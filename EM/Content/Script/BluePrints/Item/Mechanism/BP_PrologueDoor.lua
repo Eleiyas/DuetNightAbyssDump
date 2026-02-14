@@ -3,13 +3,11 @@ local BP_PrologueDoor = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_PrologueDoor:RegisterComponent(CompArray)
   for i, v in pairs(CompArray) do
     self.ComponentLoc:Add(v, v.RelativeLocation)
   end
 end
-
 function BP_PrologueDoor:FindMiniGame()
   if not self.CreateGame then
     self:RemoveTimer(self.MiniGameHandle)
@@ -27,7 +25,6 @@ function BP_PrologueDoor:FindMiniGame()
     end
   end
 end
-
 function BP_PrologueDoor:AuthorityInitInfo(Info)
   BP_PrologueDoor.Super.AuthorityInitInfo(self, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -48,7 +45,6 @@ function BP_PrologueDoor:AuthorityInitInfo(Info)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.DoorMap:Add(self.DoorId, self)
 end
-
 function BP_PrologueDoor:CommonInitInfo(Info)
   self.OnDoorOpen = false
   self.OnDoorClose = false
@@ -58,7 +54,6 @@ function BP_PrologueDoor:CommonInitInfo(Info)
     i:K2_SetRelativeLocation(UE4.FVector(0, 0, 0), false, nil, false)
   end
 end
-
 function BP_PrologueDoor:InitComponent(Info)
   BP_PrologueDoor.Super.InitComponent(self, Info)
   if 0 == self:GetCurrentDoorType() then
@@ -66,7 +61,6 @@ function BP_PrologueDoor:InitComponent(Info)
     self.EMNavModifierComponent = nil
   end
 end
-
 function BP_PrologueDoor:OnActorReady(Info)
   BP_PrologueDoor.Super.OnActorReady(self, Info)
   if IsAuthority(self) then
@@ -85,7 +79,6 @@ function BP_PrologueDoor:OnActorReady(Info)
   self.bCanPlaySound = true
   EventManager:FireEvent(EventID.UpdateDoorIcon, self)
 end
-
 function BP_PrologueDoor:ManualTriggerOverlap()
   local ObjectTypes = TArray(EObjectTypeQuery)
   ObjectTypes:Add(UE4.EObjectTypeQuery.Pawn)
@@ -95,7 +88,6 @@ function BP_PrologueDoor:ManualTriggerOverlap()
     self:StartWait()
   end
 end
-
 function BP_PrologueDoor:StartWait(Actor)
   if self.bIsUnidirectional and not self:CheckDirection(Actor) then
     return
@@ -114,7 +106,6 @@ function BP_PrologueDoor:StartWait(Actor)
     self:ChangeState("TriggerBox", 0)
   end
 end
-
 function BP_PrologueDoor:OpenMechanism()
   print(_G.LogTag, "LXZ OpenMechanism", self:GetName())
   self.DoorOpenState = true
@@ -124,7 +115,6 @@ function BP_PrologueDoor:OpenMechanism()
   self:OpenDoor()
   EventManager:FireEvent(EventID.UpdateDoorIcon, self)
 end
-
 function BP_PrologueDoor:CloseMechanism()
   print(_G.LogTag, "LXZ CloseMechanism", self:GetName())
   self.DoorOpenState = false
@@ -133,7 +123,6 @@ function BP_PrologueDoor:CloseMechanism()
   end
   self:CloseDoor()
 end
-
 function BP_PrologueDoor:EndWait(Actor)
   if self.bIsbIsUnidirectional and not self:CheckDirection(Actor) then
     return
@@ -146,12 +135,10 @@ function BP_PrologueDoor:EndWait(Actor)
     self.CloseHandle = self:AddTimer(2, self.DelayCloseDoor, false, 0, nil, nil)
   end
 end
-
 function BP_PrologueDoor:DelayCloseDoor()
   self:UpdateRegionData("DoorOpenState", false)
   self:ChangeState("TriggerBox", 0)
 end
-
 function BP_PrologueDoor:TriggerByChild(SourceEid)
   local MiniGame = Battle(self):GetEntity(self.MiniGameEid)
   local UnlockedDoorAndOpenDoorId = 0
@@ -173,7 +160,6 @@ function BP_PrologueDoor:TriggerByChild(SourceEid)
     Callback[self.GameId]()
   end
 end
-
 function BP_PrologueDoor:GetGuidePos()
   if 1 == self.DoorTypeStateId:Find(self.StateId) then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -182,14 +168,12 @@ function BP_PrologueDoor:GetGuidePos()
     return self:K2_GetActorLocation() + self.GuidePos.RelativeLocation
   end
 end
-
 function BP_PrologueDoor:CreateRegionData()
   self.RegionData = {
     DoorOpenState = self.DoorOpenState,
     StateId = self.StateId
   }
 end
-
 function BP_PrologueDoor:GetCurrentDoorType()
   local Type = self.DoorTypeStateId:Find(self.StateId)
   if Type == EDoorType.UnlockedDoorAndOpenDoor then
@@ -197,7 +181,6 @@ function BP_PrologueDoor:GetCurrentDoorType()
   end
   return Type
 end
-
 function BP_PrologueDoor:RecoverSavedData(DataTable)
   if not DataTable then
     return
@@ -208,7 +191,6 @@ function BP_PrologueDoor:RecoverSavedData(DataTable)
     end
   end
 end
-
 function BP_PrologueDoor:InitMiniGameState(NowStateId)
   if not IsAuthority(self) then
     return
@@ -224,14 +206,14 @@ function BP_PrologueDoor:InitMiniGameState(NowStateId)
     MiniGame:ChangeState("Manual", 0, MiniGame.DeActiveStateId)
   end
 end
-
 function BP_PrologueDoor:OnDoorTypeChange(DoorType)
   print(_G.LogTag, "LXZ OnDoorTypeChange", DoorType)
   if DoorType == EDoorType.UnlockedDoorAndOpenDoor or DoorType == EDoorType.UnlockedDoor then
     self.Box:SetCollisionEnabled(ECollisionEnabled.QueryOnly)
+    self.BlockPawn:SetCollisionEnabled(ECollisionEnabled.NoCollision)
   else
     self.Box:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+    self.BlockPawn:SetCollisionEnabled(ECollisionEnabled.QueryOnly)
   end
 end
-
 return BP_PrologueDoor

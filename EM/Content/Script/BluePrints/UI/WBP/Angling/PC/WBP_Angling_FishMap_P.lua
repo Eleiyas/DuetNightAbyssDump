@@ -1,10 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local Info = (...)
   self.DefaultFishingSpotId = Info.FishingSpotId
+  self.DefaultFishingRegionId = DataMgr.FishingSpot2FishingRegion[self.DefaultFishingSpotId] or 1
   self.DefaultFishResourceId = Info.FishResourceId
   if not self.DefaultFishResourceId then
     self.DefaultFishId = Info.FishId
@@ -16,13 +16,14 @@ function M:OnLoaded(...)
     self.DefaultFishId = 101
   end
   if not self.DefaultFishingSpotId then
-    GWorld.logger.error("\230\178\161\230\156\137\230\137\190\229\136\176\233\146\147\233\177\188\231\130\185\230\149\176\230\141\174\239\188\140\233\177\188id\239\188\154" .. self.DefaultFishId .. "\239\188\140\232\175\183\230\163\128\230\159\165\233\177\188\231\130\185\232\161\168\231\154\132\233\177\188\231\177\187\229\136\151\232\161\168")
+    GWorld.logger.error("没有找到钓鱼点数据，鱼id：" .. self.DefaultFishId .. "，请检查鱼点表的鱼类列表")
     self.DefaultFishingSpotId = 10010101
   end
   self.RegionPointId = DataMgr.FishingSpot[self.DefaultFishingSpotId].RegionPointId
+  self.RegionList = {}
   self.SpotList = {}
-  self:InitCommonWidget()
   self.DeviceInPc = CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile"
+  self:InitCommonWidget()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshInfoByInputTypeChange)
   self.CurMode = self.GameInputModeSubsystem:GetCurrentInputType()
@@ -37,8 +38,8 @@ function M:OnLoaded(...)
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "AnglingMapOpen", nil)
 end
-
 function M:InitCommonWidget()
+  self.CurrentContentIdx = 1
   self:InitCommonTab()
   self:UpdateFishMapItem()
   self.BtnText:SetText(GText("UI_Fishing_TrackFishingSpot"))
@@ -58,43 +59,47 @@ function M:InitCommonWidget()
   self.Text_Tips:SetText(GText("UI_Wiki_Reward_Title"))
   self:CheckCompleteAchieveCount()
 end
-
 function M:InitCommonTab()
   local TabList = {}
-  for SpotId, Data in pairs(DataMgr.FishingSpot) do
-    if Data.ShowInFishMap then
-      local IconPath = Data.IconPath or "/Game/UI/Texture/Dynamic/Atlas/Tab/T_Tab_Angling01.T_Tab_Angling01"
-      local Tab = {
-        Text = GText(Data.FishingSpotName),
-        ShowRedDot = false,
-        IsNew = false,
-        IconPath = IconPath,
-        IsLocked = false,
-        IsForbidden = false,
-        LockReasonText = GText("UI_RegionMap_MaxMark"),
-        SpotId = SpotId
-      }
-      table.insert(TabList, Tab)
-    end
+  for FishingRegionId, Data in pairs(DataMgr.FishingRegion) do
+    local IconPath = Data.IconPath or "/Game/UI/Texture/Dynamic/Atlas/Tab/T_Tab_Angling01.T_Tab_Angling01"
+    local Tab = {
+      Text = GText(Data.FishingRegionName),
+      ShowRedDot = false,
+      IsNew = false,
+      IconPath = IconPath,
+      IsLocked = false,
+      IsForbidden = false,
+      LockReasonText = GText("UI_RegionMap_MaxMark"),
+      FishingRegionId = FishingRegionId,
+      IconId = Data.IconId or 0
+    }
+    table.insert(TabList, Tab)
   end
   table.sort(TabList, function(a, b)
-    return a.SpotId < b.SpotId
+    return a.IconId < b.IconId
   end)
+  local FishRegion2Tab = {}
   local CurrentTabId = 1
   self.CurrentTabIndex = 1
   for i, v in pairs(TabList) do
     v.TabId = CurrentTabId
-    self.SpotList[CurrentTabId] = v.SpotId
-    if v.SpotId == self.DefaultFishingSpotId then
+    self.RegionList[CurrentTabId] = v.FishingRegionId
+    if v.FishingRegionId == self.DefaultFishingRegionId then
       self.CurrentTabIndex = CurrentTabId
     end
     CurrentTabId = CurrentTabId + 1
+    FishRegion2Tab[v.FishingRegionId] = CurrentTabId
+  end
+  local PlatformName = CommonConst.CLIENT_DEVICE_TYPE.PC
+  if not self.DeviceInPc then
+    PlatformName = CommonConst.CLIENT_DEVICE_TYPE.MOBILE
   end
   self.Com_Tab:Init({
     LeftKey = "Q",
     RightKey = "E",
     Tabs = TabList,
-    PlatformName = "PC",
+    PlatformName = PlatformName,
     DynamicNode = {
       "Back",
       "BottomKey",
@@ -102,8 +107,26 @@ function M:InitCommonTab()
     },
     OwnerPanel = self,
     BackCallback = self.OnClickReturn,
-    StyleName = "Text",
+    StyleName = "TextImage",
     BottomKeyInfo = {
+      {
+        KeyInfoList = {
+          {
+            Type = "Text",
+            Text = "",
+            Owner = self
+          }
+        },
+        GamePadInfoList = {
+          {
+            Type = "Img",
+            ImgShortPath = UIConst.GamePadImgKey.RightTriggerAnalog,
+            Owner = self
+          }
+        },
+        Desc = GText("UI_Controller_Introduction"),
+        bLongPress = false
+      },
       {
         KeyInfoList = {
           {
@@ -126,27 +149,116 @@ function M:InitCommonTab()
     },
     TitleName = GText("UI_Fishing_FishBook")
   })
+  self.Com_Tab:UpdateSingleBottomKeyInfo(1, {})
+  local EMCache = require("EMCache.EMCache")
+  local UnLockData = EMCache:Get("FishUnLockData", true)
+  if UnLockData then
+    for FishId, UnLockState in pairs(UnLockData) do
+      if 1 == UnLockState then
+        local SpotId = DataMgr.Fish2FishingSpot[FishId]
+        local FishRegionId = DataMgr.FishingSpot2FishingRegion[SpotId]
+        local NeedNewTabId = FishRegion2Tab[FishRegionId]
+        self.Com_Tab:ShowTabRedDotByTabId(NeedNewTabId, true, false, false)
+      end
+    end
+  end
   self.Com_Tab:BindEventOnTabSelected(self, self.OnTabChanged)
   self.Com_Tab:SelectTab(self.CurrentTabIndex)
 end
-
+function M:UpdateFishMapRegion()
+  local SubTabList = {}
+  local FishingRegionId = self.RegionList[self.CurrentTabIndex]
+  local RegionData = DataMgr.FishingRegion[FishingRegionId]
+  if not RegionData or not RegionData.FishingSpotList then
+    GWorld.logger.error("鱼区域" .. self.DefaultFishingRegionId .. "没有鱼点列表数据")
+  end
+  for _, SpotId in pairs(RegionData.FishingSpotList) do
+    local Data = DataMgr.FishingSpot[SpotId]
+    if Data.ShowInFishMap then
+      local IconPath = Data.IconPath or "/Game/UI/Texture/Dynamic/Atlas/Tab/T_Tab_Angling01.T_Tab_Angling01"
+      local Tab = {
+        Text = GText(Data.FishingSpotName),
+        ShowRedDot = false,
+        IsNew = false,
+        IconPath = IconPath,
+        IsLocked = false,
+        IsForbidden = false,
+        LockReasonText = GText("UI_RegionMap_MaxMark"),
+        SpotId = SpotId,
+        IconId = Data.IconId or 0
+      }
+      table.insert(SubTabList, Tab)
+    end
+  end
+  if #SubTabList > 0 then
+    table.sort(SubTabList, function(a, b)
+      return a.IconId < b.IconId
+    end)
+    self.CurrentSubTabIndex = 1
+    if not self.SpotList[self.CurrentTabIndex] then
+      self.SpotList[self.CurrentTabIndex] = {}
+    end
+    local CurrentSubTabIndex = 1
+    for _, SpotTab in pairs(SubTabList) do
+      SpotTab.TabId = CurrentSubTabIndex
+      self.SpotList[self.CurrentTabIndex][CurrentSubTabIndex] = SpotTab.SpotId
+      if SpotTab.SpotId == self.DefaultFishingSpotId then
+        self.CurrentSubTabIndex = CurrentSubTabIndex
+      end
+      CurrentSubTabIndex = CurrentSubTabIndex + 1
+    end
+    local PlatformName = CommonConst.CLIENT_DEVICE_TYPE.PC
+    if not self.DeviceInPc then
+      PlatformName = CommonConst.CLIENT_DEVICE_TYPE.MOBILE
+    end
+    self.Com_SubTab:Init({
+      LeftKey = "A",
+      RightKey = "D",
+      Tabs = SubTabList,
+      PlatformName = PlatformName,
+      DynamicNode = {
+        "Back",
+        "BottomKey",
+        "Tip"
+      },
+      OwnerPanel = self,
+      StyleName = "Text"
+    })
+    self.Com_SubTab:BindEventOnTabSelected(self, self.OnSubTabChanged)
+    self.Com_SubTab:SelectTab(self.CurrentSubTabIndex)
+    if #SubTabList <= 1 then
+      self.SubTab:SetVisibility(ESlateVisibility.Collapsed)
+    else
+      self.SubTab:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    end
+  else
+    self.List_Item:BP_ClearSelection()
+    self.List_Item:ClearListItems()
+  end
+end
 function M:UpdateFishMapItem()
+  self.List_Item:BP_ClearSelection()
   self.List_Item:ClearListItems()
-  local SpotId = self.SpotList[self.CurrentTabIndex]
+  local SpotId = self.SpotList[self.CurrentTabIndex][self.CurrentSubTabIndex]
   if not DataMgr.FishingSpot[SpotId] or not DataMgr.FishingSpot[SpotId].FishId then
-    GWorld.logger.error("\233\177\188\231\130\185" .. SpotId .. "\230\178\161\230\156\137\230\149\176\230\141\174\239\188\140\230\136\150\232\128\133\230\178\161\230\156\137\233\177\188\231\154\132\230\149\176\230\141\174")
+    GWorld.logger.error("鱼点" .. SpotId .. "没有数据，或者没有鱼的数据")
     return
   end
   local List = {}
   for i, FishId in ipairs(DataMgr.FishingSpot[SpotId].FishId) do
     local ResourceId = DataMgr.Fish[FishId].ResourceId
     local Rarity = ItemUtils.GetItemRarity(ResourceId, "Resource")
-    table.insert(List, {
-      FishId = FishId,
-      Rarity = Rarity,
-      Idx = i
-    })
-    print(_G.LogTag, "LXZ UpdateFishMapItem", FishId)
+    if not DataMgr.FishingBook[FishId] or not DataMgr.FishingBook[FishId].FishingSpot then
+      GWorld.logger.error("鱼" .. FishId .. "没有所属钓鱼点数据")
+    end
+    local FishSpotId = DataMgr.FishingBook[FishId].FishingSpot
+    if FishSpotId == SpotId then
+      table.insert(List, {
+        FishId = FishId,
+        Rarity = Rarity,
+        Idx = i
+      })
+    end
   end
   table.sort(List, function(a, b)
     if a.Rarity == b.Rarity then
@@ -156,24 +268,30 @@ function M:UpdateFishMapItem()
     end
   end)
   for i, FishTable in pairs(List) do
-    print(_G.LogTag, "LXZ UpdateFishMapItem11", FishTable.FishId)
-    local Content = self:NewMapContent(FishTable.FishId)
+    local Content = self:NewMapContent(FishTable.FishId, i)
     if Content then
+      if i == self.CurrentContentIdx then
+        self.List_Item:BP_SetItemSelection(Content, true)
+      end
       self.List_Item:AddItem(Content)
     end
   end
+  self.List_Item:SetFocus()
 end
-
 function M:OnTabChanged(TabWidget)
   self.CurrentTabIndex = TabWidget.Idx
+  self.Com_Tab:ShowTabRedDotByTabId(TabWidget.Idx, false, false, false)
+  self:UpdateFishMapRegion()
+end
+function M:OnSubTabChanged(TabWidget)
+  self.CurrentSubTabIndex = TabWidget.Idx
   self:UpdateFishMapItem()
 end
-
 function M:OnClickTrackSpot()
-  local SpotId = self.SpotList[self.CurrentTabIndex]
+  local SpotId = self.SpotList[self.CurrentTabIndex][self.CurrentSubTabIndex]
   self.RegionPointId = DataMgr.FishingSpot[SpotId].RegionPointId
   if not self.RegionPointId then
-    GWorld.logger.error("LXZ OnClickTrackSpot \233\177\188\231\130\185\228\184\141\229\173\152\229\156\168\229\156\176\229\155\190\229\155\190\230\160\135\231\188\150\229\143\183\239\188\140 \233\177\188\231\130\185Id:", self.DefaultFishingSpotId)
+    GWorld.logger.error("LXZ OnClickTrackSpot 鱼点不存在地图图标编号， 鱼点Id:", self.DefaultFishingSpotId)
     return
   end
   local ConditionId = DataMgr.RegionPoint[self.RegionPointId].UnlockConditionId
@@ -189,12 +307,10 @@ function M:OnClickTrackSpot()
     UIManager(self):LoadUINew("LevelMapMain", false, RegionId, "RegionPoint", self.RegionPointId)
   end
 end
-
 function M:OnClickReturn(TabWidget)
   AudioManager(self):SetEventSoundParam(self, "AnglingMapOpen", {ToEnd = 1})
   self:Close()
 end
-
 function M:OnClickReward(TabWidget)
   print(_G.LogTag, "LXZ OnClickReward")
   local ConfigData = {
@@ -236,7 +352,6 @@ function M:OnClickReward(TabWidget)
   }, self)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -249,20 +364,20 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     self:OnClickReward()
   elseif UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) then
     self.Com_Tab:Handle_KeyEventOnGamePad(InKeyName)
+    self.Com_SubTab:Handle_KeyEventOnGamePad(InKeyName)
   else
     self.Com_Tab:Handle_KeyEventOnPC(InKeyName)
+    self.Com_SubTab:Handle_KeyEventOnPC(InKeyName)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:GetRewards(Content)
-  print(_G.LogTag, "LXZ Avatar\229\143\145\229\165\150", Content.ConfigData.ReceiveParm.AchievementId)
+  print(_G.LogTag, "LXZ Avatar发奖", Content.ConfigData.ReceiveParm.AchievementId)
   local AchievementId = Content.ConfigData.ReceiveParm.AchievementId
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local FishiAchv = Avatar.FishAchvs[AchievementId]
-      
       Content.ConfigData.CanReceive = FishiAchv:IsComplete() and FishiAchv:CanRecvReward()
       Content.ConfigData.RewardsGot = not FishiAchv:CanRecvReward()
       Content.SelfWidget:RefreshBtn(0 == Ret)
@@ -279,24 +394,21 @@ function M:GetRewards(Content)
       Content.SelfWidget.Owner:RefreshButton(HaveReWardToGet)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward, false, nil, self, false)
     end
-    
     Avatar:GetFishAchvReward(AchievementId, CallBack)
   end
 end
-
 function M:GetAllRewards(ReceiveAllParam)
-  print(_G.LogTag, "LXZ Avatar\229\133\168\233\131\168\229\143\145\229\165\150", ReceiveAllParam.AchievementId)
+  print(_G.LogTag, "LXZ Avatar全部发奖", ReceiveAllParam.AchievementId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local HaveReWardToGet = false
-      
       for i = 0, ReceiveAllParam.SelfWidget.List_Item:GetNumItems() - 1 do
         local Item = ReceiveAllParam.SelfWidget.List_Item:GetItemAt(i)
         local AchievementId = Item.ConfigData.AchievementId
         local FishiAchv = Avatar.FishAchvs[AchievementId]
         local CanReceive = FishiAchv:IsComplete() and FishiAchv:CanRecvReward()
-        print(_G.LogTag, "LXZ Avatar\229\133\168\233\131\168\229\143\145\229\165\150 cb 1", AchievementId, CanReceive, ReceiveAllParam.SelfWidget.List_Item:GetNumItems())
+        print(_G.LogTag, "LXZ Avatar全部发奖 cb 1", AchievementId, CanReceive, ReceiveAllParam.SelfWidget.List_Item:GetNumItems())
         if CanReceive then
           HaveReWardToGet = true
         end
@@ -309,18 +421,16 @@ function M:GetAllRewards(ReceiveAllParam)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward, false, nil, self, false)
       ReceiveAllParam.SelfWidget:RefreshButton(HaveReWardToGet)
     end
-    
     Avatar:GetAllFishAchvReward(CallBack)
   end
 end
-
-function M:NewMapContent(FishId)
+function M:NewMapContent(FishId, Idx)
   local Class = LoadClass("/Game/UI/WBP/Angling/Widget/Angling_FishMap_Item_Content.Angling_FishMap_Item_Content")
   local Obj = NewObject(Class)
   Obj.FishId = FishId
+  Obj.ContentIdx = Idx
   return Obj
 end
-
 function M:GetRewardsIcons(RewardId)
   local Res = {}
   local RewardInfo = DataMgr.Reward[RewardId]
@@ -330,7 +440,6 @@ function M:GetRewardsIcons(RewardId)
   end
   return Res
 end
-
 function M:GetRewardIcon(RewardInfo, RewardIndex)
   local Type = RewardInfo.Type[RewardIndex]
   local Id = RewardInfo.Id[RewardIndex]
@@ -345,7 +454,6 @@ function M:GetRewardIcon(RewardInfo, RewardIndex)
   }
   return Res
 end
-
 function M:CreateArchieveTable(AchievementId, Data, TabId)
   local Item = {
     ItemId = TabId,
@@ -373,7 +481,6 @@ function M:CreateArchieveTable(AchievementId, Data, TabId)
   end
   return Item
 end
-
 function M:CheckCompleteAchieveCount()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -403,7 +510,6 @@ function M:CheckCompleteAchieveCount()
   end
   self.Text_Num:SetText(CompleteCount .. "/" .. Count)
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   self.CurMode = CurInputDevice
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.DeviceInPc then
@@ -413,7 +519,6 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   elseif CurInputDevice == ECommonInputType.Touch then
   end
 end
-
 function M:GetFishSpotId(FishId)
   local Data = DataMgr.Fish2FishingSpot[FishId]
   if not Data then
@@ -427,5 +532,48 @@ function M:GetFishSpotId(FishId)
   end
   return
 end
-
+function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "Gamepad_RightX" == InKeyName then
+    self.MoveDeltaX = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent)
+  elseif "Gamepad_RightY" == InKeyName then
+    self.MoveDeltaY = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent)
+  end
+  local InKeyName
+  if self.MoveDeltaY and 0 ~= self.MoveDeltaY then
+    if self.MoveDeltaY > 0.5 then
+      InKeyName = "Gamepad_RightStick_Up"
+    elseif self.MoveDeltaY < -0.5 then
+      InKeyName = "Gamepad_RightStick_Down"
+    end
+    local CurrentItem = self.CurrentItem
+    if not CurrentItem then
+      return UIUtils.Handled
+    end
+    local DeltaOffset = -1 * UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 5
+    local CurrentOffset = CurrentItem.Scroll_Box:GetScrollOffset()
+    local NextOffset = math.clamp(CurrentOffset + DeltaOffset, 0, CurrentItem.Scroll_Box:GetScrollOffsetOfEnd())
+    CurrentItem.Scroll_Box:SetScrollOffset(NextOffset)
+  end
+  return UIUtils.Handled
+end
+function M:OnItemSelectionChanged(CurrentItem)
+  self.CurrentItem = CurrentItem
+  self.CurrentContentIdx = CurrentItem.ContentIdx
+  if not UIUtils.CheckScrollBoxCanScroll(CurrentItem.Scroll_Box) then
+    self.Com_Tab:UpdateSingleBottomKeyInfo(1, {})
+  else
+    self.Com_Tab:UpdateSingleBottomKeyInfo(1, {
+      GamePadInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = UIConst.GamePadImgKey.RightTriggerAnalog,
+          Owner = self
+        }
+      },
+      Desc = GText("UI_Controller_Introduction")
+    })
+  end
+end
 return M

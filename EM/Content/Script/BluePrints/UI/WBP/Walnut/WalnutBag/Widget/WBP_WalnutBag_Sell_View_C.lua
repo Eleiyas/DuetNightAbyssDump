@@ -1,10 +1,10 @@
 require("UnLua")
 local WalnutBagController = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBagController")
 local WalnutBagModel = WalnutBagController:GetModel()
+local BagCommon = require("BluePrints.UI.WBP.Bag.BagCommon")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ParentWidget = nil
@@ -23,7 +23,6 @@ function M:Initialize(Initializer)
   self.ConfirmCallback = nil
   self.CurFocusWidget = "DefaultWidget"
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.List_Item:ClearListItems()
@@ -35,8 +34,12 @@ function M:OnLoaded(...)
     end
   end
   self:PlayInAnim()
+  if self.ParentWidget.CurSelectContent and self.ParentWidget.CurSelectContent.Count > 0 then
+    self:AddTimer(0.01, function()
+      self.ParentWidget:OnListItemSelected(self.ParentWidget.CurSelectContent)
+    end)
+  end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.CurFocusWidget = "DefaultWidget"
   if self.ParentWidget then
@@ -44,12 +47,10 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnAddWalnutItemToList, self, self.AddWalnutItemToList)
   self:AddDispatcher(EventID.OnRemoveWalnutItemInList, self, self.RemoveWalnutItemInList)
 end
-
 function M:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -58,7 +59,6 @@ function M:PlayInAnim()
   self:RefreshBaseInfo()
   self:InitListenEvent()
 end
-
 function M:PlayOutAnim()
   if not self or self:IsAnimationPlaying(self.Out) then
     return
@@ -66,7 +66,6 @@ function M:PlayOutAnim()
   if self.bIsOpenList or self:IsAnimationPlaying(self.CloseList) then
     local function PlayCloseAnimFinished()
       self.List_Item:SetVisibility(UE4.ESlateVisibility.Collapsed)
-      
       self.Panel_Sell_List:SetVisibility(UE4.ESlateVisibility.Collapsed)
       self.bIsOpenList = false
       self:BindToAnimationFinished(self.Out, {
@@ -75,7 +74,6 @@ function M:PlayOutAnim()
       })
       self:PlayAnimationForward(self.Out)
     end
-    
     self:UnbindAllFromAnimationFinished(self.CloseList)
     self:BindToAnimationFinished(self.CloseList, {self, PlayCloseAnimFinished})
     self:PlayAnimationForward(self.CloseList)
@@ -91,7 +89,6 @@ function M:PlayOutAnim()
     self.ParentWidget:LeaveWalnutSellState()
   end
 end
-
 function M:RefreshBaseInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.PC then
     self.Key_Check:CreateCommonKey({
@@ -133,7 +130,7 @@ function M:RefreshBaseInfo()
   self.Text_Num:SetText(GText("UI_Bag_Sell_Amount"))
   self.Text_Select:SetText(GText("UI_Bag_Sell_Select"))
   self.Text_Total:SetText(GText("UI_Bag_Decompose_Expect"))
-  self.Text_Empty:SetText(GText("UI_BAG_Nochosen"))
+  self.Text_Empty:SetText(GText("UI_NoWalnut"))
   self.Button_Purchase:SetGamePadImg("Y")
   self.Button_Purchase:SetText(GText("UI_BAG_Sell"))
   self.Button_Purchase:BindEventOnClicked(self, self.TryToSaleWalnut)
@@ -155,11 +152,9 @@ function M:RefreshBaseInfo()
     self.Button_Purchase:ForbidBtn(true)
   end
   self.List_Item.BP_OnItemSelectionChanged:Add(self, self.OnSelectStuffItemChanged)
-  
   function self.Button_List.SoundFunc(Btn)
     AudioManager(self):PlayUISound(self.Button_List, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   if self.ParentWidget then
     if type(self.ParentWidget.SetFocus_Lua) == "function" then
       self.ParentWidget:SetFocus_Lua()
@@ -170,7 +165,6 @@ function M:RefreshBaseInfo()
   local IsUseGamePad = self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad and self:IsCanChangeToGamePadViewMode()
   self:UpdateUIStyleInPlatform(IsUseGamePad)
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -184,11 +178,9 @@ function M:UpdateUIStyleInPlatform(IsUseGamePad)
     self.Key_View:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateCurFocusInfo(NewFocusName)
   self.CurFocusWidget = NewFocusName
 end
-
 function M:SetFocus_Lua()
   if self.bIsOpenList then
     self.List_Item:SetFocus()
@@ -202,7 +194,6 @@ function M:SetFocus_Lua()
     end
   end
 end
-
 function M:ClickToOpenStuffList()
   if self:IsAnimationPlaying(self.OpenList) or self:IsAnimationPlaying(self.CloseList) then
     return
@@ -210,7 +201,6 @@ function M:ClickToOpenStuffList()
   if self.bIsOpenList then
     local function PlayCloseAnimFinished()
       local ChooseItem = self.List_Item:BP_GetSelectedItem()
-      
       if ChooseItem and ChooseItem.SelfWidget then
         ChooseItem.SelfWidget:SetSelected(false)
       end
@@ -223,14 +213,12 @@ function M:ClickToOpenStuffList()
         self.ParentWidget:SetFocus_Lua()
       end
     end
-    
     self:UnbindAllFromAnimationFinished(self.CloseList)
     self:BindToAnimationFinished(self.CloseList, {self, PlayCloseAnimFinished})
     self:PlayAnimationForward(self.CloseList)
   else
     local function PlayOpenAnimFinished()
       self.bIsOpenList = true
-      
       local AllItemCount = self.List_Item:GetNumItems()
       for i = 0, AllItemCount - 1 do
         local ItemObj = self.List_Item:GetItemAt(i)
@@ -249,7 +237,6 @@ function M:ClickToOpenStuffList()
       self.Com_NumInput:OverrideFocusToWidget(self)
       self:UpdateCurFocusInfo("ToSellListView")
     end
-    
     self.List_Item:SetFocus()
     self:UnbindAllFromAnimationFinished(self.OpenList)
     self:BindToAnimationFinished(self.OpenList, {self, PlayOpenAnimFinished})
@@ -258,7 +245,6 @@ function M:ClickToOpenStuffList()
     self.Panel_Sell_List:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
   if not SelectItem then
     return
@@ -267,7 +253,6 @@ function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
     self:OnListSelectStuffClicked(SelectItem, "ChangeHoverInGamepad")
   end
 end
-
 function M:TryToSaleWalnut()
   if self.CurStuffCountInList <= 0 then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_BAG_Nochosen"))
@@ -323,11 +308,9 @@ function M:TryToSaleWalnut()
     CommonDialogParams.bHideDialogItem = true
     CommonDialogParams.DialogItemIndex = 1
   end
-  
   function CommonDialogParams.RightCallbackFunction()
     self:ConfirmDealWithItems()
   end
-  
   local ConfirmParams = {}
   if bIsNeedShowWarning then
     ConfirmParams.ShortText = GText("UI_COMMONPOP_TEXT_100038")
@@ -335,16 +318,13 @@ function M:TryToSaleWalnut()
   if ConfirmParams.ShortText then
     function ConfirmParams.RightCallbackFunction(_, Data)
       self:UpdatePopupSelectedInfo(Data, BagCommon.LastStuffSellTimeStamp)
-      
       UIManager(self):ShowCommonPopupUI(100164, CommonDialogParams, self)
     end
-    
     UIManager(self):ShowCommonPopupUI(100165, ConfirmParams, self)
   else
     UIManager(self):ShowCommonPopupUI(100164, CommonDialogParams, self)
   end
 end
-
 function M:AddWalnutItemToList(StuffData)
   self:FillWithStuffSellData(StuffData)
   self:RefreshCoinInfo()
@@ -356,7 +336,6 @@ function M:AddWalnutItemToList(StuffData)
   end
   self:RefreshKeyCount()
 end
-
 function M:RemoveWalnutItemInList(StuffUuid)
   local StuffContent = self.NeedDealWithStuffData[StuffUuid]
   if nil ~= StuffContent then
@@ -365,7 +344,6 @@ function M:RemoveWalnutItemInList(StuffUuid)
     self:AfterRemoveItemFromList(StuffContent, IsRemoveSelectedItem)
   end
 end
-
 function M:RemoveFromSellList(StuffContent)
   local NeedRemoveStuffContent
   local AllItemCount = self.List_Item:GetNumItems()
@@ -393,7 +371,6 @@ function M:RemoveFromSellList(StuffContent)
   end
   return IsRemoveSelectedItem
 end
-
 function M:AfterRemoveItemFromList(StuffContent, IsRemoveSelectedItem)
   self.NeedDealWithStuffCount[StuffContent.Uuid] = nil
   self.Num_Select:SetText(tostring(math.max(self.CurStuffCountInList, 0)))
@@ -416,7 +393,6 @@ function M:AfterRemoveItemFromList(StuffContent, IsRemoveSelectedItem)
     self.RemoveCallback(self.ParentWidget, StuffContent.Uuid)
   end
 end
-
 function M:FillWithStuffSellData(StuffData)
   StuffData.ParentWidget = self
   StuffData.GridIndex = self.CurStuffCountInList + 1
@@ -424,8 +400,6 @@ function M:FillWithStuffSellData(StuffData)
   if self.NeedDealWithStuffData[StuffData.Uuid] ~= nil then
     StuffData.GridIndex = self.ItemId2GridIndex[StuffData.Uuid]
     self.NeedDealWithStuffCount[StuffData.Uuid] = self.NeedDealWithStuffCount[StuffData.Uuid] + 1
-    local temp = self.List_Item:GetItemAt(StuffData.GridIndex - 1)
-    self:OnListSelectStuffClicked(temp, "AddNewItem")
   else
     StuffData.GridIndex = self.CurStuffCountInList + 1
     StuffData.StateTagInfo = {
@@ -456,7 +430,6 @@ function M:FillWithStuffSellData(StuffData)
     self.AllTypeCoinInfo[StuffCoinId] = StuffData.Price * AddStuffCount
   end
 end
-
 function M:RefreshCoinInfo()
   local AllChildren = self.ItemBox:GetAllChildren()
   local TotalRewardTypeNum, ExtraShowCoinNum = 0, 0
@@ -493,7 +466,6 @@ function M:RefreshCoinInfo()
   self.ItemBox_Overflow:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text_Overflow:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:RefreshKeyCount()
   if self.CurSelectStuffContentInList then
     local InitDealWithStuffCount = self.NeedDealWithStuffCount[self.CurSelectStuffContentInList.Uuid]
@@ -502,7 +474,6 @@ function M:RefreshKeyCount()
     self.Com_Slider:OverrideValueLimit(InitDealWithStuffCount, MaxDealWithStuffCount, 1, true)
   end
 end
-
 function M:ConfirmDealWithItems()
   if self.ConfirmCallback ~= nil then
     self.ConfirmCallback(self.ParentWidget, self.NeedDealWithStuffData, self.NeedDealWithStuffCount)
@@ -515,7 +486,6 @@ function M:ConfirmDealWithItems()
     end
   end
 end
-
 function M:OnInputStuffNum(NewValue, OldValue)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -529,7 +499,6 @@ function M:OnInputStuffNum(NewValue, OldValue)
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(NewValue, true)
 end
-
 function M:SliderChangeCallback(Value)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -547,7 +516,6 @@ function M:SliderChangeCallback(Value)
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(Value, true)
 end
-
 function M:OnClickToMinusStuff()
   if self.CurSelectStuffContentInList == nil then
     return
@@ -569,7 +537,6 @@ function M:OnClickToMinusStuff()
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(Num, true)
 end
-
 function M:OnClickToAddStuff()
   if self.CurSelectStuffContentInList == nil then
     return
@@ -585,7 +552,6 @@ function M:OnClickToAddStuff()
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(Num, true)
 end
-
 function M:OnUpdateCurSelectItemSaleInfo(Num, bIsNeedRefreshSliderBar)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -608,7 +574,6 @@ function M:OnUpdateCurSelectItemSaleInfo(Num, bIsNeedRefreshSliderBar)
     self.ParentWidget:RefreshItemInfo(Num, math.tointeger(self.CurSelectStuffContentInList.Uuid))
   end
 end
-
 function M:OnListSelectStuffClicked(Content, ClickReason)
   if nil == Content then
     return
@@ -628,7 +593,6 @@ function M:OnListSelectStuffClicked(Content, ClickReason)
   self.CurSelectStuffContentInList = Content
   self:ClickChooseStuff(GridIndex, StuffUuid)
 end
-
 function M:ClickChooseStuff(GridIndex, StuffUuid)
   self.CurSelectGridIndex = GridIndex
   self:RefreshKeyCount()
@@ -640,7 +604,6 @@ function M:ClickChooseStuff(GridIndex, StuffUuid)
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -657,7 +620,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:IsCanChangeToGamePadViewMode()
   if self.CurFocusWidget == "DefaultWidget" then
     return true
@@ -673,7 +635,6 @@ function M:IsCanChangeToGamePadViewMode()
     return true
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -687,7 +648,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = false
   if self.CurSelectStuffContentInList then
@@ -783,7 +743,6 @@ function M:OnGamePadButtonDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonUp(InKeyName)
   local IsEventHandled = false
   if self.CurSelectStuffContentInList then
@@ -791,5 +750,4 @@ function M:OnGamePadButtonUp(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

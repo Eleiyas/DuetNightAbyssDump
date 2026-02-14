@@ -2,25 +2,21 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.ItemMenuAnchorChanged)
 end
-
 function M:Destruct()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.ItemMenuAnchorChanged)
 end
-
 function M:BindEventOnMenuOpenChanged(Obj, OnMenuOpenChangedFunc)
   self.Obj = Obj
   self.OnMenuOpenChangedFunc = OnMenuOpenChangedFunc
 end
-
 function M:InitSuitSign(TreasureId, GroupId, Count, bPreview)
   local TreasureGroupData = DataMgr.TreasureGroup[GroupId]
   if TreasureGroupData then
     local IconObj = LoadObject(TreasureGroupData.Icon)
-    assert(IconObj, "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148TreasureGroup\231\154\132Icon:" .. GroupId)
+    assert(IconObj, "未找到对应TreasureGroup的Icon:" .. GroupId)
     self.Image_TitleIcon:SetBrushResourceObject(IconObj)
     local TreasureNum = UIUtils.GetTreasureGroupNum(TreasureId)
     local Text = "<G>" .. tostring(Count) .. "</>/" .. tostring(TreasureNum)
@@ -52,21 +48,18 @@ function M:InitSuitSign(TreasureId, GroupId, Count, bPreview)
       end
     })
   else
-    ScreenPrint("\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148TreasureGroup\228\191\161\230\129\175\239\188\154" .. GroupId)
+    ScreenPrint("未找到对应TreasureGroup信息：" .. GroupId)
   end
 end
-
 function M:ItemMenuAnchorChanged(bOpen)
   if self.OnMenuOpenChangedFunc then
     self.OnMenuOpenChangedFunc(self.Obj, bOpen)
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   if InKeyName == UIConst.GamePadKey.LeftThumb then
     self.ItemDetails_MenuAnchor:OpenItemDetailsWidget(false, self.Content)
     return UIUtils.Handled
   end
 end
-
 return M

@@ -1,11 +1,17 @@
 local TemplateDumpUtils = require("BluePrints.Client.TemplateDumpUtils")
 local BattleDumpUtils = {}
-
 function BattleDumpUtils:GetInfoProxy(Info, ModData, ModSuit)
   local Proxy = setmetatable({ModData = ModData, ModSuit = ModSuit}, {__index = Info})
   return Proxy
 end
-
+function BattleDumpUtils:GetMeleeWeaponInfoProxy(Info, ModData, ModSuit, SecondModSuit)
+  local Proxy = setmetatable({
+    ModData = ModData,
+    ModSuit = ModSuit,
+    SecondModSuit = SecondModSuit
+  }, {__index = Info})
+  return Proxy
+end
 function BattleDumpUtils:GetBattleInfoByInfo(Avatar, Info, bNotUseUWeapon)
   if Info.ReplaceAvatar then
     Avatar = Info.ReplaceAvatar
@@ -27,7 +33,7 @@ function BattleDumpUtils:GetBattleInfoByInfo(Avatar, Info, bNotUseUWeapon)
     AvatarInfo.RoleInfo = {}
   end
   if MeleeWeapon then
-    local InfoProxy = self:GetInfoProxy(Info, Info.MeleeWeaponModData, Info.MeleeWeaponModSuit)
+    local InfoProxy = self:GetMeleeWeaponInfoProxy(Info, Info.MeleeWeaponModData, Info.MeleeWeaponModSuit, Info.MeleeWeaponModSuitSecondary)
     AvatarInfo.MeleeWeapon = MeleeWeapon:BattleDump(Avatar, InfoProxy)
   else
     AvatarInfo.MeleeWeapon = {}
@@ -66,7 +72,6 @@ function BattleDumpUtils:GetBattleInfoByInfo(Avatar, Info, bNotUseUWeapon)
   end
   return AvatarInfo
 end
-
 function BattleDumpUtils:GetDefaultBattleInfo(Avatar, ExtraInfo)
   if not Avatar then
     return
@@ -95,7 +100,6 @@ function BattleDumpUtils:GetDefaultBattleInfo(Avatar, ExtraInfo)
   end
   return self:GetBattleInfoByInfo(Avatar, Info)
 end
-
 function BattleDumpUtils:GetDefaultUltraWeaponInfo(Avatar, Char)
   if not Char then
     return {}
@@ -112,7 +116,6 @@ function BattleDumpUtils:GetDefaultUltraWeaponInfo(Avatar, Char)
   end
   return UltraWeapons
 end
-
 function BattleDumpUtils:GetPhantomBattleInfo(Avatar, Char, Weapon, Pet, bNotUseUWeapon)
   local Info = {
     Char = Char,
@@ -125,6 +128,10 @@ function BattleDumpUtils:GetPhantomBattleInfo(Avatar, Char, Weapon, Pet, bNotUse
     else
       Info.RangedWeapon = Weapon
     end
+  else
+    return {
+      RoleInfo = {}
+    }
   end
   if Info.Char then
     Info.CharModSuit = Info.Char.ModSuitIndex
@@ -140,7 +147,6 @@ function BattleDumpUtils:GetPhantomBattleInfo(Avatar, Char, Weapon, Pet, bNotUse
   AvatarInfo.Pet = {}
   return AvatarInfo
 end
-
 function BattleDumpUtils:GetCharBattleInfo(Avatar, Char, ExtraModSuitIndex)
   local Info = {Char = Char}
   if Info.Char then
@@ -151,7 +157,6 @@ function BattleDumpUtils:GetCharBattleInfo(Avatar, Char, ExtraModSuitIndex)
   end
   return self:GetBattleInfoByInfo(Avatar, Info)
 end
-
 function BattleDumpUtils:GetWeaponBattleInfo(Avatar, Weapon, ExtraModSuitIndex)
   local Info = {}
   if Weapon then
@@ -171,7 +176,6 @@ function BattleDumpUtils:GetWeaponBattleInfo(Avatar, Weapon, ExtraModSuitIndex)
   end
   return self:GetBattleInfoByInfo(Avatar, Info)
 end
-
 function BattleDumpUtils:GetSquadInfoByQuestRoleId(RoleId, Avatar)
   local RoleInfo = DataMgr.QuestRoleInfo[RoleId]
   if not RoleInfo then
@@ -180,10 +184,10 @@ function BattleDumpUtils:GetSquadInfoByQuestRoleId(RoleId, Avatar)
   local ReplaceCharId
   if RoleInfo.ExStroyInfo ~= nil then
     local Sex = Avatar.Sex
-    if RoleInfo.ExStroyInfo == "Player" then
-      Sex = Avatar.Sex
-    else
+    if string.sub(RoleInfo.ExStroyInfo, 1, 2) == "EX" then
       Sex = Avatar.WeitaSex
+    else
+      Sex = Avatar.Sex
     end
     ReplaceCharId = DataMgr.Player2RoleId[RoleInfo.ExStroyInfo][Sex]
   end
@@ -196,14 +200,15 @@ function BattleDumpUtils:GetSquadInfoByQuestRoleId(RoleId, Avatar)
   Info.AvatarQuestRoleID = RoleId
   return Info, TemplateAvatar
 end
-
 function BattleDumpUtils:GetSquadInfoByTemplate(Avatar, AvatarSquad, TrialSquad, PetId)
   local TemplateAvatarComponent = require("BluePrints.Client.TemplateAvatar.TemplateAvatarComponent")
   local TemplateAvatar = TemplateAvatarComponent()
   local ExtraSquad = {}
+  TemplateAvatar.Mods = Avatar.Mods
   if AvatarSquad.Char then
     TemplateAvatar.CurrentChar = AvatarSquad.Char
     TemplateAvatar.Chars[AvatarSquad.Char] = Avatar.Chars[AvatarSquad.Char]
+    TemplateAvatar.CommonChars = Avatar.CommonChars
   end
   if TrialSquad.Char then
     TemplateDumpUtils:CreateTemplate_Char(TemplateAvatar, TrialSquad.Char, nil, true)
@@ -259,27 +264,28 @@ function BattleDumpUtils:GetSquadInfoByTemplate(Avatar, AvatarSquad, TrialSquad,
   ExtraSquad.Pet = TemplateDumpUtils:CreateTemplate_Pet(TemplateAvatar, PetId)
   return TemplateAvatar:GetSquadCreateInfoByNow(ExtraSquad), TemplateAvatar
 end
-
 function BattleDumpUtils:GetBattleInfoByQuestRoleId(RoleId, Avatar)
   local Info, TemplateAvatar = self:GetSquadInfoByQuestRoleId(RoleId, Avatar)
   return self:GetBattleInfoByInfo(TemplateAvatar, Info)
 end
-
 function BattleDumpUtils:UpdateBattleInfo(AvatarInfo, UpdateInfo)
   if not UpdateInfo then
     return AvatarInfo
   end
   if UpdateInfo.RoleInfo then
+    AvatarInfo.RoleInfo = AvatarInfo.RoleInfo or {}
     for k, v in pairs(UpdateInfo.RoleInfo) do
       AvatarInfo.RoleInfo[k] = v
     end
   end
   if UpdateInfo.MeleeWeapon then
+    AvatarInfo.MeleeWeapon = AvatarInfo.MeleeWeapon or {}
     for k, v in pairs(UpdateInfo.MeleeWeapon) do
       AvatarInfo.MeleeWeapon[k] = v
     end
   end
   if UpdateInfo.RangedWeapon then
+    AvatarInfo.RangedWeapon = AvatarInfo.RangedWeapon or {}
     for k, v in pairs(UpdateInfo.RangedWeapon) do
       AvatarInfo.RangedWeapon[k] = v
     end
@@ -295,5 +301,4 @@ function BattleDumpUtils:UpdateBattleInfo(AvatarInfo, UpdateInfo)
   end
   return AvatarInfo
 end
-
 return BattleDumpUtils

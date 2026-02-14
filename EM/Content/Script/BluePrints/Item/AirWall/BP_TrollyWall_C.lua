@@ -1,13 +1,11 @@
 local BP_TrollyWall_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_TrollyWall_C:CommonInitInfo(Info)
   BP_TrollyWall_C.Super.CommonInitInfo(self, Info)
   self.InitHandle = self:AddTimer(0.5, self.GetTrolly, true)
   self.bCrashed = false
 end
-
 function BP_TrollyWall_C:OnActorReady(Info)
   if IsAuthority(self) then
     self._RegisterOnCharacterDead = true
@@ -15,11 +13,9 @@ function BP_TrollyWall_C:OnActorReady(Info)
     self.BattleEvent.OnToughnessToZero:Add(self, self.OnToughnessToZeroCallback)
   end
 end
-
 function BP_TrollyWall_C:OnToughnessToZeroCallback()
   self:OnToughnessToZero_CPP()
 end
-
 function BP_TrollyWall_C:OnToughnessToZero()
   if IsAuthority(self) then
     self.BattleEvent.AfterBeCutToughness:Remove(self, self.AfterBeCutToughness)
@@ -31,7 +27,6 @@ function BP_TrollyWall_C:OnToughnessToZero()
   end
   self:EMActorDestroy(EDestroyReason.MechanismDead)
 end
-
 function BP_TrollyWall_C:AfterBeCutToughness(Target, Source, Skill, BeforeTN, AfterTN, SubTN)
   if 0 ~= AfterTN then
     self:OnNormalDamage()
@@ -39,12 +34,10 @@ function BP_TrollyWall_C:AfterBeCutToughness(Target, Source, Skill, BeforeTN, Af
     self:OnNormalDead()
   end
 end
-
 function BP_TrollyWall_C:OnCrashed()
   self.bCrashed = true
   AudioManager(self):PlayFMODSound(self, nil, self.OnCrashedSoundPath, "OnTrollyWallCrashed")
 end
-
 function BP_TrollyWall_C:OnNormalDead()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.RaplacePathMap:Add(self.CurrentPathIndex, self.ReplacePathIndex)
@@ -56,13 +49,11 @@ function BP_TrollyWall_C:OnNormalDead()
     end
   end
 end
-
 function BP_TrollyWall_C:OnNormalDamage()
   if self.bCrashed then
     self.Trolly:Stop(self)
   end
 end
-
 function BP_TrollyWall_C:GetTrolly()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState.DefBaseMap:Length() > 1 then
@@ -77,5 +68,4 @@ function BP_TrollyWall_C:GetTrolly()
     break
   end
 end
-
 return BP_TrollyWall_C

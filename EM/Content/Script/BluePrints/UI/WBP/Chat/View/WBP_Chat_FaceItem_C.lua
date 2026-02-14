@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.Btn_SmallFace.OnClicked:Add(self, self.OnFaceClicked)
   self.Btn_BigFace.OnClicked:Add(self, self.OnFaceClicked)
@@ -14,7 +13,6 @@ function M:Construct()
   self.MenuAnchor_BigFace.OnGetUserMenuContentEvent:Bind(self, self.OnGetUserMenuContent)
   self.MenuAnchor_SmallFace.OnGetUserMenuContentEvent:Bind(self, self.OnGetUserMenuContent)
 end
-
 function M:Destruct()
   self.Btn_SmallFace.OnClicked:Remove(self, self.OnFaceClicked)
   self.Btn_BigFace.OnClicked:Remove(self, self.OnFaceClicked)
@@ -25,7 +23,6 @@ function M:Destruct()
   self.MenuAnchor_BigFace.OnGetUserMenuContentEvent:Unbind()
   self.MenuAnchor_SmallFace.OnGetUserMenuContentEvent:Unbind()
 end
-
 function M:OnGetUserMenuContent()
   local Data = self.Content.Data
   if not IsValid(self.FaceItemTipsWidget) then
@@ -38,12 +35,10 @@ function M:OnGetUserMenuContent()
   end
   return self.FaceItemTipsWidget
 end
-
 function M:OnFaceClicked()
   self.Owner:OnListItemClicked(self.Content)
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_click_emoj", nil, nil)
 end
-
 function M:OnFaceHovered()
   if self.Content.Data.GroupId == ChatCommon.EmojiGroupId then
     self.MenuAnchor_SmallFace:Open(false)
@@ -51,7 +46,6 @@ function M:OnFaceHovered()
     self.MenuAnchor_BigFace:Open(false)
   end
 end
-
 function M:OnFaceUnhovered()
   if self.Content.Data.GroupId == ChatCommon.EmojiGroupId then
     self.MenuAnchor_SmallFace:Close()
@@ -59,7 +53,6 @@ function M:OnFaceUnhovered()
     self.MenuAnchor_BigFace:Close()
   end
 end
-
 function M:OnListItemObjectSet(Content)
   Content.UI = self
   self.Content = Content
@@ -92,5 +85,4 @@ function M:OnListItemObjectSet(Content)
   end
   self:OnGetUserMenuContent()
 end
-
 return M

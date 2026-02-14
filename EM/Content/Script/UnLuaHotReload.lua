@@ -8,11 +8,9 @@ local config = {
 }
 local hook = {module_loaded = nil}
 local M = {config = config, hook = hook}
-
 local function dump(tbl, max_indent)
   local rep = string.rep
   local handled = {}
-  
   local function traverse(tbl, indent)
     indent = indent or 0
     if type(tbl) ~= "table" then
@@ -49,27 +47,22 @@ local function dump(tbl, max_indent)
     ret = ret .. rep(" ", indent - 2) .. "}"
     return ret
   end
-  
   if nil == max_indent then
     max_indent = 64
   end
   return traverse(tbl)
 end
-
 local function print(...)
   if config.debug then
     UEPrint("HotReload ", ...)
   end
 end
-
 local table = _ENV.table
 local debug = _ENV.debug
 local pairs = _ENV.pairs
 local origin_require = require
-
 local function safe_pairs(t)
   local _next, _t, _nil = pairs(t)
-  
   local function safe_next(_t, i)
     local ok, result, next_i, value = pcall(_next, _t, i)
     if ok then
@@ -78,10 +71,8 @@ local function safe_pairs(t)
       return nil
     end
   end
-  
   return safe_next, _t, _nil
 end
-
 local function load_error_handler(err)
   local msg = err .. "\n" .. debug.traceback()
   if ScreenPrint then
@@ -90,7 +81,6 @@ local function load_error_handler(err)
     print(msg)
   end
 end
-
 local function call_hook(name, ...)
   local func = hook[name]
   if not func then
@@ -101,14 +91,11 @@ local function call_hook(name, ...)
     print(string.format("calling hook function '%s' failed : %s", name, result))
   end
 end
-
 local loaded_module_times = {}
-
 local function get_last_modified_time(module_name)
   local filename = config.script_root_path .. module_name:gsub("%.", "/") .. ".lua"
   return UE.UUnLuaFunctionLibrary.GetFileLastModifiedTimestamp(filename)
 end
-
 local function make_sandbox()
   local reloading, loaded
   local proxy = setmetatable({}, {
@@ -116,7 +103,6 @@ local function make_sandbox()
     __newindex = _G
   })
   local env_mt = {__index = proxy, __newindex = proxy}
-  
   local function load(module_name)
     local found, chunk
     for i, searcher in ipairs(package.searchers) do
@@ -134,18 +120,15 @@ local function make_sandbox()
     debug.setupvalue(chunk, 1, env)
     return chunk, env
   end
-  
   local function load_str(str)
     local function chunk()
       return _G.load(str)()
     end
-    
     local env = {}
     setmetatable(env, env_mt)
     debug.setupvalue(chunk, 1, env)
     return chunk, env
   end
-  
   local function require(module_name, ...)
     if package.loaded[module_name] ~= nil then
       return package.loaded[module_name], nil
@@ -172,7 +155,6 @@ local function make_sandbox()
     end
     return env, nil
   end
-  
   local function enter(modules)
     reloading = true
     loaded = setmetatable({}, {__mode = "kv"})
@@ -181,16 +163,13 @@ local function make_sandbox()
       loaded[module] = name
     end
   end
-  
   local function exit()
     reloading = false
     loaded = setmetatable({}, {__mode = "kv"})
   end
-  
   local function is_loaded(obj)
     return nil ~= loaded[obj]
   end
-  
   function proxy.require(module_name, ...)
     if reloading and nil ~= loaded[module_name] then
       return loaded[module_name]
@@ -202,7 +181,6 @@ local function make_sandbox()
     end
     return ret
   end
-  
   return {
     enter = enter,
     exit = exit,
@@ -212,9 +190,7 @@ local function make_sandbox()
     is_loaded = is_loaded
   }
 end
-
 local sandbox = make_sandbox()
-
 local function merge_objects(module_res)
   for _, m in ipairs(module_res) do
     assert(m.old_module)
@@ -249,11 +225,9 @@ local function merge_objects(module_res)
     end
   end
 end
-
 local function collect_module_upvalues(moudule)
   local function collect_function_upvalues(func, upvalues)
     assert(type(func) == "function")
-    
     local i = 1
     while true do
       local name, value = debug.getupvalue(func, i)
@@ -261,6 +235,7 @@ local function collect_module_upvalues(moudule)
         break
       end
       if not name:find("^[_%w]") then
+        local path
         error("Invalid upvalue : " .. table.concat(path, "."))
       end
       if not upvalues[name] then
@@ -272,7 +247,6 @@ local function collect_module_upvalues(moudule)
       i = i + 1
     end
   end
-  
   local ret = {}
   for _, v in pairs(moudule) do
     if type(v) == "function" then
@@ -281,7 +255,6 @@ local function collect_module_upvalues(moudule)
   end
   return ret
 end
-
 local function collect_module_info(module)
   local ret = {}
   if sandbox.is_loaded(module) then
@@ -295,7 +268,6 @@ local function collect_module_info(module)
   end
   return ret
 end
-
 local function match_module(new_module_info, old_module)
   local ret = {}
   for _, v in ipairs(new_module_info) do
@@ -310,7 +282,6 @@ local function match_module(new_module_info, old_module)
   end
   return ret
 end
-
 local function match_upvalues(value_info_map, old_upvalues)
   local ret = {}
   for index, v in ipairs(value_info_map) do
@@ -348,7 +319,6 @@ local function match_upvalues(value_info_map, old_upvalues)
   end
   return ret
 end
-
 local function update_global(value_map)
   local running_state = coroutine.running()
   local exclude = {
@@ -361,7 +331,6 @@ local function update_global(value_map)
   exclude[sandbox] = true
   exclude[value_map] = true
   local update_table
-  
   local function update_running_stack(co, level)
     local info = debug.getinfo(co, level + 1, "f")
     if nil == info then
@@ -395,7 +364,6 @@ local function update_global(value_map)
     end
     return update_running_stack(co, level + 1)
   end
-  
   function update_table(root)
     if nil == root or exclude[root] then
       return
@@ -462,12 +430,10 @@ local function update_global(value_map)
       end
     end
   end
-  
   update_running_stack(running_state, 2)
   update_table(_G)
   update_table(debug.getregistry())
 end
-
 local function update_modules(old_modules, new_modules, new_envs)
   print("HOT RELOAD START")
   local result = {}
@@ -513,7 +479,6 @@ local function update_modules(old_modules, new_modules, new_envs)
   update_global(all_value_maps)
   print("HOT RELOAD END")
 end
-
 local function reload_modules(module_names)
   if not module_names or 0 == #module_names then
     return
@@ -563,7 +528,6 @@ local function reload_modules(module_names)
   update_modules(old_modules, new_modules, module_envs)
   sandbox.exit()
 end
-
 function M.reload(module_names)
   if module_names then
     reload_modules(module_names)
@@ -584,11 +548,9 @@ function M.reload(module_names)
     reload_modules(modified_modules)
   end
 end
-
 function M.RemoveLoadedModule(module_name)
   loaded_modules[module_name] = nil
   package.loaded[module_name] = nil
 end
-
 M.require = sandbox.require
 return M

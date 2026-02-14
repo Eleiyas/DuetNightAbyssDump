@@ -10,7 +10,6 @@ local TaskType = {
   Cycle = 3,
   Achievement = 4
 }
-
 function M:Construct()
   self.MidTermConst = DataMgr.MidTermGoalConstant
   self.AchievementRewardPoint = self.MidTermConst.AchievementRewardPoint.ConstantValue
@@ -42,22 +41,21 @@ function M:Construct()
   self.List_Challenge:SetControlScrollbarInside(true)
   self.CurFocusTask = nil
 end
-
 function M:Destruct()
   if self.HasNewTask then
     self:TryClearChallengeTaskNewReddot()
   end
   self.Btn_OneClickGet.Btn_GetReward.OnClicked:Clear()
 end
-
 function M:Init(Params)
   self.Params = Params
   self.Owner = Params.Owner
   self.EventDay = Params.EventDay
   self._Avatar = GWorld:GetAvatar()
-  self.MidTermTask = self._Avatar.MidTermTasks
-  self.MidTermAchvProgressRewarded = self._Avatar.MidTermAchvProgressRewarded
-  self.EventEndTime = Params.EventEndTime
+  self.MidTermGoals = self._Avatar.MidTermGoals[self.MidTermGoalEventId] or {}
+  self.MidTermTask = self.MidTermGoals.Tasks or {}
+  self.MidTermAchvProgressRewarded = self.MidTermGoals.AchvProgressRewarded or {}
+  self.EventEndTime = DataMgr.EventMain[self.MidTermGoalEventId].EventEndTime
   self:InitTaskList()
   self:InitChallengeScoreItem()
   self.ChallengeTaskScore = self:CalChallengeTaskScore()
@@ -86,36 +84,31 @@ function M:Init(Params)
   })
   self:SetFocus()
 end
-
 function M:CalChallengeTaskScore()
-  local completedTaskCount = 0
-  for _, taskItem in pairs(self.ChallengeTaskList) do
-    if taskItem.TaskProp.RewardsGot then
-      completedTaskCount = completedTaskCount + 1
-    end
-  end
-  return completedTaskCount * self.AchievementRewardPoint
+  local Avatar = GWorld:GetAvatar()
+  self.MidTermGoals = Avatar.MidTermGoals[self.MidTermGoalEventId] or {}
+  local MidTermAchvScores = self.MidTermGoals.AchvScores or 0
+  return MidTermAchvScores
 end
-
 function M:UpdateChallengeTaskScore(TaskScoreToday)
   self.Text_TaskScoreToday:SetText(TaskScoreToday)
   self:UpdateChallengeScoreItem(TaskScoreToday)
 end
-
 function M:InitTaskList()
   self:UpdateChallengeTaskList()
   self:UpdateOneClickBtnState()
 end
-
 function M:UpdateChallengeTaskList()
   self.List_Challenge:ClearListItems()
+  self.MidTermGoals = self._Avatar.MidTermGoals[self.MidTermGoalEventId] or {}
+  local MidTermTasks = self.MidTermGoals.Tasks or {}
+  local SortedTaskList = self:SortTaskList(MidTermTasks)
   self.ChallengeTaskList = {}
-  local SortedTaskList = self:SortTaskList(self._Avatar.MidTermTasks)
   for i, Task in pairs(SortedTaskList) do
     local TaskData = DataMgr.MidTermTask[Task.UniqueID]
     if not TaskData then
       print("TaskData is nil, Task.UniqueID = ", Task.UniqueID)
-      Utils.ScreenPrint("MidTermTask\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168UniqueID\228\184\186" .. Task.UniqueID .. "\231\154\132\228\187\187\229\138\161\239\188\140\232\175\183\230\163\128\230\159\165\233\133\141\231\189\174")
+      Utils.ScreenPrint("MidTermTask表中不存在UniqueID为" .. Task.UniqueID .. "的任务，请检查配置")
     elseif TaskData.EnableDay > self.EventDay then
     else
       local TaskItem
@@ -134,26 +127,35 @@ function M:UpdateChallengeTaskList()
   self.List_Challenge:SetFocus()
   self:TryIncreaceChallengeTaskNewReddot()
 end
-
 function M:SortTaskList(TaskList)
-  local UncompletedTasks = {}
+  local ClaimableTasks = {}
+  local OngoingTasks = {}
   local CompletedTasks = {}
   for k, v in pairs(TaskList) do
     local taskKey = tonumber(k)
+    local isFinished = v.Progress >= v.Target
     if v.RewardsGot then
       table.insert(CompletedTasks, {key = taskKey, value = v})
+    elseif isFinished then
+      table.insert(ClaimableTasks, {key = taskKey, value = v})
     else
-      table.insert(UncompletedTasks, {key = taskKey, value = v})
+      table.insert(OngoingTasks, {key = taskKey, value = v})
     end
   end
-  table.sort(UncompletedTasks, function(a, b)
+  table.sort(ClaimableTasks, function(a, b)
+    return a.key < b.key
+  end)
+  table.sort(OngoingTasks, function(a, b)
     return a.key < b.key
   end)
   table.sort(CompletedTasks, function(a, b)
     return a.key < b.key
   end)
   local result = {}
-  for _, pair in ipairs(UncompletedTasks) do
+  for _, pair in ipairs(ClaimableTasks) do
+    table.insert(result, pair.value)
+  end
+  for _, pair in ipairs(OngoingTasks) do
     table.insert(result, pair.value)
   end
   for _, pair in ipairs(CompletedTasks) do
@@ -161,7 +163,6 @@ function M:SortTaskList(TaskList)
   end
   return result
 end
-
 function M:TryIncreaceChallengeTaskNewReddot()
   for _, TaskItem in pairs(self.ChallengeTaskList) do
     local CacheKey = TaskItem.TaskProp.UniqueID
@@ -175,7 +176,6 @@ function M:TryIncreaceChallengeTaskNewReddot()
     end
   end
 end
-
 function M:TryClearChallengeTaskNewReddot()
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeTaskNewReddotName)
   if CacheData then
@@ -186,7 +186,6 @@ function M:TryClearChallengeTaskNewReddot()
   ReddotManager.ClearLeafNodeCount(ChallengeTaskNewReddotName)
   self.HasNewTask = false
 end
-
 function M:InitChallengeScoreItem()
   for Count, RewardId in pairs(self.AchievementPrize) do
     local Index = math.floor(Count / 10)
@@ -202,7 +201,6 @@ function M:InitChallengeScoreItem()
     self["ChallengeScoreItem_" .. Index]:Init(Params)
   end
 end
-
 function M:TryIncreaceChallengeRewardReddot(Count)
   local CacheKey = "ChallengeScoreItem" .. Count
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
@@ -211,7 +209,6 @@ function M:TryIncreaceChallengeRewardReddot(Count)
     ReddotManager.IncreaseLeafNodeCount(ChallengeRewardReddotName)
   end
 end
-
 function M:TrySubChallengeRewardReddot(Target)
   local CacheKey = "ChallengeScoreItem" .. Target
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
@@ -220,8 +217,17 @@ function M:TrySubChallengeRewardReddot(Target)
     ReddotManager.DecreaseLeafNodeCount(ChallengeRewardReddotName)
   end
 end
-
 function M:TryIncreaceChallengeTaskRewardReddot(TaskId)
+  local allRewardsClaimed = true
+  for _, v in pairs(self.MidTermAchvProgressRewarded) do
+    if 0 == v then
+      allRewardsClaimed = false
+      break
+    end
+  end
+  if allRewardsClaimed then
+    return
+  end
   local CacheKey = ChallengeRewardReddotName .. TaskId
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
   if CacheData and nil == CacheData[CacheKey] then
@@ -229,7 +235,6 @@ function M:TryIncreaceChallengeTaskRewardReddot(TaskId)
     ReddotManager.IncreaseLeafNodeCount(ChallengeRewardReddotName)
   end
 end
-
 function M:TrySubChallengeTaskRewardReddot(TaskId)
   local CacheKey = ChallengeRewardReddotName .. TaskId
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
@@ -238,7 +243,6 @@ function M:TrySubChallengeTaskRewardReddot(TaskId)
     ReddotManager.DecreaseLeafNodeCount(ChallengeRewardReddotName)
   end
 end
-
 function M:TrySubChallengeTaskNewReddot(TaskId)
   local CacheKey = TaskId
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeTaskNewReddotName)
@@ -247,14 +251,13 @@ function M:TrySubChallengeTaskNewReddot(TaskId)
     ReddotManager.DecreaseLeafNodeCount(ChallengeTaskNewReddotName)
   end
 end
-
 function M:UpdateChallengeScoreItem(TaskScoreToday)
   local RewardCanGet = false
   for Count, RewardId in pairs(self.AchievementPrize) do
     local Index = math.floor(Count / 10)
     local Item = self["ChallengeScoreItem_" .. Index]
     if Count <= TaskScoreToday then
-      if 1 == self._Avatar.MidTermAchvProgressRewarded[Count] then
+      if 1 == self.MidTermAchvProgressRewarded[Count] then
         Item:StopAnimation(Item.Reward)
         Item:PlayAnimation(Item.Recived)
       else
@@ -278,10 +281,8 @@ function M:UpdateChallengeScoreItem(TaskScoreToday)
     self.Text_TaskScoreTodayTitle:SetText(GText("UI_Event_MidTerm_GotoPreview"))
   end
 end
-
 function M:UpdateOneClickBtnState()
   local canReceive = false
-  
   local function checkTaskItemCanReceive(TaskItem)
     if not TaskItem or not TaskItem.TaskProp then
       return false
@@ -289,7 +290,6 @@ function M:UpdateOneClickBtnState()
     local taskProp = TaskItem.TaskProp
     return taskProp.Progress >= taskProp.Target and not taskProp.RewardsGot
   end
-  
   if self.ChallengeTaskList then
     for _, TaskItem in pairs(self.ChallengeTaskList) do
       if checkTaskItemCanReceive(TaskItem) then
@@ -297,6 +297,9 @@ function M:UpdateOneClickBtnState()
         break
       end
     end
+  end
+  if TimeUtils.NowTime() > self.EventEndTime then
+    canReceive = false
   end
   if canReceive then
     self.Btn_OneClickGet.Btn_GetReward:SetForbidden(false)
@@ -372,13 +375,14 @@ function M:UpdateOneClickBtnState()
   end
   self.canReceive = canReceive
 end
-
 function M:GetAllTaskScores()
+  if TimeUtils.NowTime() > self.EventEndTime then
+    return
+  end
   if self.Btn_OneClickGet.Btn_GetReward:GetForbidden() then
     return
   end
   AudioManager(self):PlayUISound(self, "event:/ui/activity/wenmingboyi_all_btn_click", nil, nil)
-  
   local function Cb(ErrCode, Ret)
     DebugPrint("GetAllChallengeTaskScores", ErrorCode:Name(ErrCode))
     if ErrCode == ErrorCode.RET_SUCCESS then
@@ -399,11 +403,9 @@ function M:GetAllTaskScores()
     end
     self.Owner:BlockAllUIInput(false)
   end
-  
   self.Owner:BlockAllUIInput(true)
   self._Avatar:MidTermGetAllAchvScores(Cb)
 end
-
 function M:NewItemContent(TaskType, TaskId, TaskPoint, TaskDes)
   local ItemContent = NewObject(UIUtils.GetCommonItemContentClass())
   ItemContent.Owner = self
@@ -413,7 +415,6 @@ function M:NewItemContent(TaskType, TaskId, TaskPoint, TaskDes)
   ItemContent.Desc = TaskDes
   return ItemContent
 end
-
 function M:OnAchvFinished(TaskId)
   if not self.ChallengeTaskList then
     return
@@ -425,7 +426,6 @@ function M:OnAchvFinished(TaskId)
   end
   self:UpdateOneClickBtnState()
 end
-
 function M:OnMidTermTaskProgressChange(TaskId, Progress)
   if not self.ChallengeTaskList then
     return
@@ -435,9 +435,7 @@ function M:OnMidTermTaskProgressChange(TaskId, Progress)
       TaskItem.SelfWidget:OnMidTermTaskProgressChange(TaskId, Progress)
     end
   end
-  self:UpdateOneClickBtnState()
 end
-
 function M:OnTaskGet(Item)
   Item.WS_Btn:SetActiveWidgetIndex(3)
   Item:PlayAnimation(Item.In_Got)
@@ -453,14 +451,12 @@ function M:OnTaskGet(Item)
     self:PlayAnimation(self.Up)
   end)
 end
-
 function M:OnChallengeRewardGet()
   local function Callback(ErrCode, Ret)
     if ErrCode == ErrorCode.RET_SUCCESS then
       UIManager(GWorld.GameInstance):LoadUI(UIConst.LoadInConfig, "GetItemPage", nil, nil, nil, nil, Ret, function()
         self:AddTimer(0.1, function()
           local FocusedTask = self.CurFocusTask or self.List_Challenge:GetItemAt(0)
-          
           self.List_Challenge:BP_NavigateToItem(FocusedTask)
         end)
       end)
@@ -483,11 +479,9 @@ function M:OnChallengeRewardGet()
     end
     self.Owner:BlockAllUIInput(false)
   end
-  
   self.Owner:BlockAllUIInput(true)
   self._Avatar:MidTermGetProgressReward(Callback)
 end
-
 function M:ClearChallengeReddot()
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
   if CacheData then
@@ -497,7 +491,6 @@ function M:ClearChallengeReddot()
   end
   ReddotManager.ClearLeafNodeCount(ChallengeRewardReddotName)
 end
-
 function M:ClearChallengeTaskReddot()
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeTaskNewReddotName)
   if CacheData then
@@ -507,7 +500,6 @@ function M:ClearChallengeTaskReddot()
     end
   end
 end
-
 function M:InitListenEvent()
   local PlayerController = self:GetOwningPlayer()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -516,13 +508,11 @@ function M:InitListenEvent()
   end
   self:InitNavigationRules()
 end
-
 function M:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseGamepad = CurInputDevice == ECommonInputType.Gamepad
@@ -545,12 +535,10 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:InitNavigationRules()
   self.List_Challenge:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   self.List_Challenge:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.CurFocusTask ~= nil then
     return self.CurFocusTask.SelfWidget
@@ -560,7 +548,6 @@ function M:BP_GetDesiredFocusTarget()
     return nil
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -578,7 +565,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = true
   if InKeyName == Const.GamepadFaceButtonLeft then
@@ -598,5 +584,4 @@ function M:OnGamePadDown(InKeyName)
     return UE4.UWidgetBlueprintLibrary.Unhandled()
   end
 end
-
 return M

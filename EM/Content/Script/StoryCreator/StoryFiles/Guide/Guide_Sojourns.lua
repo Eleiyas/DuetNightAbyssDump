@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1745407069013431",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1642, y = 322},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -161,7 +163,7 @@ return {
           ["1745407165451551512"] = {
             key = "1745407165451551512",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1226.7058823529412, y = 292.00653594771245},
             propsData = {
               ShowEnable = true,
@@ -191,7 +193,7 @@ return {
           ["1745407168620551720"] = {
             key = "1745407168620551720",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1610.5882352941176, y = 293.35947712418306},
             propsData = {
               ShowEnable = true,
@@ -221,7 +223,7 @@ return {
           ["1745407169472551775"] = {
             key = "1745407169472551775",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2006.9346405228757, y = 291.47058823529414},
             propsData = {
               ShowEnable = true,
@@ -251,7 +253,7 @@ return {
           ["1745407182420552055"] = {
             key = "1745407182420552055",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 2402.9411764705883, y = 292.7058823529412},
             propsData = {
               MessageId = 330004,
@@ -267,7 +269,7 @@ return {
           ["1745407186756552276"] = {
             key = "1745407186756552276",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1234.8235294117646, y = 497.1764705882353},
             propsData = {
               ShowEnable = true,
@@ -297,7 +299,7 @@ return {
           ["1745407218236552599"] = {
             key = "1745407218236552599",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1611.6470588235293, y = 498.2352941176471},
             propsData = {
               ShowEnable = true,
@@ -327,7 +329,7 @@ return {
           ["1745407218932552654"] = {
             key = "1745407218932552654",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2408.073529411765, y = 494.5147058823529},
             propsData = {
               ShowEnable = true,
@@ -357,14 +359,14 @@ return {
           ["17471212434073569"] = {
             key = "17471212434073569",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 2001.25, y = 495.25},
             propsData = {WaitTime = 0.2}
           },
           ["17471431680571718421"] = {
             key = "17471431680571718421",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1812.692570501394, y = 92.98897834191945},
             propsData = {WaitTime = 0.2}
           }

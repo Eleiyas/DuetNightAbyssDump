@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.WBP.Camera.WBP_CameraBase_C")
 local Handle = UE4.UWidgetBlueprintLibrary.Handled()
 local Unhandle = UE4.UWidgetBlueprintLibrary.Unhandled()
-
 function M:Construct()
   self.TouchInfo = {}
   self.Btn_Close.OnClicked:Clear()
@@ -59,7 +58,6 @@ function M:Construct()
   self:UpdateCheckBox()
   self:UpdateHideCharacterBtn()
 end
-
 function M:HideMenu(FromBtn)
   if self.IsRollScrollBarShowed and (not FromBtn or FromBtn ~= self.Btn_Incline) then
     self:ToggleShowRollScrollBar(self.Btn_Incline)
@@ -72,13 +70,11 @@ function M:HideMenu(FromBtn)
   end
   self.Btn_HideUI:Unclicked()
 end
-
 function M:OnShowRollScrollBarBtnClicked(FromBtn)
   UIUtils.PlayCommonBtnSe(self)
   self:HideMenu(FromBtn)
   self:ToggleShowRollScrollBar(FromBtn)
 end
-
 function M:ToggleShowRollScrollBar(FromBtn)
   self.IsRollScrollBarShowed = not self.IsRollScrollBarShowed
   if self.IsRollScrollBarShowed then
@@ -94,13 +90,11 @@ function M:ToggleShowRollScrollBar(FromBtn)
     end
   end
 end
-
 function M:OnShowTabBtnClicked(FromBtn)
   UIUtils.PlayCommonBtnSe(self)
   self:HideMenu(FromBtn)
   self:ToggleShowTab(FromBtn)
 end
-
 function M:ToggleShowTab(FromBtn)
   self.IsTabShowed = not self.IsTabShowed
   if self.IsTabShowed then
@@ -116,12 +110,10 @@ function M:ToggleShowTab(FromBtn)
     end
   end
 end
-
 function M:OnTabSelected(TabWidget, Tab)
   self:ChangeCamera(Tab.CameraIndex)
   self.Text_Tab:SetText(Tab.Text)
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   local PointerIndex = UE4.UKismetInputLibrary.PointerEvent_GetPointerIndex(InTouchEvent)
   self.TouchInfo[PointerIndex] = UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InTouchEvent)
@@ -133,7 +125,6 @@ function M:OnTouchStarted(MyGeometry, InTouchEvent)
   end
   return UWidgetBlueprintLibrary.CaptureMouse(Handle, self)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   local PointerIndex = UE4.UKismetInputLibrary.PointerEvent_GetPointerIndex(InTouchEvent)
   self.TouchInfo[PointerIndex] = nil
@@ -149,7 +140,6 @@ function M:OnTouchEnded(MyGeometry, InTouchEvent)
   self.HasTouchMove = false
   return UWidgetBlueprintLibrary.ReleaseMouseCapture(Handle)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   if self.bScreenshotWidgetShow then
     return Unhandle
@@ -171,47 +161,38 @@ function M:OnTouchMoved(MyGeometry, InTouchEvent)
   self.HasTouchMove = self.HasTouchMove or RealMove
   return Unhandle
 end
-
 function M:OnMouseCaptureLost()
   self.HasTouchMove = false
 end
-
 function M:OnJoyStickMove(Dir, Percent)
   self.bCameraMovedByJoyStick = not self.bLockCameraPos
   self:MoveCamera(0, Dir.X * Percent, Dir.Y * Percent)
 end
-
 function M:OnJoyStickPointerDown()
   if self.bLockCameraPos then
     self.WBP_Camera_Roll_M:PlayAnimation(self.WBP_Camera_Roll_M.Warning)
   end
 end
-
 function M:OnJoyStickPointerUp()
   self.bCameraMovedByJoyStick = false
 end
-
 function M:OnRollScrollBarPercentChanged(Percent)
   self.bRollScrollBarPointerDown = true
   self:SetRollPercent(Percent)
 end
-
 function M:OnRollScrollBarInertialScrollingEnd()
   M.Super.OnRollScrollBarInertialScrollingEnd(self)
   self.bRollScrollBarPointerDown = false
 end
-
 function M:OnHideUIBtnClicked()
   self:HideMenu()
   self:ToggleHideSelf()
 end
-
 function M:OnHideCharacterBtnClicked(FromBtn)
   UIUtils.PlayCommonBtnSe(self)
   self:HideMenu(FromBtn)
   self:ToggleShowHideCharacterWidget(FromBtn)
 end
-
 function M:ToggleShowHideCharacterWidget(FromBtn)
   self.IsHideCharacterWidgetShowed = not self.IsHideCharacterWidgetShowed
   if self.IsHideCharacterWidgetShowed then
@@ -227,14 +208,12 @@ function M:ToggleShowHideCharacterWidget(FromBtn)
     end
   end
 end
-
 function M:OnHideBtnClickedImp(HiddenButtonType, CharacterType)
   M.Super.OnHideBtnClickedImp(self, HiddenButtonType, CharacterType)
   if not self[HiddenButtonType].bLocked then
     self:UpdateHideCharacterBtn()
   end
 end
-
 function M:UpdateCheckBox()
   local Checked = self.CharType.All == self.CurCharHiddenState
   local CheckedBefore = not not self.Btn_AISetting:GetChecked()
@@ -242,7 +221,6 @@ function M:UpdateCheckBox()
     self.Btn_AISetting:SetChecked(Checked, false)
   end
 end
-
 function M:UpdateHideCharacterBtn()
   local HasAnyCharacterHidden = 0 ~= self.CurCharHiddenState
   if self.bHasAnyCharacterHidden ~= HasAnyCharacterHidden then
@@ -256,7 +234,6 @@ function M:UpdateHideCharacterBtn()
     end
   end
 end
-
 function M:OnCheckBoxClicked()
   if self.CurCharHiddenState ~= self.CharType.All then
     self:SetCharHiddengState(self.CharType.All)
@@ -270,38 +247,30 @@ function M:OnCheckBoxClicked()
   self.Hide_Monster:SetHiddenState(0 ~= self.CharType.Monster & self.CurCharHiddenState)
   self.Hide_Pet:SetHiddenState(0 ~= self.CharType.Pet & self.CurCharHiddenState)
 end
-
 function M:OnResetCameraBtnClicked()
   self:HideMenu()
   self:ResetCamera()
   self.Btn_Restore:Unclicked()
 end
-
 function M:OnAddFocalLengthBtnClicked()
   self.FocalLengthSlider:AddValue()
 end
-
 function M:OnSubFocalLengthBtnClicked()
   self.FocalLengthSlider:SubValue()
 end
-
 function M:OnFocalLengthSliderValueChanged(Value)
   self:SetFocalLength(Value)
 end
-
 function M:OnBackBtnClicked()
   self:CheckHasAnyOperationOrClose()
   self:HideMenu()
 end
-
 function M:OnCheeseBtnClicked()
   self:Screenshot()
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.HasTouchMove or self.bCameraMovedByJoyStick then
     self.SoundFlags.Camera_Motor = true
@@ -311,9 +280,12 @@ function M:Tick(MyGeometry, InDeltaTime)
   self.HasTouchMove = false
   M.Super.Tick(self, MyGeometry, InDeltaTime)
 end
-
 function M:TickFindTargets()
   M.Super.TickFindTargets(self)
+  if self.InitParams and self.InitParams.IsAprilFoolsDayActivity then
+    self.WBP_Camera_Shoot_M:StopLoopRemind()
+    return
+  end
   if self.bScreenshotWidgetShow or self.IsShotTargetSucceeded then
     self.WBP_Camera_Shoot_M:StopLoopRemind()
     return
@@ -324,12 +296,10 @@ function M:TickFindTargets()
     self.WBP_Camera_Shoot_M:StopLoopRemind()
   end
 end
-
 function M:SetLockGamePause(bNewLock)
   M.Super.SetLockGamePause(self, bNewLock)
   self.Icon_Lock_Pause:SetVisibility(bNewLock and UIConst.VisibilityOp.SelfHitTestInvisible or UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SetLockHiddenButton(HiddenButton, bNewLock)
   M.Super.SetLockHiddenButton(self, HiddenButton, bNewLock)
   if bNewLock then
@@ -337,13 +307,11 @@ function M:SetLockHiddenButton(HiddenButton, bNewLock)
     self:SetLockHiddenAllButton(bNewLock)
   end
 end
-
 function M:SetLockAllHiddenButton(bNewLock)
   M.Super.SetLockAllHiddenButton(self, bNewLock)
   self.Icon_Lock:SetOpacity(bNewLock and 1 or 0)
   self:SetLockHiddenAllButton(bNewLock)
 end
-
 function M:SetLockCameraPos(bNewLock)
   M.Super.SetLockCameraPos(self, bNewLock)
   if bNewLock then
@@ -353,7 +321,6 @@ function M:SetLockCameraPos(bNewLock)
   end
   self.WBP_Camera_Roll_M:SetJoyStickLocked(bNewLock)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self.bScreenshotWidgetShow then
     self.ScreenshotWidget:OnKeyDown(MyGeometry, InKeyEvent)
@@ -366,5 +333,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 return M

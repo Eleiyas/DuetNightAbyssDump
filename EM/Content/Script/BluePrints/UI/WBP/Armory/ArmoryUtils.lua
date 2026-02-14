@@ -46,7 +46,6 @@ M.PreviewTargetStates = {
   Max = 1,
   Custom = 2
 }
-
 function M:NewCharOrWeaponItemContent(Target, Type, Tag, bNotReddot, ReddotFrom)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Uuid = Target.Uuid
@@ -73,17 +72,16 @@ function M:NewCharOrWeaponItemContent(Target, Type, Tag, bNotReddot, ReddotFrom)
   if "Archive" == ReddotFrom then
     Obj.IsNew = M.TryAddArchiveNewReddot(M, Obj, Tag)
   end
-  if Obj.IsNew then
-    Obj.RedDotType = UIConst.RedDotType.NewRedDot
-  elseif Obj.Upgradeable or Obj.HasReward then
+  if Obj.Upgradeable or Obj.HasReward then
     Obj.RedDotType = UIConst.RedDotType.CommonRedDot
+  elseif Obj.IsNew then
+    Obj.RedDotType = UIConst.RedDotType.NewRedDot
   end
   Obj.IsLocked = Target.IsLock and Target:IsLock()
   Obj.LockType = Obj.IsLocked and 1 or 0
   Obj.SortPriority = Target:Data().SortPriority or 0
   return Obj
 end
-
 function M:TryAddArchiveNewReddot(Content, Tag)
   if not ReddotManager.GetTreeNode("ArchiveNew" .. Tag) then
     return
@@ -91,7 +89,6 @@ function M:TryAddArchiveNewReddot(Content, Tag)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("ArchiveNew" .. Tag)
   return 1 == CacheDetail[Content.UnitId]
 end
-
 function M:NewCommonItemContent(Target, Type)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Uuid = Target.Uuid
@@ -102,7 +99,6 @@ function M:NewCommonItemContent(Target, Type)
   Obj.SortPriority = Target:Data().SortPriority or 0
   return Obj
 end
-
 function M:CopyCharOrWeaponItemContent(Content)
   local Obj = {}
   Obj.Uuid = Content.Uuid
@@ -119,7 +115,6 @@ function M:CopyCharOrWeaponItemContent(Content)
   Obj.SortPriority = Content.SortPriority
   return Obj
 end
-
 function M:NewPetItemContent(Target)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.UniqueId = Target.UniqueId
@@ -155,7 +150,6 @@ function M:NewPetItemContent(Target)
   end
   return Obj
 end
-
 function M:NewPetItemContentWithEntry(Target)
   local Obj = self:NewPetItemContent(Target)
   Obj.PetEntry = {}
@@ -166,7 +160,6 @@ function M:NewPetItemContentWithEntry(Target)
   end
   return Obj
 end
-
 function M:NewResourceItemContent(Target)
   local Data = Target:Data()
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -181,7 +174,6 @@ function M:NewResourceItemContent(Target)
   Obj.CharId = Data.UseParam
   return Obj
 end
-
 function M:NewModItemContent(Target, Type)
   Type = Type or CommonConst.ArmoryType.Mod
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -189,6 +181,7 @@ function M:NewModItemContent(Target, Type)
   Obj.Type = Type
   Obj.UnitId = Target[Type .. "Id"]
   Obj.UnitName = DataMgr[Obj.Type][Obj.UnitId].Name
+  Obj.ItemName = Obj.UnitName
   Obj.Rarity = Target.Rarity
   Obj.Polarity = Target.Polarity
   Obj.Icon = Target.Icon
@@ -198,13 +191,11 @@ function M:NewModItemContent(Target, Type)
   Obj.Cost = Target.Cost
   return Obj
 end
-
 function M:SortItemContents(InOutArr, OrderByAttrNames, SortType, CurrentContent, ExCmpFunc)
   local OrderBy = OrderByAttrNames
   ExCmpFunc = ExCmpFunc or function(a, b)
   end
   local CmpCopy, ExCmpRes
-  
   local function Cmp(a, b, Idx)
     if CurrentContent then
       if a == CurrentContent then
@@ -227,16 +218,12 @@ function M:SortItemContents(InOutArr, OrderByAttrNames, SortType, CurrentContent
       return (a[OrderBy[Idx]] or 1) > (b[OrderBy[Idx]] or 1)
     end
   end
-  
   CmpCopy = Cmp
-  
   local function SortFunc(a, b)
     return Cmp(a, b, 1)
   end
-  
   table.sort(InOutArr, SortFunc)
 end
-
 function M.IsOwnedCmpFunc(a, b)
   if a.IsOwned ~= b.IsOwned then
     if a.IsOwned then
@@ -246,25 +233,20 @@ function M.IsOwnedCmpFunc(a, b)
     end
   end
 end
-
 function M:SortEntryPets(Pets, SortKind, IsASC)
   SortKind = 2 == SortKind and 2 or 1
   IsASC = nil == IsASC and true or IsASC
-  
   local function getEntryId(pet)
     return pet.PetEntry and pet.PetEntry[1] or 0
   end
-  
   local function getEntryRarity(pet)
     local entryId = getEntryId(pet)
     local entryData = entryId > 0 and DataMgr.PetEntry[entryId]
     return entryData and entryData.Rarity or 0
   end
-  
   local function getEntryCount(pet)
     return pet.PetEntry and #pet.PetEntry or 0
   end
-  
   local function compare(a, b)
     local aIsResource = not not a.IsResourcePet
     local bIsResource = not not b.IsResourcePet
@@ -276,7 +258,7 @@ function M:SortEntryPets(Pets, SortKind, IsASC)
       end
     end
     if aIsResource then
-      if 1 == SortKind then
+      if 2 == SortKind then
         local aEntryId, bEntryId = getEntryId(a), getEntryId(b)
         if aEntryId ~= bEntryId then
           if IsASC then
@@ -316,6 +298,34 @@ function M:SortEntryPets(Pets, SortKind, IsASC)
         end
         return false
       end
+    elseif 1 == SortKind then
+      local aRarity = a.Rarity or 0
+      local bRarity = b.Rarity or 0
+      if aRarity ~= bRarity then
+        if IsASC then
+          return aRarity > bRarity
+        else
+          return aRarity < bRarity
+        end
+      end
+      local aCount, bCount = getEntryCount(a), getEntryCount(b)
+      if aCount ~= bCount then
+        if IsASC then
+          return aCount > bCount
+        else
+          return aCount < bCount
+        end
+      end
+      local aPriority = a.SortPriority or 0
+      local bPriority = b.SortPriority or 0
+      if aPriority ~= bPriority then
+        if IsASC then
+          return aPriority > bPriority
+        else
+          return aPriority < bPriority
+        end
+      end
+      return false
     else
       local aCount, bCount = getEntryCount(a), getEntryCount(b)
       if aCount ~= bCount then
@@ -335,11 +345,9 @@ function M:SortEntryPets(Pets, SortKind, IsASC)
       return false
     end
   end
-  
   table.sort(Pets, compare)
   return Pets
 end
-
 function M:CustomDebugSort(arr, cmp)
   if type(arr) ~= "table" then
     error("Invalid array")
@@ -350,18 +358,17 @@ function M:CustomDebugSort(arr, cmp)
   for i = 2, #arr do
     local current = arr[i]
     local j = i - 1
-    print(string.format("[DebugSort] \231\172\172%d\232\189\174\230\175\148\232\190\131\239\188\154\229\189\147\229\137\141\229\133\131\231\180\160\231\180\162\229\188\149=%d\239\188\140\229\128\188=%s", i, i, tostring(current)))
+    print(string.format("[DebugSort] 第%d轮比较：当前元素索引=%d，值=%s", i, i, tostring(current)))
     while j >= 1 and cmp(current, arr[j]) do
-      print(string.format("  \230\175\148\232\190\131 current=%s vs arr[%d]=%s \226\134\146 \231\187\147\230\158\156=%s", tostring(current), j, tostring(arr[j]), tostring(cmp(current, arr[j]))))
+      print(string.format("  比较 current=%s vs arr[%d]=%s → 结果=%s", tostring(current), j, tostring(arr[j]), tostring(cmp(current, arr[j]))))
       arr[j + 1] = arr[j]
       j = j - 1
     end
     arr[j + 1] = current
-    print(string.format("  \230\143\146\229\133\165\229\174\140\230\136\144\239\188\140\230\156\128\231\187\136\228\189\141\231\189\174=%d\n", j + 1))
+    print(string.format("  插入完成，最终位置=%d\n", j + 1))
   end
   return arr
 end
-
 function M:SetContentIsSelected(Content, IsSelected)
   if Content then
     Content.IsSelected = IsSelected
@@ -373,7 +380,6 @@ function M:SetContentIsSelected(Content, IsSelected)
     end
   end
 end
-
 function M:SetItemIsSelected(Content, IsSelect)
   if Content then
     Content.IsSelect = IsSelect
@@ -386,7 +392,6 @@ function M:SetItemIsSelected(Content, IsSelect)
     end
   end
 end
-
 function M:SetItemInGear(Content, bInGear)
   if Content then
     Content.bInGear = bInGear
@@ -398,7 +403,6 @@ function M:SetItemInGear(Content, bInGear)
     end
   end
 end
-
 function M:SetItemSelectTag(Content, bSelectTag)
   if Content then
     Content.bSelectTag = bSelectTag
@@ -415,7 +419,6 @@ function M:SetItemSelectTag(Content, bSelectTag)
     end
   end
 end
-
 function M:SetItemLevel(Content, Level)
   if Content then
     Content.Level = Level
@@ -427,7 +430,6 @@ function M:SetItemLevel(Content, Level)
     end
   end
 end
-
 function M:ResetResourcePetEntryIcons(Content, EntryId)
   if Content then
     Content.PetEntry = {EntryId}
@@ -439,7 +441,6 @@ function M:ResetResourcePetEntryIcons(Content, EntryId)
     end
   end
 end
-
 function M:SetContentPhantomIcon(Content)
   if Content then
     if Content.Widget and Content.Widget.SetWeaponPhantomIcon then
@@ -450,7 +451,6 @@ function M:SetContentPhantomIcon(Content)
     end
   end
 end
-
 function M:GenPetPassiveEffectDesc(PetBattleData, BaseLevel, ExpectLevel)
   local Desc = PetBattleData.PassiveEffectDesc and GText(PetBattleData.PassiveEffectDesc) or ""
   if not PetBattleData.PassiveEffectDescParameter then
@@ -465,16 +465,13 @@ function M:GenPetPassiveEffectDesc(PetBattleData, BaseLevel, ExpectLevel)
   end
   return Desc
 end
-
 function M:GetPetSkillLevel(BreakLevel)
   return BreakLevel + 1
 end
-
 function M:GetPet(UniqueId)
   local Avatar = GWorld:GetAvatar()
   return Avatar.Pets[UniqueId]
 end
-
 function M:GetMod(ModUuid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -486,7 +483,6 @@ function M:GetMod(ModUuid)
   ModUuid = CommonUtils.Str2ObjId(ModUuid)
   return Avatar.Mods[ModUuid]
 end
-
 function M:GetBlackPath(Path)
   local Strs = Split(Path, ".")
   for i, _ in pairs(Strs) do
@@ -494,7 +490,6 @@ function M:GetBlackPath(Path)
   end
   return table.concat(Strs, ".")
 end
-
 function M:GenModPassiveEffectDesc(ModConf, BaseLevel, ExpectLevel)
   local Desc = ModConf.PassiveEffectsDesc and GText(ModConf.PassiveEffectsDesc) or ""
   if not ModConf.DescValues then
@@ -512,27 +507,24 @@ function M:GenModPassiveEffectDesc(ModConf, BaseLevel, ExpectLevel)
   end
   return Desc
 end
-
 local function _GetModAttrConf(DescValue, ModId, AttrIdx, ValueType)
   local ModConf = DataMgr.Mod[ModId]
   if not ModConf.AddAttrs then
-    error("\232\162\171\229\138\168\230\149\136\230\158\156\230\149\176\229\128\188\231\154\132ModId\229\161\171\233\148\153\228\186\134!!!" .. "\231\173\150\229\136\146\230\163\128\230\159\165\228\184\128\228\184\139" .. DescValue, 0)
+    error("被动效果数值的ModId填错了!!!" .. "策划检查一下" .. DescValue, 0)
     return nil
   end
   local ModAttrConf = ModConf.AddAttrs[AttrIdx]
   if not ModAttrConf then
-    error("\232\162\171\229\138\168\230\149\136\230\158\156\230\149\176\229\128\188\231\154\132AddAttrs[\231\180\162\229\188\149]\231\180\162\229\188\149\229\161\171\233\148\153\228\186\134!!!" .. "\231\173\150\229\136\146\230\163\128\230\159\165\228\184\128\228\184\139" .. DescValue, 0)
+    error("被动效果数值的AddAttrs[索引]索引填错了!!!" .. "策划检查一下" .. DescValue, 0)
     return nil
   end
   return ModAttrConf
 end
-
 function M:_ModAttrGrowDesc2(DescValue, BaseLevel, ExpectLevel, Percent, CastTo, ForbidFormat)
   if string.match(DescValue, "GetModValue") then
     local function _GetModValue(GetModValue_Level)
       return function(ModId, AttrIdx, ValueType)
         local ModAttrConf = _GetModAttrConf(DescValue, ModId, AttrIdx, ValueType)
-        
         if not ModAttrConf then
           return 0
         end
@@ -540,7 +532,6 @@ function M:_ModAttrGrowDesc2(DescValue, BaseLevel, ExpectLevel, Percent, CastTo,
         return Res
       end
     end
-    
     local OldValStr = SkillUtils.SplitEval(DescValue, "$", {
       GetModValue = _GetModValue(BaseLevel)
     }) .. Percent
@@ -563,7 +554,6 @@ function M:_ModAttrGrowDesc2(DescValue, BaseLevel, ExpectLevel, Percent, CastTo,
         return DataMgr.ModPolarity[Polarity].Char
       end
     end
-    
     local ValStr = SkillUtils.SplitEval(DescValue, "$", {
       GetModPolarity = _GetModPolarity()
     })
@@ -571,10 +561,9 @@ function M:_ModAttrGrowDesc2(DescValue, BaseLevel, ExpectLevel, Percent, CastTo,
   end
   return ""
 end
-
 function M:_SkillGrowDesc(DescValue, BaseLevel, ExpectLevel, Percent, CastTo, ForbidFormat)
-  local OldValStr = SkillUtils.CalcSkillDesc(DescValue, BaseLevel) .. Percent
-  local NewValStr = SkillUtils.CalcSkillDesc(DescValue, ExpectLevel) .. Percent
+  local OldValStr = SkillUtils.CalcSkillDesc(DescValue, BaseLevel, nil, true) .. Percent
+  local NewValStr = SkillUtils.CalcSkillDesc(DescValue, ExpectLevel, nil, true) .. Percent
   local bRepeatModLevel = string.find(DescValue, "RepeatModLevel")
   if not ForbidFormat and not bRepeatModLevel then
     OldValStr = SkillUtils.FormatDescValue1(OldValStr, CastTo)
@@ -582,7 +571,6 @@ function M:_SkillGrowDesc(DescValue, BaseLevel, ExpectLevel, Percent, CastTo, Fo
   end
   return OldValStr ~= NewValStr and OldValStr .. " -> " .. string.format("<H>%s</>", NewValStr) or NewValStr
 end
-
 function M:GenModAttrData(ModAttrConf, ModLevel, AttrConf, ModId)
   local IsRate = ModAttrConf.Rate ~= nil
   local Value = M:CalcModAttrByLevel(ModAttrConf, ModLevel, nil, ModId)
@@ -590,7 +578,6 @@ function M:GenModAttrData(ModAttrConf, ModLevel, AttrConf, ModId)
   ValueStr = (Value > 0 and "+" or "") .. ValueStr
   return Value, ValueStr
 end
-
 function M:CalcModAttrByLevel(ModAttrConf, ModLevel, ValueType, ModId)
   local IsRate = ModAttrConf.Rate ~= nil
   local Base = IsRate and ModAttrConf.Rate or ModAttrConf.Value
@@ -611,23 +598,29 @@ function M:CalcModAttrByLevel(ModAttrConf, ModLevel, ValueType, ModId)
     }, ModAttrConf)
     local Value = tonumber(IsRate and AttrData.Rate or AttrData.Value)
     if not Value then
-      DebugPrint(ErrorTag, string.format("ModId: %s \231\154\132SkillGrow\233\133\141\231\189\174\230\156\137\233\151\174\233\162\152\239\188\140\231\188\186\229\176\145\231\173\137\231\186\167%s\231\154\132\230\136\144\233\149\191\230\149\176\229\128\188\239\188\140\232\175\183\230\163\128\230\159\165SkillGrow\232\161\168", ModId, ModLevel))
+      DebugPrint(ErrorTag, string.format("ModId: %s 的SkillGrow配置有问题，缺少等级%s的成长数值，请检查SkillGrow表", ModId, ModLevel))
       return 0
     end
     return Value
   end
   return Base + (ModAttrConf.LevelGrow or 0) * ModLevel
 end
-
+local DefaultCharAccessoryIds = {
+  [CommonConst.CharAccessoryTypes.FX_Dead] = DataMgr.GlobalConstant.DefautFXDead.ConstantValue,
+  [CommonConst.CharAccessoryTypes.FX_Teleport] = DataMgr.GlobalConstant.DefautFXTeleport.ConstantValue,
+  [CommonConst.CharAccessoryTypes.FX_PlungingATK] = DataMgr.GlobalConstant.DefaultFXPlungingATK.ConstantValue,
+  [CommonConst.CharAccessoryTypes.FX_HelixLeap] = DataMgr.GlobalConstant.DefaultFXHelixLeap.ConstantValue
+}
+function M:GetDefaultCharAccessoryIds()
+  return DefaultCharAccessoryIds
+end
 local ReddotCreateFunctions = {}
-
 function ReddotCreateFunctions.CreateCharReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   local AllChars = Avatar.Chars
   for Uuid, Char in pairs(AllChars) do
     M:TryAddNewCharReddot(Char, CommonUtils.ObjId2Str(Uuid))
   end
-  
   local function RemoveUnknownChars(CacheDetail)
     if CacheDetail then
       local Uuid
@@ -642,14 +635,16 @@ function ReddotCreateFunctions.CreateCharReddotInfos(M)
       end
     end
   end
-  
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(DataMgr.ReddotNode.NewChar.Name)
   RemoveUnknownChars(CacheDetail)
   for CharId, value in pairs(DataMgr.Char) do
     M:TryAddUnlockableCharReddot(CharId)
+    M:TryAddNewReleasedCharReddot(CharId)
+    if not CommonUtils.IsCurrentVersionNewRealease(CommonConst.DataType.Char, CharId) then
+      M:_SetReddotReadCommon(CharId, DataMgr.ReddotNode.NewReleasedChar.Name, false)
+    end
   end
 end
-
 function ReddotCreateFunctions.CreateCharSkillReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   for Uuid, Char in pairs(Avatar.Chars) do
@@ -659,14 +654,12 @@ function ReddotCreateFunctions.CreateCharSkillReddotInfos(M)
     end
   end
 end
-
 function ReddotCreateFunctions.CreateWeaponReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   local AllWeapons = Avatar.Weapons
   for Uuid, Weapon in pairs(AllWeapons) do
     M:TryAddNewWeaponReddot(Weapon, CommonUtils.ObjId2Str(Uuid))
   end
-  
   local function RemoveUnknownWeapons(CacheDetail, WeaponTag)
     if CacheDetail then
       local Uuid
@@ -682,13 +675,11 @@ function ReddotCreateFunctions.CreateWeaponReddotInfos(M)
       end
     end
   end
-  
   local MeleeCacheDetail = ReddotManager.GetLeafNodeCacheDetail(CommonConst.WeaponType.MeleeWeapon)
   RemoveUnknownWeapons(MeleeCacheDetail, CommonConst.WeaponType.MeleeWeapon)
   local RangedCacheDetail = ReddotManager.GetLeafNodeCacheDetail(CommonConst.WeaponType.RangedWeapon)
   RemoveUnknownWeapons(RangedCacheDetail, CommonConst.WeaponType.RangedWeapon)
 end
-
 function ReddotCreateFunctions.CreateResourceReddotInfos()
   local Avatar = GWorld:GetAvatar()
   local WheelItems = {}
@@ -721,7 +712,6 @@ function ReddotCreateFunctions.CreateResourceReddotInfos()
     end
   end
 end
-
 function ReddotCreateFunctions.CreateModReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   local AllModIds = {}
@@ -747,27 +737,11 @@ function ReddotCreateFunctions.CreateModReddotInfos(M)
     end
   end
 end
-
 function ReddotCreateFunctions.CreateRecordReddotInfos(M)
   pcall(M.InitAllCharRecordReddot(), M)
 end
-
 function ReddotCreateFunctions.CreateCharVoiceReddotInfos(M)
-  local Avatar = GWorld:GetAvatar()
-  local CharId = Avatar.Chars[Avatar.CurrentChar].CharId
-  if not CharId then
-    return
-  end
-  local CharVoiceData = DataMgr.CharVoice[CharId]
-  if not CharVoiceData then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140CharVoice\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. CharId)
-    return
-  end
-  for VoiceId, Data in pairs(CharVoiceData) do
-    M:TryAddNewCharVoiceReddot(Data, table.concat({CharId, VoiceId}, "_"))
-  end
 end
-
 local function CreateOneCharAppearanceReddotInfos(CharId)
   local Avatar = GWorld:GetAvatar()
   local CommonChar = Avatar.CommonChars[CharId]
@@ -783,7 +757,7 @@ local function CreateOneCharAppearanceReddotInfos(CharId)
       if CacheDetail then
         for key, _ in pairs(CacheDetail) do
           key = tonumber(key)
-          if nil == AllAccessorys[key] then
+          if nil == AllAccessorys[key] or not CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.CharAccessory, key) then
             M:SetItemReddotRead({
               ItemType = CommonConst.DataType.CharAccessory,
               AccessoryId = key
@@ -801,7 +775,7 @@ local function CreateOneCharAppearanceReddotInfos(CharId)
   if CacheDetail then
     for key, _ in pairs(CacheDetail) do
       key = tonumber(key)
-      if nil == CharAllSkin[key] then
+      if nil == CharAllSkin[key] or not CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.Skin, key) then
         M:SetItemReddotRead({
           ItemType = CommonConst.DataType.Skin,
           SkinId = key
@@ -809,20 +783,43 @@ local function CreateOneCharAppearanceReddotInfos(CharId)
       end
     end
   end
+  local CharAllHair = CommonChar.OwnedHairs
+  for HairId, Hair in pairs(CharAllHair) do
+    if HairId ~= CommonChar.CharId then
+      M:TryAddNewCharHairReddot(HairId, CommonChar.CharId)
+    end
+  end
+  local LeafNodeName = CommonConst.DataType.Char .. CommonConst.DataType.Hair .. CommonChar.CharId
+  if not ReddotManager.GetTreeNode(LeafNodeName) then
+    ReddotManager.AddNode(LeafNodeName, nil, 1)
+  end
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(LeafNodeName)
+  if CacheDetail then
+    for key, _ in pairs(CacheDetail) do
+      key = tonumber(key)
+      if nil == CharAllSkin[key] or not CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.Hair, key) then
+        M:SetItemReddotRead({
+          ItemType = CommonConst.DataType.Hair,
+          HairId = key
+        }, true, true, true)
+      end
+    end
+  end
 end
-
 function ReddotCreateFunctions.CreateCharAppearanceReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   local AllAccessorys = Avatar.CharAccessorys
   local AccessoryIds = {}
   local DefaultAcceesories = {
     [CommonConst.CharAccessoryTypes.FX_Dead] = DataMgr.GlobalConstant.DefautFXDead.ConstantValue,
-    [CommonConst.CharAccessoryTypes.FX_Teleport] = DataMgr.GlobalConstant.DefautFXTeleport.ConstantValue
+    [CommonConst.CharAccessoryTypes.FX_Teleport] = DataMgr.GlobalConstant.DefautFXTeleport.ConstantValue,
+    [CommonConst.CharAccessoryTypes.FX_PlungingATK] = DataMgr.GlobalConstant.DefaultFXPlungingATK.ConstantValue,
+    [CommonConst.CharAccessoryTypes.FX_HelixLeap] = DataMgr.GlobalConstant.DefaultFXHelixLeap.ConstantValue
   }
   for _, AccessoryId in pairs(AllAccessorys) do
     AccessoryIds[AccessoryId] = true
     local CharAccessoryData = DataMgr.CharAccessory[AccessoryId]
-    if CharAccessoryData and CharAccessoryData.AccessoryType and (not DefaultAcceesories[CharAccessoryData.AccessoryType] or AccessoryId ~= DefaultAcceesories[CharAccessoryData.AccessoryType]) then
+    if CharAccessoryData and CharAccessoryData.AccessoryType and (not DefaultAcceesories[CharAccessoryData.AccessoryType] or AccessoryId ~= DefaultAcceesories[CharAccessoryData.AccessoryType] and CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.CharAccessory, AccessoryId)) then
       for _, SkinId in ipairs(CharAccessoryData.Skin or {""}) do
         M:TryAddNewCharAccessoryReddot(AccessoryId, SkinId)
       end
@@ -837,7 +834,7 @@ function ReddotCreateFunctions.CreateCharAppearanceReddotInfos(M)
     if CacheDetail then
       for key, _ in pairs(CacheDetail) do
         key = tonumber(key)
-        if nil == AccessoryIds[key] or key == DefaultAcceesories[AccessoryType] then
+        if nil == AccessoryIds[key] or key == DefaultAcceesories[AccessoryType] or not CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.CharAccessory, key) then
           M:SetItemReddotRead({
             ItemType = CommonConst.DataType.CharAccessory,
             AccessoryId = key
@@ -850,7 +847,6 @@ function ReddotCreateFunctions.CreateCharAppearanceReddotInfos(M)
     CreateOneCharAppearanceReddotInfos(CommonChar.CharId)
   end
 end
-
 function ReddotCreateFunctions.CreateWeaponAppearanceReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   if not ReddotManager.GetTreeNode(CommonConst.DataType.WeaponAccessory) then
@@ -861,7 +857,7 @@ function ReddotCreateFunctions.CreateWeaponAppearanceReddotInfos(M)
   for _, AccessoryId in pairs(AllAccessorys) do
     AccessoryIds[AccessoryId] = true
     local AccessoryData = DataMgr.WeaponAccessory[AccessoryId]
-    if AccessoryData then
+    if AccessoryData and CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.WeaponAccessory, AccessoryId) then
       M:TryAddNewWeaponAccessoryReddot(AccessoryId)
     end
   end
@@ -869,7 +865,7 @@ function ReddotCreateFunctions.CreateWeaponAppearanceReddotInfos(M)
   if CacheDetail then
     for key, _ in pairs(CacheDetail) do
       key = tonumber(key)
-      if nil == AccessoryIds[key] then
+      if nil == AccessoryIds[key] or not CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.WeaponAccessory, key) then
         M:SetItemReddotRead({
           ItemType = CommonConst.DataType.WeaponAccessory,
           AccessoryId = key
@@ -880,7 +876,7 @@ function ReddotCreateFunctions.CreateWeaponAppearanceReddotInfos(M)
   local AllWeaponSkins = Avatar.OwnedWeaponSkins
   for SkinId, _ in pairs(AllWeaponSkins) do
     local SkinData = DataMgr.WeaponSkin[SkinId]
-    if SkinData then
+    if SkinData and CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.WeaponSkin, SkinId) then
       M:TryAddNewWeaponSkinReddot(SkinId)
     end
   end
@@ -901,7 +897,7 @@ function ReddotCreateFunctions.CreateWeaponAppearanceReddotInfos(M)
     if CacheDetail then
       for key, _ in pairs(CacheDetail) do
         key = tonumber(key)
-        if nil == AllWeaponSkins[key] then
+        if nil == AllWeaponSkins[key] or not CommonUtils.IsCurrentTimeRealease(CommonConst.DataType.WeaponSkin, key) then
           M:SetItemReddotRead({
             ItemType = CommonConst.DataType.WeaponSkin,
             SkinId = key
@@ -911,7 +907,6 @@ function ReddotCreateFunctions.CreateWeaponAppearanceReddotInfos(M)
     end
   end
 end
-
 function ReddotCreateFunctions.CreatePetReddotInfos(M)
   local Avatar = GWorld:GetAvatar()
   local AllPets = Avatar.Pets
@@ -937,7 +932,6 @@ function ReddotCreateFunctions.CreatePetReddotInfos(M)
     end
   end
 end
-
 function M:CreateReddotInfos(ItemType)
   if not ItemType or "" == ItemType then
     return
@@ -947,7 +941,6 @@ function M:CreateReddotInfos(ItemType)
     return ReddotCreateFunctions[FunctionName](M)
   end
 end
-
 function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
   if self.IsPreviewMode then
     return
@@ -956,7 +949,6 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     return
   end
   local functions = {}
-  
   function functions.SetCharReddotRead()
     local UuidStr = CommonUtils.ObjId2Str(Content.Uuid)
     if ReadNew then
@@ -966,18 +958,15 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
       M:_SetReddotReadCommon(UuidStr, DataMgr.ReddotNode.PromoteChar.Name, bDeleteCache)
     end
   end
-  
   function functions.SetCharSkillReddotRead()
     local NodeName = Content.Type .. CommonUtils.ObjId2Str(Content.CharUuid)
     local CacheKey = Content.SkillId
     M:_SetReddotReadCommon(CacheKey, NodeName)
   end
-  
   function functions.SetWeaponReddotRead()
     local UuidStr = CommonUtils.ObjId2Str(Content.Uuid)
     M:_SetReddotReadCommon(UuidStr, Content.Tag, bDeleteCache)
   end
-  
   function functions.SetResourceReddotRead()
     local ResData = DataMgr.Resource[Content.UnitId]
     if not ResData then
@@ -996,7 +985,6 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     end
     M:_SetReddotReadCommon(Content.UnitId, DataMgr.ReddotNode.ArmoryBattleItem.Name, bDeleteCache)
   end
-  
   function functions.SetModReddotRead()
     local ApplicationType = Content.ApplicationType
     local ModId = Content.UnitId
@@ -1004,7 +992,6 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local NodeName = CommonConst.DataType.Mod .. ApplicationType
     M:_SetReddotReadCommon(ModId, NodeName, bDeleteCache)
   end
-  
   function functions.SetRecordReddotRead()
     local NodeName = table.concat({
       M.FilesTabType[2],
@@ -1017,7 +1004,6 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     }, "_")
     M:_SetReddotReadCommon(CacheKey, NodeName)
   end
-  
   function functions.SetCharVoiceReddotRead()
     local NodeName = table.concat({
       M.FilesTabType[1],
@@ -1030,7 +1016,6 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     }, "_")
     M:_SetReddotReadCommon(CacheKey, NodeName)
   end
-  
   function functions.SetCharAccessoryReddotRead()
     local AccessoryId = Content.AccessoryId
     local Data = DataMgr.CharAccessory[AccessoryId]
@@ -1043,12 +1028,10 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
       M:_SetReddotReadCommon(AccessoryId, NodeName)
     end
   end
-  
   function functions.SetPetReddotRead()
     local UniqueIdStr = Content.UniqueId
     M:_SetReddotReadCommon(UniqueIdStr, Content.Type, bDeleteCache)
   end
-  
   if functions["Set" .. Content.Type .. "ReddotRead"] then
     functions["Set" .. Content.Type .. "ReddotRead"]()
     if ReadNew then
@@ -1065,38 +1048,31 @@ function M:SetReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     end
   end
 end
-
-function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
-  if self.IsPreviewMode then
-    return
-  end
-  if not Content then
-    return
-  end
-  local functions = {}
-  
-  function functions.SetCharReddotRead()
-    local UuidStr = CommonUtils.ObjId2Str(Content.Uuid)
-    if ReadNew then
-      M:_SetReddotReadCommon(UuidStr, DataMgr.ReddotNode.NewChar.Name, bDeleteCache)
+local SetReddotReadFunctions = {
+  SetCharReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
+    if tonumber(Content.Uuid) == nil and CommonUtils.IsObjId(Content.Uuid) then
+      local UuidStr = CommonUtils.ObjId2Str(Content.Uuid)
+      if ReadNew then
+        M:_SetReddotReadCommon(UuidStr, DataMgr.ReddotNode.NewChar.Name, bDeleteCache)
+      end
+      if ReadUpgradeable then
+        M:_SetReddotReadCommon(UuidStr, DataMgr.ReddotNode.PromoteChar.Name, bDeleteCache)
+      end
     end
-    if ReadUpgradeable then
-      M:_SetReddotReadCommon(UuidStr, DataMgr.ReddotNode.PromoteChar.Name, bDeleteCache)
+    if ReadNew and Content.UnitId then
+      M:_SetReddotReadCommon(Content.UnitId, DataMgr.ReddotNode.NewReleasedChar.Name, bDeleteCache)
     end
-  end
-  
-  function functions.SetCharSkillReddotRead()
+  end,
+  SetCharSkillReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local NodeName = Content.Type .. CommonUtils.ObjId2Str(Content.CharUuid)
     local CacheKey = Content.SkillId
     M:_SetReddotReadCommon(CacheKey, NodeName)
-  end
-  
-  function functions.SetWeaponReddotRead()
+  end,
+  SetWeaponReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local UuidStr = CommonUtils.ObjId2Str(Content.Uuid)
     M:_SetReddotReadCommon(UuidStr, Content.Tag, bDeleteCache)
-  end
-  
-  function functions.SetResourceReddotRead()
+  end,
+  SetResourceReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local ResData = DataMgr.Resource[Content.UnitId]
     if not ResData then
       local Avatar = GWorld:GetAvatar()
@@ -1113,17 +1089,15 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
       return
     end
     M:_SetReddotReadCommon(Content.UnitId, DataMgr.ReddotNode.ArmoryBattleItem.Name, bDeleteCache)
-  end
-  
-  function functions.SetModReddotRead()
+  end,
+  SetModReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local ApplicationType = Content.ApplicationType
     local ModId = Content.UnitId
     ApplicationType = ApplicationType or DataMgr.Mod[ModId].ApplicationType
     local NodeName = CommonConst.DataType.Mod .. ApplicationType
     M:_SetReddotReadCommon(ModId, NodeName, bDeleteCache)
-  end
-  
-  function functions.SetRecordReddotRead()
+  end,
+  SetRecordReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local NodeName = table.concat({
       M.FilesTabType[2],
       Content.CharId,
@@ -1134,9 +1108,8 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
       Content.CharDataTarget
     }, "_")
     M:_SetReddotReadCommon(CacheKey, NodeName)
-  end
-  
-  function functions.SetCharVoiceReddotRead()
+  end,
+  SetCharVoiceReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local NodeName = table.concat({
       M.FilesTabType[1],
       Content.CharId,
@@ -1147,9 +1120,8 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
       Content.VoiceId
     }, "_")
     M:_SetReddotReadCommon(CacheKey, NodeName)
-  end
-  
-  function functions.SetCharAccessoryReddotRead()
+  end,
+  SetCharAccessoryReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local AccessoryId = Content.AccessoryId
     local Data = DataMgr.CharAccessory[AccessoryId]
     if not Data then
@@ -1160,17 +1132,22 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
       local NodeName = NodeNamePre .. SkinId
       M:_SetReddotReadCommon(AccessoryId, NodeName)
     end
-  end
-  
-  function functions.SetSkinReddotRead()
+  end,
+  SetSkinReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     if not Content.CharId then
       return
     end
     local NodeName = CommonConst.DataType.Char .. CommonConst.DataType.Skin .. Content.CharId
     M:_SetReddotReadCommon(Content.SkinId, NodeName)
-  end
-  
-  function functions.SetWeaponSkinReddotRead()
+  end,
+  SetHairReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
+    if not Content.CharId then
+      return
+    end
+    local NodeName = CommonConst.DataType.Char .. CommonConst.DataType.Hair .. Content.CharId
+    M:_SetReddotReadCommon(Content.HairId, NodeName)
+  end,
+  SetWeaponSkinReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local SkinId = Content.SkinId
     local Data = DataMgr.WeaponSkin[SkinId]
     if not Data then
@@ -1178,9 +1155,8 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     end
     local NodeName = CommonConst.DataType.WeaponSkin .. (Data.ApplicationType or "")
     M:_SetReddotReadCommon(SkinId, NodeName)
-  end
-  
-  function functions.SetWeaponAccessoryReddotRead()
+  end,
+  SetWeaponAccessoryReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local AccessoryId = Content.AccessoryId
     local Data = DataMgr.WeaponAccessory[AccessoryId]
     if not Data then
@@ -1188,18 +1164,24 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     end
     local NodeName = CommonConst.DataType.WeaponAccessory
     M:_SetReddotReadCommon(AccessoryId, NodeName)
-  end
-  
-  function functions.SetPetReddotRead()
+  end,
+  SetPetReddotRead = function(self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     local UniqueIdStr = Content.UniqueId
     local NodeName = CommonConst.DataType.Pet
     M:_SetReddotReadCommon(UniqueIdStr, "Resource" .. NodeName, bDeleteCache)
     M:_SetReddotReadCommon(UniqueIdStr, NodeName, bDeleteCache)
     EventManager:FireEvent(EventID.OnPetReddotRead, UniqueIdStr, Content)
   end
-  
-  if functions["Set" .. (Content.ItemType or Content.Type) .. "ReddotRead"] then
-    functions["Set" .. (Content.ItemType or Content.Type) .. "ReddotRead"]()
+}
+function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
+  if self.IsPreviewMode then
+    return
+  end
+  if not Content then
+    return
+  end
+  if SetReddotReadFunctions["Set" .. (Content.ItemType or Content.Type) .. "ReddotRead"] then
+    SetReddotReadFunctions["Set" .. (Content.ItemType or Content.Type) .. "ReddotRead"](self, Content, ReadNew, ReadUpgradeable, bDeleteCache)
     if ReadNew then
       Content.IsNew = false
     end
@@ -1209,7 +1191,6 @@ function M:SetItemReddotRead(Content, ReadNew, ReadUpgradeable, bDeleteCache)
     M:UpdateContentRetDotType(Content)
   end
 end
-
 function M:UpdateContentRetDotType(Content)
   if Content.IsNew then
     Content.RedDotType = UIConst.RedDotType.NewRedDot
@@ -1225,7 +1206,6 @@ function M:UpdateContentRetDotType(Content)
     Content.Widget:SetReddot(Content.RedDotType)
   end
 end
-
 function M:SetArchiveReddotRead(Content)
   if not Content.IsNew then
     return
@@ -1261,13 +1241,11 @@ function M:SetArchiveReddotRead(Content)
     end
   end
 end
-
 function M:SetReddotsRead(Contents, ReadNew, ReadUpgradeable)
   for _, Content in pairs(Contents) do
     self:SetItemReddotRead(Content, ReadNew, ReadUpgradeable)
   end
 end
-
 function M:TryAddNewModReddot(Mod, ModId)
   if Mod.Level > 0 then
     return
@@ -1279,7 +1257,7 @@ function M:TryAddNewModReddot(Mod, ModId)
     return
   end
   if not Mod:Data() then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140Mod\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. Mod.ModId)
+    print(_G.LogTag, "红点添加失败，Mod的表数据无效，无效Id: " .. Mod.ModId)
     return false
   end
   if nil == ModId then
@@ -1289,7 +1267,6 @@ function M:TryAddNewModReddot(Mod, ModId)
   local NodeName = CommonConst.DataType.Mod .. Mod.ApplicationType
   return M:_TryAddNewReddotCommon(ModId, NodeName)
 end
-
 function M:TryAddNewModBookReddot(Mod, ModId)
   local Avatar = GWorld:GetAvatar()
   if Avatar.HoldMods and Avatar.HoldMods[ModId] then
@@ -1297,6 +1274,9 @@ function M:TryAddNewModBookReddot(Mod, ModId)
   end
   local ArchiveId = DataMgr.ModId2ArchiveId[ModId]
   if not ArchiveId then
+    return
+  end
+  if Avatar.HoldModRewards and Avatar.HoldModRewards[ArchiveId] then
     return
   end
   local ModList = DataMgr.ModGuideBookArchive[ArchiveId].ModList
@@ -1317,13 +1297,12 @@ function M:TryAddNewModBookReddot(Mod, ModId)
   CacheDetail.RedNum = CacheDetail.RedNum + 1
   ReddotManager.IncreaseLeafNodeCount(ReddotNode, 1, CacheDetail)
 end
-
 function M:TryAddNewWeaponReddot(Weapon, UuidStr)
   if self.IsPreviewMode then
     return
   end
   if not Weapon:BattleData() or not Weapon:Data() then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140Weapon\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. Weapon.WeaponId)
+    print(_G.LogTag, "红点添加失败，Weapon的表数据无效，无效Id: " .. Weapon.WeaponId)
     return false
   end
   if Weapon:HasTag(CommonConst.WeaponType.UltraWeapon) then
@@ -1332,24 +1311,21 @@ function M:TryAddNewWeaponReddot(Weapon, UuidStr)
   if nil == UuidStr then
     UuidStr = CommonUtils.ObjId2Str(Weapon.Uuid)
   end
-  
   local function _TryAddNewWeaponReddot(WeaponType)
     return M:_TryAddNewReddotCommon(UuidStr, WeaponType)
   end
-  
   local IsNew = false
   IsNew = Weapon:HasTag(CommonConst.WeaponType.MeleeWeapon) and _TryAddNewWeaponReddot(CommonConst.WeaponType.MeleeWeapon) or IsNew
   IsNew = Weapon:HasTag(CommonConst.WeaponType.RangedWeapon) and _TryAddNewWeaponReddot(CommonConst.WeaponType.RangedWeapon) or IsNew
   local HasReward = M:TryAddWeaponRewardReddot(Weapon.WeaponId)
   return IsNew, false, HasReward
 end
-
 function M:TryAddNewResourceReddot(Resource, Id)
   if self.IsPreviewMode then
     return
   end
   if not Resource:Data() then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140Resource\231\154\132\232\161\168\230\160\188\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. Resource.ResourceId)
+    print(_G.LogTag, "红点添加失败，Resource的表格数据无效，无效Id: " .. Resource.ResourceId)
     return false
   end
   local ResData = Resource:Data()
@@ -1365,13 +1341,12 @@ function M:TryAddNewResourceReddot(Resource, Id)
   end
   return M:_TryAddNewReddotCommon(Id, DataMgr.ReddotNode.ArmoryBattleItem.Name)
 end
-
 function M:TryAddNewCharReddot(Char, UuidStr)
   if self.IsPreviewMode then
     return
   end
   if not Char:Data() or not Char:BattleData() then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140Char\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136CharId: " .. Char.CharId .. "\230\151\160\230\149\136RoleId: " .. Char.RoleId)
+    print(_G.LogTag, "红点添加失败，Char的表数据无效，无效CharId: " .. Char.CharId .. "无效RoleId: " .. Char.RoleId)
     return false
   end
   if nil == UuidStr then
@@ -1386,7 +1361,6 @@ function M:TryAddNewCharReddot(Char, UuidStr)
   local HasReward = M:TryAddCharRewardReddot(Char.CharId)
   return M:_TryAddNewReddotCommon(UuidStr, DataMgr.ReddotNode.NewChar.Name), PromoteRes, HasReward
 end
-
 function M:TryAddCharRewardReddot(CharId)
   if self.IsPreviewMode then
     return
@@ -1396,7 +1370,6 @@ function M:TryAddCharRewardReddot(CharId)
     return M:_TryAddNewReddotCommon(CharId, DataMgr.ReddotNode.CharReward.Name)
   end
 end
-
 function M:TryAddWeaponRewardReddot(WeaponId)
   local Avatar = GWorld:GetAvatar()
   if Avatar:IsWeaponHasReward(WeaponId) then
@@ -1408,7 +1381,6 @@ function M:TryAddWeaponRewardReddot(WeaponId)
     end
   end
 end
-
 function M:TryAddUnlockableCharReddot(CharId)
   if self.IsPreviewMode then
     return
@@ -1427,13 +1399,22 @@ function M:TryAddUnlockableCharReddot(CharId)
     return M:_TryAddNewReddotCommon(CharId, DataMgr.ReddotNode.UnlockableChar.Name)
   end
 end
-
+function M:TryAddNewReleasedCharReddot(CharId)
+  if self.IsPreviewMode then
+    return
+  end
+  local Data = DataMgr.Char[CharId]
+  if not Data or Data.IsNotOpen or not CommonUtils.IsCurrentVersionNewRealease(CommonConst.DataType.Char, CharId) then
+    return
+  end
+  return M:_TryAddNewReddotCommon(CharId, DataMgr.ReddotNode.NewReleasedChar.Name)
+end
 function M:TryAddNewCharSkillReddot(CharSkill, Id, CharUuid, bCanLevelUp)
   if self.IsPreviewMode then
     return
   end
   if not CharSkill:Data() then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140CharSkill\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. CharSkill.SkillId)
+    print(_G.LogTag, "红点添加失败，CharSkill的表数据无效，无效Id: " .. CharSkill.SkillId)
     return false
   end
   if nil == Id then
@@ -1450,27 +1431,25 @@ function M:TryAddNewCharSkillReddot(CharSkill, Id, CharUuid, bCanLevelUp)
   end
   return false
 end
-
 function M:TryAddNewCharAccessoryReddot(AccessoryId, SkinId)
   if self.IsPreviewMode then
     return
   end
   local CharAccessoryData = DataMgr.CharAccessory[AccessoryId]
   if not CharAccessoryData then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140CharAccessory\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. AccessoryId)
+    print(_G.LogTag, "红点添加失败，CharAccessory的表数据无效，无效Id: " .. AccessoryId)
     return false
   end
   local ReddotName = CommonConst.DataType.CharAccessory .. CharAccessoryData.AccessoryType
   SkinId = SkinId or ""
   return M:_TryAddNewReddotCommon(AccessoryId, ReddotName .. SkinId)
 end
-
 function M:TryAddNewCharSkinReddot(SkinId, CharId)
   if self.IsPreviewMode then
     return
   end
-  local CharAccessoryData = DataMgr.Skin[SkinId]
-  if not CharAccessoryData then
+  local CharSkinData = DataMgr.Skin[SkinId]
+  if not CharSkinData then
     return false
   end
   local ReddotName = CommonConst.DataType.Char .. CommonConst.DataType.Skin .. CharId
@@ -1482,7 +1461,17 @@ function M:TryAddNewCharSkinReddot(SkinId, CharId)
   end
   return M:_TryAddNewReddotCommon(SkinId, ReddotName)
 end
-
+function M:TryAddNewCharHairReddot(HairId, CharId)
+  if self.IsPreviewMode then
+    return
+  end
+  local CharHairData = DataMgr.Hair[HairId]
+  if not CharHairData then
+    return false
+  end
+  local ReddotName = CommonConst.DataType.Char .. CommonConst.DataType.Hair .. CharId
+  return M:_TryAddNewReddotCommon(HairId, ReddotName)
+end
 function M:TryAddNewWeaponAccessoryReddot(AccessoryId)
   if self.IsPreviewMode then
     return
@@ -1494,7 +1483,6 @@ function M:TryAddNewWeaponAccessoryReddot(AccessoryId)
   local ReddotName = CommonConst.DataType.WeaponAccessory
   return M:_TryAddNewReddotCommon(AccessoryId, ReddotName)
 end
-
 function M:TryAddNewWeaponSkinReddot(SkinId)
   if self.IsPreviewMode then
     return
@@ -1506,7 +1494,6 @@ function M:TryAddNewWeaponSkinReddot(SkinId)
   local ReddotName = CommonConst.DataType.WeaponSkin .. (WeaponSkinData.ApplicationType or "")
   return M:_TryAddNewReddotCommon(SkinId, ReddotName)
 end
-
 function M:TryAddNewCharVoiceReddot(VoiceData, CacheKey)
   if self.IsPreviewMode then
     return
@@ -1522,7 +1509,6 @@ function M:TryAddNewCharVoiceReddot(VoiceData, CacheKey)
   }, "_")
   return M:_TryAddNewReddotCommon(CacheKey, ReddotName)
 end
-
 function M:TryAddNewRecordReddot(RecordData, CacheKey)
   if self.IsPreviewMode then
     return
@@ -1538,13 +1524,12 @@ function M:TryAddNewRecordReddot(RecordData, CacheKey)
   }, "_")
   return M:_TryAddNewReddotCommon(CacheKey, ReddotName)
 end
-
 function M:TryAddNewPetReddot(Pet, UniqueId)
   if self.IsPreviewMode then
     return
   end
   if not Pet:Data() or not Pet:BattleData() then
-    print(_G.LogTag, "\231\186\162\231\130\185\230\183\187\229\138\160\229\164\177\232\180\165\239\188\140\229\174\160\231\137\169\231\154\132\232\161\168\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\230\151\160\230\149\136Id: " .. Pet.PetId)
+    print(_G.LogTag, "红点添加失败，宠物的表数据无效，无效Id: " .. Pet.PetId)
     return false
   end
   if nil == UniqueId then
@@ -1557,14 +1542,13 @@ function M:TryAddNewPetReddot(Pet, UniqueId)
   local Res = M:_TryAddNewReddotCommon(UniqueId, NodeName, false, false, NodeName)
   return Res
 end
-
 function M:_TryAddNewReddotCommon(CacheKey, NodeName, Recyclable, bDontIncrease, ModelName)
   if not ReddotManager.GetTreeNode(NodeName) then
     ReddotManager.AddNode(NodeName, nil, 1, nil, ModelName)
   end
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(NodeName)
   if not CacheDetail then
-    DebugPrint(Traceback(ErrorTag, "CacheDetail\228\184\186\231\169\186: " .. NodeName))
+    DebugPrint(Traceback(ErrorTag, "CacheDetail为空: " .. NodeName))
     return
   end
   if not CacheDetail[CacheKey] or Recyclable and 0 == CacheDetail[CacheKey] then
@@ -1577,15 +1561,14 @@ function M:_TryAddNewReddotCommon(CacheKey, NodeName, Recyclable, bDontIncrease,
   end
   return 1 == CacheDetail[CacheKey]
 end
-
 function M:_SetReddotReadCommon(CacheKey, NodeName, bDeleteCache)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(NodeName)
   if not CacheDetail then
-    DebugPrint(Warning, LXYTag, "\229\134\155\230\162\176\229\186\147\231\186\162\231\130\185\230\178\161\230\156\137\232\191\153\228\184\170\231\188\147\229\173\152 " .. NodeName)
+    DebugPrint(WarningTag, LXYTag, "军械库红点没有这个缓存 " .. (NodeName or ""))
     return
   end
   if not CacheDetail[CacheKey] then
-    DebugPrint(Warning, LXYTag, NodeName .. "\229\134\155\230\162\176\229\186\147\231\186\162\231\130\185\231\188\147\229\173\152\230\178\161\230\156\137\232\191\153\228\184\170key " .. CacheKey)
+    DebugPrint(WarningTag, LXYTag, NodeName .. "军械库红点缓存没有这个key " .. (CacheKey or ""))
     return
   end
   if 1 == CacheDetail[CacheKey] then
@@ -1596,15 +1579,12 @@ function M:_SetReddotReadCommon(CacheKey, NodeName, bDeleteCache)
     CacheDetail[CacheKey] = nil
   end
 end
-
 function M:SetIsPreviewMode(IsPreviewMode)
   self.IsPreviewMode = IsPreviewMode
 end
-
 function M:GetIsPreviewMode()
   return self.IsPreviewMode
 end
-
 function M:SwitchPreviewTargetState(PreviewTargetState)
   if not self:HasAvatar(PreviewTargetState) then
     return
@@ -1612,11 +1592,9 @@ function M:SwitchPreviewTargetState(PreviewTargetState)
   self.CurPreviewTargetState = PreviewTargetState
   EventManager:FireEvent(EventID.OnArmoryPreviewModeStateChanged, self.CurPreviewTargetState)
 end
-
 function M:GetPreviewTargetState()
   return self.CurPreviewTargetState
 end
-
 function M:GetDummyAvatar(State)
   State = State or self.CurPreviewTargetState
   if State == self.PreviewTargetStates.Prime then
@@ -1627,7 +1605,6 @@ function M:GetDummyAvatar(State)
     return self.DummyAvatar_Custom
   end
 end
-
 function M:DestroyDummyAvatar(State)
   if State then
     if State == self.PreviewTargetStates.Prime then
@@ -1644,27 +1621,21 @@ function M:DestroyDummyAvatar(State)
     self.CurPreviewTargetState = nil
   end
 end
-
 local _NeedResetUuid = true
-
 function M:DontResetUuid(bDontReset)
   _NeedResetUuid = not bDontReset
 end
-
 local _Uuid = 1
-
 local function _ResetUuid()
   if _NeedResetUuid then
     _Uuid = 1
   end
 end
-
 local function _NextUuid()
   local uuid = _Uuid
   _Uuid = _Uuid + 1
   return uuid
 end
-
 local function _CreateDummyAvatarBase(DummyAvatar, _Params)
   DummyAvatar.Chars = {}
   DummyAvatar.CommonChars = {}
@@ -1673,16 +1644,11 @@ local function _CreateDummyAvatarBase(DummyAvatar, _Params)
   DummyAvatar.Pets = {}
   DummyAvatar.Mods = {}
   DummyAvatar.CharAccessorys = {}
-  DummyAvatar.CurrentChar = _Params.CurrentChar
-  DummyAvatar.CurrentPet = _Params.CurrentPet or 0
-  DummyAvatar.MeleeWeapon = _Params.MeleeWeapon
-  DummyAvatar.RangedWeapon = _Params.RangedWeapon
   DummyAvatar.WeaponId2UWeapon = {}
-  
+  DummyAvatar.CurrentPet = DummyAvatar.CurrentPet or 0
   function DummyAvatar.CheckUIUnlocked()
     return true
   end
-  
   DummyAvatar.CreateInfo2Uuids = {
     Chars = {},
     Weapons = {},
@@ -1690,7 +1656,6 @@ local function _CreateDummyAvatarBase(DummyAvatar, _Params)
   }
   DummyAvatar.Sex = _Params.Sex or GWorld:GetAvatar().Sex
 end
-
 local function _UnlockModSlot(Target, TargetInfo)
   if TargetInfo and TargetInfo.ModSlotUnlock then
     for i = 1, #TargetInfo.ModSlotUnlock do
@@ -1701,7 +1666,6 @@ local function _UnlockModSlot(Target, TargetInfo)
     end
   end
 end
-
 local function _DummyAvatarCreateMod(FakeUuid, ModId, Level, CardLevel)
   local Mod = ModCom.ModDict:NewMod(FakeUuid, ModId, Level)
   Mod.CurrentModCardLevel = CardLevel
@@ -1709,7 +1673,6 @@ local function _DummyAvatarCreateMod(FakeUuid, ModId, Level, CardLevel)
   Mod.LockState = 1
   return Mod
 end
-
 local function _DummyAvatarCreateWeapon(Uuid, WeaponId, Level, NeedEnhance, ModSuitIndex)
   local weapon = WeaponCom.WeaponDict:NewWeapon(Uuid, WeaponId, Level)
   weapon:InitAppearance()
@@ -1733,12 +1696,10 @@ local function _DummyAvatarCreateWeapon(Uuid, WeaponId, Level, NeedEnhance, ModS
   _UnlockModSlot(weapon, WeaponInfo)
   return weapon
 end
-
 local function _AddWeaponToDummyAvatar(DummyAvatar, Weapon, WeaponInfo)
   DummyAvatar.Weapons[Weapon.Uuid] = Weapon
   DummyAvatar.CreateInfo2Uuids.Weapons[WeaponInfo] = Weapon.Uuid
 end
-
 local function _DummyAvatarCreateUWeapon(WeaponId, Level, EnhanceLevel, ModSuitIndex)
   local info = DataMgr.UWeapon[WeaponId]
   if not info or not DataMgr.WeaponLevelUp[Level] then
@@ -1753,7 +1714,6 @@ local function _DummyAvatarCreateUWeapon(WeaponId, Level, EnhanceLevel, ModSuitI
   _UnlockModSlot(weapon, WeaponInfo)
   return weapon
 end
-
 local function _CharInitUltraWeapon(DummyAvatar, Char, Level)
   if not Char or not Char.UWeapon then
     return
@@ -1767,7 +1727,6 @@ local function _CharInitUltraWeapon(DummyAvatar, Char, Level)
     end
   end
 end
-
 local function _InitCharSetCharAppearanceAccessory(DummyAvatar, Char)
   if not Char then
     return
@@ -1784,7 +1743,6 @@ local function _InitCharSetCharAppearanceAccessory(DummyAvatar, Char)
     end
   end
 end
-
 local function _DummyAvatarCreateChar(DummyAvatar, Uuid, CharId, Level, NeedEnhance, ModSuitIndex)
   local char = CharCom.CharDict:NewChar(Uuid, CharId, Level)
   NeedEnhance = NeedEnhance or true
@@ -1811,12 +1769,10 @@ local function _DummyAvatarCreateChar(DummyAvatar, Uuid, CharId, Level, NeedEnha
   DummyAvatar.CommonChars[CharId] = CharacterCommon.CommonCharDict:NewCommonChar(CharId)
   return char
 end
-
 local function _AddCharToDummyAvatar(DummyAvatar, Char, CharInfo)
   DummyAvatar.Chars[Char.Uuid] = Char
   DummyAvatar.CreateInfo2Uuids.Chars[CharInfo] = Char.Uuid
 end
-
 local function _DummyAvatarCreatePet(PetId, UniqueId)
   local Pet = PetCom.Pet(PetId, UniqueId)
   local PetType = DataMgr.Pet[Pet.PetId] and DataMgr.Pet[Pet.PetId].PetType
@@ -1830,12 +1786,10 @@ local function _DummyAvatarCreatePet(PetId, UniqueId)
   Pet.Entry = Pet.Entry
   return Pet
 end
-
 local function _AddPetToDummyAvatar(DummyAvatar, Pet, PetInfo)
   DummyAvatar.Pets[Pet.UniqueId] = Pet
   DummyAvatar.CreateInfo2Uuids.Pets[Pet.UniqueId] = PetInfo
 end
-
 local function _CreateDummyAvatarPrime(DummyAvatar, _Params)
   _CreateDummyAvatarBase(DummyAvatar, _Params)
   local Level = 1
@@ -1843,6 +1797,9 @@ local function _CreateDummyAvatarPrime(DummyAvatar, _Params)
   if _Params.CharIds then
     for i, CharId in ipairs(_Params.CharIds) do
       local Char = _DummyAvatarCreateChar(DummyAvatar, _NextUuid(), CharId, Level, 1)
+      if _Params.CurrentChar == CharId then
+        DummyAvatar.CurrentChar = Char.Uuid
+      end
       for _, value in ipairs(Char.Skills) do
         value:Lock()
       end
@@ -1852,17 +1809,25 @@ local function _CreateDummyAvatarPrime(DummyAvatar, _Params)
   if _Params.WeaponIds then
     for i, WeaponId in ipairs(_Params.WeaponIds) do
       local Weapon = _DummyAvatarCreateWeapon(_NextUuid(), WeaponId, Level, 1)
+      if _Params.MeleeWeapon == WeaponId then
+        DummyAvatar.MeleeWeapon = Weapon.Uuid
+      end
+      if _Params.RangedWeapon == WeaponId then
+        DummyAvatar.RangedWeapon = Weapon.Uuid
+      end
       _AddWeaponToDummyAvatar(DummyAvatar, Weapon, WeaponId)
     end
   end
   if _Params.PetIds then
     for i, PetId in ipairs(_Params.PetIds) do
       local Pet = _DummyAvatarCreatePet(PetId, _NextUuid())
+      if _Params.CurrentPet == PetId then
+        DummyAvatar.CurrentPet = Pet.UniqueId or DummyAvatar.CurrentPet
+      end
       _AddPetToDummyAvatar(DummyAvatar, Pet, PetId)
     end
   end
 end
-
 local function _CreateDummyAvatarMax(DummyAvatar, _Params)
   _CreateDummyAvatarBase(DummyAvatar, _Params)
   local Level = 1
@@ -1871,6 +1836,9 @@ local function _CreateDummyAvatarMax(DummyAvatar, _Params)
     for i, CharId in ipairs(_Params.CharIds) do
       Level = DataMgr.Char[CharId].CharMaxLevel
       local Char = _DummyAvatarCreateChar(DummyAvatar, _NextUuid(), CharId, Level, 1)
+      if _Params.CurrentChar == CharId then
+        DummyAvatar.CurrentChar = Char.Uuid
+      end
       Char:SetGradeLevel(DataMgr.GlobalConstant.CharCardLevelMax.ConstantValue)
       for _, Skill in pairs(Char.Skills) do
         Skill:UnLock()
@@ -1891,6 +1859,12 @@ local function _CreateDummyAvatarMax(DummyAvatar, _Params)
     for i, WeaponId in ipairs(_Params.WeaponIds) do
       Level = DataMgr.Weapon[WeaponId].WeaponMaxLevel
       local Weapon = _DummyAvatarCreateWeapon(_NextUuid(), WeaponId, Level, 1)
+      if _Params.MeleeWeapon == WeaponId then
+        DummyAvatar.MeleeWeapon = Weapon.Uuid
+      end
+      if _Params.RangedWeapon == WeaponId then
+        DummyAvatar.RangedWeapon = Weapon.Uuid
+      end
       local WeaponCardLevelData = DataMgr.WeaponCardLevel[WeaponId]
       local CardLevelMax = WeaponCardLevelData and WeaponCardLevelData.CardLevelMax
       if CardLevelMax then
@@ -1902,6 +1876,9 @@ local function _CreateDummyAvatarMax(DummyAvatar, _Params)
   if _Params.PetIds then
     for i, PetId in ipairs(_Params.PetIds) do
       local Pet = _DummyAvatarCreatePet(PetId, _NextUuid())
+      if _Params.CurrentPet == PetId then
+        DummyAvatar.CurrentPet = Pet.UniqueId or DummyAvatar.CurrentPet
+      end
       local BreakConf = Pet:BreakData()
       Pet.BreakNum = BreakConf and #BreakConf or 0
       Pet.Level = Pet:GetMaxLevel()
@@ -1909,9 +1886,8 @@ local function _CreateDummyAvatarMax(DummyAvatar, _Params)
     end
   end
 end
-
 local function _SetUpModForTarget(DummyAvatar, Target, TargetInfo)
-  if TargetInfo.SlotData and TargetInfo.ModSuitIndex then
+  if TargetInfo.SlotData and TargetInfo.ModSuitIndex and Target.ModSuits then
     for SlotId, Slot in pairs(Target.ModSuits[TargetInfo.ModSuitIndex]) do
       local SlotData = TargetInfo.SlotData[SlotId] or {
         SlotId = SlotId,
@@ -1937,12 +1913,14 @@ local function _SetUpModForTarget(DummyAvatar, Target, TargetInfo)
     DummyAvatar.Mods[Mod.Uuid] = Mod
   end
 end
-
 function M._CreateDummyAvatarCustom(DummyAvatar, _Params)
   _CreateDummyAvatarBase(DummyAvatar, _Params)
   _ResetUuid()
   for i, CharInfo in ipairs(_Params.CharInfos or {}) do
     local Char = _DummyAvatarCreateChar(DummyAvatar, _NextUuid(), CharInfo.RoleId, CharInfo.Level, 1, CharInfo.ModSuitIndex)
+    if _Params.CurrentChar == CharInfo then
+      DummyAvatar.CurrentChar = Char.Uuid
+    end
     Char.Exp = CharInfo.Exp
     Char.GradeLevel = CharInfo.GradeLevel
     if CharInfo.EnhanceLevel then
@@ -1950,14 +1928,17 @@ function M._CreateDummyAvatarCustom(DummyAvatar, _Params)
     end
     local AppearanceSuit = Char.AppearanceSuits[Char.CurrentAppearanceIndex]
     AppearanceSuit.SkinId = CharInfo.SkinId or AppearanceSuit.SkinId
+    AppearanceSuit.HairId = CharInfo.HairId or AppearanceSuit.HairId
     if CharInfo.AppearanceSuit then
       AppearanceSuit.SkinId = CharInfo.AppearanceSuit.SkinId or AppearanceSuit.SkinId
+      AppearanceSuit.HairId = CharInfo.AppearanceSuit.HairId or AppearanceSuit.HairId
       local AccessorySuit = CharInfo.AppearanceSuit.AccessorySuit
       if AccessorySuit then
         for key, value in pairs(AccessorySuit) do
           AppearanceSuit.Accessory[key] = value
         end
       end
+      AppearanceSuit.AccessoryCustomParams = CharInfo.AppearanceSuit.AccessoryCustomParams
     end
     local SkilMap = {}
     if CharInfo.SkillInfos then
@@ -2000,20 +1981,40 @@ function M._CreateDummyAvatarCustom(DummyAvatar, _Params)
     _AddCharToDummyAvatar(DummyAvatar, Char, CharInfo)
     local CommonChar = DummyAvatar.CommonChars[Char.CharId]
     local AppearanceSuit = CharInfo.AppearanceSuit
-    if AppearanceSuit then
-      CommonChar:AddSkin(AppearanceSuit.SkinId)
-      local Skin = CommonChar:GetSkin(AppearanceSuit.SkinId)
-      local CurrentPlanIndex = Skin.CurrentPlanIndex or 1
-      if Skin then
-        for i, value in pairs(AppearanceSuit.Colors or {}) do
-          Skin.Colors[CurrentPlanIndex][i] = value
+    if AppearanceSuit and CommonChar then
+      if AppearanceSuit.SkinId then
+        CommonChar:AddSkin(AppearanceSuit.SkinId)
+        local Skin = CommonChar:GetSkin(AppearanceSuit.SkinId)
+        if Skin then
+          local CurrentPlanIndex = Skin.CurrentPlanIndex or 1
+          for i, value in pairs(AppearanceSuit.Colors or {}) do
+            if Skin.Colors[CurrentPlanIndex] then
+              Skin.Colors[CurrentPlanIndex][i] = value
+            end
+          end
         end
-        Skin.IsShowPartMesh = AppearanceSuit.IsShowPartMesh
+      end
+      CommonChar:AddHair(AppearanceSuit.HairId or Char.CharId)
+      local Hair = CommonChar:GetHair(AppearanceSuit.HairId or Char.CharId)
+      if Hair and type(AppearanceSuit.HairColors) == "table" then
+        for PlanIdx, PlanColors in pairs(AppearanceSuit.HairColors) do
+          if Hair.Colors[PlanIdx] and type(PlanColors) == "table" then
+            for PartIdx, ColorId in pairs(PlanColors) do
+              Hair.Colors[PlanIdx][PartIdx] = ColorId
+            end
+          end
+        end
       end
     end
   end
   for i, WeaponInfo in ipairs(_Params.WeaponInfos or {}) do
     local Weapon = _DummyAvatarCreateWeapon(_NextUuid(), WeaponInfo.WeaponId, WeaponInfo.Level, 1, WeaponInfo.ModSuitIndex)
+    if _Params.MeleeWeapon == WeaponInfo then
+      DummyAvatar.MeleeWeapon = Weapon.Uuid
+    end
+    if _Params.RangedWeapon == WeaponInfo then
+      DummyAvatar.RangedWeapon = Weapon.Uuid
+    end
     Weapon.Exp = WeaponInfo.Exp
     Weapon.GradeLevel = WeaponInfo.GradeLevel
     Weapon.EnhanceLevel = WeaponInfo.EnhanceLevel
@@ -2066,6 +2067,9 @@ function M._CreateDummyAvatarCustom(DummyAvatar, _Params)
   end
   for i, PetInfo in ipairs(_Params.PetInfos or {}) do
     local Pet = _DummyAvatarCreatePet(PetInfo.PetId, _NextUuid())
+    if _Params.CurrentPet == PetInfo then
+      DummyAvatar.CurrentPet = Pet.UniqueId or DummyAvatar.CurrentPet
+    end
     Pet.Level = PetInfo.Level or 1
     Pet.Exp = PetInfo.Exp or 0
     Pet.BreakNum = PetInfo.BreakNum or 0
@@ -2078,7 +2082,6 @@ function M._CreateDummyAvatarCustom(DummyAvatar, _Params)
     _AddPetToDummyAvatar(DummyAvatar, Pet, PetInfo)
   end
 end
-
 function M:CreateDummyAvatar(Params)
   if Params.CharIds or Params.WeaponIds or Params.PetIds then
     self.DummyAvatar_Prime = {}
@@ -2088,7 +2091,6 @@ function M:CreateDummyAvatar(Params)
   end
   self:CreateDummyAvatarByDumpInfo(Params)
 end
-
 function M:CreateNewDummyAvatar(State, Params)
   local DummyAvatar = {}
   if State == self.PreviewTargetStates.Prime then
@@ -2100,22 +2102,18 @@ function M:CreateNewDummyAvatar(State, Params)
   end
   return DummyAvatar
 end
-
 function M:CreateDummyAvatarByDumpInfo(Params)
   if Params.CharInfos or Params.WeaponInfos or Params.PetInfos then
     self.DummyAvatar_Custom = {}
     self._CreateDummyAvatarCustom(self.DummyAvatar_Custom, Params)
   end
 end
-
 function M:SetTemporaryAvatar(Avatar)
   self.TemporaryAvatar = Avatar
 end
-
 function M:GetAvatar()
   return self.TemporaryAvatar or self:GetDummyAvatar() or GWorld:GetAvatar()
 end
-
 function M:HasAvatar(PreviewTargetState)
   if PreviewTargetState == self.PreviewTargetStates.Prime then
     return not not self.DummyAvatar_Prime
@@ -2125,23 +2123,19 @@ function M:HasAvatar(PreviewTargetState)
     return not not self.DummyAvatar_Custom
   end
 end
-
 function M:GetPhantomWeaponUuid(PhantomResourceId)
   local Avatar = self:GetAvatar()
   local PhantomResource = Avatar.Resources[PhantomResourceId]
   return PhantomResource and PhantomResource.WeaponUuid
 end
-
 function M:GetCharByUuid(Uuid)
   local Avatar = self:GetAvatar()
   return Avatar.Chars[Uuid]
 end
-
 function M:GetWeaponByUuid(Uuid)
   local Avatar = self:GetAvatar()
   return Avatar.Weapons[Uuid] or Avatar.UWeapons[Uuid]
 end
-
 function M:GetCharNoneAccessoryIconPaths()
   local AccessoryIconPaths = {}
   for _, value in pairs(CommonConst.CharAccessoryTypes) do
@@ -2149,49 +2143,35 @@ function M:GetCharNoneAccessoryIconPaths()
   end
   return AccessoryIconPaths
 end
-
 function M:InsertWeaponTypeImpl(WeaponId, AttrTable)
   local WeaponTypeKey = "WeaponType"
   local AttrConfigData = DataMgr.AttrConfig[WeaponTypeKey]
   if not AttrConfigData or not AttrConfigData.ShowInInspector then
     return
   end
-  local MeleeTags, MeleeTagNames, RangedTags, RangedTagNames = UIUtils.GetAllWeaponTags()
-  local WeaponTags, WeaponTagNames
   local BattleWeaponData = DataMgr.BattleWeapon[WeaponId]
-  local WeaponTagData = BattleWeaponData.WeaponTag
-  
-  local function HasTag(Tag)
-    for _, value in pairs(WeaponTagData) do
-      if Tag == value then
-        return true
+  if not BattleWeaponData or not BattleWeaponData.WeaponTag then
+    return
+  end
+  for _, v in pairs(BattleWeaponData.WeaponTag) do
+    local WeaponTagData = DataMgr.WeaponTag[v]
+    if WeaponTagData and WeaponTagData.WeaponTagfilter and (WeaponTagData.WeaponTagfilter == "RangedType" or WeaponTagData.WeaponTagfilter == "MeleeType") then
+      if "Bow" == v then
+        local BowTag
+        for _, tag in pairs(BattleWeaponData.WeaponTag) do
+          if "Bow01" == tag then
+            BowTag = tag
+          end
+        end
+        WeaponTagData = DataMgr.WeaponTag[BowTag or "Bow02"] or {}
       end
-    end
-    return false
-  end
-  
-  local WeaponTag
-  if HasTag("Melee") then
-    WeaponTags, WeaponTagNames = MeleeTags, MeleeTagNames
-  else
-    WeaponTags, WeaponTagNames = RangedTags, RangedTagNames
-  end
-  for _, value in ipairs(WeaponTags) do
-    if HasTag(value) then
-      WeaponTag = value
-      break
-    end
-  end
-  if WeaponTag then
-    for index, value in ipairs(WeaponTags) do
-      if WeaponTag == value then
-        AttrTable[WeaponTypeKey] = GText(WeaponTagNames[index])
+      if WeaponTagData.WeaponTagTextmap then
+        AttrTable[WeaponTypeKey] = GText(WeaponTagData.WeaponTagTextmap)
         break
       end
     end
   end
 end
-
 function M:InitAllCharRecordReddot()
   local EMCache = require("EMCache.EMCache")
   if not EMCache then
@@ -2236,7 +2216,7 @@ function M:InitAllCharRecordReddot()
             nil
           }
         else
-          ScreenPrint("CharacterDataTarget\232\161\168\233\135\140\229\161\171\231\154\132CharDataType\230\178\161\230\156\137\229\156\168CharRecordType\232\161\168\233\135\140\230\137\190\229\136\176\239\188\140\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165")
+          ScreenPrint("CharacterDataTarget表里填的CharDataType没有在CharRecordType表里找到，请策划检查")
         end
         if not IsInit and M.CheckCharRecoedUnlock(self, CharId, RecordId, CharModel) then
           local RecordNodeCache = ReddotManager.GetLeafNodeCacheDetail(RecordNodeName)
@@ -2256,7 +2236,6 @@ function M:InitAllCharRecordReddot()
     EMCache:Set("IsInitCharRecord", true, true)
   end
 end
-
 function M:CreatCharRecordReddotNode(CharId)
   if DataMgr.CharacterDataTarget[CharId] == nil then
     return
@@ -2293,7 +2272,7 @@ function M:CreatCharRecordReddotNode(CharId)
         nil
       }
     else
-      ScreenPrint("CharacterDataTarget\232\161\168\233\135\140\229\161\171\231\154\132CharDataType\230\178\161\230\156\137\229\156\168CharRecordType\232\161\168\233\135\140\230\137\190\229\136\176\239\188\140\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165")
+      ScreenPrint("CharacterDataTarget表里填的CharDataType没有在CharRecordType表里找到，请策划检查")
     end
   end
   for RecordType, DataNodes in pairs(LeafNodes) do
@@ -2302,7 +2281,6 @@ function M:CreatCharRecordReddotNode(CharId)
   end
   ReddotManager.AddNodeEx(CharNodeName, SubTabNodes)
 end
-
 function M:InitCharRecoedReddotNode(CharId)
   local HeadNodeName = table.concat({
     M.FilesTabType[2],
@@ -2314,7 +2292,7 @@ function M:InitCharRecoedReddotNode(CharId)
   end
   DebugPrint("yklua ..InitCharRecoedReddotNode" .. CharId)
   if not HeadNode then
-    DebugPrint("yklua..InitCharRecoedReddotNode" .. CharId .. "\229\136\155\229\187\186\230\161\163\230\161\136\232\138\130\231\130\185")
+    DebugPrint("yklua..InitCharRecoedReddotNode" .. CharId .. "创建档案节点")
     self:CreatCharRecordReddotNode(CharId)
   end
   local bHavaTryCreateNode = false
@@ -2327,13 +2305,13 @@ function M:InitCharRecoedReddotNode(CharId)
     }, "_")
     local LeafNode = ReddotManager.GetTreeNode(LeafNodeName)
     if not LeafNode and not bHavaTryCreateNode then
-      DebugPrint("yklua..InitCharRecoedReddotNode" .. CharId .. "\229\136\155\229\187\186\230\161\163\230\161\136\232\138\130\231\130\185" .. LeafNodeName)
+      DebugPrint("yklua..InitCharRecoedReddotNode" .. CharId .. "创建档案节点" .. LeafNodeName)
       self:CreatCharRecordReddotNode(CharId)
       bHavaTryCreateNode = true
     end
     LeafNode = ReddotManager.GetTreeNode(LeafNodeName)
     if not LeafNode then
-      ScreenPrint("\229\136\155\229\187\186\231\186\162\231\130\185\228\191\161\230\129\175\229\164\177\232\180\165" .. CharId)
+      ScreenPrint("创建红点信息失败" .. CharId)
     else
       local LeftNodeCache = ReddotManager.GetLeafNodeCacheDetail(LeafNodeName)
       if LeftNodeCache and (LeftNodeCache.IsRead == true or LeftNodeCache.IsRead == false) then
@@ -2351,7 +2329,6 @@ function M:InitCharRecoedReddotNode(CharId)
     end
   end
 end
-
 function M:CheckCharRecoedUnlock(CharId, DataId, CharModel)
   local UnlockLevel = DataMgr.CharacterDataTarget[CharId][DataId].CharDataUnlockLevel
   local ConditionId = DataMgr.CharacterDataTarget[CharId][DataId].CharDataUnlockCondition
@@ -2384,5 +2361,33 @@ function M:CheckCharRecoedUnlock(CharId, DataId, CharModel)
   end
   return false
 end
-
+function M:OnUnlockCharUsePiece(Ret, CharId, EscapeArmoryCharID, BeforeCheckErroCode, OnCheckErroCodeSuccess, OnPageClosed)
+  if BeforeCheckErroCode then
+    BeforeCheckErroCode(Ret)
+  end
+  if not ErrorCode:Check(Ret) then
+    return
+  end
+  if OnCheckErroCodeSuccess then
+    OnCheckErroCodeSuccess()
+  end
+  local ArmoryMain = UIManager(self):GetUIObj("ArmoryMain")
+  local CallbackFunc
+  function CallbackFunc()
+    if OnPageClosed then
+      OnPageClosed()
+    end
+    if EscapeArmoryCharID and ArmoryMain and CharId == EscapeArmoryCharID then
+      ArmoryMain:OnBackBtnClicked()
+    end
+  end
+  if ArmoryMain and ArmoryMain.ActorController then
+    ArmoryMain.ActorController:StopPlayerSound()
+  end
+  UIUtils.ShowGetCharWeaponPage({
+    Chars = {
+      [CharId] = 1
+    }
+  }, CallbackFunc, self, nil)
+end
 return M

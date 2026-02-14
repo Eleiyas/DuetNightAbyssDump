@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Text_Title:SetText(GText("ChapterIntro_Icelake"))
@@ -10,7 +9,6 @@ function M:OnLoaded(...)
   self.Text_World:SetText(GText("ChapterIntroWd_Icelake"))
   self:PlayAnimation(self.In)
 end
-
 function M:SetFontSize()
   local Language = CommonConst.SystemLanguage
   if Language == CommonConst.SystemLanguages.CN or Language == CommonConst.SystemLanguages.TC then
@@ -24,5 +22,4 @@ function M:SetFontSize()
     self.Text_Title.Font.Size = self.TextSize_KR
   end
 end
-
 return M

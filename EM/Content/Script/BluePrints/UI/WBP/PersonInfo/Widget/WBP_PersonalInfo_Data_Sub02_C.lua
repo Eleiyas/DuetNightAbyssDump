@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(TabInfo)
   self.Text_DataDetailTitle:SetText(GText(TabInfo.Name))
   local Contents = TabInfo.Contents
@@ -14,5 +13,4 @@ function M:OnListItemObjectSet(TabInfo)
     self.List_Data:AddItem(Obj)
   end
 end
-
 return M

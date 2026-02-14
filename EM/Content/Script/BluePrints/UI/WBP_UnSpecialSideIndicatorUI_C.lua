@@ -3,7 +3,6 @@ require("DataMgr")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
 local WBP_UnSpecialSideIndicatorUI_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_UnSpecialSideIndicatorUI_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.TargetPointPos = nil
@@ -20,7 +19,6 @@ function WBP_UnSpecialSideIndicatorUI_C:Initialize(Initializer)
   self.IsInTaskRegion = false
   self.NpcIndicatorPreVisibility = 0
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:OnLoadedInit()
@@ -28,7 +26,6 @@ function WBP_UnSpecialSideIndicatorUI_C:OnLoaded(...)
   self.OwnerDisplayName, self.OwenrQuestNpcId = ...
   self:SetNpcSideQuestGuideInfo(self.OwnerDisplayName)
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:OnLoadedInit()
   local DesignedScreenSize = UIManager(self):GetDesignedScreenSize()
   self.CenterPos = FVector2D(DesignedScreenSize.X / 2, DesignedScreenSize.Y / 2)
@@ -48,25 +45,21 @@ function WBP_UnSpecialSideIndicatorUI_C:OnLoadedInit()
   self.PlayerRegionId = 0
   self.SmartGuidePointInfo = nil
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:Construct()
   self.Super.Construct(self)
   EventManager:AddEvent(EventID.OnChangeTaskSubRegion, self, self.SetSmarPointInfoByQuestRegionId)
   self.IsDestroied = false
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:Destruct()
   self.Super.Destruct(self)
   EventManager:RemoveEvent(EventID.OnChangeTaskSubRegion, self)
   self.IsDestroied = true
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:CloseIndicator()
   EventManager:FireEvent(EventID.UpdateMiniMap, self.OwenrQuestNpcId, "SpecialSide", "Delete")
   self.Super.Close(self)
   MissionIndicatorManager:TryToArrangeIndicatorBySmartPointInfo()
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:SetNpcSideQuestGuideInfo(InOwnerDisplayName)
   self.STLIndicatorType = "UnSpecialSide"
   self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", LoadObject("/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_SpSideMission_Un.T_Gp_SpSideMission_Un"))
@@ -82,7 +75,6 @@ function WBP_UnSpecialSideIndicatorUI_C:SetNpcSideQuestGuideInfo(InOwnerDisplayN
     self.TargetPointPos = UE4.FVector(TargetLoc.X, TargetLoc.Y, TargetLoc.Z + 2 * self.HelperCoefficient)
   end
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:SetSmarPointInfoByQuestRegionId()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -109,7 +101,6 @@ function WBP_UnSpecialSideIndicatorUI_C:SetSmarPointInfoByQuestRegionId()
   end
   MissionIndicatorManager:TryToArrangeIndicatorBySmartPointInfo()
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:TryToFindGuidePointTarget(DisplayName)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local TargetStaticCreator
@@ -130,7 +121,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryToFindGuidePointTarget(DisplayName)
   end
   return nil
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionId, TargetSubRegionId)
   local function ContainsElement(table, element)
     for _, value in pairs(table) do
@@ -140,7 +130,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
     end
     return nil
   end
-  
   local function CreateQueue()
     local queue = {}
     queue.first = 0
@@ -149,14 +138,12 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
     queue.Path = {}
     return queue
   end
-  
   local function Enqueue(queue, value)
     local last = queue.last + 1
     queue.last = last
     queue.QueueValue[last] = value
     table.insert(queue.Path, value[1])
   end
-  
   local function ContainsPath(table, element)
     for _, value in pairs(table) do
       if value == element then
@@ -165,7 +152,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
     end
     return false
   end
-  
   local function Dequeue(queue)
     local first = queue.first
     if first > queue.last then
@@ -176,11 +162,9 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
     queue.first = first + 1
     return value
   end
-  
   local function IsEmptyQueue(queue)
     return queue.first > queue.last
   end
-  
   if not DataMgr.RegionGraph[TargetSubRegionId] or not DataMgr.SubRegion[TargetSubRegionId].RegionId then
     return nil
   end
@@ -189,7 +173,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
     return nil
   end
   local RegionTargetDatas = DataMgr.RegionGraph[CurSubRegionId].SubRegionTarget.RegionTarget
-  
   local function TryFindTargetPointByBFS(RootTargetData)
     local RootSubRegionId = RootTargetData[1]
     if not (DataMgr.RegionGraph[RootSubRegionId] and DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget) or not DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget.RegionTarget then
@@ -235,7 +218,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
       return -1
     end
   end
-  
   local function TryFindNearestEnterByRegionId()
     local NearestData
     local CurrentParentRegionId = DataMgr.SubRegion[CurSubRegionId].RegionId
@@ -266,7 +248,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
     end
     return NearestData
   end
-  
   local RetData = TryFindNearestEnterByRegionId()
   local RetWeight = math.maxinteger
   if nil ~= RetData then
@@ -351,7 +332,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurS
   end
   return RetData
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:TickChildBP()
   if not self.IsInTaskRegion then
     local TargetPointInfo = self.SmartGuidePointInfo
@@ -364,7 +344,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TickChildBP()
   end
   self:UpdateTaskIndicator_CPP()
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:CheckConditionIsUnlock(RegionData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -375,7 +354,6 @@ function WBP_UnSpecialSideIndicatorUI_C:CheckConditionIsUnlock(RegionData)
   end
   return ConditionUtils.CheckCondition(Avatar, RegionData)
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:TryReplaceNearlySmartPoint(SmarPointInfo)
   if nil == SmarPointInfo then
     return false
@@ -389,7 +367,6 @@ function WBP_UnSpecialSideIndicatorUI_C:TryReplaceNearlySmartPoint(SmarPointInfo
     return true
   end
 end
-
 function WBP_UnSpecialSideIndicatorUI_C:CalculateTargetPointPos()
   if self.TargetPointType == "P" then
     self:SetTargetPositionByNewTargetPoint()
@@ -397,5 +374,4 @@ function WBP_UnSpecialSideIndicatorUI_C:CalculateTargetPointPos()
     self:SetTargetPositionByStaticCreator()
   end
 end
-
 return WBP_UnSpecialSideIndicatorUI_C

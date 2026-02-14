@@ -5,6 +5,7 @@ local Stack = StrLib.Stack
 local EMCache = require("EMCache.EMCache")
 local GMVariable = require("BluePrints.UI.GMInterface.GMVariable")
 local CommonUtils = require("Utils.CommonUtils")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local BP_UIManagerComponent_C = Class({
   "BluePrints.Common.TimerMgr"
 })
@@ -19,7 +20,6 @@ local ENormalModeSubState = {
   ConditionMode = "Condition",
   BlockedMode = "Blocked"
 }
-
 function BP_UIManagerComponent_C:Initialize(Initializer)
   self.UniqueCount = {}
   self.AllNotRenderWorldUI = {}
@@ -38,6 +38,7 @@ function BP_UIManagerComponent_C:Initialize(Initializer)
   self.IsMenuAnchorOpen = false
   self.GameInputModeSubsystem = nil
   self.FlowList = {}
+  self.BlockingReasons = {}
   self.AsyncLoadHandlers = {}
   self.AsyncGetUIContexts = {}
   self.AsyncUnloadFlags = {}
@@ -45,7 +46,6 @@ function BP_UIManagerComponent_C:Initialize(Initializer)
   self:InitAllContainerData()
   self:InitUIConfigBySetting()
 end
-
 function BP_UIManagerComponent_C:InitUIConfigBySetting()
   if EMCache then
     local GMInfo = EMCache:Get("GMInfo")
@@ -56,7 +56,6 @@ function BP_UIManagerComponent_C:InitUIConfigBySetting()
     end
   end
 end
-
 function BP_UIManagerComponent_C:InitAllContainerData()
   self.UILoadingDeque = Deque.New()
   self.UIJumpToDeque = Deque.New()
@@ -69,7 +68,6 @@ function BP_UIManagerComponent_C:InitAllContainerData()
   self.UIManagerModeTagsStack = Stack.New()
   self:PushCurrentModeStateTag(EUIManageLoadStateTags.NormalMode)
 end
-
 function BP_UIManagerComponent_C:InitUIStates()
   self:_InitGameDPI()
   local SceneManager = GWorld.GameInstance:GetSceneManager()
@@ -82,7 +80,10 @@ function BP_UIManagerComponent_C:InitUIStates()
     end
   elseif SceneManager then
     local UInputSettings = UE4.UInputSettings.GetInputSettings()
-    if UInputSettings.GetInputSettings().bUseMouseForTouch then
+    local bPCCloudGame = UE4.UUCloudGameInstanceSubsystem.IsPCCloudGame()
+    if bPCCloudGame then
+      SceneManager:UpdateUIDPIStandValue(UIConst.DPIBaseOnSize.PC.X, UIConst.DPIBaseOnSize.PC.Y)
+    elseif UInputSettings.GetInputSettings().bUseMouseForTouch then
       SceneManager:UpdateUIDPIStandValue(UIConst.DPIBaseOnSize.Mobile.X, UIConst.DPIBaseOnSize.Mobile.Y)
     else
       SceneManager:UpdateUIDPIStandValue(UIConst.DPIBaseOnSize.PC.X, UIConst.DPIBaseOnSize.PC.Y)
@@ -90,9 +91,7 @@ function BP_UIManagerComponent_C:InitUIStates()
   end
   self.Overridden.InitUIStates(self)
   UE4.UMainBar.SetIsForbidenShowBloodUI(false)
-  self:InitGlobalVersionDisplay()
 end
-
 function BP_UIManagerComponent_C:PreloadUI()
   local bMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   for UIName, UIData in pairs(DataMgr.SystemUI) do
@@ -122,7 +121,6 @@ function BP_UIManagerComponent_C:PreloadUI()
     end
   end
 end
-
 function BP_UIManagerComponent_C:_InitGameDPI()
   local HUDSizeConf = DataMgr.Option.HUDSize
   if not HUDSizeConf then
@@ -140,7 +138,6 @@ function BP_UIManagerComponent_C:_InitGameDPI()
   end
   UE.UUIFunctionLibrary.SetGameDPI(HUDSizeVal)
 end
-
 function BP_UIManagerComponent_C:AddWidgetComponentToList(ActorEid, WidgetName, WidgetComp)
   if not self.WidgetComponentList[ActorEid] then
     self.WidgetComponentList[ActorEid] = {}
@@ -157,8 +154,19 @@ function BP_UIManagerComponent_C:AddWidgetComponentToList(ActorEid, WidgetName, 
       end
     end
   end
+  if self.HideWidgetComponentTags then
+    local TempWidgetComponent = {
+      [ActorEid] = {
+        [WidgetName] = WidgetComp
+      }
+    }
+    for Tag, Comps in pairs(self.HideWidgetComponentTags) do
+      for CompName, Value in pairs(Comps) do
+        self:PrivateHideAllComponentUI(Value, Tag, CompName, TempWidgetComponent)
+      end
+    end
+  end
 end
-
 function BP_UIManagerComponent_C:RemoveWidgetComponentToList(ActorEid, WidgetName)
   if self.WidgetComponentList[ActorEid] ~= nil then
     self.WidgetComponentList[ActorEid][WidgetName] = nil
@@ -167,7 +175,6 @@ function BP_UIManagerComponent_C:RemoveWidgetComponentToList(ActorEid, WidgetNam
     end
   end
 end
-
 function BP_UIManagerComponent_C:CreateAndAttachToParentWidget(BPClassPath, UIName, ParentWidget, IsWrapChildWithPanel)
   local UIConfig = UIConst.AllUIConfig[UIName] or {}
   local ExistUIObj = self:GetUI(UIName)
@@ -192,10 +199,9 @@ function BP_UIManagerComponent_C:CreateAndAttachToParentWidget(BPClassPath, UINa
   local UIObj = self.Overridden.CreateAndAttachToParentWidget(self, UMG_Class, UIName, ParentWidget, IsWrapChildWithPanel)
   return UIObj
 end
-
 function BP_UIManagerComponent_C:_CreateWidgetNew(UIName)
   local WidgetUIConfig = DataMgr.WidgetUI[UIName]
-  assert(WidgetUIConfig, "UI:" .. UIName .. "\228\184\141\229\156\168WidgetUI\232\161\168\228\184\173")
+  assert(WidgetUIConfig, "UI:" .. UIName .. "不在WidgetUI表中")
   local PlatformName, BPClassPath = (CommonUtils.GetDeviceTypeByPlatformName(self))
   if PlatformName == CommonConst.CLIENT_DEVICE_TYPE.PC then
     BPClassPath = WidgetUIConfig.BPPath
@@ -209,7 +215,6 @@ function BP_UIManagerComponent_C:_CreateWidgetNew(UIName)
   self:UpdateArgs(Widget, WidgetUIConfig.Params)
   return Widget
 end
-
 function BP_UIManagerComponent_C:CreateWidgetAsync(UIName, CoroutineOrCBFunc, BPPath, ...)
   if not CoroutineOrCBFunc then
     if UIName then
@@ -230,7 +235,7 @@ function BP_UIManagerComponent_C:CreateWidgetAsync(UIName, CoroutineOrCBFunc, BP
     }
   else
     WidgetUIConfig = DataMgr.WidgetUI[UIName]
-    assert(WidgetUIConfig, "UI:" .. UIName .. "\228\184\141\229\156\168WidgetUI\232\161\168\228\184\173")
+    assert(WidgetUIConfig, "UI:" .. UIName .. "不在WidgetUI表中")
     if PlatformName == CommonConst.CLIENT_DEVICE_TYPE.PC then
       BPClassPath = WidgetUIConfig.BPPath
     elseif PlatformName == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
@@ -239,25 +244,25 @@ function BP_UIManagerComponent_C:CreateWidgetAsync(UIName, CoroutineOrCBFunc, BP
       BPClassPath = WidgetUIConfig.BPPath
     end
   end
-  
   local function AfterLoadUMGClassDone(UMG_Class, CbFunc)
     local UMG_Widget_Ins = self:_CreateWidgetByUMGClass(UMG_Class, WidgetUIConfig.NeedShowInWindow, WidgetUIConfig.ZOrder, nil, WidgetUIConfig.IsAddToCachePool)
     if nil == UMG_Widget_Ins then
       DebugPrint(ErrorTag, "BP_UIManagerComponent_C: CreateWidget Error, BPClassPath is ", BPClassPath)
+      local ErrorLog = string.format("::Error::  Widget创建失败，界面名称：%s", UIName or "None")
+      self:ShowUIError(UIConst.ErrorCategory.BasicModule, ErrorLog)
     end
     if CbFunc then
       CbFunc(UMG_Widget_Ins)
     end
     return UMG_Widget_Ins
   end
-  
   local UMG_Class
-  DebugPrint("CreateWidget \229\188\128\229\167\139\229\188\130\230\173\165\229\138\160\232\189\189UMGCLass", UIName)
+  DebugPrint("CreateWidget 开始异步加载UMGCLass", UIName)
   local Handler
   Handler = UE.UResourceLibrary.LoadClassAsync(self, BPClassPath, {
     self,
     function(self, UIClass)
-      DebugPrint("CreateWidget \229\188\130\230\173\165\229\138\160\232\189\189UMGCLass\229\174\140\230\136\144", UIName)
+      DebugPrint("CreateWidget 异步加载UMGCLass完成", UIName)
       UMG_Class = UIClass
       if type(CoroutineOrCBFunc) == "function" then
         if Handler then
@@ -272,7 +277,7 @@ function BP_UIManagerComponent_C:CreateWidgetAsync(UIName, CoroutineOrCBFunc, BP
     if not UResourceLibrary.IsValidResource(self, Handler) then
       return
     end
-    DebugPrint("CreateWidget \231\173\137\229\190\133\229\188\130\230\173\165\229\138\160\232\189\189UMGCLass...", UIName)
+    DebugPrint("CreateWidget 等待异步加载UMGCLass...", UIName)
     if type(CoroutineOrCBFunc) == "thread" then
       UMG_Class = coroutine.yield()
     elseif type(CoroutineOrCBFunc) == "function" then
@@ -281,7 +286,6 @@ function BP_UIManagerComponent_C:CreateWidgetAsync(UIName, CoroutineOrCBFunc, BP
   end
   return AfterLoadUMGClassDone(UMG_Class)
 end
-
 function BP_UIManagerComponent_C:CreateWidget(BPClassPath, NeedShowInWindow, ZOrder, UIName, bIsAddToCachePool)
   local UMG_Class
   if type(BPClassPath) == "string" then
@@ -297,7 +301,6 @@ function BP_UIManagerComponent_C:CreateWidget(BPClassPath, NeedShowInWindow, ZOr
   end
   return Widget
 end
-
 function BP_UIManagerComponent_C:_CreateWidgetByUMGClass(UMG_Class, NeedShowInWindow, ZOrder, UIName, bIsAddToCachePool)
   if nil == UMG_Class then
     return
@@ -317,7 +320,6 @@ function BP_UIManagerComponent_C:_CreateWidgetByUMGClass(UMG_Class, NeedShowInWi
   end
   return UMG_Widget_Ins
 end
-
 function BP_UIManagerComponent_C:AddUIToStateTagsCluster(UIStateTag, UIName, IsAdd)
   if IsAdd then
     if self.AllUIStateTagsCluster[UIStateTag] == nil then
@@ -328,7 +330,6 @@ function BP_UIManagerComponent_C:AddUIToStateTagsCluster(UIStateTag, UIName, IsA
     self.AllUIStateTagsCluster[UIStateTag][UIName] = nil
   end
 end
-
 function BP_UIManagerComponent_C:GenerateSpecialUIListBeforeUICreate(UIName, KeyInList)
   local ResultStateTag, ResultList = ENormalModeSubState.ConditionMode, {}
   if KeyInList == UIConst.WidgetAllStateTag.Queue then
@@ -371,7 +372,6 @@ function BP_UIManagerComponent_C:GenerateSpecialUIListBeforeUICreate(UIName, Key
   end
   return ResultStateTag, ResultList
 end
-
 function BP_UIManagerComponent_C:CheckUIMgrIsInSpecialState()
   local CurrentLevelName = UGameplayStatics.GetCurrentLevelName(self)
   if "Login" == CurrentLevelName or "Game_Start" == CurrentLevelName then
@@ -383,7 +383,6 @@ function BP_UIManagerComponent_C:CheckUIMgrIsInSpecialState()
   local CurrentUIMgrStateTag = self:GetCurrentModeStateTag()
   return CurrentUIMgrStateTag
 end
-
 function BP_UIManagerComponent_C:GetSubTagInNormalState(UIName)
   local SubTag, SpecialUINameList = nil, {}
   if self:CheckUIMgrIsInSpecialState() == EUIManageLoadStateTags.GMMode then
@@ -416,7 +415,6 @@ function BP_UIManagerComponent_C:GetSubTagInNormalState(UIName)
   end
   return SubTag, SpecialUINameList
 end
-
 function BP_UIManagerComponent_C:AddUIManagerCurrentModeTag(ModeStateTag)
   self:PushCurrentModeStateTag(ModeStateTag)
   if ModeStateTag == EUIManageLoadStateTags.SkillFeatureMode or ModeStateTag == EUIManageLoadStateTags.StoryMode then
@@ -429,7 +427,6 @@ function BP_UIManagerComponent_C:AddUIManagerCurrentModeTag(ModeStateTag)
     end
   end
 end
-
 function BP_UIManagerComponent_C:RemoveUIManagerCurrentModeTag(ModeStateTag)
   if nil == ModeStateTag then
     ModeStateTag = self:GetCurrentModeStateTag()
@@ -445,15 +442,12 @@ function BP_UIManagerComponent_C:RemoveUIManagerCurrentModeTag(ModeStateTag)
     end
   end
 end
-
 function BP_UIManagerComponent_C:GetCurrentModeStateTag()
   return self.UIManagerModeTagsStack:Peek()
 end
-
 function BP_UIManagerComponent_C:PushCurrentModeStateTag(ModeStateTag)
   self.UIManagerModeTagsStack:Push(ModeStateTag)
 end
-
 function BP_UIManagerComponent_C:PopCurrentModeStateTag(ModeStateTag)
   local Result
   if nil ~= ModeStateTag then
@@ -463,20 +457,43 @@ function BP_UIManagerComponent_C:PopCurrentModeStateTag(ModeStateTag)
   end
   return Result
 end
-
+function BP_UIManagerComponent_C:GetTopUIWidgetInAnimEndTime()
+  local TopUIState = UIManager(self):GetCurrentState()
+  if TopUIState and TopUIState.In then
+    if type(TopUIState.In) == "userdata" and type(TopUIState.In.GetEndTime) == "function" then
+      return TopUIState.In:GetEndTime() or UIConst.AnimWithJumpConfig.Normal.InAnimWithJumpTime
+    elseif "userdata" == type(TopUIState.Auto_In) and "function" == type(TopUIState.Auto_In.GetEndTime) then
+      return TopUIState.Auto_In:GetEndTime() or UIConst.AnimWithJumpConfig.Normal.InAnimWithJumpTime
+    end
+  end
+  return UIConst.AnimWithJumpConfig.Normal.InAnimWithJumpTime
+end
+function BP_UIManagerComponent_C:GetTopUIWidgetOutAnimEndTime()
+  local TopUIState = UIManager(self):GetCurrentState()
+  if TopUIState and TopUIState.Out then
+    if type(TopUIState.Out) == "userdata" and type(TopUIState.Out.GetEndTime) == "function" then
+      return TopUIState.Out:GetEndTime() or UIConst.AnimWithJumpConfig.Normal.OutAnimWithJumpTime
+    elseif "userdata" == type(TopUIState.Auto_Out) and "function" == type(TopUIState.Auto_Out.GetEndTime) then
+      return TopUIState.Auto_Out:GetEndTime() or UIConst.AnimWithJumpConfig.Normal.OutAnimWithJumpTime
+    end
+  end
+  return UIConst.AnimWithJumpConfig.Normal.OutAnimWithJumpTime
+end
 function BP_UIManagerComponent_C:PlaceJumpUIToTop(JumpUIObj, JumpUIName)
   self:PlaceItemToQueueBack(JumpUIObj)
   self:PlaceUIStateToTop(JumpUIName)
 end
-
 function BP_UIManagerComponent_C:PrintJumpPageDequeInfo()
   local DequeSize = self.UIJumpToDeque:Size()
   for i = 1, DequeSize do
     local CurrentFirstUIObj = self.UIJumpToDeque:Get(i)
-    DebugPrint("BP_UIManagerComponent_C: PrintJumpPageDequeInfo, The Info is: ", CurrentFirstUIObj:GetName(), CurrentFirstUIObj:GetCameraViewCurrentTarget():GetName())
+    if type(CurrentFirstUIObj.GetCameraViewCurrentTarget) == "function" then
+      DebugPrint("BP_UIManagerComponent_C: PrintJumpPageDequeInfo, The Info is: ", CurrentFirstUIObj:GetName(), CurrentFirstUIObj:GetCameraViewCurrentTarget():GetName())
+    else
+      DebugPrint("BP_UIManagerComponent_C: PrintJumpPageDequeInfo, The Info is: ", CurrentFirstUIObj:GetName(), "Has No CameraViewTarget")
+    end
   end
 end
-
 function BP_UIManagerComponent_C:AddToJumpPageDeque(UIObj)
   if not UIObj then
     return
@@ -485,6 +502,7 @@ function BP_UIManagerComponent_C:AddToJumpPageDeque(UIObj)
   if DequeSize >= 3 then
     local FirstUIObj = self.UIJumpToDeque:PopFront()
     if IsValid(FirstUIObj) then
+      FirstUIObj.IsNeedSearchInStack = true
       if type(FirstUIObj.Close) == "function" then
         FirstUIObj:Close()
       else
@@ -496,7 +514,6 @@ function BP_UIManagerComponent_C:AddToJumpPageDeque(UIObj)
   self.UIJumpToDeque:PushBack(UIObj)
   EventManager:FireEvent(EventID.OnJumpToPage, self:GetLastJumpPage(), UIObj)
 end
-
 function BP_UIManagerComponent_C:RemoveToJumpPageDeque(UIObj)
   local CurrentLastUIObj = self.UIJumpToDeque:Back()
   if CurrentLastUIObj == UIObj then
@@ -504,11 +521,9 @@ function BP_UIManagerComponent_C:RemoveToJumpPageDeque(UIObj)
     EventManager:FireEvent(EventID.OnJumpBackToPage, UIObj, self:GetLastJumpPage())
   end
 end
-
 function BP_UIManagerComponent_C:GetLastJumpPage()
   return self.UIJumpToDeque:Back()
 end
-
 function BP_UIManagerComponent_C:PlaceItemToQueueBack(Element)
   if nil == Element then
     return
@@ -525,7 +540,6 @@ function BP_UIManagerComponent_C:PlaceItemToQueueBack(Element)
     self.UIJumpToDeque:Set(DequeSize, Element)
   end
 end
-
 function BP_UIManagerComponent_C:CheckIsInJumpPageDeque(UIObj)
   local DequeSize, SearchIndex = (self.UIJumpToDeque:Size())
   for i = 1, DequeSize do
@@ -537,7 +551,6 @@ function BP_UIManagerComponent_C:CheckIsInJumpPageDeque(UIObj)
   end
   return SearchIndex
 end
-
 function BP_UIManagerComponent_C:CheckIsInLoadingDeque(CheckList, UIName)
   if 1 == #CheckList and CheckList[1] == UIName then
     return true
@@ -552,16 +565,14 @@ function BP_UIManagerComponent_C:CheckIsInLoadingDeque(CheckList, UIName)
   end
   return IsInDeque
 end
-
 function BP_UIManagerComponent_C:LoadUINew(UIName, ...)
   local SystemUIConfig = DataMgr.SystemUI[UIName]
-  assert(SystemUIConfig, "UI:" .. UIName .. "\228\184\141\229\156\168SystemUI\232\161\168\228\184\173")
+  assert(SystemUIConfig, "UI:" .. UIName .. "不在SystemUI表中")
   return self:LoadUI(UIConst.LoadInConfig, UIName, SystemUIConfig.ZOrder, ...)
 end
-
 function BP_UIManagerComponent_C:LoadUIAsync(UIName, CoroutineOrCBFunc, ...)
   local SystemUIConfig = DataMgr.SystemUI[UIName]
-  assert(SystemUIConfig, "UI:" .. UIName .. "\228\184\141\229\156\168SystemUI\232\161\168\228\184\173")
+  assert(SystemUIConfig, "UI:" .. UIName .. "不在SystemUI表中")
   local Param = {
     ...
   }
@@ -569,7 +580,6 @@ function BP_UIManagerComponent_C:LoadUIAsync(UIName, CoroutineOrCBFunc, ...)
   table.insert(Param, "Async")
   return self:LoadUI(UIConst.LoadInConfig, UIName, SystemUIConfig.ZOrder, table.unpack(Param))
 end
-
 function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
   if IsDedicatedServer(self) then
     return
@@ -644,12 +654,13 @@ function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
   end
   if nil == BPClassPath then
     DebugPrint("The UI Whitch Named " .. UIName .. " BPClass is nil !!!!!!!")
+    local ErrorLog = string.format("::Error::  系统界面创建失败，BPClassPath找不到，系统名称：%s", UIName)
+    self:ShowUIError(UIConst.ErrorCategory.BasicModule, ErrorLog)
     return
   end
   if nil == ZOrder then
     ZOrder = UIConfig.zorder or UIConst.ZORDER_FOR_ZERO
   end
-  
   local function AfterLoadUMGClassDone(UMG_Class, CbFunc)
     local UIObj
     if not self.AsyncUnloadFlags[UIName] and UMG_Class then
@@ -671,13 +682,15 @@ function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
     end
     if not UMG_Class then
       DebugPrint(ErrorTag, "BPClassPath is not valid")
+      local ErrorLog = string.format("::Error::  系统界面异步创建传进来的Class对象是个空，系统名称：%s", UIName)
+      self:ShowUIError(UIConst.ErrorCategory.BasicModule, ErrorLog)
     end
     if self.AsyncLoadHandlers[UIName] then
       self.AsyncLoadHandlers[UIName] = nil
     end
     if self.AsyncGetUIContexts[UIName] then
       self:AddTimer(0.01, function()
-        DebugPrint(LXYTag, "GetUIObjAsync\229\188\130\230\173\165\229\155\158\232\176\131\229\164\132\231\144\134")
+        DebugPrint(LXYTag, "GetUIObjAsync异步回调处理")
         for _, CoroutineOrCBFunc in ipairs(self.AsyncGetUIContexts[UIName]) do
           if type(CoroutineOrCBFunc) == "function" then
             CoroutineOrCBFunc(UIObj)
@@ -694,10 +707,9 @@ function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
     end
     return UIObj
   end
-  
   local UMG_Class = self:GetPreloadUIClass(UIName)
   if nil == UMG_Class then
-    if "string" == type(BPClassPath) then
+    if type(BPClassPath) == "string" then
       local CoroutineOrCBFunc
       if "Async" == Params[#Params] then
         table.remove(Params, #Params)
@@ -705,15 +717,15 @@ function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
         table.remove(Params, #Params)
       end
       if CoroutineOrCBFunc then
-        DebugPrint(LXYTag, "\229\188\128\229\167\139\229\188\130\230\173\165\229\138\160\232\189\189UMGClass", UIName, BPClassPath)
+        DebugPrint(LXYTag, "开始异步加载UMGClass", UIName, BPClassPath)
         local Handler = UE.UResourceLibrary.LoadClassAsync(self, BPClassPath, {
           self,
           function(self, UIClass)
             if not IsValid(UIClass) then
-              DebugPrint(LXYTag, "\229\155\158\232\176\131\229\134\133\239\188\140\229\188\130\230\173\165\229\138\160\232\189\189UMGCLass\229\164\177\232\180\165", UIName, BPClassPath)
+              DebugPrint(LXYTag, "回调内，异步加载UMGCLass失败", UIName, BPClassPath)
               return
             end
-            DebugPrint(LXYTag, "\229\188\130\230\173\165\229\138\160\232\189\189UMGCLass\229\174\140\230\136\144", UIName, BPClassPath)
+            DebugPrint(LXYTag, "异步加载UMGCLass完成", UIName, BPClassPath)
             UMG_Class = UIClass
             if type(CoroutineOrCBFunc) == "function" or type(CoroutineOrCBFunc) == "nil" then
               if self.AsyncLoadHandlers[UIName] then
@@ -726,10 +738,10 @@ function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
         })
         if not UMG_Class then
           if UResourceLibrary.IsValidResource(self, Handler) then
-            DebugPrint(LXYTag, "\231\173\137\229\190\133\229\188\130\230\173\165\229\138\160\232\189\189UMGCLass...", UIName)
+            DebugPrint(LXYTag, "等待异步加载UMGCLass...", UIName)
             self.AsyncLoadHandlers[UIName] = Handler
           else
-            DebugPrint(LXYTag, "\229\188\130\230\173\165\229\138\160\232\189\189UMGCLass\229\164\177\232\180\165\239\188\140\228\188\176\232\174\161\232\183\175\229\190\132\230\156\137\233\151\174\233\162\152", UIName, BPClassPath)
+            DebugPrint(LXYTag, "异步加载UMGCLass失败，估计路径有问题", UIName, BPClassPath)
             return
           end
           if type(CoroutineOrCBFunc) == "thread" then
@@ -749,7 +761,6 @@ function BP_UIManagerComponent_C:LoadUI(BPClassPath, UIName, ZOrder, ...)
   end
   return AfterLoadUMGClassDone(UMG_Class)
 end
-
 function BP_UIManagerComponent_C:RevertRealStopGame(IsStopGame)
   if nil == IsStopGame then
     return false
@@ -763,7 +774,6 @@ function BP_UIManagerComponent_C:RevertRealStopGame(IsStopGame)
   end
   return nil ~= IsStopGame and false ~= IsStopGame and IsStopGame > 0
 end
-
 function BP_UIManagerComponent_C:SetUIConfig(BPClassPath, UIName, SystemUI)
   local UIConfig = UIConst.AllUIConfig[UIName] or {}
   BPClassPath = BPClassPath or UIConfig.resource
@@ -783,6 +793,7 @@ function BP_UIManagerComponent_C:SetUIConfig(BPClassPath, UIName, SystemUI)
     UIConfig.System = SystemUI.System
     UIConfig.PauseAfterLoadingState = SystemUI.PauseAfterLoadingState
     UIConfig.IsHideInImmersionMode = SystemUI.IsHideInImmersionMode
+    UIConfig.IsGlobalUI = SystemUI.IsGlobalUI
     if SystemUI.ConfigName then
       local SystemUIConfig = DataMgr.SystemUIConfig[SystemUI.ConfigName]
       if SystemUIConfig then
@@ -810,7 +821,6 @@ function BP_UIManagerComponent_C:SetUIConfig(BPClassPath, UIName, SystemUI)
   self:RecordShowInStoryConfig(UIConfig, UIName)
   return UIConfig, BPClassPath
 end
-
 function BP_UIManagerComponent_C:UpdateUIObjByConfig(UIObj, UIConfig, UIName, FinalName, Params, NowUIMgrStateTag, NormalStateSubState, SpecialUINameList)
   if UIConfig.popup == true then
     UIObj.IsUIPopUp = true
@@ -861,7 +871,6 @@ function BP_UIManagerComponent_C:UpdateUIObjByConfig(UIObj, UIConfig, UIName, Fi
     self:TryPauseAfterLoadingMgr(UIConfig.PauseAfterLoadingState)
   end
 end
-
 function BP_UIManagerComponent_C:DealWithOtherWidgetsVisibilityByUIShow(UIName, UIObj, UIConfig, NowUIMgrStateTag, NormalStateSubState, SpecialUINameList)
   local IsHideCurUIObj = false
   if UIConfig.specialvisiblemode ~= "forceshow" then
@@ -897,7 +906,6 @@ function BP_UIManagerComponent_C:DealWithOtherWidgetsVisibilityByUIShow(UIName, 
   end
   return IsHideCurUIObj
 end
-
 function BP_UIManagerComponent_C:HandleUIWidgetsVisibilityByUIShow(UIName, UIObj, NormalStateSubState, SpecialUINameList)
   local ReasonString, IsHideCurUIObj = "InUIConfigure", false
   if NormalStateSubState == ENormalModeSubState.ExclusiveMode then
@@ -911,7 +919,6 @@ function BP_UIManagerComponent_C:HandleUIWidgetsVisibilityByUIShow(UIName, UIObj
   elseif NormalStateSubState == ENormalModeSubState.ConditionMode then
     local function HideUIWithConditionMode(UIObjInst, UINameText, ReasonStr, SubState)
       UIObjInst:Hide(ReasonStr .. UINameText)
-      
       if self.HideByStateTagUIList[SubState] == nil then
         self.HideByStateTagUIList[SubState] = {}
         self.HideByStateTagUIList[SubState][UINameText] = {UIObjInst}
@@ -921,7 +928,6 @@ function BP_UIManagerComponent_C:HandleUIWidgetsVisibilityByUIShow(UIName, UIObj
         table.insert(self.HideByStateTagUIList[SubState][UINameText], UIObjInst)
       end
     end
-    
     if SpecialUINameList[UIConst.WidgetAllStateTag.Precedence] ~= nil then
       for CheckUIName, Value in pairs(SpecialUINameList[UIConst.WidgetAllStateTag.Precedence]) do
         if CheckUIName == UIName then
@@ -978,7 +984,6 @@ function BP_UIManagerComponent_C:HandleUIWidgetsVisibilityByUIShow(UIName, UIObj
   end
   return IsHideCurUIObj
 end
-
 function BP_UIManagerComponent_C:SetIsHideInImmersionMode(UIObj)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if PlayerCharacter and PlayerCharacter.IsImmersionModel then
@@ -986,7 +991,6 @@ function BP_UIManagerComponent_C:SetIsHideInImmersionMode(UIObj)
     UIObj:SetRenderOpacity(0)
   end
 end
-
 function BP_UIManagerComponent_C:LoadGuideIconAsync(BPClassPath, UIName, ZOrder, CoroutineOrCBFunc, ...)
   local Param = {
     ...
@@ -995,7 +999,6 @@ function BP_UIManagerComponent_C:LoadGuideIconAsync(BPClassPath, UIName, ZOrder,
   table.insert(Param, "Async")
   return self:LoadUI(BPClassPath, UIName, ZOrder, table.unpack(Param))
 end
-
 function BP_UIManagerComponent_C:UpdateArgs(UIObj, Args)
   if not UIObj or not UIObj.UpdateArgs then
     return
@@ -1005,11 +1008,10 @@ function BP_UIManagerComponent_C:UpdateArgs(UIObj, Args)
   end
   UIObj:UpdateArgs(Args)
 end
-
 function BP_UIManagerComponent_C:GetBannedActionNameList(KeyboardSetName)
   local KeyboardSetData = DataMgr.UIKeyboardSet[KeyboardSetName]
   if not KeyboardSetData then
-    DebugPrint("Tianyi@ \230\137\190\228\184\141\229\136\176\230\140\137\233\148\174\231\166\129\231\148\168\231\187\132: " .. KeyboardSetName)
+    DebugPrint("Tianyi@ 找不到按键禁用组: " .. KeyboardSetName)
     return nil
   end
   if KeyboardSetData.IsWhiteList then
@@ -1031,7 +1033,6 @@ function BP_UIManagerComponent_C:GetBannedActionNameList(KeyboardSetName)
     return KeyboardSetData.ActionNameList
   end
 end
-
 function BP_UIManagerComponent_C:CheckCombatcondition(CombatconditionIdList, ConditiontextList)
   if nil == CombatconditionIdList then
     return true
@@ -1050,7 +1051,6 @@ function BP_UIManagerComponent_C:CheckCombatcondition(CombatconditionIdList, Con
   end
   return IsConditionSuccess, ShowConditiontext
 end
-
 function BP_UIManagerComponent_C:SetBannedActionCallback(KeyboardSetName, IsBanned, UIName)
   UIName = UIName or "Common"
   self.ActivateBannedUI = self.ActivateBannedUI or {}
@@ -1084,7 +1084,7 @@ function BP_UIManagerComponent_C:SetBannedActionCallback(KeyboardSetName, IsBann
     end
     Player:FlushInputKeyExcept(AllowedList)
   end
-  DebugPrint("Tianyi@ \232\174\190\231\189\174\231\166\129\231\148\168Action: , IsBanned = " .. tostring(IsBanned))
+  DebugPrint("Tianyi@ 设置禁用Action: , IsBanned = " .. tostring(IsBanned))
   self.BanActionCallbackMap = self.BanActionCallbackMap or {}
   for _, Action in ipairs(ActionList) do
     if IsBanned then
@@ -1105,7 +1105,6 @@ function BP_UIManagerComponent_C:SetBannedActionCallback(KeyboardSetName, IsBann
     self.ActivateBannedUI[UIName] = nil
   end
 end
-
 function BP_UIManagerComponent_C:SetAllBattleEntityHidden(bHidden, TagName, UnitType)
   local Entities = Battle(self):GetAllEntities()
   if bHidden then
@@ -1126,12 +1125,10 @@ function BP_UIManagerComponent_C:SetAllBattleEntityHidden(bHidden, TagName, Unit
     end
   end
 end
-
 function BP_UIManagerComponent_C:CheckIsActionBanned(ActionName)
   local IsActionBanned = self.BanActionCallbackMap and self.BanActionCallbackMap[ActionName]
   return IsActionBanned
 end
-
 function BP_UIManagerComponent_C:DealWithGroupUIVisibility(CheckList, UIName, UIObj, NormalStateSubState, ReasonString)
   local IsHideCurUIObj = false
   for CheckUIName, Value in pairs(CheckList) do
@@ -1184,7 +1181,6 @@ function BP_UIManagerComponent_C:DealWithGroupUIVisibility(CheckList, UIName, UI
   end
   return IsHideCurUIObj
 end
-
 function BP_UIManagerComponent_C:OnUIObjLoadCompleted(UIName, UIConfig)
   self:SetEntitiesVisibility(UIName, UIConfig.IsHideBattleUnit == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAll, UIConfig.IsHideBattleUnit == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAllExceptSelf, true)
   if UIConfig.IsHideDrop then
@@ -1192,10 +1188,9 @@ function BP_UIManagerComponent_C:OnUIObjLoadCompleted(UIName, UIConfig)
   end
   EventManager:FireEvent(EventID.LoadUI, UIName)
 end
-
 function BP_UIManagerComponent_C:UnLoadUINew(UIName)
   local SystemUIConfig = DataMgr.SystemUI[UIName]
-  assert(SystemUIConfig, "UI:" .. UIName .. "\228\184\141\229\156\168SystemUI\232\161\168\228\184\173")
+  assert(SystemUIConfig, "UI:" .. UIName .. "不在SystemUI表中")
   if UIConst.AllUIConfig[UIName] then
     UIConst.AllUIConfig[UIName] = {
       resource = UIConst.LoadInConfig
@@ -1203,7 +1198,6 @@ function BP_UIManagerComponent_C:UnLoadUINew(UIName)
   end
   return self:UnLoadUI(UIName, UIName)
 end
-
 function BP_UIManagerComponent_C:UnLoadUI(UIConfigName, UIName)
   if IsDedicatedServer(self) then
     return
@@ -1238,9 +1232,9 @@ function BP_UIManagerComponent_C:UnLoadUI(UIConfigName, UIName)
   if UIObj and UIObj.IsAddInDeque then
     self:RemoveToJumpPageDeque(UIObj)
   end
-  self:SetEntitiesVisibility(UIName, UIConfig.IsHideBattleUnit == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAll, UIConfig.IsHideBattleUnit == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAllExceptSelf, false)
+  self:SetEntitiesVisibility(UIConfigName, UIConfig.IsHideBattleUnit == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAll, UIConfig.IsHideBattleUnit == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAllExceptSelf, false)
   if UIConfig.IsHideDrop then
-    self:SetAllBattleEntityHidden(false, UIName, "Drop")
+    self:SetAllBattleEntityHidden(false, UIConfigName, "Drop")
   end
   if UIConfig.PauseAfterLoadingState and UIObj then
     self:TryResumeAfterLoadingMgr(UIConfig.PauseAfterLoadingState)
@@ -1252,19 +1246,17 @@ function BP_UIManagerComponent_C:UnLoadUI(UIConfigName, UIName)
     local bIsRemoveInStack = not not UIConfig.addtostack
     self:UnLoadUI_CPP(UIName, bIsRemoveInStack, UIObj and UIObj.IsNeedSearchInStack)
   end
-  if self.AsyncLoadHandlers[UIName] then
-    self.AsyncUnloadFlags[UIName] = true
+  if self.AsyncLoadHandlers[UIConfigName] then
+    self.AsyncUnloadFlags[UIConfigName] = true
   end
+  EventManager:FireEvent(EventID.UnLoadUI, UIName)
   if self.FlowList[UIName] then
     local flow = self.FlowList[UIName]
     self.FlowList[UIName] = nil
-    local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-    FlowManager:RemoveFlow(flow)
+    GameFlowUtils:RemoveFlow(flow)
     DebugPrint("WXT UIManagerComponent_C:RemoveFlow", UIName)
   end
-  EventManager:FireEvent(EventID.UnLoadUI, UIName)
 end
-
 function BP_UIManagerComponent_C:DealWithOtherWidgetsVisibilityByUIHide(UIConfigName, UIName, UIStatetag)
   if nil == UIStatetag or UIStatetag == UIConst.WidgetAllStateTag.Blocked then
     return
@@ -1279,7 +1271,6 @@ function BP_UIManagerComponent_C:DealWithOtherWidgetsVisibilityByUIHide(UIConfig
     self:HandleUIWidgetsVisibilityByUIHide(UIConfigName, UIName, UIStatetag)
   end
 end
-
 function BP_UIManagerComponent_C:HandleUIWidgetsVisibilityByUIHide(UIConfigName, UIName, UIStatetag)
   local HideUIList, ReShowUIWithReasonStr = nil, "InUIConfigure"
   if UIStatetag == UIConst.WidgetAllStateTag.Exclusive then
@@ -1324,7 +1315,6 @@ function BP_UIManagerComponent_C:HandleUIWidgetsVisibilityByUIHide(UIConfigName,
     end
   end
 end
-
 function BP_UIManagerComponent_C:ReShowUIWithReason(UIList, ReasonString)
   if nil == UIList or type(UIList) ~= "table" then
     return
@@ -1339,7 +1329,6 @@ function BP_UIManagerComponent_C:ReShowUIWithReason(UIList, ReasonString)
     end
   end
 end
-
 function BP_UIManagerComponent_C:GetUIObj(UIName, bUseRegularMatch)
   if bUseRegularMatch then
     local UIPathes = self:GetUIPathFromString(UIName)
@@ -1354,11 +1343,10 @@ function BP_UIManagerComponent_C:GetUIObj(UIName, bUseRegularMatch)
   end
   return self:GetUI(UIName)
 end
-
 function BP_UIManagerComponent_C:GetUIObjAsync(UIName, CoroutineOrCBFunc)
   local UI = self:GetUIObj(UIName)
   if not UI and self.AsyncLoadHandlers[UIName] then
-    DebugPrint(LXYTag, "\229\188\128\229\167\139\229\188\130\230\173\165GetUIObj...", UIName)
+    DebugPrint(LXYTag, "开始异步GetUIObj...", UIName)
     if not self.AsyncGetUIContexts[UIName] then
       self.AsyncGetUIContexts[UIName] = {}
     end
@@ -1373,11 +1361,9 @@ function BP_UIManagerComponent_C:GetUIObjAsync(UIName, CoroutineOrCBFunc)
   end
   return UI
 end
-
 function BP_UIManagerComponent_C:GetUIObjIsAsyncLoading(UIName)
   return self.AsyncLoadHandlers[UIName] ~= nil
 end
-
 function BP_UIManagerComponent_C:GetUIPathFromString(InputString)
   if not InputString then
     return nil
@@ -1388,11 +1374,9 @@ function BP_UIManagerComponent_C:GetUIPathFromString(InputString)
   end
   return Parents
 end
-
 function BP_UIManagerComponent_C:GetUIObjCountByBaseName(UIName)
   return self.Overridden.GetUIObjCountByBaseName(self, UIName)
 end
-
 function BP_UIManagerComponent_C:HideOrShowUIByBaseName(UIName, IsShow)
   local UIConfig = UIConst.AllUIConfig[UIName] or {}
   if UIConfig.allowmulti then
@@ -1419,7 +1403,6 @@ function BP_UIManagerComponent_C:HideOrShowUIByBaseName(UIName, IsShow)
     end
   end
 end
-
 function BP_UIManagerComponent_C:GetTexture2DResource(TexturePath)
   if string.find(TexturePath, "/Game/") == nil then
     TexturePath = "/Game/" .. TexturePath
@@ -1427,13 +1410,31 @@ function BP_UIManagerComponent_C:GetTexture2DResource(TexturePath)
   local ImageResource = LoadObject(TexturePath)
   return ImageResource
 end
-
 function BP_UIManagerComponent_C:GetLogMask()
   return _G.LogTag
 end
-
+function BP_UIManagerComponent_C:CheckIsExistPopUpWidget()
+  local bIsExistPopUp = false
+  for key, value in pairs(self.PopUpUIWidgetRecord) do
+    local CheckUIWidget = self:GetUIObj(key)
+    if CheckUIWidget and not CheckUIWidget:IsBeingRemoveState() then
+      if not CheckUIWidget:IsHide() then
+        bIsExistPopUp = true
+        break
+      elseif CheckUIWidget:IsOnlyHideWithDesireTag(UIConst.CommonHideTagName.UIStackChange) then
+        bIsExistPopUp = true
+        break
+      end
+    end
+  end
+  return bIsExistPopUp
+end
 function BP_UIManagerComponent_C:CloseResidentUI(PopUIName)
-  if not IsEmptyTable(self.PopUpUIWidgetRecord) then
+  DebugPrint("HY@ UIManagerComponent CloseResidentUI:", PopUIName)
+  if self:CheckIsExistPopUpWidget() then
+    if nil ~= PopUIName then
+      self.PopUpUIWidgetRecord[PopUIName] = 1
+    end
     return
   end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -1459,6 +1460,7 @@ function BP_UIManagerComponent_C:CloseResidentUI(PopUIName)
     if "BattleMain" == UIName then
       if not Widget.IsPlayOutAnim then
         Widget:Hide("UIPopUp")
+        Widget:AddPlayInOutSystems(PopUIName)
       end
     else
       Widget:Hide("UIPopUp")
@@ -1474,9 +1476,12 @@ function BP_UIManagerComponent_C:CloseResidentUI(PopUIName)
     self.PopUpUIWidgetRecord[PopUIName] = 1
   end
 end
-
 function BP_UIManagerComponent_C:OpenResidentUI(PopUIName)
-  if not self:CheckNeedExitPopUp(PopUIName) then
+  DebugPrint("HY@ UIManagerComponent OpenResidentUI:", PopUIName)
+  if nil ~= PopUIName then
+    self.PopUpUIWidgetRecord[PopUIName] = nil
+  end
+  if self:CheckIsExistPopUpWidget() then
     return
   end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -1513,11 +1518,7 @@ function BP_UIManagerComponent_C:OpenResidentUI(PopUIName)
       UIObj:Show("UIPopUp")
     end
   end
-  if nil ~= PopUIName then
-    self.PopUpUIWidgetRecord[PopUIName] = nil
-  end
 end
-
 function BP_UIManagerComponent_C:CheckNeedExitPopUp(ExceptUIName)
   local NeedRecover = true
   for k, v in pairs(self.PopUpUIWidgetRecord) do
@@ -1528,7 +1529,6 @@ function BP_UIManagerComponent_C:CheckNeedExitPopUp(ExceptUIName)
   end
   return NeedRecover
 end
-
 function BP_UIManagerComponent_C:GetCurrnetAllUIBySystem(SystemList)
   local AllUI, Result = self.UIInstances:ToTable(), {}
   for _, Widget in pairs(AllUI) do
@@ -1549,7 +1549,6 @@ function BP_UIManagerComponent_C:GetCurrnetAllUIBySystem(SystemList)
   end
   return Result
 end
-
 function BP_UIManagerComponent_C:GetUIManagerShowStateInViewport()
   local BattleWidget = self:GetUIObj("BattleMain")
   if BattleWidget then
@@ -1560,11 +1559,9 @@ function BP_UIManagerComponent_C:GetUIManagerShowStateInViewport()
     end
   end
 end
-
 function BP_UIManagerComponent_C:IsInHUDShowMode()
   return self:GetUIManagerShowStateInViewport() == UIConst.GameUIShowState.HUD
 end
-
 function BP_UIManagerComponent_C:ShowCommonPopupUI_Old(PopupId, CallbackObj, YesCallBackFunction, NoCallBackFunction, BlankAreaClicked, OverrideText)
   local Params = {}
   Params.LeftCallbackFunction = NoCallBackFunction
@@ -1577,7 +1574,6 @@ function BP_UIManagerComponent_C:ShowCommonPopupUI_Old(PopupId, CallbackObj, Yes
   Params.LongText = OverrideText
   return self:ShowCommonPopupUI(PopupId, Params)
 end
-
 function BP_UIManagerComponent_C:ShowDisconnectUIConfirm(PopupId, IsStopGame, Params)
   local DisconnectUIName = "NetDisConnectedDialog"
   if UIConst.AllUIConfig[DisconnectUIName] == nil then
@@ -1588,11 +1584,9 @@ function BP_UIManagerComponent_C:ShowDisconnectUIConfirm(PopupId, IsStopGame, Pa
   local PopupUI = self:LoadUI(UIConst.AllUIConfig[DisconnectUIName].resource, DisconnectUIName)
   if nil ~= PopupUI then
     Params = Params or {}
-    
     function Params.OnCloseCallbackFunction()
       EventManager:FireEvent(EventID.OnToggleDisconnectUI, false)
     end
-    
     EventManager:FireEvent(EventID.OnToggleDisconnectUI, true)
     PopupUI:ShowPopup(PopupId, Params)
     local StorySubsystem = UEMCommonInputSubsystem.Get(self)
@@ -1602,8 +1596,37 @@ function BP_UIManagerComponent_C:ShowDisconnectUIConfirm(PopupId, IsStopGame, Pa
   end
   return PopupUI
 end
-
-function BP_UIManagerComponent_C:ShowCommonPopupUI(PopupId, Params, ParentWidget, Coroutine)
+function BP_UIManagerComponent_C:_BlockAllUIInput(bBlock, Reason)
+  local LoadingReconnectUi = self:GetUIObj("LoadingReconnect")
+  if false == bBlock then
+    if LoadingReconnectUi and LoadingReconnectUi.bDisplayOnly then
+      LoadingReconnectUi:Close()
+    end
+    if self:IsExistTimer(self.ReconnectUITimer) then
+      self:RemoveTimer(self.ReconnectUITimer)
+    end
+    self.BlockingReasons[Reason] = nil
+  else
+    if not LoadingReconnectUi and "SP_DisplayOnly" ~= Reason then
+      if self:IsExistTimer(self.ReconnectUITimer) then
+        self:RemoveTimer(self.ReconnectUITimer)
+      end
+      local _, TimerKey = self:AddTimer(UIConst.BlockingTime, function()
+        if not self:GetUIObj("LoadingReconnect") then
+          self:LoadUINew("LoadingReconnect", true)
+        end
+      end)
+      self.ReconnectUITimer = TimerKey
+    end
+    if not self.BlockingReasons then
+      self.BlockingReasons = {}
+    end
+    self.BlockingReasons[Reason] = 1
+  end
+  DebugPrint(WarningTag, string.format("BP_UIManagerComponent_C:_BlockAllUIInput(%s, %s)", bBlock, Reason))
+  self:BlockAllUIInput(bBlock, Reason)
+end
+function BP_UIManagerComponent_C:ShowCommonPopupUI(PopupId, Params, ParentWidget, Coroutine, ZOrderOverride)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if not GameInstance:CheckCanShowPopup() then
     GameInstance:RequestShowPopup(PopupId, Params, ParentWidget)
@@ -1612,10 +1635,14 @@ function BP_UIManagerComponent_C:ShowCommonPopupUI(PopupId, Params, ParentWidget
   local PopupData = DataMgr.CommonPopupUIContext[PopupId]
   local PopupStyle = DataMgr.CommonPopupUIStyle[PopupData.Style]
   local PopupUI
+  local SystemUIConfig = DataMgr.SystemUI.CommonDialog
+  local Param = {}
   if Coroutine then
-    PopupUI = self:LoadUIAsync("CommonDialog", Coroutine, Params, ParentWidget)
+    table.insert(Param, Coroutine)
+    table.insert(Param, "Async")
+    PopupUI = self:LoadUI(UIConst.LoadInConfig, "CommonDialog", ZOrderOverride or SystemUIConfig.ZOrder, table.unpack(Param))
   else
-    PopupUI = self:LoadUINew("CommonDialog", PopupId, Params, ParentWidget)
+    PopupUI = self:LoadUI(UIConst.LoadInConfig, "CommonDialog", ZOrderOverride or SystemUIConfig.ZOrder, table.unpack(Param))
   end
   PopupUI:ShowPopup(PopupId, Params, ParentWidget)
   if Params and Params.BindScript and PopupUI.Script then
@@ -1624,16 +1651,14 @@ function BP_UIManagerComponent_C:ShowCommonPopupUI(PopupId, Params, ParentWidget
     return PopupUI
   end
 end
-
 function BP_UIManagerComponent_C:ShowCommonPopupUI_Interrupt(PopupId, Params, ParentWidget)
   local CommonDialog = self:GetUI("CommonDialog")
   if not CommonDialog then
-    DebugPrint("Tianyi@ ShowCommonPopupUI_Interrupt \229\143\170\232\131\189\229\156\168\233\128\154\231\148\168\229\188\185\231\170\151\230\152\190\231\164\186\229\135\186\230\157\165\231\154\132\230\151\182\229\128\153\232\176\131\231\148\168!")
+    DebugPrint("Tianyi@ ShowCommonPopupUI_Interrupt 只能在通用弹窗显示出来的时候调用!")
     return
   end
   CommonDialog:ShowPopupInterrupt(PopupId, Params, ParentWidget)
 end
-
 function BP_UIManagerComponent_C:PreviewCommonPopupStyle(StyleId)
   local PopupStyle = DataMgr.CommonPopupUIStyle[StyleId]
   if not PopupStyle then
@@ -1644,14 +1669,12 @@ function BP_UIManagerComponent_C:PreviewCommonPopupStyle(StyleId)
   PopupWidget:PlayAnimation(PopupWidget.In)
   PopupWidget:UpdateView(StyleId)
 end
-
 function BP_UIManagerComponent_C:GetGameInputModeSubsystem()
   if not self.GameInputModeSubsystem then
     self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
   end
   return self.GameInputModeSubsystem
 end
-
 function BP_UIManagerComponent_C:ShowError(ErrCode, Duration, TipType, ...)
   if nil == TipType then
     TipType = UIConst.Tip_CommonTop
@@ -1661,15 +1684,14 @@ function BP_UIManagerComponent_C:ShowError(ErrCode, Duration, TipType, ...)
     local Content = ErrorCode:GetText(ErrCode)
     Content = string.format(Content or "", ...)
     if not Content or "" == Content then
-      self:ShowUITip(TipType, "Unconfigured ErrorCode\239\188\154" .. tostring(ErrCode), Duration)
+      self:ShowUITip(TipType, "Unconfigured ErrorCode：" .. tostring(ErrCode), Duration)
     else
       self:ShowUITip(TipType, Content, Duration)
     end
   else
-    self:ShowUITip(TipType, "Unknown ErrorCode\239\188\154" .. tostring(ErrCode), Duration)
+    self:ShowUITip(TipType, "Unknown ErrorCode：" .. tostring(ErrCode), Duration)
   end
 end
-
 function BP_UIManagerComponent_C:ShowUITip(TipType, TipContent, LastTime, IsWaitToTrigger, ExtraData)
   ExtraData = ExtraData or {}
   LastTime = LastTime or 2.0
@@ -1705,11 +1727,8 @@ function BP_UIManagerComponent_C:ShowUITip(TipType, TipContent, LastTime, IsWait
     if nil == UITipList then
       UITipList = self:LoadUINew("CommonTopToastList", TipContent, LastTime)
     elseif UITipList:IsHide() then
-      local TS = TalkSubsystem()
-      if not TS or not TS:IsGameUIHidden() then
-        UITipList:ClearAllHideTags()
-        UITipList:Show()
-      end
+      UITipList:ClearAllHideTags()
+      UITipList:Show()
     end
     local NextTipsIndex = UITipList:AddAndUpdateCurrentUITips()
     RunAsyncTask(self, TipContent .. tostring(NextTipsIndex), function(CoroutineObj)
@@ -1740,7 +1759,6 @@ function BP_UIManagerComponent_C:ShowUITip(TipType, TipContent, LastTime, IsWait
         UITopTip.MessageId = ExtraData
       end
     end
-    
     if IsValid(self.WarningToastUI) and not self.WarningToastUI.IsClose then
       self.WarningToastUI:BindToAnimationFinished(self.WarningToastUI.Out, {
         self.WarningToastUI,
@@ -1773,7 +1791,6 @@ function BP_UIManagerComponent_C:ShowUITip(TipType, TipContent, LastTime, IsWait
     ExcavationToast:OnLoaded(LastTime, TipContent, ExtraData.Level, ExtraData.OrderText)
   end
 end
-
 function BP_UIManagerComponent_C:_ProcessCommonToastQueue(QueneContainerName, SetContainerName, TimerKeyName, ToastUIName, ExtraData)
   local TipContent, ToastLastTime = table.unpack(self[QueneContainerName]:Back())
   local SoundEvent = ExtraData and ExtraData.SoundEvent or nil
@@ -1786,7 +1803,6 @@ function BP_UIManagerComponent_C:_ProcessCommonToastQueue(QueneContainerName, Se
     self:_DoPopNextToastQueue(QueneContainerName, SetContainerName, TimerKeyName, ToastUIName, ExtraData)
   end, false, 0, self[TimerKeyName], true)
 end
-
 function BP_UIManagerComponent_C:_DoPopNextToastQueue(QueneContainerName, SetContainerName, TimerKeyName, ToastUIName, ExtraData)
   local TipContent = table.unpack(self[QueneContainerName]:Back())
   self[QueneContainerName]:PopBack()
@@ -1799,7 +1815,6 @@ function BP_UIManagerComponent_C:_DoPopNextToastQueue(QueneContainerName, SetCon
     self[SetContainerName] = {}
   end
 end
-
 function BP_UIManagerComponent_C:_BreakInTopToastInQueue(QueneContainerName, SetContainerName, TimerKeyName, ToastUIName, ExtraData)
   local ToastUI = self:GetUI(ToastUIName)
   if ToastUI then
@@ -1808,29 +1823,24 @@ function BP_UIManagerComponent_C:_BreakInTopToastInQueue(QueneContainerName, Set
   self:RemoveTimer(self[TimerKeyName])
   self:_DoPopNextToastQueue(QueneContainerName, SetContainerName, TimerKeyName, ToastUIName, ExtraData)
 end
-
 function BP_UIManagerComponent_C:ShowUITip_BattleCommonTop(TipType, TipContent, LastTime, IsWaitToTrigger, ExtraData)
   if TipType == UIConst.Tip_CommonTop then
     if not self["BattleCommonTopInCD_" .. TipContent] then
       self:ShowUITip(TipType, GText(TipContent), LastTime, IsWaitToTrigger, ExtraData)
       self["BattleCommonTopInCD_" .. TipContent] = true
-      
       local function TimerFunc()
         self["BattleCommonTopInCD_" .. TipContent] = false
       end
-      
       self:AddTimer(Const.BattleTip_CommonTop_CD, TimerFunc, false, 0, TipContent, true)
     end
     return
   end
 end
-
 function BP_UIManagerComponent_C:HideWarningUITip(MessageId)
   if self.WarningToastUI and self.WarningToastUI.MessageId == MessageId then
     self.WarningToastUI:PlayOutAnim()
   end
 end
-
 function BP_UIManagerComponent_C:ShowCommonBlackScreen(Params)
   local NewHandleName = Params.BlackScreenHandle
   if nil == NewHandleName then
@@ -1842,14 +1852,13 @@ function BP_UIManagerComponent_C:ShowCommonBlackScreen(Params)
     self.CommonBlackScreenInstances = {}
   end
   if IsValid(self.CommonBlackScreenInstances[NewHandleName]) then
-    DebugPrint("Common_BlackScreen: \231\155\184\229\144\140\231\154\132HandleName\229\183\178\229\173\152\229\156\168\239\188\129")
+    DebugPrint("Common_BlackScreen: 相同的HandleName已存在！")
     return NewHandleName
   end
   local NewBlackScreen = self:LoadUINew("CommonBlackScreen", Params)
   DebugPrint("Common_BlackScreen: NewBlackScreen", NewHandleName)
   return NewHandleName
 end
-
 function BP_UIManagerComponent_C:RegisterBlackScreenInstance(NewHandleName, BlackScreenInstance)
   if self.CommonBlackScreenInstances == nil then
     self.CommonBlackScreenInstances = {}
@@ -1857,9 +1866,8 @@ function BP_UIManagerComponent_C:RegisterBlackScreenInstance(NewHandleName, Blac
   self.CommonBlackScreenInstances[NewHandleName] = BlackScreenInstance
   DebugPrint("Common_BlackScreen: RegisterBlackScreenInstance", NewHandleName)
 end
-
 function BP_UIManagerComponent_C:HideCommonBlackScreen(BlackScreenHandle)
-  assert(BlackScreenHandle, "HideCommonBlackScreen\229\191\133\233\161\187\232\190\147\229\133\165BlackScreenHandle\239\188\129")
+  assert(BlackScreenHandle, "HideCommonBlackScreen必须输入BlackScreenHandle！")
   if self.CommonBlackScreenInstances == nil then
     self.CommonBlackScreenInstances = {}
   end
@@ -1868,7 +1876,6 @@ function BP_UIManagerComponent_C:HideCommonBlackScreen(BlackScreenHandle)
     CommonBlackScreen:HideCommonBlackScreen()
   end
 end
-
 function BP_UIManagerComponent_C:OnCommonBlackScreenClosed(BlackScreenHandle)
   if self.CommonBlackScreenInstances == nil then
     self.CommonBlackScreenInstances = {}
@@ -1876,17 +1883,15 @@ function BP_UIManagerComponent_C:OnCommonBlackScreenClosed(BlackScreenHandle)
   self.CommonBlackScreenInstances[BlackScreenHandle] = nil
   DebugPrint("Common_BlackScreen: OnCommonBlackScreenClosed", BlackScreenHandle)
 end
-
 function BP_UIManagerComponent_C:IsCommonBlackScreenExist(BlackScreenHandle)
-  assert(BlackScreenHandle, "IsCommonBlackScreenExist\229\191\133\233\161\187\232\190\147\229\133\165BlackScreenHandle\239\188\129")
+  assert(BlackScreenHandle, "IsCommonBlackScreenExist必须输入BlackScreenHandle！")
   if self.CommonBlackScreenInstances == nil then
     self.CommonBlackScreenInstances = {}
   end
   return IsValid(self.CommonBlackScreenInstances[BlackScreenHandle])
 end
-
 function BP_UIManagerComponent_C:CloseCommonBlackScreenWithoutCB(BlackScreenHandle)
-  assert(BlackScreenHandle, "CloseCommonBlackScreenWithoutCB\229\191\133\233\161\187\232\190\147\229\133\165BlackScreenHandle\239\188\129")
+  assert(BlackScreenHandle, "CloseCommonBlackScreenWithoutCB必须输入BlackScreenHandle！")
   if self.CommonBlackScreenInstances == nil then
     self.CommonBlackScreenInstances = {}
   end
@@ -1897,21 +1902,17 @@ function BP_UIManagerComponent_C:CloseCommonBlackScreenWithoutCB(BlackScreenHand
     DebugPrint("Common_BlackScreen: CloseCommonBlackScreenWithoutCB", BlackScreenHandle)
   end
 end
-
 function BP_UIManagerComponent_C:IsHaveMenuAnchorOpen()
   return self.IsMenuAnchorOpen
 end
-
 function BP_UIManagerComponent_C:SetIsMenuAnchorOpen(bIsOpen)
   self.IsMenuAnchorOpen = bIsOpen
 end
-
 function BP_UIManagerComponent_C:ShowLevelUpToast(Level, Type, Id)
   self:CacheLevelUpInfo(Level, Type, Id)
   local LevelUpUI = self:LoadUIAsync("CharLevelUp", function()
   end, false)
 end
-
 function BP_UIManagerComponent_C:ShowPlayerLevelUpToast(IsInSystem)
   if IsInSystem then
     self:LoadUIAsync("CharLevelUp_System", function()
@@ -1921,7 +1922,6 @@ function BP_UIManagerComponent_C:ShowPlayerLevelUpToast(IsInSystem)
     end, true)
   end
 end
-
 function BP_UIManagerComponent_C:CacheLevelUpInfo(Level, Type, Id)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if GameInstance.LevelUpToastQueue == nil then
@@ -1938,10 +1938,10 @@ function BP_UIManagerComponent_C:CacheLevelUpInfo(Level, Type, Id)
     Id
   }
 end
-
 function BP_UIManagerComponent_C:TryShowPlayerLevelUpInfo(LevelUpInfo)
   local Avatar = GWorld:GetAvatar()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not Avatar then
     return
   end
@@ -1950,6 +1950,9 @@ function BP_UIManagerComponent_C:TryShowPlayerLevelUpInfo(LevelUpInfo)
   end
   GameInstance.LevelUpToastQueue.Player = LevelUpInfo
   if Avatar:IsInDungeon() and LevelUpInfo.ShowProgressBar then
+    return
+  end
+  if GameState and (GameState.GameModeType == "Temple" or GameState.GameModeType == "Party" or GameState.GameModeType == "MonsterRush") then
     return
   end
   if not self:IsInHUDShowMode() then
@@ -1978,7 +1981,6 @@ function BP_UIManagerComponent_C:TryShowPlayerLevelUpInfo(LevelUpInfo)
   end
   self:ShowPlayerLevelUpToast()
 end
-
 function BP_UIManagerComponent_C:CreateOrGetArmoryPlayerActor(Char, InAvatar)
   local IsCreated = false
   if not self.ArmoryPlayer or not self.ArmoryPlayer:IsValid() then
@@ -1999,8 +2001,10 @@ function BP_UIManagerComponent_C:CreateOrGetArmoryPlayerActor(Char, InAvatar)
       end
       actor:ForceClearActorHideTag()
       actor.CapsuleComponent:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+      actor.CameraFadeCapsule:SetCollisionEnabled(ECollisionEnabled.NoCollision)
       actor.Mesh:SetCollisionEnabled(ECollisionEnabled.NoCollision)
       actor.Mesh:SetTickableWhenPaused(true)
+      actor.Mesh.bComponentUseFixedSkelBounds = false
       actor.DitherDisabled = true
     end
     self.ArmoryPlayer = actor
@@ -2008,7 +2012,6 @@ function BP_UIManagerComponent_C:CreateOrGetArmoryPlayerActor(Char, InAvatar)
   end
   return self.ArmoryPlayer, IsCreated
 end
-
 function BP_UIManagerComponent_C:CreateShowWeapon(Owner, Params, Callback)
   self.ShowWeaponOwners = self.ShowWeaponOwners or {}
   self.ShowWeaponOwners[Owner] = Params
@@ -2031,7 +2034,6 @@ function BP_UIManagerComponent_C:CreateShowWeapon(Owner, Params, Callback)
     end
   end)
 end
-
 function BP_UIManagerComponent_C:DestroyShowWeapon(Owner)
   self.ShowWeaponOwners = self.ShowWeaponOwners or {}
   if Owner then
@@ -2042,7 +2044,6 @@ function BP_UIManagerComponent_C:DestroyShowWeapon(Owner)
   end
   self:ForceDestroyShowWeapon()
 end
-
 function BP_UIManagerComponent_C:ForceDestroyShowWeapon()
   if IsValid(self.ShowWeapon) then
     if self.ShowWeapon.ChildWeapon then
@@ -2052,7 +2053,6 @@ function BP_UIManagerComponent_C:ForceDestroyShowWeapon()
     self.ShowWeapon = nil
   end
 end
-
 function BP_UIManagerComponent_C:CreateAndGetUINpcActor(NpcId)
   local ToCreateUIActor = self.AllUINpcActor[NpcId]
   if nil ~= ToCreateUIActor and IsValid(ToCreateUIActor) and ToCreateUIActor.NpcId == NpcId then
@@ -2087,7 +2087,6 @@ function BP_UIManagerComponent_C:CreateAndGetUINpcActor(NpcId)
   end
   PlayerTransform.Rotation = NewNpcRotation:ToQuat()
   ToCreateUIActor = self:GetWorld():SpawnActor(LoadClass(SpawnNpcConfig.BPPath), PlayerTransform, UE4.ESpawnActorCollisionHandlingMethod.AdjustIfPossibleButAlwaysSpawn, PlayerCharacter, PlayerCharacter, nil)
-  
   local function TryGetActorOverlapImpactLocation(Actor)
     local ActorCapsuleRaduis = Actor.CapsuleComponent:GetUnscaledCapsuleRadius()
     local Start = Actor.CapsuleComponent:K2_GetComponentLocation()
@@ -2102,7 +2101,6 @@ function BP_UIManagerComponent_C:CreateAndGetUINpcActor(NpcId)
       return nil
     end
   end
-  
   local FirstImpactLocation = TryGetActorOverlapImpactLocation(ToCreateUIActor)
   if nil ~= FirstImpactLocation then
     PlayerTransform.Translation.X = FirstImpactLocation.X
@@ -2133,18 +2131,15 @@ function BP_UIManagerComponent_C:CreateAndGetUINpcActor(NpcId)
   self.AllUINpcActor[NpcId] = ToCreateUIActor
   return ToCreateUIActor
 end
-
 function BP_UIManagerComponent_C:GetUINpcActor(NpcId)
   return self.AllUINpcActor[NpcId]
 end
-
 function BP_UIManagerComponent_C:HideOrShowPlayerFX(Player, bHide, Tag)
   if Player and Player.Mesh then
     local Components = TArray(USceneComponent)
     URuntimeCommonFunctionLibrary.SetSceneComponentHiddenInGame(Player.Mesh, bHide, true, Tag, Components)
   end
 end
-
 function BP_UIManagerComponent_C:HideOrShowOtherUINpcActor(bHide, HideTag, ExNpcId)
   for NpcId, UINpcActor in pairs(self.AllUINpcActor) do
     if NpcId ~= ExNpcId then
@@ -2160,7 +2155,6 @@ function BP_UIManagerComponent_C:HideOrShowOtherUINpcActor(bHide, HideTag, ExNpc
     self.ArmoryPlayer:HideAllEffectCreature(HideTag, bHide)
   end
 end
-
 function BP_UIManagerComponent_C:HideNpcActor(bHide, HideTag, ExNpcId)
   for NpcId, UINpcActor in pairs(self.AllUINpcActor) do
     if NpcId ~= ExNpcId then
@@ -2172,11 +2166,10 @@ function BP_UIManagerComponent_C:HideNpcActor(bHide, HideTag, ExNpcId)
     end
   end
 end
-
 function BP_UIManagerComponent_C:HideNpcById(NpcId, bHide, HideTag)
   local UINpcActor = self.AllUINpcActor and self.AllUINpcActor[NpcId]
   if not UINpcActor then
-    DebugPrint("HideNpcById  \230\137\190\228\184\141\229\136\176npc")
+    DebugPrint("HideNpcById  找不到npc")
     return
   end
   if UINpcActor.SetActorHideTag then
@@ -2185,18 +2178,15 @@ function BP_UIManagerComponent_C:HideNpcById(NpcId, bHide, HideTag)
     UINpcActor:SetActorHiddenInGame(bHide)
   end
 end
-
 function BP_UIManagerComponent_C:CreateUIActorCameraHelper(Player)
   local ToCreateUIActorCameraHelper = self:GetWorld():SpawnActor(LoadClass("/Game/BluePrints/Char/BP_PlayerCharacterArmoryHelper.BP_PlayerCharacterArmoryHelper_C"), Player:GetTransform(), UE4.ESpawnActorCollisionHandlingMethod.Default)
   ToCreateUIActorCameraHelper:K2_AttachToActor(Player, "Root", UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, true)
   ToCreateUIActorCameraHelper:K2_AddActorLocalOffset(FVector(0, 0, 0), false, nil, false)
   return ToCreateUIActorCameraHelper
 end
-
 function BP_UIManagerComponent_C:GetUIActorCameraHelper(NpcId)
   return self.AllUIActorCameraHelper[NpcId]
 end
-
 function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Params)
   local UINpcActor = self:GetUINpcActor(NpcId)
   local SpawnNpcConfig = DataMgr.SpawnNPC[NpcId]
@@ -2208,6 +2198,7 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
   if bInOut then
     local OnInActionFinished = Params.OnInActionFinished
     if UINpcActor.IsNeedSetPos then
+      local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
       local DistanceRadius = SpawnNpcConfig.SpawnRadius
       local DistanceAngle = SpawnNpcConfig.SpawnAngle
       local PlayerForwardVector = Player:GetActorForwardVector()
@@ -2228,7 +2219,6 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
       end
       PlayerTransform.Rotation = NewNpcRotation:ToQuat()
       UINpcActor:K2_SetActorTransform(PlayerTransform, false, nil, false)
-      
       local function TryGetActorOverlapImpactLocation(Actor)
         local ActorCapsuleRaduis = Actor.CapsuleComponent:GetUnscaledCapsuleRadius()
         local Start = Actor.CapsuleComponent:K2_GetComponentLocation()
@@ -2243,7 +2233,6 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
           return nil
         end
       end
-      
       local FirstImpactLocation = TryGetActorOverlapImpactLocation(UINpcActor)
       if nil ~= FirstImpactLocation then
         PlayerTransform.Translation.X = FirstImpactLocation.X
@@ -2262,14 +2251,12 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
       end
     end
     self:HideOrShowOtherUINpcActor(true, UIName, NpcId)
-    
     local function PlayInActionFinished()
       UINpcActor:SetCharacterTag("Interactive")
       if OnInActionFinished then
         OnInActionFinished()
       end
     end
-    
     if IsHaveInOutAnim and nil ~= SpawnNpcConfig.StartDialogue then
       UINpcActor:PlayUITalkAction(SpawnNpcConfig.StartDialogue, {self, PlayInActionFinished})
     else
@@ -2280,7 +2267,6 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
       UINpcActor.BaiBox:SetHiddenInGame(true, false)
     end
     local ToCreateUIActorCameraHelper = self.AllUIActorCameraHelper[NpcId]
-    
     local function PlayOutActionFinished()
       if bDestroyNpc and IsValid(UINpcActor) then
         UINpcActor:DestroyActorTemp()
@@ -2301,7 +2287,6 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
       self:HideOrShowOtherUINpcActor(false, UIName, NpcId)
       ToCreateUIActorCameraHelper:K2_DestroyActor()
     end
-    
     if IsHaveInOutAnim and nil ~= SpawnNpcConfig.EndDialogue then
       UINpcActor.IsInOutAnim = true
       UINpcActor:PlayUITalkAction(SpawnNpcConfig.EndDialogue, {self, PlayOutActionFinished})
@@ -2310,7 +2295,6 @@ function BP_UIManagerComponent_C:PlayUINpcAnimation(bInOut, UIName, NpcId, Param
     end
   end
 end
-
 function BP_UIManagerComponent_C:SwitchUINpcCamera(bNpcCamera, UIName, NpcId, Params)
   local SpawnNpcConfig, UINpcActorForCreate = DataMgr.SpawnNPC[NpcId]
   if nil == SpawnNpcConfig then
@@ -2332,6 +2316,15 @@ function BP_UIManagerComponent_C:SwitchUINpcCamera(bNpcCamera, UIName, NpcId, Pa
     end
     if UINpcActorForCreate.BaiBox then
       UINpcActorForCreate.BaiBox:SetHiddenInGame(false, false)
+    end
+  end
+  if SpawnNpcConfig.UseXFOV then
+    if bNpcCamera then
+      DebugPrint("SwitchFixedCamera：固定镜头锁X轴向")
+      UE.UUIFunctionLibrary.StartHorizontalFOV()
+    else
+      DebugPrint("SwitchFixedCamera：固定镜头锁恢复轴向")
+      UE.UUIFunctionLibrary.StopHorizontalFOV()
     end
   end
   Params = Params or {}
@@ -2376,22 +2369,18 @@ function BP_UIManagerComponent_C:SwitchUINpcCamera(bNpcCamera, UIName, NpcId, Pa
     if nil ~= RecoverTime then
       local function OnRecorverCameraEnd()
         local TargetUI = self:GetUIObj(UIName)
-        
         if TargetUI and TargetUI.OnRecorverCameraEnd then
           TargetUI:OnRecorverCameraEnd()
         end
       end
-      
       UIActorCameraHelper:RecorverCamera(self, OnRecorverCameraEnd, RecoverTime)
     end
   end
 end
-
 local FixedCameraCache = {}
-
 function BP_UIManagerComponent_C:SwitchFixedCamera(bInOut, NpcId, Hidetag, OriginSelf, UIName, Parms)
   if nil == NpcId then
-    ScreenPrint("SwitchFixedCamera:\232\183\179\232\189\172\233\149\156\229\164\180\229\164\177\232\180\165NpcId\228\184\186\231\169\186")
+    ScreenPrint("SwitchFixedCamera:跳转镜头失败NpcId为空")
     DebugPrint("SwitchFixedCamera Failed NpcId is nil ")
     return
   end
@@ -2399,19 +2388,17 @@ function BP_UIManagerComponent_C:SwitchFixedCamera(bInOut, NpcId, Hidetag, Origi
   local PlayerCharacter = UGameplayStatics.GetPlayerCharacter(self, 0)
   local SpawnNpcConfig, UINpcActorForCreate = DataMgr.SpawnNPC[NpcId]
   if nil == SpawnNpcConfig then
-    ScreenPrint("SwitchFixedCamera:\230\178\161\230\156\137\230\137\190\229\136\176\232\161\168\229\134\133\230\149\176\230\141\174\239\188\140\232\175\183\230\163\128\230\159\165NpcId" .. (NpcId or "NpcId\228\184\186\231\169\186"))
-    DebugPrint("SwitchFixedCamera:\230\178\161\230\156\137\230\137\190\229\136\176\232\161\168\229\134\133\230\149\176\230\141\174 SpawnNpcConfig \228\184\186\231\169\186 ")
+    ScreenPrint("SwitchFixedCamera:没有找到表内数据，请检查NpcId" .. (NpcId or "NpcId为空"))
+    DebugPrint("SwitchFixedCamera:没有找到表内数据 SpawnNpcConfig 为空 ")
     return
   end
-  
   local function CreatNpcAndSwitch()
     if UIName then
       self:SwitchUINpcCamera(bInOut, UIName, NpcId, Parms)
     else
-      ScreenPrint("\231\148\159\230\136\144NPC\233\149\156\229\164\180UIName\228\184\186\231\169\186")
+      ScreenPrint("生成NPC镜头UIName为空")
     end
   end
-  
   local cameraPath
   local CurrentPlatform = CommonUtils.GetDeviceTypeByPlatformName(self)
   if "Mobile" == CurrentPlatform and SpawnNpcConfig.FixedCameraM then
@@ -2419,32 +2406,30 @@ function BP_UIManagerComponent_C:SwitchFixedCamera(bInOut, NpcId, Hidetag, Origi
   elseif SpawnNpcConfig.FixedCamera then
     cameraPath = SpawnNpcConfig.FixedCamera
   else
-    DebugPrint("SwitchFixedCamera:\232\161\168\229\134\133\230\178\161\230\156\137\233\133\141\231\189\174\229\155\186\229\174\154\233\149\156\229\164\180\239\188\154\231\148\159\230\136\144NPC\233\149\156\229\164\180")
+    DebugPrint("SwitchFixedCamera:表内没有配置固定镜头：生成NPC镜头")
     CreatNpcAndSwitch()
     return
   end
-  
   local function GetOrCreateCamera()
     if FixedCameraCache[cameraPath] and IsValid(FixedCameraCache[cameraPath].actor) then
       return FixedCameraCache[cameraPath].actor
     end
     local CameraClass = LoadClass(cameraPath)
     if not CameraClass then
-      ScreenPrint("SwitchFixedCamera:\230\151\160\230\179\149\229\138\160\232\189\189\231\155\184\230\156\186\232\147\157\229\155\190\231\177\187\239\188\140\232\175\183\230\163\128\230\159\165\232\183\175\229\190\132\230\152\175\229\144\166\230\173\163\231\161\174\239\188\154" .. cameraPath)
+      ScreenPrint("SwitchFixedCamera:无法加载相机蓝图类，请检查路径是否正确：" .. cameraPath)
       return nil
     end
     local actor = UGameplayStatics.GetActorOfClass(OriginSelf, CameraClass)
     if not actor then
-      ScreenPrint("SwitchFixedCamera:[WARNING] \230\156\170\230\137\190\229\136\176\231\155\184\230\156\186\229\174\158\228\190\139")
+      ScreenPrint("SwitchFixedCamera:[WARNING] 未找到相机实例")
       return
     end
     FixedCameraCache[cameraPath] = {class = CameraClass, actor = actor}
     return actor
   end
-  
   local ShopCamera = GetOrCreateCamera()
   if not ShopCamera then
-    ScreenPrint("\230\156\170\230\137\190\229\136\176\231\155\184\230\156\186\229\174\158\228\190\139")
+    ScreenPrint("未找到相机实例")
     CreatNpcAndSwitch()
     return
   end
@@ -2458,23 +2443,31 @@ function BP_UIManagerComponent_C:SwitchFixedCamera(bInOut, NpcId, Hidetag, Origi
     if PlayerCharacter and Hidetag then
       PlayerCharacter:SetActorHideTag(Hidetag, true)
     end
+    if SpawnNpcConfig.UseXFOV then
+      DebugPrint("SwitchFixedCamera：固定镜头锁X轴向")
+      UE.UUIFunctionLibrary.StartHorizontalFOV()
+    end
+    DebugPrint("SwitchFixedCamera:切换到固定镜头：" .. (cameraPath or "cameraPath为空"))
   else
     if IsValid(OriginSelf.CameraHandle) then
       ULTweenBPLibrary.KillIfIsTweening(OriginSelf, OriginSelf.CameraHandle)
     end
     local CachedViewTarget = rawget(OriginSelf, "OriginalViewTarget")
-    if IsValid() then
-      PlayerController:SetViewTargetWithBlend(OriginSelf.OriginalViewTarget, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
+    if IsValid(CachedViewTarget) then
+      PlayerController:SetViewTargetWithBlend(CachedViewTarget, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
     else
-      DebugPrint("SwitchFixedCamera:UIState\231\154\132OriginalViewTarget\228\184\186\231\169\186  " .. (UIName or "UIName\228\184\186\231\169\186"))
+      DebugPrint("SwitchFixedCamera:UIState的OriginalViewTarget为空  " .. (UIName or "UIName为空"))
       OriginSelf:GetOwningPlayer():SetViewTargetWithBlend(PlayerCharacter, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
     end
     if PlayerCharacter and Hidetag then
       PlayerCharacter:SetActorHideTag(Hidetag, false)
     end
+    if SpawnNpcConfig.UseXFOV then
+      DebugPrint("SwitchFixedCamera：固定镜头锁恢复轴向")
+      UE.UUIFunctionLibrary.StopHorizontalFOV()
+    end
   end
 end
-
 function BP_UIManagerComponent_C:MoveFixedCamera(Camera)
   local StartPosition = Camera.RelativeLocation
   local EndPosition = FVector(0)
@@ -2485,7 +2478,6 @@ function BP_UIManagerComponent_C:MoveFixedCamera(Camera)
     end
   }, StartPosition, EndPosition, 0.5, 0, 17)
 end
-
 function BP_UIManagerComponent_C:SetCameraParamWithConfigData(ToCreateUIActorCameraHelper, SpawnNpcConfig)
   local CameraPositionStart, CameraRotationStart, CameraPosition, CameraRotation
   local PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self)
@@ -2494,7 +2486,7 @@ function BP_UIManagerComponent_C:SetCameraParamWithConfigData(ToCreateUIActorCam
     CameraRotationStart = SpawnNpcConfig.CameraRotationStartM
     CameraPosition = SpawnNpcConfig.CameraPositionM
     CameraRotation = SpawnNpcConfig.CameraRotationM
-    CameraRotation = self:CalculatorCameraRotationbyResolution(SpawnNpcConfig, CameraRotation)
+    CameraRotation = self:CalculatorCameraRotationbyResolution(SpawnNpcConfig, CameraRotation, true)
   else
     CameraPositionStart = SpawnNpcConfig.CameraPositionStart
     CameraRotationStart = SpawnNpcConfig.CameraRotationStart
@@ -2509,16 +2501,17 @@ function BP_UIManagerComponent_C:SetCameraParamWithConfigData(ToCreateUIActorCam
   if SpawnNpcConfig.CameraFov then
     ToCreateUIActorCameraHelper:StartFOVAnim(SpawnNpcConfig.CameraFov, SpawnNpcConfig.CameraTime, 14)
   end
+  DebugPrint("小白镜头 相机位置" .. CameraPosition[1] .. "," .. CameraPosition[2] .. "," .. CameraPosition[3])
+  DebugPrint("小白镜头 相机旋转" .. CameraRotation[1] .. "," .. CameraRotation[2] .. "," .. CameraRotation[3])
   ToCreateUIActorCameraHelper:TransformCamera(FVector(CameraPosition[1], CameraPosition[2], CameraPosition[3]), FRotator(CameraRotation[1], CameraRotation[2], CameraRotation[3]), SpawnNpcConfig.CameraTime, 17, StartCameraLocation, StartCameraRotation)
 end
-
-function BP_UIManagerComponent_C:CalculatorCameraRotationbyResolution(SpawnNpcConfig, CameraRotation)
-  local CameraRotationDelta = SpawnNpcConfig.CameraRotation2
+function BP_UIManagerComponent_C:CalculatorCameraRotationbyResolution(SpawnNpcConfig, CameraRotation, bMobile)
+  local CameraRotationDelta = bMobile and SpawnNpcConfig.CameraRotationDeltaM or SpawnNpcConfig.CameraRotationDelta
   if nil == CameraRotationDelta then
     return CameraRotation
   end
   if not (type(CameraRotationDelta) == "table" and CameraRotationDelta[1] and CameraRotationDelta[2]) or not CameraRotationDelta[3] then
-    ScreenPrint("SpawnNpc\232\161\168\228\184\173\231\154\132CameraRotationDelta\230\149\176\230\141\174\230\156\137\232\175\175\239\188\140\230\178\161\230\137\190\229\136\176\229\175\185\229\186\148\231\154\1323\228\184\170\229\157\144\230\160\135")
+    ScreenPrint("SpawnNpc表中的CameraRotationDelta数据有误，没找到对应的3个坐标")
     return CameraRotation
   end
   local FinalCameraRotation = {
@@ -2542,10 +2535,12 @@ function BP_UIManagerComponent_C:CalculatorCameraRotationbyResolution(SpawnNpcCo
     math.lerp(CameraRotation[2] or 0, FinalCameraRotation[2] or 0, Alalpha) or 0,
     math.lerp(CameraRotation[3] or 0, FinalCameraRotation[3] or 0, Alalpha) or 0
   }
-  DebugPrint("yklua CalculatorCameraRotationbyResolution Aspectratio:" .. (Aspectratio or "nil") .. " Alalpha:" .. (Alalpha or "nil") .. "resolution X:" .. (width or "nil") .. " Y:" .. (height or "nil"))
+  DebugPrint("小白镜头 相机旋转" .. CameraRotation[1] .. "," .. CameraRotation[2] .. "," .. CameraRotation[3])
+  DebugPrint("小白镜头 相机旋转偏移" .. CameraRotationDelta[1] .. "," .. CameraRotationDelta[2] .. "," .. CameraRotationDelta[3])
+  DebugPrint("小白镜头 相机旋转最终" .. AimCameraRotationEnd[1] .. "," .. AimCameraRotationEnd[2] .. "," .. AimCameraRotationEnd[3])
+  DebugPrint("小白镜头 屏幕参数 Aspectratio:" .. (Aspectratio or "nil") .. " Alalpha:" .. (Alalpha or "nil") .. "resolution X:" .. (width or "nil") .. " Y:" .. (height or "nil"))
   return AimCameraRotationEnd
 end
-
 function BP_UIManagerComponent_C:TweenToMoveCamera(Camera, EndPosition)
   if not IsValid(Camera) then
     return
@@ -2561,7 +2556,6 @@ function BP_UIManagerComponent_C:TweenToMoveCamera(Camera, EndPosition)
     end
   }, StartPosition, EndPosition, 0.5, 0, 17)
 end
-
 function BP_UIManagerComponent_C:SetTargetActorState(IsLoaded, TargetActor, ReasonStr, IsHaveInOutAnim)
   if IsValid(TargetActor) and not IsHaveInOutAnim then
     CommonUtils:SetActorTickableWhenPaused(TargetActor, IsLoaded)
@@ -2583,7 +2577,6 @@ function BP_UIManagerComponent_C:SetTargetActorState(IsLoaded, TargetActor, Reas
     TargetActor:SetActorHiddenInGame(not IsLoaded)
   end
 end
-
 function BP_UIManagerComponent_C:RegisterBattleShortCutHudKey(ShortCutKeyHud)
   DebugPrint("RegisterBattleShortCutHudKey:" .. tostring(ShortCutKeyHud))
   if nil == ShortCutKeyHud then
@@ -2591,7 +2584,6 @@ function BP_UIManagerComponent_C:RegisterBattleShortCutHudKey(ShortCutKeyHud)
   end
   self.ShortCutHudKeys[ShortCutKeyHud] = true
 end
-
 function BP_UIManagerComponent_C:UnRegisterBattleShortCutHudKey(ShortCutKeyHud)
   DebugPrint("UnRegisterBattleShortCutHudKey:" .. tostring(ShortCutKeyHud))
   if nil == ShortCutKeyHud then
@@ -2599,7 +2591,6 @@ function BP_UIManagerComponent_C:UnRegisterBattleShortCutHudKey(ShortCutKeyHud)
   end
   self.ShortCutHudKeys[ShortCutKeyHud] = nil
 end
-
 function BP_UIManagerComponent_C:SetBattleShortCutHudKeysHidden(bHidden)
   if bHidden then
     for KeyHud, _ in pairs(self.ShortCutHudKeys) do
@@ -2615,13 +2606,8 @@ function BP_UIManagerComponent_C:SetBattleShortCutHudKeysHidden(bHidden)
     end
   end
 end
-
-function BP_UIManagerComponent_C:HideAllComponentUI(IsHide, Tag, CompName)
-  if "Billboard" == CompName or nil == CompName then
-    DebugPrint("BP_UIManagerComponent_C:HideAllComponentUI SetIsForbidenShowBloodUI", IsHide, Tag)
-    UE4.UMainBar.SetIsForbidenShowBloodUI(IsHide)
-  end
-  for Eid, WidgetInfo in pairs(self.WidgetComponentList) do
+function BP_UIManagerComponent_C:PrivateHideAllComponentUI(IsHide, Tag, CompName, WidgetComponentList)
+  for Eid, WidgetInfo in pairs(WidgetComponentList) do
     for WidgetName, WidgetComp in pairs(WidgetInfo) do
       if CompName and "" ~= CompName and CompName ~= WidgetName then
       elseif IsValid(WidgetComp) then
@@ -2639,9 +2625,27 @@ function BP_UIManagerComponent_C:HideAllComponentUI(IsHide, Tag, CompName)
       end
     end
   end
+end
+function BP_UIManagerComponent_C:HideAllComponentUI(IsHide, Tag, CompName)
+  if "Billboard" == CompName or nil == CompName then
+    DebugPrint("BP_UIManagerComponent_C:HideAllComponentUI SetIsForbidenShowBloodUI", IsHide, Tag)
+    UE4.UMainBar.SetIsForbidenShowBloodUI(IsHide)
+  end
+  self:PrivateHideAllComponentUI(IsHide, Tag, CompName, self.WidgetComponentList)
+  local HideWidgetComponentTags = self.HideWidgetComponentTags or {}
+  self.HideWidgetComponentTags = HideWidgetComponentTags
+  if nil == CompName or "" == CompName then
+    CompName = ""
+  end
+  local CompHideTags = self.HideWidgetComponentTags[Tag] or {}
+  self.HideWidgetComponentTags[Tag] = CompHideTags
+  if IsHide then
+    CompHideTags[CompName] = true
+  else
+    CompHideTags[CompName] = nil
+  end
   EventManager:FireEvent(EventID.OnHideAllComponentUI, IsHide, Tag)
 end
-
 function BP_UIManagerComponent_C:PlayScreenEffectAnim(BPPath, EffectName, AnimInfoList)
   local ScreenEffectUI = self:LoadUI(BPPath, EffectName, UIConst.ZORDER_SCREEN_EFFECT)
   if nil == ScreenEffectUI then
@@ -2655,7 +2659,6 @@ function BP_UIManagerComponent_C:PlayScreenEffectAnim(BPPath, EffectName, AnimIn
           EffectPanelUI:PlayAnimation(EffectPanelUI[AnimInfoList[2].AnimName], AnimInfoList[2].StartTime, AnimInfoList[2].LoopNums)
         end
       end
-      
       ScreenEffectUI:BindToAnimationFinished(ScreenEffectUI[AnimInfoList[1].AnimName], {ScreenEffectUI, PlayAnimFinished})
       ScreenEffectUI:PlayAnimation(ScreenEffectUI[AnimInfoList[1].AnimName], AnimInfoList[1].StartTime, AnimInfoList[1].LoopNums)
     end
@@ -2667,7 +2670,6 @@ function BP_UIManagerComponent_C:PlayScreenEffectAnim(BPPath, EffectName, AnimIn
   end
   return ScreenEffectUI
 end
-
 function BP_UIManagerComponent_C:CheckNeedExitUIMode(ExceptUI)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local TalkContext = GameInstance:TryGetTalkContext()
@@ -2682,7 +2684,6 @@ function BP_UIManagerComponent_C:CheckNeedExitUIMode(ExceptUI)
   end
   return true
 end
-
 function BP_UIManagerComponent_C:GetTopUIModeUI(ExceptUI)
   local allUI = self.UIInstances:ToTable()
   local ZOrder = -10000
@@ -2698,7 +2699,6 @@ function BP_UIManagerComponent_C:GetTopUIModeUI(ExceptUI)
   end
   return TopWidget
 end
-
 function BP_UIManagerComponent_C:SetPauseWorldRenderingSwitch(UIName, bOpen)
   if bOpen then
     self.AllNotRenderWorldUI[UIName] = 1
@@ -2712,39 +2712,23 @@ function BP_UIManagerComponent_C:SetPauseWorldRenderingSwitch(UIName, bOpen)
     end
   end
 end
-
 function BP_UIManagerComponent_C:ShowBossBattleOpenTitle(bIsShow)
   local BossBattleOpenUI = self:GetUIObj("HardBossBattleOpen")
   if BossBattleOpenUI then
     BossBattleOpenUI:ShowHardBossTitle(bIsShow)
   else
-    DebugPrint("\230\137\190\228\184\141\229\136\176Boss\230\136\152\229\188\128\230\136\152UI")
+    DebugPrint("找不到Boss战开战UI")
   end
 end
-
 function BP_UIManagerComponent_C:RecordShowInStoryConfig(UIConfig, UIName)
   self.ShowInStoryUINames = self.ShowInStoryUINames or {}
   if UIConfig.ShowInStory then
     self.ShowInStoryUINames[UIName] = UIName
   end
 end
-
 function BP_UIManagerComponent_C:GetShowInStoryUINames()
   return self.ShowInStoryUINames or {}
 end
-
-function BP_UIManagerComponent_C:PlayBattleButtonPhoneVX(SkillName, IsClose)
-  local Widget = self:GetUIObj("BattleMain")
-  if not Widget then
-    print(_G.LogTag, "UIManager get widget BattleMain failed")
-    return
-  end
-  Widget = Widget.Char_Skill
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
-    Widget.Jump:PlayVX(SkillName, IsClose)
-  end
-end
-
 function BP_UIManagerComponent_C:LoadBossSkillTipsUI(BossSkillToastId)
   local BossSkillToastConfig = DataMgr.BossSkillToast[BossSkillToastId]
   local TipsStyle = BossSkillToastConfig.TipsStyle or "Common"
@@ -2761,11 +2745,9 @@ function BP_UIManagerComponent_C:LoadBossSkillTipsUI(BossSkillToastId)
   end
   return self:LoadUINew(UIName, BossSkillToastId)
 end
-
 function BP_UIManagerComponent_C:GetArmoryUIObj()
   return self:GetUI("ArmoryDetail") or self:GetUI("ArmoryMain")
 end
-
 function BP_UIManagerComponent_C:ShowDispatchTip(DispatchId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -2775,23 +2757,23 @@ function BP_UIManagerComponent_C:ShowDispatchTip(DispatchId)
   local Condition = DataMgr.Region[RegionId].RegionDispCondition
   local Check = ConditionUtils.CheckCondition(Avatar, Condition)
   if false == Check then
-    DebugPrint("\228\186\139\228\187\182\230\137\128\229\156\168\229\140\186\229\159\159\230\156\170\232\167\163\233\148\129")
+    DebugPrint("事件所在区域未解锁")
     return
   end
   local DispatchUIId = DataMgr.Dispatch[DispatchId].DispatchUIId
   local DispatchName = DataMgr.DispatchUI[DispatchUIId].DispatchName
   self:AddTimer(1.8, function()
-    local Text = string.format(GText("UI_Dispatch_Toast_Unlock"), "\227\128\144" .. GText(DispatchName) .. "\227\128\145")
+    local Text = string.format(GText("UI_Dispatch_Toast_Unlock"), "【" .. GText(DispatchName) .. "】")
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, Text)
     DebugPrint("lkkkShowDispatchTip ", DispatchId)
   end, false, 0, nil, false)
 end
-
 function BP_UIManagerComponent_C:LaunchAfterLoadingMgr()
-  DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, \229\144\175\229\138\168\231\138\182\230\128\129\230\156\186")
+  DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, 启动状态机")
   self:DestroyAfterLoadingMgr()
   local AfterLoadingMgr = require("BluePrints.UI.Common.AfterLoadingMgr")
   self.AfterLoadingMgr = AfterLoadingMgr.New()
+  EventManager:RemoveEvent(EventID.OnGuideEnd, self)
   EventManager:AddEvent(EventID.OnGuideEnd, self.AfterLoadingMgr, function(_, GuidId)
     self.AfterLoadingMgr.bGuideEndPending = true
     self:TryResumeAfterLoadingMgr({
@@ -2800,32 +2782,40 @@ function BP_UIManagerComponent_C:LaunchAfterLoadingMgr()
       "DynamicQuest"
     })
   end)
+  self.BlockingReasons = {}
+  EventManager:RemoveEvent(EventID.OnNetDisconnect, self)
+  EventManager:AddEvent(EventID.OnNetDisconnect, self, self.ResetAllBlockReasons)
+  EventManager:RemoveEvent(EventID.OnConnectSuccess, self)
+  EventManager:AddEvent(EventID.OnConnectSuccess, self, self.ResetAllBlockReasons)
   self.AfterLoadingMgr:Continue()
 end
-
+function BP_UIManagerComponent_C:ResetAllBlockReasons()
+  for BlockReason, _ in ipairs(self.BlockingReasons) do
+    self:_BlockAllUIInput(false, BlockReason)
+  end
+  self.BlockingReasons = {}
+end
 function BP_UIManagerComponent_C:DestroyAfterLoadingMgr()
   if self.AfterLoadingMgr and not self.AfterLoadingMgr:IsEnd() then
-    DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, \229\188\186\229\136\182\230\184\133\231\144\134\230\142\137\228\184\138\230\172\161\230\178\161\230\137\167\232\161\140\229\174\140\231\154\132\231\138\182\230\128\129\230\156\186")
+    DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, 强制清理掉上次没执行完的状态机")
   end
   if self.AfterLoadingMgr then
     EventManager:RemoveEvent(EventID.OnGuideEnd, self.AfterLoadingMgr)
   end
   self.AfterLoadingMgr = nil
 end
-
 function BP_UIManagerComponent_C:TryPauseAfterLoadingMgr(PauseAfterLoadingState)
   if not self.AfterLoadingMgr then
     return
   end
   for _, State in ipairs(PauseAfterLoadingState) do
     if self.AfterLoadingMgr:IsCurrentState(State) then
-      DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, UI\230\137\147\229\188\128\232\167\166\229\143\145\231\187\167\231\187\173\231\138\182\230\128\129\230\156\186\230\154\130\229\129\156")
+      DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, UI打开触发继续状态机暂停")
       self.AfterLoadingMgr:Pause()
       return
     end
   end
 end
-
 function BP_UIManagerComponent_C:FallbackAfterLoadingMgr()
   if not self.AfterLoadingMgr then
     return
@@ -2833,10 +2823,9 @@ function BP_UIManagerComponent_C:FallbackAfterLoadingMgr()
   if self.AfterLoadingMgr.bPause then
     return
   end
-  DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, \228\191\157\229\186\149\231\187\167\231\187\173\230\137\167\232\161\140\231\138\182\230\128\129\230\156\186\239\188\140\233\129\191\229\133\141\229\141\161\228\189\143")
+  DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, 保底继续执行状态机，避免卡住")
   self.AfterLoadingMgr:Fallback()
 end
-
 function BP_UIManagerComponent_C:TryResumeAfterLoadingMgr(PauseAfterLoadingState)
   if not self.AfterLoadingMgr then
     return
@@ -2845,7 +2834,7 @@ function BP_UIManagerComponent_C:TryResumeAfterLoadingMgr(PauseAfterLoadingState
     if self.AfterLoadingMgr:IsCurrentState(State) then
       self:AddTimer(0.01, function()
         if self.AfterLoadingMgr and not self.AfterLoadingMgr:IsEnd() then
-          DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, UI\229\133\179\233\151\173\232\167\166\229\143\145\231\187\167\231\187\173\230\137\167\232\161\140\231\138\182\230\128\129\230\156\186")
+          DebugPrint(WarningTag, "UIManager.AfterLoadingMgr, UI关闭触发继续执行状态机")
           self.AfterLoadingMgr:Continue()
         end
         return
@@ -2854,21 +2843,18 @@ function BP_UIManagerComponent_C:TryResumeAfterLoadingMgr(PauseAfterLoadingState
     end
   end
 end
-
 function BP_UIManagerComponent_C:AddTimer(Interval, Func, IsLoop, Delay, Key, IsRealTime, ...)
   if nil == IsRealTime then
     IsRealTime = true
   end
   return BP_UIManagerComponent_C.Super.AddTimer(self, Interval, Func, IsLoop, Delay, Key, IsRealTime, ...)
 end
-
 function BP_UIManagerComponent_C:SetUIPauseGame(UIName, IsPause)
   if not self.UIPauseGameMap then
     self.UIPauseGameMap = {}
   end
   self.UIPauseGameMap[UIName] = IsPause and true or nil
 end
-
 function BP_UIManagerComponent_C:IsUIPauseGame()
   if not self.UIPauseGameMap then
     return false
@@ -2876,68 +2862,285 @@ function BP_UIManagerComponent_C:IsUIPauseGame()
   local Num = CommonUtils.TableLength(self.UIPauseGameMap)
   return Num > 0
 end
-
 function BP_UIManagerComponent_C:NotifyClientShowDungeonToast(Color)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   UE4.UGameplayStatics.GetGameMode():NotifyClientShowDungeonToast("AvailablePet_Empty", 1.0, EToastType.Common, Color or EToastColor.Yellow)
 end
-
 function BP_UIManagerComponent_C:LoadTitleFrameWidget(TitleFrameID)
   local TitleConfig = DataMgr.TitleFrame[TitleFrameID]
   if not TitleConfig then
-    ScreenPrint("\231\167\176\229\143\183\229\138\160\232\189\189\229\164\177\232\180\165\239\188\154TitleFrame \232\161\168\229\134\133\230\178\161\230\156\137\233\133\141\231\189\174TitleFrameID=" .. TitleFrameID or "\231\169\186")
+    ScreenPrint("称号加载失败：TitleFrame 表内没有配置TitleFrameID=" .. TitleFrameID or "空")
     return
   end
   local BPPath = TitleConfig.FramePath
   if not BPPath then
-    ScreenPrint("\231\167\176\229\143\183\229\138\160\232\189\189\229\164\177\232\180\165\239\188\154TitleFrame \232\161\168\229\134\133\230\178\161\230\156\137\233\133\141\231\189\174\232\181\132\230\186\144\229\156\176\229\157\128\239\188\140\229\133\136\231\148\168\233\187\152\232\174\164\231\154\132=" .. TitleFrameID or "\231\169\186")
+    ScreenPrint("称号加载失败：TitleFrame 表内没有配置资源地址，先用默认的=" .. TitleFrameID or "空")
     BPPath = "WidgetBlueprint'/Game/UI/WBP/PersonalInfo/Widget/Title/Title/WBP_PersonalInfo_Title_01.WBP_PersonalInfo_Title_01'"
   end
   local Widget = self:CreateWidget(BPPath, false)
   return Widget
 end
-
 function BP_UIManagerComponent_C:GetCurrentWindowSize()
   return GWorld.GameInstance:GetSceneManager():GetWindowSize()
 end
-
 function BP_UIManagerComponent_C:AddFlow(WidgetName, Flow)
   self.FlowList[WidgetName] = Flow
   DebugPrint("WXT UIManagerComponent_C:AddFlow", WidgetName)
 end
-
 function BP_UIManagerComponent_C:TryOpenSystem(source)
   local currentFrame = UKismetSystemLibrary.GetFrameCount()
   if self.SystemOpenFrameFlag ~= currentFrame and self.SystemOpenFrameFlag ~= currentFrame - 1 then
     self.SystemOpenFrameFlag = currentFrame
     return true
   end
-  DebugPrint("\233\152\178\230\173\162\229\144\140\228\184\128\229\184\167\230\137\147\229\188\128\229\164\154\228\184\170\231\179\187\231\187\159:", "\230\157\165\230\186\144:", source, "\229\184\167\229\143\183:", currentFrame)
+  DebugPrint("防止同一帧打开多个系统:", "来源:", source, "帧号:", currentFrame)
   return false
 end
-
 function BP_UIManagerComponent_C:InitGlobalVersionDisplay()
   if UE.URuntimeCommonFunctionLibrary.IsDistribution() then
     return
   end
   local bpPath = "WidgetBlueprint'/Game/UI/WBP/Battle/Widget/WBP_Battle_Version.WBP_Battle_Version'"
-  local versionWidget = self:CreateWidget(bpPath, true, 999)
-  if versionWidget then
-    self.GlobalVersionWidget = versionWidget
-    versionWidget:InitVersionDisplay()
+  local function AfterLoadVersionWidget(versionWidget)
+    if versionWidget then
+      self.GlobalVersionWidget = versionWidget
+      local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+      GameInstance.GlobalVersionWidget = versionWidget
+      versionWidget:InitVersionDisplay()
+    end
   end
+  self:LoadUIAsync("WBP_Battle_Version", AfterLoadVersionWidget)
 end
-
 function BP_UIManagerComponent_C:ShowGlobalVersion()
-  if self.GlobalVersionWidget then
-    self.GlobalVersionWidget:Show()
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  if GameInstance.GlobalVersionWidget then
+    GameInstance.GlobalVersionWidget:Show()
   end
 end
-
 function BP_UIManagerComponent_C:HideGlobalVersion()
-  if self.GlobalVersionWidget then
-    self.GlobalVersionWidget:Hide()
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  if GameInstance.GlobalVersionWidget then
+    GameInstance.GlobalVersionWidget:Hide()
   end
 end
-
+function BP_UIManagerComponent_C:ShowUIError(ErrorCategory, Text, ShowTraceback)
+  self:ShowUIErrorLua(Text, ErrorCategory, ShowTraceback)
+end
+function BP_UIManagerComponent_C:ShowUIErrorLua(Text, ErrorCategory, ShowTraceback)
+  if nil == Text then
+    DebugPrint(ErrorTag, "ShowUIErrorLua:参数Text为nil")
+    return
+  end
+  if nil == ErrorCategory then
+    DebugPrint(ErrorTag, "ShowUIErrorLua:参数ErrorCategory为nil")
+    return
+  end
+  local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
+  local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
+  if bDistribution and not bEnableShippingLog then
+    return
+  end
+  local Space = "=========================================================\n"
+  local ct = {
+    Space,
+    "报错文本:\n\t",
+    tostring(Text),
+    "\n"
+  }
+  if nil == ShowTraceback or true == ShowTraceback then
+    table.insert(ct, Space)
+    table.insert(ct, [[
+Traceback:
+	]])
+    table.insert(ct, debug.traceback())
+    table.insert(ct, "\n")
+  end
+  table.insert(ct, Space)
+  self:_FillUIErrorLog(ct)
+  table.insert(ct, Space)
+  local Ret = table.concat(ct)
+  if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
+    ScreenPrint("UI报错:\n" .. Ret)
+  end
+  GWorld.ErrorDict = GWorld.ErrorDict or {}
+  if GWorld.ErrorDict[Text] then
+    return
+  end
+  GWorld.ErrorDict[Text] = true
+  local TraceType = {
+    first = "UI报错",
+    second = ErrorCategory,
+    third = Text
+  }
+  local DescribeInfo = {title = "UI报错", trace_content = Ret}
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local LocalUser = UE.UKismetSystemLibrary:GetPlatformUserName()
+    local Ret = "设备名：" .. LocalUser .. "\n" .. Ret
+    Avatar:SendTraceToQaWeb(TraceType, DescribeInfo)
+    return
+  end
+  local DSEntity = GWorld:GetDSEntity()
+  if DSEntity then
+    DSEntity:SendTraceToQaWeb(TraceType, DescribeInfo)
+    return
+  end
+end
+function BP_UIManagerComponent_C:_FillUIErrorLog(ct)
+  if not ct and type(ct) ~= "table" then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  table.insert(ct, "环境:")
+  if IsClient(self) then
+    table.insert(ct, "联机客户端\n")
+  elseif IsDedicatedServer(self) then
+    table.insert(ct, "联机服务端\n")
+  elseif Avatar and Avatar:IsInHardBoss() then
+    table.insert(ct, "梦魇残声")
+    if Avatar.HardBossInfo then
+      table.insert(ct, ":编号[")
+      local HardBossId = Avatar.HardBossInfo.HardBossId
+      table.insert(ct, HardBossId)
+      table.insert(ct, "]")
+      local Context
+      if DataMgr.HardBossMain[HardBossId] then
+        local HardBossName = DataMgr.HardBossMain[HardBossId].HardBossName
+        if DataMgr.TextMap[HardBossName] then
+          Context = GText(HardBossName)
+        end
+      end
+      if Context then
+        table.insert(ct, "[")
+        table.insert(ct, Context)
+        table.insert(ct, "]")
+      end
+      local DifficultyId = Avatar.HardBossInfo.DifficultyId
+      local DifficultyLevel
+      if DifficultyId and DataMgr.HardBossDifficulty[DifficultyId] then
+        DifficultyLevel = DataMgr.HardBossDifficulty[DifficultyId].DifficultyLevel
+      end
+      table.insert(ct, ":难度等级[")
+      table.insert(ct, DifficultyLevel)
+      table.insert(ct, "]")
+    end
+    table.insert(ct, "\n")
+  else
+    table.insert(ct, "单机\n")
+  end
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if IsDedicatedServer(self) then
+    local AllPlayer = GameMode:GetAllPlayer()
+    for i, Player in pairs(AllPlayer) do
+      table.insert(ct, "[")
+      table.insert(ct, i)
+      table.insert(ct, "]")
+      self:_FillCharacterLog_UI(ct, Player)
+      table.insert(ct, "\n")
+    end
+  else
+    local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+    local CurrentRoleId
+    if Player then
+      CurrentRoleId = Player.CurrentRoleId
+    end
+    self:_FillCharacterLog_UI(ct, Player)
+    table.insert(ct, "\n")
+  end
+  local GameState = UE.UGameplayStatics.GetGameState(self.Player)
+  if IsValid(GameState) then
+    local DungeonId = GameState.DungeonId
+    if DungeonId and DungeonId > 0 then
+      table.insert(ct, "副本ID:")
+      table.insert(ct, tostring(DungeonId))
+      local DungeonInfo = DataMgr.Dungeon[DungeonId]
+      if DungeonInfo then
+        local DungeonName = DungeonInfo.DungeonName
+        if DataMgr.TextMap[DungeonName] then
+          DungeonName = GText(DungeonName)
+        end
+        table.insert(ct, "(")
+        table.insert(ct, tostring(DungeonName))
+        table.insert(ct, ")")
+      end
+      table.insert(ct, "\n")
+    end
+  end
+  if IsValid(GameMode) and GameMode.IsInRegion and GameMode:IsInRegion() and Avatar then
+    local RegionId = Avatar:GetCurrentRegionId()
+    table.insert(ct, "子区域ID:")
+    table.insert(ct, tostring(RegionId))
+    local RegionInfo = DataMgr.SubRegion[RegionId]
+    if RegionInfo then
+      local RegionName = RegionInfo.SubRegionName
+      if DataMgr.TextMap[RegionName] then
+        RegionName = GText(RegionName)
+      end
+      table.insert(ct, "(")
+      table.insert(ct, tostring(RegionName))
+      table.insert(ct, ")")
+    end
+    table.insert(ct, "\n")
+  end
+end
+function BP_UIManagerComponent_C:_FillCharacterLog_UI(ct, Player)
+  if not ct and type(ct) ~= "table" then
+    return
+  end
+  if not Player then
+    return
+  end
+  local CurrentRoleId = Player.CurrentRoleId
+  table.insert(ct, "使用角色ID:")
+  table.insert(ct, tostring(CurrentRoleId))
+  if DataMgr.BattleChar[CurrentRoleId] then
+    local RoleName = GText(DataMgr.BattleChar[CurrentRoleId].CharName)
+    table.insert(ct, "(")
+    table.insert(ct, tostring(RoleName))
+    table.insert(ct, ")")
+  end
+  if Player:IsPlayer() then
+    local Flag = false
+    local PhantomTeammate = Player:GetPhantomTeammates()
+    for _, Target in pairs(PhantomTeammate) do
+      if Target ~= Player then
+        if not Flag then
+          table.insert(ct, "\n正在使用的魅影信息:")
+          Flag = true
+        end
+        table.insert(ct, [[
+	]])
+        self:_FillCharacterLog_UI(ct, Target)
+      end
+    end
+  end
+end
+function BP_UIManagerComponent_C:StartScriptDetectionCheck()
+  if Const.bOpenScriptDetectionCheck then
+    local SceneManager = GWorld.GameInstance:GetSceneManager()
+    if SceneManager and SceneManager:GetIsEnableScriptDetectionCheck() then
+      SceneManager:StartScriptDetectionCheck(Const.ScriptDetectionCheckType.OnMouse)
+      SceneManager:StartScriptDetectionCheck(Const.ScriptDetectionCheckType.OnKeyboard)
+    end
+  end
+end
+function BP_UIManagerComponent_C:MarkKeyLongPressSuccess(InKey)
+  if not self.LongPressTbl then
+    self.LongPressTbl = {}
+  end
+  self.LongPressTbl[InKey] = 1
+end
+function BP_UIManagerComponent_C:CheckAndCleanKeyLongPressSuccess(InKey)
+  if self.LongPressTbl then
+    local Res = self.LongPressTbl[InKey]
+    self:ClearKeyLongPressSuccess(InKey)
+    return Res
+  end
+  return false
+end
+function BP_UIManagerComponent_C:ClearKeyLongPressSuccess(InKey)
+  if self.LongPressTbl and self.LongPressTbl[InKey] then
+    self.LongPressTbl[InKey] = nil
+  end
+end
 return BP_UIManagerComponent_C

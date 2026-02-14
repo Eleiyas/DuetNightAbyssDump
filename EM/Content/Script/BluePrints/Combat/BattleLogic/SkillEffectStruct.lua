@@ -1,11 +1,10 @@
 local SkillEffectClass = {}
-
 function SkillEffectClass.New(Source, EffectId, TargetFilterResult, Location, Skill, SkillLevelSource, SkillEffectInfo, SourceComponent)
   if not IsValid(Source) then
     return
   end
   local EffectInfo = DataMgr.SkillEffects[EffectId]
-  assert(EffectInfo, "\230\138\128\232\131\189\230\149\136\230\158\156\231\188\150\229\143\183\229\161\171\229\134\153\233\148\153\232\175\175:" .. tostring(EffectId))
+  assert(EffectInfo, "技能效果编号填写错误:" .. tostring(EffectId))
   local Effects = EffectInfo.TaskEffects
   if not IsValid(Skill) then
     Skill = nil
@@ -71,5 +70,4 @@ function SkillEffectClass.New(Source, EffectId, TargetFilterResult, Location, Sk
   end
   return SkillEffectStruct
 end
-
 return SkillEffectClass

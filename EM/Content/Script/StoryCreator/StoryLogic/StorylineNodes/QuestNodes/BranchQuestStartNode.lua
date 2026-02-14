@@ -1,7 +1,6 @@
 local BranchQuestStartNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function BranchQuestStartNode:Init()
   self.AllQuestOptions = nil
   self.AllDiffGuideOptions = nil
@@ -10,7 +9,6 @@ function BranchQuestStartNode:Init()
   self.CurDoingQuestId = 0
   self.IsDifftation = false
 end
-
 function BranchQuestStartNode:Start(Context)
   self.Context = Context
   local NeedFinishCount = 0
@@ -27,7 +25,8 @@ function BranchQuestStartNode:Start(Context)
     BranchQuestOptions = self.AllQuestOptions,
     DiffGuideList = self.AllDiffGuideOptions,
     IsUpdateCountInfo = self.IsSetCountInfo,
-    NeedFinishCount = NeedFinishCount
+    NeedFinishCount = NeedFinishCount,
+    IsUseDifftation = self.IsDifftation
   })
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -47,7 +46,6 @@ function BranchQuestStartNode:Start(Context)
     self:FinishAction()
   end
 end
-
 function BranchQuestStartNode:OnCancelTrack()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if not TaskUIObj then
@@ -64,7 +62,6 @@ function BranchQuestStartNode:OnCancelTrack()
   end
   TaskUIObj.VBox_SubTasks:ClearChildren()
 end
-
 function BranchQuestStartNode:OnChooseTrack()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if not TaskUIObj then
@@ -81,38 +78,22 @@ function BranchQuestStartNode:OnChooseTrack()
         TaskUIObj.VBox_SubTasks:AddChildToVerticalBox(ChildQuestWidget)
         TaskUIObj.SubTaskWidgetsTable["Branch_" .. tostring(SubTaskIndex)] = ChildQuestWidget
         TaskUIObj.VBox_SubTasks:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-        if self.IsDifftation then
-          ChildQuestWidget.WS_Type:SetActiveWidgetIndex(1)
-          ChildQuestWidget:SetABCImg(SubTaskIndex)
-          ChildQuestWidget.DiffGuideInfos = self.AllDiffGuideOptions[SubTaskIndex]
-        end
+        ChildQuestWidget.SubTaskIndex = SubTaskIndex
         ChildQuestWidget:SetBranchInfo(BranchQuestInfo.TargetBranchQuestKey, GText(BranchQuestInfo.BranchQuestName))
       end
       SubTaskIndex = SubTaskIndex + 1
     end
   end
-  if TaskUIObj and 0 ~= TaskUIObj.VBox_SubTasks:GetChildrenCount() then
-    TaskUIObj:TriggerQuestTrackPanelTips(false)
-    local Info = TaskUtils:GetQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId)
-    if not Info then
-      return
-    end
-    for _, Data in pairs(Info) do
-      if Data.Node and Data.Node.Type == "BranchQuestStartNode" and IsEmptyTable(Data.DiffGuideList) == false then
-        for Index, OptionElemts in pairs(Data.DiffGuideList) do
-          for _, KeyList in pairs(OptionElemts) do
-            for _, KeyData in pairs(KeyList) do
-              if KeyData.IsShowOptional == true and TaskUIObj then
-                TaskUIObj:SetTaskBarSubTaskIcon(Index, "Optional")
-              end
-            end
-          end
-        end
-      end
+  local Indicators = MissionIndicatorManager:GetIndicatorUIObjByQuestChainId(self.CurQuestChainId)
+  if not IsEmptyTable(Indicators) then
+    for _, Indicator in pairs(Indicators) do
+      Indicator:TrySetDiffGuideIcon(self.CurQuestChainId, Indicator.GuideInfoCache.QuestNode.Key)
     end
   end
+  if TaskUIObj and 0 ~= TaskUIObj.VBox_SubTasks:GetChildrenCount() then
+    TaskUIObj:TriggerQuestTrackPanelTips(false)
+  end
 end
-
 function BranchQuestStartNode:SetTaskBarByBranchStartNode()
   if not self.IsSetCountInfo then
     return
@@ -123,7 +104,6 @@ function BranchQuestStartNode:SetTaskBarByBranchStartNode()
   end
   TaskUIObj:ChangeMainTaskBarCountInfoByBranchQuestNode(self.QuestChainId, self.QuestData.QuestId)
 end
-
 function BranchQuestStartNode:ExecuteBranchQuestNode()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -140,12 +120,8 @@ function BranchQuestStartNode:ExecuteBranchQuestNode()
         TaskUIObj.VBox_SubTasks:AddChildToVerticalBox(ChildQuestWidget)
         TaskUIObj.SubTaskWidgetsTable["Branch_" .. tostring(SubTaskIndex)] = ChildQuestWidget
         TaskUIObj.VBox_SubTasks:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-        if self.IsDifftation then
-          ChildQuestWidget.WS_Type:SetActiveWidgetIndex(1)
-          ChildQuestWidget:SetABCImg(SubTaskIndex)
-          ChildQuestWidget.DiffGuideInfos = self.AllDiffGuideOptions[SubTaskIndex]
-        end
         ChildQuestWidget:PlayAnimation(ChildQuestWidget.In)
+        ChildQuestWidget.SubTaskIndex = SubTaskIndex
         ChildQuestWidget:SetBranchInfo(BranchQuestInfo.TargetBranchQuestKey, GText(BranchQuestInfo.BranchQuestName))
       end
       SubTaskIndex = SubTaskIndex + 1
@@ -174,12 +150,8 @@ function BranchQuestStartNode:ExecuteBranchQuestNode()
                 TaskUIObj.VBox_SubTasks:AddChildToVerticalBox(ChildQuestWidget)
                 TaskUIObj.SubTaskWidgetsTable["Branch_" .. tostring(SubTaskIndex)] = ChildQuestWidget
                 TaskUIObj.VBox_SubTasks:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-                if self.IsDifftation then
-                  ChildQuestWidget.WS_Type:SetActiveWidgetIndex(SubTaskIndex)
-                  ChildQuestWidget:SetABCImg(SubTaskIndex)
-                  ChildQuestWidget.DiffGuideInfos = self.AllDiffGuideOptions[SubTaskIndex]
-                end
                 ChildQuestWidget:PlayAnimation(ChildQuestWidget.In)
+                ChildQuestWidget.SubTaskIndex = SubTaskIndex
                 ChildQuestWidget:SetBranchInfo(BranchQuestInfo.TargetBranchQuestKey, GText(BranchQuestInfo.BranchQuestName))
               end
               SubTaskIndex = SubTaskIndex + 1
@@ -197,6 +169,7 @@ function BranchQuestStartNode:ExecuteBranchQuestNode()
             if IsValid(ChildWidget) then
               ChildWidget:PlayAnimation(ChildWidget.In)
               Index = Index + 1
+              ChildWidget.SubTaskIndex = Index
               ChildWidget:SetBranchInfo(BranchQuestInfo.TargetBranchQuestKey, GText(BranchQuestInfo.BranchQuestName))
             end
           end
@@ -211,15 +184,12 @@ function BranchQuestStartNode:ExecuteBranchQuestNode()
     self:FinishAction()
   end
 end
-
 function BranchQuestStartNode:FinishAction()
   self:Finish()
 end
-
 function BranchQuestStartNode:ClearWhenQuestSuccess()
   TaskUtils:ClearQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId, self.Key)
 end
-
 function BranchQuestStartNode:ClearWhenQuestFail()
   TaskUtils:ClearQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId, self.Key)
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
@@ -233,8 +203,6 @@ function BranchQuestStartNode:ClearWhenQuestFail()
     TaskUIObj.SubTaskWidgetsTable = {}
   end
 end
-
 function BranchQuestStartNode:Clear()
 end
-
 return BranchQuestStartNode

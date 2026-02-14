@@ -1,12 +1,10 @@
 local ShowOrHideUINode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function ShowOrHideUINode:Init()
   self.Function = nil
   self.UIParam = nil
   self.ActionParam = nil
   self.ShowOrHide = false
 end
-
 function ShowOrHideUINode:Start(Context)
   self.Context = Context
   local GameInstance = GWorld.GameInstance
@@ -23,11 +21,9 @@ function ShowOrHideUINode:Start(Context)
   end
   self:FinishAction()
 end
-
 function ShowOrHideUINode:FinishAction()
   self:Finish()
 end
-
 function ShowOrHideUINode:OnQuestlineSuccess()
   if self.Function == "HideUIInScreen" then
     self.Context:SaveSuitUpdateData("UpdateSuitKey2Value", CommonConst.SuitType.PlayerCharacterSuit, CommonConst.PlayerCharacterSuit.HideUIInScreen, self.UIParam, self.ShowOrHide)
@@ -35,7 +31,6 @@ function ShowOrHideUINode:OnQuestlineSuccess()
     self.Context:SaveSuitUpdateData("UpdateSuitKey2Value", CommonConst.SuitType.PlayerCharacterSuit, CommonConst.PlayerCharacterSuit.ContinuedGuide, self.ActionParam, self.ShowOrHide)
   end
 end
-
 function ShowOrHideUINode:OnQuestlineFail()
   DebugPrint("ShowOrHideUINode: OnQuestlineFail", self.Function, self.UIParam, self.ActionParam, self.ShowOrHide)
   local GameInstance = GWorld.GameInstance
@@ -61,5 +56,4 @@ function ShowOrHideUINode:OnQuestlineFail()
     end
   end
 end
-
 return ShowOrHideUINode

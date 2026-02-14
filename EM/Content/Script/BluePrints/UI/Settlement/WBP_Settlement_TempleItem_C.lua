@@ -3,7 +3,6 @@ local WBP_Settlement_TempleItem_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Settlement_TempleItem_C:SetStarLevel(Count, FailReason)
   self.StarCount = Count
   if "" == FailReason then
@@ -28,7 +27,6 @@ function WBP_Settlement_TempleItem_C:SetStarLevel(Count, FailReason)
     self.Text_StarDesc:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function WBP_Settlement_TempleItem_C:SetNoStarLevel(FailReason)
   if "" == FailReason then
     self.Text_Title:SetText(GText("UI_TEMPLE_TOTAL_STAR"))
@@ -40,12 +38,10 @@ function WBP_Settlement_TempleItem_C:SetNoStarLevel(FailReason)
     self.Text_StarDesc:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function WBP_Settlement_TempleItem_C:SetPoints(Points)
   self.Text_PointsNum:SetVisibility(ESlateVisibility.HitTestInvisible)
   self.Text_PointsNum:SetText(Points)
 end
-
 function WBP_Settlement_TempleItem_C:SetStarRewards(RewardsInfo, CurrentStar, HistoryMaxStar)
   self.Text_Title:SetText(GText("UI_TEMPLE_REWARDS"))
   self.Group_Star:SetVisibility(ESlateVisibility.Collapsed)
@@ -85,7 +81,6 @@ function WBP_Settlement_TempleItem_C:SetStarRewards(RewardsInfo, CurrentStar, Hi
     self["Item0" .. i]:Init(RewardsInfo[i])
   end
 end
-
 function WBP_Settlement_TempleItem_C:SetNoStarRewards(RewardsInfo, IsPass, IntervalTime, FirstDelayTime)
   self.Text_Title:SetText(GText("UI_TEMPLE_REWARDS"))
   self.Group_Star:SetVisibility(ESlateVisibility.Collapsed)
@@ -97,41 +92,33 @@ function WBP_Settlement_TempleItem_C:SetNoStarRewards(RewardsInfo, IsPass, Inter
   self.IntervalTime = IntervalTime
   self.FirstDelayTime = FirstDelayTime
 end
-
 function WBP_Settlement_TempleItem_C:ActiveStar1()
   if self.StarCount ~= nil and self.StarCount >= 1 then
     self.WBP_LevelMap_TempleStarItem_1:PlayStarInAnim()
   end
 end
-
 function WBP_Settlement_TempleItem_C:ActiveStar2()
   if self.StarCount ~= nil and self.StarCount >= 2 then
     self.WBP_LevelMap_TempleStarItem_2:PlayStarInAnim()
   end
 end
-
 function WBP_Settlement_TempleItem_C:ActiveStar3()
   if self.StarCount ~= nil and self.StarCount >= 3 then
     self.WBP_LevelMap_TempleStarItem_3:PlayStarInAnim()
   end
 end
-
 function WBP_Settlement_TempleItem_C:PlayStarInAnim()
   self:PlayAnimation(self.StarSign_In)
 end
-
 function WBP_Settlement_TempleItem_C:PlayPointsInAnim()
   self:PlayAnimation(self.PointsNum_In)
 end
-
 function WBP_Settlement_TempleItem_C:PlayRewardsInAnim()
   self:PlayAnimation(self.Rewards_In)
 end
-
 function WBP_Settlement_TempleItem_C:StartShowNoStarRewards()
   local function AddProp()
     local CurrentNum = self.List_Reward:GetNumItems()
-    
     if CurrentNum < #self.RewardsInfo then
       self.List_Reward:AddItem(self:NewPropContent(self.RewardsInfo[CurrentNum + 1]), self.List_Reward)
       self.List_Reward:SetScrollbarVisibility(ESlateVisibility.Collapsed)
@@ -139,7 +126,6 @@ function WBP_Settlement_TempleItem_C:StartShowNoStarRewards()
       self:RemoveTimer("AddTempleProp", true)
     end
   end
-  
   if self.IntervalTime ~= nil and nil ~= self.RewardsInfo then
     self:AddTimer(self.IntervalTime, AddProp, true, 0, "AddTempleProp", true)
     self:AddTimer(self.IntervalTime + 1, function()
@@ -147,14 +133,12 @@ function WBP_Settlement_TempleItem_C:StartShowNoStarRewards()
     end)
   end
 end
-
 function WBP_Settlement_TempleItem_C:NewPropContent(Content, RewardViewWidget)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   if nil ~= Content then
     Obj.ParentWidget = self
     Obj.Id = Content.Id
     Obj.Count = Content.Count
-    
     function Obj.AfterInitCallback(Widget)
       if not Widget.Content.IsPlayedInAnimation then
         Widget:PlayInAnimation()
@@ -164,7 +148,6 @@ function WBP_Settlement_TempleItem_C:NewPropContent(Content, RewardViewWidget)
       end
       self:OpenTipsBindEvents(Widget)
     end
-    
     Obj.Icon = Content.Icon
     Obj.Rarity = Content.Rarity
     if Content.IsWalnut then
@@ -183,13 +166,11 @@ function WBP_Settlement_TempleItem_C:NewPropContent(Content, RewardViewWidget)
   end
   return Obj
 end
-
 function WBP_Settlement_TempleItem_C:OpenTipsBindEvents(Widget)
   local Events = {}
   Events.OnMenuOpenChanged = self.ItemMenuAnchorChanged
   Widget:BindEvents(self, Events)
 end
-
 function WBP_Settlement_TempleItem_C:ItemMenuAnchorChanged()
   if UIManager(self.ParentUI):IsHaveMenuAnchorOpen() then
     self.ParentUI:UpdateMainUIInGamePadClick()
@@ -201,5 +182,4 @@ function WBP_Settlement_TempleItem_C:ItemMenuAnchorChanged()
     self.ParentUI:UpdateMainUIWithPCOrMoble()
   end
 end
-
 return WBP_Settlement_TempleItem_C

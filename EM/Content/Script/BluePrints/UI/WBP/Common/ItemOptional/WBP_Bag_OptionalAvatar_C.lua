@@ -1,7 +1,6 @@
 require("UnLua")
 local StuffIconObject = require("BluePrints.UI.WBP.Bag.Widget.BagStuffIconObject")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   self.OptionalItemsList = Params.OptionalItemsList
@@ -12,21 +11,16 @@ function M:InitContent(Params, PopupData, Owner)
   self.AllItemsWidget = {}
   self.ParentWidget = Params.ParentWidget
   self.CurrentChooseInfo = Params.ParentWidget.CurrentChooseInfo or nil
+  self.ResourceId = Params.ResourceId
   self:ShowGamepadShortcutBtn({
     KeyInfoList = {
       {Type = "Img", ImgShortPath = "LS"}
     },
     Desc = GText("UI_Controller_CheckDetails")
   })
-  self:ShowGamepadShortcutBtn({
-    KeyInfoList = {
-      {Type = "Img", ImgShortPath = "A"}
-    },
-    Desc = GText("UI_CTL_Select")
-  })
   self:InitAllOptionalItemsInfo()
+  self.Owner:ShowDialogTip(1)
 end
-
 function M:InitAllOptionalItemsInfo()
   self.WB_Avatar:ClearChildren()
   for i, v in ipairs(self.OptionalItemsList) do
@@ -71,7 +65,6 @@ function M:InitAllOptionalItemsInfo()
     self:ResetChooseInfo()
   end
 end
-
 function M:ChangeChooseClickCallback(bSelectState, ChooseInfo)
   if self.CurrentChooseWidget then
     self.CurrentChooseWidget:SetSelected(false)
@@ -79,44 +72,39 @@ function M:ChangeChooseClickCallback(bSelectState, ChooseInfo)
   self.CurrentChooseInfo = ChooseInfo
   if bSelectState then
     self.CurrentChooseWidget = ChooseInfo.ChooseWidget
+    self.CurrentChooseWidget:SetSelected(true)
     if type(self.ChooseCallbackFunction) == "function" then
       self.ChooseCallbackFunction(self.FunctionCallbackObj, self.CurrentChooseInfo)
     end
     self.Owner:ForbidRightBtn(false)
     local ResourceName = DataMgr.Resource[self.CurrentChooseInfo.ResourceId].ResourceName
-    self:AddTimer(0.01, function()
-      self:BroadcastDialogEvent("UpdateDialogTipText", {
-        Tips = {
-          string.format(GText("UI_Consumable_Effect"), GText(ResourceName), self.CurrentChooseInfo.ChooseName)
-        },
-        DialogItemIndex = 1,
-        bShowTip = true
-      })
-    end)
+    local Funds = {}
+    Funds[1] = {}
+    Funds[1].FundId = self.ResourceId
+    Funds[1].FundNeed = 1
+    Funds[1].CostText = GText("UI_Armory_Trace_Cost")
+    self:AddDelayFrameFunc(function()
+      self:BroadcastDialogEvent("UpdateFunds", {Funds = Funds})
+      self.Owner:HideDialogTip(1, false)
+      self.Owner:ShowDialogTip(2)
+    end, 1)
   else
     self.CurrentChooseWidget = nil
     self.Owner:ForbidRightBtn(true)
-    self:BroadcastDialogEvent("UpdateDialogTipText", {
-      Tips = self.OriginalTips,
-      DialogItemIndex = 1,
-      bShowTip = true
-    })
+    self.Owner:HideDialogTip(2)
+    self.Owner:ShowDialogTip(1)
   end
 end
-
 function M:ResetChooseInfo()
   local ChooseWidget = self.AllItemsWidget[self.CurrentChooseInfo.ChooseIndex]
   ChooseWidget:OnBtnChooseClicked()
 end
-
 function M:ScrollToTargetItem(TargetItem)
   self.ScrollBox_Avatar:ScrollWidgetIntoView(TargetItem)
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.CurrentChooseWidget or self.ScrollBox_Avatar
 end
-
 function M:OnBtnYes()
   if self.Owner then
     if self.CurrentChooseInfo == nil then
@@ -126,7 +114,6 @@ function M:OnBtnYes()
     end
   end
 end
-
 function M:HideSelf(bIsHide, IsNeedFocus)
   if self.Owner then
     if bIsHide then
@@ -143,13 +130,11 @@ function M:HideSelf(bIsHide, IsNeedFocus)
     end
   end
 end
-
 function M:CloseDialog()
   if self.Owner then
     self.Owner:Close()
   end
 end
-
 function M:GetCurrentHoverItem()
   local TargetWidget
   local AllChildren = self.WB_Avatar:GetAllChildren()
@@ -162,7 +147,6 @@ function M:GetCurrentHoverItem()
   end
   return TargetWidget
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -181,5 +165,4 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 return M

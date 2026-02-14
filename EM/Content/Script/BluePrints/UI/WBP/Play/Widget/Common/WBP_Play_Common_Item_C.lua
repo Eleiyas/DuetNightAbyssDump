@@ -1,11 +1,9 @@
 require("UnLua")
 local WBP_Play_Common_Item_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Play_Common_Item_C:Initialize(Initializer)
   self.IsSelected = false
   self.Parent = nil
 end
-
 function WBP_Play_Common_Item_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -52,15 +50,12 @@ function WBP_Play_Common_Item_C:OnListItemObjectSet(Content)
     ReddotManager.AddListener(self.Content.SubWidgetUIName, self, self["On" .. self.Content.SubWidgetUIName .. "ReddotChange"])
   end
 end
-
 function WBP_Play_Common_Item_C:OnCellClicked()
   self:SelectCell()
 end
-
 function WBP_Play_Common_Item_C:OnCellClickedWithoutSound()
   self:SelectCell(true)
 end
-
 function WBP_Play_Common_Item_C:SelectCell(DoNotPlaySound)
   if self.Content.IsSelect then
     return
@@ -74,7 +69,6 @@ function WBP_Play_Common_Item_C:SelectCell(DoNotPlaySound)
     self:PlayAnimation(self.Click)
   end
 end
-
 function WBP_Play_Common_Item_C:OnCellHovered()
   if self.Content.IsSelect then
     return
@@ -84,7 +78,6 @@ function WBP_Play_Common_Item_C:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Play_Common_Item_C:OnCellUnhovered()
   if self.Content.IsSelect then
     return
@@ -95,14 +88,12 @@ function WBP_Play_Common_Item_C:OnCellUnhovered()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Play_Common_Item_C:OnCellPressed()
   if self.Content.IsSelect then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Play_Common_Item_C:OnCellReleased()
   if self.Content.IsSelect then
     return
@@ -110,7 +101,6 @@ function WBP_Play_Common_Item_C:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Play_Common_Item_C:StopBtnAnimations()
   self:StopAnimation(self.Normal)
   self:StopAnimation(self.Hover)
@@ -118,7 +108,6 @@ function WBP_Play_Common_Item_C:StopBtnAnimations()
   self:StopAnimation(self.Press)
   self:StopAnimation(self.Click)
 end
-
 function WBP_Play_Common_Item_C:OnRougeMainReddotChange()
   if not ReddotManager.GetTreeNode("RougeMain") then
     ReddotManager.AddNode("RougeMain")
@@ -130,7 +119,6 @@ function WBP_Play_Common_Item_C:OnRougeMainReddotChange()
     self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Play_Common_Item_C:OnAbyssMainReddotChange()
   if not ReddotManager.GetTreeNode("AbyssMain") then
     ReddotManager.AddNode("AbyssMain")
@@ -142,9 +130,7 @@ function WBP_Play_Common_Item_C:OnAbyssMainReddotChange()
     self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Play_Common_Item_C:Destruct()
   ReddotManager.RemoveListener(self.Content.SubWidgetUIName, self)
 end
-
 return WBP_Play_Common_Item_C

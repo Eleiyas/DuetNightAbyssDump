@@ -1,7 +1,6 @@
 require("UnLua")
 require("DataMgr")
 local Guide_Touch = Class("BluePrints.UI.BP_UIState_C")
-
 function Guide_Touch:GuideUIInit(UIKey, MessageId, Time, Actions, IsTimeDilation, IsForceClick)
   self:AddTimer(0.1, function()
     DebugPrint("ERROR:GuideTouch GuideUIInit is not Support:" .. "MessageId:" .. MessageId)
@@ -13,12 +12,10 @@ function Guide_Touch:GuideUIInit(UIKey, MessageId, Time, Actions, IsTimeDilation
     self.IsDestroied = true
   end)
 end
-
 function Guide_Touch:GuideUIInit_Bubble(UIKey, MessageId, Time, DelayTime, Actions, IsTimePause, IsTimeDilation, IsForceClick, IsControlPlayer, IsShowCursor, HighLightUIPath, UICompName, UIShape, IsAdapted, UICompSizeOffset, UICompLocOffset, MessageParentLoc, MessageLoc, MessageLocOffset, IsResetPlayer, IsForbidInAnim, IsForbidOutAnim, GamePadWidgetName, IsAutoClick, IsAutoClickByGamepad, IsByToastButton)
   self:Init(MessageId, Time, DelayTime, Actions, IsForceClick, IsControlPlayer, IsTimePause, IsTimeDilation, IsShowCursor, HighLightUIPath, UICompName, UIShape, IsAdapted, UICompSizeOffset, UICompLocOffset, MessageParentLoc, MessageLoc, MessageLocOffset, IsResetPlayer, IsForbidInAnim, IsForbidOutAnim, GamePadWidgetName, IsAutoClick, IsAutoClickByGamepad, IsByToastButton)
   self.IsDestroied = false
 end
-
 function Guide_Touch:Init(MessageId, LastTime, DelayTime, Actions, IsForceClick, IsControlPlayer, IsTimePause, IsTimeDilation, IsShowCursor, HighLightUIPath, UICompName, UIShape, IsAdapted, UICompSizeOffset, UICompLocOffset, MessageParentLoc, MessageLoc, MessageLocOffset, IsResetPlayer, IsForbidInAnim, IsForbidOutAnim, GamePadWidgetName, IsAutoClick, IsAutoClickByGamepad, IsByToastButton)
   local Message = DataMgr.Message[MessageId]
   if not Message then
@@ -42,6 +39,7 @@ function Guide_Touch:Init(MessageId, LastTime, DelayTime, Actions, IsForceClick,
   if self.HighLightUIPath == "PlayerVirtualJoysticks" then
     self.IsPlayerVirtualJoystick = true
   end
+  self.bIsFocusable = true
   self.IsForbidInAnim = IsForbidInAnim
   self.IsForbidOutAnim = IsForbidOutAnim
   self.MessageId = MessageId
@@ -55,6 +53,7 @@ function Guide_Touch:Init(MessageId, LastTime, DelayTime, Actions, IsForceClick,
   self.UIShape = UIShape
   self.IsPlayInAnimation = false
   self.IsInUIMode = true
+  self.bOpenWindow = false
   self.IsAdapted = IsAdapted
   self.UICompSizeOffset = FVector2D(UICompSizeOffset.X, UICompSizeOffset.Y)
   self.UICompLocOffset = FVector2D(UICompLocOffset.X, UICompLocOffset.Y)
@@ -102,7 +101,6 @@ function Guide_Touch:Init(MessageId, LastTime, DelayTime, Actions, IsForceClick,
   self.Mask:SetVisibility(UE4.ESlateVisibility.Visible)
   self:AddTimer(self.DelayTime, self.DelayShow, false, 0, nil, true)
 end
-
 function Guide_Touch:BlackScreenUIFadeIn()
   local GameInstance = GWorld.GameInstance
   local UIManger = GameInstance:GetGameUIManager()
@@ -119,10 +117,8 @@ function Guide_Touch:BlackScreenUIFadeIn()
     UIManger:HideCommonBlackScreen("GuideTouch")
   end)
 end
-
 function Guide_Touch:BlackScreenUIFadeOut()
 end
-
 function Guide_Touch:ResetPlayerStateStart()
   DebugPrint("==========================================================ResetPlayerStateStart")
   local GameInstance = GWorld.GameInstance
@@ -139,7 +135,6 @@ function Guide_Touch:ResetPlayerStateStart()
   end
   PlayerCharacter:AddDisableInputTag("ResetPlayerState")
 end
-
 function Guide_Touch:ResetPlayerStateEnd()
   DebugPrint("==========================================================ResetPlayerStateEnd")
   local GameInstance = GWorld.GameInstance
@@ -154,11 +149,9 @@ function Guide_Touch:ResetPlayerStateEnd()
     self.BlackScreenUI = nil
   end
 end
-
 function Guide_Touch:DelayShow()
   self:SetSelfAppearance()
 end
-
 function Guide_Touch:SetSelfAppearance()
   self:SetUIShape()
   if self:GetUIComp() == false then
@@ -247,13 +240,11 @@ function Guide_Touch:SetSelfAppearance()
   end
   self:AddTimer(0.1, self.RefreshPos, true, 0, "GuideTouchRefreshPos", true)
 end
-
 function Guide_Touch:HideCursor()
   self:SetCursor(0)
   self:QueryCursor()
   DebugPrint("=========================HideCursor======================")
 end
-
 function Guide_Touch:RefreshPos()
   if self.IsAdapted then
     self:SetGrid()
@@ -301,14 +292,11 @@ function Guide_Touch:RefreshPos()
     end
   end
 end
-
 function Guide_Touch:CheckDispatchGuide()
   return string.find(self.HighLightUIPath, "Dispatch") or string.find(self.UICompName, "Dispatch")
 end
-
 function Guide_Touch:SetUIShape()
 end
-
 function Guide_Touch:SetWidgetParent(Widget, CildWidget, ChildWidgetName)
   if nil == CildWidget then
     self:ErrorAndFinish(self.HighLightUIPath .. "." .. self.UICompName .. " -> " .. ChildWidgetName)
@@ -318,7 +306,6 @@ function Guide_Touch:SetWidgetParent(Widget, CildWidget, ChildWidgetName)
   self.UICompPairs:Add(CildWidget)
   return Widget
 end
-
 function Guide_Touch:IsUICompHide()
   local IsUICompHide = false
   if self.UICompPairs:Length() > 0 then
@@ -331,7 +318,6 @@ function Guide_Touch:IsUICompHide()
   end
   return IsUICompHide
 end
-
 function Guide_Touch:GetUIComp()
   if self.IsPlayerVirtualJoystick then
     self.UIComp = "PlayerVirtualJoysticks"
@@ -465,7 +451,6 @@ function Guide_Touch:GetUIComp()
   end
   return true
 end
-
 function Guide_Touch:GetIndexByBtnId(ListView, BtnId)
   local Nums = ListView:GetNumItems()
   for i = 0, Nums - 1 do
@@ -477,7 +462,6 @@ function Guide_Touch:GetIndexByBtnId(ListView, BtnId)
   end
   return -1
 end
-
 function Guide_Touch:GetIndexByWidgetName(ParentWidget, WidgetName)
   local Nums = ParentWidget:GetChildrenCount()
   for i = 0, Nums - 1 do
@@ -489,7 +473,6 @@ function Guide_Touch:GetIndexByWidgetName(ParentWidget, WidgetName)
   end
   return -1
 end
-
 function Guide_Touch:GetIndexByListItemName(ListView, WidgetName)
   local Nums = ListView:GetNumItems()
   for i = 0, Nums - 1 do
@@ -501,11 +484,9 @@ function Guide_Touch:GetIndexByListItemName(ListView, WidgetName)
   end
   return -1
 end
-
 function Guide_Touch:ErrorAndFinish(path)
   DebugPrint("ERROR:GuideTouch path is not valid:" .. path)
 end
-
 function Guide_Touch:ErrorExit()
   DebugPrint("ERROR:GuideTouch path is not valid:" .. "ErrorExit")
   self:RemoveTimer("GuideTouchRefreshPos")
@@ -521,14 +502,21 @@ function Guide_Touch:ErrorExit()
     "MainLineQuest",
     "DynamicQuest"
   })
-  if self.OnGuideEnd:IsBound() then
-    self.OnGuideEnd:Broadcast()
-  end
   self:EnableMapBtn()
   self:Close()
-  self.IsDestroied = true
 end
-
+function Guide_Touch:GuideSkip()
+  self:RemoveTimer("GuideTouchRefreshPos")
+  self:ChangePlayerInputable(true, true)
+  if DataMgr.SystemGuide[SystemGuideManager.RunningId] then
+    local Path = DataMgr.SystemGuide[SystemGuideManager.RunningId].GuideStoryline
+    GWorld.StoryMgr:StopStoryline(Path, false)
+    self:EnableMapBtn()
+    self:Close()
+  else
+    DebugPrint("@lkkkERROR:GuideTouchSkip引导id不存在", SystemGuideManager.RunningId)
+  end
+end
 function Guide_Touch:InitClickLogic()
   self.Btn_Area:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if not self.UIComp then
@@ -575,18 +563,14 @@ function Guide_Touch:InitClickLogic()
     self.Btn_Area.OnClicked:Add(self, self.PlayOutAnimation)
   end
 end
-
 function Guide_Touch:AddActions()
   self.ActionIndex = 1
   self:AddAction()
 end
-
 function Guide_Touch:AddAction()
   local EnumSkill = UE4.ESkillName
   local ActionName = EnumSkill:GetNameByValue(self.Actions[self.ActionIndex])
-  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-  local UIManger = GameInstance:GetGameUIManager()
-  UIManger:PlayBattleButtonPhoneVX(ActionName)
+  self:StartBattleButtonGuide(ActionName)
   self.CurActionName = ActionName
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if "ControlMove" == ActionName then
@@ -619,7 +603,6 @@ function Guide_Touch:AddAction()
     EventManager:AddEvent(self.CurEventID, self, self.OnActionEvent)
   end
 end
-
 function Guide_Touch:OnActionEvent(NoEvent)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if self.CurActionName == "FireInAir" and PlayerCharacter.IsInAir == false then
@@ -651,13 +634,11 @@ function Guide_Touch:OnActionEvent(NoEvent)
     self:AddAction()
   end
 end
-
 function Guide_Touch:OnSecActionEvent()
   if self.CurActionName == "ContinuousShooting" then
     self:RemoveTimer("TryContinuousShooting")
   end
 end
-
 function Guide_Touch:WaitControlMoveLogicExecute()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if 0 ~= PlayerCharacter.MoveInput.X or 0 ~= PlayerCharacter.MoveInput.Y then
@@ -665,7 +646,6 @@ function Guide_Touch:WaitControlMoveLogicExecute()
     self:OnActionEvent(true)
   end
 end
-
 function Guide_Touch:WaitControlAngleLogicExecute()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if not self.ControllerLastRotator then
@@ -678,10 +658,8 @@ function Guide_Touch:WaitControlAngleLogicExecute()
     self.ControllerLastRotator = PlayerController:GetControlRotation()
   end
 end
-
 function Guide_Touch:RemoveActions()
 end
-
 function Guide_Touch:SetGrid()
   if not self.UIComp then
     DebugPrint("ERROR:GuideTouch Can not Find UIComp, Please check your Param again", self.HighLightUIPath .. "." .. self.UICompName)
@@ -790,7 +768,6 @@ function Guide_Touch:SetGrid()
     self.TouchSize = real_Size + self.UICompSizeOffset
   end
 end
-
 function Guide_Touch:PlayInAnimation()
   if self.IsPlayInAnimation then
     return
@@ -816,7 +793,6 @@ function Guide_Touch:PlayInAnimation()
   self:AddTimer(TimerTime, self.PlayLoopAnimation)
   self:PlaySound()
 end
-
 function Guide_Touch:PlayLoopAnimation()
   local InAnimation
   if self.IsForceClick then
@@ -826,11 +802,9 @@ function Guide_Touch:PlayLoopAnimation()
   end
   self.InnerBox:PlayAnimation(InAnimation, 0, 0)
 end
-
 function Guide_Touch:PlayOutAnimationByListViewItem(Item)
   self:PlayOutAnimation()
 end
-
 function Guide_Touch:PlayOutAnimation()
   DebugPrint("Guide_Touch:PlayOutAnimation")
   local TimerTime = 0
@@ -860,14 +834,14 @@ function Guide_Touch:PlayOutAnimation()
     self:AddTimer(TimerTime, self.Close)
   end
 end
-
 function Guide_Touch:Close()
   DebugPrint("Guide_Touch:Close")
   self:StopSound()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
   UIManger:UnLoadUI("GuideBubble")
-  UIManger:PlayBattleButtonPhoneVX(nil, true)
+  self.Bubble = nil
+  self:EndBattleButtonGuide()
   if self.Btn_Area.OnClicked:IsBound() then
     self.Btn_Area.OnClicked:Clear()
   end
@@ -903,13 +877,27 @@ function Guide_Touch:Close()
     })
   end
   self:EnableMapBtn()
+  self.bIsFocusable = false
   self.IsDestroied = true
   if self.OnGuideEnd:IsBound() then
     self.OnGuideEnd:Broadcast()
   end
   Guide_Touch.Super.Close(self)
 end
-
+function Guide_Touch:StartBattleButtonGuide(ActionName)
+  local Widget = UIManager(self):GetUIObj("BattleMain")
+  if not (IsValid(Widget) and IsValid(Widget.Char_Skill)) or not IsValid(Widget.Char_Skill.Jump) then
+    return
+  end
+  Widget.Char_Skill.Jump:OnGuideStart(ActionName)
+end
+function Guide_Touch:EndBattleButtonGuide()
+  local Widget = UIManager(self):GetUIObj("BattleMain")
+  if not (IsValid(Widget) and IsValid(Widget.Char_Skill)) or not IsValid(Widget.Char_Skill.Jump) then
+    return
+  end
+  Widget.Char_Skill.Jump:OnGuideEnd()
+end
 function Guide_Touch:Destruct()
   self:RemoveTimer("GuideTouchRefreshPos")
   self:SetInputUIOnly(false)
@@ -929,14 +917,12 @@ function Guide_Touch:Destruct()
   self:ChangePlayerInputable(true)
   Guide_Touch.Super.Destruct(self)
 end
-
 function Guide_Touch:ExecuteForceLogic()
   if self.UIComp.OnClicked and self.UIComp.OnClicked:IsBound() then
     self.UIComp.OnClicked:Broadcast()
     return
   end
 end
-
 function Guide_Touch:CreateSelfGuideBubble()
   if not self.BublleAddToViewport then
     UEPrint("MessageLoc is invaild")
@@ -963,22 +949,33 @@ function Guide_Touch:CreateSelfGuideBubble()
     self.MessageContent = GText(TextMapIndex)
     self.MessageContent = CommonUtils:StringReplaceActionName(self.MessageContent)
   end
+  self.bSkip = 0
+  if -1 ~= SystemGuideManager.RunningId then
+    self.bSkip = DataMgr.SystemGuide[SystemGuideManager.RunningId].GuideSkip
+  end
   if not self.Bubble then
     if self.UsingGamepad then
-      self.Bubble = UIManger:LoadUI("/Game/UI/WBP/Guide/Widget/WBP_Guide_ContentBlock.WBP_Guide_ContentBlock", "GuideBubble", self:GetZOrder(), self.MessageContent, self.MessageLoc, self.GamePadKey)
+      self.Bubble = UIManger:LoadUI("/Game/UI/WBP/Guide/Widget/WBP_Guide_ContentBlock.WBP_Guide_ContentBlock", "GuideBubble", self:GetZOrder(), self.MessageContent, self.MessageLoc, self.GamePadKey, self.bSkip, self)
+      if 1 == self.bSkip then
+        self.Bubble.Controller_Skip:SetVisibility(UE4.ESlateVisibility.Visible)
+      end
     else
-      self.Bubble = UIManger:LoadUI("/Game/UI/WBP/Guide/Widget/WBP_Guide_ContentBlock.WBP_Guide_ContentBlock", "GuideBubble", self:GetZOrder(), self.MessageContent, self.MessageLoc, nil)
+      self.Bubble = UIManger:LoadUI("/Game/UI/WBP/Guide/Widget/WBP_Guide_ContentBlock.WBP_Guide_ContentBlock", "GuideBubble", self:GetZOrder(), self.MessageContent, self.MessageLoc, nil, self.bSkip, self)
+      self.Bubble.Controller_Skip:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
   elseif self.UsingGamepad then
-    self.Bubble:InitMessage(self.MessageContent, self.MessageLoc, self.GamePadKey)
+    self.Bubble:InitMessage(self.MessageContent, self.MessageLoc, self.GamePadKey, self.bSkip, self)
+    if 1 == self.bSkip then
+      self.Bubble.Controller_Skip:SetVisibility(UE4.ESlateVisibility.Visible)
+    end
   else
-    self.Bubble:InitMessage(self.MessageContent, self.MessageLoc, nil)
+    self.Bubble:InitMessage(self.MessageContent, self.MessageLoc, nil, self.bSkip, self)
+    self.Bubble.Controller_Skip:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
   self:AddTimer(0.1, function()
     self:CalcBubblePosition()
   end)
 end
-
 function Guide_Touch:CalcBubblePosition(IsRefresh)
   if self.HighLightUIPath == "GetCharPage" then
     return
@@ -1001,7 +998,6 @@ function Guide_Touch:CalcBubblePosition(IsRefresh)
   self.BubblePosition = BubblePosition
   self:BubbleSlotSetPosition()
 end
-
 function Guide_Touch:BubbleSlotSetPosition()
   local BubbleSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Bubble.Panel_Text)
   if 0 ~= self.MessageLoc.X and 0 ~= self.MessageLoc.Y then
@@ -1010,7 +1006,6 @@ function Guide_Touch:BubbleSlotSetPosition()
     BubbleSlot:SetPosition(self.BubblePosition)
   end
 end
-
 function Guide_Touch:GetPathFromString(InputString)
   if not InputString then
     return nil
@@ -1018,7 +1013,6 @@ function Guide_Touch:GetPathFromString(InputString)
   local Parents = Split(InputString, ".")
   return Parents
 end
-
 function Guide_Touch:GetPositionScale(MessgaeLoc)
   self.BublleAddToViewport = true
   local PositionScale = FVector2D(0, 0)
@@ -1040,7 +1034,6 @@ function Guide_Touch:GetPositionScale(MessgaeLoc)
   end
   return PositionScale
 end
-
 function Guide_Touch:ChangePlayerInputable(IfAble, IsErrorExit)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if not IfAble then
@@ -1076,7 +1069,6 @@ function Guide_Touch:ChangePlayerInputable(IfAble, IsErrorExit)
     end
   end
 end
-
 function Guide_Touch:Hide(HideTag)
   HideTag = HideTag or UIConst.CommonHideTagName.DefaultTag
   local IsVisibilityChange = self:SetUIVisibilityTag(HideTag, true)
@@ -1102,7 +1094,6 @@ function Guide_Touch:Hide(HideTag)
     end
   end
 end
-
 function Guide_Touch:Show(ShowTag)
   ShowTag = ShowTag or UIConst.CommonHideTagName.DefaultTag
   local IsVisibilityChange = self:SetUIVisibilityTag(ShowTag, false)
@@ -1125,11 +1116,14 @@ function Guide_Touch:Show(ShowTag)
     end
   end
 end
-
 function Guide_Touch:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   local Handle = false
+  if "Gamepad_Special_Right" == InKeyName and 1 == self.bSkip then
+    self.Bubble.Controller_Skip:OnButtonPressed()
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  end
   if self.IsShowCursor and not self.UsingGamepad then
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
@@ -1156,13 +1150,16 @@ function Guide_Touch:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.Unhandled()
   end
 end
-
 function Guide_Touch:OnKeyUp(MyGeometry, InKeyEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "Gamepad_Special_Right" == InKeyName then
+    self.Bubble.Controller_Skip:OnButtonReleased()
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  end
   if self.IsShowCursor then
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
-  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
-  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if "LeftAlt" == InKeyName and 0 ~= self.Cursor then
     self:SetCursor(0)
     self:QueryCursor()
@@ -1170,15 +1167,12 @@ function Guide_Touch:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function Guide_Touch:PlaySound()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/guider_highlight_loop", "Guide_Touch_PlaySound", nil)
 end
-
 function Guide_Touch:StopSound()
   AudioManager(self):SetEventSoundParam(nil, "Guide_Touch_PlaySound", {ToEnd = 1})
 end
-
 function Guide_Touch:DisableMapBtn()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -1193,7 +1187,6 @@ function Guide_Touch:DisableMapBtn()
     DebugPrint("Guide_Touch:DisableMapBtn")
   end
 end
-
 function Guide_Touch:EnableMapBtn()
   if self.BattleMap then
     self.BattleMap.IsDisableClick = false
@@ -1201,7 +1194,6 @@ function Guide_Touch:EnableMapBtn()
     DebugPrint("Guide_Touch:EnableMapBtn")
   end
 end
-
 function Guide_Touch:AutoClick()
   if self.Btn_Area:GetVisibility() == ESlateVisibility.Visible then
     self.Btn_Area.OnClicked:Broadcast()
@@ -1249,13 +1241,11 @@ function Guide_Touch:AutoClick()
   end
   return false
 end
-
 function Guide_Touch:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function Guide_Touch:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -1263,7 +1253,6 @@ function Guide_Touch:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function Guide_Touch:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -1276,10 +1265,11 @@ function Guide_Touch:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.UsingGamepad = true
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
     self:CreateSelfGuideBubble()
-    self:SetFocus()
+    if false == self.bOpenWindow then
+      self:SetFocus()
+    end
   end
 end
-
 function Guide_Touch:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1313,9 +1303,11 @@ function Guide_Touch:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function Guide_Touch:OnFocusLost(InFocusEvent)
   if self.UsingGamepad then
+    if self.bOpenWindow then
+      return
+    end
     if not self.FocusCount then
       return
     end
@@ -1326,9 +1318,11 @@ function Guide_Touch:OnFocusLost(InFocusEvent)
     self:SetFocus()
   end
 end
-
 function Guide_Touch:OnRemovedFromFocusPath(InFocusEvent)
   if self.UsingGamepad then
+    if self.bOpenWindow then
+      return
+    end
     if not self.FocusCount then
       return
     end
@@ -1339,7 +1333,6 @@ function Guide_Touch:OnRemovedFromFocusPath(InFocusEvent)
     self:SetFocus()
   end
 end
-
 function Guide_Touch:LoadUIEvent(UIKey)
   if not self.UIKey and UIManager(self):StateCount() > 0 then
     self.UIKey = UIKey
@@ -1350,7 +1343,6 @@ function Guide_Touch:LoadUIEvent(UIKey)
     end
   end
 end
-
 function Guide_Touch:UnLoadUIEvent(UIKey)
   if self.UIKey == UIKey then
     self:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
@@ -1363,7 +1355,6 @@ function Guide_Touch:UnLoadUIEvent(UIKey)
     self.UIKey = nil
   end
 end
-
 function Guide_Touch:GetUICompGamePadInfo()
   if not self.UIComp then
     return
@@ -1378,7 +1369,7 @@ function Guide_Touch:GetUICompGamePadInfo()
       if Widget[self.GamePadWidgetName] then
         GamePadWidget = Widget[self.GamePadWidgetName]
       else
-        DebugPrint(self.GamePadWidgetName .. "\230\178\161\230\156\137\229\188\128\230\148\190\229\143\152\233\135\143")
+        DebugPrint(self.GamePadWidgetName .. "没有开放变量")
         return "A"
       end
       if GamePadWidget.KeyInfoList or GamePadWidget.GamePadImgName then
@@ -1407,12 +1398,11 @@ function Guide_Touch:GetUICompGamePadInfo()
         return Key
       end
     else
-      DebugPrint("Stl\232\138\130\231\130\185\231\188\186\229\176\145\230\137\139\230\159\132\230\140\137\233\148\174\233\133\141\231\189\174")
+      DebugPrint("Stl节点缺少手柄按键配置")
       return "A"
     end
   else
     return "A"
   end
 end
-
 return Guide_Touch

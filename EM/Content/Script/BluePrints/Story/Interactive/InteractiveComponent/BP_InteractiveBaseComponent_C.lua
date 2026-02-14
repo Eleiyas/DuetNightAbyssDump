@@ -7,7 +7,6 @@ local InteractiveTypeEnum = {
   Quest = 1,
   PickUpAll = 3
 }
-
 function BP_InteractiveBaseComponent_C:ReceiveBeginPlay()
   self.Priority = "Normal"
   self.Owner = self:GetOwner()
@@ -15,7 +14,6 @@ function BP_InteractiveBaseComponent_C:ReceiveBeginPlay()
     self:InitCommonUIConfirmID(self.CommonUIConfirmID)
   end
 end
-
 function BP_InteractiveBaseComponent_C:SetInteractiveName(Name)
   self.InteractiveName = Name
   self.DisplayInteractiveName = GText(Name)
@@ -23,7 +21,6 @@ function BP_InteractiveBaseComponent_C:SetInteractiveName(Name)
     self.DisplayInteractiveName = Name
   end
 end
-
 function BP_InteractiveBaseComponent_C:DisplayInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:LoadUINew(UIConst.InteractiveUIName)
@@ -35,7 +32,6 @@ function BP_InteractiveBaseComponent_C:DisplayInteractiveBtn(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, true)
   self:RefreshInteractiveBtn(PlayerActor)
 end
-
 function BP_InteractiveBaseComponent_C:RefreshInteractiveBtn(PlayerActor)
   local bChanged, bLocked = self:UpdateLockState()
   if not bLocked and not bChanged then
@@ -45,7 +41,6 @@ function BP_InteractiveBaseComponent_C:RefreshInteractiveBtn(PlayerActor)
     self:UpdateInteractiveUIState()
   end
 end
-
 function BP_InteractiveBaseComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
@@ -55,28 +50,27 @@ function BP_InteractiveBaseComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   end
   InteractiveUI:RemoveInteractiveItem(self)
 end
-
-function BP_InteractiveBaseComponent_C:OnStartInteractive(PlayerActor, MontageName, MechanismEid)
+function BP_InteractiveBaseComponent_C:OnStartInteractive(PlayerActor, MontageName, MechanismEid, SubFile)
   local Owner = self:GetOwner()
   if not self:CheckCanEnterOrEixt() then
     return
   end
-  if PlayerActor.SetEnterInteractive and 0 ~= MechanismEid then
+  if PlayerActor and PlayerActor.SetEnterInteractive and 0 ~= MechanismEid then
+    local RealSubFile = SubFile or "MechInteractive"
     PlayerActor.WaitCallBack = true
-    PlayerActor:SetEnterInteractive(true, MontageName, Owner.InteractiveTag)
+    PlayerActor:SetEnterInteractive(true, MontageName, Owner.InteractiveTag, RealSubFile)
   end
 end
-
-function BP_InteractiveBaseComponent_C:OnEndInteractive(PlayerActor, MontageName, MechanismEid)
+function BP_InteractiveBaseComponent_C:OnEndInteractive(PlayerActor, MontageName, MechanismEid, SubFile)
   local Owner = self:GetOwner()
   if not self:CheckCanEnterOrEixt() then
     return
   end
-  if PlayerActor.SetEnterInteractive then
-    PlayerActor:SetEnterInteractive(false, MontageName)
+  if PlayerActor and PlayerActor.SetEnterInteractive then
+    local RealSubFile = SubFile or "MechInteractive"
+    PlayerActor:SetEnterInteractive(false, MontageName, nil, RealSubFile)
   end
 end
-
 function BP_InteractiveBaseComponent_C:CheckCanEnterOrEixt()
   if not self:GetOwner().UnitId then
     return false
@@ -90,7 +84,6 @@ function BP_InteractiveBaseComponent_C:CheckCanEnterOrEixt()
   end
   return true
 end
-
 function BP_InteractiveBaseComponent_C:GetInteractiveIcon(PlayerActor)
   if self:IsLocked() then
     return "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Interactive/T_Interactive_Lock.T_Interactive_Lock'"
@@ -102,13 +95,14 @@ function BP_InteractiveBaseComponent_C:GetInteractiveIcon(PlayerActor)
   if not Data or not Data.Icon then
     return nil
   end
+  local UseItemIcon = Data.UseItemIcon
+  local Icon = Data.Icon
   local Avatar = GWorld:GetAvatar()
-  if Avatar and 1 == Avatar.Sex then
-    return Data.IconFemale or Data.Icon
+  if Avatar and 1 == Avatar.Sex and Data.IconFemale ~= nil then
+    Icon = Data.IconFemale
   end
-  return Data.Icon
+  return Icon, UseItemIcon
 end
-
 function BP_InteractiveBaseComponent_C:GetInteractiveName()
   if self.InteractiveName ~= "" then
     return GText(self.InteractiveName)
@@ -119,7 +113,6 @@ function BP_InteractiveBaseComponent_C:GetInteractiveName()
   end
   return GText(Data.ConfirmText)
 end
-
 function BP_InteractiveBaseComponent_C:GetInteractiveCondition()
   local NeedKey, TotalKey = self:GetInteractiveConditionParam()
   if TotalKey <= 0 then
@@ -132,7 +125,6 @@ function BP_InteractiveBaseComponent_C:GetInteractiveCondition()
     return "<Highlight>" .. RealText .. "</>"
   end
 end
-
 function BP_InteractiveBaseComponent_C:GetInteractiveConditionParam()
   local Data = DataMgr.CommonUIConfirm[self.CommonUIConfirmID]
   if not Data or not Data.InteractiveCondition then
@@ -154,11 +146,9 @@ function BP_InteractiveBaseComponent_C:GetInteractiveConditionParam()
   end
   return NeedKey, Condition.ConditionMap.HaveResource[1][2]
 end
-
 function BP_InteractiveBaseComponent_C:GetRarity()
   return 0
 end
-
 function BP_InteractiveBaseComponent_C:IsImportant()
   local Data = DataMgr.CommonUIConfirm[self.CommonUIConfirmID]
   if not Data then
@@ -166,23 +156,20 @@ function BP_InteractiveBaseComponent_C:IsImportant()
   end
   return Data.Important
 end
-
 function BP_InteractiveBaseComponent_C:InitCommonUIConfirmID(CommonUIConfirmID)
   self.CommonUIConfirmID = CommonUIConfirmID
   local Data = DataMgr.CommonUIConfirm[CommonUIConfirmID]
   if not Data then
     return
   end
-  self.InteractiveDistance = Data.InteractiveRadius or self.InteractiveDistance
+  self:SetInteractiveDistance(Data.InteractiveRadius or self.InteractiveDistance)
   self.InteractiveAngle = Data.InteractiveAngle or self.InteractiveAngle
   self.InteractiveFaceAngle = Data.PlayerFaceAngle or self.InteractiveFaceAngle
   self.ListPriority = Data.InteractivePriority or 0
 end
-
 function BP_InteractiveBaseComponent_C:CheckInteractiveSucc(PlayerEid)
   return self:CheckInteractiveCondition(PlayerEid)
 end
-
 function BP_InteractiveBaseComponent_C:CheckInteractiveCondition(PlayerEid)
   local Data = DataMgr.CommonUIConfirm[self.CommonUIConfirmID]
   if not Data then
@@ -198,7 +185,6 @@ function BP_InteractiveBaseComponent_C:CheckInteractiveCondition(PlayerEid)
   end
   return ConditionUtils.CheckCondition(Avatar, InteractiveCondition)
 end
-
 function BP_InteractiveBaseComponent_C:InteractiveFailed()
   local TalkContext = GWorld.GameInstance:GetTalkContext()
   local TalkTriggerId = DataMgr.CommonUIConfirm[self.CommonUIConfirmID].TalkTriggerId
@@ -212,7 +198,6 @@ function BP_InteractiveBaseComponent_C:InteractiveFailed()
     UIManager:ShowUITip(UIConst.Tip_CommonTop, GText(FailMsg))
   end
 end
-
 function BP_InteractiveBaseComponent_C:CheckPlayerTag(PlayerActor)
   if IsValid(PlayerActor) == false then
     return false
@@ -224,33 +209,25 @@ function BP_InteractiveBaseComponent_C:CheckPlayerTag(PlayerActor)
   local Res = PlayerActor:CanEnterInteractive() or Owner.AutoSyncProp ~= nil and Owner.AutoSyncProp.CharacterTag == "Defeated"
   return Res
 end
-
 function BP_InteractiveBaseComponent_C:IsForbidden()
   return false
 end
-
 function BP_InteractiveBaseComponent_C:OnClicked_Forbidden()
 end
-
 function BP_InteractiveBaseComponent_C:IsLocked()
   return false
 end
-
 function BP_InteractiveBaseComponent_C:OnClicked_Locked()
 end
-
 function BP_InteractiveBaseComponent_C:GetUUID()
   return nil
 end
-
 function BP_InteractiveBaseComponent_C:GetOverridenFailMsg()
   return self.OverridenFailMsg
 end
-
 function BP_InteractiveBaseComponent_C:SetOverridenFailMsg(FailMsg)
   self.OverridenFailMsg = FailMsg
 end
-
 function BP_InteractiveBaseComponent_C:UpdateLockState()
   local UUID = self:GetUUID()
   if not UUID then
@@ -280,7 +257,6 @@ function BP_InteractiveBaseComponent_C:UpdateLockState()
   end
   return false, CurrentLockState
 end
-
 function BP_InteractiveBaseComponent_C:UpdateForbiddenState(PlayerActor)
   if self.bForbidden == nil then
     self.bForbidden = self:IsForbidden(PlayerActor)
@@ -293,7 +269,6 @@ function BP_InteractiveBaseComponent_C:UpdateForbiddenState(PlayerActor)
   end
   return false
 end
-
 function BP_InteractiveBaseComponent_C:UpdateInteractiveUIState()
   local InteractiveUI = UIManager(self):GetUIObj(UIConst.InteractiveUIName)
   if not InteractiveUI then
@@ -301,19 +276,15 @@ function BP_InteractiveBaseComponent_C:UpdateInteractiveUIState()
   end
   InteractiveUI:UpdateInteractiveItemState(self)
 end
-
 function BP_InteractiveBaseComponent_C:GetStars()
   return nil
 end
-
 function BP_InteractiveBaseComponent_C:IsLastingInteract()
   return false
 end
-
 function BP_InteractiveBaseComponent_C:CanPickUpWithOneClick()
   return false
 end
-
 function BP_InteractiveBaseComponent_C:GetShouldHighlight()
   local Data = DataMgr.CommonUIConfirm[self.CommonUIConfirmID]
   if not Data or not Data.HighLight then
@@ -321,15 +292,12 @@ function BP_InteractiveBaseComponent_C:GetShouldHighlight()
   end
   return true
 end
-
 function BP_InteractiveBaseComponent_C:GetQuestID()
   return nil
 end
-
 function BP_InteractiveBaseComponent_C:GetSpecialQuestID()
   return nil
 end
-
 function BP_InteractiveBaseComponent_C:GetInteractivePriority()
   local ConfirmData = DataMgr.CommonUIConfirm[self:GetCommonUIConfirmID()]
   local Type = InteractiveTypeEnum.Default
@@ -356,11 +324,9 @@ function BP_InteractiveBaseComponent_C:GetInteractivePriority()
   end
   return FinalPriority
 end
-
 function BP_InteractiveBaseComponent_C:GetCommonUIConfirmID()
   return self.CommonUIConfirmID
 end
-
 function BP_InteractiveBaseComponent_C:GetQuestInteractiveType()
   local Data = DataMgr.CommonUIConfirm[self.CommonUIConfirmID]
   if not Data or not Data.Icon then
@@ -371,5 +337,19 @@ function BP_InteractiveBaseComponent_C:GetQuestInteractiveType()
   end
   return nil
 end
-
+function BP_InteractiveBaseComponent_C:GetNeedLongPressTime()
+  return 0
+end
+function BP_InteractiveBaseComponent_C:GetLongPressedPercent()
+  return 0
+end
+function BP_InteractiveBaseComponent_C:GetReduceTime()
+  return 0.1
+end
+function BP_InteractiveBaseComponent_C:NeedShowRemaindTime()
+  return true
+end
+function BP_InteractiveBaseComponent_C:GetLongPressingText()
+  return self:GetInteractiveName()
+end
 return BP_InteractiveBaseComponent_C

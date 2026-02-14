@@ -1,7 +1,6 @@
 local WalnutBagCommon = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBagCommon")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   M.Super.Init(self)
   self._WalnutList = nil
@@ -9,16 +8,16 @@ function M:Init()
   self:GetAvatar()
   self:InitWalnutBagReddotNode()
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 function M:GetAllWalnutDict(TypeId, KeyWords, IsShowNotHave)
   self._WalnutList = {}
   local WalnutDataTable = DataMgr.Walnut
+  local GlobalReleaseVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   for ItemId, WalnutConfigData in pairs(WalnutDataTable) do
-    if 0 == TypeId or TypeId == WalnutConfigData.WalnutType then
+    if 0 ~= TypeId and TypeId ~= WalnutConfigData.WalnutType or GlobalReleaseVersion < WalnutConfigData.ReleaseVersion then
+    else
       local WalnutCount = self:GetWalnutCountById(ItemId)
       local IsSearchConditionMet = true
       if KeyWords then
@@ -46,7 +45,6 @@ function M:GetAllWalnutDict(TypeId, KeyWords, IsShowNotHave)
   end
   return self._WalnutList
 end
-
 function M:GetSearchConditionList(WalnutConfigData)
   local SearchList = {
     GText(WalnutConfigData.Name)
@@ -87,11 +85,9 @@ function M:GetSearchConditionList(WalnutConfigData)
   end
   return SearchList
 end
-
 function M:GetHaveWalnutDict()
   return self:GetAvatar().Walnuts.WalnutBag
 end
-
 function M:GetDungeonNextRefreshTime()
   local LastRefreshTime = self:GetAvatar().Walnuts.WalnutLastRefreshTime
   if nil == LastRefreshTime then
@@ -99,14 +95,12 @@ function M:GetDungeonNextRefreshTime()
   end
   return LastRefreshTime + DataMgr.GlobalConstant.WalnutRefreshCD.ConstantValue * 60 * 60
 end
-
 function M:GetWalnutCountById(ItemId)
   if self:GetAvatar().Walnuts.WalnutBag == nil then
     return 0
   end
   return self:GetAvatar().Walnuts.WalnutBag[ItemId] or 0
 end
-
 function M:CheckIsNeedShowNewDot(ItemId)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(WalnutBagCommon.ReddotName)
   if nil ~= CacheDetail[ItemId] and CacheDetail[ItemId].IsRead == false then
@@ -114,7 +108,6 @@ function M:CheckIsNeedShowNewDot(ItemId)
   end
   return false
 end
-
 function M:GetAllNewItemsId()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(WalnutBagCommon.ReddotName)
   local ResultList = {}
@@ -132,14 +125,12 @@ function M:GetAllNewItemsId()
   end
   return ResultList
 end
-
 function M:GetWalnutConsumeRecordById(ItemId)
   if self:GetAvatar().Walnuts.ConsumeRecord == nil then
     return 0
   end
   return self:GetAvatar().Walnuts.ConsumeRecord[ItemId] or 0
 end
-
 function M:InitWalnutBagReddotNode()
   local Node = ReddotManager.GetTreeNode(WalnutBagCommon.ReddotName)
   Node = Node or ReddotManager.AddNode(WalnutBagCommon.ReddotName, nil, 1)
@@ -156,7 +147,6 @@ function M:InitWalnutBagReddotNode()
     end
   end
 end
-
 function M:AddReddotCount(ItemId)
   if nil == ItemId then
     return
@@ -167,7 +157,6 @@ function M:AddReddotCount(ItemId)
     ReddotManager.IncreaseLeafNodeCount(WalnutBagCommon.ReddotName)
   end
 end
-
 function M:RemoveReddotCount(ItemId)
   if nil == ItemId then
     return
@@ -181,7 +170,6 @@ function M:RemoveReddotCount(ItemId)
     end
   end
 end
-
 function M:ClearReddotCount()
   local ReddotNode = ReddotManager.GetTreeNode(WalnutBagCommon.ReddotName)
   if 0 == ReddotNode.Count then
@@ -193,7 +181,6 @@ function M:ClearReddotCount()
   ReddotNode.Count = 1
   ReddotManager.DecreaseLeafNodeCount(WalnutBagCommon.ReddotName)
 end
-
 function M:GetWalnutStuffData(StuffServerData, ParentWidget, ClickCallback)
   local Avatar = self:GetAvatar()
   if nil == Avatar then
@@ -219,7 +206,6 @@ function M:GetWalnutStuffData(StuffServerData, ParentWidget, ClickCallback)
   StuffConfig.ParentWidget = ParentWidget
   return StuffConfig
 end
-
 function M:CreateBagItemContent(Content)
   if nil == Content then
     return
@@ -250,5 +236,4 @@ function M:CreateBagItemContent(Content)
   end
   return StuffObj
 end
-
 return M

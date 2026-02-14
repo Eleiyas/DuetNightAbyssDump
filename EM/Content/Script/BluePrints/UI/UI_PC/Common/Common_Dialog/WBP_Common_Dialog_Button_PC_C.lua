@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Common_Dialog_Button_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_Button_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local PopupStyle = DataMgr.CommonPopupUIStyle[PopupData.Style]
@@ -15,46 +14,37 @@ function WBP_Common_Dialog_Button_PC_C:InitContent(Params, PopupData, Owner)
   end
   self:InitInputSettings()
 end
-
 function WBP_Common_Dialog_Button_PC_C:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function WBP_Common_Dialog_Button_PC_C:InitPageFlitStyle(Params, PopupData, Owner)
   local PopupStyle = DataMgr.CommonPopupUIStyle[PopupData.Style]
   self.Flip_Page_PC:InitContent(Params, PopupData, Owner)
 end
-
 function WBP_Common_Dialog_Button_PC_C:BindOnLeftClickFunc(Obj, OnClickedFunc, OnForbiddenClickedFunc)
   self.Btn_Quit:BindEventOnClicked(Obj, OnClickedFunc)
   self.Btn_Quit:BindForbidStateExecuteEvent(Obj, OnForbiddenClickedFunc)
 end
-
 function WBP_Common_Dialog_Button_PC_C:BindOnRightClickFunc(Obj, OnClickedFunc, OnForbiddenClickedFunc)
   self.Btn_Yes:BindEventOnClicked(Obj, OnClickedFunc)
   self.Btn_Yes:BindForbidStateExecuteEvent(Obj, OnForbiddenClickedFunc)
 end
-
 function WBP_Common_Dialog_Button_PC_C:InitButtonStyle(Params, PopupData, Owner)
   self:BindOnLeftClickFunc(Owner, Owner.OnLeftBtnClicked, Owner.OnForbiddenLeftBtnClicked)
   self:BindOnRightClickFunc(Owner, Owner.OnRightBtnClicked, Owner.OnForbiddenRightBtnClicked)
   local PopupStyle = DataMgr.CommonPopupUIStyle[PopupData.Style]
   local ButtonNum = (PopupStyle.ShowLeftButton and 1 or 0) + (PopupStyle.ShowRightButton and 1 or 0)
   self.Btn_Yes:SetBtnHovered(false)
-  
   function self.Btn_Yes.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   end
-  
   self.Btn_Quit:SetBtnHovered(false)
-  
   function self.Btn_Quit.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_cancel", nil, nil)
   end
-  
   if PopupStyle.ShowLeftButton then
     local Text
     if PopupData and not Text then
@@ -116,33 +106,26 @@ function WBP_Common_Dialog_Button_PC_C:InitButtonStyle(Params, PopupData, Owner)
     self.Panel_Yes:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_Button_PC_C:SimulateLeftBtnClick()
   self.Btn_Quit:OnBtnPressed()
   self.Btn_Quit:OnBtnClicked()
 end
-
 function WBP_Common_Dialog_Button_PC_C:SimulateRightBtnClick()
   self.Btn_Yes:OnBtnPressed()
   self.Btn_Yes:OnBtnClicked()
 end
-
 function WBP_Common_Dialog_Button_PC_C:ForbidLeftBtn(IsForbid)
   self.Btn_Quit:ForbidBtn(IsForbid)
 end
-
 function WBP_Common_Dialog_Button_PC_C:ForbidRightBtn(IsForbid)
   self.Btn_Yes:ForbidBtn(IsForbid)
 end
-
 function WBP_Common_Dialog_Button_PC_C:IsLeftBtnForbidden()
   return self.Btn_Quit:IsBtnForbidden()
 end
-
 function WBP_Common_Dialog_Button_PC_C:IsRightBtnForbidden()
   return self.Btn_Yes:IsBtnForbidden()
 end
-
 function WBP_Common_Dialog_Button_PC_C:SetGamepadBtnKeyVisibility(IsShow)
   if IsShow then
     self.Btn_Quit:OverrideGamePadVisibility(nil)
@@ -156,7 +139,6 @@ function WBP_Common_Dialog_Button_PC_C:SetGamepadBtnKeyVisibility(IsShow)
     self.Btn_Yes:SetGamePadVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_Button_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_Common_Dialog_Button_PC_C M:RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -175,5 +157,4 @@ function WBP_Common_Dialog_Button_PC_C:RefreshOpInfoByInputDevice(CurInputDevice
     self.Btn_Quit:SetIconPanelVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return WBP_Common_Dialog_Button_PC_C

@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Erase:BindEventOnClicked(self, self.OnMarkDelete)
   self.Btn_Confirm:BindEventOnClicked(self, self.OnMarkConfirm)
@@ -54,7 +53,6 @@ function M:Construct()
     self.TypeTable[i * -100] = markType
   end
 end
-
 function M:Destruct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnUpdateUIStyleByInputTypeChange)
   for _, markType in pairs(self.TypeTable) do
@@ -63,7 +61,6 @@ function M:Destruct()
   end
   self.TypeId2Image = {}
 end
-
 function M:Open(Id, Data, MarkHitName, TypeId, Tracking, RegionIcon)
   self.SaveSensitive = 0
   self.CurrentId = Id
@@ -112,7 +109,6 @@ function M:Open(Id, Data, MarkHitName, TypeId, Tracking, RegionIcon)
     end
   end
 end
-
 function M:Close(NeedCheck)
   if not self.IsVisible then
     return
@@ -123,30 +119,24 @@ function M:Close(NeedCheck)
   self.IsNewMark = false
   self:OnMarkNameConfirm(NeedCheck)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Auto_Out then
     self:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnMarkDeleteSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_cancel", "", nil)
 end
-
 function M:OnMarkDelete()
   self.Parent:DeleteMark()
 end
-
 function M:OnMarkConfirm()
   self.IsNewMark = true
   self:OnMarkNameConfirm(true)
 end
-
 function M:OnMarkTrack()
   self.Parent:OnMarkTrack()
 end
-
 function M:OnMarkNameConfirm(NeedCheck)
   self.ConfirmName = self.Com_Input_Light:GetText()
   if not self.ConfirmName or self.ConfirmName == "" then
@@ -158,7 +148,6 @@ function M:OnMarkNameConfirm(NeedCheck)
     self.Parent:OnMarkNameConfirm(nil, nil)
   end
 end
-
 function M:OnTypeClicked(TypeId)
   self.TypeTable[TypeId].IsSelected = true
   if self.LastMarkType and self.LastMarkType ~= self.TypeTable[TypeId] then
@@ -168,13 +157,11 @@ function M:OnTypeClicked(TypeId)
   self.LastMarkType = self.TypeTable[TypeId]
   self.Parent:ChangeMarkType(TypeId, self.TypeId2Image[TypeId])
 end
-
 function M:SetDefaultType()
   if self.DefaultTypeId then
     self:OnTypeClicked(self.DefaultTypeId)
   end
 end
-
 function M:CheckCharInAnyRange(NewName, i, AllRange)
   local CharByte1 = string.byte(NewName, i)
   local CharByte2 = string.byte(NewName, i + 1)
@@ -186,7 +173,6 @@ function M:CheckCharInAnyRange(NewName, i, AllRange)
   end
   return false
 end
-
 function M:ContainsCJK(CharByte1, CharByte2, CharByte3, Range)
   local ByteNum = CharByte1 * 65536.0 + CharByte2 * 256.0 + CharByte3
   if ByteNum >= Range[1] and ByteNum <= Range[2] then
@@ -194,7 +180,6 @@ function M:ContainsCJK(CharByte1, CharByte2, CharByte3, Range)
   end
   return false
 end
-
 function M:OnTextChanged(NewName)
   local SpaceNum = 0
   NewName, SpaceNum = string.gsub(NewName, "%s", "")
@@ -223,29 +208,25 @@ function M:OnTextChanged(NewName)
     self.Com_Input_Light:SetText(subName)
   end
 end
-
 function M:CheckSensitive()
   self.CurrentSensitive = self.CurrentSensitive + 1
   self.SaveSensitive = self.CurrentSensitive
   HeroUSDKUtils.CheckStringSensitive(self, self.ConfirmName, self.OnNameSensitive, self.OnNameNotSensitive)
 end
-
 function M:OnNameSensitive()
   UIManager(self):ShowUITip("CommonToastMain", GText("UI_REGISTER_BANNEDINPUT"))
 end
-
 function M:OnNameNotSensitive()
   if self.SaveSensitive ~= self.CurrentSensitive then
     return
   end
   if self.IsNewMark then
     self.Parent:OnMarkConfirm(self.ConfirmName)
-  else
+  elseif self.CurrentData.Name ~= self.ConfirmName then
     self.CurrentData.Name = self.ConfirmName
     self.Parent:OnMarkNameConfirm(self.CurrentId, self.CurrentData)
   end
 end
-
 local CjkUTFRanges = {
   {14844070, 14844070},
   {14844051, 14844061},
@@ -257,7 +238,6 @@ local CjkUTFRanges = {
 local DoubleByteRanges = {
   {49847, 49847}
 }
-
 function M:CheckNameLegal(NewName)
   local IllegalRange = {}
   local SpaceRange = {}
@@ -311,7 +291,6 @@ function M:CheckNameLegal(NewName)
   end
   return NameLength, RealName, IllegalRange, ErrorType
 end
-
 function M:CheckDoubleCharInAnyRange(NewName, i, AllRange)
   local CharByte1 = string.byte(NewName, i)
   local CharByte2 = string.byte(NewName, i + 1)
@@ -322,7 +301,6 @@ function M:CheckDoubleCharInAnyRange(NewName, i, AllRange)
   end
   return false
 end
-
 function M:ContainsDoubleChar(CharByte1, CharByte2, Range)
   local ByteNum = CharByte1 * 256.0 + CharByte2
   if ByteNum >= Range[1] and ByteNum <= Range[2] then
@@ -330,7 +308,6 @@ function M:ContainsDoubleChar(CharByte1, CharByte2, Range)
   end
   return false
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -357,19 +334,16 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self.LastMarkType:SetFocus()
   else
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.LastMarkType then
     self.LastMarkType:SetFocus()
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 return M

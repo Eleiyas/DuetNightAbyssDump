@@ -1,7 +1,11 @@
 require("UnLua")
 local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
 local WBP_ForgeWorkableTip_C = Class("BluePrints.UI.BP_UIState_C")
-
+function WBP_ForgeWorkableTip_C:OnListItemObjectSet(Content)
+  self.Content = Content
+  Content.Widget = self
+  self:ShowDraftItem(Content.DraftId)
+end
 function WBP_ForgeWorkableTip_C:ShowDraftItem(DraftId)
   if not self.CachedItemForShow then
     self.CachedItemForShow = {}
@@ -9,7 +13,6 @@ function WBP_ForgeWorkableTip_C:ShowDraftItem(DraftId)
   table.insert(self.CachedItemForShow, DraftId)
   self:TryShowDraftItem()
 end
-
 function WBP_ForgeWorkableTip_C:TryShowDraftItem()
   if not self.IsClosing and self.CachedItemForShow and #self.CachedItemForShow > 0 then
     local NextDraftId = table.remove(self.CachedItemForShow, 1)
@@ -18,12 +21,10 @@ function WBP_ForgeWorkableTip_C:TryShowDraftItem()
     self:PlayAnimation(self.In)
   end
 end
-
 function WBP_ForgeWorkableTip_C:HideDraftItem()
   self:PlayAnimation(self.Out)
   self.IsClosing = true
 end
-
 function WBP_ForgeWorkableTip_C:InitDraftInfo(DraftId)
   local DraftInfo = DataMgr.Draft[DraftId]
   if not DraftInfo then
@@ -51,7 +52,6 @@ function WBP_ForgeWorkableTip_C:InitDraftInfo(DraftId)
     self.Text_Name:SetColorAndOpacity(self.Color_Orange)
   end
 end
-
 function WBP_ForgeWorkableTip_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -59,5 +59,4 @@ function WBP_ForgeWorkableTip_C:OnAnimationFinished(InAnimation)
     self:TryShowDraftItem()
   end
 end
-
 return WBP_ForgeWorkableTip_C

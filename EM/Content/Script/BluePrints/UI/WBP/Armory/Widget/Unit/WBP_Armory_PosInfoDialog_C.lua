@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   local CharId = Params and Params.CharId
@@ -61,7 +60,6 @@ function M:InitContent(Params, PopupData, Owner)
     Panel:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -74,5 +72,4 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 return M

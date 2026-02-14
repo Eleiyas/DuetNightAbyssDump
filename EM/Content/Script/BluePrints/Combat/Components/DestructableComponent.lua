@@ -1,6 +1,5 @@
 local Component = {}
 local CommonUtils = require("Utils.CommonUtils")
-
 function Component:ServerSetUpDestructableBody()
   if not self:IsMonster() then
     return
@@ -21,7 +20,6 @@ function Component:ServerSetUpDestructableBody()
     end
   end
 end
-
 function Component:RegisterAttachment(AttachmentName, Attachment)
   self.SocketPartsMap:Add(AttachmentName, Attachment)
   local PartId = Attachment.PartId
@@ -42,7 +40,6 @@ function Component:RegisterAttachment(AttachmentName, Attachment)
     self:TryShowOrHideParts()
   end
 end
-
 function Component:TryShowOrHideParts()
   local HpNum = 0
   for Name, Comp in pairs(self.SocketPartsMap) do
@@ -59,11 +56,9 @@ function Component:TryShowOrHideParts()
   print(_G.LogTag, "GZJY_BornWith", self.HpNum)
   self:GetOwnBlackBoardComponent():SetValueAsInt("ActivePartNum", self.HpNum)
 end
-
 function Component:GetSockeId(SocketName)
   return self.SocketPartsMap:FindRef(SocketName).PartId
 end
-
 function Component:ActivateParts(ShouldActivate, ActivateMap)
   for Name, Comp in pairs(ActivateMap) do
     if ShouldActivate and not Comp.IsActivated then
@@ -83,7 +78,6 @@ function Component:ActivateParts(ShouldActivate, ActivateMap)
   end
   self:GetOwnBlackBoardComponent():SetValueAsInt("ActivePartNum", self.HpNum)
 end
-
 function Component:PreActivateParts(PartIds, ActivatePart)
   local PartToActivate = {}
   for Name, Comp in pairs(self.SocketPartsMap) do
@@ -93,5 +87,4 @@ function Component:PreActivateParts(PartIds, ActivatePart)
   end
   self:ActivateParts(ActivatePart, PartToActivate)
 end
-
 return Component

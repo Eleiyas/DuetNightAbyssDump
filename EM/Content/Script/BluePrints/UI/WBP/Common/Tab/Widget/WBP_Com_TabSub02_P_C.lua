@@ -1,12 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.SoundFunc = nil
   self.HoverSoundFunc = nil
   self.SoundFuncReceiver = self
 end
-
 function M:Init(ConfigData)
   self.CurrentTab = nil
   self.ConfigData = ConfigData
@@ -17,7 +15,6 @@ function M:Init(ConfigData)
   self.DeviceTypeByPlatformName = ConfigData.PlatformName or CommonUtils.GetDeviceTypeByPlatformName(self)
   self:UpdateTabs(self.ConfigData.Tabs or {})
 end
-
 function M:UpdateTabs(Tabs)
   self.Tabs = Tabs
   self.ScrollBox_Tab:ClearChildren()
@@ -36,13 +33,13 @@ function M:UpdateTabs(Tabs)
   end
   self:InitNavigationRules()
 end
-
 function M:OnTabSwitchOn(TabWidget)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
       self.ScrollBox_Tab:GetChildAt(self.CurrentTab - 1):SetSwitchOn(false)
     end
     self.CurrentTab = TabWidget.Idx
+    self.ScrollBox_Tab:ScrollWidgetIntoView(TabWidget)
   end
   if self.EventTabSelected then
     self.EventTabSelected(self.ObjTabSelected, TabWidget)
@@ -51,32 +48,27 @@ function M:OnTabSwitchOn(TabWidget)
     self.ScrollBox_Tab:SetSelectItemIndex(self.CurrentTab - 1)
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0)):SetSwitchOn(true)
   end
 end
-
 function M:TabToUp()
   if self.CurrentTab and self.CurrentTab - 1 >= 1 then
     UIUtils.PlayCommonBtnSe(self)
     self.ScrollBox_Tab:GetChildAt(self.CurrentTab - 2):SetSwitchOn(true, true)
   end
 end
-
 function M:TabToDown()
   if self.CurrentTab and self.CurrentTab + 1 <= #self.Tabs then
     UIUtils.PlayCommonBtnSe(self)
     self.ScrollBox_Tab:GetChildAt(self.CurrentTab):SetSwitchOn(true, true)
   end
 end
-
 function M:UnLockTabByIndex(bUnLock, TabIndex)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   if nil ~= TabIndex then
@@ -94,7 +86,6 @@ function M:UnLockTabByIndex(bUnLock, TabIndex)
     end
   end
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -102,14 +93,12 @@ function M:UpdateReddots()
     end
   end
 end
-
 function M:ShowTabRedDot(Idx, IsNew, Upgradeable, OhterReddot)
   if self.Tabs[Idx] then
     local TabWidget = self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0))
     TabWidget:SetReddot(IsNew, Upgradeable, OhterReddot)
   end
 end
-
 function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -120,11 +109,9 @@ function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
     end
   end
 end
-
 function M:PlayClickSound()
   UIUtils.PlayCommonBtnSe(self)
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   local IsEventHandled = true
   if InKeyName == UE4.EKeys.W.KeyName then
@@ -136,7 +123,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = true
   if InKeyName == UIConst.GamePadKey.LeftTriggerThreshold then
@@ -148,7 +134,6 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local Widget = self.ScrollBox_Tab:GetChildAt(0)
   if Widget then
@@ -156,7 +141,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:InitNavigationRules()
   local Widgets = self.ScrollBox_Tab:GetAllChildren():ToTable()
   for index, Widget in ipairs(Widgets) do
@@ -164,10 +148,8 @@ function M:InitNavigationRules()
     if LastWidgt then
       local function OnNavigateUp()
         self.ScrollBox_Tab:ScrollWidgetIntoView(LastWidgt)
-        
         return LastWidgt
       end
-      
       Widget:SetNavigationRuleCustom(EUINavigation.Up, OnNavigateUp)
     else
       Widget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Escape)
@@ -176,15 +158,12 @@ function M:InitNavigationRules()
     if NextWidget then
       local function OnNavigateDown()
         self.ScrollBox_Tab:ScrollWidgetIntoView(NextWidget)
-        
         return NextWidget
       end
-      
       Widget:SetNavigationRuleCustom(EUINavigation.Down, OnNavigateDown)
     else
       Widget:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Escape)
     end
   end
 end
-
 return M

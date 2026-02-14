@@ -21,10 +21,8 @@ BP_Battle_C._components = {
   "BluePrints.Combat.BattleLogic.ToughnessLogic",
   "BluePrints.Combat.BattleLogic.BattlePlayMgr",
   "BluePrints.Combat.BattleLogic.LaserLogic",
-  "BluePrints.Combat.Components.SkillCreaturePool",
-  "BluePrints.Combat.BattleLogic.DanmakuLogic"
+  "BluePrints.Combat.Components.SkillCreaturePool"
 }
-
 function BP_Battle_C:CanExecute()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState:CheckGameModeStateNotEnd() then
@@ -41,7 +39,6 @@ function BP_Battle_C:CanExecute()
   end
   return false
 end
-
 function BP_Battle_C:ReceiveBeginPlay()
   print(_G.LogTag, "BP_Battle_C ReceiveBeginPlay")
   GWorld.Battle = self
@@ -57,7 +54,25 @@ function BP_Battle_C:ReceiveBeginPlay()
   self:OnCreated()
   EventManager:AddEvent(EventID.TalkPauseGame, self, self.ClearAllDanmaku)
 end
-
+function BP_Battle_C:GetSummonInheritAttrs()
+  return {
+    "MaxHP",
+    "Hp",
+    "MaxES",
+    "ES",
+    "DEF",
+    "SkillRange",
+    "SkillSustain",
+    "SkillEfficiency",
+    "SkillIntensity"
+  }
+end
+function BP_Battle_C:GetSummonSpecialInheritAttrs()
+  return {
+    "StrongValue",
+    "EnmityValue"
+  }
+end
 function BP_Battle_C:OnCreated()
   assert(Battle(self))
   if IsAuthority(self) then
@@ -66,7 +81,6 @@ function BP_Battle_C:OnCreated()
   print(_G.LogTag, "FireEvent OnBattleReady")
   EventManager:FireEvent(EventID.OnBattleReady, self)
 end
-
 function BP_Battle_C:GetClientOnlyFunction_Lua()
   return {
     "ExecuteClientPassiveFunction",
@@ -77,21 +91,20 @@ function BP_Battle_C:GetClientOnlyFunction_Lua()
     "AdditionalHitFX"
   }
 end
-
 function BP_Battle_C:GetClientPredictFunction_Lua()
   return {"PlayFX", "PlaySE"}
 end
-
 function BP_Battle_C:GetServerClientBothFunction_Lua()
   return {
     "AddCameraSpeed",
     "AddCharFallSpeed",
     "HitStop",
     "ExecuteClientSkillLogicFunction",
-    "ChangeModel"
+    "ChangeModel",
+    "SetToCondemnLoc",
+    "GrabHit"
   }
 end
-
 function BP_Battle_C:GetServerClientBothNetMulticastFunction_Lua()
   return {
     "CreateSkillCreature",
@@ -111,18 +124,15 @@ function BP_Battle_C:GetServerClientBothNetMulticastFunction_Lua()
     "RemoveDanmaku"
   }
 end
-
 function BP_Battle_C:GetLuaOverrideFunction_Lua()
   return {}
 end
-
 function BP_Battle_C:TriggerGameModeBattleInit()
   if not IsAuthority(self) then
     return
   end
   UE4.UGameplayStatics.GetGameMode(self):TryTriggerOnPrepare("BattleInit")
 end
-
 function BP_Battle_C:FlushEffectResult_Lua()
   if self.Result and not self.Result.IsEmpty then
     self.Results:Add(self.Result)
@@ -134,7 +144,6 @@ function BP_Battle_C:FlushEffectResult_Lua()
     self.Results = EffectResults.Results()
   end
 end
-
 function BP_Battle_C:DelayCreateSkillCreature()
   local Battle = Battle(self)
   for i, v in pairs(self.CreatureSrouceMap) do
@@ -153,7 +162,6 @@ function BP_Battle_C:DelayCreateSkillCreature()
         self.BornLocation = nil
       end
     end
-    
     local Interval = 0.01 * (i - 1)
     if Interval > 0 then
       local Handle = UE4.UKismetSystemLibrary.K2_SetTimerDelegate({self, CreateSkillCreatureDelay}, Interval, false)
@@ -164,7 +172,6 @@ function BP_Battle_C:DelayCreateSkillCreature()
   end
   self.CreatureSrouceMap = {}
 end
-
 function BP_Battle_C:ReceiveEndPlay()
   if self.Components then
     for _, Module in pairs(self.Components) do
@@ -177,7 +184,6 @@ function BP_Battle_C:ReceiveEndPlay()
   EventManager:RemoveEvent(EventID.TalkPauseGame, self)
   GWorld.Battle = nil
 end
-
 function BP_Battle_C:ToTable(SourceCharacter)
   local CharStruct = New(CharacterDataStruct)
   CharStruct.Eid = SourceCharacter.Eid
@@ -195,16 +201,13 @@ function BP_Battle_C:ToTable(SourceCharacter)
   end
   return CharStruct
 end
-
 function BP_Battle_C:ToStruct(CharStruct)
   function CharStruct.K2_GetActorLocation()
     return FVector(CharStruct.Location[1], CharStruct.Location[2], CharStruct.Location[3])
   end
-  
   function CharStruct.GetFireSkill()
     return CharStruct.FireSkillId
   end
-  
   function CharStruct.GetCurrentWeapon()
     if not Battle(self):GetEntity(CharStruct.Eid) then
       return nil
@@ -215,18 +218,15 @@ function BP_Battle_C:ToStruct(CharStruct)
     end
     return Character.Weapons[CharStruct.CurrentWeapon]
   end
-  
   return CharStruct
 end
-
 function BP_Battle_C:ShowBattleErrorLua(Text)
   self:ShowBattleError(Text, true)
 end
-
 function BP_Battle_C:StandardShowBattleErrorLua(Type, Title, Content, bCallFromCpp)
   Content = Content or ""
   if nil == Type then
-    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:\229\143\130\230\149\176Type\228\184\186nil")
+    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:参数Type为nil")
     return
   end
   local TypeString
@@ -234,18 +234,18 @@ function BP_Battle_C:StandardShowBattleErrorLua(Type, Title, Content, bCallFromC
     return UE.EShowBattleErrorType:GetNameStringByValue(Type)
   end)
   if not (Success and Result) or "" == Result then
-    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:\229\143\130\230\149\176Type\228\184\141\230\152\175\230\156\137\230\149\136\231\154\132EShowBattleErrorType\230\158\154\228\184\190\229\128\188")
+    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:参数Type不是有效的EShowBattleErrorType枚举值")
     return
   end
   TypeString = Result
   if nil == Title then
-    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:\229\143\130\230\149\176Title\228\184\186nil")
+    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:参数Title为nil")
     Title = "nil"
   elseif type(Title) ~= "string" and type(Title) ~= "number" then
     Title = tostring(Title)
   end
   if nil == Content then
-    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:\229\143\130\230\149\176Content\228\184\186nil")
+    DebugPrint(ErrorTag, "StandardShowBattleErrorLua:参数Content为nil")
     Content = "nil"
   elseif type(Content) ~= "string" and type(Content) ~= "number" then
     Content = tostring(Content)
@@ -257,29 +257,23 @@ function BP_Battle_C:StandardShowBattleErrorLua(Type, Title, Content, bCallFromC
   local Space = "=========================================================\n"
   local Ct = "" ~= Content and {
     Space,
-    "\227\128\144\233\148\153\232\175\175\229\164\167\231\177\187\227\128\145: ",
+    "【错误大类】: ",
     TypeString,
     "\n",
-    "\227\128\144Title\227\128\145: ",
+    "【Title】: ",
     Title,
     "\n",
-    "\227\128\144Content\227\128\145: ",
+    "【Content】: ",
     Content,
-    [[
-
-
-]]
+    "\n"
   } or {
     Space,
-    "\227\128\144\233\148\153\232\175\175\229\164\167\231\177\187\227\128\145: ",
+    "【错误大类】: ",
     TypeString,
     "\n",
-    "\227\128\144Title\227\128\145: ",
+    "【Title】: ",
     Title,
-    [[
-
-
-]]
+    "\n"
   }
   local Ret
   self:FillBattleLog(Ct)
@@ -293,7 +287,9 @@ Traceback:
   end
   Ret = table.concat(Ct)
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
-    ScreenPrint("\230\136\152\230\150\151\230\138\165\233\148\153(StandardShowBattleError):\n" .. Ret)
+    ScreenPrint("战斗报错(StandardShowBattleError):\n" .. Ret)
+  else
+    DebugPrint("战斗报错(StandardShowBattleError):\n" .. Ret)
   end
   if not GWorld.ErrorDict then
     GWorld.ErrorDict = {}
@@ -304,34 +300,33 @@ Traceback:
   end
   GWorld.ErrorDict[ErrorDictContent] = true
   local TraceType = {
-    first = GText("\230\136\152\230\150\151\230\138\165\233\148\153"),
+    first = GText("战斗报错"),
     second = TypeString,
     third = Title
   }
   local DescribeInfo = {
-    title = GText("\232\175\166\231\187\134\228\191\161\230\129\175"),
+    title = GText("详细信息"),
     trace_content = Ret
   }
   local Avatar = GWorld:GetAvatar()
   if Avatar then
-    Avatar:SendToFeishuForBattle(Ret, "\230\136\152\230\150\151\230\138\165\233\148\153" .. TypeString)
+    Avatar:SendToFeishuForBattle(Ret, "战斗报错" .. TypeString)
     Avatar:SendTraceToQaWeb(TraceType, DescribeInfo)
     return
   end
   local DSEntity = GWorld:GetDSEntity()
   if DSEntity then
-    DSEntity:SendToFeishuForBattle(Ret, "\230\136\152\230\150\151\230\138\165\233\148\153" .. TypeString)
+    DSEntity:SendToFeishuForBattle(Ret, "战斗报错" .. TypeString)
     DSEntity:SendTraceToQaWeb(TraceType, DescribeInfo)
     return
   end
 end
-
 function BP_Battle_C:FillBattleCharacterLog(Ct, Player)
   if not Player then
     return
   end
   local CurrentRoleId = Player.CurrentRoleId
-  table.insert(Ct, "\228\189\191\231\148\168\232\167\146\232\137\178ID:")
+  table.insert(Ct, "使用角色ID:")
   table.insert(Ct, tostring(CurrentRoleId))
   if DataMgr.BattleChar[CurrentRoleId] then
     local RoleName = GText(DataMgr.BattleChar[CurrentRoleId].CharName)
@@ -341,7 +336,7 @@ function BP_Battle_C:FillBattleCharacterLog(Ct, Player)
   end
   if Player.MeleeWeapon then
     local WeaponId = Player.MeleeWeapon.WeaponId
-    table.insert(Ct, ",\232\191\145\230\136\152\230\173\166\229\153\168ID:")
+    table.insert(Ct, ",近战武器ID:")
     table.insert(Ct, tostring(Player.MeleeWeapon.WeaponId))
     local WeaponInfo = DataMgr.Weapon[WeaponId]
     if WeaponInfo then
@@ -358,7 +353,7 @@ function BP_Battle_C:FillBattleCharacterLog(Ct, Player)
   end
   if Player.RangedWeapon then
     local WeaponId = Player.RangedWeapon.WeaponId
-    table.insert(Ct, ",\232\191\156\231\168\139\230\173\166\229\153\168ID:")
+    table.insert(Ct, ",远程武器ID:")
     table.insert(Ct, tostring(Player.RangedWeapon.WeaponId))
     local WeaponInfo = DataMgr.Weapon[WeaponId]
     if WeaponInfo then
@@ -373,35 +368,90 @@ function BP_Battle_C:FillBattleCharacterLog(Ct, Player)
       end
     end
   end
+  if not Player:IsPhantom() then
+    table.insert(Ct, "\n基础信息:")
+    table.insert(Ct, "  Eid: ")
+    table.insert(Ct, tostring(Player.Eid or "Unknown"))
+    table.insert(Ct, "  模型Id: ")
+    table.insert(Ct, tostring(Player.ModelId or "Unknown"))
+    table.insert(Ct, "\n初始化状态:")
+    table.insert(Ct, "  InitSuccess: ")
+    table.insert(Ct, Player.InitSuccess and "成功" or "失败")
+    table.insert(Ct, "  ServerInitSuccess: ")
+    table.insert(Ct, Player.ServerInitSuccess and "成功" or "失败")
+    if Player.IsCharacterReady then
+      table.insert(Ct, "  IsCharacterReady: ")
+      table.insert(Ct, Player:IsCharacterReady() and "就绪" or "未就绪")
+    end
+    if Player.WaitInitTags then
+      local waitCount = 0
+      for _ in pairs(Player.WaitInitTags) do
+        waitCount = waitCount + 1
+      end
+      if waitCount > 0 then
+        table.insert(Ct, "  WaitInitTags: ")
+        table.insert(Ct, tostring(waitCount))
+      end
+    end
+    local hasSpecialState = false
+    local specialStates = {}
+    if Player.bInJetRush then
+      table.insert(specialStates, "喷射冲刺")
+      hasSpecialState = true
+    end
+    if Player.bInJetState then
+      table.insert(specialStates, "喷射状态")
+      hasSpecialState = true
+    end
+    if Player.EnableAnimFly then
+      table.insert(specialStates, "飞行动画")
+      hasSpecialState = true
+    end
+    if Player.JumpHolden then
+      table.insert(specialStates, "跳跃保持")
+      hasSpecialState = true
+    end
+    if Player.SprintHolden then
+      table.insert(specialStates, "冲刺保持")
+      hasSpecialState = true
+    end
+    if hasSpecialState then
+      table.insert(Ct, "\n特殊状态:")
+      for i, state in ipairs(specialStates) do
+        if i > 1 then
+          table.insert(Ct, ", ")
+        end
+        table.insert(Ct, "  " .. state)
+      end
+    end
+  end
   if Player:IsPlayer() then
     local Flag = false
     local PhantomTeammate = Player:GetPhantomTeammates()
     for _, Target in pairs(PhantomTeammate) do
       if Target ~= Player then
         if not Flag then
-          table.insert(Ct, "\n\230\173\163\229\156\168\228\189\191\231\148\168\231\154\132\233\173\133\229\189\177\228\191\161\230\129\175:")
+          table.insert(Ct, "\n正在使用的魅影信息:")
           Flag = true
         end
         table.insert(Ct, [[
-
 	]])
         self:FillBattleCharacterLog(Ct, Target)
       end
     end
   end
 end
-
 function BP_Battle_C:FillBattleLog(Ct)
   local Avatar = GWorld:GetAvatar()
-  table.insert(Ct, "\231\142\175\229\162\131:")
+  table.insert(Ct, "环境:")
   if IsClient(self) then
-    table.insert(Ct, "\232\129\148\230\156\186\229\174\162\230\136\183\231\171\175")
+    table.insert(Ct, "联机客户端")
   elseif IsDedicatedServer(self) then
-    table.insert(Ct, "\232\129\148\230\156\186\230\156\141\229\138\161\231\171\175")
+    table.insert(Ct, "联机服务端")
   elseif Avatar and Avatar:IsInHardBoss() then
-    table.insert(Ct, "\230\162\166\233\173\135\230\174\139\229\163\176")
+    table.insert(Ct, "梦魇残声")
     if Avatar.HardBossInfo then
-      table.insert(Ct, ":\231\188\150\229\143\183[")
+      table.insert(Ct, ":编号[")
       local HardBossId = Avatar.HardBossInfo.HardBossId
       table.insert(Ct, HardBossId)
       table.insert(Ct, "]")
@@ -422,24 +472,26 @@ function BP_Battle_C:FillBattleLog(Ct)
       if DifficultyId and DataMgr.HardBossDifficulty[DifficultyId] then
         DifficultyLevel = DataMgr.HardBossDifficulty[DifficultyId].DifficultyLevel
       end
-      table.insert(Ct, ":\233\154\190\229\186\166\231\173\137\231\186\167[")
+      table.insert(Ct, ":难度等级[")
       table.insert(Ct, DifficultyLevel)
       table.insert(Ct, "]")
     end
   elseif Avatar and Avatar.CurrentOnlineType and -1 ~= Avatar.CurrentOnlineType then
-    table.insert(Ct, "\229\140\186\229\159\159\232\129\148\230\156\186")
+    table.insert(Ct, "区域联机")
   else
-    table.insert(Ct, "\229\141\149\230\156\186")
+    table.insert(Ct, "单机")
   end
   local PlatformName
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
-    PlatformName = "\231\188\150\232\190\145\229\153\168"
+    PlatformName = "编辑器"
   else
     PlatformName = UGameplayStatics.GetPlatformName()
   end
-  table.insert(Ct, "  \229\185\179\229\143\176:" .. tostring(PlatformName))
+  table.insert(Ct, "  平台:" .. tostring(PlatformName))
   table.insert(Ct, "\n")
+  local Space = "================" .. "角色信息" .. "================\n"
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  table.insert(Ct, Space)
   if IsDedicatedServer(self) then
     local AllPlayer = GameMode:GetAllPlayer()
     for i, Player in pairs(AllPlayer) do
@@ -458,44 +510,244 @@ function BP_Battle_C:FillBattleLog(Ct)
     self:FillBattleCharacterLog(Ct, Player)
     table.insert(Ct, "\n")
   end
+  Space = "================" .. "副本信息" .. "================\n"
   local GameState = UE.UGameplayStatics.GetGameState(self.Player)
-  if IsValid(GameState) then
-    local DungeonId = GameState.DungeonId
-    if DungeonId and DungeonId > 0 then
-      table.insert(Ct, "\229\137\175\230\156\172ID:")
-      table.insert(Ct, tostring(DungeonId))
-      local DungeonInfo = DataMgr.Dungeon[DungeonId]
-      if DungeonInfo then
-        local DungeonName = DungeonInfo.DungeonName
-        if DataMgr.TextMap[DungeonName] then
-          DungeonName = GText(DungeonName)
-        end
-        table.insert(Ct, "(")
-        table.insert(Ct, tostring(DungeonName))
-        table.insert(Ct, ")")
-      end
-      table.insert(Ct, "\n")
+  if IsValid(GameState) and GameState:IsInDungeon() then
+    table.insert(Ct, Space)
+    self:FillDungeonLog(Ct, GameState)
+  end
+  Space = "================" .. "区域信息" .. "================\n"
+  if IsValid(GameState) and GameState:IsInRegion() and Avatar then
+    table.insert(Ct, Space)
+    self:FillRegionLog(Ct, GameMode, Avatar)
+  end
+  Space = "================" .. "时间信息" .. "================\n"
+  table.insert(Ct, Space)
+  self:FillTimeLog(Ct)
+  Space = "================" .. "UI信息" .. "================\n"
+  table.insert(Ct, Space)
+  self:FillUIInfoLog(Ct)
+end
+function BP_Battle_C:FillDungeonLog(Ct, GameState)
+  local DungeonId = GameState.DungeonId
+  if not DungeonId or DungeonId <= 0 then
+    return
+  end
+  table.insert(Ct, "副本ID:")
+  table.insert(Ct, tostring(DungeonId))
+  local DungeonInfo = DataMgr.Dungeon[DungeonId]
+  local DungeonType
+  if DungeonInfo then
+    local DungeonName = DungeonInfo.DungeonName
+    if DungeonName and DataMgr.TextMap[DungeonName] then
+      DungeonName = GText(DungeonName)
+    end
+    table.insert(Ct, "(")
+    table.insert(Ct, tostring(DungeonName))
+    table.insert(Ct, ")")
+    DungeonType = DungeonInfo.DungeonType
+    if DungeonInfo.DungeonType then
+      table.insert(Ct, "  [")
+      table.insert(Ct, "副本类型: ")
+      table.insert(Ct, tostring(DungeonInfo.DungeonType))
+      table.insert(Ct, "]")
     end
   end
-  if IsValid(GameMode) and GameMode:IsInRegion() and Avatar then
-    local RegionId = Avatar:GetCurrentRegionId()
-    table.insert(Ct, "\229\173\144\229\140\186\229\159\159ID:")
-    table.insert(Ct, tostring(RegionId))
-    local RegionInfo = DataMgr.SubRegion[RegionId]
-    if RegionInfo then
-      local RegionName = RegionInfo.SubRegionName
-      if DataMgr.TextMap[RegionName] then
-        RegionName = GText(RegionName)
+  table.insert(Ct, "\n")
+  if DungeonInfo then
+    if DungeonInfo.DungeonLevel then
+      table.insert(Ct, "副本等级: ")
+      table.insert(Ct, tostring(DungeonInfo.DungeonLevel))
+      table.insert(Ct, "")
+    end
+    if DungeonId and DataMgr.Dungeon[DungeonId] and DataMgr.Dungeon[DungeonId].IsWeeklyDungeon then
+      table.insert(Ct, "      是否为周本: 是")
+    else
+      table.insert(Ct, "      是否为周本: 否")
+    end
+  end
+  local SceneManager = GWorld.GameInstance:GetSceneManager()
+  if SceneManager then
+    local SceneName = SceneManager:GetCurSceneName()
+    if SceneName then
+      table.insert(Ct, "      当前场景名称: ")
+      table.insert(Ct, tostring(SceneName))
+    end
+  end
+  table.insert(Ct, "\n")
+  if self:IsInSettlement() then
+    table.insert(Ct, "是否结算: 是")
+  else
+    table.insert(Ct, "是否结算: 否")
+    if GameState.DungeonProgress then
+      table.insert(Ct, "      副本当前进度(轮次): ")
+      table.insert(Ct, tostring(GameState.DungeonProgress))
+    end
+    if GameState.MonsterNum then
+      table.insert(Ct, "      当前敌人数量: ")
+      table.insert(Ct, tostring(GameState.MonsterNum))
+    end
+  end
+  table.insert(Ct, "\n")
+end
+function BP_Battle_C:FillTimeLog(Ct)
+  local WorldTime = GWorld:GetCurrentTime()
+  table.insert(Ct, "当前World运行时间（进入副本/父区域时间）:")
+  local minutes = math.floor(WorldTime / 60)
+  local seconds = WorldTime % 60
+  if minutes > 0 then
+    table.insert(Ct, string.format("  时间: %d分%.0f秒", minutes, seconds))
+  else
+    table.insert(Ct, string.format("  时间: %.0f秒", seconds))
+  end
+  table.insert(Ct, "\n")
+  local SystemTime = os.time()
+  if self.LastErrorLogTime then
+    local LastTimeStr = os.date("%Y-%m-%d %H:%M:%S", self.LastErrorLogTime)
+    local TimeSinceLast = math.floor(SystemTime - self.LastErrorLogTime)
+    table.insert(Ct, "上次战斗报错距今(" .. LastTimeStr .. "):")
+    local hours = math.floor(TimeSinceLast / 3600)
+    local minutes = math.floor(TimeSinceLast % 3600 / 60)
+    local seconds = TimeSinceLast % 60
+    local timeStr = ""
+    if hours > 0 then
+      timeStr = timeStr .. hours .. "小时"
+    end
+    if minutes > 0 then
+      timeStr = timeStr .. minutes .. "分钟"
+    end
+    if seconds > 0 or 0 == hours and 0 == minutes then
+      timeStr = timeStr .. seconds .. "秒"
+    end
+    table.insert(Ct, timeStr)
+    table.insert(Ct, "\n")
+  end
+  self.LastErrorLogTime = SystemTime
+end
+function BP_Battle_C:FillUIInfoLog(Ct)
+  local UIManager = GWorld.GameInstance:GetGameUIManager()
+  if IsValid(UIManager) then
+    local ExcludeUIPrefixes = {
+      "TaskIndicator",
+      "PoolClass_Monster",
+      "BattleHitDirection",
+      "TalkGuideUI"
+    }
+    local function IsUIExcluded(UiName)
+      for _, prefix in ipairs(ExcludeUIPrefixes) do
+        if string.sub(UiName, 1, string.len(prefix)) == prefix then
+          return true
+        end
+      end
+      return false
+    end
+    table.insert(Ct, "当前UI:")
+    table.insert(Ct, "\n")
+    local AllUI = UIManager.UIInstances:ToTable()
+    local RootWidgets = {}
+    for _, Widget in pairs(AllUI) do
+      if IsValid(Widget) then
+        local UIName = Widget.ConfigName or Widget.WidgetName or "Unknown"
+        if not IsUIExcluded(UIName) then
+          local Parent = Widget:GetParent()
+          table.insert(RootWidgets, Widget)
+        end
+      end
+    end
+    local function BuildUIHierarchy(Widget, Depth)
+      local Indent = string.rep("  ", Depth)
+      local UIName = Widget.ConfigName or Widget.WidgetName or "Unknown"
+      local VisibilityState = Widget:IsVisible() and "显示" or "隐藏"
+      local HideTagsInfo = ""
+      if not Widget:IsVisible() and Widget.HideTags then
+        local HideTags = Widget.HideTags
+        if HideTags and type(HideTags) == "table" and next(HideTags) then
+          local TagsList = {}
+          for tag, _ in pairs(HideTags) do
+            table.insert(TagsList, tostring(tag))
+          end
+          if #TagsList > 0 then
+            local TagsStr = table.concat(TagsList, ",")
+            HideTagsInfo = string.format(" [HideTags:%s]", TagsStr)
+          end
+        elseif HideTags and "string" == type(HideTags) and "" ~= HideTags then
+          HideTagsInfo = string.format(" [HideTags:%s]", HideTags)
+        end
+      end
+      local UIInfo = string.format("%s├─ %s (%s)%s", Indent, UIName, VisibilityState, HideTagsInfo)
+      table.insert(Ct, UIInfo)
+      table.insert(Ct, "\n")
+    end
+    if #RootWidgets > 0 then
+      for _, RootWidget in pairs(RootWidgets) do
+        BuildUIHierarchy(RootWidget, 0)
+      end
+    else
+      table.insert(Ct, "  无活跃UI")
+      table.insert(Ct, "\n")
+    end
+    local TotalUICount = 0
+    local VisibleUICount = 0
+    local HiddenUICount = 0
+    local ExcludeUICount = 0
+    for _, Widget in pairs(AllUI) do
+      if IsValid(Widget) then
+        TotalUICount = TotalUICount + 1
+        local UIName = Widget.ConfigName or Widget.WidgetName or "Unknown"
+        if IsUIExcluded(UIName) then
+          ExcludeUICount = ExcludeUICount + 1
+        elseif Widget:IsVisible() then
+          VisibleUICount = VisibleUICount + 1
+        else
+          HiddenUICount = HiddenUICount + 1
+        end
+      end
+    end
+    table.insert(Ct, string.format("UI统计: 总计%d个, 可见%d个, 隐藏%d个, 排除%d个(排除前缀:%s)", TotalUICount, VisibleUICount, HiddenUICount, ExcludeUICount, table.concat(ExcludeUIPrefixes, ",")))
+    table.insert(Ct, "\n")
+  end
+end
+function BP_Battle_C:FillRegionLog(Ct, GameMode, Avatar)
+  local RegionId = Avatar:GetCurrentRegionId()
+  table.insert(Ct, "子区域ID:")
+  table.insert(Ct, tostring(RegionId))
+  local RegionInfo = DataMgr.SubRegion[RegionId]
+  if not RegionInfo then
+    return
+  end
+  local RegionName = RegionInfo.SubRegionName
+  if DataMgr.TextMap[RegionName] then
+    RegionName = GText(RegionName)
+  end
+  table.insert(Ct, "(")
+  table.insert(Ct, tostring(RegionName))
+  table.insert(Ct, ")")
+  table.insert(Ct, "\n")
+  if GameMode and GameMode.RegionId then
+    table.insert(Ct, "父区域ID:")
+    table.insert(Ct, tostring(GameMode.RegionId))
+    local MainRegionInfo = DataMgr.Region[GameMode.RegionId]
+    if MainRegionInfo then
+      local MainRegionName = MainRegionInfo.RegionName
+      if DataMgr.TextMap[MainRegionName] then
+        MainRegionName = GText(MainRegionName)
       end
       table.insert(Ct, "(")
-      table.insert(Ct, tostring(RegionName))
+      table.insert(Ct, tostring(MainRegionName))
       table.insert(Ct, ")")
     end
     table.insert(Ct, "\n")
   end
-  table.insert(Ct, Space)
+  local SceneManager = GWorld.GameInstance:GetSceneManager()
+  if SceneManager then
+    local SceneName = SceneManager:GetCurSceneName()
+    if SceneName then
+      table.insert(Ct, "当前场景名称: ")
+      table.insert(Ct, tostring(SceneName))
+      table.insert(Ct, "\n")
+    end
+  end
 end
-
 function BP_Battle_C:ShowBattleError(Text, HideTraceback)
   local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
   local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
@@ -505,7 +757,7 @@ function BP_Battle_C:ShowBattleError(Text, HideTraceback)
   local Space = "=========================================================\n"
   local Ct = {
     Space,
-    "\230\138\165\233\148\153\230\150\135\230\156\172:\n\t",
+    "报错文本:\n\t",
     tostring(Text),
     "\n"
   }
@@ -522,7 +774,9 @@ Traceback:
   self:FillBattleLog(Ct)
   Ret = table.concat(Ct)
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
-    ScreenPrint("\230\136\152\230\150\151\230\138\165\233\148\153:\n" .. Ret)
+    ScreenPrint("战斗报错:\n" .. Ret)
+  else
+    DebugPrint("战斗报错(ShowBattleError):\n" .. Ret)
   end
   if not GWorld.ErrorDict then
     GWorld.ErrorDict = {}
@@ -532,32 +786,30 @@ Traceback:
   end
   GWorld.ErrorDict[Text] = true
   local TraceType = {
-    first = "\230\136\152\230\150\151\230\138\165\233\148\153",
-    second = "\230\151\167\231\137\136ShowBattleError",
-    third = "\229\133\182\228\187\150\229\136\134\231\177\187"
+    first = "战斗报错",
+    second = "旧版ShowBattleError",
+    third = "其他分类"
   }
   local DescribeInfo = {
-    title = "\230\136\152\230\150\151\230\138\165\233\148\153",
+    title = "战斗报错",
     trace_content = Ret
   }
   local Avatar = GWorld:GetAvatar()
   if Avatar then
-    Avatar:SendToFeishuForBattle(Ret, "\230\136\152\230\150\151\230\138\165\233\148\153")
+    Avatar:SendToFeishuForBattle(Ret, "战斗报错")
     Avatar:SendTraceToQaWeb(TraceType, DescribeInfo)
     return
   end
   local DSEntity = GWorld:GetDSEntity()
   if DSEntity then
-    DSEntity:SendToFeishuForBattle(Ret, "\230\136\152\230\150\151\230\138\165\233\148\153")
+    DSEntity:SendToFeishuForBattle(Ret, "战斗报错")
     DSEntity:SendTraceToQaWeb(TraceType, DescribeInfo)
     return
   end
 end
-
 function BP_Battle_C:GetLimitSeNumEachAttack()
   return Const.EveryAttackLimitSeNum
 end
-
 function BP_Battle_C:InitBannedRecordTags()
   local Arr = TArray(FName)
   local BannedRecordTags = EMCache:Get("BannedRecordTags")
@@ -568,10 +820,9 @@ function BP_Battle_C:InitBannedRecordTags()
   end
   self:SetBannedRecordTags(Arr)
 end
-
 function BP_Battle_C:ShowError_Monster_Inner_Lua(Text, Title)
   if nil == Title then
-    Title = "\230\128\170\231\137\169\231\187\132\230\138\165\233\148\153"
+    Title = "怪物组报错"
   end
   local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
   local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
@@ -581,7 +832,7 @@ function BP_Battle_C:ShowError_Monster_Inner_Lua(Text, Title)
   local Space = "=========================================================\n"
   local ct = {
     Space,
-    "\230\138\165\233\148\153\230\150\135\230\156\172:\n\t",
+    "报错文本:\n\t",
     tostring(Text),
     "\n"
   }
@@ -605,7 +856,7 @@ Traceback:
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local LocalUser = UE.UKismetSystemLibrary:GetPlatformUserName()
-    local ret = "\232\174\190\229\164\135\229\144\141\239\188\154" .. LocalUser .. "\n" .. ret
+    local ret = "设备名：" .. LocalUser .. "\n" .. ret
     Avatar:CallServerMethod("SendToFeiShuForMonster", ret, Title)
     return
   end
@@ -614,19 +865,37 @@ Traceback:
     DSEntity:SendToFeishuForMonster(ret, Title)
     return
   end
+  local TraceType = {
+    first = GText("怪物报错"),
+    second = Title,
+    third = ""
+  }
+  local DescribeInfo = {
+    title = GText("详细信息"),
+    trace_content = ret
+  }
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    Avatar:SendTraceToQaWeb(TraceType, DescribeInfo)
+    return
+  end
+  local DSEntity = GWorld:GetDSEntity()
+  if DSEntity then
+    DSEntity:SendTraceToQaWeb(TraceType, DescribeInfo)
+    return
+  end
 end
-
 function BP_Battle_C:FillLog_Monster(ct)
   local Avatar = GWorld:GetAvatar()
-  table.insert(ct, "\231\142\175\229\162\131:")
+  table.insert(ct, "环境:")
   if IsClient(self) then
-    table.insert(ct, "\232\129\148\230\156\186\229\174\162\230\136\183\231\171\175\n")
+    table.insert(ct, "联机客户端\n")
   elseif IsDedicatedServer(self) then
-    table.insert(ct, "\232\129\148\230\156\186\230\156\141\229\138\161\231\171\175\n")
+    table.insert(ct, "联机服务端\n")
   elseif Avatar and Avatar:IsInHardBoss() then
-    table.insert(ct, "\230\162\166\233\173\135\230\174\139\229\163\176")
+    table.insert(ct, "梦魇残声")
     if Avatar.HardBossInfo then
-      table.insert(ct, ":\231\188\150\229\143\183[")
+      table.insert(ct, ":编号[")
       local HardBossId = Avatar.HardBossInfo.HardBossId
       table.insert(ct, HardBossId)
       table.insert(ct, "]")
@@ -647,13 +916,13 @@ function BP_Battle_C:FillLog_Monster(ct)
       if DifficultyId and DataMgr.HardBossDifficulty[DifficultyId] then
         DifficultyLevel = DataMgr.HardBossDifficulty[DifficultyId].DifficultyLevel
       end
-      table.insert(ct, ":\233\154\190\229\186\166\231\173\137\231\186\167[")
+      table.insert(ct, ":难度等级[")
       table.insert(ct, DifficultyLevel)
       table.insert(ct, "]")
     end
     table.insert(ct, "\n")
   else
-    table.insert(ct, "\229\141\149\230\156\186\n")
+    table.insert(ct, "单机\n")
   end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if IsDedicatedServer(self) then
@@ -678,12 +947,12 @@ function BP_Battle_C:FillLog_Monster(ct)
   if IsValid(GameState) then
     local DungeonId = GameState.DungeonId
     if DungeonId and DungeonId > 0 then
-      table.insert(ct, "\229\137\175\230\156\172ID:")
+      table.insert(ct, "副本ID:")
       table.insert(ct, tostring(DungeonId))
       local DungeonInfo = DataMgr.Dungeon[DungeonId]
       if DungeonInfo then
         local DungeonName = DungeonInfo.DungeonName
-        if DataMgr.TextMap[DungeonName] then
+        if DungeonName and DataMgr.TextMap[DungeonName] then
           DungeonName = GText(DungeonName)
         end
         table.insert(ct, "(")
@@ -695,7 +964,7 @@ function BP_Battle_C:FillLog_Monster(ct)
   end
   if IsValid(GameMode) and GameMode:IsInRegion() and Avatar then
     local RegionId = Avatar:GetCurrentRegionId()
-    table.insert(ct, "\229\173\144\229\140\186\229\159\159ID:")
+    table.insert(ct, "子区域ID:")
     table.insert(ct, tostring(RegionId))
     local RegionInfo = DataMgr.SubRegion[RegionId]
     if RegionInfo then
@@ -709,15 +978,13 @@ function BP_Battle_C:FillLog_Monster(ct)
     end
     table.insert(ct, "\n")
   end
-  table.insert(ct, Space)
 end
-
 function BP_Battle_C:FillCharacterLog_Monster(ct, Player)
   if not Player then
     return
   end
   local CurrentRoleId = Player.CurrentRoleId
-  table.insert(ct, "\228\189\191\231\148\168\232\167\146\232\137\178ID:")
+  table.insert(ct, "使用角色ID:")
   table.insert(ct, tostring(CurrentRoleId))
   if DataMgr.BattleChar[CurrentRoleId] then
     local RoleName = GText(DataMgr.BattleChar[CurrentRoleId].CharName)
@@ -731,206 +998,18 @@ function BP_Battle_C:FillCharacterLog_Monster(ct, Player)
     for _, Target in pairs(PhantomTeammate) do
       if Target ~= Player then
         if not Flag then
-          table.insert(ct, "\n\230\173\163\229\156\168\228\189\191\231\148\168\231\154\132\233\173\133\229\189\177\228\191\161\230\129\175:")
+          table.insert(ct, "\n正在使用的魅影信息:")
           Flag = true
         end
         table.insert(ct, [[
-
 	]])
         self:FillCharacterLog_Monster(ct, Target)
       end
     end
   end
 end
-
-function BP_Battle_C:ShowError_UI_Inner_Lua(Text, Title)
-  if nil == Title then
-    Title = "UI\231\187\132\230\138\165\233\148\153"
-  end
-  local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
-  local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
-  if bDistribution and not bEnableShippingLog then
-    return
-  end
-  local Space = "=========================================================\n"
-  local ct = {
-    Space,
-    "\230\138\165\233\148\153\230\150\135\230\156\172:\n\t",
-    tostring(Text),
-    "\n"
-  }
-  local Ret
-  table.insert(ct, Space)
-  table.insert(ct, [[
-Traceback:
-	]])
-  table.insert(ct, debug.traceback())
-  table.insert(ct, "\n")
-  table.insert(ct, Space)
-  self:FillLog_UI(ct)
-  Ret = table.concat(ct)
-  if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
-    ScreenPrint("UI\230\138\165\233\148\153:\n" .. Ret)
-  end
-  if not GWorld.ErrorDict then
-    GWorld.ErrorDict = {}
-  end
-  if GWorld.ErrorDict[Text] then
-    return
-  end
-  GWorld.ErrorDict[Text] = true
-  local TraceType = {
-    first = "UI\230\138\165\233\148\153",
-    second = "ShowError_UI_Inner_Lua",
-    third = "\229\133\182\228\187\150\229\136\134\231\177\187"
-  }
-  local DescribeInfo = {title = "UI\230\138\165\233\148\153", trace_content = Ret}
-  local Avatar = GWorld:GetAvatar()
-  if Avatar then
-    local LocalUser = UE.UKismetSystemLibrary:GetPlatformUserName()
-    local DeviceData = "\232\174\190\229\164\135\229\144\141\239\188\154" .. LocalUser .. "\n" .. Ret
-    Avatar:CallServerMethod("SendToFeiShuForUI", DeviceData, Title)
-    Avatar:SendTraceToQaWeb(TraceType, DescribeInfo)
-    return
-  end
-  local DSEntity = GWorld:GetDSEntity()
-  if DSEntity then
-    DSEntity:SendToFeishuForUI(Ret, Title)
-    DSEntity:SendTraceToQaWeb(TraceType, DescribeInfo)
-    return
-  end
-end
-
-function BP_Battle_C:FillLog_UI(ct)
-  local Avatar = GWorld:GetAvatar()
-  table.insert(ct, "\231\142\175\229\162\131:")
-  if IsClient(self) then
-    table.insert(ct, "\232\129\148\230\156\186\229\174\162\230\136\183\231\171\175\n")
-  elseif IsDedicatedServer(self) then
-    table.insert(ct, "\232\129\148\230\156\186\230\156\141\229\138\161\231\171\175\n")
-  elseif Avatar and Avatar:IsInHardBoss() then
-    table.insert(ct, "\230\162\166\233\173\135\230\174\139\229\163\176")
-    if Avatar.HardBossInfo then
-      table.insert(ct, ":\231\188\150\229\143\183[")
-      local HardBossId = Avatar.HardBossInfo.HardBossId
-      table.insert(ct, HardBossId)
-      table.insert(ct, "]")
-      local Context
-      if DataMgr.HardBossMain[HardBossId] then
-        local HardBossName = DataMgr.HardBossMain[HardBossId].HardBossName
-        if DataMgr.TextMap[HardBossName] then
-          Context = GText(HardBossName)
-        end
-      end
-      if Context then
-        table.insert(ct, "[")
-        table.insert(ct, Context)
-        table.insert(ct, "]")
-      end
-      local DifficultyId = Avatar.HardBossInfo.DifficultyId
-      local DifficultyLevel
-      if DifficultyId and DataMgr.HardBossDifficulty[DifficultyId] then
-        DifficultyLevel = DataMgr.HardBossDifficulty[DifficultyId].DifficultyLevel
-      end
-      table.insert(ct, ":\233\154\190\229\186\166\231\173\137\231\186\167[")
-      table.insert(ct, DifficultyLevel)
-      table.insert(ct, "]")
-    end
-    table.insert(ct, "\n")
-  else
-    table.insert(ct, "\229\141\149\230\156\186\n")
-  end
-  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if IsDedicatedServer(self) then
-    local AllPlayer = GameMode:GetAllPlayer()
-    for i, Player in pairs(AllPlayer) do
-      table.insert(ct, "[")
-      table.insert(ct, i)
-      table.insert(ct, "]")
-      self:FillCharacterLog_UI(ct, Player)
-      table.insert(ct, "\n")
-    end
-  else
-    local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-    local CurrentRoleId
-    if Player then
-      CurrentRoleId = Player.CurrentRoleId
-    end
-    self:FillCharacterLog_UI(ct, Player)
-    table.insert(ct, "\n")
-  end
-  local GameState = UE.UGameplayStatics.GetGameState(self.Player)
-  if IsValid(GameState) then
-    local DungeonId = GameState.DungeonId
-    if DungeonId and DungeonId > 0 then
-      table.insert(ct, "\229\137\175\230\156\172ID:")
-      table.insert(ct, tostring(DungeonId))
-      local DungeonInfo = DataMgr.Dungeon[DungeonId]
-      if DungeonInfo then
-        local DungeonName = DungeonInfo.DungeonName
-        if DataMgr.TextMap[DungeonName] then
-          DungeonName = GText(DungeonName)
-        end
-        table.insert(ct, "(")
-        table.insert(ct, tostring(DungeonName))
-        table.insert(ct, ")")
-      end
-      table.insert(ct, "\n")
-    end
-  end
-  if IsValid(GameMode) and GameMode:IsInRegion() and Avatar then
-    local RegionId = Avatar:GetCurrentRegionId()
-    table.insert(ct, "\229\173\144\229\140\186\229\159\159ID:")
-    table.insert(ct, tostring(RegionId))
-    local RegionInfo = DataMgr.SubRegion[RegionId]
-    if RegionInfo then
-      local RegionName = RegionInfo.SubRegionName
-      if DataMgr.TextMap[RegionName] then
-        RegionName = GText(RegionName)
-      end
-      table.insert(ct, "(")
-      table.insert(ct, tostring(RegionName))
-      table.insert(ct, ")")
-    end
-    table.insert(ct, "\n")
-  end
-  table.insert(ct, Space)
-end
-
-function BP_Battle_C:FillCharacterLog_UI(ct, Player)
-  if not Player then
-    return
-  end
-  local CurrentRoleId = Player.CurrentRoleId
-  table.insert(ct, "\228\189\191\231\148\168\232\167\146\232\137\178ID:")
-  table.insert(ct, tostring(CurrentRoleId))
-  if DataMgr.BattleChar[CurrentRoleId] then
-    local RoleName = GText(DataMgr.BattleChar[CurrentRoleId].CharName)
-    table.insert(ct, "(")
-    table.insert(ct, tostring(RoleName))
-    table.insert(ct, ")")
-  end
-  if Player:IsPlayer() then
-    local Flag = false
-    local PhantomTeammate = Player:GetPhantomTeammates()
-    for _, Target in pairs(PhantomTeammate) do
-      if Target ~= Player then
-        if not Flag then
-          table.insert(ct, "\n\230\173\163\229\156\168\228\189\191\231\148\168\231\154\132\233\173\133\229\189\177\228\191\161\230\129\175:")
-          Flag = true
-        end
-        table.insert(ct, [[
-
-	]])
-        self:FillCharacterLog_UI(ct, Target)
-      end
-    end
-  end
-end
-
 function BP_Battle_C:IsInSettlement()
   return UIManager(self):GetUI("DungeonSettlement") ~= nil
 end
-
 AssembleComponents(BP_Battle_C)
 return BP_Battle_C

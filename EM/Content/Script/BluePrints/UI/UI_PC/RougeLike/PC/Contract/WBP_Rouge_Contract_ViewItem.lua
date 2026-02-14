@@ -1,7 +1,6 @@
 local TimeUtils = require("Utils.TimeUtils")
 local EMCache = require("EMCache.EMCache")
 local WBP_Rouge_Contract_ViewItem = Class("BluePrints.UI.BP_UIState_C", "BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_Contract_ViewItem:Construct()
   self.Arrow_L.Btn.OnClicked:Clear()
   self.Arrow_L.Btn.OnClicked:Add(self, self.OnBtnDecreaseLevelClicked)
@@ -34,20 +33,17 @@ function WBP_Rouge_Contract_ViewItem:Construct()
     self.OnNavigateDown
   })
 end
-
 function WBP_Rouge_Contract_ViewItem:InitKeyboardView()
   self.Arrow_L:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Arrow_R:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Btn_Defintion:SetVisibility(UE4.ESlateVisibility.Visible)
   self:ShowControllerIcon(false)
 end
-
 function WBP_Rouge_Contract_ViewItem:InitGamepadView()
   self.Arrow_L:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Arrow_R:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Btn_Defintion:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Rouge_Contract_ViewItem:ShowControllerIcon(bShow)
   if bShow then
     self.Controller_Decrease:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -59,21 +55,18 @@ function WBP_Rouge_Contract_ViewItem:ShowControllerIcon(bShow)
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:OnNavigateUp(Navigation)
   if self.Item.OnNavigateUp then
     self.Item.OnNavigateUp(self.Owner, self.Item, self)
   end
   return nil
 end
-
 function WBP_Rouge_Contract_ViewItem:OnNavigateDown(Navigation)
   if self.Item.OnNavigateDown then
     self.Item.OnNavigateDown(self.Owner, self.Item, self)
   end
   return nil
 end
-
 function WBP_Rouge_Contract_ViewItem:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == UE4.ECommonInputType.Gamepad then
     self:ShowControllerIcon(true)
@@ -83,13 +76,11 @@ function WBP_Rouge_Contract_ViewItem:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return self.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function WBP_Rouge_Contract_ViewItem:OnFocusLost(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == UE4.ECommonInputType.Gamepad then
     self:ShowControllerIcon(false)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:OnListItemObjectSet(ListItemObject)
   self.Item = ListItemObject
   self.Owner = ListItemObject.Owner
@@ -117,7 +108,6 @@ function WBP_Rouge_Contract_ViewItem:OnListItemObjectSet(ListItemObject)
     self:InitKeyboardView()
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -130,7 +120,6 @@ function WBP_Rouge_Contract_ViewItem:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Rouge_Contract_ViewItem:UpdateView()
   self.Text_Level:SetText(self.Item.SelectedLevel)
   self.Text_TotalNum:SetText(self.Item.SelectedLevel * self.Item.HeatValuePerLevel)
@@ -148,14 +137,24 @@ function WBP_Rouge_Contract_ViewItem:UpdateView()
   end
   self:ValidateButtonState()
 end
-
 function WBP_Rouge_Contract_ViewItem:OnBtnDefintionClicked()
-  local ExplanationId = DataMgr.RougeLikeContract[self.Item.ContractId].ExplanationId
-  if ExplanationId then
-    UIManager(self):LoadUINew("Rouge_Definition", ExplanationId)
+  local ExplanationIds = DataMgr.RougeLikeContract[self.Item.ContractId].ExplanationId
+  local Params = {}
+  Params.DefinitionItems = {}
+  if ExplanationIds then
+    for Index, ExplanationId in ipairs(ExplanationIds) do
+      local CombatTermData = DataMgr.CombatTerm[ExplanationId]
+      if CombatTermData then
+        local TermInfo = {}
+        TermInfo.Index = Index
+        TermInfo.Name = GText(CombatTermData.CombatTerm)
+        TermInfo.Des = GText(CombatTermData.CombatTermExplaination)
+        table.insert(Params.DefinitionItems, TermInfo)
+      end
+    end
+    UIManager(self):ShowCommonPopupUI(100266, Params)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:OnBtnDecreaseLevelClicked()
   local PrevLevel = self.Item.SelectedLevel
   if PrevLevel > 0 then
@@ -171,7 +170,6 @@ function WBP_Rouge_Contract_ViewItem:OnBtnDecreaseLevelClicked()
     self.OnDecreaseLevel(self.Owner, self.Item.ContractId, PrevLevel, self.Item.SelectedLevel)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:OnBtnIncreaseLevelClicked()
   local PrevLevel = self.Item.SelectedLevel
   if PrevLevel > 0 then
@@ -188,7 +186,6 @@ function WBP_Rouge_Contract_ViewItem:OnBtnIncreaseLevelClicked()
     self.OnIncreaseLevel(self.Owner, self.Item.ContractId, PrevLevel, self.Item.SelectedLevel)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:ValidateButtonState()
   if 0 == self.Item.SelectedLevel then
     self.Arrow_L.Btn:SetIsEnabled(false)
@@ -213,7 +210,6 @@ function WBP_Rouge_Contract_ViewItem:ValidateButtonState()
     self.Arrow_R:PlayAnimation(self.Arrow_R.Normal)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:OnAnimationFinished(InAnimation)
   if InAnimation == self.Up then
     self:PlayAnimation(self.Active)
@@ -221,9 +217,7 @@ function WBP_Rouge_Contract_ViewItem:OnAnimationFinished(InAnimation)
     self:PlayAnimation(self.Noactive)
   end
 end
-
 function WBP_Rouge_Contract_ViewItem:Destruct()
   self.Super.Destruct(self)
 end
-
 return WBP_Rouge_Contract_ViewItem

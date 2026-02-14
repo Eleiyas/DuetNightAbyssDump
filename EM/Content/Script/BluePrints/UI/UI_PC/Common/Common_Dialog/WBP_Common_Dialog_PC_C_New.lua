@@ -7,11 +7,9 @@ local Rule = FSlateChildSize()
 Rule.SizeRule = UE.ESlateSizeRule.Fill
 Rule.Value = 1.0
 local WBP_Common_Dialog_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Common_Dialog_PC_C:Initialize()
   self.Super.Initialize(self)
 end
-
 function WBP_Common_Dialog_PC_C:OnLoaded(PopupId, Params, ParentWidget)
   self.Super.OnLoaded(self)
   self:AddDispatcher(EventID.UnLoadUI, self, function(self, UIName)
@@ -21,7 +19,6 @@ function WBP_Common_Dialog_PC_C:OnLoaded(PopupId, Params, ParentWidget)
   end)
   self.PopupQueue = self.PopupQueue or {}
 end
-
 function WBP_Common_Dialog_PC_C:ShowPopupInterrupt(PopupId, Params, ParentWidget)
   if #self.PopupQueue <= 0 then
     self:ShowPopup(PopupId, Params, ParentWidget)
@@ -34,11 +31,9 @@ function WBP_Common_Dialog_PC_C:ShowPopupInterrupt(PopupId, Params, ParentWidget
   table.insert(self.PopupQueue, 1, {})
   self:OnClose()
 end
-
 function WBP_Common_Dialog_PC_C:RemoveFirstItemInPopupQueue()
   table.remove(self.PopupQueue, 1)
 end
-
 function WBP_Common_Dialog_PC_C:ShowPopup(PopupId, Params, ParentWidget)
   table.insert(self.PopupQueue, {
     PopupId,
@@ -49,7 +44,6 @@ function WBP_Common_Dialog_PC_C:ShowPopup(PopupId, Params, ParentWidget)
     self:InitView(PopupId, Params, ParentWidget)
   end
 end
-
 function WBP_Common_Dialog_PC_C:ShowNextPopup()
   self.PopupQueue = self.PopupQueue or {}
   table.remove(self.PopupQueue, 1)
@@ -61,7 +55,6 @@ function WBP_Common_Dialog_PC_C:ShowNextPopup()
     self.Super.Close(self)
   end
 end
-
 function WBP_Common_Dialog_PC_C:InitView(PopupId, Params, ParentWidget)
   if ParentWidget then
     self.ParentWidget = ParentWidget
@@ -81,11 +74,10 @@ function WBP_Common_Dialog_PC_C:InitView(PopupId, Params, ParentWidget)
     if self.Script then
       self.Script:BindDialogWidget(PopupId, self)
       self.Script:Initialize()
-      DebugPrint("Tianyi@ \229\188\185\231\170\151\230\136\144\229\138\159\231\187\145\229\174\154\232\132\154\230\156\172: ", Params.BindScript)
+      DebugPrint("Tianyi@ 弹窗成功绑定脚本: ", Params.BindScript)
     end
   end
 end
-
 function WBP_Common_Dialog_PC_C:RefreshView(PopupId, Params)
   self.ContentWidgetTable = {}
   self:ClearDelegates()
@@ -108,7 +100,6 @@ function WBP_Common_Dialog_PC_C:RefreshView(PopupId, Params)
   end
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Common_Dialog_PC_C:InitWidgetView(PopupId, Params)
   self.IsWidgetView = true
   self.ResourceBarWidget = {}
@@ -121,7 +112,6 @@ function WBP_Common_Dialog_PC_C:InitWidgetView(PopupId, Params)
   self.CloseMask:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.WBP_Com_Bg:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Common_Dialog_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -131,7 +121,6 @@ function WBP_Common_Dialog_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
     self:InitKeyboardView(self.CurGamepadName)
   end
 end
-
 function WBP_Common_Dialog_PC_C:InitKeyboardView(CurGamepadName)
   self.Switcher_Text:SetActiveWidgetIndex(0)
   for _, ContentWidget in pairs(self.ContentWidgetTable) do
@@ -140,7 +129,6 @@ function WBP_Common_Dialog_PC_C:InitKeyboardView(CurGamepadName)
     end
   end
 end
-
 function WBP_Common_Dialog_PC_C:InitGamepadView(CurGamepadName)
   self.Switcher_Text:SetActiveWidgetIndex(1)
   local ForceShow = self.Params.ShowBKeyClose
@@ -162,18 +150,15 @@ function WBP_Common_Dialog_PC_C:InitGamepadView(CurGamepadName)
     end
   end
 end
-
 function WBP_Common_Dialog_PC_C:AddEventListener(EventName, ListenerObj, ListenerFunc)
   if not self.EventListenerMap[EventName] then
     self.EventListenerMap[EventName] = {}
   end
   table.insert(self.EventListenerMap[EventName], {ListenerObj = ListenerObj, ListenerFunc = ListenerFunc})
 end
-
 function WBP_Common_Dialog_PC_C:RemoveEventListener(EventName)
   self.EventListenerMap[EventName] = nil
 end
-
 function WBP_Common_Dialog_PC_C:BroadcastDialogEvent(EventName, ...)
   local EventListeners = self.EventListenerMap[EventName]
   if EventListeners then
@@ -182,7 +167,6 @@ function WBP_Common_Dialog_PC_C:BroadcastDialogEvent(EventName, ...)
     end
   end
 end
-
 function WBP_Common_Dialog_PC_C:ClearDelegates()
   self.CloseBtnCallbackObj = nil
   self.CloseBtnCallbackFunction = nil
@@ -208,7 +192,6 @@ function WBP_Common_Dialog_PC_C:ClearDelegates()
   self.DontFocusParentWidget = false
   self.IsClosing = false
 end
-
 function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
   if PopupStyleID and not PopupData then
     PopupData = {Style = PopupStyleID}
@@ -225,7 +208,7 @@ function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
   end
   local PopupStyle = DataMgr.CommonPopupUIStyle[PopupStyleID]
   if not PopupStyle then
-    DebugPrint("Tianyi@ \230\137\190\228\184\141\229\136\176 " .. tostring(PopupStyleID) .. " \229\175\185\229\186\148\231\154\132\229\188\185\231\170\151\230\160\183\229\188\143")
+    DebugPrint("Tianyi@ 找不到 " .. tostring(PopupStyleID) .. " 对应的弹窗样式")
     return
   end
   self.PopupStyle = PopupStyle
@@ -322,7 +305,7 @@ function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
         self:RegisterContentWidget(ContentTypeIdx, TipWidget)
         table.insert(self.Tips, TipWidget)
       else
-        DebugPrint("Tianyi@ \229\156\168\229\188\185\231\170\151\230\142\167\228\187\182\232\161\168\228\184\173\230\137\190\228\184\141\229\136\176ContentId: " .. ContentTypeIdx)
+        DebugPrint("Tianyi@ 在弹窗控件表中找不到ContentId: " .. ContentTypeIdx)
       end
     end
     local AllChildrend = self.Pos_Tips:GetAllChildren()
@@ -342,7 +325,7 @@ function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
     if BGWidget then
       self.Pos_BGEffect:AddChild(BGWidget)
     else
-      DebugPrint(LogTag.Error, "Tianyi@ \229\136\155\229\187\186BG\230\142\167\228\187\182\229\164\177\232\180\165", PopupStyle.ShowBG)
+      DebugPrint(LogTag.Error, "Tianyi@ 创建BG控件失败", PopupStyle.ShowBG)
     end
   end
   local AllChildrend = self.VB_Node:GetAllChildren()
@@ -356,7 +339,6 @@ function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
       local function PackageFunc()
         return ContentWidget.PackageKey or "Content_" .. i - 1, ContentWidget:PackageData()
       end
-      
       table.insert(self.PackageFuncs, PackageFunc)
     end
   end
@@ -371,7 +353,6 @@ function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
       local function PackageFunc()
         return TipWidget.PackageKey or "Tip_" .. i, TipWidget:PackageData()
       end
-      
       table.insert(self.PackageFuncs, PackageFunc)
     end
   end
@@ -435,41 +416,24 @@ function WBP_Common_Dialog_PC_C:UpdateView(PopupStyleID, Params, PopupData)
       end
     end
   end
-  if Params and Params.CountDownParams then
-    local CountDownName = Params.CountDownParams.Name
-    local CountDownRemainTime = Params.CountDownParams.RemainTime
-    local CountDownTimeIconPath = Params.CountDownParams.TimeIcon
-    local CountDownEndTime = TimeUtils.NowTime() + CountDownRemainTime
-    self.Panel_CountDown:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    self:AddTimer(1, function()
-      local CurrentTime = TimeUtils.NowTime()
-      if CurrentTime > CountDownEndTime then
-        self:RemoveTimer("DialogCountDown")
-        return
-      end
-      local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(CountDownEndTime)
-      self.CountDown:SetTimeText(CountDownName, RemainTimeDict, CountDownTimeIconPath)
-    end, true, -1, "DialogCountDown")
-  else
-    self.Panel_CountDown:SetVisibility(UE4.ESlateVisibility.Collapsed)
-  end
   self:AutofitDialog(PopupStyle)
 end
-
 function WBP_Common_Dialog_PC_C:BP_GetDesiredFocusTarget()
+  if not self.ContentWidgetTable then
+    return
+  end
   local ContentWidgetDesiredFocusTarget
   for _, ContentWidget in pairs(self.ContentWidgetTable) do
     if ContentWidget.HandleDialogFocused then
       ContentWidgetDesiredFocusTarget = ContentWidget:HandleDialogFocused()
       if ContentWidgetDesiredFocusTarget then
-        DebugPrint("Tianyi@ \229\188\185\231\170\151\230\142\167\228\187\182: " .. ContentWidget:GetName() .. " Handle\228\186\134\229\188\185\231\170\151\231\154\132\232\129\154\231\132\166, \230\150\176\232\129\154\231\132\166\228\184\186: " .. ContentWidgetDesiredFocusTarget:GetName())
+        DebugPrint("Tianyi@ 弹窗控件: " .. ContentWidget:GetName() .. " Handle了弹窗的聚焦, 新聚焦为: " .. ContentWidgetDesiredFocusTarget:GetName())
         break
       end
     end
   end
   return ContentWidgetDesiredFocusTarget
 end
-
 function WBP_Common_Dialog_PC_C:PrintVBNode()
   local Length = self.VB_Node:GetChildrenCount()
   for i = 0, Length - 1 do
@@ -477,7 +441,6 @@ function WBP_Common_Dialog_PC_C:PrintVBNode()
     DebugPrint("Tianyi Child " .. tostring(i) .. " : " .. tostring(Child.Name))
   end
 end
-
 function WBP_Common_Dialog_PC_C:AutofitDialog()
   if self.Pos_Btn:GetChildrenCount() <= 0 then
     self.Bg_Switch:SetActiveWidgetIndex(1)
@@ -493,26 +456,30 @@ function WBP_Common_Dialog_PC_C:AutofitDialog()
   else
     self.Size_Bg:SetMinDesiredWidth(DialogMinWidthNormal)
   end
-  local AllChildrend = self.Pos_Tips:GetAllChildren()
-  local Length = AllChildrend:Length()
-  local HasTipWidgetVisible = false
-  for i = 1, Length do
-    local TipWidget = AllChildrend:GetRef(i)
-    local WidgetVisibility = TipWidget:GetVisibility()
-    if WidgetVisibility == UE4.ESlateVisibility.Visible or WidgetVisibility == UE4.ESlateVisibility.SelfHitTestInvisible then
-      HasTipWidgetVisible = true
-      break
-    end
-  end
-  if self.PopupStyle.ShowTip and HasTipWidgetVisible then
+  if self.Params.FixTipHeight then
     self.Spacer_VBNode_Top:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Top_Y_Large))
     self.Spacer_VBNode_Botton:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Botton_Y_Large))
   else
-    self.Spacer_VBNode_Top:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Top_Y_Normal))
-    self.Spacer_VBNode_Botton:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Botton_Y_Normal))
+    local AllChildrend = self.Pos_Tips:GetAllChildren()
+    local Length = AllChildrend:Length()
+    local HasTipWidgetVisible = false
+    for i = 1, Length do
+      local TipWidget = AllChildrend:GetRef(i)
+      local WidgetVisibility = TipWidget:GetVisibility()
+      if WidgetVisibility == UE4.ESlateVisibility.Visible or WidgetVisibility == UE4.ESlateVisibility.SelfHitTestInvisible then
+        HasTipWidgetVisible = true
+        break
+      end
+    end
+    if self.PopupStyle.ShowTip and HasTipWidgetVisible then
+      self.Spacer_VBNode_Top:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Top_Y_Large))
+      self.Spacer_VBNode_Botton:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Botton_Y_Large))
+    else
+      self.Spacer_VBNode_Top:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Top_Y_Normal))
+      self.Spacer_VBNode_Botton:SetSize(UE4.FVector2D(0, self.Spacer_VBNode_Botton_Y_Normal))
+    end
   end
 end
-
 function WBP_Common_Dialog_PC_C:PackageResult()
   if self.Script and self.Script.PackageData then
     local Data = self.Script:PackageData()
@@ -529,7 +496,6 @@ function WBP_Common_Dialog_PC_C:PackageResult()
   end
   return Result
 end
-
 function WBP_Common_Dialog_PC_C:OnMouseButtonDown(MyGeometry, InPointerEvent)
   local IsContentWidgetHandled = false
   for _, ContentWidget in pairs(self.ContentWidgetTable) do
@@ -545,7 +511,6 @@ function WBP_Common_Dialog_PC_C:OnMouseButtonDown(MyGeometry, InPointerEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Common_Dialog_PC_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -560,11 +525,7 @@ function WBP_Common_Dialog_PC_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Common_Dialog_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
-  if CommonUtils:IfExistSystemGuideUI(self) then
-    return UE4.UWidgetBlueprintLibrary.Handled()
-  end
   if self.IsClosing then
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
@@ -599,7 +560,6 @@ function WBP_Common_Dialog_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Common_Dialog_PC_C:ProcessGamepadKeydown(InKeyName)
   local ButtonBar = self:GetButtonBar()
   local RightBtnKey = Const.GamepadFaceButtonDown
@@ -633,7 +593,6 @@ function WBP_Common_Dialog_PC_C:ProcessGamepadKeydown(InKeyName)
   end
   return false
 end
-
 function WBP_Common_Dialog_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   if self.IsClosing then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -653,7 +612,6 @@ function WBP_Common_Dialog_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Common_Dialog_PC_C:OnLeftBtnClicked()
   if self.IsClosing then
     return
@@ -671,7 +629,6 @@ function WBP_Common_Dialog_PC_C:OnLeftBtnClicked()
   end
   self:OnClose()
 end
-
 function WBP_Common_Dialog_PC_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     if IsValid(self.ParentWidget) and self.ParentWidget.bIsFocusable and not self.DontFocusParentWidget then
@@ -684,7 +641,6 @@ function WBP_Common_Dialog_PC_C:OnAnimationFinished(InAnimation)
     self:ShowNextPopup()
   end
 end
-
 function WBP_Common_Dialog_PC_C:OnRightBtnClicked()
   if self.IsClosing then
     return
@@ -702,14 +658,12 @@ function WBP_Common_Dialog_PC_C:OnRightBtnClicked()
   end
   self:OnClose()
 end
-
 function WBP_Common_Dialog_PC_C:OnCloseMaskClicked()
   if not self.PopupData.ShowQuitTip or UIManager(self):IsHaveMenuAnchorOpen() then
     return
   end
   self:OnCloseBtnClicked()
 end
-
 function WBP_Common_Dialog_PC_C:OnCloseBtnClicked()
   if self.CloseBtnCallbackFunction then
     local Data = self:PackageResult()
@@ -717,7 +671,6 @@ function WBP_Common_Dialog_PC_C:OnCloseBtnClicked()
   end
   self:OnClose()
 end
-
 function WBP_Common_Dialog_PC_C:OnForbiddenLeftBtnClicked()
   if self.IsClosing then
     return
@@ -729,7 +682,6 @@ function WBP_Common_Dialog_PC_C:OnForbiddenLeftBtnClicked()
     UIManager(self):ShowUITip("CommonToastMain", GText(self.PopupData.NoButtonForbiddenToast))
   end
 end
-
 function WBP_Common_Dialog_PC_C:OnForbiddenRightBtnClicked()
   if self.IsClosing then
     return
@@ -741,18 +693,16 @@ function WBP_Common_Dialog_PC_C:OnForbiddenRightBtnClicked()
     UIManager(self):ShowUITip("CommonToastMain", GText(self.PopupData.YesButtonForbiddenToast))
   end
 end
-
 function WBP_Common_Dialog_PC_C:PlaySound(SoundFile, SoundEventName, Params)
   AudioManager(self):PlayUISound(self, SoundFile, SoundEventName, nil)
   if Params then
     AudioManager(self):SetEventSoundParam(self, SoundEventName, Params)
   end
 end
-
 function WBP_Common_Dialog_PC_C:CreateContentWidget(WidgetName)
   local ContentData = DataMgr.CommonDialogContent[WidgetName]
   if not ContentData then
-    DebugPrint("Tianyi@ \229\156\168\229\188\185\231\170\151\230\142\167\228\187\182\232\161\168\228\184\173\230\137\190\228\184\141\229\136\176ContentId: " .. WidgetName)
+    DebugPrint("Tianyi@ 在弹窗控件表中找不到ContentId: " .. WidgetName)
     return nil
   end
   local ContentBPPath = ContentData.BPPath
@@ -765,44 +715,37 @@ function WBP_Common_Dialog_PC_C:CreateContentWidget(WidgetName)
   end
   return nil
 end
-
 function WBP_Common_Dialog_PC_C:RegisterContentWidget(ContentWidgetName, ContentWidget)
   if ContentWidgetName then
     if self.ContentWidgetTable[ContentWidgetName] then
-      DebugPrint("Tianyi@ \233\135\141\229\164\141\230\179\168\229\134\140\230\142\167\228\187\182\239\188\154" .. ContentWidgetName)
+      DebugPrint("Tianyi@ 重复注册控件：" .. ContentWidgetName)
     end
     self.ContentWidgetTable[ContentWidgetName] = ContentWidget
   else
-    DebugPrint("Tianyi@ ContentWidget:" .. ContentWidget:GetName() .. "\230\178\161\230\156\137\232\174\190\231\189\174ContentWidgetName, \228\185\159\232\174\184\230\152\175\230\156\170\231\187\167\230\137\191DialogContentBase\231\177\187?")
+    DebugPrint("Tianyi@ ContentWidget:" .. ContentWidget:GetName() .. "没有设置ContentWidgetName, 也许是未继承DialogContentBase类?")
   end
 end
-
 function WBP_Common_Dialog_PC_C:GetContentWidgetByName(WidgetName)
   return self.ContentWidgetTable[WidgetName]
 end
-
 function WBP_Common_Dialog_PC_C:GetTitle()
   return self.DialogTitle
 end
-
 function WBP_Common_Dialog_PC_C:GetButtonBar()
   return self.ButtonBar
 end
-
 function WBP_Common_Dialog_PC_C:ForbidLeftBtn(IsForbid)
   local ButtonBar = self:GetButtonBar()
   if ButtonBar then
     ButtonBar:ForbidLeftBtn(IsForbid)
   end
 end
-
 function WBP_Common_Dialog_PC_C:ForbidRightBtn(IsForbid)
   local ButtonBar = self:GetButtonBar()
   if ButtonBar then
     ButtonBar:ForbidRightBtn(IsForbid)
   end
 end
-
 function WBP_Common_Dialog_PC_C:ShowDialogTip(DialogItemIndex, bShouldPlayAnim)
   self:BroadcastDialogEvent(DialogEvent.HideDialogItem, {
     DialogItemIndex = DialogItemIndex,
@@ -810,7 +753,6 @@ function WBP_Common_Dialog_PC_C:ShowDialogTip(DialogItemIndex, bShouldPlayAnim)
     bShouldPlayAnim = bShouldPlayAnim
   })
 end
-
 function WBP_Common_Dialog_PC_C:HideDialogTip(DialogItemIndex, bShouldPlayAnim)
   self:BroadcastDialogEvent(DialogEvent.HideDialogItem, {
     DialogItemIndex = DialogItemIndex,
@@ -818,11 +760,9 @@ function WBP_Common_Dialog_PC_C:HideDialogTip(DialogItemIndex, bShouldPlayAnim)
     bShouldPlayAnim = bShouldPlayAnim
   })
 end
-
 function WBP_Common_Dialog_PC_C:GetGamepadShortcutByIndex(Index)
   return self.Index2GamepadShortcut[Index]
 end
-
 function WBP_Common_Dialog_PC_C:InitGamepadShortcut(Params, TargetIndex)
   local Index, Widget = self:DispatchGamepadShortcut(TargetIndex)
   if not Index or not Widget then
@@ -832,28 +772,47 @@ function WBP_Common_Dialog_PC_C:InitGamepadShortcut(Params, TargetIndex)
   Widget:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   return Index
 end
-
 function WBP_Common_Dialog_PC_C:HideGamepadShortcut(Index)
   local GamepadShortcut = self:GetGamepadShortcutByIndex(Index)
   if GamepadShortcut then
     GamepadShortcut:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_PC_C:HideAllGamepadShortcut()
   local GamepadShortcutNum = #self.Index2GamepadShortcut
   for Index = 1, GamepadShortcutNum do
     self:HideGamepadShortcut(Index)
   end
 end
-
 function WBP_Common_Dialog_PC_C:ShowGamepadShortcut(Index)
   local GamepadShortcut = self:GetGamepadShortcutByIndex(Index)
   if GamepadShortcut then
     GamepadShortcut:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
+function WBP_Common_Dialog_PC_C:ClearAllGamepadShortcutContent()
+  if not self.Index2GamepadShortcut then
+    return
+  end
+  for _, Shortcut in ipairs(self.Index2GamepadShortcut) do
+    if Shortcut then
+      Shortcut.KeyInfoList = nil
+      Shortcut.CreateInfo = nil
+      if Shortcut.SubWidgetList and Shortcut.SubWidgetList.Clear then
+        Shortcut.SubWidgetList:Clear()
+      end
+    end
+  end
+end
+function WBP_Common_Dialog_PC_C:ShowAllGamepadShortcut()
+  local GamepadShortcutNum = #self.Index2GamepadShortcut
+  for Index = 1, GamepadShortcutNum do
+    local Shortcut = self:GetGamepadShortcutByIndex(Index)
+    if Shortcut and Shortcut.KeyInfoList and #Shortcut.KeyInfoList > 0 then
+      self:ShowGamepadShortcut(Index)
+    end
+  end
+end
 function WBP_Common_Dialog_PC_C:DispatchGamepadShortcut(TargetIndex)
   if TargetIndex then
     return TargetIndex, self.Index2GamepadShortcut[TargetIndex]
@@ -866,12 +825,10 @@ function WBP_Common_Dialog_PC_C:DispatchGamepadShortcut(TargetIndex)
   end
   return nil
 end
-
 function WBP_Common_Dialog_PC_C:IsGamepadShortcutVisible(Index)
   local GamepadShortcut = self:GetGamepadShortcutByIndex(Index)
   return GamepadShortcut:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible
 end
-
 function WBP_Common_Dialog_PC_C:ShowGamepadCloseBtn(bShow)
   if bShow then
     if self.GamepadCloseBtnIndex then
@@ -891,14 +848,12 @@ function WBP_Common_Dialog_PC_C:ShowGamepadCloseBtn(bShow)
     self.GamepadCloseBtnIndex = nil
   end
 end
-
 function WBP_Common_Dialog_PC_C:SetGamepadBtnKeyVisibility(IsShow)
   local ButtonBar = self:GetButtonBar()
   if ButtonBar then
     ButtonBar:SetGamepadBtnKeyVisibility(IsShow)
   end
 end
-
 function WBP_Common_Dialog_PC_C:ShowGamepadScrollBtn(bShow)
   if bShow then
     if self.GamepadScrollBtnIndex then
@@ -918,7 +873,6 @@ function WBP_Common_Dialog_PC_C:ShowGamepadScrollBtn(bShow)
     self.GamepadScrollBtnIndex = nil
   end
 end
-
 function WBP_Common_Dialog_PC_C:GetItemIndex()
   if not self.CurItemIndex then
     self.CurItemIndex = 0
@@ -926,7 +880,6 @@ function WBP_Common_Dialog_PC_C:GetItemIndex()
   self.CurItemIndex = self.CurItemIndex + 1
   return self.CurItemIndex
 end
-
 function WBP_Common_Dialog_PC_C:OnClose()
   if self.IsClosing then
     return
@@ -939,7 +892,6 @@ function WBP_Common_Dialog_PC_C:OnClose()
     self:PlayAnimation(self.Out)
   end
 end
-
 function WBP_Common_Dialog_PC_C:RealClose()
   self.Super.RealClose(self)
   if self.OnCloseCallbackFunction then
@@ -947,11 +899,9 @@ function WBP_Common_Dialog_PC_C:RealClose()
     self.OnCloseCallbackFunction(self.OnCloseCallbackObj, Data, self)
   end
 end
-
 function WBP_Common_Dialog_PC_C:SequenceEvent_ListViewAnim()
   self:BroadcastDialogEvent("PlayAttrListInAnim")
 end
-
 function WBP_Common_Dialog_PC_C:UpdateResourceInfos(DialogContent, Res)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -972,7 +922,6 @@ function WBP_Common_Dialog_PC_C:UpdateResourceInfos(DialogContent, Res)
   end
   self:BroadcastDialogEvent("UpdateItemSubSize", DialogContent.Params)
 end
-
 function WBP_Common_Dialog_PC_C:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.ContentWidgetTable then
     for _, ContentWidget in pairs(self.ContentWidgetTable) do
@@ -983,7 +932,6 @@ function WBP_Common_Dialog_PC_C:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return WBP_Common_Dialog_PC_C.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function WBP_Common_Dialog_PC_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local AllChildrend = self.VB_Node:GetAllChildren()
   local Length = AllChildrend:Length()
@@ -995,5 +943,4 @@ function WBP_Common_Dialog_PC_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEv
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 return WBP_Common_Dialog_PC_C

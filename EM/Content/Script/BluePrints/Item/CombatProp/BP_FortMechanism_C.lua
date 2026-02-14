@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function M:OnActiveStateChange()
   self.Super.OnActiveStateChange(self)
   if self.IsActive then
@@ -12,7 +11,6 @@ function M:OnActiveStateChange()
     self:SetActorTickEnabled(false)
   end
 end
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.AttackRange = self.UnitParams.AttackRange
@@ -23,7 +21,6 @@ function M:CommonInitInfo(Info)
     end
   end
 end
-
 function M:OnTargetCanBeAttack(Target)
   if self.bCDOver then
     for i, Id in pairs(self.AttackSkillEffects) do
@@ -34,15 +31,12 @@ function M:OnTargetCanBeAttack(Target)
   end
   self.Overridden.OnTargetCanBeAttack(self, Target)
 end
-
 function M:ResetCD()
   self.bCDOver = true
 end
-
 function M:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   M.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
   self:SetActorTickEnabled(false)
   self:EMActorDestroy(EDestroyReason.MechanismDead)
 end
-
 return M

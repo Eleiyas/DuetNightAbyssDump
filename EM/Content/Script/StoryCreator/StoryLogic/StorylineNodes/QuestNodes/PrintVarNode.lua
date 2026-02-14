@@ -1,47 +1,41 @@
 local PrintVarNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
+local VarLogType = UE.EStoryLogType.StoryVar
 function PrintVarNode:Init()
   self.VarName = nil
 end
-
 function PrintVarNode:Execute()
   if not self.VarName or self.VarName == "" then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "PrintVarNode\232\138\130\231\130\185\229\135\186\233\148\153", "\230\178\161\230\156\137\229\161\171\229\134\153VarName, FileName:" .. tostring(self.Context.FileName) .. ",\232\175\183\231\173\150\229\136\146\230\142\146\230\159\165.")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, VarLogType, "PrintVarNode节点出错", "没有填写VarName, FileName:" .. tostring(self.Context.FileName) .. ",请策划排查.")
     return
   end
   local VarInfo = DataMgr.StoryVariable[self.VarName]
   if not VarInfo then
-    local _Str = "\229\143\152\233\135\143:[" .. tostring(self.VarName) .. "]\233\156\128\232\166\129\231\142\176\229\156\168StoryVariable.xlsx\228\184\173\229\133\136\229\163\176\230\152\142"
+    local _Str = "变量:[" .. tostring(self.VarName) .. "]需要现在StoryVariable.xlsx中先声明"
     if self.QuestChainId and 0 ~= self.QuestChainId then
       _Str = _Str .. ",QuestChainId:[" .. tostring(self.QuestChainId) .. "]"
     end
-    _Str = _Str .. ",FileName:" .. tostring(self.Context.FileName) .. ",\232\175\183\231\173\150\229\136\146\230\142\146\230\159\165."
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "PrintVarNode\232\138\130\231\130\185\229\135\186\233\148\153", _Str)
+    _Str = _Str .. ",FileName:" .. tostring(self.Context.FileName) .. ",请策划排查."
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, VarLogType, "PrintVarNode节点出错", _Str)
     return
   end
   if VarInfo.QuestChainId and VarInfo.QuestChainId ~= self.QuestChainId then
-    local _Str = "\229\143\152\233\135\143:[" .. tostring(self.VarName) .. "]\228\184\141\232\131\189\229\156\168QuestChain:[" .. tostring(self.QuestChainId) .. "]\228\184\173\228\189\191\231\148\168\239\188\129\232\161\168\233\135\140\229\161\171\233\135\140\229\174\131\229\143\170\230\148\175\230\140\129\229\156\168QuestChain:[" .. tostring(VarInfo.QuestChainId) .. "]\228\184\173\228\189\191\231\148\168\239\188\129"
-    _Str = _Str .. ",\232\175\183\231\173\150\229\136\146\230\142\146\230\159\165."
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "StorySubsystem\233\148\153\232\175\175", _Str)
+    local _Str = "变量:[" .. tostring(self.VarName) .. "]不能在QuestChain:[" .. tostring(self.QuestChainId) .. "]中使用！表里填里它只支持在QuestChain:[" .. tostring(VarInfo.QuestChainId) .. "]中使用！"
+    _Str = _Str .. ",请策划排查."
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, VarLogType, "StorySubsystem错误", _Str)
     return
   end
   local StorySubsystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, UStorySubsystem:StaticClass())
   local VarValue = StorySubsystem:GetInt(self.VarName)
-  local Str = "[PrintVarNode]\229\143\152\233\135\143[" .. tostring(self.VarName) .. "]\231\154\132\229\128\188\228\184\186[" .. tostring(VarValue) .. "]"
+  local Str = "[PrintVarNode]变量[" .. tostring(self.VarName) .. "]的值为[" .. tostring(VarValue) .. "]"
   ScreenPrint(Str)
   return nil
 end
-
 function PrintVarNode:Clear()
 end
-
 function PrintVarNode:OnQuestlineFinish()
 end
-
 function PrintVarNode:OnQuestlineSuccess()
 end
-
 function PrintVarNode:OnQuestlineFail()
 end
-
 return PrintVarNode

@@ -1,4 +1,5 @@
 require("UnLua")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local FEntertainmentUtils = require("BluePrints.UI.WBP.Entertainment.EntertainmentUtils")
 local EEntertainmentState = FEntertainmentUtils.EEntertainmentState
 local EBlendFuncMap = {
@@ -7,15 +8,15 @@ local EBlendFuncMap = {
   easeOutQuad = EViewTargetBlendFunction.VTBlend_EaseOut,
   easeInOutQuad = EViewTargetBlendFunction.VTBlend_EaseInOut
 }
-
+local InviteLogType = UE.EStoryLogType.Invite
 local function GetCharacterData(CharacterId)
   if not CharacterId then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\228\188\160\229\133\165\231\169\186\231\154\132\232\167\146\232\137\178 Id\239\188\140\231\148\159\230\136\144\233\130\128\231\186\166\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "CharacterId无效", "传入空的角色 Id，生成邀约角色信息失败。")
     return
   end
   local NativeCharData = DataMgr.Char[CharacterId]
   if not NativeCharData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 Char \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174", CharacterId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "未找到Char数据", string.format("未在 Char 表找到Id：%d 的数据", CharacterId))
     return
   end
   local NativePartyNPCData = DataMgr.PartyNpc[CharacterId]
@@ -23,17 +24,17 @@ local function GetCharacterData(CharacterId)
   if not NativePartyNPCData then
     OldCharacterId = CharacterId
     CharacterId = 5301
-    DebugPrint(WarningTag, "CharacterId ", OldCharacterId, " \229\175\185\229\186\148\231\154\132\233\130\128\231\186\166\232\167\146\232\137\178\230\156\170\233\133\141\231\189\174\239\188\140\232\135\170\229\138\168\229\136\135\230\141\162\229\136\176 ", CharacterId, " \232\181\155\231\144\170\228\189\156\228\184\186\233\187\152\232\174\164\233\130\128\231\186\166\232\167\146\232\137\178")
+    DebugPrint(WarningTag, "CharacterId ", OldCharacterId, " 对应的邀约角色未配置，自动切换到 ", CharacterId, " 赛琪作为默认邀约角色")
   end
   local NativePartyNPCData = DataMgr.PartyNpc[CharacterId]
   if not NativePartyNPCData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 PartyNpc \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174 OldCharacterId %d", CharacterId, OldCharacterId or -1))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "未找到PartyNpc数据", string.format("未在 PartyNpc 表找到Id：%d 的数据 OldCharacterId %d", CharacterId, OldCharacterId or -1))
     return
   end
   local UnitId = NativePartyNPCData.UnitId
   local NativeNpcData = DataMgr.Npc[UnitId]
   if nil == NativeNpcData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 Npc \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174", UnitId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "未找到Npc数据", string.format("未在 Npc 表找到Id：%d 的数据", UnitId))
     return
   end
   local SpecialCharacterId = FEntertainmentUtils.GetPriorityCharacterId()
@@ -42,8 +43,8 @@ local function GetCharacterData(CharacterId)
     IconPath = NativeCharData.Icon,
     Rarity = NativeCharData.CharRarity,
     bPriority = SpecialCharacterId == CharacterId,
-    Name = GText(NativeNpcData.UnitName) or "\231\169\186",
-    WorldName = EnText(NativeNpcData.UnitName) or "\231\169\186",
+    Name = GText(NativeNpcData.UnitName) or "空",
+    WorldName = EnText(NativeNpcData.UnitName) or "空",
     AvatarIconPath = NativePartyNPCData.AvatarIconPath,
     PartyTopicIdArray = NativePartyNPCData.PartyTopicList,
     EscIcon = NativeCharData.EscIcon,
@@ -62,21 +63,19 @@ local function GetCharacterData(CharacterId)
     CameraBlendCurve = NativePartyNPCData.CameraBlendCurve
   }
 end
-
 local function GetAvatarCurrentCharacterData()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\229\189\147\229\137\141\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "Avatar无效", "获取当前角色信息失败，avatar 为空。")
     return
   end
   local CharacterId = Avatar:GetCurrentCharConfigID()
   return GetCharacterData(CharacterId)
 end
-
 local function GetAvatarOwnedCharacterDataMap()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\230\139\165\230\156\137\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "Avatar无效", "获取拥有角色信息失败，avatar 为空。")
     return
   end
   local OwnedCharacterDataMap = {}
@@ -85,7 +84,6 @@ local function GetAvatarOwnedCharacterDataMap()
   end
   return OwnedCharacterDataMap
 end
-
 local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
@@ -95,7 +93,6 @@ M._components = {
   "BluePrints.UI.WBP.Entertainment.Components.Entertainment_ShowModelComponent",
   "BluePrints.UI.WBP.Entertainment.Components.Entertainment_SequenceComponent"
 }
-
 function M:Initialize(Initializer)
   M.Super.Initialize(self, Initializer)
   self.TabTitleName = GText("MAIN_UI_ENTERTAINMENT")
@@ -124,7 +121,6 @@ function M:Initialize(Initializer)
   self.PlayerInteractiveTriggerTag = "Entertainment"
   self:OnInitialize()
 end
-
 function M:UpdateTitleName()
   local TabTitleName = GText("MAIN_UI_ENTERTAINMENT")
   if self.State == EEntertainmentState.Topic then
@@ -142,7 +138,6 @@ function M:UpdateTitleName()
     self.Tab:UpdateTopTitle(TabTitleName)
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -192,21 +187,38 @@ function M:Construct()
     self:HandleOnEnterInvitation(CharacterId, TopicLevel, bIsReview)
   end)
   self:OnConstruct()
-end
-
-function M:Destruct()
-  if IsValid(self.ArmoryHelper) then
-    self.ArmoryHelper:OnArmoryOpenOrClose(false)
-    self.ArmoryHelper:K2_DestroyActor()
+  local GameInstance = GWorld.GameInstance
+  if GameInstance then
+    self.TalkContext = GameInstance:GetTalkContext()
+    self.TalkContext:CacheDirLight()
+    self.TalkContext:TurnAllCharPointLights(false)
+    local EnvironmentManager = UE4.UGameplayStatics.GetActorOfClass(self, UE4.AEnvironmentManager:StaticClass())
+    self.EnvironmentManager = EnvironmentManager
+    if IsValid(EnvironmentManager) then
+      EnvironmentManager:SetEnableTimeElapse(false, "Entertainment")
+    end
   end
-  self.NotMoveCamera = nil
+end
+function M:Destruct()
+  if IsValid(self.TalkContext) then
+    self.TalkContext:ReverseDirLight()
+    self.TalkContext:TurnAllCharPointLights(true)
+  end
+  if IsValid(self.EnvironmentManager) then
+    self.EnvironmentManager:RevertEnableTimeElapse("Entertainment")
+  end
   self:OnDestruct()
   M.Super.Destruct(self)
+  GameFlowUtils:RemoveFlow(self.Flow)
+  local TS = TalkSubsystem()
+  if TS then
+    TS:ResumeLightTalkTask(self.WidgetName)
+  end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
-  local CharacterId, TabIndex = ...
+  local CharacterId, TabIndex, Flow = ...
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, CharacterId, TabIndex)
+  self.Flow = Flow
   local CharacterData
   if FEntertainmentUtils:IsSpecialSelectCharacter() then
     CharacterId = FEntertainmentUtils:GetPriorityCharacterId()
@@ -237,8 +249,11 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.SwitchCharacter:Init(self)
   AudioManager(self):PlayUISound(self, self.OpenSound, self.OpenSoundKey, nil)
   self:OnInitUIInfo()
+  local TS = TalkSubsystem()
+  if TS then
+    TS:PauseLightTalkTask(self.WidgetName)
+  end
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, self.OpenSoundKey, {ToEnd = 1})
   self:SetCharacterData(nil)
@@ -249,12 +264,9 @@ function M:Close()
   if IsValid(PlayerCharacter) then
     PlayerCharacter:SetCanInteractiveTrigger(true, self.PlayerInteractiveTriggerTag)
   end
-  if not self.NotMoveCamera then
-    self:SetViewTargetWithBlend(PlayerCharacter)
-  end
+  self:SetViewTargetWithBlend(PlayerCharacter)
   M.Super.Close(self)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self:IsInteractionEnabled() == false then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -266,12 +278,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   self.TopicDetail:RefreshPartyTopic()
 end
-
 function M:EnterMainState()
   if self.CharacterData == nil then
     return
@@ -288,11 +298,9 @@ function M:EnterMainState()
   self.EMListView_Role:SetFocus()
   self.EMListView_Role:NavigateToIndex(0)
 end
-
 function M:ExitMainState(ExitCallback)
   ExitCallback()
 end
-
 function M:EnterSwitchCharacterState()
   self.Panel_Button:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Panel_Topic:SetVisibility(ESlateVisibility.Collapsed)
@@ -302,11 +310,9 @@ function M:EnterSwitchCharacterState()
   self.TopicDetail:ClosePanel(nil, self)
   self:SetShowCharacterActionWithState(EEntertainmentState.SwitchCharacter)
 end
-
 function M:ExitSwitchCharacterState(ExitCallback)
   self.SwitchCharacter:ClosePanel(ExitCallback)
 end
-
 function M:EnterTopicState()
   self.Panel_Button:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_Topic:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -318,21 +324,18 @@ function M:EnterTopicState()
   self:UpdateTitleName()
   self:PlayCameraSound()
 end
-
 function M:ExitTopicState(ExitCallback)
   self.SwitchButton:ClosePanel()
   self.TopicDetail:ClosePanel(ExitCallback, self)
   self:UpdateTitleName()
   self:PlayCameraSound()
 end
-
 function M:SetState(NewState)
   if self.State == NewState then
     return
   end
   local OldState = self.State
   self.State = NewState
-  
   local function ExitCallback()
     if NewState == EEntertainmentState.Main then
       self:EnterMainState()
@@ -342,7 +345,6 @@ function M:SetState(NewState)
       self:EnterTopicState()
     end
   end
-  
   if OldState == EEntertainmentState.None then
     ExitCallback()
   elseif OldState == EEntertainmentState.Main then
@@ -353,8 +355,10 @@ function M:SetState(NewState)
     self:ExitTopicState(ExitCallback)
   end
 end
-
 function M:ExitCurrentState()
+  if self:IsInteractionEnabled() == false then
+    return
+  end
   if self.State == EEntertainmentState.Main then
     self:Close()
   elseif self.State == EEntertainmentState.SwitchCharacter then
@@ -367,27 +371,22 @@ function M:ExitCurrentState()
     self:SetState(EEntertainmentState.Main)
   end
 end
-
 function M:HandleOnSettedCharacterDataChanged(NewCharacterData)
   self:SetCharacterData(NewCharacterData)
   self:UpdateTitleName()
 end
-
 function M:HandleOnSelectedCharacterDataChanged(NewCharacterData)
   self:SetState(self.State)
   self:SetShowCharacterData(NewCharacterData)
 end
-
 function M:HandleOnDisplayMemory(MemoryName, MemoryDescription, MemoryIconPath)
   self.GetBadge:SetMemory(MemoryName, MemoryDescription, MemoryIconPath)
   self.GetBadge:OpenPanel()
 end
-
 function M:HandleOnGotReward()
   self.SwitchCharacter:RefreshRedDot()
   self:RefreshRedDot()
 end
-
 function M:CloseMenuWorld()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -400,7 +399,6 @@ function M:CloseMenuWorld()
     end
   end
 end
-
 function M:HandleOnEnterInvitation(CharacterId, TopicLevel, bIsReview)
   local CharacterData = self.OwnedCharacterDataMap[CharacterId]
   if CharacterData then
@@ -430,7 +428,6 @@ function M:HandleOnEnterInvitation(CharacterId, TopicLevel, bIsReview)
     self:Close()
   end
 end
-
 function M:SetInteractionEnabled(bEnabled)
   if self.bInteractionEnabled == bEnabled then
     return
@@ -442,11 +439,9 @@ function M:SetInteractionEnabled(bEnabled)
   end
   self.bInteractionEnabled = bEnabled
 end
-
 function M:IsInteractionEnabled()
   return self.bInteractionEnabled and self.IsInit
 end
-
 function M:SetCharacterData(NewCharacterData)
   if self.CharacterData and NewCharacterData and self.CharacterData.Id == NewCharacterData.Id then
     return
@@ -461,7 +456,6 @@ function M:SetCharacterData(NewCharacterData)
   end
   self:UpdateBtnRedDot()
 end
-
 function M:UpdateBtnRedDot()
   local CharacterData = self.CharacterData
   if not CharacterData then
@@ -469,7 +463,6 @@ function M:UpdateBtnRedDot()
   end
   self.Btn02:EnableReddot(CharacterData and FEntertainmentUtils:IsCharacterShowRedDot(CharacterData.Id))
 end
-
 function M:SetShowCharacterData(NewShowCharacterData)
   if self.ShowCharacterData and NewShowCharacterData and self.ShowCharacterData.UnitId == NewShowCharacterData.UnitId then
     return
@@ -517,17 +510,16 @@ function M:SetShowCharacterData(NewShowCharacterData)
     end)
   end
   self:WaitTime(self.SwitchBlackTime, function()
+    self.TalkContext:SetDirLight(true, self.ShowCharacter)
   end)
   if BlackKey then
     self:StartFadeOut(BlackKey, function()
     end)
   end
 end
-
 function M:SetOwnedCharacterDataMap(NewOwnedCharacterDataMap)
   self.OwnedCharacterDataMap = NewOwnedCharacterDataMap
 end
-
 function M:SetViewTargetWithBlend(NewViewTarget, CameraBlendSecond, CurveName)
   self.ViewTarget = NewViewTarget
   CameraBlendSecond = CameraBlendSecond or 0
@@ -537,18 +529,16 @@ function M:SetViewTargetWithBlend(NewViewTarget, CameraBlendSecond, CurveName)
     PlayerController:SetViewTargetWithBlend(NewViewTarget, CameraBlendSecond, EViewTargetBlendFunction, 2, true)
   end
 end
-
 function M:PlayCameraSound(Camera, TargetCamera)
   AudioManager(self.ViewUI):PlayUISound(self, "event:/ui/common/whoosh_cam_move_long_slow", "EntertainmentCameraMoveLong", nil)
 end
-
 function M:SetShowCharacterActionWithState(State)
   if IsValid(self.ShowCharacter) == false then
     return
   end
   local AnimInstance = self.ShowCharacter.Mesh:GetAnimInstance()
   if nil == AnimInstance then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\232\174\190\231\189\174 Id\239\188\154%d \232\167\146\232\137\178\229\138\168\228\189\156\229\164\177\232\180\165\239\188\140\229\138\168\231\148\187\229\174\158\228\190\139\228\184\186\231\169\186\227\128\130", self.ShowCharacterData.Id))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "AnimInstance无效", string.format("设置 Id：%d 角色动作失败，动画实例为空。", self.ShowCharacterData.Id))
     return
   end
   local ViewTarget = self.ViewTarget
@@ -590,7 +580,6 @@ function M:SetShowCharacterActionWithState(State)
     AnimInstance:SetLookAtActor(LookAtCamera)
   end
 end
-
 function M:GetEntertainmentCamera()
   local State = self.State
   if State == EEntertainmentState.None or State == EEntertainmentState.Main then
@@ -604,7 +593,6 @@ function M:GetEntertainmentCamera()
     return TopicCamera
   end
 end
-
 function M:HandleOnShowCharacterGot(Character, CharacterData)
   self.ShowCharacter = Character
   self:SetShowCharacterActionWithState(self.State)
@@ -612,12 +600,10 @@ function M:HandleOnShowCharacterGot(Character, CharacterData)
     self.ShowCharacter:PlayTalkSound(CharacterData.VoiceName)
   end
 end
-
 function M:GetPoint(PointName)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   assert(GameState)
   return GameState:GetTargetPoint(PointName)
 end
-
 AssembleComponents(M)
 return M

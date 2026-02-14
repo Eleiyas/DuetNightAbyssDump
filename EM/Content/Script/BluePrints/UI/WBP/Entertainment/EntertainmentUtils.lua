@@ -17,11 +17,10 @@ local EPartyTopicState = {
   CanReviewPartyTopic = 7
 }
 local EDisableTopicParty = {}
-
 function M:IsSystemShowRedDot()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Invite, "邀约系统错误", "获取角色信息失败，avatar 为空。")
     return false
   end
   for I, Char in pairs(Avatar.Chars) do
@@ -31,7 +30,6 @@ function M:IsSystemShowRedDot()
   end
   return false
 end
-
 function M:IsDisableTopicParty(CharacterId)
   local NativePartyNPCData = DataMgr.PartyNpc[CharacterId]
   if not NativePartyNPCData then
@@ -39,10 +37,9 @@ function M:IsDisableTopicParty(CharacterId)
   end
   return not NativePartyNPCData.bEnableParty
 end
-
 function M:IsCharacterShowRedDot(CharacterId)
   if nil == CharacterId then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140character id \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", "获取角色信息失败，character id 为空。")
     return false
   end
   local PartyNPCData = DataMgr.PartyNpc[CharacterId]
@@ -51,7 +48,7 @@ function M:IsCharacterShowRedDot(CharacterId)
   end
   local PartyTopicList = PartyNPCData.PartyTopicList
   if nil == PartyTopicList then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\232\142\183\229\143\150\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140PartyNpc \232\161\168 Id\239\188\154%d \231\154\132 party topic list \229\173\151\230\174\181\228\184\186\231\169\186\227\128\130", CharacterId))
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", string.format("获取角色信息失败，PartyNpc 表 Id：%d 的 party topic list 字段为空。", CharacterId))
     return false
   end
   if self:IsDisableTopicParty(CharacterId) then
@@ -64,11 +61,10 @@ function M:IsCharacterShowRedDot(CharacterId)
   end
   return false
 end
-
 function M:GetPriorityCharacterId()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", "获取角色信息失败，avatar 为空。")
     return
   end
   local SojournsGameInstanceSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, USojournsGameInstanceSubsystem)
@@ -83,7 +79,6 @@ function M:GetPriorityCharacterId()
     end
   end
 end
-
 function M:IsSpecialSelectCharacter()
   local SojournsGameInstanceSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, USojournsGameInstanceSubsystem)
   if SojournsGameInstanceSubsystem and SojournsGameInstanceSubsystem.bSpecialGuide then
@@ -92,28 +87,43 @@ function M:IsSpecialSelectCharacter()
     return true
   end
 end
-
+function M:CheckEnough(Avatar, ConsumeCountMap)
+  if Avatar:CheckEnough(ConsumeCountMap) then
+    return true
+  end
+  local HighLevelNeedCount = 0
+  for ResourceId, Count in pairs(ConsumeCountMap) do
+    local ItemCount = Avatar:GetResourceNum(ResourceId)
+    local NeedCount = Count - ItemCount
+    HighLevelNeedCount = HighLevelNeedCount + (NeedCount > 0 and NeedCount or 0)
+  end
+  local HighLevelItemCount = Avatar:GetResourceNum(19000)
+  if HighLevelNeedCount <= HighLevelItemCount then
+    return true
+  end
+  return false
+end
 function M:IsPartyTopicShowRedDot(CharacterId, PartyTopicLevel, PartyTopicId)
   if nil == CharacterId then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\175\157\233\162\152\231\186\162\231\130\185\230\152\175\229\144\166\230\152\190\231\164\186\229\164\177\232\180\165\239\188\140character id \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", "获取话题红点是否显示失败，character id 为空。")
     return false
   end
   if nil == PartyTopicLevel then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\175\157\233\162\152\231\186\162\231\130\185\230\152\175\229\144\166\230\152\190\231\164\186\229\164\177\232\180\165\239\188\140party topic level \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", "获取话题红点是否显示失败，party topic level 为空。")
     return false
   end
   if nil == PartyTopicId then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\175\157\233\162\152\231\186\162\231\130\185\230\152\175\229\144\166\230\152\190\231\164\186\229\164\177\232\180\165\239\188\140party topic id \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", "获取话题红点是否显示失败，party topic id 为空。")
     return false
   end
   local PartyTopicData = DataMgr.PartyTopic[PartyTopicId]
   if nil == PartyTopicData then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\232\142\183\229\143\150\232\175\157\233\162\152\231\186\162\231\130\185\230\152\175\229\144\166\230\152\190\231\164\186\229\164\177\232\180\165\239\188\140\230\156\170\229\156\168 PartyTopic \232\161\168\230\137\190\229\136\176 Id\239\188\154%d \231\154\132\230\149\176\230\141\174\227\128\130", PartyTopicId))
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", string.format("获取话题红点是否显示失败，未在 PartyTopic 表找到 Id：%d 的数据。", PartyTopicId))
     return false
   end
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
-    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\232\167\146\232\137\178\228\191\161\230\129\175\229\164\177\232\180\165\239\188\140avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils:PrintToFeiShu(GWorld.GameInstance, "邀约系统错误", "获取角色信息失败，avatar 为空。")
     return false
   end
   local PartyTopic = Avatar:GetPartyTopic(CharacterId, PartyTopicLevel)
@@ -129,12 +139,11 @@ function M:IsPartyTopicShowRedDot(CharacterId, PartyTopicLevel, PartyTopicId)
     return false
   end
   local PartyTopicConsume = PartyTopicData.PartyTopicConsume
-  if nil ~= PartyTopicConsume and PartyTopic and PartyTopic:IsLocked() and false == Avatar:CheckEnough(PartyTopicConsume) then
+  if nil ~= PartyTopicConsume and PartyTopic and PartyTopic:IsLocked() and false == self:CheckEnough(Avatar, PartyTopicConsume) then
     return false
   end
   return true
 end
-
 M.EEntertainmentState = EEntertainmentState
 M.EPartyTopicState = EPartyTopicState
 return M

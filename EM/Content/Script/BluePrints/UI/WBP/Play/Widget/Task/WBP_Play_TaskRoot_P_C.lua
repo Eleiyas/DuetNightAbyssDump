@@ -3,11 +3,9 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
-
 function M:Construct()
   self:InitTab()
 end
-
 function M:Destruct()
   if self.WidgetNameToIndex then
     for WidgetName, _ in pairs(self.WidgetNameToIndex) do
@@ -17,7 +15,6 @@ function M:Destruct()
     end
   end
 end
-
 function M:InitTab()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -79,15 +76,12 @@ function M:InitTab()
     end
   end
 end
-
 function M:OnStarterQuestReddotChange()
   self:OnReddotChange("StarterQuest")
 end
-
 function M:OnDailyMainReddotChange()
   self:OnReddotChange("DailyMain")
 end
-
 function M:OnReddotChange(SystemUIName)
   local Index = self.WidgetNameToIndex[SystemUIName]
   if Index then
@@ -102,7 +96,6 @@ function M:OnReddotChange(SystemUIName)
     end
   end
 end
-
 function M:OnSubTabChanged(TabWidget)
   local SubTabData = self.PlayTabInfo[TabWidget.Idx]
   if not SubTabData then
@@ -110,8 +103,7 @@ function M:OnSubTabChanged(TabWidget)
   end
   self:OnOpenTaskUI(SubTabData.SubWidgetUI)
 end
-
-function M:OpenTaskUI(UIName)
+function M:SubUIJumpFunc(UIName)
   for Index, TabInfo in ipairs(self.PlayTabInfo) do
     if TabInfo.SubWidgetUI == UIName then
       self.Tab:SelectTab(Index)
@@ -119,7 +111,6 @@ function M:OpenTaskUI(UIName)
     end
   end
 end
-
 function M:OnOpenTaskUI(UIName)
   self.IsHideGamepadKey = nil
   self.PanelRoot:ClearChildren()
@@ -136,8 +127,17 @@ function M:OnOpenTaskUI(UIName)
   end
   self.CurSubUI = WidgetUI
   self.CurSubUI:SetFocus()
+  self:PlayAnimationIn(WidgetUI, true)
 end
-
+function M:PlayAnimationIn(WidgetUI, bForce)
+  if not WidgetUI or not WidgetUI.In then
+    return
+  end
+  if WidgetUI:IsPlayingAnimation(WidgetUI.In) then
+    WidgetUI:StopAnimation(WidgetUI.In)
+  end
+  WidgetUI:PlayAnimation(WidgetUI.In)
+end
 function M:SwitchIn()
   if not self.CurSubUI then
     return
@@ -145,13 +145,12 @@ function M:SwitchIn()
   if self.CurSubUI.SwitchIn then
     self.CurSubUI:SwitchIn()
   end
+  self:PlayAnimationIn(self.CurSubUI, false)
 end
-
 function M:SwitchGamepadKeyShow(IsShow)
   self.Tab:UpdateUIStyleInPlatform(IsShow)
   self.IsHideGamepadKey = not IsShow
 end
-
 function M:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -165,12 +164,10 @@ function M:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.CurSubUI and self.CurSubUI.NodeName == "StarterQuest" and not UIUtils.HasAnyFocus(self.CurSubUI) then
-    return self.CurSubUI.List_Task
+    return self.CurSubUI:ReGetDesiredFocusTarget()
   end
   return self.CurSubUI or self
 end
-
 return M

@@ -1,6 +1,25 @@
 local FTalkTriggerComponent = require("BluePrints.Story.Talk.Component.TalkTriggerComponent")
 local M = Class("BluePrints.Story.FlowGraph.FlowNode.TalkFlowNode.FlowNode_TalkNodeBase")
-
+local FlowLogType = UE.EStoryLogType.TalkFlow
+function M:K2_InitializeInstance()
+  self.Options = self.OptionData:ToTable()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local FlowExportBranchImpr = DataMgr.FlowExportBranchImpr
+  for _, OptionId in pairs(self.Options) do
+    local bSelected = false
+    if FlowExportBranchImpr[OptionId] then
+      for _, ImprOptionId in pairs(FlowExportBranchImpr[OptionId]) do
+        if Avatar:IsImpressionCheckFailure(OptionId) then
+          self.RestartTag = true
+          return
+        end
+      end
+    end
+  end
+end
 function M:GetConditionOptions()
   local Options = {}
   for _, OptionData in ipairs(self.Options) do
@@ -35,7 +54,6 @@ function M:GetConditionOptions()
   end
   return Options
 end
-
 function M:GetRecordOptionData(OptionDialogueId)
   local OptionData = {
     bImpression = false,
@@ -46,7 +64,6 @@ function M:GetRecordOptionData(OptionDialogueId)
   }
   return OptionData
 end
-
 function M:IterForward()
   local DialogueFlowGraphComponent = self:TryGetFlowGraphComponent()
   local DialogueRecordComponent = self:TryGetRecordComponent()
@@ -62,34 +79,32 @@ function M:IterForward()
     self:FinishToFinal()
   elseif #Options > 0 then
     DialogueFlowGraphComponent:PlayOptions(Options, self.SelectOptions, function(OptionDialogueId, FinishType)
-      self:SelectOption(OptionDialogueId, FinishType)
       DialogueRecordComponent:OnOptionRecord(OptionDialogueId, self:GetRecordOptionData(OptionDialogueId))
+      self:SelectOption(OptionDialogueId, FinishType)
     end, self)
   else
     self:FinishToDefault()
   end
 end
-
 function M:Start()
-  self.Options = self.OptionData:ToTable()
-  self.SelectOptions = {}
+  self.SelectOptions = self.SelectOptions or {}
   local DialogueFlowGraphComponent = self:TryGetFlowGraphComponent()
   if not DialogueFlowGraphComponent then
-    local Message = string.format("\229\189\147\229\137\141Option\232\138\130\231\130\185\239\188\140\230\179\168\229\134\140\231\154\132Task\228\184\141\229\173\152\229\156\168 DialogueFlowGraphComponent\239\188\140\232\175\183\230\179\168\229\134\140")
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157FLowNode\229\135\186\233\148\153", Message)
+    local Message = string.format("当前Option节点，注册的Task不存在 DialogueFlowGraphComponent，请注册")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, FlowLogType, "Flow选项节点出错：DialogueFlowGraphComponent无效", Message)
     return
   end
   local DialogueRecordComponent = self:TryGetRecordComponent()
   if not DialogueRecordComponent then
-    local Message = string.format("\229\189\147\229\137\141Dialogue\232\138\130\231\130\185\239\188\140\230\179\168\229\134\140\231\154\132Task\228\184\141\229\173\152\229\156\168 DialogueRecordComponent\239\188\140\232\175\183\230\179\168\229\134\140")
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157FLowNode\229\135\186\233\148\153", Message)
+    local Message = string.format("当前Dialogue节点，注册的Task不存在 DialogueRecordComponent，请注册")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, FlowLogType, "Flow选项节点出错：DialogueRecordComponent无效", Message)
     return
   end
   self:IterForward()
 end
-
 function M:Skip()
   local DialogueFlowGraphComponent = self:TryGetFlowGraphComponent()
+  local DialogueRecordComponent = self:TryGetRecordComponent()
   for _, OptionId in ipairs(self:GetConditionOptions()) do
     if not self.SelectOptions[OptionId] then
       DialogueFlowGraphComponent:SelectOption(OptionId)
@@ -97,26 +112,29 @@ function M:Skip()
     end
   end
   if not self:HasFinalDialogue() then
-    local Message = string.format("\229\189\147\229\137\141Option\232\138\130\231\130\185\239\188\140\232\183\179\232\191\135\230\151\182\228\184\141\229\173\152\229\156\168Final \229\135\186\229\143\163\239\188\140\230\151\160\230\179\149\230\173\163\229\184\184\232\183\179\232\191\135\239\188\140\232\175\183\230\163\128\230\159\165\239\188\140\230\136\150\232\128\133\228\184\141\232\166\129\233\135\141\229\164\141\232\191\158\230\142\165\229\136\176\232\175\165\232\138\130\231\130\185")
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157FLowNode\229\135\186\233\148\153", Message)
+    local Message = string.format("当前Option节点，跳过时不存在Final 出口，无法正常跳过，请检查，或者不要重复连接到该节点")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, FlowLogType, "Flow选项节点出错：Skip", Message)
   end
 end
-
 function M:CanSkip()
+  local FlowAsset = self:GetFlowAsset()
+  if FlowAsset and FlowAsset.bIsInRestartDialogueSkip then
+    if self.RestartTag then
+      return false
+    else
+      return true
+    end
+  end
   return not self.bForbidSkip
 end
-
 function M:Pause()
 end
-
 function M:Resume()
 end
-
 function M:SelectOption(OptionId, FinishType)
   self.SelectOptions[OptionId] = true
   self:FinishSelectOption(OptionId)
 end
-
 function M:GetSavedOptions()
   local Avatar = GWorld:GetAvatar()
   local Res = {}
@@ -140,5 +158,4 @@ function M:GetSavedOptions()
   end
   return Res
 end
-
 return M

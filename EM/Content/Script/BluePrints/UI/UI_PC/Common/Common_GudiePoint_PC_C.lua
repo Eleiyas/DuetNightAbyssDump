@@ -1,7 +1,6 @@
 require("UnLua")
 local Common_GuidePoint_C = Class("BluePrints.UI.BP_EMUserWidget_C")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function Common_GuidePoint_C:Construct()
   self.Button_GuidePoint.OnClicked:Add(self, self.OnClicked)
   self.Button_GuidePoint.OnHovered:Add(self, self.OnHover)
@@ -10,11 +9,9 @@ function Common_GuidePoint_C:Construct()
   self.IsSelected = false
   self.LoopUISoundEnable = false
 end
-
 function Common_GuidePoint_C:Destruct()
   self.Button_GuidePoint.OnClicked:Clear()
 end
-
 function Common_GuidePoint_C:Init(Parent, Data, ClickFunction, HoverFunction, UnoverFunction)
   self.Parent = Parent
   self.Data = Data
@@ -23,7 +20,6 @@ function Common_GuidePoint_C:Init(Parent, Data, ClickFunction, HoverFunction, Un
   self.UnoverFunction = UnoverFunction
   self:PlayAnimation(self.Loop, 0, 0)
 end
-
 function Common_GuidePoint_C:OnClicked()
   if self.ClickFunction and type(self.ClickFunction) == "function" then
     self.IsSelected = true
@@ -37,14 +33,12 @@ function Common_GuidePoint_C:OnClicked()
     self:PlayAnimation(self.Press)
   end
 end
-
 function Common_GuidePoint_C:OnHover()
   if self.HoverFunction and type(self.HoverFunction) == "function" and not self.IsSelected then
     self.HoverFunction(self.Parent)
     self:PlayAnimation(self.Hover)
   end
 end
-
 function Common_GuidePoint_C:OnUnhovered()
   if self.UnoverFunction and type(self.UnoverFunction) == "function" and not self.IsSelected then
     self.UnoverFunction(self.Parent)
@@ -56,19 +50,16 @@ function Common_GuidePoint_C:OnUnhovered()
     end
   end
 end
-
 function Common_GuidePoint_C:ClearAllFunc()
   self.Button_GuidePoint.OnClicked:Clear()
   self.Button_GuidePoint.OnHovered:Clear()
   self.Button_GuidePoint.OnUnhovered:Clear()
   self.IsSelected = false
 end
-
 function Common_GuidePoint_C:InitMiniGuidePointWidget(GuidePointName, Player)
   self.PointName = GuidePointName
   self.Player = Player
 end
-
 function Common_GuidePoint_C:TryChangeStyleByRange()
   if self.IsMapPoint and self.Player and self.PointName ~= nil then
     if not self:CheckIsNeedShowRangeStyle(self.PointName) then
@@ -80,7 +71,6 @@ function Common_GuidePoint_C:TryChangeStyleByRange()
     end
   end
 end
-
 function Common_GuidePoint_C:CheckIsNeedShowRangeStyle(Name)
   local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
   if self.Player == nil then
@@ -101,23 +91,19 @@ function Common_GuidePoint_C:CheckIsNeedShowRangeStyle(Name)
   end
   return false
 end
-
 function Common_GuidePoint_C:OnEnabled(InNpc)
   InNpc.IsNeedCollapsedOtherBubble = true
   InNpc:CollapsedOtherBubble()
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function Common_GuidePoint_C:OnDisabled(InNpc)
   InNpc.IsNeedCollapsedOtherBubble = false
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function Common_GuidePoint_C:InitNpcSideQuestBubble(ParentHeadWidget)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.ParentHeadWidget = ParentHeadWidget
 end
-
 function Common_GuidePoint_C:InitBubble(InWidget)
   if InWidget and InWidget.AttachedWidgetComponent then
     local Owner = InWidget.AttachedWidgetComponent:GetOwner()
@@ -134,7 +120,6 @@ function Common_GuidePoint_C:InitBubble(InWidget)
     end
   end
 end
-
 function Common_GuidePoint_C:PlayLoopUISound()
   if self.LoopUISoundEnable then
     AudioManager(self):PlayUISound(self, "event:/ui/common/map_track_warning", "", {
@@ -142,7 +127,6 @@ function Common_GuidePoint_C:PlayLoopUISound()
     })
   end
 end
-
 function Common_GuidePoint_C:GetCurrentSoundPosValue()
   local ScreenSize = UIManager(self):GetDesignedScreenSize(self)
   local _, ViewportPos = USlateBlueprintLibrary.AbsoluteToViewport(self, UUIFunctionLibrary.GetGeometryAbsolutePosition(self:GetCachedGeometry()))
@@ -150,9 +134,7 @@ function Common_GuidePoint_C:GetCurrentSoundPosValue()
   Value = (math.clamp(Value, 0, 1) - 0.5) * 2 * -1
   return Value
 end
-
 function Common_GuidePoint_C:SetLoopUISoundEnable(Enabled)
   self.LoopUISoundEnable = Enabled
 end
-
 return Common_GuidePoint_C

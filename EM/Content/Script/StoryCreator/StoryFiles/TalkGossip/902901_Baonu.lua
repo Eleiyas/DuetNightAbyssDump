@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17557773980381233842",
       type = "StoryNode",
-      name = "\232\142\137\229\133\185\232\180\157\229\176\148\231\156\139\230\157\191\229\168\152",
+      name = "莉兹贝尔看板娘",
       pos = {x = 1082.8383838383838, y = 287.3030303030303},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -104,7 +106,7 @@ return {
           ["17557773980381233843"] = {
             key = "17557773980381233843",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 85, y = 156.94128009520045},
             propsData = {
               NpcInfos = {
@@ -115,7 +117,7 @@ return {
           ["17557773980381233844"] = {
             key = "17557773980381233844",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 600.7993047310042, y = 151.0613353605546},
             propsData = {
               NpcInfos = {
@@ -147,7 +149,7 @@ return {
           ["17557773980381233848"] = {
             key = "17557773980381233848",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 321.915458937198, y = 144},
             propsData = {
               IsNpcNode = false,
@@ -166,6 +168,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = false,
               ShowAutoPlayButton = false,
               ShowReviewButton = true,
@@ -173,6 +176,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -189,10 +193,6 @@ return {
                   TalkActorId = 81501,
                   TalkActorVisible = true
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 81501}
               },
               OptionType = "normal",
               FreezeWorldComposition = false,

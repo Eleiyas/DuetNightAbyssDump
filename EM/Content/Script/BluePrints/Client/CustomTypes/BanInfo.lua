@@ -15,7 +15,6 @@ BanInfo.__Props__ = {
   Reason = prop.prop("Str", "save"),
   Uid = prop.prop("Int", "save")
 }
-
 function BanInfo:HasBan()
   local ban_time = self.BanTime
   local res = false
@@ -24,7 +23,6 @@ function BanInfo:HasBan()
   end
   return res
 end
-
 function BanInfo:GetLeftTime()
   local ban_time = self.BanTime
   local res = 0
@@ -35,12 +33,10 @@ function BanInfo:GetLeftTime()
   end
   return res
 end
-
 FormatProperties(BanInfo)
 local BanIdDict = Class("BanIdDict", CustomTypes.CustomDict)
 BanIdDict.KeyType = BaseTypes.ObjId
 BanIdDict.ValueType = BanInfo
-
 function BanIdDict:NewBan(time, reason, uid)
   local info = BanInfo()
   if time >= 0 then
@@ -50,11 +46,9 @@ function BanIdDict:NewBan(time, reason, uid)
   info.Uid = uid or 0
   return info
 end
-
 local BanStrDict = Class("BanStrDict", CustomTypes.CustomDict)
 BanStrDict.KeyType = BaseTypes.Str
 BanStrDict.ValueType = BanInfo
-
 function BanStrDict:NewBan(time, reason, uid)
   local info = BanInfo()
   if time >= 0 then
@@ -64,7 +58,6 @@ function BanStrDict:NewBan(time, reason, uid)
   info.Uid = uid or 0
   return info
 end
-
 return {
   BanInfo = BanInfo,
   BanIdDict = BanIdDict,

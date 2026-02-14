@@ -1,22 +1,31 @@
+local SettingUtils = require("Utils.SettingUtils")
 local Component = {}
 local SignBoardBubbleTalkController = require("BluePrints.UI.WBP.SignBoardBubble.SignBoardBubbleTalkController")
 local StoryInteractiveController = require("BluePrints.UI.WBP.StoryInteractive.StoryInteractiveController")
-
 function Component:EnterWorld(...)
   SignBoardBubbleTalkController:Init()
   StoryInteractiveController:Init()
+  self:InitReddotTrees()
 end
-
 function Component:LeaveWorld(...)
   SignBoardBubbleTalkController:Destory()
   StoryInteractiveController:Destory()
 end
-
+function Component:InitReddotTrees()
+  ReddotManager.AddNodeEx("Setting_Root")
+  if SettingUtils.IsShowRedDotForLayoutPlan() then
+    ReddotManager.IncreaseLeafNodeCount("Setting_Layout", 1)
+  end
+  ReddotManager.ClearLeafNodeCount("Setting_Service")
+  local HasCustomerServiceRedDot = self:CheckCustomerServiceRedDot()
+  if HasCustomerServiceRedDot then
+    ReddotManager.IncreaseLeafNodeCount("Setting_Service", 1)
+  end
+end
 function Component:InitGameSetting()
   self:CheckActionMappingAdd()
   self:CheckActionMappingWithAvatar()
 end
-
 function Component:CheckActionMappingAdd()
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionMappings = InputSetting.ActionMappings:ToTable()
@@ -24,8 +33,8 @@ function Component:CheckActionMappingAdd()
   local KeyInfo = DataMgr.KeyboardMap
   for k, v in ipairs(ActionMappings) do
     local Res = string.find(v.Key.KeyName, "Gamepad")
-    local Res2 = string.find(v.ActionName, "Talk")
-    if nil == Res2 and nil == Res and KeyInfo[v.ActionName] then
+    local KeyData = DataMgr.KeyboardMap[v.ActionName]
+    if nil == Res and KeyData and KeyData.IsShowInSetting then
       EngineActionMappings[v.ActionName] = v
     end
   end
@@ -61,7 +70,6 @@ function Component:CheckActionMappingAdd()
   end
   InputSetting:SaveKeyMappings()
 end
-
 function Component:CheckActionMappingWithAvatar()
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionMappings = InputSetting.ActionMappings:ToTable()
@@ -69,8 +77,8 @@ function Component:CheckActionMappingWithAvatar()
   local KeyInfo = DataMgr.KeyboardMap
   for k, v in ipairs(ActionMappings) do
     local Res = string.find(v.Key.KeyName, "Gamepad")
-    local Res2 = string.find(v.ActionName, "Talk")
-    if nil == Res2 and nil == Res and KeyInfo[v.ActionName] then
+    local KeyData = DataMgr.KeyboardMap[v.ActionName]
+    if nil == Res and KeyData and KeyData.IsShowInSetting then
       EngineActionMappings[v.ActionName] = v
     end
   end
@@ -142,27 +150,20 @@ function Component:CheckActionMappingWithAvatar()
   end
   InputSetting:SaveKeyMappings()
 end
-
 function Component:UpdateSignBoardNpc(SignBoard, NpcId)
   local function callback(Ret)
     self.logger.debug("UpdateSignBoardNpc", Ret, SignBoard, NpcId)
-    
     EventManager:FireEvent(EventID.UpdateSignBoardNpc, Ret, SignBoard, NpcId)
   end
-  
   self:CallServer("UpdateSignBoardNpc", callback, SignBoard, NpcId)
 end
-
 function Component:UpdateActionMapping(ActionMapping)
   local function callback(Ret)
     self.logger.debug("UpdateActionMapping", Ret, ActionMapping)
-    
     EventManager:FireEvent(EventID.OnUpdateActionMapping, Ret, ActionMapping)
   end
-  
   self:CallServer("UpdateActionMapping", callback, ActionMapping)
 end
-
 function Component:CheckSignBoardNpcDailyTalkIsLimit(NpcId)
   if not NpcId or not DataMgr.Npc[NpcId] then
     return false
@@ -181,20 +182,16 @@ function Component:CheckSignBoardNpcDailyTalkIsLimit(NpcId)
   end
   return true
 end
-
 function Component:TriggerAddSignBoardNpcDailyTalk(NpcId, callback)
   self.logger.debug("TriggerAddSignBoardNpcDailyTalk Begin", NpcId)
-  
   local function Callback(Ret)
     self.logger.debug("TriggerAddSignBoardNpcDailyTalk Callback", NpcId, Ret)
     if callback then
       callback(Ret == ErrorCode.RET_SUCCESS)
     end
   end
-  
   self:CallServer("TriggerAddSignBoardNpcDailyTalk", Callback, NpcId)
 end
-
 function Component:CheckSignBoardNpcTalkIsRecord(NpcId, DialogueId)
   if not NpcId or not DataMgr.Npc[NpcId] then
     return false
@@ -218,7 +215,6 @@ function Component:CheckSignBoardNpcTalkIsRecord(NpcId, DialogueId)
   end
   return false
 end
-
 function Component:CheckSignBoardNpcTalkValid(NpcId, DialogueId)
   if not NpcId or not DataMgr.Npc[NpcId] then
     return false
@@ -235,15 +231,78 @@ function Component:CheckSignBoardNpcTalkValid(NpcId, DialogueId)
   end
   return true
 end
-
 function Component:TriggerRecordSignBoardNpcTalk(NpcId, DialogueId)
   self.logger.debug("TriggerRecordSignBoardNpcTalk Begin", NpcId, DialogueId)
-  
   local function Callback(Ret)
     self.logger.debug("TriggerRecordSignBoardNpcTalk Callback", NpcId, DialogueId, Ret)
   end
-  
   self:CallServer("TriggerRecordSignBoardNpcTalk", Callback, NpcId, DialogueId)
 end
-
+function Component:GetCurrentMobileHudPlanIndex()
+  return self.CurrentMobileHudPlan
+end
+function Component:GetMobileHudPlan(PlanIndex)
+  local Index = PlanIndex or self.CurrentMobileHudPlan
+  local Plan = self.MobileHudPlans[Index]
+  if not Plan then
+    return nil
+  end
+  return SerializeUtils:UnSerialize(Plan)
+end
+function Component:GetMobileHudPlanCount()
+  return self.MobileHudPlans:Length()
+end
+function Component:SwitchMobileHudPlan(NewPlanIndex)
+  self.logger.debug("SwitchMobileHudPlan Begin", self.CurrentMobileHudPlan, NewPlanIndex)
+  local function Callback(Ret)
+    self.logger.debug("SwitchMobileHudPlan Callback", Ret, self.CurrentMobileHudPlan, NewPlanIndex)
+  end
+  self:CallServer("SwitchMobileHudPlan", Callback, NewPlanIndex)
+end
+function Component:UpdateMobileHudPlan(PlanIndex, PlanInfo)
+  self.logger.debug("UpdateMobileHudPlan Begin", PlanIndex)
+  local function Callback(Ret)
+    EventManager:FireEvent(EventID.OnMobileHudPlanChanged, "Update", PlanIndex, PlanInfo)
+    self.logger.debug("UpdateMobileHudPlan Callback", Ret, PlanIndex)
+  end
+  self:CallServer("UpdateMobileHudPlan", Callback, PlanIndex, PlanInfo)
+end
+function Component:AddMobileHudPlan(PlanInfo)
+  self.logger.debug("AddMobileHudPlan Begin")
+  local function Callback(Ret)
+    self.logger.debug("AddMobileHudPlan Callback", Ret)
+  end
+  self:CallServer("AddMobileHudPlan", Callback, PlanInfo)
+end
+function Component:RemoveMobileHudPlan(PlanIndex)
+  self.logger.debug("RemoveMobileHudPlan Begin", self.CurrentMobileHudPlan, PlanIndex)
+  local function Callback(Ret)
+    self.logger.debug("RemoveMobileHudPlan Callback", Ret, PlanIndex)
+  end
+  self:CallServer("RemoveMobileHudPlan", Callback, PlanIndex)
+end
+function Component:InitMobileHudPlan(PlanIndex)
+  self.logger.debug("InitMobileHudPlan Begin", self.CurrentMobileHudPlan, PlanIndex)
+  local function Callback(Ret)
+    self.logger.debug("InitMobileHudPlan Callback", Ret, PlanIndex)
+  end
+  self:CallServer("InitMobileHudPlan", Callback, PlanIndex)
+end
+function Component:OnReceiveCustomerServiceRedDot()
+  self.logger.debug("OnReceiveCustomerServiceRedDot", self.DataStatistics.CustomerServiceRedDot)
+  ReddotManager.IncreaseLeafNodeCount("Setting_Service", 1)
+end
+function Component:ClearCustomerServiceRedDot()
+  self.logger.debug("ClearCustomerServiceRedDot Begin", self.DataStatistics.CustomerServiceRedDot)
+  local function Callback(Ret)
+    self.logger.debug("ClearCustomerServiceRedDot Callback", Ret, self.DataStatistics.CustomerServiceRedDot)
+  end
+  self:CallServer("ClearCustomerServiceRedDot", Callback)
+end
+function Component:CheckCustomerServiceRedDot()
+  if self.DataStatistics.CustomerServiceRedDot then
+    return true
+  end
+  return false
+end
 return Component

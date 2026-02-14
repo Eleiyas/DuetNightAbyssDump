@@ -2,7 +2,6 @@ local ShowGuideToastFingerNode = Class("StoryCreator.StoryLogic.StorylineNodes.Q
 ShowGuideToastFingerNode._components = {
   "StoryCreator.StoryLogic.StorylineNodes.QuestNodes.GuideNodeComp"
 }
-
 function ShowGuideToastFingerNode:Init()
   self.ShowEnable = false
   self.MessageId = 0
@@ -11,12 +10,10 @@ function ShowGuideToastFingerNode:Init()
   self.MessageLoc = ""
   self.MessageLocOffset = {}
 end
-
 function ShowGuideToastFingerNode:Start(Context)
   self.Context = Context
   self:ShowMessage(self.Context)
 end
-
 function ShowGuideToastFingerNode:ShowMessage(Context)
   DebugPrint("------------ ShowGuideToastFingerNode ------------------")
   local GameInstance = GWorld.GameInstance
@@ -63,7 +60,6 @@ function ShowGuideToastFingerNode:ShowMessage(Context)
     end
   end
 end
-
 function ShowGuideToastFingerNode:Clear()
   if self.UIStateAsyncActionBase and self.UIStateAsyncActionBase.OnGuideEnd:IsBound() then
     self.UIStateAsyncActionBase.OnGuideEnd:Clear()
@@ -75,10 +71,8 @@ function ShowGuideToastFingerNode:Clear()
     self.GuideTextPanel.OnGuideEnd:Clear()
   end
 end
-
 function ShowGuideToastFingerNode:FinishAction()
   self:Finish()
 end
-
 AssembleComponents(ShowGuideToastFingerNode)
 return ShowGuideToastFingerNode

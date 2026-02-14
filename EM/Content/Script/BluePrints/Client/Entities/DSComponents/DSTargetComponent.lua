@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:TriggerTarget(targets, AvatarEid)
   if type(targets) ~= "table" then
     return
@@ -10,28 +9,19 @@ function Component:TriggerTarget(targets, AvatarEid)
     self:ServerMulticast("ServerTriggerTarget", targets)
   end
 end
-
 function Component:CombatItemTargetFinish(AvatarEid, TargetType, UniqueAttr, Count, ...)
-  local TargetIds = DataMgr.TargetType2TargetId[TargetType]
-  if not TargetIds then
-    return
-  end
   local Params = {
     ...
   }
-  local temp = false
-  for _, TargetId in ipairs(TargetIds) do
-    local info = DataMgr.Target[TargetId]
-    if info and CommonUtils.HasValue(info.TargetParam[1], tostring(Params[1])) then
-      temp = true
-      break
-    end
+  if #Params < 1 then
+    return
   end
-  if temp then
-    self:ServerTargetFinish(AvatarEid, TargetType, UniqueAttr, Count, ...)
+  local Key = tostring(TargetType) .. "_" .. tostring(Params[1])
+  if not DataMgr.TargetTypeIdValidMap[Key] then
+    return
   end
+  self:ServerTargetFinish(AvatarEid, TargetType, UniqueAttr, Count, ...)
 end
-
 function Component:ServerTargetFinish(AvatarEid, TargetType, UniqueAttr, Count, ...)
   self.logger.debug("ServerTargetFinish", TargetType, UniqueAttr, Count, ...)
   local args = {
@@ -42,5 +32,4 @@ function Component:ServerTargetFinish(AvatarEid, TargetType, UniqueAttr, Count, 
   args[#args] = 1
   self:SendAvatar(AvatarEid, "ServerTargetFinish", TargetType, UniqueAttr, Count, args)
 end
-
 return Component

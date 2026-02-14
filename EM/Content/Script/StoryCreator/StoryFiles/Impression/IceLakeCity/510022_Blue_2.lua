@@ -20,7 +20,7 @@ return {
       isStoryNode = true,
       key = "170184690974134340",
       type = "StoryNode",
-      name = "\229\141\176\232\177\161\231\179\187\231\187\159\232\138\130\231\130\185",
+      name = "印象系统节点",
       pos = {x = 1196.9424682551112, y = 285.3205429835864},
       propsData = {
         QuestId = 0,
@@ -44,8 +44,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -66,7 +68,7 @@ return {
           ["170184691563634954"] = {
             key = "170184691563634954",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1183.178731991375, y = 323.3974660605095},
             propsData = {
               IsNpcNode = false,
@@ -85,6 +87,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -92,13 +95,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

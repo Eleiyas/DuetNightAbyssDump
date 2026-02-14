@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "171851537058311663296",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1028.970337028758, y = 308.3616499713401},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,7 +115,7 @@ return {
           ["172232611645627371"] = {
             key = "172232611645627371",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186\229\138\168\231\148\187 \230\136\152\229\144\142\233\128\146\232\138\177",
+            name = "过场动画 战后递花",
             pos = {x = 1043.953544133883, y = 417.15970987217094},
             propsData = {
               IsNpcNode = false,
@@ -130,8 +132,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -142,9 +146,6 @@ return {
                   TalkActorId = 0,
                   TalkActorVisible = false
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
               },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

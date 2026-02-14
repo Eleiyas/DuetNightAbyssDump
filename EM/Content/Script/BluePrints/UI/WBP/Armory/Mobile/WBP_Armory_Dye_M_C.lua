@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.WBP.Armory.WBP_Armory_Dye_Base_C")
-
 function M:Construct()
   self.TabConfig = {
     TitleName = GText("UI_Dye_Name"),
@@ -21,5 +20,4 @@ function M:Construct()
   }
   M.Super.Construct(self)
 end
-
 return M

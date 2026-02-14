@@ -32,11 +32,9 @@ local DaysOrdinal = {
   "30th",
   "31st"
 }
-
 local function Process_e(str, number)
   return tostring(DaysOrdinal[number])
 end
-
 function Utils.GDate(DateFormatID, Time, Language)
   local OsTime = os.time()
   if Time then
@@ -64,7 +62,7 @@ function Utils.GDate(DateFormatID, Time, Language)
   elseif Language == CommonConst.SystemLanguages.KR then
     Format = Format.FormatKR
   else
-    DebugPrint("Tianyi@ \230\137\190\228\184\141\229\136\176\229\175\185\229\186\148\231\154\132DateFormat\230\160\188\229\188\143\239\188\140\233\187\152\232\174\164\228\187\165\232\139\177\230\150\135\229\189\162\229\188\143\231\187\153\229\135\186")
+    DebugPrint("Tianyi@ 找不到对应的DateFormat格式，默认以英文形式给出")
     Format = Format.FormatEN
   end
   Format = Format.gsub(Format, "(%%e+)", function(s)
@@ -75,5 +73,4 @@ function Utils.GDate(DateFormatID, Time, Language)
   end
   return nil
 end
-
 return Utils

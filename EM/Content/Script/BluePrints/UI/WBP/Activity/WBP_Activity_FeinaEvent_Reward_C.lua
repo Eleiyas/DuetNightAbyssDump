@@ -1,7 +1,6 @@
 require("UnLua")
 local NumberModel = require("BluePrints.UI.UI_PC.Archive.WBP_Archive_Number_Model")
 local WBP_Activity_FeinaEvent_Reward_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Activity_FeinaEvent_Reward_C:Construct()
   self.Super.Construct(self)
   self:Init()
@@ -11,40 +10,9 @@ function WBP_Activity_FeinaEvent_Reward_C:Construct()
   ReddotManager.AddListener("FeinaEventReward", self, self.RefreshBtnGetAll)
   self.Btn_GetAll:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:UpdateFeinaEventRewardReddot()
-  local Avatar = GWorld:GetAvatar()
-  if not Avatar then
-    return
-  end
-  for Id, Info in pairs(DataMgr.FeinaEvent) do
-    for _, DungeonId in pairs(Info.DungeonId) do
-      local RewardsGot = Avatar:GetFeinaRewardInfo(DungeonId)
-      if RewardsGot then
-        for RewardIndex, State in pairs(RewardsGot) do
-          if 1 == State then
-            local Node = ReddotManager.GetTreeNode("FeinaEventReward")
-            if not Node then
-              ReddotManager.AddNode("FeinaEventReward")
-            end
-            local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("FeinaEventReward")
-            if not CacheDetail[Id] then
-              CacheDetail[Id] = {}
-            end
-            if not CacheDetail[Id][DungeonId] then
-              CacheDetail[Id][DungeonId] = {}
-            end
-            if not CacheDetail[Id][DungeonId][RewardIndex] then
-              CacheDetail[Id][DungeonId][RewardIndex] = 1
-              ReddotManager.IncreaseLeafNodeCount("FeinaEventReward")
-            end
-          end
-        end
-      end
-    end
-  end
+  UIUtils.RefreshFeinaRewardReddot()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:Destruct()
   self.Super.Destruct(self)
   ReddotManager.RemoveListener("FeinaEventReward", self)
@@ -52,7 +20,6 @@ function WBP_Activity_FeinaEvent_Reward_C:Destruct()
   self.List_Tab:ClearListItems()
   self.List_Item:ClearListItems()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Type, self.DataModel = ...
@@ -80,7 +47,6 @@ function WBP_Activity_FeinaEvent_Reward_C:OnLoaded(...)
     self.Key_Tip:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:Init()
   self:InitNormalInfo()
   self:InitListTabInfo()
@@ -93,17 +59,14 @@ function WBP_Activity_FeinaEvent_Reward_C:Init()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitNormalInfo()
   self.Btn_GetAll:SetText(GText("UI_Archive_CollectionClaimAll"))
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitBtnInfo()
   self.Btn_GetAll:BindEventOnClicked(self, self.GetAllRewards)
   self.Btn_Close:Init("Close", self, self.OnClickClose)
   self.Btn_Close.AudioEventPath = "event:/ui/common/click_btn_return"
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitListTabInfo()
   self.List_Tab.BP_OnItemSelectionChanged:Add(self, self.OnSelectItemChanged)
   self.List_Tab:SetNavigationRuleCustom(EUINavigation.Right, {
@@ -128,7 +91,6 @@ function WBP_Activity_FeinaEvent_Reward_C:InitListTabInfo()
     self.Type2Index[Obj.Type] = Index
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:RefreshListRewardInfo(Item)
   if self.SelectedContent then
     self.SelectedContent.Entry:UnSelected()
@@ -154,12 +116,10 @@ function WBP_Activity_FeinaEvent_Reward_C:RefreshListRewardInfo(Item)
     end
   end, false, 0, nil, true)
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:RealRefreshListRewardInfo(Type)
   self:AddListReward(Type)
   self:RefreshBtnGetAll()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:AddListReward(Type)
   local EventInfo = DataMgr.FeinaEvent[Type]
   local ClassPath = "/Game/UI/UI_PC/Common/Common_Item_subsize_PC_Content.Common_Item_subsize_PC_Content_C"
@@ -173,30 +133,25 @@ function WBP_Activity_FeinaEvent_Reward_C:AddListReward(Type)
     self.List_Item:AddItem(Obj)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:TryGetAllRewards()
   if self.Btn_GetAll:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
     self:GetAllRewards()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:GetAllRewards()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Errorcode, Rewards)
       self:RefreshItemState()
-      
       self:RefreshReddotInfo()
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function()
         self:SetFocus()
       end, self)
       EventManager:FireEvent(EventID.OnGetFeiNaReward)
     end
-    
     Avatar:GetAllFeiNaProgressRewerd(self.Type2Index[self.SelectedContent.Type], Callback)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:RefreshItemState()
   local TargetListItems = self.List_Item:GetDisplayedEntryWidgets()
   for i = 1, TargetListItems:Length() do
@@ -211,7 +166,6 @@ function WBP_Activity_FeinaEvent_Reward_C:RefreshItemState()
     end
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:RefreshReddotInfo()
   DebugPrint("Ljh Try RefreshReddotInfo")
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("FeinaEventReward")
@@ -227,7 +181,6 @@ function WBP_Activity_FeinaEvent_Reward_C:RefreshReddotInfo()
     DebugPrint("Ljh CacheDetail" .. tostring(self.SelectedContent.Type) .. "Cleared,ClearedNums:" .. tostring(Num))
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:RefreshBtnGetAll()
   DebugPrint("Ljh Try RefreshBtnGetAll")
   if not self.SelectedContent then
@@ -291,7 +244,6 @@ function WBP_Activity_FeinaEvent_Reward_C:RefreshBtnGetAll()
     self.Btn_GetAll:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -317,7 +269,6 @@ function WBP_Activity_FeinaEvent_Reward_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -336,27 +287,22 @@ function WBP_Activity_FeinaEvent_Reward_C:OnPreviewKeyDown(MyGeometry, InKeyEven
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnReturnKeyDown()
   self:OnClickClose()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnClickClose()
   self:Close()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -364,7 +310,6 @@ function WBP_Activity_FeinaEvent_Reward_C:RefreshOpInfoByInputDevice(CurInputDev
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -372,7 +317,6 @@ function WBP_Activity_FeinaEvent_Reward_C:UpdateUIStyleInPlatform(IsUseKeyAndMou
     self:InitGamepadView()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitGamepadView()
   if self.Btn_GetAll:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
     self.Btn_GetAll:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
@@ -412,7 +356,6 @@ function WBP_Activity_FeinaEvent_Reward_C:InitGamepadView()
     self.List_Tab:SetSelectedIndex(self.SelectIndex)
   end, false, 0, nil, true)
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitKeyboardView()
   if self.Btn_GetAll:GetVisibility() == UE4.ESlateVisibility.HitTestInvisible then
     self.Btn_GetAll:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -440,11 +383,9 @@ function WBP_Activity_FeinaEvent_Reward_C:InitKeyboardView()
     ItemView:InitKeyboardView()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:InitWidgetInfoInGamePad()
   self.Btn_GetAll:SetDefaultGamePadImg("Y")
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnSelectItemChanged(SelectItem)
   if not SelectItem then
     return
@@ -453,13 +394,11 @@ function WBP_Activity_FeinaEvent_Reward_C:OnSelectItemChanged(SelectItem)
     self:ClickListItemWhenSelectItemChanged(SelectItem)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:ClickListItemWhenSelectItemChanged(Content)
   if Content and Content.Entry then
     Content.Entry:OnCellClicked()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnUINavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     self:NavigateToLeftTab()
@@ -479,7 +418,6 @@ function WBP_Activity_FeinaEvent_Reward_C:OnUINavigation(NavigationDirection)
     return self:NavigateToFirstDisplayedItem(self.List_Item)
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:NavigateToLeftTab(NeedFocus)
   if self.CurFocusedRewardItem then
     self.CurFocusedRewardItem:StopHover()
@@ -499,7 +437,6 @@ function WBP_Activity_FeinaEvent_Reward_C:NavigateToLeftTab(NeedFocus)
     self.SelectedContent.Entry:SetFocus()
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:TryChangeCurFocusedRewardItem(RewardItem)
   if self.CurFocusedRewardItem then
     self.CurFocusedRewardItem:StopHover()
@@ -507,7 +444,6 @@ function WBP_Activity_FeinaEvent_Reward_C:TryChangeCurFocusedRewardItem(RewardIt
   self.CurFocusedRewardItem = RewardItem
   self.CurFocusedRewardItem:BeginHover()
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:NavigateToFirstDisplayedItem(List)
   local ItemUIs = List:GetDisplayedEntryWidgets()
   if ItemUIs:Length() > 0 then
@@ -526,7 +462,6 @@ function WBP_Activity_FeinaEvent_Reward_C:NavigateToFirstDisplayedItem(List)
   end
   return List
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:NavigateToNextDisplayedItem()
   local Item = self.List_Item:BP_GetSelectedItem()
   local NextIdx = self.List_Item:GetIndexForItem(Item) + 1
@@ -541,7 +476,6 @@ function WBP_Activity_FeinaEvent_Reward_C:NavigateToNextDisplayedItem()
     end
   end, false, 0, nil, true)
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:NavigateToPreviousDisplayedItem()
   local Item = self.List_Item:BP_GetSelectedItem()
   local NextIdx = self.List_Item:GetIndexForItem(Item) - 1
@@ -556,7 +490,6 @@ function WBP_Activity_FeinaEvent_Reward_C:NavigateToPreviousDisplayedItem()
     end
   end, false, 0, nil, true)
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:OnMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -566,7 +499,6 @@ function WBP_Activity_FeinaEvent_Reward_C:OnMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:UpdateUIStyle(IsVisible)
   if IsVisible then
     self.CantGetAll = false
@@ -580,7 +512,6 @@ function WBP_Activity_FeinaEvent_Reward_C:UpdateUIStyle(IsVisible)
     end
   end
 end
-
 function WBP_Activity_FeinaEvent_Reward_C:BP_GetDesiredFocusTarget()
   if self.SelectedContent then
     self.List_Tab:BP_NavigateToItem(self.SelectedContent)
@@ -589,5 +520,4 @@ function WBP_Activity_FeinaEvent_Reward_C:BP_GetDesiredFocusTarget()
     return self.List_Tab
   end
 end
-
 return WBP_Activity_FeinaEvent_Reward_C

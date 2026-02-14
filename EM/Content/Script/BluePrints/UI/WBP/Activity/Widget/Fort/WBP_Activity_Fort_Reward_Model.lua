@@ -1,12 +1,10 @@
 local ActivityFortRewardModel = {}
 ActivityFortRewardModel.CurEventId = DataMgr.PaotaiEventConstant.PaotaiGameEventId.ConstantValue
-
 function ActivityFortRewardModel:OpenReward(Widget, Type)
   self:SetRewardParams(Type)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(100213, self.Params, Widget)
 end
-
 function ActivityFortRewardModel:SetRewardParams(Type)
   self.Params = {}
   local ConfigData = {
@@ -127,13 +125,11 @@ function ActivityFortRewardModel:SetRewardParams(Type)
   self.Params.ConfigData = ConfigData
   self.Params.Title = GText("Event_RewardTitle_103007")
 end
-
 function ActivityFortRewardModel.GetRewards(RewardItem, Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       local PaotaiGame = Avatar.PaotaiGame
-      
       local PaotaiGameEventInfo
       if PaotaiGame then
         PaotaiGameEventInfo = PaotaiGame[Content.ConfigData.ReceiveParm.RewardModel.CurEventId]
@@ -175,11 +171,9 @@ function ActivityFortRewardModel.GetRewards(RewardItem, Content)
         RewardItem:SetFocus()
       end, RewardItem)
     end
-    
     Avatar:PaotaiGetScoreReward(Content.ConfigData.Type, Content.ConfigData.Index, Callback)
   end
 end
-
 function ActivityFortRewardModel:CheckHaveRewardToGet(Type)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -211,14 +205,12 @@ function ActivityFortRewardModel:CheckHaveRewardToGet(Type)
     return false
   end
 end
-
 function ActivityFortRewardModel:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Content = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
-        
         local PaotaiGame = Avatar.PaotaiGame
         local PaotaiGameEventInfo
         if PaotaiGame then
@@ -253,7 +245,7 @@ function ActivityFortRewardModel:GetAllRewards(ReceiveAllParm)
           end
         end
         if Content.SelfWidget then
-          Content.SelfWidget:RefreshBtn(0 == Ret)
+          Content.SelfWidget:RefreshBtn(Content.ConfigData.RewardsGot)
         end
       end
       ReceiveAllParm.SelfWidget:RefreshButton(ReceiveAllParm.RewardModel:CheckHaveRewardToGet(ReceiveAllParm.Type))
@@ -264,9 +256,7 @@ function ActivityFortRewardModel:GetAllRewards(ReceiveAllParm)
         ReceiveAllParm.SelfWidget:SetFocus()
       end, ReceiveAllParm.SelfWidget)
     end
-    
     Avatar:PaotaiGetAllScoreReward(ReceiveAllParm.Type, Callback)
   end
 end
-
 return ActivityFortRewardModel

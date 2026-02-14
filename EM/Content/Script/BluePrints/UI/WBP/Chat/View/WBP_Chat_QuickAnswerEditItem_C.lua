@@ -2,7 +2,6 @@ require("UnLua")
 local StringUtils = require("Utils.StringUtils")
 local ChatModel = ChatController:GetModel()
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn_Edit.OnClicked:Add(self, self.OnEditClicked)
   self.Btn_No:BindEventOnReleased(self, self.OnNoReleased)
@@ -53,7 +52,6 @@ function M:Construct()
     end
   end
 end
-
 function M:Destruct()
   self.Btn_Edit.OnClicked:Remove(self, self.OnEditClicked)
   self.Btn_No:UnBindEventOnReleased(self, self.OnNoReleased)
@@ -65,11 +63,9 @@ function M:Destruct()
     end
   end
 end
-
 function M:OnInputTextReleased()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_input_bar", nil, nil)
 end
-
 function M:OnInputTextChanged(Text)
   local TextTable = StringUtils.Utf8ToTable(Text)
   local MaxLen = DataMgr.GlobalConstant.ChatQuickMsgMaxLen.ConstantValue
@@ -78,7 +74,6 @@ function M:OnInputTextChanged(Text)
     self.Com_Input_Light:SetText(table.concat(TextTable))
   end
 end
-
 function M:OnNoReleased(bNotEnableRightBtn)
   self.Owner:ExitEditing()
   self.Text_Answer:SetText(self.Text)
@@ -93,7 +88,6 @@ function M:OnNoReleased(bNotEnableRightBtn)
   self:UpdateUIStyleInPlatform()
   DebugPrint("quickAnswerEditItem_C :: OnNoReleased")
 end
-
 function M:OnYesReleased()
   self.Owner:ExitEditing()
   self.Btn_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -116,7 +110,6 @@ function M:OnYesReleased()
   })
   self:UpdateUIStyleInPlatform()
 end
-
 function M:OnEditClicked()
   self.Btn_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Key_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -131,7 +124,6 @@ function M:OnEditClicked()
   self:UpdateUIStyleInPlatform()
   DebugPrint("quickAnswerEditItem_C :: OnEditClicked")
 end
-
 function M:Init(Owner, Index, Text)
   self.Owner = Owner
   self.Index = Index
@@ -143,15 +135,12 @@ function M:Init(Owner, Index, Text)
   self.Com_Input_Light.DialogParams = self.Owner.Params
   self:PlayAnimation(self.In)
 end
-
 function M:IsChanged()
   return self.Text ~= self.OriginText
 end
-
 function M:Close()
   self:PlayAnimation(self.Out)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.IsEnter and self == self.Owner.CurrItem then
   else
@@ -160,7 +149,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UIUtils.Handle
 end
-
 function M:Select()
   self.IsEnter = true
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
@@ -169,7 +157,6 @@ function M:Select()
   self:UpdateUIStyleInPlatform()
   self:PlayAnimation(self.Hover)
 end
-
 function M:UnSelect()
   self.IsEnter = false
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
@@ -178,7 +165,6 @@ function M:UnSelect()
   self:UpdateUIStyleInPlatform()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.In then
     if self.IsEnter then
@@ -193,7 +179,6 @@ function M:OnAnimationFinished(InAnimation)
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -205,7 +190,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:UpdateUIStyleInPlatform()
 end
-
 function M:UpdateUIStyleInPlatform()
   local IsGamepad = self.CurInputDeviceType == ECommonInputType.Gamepad
   local IsEnter = IsGamepad and self.IsEnter
@@ -232,7 +216,6 @@ function M:UpdateUIStyleInPlatform()
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -245,7 +228,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonDown then
@@ -276,5 +258,4 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

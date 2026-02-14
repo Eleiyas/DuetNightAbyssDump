@@ -1,10 +1,8 @@
 local BP_StoryVarsObject_C = Class()
-
 function BP_StoryVarsObject_C:TryInitVars()
   self:ClearVars()
   self:InitVars()
 end
-
 function BP_StoryVarsObject_C:InitVars()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -18,7 +16,6 @@ function BP_StoryVarsObject_C:InitVars()
     end
   end
 end
-
 function BP_StoryVarsObject_C:UpdateGlobalVariable(VarName, Value)
   local VarInfo = DataMgr.StoryVariable[VarName]
   if VarInfo and VarInfo.IsGlobal then
@@ -32,5 +29,7 @@ function BP_StoryVarsObject_C:UpdateGlobalVariable(VarName, Value)
     end
   end
 end
-
+function BP_StoryVarsObject_C:UpdateTaskQuestExtraData(InKey, InOldValue, InNewValue)
+  EventManager:FireEvent(EventID.OnCalcVarChange, InKey, InOldValue, InNewValue)
+end
 return BP_StoryVarsObject_C

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.RariryColors = {
     [5] = self.Yellow,
@@ -10,7 +9,6 @@ function M:Construct()
     [3] = self.Blue
   }
 end
-
 function M:Init(Content, bHideName)
   self.Text_Entry:SetText(Content.Name)
   local IconPath
@@ -33,7 +31,6 @@ function M:Init(Content, bHideName)
     self.Text_Entry:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:InitByPetEntryId(PetEntryId, bHideName)
   local Data = DataMgr.PetEntry[PetEntryId]
   if Data then
@@ -44,5 +41,4 @@ function M:InitByPetEntryId(PetEntryId, bHideName)
     self:Init(Content, bHideName)
   end
 end
-
 return M

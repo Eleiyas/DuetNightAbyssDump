@@ -2,15 +2,12 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
 end
-
 function M:OnListItemObjectSet(Content)
   self.ColorId = Content.ColorId
   self:SetColor()
 end
-
 function M:SetColor()
   local SwatchData = DataMgr.Swatch
   local ColorData = SwatchData[self.ColorId]
@@ -23,5 +20,4 @@ function M:SetColor()
     self.Image_Color:SetColorAndOpacity(Color)
   end
 end
-
 return M

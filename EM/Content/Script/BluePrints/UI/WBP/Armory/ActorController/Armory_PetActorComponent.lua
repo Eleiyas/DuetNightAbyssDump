@@ -1,20 +1,17 @@
 local M = {}
-
 function M:Init()
   EventManager:AddEvent(EventID.OnArmoryShowPet, self, self.OnArmoryShowPet)
   EventManager:AddEvent(EventID.OnPetEffectCreatureCreated, self, self.OnPetEffectCreatureCreated)
 end
-
 function M:ChangePetModel(Info, PlayCharacter, Params)
   self.CurrentPetInfo = Info
-  
   function self.RealChangePetModel()
     PlayCharacter = PlayCharacter or self.ArmoryPlayer
     PlayCharacter:ServerRemoveBattlePet()
     local AudioManager = AudioManager(self.ViewUI)
     if Info and Info.PetId then
       if Info.Type == "BattlePass" then
-        self:CreatePetEffectCreature(Info.PetId, Params)
+        self:CreatePetEffectCreature(Info.PetId, Params, true)
       else
         self.WaitForServerSetBattlePet = true
         PlayCharacter:ServerSetBattlePet(Info.PetId, Info.BattlePetLevel, false)
@@ -28,14 +25,12 @@ function M:ChangePetModel(Info, PlayCharacter, Params)
       AudioManager:SetEventSoundParam(self.ViewUI, "PetIdle", {ToEnd = 1})
     end
   end
-  
   if self.bWaitForNotifyToChangePet then
     return
   else
     self.RealChangePetModel()
   end
 end
-
 function M:PlayPetVoice(VoiceStr)
   local PetId = self.CurrentPetInfo and self.CurrentPetInfo.PetId
   local PetData = DataMgr.Pet[PetId]
@@ -43,7 +38,6 @@ function M:PlayPetVoice(VoiceStr)
     AudioManager(self.ArmoryPlayer):PlayPetVoice(self.ArmoryPlayer, PetData.PetNameTag, VoiceStr, "ArmoryPetVoice")
   end
 end
-
 function M:OnArmoryShowPet()
   if self.bWaitForNotifyToChangePet then
     self.bWaitForNotifyToChangePet = false
@@ -51,9 +45,8 @@ function M:OnArmoryShowPet()
     self.RealChangePetModel()
   end
 end
-
 function M:OnPetEffectCreatureCreated(BattlePet, Owner)
-  if not (self.WaitForServerSetBattlePet and self.ViewUI and self.ViewUI:IsVisible() and IsValid(self.ArmoryPlayer)) or Owner ~= self.ArmoryPlayer then
+  if not (self.WaitForServerSetBattlePet and self.ViewUI and IsValid(self.ArmoryPlayer)) or Owner ~= self.ArmoryPlayer then
     return
   end
   if self.ArmoryPlayer:GetBattlePet() ~= BattlePet then
@@ -70,14 +63,12 @@ function M:OnPetEffectCreatureCreated(BattlePet, Owner)
     self:SetPetFresnel(self.ArmoryPlayer)
   end
 end
-
 function M:GetPetActor()
   if IsValid(self.ArmoryPlayer) then
     local BattlePet = self.ArmoryPlayer:GetBattlePet()
     return BattlePet and BattlePet.EffectCreature
   end
 end
-
 function M:HidePetActor(Tag, IsHidden)
   if IsValid(self.ArmoryPlayer) then
     local BattlePet = self.ArmoryPlayer:GetBattlePet()
@@ -89,7 +80,6 @@ function M:HidePetActor(Tag, IsHidden)
     self.EffectCreature:SetActorHiddenInGame(IsHidden)
   end
 end
-
 function M:SetPetFresnel(Player)
   local BattlePet = Player:GetBattlePet()
   local EffectCreature = BattlePet and BattlePet.EffectCreature
@@ -111,7 +101,6 @@ function M:SetPetFresnel(Player)
     end
   end
 end
-
 function M:RemovePetFresnel(Player)
   local BattlePet = Player:GetBattlePet()
   local EffectCreature = BattlePet and BattlePet.EffectCreature
@@ -119,13 +108,12 @@ function M:RemovePetFresnel(Player)
     EffectCreature.FashionComponent:RemoveFresnel(EffectCreature)
   end
 end
-
-function M:CreatePetEffectCreature(PetId, Params)
+function M:CreatePetEffectCreature(PetId, Params, bForceCreate)
   Params = Params or {}
   local PetData = DataMgr.Pet[PetId]
-  if self.EffectCreatureId and self.EffectCreatureId == PetData.EffectCreatureId then
+  if self.EffectCreatureId and self.EffectCreatureId == PetData.EffectCreatureId and not bForceCreate then
     return
-  elseif self.EffectCreatureId and self.EffectCreatureId ~= PetData.EffectCreatureId and self.EffectCreature then
+  elseif self.EffectCreatureId and (self.EffectCreatureId ~= PetData.EffectCreatureId or bForceCreate) and self.EffectCreature then
     self.EffectCreature:SetActorHiddenInGame(true)
     self._Player:RemoveEffectCreature(self.EffectCreatureId)
   end
@@ -137,13 +125,19 @@ function M:CreatePetEffectCreature(PetId, Params)
   self.EffectCreature:UpdateTickableWhenPaused()
   if not self.ActorTransform then
     self.ActorTransform = self.ArmoryPlayer:GetTransform()
+    self.EffectCreature:K2_SetActorTransform(FTransform(self.ActorTransform.Rotation, self.ActorTransform.Translation, self.ActorTransform.Scale3D), false, nil, false)
   end
-  self.EffectCreature:K2_SetActorTransform(FTransform(self.ActorTransform.Rotation, self.ActorTransform.Translation, self.ActorTransform.Scale3D), false, nil, false)
-  self.EffectCreature.SkeletalMesh:K2_AddRelativeLocation(Params.Location or FVector(0, -40, 25), false, nil, false)
+  local Location = self.ActorTransform.Translation
+  Location = UE4.UKismetMathLibrary.TransformLocation(self.ActorTransform, Params.Location or FVector(0, -40, 25))
+  local Scale = Params.Scale or self.ActorTransform.Scale3D
+  local Rotation = self.ActorTransform.Rotation
+  if Params.Rotation then
+    Rotation = UE4.UKismetMathLibrary.TransformRotation(self.ActorTransform, Params.Rotation):ToQuat()
+  end
+  self.EffectCreature:K2_SetActorTransform(FTransform(Rotation, Location, Scale), false, nil, false)
   self.EffectCreature:SetActorHiddenInGame(false)
   self.EffectCreature.SkeletalMesh:SetTickableWhenPaused(true)
 end
-
 function M:DestroyPetEffectCreature()
   if self.EffectCreature then
     self.EffectCreature:SetActorHiddenInGame(true)
@@ -152,7 +146,6 @@ function M:DestroyPetEffectCreature()
     self.EffectCreature = nil
   end
 end
-
 function M:PetLvUpOrBreakUp()
   local ArmoryPet = self:GetPetActor()
   if not ArmoryPet then
@@ -171,16 +164,15 @@ function M:PetLvUpOrBreakUp()
     })
   end
 end
-
 function M:Component_OnClosed()
   self:HidePetActor(self.UIName, true)
 end
-
 function M:Component_OnDestruct()
-  self.CurrentPetInfo = nil
-  self:DestroyPetEffectCreature()
   EventManager:RemoveEvent(EventID.OnArmoryShowPet, self)
   EventManager:RemoveEvent(EventID.OnPetEffectCreatureCreated, self)
 end
-
+function M:Component_DestroyActors()
+  self.CurrentPetInfo = nil
+  self:DestroyPetEffectCreature()
+end
 return M

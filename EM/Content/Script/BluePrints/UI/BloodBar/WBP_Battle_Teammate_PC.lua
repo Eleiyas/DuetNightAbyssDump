@@ -1,7 +1,6 @@
 require("UnLua")
 local BloodBarUtils = require("BluePrints.UI.BloodBar.BloodBarUtils")
 local WBP_Teammate_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Teammate_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.MaxHp = 0
@@ -21,7 +20,6 @@ function WBP_Teammate_PC_C:Initialize(Initializer)
   self.LowHpPercent = 0.3
   self.BloodState = {}
 end
-
 function WBP_Teammate_PC_C:InitConfig(Owner)
   if not IsValid(Owner) then
     return
@@ -59,20 +57,13 @@ function WBP_Teammate_PC_C:InitConfig(Owner)
   self.IsDestroied = nil
   self:InitShortageUI()
 end
-
 function WBP_Teammate_PC_C:InitWithOutCharacter(PlayerState)
-  if PlayerState:IsA(AEMPlayerState) then
-    self.Text_Name:SetText(PlayerState.PlayerName)
-    self:SetNameMaterial(self.NameMaterial_Player)
-  elseif PlayerState:IsA(APhantomState) then
-    self.Text_Name:SetText(GText(DataMgr.BattleChar[PlayerState.CharId].CharName))
-    self:SetNameMaterial(self.NameMaterial_Phantom)
-  end
   self.RoleId = PlayerState.CharId
   self.Eid = PlayerState.Eid
   self.MaxShield = 1
+  self:SetName(PlayerState)
   self:SetImage(PlayerState.TeamRecoveryState ~= ETeamRecoveryState.Alive)
-  local Player = Battle(self):GetEntity(PlayerState.Eid)
+  local Player = Battle(self):GetEntity(self.Eid)
   if not IsValid(Player) then
     self:AddBloodState(self.Eid, BloodBarUtils.AllBloodState.OverReach)
   else
@@ -85,7 +76,6 @@ function WBP_Teammate_PC_C:InitWithOutCharacter(PlayerState)
   self:PlayAnimation(self.In)
   self.IsDestroied = nil
 end
-
 function WBP_Teammate_PC_C:SetNameMaterial(MaterialRef)
   UResourceLibrary.LoadObjectAsync(self, tostring(MaterialRef), {
     self,
@@ -109,7 +99,6 @@ function WBP_Teammate_PC_C:SetNameMaterial(MaterialRef)
     end
   })
 end
-
 function WBP_Teammate_PC_C:InitValue(IsDead)
   local Owner = self.Owner
   if not IsValid(Owner) then
@@ -130,7 +119,6 @@ function WBP_Teammate_PC_C:InitValue(IsDead)
     self:SetImage(IsDead)
   end
 end
-
 function WBP_Teammate_PC_C:InitUISettingByPlatform()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     local PlayerAvatar = GWorld:GetAvatar()
@@ -143,12 +131,10 @@ function WBP_Teammate_PC_C:InitUISettingByPlatform()
     end
   end
 end
-
 function WBP_Teammate_PC_C:ReInit()
   self:InitValue()
   self:UpdateBar()
 end
-
 function WBP_Teammate_PC_C:UpdateBar()
   if not IsValid(self.Owner) then
     return
@@ -192,11 +178,9 @@ function WBP_Teammate_PC_C:UpdateBar()
     self:PlayHealAnimation()
   end
 end
-
 function WBP_Teammate_PC_C:LoadHpBar()
   self.HpBar = BloodBarUtils.LoadSubWidget(self, self.Group_HPBarRoot, "HPBar", false, 0)
 end
-
 function WBP_Teammate_PC_C:CheckAndLoadShieldBar()
   if self.MaxShield <= 0 then
     self.Group_ShieldRoot:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -204,54 +188,80 @@ function WBP_Teammate_PC_C:CheckAndLoadShieldBar()
   end
   self.ShieldBar = BloodBarUtils.LoadSubWidget(self, self.Group_ShieldRoot, "ShieldBar", 0, 0)
 end
-
-function WBP_Teammate_PC_C:SetName()
+function WBP_Teammate_PC_C:SetName(PlayerState)
   self.Text_Name:SetText("")
-  if self.Owner:IsPhantom() then
-    local NameKey = DataMgr.BattleChar[self.RoleId].CharName
-    if string.find(DataMgr.TextMap_ContentEN[NameKey].ContentEN, "{nickname") and not IsStandAlone(self) then
-      local PhantomState = GameState(self):GetPhantomState(self.Owner.Eid)
-      if not PhantomState then
-        local PhantomOwner = self.Owner.PhantomOwner
-        if PhantomOwner then
-          local OwnerState = GameState(self):GetPlayerState(PhantomOwner.Eid)
+  if self.Owner then
+    if self.Owner:IsPhantom() then
+      self:SetNameMaterial(self.NameMaterial_Phantom)
+      local NameKey = DataMgr.BattleChar[self.RoleId].CharName
+      if string.find(DataMgr.TextMap_ContentEN[NameKey].ContentEN, "{nickname") and not IsStandAlone(self) then
+        local PhantomState = GameState(self):GetPhantomState(self.Owner.Eid)
+        if not PhantomState then
+          local PhantomOwner = self.Owner.PhantomOwner
+          if PhantomOwner then
+            local OwnerState = GameState(self):GetPlayerState(PhantomOwner.Eid)
+            if OwnerState and OwnerState.PlayerName then
+              self.Text_Name:SetText(OwnerState.PlayerName)
+            end
+          end
+          self.bPendingPhantomSetName = true
+          return
+        end
+        local PhantomOwnerEid = PhantomState.OwnerEid
+        if PhantomOwnerEid then
+          local OwnerState = GameState(self):GetPlayerState(PhantomOwnerEid)
           if OwnerState and OwnerState.PlayerName then
             self.Text_Name:SetText(OwnerState.PlayerName)
+          else
+            self.Text_Name:SetText(GText(NameKey))
+            self.bPendingPhantomSetName = true
+            DebugPrint(ErrorTag, "WBP_Teammate_PC_C:SetName  主角魅影找不到它的OwnerPlayerName")
           end
-        end
-        self.bPendingPhantomSetName = true
-        return
-      end
-      local PhantomOwnerEid = PhantomState.OwnerEid
-      if PhantomOwnerEid then
-        local OwnerState = GameState(self):GetPlayerState(PhantomOwnerEid)
-        if OwnerState and OwnerState.PlayerName then
-          self.Text_Name:SetText(OwnerState.PlayerName)
         else
-          self.Text_Name:SetText(GText(NameKey))
-          self.bPendingPhantomSetName = true
-          DebugPrint(ErrorTag, "WBP_Teammate_PC_C:SetName  \228\184\187\232\167\146\233\173\133\229\189\177\230\137\190\228\184\141\229\136\176\229\174\131\231\154\132OwnerPlayerName")
+          DebugPrint(ErrorTag, "WBP_Teammate_PC_C:SetName  主角魅影找不到它的Owner， 无法赋予名称")
+          self.Text_Name:SetText("<ERROR>")
         end
       else
-        DebugPrint(ErrorTag, "WBP_Teammate_PC_C:SetName  \228\184\187\232\167\146\233\173\133\229\189\177\230\137\190\228\184\141\229\136\176\229\174\131\231\154\132Owner\239\188\140 \230\151\160\230\179\149\232\181\139\228\186\136\229\144\141\231\167\176")
-        self.Text_Name:SetText("<ERROR>")
+        self.Text_Name:SetText(GText(NameKey))
       end
-    else
-      self.Text_Name:SetText(GText(NameKey))
+    elseif self.Owner:IsPlayer() and self.Owner.GetNickName then
+      self.Text_Name:SetText(self.Owner:GetNickName())
+      self:SetNameMaterial(self.NameMaterial_Player)
     end
-    self:SetNameMaterial(self.NameMaterial_Phantom)
-  elseif self.Owner:IsPlayer() and self.Owner.GetNickName then
-    self.Text_Name:SetText(self.Owner:GetNickName())
-    self:SetNameMaterial(self.NameMaterial_Player)
+  elseif PlayerState then
+    if PlayerState:IsA(AEMPlayerState) then
+      self.Text_Name:SetText(PlayerState.PlayerName)
+      self:SetNameMaterial(self.NameMaterial_Player)
+    elseif PlayerState:IsA(APhantomState) then
+      self:SetNameMaterial(self.NameMaterial_Phantom)
+      local NameKey = DataMgr.BattleChar[self.RoleId].CharName
+      if string.find(DataMgr.TextMap_ContentEN[NameKey].ContentEN, "{nickname") and not IsStandAlone(self) then
+        local PhantomState = PlayerState
+        local PhantomOwnerEid = PhantomState.OwnerEid
+        if PhantomOwnerEid then
+          local OwnerState = GameState(self):GetPlayerState(PhantomOwnerEid)
+          if OwnerState and OwnerState.PlayerName then
+            self.Text_Name:SetText(OwnerState.PlayerName)
+          else
+            self.Text_Name:SetText(GText(NameKey))
+            self.bPendingPhantomSetName = true
+            DebugPrint(ErrorTag, "WBP_Teammate_PC_C:SetName  主角魅影找不到它的OwnerPlayerName")
+          end
+        else
+          DebugPrint(ErrorTag, "WBP_Teammate_PC_C:SetName  主角魅影找不到它的Owner， 无法赋予名称")
+          self.Text_Name:SetText("<ERROR>")
+        end
+      else
+        self.Text_Name:SetText(GText(NameKey))
+      end
+    end
   end
 end
-
 function WBP_Teammate_PC_C:OnDead()
   self:SetImage(true)
   self:PlayAnimation(self.LifeSwitch)
   self:PlayHpBarGreyAnimation(false)
 end
-
 function WBP_Teammate_PC_C:OnRecovery(Eid)
   if Eid ~= self.Eid then
     return
@@ -275,7 +285,6 @@ function WBP_Teammate_PC_C:OnRecovery(Eid)
   end
   self:RemoveBloodState(self.Eid, BloodBarUtils.AllBloodState.Dead)
 end
-
 function WBP_Teammate_PC_C:OnTeammateRecoverStateChange(Eid, State, PrevState)
   if Eid ~= self.Eid then
     return
@@ -286,15 +295,12 @@ function WBP_Teammate_PC_C:OnTeammateRecoverStateChange(Eid, State, PrevState)
     self:OnRecovery(Eid)
   end
 end
-
 function WBP_Teammate_PC_C:UpdateCharBuffUI()
 end
-
 function WBP_Teammate_PC_C:RefreshInvincibleState()
   local IsGodLike = self.Owner.bIsInvincible or self.Owner:IsInvincible()
   self:SetInvincible(IsGodLike)
 end
-
 function WBP_Teammate_PC_C:SetInvincible(IsInvincibility)
   self.IsInvincibility = IsInvincibility
   if IsInvincibility then
@@ -319,7 +325,6 @@ function WBP_Teammate_PC_C:SetInvincible(IsInvincibility)
     self:PlayHpBarGreyAnimation(0 == self.WaitingToPlayGreyAnim)
   end
 end
-
 function WBP_Teammate_PC_C:PlayHealAnimation()
   if self.CurHp == self.MaxHp and self.IsPlayingReturning then
     self:StopReturning()
@@ -333,7 +338,6 @@ function WBP_Teammate_PC_C:PlayHealAnimation()
     self:PlayAnimation(self.BloodReturn)
   end
 end
-
 function WBP_Teammate_PC_C:OpenTeamInfo()
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
   if nil ~= BattleMain and type(BattleMain.OpenTeamInfo) == "function" then
@@ -341,7 +345,6 @@ function WBP_Teammate_PC_C:OpenTeamInfo()
     BattleMain:OpenTeamInfo()
   end
 end
-
 function WBP_Teammate_PC_C:UpdateCharHotUIState(HotUI)
   self.IsCharInHotUI = HotUI
   if self.CurHp == self.MaxHp and self.IsPlayingReturning then
@@ -354,7 +357,6 @@ function WBP_Teammate_PC_C:UpdateCharHotUIState(HotUI)
     self:StopReturning()
   end
 end
-
 function WBP_Teammate_PC_C:StartReturing()
   if not self.PlayerBloodReturn then
     return
@@ -362,7 +364,6 @@ function WBP_Teammate_PC_C:StartReturing()
   self:PlayAnimation(self.BloodReturning)
   self.IsPlayingReturning = true
 end
-
 function WBP_Teammate_PC_C:StopReturning()
   if not self.PlayerBloodReturn then
     return
@@ -371,11 +372,9 @@ function WBP_Teammate_PC_C:StopReturning()
   self:PlayAnimation(self.BloodReturnEnd)
   self.IsPlayingReturning = false
 end
-
 function WBP_Teammate_PC_C:BuffSpecialEffect_InvincibleUI(IsShow)
   self:SetInvincible(IsShow)
 end
-
 function WBP_Teammate_PC_C:SetImage(IsDead)
   local MiniIconPath = "Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Mini/"
   local Prefix = IsDead and "T_Dead_" or "T_Normal_"
@@ -386,7 +385,6 @@ function WBP_Teammate_PC_C:SetImage(IsDead)
     WBP_Teammate_PC_C.LoadImageFinish
   })
 end
-
 function WBP_Teammate_PC_C:LoadImageFinish(Object)
   if Object and self.Img_Head then
     local IconDynaMaterial = self.Img_Head:GetDynamicMaterial()
@@ -395,7 +393,6 @@ function WBP_Teammate_PC_C:LoadImageFinish(Object)
     end
   end
 end
-
 function WBP_Teammate_PC_C:GetTeammatePlayerState(Eid)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local TargetPlayerState
@@ -406,7 +403,6 @@ function WBP_Teammate_PC_C:GetTeammatePlayerState(Eid)
   end
   return TargetPlayerState
 end
-
 function WBP_Teammate_PC_C:ClearBloodAllState(TargetEid)
   if self.BloodState == nil or IsEmptyTable(self.BloodState) then
     return
@@ -420,14 +416,12 @@ function WBP_Teammate_PC_C:ClearBloodAllState(TargetEid)
     end
   end
 end
-
 function WBP_Teammate_PC_C:CheckStateCondition(StateName)
   if StateName == BloodBarUtils.AllBloodState.Dead then
     return self.Owner and not self.Owner:IsPhantom()
   end
   return true
 end
-
 function WBP_Teammate_PC_C:AddBloodState(TargetEid, StateName)
   if nil == StateName or TargetEid ~= self.Eid then
     return
@@ -444,7 +438,6 @@ function WBP_Teammate_PC_C:AddBloodState(TargetEid, StateName)
   end
   self.BloodState[StateName] = 1
 end
-
 function WBP_Teammate_PC_C:RemoveBloodState(TargetEid, StateName)
   if nil == StateName or TargetEid ~= self.Eid then
     return
@@ -455,7 +448,6 @@ function WBP_Teammate_PC_C:RemoveBloodState(TargetEid, StateName)
   end
   self.BloodState[StateName] = nil
 end
-
 function WBP_Teammate_PC_C:_SetBloodInDeadState(TargetEid)
   if self.BloodState[BloodBarUtils.AllBloodState.OverReach] ~= nil then
     self:_RemoveBloodInOverReachState()
@@ -469,16 +461,13 @@ function WBP_Teammate_PC_C:_SetBloodInDeadState(TargetEid)
   self.Pos_Resurrection:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.WidgetInDead:Init(self.Owner, self:GetTeammatePlayerState(TargetEid))
 end
-
 function WBP_Teammate_PC_C:_RemoveBloodInDeadState()
   local function AfterBloodResurrectionAnim()
     self.Pos_Resurrection:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    
     if self.BloodState[BloodBarUtils.AllBloodState.OverReach] ~= nil then
       self:_SetBloodInOverReachState()
     end
   end
-  
   if self.WidgetInDead then
     self.WidgetInDead:Clear()
     self:AddTimer(2.0, AfterBloodResurrectionAnim, false, 0, "BloodResurrectionAnim")
@@ -486,7 +475,6 @@ function WBP_Teammate_PC_C:_RemoveBloodInDeadState()
     AfterBloodResurrectionAnim()
   end
 end
-
 function WBP_Teammate_PC_C:_SetBloodInOverReachState(TargetEid)
   local CurWorld = self:GetWorld()
   if not CurWorld then
@@ -509,14 +497,12 @@ function WBP_Teammate_PC_C:_SetBloodInOverReachState(TargetEid)
   self.Text_Overreach:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Pos_Overreach:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Teammate_PC_C:_RemoveBloodInOverReachState()
   self.Group_HPBarRoot:SetRenderOpacity(1.0)
   self.Group_ShieldRoot:SetRenderOpacity(1.0)
   self.Text_Overreach:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Pos_Overreach:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Teammate_PC_C:Construct()
   WBP_Teammate_PC_C.Super.Construct(self)
   if IsStandAlone(self) then
@@ -528,14 +514,12 @@ function WBP_Teammate_PC_C:Construct()
   self:AddDispatcher(EventID.OnRepPlayerName, self, self._SyncPlayerName)
   self:AddDispatcher(EventID.OnCloseLoading, self, self._SyncPlayerName)
 end
-
 function WBP_Teammate_PC_C:_SyncPlayerName()
   if self.bPendingPhantomSetName then
     self:SetName()
     self.bPendingPhantomSetName = false
   end
 end
-
 function WBP_Teammate_PC_C:InitShortageUI()
   self.ShortageItems = self.ShortageItems or {}
   local Path = "/Game/UI/WBP/Battle/Widget/WBP_Battle_Shortage.WBP_Battle_Shortage"
@@ -548,7 +532,6 @@ function WBP_Teammate_PC_C:InitShortageUI()
   ShortageItem2:InitConfig(self.Owner, "/Game/UI/Texture/Dynamic/Atlas/Buff/T_Buff_Energy_Down.T_Buff_Energy_Down", 902)
   self.ShortageItems[902] = ShortageItem2
 end
-
 function WBP_Teammate_PC_C:ShowShortageUI(BuffId, bShow)
   if not self.ShortageItems[BuffId] then
     return
@@ -559,12 +542,10 @@ function WBP_Teammate_PC_C:ShowShortageUI(BuffId, bShow)
     self.ShortageItems[BuffId]:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Teammate_PC_C:Destruct()
   self.IsDestroied = true
   WBP_Teammate_PC_C.Super.Destruct(self)
 end
-
 function WBP_Teammate_PC_C:PlayHpBarGreyAnimation(bReverse)
   if not self.IsInvincibility then
     if not bReverse then
@@ -577,5 +558,4 @@ function WBP_Teammate_PC_C:PlayHpBarGreyAnimation(bReverse)
   end
   self.WaitingToPlayGreyAnim = bReverse and 0 or 1
 end
-
 return WBP_Teammate_PC_C

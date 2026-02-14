@@ -1,25 +1,24 @@
 require("UnLua")
 require("Const")
 local HardBossComponent = {}
-
 function HardBossComponent:InitHardBoss(BossBattleId, DifficultyId)
   local BossInfo = DataMgr.HardBossMain[BossBattleId]
   if nil == BossInfo then
-    DebugPrint("\230\162\166\233\173\135\230\174\139\229\163\176BossId\228\187\165\229\143\138\233\154\190\229\186\166Id\229\161\171\229\134\153\233\148\153\232\175\175")
+    DebugPrint("梦魇残声BossId以及难度Id填写错误")
     return
   end
   self.LevelGameMode.BossBattleInfo = {}
   self.LevelGameMode.EMGameState.HardBossInfo = {}
   local BossStaticCreator = self.LevelGameMode.EMGameState.StaticCreatorMap:Find(BossInfo.MonsterStaticId)
   if not BossStaticCreator then
-    DebugPrint("\230\162\166\233\173\135\230\174\139\229\163\176\233\157\153\230\128\129\231\130\185Id\233\148\153\232\175\175\239\188\140\230\137\190\228\184\141\229\136\176\229\175\185\229\186\148\233\157\153\230\128\129\231\130\185", BossInfo.MonsterStaticId)
+    DebugPrint("梦魇残声静态点Id错误，找不到对应静态点", BossInfo.MonsterStaticId)
     return
   end
   BossStaticCreator.UnitType = "Monster"
   BossStaticCreator.UnitId = BossInfo.MonsterId
   local DifficultyLevel = DataMgr.HardBossDifficulty[DifficultyId].DifficultyLevel
   if nil == DifficultyLevel then
-    DebugPrint("\233\173\135\230\174\139\229\163\176DifficultyLevel\229\161\171\229\134\153\233\148\153\232\175\175")
+    DebugPrint("魇残声DifficultyLevel填写错误")
     return
   end
   BossStaticCreator.Level = DifficultyLevel - self.LevelGameMode:GetGameModeLevel()
@@ -57,7 +56,8 @@ function HardBossComponent:InitHardBoss(BossBattleId, DifficultyId)
   if BattleMainUI then
     local TaskBarWidget = BattleMainUI.Pos_TaskBar:GetChildAt(0)
     if TaskBarWidget then
-      TaskBarWidget:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      TaskBarWidget:StopAllAnimations()
+      TaskBarWidget:PlayAnimation(TaskBarWidget.Out)
     end
     if BattleMainUI.Btn_Task then
       BattleMainUI.Btn_Task:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -70,14 +70,12 @@ function HardBossComponent:InitHardBoss(BossBattleId, DifficultyId)
     local function STLCallback()
       self:InitBossBattleInfoCallBack()
     end
-    
     self:RunStory(BossInfo.StorylinePath, 10100, STLCallback, STLCallback)
     return
   else
     self:InitBossBattleInfoCallBack()
   end
 end
-
 function HardBossComponent:SpawnHardBossInfo()
   local BossStaticInfo = TArray(0)
   BossStaticInfo:Add(self.LevelGameMode.BossBattleInfo.AirWallStaticId)
@@ -85,7 +83,6 @@ function HardBossComponent:SpawnHardBossInfo()
   self.LevelGameMode:TriggerActiveStaticCreator(BossStaticInfo)
   self.LevelGameMode:InitBossBattleSubGameMode(self.LevelGameMode.BossBattleInfo.GameModePath)
 end
-
 function HardBossComponent:InitBossBattleInfoCallBack()
   self.LevelGameMode.BossBattleInfo.HardBossBTRunning = true
   for i, Boss in pairs(self.EMGameState.BossMap) do
@@ -102,20 +99,9 @@ function HardBossComponent:InitBossBattleInfoCallBack()
   AirWallCreatorIds:Add(self.LevelGameMode.BossBattleInfo.AirWallStaticId)
   self:TriggerActiveBossBattle(MonsterId, AirWallCreatorIds)
 end
-
 function HardBossComponent:EndHardBoss(IsWin)
-  if self.LevelGameMode.BossBattleInfo.StorylinePath then
-    local function STLCallback()
-      self:TriggerExitDungeon(IsWin)
-    end
-    
-    self:RunStory(self.LevelGameMode.BossBattleInfo.StorylinePath, 10199, STLCallback, STLCallback)
-    return
-  else
-    self:TriggerExitDungeon(IsWin)
-  end
+  self:TriggerExitDungeon(IsWin)
 end
-
 function HardBossComponent:EndHardBossCallBack(IsWin)
   self.LevelGameMode.IsInHardBossSettlement = false
   self:PostCustomEvent("EndHardBossCallBack")
@@ -155,14 +141,12 @@ function HardBossComponent:EndHardBossCallBack(IsWin)
   Avatar:TriggerQuestChain()
   MissionIndicatorManager:TriggerAllIndicatorVisible(true)
 end
-
 function HardBossComponent:QuitHardBoss()
   self.LevelGameMode.BossBattleInfo.HardBossBTRunning = false
   self:HardBossClearBattleEntities(false)
   self:HardBossSetPhantomBTEnable(false)
   self:PostCustomEvent("OnHardBossEnd")
 end
-
 function HardBossComponent:HardBossClearBattleEntities(IsBegin)
   DebugPrint("GameMode_HardBossComponent: HardBossClearBattleEntities", IsBegin)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -184,8 +168,8 @@ function HardBossComponent:HardBossClearBattleEntities(IsBegin)
     end
   end
   if not IsValid(self.EMGameState.Battle) then
-    ScreenPrint("************* GameMode_HardBossComponent:HardBossClearBattleEntities Battle\228\184\141\229\173\152\229\156\168!!!!!! *************")
-    Battle(self):ShowBattleError("\230\162\166\233\173\135\230\174\139\229\163\176\230\184\133\233\153\164Actor\230\151\182, Battle\228\184\141\229\173\152\229\156\168\239\188\129")
+    ScreenPrint("************* GameMode_HardBossComponent:HardBossClearBattleEntities Battle不存在!!!!!! *************")
+    Battle(self):ShowBattleError("梦魇残声清除Actor时, Battle不存在！")
     return
   end
   local Index = 0
@@ -213,9 +197,8 @@ function HardBossComponent:HardBossClearBattleEntities(IsBegin)
       end
     end
   end
-  DebugPrint("GameMode_HardBossComponent: \230\152\175\229\144\166\232\191\155\229\133\165:", IsBegin, "\229\136\160\233\153\164\230\128\187\230\149\176:", Counter)
+  DebugPrint("GameMode_HardBossComponent: 是否进入:", IsBegin, "删除总数:", Counter)
 end
-
 function HardBossComponent:HardBossSetPhantomBTEnable(RunEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   for _, Phantom in pairs(Player:GetPhantomTeammates()) do
@@ -228,5 +211,4 @@ function HardBossComponent:HardBossSetPhantomBTEnable(RunEnable)
     end
   end
 end
-
 return HardBossComponent

@@ -1,6 +1,5 @@
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = {}
-
 function M:UpdateSkinParams(SkinInfo)
   local SkinData = DataMgr.Skin[SkinInfo.TypeId]
   if not SkinData then
@@ -16,7 +15,6 @@ function M:UpdateSkinParams(SkinInfo)
   }
   return Params
 end
-
 function M:UpdateCharSkinDescription(SkinInfo)
   local SkinData = DataMgr.Skin[SkinInfo.TypeId]
   if not SkinData then
@@ -53,7 +51,6 @@ function M:UpdateCharSkinDescription(SkinInfo)
     self.Text_Char_None:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:UpdateCharAccessoryParams(SkinInfo, Avatar)
   local AccessoryData = DataMgr.CharAccessory[SkinInfo.TypeId]
   if not AccessoryData then
@@ -69,7 +66,6 @@ function M:UpdateCharAccessoryParams(SkinInfo, Avatar)
   }
   return Params
 end
-
 function M:UpdateCharAccessoryDescription(SkinInfo)
   local AccessoryData = DataMgr.CharAccessory[SkinInfo.TypeId]
   if not AccessoryData then
@@ -94,7 +90,6 @@ function M:UpdateCharAccessoryDescription(SkinInfo)
     self.Image_Element:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:UpdateCharGestureParams(SkinInfo, Avatar)
   local Char = Avatar.Chars[Avatar.CurrentChar]
   local Params = {
@@ -103,7 +98,6 @@ function M:UpdateCharGestureParams(SkinInfo, Avatar)
   }
   return Params
 end
-
 function M:UpdateCharGestureDescription(SkinInfo)
   local GestureData = DataMgr.Resource[SkinInfo.TypeId]
   if not GestureData or GestureData.ResourceSType ~= "GestureItem" then
@@ -121,5 +115,4 @@ function M:UpdateCharGestureDescription(SkinInfo)
   self.Tab_Change:SetVisibility(ESlateVisibility.Collapsed)
   self.Image_Element:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 return M

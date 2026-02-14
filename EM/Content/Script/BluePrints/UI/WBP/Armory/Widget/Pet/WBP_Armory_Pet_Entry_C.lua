@@ -2,12 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
   self.Text_Empty:SetText(GText("UI_Pet_Affix_Without"))
+  self.Text_Lock:SetText(GText("UI_Aaccessory_Locked"))
 end
-
 function M:Init(Content)
   self.Content = Content
   Content.UI = self
@@ -26,13 +25,11 @@ function M:Init(Content)
   self._OnClicked = Content.OnClicked
   self:SetIsSelected(Content.IsSelected)
 end
-
 function M:OnBtnClicked()
   if self._OnClicked then
     self._OnClicked(self.Owner, self.Content, self)
   end
 end
-
 function M:SetIsSelected(IsSelected)
   if IsSelected then
     self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -47,5 +44,4 @@ function M:SetIsSelected(IsSelected)
     self.Content.IsSelected = IsSelected
   end
 end
-
 return M

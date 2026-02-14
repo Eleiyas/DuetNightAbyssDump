@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:SetCharIcon(IconPath, ...)
   self.CharIconPath = IconPath
   self:PlayAnimation(self.Normal)
@@ -10,7 +9,6 @@ function M:SetCharIcon(IconPath, ...)
   self.WidgetSwitcher_Head:SetActiveWidgetIndex(0)
   self.Img_Avatar:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetWeaponIcon(IconPath, ...)
   self:PlayAnimation(self.Normal)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -20,7 +18,6 @@ function M:SetWeaponIcon(IconPath, ...)
     IconDynaMaterial:SetTextureParameterValue("IconMap", LoadObject(IconPath))
   end
 end
-
 function M:SetEmptyIcon(IconPath, ...)
   self:StopAllAnimations()
   local Type = (...)
@@ -31,12 +28,10 @@ function M:SetEmptyIcon(IconPath, ...)
   end
   self:PlayAnimation(self.Normal)
 end
-
 function M:SetDeficiencyIcon()
   self:StopAllAnimations()
   self:PlayAnimation(self.FlashRed)
 end
-
 function M:CharIconGray()
   self.WidgetSwitcher_Head:SetActiveWidgetIndex(4)
   local IconDynaMaterial = self.Head_Phantom_Lack:GetDynamicMaterial()
@@ -44,5 +39,4 @@ function M:CharIconGray()
     IconDynaMaterial:SetTextureParameterValue("MainTex", LoadObject(self.CharIconPath))
   end
 end
-
 return M

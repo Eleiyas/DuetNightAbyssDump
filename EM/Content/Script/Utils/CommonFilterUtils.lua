@@ -1,23 +1,5 @@
 local CommonFilterUtils = {}
 CommonFilterUtils.FilterRule = {And = 0, Or = 1}
-
-local function GetFieldValueByIndex(ItemData, FiledIndex)
-  local fieldName = fieldMapping[index]
-  if "FilterTag" == fieldName then
-    return ModItem.FilterTag
-  else
-    local modFieldValue = ModItem[fieldName]
-    if "Level" == fieldName and type(modFieldValue) == "number" and modFieldValue > 1 then
-      modFieldValue = 1
-    end
-    if type(modFieldValue) == "number" then
-      return tostring(modFieldValue)
-    else
-      return modFieldValue
-    end
-  end
-end
-
 local function IsItemDataMatchFilterTag(ItemData, FilterTags)
   local ItemFilterTags = ItemData.FilterTag
   for i, ItemFilterTag in ipairs(ItemFilterTags) do
@@ -29,7 +11,6 @@ local function IsItemDataMatchFilterTag(ItemData, FilterTags)
   end
   return false
 end
-
 local function IsItemDataMatchFilterField(ItemData, FieldName, FieldValues)
   assert(nil ~= ItemData[FieldName], "ItemData[" .. FieldName .. "] is nil")
   local ItemFieldValue = ItemData[FieldName]
@@ -43,7 +24,6 @@ local function IsItemDataMatchFilterField(ItemData, FieldName, FieldValues)
   end
   return false
 end
-
 local function IsItemDataMatchFilterData(ItemData, FilterData)
   local FieldName = FilterData.FieldName
   local FieldValues = FilterData.FieldValues
@@ -57,7 +37,6 @@ local function IsItemDataMatchFilterData(ItemData, FilterData)
     return IsItemDataMatchFilterField(ItemData, FieldName, FieldValues)
   end
 end
-
 function CommonFilterUtils.FilterItemDataByFilterData(ItemData, FilterSelectedItems, FilterItemDatas)
   for Index, SelectedItem in pairs(FilterSelectedItems) do
     local FilterItemData = FilterItemDatas[Index]
@@ -73,7 +52,6 @@ function CommonFilterUtils.FilterItemDataByFilterData(ItemData, FilterSelectedIt
   end
   return true
 end
-
 function CommonFilterUtils.FilterItemDataListByFilterData(ItemDataList, FilterSelectedItems, FilterItemDatas)
   for Index, SelectedItem in pairs(FilterSelectedItems) do
     local FilterItemData = FilterItemDatas[Index]
@@ -93,5 +71,4 @@ function CommonFilterUtils.FilterItemDataListByFilterData(ItemDataList, FilterSe
   end
   return ItemDataList
 end
-
 return CommonFilterUtils

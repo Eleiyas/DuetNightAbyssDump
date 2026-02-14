@@ -1,11 +1,9 @@
 require("UnLua")
 local BP_SeatPointComponent_C = Class()
-
 function BP_SeatPointComponent_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self.EnterPointArray = self:GetChildrenComponents(true)
 end
-
 function BP_SeatPointComponent_C:FindEnterPoint(PlayerEid)
   local Result
   local ResDis = 99999
@@ -21,7 +19,6 @@ function BP_SeatPointComponent_C:FindEnterPoint(PlayerEid)
   self.EnterType = Result.Type
   return Result
 end
-
 function BP_SeatPointComponent_C:NpcFindEnterPoint(Npc)
   local Result
   local ResDis = 99999
@@ -41,7 +38,6 @@ function BP_SeatPointComponent_C:NpcFindEnterPoint(Npc)
   self.EnterType = Result.Type
   return Result
 end
-
 function BP_SeatPointComponent_C:FindLeavingPoint(Type)
   for i = 1, self.EnterPointArray:Length() do
     if self.EnterPointArray[i].Type == Type then
@@ -50,7 +46,6 @@ function BP_SeatPointComponent_C:FindLeavingPoint(Type)
   end
   return self.EnterPointArray[1]
 end
-
 function BP_SeatPointComponent_C:NpcFindLeavingPoint(Npc)
   local Result
   local ResDis = 99999
@@ -73,5 +68,4 @@ function BP_SeatPointComponent_C:NpcFindLeavingPoint(Npc)
   end
   return Result
 end
-
 return BP_SeatPointComponent_C

@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.SetClickState)
   self.Btn_Click.OnPressed:Add(self, self.SetPressState)
   self.Btn_Click.OnHovered:Add(self, self.SetHoverState)
   self.Btn_Click.OnUnhovered:Add(self, self.SetNormalState)
 end
-
 function M:Init(Parent, TraceId, IsLock)
   self.Parent = Parent
   self.TraceId = TraceId
@@ -16,7 +14,6 @@ function M:Init(Parent, TraceId, IsLock)
   self.Text_TraceAbilityTitle:SetText(GText("UI_ROOT_" .. self.TraceId))
   self:SetReddotState(false)
 end
-
 function M:SetNormalState()
   if self.IsClick then
     return
@@ -28,7 +25,6 @@ function M:SetNormalState()
     self:PlayAnimation(self.UnLocked_Normal)
   end
 end
-
 function M:SetClickState()
   if self.IsClick then
     return
@@ -43,7 +39,6 @@ function M:SetClickState()
   self:SetReddotState(false)
   self.Parent:OnClickTraceItem(self.TraceId)
 end
-
 function M:SetHoverState()
   if self.IsClick then
     return
@@ -55,7 +50,6 @@ function M:SetHoverState()
     self:PlayAnimation(self.UnLocked_Hover)
   end
 end
-
 function M:SetPressState()
   if self.IsClick then
     return
@@ -67,7 +61,6 @@ function M:SetPressState()
     self:PlayAnimation(self.UnLocked_Press)
   end
 end
-
 function M:SetReddotState(IsShow)
   if IsShow then
     self.Common_Item_Subsize_Reddot_PC:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -75,7 +68,6 @@ function M:SetReddotState(IsShow)
     self.Common_Item_Subsize_Reddot_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:PlayUnLockAnim()
   self:PlayAnimation(self.UnLock)
   self.IsLock = false
@@ -85,9 +77,7 @@ function M:PlayUnLockAnim()
     self.PlayUnLockAnimFinished
   })
 end
-
 function M:PlayUnLockAnimFinished()
   self.Parent:ClickToNextTraceItem()
 end
-
 return M

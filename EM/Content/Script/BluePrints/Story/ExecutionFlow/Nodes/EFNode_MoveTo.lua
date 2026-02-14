@@ -1,41 +1,43 @@
 local ETalkVisibility = {Show = "Show", Hide = "Hide"}
 local M = {}
-
+local ScriptLogType = UE.EStoryLogType.Script
 function M:CreateNode(Flow, TalkTask, Params)
   local ActorId = Params.ActorId
   local TargetPointName = Params.TargetPoint
   local MoveSpeed = Params.MoveSpeed
   local Visibility = Params.Visibility or ETalkVisibility.Show
+  local EnableFootStepFx = Params.EnableFootStepFx or false
   local TalkContext = GWorld.GameInstance:GetTalkContext()
   if not IsValid(TalkContext) then
     local Message = string.format("MoveTo create failed: TalkContext not found, DialogueId: %d", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "MoveTo脚本执行出错：TalkContext无效", Message)
     return
   end
   local TalkActorData = TalkContext:GetTalkActorData(TalkTask, ActorId)
   if not TalkActorData then
     local Message = string.format("MoveTo create failed: TalkActorData not found, ActorId: %d, DialogueId: %d", ActorId, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "MoveTo脚本执行出错：TalkActorData无效", Message)
     return
   end
   local TalkActor = TalkActorData.TalkActor
   if not IsValid(TalkActor) then
     local Message = string.format("MoveTo create failed: TalkActor not found, ActorId: %d, DialogueId: %d", ActorId, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "MoveTo脚本执行出错：TalkActor无效", Message)
     return
   end
   local GameState = UGameplayStatics.GetGameState(Flow)
   if not IsValid(GameState) then
     local Message = string.format("MoveTo create failed: GameState not found, DialogueId: %d", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "MoveTo脚本执行出错：GameState无效", Message)
     return
   end
   local TargetPoint = GameState:GetTargetPoint(TargetPointName)
   if not IsValid(TargetPoint) then
     local Message = string.format("MoveTo create failed: TargetPoint not found, PointName: %s, DialogueId: %d", TargetPointName, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "MoveTo脚本执行出错：TargetPoint无效", Message)
     return
   end
+  local ActorForbidFootFX = TalkActor.bForbidFootStepFX
   local MaxMovingSpeedInfoCache = TalkActor:GetMaxMovingSpeedInfo()
   local bMovementTickEnable = TalkActor.bNpcMovementTickEnable
   local ActorStartLocation = TalkActor:K2_GetActorLocation()
@@ -53,13 +55,18 @@ function M:CreateNode(Flow, TalkTask, Params)
       AnimInstance:SwitchEnableTalkAction(false)
     end
     TalkActor:SetNpcMovementTickEnable(true)
+    TalkActor:ForbidFootStep(not EnableFootStepFx)
+    if TalkActor:GetMovementComponent() then
+      TalkActor:GetMovementComponent():LockMovementMode(false, EMovementMode.MOVE_Walking)
+      TalkActor:GetMovementComponent().bDoingMoveToNode = true
+    end
     if TalkActor.CapsuleComponent and TalkActor.CapsuleComponent:GetCollisionEnabled() == ECollisionEnabled.NoCollision then
       TalkActor.CapsuleComponent:SetCollisionEnabled(ECollisionEnabled.QueryAndPhysics)
     end
     Node.MoveToProxy = UAIBlueprintHelperLibrary.CreateMoveToProxyObject(Node, TalkActor, TargetPoint:K2_GetActorLocation())
     if not IsValid(Node.MoveToProxy) then
       local Message = string.format("MoveTo start failed: MoveToProxy not created, ActorId: %d, DialogueId: %d", ActorId, Flow.DialogueId)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "对话运行时出错", Message)
       Node:Finish({
         Node.FinishPin
       })
@@ -83,6 +90,10 @@ function M:CreateNode(Flow, TalkTask, Params)
       AnimInstance:SwitchEnableTalkAction(true)
     end
     TalkActor:SetNpcMovementTickEnable(bMovementTickEnable)
+    TalkActor:ForbidFootStep(ActorForbidFootFX)
+    if TalkActor:GetMovementComponent() then
+      TalkActor:GetMovementComponent().bDoingMoveToNode = false
+    end
     if false == bMovementTickEnable then
       TalkActor:ResetLocation()
     end
@@ -112,5 +123,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return MoveToNode
 end
-
 return M

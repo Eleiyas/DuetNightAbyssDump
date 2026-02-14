@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr"
 })
 local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self, Initializer)
   self.ID2ArtStreamingLevel = {}
@@ -26,11 +25,11 @@ function M:Initialize(Initializer)
   self.EnterRegionType = ""
   self.loadProgress = 0
 end
-
 function M:ReceiveBeginPlay()
   self.IsWorldLoader = true
   self:BeginPlay()
   self.EnvironmentManager.bFixLightDirection = false
+  self.WorldCompositionSubSystem = USubsystemBlueprintLibrary.GetWorldSubsystem(self, UWorldCompositionSubSystem:StaticClass())
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     self:HandleEnterRegionType(Avatar, Avatar.EnterRegionType)
@@ -39,13 +38,17 @@ function M:ReceiveBeginPlay()
       Location = Avatar.LastRegionData:GetLocation()
     }, 2)
   else
-    self:LevelLoaderReady()
-    self:DestroySelf()
+    self:AddTimer(1, function()
+      self:LevelLoaderReady()
+      self:ReleaseInitialBuildingLock()
+    end)
+    if URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
+      self.WorldCompositionSubSystem:ForceAddLoadedLevel()
+    end
     return
   end
   self.shortname = WorldTravelSubsystem(self).LevelLoadJsonName
   local ShortString = string.find(self.shortname, "Houdini_data/")
-  self.WorldCompositionSubSystem = UWorldCompositionSubSystem and USubsystemBlueprintLibrary.GetWorldSubsystem(self, UWorldCompositionSubSystem:StaticClass())
   if self.shortname and ShortString then
     self.shortname = string.sub(self.shortname, string.find(self.shortname, "Houdini_data/") + 13)
     local levelTable = DataMgr.GetLevelLoaderJsonData(self.shortname)
@@ -55,12 +58,13 @@ function M:ReceiveBeginPlay()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   self:InitLevelID()
   self.LevelPathfinding.LevelLoaderComplete = true
+  if GameInstance then
+    GameInstance:UpdatePostProcessMaterial()
+  end
 end
-
 function M:ReceiveTick(DeltaSeconds)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    self.GetLevels = true
     return
   end
   if self.GetLevels then
@@ -73,7 +77,6 @@ function M:ReceiveTick(DeltaSeconds)
   end
   self:InitWorldLoad(temp)
 end
-
 function M:InitLevelID()
   if self.points then
     for i = 1, #self.points do
@@ -85,7 +88,6 @@ function M:InitLevelID()
   end
   self:InitLevelInfo()
 end
-
 function M:InitLevelInfo(StreamLevels)
   if self.LevelInfoInited then
     return
@@ -94,6 +96,8 @@ function M:InitLevelInfo(StreamLevels)
   self:GetStreamingLevels()
   StreamLevels = self.StreamLevels:ToTable()
   local isPIE = UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self)
+  local WorldCompositionSubSystem = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE4.UWorldCompositionSubSystem)
+  local IsInDungeon = WorldCompositionSubSystem and WorldCompositionSubSystem:WCIsInDungeon()
   for _, streamLevel in pairs(StreamLevels) do
     local packageName = streamLevel.PackageNameToLoad
     if "None" == packageName then
@@ -102,6 +106,7 @@ function M:InitLevelInfo(StreamLevels)
     local temp, _ = UNameStringFunctionLibrary.LongPathNameToName(packageName)
     local bIsGameplayLevel = URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) and UKismetStringLibrary.EndsWith(packageName, "_Gameplay", ESearchCase.CaseSensitive)
     local bIsHomeLevel = UKismetStringLibrary.StartsWith(packageName, "/Game/Maps/Levels", ESearchCase.CaseSensitive) and not URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self)
+    local DungeonDesignIndex = -1
     if UKismetStringLibrary.EndsWith(temp, "_Art", ESearchCase.CaseSensitive) then
       local LevelID = string.gsub(temp, "_Art", "")
       self.levelName2Id[LevelID] = LevelID
@@ -114,7 +119,14 @@ function M:InitLevelInfo(StreamLevels)
     elseif UKismetStringLibrary.EndsWith(temp, "_Sound", ESearchCase.CaseSensitive) then
       self.ID2SoundStreamingLevel[string.gsub(temp, "_Sound", "")] = streamLevel
     elseif UKismetStringLibrary.EndsWith(temp, "_Design", ESearchCase.CaseSensitive) then
-      self.ID2DesignStreamingLevel[string.gsub(temp, "_Design", "")] = streamLevel
+      if not IsInDungeon then
+        self.ID2DesignStreamingLevel[string.gsub(temp, "_Design", "")] = streamLevel
+      end
+    elseif UE4.UKismetStringLibrary.Contains(temp, "_DungeonDesign") then
+      if IsInDungeon then
+        local StringIndex = UE4.UKismetStringLibrary.FindSubstring(temp, "_DungeonDesign")
+        self.ID2DesignStreamingLevel[string.sub(temp, 1, StringIndex)] = streamLevel
+      end
     elseif UKismetStringLibrary.EndsWith(temp, "_NavMesh", ESearchCase.CaseSensitive) then
       local levelName = string.gsub(temp, "_NavMesh", "")
       self.ID2NavMeshStreamingLevel[levelName] = streamLevel
@@ -129,7 +141,6 @@ function M:InitLevelInfo(StreamLevels)
           json.rot
         }
       end
-      coroutine.resume(coroutine.create(self.LoadNavMesh), self, temp)
     elseif bIsGameplayLevel or bIsHomeLevel then
       self:InithomeLevel2IDInfo(streamLevel, temp, "_Gameplay")
     end
@@ -154,8 +165,10 @@ function M:InitLevelInfo(StreamLevels)
     end
   end
 end
-
 function M:InithomeLevel2IDInfo(streamLevel, temp, SubStr)
+  if WorldTravelSubsystem(self):IsDungeonWorld() then
+    return
+  end
   self.homeLevel2ID[streamLevel:GetLoadedLevel()] = string.gsub(temp, SubStr, "")
   if not self.enterLevelID then
     self.enterLevelID = temp
@@ -165,7 +178,6 @@ function M:InithomeLevel2IDInfo(streamLevel, temp, SubStr)
     GameMode:AddSubGameModeInfo(string.gsub(temp, SubStr, ""), streamLevel:GetLoadedLevel())
   end
 end
-
 function M:InitWorldLoad(StreamLevels)
   self:InitLevelInfo(StreamLevels)
   if self.TempLevelDoor then
@@ -182,25 +194,15 @@ function M:InitWorldLoad(StreamLevels)
   end
   self.GetLevels = true
   self:SetActorTickEnabled(false)
-  if not URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) and self.TempGridframe and #self.TempGridframe > 0 then
-    for _, gridframe in pairs(self.TempGridframe) do
-      self.Super.AddGridFrame(self, gridframe)
-    end
-  end
-  if self.enterLevelID then
+  local IsInDungeon = WorldTravelSubsystem(self):IsDungeonWorld()
+  if self.enterLevelID and not IsInDungeon then
     self:SetPlayerTrans()
     self:LoadArtLevel(self.enterLevelID)
-    if not URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
-      for id, _ in pairs(self.ID2ArtStreamingLevel) do
-        if id ~= self.enterLevelID then
-          self:LoadArtLevel(id)
-        end
-      end
-    end
+  elseif IsInDungeon and not IsDedicatedServer(self) then
+    self:DungeonSetPlayerTrans()
   end
   self:SetForceGCAfterLevelStreamedOut(false)
 end
-
 function M:AddGridFrame(GridFrame)
   if URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
     self:InitLevelInfo()
@@ -215,7 +217,6 @@ function M:AddGridFrame(GridFrame)
   end
   self.TempGridframe[#self.TempGridframe + 1] = GridFrame
 end
-
 function M:GetLevelJsonByLevelName(LevelName)
   if not self.points then
     return
@@ -226,18 +227,15 @@ function M:GetLevelJsonByLevelName(LevelName)
     end
   end
 end
-
 function M:GetLevelId(Actor)
   if self.WorldCompositionSubSystem then
     return self.WorldCompositionSubSystem:GetObjectLevelId(Actor)
   end
   return self.Super.GetLevelId(self, Actor)
 end
-
 function M:GetLevelIdByRegionId(RegionId)
   return self.RegionID2LevelID[RegionId]
 end
-
 function M:LoadArtLevel(LevelName)
   if URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
     self:InitLevelInfo()
@@ -252,7 +250,6 @@ function M:LoadArtLevel(LevelName)
   end
   coroutine.resume(coroutine.create(self.Load), self, LevelName)
 end
-
 function M:CheckWorldCompositionLevelLoaded(id)
   self:SetLoadProgress(self.WorldCompositionSubSystem:GetLoadedLevelPercent() * 100)
   if not self.WorldCompositionSubSystem then
@@ -269,13 +266,15 @@ function M:CheckWorldCompositionLevelLoaded(id)
   for _, _ in pairs(self.id2NeedLoad) do
     return
   end
+  local GameState = UGameplayStatics.GetGameState(self)
+  if GameState and GameState:IsInDungeon() then
+    self:OnLevelLoaderReady()
+  end
   self:RemoveTimer("CheckWorldCompositionLevelLoaded")
 end
-
 function M:LoadNavMesh(LevelName)
   UGameplayStatics.LoadStreamLevel(self, LevelName, true, true)
 end
-
 function M:Load(LevelName)
   if UAsyncFunctionLibrary.CheckStreamLevelBeLoadState(self, LevelName .. "_Art", true) then
     print(_G.LogTag, "CheckStreamLevelBeLoadState Failed:" .. LevelName)
@@ -292,7 +291,6 @@ function M:Load(LevelName)
     UGameplayStatics.LoadStreamLevel(self, LevelName .. "_Sound", true, true)
   end
 end
-
 function M:UnloadArtLevel(LevelName)
   if URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
     self:BeforeLevelUnloadedCallback(LevelName)
@@ -311,7 +309,6 @@ function M:UnloadArtLevel(LevelName)
   coroutine.resume(coroutine.create(self.Unload), self, LevelName)
   self:OnArtLevelUnloadedCallback(LevelName)
 end
-
 function M:Unload(LevelName)
   if self.ID2ArtStreamingLevel[LevelName] then
     UGameplayStatics.UnloadStreamLevel(self, LevelName .. "_Art", true)
@@ -323,7 +320,6 @@ function M:Unload(LevelName)
     UGameplayStatics.UnloadStreamLevel(self, LevelName .. "_Sound", true)
   end
 end
-
 function M:OnArtLevelLoaded()
   if URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
     return
@@ -337,7 +333,6 @@ function M:OnArtLevelLoaded()
     end
   end
 end
-
 function M:WorldLoaderCheckArtLevelLoaded(level, id)
   while true do
     if not UE4.UKismetSystemLibrary.IsValid(level) then
@@ -351,7 +346,6 @@ function M:WorldLoaderCheckArtLevelLoaded(level, id)
   self:OnArtLevelLoadedCallback(id)
   self:OnLevelLoaderReady()
 end
-
 function M:OnLevelLoaderReady()
   if not self.levelLoadComplete then
     self.levelLoadComplete = true
@@ -359,14 +353,78 @@ function M:OnLevelLoaderReady()
     self:ReleaseInitialBuildingLock()
   end
 end
-
+function M:DungeonSetPlayerTrans()
+  if IsDedicatedServer(self) or WorldTravelSubsystem(self):IsDungeonWorld() then
+    if not self.startPoint then
+      self:GetRandStartPoint()
+    end
+    if not self.startPoint then
+      DebugPrint("DungeonSetPlayerTrans Delay...")
+      self:AddTimer(0.1, self.DungeonSetPlayerTrans)
+      return
+    end
+    if IsStandAlone(self) then
+      local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+      local Transform = self.startPoint:GetTransform(0)
+      self.WorldCompositionSubSystem:RequestAsyncTravel(Player, Transform, {
+        self,
+        function()
+        end
+      }, true, false, false)
+      self:AddTimer(0.7, self.CheckWorldCompositionLevelLoaded, true, 0, "CheckWorldCompositionLevelLoaded", nil, nil)
+    elseif IsDedicatedServer(self) then
+      self.startPoint:InitSetPlayerTrans()
+    elseif IsClient(self) then
+      local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+      local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
+      local TargetLoc
+      if PlayerController.PlayerState and PlayerController.PlayerState.bIsEMInactive then
+        TargetLoc = Player:K2_GetActorLocation()
+      elseif not UKismetMathLibrary.EqualEqual_VectorVector(PlayerController.TargetBornLocation, FVector(0, 0, 0), 0.001) then
+        TargetLoc = PlayerController.TargetBornLocation
+      end
+      local Transform
+      if TargetLoc then
+        Transform = FTransform()
+        Transform.Translation = TargetLoc
+      else
+        Transform = self.startPoint:GetTransform(0)
+      end
+      if not self.InitCameraActor then
+        self.InitCameraActor = self:GetWorld():SpawnActor(ACameraActor:StaticClass(), Transform)
+      end
+      self.WorldCompositionSubSystem:SetViewTargetWithWC(self.InitCameraActor, function()
+      end, true, false)
+      self:AddTimer(0.7, self.CheckWorldCompositionLevelLoaded, true, 0, "CheckWorldCompositionLevelLoaded", nil, nil)
+    end
+  end
+end
+function M:SetEnteredPlayerTrans(PlayerController)
+  if not self.startPoint then
+    self:GetRandStartPoint()
+  end
+  if self.startPoint then
+    self.startPoint:SetEnteredPlayerTrans(PlayerController)
+  end
+end
+function M:RealSetNewEnteredPlayerTrans(AvatarEidStr)
+  if self.startPoint == nil then
+    self:GetRandStartPoint()
+  end
+  self.startPoint:RealSetNewEnteredPlayerTrans(AvatarEidStr)
+end
 function M:SetPlayerTrans()
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local Avatar = GWorld:GetAvatar()
-  if not Avatar then
+  if not Avatar and not IsDedicatedServer(self) then
+    return
+  end
+  if IsDedicatedServer(self) or GameMode and GameMode:IsInDungeon() then
+    self:DungeonSetPlayerTrans()
     return
   end
   if self:HandleQuestChainInitLocation(Avatar, self.EnterRegionType) then
-    GWorld.logger.error("ZJT_ \230\156\172\230\172\161\228\189\141\231\189\174\230\129\162\229\164\141 \232\162\171\228\187\187\229\138\161\230\142\165\231\174\161 \231\148\177\228\187\187\229\138\161\232\174\190\231\189\174\231\142\169\229\174\182\230\137\128\229\156\168\228\189\141\231\189\174 ")
+    GWorld.logger.error("ZJT_ 本次位置恢复 被任务接管 由任务设置玩家所在位置 ")
   end
   DebugPrint("ZJT_ Set Current PlayerLocation ", Avatar.CurrentRegionId, self.enterLoc, self.StartIndex)
   if self.enterLoc and self.enterLoc ~= FVector(0, 0, 0) then
@@ -385,7 +443,6 @@ function M:SetPlayerTrans()
     MovementComponent.bIsAsyncTraveling = false
   end
 end
-
 function M:InitSetPlayerTrans()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -414,7 +471,6 @@ function M:InitSetPlayerTrans()
   Controller:SetControlRotation(self.enterRot)
   self:OpenPlayerPositionSync()
 end
-
 function M:GetRegionIdByLocation(location)
   local id = self:GetLevelIdByLocation(location)
   if self.LevelID2RegionID[id] then
@@ -422,7 +478,6 @@ function M:GetRegionIdByLocation(location)
   end
   return -1
 end
-
 function M:GetStartPointByManager(LevelID, StartIndex)
   DebugPrint("GetStartPointByManager", LevelID, StartIndex)
   if not LevelID then
@@ -453,7 +508,6 @@ function M:GetStartPointByManager(LevelID, StartIndex)
   end
   return nil
 end
-
 function M:BeforeLevelUnloadedCallback(LevelName)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if IsValid(GameMode) and not IsValid(GameMode:GetWCSubSystem()) then
@@ -466,7 +520,6 @@ function M:BeforeLevelUnloadedCallback(LevelName)
     func(self, LevelName)
   end
 end
-
 function M:AfterLevelLoadeCallback(LevelName)
   if not self.ArtLevelLoadEvent[LevelName] then
     return
@@ -475,7 +528,6 @@ function M:AfterLevelLoadeCallback(LevelName)
     func(self, LevelName)
   end
 end
-
 function M:OpenPlayerPositionSync()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -494,23 +546,18 @@ function M:OpenPlayerPositionSync()
     Player:CreatePhantomOnLevelTransition()
   end
 end
-
 function M:OpenRegionDataRecover()
 end
-
 function M:GetRegionIdByLevelId(LevelName)
   if self.LevelID2RegionID[LevelName] then
     return self.LevelID2RegionID[LevelName]
   end
   return -1
 end
-
 function M:OnArtLevelLoadRecoverRegionData(TargetLevelId)
 end
-
 function M:OnArtLevelUnLoadSaveRegionData(TargetLevelId)
 end
-
 function M:ArtLevelBindEvent(IsRecover)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) then
@@ -533,7 +580,6 @@ function M:ArtLevelBindEvent(IsRecover)
     end
   end
 end
-
 function M:OpenInitSuit()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local Avatar = GWorld:GetAvatar()
@@ -544,10 +590,8 @@ function M:OpenInitSuit()
     EventManager:AddEvent(EventID.OnCharacterInitSuitRecover, PlayerCharacter, PlayerCharacter.OnCharacterInitSuitRecover)
   end
 end
-
 function M:RecoverArtLevelBreakable()
 end
-
 function M:ReAddSubGameModeInfo()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil == GameMode then
@@ -560,7 +604,6 @@ function M:ReAddSubGameModeInfo()
     end
   end
 end
-
 function M:HandleEnterRegionType(Avatar, EnterRegionType)
   DebugPrint("ZJT_ HandleEnterRegionType ", EnterRegionType)
   if not CommonConst.EnterRegionType[EnterRegionType] then
@@ -570,12 +613,10 @@ function M:HandleEnterRegionType(Avatar, EnterRegionType)
   local EnterRegionTypeFunc = "Handle" .. CommonConst.EnterRegionType[EnterRegionType]
   self[EnterRegionTypeFunc](self, Avatar, EnterRegionType)
 end
-
 function M:HandleGM(Avatar, EnterRegionType)
   self.enterLevelID = DataMgr.SubRegion[Avatar.CurrentRegionId].SubRegionLevel
   self.StartIndex = Avatar.StartIndex
 end
-
 function M:HandleQuestChainInitLocation(Avatar, EnterRegionType)
   if EnterRegionType ~= CommonConst.EnterRegionType.Recover then
     return false
@@ -604,7 +645,6 @@ function M:HandleQuestChainInitLocation(Avatar, EnterRegionType)
   end
   return false
 end
-
 function M:HandleRecover(Avatar, EnterRegionType)
   if Avatar:InitRecoverCheck() then
     self.enterLevelID = DataMgr.SubRegion[Avatar:GetLastRegionId()].SubRegionLevel
@@ -612,41 +652,35 @@ function M:HandleRecover(Avatar, EnterRegionType)
     local rot = Avatar.LastRegionData:GetRotation()
     self.enterLoc = FVector(loc.X, loc.Y, loc.Z)
     self.enterRot = FRotator(0, rot.Yaw, 0)
-    DebugPrint("ZJT_ HandleRecover \230\136\144\229\138\159 ", self.enterLoc, Avatar.LastRegionData.RegionId)
+    DebugPrint("ZJT_ HandleRecover 成功 ", self.enterLoc, Avatar.LastRegionData.RegionId)
   else
     self.enterLevelID = DataMgr.SubRegion[Avatar.CurrentRegionId].SubRegionLevel
     self.StartIndex = Avatar.StartIndex or 1
-    DebugPrint("ZJT_ HandleRecover \229\164\177\232\180\165 ", self.StartIndex, self.enterLevelID, Avatar:InitRecoverCheck())
+    DebugPrint("ZJT_ HandleRecover 失败 ", self.StartIndex, self.enterLevelID, Avatar:InitRecoverCheck())
   end
 end
-
 function M:HandleSojourns(Avatar, EnterRegionType)
   self.enterLevelID = DataMgr.SubRegion[Avatar.CurrentRegionId].SubRegionLevel
   self.StartIndex = Avatar.StartIndex
 end
-
 function M:HandleSelectMap(Avatar, EnterRegionType)
   self.enterLevelID = DataMgr.SubRegion[Avatar.CurrentRegionId].SubRegionLevel
   self.StartIndex = Avatar.StartIndex
 end
-
 function M:HandleDeliver(Avatar, EnterRegionType)
   self.enterLevelID = DataMgr.SubRegion[Avatar.CurrentRegionId].SubRegionLevel
   self.StartIndex = Avatar.StartIndex
 end
-
 function M:HandleFirstRegion(Avatar, EnterRegionType)
   self.enterLevelID = DataMgr.SubRegion[Avatar.CurrentRegionId].SubRegionLevel
   self.StartIndex = Avatar.StartIndex
 end
-
 function M:SetLevelDoor(door)
   if not self.TempLevelDoor then
     self.TempLevelDoor = {}
   end
   table.insert(self.TempLevelDoor, door)
 end
-
 function M:RealSetLevelDoor(door)
   if URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
     return
@@ -674,7 +708,6 @@ function M:RealSetLevelDoor(door)
     end
   end
 end
-
 function M:SetLoadProgress(Num)
   if not Num or Num <= 0 or Num >= 100 then
     return
@@ -688,5 +721,4 @@ function M:SetLoadProgress(Num)
     self.LoadingUI = GameInstance:GetLoadingUI()
   end
 end
-
 return M

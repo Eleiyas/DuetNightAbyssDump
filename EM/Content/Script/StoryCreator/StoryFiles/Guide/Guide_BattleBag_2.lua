@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "170383325692792549",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1302.7320551772905, y = 327.5347996935087},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,12 +121,12 @@ return {
           ["170383327627592844"] = {
             key = "170383327627592844",
             type = "ShowGuideToastButtonNode",
-            name = "ToastButton\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "ToastButton显示/隐藏信息",
             pos = {x = 1335.8938198831725, y = 462.067605123373},
             propsData = {
               ShowEnable = true,
               MessageId = 300613,
-              MessageNote = "\230\137\147\229\188\128\230\136\152\230\150\151\232\131\140\229\140\133",
+              MessageNote = "打开战斗背包",
               LastTime = 5,
               DelayTime = 0.5,
               HighLightUIPath = "BattleMain.Char_Skill.Battle_Menu",
@@ -142,7 +144,7 @@ return {
           ["17096410470221061"] = {
             key = "17096410470221061",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1351.5380844645551, y = 304.3453996983409},
             propsData = {WaitTime = 1}
           }

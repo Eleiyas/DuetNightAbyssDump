@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Common_RewardsBtn_PC:BindEventOnClicked(self, self.GetReward)
   self.Common_RewardsBtn_PC:SetText(GText("UI_Achievement_GetReward"))
@@ -12,7 +11,6 @@ function M:Construct()
   self.RewardItemWidth = nil
   self.PreAchvUrl = {}
 end
-
 function M:OnListItemObjectSet(Content)
   self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.ID = Content.ID
@@ -118,7 +116,7 @@ function M:OnListItemObjectSet(Content)
     end
   end
   if nil == data.AchievementRarity then
-    error("\230\136\144\229\176\177\232\161\168\233\135\140\230\178\161\229\161\171\231\168\128\230\156\137\229\186\166,\233\128\159\229\161\171 ID:" .. self.ID .. GText(data.AchievementName))
+    error("成就表里没填稀有度,速填 ID:" .. self.ID .. GText(data.AchievementName))
   else
     self.WS_AchievementIcon:SetActiveWidgetIndex(data.AchievementRarity - 1)
   end
@@ -181,7 +179,7 @@ function M:OnListItemObjectSet(Content)
   self.CompleteMask:SetVisibility(ESlateVisibility.Collapsed)
   if locked then
     self.Change:SetActiveWidgetIndex(0)
-  elseif not achieve:IsFinished() then
+  elseif not achieve:IsFinished() and achieve:CanRecvReward() then
     self.Change:SetActiveWidgetIndex(1)
     if achieve:IsIndividual() and not data.ShowTargetProgress then
       self.ing_Progress:SetText("(" .. achieve.CurrentValue .. "/" .. achieve.CompletionValue .. ")")
@@ -190,10 +188,10 @@ function M:OnListItemObjectSet(Content)
     end
   elseif achieve:CanRecvReward() then
     self.Change:SetActiveWidgetIndex(2)
-    self.Complete_Date:SetTimeText(achieve.Time, UIConst.EnumTimeStyleType.YMD, nil, nil, nil, nil, true)
+    self.Complete_Date:SetTimeText(0 ~= achieve.Time and achieve.Time or nil, UIConst.EnumTimeStyleType.YMD, nil, nil, nil, nil, true)
   else
     self.Change:SetActiveWidgetIndex(3)
-    self.Complete_Date_1:SetTimeText(achieve.Time, UIConst.EnumTimeStyleType.YMD, nil, nil, nil, nil, true)
+    self.Complete_Date_1:SetTimeText(0 ~= achieve.Time and achieve.Time or nil, UIConst.EnumTimeStyleType.YMD, nil, nil, nil, nil, true)
     self.CompleteMask:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     for i = 0, self.List_ItemRewards:GetNumItems() - 1 do
       local Item = self.List_ItemRewards:GetItemAt(i)
@@ -220,8 +218,10 @@ function M:OnListItemObjectSet(Content)
     self:SetRenderOpacity(1)
     self:PlayAnimation(self.In, self.In:GetEndTime())
   end
+  self.List_ItemRewards:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
+  self.List_ItemRewards:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
+  self:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
 end
-
 function M:NewItemContent(ItemType, ItemId, Count)
   if 0 == ItemId then
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -246,13 +246,16 @@ function M:NewItemContent(ItemType, ItemId, Count)
   }
   return NewObj
 end
-
 function M:OnMenuOpenChanged(bIsOpen, Obj)
-  if Obj.SelfWidget and false == bIsOpen and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
-    Obj.SelfWidget.Item:PlayAnimation(Obj.SelfWidget.Item.Hover)
+  if Obj.SelfWidget and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+    if false == bIsOpen then
+      Obj.SelfWidget.Item:PlayAnimation(Obj.SelfWidget.Item.Hover)
+      self.AchievementSystem.Com_Tab_P:SetBottomKeyInfoVisible(true)
+    else
+      self.AchievementSystem.Com_Tab_P:SetBottomKeyInfoVisible(false)
+    end
   end
 end
-
 function M:GetReward()
   local avatar = GWorld:GetAvatar()
   if not avatar then
@@ -260,14 +263,12 @@ function M:GetReward()
   end
   avatar:GetAchvReward(self.ID, self.GetRewardCallBack)
 end
-
 function M:Destruct()
   for _, item in pairs(self.RewardItems) do
     item:RemoveFromParent()
   end
   self.RewardItems = {}
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -277,10 +278,10 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     self.Common_RewardsBtn_PC.Img_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.AchievementSystem.Com_Tab_P.Com_KeyTips.Panel_Key:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self["Achievement_SystemDetail_Item2Condition_PC_" .. 1].Key_Condition:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.AchievementSystem:UpdateComTab(nil, true)
   end
   return self.ID
 end
-
 function M:OnFocusLost(InFocusEvent)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -289,7 +290,6 @@ function M:OnFocusLost(InFocusEvent)
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -298,9 +298,7 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   if "Gamepad_FaceButton_Bottom" ~= InKeyName or self.AchievementSystem.OpenRewardDetail ~= nil and self.AchievementSystem.OpenRewardDetail == true then
   else
-    self:AddTimer(0, function()
-      self:GetReward()
-    end)
+    self:GetReward()
     IsEventHandled = true
   end
   if IsEventHandled then
@@ -308,7 +306,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -316,23 +313,34 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   if "Gamepad_LeftThumbstick" == InKeyName then
-    self.List_ItemRewards:SetFocus()
+    local Widget = URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_ItemRewards, 0)
+    if Widget then
+      self.List_ItemRewards:ScrollIndexIntoView(0)
+      Widget:SetFocus()
+      self.AchievementSystem.OpenRewardDetail = true
+    end
     IsEventHandled = true
-  elseif "Gamepad_FaceButton_Left" == InKeyName and self.PreAchvUrl[1] then
-    local InUrl = Split(self.PreAchvUrl[1], ".")
-    local Id = tonumber(InUrl[1])
-    local TypeId = tonumber(InUrl[2])
-    if not (DataMgr.Achievement[Id] and DataMgr.AchievementType[TypeId]) or self.ID ~= tonumber(InUrl[3]) then
-      return
+  elseif "Gamepad_FaceButton_Left" == InKeyName then
+    if self.PreAchvUrl[1] then
+      local InUrl = Split(self.PreAchvUrl[1], ".")
+      local Id = tonumber(InUrl[1])
+      local TypeId = tonumber(InUrl[2])
+      if not (DataMgr.Achievement[Id] and DataMgr.AchievementType[TypeId]) or self.ID ~= tonumber(InUrl[3]) then
+        return
+      end
+      if self.AchievementSystem.CurrentTypeId == TypeId and self.AchievementSystem.Id2Item[Id] then
+        self.AchievementSystem.Achievement_Root.List_Item:NavigateToIndex(self.AchievementSystem.Id2Index[Id])
+        self:AddTimer(0.01, function()
+          self.AchievementSystem.Id2Item[Id]:PlayAnimation(self.AchievementSystem.Id2Item[Id].scanline)
+        end, false, 0, nil, true)
+        AudioManager(self):PlayUISound(self, "event:/ui/common/achieve_active", "", nil)
+      else
+      end
+      IsEventHandled = true
     end
-    if self.AchievementSystem.CurrentTypeId == TypeId and self.AchievementSystem.Id2Item[Id] then
-      self.AchievementSystem.Achievement_Root.List_Item:NavigateToIndex(self.AchievementSystem.Id2Index[Id])
-      self:AddTimer(0.01, function()
-        self.AchievementSystem.Id2Item[Id]:PlayAnimation(self.AchievementSystem.Id2Item[Id].scanline)
-      end, false, 0, nil, true)
-      AudioManager(self):PlayUISound(self, "event:/ui/common/achieve_active", "", nil)
-    else
-    end
+  elseif "Gamepad_FaceButton_Right" == InKeyName and self.AchievementSystem.OpenRewardDetail then
+    self:SetFocus()
+    self.AchievementSystem.OpenRewardDetail = false
     IsEventHandled = true
   end
   if IsEventHandled then
@@ -340,7 +348,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnTipsOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -352,9 +359,7 @@ function M:OnTipsOpenChanged(bIsOpen)
     end, false, 0, nil, true)
   end
 end
-
 function M:GetRewardCallBack()
   EventManager:FireEvent(EventID.GetAchvRewardCallBack)
 end
-
 return M

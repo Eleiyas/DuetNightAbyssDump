@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self.TeamIdxIcons = {
@@ -10,7 +9,6 @@ function M:Construct()
     [1] = self.Text_B
   }
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   Content.Widget = self
@@ -29,7 +27,6 @@ function M:OnListItemObjectSet(Content)
   self.TabItem:FlushAnimations()
   self:SetSelected(Content.IsSelected)
 end
-
 function M:ShowPhantomIdx(Info)
   if Info and Info.Tag then
     local SlotName = Info.Tag
@@ -54,7 +51,6 @@ function M:ShowPhantomIdx(Info)
   end
   self.Panel_Abyss:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:ShowPhantomIcon(IsPhantomWeapon, PhantomCharId)
   if not IsPhantomWeapon then
     self.TabItem.Image_Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -67,7 +63,6 @@ function M:ShowPhantomIcon(IsPhantomWeapon, PhantomCharId)
     self.TabItem.Image_Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:ShowEquippedIcon(IsPhantomWeapon, Info)
   if IsPhantomWeapon or Info then
     self.TabItem.Image_Equipped:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -76,7 +71,6 @@ function M:ShowEquippedIcon(IsPhantomWeapon, Info)
     self.TabItem.Image_Equipped:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:SetPhantomIcon(CharId)
   local MiniIconPath = "Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Mini/"
   local PhantomGuideIconImg = "T_Normal_" .. DataMgr.BattleChar[CharId].GuideIconImg
@@ -93,15 +87,12 @@ function M:SetPhantomIcon(CharId)
   end
   return false
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Widget = nil
   end
 end
-
 function M:SetSelected(IsSelect)
   self.TabItem:SetSelected(IsSelect)
 end
-
 return M

@@ -10,7 +10,6 @@ local WBP_Impression_PC = Class("BluePrints.Story.Talk.UI.Common.WBP_Impression_
 WBP_Impression_PC._components = {
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function WBP_Impression_PC:InitImpressionUI()
   WBP_Impression_PC.Super.InitImpressionUI(self)
   self:InitKeyInfo()
@@ -18,26 +17,27 @@ function WBP_Impression_PC:InitImpressionUI()
   self:AddLSFocusTarget(self.Btn_DimensionDrawArea.Key_Dimension, self.Btn_DimensionDrawArea, "Menu", true)
   self:AddLSFocusTarget(self.Com_Cost.Key, self.Com_Cost, "RS", true)
 end
-
 function WBP_Impression_PC:InitKeyInfo()
   self.Key_PickUp:CreateCommonKey({
     KeyInfoList = {
       {
         Type = "Text",
-        Text = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("Interactive"))
+        Text = CommonUtils:GetActionMappingKeyName("TalkOption")
       }
     }
   })
   self.Key_Controller:CreateCommonKey({
     KeyInfoList = {
-      {Type = "Img", ImgShortPath = "A"}
+      {
+        Type = "Img",
+        ImgShortPath = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("TalkOption", true))
+      }
     }
   })
   if self.KeyNode then
     self.KeyNode:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Impression_PC:OnOptionInAnimationStarted()
   WBP_Impression_PC.Super.OnOptionInAnimationStarted(self)
   local LastItem
@@ -56,7 +56,6 @@ function WBP_Impression_PC:OnOptionInAnimationStarted()
     end
   end
 end
-
 function WBP_Impression_PC:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if not self.SelectImpressionItemIndex then
     return UIUtils.Unhandled
@@ -93,13 +92,11 @@ function WBP_Impression_PC:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Handled
 end
-
 function WBP_Impression_PC:CreateCDTimer()
   self.CdTimer = self:AddTimer(0.2, function()
     self.CdTimer = nil
   end, nil, nil, nil, true)
 end
-
 function WBP_Impression_PC:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if not self.SelectImpressionItemIndex then
     return UIUtils.Unhandled
@@ -114,7 +111,6 @@ function WBP_Impression_PC:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function WBP_Impression_PC:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -124,7 +120,6 @@ function WBP_Impression_PC:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return WBP_Impression_PC.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function WBP_Impression_PC:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -135,39 +130,33 @@ function WBP_Impression_PC:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return WBP_Impression_PC.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
 end
-
 function WBP_Impression_PC:OnImpressionItemPressed()
   if self:IsTipsOpen() then
     return
   end
   WBP_Impression_PC.Super.OnImpressionItemPressed(self)
 end
-
 function WBP_Impression_PC:OnImpressionItemReleased()
   if self:IsTipsOpen() then
     return
   end
   WBP_Impression_PC.Super.OnImpressionItemReleased(self)
 end
-
 function WBP_Impression_PC:OnReviewButtonClicked()
   if self:IsTipsOpen() then
     return
   end
   WBP_Impression_PC.Super.OnReviewButtonClicked(self)
 end
-
 function WBP_Impression_PC:OnWikiButtonClicked()
   if self:IsTipsOpen() then
     return
   end
   WBP_Impression_PC.Super.OnWikiButtonClicked(self)
 end
-
 function WBP_Impression_PC:IsTipsOpen()
   return self.Com_Cost:HasFocusedDescendants() or self.Com_Cost:HasAnyUserFocus()
 end
-
 function WBP_Impression_PC:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("WBP_Impression_PC:RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   local IsGamePad = CurInputDevice == ECommonInputType.Gamepad
@@ -194,16 +183,13 @@ function WBP_Impression_PC:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepad
   end
   self.WBP_Story_PlayKey_P:UpdateKeyImg(IsGamePad)
 end
-
 function WBP_Impression_PC:ClearOptions()
   WBP_Impression_PC.Super.ClearOptions(self)
   self:RefreshBaseInfo()
 end
-
 function WBP_Impression_PC:AdaptPlatform()
   self.Img_Mouse:SetVisibility(ESlateVisibility.HitTestInvisible)
 end
-
 function WBP_Impression_PC:OnExitButtonSelectedPlatform(bIsSelect)
   if bIsSelect then
     self.KeyNode:SetVisibility(ESlateVisibility.HitTestInvisible)
@@ -211,30 +197,24 @@ function WBP_Impression_PC:OnExitButtonSelectedPlatform(bIsSelect)
     self.KeyNode:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Impression_PC:OnExitButtonReleasedByPlatform()
   if self:IsExitButtonSelect() then
     self:PlayAnimation(self.BtnQuit_Hover, 0, 1)
   end
 end
-
 function WBP_Impression_PC:PlayExitButtonHoveredPerformanceByPlatform()
   self:StopAnimation(self.BtnQuit_UnHover)
   self:PlayAnimation(self.BtnQuit_Hover, 0, 1)
 end
-
 function WBP_Impression_PC:PlayExitButtonUnhoveredPerformanceByPlatform()
   self:StopAnimation(self.BtnQuit_Hover)
   self:PlayAnimation(self.BtnQuit_UnHover)
 end
-
 function WBP_Impression_PC:InitPlayKey()
   self.WBP_Story_PlayKey_P:Init(self.IsGamePad)
 end
-
 function WBP_Impression_PC:InitAutoPlay()
 end
-
 function WBP_Impression_PC:ChangeImgMouseVisibility(OptionData)
   if OptionData.OptionType == ETalkOptionType.Check then
     self.Img_Mouse:SetVisibility(ESlateVisibility.HitTestInvisible)
@@ -246,11 +226,10 @@ function WBP_Impression_PC:ChangeImgMouseVisibility(OptionData)
   end
   self.Img_Mouse:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_Impression_PC:PreExitTalkTask(TalkTask, TalkData, OnPreExitTalkTaskFinished, OutType, OutTime)
   WBP_Impression_PC.Super.PreExitTalkTask(self, TalkTask, TalkData, OnPreExitTalkTaskFinished, OutType, OutTime)
+  self.WBP_Story_PlayKey_P:StopAllAnimations()
   self:RemoveFocusTarget("Menu")
 end
-
 AssembleComponents(WBP_Impression_PC)
 return WBP_Impression_PC

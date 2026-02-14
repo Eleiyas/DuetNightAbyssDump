@@ -1,17 +1,14 @@
 local M = Class("BluePrints/Item/CombatProp/BP_CombatPropBase_C")
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   self.Box.OnComponentBeginOverlap:Add(self, self.CollisionBeginOverlap)
 end
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.BuffBlockTime = self.UnitParams.BuffBlockTime or 15
   self.BoxRespawnTime = self.UnitParams.BoxRespawnTime or 10
   self.bCanAddBuff = true
 end
-
 function M:CollisionBeginOverlap(Component, OtherActor)
   if not OtherActor:IsPlayer() or not self.bCanAddBuff then
     return
@@ -36,12 +33,10 @@ function M:CollisionBeginOverlap(Component, OtherActor)
     GameMode:OnPlayerGetBuff(OtherActor.Eid, BuffId, DataMgr.ParkourSkill[Idx].IsPositiveBuff, Time)
   end
 end
-
 function M:BoxRespawn()
   self.bCanAddBuff = true
   self:OnPartyBuffBoxRespawn()
 end
-
 function M:GetBuffId(PlayerEid)
   local GameState = UGameplayStatics.GetGameState(self)
   local Percent = GameState.PartyPlayerDisPercentValues:Find(PlayerEid)
@@ -83,7 +78,6 @@ function M:GetBuffId(PlayerEid)
     end
   end
 end
-
 function M:AddBuff(BuffId, TargetType, TriggerPlayer, Time)
   local GameState = UGameplayStatics.GetGameState(self)
   local Targets = {}
@@ -117,5 +111,4 @@ function M:AddBuff(BuffId, TargetType, TriggerPlayer, Time)
   end
   Battle(self):AddBuffToTarget(TriggerPlayer, TriggerPlayer, 5000209, self.BuffBlockTime, 0, nil, 1)
 end
-
 return M

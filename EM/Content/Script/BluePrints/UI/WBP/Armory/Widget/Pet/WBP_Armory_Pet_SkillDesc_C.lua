@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Text_Level:SetText(GText("UI_LEVEL_NAME"))
   self.Text_CD:SetText(GText("UI_Pet_Skill_CD"))
@@ -11,7 +10,6 @@ function M:Construct()
   self.GameInputSubsystem.OnInputMethodChanged:Add(self, self.OnUpdateUIStyleByInputTypeChange)
   self:OnUpdateUIStyleByInputTypeChange(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.SkillData = Content.SkillData
@@ -37,14 +35,12 @@ function M:OnListItemObjectSet(Content)
   self:UpdateKeyInfo(self.Content)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   if self.Content then
     self:UpdateKeyInfo(self.Content)
   end
 end
-
 function M:UpdateKeyInfo(Params)
   local Key = Params.SkillData and CommonUtils:GetActionMappingKeyName("Skill3")
   self.Skill_Key.Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -89,5 +85,4 @@ function M:UpdateKeyInfo(Params)
     self.Panel_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

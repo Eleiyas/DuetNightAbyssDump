@@ -2,21 +2,25 @@ require("UnLua")
 require("DataMgr")
 local EMCache = require("EMCache.EMCache")
 local BP_RegionOnlineInterAddFriendComponent_C = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C")
-
 function BP_RegionOnlineInterAddFriendComponent_C:ReceiveBeginPlay()
   self.Priority = "Normal"
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:InitRegionInfo(Eid, ObjId)
   self.CharEid = Eid
   self.CharObjId = ObjId
+  self.Content = {
+    [1] = Eid,
+    [2] = ObjId,
+    [3] = "AddFriend"
+  }
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:SetInteractiveName(Name)
-  self.DisplayInteractiveName = "\230\183\187\229\138\160\229\165\189\229\143\139"
+  self.DisplayInteractiveName = "添加好友"
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:DisplayInteractiveBtn(PlayerActor)
+  if not self.CanOpen then
+    return
+  end
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:LoadUINew(UIConst.InteractiveUIName)
   if not InteractiveUI then
@@ -27,8 +31,8 @@ function BP_RegionOnlineInterAddFriendComponent_C:DisplayInteractiveBtn(PlayerAc
   self:SetBtnDisplayed(PlayerActor, true)
   self:RefreshInteractiveBtn(PlayerActor)
   self.IsDisplayed = true
+  DebugPrint("JLY BP_RegionOnlineInterAddFriendComponent_C:DisplayInteractiveBtn")
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:RefreshInteractiveBtn(PlayerActor)
   local bChanged, bLocked = self:UpdateLockState()
   if not bLocked and not bChanged then
@@ -38,7 +42,6 @@ function BP_RegionOnlineInterAddFriendComponent_C:RefreshInteractiveBtn(PlayerAc
     self:UpdateInteractiveUIState()
   end
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:BtnClicked(PlayerActor, InPressTimeSeconds)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -50,21 +53,21 @@ function BP_RegionOnlineInterAddFriendComponent_C:BtnClicked(PlayerActor, InPres
     FriendController:OpenAddFriendDialog(InteractiveUI, AvatarInfo)
   end
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:IsCanInteractive(PlayerActor)
   return true
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:NotDisplayInteractiveBtn(PlayerActor)
+  self.CanOpen = false
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:GetUIObj(UIConst.InteractiveUIName)
   if not InteractiveUI then
+    DebugPrint("JLY BP_RegionOnlineInterAddFriendComponent_C:Not InteractiveUI")
     return
   end
   InteractiveUI:RemoveInteractiveItem(self)
+  DebugPrint("JLY BP_RegionOnlineInterAddFriendComponent_C:RemoveInteractiveItem")
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:CheckCanEnterOrEixt()
   if not self:GetOwner().UnitId then
     return false
@@ -78,25 +81,21 @@ function BP_RegionOnlineInterAddFriendComponent_C:CheckCanEnterOrEixt()
   end
   return true
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:GetInteractiveIcon(PlayerActor)
   return "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Interactive/T_Interactive_AddFriend.T_Interactive_AddFriend'"
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:GetInteractiveName()
   return GText("UI_Friend_AddFriend")
 end
-
 function BP_RegionOnlineInterAddFriendComponent_C:InitCommonUIConfirmID(CommonUIConfirmID)
   self.CommonUIConfirmID = CommonUIConfirmID
   local Data = DataMgr.CommonUIConfirm[CommonUIConfirmID]
   if not Data then
     return
   end
-  self.InteractiveDistance = Data.InteractiveRadius or self.InteractiveDistance
+  self:SetInteractiveDistance(Data.InteractiveRadius or self.InteractiveDistance)
   self.InteractiveAngle = Data.InteractiveAngle or self.InteractiveAngle
   self.InteractiveFaceAngle = Data.PlayerFaceAngle or self.InteractiveFaceAngle
   self.ListPriority = Data.InteractivePriority or 0
 end
-
 return BP_RegionOnlineInterAddFriendComponent_C

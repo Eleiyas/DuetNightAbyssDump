@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Button_Close.OnClicked:Add(self, self.Close)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.TermList = (...)
@@ -18,7 +16,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
     self:InitKeyboardView()
   end
 end
-
 function M:InitDefinitionList()
   self.List_Definition:ClearListItems()
   for _, TermId in ipairs(self.TermList) do
@@ -29,7 +26,6 @@ function M:InitDefinitionList()
     self.List_Definition:AddItem(Obj)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
@@ -38,7 +34,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   self.Panel_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Text_Tip:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -54,14 +49,12 @@ function M:InitGamepadView()
   self.Button_Close:SetIsShowNavigateGuide(false)
   self.List_Definition:SetIsShowNavigateGuide(false)
 end
-
 function M:InitKeyboardView()
   if self.Panel_Key then
     self.Panel_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   self.Text_Tip:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -70,5 +63,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return M

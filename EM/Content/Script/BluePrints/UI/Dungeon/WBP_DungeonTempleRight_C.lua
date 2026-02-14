@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ScoreOrCollect = 0
@@ -10,7 +9,6 @@ function M:Initialize(Initializer)
   self.CurStar = 0
   self.IsStarTemple = false
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnSetTempleLimit, self, self.OnSetTempleLimit)
   self:AddDispatcher(EventID.OnTempleTimeChanged, self, self.OnTempleTimeChanged)
@@ -19,13 +17,11 @@ function M:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdatePartyRightUI, self, self.OnUpdatePartyRightUI)
   self:AddDispatcher(EventID.OnUpdatePartyLeftUI, self, self.OnUpdatePartyTime)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitListenEvent()
   self:InitInfo()
 end
-
 function M:InitInfo()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if not GameInstance then
@@ -56,7 +52,6 @@ function M:InitInfo()
     end
   end
 end
-
 function M:InitTemple()
   if not self.IsCountDown then
     self.Text_ScoreNum:SetText(0)
@@ -72,7 +67,6 @@ function M:InitTemple()
     self:InitTargetInfo()
   end, false, nil, nil, false)
 end
-
 function M:InitParty()
   self.Group_Score:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_TempleGoal:SetVisibility(ESlateVisibility.Collapsed)
@@ -81,7 +75,6 @@ function M:InitParty()
     self:InitPartyTargetInfo()
   end, false, nil, nil, false)
 end
-
 function M:OnTempleScoreCollectChanged(Value)
   if not self.IsCountDown then
     local Dif = Value - self.ScoreOrCollect
@@ -99,7 +92,6 @@ function M:OnTempleScoreCollectChanged(Value)
     self:CheckStar()
   end
 end
-
 function M:InitTargetInfo()
   local TextRule2 = ""
   if self.TempleInfo.SucRule == "Time" then
@@ -154,13 +146,11 @@ function M:InitTargetInfo()
     end
   end
 end
-
 function M:InitPartyTargetInfo()
   self.Text_CompletionRateNum:SetText("0%")
   self.Text_RankTitle:SetText(GText("UI_Party_Parkour_Ranking"))
   self.Text_CompletionRateTitle:SetText(GText("UI_Party_Parkour_FinishingRate"))
 end
-
 function M:OnSetTempleLimit(Limit, Value)
   self.Limit = Limit
   if "TIME" == Limit then
@@ -178,7 +168,6 @@ function M:OnSetTempleLimit(Limit, Value)
     self.Text_ScoreNum:SetText(Value)
   end
 end
-
 function M:CheckStar()
   if self.IsStarTemple then
     if self.TempleInfo.SucRule == "Score" or self.TempleInfo.SucRule == "Collect" then
@@ -204,7 +193,6 @@ function M:CheckStar()
     end
   end
 end
-
 function M:OnTempleEnter()
   self.CurStar = 0
   if self.IsStarTemple then
@@ -233,7 +221,6 @@ function M:OnTempleEnter()
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Time_Add)
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Time_Minus)
 end
-
 function M:OnUpdatePartyTime(PartyTime)
   if not self.PartyStarUIStart then
     return
@@ -242,7 +229,7 @@ function M:OnUpdatePartyTime(PartyTime)
   self.CurTime = PartyTime
   local RemainTime = self.TimeThreshold - self.CurTime
   if self.GameState and self.GameState.CurPlayerComplete then
-    DebugPrint("zzz \229\183\178\229\136\176\231\187\136\231\130\185")
+    DebugPrint("zzz 已到终点")
     return
   end
   if self.CurStar > 0 and RemainTime < self.TempleInfo.RatingRange[self.CurStar] then
@@ -251,7 +238,6 @@ function M:OnUpdatePartyTime(PartyTime)
     AudioManager(self):PlayUISound(self, "event:/ui/common/sp_goal_disable", nil, nil)
   end
 end
-
 function M:OnTempleTimeChanged(CurrentTime, ThresholdTime)
   if self.IsCountDown then
     local Time = ThresholdTime - CurrentTime
@@ -277,12 +263,10 @@ function M:OnTempleTimeChanged(CurrentTime, ThresholdTime)
     self:CheckStar()
   end
 end
-
 function M:ConstructInfo()
   self:InitListenEvent()
   self:InitInfo()
 end
-
 function M:GetCurrentScore()
   local Points = 0
   if self.TempleInfo.SucRule == "CountDown" then
@@ -298,7 +282,6 @@ function M:GetCurrentScore()
   end
   return Points
 end
-
 function M:OnUpdatePartyRightUI(CompletionRate, Rank, TotalNum)
   if self.Group_Score:GetVisibility() ~= ESlateVisibility.SelfHitTestInvisible then
     self.Group_Score:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -330,7 +313,6 @@ function M:OnUpdatePartyRightUI(CompletionRate, Rank, TotalNum)
   self.Text_CompletionRateNum:SetText(self:GetCompletionRate(CompletionRate) .. "%")
   self.Text_RankNum:SetText(Rank .. "/" .. TotalNum)
 end
-
 function M:GetCompletionRate(CompletionRate)
   if CompletionRate < 0 then
     return 0
@@ -341,7 +323,6 @@ function M:GetCompletionRate(CompletionRate)
   end
   return PercentValue
 end
-
 function M:SwitchStarType()
   for i = 1, 3 do
     local ButtonIconPath_Star = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Activity/Temple/Solo/T_Activity_Temple_Solo_Star_Challenge.T_Activity_Temple_Solo_Star_Challenge'"
@@ -352,5 +333,4 @@ function M:SwitchStarType()
     self["TempleItem_" .. i].Image_Empty:SetBrushFromTexture(Tex_Empty)
   end
 end
-
 return M

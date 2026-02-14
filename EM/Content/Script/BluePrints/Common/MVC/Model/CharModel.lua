@@ -1,20 +1,17 @@
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class()
-local _CardLevelResourceToUuid = {}
-local _CardLevelResourceToCharId = {}
+local _CardLevelResourceToUuids = {}
+local _CardLevelResourceToCharIds = {}
 local _UuidToCardLevelResourceId = {}
 local _SkinIdToCharId = {}
+local _HairIdToCharId = {}
 local _CharAccessoryMap = {}
 local _CharReward = {
   CharBreak = {}
 }
 local _CharIdToUuid = {}
 local _UuidToCharId = {}
-local _DefaultAccessories = {
-  [DataMgr.GlobalConstant.DefautFXDead.ConstantValue] = true,
-  [DataMgr.GlobalConstant.DefautFXTeleport.ConstantValue] = true
-}
-
+local _DefaultAccessories = ArmoryUtils:GetDefaultCharAccessoryIds()
 local function MappingChar(Char)
   if nil == Char then
     return
@@ -24,22 +21,22 @@ local function MappingChar(Char)
   local CardLevelUpData = DataMgr.CharCardLevelUp[Char.CharId]
   local Rid = CardLevelUpData and CardLevelUpData[0] and CardLevelUpData[0].ResourceId1
   if Rid then
-    _CardLevelResourceToUuid[Rid] = Char.Uuid
+    _CardLevelResourceToUuids[Rid] = _CardLevelResourceToUuids[Rid] or {}
+    _CardLevelResourceToUuids[Rid][Char.Uuid] = true
     _UuidToCardLevelResourceId[Char.Uuid] = Rid
     return true
   end
 end
-
-local function MappingCardLevelResource2CharId()
-  _CardLevelResourceToCharId = {}
+local function MappingCardLevelResource2CharIds()
+  _CardLevelResourceToCharIds = {}
   for CharId, value in pairs(DataMgr.CharCardLevelUp) do
     local Rid = value[0] and value[0].ResourceId1
     if Rid then
-      _CardLevelResourceToCharId[Rid] = CharId
+      _CardLevelResourceToCharIds[Rid] = _CardLevelResourceToCharIds[Rid] or {}
+      _CardLevelResourceToCharIds[Rid][CharId] = true
     end
   end
 end
-
 local function MappingSkin(CommonChar)
   if nil == CommonChar then
     return
@@ -49,7 +46,15 @@ local function MappingSkin(CommonChar)
     _SkinIdToCharId[SkinId] = CharId
   end
 end
-
+local function MappingHair(CommonChar)
+  if nil == CommonChar then
+    return
+  end
+  local CharId = CommonChar.CharId
+  for HairId, Hair in pairs(CommonChar.OwnedHairs or {}) do
+    _HairIdToCharId[HairId] = CharId
+  end
+end
 local function MappingReward(Avatar)
   local Strings, CharId
   for Keys, _ in pairs(Avatar.StoredCollectReward or {}) do
@@ -63,23 +68,21 @@ local function MappingReward(Avatar)
     end
   end
 end
-
 function M:GetCharIdBySkinId(SkinId)
   return _SkinIdToCharId[SkinId]
 end
-
-function M:GetUuidByCardLevelResource(ResourceId)
-  return _CardLevelResourceToUuid[ResourceId]
+function M:GetCharIdByHairId(HairId)
+  return _HairIdToCharId[HairId]
 end
-
+function M:GetUuidsByCardLevelResource(ResourceId)
+  return _CardLevelResourceToUuids[ResourceId]
+end
 function M:GetUuidByCharId(CharId)
   return _CharIdToUuid[CharId]
 end
-
-function M:GetCharIdByCardLevelResource(ResourceId)
-  return _CardLevelResourceToCharId[ResourceId]
+function M:GetCharIdsByCardLevelResource(ResourceId)
+  return _CardLevelResourceToCharIds[ResourceId]
 end
-
 function M:IsCharHasReward(CharId)
   local CharBreak = _CharReward.CharBreak[CharId]
   if CharBreak and next(CharBreak) then
@@ -87,15 +90,14 @@ function M:IsCharHasReward(CharId)
   end
   return false
 end
-
 function M:GetCharRewardInfo()
   return _CharReward
 end
-
 function M:Init(Avatar)
   _UuidToCardLevelResourceId = {}
-  _CardLevelResourceToUuid = {}
+  _CardLevelResourceToUuids = {}
   _SkinIdToCharId = {}
+  _HairIdToCharId = {}
   _CharAccessoryMap = {}
   _CharReward = {
     CharBreak = {}
@@ -109,31 +111,36 @@ function M:Init(Avatar)
     for Uuid, Char in pairs(Avatar.Chars) do
       MappingChar(Char)
       MappingSkin(Avatar.CommonChars[Char.CharId])
+      MappingHair(Avatar.CommonChars[Char.CharId])
     end
   end
-  MappingCardLevelResource2CharId()
-  if Avatar.CharAccessory then
-    for AccessoryId, value in pairs(Avatar.CharAccessory) do
+  MappingCardLevelResource2CharIds()
+  if Avatar.CharAccessorys then
+    for _, AccessoryId in pairs(Avatar.CharAccessorys) do
       _CharAccessoryMap[AccessoryId] = true
     end
   end
   MappingReward(Avatar)
   EventManager:AddEvent(EventID.OnCharCardLevelResourcesChanged, self, self.OnCharCardLevelResourcesChanged)
-  EventManager:AddEvent(EventID.OnNewCharObtained, self, self.OnNewCharObtained)
   EventManager:AddEvent(EventID.OnCharDeleted, self, self.OnCharDeleted)
-  EventManager:AddEvent(EventID.OnNewCharSkinObtained, self, self.OnNewCharSkinObtained)
-  EventManager:AddEvent(EventID.OnNewCharAccessoryObtained, self, self.OnNewCharAccessoryObtained)
-  ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Char)
-  ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Char .. ArmoryUtils.ArmorySubTabNames.Appearance)
-  ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Char .. Const.Skill)
-  ArmoryUtils:CreateReddotInfos(ArmoryUtils.FilesTabType[1])
-  ArmoryUtils:CreateReddotInfos(ArmoryUtils.FilesTabType[2])
+  try({
+    exec = function()
+      ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Char)
+      ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Char .. ArmoryUtils.ArmorySubTabNames.Appearance)
+      ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Char .. Const.Skill)
+      ArmoryUtils:CreateReddotInfos(ArmoryUtils.FilesTabType[1])
+      ArmoryUtils:CreateReddotInfos(ArmoryUtils.FilesTabType[2])
+    end,
+    catch = function(err)
+      local trace = debug.traceback()
+      err = err or ""
+      DebugPrint("Error: 角色红点数据创建失败！" .. "\n" .. trace)
+    end
+  })
 end
-
 function M:GetCardLevelResourceByUuid(Uuid)
   return _UuidToCardLevelResourceId[Uuid]
 end
-
 function M:OnCharCardLevelResourcesChanged(ResourceId, CharId, CharUuid)
   local Avatar = GWorld:GetAvatar()
   local Char = Avatar.Chars[CharUuid]
@@ -144,10 +151,10 @@ function M:OnCharCardLevelResourcesChanged(ResourceId, CharId, CharUuid)
     }, false, true)
     ArmoryUtils:TryAddNewCharReddot(Char, CommonUtils.ObjId2Str(CharUuid))
   else
+    ArmoryUtils:_SetReddotReadCommon(CharId, DataMgr.ReddotNode.UnlockableChar.Name, true)
     ArmoryUtils:TryAddUnlockableCharReddot(CharId)
   end
 end
-
 function M:OnNewCharObtained(CharUuid)
   local Avatar = GWorld:GetAvatar()
   local Char = Avatar.Chars[CharUuid]
@@ -157,37 +164,54 @@ function M:OnNewCharObtained(CharUuid)
     ArmoryUtils:TryAddNewCharReddot(Char, CommonUtils.ObjId2Str(CharUuid))
   end
 end
-
 function M:OnCharDeleted(CharUuid)
-  local CardLevelResourceId = _UuidToCardLevelResourceId[CharUuid]
-  if CardLevelResourceId then
-    local CharId = self:GetCharIdByCardLevelResource(CardLevelResourceId)
-    if CharId then
-      ArmoryUtils:_SetReddotReadCommon(CharId, DataMgr.ReddotNode.UnlockableChar.Name, true)
-    end
-  end
   local CharId = _UuidToCharId[CharUuid]
+  local CardLevelResourceId = _UuidToCardLevelResourceId[CharUuid]
+  if CharId then
+    ArmoryUtils:_SetReddotReadCommon(CharId, DataMgr.ReddotNode.UnlockableChar.Name, true)
+  end
   _UuidToCharId[CharUuid] = nil
   _CharIdToUuid[CharId] = nil
   _UuidToCardLevelResourceId[CharUuid] = nil
-  _CardLevelResourceToUuid[CardLevelResourceId] = nil
+  if _CardLevelResourceToUuids[CardLevelResourceId] then
+    for Uuid, _ in pairs(_CardLevelResourceToUuids[CardLevelResourceId]) do
+      if Uuid == CharUuid then
+        _CardLevelResourceToUuids[CardLevelResourceId][Uuid] = nil
+        break
+      end
+    end
+  end
   ArmoryUtils:SetItemReddotRead({
     ItemType = CommonConst.DataType.Char,
-    Uuid = CharUuid
+    Uuid = CharUuid,
+    UnitId = CharId
   }, true, true, true)
 end
-
 function M:OnNewCharSkinObtained(SkinId, CharId)
   _SkinIdToCharId[SkinId] = CharId
+  if not CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.Skin, SkinId) then
+    return
+  end
   if SkinId ~= CharId then
     ArmoryUtils:TryAddNewCharSkinReddot(SkinId, CharId)
   end
 end
-
+function M:OnNewCharHairObtained(HairId, CharId)
+  _HairIdToCharId[HairId] = CharId
+  if not CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.Hair, HairId) then
+    return
+  end
+  if HairId ~= CharId then
+    ArmoryUtils:TryAddNewCharHairReddot(HairId, CharId)
+  end
+end
 function M:OnNewCharAccessoryObtained(AccessoryId)
   _CharAccessoryMap[AccessoryId] = true
   local CharAccessoryData = DataMgr.CharAccessory[AccessoryId]
-  if not CharAccessoryData or _DefaultAccessories[AccessoryId] then
+  if not CharAccessoryData or _DefaultAccessories[CharAccessoryData.AccessoryType] == AccessoryId then
+    return
+  end
+  if not CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.CharAccessory, AccessoryId) then
     return
   end
   if CharAccessoryData.Skin then
@@ -198,7 +222,6 @@ function M:OnNewCharAccessoryObtained(AccessoryId)
     ArmoryUtils:TryAddNewCharAccessoryReddot(AccessoryId)
   end
 end
-
 function M:OnPropChangeStoredCollectReward(Strings)
   if _CharReward[Strings[1]] and Strings[2] and Strings[3] then
     local CharId = tonumber(Strings[2])
@@ -219,21 +242,22 @@ function M:OnPropChangeStoredCollectReward(Strings)
     EventManager:FireEvent(EventID.OnCharRewardStateChanged, CharId)
   end
 end
-
 function M:IsCharAccessoryExist(AccessoryId)
   return not not _CharAccessoryMap[AccessoryId]
 end
-
 function M:Destory()
+  _CardLevelResourceToUuids = {}
+  _CardLevelResourceToCharIds = {}
   _UuidToCardLevelResourceId = {}
-  _CardLevelResourceToUuid = {}
   _SkinIdToCharId = {}
+  _HairIdToCharId = {}
   _CharAccessoryMap = {}
-  EventManager:RemoveEvent(EventID.OnNewCharObtained, self)
+  _CharReward = {
+    CharBreak = {}
+  }
+  _CharIdToUuid = {}
+  _UuidToCharId = {}
   EventManager:RemoveEvent(EventID.OnCharCardLevelResourcesChanged, self)
   EventManager:RemoveEvent(EventID.OnCharDeleted, self)
-  EventManager:RemoveEvent(EventID.OnNewCharSkinObtained, self)
-  EventManager:RemoveEvent(EventID.OnNewCharAccessoryObtained, self)
 end
-
 return M

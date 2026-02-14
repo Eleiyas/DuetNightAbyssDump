@@ -1,7 +1,6 @@
 local ModModel = ModController:GetModel()
 local Component = {}
 local ModOriginPos
-
 function Component:UpdateTopResourceBar()
   local Level = self.Target.Level
   if 0 == Level then
@@ -13,10 +12,9 @@ function Component:UpdateTopResourceBar()
   end
   self.Tab_Intensify:OverrideTopResource(ResInfo, true)
 end
-
 function Component:OnViewportSizeChanged_Mod()
   local PanelModSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Panel_Mod)
-  if ModController.CurrUIName ~= ModCommon.AbyssMod then
+  if ModController.CurrUIName == ModCommon.ArmoryMod then
     local VPScale = UWidgetLayoutLibrary.GetViewportScale(self)
     local VPSize = UWidgetLayoutLibrary.GetViewportSize(self) / VPScale
     local ModAttachVPos = ModController:GetModAttachBoneVPos() / VPScale
@@ -27,7 +25,6 @@ function Component:OnViewportSizeChanged_Mod()
     PanelModSlot:SetPosition(ModOriginPos)
   end
 end
-
 function Component:PlayModUICameraAnim()
   if not ModOriginPos then
     local PanelModSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Panel_Mod)
@@ -35,7 +32,7 @@ function Component:PlayModUICameraAnim()
   end
   self:AddDispatcher(EventID.GameViewportSizeChanged, self, self.OnViewportSizeChanged_Mod)
   ModController:SetUICamera(self.ModCameraOffset)
-  local TotalTime, Interval, MaxTime = 0, 0.03, 3
+  local TotalTime, Interval, MaxTime, MaxSameCount = 0, 0.03, 3, 100
   local CameraMgr = UGameplayStatics.GetPlayerCameraManager(self, 0)
   local LastCameraLoc
   local SameCount = 0
@@ -44,7 +41,7 @@ function Component:PlayModUICameraAnim()
     if LastCameraLoc and LastCameraLoc == NowCameraLoc then
       SameCount = SameCount + 1
     end
-    if TotalTime >= MaxTime or SameCount >= 10 then
+    if TotalTime >= MaxTime or SameCount >= MaxSameCount then
       self:RemoveTimer(self.PanelModTicker)
       return
     end
@@ -54,7 +51,6 @@ function Component:PlayModUICameraAnim()
   end, true, 0, nil, true)
   self.PanelModTicker = Ticker
 end
-
 function Component:SetModDataUI()
   local ModIconPath = self.Target:Data().Icon
   UResourceLibrary.LoadObjectAsync(self, ModIconPath, {
@@ -65,8 +61,14 @@ function Component:SetModDataUI()
   })
   self.TextBlock_Name:SetText(self.Target:GetName())
   self.ListView_Star:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  local WidgetPath = ""
   if ModController.CurrUIName == ModCommon.AbyssMod then
-    self.AbyssBg = UIManager():CreateWidget("/Game/UI/WBP/Abyss/Widget/WBP_Abyss_Mod_bg.WBP_Abyss_Mod_bg_C")
+    WidgetPath = "/Game/UI/WBP/Abyss/Widget/WBP_Abyss_Mod_bg.WBP_Abyss_Mod_bg_C"
+  elseif ModController.CurrUIName == ModCommon.Wuyousheng then
+    WidgetPath = "/Game/UI/WBP/Activity/Widget/Wuyousheng/WBP_Activity_Wuyousheng_BG03.WBP_Activity_Wuyousheng_BG03"
+  end
+  if ModController.CurrUIName ~= ModCommon.ArmoryMod then
+    self.AbyssBg = UIManager():CreateWidget(WidgetPath)
     self.BackGround:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.BackGround.background_blur:GetParent():AddChild(self.AbyssBg)
     local Slot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.AbyssBg)
@@ -78,11 +80,9 @@ function Component:SetModDataUI()
   end
   self.Panel_Info:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Component:UpdateAttrListUI(Attrs, ComparedAttrs, Level)
   ModModel:UpdateModAttrListForIntensify(Attrs, ComparedAttrs, self.Target, Level)
 end
-
 function Component:UpdateModCostUI(Attrs, ComparedAttrs, Level)
   self.bTakeOff = ModModel:UpdateModCostPreviewForIntensify(Attrs, ComparedAttrs, self.Target, Level)
   if self.bTakeOff then
@@ -93,7 +93,6 @@ function Component:UpdateModCostUI(Attrs, ComparedAttrs, Level)
     self:ShowWarning(false)
   end
 end
-
 function Component:CloseForModCommon()
   ModController:UnRegisterEvent(self)
   ModController:SetUICamera(FVector(0, 0, 0))
@@ -107,5 +106,4 @@ function Component:CloseForModCommon()
     self.AbyssBg = nil
   end
 end
-
 return Component

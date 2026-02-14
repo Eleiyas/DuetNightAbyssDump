@@ -4,7 +4,6 @@ RpcRecorder.S2C = {}
 RpcRecorder.StartTime = os.time()
 RpcRecorder.C2S.TotalByteSize = 0
 RpcRecorder.S2C.TotalByteSize = 0
-
 function RpcRecorder:Restart()
   UE.UNetworkManager.PrintNetMsgC2S("======================== RpcRecorder:Restart ===============================================")
   self.C2S = {}
@@ -13,7 +12,6 @@ function RpcRecorder:Restart()
   RpcRecorder.S2C.TotalByteSize = 0
   self.StartTime = os.time()
 end
-
 function RpcRecorder:Send(Cmd, ByteSize, Args, Ctx)
   if self.RecordMsgs then
     local time = os.time() - self.RecordStartTime
@@ -38,7 +36,6 @@ function RpcRecorder:Send(Cmd, ByteSize, Args, Ctx)
   self.C2S[Cmd].TotalByteSize = self.C2S[Cmd].TotalByteSize + ByteSize
   self.C2S.TotalByteSize = self.C2S.TotalByteSize + ByteSize
 end
-
 function RpcRecorder:Recv(Cmd, ByteSize, Args, Ctx)
   local EntityFunc = ""
   if "EntityMessage" == Cmd then
@@ -56,7 +53,6 @@ function RpcRecorder:Recv(Cmd, ByteSize, Args, Ctx)
   self.S2C[Cmd].TotalByteSize = self.S2C[Cmd].TotalByteSize + ByteSize
   self.S2C.TotalByteSize = self.S2C.TotalByteSize + ByteSize
 end
-
 function RpcRecorder:Print(Deep)
   UE.UNetworkManager.PrintNetMsgC2S("======================== C2S Print START ===============================================")
   local delay = os.time() - self.StartTime
@@ -68,13 +64,11 @@ function RpcRecorder:Print(Deep)
   UE.UNetworkManager.PrintNetMsgS2C("[S2C] NetSpeed(B/S):" .. tostring(S2CSpeed) .. " Delay:" .. tostring(delay) .. "s " .. " Bytes(MB):" .. tostring(self.S2C.TotalByteSize / 1024 / 1024) .. self.TableToStr(self.S2C, Deep))
   UE.UNetworkManager.PrintNetMsgS2C("======================== C2S Print END ===============================================")
 end
-
 function RpcRecorder.TableToStr(Targets, Deep)
   if type(Targets) ~= "table" then
     Targets = {Targets}
   end
   Deep = Deep or 1
-  
   local function get_table_str(t, step)
     local s = ""
     for k, v in pairs(t) do
@@ -103,14 +97,12 @@ function RpcRecorder.TableToStr(Targets, Deep)
     end
     return s
   end
-  
   local ret = "\n"
   if Targets then
     ret = ret .. get_table_str(Targets, 1)
   end
   return ret
 end
-
 local function save(tbl, file, compressed)
   local f, err = io.open(file, "w")
   if err then
@@ -118,7 +110,6 @@ local function save(tbl, file, compressed)
     return
   end
   local indent = 1
-  
   local function exportstring(s)
     s = string.format("%q", s)
     s = s:gsub("\\\n", "\\n")
@@ -126,7 +117,6 @@ local function save(tbl, file, compressed)
     s = s:gsub(string.char(26), "\"..string.char(26)..\"")
     return s
   end
-  
   local function serialize(o)
     if type(o) == "number" then
       f:write(o)
@@ -163,7 +153,6 @@ local function save(tbl, file, compressed)
       f:write("nil," .. (compressed and "" or " -- ***ERROR: unsupported data type: " .. type(o) .. "!***"))
     end
   end
-  
   f:write("return {" .. (compressed and "" or "\n"))
   local tab = "    "
   for k, v in pairs(tbl) do
@@ -176,7 +165,6 @@ local function save(tbl, file, compressed)
   f:write("}")
   f:close()
 end
-
 local function load(file)
   local data, err = loadfile(file)
   if err then
@@ -185,22 +173,18 @@ local function load(file)
     return data()
   end
 end
-
 function RpcRecorder:StartRecord(Filename)
   self.RecordMsgs = {}
   self.RecordFilename = Filename
   self.RecordStartTime = os.time()
 end
-
 function RpcRecorder:EndRecord()
   save(self.RecordMsgs, self.RecordFilename or "F:/DefaultRpcRecorder.bin", true)
   self.RecordMsgs = nil
   self.RecordFilename = nil
   self.RecordStartTime = nil
 end
-
 function RpcRecorder:LoadRecordMsg(file)
   return load(file or "F:/DefaultRpcRecorder.bin")
 end
-
 return RpcRecorder

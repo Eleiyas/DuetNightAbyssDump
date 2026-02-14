@@ -1,6 +1,5 @@
 require("UnLua")
 local BattleGrenades_C = Class("BluePrints.UI.BP_UIState_C")
-
 function BattleGrenades_C:Tick(MyGeometry, InDeltaTime)
   local Controller = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -58,7 +57,6 @@ function BattleGrenades_C:Tick(MyGeometry, InDeltaTime)
     self:PlayAnim("Loop_Fast", 0, 0)
   end
 end
-
 function BattleGrenades_C:OnLoaded(Target)
   self.Target = Target
   self.Data = DataMgr.SkillCreature[Target.CreatureId]
@@ -70,5 +68,4 @@ function BattleGrenades_C:OnLoaded(Target)
   self.ScreenCenter = UIManger:GetDesignedScreenSize() / 2
   self.StandK = self.ScreenCenter.Y / self.ScreenCenter.X
 end
-
 return BattleGrenades_C

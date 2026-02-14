@@ -1,10 +1,8 @@
 local FinishDetectiveQuestionNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
 local ReasoningUtils = require("BluePrints.UI.WBP.DetectiveMinigame.ReasoningUtils")
-
 function FinishDetectiveQuestionNode:Init()
   self.QuestionIds = {}
 end
-
 function FinishDetectiveQuestionNode:Execute()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -24,5 +22,4 @@ function FinishDetectiveQuestionNode:Execute()
     end
   end
 end
-
 return FinishDetectiveQuestionNode

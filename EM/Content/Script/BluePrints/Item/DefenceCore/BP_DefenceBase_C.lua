@@ -2,7 +2,6 @@ require("UnLua")
 local BP_DefenceBase_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_DefenceBase_C:AuthorityInitInfo(Info)
   self.IsActive = false
   self.SeventyEvent = true
@@ -13,7 +12,6 @@ function BP_DefenceBase_C:AuthorityInitInfo(Info)
   self.ESRecover = self.UnitParams.ESRecover or 0
   self.ActiveRange = self.UnitParams.ActiveRange or 0
 end
-
 function BP_DefenceBase_C:OnActiveStateChange()
   if self.IsActive then
     local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
@@ -21,17 +19,14 @@ function BP_DefenceBase_C:OnActiveStateChange()
     self.CombatClientEffectComponent:OnActiveEffect()
   end
 end
-
 function BP_DefenceBase_C:SetActiveType()
   self.ActiveType = "DistanceAlways"
 end
-
 function BP_DefenceBase_C:ActiveOnServer(Info)
   if self.IsActive then
     self:ActiveDefence(1)
   end
 end
-
 function BP_DefenceBase_C:OnDamaged(DamageEvent)
   if not IsAuthority(self) then
     return
@@ -46,7 +41,6 @@ function BP_DefenceBase_C:OnDamaged(DamageEvent)
     self.ThirtyEvent = false
   end
 end
-
 function BP_DefenceBase_C:ActiveDefence()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if nil == GameState then
@@ -66,21 +60,10 @@ function BP_DefenceBase_C:ActiveDefence()
   Battle(self):RemoveBuffFromTarget(self, self, 301, false, -1)
   GameState:AddDefBaseInfo(self)
 end
-
-function BP_DefenceBase_C:RegisterToGameState()
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  if nil == GameState then
-    print(_G.LogTag, "GameState is nil")
-    return
-  end
-  GameState:RegisterMechanism(self, self:GetUnitRealType())
-end
-
 function BP_DefenceBase_C:ShowDeath()
   BP_DefenceBase_C.Super.ShowDeath(self)
   self:PlayDeadAnim()
 end
-
 function BP_DefenceBase_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   BP_DefenceBase_C.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -104,29 +87,23 @@ function BP_DefenceBase_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   end
   self:OnCoreDead()
 end
-
 function BP_DefenceBase_C:OnCoreDead()
   self.Overridden.OnCoreDead(self)
 end
-
 function BP_DefenceBase_C:OnEMActorDestroy(...)
   BP_DefenceBase_C.Super.OnEMActorDestroy(self, ...)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.DefBaseMap:Remove(self.Eid)
   GameState.HatredCombatProp:Remove(self.Eid)
 end
-
 function BP_DefenceBase_C:OnFirstActive()
 end
-
 function BP_DefenceBase_C:OnDefenceWaveStart()
   self.Overridden.OnDefenceWaveStart(self)
 end
-
 function BP_DefenceBase_C:OnDefenceWaveEnd()
   self.Overridden.OnDefenceWaveEnd(self)
 end
-
 function BP_DefenceBase_C:RecoverSavedData(DataTable)
   if not DataTable then
     return
@@ -139,7 +116,6 @@ function BP_DefenceBase_C:RecoverSavedData(DataTable)
     end
   end
 end
-
 function BP_DefenceBase_C:RecoverAttribute(DataTable)
   if not DataTable then
     return
@@ -148,7 +124,6 @@ function BP_DefenceBase_C:RecoverAttribute(DataTable)
     self:SetAttr(i, v)
   end
 end
-
 function BP_DefenceBase_C:GetDungeonSaveData()
   return {
     StateId = self.StateId,
@@ -158,7 +133,6 @@ function BP_DefenceBase_C:GetDungeonSaveData()
     }
   }
 end
-
 function BP_DefenceBase_C:GetGuidePos()
   if self.GuidePos then
     return self:K2_GetActorLocation() + self.GuidePos.RelativeLocation
@@ -166,5 +140,4 @@ function BP_DefenceBase_C:GetGuidePos()
     return self:K2_GetActorLocation()
   end
 end
-
 return BP_DefenceBase_C

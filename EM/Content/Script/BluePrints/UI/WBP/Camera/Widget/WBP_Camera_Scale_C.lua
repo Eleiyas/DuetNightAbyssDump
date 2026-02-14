@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.List_Scale.BP_OnEntryInitialized:Clear()
   self.List_Scale.BP_OnEntryInitialized:Add(self, self.OnListEntryInitialized)
@@ -12,7 +11,6 @@ function M:Construct()
   self.EMScrollBox_0.OnMouseButtonDown:Add(self, self.OnScrollBoxMouseDown)
   self.EMScrollBox_0.OnMouseButtonUp:Add(self, self.OnScrollBoxMouseUp)
 end
-
 function M:DisableHover(bDisableHover)
   self.bDisableHover = bDisableHover
   if self.bDisableHover then
@@ -21,7 +19,6 @@ function M:DisableHover(bDisableHover)
     self:PlayAnimation(self.ScaleRuler_Hover)
   end
 end
-
 function M:Init(MinValue, MaxValue, Interval)
   self.Text_LastNum:SetText(MaxValue)
   local Max = MaxValue - Interval
@@ -37,7 +34,6 @@ function M:Init(MinValue, MaxValue, Interval)
     self:PlayAnimation(self.ScaleRuler_Normal)
   end
 end
-
 function M:ResetScroll()
   self.EMScrollBox_0:EndInertialScrolling()
   self:AddTimer(0.01, function()
@@ -49,21 +45,17 @@ function M:ResetScroll()
     self.EMScrollBox_0:SetScrollOffset(self.ScrollOffsetOfEnd / 2)
   end, false, 0, "ResetScroll", true)
 end
-
 function M:OnListEntryInitialized(Content, Widget)
   Widget.Text_Num:SetText(Content.Value)
 end
-
 function M:OnUserScrolled(CurrentOffset)
   if 0 ~= self.ScrollOffsetOfEnd and self.OnScrolledEvent then
     self.OnScrolledEvent(self.EventObj, CurrentOffset / self.ScrollOffsetOfEnd)
   end
 end
-
 function M:SetScrollPercent(Percent)
   self.EMScrollBox_0:SetScrollOffset(Percent * self.ScrollOffsetOfEnd)
 end
-
 function M:SetScrollPercentWithAnim(Percent)
   self.EMScrollBox_0:SetScrollOffset(Percent * self.ScrollOffsetOfEnd)
   self:OnMouseEnter()
@@ -74,13 +66,11 @@ function M:SetScrollPercentWithAnim(Percent)
     self:OnMouseLeave()
   end, false, 0, "SetScrollPercentWithAnim", true)
 end
-
 function M:BindEvents(Events)
   self.EventObj = Events.EventObj
   self.OnScrolledEvent = Events.OnScrolledEvent
   self.OnInertialScrollingEndEvent = Events.OnInertialScrollingEndEvent
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.bDisableHover then
     return
@@ -93,7 +83,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAnimation(self.ScaleRuler_UnHover)
   self:PlayAnimation(self.ScaleRuler_Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if self.bDisableHover then
     return
@@ -106,11 +95,9 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAnimation(self.ScaleRuler_Hover)
   self:PlayAnimation(self.ScaleRuler_UnHover)
 end
-
 function M:OnScrollBoxMouseDown(MyGeometry, MouseEvent)
   self.bScrollBoxMouseDown = true
 end
-
 function M:OnScrollBoxMouseUp(MyGeometry, MouseEvent)
   self.EMScrollBox_0:EndInertialScrolling()
   if self.OnInertialScrollingEndEvent then
@@ -127,9 +114,7 @@ function M:OnScrollBoxMouseUp(MyGeometry, MouseEvent)
   self:StopAnimation(self.ScaleRuler_Hover)
   self:PlayAnimation(self.ScaleRuler_UnHover)
 end
-
 function M:SetVisibility(VisibilityOp)
   self.CanvasPanel_0:SetVisibility(VisibilityOp)
 end
-
 return M

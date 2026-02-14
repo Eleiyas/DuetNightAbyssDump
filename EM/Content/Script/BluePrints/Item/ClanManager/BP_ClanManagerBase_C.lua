@@ -1,6 +1,5 @@
 require("Unlua")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:ReceiveBeginPlay()
   self.RemainTriggerAlertCD = 0
   self.AlertingEid = 0
@@ -10,7 +9,6 @@ function M:ReceiveBeginPlay()
   self.PlayerNum = 0
   self.PlayerInClan = {}
 end
-
 function M:InitClan()
   local Avatar = GWorld:GetAvatar()
   if (not Avatar or not Avatar:CheckCondition(self.ActiveConditionId)) and DataMgr.Condition[self.ActiveConditionId] then
@@ -19,7 +17,6 @@ function M:InitClan()
     self:ActiveClan(self.ActiveConditionId)
   end
 end
-
 function M:ActiveClan(ConditionId)
   if ConditionId ~= self.ActiveConditionId then
     return
@@ -28,7 +25,6 @@ function M:ActiveClan(ConditionId)
   EventManager:AddEvent(EventID.CharRecover, self, self.OnPlayerEnter)
   self:InitClanCreator()
 end
-
 function M:InitClanCreator()
   local StaticIds = TArray(0)
   for Id, Creator in pairs(self.StaticCreatorMap) do
@@ -39,7 +35,6 @@ function M:InitClanCreator()
   self.SpawnHandle = self:AddTimer(0.5, self.CheckAllSpawn, true)
   self.CommonAlertDisable = false
 end
-
 function M:CreateMonsterSpawn()
   if not self.InCommonAlert then
     return
@@ -47,12 +42,10 @@ function M:CreateMonsterSpawn()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:TriggerCreateMonsterSpawn(self.MonsterSpawnIds)
 end
-
 function M:DestoryMonsterSpawn()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:TriggerDestoryMonsterSpawn(self.MonsterSpawnIds)
 end
-
 function M:CheckAllSpawn()
   for Id, Creator in pairs(self.StaticCreatorMap) do
     if Creator.ChildEids:Length() <= 0 or not IsValid(Battle(self):GetEntity(Creator.ChildEids:GetRef(1))) then
@@ -72,7 +65,6 @@ function M:CheckAllSpawn()
   end
   self:RemoveTimer(self.SpawnHandle)
 end
-
 function M:GetAlertMechanism(Monster)
   local MinDis = 99999
   local Result
@@ -89,11 +81,9 @@ function M:GetAlertMechanism(Monster)
   end
   return Result
 end
-
 function M:GetAlertMiniGameDis(Monster, AlertMiniGame)
   return Monster:GetTwoPosPathLength(Monster:K2_GetActorLocation(), AlertMiniGame:GetMonsterAnimTrans().Translation)
 end
-
 function M:ChangeRemainTriggerAlertCD()
   self.RemainTriggerAlertCD = math.max(self.RemainTriggerAlertCD - 1, 0)
   if 0 == self.RemainTriggerAlertCD then
@@ -101,7 +91,6 @@ function M:ChangeRemainTriggerAlertCD()
     self.TriggerAlertCDHandle = nil
   end
 end
-
 function M:OnPlayerLeave(PlayerEid)
   if self.PlayerInClan[PlayerEid] == nil then
     return
@@ -115,30 +104,25 @@ function M:OnPlayerLeave(PlayerEid)
     self:ExitAlert()
   end
 end
-
 function M:OnPlayerEnter(PlayerEid)
   if self.PlayerInClan[PlayerEid] == nil then
     self.PlayerInClan[PlayerEid] = Battle(self):GetEntity(PlayerEid)
     self.PlayerNum = self.PlayerNum + 1
   end
 end
-
 function M:OnMonsterLeave(MonsterEid)
   if MonsterEid ~= self.AlertingEid then
     return
   end
 end
-
 function M:OnMonsterEnter(MonsterEid)
 end
-
 function M:ResetRemainTriggerAlertCD()
   self.RemainTriggerAlertCD = DataMgr.GlobalConstant.GameModeAlertCD.ConstantValue or 30
   if not self.TriggerAlertCDHandle then
     self.TriggerAlertCDHandle = self:AddTimer(1.0, self.ChangeRemainTriggerAlertCD, true)
   end
 end
-
 function M:ResetAllMonster()
   for Eid, Monster in pairs(self.MonsterMap) do
     if IsValid(Monster) and not Monster:IsDead() then
@@ -154,7 +138,6 @@ function M:ResetAllMonster()
     end
   end
 end
-
 function M:ExitAlert()
   self.AlertingEid = 0
   self.InCommonAlert = false
@@ -164,10 +147,8 @@ function M:ExitAlert()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:OnExitCommonAlert()
 end
-
 function M:ActiveClanAlert()
   for Eid, Monster in pairs(self.MonsterMap) do
   end
 end
-
 return M

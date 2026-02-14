@@ -5,7 +5,6 @@ BloodBarUtils.AllBloodState = {
   Dead = "Dead",
   Other = "Other"
 }
-
 function BloodBarUtils:LoadSubWidget(Container, WidgetName, ...)
   if not Container then
     return
@@ -21,7 +20,6 @@ function BloodBarUtils:LoadSubWidget(Container, WidgetName, ...)
   SubWidget:Init(...)
   return Container:GetChildAt(0)
 end
-
 function BloodBarUtils:SetDeductEffect(OldHeight, OldLength, DeductImage, LastPercent, NowPercent, RenderOpacity, OriginalPositionX)
   OriginalPositionX = OriginalPositionX or 0
   local DeductEffectSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(DeductImage)
@@ -37,8 +35,6 @@ function BloodBarUtils:SetDeductEffect(OldHeight, OldLength, DeductImage, LastPe
   DeductImage:SetRenderOpacity(RenderOpacity)
   DeductImage:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function BloodBarUtils:PlayDeduct()
 end
-
 return BloodBarUtils

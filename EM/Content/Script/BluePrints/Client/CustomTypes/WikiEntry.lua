@@ -10,18 +10,14 @@ WikiEntry.__Props__ = {
   UnlockTexts = prop.prop("Int2IntDict", "client save"),
   ReadTexts = prop.prop("Int2IntDict", "client save")
 }
-
 function WikiEntry:Init(WikiEntryId)
   self.WikiEntryId = WikiEntryId
 end
-
 FormatProperties(WikiEntry)
 local WikiEntryDict = Class("WikiEntryDict", CustomTypes.CustomDict)
 WikiEntryDict.KeyType = BaseTypes.Int
 WikiEntryDict.ValueType = WikiEntry
-
 function WikiEntryDict:NewWikiEntry(WikiEntryId)
   return WikiEntry(WikiEntryId)
 end
-
 return {WikiEntry = WikiEntry, WikiEntryDict = WikiEntryDict}

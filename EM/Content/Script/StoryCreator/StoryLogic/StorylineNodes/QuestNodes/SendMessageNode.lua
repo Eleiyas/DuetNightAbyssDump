@@ -1,16 +1,13 @@
 local SendMessageNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function SendMessageNode:Init()
   self.MessageType = ""
   self.MessageContent = {}
   self.UnitId = -1
 end
-
 function SendMessageNode:Start(Context)
   self.Context = Context
   self:SendMessageContent()
 end
-
 function SendMessageNode:SendMessageContent()
   DebugPrint("------------ SendMessageContent ------------------")
   local GameInstance = GWorld.GameInstance
@@ -32,7 +29,6 @@ function SendMessageNode:SendMessageContent()
   end
   self:FinishAction()
 end
-
 function SendMessageNode:QuestEventMonsterOrNpc(AI)
   if IsValid(AI) and tonumber(self.UnitId) == tonumber(AI.UnitId) then
     local BB = AI:GetOwnBlackBoardComponent()
@@ -43,9 +39,7 @@ function SendMessageNode:QuestEventMonsterOrNpc(AI)
     end
   end
 end
-
 function SendMessageNode:FinishAction()
   self:Finish()
 end
-
 return SendMessageNode

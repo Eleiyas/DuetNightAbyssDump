@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Item.WBP_Com_item_Universal_L_C"
 })
 local LongPressInterval = 0.15
-
 function M:InitData(Content)
   Content.OnMouseButtonDownEvent = {
     Obj = self,
@@ -37,12 +36,12 @@ function M:InitData(Content)
   self.DragThreshold = 10
   self.DragStartPos = {X = 0, Y = 0}
 end
-
 function M:InitCompView()
   M.Super.InitCompView(self)
   if self.ItemType == "EmptyGrid" then
     self:CheckAndSetVisibility(self.CountWidget, UIConst.VisibilityOp.Collapsed)
     self:CheckAndSetVisibility(self.LevelWidget, UIConst.VisibilityOp.Collapsed)
+    self:PlayFadeInAnim()
     return
   elseif self.ItemType == CommonConst.DataType.Weapon then
     self:CheckAndSetVisibility(self.CountWidget, UIConst.VisibilityOp.Collapsed)
@@ -61,7 +60,7 @@ function M:InitCompView()
   if self.ItemType == CommonConst.DataType.Resource and ItemConf and ItemConf.ResourceSType == "TreasureMap" then
     local Conf = DataMgr.Explore_Treasure[self.Content.StuffId]
     if not Conf then
-      DebugPrint(ErrorTag, "\232\151\143\229\174\157\229\155\190\233\129\147\229\133\183\230\178\161\230\156\137\228\184\142\230\142\162\231\180\162\231\187\132\229\133\179\232\129\148\239\188\129\239\188\129\239\188\129 \233\129\147\229\133\183ID: ", self.Content.StuffId)
+      DebugPrint(ErrorTag, "藏宝图道具没有与探索组关联！！！ 道具ID: ", self.Content.StuffId)
     else
       self.RarelyId = Conf.ExploreGroupId
       local Explore = GWorld:GetAvatar().Explores[self.RarelyId]
@@ -69,13 +68,24 @@ function M:InitCompView()
       self:SetTreasureMapDigable(true, bDigable)
     end
   end
+  self:PlayFadeInAnim()
 end
-
+function M:PlayFadeInAnim()
+  if self.Content.AnimNameWithCreate and self[self.Content.AnimNameWithCreate] then
+    self.Root:SetRenderOpacity(0)
+    self:PlayAnimation(self[self.Content.AnimNameWithCreate])
+  end
+end
+function M:IsInAnimationPlaying()
+  if self.Content.AnimNameWithCreate and self[self.Content.AnimNameWithCreate] then
+    return self:IsAnimationPlaying(self[self.Content.AnimNameWithCreate])
+  end
+  return false
+end
 function M:IsInSaleOrResolveState()
   local State = self.ParentWidget and self.ParentWidget.BagCurState
   return State == BagCommon.AllBagState.ChooseSaleState or State == BagCommon.AllBagState.WeaponResolveState
 end
-
 function M:StopHoldTimers()
   if self.HoldStartDelayHandle then
     self:RemoveTimer(self.HoldStartDelayHandle)
@@ -88,8 +98,10 @@ function M:StopHoldTimers()
   end
   self.HoldStartDelayHandle, self.HoldLoopHandle, self.HoldReduceHandle = nil, nil, nil
 end
-
 function M:OnPressed()
+  if self:IsInAnimationPlaying() then
+    return
+  end
   if self.ItemType == "EmptyGrid" then
     return
   end
@@ -137,7 +149,6 @@ function M:OnPressed()
     self:StartHoldAddStuff(gen, globalTok)
   end, false, 0, self.HoldTimerName .. "_StartDelay")
 end
-
 function M:OnReleased()
   if self.ItemType == "EmptyGrid" then
     return
@@ -176,7 +187,6 @@ function M:OnReleased()
     self:TriggerClickCallback(1)
   end
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   if not self.bIsHolding then
     return UWidgetBlueprintLibrary.Unhandled()
@@ -187,36 +197,21 @@ function M:OnMouseMove(MyGeometry, MouseEvent)
   local dist2 = dx * dx + dy * dy
   if dist2 >= self.DragThreshold * self.DragThreshold then
     self.bIsDragging = true
-    self.bIsLongPress = false
-    self.bHasTriggeredHoldAction = false
-    self:StopHoldTimers()
+    self:CancelHold()
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnLeaved()
   self.bIsDragging = false
   if not self:IsInSaleOrResolveState() then
     return
   end
-  if self.ParentWidget.HoldOwner == self then
-    self.ParentWidget.HoldGlobalToken = self.ParentWidget.HoldGlobalToken + 1
-    self.ParentWidget.HoldOwner = nil
-  end
-  self.bIsHolding = false
-  if self.HoldStartDelayHandle then
-    self:RemoveTimer(self.HoldStartDelayHandle)
-  end
-  if self.HoldLoopHandle then
-    self:RemoveTimer(self.HoldLoopHandle)
-  end
-  if self.HoldReduceHandle then
-    self:RemoveTimer(self.HoldReduceHandle)
-  end
-  self.HoldStartDelayHandle, self.HoldLoopHandle, self.HoldReduceHandle = nil, nil, nil
+  self:CancelHold()
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
+  if self.bIsHolding or self.ParentWidget and self.ParentWidget.HoldOwner == self then
+    self:CancelHold()
+  end
   self.bIsDragging = false
   if not self.Content or self.NotInteractive or self.Content.IsShowTips or self:IsInAnimationPlaying() then
     return
@@ -231,7 +226,49 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.UnHover)
 end
-
+function M:OnTouchEnded(MyGeometry, TouchEvent)
+  if self:IsInSaleOrResolveState() then
+    DebugPrint("---------WBP_Bag_Item_C OnTouchEnded", self.Id)
+    if self.CancelHold then
+      self:CancelHold()
+    end
+    self:OnMouseButtonUp(MyGeometry, TouchEvent)
+    local Reply = UWidgetBlueprintLibrary.Handled()
+    return UWidgetBlueprintLibrary.ReleaseMouseCapture(Reply)
+  else
+    return self:OnMouseButtonUp(MyGeometry, TouchEvent)
+  end
+end
+function M:OnTouchStarted(MyGeometry, TouchEvent)
+  if self:IsInSaleOrResolveState() then
+    DebugPrint("---------WBP_Bag_Item_C OnTouchStarted", self.Id)
+    if self.ParentWidget and self.ParentWidget.HoldOwner and self.ParentWidget.HoldOwner ~= self then
+      local prev = self.ParentWidget.HoldOwner
+      if prev.CancelHold then
+        prev:CancelHold()
+      else
+        self.ParentWidget.HoldGlobalToken = (self.ParentWidget.HoldGlobalToken or 0) + 1
+        self.ParentWidget.HoldOwner = nil
+      end
+    end
+    self:OnMouseButtonDown(MyGeometry, TouchEvent)
+    local Reply = UWidgetBlueprintLibrary.Handled()
+    return UWidgetBlueprintLibrary.CaptureMouse(Reply, self)
+  else
+    return self:OnMouseButtonDown(MyGeometry, TouchEvent)
+  end
+end
+function M:CancelHold()
+  if self.ParentWidget and self.ParentWidget.HoldOwner == self then
+    self.ParentWidget.HoldGlobalToken = (self.ParentWidget.HoldGlobalToken or 0) + 1
+    self.ParentWidget.HoldOwner = nil
+  end
+  self.bIsHolding = false
+  self.bIsLongPress = false
+  self.bHasTriggeredHoldAction = false
+  self.bIsDragging = false
+  self:StopHoldTimers()
+end
 function M:TriggerClickCallback(Count)
   if self.Content.ClickCallback and type(self.Content.ClickCallback) == "function" then
     if Count > 0 then
@@ -244,7 +281,6 @@ function M:TriggerClickCallback(Count)
     self.Content.ClickCallback(self.ParentWidget, self.Content)
   end
 end
-
 function M:StartHoldAddStuff(gen, globalTok)
   if self.HoldLoopHandle then
     self:RemoveTimer(self.HoldLoopHandle)
@@ -282,7 +318,6 @@ function M:StartHoldAddStuff(gen, globalTok)
   end, true, 0, self.HoldTimerName)
   self.HoldLoopHandle = handle
 end
-
 function M:GetChangeCount(PressTime)
   local Multiple = 1
   if not self.bForbidPressAccelerate and self.LongPressCurve then
@@ -295,10 +330,9 @@ function M:GetChangeCount(PressTime)
   local FinalCount = math.max(MinValue, math.min(StepCount, MaxValue))
   return FinalCount
 end
-
 function M:SetTreasureMapDigable(bShow, bDigable)
   if not self.Item then
-    DebugPrint(ErrorTag, "SetTreasureMapDigable::\230\178\161\230\156\137Item\230\142\167\228\187\182\228\184\141\231\172\166\229\144\136\233\128\154\231\148\168\233\129\147\229\133\183\230\161\134\231\187\147\230\158\132")
+    DebugPrint(ErrorTag, "SetTreasureMapDigable::没有Item控件不符合通用道具框结构")
     return
   end
   if bShow then
@@ -313,7 +347,6 @@ function M:SetTreasureMapDigable(bShow, bDigable)
     self:RemoveWidgetFromNode(self.TreasureDigableWidget)
   end
 end
-
 function M:SetStuffStyleByStateTag(Content)
   local StateTagInfo = Content.StateTagInfo
   if nil == StateTagInfo then
@@ -333,7 +366,6 @@ function M:SetStuffStyleByStateTag(Content)
   end
   self:RefreshItemsViewWithStateTag(Content)
 end
-
 function M:RefreshItemsViewWithStateTag(Content)
   self:SetItemMinus(false)
   Content = Content or self.Content
@@ -345,7 +377,7 @@ function M:RefreshItemsViewWithStateTag(Content)
       self.MinusWidget.Btn_Minus:UnBindEventOnClicked(self, self.CancelSelectClick)
       self.MinusWidget.Btn_Minus:BindEventOnClicked(self, self.CancelSelectClick)
       if Content.ItemType ~= CommonConst.DataType.Weapon then
-        self:SetItemMoney(StateTagInfo.ExtraData[4], Utils.FormatNumber(math.floor(StateTagInfo.ExtraData[3] + 0.5), true))
+        self:SetItemMoney(StateTagInfo.ExtraData[4], Utils.FormatNumber(math.floor(StateTagInfo.ExtraData[3] + 0.5), true), true)
       end
     end
     self:CheckAndSetVisibility(self.SelectWidget, UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -363,7 +395,7 @@ function M:RefreshItemsViewWithStateTag(Content)
       self.MinusWidget.Btn_Minus:UnBindEventOnClicked(self, self.CancelSelectClick)
       self.MinusWidget.Btn_Minus:BindEventOnClicked(self, self.CancelSelectClick)
       if Content.ItemType ~= CommonConst.DataType.Weapon then
-        self:SetItemMoney(StateTagInfo.ExtraData[4], Utils.FormatNumber(math.floor(StateTagInfo.ExtraData[3] + 0.5), true))
+        self:SetItemMoney(StateTagInfo.ExtraData[4], Utils.FormatNumber(math.floor(StateTagInfo.ExtraData[3] + 0.5), true), true)
       end
     end
     self:CheckAndSetVisibility(self.MinusWidget, UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -377,7 +409,7 @@ function M:RefreshItemsViewWithStateTag(Content)
     if StateTagInfo.ExtraData ~= nil then
       self:SetSelectNum(0, Utils.FormatNumber(StateTagInfo.ExtraData[1], true))
       if Content.StuffType ~= CommonConst.DataType.Weapon then
-        self:SetItemMoney(StateTagInfo.ExtraData[3], Utils.FormatNumber(math.floor(StateTagInfo.ExtraData[2] + 0.5), true))
+        self:SetItemMoney(StateTagInfo.ExtraData[3], Utils.FormatNumber(math.floor(StateTagInfo.ExtraData[2] + 0.5), true), true)
       end
       self:CheckAndSetVisibility(self.MinusWidget, UIConst.VisibilityOp.Collapsed)
       self:CheckAndSetVisibility(self.SelectWidget, UIConst.VisibilityOp.Collapsed)
@@ -396,7 +428,6 @@ function M:RefreshItemsViewWithStateTag(Content)
   end
   self:SetItemShowGrey(StateTagInfo.IsShowGrey)
 end
-
 function M:CheckAndSetVisibility(WidgetComp, VisibilityOp)
   if self.WidgetMap[WidgetComp] then
     WidgetComp:SetVisibility(VisibilityOp)
@@ -407,7 +438,6 @@ function M:CheckAndSetVisibility(WidgetComp, VisibilityOp)
   end
   return false
 end
-
 function M:SetItemShowGrey(bShowGrey)
   if bShowGrey then
     if self.ItemType == CommonConst.DataType.Weapon then
@@ -422,7 +452,6 @@ function M:SetItemShowGrey(bShowGrey)
     self:SetItemConflict(false)
   end
 end
-
 function M:CancelSelectClick()
   if self.ParentWidget ~= nil and self.Content.StateTagInfo then
     local AllCount = #self.Content.StateTagInfo.ExtraData
@@ -433,11 +462,9 @@ function M:CancelSelectClick()
     end
   end
 end
-
 function M:SetItemConflict(bConflict)
   self:_SetItemConflictImpl(bConflict, self.ShowWarningText)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.ItemType == "EmptyGrid" then
     return UWidgetBlueprintLibrary.Handled()
@@ -447,14 +474,12 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return M.Super.OnMouseButtonDown(self, MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.ItemType == "EmptyGrid" then
     return UWidgetBlueprintLibrary.Handled()
   end
   return M.Super.OnMouseButtonUp(self, MyGeometry, MouseEvent)
 end
-
 function M:UpdateModItem()
   local ModId = self.Content.UnitId
   if not ModId then
@@ -462,7 +487,7 @@ function M:UpdateModItem()
   end
   local ModDataInfo = DataMgr.Mod[ModId]
   if not ModDataInfo then
-    DebugPrint("\232\175\165ModId\232\162\171\231\173\150\229\136\146\229\136\160\228\186\134...", ModId)
+    DebugPrint("该ModId被策划删了...", ModId)
     return
   end
   local ModCost, Mod
@@ -491,7 +516,6 @@ function M:UpdateModItem()
     self:ShowModStar(Mod)
   end
 end
-
 function M:ShowModStar(Mod)
   if not Mod or not Mod:HasCardLevel() then
     if IsValid(self.ModStarWidget) then
@@ -516,7 +540,6 @@ function M:ShowModStar(Mod)
     end
   end
 end
-
 function M:HideOrShowTimeLimitWidget(bHide)
   if bHide then
     if not self.WidgetMap[self.TimeLimitWidget] then
@@ -530,12 +553,10 @@ function M:HideOrShowTimeLimitWidget(bHide)
     self.TimeLimitWidget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:SetItemMinus(bMinus)
   self.Super.SetItemMinus(self, bMinus)
   self.Content.bMinus = bMinus
 end
-
 function M:SetSelected(IsSelected)
   if self.NotInteractive then
     return
@@ -553,5 +574,14 @@ function M:SetSelected(IsSelected)
     self.Item:PlayAnimation(self.Item.Normal)
   end
 end
-
+function M:SetDraftType(IsDraftType)
+  local function Callback(CoroutineObj)
+    if IsDraftType then
+      self.DraftItemWidget = self:GetOrCreateGroupWidget("DraftCompendiumItem", CoroutineObj)
+    else
+      self:RemoveGroupWidget("DraftCompendiumItem")
+    end
+  end
+  self:AsyncLoadWidgetCommon("DraftItemWidget", "SetDraftTypeTask", Callback)
+end
 return M

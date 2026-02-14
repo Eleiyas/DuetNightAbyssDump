@@ -1,6 +1,5 @@
 local ReceiveSideQuestNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function ReceiveSideQuestNode:Init()
   self.SideQuestChainId = 0
   self.CurrentCamera = nil
@@ -14,7 +13,6 @@ function ReceiveSideQuestNode:Init()
   self.TalkNpcId = 0
   self.CameraSequenceActor = nil
 end
-
 function ReceiveSideQuestNode:Start(Context)
   self.IsShowDialog = self:CheckIsNeedShowDialog()
   if not self.IsShowDialog then
@@ -30,7 +28,6 @@ function ReceiveSideQuestNode:Start(Context)
     end, false)
   end
 end
-
 function ReceiveSideQuestNode:StartSequenceMode()
   local GameInstance = GWorld.GameInstance
   local EMGameState = UE4.UGameplayStatics.GetGameState(GameInstance)
@@ -56,7 +53,7 @@ function ReceiveSideQuestNode:StartSequenceMode()
   self.CameraSequenceActor = GameInstance:GetWorld():SpawnActor(ALevelSequenceActor)
   if not IsValid(self.CameraSequenceActor) then
     local Message = string.format("%s start failed, CameraSequenceActor is invalid", self:GetName())
-    UStoryLogUtils.PrintToFeiShu(GameInstance, UE.EStoryLogType.Quest, "\230\148\175\231\186\191\230\142\165\229\143\150\232\138\130\231\130\185", Message)
+    UStoryLogUtils.PrintToFeiShu(GameInstance, UE.EStoryLogType.Quest, "支线接取节点", Message)
     return
   end
   if not self.SequencePath or self.SequencePath == "" then
@@ -66,7 +63,6 @@ function ReceiveSideQuestNode:StartSequenceMode()
   if not Sequence then
     return
   end
-  self.CameraSequenceActor.CameraSettings.bOverrideAspectRatioAxisConstraint = false
   self.CameraSequenceActor:SetSequence(Sequence)
   self.CameraSequenceActor.SequencePlayer.OnPause:Add(self.CameraSequenceActor, function()
     self:OnSequencePause()
@@ -81,15 +77,12 @@ function ReceiveSideQuestNode:StartSequenceMode()
   PlaybackParams.PositionType = EMovieScenePositionType.MarkedFrame
   self.CameraSequenceActor.SequencePlayer:PlayTo(PlaybackParams)
 end
-
 function ReceiveSideQuestNode:OnSequencePause()
   self:InitReceiveUI()
 end
-
 function ReceiveSideQuestNode:OnSequenceFinished()
   self:FinishAction("ApproveOut")
 end
-
 function ReceiveSideQuestNode:InitReceiveUI()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -97,7 +90,6 @@ function ReceiveSideQuestNode:InitReceiveUI()
     self.Widget = UIManager:LoadUINew("BranchTaskReceiveTips", self)
   end
 end
-
 function ReceiveSideQuestNode:CheckIsNeedShowDialog()
   if not DataMgr.QuestChain[self.SideQuestChainId] or not DataMgr.QuestChain[self.SideQuestChainId].QuestNpcId then
     return true
@@ -107,7 +99,6 @@ function ReceiveSideQuestNode:CheckIsNeedShowDialog()
   end
   return true
 end
-
 function ReceiveSideQuestNode:TrySwitchCamera()
   local GameInstance = GWorld.GameInstance
   local EMGameState = UE4.UGameplayStatics.GetGameState(GameInstance)
@@ -155,7 +146,6 @@ function ReceiveSideQuestNode:TrySwitchCamera()
     USequenceFunctionLibrary.SetViewTargetWithBlendByCurve(PlayerController, self.TargetCamera, self.CameraBlendTime, CurveName, CurveName, CurveName)
   end
 end
-
 function ReceiveSideQuestNode:FinishAction(OptionStr)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -214,7 +204,6 @@ function ReceiveSideQuestNode:FinishAction(OptionStr)
   end
   self:Finish(OptionStr)
 end
-
 function ReceiveSideQuestNode:Clear()
   if self.EnableSequence and IsValid(self.CameraSequenceActor) then
     self.CameraSequenceActor:K2_DestroyActor()
@@ -224,7 +213,6 @@ function ReceiveSideQuestNode:Clear()
     self.ListenTimer = nil
   end
 end
-
 function ReceiveSideQuestNode:AdaptCameraComponent(CameraComponent)
   if not IsValid(CameraComponent) then
     return
@@ -244,5 +232,4 @@ function ReceiveSideQuestNode:AdaptCameraComponent(CameraComponent)
     CameraComponent:SetAspectRatio(AspectRatio)
   end
 end
-
 return ReceiveSideQuestNode

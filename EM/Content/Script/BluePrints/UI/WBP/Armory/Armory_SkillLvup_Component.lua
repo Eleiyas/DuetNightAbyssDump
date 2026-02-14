@@ -1,16 +1,12 @@
 require("UnLua")
 local SkillUtils = require("Utils.SkillUtils")
 local Component = {}
-
 function Component:Construct()
 end
-
 function Component:PreLevel()
 end
-
 function Component:NextLevel()
 end
-
 function Component:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.Params = Params
@@ -23,7 +19,6 @@ function Component:InitContent(Params, PopupData, Owner)
   self:AddDispatcher(EventID.OnCharSkillLevelUp, self, self.OnCharSkillLevelUp)
   self:InitView(Params.CharUuid, Params.Skill)
 end
-
 function Component:InitView(CharUuid, Skill)
   self.CharUuid = CharUuid
   self.Skill = Skill
@@ -41,14 +36,13 @@ function Component:InitView(CharUuid, Skill)
   self.Btn_Add_Max:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:UpdateSkillLevelUpInfo(self.Level, self.ComparedLevel)
 end
-
 function Component:UpdateSkillLevelUpInfo(Level, ComparedLevel)
   if ComparedLevel > self.MaxLevel then
     return
   end
   local ExtraLevel = self.Skill.ExtraLevel or 0
   if ExtraLevel > 0 then
-    self.Text_Intensify_Level:SetText("\239\188\136" .. GText("UI_Armory_Trace") .. "+" .. ExtraLevel .. "\239\188\137")
+    self.Text_Intensify_Level:SetText("（" .. GText("UI_Armory_Trace") .. "+" .. ExtraLevel .. "）")
     self.Text_Intensify_Level:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   else
     self.Text_Intensify_Level:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -97,7 +91,6 @@ function Component:UpdateSkillLevelUpInfo(Level, ComparedLevel)
   self.Level = Level
   self.ComparedLevel = ComparedLevel
 end
-
 function Component:UpdateSkillAttrView(Level, ComparedLevel)
   local Avatar = GWorld:GetAvatar()
   local Char = Avatar.Chars[self.CharUuid]
@@ -120,7 +113,6 @@ function Component:UpdateSkillAttrView(Level, ComparedLevel)
   end
   self:BroadcastDialogEvent("UpdateAttrList", self.Attrs, self.ComparedAttrs)
 end
-
 function Component:UpgradeSkill()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -133,11 +125,9 @@ function Component:UpgradeSkill()
     UIManager(self):ShowUITip("CommonToastMain", GText(self.ErrorText))
   end
 end
-
 function Component:ForbiddenUpgradeBtnClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText(self.ErrorText))
 end
-
 function Component:OnCharSkillLevelUp(Ret, SkillId, Level, NewLevel)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -146,7 +136,6 @@ function Component:OnCharSkillLevelUp(Ret, SkillId, Level, NewLevel)
   end
   if Ret == ErrorCode.RET_SUCCESS then
     self.Skill.Level = NewLevel
-    
     local function Callback()
       self.Owner:BlockAllUIInput(false)
       if NewLevel >= self.MaxLevel then
@@ -157,13 +146,11 @@ function Component:OnCharSkillLevelUp(Ret, SkillId, Level, NewLevel)
         self:InitView(self.CharUuid, self.Skill)
       end
     end
-    
-    self.Owner:BlockAllUIInput(true)
+    self.Owner:BlockAllUIInput(true, "SP_DisplayOnly")
     UIManager:LoadUI(nil, "UpgradePrompt", self.Owner:GetZOrder(), "LevelUp", "Skill", Level, NewLevel, self.Attrs, self.ComparedAttrs, self, Callback)
   else
     UIManager:ShowError(Ret, 1.5)
     self.Owner:OnCloseBtnClicked()
   end
 end
-
 return Component

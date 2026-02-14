@@ -1,18 +1,15 @@
 require("UnLua")
 require("DataMgr")
 local WBP_MapLevelSelect_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_MapLevelSelect_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_MapLevelSelect_C:Destruct()
   self.Super.Destruct(self)
   self:RemoveTrackingFromButton()
   AudioManager(self):SetEventSoundParam(self, "MapOpen", {ToEnd = 1})
   AudioManager(self):StopSound(self, "MapOpen")
 end
-
 function WBP_MapLevelSelect_C:OnLoaded(...)
   self:InitMapUI()
   self:AddDispatcher(EventID.OnMatchStateChanged, self, self.OnMatchStateChanged)
@@ -21,19 +18,16 @@ function WBP_MapLevelSelect_C:OnLoaded(...)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_open", "MapOpen", nil)
   self:SelectTrackingQuestRegion()
 end
-
 function WBP_MapLevelSelect_C:OnHoveredMainLevelItem(UIIndex)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_hover_level", nil, nil)
   self:RefreshMainLevelItem(false, UIIndex)
 end
-
 function WBP_MapLevelSelect_C:OnClickedMainMapBtnCancel()
   self.MainDetailsDungeonId = {-1, -1}
   self:SetUICollapsed(self.Prologue_Map_Level_Details)
   self:SetHardBossMapTipsClose()
   self:RefreshMainLevelItem(false, -1)
 end
-
 function WBP_MapLevelSelect_C:OnClickedMainLevelItem(UIIndex, RegionID, BornID)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_level", nil, nil)
   self:RefreshMainLevelItem(true, UIIndex)
@@ -56,7 +50,6 @@ function WBP_MapLevelSelect_C:OnClickedMainLevelItem(UIIndex, RegionID, BornID)
   self:SetPosition(self.Prologue_Map_Main_New.Panel_Map, Pos)
   self:SetPosition(self.Prologue_Map_Main_New.Panel_AreaName, Pos)
 end
-
 function WBP_MapLevelSelect_C:ClickHardBossLevelItem(UIIndex, RegionID, BornID)
   if self.BtnChapterLevelList[UIIndex].IsHardBoss then
     self:SetUICollapsed(self.Prologue_Map_Level_Details)
@@ -74,7 +67,6 @@ function WBP_MapLevelSelect_C:ClickHardBossLevelItem(UIIndex, RegionID, BornID)
     self:SetHardBossMapTipsClose()
   end
 end
-
 function WBP_MapLevelSelect_C:SetHardBossLevelItem()
   local HardBossMain = {}
   for i, data in pairs(DataMgr.HardBossMain) do
@@ -107,7 +99,6 @@ function WBP_MapLevelSelect_C:SetHardBossLevelItem()
     end
   end
 end
-
 function WBP_MapLevelSelect_C:SetHardBossMapTipsClose()
   if self.HardBossMapTips then
     self.HardBossMapTips:PlayOutAnim()
@@ -115,7 +106,6 @@ function WBP_MapLevelSelect_C:SetHardBossMapTipsClose()
     self.CurHardBossUIIndex = -1
   end
 end
-
 function WBP_MapLevelSelect_C:SelectHardBossBtn(HardBossId)
   for i, BtnHardBossLeve in ipairs(self.BtnHardBossLevelList) do
     if BtnHardBossLeve.HardBossId == HardBossId then
@@ -124,7 +114,6 @@ function WBP_MapLevelSelect_C:SelectHardBossBtn(HardBossId)
     end
   end
 end
-
 function WBP_MapLevelSelect_C:OnClickedAreaLevelItem(UIIndex, DungeonId)
   if DungeonId > 0 then
     self:RefreshAreaLevelItem(UIIndex)
@@ -133,12 +122,10 @@ function WBP_MapLevelSelect_C:OnClickedAreaLevelItem(UIIndex, DungeonId)
   end
   self:ClickToSelectLevel(DungeonId)
 end
-
 function WBP_MapLevelSelect_C:OnMainMapBgPress()
   self.MouseLoc = UWidgetLayoutLibrary.GetMousePositionOnViewport(self)
   self:AddTimer(0.01, self.OnTimerDragMainMapBg, true, 0, "OnTimerDragMainMapBg")
 end
-
 function WBP_MapLevelSelect_C:OnTimerDragMainMapBg()
   local TmpMouseLoc = UWidgetLayoutLibrary.GetMousePositionOnViewport(self)
   local OriginLoc = self:GetPosition(self.Prologue_Map_Main_New.Panel_Map)
@@ -157,11 +144,9 @@ function WBP_MapLevelSelect_C:OnTimerDragMainMapBg()
   self:SetPosition(self.Prologue_Map_Main_New.Panel_LevelsAndName, OriginLoc - SubLoc)
   self:SetPosition(self.Prologue_Map_Main_New.Panel_AreaName, OriginLoc - SubLoc)
 end
-
 function WBP_MapLevelSelect_C:OnMainMapBgRelease()
   self:RemoveTimer("OnTimerDragMainMapBg")
 end
-
 function WBP_MapLevelSelect_C:ClickToSelectLevel(DungeonId)
   if DungeonId < 0 then
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -179,7 +164,6 @@ function WBP_MapLevelSelect_C:ClickToSelectLevel(DungeonId)
   end
   ::lbl_39::
 end
-
 function WBP_MapLevelSelect_C:ClickToSelectRegion(RegionID, BornID)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_enter_level", nil, nil)
   if RegionID < 0 then
@@ -199,7 +183,6 @@ function WBP_MapLevelSelect_C:ClickToSelectRegion(RegionID, BornID)
     WorldTravelSubsystem(self):ChangeRegionByRegionId(RegionID)
   end
 end
-
 function WBP_MapLevelSelect_C:CloseUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -214,7 +197,6 @@ function WBP_MapLevelSelect_C:CloseUI()
   self:Close()
   return true
 end
-
 function WBP_MapLevelSelect_C:InitMapUI()
   self:PlayAnimation(self.Page_in)
   self:SetUICollapsed(self.Prologue_Map_Level_Details)
@@ -292,7 +274,6 @@ function WBP_MapLevelSelect_C:InitMapUI()
   self.Prologue_Map_Level_Details.Btn_Go:BindEventOnClicked(self, self.MainMapDetailsEnterBtnCallback)
   self:SetUICollapsed(self.Panel_Back)
 end
-
 function WBP_MapLevelSelect_C:InitChangeMapTip()
   self.Btn_Select_01.Key_Left:CreateCommonKey({
     KeyInfoList = {
@@ -313,7 +294,6 @@ function WBP_MapLevelSelect_C:InitChangeMapTip()
   self:SetUICollapsed(self.Btn_Select_01.Tab_5)
   self:SetUICollapsed(self.Btn_Select_02)
 end
-
 function WBP_MapLevelSelect_C:MainMapBtnCallback(_, _)
   if self.bInExploreMap then
     self.Prologue_Map_Area_Level:PlayAnimation(self.Prologue_Map_Area_Level.Level_out)
@@ -324,7 +304,6 @@ function WBP_MapLevelSelect_C:MainMapBtnCallback(_, _)
   self:SetUICollapsed(self.Prologue_Map_Area_Level)
   self:InitMainMap()
 end
-
 function WBP_MapLevelSelect_C:ExploreMapBtnCallback(_, _)
   if self.bInExploreMap then
     self:SetUIVisible(self.Prologue_Map_Area_Level)
@@ -340,11 +319,9 @@ function WBP_MapLevelSelect_C:ExploreMapBtnCallback(_, _)
   self.MainDetailsDungeonId = {-1, -1}
   self:InitExploreMap()
 end
-
 function WBP_MapLevelSelect_C:MainMapDetailsEnterBtnCallback(_, _)
   self:ClickToSelectRegion(self.MainDetailsDungeonId[1], self.MainDetailsDungeonId[2])
 end
-
 function WBP_MapLevelSelect_C:InitPanelTips()
   self:SetUICollapsed(self.Btn_BacktoLocation)
   self.Btn_BacktoLocation:CreateCommonKey({
@@ -352,7 +329,7 @@ function WBP_MapLevelSelect_C:InitPanelTips()
       {Type = "Text", Text = "Tab"}
     },
     bLongPress = false,
-    Desc = "\229\155\158\229\136\176\229\189\147\229\137\141\228\189\141\231\189\174"
+    Desc = "回到当前位置"
   })
   self.Btn_Back:CreateCommonKey({
     KeyInfoList = {
@@ -363,7 +340,6 @@ function WBP_MapLevelSelect_C:InitPanelTips()
   })
   self.Btn_Back:AddExecuteLogic(self, self.BtnBackOnClick)
 end
-
 function WBP_MapLevelSelect_C:BtnBackOnClick(_)
   if self.bInExploreMap and not self.bInMainMap then
     self:BackToAreaMap()
@@ -375,7 +351,6 @@ function WBP_MapLevelSelect_C:BtnBackOnClick(_)
   end
   self:CloseUI()
 end
-
 function WBP_MapLevelSelect_C:InitMainMap()
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_switch_to_chapter", nil, nil)
   self.LastSelectMainMapItemIndex = -1
@@ -415,7 +390,6 @@ function WBP_MapLevelSelect_C:InitMainMap()
   end
   self:SetHardBossLevelItem()
 end
-
 function WBP_MapLevelSelect_C:RefreshMainLevelItem(bMoveCenter, MoveUIIndex)
   if MoveUIIndex > 0 then
     self:SetUIVisible(self.BtnChapterLevelList[MoveUIIndex].Selected)
@@ -433,7 +407,6 @@ function WBP_MapLevelSelect_C:RefreshMainLevelItem(bMoveCenter, MoveUIIndex)
   end
   self.LastSelectMainMapItemIndex = MoveUIIndex
 end
-
 function WBP_MapLevelSelect_C:InitExploreMap()
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_switch_to_chapter", nil, nil)
   self.bInMainMap = false
@@ -464,10 +437,8 @@ function WBP_MapLevelSelect_C:InitExploreMap()
     end
   end
 end
-
 function WBP_MapLevelSelect_C:RefreshAreaMap(UIIndex)
 end
-
 function WBP_MapLevelSelect_C:RefreshAreaLevelItem(UIIndex)
   if UIIndex > 0 then
     self.BtnExploreLevelList[UIIndex].KeepSelected = true
@@ -481,15 +452,12 @@ function WBP_MapLevelSelect_C:RefreshAreaLevelItem(UIIndex)
   end
   self.LastSelectAreaLevelItemIndex = UIIndex
 end
-
 function WBP_MapLevelSelect_C:SetUICollapsed(Item)
   Item:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_MapLevelSelect_C:SetUIVisible(Item)
   Item:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function WBP_MapLevelSelect_C:PlayExploreAnim(bOpenArea)
   if bOpenArea then
     self.Prologue_Map_Area:StopAnimation(self.Prologue_Map_Area.Area_out)
@@ -503,7 +471,6 @@ function WBP_MapLevelSelect_C:PlayExploreAnim(bOpenArea)
     self.Prologue_Map_Area_Level:PlayAnimation(self.Prologue_Map_Area_Level.Level_in)
   end
 end
-
 function WBP_MapLevelSelect_C:EnterArea(AreaID, bPlayAnim)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_chapter", nil, nil)
   if AreaID < 0 then
@@ -538,7 +505,6 @@ function WBP_MapLevelSelect_C:EnterArea(AreaID, bPlayAnim)
     self:SetUICollapsed(self.BtnExploreLevelList[i].Panel_Circle)
   end
 end
-
 function WBP_MapLevelSelect_C:BackToAreaMap()
   self.bInExploreMap = false
   self.CurAreaID = -1
@@ -547,10 +513,8 @@ function WBP_MapLevelSelect_C:BackToAreaMap()
   self:SetUICollapsed(self.Prologue_Map_Area_Level)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_switch_to_chapter", nil, nil)
 end
-
 function WBP_MapLevelSelect_C:OnMatchStateChanged()
 end
-
 function WBP_MapLevelSelect_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -562,7 +526,6 @@ function WBP_MapLevelSelect_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_MapLevelSelect_C:SelectTrackingQuestRegion()
   local BtnChapterLevel = self:GetTrackingQuestRegionButton()
   if BtnChapterLevel then
@@ -578,7 +541,6 @@ function WBP_MapLevelSelect_C:SelectTrackingQuestRegion()
     GuidePointWidget:PlayAnimation(GuidePointWidget.Loop, 0, 0)
   end
 end
-
 function WBP_MapLevelSelect_C:GetTrackingQuestRegionButton()
   local EMCache = require("EMCache.EMCache")
   local RegionID = EMCache:Get("TrackingQuestRegionId", true)
@@ -591,17 +553,14 @@ function WBP_MapLevelSelect_C:GetTrackingQuestRegionButton()
     end
   end
 end
-
 function WBP_MapLevelSelect_C:RemoveTrackingFromButton()
   local BtnChapterLevel = self:GetTrackingQuestRegionButton()
   if BtnChapterLevel then
     BtnChapterLevel.Level_Btn:RemoveChild(BtnChapterLevel.CommonGuidePoint)
   end
 end
-
 function WBP_MapLevelSelect_C:CloseSelf()
   UIManager(self):UnLoadUI("DungeonDetail")
   self:Close()
 end
-
 return WBP_MapLevelSelect_C

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   if Content.IsNew then
     self.New:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -11,7 +10,10 @@ function M:OnListItemObjectSet(Content)
   end
   if not Content or not Content.FrameId then
     self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    self.WS_Item:SetActiveWidgetIndex(1)
     return
+  else
+    self.WS_Item:SetActiveWidgetIndex(0)
   end
   self.Content = Content
   Content.UI = self
@@ -26,14 +28,17 @@ function M:OnListItemObjectSet(Content)
   if Widget then
     Widget.Text_Title:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Title:AddChildToOverlay(Widget)
+    if Content.bOwned == false then
+      self.Btn_Area.NormalAnimName = "HaveNot"
+      self:PlayAnimation(self.HaveNot)
+    else
+      self.Btn_Area.NormalAnimName = "Normal"
+    end
   end
 end
-
 function M:OnAddedToFocusPath()
-  ScreenPrint("OnAddedToFocusPath")
   self.Content.FocusEvent(self.Content.FocusEventObj, self.Content, self)
 end
-
 function M:InitSelect()
   if self.Content and self.Content.bSelect then
     self.Btn_Area:SetChecked(true)
@@ -43,7 +48,6 @@ function M:InitSelect()
     self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:SetIsEquipped(bIsEquipped)
   if bIsEquipped then
     self:PlayAnimation(self.Select)
@@ -52,7 +56,6 @@ function M:SetIsEquipped(bIsEquipped)
   end
   self.Content.bEquipped = bIsEquipped
 end
-
 function M:SetIsSelected(bIsSelect)
   self.Content.bSelect = bIsSelect
   if bIsSelect then
@@ -69,5 +72,4 @@ function M:SetIsSelected(bIsSelect)
     self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 return M

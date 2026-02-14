@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class()
-
 function M:Received_Notify(MeshComp, Animation)
   if IsStandAlone(self) then
     if self:NotifyServer(MeshComp, Animation) then
@@ -13,7 +12,6 @@ function M:Received_Notify(MeshComp, Animation)
   end
   return false
 end
-
 function M:NotifyServer(MeshComp, Animation)
   local PlayerCharacter = MeshComp:GetOwner()
   if not PlayerCharacter then
@@ -21,13 +19,12 @@ function M:NotifyServer(MeshComp, Animation)
   end
   PlayerCharacter.SkillFeature = true
   if PlayerCharacter.AddTimer then
-    PlayerCharacter:AddTimer(self:GetSequenceDuration(), function(InPlayer)
+    PlayerCharacter:AddTimer(self:GetSequenceDuration(PlayerCharacter), function(InPlayer)
       InPlayer.SkillFeature = false
     end, false, 0, "SkillFeature")
   end
   return true
 end
-
 function M:NotifyClient(MeshComp, Animation)
   local PlayerCharacter = MeshComp:GetOwner()
   if not PlayerCharacter then
@@ -38,11 +35,10 @@ function M:NotifyClient(MeshComp, Animation)
   end
   PlayerCharacter.SkillFeature = true
   if PlayerCharacter.AddTimer then
-    PlayerCharacter:AddTimer(self:GetSequenceDuration(), function(InPlayer)
+    PlayerCharacter:AddTimer(self:GetSequenceDuration(PlayerCharacter), function(InPlayer)
       InPlayer.SkillFeature = false
     end, false, 0, "SkillFeature")
   end
   return self.Overridden.NotifyClient(self, MeshComp, Animation)
 end
-
 return M

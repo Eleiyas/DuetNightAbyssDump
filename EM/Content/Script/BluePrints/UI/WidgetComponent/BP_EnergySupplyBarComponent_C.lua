@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_EnergySupplyBarComponent = Class("BluePrints.Common.TimerMgr")
-
 function BP_EnergySupplyBarComponent:Init(UnitID)
   self.UnitID = UnitID
   self.MaxSurvivalValue = DataMgr.GlobalConstant.SurvivalValue.ConstantValue
@@ -20,13 +19,11 @@ function BP_EnergySupplyBarComponent:Init(UnitID)
   self.IsFaceToPlayer = true
   self.FxObjectCount = 0
 end
-
 function BP_EnergySupplyBarComponent:UITip(TipString)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowUITip_BattleCommonTop(UIConst.Tip_CommonTop, TipString)
 end
-
 function BP_EnergySupplyBarComponent:OnFxObjectCreated(FxObject)
   if not FxObject then
     return
@@ -34,25 +31,20 @@ function BP_EnergySupplyBarComponent:OnFxObjectCreated(FxObject)
   self.FxObjectCount = self.FxObjectCount + 1
   FxObject.OnSystemFinished:Add(self, BP_EnergySupplyBarComponent.OnFxObjectFinished)
 end
-
 function BP_EnergySupplyBarComponent:OnFxObjectFinished()
   self.FxObjectCount = self.FxObjectCount - 1
 end
-
 function BP_EnergySupplyBarComponent:Initialize(Initializer)
   self.UnitID = 0
 end
-
 function BP_EnergySupplyBarComponent:ReceiveBeginPlay()
 end
-
 function BP_EnergySupplyBarComponent:ReceiveTick(DeltaSeconds)
   if self.IsFaceToPlayer == false then
     return
   end
   self:UpdateSupplyBarComponentRotation()
 end
-
 function BP_EnergySupplyBarComponent:UpdateSupplyBarComponentRotation()
   local LocPlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if nil == LocPlayerController then
@@ -64,7 +56,6 @@ function BP_EnergySupplyBarComponent:UpdateSupplyBarComponentRotation()
   ViewRotation.Pitch = ViewRotation.Pitch * -1
   self:K2_SetWorldRotation(ViewRotation, false, nil, true)
 end
-
 function BP_EnergySupplyBarComponent:OnEnergyChanged(NewEnergy, bFromMonster)
   if not self.FxObjectCount then
     self.FxObjectCount = 0
@@ -80,7 +71,6 @@ function BP_EnergySupplyBarComponent:OnEnergyChanged(NewEnergy, bFromMonster)
     self:OnBuffAdded(nil, self.BuffId, OldLevel, NewLevel)
   end
 end
-
 function BP_EnergySupplyBarComponent:OnBuffAdded(PlayerEid, BuffID, OldLayer, NewLayer)
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
   local BuffInfo = DataMgr.SurvivalPro[DungeonId].BuffDescribe[BuffID]
@@ -103,7 +93,6 @@ function BP_EnergySupplyBarComponent:OnBuffAdded(PlayerEid, BuffID, OldLayer, Ne
     end)
   end
 end
-
 function BP_EnergySupplyBarComponent:OnPlayerLeft(PlayerEid)
   self:UITip("DUNGEON_SURVIVALPRO_101")
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self:GetOwner())
@@ -116,7 +105,6 @@ function BP_EnergySupplyBarComponent:OnPlayerLeft(PlayerEid)
   end
   return false
 end
-
 function BP_EnergySupplyBarComponent:OnPlayerIn(PlayerEid, BuffID)
   if not DataMgr.Buff[BuffID] then
     return false
@@ -146,5 +134,4 @@ function BP_EnergySupplyBarComponent:OnPlayerIn(PlayerEid, BuffID)
   end)
   return true
 end
-
 return BP_EnergySupplyBarComponent

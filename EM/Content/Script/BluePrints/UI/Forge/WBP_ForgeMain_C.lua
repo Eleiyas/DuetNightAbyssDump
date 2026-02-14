@@ -9,11 +9,9 @@ local MAX_ITEM_PER_PANEL = 8
 local ForgeNPCId = 900001
 local ForgeNPCRegionId = 910001
 local WBP_ForgeMain_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_ForgeMain_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_ForgeMain_C:OnLoaded(...)
   self.KeyboardKeyConfig = {
     [ForgeConst.BottomKeyTypes.BottomKey_Keyboard_Space] = {
@@ -106,7 +104,7 @@ function WBP_ForgeMain_C:OnLoaded(...)
       OnEnter = self.OnEnterState_NormalPage_NoFocus
     },
     [ForgeConst.ControllerFSMStates.NormalPage_FocusItem] = {
-      OnEnter = self.OnEnterSttae_NormalPage_FocusItem
+      OnEnter = self.OnEnterState_NormalPage_FocusItem
     },
     [ForgeConst.ControllerFSMStates.NormalPage_ShowItem] = {
       OnEnter = self.OnEnterState_NormalPage_ShowItem,
@@ -115,6 +113,10 @@ function WBP_ForgeMain_C:OnLoaded(...)
     [ForgeConst.ControllerFSMStates.NormalPage_FocusSort] = {
       OnEnter = self.OnEnterState_NormalPage_FocusSort,
       OnLeave = self.OnLeaveState_NormalPage_FocusSort
+    },
+    [ForgeConst.ControllerFSMStates.NormalPage_FocusCompendium] = {
+      OnEnter = self.OnEnterState_NormalPage_FocusCompendium,
+      OnLeave = self.OnLeaveState_NormalPage_FocusCompendium
     },
     [ForgeConst.ControllerFSMStates.PathPage_Normal] = {
       OnEnter = self.OnEnterState_PathPage_Normal,
@@ -191,11 +193,11 @@ function WBP_ForgeMain_C:OnLoaded(...)
   self.Tab:PlayInAnim()
   self.Forging_Path_PC.HasPreInit = false
   self.Entrance_Compendium:Init(self, self.OnCompendiumClicked)
+  self.Entrance_Convert:Init(self, self.OnConvertClicked)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
   self:InitViewByDeviceType()
 end
-
 function WBP_ForgeMain_C:BP_GetDesiredFocusTarget()
   if UIUtils.IsGamepadInput() then
     local CurrentState = self.ControllerFSM:Current()
@@ -208,18 +210,15 @@ function WBP_ForgeMain_C:BP_GetDesiredFocusTarget()
     return self
   end
 end
-
 function WBP_ForgeMain_C:SetFocus_Lua()
   return self:BP_GetDesiredFocusTarget()
 end
-
 function WBP_ForgeMain_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
   self:InitViewByDeviceType()
   self:HandleGamepadRefocus()
 end
-
 function WBP_ForgeMain_C:InitViewByDeviceType()
   if UIUtils.IsGamepadInput() then
     self:InitGamepadView()
@@ -229,7 +228,6 @@ function WBP_ForgeMain_C:InitViewByDeviceType()
     self:InitKeyboardView()
   end
 end
-
 function WBP_ForgeMain_C:HandleGamepadRefocus()
   if UIUtils.IsGamepadInput() then
     if self.IsShowingDraftPathView then
@@ -245,7 +243,6 @@ function WBP_ForgeMain_C:HandleGamepadRefocus()
     end
   end
 end
-
 function WBP_ForgeMain_C:InitKeyboardView()
   self.Btn_Receive:SetGamePadIconVisible(false)
   if self.CanBatchComplete then
@@ -258,16 +255,18 @@ function WBP_ForgeMain_C:InitKeyboardView()
       ForgeConst.BottomKeyTypes.BottomKey_Keyboard_Esc
     })
   end
+  self.Controller:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_ForgeMain_C:InitMobileView()
   self.Btn_Receive:SetGamePadIconVisible(false)
 end
-
 function WBP_ForgeMain_C:InitGamepadView()
   self.Btn_Receive:SetGamePadIconVisible(true)
+  if self.Controller then
+    self.Controller:CreateGamepadKey(UIConst.GamePadImgKey.SpecialRight)
+    self.Controller:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+  end
 end
-
 function WBP_ForgeMain_C:InitNormalPageState()
   self:AddDelayFrameFunc(function()
     if self.CurInputDeviceType == UE4.ECommonInputType.Gamepad then
@@ -280,7 +279,6 @@ function WBP_ForgeMain_C:InitNormalPageState()
     end
   end, 10)
 end
-
 function WBP_ForgeMain_C:NavigateToFirstEntry()
   if self.ControllerNotAutoFocus then
     self.ControllerNotAutoFocus = nil
@@ -302,17 +300,17 @@ function WBP_ForgeMain_C:NavigateToFirstEntry()
     end
   end
   MinIndex = math.clamp(MinIndex, 0, AllItemsNum - 1)
-  self.ForgeContent:NavigateToIndex(MinIndex)
-  self.ForgeContent:SetFocus()
+  if not CommonUtils:IfExistSystemGuideUI(self) then
+    self.ForgeContent:NavigateToIndex(MinIndex)
+    self.ForgeContent:SetFocus()
+  end
 end
-
-function WBP_ForgeMain_C:OnEnterSttae_NormalPage_FocusItem()
+function WBP_ForgeMain_C:OnEnterState_NormalPage_FocusItem()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_ShowItem,
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_ForgeMain_C:OnEnterState_NormalPage_ShowItem()
   if self.CurrentGamepadSelectedItem then
     self:UpdateGamepadBottomKeyInfo({
@@ -324,11 +322,10 @@ function WBP_ForgeMain_C:OnEnterState_NormalPage_ShowItem()
       CurrentGamepadSelectedEntry:EnterShowItemView()
     end
   else
-    DebugPrint(LogTag.Error, "\232\191\155\229\133\165\232\129\154\231\132\166\230\168\161\229\188\143\229\164\177\232\180\165\239\188\140\230\137\190\228\184\141\229\136\176\233\156\128\232\166\129\232\129\154\231\132\166\231\154\132\233\147\184\233\128\160\230\157\161\231\155\174")
+    DebugPrint(LogTag.Error, "进入聚焦模式失败，找不到需要聚焦的铸造条目")
     self.ControllerFSM:Enter(ForgeConst.ControllerFSMStates.NormalPage_FocusItem)
   end
 end
-
 function WBP_ForgeMain_C:OnLeaveState_NormalPage_ShowItem(NewStateName)
   local CurrentGamepadSelectedEntry = self:GetEntryFromItem(self.CurrentGamepadSelectedItem)
   if CurrentGamepadSelectedEntry then
@@ -338,42 +335,53 @@ function WBP_ForgeMain_C:OnLeaveState_NormalPage_ShowItem(NewStateName)
     end)
   end
 end
-
 function WBP_ForgeMain_C:OnEnterState_NormalPage_FocusSort()
   self.Sort:SetFocus()
   self.Sort:SetControllerKeyHidden(true)
   self.Tab.WBP_Com_Tab_ResourceBar:HideGamePadKey(true)
-  self.Entrance_Compendium:HideGamepadKeyTip(true)
+  self.Controller:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   self.Btn_Receive:SetGamePadIconVisible(false)
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Confirm,
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_ForgeMain_C:OnLeaveState_NormalPage_FocusSort(NewStateName)
   self.Sort:SetControllerKeyHidden(false)
   self.Tab.WBP_Com_Tab_ResourceBar:HideGamePadKey(false)
-  self.Entrance_Compendium:HideGamepadKeyTip(false)
+  self.Controller:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Btn_Receive:SetGamePadIconVisible(true)
 end
-
+function WBP_ForgeMain_C:OnEnterState_NormalPage_FocusCompendium()
+  self.Entrance_Compendium:SetFocus()
+  self.Sort:SetControllerKeyHidden(true)
+  self.Tab.WBP_Com_Tab_ResourceBar:HideGamePadKey(true)
+  self.Btn_Receive:SetGamePadIconVisible(false)
+  self.Controller:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self:UpdateGamepadBottomKeyInfo({
+    ForgeConst.BottomKeyTypes.BottomKey_Confirm,
+    ForgeConst.BottomKeyTypes.BottomKey_Back
+  })
+end
+function WBP_ForgeMain_C:OnLeaveState_NormalPage_FocusCompendium()
+  self.Sort:SetControllerKeyHidden(false)
+  self.Tab.WBP_Com_Tab_ResourceBar:HideGamePadKey(false)
+  self.Btn_Receive:SetGamePadIconVisible(true)
+  self.Controller:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+end
 function WBP_ForgeMain_C:OnEnterState_NormalPage_NoFocus()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
   self.CurrentGamepadSelectedItem = nil
 end
-
 function WBP_ForgeMain_C:OnEnterState_PathPage_Normal()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_ForgeMain_C:OnLeaveState_PathPage_Normal(NewStateName)
 end
-
 function WBP_ForgeMain_C:UpdateGamepadBottomKeyInfo(KeyInfoTypeList)
   local KeyInfo = {}
   for Index, Value in ipairs(KeyInfoTypeList) do
@@ -381,7 +389,6 @@ function WBP_ForgeMain_C:UpdateGamepadBottomKeyInfo(KeyInfoTypeList)
   end
   self.Tab:UpdateBottomKeyInfo(KeyInfo)
 end
-
 function WBP_ForgeMain_C:UpdateKeyboardBottomKeyInfo(KeyTypeList)
   local KeyInfo = {}
   for _, Value in ipairs(KeyTypeList) do
@@ -389,7 +396,6 @@ function WBP_ForgeMain_C:UpdateKeyboardBottomKeyInfo(KeyTypeList)
   end
   self.Tab:UpdateBottomKeyInfo(KeyInfo)
 end
-
 function WBP_ForgeMain_C:OnForgeItemReceiveFocus(Widget)
   if self.CurrentGamepadSelectedItem == Widget.Content then
     return
@@ -404,7 +410,6 @@ function WBP_ForgeMain_C:OnForgeItemReceiveFocus(Widget)
   self.CurrentGamepadSelectedItem = Widget.Content
   self:UpdateFocusItemSetTargetState()
 end
-
 function WBP_ForgeMain_C:HandleGamepadSetTarget()
   if not self.CurrentGamepadSelectedItem then
     return
@@ -417,15 +422,12 @@ function WBP_ForgeMain_C:HandleGamepadSetTarget()
   end
   self:UpdateFocusItemSetTargetState()
 end
-
 function WBP_ForgeMain_C:HandleGamepadBatchComplete()
   self:TryBatchComplete()
 end
-
 function WBP_ForgeMain_C:HandleGamepadHideDraftPathView()
   self.ControllerFSM:Enter(ForgeConst.ControllerFSMStates.NormalPage_FocusItem)
 end
-
 function WBP_ForgeMain_C:UpdateFocusItemSetTargetState()
   if not self.CurrentGamepadSelectedItem then
     return
@@ -454,7 +456,6 @@ function WBP_ForgeMain_C:UpdateFocusItemSetTargetState()
     end
   end
 end
-
 function WBP_ForgeMain_C:OnMenuOpenChanged(bIsOpen)
   if self.CurInputDeviceType == UE4.ECommonInputType.Gamepad then
     self.Tab:UpdateUIStyleInPlatform(not bIsOpen)
@@ -462,23 +463,19 @@ function WBP_ForgeMain_C:OnMenuOpenChanged(bIsOpen)
     self.SubTab_List:UpdateUIStyleInPlatform(not bIsOpen)
     self.Sort:SetControllerKeyHidden(bIsOpen)
     self.Btn_Receive:SetGamePadIconVisible(not bIsOpen)
-    self.Entrance_Compendium:HideGamepadKeyTip(bIsOpen)
+    self.Controller:SetVisibility(bIsOpen and UE4.ESlateVisibility.HitTestInvisible or UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeMain_C:OnForgeItemLostFocus(Widget)
   Widget:SetGamepadFocus(false)
   if self.CurrentGamepadSelectedItem == Widget.Content then
     self.CurrentGamepadSelectedItem = nil
   end
 end
-
 function WBP_ForgeMain_C:OnForgeItemNavigateUp(Widget)
 end
-
 function WBP_ForgeMain_C:OnForgeItemNavigateDown(Widget)
 end
-
 function WBP_ForgeMain_C:OnForgeItemWidgetClicked(Widget)
   local DraftId = Widget.Content.Id
   local IsNotSeen = Widget.Content.IsNotSeen
@@ -489,11 +486,9 @@ function WBP_ForgeMain_C:OnForgeItemWidgetClicked(Widget)
     Widget:RefreshView()
   end
 end
-
 function WBP_ForgeMain_C:OnSortMethodChanged()
   self:UpdateForgeContent()
 end
-
 function WBP_ForgeMain_C:ParseLoadParams(Params)
   if not Params then
     return
@@ -502,7 +497,6 @@ function WBP_ForgeMain_C:ParseLoadParams(Params)
     self:SetNotDelayAddListItem(true)
   end
 end
-
 function WBP_ForgeMain_C:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
   AudioManager(self):PlaySystemUIBGM("event:/bgm/cbt02/0041_story_jiaojiao_tiejiang", nil, "ForgeMain")
@@ -513,16 +507,14 @@ function WBP_ForgeMain_C:ReceiveEnterState(StackAction)
   end
   if self.ControllerFSM then
     local Current = self.ControllerFSM:Current()
-    if Current == ForgeConst.ControllerFSMStates.NormalPage_ShowItem then
+    if Current == ForgeConst.ControllerFSMStates.NormalPage_ShowItem or Current == ForgeConst.ControllerFSMStates.NormalPage_FocusCompendium then
       self.ControllerFSM:Enter(ForgeConst.ControllerFSMStates.NormalPage_FocusItem)
     end
   end
 end
-
 function WBP_ForgeMain_C:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
 end
-
 function WBP_ForgeMain_C:RefreshSingleItemData(ForgeItemContent)
   if ForgeItemContent then
     if ForgeItemContent.IsEmptyWidget then
@@ -538,7 +530,6 @@ function WBP_ForgeMain_C:RefreshSingleItemData(ForgeItemContent)
     end
   end
 end
-
 function WBP_ForgeMain_C:TickRefreshItemsView(WidgetState)
   if self.IsShowingDraftPathView then
     self.Forging_Path_PC:TickRefreshDetails()
@@ -557,7 +548,6 @@ function WBP_ForgeMain_C:TickRefreshItemsView(WidgetState)
     end
   end
 end
-
 function WBP_ForgeMain_C:RefreshItemsView()
   if self.IsShowingDraftPathView then
     self.Forging_Path_PC:Refresh()
@@ -583,7 +573,6 @@ function WBP_ForgeMain_C:RefreshItemsView()
     self:UpdateBatchCompleteButton()
   end
 end
-
 function WBP_ForgeMain_C:UpdateBatchCompleteButton()
   local TabType = self:GetCurrentTabType()
   local Items = self.DraftInfosCache
@@ -615,7 +604,6 @@ function WBP_ForgeMain_C:UpdateBatchCompleteButton()
     })
   end
 end
-
 function WBP_ForgeMain_C:UpdateSiftButton()
   local TabType = self:GetCurrentTabType()
   if TabType == ForgeConst.TabType.Mod then
@@ -624,7 +612,6 @@ function WBP_ForgeMain_C:UpdateSiftButton()
     self.Panel_Sift:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeMain_C:InitListenEvent()
   self:AddDispatcher(EventID.OnStartProduce, self, self.OnStartProduce)
   self:AddDispatcher(EventID.OnCompleteProduce, self, self.OnCompleteProduce)
@@ -636,7 +623,6 @@ function WBP_ForgeMain_C:InitListenEvent()
   self.ForgeContent.BP_OnEntryInitialized:Add(self, self.OnForgeContentEntryInit)
   self.ForgeContent.BP_OnItemClicked:Add(self, self.OnForgeContentItemClicked)
 end
-
 function WBP_ForgeMain_C:InitKeySetting()
   self.SwitchTab_LeftKey = "Q"
   self.SwitchTab_RightKey = "E"
@@ -664,7 +650,6 @@ function WBP_ForgeMain_C:InitKeySetting()
     self.SubTab_List:TabToRight()
   end
 end
-
 function WBP_ForgeMain_C:ShowDraftPathView(DraftId)
   self.Panel_List:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Panel_Path:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -695,14 +680,12 @@ function WBP_ForgeMain_C:ShowDraftPathView(DraftId)
     self.Forging_Path_PC:SetGamepadFocus()
   end
 end
-
 function WBP_ForgeMain_C:HandleCloseDraftPathView()
   if UIUtils.IsGamepadInput() then
     self:HandleGamepadHideDraftPathView()
   end
   self:HideDraftPathView()
 end
-
 function WBP_ForgeMain_C:HideDraftPathView()
   if self.CurInputDeviceType == UE4.ECommonInputType.Gamepad then
     self.ForgeContent:SetFocus()
@@ -712,7 +695,6 @@ function WBP_ForgeMain_C:HideDraftPathView()
   self.IsShowingDraftPathView = false
   self:TickRefreshItemsView()
 end
-
 function WBP_ForgeMain_C:Handle_PreviewKeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   local CurrentState = self.ControllerFSM:Current()
@@ -736,7 +718,6 @@ function WBP_ForgeMain_C:Handle_PreviewKeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function WBP_ForgeMain_C:Handle_KeyDownOnGamePad(InKeyName)
   DebugPrint("Tianyi@ HandleKeyDownOnGamePad", InKeyName, self.ControllerFSM:Current())
   local IsEventHandled = false
@@ -762,7 +743,8 @@ function WBP_ForgeMain_C:Handle_KeyDownOnGamePad(InKeyName)
       self.ControllerFSM:Enter(ForgeConst.ControllerFSMStates.NormalPage_FocusSort)
       IsEventHandled = true
     elseif InKeyName == Const.GamepadSpecialRight then
-      self:OnCompendiumClicked()
+      self.ControllerFSM:Enter(ForgeConst.ControllerFSMStates.NormalPage_FocusCompendium)
+      self.Entrance_Compendium:SetFocus()
       IsEventHandled = true
     elseif InKeyName == Const.GamepadFaceButtonUp then
       self:HandleGamepadBatchComplete()
@@ -776,13 +758,18 @@ function WBP_ForgeMain_C:Handle_KeyDownOnGamePad(InKeyName)
     elseif InKeyName == Const.GamepadRightThumbstick then
       IsEventHandled = true
     end
+  elseif CurrentState == ForgeConst.ControllerFSMStates.NormalPage_FocusCompendium then
+    if InKeyName == Const.GamepadFaceButtonRight then
+      self.ControllerFSM:Enter(ForgeConst.ControllerFSMStates.NormalPage_FocusItem)
+      self.ForgeContent:SetFocus()
+      IsEventHandled = true
+    end
   elseif CurrentState == ForgeConst.ControllerFSMStates.PathPage_Normal and InKeyName == Const.GamepadFaceButtonUp then
     IsEventHandled = self.Forging_Path_PC:HandleTipPreviewDetails(InKeyName)
   end
   IsEventHandled = IsEventHandled or self.Tab:Handle_KeyEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function WBP_ForgeMain_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -795,7 +782,6 @@ function WBP_ForgeMain_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_ForgeMain_C:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -814,7 +800,6 @@ function WBP_ForgeMain_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_ForgeMain_C:BindReddotTreeEvents()
   ReddotManager.AddListener(ForgeConst.NewdotNodeName.Root, self, self.UpdateNewReddotState)
   for TabIdx, TabType in pairs(self.TabIdx2TabType) do
@@ -836,8 +821,10 @@ function WBP_ForgeMain_C:BindReddotTreeEvents()
       self:UpdateTabReddot(TabIdx)
     end)
   end
+  ReddotManager.AddListenerEx("ForgeConvert", self, function()
+    self:UpdateConvertReddot()
+  end)
 end
-
 function WBP_ForgeMain_C:UnBindReddotTreeEvents()
   for _, NodeName in pairs(ForgeConst.ReddotNodeName) do
     ReddotManager.RemoveListener(NodeName, self)
@@ -845,8 +832,8 @@ function WBP_ForgeMain_C:UnBindReddotTreeEvents()
   for _, NodeName in pairs(ForgeConst.NewdotNodeName) do
     ReddotManager.RemoveListener(NodeName, self)
   end
+  ReddotManager.RemoveListener("ForgeConvert", self)
 end
-
 function WBP_ForgeMain_C:UpdateNewReddotState()
   local NewDotCount = ReddotManager.GetTreeNode(ForgeConst.NewdotNodeName.Root).Count
   if NewDotCount > 0 then
@@ -855,7 +842,6 @@ function WBP_ForgeMain_C:UpdateNewReddotState()
     self.Entrance_Compendium.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeMain_C:UpdateTabReddot(TabIdx)
   DebugPrint("Tianyi@ UpdateTabReddot", TabIdx)
   local TabType = self.TabIdx2TabType[TabIdx]
@@ -865,7 +851,6 @@ function WBP_ForgeMain_C:UpdateTabReddot(TabIdx)
   local ShowNewReddot = NewdotNode.Count > 0
   self.Tab:ShowTabRedDot(TabIdx, ShowNewReddot and not ShowNormalReddot, ShowNormalReddot)
 end
-
 function WBP_ForgeMain_C:UpdateSubTabReddot(TabIdx, SubTabIdx)
   DebugPrint("Tianyi@ UpdateSubTabReddot", TabIdx, SubTabIdx)
   if not (self.TabIndex == TabIdx and self.TabIdx2SubTabType[TabIdx]) or not self.TabIdx2SubTabType[TabIdx][SubTabIdx] then
@@ -878,7 +863,15 @@ function WBP_ForgeMain_C:UpdateSubTabReddot(TabIdx, SubTabIdx)
   local ShowNewReddot = SubTabNewdotNode.Count > 0
   self.SubTab_List:ShowTabRedDot(SubTabIdx, ShowNewReddot and not ShowNormalReddot, ShowNormalReddot)
 end
-
+function WBP_ForgeMain_C:UpdateConvertReddot()
+  local ConvertReddotNode = ReddotManager.GetTreeNode("ForgeConvert")
+  local ShowConvertReddot = ConvertReddotNode.Count > 0
+  if ShowConvertReddot then
+    self.Entrance_Convert.New:SetVisibility(UE4.ESlateVisibility.Visible)
+  else
+    self.Entrance_Convert.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+end
 function WBP_ForgeMain_C:InitTabContent()
   local AllTabInfo = {}
   self.TabIdx2DataIdx = {}
@@ -928,15 +921,12 @@ function WBP_ForgeMain_C:InitTabContent()
   self.Tab:SelectTab(1)
   self:BindReddotTreeEvents()
 end
-
 function WBP_ForgeMain_C:SetTargetSubTabIndex(SubTabIndex)
   self.TargetSubTabIndex = SubTabIndex
 end
-
 function WBP_ForgeMain_C:GetTargetSubTabIndex()
   return self.TargetSubTabIndex
 end
-
 function WBP_ForgeMain_C:OnTabItemSelected(TabWidget)
   local PrevTabType = self:GetCurrentTabType()
   self.TabIndex = TabWidget.Idx
@@ -977,12 +967,10 @@ function WBP_ForgeMain_C:OnTabItemSelected(TabWidget)
   end
   self.Sift:ClearSiftSelection()
 end
-
 function WBP_ForgeMain_C:OnSubTabItemSelected(TabWidget)
   self.SubTabIndex = TabWidget.Idx
   self:UpdateForgeContent()
 end
-
 function WBP_ForgeMain_C:UpdateForgeContent()
   if self.TabIndex then
     self.CurrentGamepadSelectedItem = nil
@@ -1005,7 +993,6 @@ function WBP_ForgeMain_C:UpdateForgeContent()
     self:InitNormalPageState()
   end
 end
-
 function WBP_ForgeMain_C:GetMaxItemNumPerPanel()
   if self.MaxItemNumPerPanel then
     return self.MaxItemNumPerPanel
@@ -1022,7 +1009,6 @@ function WBP_ForgeMain_C:GetMaxItemNumPerPanel()
     return MAX_ITEM_PER_PANEL
   end
 end
-
 function WBP_ForgeMain_C:CheckScrollbarVisibility(ItemNum)
   if ItemNum <= self:GetMaxItemNumPerPanel() then
     self.ForgeContent:SetScrollbarVisibility(UE4.ESlateVisibility.Collapsed)
@@ -1030,8 +1016,10 @@ function WBP_ForgeMain_C:CheckScrollbarVisibility(ItemNum)
     self.ForgeContent:SetScrollbarVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function WBP_ForgeMain_C:CheckShouldAddEmptyItem()
+  if self:IsDelayAddingForgeContentItem() then
+    return
+  end
   local ItemsNum = self.ForgeContent:GetNumItems()
   local MaxItemNumPerPanel = self:GetMaxItemNumPerPanel()
   while ItemsNum < MaxItemNumPerPanel do
@@ -1042,7 +1030,6 @@ function WBP_ForgeMain_C:CheckShouldAddEmptyItem()
     DebugPrint("Tianyi@ Items num not enough. Add empty item")
   end
 end
-
 function WBP_ForgeMain_C:ShowEmptyPage(bShow, FilterResult)
   local IsGamepad = self.CurInputDeviceType == UE4.ECommonInputType.Gamepad
   if bShow then
@@ -1083,15 +1070,12 @@ function WBP_ForgeMain_C:ShowEmptyPage(bShow, FilterResult)
     end
   end
 end
-
 function WBP_ForgeMain_C:SetNotDelayAddListItem(Value)
   self.NotDelayAddListItem = Value
 end
-
 function WBP_ForgeMain_C:GetNotDelayAddListItem()
   return self.NotDelayAddListItem
 end
-
 function WBP_ForgeMain_C:AddSingleItemToContent(DraftInfo, IsEmpty)
   local Obj = NewObject(self.ForgeItemContentClass)
   if IsEmpty then
@@ -1100,35 +1084,27 @@ function WBP_ForgeMain_C:AddSingleItemToContent(DraftInfo, IsEmpty)
   else
     Obj = ForgeModel:ConstructForgeItemContent(Obj, DraftInfo)
     Obj.IsEmptyWidget = false
-    
     function Obj.OnReceiveFocus(Widget)
       self:OnForgeItemReceiveFocus(Widget)
     end
-    
     function Obj.OnLostFocus(Widget)
       self:OnForgeItemLostFocus(Widget)
     end
-    
     function Obj.OnNavigateUp(Widget)
       self:OnForgeItemNavigateUp(Widget)
     end
-    
     function Obj.OnNavigateDown(Widget)
       self:OnForgeItemNavigateDown(Widget)
     end
-    
     function Obj.OnMenuOpenChanged(bIsOpen)
       self:OnMenuOpenChanged(bIsOpen)
     end
-    
     function Obj.OnItemWidgetClicked(Widget)
       self:OnForgeItemWidgetClicked(Widget)
     end
-    
     self.ForgeContent:AddItem(Obj)
   end
 end
-
 function WBP_ForgeMain_C:BeginAddForgeContentItem(DraftInfos)
   self.ForgeContent:ClearListItems()
   self.DraftInfosCache = DraftInfos
@@ -1145,7 +1121,6 @@ function WBP_ForgeMain_C:BeginAddForgeContentItem(DraftInfos)
     self:DelayAddForgeContentItem(DraftInfos)
   end
 end
-
 function WBP_ForgeMain_C:AddForgeContentItem(DraftInfos)
   local MaxItemNumPerPanel = self:GetMaxItemNumPerPanel()
   for ItemIndex, DraftInfo in ipairs(DraftInfos) do
@@ -1156,7 +1131,6 @@ function WBP_ForgeMain_C:AddForgeContentItem(DraftInfos)
   end
   self:CheckScrollbarVisibility(#DraftInfos)
 end
-
 function WBP_ForgeMain_C:DelayAddForgeContentItem(DraftInfos)
   self.DelayItemIndex = 1
   self.DelayToShowContentItemTimer = self:AddTimer(0.06, function()
@@ -1177,39 +1151,31 @@ function WBP_ForgeMain_C:DelayAddForgeContentItem(DraftInfos)
     self.DelayItemIndex = self.DelayItemIndex + 1
   end, true)
 end
-
 function WBP_ForgeMain_C:IsDelayAddingForgeContentItem()
   return self.DelayToShowContentItemTimer
 end
-
 function WBP_ForgeMain_C:OnForgeContentEntryInit(Item, Widget)
   function Widget.EventStartProduce()
     self:OnDraftBtnStartClicked(Item.ID)
   end
-  
   function Widget.EventCancelProduce()
     self:OnDraftBtnCancelClicked(Item.ID)
   end
-  
   function Widget.EventShowPath()
     self:OnDraftShowPath(Item.ID)
   end
-  
   self:RefreshSingleItemData(Item)
   Widget.Content = Item
   Widget:InitializeView()
 end
-
 function WBP_ForgeMain_C:OnForgeContentItemClicked(Item)
   if Item.State == ForgeConst.DraftState.Complete then
     self:RequestCompleteProduce(Item.Id)
   end
 end
-
 function WBP_ForgeMain_C:SetEnableBtnStartClicked(Value)
   self.DisableBtnStartClicked = not Value
 end
-
 function WBP_ForgeMain_C:OnDraftBtnStartClicked(DraftId)
   if self.DisableBtnStartClicked then
     return
@@ -1219,16 +1185,7 @@ function WBP_ForgeMain_C:OnDraftBtnStartClicked(DraftId)
   if DraftInfo then
     if DraftInfo.State == ForgeConst.DraftState.NotStarted then
       if DraftInfo.CanProduce then
-        local CostItemList
-        if DraftInfo.ModAsMaterial then
-          CostItemList = ForgeModel:ChooseCostItems(DraftId)
-          if nil == CostItemList then
-            DebugPrint(ErrorTag, "CostModList is nil, there must be something wrong!")
-            return
-          end
-        end
-        self:ShowStartProduceConfirmWindowWithItem(DraftId, CostItemList)
-      else
+        self:ShowStartProduceConfirmWindowWithItem(DraftId, DraftInfo.ModAsMaterial)
       end
     elseif DraftInfo.State == ForgeConst.DraftState.InProgress then
       self:ShowAccerateProduceConfirmWindow(DraftId)
@@ -1239,32 +1196,27 @@ function WBP_ForgeMain_C:OnDraftBtnStartClicked(DraftId)
     DebugPrint("Tianyi@ Can not Found DraftInfo! It must be something wrong!")
   end
 end
-
 function WBP_ForgeMain_C:OnDraftShowPath(DraftId)
   DebugPrint("Tianyi@ OnDraftShowPath, DraftId = " .. DraftId)
   self:ShowDraftPathView(DraftId)
 end
-
 function WBP_ForgeMain_C:OnDraftBtnCancelClicked(DraftId)
   local DraftInfo = ForgeModel:CheckState(DraftId)
   if DraftInfo and DraftInfo.State == ForgeConst.DraftState.InProgress then
     self:ShowCancelProduceConfirmWindow(DraftId)
   end
 end
-
 function WBP_ForgeMain_C:OnFocusToPathDetailsView()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Confirm,
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_ForgeMain_C:OnFocusToPathView()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_ForgeMain_C:NavigateToTab(TabIndex, SubTabIndex)
   if self.Tab.CurrentTab == TabIndex then
     return
@@ -1273,7 +1225,6 @@ function WBP_ForgeMain_C:NavigateToTab(TabIndex, SubTabIndex)
   self:SetTargetSubTabIndex(SubTabIndex)
   self.Tab:SelectTab(TabIndex)
 end
-
 function WBP_ForgeMain_C:NavigateToTargetDraft(DraftId)
   local IsGamepad = self.CurInputDeviceType == UE4.ECommonInputType.Gamepad
   if self.IsShowingDraftPathView then
@@ -1308,7 +1259,6 @@ function WBP_ForgeMain_C:NavigateToTargetDraft(DraftId)
     end
   end)
 end
-
 function WBP_ForgeMain_C:PlayEntryScanlineAnim(Widget)
   if not Widget then
     return
@@ -1327,15 +1277,13 @@ function WBP_ForgeMain_C:PlayEntryScanlineAnim(Widget)
     Widget:PlayScanlineAnim()
   end
 end
-
 function WBP_ForgeMain_C:ContinueCoroutine(co, ...)
   if co then
     local Succeed, Ret = coroutine.resume(co, ...)
     assert(Succeed, Ret)
   end
 end
-
-function WBP_ForgeMain_C:ShowStartProduceConfirmWindow(DraftId, HasEquipedMod, co)
+function WBP_ForgeMain_C:ShowStartProduceConfirmWindow(DraftId, HasEquipedMod, Count, co)
   local CommonDialogParams = {}
   local DraftData = DataMgr.Draft[DraftId]
   local PopupData = DataMgr.CommonPopupUIContext[Const.Popup_StartProduce]
@@ -1344,20 +1292,16 @@ function WBP_ForgeMain_C:ShowStartProduceConfirmWindow(DraftId, HasEquipedMod, c
   if DraftData.ProductNum and DraftData.ProductNum > 1 then
     ProductName = ProductName .. " x" .. tostring(DraftData.ProductNum)
   end
-  CommonDialogParams.ShortText = string.format(GText(PopoverText), ProductName)
+  CommonDialogParams.ShortText = string.format(GText(PopoverText), ProductName, Count or 1)
   CommonDialogParams.HideItemTips = not HasEquipedMod
-  
   function CommonDialogParams.RightCallbackFunction()
     self:ContinueCoroutine(co, true, 1)
   end
-  
   function CommonDialogParams.LeftCallbackFunction()
     self:ContinueCoroutine(co, false)
   end
-  
   self:ShowConfirmWindow(Const.Popup_StartProduce, CommonDialogParams, self)
 end
-
 function WBP_ForgeMain_C:ShowStartBatchProduceConfirmWindow(DraftId, co)
   local CommonDialogParams = {}
   local DraftData = DataMgr.Draft[DraftId]
@@ -1370,29 +1314,24 @@ function WBP_ForgeMain_C:ShowStartBatchProduceConfirmWindow(DraftId, co)
   local ForgeItemContent = ForgeModel:ConstructForgeItemContent({}, DraftInfo)
   CommonDialogParams.ForgeItemContent = ForgeItemContent
   CommonDialogParams.DraftInfo = DraftInfo
-  
   function CommonDialogParams.RightCallbackFunction(_, PackageData)
     local Result = PackageData.Content_1
     local ProduceCount = Result.Count or 1
     self:ContinueCoroutine(co, true, ProduceCount)
   end
-  
   function CommonDialogParams.LeftCallbackFunction()
     self:ContinueCoroutine(co, false)
   end
-  
   CommonDialogParams.BindScript = "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_LuaModel.Common_Dialog_LuaModel_BatchProduce"
   self:ShowConfirmWindow(Const.Popup_BatchStartProduce, CommonDialogParams, self)
 end
-
-function WBP_ForgeMain_C:ShowStartProduceConfirmWindowWithItem(DraftId, CostItemList)
-  CostItemList = CostItemList or {}
+function WBP_ForgeMain_C:HandleShowModConfirmWindow(DraftId, Count, CostItemList)
+  local co = coroutine.running()
   local ImportantModList = {}
-  local UseModAsMaterial = false
   local HasLockedMod = false
   local HasUpgradedMod = false
   local HasEquipedMod = false
-  local ShouldShowBatchProduceWindow = DataMgr.Draft[DraftId].Batch
+  local UseModAsMaterial = false
   for _, Item in ipairs(CostItemList) do
     local IsImportant = false
     if Item.Type == "Mod" then
@@ -1413,37 +1352,46 @@ function WBP_ForgeMain_C:ShowStartProduceConfirmWindowWithItem(DraftId, CostItem
       end
     end
   end
+  table.sort(ImportantModList, function(a, b)
+    if a.IsLock ~= b.IsLock then
+      return a.IsLock == true
+    end
+    return false
+  end)
+  if UseModAsMaterial then
+    if HasLockedMod then
+      self:ShowHasLockedModConfirmWindow(DraftId, ImportantModList, HasEquipedMod, co)
+      return coroutine.yield()
+    elseif HasUpgradedMod then
+      self:ShowHasUpgradedModConfirmWindow(DraftId, ImportantModList, HasEquipedMod, co)
+      return coroutine.yield()
+    else
+      self:ShowStartProduceConfirmWindow(DraftId, HasEquipedMod, Count, co)
+      return coroutine.yield()
+    end
+  end
+end
+function WBP_ForgeMain_C:ShowStartProduceConfirmWindowWithItem(DraftId, UseModAsMaterial)
+  local ShouldShowBatchProduceWindow = DataMgr.Draft[DraftId].Batch
   local AsyncFunc = coroutine.create(function()
     local co = coroutine.running()
-    local Succeed, Count
-    if UseModAsMaterial then
-      if HasLockedMod then
-        self:ShowHasLockedModConfirmWindow(DraftId, ImportantModList, HasEquipedMod, co)
-        Succeed, Count = coroutine.yield()
-        if false == Succeed then
-          return
-        end
-      elseif HasUpgradedMod then
-        self:ShowHasUpgradedModConfirmWindow(DraftId, ImportantModList, HasEquipedMod, co)
-        Succeed, Count = coroutine.yield()
-        if false == Succeed then
-          return
-        end
-      else
-        self:ShowStartProduceConfirmWindow(DraftId, HasEquipedMod, co)
-        Succeed, Count = coroutine.yield()
-        if false == Succeed then
-          return
-        end
-      end
-    elseif ShouldShowBatchProduceWindow then
+    local Succeed, Count = nil, 1
+    local CostItemList = {}
+    if ShouldShowBatchProduceWindow then
       self:ShowStartBatchProduceConfirmWindow(DraftId, co)
       Succeed, Count = coroutine.yield()
       if false == Succeed then
         return
       end
+      if UseModAsMaterial then
+        CostItemList = ForgeModel:ChooseCostItems(DraftId, Count)
+        local Succeed = self:HandleShowModConfirmWindow(DraftId, Count, CostItemList)
+        if not Succeed then
+          return
+        end
+      end
     else
-      self:ShowStartProduceConfirmWindow(DraftId, false, co)
+      self:ShowStartProduceConfirmWindow(DraftId, false, 1, co)
       Succeed = coroutine.yield()
       if false == Succeed then
         return
@@ -1454,7 +1402,6 @@ function WBP_ForgeMain_C:ShowStartProduceConfirmWindowWithItem(DraftId, CostItem
   local Succeed, Ret = coroutine.resume(AsyncFunc)
   assert(Succeed, Ret)
 end
-
 function WBP_ForgeMain_C:ShowImportantItemCostConfirmWindow(DraftId, ImportantItemList, PopupId, HasEquipedMod, co)
   local CommonDialogParams = {}
   local DraftData = DataMgr.Draft[DraftId]
@@ -1470,32 +1417,27 @@ function WBP_ForgeMain_C:ShowImportantItemCostConfirmWindow(DraftId, ImportantIt
       ItemType = "Mod",
       ItemId = ImportantMod.Id,
       ItemUuid = ImportantMod.Uuid,
-      ItemNum = ImportantMod.Count
+      ItemNum = ImportantMod.Count,
+      ItemInstance = ImportantMod.Instance
     })
   end
   CommonDialogParams.LargeSizeItem = true
   CommonDialogParams.ShortText = string.format(GText(PopoverText), ProductName)
   CommonDialogParams.HideItemTips = not HasEquipedMod
-  
   function CommonDialogParams.RightCallbackFunction()
     self:ContinueCoroutine(co, true)
   end
-  
   function CommonDialogParams.LeftCallbackFunction()
     self:ContinueCoroutine(co, false)
   end
-  
   self:ShowConfirmWindow(PopupId, CommonDialogParams, self)
 end
-
 function WBP_ForgeMain_C:ShowHasLockedModConfirmWindow(DraftId, ImportantModList, HasEquipedMod, co)
   self:ShowImportantItemCostConfirmWindow(DraftId, ImportantModList, Const.Popup_ConfirmLockedMod, HasEquipedMod, co)
 end
-
 function WBP_ForgeMain_C:ShowHasUpgradedModConfirmWindow(DraftId, ImportantModList, HasEquipedMod, co)
   self:ShowImportantItemCostConfirmWindow(DraftId, ImportantModList, Const.Popup_ConfirmUpgradedMod, HasEquipedMod, co)
 end
-
 function WBP_ForgeMain_C:ShowCancelProduceConfirmWindow(DraftId)
   local CommonDialogParams = {}
   local CancelParams = {
@@ -1530,28 +1472,22 @@ function WBP_ForgeMain_C:ShowCancelProduceConfirmWindow(DraftId)
     }
   end
   CommonDialogParams.CancelParams = CancelParams
-  
   function CommonDialogParams.RightCallbackFunction()
     self:RequestCancelProduce(DraftId)
   end
-  
   self:ShowConfirmWindow(Const.Popup_CancelProduce, CommonDialogParams, self)
 end
-
 function WBP_ForgeMain_C:ShowAccerateProduceConfirmWindow(DraftId)
   local CommonDialogParams = {}
   local PopupData = DataMgr.CommonPopupUIContext[Const.Popup_AccerateProduce]
   local PopoverText = PopupData.PopoverText
   local AccelerateCostType = DataMgr.GlobalConstant.AccelerateCostType.ConstantValue
   CommonDialogParams.ShortText = string.format(GText(PopoverText), GText(ForgeModel:GetProductNameByTypeAndId("Resource", AccelerateCostType)), ForgeModel:GetAccerateCost(DraftId))
-  
   function CommonDialogParams.RightCallbackFunction()
     self:RequestAccerateProduce(DraftId)
   end
-  
   self:ShowConfirmWindow(Const.Popup_AccerateProduce, CommonDialogParams, self)
 end
-
 function WBP_ForgeMain_C:ShowCompleteProduceWindow(DraftIDs)
   local Params = {}
   local WeaponIds = {}
@@ -1570,16 +1506,13 @@ function WBP_ForgeMain_C:ShowCompleteProduceWindow(DraftIDs)
     Params[ItemType][ItemId] = ItemNum
   end
   self:SetEnableBtnStartClicked(false)
-  
   local function Callback()
     self:RefreshItemsView()
     self:SetInputUIOnly(true)
     self:SetEnableBtnStartClicked(true)
   end
-  
   self:ShowGetItemWindow(Params, Callback)
 end
-
 function WBP_ForgeMain_C:ShowCancelProduceWindow(DraftId, InCount, Count)
   local Params = {}
   local DraftData = DataMgr.Draft[DraftId]
@@ -1603,27 +1536,22 @@ function WBP_ForgeMain_C:ShowCancelProduceWindow(DraftId, InCount, Count)
       Params.Resources[FoundryId] = FoundryCount * InCount
     end
   end
-  
   local function Callback()
     self:RefreshItemsView()
     self:SetInputUIOnly(true)
   end
-  
   self:ShowGetItemWindow(Params, Callback)
 end
-
 function WBP_ForgeMain_C:ShowConfirmWindow(PopupId, Params, ParentWidget)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(PopupId, Params, ParentWidget)
 end
-
 function WBP_ForgeMain_C:ShowGetItemWindow(Params, Callback)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Params, false, Callback, self)
 end
-
 function WBP_ForgeMain_C:RequestStartProduce(DraftId, CostItemList, ProduceNum)
   local PlayerAvatar = GWorld:GetAvatar()
   local SelectParam = {}
@@ -1647,42 +1575,41 @@ function WBP_ForgeMain_C:RequestStartProduce(DraftId, CostItemList, ProduceNum)
     ForgeModel:RemoveDraftFromTarget(DraftId)
   end
 end
-
 function WBP_ForgeMain_C:TryBatchComplete()
   if self.CanBatchComplete then
     self:RequestBatchComplete()
   end
 end
-
 function WBP_ForgeMain_C:RequestBatchComplete()
-  local TabType = self:GetCurrentTabType()
-  local SubTabType = self:GetCurrentSubTabType()
-  local CurrentCompeletedDraftIds = ForgeModel:GetCompletedDraftIdsByFilter(TabType, SubTabType)
+  local CurrentCompeletedDraftIds = {}
+  local CurrentForgeItems = self.ForgeContent:GetListItems()
+  for i = 1, CurrentForgeItems:Num() do
+    local Item = CurrentForgeItems:GetRef(i)
+    local DraftInfo = ForgeModel:CheckState(Item.Id)
+    if DraftInfo and DraftInfo.State == ForgeConst.DraftState.Complete then
+      table.insert(CurrentCompeletedDraftIds, Item.Id)
+    end
+  end
   local PlayerAvatar = GWorld:GetAvatar()
   PlayerAvatar:GetAllDraftCompleteReward(CurrentCompeletedDraftIds)
   self:BlockAllUIInput(true)
 end
-
 function WBP_ForgeMain_C:RequestCancelProduce(DraftId)
   local PlayerAvatar = GWorld:GetAvatar()
   PlayerAvatar:CancelProduct(DraftId)
   self:BlockAllUIInput(true)
 end
-
 function WBP_ForgeMain_C:RequestAccerateProduce(DraftId)
   local PlayerAvatar = GWorld:GetAvatar()
   PlayerAvatar:AccelerateProduct(DraftId)
   self:BlockAllUIInput(true)
 end
-
 function WBP_ForgeMain_C:RequestCompleteProduce(DraftId)
   local PlayerAvatar = GWorld:GetAvatar()
   PlayerAvatar:CompleteProduct(DraftId)
   self:BlockAllUIInput(true)
 end
-
 function WBP_ForgeMain_C:OnStartProduce(DraftId, Ret)
-  DebugPrint("Tianyi@ ForgeMain: StartProduce ", DraftId)
   if not ErrorCode:Check(Ret) then
     self:BlockAllUIInput(false)
     return
@@ -1691,9 +1618,7 @@ function WBP_ForgeMain_C:OnStartProduce(DraftId, Ret)
   self:RefreshItemsView()
   self:BlockAllUIInput(false)
 end
-
 function WBP_ForgeMain_C:OnCompleteProduce(DraftIds, Ret)
-  DebugPrint("Tianyi@ ForgeMain: CompleteProduce ", DraftId)
   if not ErrorCode:Check(Ret) then
     self:BlockAllUIInput(false)
     return
@@ -1702,9 +1627,7 @@ function WBP_ForgeMain_C:OnCompleteProduce(DraftIds, Ret)
   self:UpdateBatchCompleteButton()
   self:BlockAllUIInput(false)
 end
-
 function WBP_ForgeMain_C:OnCancelProduce(DraftId, Ret, InCount, Count)
-  DebugPrint("Tianyi@ OnCancelProduce " .. DraftId .. " " .. Ret)
   if not ErrorCode:Check(Ret) then
     self:BlockAllUIInput(false)
     return
@@ -1714,12 +1637,10 @@ function WBP_ForgeMain_C:OnCancelProduce(DraftId, Ret, InCount, Count)
   self:ShowCancelProduceWindow(DraftId, InCount, Count)
   self:BlockAllUIInput(false)
 end
-
 function WBP_ForgeMain_C:OnBlueComplete(DraftId)
   self:RefreshItemsView()
   self:UpdateBatchCompleteButton()
 end
-
 function WBP_ForgeMain_C:OnAccerateProduce(DraftId, Ret)
   if not ErrorCode:Check(Ret) then
     self:BlockAllUIInput(false)
@@ -1729,7 +1650,6 @@ function WBP_ForgeMain_C:OnAccerateProduce(DraftId, Ret)
   self:UpdateBatchCompleteButton()
   self:BlockAllUIInput(false)
 end
-
 function WBP_ForgeMain_C:OnReturnKeyDown()
   if self.IsShowingDraftPathView then
     self.Forging_Path_PC:OnBtnCloseClicked()
@@ -1737,7 +1657,6 @@ function WBP_ForgeMain_C:OnReturnKeyDown()
     self:OnClose()
   end
 end
-
 function WBP_ForgeMain_C:SwitchCamera(bNpcCamera)
   local Avatar = GWorld:GetAvatar()
   local IsHome = Avatar:CheckSubRegionType(nil, CommonConst.SubRegionType.Home)
@@ -1747,7 +1666,6 @@ function WBP_ForgeMain_C:SwitchCamera(bNpcCamera)
     UIManager(self):SwitchUINpcCamera(bNpcCamera, "ForgeMain", ForgeNPCRegionId, {bDestroyNpc = true, IsHaveInOutAnim = false})
   end
 end
-
 function WBP_ForgeMain_C:OnClose()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -1785,7 +1703,6 @@ function WBP_ForgeMain_C:OnClose()
   AudioManager(self):SetEventSoundParam(self, "ForgeMainIn", {ToEnd = 1})
   ForgeModel:ClearNewRedDots()
 end
-
 function WBP_ForgeMain_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     local Avatar = GWorld:GetAvatar()
@@ -1793,12 +1710,13 @@ function WBP_ForgeMain_C:OnAnimationFinished(InAnimation)
     self:Close()
   end
 end
-
 function WBP_ForgeMain_C:OnModFilterChanged(SelectedItems, ItemDatas)
   self.CommonFilterData = {FilterSelectedItems = SelectedItems, FilterItemDatas = ItemDatas}
-  self:UpdateForgeContent()
+  local CurrentTabType = self:GetCurrentTabType()
+  if CurrentTabType == ForgeConst.TabType.Mod then
+    self:UpdateForgeContent()
+  end
 end
-
 function WBP_ForgeMain_C:Close()
   self:RemoveDispatcher(EventID.OnStartProduce)
   self:RemoveDispatcher(EventID.OnCompleteProduce)
@@ -1807,7 +1725,6 @@ function WBP_ForgeMain_C:Close()
   EventManager:FireEvent(EventID.OnMainUIReddotUpdate)
   self.Super.Close(self)
 end
-
 function WBP_ForgeMain_C:Destruct()
   AudioManager(self):StopSystemUIBGM("ForgeMain")
   self.RemoveTimer(self.RefreshTimer)
@@ -1818,13 +1735,11 @@ function WBP_ForgeMain_C:Destruct()
   self:EnableTickWhenPaused(false)
   self.Super.Destruct(self)
 end
-
 function WBP_ForgeMain_C:ShowError(ErrorCode)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowError(ErrorCode)
 end
-
 function WBP_ForgeMain_C:EnableTickWhenPaused(Value)
   local TweenActor = UE4.ALTweenActor.GetLTweenInstance(self:GetWorld())
   if Value then
@@ -1835,17 +1750,14 @@ function WBP_ForgeMain_C:EnableTickWhenPaused(Value)
     TweenActor:SetTickableWhenPaused(false)
   end
 end
-
 function WBP_ForgeMain_C:GetCurrentTabType()
   local TabType = self.TabIdx2TabType[self.TabIndex]
   return TabType
 end
-
 function WBP_ForgeMain_C:GetCurrentSubTabType()
   local SubTabType = self.SubTabIndex and self.TabIdx2SubTabType[self.TabIndex][self.SubTabIndex] or nil
   return SubTabType
 end
-
 function WBP_ForgeMain_C:GetEntryFromItem(Item)
   if Item then
     local ItemIndex = self.ForgeContent:GetIndexForItem(Item)
@@ -1854,7 +1766,6 @@ function WBP_ForgeMain_C:GetEntryFromItem(Item)
   end
   return nil
 end
-
 function WBP_ForgeMain_C:AddWidgetHiddenTag(Widget, IsHide, Tag)
   self.WidgetHiddenTags = self.WidgetHiddenTags or {}
   if not self.WidgetHiddenTags[Widget] then
@@ -1871,10 +1782,20 @@ function WBP_ForgeMain_C:AddWidgetHiddenTag(Widget, IsHide, Tag)
     Widget:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ForgeMain_C:OnCompendiumClicked()
   local UI = UIManager(self):LoadUINew("ForgeCompenduim", self:GetCurrentTabType())
 end
-
+function WBP_ForgeMain_C:OnConvertClicked()
+  DebugPrint("Yihan@ OnConvertClicked")
+  local GameInstance = GWorld.GameInstance
+  local UIManager = GameInstance:GetGameUIManager()
+  local ForgeConvertPage = UIManager:GetUIObj("ForgeConvertMain")
+  if ForgeConvertPage then
+    UIManager:PlaceJumpUIToTop(ForgeConvertPage, "ForgeConvertMain")
+    ForgeConvertPage:InitUsedByJumpPage()
+  else
+    local UI = UIManager:LoadUINew("ForgeConvertMain")
+  end
+end
 AssembleComponents(WBP_ForgeMain_C)
 return WBP_ForgeMain_C

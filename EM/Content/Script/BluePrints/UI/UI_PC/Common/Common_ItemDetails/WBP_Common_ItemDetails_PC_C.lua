@@ -3,7 +3,6 @@ local Handled = UE4.UWidgetBlueprintLibrary.Handled()
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Panel_Detail:SetRenderOpacity(0)
@@ -29,14 +28,13 @@ function M:Construct()
   self.LockPadKey = UIConst.GamePadKey.SpecialRight
   self._bFocusOnce = true
 end
-
 function M:Destruct()
   self.btn02_mod:UnBindEventOnClickedByObj(self)
   self.btn01_mod:UnBindEventOnClickedByObj(self)
-  self.Btn_Locked:UnBindEventOnClickedByObj(self)
+  self.Btn_Locked:UnBindEventOnReleased(self, self._BtnLockedReleased)
+  self.Btn_Locked:UnBindEventOnPressed(self, self._BtnLockedPressed)
   M.Super.Destruct(self)
 end
-
 function M:InitItemBaseInfo(ItemInfo)
   self.Text_Hold01:SetText(GText("UI_Bag_Sellconfirm_Hold"))
   self.Panel_Hold:SetVisibility(ESlateVisibility.Collapsed)
@@ -58,8 +56,7 @@ function M:InitItemBaseInfo(ItemInfo)
   end
   self.Text_ItemName:SetText(GText(ItemInfo.Name or ItemInfo[self.Type .. "Name"]))
 end
-
-function M:RefreshItemInfo(Content, bNotFocus)
+function M:RefreshItemInfo(Content, bNotFocus, bInitLockedEvent)
   self.Content = Content
   if not Content.IsArmoryMod and not bNotFocus and self._bFocusOnce then
     self:SetFocus()
@@ -84,14 +81,14 @@ function M:RefreshItemInfo(Content, bNotFocus)
     local ItemInfo
     if self.ItemId then
       ItemInfo = DataMgr[self.Type][self.ItemId]
-      assert(ItemInfo, "\230\178\161\230\156\137\230\137\190\229\136\176\231\137\169\229\147\129\228\191\161\230\129\175" .. self.Type .. "," .. self.ItemId)
+      assert(ItemInfo, "没有找到物品信息" .. self.Type .. "," .. self.ItemId)
     else
       ItemInfo = {
         Name = Content.Name
       }
     end
     self.Text_Hold01:SetText(GText("UI_Bag_Sellconfirm_Hold"))
-    local Rarity = ItemInfo.Rarity or ItemInfo[self.Type .. "Rarity"]
+    local Rarity = ItemInfo.Rarity or ItemInfo[self.Type .. "Rarity"] or ItemInfo.TreasureRarity
     if 6 == Rarity then
       self.OutLine_Quality:SetBrushFromTexture(self.Img_Line_6)
     elseif 5 == Rarity then
@@ -132,12 +129,25 @@ function M:RefreshItemInfo(Content, bNotFocus)
   self.Panel_Controller:SetVisibility(ESlateVisibility.Collapsed)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
   self:OnUpdateUIStyleByInputTypeChange(GameInputModeSubsystem:GetCurrentInputType(), GameInputModeSubsystem:GetCurrentGamepadName())
+  if bInitLockedEvent then
+    self.Btn_Locked:ForbidBtn(false)
+    if not Content.LockType then
+      self.Btn_Locked:SetVisibility(ESlateVisibility.Collapsed)
+    else
+      self.Btn_Locked:SetVisibility(ESlateVisibility.Visible)
+      self:InitLockedEvent(Content)
+      self.bLocked = Content.IsLocked
+      if Content.IsLocked then
+        self.Switcher_Lock:SetActiveWidgetIndex(0)
+      else
+        self.Switcher_Lock:SetActiveWidgetIndex(1)
+      end
+    end
+  end
 end
-
 function M:OverrideSizeX(SizeX)
   self.SizeBox:SetWidthOverride(SizeX)
 end
-
 function M:InitItemDetails(ItemType, ItemId, Uuid)
   self.VerticalBox_Info:ClearChildren()
   self.Switch_Show:SetActiveWidgetIndex(0)
@@ -167,7 +177,7 @@ function M:InitItemDetails(ItemType, ItemId, Uuid)
     else
       self.Img_Aura:SetVisibility(ESlateVisibility.Collapsed)
     end
-  elseif "Tips" == ItemType or "Resource" == ItemType or "CharAccessory" == ItemType or "WeaponAccessory" == ItemType or "CharPartMesh" == ItemType or "RougeLikeBlessing" == ItemType or "RougeLikeTreasure" == ItemType or "HeadSculpture" == ItemType or "HeadFrame" == ItemType or "Skin" == ItemType or "WeaponSkin" == ItemType or "Title" == ItemType or "TitleFrame" == ItemType then
+  elseif "Tips" == ItemType or "Resource" == ItemType or "CharAccessory" == ItemType or "WeaponAccessory" == ItemType or "CharPartMesh" == ItemType or "RougeLikeBlessing" == ItemType or "RougeLikeTreasure" == ItemType or "HeadSculpture" == ItemType or "HeadFrame" == ItemType or "Skin" == ItemType or "WeaponSkin" == ItemType or "Title" == ItemType or "TitleFrame" == ItemType or "Mount" == ItemType then
     if Avatar.Resources[ItemId] and Avatar.Resources[ItemId]:IsInfiniteBattleItem() and self:IsHasChar(ItemId) then
       self.Switch_Show:SetActiveWidgetIndex(1)
       ItemInfoWidget = self:CreateWidgetNew("PhantomItemDetails")
@@ -205,11 +215,14 @@ function M:InitItemDetails(ItemType, ItemId, Uuid)
     ItemInfoWidget.Text_Describe:SetText(GText(DataMgr.TreasureGroup[ItemId].GroupEffectDesc))
     self.VerticalBox_Info:AddChild(ItemInfoWidget)
     return
+  elseif "ExtractionTreasure" == ItemType then
+    self.Panel_Hold:SetVisibility(ESlateVisibility.Collapsed)
+    ItemInfoWidget = self:CreateWidgetNew("ExtractionTreasureDetails")
   elseif self.Parent then
     self.Parent:Close()
     return
   end
-  if not ("Resource" ~= ItemType and ("Mod" ~= ItemType or self.Content.IsArmoryMod)) or "CharPartMesh" == ItemType or "Draft" == ItemType or self.Content.bShowAccess then
+  if (not ("Resource" ~= ItemType and ("Mod" ~= ItemType or self.Content.IsArmoryMod)) or "CharPartMesh" == ItemType or "Draft" == ItemType) and not self.Content.bNotShowAccess then
     self:SetAccessItem(ItemType, ItemId)
   else
     self.Panel_Method:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -221,11 +234,10 @@ function M:InitItemDetails(ItemType, ItemId, Uuid)
     self.VerticalBox_Info:AddChild(ItemInfoWidget)
   end
 end
-
 function M:SetAccessItem(ItemType, ItemId)
   self.Method:ClearChildren(ItemType, ItemId)
   local ItemInfo = DataMgr[ItemType][ItemId]
-  assert(ItemInfo, "\228\184\141\229\173\152\229\156\168\232\175\165\231\137\169\229\147\129\239\188\154", ItemType, ItemId)
+  assert(ItemInfo, "不存在该物品：", ItemType, ItemId)
   self.Key_Controller_Method:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_Method:SetVisibility(ESlateVisibility.Collapsed)
   if ItemInfo.AccessKey then
@@ -242,7 +254,6 @@ function M:SetAccessItem(ItemType, ItemId)
     end
   end
 end
-
 function M:IsHasChar(ItemId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -254,7 +265,6 @@ function M:IsHasChar(ItemId)
   end
   return false
 end
-
 function M:InitButtonStyle()
   self.Switch_Bg:SetActiveWidgetIndex(1)
   self.Switch_Frame:SetActiveWidgetIndex(1)
@@ -262,7 +272,6 @@ function M:InitButtonStyle()
   self.Panel_Button:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Line:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:RealInitButtonEvent(Widget, ButtonClickCallBack, ButtonClickText, bNotCloseTips)
   local function CallBack()
     if not bNotCloseTips and self.ParentWidget then
@@ -270,13 +279,11 @@ function M:RealInitButtonEvent(Widget, ButtonClickCallBack, ButtonClickText, bNo
     end
     ButtonClickCallBack()
   end
-  
   self:InitButtonStyle()
   Widget:SetText(GText(ButtonClickText))
   Widget:UnBindEventOnClickedByObj(self)
   Widget:BindEventOnClicked(self, CallBack)
 end
-
 function M:InitButtonEvent(Content)
   if not Content or not Content.ButtonClickCallBack then
     return
@@ -298,12 +305,12 @@ function M:InitButtonEvent(Content)
   self.Btn02_Mod:SetGamePadImg(DataMgr.KeyboardText[self.Btn02PadKey].KeyText)
   self:RealInitButtonEvent(self.Btn02_Mod, Content.ButtonClickCallBack, Content.ButtonClickText, Content.bNotCloseTips)
 end
-
 function M:HideButtons()
+  self.Panel_Extra:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Panel_Button:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn02_Mod:SetVisibility(ESlateVisibility.Collapsed)
   self.Btn01_Mod:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:InitButton01Event(Content)
   if not Content or not Content.ButtonClickCallBack then
     return
@@ -325,7 +332,6 @@ function M:InitButton01Event(Content)
   self.Btn01_Mod:SetGamePadImg(DataMgr.KeyboardText[self.Btn01PadKey].KeyText)
   self:RealInitButtonEvent(self.Btn01_Mod, Content.ButtonClickCallBack, Content.ButtonClickText, Content.bNotCloseTips)
 end
-
 function M:InitLockedEvent(Content)
   if not Content or not Content.LockedButtonClickCallBack then
     return
@@ -337,20 +343,30 @@ function M:InitLockedEvent(Content)
   self.Btn_Locked:SetVisibility(ESlateVisibility.Visible)
   self.Switcher_Lock:SetActiveWidgetIndex(1)
   self.bLocked = false
-  
-  local function Callback()
-    self.bLocked = not self.bLocked
+  self.Btn_Locked:UnBindEventOnReleased(self, self._BtnLockedReleased)
+  self.Btn_Locked:UnBindEventOnPressed(self, self._BtnLockedPressed)
+  self.Btn_Locked:BindEventOnPressed(self, self._BtnLockedPressed)
+  self.Btn_Locked:BindEventOnReleased(self, self._BtnLockedReleased, Content)
+end
+function M:_BtnLockedPressed()
+  self:OnMouseButtonDown()
+end
+function M:_BtnLockedReleased(Content)
+  local function SetLock(bLock)
+    self.bLocked = bLock
     if self.bLocked then
       self.Switcher_Lock:SetActiveWidgetIndex(0)
     else
       self.Switcher_Lock:SetActiveWidgetIndex(1)
     end
-    Content.LockedButtonClickCallBack()
   end
-  
-  self.Btn_Locked:BindEventOnClicked(self, Callback)
+  local bWaitRPCRet = Content.bWaitRPCRet
+  Content.LockedButtonClickCallBack(SetLock)
+  if bWaitRPCRet then
+    return
+  end
+  SetLock(not self.bLocked)
 end
-
 function M:SetConflictLine(bShow, Text, ColorNumber)
   if bShow then
     self.Line:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -366,7 +382,6 @@ function M:SetConflictLine(bShow, Text, ColorNumber)
     self.Line:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:GetFirstJumpItem()
   local Items = self.Method:GetAllChildren():ToTable()
   local Item
@@ -378,7 +393,6 @@ function M:GetFirstJumpItem()
   end
   return Item
 end
-
 function M:FocusJumpItem()
   local Item = self:GetFirstJumpItem()
   if Item then
@@ -387,7 +401,6 @@ function M:FocusJumpItem()
     Item.Btn_Click:SetFocus()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -409,7 +422,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:TryGoToFirstItem()
   local Item = self:GetFirstJumpItem()
   if Item then
@@ -419,7 +431,6 @@ function M:TryGoToFirstItem()
   end
   return false
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = self.HandleKeyDown
   if InKeyName == UIConst.GamePadKey.FaceButtonRight then
@@ -444,7 +455,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -460,41 +470,33 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:SetCallbacks(Callbacks)
   self.CallObj = Callbacks.CallObj
   self.OnMouseButtonDownCallback = Callbacks.OnMouseButtonDownCallback
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.OnMouseButtonDownCallback then
     self.OnMouseButtonDownCallback(self.CallObj, MyGeometry, MouseEvent)
   end
   return Handled
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return Handled
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return Handled
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   return Handled
 end
-
 function M:OnMouseButtonDoubleClick(MyGeometry, MouseEvent)
   return Handled
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.Content.bIsHoverState and self.Parent and UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     self.Parent:Close()
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   local bHoverState = self.Content and not self.Content.bIsHoverState
   if CurInputDevice == UE4.ECommonInputType.Gamepad and bHoverState then
@@ -530,7 +532,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Key_Confirm:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:InitGamepadView(CurGamepadName)
   self.Key_Back:CreateCommonKey({
     KeyInfoList = {
@@ -558,27 +559,22 @@ function M:InitGamepadView(CurGamepadName)
     }
   })
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.OnAddedToFocusPathEvent and type(self.OnAddedToFocusPathEvent) == "table" then
     self.OnAddedToFocusPathEvent.Callback(self.OnAddedToFocusPathEvent.Obj, self.OnAddedToFocusPathEvent.Params)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.OnRemovedFromFocusPathEvent and type(self.OnRemovedFromFocusPathEvent) == "table" then
     self.OnRemovedFromFocusPathEvent.Callback(self.OnRemovedFromFocusPathEvent.Obj, self.OnRemovedFromFocusPathEvent.Params)
   end
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 return M

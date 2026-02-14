@@ -8,19 +8,16 @@ local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local ImpressionItemHideUITag = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionItemHideUITag
 local ImpressionItemNum = 5
-
 function WBP_Impression_Common:Construct()
   WBP_Impression_Common.Super.Construct(self)
   self:SetStoryInputModeEnabled(true)
 end
-
 function WBP_Impression_Common:OnLoaded(...)
   WBP_Impression_Common.Super.OnLoaded(self, ...)
   DebugPrint("WBP_Impression_Common:OnLoaded")
   self.WikiEntryIds = {}
   self:InitImpressionUI()
 end
-
 function WBP_Impression_Common:InitImpressionUI()
   DebugPrint("WBP_Impression_Common:InitImpressionUI")
   self:InitData_Lua()
@@ -35,12 +32,10 @@ function WBP_Impression_Common:InitImpressionUI()
   self:SwitchBindAnimationEvents(true)
   self:SwitchBindDimensionButtonEvents(true)
 end
-
 function WBP_Impression_Common:SwitchBindAnimationEvents(bBind)
   self:SwitchBindOptionAnimationEvents(bBind)
   self:SwitchBindExitAnimationEvents(bBind)
 end
-
 function WBP_Impression_Common:InitData_Lua()
   DebugPrint("WBP_Impression_Common:InitData_Lua")
   self.SelectImpressionItemIndex = nil
@@ -48,18 +43,15 @@ function WBP_Impression_Common:InitData_Lua()
   self.bIsTextBorderHidden = true
   self.bImpressionMapVisibility = false
 end
-
 function WBP_Impression_Common:InitTypingText()
   self.TypingText:SetTypingSpeed(0.5)
   self:SwitchBindTypingTextOnFinishEvent(true, self, self.OnWholeDialogueTypingFinished)
 end
-
 function WBP_Impression_Common:InitGText()
   DebugPrint("WBP_Impression_Common:InitGText")
   self.Text_TipsTitle:SetText(GText("Impression_Repeat_Dice"))
   self.Text_Button:SetText(GText("Impression_UI_Back"))
 end
-
 function WBP_Impression_Common:InitVisibility()
   DebugPrint("WBP_Impression_Common:InitVisibility")
   self.Group_Dimension:SetVisibility(ESlateVisibility.Collapsed)
@@ -74,7 +66,6 @@ function WBP_Impression_Common:InitVisibility()
   self:ShowWikiButton(false)
   self:SwitchShowOptionUI(false)
 end
-
 function WBP_Impression_Common:InitGroupCost(ImpressionAreaId, Count, Cost, bCanCheck)
   DebugPrint("WBP_Impression_Common:InitGroupCost", ImpressionAreaId, Count, Cost, bCanCheck)
   local ImpressionResourceInfo = DataMgr.ImpressionResource[ImpressionAreaId]
@@ -83,12 +74,12 @@ function WBP_Impression_Common:InitGroupCost(ImpressionAreaId, Count, Cost, bCan
     bShowDenominator = true,
     Numerator = Count,
     Denominator = Cost,
-    KeyIconName = "RS"
+    KeyIconName = "RS",
+    UIName = "ImpressionMainUI"
   }
   self.Com_Cost:InitContent(Params)
   return bCanCheck
 end
-
 function WBP_Impression_Common:InitOptions(OptionData, TalkTriggerId, ImpressionAreaId, OnOptionItemClicked)
   local OptionState = self:GetOptionState(OptionData, ImpressionAreaId)
   local ImpressionDone = false
@@ -179,15 +170,12 @@ function WBP_Impression_Common:InitOptions(OptionData, TalkTriggerId, Impression
     end
   end
 end
-
 function WBP_Impression_Common:InitPlayKey()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:InitPlayKey")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:InitPlayKey")
 end
-
 function WBP_Impression_Common:InitAutoPlay()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:InitAutoPlay")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:InitAutoPlay")
 end
-
 function WBP_Impression_Common:SwitchBindExitButtonEvents(bBind)
   DebugPrint("WBP_Impression_Common:SwitchBindExitButtonEvents", bBind)
   if bBind then
@@ -204,7 +192,6 @@ function WBP_Impression_Common:SwitchBindExitButtonEvents(bBind)
     self.Button_Area.OnReleased:Remove(self, self.OnExitButtonReleased)
   end
 end
-
 function WBP_Impression_Common:SwitchBindExitAnimationEvents(bBind)
   if bBind then
     self:BindToAnimationFinished(self.BtnQuit_Click, {
@@ -218,7 +205,6 @@ function WBP_Impression_Common:SwitchBindExitAnimationEvents(bBind)
     })
   end
 end
-
 function WBP_Impression_Common:SwitchBindTypingTextOnFinishEvent(bBind, Obj, Func)
   if bBind then
     self.TypingText:BindEventOnFinished(Obj, Func)
@@ -226,7 +212,6 @@ function WBP_Impression_Common:SwitchBindTypingTextOnFinishEvent(bBind, Obj, Fun
     self.TypingText:UnBindEventOnFinished()
   end
 end
-
 function WBP_Impression_Common:SwitchBindDimensionButtonEvents(bBind)
   if bBind then
     self.Btn_DimensionDrawArea:BindEventOnClicked(self, self.SwitchShowImpressionMap)
@@ -236,7 +221,6 @@ function WBP_Impression_Common:SwitchBindDimensionButtonEvents(bBind)
     self.Btn_DimensionFullClose.OnClicked:Clear()
   end
 end
-
 function WBP_Impression_Common:SwitchBindDimensionAnimationEvents(bBind)
   if not self.DimensionGraph then
     return
@@ -261,7 +245,6 @@ function WBP_Impression_Common:SwitchBindDimensionAnimationEvents(bBind)
     })
   end
 end
-
 function WBP_Impression_Common:SwitchBindOptionAnimationEvents(bBind)
   if bBind then
     self:BindToAnimationFinished(self.Option_In, {
@@ -299,7 +282,6 @@ function WBP_Impression_Common:SwitchBindOptionAnimationEvents(bBind)
     })
   end
 end
-
 function WBP_Impression_Common:SwitchEnableImpressionItemClick(bBind)
   DebugPrint("WBP_Impression_Common:SwitchBindImpressionItemButtonEvents", bBind)
   for i = 1, ImpressionItemNum do
@@ -307,7 +289,6 @@ function WBP_Impression_Common:SwitchEnableImpressionItemClick(bBind)
     ImpressionItem:SwitchEnableClickEvents(bBind)
   end
 end
-
 function WBP_Impression_Common:SwitchEnableItemEvents(Enable)
   self:StopListeningForInputAction("TalkOption", EInputEvent.IE_Released)
   self:StopListeningForInputAction("TalkOption", EInputEvent.IE_Pressed)
@@ -322,7 +303,6 @@ function WBP_Impression_Common:SwitchEnableItemEvents(Enable)
     })
   end
 end
-
 function WBP_Impression_Common:SwitchEnableMouseWheelEvents(Enable)
   DebugPrint("WBP_Impression_Common:SetMouseWheelEventEnable", Enable)
   self:StopListeningForInputAction("TalkUpSelect", EInputEvent.IE_Pressed)
@@ -338,19 +318,16 @@ function WBP_Impression_Common:SwitchEnableMouseWheelEvents(Enable)
     })
   end
 end
-
 function WBP_Impression_Common:SwitchEnableOptionClick(bIsEnable)
   DebugPrint("WBP_Impression_Common:SetOptionClickEnable", bIsEnable)
   self:SwitchBindExitButtonEvents(bIsEnable)
   self:SwitchEnableImpressionItemClick(bIsEnable)
   self:SwitchEnableItemEvents(bIsEnable)
 end
-
 function WBP_Impression_Common:PreEnterTalkTask(TalkTask, TaskData, OnPreEnterTalkTaskFinished)
   DebugPrint("WBP_Impression_Common:PreEnterTalkTask")
   WBP_Impression_Common.Super.PreEnterTalkTask(self, TalkTask, TaskData, OnPreEnterTalkTaskFinished)
 end
-
 function WBP_Impression_Common:PostEnterTalkTask(TalkTask, TaskData, OnPostEnterTalkTaskFinished)
   self.HasShowWikiButton = false
   DebugPrint("WBP_Impression_Common:PostEnterTalkTask")
@@ -364,14 +341,12 @@ function WBP_Impression_Common:PostEnterTalkTask(TalkTask, TaskData, OnPostEnter
   self:PlayAnimation(self.Dialog_In)
   WBP_Impression_Common.Super.PostEnterTalkTask(self, TalkTask, TaskData, OnPostEnterTalkTaskFinished)
 end
-
 function WBP_Impression_Common:RecordData(TaskData)
   self.bDefaultShowAutoPlayButton = TaskData.bShowAutoPlayButton or false
   self.bDefaultShowReviewButton = TaskData.bShowReviewButton or false
   self.bDefaultShowSkipButton = TaskData.bShowSkipButton or false
   self.bDefaultShowWikiButton = TaskData.bShowWikiButton or false
 end
-
 function WBP_Impression_Common:PreExitTalkTask(TalkTask, TalkData, OnPreExitTalkTaskFinished, OutType, OutTime)
   DebugPrint("WBP_Impression_Common:PreExitTalkTask", TalkTask, TalkData, OnPreExitTalkTaskFinished, OutType, OutTime)
   self:TryHideLastDialoguePic()
@@ -388,8 +363,7 @@ function WBP_Impression_Common:PreExitTalkTask(TalkTask, TalkData, OnPreExitTalk
   self:PlayAnimation(self.Dialog_Out)
   WBP_Impression_Common.Super.PreExitTalkTask(self, TalkTask, TalkData, OnPreExitTalkTaskFinished, OutType, OutTime)
 end
-
-function WBP_Impression_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
+function WBP_Impression_Common:PlayDialogue(TalkTask, DialogueData, TaskData, bSkip)
   DebugPrint("WBP_Impression_Common:PlayDialogue", TalkTask, DialogueData, TaskData)
   self:StopTypingAudio()
   self:InitDialogueData(DialogueData)
@@ -403,7 +377,6 @@ function WBP_Impression_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
     end
     self:TryShowWikiButton(TalkTask)
   end
-  
   local function Callback()
     if DialogueData.DialoguePanelType == "Voiceover" then
       self.bUseVoiceover = true
@@ -420,7 +393,7 @@ function WBP_Impression_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
         self:SetTipImageHidden(true)
         self:SetTextBorderHidden(true)
         self:SwitchEnableTalkClick(false)
-        self.WholeDialogueTypingFinished_Delegate:Fire(true, true)
+        self.WholeDialogueTypingFinished_Delegate:Fire(true)
       else
         self:SetTipImageHidden(false)
         self:SetTextBorderHidden(false)
@@ -431,14 +404,13 @@ function WBP_Impression_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
         self:SetTipImageHidden(true)
         self:SetTextBorderHidden(true)
         self:SwitchEnableTalkClick(false)
-        self.WholeDialogueTypingFinished_Delegate:Fire(true, true)
+        self.WholeDialogueTypingFinished_Delegate:Fire(true)
       end
     end
   end
-  
   self:TryHideLastDialoguePic()
   if DialogueData.DialogueGraphPath then
-    self:OnPlayRecallGraph(DialogueData)
+    self:OnPlayRecallGraph(DialogueData, bSkip)
     Callback()
   else
     self:OnNotPlayRecallGraph()
@@ -452,38 +424,35 @@ function WBP_Impression_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
     end
   end
 end
-
 function WBP_Impression_Common:OnOptionItemEnd(ItemIdx, SpecifyFinishType)
   DebugPrint("WBP_Impression_Common:OnOptionItemEnd")
-  
   function self.OnOptionOutAnimationFinishedCallback()
     if self.OnOptionItemClicked then
       self.OnOptionItemClicked(ItemIdx, SpecifyFinishType)
     end
     self.OnOptionItemClicked = nil
   end
-  
+  self:ResetNormalButton()
+  self:PlayAnimation(self.Option_Out)
+end
+function WBP_Impression_Common:ResetNormalButton()
   self:SwitchEnableSkipButton(self.bDefaultShowSkipButton)
   self:SwitchEnableReviewButton(self.bDefaultShowReviewButton)
   self:SwitchEnableAutoPlayButton(self.bDefaultShowAutoPlayButton)
   if self.HasShowWikiButton then
     self:SwitchEnableWikiButton(self.bDefaultShowWikiButton)
   end
-  self:PlayAnimation(self.Option_Out)
 end
-
 function WBP_Impression_Common:OnBeginShowCheckOrPlusUI()
   DebugPrint("WBP_Impression_Common:OnBeginShowCheckOrPlusUI")
   self:Hide(ImpressionItemHideUITag)
-  self:SwitchEnableReviewButton(false)
+  self:SetTipImageHidden(true)
+  self:SetTextBorderHidden(true)
 end
-
 function WBP_Impression_Common:OnEndShowCheckOrPlusUI()
   DebugPrint("WBP_Impression_Common:OnEndShowCheckOrPlusUI")
   self:Show(ImpressionItemHideUITag)
-  self:SwitchEnableReviewButton(self.bDefaultShowReviewButton)
 end
-
 function WBP_Impression_Common:OnUpSelectItem()
   local NewSelectImpressionItemIndex = math.max(1, self.SelectImpressionItemIndex - 1)
   if NewSelectImpressionItemIndex ~= self.SelectImpressionItemIndex then
@@ -491,7 +460,6 @@ function WBP_Impression_Common:OnUpSelectItem()
   end
   self:SetSelectImpressionItem(NewSelectImpressionItemIndex)
 end
-
 function WBP_Impression_Common:OnDownSelectItem()
   local MaxNum = self.Group_Button:IsVisible() and self.OptionMaxNum + 1 or self.OptionMaxNum
   local NewSelectImpressionItemIndex = math.min(MaxNum, self.SelectImpressionItemIndex + 1)
@@ -500,7 +468,6 @@ function WBP_Impression_Common:OnDownSelectItem()
   end
   self:SetSelectImpressionItem(NewSelectImpressionItemIndex)
 end
-
 function WBP_Impression_Common:SwithShowExitButton(bShow)
   if bShow then
     self.Group_Button:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -508,7 +475,6 @@ function WBP_Impression_Common:SwithShowExitButton(bShow)
     self.Group_Button:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Impression_Common:SwitchShowDimensionGroup(bShow)
   if bShow then
     self.Btn_DimensionDrawArea:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -520,7 +486,6 @@ function WBP_Impression_Common:SwitchShowDimensionGroup(bShow)
     end
   end
 end
-
 function WBP_Impression_Common:SwitchShowCostGroup(bShow)
   if bShow then
     self.Group_Cost:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -528,7 +493,6 @@ function WBP_Impression_Common:SwitchShowCostGroup(bShow)
     self.Group_Cost:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Impression_Common:ChangeExitButtonVisibilityFromOptionType(OptionData)
   if OptionData.OptionType == ETalkOptionType.Check then
     self:SwithShowExitButton(true)
@@ -536,7 +500,6 @@ function WBP_Impression_Common:ChangeExitButtonVisibilityFromOptionType(OptionDa
     self:SwithShowExitButton(false)
   end
 end
-
 function WBP_Impression_Common:IsOptionCanCheck(ImpressionAreaId, OptionData)
   local bCanCheck = true
   local OptionType = OptionData.OptionType
@@ -548,7 +511,6 @@ function WBP_Impression_Common:IsOptionCanCheck(ImpressionAreaId, OptionData)
   end
   return bCanCheck
 end
-
 function WBP_Impression_Common:IsRetryCheck(OptionData)
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -566,7 +528,6 @@ function WBP_Impression_Common:IsRetryCheck(OptionData)
   end
   return false
 end
-
 function WBP_Impression_Common:GetOptionState(OptionData, ImpressionAreaId)
   local OptionState = EImpressionButtonState.Enabled
   local bCanCheck = self:IsOptionCanCheck(ImpressionAreaId, OptionData)
@@ -575,7 +536,6 @@ function WBP_Impression_Common:GetOptionState(OptionData, ImpressionAreaId)
   end
   return OptionState
 end
-
 function WBP_Impression_Common:GetOptionImpressionAreaId(OptionData)
   local ImpressionAreaId
   local OptionType = OptionData.OptionType
@@ -585,9 +545,9 @@ function WBP_Impression_Common:GetOptionImpressionAreaId(OptionData)
     if PlusData then
       ImpressionAreaId = PlusData.RegionId
     else
-      local Title = "\229\141\176\232\177\161\229\138\160\229\128\188Id\228\184\141\229\173\152\229\156\168"
-      local Message = string.format("\229\138\160\229\128\188Id: %s \229\156\168ImpressionPlus\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168\239\188\140\232\175\183\230\163\128\230\159\165\233\133\141\231\189\174", tostring(PlusId))
-      UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+      local Title = "印象加值Id不存在"
+      local Message = string.format("加值Id: %s 在ImpressionPlus表中不存在，请检查配置", tostring(PlusId))
+      UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
       return nil, false
     end
   elseif OptionType == ETalkOptionType.Check then
@@ -596,25 +556,22 @@ function WBP_Impression_Common:GetOptionImpressionAreaId(OptionData)
     if CheckData then
       ImpressionAreaId = CheckData.RegionId
     else
-      local Title = "\229\141\176\232\177\161\230\163\128\229\174\154Id\228\184\141\229\173\152\229\156\168"
-      local Message = string.format("\230\163\128\229\174\154Id: %s \229\156\168ImpressionCheck\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168\239\188\140\232\175\183\230\163\128\230\159\165\233\133\141\231\189\174", tostring(CheckId))
-      UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+      local Title = "印象检定Id不存在"
+      local Message = string.format("检定Id: %s 在ImpressionCheck表中不存在，请检查配置", tostring(CheckId))
+      UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
       return nil, false
     end
   end
   return ImpressionAreaId, true
 end
-
 function WBP_Impression_Common:GetImpressionItem(Index)
   if Index then
     return self["BP_Impression_Item_PC_" .. Index]
   end
 end
-
 function WBP_Impression_Common:GetCurrentSelectIndex()
   return self.SelectImpressionItemIndex
 end
-
 function WBP_Impression_Common:TryDisplayCostGroup(OptionType, ImpressionAreaId, bIsRetryCheck)
   DebugPrint("WBP_Impression_Common:TryDisplayCostGroup", ImpressionAreaId)
   self:SwitchShowCostGroup(false)
@@ -630,15 +587,12 @@ function WBP_Impression_Common:TryDisplayCostGroup(OptionType, ImpressionAreaId,
     self:SwitchShowCostGroup(true)
   end
 end
-
 function WBP_Impression_Common:IsExitButtonHidden()
   return self.Group_Button:GetVisibility() ~= ESlateVisibility.Collapsed
 end
-
 function WBP_Impression_Common:IsExitButtonIndex(i)
   return i > self.OptionMaxNum
 end
-
 function WBP_Impression_Common:SetSelectImpressionItem(Index)
   DebugPrint("WBP_Impression_Common:SetSelectImpressionItem", Index)
   if self:IsExitButtonHidden() == false then
@@ -664,7 +618,6 @@ function WBP_Impression_Common:SetSelectImpressionItem(Index)
     Item:SetSelect(true)
   end
 end
-
 function WBP_Impression_Common:SwitchShowOptionUI(bShow)
   if bShow then
     self.VB_GroupItem:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -672,14 +625,12 @@ function WBP_Impression_Common:SwitchShowOptionUI(bShow)
     self.VB_GroupItem:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Impression_Common:InitOptionData(TalkTask, OptionData, OnOptionItemClicked)
   self.TalkTask = TalkTask
   self.OptionData = OptionData
   self.OptionMaxNum = #OptionData.Options
   self.OnOptionItemClicked = OnOptionItemClicked
 end
-
 function WBP_Impression_Common:ShowOptions(TalkTask, OptionTexts, OptionData, OnOptionItemClicked)
   DebugPrint("WBP_Impression_Common:ShowOptions", TalkTask, OptionTexts, OptionData, OnOptionItemClicked)
   self:TryHideLastDialoguePic()
@@ -688,7 +639,6 @@ function WBP_Impression_Common:ShowOptions(TalkTask, OptionTexts, OptionData, On
   self:PlayAnimation(self.Option_In)
   EventManager:FireEvent(EventID.ImpressionTalk)
 end
-
 function WBP_Impression_Common:ClearOptions()
   DebugPrint("WBP_Impression_Common:ClearOptions")
   for i = 1, ImpressionItemNum do
@@ -699,7 +649,6 @@ function WBP_Impression_Common:ClearOptions()
   end
   self.SelectImpressionItemIndex = nil
 end
-
 function WBP_Impression_Common:TryDisplayImpressionDimension(ImpressionAreaId, OptionData)
   local OptionType = OptionData.OptionType
   if OptionType == ETalkOptionType.Plus or OptionType == ETalkOptionType.Check then
@@ -708,7 +657,6 @@ function WBP_Impression_Common:TryDisplayImpressionDimension(ImpressionAreaId, O
     self.Btn_DimensionDrawArea:Init(ImpressionAreaId)
   end
 end
-
 function WBP_Impression_Common:InitDimensionGraph(ImpressionAreaId)
   if self.bDimensionGraphInited then
     self.DimensionGraph:Init(ImpressionAreaId, self.TalkTask.TaskData.UsingGM)
@@ -728,11 +676,9 @@ function WBP_Impression_Common:InitDimensionGraph(ImpressionAreaId)
   self:SwitchBindDimensionAnimationEvents(true)
   self.bDimensionGraphInited = true
 end
-
 function WBP_Impression_Common:SetExitButtonNormal()
   self:PlayAnimation(self.BtnQuit_Normal)
 end
-
 function WBP_Impression_Common:SetTalkActorName(DialogueData)
   local Name = DialogueData.TalkActorName
   if not Name then
@@ -746,7 +692,6 @@ function WBP_Impression_Common:SetTalkActorName(DialogueData)
   local Name = GText(Name)
   self.NpcNameText:SetText(Name)
 end
-
 function WBP_Impression_Common:SetTextBorderHidden(bHidden)
   if bHidden then
     self.Group_Dialog:SetVisibility(ESlateVisibility.Collapsed)
@@ -754,24 +699,19 @@ function WBP_Impression_Common:SetTextBorderHidden(bHidden)
     self.Group_Dialog:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function WBP_Impression_Common:ToPageEnd()
   self.TypingText:ToPageEnd()
 end
-
 function WBP_Impression_Common:HasPageTypingFinished()
   return self.TypingText:IsPageEnd()
 end
-
 function WBP_Impression_Common:HasWholeDialogueTypingFinished()
   return self.TypingText:IsFinished()
 end
-
 function WBP_Impression_Common:SetSelectExitButton()
   DebugPrint("WBP_Impression_Common:SetSelectExitButton")
   self:SetSelectImpressionItem(self.OptionMaxNum + 1)
 end
-
 function WBP_Impression_Common:OnExitButtonSelected(bIsSelect)
   DebugPrint("WBP_Impression_Common:OnExitButtonSelected", bIsSelect)
   self.bExitButtonSelect = bIsSelect
@@ -782,19 +722,16 @@ function WBP_Impression_Common:OnExitButtonSelected(bIsSelect)
   end
   self:OnExitButtonSelectedPlatform(bIsSelect)
 end
-
 function WBP_Impression_Common:TryPlayDialogueTypingAudio(DialogueData)
   if DialogueData and not DialogueData.VoiceName then
     AudioManager(self):PlayUISound(self, "event:/ui/common/dialog_type", "TypingAudioKey", nil)
     self.TypingText:BindEventOnPageEnd(self, self.StopTypingAudio)
   end
 end
-
 function WBP_Impression_Common:StopTypingAudio()
   AudioManager(self):StopSound(self, "TypingAudioKey")
   self.TypingText:UnBindEventOnPageEnd()
 end
-
 function WBP_Impression_Common:SwitchEnableTalkClick(bEnable)
   DebugPrint("WBP_Impression_Common:SwitchEnableTalkClick", bEnable)
   self:SwitchEnableConfirmButton(bEnable)
@@ -819,12 +756,10 @@ function WBP_Impression_Common:SwitchEnableTalkClick(bEnable)
     })
   end
 end
-
 function WBP_Impression_Common:SetTipImageHidden(bHidden)
   DebugPrint("WBP_Impression_Common:SetTipImageHidden", bHidden)
   self.WS_Type:SetVisibility(bHidden and ESlateVisibility.Collapsed or ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Impression_Common:SwitchShowImpressionMap()
   self.bImpressionMapVisibility = not self.bImpressionMapVisibility
   if self.bImpressionMapVisibility then
@@ -836,7 +771,6 @@ function WBP_Impression_Common:SwitchShowImpressionMap()
   end
   self.Btn_DimensionFullClose:SetVisibility(self.bImpressionMapVisibility and ESlateVisibility.Visible or ESlateVisibility.Collapsed)
 end
-
 function WBP_Impression_Common:SwitchDimensionBg(bShow)
   if bShow then
     self:StopAnimation(self.BtnBg_Out)
@@ -848,7 +782,6 @@ function WBP_Impression_Common:SwitchDimensionBg(bShow)
     self:PlayAnimation(self.BtnBg_Out)
   end
 end
-
 function WBP_Impression_Common:OnExitButtonClicked()
   DebugPrint("WBP_Impression_Common:OnExitButtonClicked")
   self:SwitchEnableOptionClick(false)
@@ -858,61 +791,48 @@ function WBP_Impression_Common:OnExitButtonClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", "", nil)
 end
-
 function WBP_Impression_Common:OnExitButtonHovered()
   DebugPrint("WBP_Impression_Common:OnExitButtonHovered")
   self:SetSelectExitButton()
 end
-
 function WBP_Impression_Common:OnExitButtonUnhovered()
   DebugPrint("WBP_Impression_Common:OnExitButtonUnhovered")
 end
-
 function WBP_Impression_Common:PlayExitButtonHoveredPerformance()
   DebugPrint("WBP_Impression_Common:PlayExitButtonHoveredPerformance")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_add", "", nil)
   self:SetSelectExitButton()
   self:PlayExitButtonHoveredPerformanceByPlatform()
 end
-
 function WBP_Impression_Common:PlayExitButtonUnhoveredPerformance()
   DebugPrint("WBP_Impression_Common:PlayExitButtonUnhoveredPerformance")
   self:PlayExitButtonUnhoveredPerformanceByPlatform()
 end
-
 function WBP_Impression_Common:OnExitButtonPressed()
   DebugPrint("WBP_Impression_Common:OnExitButtonPressed")
   self:PlayAnimation(self.BtnQuit_Press)
 end
-
 function WBP_Impression_Common:OnExitButtonReleased()
   DebugPrint("WBP_Impression_Common:OnExitButtonReleased")
   self:OnExitButtonReleasedByPlatform()
 end
-
 function WBP_Impression_Common:OnExitButtonClickAnimFinished()
   DebugPrint("WBP_Impression_Common:OnExitButtonClickAnimFinished")
   self:StopAllAnimations()
-  
   function self.OnOptionOutAnimationFinishedCallback()
     self:StopStoryLine()
   end
-  
   self:PlayAnimation(self.Option_Out)
 end
-
 function WBP_Impression_Common:StopStoryLine()
   DebugPrint("WBP_Impression_Common:StopStoryLine")
   self.StopStoryline_Delegate:Fire()
 end
-
 function WBP_Impression_Common:OnImpressionItemHovered(ItemIndex)
   self:SetSelectImpressionItem(ItemIndex)
 end
-
 function WBP_Impression_Common:OnImpressionItemUnhovered(ItemIndex)
 end
-
 function WBP_Impression_Common:OnImpressionItemClicked(Item)
   DebugPrint("WBP_Impression_Common:OnClickedItem", Item.State)
   self:StopAllAnimations()
@@ -939,7 +859,6 @@ function WBP_Impression_Common:OnImpressionItemClicked(Item)
     self:SwitchEnableWikiButton(false)
   end
 end
-
 function WBP_Impression_Common:OnImpressionItemPressed()
   if self.SelectImpressionItemIndex then
     if self.SelectImpressionItemIndex > self.OptionMaxNum then
@@ -950,7 +869,6 @@ function WBP_Impression_Common:OnImpressionItemPressed()
     end
   end
 end
-
 function WBP_Impression_Common:OnImpressionItemReleased()
   if self.SelectImpressionItemIndex then
     if self.SelectImpressionItemIndex > self.OptionMaxNum then
@@ -961,7 +879,6 @@ function WBP_Impression_Common:OnImpressionItemReleased()
     end
   end
 end
-
 function WBP_Impression_Common:GetCurrentImpressionItem()
   if not self.SelectImpressionItemIndex then
     return nil
@@ -972,15 +889,12 @@ function WBP_Impression_Common:GetCurrentImpressionItem()
     return self:GetImpressionItem(self.SelectImpressionItemIndex)
   end
 end
-
 function WBP_Impression_Common:OnDetails_InStarted()
   self.Group_Dimension:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Impression_Common:OnDetails_OutFinished()
   self.Group_Dimension:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_Impression_Common:OnOptionInAnimationStarted()
   DebugPrint("WBP_Impression_Common:OnOptionInAnimationStarted")
   self.SelectImpressionItemIndex = nil
@@ -1003,13 +917,11 @@ function WBP_Impression_Common:OnOptionInAnimationStarted()
   self:TryDisplayCostGroup(self.OptionData.OptionType, ImpressionAreaId, bIsRetryCheck)
   self:TryDisplayImpressionDimension(ImpressionAreaId, self.OptionData)
 end
-
 function WBP_Impression_Common:OnOptionInAnimationFinished()
   DebugPrint("WBP_Impression_Common:OnOptionInAnimationFinished")
   self:SwitchEnableOptionClick(true)
   self:SwitchEnableMouseWheelEvents(true)
 end
-
 function WBP_Impression_Common:OnOptionOutAnimationStarted()
   DebugPrint("WBP_Impression_Common:OnOptionOutAnimationStarted", self.OnOptionOutAnimationFinishedCallback)
   self:SwitchEnableOptionClick(false)
@@ -1023,46 +935,35 @@ function WBP_Impression_Common:OnOptionOutAnimationStarted()
   end
   self.SelectImpressionItemIndex = nil
 end
-
 function WBP_Impression_Common:IsExitButtonSelect()
   return self.bExitButtonSelect
 end
-
 function WBP_Impression_Common:OnOptionOutAnimationFinished()
   DebugPrint("WBP_Impression_Common:OnOptionOutAnimationFinished")
 end
-
 function WBP_Impression_Common:OnUseOtherUIPlayDialogue()
   self:SwitchHideDialoguePanel(true)
   self:TryHideLastDialoguePic()
 end
-
 function WBP_Impression_Common:SwitchHideDialoguePanel(bHide)
   self:SetTextBorderHidden(bHide)
 end
-
 function WBP_Impression_Common:AdaptPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:AdaptPlatform")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:AdaptPlatform")
 end
-
 function WBP_Impression_Common:OnExitButtonSelectedPlatform(bIsSelect)
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:OnExitButtonSelectedPlatform", bIsSelect)
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:OnExitButtonSelectedPlatform", bIsSelect)
 end
-
 function WBP_Impression_Common:OnExitButtonReleasedByPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:OnExitButtonReleasedByPlatform")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:OnExitButtonReleasedByPlatform")
 end
-
 function WBP_Impression_Common:PlayExitButtonHoveredPerformanceByPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:PlayExitButtonHoveredPerformanceByPlatform")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:PlayExitButtonHoveredPerformanceByPlatform")
 end
-
 function WBP_Impression_Common:PlayExitButtonUnhoveredPerformanceByPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:PlayExitButtonUnhoveredPerformanceByPlatform")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:PlayExitButtonUnhoveredPerformanceByPlatform")
 end
-
 function WBP_Impression_Common:ChangeImgMouseVisibility(OptionData)
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Impression_Common:ChangeImgMouseVisibility")
+  DebugPrint("Error: 未实现的函数WBP_Impression_Common:ChangeImgMouseVisibility")
 end
-
 return WBP_Impression_Common

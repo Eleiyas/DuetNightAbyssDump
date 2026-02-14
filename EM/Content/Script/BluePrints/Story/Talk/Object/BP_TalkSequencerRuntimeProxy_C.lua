@@ -1,11 +1,9 @@
-local M = Class()
-
+local M = Class("BluePrints.Story.Talk.Object.BP_TalkSequencerObject_C")
 function M:SetUpLua(TalkTask)
   assert(nil ~= TalkTask, "TalkSequencerProxy: TalkSequencerRuntimeProxy Setup Failed, TalkTask is nil")
   self.TalkTask = TalkTask
   self:InitAfterSetupLua()
 end
-
 function M:RealShowMediaUI_Lua(bShow)
   DebugPrint("TalkSequencerProxy:RealShowMediaUI_Lua", bShow)
   local TalkTask = self.TalkTask
@@ -13,7 +11,6 @@ function M:RealShowMediaUI_Lua(bShow)
     TalkTask:OnSequenceShowVideoUI(bShow)
   end
 end
-
 function M:SendGameModeMessage_Lua(Content)
   local GameInstance = GWorld.GameInstance
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -23,7 +20,6 @@ function M:SendGameModeMessage_Lua(Content)
   end
   GameMode:PostCustomEvent(Content)
 end
-
 function M:SendBehaviorMessage_Lua(UnitId, Content)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if not IsValid(GameState) then
@@ -36,7 +32,6 @@ function M:SendBehaviorMessage_Lua(UnitId, Content)
     self:QuestEventMonsterOrNpc(Npc, UnitId, Content)
   end
 end
-
 function M:QuestEventMonsterOrNpc(AI, UnitId, Content)
   if IsValid(AI) and tonumber(UnitId) == tonumber(AI.UnitId) then
     local BB = AI:GetOwnBlackBoardComponent()
@@ -47,5 +42,4 @@ function M:QuestEventMonsterOrNpc(AI, UnitId, Content)
     end
   end
 end
-
 return M

@@ -1,7 +1,6 @@
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self)
   self.bIsFocusable = true
@@ -14,15 +13,14 @@ function M:OnLoaded(...)
   self.MainTabMap = {}
   self.SubTabMap = {}
   self.bFilterOwned = false
-  local MainTabIdx, ShopItemId, ShopSystemName, ShopSystemName1 = ...
+  local MainTabIdx, ShopItemId, ShopSystemName, ShopSystemName1, CloseCallBack, ClsoeCallBackObj = ...
   if nil == ShopSystemName or "nil" == ShopSystemName then
     ShopSystemName = ShopSystemName1
   end
   self.SelectShopItemId = ShopItemId
   self.List_Item:SetVisibility(ESlateVisibility.Visible)
-  self:InitShop(MainTabIdx, ShopItemId, ShopSystemName)
+  self:InitShop(MainTabIdx, ShopItemId, ShopSystemName, CloseCallBack, ClsoeCallBackObj)
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.List_Item.OnCreateEmptyContent:Bind(self, function(self)
@@ -46,17 +44,14 @@ function M:Construct()
     self.OnInAnimationFinished
   })
 end
-
 function M:OnInAnimationFinished()
   self:RefreshUI()
 end
-
 function M:OnPurchaseShopItem(Ret)
   self:BlockAllUIInput(false)
   self:RefreshShopDetail(self.nowIndex)
 end
-
-function M:InitShop(MainTabIdx, ShopItemId, ShopType)
+function M:InitShop(MainTabIdx, ShopItemId, ShopType, CloseCallBack, ClsoeCallBackObj)
   local PlayerController = UGameplayStatics.GetPlayerController(self, 0)
   if IsValid(PlayerController) then
     if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -67,7 +62,7 @@ function M:InitShop(MainTabIdx, ShopItemId, ShopType)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "OpenShopMain", nil)
   if not ShopType then
-    DebugPrint("ShopType\231\188\186\229\164\177")
+    DebugPrint("ShopType缺失")
     ShopType = "Shop"
   end
   self:PlayAnimation(self.In)
@@ -75,11 +70,12 @@ function M:InitShop(MainTabIdx, ShopItemId, ShopType)
   self.Common_SortList_PC:BindEventOnSelectionsChanged(self, self.BindEventOnSelectionsChanged)
   self.Common_SortList_PC:BindEventOnSortTypeChanged(self, self.BindEventOnSortTypeChanged)
   self.SelectShopItemId = ShopItemId
+  self.CloseCallBack = CloseCallBack
+  self.ClsoeCallBackObj = ClsoeCallBackObj
   self:InitShopTabInfo(MainTabIdx, ShopType)
   self:InitShopBG(ShopType)
   self:RefreshShopDetail(1)
 end
-
 function M:InitShopBG(ShopType)
   local bgPathMap = {
     ZhiLiuEntrust = "/Game/UI/WBP/Activity/Widget/Shop/ShopBG/WBP_Activity_Shop_BG_ZhiliuEvent.WBP_Activity_Shop_BG_ZhiliuEvent"
@@ -96,16 +92,15 @@ function M:InitShopBG(ShopType)
     OverlaySlot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
     Widget:PlayAnimation(Widget.In)
   else
-    DebugPrint("Error: \230\151\160\230\179\149\229\138\160\232\189\189\229\149\134\229\186\151\232\131\140\230\153\175: " .. bgPath)
+    DebugPrint("Error: 无法加载商店背景: " .. bgPath)
   end
 end
-
 function M:InitShopTabInfo(MainTabIdx, ShopType)
   self.MainTabData = "ShopTabMain"
   self.SubTabData = "ShopTabSub"
   self.ShopType = ShopType
   local MainShopTabData = DataMgr.Shop[ShopType]
-  assert(MainShopTabData, "\232\142\183\229\143\150\229\149\134\229\186\151\231\177\187\229\158\139\228\191\161\230\129\175\229\164\177\232\180\165:" .. ShopType)
+  assert(MainShopTabData, "获取商店类型信息失败:" .. ShopType)
   local TabList = {}
   self.MainTabMap = {}
   local MainTabs = {}
@@ -207,11 +202,9 @@ function M:InitShopTabInfo(MainTabIdx, ShopType)
     self.Com_Tab_P.Key_Right:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:OnMainTabChanged(TabWidget)
   self:RefreshShopDetail(TabWidget.Idx)
 end
-
 function M:RefreshShopDetail(index)
   self.nowIndex = index
   local MainTabId = self.MainTabMap[index]
@@ -258,7 +251,6 @@ function M:RefreshShopDetail(index)
   end
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
 function M:UpdateShopDetail(SubTabData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -292,7 +284,6 @@ function M:UpdateShopDetail(SubTabData)
     end
   end
   local SortFunc
-  
   local function SortBySequence(a, b)
     if SortType == CommonConst.ASC then
       if a.Sequence == b.Sequence then
@@ -303,7 +294,6 @@ function M:UpdateShopDetail(SubTabData)
       return a.Sequence < b.Sequence
     end
   end
-  
   local function SortFuncByTime(a, b)
     if SortType == CommonConst.ASC then
       return a.StartTime < b.StartTime
@@ -311,7 +301,6 @@ function M:UpdateShopDetail(SubTabData)
       return a.StartTime > b.StartTime
     end
   end
-  
   local function SortFuncByRarity(a, b)
     local ItemDataA = DataMgr[a.ItemType][a.TypeId]
     local ItemDataB = DataMgr[b.ItemType][b.TypeId]
@@ -323,7 +312,6 @@ function M:UpdateShopDetail(SubTabData)
       return RarityA > RarityB
     end
   end
-  
   local function SortFuncByPrice(a, b)
     if SortType == CommonConst.ASC then
       return ShopUtils:GetShopItemPrice(a.ItemId) < ShopUtils:GetShopItemPrice(b.ItemId)
@@ -331,7 +319,6 @@ function M:UpdateShopDetail(SubTabData)
       return ShopUtils:GetShopItemPrice(a.ItemId) > ShopUtils:GetShopItemPrice(b.ItemId)
     end
   end
-  
   if 1 == Filter1 then
     function SortFunc(a, b)
       if SortBySequence(a, b) then
@@ -475,7 +462,6 @@ function M:UpdateShopDetail(SubTabData)
   self.List_Item:RequestFillEmptyContent()
   self.List_Item:RequestPlayEntriesAnim()
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -488,11 +474,12 @@ function M:CloseSelf()
     Child:PlayAnimation(Child.Out)
   end
 end
-
 function M:Close()
   self.Super.Close(self)
+  if self.CloseCallBack then
+    self.CloseCallBack(self.ClsoeCallBackObj)
+  end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
@@ -503,20 +490,16 @@ function M:OnAnimationFinished(InAnimation)
     end, false, 0, "OpenShopItemDialog", true)
   end
 end
-
 function M:BindEventOnSelectionsChanged(Filter1, Filter2, Filter3, SortType)
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
 function M:BindEventOnSortTypeChanged(SortType)
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
 function M:Destruct()
   self.List_Item.OnCreateEmptyContent:Unbind()
   self.Super.Destruct(self)
 end
-
 function M:ShowItemDetail()
   self.ShopItemData = setmetatable({}, {
     __index = DataMgr.ShopItem[self.SelectShopItemId]
@@ -579,7 +562,6 @@ function M:ShowItemDetail()
     ForbidRightBtn = not ShopUtils:CanPurchase(self.ShopItemData, Funds[1].FundId, Funds[1].FundNeed)
   }, UIManager(self):GetUIObj("ActivityShop"))
 end
-
 function M:CanPurchase(PriceType, Price)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -602,7 +584,6 @@ function M:CanPurchase(PriceType, Price)
   end
   return true
 end
-
 function M:SetTabReddot(ShopType)
   for _, MainTabId in pairs(DataMgr.Shop[ShopType].MainTabId) do
     local Data = DataMgr.ShopItem2ShopTab[MainTabId]
@@ -628,7 +609,6 @@ function M:SetTabReddot(ShopType)
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -653,7 +633,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -672,7 +651,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftTrigger" == InKeyName then
@@ -693,10 +671,9 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
@@ -732,18 +709,15 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     })
   end
 end
-
 function M:SetFocus_Lua()
   self.List_Item:SetFocus()
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.List_Item
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
@@ -757,7 +731,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.List_Item:SetFocus()
   end
 end
-
 function M:RefreshUI()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self.Com_KeyTips:UpdateKeyInfo({
@@ -789,5 +762,4 @@ function M:RefreshUI()
     })
   end
 end
-
 return M

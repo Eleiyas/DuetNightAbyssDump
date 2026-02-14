@@ -5,7 +5,6 @@ Component.LevelUpWidgetMap = {
   [CommonConst.ArmoryType.Char] = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Intensify/WBP_Armory_Upgrade.WBP_Armory_Upgrade'",
   [CommonConst.ArmoryType.Weapon] = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Intensify/WBP_Armory_Upgrade.WBP_Armory_Upgrade'"
 }
-
 function Component:InitLevelUpComp(...)
   local User, Target, SubWidget, Params = ...
   self.Target = Target
@@ -42,13 +41,11 @@ function Component:InitLevelUpComp(...)
     self:RefreshBaseInfo()
   end)
 end
-
 function Component:OnUpgradeBtnClicked()
   if self.CurrentMode == "LevelUp" then
     self:TryToLevelUp()
   end
 end
-
 function Component:InitLvUpIntensify(WidgetPath, Params)
   if self.IntensifyWidget then
     return
@@ -56,7 +53,6 @@ function Component:InitLvUpIntensify(WidgetPath, Params)
   self.VB_Node:ClearChildren()
   self:CreateLvUpWidget(WidgetPath, Params)
 end
-
 function Component:CreateLvUpWidget(WidgetPath, Params)
   self.IntensifyWidget = UIManager(self):CreateWidget(WidgetPath, true)
   self.VB_Node:AddChild(self.IntensifyWidget)
@@ -88,7 +84,6 @@ function Component:CreateLvUpWidget(WidgetPath, Params)
     self.CurrentSubUI.Btn_Add.Button_Area.OnClicked:Add(self, self.NextLevel)
   end
 end
-
 function Component:InitLvUpPanelInfo()
   self.Panel_Info:SetVisibility(UIConst.VisibilityOp.Visible)
   local TargetData = self.Target.Props
@@ -110,7 +105,6 @@ function Component:InitLvUpPanelInfo()
   self.Btn_Upgrade:SetText(GText("UI_COMMONPOP_TITLE_100029"))
   self.Btn_Upgrade:SetDefaultGamePadImg("Y")
 end
-
 function Component:SetElementIcon(ElementType)
   if ElementType then
     self.Panel_Element:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -127,7 +121,6 @@ function Component:SetElementIcon(ElementType)
     self.Stats_ListView:AddItem(self:NewElmtIconContent(Type, ElmtNames[idx], Type == ElementType))
   end
 end
-
 function Component:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   local IconName = "Armory_" .. ElmtType
@@ -136,23 +129,18 @@ function Component:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   Obj.IsSelected = IsSelected
   return Obj
 end
-
 function Component:CloseComp()
   if self.InitTimer then
     self:RemoveTimer(self.InitTimer)
     self.InitTimer = nil
   end
 end
-
 function Component:OnBackgroundClickedComp()
 end
-
 function Component:DestructComp()
 end
-
 function Component:Construct()
 end
-
 function Component:PreLevel()
   if self.ComparedLevel - 1 <= self.Level or 0 == self.PreLevelTimes then
     return
@@ -161,7 +149,6 @@ function Component:PreLevel()
   self.NextLevelTimes = self.NextLevelTimes - 1
   self:UpdateLevelUpInfo(self.Level, self.ComparedLevel - 1)
 end
-
 function Component:NextLevel()
   DebugPrint("NextLevel", self.ComparedLevel, self.Level, self.NextLevelTimes)
   if self.ComparedLevel + 1 > self.MaxLevel then
@@ -175,7 +162,6 @@ function Component:NextLevel()
   else
   end
 end
-
 function Component:OnAddBtnForbid()
   if self.ComparedLevel + 1 > self.MaxLevel then
     return
@@ -183,7 +169,6 @@ function Component:OnAddBtnForbid()
   local Res = UpgradeUtils.CalcCharOrWeaponLevelUp(self.Target, self.Type, self.Level, self.ComparedLevel + 1)
   UIManager(self):ShowUITip("CommonToastMain", GText(Res.ErrorText))
 end
-
 function Component:OnBtnAddMaxClicked()
   if self.ComparedLevel >= self.MaxLevel then
     return
@@ -208,7 +193,6 @@ function Component:OnBtnAddMaxClicked()
     self:UpdateLevelUpInfo(self.Level, ToLevel)
   end
 end
-
 function Component:OnBtnReduceMaxClicked()
   if self.ComparedLevel - 1 <= self.Level or 0 == self.PreLevelTimes then
     return
@@ -218,7 +202,6 @@ function Component:OnBtnReduceMaxClicked()
   self.ComparedLevel = self.Level + 1
   self:UpdateLevelUpInfo(self.Level, self.ComparedLevel)
 end
-
 function Component:OnLvUpResourcesChanged(ResourceId)
   if self.CurrentMode ~= "LevelUp" then
     return
@@ -232,7 +215,6 @@ function Component:OnLvUpResourcesChanged(ResourceId)
     end
   end
 end
-
 function Component:InitLvUpView(LevelUpParams)
   local Avatar = GWorld:GetAvatar()
   if not (Avatar and self.Target) or not self.Type then
@@ -252,7 +234,6 @@ function Component:InitLvUpView(LevelUpParams)
   self.ComparedLevel = self.Level + 1
   self:UpdateLevelUpInfo(self.Level, self.ComparedLevel)
 end
-
 function Component:UpdateLevelUpInfo(Level, ComparedLevel)
   if Level >= self.MaxLevel then
     self:UpdateBtnState(true)
@@ -361,13 +342,11 @@ function Component:UpdateLevelUpInfo(Level, ComparedLevel)
     self:UpdateLvUpResourceItems(Res.ResourceUse)
   end
   if not self.CanUpgrade then
-    UIManager(self):LoadUI(UIConst.COMMONTOASTMAIN, "CommonToastMain", UIConst.ZORDER_FOR_COMMON_TIP, GText(self.ErrorText), 2)
   end
   self.Level = Level
   self.ComparedLevel = ComparedLevel
   self.WidgetSwitcher_Hint:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Component:UpdateLvUpResourceItems(ResourceUse)
   if not ResourceUse or 0 == #ResourceUse then
     return
@@ -395,7 +374,8 @@ function Component:UpdateLvUpResourceItems(ResourceUse)
           Count = Resource.Count,
           Icon = resourceConfig.Icon,
           Rarity = resourceConfig.Rarity or 1,
-          IsShowDetails = true
+          IsShowDetails = true,
+          MenuPlacement = EMenuPlacement.MenuPlacement_AboveAnchor
         }
         local Avatar = GWorld:GetAvatar()
         local hasCount = Avatar and Avatar:GetResourceNum(Resource.ResourceId) or 0
@@ -419,7 +399,6 @@ function Component:UpdateLvUpResourceItems(ResourceUse)
     currentIndex = currentIndex + 1
   end
 end
-
 function Component:UpdataLevelUpAttr(Level, ComparedLevel)
   local LevelUpData = self.LevelUpData[Level]
   local ComparedLevelUpData = self.LevelUpData[ComparedLevel]
@@ -486,7 +465,6 @@ function Component:UpdataLevelUpAttr(Level, ComparedLevel)
   end
   self.CurrentSubUI:UpdataAttrListView(self.Attrs, self.ComparedAttrs)
 end
-
 function Component:TryToLevelUp()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -506,11 +484,9 @@ function Component:TryToLevelUp()
     UIManager(self):ShowUITip("CommonToastMain", GText(self.ErrorText))
   end
 end
-
 function Component:ForbiddenUpgradeBtnClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText(self.ErrorText))
 end
-
 function Component:OnTargetLevelUp(Ret, Uuid, Level, NewLevel)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -527,7 +503,7 @@ function Component:OnTargetLevelUp(Ret, Uuid, Level, NewLevel)
       elseif self.Type == "Weapon" then
         self.ErrorText = "Weapon_LevelUp_Success"
       end
-      self:BlockAllUIInput(true)
+      self:BlockAllUIInput(true, "SP_DisplayOnly")
       self.CurrentSubUI:OnLevelUpSuccess()
       self.CurrentSubUI.Num_LevelUp:SetText(NewLevel)
       self.Btn_Upgrade:ForbidBtn(true)
@@ -549,7 +525,6 @@ function Component:OnTargetLevelUp(Ret, Uuid, Level, NewLevel)
     UIManager:ShowError(Ret, 1.5)
   end
 end
-
 function Component:OnLevelUpAnimFinishedCallback()
   if self.CurrentMode ~= "LevelUp" then
     return
@@ -587,7 +562,6 @@ function Component:OnLevelUpAnimFinishedCallback()
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Component:UpdateBtnState(bIsMaxLevel)
   DebugPrint(WarningTag, "UpdateBtnStateUpdateBtnStateUpdateBtnState", bIsMaxLevel)
   if bIsMaxLevel then
@@ -603,7 +577,6 @@ function Component:UpdateBtnState(bIsMaxLevel)
     self.CurrentSubUI.Btn_Min:ForbidBtn(false)
   end
 end
-
 function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -642,14 +615,12 @@ function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName
     end
   end
 end
-
 function Component:OnFocusReceivedComp(MyGeometry, InFocusEvent)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ReNavigateToListItem()
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Component:ReNavigateToListItem()
   if CommonUtils:IfExistSystemGuideUI(self) then
     return
@@ -670,7 +641,6 @@ function Component:ReNavigateToListItem()
     end
   end
 end
-
 function Component:OnKeyDownComp(MyGeometry, InKeyName)
   if InKeyName == UIConst.GamePadKey.FaceButtonTop and self.CurrentMode == "LevelUp" then
     self:OnUpgradeBtnClicked()
@@ -693,7 +663,7 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
   elseif InKeyName == UIConst.GamePadKey.RightTriggerThreshold then
     self:NextLevel()
     return true
-  elseif InKeyName == UIConst.GamePadKey.RightThumb then
+  elseif InKeyName == UIConst.GamePadKey.LeftThumb then
     self.Item_1:SetFocus()
     self.IsFocusInItem = true
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -702,7 +672,6 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
   end
   return false
 end
-
 function Component:OnPreviewKeyDownComp(MyGeometry, InKeyName)
   if InKeyName == UIConst.GamePadKey.DPadLeft then
     self:OnBtnReduceMaxClicked()
@@ -713,5 +682,4 @@ function Component:OnPreviewKeyDownComp(MyGeometry, InKeyName)
   end
   return false
 end
-
 return Component

@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.List_Box:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.ListBox_Parent.Button_Area.OnClicked:Add(self, self.OnItemClicked)
@@ -22,7 +21,6 @@ function M:Construct()
     end
   end)
 end
-
 function M:OnItemClicked(bNotPlaySound)
   self.IsExpanded = not self.IsExpanded
   self:ToggleFold(self.IsExpanded)
@@ -30,7 +28,6 @@ function M:OnItemClicked(bNotPlaySound)
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
   end
 end
-
 function M:ToggleFold(bExpand)
   if bExpand then
     self.List_Box:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -47,14 +44,12 @@ function M:ToggleFold(bExpand)
     self.Owner:RefreshList_Catalogue()
   end, false, 0, nil, true)
 end
-
 function M:_StopExpandDelayTimer()
   if self:IsExistTimer(self.ExpandDelayTimer) then
     self:RemoveTimer(self.ExpandDelayTimer)
     self.ExpandDelayTimer = nil
   end
 end
-
 function M:OnListItemObjectSet(InObject)
   self:_StopExpandDelayTimer()
   self.Text_Name:SetText(GText(InObject.SubTypeText))
@@ -75,7 +70,6 @@ function M:OnListItemObjectSet(InObject)
   end
   self:UpdateEntryList()
 end
-
 function M:ClearItemState()
   if self.IsExpanded then
     self:ToggleFold(false)
@@ -83,11 +77,9 @@ function M:ClearItemState()
     self.IsExpanded = false
   end
 end
-
 function M:UpdateEntryStyle()
   self.Owner:UpdateEntryWidgetSelectedStyle(self)
 end
-
 function M:UpdateEntryList()
   if not self.List_Box then
     return
@@ -107,38 +99,34 @@ function M:UpdateEntryList()
     EntryWidget.Index = index - 1
   end
 end
-
 function M:CreateEntryItem(entryId, entryData)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+  Obj.SubTypeId = self.SubTypeId
   Obj.EntryId = entryId
   Obj.EntryTitle = entryData.EntryTitle
   Obj.OriginalTitle = entryData.OriginalTitle
   Obj.Parent = self
   return Obj
 end
-
 function M:GetEntryIndex(entryId)
-  for index, Entry in ipairs(self.List_Box:GetAllChildren()) do
+  for index, Entry in ipairs(self.List_Box:GetAllChildren():ToTable()) do
     if Entry.EntryId == entryId then
-      return index - 1
+      return Entry.Index
     end
   end
   return nil
 end
-
 function M:Destruct()
   self:_StopExpandDelayTimer()
   self.ListBox_Parent.Button_Area.OnClicked:Remove(self, self.OnItemClicked)
   WikiController:GetModel():RemoveNewStateListener(self)
 end
-
 function M:_OnWikiEntryTextReaded(TextId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:WikiEntryTextReaded(self.EntryId, TextId)
   end
 end
-
 function M:InitListenEvent()
   local PlayerController = self:GetOwningPlayer()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -146,13 +134,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -162,14 +148,12 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     local ListBoxItem = self.List_Box:GetChildAt(0)
     ListBoxItem:OnCellClicked(true)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.Owner.CatalogueScroll:ScrollWidgetIntoView(self, true, UE4.EDescendantScrollDestination.IntoView)
   if CommonUtils.GetDeviceTypeByPlatformName() ~= "Mobile" then
@@ -199,7 +183,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:InitNavigationRules()
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:InitNavigationRules()
   self:SetNavigationRuleCustom(EUINavigation.Down, {
     self,
@@ -210,7 +193,6 @@ function M:InitNavigationRules()
     self.SetUpTarget
   })
 end
-
 function M:SetDownTarget()
   if self.List_Box:GetVisibility() == UIConst.VisibilityOp.SelfHitTestInvisible and self.List_Box:GetChildrenCount() > 0 then
     return self.List_Box:GetChildAt(0)
@@ -218,7 +200,6 @@ function M:SetDownTarget()
     return self:GetNextListCatalogueItem()
   end
 end
-
 function M:SetUpTarget()
   local ListBoxItem = self:GetPreListCatalogueItem()
   if not ListBoxItem then
@@ -230,7 +211,6 @@ function M:SetUpTarget()
     return ListBoxItem
   end
 end
-
 function M:GetNextListCatalogueItem()
   if self.Owner and self.Owner.List_Catalogue then
     local nextItem = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.Owner.List_Catalogue, self.Index + 1)
@@ -238,7 +218,6 @@ function M:GetNextListCatalogueItem()
   end
   return nil
 end
-
 function M:GetPreListCatalogueItem()
   if self.Owner and self.Owner.List_Catalogue then
     local Item = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.Owner.List_Catalogue, self.Index - 1)
@@ -246,7 +225,6 @@ function M:GetPreListCatalogueItem()
   end
   return nil
 end
-
 function M:GetSelfListCatalogueItem()
   if self.Owner and self.Owner.List_Catalogue then
     local Item = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.Owner.List_Catalogue, self.Index)
@@ -254,5 +232,4 @@ function M:GetSelfListCatalogueItem()
   end
   return nil
 end
-
 return M

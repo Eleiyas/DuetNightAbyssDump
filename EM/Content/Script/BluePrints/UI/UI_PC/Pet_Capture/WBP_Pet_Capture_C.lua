@@ -6,7 +6,6 @@ local PetBehavior = {
   Idle = "Idle"
 }
 local WBP_Pet_Capture_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Pet_Capture_C:Construct()
   self.Btn_Confirm:BindEventOnClicked(self, self.OnConfirmClicked)
   self.Btn_Confirm:SetDefaultGamePadImg("X")
@@ -44,7 +43,6 @@ function WBP_Pet_Capture_C:Construct()
   self.SnackClickMap[self.Snack_Gold] = {}
   self:AddDispatcher(EventID.CharDie, self, self.OnPlayerDead)
 end
-
 function WBP_Pet_Capture_C:Destruct()
   self:ClearAllButtonEvent(self.Snack_Purple)
   self:ClearAllButtonEvent(self.Snack_Blue)
@@ -53,7 +51,6 @@ function WBP_Pet_Capture_C:Destruct()
   self.Button_Throw.OnClicked:Clear()
   WBP_Pet_Capture_C.Super.Destruct(self)
 end
-
 function WBP_Pet_Capture_C:ClearAllButtonEvent(ButtonArea)
   ButtonArea.Button_Area.OnClicked:Clear()
   ButtonArea.Button_Area.OnHovered:Clear()
@@ -62,7 +59,6 @@ function WBP_Pet_Capture_C:ClearAllButtonEvent(ButtonArea)
   ButtonArea.Button_Area.OnReleased:Clear()
   ButtonArea:UnbindAllFromAnimationFinished(ButtonArea.UnHover)
 end
-
 function WBP_Pet_Capture_C:OnLoaded(Owner)
   self:SetFocus()
   self.Super.OnLoaded(self)
@@ -99,13 +95,36 @@ function WBP_Pet_Capture_C:OnLoaded(Owner)
   self:PlayAnimation(self.In)
   self:InitTabInfo()
   self:InitSnacks()
+  self:InitCaptureInfo()
   self:SwitchCamera(false)
   self:InitGamepadUI()
   self.SelectStart = false
+  self.SelectThrowSnack = false
   self.ExistReason = 3
   self:PlayPetVoice(PetBehavior.Hello)
 end
-
+function WBP_Pet_Capture_C:InitCaptureInfo()
+  if not self.PetData.CollectRewardExp then
+    self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.Collapsed)
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local PetCache = Avatar:GetCollectRewardRecordCache()
+  if PetCache and PetCache.Pet and PetCache.Pet[tostring(self.PetData.GUID)] then
+    self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.Collapsed)
+    return
+  end
+  local CaptureTipsL = self.Color_Bar.Text_Exp_L
+  local CaptureTipsR = self.Color_Bar.Text_Exp_R
+  local Text_Num = self.Color_Bar.Text_Num
+  Text_Num:SetText(self.PetData.CollectRewardExp)
+  CaptureTipsL:SetText(GText("PlayerLevel_FirstObtain_Pet_Des"))
+  CaptureTipsR:SetText(GText("PlayerLevel_Exp"))
+  self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+end
 function WBP_Pet_Capture_C:InitGamepadUI()
   local bIsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   if bIsMobile then
@@ -263,7 +282,6 @@ function WBP_Pet_Capture_C:InitGamepadUI()
     end
   })
 end
-
 function WBP_Pet_Capture_C:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   local bIsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   if bIsMobile then
@@ -275,17 +293,38 @@ function WBP_Pet_Capture_C:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurG
   local IsGamePad = GameInputModeSubsystem and GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad
   self.WS_Type:SetActiveWidgetIndex(IsGamePad and 1 or 0)
 end
-
+function WBP_Pet_Capture_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
+  if CommonUtils:IfExistSystemGuideUI(self) then
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  end
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  local IsHandled = false
+  if "SpaceBar" == InKeyName then
+    if not self.SelectStart then
+      self:OnConfirmClicked()
+    else
+      self:ThrowSnack()
+    end
+  end
+  if IsHandled then
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  end
+  return UE4.UWidgetBlueprintLibrary.Unhandled()
+end
 function WBP_Pet_Capture_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if "SpaceBar" == InKeyName then
-    self:ThrowSnack()
+    if not self.SelectStart then
+      self:OnConfirmClicked()
+    else
+      self:ThrowSnack()
+    end
   elseif "Escape" == InKeyName or "Gamepad_FaceButton_Right" == InKeyName then
     self:ExitPetCapture()
   elseif "Gamepad_FaceButton_Left" == InKeyName and not self.SelectStart then
     self:OnConfirmClicked()
-    self.Button_Throw:SetFocus()
   elseif "Gamepad_Special_Right" == InKeyName then
     local UIManager = GWorld.GameInstance:GetGameUIManager()
     if not UIManager then
@@ -295,12 +334,37 @@ function WBP_Pet_Capture_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Pet_Capture_C:InitTabInfo()
-  self.Tab_Pet_Capture:Init({
+  BottomKeyInfo = {
+    {
+      KeyInfoList = {
+        {
+          Type = "Text",
+          Text = "Esc",
+          ClickCallback = self.ExitPetCapture,
+          Owner = self
+        }
+      },
+      GamePadInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = "B",
+          ClickCallback = self.ExitPetCapture,
+          Owner = self
+        }
+      },
+      Desc = GText("UI_BACK")
+    }
+  }, self.Tab_Pet_Capture:Init({
     TitleName = GText("UI_Pet_Title"),
     DynamicNode = {"Back", "BottomKey"},
     BottomKeyInfo = {
+      {
+        KeyInfoList = {
+          {Type = "Text", Text = "SpaceBar"}
+        },
+        Desc = GText("UI_LOGIN_ENSURE")
+      },
       {
         KeyInfoList = {
           {
@@ -318,7 +382,7 @@ function WBP_Pet_Capture_C:InitTabInfo()
             Owner = self
           }
         },
-        Desc = GText("UI_BACK")
+        Desc = GText("UI_Tips_Close")
       }
     },
     StyleName = "Text",
@@ -326,22 +390,18 @@ function WBP_Pet_Capture_C:InitTabInfo()
     BackCallback = self.ExitPetCapture
   })
 end
-
 function WBP_Pet_Capture_C:OnSelectSnackClicked1()
   self:PressSnackButton(self.Snack_Green, 0, 0)
   self:ShowSpecialPet(false)
 end
-
 function WBP_Pet_Capture_C:OnSelectSnackClicked2()
   self:PressSnackButton(self.Snack_Blue, DataMgr.GlobalConstant.ItemIDPetFoodLV1.ConstantValue, 1)
   self:ShowSpecialPet(false)
 end
-
 function WBP_Pet_Capture_C:OnSelectSnackClicked3()
   self:PressSnackButton(self.Snack_Purple, DataMgr.GlobalConstant.ItemIDPetFoodLV2.ConstantValue, 2)
   self:ShowSpecialPet(false)
 end
-
 function WBP_Pet_Capture_C:OnSelectSnackClicked4()
   if not self.PetData.PremiumTransform and not self.PetData.Premium then
     UIManager(self):ShowUITip("CommonToastMain", GText("Pet_PremiumTransform_Lock"), 1.5)
@@ -350,8 +410,11 @@ function WBP_Pet_Capture_C:OnSelectSnackClicked4()
   self:PressSnackButton(self.Snack_Gold, DataMgr.GlobalConstant.ItemIDPetFoodLV3.ConstantValue, 3)
   self:ShowSpecialPet(true)
 end
-
 function WBP_Pet_Capture_C:ShowSpecialPet(IsShow)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
   if self.IsShowSpecialPet == nil then
     self.IsShowSpecialPet = false
   end
@@ -374,15 +437,32 @@ function WBP_Pet_Capture_C:ShowSpecialPet(IsShow)
     local ModelConfig = DataMgr.Model[PetData.ModelId]
     self.Owner:UpdateModelSkin(ModelConfig.PetModelId)
     self.Owner.FXComponent:PlayEffectByIDParams(301, {bTickEvenWhenPaused = true, NotAttached = true})
+    if PetData.CollectRewardExp then
+      local PetCache = Avatar:GetCollectRewardRecordCache()
+      if PetCache and PetCache.Pet and PetCache.Pet[tostring(PetData.GUID)] then
+        self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.Collapsed)
+      else
+        self.Color_Bar.Text_Num:SetText(PetData.CollectRewardExp)
+        self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+      end
+    end
   else
     self.Owner:RemovePetEffectCreatureFXById(PremiumTransform)
     CharModelComponent:UpdateCurrentModel(self.PetData.ModelId)
     local ModelConfig = DataMgr.Model[self.PetData.ModelId]
     self.Owner:UpdateModelSkin(ModelConfig.PetModelId)
     self.Owner.FXComponent:PlayEffectByIDParams(302, {bTickEvenWhenPaused = true, NotAttached = true})
+    if self.PetData.CollectRewardExp then
+      local PetCache = Avatar:GetCollectRewardRecordCache()
+      if PetCache and PetCache.Pet and PetCache.Pet[tostring(self.PetData.GUID)] then
+        self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.Collapsed)
+      else
+        self.Color_Bar.Text_Num:SetText(PetData.CollectRewardExp)
+        self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+      end
+    end
   end
 end
-
 function WBP_Pet_Capture_C:PressSnackButton(PressButton, SnackId, Level)
   if self.PreSelectSnackButton == PressButton then
     return
@@ -427,7 +507,6 @@ function WBP_Pet_Capture_C:PressSnackButton(PressButton, SnackId, Level)
   end
   self:PlayPetVoice(PetBehavior.Upset)
 end
-
 function WBP_Pet_Capture_C:InitSnackButton(SnackButton, SnackId)
   SnackButton.Button_Area.OnHovered:Add(self, function()
     if not self.SnackClickMap[SnackButton].IsClick then
@@ -478,7 +557,6 @@ function WBP_Pet_Capture_C:InitSnackButton(SnackButton, SnackId)
     end
   })
 end
-
 function WBP_Pet_Capture_C:InitSnacks()
   self.Snack_Green.WidgetSwitcher_State:SetActiveWidgetIndex(2)
   local MiniGameConfig = DataMgr.MiniGameCapture[self.PetData.MiniGameCaptureId]
@@ -491,7 +569,7 @@ function WBP_Pet_Capture_C:InitSnacks()
   self.SnackBlueIcon = "/Game/UI/Texture/Dynamic/Atlas/Prop/Item/T_Resource_PetFood01.T_Resource_PetFood01"
   local Item = self.Snack_Green.Item_Snacks
   Item:SetIcon(self.SnackBlueIcon)
-  Item:SetName("\226\136\158")
+  Item:SetName("∞")
   Item.Content = {}
   Item:SetRarity(2)
   Item:BindEventOnMouseButtonUp(self, function()
@@ -507,7 +585,6 @@ function WBP_Pet_Capture_C:InitSnacks()
     self.Snack_Gold:PlayAnimation(self.Snack_Gold.Forbidden)
   end
 end
-
 function WBP_Pet_Capture_C:UpdateSnackWidget(SnackWidget, SnackId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -535,7 +612,6 @@ function WBP_Pet_Capture_C:UpdateSnackWidget(SnackWidget, SnackId)
     SnackWidget.WidgetSwitcher_State:SetActiveWidgetIndex(1)
   end
 end
-
 function WBP_Pet_Capture_C:OnConfirmClicked()
   if self.SelectStart then
     return
@@ -545,6 +621,7 @@ function WBP_Pet_Capture_C:OnConfirmClicked()
   self.Btn_Confirm:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_Snacks:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_Text:SetVisibility(ESlateVisibility.Collapsed)
+  self.Color_Bar.HB_Exp:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_Tip:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:BindToAnimationFinished(self.Tip_In, {
     self,
@@ -553,8 +630,8 @@ function WBP_Pet_Capture_C:OnConfirmClicked()
   self:PlayAnimationForward(self.Tip_In)
   self.Color_Bar.Color_Gauge:PlayAnimationForward(self.Color_Bar.Color_Gauge.In)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
+  self.Button_Throw:SetFocus()
 end
-
 function WBP_Pet_Capture_C:StartSelect()
   self.Color_Bar.Color_Gauge:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   if self.ColorBarHandle then
@@ -583,14 +660,13 @@ function WBP_Pet_Capture_C:StartSelect()
   self.Color_Bar.Panel_Attribute:SetVisibility(ESlateVisibility.Collapsed)
   self:PlayPetVoice(PetBehavior.Hello)
 end
-
 function WBP_Pet_Capture_C:MoveRightSelectArrow()
   local Padding = UE4.FMargin(0, 0, 0, 0)
   local MiniGameConfig = DataMgr.MiniGameCapture[self.PetData.MiniGameCaptureId]
   self.MoveSelectArrowHandle = ULTweenBPLibrary.FloatTo(self, {
     self,
     function(_, Value)
-      if not self.SelectStart then
+      if not self.SelectStart or self.SelectThrowSnack then
         ULTweenBPLibrary.KillIfIsTweening(self, self.MoveSelectArrowHandle)
         return
       end
@@ -603,14 +679,13 @@ function WBP_Pet_Capture_C:MoveRightSelectArrow()
     end
   }, -298, 298, MiniGameConfig.PointerSpeed, 0, 0)
 end
-
 function WBP_Pet_Capture_C:MoveLeftSelectArrow()
   local Padding = UE4.FMargin(0, 0, 0, 0)
   local MiniGameConfig = DataMgr.MiniGameCapture[self.PetData.MiniGameCaptureId]
   self.MoveSelectArrowHandle = ULTweenBPLibrary.FloatTo(self, {
     self,
     function(_, Value)
-      if not self.SelectStart then
+      if not self.SelectStart or self.SelectThrowSnack then
         ULTweenBPLibrary.KillIfIsTweening(self, self.MoveSelectArrowHandle)
         return
       end
@@ -623,21 +698,22 @@ function WBP_Pet_Capture_C:MoveLeftSelectArrow()
     end
   }, 298, -298, MiniGameConfig.PointerSpeed, 0, 0)
 end
-
 function WBP_Pet_Capture_C:ThrowSnack()
   if not self.SelectStart then
+    return
+  end
+  if self.SelectThrowSnack then
     return
   end
   self:TryCapturePet()
   self.Color_Bar:PlayAnimationForward(self.Color_Bar.Throw)
   self.Color_Bar.Color_Gauge:PlayAnimationForward(self.Color_Bar.Color_Gauge.Throw)
-  self.SelectStart = false
+  self.SelectThrowSnack = true
   AudioManager(self):StopSound(self, "PetCaptureStartSelect")
   AudioManager(self):PlayUISound(self, "event:/ui/common/pet_slider_end", nil, nil)
   CommonUtils:CloseGuideTouchIfExist(self)
   self:PlayPetVoice(PetBehavior.Idle)
 end
-
 function WBP_Pet_Capture_C:TryCapturePet()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -700,10 +776,10 @@ function WBP_Pet_Capture_C:TryCapturePet()
   local XMax = MiniGameConfig.Xmax
   local Percent = ArrowValue / 298
   local XValue = Percent * XMax
-  
   local function RPCCallback(ErrCode, UniqueId)
     self.ExistReason = 2
     self.Owner:HidePetNotifyEarly(ErrCode)
+    self.Owner:AfterCaptureChangeClientRegionData(ErrCode)
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
     local SceneMgrComponent = GameInstance:GetSceneManager()
     if IsValid(SceneMgrComponent) and self.Owner.Eid == SceneMgrComponent.NearestPetGuideEid then
@@ -715,7 +791,6 @@ function WBP_Pet_Capture_C:TryCapturePet()
       self:PlayOutAnim()
     end)
   end
-  
   local GameMode = UGameplayStatics.GetGameMode(self.Owner)
   if 0 ~= self.Owner.DynamicUniqueId then
     Avatar:TryCapturePetDynamicQuest(self.SnackId, XValue, self.Owner.DynamicUniqueId, RPCCallback)
@@ -727,7 +802,6 @@ function WBP_Pet_Capture_C:TryCapturePet()
   end
   RPCCallback = nil
 end
-
 function WBP_Pet_Capture_C:UpdateFoodLvProbability(FoodLv)
   local GameMode = UGameplayStatics.GetGameMode(self.Owner)
   if 0 == self.Owner.DynamicUniqueId and (not GameMode or not GameMode:IsInRegion()) then
@@ -808,7 +882,6 @@ function WBP_Pet_Capture_C:UpdateFoodLvProbability(FoodLv)
     self.Color_Bar.Text_Probability:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Pet_Capture_C:InitProbabilitySlot()
   local SizeStruct = FSlateChildSize()
   for i = 1, #self.CurColorBarSize do
@@ -818,7 +891,6 @@ function WBP_Pet_Capture_C:InitProbabilitySlot()
     self.Color_Bar["Block_" .. ColorBar.ColorIndex - i + 1].Slot:SetSize(SizeStruct)
   end
 end
-
 function WBP_Pet_Capture_C:PlayProbabilityAnimation()
   local SizeStruct = FSlateChildSize()
   if self.ProbabilityHandle then
@@ -838,7 +910,6 @@ function WBP_Pet_Capture_C:PlayProbabilityAnimation()
     end
   }, 0, 1, 0.5, 0, 0)
 end
-
 function WBP_Pet_Capture_C:ExitPetCapture()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -851,11 +922,9 @@ function WBP_Pet_Capture_C:ExitPetCapture()
   }
   UIManager:ShowCommonPopupUI(100010, Params)
 end
-
 function WBP_Pet_Capture_C:ReturnFocus()
   self:SetFocus()
 end
-
 function WBP_Pet_Capture_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) or self.IsBeginToClose then
     return
@@ -868,7 +937,6 @@ function WBP_Pet_Capture_C:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "OpenPetCapture", {ToEnd = 1})
   AudioManager(self):SetEventSoundParam(self, "PetIdle", {ToEnd = 1})
 end
-
 function WBP_Pet_Capture_C:SwitchCamera(IsPlayer)
   local PlayerController = UGameplayStatics.GetPlayerController(self, 0)
   if IsPlayer then
@@ -902,7 +970,6 @@ function WBP_Pet_Capture_C:SwitchCamera(IsPlayer)
     end
   end
 end
-
 function WBP_Pet_Capture_C:MoveCamera(Camera, IsSelecting)
   local CamOffset = self.PetData.MiniGameCamOffset or FVector(0, 0, 0)
   CamOffset = CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" and FVector(0, 0, 0) or FVector(CamOffset[1], CamOffset[2], CamOffset[3])
@@ -926,7 +993,6 @@ function WBP_Pet_Capture_C:MoveCamera(Camera, IsSelecting)
     }, StartLocation, EndLocation, 0.5, 0, 17)
   end
 end
-
 function WBP_Pet_Capture_C:Close()
   ULTweenBPLibrary.KillIfIsTweening(self, self.MoveSelectArrowHandle)
   self:SwitchCamera(true)
@@ -938,14 +1004,12 @@ function WBP_Pet_Capture_C:Close()
   EventManager:RemoveEvent(EventID.CharDie, self)
   self.Super.Close(self)
 end
-
 function WBP_Pet_Capture_C:OnPlayerDead(Eid)
   local Character = Battle(self):GetEntity(Eid)
   if Character:IsMainPlayer() then
     self:Close()
   end
 end
-
 function WBP_Pet_Capture_C:PlayPetVoice(Behavior)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local PetNameTag = self.PetData and self.PetData.PetNameTag
@@ -963,5 +1027,4 @@ function WBP_Pet_Capture_C:PlayPetVoice(Behavior)
     AudioManager(self):PlayPetVoice(Player, PetNameTag, "vo_idle", "PetVoice")
   end
 end
-
 return WBP_Pet_Capture_C

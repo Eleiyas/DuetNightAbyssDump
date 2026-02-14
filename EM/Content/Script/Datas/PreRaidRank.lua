@@ -1,11 +1,14 @@
+local LocalTimeProxy = (DataMgr or {}).LocalTimeProxy or function(x)
+  return x
+end
 local ReadOnly = (DataMgr or {}).ReadOnly or function(n, x)
   return x
 end
 return ReadOnly("PreRaidRank", {
   [1] = {
     IsOnline = {
-      true,
-      true,
+      false,
+      false,
       false,
       false,
       false
@@ -19,10 +22,10 @@ return ReadOnly("PreRaidRank", {
       "B"
     },
     RankPercent = {
-      5,
-      20,
-      45,
-      70,
+      15,
+      35,
+      55,
+      75,
       100
     },
     RankReward = {

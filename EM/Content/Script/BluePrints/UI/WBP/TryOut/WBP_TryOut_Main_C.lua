@@ -4,14 +4,12 @@ local M = Class("Blueprints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.UIComponent.StarsUIComponent"
 }
-
 function M:Construct()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Text_Title:SetText(GText("UI_CharTrial_CharIntro"))
-  self.Btn_Close.OnClicked:Add(self, self.CloseSelf)
+  self.Btn_Close:BindEventOnClicked(self, self.CloseSelf)
   self.Btn_FullScreen.OnClicked:Add(self, self.CloseSelf)
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
     self.Switcher_Text:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -26,15 +24,12 @@ function M:OnLoaded(...)
   self:PlayInAnim()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/role_trial_level_panel_show", "TrialCharacterSkills", nil)
 end
-
 function M:PlayInAnim()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayAnimOut()
   self:PlayAnimation(self.Out)
 end
-
 function M:InitItems()
   local Avatar = GWorld:GetAvatar()
   local CharId
@@ -45,29 +40,38 @@ function M:InitItems()
       CharId = Player.PlayerState.CharId
     end
   end
-  local Char = DataMgr.BattleChar[CharId]
-  local BigIcon = DataMgr.Char[CharId].BigIcon
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  local Char = DataMgr.BattleChar[CharId]
+  local BigIcon = DataMgr.Char[CharId].GachaIcon
   if GameMode and GameMode.PreInitInfo.CharTrialId then
-    local QuestRoleId = DataMgr.CharTrial[GameMode.PreInitInfo.CharTrialId].QuestRoleId
-    if QuestRoleId then
-      local CharTemplateId = DataMgr.QuestRoleInfo[QuestRoleId].CharTemplateRuleId
-      if CharTemplateId then
-        local CharCostumeId = DataMgr.CharTemplate[CharTemplateId].CharCostumeId
-        if CharCostumeId then
-          local SkinId = DataMgr.CharCostumeTemplate[CharCostumeId].SkinId
-          BigIcon = DataMgr.Skin[SkinId].BigIcon
+    local TrialType
+    for _, Data in pairs(DataMgr.CharTrialEvent) do
+      if Data.CharTrialId == GameMode.PreInitInfo.CharTrialId then
+        TrialType = Data.TrialType
+        break
+      end
+    end
+    if "Skin" == TrialType then
+      local QuestRoleId = DataMgr.CharTrial[GameMode.PreInitInfo.CharTrialId].QuestRoleId
+      if QuestRoleId then
+        local CharTemplateId = DataMgr.QuestRoleInfo[QuestRoleId].CharTemplateRuleId
+        if CharTemplateId then
+          local CharCostumeId = DataMgr.CharTemplate[CharTemplateId].CharCostumeId
+          if CharCostumeId then
+            local SkinId = DataMgr.CharCostumeTemplate[CharCostumeId].SkinId
+            BigIcon = DataMgr.Skin[SkinId].LongIcon
+          else
+            DebugPrint("ljh@试玩Icon读取失败，CharCostumeId为空,CharTrialId为:" .. tostring(GameMode.PreInitInfo.CharTrialId))
+          end
         else
-          DebugPrint("ljh@\232\175\149\231\142\169Icon\232\175\187\229\143\150\229\164\177\232\180\165\239\188\140CharCostumeId\228\184\186\231\169\186,CharTrialId\228\184\186:" .. tostring(GameMode.PreInitInfo.CharTrialId))
+          DebugPrint("ljh@试玩Icon读取失败，CharTemplateId为空,CharTrialId为:" .. tostring(GameMode.PreInitInfo.CharTrialId))
         end
       else
-        DebugPrint("ljh@\232\175\149\231\142\169Icon\232\175\187\229\143\150\229\164\177\232\180\165\239\188\140CharTemplateId\228\184\186\231\169\186,CharTrialId\228\184\186:" .. tostring(GameMode.PreInitInfo.CharTrialId))
+        DebugPrint("ljh@试玩Icon读取失败，QuestRoleId为空,CharTrialId为:" .. tostring(GameMode.PreInitInfo.CharTrialId))
       end
-    else
-      DebugPrint("ljh@\232\175\149\231\142\169Icon\232\175\187\229\143\150\229\164\177\232\180\165\239\188\140QuestRoleId\228\184\186\231\169\186,CharTrialId\228\184\186:" .. tostring(GameMode.PreInitInfo.CharTrialId))
     end
   else
-    DebugPrint("ljh@\232\175\149\231\142\169Icon\232\175\187\229\143\150\229\164\177\232\180\165\239\188\140CharTrialId\228\184\186\231\169\186")
+    DebugPrint("ljh@试玩Icon读取失败，CharTrialId为空")
   end
   local AttrName = Char.Attribute
   self.Text_Name:SetText(GText(Char.CharName))
@@ -81,15 +85,9 @@ function M:InitItems()
       local OffsetV = DataMgr.CharTrial[CharTrialId].VOffset
       local DynamicMaterial = self.Img_Role:GetDynamicMaterial()
       DynamicMaterial:SetTextureParameterValue("MainTex", BigIconObj)
-      if OffsetU then
-        DynamicMaterial:SetScalarParameterValue("Main_U_Offset", OffsetU)
-      end
-      if OffsetV then
-        DynamicMaterial:SetScalarParameterValue("Main_V_Offset", OffsetV)
-      end
     end
   else
-    DebugPrint("ljh@\232\175\149\231\142\169Icon\232\175\187\229\143\150\229\164\177\232\180\165IconPath\228\184\186\231\169\186")
+    DebugPrint("ljh@试玩Icon读取失败IconPath为空")
   end
   self.Image_Element:SetBrushResourceObject(AttributeIcon or LoadObject("/Game/UI/Texture/Dynamic/Atlas/Armory/T_Armory_Default.T_Armory_Default"))
   self.List_Item:ClearListItems()
@@ -106,19 +104,17 @@ function M:InitItems()
     end
   end
 end
-
 function M:CloseSelf()
+  self.Btn_Close:UnBindEventOnClicked(self, self.CloseSelf)
   AudioManager(self):SetEventSoundParam(nil, "TrialCharacterSkills", {ToEnd = 1})
   self:Close()
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(GameInputModeSubsystem:GetCurrentInputType())
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -126,7 +122,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     self:CloseSelf()
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIVisibility(IsUseKeyAndMouse)
@@ -146,13 +141,10 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end, false, 0, nil, true)
   end
 end
-
 function M:OnNavigateUp(Content)
 end
-
 function M:OnNavigateDown(Content)
 end
-
 function M:UpdateUIVisibility(IsUseKeyAndMouse)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -163,7 +155,7 @@ function M:UpdateUIVisibility(IsUseKeyAndMouse)
       KeyInfoList = {
         {Type = "Img", ImgShortPath = "RS"}
       },
-      Desc = GText("\230\187\145\229\138\168\229\136\151\232\161\168")
+      Desc = GText("滑动列表")
     })
     self.Gamepad_Shortcut02:CreateCommonKey({
       KeyInfoList = {
@@ -176,12 +168,10 @@ function M:UpdateUIVisibility(IsUseKeyAndMouse)
     self.Text_Tips_1:SetText(self.Tips)
   end
 end
-
 function M:GetTargetOffsetByIndex(Index)
   local EndOffset = self.ScrollBox:GetScrollOffsetOfEnd()
   return (Index - 1) * (EndOffset / (self.NumMax - 1))
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
@@ -194,5 +184,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 return M

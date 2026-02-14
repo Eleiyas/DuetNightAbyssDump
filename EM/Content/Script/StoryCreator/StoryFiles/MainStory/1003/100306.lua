@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17466257315105599",
       type = "StoryNode",
-      name = "\229\137\167\233\153\162\229\134\133",
+      name = "剧院内",
       pos = {x = 1772.8960271754386, y = 282.86348945172455},
       propsData = {
         QuestId = 10030601,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101901,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "NewTargetPoint12000204"
+        StoryGuidePointName = "NewTargetPoint12000204",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -141,6 +143,7 @@ return {
               ModeType = 1,
               Id = 101101,
               StartIndex = 1,
+              LoadingId = 0,
               IsWhite = false
             }
           },
@@ -154,14 +157,14 @@ return {
           ["17466257315105607"] = {
             key = "17466257315105607",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 1897.7493632661776, y = 277.2969924812031},
             propsData = {SpecialConfigId = 1042, BlackScreenImmediately = true}
           },
           ["17466257315105609"] = {
             key = "17466257315105609",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = 1120, y = 912},
             propsData = {
               UnitId = 0,
@@ -176,7 +179,7 @@ return {
           ["17466257315105610"] = {
             key = "17466257315105610",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = 1490.9508021390375, y = 926},
             propsData = {
               MessageType = "GameMode",
@@ -187,7 +190,7 @@ return {
           ["17466257315105611"] = {
             key = "17466257315105611",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = 2280, y = 694},
             propsData = {
               UnitId = 0,
@@ -202,7 +205,7 @@ return {
           ["17466257315105612"] = {
             key = "17466257315105612",
             type = "SkipRegionNode",
-            name = "\232\183\168\229\140\186\229\159\159\228\188\160\233\128\129\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174",
+            name = "跨区域传送设置玩家位置",
             pos = {x = 2280, y = 490},
             propsData = {
               ModeType = 1,
@@ -214,7 +217,7 @@ return {
           ["17473187345893588"] = {
             key = "17473187345893588",
             type = "GoToRegionNode",
-            name = "\232\191\155\229\133\165\229\140\186\229\159\159",
+            name = "进入区域",
             pos = {x = 1268, y = 62},
             propsData = {
               RegionType = 1,
@@ -228,7 +231,7 @@ return {
           ["17474657276565202715"] = {
             key = "17474657276565202715",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = 1330, y = 608},
             propsData = {
               MessageType = "GameMode",

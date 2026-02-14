@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Play.Widget.Task.NewPlayer.NewPlayerTaskView"
 }
-
 function M:Initialize(Initializer)
   M.Super.Initialize(self)
   self.NodeName = "StarterQuest"
@@ -15,13 +14,11 @@ function M:Initialize(Initializer)
   self.AllQuestServerData = {}
   self.AllQuestConfigData = {}
 end
-
 function M:Destruct()
   self.List_Task.OnCreateEmptyContent:Unbind()
   ReddotManager.RemoveListener(self.NodeName, self)
   self.Super.Destruct(self)
 end
-
 function M:InitContent(Parent)
   self.InitKey = nil
   local PlayerAvatar = GWorld:GetAvatar()
@@ -79,13 +76,11 @@ function M:InitContent(Parent)
   end)
   self.Left_Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:HideNpc(IsHide)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:HideNpcActor(IsHide, "StyleOfPlay")
 end
-
 function M:OnUpdateActivityByAction(ActionName, ...)
   local ParamId = (...)
   if "QuestGetReward" == ActionName or "QuestComplete" == ActionName then
@@ -110,7 +105,6 @@ function M:OnUpdateActivityByAction(ActionName, ...)
     self:RefreshRightBtnReddot()
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -121,7 +115,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateUIStyleInPlatform()
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:TryNavigateToIndex(Index)
   Index = Index or 0
   self:AddTimer(0.1, function()
@@ -132,13 +125,10 @@ function M:TryNavigateToIndex(Index)
     end
   end)
 end
-
 function M:SwitchIn()
   self:TryNavigateToIndex(0)
   self:UpdateUIStyleInPlatform()
-  self:PlayAnimation(self.In)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -152,7 +142,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -171,7 +160,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonLeft then
@@ -186,13 +174,17 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnAllDailyTaskRewardKey()
   if self.Btn_Reward:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
     self:GetAllRewardBtnClick()
   end
 end
-
+function M:ReGetDesiredFocusTarget()
+  if self.SelectItem and self.SelectItem.FocusTypeName ~= "SelfWidget" then
+    self.SelectItem:UpdatKeyDisplay("SelfWidget")
+  end
+  return self.List_Task
+end
 function M:SwitchGamepadKeyShow(IsShow, FocusTypeName)
   if not self.InitKey then
     self.InitKey = true
@@ -206,7 +198,6 @@ function M:SwitchGamepadKeyShow(IsShow, FocusTypeName)
         {Type = "Img", ImgShortPath = "Right"}
       }
     })
-    
     local function ForbidFunc(Widget, bOn)
       local IsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
       local CurrentPhaseIndex = self.PhaseId2TabId[self.CurPhaseId]
@@ -216,7 +207,6 @@ function M:SwitchGamepadKeyShow(IsShow, FocusTypeName)
         self:SetTabWidgetState(self.Key_Right, CurrentPhaseIndex < self.MaxPhaseIndex, true, IsGamepad)
       end
     end
-    
     self.Key_Left.SetForbidKey = ForbidFunc
     self.Key_Right.SetForbidKey = ForbidFunc
     self.Btn_Reward:SetGamePadImg("Y")
@@ -234,7 +224,6 @@ function M:SwitchGamepadKeyShow(IsShow, FocusTypeName)
   self.Btn_CheckReward.Key_RewardPreview:SetVisibility(Visibility)
   self.Parent:SwitchGamepadKeyShow(IsShow)
 end
-
 function M:UpdateUIStyleInPlatform()
   if self.Mobile then
     return
@@ -285,7 +274,6 @@ function M:UpdateUIStyleInPlatform()
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 function M:OnSelectChange(Item)
   if self.SelectItem == Item then
     return
@@ -298,12 +286,10 @@ function M:OnSelectChange(Item)
   end
   self.SelectItem = Item
 end
-
 function M:CloseSelf()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   self:PlayAnimation(self.Out)
   Item:OnClickBack()
 end
-
 AssembleComponents(M)
 return M

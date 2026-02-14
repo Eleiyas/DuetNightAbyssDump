@@ -10,7 +10,6 @@ local function UnpackEffectStruct(InEffectStruct)
   local Result = msgpack.unpack(Str)
   return Result
 end
-
 local function ToEffectStruct(self, InEffectStruct)
   self.Add = nil
   self.ToEffectStruct = nil
@@ -30,7 +29,6 @@ local function ToEffectStruct(self, InEffectStruct)
   EffectStruct:SetResult(s0, #s0)
   return EffectStruct
 end
-
 local LocalResults = {
   IsEmpty = true,
   Add = function(self, Value)

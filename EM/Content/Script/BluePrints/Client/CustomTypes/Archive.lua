@@ -18,11 +18,9 @@ Archive.__Props__ = {
   ArchiveStep = prop.getter("Data", "ArchiveStep"),
   RewardId = prop.getter("Data", "RewardId")
 }
-
 function Archive:Data()
   return DataMgr.ArchiveInfo[self.ArchiveId]
 end
-
 function Archive:Init(ArchiveId)
   if not ArchiveId then
     return
@@ -32,18 +30,15 @@ function Archive:Init(ArchiveId)
   end
   self.ArchiveId = ArchiveId
 end
-
 function Archive:UpdateArchiveList(TargetId)
   if self.ArchiveList[TargetId] then
     return
   end
   self.ArchiveList[TargetId] = TimeUtils.NowTime()
 end
-
 function Archive:GetArchiveCount()
   return CommonUtils.Size(self.ArchiveList)
 end
-
 function Archive:GetArchiveInfoValue(TargetId, Key)
   local TargetInfo = self.ArchiveInfo[TargetId]
   if not TargetInfo or not TargetInfo[Key] then
@@ -51,13 +46,11 @@ function Archive:GetArchiveInfoValue(TargetId, Key)
   end
   return TargetInfo[Key]
 end
-
 function Archive:InitArchiveInfo(TargetType)
   if TargetType == CommonConst.ArchiveType.Weapon then
     return {0, 0}
   end
 end
-
 function Archive:UpdateArchiveInfoValue(TargetId, TargetType, Key, Value)
   if not self.ArchiveInfo[TargetId] then
     self.ArchiveInfo[TargetId] = self:InitArchiveInfo(TargetType)
@@ -67,28 +60,23 @@ function Archive:UpdateArchiveInfoValue(TargetId, TargetType, Key, Value)
   end
   self.ArchiveInfo[TargetId][Key] = Value
 end
-
 function Archive:AddArchiveRewardGot(Count)
   if self.ArchiveRewardGot[Count] then
     return
   end
   self.ArchiveRewardGot[Count] = TimeUtils.NowTime()
 end
-
 FormatProperties(Archive)
 local ArchiveDict = Class("ArchiveDict", CustomTypes.CustomDict)
 ArchiveDict.KeyType = BaseTypes.Int
 ArchiveDict.ValueType = Archive
-
 function ArchiveDict:NewArchive(ArchiveId)
   return Archive(ArchiveId)
 end
-
 function ArchiveDict:GetArchive(ArchiveId)
   if not self[ArchiveId] then
     return self:NewArchive(ArchiveId)
   end
   return self[ArchiveId]
 end
-
 return {Archive = Archive, ArchiveDict = ArchiveDict}

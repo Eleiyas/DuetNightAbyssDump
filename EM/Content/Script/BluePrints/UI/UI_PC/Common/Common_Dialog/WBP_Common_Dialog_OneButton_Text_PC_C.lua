@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Common_Dialog_OneButton_Text_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_OneButton_Text_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local Text
@@ -19,5 +18,4 @@ function WBP_Common_Dialog_OneButton_Text_PC_C:InitContent(Params, PopupData, Ow
   end
   self.Text_Details:SetText(GText(Text))
 end
-
 return WBP_Common_Dialog_OneButton_Text_PC_C

@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Rouge_Settlement_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Rouge_Settlement_C:OnLoaded(...)
   WBP_Rouge_Settlement_C.Super.OnLoaded(self, ...)
   local LogicServerInfo = (...)
@@ -33,7 +32,6 @@ function WBP_Rouge_Settlement_C:OnLoaded(...)
   self:InitInputDeviceInfo()
   self:PlayInAnimation()
 end
-
 function WBP_Rouge_Settlement_C:InitTitleInfo()
   if self.IsWin then
     self.Text_Success01:SetText(GText("UI_RougeLike_End_Success01"))
@@ -45,7 +43,6 @@ function WBP_Rouge_Settlement_C:InitTitleInfo()
   end
   self.Text_Describe:SetText(GText("UI_RougeLike_End_Desc"))
 end
-
 function WBP_Rouge_Settlement_C:InitExitButton()
   if self.IsMobile then
     self.Btn_Close:Init("Close", self, self.OnExitButtonClicked)
@@ -54,7 +51,6 @@ function WBP_Rouge_Settlement_C:InitExitButton()
     self.Text_Tips:SetText(GText("UI_RougeLike_End__ClickEmpty"))
   end
 end
-
 function WBP_Rouge_Settlement_C:OnExitButtonClicked()
   if self.IsInAnimFinished then
     if self.IsShowTips then
@@ -62,7 +58,7 @@ function WBP_Rouge_Settlement_C:OnExitButtonClicked()
       return
     end
     DebugPrint("WBP_Rouge_Settlement_C: OnExitButtonClicked")
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
     self:BindToAnimationFinished(self.Settlement_Out, {
       self,
       self.OnOutAnimFinished
@@ -70,7 +66,6 @@ function WBP_Rouge_Settlement_C:OnExitButtonClicked()
     self:PlayAnimation(self.Settlement_Out)
   end
 end
-
 function WBP_Rouge_Settlement_C:OnOutAnimFinished()
   AudioManager(self):SetEventSoundParam(self, "SettlementSuccess", {ToEnd = 1})
   AudioManager(self):StopSound(self, "SettlementSuccess")
@@ -85,13 +80,11 @@ function WBP_Rouge_Settlement_C:OnOutAnimFinished()
     EventManager:AddEvent(EventID.OnExitDungeon, self, self.OnCloseSettlementUI)
   end
 end
-
 function WBP_Rouge_Settlement_C:OnCloseSettlementUI()
   EventManager:RemoveEvent(EventID.OnExitDungeon, self)
   self:BlockAllUIInput(false)
   self:Close()
 end
-
 function WBP_Rouge_Settlement_C:InitBlessingsInfo()
   local BlessingNum = CommonUtils.Size(self.Blessings)
   self.Text_BlessNum:SetText(BlessingNum)
@@ -102,11 +95,9 @@ function WBP_Rouge_Settlement_C:InitBlessingsInfo()
       local BlessingItem = self:CreateWidgetNew("RougeSettlementBlessItem")
       BlessingItem:InitInfo(BlessingData)
       self.WrapBox_Bless:AddChild(BlessingItem)
-      
       local function Callback(bIsOpen)
         self.IsShowTips = bIsOpen
       end
-      
       BlessingItem.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, Callback)
     end
     self.IsShowTipsConfirm = true
@@ -115,12 +106,11 @@ function WBP_Rouge_Settlement_C:InitBlessingsInfo()
     self.Bless_Empty:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Rouge_Settlement_C:GetBlessingData(BlessingId)
   local BlessingData = {}
   local BlessingInfo = DataMgr.RougeLikeBlessing[BlessingId]
   if not BlessingInfo then
-    DebugPrint("RougeSettlement: Error! \230\137\190\228\184\141\229\136\176\229\175\185\229\186\148Blessing\232\161\168\233\135\140\231\154\132\230\149\176\230\141\174\239\188\140BlessingId:", BlessingId)
+    DebugPrint("RougeSettlement: Error! 找不到对应Blessing表里的数据，BlessingId:", BlessingId)
     return BlessingData
   end
   for k, v in pairs(BlessingInfo) do
@@ -129,7 +119,6 @@ function WBP_Rouge_Settlement_C:GetBlessingData(BlessingId)
   BlessingData.ItemType = "Blessing"
   return BlessingData
 end
-
 function WBP_Rouge_Settlement_C:InitTreasuresInfo()
   local TreasureNum = CommonUtils.Size(self.Treasures)
   self.Text_TreasureNum:SetText(TreasureNum)
@@ -140,11 +129,9 @@ function WBP_Rouge_Settlement_C:InitTreasuresInfo()
       local TreasureItem = self:CreateWidgetNew("RougeSettlementTreasureItem")
       TreasureItem:InitInfo(TreasureData)
       self.WrapBox_Treasure:AddChild(TreasureItem)
-      
       local function Callback(bIsOpen)
         self.IsShowTips = bIsOpen
       end
-      
       TreasureItem.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, Callback)
     end
     self.IsShowTipsConfirm = true
@@ -153,12 +140,11 @@ function WBP_Rouge_Settlement_C:InitTreasuresInfo()
     self.Treasure_Empty:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Rouge_Settlement_C:GetTreasueData(TreasureId)
   local TreasureData = {}
   local TreasureInfo = DataMgr.RougeLikeTreasure[TreasureId]
   if not TreasureInfo then
-    DebugPrint("RougeSettlement: Error! \230\137\190\228\184\141\229\136\176\229\175\185\229\186\148Treasue\232\161\168\233\135\140\231\154\132\230\149\176\230\141\174\239\188\140TreasureId:", TreasureId)
+    DebugPrint("RougeSettlement: Error! 找不到对应Treasue表里的数据，TreasureId:", TreasureId)
     return TreasureInfo
   end
   for k, v in pairs(TreasureInfo) do
@@ -167,7 +153,6 @@ function WBP_Rouge_Settlement_C:GetTreasueData(TreasureId)
   TreasureData.ItemType = "Treasure"
   return TreasureData
 end
-
 function WBP_Rouge_Settlement_C:InitEventsInfo()
   local Rooms = DataMgr.RougeLikeRoom
   self.Text_Event:SetText(GText("UI_RougeLike_End_Event"))
@@ -189,7 +174,6 @@ function WBP_Rouge_Settlement_C:InitEventsInfo()
     self.Event_Empty:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Rouge_Settlement_C:InitPointsInfo()
   self.Text_EarnPoints:SetText(self.Points)
   self.Text_Points:SetText(GText("UI_RougeLike_End_EndPoints"))
@@ -201,13 +185,11 @@ function WBP_Rouge_Settlement_C:InitPointsInfo()
     })
   end
 end
-
 function WBP_Rouge_Settlement_C:OnEarnPointsIconLoadFinish(Object)
   if Object and IsValid(self) then
     self.Icon_FootPrint:SetBrushResourceObject(Object)
   end
 end
-
 function WBP_Rouge_Settlement_C:InitTalentPointsInfo()
   local IconPath = DataMgr.Resource[205].Icon
   UE.UResourceLibrary.LoadObjectAsync(self, IconPath, {
@@ -217,13 +199,11 @@ function WBP_Rouge_Settlement_C:InitTalentPointsInfo()
   self.Text_TP:SetText(self.TalentPoints)
   self.Text_TalentPoints:SetText(GText("UI_RougeLike_End_TalentPoints"))
 end
-
 function WBP_Rouge_Settlement_C:OnIconLoadFinish(Object)
   if Object and IsValid(self) then
     self.Img_Icon:SetBrushResourceObject(Object)
   end
 end
-
 function WBP_Rouge_Settlement_C:InitOuterShopTokenInfo()
   local IconPath = DataMgr.Resource[215].Icon
   local Name = DataMgr.Resource[215].ResourceName
@@ -234,13 +214,11 @@ function WBP_Rouge_Settlement_C:InitOuterShopTokenInfo()
   self.Text_TK:SetText(self.OuterShopTokens)
   self.Text_Token:SetText(GText(Name))
 end
-
 function WBP_Rouge_Settlement_C:OnOuterShopIconLoadFinish(Object)
   if Object and IsValid(self) then
     self.Img_Icon_Token:SetBrushResourceObject(Object)
   end
 end
-
 function WBP_Rouge_Settlement_C:InitTipsInfo()
   if self.IsMobile then
     return
@@ -262,7 +240,6 @@ function WBP_Rouge_Settlement_C:InitTipsInfo()
   })
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function WBP_Rouge_Settlement_C:InitInputDeviceInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -274,11 +251,9 @@ function WBP_Rouge_Settlement_C:InitInputDeviceInfo()
     self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   end
 end
-
 function WBP_Rouge_Settlement_C:OnRougeSettlementBoxItemMenuChanged(bIsOpen)
   self:SetTipsVisibilityByTag(not bIsOpen, "ItemMenuChange")
 end
-
 function WBP_Rouge_Settlement_C:OnRougeSettlementBoxItemFocused(Widget, Suffix)
   local ScrollBox = self["EMScrollBox_" .. Suffix]
   if ScrollBox then
@@ -286,7 +261,6 @@ function WBP_Rouge_Settlement_C:OnRougeSettlementBoxItemFocused(Widget, Suffix)
     ScrollBox:ScrollWidgetIntoView(Widget)
   end
 end
-
 function WBP_Rouge_Settlement_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -298,12 +272,10 @@ function WBP_Rouge_Settlement_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function WBP_Rouge_Settlement_C:ShowMouseAndKeyboardView()
   self:SetTipsVisibilityByTag(false, "InputDevice")
   self.Text_Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Rouge_Settlement_C:ShowGamepadView()
   local Item = self:TryGetFirstValidItem()
   if IsValid(Item) then
@@ -314,7 +286,6 @@ function WBP_Rouge_Settlement_C:ShowGamepadView()
   self:SetTipsVisibilityByTag(true, "InputDevice")
   self.Text_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Rouge_Settlement_C:TryGetFirstValidItem()
   local Item = self.WrapBox_Bless:GetChildAt(0)
   if IsValid(Item) then
@@ -330,7 +301,6 @@ function WBP_Rouge_Settlement_C:TryGetFirstValidItem()
   end
   return
 end
-
 function WBP_Rouge_Settlement_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -340,7 +310,6 @@ function WBP_Rouge_Settlement_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Rouge_Settlement_C:PlayInAnimation()
   self:BindToAnimationFinished(self.Finish_Out, {
     self,
@@ -383,7 +352,6 @@ function WBP_Rouge_Settlement_C:PlayInAnimation()
     AudioManager(self):PlayUISound(self, "event:/ui/roguelike/level_fail_hud_show", "SettlementFail", nil)
   end
 end
-
 function WBP_Rouge_Settlement_C:SetTipsVisibilityByTag(IsShow, HideTag)
   if not self.TipsVisibilityTags then
     self.TipsVisibilityTags = {}
@@ -398,5 +366,4 @@ function WBP_Rouge_Settlement_C:SetTipsVisibilityByTag(IsShow, HideTag)
     self.Key_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Rouge_Settlement_C

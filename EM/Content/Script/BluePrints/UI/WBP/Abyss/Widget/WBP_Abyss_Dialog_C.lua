@@ -2,10 +2,8 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
 end
-
 function M:InitContent(Params, PopupData, Owner)
   local ConfigData = Params.ConfigData
   self.TabConfigDatas = Params.TabConfigDatas
@@ -36,7 +34,6 @@ function M:InitContent(Params, PopupData, Owner)
     self:InitGamepadView()
   end
 end
-
 function M:InitItem(ConfigData)
   self.List_Item:ClearListItems()
   if 1 == ConfigData.SortType then
@@ -80,7 +77,6 @@ function M:InitItem(ConfigData)
     self.BtnReward:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SortItems()
   if not self.Items then
     return
@@ -98,7 +94,6 @@ function M:SortItems()
     return a.SourceNum < b.SourceNum
   end)
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -106,7 +101,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -115,7 +109,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:InitGamepadView()
   end
 end
-
 function M:InitGamepadView()
   self.List_Item:SetFocus()
   self.IsInViewMode = false
@@ -126,7 +119,6 @@ function M:InitGamepadView()
   self:ShowGamepadViewBtn(true)
   self:ShowGamepadViewSingleBtn(false)
 end
-
 function M:InitKeyBoardView()
   self.BtnReward:SetGamePadIconVisible(false)
   if self.BtnReward:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
@@ -135,7 +127,6 @@ function M:InitKeyBoardView()
   self:ShowGamepadViewBtn(false)
   self:ShowGamepadViewSingleBtn(false)
 end
-
 function M:ShowGamepadScrollBtn(bShow)
   if bShow then
     if self.GamepadScrollBtnIndex then
@@ -158,7 +149,6 @@ function M:ShowGamepadScrollBtn(bShow)
     self.GamepadScrollBtnIndex = nil
   end
 end
-
 function M:ShowGamepadViewBtn(bShow)
   if bShow then
     if self.GamepadViewBtnIndex then
@@ -178,7 +168,6 @@ function M:ShowGamepadViewBtn(bShow)
     self.GamepadViewBtnIndex = nil
   end
 end
-
 function M:ShowGamepadViewSingleBtn(bShow)
   if bShow then
     if self.GamepadViewSingleBtnIndex then
@@ -198,7 +187,6 @@ function M:ShowGamepadViewSingleBtn(bShow)
     self.GamepadViewSingleBtnIndex = nil
   end
 end
-
 function M:RefreshButton(CanReceiveAll)
   if not CanReceiveAll then
     self.BtnReward:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -206,13 +194,11 @@ function M:RefreshButton(CanReceiveAll)
     self.BtnReward:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:OnTabSelected(TabWidget)
   if self.TabConfigDatas and self.TabConfigDatas[TabWidget.Idx] then
     self:Refresh(self.TabConfigDatas[TabWidget.Idx])
   end
 end
-
 function M:Refresh(ConfigData)
   self.Items = ConfigData.Items
   self.Text_Total:SetText(GText(ConfigData.Text_Total))
@@ -231,7 +217,6 @@ function M:Refresh(ConfigData)
   end)
   self:InitItem(ConfigData)
 end
-
 function M:OnNavigateUp(Content)
   local Id = Content.Id - 1
   if Id >= 0 then
@@ -240,7 +225,6 @@ function M:OnNavigateUp(Content)
     Item.SelfWidget:SetFocus()
   end
 end
-
 function M:OnNavigateDown(Content)
   local Id = Content.Id + 1
   local AllItemCount = self.List_Item:GetNumItems() - 1
@@ -250,24 +234,20 @@ function M:OnNavigateDown(Content)
     Item.SelfWidget:SetFocus()
   end
 end
-
 function M:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   self:RemoveInputMethodChangedListen()
   self.Super.Destruct(self)
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -277,7 +257,6 @@ function M:OnMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 function M:UpdateUIStyle(IsVisible)
   if IsVisible then
     if self.Owner then
@@ -288,12 +267,10 @@ function M:UpdateUIStyle(IsVisible)
     self.Owner:HideAllGamepadShortcut()
   end
 end
-
 function M:ChangeCloseShortKeyText(Text)
   local Key = self.Owner:GetGamepadShortcutByIndex(self.Owner.GamepadCloseBtnIndex)
   if Key then
     Key:SetDescription(Text)
   end
 end
-
 return M

@@ -7,7 +7,6 @@ local FortState = {
   Normal = 2,
   LowHp = 3
 }
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self.FortUI = self:CreateWidgetNew("ProcessEscortPoint")
@@ -23,7 +22,6 @@ function M:OnLoaded(...)
   end
   self:InitUIParams()
 end
-
 function M:InitUIParams()
   self.RegionHijactTextMap = {
     [1] = "DUNGEON_PAOTAI_201",
@@ -37,23 +35,19 @@ function M:InitUIParams()
     self.RegionHijactTextMap[i] = UIParams["HijackPanel_" .. i]
   end
 end
-
 function M:HideSelfAndSubWidget()
   self:SetVisibility(ESlateVisibility.Collapsed)
   self.FortUI:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:ShowSelfAndSubWidget()
   self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.FortUI:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:InitText()
   self.Text_Title:SetText(GText(self.RegionHijactTextMap[1]))
   self.Text_Percent:SetText(tostring(0))
   self:PlayAnimation(self.Text_Refresh)
 end
-
 function M:UpdateHp(Percent)
   local Mat = self.FortUI.BG_Bar_Clolor:GetDynamicMaterial()
   if Mat then
@@ -65,7 +59,6 @@ function M:UpdateHp(Percent)
     self:UpdateFortState(FortState.LowHp)
   end
 end
-
 function M:UpdateLength(Percent)
   local Mat = self.Bar_Progress:GetDynamicMaterial()
   if Mat then
@@ -85,7 +78,6 @@ function M:UpdateLength(Percent)
   end
   self.LastPercent = Percent
 end
-
 function M:UpdateFortState(NewState)
   if not NewState or not self.FortUI then
     return
@@ -102,7 +94,6 @@ function M:UpdateFortState(NewState)
   end
   self.FortState = NewState
 end
-
 function M:AfterAddToParent()
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
   if BattleMain and BattleMain.Pos_ProcessEscort then
@@ -111,7 +102,6 @@ function M:AfterAddToParent()
     BattleMain.Pos_ProcessEscort:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:ReceiveClose()
   self:AddDispatcher(EventID.QuestStart, self, function()
     local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -120,5 +110,4 @@ function M:ReceiveClose()
     end
   end)
 end
-
 return M

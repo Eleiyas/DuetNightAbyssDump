@@ -1,6 +1,5 @@
 require("unlua")
 local WBP_Common_Dialog_Item_Tip_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_Item_Tip_PC_C:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   self.PosIndex = self.Owner:GetItemIndex()
@@ -10,7 +9,6 @@ function WBP_Common_Dialog_Item_Tip_PC_C:PreInitContent(Params, PopupData, Owner
     self:SetVisibility(UE.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_Item_Tip_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self:ShowTip(Params, PopupData)
@@ -20,7 +18,6 @@ function WBP_Common_Dialog_Item_Tip_PC_C:InitContent(Params, PopupData, Owner)
     self.Switcher_Bg:SetActiveWidgetIndex(1)
   end
 end
-
 function WBP_Common_Dialog_Item_Tip_PC_C:ShowTip(Params, PopupData)
   local Text
   if PopupData and PopupData.Tip then
@@ -38,7 +35,6 @@ function WBP_Common_Dialog_Item_Tip_PC_C:ShowTip(Params, PopupData)
     self:SetVisibility(UE.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_Item_Tip_PC_C:HideDialogItem(Params, PopupData)
   if Params.DialogItemIndex == self.PosIndex then
     if Params.bHideDialogItem then
@@ -60,17 +56,14 @@ function WBP_Common_Dialog_Item_Tip_PC_C:HideDialogItem(Params, PopupData)
   end
   self.Owner:AutofitDialog()
 end
-
 function WBP_Common_Dialog_Item_Tip_PC_C:UpdateDialogTipText(Params, PopupData)
   if Params.DialogItemIndex == self.PosIndex then
     self:ShowTip(Params, PopupData)
   end
 end
-
 function WBP_Common_Dialog_Item_Tip_PC_C:OnAnimationFinished(Anim)
   if Anim == self.Out then
     self:SetVisibility(UE.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Common_Dialog_Item_Tip_PC_C

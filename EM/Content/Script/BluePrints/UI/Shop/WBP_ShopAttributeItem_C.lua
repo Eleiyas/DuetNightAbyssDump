@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:UpdateAttr(AttrInfo1, AttrInfo2)
   if AttrInfo1 then
     self.Text_Attribute01:SetText(GText(AttrInfo1.Config.Name))
@@ -14,5 +13,4 @@ function M:UpdateAttr(AttrInfo1, AttrInfo2)
     self.Attribute02:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

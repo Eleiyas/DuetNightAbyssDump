@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:InitPenalizeComponentImpl()
   if self:HasCannotCondemn() then
     return
@@ -10,7 +9,7 @@ function Component:InitPenalizeComponentImpl()
   self.InteractiveType = Const.PressInteractive
   self.PenalizeInteractiveComponent.bCanUsed = true
   self.PenalizeInteractiveComponent:SetInteractiveName("BATTLE_CONDEMN_NAME")
-  self.PenalizeInteractiveComponent.InteractiveDistance = 400
+  self.PenalizeInteractiveComponent:SetInteractiveDistance(400)
   self.PenalizeInteractiveComponent.InteractiveFaceAngle = 180
   self.PenalizeInteractiveComponent.InteractiveAngle = 360
   local ModelData = DataMgr.Model[self.ModelId]
@@ -39,13 +38,11 @@ function Component:InitPenalizeComponentImpl()
     end
   end
 end
-
 function Component:SetHeightLightTip(Visibility)
   if self.HeightLightTip then
     self.HeightLightTip:SetVisibility(Visibility)
   end
 end
-
 function Component:Penalize(PlayerId)
   local Role = Battle(self):GetEntity(PlayerId)
   if not Role then
@@ -68,6 +65,7 @@ function Component:Penalize(PlayerId)
       Role:ClientShowToast(UIConst.Tip_CommonToast, GText("TOAST_PENALIZEINVALID"))
     end
     if Res then
+      self:SetEnableBeCondemned(ECondemnState.WaitEnterDefeated)
       self:DisableToughnessRecover()
       self:DefeatedRecoverToIdleSuccess()
     else
@@ -75,25 +73,23 @@ function Component:Penalize(PlayerId)
     end
   end
 end
-
 function Component:DefeatedRecoverToIdleSuccess_Implementation()
   if self.HeightLightTip then
     self.HeightLightTip:SetVisibility(false)
   end
   self:HideDefeatedUI()
 end
-
 function Component:HideDefeatedUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
+  if not UIManager then
+    return
+  end
   local DefeatedUI = UIManager:GetUIObj("DefeatedInteract")
   if DefeatedUI then
-    DefeatedUI:StopAllAnimations()
-    DefeatedUI:PlayAnimation(DefeatedUI.Press)
-    DefeatedUI:TryShowPhoneUI(false)
+    DefeatedUI:RemoveExecuteItem(self, "Press")
   end
 end
-
 function Component:HasAirWallBetweenPosition(Player)
   local BornLocation = self:GetCondemnLocation(Player)
   local TargetLocation = self.PenalizeInteractiveComponent:K2_GetComponentLocation()
@@ -110,7 +106,6 @@ function Component:HasAirWallBetweenPosition(Player)
   end
   return false
 end
-
 function Component:GetCondemnLocation(PenalizePlayer)
   if not PenalizePlayer then
     return
@@ -132,7 +127,6 @@ function Component:GetCondemnLocation(PenalizePlayer)
   local PenalizePos = CondemnLocation + IntervalV
   return PenalizePos
 end
-
 function Component:IsCanBePenalize()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not Player then
@@ -143,5 +137,4 @@ function Component:IsCanBePenalize()
   end
   return false
 end
-
 return Component

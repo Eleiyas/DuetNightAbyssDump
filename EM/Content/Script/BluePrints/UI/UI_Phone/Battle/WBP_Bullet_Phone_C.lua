@@ -1,15 +1,15 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
+M._components = {
+  "BluePrints.UI.UI_Phone.Battle.Component.DraggableWidgetComponent"
+}
 function M:Initialize(Initializer)
 end
-
 function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnPressed)
   self.OwnerPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
   self:InitVariable()
 end
-
 function M:InitVariable()
   self.CurButtonState = "Normal"
   self.HasReloadSkill = true
@@ -18,12 +18,10 @@ function M:InitVariable()
   end
   self:PlayButtonStateAnimation()
 end
-
 function M:OnPressed()
   self.OwnerPanel:TryToPlayTargetCommand("Reload", true)
   self:OnPressed_Presentation()
 end
-
 function M:OnPressed_Presentation()
   if self.CurButtonState == "Ban" then
     UIManager(self):ShowUITip_BattleCommonTop(UIConst.Tip_CommonTop, GText("UI_RANGED_FORBIDDEN"))
@@ -35,12 +33,10 @@ function M:OnPressed_Presentation()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Click)
   end
 end
-
 function M:TryToEnterReloadState()
   self.CurButtonState = "ChangeMagazine"
   self:PlayButtonStateAnimation()
 end
-
 function M:UpdatePlayerWeaponInfo()
   if not self.RangedWeapon then
     return
@@ -93,7 +89,6 @@ function M:UpdatePlayerWeaponInfo()
     end
   end
 end
-
 function M:PlayButtonStateAnimation()
   if self.LastCurButtonState == self.CurButtonState then
     return
@@ -124,18 +119,15 @@ function M:PlayButtonStateAnimation()
   end
   self.LastCurButtonState = self.CurButtonState
 end
-
 function M:HandleCurButtonState(CurButtonState)
   if "ChangeMagazine" == CurButtonState and (self.OwnerPlayer.CurrentSkillId ~= self.OwnerPlayer:GetSkillByType(UE.ESkillType.Reload) or not IsValid(self.OwnerPlayer:GetCurrentWeapon())) then
     self.CurButtonState = "Normal"
     self:PlayButtonStateAnimation()
   end
 end
-
 function M:UpdateButtonInTimer()
   self:HandleCurButtonState(self.CurButtonState)
 end
-
 function M:UpdateBulletType()
   local RangedWeapon
   if -1 ~= self.OwnerPlayer.BuffManager.UseSummonWeapon then
@@ -185,11 +177,10 @@ function M:UpdateBulletType()
   end
   self:UpdatePlayerWeaponInfo()
 end
-
 function M:OnBulletIconLoadFinish(Object)
   if IsValid(self) and Object and self.Icon_Bullet then
     self.Icon_Bullet:SetBrushResourceObject(Object)
   end
 end
-
+AssembleComponents(M)
 return M

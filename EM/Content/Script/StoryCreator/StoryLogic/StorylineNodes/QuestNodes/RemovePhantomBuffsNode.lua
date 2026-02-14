@@ -1,9 +1,7 @@
 local RemovePhantomBuffsNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function RemovePhantomBuffsNode:Init()
   self.RemoveBuffs = {}
 end
-
 function RemovePhantomBuffsNode:Start(Context)
   self.Context = Context
   local GameInstance = GWorld.GameInstance
@@ -20,9 +18,7 @@ function RemovePhantomBuffsNode:Start(Context)
     end
   end
 end
-
 function RemovePhantomBuffsNode:FinishAction()
   self:Finish()
 end
-
 return RemovePhantomBuffsNode

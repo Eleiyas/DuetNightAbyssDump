@@ -1,5 +1,5 @@
 return {
-  storyName = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+  storyName = "未命名任务",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1732783210333413946",
       type = "StoryNode",
-      name = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+      name = "未命名任务",
       pos = {x = 431, y = 100.75},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -110,17 +112,17 @@ return {
           ["17131748239904652"] = {
             key = "17131748239904652",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\229\188\128\229\167\139\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待开始特殊任务开始并完成",
             pos = {x = 281.3403864128803, y = 170.29025920893628},
             propsData = {SpecialConfigId = 10000, BlackScreenImmediately = false}
           },
           ["171394070707798760"] = {
             key = "171394070707798760",
             type = "TestPrintNode",
-            name = "\230\181\139\232\175\149\230\137\147\229\141\176",
+            name = "测试打印",
             pos = {x = 597.7219996684191, y = 243.25931218539918},
             propsData = {
-              Text = "tyx\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165"
+              Text = "tyx特殊任务失败"
             }
           },
           ["1732783210333413947"] = {

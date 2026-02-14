@@ -1,9 +1,9 @@
 require("UnLua")
+local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.WBP.Activity.Widget.ConditionRewardActivity.ConditionRewardActiviyBase"
 })
-
 function M:InitUI()
   self.FocusWidgetName = "CheckRewardView"
   self.FocusWidgetWidget = nil
@@ -35,13 +35,12 @@ function M:InitUI()
     self.TenTimesReward_Item.Text_BtnGet:SetText(GText("UI_GameEvent_HasClaimed"))
   end
   self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
+  ActivityUtils.SetUpJustifyOfJap(self.WBP_Activity_TenTimesReward_Title.Text_ActivityDesc)
 end
-
 function M:GetCurFocusWidgetInfo()
   self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:UpdateUIByInputDevice(CurInputDeviceType)
   if CurInputDeviceType == ECommonInputType.Gamepad then
     if self.IsGetReward then
@@ -53,7 +52,6 @@ function M:UpdateUIByInputDevice(CurInputDeviceType)
     self.TenTimesReward_Item.Key_Get:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -64,12 +62,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Left" == InKeyName then
@@ -78,5 +74,4 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

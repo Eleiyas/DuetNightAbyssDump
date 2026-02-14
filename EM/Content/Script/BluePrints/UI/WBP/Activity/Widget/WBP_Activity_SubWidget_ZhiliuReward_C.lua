@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:InitPage(EventId)
   self.CurProgress = 0
   self.TotalProgress = 7
@@ -31,7 +30,6 @@ function M:InitPage(EventId)
     self:OnUpdateSubUIViewStyle(self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad)
   end
 end
-
 function M:UpdatePage()
   self.IsShow = self:IsPrerequisiteSatisfied()
   DebugPrint("ZhiliuReward:UpdatePage IsShow", self.IsShow)
@@ -55,7 +53,6 @@ function M:UpdatePage()
     self:SwitchDisplay("Progress")
   end
 end
-
 function M:SetBtnAndReddotForbid(IsForbid)
   self.Btn_Reward:ForbidBtn(IsForbid)
   if IsForbid then
@@ -65,7 +62,6 @@ function M:SetBtnAndReddotForbid(IsForbid)
   end
   self.IsShowReddot = not IsForbid
 end
-
 function M:OnRewardBtnClicked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -74,7 +70,6 @@ function M:OnRewardBtnClicked()
   if self.CurProgress ~= self.TotalProgress then
     return
   end
-  
   local function cb(ErrCode, RewardBox)
     DebugPrint("ZhiliuReward:OnCombatMainBtnClickedCallback")
     if ErrorCode:Check(ErrCode) then
@@ -83,17 +78,14 @@ function M:OnRewardBtnClicked()
       self.Key_Reward:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
   end
-  
   DebugPrint("ZhiliuReward:OnCombatMainBtnClicked")
   Avatar:RpcZhiLiuEntrustGrandRewards(cb)
 end
-
 function M:OnRewardIconClicked()
   local Params = {}
   Params.ActivityId = self.ZhiliuEventId
   UIManager(self):ShowCommonPopupUI(100202, Params, self)
 end
-
 function M:IsPlayerAlreadyGotReward()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -101,7 +93,6 @@ function M:IsPlayerAlreadyGotReward()
   end
   return Avatar.ZhiLiuEntrustGrandRewardGot or false
 end
-
 function M:SwitchDisplay(DisplayType)
   if "Progress" == DisplayType then
     self.HB_ProgressNum:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -112,10 +103,9 @@ function M:SwitchDisplay(DisplayType)
     self.Group_RewardBtn:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self:PlayAnimation(self.Reward)
   else
-    assert(false, "\228\188\160\229\133\165\228\186\134\233\148\153\232\175\175\231\154\132DisplayType! " .. DisplayType)
+    assert(false, "传入了错误的DisplayType! " .. DisplayType)
   end
 end
-
 function M:IsPrerequisiteSatisfied()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -123,7 +113,7 @@ function M:IsPrerequisiteSatisfied()
   end
   local ZhiliuEventInfo = DataMgr.EventMain[self.ZhiliuEventId]
   if not ZhiliuEventInfo then
-    ScreenPrint("EventMain\232\161\168\228\184\173\230\137\190\228\184\141\229\136\176\230\173\162\230\181\129\230\180\187\229\138\168\231\155\184\229\133\179\228\191\161\230\129\175\239\188\129\232\175\187\229\143\150\231\154\132EventId:" .. self.ZhiliuEventId)
+    ScreenPrint("EventMain表中找不到止流活动相关信息！读取的EventId:" .. self.ZhiliuEventId)
     return false
   end
   local PrerequisiteQuestId = {}
@@ -136,7 +126,7 @@ function M:IsPrerequisiteSatisfied()
   for _, QuestId in pairs(PrerequisiteQuestId) do
     local QuestChain = Avatar.QuestChains[QuestId]
     if not QuestChain then
-      ScreenPrint("Zhiliu \233\133\141\231\189\174\228\186\134\228\184\128\228\184\170\228\184\141\229\173\152\229\156\168\231\154\132\228\187\187\229\138\161\233\147\190Id\239\188\129\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165\239\188\129Id:" .. QuestId)
+      ScreenPrint("Zhiliu 配置了一个不存在的任务链Id！请策划检查！Id:" .. QuestId)
       return false
     end
     if not QuestChain:IsFinish() then
@@ -145,7 +135,6 @@ function M:IsPrerequisiteSatisfied()
   end
   return true
 end
-
 function M:GetCurProgress()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -162,7 +151,6 @@ function M:GetCurProgress()
   end
   return CurProgress
 end
-
 function M:IsSubmitCompleted(DayIndex)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -172,7 +160,6 @@ function M:IsSubmitCompleted(DayIndex)
   local Info = Avatar.ZhiLiuEntrustDict[Id] or {}
   return Info.SubmitEntrustCompleted or false
 end
-
 function M:IsCombatCompleted(DayIndex)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -182,13 +169,10 @@ function M:IsCombatCompleted(DayIndex)
   local Info = Avatar.ZhiLiuEntrustDict[Id] or {}
   return Info.CombatEntrustCompleted or false
 end
-
 function M:OnSubWidgetReceivedFocus()
 end
-
 function M:OnSubWidgetLostFocus()
 end
-
 function M:OnUpdateSubUIViewStyle(IsUseGamePad)
   DebugPrint("ZhiliuReward:OnUpdateSubUIViewStyle IsShow", self.IsShow, "IsUseGamePad", IsUseGamePad, "IsShowReddot", self.IsShowReddot)
   if not self.IsShow then
@@ -204,7 +188,6 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad)
     self.Key_RewardBox:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:HandleKeyDownOnGamePad(InKeyName)
   DebugPrint("ZhiliuReward:HandleKeyDownOnGamePad", InKeyName)
   if not self.IsShow then
@@ -219,5 +202,4 @@ function M:HandleKeyDownOnGamePad(InKeyName)
     self:OnRewardIconClicked()
   end
 end
-
 return M

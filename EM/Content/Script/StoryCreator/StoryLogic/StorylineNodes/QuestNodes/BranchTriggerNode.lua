@@ -1,16 +1,4 @@
 local BranchTriggerNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
-function BranchTriggerNode:Init()
-  self.Branches = nil
-end
-
-function BranchTriggerNode:OnDataUpdated()
-  local OutputPort = {}
-  for k, v in pairs(self.Branches) do
-    table.insert(OutputPort, TriggerOutPort(string.format("Branch_%d", k)))
-  end
-end
-
 function BranchTriggerNode:Start(Context)
   DebugPrint("------------ BranchTriggerNode Start------------------")
   self.Context = Context
@@ -26,7 +14,6 @@ function BranchTriggerNode:Start(Context)
   end
   self:Finish(Index)
 end
-
 function BranchTriggerNode:Finish(OutPortIndex)
   DebugPrint("BranchTriggerNode finished", "Branch_", self, OutPortIndex)
   if OutPortIndex then
@@ -35,5 +22,4 @@ function BranchTriggerNode:Finish(OutPortIndex)
     BranchTriggerNode.Super.Finish(self)
   end
 end
-
 return BranchTriggerNode

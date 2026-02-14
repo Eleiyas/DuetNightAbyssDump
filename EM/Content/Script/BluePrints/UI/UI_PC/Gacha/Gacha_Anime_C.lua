@@ -1,7 +1,6 @@
 require("UnLua")
 local GachaCommon = require("BluePrints.UI.WBP.Gacha.GachaCommon")
 local G = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function G:Construct()
   self.Btn_Skip:SetCurrentTextBlock(GText("UI_GACHA_SKIP"))
   self.Btn_Skip:BindEventOnClicked(self, self.OnBtnSkipClicked)
@@ -24,7 +23,6 @@ function G:Construct()
     EventManager:AddEvent(EventID.ApplicationHasEnteredForeground, self, self.OnApplicationHasEnteredForeground)
   end
 end
-
 function G:Init(Result, RebateData)
   self.Result = Result
   self.RebateData = RebateData
@@ -46,7 +44,7 @@ function G:Init(Result, RebateData)
   end
   local path = CommonConst[VideoPathInd]
   local VideoObj = LoadObject(path)
-  assert(VideoObj, "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\232\167\134\233\162\145\232\181\132\230\186\144:" .. path)
+  assert(VideoObj, "未找到对应的视频资源:" .. path)
   self.WBP_VideoPlayer:SetUrlByMediaSource(VideoObj)
   self.CanSkip = true
   local GuideGachaId = DataMgr.GlobalConstant.GuideGachaId.ConstantValue
@@ -73,7 +71,6 @@ function G:Init(Result, RebateData)
   self:PlayAnimation(self.In)
   self:SetFocus()
 end
-
 function G:GetResultRarity()
   local Rarity = 0
   for key, GachaResult in pairs(self.Result) do
@@ -83,7 +80,6 @@ function G:GetResultRarity()
   end
   return Rarity
 end
-
 function G:OnParentUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
@@ -91,7 +87,6 @@ function G:OnParentUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function G:InitGamepadView()
   self:SetFocus()
   if self.CanSkip then
@@ -99,27 +94,23 @@ function G:InitGamepadView()
   end
   self.Btn_Skip:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function G:InitKeyboardView()
   self.Key_Tips:SetVisibility(ESlateVisibility.Collapsed)
   if self.CanSkip then
     self.Btn_Skip:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function G:HandleKeyReleased(Key)
   if Key.KeyName == UIConst.GamePadKey.FaceButtonRight and self.CanSkip then
     self:OnBtnSkipClicked()
   end
 end
-
 function G:OnParentKeyDown(MyGeometry, InKeyEvent)
   if self.CanSkip then
     self:OnBtnSkipClicked()
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function G:OnBtnSkipClicked()
   self:SetIsDealWithVirtualAccept(false)
   AudioManager(self):SetEventSoundParam(self.Parent, "GachaAnime", {state = 1})
@@ -127,7 +118,6 @@ function G:OnBtnSkipClicked()
   self.WBP_VideoPlayer:Stop()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function G:OnVideoPlayEnd()
   self:SetIsDealWithVirtualAccept(false)
   AudioManager(self):SetEventSoundParam(self.Parent, "GachaAnime", {state = 1})
@@ -135,7 +125,6 @@ function G:OnVideoPlayEnd()
   self.WBP_VideoPlayer:Stop()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function G:OnApplicationWillEnterBackground()
   DebugPrint("JLY OnApplicationWillEnterBackground")
   if self.WBP_VideoPlayer and self.WBP_VideoPlayer:IsPlaying() then
@@ -146,7 +135,6 @@ function G:OnApplicationWillEnterBackground()
     self.bWasPlayingBeforeBackground = false
   end
 end
-
 function G:OnApplicationHasEnteredForeground()
   DebugPrint("JLY OnApplicationHasEnteredForeground")
   if self.bWasPlayingBeforeBackground and self.WBP_VideoPlayer then
@@ -167,7 +155,6 @@ function G:OnApplicationHasEnteredForeground()
     end, false, 0, "ResumeVideoPlayback")
   end
 end
-
 function G:GetVideoPathInd()
   if not self.Result then
     return nil
@@ -187,10 +174,8 @@ function G:GetVideoPathInd()
   end
   return VideoPathInd
 end
-
 function G:Destruct()
   EventManager:RemoveEvent(EventID.ApplicationWillEnterBackground, self)
   EventManager:RemoveEvent(EventID.ApplicationHasEnteredForeground, self)
 end
-
 return G

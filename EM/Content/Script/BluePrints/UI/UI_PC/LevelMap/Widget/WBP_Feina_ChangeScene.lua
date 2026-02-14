@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.ChapterName, self.CantoName, self.Title, self.AudioPath, self.Func = ...
@@ -26,7 +25,6 @@ function M:OnLoaded(...)
     self:PlayAnimation(self.In)
   end
 end
-
 function M:OnEnd()
   if self.Out then
     self:UnbindAllFromAnimationFinished(self.Out)
@@ -44,7 +42,6 @@ function M:OnEnd()
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:SetText()
   self.Text_Day:SetText(GText(self.ChapterName))
   self.Text_Title:SetText(GText(self.Title))
@@ -71,5 +68,4 @@ function M:SetText()
     self.WS_Day:SetActiveWidgetIndex(1)
   end
 end
-
 return M

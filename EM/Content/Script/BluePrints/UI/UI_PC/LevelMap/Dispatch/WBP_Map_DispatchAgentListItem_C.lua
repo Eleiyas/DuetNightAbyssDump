@@ -7,17 +7,14 @@ local AgentEnum = {
   NotDispatched = 3,
   Fighting = 1
 }
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.IsChoose = false
   self.Owner = nil
   self.AbilityList = {}
 end
-
 function M:Construct()
 end
-
 function M:OnListItemObjectSet(Content)
   self.Id = Content.Id
   self.Uuid = Content.Uuid
@@ -47,18 +44,15 @@ function M:OnListItemObjectSet(Content)
   self.WBox_Ability:ClearChildren()
   self:AddAbility()
 end
-
 function M:BP_OnEntryReleased()
   if self.conten then
     self.Content.UI = nil
   end
 end
-
 function M:OnClickMinus()
   self:CancelChoose()
   self.Owner.DispatchDetail:RemoveAgentData(nil, self.Uuid)
 end
-
 function M:AddAbility()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -77,7 +71,6 @@ function M:AddAbility()
     end
   end
 end
-
 function M:SetColor(Item, Type)
   local ColorName = UIUtils.GetDispathchColorNameByType(Type)
   if ColorName and Item["Color_BG_" .. ColorName] then
@@ -86,7 +79,6 @@ function M:SetColor(Item, Type)
     Item:PlayAnimation(Item.Special)
   end
 end
-
 function M:CancelChoose()
   if self.State == AgentEnum.Dispatching or self.State == AgentEnum.Fighting then
     return
@@ -97,5 +89,4 @@ function M:CancelChoose()
   self.Item.Minus:SetVisibility(ESlateVisibility.Collapsed)
   self.IsChoose = false
 end
-
 return M

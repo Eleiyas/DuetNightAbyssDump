@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1739608900308689377",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1168.8500000000001, y = 292.894671169903},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -131,7 +133,7 @@ return {
           ["1739608900308689381"] = {
             key = "1739608900308689381",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1094.1136363636367, y = 339.72194389717595},
             propsData = {
               IsNpcNode = false,
@@ -146,7 +148,7 @@ return {
           ["17546439243509220615"] = {
             key = "17546439243509220615",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1046.4947843918096, y = 807.9460710600031},
             propsData = {
               IsNpcNode = false,
@@ -180,7 +182,7 @@ return {
           ["17546439243509220616"] = {
             key = "17546439243509220616",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1382.832446729472, y = 761.881135995068},
             propsData = {
               IsNpcNode = false,
@@ -195,7 +197,7 @@ return {
           ["17546439243509220617"] = {
             key = "17546439243509220617",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1379.0057561786432, y = 934.435099273169},
             propsData = {
               IsNpcNode = false,
@@ -210,7 +212,7 @@ return {
           ["17546439243509220618"] = {
             key = "17546439243509220618",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1381.9339430592288, y = 1100.9197793367402},
             propsData = {
               IsNpcNode = false,

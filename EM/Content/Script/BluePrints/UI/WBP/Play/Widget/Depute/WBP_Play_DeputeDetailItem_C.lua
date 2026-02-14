@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Init(Obj)
   local RewardList = Obj.RewardList
   if not RewardList then
@@ -70,7 +69,6 @@ function M:Init(Obj)
     end
   end, false, 0, "_DeputeDetailItem_List_Item")
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -83,12 +81,10 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self.ParentWidget:ShowGamepadCloseBtn(true)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.List_Item:NavigateToIndex(0)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:ShowGamepadABtn(bIsShow)
   self.ParentWidget:HideAllGamepadShortcut()
   if bIsShow then
@@ -106,5 +102,4 @@ function M:ShowGamepadABtn(bIsShow)
     self.GamepadCheckItemKeyInfo = nil
   end
 end
-
 return M

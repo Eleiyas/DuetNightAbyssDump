@@ -10,7 +10,6 @@ local ETypingStates = {
   Init = 3,
   Typing = 4
 }
-
 function M:Construct()
   self.RichMatch = "<.-/>"
   self.TextRichMatch = "<.->.-</>"
@@ -23,13 +22,11 @@ function M:Construct()
   self.TypingBook = nil
   self.TypingBlocks = nil
   self.CurPageIdx = 0
-  
   function self.CalcRichTextBlockSize(RichText)
     self.RichTextBlock_Calc:SetText(RichText)
     self.RichTextBlock_Calc:ForceLayoutPrepass()
     return self.RichTextBlock_Calc:GetDesiredSize()
   end
-  
   self.FinishedIconRichText = "<img id=\"Arrow01\"/>"
   self.FinishedIconSize = self.CalcRichTextBlockSize(self.FinishedIconRichText)
   self.BlurMIs = {}
@@ -41,7 +38,6 @@ function M:Construct()
     end
   end
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.TypingState == ETypingStates.None then
     return
@@ -54,7 +50,6 @@ function M:Tick(MyGeometry, InDeltaTime)
     self:RealTyping(InDeltaTime)
   end
 end
-
 function M:Typing(Dialogue)
   if nil == Dialogue then
     self:ToFinish()
@@ -66,15 +61,12 @@ function M:Typing(Dialogue)
   self.bPrepareToFinish = false
   self.TypingState = ETypingStates.FirstFrame
 end
-
 function M:SetTypingSpeed(Speed)
   self.TypingSpeed = Speed or 2
 end
-
 function M:SetTransFactor(TransFactor)
   self.TransFactor = TransFactor or 10
 end
-
 function M:GetDialogueTypingTime()
   if self.TypingSpeed > 0 then
     if self.TypingState == ETypingStates.Typing then
@@ -102,39 +94,31 @@ function M:GetDialogueTypingTime()
   end
   return 0
 end
-
 function M:BindEventOnPageEnd(Obj, Event)
   self.OnPageEnd = {}
   self.OnPageEnd.Obj = Obj
   self.OnPageEnd.Event = Event
 end
-
 function M:UnBindEventOnPageEnd()
   self.OnPageEnd = nil
 end
-
 function M:BindEventOnFinished(Obj, Event)
   self.OnFinished = {}
   self.OnFinished.Obj = Obj
   self.OnFinished.Event = Event
 end
-
 function M:UnBindEventOnFinished()
   self.OnFinished = nil
 end
-
 function M:Pause(bPause)
   self.bPause = bPause
 end
-
 function M:IsPause()
   return self.bPause or false
 end
-
 function M:IsPageEnd()
   return self.bPageEnd or false
 end
-
 function M:ToPageEnd()
   if self.TypingState ~= ETypingStates.Typing then
     self.bPrepareToPageEnd = true
@@ -157,21 +141,17 @@ function M:ToPageEnd()
   end
   return true
 end
-
 function M:PrePage()
   local PrePageIdx = self.CurPageIdx - 1
   return self:InitPageTyping(PrePageIdx)
 end
-
 function M:NextPage()
   local NextPageIdx = self.CurPageIdx + 1
   return self:InitPageTyping(NextPageIdx)
 end
-
 function M:IsFinished()
   return self.bFinished or false
 end
-
 function M:ToFinish()
   if self.TypingState ~= ETypingStates.Typing then
     self.bPrepareToFinish = true
@@ -190,15 +170,12 @@ function M:ToFinish()
   self:Finish(true)
   return true
 end
-
 function M:SetVerticalAlignment(Alignment)
   self.VerticalAlignment = Alignment or 0
 end
-
 function M:SetHorizontalAlignment(Alignment)
   self.HorizontalAlignment = Alignment or 0
 end
-
 function M:ShowPageEndIcon()
   if self.TypingBook then
     local Page = self.TypingBook:GetPage(self.CurPageIdx)
@@ -215,14 +192,12 @@ function M:ShowPageEndIcon()
     end
   end
 end
-
 function M:PageEnd()
   self.bPageEnd = true
   if self.OnPageEnd then
     self.OnPageEnd.Event(self.OnPageEnd.Obj)
   end
 end
-
 function M:Finish(FinishOrPageEnd)
   self.bFinished = FinishOrPageEnd
   if self.bFinished then
@@ -232,7 +207,6 @@ function M:Finish(FinishOrPageEnd)
     self.OnFinished.Event(self.OnFinished.Obj, FinishOrPageEnd)
   end
 end
-
 function M:Init()
   self.TypingBlocks = self:SplitRich(self.Dialogue)
   if self:CalculateSize() and self:InitPageTyping(1) then
@@ -244,7 +218,6 @@ function M:Init()
     self.TypingState = ETypingStates.None
   end
 end
-
 function M:CalculateSize()
   self.SelfSize = FVector2D(self.Root.WidthOverride, self.Root.MaxDesiredHeight)
   if UE4.UKismetMathLibrary.IsZero2D(self.SelfSize) then
@@ -269,7 +242,6 @@ function M:CalculateSize()
   end
   return true
 end
-
 function M:SplitRich(Text)
   local Blocks = {}
   local TextLines = UE4.UKismetStringLibrary.ParseIntoArray(Text, "\n")
@@ -280,7 +252,6 @@ function M:SplitRich(Text)
   table.remove(Blocks, #Blocks)
   return Blocks
 end
-
 function M:SplitBlock(BlockArr, Text, Match)
   local InitIdx = 1
   local StartIdx = 1
@@ -305,7 +276,6 @@ function M:SplitBlock(BlockArr, Text, Match)
     table.insert(BlockArr, FTypingTextBlock:New(RemainStr, "Default"))
   end
 end
-
 function M:CalcRich(BlockArr, RichStr)
   local IsMatch = string.match(RichStr, self.TextRichMatch)
   RichStr = self:RemoveSpaces(RichStr)
@@ -326,14 +296,12 @@ function M:CalcRich(BlockArr, RichStr)
     table.insert(BlockArr, FTypingImgBlock:New(Tag, Attrs))
   end
 end
-
 function M:RemoveSpaces(RichStr)
   RichStr = string.gsub(RichStr, "%s+", " ")
   RichStr = string.gsub(RichStr, "%s*=%s*\"%s*", "=\"")
   RichStr = string.gsub(RichStr, "%s*\"", "\"")
   return RichStr
 end
-
 function M:SplitTagAndAttrs(RichTagAndAttrs)
   local StartIdx = 1
   local EndIdx = string.find(RichTagAndAttrs, "%s", 1)
@@ -370,7 +338,6 @@ function M:SplitTagAndAttrs(RichTagAndAttrs)
   end
   return RichTag, AttrTable
 end
-
 function M:InitPageTyping(Index)
   if self.TypingBook == nil then
     return false
@@ -405,7 +372,6 @@ function M:InitPageTyping(Index)
   self.TypingState = ETypingStates.Typing
   return true
 end
-
 function M:InitLineTyping(Page, Index, LinePosY)
   local Line = Page:GetLine(Index)
   local LineUI = self.LineUIs[Index]
@@ -473,14 +439,12 @@ function M:InitLineTyping(Page, Index, LinePosY)
   self:SetLineUIProcess(LineUI.Widget, 0)
   return LinePosY
 end
-
 function M:SetLineUITransFactor(UI, Factor)
   local Meterial = UI.RetainerBox:GetEffectMaterial()
   Meterial:SetScalarParameterValue("Factor", Factor)
   local BlurMI = self:GetBGBlurMI(UI)
   BlurMI:SetScalarParameterValue("Factor", Factor)
 end
-
 function M:GetBGBlurMI(LineUI)
   self.BlurMIs = self.BlurMIs or {}
   if not self.BlurMIs[LineUI] then
@@ -494,18 +458,15 @@ function M:GetBGBlurMI(LineUI)
   end
   return self.BlurMIs[LineUI]
 end
-
 function M:SetLineUIProcess(UI, Proess)
   local Meterial = UI.RetainerBox:GetEffectMaterial()
   Meterial:SetScalarParameterValue("Process", Proess)
   self:SetLineBGBlurProcess(UI, Proess)
 end
-
 function M:SetLineBGBlurProcess(UI, Proess)
   local BlurMI = self:GetBGBlurMI(UI)
   BlurMI:SetScalarParameterValue("Process", Proess)
 end
-
 function M:RealTyping(DeltaTime)
   if self.bPrepareToFinish then
     self:ToFinish()
@@ -538,5 +499,4 @@ function M:RealTyping(DeltaTime)
     end
   end
 end
-
 return M

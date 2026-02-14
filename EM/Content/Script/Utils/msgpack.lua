@@ -4,7 +4,6 @@ local tconcat, tunpack = table.concat, table.unpack
 local ssub = string.sub
 local type, pcall, pairs, select = type, pcall, pairs, _ENV.select
 local encode_value
-
 local function is_an_array(value)
   local expected = 1
   for k in pairs(value) do
@@ -15,7 +14,6 @@ local function is_an_array(value)
   end
   return true
 end
-
 local encoder_functions = {
   ["nil"] = function()
     return pack("B", 192)
@@ -112,11 +110,9 @@ local encoder_functions = {
     end
   end
 }
-
 function encode_value(value)
   return encoder_functions[type(value)](value)
 end
-
 local function encode(...)
   local data = {}
   for i = 1, select("#", ...) do
@@ -124,9 +120,7 @@ local function encode(...)
   end
   return tconcat(data)
 end
-
 local decode_value
-
 local function decode_array(data, position, length)
   local elements, value = {}
   for i = 1, length do
@@ -135,7 +129,6 @@ local function decode_array(data, position, length)
   end
   return elements, position
 end
-
 local function decode_map(data, position, length)
   local elements, key, value = {}
   for i = 1, length do
@@ -145,7 +138,6 @@ local function decode_map(data, position, length)
   end
   return elements, position
 end
-
 local decoder_functions = {
   [192] = function(data, position)
     return nil, position
@@ -251,14 +243,12 @@ for i = 224, 255 do
     return -32 + (i - 224), position
   end
 end
-
 function decode_value(data, position)
   local byte, value
   byte, position = unpack("B", data, position)
   value, position = decoder_functions[byte](data, position)
   return value, position
 end
-
 local ret = {
   _AUTHOR = "Sebastian Steinhauer <s.steinhauer@yahoo.de>",
   _VERSION = "0.6.0",

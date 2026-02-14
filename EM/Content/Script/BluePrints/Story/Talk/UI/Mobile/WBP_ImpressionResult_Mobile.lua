@@ -3,7 +3,6 @@ local ECheckMode = {
   Normal = "Normal",
   ImpressionShop = "ImpressionShop"
 }
-
 function WBP_ImpressionResult_Mobile:AdaptPlatform()
   DebugPrint("WBP_ImpressionResult_Mobile:AdaptPlatform")
   self.WS_Key:SetActiveWidgetIndex(1)
@@ -11,7 +10,6 @@ function WBP_ImpressionResult_Mobile:AdaptPlatform()
   self.Button_Skip:BindEventOnClicked(self, self.OnSkipButtonClicked)
   self.Button_Skip:SetCurrentTextBlock(GText("UI_TALK_SKIP_MOIILE"))
 end
-
 function WBP_ImpressionResult_Mobile:SwitchBindDicePressInput(bBind)
   DebugPrint("WBP_ImpressionResult_Mobile:SwitchBindDicePressInput", bBind)
   self.bListenPressInput = bBind
@@ -25,7 +23,6 @@ function WBP_ImpressionResult_Mobile:SwitchBindDicePressInput(bBind)
     self.Group_Close:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ImpressionResult_Mobile:SwitchBindDiceReleaseInput(bBind)
   DebugPrint("WBP_ImpressionResult_Mobile:SwitchBindDiceReleaseInput", bBind)
   self.bListenReleaseInput = bBind
@@ -37,7 +34,6 @@ function WBP_ImpressionResult_Mobile:SwitchBindDiceReleaseInput(bBind)
     self.Btn_Dice.OnReleased:Clear()
   end
 end
-
 function WBP_ImpressionResult_Mobile:SwitchBindSkipInput(bBind)
   DebugPrint("WBP_ImpressionResult_Mobile:SwitchBindSkipInput", bBind)
   if bBind then
@@ -47,5 +43,4 @@ function WBP_ImpressionResult_Mobile:SwitchBindSkipInput(bBind)
     self.Button_Skip:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_ImpressionResult_Mobile

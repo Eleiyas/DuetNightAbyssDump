@@ -2,20 +2,16 @@ require("UnLua")
 local BP_EMPhantomState_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_EMPhantomState_C:Initialize(Initializer)
 end
-
 function BP_EMPhantomState_C:OnRep_TeamRecoveryState(PrevRecoveryState)
   DebugPrint("LHQ_PhantomState OnRep_TeamRecoveryState, NewState:" .. self.TeamRecoveryState, "Eid:", self.Eid, "PrevRecoveryState: ", PrevRecoveryState)
   EventManager:FireEvent(EventID.OnTeamRecoveryStateChange, self.Eid, self.TeamRecoveryState, PrevRecoveryState)
 end
-
 function BP_EMPhantomState_C:OnRep_RecoveryValue()
   DebugPrint("PhantomState OnRep_RecoveryValue", self.RecoveryValue)
   EventManager:FireEvent(EventID.OnRepPhantomRecoveryValue, self.RecoveryValue)
 end
-
 function BP_EMPhantomState_C:OnRep_RecoverySpeed()
   if not self.bIsHostage then
     return
@@ -35,24 +31,19 @@ function BP_EMPhantomState_C:OnRep_RecoverySpeed()
     self:OnExitRecoveringState()
   end
 end
-
 function BP_EMPhantomState_C:OnRep_DyingDuration()
   DebugPrint("PhantomState OnRep_DyingDuration", self.DyingDuration)
   EventManager:FireEvent(EventID.OnRepPhantomDyingDuration, self.DyingDuration)
 end
-
 function BP_EMPhantomState_C:OnRep_OwnerEid()
   EventManager:FireEvent(EventID.OnRepOwnerEidPhantomState, self.Eid, self.OwnerEid)
 end
-
 function BP_EMPhantomState_C:OnEnterRecoveringState()
   self:TriggerRescueTimerFloatVisibility(true)
 end
-
 function BP_EMPhantomState_C:OnExitRecoveringState()
   self:TriggerRescueTimerFloatVisibility(false)
 end
-
 function BP_EMPhantomState_C:TriggerRescueTimerFloatVisibility(IsShow)
   if not self.bIsHostage then
     return
@@ -69,5 +60,4 @@ function BP_EMPhantomState_C:TriggerRescueTimerFloatVisibility(IsShow)
     CaptureFloat.Panel_time:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return BP_EMPhantomState_C

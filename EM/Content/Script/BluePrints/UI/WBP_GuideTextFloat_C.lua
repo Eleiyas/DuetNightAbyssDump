@@ -1,13 +1,11 @@
 require("UnLua")
 require("DataMgr")
 local WBP_GuideTextFloat_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_GuideTextFloat_C:Construct()
   AudioManager(self):PlayUISound(self, "event:/ui/common/guide_bar_show", nil, nil)
   self:AddDispatcher(EventID.OnChangeKeyBoardSet, self, self.RefreshText)
   self.IsDestroied = false
 end
-
 function WBP_GuideTextFloat_C:ShowDungeonGuide(TextIndex, Duration)
   self:AddTimer(Duration, self.Close)
   self:PlayAnimation(self.GuideText_in)
@@ -27,28 +25,24 @@ function WBP_GuideTextFloat_C:ShowDungeonGuide(TextIndex, Duration)
   WarningHint = WarningHint or UIManager:LoadUI(UIConst.WARNINGHINT, UIConst.WarningHintName, UIConst.ZORDER_FOR_SECONDARY_POPUP)
   WarningHint:InitializeData(Duration)
 end
-
 function WBP_GuideTextFloat_C:GuideUIInit(UIKey, MessageId, Time, ExecuteLogic, IsTimeDilation, IsForceClick)
   self:AddGuideMessage(UIKey, MessageId, Time, nil)
   if ExecuteLogic and "" ~= ExecuteLogic then
     self:SetInfoAboutGuide(ExecuteLogic, IsTimeDilation)
   end
 end
-
 function WBP_GuideTextFloat_C:GuideUIInit_String(UIKey, Message, Time, ExecuteLogic, IsTimeDilation, IsForceClick)
   self:AddGuideMessage(UIKey, nil, Time, Message)
   if ExecuteLogic and "" ~= ExecuteLogic then
     self:SetInfoAboutGuide(ExecuteLogic, IsTimeDilation)
   end
 end
-
 function WBP_GuideTextFloat_C:GuideUIInit_EnumArray(UIKey, MessageId, Actions, Time, IsForceTouch, IsTimeDailation, ForbidSuccessAnim, IsNotForceRelease)
   self:AddGuideMessage(UIKey, MessageId, Time, nil)
   Actions = Actions:ToTable()
   PrintTable(Actions, 2)
   self:SetInfoAboutGuide_Enum(Actions, IsForceTouch, IsTimeDailation, ForbidSuccessAnim, IsNotForceRelease)
 end
-
 function WBP_GuideTextFloat_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.NowShowMessageId = nil
@@ -59,7 +53,6 @@ function WBP_GuideTextFloat_C:Initialize(Initializer)
     "MouseButton"
   }
 end
-
 function WBP_GuideTextFloat_C:SetShowInfoVisible(VisibleType)
   for i = 1, 7 do
     local ui_index = i - i // 2
@@ -70,7 +63,6 @@ function WBP_GuideTextFloat_C:SetShowInfoVisible(VisibleType)
     end
   end
 end
-
 function WBP_GuideTextFloat_C:AddGuideMessage(UIKey, MessageId, LastTime, Message)
   self.MessageRecord = Message
   self:InitListenEvent()
@@ -86,7 +78,6 @@ function WBP_GuideTextFloat_C:AddGuideMessage(UIKey, MessageId, LastTime, Messag
     self:AddTimer(self.LastTime, self.PlayOutAnim, false, 0, "GuideTextFloatPlayOutAnim", false)
   end
 end
-
 function WBP_GuideTextFloat_C:DeleteGuideMessage(IsExecuteFinish)
   DebugPrint("==================================IsExecuteFinish===DeleteGuideMessage=========", IsExecuteFinish)
   if not self.IsNotForceRelease then
@@ -98,7 +89,6 @@ function WBP_GuideTextFloat_C:DeleteGuideMessage(IsExecuteFinish)
   self.NowShowMessageId = nil
   self:PlayOutAnim(IsExecuteFinish)
 end
-
 function WBP_GuideTextFloat_C:Close()
   self.IsInit = false
   if self.IsInUIMode then
@@ -118,7 +108,6 @@ function WBP_GuideTextFloat_C:Close()
   end
   self.IsDestroied = true
 end
-
 function WBP_GuideTextFloat_C:PlayOutAnim(IsExecuteFinish)
   if self:IsAnimationPlaying(self.Complete) or self:IsAnimationPlaying(self.GuideText_Out) then
     return
@@ -138,7 +127,6 @@ function WBP_GuideTextFloat_C:PlayOutAnim(IsExecuteFinish)
   if self.NowState then
   end
 end
-
 function WBP_GuideTextFloat_C:UpdateTextContent(Messgae)
   local MessageContent = ""
   local TitleContent = ""
@@ -166,14 +154,12 @@ function WBP_GuideTextFloat_C:UpdateTextContent(Messgae)
   local AllFontCount = self:getFontLength(MessageContent)
   self:UpdateGuideBgContentSize(AllFontCount, self.LineMaxFontCount)
 end
-
 function WBP_GuideTextFloat_C:RefreshText()
   if self.MessageContent == nil or self.MessageContent == "" then
     return
   end
   self:SetText(self.MessageContent)
 end
-
 function WBP_GuideTextFloat_C:SetText(MessageContent)
   local strs = self:AnalyzeText(MessageContent)
   if strs then
@@ -194,14 +180,12 @@ function WBP_GuideTextFloat_C:SetText(MessageContent)
     end
   end
 end
-
 function WBP_GuideTextFloat_C:CheckSpecialPadkey(ActionName)
   if "R" == ActionName or "L" == ActionName or "DpadV" == ActionName then
     return true
   end
   return false
 end
-
 function WBP_GuideTextFloat_C:GetSpecialPadkey(ActionName)
   if "R" == ActionName then
     return "R", "GamepadKey"
@@ -212,7 +196,6 @@ function WBP_GuideTextFloat_C:GetSpecialPadkey(ActionName)
   end
   return nil, nil
 end
-
 function WBP_GuideTextFloat_C:SetCommonKey(KeyInfo, TableIndex)
   local KeyType
   local ActionName = string.sub(KeyInfo, 2, -2)
@@ -224,13 +207,21 @@ function WBP_GuideTextFloat_C:SetCommonKey(KeyInfo, TableIndex)
   local Key, UIIndex
   if self:CheckSpecialPadkey(ActionName) and self.UsingGamepad then
     Key, KeyType = self:GetSpecialPadkey(ActionName)
+  elseif "W" == ActionName or "A" == ActionName or "S" == ActionName or "D" == ActionName then
+    if self.UsingGamepad then
+      Key = "L"
+      KeyType = "GamepadKey"
+    else
+      Key = CommonUtils:GetWASDKeyName(ActionName)
+      KeyType = "KeyboardKey"
+    end
   else
     Key, KeyType = self:GetKeyName(ActionName)
   end
   UIIndex = TableIndex - TableIndex // 2
   local Widget
   if "ControlAngle" == ActionName then
-    if self.CurrentInputDevice[1] == "GamepadKey" then
+    if "GamepadKey" == self.CurrentInputDevice[1] then
       return
     else
       Widget = UE4.UWidgetBlueprintLibrary.Create(self, self:GetCommonKeyBlueprint(true))
@@ -245,7 +236,7 @@ function WBP_GuideTextFloat_C:SetCommonKey(KeyInfo, TableIndex)
     return
   end
   if "ControlMove" == ActionName then
-    if self.CurrentInputDevice[1] == "GamepadKey" then
+    if "GamepadKey" == self.CurrentInputDevice[1] then
       return
     else
       self["Key_" .. UIIndex]:ClearChildren()
@@ -281,7 +272,7 @@ function WBP_GuideTextFloat_C:SetCommonKey(KeyInfo, TableIndex)
     return
   end
   if not Key or not KeyType then
-    print(_G.LogTag, "Error: Wrong Action Name, cannot find this Action's Key\239\188\154", ActionName)
+    print(_G.LogTag, "Error: Wrong Action Name, cannot find this Action's Key：", ActionName)
     self:DeleteGuideMessage()
     return
   end
@@ -318,7 +309,6 @@ function WBP_GuideTextFloat_C:SetCommonKey(KeyInfo, TableIndex)
     Widget:PlayAnimation(Widget.Remind)
   end
 end
-
 function WBP_GuideTextFloat_C:GetCommonKeyBlueprint(bText)
   if bText then
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyText.WBP_Com_KeyText_C'")
@@ -326,7 +316,6 @@ function WBP_GuideTextFloat_C:GetCommonKeyBlueprint(bText)
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyImg.WBP_Com_KeyImg_C'")
   end
 end
-
 function WBP_GuideTextFloat_C:GetKeyName(ActionName)
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionKeys = UE4.TArray(UE4.FInputActionKeyMapping)
@@ -352,7 +341,6 @@ function WBP_GuideTextFloat_C:GetKeyName(ActionName)
   end
   return nil, nil
 end
-
 function WBP_GuideTextFloat_C:AnalyzeText(MessageContent)
   local match_res = {}
   if nil == MessageContent then
@@ -368,7 +356,6 @@ function WBP_GuideTextFloat_C:AnalyzeText(MessageContent)
   table.insert(match_res, MessageContent)
   return match_res
 end
-
 function WBP_GuideTextFloat_C:getFontLength(str)
   if not str or #str <= 0 then
     return 0
@@ -395,7 +382,6 @@ function WBP_GuideTextFloat_C:getFontLength(str)
   end
   return length
 end
-
 function WBP_GuideTextFloat_C:SetInfoAboutGuide(ExecuteLogic, IsTimePause)
   if not ExecuteLogic or "" == ExecuteLogic then
     print(_G.LogTag, "ERROR: Use ShowGuideMessage but don't have ActionName")
@@ -409,7 +395,6 @@ function WBP_GuideTextFloat_C:SetInfoAboutGuide(ExecuteLogic, IsTimePause)
     self:ChangePlayerInputable(false)
   end
 end
-
 function WBP_GuideTextFloat_C:AnalyzeExecuteLogic(LogicStr)
   local index = string.find(LogicStr, ",")
   self.ExecuteLogics = {}
@@ -430,7 +415,6 @@ function WBP_GuideTextFloat_C:AnalyzeExecuteLogic(LogicStr)
   self.NowState = self.ExecuteLogics[1]
   self.NowStateIndex = 1
 end
-
 function WBP_GuideTextFloat_C:ChangePlayerInputable(IfAble)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -448,7 +432,6 @@ function WBP_GuideTextFloat_C:ChangePlayerInputable(IfAble)
     PlayerCharacter:RemoveDisableInputTag("GuideTextFloat")
   end
 end
-
 function WBP_GuideTextFloat_C:Destruct()
   WBP_GuideTextFloat_C.Super.Destruct(self)
   self:SetInputUIOnly(false)
@@ -461,7 +444,6 @@ function WBP_GuideTextFloat_C:Destruct()
     PlayerCharacter:RemoveDisableInputTag("GuideTextFloat")
   end
 end
-
 function WBP_GuideTextFloat_C:LogicExecuteFinish()
   if self.NowState == self.ExecuteLogics[#self.ExecuteLogics] then
     UE4.UGameplayStatics.SetGlobalTimeDilation(self, 1)
@@ -471,7 +453,6 @@ function WBP_GuideTextFloat_C:LogicExecuteFinish()
     self.NowState = self.ExecuteLogics[self.NowStateIndex]
   end
 end
-
 function WBP_GuideTextFloat_C:ExecuteJumpLogic()
   if self.NowState ~= "Jump" then
     return
@@ -480,7 +461,6 @@ function WBP_GuideTextFloat_C:ExecuteJumpLogic()
   PlayerCharacter:StartJump()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteSlideLogic()
   if self.NowState ~= "Slide" then
     return
@@ -493,7 +473,6 @@ function WBP_GuideTextFloat_C:ExecuteSlideLogic()
   end
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteFireLogic()
   if self.NowState ~= "Fire" then
     return
@@ -502,7 +481,6 @@ function WBP_GuideTextFloat_C:ExecuteFireLogic()
   PlayerCharacter:StartFire()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteAttackLogic()
   if self.NowState ~= "Attack" then
     return
@@ -511,7 +489,6 @@ function WBP_GuideTextFloat_C:ExecuteAttackLogic()
   PlayerCharacter:ReleaseAttack()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteSkill1Logic()
   if self.NowState ~= "Skill1" then
     return
@@ -520,7 +497,6 @@ function WBP_GuideTextFloat_C:ExecuteSkill1Logic()
   PlayerCharacter:PressSkill1()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ReleaseSkill1Logic()
   if self.NowState ~= "Skill1" then
     return
@@ -529,7 +505,6 @@ function WBP_GuideTextFloat_C:ReleaseSkill1Logic()
   PlayerCharacter:ReleaseSkill1()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteSkill2Logic()
   if self.NowState ~= "Skill2" then
     return
@@ -539,7 +514,6 @@ function WBP_GuideTextFloat_C:ExecuteSkill2Logic()
   PlayerCharacter:ForceReleaseGamepadUseSkill()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteSkill3Logic()
   if self.NowState ~= "Skill3" then
     return
@@ -549,7 +523,6 @@ function WBP_GuideTextFloat_C:ExecuteSkill3Logic()
   PlayerCharacter:ForceReleaseGamepadUseSkill()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:ExecuteOpenMenuLogic()
   if self.NowState ~= "OpenMenu" then
     return
@@ -558,7 +531,6 @@ function WBP_GuideTextFloat_C:ExecuteOpenMenuLogic()
   PlayerCharacter:PressOpenMenu()
   self:LogicExecuteFinish()
 end
-
 function WBP_GuideTextFloat_C:PressSkillCombLogic()
   if not string.match(self.NowState, "Skill1") then
     return
@@ -566,7 +538,6 @@ function WBP_GuideTextFloat_C:PressSkillCombLogic()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   PlayerCharacter:PressGamepadUseSkill()
 end
-
 function WBP_GuideTextFloat_C:ReleaseSkillCombLogic()
   if self.NowState ~= "Skill1" then
     return
@@ -574,10 +545,9 @@ function WBP_GuideTextFloat_C:ReleaseSkillCombLogic()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   PlayerCharacter:ForceReleaseGamepadUseSkill()
 end
-
 function WBP_GuideTextFloat_C:SetInfoAboutGuide_Enum(Actions, IsForceTouch, IsTimeDilation, ForbidSuccessAnim, IsNotForceRelease)
   if self.LastTime < 0 and (IsForceTouch or IsTimeDilation) and 0 == #Actions then
-    print(_G.LogTag, "Error: WBP_GuideTextFloat_C \229\188\186\229\136\182\232\190\147\229\133\165/\230\151\182\233\151\180\232\134\168\232\131\128, \230\140\129\231\187\173\230\151\182\233\151\180\228\184\186-1, \228\189\134\230\152\175\230\178\161\230\156\137\233\156\128\232\166\129\232\191\155\232\161\140\231\154\132\230\147\141\228\189\156, UI\228\184\141\228\188\154\229\133\179\233\151\173, \231\142\169\229\174\182\230\151\160\230\179\149\230\147\141\228\189\156/\230\151\182\233\151\180\228\184\128\231\155\180\232\134\168\232\131\128, \232\161\168\231\142\176\233\148\153\232\175\175")
+    print(_G.LogTag, "Error: WBP_GuideTextFloat_C 强制输入/时间膨胀, 持续时间为-1, 但是没有需要进行的操作, UI不会关闭, 玩家无法操作/时间一直膨胀, 表现错误")
     self:DeleteGuideMessage()
     return
   end
@@ -590,7 +560,6 @@ function WBP_GuideTextFloat_C:SetInfoAboutGuide_Enum(Actions, IsForceTouch, IsTi
   end
   self:AnalyzeExecuteLogic_Enum(Actions)
 end
-
 function WBP_GuideTextFloat_C:AnalyzeExecuteLogic_Enum(Actions)
   self.ExecuteLogics = {}
   local EnumSkill = UE4.ESkillName
@@ -691,7 +660,6 @@ function WBP_GuideTextFloat_C:AnalyzeExecuteLogic_Enum(Actions)
   self.NowState = self.ExecuteLogics[1]
   self.NowStateIndex = 1
 end
-
 function WBP_GuideTextFloat_C:WaitBulletJumpLogicExecute()
   if self.NowState ~= "BulletJump" then
     return
@@ -701,7 +669,6 @@ function WBP_GuideTextFloat_C:WaitBulletJumpLogicExecute()
     self:LogicExecuteFinish()
   end
 end
-
 function WBP_GuideTextFloat_C:WaitHeavyAttackPressLogicExecute()
   if self.NowState ~= "HeavyAttack" then
     return
@@ -710,14 +677,12 @@ function WBP_GuideTextFloat_C:WaitHeavyAttackPressLogicExecute()
     self:LogicExecuteFinish()
   end, false, 0, "TryHeavyAttack")
 end
-
 function WBP_GuideTextFloat_C:WaitHeavyAttackReleaseLogicExecute()
   if self.NowState ~= "HeavyAttack" then
     return
   end
   self:RemoveTimer("TryHeavyAttack")
 end
-
 function WBP_GuideTextFloat_C:WaitFireInAirLogicExecute()
   if self.NowState ~= "FireInAir" then
     return
@@ -727,7 +692,6 @@ function WBP_GuideTextFloat_C:WaitFireInAirLogicExecute()
     self:LogicExecuteFinish()
   end
 end
-
 function WBP_GuideTextFloat_C:WaitContinuousShootingPressLogicExecute()
   if self.NowState ~= "ContinuousShooting" then
     return
@@ -736,14 +700,12 @@ function WBP_GuideTextFloat_C:WaitContinuousShootingPressLogicExecute()
     self:LogicExecuteFinish()
   end, false, 0, "TryContinuousShooting")
 end
-
 function WBP_GuideTextFloat_C:WaitContinuousShootingReleaseLogicExecute()
   if self.NowState ~= "ContinuousShooting" then
     return
   end
   self:RemoveTimer("TryContinuousShooting")
 end
-
 function WBP_GuideTextFloat_C:WaitControlMoveLogicExecute()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if 0 ~= PlayerCharacter.MoveInput.X or 0 ~= PlayerCharacter.MoveInput.Y then
@@ -751,7 +713,6 @@ function WBP_GuideTextFloat_C:WaitControlMoveLogicExecute()
     self:LogicExecuteFinish()
   end
 end
-
 function WBP_GuideTextFloat_C:WaitControlAngleLogicExecute()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if not self.ControllerLastRotator then
@@ -764,7 +725,6 @@ function WBP_GuideTextFloat_C:WaitControlAngleLogicExecute()
     self.ControllerLastRotator = PlayerController:GetControlRotation()
   end
 end
-
 function WBP_GuideTextFloat_C:WaitFallAttackLogicExecute()
   if self.NowState ~= "FallAttack" then
     return
@@ -776,7 +736,6 @@ function WBP_GuideTextFloat_C:WaitFallAttackLogicExecute()
     end
   end)
 end
-
 function WBP_GuideTextFloat_C:WaitSlideAttackLogicExecute()
   if self.NowState ~= "SlideAttack" then
     return
@@ -788,7 +747,6 @@ function WBP_GuideTextFloat_C:WaitSlideAttackLogicExecute()
     end
   end)
 end
-
 function WBP_GuideTextFloat_C:WaitOpenMenuLogicExecute()
   if self.NowState ~= "OpenMenu" then
     return
@@ -800,13 +758,11 @@ function WBP_GuideTextFloat_C:WaitOpenMenuLogicExecute()
     end
   end)
 end
-
 function WBP_GuideTextFloat_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_GuideTextFloat_C:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -814,7 +770,6 @@ function WBP_GuideTextFloat_C:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_GuideTextFloat_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -833,5 +788,4 @@ function WBP_GuideTextFloat_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGame
     self:UpdateTextContent(self.MessageRecord)
   end
 end
-
 return WBP_GuideTextFloat_C

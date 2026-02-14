@@ -1,7 +1,6 @@
 local BP_ElectricGrid_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_ElectricGrid_C:CommonInitInfo(Info)
   BP_ElectricGrid_C.Super.CommonInitInfo(self, Info)
   self:TrySetVariable()
@@ -23,14 +22,12 @@ function BP_ElectricGrid_C:CommonInitInfo(Info)
     self.DefaultForward = self.Arrow1:GetForwardVector()
   end
 end
-
 function BP_ElectricGrid_C:OnActorReady(Info)
   BP_ElectricGrid_C.Super.OnActorReady(self, Info)
   if 0 ~= self.CurrentTypeStateId and IsAuthority(self) then
     self:ChangeState("Manual", 0, self.CurrentTypeStateId)
   end
 end
-
 function BP_ElectricGrid_C:ReceiveTick(DeltaSeconds)
   if not self.IsActive then
     return
@@ -47,18 +44,15 @@ function BP_ElectricGrid_C:ReceiveTick(DeltaSeconds)
     self:RotateWithOtherActor(DeltaSeconds, self.CenterComponent, self.RotateBySelf, self.DefaultLocation)
   end
 end
-
 function BP_ElectricGrid_C:TrySetVariable()
   if not self.Start then
     self.Start = {}
     self.End = {}
-    self.Rays = {}
     self.Lasers = {}
     self.HitedArray = {}
     self:GetComponents()
   end
 end
-
 function BP_ElectricGrid_C:GetComponents()
   local Components = self:K2_GetComponentsByClass(UE.USceneComponent)
   if Components then
@@ -68,14 +62,10 @@ function BP_ElectricGrid_C:GetComponents()
         self.Start[Name] = Component
       elseif string.find(Name, "EndMesh") then
         self.End[Name] = Component
-      elseif string.find(Name, "LaserRay") then
-        self.Rays[Name] = Component
       end
     end
-    self:SetNiagara(self.Rays)
   end
 end
-
 function BP_ElectricGrid_C:UpdateHitedArray(DeltaSeconds)
   for i, v in pairs(self.HitedArray) do
     for Id, Value in pairs(v) do
@@ -86,10 +76,18 @@ function BP_ElectricGrid_C:UpdateHitedArray(DeltaSeconds)
     end
   end
 end
-
 function BP_ElectricGrid_C:LaunchLaser()
   if self.IsActive then
     return
+  end
+  if not self.Rays then
+    self.Rays = {}
+    for i, v in pairs(self.Start) do
+      local Start, End = string.find(i, "%d+", 1)
+      local Idx = tonumber(string.sub(i, Start, End))
+      self.Rays["LaserRay" .. Idx] = self:CreateLaserComponent(v, "LaserRay" .. Idx)
+    end
+    self:SetNiagara(self.Rays)
   end
   for i, v in pairs(self.Start) do
     local Start, End = string.find(i, "%d+", 1)
@@ -108,6 +106,7 @@ function BP_ElectricGrid_C:LaunchLaser()
     LaserInfo.SocketName = "LaserPoint"
     LaserInfo.Debug = false
     LaserInfo.Radiu = self.LaserRadius
+    LaserInfo.MultiTrace = true
     if self.Rays["LaserRay" .. Idx] then
       local LaserPort = Battle(self):CreateLaser(v, self.Rays["LaserRay" .. Idx], LaserInfo)
       if not self.HitedArray[LaserPort] then
@@ -119,7 +118,6 @@ function BP_ElectricGrid_C:LaunchLaser()
     end
   end
 end
-
 function BP_ElectricGrid_C:DeActiveLaser()
   if not self.IsActive or not self.Rays then
     return
@@ -134,7 +132,6 @@ function BP_ElectricGrid_C:DeActiveLaser()
   end
   self.Lasers = {}
 end
-
 function BP_ElectricGrid_C:OnHitTarget(Port, HitResult)
   if HitResult.Actor and HitResult.Actor:IsDead() ~= true and not self.HitedArray[Port][HitResult.Actor.Eid] then
     self.HitedArray[Port][HitResult.Actor.Eid] = 0
@@ -142,7 +139,6 @@ function BP_ElectricGrid_C:OnHitTarget(Port, HitResult)
     self.Super.PropAttack(self, HitResult.Actor)
   end
 end
-
 function BP_ElectricGrid_C:MoveWithSpline(DeltaSeconds)
   self.Progress = self.Progress + self.Direction * DeltaSeconds
   if self.Progress >= self.TimeLength then
@@ -160,7 +156,6 @@ function BP_ElectricGrid_C:MoveWithSpline(DeltaSeconds)
     self.Box:K2_SetWorldLocation(Location, false, nil, false)
   end
 end
-
 function BP_ElectricGrid_C:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   DebugPrint("zwk ElectricGrid OnEnterState", self:GetName(), NowStateId)
@@ -180,5 +175,4 @@ function BP_ElectricGrid_C:OnEnterState(NowStateId)
     self:LaunchLaser()
   end
 end
-
 return BP_ElectricGrid_C

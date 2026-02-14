@@ -1,17 +1,31 @@
 require("UnLua")
 local BP_PetNPC_C = Class("BluePrints.Char.BP_NPC_C")
-
 function BP_PetNPC_C:ReceiveBeginPlay()
   BP_PetNPC_C.Super.ReceiveBeginPlay(self)
   self.IsDestroied = false
+  self.AfterInteractive = false
 end
-
 function BP_PetNPC_C:ReceiveEndPlay()
   BP_PetNPC_C.Super.ReceiveEndPlay(self)
   self.IsDestroied = true
 end
-
+function BP_PetNPC_C:ReceiveTick(DeltaSeconds)
+  if self.OwnerCameraStaticMesh and self.OwnerCameraStaticMesh.bHiddenInGame == false then
+    self.OwnerCameraStaticMesh:SetHiddenInGame(true)
+  end
+end
 function BP_PetNPC_C:InitInteractiveState(WorldRegionEid)
+  if self.Camera and self.Camera.bCameraMeshHiddenInGame then
+    self.Camera:SetHiddenInGame(true)
+    local Components = self:K2_GetComponentsByClass(UStaticMeshComponent:StaticClass())
+    if Components then
+      for _, Component in pairs(Components) do
+        if Component then
+          self.OwnerCameraStaticMesh = Component
+        end
+      end
+    end
+  end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode and GameMode:IsInDungeon() then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -35,7 +49,6 @@ function BP_PetNPC_C:InitInteractiveState(WorldRegionEid)
   end
   self.InteractiveState = PetStateInfo.PetState
 end
-
 function BP_PetNPC_C:ClientInteractiveStateRecover()
   local ProgressWidget = self.PetHeadWidgetComponent:GetWidget()
   if ProgressWidget then
@@ -51,33 +64,28 @@ function BP_PetNPC_C:ClientInteractiveStateRecover()
     end
   end
 end
-
 function BP_PetNPC_C:SetInteractiveState(NewState)
   if NewState and NewState >= ENpcPetState.None and NewState <= ENpcPetState.InteractiveFail then
     self.InteractiveState = NewState
   end
 end
-
 function BP_PetNPC_C:ClientSetInteractiveState(NewState)
   if NewState and NewState >= ENpcPetState.None and NewState <= ENpcPetState.InteractiveFail then
     self.ClientInteractiveState = NewState
   end
 end
-
 function BP_PetNPC_C:PlaySuccessMontage()
   local AnimInstance = self.Mesh:GetAnimInstance()
   if AnimInstance then
     AnimInstance.PetStates = 3
   end
 end
-
 function BP_PetNPC_C:PlayFailureMontage()
   local AnimInstance = self.Mesh:GetAnimInstance()
   if AnimInstance then
     AnimInstance.PetStates = 4
   end
 end
-
 function BP_PetNPC_C:PlayFailureMontageThenDestroy()
   local AnimInstance = self.Mesh:GetAnimInstance()
   if AnimInstance then
@@ -89,7 +97,6 @@ function BP_PetNPC_C:PlayFailureMontageThenDestroy()
     self:EMActorDestroy(EDestroyReason.PetAfterInteractive)
   end)
 end
-
 function BP_PetNPC_C:HidePetNotifyEarly(ErrCode)
   if ErrCode == ErrorCode.RET_PET_CAPTURE_FAILED or ErrCode == ErrorCode.RET_SUCCESS then
     local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
@@ -102,7 +109,6 @@ function BP_PetNPC_C:HidePetNotifyEarly(ErrCode)
     ErrorCode:Check(ErrCode)
   end
 end
-
 function BP_PetNPC_C:RegionCapturePetCallback(bSuccess)
   self.InteractiveState = bSuccess and ENpcPetState.InteractiveSuccess or ENpcPetState.InteractiveFail
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -110,7 +116,6 @@ function BP_PetNPC_C:RegionCapturePetCallback(bSuccess)
     GameMode:GetRegionDataMgrSubSystem():UpdatePetRegionActorData(self, self.InteractiveState)
   end
 end
-
 function BP_PetNPC_C:OnInteractiveFinish(bSuccess)
   local Avatar = GWorld:GetAvatar()
   if Avatar and bSuccess and 0 == Avatar.CurrentPet then
@@ -135,28 +140,31 @@ function BP_PetNPC_C:OnInteractiveFinish(bSuccess)
     self:EMActorDestroy(EDestroyReason.PetAfterInteractive)
   end
 end
-
 function BP_PetNPC_C:RegisterUpdateProgressFunc(UpdateFunc)
   self.UpdateFunc = UpdateFunc
 end
-
 function BP_PetNPC_C:ProgressUpdate(TickDelta)
   if self.UpdateFunc then
     self.UpdateFunc(TickDelta)
   end
 end
-
 function BP_PetNPC_C:OnEMActorDestroy_Lua(DestroyReason)
   self:CommonOnEMActorDestroy(DestroyReason)
-  if DestroyReason == EDestroyReason.LevelUnloadedSaveGame then
+  if DestroyReason == EDestroyReason.LevelUnloadedSaveGame and not self.AfterInteractive then
     local GameMode = UGameplayStatics.GetGameMode(self)
     if GameMode then
-      GameMode:GetRegionDataMgrSubSystem():DeadRegionActorData(self, DestroyReason, GameMode:GetActorLevelName(self))
+      GameMode:GetRegionDataMgrSubSystem():DeadRegionActorData(self, DestroyReason)
     end
   end
   if IsAuthority(self) then
     self:ServerOnEMActorDestroy(DestroyReason)
   end
 end
-
+function BP_PetNPC_C:AfterCaptureChangeClientRegionData(ErrCode)
+  local GameMode = UGameplayStatics.GetGameMode(self)
+  if GameMode and GameMode:IsInRegion() and (ErrCode == ErrorCode.RET_PET_CAPTURE_FAILED or ErrCode == ErrorCode.RET_SUCCESS) then
+    GameMode:GetRegionDataMgrSubSystem():DeadRegionActorData(self, EDestroyReason.PetAfterInteractive)
+    self.AfterInteractive = true
+  end
+end
 return BP_PetNPC_C

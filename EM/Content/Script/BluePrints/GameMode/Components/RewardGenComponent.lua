@@ -8,7 +8,6 @@ local ForceLogicRewardReason = {
   [CommonConst.RewardReason.MonsterDead] = true,
   [CommonConst.RewardReason.PickUp] = true
 }
-
 function Component:InitRewardParams()
   self.RewardPerFrame = 20
   self.CacheFrontIndex = 1
@@ -18,7 +17,6 @@ function Component:InitRewardParams()
   self.CacheEid2AvatarEid = {}
   self.bNeedNotifyClientCreateDrop = false
 end
-
 function Component:TickGenReward(DeltaSeconds)
   if self.bNeedNotifyClientCreateDrop then
     self.EMGameState:ClientCreateReward()
@@ -46,7 +44,6 @@ function Component:TickGenReward(DeltaSeconds)
   self.CacheLogicRewards = {}
   ServerEntity:TriggerRewardEvent(LogicRewards)
 end
-
 function Component:AddCacheBattleReward(RewardIds, Reason, Transform, ExtraInfo)
   if 0 == #RewardIds then
     return
@@ -59,25 +56,22 @@ function Component:AddCacheBattleReward(RewardIds, Reason, Transform, ExtraInfo)
   }
   self.CacheRearIndex = self.CacheRearIndex + 1
 end
-
 function Component:RealGenerateReward(RewardIds, Reason, Transform, ExtraInfo)
   local Rewards = RewardUtils:GetRewards(RewardIds)
   self:ResolveRewardsInBattle(Rewards, Reason, Transform, ExtraInfo)
 end
-
 function Component:TriggerRewardEvent(UnitId, Reason, Transform, ExtraInfo, Callback)
   DebugPrint("TriggerRewardEvent", UnitId, Reason, Transform)
   ExtraInfo = ExtraInfo or {}
   local AvatarEid = self:GetAvatarEidByBattleEid(rawget(ExtraInfo, "SourceEid"))
   ExtraInfo.Avatar = AvatarEid
-  self:AddCacheGenUnitReward(UnitId, Reason, Transform, ExtraInfo, Callback)
+  return self:AddCacheGenUnitReward(UnitId, Reason, Transform, ExtraInfo, Callback)
 end
-
 function Component:AddCacheGenUnitReward(UnitId, Reason, Transform, ExtraInfo, Callback)
   local ret, RewardIds = RewardParse:ParseReward(UnitId, Reason, ExtraInfo)
   if not ret then
     print(_G.LogTag, "Cannot Generate Reward for UnitId:", UnitId, "Reason:", Reason)
-    return
+    return false
   end
   if Reason == CommonConst.RewardReason.MonsterDead then
     self:GetMonsterSpawnRewardId(UnitId, MonsterSpawnRewardArray)
@@ -86,17 +80,20 @@ function Component:AddCacheGenUnitReward(UnitId, Reason, Transform, ExtraInfo, C
       RewardIds[#RewardIds + 1] = RewardId
     end
   end
-  if not ExtraInfo.Avatar then
+  local bHasLogicRewards = false
+  local bForceLogicRewardReason = ForceLogicRewardReason[Reason]
+  if not ExtraInfo.Avatar and not bForceLogicRewardReason then
     self:AddCacheBattleReward(RewardIds, Reason, Transform, ExtraInfo)
   else
     local RewardId, BattleRewards = RewardUtils:SplitBattleRewards(RewardIds)
     self:AddCacheBattleReward(BattleRewards, Reason, Transform, ExtraInfo)
-    if #RewardId > 0 or ForceLogicRewardReason[Reason] then
+    if #RewardId > 0 or bForceLogicRewardReason then
       self:AddCacheLogicUnitReward(UnitId, Reason, Transform, ExtraInfo, Callback)
+      bHasLogicRewards = true
     end
   end
+  return bHasLogicRewards
 end
-
 function Component:AddCacheLogicUnitReward(UnitId, Reason, Transform, ExtraInfo, Callback)
   local AvatarEid = ExtraInfo.Avatar
   if not AvatarEid then
@@ -125,7 +122,6 @@ function Component:AddCacheLogicUnitReward(UnitId, Reason, Transform, ExtraInfo,
   }
   self.CacheLogicRewards[AvatarEid] = AvatarCache
 end
-
 function Component:AddCacheBattleUnitReward(UnitId, Reason, Transform, ExtraInfo)
   local ret, RewardIds = RewardParse:ParseReward(UnitId, Reason, ExtraInfo)
   if not ret then
@@ -134,7 +130,6 @@ function Component:AddCacheBattleUnitReward(UnitId, Reason, Transform, ExtraInfo
   end
   self:AddCacheBattleReward(RewardIds, Reason, Transform, ExtraInfo)
 end
-
 function Component:GetAvatarEidByBattleEid(Eid)
   if not Eid then
     return
@@ -157,13 +152,11 @@ function Component:GetAvatarEidByBattleEid(Eid)
   self.CacheEid2AvatarEid[Eid] = AvatarEid
   return AvatarEid
 end
-
 function Component:ResolveRewardsInBattle(Rewards, Reason, Transform, ExtraInfo, OtherParams)
   DebugPrint("ResolveRewardsInBattle", Reason, Transform)
   self:ResolveExpInBattle(Rewards, Reason, ExtraInfo, OtherParams)
   self:HandleRewardDrop(rawget(Rewards, "Drops"), Reason, Transform, ExtraInfo, OtherParams)
 end
-
 function Component:ResolveExpInBattle(Rewards, Reason, ExtraInfo, OtherParams)
   if not OtherParams then
     return
@@ -178,7 +171,6 @@ function Component:ResolveExpInBattle(Rewards, Reason, ExtraInfo, OtherParams)
   self:HandleExpInBattle()
   self.ExpMap:Clear()
 end
-
 function Component:GetExpMap(Character, Rewards)
   local Exps = rawget(Rewards, "Exps")
   if not Exps then
@@ -187,7 +179,6 @@ function Component:GetExpMap(Character, Rewards)
   local BattleEid = Character.Eid
   self:SingleAddExpToMap(BattleEid, RewardBox:GetCount(Exps[CommonConst.CharExpItemId]), RewardBox:GetCount(Exps[CommonConst.MeleeWeaponExpItemId]), RewardBox:GetCount(Exps[CommonConst.RangedWeaponExpItemId]))
 end
-
 function Component:HandleRewardDrop(Drops, Reason, Transform, ExtraInfo, OtherParams)
   if not Drops then
     return
@@ -195,7 +186,6 @@ function Component:HandleRewardDrop(Drops, Reason, Transform, ExtraInfo, OtherPa
   OtherParams = OtherParams or {}
   local GameState = self.EMGameState
   local LevelId = self:GetItemLevelId(Transform.Translation)
-  
   local function CreateDrop(DropId, Count, bExtra, CreateIndex)
     DebugPrint("HandleRewardDrop in Dungeon1111", DropId, Count)
     if self.LevelGameMode.DropRule[DropId] then
@@ -221,10 +211,10 @@ function Component:HandleRewardDrop(Drops, Reason, Transform, ExtraInfo, OtherPa
       end
     end
   end
-  
   if ExtraInfo and ExtraInfo.MultiWave and self:IsInDungeon() then
     local Mechanism = Battle(self):GetEntity(ExtraInfo.ParentEid)
-    Mechanism:MultiWaveCreateDrop(Drops, CreateDrop)
+    print(_G.LogTag, "HandleCreateDrop For Player", OtherParams.Avatar)
+    Mechanism:MultiWaveCreateDrop(Drops, CreateDrop, OtherParams.Avatar)
   else
     for DropId, DropCountTable in pairs(Drops) do
       DropId = tonumber(DropId)
@@ -241,8 +231,7 @@ function Component:HandleRewardDrop(Drops, Reason, Transform, ExtraInfo, OtherPa
     end
   end
 end
-
-function Component:TriggerGenerateRewardForMonsterDeath(UnitId, Transform, UniqueSign, KillerEid, bKilledByPlayer, WeaponType, ExpRate, Level, IsEliteMonster, IsSummonMonster, MonEid, DamageCauserLocation)
+function Component:TriggerGenerateRewardForMonsterDeath(UnitId, Transform, UniqueSign, KillerEid, bKilledByPlayer, WeaponType, Level, IsSummonMonster, MonEid, DamageCauserLocation)
   Transform = UE4.FTransform(Transform.Rotation, Transform.Translation)
   if "" == WeaponType then
     WeaponType = nil
@@ -252,12 +241,9 @@ function Component:TriggerGenerateRewardForMonsterDeath(UnitId, Transform, Uniqu
     SourceEid = KillerEid,
     bKilledByPlayer = bKilledByPlayer,
     WeaponType = WeaponType,
-    ExpRate = ExpRate,
     Level = Level,
-    IsEliteMonster = IsEliteMonster,
     IsSummonMonster = IsSummonMonster
   }
-  
   local function Callback(Reward)
     if not Reward then
       return
@@ -274,13 +260,10 @@ function Component:TriggerGenerateRewardForMonsterDeath(UnitId, Transform, Uniqu
     end
     DebugPrint("Component:TriggerGenerateRewardForMonsterDeath", ExpNum)
   end
-  
   self:TriggerRewardEvent(UnitId, CommonConst.RewardReason.MonsterDead, Transform, ExtraInfo, Callback)
 end
-
 function Component:FlushRewards()
   DebugPrint("FlushRewards")
   self:TickGenReward(0)
 end
-
 return Component

@@ -1,8 +1,7 @@
 local ETaskState = {
   Default = "Default",
-  WaitingDependency = "WaitingDependency",
   Queue = "Queue",
-  DependencyCompleted = "DependencyCompleted",
+  WaitGameUnpause = "WaitGameUnpause",
   Working = "Working",
   Interrupted = "Interrupted",
   Paused = "Paused",

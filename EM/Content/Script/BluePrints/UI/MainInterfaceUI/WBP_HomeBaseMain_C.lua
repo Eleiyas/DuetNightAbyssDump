@@ -3,12 +3,10 @@ local EMCache = require("EMCache.EMCache")
 local WBP_HomeBaseMain_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_HomeBaseMain_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.Owner = nil
 end
-
 function WBP_HomeBaseMain_C:Construct()
   self.Overridden.Construct(self)
   self:AddDispatcher(EventID.OnChangeKeyBoardSet, self, self.InitBtnList)
@@ -18,13 +16,11 @@ function WBP_HomeBaseMain_C:Construct()
   self:AddDispatcher(EventID.OnReceiveNewQuest, self, self.UpdateRedDotStates)
   self:AddTimer(1.0, self.SetSignBoardNpcIdle, true, 0, "SetSignBoardNpcIdle")
 end
-
 function WBP_HomeBaseMain_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitBtnList()
   self:InitEsc()
 end
-
 function WBP_HomeBaseMain_C:InitBtnList()
   local SystemData = DataMgr.MainUI
   self.ListView:ClearListItems()
@@ -37,7 +33,6 @@ function WBP_HomeBaseMain_C:InitBtnList()
     end
   end
 end
-
 function WBP_HomeBaseMain_C:UpdateRedDotStates()
   DebugPrint("Tianyi@ UpdateRedDotStates")
   local EntryList = self.ListView:GetDisplayedEntryWidgets():ToTable()
@@ -45,7 +40,6 @@ function WBP_HomeBaseMain_C:UpdateRedDotStates()
     v:UpdateRedDot()
   end
 end
-
 function WBP_HomeBaseMain_C:InitQuest()
   local Avatar = GWorld:GetAvatar()
   if nil ~= Avatar then
@@ -59,7 +53,6 @@ function WBP_HomeBaseMain_C:InitQuest()
     end
   end
 end
-
 function WBP_HomeBaseMain_C:SetSignBoardNpcIdle()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -95,7 +88,6 @@ function WBP_HomeBaseMain_C:SetSignBoardNpcIdle()
     self:RemoveTimer("SetSignBoardNpcIdle")
   end
 end
-
 function WBP_HomeBaseMain_C:OpenArmory()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -104,7 +96,6 @@ function WBP_HomeBaseMain_C:OpenArmory()
     UIManager:LoadUINew("ArmoryMain")
   end
 end
-
 function WBP_HomeBaseMain_C:OpenBag()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -113,7 +104,6 @@ function WBP_HomeBaseMain_C:OpenBag()
     UIManger:LoadUI(nil, "BagMain", UIConst.ZORDER_FOR_DESKTOP_TEMP)
   end
 end
-
 function WBP_HomeBaseMain_C:OpenCommonSetup()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player:GetESCMenuForbiddenState() then
@@ -130,10 +120,8 @@ function WBP_HomeBaseMain_C:OpenCommonSetup()
   end
   UIManager(self):LoadUINew(UIConst.MenuWorld, "OutBattle")
 end
-
 function WBP_HomeBaseMain_C:InitEsc()
   self.Btn_Esc.Btn_top.OnClicked:Add(self, self.OpenCommonSetup)
   self.Btn_Esc:LoadImage(11)
 end
-
 return WBP_HomeBaseMain_C

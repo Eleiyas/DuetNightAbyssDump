@@ -1,7 +1,7 @@
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local M = Class("BluePrints.Combat.BP_SkillFeatureLevelSequenceActorBase_C")
-
 function M:IsCanPlay()
   if not self.bIsSkill then
     return true
@@ -47,39 +47,35 @@ function M:IsCanPlay()
   self.SequencePlayer:SetPlaybackPosition(FMovieSceneSequencePlaybackParams())
   return true
 end
-
 function M:HidePlayerBattlePet(IsHide)
   local BattlePet = self.OwnerCharacter:GetBattlePet()
   if BattlePet then
     BattlePet:HideBattlePet("Skill", IsHide)
   end
 end
-
 function M:StartSkillFeature()
-  local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-  self.Flow = FlowManager:CreateFlow("SkillFeature")
-  self.Flow.OnBegin:Add(self.Flow, function()
-    local PlayerCameraManager = UGameplayStatics.GetPlayerCameraManager(self, 0)
-    PlayerCameraManager:StopAllCameraShakes(true)
-    self:RecordPlayerCamera()
-    self.CacheControlRotation = self.OwnerCharacter:GetControlRotation()
-    self:StartSkillFeatureCD()
-    M.Super.StartSkillFeature(self)
-    self:SetSkillFeatureTimeDilation()
-    if self.OwnerCharacter.Controller.AddDisableRotationInputTag then
-      self.OwnerCharacter.Controller:AddDisableRotationInputTag("SkillFeature")
+  self.Flow = GameFlowUtils:AddFlow("SkillFeature", {
+    self,
+    function()
+      local PlayerCameraManager = UGameplayStatics.GetPlayerCameraManager(self, 0)
+      PlayerCameraManager:StopAllCameraShakes(true)
+      self:RecordPlayerCamera()
+      self.CacheControlRotation = self.OwnerCharacter:GetControlRotation()
+      self:StartSkillFeatureCD()
+      M.Super.StartSkillFeature(self)
+      self:SetSkillFeatureTimeDilation()
+      if self.OwnerCharacter.Controller.AddDisableRotationInputTag then
+        self.OwnerCharacter.Controller:AddDisableRotationInputTag("SkillFeature")
+      end
+      if self.bIsSkill then
+        self:HidePlayerBattlePet(true)
+      end
     end
-    if self.bIsSkill then
-      self:HidePlayerBattlePet(true)
-    end
-  end)
-  FlowManager:AddFlow(self.Flow)
+  })
 end
-
 function M:EndSkillFeature()
   if self.Flow then
-    local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-    FlowManager:RemoveFlow(self.Flow)
+    GameFlowUtils:RemoveFlow(self.Flow)
     self.Flow = nil
   end
   self.OwnerCharacter.SkillFeature = false
@@ -116,7 +112,6 @@ function M:EndSkillFeature()
   M.Super.EndSkillFeature(self)
   self.OwnerCharacter:ForbidHitStop(false)
 end
-
 function M:DuplicateCameraActorOnEnd()
   if IsValid(self.EndBlendCamera) then
     return self.EndBlendCamera
@@ -129,5 +124,4 @@ function M:DuplicateCameraActorOnEnd()
   end
   return NewCamera
 end
-
 return M

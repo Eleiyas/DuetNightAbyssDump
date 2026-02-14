@@ -2,14 +2,12 @@ require("UnLua")
 local BP_HeadWidgetComponent_C = Class("BluePrints.Common.TimerMgr")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local Const = require("Const")
-
 function BP_HeadWidgetComponent_C:Initialize(Initializer)
   self.OwnerLocation = nil
   self.State = 0
   self.HeadImpressionWidgetMgr = nil
   self.HideTags = {}
 end
-
 function BP_HeadWidgetComponent_C:ReceiveBeginPlay()
   self.Owner = self:GetOwner()
   if self.Owner.Eid then
@@ -19,17 +17,14 @@ function BP_HeadWidgetComponent_C:ReceiveBeginPlay()
   end
   self.Overridden.ReceiveBeginPlay(self)
 end
-
 function BP_HeadWidgetComponent_C:ReceiveEndPlay(EndPlayReason)
   UIManager(self):RemoveWidgetComponentToList(self.Owner.Eid, "NPCHeadWidget")
   self:TryReleaseWidgetInternal()
   self.Owner = nil
 end
-
 function BP_HeadWidgetComponent_C:UnsetAttachedWidget(Widget)
   Widget.AttachedWidgetComponent = nil
 end
-
 function BP_HeadWidgetComponent_C:GetOrCreateWidget(WidgetName)
   if not self:CheckCanGetWidget(WidgetName) then
     return
@@ -47,9 +42,9 @@ function BP_HeadWidgetComponent_C:GetOrCreateWidget(WidgetName)
     Widget = HeadUISubsystem:TryGetHeadWidget(self)
   end
   if not Widget then
-    local Title = "\232\142\183\229\143\150\229\164\180\233\161\182UI\229\164\177\232\180\165"
-    local Message = string.format("HeadWidgetComponent\232\142\183\229\143\150\229\164\180\233\161\182Widget\230\151\182\229\164\177\232\180\165 NPCId:%d", self:GetOwner().NpcId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, Title, Message)
+    local Title = "获取头顶UI失败"
+    local Message = string.format("HeadWidgetComponent获取头顶Widget时失败 NPCId:%d", self:GetOwner().NpcId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.NPC, Title, Message)
     return
   end
   Widget:InitSubWidgets()
@@ -60,9 +55,9 @@ function BP_HeadWidgetComponent_C:GetOrCreateWidget(WidgetName)
   self:OcclusionTestFuncWithoutAnim()
   return Widget
 end
-
 function BP_HeadWidgetComponent_C:CheckCanGetWidget(WidgetName)
-  local bRegionClientOnlyShowUI = GWorld.GameInstance and GWorld.GameInstance.bRegionClientOnlyShowUI
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  local bRegionClientOnlyShowUI = nil ~= RegionSyncSubsys
   if bRegionClientOnlyShowUI then
     return true
   end
@@ -74,26 +69,24 @@ function BP_HeadWidgetComponent_C:CheckCanGetWidget(WidgetName)
   end
   return true
 end
-
 function BP_HeadWidgetComponent_C:TryReleaseWidgetInternal()
   self:RemoveOcclusionTestTimer()
   self:SetWidgetRenderOpacity(1.0)
   self.HideTags.Occlusion = nil
   self:CleanTimer()
   local Widget = self:GetWidget()
-  if not IsValid(Widget) then
-    return
-  end
-  Widget.HideTags = {}
   local HeadUISubsystem = UNpcHeadUISubsystem.GetHeadUISubsystem(self)
   if self:GetOwner() and HeadUISubsystem then
     HeadUISubsystem:TryReleaseHeadWidget(self, Widget)
   end
+  if not IsValid(Widget) then
+    return
+  end
+  Widget.HideTags = {}
   self:SetWidget(nil)
   Widget:UnsetAttachedWidget()
   self.ReleaseTimer = nil
 end
-
 function BP_HeadWidgetComponent_C:EnableWidget(WidgetName, ...)
   local Widget = self:GetOrCreateWidget(WidgetName)
   if not IsValid(Widget) then
@@ -101,18 +94,15 @@ function BP_HeadWidgetComponent_C:EnableWidget(WidgetName, ...)
   end
   Widget:EnableWidget(WidgetName, ...)
 end
-
 function BP_HeadWidgetComponent_C:DisableWidget(WidgetName, ...)
   local Widget = self:GetWidget()
   if Widget then
     Widget:DisableWidget(WidgetName, ...)
   end
 end
-
 function BP_HeadWidgetComponent_C:NeedForceInit()
   return 0 == self.State
 end
-
 function BP_HeadWidgetComponent_C:OnChangeActiveWidgets(State)
   self.State = State
   if 0 == State then
@@ -123,7 +113,6 @@ function BP_HeadWidgetComponent_C:OnChangeActiveWidgets(State)
     self:AddOcclusionTestTimer()
   end
 end
-
 function BP_HeadWidgetComponent_C:UpdateUniformWidgetHide()
   local bHidden = self:IsHidden()
   local Widget = self:GetWidget()
@@ -135,17 +124,17 @@ function BP_HeadWidgetComponent_C:UpdateUniformWidgetHide()
     end
   end
 end
-
 function BP_HeadWidgetComponent_C:SetUniformWidgetHideTags(Tags)
   self.HideTags = Tags
   self:UpdateUniformWidgetHide()
 end
-
 function BP_HeadWidgetComponent_C:SetUniformWidgetHideTag(bHidden, Tag)
   self:UpdateTag(bHidden, Tag)
   self:UpdateUniformWidgetHide()
 end
-
+function BP_HeadWidgetComponent_C:SetWidgetHiddenByTag(bHidden, Tag)
+  self:SetUniformWidgetHideTag(bHidden, Tag)
+end
 function BP_HeadWidgetComponent_C:SetUniformWidgetHideWithAnim(bHidden, Tag)
   local Widget = self:GetWidget()
   if self:CheckAndUpdateTag(bHidden, Tag) and IsValid(Widget) then
@@ -153,7 +142,6 @@ function BP_HeadWidgetComponent_C:SetUniformWidgetHideWithAnim(bHidden, Tag)
   end
   self:TriggerAllSpecialSideIndicatorUIObjVisible(bHidden)
 end
-
 function BP_HeadWidgetComponent_C:TriggerAllSpecialSideIndicatorUIObjVisible(bHeadHidden)
   if not self.Owner then
     return
@@ -165,11 +153,9 @@ function BP_HeadWidgetComponent_C:TriggerAllSpecialSideIndicatorUIObjVisible(bHe
     UI:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function BP_HeadWidgetComponent_C:IsHidden()
   return not IsEmptyTable(self.HideTags)
 end
-
 function BP_HeadWidgetComponent_C:UpdateTag(bHidden, Tag)
   if bHidden then
     self.HideTags[Tag] = 1
@@ -177,20 +163,17 @@ function BP_HeadWidgetComponent_C:UpdateTag(bHidden, Tag)
     self.HideTags[Tag] = nil
   end
 end
-
 function BP_HeadWidgetComponent_C:CheckAndUpdateTag(bHidden, Tag)
   local bCache = self:IsHidden()
   self:UpdateTag(bHidden, Tag)
   return bCache ~= self:IsHidden()
 end
-
 function BP_HeadWidgetComponent_C:SetWidgetRenderOpacity(Opacity)
   local Widget = self:GetWidget()
   if IsValid(Widget) then
     Widget.Root:SetRenderOpacity(Opacity)
   end
 end
-
 local function CalculateBubbleTime(Text, bShortBubble)
   local Language = CommonConst.SystemLanguage
   local Size = 3.0
@@ -201,7 +184,6 @@ local function CalculateBubbleTime(Text, bShortBubble)
   local LineCount = Len / (bShortBubble and 10 or 22)
   return math.max(LineCount * Const.BubbleTimePerLine, Const.BubbleTimePerLine)
 end
-
 function BP_HeadWidgetComponent_C:EnableBubbleWidget(TextMapId, Time, bShortBubble)
   local WidgetName = "Long_Bubble"
   if bShortBubble then
@@ -223,5 +205,4 @@ function BP_HeadWidgetComponent_C:EnableBubbleWidget(TextMapId, Time, bShortBubb
     end, false)
   end
 end
-
 return BP_HeadWidgetComponent_C

@@ -6,19 +6,15 @@ local EImpressionState = {
   Working = 2,
   Completed = 3
 }
-
 function HeadImpressionWidgetMgr:OnInitialize(...)
   EventManager:AddEvent(EventID.OnImprTalkTriggerComplete, self, self.OnTalkTriggerComplete)
 end
-
 function HeadImpressionWidgetMgr:OnDeinitialize(...)
   EventManager:RemoveEvent(EventID.OnImprTalkTriggerComplete, self)
 end
-
 function HeadImpressionWidgetMgr:OnTalkTriggerComplete(TalkTriggerId, RegionId)
   self:ForceRefreshState()
 end
-
 function HeadImpressionWidgetMgr:GetNpcImpressionState(Npc)
   if not Npc then
     return EImpressionState.Undefined
@@ -56,5 +52,4 @@ function HeadImpressionWidgetMgr:GetNpcImpressionState(Npc)
   end
   return State
 end
-
 return HeadImpressionWidgetMgr

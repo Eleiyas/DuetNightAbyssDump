@@ -1,17 +1,14 @@
 require("UnLua")
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local BP_ChestBase_C = Class("BluePrints.Item.Chest.BP_MechanismBase_C")
-
 function BP_ChestBase_C:ReceiveBeginPlay()
   BP_ChestBase_C.Super.ReceiveBeginPlay(self)
   self:SetMaterial()
 end
-
 function BP_ChestBase_C:AuthorityInitInfo(Info)
   BP_ChestBase_C.Super.AuthorityInitInfo(self, Info)
   self:SetRewardID()
 end
-
 function BP_ChestBase_C:ClientInitInfo(Info)
   BP_ChestBase_C.Super.ClientInitInfo(self, Info)
   if self.InitAnim then
@@ -19,14 +16,12 @@ function BP_ChestBase_C:ClientInitInfo(Info)
     self.Mesh:SetComponentTickEnabled(false)
   end
 end
-
 function BP_ChestBase_C:OnActorReady(Info)
   BP_ChestBase_C.Super.OnActorReady(self, Info)
   if self.OpenState and self.NeedDestroy then
     self:EMActorDestroy(EDestroyReason.MechanismDead)
   end
 end
-
 function BP_ChestBase_C:OpenMechanism(PlayerId)
   self.Mesh:SetComponentTickEnabled(true)
   self:TriggerSource(0)
@@ -58,17 +53,14 @@ function BP_ChestBase_C:OpenMechanism(PlayerId)
     SceneMgrComponent.NearestBreakableItemGuideEid = 0
   end
 end
-
 function BP_ChestBase_C:PlayDestroyEffect()
   self:OnChestDestroy()
 end
-
 function BP_ChestBase_C:OnChestDestroy()
   self:RemoveTimer("CloseChestTick")
   self.BodyCollision:SetCollisionEnabled(0)
   self.Overridden.OnChestDestroy(self)
 end
-
 function BP_ChestBase_C:BuildRewardInfo(PlayerId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -94,9 +86,15 @@ function BP_ChestBase_C:BuildRewardInfo(PlayerId)
   end
   return RewardIds, ExtraInfo
 end
-
-function BP_ChestBase_C:MultiWaveCreateDrop(Drops, CreateDropFunc)
-  self.CurrentWave = 1
+function BP_ChestBase_C:MultiWaveCreateDrop(Drops, CreateDropFunc, AvatarEidStr)
+  if not self.CurrentWaveList then
+    self.CurrentWaveList = {}
+  end
+  self.CurrentWaveList[AvatarEidStr] = CreateDropFunc
+  if not self.CurrentWave then
+    self.CurrentWave = {}
+  end
+  self.CurrentWave[AvatarEidStr] = 1
   local DropsTable = {}
   for DropId, DropCountTable in pairs(Drops) do
     DropId = tonumber(DropId)
@@ -107,27 +105,31 @@ function BP_ChestBase_C:MultiWaveCreateDrop(Drops, CreateDropFunc)
   end
   local RealWave = self:GetWaveCount(DropsTable)
   local Time = self.RewardTime / RealWave
-  self:AddTimer(Time, self.RealCreateDrop, true, -Time, "ChestCreateDrop", nil, RealWave, DropsTable, CreateDropFunc)
+  local Key = "ChestCreateDrop" .. AvatarEidStr
+  self:AddTimer(Time, self.RealCreateDrop, true, -Time, Key, nil, RealWave, DropsTable, AvatarEidStr, Key)
   self:ClientPlayAnim(self.CombatStateChangeComponent.PlayerEid, 0, self.Eid)
 end
-
-function BP_ChestBase_C:RealCreateDrop(RealWave, DropsTable, CreateDropFunc)
+function BP_ChestBase_C:RealCreateDrop(RealWave, DropsTable, AvatarEidStr, TimerKey)
+  if not self.CurrentWave or not self.CurrentWave[AvatarEidStr] then
+    return
+  end
+  if not self.CurrentWaveList or not self.CurrentWaveList[AvatarEidStr] then
+    return
+  end
   for DropId, Table in pairs(DropsTable) do
-    if RealWave > self.CurrentWave then
-      if Table.Count > 0 and Table.WaveCount > 0 and 0 == self.CurrentWave % Table.WaitWave then
-        print(_G.LogTag, "LXZ RealCreateDrop", DropId)
-        CreateDropFunc(DropId, Table.WaveCount, false, 0)
+    if RealWave > self.CurrentWave[AvatarEidStr] then
+      if Table.Count > 0 and Table.WaveCount > 0 and 0 == self.CurrentWave[AvatarEidStr] % Table.WaitWave then
+        self.CurrentWaveList[AvatarEidStr](DropId, Table.WaveCount, false, 0)
       end
-    elseif self.CurrentWave == RealWave and Table.Count > 0 and Table.RemainCount > 0 then
-      CreateDropFunc(DropId, Table.RemainCount, false, 0)
+    elseif self.CurrentWave[AvatarEidStr] == RealWave and Table.Count > 0 and Table.RemainCount > 0 then
+      self.CurrentWaveList[AvatarEidStr](DropId, Table.RemainCount, false, 0)
     end
   end
-  self.CurrentWave = self.CurrentWave + 1
-  if RealWave < self.CurrentWave then
-    self:RemoveTimer("ChestCreateDrop")
+  self.CurrentWave[AvatarEidStr] = self.CurrentWave[AvatarEidStr] + 1
+  if RealWave < self.CurrentWave[AvatarEidStr] then
+    self:RemoveTimer(TimerKey)
   end
 end
-
 function BP_ChestBase_C:GetWaveCount(DropsTable)
   local RealWave = self.RewardWave
   local Res = true
@@ -164,5 +166,4 @@ function BP_ChestBase_C:GetWaveCount(DropsTable)
   end
   return RealWave
 end
-
 return BP_ChestBase_C

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:InitContent(Params)
   self.Group_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.IsGamePadIconVisible = true
@@ -27,7 +26,7 @@ function M:InitContent(Params)
     Id = Params.ResourceId,
     Icon = Icon,
     ItemType = "Resource",
-    UIName = "CommonDialog",
+    UIName = Params.UIName or "CommonDialog",
     IsShowDetails = Params.IsShowDetails == nil and true or Params.IsShowDetails,
     IsCantItemSelection = true,
     MenuPlacement = EMenuPlacement.MenuPlacement_MenuRight,
@@ -66,13 +65,12 @@ function M:InitContent(Params)
   self:InitConfig()
   self:InitGamePad(Params.KeyIconName)
   self.IsOpen = false
+  self.ItemMenuAnchorChangedCallback = Params.ItemMenuAnchorChangedCallback
 end
-
 function M:OpenTip()
   self.Common_Item_Icon:OnMouseButtonUp()
   self.OpenByKey = true
 end
-
 function M:SetPossess(PossessNum)
   self.Text_Possess:SetText(PossessNum)
   if tonumber(self.Text_Possess:GetText()) < tonumber(self.Text_Expend:GetText()) then
@@ -81,7 +79,6 @@ function M:SetPossess(PossessNum)
     self.Text_Possess:SetColorAndOpacity(self.NormalColor)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -93,7 +90,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   else
   end
 end
-
 function M:SetCost(Cost, Possess)
   self.Text_Expend:SetText(Cost)
   if Possess then
@@ -105,7 +101,6 @@ function M:SetCost(Cost, Possess)
     self.Text_Possess:SetColorAndOpacity(self.NormalColor)
   end
 end
-
 function M:SetIsEnough(bIsEnough)
   if bIsEnough then
     self.Text_Possess:SetColorAndOpacity(self.NormalColor)
@@ -113,7 +108,6 @@ function M:SetIsEnough(bIsEnough)
     self.Text_Possess:SetColorAndOpacity(self.UnEnoughColor)
   end
 end
-
 function M:InitGamePad(KeyIconName)
   KeyIconName = KeyIconName or "LS"
   local ImgPath = UIUtils.UtilsGetKeyIconPathInGamepad(KeyIconName, self.CurGamepadName)
@@ -123,12 +117,10 @@ function M:InitGamePad(KeyIconName)
     }
   })
 end
-
 function M:InitConfig()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
 end
-
 function M:RefreshIconAndGamePadVisibility()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:SwitchToGamePad()
@@ -136,15 +128,12 @@ function M:RefreshIconAndGamePadVisibility()
     self:SwitchToPC()
   end
 end
-
 function M:SwitchToPC()
   self.Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SwitchToGamePad()
   self.Key:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnkeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -154,25 +143,24 @@ function M:OnkeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OpenTipsBindEvents(Widget)
   local Events = {}
   Events.OnMenuOpenChanged = self.ItemMenuAnchorChanged
   Widget:BindEvents(self, Events)
 end
-
 function M:ItemMenuAnchorChanged(IsOpen)
   self.IsOpen = IsOpen
+  if self.ItemMenuAnchorChangedCallback then
+    self.ItemMenuAnchorChangedCallback(self.Owner, IsOpen)
+  end
   if not IsOpen and self.OpenByKey then
     self.Common_Item_Icon:PlayAnimation(self.Common_Item_Icon.Normal)
     self.OpenByKey = false
   end
 end
-
 function M:IsTipOpen()
   return self.IsOpen
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = false
   if "Gamepad_RightStick_Right" == InKeyName then
@@ -181,24 +169,19 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Activate()
   self.Common_Item_Icon:OnMouseButtonUp()
 end
-
 function M:InActivate()
   self.Common_Item_Icon:OnMouseLeave()
 end
-
 function M:SetGamePadIconVisible(IsVisible)
   self.IsGamePadIconVisible = IsVisible
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 return M

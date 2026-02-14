@@ -1,7 +1,6 @@
 local TeamController = require("BluePrints.UI.WBP.Team.TeamController")
 local TeamModel = TeamController:GetModel()
 local Component = {}
-
 function Component:InitComp(DungeonId)
   self.CurrentDungeonId = DungeonId
   self.SelectYes = false
@@ -26,11 +25,32 @@ function Component:InitComp(DungeonId)
   self:PlayAnimation(self.In)
   EventManager:FireEvent(EventID.OnRefreshDeputeBtn, true)
 end
-
 function Component:OnClickButtonYes()
   local WalnutId = self.CurrentSelectContent.Id
   if nil == WalnutId then
     WalnutId = -1
+  end
+  local Content = self.CurrentSelectContent
+  if Content and 0 == Content.Count and Content.ActionType then
+    if Content.ActionType == "Purchase" then
+      local ShopType = Content.ShopType or "Shop"
+      ShopUtils:ShowPurchaseDialog("Walnut", WalnutId, ShopType, self.UIName)
+      return
+    elseif Content.ActionType == "Jump" then
+      if self.Btn_Yes.IsForbidden then
+        UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Walnut_Toast_CanNotGet"))
+        return
+      end
+      local WalnutData = DataMgr.Walnut[WalnutId]
+      if WalnutData and WalnutData.AccessKey then
+        for _, AccessKey in pairs(WalnutData.AccessKey) do
+          if PageJumpUtils:ExecuteJumpByAccessKey(WalnutId, "Walnut", AccessKey, self.UIName) then
+            return
+          end
+        end
+      end
+      return
+    end
   end
   local Avatar = GWorld:GetAvatar()
   Avatar:SelectWalnut(self:ShowChooseSuccessToast(self.CurrentSelectContent), self.CurrentDungeonId, WalnutId)
@@ -42,7 +62,6 @@ function Component:OnClickButtonYes()
     self:CloseSelf()
   end
 end
-
 function Component:OnClickButtonNo()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -54,7 +73,6 @@ function Component:OnClickButtonNo()
   EventManager:FireEvent(EventID.OnRefreshDeputeBtn, false)
   self:CloseSelf()
 end
-
 function Component:OnBtnGiveUpClicked()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -72,7 +90,6 @@ function Component:OnBtnGiveUpClicked()
   }, self)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_cancel", nil, nil)
 end
-
 function Component:InitTeamHeads(PlayerArray)
   self.TeamHeadUI = {
     self.State_Mine,
@@ -107,27 +124,12 @@ function Component:InitTeamHeads(PlayerArray)
     TeamHead:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Component:SetDefaultSelect(TeamHead, AllTeamHead)
   TeamHead:SetIsChosenState(true)
   local WalnutIcon = "/Game/UI/Texture/Dynamic/Atlas/Armory/T_Armory_Forbid.T_Armory_Forbid"
   self:ChangeStateIcon(AllTeamHead.Item_Walnut, false, WalnutIcon)
   AllTeamHead.Text_State:SetText(GText("UI_Walnut_Not_Select"))
 end
-
-function Component:WalnutSelectComplete()
-  for Uid, WalnutId in pairs(self.Uid2WalnutMap) do
-    if -1 == WalnutId then
-      local AllTeamHead = self.TeamHeadTable[Uid]
-      local TeamHead = AllTeamHead.Team_Head
-      self:SetDefaultSelect(TeamHead, AllTeamHead)
-    end
-  end
-  self.Panel_Yes:SetVisibility(ESlateVisibility.Collapsed)
-  self:RemoveTimer("WalnutSelectCountDown")
-  self:PlayWalnutReady()
-end
-
 function Component:ReceiveTeammateChoose(Uid, WalnutId)
   local AllTeamHead = self.TeamHeadTable[Uid]
   local TeamHead = AllTeamHead.Team_Head
@@ -153,14 +155,12 @@ function Component:ReceiveTeammateChoose(Uid, WalnutId)
   end
   self.Uid2WalnutMap[Uid] = WalnutId
 end
-
 function Component:PlayWalnutReady()
   self:PlayAnimation(self.LayoutRefresh)
   self:StartDeputeWalnutReadyCountDown()
   self.Btn_No.Button_Area.OnClicked:Clear()
   self.Btn_No.Button_Area.OnClicked:Add(self, self.OnBtnGiveUpClicked)
 end
-
 function Component:WalnutSelectComplete()
   for Uid, WalnutId in pairs(self.Uid2WalnutMap) do
     if -1 == WalnutId then
@@ -173,12 +173,10 @@ function Component:WalnutSelectComplete()
   self:RemoveTimer("WalnutSelectCountDown")
   self:PlayWalnutReady()
 end
-
 function Component:GetDeputeWalnutCountDown(StartTime, CountDownTime)
   local GameState = UGameplayStatics.GetGameState(self)
   return CountDownTime - (GameState.ReplicatedRealTimeSeconds - StartTime)
 end
-
 function Component:StartDeputeSelectCountDown()
   self.Text_CountDown:SetText(DataMgr.GlobalConstant.WalnutSelectTime.ConstantValue)
   self.Text_CountDown_1:SetText(DataMgr.GlobalConstant.WalnutSelectTime.ConstantValue)
@@ -187,7 +185,6 @@ function Component:StartDeputeSelectCountDown()
   self.WalnutCountDownNumber = 0
   self:AddTimer(0.5, self.DeputeWalnutSelectCountDown, true, 0, "WalnutSelectCountDown")
 end
-
 function Component:StartDeputeWalnutReadyCountDown()
   self.Text_Choose_Multi:SetText(GText("UI_Walnut_Begin"))
   self.Text_CountDown:SetText(DataMgr.GlobalConstant.WalnutDungeonReadyTime.ConstantValue)
@@ -197,15 +194,12 @@ function Component:StartDeputeWalnutReadyCountDown()
   self.WalnutCountDownNumber = 0
   self:AddTimer(0.5, self.DeputeWalnutReadyCountDown, true, 0, "WalnutReadyCountDown")
 end
-
 function Component:DeputeWalnutSelectCountDown()
   self:DisplayCountDown(self.ReadyTime, DataMgr.GlobalConstant.WalnutSelectTime.ConstantValue, "WalnutSelectCountDown")
 end
-
 function Component:DeputeWalnutReadyCountDown()
   self:DisplayCountDown(self.ReadyTime, DataMgr.GlobalConstant.WalnutDungeonReadyTime.ConstantValue, "WalnutReadyCountDown")
 end
-
 function Component:DisplayCountDown(ReadyTime, CountDownTime, TimerName)
   local CurrentCountDown = self:GetDeputeWalnutCountDown(ReadyTime, CountDownTime)
   CurrentCountDown = math.floor(CurrentCountDown)
@@ -224,14 +218,12 @@ function Component:DisplayCountDown(ReadyTime, CountDownTime, TimerName)
     self:RemoveTimer(TimerName)
   end
 end
-
 function Component:TeamMatchOneRefused(Uid)
   if not TeamModel:IsYourself(Uid) then
     UIManager(self):ShowUITip("CommonToastMain", string.format(GText("UI_Walnut_Giveup_Toast"), GText(TeamModel:GetTeamMember(Uid).Nickname)), 1.5)
   end
   self:CloseSelf()
 end
-
 function Component:CloseSelf()
   if self:IsAnimationPlaying(self.Auto_Out) then
     return
@@ -239,7 +231,6 @@ function Component:CloseSelf()
   self:PlayAnimation(self.Auto_Out)
   self:Close()
 end
-
 function Component:OnStartMatching()
   DebugPrint("gmy@WBP_Depute_Walnut_ChoiceComp_C Component:OnStartMatching")
   if not UIManager(self):GetUIObj("DungeonMatchTimingBar") then
@@ -248,7 +239,6 @@ function Component:OnStartMatching()
   end
   self:CloseSelf()
 end
-
 function Component:GetSquadId()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -259,7 +249,6 @@ function Component:GetSquadId()
   end
   return 1
 end
-
 function Component:CloseByEscape()
   local Avatar = GWorld:GetAvatar()
   if Avatar and not Avatar:IsInTeam() then
@@ -268,5 +257,4 @@ function Component:CloseByEscape()
     return true
   end
 end
-
 return Component

@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.WBP.Activity.Widget.ConditionRewardActivity.ConditionRewardActiviyBase"
 })
-
 function M:InitUI()
   local ActivityConfigData = self:GetPageConfigData()
   self.List_Reward:ClearListItems()
@@ -87,7 +86,6 @@ function M:InitUI()
     }
   })
 end
-
 function M:ViewWeaponDetailFunction()
   local PageConfigData = self:GetPageConfigData()
   local WeaponId = PageConfigData.Weapon
@@ -100,7 +98,6 @@ function M:ViewWeaponDetailFunction()
     EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewArmory
   })
 end
-
 function M:OnViewStuffDetailClick(IsOpenDetail, RewardItem)
   self.IsOpenTip = IsOpenDetail
   if ModController:IsMobile() then
@@ -119,7 +116,6 @@ function M:OnViewStuffDetailClick(IsOpenDetail, RewardItem)
     end
   end
 end
-
 function M:UpdateUIByInputDevice(CurInputDeviceType)
   if CurInputDeviceType == ECommonInputType.Gamepad then
     self.Btn_Get.Key_GetAll:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -130,7 +126,6 @@ function M:UpdateUIByInputDevice(CurInputDeviceType)
     self.IsSelectItem = false
   end
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -142,12 +137,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.LeftThumb then
@@ -163,7 +156,6 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:EnterStuffViewMode()
   if self.IsHideReward then
     return false
@@ -180,7 +172,6 @@ function M:EnterStuffViewMode()
   self:OnUpdateSubUIViewStyle(false, true)
   return true
 end
-
 function M:LeaveStuffViewMode()
   self.IsSelectItem = false
   if self.FocusWidgetName == nil then
@@ -196,7 +187,6 @@ function M:LeaveStuffViewMode()
   self:OnUpdateSubUIViewStyle(true, true)
   return true
 end
-
 function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
   if IsUseGamePad then
     self.Key_RewardTitle:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -206,19 +196,16 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
     self.Btn_Get.Key_GetAll:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetSupportCommonSubItemWidget()
   local CommonSubItemWidget = self.Group_LimitTimeReward:GetChildAt(0)
   return CommonSubItemWidget
 end
-
 function M:GetSupportsKeyDownSubWidget()
   local ChildItemSubWidget = self.Group_Task:GetChildAt(0)
   ChildItemSubWidget = ChildItemSubWidget or self.Group_TaskProgress:GetChildAt(0)
   ChildItemSubWidget = ChildItemSubWidget or self.Group_Common_SubItem:GetChildAt(0)
   return ChildItemSubWidget
 end
-
 function M:MenuOpenChangedEvent(IsOpened, Content)
   if ModController:IsMobile() then
     return
@@ -238,14 +225,12 @@ function M:MenuOpenChangedEvent(IsOpened, Content)
     self.LastFocusWidget:SetFocus()
   end
 end
-
 function M:ShowPage(IsNeedPlayInAnim)
   if IsNeedPlayInAnim then
     self:PlayFadeIn()
   end
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:PlayFadeIn()
   self:PlayAnimation(self.In)
   local TitleWidget = self.Group_TitleAnchor:GetChildAt(0)
@@ -253,5 +238,4 @@ function M:PlayFadeIn()
     TitleWidget:PlayAnimationForward(TitleWidget.In)
   end
 end
-
 return M

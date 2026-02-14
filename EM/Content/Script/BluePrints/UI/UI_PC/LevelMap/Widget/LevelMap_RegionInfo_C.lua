@@ -1,16 +1,13 @@
 require("UnLua")
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
 end
-
 function M:Destruct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
 end
-
 function M:Init(RegionId, Spacer)
   local Avatar = GWorld:GetAvatar()
   local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
@@ -33,7 +30,6 @@ function M:Init(RegionId, Spacer)
   end
   self.Impression_Dimension:Init(RegionId)
 end
-
 function M:Show()
   if self:GetVisibility() == ESlateVisibility.Collapsed or self:IsAnimationPlaying(self.Auto_Out) then
     self:StopAllAnimations()
@@ -41,27 +37,23 @@ function M:Show()
     self:PlayAnimation(self.Auto_In)
   end
 end
-
 function M:Close()
   if self:GetVisibility() == ESlateVisibility.SelfHitTestInvisible then
     self:StopAllAnimations()
     self:PlayAnimation(self.Auto_Out)
   end
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Auto_Out then
     self:SetVisibility(ESlateVisibility.Collapsed)
     self.GuidePoint:SetLoopUISoundEnable(false)
   end
 end
-
 function M:OnAnimationStarted(Animation)
   if Animation == self.Auto_In then
     self.GuidePoint:SetLoopUISoundEnable(true)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.Key_Controller then
     if CurInputDevice == ECommonInputType.Gamepad then
@@ -76,5 +68,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 return M

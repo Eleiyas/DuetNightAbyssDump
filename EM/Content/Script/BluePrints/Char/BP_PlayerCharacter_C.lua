@@ -10,7 +10,7 @@ local ForgeModel = require("Blueprints.UI.Forge.ForgeDataModel")
 local AllPlayerBloodState = require("BluePrints.UI.BloodBar.BloodBarUtils").AllBloodState
 local ChatController = require("BluePrints.UI.WBP.Chat.ChatController")
 local MiscUtils = require("Utils.MiscUtils")
-UE4.URegionPlayerManagerSubsystem.SetOnlyShowTeammate(EMCache:Get("HidePlayer"))
+local EMLuaConst = require("EMLuaConst")
 local BP_PlayerCharacter_C = Class("BluePrints.Char.BP_CharacterBase_C")
 BP_PlayerCharacter_C._components = {
   "BluePrints.Char.CharacterComponent.PickupComponent",
@@ -22,13 +22,12 @@ BP_PlayerCharacter_C._components = {
   "BluePrints.Char.CharacterComponent.CharacterPickupUseComponent",
   "BluePrints.Char.CharacterComponent.TeamRecoveryComponent",
   "BluePrints.Char.CharacterComponent.QTEComponent",
-  "BluePrints.Char.CharacterComponent.CharMoveSyncMgr"
+  "BluePrints.Char.CharacterComponent.CharMoveSyncMgr",
+  "BluePrints.Char.CharacterComponent.PropEffectComponent"
 }
-
 function BP_PlayerCharacter_C:Initialize(Initializer)
   self:PlayerCharacterInitialize()
 end
-
 function BP_PlayerCharacter_C:ReceiveBeginPlay()
   self:BeforeBeginPlay()
   self.Super.ReceiveBeginPlay(self)
@@ -43,7 +42,7 @@ function BP_PlayerCharacter_C:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.OnRepBulletNum, self, self.UpdateBulletNumUI)
   self:SetActorHideTag("login", true)
   self.DisableInputTags = TArray("")
-  MiscUtils.InitializeSettings()
+  MiscUtils.InitializeSettings(self)
   self:RefreshTeamMemberInfo("ReceiveBeginPlay")
   if self:IsMainPlayer() then
     EventManager:FireEvent(EventID.OnMainCharacterBeginPlay)
@@ -54,25 +53,43 @@ function BP_PlayerCharacter_C:ReceiveBeginPlay()
     self:UpdateOpenHelperAim(self.IsOpenHelperAim)
     self:InitGameSkillFaceTo()
     self:SetEnableFallAtkDir()
+    self:SetVirtualJoystickEnableMoveLockFromCache()
     self:SetRegionOnlineState()
+    local ShowPlayerNameOption = EMCache:Get("ShowPlayerName") or EMainPlayerNameWidgetOption.EOnlyInRegionOnline
+    self:ChangeNameWidgetOption(ShowPlayerNameOption, true)
   end
   self:SetUpAllTimer()
   self:SetGamepadFromCache()
   self:SetMobileRotationFromCache()
-  self:SetMobileCameraSpringRate()
   self:BindControllerChangedDelegate()
   local Controller = self:GetController()
   if Controller then
     Controller:ShowFlags("VisualizeSkyVisibilityLightmap", false)
     Controller:ShowFlags("VisualizeBouncedSkyVisibilityLightmap", false)
   end
+  if self.CharFSMComp then
+    self.CharFSMComp.OnAfterTagChanged:Add(self, self.OnTagChange)
+  end
 end
-
+function BP_PlayerCharacter_C:OnTagChange(Eid, OldTag, NewTag)
+  if "GrabHit" == NewTag and not self.GrabHitCheckTimer then
+    self.GrabHitCheckTimer = self:AddTimer(1, function()
+      if self:CharacterInTag("GrabHit") then
+        self:OnGrabHitLanded()
+      elseif self.GrabHitCheckTimer then
+        self:RemoveTimer(self.GrabHitCheckTimer)
+        self.GrabHitCheckTimer = nil
+      end
+    end, true, 0, "GrabHitCheckTimer")
+  elseif self.GrabHitCheckTimer then
+    self:RemoveTimer(self.GrabHitCheckTimer)
+    self.GrabHitCheckTimer = nil
+  end
+end
 function BP_PlayerCharacter_C:BindControllerChangedDelegate()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   GameInstance.OnPawnControllerChangedDelegates:Add(self, self.OnPlayerControllerChanged)
 end
-
 function BP_PlayerCharacter_C:OnPlayerControllerChanged(Pawn, Controller)
   if Pawn == self and Controller and Controller:IsPlayerController() then
     if self.DisableInputTags:Length() > 0 then
@@ -82,13 +99,12 @@ function BP_PlayerCharacter_C:OnPlayerControllerChanged(Pawn, Controller)
     end
   end
 end
-
 function BP_PlayerCharacter_C:SetGamepadFromCache()
   if not self:IsMainPlayer() then
     return
   end
   local GamepadLayout = EMCache:Get("GamepadLayout")
-  DebugPrint("@zyh \232\142\183\229\143\150\229\136\176\231\154\132GamepadLayout", GamepadLayout)
+  DebugPrint("@zyh 获取到的GamepadLayout", GamepadLayout)
   if not GamepadLayout then
     local DefaultLayout = tonumber(DataMgr.Option.GamepadPreset.DefaultValue)
     EMCache:Set("GamepadLayout", DefaultLayout)
@@ -99,19 +115,17 @@ function BP_PlayerCharacter_C:SetGamepadFromCache()
     self:InitReplaceGamepadSet(GamepadLayout)
   end
 end
-
 function BP_PlayerCharacter_C:SwitchGamepadSet(KeySet)
   self:InitGamepadSet(KeySet)
   self:InitReplaceGamepadSet(KeySet)
   EventManager:FireEvent(EventID.OnSwitchGamepadSet)
 end
-
 function BP_PlayerCharacter_C:SetMobileRotationFromCache()
   if not self:IsMainPlayer() then
     return
   end
   local EnableMobileRotation = EMCache:Get("EnableMobileRotation")
-  DebugPrint("@zyh \232\142\183\229\143\150\229\136\176\231\154\132EnableMobileRotation", EnableMobileRotation)
+  DebugPrint("@zyh 获取到的EnableMobileRotation", EnableMobileRotation)
   if nil == EnableMobileRotation then
     local DefaultValue = DataMgr.Option.EnableMobileRotation.DefaultValueM
     local ToBool = "True" == DefaultValue and true or false
@@ -121,39 +135,27 @@ function BP_PlayerCharacter_C:SetMobileRotationFromCache()
     self.EnableMobileRotation = EnableMobileRotation
   end
 end
-
-function BP_PlayerCharacter_C:SetMobileCameraSpringRate()
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
-    self.CameraSpringChangeRate = 0.01
-  else
-    self.CameraSpringChangeRate = 0.05
-  end
-end
-
 function BP_PlayerCharacter_C:SwitchEnableMobileRotation(Value)
   self.EnableMobileRotation = Value
   EMCache:Set("EnableMobileRotation", Value)
 end
-
 function BP_PlayerCharacter_C:UpdateOpenHelperAim(IsOpen)
   self.IsOpenHelperAim = IsOpen
   self.CurShootingLocation = Const.ZeroVector
   EMCache:Set("IsOpenHelperAim", IsOpen)
 end
-
 function BP_PlayerCharacter_C:UpdateOpenLockAim(IsOpen)
   self.IsOpenLockAim = IsOpen
   self.CurShootingLocation = Const.ZeroVector
   EMCache:Set("IsOpenLockAim", IsOpen)
 end
-
 function BP_PlayerCharacter_C:InitGameSkillFaceTo()
   local OptionName = "SkillFaceTo"
   local GameSkillFaceTo = EMCache:Get(OptionName)
   local DefaultValue
   if nil == GameSkillFaceTo then
     local OptionInfo = DataMgr.Option[OptionName]
-    if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" and OptionInfo.DefaultValueM then
+    if CommonUtils.GetRuntimePlatform(self) == "Mobile" and OptionInfo.DefaultValueM then
       DefaultValue = OptionInfo.DefaultValueM
     else
       DefaultValue = OptionInfo.DefaultValue
@@ -167,7 +169,6 @@ function BP_PlayerCharacter_C:InitGameSkillFaceTo()
   end
   self:SetLockOrientpreference(GameSkillFaceTo)
 end
-
 function BP_PlayerCharacter_C:SetUpAllTimer()
   if self:IsMainPlayer() then
     self:AddTimer(1.0, self.UpdatePlayerBloodEffectInfo, true, 0, "UpdatePlayerBloodEffectInfo")
@@ -177,7 +178,6 @@ function BP_PlayerCharacter_C:SetUpAllTimer()
     end
   end
 end
-
 function BP_PlayerCharacter_C:ShowCursor_Press()
   DebugPrint("ShowCursor_Press", UE4.UKismetSystemLibrary.GetFrameCount())
   local GameInputSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
@@ -186,7 +186,6 @@ function BP_PlayerCharacter_C:ShowCursor_Press()
   end
   GameInputSubsystem:HandleShowCursorPressOrRelease(true)
 end
-
 function BP_PlayerCharacter_C:ShowCursor_Release()
   DebugPrint("ShowCursor_Release", UE4.UKismetSystemLibrary.GetFrameCount())
   local GameInputSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
@@ -195,11 +194,9 @@ function BP_PlayerCharacter_C:ShowCursor_Release()
   end
   GameInputSubsystem:HandleShowCursorPressOrRelease(false)
 end
-
 function BP_PlayerCharacter_C:ShowCursorLock(bLock)
   self.bShowCursorLock = bLock
 end
-
 function BP_PlayerCharacter_C:ShowMonsterInfo()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -211,10 +208,6 @@ function BP_PlayerCharacter_C:ShowMonsterInfo()
   end
   self:RemoveInputCache("ShowMonsterInfo")
 end
-
-function BP_PlayerCharacter_C:ChangeAspectAndFOV(ResolutionX, ResolutionY, bConstrainAspect)
-end
-
 function BP_PlayerCharacter_C:OpenMap()
   if TeamController:IsTeamPopupBarOpenInGamepad() then
     return
@@ -236,7 +229,6 @@ function BP_PlayerCharacter_C:OpenMap()
     battleMap:OnKeyboardClick()
   end
 end
-
 function BP_PlayerCharacter_C:StartOpenMap()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     local Avatar = GWorld:GetAvatar()
@@ -252,25 +244,21 @@ function BP_PlayerCharacter_C:StartOpenMap()
   end
   self:OpenMap()
 end
-
 function BP_PlayerCharacter_C:ClearChatEntryKey()
   self.Key_ChatEntry:RemoveExecuteLogic()
   self.Key_ChatEntry:OnButtonReleased()
   self.Key_ChatEntry = nil
 end
-
 function BP_PlayerCharacter_C:StopOpenMap()
   if self.Key_ChatEntry then
     self:ClearChatEntryKey()
     self:OpenMap()
   end
 end
-
 function BP_PlayerCharacter_C:ChatUpdate()
   self:ClearChatEntryKey()
   ChatController:OpenView(self, true)
 end
-
 function BP_PlayerCharacter_C:OpenBattleWheel()
   DebugPrint("gmy@OpenBattleWheel")
   local Avatar = GWorld:GetAvatar()
@@ -292,13 +280,13 @@ function BP_PlayerCharacter_C:OpenBattleWheel()
         BattleWheel = nil
       end
       if nil == BattleWheel then
-        BattleWheel = UIManager:LoadUINew("InBattleWheelMenu")
-        DebugPrint(LXYTag, "BattleWheel", BattleWheel)
-        AudioManager(self):PlayUISound(BattleWheel, "event:/ui/common/combat_bag_show", "BattleMenuShow", nil)
-        self:FlushInputKeyExceptMove()
-        self:AddForbidTag("BattleWheelForbid")
-        Controller:AddDisableRotationInputTag("SetRotation_Lerp")
+        BattleWheel = UIManager:LoadUINew("InBattleWheelMenu", Controller.QuestBattleWheelID or nil)
       end
+      DebugPrint(LXYTag, "BattleWheel", BattleWheel)
+      AudioManager(self):PlayUISound(BattleWheel, "event:/ui/common/combat_bag_show", "BattleMenuShow", nil)
+      self:FlushInputKeyExceptMove()
+      self:AddForbidTag("BattleWheelForbid")
+      Controller:AddDisableRotationInputTag("SetRotation_Lerp")
     else
       UIManager(self):ShowUITip_BattleCommonTop(UIConst.Tip_CommonTop, UIUnlockRule.BattleWheel.UIUnlockDesc)
     end
@@ -312,7 +300,6 @@ function BP_PlayerCharacter_C:OpenBattleWheel()
     end
   end
 end
-
 function BP_PlayerCharacter_C:CloseBattleWheel(bForceClose)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -332,7 +319,6 @@ function BP_PlayerCharacter_C:CloseBattleWheel(bForceClose)
   self:MinusForbidTag("BattleWheelForbid")
   Controller:RemoveDisableRotationInputTag("SetRotation_Lerp")
 end
-
 function BP_PlayerCharacter_C:RefreshBattleWheelEnableState()
   local Controller = self:GetController()
   if not Controller.bEnableBattleWheel then
@@ -341,7 +327,14 @@ function BP_PlayerCharacter_C:RefreshBattleWheelEnableState()
   DebugPrint("gmy@BP_PlayerCharacter_C:RefreshBattleWheelEnableState", Controller.bEnableBattleWheel)
   EventManager:FireEvent(EventID.OnRefreshBattleWheelEnableState, Controller.bEnableBattleWheel, Controller.bShowBattleWheel)
 end
-
+function BP_PlayerCharacter_C:SetQuestBattleWheelID(QuestBattleWheelID)
+  self.QuestBattleWheelID = QuestBattleWheelID
+  local GameInstance = GWorld.GameInstance
+  local Controller = UE4.UGameplayStatics.GetPlayerController(GameInstance, 0)
+  if Controller then
+    Controller.QuestBattleWheelID = self.QuestBattleWheelID
+  end
+end
 function BP_PlayerCharacter_C:EnableBattleWheel()
   local GameInstance = GWorld.GameInstance
   local Controller = UE4.UGameplayStatics.GetPlayerController(GameInstance, 0)
@@ -350,7 +343,6 @@ function BP_PlayerCharacter_C:EnableBattleWheel()
     self:RefreshBattleWheelEnableState()
   end
 end
-
 function BP_PlayerCharacter_C:DisableBattleWheel()
   local GameInstance = GWorld.GameInstance
   local Controller = UE4.UGameplayStatics.GetPlayerController(GameInstance, 0)
@@ -359,7 +351,6 @@ function BP_PlayerCharacter_C:DisableBattleWheel()
     self:RefreshBattleWheelEnableState()
   end
 end
-
 function BP_PlayerCharacter_C:ShowBattleWheel()
   local Controller = self:GetController()
   if Controller then
@@ -367,7 +358,6 @@ function BP_PlayerCharacter_C:ShowBattleWheel()
     self:RefreshBattleWheelEnableState()
   end
 end
-
 function BP_PlayerCharacter_C:HideBattleWheel()
   local Controller = self:GetController()
   if Controller then
@@ -375,7 +365,6 @@ function BP_PlayerCharacter_C:HideBattleWheel()
     self:RefreshBattleWheelEnableState()
   end
 end
-
 function BP_PlayerCharacter_C:CalcCurrentPlayerRegionId()
   local Avatar = GWorld:GetAvatar()
   local CalcRegionId = self:GetRegionId()
@@ -399,7 +388,6 @@ function BP_PlayerCharacter_C:CalcCurrentPlayerRegionId()
     Avatar:SkipRegion(CalcRegionId)
   end
 end
-
 function BP_PlayerCharacter_C:OnEnteredNewSubRegion()
   local Avatar = GWorld:GetAvatar()
   DebugPrint("OnEnteredNewSubRegion", Avatar.CurrentRegionId)
@@ -414,7 +402,6 @@ function BP_PlayerCharacter_C:OnEnteredNewSubRegion()
   end
   AudioManager(self):CheckLevelSoundAndRegionId(Avatar.CurrentRegionId)
 end
-
 function BP_PlayerCharacter_C:GetRegionId(TargetLocation)
   TargetLocation = TargetLocation or self.CurrentLocation
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -428,7 +415,6 @@ function BP_PlayerCharacter_C:GetRegionId(TargetLocation)
   end
   return CalcRegionId
 end
-
 function BP_PlayerCharacter_C:StartLookAt(LookType, LookInfo)
   if not self:CheckLookPriority(LookType) then
     return
@@ -438,11 +424,9 @@ function BP_PlayerCharacter_C:StartLookAt(LookType, LookInfo)
   self.CurrentLookInfo = LookInfo
   self.LookAtTag:SetTagState(LookType, true)
 end
-
 function BP_PlayerCharacter_C:CheckLookPriority(LookType)
   return true
 end
-
 function BP_PlayerCharacter_C:StopLookAt(LookType)
   if not LookType then
     self.LookAtTag:SetTagState(self.CurrentLookType, false)
@@ -452,7 +436,6 @@ function BP_PlayerCharacter_C:StopLookAt(LookType)
     self.LookAtTag:SetTagState(self.CurrentLookType, false)
   end
 end
-
 function BP_PlayerCharacter_C:CheckCanLookAt(FroceStop)
   if FroceStop then
     self:StopLookAt()
@@ -468,7 +451,6 @@ function BP_PlayerCharacter_C:CheckCanLookAt(FroceStop)
     self:StopLookAt("Camera")
   end
 end
-
 function BP_PlayerCharacter_C.OnSetLookAtTag(Owner, IsShouldLookAt)
   if not Owner.PlayerAnimInstance then
     return
@@ -479,7 +461,6 @@ function BP_PlayerCharacter_C.OnSetLookAtTag(Owner, IsShouldLookAt)
   end
   Owner:SetLookAtParam()
 end
-
 function BP_PlayerCharacter_C:SetLookAtParam()
   if not self.PlayerAnimInstance then
     return
@@ -501,19 +482,16 @@ function BP_PlayerCharacter_C:SetLookAtParam()
     self.PlayerAnimInstance:SetLookAtActor(Target, Socket)
   end
 end
-
 function BP_PlayerCharacter_C:OnSkillFeatureBegin()
   self:StopFire(false, true)
 end
-
 function BP_PlayerCharacter_C:CancelSkill(JumpStage, bStillHoldFire)
   if not self:IsSkillFinished() then
-    self:StopSkill()
+    self:StopSkill(UE.ESkillStopReason.ForceCancel)
     self:StopFire(bStillHoldFire, false)
     self.PlayerAnimInstance:StopSkillAnimation()
   end
 end
-
 function BP_PlayerCharacter_C:InitSceneStartUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -534,12 +512,25 @@ function BP_PlayerCharacter_C:InitSceneStartUI()
     local ExceptUIName = TSet(FName)
     UIManager:HideAllUI_EX(ExceptUIName, false, "RegionResurgence")
   end
+  local bIsInAutoChessDungeon = GWorld.GameInstance:CheckInAutoChessDungeon()
+  local BattleMain = UIManager:GetUI("BattleMain") or UIManager:GetUI("HomeBaseMain")
+  if BattleMain then
+    if bIsInAutoChessDungeon then
+      BattleMain:Hide("AutoChess")
+    else
+      BattleMain:Show("AutoChess")
+    end
+  end
+  if not bIsInAutoChessDungeon then
+    UE4.UMainBar.SetIsForceShowBloodUI(false)
+    local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
+    GameInputModeSubsystem:DisableInputMode(CommonConst.AutoChess.InputMode)
+  end
   self:UpdatePlayerTaskInfo()
   if not GameInstance:GetLoadingUI() then
     self:RefreshCharUIByPlatform()
   end
 end
-
 function BP_PlayerCharacter_C:RefreshCharUIByPlatform()
   local UIManager = UIManager(self)
   self.SkillUINames = self.SkillUINames or {}
@@ -554,7 +545,6 @@ function BP_PlayerCharacter_C:RefreshCharUIByPlatform()
     self:TryOpenSkillUI(BattleCharInfo.CharUIId, false)
   end
 end
-
 function BP_PlayerCharacter_C:CheckDraftCanProduce()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -571,7 +561,6 @@ function BP_PlayerCharacter_C:CheckDraftCanProduce()
     end
   end
 end
-
 function BP_PlayerCharacter_C:UpdatePlayerBloodEffectInfo()
   if not self.InitSuccess then
     return
@@ -627,7 +616,6 @@ function BP_PlayerCharacter_C:UpdatePlayerBloodEffectInfo()
     end
   end
 end
-
 function BP_PlayerCharacter_C:UpdateUIMode(UIMode)
   self.UIModePlatform = UIMode
   local CharMainUI = UIManager(self):GetUIObj("SceneStartUI")
@@ -636,24 +624,21 @@ function BP_PlayerCharacter_C:UpdateUIMode(UIMode)
     CharMainUI:InitMainPage()
   end
 end
-
 function BP_PlayerCharacter_C:Landed()
   if not self:PlayerLanded() then
     return
   end
   if self:CharacterInTag("Shooting") and self:CheckCanEnterTag("LandHeavy") and self.PlayerAnimInstance.FallingSpeed < Const.LandHeavySpeed then
     self:StopFire(true, false)
-    self:StopSkill()
+    self:StopSkill(UE.ESkillStopReason.ActionCancel)
   end
 end
-
 function BP_PlayerCharacter_C:Impending()
   if not self:PlayerImpending() then
     return
   end
   self.Overridden.Impending(self)
 end
-
 function BP_PlayerCharacter_C:StartSlide()
   print(_G.LogTag, "StartSlideStartSlideStartSlide")
   self:DoSlide()
@@ -661,37 +646,33 @@ function BP_PlayerCharacter_C:StartSlide()
     EventManager:FireEvent(EventID.OnSlidePressed)
   end
 end
-
 function BP_PlayerCharacter_C:PressDodge()
   self.bSprintPressed = true
   self:StartDodge()
 end
-
 function BP_PlayerCharacter_C:StartDodge()
   self:DoDodge()
   if self.NeedAvoidEvent then
     EventManager:FireEvent(EventID.OnAvoidPressed)
   end
 end
-
 function BP_PlayerCharacter_C:ApplyHitFlyDown()
   self:ResetCapSize()
   self:RealStopSlide(true)
   self.Super.ApplyHitFlyDown(self)
 end
-
 function BP_PlayerCharacter_C:ShowPlayerDeadUI()
   local RecoverUIName = self:GetCurRecoveryUIName()
-  local RecoverUI = UIManager(self):LoadUINew(RecoverUIName)
-  RecoverUI:OnMainCharacterInitReady()
-  RecoverUI:InitResurgenceUI(self.Eid)
+  if RecoverUIName then
+    local RecoverUI = UIManager(self):LoadUINew(RecoverUIName)
+    RecoverUI:OnMainCharacterInitReady()
+    RecoverUI:InitResurgenceUI(self.Eid)
+  end
 end
-
 function BP_PlayerCharacter_C:IsDeadDuringQuest()
   local CurrentStoryNode = GWorld.StoryMgr:GetCurrentStoryNode()
   return CurrentStoryNode and CurrentStoryNode.bDeadTriggerQuestFail
 end
-
 function BP_PlayerCharacter_C:HandleDeadDuringQuest()
   local StoryMgr = GWorld.StoryMgr
   local RespawnPointParams = StoryMgr:GetResurgencePointInfo()
@@ -701,22 +682,16 @@ function BP_PlayerCharacter_C:HandleDeadDuringQuest()
       self:RequestDeadAsyncTravel(RespawnPointParams)
     end)
   else
-    DebugPrint("Tianyi@ \230\137\190\228\184\141\229\136\176\229\164\141\230\180\187\231\130\185\239\188\140\232\181\176\229\140\186\229\159\159\229\164\141\230\180\187\233\128\187\232\190\145")
+    DebugPrint("Tianyi@ 找不到复活点，走区域复活逻辑")
     self:TryEnterDying()
   end
 end
-
 function BP_PlayerCharacter_C:RealOnDead_Lua(KillMineRoleEid, KillMineSkillId, DeathReason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil ~= GameMode then
     GameMode:NotifyGameModePlayerDead(self)
   end
   DebugPrint("Tianyi@ Player Die!!!!!!!!!!")
-  if self.PlayerAniminstance then
-    self.PlayerAniminstance:ResetIdleTag(true)
-    self:SetArmoryTag("None")
-  end
-  self:PlayHitMontage("Die")
   self:SetHoldCrouch(false)
   self:StopFire(false, false)
   self:ZeroComboCount(UE4.EClearComboReason.Dead)
@@ -727,11 +702,11 @@ function BP_PlayerCharacter_C:RealOnDead_Lua(KillMineRoleEid, KillMineSkillId, D
     if RespawnPoint then
       Battle(self):TeleportRecovery(self.Eid, RespawnPoint:K2_GetActorLocation(), RespawnPoint:K2_GetActorRotation(), DelayTime)
     else
-      DebugPrint("Tianyi@ \230\137\190\228\184\141\229\136\176\232\174\173\231\187\131\229\156\186\229\164\141\230\180\187\231\130\185")
+      DebugPrint("Tianyi@ 找不到训练场复活点")
       Battle(self):TeleportRecovery(self.Eid, FVector(2148.795166, -4042.718262, 2133), FRotator(0, 0, 0), DelayTime)
     end
   elseif self:IsDeadDuringQuest() then
-    DebugPrint("Tianyi@ \231\142\169\229\174\182\229\156\168\228\187\187\229\138\161\228\184\173\230\173\187\228\186\161")
+    DebugPrint("Tianyi@ 玩家在任务中死亡")
     self:HandleDeadDuringQuest()
   else
     self:TryEnterDying()
@@ -747,24 +722,29 @@ function BP_PlayerCharacter_C:RealOnDead_Lua(KillMineRoleEid, KillMineSkillId, D
     })
   end
 end
-
 function BP_PlayerCharacter_C:OnTriggerFallTrigger(GameMode, FallTrigger)
   if GameMode and FallTrigger then
     local ControllerIndex = UE4.URuntimeCommonFunctionLibrary.GetPlayerControllerIndex(self, self:GetController())
     GameMode:OnTriggerFallTrigger(FallTrigger, self, ControllerIndex)
   end
 end
-
 function BP_PlayerCharacter_C:HandleRemoveModPassives()
   self:ClearWeaponModPassive()
   local Controller = self:GetController()
   self:RemovePassiveEffectByRole(Controller:GetRoleId())
 end
-
 function BP_PlayerCharacter_C:TriggerFallingCallable(GameMode, DefaultTransform, MaxDis, DefaultEnable, FallTrigger, TriggerFallingScreenColor)
-  DebugPrint("OtherActor is Falling Dead. ActorName:", self:GetName(), ", UnitId:", self.UnitId, ", Eid:", self.Eid, ", CreatorId:", self.CreatorId, ", CreatorType:", self.CreatorType, ", BornPos:", self.BornPos)
+  DebugPrint("OtherActor is Falling Dead. TriggeredByPlayer. ActorName:", self:GetName(), ", UnitId:", self.UnitId, ", Eid:", self.Eid, ", CreatorId:", self.CreatorId, ", CreatorType:", self.CreatorType, ", BornPos:", self.BornPos, "MaxDis", MaxDis, "DefaultEnable", DefaultEnable, "DefaultTransform", DefaultTransform)
   if self.FromOtherWorld then
     DebugPrint("OtherActor is player, but from other world  ActorName:", self:GetName())
+    return
+  end
+  if not IsDedicatedServer(self) and not self:IsMainPlayer() then
+    DebugPrint("OtherActor is player, but not main player  ActorName:", self:GetName())
+    return
+  end
+  if not self.InitSuccess then
+    DebugPrint("OtherActor is player, but not InitSuccess  ActorName:", self:GetName())
     return
   end
   GameMode:TriggerDungeonComponentFun("OnPlayerTriggerFallTrigger")
@@ -774,40 +754,36 @@ function BP_PlayerCharacter_C:TriggerFallingCallable(GameMode, DefaultTransform,
   if self:CharacterInTag("Interactive") then
     self:LeaveInteractiveTag("Interactive")
   end
-  if GameMode.EMGameState.GameModeType == "Temple" and true ~= DefaultEnable then
-    local ArchivePointLocation, ArchivePointRotation = GameMode.EMGameState:BackToTempleArchivePoint()
-    if ArchivePointLocation then
-      SafeLocation = ArchivePointLocation + FVector(0, 0, self.CapsuleComponent:GetScaledCapsuleHalfHeight())
-      SafeRotation = ArchivePointRotation
-    else
-      DebugPrint("ERROR:BackToTempleArchivePoint ArchivePointLocation is nil")
-    end
-  elseif GameMode.EMGameState.GameModeType == "Party" and true ~= DefaultEnable then
-    local ArchivePointLocation, ArchivePointRotation = GameMode.EMGameState:BackToPartyArchivePoint(self)
-    if ArchivePointLocation then
-      SafeLocation = ArchivePointLocation + FVector(0, 0, self.CapsuleComponent:GetScaledCapsuleHalfHeight())
-      SafeRotation = ArchivePointRotation
-      GameMode:OnPartyPlayerTriggerFallTrigger(self.Eid)
-    else
-      DebugPrint("ERROR:BackToPartyArchivePoint ArchivePointLocation is nil")
-    end
+  if self.EnterRegion then
+    self:StopAllCurrentMove()
   end
-  DebugPrint("FallTrigger -----------------------------------------------------------------------")
-  DebugPrint("FallTrigger TriggeredByPlayer  MaxDis", MaxDis, "DefaultEnable", DefaultEnable)
-  if SafeLocation then
-    DebugPrint("FallTrigger PrintPlayer SafeLocation ", SafeLocation.X, SafeLocation.Y, SafeLocation.Z)
-  end
-  if DefaultTransform and DefaultTransform.Translation then
-    DebugPrint("FallTrigger PrintPlayer DefaultTransform ", DefaultTransform.Translation.X, DefaultTransform.Translation.Y, DefaultTransform.Translation.Z)
+  if true ~= DefaultEnable then
+    local GameModeType = GameMode.EMGameState.GameModeType
+    if "Temple" == GameModeType then
+      local ArchivePointLocation, ArchivePointRotation = GameMode.EMGameState:BackToTempleArchivePoint()
+      if ArchivePointLocation then
+        SafeLocation = ArchivePointLocation + FVector(0, 0, self.CapsuleComponent:GetScaledCapsuleHalfHeight())
+        SafeRotation = ArchivePointRotation
+      else
+        DebugPrint("ERROR:BackToTempleArchivePoint ArchivePointLocation is nil")
+      end
+    elseif "Party" == GameModeType then
+      local ArchivePointLocation, ArchivePointRotation = GameMode.EMGameState:BackToPartyArchivePoint(self)
+      if ArchivePointLocation then
+        SafeLocation = ArchivePointLocation + FVector(0, 0, self.CapsuleComponent:GetScaledCapsuleHalfHeight())
+        SafeRotation = ArchivePointRotation
+        GameMode:OnPartyPlayerTriggerFallTrigger(self.Eid)
+      else
+        DebugPrint("ERROR:BackToPartyArchivePoint ArchivePointLocation is nil")
+      end
+    end
   end
   if not DefaultEnable and SafeLocation ~= FVector(0, 0, 0) then
-    DebugPrint("FallTrigger SetPlayerLocation to SafeLocation", SafeLocation.X, SafeLocation.Y, SafeLocation.Z)
     self:K2_SetActorLocation(SafeLocation, false, nil, false)
     if nil ~= SafeRotation then
       self:K2_SetActorRotation(SafeRotation, false)
     end
   else
-    DebugPrint("FallTrigger SetPlayerLocation to DefaultTransform", DefaultTransform.Translation.X, DefaultTransform.Translation.Y, DefaultTransform.Translation.Z)
     self:K2_SetActorLocation(DefaultTransform.Translation, false, nil, false)
     self:K2_SetActorRotation(DefaultTransform.Rotation:ToRotator(), false)
   end
@@ -817,18 +793,29 @@ function BP_PlayerCharacter_C:TriggerFallingCallable(GameMode, DefaultTransform,
     self:OnTriggerFallingCallable()
   end
   if IsDedicatedServer(self) then
-    self.RPCComponent:OnPlayerFallTriggerClient()
+    self.RPCComponent:OnPlayerFallTriggerClient(SafeRotation and SafeRotation or DefaultTransform.Rotation:ToRotator())
   else
     self:ShowBlackScreenFade_StandAlone(TriggerFallingScreenColor)
   end
+  if self.EnterRegion then
+    self:ForceReSyncLocation()
+  end
   self:GetController():SetControlRotation(self:K2_GetActorRotation())
   self:Landed()
+  local Mount = self.CurMount
+  if Mount and Mount.EMAnimInstance then
+    local MountAnim = Mount.EMAnimInstance
+    if MountAnim.OnMountStopRideFly then
+      MountAnim:OnMountStopRideFly()
+    end
+  end
+  if self.FlyMount then
+    self:StartRideFly()
+  end
 end
-
 function BP_PlayerCharacter_C:TriggerWaterFallingCallable(GameMode, DefaultTransform, MaxDis, DefaultEnable)
   self:TriggerFallingCallable(GameMode, DefaultTransform, MaxDis, DefaultEnable)
 end
-
 function BP_PlayerCharacter_C:ShowBlackScreenFade_StandAlone(TriggerFallingScreenColor, OutAnimationPlayTime)
   if "White" == TriggerFallingScreenColor then
     local Params = {}
@@ -841,7 +828,6 @@ function BP_PlayerCharacter_C:ShowBlackScreenFade_StandAlone(TriggerFallingScree
     self:NewBlackScreenFade(OutAnimationPlayTime)
   end
 end
-
 function BP_PlayerCharacter_C:TryToUpdateScreenEffect(DamageFrom, EnergyShieldReduce)
   local NowEnergyShield = self:GetAttr("ES")
   if EnergyShieldReduce > 0 then
@@ -879,7 +865,6 @@ function BP_PlayerCharacter_C:TryToUpdateScreenEffect(DamageFrom, EnergyShieldRe
     end
   end
 end
-
 function BP_PlayerCharacter_C:SkillEnd(Owner, SkillId)
   if not SkillId or 0 == SkillId then
     return
@@ -891,7 +876,6 @@ function BP_PlayerCharacter_C:SkillEnd(Owner, SkillId)
   self.Super.SkillEnd(Owner, SkillId)
   self:SetRotationRate("OnGround")
 end
-
 function BP_PlayerCharacter_C:ResetWeaponHandDelay()
   if not self.KeepWeaponOnHand then
     return
@@ -899,7 +883,6 @@ function BP_PlayerCharacter_C:ResetWeaponHandDelay()
   self.KeepWeaponOnHand = false
   self:RemoveTimer("KeepWeaponDelay")
 end
-
 function BP_PlayerCharacter_C:InitPlayerUseSkillTimes_Internal()
   if not GWorld:GetAvatar() then
     return
@@ -913,7 +896,6 @@ function BP_PlayerCharacter_C:InitPlayerUseSkillTimes_Internal()
     self.CountPlayerSkillUsedTimesList:Add(SkillType, Count)
   end
 end
-
 function BP_PlayerCharacter_C:GetPlayerUseSkillTimesFromCache(SkillType)
   if not GWorld:GetAvatar() then
     return
@@ -921,7 +903,6 @@ function BP_PlayerCharacter_C:GetPlayerUseSkillTimesFromCache(SkillType)
   local CountPlayerSkillUsedTimesList = EMCache:Get("CountPlayerSkillUsedTimesList", true) or {}
   return CountPlayerSkillUsedTimesList[SkillType] or 0
 end
-
 function BP_PlayerCharacter_C:SavePlayerSkillUsedTimes()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -929,14 +910,15 @@ function BP_PlayerCharacter_C:SavePlayerSkillUsedTimes()
     EMCache:Set("CountPlayerSkillUsedTimesList", self.CountPlayerSkillUsedTimesList:ToTable(), true)
   end
 end
-
 function BP_PlayerCharacter_C:PressFire()
   if not self:CharacterInTag("LandHeavy") and not self:CheckCanSkillTypeCancel(UE.ESkillType.Shooting) and self:CheckForbidInput() then
     return
   end
   if self:CheckSkillOccupiedByProp(ESkillName.HeavyShooting) then
     self.PropHoldShootTimer = self:AddTimer(0.2, function()
-      self.PropEffectComponent.CurrentPropEffect:OnHoldShoot()
+      if self.PropEffectComponent and self.PropEffectComponent.CurrentPropEffect then
+        self.PropEffectComponent.CurrentPropEffect:OnHoldShoot()
+      end
       self.PropHoldShootTimer = nil
     end, false, 0, "PropHoldShoot")
   end
@@ -951,7 +933,7 @@ function BP_PlayerCharacter_C:PressFire()
     return
   end
   local SkillId = self:GetSkillByType(UE.ESkillType.HeavyShooting)
-  if SkillId and not self.PropHoldShootTimer then
+  if SkillId and 0 ~= SkillId and not self.PropHoldShootTimer then
     self:RemoveInputCache("Fire")
     self.HoldShootingTimer = self:AddTimer(0.2, self.HoldShooting)
     return
@@ -961,7 +943,6 @@ function BP_PlayerCharacter_C:PressFire()
     EventManager:FireEvent(EventID.OnFirePressed)
   end
 end
-
 function BP_PlayerCharacter_C:StartFire(FireType)
   if self:CheckSkillOccupiedByProp(ESkillName.Fire) then
     return false
@@ -976,7 +957,6 @@ function BP_PlayerCharacter_C:StartFire(FireType)
   if not self:CheckCanShoot(false) then
     return
   end
-  print(_G.LogTag, "StartFireStartFireStartFire", FireType)
   if self.PlayerAnimInstance then
     self.PlayerAnimInstance.bPressedFire = true
   end
@@ -986,7 +966,6 @@ function BP_PlayerCharacter_C:StartFire(FireType)
   else
     SkillId = self:GetSkillByType(UE.ESkillType.HeavyShooting)
   end
-  print(_G.LogTag, "StartFireStartFireStartFireStartFire", SkillId)
   local FireSuccess = self:UseSkill(SkillId, 0)
   if not FireSuccess then
     return false
@@ -996,7 +975,6 @@ function BP_PlayerCharacter_C:StartFire(FireType)
   self:RemoveInputCache(InputCache)
   return true
 end
-
 function BP_PlayerCharacter_C:HoldShooting()
   self.bHoldingShooting = true
   if self:CharacterInTag("Slide") then
@@ -1006,13 +984,11 @@ function BP_PlayerCharacter_C:HoldShooting()
   self:StartFire("HeavyShooting")
   self.HoldShootingTimer = nil
 end
-
 function BP_PlayerCharacter_C:RemoveHoldShootingTimer()
   self:RemoveTimer(self.HoldShootingTimer)
   self.HoldShootingTimer = nil
 end
-
-function BP_PlayerCharacter_C:ReleaseFire()
+function BP_PlayerCharacter_C:ReleasePropEffectFire()
   if self:CheckSkillOccupiedByProp(ESkillName.HeavyShooting) and self.PropHoldShootTimer then
     self:RemoveTimer("PropHoldShoot")
     self.PropHoldShootTimer = nil
@@ -1021,13 +997,15 @@ function BP_PlayerCharacter_C:ReleaseFire()
     self.PropEffectComponent.CurrentPropEffect:OnShootReleased()
     return
   end
+end
+function BP_PlayerCharacter_C:ReleaseFire()
+  self:ReleasePropEffectFire()
   if not self.bHoldingShooting and self.HoldShootingTimer then
     self:SetInputCache("Fire")
     self:StartFire("Fire")
   end
   self:StopFire(false, true)
 end
-
 function BP_PlayerCharacter_C:StopFire(bStillHoldFire, OnlyReleaseFire)
   if self.NeedFireReleaseEvent then
     EventManager:FireEvent(EventID.OnFireRelease)
@@ -1057,18 +1035,15 @@ function BP_PlayerCharacter_C:StopFire(bStillHoldFire, OnlyReleaseFire)
     self.PlayerAnimInstance.EnableAim = UE4.UKismetMathLibrary.Clamp(self.PlayerAnimInstance.EnableAim - 1, 0, 1)
   end
 end
-
 function BP_PlayerCharacter_C:AnimIdleStart()
   if self:CheckShouldEnterNormalIdle() then
     self.PlayerAnimInstance:AnimNotify_IdleStartNew()
   end
   self:TryEnterTalk()
 end
-
 function BP_PlayerCharacter_C:EnterCrouchTag()
   self:TryEnterTalk()
 end
-
 function BP_PlayerCharacter_C:CheckShouldEnterNormalIdle()
   if not self.PlayerAnimInstance then
     return false
@@ -1082,23 +1057,39 @@ function BP_PlayerCharacter_C:CheckShouldEnterNormalIdle()
   end
   return true
 end
-
 function BP_PlayerCharacter_C:EnterSkillTag()
+  self.PreSkillId = self.CurrentSkillId
   if self:IsAnimCrouch() and self.CurrentSkillId == self:GetSkillByType(UE.ESkillType.SlideAttack) then
     return
   end
   self:ResetCapSize()
 end
-
+function BP_PlayerCharacter_C:LeaveSkillTag()
+  self:EnsureCondemnMonsterRecoverIdle()
+end
+function BP_PlayerCharacter_C:EnsureCondemnMonsterRecoverIdle()
+  if not IsAuthority(self) or not self.PreSkillId then
+    return
+  end
+  local Skill = self:GetSkill(self.PreSkillId)
+  if not Skill then
+    return
+  end
+  local SkillType = Skill:GetSkillType()
+  if SkillType and SkillType == ESkillType.Condemn and self.CondemnMonsterEid then
+    local CondemnMonster = Battle(self):GetEntity(self.CondemnMonsterEid)
+    if CondemnMonster and CondemnMonster:IsCantLeaveDefeated() then
+      CondemnMonster:DefeatedRecoverToIdle(true)
+    end
+  end
+end
 function BP_PlayerCharacter_C:EnterBulletJumpTag()
   Battle(self):TriggerBattleEvent(BattleEventName.EnterBulletJump, self)
 end
-
 function BP_PlayerCharacter_C:LeaveBulletJumpTag(NewTag)
   Battle(self):TriggerBattleEvent(BattleEventName.QuitBulletJump, self)
   self:SetPushEnemyInfo("BulletJump", false)
 end
-
 function BP_PlayerCharacter_C:CheckKeepBoneHit()
   local MoveState = self.PlayerAnimInstance:GetCurrentStateNameByStateMachineName("Movement")
   if "Idle" ~= MoveState and "Run" ~= MoveState then
@@ -1109,20 +1100,17 @@ function BP_PlayerCharacter_C:CheckKeepBoneHit()
     end
   end
 end
-
 function BP_PlayerCharacter_C:ForbidRenderMainCamera()
   self.CharCameraComponent:SetOrthoNearClipPlane(100000)
   self.CharCameraComponent:SetOrthoFarClipPlane(100001)
   self.CharCameraComponent:SetOrthoWidth(1)
   self.CharCameraComponent:SetProjectionMode(1)
 end
-
 function BP_PlayerCharacter_C:AllowRenderMainCamera()
   self.CharCameraComponent:SetProjectionMode(0)
 end
-
 function BP_PlayerCharacter_C:CheckNeedFootprint()
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+  if CommonUtils.GetRuntimePlatform(self) == "Mobile" then
     return false
   end
   if IsStandAlone(self) or MiscUtils.IsAutonomousProxy(self) then
@@ -1141,7 +1129,6 @@ function BP_PlayerCharacter_C:CheckNeedFootprint()
   print("not need foot print")
   return false
 end
-
 function BP_PlayerCharacter_C:IsOpenNormalAim()
   if not IsValid(self.RangedWeapon) then
     return false
@@ -1152,21 +1139,32 @@ function BP_PlayerCharacter_C:IsOpenNormalAim()
   end
   return self.ChooseTargetFilter ~= nil and nil ~= self.LockTargetFilter
 end
-
 function BP_PlayerCharacter_C:HoldToRecovery()
   Battle(self):Recovery(self.Eid)
 end
-
+function BP_PlayerCharacter_C:CommonRecoveryImpl()
+  self.Super.CommonRecoveryImpl(self)
+  if IsClient(self) or IsStandAlone(self) then
+    self:ResetForbidTag("Battle")
+    self:RefreshClientSkillLogicComponents()
+    self:OnRecoverDissolve()
+  end
+end
 function BP_PlayerCharacter_C:Recovery(...)
   BP_PlayerCharacter_C.Super.Recovery(self, ...)
-  self:TryLeaveDying()
-  self:ResetForbidTag("Battle")
-  self:OnRecoverDissolve()
+  if self:IsInRideMove() then
+    self:ServerResourceDisableBattleMount(true)
+  end
   if IsClient(self) or IsStandAlone(self) then
     self:UseSkill(Const.PlayerRecoverySkill, 0)
   end
 end
-
+function BP_PlayerCharacter_C:QuickRecovery(NotRecoverAttr)
+  if self:IsInRideMove() then
+    self:ServerResourceDisableBattleMount(true)
+  end
+  self.Super.QuickRecovery(self, NotRecoverAttr)
+end
 function BP_PlayerCharacter_C:OnRealEnterDying()
   self.Super.OnRealEnterDying(self)
   if not IsDedicatedServer(self) and self:IsMainPlayer() then
@@ -1177,7 +1175,6 @@ function BP_PlayerCharacter_C:OnRealEnterDying()
     end
   end
 end
-
 function BP_PlayerCharacter_C:OnRealDie()
   DebugPrint("Tianyi@ Player real die, Eid = " .. self.Eid)
   if IsAuthority(self) then
@@ -1187,7 +1184,6 @@ function BP_PlayerCharacter_C:OnRealDie()
     })
   end
 end
-
 function BP_PlayerCharacter_C:OnLanded()
   if self:IsExistTimer("PlayDeadMontage") then
     self:RemoveTimer("PlayDeadMontage")
@@ -1202,7 +1198,6 @@ function BP_PlayerCharacter_C:OnLanded()
     self:OnGrabHitLanded()
   end
 end
-
 function BP_PlayerCharacter_C:EnterDeadTag()
   self:AddForbidTag("Battle")
   self:TrackDeadInfo()
@@ -1212,7 +1207,6 @@ function BP_PlayerCharacter_C:EnterDeadTag()
   end
   BattlePet:HideBattlePet("Dead", true)
 end
-
 function BP_PlayerCharacter_C:LeaveDeadTag()
   local BattlePet = self:GetBattlePet()
   if not BattlePet then
@@ -1220,48 +1214,39 @@ function BP_PlayerCharacter_C:LeaveDeadTag()
   end
   BattlePet:HideBattlePet("Dead", false)
 end
-
 function BP_PlayerCharacter_C:EnterRecoveryTag()
   self:TrackRecoverInfo()
 end
-
 function BP_PlayerCharacter_C:GetLogMask()
   return _G.LogTag
 end
-
 function BP_PlayerCharacter_C:SetLogMask(MaskName)
   print("LogInfo", MaskName)
   _G.LogTag = MaskName
 end
-
 function BP_PlayerCharacter_C:SetLogMask(MaskName)
   print("LogInfo", MaskName)
   _G.LogTag = MaskName
 end
-
 function BP_PlayerCharacter_C:GetLogMask()
   return _G.LogTag
 end
-
 function BP_PlayerCharacter_C:ReceiveSound(SoundSourceLoc, Strength)
   self.Overridden.ReceiveSound(self, SoundSourceLoc, Strength)
 end
-
 function BP_PlayerCharacter_C:GetCharSpringArmWorldResultLoc()
   return self.CharSpringArmComponent.bWorldResultLoc
 end
-
 function BP_PlayerCharacter_C:GetNickName()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    return "\229\164\156\232\136\170\228\184\187\232\167\146\229\144\141"
+    return "夜航主角名"
   end
   if GWorld:IsStandAlone() then
     return Avatar.Nickname
   end
   return self.PlayerState.PlayerName
 end
-
 function BP_PlayerCharacter_C:CheckSkillInActive(SkillName)
   local Controller = self:GetController()
   if not Controller or not Controller.CheckSkillInActive then
@@ -1269,7 +1254,6 @@ function BP_PlayerCharacter_C:CheckSkillInActive(SkillName)
   end
   return Controller:CheckSkillInActive(SkillName)
 end
-
 function BP_PlayerCharacter_C:PickupFunctionDispatcher(UnitId, PickUpCount, Transform, CharacterEid, PickUpEid, bExtra)
   local Battle = Battle(self)
   local TargetCharacter = Battle:GetEntity(CharacterEid)
@@ -1296,7 +1280,6 @@ function BP_PlayerCharacter_C:PickupFunctionDispatcher(UnitId, PickUpCount, Tran
     end
   end
 end
-
 function BP_PlayerCharacter_C:SetDefaultWeapon()
   if not IsAuthority(self) then
     return
@@ -1321,7 +1304,6 @@ function BP_PlayerCharacter_C:SetDefaultWeapon()
   end
   self:ChangeUsingWeaponByType("Melee")
 end
-
 function BP_PlayerCharacter_C:HideMonsterCapsule(IsEnable)
   local Entities = Battle(self):GetAllEntities()
   for eid, ent in pairs(Entities) do
@@ -1330,9 +1312,8 @@ function BP_PlayerCharacter_C:HideMonsterCapsule(IsEnable)
     end
   end
 end
-
-function BP_PlayerCharacter_C:ServerInteractiveMechanism(Id, PlayerId, NextStateId, InteractiveId, IsPlayer)
-  print(_G.LogTag, "lxz ServerInteractiveMechanism", PlayerId)
+function BP_PlayerCharacter_C:ServerInteractiveMechanism(Id, PlayerId, NextStateId, InteractiveId, IsPlayer, OnlineInteractiveId)
+  print(_G.LogTag, "lxz ServerInteractiveMechanism", Id, PlayerId)
   local Mechanism = Battle(self):GetEntity(Id)
   if IsPlayer then
     if Mechanism.CheckMontageInteractive then
@@ -1343,6 +1324,10 @@ function BP_PlayerCharacter_C:ServerInteractiveMechanism(Id, PlayerId, NextState
   end
   local InteractiveTag
   if Mechanism.CombatStateChangeComponent then
+    if -1 ~= OnlineInteractiveId then
+      Mechanism.RegionOnlineInteractiveMessage:Add(self.Eid, OnlineInteractiveId)
+    end
+    print(_G.LogTag, "lxz ServerInteractiveMechanism222", PlayerId, NextStateId)
     Mechanism:ChangeState("Interactive", PlayerId, NextStateId)
   else
     if Mechanism:CharacterInTag("Defeated") then
@@ -1358,8 +1343,7 @@ function BP_PlayerCharacter_C:ServerInteractiveMechanism(Id, PlayerId, NextState
     self:SetCharacterTag(InteractiveTag)
   end
 end
-
-function BP_PlayerCharacter_C:ServerDeInteractiveMechanism(Id, PlayerId, IsSuccess, ReasonId, NextStateId, IsPlayer)
+function BP_PlayerCharacter_C:ServerDeInteractiveMechanism(Id, PlayerId, IsSuccess, ReasonId, NextStateId, IsPlayer, OnlineInteractiveId)
   print(_G.LogTag, "lxz ServerDeInteractiveMechanism", PlayerId)
   local Mechanism = Battle(self):GetEntity(Id)
   if not Mechanism or not Mechanism.OpenMechanism then
@@ -1378,8 +1362,10 @@ function BP_PlayerCharacter_C:ServerDeInteractiveMechanism(Id, PlayerId, IsSucce
   else
     Mechanism:ForceCloseMechanism(PlayerId, IsSuccess)
   end
+  if -1 ~= OnlineInteractiveId then
+    Mechanism.RegionOnlineInteractiveMessage:Remove(self.Eid)
+  end
 end
-
 function BP_PlayerCharacter_C:LeaveInteractiveTag(NewTag)
   if "Idle" ~= NewTag and 0 ~= self.MechanismEid then
     local Mechanism = Battle(self):GetEntity(self.MechanismEid)
@@ -1391,15 +1377,13 @@ function BP_PlayerCharacter_C:LeaveInteractiveTag(NewTag)
     end
   end
 end
-
 function BP_PlayerCharacter_C:LeaveSeatingTag(NewTag)
   self:LeaveInteractiveTag(NewTag)
   self.CapsuleComponent:SetCollisionResponseToChannel(ECollisionChannel.ECC_WorldStatic, ECollisionResponse.ECR_Block)
 end
-
 function BP_PlayerCharacter_C:ReceiveEndPlay(Reason)
   if self.ArmoryHelper then
-    self.ArmoryHelper:K2_DestroyActor()
+    self.ArmoryHelper:DestroySelf()
   end
   self:TryCloseAllSkillUI()
   self:RefreshTeamMemberInfo("ReceiveEndPlay")
@@ -1410,18 +1394,17 @@ function BP_PlayerCharacter_C:ReceiveEndPlay(Reason)
   EventManager:RemoveEvent(EventID.CloseLoading, self)
   EventManager:RemoveEvent(EventID.OnLevelDeliverBlackCurtainEnd, self)
   EventManager:RemoveEvent(EventID.OnRepBulletNum, self)
+  EventManager:RemoveEvent(EventID.OnChangeNickName, self)
+  EventManager:RemoveEvent(EventID.OnChangeTitle, self)
   self:UnBindControllerChangedDelegate()
 end
-
 function BP_PlayerCharacter_C:UnBindControllerChangedDelegate()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   GameInstance.OnPawnControllerChangedDelegates:Remove(self, self.OnPlayerControllerChanged)
 end
-
 function BP_PlayerCharacter_C:GetLastSafeLocation()
   return self.LastSafeLocation
 end
-
 function BP_PlayerCharacter_C:SetBrushStaticMeshScalarParameter(Value)
   if self.IsGetBrushStaticMesh == nil then
     self.BrushStaticMesh = {}
@@ -1454,14 +1437,12 @@ function BP_PlayerCharacter_C:SetBrushStaticMeshScalarParameter(Value)
     end
   end
 end
-
 function BP_PlayerCharacter_C:AddDisableInputTag(Tag)
   self.DisableInputTags:AddUnique(Tag)
   if self.DisableInputTags:Length() > 0 and self:GetController() and self:GetController():IsPlayerController() then
     self:DisableInput(self:GetController())
   end
 end
-
 function BP_PlayerCharacter_C:RemoveDisableInputTag(Tag)
   if self.DisableInputTags:Find(Tag) then
     self.DisableInputTags:RemoveItem(Tag)
@@ -1470,26 +1451,22 @@ function BP_PlayerCharacter_C:RemoveDisableInputTag(Tag)
     self:EnableInput(self:GetController())
   end
 end
-
 function BP_PlayerCharacter_C:RemoveAllDisableInputTag()
   self.DisableInputTags:Clear()
   self:EnableInput(self:GetController())
 end
-
 function BP_PlayerCharacter_C:EnableInput(Controller)
   if self.DisableInputTags:Length() > 0 then
     return
   end
   self.Overridden.EnableInput(self, Controller)
 end
-
 function BP_PlayerCharacter_C:SwitchBattleShortcutKeysHidden()
   local CurrentHidden = EMCache:Get("BattleShortcutHudKeysHidden", true)
   local NewHidden = not CurrentHidden
   EMCache:Set("BattleShortcutHudKeysHidden", NewHidden, true)
   UIManager(self):SetBattleShortCutHudKeysHidden(NewHidden)
 end
-
 function BP_PlayerCharacter_C:GetSafeRegionLocation(EnterLocation)
   local Info = {}
   local Avatar = GWorld:GetAvatar()
@@ -1507,7 +1484,6 @@ function BP_PlayerCharacter_C:GetSafeRegionLocation(EnterLocation)
   end
   return Info
 end
-
 function BP_PlayerCharacter_C:ImmersionModel()
   self.Overridden.ImmersionModel(self)
   GMVariable.EnableShowBillboard = false
@@ -1521,6 +1497,7 @@ function BP_PlayerCharacter_C:ImmersionModel()
     if HeadUISubsystem then
       HeadUISubsystem:HideAllNpcHeadUI(true, "ImmersionModel")
     end
+    MissionIndicatorManager:TriggerAllIndicatorVisible(false)
   else
     require("EMLuaConst").IsHideJumpWord = false
     UIManager:AddUIToStateTagsCluster(1, "ImmersionModel")
@@ -1528,9 +1505,9 @@ function BP_PlayerCharacter_C:ImmersionModel()
     if HeadUISubsystem then
       HeadUISubsystem:HideAllNpcHeadUI(false, "ImmersionModel")
     end
+    MissionIndicatorManager:TriggerAllIndicatorVisible(true)
   end
 end
-
 function BP_PlayerCharacter_C:OnAddWidgetComponent(WidgetInfo)
   local WidgetComponent = WidgetInfo.WidgetComponent
   if WidgetComponent then
@@ -1540,7 +1517,6 @@ function BP_PlayerCharacter_C:OnAddWidgetComponent(WidgetInfo)
     end
   end
 end
-
 function BP_PlayerCharacter_C:UpdateBulletNumUI()
   self:AddDelayFrameFunc(function()
     if self.TakeAimIndicator then
@@ -1565,9 +1541,8 @@ function BP_PlayerCharacter_C:UpdateBulletNumUI()
         end
       end
     end
-  end, 2, "UpdateBulletNumFunc")
+  end)
 end
-
 function BP_PlayerCharacter_C:UpdateSkillUIInfo(ChangedSkills)
   if IsDedicatedServer(self) then
     return
@@ -1597,30 +1572,25 @@ function BP_PlayerCharacter_C:UpdateSkillUIInfo(ChangedSkills)
     end
   end
 end
-
 function BP_PlayerCharacter_C:SetESCMenuForbiddenState(IsForbidden)
   self.IsESCForbidden = IsForbidden or false
 end
-
 function BP_PlayerCharacter_C:GetESCMenuForbiddenState()
   if self.IsESCForbidden == nil then
     return false
   end
   return self.IsESCForbidden
 end
-
 function BP_PlayerCharacter_C:SetMaxMovingSpeed(Rate)
   Rate = math.max(0, Rate)
   self.PlayerSlideAtttirbute.NormalWalkSpeed = DataMgr.PlayerRotationRates.NormalWalkSpeed.ParamentValue[1] * Rate
   self.PlayerSlideAtttirbute.CrouchWalkSpeed = DataMgr.PlayerRotationRates.CrouchWalkSpeed.ParamentValue[1] * Rate
   self:SetWalkSpeed()
 end
-
 function BP_PlayerCharacter_C:SetMaxMovingSpeedByInfo(Info)
   self.PlayerSlideAtttirbute.NormalWalkSpeed = Info.NormalWalk
   self.PlayerSlideAtttirbute.CrouchWalkSpeed = Info.CrouchWalk
 end
-
 function BP_PlayerCharacter_C:TryOpenSkillUI(CharUIId, bIsOpenByBuff)
   DebugPrint("TryOpenSkillUI: ", CharUIId, bIsOpenByBuff)
   if not self:IsMainPlayer() then
@@ -1635,7 +1605,6 @@ function BP_PlayerCharacter_C:TryOpenSkillUI(CharUIId, bIsOpenByBuff)
     if IsValid(SceneMgrComponent) then
       local function OpenUIFunctor()
         local UIManager = GameInstance:GetGameUIManager()
-        
         local UIObj = UIManager:GetUIObj(CharUIInfo.UIName)
         if UIObj then
           UIManager:UnLoadUI(CharUIInfo.UIName)
@@ -1647,7 +1616,6 @@ function BP_PlayerCharacter_C:TryOpenSkillUI(CharUIId, bIsOpenByBuff)
           UIObj:InitBattleCharUI(CharUIId, GradeLevel)
         end
       end
-      
       if bIsOpenByBuff and CharUIInfo.TriggerBuffDelay then
         self:AddTimer_Combat(CharUIInfo.TriggerBuffDelay, function()
           local Buffs = self.BuffManager and self.BuffManager.Buffs
@@ -1666,7 +1634,6 @@ function BP_PlayerCharacter_C:TryOpenSkillUI(CharUIId, bIsOpenByBuff)
     end
   end
 end
-
 function BP_PlayerCharacter_C:TryCloseSkillUI(CharUIId)
   DebugPrint("TryCloseSkillUI: ", CharUIId)
   if not self:IsMainPlayer() then
@@ -1687,7 +1654,6 @@ function BP_PlayerCharacter_C:TryCloseSkillUI(CharUIId)
     end
   end
 end
-
 function BP_PlayerCharacter_C:GetReplacedCharUIId(CharUIId)
   if self.CurrentSkinId then
     local SkinData = DataMgr.Skin[self.CurrentSkinId]
@@ -1701,7 +1667,6 @@ function BP_PlayerCharacter_C:GetReplacedCharUIId(CharUIId)
   end
   return CharUIId
 end
-
 function BP_PlayerCharacter_C:TryHideAllSkillUI()
   if not self:IsMainPlayer() then
     return
@@ -1720,7 +1685,6 @@ function BP_PlayerCharacter_C:TryHideAllSkillUI()
     end
   end
 end
-
 function BP_PlayerCharacter_C:TryCloseAllSkillUI()
   if self.SkillUINames then
     for UIName, bValid in pairs(self.SkillUINames) do
@@ -1731,7 +1695,6 @@ function BP_PlayerCharacter_C:TryCloseAllSkillUI()
   end
   self.SkillUINames = {}
 end
-
 function BP_PlayerCharacter_C:TryShowAllSkillUI()
   if not self:IsMainPlayer() then
     return
@@ -1748,11 +1711,9 @@ function BP_PlayerCharacter_C:TryShowAllSkillUI()
     end
   end
 end
-
 function BP_PlayerCharacter_C:LeaveRecoveryTag(NewTag)
   self:TryShowAllSkillUI()
 end
-
 function BP_PlayerCharacter_C:TryEnterTalk()
   if self.EnterTalkDelegates then
     for _, EnterTalkDelegate in pairs(self.EnterTalkDelegates) do
@@ -1761,31 +1722,55 @@ function BP_PlayerCharacter_C:TryEnterTalk()
     self.EnterTalkDelegates = nil
   end
 end
-
 function BP_PlayerCharacter_C:SetEndPointInfo(EndPointSeqEnable, EndPointLocation, EndPointRotation)
   self.EndPointSeqEnable = EndPointSeqEnable
   self.EndPointLocation = EndPointLocation
   self.EndPointRotation = EndPointRotation
 end
-
 function BP_PlayerCharacter_C:GetEndPointInfo()
   return self.EndPointSeqEnable, self.EndPointLocation, self.EndPointRotation
 end
-
-function BP_PlayerCharacter_C:OnDungeonSettlement(IsWin, Index, SettlementData)
-  local PathExist = true
-  if IsWin then
-    local WeaponType = GWorld.GameInstance.ScenePlayers[Index].CurrentWeaponType or "Armory"
+function BP_PlayerCharacter_C:OnPreDungeonSettlement()
+  self:OnRecoverDissolve()
+  local BattleResurgenceUI = UIManager(self):GetUI(self:GetCurRecoveryUIName())
+  if BattleResurgenceUI then
+    BattleResurgenceUI:ShowBattleMainUI()
+  end
+end
+function BP_PlayerCharacter_C:GetDungeonSettlementWinMont(ScenePlayerIndex, WeaponMeleeOrRanged, SettlementData)
+  local WinMont = "LevelFinish_Armory_Montage"
+  local SkinData = DataMgr.Skin[self.CurrentSkinId]
+  local ModelId
+  if nil ~= SkinData then
+    ModelId = SkinData.SkinModelId
+  end
+  local ModelWinMont = "LevelFinish_Armory_" .. ModelId .. "_Montage"
+  local PathExist = false
+  DebugPrint("BP_PlayerCharacter_C:GetDungeonSettlementWinMont SkinId: ", self.CurrentSkinId, "ModelId: ", ModelId, "ModelWinMont", ModelWinMont)
+  if ModelId and self:CheckLevelFinishMontagePath(ModelWinMont) then
+    WinMont = ModelWinMont
+    PathExist = true
+  else
+    local WeaponType = GWorld.GameInstance.ScenePlayers[ScenePlayerIndex].CurrentWeaponType or "Armory"
     if SettlementData and SettlementData.UseDefaultMontage then
       WeaponType = "Armory"
     end
-    local WeaponMeleeOrRanged = GWorld.GameInstance.ScenePlayers[Index].CurrentWeaponMeleeOrRanged
-    DebugPrint("BP_PlayerCharacter_C:OnDungeonSettlement WeaponType: ", WeaponType, "WeaponMeleeOrRanged: ", WeaponMeleeOrRanged)
-    local WinMont = "LevelFinish_" .. WeaponType .. "_Montage"
-    PathExist = self:CheckLevelFinishMontagePath(WinMont)
-    if not PathExist then
-      WinMont = "LevelFinish_Armory_Montage"
+    local WeaponWinMont = "LevelFinish_" .. WeaponType .. "_Montage"
+    if self:CheckLevelFinishMontagePath(WeaponWinMont) then
+      WinMont = WeaponWinMont
+      PathExist = true
     end
+    DebugPrint("BP_PlayerCharacter_C:GetDungeonSettlementWinMont WeaponType: ", WeaponType, "WeaponMeleeOrRanged: ", WeaponMeleeOrRanged, "WeaponWinMont", WeaponWinMont)
+  end
+  DebugPrint("BP_PlayerCharacter_C:GetDungeonSettlementWinMont WinMont: ", WinMont)
+  return WinMont, PathExist
+end
+function BP_PlayerCharacter_C:OnDungeonSettlement(IsWin, Index, SettlementData)
+  local PathExist = false
+  if IsWin then
+    local WeaponMeleeOrRanged = GWorld.GameInstance.ScenePlayers[Index].CurrentWeaponMeleeOrRanged
+    local WinMont, PathExistResult = self:GetDungeonSettlementWinMont(Index, SettlementData)
+    PathExist = PathExistResult
     local BattleCharTag = self:GetBattleCharBodyType()
     local CameraParam = FVector(0, 0, 0)
     if SettlementData and SettlementData.CameraParam then
@@ -1817,29 +1802,27 @@ function BP_PlayerCharacter_C:OnDungeonSettlement(IsWin, Index, SettlementData)
   self:SetCharacterTag("LevelFinish")
   if IsWin and GWorld.GameInstance.ScenePlayers[Index].CurrentWeaponType and PathExist then
     self.KeepWeaponOnHand = true
-  end
-  self:OnRecoverDissolve()
-  local BattleResurgenceUI = UIManager(self):GetUI(self:GetCurRecoveryUIName())
-  if BattleResurgenceUI then
-    BattleResurgenceUI:ShowBattleMainUI()
-  end
-end
-
-function BP_PlayerCharacter_C:PlayDungeonSettlementFailDeadMontage()
-  local MontageFolder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
-  if nil ~= MontageFolder then
-    local HitMontage = MontageFolder .. "Combat/Hit/" .. MontagePrefix .. "Die" .. Const.MontageSuffix .. "." .. MontagePrefix .. "Die" .. Const.MontageSuffix
-    local AnimationAsset = LoadObject(HitMontage)
-    if not AnimationAsset then
-      DebugPrint("Error: Load Montage Failed!!!", HitMontage)
-      return
+    if 2 ~= self.WeaponPos then
+      self:BindWeaponToHand()
     end
-    self.Mesh:SetHiddenInGame(true)
-    self.PartsMesh:SetHiddenInGame(true)
-    self.PlayerAnimInstance:Montage_Play(AnimationAsset, 1.0, UE4.EMontagePlayReturnType.Duration, 3, true)
   end
 end
-
+function BP_PlayerCharacter_C:PlayDungeonSettlementMVPMontage(FileName)
+  DebugPrint("PlayDungeonSettlementMVPMontage FileName", FileName)
+  self:PlayActionMontage("Interactive/MVPShow", FileName, {})
+  self:SetCharacterTag("LevelFinish")
+end
+function BP_PlayerCharacter_C:PlayDungeonSettlementMVPSequence(FolderPath)
+  local SequencePath = "/Game/Asset/Char/Player/Common/MVPShow/" .. FolderPath .. "/Sequence/" .. FolderPath .. "_MVPShow_Cam." .. FolderPath .. "_MVPShow_Cam"
+  self:PlayMVPSequence(SequencePath)
+end
+function BP_PlayerCharacter_C:OnMVPSequenceFinish()
+  local MVPUI = UIManager(self):GetUIObj("SettlementMVP")
+  if MVPUI then
+    MVPUI:OnSequenceFinish()
+  end
+  EventManager:FireEvent(EventID.OnMVPSequenceFinish)
+end
 function BP_PlayerCharacter_C:CheckLevelFinishMontagePath(MontageSuffix)
   local RootPath = UBlueprintPathsLibrary.ProjectContentDir()
   local ModelId = self:GetCharModelComponent():GetCurrentModelId()
@@ -1858,18 +1841,9 @@ function BP_PlayerCharacter_C:CheckLevelFinishMontagePath(MontageSuffix)
   DebugPrint("CheckLevelFinishMontagePath: File not Exists")
   return false
 end
-
 function BP_PlayerCharacter_C:OnDungeonSettlementByIndex(Index, CurrentWeaponType, CurrentWeaponMeleeOrRanged, SettlementData)
-  local WeaponType = CurrentWeaponType or "Armory"
-  if SettlementData and SettlementData.UseDefaultMontage then
-    WeaponType = "Armory"
-  end
   local WeaponMeleeOrRanged = CurrentWeaponMeleeOrRanged
-  local WinMont = "LevelFinish_" .. WeaponType .. "_Montage"
-  local PathExist = self:CheckLevelFinishMontagePath(WinMont)
-  if not PathExist then
-    WinMont = "LevelFinish_Armory_Montage"
-  end
+  local WinMont, PathExist = self:GetDungeonSettlementWinMont(Index, WeaponMeleeOrRanged, SettlementData)
   self:PlayActionMontage("Interactive/LevelFinish", WinMont, {})
   self:SetEndPointOffset(Index, SettlementData)
   DebugPrint("BP_PlayerCharacter_C:OnDungeonSettlementByIndex PlayActionMontage: ", WinMont)
@@ -1879,9 +1853,11 @@ function BP_PlayerCharacter_C:OnDungeonSettlementByIndex(Index, CurrentWeaponTyp
   self:SetCharacterTag("LevelFinish")
   if CurrentWeaponType and PathExist then
     self.KeepWeaponOnHand = true
+    if 2 ~= self.WeaponPos then
+      self:BindWeaponToHand()
+    end
   end
 end
-
 function BP_PlayerCharacter_C:SetMainPlayerDungeonSettlementTransform(IsMoveToTempScene, MainPlayerOriginLoc, MainPlayerOriginRot)
   if IsMoveToTempScene then
     self:ResetIdle()
@@ -1898,19 +1874,16 @@ function BP_PlayerCharacter_C:SetMainPlayerDungeonSettlementTransform(IsMoveToTe
     if not Avatar then
       return
     end
-    if Avatar:IsInHardBoss() then
-      self:ResetIdle()
-      local EndPoint = MainPlayerOriginLoc + FVector(0, 0, -500)
-      local HitResultLine = FHitResult()
-      UE4.UKismetSystemLibrary.LineTraceSingle(self, MainPlayerOriginLoc, EndPoint, ETraceTypeQuery.TraceScene, false, nil, EDrawDebugTrace.None, HitResultLine, true)
-      local ImpactZ = HitResultLine.ImpactPoint.Z
-      local NewTranslation = FVector(MainPlayerOriginLoc.X, MainPlayerOriginLoc.Y, ImpactZ + self.CapsuleComponent:GetUnscaledCapsuleHalfHeight())
-      self:K2_SetActorLocation(NewTranslation, false, nil, true)
-      self:K2_SetActorRotation(MainPlayerOriginRot, false)
-    end
+    self:ResetIdle()
+    local EndPoint = MainPlayerOriginLoc + FVector(0, 0, -500)
+    local HitResultLine = FHitResult()
+    UE4.UKismetSystemLibrary.LineTraceSingle(self, MainPlayerOriginLoc, EndPoint, ETraceTypeQuery.TraceScene, false, nil, EDrawDebugTrace.None, HitResultLine, true)
+    local ImpactZ = HitResultLine.ImpactPoint.Z
+    local NewTranslation = FVector(MainPlayerOriginLoc.X, MainPlayerOriginLoc.Y, ImpactZ + self.CapsuleComponent:GetUnscaledCapsuleHalfHeight())
+    self:K2_SetActorLocation(NewTranslation, false, nil, true)
+    self:K2_SetActorRotation(MainPlayerOriginRot, false)
   end
 end
-
 function BP_PlayerCharacter_C:SetOtherPlayerDungeonSettlementTransform()
   self:ResetIdle()
   local CurrentLoc = self:K2_GetActorLocation()
@@ -1922,7 +1895,6 @@ function BP_PlayerCharacter_C:SetOtherPlayerDungeonSettlementTransform()
   local NewTranslation = FVector(CurrentLoc.X, CurrentLoc.Y, ImpactZ + self.CapsuleComponent:GetUnscaledCapsuleHalfHeight())
   self:K2_SetActorLocation(NewTranslation, false, nil, true)
 end
-
 function BP_PlayerCharacter_C:SetEndPointOffset(Index, SettlementData)
   local Offset = FVector(0, 0, 0)
   if SettlementData and SettlementData.SettlementOffset then
@@ -1933,13 +1905,11 @@ function BP_PlayerCharacter_C:SetEndPointOffset(Index, SettlementData)
   local NewTranslation = UE4.UKismetMathLibrary.TransformLocation(self:GetTransform(), Offset)
   self:K2_SetActorLocation(NewTranslation, false, nil, true)
 end
-
 function BP_PlayerCharacter_C:ResetOnSetEndPoint()
   self.CharacterMovement.Velocity = FVector(0, 0, 0)
   self:AddGravityModifier(UE4.EGravityModifierTag.AnimNotify, 0)
   self:SetActorEnableCollision(false)
 end
-
 function BP_PlayerCharacter_C:CheckCanRecovery()
   if IsClient(self) then
     local RecoveryCount = self:GetRecoveryCount()
@@ -1949,15 +1919,12 @@ function BP_PlayerCharacter_C:CheckCanRecovery()
     return self.Super.CheckCanRecovery(self)
   end
 end
-
 function BP_PlayerCharacter_C:SetIsJumpPadLaunched(value)
   self.PlayerAnimInstance.IsJumpPadLaunched = value
 end
-
 function BP_PlayerCharacter_C:SetIsJumpPadLaunching(value)
   self.PlayerAnimInstance.IsJumpPadLaunching = value
 end
-
 function BP_PlayerCharacter_C:GetBattleExtraInfo()
   local AvatarInfo = {}
   local PlayerHp = self:GetAttr("Hp")
@@ -2033,7 +2000,6 @@ function BP_PlayerCharacter_C:GetBattleExtraInfo()
   end
   return AvatarInfo
 end
-
 function BP_PlayerCharacter_C:GetCurPhantomInfo()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -2105,7 +2071,6 @@ function BP_PlayerCharacter_C:GetCurPhantomInfo()
   end
   return CurPhantomInfo
 end
-
 function BP_PlayerCharacter_C:RefreshTeamMemberInfo(OpType)
   if IsDedicatedServer(self) then
     return
@@ -2128,35 +2093,32 @@ function BP_PlayerCharacter_C:RefreshTeamMemberInfo(OpType)
     self.PlayerState.OnReceiveActorStateChangeDelegate:Broadcast(self.PlayerState.Eid, State, true, "ReceiveBeginPlay" == OpType)
   end
 end
-
 function BP_PlayerCharacter_C:PreEnterStory(OnFinished)
   self:CleanInputWhenEnterTalk()
   self:ReleaseFire()
   self.bInStory = true
   self:SetStealth(true, "Story")
 end
-
 function BP_PlayerCharacter_C:PreExitStory(OnFinished)
   self.bInStory = false
   self:SetStealth(false, "Story")
 end
-
 function BP_PlayerCharacter_C:_CheckCanChangeToMaster(ShowLog, CheckRegion)
   if not IsStandAlone(self) then
     if ShowLog then
-      GWorld.logger.error("\232\129\148\230\156\186\230\131\133\229\134\181\228\184\139\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("联机情况下，不能切换女主")
     end
     return false
   end
   if self:CheckSkillIsBan(ESkillName.SwitchMasterOrHero) then
     if ShowLog then
-      GWorld.logger.error("\231\166\129\231\148\168\229\136\135\230\141\162\229\165\179\228\184\187\229\146\140\229\136\135\229\155\158\229\142\187\232\139\177\233\155\132\230\138\128\232\131\189")
+      GWorld.logger.error("禁用切换女主和切回去英雄技能")
     end
     return false
   end
   if self:CheckSkillInActive(ESkillName.SwitchMasterOrHero) then
     if ShowLog then
-      GWorld.logger.error("\229\136\135\230\141\162\229\165\179\228\184\187\229\146\140\229\136\135\229\155\158\229\142\187\232\139\177\233\155\132\230\138\128\232\131\189\230\156\170\230\191\128\230\180\187")
+      GWorld.logger.error("切换女主和切回去英雄技能未激活")
     end
     return false
   end
@@ -2164,39 +2126,38 @@ function BP_PlayerCharacter_C:_CheckCanChangeToMaster(ShowLog, CheckRegion)
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
   if DungeonId and DungeonId > 0 then
     if ShowLog then
-      GWorld.logger.error("\229\137\175\230\156\172\229\134\133\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("副本内，不能切换女主")
     end
     return false
   end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     if ShowLog then
-      GWorld.logger.error("\230\178\161\230\156\137\232\191\158\230\142\165\230\156\141\229\138\161\229\153\168\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("没有连接服务器，不能切换女主")
     end
     return false
   end
   local RegionId = Avatar:GetCurrentRegionId()
   if not RegionId or 0 == RegionId then
     if ShowLog then
-      GWorld.logger.error("\228\184\141\229\156\168\229\140\186\229\159\159\228\184\173\230\136\150\232\128\133\229\140\186\229\159\159\231\188\150\229\143\183\229\135\186\233\148\153\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("不在区域中或者区域编号出错，不能切换女主")
     end
     return false
   end
   local RegionInfo = DataMgr.SubRegion[RegionId]
   if not RegionInfo then
     if ShowLog then
-      GWorld.logger.error("\228\184\141\229\156\168\229\140\186\229\159\159\228\184\173\230\136\150\232\128\133\229\140\186\229\159\159\231\188\150\229\143\183\229\135\186\233\148\153\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("不在区域中或者区域编号出错，不能切换女主")
     end
     return false
   end
   return true
 end
-
 function BP_PlayerCharacter_C:CheckCanChangeToMaster(ShowLog, IsEnterRegion)
   self.CanChangeToMaster = self:_CheckCanChangeToMaster(ShowLog, true)
   if not IsEnterRegion and (not self:CanEnterInteractive() or not self:CharacterInTag("Idle")) then
     if ShowLog then
-      GWorld.logger.error("\229\189\147\229\137\141\231\138\182\230\128\129\228\184\141\229\133\129\232\174\184\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("当前状态不允许切换女主")
     end
     self.CanChangeToMaster = false
     return self.CanChangeToMaster
@@ -2205,7 +2166,7 @@ function BP_PlayerCharacter_C:CheckCanChangeToMaster(ShowLog, IsEnterRegion)
   if not IsValid(GameMode) then
     self.CanChangeToMaster = false
     if ShowLog then
-      GWorld.logger.error("\229\189\147\229\137\141\230\184\184\230\136\143\230\168\161\229\188\143\230\151\160\230\149\136, \228\184\141\232\131\189\229\136\135\230\141\162\229\165\179\228\184\187")
+      GWorld.logger.error("当前游戏模式无效, 不能切换女主")
     end
   elseif GameMode:IsInDungeon() then
     if self:IsDungeonInBattle() then
@@ -2216,11 +2177,9 @@ function BP_PlayerCharacter_C:CheckCanChangeToMaster(ShowLog, IsEnterRegion)
   end
   return self.CanChangeToMaster
 end
-
 function BP_PlayerCharacter_C:CheckCanChangeBackToHero(ShowLog)
   return self:_CheckCanChangeToMaster(ShowLog, false)
 end
-
 function BP_PlayerCharacter_C:SwitchMasterOrHeroUIPerform()
   if not IsValid(self.BattleMainUI) then
     self.BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -2230,7 +2189,6 @@ function BP_PlayerCharacter_C:SwitchMasterOrHeroUIPerform()
   end
   self.BattleMainUI.Char_Skill:OnSwitchMasterOrHero()
 end
-
 function BP_PlayerCharacter_C:ChangeToMasterUIPerform()
   EventManager:FireEvent(EventID.ShowOrHideMainPlayerBloodUI, false, "ChangeRoleToMaster")
   if not IsValid(self.BattleMainUI) then
@@ -2241,7 +2199,6 @@ function BP_PlayerCharacter_C:ChangeToMasterUIPerform()
   end
   self.BattleMainUI.Char_Skill:OnChangeToMaster()
 end
-
 function BP_PlayerCharacter_C:ChangeBackToHeroUIPerform()
   EventManager:FireEvent(EventID.ShowOrHideMainPlayerBloodUI, true, "ChangeRoleToMaster")
   if not IsValid(self.BattleMainUI) then
@@ -2252,7 +2209,6 @@ function BP_PlayerCharacter_C:ChangeBackToHeroUIPerform()
   end
   self.BattleMainUI.Char_Skill:OnChangeBackToHero()
 end
-
 function BP_PlayerCharacter_C:SwitchMasterOrHero()
   self:SwitchMasterOrHeroUIPerform()
   if self.IsSwitchFuncInCD then
@@ -2268,13 +2224,12 @@ function BP_PlayerCharacter_C:SwitchMasterOrHero()
     self.IsSwitchFuncInCD = false
   end, false, 0, "SwitchFuncCDTimer")
 end
-
 function BP_PlayerCharacter_C:ChangeToMaster(ShowLog, IsEnterRegion)
   if not self:CheckCanChangeToMaster(ShowLog, IsEnterRegion) then
     return
   end
   if self.CurrentMasterBan then
-    GWorld.logger.error("\229\189\147\229\137\141\229\183\178\231\187\143\230\152\175\228\184\187\232\167\146\231\138\182\230\128\129\239\188\140\228\184\141\232\131\189\230\137\167\232\161\140\229\136\135\228\184\187\232\167\146\230\147\141\228\189\156")
+    GWorld.logger.error("当前已经是主角状态，不能执行切主角操作")
     return
   end
   local MasterRoleId = 111
@@ -2282,17 +2237,17 @@ function BP_PlayerCharacter_C:ChangeToMaster(ShowLog, IsEnterRegion)
   local RegionId = Avatar:GetCurrentRegionId()
   print(_G.LogTag, "CheckCanChangeToMaster", RegionId)
   if not RegionId or DataMgr.SubRegion[RegionId] == nil then
-    GWorld.logger.error("\229\189\147\229\137\141\228\184\141\229\156\168\229\140\186\229\159\159\228\184\173\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\228\184\187\232\167\146")
+    GWorld.logger.error("当前不在区域中，不能切换主角")
     return
   end
   local PlayerIdentity = DataMgr.SubRegion[RegionId].SwitchPlayer
   if not PlayerIdentity then
-    GWorld.logger.error("\229\189\147\229\137\141\229\140\186\229\159\159\230\178\161\230\156\137\229\143\175\229\136\135\230\141\162\232\167\146\232\137\178\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\228\184\187\232\167\146")
+    GWorld.logger.error("当前区域没有可切换角色，不能切换主角")
     return
   end
   local MasterGender = 1
   if not Avatar then
-    GWorld.logger.error("\230\178\161\230\156\137\230\173\163\229\184\184\231\153\187\229\189\149\239\188\140\228\184\141\232\131\189\229\136\135\230\141\162\228\184\187\232\167\146")
+    GWorld.logger.error("没有正常登录，不能切换主角")
     return
   end
   self.HeroTempInfo = {
@@ -2315,12 +2270,12 @@ function BP_PlayerCharacter_C:ChangeToMaster(ShowLog, IsEnterRegion)
   print(_G.LogTag, "ChangeToMaster", MasterRoleId, MasterGender, PlayerIdentity)
   local MasterInfo = DataMgr.Player2RoleId[PlayerIdentity]
   if not MasterInfo then
-    GWorld.logger.error("\230\178\161\230\156\137\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\228\184\187\232\167\146\228\191\161\230\129\175\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\232\161\168")
+    GWorld.logger.error("没有找到对应的主角信息，请检查导表")
     return
   end
   local GenderInfo = MasterInfo[MasterGender]
   if not GenderInfo then
-    GWorld.logger.error("\229\175\185\229\186\148\230\128\167\229\136\171\230\178\161\230\156\137\232\167\146\232\137\178\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\232\161\168")
+    GWorld.logger.error("对应性别没有角色，请检查导表")
     return
   end
   MasterRoleId = GenderInfo
@@ -2340,7 +2295,6 @@ function BP_PlayerCharacter_C:ChangeToMaster(ShowLog, IsEnterRegion)
     BattlePet:HideBattlePet("Master", true)
   end
 end
-
 function BP_PlayerCharacter_C:ChangeBackToHero()
   if not self:CheckCanChangeBackToHero(true) then
     return
@@ -2350,7 +2304,7 @@ function BP_PlayerCharacter_C:ChangeBackToHero()
     return
   end
   if not self.CurrentMasterBan then
-    GWorld.logger.error("\229\189\147\229\137\141\228\184\141\230\152\175\229\165\179\228\184\187\231\138\182\230\128\129\239\188\140\228\184\141\232\131\189\228\187\142\229\165\179\228\184\187\229\136\135\229\155\158\229\134\155\230\162\176\229\186\147\232\167\146\232\137\178")
+    GWorld.logger.error("当前不是女主状态，不能从女主切回军械库角色")
     return
   end
   self:RecoverBanSkills()
@@ -2360,7 +2314,6 @@ function BP_PlayerCharacter_C:ChangeBackToHero()
   self.NotChangeRoleTips = false
   self:WithChangeBackToHero()
 end
-
 function BP_PlayerCharacter_C:WithChangeBackToHero()
   self:SeparateTwoKeyToOneCommand("Skill3", "SwitchMaster")
   self:ChangeBackToHeroUIPerform()
@@ -2370,7 +2323,6 @@ function BP_PlayerCharacter_C:WithChangeBackToHero()
     BattlePet:HideBattlePet("Master", false)
   end
 end
-
 function BP_PlayerCharacter_C:RecoverHeroInfo()
   local Avatar = GWorld:GetAvatar()
   local HeroTempInfo = self.HeroTempInfo or Avatar.HeroTempInfo
@@ -2384,7 +2336,6 @@ function BP_PlayerCharacter_C:RecoverHeroInfo()
     Avatar.HeroTempInfo = nil
   end
 end
-
 function BP_PlayerCharacter_C:RecoverBanSkills()
   print(_G.LogTag, "RecoverBanSkills", self.CurrentRoleId)
   if self.CurrentMasterBan then
@@ -2396,11 +2347,6 @@ function BP_PlayerCharacter_C:RecoverBanSkills()
     end
   end
 end
-
-function BP_PlayerCharacter_C:IsCurrentMasterBan()
-  return self.CurrentMasterBan
-end
-
 function BP_PlayerCharacter_C:OnBattleStateChanged(RegionInBattle)
   if not RegionInBattle then
     return
@@ -2411,7 +2357,6 @@ function BP_PlayerCharacter_C:OnBattleStateChanged(RegionInBattle)
   print(_G.LogTag, "OnBattleStateChanged", RegionInBattle)
   self:ChangeBackToHero()
 end
-
 function BP_PlayerCharacter_C:BanSkills()
   local SkillNamesArray = TArray(0)
   for _, Skill in pairs(Const.AllSKillNames) do
@@ -2424,14 +2369,12 @@ function BP_PlayerCharacter_C:BanSkills()
     Controller:BanSkills(SkillNamesArray, "MasterBan")
   end
 end
-
 function BP_PlayerCharacter_C:UnBanSkills()
   local Controller = self:GetController()
   if Controller then
     Controller:UnBanSkills("MasterUnBan")
   end
 end
-
 function BP_PlayerCharacter_C:RegionBanSkills()
   local SkillNamesArray = TArray(0)
   for _, Skill in pairs(Const.AllSKillNames) do
@@ -2444,14 +2387,12 @@ function BP_PlayerCharacter_C:RegionBanSkills()
     Controller:BanSkills(SkillNamesArray, "RegionBan")
   end
 end
-
 function BP_PlayerCharacter_C:RegionUnBanSkills()
   local Controller = self:GetController()
   if Controller then
     Controller:UnBanSkills("RegionUnBan")
   end
 end
-
 function BP_PlayerCharacter_C:MoveAlongSplineBanSkills()
   local SkillNamesArray = TArray(0)
   for _, Skill in pairs(Const.AllSKillNames) do
@@ -2465,14 +2406,12 @@ function BP_PlayerCharacter_C:MoveAlongSplineBanSkills()
     Controller:BanSkills(SkillNamesArray, "MoveAlongSpline")
   end
 end
-
 function BP_PlayerCharacter_C:MoveAlongSplineUnBanSkills()
   local Controller = self:GetController()
   if Controller then
     Controller:UnBanSkills("MoveAlongSpline")
   end
 end
-
 function BP_PlayerCharacter_C:ForbidActionWhileMoveAlongSpline(bForbid)
   local SkillNamesArray = TArray(0)
   SkillNamesArray:Add(ESkillName.Jump)
@@ -2489,7 +2428,6 @@ function BP_PlayerCharacter_C:ForbidActionWhileMoveAlongSpline(bForbid)
     end
   end
 end
-
 function BP_PlayerCharacter_C:ForbidSkillsInHooking(bForbid)
   local Skills = {
     ESkillName.Fire,
@@ -2515,7 +2453,6 @@ function BP_PlayerCharacter_C:ForbidSkillsInHooking(bForbid)
     end
   end
 end
-
 function BP_PlayerCharacter_C:ForbidActiveSkills(bForbid)
   local Skills = {
     ESkillName.Skill1,
@@ -2524,7 +2461,37 @@ function BP_PlayerCharacter_C:ForbidActiveSkills(bForbid)
   }
   self:ForbidSkills(bForbid, Skills)
 end
-
+function BP_PlayerCharacter_C:ForbidAllSkillsByBuff(bForbid)
+  local DisableSkillsBuffId = 311
+  local BuffData = DataMgr.Buff[DisableSkillsBuffId]
+  if not BuffData then
+    return
+  end
+  local DisableSkills = BuffData.DisableSkills
+  local Skills = {}
+  for i, Skill in pairs(DisableSkills) do
+    Skills[i] = ESkillName[Skill]
+  end
+  if bForbid then
+    Battle(self):AddBuffToTarget(self, self, DisableSkillsBuffId, -1, nil, nil)
+  else
+    Battle(self):RemoveBuffFromTarget(self, self, DisableSkillsBuffId, false, -1)
+  end
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local UIManger = GameInstance:GetGameUIManager()
+  local Widget = UIManger:GetUIObj("BattleMain")
+  if not Widget then
+    return
+  end
+  local SkillWidget = Widget.Char_Skill
+  local StateName = bForbid and "Ban" or "UnBan"
+  if not SkillWidget then
+    return
+  end
+  for _, Skill in pairs(Skills) do
+    SkillWidget:ChangeSkillButtonState(Skill, StateName)
+  end
+end
 function BP_PlayerCharacter_C:ForbidAllSkills(bForbid)
   local Skills = {
     ESkillName.Skill1,
@@ -2534,7 +2501,6 @@ function BP_PlayerCharacter_C:ForbidAllSkills(bForbid)
   }
   self:ForbidSkills(bForbid, Skills)
 end
-
 function BP_PlayerCharacter_C:ForbidMeleeSkills(bForbid)
   local Skills = {
     ESkillName.Attack,
@@ -2544,7 +2510,6 @@ function BP_PlayerCharacter_C:ForbidMeleeSkills(bForbid)
   }
   self:ForbidSkills(bForbid, Skills)
 end
-
 function BP_PlayerCharacter_C:ForbidRangedSkills(bForbid)
   local Skills = {
     ESkillName.Fire,
@@ -2553,7 +2518,6 @@ function BP_PlayerCharacter_C:ForbidRangedSkills(bForbid)
   }
   self:ForbidSkills(bForbid, Skills)
 end
-
 function BP_PlayerCharacter_C:ForbidSkills(bForbid, Skills)
   local SkillNamesArray = TArray(0)
   for _, Skill in pairs(Skills) do
@@ -2568,8 +2532,7 @@ function BP_PlayerCharacter_C:ForbidSkills(bForbid, Skills)
     end
   end
 end
-
-function BP_PlayerCharacter_C:AfterLoading()
+function BP_PlayerCharacter_C:AfterLoading(Eid)
   if self.AfterLoadingDone then
     return
   end
@@ -2582,46 +2545,59 @@ function BP_PlayerCharacter_C:AfterLoading()
   if Avatar and Avatar:CheckSubRegionType(nil, CommonConst.SubRegionType.Home) then
     self:CheckDraftCanProduce()
   end
+  self.IsInDeliver = false
   self:SetActorHideTag("DeliveryMontage", false)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-  if GameInstance then
-    if GameInstance.ShouldPlayDeliveryEndMontage then
-      local function NotifyBegin()
-        DebugPrint("zwk OnDeliveryAfterLoadingMontageNotifyBegin")
-        
-        self:RemoveDisableInputTag("DeliverMontage")
-      end
-      
-      local function Interrupted()
-        DebugPrint("zwk OnDeliveryAfterLoadingInterrupted", GameInstance.ShouldPlayDeliveryEndMontage)
-        self:RemoveDisableInputTag("DeliverMontage")
-      end
-      
-      local AllCallback = {OnNotifyBegin = NotifyBegin, OnInterrupted = Interrupted}
-      DebugPrint("zwk OnDeliveryAfterLoadingMontageBegin")
-      self:ResetIdle()
-      self:AddDisableInputTag("DeliverMontage")
-      self:PlayTeleportAction(AllCallback, false, true, false)
-      self.Mesh:GetAnimInstance():Montage_JumpToSection("End")
-      
-      local function RemoveDeliverTag()
-        if self.DisableInputTags:Find("DeliverMontage") then
-          DebugPrint("zwk RemoveDeliverTag")
-        end
-        self:RemoveDisableInputTag("DeliverMontage")
-        self:SetActorHideTag("DeliveryMontage", false)
-      end
-      
-      self:AddTimer(2, RemoveDeliverTag, false, 0)
+  if GameInstance and Eid and Eid == self.Eid and GameInstance.ShouldPlayDeliveryEndMontage then
+    local function NotifyBegin()
+      DebugPrint("zwk OnDeliveryAfterLoadingMontageNotifyBegin")
+      self:RemoveDisableInputTag("DeliverMontage")
     end
-    GameInstance.ShouldPlayDeliveryEndMontage = false
+    local function Interrupted()
+      DebugPrint("zwk OnDeliveryAfterLoadingInterrupted", GameInstance.ShouldPlayDeliveryEndMontage)
+      self:RemoveDisableInputTag("DeliverMontage")
+      GameInstance.ShouldPlayDeliveryEndMontage = false
+    end
+    local function Completed()
+      DebugPrint("zwk OnDeliveryAfterLoadingMontageCompleted", GameInstance.ShouldPlayDeliveryEndMontage)
+      GameInstance.ShouldPlayDeliveryEndMontage = false
+    end
+    local AllCallback = {
+      OnNotifyBegin = NotifyBegin,
+      OnInterrupted = Interrupted,
+      OnCompleted = Completed
+    }
+    DebugPrint("zwk OnDeliveryAfterLoadingMontageBegin")
+    if Avatar and Avatar.IsInRegionOnline and Avatar.CurrentOnlineType then
+      self:ForceReSyncLocation()
+      Avatar:SwitchOnlineState(Avatar.CurrentOnlineType, CommonConst.OnlineState.Normal)
+    end
+    self:ResetIdle()
+    self:AddDisableInputTag("DeliverMontage")
+    self:PlayTeleportAction(AllCallback, false, true, false)
+    self.Mesh:GetAnimInstance():Montage_JumpToSection("End")
+    local function RemoveDeliverTag()
+      if self.DisableInputTags:Find("DeliverMontage") then
+        DebugPrint("zwk RemoveDeliverTag")
+      end
+      self:RemoveDisableInputTag("DeliverMontage")
+      self:SetActorHideTag("DeliveryMontage", false)
+    end
+    self:AddTimer(2, RemoveDeliverTag, false, 0)
   end
   self.AfterLoadingDone = true
   self:AddTimer(1, function()
     self.AfterLoadingDone = false
   end)
+  self:UpdateTeammateGesture()
 end
-
+function BP_PlayerCharacter_C:GetIsInDelivery()
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local LoadingUI = GameInstance:GetLoadingUI()
+  local bIsInLoading = LoadingUI and LoadingUI.bIsInLoading
+  local bIsInBlackScreen = UIManager(self):GetUIObj("BlackScreenXiaobai")
+  return bIsInLoading or bIsInBlackScreen or GameInstance.ShouldPlayDeliveryEndMontage or self.IsInDeliver
+end
 function BP_PlayerCharacter_C:LoadHitDirection(HitDirectionsObject, Attacker)
   HitDirectionsObject.CurHitDirectionNum = HitDirectionsObject.CurHitDirectionNum + 1
   RunAsyncTask(self, "CreateHitDirectionHandler" .. HitDirectionsObject.CurHitDirectionNum, function(CoroutineObj)
@@ -2631,7 +2607,6 @@ function BP_PlayerCharacter_C:LoadHitDirection(HitDirectionsObject, Attacker)
     HitDirectionsObject:AddToQueue(HitDirection)
   end)
 end
-
 function BP_PlayerCharacter_C:DungeonOtherPlayerLeave()
   if not self:IsMainPlayer() and IsClient(self) then
     EventManager:FireEvent(EventID.OnDungeonOtherPlayerLeave, self)
@@ -2642,7 +2617,6 @@ function BP_PlayerCharacter_C:DungeonOtherPlayerLeave()
     UIManager(self):LoadUINew("TeamToast", self.PlayerState, false)
   end
 end
-
 function BP_PlayerCharacter_C:SetCollisionProfileOverlapAll(bSet)
   DebugPrint("BP_PlayerCharacter_C:SetCollisionProfileOverlapAll", bSet, self.CachedPlayerCollisionProfile)
   local bCurrentSet = self.CachedPlayerCollisionProfile ~= nil
@@ -2663,11 +2637,9 @@ function BP_PlayerCharacter_C:SetCollisionProfileOverlapAll(bSet)
     end
   end
 end
-
 function BP_PlayerCharacter_C:NeedArmoryHelper()
   return GWorld:GetAvatar() ~= nil
 end
-
 function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
   self:DisablePlayerInputInDeliver(true)
   local GameInstance = GWorld.GameInstance
@@ -2678,7 +2650,6 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
   local bForceAsyncLoading = false
   local bResetCamera = false
   local Transform = RespawnPointParams.Transform
-  
   local function FadeOutCallback()
     UIManager:HideCommonBlackScreen("DeadAsyncTravel")
     local TaskIndicator = UIManager:GetUIObj("MainTaskIndicator")
@@ -2687,6 +2658,7 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
     end
     local SceneMgrComponent = GameInstance:GetSceneManager()
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+    local LevelLoader = GameMode:GetLevelLoader()
     SceneMgrComponent:ShowOrHideAllSceneGuideIcon(true)
     self:EnableInput(PlayerController)
     if IsValid(LevelLoader) then
@@ -2699,7 +2671,6 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
       StoryMgr:FailCurrentQuestWhenDead()
     end
   end
-  
   local function FadeInCallback()
     local GameInstance = GWorld.GameInstance
     local UIManager = GameInstance:GetGameUIManager()
@@ -2712,7 +2683,6 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
     self:DisableInput()
     self:QuickRecovery()
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-    
     local function SetActorTransform()
       GameMode:SetActorLocationAndRotationByTransform(0, Transform, true)
       self:SetSafeLocation()
@@ -2720,11 +2690,9 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
         self:GetController():SetControlRotation(self:K2_GetActorRotation())
       end
     end
-    
     local LevelLoader = GameMode:GetLevelLoader()
     self.DurationEnd = false
     self.TravelFinish = false
-    
     local function TryFadeOut()
       if self.DurationEnd and self.TravelFinish then
         self.DurationEnd = nil
@@ -2732,17 +2700,14 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
         FadeOutCallback()
       end
     end
-    
     local function TravelFinishCallback()
       self.TravelFinish = true
       TryFadeOut()
     end
-    
     local function DurationEndCallback()
       self.DurationEnd = true
       TryFadeOut()
     end
-    
     GameMode:AddTimer(RespawnPointParams.ContinueTime, DurationEndCallback, false, 0, "CommonBlackScreenContinueTimer", true)
     if IsValid(LevelLoader) then
       local TargetLevelId = GameMode:GetLevelLoader():GetLevelIdByLocation(Transform.Translation)
@@ -2780,7 +2745,6 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
       TravelFinishCallback()
     end
   end
-  
   UIManager:ShowCommonBlackScreen({
     BlackScreenHandle = "DeadAsyncTravel",
     BlackScreenText = GText(RespawnPointParams.FailBlackScreenText),
@@ -2792,11 +2756,13 @@ function BP_PlayerCharacter_C:RequestDeadAsyncTravel(RespawnPointParams)
     OutAnimationPlayTime = RespawnPointParams.FadeOutTime or nil
   })
 end
-
 function BP_PlayerCharacter_C:TeleportToCloestTeleportPoint(OnTeleportSucceedDel, TargetLoc)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
     return false
+  end
+  if not GameMode:IsInRegion() then
+    return
   end
   local WCSubsystem = GameMode:GetWCSubSystem()
   if not WCSubsystem then
@@ -2860,7 +2826,6 @@ function BP_PlayerCharacter_C:TeleportToCloestTeleportPoint(OnTeleportSucceedDel
   })
   return true
 end
-
 function BP_PlayerCharacter_C:InpActEvt_GlobalSlow_K2Node_InputActionEvent_1(Key)
   if TeamController and TeamController:GetTeamPopupBarOpen() then
     return
@@ -2868,17 +2833,15 @@ function BP_PlayerCharacter_C:InpActEvt_GlobalSlow_K2Node_InputActionEvent_1(Key
   DebugPrint(LXYTag, "BP_PlayerCharacter_C:InpActEvt_GlobalSlow_K2Node_InputActionEvent_1")
   self.Overridden.InpActEvt_GlobalSlow_K2Node_InputActionEvent_1(self, Key)
 end
-
 function BP_PlayerCharacter_C:CallClientPrint_Lua(Text)
-  print(LogTag, "\230\156\141\229\138\161\229\153\168\231\154\132\232\190\147\229\135\186\228\184\186:" .. tostring(Text))
+  print(LogTag, "服务器的输出为:" .. tostring(Text))
 end
-
 function BP_PlayerCharacter_C:SetEnableFallAtkDir()
   local bEnableFallAtkDir = EMCache:Get("EnableFallAtkDir")
   if nil == bEnableFallAtkDir then
     local OptionInfo = DataMgr.Option.FallAttackDirection
     local DefaultValue = OptionInfo.DefaultValue
-    if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" and OptionInfo.DefaultValueM then
+    if (CommonUtils.GetRuntimePlatform(self) == "Mobile" or GWorld.GameInstance and GWorld.GameInstance:GetUseMapPhoneInPC()) and OptionInfo.DefaultValueM then
       DefaultValue = OptionInfo.DefaultValueM
     end
     bEnableFallAtkDir = true
@@ -2888,19 +2851,16 @@ function BP_PlayerCharacter_C:SetEnableFallAtkDir()
   end
   self:UpdateEnableFallAtkDir(bEnableFallAtkDir)
 end
-
 function BP_PlayerCharacter_C:UpdateEnableFallAtkDir(Enable)
   self.Overridden.UpdateEnableFallAtkDir(self, Enable)
   EMCache:Set("EnableFallAtkDir", Enable)
 end
-
 function BP_PlayerCharacter_C:GetCurrentCharUI()
   local BattleCharInfo = DataMgr.BattleChar[self.CurrentRoleId]
   if BattleCharInfo.CharUIId then
     return self:GetCharUIObj(BattleCharInfo.CharUIId)
   end
 end
-
 function BP_PlayerCharacter_C:GetCharUIObj(CharUIId)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not IsValid(UIManager) then
@@ -2910,23 +2870,20 @@ function BP_PlayerCharacter_C:GetCharUIObj(CharUIId)
   local CharUIInfo = DataMgr.BattleCharUI[CharUIId][GradeLevel]
   return UIManager:GetUIObj(CharUIInfo.UIName)
 end
-
 function BP_PlayerCharacter_C:K2_OnEndViewTarget(PC)
   EventManager:FireEvent(EventID.OnEndViewTarget)
 end
-
 function BP_PlayerCharacter_C:K2_OnBecomeViewTarget(PC)
   rawset(self, "Controller", PC)
   rawset(PC, "PlayerCameraManager", PC.PlayerCameraManager)
   EventManager:FireEvent(EventID.OnBecomeViewTarget)
 end
-
 function BP_PlayerCharacter_C:SetRegionOnlineState()
   local bAutoJoin = EMCache:Get("AutoJoin")
   if nil == bAutoJoin then
     local OptionInfo = DataMgr.Option.AutoJoin
     local DefaultValue = OptionInfo.DefaultValue
-    if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" and OptionInfo.DefaultValueM then
+    if CommonUtils.GetRuntimePlatform(self) == "Mobile" and OptionInfo.DefaultValueM then
       DefaultValue = OptionInfo.DefaultValueM
     end
     bAutoJoin = true
@@ -2936,12 +2893,10 @@ function BP_PlayerCharacter_C:SetRegionOnlineState()
   end
   self:UpdateRegionOnlineState(bAutoJoin)
 end
-
 function BP_PlayerCharacter_C:UpdateRegionOnlineState(bOpen)
   self.bOpenRegionOnline = bOpen
   EMCache:Set("AutoJoin", bOpen)
 end
-
 function BP_PlayerCharacter_C:GetPlayerGender(bOpen)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -2950,7 +2905,6 @@ function BP_PlayerCharacter_C:GetPlayerGender(bOpen)
     return 0
   end
 end
-
 function BP_PlayerCharacter_C:GetTeamMemberEidArray()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if not (TeamController and TeamController:GetModel()) or not GameInstance then
@@ -2969,7 +2923,98 @@ function BP_PlayerCharacter_C:GetTeamMemberEidArray()
   end
   return Eids
 end
-
+function BP_PlayerCharacter_C:EnterRegionOnlineRegisterTeamEvent(bEnterRegionOnline)
+  if not TeamController or not TeamController:GetModel() then
+    return
+  end
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  if bEnterRegionOnline then
+    TeamController:RegisterEvent(self, function(self, EventId, ...)
+      DebugPrint("EnterRegionOnlineRegisterTeamEvent  " .. EventId)
+      if EventId == TeamCommon.EventId.TeamOnAddPlayer then
+        local TeamMember = (...)
+        if RegionSyncSubsys and TeamMember and TeamMember.Eid then
+          RegionSyncSubsys:SetOnlinePlayerTeamMember(CommonUtils.ObjId2Str(TeamMember.Eid), true)
+        end
+      elseif EventId == TeamCommon.EventId.TeamOnDelPlayer then
+        local TeamMember = (...)
+        if RegionSyncSubsys and TeamMember and TeamMember.Eid then
+          RegionSyncSubsys:SetOnlinePlayerTeamMember(CommonUtils.ObjId2Str(TeamMember.Eid), true)
+        end
+      elseif EventId == TeamCommon.EventId.TeamOnInit or EventId == TeamCommon.EventId.TeamLeave then
+        local bIsTeamMember = EventId == TeamCommon.EventId.TeamOnInit
+        local Team = (...)
+        local TeamData = Team or TeamController:GetModel():GetTeam()
+        if not TeamData or not TeamData.Members then
+          return
+        end
+        for _, Member in pairs(TeamData.Members) do
+          if RegionSyncSubsys then
+            RegionSyncSubsys:SetOnlinePlayerTeamMember(CommonUtils.ObjId2Str(Member.Eid), bIsTeamMember)
+          end
+        end
+      end
+    end)
+  else
+    TeamController:UnRegisterEvent(self)
+  end
+end
+function BP_PlayerCharacter_C:OnChangeNickName(NewNickName)
+  self:EnableHeadWidget("Name", false)
+  self:EnableHeadWidget("Name", true, NewNickName)
+end
+function BP_PlayerCharacter_C:OnChangeTitle(PrefixId, SuffixId, TitleFrameId)
+  self:RefreshTitle(PrefixId, SuffixId, TitleFrameId)
+end
+function BP_PlayerCharacter_C:EnableNameWidget()
+  EventManager:AddEvent(EventID.OnChangeNickName, self, self.OnChangeNickName)
+  EventManager:AddEvent(EventID.OnChangeTitle, self, self.OnChangeTitle)
+  local bFirtInit = self.HeadWidgetComponent == nil
+  self:InitHeadWidgetComponent()
+  if bFirtInit then
+    self:EnableHeadWidget("Name", false)
+    self:EnableHeadWidget("Title", false)
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    self:OnChangeNickName(Avatar.Nickname)
+    self:OnChangeTitle(Avatar.TitleBefore, Avatar.TitleAfter, Avatar.TitleFrame)
+  end
+end
+function BP_PlayerCharacter_C:DisableNameWidget()
+  if not self.HeadWidgetComponent then
+    return
+  end
+  EventManager:RemoveEvent(EventID.OnChangeNickName, self)
+  EventManager:RemoveEvent(EventID.OnChangeTitle, self)
+  self:EnableHeadWidget("Name", false)
+  self:EnableHeadWidget("Title", false)
+end
+function BP_PlayerCharacter_C:SetVirtualJoystickEnableMoveLockFromCache()
+  local CachedVirtualJoystickEnableMoveLock = EMCache:Get("VirtualJoystickMoveLock")
+  if nil == CachedVirtualJoystickEnableMoveLock then
+    local DefaultValue = true
+    local DefaultValueString
+    local OptionInfo = DataMgr.Option.MoveLock
+    if CommonUtils.GetRuntimePlatform(self) == "Mobile" and OptionInfo and OptionInfo.DefaultValueM then
+      DefaultValueString = OptionInfo.DefaultValueM
+    else
+      DefaultValueString = OptionInfo.DefaultValue
+    end
+    if "False" == DefaultValueString then
+      DefaultValue = false
+    elseif "True" == DefaultValueString then
+      DefaultValue = true
+    end
+    EMCache:Set("VirtualJoystickMoveLock", DefaultValue)
+    CachedVirtualJoystickEnableMoveLock = DefaultValue
+  end
+  UIManager(self):SetVirtualJoystickEnableMoveLock(CachedVirtualJoystickEnableMoveLock)
+end
+function BP_PlayerCharacter_C:UpdateVirtualJoystickEnableMoveLock(bEnable)
+  EMCache:Set("VirtualJoystickMoveLock", bEnable)
+  UIManager(self):SetVirtualJoystickEnableMoveLock(bEnable)
+end
 AssembleComponents(BP_PlayerCharacter_C, {
   "GetDamageInstigatorCurrentAngle"
 })

@@ -6,18 +6,16 @@ local ObjId2Str = CommonUtils.ObjId2Str
 local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
 local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
 local IsValid = UE4.UObject.IsValid
-
 function Utils.IsValid(Object)
   if nil == Object then
     return false
   end
   if not Object.IsValid then
-    Traceback(WarningTag, "Utils.IsValid\230\156\172\230\132\143\230\152\175\231\187\153UObject\229\136\164\230\150\173\230\156\137\230\149\136\230\128\167\231\154\132\239\188\140\228\184\141\229\187\186\232\174\174\228\188\160luaTable\232\191\155\230\157\165")
+    Traceback(WarningTag, "Utils.IsValid本意是给UObject判断有效性的，不建议传luaTable进来")
     return true
   end
   return IsValid(Object)
 end
-
 Utils.PrintArray = not (not bDistribution or bEnableShippingLog) and Utils.EmptyFunction or function(Targets, Log)
   if Targets.ToArray then
     Targets = Targets:ToArray()
@@ -30,7 +28,6 @@ Utils.PrintArray = not (not bDistribution or bEnableShippingLog) and Utils.Empty
   end
   print(LogTag, s)
 end
-
 function Utils.DumpMap(map)
   local ret = {}
   local keys = map:Keys()
@@ -41,7 +38,6 @@ function Utils.DumpMap(map)
   end
   return "{" .. table.concat(ret, ",") .. "}"
 end
-
 function Utils.DumpArray(array)
   local ret = {}
   for i = 1, array:Length() do
@@ -49,7 +45,6 @@ function Utils.DumpArray(array)
   end
   return "[" .. table.concat(ret, ",") .. "]"
 end
-
 function Utils.DumpSet(set)
   local array = set:ToArray()
   local ret = {}
@@ -58,7 +53,6 @@ function Utils.DumpSet(set)
   end
   return "(" .. table.concat(ret, ",") .. ")"
 end
-
 Utils.PrintMap = not (not bDistribution or bEnableShippingLog) and Utils.EmptyFunction or function(Map)
   PrintTable(Map:ToTable())
 end
@@ -66,15 +60,12 @@ Utils.Error = not (not bDistribution or bEnableShippingLog) and Utils.EmptyFunct
   local s = "Error.." .. tostring(log)
   print(LogTag, s)
 end
-
 function Utils.Trim(str)
   return (string.gsub(str, "^[%s\n\r\t]*(.-)[%s\n\r\t]*$", "%1"))
 end
-
 function Utils.TrimAll(str)
   return (str:gsub("%s+", ""))
 end
-
 function Utils.Keys(Table)
   local Keys = {}
   for k, v in pairs(Table) do
@@ -82,7 +73,6 @@ function Utils.Keys(Table)
   end
   return Keys
 end
-
 function Utils.Values(Table)
   local Values = {}
   for k, v in pairs(Table) do
@@ -90,7 +80,6 @@ function Utils.Values(Table)
   end
   return Values
 end
-
 function Utils.IKeys(Table)
   local Keys = {}
   for k, v in ipairs(Table) do
@@ -98,7 +87,6 @@ function Utils.IKeys(Table)
   end
   return Keys
 end
-
 function Utils.IValues(Table)
   local Values = {}
   for k, v in ipairs(Table) do
@@ -106,7 +94,6 @@ function Utils.IValues(Table)
   end
   return Values
 end
-
 function Utils.PairsByKeys(Table)
   local KeyTable = {}
   for n in pairs(Table) do
@@ -119,45 +106,37 @@ function Utils.PairsByKeys(Table)
     return KeyTable[i], Table[KeyTable[i]]
   end
 end
-
 function Utils.Swap(x, y)
   local Temp = x
   x = y
   y = Temp
   return x, y
 end
-
 function Utils.IsListenServer(Actor)
   return UNeModeFunctionLibrary.IsListenServer(Actor)
 end
-
 function Utils.IsSimulatedProxy(actor)
   return 1 == actor:GetLocalRole()
 end
-
 function Utils.IsAutonomousProxy(actor)
   return 2 == actor:GetLocalRole()
 end
-
 local IsActorValidInGame = UE4.AActor.IsActorValidInGame
-
 function Utils.IsActorValid(Actor)
   if nil == Actor then
     return false
   end
   if not IsActorValidInGame then
-    Utils.Traceback(ErrorTag, "Utils.IsActorValid\230\156\172\230\132\143\230\152\175\231\187\153Actor\229\136\164\230\150\173\230\156\137\230\149\136\230\128\167\231\154\132\239\188\140\228\184\141\229\187\186\232\174\174\228\188\160\229\133\182\228\187\150\231\177\187\229\158\139\229\175\185\232\177\161\232\191\155\230\157\165")
+    Utils.Traceback(ErrorTag, "Utils.IsActorValid本意是给Actor判断有效性的，不建议传其他类型对象进来")
     return true
   end
   return IsActorValidInGame(Actor)
 end
-
 function Utils.IsWithoutAvatar(InWorldContext)
   local IsPIE = UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(InWorldContext)
   local Avatar = GWorld:GetAvatar()
   return true == IsPIE and nil == Avatar
 end
-
 function Utils.IsTakeRecorderCapturing(WorldContext)
   if Utils.IsWithoutAvatar(WorldContext) then
     local GameInstance = UGameplayStatics.GetGameInstance(WorldContext)
@@ -167,7 +146,6 @@ function Utils.IsTakeRecorderCapturing(WorldContext)
   end
   return false
 end
-
 function Utils.GetObjectRight(ObjectInst)
   local ObjectRight = FVector()
   if ObjectInst.GetActorRightVector then
@@ -177,7 +155,6 @@ function Utils.GetObjectRight(ObjectInst)
   end
   return ObjectRight
 end
-
 function Utils.GetObjectFoward(ObjectInst)
   local ObjectForward = FVector()
   if ObjectInst.GetActorForwardVector then
@@ -187,7 +164,6 @@ function Utils.GetObjectFoward(ObjectInst)
   end
   return ObjectForward
 end
-
 function Utils.GetObjectLocation(ObjectInst)
   local ObjectLoc = FVector()
   if ObjectInst.K2_GetActorLocation then
@@ -197,11 +173,6 @@ function Utils.GetObjectLocation(ObjectInst)
   end
   return ObjectLoc
 end
-
-function Utils.GetHitActor(HitResult)
-  return GlobalFunctionLibrary:get().GetHitActor(HitResult)
-end
-
 function Utils.ToFVector(t)
   if t.X then
     return FVector(t.X, t.Y, t.Z)
@@ -209,20 +180,13 @@ function Utils.ToFVector(t)
     return FVector(t[1], t[2], t[3])
   end
 end
-
-function Utils.TransEPhysicalSurface(EPhysicalSurface)
-  return GlobalFunctionLibrary:get().TransEPhysicalSurface(EPhysicalSurface)
-end
-
 function Utils.GameMode(context)
   context = context or GWorld.GameInstance
   return UE4.UGameplayStatics.GetGameMode(context)
 end
-
 function Utils.LazyLoadClass(str, persistent)
   local object = {}
   object.path = str
-  
   function object:get()
     if IsValid(self.object) then
       return self.object
@@ -233,14 +197,11 @@ function Utils.LazyLoadClass(str, persistent)
     end
     return self.object
   end
-  
   return object
 end
-
 function Utils.LazyLoadObject(str)
   local object = {}
   object.path = str
-  
   function object:get()
     if self.object and Utils.IsValid(self.object) then
       return self.object
@@ -250,21 +211,23 @@ function Utils.LazyLoadObject(str)
     self.object = LoadObject(self.path)
     return self.object
   end
-  
   return object
 end
-
 local GlobalDamageStruct = Utils.LazyLoadClass("/Game/BluePrints/Combat/BP_DamageStruct.BP_DamageStruct", true)
 local PetClass = Utils.LazyLoadClass("/Game/BluePrints/Char/BP_PetNpc/BP_PetNPC.BP_PetNPC_C", true)
-
+local GlobalFunctionLibrary = Utils.LazyLoadClass("/Game/BluePrints/Common/BP_GlobalFunctionLibrary.BP_GlobalFunctionLibrary_C", true)
+function Utils.GetHitActor(HitResult)
+  return GlobalFunctionLibrary:get().GetHitActor(HitResult)
+end
+function Utils.TransEPhysicalSurface(EPhysicalSurface)
+  return GlobalFunctionLibrary:get().TransEPhysicalSurface(EPhysicalSurface)
+end
 function Utils.DamageEventClass()
   return GlobalDamageStruct:get()
 end
-
 function Utils.PreloadPetClass()
   DebugPrint("BP_PetNpc Class", PetClass:get())
 end
-
 function Utils.Round(FloatValue)
   if 0 == FloatValue then
     return 0
@@ -275,11 +238,9 @@ function Utils.Round(FloatValue)
     return -Utils.Round(-FloatValue)
   end
 end
-
 function Utils.IsNilOrEmpty(InStr)
   return nil == InStr or "" == InStr
 end
-
 function Utils.InArray(Array, Value)
   if not Array or 0 == Array:Length() then
     return false
@@ -291,7 +252,6 @@ function Utils.InArray(Array, Value)
   end
   return false
 end
-
 function Utils.Int(FloatValue)
   if 0 == FloatValue then
     return 0
@@ -302,7 +262,6 @@ function Utils.Int(FloatValue)
     return -Utils.Int(-FloatValue)
   end
 end
-
 function Utils.NumberToBool(Number)
   if nil == Number then
     return false
@@ -318,27 +277,22 @@ function Utils.NumberToBool(Number)
   end
   return Number
 end
-
 function Utils.IsLowerAuthority(actor)
   return actor:GetLocalRole() < 3
 end
-
 function Utils.GetCacheClass(ActorPath)
   if Const.CacheClassMap then
     return Const.CacheClassMap[ActorPath]
   end
   return nil
 end
-
 function Utils.IsInRange(Source, Target, MinDis, MaxDis)
   local Dis = (Target - Source):Size()
   return MaxDis >= Dis and MinDis <= Dis
 end
-
 function Utils.IsInCircle(Source, Target, Radius)
   return Radius >= (Target - Source):Size()
 end
-
 function Utils.CircleCrossSegment(Point1, Point2, CircleCenter, CircleRadius)
   local Flag1 = (Point1.X - CircleCenter.X) * (Point1.X - CircleCenter.X) + (Point1.Y - CircleCenter.Y) * (Point1.Y - CircleCenter.Y) <= CircleRadius * CircleRadius
   local Flag2 = (Point2.X - CircleCenter.X) * (Point2.X - CircleCenter.X) + (Point2.Y - CircleCenter.Y) * (Point2.Y - CircleCenter.Y) <= CircleRadius * CircleRadius
@@ -364,7 +318,6 @@ function Utils.CircleCrossSegment(Point1, Point2, CircleCenter, CircleRadius)
     return false
   end
 end
-
 function Utils.IsInsideSector(Source, SourceForward, Target, TargetRadius, Radius, Angle)
   if (Target - Source):Size() > TargetRadius + Radius then
     return false
@@ -397,7 +350,6 @@ function Utils.IsInsideSector(Source, SourceForward, Target, TargetRadius, Radiu
   end
   return false
 end
-
 function Utils.IsRingCrossSector(CenterPos2D, Forward2D, TargetLoc2D, OutterRadius, Radius, Angle, InnerRadius)
   if not Utils.IsInsideSector(CenterPos2D, Forward2D, TargetLoc2D, OutterRadius, Radius, Angle) then
     return false
@@ -407,7 +359,6 @@ function Utils.IsRingCrossSector(CenterPos2D, Forward2D, TargetLoc2D, OutterRadi
   end
   return true
 end
-
 function Utils.SectorCrossInnerCircle(CenterPos2D, Forward2D, TargetLoc2D, OutterRadius, Radius, Angle, InnerRadius)
   Forward2D:Normalize()
   local HalfAngle = Angle / 2.0
@@ -438,11 +389,9 @@ function Utils.SectorCrossInnerCircle(CenterPos2D, Forward2D, TargetLoc2D, Outte
   local MaxCrossPoint = CenterPos2D + TargetToSource * Radius
   return InnerRadius <= (MaxCrossPoint - TargetLoc2D):Size()
 end
-
 function Utils.PointInRect(TargetDotEdge, TargetToSourcePow2, TargetDotEdgePow2, RadiusPow2)
   return TargetDotEdge >= 0 and RadiusPow2 >= TargetToSourcePow2 - TargetDotEdgePow2
 end
-
 function Utils.CalculateQuadrant(CurrentDir, Angle)
   local Forward = 0
   local Backward = 1
@@ -460,21 +409,18 @@ function Utils.CalculateQuadrant(CurrentDir, Angle)
   end
   return Backward
 end
-
 function Utils.AngleInRange(Angle, MinAngle, MaxAngle, Buffer, IncreaseBuffer)
   if IncreaseBuffer then
     return Angle >= MinAngle - Buffer and Angle <= MaxAngle + Buffer
   end
   return Angle >= MinAngle + Buffer and Angle <= MaxAngle - Buffer
 end
-
 function Utils.BetweenTwoVec(Left, Mid, Right)
   local Left2D = UE4.UKismetMathLibrary.Conv_VectorToVector2D(Left)
   local Mid2D = UE4.UKismetMathLibrary.Conv_VectorToVector2D(Mid)
   local Right2D = UE4.UKismetMathLibrary.Conv_VectorToVector2D(Right)
   return Left2D:Cross(Mid2D) * Right2D:Cross(Mid2D) <= 0
 end
-
 function Utils.FourDirToEightDir(LocRelativeVelocityDir)
   local TargetVelocityBlend = FVelocityBlend()
   local Aix, LeanAix = table.unpack(Utils.AixsCheck(Utils.WithTolerance(LocRelativeVelocityDir.X), Utils.WithTolerance(LocRelativeVelocityDir.Y)))
@@ -490,7 +436,6 @@ function Utils.FourDirToEightDir(LocRelativeVelocityDir)
   TargetVelocityBlend[LeanAix] = UE4.UKismetMathLibrary.FClamp(LeanAixVal, 0.1, 1)
   return TargetVelocityBlend
 end
-
 function Utils.FourDirVelocityBlend(LocRelativeVelocityDir)
   local TargetVelocityBlend = FVelocityBlend()
   local Value = math.abs(LocRelativeVelocityDir.X)
@@ -507,7 +452,6 @@ function Utils.FourDirVelocityBlend(LocRelativeVelocityDir)
   TargetVelocityBlend.R = UE4.UKismetMathLibrary.FClamp(RelativeDir.Y, 0, 1)
   return TargetVelocityBlend
 end
-
 function Utils.AixsCheck(x, y)
   local QuadrantTable = {
     {1, 2},
@@ -540,7 +484,6 @@ function Utils.AixsCheck(x, y)
   end
   return AixsTable[QuadrantTable[QuadrantIndex][AixIndex]]
 end
-
 function Utils.Sign(Value, Tolerance)
   local T = Tolerance
   if not Tolerance then
@@ -551,11 +494,9 @@ function Utils.Sign(Value, Tolerance)
   end
   return 1
 end
-
 function Utils.Average(x, y)
   return x / (math.abs(x) + math.abs(y)), y / (math.abs(x) + math.abs(y))
 end
-
 function Utils.WithTolerance(Value, Tolerance)
   local T = Tolerance
   if not Tolerance then
@@ -568,7 +509,6 @@ function Utils.WithTolerance(Value, Tolerance)
   end
   return Value
 end
-
 function Utils.FormatNumberWithCommas(Number)
   if type(Number) == "number" then
     if Number < 100000 then
@@ -584,13 +524,11 @@ function Utils.FormatNumberWithCommas(Number)
     end
   end
 end
-
 Utils.GetStrTable = not (not bDistribution or bEnableShippingLog) and Utils.EmptyFunction or function(ct, t, step, deep, PrettyFormat)
   if type(t) ~= "table" then
     ct[#ct + 1] = tostring(t)
     return
   end
-  
   local function func(k, v)
     for i = 1, step do
       ct[#ct + 1] = "\t"
@@ -633,7 +571,6 @@ Utils.GetStrTable = not (not bDistribution or bEnableShippingLog) and Utils.Empt
       Utils.GetStrTable(ct, v, step + 1, deep, PrettyFormat)
     end
   end
-  
   if PrettyFormat then
     local keys = {}
     for k, v in pairs(t) do
@@ -649,14 +586,12 @@ Utils.GetStrTable = not (not bDistribution or bEnableShippingLog) and Utils.Empt
     end
   end
 end
-
 function Utils.CorrectUrl(Url)
   Url = string.gsub(Url, "([%%+#&= ])", function(c)
     return string.format("%%%02X", string.byte(c))
   end)
   return Url
 end
-
 function Utils.IsSingleByteWord(Word)
   for i = 1, #Word do
     local curByte = string.byte(Word, i)
@@ -666,7 +601,7 @@ function Utils.IsSingleByteWord(Word)
   end
   return true
 end
-
+Utils.AudioManager_Var = nil
 function Utils.GetAudioManager_Lua(context)
   if IsDedicatedServer(context) then
     Utils.AudioManager_Var = CommonUtils.EmptyProxy
@@ -678,32 +613,27 @@ function Utils.GetAudioManager_Lua(context)
   end
   return Utils.AudioManager_Var
 end
-
 function Utils.GetGameCofingSettings(VarName)
   return UE4.UGameConfigSetttings.Get()[VarName]
 end
-
-function Utils.InitializeSettings()
+function Utils:InitializeSettings()
   local WorldContext = GWorld.GameInstance
   local IsPIE = UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(WorldContext)
   if IsPIE then
     UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "Editor.OverrideDPIBasedEditorViewportScaling 1", nil)
   end
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+  if CommonUtils.GetRuntimePlatform(self) == "Mobile" then
     UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "r.ReflectionCaptureGPUArrayCopy 0", nil)
   end
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "Slate.EnableRetainedRenderingWithLocalTransform 0", nil)
   Utils.PreloadPetClass()
 end
-
 function Utils.AddTickLodActor(InTag, InActor, TickLodFlag)
   URuntimeCommonFunctionLibrary.AddTickLodObject(InTag, InActor, TickLodFlag)
 end
-
 function Utils.RemoveTickLodActor(InTag, InActor, TickLodFlag)
   URuntimeCommonFunctionLibrary.RemoveTickLodObject(InTag, InActor, TickLodFlag)
 end
-
 function Utils.BlockTickLod(InTag, bBlock, InActor, BlockTag, TickLodFlag)
   if InActor.BlockTickLod then
     InActor:BlockTickLod(bBlock, InTag, TickLodFlag)
@@ -715,7 +645,6 @@ function Utils.BlockTickLod(InTag, bBlock, InActor, BlockTag, TickLodFlag)
   end
   SignificanceMgrSubsystem:BlockTickLod(InTag, bBlock, InActor, BlockTag, TickLodFlag)
 end
-
 function Utils.PlayMontageBySkeletaMesh(Owner, MeshComp, MontageAsset, PlayParam)
   if not MontageAsset then
     local Result = PlayParam.OnCompleted and PlayParam.OnCompleted(Owner, true)
@@ -737,19 +666,22 @@ function Utils.PlayMontageBySkeletaMesh(Owner, MeshComp, MontageAsset, PlayParam
   if not Utils.IsValid(MontCallbackProxy) then
     return
   end
-  
   local function StopMontageFuncComplete()
     if Owner and Owner.RemoveMontPorxy then
       Owner:RemoveMontPorxy(MontCallbackProxy)
     end
+    if Owner:IsNPC() and PlayParam.MontageSlotGroupName == "TalkGroup" then
+      Owner.CurrentAnimationMontageSectionName = ""
+    end
   end
-  
   local function StopMontageFunc()
     if Owner and Owner.RemoveMontPorxy and MontCallbackProxy.OnCompleted:IsBound() == false then
       Owner:RemoveMontPorxy(MontCallbackProxy)
     end
+    if Owner:IsNPC() and PlayParam.MontageSlotGroupName == "TalkGroup" then
+      Owner.CurrentAnimationMontageSectionName = ""
+    end
   end
-  
   local OnCompleted = PlayParam.OnCompleted
   local Temp = PlayParam.OnCompleted and MontCallbackProxy.OnCompleted:Add(Owner, PlayParam.OnCompleted)
   if OnCompleted then
@@ -786,24 +718,20 @@ function Utils.PlayMontageBySkeletaMesh(Owner, MeshComp, MontageAsset, PlayParam
     Owner:CacheMontPorxy(MontCallbackProxy)
   end
 end
-
 function Utils.EnableFriendFXBias(enable)
   if Const.EnableFriendFXQualityBias ~= enable then
     Const.EnableFriendFXQualityBias = enable
     Const.ScalabilityUpdateTime = Const.ScalabilityUpdateTime + 1
   end
 end
-
 function Utils.SetFriendFXQuality(quality)
   if Const.FriendFXQuality ~= quality then
     Const.FriendFXQuality = quality
     Const.ScalabilityUpdateTime = Const.ScalabilityUpdateTime + 1
   end
 end
-
 function Utils.EmptyFunction(...)
 end
-
 function Utils.SaveCacheClass(ActorPath, UnitBlueprint)
   if not Const.CacheClassMap then
     Const.CacheClassMap = {}
@@ -813,7 +741,6 @@ function Utils.SaveCacheClass(ActorPath, UnitBlueprint)
     AddToRoot(UnitBlueprint)
   end
 end
-
 function Utils.GetNPCCreateSubSystem_Lua(context)
   if IsDedicatedServer(context) then
     Utils.NPCCreateSubSystem_Var = CommonUtils.EmptyProxy
@@ -822,7 +749,6 @@ function Utils.GetNPCCreateSubSystem_Lua(context)
   end
   return Utils.NPCCreateSubSystem_Var
 end
-
 function Utils.StringToByteTable(Data)
   Len = string.len(Data)
   local ByteTable = {}
@@ -831,7 +757,6 @@ function Utils.StringToByteTable(Data)
   end
   return ByteTable
 end
-
 function Utils.ByteArrayToString(ByteArray)
   local Chars = {}
   local Len = ByteArray:Num()
@@ -840,5 +765,20 @@ function Utils.ByteArrayToString(ByteArray)
   end
   return table.concat(Chars)
 end
-
+function Utils.GetGameReviewPlatform()
+  local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
+  if "IOS" == PlatformName then
+    return "IOS"
+  end
+  local ImgChannelId = HeroUSDKSubsystem():GetMirrorChannelId()
+  local ImgChannelInfo = DataMgr.ImgChannelInfo[ImgChannelId]
+  if ImgChannelInfo and ImgChannelInfo.Provider == "TapTap" then
+    return "TapTap"
+  end
+  local ChannelId = HeroUSDKSubsystem():GetChannelId()
+  if 160 == ChannelId then
+    return "Google"
+  end
+  return ""
+end
 return Utils

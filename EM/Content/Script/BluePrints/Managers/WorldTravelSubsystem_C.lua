@@ -1,13 +1,11 @@
 require("UnLua")
 local WorldTravelSubsystem_C = Class()
-
 function WorldTravelSubsystem_C:ReceiveInitialize()
   DebugPrint("WorldTravelSubsystem ReceiveInitialize")
   self.ChangeSceneUIPath = UIConst.COMMONCHANGESCENE
   DebugPrint("ChangeSceneUIPath", self.ChangeSceneUIPath)
   EventManager:AddEvent(EventID.CloseLoading, self, self.OnCloseLoading)
 end
-
 function WorldTravelSubsystem_C:SetLevelLoadJsonName(DungeonId)
   local DungeonInfo = DataMgr.Dungeon[DungeonId]
   if not DungeonInfo or 1 ~= DungeonInfo.IsRandom then
@@ -22,7 +20,6 @@ function WorldTravelSubsystem_C:SetLevelLoadJsonName(DungeonId)
   self.LevelLoadJsonName = FileName
   DebugPrint("LoadDungeonJson BP_EMGameInstance_C ", UE4.URuntimeCommonFunctionLibrary.GetLevelLoadJsonName(self))
 end
-
 function WorldTravelSubsystem_C:K2_PreChangeScene(WorldType, bQueryHotfix)
   LuaMemoryManager:FullGC(true)
   if 2 == WorldType then
@@ -39,7 +36,6 @@ function WorldTravelSubsystem_C:K2_PreChangeScene(WorldType, bQueryHotfix)
     end
   end
 end
-
 function WorldTravelSubsystem_C:OnCloseLoading()
   HeroUSDKSubsystem():UploadTrackLog_Lua("game_level_loading_time", {
     pve_id = self:GetSceneId(),
@@ -47,9 +43,7 @@ function WorldTravelSubsystem_C:OnCloseLoading()
   })
   self:OnWorldTravelEnd()
 end
-
 function WorldTravelSubsystem_C:ReceiveDeinitialize()
   EventManager:RemoveEvent(EventID.CloseLoading, self)
 end
-
 return WorldTravelSubsystem_C

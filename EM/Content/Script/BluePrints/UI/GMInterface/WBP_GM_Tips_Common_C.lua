@@ -1,7 +1,6 @@
 require("UnLua")
 local GMObjectUtils = require("BluePrints.UI.GMInterface.GMObjectUtils")
 local WBP_GM_Tips_Common_C = Class("BluePrints.UI.GMInterface.WBP_GM_Menu_Base_C")
-
 function WBP_GM_Tips_Common_C:InitMenu(Command)
   self.Super.InitMenu(self, Command)
   self.List:ClearListItems()
@@ -21,5 +20,4 @@ function WBP_GM_Tips_Common_C:InitMenu(Command)
     Command.Initialized = true
   end
 end
-
 return WBP_GM_Tips_Common_C

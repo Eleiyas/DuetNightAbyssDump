@@ -1,7 +1,6 @@
 require("UnLua")
 local GachaModel = require("BluePrints.UI.WBP.Gacha.GachaModel")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.GachaId = Params.CurrentGachaId
@@ -34,7 +33,6 @@ function M:InitContent(Params, PopupData, Owner)
   self:InitListText()
   self.List_Probability:SetFocus()
 end
-
 function M:InitListProbability()
   self.List_Probability:ClearListItems()
   local GachaData = DataMgr.SkinGacha[self.GachaId]
@@ -70,7 +68,6 @@ function M:InitListProbability()
   self.List_Probability:AddItem(Content4)
   self.List_Probability:AddItem(Content3)
 end
-
 function M:InitListText()
   self.List_Desc:ClearListItems()
   local GachaInfo = DataMgr.SkinGacha[self.GachaId]
@@ -81,7 +78,6 @@ function M:InitListText()
   Content.ParentWidget = self
   self.List_Desc:AddItem(Content)
 end
-
 function M:OnTabSelected(TabWidget)
   self.NowTabId = TabWidget.Idx
   if self.FocusOnSubItem then
@@ -102,7 +98,6 @@ function M:OnTabSelected(TabWidget)
     GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   end
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -115,5 +110,4 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 return M

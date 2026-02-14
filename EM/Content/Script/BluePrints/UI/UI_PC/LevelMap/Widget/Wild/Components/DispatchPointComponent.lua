@@ -1,12 +1,10 @@
 require("UnLua")
 local Component = {}
-
 function Component:InitComponentCoroutine()
   local Coroutine = CreateCoroutine(self.InitDispatchPoint)
   table.insert(self.InitCoroutines, Coroutine)
   coroutine.resume(Coroutine, self, #self.InitCoroutines)
 end
-
 function Component:AddComponentEvent()
   EventManager:AddEvent(EventID.StartDispatch, self, self.StartDispatch)
   EventManager:AddEvent(EventID.CancelDispatch, self, self.CancelDispatch)
@@ -17,7 +15,6 @@ function Component:AddComponentEvent()
   EventManager:AddEvent(EventID.OnActiveDynamicQuest, self, self.OnActiveDynamicQuest)
   EventManager:AddEvent(EventID.GoToDispatch, self, self.OnDispatchTrace)
 end
-
 function Component:RemoveComponentEvent()
   EventManager:RemoveEvent(EventID.StartDispatch, self)
   EventManager:RemoveEvent(EventID.CancelDispatch, self)
@@ -28,7 +25,6 @@ function Component:RemoveComponentEvent()
   EventManager:RemoveEvent(EventID.OnActiveDynamicQuest, self)
   EventManager:RemoveEvent(EventID.GoToDispatch, self)
 end
-
 function Component:ClearData()
   if next(self.DispatchPoint) then
     for Id, Item in pairs(self.DispatchPoint) do
@@ -50,7 +46,6 @@ function Component:ClearData()
     self.DispatchLocations = {}
   end
 end
-
 function Component:InitDispatchPoint(CoroutineIndex)
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar or self.IsMiniMap then
@@ -66,7 +61,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
         Point = UIManager(self):CreateWidgetAsync("RegionMapDispatchPointInfo", self.InitCoroutines[CoroutineIndex])
       end
       self.Panel_Point:AddChild(Point)
-      
       local function AdjustSlot(Point)
         Point:SetAlignment(FVector2D(0.5, 0.5))
         Point:SetAutoSize(true)
@@ -79,7 +73,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
         Offset.Top = 0
         Point:SetOffsets(Offset)
       end
-      
       AdjustSlot(Point.Slot)
       local UIPos = DataMgr.DispatchUI[Dispatch.DispatchId].UIPos
       local Pos = self:TransformWorldLocToUILoc(UIPos[1], UIPos[2])
@@ -101,7 +94,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
           Point = UIManager(self):CreateWidgetAsync("RegionMapDispatchPointInfo", self.InitCoroutines[CoroutineIndex])
         end
         self.Panel_Point:AddChild(Point)
-        
         local function AdjustSlot(Point)
           Point:SetAlignment(FVector2D(0.5, 0.5))
           Point:SetAutoSize(true)
@@ -115,7 +107,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
           Point:SetOffsets(Offset)
           Point:SetZOrder(0)
         end
-        
         AdjustSlot(Point.Slot)
         local UIPos = DataMgr.DispatchUI[Dispatch.DispatchId].UIPos
         local Pos = self:TransformWorldLocToUILoc(UIPos[1], UIPos[2])
@@ -135,7 +126,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
         Select = UIManager(self):CreateWidgetAsync("RegionMapSelect", self.InitCoroutines[CoroutineIndex])
       end
       self.Panel_Point:AddChild(Select)
-      
       local function AdjustSlot(Point)
         Point:SetAlignment(FVector2D(0.5, 0.5))
         Point:SetAutoSize(true)
@@ -149,7 +139,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
         Point:SetOffsets(Offset)
         Point:SetZOrder(10)
       end
-      
       AdjustSlot(Select.Slot)
       Select:SetRenderTranslation(self.DispatchLocations[Id])
       self.DispatchSelect[Id] = Select
@@ -158,7 +147,6 @@ function Component:InitDispatchPoint(CoroutineIndex)
   end
   self:InitCoroutineCheck(CoroutineIndex)
 end
-
 function Component:OnScaleChange_Component(Percent)
   for Id, Point in pairs(self.DispatchPoint) do
     local UIPos = DataMgr.DispatchUI[Id].UIPos
@@ -171,14 +159,14 @@ function Component:OnScaleChange_Component(Percent)
     Point:SetRenderTranslation(Pos)
   end
 end
-
 function Component:RefreshDispatchMap(RegionId, DispatchId)
   if RegionId ~= self.RegionID then
     self:ChangeRegion(RegionId, function()
       self:CloseForDispatch(true)
       self:OnPanelOpen(5)
-      local Pos = self.DispatchLocations[DispatchId]
-      if Pos then
+      local UIPos = DataMgr.DispatchUI[DispatchId].UIPos
+      if UIPos then
+        local Pos = self:TransformWorldLocToUILoc(UIPos[1], UIPos[2])
         self:MoveMapTo(Pos * -1)
         self:RefreshDispatchSelect()
         self:RefreshSingleDispatchPoint()
@@ -195,8 +183,9 @@ function Component:RefreshDispatchMap(RegionId, DispatchId)
     if nil == Item then
       self:InitDispatchPoint()
     end
-    local Pos = self.DispatchLocations[DispatchId]
-    if Pos then
+    local UIPos = DataMgr.DispatchUI[DispatchId].UIPos
+    if UIPos then
+      local Pos = self:TransformWorldLocToUILoc(UIPos[1], UIPos[2])
       self:MoveMapTo(Pos * -1)
       self:RefreshDispatchSelect()
       self:RefreshSingleDispatchPoint()
@@ -210,27 +199,23 @@ function Component:RefreshDispatchMap(RegionId, DispatchId)
   end
   self:ShowAllMiniHead(DispatchId)
 end
-
 function Component:ShowAllMiniHead(DispatchId)
   for Id, Point in pairs(self.DispatchPoint) do
     Point:ShowMiniHead(DispatchId)
   end
 end
-
 function Component:RefreshDispatchPoint(Id, CharId)
   local Point = self.DispatchPoint[Id]
   if Point then
     Point:RefreshAgent(CharId)
   end
 end
-
 function Component:RemoveDispatchPoint(Id, AgentId)
   local Point = self.DispatchPoint[Id]
   if Point then
     Point:RemoveAgent(AgentId)
   end
 end
-
 function Component:StartDispatch(Id)
   if self.IsMiniMap then
     return
@@ -246,7 +231,6 @@ function Component:StartDispatch(Id)
     end
   end
 end
-
 function Component:CancelDispatch(Id)
   if self.IsMiniMap then
     return
@@ -266,7 +250,6 @@ function Component:CancelDispatch(Id)
   self.DispatchSelect[Id] = nil
   self.DispatchLocations[Id] = nil
 end
-
 function Component:CompleteDispatch(TotalReward, Id)
   if self.IsMiniMap then
     return
@@ -282,7 +265,6 @@ function Component:CompleteDispatch(TotalReward, Id)
   self.DispatchSelect[Id] = nil
   self.DispatchLocations[Id] = nil
 end
-
 function Component:GetAllDispatchReward(TotalReward, CompleteDispatchs)
   if self.IsMiniMap then
     return
@@ -301,7 +283,6 @@ function Component:GetAllDispatchReward(TotalReward, CompleteDispatchs)
     self.DispatchLocations[Id] = nil
   end
 end
-
 function Component:OnDispatchOverdate(Id)
   if self.IsMiniMap then
     return
@@ -327,23 +308,19 @@ function Component:OnDispatchOverdate(Id)
   end
   self:InitDispatchPoint()
 end
-
 function Component:OnActiveDynamicQuest(Id)
-  self:OnCommonTrack(Id, false)
+  self:OnCommonTrack(CommonConst.RegionMapTrackingType.MiniDispatchPoint, Id, false)
 end
-
 function Component:RefreshAllDispatchPoint()
   for DispatchId, Point in pairs(self.DispatchPoint) do
     Point:RefreshPoint()
   end
 end
-
 function Component:RefreshSingleDispatchPoint()
   for DispatchId, Point in pairs(self.DispatchPoint) do
     Point:RefreshSinglePoint()
   end
 end
-
 function Component:DispatchSelectHover(Id)
   if Id ~= self.CurClickDispatchId then
     local Select = self.DispatchSelect[Id]
@@ -351,21 +328,18 @@ function Component:DispatchSelectHover(Id)
     Select:PlayAnimation(Select.Hover)
   end
 end
-
 function Component:DispatchSelectUnHover(Id)
   if Id ~= self.CurClickDispatchId then
     local Select = self.DispatchSelect[Id]
     Select:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function Component:PlaySelectAni(Id)
   local Point = self.DispatchPoint[Id]
   if Point then
     Point:PlaySelectAnimation()
   end
 end
-
 function Component:DispatchSelectClick(Id)
   self.CurClickDispatchId = Id
   self.MainMap.DispatchId = Id
@@ -373,12 +347,13 @@ function Component:DispatchSelectClick(Id)
   local FloorId = DataMgr.DispatchUI[UIId].FloorId
   self:OnFloorBtnClicked(FloorId, true)
   local Select = self.DispatchSelect[Id]
-  Select.Slot:SetZOrder(10)
-  Select:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-  Select.IsPlay = false
-  Select:PlayAnimation(Select.Click)
+  if Select then
+    Select.Slot:SetZOrder(10)
+    Select:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    Select.IsPlay = false
+    Select:PlayAnimation(Select.Click)
+  end
 end
-
 function Component:RefreshDispatchSelect()
   for _, Select in pairs(self.DispatchSelect) do
     if Select then
@@ -386,7 +361,6 @@ function Component:RefreshDispatchSelect()
     end
   end
 end
-
 function Component:OnDispatchExistingComplete(Id)
   if self.IsMiniMap then
     return
@@ -405,7 +379,6 @@ function Component:OnDispatchExistingComplete(Id)
     end
   end
 end
-
 function Component:OnDispatchComplete(Id)
   if self.IsMiniMap then
     return
@@ -420,30 +393,22 @@ function Component:OnDispatchComplete(Id)
     Point:SetState(Dispatch)
   end
 end
-
 function Component:BackToOriginalRegion()
-  self:ChangeRegion(self.OriginalRegionId)
+  self:ChangeRegion(self.OriginalRegionId, function()
+    self:ShowMissionIndicatorsInRegionMap()
+  end)
 end
-
 function Component:OnDispatchTrace(Dispatch)
   self.CurTrackDispatchId = Dispatch
-  if GWorld.GameInstance.TrackingID ~= self.CurTrackDispatchId then
-    if GWorld.GameInstance.TrackingID then
-      local TrackingID = GWorld.GameInstance.TrackingID
-      local trackTarget = self.MarkTable[TrackingID] or self.TeleportPoints[TrackingID] or self.RegionPoints[TrackingID]
-      if trackTarget then
-        EventManager:FireEvent(EventID.OnCommonTrack, TrackingID, false)
-        trackTarget:StopAllAnimations()
-      end
-    end
-    EventManager:FireEvent(EventID.OnCommonTrack, self.CurTrackDispatchId, true)
-    GWorld.GameInstance.TrackingID = self.CurTrackDispatchId
+  local TrackingId = self:GetTrackingId(CommonConst.RegionMapTrackingType.MiniDispatchPoint)
+  if TrackingId ~= self.CurTrackDispatchId then
+    self:CancelCurrentTracking()
+    EventManager:FireEvent(EventID.OnCommonTrack, CommonConst.RegionMapTrackingType.MiniDispatchPoint, self.CurTrackDispatchId, true)
+    self:TryToastNotInSameRegion()
   else
-    EventManager:FireEvent(EventID.OnCommonTrack, self.CurTrackDispatchId, false)
-    GWorld.GameInstance.TrackingID = nil
+    EventManager:FireEvent(EventID.OnCommonTrack, CommonConst.RegionMapTrackingType.MiniDispatchPoint, self.CurTrackDispatchId, false)
   end
 end
-
 function Component:CloseForDispatch(ShowDispatch)
   local Avatar = GWorld:GetAvatar()
   local Visible = ShowDispatch and ESlateVisibility.Collapsed or ESlateVisibility.SelfHitTestInvisible
@@ -454,6 +419,9 @@ function Component:CloseForDispatch(ShowDispatch)
     Point:SetPointVisibility("Dispatch", not ShowDispatch, true)
   end
   for _, Point in pairs(self.MarkTable) do
+    Point:SetPointVisibility("Dispatch", not ShowDispatch, true)
+  end
+  for _, Point in pairs(self.ChallengePoints) do
     Point:SetPointVisibility("Dispatch", not ShowDispatch, true)
   end
   if not IsEmptyTable(self.IndicatorWidgets) then
@@ -471,5 +439,4 @@ function Component:CloseForDispatch(ShowDispatch)
     self.MainMap.Slider_Zoom:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return Component

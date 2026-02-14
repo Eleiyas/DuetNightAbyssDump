@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Reward:SetText(GText("UI_BattlePass_QuestRewardClaim"))
   self.Btn_Reward:SetDefaultGamePadImg("A")
@@ -10,10 +9,9 @@ function M:Construct()
   self.Btn_Goto:SetDefaultGamePadImg("A")
   self.Btn_Goto:OverrideGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   self.Text_UnFinish:SetText(GText("UI_BattlePass_QuestToBeFinish"))
-  
+  self.Text_Finish:SetText(GText("UI_BattlePass_QuestFinished"))
   local function EmptyFunction()
   end
-  
   self.Btn_Reward:TryOverrideSoundFunc(EmptyFunction)
   self.Btn_Reward:BindEventOnClicked(self, self.OnBtnRewardClicked)
   self.Btn_Goto:TryOverrideSoundFunc(EmptyFunction)
@@ -27,29 +25,24 @@ function M:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function M:Destruct()
   self:ClearListenEvent()
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   Content.Entry = self
   self:Refresh()
   self:PlayAnimation(self.In)
 end
-
 function M:OnBtnRewardClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_crystal_btn_content", nil, nil)
   self.Content.Parent:GetMissionReward(self.Content.Type, self.Content.ID)
 end
-
 function M:OnBtnGotoClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   local TaskInfo = DataMgr.BattlePassTask[self.Content.ID]
   self.Content.Parent:JumptoOtherUI(TaskInfo.JumpUIId)
 end
-
 function M:Refresh()
   if self.Content.IsEmpty then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
@@ -108,7 +101,6 @@ function M:Refresh()
     end
   end
 end
-
 function M:ClickMissionList()
   local Index = self.WidgetSwitcher_Btn:GetActiveWidgetIndex()
   if 0 == Index then
@@ -117,19 +109,16 @@ function M:ClickMissionList()
     self:OnBtnGotoClicked()
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -137,7 +126,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -145,15 +133,12 @@ function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function M:InitGamepadView()
   self.Gamepad:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:InitKeyboardView()
   self.Gamepad:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:InitWidgetInfoInGamePad()
   self.Key_Check_GamePad:CreateCommonKey({
     KeyInfoList = {
@@ -161,7 +146,6 @@ function M:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -181,18 +165,15 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:EnterSelectMode()
   self:UpdateUIStyle(false)
   local Reward = self.WB_Item:GetChildAt(0)
   Reward:SetFocus()
 end
-
 function M:LeaveSelectMode()
   self:UpdateUIStyle(true)
   self:SetFocus()
 end
-
 function M:BP_GetDesiredFocusTarget()
   self.Content.Parent:TryChangeCurFocusedMissionList(self)
   self:BeginHover()
@@ -204,21 +185,18 @@ function M:BP_GetDesiredFocusTarget()
     return self
   end
 end
-
 function M:BeginHover()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:PlayAnimation(self.Gamepad_Hover)
     self:UpdateUIStyle(true)
   end
 end
-
 function M:StopHover(InSwitch)
   if InSwitch or UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:PlayAnimationReverse(self.Gamepad_Hover)
     self:UpdateUIStyle(false)
   end
 end
-
 function M:UpdateUIStyle(IsVisible)
   if IsVisible then
     self.Btn_Reward:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -230,12 +208,10 @@ function M:UpdateUIStyle(IsVisible)
     self.Key_Check_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:TryRefreshTime()
   if self.Content.TaskEndTime then
     local RemainTimeDictTask = UIUtils.GetLeftTimeStrStyle2(self.Content.TaskEndTime)
     self.Com_Time:SetTimeText(GText("UI_BattlePass_RemainTime"), RemainTimeDictTask)
   end
 end
-
 return M

@@ -2,9 +2,9 @@ require("UnLua")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local EMCache = require("EMCache.EMCache")
 local WBP_PreGameStartAnim_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_PreGameStartAnim_C:Construct()
   self.Super.Construct(self)
+  UIManager(self):InActivateVirtualJoystick()
   local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
   self:SetVisibility(ESlateVisibility.Collapsed)
   if HeroUSDKUtils.IsEnable() and "Android" ~= PlatformName or UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
@@ -14,6 +14,11 @@ function WBP_PreGameStartAnim_C:Construct()
       self:PlayAnimAndClose()
     end
   else
+    if HeroUSDKUtils.IsEnable() and "Android" == PlatformName and not HeroUSDKSubsystem(self).bAndroidPreDownload then
+      HeroUSDKSubsystem(self).OnHeroOppoResourceCopySuccess:Add(self, self.PlayAnimAndClose)
+      HeroUSDKSubsystem(self).OnHeroOppoResourceCopyFail:Add(self, self.PlayAnimAndClose)
+      return
+    end
     self:PlayAnimAndClose()
   end
   if UE4.UUIFunctionLibrary.GetDevicePlatformName() ~= "Android" then
@@ -47,9 +52,14 @@ function WBP_PreGameStartAnim_C:Construct()
       GameInputModeSubsystem:SetMouseCursorVisable(false)
       GameInputModeSubsystem:SetMouseCursorOpacity(0.0)
     end
+    local bPCCloudGame = UE4.UUCloudGameInstanceSubsystem.IsPCCloudGame()
+    if not bPCCloudGame then
+      UInputSettings.GetInputSettings().bAlwaysShowTouchInterface = true
+      UE4.UUIFunctionLibrary.SetGameIsFakingTouchEvents(true)
+    end
+    DebugPrint("lgc@WBP_PreGameStartAnim_C:Construct IsPCCloudGame:" .. tostring(bPCCloudGame) .. " IsCloudGame:" .. tostring(UE4.UUCloudGameInstanceSubsystem.IsCloudGame()) .. " bShowMouseCursor:" .. "false")
   end
 end
-
 function WBP_PreGameStartAnim_C:PlayAnimAndClose()
   if self.bClose then
     return
@@ -57,14 +67,15 @@ function WBP_PreGameStartAnim_C:PlayAnimAndClose()
   self.bClose = true
   self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   local SystemLanguage = EMCache:Get("SystemLanguage") or "CN"
-  if "CN" == SystemLanguage and UE.AHotUpdateGameMode.IsGlobalPak() then
+  if "DE" == SystemLanguage or "FR" == SystemLanguage or "ES" == SystemLanguage then
+    SystemLanguage = "EN"
+  elseif "CN" == SystemLanguage and UE.AHotUpdateGameMode.IsGlobalPak() then
     SystemLanguage = "CN_OverSea"
   end
-  local AnimPlayTime = self[SystemLanguage]:GetEndTime() or 0.5
+  local AnimPlayTime = self[SystemLanguage] and self[SystemLanguage]:GetEndTime() or 0.5
   self:PlayAnim(SystemLanguage, 1.0)
   self:AddTimer(AnimPlayTime + 0.2, self.CloseUI, false, 0, "CloseAndLoadCG")
 end
-
 function WBP_PreGameStartAnim_C:CloseUI()
   if not self.bClose then
     return
@@ -72,16 +83,15 @@ function WBP_PreGameStartAnim_C:CloseUI()
   self:RemoveTimer("CloseAndLoadCG")
   self:Close()
 end
-
 function WBP_PreGameStartAnim_C:Close()
   HeroUSDKSubsystem().HeroSDKProtocolAgreeDelegate:Unbind()
+  HeroUSDKSubsystem().OnHeroOppoResourceCopySuccess:Remove(self, self.PlayAnimAndClose)
+  HeroUSDKSubsystem().OnHeroOppoResourceCopyFail:Remove(self, self.PlayAnimAndClose)
   self.Super.Close(self)
   AudioManager(self):StopSound(self, "LogoEvent")
   self:TryToLoadLoginMainPage()
 end
-
 function WBP_PreGameStartAnim_C:TryToLoadLoginMainPage()
   UGameplayStatics.OpenLevel(self, "/Game/Maps/Login")
 end
-
 return WBP_PreGameStartAnim_C

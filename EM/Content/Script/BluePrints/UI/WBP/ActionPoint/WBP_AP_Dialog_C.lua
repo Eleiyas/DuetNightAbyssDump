@@ -3,14 +3,11 @@ local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
 local TimeUtils = require("Utils.TimeUtils")
-
 function M:Construct()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Owner = Owner
   self.RecoverItemId = 204
@@ -48,17 +45,14 @@ function M:InitContent(Params, PopupData, Owner)
   self:AddDispatcher(EventID.OnChangeActionPoint, self, self.RefreshContent)
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:OnClickMoonStone()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large", nil, nil)
   self:SetMoonStonePurchaseInfo()
 end
-
 function M:OnClickResource()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large", nil, nil)
   self:SetResourcePurchaseInfo()
 end
-
 function M:InitNumInput()
   local MinValue = 1
   local InitValue = 1
@@ -94,7 +88,6 @@ function M:InitNumInput()
     OwnerPanel = self
   })
 end
-
 function M:InitItemCost()
   local ResourceData = self:GetResourceContent(self.MoonStoneId)
   ResourceData.NotCountFormat = true
@@ -103,7 +96,6 @@ function M:InitItemCost()
   ResourceData.NotCountFormat = true
   self.ItemCost_2:Init(ResourceData)
 end
-
 function M:RefreshContent()
   local Avatar = GWorld:GetAvatar()
   self:SetAPInfo(Avatar.ActionPoint, DataMgr.GlobalConstant.CostRecoveryMax.ConstantValue, DataMgr.GlobalConstant.HaveCostMax.ConstantValue)
@@ -120,7 +112,6 @@ function M:RefreshContent()
   self.CurrentCount = 1
   self:UpdateItemPanel()
 end
-
 function M:UpdateProgressAP(AddedAP)
   if self.SliderCapture then
     return
@@ -166,7 +157,6 @@ function M:UpdateProgressAP(AddedAP)
     self.Bg_Progress_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:GetResourceContent(ResourceId)
   local Avatar = GWorld:GetAvatar()
   local Content = {}
@@ -182,7 +172,6 @@ function M:GetResourceContent(ResourceId)
   end
   return Content
 end
-
 function M:SetAPInfo(Current, Total, Max)
   self.Num_AP_Now:SetText(Current)
   self.Num_AP_Total:SetText(Total)
@@ -193,12 +182,10 @@ function M:SetAPInfo(Current, Total, Max)
     self.Bg_Progress_1:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function M:SetRestoreInfo()
   self.Text_NextStore:SetText(GText("UI_ActionPoint_NextRecover"))
   self.Text_RestoreAll:SetText(GText("UI_ActionPoint_FullyRecover"))
 end
-
 function M:SetMoonStonePurchaseInfo()
   if self.SetCheckNotifyKey then
     self:RemoveTimer(self.SetCheckNotifyKey, false)
@@ -259,7 +246,6 @@ function M:SetMoonStonePurchaseInfo()
   end
   self.IsMoonStoneSelected = true
 end
-
 function M:OnMenuOpenChangedCallBack(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -274,10 +260,8 @@ function M:OnMenuOpenChangedCallBack(bIsOpen)
     end
   end
 end
-
 function M:QaClickCallBack(IsChecked)
 end
-
 function M:SetResourcePurchaseInfo()
   if self.SetCheckNotifyKey then
     self:RemoveTimer(self.SetCheckNotifyKey, false)
@@ -309,7 +293,6 @@ function M:SetResourcePurchaseInfo()
   self:UpdateItemPanel()
   self.IsMoonStoneSelected = false
 end
-
 function M:UpdateItemPanel(bInit)
   local MaxCount = self:GetMaxUseCount()
   self.CurrentCount = math.max(1, math.min(MaxCount, self.CurrentCount))
@@ -340,7 +323,6 @@ function M:UpdateItemPanel(bInit)
     self.WidgetSwitcher_Function:SetActiveWidgetIndex(0)
   end
 end
-
 function M:GetMaxCount()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -349,7 +331,6 @@ function M:GetMaxCount()
   local ResourceCount = Avatar.Resources[self.RecoverItemId] and Avatar.Resources[self.RecoverItemId].Count or 0
   return ResourceCount
 end
-
 function M:GetMaxUseCount()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -359,7 +340,6 @@ function M:GetMaxUseCount()
   local MaxUseCount = math.min((DataMgr.GlobalConstant.HaveCostMax.ConstantValue - Avatar.ActionPoint) // ResourceData.UseParam, self:GetMaxCount())
   return MaxUseCount
 end
-
 function M:UpdateNextRecoverTime()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -383,7 +363,6 @@ function M:UpdateNextRecoverTime()
     self.Time_AllStore:SetTimeText("UI_ActionPoint_FullyRecover", RestoreAll)
   end
 end
-
 function M:TimeToStr(RemainRefreshTime)
   local RemainTimeStr = ""
   local RemainHour = math.floor(RemainRefreshTime / 3600)
@@ -401,41 +380,34 @@ function M:TimeToStr(RemainRefreshTime)
   end
   return TimeDict
 end
-
 function M:OnClickAdd()
   local MaxCount = self:GetMaxCount()
   self.CurrentCount = math.min(self.CurrentCount + 1, MaxCount < 1 and 1 or MaxCount)
   self:UpdateItemPanel()
 end
-
 function M:OnClickFobidAdd()
   if self:GetMaxCount() > self:GetMaxUseCount() then
     UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText("UI_ActionPoint_RecoverMax"))
   end
 end
-
 function M:OnClickFobidMax()
   if self:GetMaxCount() > self:GetMaxUseCount() then
     UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText("UI_ActionPoint_RecoverMax"))
   end
 end
-
 function M:OnClickMinus()
   self.CurrentCount = math.max(self.CurrentCount - 1, 1)
   self:UpdateItemPanel()
 end
-
 function M:OnClickMax()
   local MaxCount = self:GetMaxUseCount()
   self.CurrentCount = MaxCount
   self:UpdateItemPanel()
 end
-
 function M:OnClickMin()
   self.CurrentCount = 1
   self:UpdateItemPanel()
 end
-
 function M:CloseSelf()
   self:RemoveInputMethodChangedListen()
   if self:IsAnimationPlaying(self.Out) then
@@ -452,7 +424,6 @@ function M:CloseSelf()
     UIState:SetFocus()
   end
 end
-
 function M:BtnConfirmClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   local Avatar = GWorld:GetAvatar()
@@ -460,10 +431,8 @@ function M:BtnConfirmClicked()
     local ResourceData = self:GetResourceContent(self.MoonStoneId)
     local CoinNeededCount = DataMgr.ActionPointPrice[Avatar.PurchaseActionPointCount + 1].PurchasePrice
     local Coin1OwnedCount = ResourceData.Count
-    
     local function OpenAPDialog()
     end
-    
     if CoinNeededCount > Coin1OwnedCount then
       local Coin4 = CommonConst.Coins.Coin4
       local Coin4OwnedCount = Avatar:GetResourceNum(Coin4)
@@ -472,12 +441,10 @@ function M:BtnConfirmClicked()
         local function Confirm()
           Avatar:TransformCoin4ToCoin1(Coin1NeededCount, function()
             local ItemId = 100
-            
             UIUtils.ShowGetItemPageAndOpenBagIfNeeded("Resource", ItemId, Coin1NeededCount, nil, false, nil, self, false)
             OpenAPDialog()
           end)
         end
-        
         local ItemList = {}
         table.insert(ItemList, {
           ItemId = Coin4,
@@ -515,7 +482,6 @@ function M:BtnConfirmClicked()
         local function JumpToShop()
           PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
         end
-        
         local Params = {}
         Params.LeftCallbackObj = self
         Params.LeftCallbackFunction = OpenAPDialog
@@ -551,7 +517,6 @@ function M:BtnConfirmClicked()
     end
   end
 end
-
 function M:ClickConfirmPurchase()
   local Avatar = GWorld:GetAvatar()
   if Avatar.ActionPoint + DataMgr.GlobalConstant.ActionPointRecoveryPurchase.ConstantValue > DataMgr.GlobalConstant.HaveCostMax.ConstantValue then
@@ -574,7 +539,6 @@ function M:ClickConfirmPurchase()
     end)
   end
 end
-
 function M:PlayRecoverAnimation()
   self:PlayAnimation(self.Add)
   self:PlayAnimation(self.Now_Pecent, self.NowMaterialPercent * 0.5)
@@ -592,11 +556,9 @@ function M:PlayRecoverAnimation()
     end
   end, false, 0, nil, true)
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   self:UpdateNextRecoverTime()
 end
-
 function M:InitCommonKey()
   self.Key_Qa:CreateCommonKey({
     KeyInfoList = {
@@ -604,22 +566,18 @@ function M:InitCommonKey()
     }
   })
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
 end
-
 function M:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
@@ -627,7 +585,6 @@ function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   self.Btn_Confirm:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Key_Qa:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -645,7 +602,6 @@ function M:InitGamepadView()
     self.GameInputModeSubsystem:UpdateCurrentFocusWidgetPos()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -685,18 +641,14 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UIUtils.UnHandled
   end
 end
-
 function M:InitKeyboardView()
   self.Key_Qa:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:RecoverNavigate()
 end
-
 function M:ForbidNavigate()
   self.Btn_Confirm:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:RecoverNavigate()
   self.Btn_Confirm:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 return M

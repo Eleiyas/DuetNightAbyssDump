@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Btn_Retry:SetText(GText("UI_MISSION_AGAIN"))
   self.Btn_Retry:BindEventOnClicked(self, self.Retry)
@@ -13,7 +12,6 @@ function M:Construct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self.GuideCombinationId = (...)
@@ -37,7 +35,6 @@ function M:OnLoaded(...)
   end
   self:PlayAnimation(self.In)
 end
-
 function M:BindEventOnRetry(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -48,7 +45,6 @@ function M:BindEventOnRetry(Obj, Func, ...)
     ...
   }
 end
-
 function M:BindEventOnExit(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -59,28 +55,24 @@ function M:BindEventOnExit(Obj, Func, ...)
     ...
   }
 end
-
 function M:Retry()
   if self.RetryObj and self.RetryCallback then
     self.RetryCallback(self.RetryObj, table.unpack(self.RetryParams))
   end
   self:Close()
 end
-
 function M:Exit()
   if self.ExitObj and self.ExitCallback then
     self.ExitCallback(self.ExitObj, table.unpack(self.ExitParams))
   end
   self:Close()
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   if self.CurTips then
     self.CurTips:SetFocus()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -95,7 +87,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:Handle_OnGamePadDown(InKeyName)
   if "Gamepad_FaceButton_Right" == InKeyName then
     self:Exit()
@@ -113,7 +104,6 @@ function M:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -122,7 +112,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function M:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     local CurTips = self.List_Tips:GetItemAt(0)
@@ -131,5 +120,4 @@ function M:UpdateOnInputDeviceTypeChange()
     end
   end
 end
-
 return M

@@ -15,11 +15,9 @@ AbyssTeam.__Props__ = {
   Pet = prop.prop("Int", "client save"),
   UnitIdList = prop.prop("Str2IntDict", "client save")
 }
-
 function AbyssTeam:Init()
   self:ClearTeam()
 end
-
 function AbyssTeam:UpdateTeam(Char, MeleeWeapon, RangedWeapon, Phantom1, PhantomWeapon1, Phantom2, PhantomWeapon2, Pet)
   self.Char = Char
   self.MeleeWeapon = MeleeWeapon
@@ -30,7 +28,6 @@ function AbyssTeam:UpdateTeam(Char, MeleeWeapon, RangedWeapon, Phantom1, Phantom
   self.PhantomWeapon2 = PhantomWeapon2
   self.Pet = Pet
 end
-
 function AbyssTeam:UpdateUnitIdList(CharId, MeleeWeaponId, RangedWeaponId, PhantomId1, PhantomWeaponId1, PhantomId2, PhantomWeaponId2, PetId)
   self.UnitIdList.CharId = CharId
   self.UnitIdList.MeleeWeaponId = MeleeWeaponId
@@ -41,7 +38,6 @@ function AbyssTeam:UpdateUnitIdList(CharId, MeleeWeaponId, RangedWeaponId, Phant
   self.UnitIdList.PhantomWeaponId2 = PhantomWeaponId2
   self.UnitIdList.PetId = PetId
 end
-
 function AbyssTeam:ClearTeam()
   self.Char = CommonConst.AbyssTeamNoChar
   self.MeleeWeapon = CommonConst.AbyssTeamNoChar
@@ -60,16 +56,13 @@ function AbyssTeam:ClearTeam()
   self.UnitIdList.PhantomWeaponId2 = CommonConst.AbyssTeamNoPet
   self.UnitIdList.PetId = CommonConst.AbyssTeamNoPet
 end
-
 FormatProperties(AbyssTeam)
 local AbyssTeamList = Class("AbyssTeamList", CustomTypes.CustomList)
 AbyssTeamList.ValueType = AbyssTeam
-
 function AbyssTeamList:NewAbyssTeam()
   local _AbyssTeam = AbyssTeam()
   return _AbyssTeam
 end
-
 local AbyssLevel = Class("AbyssLevel", CustomTypes.CustomAttr)
 AbyssLevel.__Props__ = {
   AbyssLevelId = prop.prop("Int", "client save"),
@@ -92,11 +85,9 @@ AbyssLevel.__Props__ = {
   DungeonReward1 = prop.getter("Data", "DungeonReward1"),
   DungeonReward2 = prop.getter("Data", "DungeonReward2")
 }
-
 function AbyssLevel:Data()
   return DataMgr.AbyssLevel[self.AbyssLevelId]
 end
-
 function AbyssLevel:Init(LevelId)
   if not LevelId then
     return
@@ -106,7 +97,6 @@ function AbyssLevel:Init(LevelId)
   self:InitAbyssTeamList()
   self:ClearAbyssLevelProgress()
 end
-
 function AbyssLevel:InitAbyssTeamList()
   if self.AbyssDungeon1 then
     local NewAbyssTeamA1 = self.AbyssLockedTeamList:NewAbyssTeam()
@@ -121,17 +111,14 @@ function AbyssLevel:InitAbyssTeamList()
     self.AbyssCacheTeamList:Append(NewAbyssTeamB2)
   end
 end
-
 function AbyssLevel:IsAbyssLevelPass()
   return self.MaxAbyssLevelProgress == self:GetAbyssLevelRoomCount()
 end
-
 function AbyssLevel:ClearAbyssLevelProgress()
   self.AbyssLevelProgress = {0, 0}
   self.MaxLockedTeamProgress = {0, 0}
   self.PassTime = {-1, -1}
 end
-
 function AbyssLevel:UpdateAbyssLevelProgress(AbyssRoomA, AbyssRoomB)
   if AbyssRoomA then
     self.AbyssLevelProgress[1] = math.min(AbyssRoomA, self:GetAbyssDungeon1RoomCount())
@@ -143,11 +130,9 @@ function AbyssLevel:UpdateAbyssLevelProgress(AbyssRoomA, AbyssRoomB)
   end
   self:UpdateMaxAbyssLevelProgress()
 end
-
 function AbyssLevel:UpdateMaxAbyssLevelProgress()
   self.MaxAbyssLevelProgress = math.min(self:GetAbyssLevelRoomCount(), math.max(self.MaxAbyssLevelProgress, self.MaxLockedTeamProgress[1] + self.MaxLockedTeamProgress[2]))
 end
-
 function AbyssLevel:UpdatePassTime(PassTime, DungeonIndex)
   if not PassTime or PassTime <= 0 then
     return
@@ -158,7 +143,6 @@ function AbyssLevel:UpdatePassTime(PassTime, DungeonIndex)
     self.PassTime[DungeonIndex] = math.min(self.PassTime[DungeonIndex], PassTime)
   end
 end
-
 function AbyssLevel:UpdateFastestPassTime(IsLoop)
   local AllPassTime = self.PassTime[1]
   if not IsLoop then
@@ -170,17 +154,14 @@ function AbyssLevel:UpdateFastestPassTime(IsLoop)
     self.FastestPassTime = math.min(self.FastestPassTime, AllPassTime)
   end
 end
-
 function AbyssLevel:AddAbyssDungeonEnterCount(DungeonIndex)
   if self.AbyssDungeonEnterCount[DungeonIndex] ~= nil then
     self.AbyssDungeonEnterCount[DungeonIndex] = self.AbyssDungeonEnterCount[DungeonIndex] + 1
   end
 end
-
 function AbyssLevel:GetAbyssLevelRoomCount()
   return self:GetAbyssDungeon1RoomCount() + self:GetAbyssDungeon2RoomCount()
 end
-
 function AbyssLevel:GetAbyssDungeon1RoomCount()
   if self.AbyssDungeon1 and DataMgr.AbyssDungeon[self.AbyssDungeon1] then
     local AbyssDungeonInfo = DataMgr.AbyssDungeon[self.AbyssDungeon1]
@@ -188,7 +169,6 @@ function AbyssLevel:GetAbyssDungeon1RoomCount()
   end
   return 0
 end
-
 function AbyssLevel:GetAbyssDungeon2RoomCount()
   if self.AbyssDungeon2 and DataMgr.AbyssDungeon[self.AbyssDungeon2] then
     local AbyssDungeonInfo = DataMgr.AbyssDungeon[self.AbyssDungeon2]
@@ -196,32 +176,25 @@ function AbyssLevel:GetAbyssDungeon2RoomCount()
   end
   return 0
 end
-
 function AbyssLevel:SavePlayerInfo1(Info)
   self.PlayerInfo1 = SerializeUtils:Serialize(Info)
 end
-
 function AbyssLevel:GetPlayerInfo1()
   return SerializeUtils:UnSerialize(self.PlayerInfo1)
 end
-
 function AbyssLevel:SavePlayerInfo2(Info)
   self.PlayerInfo2 = SerializeUtils:Serialize(Info)
 end
-
 function AbyssLevel:GetPlayerInfo2()
   return SerializeUtils:UnSerialize(self.PlayerInfo2)
 end
-
 FormatProperties(AbyssLevel)
 local AbyssLevelList = Class("AbyssLevelList", CustomTypes.CustomList)
 AbyssLevelList.ValueType = AbyssLevel
-
 function AbyssLevelList:NewAbyssLevel(LevelId)
   local _AbyssLevel = AbyssLevel(LevelId)
   return _AbyssLevel
 end
-
 local Abyss = Class("Abyss", CustomTypes.CustomAttr)
 Abyss.__Props__ = {
   AbyssId = prop.prop("Int", "client save"),
@@ -236,17 +209,16 @@ Abyss.__Props__ = {
   }),
   AlreadyJumpLevelTimes = prop.prop("Int", "client save", 0),
   FastestTeamList = prop.prop("AbyssTeamList", "client save"),
+  AttributeType = prop.prop("Str", "client save"),
   AbyssSeasonId = prop.getter("Data", "AbyssSeasonId"),
   DifficultyLock = prop.getter("Data", "DifficultyLock"),
   AbyssType = prop.getter("Data", "AbyssType"),
   AbyssLevelId = prop.getter("Data", "AbyssLevelId"),
   AbyssRewardList = prop.getter("Data", "AbyssRewardList")
 }
-
 function Abyss:Data()
   return DataMgr.AbyssSeason[self.AbyssId]
 end
-
 function Abyss:Init(AbyssId)
   if not AbyssId then
     return
@@ -259,7 +231,6 @@ function Abyss:Init(AbyssId)
   self:SetLockState()
   self:InitRewardGotList()
 end
-
 function Abyss:SetLockState()
   if self.DifficultyLock then
     self.LockState = true
@@ -267,7 +238,6 @@ function Abyss:SetLockState()
     self.LockState = false
   end
 end
-
 function Abyss:InitRewardGotList()
   local RoomCount = 0
   for key, value in ipairs(self.AbyssLevelList) do
@@ -286,14 +256,12 @@ function Abyss:InitRewardGotList()
     end
   end
 end
-
 function Abyss:CheckRewardIsGot(RoomCount)
   if self.RewardGotList[RoomCount] then
     return 1 == self.RewardGotList[RoomCount][2]
   end
   return false
 end
-
 function Abyss:CheckRewardCanGet(RoomCount)
   if not self.RewardGotList[RoomCount] then
     return false
@@ -307,20 +275,17 @@ function Abyss:CheckRewardCanGet(RoomCount)
   end
   return false
 end
-
 function Abyss:GetReward(RoomCount)
   if self.RewardGotList[RoomCount] then
     self.RewardGotList[RoomCount][2] = 1
   end
 end
-
 function Abyss:GetAbyssRewardIdByStar(RoomCount)
   if self.RewardGotList[RoomCount] then
     return self.RewardGotList[RoomCount][1]
   end
   return 0
 end
-
 function Abyss:CheckHaveRewardToGet()
   local AllRoomCount = self:GetAllPassRoomCount()
   for key, value in pairs(self.RewardGotList) do
@@ -330,38 +295,31 @@ function Abyss:CheckHaveRewardToGet()
   end
   return false
 end
-
 function Abyss:UnLock()
   self.LockState = false
 end
-
 function Abyss:IsLocked()
   return self.LockState
 end
-
 function Abyss:InitAbyssLevelList()
   for index, AbyssLevelId in ipairs(self.AbyssLevelId) do
     local AbyssLevel = self.AbyssLevelList:NewAbyssLevel(AbyssLevelId)
     self.AbyssLevelList:Append(AbyssLevel)
   end
 end
-
 function Abyss:AddAbyssLevel(LevelId)
   local AbyssLevel = self.AbyssLevelList:NewAbyssLevel(LevelId)
   self.AbyssLevelList:Append(AbyssLevel)
 end
-
 function Abyss:GetAbyssLevelCount()
   return self.AbyssLevelList:Length()
 end
-
 function Abyss:IsLoopAbyss()
   if self.AbyssType and 3 == self.AbyssType then
     return true
   end
   return false
 end
-
 function Abyss:IsAbyssPass()
   if self.AbyssType and 3 == self.AbyssType then
     return false
@@ -373,7 +331,6 @@ function Abyss:IsAbyssPass()
     return self.MaxAbyssProgress[2] == self.AbyssLevelList[AbyssLevelCount]:GetAbyssLevelRoomCount()
   end
 end
-
 function Abyss:ClearAbyssProgress()
   self.AbyssProgress = {
     1,
@@ -381,7 +338,6 @@ function Abyss:ClearAbyssProgress()
     0
   }
 end
-
 function Abyss:UpdateAbyssProgress(AbyssLevel, AbyssRoomA, AbyssRoomB)
   if AbyssLevel then
     self.AbyssProgress[1] = AbyssLevel
@@ -394,7 +350,6 @@ function Abyss:UpdateAbyssProgress(AbyssLevel, AbyssRoomA, AbyssRoomB)
   end
   self:UpdateMaxAbyssProgress()
 end
-
 function Abyss:UpdateMaxAbyssProgress()
   if self.MaxAbyssProgress[1] < self.AbyssProgress[1] then
     self.MaxAbyssProgress[1] = self.AbyssProgress[1]
@@ -403,11 +358,9 @@ function Abyss:UpdateMaxAbyssProgress()
     self.MaxAbyssProgress[2] = math.max(self.MaxAbyssProgress[2], self.AbyssProgress[2] + self.AbyssProgress[3])
   end
 end
-
 function Abyss:UpdateFastestTeamList(TeamList)
   self.FastestTeamList = TeamList
 end
-
 function Abyss:GetAllPassRoomCount()
   local AllPassRoomCount = 0
   for LevelIndex = 1, self.MaxAbyssProgress[1] - 1 do
@@ -418,23 +371,19 @@ function Abyss:GetAllPassRoomCount()
   end
   return AllPassRoomCount + self.MaxAbyssProgress[2]
 end
-
 FormatProperties(Abyss)
 local AbyssDict = Class("AbyssDict", CustomTypes.CustomDict)
 AbyssDict.KeyType = BaseTypes.Int
 AbyssDict.ValueType = Abyss
-
 function AbyssDict:NewAbyss(AbyssId)
   return Abyss(AbyssId)
 end
-
 function AbyssDict:GetAbyss(AbyssId)
   if not self[AbyssId] then
     return self:NewAbyss(AbyssId)
   end
   return self[AbyssId]
 end
-
 return {
   Abyss = Abyss,
   AbyssDict = AbyssDict,

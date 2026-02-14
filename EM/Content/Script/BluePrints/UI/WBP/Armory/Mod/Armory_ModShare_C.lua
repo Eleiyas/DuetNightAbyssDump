@@ -3,7 +3,6 @@ local ModModel = ModController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_CopyLink:BindEventOnClicked(self, function()
     ModController:ShowToast(GText("UI_Mod_Toast_CopyedSuit"))
@@ -43,23 +42,19 @@ function M:Construct()
   self.Btn_Import:SetText(GText("UI_Mod_ImportPlan"))
   ModController:RegisterEvent(self)
 end
-
 function M:NotifyOnModSuitCopyFaild()
   self.ModMain:BlockAllUIInput(false)
 end
-
 function M:ForbidCopy(bForbid)
   self.Btn_CopyLink:ForbidBtn(bForbid)
   self.Btn_CopyCommunity:ForbidBtn(bForbid)
 end
-
 function M:Destruct()
   self.Btn_CopyLink:UnBindEventOnClickedByObj(self)
   self.Btn_CopyCommunity:UnBindEventOnClickedByObj(self)
   self.Btn_Import:UnBindEventOnClickedByObj(self)
   ModController:UnRegisterEvent(self)
 end
-
 function M:Show()
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self.bIsFocusable = true
@@ -78,12 +73,10 @@ function M:Show()
   self.Btn_CopyCommunity.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_Import.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ResetFocus()
   self:OnRemovedFromFocusPath()
   self.ModMain:SetFocus()
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.bIsFocusable == false then
     return
@@ -94,5 +87,4 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     self.ModMain.Mod_Plan.Key_Gamepad:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 return M

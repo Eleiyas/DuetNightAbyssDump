@@ -1,10 +1,8 @@
 local M = Class("BluePrints/Item/BP_CombatItemBase_C")
-
 function M:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.InitRotate = self:K2_GetActorRotation()
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   local CurYaw = self.CurRotate.Yaw
@@ -13,7 +11,6 @@ function M:ReceiveTick(DeltaSeconds)
   self.CurRotate.Yaw = NewYaw
   self:K2_SetActorRotation(self.CurRotate, false, nil, false)
 end
-
 function M:CheckAngle(RotateFactor)
   local CurYaw = self:K2_GetActorRotation().Yaw
   local InitYaw = self.InitRotate.Yaw
@@ -26,16 +23,13 @@ function M:CheckAngle(RotateFactor)
   self.RotateFactor = RotateFactor
   return false
 end
-
 function M:ActiveCombat()
   self.Super.ActiveCombat(self)
   self:SetActorTickEnabled(false)
 end
-
 function M:DeActiveCombat()
   self.Super.DeActiveCombat(self)
   self.CurRotate = self:K2_GetActorRotation()
   self:SetActorTickEnabled(true)
 end
-
 return M

@@ -13,7 +13,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function M:Init(Params)
   self.CurrentWidget = nil
   self.Parent = Params.Parent
@@ -27,7 +26,6 @@ function M:Init(Params)
   self:InitPreConsumeList()
   self:InitDetails()
 end
-
 function M:Construct()
   self.Text_Exp:SetText(GText("UI_Panel_Experience"))
   self:BindToAnimationFinished(self.LevelUp_In, {
@@ -40,13 +38,11 @@ function M:Construct()
   })
   self:AddLSFocusTarget(nil, self.Sort_Pet, "View", true)
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.LevelUp_In)
   self:UnbindAllFromAnimationFinished(self.LevelUp_Out)
   self:RemoveFocusTarget("View")
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -59,15 +55,12 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.UnHandled
 end
-
 function M:IsFull()
   return self.SelectedCount == self.PreConsumeCount
 end
-
 function M:IsEmpty()
   return 0 == self.SelectedCount
 end
-
 function M:IsPrecious()
   local PreConsumeArray = self.ListWidgets
   for i, Widget in pairs(PreConsumeArray) do
@@ -78,16 +71,14 @@ function M:IsPrecious()
   end
   return false
 end
-
 function M:OnListItemInited(Content, EntryUI)
   self:OnPreConsumeListGenerated(Content, EntryUI)
 end
-
 function M:OnPetIntensifyDone(CostPetUniqueId, bLevelUp)
   self.LevelUping = true
   local PreConsumeArray = self.ListWidgets
   for i = 1, self.SelectedCount do
-    local DelContent = PreConsumeArray[i].Content
+    local DelContent = PreConsumeArray[1].Content
     self:OnItemMinusBtnClick(DelContent)
   end
   self:ClearResourceCnt()
@@ -112,14 +103,12 @@ function M:OnPetIntensifyDone(CostPetUniqueId, bLevelUp)
     end
   end
 end
-
 function M:ReInitAfterIntensify()
   self.Parent.Btn_Auto:ForbidBtn(false)
   self:HidePreConsumeList(false)
   self:InitDetails()
   self.Parent:ReNavigateToListItem(true)
 end
-
 function M:HidePreConsumeList(bHide)
   self.PreConsumeCount = bHide and 0 or PreConsumeCount
   self.PreConsumeList:Clear()
@@ -135,7 +124,6 @@ function M:HidePreConsumeList(bHide)
     self:OnPreConsumeListGenerated(NewContent, Widget)
   end
 end
-
 function M:GetConsumeContents()
   local PreConsumeArray = self.ListWidgets
   local ConsumeContents = {}
@@ -145,7 +133,6 @@ function M:GetConsumeContents()
   end
   return ConsumeContents
 end
-
 function M:UpdatePreConsumeList(PreConsumeList)
   local PreConsumeArray = self.ListWidgets
   for i, Widget in pairs(PreConsumeArray) do
@@ -158,7 +145,6 @@ function M:UpdatePreConsumeList(PreConsumeList)
     self.CurrentWidget.Item:PlayAnimation(self.CurrentWidget.Item.Hover)
   end
 end
-
 function M:InitPreConsumeList(bSkipAnim)
   self.SelectedCount = 0
   self.PreConsumeCount = PreConsumeCount
@@ -175,14 +161,12 @@ function M:InitPreConsumeList(bSkipAnim)
   self.ListWidgets = {}
   self:ClearResourceCnt()
 end
-
 function M:CreateSlotContent(i)
   local EmptyContent = NewObject(UIUtils.GetCommonItemContentClass())
   EmptyContent.Index = i
   self:ReInitSlotContent(EmptyContent)
   return EmptyContent
 end
-
 function M:ReInitSlotContent(Content)
   if Content.Index <= self.PreConsumeCount then
     Content.NotInteractive = false
@@ -241,7 +225,6 @@ function M:ReInitSlotContent(Content)
     Content.OnMouseButtonUpEvents = nil
   end
 end
-
 function M:HasAnyChoiceOfContent()
   local AllParentContents = self.Parent:GetAllListContent()
   local Result = false
@@ -253,7 +236,6 @@ function M:HasAnyChoiceOfContent()
   end
   return Result
 end
-
 function M:OnPreConsumeListGenerated(Content, Widget)
   local Index = Content.Index
   self.ListWidgets[Index] = Widget
@@ -291,7 +273,6 @@ function M:OnPreConsumeListGenerated(Content, Widget)
     end
   end
 end
-
 function M:CopyItemToConsumeList(AddContent)
   self.SelectedCount = self.SelectedCount + 1
   self.PreConsumeList:Clear()
@@ -302,7 +283,7 @@ function M:CopyItemToConsumeList(AddContent)
     if i == self.SelectedCount then
       if self:IsCommonResource(AddContent.Uuid) then
         Target = self.Parent._Avatar.Resources[AddContent.UnitId]
-        assert(Target and Target.Count > 0, "\233\128\154\231\148\168\229\174\160\231\137\169\229\141\135\231\186\167\231\180\160\230\157\144\228\184\141\229\173\152\229\156\168\230\136\150\229\183\178\232\128\151\229\176\189")
+        assert(Target and Target.Count > 0, "通用宠物升级素材不存在或已耗尽")
         Content = ArmoryUtils:NewResourceItemContent(Target)
         Content.Count = 1
         Content.Uuid = AddContent.Uuid
@@ -310,7 +291,7 @@ function M:CopyItemToConsumeList(AddContent)
         Content.Exp = AddContent.Exp
       else
         Target = ArmoryUtils:GetPet(AddContent.Uuid)
-        assert(Target, AddContent.Uuid .. "\239\188\140\232\191\153\228\184\170\229\174\160\231\137\169\230\149\176\230\141\174\229\183\178\231\187\143\229\164\177\230\149\136\228\186\134\239\188\140\232\175\183\230\141\162\230\150\176\229\143\183\229\142\187\230\181\139")
+        assert(Target, AddContent.Uuid .. "，这个宠物数据已经失效了，请换新号去测")
         Content = ArmoryUtils:NewPetItemContent(Target)
         Content.Index = i
       end
@@ -325,7 +306,6 @@ function M:CopyItemToConsumeList(AddContent)
   local Delta = self:GetDeltaValue(Target)
   self:UpdateDetails(Delta)
 end
-
 function M:OnItemMinusBtnClick(DelContent)
   if not DelContent then
     return
@@ -366,7 +346,6 @@ function M:OnItemMinusBtnClick(DelContent)
     self:UpdateDetails(Delta)
   end
 end
-
 function M:FindSelectedContent(Uuid)
   local PreConsumeArray = self.ListWidgets
   for i, Widget in pairs(PreConsumeArray) do
@@ -377,7 +356,6 @@ function M:FindSelectedContent(Uuid)
   end
   return nil
 end
-
 function M:OnMinusStart(Content)
   if not self.MinusPressed then
     self.MinusPressed = true
@@ -387,7 +365,6 @@ function M:OnMinusStart(Content)
     self:RemoveCurrentContent()
   end
 end
-
 function M:OnMinusEnd()
   if self.MinusPressed then
     self.MinusPressed = false
@@ -397,7 +374,6 @@ function M:OnMinusEnd()
     end
   end
 end
-
 function M:UpdateMinus()
   if self.MinusPressed then
     self.MinusPressTime = self.MinusPressTime + LongPressTimerInterval
@@ -406,7 +382,6 @@ function M:UpdateMinus()
     end
   end
 end
-
 function M:RemoveCurrentContent()
   local Content = self.MinusContent
   DebugPrint("WBP_Armory_PetUpgrade_C:RemoveCurrentContent", Content)
@@ -438,7 +413,6 @@ function M:RemoveCurrentContent()
     self:UpdateAutoBtnState()
   end
 end
-
 function M:OnPlusStart(Content)
   if not self.PlusPressed then
     self.PlusPressed = true
@@ -448,7 +422,6 @@ function M:OnPlusStart(Content)
     self:AddResource()
   end
 end
-
 function M:OnPlusEnd()
   if self.PlusPressed then
     if self.PlusTimer then
@@ -459,7 +432,6 @@ function M:OnPlusEnd()
     local PlusContent
   end
 end
-
 function M:UpdatePlus()
   if self.PlusPressed then
     self.PlusPressTime = self.PlusPressTime + LongPressTimerInterval
@@ -468,7 +440,6 @@ function M:UpdatePlus()
     end
   end
 end
-
 function M:AddResource()
   DebugPrint("WBP_Armory_PetUpgrade_C:AddResource")
   local PlusContent = self.PlusContent
@@ -508,7 +479,6 @@ function M:AddResource()
     end
   end
 end
-
 function M:ClearResourceCnt()
   for Uuid, _ in pairs(self.Parent.ContentMap) do
     if self:IsCommonResource(Uuid) then
@@ -516,7 +486,6 @@ function M:ClearResourceCnt()
     end
   end
 end
-
 function M:SetResourceCount(ResourceId, Cnt)
   local Content = self.Parent.ContentMap[ResourceId]
   DebugPrint("WBP_Armory_PetUpgrade_C:SetResourceCount", Cnt, Content, Content and Content.SelfWidget)
@@ -530,15 +499,12 @@ function M:SetResourceCount(ResourceId, Cnt)
     Widget:SetItemSelect(false)
   end
 end
-
 function M:GetCurrentContent()
   return self.CurrentWidget and self.CurrentWidget.Content
 end
-
 function M:UpdateAutoBtnState(bAutoSelect)
   self.Parent:SwitchAutoBtnState(bAutoSelect)
 end
-
 function M:GetDeltaValue(Target)
   if not Target then
     return 0
@@ -549,7 +515,6 @@ function M:GetDeltaValue(Target)
     return Target.UseParam
   end
 end
-
 function M:UpdateDetails(Delta)
   if self.LevelUping then
     return
@@ -585,7 +550,6 @@ function M:UpdateDetails(Delta)
   self.LastTotalExp = BarExp
   return true
 end
-
 function M:CalcRequiredExp(CurrentLevel, ExpectLevel)
   local TotalExp = 0
   for Level = CurrentLevel, ExpectLevel do
@@ -596,7 +560,6 @@ function M:CalcRequiredExp(CurrentLevel, ExpectLevel)
   end
   return TotalExp
 end
-
 function M:PreviewLevelMax()
   local Target = self.Target
   local LastLevel = Target:GetPreviewLevelByExp(self.LastTotalExp)
@@ -606,7 +569,6 @@ function M:PreviewLevelMax()
   end
   return false
 end
-
 function M:OnAutoSelectClick(SelectContents)
   if self.bAutoSelecting then
     return
@@ -640,7 +602,6 @@ function M:OnAutoSelectClick(SelectContents)
   self.bAutoSelecting = false
   self:UpdateAutoBtnState(true)
 end
-
 function M:OnClearClick()
   if self.bClearing then
     return
@@ -654,7 +615,6 @@ function M:OnClearClick()
   self:InitDetails()
   self.bClearing = false
 end
-
 function M:ClearListItems()
   self.PreConsumeList:Clear()
   local PreConsumeArray = self.ListWidgets
@@ -671,13 +631,11 @@ function M:ClearListItems()
   self.SelectedCount = 0
   self.LastTotalExp = self.Target.Exp
 end
-
 function M:RevertLastSelect()
   local PreConsumeArray = self.ListWidgets
   local FinalContent = PreConsumeArray[self.SelectedCount].Content
   self:OnItemMinusBtnClick(FinalContent)
 end
-
 function M:InitDetails()
   local Target = self.Target
   self.LevelUping = false
@@ -705,7 +663,6 @@ function M:InitDetails()
     self:SetExpBar(Target.Exp, MaxExp, self.Exp_Bar)
   end
 end
-
 function M:OnSortListSelectionsChanged(ItemIdx)
   self.Parent:OnFilterTagChanged(ItemIdx)
   local PreConsumeArray = self.ListWidgets
@@ -716,7 +673,6 @@ function M:OnSortListSelectionsChanged(ItemIdx)
     end
   end
 end
-
 function M:SetExpBar(Value, MaxValue, Bar)
   local BGSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Image_Exp_BG)
   local MaxWidth = BGSlot:GetSize().X
@@ -726,7 +682,6 @@ function M:SetExpBar(Value, MaxValue, Bar)
   Size.X = Width
   Slot:SetSize(Size)
 end
-
 function M:GetConsumeIds()
   local PreConsumeArray = self.ListWidgets
   local ConsumeIds = {}
@@ -738,7 +693,6 @@ function M:GetConsumeIds()
   end
   return ConsumeIds
 end
-
 function M:GetConsumeResources()
   local ConsumeResources = {}
   local PreConsumeArray = self.ListWidgets
@@ -750,14 +704,12 @@ function M:GetConsumeResources()
   end
   return ConsumeResources
 end
-
 function M:IsCommonResource(Uuid)
   if not Uuid then
     return false
   end
   return type(Uuid) == "number" and Uuid < 0
 end
-
 function M:OnExpandList(bExpandList, bRefreshList)
   if self.Parent then
     if self.Parent.bItemDetailsShowed then
@@ -767,13 +719,11 @@ function M:OnExpandList(bExpandList, bRefreshList)
     self.Parent:ReNavigateToListItem(false, true)
   end
 end
-
 function M:OnLevelUpInAnimFinished()
   self:AddTimer(1.5, function()
     self:PlayAnimation(self.LevelUp_Out)
   end, false, 0, nil, true)
 end
-
 function M:OnLevelUpOutAnimFinished()
   self.LevelUping = false
   self.Panel_Exp:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -782,6 +732,5 @@ function M:OnLevelUpOutAnimFinished()
     self.Parent:OnLevelUpAnimFinishedCallback()
   end
 end
-
 AssembleComponents(M)
 return M

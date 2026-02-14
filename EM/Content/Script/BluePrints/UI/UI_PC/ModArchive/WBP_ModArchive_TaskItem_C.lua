@@ -3,7 +3,6 @@ local WBP_ModArchive_TaskItem_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_ModArchive_TaskItem_C:OnListItemObjectSet(ListItemObject)
   ListItemObject.SelfWidget = self
   self.Content = ListItemObject
@@ -26,11 +25,9 @@ function WBP_ModArchive_TaskItem_C:OnListItemObjectSet(ListItemObject)
   self:RefreshList()
   self:OnFocusLostNew()
 end
-
 function WBP_ModArchive_TaskItem_C:RefreshList()
   self:InitTaskItem()
 end
-
 function WBP_ModArchive_TaskItem_C:InitTaskItem()
   self.Text_Title:SetText(GText(self.TaskInfo.TaskName))
   self.Text_TitleNum:SetText(GText(self.TaskInfo.DisplayId))
@@ -94,13 +91,11 @@ function WBP_ModArchive_TaskItem_C:InitTaskItem()
     Content.IsShowDetails = Rewards[i].IsShowDetails
     Content.ItemType = Rewards[i].ItemType
     Content.bHasGot = self.TaskInfo.Complete and self.TaskInfo.RewardsGot
-    
     function Content.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnTipsOpenChanged
       })
     end
-    
     Content.OnMouseButtonUpEvents = {
       Obj = self,
       Callback = self.OnClickItem,
@@ -167,14 +162,12 @@ function WBP_ModArchive_TaskItem_C:InitTaskItem()
     })
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnClickJumpTo()
   if self.TaskInfo.Complete or self.TaskInfo.TaskType == "Collect" then
     return
   end
   PageJumpUtils:JumpToTargetPageByJumpId(self.TaskInfo.JumpTaskTypeParam[1])
 end
-
 function WBP_ModArchive_TaskItem_C:SortRewardsArray(RewardsArray)
   table.sort(RewardsArray, function(a, b)
     if a.Rarity ~= b.Rarity then
@@ -189,7 +182,6 @@ function WBP_ModArchive_TaskItem_C:SortRewardsArray(RewardsArray)
     return false
   end)
 end
-
 function WBP_ModArchive_TaskItem_C:OnTipsOpenChanged(bIsOpen)
   DebugPrint("zwkkk OnTipsOpenChanged", bIsOpen, self:GetName())
   self.Owner:OnTipsOpenChanged(bIsOpen, self)
@@ -203,10 +195,8 @@ function WBP_ModArchive_TaskItem_C:OnTipsOpenChanged(bIsOpen)
     self.Key_Rewards:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnClickGetReward()
   local Avatar = GWorld:GetAvatar()
-  
   local function CallBack(ErrCode, Reward)
     if ErrorCode:Check(ErrCode) then
       local ItemPage = UIManager(self):LoadUINew("GetItemPage", nil, nil, nil, Reward)
@@ -216,14 +206,11 @@ function WBP_ModArchive_TaskItem_C:OnClickGetReward()
       self.Owner.Owner:RefreshReddot()
     end
   end
-  
   Avatar:ModBookQuestGetReward(self.TaskInfo.TaskId, CallBack)
 end
-
 function WBP_ModArchive_TaskItem_C:SetReward()
   self:InitTaskItem()
 end
-
 function WBP_ModArchive_TaskItem_C:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -239,7 +226,6 @@ function WBP_ModArchive_TaskItem_C:OnMouseEnter(MyGeometry, MouseEvent)
   end
   DebugPrint("zwkkk Hover")
 end
-
 function WBP_ModArchive_TaskItem_C:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -251,11 +237,9 @@ function WBP_ModArchive_TaskItem_C:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsHovering = false
   DebugPrint("zwkkk UnHover")
 end
-
 function WBP_ModArchive_TaskItem_C:OnClickItem()
   DebugPrint("zwkkk OnClickItem")
 end
-
 function WBP_ModArchive_TaskItem_C:OnStartJumpOrReward()
   if 3 == self.WS_Bottom:GetActiveWidgetIndex() then
     self.Btn_Reward:StopAllAnimations()
@@ -267,49 +251,43 @@ function WBP_ModArchive_TaskItem_C:OnStartJumpOrReward()
     self:OnClickJumpTo()
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnGamePadSelected()
   self:SetFocus()
   DebugPrint("zwkkk OnGamePadSelected")
   if self.List_Reward:GetChildrenCount() > 0 then
-    DebugPrint("zwkkk \233\173\148\228\185\139\230\165\148Item\232\162\171\232\129\154\231\132\166\228\186\134")
+    DebugPrint("zwkkk 魔之楔Item被聚焦了")
     self.List_Reward:GetChildAt(0):SetFocus()
     self.SelectedModIndex = 0
   else
-    DebugPrint("zwkkk \230\140\137\231\144\134\230\157\165\232\175\180\229\186\148\232\175\165\232\191\155\229\136\176\229\165\150\229\138\177\230\160\143\228\186\134", self.RewardIdSelected)
+    DebugPrint("zwkkk 按理来说应该进到奖励栏了", self.RewardIdSelected)
     self.ListView_Rewards:SetFocus()
     self:OnRewardsAddedToFocusPath()
   end
   self.IsSelected = true
 end
-
 function WBP_ModArchive_TaskItem_C:OnGamePadUnSelected()
   DebugPrint("zwkkkk OnGamePadUnSelected", self.ListView_Rewards:HasAnyUserFocus())
   self.ListView_Rewards:BP_ClearSelection()
   self.Key_Rewards:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.IsSelected = false
 end
-
 function WBP_ModArchive_TaskItem_C:OnEntryInitialized(Item, Widget)
   Widget.WidgetMap = nil
 end
-
 function WBP_ModArchive_TaskItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
-  DebugPrint("zwkkk12 \232\142\183\229\190\151\232\129\154\231\132\166")
+  DebugPrint("zwkkk12 获得聚焦")
   self.InFocus = true
   if self.CurInputDeviceType == ECommonInputType.Gamepad and self.Owner and self.Owner.Owner and 3 ~= self.Owner.Owner.CurTipsIndex then
     self.Owner.Owner:SwitchComKeyTipsState(3)
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnFocusLost(InFocusEvent)
-  DebugPrint("zwkkk12 \229\164\177\229\142\187\232\129\154\231\132\166")
+  DebugPrint("zwkkk12 失去聚焦")
   self.InFocus = false
   if not self:HasFocusedDescendants() then
     self:OnFocusLostNew()
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnInAnimFinished()
   self.InAnimFinished = true
   if self:HasAnyUserFocus() then
@@ -319,22 +297,28 @@ function WBP_ModArchive_TaskItem_C:OnInAnimFinished()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnAddedToFocusPath(InFocusEvent)
   DebugPrint("zwkkk1234 OnAddedToFocusPath")
+  if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.GamePad then
+    self.Btn_Build:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Key_Rewards:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  end
 end
-
 function WBP_ModArchive_TaskItem_C:OnRemovedFromFocusPath(InFocusEvent)
   DebugPrint("zwkkk1234 OnRemovedFromFocusPath")
+  if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.GamePad then
+    self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
+    self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.Collapsed)
+    self.Key_Rewards:SetVisibility(ESlateVisibility.Collapsed)
+  end
 end
-
 function WBP_ModArchive_TaskItem_C:RefreshInputDeviceType()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function WBP_ModArchive_TaskItem_C:OnFocusNew()
   DebugPrint("zw123 OnFocusNew ", self.CurInputDeviceType, self.CurInputDeviceType == ECommonInputType.GamePad, self.Owner)
   if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.GamePad then
@@ -343,7 +327,6 @@ function WBP_ModArchive_TaskItem_C:OnFocusNew()
     self.Key_Rewards:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnFocusLostNew()
   if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.GamePad then
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
@@ -351,7 +334,6 @@ function WBP_ModArchive_TaskItem_C:OnFocusLostNew()
     self.Key_Rewards:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_TaskItem_C:OnNavigateLeft()
   if self.SelectedModIndex <= 0 then
     return
@@ -363,7 +345,6 @@ function WBP_ModArchive_TaskItem_C:OnNavigateLeft()
   end
   return
 end
-
 function WBP_ModArchive_TaskItem_C:OnNavigateRight()
   if self.SelectedModIndex < 0 then
     return
@@ -378,7 +359,6 @@ function WBP_ModArchive_TaskItem_C:OnNavigateRight()
   end
   return
 end
-
 function WBP_ModArchive_TaskItem_C:OnNavigateUp()
   if self.SelectedModIndex < 4 then
     return
@@ -387,7 +367,6 @@ function WBP_ModArchive_TaskItem_C:OnNavigateUp()
   self.List_Reward:GetChildAt(self.SelectedModIndex):SetFocus()
   return self.List_Reward:GetChildAt(self.SelectedModIndex)
 end
-
 function WBP_ModArchive_TaskItem_C:OnNavigateDown()
   if self.SelectedModIndex < 0 then
     return
@@ -402,13 +381,11 @@ function WBP_ModArchive_TaskItem_C:OnNavigateDown()
   self.List_Reward:GetChildAt(self.SelectedModIndex):SetFocus()
   return self.List_Reward:GetChildAt(self.SelectedModIndex)
 end
-
 function WBP_ModArchive_TaskItem_C:OnRewardNavigateUp()
   self.SelectedModIndex = 0
   self:OnRewardsRemovedFromFocusPath()
   return self.List_Reward:GetChildAt(self.SelectedModIndex)
 end
-
 function WBP_ModArchive_TaskItem_C:OnRewardsAddedToFocusPath()
   self.FocusInRewards = true
   if self.CurInputDeviceType ~= ECommonInputType.GamePad then
@@ -418,7 +395,6 @@ function WBP_ModArchive_TaskItem_C:OnRewardsAddedToFocusPath()
   self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
   self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_ModArchive_TaskItem_C:OnRewardsRemovedFromFocusPath()
   self.FocusInRewards = false
   if self.CurInputDeviceType ~= ECommonInputType.GamePad then
@@ -428,7 +404,6 @@ function WBP_ModArchive_TaskItem_C:OnRewardsRemovedFromFocusPath()
   self.Btn_Build:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_ModArchive_TaskItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName, self:GetName())
   if self.CurInputDeviceType == CurInputDevice then
@@ -438,7 +413,6 @@ function WBP_ModArchive_TaskItem_C:RefreshOpInfoByInputDevice(CurInputDevice, Cu
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function WBP_ModArchive_TaskItem_C:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     if self:HasAnyUserFocus() or self.List_Reward:HasFocusedDescendants() then
@@ -452,9 +426,12 @@ function WBP_ModArchive_TaskItem_C:UpdateOnInputDeviceTypeChange()
       self:AddDelayFrameFunc(function()
         self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
         self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.Collapsed)
-        if self:HasAnyUserFocus() and not self.ListView_Rewards:HasFocusedDescendants() then
+        if self.Owner.CurWidget and self.Owner.CurWidget == self and not self.ListView_Rewards:HasFocusedDescendants() then
           self.Btn_Build:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
           self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
+          if self.Key_Rewards then
+            self.Key_Rewards:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+          end
         end
       end, 1, "CollapseBtn")
     end
@@ -466,5 +443,4 @@ function WBP_ModArchive_TaskItem_C:UpdateOnInputDeviceTypeChange()
     self.Key_Rewards:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_ModArchive_TaskItem_C

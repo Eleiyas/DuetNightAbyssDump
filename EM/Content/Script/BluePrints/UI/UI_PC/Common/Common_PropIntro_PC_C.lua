@@ -2,11 +2,9 @@ require("UnLua")
 require("DataMgr")
 local UIUtils = require("Utils.UIUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
 end
-
 function M:Construct()
   self:BindToAnimationFinished(self.In, {
     self,
@@ -20,7 +18,6 @@ function M:Construct()
     Desc = GText("UI_DETAILS")
   })
 end
-
 function M:CheckAndStartNextPropAnim(PropInfo)
   if PropInfo then
     local TableName = PropInfo.TableTypeName
@@ -85,7 +82,6 @@ function M:CheckAndStartNextPropAnim(PropInfo)
     self:Close()
   end
 end
-
 function M:TryToViewItemDetail()
   local ItemInformationPanel = UIManager(self):GetUI("ItemInformation")
   if nil == ItemInformationPanel then
@@ -94,21 +90,16 @@ function M:TryToViewItemDetail()
     ItemInformationPanel:Close()
   end
 end
-
 function M:PlayOutAnim()
   local function func()
     self:StopListeningForAllInputActions()
-    
     self:PlayAnimation(self.Out)
   end
-  
   self:AddTimer(3, func, false, nil, "PlayOutAnim")
 end
-
 function M:OnAnimationFinished(Anim)
   if Anim == self.Out then
     UIUtils.ShowTopTips()
   end
 end
-
 return M

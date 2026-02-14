@@ -1,7 +1,6 @@
 local BaseTagRule = require("BluePrints.Char.CharacterComponent.CharacterTagLogic.BaseCharacterTagRule")
 local FSM = {}
 FSM.__index = FSM
-
 function FSM:CreateFSM(Owner, TagRule)
   local CharFSM = {}
   setmetatable(CharFSM, FSM)
@@ -13,7 +12,6 @@ function FSM:CreateFSM(Owner, TagRule)
   CharFSM.Enable = false
   return CharFSM
 end
-
 function FSM:SetTag(NewTag)
   if not self.TagRule or self.IsLeavingTag == true then
     return false
@@ -36,19 +34,17 @@ function FSM:SetTag(NewTag)
   end
   return true
 end
-
 function FSM:AddCustomChecker(CheckerName, Checker)
   if not CheckerName or not Checker then
     return
   end
   if self.CustomCheckers[CheckerName] then
-    DebugPrint("Tianyi@ \232\175\165CustomChecker\229\183\178\230\179\168\229\134\140")
+    DebugPrint("Tianyi@ 该CustomChecker已注册")
     return
   end
   Checker.Name = CheckerName
   self.CustomCheckers[CheckerName] = Checker
 end
-
 function FSM:SetDefaultTag()
   if not self.TagRule then
     return
@@ -58,5 +54,4 @@ function FSM:SetDefaultTag()
     self:SetTag(DefaultTag)
   end
 end
-
 return FSM

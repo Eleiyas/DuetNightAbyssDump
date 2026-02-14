@@ -3,18 +3,20 @@ local WBP_BattleMap_C = Class("BluePrints.UI.BP_UIState_C")
 WBP_BattleMap_C._components = {
   "BluePrints.UI.UIComponent.TouchComponent"
 }
-
 function WBP_BattleMap_C:Construct()
   self.Super.Construct(self)
   self.bNewMaterial = true
-  self.MapMaterialTexNum = 10
+  self.MapMaterialTexNum = 5
+  self.MapMaterialNum = 5
   self.levelLoader = UGameplayStatics.GetGameInstance(self):GetSceneManager():GetLevelLoader()
   self.Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.GameState = UGameplayStatics.GetGameState(self)
   self.MapPanelCPP = self.MapPanel
   self.PointPanelCPP = self.PointPanel
   self.RangePanelCPP = self.RangePanel
+  self.RangePanel:SetVisibility(ESlateVisibility.Collapsed)
   self.FloorPanelCPP = self.FloorPanel
+  self.FloorPanel:SetVisibility(ESlateVisibility.Collapsed)
   self.TracePanelCPP = self.TracePanel
   self.PhantomPanelCPP = self.PhantomPanel
   self.GamerCPP = self.Gamer
@@ -61,13 +63,35 @@ function WBP_BattleMap_C:Construct()
   local Avatar = GWorld:GetAvatar()
   if self.levelLoader and self.levelLoader.IsWorldLoader and Avatar then
     self.WildMap = self:InitWildMap()
-    self.WildMap:Init(true, DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId, self)
+    if self.DungeonData then
+      for Id, Data in pairs(DataMgr.Region) do
+        if Data.RegionMapFile == self.DungeonData.DungeonMapFile then
+          self.WildMap:InitInDungeon(Id, self)
+          break
+        end
+      end
+    else
+      self.WildMap:Init(true, DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId, self)
+    end
     self.Scale = self.WildMap.Scale
     self.MapImageCenter = self.WildMap.MapImageCenter
     self.IsInRegionMap = true
     self.MapRotation = self.WildMap.MapRotation
     self.YawOff = self.MapRotation + 90
     self.WildMap.TracePanelBattleMapScale = self.PointPanel.RenderTransform.Scale
+    for i = 1, self.MapMaterialNum do
+      if self["MapPanel" .. i] then
+        self["MapPanel" .. i]:SetVisibility(ESlateVisibility.Collapsed)
+      end
+    end
+    self.DoorArrowPanel:SetVisibility(ESlateVisibility.Collapsed)
+  else
+    for i = 1, self.MapMaterialNum do
+      if self["MapPanel" .. i] then
+        self["MapPanel" .. i]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+      end
+    end
+    self.DoorArrowPanel:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
   self.TracePanel:SetRenderScale(self.PointPanel.RenderTransform.Scale)
   self.MapPanelStandScale = FVector2D(self.MapPanel.RenderTransform.Scale.X, self.MapPanel.RenderTransform.Scale.Y)
@@ -92,10 +116,13 @@ function WBP_BattleMap_C:Construct()
       self:InitMapWidth()
     end)
     self.EnemyMaterial = self.EnemyPanel:GetDynamicMaterial()
-    for i = 1, 3 do
+    for i = 1, self.MapMaterialNum do
       if self["MapPanel" .. i] then
+        if i ~= self.MapMaterialNum then
+          self.MapPanelArray:Add(self["MapPanel" .. i])
+        end
         local Material = self["MapPanel" .. i]:GetDynamicMaterial()
-        if i < 3 then
+        if i < self.MapMaterialNum then
           self.MapMaterialArray:Add(Material)
         else
           self.DoorMaterial = Material
@@ -111,25 +138,25 @@ function WBP_BattleMap_C:Construct()
     self.DropIconMaterial = self.DropPanel:GetDynamicMaterial()
     self.GuideIconArrowMaterial = self.GuideArrowPanel:GetDynamicMaterial()
     self.DropIconArrowMaterial = self.DropArrowPanel:GetDynamicMaterial()
-    local GuideIconArrow = LoadObject("/Game/UI/Texture/Static/Atlas/Map/Src_T_Map_Subscript_MiniMap.Src_T_Map_Subscript_MiniMap")
-    for i = 1, 10 do
+    local GuideIconArrow = LoadObject("/Game/UI/Texture/Static/Atlas/Map/T_Map_Subscript_MiniMap.T_Map_Subscript_MiniMap")
+    for i = 1, 5 do
       local Obj1 = NewObject(UBattleMapEnemyObj.StaticClass(), self)
       local Obj2 = NewObject(UBattleMapEnemyObj.StaticClass(), self)
       Obj1.Index = i
       Obj2.Index = i
       self.GuideIndexPool:Add(Obj1)
       self.DropIndexPool:Add(Obj2)
-      self.GuideIconMaterial:SetScalarParameterValue("EnemyOpacity" .. i, 0)
-      self.DropIconMaterial:SetScalarParameterValue("EnemyOpacity" .. i, 0)
-      self.GuideIconArrowMaterial:SetScalarParameterValue("EnemyOpacity" .. i, 0)
-      self.DropIconArrowMaterial:SetScalarParameterValue("EnemyOpacity" .. i, 0)
+      self.GuideIconMaterial:SetScalarParameterValue("GuideOpacity" .. i, 0)
+      self.DropIconMaterial:SetScalarParameterValue("GuideOpacity" .. i, 0)
+      self.GuideIconArrowMaterial:SetScalarParameterValue("GuideOpacity" .. i, 0)
+      self.DropIconArrowMaterial:SetScalarParameterValue("GuideOpacity" .. i, 0)
       self.GuideIconArrowMaterial:SetTextureParameterValue("GuideTex" .. i, GuideIconArrow)
       self.DropIconArrowMaterial:SetTextureParameterValue("GuideTex" .. i, GuideIconArrow)
       self.DoorArrowMaterial:SetScalarParameterValue("MapOpacity" .. i, 0)
       self.DoorArrowMaterial:SetTextureParameterValue("MapTex" .. i, GuideIconArrow)
     end
   else
-    for i = 1, 3 do
+    for i = 1, self.MapMaterialNum do
       if self["MapPanel" .. i] then
         self["MapPanel" .. i]:SetVisibility(ESlateVisibility.Collapsed)
       end
@@ -153,7 +180,11 @@ function WBP_BattleMap_C:Construct()
       Obj.MonsterIcon2EndIcon:Add("/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Enemy.T_Gp_Enemy", "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Enemy_Sleep.T_Gp_Enemy_Sleep")
       Obj.MonsterIcon2EndIcon:Add("/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Rescue_Elite.T_Gp_Rescue_Elite", "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Rescue_Elite_Sleep.T_Gp_Rescue_Elite_Sleep")
       self.EnemyIndexPool:Add(Obj)
-      self.EnemyMaterial:SetScalarParameterValue("EnemyOpacity" .. i, 0)
+      if i > self.BattleMapNormalEnemyNum then
+        self.EnemyMaterial:SetScalarParameterValue("SpecialEnemyOpacity" .. 11 - i, 0)
+      else
+        self.EnemyMaterial:SetScalarParameterValue("NormalEnemyOpacity" .. i, 0)
+      end
     end
   end
   local scenemanager = UGameplayStatics.GetGameInstance(self):GetSceneManager()
@@ -183,8 +214,9 @@ function WBP_BattleMap_C:Construct()
   if self.DungeonData and self.DungeonData.bHideBatttleMap then
     self:SetVisibility(ESlateVisibility.Collapsed)
   end
+  self.DropPanel:SetVisibility(ESlateVisibility.Collapsed)
+  self.DropArrowPanel:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_BattleMap_C:InitMapWidth()
   self.MapWidth = self.IsOpen and self.OutMapWidth or self.InMapWidth
   for _, Material in pairs(self.MapMaterialArray) do
@@ -199,7 +231,6 @@ function WBP_BattleMap_C:InitMapWidth()
   self.TraceArrowRange = (1 - 32 / self.MapWidth.X) / 2
   self.DoorArrowMaterial:SetScalarParameterValue("PanelSizeY", self.MapWidth.Y)
 end
-
 function WBP_BattleMap_C:ChangeEvent()
   if self.IsOpen then
     self.RetainerBox_101:SetVisibility(ESlateVisibility.Collapsed)
@@ -224,11 +255,19 @@ function WBP_BattleMap_C:ChangeEvent()
     self:SetVisibility(0)
     self.MiniMapRad = 135
   end
+  if self.DungeonData and self.WildMap then
+    for Id, Data in pairs(DataMgr.Region) do
+      if Data.RegionMapFile == self.DungeonData.DungeonMapFile then
+        self.WildMap:InitInDungeon(Id, self)
+        self.WildMap:InitMapRect()
+        break
+      end
+    end
+  end
   if self.bNewMaterial then
     self:InitMapWidth()
   end
 end
-
 function WBP_BattleMap_C:AdjustSlot(CanvasSlot)
   local half = UKismetMathLibrary.Vector2D_One() / 2
   local anchors = CanvasSlot:GetAnchors()
@@ -244,7 +283,6 @@ function WBP_BattleMap_C:AdjustSlot(CanvasSlot)
   CanvasSlot:SetSize(UKismetMathLibrary.Vector2D_Zero())
   CanvasSlot:SetAlignment(half)
 end
-
 function WBP_BattleMap_C:DelayAddTouchLayer()
   self.InitBoxScale = FVector2D(self.RetainerBox_101.RenderTransform.Scale.X, self.RetainerBox_101.RenderTransform.Scale.Y)
   self.ScaleByFingerTouch = self.RetainerBox_101.RenderTransform.Scale
@@ -253,7 +291,6 @@ function WBP_BattleMap_C:DelayAddTouchLayer()
     MultiMove = self.TouchMapMultiMove
   })
 end
-
 function WBP_BattleMap_C:CreateBattleMap(mapData)
   if not mapData then
     return
@@ -262,7 +299,6 @@ function WBP_BattleMap_C:CreateBattleMap(mapData)
     self:CreateSingleBattleMap(id, data)
   end
 end
-
 function WBP_BattleMap_C:CreateSingleBattleMap(id, data)
   if not data[4] or self.levelLoader.IsWorldLoader then
     return
@@ -317,7 +353,6 @@ function WBP_BattleMap_C:CreateSingleBattleMap(id, data)
     end
   end
 end
-
 function WBP_BattleMap_C:CreateRougelikeBattleMap(Id, Data)
   if self.bNewMaterial then
     if not self.RougelikeMaterial then
@@ -362,10 +397,8 @@ function WBP_BattleMap_C:CreateRougelikeBattleMap(Id, Data)
     self.MapArray[#self.MapArray + 1] = map
   end
 end
-
 function WBP_BattleMap_C:TouchMapMove()
 end
-
 function WBP_BattleMap_C:TouchMapMultiMove(TouchFingerCount, Index, Pos1, Pos2, TwoPointDist)
   if not UE4.UKismetSystemLibrary.IsValid(self.Player) or TouchFingerCount <= 1 then
     return
@@ -385,7 +418,6 @@ function WBP_BattleMap_C:TouchMapMultiMove(TouchFingerCount, Index, Pos1, Pos2, 
   self.RetainerBox_101:SetRenderScale(self.ScaleByFingerTouch)
   self.LastTouchMultiDist = TwoPointDist
 end
-
 function WBP_BattleMap_C:OnClickOpen(Geometry, InputEvent)
   if self.IsDisableClick then
     DebugPrint("WBP_BattleMap_C.IsDisableClick = true")
@@ -394,8 +426,9 @@ function WBP_BattleMap_C:OnClickOpen(Geometry, InputEvent)
   if not self.Player:GetController():IsA(APlayerController) then
     return
   end
-  local Size = USlateBlueprintLibrary.GetAbsoluteSize(Geometry)
-  local Position = USlateBlueprintLibrary.LocalToAbsolute(Geometry, FVector2D(0, 0))
+  local TargetGeometry = self.RetainerBox_101:GetCachedGeometry()
+  local Size = USlateBlueprintLibrary.GetAbsoluteSize(TargetGeometry)
+  local Position = USlateBlueprintLibrary.LocalToAbsolute(TargetGeometry, FVector2D(0, 0))
   FVector2D.Div(Size, 2)
   FVector2D.Add(Position, Size)
   local MousePosition = UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InputEvent)
@@ -404,9 +437,9 @@ function WBP_BattleMap_C:OnClickOpen(Geometry, InputEvent)
   end
   self:OnClickRealOpen()
 end
-
 function WBP_BattleMap_C:OnClickRealOpen()
-  if self.levelLoader and self.levelLoader.IsWorldLoader then
+  local GameState = UGameplayStatics.GetGameState(self)
+  if GameState and GameState:IsInRegion() then
     self:OnKeyboardClick()
     return
   end
@@ -428,7 +461,6 @@ function WBP_BattleMap_C:OnClickRealOpen()
   self.IsAnimating = false
   self.Btn_Close:SetVisibility(UE4.ESlateVisibility.Visible)
 end
-
 function WBP_BattleMap_C:OnClickClose()
   self.IsOpen = false
   self.IsAnimating = true
@@ -442,7 +474,6 @@ function WBP_BattleMap_C:OnClickClose()
   self.Btn_Open:SetVisibility(UE4.ESlateVisibility.Visible)
   self.BG:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_BattleMap_C:OnKeyboardClick()
   if TeamController:IsTeamPopupBarOpenInGamepad() then
     return
@@ -450,7 +481,8 @@ function WBP_BattleMap_C:OnKeyboardClick()
   if self.IsAnimating then
     return
   end
-  if self.levelLoader and self.levelLoader.IsWorldLoader then
+  local GameState = UGameplayStatics.GetGameState(self)
+  if GameState and GameState:IsInRegion() then
     local Avatar = GWorld:GetAvatar()
     if not (Avatar and Avatar:IsRealInBigWorld()) or Avatar:IsInHardBoss() then
       return
@@ -474,7 +506,6 @@ function WBP_BattleMap_C:OnKeyboardClick()
     self:OnClickRealOpen()
   end
 end
-
 function WBP_BattleMap_C:InitPointPool()
   self.PointPool_TracePanel = {}
   self.PointPool_PointPanel = {}
@@ -498,7 +529,6 @@ function WBP_BattleMap_C:InitPointPool()
   end
   self.PointArrowPool = TempPool
 end
-
 function WBP_BattleMap_C:NewPointArrow()
   local Arrow
   if self.PointArrowPool and #self.PointArrowPool > 0 then
@@ -509,7 +539,6 @@ function WBP_BattleMap_C:NewPointArrow()
   Arrow:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   return Arrow
 end
-
 function WBP_BattleMap_C:NewPoint(NeedTrace)
   local Point, Arrow
   if NeedTrace then
@@ -543,7 +572,6 @@ function WBP_BattleMap_C:NewPoint(NeedTrace)
   end
   return Point, Arrow
 end
-
 function WBP_BattleMap_C:UpdateGuideIcon(SceneManager, GuideName, OpType, TargetEid, TargetActor, TargetActorLocation, ConfigData, IsNeedArrow, IsGuideFollowActor, IsNeedLookUpEntity)
   DebugPrint(" WBP_BattleMap_C:UpdateGuideIcon", GuideName, OpType)
   if "Delete" == OpType then
@@ -635,8 +663,6 @@ function WBP_BattleMap_C:UpdateGuideIcon(SceneManager, GuideName, OpType, Target
       local Index = (TargetActor.GuideOrderIndex - 1) % 6
       local Content = string.char(string.byte("A") + Index)
       MiniMapGuidePNG = SceneManager:GetExcavationABCIconPath(Content)
-    else
-      return
     end
     if not MiniMapGuidePNG then
       return
@@ -652,7 +678,7 @@ function WBP_BattleMap_C:UpdateGuideIcon(SceneManager, GuideName, OpType, Target
         Obj.RangeArrow = self:NewPointArrow()
         self.GuideIconMap:Add(GuideName, Obj)
         self.GuideIndexPool:Remove(Index)
-        self.GuideIconMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 1)
+        self.GuideIconMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 1)
         Obj:SetGuideTarget(MiniMapGuidePNG, self.GuideIconMaterial)
       end
       if not self.GuideData:Find(GuideName) then
@@ -684,21 +710,18 @@ function WBP_BattleMap_C:UpdateGuideIcon(SceneManager, GuideName, OpType, Target
     end
   end
 end
-
 function WBP_BattleMap_C:MiniMapGuidePNGLoadFinish(Object)
   if not Object then
     return
   end
   local GuideName = self.LoadingGuidePNGMap[Object]
 end
-
 function WBP_BattleMap_C:SetSabotageABCGuideIcon_Callback(Eids, UnitIds)
   for GuideName, Info in pairs(self.SabotageABCGuideCache) do
     self:RealSetSabotageABCGuideIcon(Eids, GuideName, Info)
   end
   self.SabotageABCGuideCache = {}
 end
-
 function WBP_BattleMap_C:RealSetSabotageABCGuideIcon(Eids, GuideName, Info)
   DebugPrint("WBP_BattleMap_C: RealSetSabotageABCGuideIcon: GuideName", GuideName, "Eid", Info.TargetEid)
   local index = 0
@@ -715,7 +738,7 @@ function WBP_BattleMap_C:RealSetSabotageABCGuideIcon(Eids, GuideName, Info)
   DebugPrint("WBP_BattleMap_C:SetSabotageABCGuideIcon_Callback Content:", Content)
   local SceneManager = GWorld.GameInstance:GetSceneManager()
   if nil == SceneManager then
-    ScreenPrint("WBP_BattleMap_C:SetSabotageABCGuideIcon_Callback: SceneManager \228\184\141\229\173\152\229\156\168")
+    ScreenPrint("WBP_BattleMap_C:SetSabotageABCGuideIcon_Callback: SceneManager 不存在")
     return
   end
   local MiniMapGuidePNG = SceneManager:GetSabotageABCIconPath(Content)
@@ -739,7 +762,6 @@ function WBP_BattleMap_C:RealSetSabotageABCGuideIcon(Eids, GuideName, Info)
   self:LoadTextureAsync(MiniMapGuidePNG, self.GuidePoint:FindRef(GuideName), "SetImageWithTextureOrSprite", self:GetAssetNameFromPath(MiniMapGuidePNG))
   self:AddTrack(GuideName)
 end
-
 function WBP_BattleMap_C:ArrangeGuideIcons(TargetEid, TargetDoorLocation, IsInLevel)
   local table = self.GuideData:ToTable()
   for guideName, guideData in pairs(table) do
@@ -758,7 +780,6 @@ function WBP_BattleMap_C:ArrangeGuideIcons(TargetEid, TargetDoorLocation, IsInLe
     end
   end
 end
-
 function WBP_BattleMap_C:SetImageWithTextureOrSprite(Image, Res)
   if URuntimeCommonFunctionLibrary.ObjIsChildOf(Res, UPaperSprite) then
     Image:SetBrushResourceObject(Res)
@@ -767,7 +788,6 @@ function WBP_BattleMap_C:SetImageWithTextureOrSprite(Image, Res)
     Image:SetBrushFromTexture(Res, true)
   end
 end
-
 function WBP_BattleMap_C:RemoveGuidePoint(GuideName)
   local guidePoint = self.GuidePoint:FindRef(GuideName)
   if nil ~= guidePoint then
@@ -799,12 +819,12 @@ function WBP_BattleMap_C:RemoveGuidePoint(GuideName)
     if Obj then
       if Obj.ParentEnemyMaterial == self.GuideIconMaterial then
         self.GuideIndexPool:Add(Obj)
-        self.GuideIconMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 0)
-        self.GuideIconArrowMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 0)
+        self.GuideIconMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 0)
+        self.GuideIconArrowMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 0)
       else
         self.DropIndexPool:Add(Obj)
-        self.DropIconMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 0)
-        self.DropIconArrowMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 0)
+        self.DropIconMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 0)
+        self.DropIconArrowMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 0)
       end
       if Obj.RangeArrow then
         Obj.RangeArrow:SetVisibility(ESlateVisibility.Collapsed)
@@ -817,14 +837,12 @@ function WBP_BattleMap_C:RemoveGuidePoint(GuideName)
     end
   end
 end
-
 function WBP_BattleMap_C:CheckIsNeedCalEveryFrameByActor(guideData)
   if nil == guideData[1] or not UE4.UKismetSystemLibrary.IsValid(guideData[1]) then
     return false
   end
   return guideData[6] or nil == guideData[2]
 end
-
 function WBP_BattleMap_C:Destruct()
   WBP_BattleMap_C.Super.Destruct(self)
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnChangeKeyBoardSet)
@@ -837,19 +855,26 @@ function WBP_BattleMap_C:Destruct()
   EventManager:RemoveEvent(EventID.UpdateDoorIcon, self)
   EventManager:RemoveEvent(EventID.OnTeamRecoveryStateChange, self)
   EventManager:RemoveEvent(EventID.ForceUpdatePlayerCurrentLevelId, self)
+  if self.WildMap then
+    self.WildMap:RemoveFromParent()
+    self.WildMap = nil
+  end
   self:OnClickClose()
   for _, map in pairs(self.MapArray) do
     map:RemoveFromParent()
   end
   self.MapArray = {}
-  for _, point in pairs(self.GuidePoint:ToTable()) do
-    point:RemoveFromParent()
+  for guideName, point in pairs(self.GuidePoint:ToTable()) do
+    self:RemoveGuidePoint(guideName)
   end
   for _, point in pairs(self.GuidePointArrow:ToTable()) do
     point:RemoveFromParent()
   end
   for _, point in pairs(self.EnemyPoint:ToTable()) do
     point:RemoveFromParent()
+  end
+  for _, pointArrow in pairs(self.PointArrowPool) do
+    pointArrow:RemoveFromParent()
   end
   self.TracePanel:ClearChildren()
   self.PointPanel:ClearChildren()
@@ -861,6 +886,8 @@ function WBP_BattleMap_C:Destruct()
   self.GuideIndexPool:Clear()
   self.DropIndexPool:Clear()
   self.LevelId2MapObj:Clear()
+  self.GuidePoint:Clear()
+  self.GuidePointArrow:Clear()
   for _, Obj in pairs(self.GuideIconMap:ToTable()) do
     if Obj.RangeArrow then
       Obj.RangeArrow:RemoveFromParent()
@@ -868,10 +895,6 @@ function WBP_BattleMap_C:Destruct()
   end
   self.GuideIconMap:Clear()
   self.GuideData:Clear()
-  if self.WildMap then
-    self.WildMap:RemoveFromParent()
-    self.WildMap = nil
-  end
   local Avatar = GWorld:GetAvatar()
   if Avatar and self.UnlockEventId then
     Avatar:UnBindOnUIFirstTimeUnlock("Map", self.UnlockEventId)
@@ -879,7 +902,6 @@ function WBP_BattleMap_C:Destruct()
   end
   UGameplayStatics.GetGameInstance(self):GetSceneManager().CacheGuideInfo = self.GuideData
 end
-
 function WBP_BattleMap_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -889,7 +911,6 @@ function WBP_BattleMap_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_BattleMap_C:OnChangeKeyBoardSet()
   local platformName = UGameplayStatics.GetPlatformName()
   local IsTemple = self.DungeonData and self.DungeonData.DungeonType == "Temple"
@@ -917,7 +938,6 @@ function WBP_BattleMap_C:OnChangeKeyBoardSet()
     self.Common_Key_Hud_PC:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_BattleMap_C:AddArea(TargetAreaName)
   if not self.GameState.QuestArea or self.IsInRegionMap then
     return
@@ -933,7 +953,6 @@ function WBP_BattleMap_C:AddArea(TargetAreaName)
   area:SetRenderTranslation(location)
   area:SetRenderScale(scale)
 end
-
 function WBP_BattleMap_C:ShowDropInMinimap(PickupBase, IsShow)
   local GuideName = tostring(PickupBase.Eid)
   if not IsShow then
@@ -955,7 +974,7 @@ function WBP_BattleMap_C:ShowDropInMinimap(PickupBase, IsShow)
       local Obj = self.DropIndexPool:Get(Index)
       self.GuideIconMap:Add(GuideName, Obj)
       self.DropIndexPool:Remove(Index)
-      self.DropIconMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 1)
+      self.DropIconMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 1)
       Obj:SetGuideTarget(PickupBase.Data.GuideIconBPPath, self.DropIconMaterial)
     end
     if not self.GuideData:Find(GuideName) then
@@ -986,7 +1005,6 @@ function WBP_BattleMap_C:ShowDropInMinimap(PickupBase, IsShow)
     self:LoadTextureAsync(PickupBase.Data.GuideIconBPPath, self.GuidePoint:FindRef(GuideName), "SetImageWithTextureOrSprite", self:GetAssetNameFromPath(PickupBase.Data.GuideIconBPPath))
   end
 end
-
 function WBP_BattleMap_C:ShowRangedIconInMinimap(Eid, IsShow, ImagePath, Radius)
   local GuideName = Eid .. "Ranged"
   local Actor = Battle(self):GetEntity(Eid)
@@ -1008,7 +1026,7 @@ function WBP_BattleMap_C:ShowRangedIconInMinimap(Eid, IsShow, ImagePath, Radius)
     local Obj = self.GuideIndexPool:Get(Index)
     self.GuideIconMap:Add(GuideName, Obj)
     self.GuideIndexPool:Remove(Index)
-    self.GuideIconMaterial:SetScalarParameterValue("EnemyOpacity" .. Obj.Index, 1)
+    self.GuideIconMaterial:SetScalarParameterValue("GuideOpacity" .. Obj.Index, 1)
     Obj:SetGuideTarget(ImagePath, self.GuideIconMaterial)
   end
   if not self.GuideData:Find(GuideName) then
@@ -1021,9 +1039,12 @@ function WBP_BattleMap_C:ShowRangedIconInMinimap(Eid, IsShow, ImagePath, Radius)
   guideData.IsGuideFollowActor = true
   guideData.IsNeedLookUpEntity = false
   guideData.NeedTrack = false
-  guideData.Radius = Radius
+  if self.WildMap then
+    guideData.Radius = Radius / self.MapPanelStandScale.X
+  else
+    guideData.Radius = Radius
+  end
 end
-
 function WBP_BattleMap_C:TickFloor()
   if not self.Player or 0 == self.Player.CurrentLevelId:Num() or self.Player:IsCharacterInAir() then
     return
@@ -1075,7 +1096,6 @@ function WBP_BattleMap_C:TickFloor()
     end
   end
 end
-
 function WBP_BattleMap_C:OnArtLevelLoadedStateChange(LevelId, IsLoad)
   if self.bNewMaterial then
     return
@@ -1085,7 +1105,6 @@ function WBP_BattleMap_C:OnArtLevelLoadedStateChange(LevelId, IsLoad)
     self.LevelId2Map[LevelId]:SetVisibility(IsLoad and ESlateVisibility.SelfHitTestInvisible or ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_BattleMap_C:InitFloorBox()
   local array = GWorld.GameInstance:GetSceneManager().FloorBoxArray
   if not array or self.IsInRegionMap then
@@ -1095,7 +1114,6 @@ function WBP_BattleMap_C:InitFloorBox()
     self:AddFloorBox(FloorBox)
   end
 end
-
 function WBP_BattleMap_C:AddFloorBox(FloorBox)
   if FloorBox.TriggerOnly then
     return
@@ -1149,14 +1167,12 @@ function WBP_BattleMap_C:AddFloorBox(FloorBox)
     self.LevelId2Map[levelId]:SetRenderOpacity(0.3)
   end
 end
-
 function WBP_BattleMap_C:OnTargetActorLookUp(GuideName)
   local guideData = self.GuideData:FindRef(GuideName)
   if guideData.GuideTarget.UnitType == "Phantom" then
     self:InitPhantomConfigData(GuideName, guideData, guideData.GuideTarget.UnitId)
   end
 end
-
 function WBP_BattleMap_C:InitPhantomConfigData(GuideName, GuideData, UnitId)
   local phantom = self.GuidePoint:FindRef(GuideName)
   local TexturePath
@@ -1184,19 +1200,16 @@ function WBP_BattleMap_C:InitPhantomConfigData(GuideName, GuideData, UnitId)
     self:LoadTextureAsync(TexturePath, phantom, "SetBrushResourceObject", self:GetAssetNameFromPath(TexturePath))
   end
 end
-
 function WBP_BattleMap_C:InitHostageImage(GuideName)
   local phantom = self.GuidePoint:FindRef(GuideName)
   local Path = "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Rescue_HostageA.T_Gp_Rescue_HostageA"
   self:LoadTextureAsync(Path, phantom, "SetBrushResourceObject", "Rescue_HostageA")
 end
-
 function WBP_BattleMap_C:ShowHardBoss(bShow)
   if self.WildMap then
     self.WildMap:ShowHardBoss(bShow)
   end
 end
-
 function WBP_BattleMap_C:SetPhantomGuideStateByEvent(Eid, State, PrevState)
   DebugPrint("WBP_BattleMap_C:SetPhantomGuideStateByEvent", State, Eid)
   local GuideData = self.GuideData:FindRef(tostring(Eid))
@@ -1221,7 +1234,6 @@ function WBP_BattleMap_C:SetPhantomGuideStateByEvent(Eid, State, PrevState)
   DebugPrint("WBP_BattleMap_C:SetPhantomGuideStateByEvent Path = ", Path)
   self:LoadTextureAsync(Path, self.GuidePoint:FindRef(tostring(Eid)), "SetBrushResourceObject", self:GetAssetNameFromPath(Path))
 end
-
 function WBP_BattleMap_C:InOrOutEdgeState(bIn)
   if not self.VX_EdgeWarnings then
     return
@@ -1247,7 +1259,6 @@ function WBP_BattleMap_C:InOrOutEdgeState(bIn)
     end, false, nil, "BattleMapCheckEdgeTimer")
   end
 end
-
 function WBP_BattleMap_C:OnTextureLoadFinish(Object)
   if not Object then
     return
@@ -1280,7 +1291,6 @@ function WBP_BattleMap_C:OnTextureLoadFinish(Object)
     DebugPrint("Invalid FunaName = ", FuncName, AssetName)
   end
 end
-
 function WBP_BattleMap_C:LoadTextureAsync(Path, Widget, FuncName, AssetName)
   DebugPrint("WBP_BattleMap_C:LoadTextureAsync ", Path, Widget, FuncName, AssetName)
   if not (Path and Widget) or not FuncName then
@@ -1294,7 +1304,6 @@ function WBP_BattleMap_C:LoadTextureAsync(Path, Widget, FuncName, AssetName)
     WBP_BattleMap_C.OnTextureLoadFinish
   })
 end
-
 function WBP_BattleMap_C:GetAssetNameFromPath(Path)
   local Index = string.find(Path, "%.")
   if Index then
@@ -1303,7 +1312,6 @@ function WBP_BattleMap_C:GetAssetNameFromPath(Path)
   DebugPrint("WBP_BattleMap_C:GetAssetNameFromPath Path Wrong", Path)
   return nil
 end
-
 function WBP_BattleMap_C:InitMinimapDoor()
   local Array = GWorld.GameInstance:GetSceneManager().MinimapDoorArray
   if not Array or self.IsInRegionMap then
@@ -1313,7 +1321,6 @@ function WBP_BattleMap_C:InitMinimapDoor()
     self:AddDoorToMinimap(Door)
   end
 end
-
 function WBP_BattleMap_C:AddDoorToMinimap(Door)
   if self.IsInRegionMap then
     return
@@ -1362,7 +1369,6 @@ function WBP_BattleMap_C:AddDoorToMinimap(Door)
   Map:SetVisibility(ESlateVisibility.Collapsed)
   self.DoorIcons[Door] = Map
 end
-
 function WBP_BattleMap_C:AppearDoor(Map)
   if self.IsInRegionMap then
     return
@@ -1385,7 +1391,6 @@ function WBP_BattleMap_C:AppearDoor(Map)
     end
   end
 end
-
 function WBP_BattleMap_C:UpdateDoorIcon(AutoDoor)
   if self.IsInRegionMap then
     return
@@ -1443,11 +1448,9 @@ function WBP_BattleMap_C:UpdateDoorIcon(AutoDoor)
     end
   end
 end
-
 function WBP_BattleMap_C:ForceUpdatePlayerCurrentLevelId()
   self.Player:UpdateCurrentLevelId()
   self.bForceUpdatePlayerCurrentLevelId = true
 end
-
 AssembleComponents(WBP_BattleMap_C)
 return WBP_BattleMap_C

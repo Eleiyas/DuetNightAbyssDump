@@ -8,17 +8,14 @@ BP_MechanismSummon_C._components = {
   "BluePrints.Combat.Skill.MechanismSummonInitLogic",
   "BluePrints.Common.DelayFrameComponent"
 }
-
 function BP_MechanismSummon_C:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.OnBattleReady, self, self.OnBattleReady_TryInitCharacterInfo)
 end
-
 function BP_MechanismSummon_C:OnBattleReady_TryInitCharacterInfo(_Battle)
   if Battle(self) == _Battle then
     self:TryInitActorInfo("Battle")
   end
 end
-
 function BP_MechanismSummon_C:RealReceiveBeginPlay()
   self.Data = DataMgr.MechanismSummon[self.UnitId]
   if self.Data.BluePrintParams then
@@ -41,7 +38,6 @@ function BP_MechanismSummon_C:RealReceiveBeginPlay()
     EventManager:FireEvent(EventID.OnCharCallSummoner, self)
   end
 end
-
 function BP_MechanismSummon_C:ReceiveEndPlay(EndPlayReason)
   local Creator = self:GetDirectSource()
   if Creator and Creator:IsMainPlayer() and (IsStandAlone(self) or IsClient(self)) then
@@ -50,7 +46,6 @@ function BP_MechanismSummon_C:ReceiveEndPlay(EndPlayReason)
   self.Overridden.ReceiveEndPlay(self, EndPlayReason)
   EventManager:RemoveEvent(EventID.OnBattleReady, self)
 end
-
 function BP_MechanismSummon_C:LoadCurrentModel()
   local ModelId = self.Data.ModelId
   if not ModelId then
@@ -67,13 +62,16 @@ function BP_MechanismSummon_C:LoadCurrentModel()
     self.Mesh:SetSkeletalMesh(ModelMesh, true)
   end
 end
-
 function BP_MechanismSummon_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   local Creator = self:GetDirectSource()
   local CreatorName = Creator and Creator:GetName() or ""
   local CreatorEid = Creator and Creator.Eid or 0
-  Battle(self):RecordBattleEvent_Lua("\229\143\172\229\148\164\232\128\133Eid\228\184\186:" .. CreatorEid .. "\239\188\140\229\143\172\229\148\164\232\128\133\229\144\141\229\173\151\228\184\186:" .. CreatorName .. "\239\188\140Eid\228\184\186:" .. self.Eid .. "\239\188\140\229\144\141\229\173\151\228\184\186" .. self:GetName() .. "\231\154\132\230\156\186\229\133\179\229\143\172\229\148\164\231\137\169\230\173\187\228\186\161\228\186\134\239\188\140\229\174\131\231\154\132UnitId\228\184\186:" .. self.UnitId, "MechanismSummon", 0)
+  local BattleTemp = Battle and Battle(self)
+  if BattleTemp then
+    BattleTemp:RecordBattleEvent_Lua("召唤者Eid为:" .. CreatorEid .. "，召唤者名字为:" .. CreatorName .. "，Eid为:" .. self.Eid .. "，名字为" .. self:GetName() .. "的机关召唤物死亡了，它的UnitId为:" .. self.UnitId, "MechanismSummon", 0)
+  end
   self:OnMechanismSummonDead(KillMineRoleEid, KillMineSkillId, DeathReason)
+  self:DestroyAllCreatures(ECreatureDeathWithCreator.Normal, EDeathReason.CreatureNotDelay)
   if self.Data and self.Data.DelayDestroyTime then
     self.FXComponent:StopAllEffects(false)
     self:AddTimer_Combat(self.Data.DelayDestroyTime, function()
@@ -86,6 +84,5 @@ function BP_MechanismSummon_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReas
     self.BillBoardComponent:CharOnDead()
   end
 end
-
 AssembleComponents(BP_MechanismSummon_C)
 return BP_MechanismSummon_C

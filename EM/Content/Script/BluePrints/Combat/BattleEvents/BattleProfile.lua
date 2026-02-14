@@ -1,42 +1,40 @@
 require("UnLua")
 local TimeUtils = require("Utils.TimeUtils")
 local BattleProfile = Class()
-
 function BattleProfile:OnFinishProfile()
   local PassTime = self.StopTime - self.StartTime
   local PassFrameCount = self.StopFrameCount - self.StartFrameCount
   local ct = {"\n"}
   Battle(self):FillBattleLog(ct)
   local ret = table.concat(ct)
-  local LogStr = "\230\136\152\230\150\151Profile\231\187\147\230\157\159\239\188\140\231\148\168\230\151\182:[" .. tostring(PassTime) .. "]\231\167\146\239\188\140\231\148\168\230\151\182:[" .. tostring(PassFrameCount) .. "]\229\184\167\227\128\130\n\229\185\179\229\157\135\229\184\167\231\142\135:[" .. tostring(PassFrameCount / PassTime) .. "](\228\188\154\229\143\151\230\154\130\229\129\156/\230\151\182\233\151\180\232\134\168\232\131\128\229\189\177\229\147\141,\228\184\141\228\184\128\229\174\154\229\135\134)" .. ret
+  local LogStr = "战斗Profile结束，用时:[" .. tostring(PassTime) .. "]秒，用时:[" .. tostring(PassFrameCount) .. "]帧。\n平均帧率:[" .. tostring(PassFrameCount / PassTime) .. "](会受暂停/时间膨胀影响,不一定准)" .. ret
   DebugPrint(LogStr)
   if not (PassTime and not (PassTime <= 0) and PassFrameCount) or PassFrameCount <= 0 then
     return
   end
   local BattleProfileInfo = {}
-  BattleProfileInfo["\228\188\164\229\174\179Profile"] = self:GetDamageInfo(PassTime, PassFrameCount)
-  BattleProfileInfo["\230\138\128\232\131\189Profile"] = self:GetSkillInfo(PassTime, PassFrameCount)
+  BattleProfileInfo["伤害Profile"] = self:GetDamageInfo(PassTime, PassFrameCount)
+  BattleProfileInfo["技能Profile"] = self:GetSkillInfo(PassTime, PassFrameCount)
   BattleProfileInfo.BuffProfile = self:GetBuffInfo(PassTime, PassFrameCount)
   BattleProfileInfo.BuffChangedProfile = self:GetBuffChangedInfo(PassTime, PassFrameCount)
-  BattleProfileInfo["\231\137\185\230\149\136Profile"] = self:GetPlayFxInfo(PassTime, PassFrameCount)
-  BattleProfileInfo["\233\159\179\233\162\145Profile"] = self:GetPlaySEInfo(PassTime, PassFrameCount)
-  BattleProfileInfo["\229\135\189\230\149\176\232\176\131\231\148\168Profile"] = self:GetFunctionCallInfo(PassTime, PassFrameCount)
-  BattleProfileInfo["UProperty\232\176\131\231\148\168Profile"] = self:GetUPropertyCallInfo(PassTime, PassFrameCount)
-  LogStr = LogStr .. PrintTable(BattleProfileInfo, 10, "\230\136\152\230\150\151Profile\232\175\166\230\131\133", true)
+  BattleProfileInfo["特效Profile"] = self:GetPlayFxInfo(PassTime, PassFrameCount)
+  BattleProfileInfo["音频Profile"] = self:GetPlaySEInfo(PassTime, PassFrameCount)
+  BattleProfileInfo["函数调用Profile"] = self:GetFunctionCallInfo(PassTime, PassFrameCount)
+  BattleProfileInfo["UProperty调用Profile"] = self:GetUPropertyCallInfo(PassTime, PassFrameCount)
+  LogStr = LogStr .. PrintTable(BattleProfileInfo, 10, "战斗Profile详情", true)
   local TimeStr = TimeUtils.TimeToYMDHMSStr(TimeUtils.RealTime(), false, "_", "_")
   local FilePath = UEMPathFunctionLibrary.GetProjectSavedDirectory() .. "BattleProfile/" .. tostring(TimeStr) .. ".txt"
   UE.URuntimeCommonFunctionLibrary.SaveFile(FilePath, LogStr)
 end
-
 function BattleProfile:GetDamageInfo(PassTime, PassFrameCount)
   local TotalTime = self.Damages:Length()
   local DamageProfileInfo = {}
-  DamageProfileInfo["\230\128\187\228\188\164\229\174\179\230\172\161\230\149\176"] = TotalTime
+  DamageProfileInfo["总伤害次数"] = TotalTime
   if TotalTime > 0 then
     local TimePerSecond = TotalTime / PassTime
-    DamageProfileInfo["\229\185\179\229\157\135\228\188\164\229\174\179\230\172\161\230\149\176"] = {
-      ["\230\175\143\231\167\146"] = TotalTime / PassTime,
-      ["\230\175\143\229\184\167"] = TotalTime / PassFrameCount
+    DamageProfileInfo["平均伤害次数"] = {
+      ["每秒"] = TotalTime / PassTime,
+      ["每帧"] = TotalTime / PassFrameCount
     }
     local TimeSecondInfos = {}
     local FrameCountInfos = {}
@@ -56,8 +54,8 @@ function BattleProfile:GetDamageInfo(PassTime, PassFrameCount)
         MaxNumIndex = TimeSecond
       end
     end
-    DamageProfileInfo["\230\156\128\233\171\152\228\188\164\229\174\179\233\162\145\231\142\135(\230\175\143\231\167\146)"] = {
-      ["\228\184\128\231\167\146\229\134\133\230\156\128\233\171\152\228\188\164\229\174\179\230\172\161\230\149\176"] = MaxNum
+    DamageProfileInfo["最高伤害频率(每秒)"] = {
+      ["一秒内最高伤害次数"] = MaxNum
     }
     local MaxNum = 0
     local MaxNumIndex = 0
@@ -67,8 +65,8 @@ function BattleProfile:GetDamageInfo(PassTime, PassFrameCount)
         MaxNumIndex = FrameCount
       end
     end
-    DamageProfileInfo["\230\156\128\233\171\152\228\188\164\229\174\179\233\162\145\231\142\135(\230\175\143\229\184\167)"] = {
-      ["\229\141\149\229\184\167\230\156\128\233\171\152\228\188\164\229\174\179\230\172\161\230\149\176"] = MaxNum
+    DamageProfileInfo["最高伤害频率(每帧)"] = {
+      ["单帧最高伤害次数"] = MaxNum
     }
     local TagDamages = {}
     for _, DamageInfo in pairs(self.Damages) do
@@ -79,22 +77,22 @@ function BattleProfile:GetDamageInfo(PassTime, PassFrameCount)
     local SortedTagDamages = {}
     for Tag, Num in pairs(TagDamages) do
       table.insert(SortedTagDamages, {
-        ["\228\188\164\229\174\179Tag"] = Tag,
-        ["\228\188\164\229\174\179\230\149\176\233\135\143"] = Num,
-        ["\229\141\160\228\188\164\229\174\179\230\149\176\233\135\143\231\153\190\229\136\134\230\175\148"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
+        ["伤害Tag"] = Tag,
+        ["伤害数量"] = Num,
+        ["占伤害数量百分比"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
       })
     end
     table.sort(SortedTagDamages, function(a, b)
-      return a["\228\188\164\229\174\179\230\149\176\233\135\143"] > b["\228\188\164\229\174\179\230\149\176\233\135\143"]
+      return a["伤害数量"] > b["伤害数量"]
     end)
-    DamageProfileInfo["\228\188\164\229\174\179\229\136\134\229\184\131(\230\140\137\230\149\176\233\135\143\228\187\142\233\171\152\229\136\176\229\186\149)"] = SortedTagDamages
+    DamageProfileInfo["伤害分布(按数量从高到底)"] = SortedTagDamages
     local MaxTrueValue = 0
     for _, DamageInfo in pairs(self.Damages) do
       if MaxTrueValue < DamageInfo.TrueValue then
         MaxTrueValue = DamageInfo.TrueValue
       end
     end
-    DamageProfileInfo["\230\156\128\233\171\152\228\188\164\229\174\179\229\128\188"] = MaxTrueValue
+    DamageProfileInfo["最高伤害值"] = MaxTrueValue
     local CritNum = 0
     local MaxCritLevel = 0
     for _, DamageInfo in pairs(self.Damages) do
@@ -106,23 +104,22 @@ function BattleProfile:GetDamageInfo(PassTime, PassFrameCount)
       end
     end
     if CritNum > 0 then
-      DamageProfileInfo["\230\154\180\229\135\187\228\191\161\230\129\175"] = {
-        ["\230\128\187\230\154\180\229\135\187\233\162\145\231\142\135"] = CritNum / TotalTime
+      DamageProfileInfo["暴击信息"] = {
+        ["总暴击频率"] = CritNum / TotalTime
       }
     end
   end
   return DamageProfileInfo
 end
-
 function BattleProfile:GetSkillInfo(PassTime, PassFrameCount)
   local TotalTime = self.Skills:Length()
   local SkillProfileInfo = {}
-  SkillProfileInfo["\230\138\128\232\131\189\228\189\191\231\148\168\230\172\161\230\149\176"] = TotalTime
+  SkillProfileInfo["技能使用次数"] = TotalTime
   if TotalTime > 0 then
     local TimePerSecond = TotalTime / PassTime
-    SkillProfileInfo["\229\185\179\229\157\135\230\138\128\232\131\189\230\172\161\230\149\176"] = {
-      ["\230\175\143\231\167\146"] = TotalTime / PassTime,
-      ["\230\175\143\229\184\167"] = TotalTime / PassFrameCount
+    SkillProfileInfo["平均技能次数"] = {
+      ["每秒"] = TotalTime / PassTime,
+      ["每帧"] = TotalTime / PassFrameCount
     }
     local TimeSecondInfos = {}
     local FrameCountInfos = {}
@@ -142,8 +139,8 @@ function BattleProfile:GetSkillInfo(PassTime, PassFrameCount)
         MaxNumIndex = TimeSecond
       end
     end
-    SkillProfileInfo["\230\156\128\233\171\152\230\138\128\232\131\189\233\162\145\231\142\135(\230\175\143\231\167\146)"] = {
-      ["\228\184\128\231\167\146\229\134\133\230\156\128\233\171\152\230\138\128\232\131\189\230\172\161\230\149\176"] = MaxNum
+    SkillProfileInfo["最高技能频率(每秒)"] = {
+      ["一秒内最高技能次数"] = MaxNum
     }
     local MaxNum = 0
     local MaxNumIndex = 0
@@ -153,22 +150,21 @@ function BattleProfile:GetSkillInfo(PassTime, PassFrameCount)
         MaxNumIndex = FrameCount
       end
     end
-    SkillProfileInfo["\230\156\128\233\171\152\230\138\128\232\131\189\233\162\145\231\142\135(\230\175\143\229\184\167)"] = {
-      ["\229\141\149\229\184\167\230\156\128\233\171\152\230\138\128\232\131\189\230\172\161\230\149\176"] = MaxNum
+    SkillProfileInfo["最高技能频率(每帧)"] = {
+      ["单帧最高技能次数"] = MaxNum
     }
   end
   return SkillProfileInfo
 end
-
 function BattleProfile:GetBuffInfo(PassTime, PassFrameCount)
   local TotalTime = self.Buffs:Length()
   local BuffProfileInfo = {}
-  BuffProfileInfo["1. Buff\230\183\187\229\138\160\230\172\161\230\149\176"] = TotalTime
+  BuffProfileInfo["1. Buff添加次数"] = TotalTime
   if TotalTime > 0 then
     local TimePerSecond = TotalTime / PassTime
-    BuffProfileInfo["\229\185\179\229\157\135Buff\230\183\187\229\138\160\230\172\161\230\149\176"] = {
-      ["\230\175\143\231\167\146"] = TotalTime / PassTime,
-      ["\230\175\143\229\184\167"] = TotalTime / PassFrameCount
+    BuffProfileInfo["平均Buff添加次数"] = {
+      ["每秒"] = TotalTime / PassTime,
+      ["每帧"] = TotalTime / PassFrameCount
     }
     local TimeSecondInfos = {}
     local FrameCountInfos = {}
@@ -188,8 +184,8 @@ function BattleProfile:GetBuffInfo(PassTime, PassFrameCount)
         MaxNumIndex = TimeSecond
       end
     end
-    BuffProfileInfo["2. \230\156\128\233\171\152Buff\230\183\187\229\138\160\233\162\145\231\142\135(\230\175\143\231\167\146)"] = {
-      ["\228\184\128\231\167\146\229\134\133\230\156\128\233\171\152Buff\230\183\187\229\138\160\230\172\161\230\149\176"] = MaxNum
+    BuffProfileInfo["2. 最高Buff添加频率(每秒)"] = {
+      ["一秒内最高Buff添加次数"] = MaxNum
     }
     local MaxNum = 0
     local MaxNumIndex = 0
@@ -199,8 +195,8 @@ function BattleProfile:GetBuffInfo(PassTime, PassFrameCount)
         MaxNumIndex = FrameCount
       end
     end
-    BuffProfileInfo["3. \230\156\128\233\171\152Buff\230\183\187\229\138\160\233\162\145\231\142\135(\230\175\143\229\184\167)"] = {
-      ["\229\141\149\229\184\167\230\156\128\233\171\152Buff\230\183\187\229\138\160\230\172\161\230\149\176"] = MaxNum
+    BuffProfileInfo["3. 最高Buff添加频率(每帧)"] = {
+      ["单帧最高Buff添加次数"] = MaxNum
     }
     local BuffNums = {}
     for _, BuffInfo in pairs(self.Buffs) do
@@ -211,27 +207,26 @@ function BattleProfile:GetBuffInfo(PassTime, PassFrameCount)
     for BuffId, Num in pairs(BuffNums) do
       table.insert(SorteBuffNums, {
         BuffID = BuffId,
-        ["Buff\230\183\187\229\138\160\230\172\161\230\149\176"] = Num,
-        ["\229\141\160Buff\230\149\176\233\135\143\231\153\190\229\136\134\230\175\148"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
+        ["Buff添加次数"] = Num,
+        ["占Buff数量百分比"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
       })
     end
     table.sort(SorteBuffNums, function(a, b)
-      return a["Buff\230\183\187\229\138\160\230\172\161\230\149\176"] > b["Buff\230\183\187\229\138\160\230\172\161\230\149\176"]
+      return a["Buff添加次数"] > b["Buff添加次数"]
     end)
-    BuffProfileInfo["4. Buff\229\136\134\229\184\131(\230\140\137\230\149\176\233\135\143\228\187\142\233\171\152\229\136\176\229\186\149)"] = SorteBuffNums
+    BuffProfileInfo["4. Buff分布(按数量从高到底)"] = SorteBuffNums
   end
   return BuffProfileInfo
 end
-
 function BattleProfile:GetPlayFxInfo(PassTime, PassFrameCount)
   local TotalTime = self.PlayFxs:Length()
   local PlayFxProfileInfo = {}
-  PlayFxProfileInfo["\231\137\185\230\149\136\228\189\191\231\148\168\230\172\161\230\149\176"] = TotalTime
+  PlayFxProfileInfo["特效使用次数"] = TotalTime
   if TotalTime > 0 then
     local TimePerSecond = TotalTime / PassTime
-    PlayFxProfileInfo["\229\185\179\229\157\135\231\137\185\230\149\136\230\172\161\230\149\176"] = {
-      ["\230\175\143\231\167\146"] = TotalTime / PassTime,
-      ["\230\175\143\229\184\167"] = TotalTime / PassFrameCount
+    PlayFxProfileInfo["平均特效次数"] = {
+      ["每秒"] = TotalTime / PassTime,
+      ["每帧"] = TotalTime / PassFrameCount
     }
     local TimeSecondInfos = {}
     local FrameCountInfos = {}
@@ -251,8 +246,8 @@ function BattleProfile:GetPlayFxInfo(PassTime, PassFrameCount)
         MaxNumIndex = TimeSecond
       end
     end
-    PlayFxProfileInfo["\230\156\128\233\171\152\231\137\185\230\149\136\233\162\145\231\142\135(\230\175\143\231\167\146)"] = {
-      ["\228\184\128\231\167\146\229\134\133\230\156\128\233\171\152\231\137\185\230\149\136\230\172\161\230\149\176"] = MaxNum
+    PlayFxProfileInfo["最高特效频率(每秒)"] = {
+      ["一秒内最高特效次数"] = MaxNum
     }
     local MaxNum = 0
     local MaxNumIndex = 0
@@ -262,8 +257,8 @@ function BattleProfile:GetPlayFxInfo(PassTime, PassFrameCount)
         MaxNumIndex = FrameCount
       end
     end
-    PlayFxProfileInfo["\230\156\128\233\171\152\231\137\185\230\149\136\233\162\145\231\142\135(\230\175\143\229\184\167)"] = {
-      ["\229\141\149\229\184\167\230\156\128\233\171\152\231\137\185\230\149\136\230\172\161\230\149\176"] = MaxNum
+    PlayFxProfileInfo["最高特效频率(每帧)"] = {
+      ["单帧最高特效次数"] = MaxNum
     }
     local PlayFxNums = {}
     for _, PlayFxInfo in pairs(self.PlayFxs) do
@@ -273,27 +268,26 @@ function BattleProfile:GetPlayFxInfo(PassTime, PassFrameCount)
     local SortePlayFxNums = {}
     for FxId, Num in pairs(PlayFxNums) do
       table.insert(SortePlayFxNums, {
-        ["\231\137\185\230\149\136ID"] = FxId,
-        ["\231\137\185\230\149\136\230\172\161\230\149\176"] = Num,
-        ["\229\141\160\231\137\185\230\149\136\230\149\176\233\135\143\231\153\190\229\136\134\230\175\148"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
+        ["特效ID"] = FxId,
+        ["特效次数"] = Num,
+        ["占特效数量百分比"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
       })
     end
     table.sort(SortePlayFxNums, function(a, b)
-      return a["\231\137\185\230\149\136\230\172\161\230\149\176"] > b["\231\137\185\230\149\136\230\172\161\230\149\176"]
+      return a["特效次数"] > b["特效次数"]
     end)
-    PlayFxProfileInfo["\231\137\185\230\149\136\229\136\134\229\184\131(\230\140\137\230\149\176\233\135\143\228\187\142\233\171\152\229\136\176\229\186\149)"] = SortePlayFxNums
+    PlayFxProfileInfo["特效分布(按数量从高到底)"] = SortePlayFxNums
   end
   return PlayFxProfileInfo
 end
-
 function BattleProfile:GetPlaySEInfo(PassTime, PassFrameCount)
   local TotalTime = self.PlaySEs:Length()
   local PlaySEProfileInfo = {}
-  PlaySEProfileInfo["\233\159\179\230\149\136\232\176\131\231\148\168\230\172\161\230\149\176"] = TotalTime
+  PlaySEProfileInfo["音效调用次数"] = TotalTime
   if TotalTime > 0 then
-    PlaySEProfileInfo["\229\185\179\229\157\135\232\176\131\231\148\168\230\172\161\230\149\176"] = {
-      ["\230\175\143\231\167\146"] = TotalTime / PassTime,
-      ["\230\175\143\229\184\167"] = TotalTime / PassFrameCount
+    PlaySEProfileInfo["平均调用次数"] = {
+      ["每秒"] = TotalTime / PassTime,
+      ["每帧"] = TotalTime / PassFrameCount
     }
     local TimeSecondInfos = {}
     local FrameCountInfos = {}
@@ -319,8 +313,8 @@ function BattleProfile:GetPlaySEInfo(PassTime, PassFrameCount)
         MaxNum = Num
       end
     end
-    PlaySEProfileInfo["\230\156\128\233\171\152\233\159\179\230\149\136\233\162\145\231\142\135(\230\175\143\231\167\146)"] = {
-      ["\228\184\128\231\167\146\229\134\133\230\156\128\233\171\152\233\159\179\230\149\136\230\172\161\230\149\176"] = MaxNum
+    PlaySEProfileInfo["最高音效频率(每秒)"] = {
+      ["一秒内最高音效次数"] = MaxNum
     }
     MaxNum = 0
     for _, Num in pairs(FrameCountInfos) do
@@ -328,37 +322,36 @@ function BattleProfile:GetPlaySEInfo(PassTime, PassFrameCount)
         MaxNum = Num
       end
     end
-    PlaySEProfileInfo["\230\156\128\233\171\152\233\159\179\230\149\136\233\162\145\231\142\135(\230\175\143\229\184\167)"] = {
-      ["\229\141\149\229\184\167\230\156\128\233\171\152\233\159\179\230\149\136\230\172\161\230\149\176"] = MaxNum
+    PlaySEProfileInfo["最高音效频率(每帧)"] = {
+      ["单帧最高音效次数"] = MaxNum
     }
     local SortPlaySENums = {}
     for SoundId, Num in pairs(PlaySENums) do
       table.insert(SortPlaySENums, {
-        ["\233\159\179\230\149\136ID"] = SoundId,
-        ["\233\159\179\230\149\136\230\172\161\230\149\176"] = Num,
-        ["\229\141\160\233\159\179\230\149\136\230\149\176\233\135\143\231\153\190\229\136\134\230\175\148"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
+        ["音效ID"] = SoundId,
+        ["音效次数"] = Num,
+        ["占音效数量百分比"] = tostring(math.floor(Num / TotalTime * 100)) .. "%"
       })
     end
     table.sort(SortPlaySENums, function(a, b)
-      return a["\233\159\179\230\149\136\230\172\161\230\149\176"] > b["\233\159\179\230\149\136\230\172\161\230\149\176"]
+      return a["音效次数"] > b["音效次数"]
     end)
-    PlaySEProfileInfo["\233\159\179\230\149\136\229\136\134\229\184\131(\230\140\137\230\149\176\233\135\143\228\187\142\233\171\152\229\136\176\229\186\149)"] = SortPlaySENums
+    PlaySEProfileInfo["音效分布(按数量从高到底)"] = SortPlaySENums
     local SortLEPlaySEs = {}
     for Name, Info in pairs(LEPlaySEs) do
       table.insert(SortLEPlaySEs, {
-        ["\230\146\173\230\148\190\230\157\165\230\186\144"] = Name,
-        ["\233\159\179\230\149\136\230\128\187\230\149\176\233\135\143"] = Info.TotalNum,
-        ["\229\133\182\228\187\150\228\191\161\230\129\175"] = Info.Other
+        ["播放来源"] = Name,
+        ["音效总数量"] = Info.TotalNum,
+        ["其他信息"] = Info.Other
       })
     end
     table.sort(SortLEPlaySEs, function(a, b)
-      return a["\233\159\179\230\149\136\230\128\187\230\149\176\233\135\143"] > b["\233\159\179\230\149\136\230\128\187\230\149\176\233\135\143"]
+      return a["音效总数量"] > b["音效总数量"]
     end)
-    PlaySEProfileInfo["\233\159\179\230\149\136\229\136\134\229\184\131(\230\140\137\230\146\173\230\148\190\230\157\165\230\186\144\232\167\166\229\143\145\230\149\176\233\135\143\228\187\142\233\171\152\229\136\176\228\189\142)"] = SortLEPlaySEs
+    PlaySEProfileInfo["音效分布(按播放来源触发数量从高到低)"] = SortLEPlaySEs
   end
   return PlaySEProfileInfo
 end
-
 function BattleProfile:GetFunctionCallInfo(PassTime, PassFrameCount)
   local TotalTime = self.FunctionCallInfos:Length()
   local FunctionCallProfileInfo = {}
@@ -368,9 +361,9 @@ function BattleProfile:GetFunctionCallInfo(PassTime, PassFrameCount)
     local SortedFunctionCallInfos_CppOrBlueprint2Lua = {}
     for _, FunctionCallInfo in pairs(self.FunctionCallInfos) do
       local FunctionCallInfoTable = {
-        ["\229\135\189\230\149\176\229\144\141"] = FunctionCallInfo.FunctionName,
-        ["\231\177\187\229\158\139\229\144\141"] = FunctionCallInfo.ClassName,
-        ["\232\176\131\231\148\168\230\172\161\230\149\176"] = FunctionCallInfo.Times
+        ["函数名"] = FunctionCallInfo.FunctionName,
+        ["类型名"] = FunctionCallInfo.ClassName,
+        ["调用次数"] = FunctionCallInfo.Times
       }
       if FunctionCallInfo.Direction == "Lua2Cpp" then
         table.insert(SortedFunctionCallInfos_Lua2Cpp, FunctionCallInfoTable)
@@ -381,21 +374,20 @@ function BattleProfile:GetFunctionCallInfo(PassTime, PassFrameCount)
       end
     end
     table.sort(SortedFunctionCallInfos_Lua2Cpp, function(a, b)
-      return a["\232\176\131\231\148\168\230\172\161\230\149\176"] > b["\232\176\131\231\148\168\230\172\161\230\149\176"]
+      return a["调用次数"] > b["调用次数"]
     end)
     table.sort(SortedFunctionCallInfos_Lua2Blueprint, function(a, b)
-      return a["\232\176\131\231\148\168\230\172\161\230\149\176"] > b["\232\176\131\231\148\168\230\172\161\230\149\176"]
+      return a["调用次数"] > b["调用次数"]
     end)
     table.sort(SortedFunctionCallInfos_CppOrBlueprint2Lua, function(a, b)
-      return a["\232\176\131\231\148\168\230\172\161\230\149\176"] > b["\232\176\131\231\148\168\230\172\161\230\149\176"]
+      return a["调用次数"] > b["调用次数"]
     end)
-    FunctionCallProfileInfo["C++/\232\147\157\229\155\190->Lua \229\135\189\230\149\176\232\176\131\231\148\168\230\172\161\230\149\176(\228\187\142\233\171\152\229\136\176\228\189\142)"] = SortedFunctionCallInfos_CppOrBlueprint2Lua
-    FunctionCallProfileInfo["Lua->C++ \229\135\189\230\149\176\232\176\131\231\148\168\230\172\161\230\149\176(\228\187\142\233\171\152\229\136\176\228\189\142)"] = SortedFunctionCallInfos_Lua2Cpp
-    FunctionCallProfileInfo["Lua->\232\147\157\229\155\190 \229\135\189\230\149\176\232\176\131\231\148\168\230\172\161\230\149\176(\228\187\142\233\171\152\229\136\176\228\189\142)"] = SortedFunctionCallInfos_Lua2Blueprint
+    FunctionCallProfileInfo["C++/蓝图->Lua 函数调用次数(从高到低)"] = SortedFunctionCallInfos_CppOrBlueprint2Lua
+    FunctionCallProfileInfo["Lua->C++ 函数调用次数(从高到低)"] = SortedFunctionCallInfos_Lua2Cpp
+    FunctionCallProfileInfo["Lua->蓝图 函数调用次数(从高到低)"] = SortedFunctionCallInfos_Lua2Blueprint
   end
   return FunctionCallProfileInfo
 end
-
 function BattleProfile:GetUPropertyCallInfo(PassTime, PassFrameCount)
   local TotalTime = self.PropertyCallInfos:Length()
   local PropertyCallProfileInfo = {}
@@ -403,35 +395,33 @@ function BattleProfile:GetUPropertyCallInfo(PassTime, PassFrameCount)
     local SortedPropertyCallInfos = {}
     for _, PropertyCallInfo in pairs(self.PropertyCallInfos) do
       local PropertyCallInfoTable = {
-        ["Property\229\144\141"] = PropertyCallInfo.PropertyName,
-        ["Class\229\144\141"] = PropertyCallInfo.ClassName,
-        ["\229\141\149\230\172\161\232\176\131\231\148\168\232\128\151\230\151\182\239\188\136\229\141\149\228\189\141\230\152\175CPU\229\145\168\230\156\159\230\149\176\239\188\137"] = PropertyCallInfo.TimeConsuming,
-        ["\232\176\131\231\148\168\230\172\161\230\149\176"] = PropertyCallInfo.Times
+        ["Property名"] = PropertyCallInfo.PropertyName,
+        ["Class名"] = PropertyCallInfo.ClassName,
+        ["单次调用耗时（单位是CPU周期数）"] = PropertyCallInfo.TimeConsuming,
+        ["调用次数"] = PropertyCallInfo.Times
       }
       table.insert(SortedPropertyCallInfos, PropertyCallInfoTable)
     end
     table.sort(SortedPropertyCallInfos, function(a, b)
-      return a["\232\176\131\231\148\168\230\172\161\230\149\176"] > b["\232\176\131\231\148\168\230\172\161\230\149\176"]
+      return a["调用次数"] > b["调用次数"]
     end)
-    PropertyCallProfileInfo["Lua\229\136\176C++UProperty\232\176\131\231\148\168\230\172\161\230\149\176(\228\187\142\233\171\152\229\136\176\228\189\142)"] = SortedPropertyCallInfos
+    PropertyCallProfileInfo["Lua到C++UProperty调用次数(从高到低)"] = SortedPropertyCallInfos
   end
   return PropertyCallProfileInfo
 end
-
 local function GetKvString(Key, Value)
   return string.format("%s: %s", tostring(Key), tostring(Value))
 end
-
 function BattleProfile:GetBuffChangedInfo(PassTime, PassFrameCount)
   local ResultTable = {}
   local TotalTime = self.BuffsChangedInfos:Length()
   local BuffChangedInfo = {}
-  BuffChangedInfo["1. BuffsChanged\232\176\131\231\148\168\230\128\187\230\172\161\230\149\176"] = TotalTime
+  BuffChangedInfo["1. BuffsChanged调用总次数"] = TotalTime
   if TotalTime > 0 then
     local TimePerSecond = TotalTime / PassTime
-    BuffChangedInfo["2. \229\185\179\229\157\135BuffsChanged\232\176\131\231\148\168\230\172\161\230\149\176"] = {
-      ["\230\175\143\231\167\146"] = TotalTime / PassTime,
-      ["\230\175\143\229\184\167"] = TotalTime / PassFrameCount
+    BuffChangedInfo["2. 平均BuffsChanged调用次数"] = {
+      ["每秒"] = TotalTime / PassTime,
+      ["每帧"] = TotalTime / PassFrameCount
     }
     local TimeSecondInfos = {}
     local FrameCountInfos = {}
@@ -491,24 +481,24 @@ function BattleProfile:GetBuffChangedInfo(PassTime, PassFrameCount)
       return a < b
     end)
     MidNumPF = MidNumPFArr[math.max(1, math.ceil(#MidNumPFArr / 2))]
-    BuffChangedInfo["3. \230\156\128\233\171\152BuffsChanged\232\176\131\231\148\168\233\162\145\231\142\135(\230\175\143\231\167\146)"] = {
-      ["\228\184\128\231\167\146\229\134\133\230\156\128\233\171\152BuffsChanged\232\176\131\231\148\168\230\172\161\230\149\176"] = MaxNumPS,
-      ["\229\135\186\231\142\176\229\156\168\229\188\128\229\167\139Profile\231\154\132\231\167\146\230\149\176"] = MaxNumPSIndex
+    BuffChangedInfo["3. 最高BuffsChanged调用频率(每秒)"] = {
+      ["一秒内最高BuffsChanged调用次数"] = MaxNumPS,
+      ["出现在开始Profile的秒数"] = MaxNumPSIndex
     }
-    BuffChangedInfo["4. \230\156\128\233\171\152BuffsChanged\232\176\131\231\148\168\233\162\145\231\142\135(\230\175\143\229\184\167)"] = {
-      ["\229\141\149\229\184\167\230\156\128\233\171\152BuffsChanged\232\176\131\231\148\168\230\172\161\230\149\176"] = MaxNumPF,
-      ["\229\135\186\231\142\176\229\156\168\229\188\128\229\167\139Profile\231\154\132\231\167\146\230\149\176"] = FrameCountToTimeSecond[MaxNumPFIndex]
+    BuffChangedInfo["4. 最高BuffsChanged调用频率(每帧)"] = {
+      ["单帧最高BuffsChanged调用次数"] = MaxNumPF,
+      ["出现在开始Profile的秒数"] = FrameCountToTimeSecond[MaxNumPFIndex]
     }
-    BuffChangedInfo["5. BuffsChanged\232\176\131\231\148\168\233\162\145\231\142\135\229\136\134\229\184\131"] = {
-      string.format("\229\141\149\229\184\167\230\156\128\233\171\152BuffsChanged\232\176\131\231\148\168\230\172\161\230\149\176: %s", tostring(MaxNumPF)),
-      string.format("\229\135\186\231\142\176\229\156\168\229\188\128\229\167\139Profile\231\154\132\231\167\146\230\149\176: %s", tostring(FrameCountToTimeSecond[MaxNumPFIndex])),
-      string.format("\229\185\179\229\157\135\230\175\143\229\184\167: %s", tostring(AvgNumPF)),
-      string.format("\228\184\173\228\189\141\230\175\143\229\184\167: %s", tostring(MidNumPF))
+    BuffChangedInfo["5. BuffsChanged调用频率分布"] = {
+      string.format("单帧最高BuffsChanged调用次数: %s", tostring(MaxNumPF)),
+      string.format("出现在开始Profile的秒数: %s", tostring(FrameCountToTimeSecond[MaxNumPFIndex])),
+      string.format("平均每帧: %s", tostring(AvgNumPF)),
+      string.format("中位每帧: %s", tostring(MidNumPF))
     }
     table.sort(TotalPropIdCount, function(a, b)
       return b < a
     end)
-    BuffChangedInfo["6. Buff\232\161\168\229\164\180\232\176\131\231\148\168\233\162\145\231\142\135\229\136\134\229\184\131(\228\187\142\229\164\167\229\136\176\229\176\143)"] = {}
+    BuffChangedInfo["6. Buff表头调用频率分布(从大到小)"] = {}
     local TotalPropIdCountOutput = {}
     for key, value in pairs(TotalPropIdCount) do
       table.insert(TotalPropIdCountOutput, {Id = key, Count = value})
@@ -518,10 +508,9 @@ function BattleProfile:GetBuffChangedInfo(PassTime, PassFrameCount)
     end)
     local BuffPropNameTable = DataMgr.BuffConverts.BuffPropNameTable
     for _, Info in ipairs(TotalPropIdCountOutput) do
-      table.insert(BuffChangedInfo["6. Buff\232\161\168\229\164\180\232\176\131\231\148\168\233\162\145\231\142\135\229\136\134\229\184\131(\228\187\142\229\164\167\229\136\176\229\176\143)"], BuffPropNameTable[Info.Id] .. ": " .. tostring(Info.Count) .. "\230\172\161")
+      table.insert(BuffChangedInfo["6. Buff表头调用频率分布(从大到小)"], BuffPropNameTable[Info.Id] .. ": " .. tostring(Info.Count) .. "次")
     end
   end
   return BuffChangedInfo
 end
-
 return BattleProfile

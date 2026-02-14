@@ -1,12 +1,10 @@
 require("UnLua")
-local EMCache = require("EMCache.EMCache")
 local GachaModel = require("BluePrints.UI.WBP.Gacha.GachaModel")
 local GachaCommon = require("BluePrints.UI.WBP.Gacha.GachaCommon")
 local GachaController = require("BluePrints.UI.WBP.Gacha.GachaController")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.IsPCPlatform = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
   self.Btn_Detail:SetText(GText("UI_GACHA_DETAIL"))
@@ -24,27 +22,22 @@ function M:Construct()
   self.Btn_History:BindEventOnClicked(self, self.OnClickBtnHistory)
   self.Btn_Once:SetText(GText("UI_SkinGacha_One"))
   self.Btn_Once:BindEventOnClicked(self, self.OnClickBtnGachaOnce)
-  
   function self.Btn_Once.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_btn_click_normal", nil, nil)
   end
-  
   self.Btn_Tentimes:SetText(GText("UI_SkinGacha_Ten"))
   self.Btn_Tentimes:BindEventOnClicked(self, self.OnClickBtnGachaTentimes)
-  
   function self.Btn_Tentimes.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_btn_click_normal", nil, nil)
   end
-  
   self.Com_Time.Text_TimeTitle:SetText(GText("UI_SkinGacha_Remain_Time"))
   self.Group_ShopExchange:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Btn_ShopExChange:SetText(GText("UI_SkinGacha_Shop_Goto"))
   self.Btn_ShopExChange:BindEventOnClicked(self, self.OnClickBtnShop)
-  
   function self.Btn_ShopExChange.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/activity/shop_small_btn_click", nil, nil)
   end
-  
+  self.ShopExchange_PopUp:SetVisibility(ESlateVisibility.Collapsed)
   self.Btn_ShopExChange:SetDefaultGamePadImg(DataMgr.KeyboardText.Gamepad_Dpad_Left.KeyText)
   self.Group_ListTop:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_ListBottom:SetVisibility(ESlateVisibility.Collapsed)
@@ -52,35 +45,30 @@ function M:Construct()
   self:UnLoadNavMeshLevel()
   self:InitListenEvent()
 end
-
 function M:Destruct()
   AudioManager(self):StopSystemUIBGM(self.CurrentGachaId)
   self.Super.Destruct(self)
 end
-
 function M:UnLoadNavMeshLevel()
   local GameInstance = GWorld.GameInstance
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   local RegionId = Player:GetRegionId()
   self.IsUnLoadNavMesh = false
   if RegionId == CommonConst.GachaRegionId then
-    DebugPrint("----jzn---\229\134\176\230\185\150\229\159\142\230\137\147\229\188\128\230\138\189\229\141\161\229\141\184\232\189\189\229\175\188\232\136\170\231\189\145\230\160\188---")
+    DebugPrint("----jzn---冰湖城打开抽卡卸载导航网格---")
     self.IsUnLoadNavMesh = true
     URuntimeCommonFunctionLibrary.UnloadNavMeshLevel(Player:GetWorld())
   end
 end
-
 function M:ReceiveEnterState(StackAction)
   self.bCanNotClick = false
   M.Super.ReceiveEnterState(self, StackAction)
   self:RefreshGachaInfo(self.TabId)
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnDrawGacha, self, self.OnDrawGacha)
   self:AddDispatcher(EventID.OnGachaPoolUpdate, self, self.OnGachaPoolUpdate)
 end
-
 function M:OnLoaded(Params)
   M.Super.OnLoaded(self, Params)
   self.GachaRecordsCache = nil
@@ -96,7 +84,6 @@ function M:OnLoaded(Params)
   end
   self:InitGachaUI(GachaTabId)
 end
-
 function M:InitGachaUI(SkinGachaTabId)
   self.bInGachaMain = true
   self.bGachaing = false
@@ -125,10 +112,9 @@ function M:InitGachaUI(SkinGachaTabId)
   self.Image_Black:SetRenderOpacity(0)
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "GachaMainIn", nil)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:FillGachaItem()
 end
-
 function M:InitCommonTab()
   self.Com_Tab:Init({
     DynamicNode = {
@@ -173,7 +159,6 @@ function M:InitCommonTab()
   self.Btn_Once:SetGamePadImg(UIConst.GamePadImgKey.FaceButtonLeft)
   self.Btn_TenTimes:SetGamePadImg(UIConst.GamePadImgKey.FaceButtonTop)
 end
-
 function M:FillGachaItem()
   self.LastWidgetContent = nil
   self.PoolItemMap = {}
@@ -194,29 +179,31 @@ function M:FillGachaItem()
         Obj = self,
         Callback = self.OnGachaTypeItemClick
       }
+      local GachaId = self.GachaPoolDict[GachaInfo.TabId][1]
+      if GachaId and GachaModel:IsGachaNew(GachaId) then
+        Content.bShowNew = true
+      end
       self.PoolItemMap[GachaInfo.TabId] = Content
       self.List_Pool:AddItem(Content)
     end
   end
   self:AddTabReddotListen()
 end
-
-function M:OnGachaTypeItemClick(TabId, Content, bPlaySound)
+function M:OnGachaTypeItemClick(TabId, Content, bPlaySound, bIsAutoSelect)
   if self.LastWidgetContent and self.LastWidgetContent.SelfWidget then
     self.LastWidgetContent.SelfWidget:UnSelect()
   end
   self.LastWidgetContent = Content
   self.List_Pool:BP_SetItemSelection(Content, true)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:PlayAnimation(self.Change)
   if bPlaySound then
     AudioManager(self):PlayUISound(self, "event:/ui/activity/large_btn_click", nil, nil)
   end
   self.TabId = TabId
-  self:RefreshGachaInfo(self.TabId)
+  self:RefreshGachaInfo(self.TabId, bIsAutoSelect)
 end
-
-function M:RefreshGachaInfo(TabId)
+function M:RefreshGachaInfo(TabId, bIsAutoSelect)
   if not TabId then
     return
   end
@@ -228,7 +215,7 @@ function M:RefreshGachaInfo(TabId)
     return
   end
   local GachaData = DataMgr.SkinGacha[GachaLstData[1]]
-  assert(GachaData, "\230\138\189\229\141\161\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. GachaLstData[1])
+  assert(GachaData, "抽卡信息不存在:" .. GachaLstData[1])
   local GachaBGM = GachaData.BgBGM
   if GachaBGM then
     AudioManager(self):PlaySystemUIBGM(GachaBGM, nil, GachaLstData[1])
@@ -254,8 +241,22 @@ function M:RefreshGachaInfo(TabId)
     self:AddTimer(1, self.UpdateGachaTime, true, 0, "RefreshGacha", true, GachaData.GachaEndTime)
   end
   self:RefreshGachaResInfo()
+  if GachaModel:IsGachaNew(GachaData.GachaId) then
+    if bIsAutoSelect then
+      self.autoSelectedNewGacha = {
+        TabId = TabId,
+        GachaId = GachaData.GachaId
+      }
+    else
+      self:ShowTabNewByTabId(TabId, false)
+      GachaModel:MarkGachaAsOpened(GachaData.GachaId)
+      if self.autoSelectedNewGacha and self.autoSelectedNewGacha.GachaId == GachaData.GachaId then
+        self.autoSelectedNewGacha = nil
+      end
+    end
+  end
+  GachaModel:CheckNew()
 end
-
 function M:RefreshGachaResInfo()
   local GachaData = DataMgr.SkinGacha[self.CurrentGachaId]
   local Avatar = GWorld:GetAvatar()
@@ -263,13 +264,10 @@ function M:RefreshGachaResInfo()
     return
   end
   local TabCoinInfo = {}
-  if DataMgr.SystemUI.GachaMain.TabCoin then
-    for key, value in ipairs(DataMgr.SystemUI.GachaMain.TabCoin) do
-      table.insert(TabCoinInfo, value)
+  if GachaData.DisplayCostRes then
+    for _, ResourceId in ipairs(GachaData.DisplayCostRes) do
+      table.insert(TabCoinInfo, ResourceId)
     end
-  end
-  for _, ResourceId in ipairs(GachaData.GachaCostRes) do
-    table.insert(TabCoinInfo, ResourceId)
   end
   self.Com_Tab:OverrideTopResource(TabCoinInfo, true)
   self:RefreshGachaCostInfo()
@@ -277,7 +275,6 @@ function M:RefreshGachaResInfo()
     self.GetItemPage:RefreshGachaResInfo()
   end
 end
-
 function M:RefreshGachaCostInfo()
   local GachaData = DataMgr.SkinGacha[self.CurrentGachaId]
   local Avatar = GWorld:GetAvatar()
@@ -370,7 +367,6 @@ function M:RefreshGachaCostInfo()
     self.Panel_TimeLimit:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshGachaBG(GachaData)
   self.VideoPlayer:Stop()
   if self.CurrentBgMusic then
@@ -396,7 +392,7 @@ function M:RefreshGachaBG(GachaData)
         BgPath = CommonConst.GachaBackgroundAddrMobile .. GachaData.GachaDisplayPath .. "." .. GachaData.GachaDisplayPath
       end
       local BgUI = UIManager(self):CreateWidget(BgPath, false)
-      assert(BgUI, "\230\138\189\229\141\161\232\131\140\230\153\175\232\181\132\230\186\144\228\184\141\229\173\152\229\156\168\239\188\154BgPath:" .. BgPath .. " GachaId: " .. self.CurrentGachaId)
+      assert(BgUI, "抽卡背景资源不存在：BgPath:" .. BgPath .. " GachaId: " .. self.CurrentGachaId)
       self.BGWidgetMap[self.CurrentGachaId] = BgUI
       self.PoolStaticBG:AddChild(self.BGWidgetMap[self.CurrentGachaId])
       local Slot = UE4.UWidgetLayoutLibrary.SlotAsOverlaySlot(self.BGWidgetMap[self.CurrentGachaId])
@@ -410,12 +406,11 @@ function M:RefreshGachaBG(GachaData)
     self.LastBgWidget = self.BGWidgetMap[self.CurrentGachaId]
   end
 end
-
 function M:RefreshGachaTitle(GachaData)
   if not self.TitleWidgetMap[self.CurrentGachaId] then
     local TitleBPPath = GachaData.GachaNameBp
     local TitleUI = UIManager(self):CreateWidget(TitleBPPath, false)
-    assert(TitleUI, "\230\138\189\229\141\161\230\160\135\233\162\152\232\181\132\230\186\144\228\184\141\229\173\152\229\156\168\239\188\154BTitleBPPath:" .. TitleBPPath .. " GachaId: " .. self.CurrentGachaId)
+    assert(TitleUI, "抽卡标题资源不存在：BTitleBPPath:" .. TitleBPPath .. " GachaId: " .. self.CurrentGachaId)
     self.TitleWidgetMap[self.CurrentGachaId] = TitleUI
     self.Group_TitleAnchor:AddChild(self.TitleWidgetMap[self.CurrentGachaId])
   end
@@ -427,7 +422,6 @@ function M:RefreshGachaTitle(GachaData)
   self.TitleWidgetMap[self.CurrentGachaId].Text_MainTitle:SetText(GText(GachaData.GachaName))
   self.LastTitleWidget = self.TitleWidgetMap[self.CurrentGachaId]
 end
-
 function M:RefreshGachaQualityTips(GachaData)
   local GachaRarity = GachaData.GachaCoreDesColor
   local GachaCoreDes = GachaData.GachaCoreDes
@@ -440,7 +434,6 @@ function M:RefreshGachaQualityTips(GachaData)
     self.Com_QualityTag:SetCustomizedTextTag(GText(GachaCoreDes))
   end
 end
-
 function M:RefreshRemainGachaTimes()
   local GachaInfo = DataMgr.SkinGacha[self.CurrentGachaId]
   if DataMgr.GachaProbability[GachaInfo.ProbabilityId].ShowGetStar5Times == nil or GachaInfo.GachaLimitIsShow then
@@ -466,7 +459,6 @@ function M:RefreshRemainGachaTimes()
     end
   end
 end
-
 function M:RefreshCumulativeDrawReward()
   if not next(self.GachaPoolDict) then
     return
@@ -532,14 +524,13 @@ function M:RefreshCumulativeDrawReward()
       self.ExchangeBtn.VX_Particle:SetVisibility(ESlateVisibility.Collapsed)
       self.ExchangeBtn.VX_Particle:DeactivateSystem()
     end
-    assert(Icon, "\230\138\189\229\141\161\231\180\175\232\174\161\229\165\150\229\138\177\229\155\190\230\160\135\228\184\141\229\144\136\230\179\149, Id:" .. Id .. " Type:" .. Type)
+    assert(Icon, "抽卡累计奖励图标不合法, Id:" .. Id .. " Type:" .. Type)
     self.ExchangeBtn.Image_ExchangeIcon:SetBrushResourceObject(Icon)
   end
   GachaModel:CheckReddot()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
   self:OnUpdateUIStyleByInputTypeChange(GameInputModeSubsystem:GetCurrentInputType(), GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:UpdateGachaTime(GachaEndTime)
   local CurrentTime = TimeUtils.NowTime()
   local RemainRefreshTime = GachaEndTime - CurrentTime
@@ -550,7 +541,6 @@ function M:UpdateGachaTime(GachaEndTime)
   local RemainTimeStr = ShopUtils:GetRefreshTimeStr(RemainRefreshTime)
   self.Com_Time.Text_TimeDesc:SetText(RemainTimeStr)
 end
-
 function M:GetGachaAnime()
   if self.GachaAnime and self.GachaAnime:IsValid() then
     return self.GachaAnime
@@ -569,7 +559,6 @@ function M:GetGachaAnime()
   self.GachaAnime.Parent = self
   return self.GachaAnime
 end
-
 function M:GetGachaResultSpecialShow(Data, RebateData)
   self.bGachaing = false
   self.bSpecialShow = true
@@ -590,7 +579,6 @@ function M:GetGachaResultSpecialShow(Data, RebateData)
     self:GetGachaResultPage(Data, RebateData)
   end, self, true)
 end
-
 function M:GetGachaResultPage(Data, RebateData)
   if self.bNeedUpdate then
     return
@@ -621,6 +609,7 @@ function M:GetGachaResultPage(Data, RebateData)
         self.List_Pool:SetFocus()
         self:RefreshGachaInfo(self.TabId)
         self.bInGachaMain = true
+        self:CheckBubbleShow()
       end
     end)
     self.GetItemPage = self.GachaGetItemPageSP
@@ -645,12 +634,12 @@ function M:GetGachaResultPage(Data, RebateData)
         self.List_Pool:SetFocus()
         self:RefreshGachaInfo(self.TabId)
         self.bInGachaMain = true
+        self:CheckBubbleShow()
       end
     end)
     self.GetItemPage = self.GachaGetItemPage
   end
 end
-
 function M:GetShowSkin(Data)
   local GachaInfo = DataMgr.SkinGacha[self.CurrentGachaId]
   local UpItemId, UpItemType = GachaModel:GetSkinGachaUpInfo(self.CurrentGachaId)
@@ -671,7 +660,6 @@ function M:GetShowSkin(Data)
   end
   return ResType, ResId
 end
-
 function M:CheckShopLockState()
   local UIUnlockRuleId = "Shop"
   self.ShopIsUnlock = false
@@ -685,7 +673,6 @@ function M:CheckShopLockState()
     self.Group_ShopExchange:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
   local GachaInfo = DataMgr.SkinGacha[self.CurrentGachaId]
   local ResourceCountNeeded
@@ -702,12 +689,18 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
     ResourceOwnedCount = ResourceOwnedCount + Avatar:GetResourceNum(ResourceId)
   end
   local ShopItemInfo, ShopResourceId
-  for _, ResourceId in pairs(CostData) do
+  for _, ResourceId in ipairs(CostData) do
     if DataMgr.ShopItem2ShopSubId.Resource.Shop[ResourceId] then
-      local len = #DataMgr.ShopItem2ShopSubId.Resource.Shop[ResourceId]
-      ShopItemInfo = DataMgr.ShopItem2ShopSubId.Resource.Shop[ResourceId][len]
-      ShopResourceId = ResourceId
-      break
+      for _, ShopItemData in ipairs(DataMgr.ShopItem2ShopSubId.Resource.Shop[ResourceId]) do
+        if DataMgr.ShopItem[ShopItemData.ShopItemId].PriceType == CommonConst.Coins.Coin1 or DataMgr.ShopItem[ShopItemData.ShopItemId].PriceType == CommonConst.Coins.Coin4 then
+          ShopItemInfo = ShopItemData
+          ShopResourceId = ResourceId
+          break
+        end
+      end
+      if ShopResourceId then
+        break
+      end
     end
   end
   if IsSingleGacha then
@@ -730,7 +723,6 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
         if Coin4OwnedCount >= Coin1NeededCount then
           local function Confirm()
             self.CantClick = true
-            
             local function OnPurchaseShopItemUseCoin1(Ret)
               if Ret == ErrorCode.RET_SUCCESS then
                 self.CantClick = false
@@ -752,10 +744,8 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
                 UIManager(self):ShowUITip("CommonToastMain", GText(ErrorText), 1.5)
               end
             end
-            
             Avatar:PurchaseShopItemUseCoin1(ShopItemId, math.ceil(ResourceNeedPurchaseCount / ShopData.TypeNum), OnPurchaseShopItemUseCoin1)
           end
-          
           local ItemList = {}
           table.insert(ItemList, {
             ItemId = Coin4,
@@ -787,11 +777,9 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
             ShortText = PopoverText
           }
           self.PopupUI = UIManager(self):ShowCommonPopupUI(PopUpId, Params)
-          self:PopupUIGamepadSetting()
           return
         end
       end
-      
       local function JumpToShop()
         if self.ShopIsUnlock then
           PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
@@ -801,25 +789,16 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
           UIManager(self):ShowUITip("CommonToastMain", GText(UIUnlockDesc), 1.5)
         end
       end
-      
-      local PopupId
-      if CoinId == CommonConst.Coins.Coin1 then
-        PopupId = 100137
-      elseif CoinId == CommonConst.Coins.Coin4 then
-        PopupId = 100263
-      end
-      if not PopupId then
-        return
-      end
+      local PopupId = 100290
       local Params = {}
+      Params.CostType = CoinId
+      Params.CostNum = CoinNeededCount
       Params.LeftCallbackObj = self
       Params.RightCallbackObj = self
-      Params.RightCallbackFunction = JumpToShop
       self.PopupUI = UIManager(self):ShowCommonPopupUI(PopupId, Params, self)
     else
       local function Confirm()
         self.CantClick = true
-        
         self.IsPurchaseForGacha = true
         Avatar:PurchaseShopItem(ShopItemId, math.ceil(ResourceNeedPurchaseCount / ShopData.TypeNum), true, function()
           self:RefreshGachaResInfo()
@@ -834,7 +813,6 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
           end
         end)
       end
-      
       local ItemList = {}
       table.insert(ItemList, {
         ItemId = CoinId,
@@ -866,89 +844,9 @@ function M:PurchaseGachaResource(IsSingleGacha, bFromGachaRes)
         ShortText = PopoverText
       }
       self.PopupUI = UIManager(self):ShowCommonPopupUI(PopUpId, Params)
-      self:PopupUIGamepadSetting()
     end
   end
 end
-
-function M:PopupUIGamepadSetting()
-  self.PopupUI.OpenTipsButtonIndex = self.PopupUI:InitGamepadShortcut({
-    KeyInfoList = {
-      {
-        Type = "Img",
-        ImgShortPath = UIConst.GamePadImgKey.LeftThumb
-      }
-    },
-    Desc = GText("UI_Controller_CheckDetails")
-  })
-  self.PopupUI.ConfirmButtonIndex = self.PopupUI:InitGamepadShortcut({
-    KeyInfoList = {
-      {
-        Type = "Img",
-        ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
-      }
-    },
-    Desc = GText("UI_Tips_Ensure")
-  })
-  self.PopupUI.CancelButtonIndex = self.PopupUI:InitGamepadShortcut({
-    KeyInfoList = {
-      {
-        Type = "Img",
-        ImgShortPath = UIConst.GamePadImgKey.FaceButtonRight
-      }
-    },
-    Desc = GText("UI_BACK")
-  })
-  self.PopupUI:HideGamepadShortcut(self.PopupUI.ConfirmButtonIndex)
-  self.PopupUI:HideGamepadShortcut(self.PopupUI.CancelButtonIndex)
-  local ItemWidget = self.PopupUI:GetContentWidgetByName("ItemSubsize")
-  if ItemWidget then
-    ItemWidget.OnContentKeyDown = self.OnContentKeyDown
-    local Item = ItemWidget.Item:GetChildAt(0)
-    Item:BindEventOnMenuOpenChanged(self, self.ItemMenuAnchorChanged)
-  end
-end
-
-function M:ItemMenuAnchorChanged(bIsOpen)
-  if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
-    return
-  end
-  if self.PopupUI then
-    if bIsOpen then
-      self.PopupUI:HideGamepadShortcut(self.PopupUI.CancelButtonIndex)
-      self.PopupUI:HideGamepadShortcut(self.PopupUI.ConfirmButtonIndex)
-    else
-      self.PopupUI:ShowGamepadShortcut(self.PopupUI.CancelButtonIndex)
-      self.PopupUI:ShowGamepadShortcut(self.PopupUI.ConfirmButtonIndex)
-    end
-  end
-end
-
-function M:OnContentKeyDown(MyGeometry, InKeyEvent)
-  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
-  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
-  local IsEventHandled = false
-  local Item = self.Item:GetChildAt(0)
-  if InKeyName == UIConst.GamePadKey.LeftThumb then
-    if Item then
-      Item:SetFocus()
-      self.Owner.ButtonBar:SetGamepadBtnKeyVisibility(false)
-      self.Owner:ShowGamepadShortcut(self.Owner.ConfirmButtonIndex)
-      self.Owner:ShowGamepadShortcut(self.Owner.CancelButtonIndex)
-      self.Owner:HideGamepadShortcut(self.Owner.OpenTipsButtonIndex)
-      IsEventHandled = true
-    end
-  elseif InKeyName == UIConst.GamePadKey.FaceButtonRight and Item:HasAnyFocus() then
-    self.Owner.ButtonBar:SetGamepadBtnKeyVisibility(true)
-    self.Owner:HideGamepadShortcut(self.Owner.ConfirmButtonIndex)
-    self.Owner:HideGamepadShortcut(self.Owner.CancelButtonIndex)
-    self.Owner:ShowGamepadShortcut(self.Owner.OpenTipsButtonIndex)
-    self.Owner:SetFocus()
-    IsEventHandled = true
-  end
-  return IsEventHandled
-end
-
 function M:OnDrawGacha(Ret, Data, RebateData)
   if Ret == ErrorCode.RET_SUCCESS then
     AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_amb", "GachaAmb", nil)
@@ -967,6 +865,9 @@ function M:OnDrawGacha(Ret, Data, RebateData)
     else
       local GachaAnimeUI = self:GetGachaAnime()
       GachaAnimeUI:Init(Data, RebateData)
+      self:AddTimer(0.1, function()
+        GachaAnimeUI:SetFocus()
+      end, false)
     end
     self.GachaRecordsCache = nil
     self:RefreshGuaranteedDict()
@@ -977,7 +878,6 @@ function M:OnDrawGacha(Ret, Data, RebateData)
     UIManager(self):ShowUITip("CommonToastMain", GText(ErrorText), 1.5)
   end
 end
-
 function M:OnGetCumulativeDrawReward(Ret, Reward)
   if Ret == ErrorCode.RET_SUCCESS then
     UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward)
@@ -987,12 +887,10 @@ function M:OnGetCumulativeDrawReward(Ret, Reward)
   end
   self:RefreshCumulativeDrawReward()
 end
-
 function M:OnGachaPoolUpdate()
   self:BlockAllUIInput(false)
   self.bNeedUpdate = true
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
     self.VideoPlayer:Stop()
     if self.CurrentBgMusic then
@@ -1001,10 +899,8 @@ function M:OnGachaPoolUpdate()
     self.VideoPlayer:Close()
     self:Close()
   end
-  
   UIManager(self):ShowCommonPopupUI(100032, CommonDialogParams)
 end
-
 function M:OnClickBtnGachaOnce()
   if self.bCanNotClick then
     return
@@ -1012,7 +908,6 @@ function M:OnClickBtnGachaOnce()
   if self.bGachaing or self.CantClick then
     return
   end
-  self:CloseMenuAnchor()
   local Ret = GachaController:TryGacha(self.CurrentGachaId, true)
   if 1 == Ret then
     self:PurchaseGachaResource(true)
@@ -1021,7 +916,6 @@ function M:OnClickBtnGachaOnce()
     self.bGachaing = true
   end
 end
-
 function M:OnClickBtnGachaTentimes()
   if self.bCanNotClick then
     return
@@ -1029,7 +923,6 @@ function M:OnClickBtnGachaTentimes()
   if self.bGachaing or self.CantClick then
     return
   end
-  self:CloseMenuAnchor()
   local Ret = GachaController:TryGacha(self.CurrentGachaId, false)
   if 1 == Ret then
     self:PurchaseGachaResource(false)
@@ -1038,25 +931,23 @@ function M:OnClickBtnGachaTentimes()
     self.bGachaing = true
   end
 end
-
 function M:OnClickBtnShop()
   if self.bCanNotClick or self.bGachaing then
     return
   end
-  self:CloseMenuAnchor()
   self.bCanNotClick = true
   local ShopSubTabId = DataMgr.SkinGachaType[DataMgr.SkinGacha[self.CurrentGachaId].GachaType].SubTabId
   local ShopMainTabId = DataMgr.ShopTabSub[ShopSubTabId].MainTabId
   local ShopType = DataMgr.ShopMainTab2ShopType[ShopMainTabId]
   AudioManager(self):PlayUISound(self, "event:/ui/activity/shop_small_btn_click", nil, nil)
-  PageJumpUtils:JumpToShopPage(ShopMainTabId, ShopSubTabId, nil, ShopType)
+  PageJumpUtils:JumpToShopPage(ShopMainTabId, ShopSubTabId, nil, ShopType, function()
+    self:CheckBubbleShow()
+  end, self)
 end
-
 function M:OnClickBtnDetails()
   if self.bCanNotClick or self.bGachaing or self.CantClick then
     return
   end
-  self:CloseMenuAnchor()
   self.bCanNotClick = true
   local Params = {}
   local Tabs = {
@@ -1080,13 +971,11 @@ function M:OnClickBtnDetails()
   }
   Params.IsGacha = true
   Params.Parent = self
-  
   local function DialogCallback()
     self.bCanNotClick = false
     local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
     GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   end
-  
   Params.UseCachedWidget = {
     [1] = self:GetGachaDetailsUI()
   }
@@ -1095,7 +984,6 @@ function M:OnClickBtnDetails()
   Params.CurrentGachaId = self.CurrentGachaId
   self.DetailPopupUI = UIManager(self):ShowCommonPopupUI(100243, Params, self)
 end
-
 function M:GetGachaDetailsUI()
   if self.GachaDetailsUI and self.GachaDetailsUI:IsValid() then
     return self.GachaDetailsUI
@@ -1103,7 +991,6 @@ function M:GetGachaDetailsUI()
   self.GachaDetailsUI = self:CreateWidgetNew("GachaDetails")
   return self.GachaDetailsUI
 end
-
 function M:OnClickBtnHistory()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1112,9 +999,7 @@ function M:OnClickBtnHistory()
   if self.bCanNotClick or self.bGachaing then
     return
   end
-  self:CloseMenuAnchor()
   self.bCanNotClick = true
-  
   local function OpenRecordDialogue(Records, GuaranteedDict)
     self.bWaitingGachaRecord = false
     self.GachaRecordsCache = Records
@@ -1136,14 +1021,11 @@ function M:OnClickBtnHistory()
     Params.TabMapGacha = TabMapGacha
     Params.CurrentGachaId = self.CurrentGachaId
     Params.OnCloseCallbackObj = self
-    
     function Params.OnCloseCallbackFunction()
       self.bCanNotClick = false
     end
-    
     self.DetailPopupUI = UIManager(self):ShowCommonPopupUI(100242, Params, self)
   end
-  
   if self.GachaRecordsCache and self.GuaranteedDict then
     OpenRecordDialogue(self.GachaRecordsCache, self.GuaranteedDict)
   else
@@ -1154,13 +1036,11 @@ function M:OnClickBtnHistory()
     Avatar:OpenGachaRecord(OpenRecordDialogue)
   end
 end
-
 function M:RefreshGuaranteedDict()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function OpenRecordDialogue(Records, GuaranteedDict)
       self.GachaRecordsCache = Records
-      
       self.GuaranteedDict = GuaranteedDict
       local GachaInfo = DataMgr.SkinGacha[self.CurrentGachaId]
       local ProbabilityId = GachaInfo.ProbabilityId
@@ -1173,7 +1053,6 @@ function M:RefreshGuaranteedDict()
         end
       end
     end
-    
     if self.GachaRecordsCache and self.GuaranteedDict then
       OpenRecordDialogue(self.GachaRecordsCache, self.GuaranteedDict)
     else
@@ -1181,7 +1060,6 @@ function M:RefreshGuaranteedDict()
     end
   end
 end
-
 function M:HandleRecords(Records)
   local RecordSum = #Records
   local RecordList = {}
@@ -1196,7 +1074,6 @@ function M:HandleRecords(Records)
   end
   return RecordList
 end
-
 function M:GetHistoryTab()
   local NowTime = TimeUtils.NowTime()
   local HistoryTab = {}
@@ -1233,7 +1110,6 @@ function M:GetHistoryTab()
   end
   return DialogueTab, TabMapGacha
 end
-
 function M:OpenCumulativeDrawReward()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1242,7 +1118,6 @@ function M:OpenCumulativeDrawReward()
   if self.bCanNotClick or self.bGachaing then
     return
   end
-  self:CloseMenuAnchor()
   self.bCanNotClick = true
   local GachaInfo = GachaModel:GetGachaAvatarInfo(self.CurrentGachaId)
   local RewardLstData = GachaModel:GetSkinGachaCumulativeInfo(self.CurrentGachaId)
@@ -1326,15 +1201,12 @@ function M:OpenCumulativeDrawReward()
   Params.ConfigData = ConfigData
   Params.Title = GText("UI_SkinGacha_Cumulative_Title")
   Params.OnCloseCallbackObj = self
-  
   function Params.OnCloseCallbackFunction()
     self.bCanNotClick = false
   end
-  
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large_crystal", nil, nil)
   self.DetailPopupUI = UIManager(self):ShowCommonPopupUI(100158, Params, self)
 end
-
 function M:TakeGachaScreenShot(Widget, OnHideCallback)
   ULowEntryExtendedStandardLibrary.SetMousePositionInPercentages(1, 1)
   local OutColorData = TArray(FColor)
@@ -1351,11 +1223,15 @@ function M:TakeGachaScreenShot(Widget, OnHideCallback)
     self:GetScreenShotWidget()
   end
   if IsValid(self.GachaScreenShotWidget) then
-    self.GachaScreenShotWidget:Init(Image, Widget, OnHideCallback)
+    local Params = {
+      Image = Image,
+      Parent = Widget,
+      OnHiddenCallback = OnHideCallback
+    }
+    self.GachaScreenShotWidget:Init(Params)
     self.GachaScreenShotWidget:SetFocus()
   end
 end
-
 function M:GetScreenShotWidget()
   if not IsValid(self.GachaScreenShotWidget) then
     local Widget = UIManager(self):CreateWidget(UIConst.ScreenshotWidget)
@@ -1371,63 +1247,49 @@ function M:GetScreenShotWidget()
   end
   return self.GachaScreenShotWidget
 end
-
+function M:GetFirstAvailableBubbleGood()
+  local GachaInfo = DataMgr.SkinGacha[self.CurrentGachaId]
+  if not (GachaInfo and GachaInfo.BubbleShowGoods) or GachaInfo.BubbleShowGoods == "" then
+    return nil
+  end
+  for _, itemId in ipairs(GachaInfo.BubbleShowGoods) do
+    local sourceData = DataMgr.ShopItem[itemId]
+    if sourceData then
+      local shopItemData = setmetatable({}, {__index = sourceData})
+      local canPurchase = ShopUtils:CanPurchase(shopItemData, shopItemData.PriceType, ShopUtils:GetShopItemPrice(shopItemData.ItemId))
+      if 1 ~= shopItemData.PurchaseFailRes and 6 ~= shopItemData.PurchaseFailRes then
+        return shopItemData
+      end
+    end
+  end
+  return nil
+end
 function M:CheckBubbleShow()
   if not self.ShopIsUnlock or not self.bAlreadyIn then
     return
   end
-  self:CloseMenuAnchor()
-  local GachaInfo = DataMgr.SkinGacha[self.CurrentGachaId]
-  if not GachaInfo.BubbleShowGoods then
-    return
-  end
-  local sourceData = DataMgr.ShopItem[GachaInfo.BubbleShowGoods]
-  if not sourceData then
-    return
-  end
-  local ShopItemData = setmetatable({}, {__index = sourceData})
-  local CanPurchase = ShopUtils:CanPurchase(ShopItemData, ShopItemData.PriceType, ShopUtils:GetShopItemPrice(ShopItemData.ItemId))
-  if 1 == ShopItemData.PurchaseFailRes then
-    return
-  end
-  local DataKey = Utils.GDate_YMD_Timestamp(TimeUtils.NowTime())
-  local BubbleShowCache = EMCache:Get(DataKey, true)
-  if nil == BubbleShowCache or BubbleShowCache[self.CurrentGachaId] == nil then
-    local ItemName = ItemUtils:GetDropName(ShopItemData.TypeId, ShopItemData.ItemType)
-    local Text = string.format(GText("UI_SkinGacha_Shop_Bubble"), ItemName)
-    self:OpenMenuAnchor(Text)
-    if nil == BubbleShowCache then
-      BubbleShowCache = {}
-    end
-    BubbleShowCache[self.CurrentGachaId] = 1
-    EMCache:Set(DataKey, BubbleShowCache, true)
+  local availableGood = self:GetFirstAvailableBubbleGood()
+  if availableGood then
+    local itemName = ItemUtils:GetDropName(availableGood.TypeId, availableGood.ItemType)
+    local text = string.format(GText("UI_SkinGacha_Shop_Bubble"), itemName)
+    self:OpenBubble(text)
+  else
+    self:CloseBubble()
   end
 end
-
-function M:OpenMenuAnchor(Text)
-  if self.Tips_MenuAnchor:IsOpen() then
+function M:OpenBubble(Text)
+  self.ShopExchange_PopUp:Init({Text = Text})
+  if self.ShopExchange_PopUp:IsOpen() then
     return
   end
-  self.Tips_MenuAnchor:Open(false)
-  if self.TipsDetail then
-    self.TipsDetail:Init({
-      Text = Text,
-      OnCloseEvent = {
-        Obj = self,
-        Callback = self.CloseMenuAnchor
-      }
-    })
-    self.TipsDetail:Open()
-  end
+  self.ShopExchange_PopUp:Open()
 end
-
-function M:CloseMenuAnchor()
-  if not self.Tips_MenuAnchor:IsOpen() then
+function M:CloseBubble()
+  if not self.ShopExchange_PopUp:IsOpen() then
     return
   end
-  self.Tips_MenuAnchor:Close()
+  self.ShopExchange_PopUp:Close()
 end
-
 function M:AddTabReddotListen()
   for TabId, Data in pairs(DataMgr.SkinGachaTab) do
     local ReddotName = DataMgr.SkinGachaTab[TabId].ReddotNode
@@ -1446,7 +1308,6 @@ function M:AddTabReddotListen()
     end
   end
 end
-
 function M:RemoveTabReddotListen()
   for TabId, Data in pairs(DataMgr.SkinGachaTab) do
     local ReddotName = DataMgr.SkinGachaTab[TabId].ReddotNode
@@ -1455,13 +1316,16 @@ function M:RemoveTabReddotListen()
     end
   end
 end
-
-function M:ShowTabRedDotByTabId(TabId, bShow)
+function M:ShowTabRedDotByTabId(TabId, bShowReddot)
   if self.PoolItemMap[TabId] and self.PoolItemMap[TabId].SelfWidget then
-    self.PoolItemMap[TabId].SelfWidget:SetReddot(bShow)
+    self.PoolItemMap[TabId].SelfWidget:SetReddot(bShowReddot)
   end
 end
-
+function M:ShowTabNewByTabId(TabId, bShowNew)
+  if self.PoolItemMap[TabId] and self.PoolItemMap[TabId].SelfWidget then
+    self.PoolItemMap[TabId].SelfWidget:SetNew(bShowNew)
+  end
+end
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.In then
     self:BlockAllUIInput(false)
@@ -1483,8 +1347,13 @@ function M:OnAnimationFinished(InAnim)
     self.PendingRebateData = nil
   end
 end
-
 function M:Close()
+  if self.autoSelectedNewGacha then
+    local info = self.autoSelectedNewGacha
+    GachaModel:MarkGachaAsOpened(info.GachaId)
+    GachaModel:CheckNew()
+    self.autoSelectedNewGacha = nil
+  end
   if self.GachaGetItemPage then
     self.GachaGetItemPage:RemoveFromParent()
   end
@@ -1495,12 +1364,11 @@ function M:Close()
   if self.IsUnLoadNavMesh then
     local GameInstance = GWorld.GameInstance
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
-    DebugPrint("---\229\134\176\230\185\150\229\159\142\229\133\179\233\151\173\230\138\189\229\141\161\230\129\162\229\164\141\229\175\188\232\136\170\231\189\145\230\160\188---")
+    DebugPrint("---冰湖城关闭抽卡恢复导航网格---")
     URuntimeCommonFunctionLibrary.LoadNavMeshLevel(Player:GetWorld())
   end
   self.Super.Close(self)
 end
-
 function M:CloseSelf()
   if not self.bGachaing and not self.CantClick and not self.bGachaRes and not self.bSpecialShow and not self.bWaitingGachaRecord then
     self.VideoPlayer:Stop()
@@ -1508,16 +1376,16 @@ function M:CloseSelf()
       AudioManager(self):StopSound(self, self.CurrentBgMusic)
     end
     self.VideoPlayer:Close()
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
     if self.IsAddInDeque then
       self:PlayAnimationForward(self.Out, UIConst.AnimOutSpeedWithPageJump.LittleFastSpeed)
     else
       self:PlayAnimation(self.Out)
     end
+    self:CloseBubble()
     AudioManager(self):SetEventSoundParam(self, "GachaMainIn", {ToEnd = 1})
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1534,7 +1402,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
@@ -1546,7 +1413,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self.Key_Exchange:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetFocus_Lua()
   if self.bGachaing then
     self.GachaAnime:SetFocus()
@@ -1560,13 +1426,11 @@ function M:SetFocus_Lua()
     self.List_Pool:SetFocus()
   end
 end
-
 function M:OnGamePadSelect(ItemContent, bHover)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and bHover then
     ItemContent.SelfWidget:OnItemClick()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   if self.bGachaing then
     if InKeyName == UIConst.GamePadKey.FaceButtonBottom then
@@ -1606,5 +1470,4 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

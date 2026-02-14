@@ -3,23 +3,18 @@ local CommonUtils = require("Utils.CommonUtils")
 local ServerConfig = require("ServerConfig")
 local TimerMgr = require("BluePrints.Common.TimerMgr")
 local HeroUSDKUtils = {}
-
 function HeroUSDKUtils.IsEnable()
   return HeroUSDKSubsystem(GWorld.GameInstance):IsHeroSDKEnable()
 end
-
 function HeroUSDKUtils.IsGlobalSDK()
   return HeroUSDKSubsystem(GWorld.GameInstance):IsGlobalSDK()
 end
-
 function HeroUSDKUtils.HasLogin()
   return HeroUSDKSubsystem(GWorld.GameInstance).UserInfo.sdkUserId ~= ""
 end
-
 function HeroUSDKUtils.GetUserInfo()
   return HeroUSDKSubsystem(GWorld.GameInstance).UserInfo
 end
-
 function HeroUSDKUtils.GenHeroHDCGameRoleInfo(RoleId, RoleName, Level)
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -42,13 +37,11 @@ function HeroUSDKUtils.GenHeroHDCGameRoleInfo(RoleId, RoleName, Level)
   GameRoleInfo.gold2 = tostring(PlayerAvatar.Resources[CommonConst.ExpItemId] and PlayerAvatar.Resources[CommonConst.ExpItemId].Count or 0)
   return GameRoleInfo
 end
-
 function HeroUSDKUtils.SetHeroUSDKUploadBaseData(Data, PlayerAvatar)
   Data.Server_Id = tonumber(PlayerAvatar.HostNum)
   Data.Role_Id = CommonUtils.ObjId2Str(PlayerAvatar.Eid)
   Data.Role_Name = PlayerAvatar.Account
 end
-
 function HeroUSDKUtils.GenHeroUSDKUploadChatItemData(ChatContents)
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -67,7 +60,6 @@ function HeroUSDKUtils.GenHeroUSDKUploadChatItemData(ChatContents)
   end
   return HeroUSDKUploadChatData
 end
-
 function HeroUSDKUtils.GenHeroUSDKUploadReportData(ReportData)
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -89,7 +81,6 @@ function HeroUSDKUtils.GenHeroUSDKUploadReportData(ReportData)
   end
   return HeroUSDKUploadReportData
 end
-
 function HeroUSDKUtils.GenHeroUSDKUploadLogItemData(LogItemData)
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -107,7 +98,6 @@ function HeroUSDKUtils.GenHeroUSDKUploadLogItemData(LogItemData)
   end
   return HeroUSDKUploadLogData
 end
-
 function HeroUSDKUtils.CheckStringSensitive(CallObject, Str, SensitiveCallBack, NotSensitiveCallBack, SkipServerCheck)
   local SDKFinished = false
   local ServerFinished = SkipServerCheck or false
@@ -116,9 +106,15 @@ function HeroUSDKUtils.CheckStringSensitive(CallObject, Str, SensitiveCallBack, 
   local FirstSDKCheck = false
   local RealStr = string.gsub(Str, "%s", "")
   print(_G.LogTag, "LXZ SDK CheckStringSensitive")
+  if SkipServerCheck then
+    UIManager():_BlockAllUIInput(true, "CheckStringSensitive")
+  end
   HeroUSDKSubsystem():RequestRealTimeContentValidate(RealStr, {
     CallObject,
     function(CallObject, ResponseData)
+      if SkipServerCheck then
+        UIManager():_BlockAllUIInput(false, "CheckStringSensitive")
+      end
       print(_G.LogTag, "LXZ SDK CheckStringSensitive Callback", ServerFinished, ServerSucc, ServerFinished)
       SDKFinished = true
       if 0 == ResponseData.Data.Result then
@@ -141,7 +137,6 @@ function HeroUSDKUtils.CheckStringSensitive(CallObject, Str, SensitiveCallBack, 
     return
   end
   print(_G.LogTag, "LXZ Server CheckStringSensitive")
-  
   local function CallBack(NowErrorCode, BackStr)
     ServerFinished = true
     if NowErrorCode == ErrorCode.RET_SUCCESS then
@@ -160,10 +155,8 @@ function HeroUSDKUtils.CheckStringSensitive(CallObject, Str, SensitiveCallBack, 
       HeroUSDKUtils.TryCheckStringSensitiveFinished(CallObject, Str, SensitiveCallBack, NotSensitiveCallBack, ExtraParam)
     end
   end
-  
   Avatar:FilterStringSensitiveWord(RealStr, CallBack)
 end
-
 function HeroUSDKUtils.TryCheckStringSensitiveFinished(CallObject, Str, SensitiveCallBack, NotSensitiveCallBack, ExtraParam)
   print(_G.LogTag, "LXZ TryCheckStringSensitiveFinished", ExtraParam.ServerFinished, ExtraParam.SDKFinished, ExtraParam.ResponseData, ExtraParam.ServerSucc, ExtraParam.SDKSucc, ExtraParam.FirstSDKCheck)
   if ExtraParam.SDKFinished and not ExtraParam.FirstSDKCheck then
@@ -172,7 +165,6 @@ function HeroUSDKUtils.TryCheckStringSensitiveFinished(CallObject, Str, Sensitiv
     TimerMgr.AddTimer(CallObject, 1, HeroUSDKUtils.CheckStringSensitiveFinished, false, 0, "WaitSensitiveFinished", true, Str, SensitiveCallBack, NotSensitiveCallBack, ExtraParam)
   end
 end
-
 function HeroUSDKUtils.CheckStringSensitiveFinished(CallObject, Str, SensitiveCallBack, NotSensitiveCallBack, ExtraParam)
   TimerMgr.RemoveTimer(CallObject, "WaitSensitiveFinished", true)
   if not ExtraParam.ResponseData then
@@ -199,5 +191,4 @@ function HeroUSDKUtils.CheckStringSensitiveFinished(CallObject, Str, SensitiveCa
     end
   end
 end
-
 return HeroUSDKUtils

@@ -1,5 +1,4 @@
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function M:Execute()
   local InputType = CommonUtils.GetCurrentInputType()
   if InputType == ECommonInputType.MouseAndKeyboard then
@@ -12,5 +11,4 @@ function M:Execute()
     assert(false, string.format("Node execution at key %s failed, InputType is invalid.", self.Key))
   end
 end
-
 return M

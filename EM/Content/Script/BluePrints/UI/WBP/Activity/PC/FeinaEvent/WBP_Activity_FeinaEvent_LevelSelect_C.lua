@@ -1,16 +1,13 @@
 require("UnLua")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   EventManager:AddEvent(EventID.OnGetFeiNaReward, self, self.OnGetFeiNaReward)
   EventManager:FireEvent(EventID.OnLeaveActivityEntry)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnGetFeiNaReward, self)
 end
-
 function M:OnGetFeiNaReward()
   local Avatar = GWorld:GetAvatar()
   local FeinaEventData = DataMgr.FeinaEvent
@@ -33,7 +30,6 @@ function M:OnGetFeiNaReward()
     FeinaLevelPanel.Text_Progress:SetText(GetRewardCount .. "/" .. FeinaEventConfig.RewardNum)
   end
 end
-
 function M:OnLoaded(...)
   local FeinaEventId = DataMgr.EventConstant.FeinaEventId.ConstantValue
   self.EventMainConfig = DataMgr.EventMain[FeinaEventId]
@@ -66,7 +62,6 @@ function M:OnLoaded(...)
   end, 2)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_chapter_page_in", nil, nil)
 end
-
 function M:SetLevelFocus()
   local PreLevel
   for i = 1, #self.LevelTable do
@@ -76,7 +71,6 @@ function M:SetLevelFocus()
     PreLevel = CurLevel
   end
 end
-
 function M:InitCommonTab()
   self.Tab:Init({
     DynamicNode = {"Back", "BottomKey"},
@@ -109,7 +103,6 @@ function M:InitCommonTab()
     }
   })
 end
-
 function M:UpdateBottomKeyInfo()
   if UIUtils.IsMobileInput() then
     return
@@ -183,18 +176,15 @@ function M:UpdateBottomKeyInfo()
   end
   self.Tab:UpdateBottomKeyInfo(BottomKeyInfo)
 end
-
 function M:CloseBottomKetInfo()
   if UIUtils.IsMobileInput() then
     return
   end
   self.Tab:UpdateBottomKeyInfo({})
 end
-
 function M:NormalPlayInAnimation()
   self:PlayAnimation(self.In)
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -202,7 +192,7 @@ function M:CloseSelf()
   if self.CurSubUI and not self.CurSubUI.IsClose then
     if self.CurSubUI.IsGamepadClickItem then
       self.CurSubUI.IsGamepadClickItem = false
-      self.CurSubUI:SetFocus()
+      self.BG:SetFocus()
     else
       self.CurSubUI:CloseSelf()
       self:PlayAnimation(self.Back)
@@ -214,20 +204,17 @@ function M:CloseSelf()
     EventManager:FireEvent(EventID.OnReturnToActivityEntry)
   end
 end
-
 function M:DirectlyClose()
   if self.CurSubUI and not self.CurSubUI.IsClose then
     self.CurSubUI:DirectlyClose()
   end
   self:Close()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
   end
 end
-
 function M:InitLevelPanel()
   local FeinaEventData = DataMgr.FeinaEvent
   for i = 1, #FeinaEventData do
@@ -235,7 +222,6 @@ function M:InitLevelPanel()
   end
   self.Reward.Text_Reward:SetText(GText("PermanenEventReward"))
 end
-
 function M:InitLevelPanelById(Index)
   if not self["Level0" .. Index] then
     return
@@ -291,7 +277,6 @@ function M:InitLevelPanelById(Index)
     FeinaLevelPanel.Panel_Complete:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:PlayHoverSpineAnim(Index)
   if not self["Level0" .. Index] then
     return
@@ -299,14 +284,12 @@ function M:PlayHoverSpineAnim(Index)
   self["Spine_Level0" .. Index].Spine_Story:SetAnimation(0, "Hover", false)
   self["Spine_Level0" .. Index].Spine_Story:AddAnimation(0, "Loop", true, 0)
 end
-
 function M:PlayUnHoverSpineAnim(Index)
   if not self["Level0" .. Index] then
     return
   end
   self["Spine_Level0" .. Index].Spine_Story:SetAnimation(0, "Normal", false)
 end
-
 function M:OpenSubUI(TabId, Index)
   self:CreateSubUI(TabId)
   self:InitCurSubUI(Index)
@@ -314,7 +297,6 @@ function M:OpenSubUI(TabId, Index)
     self.CurSubUI:PlayAnimation(self.CurSubUI.In)
   end
 end
-
 function M:CreateSubUI(TabId)
   if self.CurSubUI then
     return
@@ -335,7 +317,6 @@ function M:CreateSubUI(TabId)
     CanvasSlot:SetAnchors(Anchors)
   end
 end
-
 function M:GetPassDungeon(Index)
   local FeinaEventConfig = DataMgr.FeinaEvent[Index]
   local DungeonId = FeinaEventConfig.DungeonId
@@ -344,7 +325,6 @@ function M:GetPassDungeon(Index)
   local IsPassDungeon2 = Avatar and Avatar:IsPassDungeon(DungeonId[2])
   return IsPassDungeon1, IsPassDungeon2
 end
-
 function M:InitCurSubUI(Index)
   if not self.CurSubUI then
     return
@@ -353,11 +333,10 @@ function M:InitCurSubUI(Index)
   local DungeonId = FeinaEventConfig.DungeonId
   local IsPassDungeon1, IsPassDungeon2 = self:GetPassDungeon(Index)
   self.CurSubUI:InitLevelDetail(DungeonId, IsPassDungeon1, IsPassDungeon2, Index)
-  self.CurSubUI:SetFocus()
+  self.BG:SetFocus()
   self:PlayAnimation(self.Next)
   self:UpdateBottomKeyInfo()
 end
-
 function M:RefreshCurSubUI(Index)
   if not self.CurSubUI then
     return
@@ -376,15 +355,13 @@ function M:RefreshCurSubUI(Index)
   local IsPassDungeon1, IsPassDungeon2 = self:GetPassDungeon(Index)
   self.CurSubUI:InitLevelDetail(DungeonId, IsPassDungeon1, IsPassDungeon2, Index)
   self.CurSubUI:PlayAnimation(self.CurSubUI.Change)
-  self.CurSubUI:SetFocus()
+  self.BG:SetFocus()
 end
-
 function M:Destruct()
   self.Reward.Btn_Click.OnClicked:Remove(self, self.OnRewardBtnClick)
   self.IsFirstFocus = false
   self.Super.Destruct(self)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -398,7 +375,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:ParentOnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -416,7 +392,7 @@ function M:ParentOnKeyDown(MyGeometry, InKeyEvent)
     self.CurSubUI:GoToDungeon()
   elseif "Escape" == InKeyName or "Gamepad_FaceButton_Right" == InKeyName then
     if self.CurSubUI.IsGamepadClickItem then
-      self.CurSubUI:SetFocus()
+      self.BG:SetFocus()
       self.CurSubUI:HideGamepadTips(false)
       self.CurSubUI.IsGamepadClickItem = false
       self:UpdateBottomKeyInfo()
@@ -425,7 +401,7 @@ function M:ParentOnKeyDown(MyGeometry, InKeyEvent)
     end
   elseif InKeyName == UIConst.GamePadKey.LeftThumb then
     if self.CurSubUI.IsGamepadClickItem then
-      self.CurSubUI:SetFocus()
+      self.BG:SetFocus()
       self.CurSubUI:HideGamepadTips(false)
     else
       self.CurSubUI.List_Reward:SetFocus()
@@ -436,13 +412,11 @@ function M:ParentOnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnRewardBtnClick()
   if self.EventMainConfig.PermanenEventTime and self.EventMainConfig.PermanenEventTime >= TimeUtils.NowTime() then
     UIManager(self):LoadUINew("FeinaEventReward")
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.Reward.Key_Controller:SetVisibility(UIUtils.IsGamepadInput() and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
   if self.CurSubUI and not self.CurSubUI.IsClose then
@@ -452,5 +426,12 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Level01.Btn_Click:SetFocus()
   end
 end
-
+function M:OnFocusReceived(MyGeometry, InFocusEvent)
+  if self.CurSubUI and not self.CurSubUI.IsClose then
+    self.CurSubUI.IsGamepadClickItem = false
+    self.BG:SetFocus()
+    self.CurSubUI:HideGamepadTips(false)
+  end
+  return UIUtils.Handle
+end
 return M

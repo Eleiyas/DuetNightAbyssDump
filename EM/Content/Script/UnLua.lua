@@ -18,7 +18,6 @@ local netprint = NetPrint
 local UE = _ENV.UE
 _NotExist = _NotExist or {}
 local NotExist = _NotExist
-
 local function Index(t, k)
   local mt = getmetatable(t)
   local p = rawget(mt, k)
@@ -39,7 +38,6 @@ local function Index(t, k)
   rawset(t, k, p)
   return p
 end
-
 local function NewIndex(t, k, v)
   local mt = getmetatable(t)
   local p = mt[k]
@@ -48,7 +46,6 @@ local function NewIndex(t, k, v)
   end
   rawset(t, k, v)
 end
-
 local function copy_table(source, target)
   for k, f in pairs(source) do
     if "__index" ~= k and "__newindex" ~= k and "Super" ~= k and "function" == type(f) then
@@ -56,13 +53,10 @@ local function copy_table(source, target)
     end
   end
 end
-
 local a
-
 local function Get_G()
   return a
 end
-
 local function Class(super_name)
   local new_class = {}
   new_class.__index = Index
@@ -97,17 +91,14 @@ local function Class(super_name)
     end
   end
   new_class.Get_G = Get_G
-  
   function new_class.add_ref(ref_table)
     if not new_class.ref_tables then
       new_class.ref_tables = setmetatable({}, {__mode = "kv"})
     end
     table.insert(new_class.ref_tables, ref_table)
   end
-  
   return new_class
 end
-
 local function IsInExceptionList(Name, ExceptionList)
   if not ExceptionList then
     return false
@@ -119,7 +110,6 @@ local function IsInExceptionList(Name, ExceptionList)
   end
   return false
 end
-
 local function AssembleComponents(M, ExceptionList)
   local NameToFuncTable = {}
   for name, value in pairs(M) do
@@ -154,12 +144,10 @@ local function AssembleComponents(M, ExceptionList)
           func(...)
         end
       end
-      
       rawset(M, name, _wrapper)
     end
   end
 end
-
 local function global_index(t, k)
   if "string" == type(k) then
     local s = str_sub(k, 1, 1)
@@ -172,22 +160,17 @@ local function global_index(t, k)
   end
   return rawget(t, k)
 end
-
+local global_mt = {}
+global_mt.__index = global_index
+setmetatable(_G, global_mt)
 if WITH_UE4_NAMESPACE then
-  local global_mt = {}
-  global_mt.__index = global_index
-  setmetatable(_G, global_mt)
   _G.UE4 = UE
   print("WITH_UE4_NAMESPACE==true")
 else
-  local global_mt = {}
-  global_mt.__index = global_index
-  setmetatable(_G, global_mt)
-  _G.UE4 = _G
-  _G.UE = _G
+  rawset(_G, "UE4", _G)
+  rawset(_G, "UE", _G)
   print("WITH_UE4_NAMESPACE==false")
 end
-
 local function print_t(logTag, ...)
   if _G.LogTag == "nil" then
     print(logTag, ...)
@@ -195,7 +178,6 @@ local function print_t(logTag, ...)
     print(logTag, ...)
   end
 end
-
 function math.clamp(v, minValue, maxValue)
   if v < minValue then
     return minValue
@@ -205,11 +187,9 @@ function math.clamp(v, minValue, maxValue)
   end
   return v
 end
-
 function math.lerp(a, b, t)
   return a + (b - a) * t
 end
-
 function math.sign(number)
   if number > 0 then
     return 1
@@ -219,13 +199,11 @@ function math.sign(number)
   end
   return 0
 end
-
 function table.slice(t, i, j)
   return {
     table.unpack(t, i, j)
   }
 end
-
 function table.reverse(t)
   local n = #t
   for i = 1, math.floor(n / 2) do
@@ -233,7 +211,6 @@ function table.reverse(t)
   end
   return t
 end
-
 function table.join(...)
   local tt = {
     ...
@@ -246,11 +223,9 @@ function table.join(...)
   end
   return nt
 end
-
 function table.isempty(t)
   return nil == t or nil == next(t)
 end
-
 function table.findValue(t, targetValue, finder)
   finder = finder or function(v, target)
     return v == target
@@ -261,7 +236,6 @@ function table.findValue(t, targetValue, finder)
     end
   end
 end
-
 function string.split(str, reps)
   local resultStrList = {}
   string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -269,36 +243,32 @@ function string.split(str, reps)
   end)
   return resultStrList
 end
-
 function string.trim(str)
   return (string.gsub(str, "^[%s\n\r\t]*(.-)[%s\n\r\t]*$", "%1"))
 end
-
 function string.startswith(str, prefix)
   return string.sub(str, 1, string.len(prefix)) == prefix
 end
-
 function string.endswith(str, postfix)
   local strLen = string.len(str)
   return string.sub(str, strLen - string.len(postfix) + 1, strLen) == postfix
 end
-
 function string.insert(str, pos, rep)
   return string.sub(str, 1, pos) .. rep .. string.sub(str, pos + 1)
 end
-
 function string.isempty(str)
   return nil == str or "" == str
 end
-
-function try(block, ...)
+local function try(block, ...)
   if not block.catch then
     function block.catch(err)
       LogError(Traceback(ErrorTag, err, false))
-      
       local EMSentrySubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld and GWorld.GameInstance, UEMSentrySubsystem)
       if EMSentrySubsystem then
-        local SceneId = WorldTravelSubsystem and tostring(WorldTravelSubsystem():GetCurrentSceneId()) or "nil"
+        local SceneId = "nil"
+        if WorldTravelSubsystem and WorldTravelSubsystem() then
+          SceneId = tostring(WorldTravelSubsystem():GetCurrentSceneId())
+        end
         local ErrorMsg = debug.traceback(tostring(err), 2)
         EMSentrySubsystem:ReportLuaTrace(ErrorMsg, {
           SceneId = SceneId,
@@ -317,14 +287,14 @@ function try(block, ...)
     return table.unpack(Res, 2)
   end
 end
-
-function CreateCoroutine(Func, ...)
+_G.try = try
+local function CreateCoroutine(Func, ...)
   return coroutine.create(function(...)
     try({exec = Func}, ...)
   end)
 end
-
-function RunAsyncTask(Obj, TaskName, TaskFunc)
+_G.CreateCoroutine = CreateCoroutine
+local function RunAsyncTask(Obj, TaskName, TaskFunc)
   if Obj[TaskName] then
     return
   end
@@ -336,8 +306,8 @@ function RunAsyncTask(Obj, TaskName, TaskFunc)
   end)
   coroutine.resume(Obj[TaskName])
 end
-
-function ForceStopAsyncTask(Obj, TaskName)
+_G.RunAsyncTask = RunAsyncTask
+local function ForceStopAsyncTask(Obj, TaskName)
   if not Obj[TaskName] then
     return
   end
@@ -348,7 +318,7 @@ function ForceStopAsyncTask(Obj, TaskName)
     coroutine.close(Co)
   end
 end
-
+_G.ForceStopAsyncTask = ForceStopAsyncTask
 _G.print = print_t
 _G.Get_G = Get_G
 _G.netprint = netprint
@@ -373,7 +343,6 @@ _G.Const = require("Const")
 _G.UIConst = require("BluePrints.UI.UIConst")
 _G.GWorld = require("GWorld")
 _G.BattleEventName = require("BluePrints/Combat/BattleEvents/BattleEventName")
-_G.EventManager, _G.EventID = table.unpack(require("BluePrints.Managers.EventManager"))
 _G.DialogEvent = require("BluePrints.UI.UI_PC.Common.Common_Dialog.DialogEvent")
 _G.ErrorCode = require("BluePrints.Client.ErrorCode")
 _G.ConditionUtils = require("BluePrints.Common.ConditionUtils")
@@ -397,24 +366,22 @@ _G.SerializeUtils = require("Utils.SerializeUtils")
 _G.TestClass = TestClass or function()
   local Class = {}
   Class.__index = Class
-  
   function Class.New()
     local o = {}
     setmetatable(o, Class)
     return o
   end
-  
   return Class
 end
 _G.Serpent = require("Utils.Serpent")
 _G.EMGlobalLuaTable = require("EMGlobalLuaTable")
-_G.bEnableNewSTLDataFeature = false
 _G.ServerConfig = require("ServerConfig")
 _G.Json = require("rapidjson")
 _G.bson = require("bson")
 _G.Utils = require("Utils")
 _G.TimeUtils = require("Utils.TimeUtils")
-_G.StubFunctionList = require("StubFunctionList")
+_G.StubInfos = require("StubInfos")
+_G.EMCache = require("EMCache.EMCache")
 local Utils = require("Utils")
 for k, v in pairs(Utils) do
   rawset(_G, k, v)
@@ -431,4 +398,5 @@ local FSkillLevelStruct = UE.FSkillLevelStruct
 local FMessage = UE.FMessage
 local SetupClient = require("SetupClient")
 SetupClient:Setup()
+require("BluePrints.Managers.EventManager")
 require("LogPrint")

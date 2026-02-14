@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:InitAddGuideComponent()
   if not IsAuthority(self) then
     return
@@ -12,17 +11,14 @@ function Component:InitAddGuideComponent()
   end
   self:CreateGuideHandle(true)
 end
-
 function Component:CheckGuideEidExist()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   return GameState:ContainsGuideEid(self.Eid)
 end
-
 function Component:StopAddGuideTimer()
   self:RemoveTimer(self.FixTryToAddGuideHandle)
   self.FixTryToAddGuideHandle = nil
 end
-
 function Component:TryToAddGuide()
   if self:StopTryToAddGuideTimer() then
     return
@@ -41,7 +37,6 @@ function Component:TryToAddGuide()
     end
   end
 end
-
 function Component:TryToAddRangeGuide(Type)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -63,7 +58,6 @@ function Component:TryToAddRangeGuide(Type)
     return
   end
 end
-
 function Component:AddGuideEid(Eid, SceneManager, GameState, Type, PlayerEid)
   local RealPlayerEid = -1
   if nil ~= PlayerEid then
@@ -77,7 +71,6 @@ function Component:AddGuideEid(Eid, SceneManager, GameState, Type, PlayerEid)
   end
   self.GuideType = Type .. "Add"
 end
-
 function Component:RemoveGuideEid(Eid, SceneManager, GameState, Type, PlayerEid)
   local RealPlayerEid = -1
   if nil ~= PlayerEid then
@@ -91,5 +84,4 @@ function Component:RemoveGuideEid(Eid, SceneManager, GameState, Type, PlayerEid)
   end
   self.GuideType = Type .. "Remove"
 end
-
 return Component

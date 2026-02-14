@@ -4,12 +4,10 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Destruct()
   AudioManager(self):StopSound(self, "BuffItemUnlockInSound")
   self:RemoveTimer("BuffItemInAnimationTimer")
 end
-
 function M:Init(Info, AttrName2Info, AttrName2Color, Index, IsFirstTime, PlayerAttrName2Info)
   self.Icon = Info.SIcon
   self.AttrName = Info.AttrName
@@ -51,7 +49,6 @@ function M:Init(Info, AttrName2Info, AttrName2Color, Index, IsFirstTime, PlayerA
     self:TryPlayUnlockIn()
   end
 end
-
 function M:TryPlayUnlockIn()
   local ExperienceMainBuffUnlock = EMCache:Get("ExperienceMainBuffUnlock", true) or {}
   if self.Unlock and self.RealUnlock and not ExperienceMainBuffUnlock[self.Attr] then
@@ -68,5 +65,4 @@ function M:TryPlayUnlockIn()
     self:PlayAnimation(self.Lock)
   end
 end
-
 return M

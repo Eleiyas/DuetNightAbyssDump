@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:ShowOrHideByAnim(bShow)
   if bShow ~= self.bShow then
     if bShow then
@@ -23,5 +22,4 @@ function M:ShowOrHideByAnim(bShow)
   end
   self.bShow = bShow
 end
-
 return M

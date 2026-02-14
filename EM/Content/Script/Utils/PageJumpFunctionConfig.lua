@@ -1,6 +1,7 @@
 require("UnLua")
+local GameFlowUtils = require("Utils.GameFlowUtils")
+local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local M = {}
-
 function M.JumpToTaskPanelByQuestChainId(QuestChainId)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local PlayerAvatar = GWorld:GetAvatar()
@@ -32,7 +33,6 @@ function M.JumpToTaskPanelByQuestChainId(QuestChainId)
     UIManager:PlaceJumpUIToTop(TargetUIPage, JumpToPageUIName)
   end
 end
-
 function M.JumpToRegionMapByTeleportId(_TeleportId)
   local TeleportId = tonumber(_TeleportId)
   DebugPrint("JumpToRegionMapByTeleportId, TeleportId", TeleportId)
@@ -46,7 +46,6 @@ function M.JumpToRegionMapByTeleportId(_TeleportId)
     UIManager:LoadUINew("LevelMapMain", false, RegionId, "TeleportPoint", TeleportId)
   end
 end
-
 function M.JumpToRegionMapByRegionPointId(_RegionPointId)
   local RegionPointId = tonumber(_RegionPointId)
   DebugPrint("JumpToRegionMapByRegionPointId, RegionPointId", RegionPointId)
@@ -60,7 +59,6 @@ function M.JumpToRegionMapByRegionPointId(_RegionPointId)
     UIManager:LoadUINew("LevelMapMain", false, RegionId, "RegionPoint", RegionPointId)
   end
 end
-
 function M.JumpToArmory(MainTab, SubTab, Id)
   local Params = {}
   local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
@@ -101,21 +99,34 @@ function M.JumpToArmory(MainTab, SubTab, Id)
   end
   Params.SelectedTargetId = tonumber(Id)
   local UIName = "ArmoryMain"
-  local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-  local Flow = FlowManager:CreateFlow("OpenSystemUI")
-  Flow.OnBegin:Add(Flow, function()
-    local UIManager = GWorld.GameInstance:GetGameUIManager()
-    local TargetUIPage = UIManager:GetUIObj(UIName)
-    if not TargetUIPage then
-      TargetUIPage = UIManager:LoadUINew(UIName, Params)
-      UIManager:AddToJumpPageDeque(TargetUIPage)
-      UIManager:AddFlow(UIName, Flow)
-    else
-      UIManager:PlaceJumpUIToTop(TargetUIPage, UIName)
-      FlowManager:RemoveFlow(Flow)
+  GameFlowUtils:AddFlow("OpenSystemUI", {
+    GWorld.GameInstance,
+    function(_, Flow)
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      local TargetUIPage = UIManager:GetUIObj(UIName)
+      if not TargetUIPage then
+        TargetUIPage = UIManager:LoadUINew(UIName, Params)
+        UIManager:AddToJumpPageDeque(TargetUIPage)
+        UIManager:AddFlow(UIName, Flow)
+      else
+        UIManager:PlaceJumpUIToTop(TargetUIPage, UIName)
+        GameFlowUtils:RemoveFlow(Flow)
+      end
     end
-  end)
-  FlowManager:AddFlow(Flow)
+  })
 end
-
+function M.JumpToInviteCode()
+  local SdkUserInfo = HeroUSDKUtils.GetUserInfo()
+  local AccessToken = SdkUserInfo.accessToken
+  local SdkUserId = SdkUserInfo.sdkUserId
+  local UserName = SdkUserInfo.userName
+  local UIManager = GWorld.GameInstance:GetGameUIManager()
+  local TargetUIPage = UIManager:GetUIObj("GlobalWebBrowser")
+  if not TargetUIPage then
+    TargetUIPage = UIManager:LoadUINew("GlobalWebBrowser", "InviteCode", true, "&accessToken=" .. AccessToken, "&cUid=" .. SdkUserId, "&cName=" .. UserName)
+    UIManager:AddToJumpPageDeque(TargetUIPage)
+  else
+    UIManager:PlaceJumpUIToTop(TargetUIPage, "GlobalWebBrowser")
+  end
+end
 return M

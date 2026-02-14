@@ -2,18 +2,15 @@ require("UnLua")
 local BP_RegionDefenceComponent_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_RegionDefenceComponent_C:InitRegionDefenceComponent()
   DebugPrint("RegionDefenceComponent: Init!")
   self.GameMode = self:GetOwner()
 end
-
 function BP_RegionDefenceComponent_C:WaveStart()
   self.MonsterTotalNum = self.MonsterTotalBaseNum + math.random(0, 2)
   self.GameMode:TriggerCreateMonsterSpawn(self:GetMonsterSpawnId())
   self.bMonRuleReseted = false
 end
-
 function BP_RegionDefenceComponent_C:GetMonsterSpawnId()
   local RealIndex = self:GetWaveIndex() % #self.MonsterSpawnIds
   if 0 == RealIndex then
@@ -21,7 +18,6 @@ function BP_RegionDefenceComponent_C:GetMonsterSpawnId()
   end
   return self:TableToTArray(self.MonsterSpawnIds[RealIndex])
 end
-
 function BP_RegionDefenceComponent_C:TriggerMonsterDead(Monster)
   if Monster.CreatorType and Monster.CreatorId and Monster:GetCamp() == ECampName.Monster then
     self.MonsterTotalNum = self.MonsterTotalNum - 1
@@ -49,7 +45,6 @@ function BP_RegionDefenceComponent_C:TriggerMonsterDead(Monster)
     end
   end
 end
-
 function BP_RegionDefenceComponent_C:MonsterNumCheck()
   if 0 == self:GetMonsterNum() and self.MonsterTotalNum <= 0 then
     self.GameMode:PostCustomEvent("DefenceWaveEnd")
@@ -57,23 +52,18 @@ function BP_RegionDefenceComponent_C:MonsterNumCheck()
     self.GameMode:TriggerGameModeEvent("OnShowDefenceTarget")
   end
 end
-
 function BP_RegionDefenceComponent_C:GetMonsterNum()
   return self.GameMode.EMGameState.MonsterNum
 end
-
 function BP_RegionDefenceComponent_C:GetWaveIndex()
   return self.GameMode.EMGameState.DefenceWave
 end
-
 function BP_RegionDefenceComponent_C:AddWaveIndex(Value)
   self.GameMode.EMGameState:SetDefenceWave(self.GameMode.EMGameState.DefenceWave + Value)
 end
-
 function BP_RegionDefenceComponent_C:SetWaveIndex(Value)
   self.GameMode.EMGameState:SetDefenceWave(Value)
 end
-
 function BP_RegionDefenceComponent_C:TableToTArray(table)
   local ResTArray = TArray(0)
   if table then
@@ -83,5 +73,4 @@ function BP_RegionDefenceComponent_C:TableToTArray(table)
   end
   return ResTArray
 end
-
 return BP_RegionDefenceComponent_C

@@ -1,28 +1,21 @@
 require("UnLua")
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.FXComponent:SetComponentTickEnabled(false)
   self.JumpPadLaunchedTime = 1
 end
-
 function M:ActiveOnServer()
   self:ShowMechanism("Condition")
 end
-
 function M:DeActive()
   self:HideMechanism(false, "Condition", not self.HiddenOnDeActive)
   self.CombatClientEffectComponent:OnDeactiveEffect()
 end
-
 function M:OnPlayerEnter(Player)
-  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-  if GameMode then
-    local WCSubsystem = GameMode.WorldCompositionSubSystem
-    if WCSubsystem and WCSubsystem:IsAsyncTraveling() then
-      return
-    end
+  local WCSubsystem = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE4.UWorldCompositionSubSystem)
+  if WCSubsystem and WCSubsystem:IsAsyncTraveling() then
+    return
   end
   if self.StayPlayers:Contains(Player) then
     return
@@ -32,7 +25,6 @@ function M:OnPlayerEnter(Player)
   Player.CharFSMComp.OnAfterTagChanged:Add(self, self.OnPlayerStay)
   self.IsPlayerInside = true
 end
-
 function M:OnPlayerLeave(Player)
   self.StayPlayers:Remove(Player)
   Player.CharFSMComp.OnAfterTagChanged:Remove(self, self.OnPlayerStay)
@@ -40,7 +32,6 @@ function M:OnPlayerLeave(Player)
     self.IsPlayerInside = false
   end
 end
-
 function M:OnPlayerStay(PlayerEid, OldTag, NewTag)
   local Player = Battle(self):GetEntity(PlayerEid)
   if IsValid(Player) == false then
@@ -53,7 +44,6 @@ function M:OnPlayerStay(PlayerEid, OldTag, NewTag)
     Player.CharFSMComp.OnAfterTagChanged:Remove(self, self.OnPlayerStay)
   end
 end
-
 function M:LaunchPlayer(Player)
   if not self.IsCdOver then
     return
@@ -86,7 +76,6 @@ function M:LaunchPlayer(Player)
     GameMode:TriggerDungeonAchieve("PlayerUsePad", Player.Eid)
   end
 end
-
 function M:ReceiveEndPlay(EndReason)
   M.Super.ReceiveEndPlay(self, EndReason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -99,5 +88,4 @@ function M:ReceiveEndPlay(EndReason)
     end
   end
 end
-
 return M

@@ -1,5 +1,4 @@
 local TalkOptionData_C = require("BluePrints.Story.Talk.Model.TalkOptionData").TalkOptionData_C
-
 local function GetSequence(SequencePath)
   local Sequence = UE4.LoadObject(SequencePath)
   if Sequence then
@@ -31,16 +30,44 @@ local function GetSequence(SequencePath)
   end
   return nil
 end
-
+local function AddExternTalkactors(TalkNodeData, ExternTalkActors, bUseExternActors)
+  local TalkActors = {}
+  local NativeTalkActors = {}
+  if bUseExternActors then
+    for _, TalkActor in pairs(ExternTalkActors) do
+      NativeTalkActors[TalkActor.TalkActorId] = true
+      table.insert(TalkActors, TalkActor)
+    end
+    if TalkNodeData.TalkActors then
+      for _, TalkActor in pairs(TalkNodeData.TalkActors) do
+        if not NativeTalkActors[TalkActor.TalkActorId] then
+          table.insert(TalkActors, TalkActor)
+        end
+      end
+    end
+  else
+    if TalkNodeData.TalkActors then
+      for _, TalkActor in pairs(TalkNodeData.TalkActors) do
+        NativeTalkActors[TalkActor.TalkActorId] = true
+        table.insert(TalkActors, TalkActor)
+      end
+    end
+    for _, TalkActor in pairs(ExternTalkActors) do
+      if not NativeTalkActors[TalkActor.TalkActorId] then
+        table.insert(TalkActors, TalkActor)
+      end
+    end
+  end
+  TalkNodeData.TalkActors = TalkActors
+end
 local CommonTalkTaskData_C = {}
-
 function CommonTalkTaskData_C.New(TalkNodeData)
   local Obj = setmetatable({}, {__index = TalkNodeData})
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   local TalkTypeData = DataMgr.TalkType[TalkNodeData.TalkType]
   Obj.SetPlayerInvincible = TalkTypeData.SetPlayerInvincible
   Obj.bDisableGameInput = not TalkTypeData.GameInput
-  Obj.bExitOnline = TalkNodeData.TalkType == "FixSimple" or TalkNodeData.TalkType == "QuestImpression" or TalkNodeData.TalkType == "Cinematic" or TalkNodeData.TalkType == "Show"
+  Obj.bExitOnline = true
   Obj.bPopMouse = TalkTypeData.UICanInteractive
   Obj.bShowGameUI = TalkTypeData.ShowGameUI
   Obj.bShowInStoryReview = TalkTypeData.ShowInStoryReview
@@ -67,7 +94,6 @@ function CommonTalkTaskData_C.New(TalkNodeData)
   Obj.bDisableMonsterAI = TalkNodeData.DisableMonsterAI
   Obj.bDisableNPCAI = TalkNodeData.DisableNPCAI
   Obj.bHideAllBattleEntity = TalkNodeData.HideAllBattleEntity
-  Obj.bDisableMonsterAIForSimpleTalk = TalkNodeData.DisableMonsterAIForSimpleTalk
   Obj.bFreezeWorldComposition = TalkNodeData.FreezeWorldComposition
   Obj.bTravelFullLoadWorldComposition = TalkNodeData.bTravelFullLoadWorldComposition
   Obj.SwitchToMasterType = TalkNodeData.SwitchToMaster
@@ -77,7 +103,6 @@ function CommonTalkTaskData_C.New(TalkNodeData)
   if TalkNodeData.CameraLookAtTartgetPoint and TalkNodeData.CameraLookAtTartgetPoint ~= "" then
     Obj.CameraLookAtTartgetPoint = TalkNodeData.CameraLookAtTartgetPoint
   end
-  Obj.CreateTalkActors = TalkNodeData.TalkActors
   Obj.Player = UE.UGameplayStatics.GetPlayerCharacter(Obj.TalkContext, 0)
   Obj.PlayerController = UE.UGameplayStatics.GetPlayerController(Obj.TalkContext, 0)
   Obj.ChapterId = 1001
@@ -97,7 +122,6 @@ function CommonTalkTaskData_C.New(TalkNodeData)
   Obj.bBubblePlayCDEnable = TalkNodeData.bBubblePlayCDEnable
   Obj.BubblePlayCD = TalkNodeData.BubblePlayCD
   Obj.AudioAttachActor = TalkNodeData.AudioAttachActor
-  Obj.bUseOldTalkPawn = -1 == TalkNodeData.BlendInTime
   Obj.PlayDialogueCallBack = TalkNodeData.PlayDialogueCallBack
   Obj.bPauseNpcBT = TalkNodeData.PauseNpcBT
   Obj.QuestChainId = TalkNodeData.QuestChainId
@@ -108,12 +132,12 @@ function CommonTalkTaskData_C.New(TalkNodeData)
     local LevelSequenceActorClass = Obj.TalkContext.LevelSequenceActorClass or UE4.LoadClass(Const.Talk_LevelSequenceActorPath)
     local DefaultTrans = UE4.UKismetMathLibrary.MakeTransform(UE4.FVector(0, 0, 0), UE4.FRotator(0, 0, 0), UE4.FVector(1, 1, 1))
     local SequenceActor = World:SpawnActor(LevelSequenceActorClass, DefaultTrans, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
-    SequenceActor.CameraSettings.bOverrideAspectRatioAxisConstraint = false
     local Sequence = GetSequence(Obj.SequencePath)
     if not Sequence then
-      local Message = "\230\137\190\228\184\141\229\136\176Sequence\232\181\132\230\186\144" .. "\nSequence\232\183\175\229\190\132:" .. Obj.SequencePath .. "\n\229\175\185\232\175\157\232\138\130\231\130\185:" .. tostring(TalkNodeData.Name)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "Seqeuence\232\181\132\230\186\144\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+      local Message = "找不到Sequence资源" .. "\nSequence路径:" .. Obj.SequencePath .. "\n对话节点:" .. tostring(TalkNodeData.Name)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Talk, "Seqeuence资源缺失/配置错误", Message)
     else
+      UE4.UMovieSceneSequenceExtensions.SetClockSource(Sequence, UE4.EUpdateClockSource.Platform)
       SequenceActor:SetSequence(Sequence)
       Obj.Sequence = Sequence
     end
@@ -128,11 +152,13 @@ function CommonTalkTaskData_C.New(TalkNodeData)
       FlowEditorSubSystem:CheckFlowAsset(FlowAsset)
     end
     if not FlowAsset then
-      local Message = "\230\137\190\228\184\141\229\136\176DialogueAsset\232\181\132\230\186\144" .. "\nSequence\232\183\175\229\190\132:" .. TalkNodeData.FlowAssetPath .. "\n\229\175\185\232\175\157\232\138\130\231\130\185:" .. tostring(TalkNodeData.Name)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "DialogueAsset\232\181\132\230\186\144\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+      local Message = "找不到DialogueAsset资源" .. "\nSequence路径:" .. TalkNodeData.FlowAssetPath .. "\n对话节点:" .. tostring(TalkNodeData.Name)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.TalkFlow, "DialogueAsset资源缺失/配置错误", Message)
     elseif TS then
       Obj.FlowAsset = TS:CreateFlowTalkTask(TalkNodeData.FlowAssetPath, UE4.LoadObject(TalkNodeData.FlowAssetPath))
       Obj.FirstDialogueId = Obj.FlowAsset:GetFirstDialogueId()
+      local TalkActors = Obj.FlowAsset:GetTalkActorData()
+      AddExternTalkactors(Obj, TalkActors, Obj.bUseFlowAssetActors)
     end
   end
   if Obj.BasicTalkType == "Black" then
@@ -155,5 +181,4 @@ function CommonTalkTaskData_C.New(TalkNodeData)
   end
   return Obj
 end
-
 return CommonTalkTaskData_C

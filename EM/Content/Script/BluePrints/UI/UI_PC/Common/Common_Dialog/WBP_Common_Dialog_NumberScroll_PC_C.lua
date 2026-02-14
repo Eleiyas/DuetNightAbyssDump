@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Common_Dialog_NumberScroll_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Common_Dialog_NumberScroll_PC_C:InitContent(NumberRequired)
   self.NumberScrollBox.OnUserScrolled:Add(self, self.OnScrolled)
   self.NumberScrollBox.OnMouseButtonUp:Add(self, self.OnMouseButtonUp)
@@ -13,7 +12,6 @@ function WBP_Common_Dialog_NumberScroll_PC_C:InitContent(NumberRequired)
   self.IsMouseDown = false
   self.SelectedWidget = nil
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:InitNumbers(NumberRequired)
   self.NumberScrollBox:RemoveChildAt(self.NumberScrollBox:GetChildrenCount() - 1)
   self.NumberWidgets = {}
@@ -26,7 +24,6 @@ function WBP_Common_Dialog_NumberScroll_PC_C:InitNumbers(NumberRequired)
   end
   self.NumberScrollBox:AddChild(self.Border_Down)
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:ResetNumbers(NumberRequired)
   self.NumberScrollBox:RemoveChildAt(self.NumberScrollBox:GetChildrenCount() - 1)
   local CurrentNumber = #self.NumberWidgets
@@ -46,12 +43,10 @@ function WBP_Common_Dialog_NumberScroll_PC_C:ResetNumbers(NumberRequired)
   end
   self.NumberScrollBox:AddChild(self.Border_Down)
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:BindOnNumberSelected(Obj, Callback)
   self.NumberSelectedObj = Obj
   self.NumberSelectedCallback = Callback
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:OnScrolled(CurrentOffset)
   if self.NumberRequired and self.NumberRequired ~= #self.NumberWidgets then
     self:ResetNumbers(self.NumberRequired)
@@ -67,12 +62,10 @@ function WBP_Common_Dialog_NumberScroll_PC_C:OnScrolled(CurrentOffset)
     self.SelectedWidget = Widget
   end
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:OnMouseButtonUp(MyGeometry, InKeyEvent)
   self:SetToCloestNumber()
   self.IsMouseDown = false
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:OnMouseWheel(MyGeometry, InKeyEvent)
   local Params = {}
   Params.ByWheel = true
@@ -82,7 +75,6 @@ function WBP_Common_Dialog_NumberScroll_PC_C:OnMouseWheel(MyGeometry, InKeyEvent
   end
   self:SetToCloestNumber(Params)
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:SetToCloestNumber(Params)
   local ClosestIndex = self:FindClosestWidgetIndex(self.NumberScrollBox:GetScrollOffset())
   if Params and Params.ByWheel and self.SelectedNumber == ClosestIndex then
@@ -102,43 +94,36 @@ function WBP_Common_Dialog_NumberScroll_PC_C:SetToCloestNumber(Params)
     end
   end
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:OnMouseButtonDown(MyGeometry, InKeyEvent)
   self.IsMouseDown = true
   self.LastScrollOffset = nil
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:NavigateTo(TargetNumber)
   self:AddTimer(0.2, function()
     self:_NavigateTo(TargetNumber)
   end, false)
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:_NavigateTo(TargetNumber)
   TargetNumber = math.floor(math.clamp(TargetNumber, 1, #self.NumberWidgets))
   local TargetWidget = self.NumberWidgets[TargetNumber]
   self.NumberScrollBox:ScrollWidgetIntoView(TargetWidget, true, UE4.EDescendantScrollDestination.Center)
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:GetSelectedNumber()
   local Index = self:FindClosestWidgetIndex(self.NumberScrollBox:GetScrollOffset())
   return Index
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:ScrollToNextNumber()
   local CurNumber = self:GetSelectedNumber()
   if CurNumber < #self.NumberWidgets then
     self:_NavigateTo(CurNumber + 1)
   end
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:ScrollToPreviousNumber()
   local CurNumber = self:GetSelectedNumber()
   if CurNumber > 1 then
     self:_NavigateTo(CurNumber - 1)
   end
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:FindClosestWidgetIndex(ScrollOffset)
   if #self.NumberWidgets <= 0 then
     return nil
@@ -154,7 +139,6 @@ function WBP_Common_Dialog_NumberScroll_PC_C:FindClosestWidgetIndex(ScrollOffset
     return Index
   end
 end
-
 function WBP_Common_Dialog_NumberScroll_PC_C:AddDeltaOffset(DeltaOffset)
   if math.abs(DeltaOffset) < 10 then
     if self.IsGamepadScrolling then
@@ -170,5 +154,4 @@ function WBP_Common_Dialog_NumberScroll_PC_C:AddDeltaOffset(DeltaOffset)
   local NextOffset = math.clamp(CurrentOffset + DeltaOffset, self.BorderHeight, OffsetToEnd - self.BorderHeight)
   self.NumberScrollBox:SetScrollOffset(NextOffset)
 end
-
 return WBP_Common_Dialog_NumberScroll_PC_C

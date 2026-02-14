@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Btn_FullClose.OnClicked:Add(self, self.OnBtnFullCloseClicked)
   if not UIUtils.IsMobileInput() then
@@ -11,13 +10,11 @@ function M:Construct()
     end
   end
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local Params = (...)
   self:Init(Params)
 end
-
 function M:Init(Params)
   self:SetFocus()
   self.TextFonts = {
@@ -29,17 +26,6 @@ function M:Init(Params)
   self.Params = Params
   self.TargetType = self.Params.TargetType
   self.bGacha = self.Params.bGacha
-  self.Key_Tips:UpdateKeyInfo({
-    {
-      KeyInfoList = {
-        {
-          Type = "Img",
-          ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
-        }
-      },
-      Desc = GText("UI_CTL_Continue")
-    }
-  })
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:InitGamepadView()
   else
@@ -50,15 +36,12 @@ function M:Init(Params)
   self.ShowTimes = #self.Params.TargetIdList
   self:RefreshCommonShowUI()
 end
-
 function M:IsWeaponSkin()
   return self.TargetType == CommonConst.DataType.WeaponSkin
 end
-
 function M:IsWeapon()
   return self.TargetType == CommonConst.DataType.Weapon
 end
-
 function M:RefreshCommonShowUI()
   self.CurShowIndex = self.CurShowIndex + 1
   if self.Params.TargetIdList[self.CurShowIndex] == nil then
@@ -99,7 +82,6 @@ function M:RefreshCommonShowUI()
   self:SetTargetNew()
   self:PlayInAnim()
 end
-
 function M:SetWeaponSkinImg(IconPath, AttributeIconPath, SpinePath)
   if not IconPath then
     return
@@ -118,7 +100,6 @@ function M:SetWeaponSkinImg(IconPath, AttributeIconPath, SpinePath)
     self.Group_Camp:ClearChildren()
   end
 end
-
 function M:SetWeaponImgRole()
   local IconPath = DataMgr.Weapon[self.TargetId].BigIcon
   local Icon = LoadObject(IconPath)
@@ -145,7 +126,6 @@ function M:SetWeaponImgRole()
     end
   end
 end
-
 function M:GetWeaponCampUI(BpPath)
   self.IsCampAnimation = true
   self.Group_Camp:ClearChildren()
@@ -163,7 +143,6 @@ function M:GetWeaponCampUI(BpPath)
   self.WeaponCampUI = WeaponCampUI
   return self.WeaponCampUI
 end
-
 function M:SetTargetNew()
   local Avatar = GWorld:GetAvatar()
   self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -179,15 +158,12 @@ function M:SetTargetNew()
     self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:PlayInAnim()
   self.CantClick = true
   local AnimTime
-  
   local function SetClick()
     self.CantClick = false
   end
-  
   local function IconInFinish()
     if self:IsWeaponSkin() then
       self:PlayAnimation(self.Skin_In)
@@ -200,7 +176,6 @@ function M:PlayInAnim()
       self:AddTimer(AnimTime, SetClick, false, 0, "SetClick")
     end
   end
-  
   if self:IsWeaponSkin() then
     self:UnbindAllFromAnimationFinished(self.Icon_In)
     self:PlayAnimation(self.Skin_Icon_In)
@@ -215,13 +190,11 @@ function M:PlayInAnim()
   end
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:PlayCampIn()
   if self.IsCampAnimation and self.WeaponCampUI then
     self.WeaponCampUI:PlayAnimation(self.WeaponCampUI.In)
   end
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
   if UIUtils.IsMobileInput() then
     return
@@ -232,19 +205,41 @@ function M:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   self:SetFocus()
+  self.Key_Tips:UpdateKeyInfo({
+    {
+      KeyInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = UIConst.GamePadImgKey.FaceButtonRight
+        }
+      },
+      Desc = GText("UI_BACK")
+    }
+  })
   self.Key_Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:InitKeyboardView()
   if UIUtils.IsMobileInput() then
     return
   end
-  self.Key_Tips:SetVisibility(ESlateVisibility.Collapsed)
+  self:SetFocus()
+  self.Key_Tips:UpdateKeyInfo({
+    {
+      KeyInfoList = {
+        {
+          Type = "Text",
+          Text = "Esc",
+          ClickCallback = self.OnBtnFullCloseClicked,
+          Owner = self
+        }
+      },
+      Desc = GText("UI_BACK")
+    }
+  })
+  self.Key_Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self.CantClick then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -253,12 +248,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if "Escape" == InKeyName and not self.bSpaceBarSkip then
     self:OnBtnFullCloseClicked()
-  elseif InKeyName == UIConst.GamePadKey.FaceButtonBottom then
+  elseif InKeyName == UIConst.GamePadKey.FaceButtonBottom or InKeyName == UIConst.GamePadKey.FaceButtonRight then
     self:OnBtnFullCloseClicked()
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnBtnFullCloseClicked()
   if self.CantClick then
     return
@@ -269,7 +263,6 @@ function M:OnBtnFullCloseClicked()
     self:PlayOutAnim()
   end
 end
-
 function M:PlayOutAnim()
   self.CantClick = true
   self:UnbindAllFromAnimationFinished(self.Out)
@@ -279,7 +272,6 @@ function M:PlayOutAnim()
     self.OnCloseCallback
   })
 end
-
 function M:OnCloseCallback()
   self.CantClick = false
   AudioManager(self):SetEventSoundParam(self, "GachaAmb", {ToEnd = 1})
@@ -288,5 +280,4 @@ function M:OnCloseCallback()
     self.Params.CallbackFunc(self.Params.CallbackObj)
   end
 end
-
 return M

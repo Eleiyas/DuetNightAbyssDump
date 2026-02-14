@@ -6,8 +6,8 @@ local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotH
 local AnnouncementUtils = require("BluePrints.UI.WBP.Announcement.AnnounceUtils")
 local Component = {}
 local BattleMainMenu = DataMgr.ReddotNode.BattleMainMenu.Name
-
 function Component:ReddotTreePlugIn(BtnConf, Type)
+  self._UnlockRuleNames = {}
   if nil == Type then
     Type = ""
   end
@@ -23,18 +23,15 @@ function Component:ReddotTreePlugIn(BtnConf, Type)
   if self._ReddotNode == BattleMainMenu then
     local function Callback()
       if not UIUtils.IsMenuWorld() then
-        DebugPrint(LXYTag, "\229\137\175\230\156\172\229\146\140boss\230\136\152\228\184\173\239\188\140\229\188\186\229\136\182\228\184\141\230\152\190\231\164\186esc\231\186\162\231\130\185")
-        
+        DebugPrint(LXYTag, "副本和boss战中，强制不显示esc红点")
         self.bForceInvisible = true
-        self:EMShowReddot(false, EReddotType.New, 0)
+        self:EMShowReddot(false, EReddotType.New)
       end
     end
-    
     EventManager:AddEvent(EventID.CloseLoading, self, Callback)
     Callback()
   end
   local UnlockRuleNames = {}
-  
   local function ReadBtnConfFunc(TempBtnConf, TempType)
     if self["InitReddotData_" .. TempBtnConf.SystemUIName] then
       self["InitReddotData_" .. TempBtnConf.SystemUIName](self, Type)
@@ -47,7 +44,6 @@ function Component:ReddotTreePlugIn(BtnConf, Type)
       end
     end
   end
-  
   if self._ReddotNode == BattleMainMenu then
     local MainUIReddotNames = {}
     for _, _BtnConf in pairs(DataMgr.MainUI) do
@@ -70,45 +66,50 @@ function Component:ReddotTreePlugIn(BtnConf, Type)
       self:_AddReddotListener(ChildNodes)
     end
   else
-    ReadBtnConfFunc(BtnConf, Type)
   end
-  if not self._UnlockRuleNames then
-    self._UnlockRuleNames = {}
+  if table.isempty(UnlockRuleNames) then
+    local ChildNodes = self:_TrySeekChildNodesOfBattleMainMenu(BtnConf.EnterId)
+    self:_AddReddotListener(ChildNodes)
+    return
   end
   for UnlockRuleName, EnterId in pairs(UnlockRuleNames) do
-    local MainUIConf = DataMgr.MainUI[EnterId]
-    local ReddotNode = MainUIConf.ReddotNode
     local bUnlocked = self._Avatar:CheckUIUnlocked(UnlockRuleName)
-    local ChildNodes = {}
-    if self._ReddotNode == BattleMainMenu and ReddotNode ~= BattleMainMenu then
-      if not self:_IsChildOfBattleMain(ReddotNode) then
-      else
-        local NodeConf = DataMgr.ReddotNode[ReddotNode]
-        if not NodeConf then
+    local ChildNodes = self:_TrySeekChildNodesOfBattleMainMenu(EnterId)
+    if not ChildNodes then
+    elseif bUnlocked then
+      if "Shop" == UnlockRuleName and not EMCache:Get("ShopUnlockTime", true) then
+        EMCache:Set("ShopUnlockTime", TimeUtils.NowTime(), true)
+      end
+      self:_AddReddotListener(ChildNodes)
+    else
+      self._UnlockRuleNames[UnlockRuleName] = self._Avatar:BindOnUIFirstTimeUnlock(UnlockRuleName, function()
+        if not self._UnlockRuleNames[UnlockRuleName] then
           return
         end
-        ChildNodes[ReddotNode] = NodeConf.IsCommonCache and 0 or 1
-        if bUnlocked then
-          if "Shop" == UnlockRuleName and not EMCache:Get("ShopUnlockTime", true) then
-            EMCache:Set("ShopUnlockTime", TimeUtils.NowTime(), true)
-          end
-          self:_AddReddotListener(ChildNodes)
-        else
-          self._UnlockRuleNames[UnlockRuleName] = self._Avatar:BindOnUIFirstTimeUnlock(UnlockRuleName, function()
-            if not self._UnlockRuleNames[UnlockRuleName] then
-              return
-            end
-            if "Shop" == UnlockRuleName then
-              EMCache:Set("ShopUnlockTime", TimeUtils.NowTime(), true)
-            end
-            self:_AddReddotListener(ChildNodes)
-          end)
+        if "Shop" == UnlockRuleName then
+          EMCache:Set("ShopUnlockTime", TimeUtils.NowTime(), true)
         end
-      end
+        self:_AddReddotListener(ChildNodes)
+      end)
     end
   end
 end
-
+function Component:_TrySeekChildNodesOfBattleMainMenu(EnterId)
+  local MainUIConf = DataMgr.MainUI[EnterId]
+  local ReddotNode = MainUIConf.ReddotNode
+  local ChildNodes = {}
+  if self._ReddotNode == BattleMainMenu and ReddotNode ~= BattleMainMenu then
+    if not self:_IsChildOfBattleMain(ReddotNode) then
+      return nil
+    end
+    local NodeConf = DataMgr.ReddotNode[ReddotNode]
+    if not NodeConf then
+      return
+    end
+    ChildNodes[ReddotNode] = NodeConf.IsCommonCache and 0 or 1
+  end
+  return ChildNodes
+end
 function Component:ReddotTreePlugOut()
   if not self._Avatar then
     return
@@ -129,7 +130,6 @@ function Component:ReddotTreePlugOut()
   self.bForceInvisible = false
   self:_RemoveReddotListener()
 end
-
 function Component:_IsChildOfBattleMain(InNodeName)
   for _, NodeName in ipairs(DataMgr.ReddotNode[BattleMainMenu].Childs) do
     if InNodeName == NodeName then
@@ -138,7 +138,6 @@ function Component:_IsChildOfBattleMain(InNodeName)
   end
   return false
 end
-
 function Component:_AddReddotListener(ChildNodes)
   if not self._Avatar then
     return
@@ -147,7 +146,7 @@ function Component:_AddReddotListener(ChildNodes)
     return
   end
   if self._ListenedReddot and self._ReddotNode == BattleMainMenu then
-    PrintTable(ChildNodes, 3, WarningTag .. LXYTag .. "BattleMainMenu\229\136\176\229\186\149\229\138\160\228\186\134\229\147\170\228\186\155\229\173\144\232\138\130\231\130\185")
+    PrintTable(ChildNodes, 3, WarningTag .. LXYTag .. "BattleMainMenu到底加了哪些子节点")
     ReddotManager.AddNode(BattleMainMenu, ChildNodes)
     return
   end
@@ -157,14 +156,12 @@ function Component:_AddReddotListener(ChildNodes)
     self._ListenedReddot = true
   end
 end
-
 function Component:_RemoveReddotListener()
   if self._ListenedReddot then
     ReddotManager.RemoveListener(self._ReddotNode, self)
     self._ListenedReddot = false
   end
 end
-
 function Component:_OnReddotNodeUpdate(Count, ReddotType, NodeName)
   if self["OnReddotUpdate_" .. self._ReddotNode] then
     self["OnReddotUpdate_" .. self._ReddotNode](self, ReddotType, Count)
@@ -172,29 +169,35 @@ function Component:_OnReddotNodeUpdate(Count, ReddotType, NodeName)
     self:EMShowReddot(Count > 0, ReddotType, Count)
   end
 end
-
 function Component:InitReddotData_ActivityMain()
   ActivityReddotHelper.InitReddot(ActivityUtils)
   ActivityUtils.RefreshActivityReddotNode()
 end
-
+function Component:InitReddotData_DayAndNight()
+  DebugPrint("InitReddotData_DayAndNight")
+  local ReddotNode = ReddotManager.GetTreeNode("DayAndNight") or ReddotManager.AddNodeEx("DayAndNight")
+  local ReddotNodeDetailed = ReddotManager.GetLeafNodeCacheDetail("DayAndNight")
+  if ReddotNodeDetailed and ReddotNodeDetailed.HasCreated == nil then
+    ReddotNodeDetailed.HasCreated = true
+    ReddotManager.ClearLeafNodeCount("DayAndNight")
+    ReddotManager.IncreaseLeafNodeCount("DayAndNight")
+  end
+end
 function Component:InitReddotData_AnnouncementMain()
   local ret = AnnouncementUtils:UpdateAnnouncementDataInGame()
   if ret then
-    self:EMShowReddot(true, EReddotType.New, 1)
+    self:EMShowReddot(true, EReddotType.New)
   else
-    self:EMShowReddot(false, EReddotType.New, 0)
+    self:EMShowReddot(false, EReddotType.New)
   end
 end
-
 function Component:OnReddotUpdate_BattleMainMenu(ReddotType, Count)
   if self.bForceInvisible then
-    self:EMShowReddot(false, EReddotType.New, 0)
+    self:EMShowReddot(false, EReddotType.New)
     return
   end
   self:EMShowReddot(Count > 0, ReddotType, Count)
 end
-
 function Component:OnReddotUpdate_ChatMainMenu(ReddotType, Count)
   local ChatNode = ReddotManager.GetTreeNode(ChatCommon.ReddotName)
   local NewCount
@@ -204,5 +207,4 @@ function Component:OnReddotUpdate_ChatMainMenu(ReddotType, Count)
   self:EMShowReddot(Count > 0, ReddotType, Count)
   self.Reddot_Num:SetNum(NewCount or Count)
 end
-
 return Component

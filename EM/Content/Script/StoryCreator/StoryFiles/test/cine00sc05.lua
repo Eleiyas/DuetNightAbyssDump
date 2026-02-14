@@ -1,5 +1,5 @@
 return {
-  storyName = "\230\156\170\229\145\189\229\144\141\230\149\133\228\186\139",
+  storyName = "未命名故事",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17289905293091127744",
       type = "StoryNode",
-      name = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+      name = "未命名任务",
       pos = {x = 300.29526513442624, y = 168.1405298721561},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -92,7 +94,7 @@ return {
           ["17289905293091127748"] = {
             key = "17289905293091127748",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186-100111-SC05-\229\165\179\231\165\158\229\131\143",
+            name = "过场-100111-SC05-女神像",
             pos = {x = 613.4004536384355, y = 517.7901696309258},
             propsData = {
               IsNpcNode = false,
@@ -112,8 +114,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "QuestPoint_Dx",
@@ -124,9 +128,6 @@ return {
                   TalkActorId = 0,
                   TalkActorVisible = false
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
               },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

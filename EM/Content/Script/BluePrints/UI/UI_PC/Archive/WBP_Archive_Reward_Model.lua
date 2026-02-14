@@ -1,20 +1,10 @@
 local NumberModel = require("BluePrints.UI.UI_PC.Archive.WBP_Archive_Number_Model")
 local ArchiveRewardModel = {}
-ArchiveRewardModel.ArchiveType2Name = {
-  [1001] = "Character",
-  [1002] = "Melee",
-  [1003] = "Ranged",
-  [1004] = "Resource",
-  [1005] = "Read",
-  [1006] = "Enemy"
-}
-
 function ArchiveRewardModel:OpenReward(Widget, Type)
   self:SetRewardParams(Type)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(100213, self.Params, Widget)
 end
-
 function ArchiveRewardModel:SetRewardParams(Type)
   self.Params = {}
   local ConfigData = {
@@ -43,12 +33,15 @@ function ArchiveRewardModel:SetRewardParams(Type)
       TableItem.IconPath = ArchiveInfo.RewardTabIconPath
     end
     table.insert(ConfigData.TabInfo, TableItem)
-    local SumNum = NumberModel["Get" .. self.ArchiveType2Name[ArchiveInfo.ArchiveType] .. "SumNumber"](NumberModel)
+    local SumNum = NumberModel["Get" .. NumberModel.ArchiveType2Name[ArchiveInfo.ArchiveType] .. "SumNumber"](NumberModel)
     local Step = ArchiveInfo.ArchiveStep
     local Index = 1
     local Avatar = GWorld:GetAvatar()
     local Archive = Avatar.Archives[ArchiveInfo.ArchiveType]
     local CurrentNum = NumberModel:GetCurrentNumber(ArchiveInfo.ArchiveType)
+    if SumNum < CurrentNum then
+      CurrentNum = SumNum
+    end
     local Data = {
       Items = {}
     }
@@ -118,13 +111,11 @@ function ArchiveRewardModel:SetRewardParams(Type)
   self.Params.ConfigData = ConfigData
   self.Params.Title = GText("UI_ArchiveCollectionReward")
 end
-
 function ArchiveRewardModel.GetRewards(RewardItem, Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       local Archive = Avatar.Archives[Content.ConfigData.Type]
-      
       local CurrentNum = NumberModel:GetCurrentNumber(Content.ConfigData.Type)
       Content.ConfigData.CanReceive = false
       Content.ConfigData.RewardsGot = false
@@ -150,14 +141,12 @@ function ArchiveRewardModel.GetRewards(RewardItem, Content)
         RewardItem:SetFocus()
       end, RewardItem)
     end
-    
     Avatar:GetArchiveReward(Callback, Content.ConfigData.Type, Content.ConfigData.Nums)
   end
 end
-
 function ArchiveRewardModel:CheckHaveRewardToGet(Type)
   local ArchiveInfo = DataMgr.ArchiveInfo[Type]
-  local SumNum = NumberModel["Get" .. self.ArchiveType2Name[Type] .. "SumNumber"](NumberModel)
+  local SumNum = NumberModel["Get" .. NumberModel.ArchiveType2Name[Type] .. "SumNumber"](NumberModel)
   local Step = ArchiveInfo.ArchiveStep
   local Index = 1
   local Avatar = GWorld:GetAvatar()
@@ -175,7 +164,6 @@ function ArchiveRewardModel:CheckHaveRewardToGet(Type)
   end
   return false
 end
-
 function ArchiveRewardModel:RefreshReddotInfo(Type, Num)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("ArchiveReward")
   if CacheDetail[Type] and CacheDetail[Type][Num] then
@@ -186,14 +174,12 @@ function ArchiveRewardModel:RefreshReddotInfo(Type, Num)
     ReddotManager.DecreaseLeafNodeCount("ArchiveReward")
   end
 end
-
 function ArchiveRewardModel:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Content = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
-        
         local Archive = Avatar.Archives[Content.ConfigData.Type]
         local CurrentNum = NumberModel:GetCurrentNumber(Content.ConfigData.Type)
         Content.ConfigData.CanReceive = false
@@ -211,7 +197,7 @@ function ArchiveRewardModel:GetAllRewards(ReceiveAllParm)
           end
         end
         if Content.SelfWidget then
-          Content.SelfWidget:RefreshBtn(0 == Ret)
+          Content.SelfWidget:RefreshBtn(Content.ConfigData.RewardsGot)
         end
         Content.ConfigData.ReceiveParm.ArchiveMain:RefreshReddotInfo(Content.ConfigData.Type, Content.ConfigData.Nums)
       end
@@ -223,9 +209,7 @@ function ArchiveRewardModel:GetAllRewards(ReceiveAllParm)
         ReceiveAllParm.SelfWidget:SetFocus()
       end, ReceiveAllParm.SelfWidget)
     end
-    
     Avatar:GetAllArchiveReward(Callback, ReceiveAllParm.Type)
   end
 end
-
 return ArchiveRewardModel

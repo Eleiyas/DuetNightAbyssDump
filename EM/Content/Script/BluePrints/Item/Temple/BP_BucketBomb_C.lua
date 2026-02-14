@@ -2,13 +2,12 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.Temple.BP_TouchBomb_C"
 })
-
 function M:SphereOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
   if self.IsActive and self.OnHitMonsterEffect and self.OnHitMonsterEffect > 0 and not OtherActor:IsDead() then
     self.Super.PropUseSkill(self, self.OnHitMonsterEffect, OtherActor)
+    AudioManager(self):PlayNormalSound(self, nil, "event:/sfx/common/scene/shenmiao/ball_gold_hit", "OnBucketBombHit")
   end
 end
-
 function M:ActiveCombat()
   self.IsActive = true
   self.ChestInteractiveComponent.bCanUsed = false
@@ -23,5 +22,4 @@ function M:ActiveCombat()
     end
   end
 end
-
 return M

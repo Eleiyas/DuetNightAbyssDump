@@ -3,7 +3,6 @@ local BP_AICharacterBase_C = Class({
   "BluePrints.Char.BP_CharacterBase_C"
 })
 BP_AICharacterBase_C._components = {}
-
 function BP_AICharacterBase_C:ActiveGuide(OpType)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local SceneMgrComponent = GameInstance:GetSceneManager()
@@ -11,7 +10,6 @@ function BP_AICharacterBase_C:ActiveGuide(OpType)
     SceneMgrComponent:UpdateSceneGuideIcon(self.Eid, self, nil, OpType, true, self.Data)
   end
 end
-
 function BP_AICharacterBase_C:DeactiveGuide()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local SceneMgrComponent = GameInstance:GetSceneManager()
@@ -19,7 +17,6 @@ function BP_AICharacterBase_C:DeactiveGuide()
     SceneMgrComponent:UpdateSceneGuideIcon(self.Eid, self, nil, "Delete", true, self.Data)
   end
 end
-
 function BP_AICharacterBase_C:OnClaimRegionData_Lua(LuaTableIndex)
   local SubSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, URegionDataMgrSubsystem:StaticClass())
   if SubSystem then
@@ -28,7 +25,6 @@ function BP_AICharacterBase_C:OnClaimRegionData_Lua(LuaTableIndex)
     self.RarelyId = SubSystem.DataPool.RegionData[LuaTableIndex].RarelyId
   end
 end
-
 function BP_AICharacterBase_C:CommonFreeAICharacterBaseMemory()
   self.IsDestroied = true
   if self.BornInfo then
@@ -45,6 +41,5 @@ function BP_AICharacterBase_C:CommonFreeAICharacterBaseMemory()
     self.ServerBornInfo = nil
   end
 end
-
 AssembleComponents(BP_AICharacterBase_C)
 return BP_AICharacterBase_C

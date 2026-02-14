@@ -1,6 +1,5 @@
 local msgpack = require("msgpack_core")
 local Component = {}
-
 function Component:_GetParamentsTable(_Data)
   local ParamentsTable
   if _Data.EffectId then
@@ -13,7 +12,6 @@ function Component:_GetParamentsTable(_Data)
   end
   return ParamentsTable
 end
-
 function Component:ExecuteEffectResults(EffectStruct)
   local Str = EffectStruct:GetResult()
   if not Str then
@@ -26,14 +24,13 @@ function Component:ExecuteEffectResults(EffectStruct)
     for _, Args in pairs(_Data) do
       for Func, Content in pairs(Args) do
         local f = self["Play_" .. Func]
-        assert(f, "\228\184\141\229\173\152\229\156\168\229\135\189\230\149\176:Play_" .. Func)
+        assert(f, "不存在函数:Play_" .. Func)
         f(self, Content, ParamentsTable)
       end
     end
   end
   self.ClientExec = false
 end
-
 function Component:Play_CutToughness(Content, ParamentsTable)
   local Source = self:GetEntity(Content.SourceEid)
   local CauseHit = Content.CauseHit
@@ -60,7 +57,6 @@ function Component:Play_CutToughness(Content, ParamentsTable)
     end
   end
 end
-
 function Component:Play_GatherTargets(Content, ParamentsTable)
   local Source = self:GetEntity(Content.SourceEid)
   if not Source then
@@ -74,7 +70,6 @@ function Component:Play_GatherTargets(Content, ParamentsTable)
     end
   end
 end
-
 function Component:Play_PlaySE(Content, ParamentsTable)
   local SourceEid = Content.SourceEid
   local Source = self:GetEntity(SourceEid)
@@ -95,7 +90,6 @@ function Component:Play_PlaySE(Content, ParamentsTable)
     end
   end
 end
-
 function Component:Play_SkillMove(Content, ParamentsTable)
   local HitTargets = Content.HitTargets
   for _, Eid in pairs(HitTargets) do
@@ -126,7 +120,6 @@ function Component:Play_SkillMove(Content, ParamentsTable)
     end
   end
 end
-
 function Component:Play_Disarm(Content, ParamentsTable)
   local DisarmParam = Content.DisarmParam
   local Source = self:GetEntity(Content.SourceEid)
@@ -147,5 +140,4 @@ function Component:Play_Disarm(Content, ParamentsTable)
     end
   end
 end
-
 return Component

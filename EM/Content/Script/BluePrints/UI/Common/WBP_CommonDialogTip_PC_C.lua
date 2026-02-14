@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_CommonDialogTip_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_CommonDialogTip_PC_C:Construct()
   self.Escape = "Escape"
   self.KeyUpEvent = {}
@@ -11,14 +10,12 @@ function WBP_CommonDialogTip_PC_C:Construct()
     self.OnOutAnimationFinished
   })
 end
-
 function WBP_CommonDialogTip_PC_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:PlayAnimation(self.In)
   self:InitTip(...)
   self:SetFocus()
 end
-
 function WBP_CommonDialogTip_PC_C:InitTip(...)
   local TipTitle, TipContent = ...
   if TipTitle and TipContent then
@@ -28,11 +25,9 @@ function WBP_CommonDialogTip_PC_C:InitTip(...)
     DebugPrint("[Esc] ExpTip is nil]")
   end
 end
-
 function WBP_CommonDialogTip_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_CommonDialogTip_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -41,7 +36,6 @@ function WBP_CommonDialogTip_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_CommonDialogTip_PC_C:CloseSelf()
   local AnimObj = self:GetAnimationByName("Out")
   if self:IsAnimationPlaying(self.Out) then
@@ -54,9 +48,7 @@ function WBP_CommonDialogTip_PC_C:CloseSelf()
     MenuWorld:SetFocus()
   end
 end
-
 function WBP_CommonDialogTip_PC_C:OnOutAnimationFinished()
   self:Close()
 end
-
 return WBP_CommonDialogTip_PC_C

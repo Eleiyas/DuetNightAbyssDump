@@ -2,14 +2,12 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   self.Button_Area.OnHovered:Add(self, self.OnHovered)
   self.Button_Area.OnUnhovered:Add(self, self.OnUnhovered)
   self.Button_Area.OnPressed:Add(self, self.OnPressed)
   self.Button_Area.OnReleased:Add(self, self.OnReleased)
 end
-
 function M:InitInfo(TicketId, Owner, Parent)
   if TicketId then
     self.TicketId = TicketId
@@ -17,7 +15,6 @@ function M:InitInfo(TicketId, Owner, Parent)
   self.Parent = Parent
   self:InitItemInfo(TicketId, Owner)
 end
-
 function M:InitItemInfo(TicketId, Owner)
   self.Owner = Owner
   self.TicketId = TicketId
@@ -63,7 +60,6 @@ function M:InitItemInfo(TicketId, Owner)
     OnMenuOpenChanged = self.OnStuffMenuOpenChanged
   })
 end
-
 function M:OnClicked()
   if self:IsAnimationPlaying(self.Click) then
     return false
@@ -80,7 +76,7 @@ function M:OnClicked()
   elseif TicketData.ResourceName and TicketData.UseParam then
     TipsContent = string.format(GText("UI_Ticket_Effect"), GText(TicketData.ResourceName), TicketData.UseParam / 100.0)
   else
-    DebugPrint("ZDX_\233\151\168\231\165\168\229\175\185\229\186\148Resource\231\188\186\229\176\145Name\230\136\150Id")
+    DebugPrint("ZDX_门票对应Resource缺少Name或Id")
   end
   table.insert(self.Tips, TipsContent)
   self:BroadcastDialogEvent("UpdateDialogTipText", {
@@ -93,7 +89,6 @@ function M:OnClicked()
   self:PlayAnimation(self.Click)
   return true
 end
-
 function M:OnHovered()
   if self:IsAnimationPlaying(self.Click) or self.IsSelected or self.bNotInteractive then
     return
@@ -103,7 +98,6 @@ function M:OnHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnUnhovered()
   if self:IsAnimationPlaying(self.Click) or self.IsSelected or self.bNotInteractive then
     return
@@ -113,7 +107,6 @@ function M:OnUnhovered()
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:OnPressed()
   if self:IsAnimationPlaying(self.Click) or self.IsSelected or self.bNotInteractive then
     return
@@ -121,7 +114,6 @@ function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
   if self:IsAnimationPlaying(self.Click) or self.IsSelected or self.bNotInteractive then
     return
@@ -129,7 +121,6 @@ function M:OnReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnCellUnSelect()
   self:StopAllAnimations()
   if self.bNotInteractive then
@@ -140,13 +131,11 @@ function M:OnCellUnSelect()
   self:PlayAnimation(self.Normal)
   self.IsSelected = false
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.UnHover then
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnAddedToFocusPath(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -167,7 +156,6 @@ function M:OnAddedToFocusPath(MyGeometry, InFocusEvent)
   self.Parent:OnItemClicked(self.TicketId)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -181,7 +169,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftThumbstick" == InKeyName and -1 ~= self.TicketId then
@@ -190,7 +177,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -205,7 +191,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -229,7 +214,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 function M:OnItemDetailKeyDown(MyGeometry, InKeyEvent, Content)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -237,7 +221,6 @@ function M:OnItemDetailKeyDown(MyGeometry, InKeyEvent, Content)
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self), true
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -248,5 +231,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 return M

@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:InitComp(DungeonId)
   local GameState = UE.UGameplayStatics.GetGameState(self)
   self.CurrentDungeonId = GameState.DungeonId
@@ -18,17 +17,16 @@ function Component:InitComp(DungeonId)
   if GWorld.GameInstance.IsInSettlementScene then
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   else
+    self:BindToAnimationFinished(self.In, self.OnInAnimFinishedFunc)
     self:PlayAnimation(self.In)
   end
 end
-
 function Component:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   if GWorld.GameInstance.IsInSettlementScene then
     self:Close()
   end
 end
-
 function Component:InitTeamHeads(WalnutRewardPlayer)
   self.TeamHeadUI = {
     self.State_Mine,
@@ -71,7 +69,6 @@ function Component:InitTeamHeads(WalnutRewardPlayer)
     TeamHead:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Component:ReceiveTeammateChoose(WalnutRewardPlayer)
   if not self.TeamHeadTable then
     DebugPrint("ReceiveTeammateChoose TeamHeadTable nil")
@@ -112,11 +109,9 @@ function Component:ReceiveTeammateChoose(WalnutRewardPlayer)
     end
   end
 end
-
 function Component:StartSelectCountDown()
   self:AddTimer(0.1, self.WalnutSelectCountDown, true, 0, "WalnutSelectCountDown")
 end
-
 function Component:WalnutSelectCountDown()
   local CurrentCountDown = self:GetRemainWalnutSelectTime("NextWalnut")
   if CurrentCountDown < 0 then
@@ -129,14 +124,12 @@ function Component:WalnutSelectCountDown()
     self:RemoveTimer("WalnutSelectCountDown")
   end
 end
-
 function Component:GetRemainWalnutSelectTime(TimerName)
   local GameState = UGameplayStatics.GetGameState(self)
   local Info = GameState.ClientTimerStruct:GetTimerInfo(TimerName)
   local WalnutRewardVoteTime = Info.Time - (GameState.ReplicatedRealTimeSeconds - Info.RealTimeSeconds)
   return WalnutRewardVoteTime
 end
-
 function Component:PlayWalnutReady()
   for _, AllTeamHead in pairs(self.TeamHeadTable) do
     local TeamHead = AllTeamHead.Team_Head
@@ -149,10 +142,12 @@ function Component:PlayWalnutReady()
   end
   self:PlayAnimation(self.LayoutRefresh_InDungeon)
   self:StartWalnutReadyCountDown()
-  local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
-  self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
-  self.NavigateWidget = self.GameInputModeSubsystem:GetNavigateWidget()
-  self.NavigateWidget:SetRenderOpacity(0)
+  if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
+    local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
+    self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
+    self.NavigateWidget = self.GameInputModeSubsystem:GetNavigateWidget()
+    self.NavigateWidget:SetRenderOpacity(0)
+  end
   self:UpdateCommonKeys("RS", GText("UI_Controller_CheckTeam"))
   self.WalnutChoiceFinish = 1
   self.State = 0
@@ -160,12 +155,10 @@ function Component:PlayWalnutReady()
     self:SetFocus()
   end)
 end
-
 function Component:StartWalnutReadyCountDown()
   self.Text_Choose_Multi:SetText(GText("UI_Walnut_Begin"))
   self:AddTimer(0.1, self.WalnutReadyCountDown, true, 0, "WalnutReadyCountDown")
 end
-
 function Component:WalnutReadyCountDown()
   local CurrentCountDown = self:GetRemainWalnutSelectTime("WalnutReady")
   local CountDownNumber = math.floor(CurrentCountDown)
@@ -181,5 +174,7 @@ function Component:WalnutReadyCountDown()
     self:RemoveTimer("WalnutReadyCountDown")
   end
 end
-
+function Component:OnInAnimFinishedFunc()
+  EventManager:FireEvent(EventID.OnDungeonWalnutChoiceUIOpen)
+end
 return Component

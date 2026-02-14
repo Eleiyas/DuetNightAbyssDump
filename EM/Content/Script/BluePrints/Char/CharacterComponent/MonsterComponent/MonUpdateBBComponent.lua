@@ -1,6 +1,5 @@
 require("UnLua")
 local Component = Class()
-
 function Component:InitCaptureBBInfo(GameMode)
   local Owner = self.Owner
   if not Owner then
@@ -17,7 +16,6 @@ function Component:InitCaptureBBInfo(GameMode)
   end
   Owner:GetOwnBlackBoardComponent():SetValueAsVector("EscapeLoc", EscapeLoc)
 end
-
 function Component:GetNextLevelIsLoaded(MonserCharacter, LevelLoader, EscapeLoc)
   if not MonserCharacter or not LevelLoader then
     return
@@ -28,5 +26,4 @@ function Component:GetNextLevelIsLoaded(MonserCharacter, LevelLoader, EscapeLoc)
   self.NextLevelEnable = NextLevelEnable
   return OutDoorLoc
 end
-
 return Component

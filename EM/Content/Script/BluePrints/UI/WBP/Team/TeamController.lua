@@ -3,7 +3,6 @@ local TeamCommon = require("BluePrints.UI.WBP.Team.TeamCommon")
 local GlobalConstant = DataMgr.GlobalConstant
 local M = Class("BluePrints.Common.MVC.Controller")
 M.HeadUIs = {}
-
 function M:Init()
   M.Super.Init(self)
   self.InviteRecvTimer = "Team_InviteRecvTimer"
@@ -13,21 +12,25 @@ function M:Init()
   EventManager:AddEvent(EventID.CloseLoading, self, self.OnCloseLoading)
   EventManager:AddEvent(EventID.OnAvatarStatusUpdate, self, self.OnAvatarStatusUpdate)
 end
-
 function M:SetTeamPopupBarOpen(bOpen)
   self.bTeamPopupBarOpen = bOpen
+  if false == bOpen then
+    self:AddTimer(0.1, function()
+      local TopUI = UIManager():GetLastestAndFocusableUIWidgetObj()
+      if nil ~= TopUI then
+        TopUI:SetFocus()
+      end
+    end)
+  end
 end
-
 function M:GetTeamPopupBarOpen()
   return self.bTeamPopupBarOpen
 end
-
 function M:IsTeamPopupBarOpenInGamepad()
   return self:GetTeamPopupBarOpen() and self:IsGamepad()
 end
-
 function M:OnCloseLoading()
-  DebugPrint(" TeamSyncDebug   xxxTeamReconnectNotify   \230\137\139\229\138\168")
+  DebugPrint(" TeamSyncDebug   xxxTeamReconnectNotify   手动")
   TeamModel:DestoryTeamDataWithDs()
   if GWorld:IsStandAlone() then
     self:TrySyncTeamInSingleGame()
@@ -35,7 +38,6 @@ function M:OnCloseLoading()
     self:TrySyncTeamInMultiGame()
   end
 end
-
 function M:OnAvatarStatusUpdate(OldStatus, NewStatus)
   if AvatarUtils:HasAvatarStatusChanged(OldStatus, NewStatus, TeamCommon.InStatusShouldDeleteInvite) then
     local bCantAgreeInvite = true
@@ -51,41 +53,40 @@ function M:OnAvatarStatusUpdate(OldStatus, NewStatus)
     end
   end
 end
-
 function M:Destory()
   M.HeadUIs = {}
   EventManager:RemoveEvent(EventID.CloseLoading, self)
   EventManager:RemoveEvent(EventID.OnAvatarStatusUpdate, self)
   M.Super.Destory(self)
 end
-
 function M:GetModel()
   return TeamModel
 end
-
 function M:GetEventName()
   return EventID.TeamControllerEvent
 end
-
 function M:ShowToast(Text, Duration)
-  DebugPrint(LXYTag, "\231\187\132\233\152\159Toast", Text)
+  DebugPrint(LXYTag, "组队Toast", Text)
   M.Super.ShowToast(self, Text, Duration, {bPopWait = true})
 end
-
 function M:OpenHeadUI(ParentWidget, bBattle)
   local HeadUI = self:GetUIMgr(ParentWidget):LoadUINew(TeamCommon.HeadUIName, ParentWidget, bBattle)
+  self:GetUIMgr(ParentWidget):RemoveLoadedUI(HeadUI:GetName())
   M.HeadUIs[ParentWidget] = HeadUI
   return HeadUI
 end
-
+function M:OpenHeadUI2(ParentWidget, bBattle)
+  local HeadUI = self:GetUIMgr(ParentWidget):LoadUINew(TeamCommon.HeadUIName2, ParentWidget, bBattle)
+  self:GetUIMgr(ParentWidget):RemoveLoadedUI(HeadUI:GetName())
+  M.HeadUIs[ParentWidget] = HeadUI
+  return HeadUI
+end
 function M:GetHeadUI(ParentWidget)
   return M.HeadUIs[ParentWidget]
 end
-
 function M:ClearHeadUI(ParentWidget)
   M.HeadUIs[ParentWidget] = nil
 end
-
 function M:OpenKickMemberDialog(AvatarInfo, ParentWidget)
   local Params = {
     RightCallbackFunction = function()
@@ -95,33 +96,32 @@ function M:OpenKickMemberDialog(AvatarInfo, ParentWidget)
   }
   self:GetUIMgr(ParentWidget):ShowCommonPopupUI(TeamCommon.KickConfirmDialog, Params, ParentWidget)
 end
-
 function M:ShutDownTeamInvite()
   if self:IsExistTimer(self.InviteRecvTimer) then
     self:StopTimer(self.InviteRecvTimer)
   end
   TeamModel:CleanInviteInfo()
 end
-
 function M:SendTeamKickMember(Uid)
   self:GetAvatar():TeamKickMember(Uid)
 end
-
 function M:RecvTeamKickMember(ErrCode, Uid)
   if not self:CheckError(ErrCode, true) then
     return
   end
   self:NotifyEvent(TeamCommon.EventId.TeamKickMember, Uid)
 end
-
 function M:SendTeamInvite(Uid)
+  if not Uid then
+    self:CheckError(ErrorCode.RET_TEAM_INVATE_NOT_EXIST, true)
+    return
+  end
   local Timer = TeamModel:GetInviteSendBox()[Uid]
   if Timer then
     return
   end
   self:GetAvatar():TeamInvite(Uid)
 end
-
 function M:RecvTeamInvite(ErrCode, Uid)
   local Timer = TeamModel:GetInviteSendBox()[Uid]
   if Timer then
@@ -135,7 +135,6 @@ function M:RecvTeamInvite(ErrCode, Uid)
   self:ShowToast(GText("UI_Team_InviteSend"))
   self:NotifyEvent(TeamCommon.EventId.TeamInvite, Uid)
 end
-
 function M:SendTeamRefuseInvite(bAutoRefuse)
   local InviteInfo = TeamModel:GetBackInviteInfo()
   if not InviteInfo then
@@ -154,15 +153,12 @@ function M:SendTeamRefuseInvite(bAutoRefuse)
   end
   self:GetAvatar():TeamRefuseInvite(Uid, bAutoRefuse)
 end
-
 function M:SendSetTeamOrientation(NewTeamOrientation)
   self:GetAvatar():SetTeamOrientation(NewTeamOrientation)
 end
-
 function M:SendVoteStartBattle(bAccepted)
   self:GetAvatar():VoteStartBattle(bAccepted)
 end
-
 function M:SendTeamAgreeInvite(Uid)
   self:GetAvatar():TeamAgreeInvite(Uid)
   local InviteView = self:GetView(GWorld.GameInstance, TeamCommon.TipUIName)
@@ -170,7 +166,6 @@ function M:SendTeamAgreeInvite(Uid)
     InviteView:Close()
   end
 end
-
 function M:RecvTeamAgreeInvite(ErrCode, Uid)
   if not self:CheckError(ErrCode, true) then
     self:NotifyEvent(TeamCommon.EventId.TeamInviteFailed, ErrCode)
@@ -186,11 +181,9 @@ function M:RecvTeamAgreeInvite(ErrCode, Uid)
   self:ShutDownTeamInvite()
   self:NotifyEvent(TeamCommon.EventId.TeamAgreeInvite, Uid)
 end
-
 function M:SendTeamLeave()
   self:GetAvatar():TeamLeave()
 end
-
 function M:RecvTeamLeave(ErrCode, bKick)
   if not self:CheckError(ErrCode, true) then
     return
@@ -211,18 +204,15 @@ function M:RecvTeamLeave(ErrCode, bKick)
   TeamModel:SetTeam(nil)
   self:NotifyEvent(TeamCommon.EventId.TeamLeave, OldTeamData)
 end
-
 function M:SendTeamChangeLeader(NewLeaderUid)
   self:GetAvatar():TeamChangeLeader(NewLeaderUid)
 end
-
 function M:RecvTeamChangeLeader(ErrCode, NewLeaderUid)
   if not self:CheckError(ErrCode, true) then
     return
   end
   self:NotifyEvent(TeamCommon.EventId.TeamChangeLeader, NewLeaderUid)
 end
-
 function M:RecvTeamBeInvited(InviteInfo)
   if TeamModel:IsInviteExist(InviteInfo) then
     return
@@ -233,7 +223,6 @@ function M:RecvTeamBeInvited(InviteInfo)
     self:SetUpBeInviteTimer(TeamCommon.LoopTimerInterval)
   end
 end
-
 function M:RecvTeamBeRefused(Uid)
   local TimerKey = TeamModel:GetInviteSendBox()[Uid]
   if not TimerKey then
@@ -247,34 +236,33 @@ function M:RecvTeamBeRefused(Uid)
   TeamModel:DelSentInvite(Uid)
   self:NotifyEvent(TeamCommon.EventId.TeamBeRefused, Uid)
 end
-
 function M:RecvTeamBeAgreed(Uid)
   local TimerKey = TeamModel:GetInviteSendBox()[Uid]
   if not TimerKey then
     return
-  end
-  local Nickname = FriendController:GetModel():GetNicknameByUid(Uid)
-  if Nickname then
-    self:ShowToast(string.format(GText("UI_Chat_SbJoin"), Nickname))
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_accept_invite", nil, nil)
   self:StopTimer(TimerKey)
   TeamModel:DelSentInvite(Uid)
   self:NotifyEvent(TeamCommon.EventId.TeamBeAgreed, Uid)
 end
-
 function M:RecvTeamOnAddPlayer(MemberInfo)
+  TeamModel:TryAddCachedRecoveryTeamInfo(MemberInfo)
   TeamModel:AddTeamMember(MemberInfo)
+  local Nickname = MemberInfo.Nickname
+  if Nickname then
+    self:ShowToast(string.format(GText("UI_Chat_SbJoin"), Nickname))
+  end
   self:NotifyEvent(TeamCommon.EventId.TeamOnAddPlayer, MemberInfo)
   ChatController:SendMemberChangeTipsToTeam(MemberInfo, TeamCommon.EventId.TeamOnAddPlayer)
 end
-
 function M:RecvTeamOnDelPlayer(Uid, LeaveReason)
+  TeamModel:TryDelCachedRecoveryTeamInfo(Uid)
   local Member = TeamModel:GetTeamMember(Uid)
   if Member and not Member.bDsData then
     local Text = ""
     if Uid == self:GetAvatar().Uid and TeamModel:GetTeam() then
-      self:RecvTeamLeave(ErrorCode.RET_SUCCESS, true)
+      self:RecvTeamLeave(ErrorCode.RET_SUCCESS, false)
       return
     end
     if LeaveReason == CommonConst.LeaveTeamReason.Willing then
@@ -290,9 +278,13 @@ function M:RecvTeamOnDelPlayer(Uid, LeaveReason)
     TeamModel:DelTeamMember(Member)
     ChatController:SendMemberChangeTipsToTeam(Member, TeamCommon.EventId.TeamOnDelPlayer)
     self:NotifyEvent(TeamCommon.EventId.TeamOnDelPlayer, Member, LeaveReason)
+    if 0 == #TeamModel:GetTeam().Members then
+      local OldTeamData = TeamModel:GetTeam()
+      TeamModel:SetTeam(nil)
+      self:NotifyEvent(TeamCommon.EventId.TeamLeave, OldTeamData)
+    end
   end
 end
-
 function M:RecvTeamOnInit(Team)
   TeamModel:SetTeam(Team)
   local TeamData = TeamModel:GetTeam()
@@ -304,18 +296,19 @@ function M:RecvTeamOnInit(Team)
   self:ShutDownTeamInvite()
   self:NotifyEvent(TeamCommon.EventId.TeamOnInit, TeamModel:GetTeam())
 end
-
 function M:RecvDsServerDie()
   self:RecvTeamOnVoteInvalid()
   self:NotifyEvent(TeamCommon.EventId.TeamOnDsDie)
 end
-
 function M:RecvTeamOnChangeLeader(Uid)
+  TeamModel:TryChangeLeaderInRecoveryTeamInfo(Uid)
   local NewLeader = TeamModel:GetTeamMember(Uid)
   local OldLeaderId = TeamModel:GetTeamLeaderId()
   if NewLeader and not NewLeader.bDsData then
     if Uid == self:GetAvatar().Uid then
-      self:ShowToast(GText("UI_Team_YouBecomeLeader"))
+      if #TeamModel:GetTeam().Members > 1 then
+        self:ShowToast(GText("UI_Team_YouBecomeLeader"))
+      end
     else
       self:ShowToast(string.format(GText("UI_Team_SomeOneBecomeLeader"), NewLeader.Nickname))
     end
@@ -323,7 +316,6 @@ function M:RecvTeamOnChangeLeader(Uid)
     self:NotifyEvent(TeamCommon.EventId.TeamOnChangeLeader, NewLeader, OldLeaderId)
   end
 end
-
 function M:RecvTeamOnVoteAgreed(Uid)
   local Member = TeamModel:GetTeamMember(Uid)
   if Member and not Member.bDsData then
@@ -331,7 +323,6 @@ function M:RecvTeamOnVoteAgreed(Uid)
   end
   self:NotifyEvent(TeamCommon.EventId.TeamOnVoteAgreed, Uid)
 end
-
 function M:RecvTeamOnVoteStart(DungeonId)
   TeamModel:CacheNowDungeonId(DungeonId)
   if not TeamModel:GetTeam() then
@@ -342,7 +333,6 @@ function M:RecvTeamOnVoteStart(DungeonId)
   end
   self:NotifyEvent(TeamCommon.EventId.TeamOnVoteStart, DungeonId)
 end
-
 function M:RecvTeamOnVoteRefused(Uid)
   TeamModel:CleanNowDungeonId()
   if not TeamModel:GetTeam() then
@@ -359,7 +349,6 @@ function M:RecvTeamOnVoteRefused(Uid)
   end
   self:NotifyEvent(TeamCommon.EventId.TeamOnVoteRefused)
 end
-
 function M:RecvTeamOnVoteInvalid(Ret)
   TeamModel:CleanNowDungeonId()
   if Ret then
@@ -373,7 +362,6 @@ function M:RecvTeamOnVoteInvalid(Ret)
   end
   self:NotifyEvent(TeamCommon.EventId.TeamOnVoteInvalid)
 end
-
 function M:RecvTeamMemberPropChange(ChangeInfo, Uid)
   if not TeamModel:GetTeam() then
     return
@@ -388,7 +376,6 @@ function M:RecvTeamMemberPropChange(ChangeInfo, Uid)
     self:NotifyEvent(TeamCommon.EventId.TeamOnMemberChange, Member, Pos)
   end
 end
-
 function M:RecvTeamOnVoteEntering()
   TeamModel:CleanNowDungeonId()
   if not TeamModel:GetTeam() then
@@ -401,13 +388,12 @@ function M:RecvTeamOnVoteEntering()
   end
   self:NotifyEvent(TeamCommon.EventId.TeamOnVoteEntering)
 end
-
 function M:SendTeamRefresh()
   if TeamModel:GetTeam() and TeamModel:GetTeam().bDsData then
     return
   end
   if not GWorld:IsStandAlone() then
-    TeamModel:CreateTeamDataWithDs(self)
+    TeamModel:CreateTeamDataWithDs(GWorld.GameInstance)
   end
   local TeamInfo = TeamModel.CachedRecoveryTeamInfo
   if TeamInfo and not table.isempty(TeamInfo) then
@@ -422,7 +408,6 @@ function M:SendTeamRefresh()
     end, false, 0, self.TeamRecoveryTimer)
   end
 end
-
 function M:RecvTeamRefresh(ErrCode, TeamInfo)
   if TeamModel.CachedRecoveryTeamInfo and table.isempty(TeamModel.CachedRecoveryTeamInfo) then
     self:_ApplyRecvTeamRefresh(TeamInfo)
@@ -430,7 +415,6 @@ function M:RecvTeamRefresh(ErrCode, TeamInfo)
     TeamModel.CachedRecoveryTeamInfo = TeamInfo
   end
 end
-
 function M:_ApplyRecvTeamRefresh(TeamInfo)
   if not GWorld:IsStandAlone() then
     if not TeamModel:GetTeamBackup() then
@@ -445,28 +429,25 @@ function M:_ApplyRecvTeamRefresh(TeamInfo)
   end
   TeamModel.CachedRecoveryTeamInfo = nil
 end
-
 function M:TrySyncTeamInSingleGame()
-  DebugPrint(DebugTag, LXYTag, " TeamSyncDebug  \231\187\132\233\152\159\230\181\129\231\168\139\230\151\182\229\186\143 \229\141\149\228\186\186\230\156\172\230\136\150\229\164\167\228\184\150\231\149\140\239\188\140 TeamController::TrySyncTeamInBigWorld")
+  DebugPrint(DebugTag, LXYTag, " TeamSyncDebug  组队流程时序 单人本或大世界， TeamController::TrySyncTeamInBigWorld")
   if not TeamModel:GetTeam() then
     self:SendTeamRefresh()
   end
   self:NotifyEvent(TeamCommon.EventId.OnEnterSingelGame)
 end
-
 function M:TrySyncTeamInMultiGame()
-  DebugPrint(DebugTag, LXYTag, " TeamSyncDebug \231\187\132\233\152\159\230\181\129\231\168\139\230\151\182\229\186\143 \229\164\154\228\186\186\229\137\175\230\156\172\239\188\140 TeamController::TrySyncTeamInMultiGame")
+  DebugPrint(DebugTag, LXYTag, " TeamSyncDebug 组队流程时序 多人副本， TeamController::TrySyncTeamInMultiGame")
   if not GameState(GWorld.GameInstance) then
-    DebugPrint(LXYTag, " TeamSyncDebug  \231\187\132\233\152\159\230\181\129\231\168\139\230\151\182\229\186\143 \229\164\154\228\186\186\229\137\175\230\156\172\228\184\173\239\188\140GameState\228\184\186\231\169\186, \230\151\160\230\179\149\229\136\164\230\150\173\230\152\175\229\144\166\230\156\137\229\164\154\229\144\141\231\142\169\229\174\182")
+    DebugPrint(LXYTag, " TeamSyncDebug  组队流程时序 多人副本中，GameState为空, 无法判断是否有多名玩家")
     return
   end
-  DebugPrint("TeamSyncDebug  \231\156\139\231\156\139PlayerArray\231\154\132\230\149\176\233\135\143", #GameState(GWorld.GameInstance).PlayerArray:ToTable())
-  DebugPrint("TeamSyncDebug  \231\156\139\231\156\139PhantomArray\231\154\132\229\128\188", #GameState(GWorld.GameInstance).PhantomArray:ToTable())
+  DebugPrint("TeamSyncDebug  看看PlayerArray的数量", #GameState(GWorld.GameInstance).PlayerArray:ToTable())
+  DebugPrint("TeamSyncDebug  看看PhantomArray的值", #GameState(GWorld.GameInstance).PhantomArray:ToTable())
   self:SendTeamRefresh()
-  PrintTable(TeamModel:GetTeam(), 3, LXYTag .. "TeamSyncDebug  \231\156\139\231\156\139TeamModel\231\154\132\233\152\159\228\188\141\229\128\188")
+  PrintTable(TeamModel:GetTeam(), 3, LXYTag .. "TeamSyncDebug  看看TeamModel的队伍值")
   self:NotifyEvent(TeamCommon.EventId.OnEnterMultiGame)
 end
-
 function M:SetUpAutoResetHeadStateTimer()
   self:StopTimer(self.AutoResetHeadStateTimer)
   self:AddTimer(TeamCommon.ResetHeadStateTime, function()
@@ -476,25 +457,24 @@ function M:SetUpAutoResetHeadStateTimer()
     self:NotifyEvent(TeamCommon.EventId.TeamOnVoteInvalid)
   end, false, 0, self.AutoResetHeadStateTimer)
 end
-
 function M:SetUpBeInviteTimer(Interval)
   local CurrInvite = TeamModel:GetBackInviteInfo()
   local InviteView = self:GetView(GWorld.GameInstance, TeamCommon.TipUIName)
   if not CurrInvite then
-    DebugPrint(LXYTag, "\233\152\159\229\136\151\231\169\186\228\186\134\239\188\140\233\130\128\232\175\183\230\181\129\231\168\139\233\128\128\229\135\186")
+    DebugPrint(LXYTag, "队列空了，邀请流程退出")
     if IsValid(InviteView) then
       InviteView:Close()
-      DebugPrint(LXYTag, "\229\133\179\233\151\173\233\130\128\232\175\183UI")
+      DebugPrint(LXYTag, "关闭邀请UI")
     end
     return
   end
-  DebugPrint(LXYTag, "\229\188\128\229\167\139\231\187\132\233\152\159\229\143\151\233\130\128\232\175\183\229\174\154\230\151\182\229\153\168")
+  DebugPrint(LXYTag, "开始组队受邀请定时器")
   if not self:GetUIMgr():GetUIObj("CommonChangeScene") then
     if not IsValid(InviteView) then
-      DebugPrint(LXYTag, "\230\137\147\229\188\128\233\130\128\232\175\183UI")
+      DebugPrint(LXYTag, "打开邀请UI")
       InviteView = self:OpenView(GWorld.GameInstance, TeamCommon.TipUIName, CurrInvite)
     else
-      DebugPrint(LXYTag, "\233\135\141\231\148\168\233\130\128\232\175\183UI")
+      DebugPrint(LXYTag, "重用邀请UI")
       InviteView:StopAllAnimations()
       InviteView:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
       InviteView:Construct()
@@ -506,7 +486,7 @@ function M:SetUpBeInviteTimer(Interval)
   self:AddTimer(Interval, function()
     InviteRemainTime = InviteRemainTime - Interval
     if IsValid(InviteView) and not InviteView:HasFocusedDescendants() and self:IsGamepad() then
-      DebugPrint(LXYTag, WarningTag, "\231\187\132\233\152\159\233\130\128\232\175\183UI\233\156\128\232\166\129\230\138\162\229\164\186\232\129\154\231\132\166\239\188\129\239\188\129\239\188\129\239\188\129\239\188\129\239\188\129")
+      DebugPrint(LXYTag, WarningTag, "组队邀请UI需要抢夺聚焦！！！！！！")
       InviteView:SetFocus()
     end
     if InviteRemainTime > 0 then
@@ -517,7 +497,6 @@ function M:SetUpBeInviteTimer(Interval)
     self:NotifyEvent(TeamCommon.EventId.TeamInviteWaiting, 0)
   end, true, 0, self.InviteRecvTimer)
 end
-
 function M:SetUpDoInviteTimer(Uid, Interval)
   local CurrInviteSent = TeamModel:GetInviteSendBox()
   if not CurrInviteSent then
@@ -530,30 +509,28 @@ function M:SetUpDoInviteTimer(Uid, Interval)
     if InviteRemainTime > 0 then
       return
     end
-    DebugPrint(DebugTag, "\229\143\145\229\135\186\229\142\187\231\154\132\231\187\132\233\152\159\233\130\128\232\175\183\229\183\178\231\187\143\232\182\133\230\151\182", Uid)
+    DebugPrint(DebugTag, "发出去的组队邀请已经超时", Uid)
     self:RecvTeamBeRefused(Uid)
   end, true, 0, nil)
 end
-
 function M:DelTeamMemberWithDs(Eid)
   if TeamModel:GetTeam() and TeamModel:GetTeam().bDsData then
-    DebugPrint(LXYTag, "TeamSyncDebug  TeamModel \229\176\157\232\175\149\231\167\187\233\153\164ds\233\152\159\229\143\139\230\149\176\230\141\174 ", Eid)
+    DebugPrint(LXYTag, "TeamSyncDebug  TeamModel 尝试移除ds队友数据 ", Eid)
     local Member = TeamModel:GetTeamMember(Eid)
     if Member and Member.bDsData then
-      DebugPrint(LXYTag, "TeamSyncDebug TeamModel Ds\233\152\159\229\143\139 \231\167\187\233\153\164\230\136\144\229\138\159 ", Eid)
+      DebugPrint(LXYTag, "TeamSyncDebug TeamModel Ds队友 移除成功 ", Eid)
       TeamModel:DelTeamMemberWithDs(Eid)
       self:NotifyEvent(TeamCommon.EventId.DsTeamOnDelPlayer, Member)
     end
   end
 end
-
 function M:AddTeamMemberWithDs(WorldContext, Eid)
-  DebugPrint(LXYTag, "TeamSyncDebug TeamModel \229\176\157\232\175\149\230\183\187\229\138\160ds\233\152\159\229\143\139\230\149\176\230\141\174 ", Eid)
+  DebugPrint(LXYTag, "TeamSyncDebug TeamModel 尝试添加ds队友数据 ", Eid)
   local Res = TeamModel:AddTeamMemberWithDs(WorldContext, Eid)
   if not Res then
     return
   end
-  DebugPrint(LXYTag, "TeamSyncDebug  Ds\233\152\159\229\143\139\230\183\187\229\138\160\230\136\144\229\138\159 ")
+  DebugPrint(LXYTag, "TeamSyncDebug  Ds队友添加成功 ")
   local TeamData = TeamModel:GetTeam()
   local TeamDataBackup = TeamModel:GetTeamBackup()
   if not TeamDataBackup or #TeamData.Members > #TeamDataBackup.Members then
@@ -567,7 +544,6 @@ function M:AddTeamMemberWithDs(WorldContext, Eid)
   local Member = TeamModel:GetTeamMember(Eid)
   self:NotifyEvent(TeamCommon.EventId.DsTeamOnAddPlayer, Member)
 end
-
 function M:DoCheckCanEnterDungeon(DungeonId)
   local TeamInfo = TeamModel:GetTeam()
   if TeamInfo then
@@ -597,7 +573,6 @@ function M:DoCheckCanEnterDungeon(DungeonId)
   end
   return true
 end
-
 function M:DoWhenEnterDungeonCheckFailed(RetCode, FailedMember)
   if RetCode ~= ErrorCode.RET_TEAM_DUNGEON_CHECK_FAILED then
     return
@@ -609,6 +584,5 @@ function M:DoWhenEnterDungeonCheckFailed(RetCode, FailedMember)
   DebugPrint(LXYTag, "gmy@M.EnterDungeonCallback FailedMember", FailedMember and #FailedMember)
   self:CheckError(RetCode)
 end
-
 _G.TeamController = M
 return M

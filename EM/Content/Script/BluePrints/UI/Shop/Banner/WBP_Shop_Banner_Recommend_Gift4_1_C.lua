@@ -2,14 +2,14 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.Shop.Banner.WBP_Shop_Banner_Base_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   local BannerTab = self:GetBannerTabData("WBP_Shop_Recommend_Gift4_1")
   if not BannerTab then
     return
   end
-  self.BannerTab = BannerTab
+  self.BannerTab = setmetatable({}, {__index = BannerTab})
+  self.BannerTab.ItemId = self:GetValidItemId(self.BannerTab)
   local SkinRarity
   if self.BannerTab.PreviewId[1] then
     local SkinInfo = DataMgr.Skin[self.BannerTab.PreviewId[1]]
@@ -31,12 +31,18 @@ function M:Construct()
     end
   end
   if self.WBP_Shop_Recommend_Common_TItle_C_0 and self.WBP_Shop_Recommend_Common_TItle_C_0.Text_MainTitle then
-    self.WBP_Shop_Recommend_Common_TItle_C_0.Text_MainTitle:SetText(GText(BannerTab.Text1))
+    self.WBP_Shop_Recommend_Common_TItle_C_0:SetText(GText(BannerTab.Text1))
   end
   if self.Text_ActivityDesc_White then
     self.Text_ActivityDesc_White:SetText(GText("UI_Weapon_Preview"))
   end
-  self.ItemId = BannerTab.ItemId
+  if self.Text_Detail and self.BannerTab.Text1Sub then
+    self.Text_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.Text_Detail:SetText(GText(self.BannerTab.Text1Sub))
+  elseif self.Text_Detail then
+    self.Text_Detail:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+  self.ItemId = self.BannerTab.ItemId
   if self.ItemId and DataMgr.ShopItem[self.ItemId] then
     self.ShopItemData = setmetatable({}, {
       __index = DataMgr.ShopItem[self.ItemId]
@@ -65,7 +71,6 @@ function M:Construct()
   local bIsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
   self:UpdateGamePadKeyInfo(bIsGamepad)
 end
-
 function M:OnGoToInterface()
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_btn_click_normal", nil, nil)
   if self.bForbidden then
@@ -80,7 +85,6 @@ function M:OnGoToInterface()
     UIManager(self):LoadUINew("PayGiftPopup_Purple", self.ShopItemData, self)
   end
 end
-
 function M:UpdateBuyBtn()
   local Count = ShopUtils:GetShopItemPurchaseLimit(self.ItemId)
   local ShowBonus = DataMgr.ShopItem[self.ItemId].ShowBonus
@@ -104,22 +108,18 @@ function M:UpdateBuyBtn()
     self.Btn_Pay.WS_Detail:SetVisibility(ESlateVisibility.Visibie)
     self.Btn_Pay.Text_BuyNum:SetText(GText("UI_Banner_Remain_Buy") .. Count)
     self.Btn_Pay.Text_BtnBuy:SetText(GText("UI_SHOP_PURCHASE"))
-    self.Btn_Pay.Btn_Buy:SetForbidden(false)
-    self.Btn_Pay:PlayAnimation(self.Btn_Pay.Btn_Normal)
+    self.Btn_Pay:ForbidBtn(false)
     self.bForbidden = false
   else
     self.Btn_Pay.Group_BuyNum:SetVisibility(ESlateVisibility.Collapsed)
-    self.Btn_Pay.Text_BtnBuy:SetText(GText("UI_SHOP_SOLDOUT"))
-    self.Btn_Pay.Btn_Buy:SetForbidden(true)
-    self.Btn_Pay:PlayAnimation(self.Btn_Pay.Btn_Foridden)
+    self.Btn_Pay.Text_BtnEmpty:SetText(GText("UI_SHOP_SOLDOUT"))
+    self.Btn_Pay:ForbidBtn(true)
     self.Btn_Pay.WS_Detail:SetVisibility(ESlateVisibility.Collapsed)
     self.bForbidden = true
   end
 end
-
 function M:Destruct()
 end
-
 function M:InitTime()
   self.EndTime = self.BannerTab and self.BannerTab.EndTime
   if self.EndTime then
@@ -129,10 +129,9 @@ function M:InitTime()
     end, true, 0, "Shop_Recommend_Gift4_1", true)
     self:NotifyTimeTick()
   else
-    self.HB_Time:SetVisibility(ESlateVisibility.Collapsed)
+    self.HB:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:NotifyTimeTick()
   if not self.EndTime then
     return
@@ -146,7 +145,6 @@ function M:NotifyTimeTick()
   local RemainTimeDict, _ = UIUtils.GetLeftTimeStrStyle2(self.EndTime)
   self.Activity_Time:SetTimeText(GText("UI_Mail_Date_Remain"), RemainTimeDict)
 end
-
 function M:GoToPreview()
   UIManager(self):LoadUINew("ArmoryDetail", {
     IsPreviewMode = true,
@@ -155,7 +153,6 @@ function M:GoToPreview()
     bNoEndCamera = true
   })
 end
-
 function M:InitBannerPage(BannerId, Owner)
   if BannerId then
     self.BannerId = BannerId
@@ -165,7 +162,6 @@ function M:InitBannerPage(BannerId, Owner)
   self:AdjustGroupDetail()
   AudioManager(self):PlayUISound(self, "event:/ui/common/shop_recommend_gift_1", nil, nil)
 end
-
 function M:InitReward()
   local TypeId = DataMgr.ShopItem[self.ItemId].TypeId
   local Rewards = DataMgr.Reward[TypeId]
@@ -199,18 +195,15 @@ function M:InitReward()
       Content.Count = ItemInfo.ItemCount
       Content.Rarity = ItemInfo.Rarity or 1
       Content.IsShowDetails = true
-      
       function Content.AfterInitCallback(Widget)
         Widget:BindEvents(self, {
           OnMenuOpenChanged = self.OnRewardMenuOpenChanged
         })
       end
-      
       self.List_Reward:AddItem(Content)
     end
   end
 end
-
 function M:OnRewardMenuOpenChanged(bIsOpen)
   local bGamePad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
   if bIsOpen and bGamePad then
@@ -219,7 +212,6 @@ function M:OnRewardMenuOpenChanged(bIsOpen)
     self.Owner:UpdateCommonTabInfoByReward()
   end
 end
-
 function M:PlayInAnimation()
   if self:IsInAnimationPlaying() then
     return
@@ -228,14 +220,12 @@ function M:PlayInAnimation()
     self:PlayAnimation(self.In)
   end
 end
-
 function M:IsInAnimationPlaying()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Out) then
     return true
   end
   return false
 end
-
 function M:PlayOutAnimation()
   if self:IsInAnimationPlaying() then
     return
@@ -244,7 +234,6 @@ function M:PlayOutAnimation()
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -260,7 +249,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonBottom then
@@ -274,14 +262,13 @@ function M:OnGamePadDown(InKeyName)
     self.Owner:UpdateCommonTabInfoByReward()
     self:ShowOrHideGamePadKey(ESlateVisibility.Collapsed)
   elseif InKeyName == UIConst.GamePadKey.FaceButtonRight and (self.List_Reward:HasFocusedDescendants() or self.List_Reward:HasAnyUserFocus()) then
-    self.Owner.List_Recommend:SetFocus()
+    self.Owner:GamePadFocusToSelectBannerItem()
     self.Owner:UpdateCommonTabInfo()
     self:ShowOrHideGamePadKey(ESlateVisibility.SelfHitTestInvisible)
     IsEventHandled = true
   end
   return IsEventHandled
 end
-
 function M:OnPCKeyDown(InKeyName)
   if "SpaceBar" == InKeyName then
     self:OnGoToInterface()
@@ -289,12 +276,10 @@ function M:OnPCKeyDown(InKeyName)
   end
   return false
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local bGamePad = CurInputDevice == ECommonInputType.Gamepad
   self:UpdateGamePadKeyInfo(bGamePad)
 end
-
 function M:UpdateGamePadKeyInfo(bGamePad)
   if bGamePad then
     if self.Btn_Pay and self.Btn_Pay.Key_ControllerBuy then
@@ -312,7 +297,6 @@ function M:UpdateGamePadKeyInfo(bGamePad)
     end
   end
 end
-
 function M:ShowOrHideGamePadKey(ESlateVisibility)
   if self.Btn_Pay and self.Btn_Pay.Key_ControllerBuy then
     self.Btn_Pay.Key_ControllerBuy:SetVisibility(ESlateVisibility)
@@ -330,5 +314,4 @@ function M:ShowOrHideGamePadKey(ESlateVisibility)
     self.Owner.Common_Tab.WBP_Com_Tab_ResourceBar.KeyImg_GamePad:SetVisibility(ESlateVisibility)
   end
 end
-
 return M

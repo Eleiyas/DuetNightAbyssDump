@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class()
-
 function M:PreloadMonAccessory()
   local Paths = {}
   if self.Owner.Data.AccessoryIds and self.Owner.Data.AccessoryIds.Normal then
@@ -18,7 +17,6 @@ function M:PreloadMonAccessory()
   table.insert(Paths, Const.CharResourcePaths.AccessoryBP)
   return Paths
 end
-
 function M:PreloadMonsterInitDependMontage()
   local ModelData = DataMgr.Model[self.Owner:GetCharModelComponent():GetCurrentModelId()]
   local Paths = {}
@@ -26,14 +24,11 @@ function M:PreloadMonsterInitDependMontage()
   table.insert(Paths, RotationMontagePath)
   self:MultiAssetPreload(Paths, ERoleInitAssetType.InitDependMontage, false)
 end
-
 function M:RegisterMonsterCustomConfig()
   self.CustomAssetsConfig = {}
-  
   local function Register(_getPathFunc)
     table.insert(self.CustomAssetsConfig, _getPathFunc)
   end
-  
   Register(function()
     return self.Owner.Data.MiniMapIcon
   end)
@@ -46,10 +41,8 @@ function M:RegisterMonsterCustomConfig()
   end
   self:MultiAssetPreload(Paths, ERoleInitAssetType.CustomAssets, false)
 end
-
 function M:PreloadDistructableBody()
   self.Owner.DistructableBodyId = self.Owner:GetDistructableBodyId()
   self:SingleAssetPreload(Const.CharResourcePaths.DistructableBodyBp, ERoleInitAssetType.DistructableBody, true)
 end
-
 return M

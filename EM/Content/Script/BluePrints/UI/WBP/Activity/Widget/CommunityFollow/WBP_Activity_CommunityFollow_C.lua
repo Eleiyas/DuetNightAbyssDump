@@ -6,19 +6,16 @@ local M = Class({
 local DevServerList = require("BluePrints/UI/GameLogin/DevServerList")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
-
+local EMCache = require("EMCache.EMCache")
 function M:Construct()
   EventManager:AddEvent(EventID.OnCommunityFollowActivityJJJFinish, self, self.OnCommunityFollowActivityJJJFinish)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnCommunityFollowActivityJJJFinish, self)
 end
-
 function M:OnCommunityFollowActivityJJJFinish(CommunityId)
   self:InitUI()
 end
-
 function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   self.CurActivityId = ActivityId
   self.ParentTabId = ParentTabId
@@ -37,6 +34,12 @@ function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   if Avatar and Avatar.Hostnum then
     self.Area = DevServerList[Avatar.Hostnum].area
   end
+  self.Languagetype = "ChinaCN"
+  local SystemLanguage = EMCache:Get("SystemLanguage") or "CN"
+  local IsGlobalPak = UE.AHotUpdateGameMode.IsGlobalPak()
+  if IsGlobalPak then
+    self.Languagetype = "Abroad" .. SystemLanguage
+  end
   self:InitTimeInfo()
   self.FocusWidgetName = "SelectView"
   self.GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem()
@@ -44,8 +47,8 @@ function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
     self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
   end
   self:InitUI()
+  ActivityUtils.SetUpJustifyOfJap(self.ActivityTitle.Text_ActivityDesc, self.ActivityTitle.Text_ActivityDescWorld)
 end
-
 function M:InitUI()
   local PageConfigData = self:GetPageConfigData()
   local CommunityList = PageConfigData.CommunityList
@@ -83,12 +86,15 @@ function M:InitUI()
   for i = 1, #SortedCommunityList do
     local CommunityId = SortedCommunityList[i]
     local CommunityData = DataMgr.CommunityList[CommunityId]
+    local JumpLink = CommunityData.JumpLink[self.Languagetype] or CommunityData.JumpLink.ChinaCN
+    local PhoneJumpLink = "ChinaCN" == self.LangugeType and CommunityData.PhoneJumpLink or nil
     local ItemContent = NewObject(UIUtils.GetCommonItemContentClass())
     ItemContent.CommunityId = CommunityId
     ItemContent.Reward = CommunityData.Reward
     ItemContent.Icon = CommunityData.Icon
     ItemContent.RewardMark = CommunityData.RewardMark
-    ItemContent.JumpLink = CommunityData.JumpLink
+    ItemContent.JumpLink = JumpLink
+    ItemContent.PhoneJumpLink = PhoneJumpLink
     ItemContent.JumpTips = CommunityData.JumpTips
     ItemContent.CommunityId = CommunityId
     ItemContent.JobTips = CommunityData.JobTips
@@ -99,7 +105,6 @@ function M:InitUI()
   self.ActivityTitle.Text_ActivityDesc:SetText(GText(ActivityConfigData.EventDes))
   self.ActivityTitle.Text_Title:SetText(GText(ActivityConfigData.EventName))
 end
-
 function M:InitTimeInfo()
   if (self.ActivityEndTime ~= nil or nil ~= self.RewardEndTime or self.IsComplete) and self.ActivityTitle.Activity_Time then
     local bCheckNextDayFiveStamp = true
@@ -109,16 +114,20 @@ function M:InitTimeInfo()
     ActivityUtils.SetLeftTimeView(self.ActivityTitle.Activity_Time, true)
   end
 end
-
 function M:GetPageConfigData()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return nil
   end
-  local ServerArea = DevServerList[Avatar.Hostnum].area
-  return DataMgr.FollowCommunityEvent[ServerArea]
+  local configData = DataMgr.FollowCommunityEvent[self.Languagetype]
+  if not configData then
+    for _, data in pairs(DataMgr.FollowCommunityEvent) do
+      DebugPrint("jly 保底：未找到语言类型配置，使用第一个配置", self.Languagetype)
+      return data
+    end
+  end
+  return configData
 end
-
 function M:ShowPage(IsNeedPlayInAnim)
   if IsNeedPlayInAnim then
     self:PlayFadeIn()
@@ -126,18 +135,15 @@ function M:ShowPage(IsNeedPlayInAnim)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:InitUI()
 end
-
 function M:HidePage(IsNeedPlayOutAnim)
   if IsNeedPlayOutAnim then
     self:PlayFadeOut()
   end
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:PlayFadeIn()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayFadeOut(IsRemoveFromParent)
   self:PlayAnimation(self.Out)
   if IsRemoveFromParent then
@@ -147,11 +153,9 @@ function M:PlayFadeOut(IsRemoveFromParent)
     })
   end
 end
-
 function M:UpdatePage(OperateSrc)
   self:InitUI()
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -162,31 +166,30 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonRight then
+    if not self.IsEnterRewardViewMode then
+      return false
+    end
     IsEventHandled = self:LeaveRewardViewMode()
   elseif InKeyName == UIConst.GamePadKey.FaceButtonBottom then
     IsEventHandled = self:EnterRewardViewMode()
   end
   return IsEventHandled
 end
-
 function M:GetCurFocusWidgetInfo()
   self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:UpdateUIByInputDevice(CurInputDeviceType)
 end
-
 function M:EnterRewardViewMode()
+  self.IsEnterRewardViewMode = true
   if self.ParentWidget then
     self.FocusWidgetName = "DefaultWidget"
     self.ParentWidget:UpdateActivityKeyTips()
@@ -194,8 +197,8 @@ function M:EnterRewardViewMode()
   self.List_Item:SetFocus()
   return true
 end
-
 function M:LeaveRewardViewMode()
+  self.IsEnterRewardViewMode = false
   if self.ParentWidget then
     self.FocusWidgetName = "SelectView"
     self.ParentWidget:UpdateActivityKeyTips(self.FocusWidgetName)
@@ -203,5 +206,4 @@ function M:LeaveRewardViewMode()
   end
   return true
 end
-
 return M

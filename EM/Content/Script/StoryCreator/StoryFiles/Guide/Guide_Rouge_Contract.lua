@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1722052102897914",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1514, y = 292.42105263157896},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -143,12 +145,12 @@ return {
           ["1745766695822609"] = {
             key = "1745766695822609",
             type = "ShowGuideButtonNode",
-            name = "\230\183\177\229\186\166",
+            name = "深度",
             pos = {x = 1160, y = 208.0000000000001},
             propsData = {
               ShowEnable = true,
               MessageId = 302201,
-              MessageNote = "\230\175\143\228\184\170\229\165\145\231\186\166\232\175\141\230\157\161\230\175\143\228\184\170\231\173\137\231\186\167\228\188\154\230\143\144\228\190\155\228\184\128\229\174\154\231\154\132\230\183\177\229\186\166\229\128\188\227\128\130",
+              MessageNote = "每个契约词条每个等级会提供一定的深度值。",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -173,12 +175,12 @@ return {
           ["174577526471023698322"] = {
             key = "174577526471023698322",
             type = "ShowGuideButtonNode",
-            name = "\231\173\137\231\186\167",
+            name = "等级",
             pos = {x = 1508, y = 207.99999999999994},
             propsData = {
               ShowEnable = true,
               MessageId = 302202,
-              MessageNote = "\233\131\168\229\136\134\229\165\145\231\186\166\232\175\141\230\157\161\230\156\137\228\184\141\229\144\140\231\154\132\231\173\137\231\186\167\227\128\130",
+              MessageNote = "部分契约词条有不同的等级。",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -203,12 +205,12 @@ return {
           ["174577538009223699275"] = {
             key = "174577538009223699275",
             type = "ShowGuideButtonNode",
-            name = "\230\128\187\230\183\177\229\186\166",
+            name = "总深度",
             pos = {x = 1837.8181818181815, y = 205.63636363636363},
             propsData = {
               ShowEnable = true,
               MessageId = 302203,
-              MessageNote = "\230\128\187\230\183\177\229\186\166\229\128\188\228\188\154\229\189\177\229\147\141\230\156\128\231\187\136\231\187\147\231\174\151\231\154\132\232\161\140\232\191\185\229\138\160\230\136\144\227\128\130",
+              MessageNote = "总深度值会影响最终结算的行迹加成。",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -233,12 +235,12 @@ return {
           ["174577542364723699981"] = {
             key = "174577542364723699981",
             type = "ShowGuideButtonNode",
-            name = "\231\161\174\229\174\154",
+            name = "确定",
             pos = {x = 1161.5, y = 398.0454545454544},
             propsData = {
               ShowEnable = true,
               MessageId = 302204,
-              MessageNote = "\231\130\185\229\135\187\226\128\156\231\161\174\229\174\154\226\128\157\229\144\142\229\143\175\228\191\157\229\173\152\229\165\145\231\186\166\233\133\141\231\189\174\227\128\130",
+              MessageNote = "点击“确定”后可保存契约配置。",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -263,12 +265,12 @@ return {
           ["174577546700823700522"] = {
             key = "174577546700823700522",
             type = "ShowGuideButtonNode",
-            name = "\233\135\141\231\189\174",
+            name = "重置",
             pos = {x = 1461.5, y = 403.49999999999994},
             propsData = {
               ShowEnable = true,
               MessageId = 302205,
-              MessageNote = "\233\135\141\231\189\174",
+              MessageNote = "重置",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -293,12 +295,12 @@ return {
           ["174577547609223700784"] = {
             key = "174577547609223700784",
             type = "ShowGuideButtonNode",
-            name = "\229\184\174\229\138\169",
+            name = "帮助",
             pos = {x = 1795.5909090909088, y = 406.22727272727263},
             propsData = {
               ShowEnable = true,
               MessageId = 302206,
-              MessageNote = "\229\184\174\229\138\169",
+              MessageNote = "帮助",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,

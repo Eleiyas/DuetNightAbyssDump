@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:SetIsChecked(IsChecked)
   self.bChecked = IsChecked
   if IsChecked then
@@ -12,7 +11,6 @@ function M:SetIsChecked(IsChecked)
     self.Event(self.Obj, self.bChecked)
   end
 end
-
 function M:Construct()
   self.Button_None.OnClicked:Clear()
   self.Button_None.OnClicked:Add(self, self.OnBtnClicked)
@@ -32,45 +30,36 @@ function M:Construct()
   self:FlushAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:IsChecked()
   return self.bChecked
 end
-
 function M:OnBtnClicked()
   self:SetIsChecked(not self.bChecked)
   self:FlushAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnClickAnimEnd()
   if self:IsHovered() then
     self:OnBtnHovered()
   end
 end
-
 function M:OnBtnPressed()
   self:FlushAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnHovered()
   self:FlushAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   self:FlushAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SetText(Text)
   self.Text_None:SetText(Text)
 end
-
 function M:BindEventOnCheckStateChanged(Obj, Event)
   self.Obj = Obj
   self.Event = Event
 end
-
 return M

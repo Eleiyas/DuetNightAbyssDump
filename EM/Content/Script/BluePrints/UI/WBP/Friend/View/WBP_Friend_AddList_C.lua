@@ -6,7 +6,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.UI.WBP.Friend.View.Base.WBP_Friend_ListBase"
 })
-
 function M:OnTeamMainFocusChanged(bFocused)
   for _, Entry in pairs(self.MyListView:GetDisplayedEntryWidgets()) do
     Entry:OnTeamMainFocusChanged(bFocused)
@@ -22,7 +21,6 @@ function M:OnTeamMainFocusChanged(bFocused)
     KeyWidget:SetVisibility(UIConst.VisibilityOp[Visibility])
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.MyListView = self.List_AddFriend
@@ -72,7 +70,8 @@ function M:Construct()
       end
       local Data = Dict[Uid]
       if not Data then
-        assert(false, "FriendCommon.Reason.AddFriend::Data nil is impossible")
+        DebugPrint(ErrorTag, "FriendCommon.Reason.AddFriend::Data nil is impossible")
+        return
       end
       self:RefreshListItem(Data, false)
     elseif Reason == FriendCommon.EventId.GetRecommandList then
@@ -82,7 +81,6 @@ function M:Construct()
   end)
   self:AddInputMethodChangedListen()
 end
-
 function M:OnRefreshReleased()
   if self.Button_Refresh.IsForbidden then
     FriendController:ShowToast(GText("UI_Toast_Firend_RefreshCd"))
@@ -93,7 +91,6 @@ function M:OnRefreshReleased()
   self.Bar_CD:SetVisibility(UIConst.VisibilityOp.Visible)
   FriendController:SendRequest(FriendCommon.EventId.GetRecommandList)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self.Com_Input.Text_Input:HasAnyUserFocus() then
     return UWidgetBlueprintLibrary.Handled()
@@ -105,7 +102,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnRecommandCdUpdate(IsEnd, Percent)
   if IsEnd then
     self.Bar_CD:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -120,11 +116,9 @@ function M:OnRecommandCdUpdate(IsEnd, Percent)
     end
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self:RefreshNavigationRule()
 end
-
 function M:OnSearchReleased()
   if self.Button_Search.IsForbidden then
     return
@@ -145,7 +139,6 @@ function M:OnSearchReleased()
   end
   FriendController:SendRequest(FriendCommon.EventId.Search, TempUid)
 end
-
 function M:OnRefreshListBegin()
   if self.bSearchState then
     self.Button_Refresh:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -156,7 +149,6 @@ function M:OnRefreshListBegin()
     self.Text_Title:SetText(GText("UI_Friend_Interested"))
   end
 end
-
 function M:OnEditUidTextChanged(Text)
   if "" == Text then
     self.Button_Search:ForbidBtn(true)
@@ -169,7 +161,6 @@ function M:OnEditUidTextChanged(Text)
     self.Button_Search:ForbidBtn(false)
   end
 end
-
 function M:Destruct()
   self.Button_Refresh:UnBindEventOnReleased(self, self.OnRefreshReleased)
   self.Button_Search:UnBindEventOnReleased(self, self.OnSearchReleased)
@@ -178,7 +169,6 @@ function M:Destruct()
   self:RemoveInputMethodChangedListen()
   M.Super.Destruct(self)
 end
-
 function M:GetListData()
   local Dict = {}
   if not self.bSearchState then
@@ -194,7 +184,6 @@ function M:GetListData()
     self:OnRefreshReleased()
   end
 end
-
 function M:SetupListContent(Uid, Content)
   local Dict = {}
   if not self.bSearchState then
@@ -205,7 +194,6 @@ function M:SetupListContent(Uid, Content)
   Content.Data = Dict[Uid]
   Content.Type = FriendCommon.FriendTabType.RegionFriend
 end
-
 function M:InitWidget(Parent)
   self.Parent = Parent
   self:RefreshList()
@@ -214,11 +202,9 @@ function M:InitWidget(Parent)
     self:OnRecommandCdUpdate(false, 1)
   end
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -237,10 +223,8 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
 function M:OnRefreshListEnd()
   self:RefreshNavigationRule()
   self.MyListView:SetFocus()
 end
-
 return M

@@ -5,12 +5,15 @@ WBP_BattlePass_Main_C._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
 local CommonUtils = require("Utils.CommonUtils")
-
+local BattlePassController = require("BluePrints.UI.WBP.BattlePass.Controller.BattlePassController")
 function WBP_BattlePass_Main_C:Construct()
   self.Super.Construct(self)
-  self.IsLastVersionPet = false
-  self.InCold = false
-  self.CurTabId = nil
+  BattlePassController:SetModelData("IsLastVersionPet", false)
+  BattlePassController:SetModelData("InCold", false)
+  BattlePassController:SetModelData("CurTabId", nil)
+  BattlePassController:SetModelData("BPRewardTyppe", BattlePassController:GetModelData("BattlePassInfo").BPRewardTyppe)
+  BattlePassController:SetModelData("TargetSkinId", nil)
+  BattlePassController:SetModelData("AccessoryId", nil)
   self.CurWidget = nil
   self.AllTabInfo = {}
   self.Index2TabId = {}
@@ -37,16 +40,19 @@ function WBP_BattlePass_Main_C:Construct()
     self.Image_Click.OnMouseButtonDownEvent:Bind(self, self.On_Image_Click_MouseButtonDown)
   end
 end
-
 function WBP_BattlePass_Main_C:Destruct()
   AudioManager(self):StopSound(self, "SystemOpenSound")
   EventManager:RemoveEvent(EventID.BattlePassVersionChange, self)
   self:RemoveRefreshPetTimer()
-  self.ActorController:OnClosed()
-  self.ActorController:OnDestruct()
+  BattlePassController:GetModel():RemoveModelDataRefCount("ActorController", function(Target)
+    if not Target or not IsValid(Target) then
+      return
+    end
+    Target:OnClosed()
+    Target:OnDestruct()
+  end)
   self.Super.Destruct(self)
 end
-
 function WBP_BattlePass_Main_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "SystemOpenSound", nil)
@@ -55,32 +61,26 @@ function WBP_BattlePass_Main_C:OnLoaded(...)
   self:PlayInAnim()
   local TargetTabId = (...)
   TargetTabId = TargetTabId or self.DefaultTabId
-  local Avatar = GWorld:GetAvatar()
+  local Avatar = BattlePassController:GetAvatar()
   if Avatar then
-    self.IsLastVersionPet = Avatar.BattlePassLastVersionHasUnclaimedPet
+    BattlePassController:SetModelData("IsLastVersionPet", Avatar.BattlePassLastVersionHasUnclaimedPet)
   end
-  if self.IsLastVersionPet then
+  if BattlePassController:GetModelData("IsLastVersionPet") then
     self:SwitchOneTab("BattlePassPetSelection")
   else
     self:SwitchTab(TargetTabId)
   end
-  self:AddTimer(0.1, function()
-    self.BattlePass_Book:CheckBattlePassAutoGetTaskReward()
-  end, false, 0, nil, true)
+  self.BattlePass_Book:CheckBattlePassAutoGetTaskReward()
 end
-
 function WBP_BattlePass_Main_C:OnBattlePassRewardReddotChange()
   self:OnReddotChange("BattlePassReward")
 end
-
 function WBP_BattlePass_Main_C:OnBattlePassMissionReddotChange()
   self:OnReddotChange("BattlePassMission")
 end
-
 function WBP_BattlePass_Main_C:OnBattlePassPetSelectionReddotChange()
   self:OnReddotChange("BattlePassPetSelection")
 end
-
 function WBP_BattlePass_Main_C:OnReddotChange(TabId)
   local Index = self.TabId2Index[TabId]
   if Index then
@@ -99,31 +99,26 @@ function WBP_BattlePass_Main_C:OnReddotChange(TabId)
     end
   end
 end
-
 function WBP_BattlePass_Main_C:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayAnimationForward(self.In)
 end
-
 function WBP_BattlePass_Main_C:SwitchOneTab(TargetTabId)
   self:InitTabInfo_OneTabState(TargetTabId)
   self:RealSwitchTab({TabId = TargetTabId})
   return self:GetWidgetByTabId(TargetTabId)
 end
-
 function WBP_BattlePass_Main_C:SwitchTab(TargetTabId)
   self:InitTabInfo()
   self:AddReddotListener()
   self:SelectTabByTabId(TargetTabId)
   return self:GetWidgetByTabId(TargetTabId)
 end
-
 function WBP_BattlePass_Main_C:InitTabInfo_OneTabState(TargetTabId)
   self:InitCommonTab_OneTabState(TargetTabId)
 end
-
 function WBP_BattlePass_Main_C:InitTabInfo()
   local PlayTab = CommonUtils.Copy(DataMgr.BattlePassTab)
   self.SortedTabInfo = {}
@@ -134,13 +129,11 @@ function WBP_BattlePass_Main_C:InitTabInfo()
   self:InitSortedTab()
   self:InitCommonTab()
 end
-
 function WBP_BattlePass_Main_C:SortTab()
   table.sort(self.SortedTabInfo, function(a, b)
     return a.Sequence > b.Sequence
   end)
 end
-
 function WBP_BattlePass_Main_C:InitSortedTab()
   self.AllTabInfo = {}
   self.Index2TabId = {}
@@ -158,7 +151,6 @@ function WBP_BattlePass_Main_C:InitSortedTab()
     self.TabId2Index[TabInfo.WidgetUI] = Index
   end
 end
-
 function WBP_BattlePass_Main_C:AddReddotListener()
   if self.Index2TabId then
     for Index, TabId in ipairs(self.Index2TabId) do
@@ -168,7 +160,6 @@ function WBP_BattlePass_Main_C:AddReddotListener()
     end
   end
 end
-
 function WBP_BattlePass_Main_C:RemoveReddotListener()
   if self.Index2TabId then
     for Index, TabId in ipairs(self.Index2TabId) do
@@ -178,7 +169,6 @@ function WBP_BattlePass_Main_C:RemoveReddotListener()
     end
   end
 end
-
 function WBP_BattlePass_Main_C:InitCommonTab()
   self.TabConfigData = {
     TitleName = GText("MAIN_UI_BATTLEPASS"),
@@ -215,7 +205,6 @@ function WBP_BattlePass_Main_C:InitCommonTab()
   self.Tab_BattlePass:Init(self.TabConfigData, true)
   self.Tab_BattlePass:BindEventOnTabSelected(self, self.RealSwitchTab)
 end
-
 function WBP_BattlePass_Main_C:InitCommonTab_OneTabState(TargetTabId)
   self.TabConfigData = {
     TitleName = GText("MAIN_UI_BATTLEPASS"),
@@ -247,38 +236,32 @@ function WBP_BattlePass_Main_C:InitCommonTab_OneTabState(TargetTabId)
   }
   self.Tab_BattlePass:Init(self.TabConfigData, true)
 end
-
 function WBP_BattlePass_Main_C:UpdateBottomKeyInfo(BottomKeyInfo)
   if self.Tab_BattlePass.UpdateBottomKeyInfo then
     self.Tab_BattlePass:UpdateBottomKeyInfo(BottomKeyInfo)
   end
 end
-
 function WBP_BattlePass_Main_C:SelectTabByTabId(TabId)
   self.Tab_BattlePass:SelectTabById(TabId)
 end
-
 function WBP_BattlePass_Main_C:SelectTab(Index)
   self.Tab_BattlePass:SelectTab(Index)
 end
-
 function WBP_BattlePass_Main_C:GetWidgetByTabId(TabId)
   if self.TabId2Widget then
     return self.TabId2Widget[TabId]
   end
 end
-
 function WBP_BattlePass_Main_C:RealSwitchTab(Info, ...)
   local TabId = Info.TabId
   if Info.GetTabId then
     TabId = Info:GetTabId()
   end
   local Widget = self.TabId2Widget[TabId]
-  if self.CurTabId == TabId then
+  if BattlePassController:GetModelData("CurTabId") == TabId then
     self.CurWidget:SetFocus()
     return self.CurWidget
   end
-  self.CurTabId = TabId
   if self.CurWidget then
     if self.CurWidget == Widget then
       self.CurWidget:SwitchState(TabId, ...)
@@ -293,9 +276,9 @@ function WBP_BattlePass_Main_C:RealSwitchTab(Info, ...)
     self.CurWidget:SwitchIn(TabId, ...)
   end
   self.CurWidget:SetFocus()
+  BattlePassController:SetModelData("CurTabId", TabId)
   return self.CurWidget
 end
-
 function WBP_BattlePass_Main_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -305,7 +288,6 @@ function WBP_BattlePass_Main_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEve
   end
   return IsEventHandled
 end
-
 function WBP_BattlePass_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -333,7 +315,6 @@ function WBP_BattlePass_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_BattlePass_Main_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -350,25 +331,22 @@ function WBP_BattlePass_Main_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_BattlePass_Main_C:OnReturnKeyDown()
   UIUtils.PlayCommonBtnSe(self)
   self:OnClickBack()
 end
-
 function WBP_BattlePass_Main_C:OnClickBack()
   if self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayOutAnim()
 end
-
 function WBP_BattlePass_Main_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   AudioManager(self):SetEventSoundParam(self, "SystemOpenSound", {ToEnd = 1})
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:BindToAnimationFinished(self.Out, {
     self,
     self.Close
@@ -378,10 +356,8 @@ function WBP_BattlePass_Main_C:PlayOutAnim()
   self.CurWidget:PlayAnimationForward(self.CurWidget.Out)
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_BattlePass_Main_C:ShowIntro()
 end
-
 function WBP_BattlePass_Main_C:TryDecreaceBattlePassNewVisionReddot()
   if not ReddotManager.GetTreeNode("BattlePassNewVision") then
     ReddotManager.AddNode("BattlePassNewVision")
@@ -391,59 +367,48 @@ function WBP_BattlePass_Main_C:TryDecreaceBattlePassNewVisionReddot()
     ReddotManager.DecreaseLeafNodeCount("BattlePassNewVision", Node.Count)
   end
 end
-
 function WBP_BattlePass_Main_C:BP_GetDesiredFocusTarget()
   return self.CurWidget
 end
-
 function WBP_BattlePass_Main_C:Close()
   self:RemoveReddotListener()
   self.Super.Close(self)
 end
-
 function WBP_BattlePass_Main_C:SetPreviewActor()
-  local Avatar = GWorld:GetAvatar()
+  local Avatar = BattlePassController:GetAvatar()
   if Avatar then
     local CharId = Avatar.Chars[Avatar.CurrentChar].CharId
     local SkinId = Avatar.Chars[Avatar.CurrentChar]:GetAppearance().SkinId
-    local BattlePassId = Avatar.BattlePassVersion
-    local BattlePassInfo = DataMgr.BattlePassMain[BattlePassId]
-    self.BPRewardTyppe = BattlePassInfo.BPRewardTyppe
-    self.TargetSkinId = nil
-    self.AccessoryId = nil
-    local GetCurrentCharAccessory = false
-    if self.BPRewardTyppe == "Skin" then
+    if BattlePassController:GetModelData("BPRewardTyppe") == "Skin" then
       local SkinInfo = DataMgr.Skin
       for SkinId, Info in pairs(SkinInfo) do
-        if Info.SkinSeries == BattlePassInfo.PreviewSkinSeries then
+        if Info.SkinSeries == BattlePassController:GetModelData("BattlePassInfo").PreviewSkinSeries then
           if Info.CharId == CharId then
             GetCurrentCharAccessory = true
-            self.TargetSkinId = SkinId
+            BattlePassController:SetModelData("TargetSkinId", SkinId)
             break
-          elseif not self.TargetSkinId or SkinId < self.TargetSkinId then
-            self.TargetSkinId = SkinId
+          elseif not BattlePassController:GetModelData("TargetSkinId") or SkinId < BattlePassController:GetModelData("TargetSkinId") then
+            BattlePassController:SetModelData("TargetSkinId", SkinId)
           end
         end
       end
-      self.TargetSkinId = self.TargetSkinId or SkinId
-      self.BattlePass_Book:InitSkinOrAccessoryInfo(self.BPRewardTyppe, self.TargetSkinId)
-    elseif self.BPRewardTyppe == "Accessory" then
+      self.BattlePass_Book:InitSkinOrAccessoryInfo()
+    elseif BattlePassController:GetModelData("BPRewardTyppe") == "Accessory" then
       GetCurrentCharAccessory = true
-      self.TargetSkinId = SkinId
-      self.AccessoryId = BattlePassInfo.AccessoryId
-      self.BattlePass_Book:InitSkinOrAccessoryInfo(self.BPRewardTyppe, self.AccessoryId)
+      BattlePassController:SetModelData("AccessoryId", BattlePassController:GetModelData("BattlePassInfo").AccessoryId)
+      self.BattlePass_Book:InitSkinOrAccessoryInfo()
     else
       GetCurrentCharAccessory = true
-      self.TargetSkinId = SkinId
+      BattlePassController:SetModelData("TargetSkinId", SkinId)
     end
     local Params = {
       Type = "Char",
-      SkinId = self.TargetSkinId,
+      SkinId = BattlePassController:GetModelData("TargetSkinId"),
       EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
       SystemType = "BattlePass",
       ViewUI = self
     }
-    local TempSkyBoxColor = BattlePassInfo.SkyBoxColor
+    local TempSkyBoxColor = BattlePassController:GetModelData("BattlePassInfo").SkyBoxColor
     if TempSkyBoxColor then
       local SkyBoxColor = {}
       SkyBoxColor.ColorCurve = TempSkyBoxColor.ColorCurve
@@ -467,176 +432,177 @@ function WBP_BattlePass_Main_C:SetPreviewActor()
         Params.Accessory[k] = v
       end
     end
-    if self.AccessoryId then
+    if BattlePassController:GetModelData("AccessoryId") then
       if not Params.Accessory then
         Params.Accessory = {}
       end
-      self.AccessoryType = DataMgr.CharAccessory[self.AccessoryId].AccessoryType
-      Params.Accessory[CommonConst.NewCharAccessoryTypes[self.AccessoryType]] = self.AccessoryId
+      self.AccessoryType = DataMgr.CharAccessory[BattlePassController:GetModelData("AccessoryId")].AccessoryType
+      Params.Accessory[CommonConst.NewCharAccessoryTypes[self.AccessoryType]] = BattlePassController:GetModelData("AccessoryId")
     end
     self.Target = self:CreatePreviewTargetData(Params)
     Params.Target = self.Target
-    self.ActorController = self:CreatePreviewActor(Params)
-    self.ActorController:OnOpened()
+    BattlePassController:SetModelData("ActorController", self:CreatePreviewActor(Params))
+    BattlePassController:GetModelData("ActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("ActorController")
     self:HidePlayerFXAccessory(false)
     self:AddRefreshPetTimer()
     self:SetCameraAnim()
   end
 end
-
 function WBP_BattlePass_Main_C:SetCameraAnim()
-  if self.AccessoryId then
-    self.ActorController:SetMontageAndCamera("Char", nil, "Accessory_Reward")
+  if BattlePassController:GetModelData("AccessoryId") then
+    BattlePassController:GetModelData("ActorController"):SetMontageAndCamera("Char", nil, "Accessory_Reward")
   else
-    self.ActorController:SetMontageAndCamera("Char", nil, "Skin_Reward")
+    BattlePassController:GetModelData("ActorController"):SetMontageAndCamera("Char", nil, "Skin_Reward")
   end
 end
-
 function WBP_BattlePass_Main_C:AddRefreshPetTimer()
-  if not self:IsExistTimer("RefreshPetTimer") and self.ActorController then
-    local Avatar = GWorld:GetAvatar()
+  if not self:IsExistTimer("RefreshPetTimer") and BattlePassController:GetModelData("ActorController") then
+    local Avatar = BattlePassController:GetAvatar()
     if Avatar then
-      self.BattlePassId = Avatar.BattlePassVersion
-      self.BattlePassInfo = DataMgr.BattlePassMain[self.BattlePassId]
-      self.PetLength = #self.BattlePassInfo.PetId
+      self.PetLength = #BattlePassController:GetModelData("BattlePassInfo").PetId
       self.PetIndex = CommonUtils:RandomInt(1, self.PetLength)
       self.PetParams = {
         Location = self.PetLocation
       }
       self:AddTimer(0.1, function()
         self:RealAddRefreshPetTimer()
-      end, false, 0, nil, true)
+      end, false, 0, "PreRefreshPetTimer", true)
     end
   end
 end
-
 function WBP_BattlePass_Main_C:RealAddRefreshPetTimer()
   if self.PetParams then
-    self.ActorController:ChangePetModel({
-      PetId = self.BattlePassInfo.PetId[self.PetIndex],
+    BattlePassController:GetModelData("ActorController"):ChangePetModel({
+      PetId = BattlePassController:GetModelData("BattlePassInfo").PetId[self.PetIndex],
       Type = "BattlePass"
     }, nil, self.PetParams)
     self:AddTimer(15, function()
       self.PetIndex = self.PetIndex % self.PetLength + 1
-      self.ActorController:ChangePetModel({
-        PetId = self.BattlePassInfo.PetId[self.PetIndex],
+      BattlePassController:GetModelData("ActorController"):ChangePetModel({
+        PetId = BattlePassController:GetModelData("BattlePassInfo").PetId[self.PetIndex],
         Type = "BattlePass"
       }, nil, self.PetParams)
     end, true, 0, "RefreshPetTimer", true)
   end
 end
-
 function WBP_BattlePass_Main_C:RemoveRefreshPetTimer()
+  self:RemoveTimer("PreRefreshPetTimer")
   self:RemoveTimer("RefreshPetTimer")
-  if self.ActorController then
-    self.ActorController:DestroyPetEffectCreature()
+  if BattlePassController:GetModelData("ActorController") then
+    BattlePassController:GetModelData("ActorController"):DestroyPetEffectCreature()
   end
 end
-
-function WBP_BattlePass_Main_C:HidePlayerActor(Tag, IsHidden)
-  if not self.ActorController then
+function WBP_BattlePass_Main_C:ChangePetActor(PetInfo)
+  if not BattlePassController:GetModelData("ActorController") then
     return
   end
-  self.ActorController:HidePlayerActor(Tag, IsHidden)
+  BattlePassController:GetModelData("ActorController"):ChangePetModel(PetInfo, nil, {
+    Rotation = FRotator(0, -10, 0),
+    Location = FVector(0, 0, -40),
+    Scale = FVector(2.68, 2.68, 2.68)
+  })
 end
-
+function WBP_BattlePass_Main_C:HidePlayerActor(Tag, IsHidden)
+  if not BattlePassController:GetModelData("ActorController") then
+    return
+  end
+  BattlePassController:GetModelData("ActorController"):HidePlayerActor(Tag, IsHidden)
+end
 function WBP_BattlePass_Main_C:HidePetActor(Tag, IsHidden)
-  if self.ActorController and self.ActorController.EffectCreature then
-    self.ActorController.EffectCreature:SetActorHiddenInGame(IsHidden)
+  if BattlePassController:GetModelData("ActorController") and BattlePassController:GetModelData("ActorController").EffectCreature then
+    BattlePassController:GetModelData("ActorController").EffectCreature:SetActorHiddenInGame(IsHidden)
   end
 end
-
 function WBP_BattlePass_Main_C:HidePlayerFXAccessory(IsHidden)
   if self.AccessoryType and self.AccessoryType == CommonConst.CharAccessoryTypes.FX_Footprint then
     if IsHidden then
-      self.ActorController:StopPlayerFX()
+      BattlePassController:GetModelData("ActorController"):StopPlayerFX()
     else
       local Appearance = self.Target:GetAppearance()
       local AccessoryId = Appearance.Accessory[CommonConst.NewCharAccessoryTypes.FX_Footprint]
-      self.ActorController:StopPlayerFX()
-      self.ActorController:ShowPlayerFXAccessory(AccessoryId, CommonConst.CharAccessoryTypes.FX_Footprint)
+      BattlePassController:GetModelData("ActorController"):StopPlayerFX()
+      BattlePassController:GetModelData("ActorController"):ShowPlayerFXAccessory(AccessoryId, CommonConst.CharAccessoryTypes.FX_Footprint)
     end
   end
 end
-
 function WBP_BattlePass_Main_C:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function WBP_BattlePass_Main_C:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function WBP_BattlePass_Main_C:OnMouseMove(MyGeometry, MouseEvent)
   return self:OnPointerMove(MyGeometry, MouseEvent)
 end
-
 function WBP_BattlePass_Main_C:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
 function WBP_BattlePass_Main_C:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnPointerMove(MyGeometry, InTouchEvent)
 end
-
 function WBP_BattlePass_Main_C:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function WBP_BattlePass_Main_C:OnBackgroundClicked()
   if self.bSelfHidden then
     self:OnHideUIKeyDown()
   end
 end
-
 function WBP_BattlePass_Main_C:JumpToDetail()
-  if self.BPRewardTyppe == "Skin" and self.TargetSkinId then
-    UIManager(self):LoadUINew("CharSkinPreview", self.ActorController, {
+  if BattlePassController:GetModelData("BPRewardTyppe") == "Skin" and BattlePassController:GetModelData("TargetSkinId") then
+    UIManager(self):LoadUINew("CharSkinPreview", {
       Type = "BattlePassPreview",
-      SkinId = self.TargetSkinId
+      SkinId = BattlePassController:GetModelData("TargetSkinId")
     })
-  elseif self.BPRewardTyppe == "Accessory" and self.AccessoryId then
-    self:RemoveRefreshPetTimer()
+  elseif BattlePassController:GetModelData("BPRewardTyppe") == "Accessory" and BattlePassController:GetModelData("AccessoryId") then
     UIManager(self):LoadUINew("ArmorySkin", {
       Type = "Char",
-      AccessoryId = self.AccessoryId
+      AccessoryId = BattlePassController:GetModelData("AccessoryId")
     })
   end
 end
-
 function WBP_BattlePass_Main_C:ReceiveEnterState(StackAction)
   WBP_BattlePass_Main_C.Super.ReceiveEnterState(self, StackAction)
-  if self.CurTabId == "BattlePassReward" or self.CurTabId == "BattlePassMission" then
+  if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" or BattlePassController:GetModelData("CurTabId") == "BattlePassMission" then
     self:AddRefreshPetTimer()
-  elseif self.CurTabId == "BattlePassPetSelection" then
+  elseif BattlePassController:GetModelData("CurTabId") == "BattlePassPetSelection" then
     self:HidePlayerActor("PetSelection", true)
     self:HidePetActor("PetSelection", true)
     self:HidePlayerFXAccessory(true)
+    if self.CurSelectPetId then
+      self:ChangePetActor({
+        Type = "BattlePass",
+        PetId = self.CurSelectPetId
+      })
+    end
   end
 end
-
+function WBP_BattlePass_Main_C:ReceiveExitState(StackAction)
+  WBP_BattlePass_Main_C.Super.ReceiveExitState(self, StackAction)
+  self:RemoveRefreshPetTimer()
+end
 function WBP_BattlePass_Main_C:PageTurnerToNext()
-  if not self.InCold then
-    self.InCold = true
+  if not BattlePassController:GetModelData("InCold") then
+    BattlePassController:SetModelData("InCold", true)
     self:AddTimer(1, function()
-      self.InCold = false
+      BattlePassController:SetModelData("InCold", false)
     end, false, 0, nil, true)
     local NewPetIndex = self.PetIndex % self.PetLength + 1
     self.PetIndex = NewPetIndex
     self:RemoveTimer("RefreshPetTimer")
-    self.ActorController:ChangePetModel({
-      PetId = self.BattlePassInfo.PetId[self.PetIndex],
+    BattlePassController:GetModelData("ActorController"):ChangePetModel({
+      PetId = BattlePassController:GetModelData("BattlePassInfo").PetId[self.PetIndex],
       Type = "BattlePass"
     }, nil, self.PetParams)
     self:RealAddRefreshPetTimer()
   end
 end
-
 function WBP_BattlePass_Main_C:PageTurnerToPrevious()
-  if not self.InCold then
-    self.InCold = true
+  if not BattlePassController:GetModelData("InCold") then
+    BattlePassController:SetModelData("InCold", true)
     self:AddTimer(1, function()
-      self.InCold = false
+      BattlePassController:SetModelData("InCold", false)
     end, false, 0, nil, true)
     local NewPetIndex = (self.PetIndex - 1) % self.PetLength
     if 0 == NewPetIndex then
@@ -644,21 +610,18 @@ function WBP_BattlePass_Main_C:PageTurnerToPrevious()
     end
     self.PetIndex = NewPetIndex
     self:RemoveTimer("RefreshPetTimer")
-    self.ActorController:ChangePetModel({
-      PetId = self.BattlePassInfo.PetId[self.PetIndex],
+    BattlePassController:GetModelData("ActorController"):ChangePetModel({
+      PetId = BattlePassController:GetModelData("BattlePassInfo").PetId[self.PetIndex],
       Type = "BattlePass"
     }, nil, self.PetParams)
     self:RealAddRefreshPetTimer()
   end
 end
-
 function WBP_BattlePass_Main_C:OnBattlePassPurchaseClose()
   self:SetCameraAnim()
 end
-
 function WBP_BattlePass_Main_C:OnBattlePassSkinClose()
   self:SetCameraAnim()
 end
-
 AssembleComponents(WBP_BattlePass_Main_C)
 return WBP_BattlePass_Main_C

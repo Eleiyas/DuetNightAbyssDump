@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OpenPanel(bIsUnlock)
   if self:IsPanelOpened() then
     return
@@ -17,7 +16,6 @@ function M:OpenPanel(bIsUnlock)
     self:PlayAnimation(self.Normal_In)
   end
 end
-
 function M:ClosePanel()
   if not self:IsPanelOpened() then
     return
@@ -26,11 +24,9 @@ function M:ClosePanel()
   self:StopAllAnimations()
   self:PlayAnimation(self.Out)
 end
-
 function M:IsPanelOpened()
   return self.bIsOpened
 end
-
 function M:SetMemory(MemoryName, MemoryDescription, MemoryIconPath)
   self.MemoryName = MemoryName
   self.MemoryDescription = MemoryDescription
@@ -44,7 +40,6 @@ function M:SetMemory(MemoryName, MemoryDescription, MemoryIconPath)
   self.Bg:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Icon_Badge:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:SetEmpty()
   self.MemoryName = nil
   self.MemoryDescription = nil
@@ -53,17 +48,14 @@ function M:SetEmpty()
   self.Bg:SetVisibility(ESlateVisibility.Collapsed)
   self.Icon_Badge:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:BindOnDisplayMemory(OnDisplayMemory)
   self.OnDisplayMemory = OnDisplayMemory
 end
-
 function M:ExecuteOnDisplayMemory(MemoryName, MemoryDescription, MemoryIconPath)
   if self.OnDisplayMemory then
     self.OnDisplayMemory(MemoryName, MemoryDescription, MemoryIconPath)
   end
 end
-
 function M:Initialize(Initializer)
   self.bIsOpened = true
   self.MemoryName = nil
@@ -71,7 +63,6 @@ function M:Initialize(Initializer)
   self.MemoryIconPath = nil
   self.BadgeUnlockSound = "event:/ui/common/invite_char_unlock"
 end
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.HandleOnButtonClicked)
   self:BindToAnimationFinished(self.In, {
@@ -83,7 +74,6 @@ function M:Construct()
     self.HandleOnOutAnimationFinished
   })
 end
-
 function M:Destruct()
   self.Btn_Click.OnClicked:Remove(self, self.HandleOnButtonClicked)
   self:UnbindFromAnimationFinished(self.In, {
@@ -95,19 +85,15 @@ function M:Destruct()
     self.HandleOnOutAnimationFinished
   })
 end
-
 function M:HandleOnInAnimationFinished()
 end
-
 function M:HandleOnOutAnimationFinished()
   self:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:HandleOnButtonClicked()
   if not self.MemoryIconPath then
     return
   end
   self:ExecuteOnDisplayMemory(self.MemoryName, self.MemoryDescription, self.MemoryIconPath)
 end
-
 return M

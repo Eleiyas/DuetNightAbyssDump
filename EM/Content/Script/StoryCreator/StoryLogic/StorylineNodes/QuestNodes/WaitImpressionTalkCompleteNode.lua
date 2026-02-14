@@ -1,18 +1,14 @@
 local WaitImpressionTalkCompleteNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function WaitImpressionTalkCompleteNode:Init()
   self.ImpressionTalkTriggerId = nil
   self.bShowGuide = nil
   self.NPCStaticCreaterName = nil
   self.GuideType = ""
-  self.GuideStaticCreatorId = 0
   self.QuestHintId = 0
   self.QuestType = "NpcNode"
   self.ListenInterval = 0.5
 end
-
 function WaitImpressionTalkCompleteNode:Execute(Callback)
-  self.NpcId = self.GuideStaticCreatorId
   if self.bShowGuide then
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
   end
@@ -27,7 +23,6 @@ function WaitImpressionTalkCompleteNode:Execute(Callback)
     end
   end, true)
 end
-
 function WaitImpressionTalkCompleteNode:Clear()
   if self.ListenTimer then
     GWorld.GameInstance:RemoveTimer(self.ListenTimer)
@@ -38,5 +33,4 @@ function WaitImpressionTalkCompleteNode:Clear()
   end
   GWorld.StoryMgr:UnRegisterWaitTalkCompleted(self.ImpressionTalkTriggerId)
 end
-
 return WaitImpressionTalkCompleteNode

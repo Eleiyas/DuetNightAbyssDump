@@ -1,21 +1,16 @@
 require("UnLua")
 local G = Class("BluePrints.UI.BP_UIState_C")
-
 function G:Construct()
   self.Btn_Back:SetText(GText("UI_BACK"))
   self.Btn_Back:BindEventOnClicked(self, self.PlayOutAnim)
-  
   function self.Btn_Back.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   end
-  
   self.Btn_Again:SetText(GText("UI_GACHA_AGAIN"))
   self.Btn_Again:BindEventOnClicked(self, self.OnClickGachaAgain)
-  
   function self.Btn_Again.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   end
-  
   self.Text_ExtrasTitle:SetText(GText("GACHA_BONUS"))
   if not UIUtils.IsMobileInput() then
     self.KeyImg_GamePad:CreateGamepadKey(UIConst.GamePadImgKey.RightThumb)
@@ -47,7 +42,6 @@ function G:Construct()
   end
   self.Btn_Share:BindEventOnClicked(self, self.OnBtnShareClicked)
 end
-
 function G:Init(Parent, Result, IsSingleGacha)
   self.Parent = Parent
   self.Parent.CantClick = true
@@ -78,7 +72,6 @@ function G:Init(Parent, Result, IsSingleGacha)
   self:RefreshGachaTentimesBtn()
   self:RefreshGachaTentimesUI()
 end
-
 function G:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
   if UIUtils.IsMobileInput() then
     return
@@ -92,7 +85,6 @@ function G:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function G:InitGamepadView()
   self:SetFocus()
   if self.CanFocusChangeItem then
@@ -109,7 +101,6 @@ function G:InitGamepadView()
   self.Key_GamePad02:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Btn_Again.Img_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function G:InitKeyboardView()
   if UIUtils.IsMobileInput() then
     return
@@ -120,7 +111,6 @@ function G:InitKeyboardView()
   self.Btn_Again.Img_GamePad:SetVisibility(ESlateVisibility.Collapsed)
   self.Key_GamePad03:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function G:OnKeyDown(MyGeometry, InKeyEvent)
   if self.CantClick == true then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -161,7 +151,6 @@ function G:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function G:GamePadFocusChangeItem()
   if self.CanFocusChangeItem then
     for Index = 1, CommonConst.GachaTenResults do
@@ -176,7 +165,6 @@ function G:GamePadFocusChangeItem()
     end
   end
 end
-
 function G:RefreshAllGamePad(IsShow)
   if IsShow then
     if self.CanFocusChangeItem then
@@ -200,7 +188,6 @@ function G:RefreshAllGamePad(IsShow)
     self.Btn_Again.Img_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function G:RefreshGachaTentimesBtn()
   if self.Parent == nil then
     return
@@ -218,7 +205,6 @@ function G:RefreshGachaTentimesBtn()
     self.Group_TenTimes:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function G:AddResourceReturn(Type, Rarity, IsUp, IsNew)
   local GachaRebateInfo = DataMgr.GachaRebate[Type][Rarity]
   if "Char" == Type and IsNew then
@@ -245,7 +231,6 @@ function G:AddResourceReturn(Type, Rarity, IsUp, IsNew)
     end
   end
 end
-
 function G:RefreshResourceBar(GachaResourceId)
   local ResourceData = {
     CommonConst.Coins.Coin4,
@@ -266,11 +251,10 @@ function G:RefreshResourceBar(GachaResourceId)
       ItemType = "Resource",
       HandleMouseDown = true
     })
-    ResourceBarWidget:SetResourceId(CoinId)
+    ResourceBarWidget:SetItemId(CoinId)
     self.HB_ResourceBar:AddChild(ResourceBarWidget)
   end
 end
-
 function G:RefreshGachaTentimesUI()
   table.sort(self.ResultData, function(a, b)
     if a.Rarity ~= b.Rarity then
@@ -286,7 +270,6 @@ function G:RefreshGachaTentimesUI()
   self.HB_Item2:SetVisibility(UE4.ESlateVisibility.Collapsed)
   local Index = 0
   self.CanFocusChangeItem = false
-  
   local function ShowRes()
     Index = Index + 1
     local Info = self.ResultData[Index]
@@ -334,16 +317,13 @@ function G:RefreshGachaTentimesUI()
       self:RemoveTimer("ShowRes")
     end
   end
-  
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_ten_times_show", nil, nil)
   self:AddTimer(self.FrameLoadTime, ShowRes, true, 0, "ShowRes", true)
 end
-
 function G:OnClickGachaAgain()
   self.Parent.OpenUI = "GachaTen"
   self.Parent:TryGacha(self.IsSingleGacha)
 end
-
 function G:OnBtnShareClicked()
   self.HB_Btn:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.Key_GamePad01 then
@@ -354,7 +334,6 @@ function G:OnBtnShareClicked()
   self.Parent:TakeGachaScreenShot(self, self.OnShareCallback)
   self.CantClick = true
 end
-
 function G:OnShareCallback()
   self:SetFocus()
   self.CantClick = false
@@ -367,7 +346,6 @@ function G:OnShareCallback()
   local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
   GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
 end
-
 function G:OnClickBtnClose()
   self.Parent.CantClick = false
   self.Parent.OpenUI = "GachaMain"
@@ -376,7 +354,6 @@ function G:OnClickBtnClose()
   AudioManager(self):SetEventSoundParam(self.Parent, "GachaAnime", {state = 2})
   AudioManager(self):SetEventSoundParam(self.Parent, "GachaAmb", {ToEnd = 1})
 end
-
 function G:PlayInAnim()
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:PlayAnimation(self.In)
@@ -387,7 +364,6 @@ function G:PlayInAnim()
     self.PlayInAnimFinished
   })
 end
-
 function G:PlayInAnimFinished()
   self.CantClick = false
   self:SetFocus()
@@ -397,7 +373,6 @@ function G:PlayInAnimFinished()
     self.Group_Share:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function G:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -411,7 +386,6 @@ function G:PlayOutAnim()
     self.OnClickBtnClose
   })
 end
-
 function G:Destruct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -419,5 +393,4 @@ function G:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshInfoByInputTypeChange)
   end
 end
-
 return G

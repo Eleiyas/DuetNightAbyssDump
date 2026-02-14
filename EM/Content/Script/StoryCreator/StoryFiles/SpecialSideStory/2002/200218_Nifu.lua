@@ -20,7 +20,7 @@ return {
       isStoryNode = true,
       key = "17211004733728410",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1123.1804552946198, y = 281.5639696444951},
       propsData = {
         QuestId = 20021801,
@@ -44,8 +44,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101103,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_200218510060Nifu_1240252"
+        StoryGuidePointName = "Npc_200218510060Nifu_1240252",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -87,7 +89,7 @@ return {
           ["1721369054352566724"] = {
             key = "1721369054352566724",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1878.142857142857, y = 293.49999999999983},
             propsData = {
               IsNpcNode = true,
@@ -112,6 +114,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -119,6 +122,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -141,15 +145,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700133}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }

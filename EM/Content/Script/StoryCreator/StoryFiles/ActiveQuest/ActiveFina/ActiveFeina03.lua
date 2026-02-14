@@ -40,7 +40,7 @@ return {
     },
     {
       startStory = "174989913535119895521",
-      startPort = "\230\156\170\229\174\140\230\136\144\229\137\175\230\156\172",
+      startPort = "未完成副本",
       endStory = "17574009019471868619",
       endPort = "In"
     },
@@ -52,7 +52,7 @@ return {
     },
     {
       startStory = "174989913535119895521",
-      startPort = "\229\174\140\230\136\144\229\137\175\230\156\172",
+      startPort = "完成副本",
       endStory = "17594821002364058363",
       endPort = "In"
     },
@@ -94,7 +94,7 @@ return {
       isStoryNode = true,
       key = "17478992314544455113",
       type = "StoryNode",
-      name = "\228\187\142\229\186\138\228\184\138\233\134\146\230\157\165",
+      name = "从床上醒来",
       pos = {x = 1251.2105682563404, y = 102.8043326642398},
       propsData = {
         QuestId = 12011301,
@@ -118,8 +118,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101105,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
         StoryGuidePointName = "TargetPoint_LeaveOutsidersHome",
+        JumpId = 0,
         QuestUIId = 120113
       },
       questNodeData = {
@@ -216,14 +218,14 @@ return {
           ["17546423067098783639"] = {
             key = "17546423067098783639",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 1616.0317262121, y = 560.7319257830227},
             propsData = {SpecialConfigId = 2064, BlackScreenImmediately = false}
           },
           ["17546423170928783817"] = {
             key = "17546423170928783817",
             type = "SkipRegionNode",
-            name = "\232\183\168\229\140\186\229\159\159\228\188\160\233\128\129\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174",
+            name = "跨区域传送设置玩家位置",
             pos = {x = 2052.6813590792176, y = 548.4941035275066},
             propsData = {
               ModeType = 1,
@@ -235,7 +237,7 @@ return {
           ["17554977830881944"] = {
             key = "17554977830881944",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 1250.9908946722219, y = 401.061668207953},
             propsData = {
               VarName = "FeinaDay03Home",
@@ -245,7 +247,7 @@ return {
           ["17554977830881945"] = {
             key = "17554977830881945",
             type = "ExecuteBlueprintFunctionCheckVarNode",
-            name = "\230\152\175\229\144\166\229\156\168\233\152\182\230\174\1811",
+            name = "是否在阶段1",
             pos = {x = 966.9172671476658, y = 567.6096558240521},
             propsData = {
               FunctionName = "Equal",
@@ -259,7 +261,7 @@ return {
           ["175751579289313389149"] = {
             key = "175751579289313389149",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1332.1749059763765, y = 850.9333974848676},
             propsData = {
               bActiveEnable = true,
@@ -276,7 +278,7 @@ return {
           ["175751579289313389150"] = {
             key = "175751579289313389150",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1240.1749059763765, y = 698.4333974848676},
             propsData = {
               ActiveEnable = true,
@@ -290,7 +292,7 @@ return {
           ["175751579289313389151"] = {
             key = "175751579289313389151",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1468.1749059763765, y = 1023.4333974848677},
             propsData = {
               ActiveEnable = false,
@@ -309,7 +311,7 @@ return {
       isStoryNode = true,
       key = "17478992314544455114",
       type = "StoryNode",
-      name = "\229\136\176\229\174\182",
+      name = "到家",
       pos = {x = 1692.6977581005908, y = 492.1421353669674},
       propsData = {
         QuestId = 12011305,
@@ -333,8 +335,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101105,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome"
+        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -424,14 +428,14 @@ return {
           ["17548802570405835"] = {
             key = "17548802570405835",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 1376, y = 342},
             propsData = {SpecialConfigId = 2067, BlackScreenImmediately = true}
           },
           ["17555009492176411947"] = {
             key = "17555009492176411947",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 1115.9320711428102, y = 155.59107997265886},
             propsData = {
               VarName = "FeinaDay03HomeBook",
@@ -441,7 +445,7 @@ return {
           ["17555009492176411948"] = {
             key = "17555009492176411948",
             type = "ExecuteBlueprintFunctionCheckVarNode",
-            name = "\230\152\175\229\144\166\229\156\168\233\152\182\230\174\1811",
+            name = "是否在阶段1",
             pos = {x = 777.1525612653129, y = 351.43318523581684},
             propsData = {
               FunctionName = "Equal",
@@ -455,7 +459,7 @@ return {
           ["175751597439016170493"] = {
             key = "175751597439016170493",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1104, y = 645.9999999999999},
             propsData = {
               bActiveEnable = true,
@@ -472,7 +476,7 @@ return {
           ["175751597439016170494"] = {
             key = "175751597439016170494",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1012, y = 493.4999999999999},
             propsData = {
               ActiveEnable = true,
@@ -486,7 +490,7 @@ return {
           ["175751597439016170495"] = {
             key = "175751597439016170495",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1240, y = 818.5},
             propsData = {
               ActiveEnable = false,
@@ -505,7 +509,7 @@ return {
       isStoryNode = true,
       key = "174989684948119879695",
       type = "StoryNode",
-      name = "\229\137\141\229\190\128\229\185\191\229\156\186",
+      name = "前往广场",
       pos = {x = 969.7663299430559, y = 504.04252009333675},
       propsData = {
         QuestId = 12011302,
@@ -529,8 +533,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "TargetPoint_OutSiderHome"
+        StoryGuidePointName = "TargetPoint_OutSiderHome",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -638,7 +644,7 @@ return {
           ["174989708393019882039"] = {
             key = "174989708393019882039",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = 2027.2107279693487, y = -155.70114942528733},
             propsData = {
               GuideUIEnable = true,
@@ -650,14 +656,14 @@ return {
           ["175464541326710576765"] = {
             key = "175464541326710576765",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 1436.313107933805, y = 297.42162689135785},
             propsData = {SpecialConfigId = 2065, BlackScreenImmediately = true}
           },
           ["1755497832930915162"] = {
             key = "1755497832930915162",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 1176.3897549387486, y = -68.40892002734114},
             propsData = {
               VarName = "FeinaDay03Walk",
@@ -667,7 +673,7 @@ return {
           ["1755497832930915163"] = {
             key = "1755497832930915163",
             type = "ExecuteBlueprintFunctionCheckVarNode",
-            name = "\230\152\175\229\144\166\229\156\168\233\152\182\230\174\1811",
+            name = "是否在阶段1",
             pos = {x = 891.6102450612514, y = 301.43318523581684},
             propsData = {
               FunctionName = "Equal",
@@ -681,7 +687,7 @@ return {
           ["17555004132505494294"] = {
             key = "17555004132505494294",
             type = "TalkNode",
-            name = "\227\128\144fx19\227\128\145\229\141\161\231\143\138\229\190\183\230\139\137",
+            name = "【fx19】卡珊德拉",
             pos = {x = 1803.584467344292, y = 282.9888159628275},
             propsData = {
               IsNpcNode = false,
@@ -700,6 +706,7 @@ return {
               HideNpcs = true,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -707,6 +714,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -734,16 +742,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 211012},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 100001}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -751,7 +755,7 @@ return {
           ["17555004132505494295"] = {
             key = "17555004132505494295",
             type = "TalkNode",
-            name = "\227\128\144fx20\227\128\145\229\141\161\231\143\138\229\190\183\230\139\137",
+            name = "【fx20】卡珊德拉",
             pos = {x = 2106.5217661117763, y = 282.6607931495482},
             propsData = {
               IsNpcNode = false,
@@ -769,6 +773,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -776,6 +781,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -803,16 +809,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 211012},
-                {TalkActorType = "Npc", TalkActorId = 100001}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -820,7 +822,7 @@ return {
           ["17555004132505494296"] = {
             key = "17555004132505494296",
             type = "TalkNode",
-            name = "\227\128\144fx21\227\128\145\229\146\140\229\165\179\228\184\187\229\175\185\232\175\157",
+            name = "【fx21】和女主对话",
             pos = {x = 2420.415532655708, y = 279.3392068504518},
             propsData = {
               IsNpcNode = false,
@@ -839,6 +841,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -846,6 +849,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -868,15 +872,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 100001}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -884,7 +885,7 @@ return {
           ["175751585673814316869"] = {
             key = "175751585673814316869",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1218.6401098901101, y = 580.8873626373625},
             propsData = {
               bActiveEnable = true,
@@ -901,7 +902,7 @@ return {
           ["175751585673814316870"] = {
             key = "175751585673814316870",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1136.4478021978025, y = 430.8104395604394},
             propsData = {
               ActiveEnable = true,
@@ -915,7 +916,7 @@ return {
           ["175751585673814316871"] = {
             key = "175751585673814316871",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1300.2664835164837, y = 743.1895604395604},
             propsData = {
               ActiveEnable = false,
@@ -934,7 +935,7 @@ return {
       isStoryNode = true,
       key = "174989854290319887292",
       type = "StoryNode",
-      name = "\229\175\187\230\137\190\229\141\161\231\143\138\229\190\183\230\139\137",
+      name = "寻找卡珊德拉",
       pos = {x = 1254.5708838478834, y = 500.1572722326375},
       propsData = {
         QuestId = 12011303,
@@ -950,7 +951,7 @@ return {
         bIsStartChapter = false,
         bIsEndChapter = false,
         bIsShowOnComplete = true,
-        bIsPlayBlackScreenOnComplete = false,
+        bIsPlayBlackScreenOnComplete = true,
         bIsPlayBlackScreenOnFail = false,
         bIsDynamicEvent = false,
         ResurgencePoint = "",
@@ -958,8 +959,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "Mechanism_SQTrigger_Feina03_1191881"
+        StoryGuidePointName = "Mechanism_SQTrigger_Feina03_1191881",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -994,18 +997,6 @@ return {
             endPort = "In"
           },
           {
-            startQuest = "175465027532214151370",
-            startPort = "Success",
-            endQuest = "175465127188215046191",
-            endPort = "In"
-          },
-          {
-            startQuest = "175465127188215046191",
-            startPort = "Out",
-            endQuest = "174989854290319887296",
-            endPort = "Success"
-          },
-          {
             startQuest = "175751590760115243615",
             startPort = "Out",
             endQuest = "175751590760115243614",
@@ -1028,6 +1019,12 @@ return {
             startPort = "Out",
             endQuest = "175751593264015244212",
             endPort = "In"
+          },
+          {
+            startQuest = "175465027532214151370",
+            startPort = "Success",
+            endQuest = "174989854290319887296",
+            endPort = "Success"
           }
         },
         nodeData = {
@@ -1042,8 +1039,14 @@ return {
             key = "174989854290319887296",
             type = "QuestSuccessNode",
             name = "QuestSuccess",
-            pos = {x = 1279.6635514828856, y = 236.2145012540629},
-            propsData = {ModeType = 0}
+            pos = {x = 991.6635514828856, y = 242.2145012540629},
+            propsData = {
+              ModeType = 1,
+              Id = 101105,
+              StartIndex = 1,
+              LoadingId = 0,
+              IsWhite = false
+            }
           },
           ["174989854290319887299"] = {
             key = "174989854290319887299",
@@ -1055,26 +1058,14 @@ return {
           ["175465027532214151370"] = {
             key = "175465027532214151370",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 590.3753809532508, y = 245.67849649411227},
             propsData = {SpecialConfigId = 2066, BlackScreenImmediately = true}
-          },
-          ["175465127188215046191"] = {
-            key = "175465127188215046191",
-            type = "SkipRegionNode",
-            name = "\228\188\160\233\128\129\229\136\176\229\165\165\229\147\165\229\174\182",
-            pos = {x = 962.4458479785173, y = 234.19290559294595},
-            propsData = {
-              ModeType = 1,
-              Id = 101105,
-              StartIndex = 1,
-              IsWhite = false
-            }
           },
           ["17555004449185495096"] = {
             key = "17555004449185495096",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 258.38975493874864, y = 57.59107997265886},
             propsData = {
               VarName = "FeinaDay03Catch",
@@ -1084,7 +1075,7 @@ return {
           ["17555004449185495097"] = {
             key = "17555004449185495097",
             type = "ExecuteBlueprintFunctionCheckVarNode",
-            name = "\230\152\175\229\144\166\229\156\168\233\152\182\230\174\1811",
+            name = "是否在阶段1",
             pos = {x = 1.6102450612513621, y = 251.43318523581684},
             propsData = {
               FunctionName = "Equal",
@@ -1098,7 +1089,7 @@ return {
           ["175751590760115243614"] = {
             key = "175751590760115243614",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 322.282967032967, y = 553.8873626373626},
             propsData = {
               bActiveEnable = true,
@@ -1115,7 +1106,7 @@ return {
           ["175751590760115243615"] = {
             key = "175751590760115243615",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 240.09065934065939, y = 403.8104395604396},
             propsData = {
               ActiveEnable = true,
@@ -1129,7 +1120,7 @@ return {
           ["175751593264015244212"] = {
             key = "175751593264015244212",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 374, y = 746},
             propsData = {
               ActiveEnable = false,
@@ -1148,7 +1139,7 @@ return {
       isStoryNode = true,
       key = "174989913535119895521",
       type = "StoryNode",
-      name = "\231\173\137\229\190\133\229\174\140\230\136\144",
+      name = "等待完成",
       pos = {x = 1967.7720170486557, y = 473.4375104421699},
       propsData = {
         QuestId = 12011306,
@@ -1172,8 +1163,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101105,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome"
+        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1251,7 +1244,7 @@ return {
           ["17574008761791867642"] = {
             key = "17574008761791867642",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 1551.6977903028599, y = 158.25},
             propsData = {
               VarName = "FeinaDay03UI",
@@ -1261,7 +1254,7 @@ return {
           ["17574008761791867643"] = {
             key = "17574008761791867643",
             type = "ExecuteBlueprintFunctionCheckVarNode",
-            name = "\230\152\175\229\144\166\229\156\168\233\152\182\230\174\1811",
+            name = "是否在阶段1",
             pos = {x = 969.1340698990468, y = 369.75},
             propsData = {
               FunctionName = "Equal",
@@ -1275,7 +1268,7 @@ return {
           ["175755674480122295030"] = {
             key = "175755674480122295030",
             type = "TalkNode",
-            name = "\230\137\147\229\188\128\228\185\166\230\156\172",
+            name = "打开书本",
             pos = {x = 1278.057142857143, y = 370.5},
             propsData = {
               IsNpcNode = false,
@@ -1292,8 +1285,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1305,9 +1300,6 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -1317,16 +1309,18 @@ return {
           ["17594819251404055207"] = {
             key = "17594819251404055207",
             type = "OpenSytstemUINode",
-            name = "\230\137\147\229\188\128\231\149\140\233\157\162\232\138\130\231\130\185",
+            name = "打开界面节点",
             pos = {x = 1567.766666666666, y = 372.05476190476185},
             propsData = {
-              UIName = "ActivityFeinaEventLevelSelect"
+              IsAsync = true,
+              UIName = "ActivityFeinaEventLevelSelect",
+              IsInterfaceJump = false
             }
           },
           ["17594819251404055208"] = {
             key = "17594819251404055208",
             type = "ConditionNode",
-            name = "\230\157\161\228\187\182\232\138\130\231\130\185",
+            name = "条件节点",
             pos = {x = 1567.166666666666, y = 591.945238095238},
             propsData = {ConditionId = 12011306}
           },
@@ -1336,7 +1330,7 @@ return {
             name = "QuestCondition",
             pos = {x = 2144.8333333333335, y = 467.945238095238},
             propsData = {
-              PortName = "\229\174\140\230\136\144\229\137\175\230\156\172"
+              PortName = "完成副本"
             }
           },
           ["17594819251404055210"] = {
@@ -1345,7 +1339,7 @@ return {
             name = "QuestCondition",
             pos = {x = 2143.1666666666665, y = 627.9452380952381},
             propsData = {
-              PortName = "\230\156\170\229\174\140\230\136\144\229\137\175\230\156\172"
+              PortName = "未完成副本"
             }
           }
         },
@@ -1356,7 +1350,7 @@ return {
       isStoryNode = true,
       key = "17574009019471868619",
       type = "GameModeCompleteNode",
-      name = "\229\174\140\230\136\144\231\155\174\230\160\135",
+      name = "完成目标",
       pos = {x = 2256.0353407099783, y = 641.1807970282359},
       propsData = {
         QuestId = 12011307,
@@ -1389,7 +1383,7 @@ return {
       isStoryNode = true,
       key = "175751560775011532562",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 983.2169184370663, y = 103.15490551937647},
       propsData = {
         QuestId = 12011350,
@@ -1413,8 +1407,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101105,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome"
+        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1468,7 +1464,7 @@ return {
           ["175751571806711534438"] = {
             key = "175751571806711534438",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1380, y = 298},
             propsData = {
               bActiveEnable = true,
@@ -1485,7 +1481,7 @@ return {
           ["175751571806711534439"] = {
             key = "175751571806711534439",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1288, y = 145.5},
             propsData = {
               ActiveEnable = true,
@@ -1499,7 +1495,7 @@ return {
           ["175751571806711534440"] = {
             key = "175751571806711534440",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1516, y = 470.5},
             propsData = {
               ActiveEnable = false,
@@ -1518,7 +1514,7 @@ return {
       isStoryNode = true,
       key = "17594821002364058363",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 2589.3698333400343, y = 513.1957148888262},
       propsData = {
         QuestId = 12011308,
@@ -1542,8 +1538,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101105,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome"
+        StoryGuidePointName = "TargetPoint_LeaveOutsidersHome",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1585,7 +1583,7 @@ return {
           ["17594821385884059264"] = {
             key = "17594821385884059264",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1212, y = 296},
             propsData = {WaitTime = 1}
           }

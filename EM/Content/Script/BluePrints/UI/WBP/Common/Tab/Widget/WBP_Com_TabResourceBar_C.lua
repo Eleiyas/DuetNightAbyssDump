@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Add.OnClicked:Add(self, self.OnBtnClicked)
   self.Btn_Item.OnHovered:Add(self, self.OnIconHovered)
@@ -23,33 +22,36 @@ function M:Construct()
   self:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   EventManager:AddEvent(EventID.OnResourcesChanged, self, self.OnResourcesChanged)
+  EventManager:AddEvent(EventID.OnUpdateWalnutItem, self, self.OnUpdateWalnutItem)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self:GetOwningPlayer())
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnResourcesChanged, self)
+  EventManager:RemoveEvent(EventID.OnUpdateWalnutItem, self)
 end
-
 function M:OnResourcesChanged(ResourceId)
-  if self.RId and self.RId == ResourceId then
-    self:RefreshResourceInfo()
+  if self.Id and self.Id == ResourceId and self.ItemType == "Resource" then
+    self:RefreshItemInfo()
   end
 end
-
+function M:OnUpdateWalnutItem()
+  if self.Id and self.ItemType == "Walnut" then
+    self:RefreshItemInfo()
+  end
+end
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamePad = CurInputDevice == ECommonInputType.Gamepad
 end
-
-function M:SetResourceId(ResourceId)
+function M:SetItemId(ItemId, Type)
   self.Panel_Resource:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  self.RId = ResourceId
-  self:RefreshResourceInfo()
+  self.Id = ItemId
+  self.ItemType = Type or "Resource"
+  self:RefreshItemInfo()
 end
-
 function M:SetAddVisibilty(bIsVisible)
   if bIsVisible then
     self.Btn_Add:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -59,7 +61,6 @@ function M:SetAddVisibilty(bIsVisible)
     self.SizeBox_Add:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:ShowBubble(ConfigData)
   self.HudBubbleWidget = UIManager(self):_CreateWidgetNew("CommonHudBubble")
   self.Pos_Bubble:AddChild(self.HudBubbleWidget)
@@ -69,11 +70,11 @@ function M:ShowBubble(ConfigData)
   self.HudBubbleWidget:Init({
     IconPath = ConfigData.IconPath,
     Text = ConfigData.Text,
-    TextColor = ConfigData.TextColor
+    ColorType = ConfigData.ColorType,
+    Arrow = ConfigData.Arrow
   })
   self.HudBubbleWidget:PlayAnimation(self.HudBubbleWidget.In)
 end
-
 function M:HideBubble()
   if IsValid(self.HudBubbleWidget) then
     self.HudBubbleWidget:StopAnimation(self.HudBubbleWidget.In)
@@ -81,11 +82,10 @@ function M:HideBubble()
   end
   self.HudBubbleWidget = nil
 end
-
-function M:RefreshResourceInfo()
-  if self.RId then
+function M:RefreshItemInfo()
+  if self.Id then
     local Avatar = GWorld:GetAvatar()
-    local FormData = DataMgr.CurrencyForm[self.RId]
+    local FormData = DataMgr.CurrencyForm[self.Id]
     if FormData and FormData.IfAdd then
       self.Btn_Add:SetVisibility(UIConst.VisibilityOp.Visible)
       self.SizeBox_Add:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -93,24 +93,32 @@ function M:RefreshResourceInfo()
       self.Btn_Add:SetVisibility(UIConst.VisibilityOp.Collapsed)
       self.SizeBox_Add:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
-    local Data = DataMgr.Resource[self.RId]
+    local Data
+    if self.ItemType == "Walnut" then
+      Data = DataMgr.Walnut[self.Id]
+    else
+      Data = DataMgr.Resource[self.Id]
+    end
     if Avatar and Data then
-      local Resource
-      if self.RId == CommonConst.ActionPoint then
-        Resource = {
+      local Item
+      if self.ItemType == "Walnut" then
+        local Count = Avatar.Walnuts.WalnutBag[self.Id] or 0
+        self.Text_Num:SetText(Count)
+      elseif self.Id == CommonConst.ActionPoint then
+        Item = {
           Count = Avatar.ActionPoint or 0
         }
         if FormData and FormData.IfMax then
           self.WidgetSwitcher_Num:SetActiveWidgetIndex(1)
-          self.Num_AP_Now:SetText(Resource.Count)
+          self.Num_AP_Now:SetText(Item.Count)
           self.Num_AP_Total:SetText(DataMgr.GlobalConstant.CostRecoveryMax.ConstantValue)
         else
           self.WidgetSwitcher_Num:SetActiveWidgetIndex(0)
-          self.Text_Num:SetText(Resource.Count)
+          self.Text_Num:SetText(Item.Count)
         end
       else
-        Resource = Avatar.Resources[self.RId] or {Count = 0}
-        self.Text_Num:SetText(Resource.Count)
+        Item = Avatar.Resources[self.Id] or {Count = 0}
+        self.Text_Num:SetText(Item.Count)
       end
       self.Panel_Resource:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
       return
@@ -119,21 +127,19 @@ function M:RefreshResourceInfo()
   self.Panel_Resource:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:BindEventOnClicked()
 end
-
 function M:BindEventOnClicked(obj, event)
   self.Obj_OnClick = obj
   self.Event_OnClick = event
 end
-
 function M:OnBtnClicked()
   if self.Event_OnClick then
     self.Event_OnClick(self.Obj_OnClick)
   end
-  if self.RId == CommonConst.PhysicalStrengthId then
+  if self.Id == CommonConst.PhysicalStrengthId then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
     local GameInstance = self:GetGameInstance()
     local UIManager = GameInstance:GetGameUIManager()
-  elseif self.RId == CommonConst.Coins.Coin1 then
+  elseif self.Id == CommonConst.Coins.Coin1 then
     local GameInstance = self:GetGameInstance()
     local UIManager = GameInstance:GetGameUIManager()
     local MaxValue = 0
@@ -171,44 +177,35 @@ function M:OnBtnClicked()
     end
   end
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
   return self.In:GetEndTime()
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
   return self.Out:GetEndTime()
 end
-
 function M:OnIconHovered()
   return self.Common_Item_Icon:OnMouseEnter()
 end
-
 function M:OnIconUnhovered()
   return self.Common_Item_Icon:OnMouseLeave()
 end
-
 function M:OnIconPressed()
   return self.Common_Item_Icon:OnMouseButtonDown()
 end
-
 function M:OnIconClicked()
   return self.Common_Item_Icon:OnMouseButtonUp()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Btn_Item)
 end
-
 function M:BindEventOnMenuOpenChanged(obj, event)
   self.Obj_OnMenuOpenChanged = obj
   self.Event_OnMenuOpenChanged = event
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   self.bIsMenuOpened = bIsOpen
   if not bIsOpen and self.IsGamePad then
@@ -218,11 +215,9 @@ function M:OnMenuOpenChanged(bIsOpen)
     self.Event_OnMenuOpenChanged(self.Obj_OnMenuOpenChanged, bIsOpen)
   end
 end
-
 function M:IsMenuOpened()
   return self.bIsMenuOpened
 end
-
 function M:BindNavigationEvents(Obj, Events)
   Events = Events or {}
   self.Obj_Navigation = Obj
@@ -230,26 +225,22 @@ function M:BindNavigationEvents(Obj, Events)
   self.Event_OnAddedToFocusPath = Events.OnAddedToFocusPath
   self.Event_OnRemovedFromFocusPath = Events.OnRemovedFromFocusPath
 end
-
 function M:OnNavigationToBoundary(NavigationDirection)
   if self.Event_OnNavigationToBoundary then
     return self.Event_OnNavigationToBoundary(self.Obj_Navigation, NavigationDirection)
   end
   return nil
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.Event_OnAddedToFocusPath then
     self.Event_OnAddedToFocusPath(self.Obj_Navigation, self)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.Event_OnRemovedFromFocusPath then
     self.Event_OnRemovedFromFocusPath(self.Obj_Navigation, self)
   end
 end
-
 function M:OnUINavigation(NavigationDirection)
   if self.Btn_Add:HasAnyUserFocus() then
     if NavigationDirection == EUINavigation.Left then
@@ -265,5 +256,4 @@ function M:OnUINavigation(NavigationDirection)
     return self:OnNavigationToBoundary(NavigationDirection)
   end
 end
-
 return M

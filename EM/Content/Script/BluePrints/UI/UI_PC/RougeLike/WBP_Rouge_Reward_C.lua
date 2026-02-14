@@ -3,12 +3,10 @@ local TimeUtils = require("Utils.TimeUtils")
 local WBP_Rouge_Reward_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_Rouge_Reward_C:Destruct()
   self.Super.Destruct(self)
   self:ClearListenEvent()
 end
-
 function WBP_Rouge_Reward_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:SetFocus()
@@ -49,7 +47,6 @@ function WBP_Rouge_Reward_C:OnLoaded(...)
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Rouge_Reward_C:SetInfo()
   local ClassPath = "/Game/UI/UI_PC/Common/Common_Item_subsize_PC_Content.Common_Item_subsize_PC_Content_C"
   self.List_Reward:SetVisibility(ESlateVisibility.HitTestInvisible)
@@ -132,7 +129,6 @@ function WBP_Rouge_Reward_C:SetInfo()
     end)
   end)
 end
-
 function WBP_Rouge_Reward_C:GetOffsetByIndex(Index)
   if Index <= self.Mid then
     self.TargetOffset = 0
@@ -144,12 +140,10 @@ function WBP_Rouge_Reward_C:GetOffsetByIndex(Index)
     self.TargetOffset = k * Index + z
   end
 end
-
 function WBP_Rouge_Reward_C:SetTimer()
   self:Refresh()
   self:AddTimer(1, self.Refresh, true, 0, "RefreshRougeRewardTimer", true)
 end
-
 function WBP_Rouge_Reward_C:Refresh()
   local refresh_hms = CommonConst.GAME_REFRESH_HMS
   local NextRefreshTime = TimeUtils.NextWeeklyRefreshTime(nil, refresh_hms)
@@ -182,7 +176,6 @@ function WBP_Rouge_Reward_C:Refresh()
   end
   self.Text_RemainTime:SetText(RemainTimeStr)
 end
-
 function WBP_Rouge_Reward_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -205,7 +198,6 @@ function WBP_Rouge_Reward_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Rouge_Reward_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -220,7 +212,6 @@ function WBP_Rouge_Reward_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Rouge_Reward_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -234,7 +225,6 @@ function WBP_Rouge_Reward_C:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_Rouge_Reward_C:UpdateItems()
   local Entrys = self.List_Reward:GetDisplayedEntryWidgets()
   local Len = Entrys:Length()
@@ -244,29 +234,24 @@ function WBP_Rouge_Reward_C:UpdateItems()
     end
   end
 end
-
 function WBP_Rouge_Reward_C:GetRougeLikeReward()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Rewards)
       self:UpdateItems()
-      
       ReddotManager.ClearLeafNodeCount("RougeLikeReward")
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function()
         self:SetFocus()
       end, self)
     end
-    
     Avatar:GetRougeLikeWeeklyReward(Callback)
   end
 end
-
 function WBP_Rouge_Reward_C:TryGetRougeLikeReward()
   if self.Btn_GetAllBtn:GetVisibility() == ESlateVisibility.SelfHitTestInvisible then
     self:GetRougeLikeReward()
   end
 end
-
 function WBP_Rouge_Reward_C:UpdateButton()
   local CacheDetail = ReddotManager.GetTreeNode("RougeLikeReward")
   if not CacheDetail then
@@ -282,7 +267,6 @@ function WBP_Rouge_Reward_C:UpdateButton()
     self:InitKeyboardCommonTab()
   end
 end
-
 function WBP_Rouge_Reward_C:CheckHaveAnyRewardCanGet()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -302,24 +286,20 @@ function WBP_Rouge_Reward_C:CheckHaveAnyRewardCanGet()
   end
   return false
 end
-
 function WBP_Rouge_Reward_C:Close()
   self.Super.Close(self)
   ReddotManager.RemoveListener("RougeLikeReward", self)
 end
-
 function WBP_Rouge_Reward_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_Reward_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_Reward_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -327,7 +307,6 @@ function WBP_Rouge_Reward_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Rouge_Reward_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -335,7 +314,6 @@ function WBP_Rouge_Reward_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_Reward_C:InitGamepadView()
   if UIUtils.HasAnyFocus(self) then
     self:SetFocus()
@@ -344,7 +322,6 @@ function WBP_Rouge_Reward_C:InitGamepadView()
   self.Btn_GetAllBtn:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:InitCommonTab(false)
 end
-
 function WBP_Rouge_Reward_C:InitKeyboardView()
   self.Btn_GetAllBtn:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   if self.CurFocusedItem then
@@ -353,11 +330,9 @@ function WBP_Rouge_Reward_C:InitKeyboardView()
   self.CurFocusedItem = nil
   self:InitKeyboardCommonTab()
 end
-
 function WBP_Rouge_Reward_C:InitWidgetInfoInGamePad()
   self.Btn_GetAllBtn:SetDefaultGamePadImg("Y")
 end
-
 function WBP_Rouge_Reward_C:TryEnterSelectMode(Entry)
   if self.IsInSelectState then
     return false
@@ -367,7 +342,6 @@ function WBP_Rouge_Reward_C:TryEnterSelectMode(Entry)
   self.IsInSelectState = true
   return true
 end
-
 function WBP_Rouge_Reward_C:TryLeaveSelectMode(Entry)
   if not self.IsInSelectState then
     return false
@@ -381,7 +355,6 @@ function WBP_Rouge_Reward_C:TryLeaveSelectMode(Entry)
   self.IsInSelectState = false
   return true
 end
-
 function WBP_Rouge_Reward_C:NavigateToFirstDisplayedItem(List)
   local ItemUIs = List:GetDisplayedEntryWidgets()
   if ItemUIs:Length() > 0 then
@@ -400,7 +373,6 @@ function WBP_Rouge_Reward_C:NavigateToFirstDisplayedItem(List)
   end
   return List
 end
-
 function WBP_Rouge_Reward_C:TryChangeCurFocusedItem(Item)
   self.CurFocusedItem = Item
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad and not self.IsInSelectState then
@@ -411,7 +383,6 @@ function WBP_Rouge_Reward_C:TryChangeCurFocusedItem(Item)
     end
   end
 end
-
 function WBP_Rouge_Reward_C:InitKeyboardCommonTab()
   self.CurCommonTabCanGet = nil
   local BottomKeyInfo = {
@@ -443,7 +414,6 @@ function WBP_Rouge_Reward_C:InitKeyboardCommonTab()
   end
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function WBP_Rouge_Reward_C:InitCommonTab(CanGet)
   if self.CurCommonTabCanGet == CanGet then
     return
@@ -473,7 +443,6 @@ function WBP_Rouge_Reward_C:InitCommonTab(CanGet)
   end
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function WBP_Rouge_Reward_C:InitSelectTab()
   self.CurCommonTabCanGet = nil
   local BottomKeyInfo = {
@@ -492,13 +461,11 @@ function WBP_Rouge_Reward_C:InitSelectTab()
   }
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function WBP_Rouge_Reward_C:InitEmptyTab()
   self.CurCommonTabCanGet = nil
   local BottomKeyInfo = {}
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function WBP_Rouge_Reward_C:OnMenuOpenChanged(bIsOpen)
   if bIsOpen then
     self:InitEmptyTab()
@@ -518,5 +485,4 @@ function WBP_Rouge_Reward_C:OnMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 return WBP_Rouge_Reward_C

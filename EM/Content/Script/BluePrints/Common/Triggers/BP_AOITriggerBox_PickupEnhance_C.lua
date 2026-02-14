@@ -1,10 +1,8 @@
 local M = Class("BluePrints.Common.Triggers.BP_AOITriggerBox_C")
-
 function M:ReceiveBeginPlay()
   M.Super.ReceiveBeginPlay(self)
   self.Eid2TickInterval = {}
 end
-
 function M:OnActorOverlap(OtherActor, TriggerType)
   if OtherActor.InitSuccess then
     local InteractiveComponent = OtherActor:GetComponentByClass(UInteractiveTriggerComponent)
@@ -21,9 +19,7 @@ function M:OnActorOverlap(OtherActor, TriggerType)
     end
   end
 end
-
 function M:CheckCanTrigger(TriggerActor)
   return true
 end
-
 return M

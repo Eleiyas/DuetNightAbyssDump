@@ -1,5 +1,4 @@
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
-
 function M:OnPlayerEnter(Player)
   if self.HasEntered == true then
     return
@@ -13,5 +12,4 @@ function M:OnPlayerEnter(Player)
   DebugPrint("==============TriggerGameModeEvent: OnTempleSuccess====================")
   GameMode:TriggerGameModeEvent("OnTempleSuccess", self)
 end
-
 return M

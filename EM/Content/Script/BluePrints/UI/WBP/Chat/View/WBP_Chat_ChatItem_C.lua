@@ -13,7 +13,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Chat.View.HeadAnchorComp"
 }
-
 function M:Construct()
   self.Text_NewMessage:SetText(GText("UI_Chat_NewMsgLine"))
   self.Head_AnchorLeft.OnGetMenuContentEvent:Bind(self, self.OnAnchorGetUserMenuContent)
@@ -21,7 +20,6 @@ function M:Construct()
   self.Head_AnchorRight.OnGetMenuContentEvent:Bind(self, self.OnAnchorGetUserMenuContent)
   self.Head_AnchorRight.OnMenuOpenChanged:Add(self, self.HeadMenuOpenChanged)
 end
-
 function M:Destruct()
   self.Head_AnchorLeft.OnGetMenuContentEvent:Unbind()
   self.Head_AnchorLeft.OnMenuOpenChanged:Remove(self, self.HeadMenuOpenChanged)
@@ -29,13 +27,11 @@ function M:Destruct()
   self.Head_AnchorRight.OnMenuOpenChanged:Remove(self, self.HeadMenuOpenChanged)
   self:CleanUpAnchor()
 end
-
 function M:BP_OnEntryReleased()
   self.Text_LeftDialog:SetText("")
   self.Text_LeftDialog:SetText("")
   self.Content.UI = nil
 end
-
 function M:OnListItemObjectSet(Content)
   Content.UI = self
   self.Content = Content
@@ -64,7 +60,6 @@ function M:OnListItemObjectSet(Content)
     })
   end
 end
-
 function M:OnListItemObjectSet_Other(Content)
   self.HeadAnchor = self.Head_AnchorLeft
   self.Head = self.HeadLeft
@@ -78,11 +73,11 @@ function M:OnListItemObjectSet_Other(Content)
   self.ImageBg = self.Image_LeftDialogBG
   self.Switcher = self.WidgetSwitcher_Bubble_L
   self.ModPlan = self.Bubble_ModPlan_L
+  self.GiftItem = self.Chat_GiftItemLeft
   self.TitleWidget = self.TitleLeft
   self:InitSelectMask(self.Image_LeftControllerLight)
   self:_SetUpChatContent(self.MsgWrap)
 end
-
 function M:OnListItemObjectSet_System(Content)
   local Text = Content.Text
   if nil == Text and nil ~= self.MsgWrap.Message then
@@ -90,7 +85,6 @@ function M:OnListItemObjectSet_System(Content)
   end
   self.Text_Tips:SetText(Text)
 end
-
 function M:OnListItemObjectSet_Self(Content)
   self.HeadAnchor = self.Head_AnchorRight
   self.Head = self.HeadRight
@@ -104,11 +98,11 @@ function M:OnListItemObjectSet_Self(Content)
   self.ImageBg = self.Image_RightDialogBG
   self.Switcher = self.WidgetSwitcher_Bubble_R
   self.ModPlan = self.Bubble_ModPlan_R
+  self.GiftItem = self.Chat_GiftItemRight
   self.TitleWidget = self.TitleRight
   self:InitSelectMask(self.Image_RightControllerLight)
   self:_SetUpChatContent(self.MsgWrap)
 end
-
 function M:OnListItemObjectSet_Time(Content)
   local Time = math.floor(self.MsgWrap.Message.Time + 0.5)
   local NowTime = TimeUtils.NowTime()
@@ -124,7 +118,6 @@ function M:OnListItemObjectSet_Time(Content)
   local ClockText = table.concat(string.split(TimeUtils.TimeToHMSStr(Time), ":"), ":", 1, 2)
   self.Text_MessageTime:SetText(DateText .. ClockText)
 end
-
 function M:_UpdateHeadClickableState()
   local isSelf = self.MsgWrap.MsgType == ChatCommon.MsgType.Self
   local shouldBeHittestInvisible = isSelf and GWorld:GetAvatar():IsInDungeon() and GWorld.GameInstance.IsInTempScene and GWorld.GameInstance:IsInTempScene()
@@ -134,7 +127,6 @@ function M:_UpdateHeadClickableState()
     self.Head:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:_SetUpChatContent(MsgWrap)
   local Message = MsgWrap.Message
   self.Head:SetHoldUp(true)
@@ -160,14 +152,12 @@ function M:_SetUpChatContent(MsgWrap)
   self:_ParseModSuitInfo(MsgWrap)
   self:_UpdateHeadClickableState()
 end
-
 function M:_ShowNormalContent(Content)
   self.ImageBg:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.TextDialog:SetVisibility(UIConst.VisibilityOp.Visible)
   self.TextDialog:SetText(Content)
   self.TextDialog:SetWrapTextAt(self.Owner:CalcWrapTextAt())
 end
-
 function M:_ParseEmoji(MsgWrap)
   local Content = MsgWrap.Message.Content
   local EmojiInfos = MsgWrap.EmojiInfos
@@ -183,18 +173,18 @@ function M:_ParseEmoji(MsgWrap)
       local EmojiWidth = EmojiHeight
       local Deco = self.TextDialog.InstanceDecorators:GetRef(1)
       if not IsValid(Deco) then
-        Utils.Traceback(ErrorTag, "\230\137\190\232\147\157\229\155\190\231\156\139\231\156\139\239\188\140\232\129\138\229\164\169\230\176\148\230\179\161\230\150\135\230\156\172\230\161\134\231\154\132\229\175\140\230\150\135\230\156\172\232\163\133\233\165\176\229\153\168\228\184\162\229\164\177")
+        Utils.Traceback(ErrorTag, "找蓝图看看，聊天气泡文本框的富文本装饰器丢失")
         return
       end
       local TableRow = FRichImageRow()
       local Res = UDataTableFunctionLibrary.GetDataTableRowFromName(Deco.ImageSet, EmojiInfo.Id, TableRow)
       if not Res then
-        Utils.Traceback(ErrorTag, "\230\137\190\231\173\150\229\136\146\231\156\139\231\156\139\239\188\140\232\161\168\230\131\133\229\140\133\229\175\140\230\150\135\230\156\172\231\154\132DataTable\230\137\190\228\184\141\229\136\176\232\191\153\228\184\170Key :" .. EmojiInfo.Id)
+        Utils.Traceback(ErrorTag, "找策划看看，表情包富文本的DataTable找不到这个Key :" .. EmojiInfo.Id)
         return
       end
       local Img = TableRow.Brush.ResourceObject
       if not IsValid(Img) then
-        Utils.Traceback(ErrorTag, "\230\137\190\231\173\150\229\136\146\231\156\139\231\156\139\239\188\140\232\161\168\230\131\133\229\140\133\229\175\140\230\150\135\230\156\172\231\154\132DataTable\230\178\161\230\156\137\233\133\141\231\189\174\232\161\168\230\131\133\232\180\180\229\155\190\239\188\140Key :" .. EmojiInfo.Id)
+        Utils.Traceback(ErrorTag, "找策划看看，表情包富文本的DataTable没有配置表情贴图，Key :" .. EmojiInfo.Id)
         return
       end
       local Scale = Img:Blueprint_GetSizeX() / Img:Blueprint_GetSizeY()
@@ -215,11 +205,11 @@ function M:_ParseEmoji(MsgWrap)
   end
   self:_ShowNormalContent(Content)
 end
-
 function M:_ParseModSuitInfo(MsgWrap)
   self.Switcher:SetActiveWidgetIndex(0)
   local ModSuitInfo = MsgWrap.ModSuitInfo
   local DyePlanInfo = MsgWrap.DyePlanInfo
+  local GiftInfo = MsgWrap.GiftInfo
   if ModSuitInfo then
     self.Switcher:SetActiveWidgetIndex(1)
     local bSelfMsg = self.MsgWrap.MsgType == ChatCommon.MsgType.Self
@@ -228,16 +218,18 @@ function M:_ParseModSuitInfo(MsgWrap)
     self.Switcher:SetActiveWidgetIndex(1)
     local bSelfMsg = self.MsgWrap.MsgType == ChatCommon.MsgType.Self
     self.ModPlan:InitDye(DyePlanInfo, bSelfMsg)
+  elseif MsgWrap.GiftInfo then
+    self.Switcher:SetActiveWidgetIndex(2)
+    local bSelfMsg = self.MsgWrap.MsgType == ChatCommon.MsgType.Self
+    self.GiftItem:InitChatGiftItem(GiftInfo, bSelfMsg)
   end
 end
-
 function M:InitSelectMask(Widget)
   self.SelectMask = Widget
   if self.Owner.OnInitSelectMask then
     self.Owner:OnInitSelectMask()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -250,7 +242,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonRight then
@@ -272,7 +263,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:SelectMessage(IsSelect)
   if not self.SelectMask or IsSelect and self.Owner.FocusStateType ~= ChatFocusType.SelectChat then
     return
@@ -280,7 +270,6 @@ function M:SelectMessage(IsSelect)
   local Visibility = IsSelect and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed
   self.SelectMask:SetVisibility(Visibility)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.IsEnter = true
   self.Owner.CurrSelectChatItem = self
@@ -293,7 +282,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:SelectMessage(true)
   return UIUtils.Handle
 end
-
 function M:OnFocusLost(InFocusEvent)
   self.IsEnter = false
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
@@ -301,12 +289,10 @@ function M:OnFocusLost(InFocusEvent)
   end
   self:SelectMessage(false)
 end
-
 function M:OnHeadMenuOpenChanged(bOpen)
   self.IsOpen = bOpen
   self.Owner:UpdateUIStyleInPlatform()
 end
-
 function M:OnCreateChatItem(Owner, Content)
   if not Owner or not Owner._ChatItemList then
     return
@@ -318,7 +304,6 @@ function M:OnCreateChatItem(Owner, Content)
   end
   Owner._ChatItemList[Index] = self
 end
-
 function M:OnNavigateUp()
   local Index = self.MsgWrap.Index
   local ChatItemList = self.Owner._ChatItemList
@@ -331,7 +316,6 @@ function M:OnNavigateUp()
   end
   return self
 end
-
 function M:OnNavigateDown()
   local Index = self.MsgWrap.Index
   local ChatItemList = self.Owner._ChatItemList
@@ -345,6 +329,5 @@ function M:OnNavigateDown()
   end
   return self
 end
-
 AssembleComponents(M)
 return M

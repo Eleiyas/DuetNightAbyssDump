@@ -1,10 +1,8 @@
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local Component = {}
-
 function Component:EnterWorld()
   self.logger.debug("ZJT_ EnterWorld ResourceUseComponent ")
 end
-
 function Component:UseItemInBattle(AvatarEid, ResourceId, Info, Reason)
   if self.IsAutoBattle then
     self:BattleTestUseItemInBattle(AvatarEid, ResourceId, Info, Reason)
@@ -31,8 +29,9 @@ function Component:UseItemInBattle(AvatarEid, ResourceId, Info, Reason)
     self["ResourceUseEffect" .. UseEffectType](self, ResourceInfo, PlayerCharacter, Info, Reason)
   end
   if UseBPFunction or PlayAnim or PlayArmoryAnim then
-    DebugPrint("gmy@Component:UseItemInBattle UseBPFunction", UseBPFunction)
+    DebugPrint("gmy@Component:UseItemInBattle UseBPFunction", UseBPFunction, self.IsInRegionOnline, self.CurrentOnlineType)
     PlayerCharacter:InvokeResourceBPFunction(ResourceId)
+    EventManager:FireEvent(EventID.OnTheaterPerform, ResourceId)
     local TrackInfo = {}
     TrackInfo.char_id = self:GetCurrentCharConfigID() or 0
     TrackInfo.map_id = WorldTravelSubsystem():GetCurrentSceneId() or 0
@@ -40,15 +39,7 @@ function Component:UseItemInBattle(AvatarEid, ResourceId, Info, Reason)
     TrackInfo.resource_id = ResourceId or 0
     HeroUSDKSubsystem():UploadTrackLog_Lua("gesture_use", TrackInfo)
     if self.IsInRegionOnline and self.CurrentOnlineType then
-      local bNeedWeapon = false
-      if PlayArmoryAnim then
-        local ActionName = Const.ArmoryActionIdToArmoryTag[PlayArmoryAnim]
-        if ActionName == Const.Melee or ActionName == Const.Ranged then
-          bNeedWeapon = true
-        end
-      end
-      PlayerCharacter.CurResourceId = ResourceId
-      self:UseExpression(self.CurrentOnlineType, ResourceId, bNeedWeapon)
+      self:RequestUseGestureOnline(PlayerCharacter, ResourceId)
     end
   end
   if UseAddLevelTag and ResourceInfo.Type and ResourceInfo.Type == "InfiniteBattleItem" then
@@ -59,7 +50,50 @@ function Component:UseItemInBattle(AvatarEid, ResourceId, Info, Reason)
     AudioManager(self):PlayUISound(self, "event:/ui/common/combat_bag_hide_use_item", "BattleItemUse", nil)
   end
 end
-
+function Component:RequestUseGestureOnline(PlayerCharacter, GestureResourceId)
+  DebugPrint("gmy@ResourceUseComponent Component:RequestUseGestureOnline", GestureResourceId)
+  local ResourceInfo = DataMgr.Resource[GestureResourceId]
+  if not ResourceInfo then
+    return
+  end
+  local ResourceIsMountId = self:ResourceIsMount(ResourceInfo)
+  if ResourceIsMountId then
+    self:SendMountRequest(PlayerCharacter, GestureResourceId, ResourceIsMountId)
+  end
+  local bIsUpdateState = not ResourceInfo.bIsNoLoopAction
+  PlayerCharacter.CurResourceId = GestureResourceId
+  self:SwitchOnlineState(self.CurrentOnlineType, CommonConst.OnlineState.UseWheel, {ResourceId = GestureResourceId}, bIsUpdateState)
+end
+function Component:SendMountRequest(PlayerCharacter, GestureResourceId, ResourceIsMountId)
+  if 0 ~= PlayerCharacter.CurrentMountId then
+    self:RequestUseCreateMount(self.CurrentOnlineType, GestureResourceId, ResourceIsMountId, 0)
+  else
+    self:RequestDeadRegionOnlineMount(self.CurrentOnlineType, 0)
+  end
+end
+function Component:ResourceIsMount(ResourceInfo)
+  if not ResourceInfo then
+    return nil
+  end
+  if not ResourceInfo.UseBPFunction then
+    return nil
+  end
+  if ResourceInfo.UseBPFunction ~= "MountOn" then
+    return nil
+  end
+  if not ResourceInfo.FunctionVars then
+    return nil
+  end
+  if not ResourceInfo.FunctionVars.Id then
+    return nil
+  end
+  return ResourceInfo.FunctionVars.Id
+end
+function Component:RequestCancelGestureOnline(PlayerCharacter)
+  DebugPrint("gmy@ResourceUseComponent Component:RequestCancelGestureOnline")
+  PlayerCharacter.CurResourceId = 0
+  self:SwitchOnlineState(self.CurrentOnlineType, CommonConst.OnlineState.UseWheel, {ResourceId = 0})
+end
 function Component:BattleTestUseItemInBattle(AvatarEid, ResourceId, Info, Reason)
   print(_G.LogTag, "BattleTestUseItemInBattle", ResourceId, Reason)
   self.AutoTestRobotInfo = self.AutoTestRobotInfo or {}
@@ -81,7 +115,6 @@ function Component:BattleTestUseItemInBattle(AvatarEid, ResourceId, Info, Reason
     end
   end
 end
-
 function Component:ResourceUseEffectAddHPValue(ResourceInfo, PlayerCharacter, Info, Reason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not GameMode then
@@ -95,7 +128,6 @@ function Component:ResourceUseEffectAddHPValue(ResourceInfo, PlayerCharacter, In
   local LocTransform = PlayerCharacter:GetTransform()
   GameMode:HandleRewardDrop(Drops, Reason, LocTransform, nil, nil)
 end
-
 function Component:ResourceUseEffectAddAmmo(ResourceInfo, PlayerCharacter, Info, Reason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not GameMode then
@@ -109,7 +141,6 @@ function Component:ResourceUseEffectAddAmmo(ResourceInfo, PlayerCharacter, Info,
   local LocTransform = PlayerCharacter:GetTransform()
   GameMode:HandleRewardDrop(Drops, Reason, LocTransform, nil, nil)
 end
-
 function Component:ResourceUseEffectAddSPValue(ResourceInfo, PlayerCharacter, Info, Reason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not GameMode then
@@ -123,27 +154,81 @@ function Component:ResourceUseEffectAddSPValue(ResourceInfo, PlayerCharacter, In
   local LocTransform = PlayerCharacter:GetTransform()
   GameMode:HandleRewardDrop(Drops, Reason, LocTransform, nil, nil)
 end
-
 function Component:ResourceUseEffectCallPhantom(ResourceInfo, PlayerCharacter, Info, Reason)
   PrintTable({ResourceUseEffectCallPhantom = Info, Reason = Reason}, 4)
   PlayerCharacter:CreatePhantom(ResourceInfo.UseParam, 1, Info, {IsSpawnByResource = 1})
 end
-
 function Component:ResourceUseEffectCancelPhantom(ResourceInfo, PlayerCharacter, Info, Reason)
   PrintTable({ResourceUseEffectCallPhantom = Info, Reason = Reason}, 4)
   UE4.UPhantomFunctionLibrary.CancelAllPhantom(PlayerCharacter, EDestroyReason.PhantomUseResource)
 end
-
 function Component:ResourceUseEffectUseBattleProp(ResourceInfo, PlayerCharacter, Info, Reason)
   DebugPrint("gmy@ResourceUseComponent Component:ResourceUseEffectUseBattleProp", ResourceInfo, PlayerCharacter, Info, Reason, ResourceInfo and ResourceInfo.UseParam)
   if PlayerCharacter then
     PlayerCharacter:ResourceUseBattleProp(ResourceInfo.UseParam)
   end
 end
-
+function Component:ResourceUseEffectCreateMechanism(ResourceInfo, PlayerCharacter, Info, Reason)
+  print(_G.LogTag, "LXZ ResourceUseEffectCreateMechanism", ResourceInfo.UseParam)
+  if not self.IsInRegionOnline or not self.CurrentOnlineType then
+    return
+  end
+  if not ResourceInfo.UseParam then
+    return
+  end
+  local MechanismData = DataMgr.Mechanism[ResourceInfo.UseParam]
+  if not MechanismData then
+    return
+  end
+  local Start = PlayerCharacter:K2_GetActorLocation()
+  local HitResult = FHitResult()
+  if MechanismData.UnitParams and MechanismData.UnitParams.InterPoint then
+    for i, v in pairs(MechanismData.UnitParams.InterPoint) do
+      local End = FVector(v[1], v[2], v[3])
+      local bHit = UE4.UKismetSystemLibrary.LineTraceSingle(self, Start, End, ETraceTypeQuery.TraceScene, false, nil, 2, HitResult, false)
+      if bHit then
+        return
+      end
+    end
+  end
+  local InteractiveIdList = {}
+  if ResourceInfo.InteractPlayerNum then
+    for i = 0, ResourceInfo.InteractPlayerNum - 1 do
+      table.insert(InteractiveIdList, i)
+    end
+  end
+  self:UseCreateMechanism(self.CurrentOnlineType, ResourceInfo.ResourceId, ResourceInfo.UseParam, InteractiveIdList)
+end
 function Component:DSSetRefreshRobberMonster(NewValue)
   self.logger.debug("ZJT_ DSSetRefreshRobberMonster ", NewValue)
   self:Multicast("SetRefreshRobberMonster", NewValue)
 end
-
+function Component:UseHeadResource(CharUuid, AppearanceIndex, AccessoryId)
+  local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+  if not PlayerCharacter then
+    return
+  end
+  if not PlayerCharacter.CharacterFashion then
+    return
+  end
+  local CharFashion = PlayerCharacter.CharacterFashion
+  if not CharFashion.Type2Id then
+    self.logger.debug("Player Not Init Yet")
+    return
+  end
+  if not DataMgr.CharAccessory then
+    self.logger.error("DataMgr.CharAccessory Not Init Yet")
+    return
+  end
+  if not DataMgr.CharAccessory[AccessoryId] then
+    self.logger.error("Doesn't has this AccessoryId", AccessoryId)
+    return
+  end
+  local AccessoryType = DataMgr.CharAccessory[AccessoryId].AccessoryType
+  CharFashion:ChangeAccessory(AccessoryId, AccessoryType)
+end
+function Component:ResourceUseEffectUseAFDGesture(ResourceInfo, PlayerCharacter, Info, Reason)
+  DebugPrint("gmy@ResourceUseComponent Component:ResourceUseEffectUseAFDGesture", ResourceInfo, PlayerCharacter, Info, Reason, ResourceInfo and ResourceInfo.UseParam)
+  UIManager():LoadUINew("AprilFoolDayRandomTrans")
+end
 return Component

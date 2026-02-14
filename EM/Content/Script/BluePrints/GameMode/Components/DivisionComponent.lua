@@ -1,11 +1,9 @@
 require("UnLua")
 local DivisionComponent = Class()
-
 function DivisionComponent:ComponentReceiveBeginPlay()
   self.MonsterSpawnDivisions = {}
   self.MonsterSpawnDivSize = 10000
 end
-
 function DivisionComponent:InitMonsterSpawnDivisions(ContentInfos)
   for Index, Info in pairs(ContentInfos) do
     local Key = self:GetCurrentKey(self.MonsterSpawnDivSize, Info.Loc)
@@ -17,18 +15,15 @@ function DivisionComponent:InitMonsterSpawnDivisions(ContentInfos)
   end
   DebugPrint("InitMonsterSpawnDivisions, DungoenId = " .. tostring(self.DungeonId) .. ", DivSize = " .. tostring(self.MonsterSpawnDivSize) .. ", InfoLength = " .. tostring(ContentInfos:Num()))
 end
-
 function DivisionComponent:ClearMonsterSpawnDivisions()
   self.MonsterSpawnDivisions = {}
   DebugPrint("DivisionComponent: Clear!")
 end
-
 function DivisionComponent:GetCurrentKey(DivSize, Location)
   local IndX = math.floor(Location.X / DivSize)
   local IndY = math.floor(Location.Y / DivSize)
   return IndX .. ", " .. IndY
 end
-
 function DivisionComponent:GetAroundKeys(DivSize, Loc)
   local Res = {}
   local Off = {
@@ -47,7 +42,6 @@ function DivisionComponent:GetAroundKeys(DivSize, Loc)
   end
   return Res
 end
-
 function DivisionComponent:GetAroundDivisionInfos(Loc)
   local Res = TMap(0, FMonsterSpawnPointParam)
   local Index = 1
@@ -61,5 +55,4 @@ function DivisionComponent:GetAroundDivisionInfos(Loc)
   end
   return Res
 end
-
 return DivisionComponent

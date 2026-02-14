@@ -11,7 +11,6 @@ local TypeSort = {
   Reward = 5,
   Resource = 6
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self.NpcId = 910003
@@ -42,7 +41,6 @@ function M:Construct()
     self.List_Task:SetControlScrollbarInside(true)
   end
 end
-
 function M:SetVerticalNavigation()
   self.List_Task:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.List_Task:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
@@ -70,11 +68,9 @@ function M:SetVerticalNavigation()
     })
   end
 end
-
 function M:InitContent(TaskRoot)
   self.TaskRoot = TaskRoot
 end
-
 function M:OnEntryReceiveEnterState(StackAction)
   if 1 == StackAction then
     local StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
@@ -92,7 +88,6 @@ function M:OnEntryReceiveEnterState(StackAction)
     self:SetNavigateToIndex()
   end
 end
-
 function M:InitDailyGoalTask()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -103,7 +98,6 @@ function M:InitDailyGoalTask()
   self:RefreshProgress()
   self:SetBtn_RewardState()
 end
-
 function M:SetBtn_RewardState()
   if self:HasClaimableTaskReward() then
     self.Btn_Reward:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -112,13 +106,11 @@ function M:SetBtn_RewardState()
   end
   self:UpdateUIStyleInPlatform()
 end
-
 function M:RefreshProgress()
   self.Progress:RefreshProgress(self)
   self.Activation.Text_Num:SetText(self.PlayerAvatar.CurrentTaskProgress)
   self.Activation.Text_Activation:SetText(GText("UI_DailyGoal_Activeness"))
 end
-
 function M:RefresDailyGoalTask()
   self.List_Task:ClearListItems()
   local TaskList = {}
@@ -158,19 +150,16 @@ function M:RefresDailyGoalTask()
   end
   self.List_Task:RequestPlayEntriesAnim()
 end
-
 function M:SetNavigateToIndex()
   self:AddTimer(0.01, function()
     self.List_Task:NavigateToIndex(0)
   end, false, 0, "Play_Daily_List_Task")
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:SetNavigateToIndex()
   end
 end
-
 function M:HasClaimableTaskReward()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -184,7 +173,6 @@ function M:HasClaimableTaskReward()
   end
   return false
 end
-
 function M:HasClaimableProgressReward()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -198,7 +186,6 @@ function M:HasClaimableProgressReward()
   end
   return false
 end
-
 function M:ClaimAllTaskRewards()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -206,19 +193,16 @@ function M:ClaimAllTaskRewards()
   end
   PlayerAvatar:GetAllDailyTaskReward()
 end
-
 function M:OnDailyProgressRewardChange(Rewards)
   self:RefreshProgress()
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
 end
-
 function M:OnAllRewardDailyTask(Rewards)
   self:RefresDailyGoalTask()
   self:RefreshProgress()
   self:SetBtn_RewardState()
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
 end
-
 function M:OnDailyRefreshDailyTask()
   local Params = {}
   local UI = UIManager(self):ShowCommonPopupUI(100177, Params)
@@ -226,20 +210,17 @@ function M:OnDailyRefreshDailyTask()
     self:InitDailyGoalTask()
   end, false, 0, "OnDailyRefreshDailyTask")
 end
-
 function M:OnDailyTaskRewardChange(DailyTaskId, Rewards)
   self:RefresDailyGoalTask()
   self:RefreshProgress()
   self:SetBtn_RewardState()
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
 end
-
 function M:UpdateTimeCountDown()
-  self.LeftTimeDict = TimeUtils.TimestampNextClock(CommonConst.GAME_REFRESH_HMS[1])
+  self.LeftTimeDict = math.floor(TimeUtils.NextDailyRefreshTime(TimeUtils.NowTime()))
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.LeftTimeDict)
   self.Refresh_Time:SetTimeText(GText("UI_DailyGoal_RemainTime"), RemainTimeDict)
 end
-
 function M:RewardView()
   local GoalRewards = {}
   self.DataMap = {}
@@ -271,7 +252,6 @@ function M:RewardView()
   for _, ItemData in pairs(DailyGoalReward) do
     table.insert(GoalRewards, ItemData)
   end
-  
   local function SortFunc(A, B)
     if A.Rarity == B.Rarity then
       if TypeSort[A.ItemType] and TypeSort[B.ItemType] then
@@ -284,7 +264,6 @@ function M:RewardView()
     end
     return A.Rarity > B.Rarity
   end
-  
   for _, Data in ipairs(GoalRewards) do
     local RewardInfo = DataMgr.Reward[Data.ActivenessReward]
     if RewardInfo then
@@ -312,13 +291,11 @@ function M:RewardView()
   Params.DataMap = self.DataMap
   local UI = UIManager(self):ShowCommonPopupUI(100181, Params)
 end
-
 function M:HideNpc(IsHide)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:HideNpcActor(IsHide, "StyleOfPlay")
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -329,11 +306,9 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:SwitchIn()
   self:UpdateUIStyleInPlatform()
 end
-
 function M:UpdateUIStyleInPlatform()
   if not UIUtils.IsGamepadInput() and not UIUtils.IsMobileInput() then
     self.Panel_Controller_Reward:SetVisibility(ESlateVisibility.Collapsed)
@@ -384,7 +359,6 @@ function M:UpdateUIStyleInPlatform()
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -403,7 +377,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Left" == InKeyName then
@@ -415,7 +388,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:ReceiveProgressReward()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local PlayerAvatar = GWorld:GetAvatar()
@@ -424,11 +396,9 @@ function M:ReceiveProgressReward()
   end
   PlayerAvatar:GetAllDailyProgressReward()
 end
-
 function M:CloseSelf()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   self:PlayAnimation(self.Out)
   Item:OnClickBack()
 end
-
 return M

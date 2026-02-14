@@ -2,7 +2,12 @@ require("UnLua")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 local M = {}
-
+local NotNeedShowButtonActivityId = {
+  [103011] = true
+}
+local NeedShowButtonActivityIdByTabName = {
+  [103016] = true
+}
 function M:PlayFadeIn()
   self:PlayAnimation(self.In)
   local TitleWidget = self.Group_TitleAnchor:GetChildAt(0)
@@ -10,7 +15,6 @@ function M:PlayFadeIn()
     TitleWidget:PlayAnimationForward(TitleWidget.In)
   end
 end
-
 function M:PlayFadeOut(IsRemoveFromParent)
   self:PlayAnimation(self.Out)
   if IsRemoveFromParent then
@@ -20,26 +24,25 @@ function M:PlayFadeOut(IsRemoveFromParent)
     })
   end
 end
-
 function M:HidePage(IsNeedPlayOutAnim)
   if IsNeedPlayOutAnim then
     self:PlayFadeOut()
   end
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ShowPage(IsNeedPlayInAnim)
   if IsNeedPlayInAnim then
     self:PlayFadeIn()
   end
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:IsPageInVisible()
   return self:IsVisible()
 end
-
 function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, InfoClickFunction, ShopClickFunction, GoToTargetPageFunction, StuffDetailOpenFunction, GoToTaskClickFunction, GoToMoreClickFunction)
+  if not self.NotNeedShowButtonActivityId then
+    self.NotNeedShowButtonActivityId = NotNeedShowButtonActivityId
+  end
   local PlayerAvatar = GWorld:GetAvatar()
   local TitleWidget = UIManager(self):CreateWidget(ActivityConfigData.EventNameBPPath)
   self:UpdateEventTitleInfo(ActivityConfigData, TitleWidget, PlayerAvatar)
@@ -134,24 +137,26 @@ function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, InfoClickFu
     if TaskWidget and TaskWidget:IsNeedShow() then
       self.Group_Task:AddChildToOverlay(TaskWidget)
     else
-      local TaskProcessWidget = UIManager(self):CreateWidget(PageConfigData.SubBPPath2)
-      if TaskProcessWidget then
-        if type(TaskProcessWidget.InitPage) == "function" then
-          TaskProcessWidget:InitPage(ActivityConfigData.EventId)
+      self.TaskProcessWidget = UIManager(self):CreateWidget(PageConfigData.SubBPPath2)
+      if self.TaskProcessWidget then
+        self.TaskProcessWidget.ParentWidget = self
+        if type(self.TaskProcessWidget.InitPage) == "function" then
+          self.TaskProcessWidget:InitPage(ActivityConfigData.EventId)
         else
-          TaskProcessWidget:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
+          self.TaskProcessWidget:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
         end
-        self.Group_TaskProgress:AddChildToOverlay(TaskProcessWidget)
+        self.Group_TaskProgress:AddChildToOverlay(self.TaskProcessWidget)
       end
     end
   elseif PageConfigData.SubBPPath2 then
     self.Group_Task:ClearChildren()
     self.Group_TaskProgress:ClearChildren()
-    local SpecialWidget = UIManager(self):CreateWidget(PageConfigData.SubBPPath2)
-    if SpecialWidget.Init then
-      SpecialWidget:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
+    self.SpecialWidget = UIManager(self):CreateWidget(PageConfigData.SubBPPath2)
+    if self.SpecialWidget.Init then
+      self.SpecialWidget.ParentWidget = self
+      self.SpecialWidget:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
     end
-    local Slot = self.Group_Common_SubItem:AddChildToOverlay(SpecialWidget)
+    local Slot = self.Group_Common_SubItem:AddChildToOverlay(self.SpecialWidget)
     Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
     Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   end
@@ -169,12 +174,13 @@ function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, InfoClickFu
       Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
     end
   end
-  local RewardWidget = UIManager(self):CreateWidget(PageConfigData.RewardBPPath)
-  if PageConfigData.RewardBPPath and not ActivityUtils.CheckIsPermanentEvent(ActivityConfigData.EventId) then
-    if RewardWidget.Init then
-      RewardWidget:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
+  self.RewardWidget = UIManager(self):CreateWidget(PageConfigData.RewardBPPath)
+  if PageConfigData.RewardBPPath and not ActivityUtils.CheckIsPermanentEvent(ActivityConfigData.EventId) and not IsLock then
+    if self.RewardWidget.Init then
+      self.RewardWidget.ParentWidget = self
+      self.RewardWidget:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
     end
-    local Slot = self.Group_LimitTimeReward:AddChildToOverlay(RewardWidget)
+    local Slot = self.Group_LimitTimeReward:AddChildToOverlay(self.RewardWidget)
     Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
     Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   end
@@ -186,30 +192,41 @@ function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, InfoClickFu
   local CallbackInfo = {
     Obj = self,
     Func = function(self, Count, RdType, RdName)
-      local bShowRed = 1 == ActivityUtils.GetReddotCachInfoByKey("Red", self.CurActivityId)
-      self.Btn_Confirm:EMShowReddot(bShowRed, EReddotType.Normal, 0)
+      local Node = ReddotManager.GetTreeNode(RdName)
+      if RdType == EReddotType.Normal then
+        local bShowRed = Node.bImplemented and 1 == ActivityUtils.GetReddotCachInfoByKey("Red", self.CurActivityId) or Count > 0
+        self.Btn_Confirm:EMShowReddot(bShowRed, EReddotType.Normal)
+      elseif RdType == EReddotType.New then
+        local bShowNew = Node.bImplemented and 1 == ActivityUtils.GetReddotCachInfoByKey("New", self.CurActivityId) or Count > 0
+        self.Btn_Confirm:EMShowReddot(bShowNew, EReddotType.New)
+      end
     end
   }
-  ActivityReddotHelper.RemoveReddotListenByEventId(self.CurActivityId, self)
-  ActivityReddotHelper.AddReddotListenByEventId(self.CurActivityId, CallbackInfo)
+  if NeedShowButtonActivityIdByTabName[self.CurActivityId] then
+    ActivityReddotHelper.AddReddotListenByTabId(self.ParentTabId, CallbackInfo)
+  elseif not self.NotNeedShowButtonActivityId[self.CurActivityId] then
+    ActivityReddotHelper.RemoveReddotListenByEventId(self.CurActivityId, self)
+    ActivityReddotHelper.AddReddotListenByEventId(self.CurActivityId, CallbackInfo)
+  end
   self.Btn_Buy:TryOverrideSoundFunc(function()
     AudioManager(self):PlayUISound(self, "event:/ui/activity/shop_small_btn_click", nil, nil)
   end)
   self.Btn_Confirm:TryOverrideSoundFunc(function()
     AudioManager(self):PlayUISound(self, "event:/ui/activity/confirm_click", nil, nil)
   end)
+  if self.IsHideReward then
+    self.Group_Task:ClearChildren()
+  end
 end
-
 function M:UpdateEventTitleInfo(ActivityConfigData, TitleWidget, PlayerAvatar)
   if not TitleWidget then
     return
   end
   TitleWidget.Text_Title:SetText(GText(ActivityConfigData.EventName))
-  if ActivityConfigData.EventSName then
+  if ActivityConfigData.EventSName and TitleWidget.Text_SubTitle then
     TitleWidget.Text_SubTitle:SetText(GText(ActivityConfigData.EventSName))
   end
 end
-
 function M:BindAllClickFunction(InfoClickFunction, ShopClickFunction, GoToTargetPageFunction, GoToTaskClickFunction, GoToMoreClickFunction)
   self.Btn_Buy:BindEventOnClicked(self, ShopClickFunction)
   self.Btn_Confirm:BindEventOnClicked(self, GoToTargetPageFunction)
@@ -219,14 +236,11 @@ function M:BindAllClickFunction(InfoClickFunction, ShopClickFunction, GoToTarget
   BtnExplanationConfigData.ClickCallback = InfoClickFunction
   BtnExplanationConfigData.OwnerWidget = self
   BtnExplanationConfigData.Desc = "UI_Common_Rule"
-  
   function BtnExplanationConfigData.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   self.Com_BtnExplanation:Init(BtnExplanationConfigData)
 end
-
 function M:InitUIInfoByPlatform()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.PC then
     self.Btn_Buy.Key_Shop:CreateCommonKey({
@@ -257,11 +271,20 @@ function M:InitUIInfoByPlatform()
   else
   end
 end
-
 function M:RefreshPageDynamicView()
   self.List_Reward:ScrollIndexIntoView(0)
 end
-
+function M:UpdatePageDynamicView()
+  if self.RewardWidget and self.RewardWidget.Update then
+    self.RewardWidget:Update()
+  end
+  if self.SpecialWidget and self.SpecialWidget.Update then
+    self.SpecialWidget:Update()
+  end
+  if self.TaskProcessWidget and self.TaskProcessWidget.Update then
+    self.TaskProcessWidget:Update()
+  end
+end
 function M:NewItemContent(ItemType, ItemId, Icon, Rarity, Quantity, OpenFunction)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.ItemType = ItemType
@@ -281,5 +304,4 @@ function M:NewItemContent(ItemType, ItemId, Icon, Rarity, Quantity, OpenFunction
   end
   return Obj
 end
-
 return M

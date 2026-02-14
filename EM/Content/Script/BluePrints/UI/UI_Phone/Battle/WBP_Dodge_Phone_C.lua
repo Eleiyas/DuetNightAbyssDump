@@ -1,8 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
+M._components = {
+  "BluePrints.UI.UI_Phone.Battle.Component.DraggableWidgetComponent"
+}
 function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnPressed)
+  self.Button_Area.OnReleased:Add(self, self.OnReleased)
   self.OwnerPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
   self.MaxAvoidTimes = self.OwnerPlayer:GetAttr("MaxAvoidExecuteTimes")
   self.DodgeCD = self.OwnerPlayer:GetAttr("AvoidChargeCd") or 0
@@ -17,14 +20,29 @@ function M:Construct()
   else
     self.CurButtonState = "Active"
   end
+  local IconMat = self.Image_Main:GetDynamicMaterial()
+  IconMat:SetTextureParameterValue("IconMap", self.Icon_Dodge)
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self.MountFly_Out)
 end
-
 function M:OnPressed()
   self:OnPressed_Presentation()
-  self.OwnerPanel:TryToPlayTargetCommand("Avoid", true)
+  if self.OwnerPlayer.CurMount and self.OwnerPlayer:IsFlying() then
+    self.OwnerPanel:TryToPlayTargetCommand("Slide", true)
+  else
+    self.OwnerPanel:TryToPlayTargetCommand("Avoid", true)
+  end
 end
-
+function M:OnReleased()
+  self:OnReleased_Presentation()
+  if self.OwnerPlayer.CurMount and self.OwnerPlayer:IsFlying() then
+    self.OwnerPanel:TryToStopTargetCommand("Slide", true)
+  end
+end
 function M:OnPressed_Presentation()
+  if self.OwnerPlayer.CurMount and self.OwnerPlayer:IsFlying() then
+    EMUIAnimationSubsystem:EMPlayAnimation(self, self.Press)
+    return
+  end
   if self.CurButtonState == "InActive" then
     return
   end
@@ -36,7 +54,11 @@ function M:OnPressed_Presentation()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Disable)
   end
 end
-
+function M:OnReleased_Presentation()
+  if self.OwnerPlayer.CurMount and self.OwnerPlayer:IsFlying() then
+    EMUIAnimationSubsystem:EMPlayAnimation(self, self.Press, EUMGSequencePlayMode.Reverse)
+  end
+end
 function M:UpdateButtonInTimer()
   if self.CurButtonState == "InActive" then
     return
@@ -71,5 +93,16 @@ function M:UpdateButtonInTimer()
     end
   end
 end
-
+function M:OnStartMountFly()
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self.MountFly_In)
+  local IconMat = self.Image_Main:GetDynamicMaterial()
+  IconMat:SetTextureParameterValue("IconMap", self.Icon_MountDown)
+end
+function M:OnStopMountFly()
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self.Press, EUMGSequencePlayMode.Reverse)
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self.MountFly_Out)
+  local IconMat = self.Image_Main:GetDynamicMaterial()
+  IconMat:SetTextureParameterValue("IconMap", self.Icon_Dodge)
+end
+AssembleComponents(M)
 return M

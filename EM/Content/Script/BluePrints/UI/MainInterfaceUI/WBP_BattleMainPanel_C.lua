@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_BattleMainPanel_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_BattleMainPanel_C:HideOrShowSubUIByName(IsHide, NeedHideListStr)
   local HideUITable = Split(NeedHideListStr, ",")
   if IsHide then
@@ -13,5 +12,4 @@ function WBP_BattleMainPanel_C:HideOrShowSubUIByName(IsHide, NeedHideListStr)
     end
   end
 end
-
 return WBP_BattleMainPanel_C

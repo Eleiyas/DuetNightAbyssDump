@@ -20,30 +20,23 @@ Squad.__Props__ = {
   PhantomWeapon2 = prop.prop("ObjId", "client save", "")
 }
 FormatProperties(Squad)
-
 function Squad:Init(Info)
   self:Update(Info)
 end
-
 function Squad:Update(Info)
   for k, v in pairs(Info) do
     self[k] = v
   end
 end
-
 function Squad:Dump()
   return self:save_dump(self)
 end
-
 local SquadList = Class("SquadList", CustomTypes.CustomList)
 SquadList.ValueType = Squad
-
 function SquadList:NewSquad(Index, Info)
   self[Index] = Squad(Info)
 end
-
 function SquadList:CreateSquad(Info)
   return Squad(Info)
 end
-
 return {Squad = Squad, SquadList = SquadList}

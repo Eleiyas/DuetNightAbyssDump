@@ -2,7 +2,6 @@ require("UnLua")
 local SkillUtils = require("Utils.SkillUtils")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self:UnbindAllFromAnimationFinished(self.Auto_In)
   self:UnbindAllFromAnimationFinished(self.Auto_Out)
@@ -36,7 +35,6 @@ function M:Construct()
   self.Common_DialogTitle_PC.Text_Title:SetFont(Font)
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Init(Parent, TargetWeapon)
   self.Parent = Parent
   self.TargetWeapon = TargetWeapon
@@ -49,7 +47,6 @@ function M:Init(Parent, TargetWeapon)
   self:UpdateGradeLevelInfo()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:FillListView(Contents)
   self.ListView_Item:ClearListItems()
   for _, Content in ipairs(Contents) do
@@ -58,19 +55,15 @@ function M:FillListView(Contents)
   self:FillEmptyItmes(self.MaxItemCount - #Contents)
   self.ListView_Item:RegenerateAllEntries()
 end
-
 function M:FillEmptyItmes(ItemCount)
   for i = 1, ItemCount do
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
-    
     function Obj.OnBtnAddClicked(Content)
       self:OnListItemClicked(Content)
     end
-    
     self.ListView_Item:AddItem(Obj)
   end
 end
-
 function M:OnListEntryInitialized(Content, Widget)
   if Content.Icon then
     Widget:ShowAddIcon(false)
@@ -81,7 +74,6 @@ function M:OnListEntryInitialized(Content, Widget)
     Widget:SetMinusBtn(false)
   end
 end
-
 function M:PlayLevelUpAnim()
   self.Text_Num:SetText(self.TargetWeapon.GradeLevel)
   self:PlayAnimation(self.LevelUp, 0, 1, 0, 1, true)
@@ -89,12 +81,10 @@ function M:PlayLevelUpAnim()
   self.Btn_up:ForbidBtn(true)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnLevelUpAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:UpdateGradeLevelInfo()
 end
-
 function M:PlayInAnim(CallBack)
   self.InAnimFinishedCallBack = CallBack
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -102,44 +92,37 @@ function M:PlayInAnim(CallBack)
   self:FlushAnimations()
   self:PlayAnimation(self.Auto_In)
 end
-
 function M:OnInAnimFinished()
   if self.InAnimFinishedCallBack then
     self.InAnimFinishedCallBack(self.Parent)
   end
 end
-
 function M:PlayOutAnim(CallBack)
   self.OutAnimFinishedCallBack = CallBack
   self:PlayAnimation(self.Auto_Out)
 end
-
 function M:OnOutAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.OutAnimFinishedCallBack then
     self.OutAnimFinishedCallBack(self.Parent)
   end
 end
-
 function M:BindEvents(Params)
   self.Obj = Params.Obj
   self.OnListItemClickedEvent = Params.OnListItemClickedEvent
   self.OnAutoFilListBtnClickedEvent = Params.OnAutoFilListBtnClickedEvent
   self.OnConfirmBtnClickedEvent = Params.OnConfirmBtnClickedEvent
 end
-
 function M:OnListItemClicked(Content)
   if self.OnListItemClickedEvent then
     self.OnListItemClickedEvent(self.Obj, Content)
   end
 end
-
 function M:OnAutoFilListBtnClicked()
   if self.OnAutoFilListBtnClickedEvent then
     self.OnAutoFilListBtnClickedEvent(self.Obj)
   end
 end
-
 function M:ClearItems(NeedGradeLevelInfo)
   self.Contents = {}
   self:FillListView(self.Contents)
@@ -147,19 +130,15 @@ function M:ClearItems(NeedGradeLevelInfo)
     self:UpdateGradeLevelInfo()
   end
 end
-
 function M:OnForbiddenAutoFilListBtnClicked()
 end
-
 function M:OnConfirmBtnClicked()
   if self.OnConfirmBtnClickedEvent then
     self.OnConfirmBtnClickedEvent(self.Obj)
   end
 end
-
 function M:OnForbiddenConfirmBtnClicked()
 end
-
 function M:RemoveItem(Content)
   local RemoveIdx
   for index, value in ipairs(self.Contents) do
@@ -174,7 +153,6 @@ function M:RemoveItem(Content)
     self:UpdateGradeLevelInfo()
   end
 end
-
 function M:AddItemToLast(Content)
   local Obj = ArmoryUtils:CopyCharOrWeaponItemContent(Content)
   Obj.IsNew = false
@@ -182,7 +160,6 @@ function M:AddItemToLast(Content)
   self:FillListView(self.Contents)
   self:UpdateGradeLevelInfo()
 end
-
 function M:UpdateGradeLevelInfo()
   self.ListView_Item:SetRenderOpacity(1)
   self.ListView_Item:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -237,9 +214,7 @@ function M:UpdateGradeLevelInfo()
   end
   self.Text_Details:SetText(SkillDesc)
 end
-
 function M:Destruct()
   self:StopAllAnimations()
 end
-
 return M

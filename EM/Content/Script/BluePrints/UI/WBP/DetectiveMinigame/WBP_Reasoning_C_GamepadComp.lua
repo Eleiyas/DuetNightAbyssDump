@@ -1,11 +1,13 @@
 local Component = {}
-
 function Component:OnGamepadKeyDown(InKeyName)
   if "Gamepad_Special_Left" == InKeyName then
     if not self.Book:GetIsClueUi() then
       return
     end
     self.Book:OnClickButton()
+    self:AddTimer(0.1, function()
+      self:SetDefaultFocus()
+    end)
     self.Btn_Associate.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   elseif "Gamepad_FaceButton_Left" == InKeyName then
     if not self.Book:GetIsClueUi() then
@@ -14,17 +16,17 @@ function Component:OnGamepadKeyDown(InKeyName)
     self:OnClickButtonAssociate()
   elseif "Gamepad_FaceButton_Right" == InKeyName then
     if self.Book:GetIsClueUi() then
-      self.Book:OnClickButton()
-      self.Btn_Associate.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    else
       self:OnClickBackButton()
+    else
+      self.Book:OnClickClose()
+      self:SetDefaultFocus()
+      self.Btn_Associate.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
     end
   end
   self:AddTimer(0.1, function()
     self:RefreshTabGamepadIcon()
   end)
 end
-
 function Component:InitGamePadUI()
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
@@ -39,25 +41,21 @@ function Component:InitGamePadUI()
     }
   })
 end
-
 function Component:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
   self.CurGamepadName = CurGamepadName
   self.IsSwitchDevice = true
   if self.CurInputDeviceType == ECommonInputType.MouseAndKeyboard then
-    DebugPrint("thy   IsPC")
     self:SwitchMainUIToPCOrMoble()
   elseif self.CurInputDeviceType == ECommonInputType.Gamepad then
-    DebugPrint("thy   IsGamePad")
     self:SwitchMainUIToGamePad()
     self:SetDefaultFocus()
   end
 end
-
 function Component:SetDefaultFocus()
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
@@ -76,20 +74,23 @@ function Component:SetDefaultFocus()
     self.Book:SetFocus()
   end
 end
-
 function Component:SwitchMainUIToGamePad()
   if self.Book:GetIsClueUi() then
     self.Btn_Associate.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
   end
   self.Book.Btn_QaBook.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
+  if self.Book.WS_Controller then
+    self.Book.WS_Controller:SetActiveWidgetIndex(1)
+  end
   self:RefreshTabGamepadIcon()
 end
-
 function Component:SwitchMainUIToPCOrMoble()
+  if self.Book.WS_Controller then
+    self.Book.WS_Controller:SetActiveWidgetIndex(0)
+  end
   self.Btn_Associate.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Book.Btn_QaBook.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Component:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -101,7 +102,6 @@ function Component:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function Component:RefreshTabGamepadIcon()
   if ModController:IsMobile() then
     return
@@ -153,5 +153,4 @@ function Component:RefreshTabGamepadIcon()
   end
   self.Tab:UpdateBottomKeyInfo_Quick(keyInfos)
 end
-
 return Component

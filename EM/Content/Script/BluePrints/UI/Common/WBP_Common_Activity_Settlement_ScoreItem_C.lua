@@ -2,19 +2,16 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Widget = self
   self:InitUI()
 end
-
 function M:Update(Content)
   self.Content = Content
   self.Content.Widget = self
   self:InitUI()
 end
-
 function M:InitUI()
   self.Text_ScoreInfo:SetText(self.Content.Text)
   if self.Content.IsFinish then
@@ -48,6 +45,11 @@ function M:InitUI()
     FontInfo.Size = 16
   end
   self.Text_ScoreInfo:SetFont(FontInfo)
+  if self.Content.ParentWidget.Params.IconPath then
+    local Img = LoadObject(self.Content.ParentWidget.Params.IconPath)
+    local Img_2 = LoadObject(self.Content.ParentWidget.Params.IconPath_2)
+    self.Image_Star:SetBrushFromTexture(Img)
+    self.Image_Empty:SetBrushFromTexture(Img_2)
+  end
 end
-
 return M

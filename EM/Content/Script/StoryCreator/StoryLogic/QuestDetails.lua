@@ -1,5 +1,4 @@
 local FQuestNodeQuestInfo = {}
-
 function FQuestNodeQuestInfo:New(QuestNode)
   if nil == QuestNode then
     DebugPrint("Warning: FQuestNodeQuestInfo.New: QuestNode is Empty")
@@ -10,9 +9,7 @@ function FQuestNodeQuestInfo:New(QuestNode)
   QuestNodeQuestInfo.PropsData = QuestNode.PropsData
   return QuestNodeQuestInfo
 end
-
 local FStoryNodeQuestInfo = {}
-
 function FStoryNodeQuestInfo:New(StoryNode)
   if nil == StoryNode then
     DebugPrint("Warning: FStoryNodeQuestInfo.New: StoryNode is Empty")
@@ -30,9 +27,7 @@ function FStoryNodeQuestInfo:New(StoryNode)
   end
   return StoryNodeQuestInfo
 end
-
 local FQuestDetails = {}
-
 function FQuestDetails:New(Storyline)
   local QuestDetails = setmetatable({}, {__index = FQuestDetails})
   QuestDetails.QuestStoryNodeQuestInfos = {}
@@ -44,5 +39,4 @@ function FQuestDetails:New(Storyline)
   end
   return QuestDetails
 end
-
 return FQuestDetails

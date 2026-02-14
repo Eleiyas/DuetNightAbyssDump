@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Overridden.Construct(self)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "AchievementSystem", nil)
@@ -172,7 +171,6 @@ function M:Construct()
     return bHasReddot, bHasNew
   end)
 end
-
 function M:OpenDetail(TypeId, Index)
   local avatar = GWorld:GetAvatar()
   self.CurrentTypeId = TypeId
@@ -193,8 +191,8 @@ function M:OpenDetail(TypeId, Index)
     local locked2 = avatar.Achvs:IsAchvLocked(y)
     local finshNoRec1 = achv1:IsFinished() and achv1:CanRecvReward() and not locked1
     local finshNoRec2 = achv2:IsFinished() and achv2:CanRecvReward() and not locked2
-    local finished1 = achv1:IsFinished() and not locked1
-    local finished2 = achv2:IsFinished() and not locked2
+    local finished1 = (achv1:IsFinished() or not achv1:CanRecvReward()) and not locked1
+    local finished2 = (achv2:IsFinished() or not achv2:CanRecvReward()) and not locked2
     if finshNoRec1 == finshNoRec2 and finshNoRec1 then
       return x < y
     elseif finshNoRec1 ~= finshNoRec2 then
@@ -286,7 +284,6 @@ function M:OpenDetail(TypeId, Index)
     end
   end
 end
-
 function M:OnListAchievementScrolled()
   if not self then
     return
@@ -307,7 +304,6 @@ function M:OnListAchievementScrolled()
       self:OnListAchievementScrolled()
     end
   end)
-  
   local function ReddotAndNewCalFunc(Content)
     if not Content then
       return false, false
@@ -317,7 +313,6 @@ function M:OnListAchievementScrolled()
     local bHasNew = false
     return bHasReddot, bHasNew
   end
-  
   self:AddTimer(0.033, function()
     if not self then
       return
@@ -328,7 +323,6 @@ function M:OnListAchievementScrolled()
     UIUtils.UpdateListReddot(self.Achievement_Root.List_Achievement, self.Achievement_Root.List_RedDotTop, self.Achievement_Root.List_RedDotBottom, self.Achievement_Root.List_ArrowTop, self.Achievement_Root.List_ArrowBottom, ReddotAndNewCalFunc)
   end)
 end
-
 function M:OnReturnKeyDown()
   if self.Closing or self:IsAnimationPlaying(self.In) then
     return
@@ -337,7 +331,6 @@ function M:OnReturnKeyDown()
   self:PlayAnimation(self.Out)
   AudioManager(self):SetEventSoundParam(self, "AchievementSystem", {ToEnd = 1})
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -356,7 +349,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -369,6 +361,7 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
         self:OnReturnKeyDown()
       else
         self.Achievement_Root.List_Achievement:SetFocus()
+        self:UpdateComTab(nil, false)
       end
       IsEventHandled = true
     elseif "Gamepad_FaceButton_Top" ~= InKeyName or self.OpenRewardDetail ~= nil and self.OpenRewardDetail == true then
@@ -385,7 +378,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Out then
     self.Achievement_Root.List_Item:SetControlScrollbarInside(false)
@@ -393,7 +385,6 @@ function M:OnAnimationFinished(Animation)
     self:Close()
   end
 end
-
 function M:PlayIn()
   self:PlayAnimation(self.In)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -402,18 +393,14 @@ function M:PlayIn()
     self.Com_Tab_M:Play_Com_Tab_M_In()
   end
 end
-
 function M:ScrollToId(id)
   if not self.Id2Index[id] then
     return
   end
   self.Achievement_Root.List_Item:ScrollIndexIntoView(self.Id2Index[id])
 end
-
 function M:OnGetAchvReward(AchvId, Ret)
   if Ret ~= ErrorCode.RET_SUCCESS then
-    local UIManager = GWorld.GameInstance:GetGameUIManager()
-    UIManager:ShowError(Ret, 1.5)
     return
   end
   local widgets = self.Achievement_Root.List_Achievement:GetDisplayedEntryWidgets():ToTable()
@@ -429,14 +416,12 @@ function M:OnGetAchvReward(AchvId, Ret)
     end
   end
 end
-
 function M:OnAchvFinished(AchvId)
   local widgets = self.Achievement_Root.List_Achievement:GetDisplayedEntryWidgets():ToTable()
   for _, widget in pairs(widgets) do
     widget:OnAchvFinished(AchvId)
   end
 end
-
 function M:OnItemScrolledIntoView(Item, Widget)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -448,11 +433,9 @@ function M:OnItemScrolledIntoView(Item, Widget)
     self.ClickHyperlink = false
   end
 end
-
 function M:GetAllReward()
   GWorld:GetAvatar():GetAllAchvRewardByType(self.CurrentTypeId, self.CurrentReceiveId, self.GetAchvReward)
 end
-
 function M:OnAchvHyperlinkClick(url)
   local inUrl = Split(url, ".")
   local id = tonumber(inUrl[1])
@@ -467,7 +450,6 @@ function M:OnAchvHyperlinkClick(url)
   end
   self.ClickHyperlink = true
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -482,7 +464,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:GamepadToPC()
   self.Achievement_Root.BP_Common_OneClickGet.Common_Button_Reward_PC.Img_GamePad:SetVisibility(ESlateVisibility.Collapsed)
   local Items = self.Achievement_Root.List_Item:GetDisplayedEntryWidgets()
@@ -490,14 +471,12 @@ function M:GamepadToPC()
     Item:OnFocusLost()
   end
 end
-
 function M:PCToGamepad()
   self.Achievement_Root.List_Achievement:NavigateToIndex(0)
   self.OpenRewardDetail = false
   self.Achievement_Root.BP_Common_OneClickGet.Common_Button_Reward_PC.Img_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
-function M:UpdateComTab(GetAllReward)
+function M:UpdateComTab(GetAllReward, CheckItem)
   if self.GetAllRewardTab == GetAllReward then
     return
   end
@@ -531,12 +510,25 @@ function M:UpdateComTab(GetAllReward)
           }
         },
         Desc = GText("UI_BACK")
-      },
+      }
+    }
+    self.Com_Tab_P:UpdateBottomKeyInfo(BottomKeyInfo)
+    self.GetAllRewardTab = true
+  elseif false == GetAllReward then
+    local BottomKeyInfo = {
       {
+        KeyInfoList = {
+          {
+            Type = "Text",
+            Text = "Esc",
+            ClickCallback = self.OnReturnKeyDown,
+            Owner = self
+          }
+        },
         GamePadInfoList = {
           {
             Type = "Img",
-            ImgShortPath = "LT",
+            ImgShortPath = "B",
             Owner = self
           }
         },
@@ -544,8 +536,9 @@ function M:UpdateComTab(GetAllReward)
       }
     }
     self.Com_Tab_P:UpdateBottomKeyInfo(BottomKeyInfo)
-    self.GetAllRewardTab = true
-  else
+    self.GetAllRewardTab = false
+  end
+  if true == CheckItem then
     local BottomKeyInfo = {
       {
         KeyInfoList = {
@@ -569,7 +562,29 @@ function M:UpdateComTab(GetAllReward)
         GamePadInfoList = {
           {
             Type = "Img",
-            ImgShortPath = "LT",
+            ImgShortPath = "LS",
+            Owner = self
+          }
+        },
+        Desc = GText("UI_Controller_CheckDetails")
+      }
+    }
+    self.Com_Tab_P:UpdateBottomKeyInfo(BottomKeyInfo)
+  elseif false == CheckItem then
+    local BottomKeyInfo = {
+      {
+        KeyInfoList = {
+          {
+            Type = "Text",
+            Text = "Esc",
+            ClickCallback = self.OnReturnKeyDown,
+            Owner = self
+          }
+        },
+        GamePadInfoList = {
+          {
+            Type = "Img",
+            ImgShortPath = "B",
             Owner = self
           }
         },
@@ -577,16 +592,12 @@ function M:UpdateComTab(GetAllReward)
       }
     }
     self.Com_Tab_P:UpdateBottomKeyInfo(BottomKeyInfo)
-    self.GetAllRewardTab = false
   end
 end
-
 function M:GetAchvRewardCallBack()
   self.Achievement_Root.List_Item:SetFocus()
 end
-
 function M:GetAchvReward()
   EventManager:FireEvent(EventID.GetAchvRewardCallBack)
 end
-
 return M

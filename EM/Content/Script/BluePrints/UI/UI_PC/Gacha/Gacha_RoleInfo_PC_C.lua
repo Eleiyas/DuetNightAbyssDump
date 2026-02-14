@@ -1,9 +1,7 @@
 require("UnLua")
 local G = Class("BluePrints.UI.BP_UIState_C")
-
 function G:Construct()
 end
-
 function G:Init(TargetType, TargetId)
   local Rarity, TargetName, TargetProperty
   if "Char" == TargetType then
@@ -31,5 +29,4 @@ function G:Init(TargetType, TargetId)
     self.Property:SetBrushResourceObject(AttributeIcon or LoadObject("/Game/UI/Texture/Dynamic/Atlas/Armory/T_Armory_Default.T_Armory_Default"))
   end
 end
-
 return G

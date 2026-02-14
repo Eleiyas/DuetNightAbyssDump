@@ -1,10 +1,8 @@
 local EntityFactory = {}
 EntityFactory.entity_classes = {}
-
 function EntityFactory:RegisterEntity(entity_type, entity_class)
   self.entity_classes[entity_type] = entity_class
 end
-
 function EntityFactory:GetEntityClass(entity_type)
   local entity_class
   if type(entity_type) == "string" then
@@ -12,7 +10,6 @@ function EntityFactory:GetEntityClass(entity_type)
   end
   return entity_class
 end
-
 function EntityFactory:CreateEntity(entity_type, entity_id)
   local EntityClass = self:GetEntityClass(entity_type)
   if nil == EntityClass then
@@ -20,5 +17,4 @@ function EntityFactory:CreateEntity(entity_type, entity_id)
   end
   return EntityClass(entity_id)
 end
-
 return EntityFactory

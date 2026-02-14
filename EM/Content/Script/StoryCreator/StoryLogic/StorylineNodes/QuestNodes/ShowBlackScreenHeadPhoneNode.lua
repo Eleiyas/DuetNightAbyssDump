@@ -1,5 +1,4 @@
 local ShowBlackScreenHeadPhoneNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function ShowBlackScreenHeadPhoneNode:Init()
   self.Tag = "ShowBlackScreenHeadPhoneNode"
   self.HeadPhoneWidget = nil
@@ -8,7 +7,6 @@ function ShowBlackScreenHeadPhoneNode:Init()
   self.BlendOutTime = 1.0
   self.DelayTime = 3.0
 end
-
 function ShowBlackScreenHeadPhoneNode:Execute(Callback)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not UIManager and Callback then
@@ -46,7 +44,6 @@ function ShowBlackScreenHeadPhoneNode:Execute(Callback)
     end
   end)
 end
-
 function ShowBlackScreenHeadPhoneNode:SetPlayerCharacterInputEnabled(bNewEnabled)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not IsValid(PlayerCharacter) then
@@ -58,13 +55,11 @@ function ShowBlackScreenHeadPhoneNode:SetPlayerCharacterInputEnabled(bNewEnabled
     PlayerCharacter:AddDisableInputTag(self.Tag)
   end
 end
-
 function ShowBlackScreenHeadPhoneNode:Clear()
   self:SetPlayerCharacterInputEnabled(true)
   if IsValid(self.HeadPhoneWidget) then
     local UIManager = GWorld.GameInstance:GetGameUIManager()
-    if not UIManager and Callback then
-      Callback(false)
+    if not UIManager then
       return
     end
     UIManager:UnLoadUI(self.HeadPhoneWidgetSystemUIName)
@@ -79,14 +74,10 @@ function ShowBlackScreenHeadPhoneNode:Clear()
     self.EndTimer = nil
   end
 end
-
 function ShowBlackScreenHeadPhoneNode:OnQuestlineFinish()
 end
-
 function ShowBlackScreenHeadPhoneNode:OnQuestlineSuccess()
 end
-
 function ShowBlackScreenHeadPhoneNode:OnQuestlineFail()
 end
-
 return ShowBlackScreenHeadPhoneNode

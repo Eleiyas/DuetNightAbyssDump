@@ -10,20 +10,16 @@ WheelSlot.__Props__ = {
   ResourceId = prop.prop("Int", "client save"),
   ResourceCount = prop.prop("Int", "client save", 0)
 }
-
 function WheelSlot:Init(SlotId)
   self.SlotId = SlotId
 end
-
 function WheelSlot:SetResource(ResourceId)
   self.ResourceId = ResourceId
 end
-
 function WheelSlot:Reset()
   self.ResourceId = 0
   self.ResourceCount = 0
 end
-
 function WheelSlot:ReduceCount(count)
   count = count or 1
   if count > self.ResourceCount then
@@ -31,27 +27,22 @@ function WheelSlot:ReduceCount(count)
   end
   self.ResourceCount = self.ResourceCount - count
 end
-
 FormatProperties(WheelSlot)
 local Wheel = Class("Wheel", CustomTypes.CustomDict)
 Wheel.KeyType = BaseTypes.Int
 Wheel.ValueType = WheelSlot
-
 function Wheel:InitSlot()
   for i = 1, DataMgr.GlobalConstant.BattleWheelPlanNum.ConstantValue do
     self[i] = WheelSlot(i)
   end
 end
-
 local Wheels = Class("Wheels", CustomTypes.CustomList)
 Wheels.ValueType = Wheel
-
 function Wheels:AddWheel()
   local wheel = Wheel()
   wheel:InitSlot()
   self:Append(wheel)
 end
-
 return {
   WheelSlot = WheelSlot,
   Wheel = Wheel,

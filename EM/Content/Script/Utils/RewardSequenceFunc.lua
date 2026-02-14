@@ -1,5 +1,4 @@
 local RewardSequenceFunc = {}
-
 function RewardSequenceFunc.Init(RewardId)
   return {
     RewardId = RewardId,
@@ -8,7 +7,6 @@ function RewardSequenceFunc.Init(RewardId)
     RandomCount = 0
   }
 end
-
 function RewardSequenceFunc:AddIndex(RewardId, Data, bCeiling)
   local Sequence = self.SequenceDict[RewardId]
   if not Sequence then
@@ -24,13 +22,11 @@ function RewardSequenceFunc:AddIndex(RewardId, Data, bCeiling)
   end
   self.SequenceDict[RewardId] = Sequence
 end
-
 function RewardSequenceFunc.Random(Sequence, Seed, min, max)
   math.randomseed(Seed + Sequence.RandomCount + Sequence.RewardId)
   Sequence.RandomCount = Sequence.RandomCount + 1
   return math.random(min, max)
 end
-
 function RewardSequenceFunc.Shuffle(Sequence, Seed, T)
   local Count = #T
   while Count > 1 do
@@ -41,7 +37,6 @@ function RewardSequenceFunc.Shuffle(Sequence, Seed, T)
     end
   end
 end
-
 function RewardSequenceFunc.UpdateRewards(Sequence, Seed, Data, bCeiling)
   local RewardInfo = Data[Sequence.RewardId]
   local Result = {}
@@ -66,9 +61,7 @@ function RewardSequenceFunc.UpdateRewards(Sequence, Seed, Data, bCeiling)
   end
   Sequence.Rewards = Result
 end
-
 function RewardSequenceFunc:GetReward()
   return self.Rewards[self.RewardIndex]
 end
-
 return RewardSequenceFunc

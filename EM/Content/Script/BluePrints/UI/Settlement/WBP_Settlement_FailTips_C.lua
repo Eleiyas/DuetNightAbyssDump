@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Settlement_FailTips_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Settlement_FailTips_C:InitialTips(DungeonId, IsInHardBoss)
   self.Text01:SetText(GText("UI_DungeonFail_Tips1"))
   self.Text02:SetText(GText("UI_DungeonFail_Tips2"))
@@ -17,7 +16,7 @@ function WBP_Settlement_FailTips_C:InitialTips(DungeonId, IsInHardBoss)
       if ChapterId then
         GuideCombinationId = DataMgr.WeeklySelectDungeon[ChapterId].GuidanceTitle
       else
-        DebugPrint("zwk \229\164\177\232\180\165\231\187\147\231\174\151\229\189\147\229\137\141\229\137\175\230\156\172Id\230\151\162\230\178\161\230\156\137\229\135\186\231\142\176\229\156\168SelectDungeon\232\161\168\228\185\159\230\178\161\230\156\137\229\135\186\231\142\176\229\156\168WeeklySelectDungeon\232\161\168\228\184\173\239\188\140\233\187\152\232\174\164\228\189\191\231\148\168200001\229\164\177\232\180\165\230\140\135\229\188\149\231\187\132\229\144\136\239\188\140\229\189\147\229\137\141\229\137\175\230\156\172ID:", DungeonId)
+        DebugPrint("zwk 失败结算当前副本Id既没有出现在SelectDungeon表也没有出现在WeeklySelectDungeon表中，默认使用200001失败指引组合，当前副本ID:", DungeonId)
         GuideCombinationId = 200001
       end
     end
@@ -34,7 +33,6 @@ function WBP_Settlement_FailTips_C:InitialTips(DungeonId, IsInHardBoss)
   local IsScrollDisable = self.List_Tips:IsDisableScroll()
   self.List_Tips:SetAllowOverscroll(IsScrollDisable)
 end
-
 function WBP_Settlement_FailTips_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -47,5 +45,4 @@ function WBP_Settlement_FailTips_C:OnAnalogValueChanged(MyGeometry, InAnalogInpu
   end
   return UIUtils.Unhandled
 end
-
 return WBP_Settlement_FailTips_C

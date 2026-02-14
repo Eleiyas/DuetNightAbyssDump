@@ -5,6 +5,7 @@ local WalnutBagController = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBa
 local WalnutBagModel = WalnutBagController:GetModel()
 local TimeUtils = require("Utils.TimeUtils")
 local EMCache = require("EMCache.EMCache")
+local ActivityController = require("BluePrints.UI.WBP.Activity.ActivityController")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
@@ -20,7 +21,6 @@ local TypeSort = {
   Resource = 6
 }
 local DungeonSelectCache = {}
-
 function M:Construct()
   M.bOpened = true
   M.Super.Construct(self)
@@ -40,12 +40,27 @@ function M:Construct()
   self:AddDispatcher(EventID.TeamMatchTimingStart, self, self.TeamMatchTimingStart)
   self:AddDispatcher(EventID.TeamMatchTimingEnd, self, self.TeamMatchTimingEnd)
   self:AddDispatcher(EventID.SelectedWalnut, self, self.EnterWalnutDungeon)
+  self:AddDispatcher(EventID.TeamMatchOneRefused, self, function()
+    self:BlockAllUIInput(false)
+  end)
   self:AddDispatcher(EventID.OnRefreshDeputeBtn, self, self.RefreshBtnState)
   self:AddDispatcher(EventID.OnDungeonsUpdate, self, self.OnDungeonsUpdate)
   self:AddDispatcher(EventID.CurrentSquadChange, self, self.OnCurrentSquadChange)
   self:AddDispatcher(EventID.FoucsDungeonSelectLevel, self, self.OnSelectCellFocus)
   self:AddDispatcher(EventID.OnDisableEscOnDungeonLoading, self, self.DisableEscOnDungeonLoading)
+  TeamController:RegisterEvent(self, function(self, EventId, ...)
+    if EventId == TeamCommon.EventId.TeamOnInit or EventId == TeamCommon.EventId.TeamLeave then
+      self:RefreshBtnState()
+    end
+  end)
   self.List_Prop.OnCreateEmptyContent:Bind(self, self.CreateAndAddEmptyItem)
+  self.List_Prop.BP_OnEntryInitialized:Add(self, function(self, Content, Widget)
+    if 0 ~= Content.Id then
+      Widget:BindEvents(self, {
+        OnMenuOpenChanged = self.OnStuffMenuOpenChanged
+      })
+    end
+  end)
   self.List_Event.OnCreateEmptyContent:Bind(self, self.CreateEventAndAddEmptyItem)
   self.HB_Cost:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self:AddInputMethodChangedListen()
@@ -93,7 +108,6 @@ function M:Construct()
   })
   self.StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
   M.bOpened = false
@@ -101,10 +115,14 @@ function M:Destruct()
   self.Button_Multi:UnBindEventOnClickedByObj(self)
   self.Button_Solo:UnBindEventOnClickedByObj(self)
   self.Button_DoubleMod:UnBindEventOnClickedByObj(self)
+  TeamController:UnRegisterEvent(self)
 end
-
 function M:InitLevelList(DungeonList, SelectDungeonId, DeputeType, WalnutId)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "Play_DeputeDetail", nil)
+  local PlayEntry = UIManager(self):GetUIObj("StyleOfPlay")
+  if PlayEntry then
+    self.CurTabId = PlayEntry.CurTabId
+  end
   self:SetFocus()
   self.MonsterIdToItem = {}
   self.TypeTable = {}
@@ -257,7 +275,6 @@ function M:InitLevelList(DungeonList, SelectDungeonId, DeputeType, WalnutId)
     self:UpdateUIStyleInPlatform(false)
   end
 end
-
 function M:SetWalnutTitleMatColor(WalnutType)
   if 1 == WalnutType then
     self.WalnutTypeTextColor = self.Sx_Text_WalnutTypeTitleMatColor
@@ -267,12 +284,10 @@ function M:SetWalnutTitleMatColor(WalnutType)
     self.WalnutTypeTextColor = self.Hl_Text_WalnutTypeTitleMatColor
   end
 end
-
 function M:UpdateTimeCountDown()
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.LeftTimeDict)
   self.Time_Refresh:SetTimeText("UI_Walnut_Dungeon_Refresh", RemainTimeDict)
 end
-
 function M:SetPanelDetails(Idx)
   self.Com_Btn_Details:UnBindEventOnClickedByObj(self)
   if Idx == self.ObtainTabId then
@@ -311,7 +326,6 @@ function M:SetPanelDetails(Idx)
     end
   end
 end
-
 function M:OnSubTabChanged(TabWidget)
   self.CurrentTabIdx = TabWidget.Idx
   self:PlayAnimation(self.Switch_Tab)
@@ -350,14 +364,12 @@ function M:OnSubTabChanged(TabWidget)
   end
   self:SetNightFlightManualText_MoreHide(TabWidget.Idx)
 end
-
 function M:IsShowKeyMore()
   if self.CurrentTabIdx == self.SpecialMonsterTabId then
     return self.MonNum and self.MonNum > self.MaxMonNum
   end
   return self.CurrentTabIdx == self.ObtainTabId
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -369,7 +381,6 @@ function M:ItemMenuAnchorChanged(bIsOpen)
     self:SelectCellFocus()
   end
 end
-
 function M:SetNightFlightManualText_MoreHide(Idx)
   if self.DeputeType == Const.DeputeType.NightFlightManualDepute and Idx == self.SpecialMonsterTabId then
     self:SetNightFlightManualEliteProp(self.CurSelectedDungeonId)
@@ -389,11 +400,9 @@ function M:SetNightFlightManualText_MoreHide(Idx)
     end
   end
 end
-
 function M:SetNightFlightManualRewardView(DungeonRewardView)
   self.DungeonRewardView = DungeonRewardView
 end
-
 function M:SetNightFlightManualEliteProp(DungeonId)
   self.WB_EliteProp:ClearChildren()
   self.MonsterWeaknessIconCache = {}
@@ -429,7 +438,6 @@ function M:SetNightFlightManualEliteProp(DungeonId)
     self.WB_EliteProp:GetChildAt(1):SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   end
 end
-
 function M:GetMonsterWeaknessIcon(MonsterId)
   local MonsterWeaknessIcon = self.MonsterWeaknessIconCache or {}
   self.MonsterWeaknessIconCache = MonsterWeaknessIcon
@@ -449,11 +457,9 @@ function M:GetMonsterWeaknessIcon(MonsterId)
   end
   return MonsterWeaknessIcon[MonsterId]
 end
-
 function M:SetWalnutType(WalnutTypeData)
   self.WalnutTypeData = WalnutTypeData
 end
-
 function M:OnClickedLevelCell(LevelCell)
   if self.SelectCell ~= nil then
     self.SelectCell:PlayAnimationReverse(self.SelectCell.Select)
@@ -470,7 +476,6 @@ function M:OnClickedLevelCell(LevelCell)
   self.CurCellDungeonId = LevelCell.DungeonId
   self:InitListCellInfo(LevelCell.DungeonId)
 end
-
 function M:OnTypeClicked(TypeId, bDefault)
   DungeonSelectCache[self.CurCellDungeonId] = TypeId
   local DungeonAttribute = DataMgr.Dungeon[TypeId].AttributeType
@@ -487,7 +492,6 @@ function M:OnTypeClicked(TypeId, bDefault)
   M.SelectedDungeonId = TypeId
   self:RefreshLevelCellContent(TypeId)
 end
-
 function M:IsShowAttributeTips()
   if not self.DungeonAttribute then
     return
@@ -511,8 +515,13 @@ function M:IsShowAttributeTips()
     self.Panel_WarningHint_Attribute:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:InitListCellInfo(DungeonId)
+  local DungeonData = DataMgr.Dungeon[DungeonId]
+  if not DungeonData then
+    return
+  end
+  self.DungeonData = DungeonData
+  self:AutoNextRoundInit()
   if self.SelectCell then
     self:SelectCellFocus()
   end
@@ -598,7 +607,8 @@ function M:InitListCellInfo(DungeonId)
     self.Group_TimeTips:SetVisibility(ESlateVisibility.Collapsed)
     return
   end
-  local CfgDrop = DataMgr.DoubleModDrop and DataMgr.DoubleModDrop[CommonConst.DoubleModDropEventID]
+  local EventId = ActivityController:GetDoubleModDropEventID()
+  local CfgDrop = DataMgr.DoubleModDrop and DataMgr.DoubleModDrop[EventId]
   if not CfgDrop then
     self.Group_TimeTips:SetVisibility(ESlateVisibility.Collapsed)
     return
@@ -608,15 +618,17 @@ function M:InitListCellInfo(DungeonId)
     self.Group_TimeTips:SetVisibility(ESlateVisibility.Collapsed)
     return
   end
-  self.IsDoubleMod = self:IsDoubleMod()
-  if not self.IsDoubleMod then
+  self.IsDoubleModOpen = self:IsDoubleMod()
+  if not self.IsDoubleModOpen then
     self.Group_TimeTips:SetVisibility(ESlateVisibility.Collapsed)
     return
   end
+  self.Text_ModUpNum:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  local _, IsEliteRushDungeon = self:CheckDungeonType(self.CurSelectedDungeonId)
   self.Group_TimeTips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Bg_Consume:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   local DropInfo = self:GetDoubleModDropData() or {}
-  local IsElite = EMCache:Get("Is_DoubleMod_SwitchTab", true) or false
+  local IsElite = IsEliteRushDungeon
   local TitleKey = IsElite and "UI_Event_ModDrop_ChallengeRemain" or "UI_Event_ModDrop_DropRemain"
   self.Text_TimeTipsTitle:SetText(GText(TitleKey))
   local MdConst = DataMgr.ModDropConstant or {}
@@ -627,14 +639,13 @@ function M:InitListCellInfo(DungeonId)
   local Remaining = math.max(0, math.floor(CfgValue - UsedTimes))
   local TextValue = Remaining <= 0 and "<Warning>0</>/" .. CfgValue or Remaining .. "/" .. CfgValue
   self.Text_Times:SetText(TextValue)
-  self.Text_ModUpNum:SetVisibility(IsElite and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
   if not IsElite then
     local BonusConst = MdConst.EventBonus and MdConst.EventBonus.ConstantValue or 0
     local BonusPct = math.floor(BonusConst / 100)
     self.Text_ModUpNum:SetText("+" .. BonusPct .. "%")
+    self.Text_ModUpNum:SetVisibility(Remaining <= 0 and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:RefreshLevelCellContent(DungeonId)
   if not DungeonId then
     DebugPrint("ZDX DungeonId is nil")
@@ -680,6 +691,7 @@ function M:RefreshLevelCellContent(DungeonId)
   if self.DeputeType == Const.DeputeType.RegularDepute then
     self.Panel_Bg:ClearChildren()
   else
+    self.Panel_Bg:ClearChildren()
     local ChildrenCount = self.Panel_Bg:GetChildrenCount()
     if ChildrenCount >= 2 then
       self.Panel_Bg:RemoveChildAt(0)
@@ -714,9 +726,17 @@ function M:RefreshLevelCellContent(DungeonId)
     DebugPrint("SL DungeonUIBG Create Failed")
   end
 end
-
+function M:AutoNextRoundInit()
+  if 1 ~= self.DungeonData.DungeonWinMode or not self.DungeonData.AutoNextRound then
+    self.AutoNextRound:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    return
+  end
+  self.AutoNextRound:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.AutoNextRound:Init(self.DungeonData)
+end
 function M:CheckDungeonType(DungeonId)
-  local CfgDrop = DataMgr.DoubleModDrop and DataMgr.DoubleModDrop[CommonConst.DoubleModDropEventID]
+  local EventId = ActivityController:GetDoubleModDropEventID()
+  local CfgDrop = DataMgr.DoubleModDrop and DataMgr.DoubleModDrop[EventId]
   if not DungeonId or not CfgDrop then
     return false, false
   end
@@ -740,21 +760,17 @@ function M:CheckDungeonType(DungeonId)
   end
   return IsDoubleModDungeon, IsEliteRushDungeon
 end
-
 function M:OpenRewardDetails()
   AudioManager(self):PlayUISound(self, "event:/ui/common/tip_show_click", nil, nil)
   local Params = {}
   Params.RewardList = self.RewardList
-  
   function Params.CloseBtnCallbackFunction()
     self:SelectCellFocus()
   end
-  
   Params.AutoFocus = true
   Params.Checked = self.Com_CheckBox_LeftText:IsChecked()
   local UI = UIManager(self):ShowCommonPopupUI(100156, Params)
 end
-
 function M:OpenCommanderDetails()
   local Params = {}
   Params.DungeonId = self.CurSelectedDungeonId
@@ -762,9 +778,8 @@ function M:OpenCommanderDetails()
   Params.AutoFocus = true
   local UI = UIManager(self):ShowCommonPopupUI(100155, Params)
 end
-
 function M:RefreshRewardInfoList(DungeonId)
-  assert(DataMgr.Dungeon[DungeonId], "\229\137\175\230\156\172\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. DungeonId)
+  assert(DataMgr.Dungeon[DungeonId], "副本信息不存在:" .. DungeonId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
@@ -797,7 +812,6 @@ function M:RefreshRewardInfoList(DungeonId)
     end
   end
   local RewardList = RewardUtils:GetRewardViewInfoById(DataMgr.Dungeon[DungeonId].DungeonRewardView)
-  
   local function SortFunc(A, B)
     if A.Rarity == B.Rarity then
       if TypeSort[A.Type] and TypeSort[B.Type] then
@@ -810,7 +824,6 @@ function M:RefreshRewardInfoList(DungeonId)
     end
     return A.Rarity > B.Rarity
   end
-  
   if FirstRewardList then
     table.sort(FirstRewardList, SortFunc)
   end
@@ -823,6 +836,14 @@ function M:RefreshRewardInfoList(DungeonId)
   end
   for _, v in ipairs(RewardList) do
     table.insert(self.RewardList, v)
+  end
+  local IsInTimeRange, RewardConfig = self:IsInTimeRange(DungeonId)
+  if IsInTimeRange and RewardConfig then
+    local EventDungeonRewardList = RewardUtils:GetRewardViewInfoById(RewardConfig.RewardView)
+    table.sort(EventDungeonRewardList, SortFunc)
+    for _, v in ipairs(EventDungeonRewardList) do
+      table.insert(self.RewardList, v)
+    end
   end
   local CheckBoxIsChecked = self.Com_CheckBox_LeftText:IsChecked()
   for _, ItemData in ipairs(self.RewardList) do
@@ -851,38 +872,44 @@ function M:RefreshRewardInfoList(DungeonId)
         Content.Count = BaseCount
       end
     end
+    Content.bShadow = false
+    if Content.ItemType == "Mod" then
+      local ModModel = ModController:GetModel()
+      Content.bShadow = ModModel:GetModCountById(Content.Id) <= 0
+    elseif Content.ItemType == "Walnut" then
+      local WalnutsInBag = Avatar.Walnuts.WalnutBag
+      Content.bShadow = (WalnutsInBag[Content.Id] or 0) <= 0
+    end
     self.List_Prop:AddItem(Content)
   end
-  if self:IsExistTimer(self.NextFrameListEmpty) then
-    self:RemoveTimer(self.NextFrameListEmpty)
+  if 0 == self.List_Prop:GetNumItems() then
+    self.List_Prop:AddItem(self:CreateAndAddEmptyItem())
   end
-  self.NextFrameListEmpty = self:AddTimer(0.01, function()
-    local len = self.List_Prop:GetNumItems()
-    for i = 1, len do
-      local entryWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Prop, i - 1)
-      if entryWidget then
-        entryWidget:BindEvents(self, {
-          OnMenuOpenChanged = self.OnStuffMenuOpenChanged
-        })
-      end
-    end
-    local RewardItemUIs = self.List_Prop:GetDisplayedEntryWidgets()
-    self.List_Prop:RequestFillEmptyContent()
-  end, false, 0, "DeputeDetailListView")
+  self.List_Prop:RequestFillEmptyContent()
 end
-
+function M:IsInTimeRange(dungeonId)
+  local nowTimestamp = TimeUtils.NowTime()
+  local dungeonConfig = DataMgr.EventDungeonReward[dungeonId]
+  if not dungeonConfig then
+    return false
+  end
+  for _, config in pairs(dungeonConfig) do
+    if type(config) == "table" and nowTimestamp >= config.StartDate and nowTimestamp <= config.EndDate then
+      return true, config
+    end
+  end
+  return false
+end
 function M:CreateEventAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.IsEmpty = true
   return Content
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Id = 0
   return Content
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -903,7 +930,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self.Switch_Details_Icon:SetActiveWidgetIndex(2)
   end
 end
-
 function M:RefreshDeputeEvent(DungeonId)
   local uniqueEventTypeSet = {}
   for _, EventData in pairs(DataMgr.DungeonRandomEvent) do
@@ -929,14 +955,10 @@ function M:RefreshDeputeEvent(DungeonId)
     Content.Des = Des
     self.List_Event:AddItem(Content)
   end
-  if self:IsExistTimer(self.NextEventFrameListEmpty) then
-    self:RemoveTimer(self.NextEventFrameListEmpty)
-  end
-  self.NextEventFrameListEmpty = self:AddTimer(0.01, function()
+  if #UniqueEventTypeList > 0 then
     self.List_Event:RequestFillEmptyContent()
-  end, false, 0, "List_EventDeputeDetailListView")
+  end
 end
-
 function M:OnClickedCell(LvCell)
   if self.SelectLvTabCell ~= nil then
     self.SelectLvTabCell:OnCellUnSelect()
@@ -944,7 +966,6 @@ function M:OnClickedCell(LvCell)
   self.SelectLvTabCell = LvCell
   LvCell:SelectCell()
 end
-
 function M:RefreshMonsterInfoList(DungeonId)
   local DungeonInfo = DataMgr.Dungeon[DungeonId]
   if not (DungeonInfo and DungeonInfo.DungeonMonsters) or 0 == #DungeonInfo.DungeonMonsters then
@@ -955,9 +976,10 @@ function M:RefreshMonsterInfoList(DungeonId)
   table.sort(DisplayMonsters, MonsterUtils.CompareMonsters)
   self.MonsterWeaknessIcon = {}
   self:InitMonsterWeakness(DungeonId)
+  local GameState = UE4.UGameplayStatics.GetGameState(self)
   for _, MonsterId in ipairs(DisplayMonsters) do
     local MonsterData = DataMgr.Monster[MonsterId]
-    if MonsterData and not MonsterData.IsNotRelease then
+    if MonsterData and GameState.IsUnitRelease(MonsterId) then
       local Content = NewObject(self.MonsterItemContentClass)
       Content.ParentWidget = self
       Content.MonsterId = MonsterId
@@ -968,7 +990,6 @@ function M:RefreshMonsterInfoList(DungeonId)
     end
   end
 end
-
 function M:InitMonsterWeakness(DungeonId)
   assert(DungeonId, "dungeon id is nil")
   local DungeonInfo = DataMgr.Dungeon[DungeonId]
@@ -996,7 +1017,6 @@ function M:InitMonsterWeakness(DungeonId)
     end
   end
 end
-
 function M:ShowDialogChar()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1031,10 +1051,8 @@ function M:ShowDialogChar()
     self:OnClickSolo()
   end
 end
-
 function M:ShowFirstDeputeWeeklyConfirmWindow(bIsSolo)
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction(_, Data)
     if bIsSolo then
       self:OnClickSolo()
@@ -1042,15 +1060,12 @@ function M:ShowFirstDeputeWeeklyConfirmWindow(bIsSolo)
       self:TryEnterMultiDungeon()
     end
   end
-  
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(100238, CommonDialogParams, self)
 end
-
 function M:ShowConfirmWindow(bIsSolo)
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction(_, Data)
     if bIsSolo then
       self:OnClickSolo()
@@ -1059,23 +1074,19 @@ function M:ShowConfirmWindow(bIsSolo)
     end
     self:UpdateSelectedInfo(Data)
   end
-  
   function CommonDialogParams.LeftCallbackFunction(_, Data)
     self:UpdateSelectedInfo(Data)
   end
-  
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(100211, CommonDialogParams, self)
 end
-
 function M:UpdateSelectedInfo(Data)
   local IsSelected = Data.SelectHint.IsSelected
   local CurTimestamp = TimeUtils.NowTime()
   EMCache:Set("Is_DeputeWeeklyNum", IsSelected, true)
   EMCache:Set("IsWeeklyDungeonTimestamp", CurTimestamp, true)
 end
-
 function M:CheckNeedShowWindow()
   local IsNoMorePrompts = false
   if TimeUtils then
@@ -1084,7 +1095,6 @@ function M:CheckNeedShowWindow()
   end
   return IsNoMorePrompts
 end
-
 function M:OnClickSolo()
   self.IsSoloStart = true
   self.MultiWalnut = false
@@ -1107,8 +1117,22 @@ function M:OnClickSolo()
       return
     end
     local bIsInTeam = Avatar:IsInTeam()
-    if not bIsInTeam then
-      self:OpenTicketDialog(self.CurSelectedDungeonId)
+    if self.DeputeType == Const.DeputeType.NightFlightManualDepute then
+      local ShowDouble = self.IsDoubleModOpen and self.ContinuousCombat
+      if not bIsInTeam then
+        if ShowDouble then
+          local Param = {
+            RightCallbackObj = self,
+            RightCallbackFunction = self.OpenTicketDialog
+          }
+          UIManager(self):ShowCommonPopupUI(100284, Param, self)
+        else
+          self:OpenTicketDialog()
+        end
+        return
+      end
+    elseif not bIsInTeam then
+      self:OpenTicketDialog()
       return
     end
   end
@@ -1125,6 +1149,7 @@ function M:OnClickSolo()
       TeamController:GetModel().WalnutId = self.WalnutId
     end
     self:TryEnterDungeon(Avatar, self.CurSelectedDungeonId, CommonConst.DungeonNetMode.Standalone, function(RetCode, ...)
+      self:BlockAllUIInput(false)
       local bCanEnter = self.HandleEnterDungeonRetCode(RetCode, ...)
       if bCanEnter then
         UIManager(self):LoadUINew("DungeonMatchTimingBar", self.CurSelectedDungeonId, Const.DUNGEON_MATCH_BAR_STATE.SPONSOR_WAITING_CONFIRM, false)
@@ -1136,13 +1161,16 @@ function M:OnClickSolo()
       local WalnutChoiceUI = UIManager(self):LoadUINew("WalnutChoice", CommonConst.WalnutUser.Depute, self.CurSelectedDungeonId)
       if self.WalnutId then
         WalnutChoiceUI:SelectWalnutById(self.WalnutId)
+      else
+        local WalnutUtils = require("BluePrints.UI.WBP.Walnut.WalnutChoice.WalnutUtils")
+        local WalnutId = WalnutUtils:GetWalnutCacheIdByDungeonId(self.CurSelectedDungeonId)
+        WalnutChoiceUI:SelectWalnutById(WalnutId)
       end
       return
     end
     self:EnterStandalone()
   end
 end
-
 function M:OnClickMulti()
   self.IsSoloStart = false
   self.MultiWalnut = false
@@ -1178,7 +1206,7 @@ function M:OnClickMulti()
     local bIsInTeam = Avatar:IsInTeam()
     if not bIsInTeam then
       self.MultiTicket = true
-      self:OpenTicketDialog(self.CurSelectedDungeonId)
+      self:OpenTicketDialog()
       return
     end
   end
@@ -1204,12 +1232,15 @@ function M:OnClickMulti()
     local WalnutChoiceUI = UIManager(self):LoadUINew("WalnutChoice", CommonConst.WalnutUser.Depute, self.CurSelectedDungeonId)
     if self.WalnutId then
       WalnutChoiceUI:SelectWalnutById(self.WalnutId)
+    else
+      local WalnutUtils = require("BluePrints.UI.WBP.Walnut.WalnutChoice.WalnutUtils")
+      local WalnutId = WalnutUtils:GetWalnutCacheIdByDungeonId(self.CurSelectedDungeonId)
+      WalnutChoiceUI:SelectWalnutById(WalnutId)
     end
     return
   end
   self:TryEnterMultiDungeon()
 end
-
 function M:TryEnterMultiDungeon()
   TeamController:GetModel().bPressedMulti = true
   local Avatar = GWorld:GetAvatar()
@@ -1217,6 +1248,7 @@ function M:TryEnterMultiDungeon()
   self:TryEnterDungeon(Avatar, self.CurSelectedDungeonId, CommonConst.DungeonNetMode.DedicatedServer, function(RetCode, ...)
     local bCanEnter = self.HandleEnterDungeonRetCode(RetCode, ...)
     DebugPrint("gmy@WBP_Play_DeputeDetail_C M:OnClickMulti", bCanEnter)
+    self:BlockAllUIInput(false)
     if bCanEnter then
       local bIsInTeam = Avatar:IsInTeam()
       if bIsInTeam then
@@ -1228,7 +1260,6 @@ function M:TryEnterMultiDungeon()
   end, self.TicketId)
   self:RefreshBtnState()
 end
-
 function M:EnterWalnutDungeon()
   if self.IsSoloStart then
     self:EnterStandalone()
@@ -1237,7 +1268,6 @@ function M:EnterWalnutDungeon()
     self:TryEnterMultiDungeon()
   end
 end
-
 function M:EnterTicketDungeon(TicketId)
   if self.IsSoloStart then
     self:EnterStandalone(TicketId)
@@ -1249,21 +1279,24 @@ function M:EnterTicketDungeon(TicketId)
     self:TryEnterMultiDungeon()
   end
 end
-
 function M:EnterStandalone(TicketId)
   if self.DungeonCost and self.MyActionPoint < self.DungeonCost then
     UIUtils.ShowActionRecover(self)
     return
   end
-  local Avatar = GWorld:GetAvatar()
   if -1 ~= TicketId then
     self.TicketId = TicketId
+    GWorld.GameInstance:SetTicketId(self.TicketId)
   end
   local StyleOfPlay = UIManager(self):GetUI("StyleOfPlay")
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_enter_level", nil, nil)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
+    if self:IsAutoNextRound() then
+      Avatar:SetDungeonAutoProgress(self.CurSelectedDungeonId, self.AutoNextRound:GetSelectCount())
+    end
     self:TryEnterDungeon(Avatar, self.CurSelectedDungeonId, CommonConst.DungeonNetMode.Standalone, function(RetCode, ...)
+      self:BlockAllUIInput(false)
       local bRetCode = self.HandleEnterDungeonRetCode(RetCode, ...)
       if not bRetCode then
         local StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
@@ -1273,21 +1306,24 @@ function M:EnterStandalone(TicketId)
         self:PlayAnimation(self.In)
       end
     end, self.TicketId)
+    self:BlockAllUIInput(true)
+    self:AddTimer(10, function()
+      if self and self:IsAllUIInputBlocked() then
+        self:BlockAllUIInput(false)
+      end
+    end)
   else
     WorldTravelSubsystem(self):ChangeDungeonByDungeonId(self.CurSelectedDungeonId, CommonConst.DungeonNetMode.Standalone)
   end
 end
-
 function M:OnBtnCheckClicked()
   if not self:IsAnimationPlaying(self.Out) then
     UIManager(self):LoadUINew("MonsterDetailInfo", self.CurSelectedDungeonId, self)
   end
 end
-
 function M:SelectMonsterInfoItem(MonsterId)
   UIManager(self):LoadUINew("MonsterDetailInfo", self.CurSelectedDungeonId, self, MonsterId)
 end
-
 function M:SetElementIcon(ElementType)
   if ElementType then
     self.Type:SetVisibility(ESlateVisibility.Visible)
@@ -1304,7 +1340,6 @@ function M:SetElementIcon(ElementType)
     self.Stats_ListView:AddItem(self:NewElmtIconContent(Type, ElmtNames[idx], Type == ElementType))
   end
 end
-
 function M:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   local Obj = NewObject(self.AttributeContentClass)
   local IconPath = DataMgr.Attribute[ElmtType].Icon
@@ -1313,7 +1348,6 @@ function M:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   Obj.IsSelected = IsSelected
   return Obj
 end
-
 function M:OnElementEntryInitialized(Content, Widget)
   if Content.IsSelected then
     Widget.Bg_On:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -1323,46 +1357,47 @@ function M:OnElementEntryInitialized(Content, Widget)
   Widget.Image_Attribute:SetBrushResourceObject(Content.Icon)
   Widget.Stats_Name:SetText(Content.Text)
 end
-
 function M:OnButtonAttibuteHovered()
   self.IsOpenAttibute = true
   self:StopAnimation(self.Tips_In)
   self:PlayAnimation(self.Tips_In)
 end
-
 function M:OnButtonAttibuteUnhovered()
   self.IsOpenAttibute = false
   self:StopAnimation(self.Tips_In)
   self:PlayAnimationReverse(self.Tips_In)
 end
-
 function M:OnUserScrolled()
   if CommonUtils.GetDeviceTypeByPlatformName() == "Mobile" then
     return
   end
   UIUtils.UpdateScrollBoxArrow(self.ScrollBox_List, self.List_ArrowTop, self.List_ArrowBottom)
 end
-
 function M:OpenDetails()
   UIManager(self):LoadUINew("ItemInformation", {
     Name = DataMgr.Dungeon[self.CurSelectedDungeonId].DungeonName,
     Desc = DataMgr.Dungeon[self.CurSelectedDungeonId].DungeonContent
   }, "LevelDatail")
 end
-
 function M:OnReturnKeyDown()
+  local PlayEntry = UIManager(self):GetUIObj("StyleOfPlay")
+  if not PlayEntry then
+    return
+  end
+  if self:IsAnimationPlaying(self.In) then
+    return
+  end
   AudioManager(self):SetEventSoundParam(self, "Play_DeputeDetail", {ToEnd = 1})
   if not self:IsAnimationPlaying(self.Out) then
     self:SetVisibility(ESlateVisibility.HitTestInvisible)
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:RemoveFromParent()
     local PlayEntry = UIManager(self):GetUIObj("StyleOfPlay")
-    PlayEntry.SubUI[PlayEntry.CurTabId] = nil
+    PlayEntry.SubUI[self.CurTabId] = nil
     if self.IsFromJump then
       if PlayEntry.IsHome then
         PlayEntry:SwitchCamera()
@@ -1379,7 +1414,6 @@ function M:OnAnimationFinished(InAnimation)
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -1398,7 +1432,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -1410,6 +1443,8 @@ function M:UpdatKeyDisplay(FocusTypeName)
   if self.DefaultList:GetVisibility() == ESlateVisibility.SelfHitTestInvisible and self.DefaultList.IsShow then
     return
   end
+  self.Tab_Info.Key_Left:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.Tab_Info.Key_Right:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.FocusTypeName = FocusTypeName
   if "RewardWidget" == FocusTypeName then
     local BottomKeyInfo = {
@@ -1624,6 +1659,52 @@ function M:UpdatKeyDisplay(FocusTypeName)
     self:UpdateUIStyleInPlatform(true)
     StyleOfPlay.ComTab.WBP_Com_Tab_ResourceBar.KeyImg_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
     StyleOfPlay.ComTab.WBP_Com_Tab_ResourceBar.Tip_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  elseif "AutoNextRound" == FocusTypeName then
+    local BottomKeyInfo = {
+      {
+        GamePadInfoList = {
+          {
+            Type = "Img",
+            ImgShortPath = "A",
+            Owner = self
+          }
+        },
+        Desc = GText("UI_SQUAD_SELECT_CONFIRM"),
+        bLongPress = false
+      },
+      {
+        KeyInfoList = {
+          {
+            Type = "Text",
+            Text = "Esc",
+            ClickCallback = self.OnReturnKeyDown,
+            Owner = self
+          }
+        },
+        GamePadInfoList = {
+          {
+            Type = "Img",
+            ImgShortPath = "B",
+            Owner = self
+          }
+        },
+        Desc = GText("UI_BACK")
+      }
+    }
+    StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
+    self:UpdateUIStyleInPlatform(true)
+    StyleOfPlay.ComTab.WBP_Com_Tab_ResourceBar.KeyImg_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    StyleOfPlay.ComTab.WBP_Com_Tab_ResourceBar.Tip_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.Tab_Info:UpdateUIStyleInPlatform(true)
+    if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+      self.Button_Multi:SetPCVisibility(true)
+      self.Button_Solo:SetPCVisibility(true)
+      self.Button_DoubleMod:SetPCVisibility(true)
+      self.Key_Details_GamePad:SetVisibility(ESlateVisibility.Collapsed)
+      self.Tab_Info.Key_Left:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      self.Tab_Info.Key_Right:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+    self.DefaultList:ApplyPcUiLayout()
   else
     local BottomKeyInfo = {}
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
@@ -1633,14 +1714,18 @@ function M:UpdatKeyDisplay(FocusTypeName)
     self.Tab_Info:UpdateUIStyleInPlatform(false)
   end
 end
-
 function M:SetPanelDetailsVis(SlateVisibility)
   self.Panel_Details:SetVisibility(SlateVisibility)
 end
-
+function M:IsAutoNextRound()
+  return self.AutoNextRound:GetVisibility() == ESlateVisibility.SelfHitTestInvisible
+end
 function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
+  end
+  if self:IsAutoNextRound() then
+    self.AutoNextRound:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   end
   if IsUseKeyAndMouse then
     self.Key_Check_GamePad:SetVisibility(ESlateVisibility.Collapsed)
@@ -1690,7 +1775,6 @@ function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   end
   self:SetPanelDetails(self.CurrentTabIdx)
 end
-
 function M:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1718,7 +1802,6 @@ function M:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadDown(InKeyName)
   DebugPrint("SL OnGamePadDown is InKeyName Detail", InKeyName)
   local IsEventHandled = false
@@ -1753,6 +1836,9 @@ function M:OnGamePadDown(InKeyName)
       self.DefaultList:OnCloseSquadGamepad()
       self:UpdatKeyDisplay("SelfWidget")
       IsEventHandled = true
+    end
+    if self:IsAutoNextRound() then
+      self.AutoNextRound:SetAutoNextRoundFocus(false)
     end
   end
   if self.DefaultList:GetVisibility() == ESlateVisibility.SelfHitTestInvisible and self.DefaultList.IsShow then
@@ -1821,10 +1907,21 @@ function M:OnGamePadDown(InKeyName)
       end
       IsEventHandled = true
     end
+  elseif "Gamepad_RightThumbstick" == InKeyName then
+    self.PressedKeys.Gamepad_DPad_Up = nil
+    self.PressedKeys.Gamepad_RightThumbstick = nil
+    if self:IsAutoNextRound() and IsDpadUp then
+      self.AutoNextRound:SetAutoNextRoundFocus(true)
+      self.CurrentFocusType = "AutoNextRound"
+      if self.StyleOfPlay then
+        self:UpdatKeyDisplay("AutoNextRound")
+        self.StyleOfPlay.IsKeyEventOnGamePad = false
+      end
+      return true
+    end
   end
   return IsEventHandled
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1838,7 +1935,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadUp(InKeyName)
   local IsEventHandled = false
   self.PressedKeys[InKeyName] = false
@@ -1847,7 +1943,6 @@ function M:OnGamePadUp(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self.DefaultList:GetVisibility() == ESlateVisibility.SelfHitTestInvisible and self.DefaultList.IsShow then
     return UWidgetBlueprintLibrary.UnHandled()
@@ -1860,17 +1955,17 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     if "Gamepad_DPad_Up" == InKeyName then
       IsEventHandled = true
     elseif "Gamepad_DPad_Down" == InKeyName then
-      if self.CurrentTabIdx == self.SpecialMonsterTabId and not self.MenuOpen then
+      if self.CurrentTabIdx == self.SpecialMonsterTabId and not self.MenuOpen and self.CurrentFocusType ~= "AutoNextRound" then
         if self.MonNum and self.MonNum > self.MaxMonNum then
           self:OpenCommanderDetails()
           IsEventHandled = true
         end
-      elseif self.CurrentTabIdx == self.ObtainTabId and not self.MenuOpen then
+      elseif self.CurrentTabIdx == self.ObtainTabId and not self.MenuOpen and self.CurrentFocusType ~= "AutoNextRound" then
         self:OpenRewardDetails()
         IsEventHandled = true
       end
       IsEventHandled = true
-    elseif "Gamepad_DPad_Right" == InKeyName and not self:IsFocusList() then
+    elseif "Gamepad_DPad_Right" == InKeyName and not self:IsFocusList() and not self:IsFocusAutoNextRound() then
       if self.DefaultList:GetVisibility() ~= ESlateVisibility.SelfHitTestInvisible then
         return IsEventHandled
       end
@@ -1885,7 +1980,7 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
         Avatar:SwitchSquadAutoPhantom(IsChecked)
         IsEventHandled = true
       end
-    elseif "Gamepad_DPad_Left" == InKeyName and not self:IsFocusList() then
+    elseif "Gamepad_DPad_Left" == InKeyName and not self:IsFocusList() and not self:IsFocusAutoNextRound() then
       if self.DefaultList:GetVisibility() ~= ESlateVisibility.SelfHitTestInvisible then
         return IsEventHandled
       end
@@ -1902,7 +1997,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnTypeItemPadLeft()
   if not self.LastMarkType then
     return
@@ -1912,7 +2006,6 @@ function M:OnTypeItemPadLeft()
     self:SelectTypeItemByIndex(CurrentIndex - 1)
   end
 end
-
 function M:OnTypeItemPadRight()
   if not self.LastMarkType then
     return
@@ -1922,14 +2015,12 @@ function M:OnTypeItemPadRight()
     self:SelectTypeItemByIndex(CurrentIndex + 1)
   end
 end
-
 function M:SelectTypeItemByIndex(Index)
   local TargetKey = self.TypeTableKeys[Index]
   if TargetKey then
     self:OnTypeClicked(TargetKey)
   end
 end
-
 function M:GetItemIndex()
   for Index, Key in ipairs(self.TypeTableKeys) do
     if self.TypeTable[Key] == self.LastMarkType then
@@ -1938,7 +2029,6 @@ function M:GetItemIndex()
   end
   return nil
 end
-
 function M:SelectCellFocus()
   self:UpdatKeyDisplay("SelfWidget")
   if not self.SelectCell.Bg_List.Button_Area:HasAnyUserFocus() then
@@ -1948,7 +2038,6 @@ function M:SelectCellFocus()
     end
   end
 end
-
 function M:OnSelectCellFocus()
   if self.Image_Select then
     self.Image_Select:SetRenderOpacity(0)
@@ -1958,44 +2047,39 @@ function M:OnSelectCellFocus()
     self:UpdatKeyDisplay("SelfWidget")
   end
 end
-
 function M:IsFocusList()
   return self.CurrentFocusType == "List"
 end
-
-function M:OnForbiddenRightBtnClicked()
-  UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "UI_REGISTER_COMINGSOON")
+function M:IsFocusAutoNextRound()
+  return self.CurrentFocusType == "AutoNextRound"
 end
-
+function M:OnForbiddenRightBtnClicked()
+  UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_REGISTER_COMINGSOON"))
+end
 function M:OnForbiddenLeftBtnClicked()
   if self.IsComMissing and self.DefaultList:GetVisibility() == ESlateVisibility.SelfHitTestInvisible then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "UI_Squad_Miss_Challenge")
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Squad_Miss_Challenge"))
   end
 end
-
 function M:OnForbiddenDoubleModBtnClicked()
-  if self.IsDoubleMod and self.ContinuousCombat then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "UI_Event_ModDrop_Exhausted")
+  if self.IsDoubleModOpen and self.ContinuousCombat then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Event_ModDrop_Exhausted"))
   end
 end
-
 function M:ShowIntro()
 end
-
 function M:OpenIntro()
 end
-
 function M:UpdateActionPoint(ActionPointID)
 end
-
 function M:OnDungeonsUpdate()
   if self.DeputeType == Const.DeputeType.WalnutDepute then
     local Params = {}
-    
     function Params.RightCallbackFunction()
-      self:OnReturnKeyDown()
+      if self then
+        self:OnReturnKeyDown()
+      end
     end
-    
     UIManager(self):ShowCommonPopupUI(100157, Params)
     local WalnutChoice = UIManager(self):GetUI("WalnutChoice")
     if WalnutChoice then
@@ -2003,7 +2087,6 @@ function M:OnDungeonsUpdate()
     end
   end
 end
-
 function M:OnCurrentSquadChange(SquadId, IsComMissing)
   self.SquadId = SquadId
   self.IsComMissing = IsComMissing
@@ -2014,7 +2097,6 @@ function M:OnCurrentSquadChange(SquadId, IsComMissing)
     self.Panel_WarningHint:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshBtnState(bInIsMatching)
   DebugPrint("gmy@WBP_Play_DeputeDetail_C M:RefreshBtnState", bInIsMatching)
   if not self.CurSelectedDungeonId then
@@ -2051,14 +2133,17 @@ function M:RefreshBtnState(bInIsMatching)
   if nil == IsMatching then
     IsMatching = self:IsMatching()
   end
-  self.ContinuousCombat = EMCache:Get("Is_DoubleMod_SwitchTab", true) or false
+  local bIsInTeam = Avatar:IsInTeam()
   local _, IsEliteRushDungeon = self:CheckDungeonType(self.CurSelectedDungeonId)
-  local ShowDouble = not IsMultiDungeon and self.IsDoubleMod and IsEliteRushDungeon and self.ContinuousCombat
+  self.ContinuousCombat = IsEliteRushDungeon
+  local ShowDouble = self:IsDoubleMod()
   local RemainOK = true
-  if ShowDouble then
+  if ShowDouble and IsEliteRushDungeon then
     local DoubleModDropInfo = self:GetDoubleModDropData() or {}
-    local ConfigValue = DataMgr.ModDropConstant.DailyFreeTicketAmount and DataMgr.ModDropConstant.DailyFreeTicketAmount.ConstantValue or 0
-    local UsedTimes = DoubleModDropInfo.EliteRushTimes or 0
+    local MdConst = DataMgr.ModDropConstant or {}
+    local DailyFree = MdConst.DailyFreeTicketAmount and MdConst.DailyFreeTicketAmount.ConstantValue or 0
+    local ConfigValue = DailyFree
+    local UsedTimes = DoubleModDropInfo.EliteRushTimes
     local Remaining = math.floor(ConfigValue - UsedTimes)
     RemainOK = Remaining > 0
   end
@@ -2070,7 +2155,9 @@ function M:RefreshBtnState(bInIsMatching)
     tostring(self.DeputeType),
     tostring(IsComMissing),
     tostring(ShowDouble or false),
-    tostring(RemainOK)
+    tostring(RemainOK),
+    tostring(bIsInTeam),
+    tostring(self.ContinuousCombat)
   }, "|")
   if self._Btn_sig == Sig then
     return
@@ -2094,23 +2181,13 @@ function M:RefreshBtnState(bInIsMatching)
   else
     if not IsMultiDungeon then
       self.Button_Multi:SetVisibility(ESlateVisibility.Collapsed)
-      if ShowDouble then
-        self.Button_Solo:SetVisibility(ESlateVisibility.Collapsed)
-        self.Button_DoubleMod:SetVisibility(ESlateVisibility.Visible)
-        self.Button_DoubleMod:SetText(GText("UI_Event_ModDrop_ChallengeStart"))
-        self.Button_DoubleMod:ForbidBtn(not RemainOK and self.ContinuousCombat or false)
-      else
-        self.Button_DoubleMod:SetVisibility(ESlateVisibility.Collapsed)
-        self.Button_Solo:SetText(GText("UI_Ticket_Choose"))
-        self.Button_Solo:SetVisibility(ESlateVisibility.Visible)
-      end
     else
       self.Button_Multi:SetVisibility(bIsUnlock and ESlateVisibility.Visible or ESlateVisibility.Collapsed)
     end
     self.Button_Multi:ForbidBtn(not IsMultiDungeon)
+    self.Button_Solo:ForbidBtn(not IsMultiDungeon and bIsInTeam)
     self.Button_Multi:UnBindEventOnClickedByObj(self)
     self.Button_Solo:UnBindEventOnClickedByObj(self)
-    self.Button_Solo:ForbidBtn(false)
     self.Button_Multi:SetDefaultGamePadImg("X")
     self.Button_Solo:SetDefaultGamePadImg("Y")
     self.Button_DoubleMod:SetDefaultGamePadImg("Y")
@@ -2118,6 +2195,11 @@ function M:RefreshBtnState(bInIsMatching)
     self.Button_Solo:BindEventOnClicked(self, self.ShowDialogChar)
     self.Button_Multi:BindForbidStateExecuteEvent(self, self.OnForbiddenRightBtnClicked)
     self.Button_DoubleMod:BindForbidStateExecuteEvent(self, self.OnForbiddenDoubleModBtnClicked)
+    self.Button_Solo:BindForbidStateExecuteEvent(self, function()
+      if not IsMultiDungeon and bIsInTeam then
+        UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Team_CanNotEnterDungeon"))
+      end
+    end)
   end
   if IsComMissing then
     self.Button_Multi:ForbidBtn(true)
@@ -2127,13 +2209,46 @@ function M:RefreshBtnState(bInIsMatching)
     self.Button_Solo:BindForbidStateExecuteEvent(self, self.OnForbiddenLeftBtnClicked)
     self.Button_Multi:BindForbidStateExecuteEvent(self, self.OnForbiddenLeftBtnClicked)
   end
+  if self.CurSelectedDungeonId then
+    local CurSelectedDungeonData = DataMgr.Dungeon[self.CurSelectedDungeonId]
+    if CurSelectedDungeonData and CurSelectedDungeonData.bDisableMatch then
+      self.Button_Multi:SetVisibility(ESlateVisibility.Collapsed)
+    end
+  end
+  if self.DeputeType == Const.DeputeType.NightFlightManualDepute then
+    if ShowDouble and self.ContinuousCombat then
+      self.Button_Solo:SetVisibility(ESlateVisibility.Collapsed)
+      self.Button_DoubleMod:SetVisibility(ESlateVisibility.Visible)
+      self.Button_DoubleMod:SetText(GText("UI_Event_ModDrop_ChallengeStart"))
+      self.Button_DoubleMod:ForbidBtn(not RemainOK and self.ContinuousCombat or false)
+    else
+      self.Button_DoubleMod:SetVisibility(ESlateVisibility.Collapsed)
+      self.Button_Solo:SetText(GText("UI_Ticket_Choose"))
+      self.Button_Solo:SetVisibility(ESlateVisibility.Visible)
+    end
+    if not RemainOK then
+      self.Button_Multi:ForbidBtn(true)
+      self.Button_Solo:ForbidBtn(true)
+      self.Button_DoubleMod:ForbidBtn(true)
+      self.Button_Multi:UnBindEventOnClickedByObj(self)
+      self.Button_Solo:UnBindEventOnClickedByObj(self)
+      self.Button_DoubleMod:UnBindEventOnClickedByObj(self)
+      self.Button_Multi:BindForbidStateExecuteEvent(self, function()
+        UIManager(self):ShowUITip("CommonToastMain", GText("UI_Event_ModDrop_Exhausted"))
+      end)
+      self.Button_Solo:BindForbidStateExecuteEvent(self, function()
+        UIManager(self):ShowUITip("CommonToastMain", GText("UI_Event_ModDrop_Exhausted"))
+      end)
+      self.Button_DoubleMod:BindForbidStateExecuteEvent(self, function()
+        UIManager(self):ShowUITip("CommonToastMain", GText("UI_Event_ModDrop_Exhausted"))
+      end)
+    end
+  end
 end
-
 function M:IsMatching()
   return TeamController:GetModel():IsMatching()
 end
-
-function M:OpenTicketDialog(DungeonId)
+function M:OpenTicketDialog()
   local CommonDialog = UIManager(self):ShowCommonPopupUI(100123, {
     DungeonId = self.CurSelectedDungeonId,
     RightCallbackObj = self,
@@ -2144,13 +2259,12 @@ function M:OpenTicketDialog(DungeonId)
     AutoFocus = true
   }, self)
 end
-
 function M:PlayTabSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
 end
-
 function M:TryEnterDungeon(Avatar, DungeonId, DungeonNetMode, OtherCallback, TicketId)
   if self:DoCheckCanEnterDungeon(Avatar, DungeonId) then
+    self:BlockAllUIInput(true)
     DebugPrint("gmy@M:TryEnterDungeon ", Avatar, DungeonId, DungeonNetMode, OtherCallback, TicketId)
     if self.DefaultList:GetVisibility() == ESlateVisibility.Collapsed then
       Avatar:EnterDungeon(DungeonId, DungeonNetMode, OtherCallback, TicketId)
@@ -2162,18 +2276,21 @@ function M:TryEnterDungeon(Avatar, DungeonId, DungeonNetMode, OtherCallback, Tic
     TeamController:GetModel().bPressedMulti = false
   end
 end
-
 function M.HandleEnterDungeonRetCode(RetCode, ...)
   DebugPrint("gmy@M.EnterDungeonCallback RetCode", RetCode)
   if RetCode == ErrorCode.RET_SUCCESS then
     return true
   else
-    TeamController:DoWhenEnterDungeonCheckFailed(RetCode, ...)
+    local FailedMember = (...)
+    if FailedMember then
+      TeamController:DoWhenEnterDungeonCheckFailed(RetCode, FailedMember)
+    else
+      ErrorCode:Check(RetCode)
+    end
     EventManager:FireEvent(EventID.TeamMatchTimingEnd)
     return false
   end
 end
-
 function M:DoCheckCanEnterDungeon(Avatar, DungeonId)
   if not TeamController:DoCheckCanEnterDungeon(DungeonId) then
     DebugPrint("gmy@M:DoCheckCanEnterDungeon bTeammateNotReady")
@@ -2181,22 +2298,18 @@ function M:DoCheckCanEnterDungeon(Avatar, DungeonId)
   end
   return true
 end
-
 function M:TeamMatchTimingStart(arg)
   TeamController:GetModel().bPressedSolo = true
   TeamController:GetModel().bPressedMulti = true
   self:RefreshBtnState(arg)
 end
-
 function M:TeamMatchTimingEnd(arg)
   TeamController:GetModel().bPressedSolo = false
   TeamController:GetModel().bPressedMulti = false
   self:RefreshBtnState(arg)
 end
-
-function M:DisableEscOnDungeonLoading()
-  self.DisableEsc = true
+function M:DisableEscOnDungeonLoading(State)
+  self.DisableEsc = State
 end
-
 AssembleComponents(M)
 return M

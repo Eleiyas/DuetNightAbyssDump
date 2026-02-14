@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17544760402849253347",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1310, y = 322},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -215,21 +217,21 @@ return {
           ["17544760402849253358"] = {
             key = "17544760402849253358",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1344.952711826357, y = 686.046033096846},
             propsData = {}
           },
           ["17544761384009311571"] = {
             key = "17544761384009311571",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 3364.0049446167864, y = 360.74856696451116},
             propsData = {}
           },
           ["175447820583711992822"] = {
             key = "175447820583711992822",
             type = "TalkNode",
-            name = "\227\128\14436-37\227\128\145\229\146\140\229\188\159\229\188\159\229\175\185\232\175\157",
+            name = "【36-37】和弟弟对话",
             pos = {x = 1406.9082619740384, y = 312.69277925040814},
             propsData = {
               IsNpcNode = false,
@@ -248,6 +250,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -255,6 +258,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -282,16 +286,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 211015}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -299,7 +299,7 @@ return {
           ["175447820583811992823"] = {
             key = "175447820583811992823",
             type = "TalkNode",
-            name = "\227\128\14438\227\128\145\229\141\161\231\143\138\229\190\183\230\139\137\229\184\166\231\157\128\229\163\171\229\133\181\232\191\135\230\157\165",
+            name = "【38】卡珊德拉带着士兵过来",
             pos = {x = 1698.1967235124996, y = 308.310664029738},
             propsData = {
               IsNpcNode = false,
@@ -317,6 +317,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -324,6 +325,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -371,20 +373,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 211015},
-                {TalkActorType = "Npc", TalkActorId = 211012},
-                {TalkActorType = "Npc", TalkActorId = 211034},
-                {TalkActorType = "Npc", TalkActorId = 211035},
-                {TalkActorType = "Npc", TalkActorId = 211036}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -392,7 +386,7 @@ return {
           ["175447820583811992824"] = {
             key = "175447820583811992824",
             type = "TalkNode",
-            name = "\227\128\14439\227\128\145\229\146\140\229\141\161\231\143\138\229\190\183\230\139\137\229\175\185\232\175\157",
+            name = "【39】和卡珊德拉对话",
             pos = {x = 2016.7198758503573, y = 313.3114558849416},
             propsData = {
               IsNpcNode = false,
@@ -411,6 +405,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -418,6 +413,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -450,17 +446,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 211015},
-                {TalkActorType = "Npc", TalkActorId = 211012}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -468,14 +459,14 @@ return {
           ["175758292893042733756"] = {
             key = "175758292893042733756",
             type = "ChangeRoleNode",
-            name = "\229\136\135\230\141\162\232\167\146\232\137\178",
+            name = "切换角色",
             pos = {x = 1384.5840378056232, y = -10.49478657460645},
             propsData = {QuestRoleId = 10301002, IsPlayFX = false}
           },
           ["175758292893042733758"] = {
             key = "175758292893042733758",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1379.7799465574592, y = -177.29663837655772},
             propsData = {
               Function = "HideUIInScreen",
@@ -487,7 +478,7 @@ return {
           ["175758292893042733759"] = {
             key = "175758292893042733759",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1688.2200534425408, y = -191.63586460069024},
             propsData = {
               Function = "HideUIInScreen",
@@ -499,7 +490,7 @@ return {
           ["175758292893042733760"] = {
             key = "175758292893042733760",
             type = "CameraControlNode",
-            name = "\233\149\156\229\164\180\230\142\167\229\136\182\232\138\130\231\130\185",
+            name = "镜头控制节点",
             pos = {x = 1679.2767692651494, y = -19.37500500040494},
             propsData = {
               Duration = 4,
@@ -514,21 +505,21 @@ return {
           ["175758296427942734893"] = {
             key = "175758296427942734893",
             type = "RestoreRoleNode",
-            name = "\230\129\162\229\164\141\232\167\146\232\137\178",
+            name = "恢复角色",
             pos = {x = 1650.796159971294, y = 911.8702734998998},
             propsData = {}
           },
           ["175758296427942734894"] = {
             key = "175758296427942734894",
             type = "CameraControlClearNode",
-            name = "\233\149\156\229\164\180\230\129\162\229\164\141",
+            name = "镜头恢复",
             pos = {x = 1897.6920599949037, y = 970.1951871053866},
             propsData = {Duration = 3}
           },
           ["175758296427942734895"] = {
             key = "175758296427942734895",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1683.7074220656418, y = 1127.4967546436765},
             propsData = {
               Function = "HideUIInScreen",
@@ -540,7 +531,7 @@ return {
           ["175758296427942734896"] = {
             key = "175758296427942734896",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1940.846770885259, y = 1200.6777141161995},
             propsData = {
               Function = "HideUIInScreen",
@@ -552,14 +543,14 @@ return {
           ["175758332354942735676"] = {
             key = "175758332354942735676",
             type = "WaitQuestFinishedNode",
-            name = "\231\173\137\229\190\133\228\187\187\229\138\161\229\174\140\230\136\144",
+            name = "等待任务完成",
             pos = {x = 3019.573975252548, y = 345.6534569670673},
             propsData = {ListenCount = 2, NeedFinishCount = 2}
           },
           ["175758332354942735678"] = {
             key = "175758332354942735678",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 2436.5927651278153, y = 214.97093762037503},
             propsData = {
               Function = "HideUIInScreen",
@@ -571,7 +562,7 @@ return {
           ["175758332354942735679"] = {
             key = "175758332354942735679",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 2716.603911267759, y = 212.3191738698298},
             propsData = {
               Function = "HideUIInScreen",
@@ -583,7 +574,7 @@ return {
           ["175758332354942735680"] = {
             key = "175758332354942735680",
             type = "CameraControlClearNode",
-            name = "\233\149\156\229\164\180\230\129\162\229\164\141",
+            name = "镜头恢复",
             pos = {x = 2548.825474616917, y = 394.7361000609503},
             propsData = {Duration = 3}
           }

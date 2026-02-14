@@ -1,7 +1,6 @@
 require("UnLua")
 local SkillUtils = require("Utils.SkillUtils")
 local ChangeTextToKeyInfoComponent = Class()
-
 function ChangeTextToKeyInfoComponent:AnalyzeText(MessageContent, MatchSymbol)
   if not MatchSymbol then
     return {}
@@ -17,7 +16,6 @@ function ChangeTextToKeyInfoComponent:AnalyzeText(MessageContent, MatchSymbol)
   table.insert(match_res, MessageContent)
   return match_res
 end
-
 function ChangeTextToKeyInfoComponent:GetFinalContentText(ContentText)
   local strs = self:AnalyzeText(ContentText, "&")
   local final_str = ""
@@ -36,9 +34,9 @@ function ChangeTextToKeyInfoComponent:GetFinalContentText(ContentText)
         local KeyWidth = KeyInfo and KeyInfo.KeyImgWidth or 48
         local KeyHeight = KeyInfo and KeyInfo.KeyImgHeight or 48
         if "GamepadKey" == KeyType then
-          final_str = final_str .. "<img id=\"" .. Key .. "\" platform=\"" .. CurrentGamepadName .. "\" width=\"" .. KeyWidth .. "\" height=\"" .. KeyHeight .. "\"></>"
+          final_str = final_str .. "<img id=\"" .. KeyInfo.Key .. "\" platform=\"" .. CurrentGamepadName .. "\" width=\"" .. KeyWidth .. "\" height=\"" .. KeyHeight .. "\"></>"
         else
-          final_str = final_str .. "<img id=\"" .. Key .. "\" width=\"" .. KeyWidth .. "\" height=\"" .. KeyHeight .. "\"></>"
+          final_str = final_str .. "<img id=\"" .. KeyInfo.Key .. "\" width=\"" .. KeyWidth .. "\" height=\"" .. KeyHeight .. "\"></>"
         end
       end
     else
@@ -47,7 +45,6 @@ function ChangeTextToKeyInfoComponent:GetFinalContentText(ContentText)
   end
   return final_str
 end
-
 function ChangeTextToKeyInfoComponent:GetKeyName(ActionName)
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionKeys = UE4.TArray(UE4.FInputActionKeyMapping)
@@ -64,7 +61,6 @@ function ChangeTextToKeyInfoComponent:GetKeyName(ActionName)
   end
   return nil, nil
 end
-
 function ChangeTextToKeyInfoComponent:AnalyzeGuideDesc(MessageContent, GuideDescValues)
   local match_word = string.gmatch(MessageContent, "#%d")
   for word in match_word, nil, nil, nil do
@@ -76,5 +72,4 @@ function ChangeTextToKeyInfoComponent:AnalyzeGuideDesc(MessageContent, GuideDesc
   end
   return MessageContent
 end
-
 return ChangeTextToKeyInfoComponent

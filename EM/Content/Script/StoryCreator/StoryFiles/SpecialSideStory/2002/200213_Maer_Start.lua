@@ -70,11 +70,11 @@ return {
       isStoryNode = true,
       key = "17221462622692593667",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 346.9751359751365, y = 686.0887445887449},
+      name = "任务节点",
+      pos = {x = 344.9061704578951, y = 686.0887445887449},
       propsData = {
         QuestId = 20021302,
-        QuestDescriptionComment = "\229\174\140\230\136\144\228\184\137\228\184\170\229\173\144\228\187\187\229\138\161",
+        QuestDescriptionComment = "完成三个子任务",
         QuestDescription = "Description_200213_2",
         QuestDeatil = "Content_200213_2",
         TaskRegionReName = "UI_REGION_NAME_1011",
@@ -94,8 +94,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -173,7 +175,7 @@ return {
           ["17221466123273510167"] = {
             key = "17221466123273510167",
             type = "BranchQuestStartNode",
-            name = "\229\173\144\228\187\187\229\138\161\229\188\128\229\167\139\232\138\130\231\130\185",
+            name = "子任务开始节点",
             pos = {x = 940.3408519584996, y = 316.38242802948685},
             propsData = {
               AllQuestOptions = {
@@ -194,35 +196,36 @@ return {
                 }
               },
               IsSetCountInfo = false,
-              IsDifftation = false
+              IsDifftation = false,
+              AllDiffGuideOptions = {}
             }
           },
           ["17221468143983818566"] = {
             key = "17221468143983818566",
             type = "WaitingCompleteSysGuideNode",
-            name = "\231\173\137\229\190\133\229\174\140\230\136\144\230\140\135\229\188\149",
+            name = "等待完成指引",
             pos = {x = 1683.6869590034544, y = 162.69745898422278},
             propsData = {SystemGuideId = 2027}
           },
           ["17221468198463818814"] = {
             key = "17221468198463818814",
             type = "WaitingCompleteSysGuideNode",
-            name = "\231\173\137\229\190\133\229\174\140\230\136\144\230\140\135\229\188\149",
+            name = "等待完成指引",
             pos = {x = 1680.0431366096323, y = 309.7968798336436},
             propsData = {SystemGuideId = 2028}
           },
           ["17221468228553818905"] = {
             key = "17221468228553818905",
             type = "WaitingCompleteSysGuideNode",
-            name = "\231\173\137\229\190\133\229\174\140\230\136\144\230\140\135\229\188\149",
+            name = "等待完成指引",
             pos = {x = 1681.8819396984354, y = 443.344177130941},
             propsData = {SystemGuideId = 2029}
           },
           ["17221468343013819250"] = {
             key = "17221468343013819250",
             type = "CheckBranchQuestFinishedNode",
-            name = "\229\173\144\228\187\187\229\138\161\231\187\147\230\157\159\232\138\130\231\130\185",
-            pos = {x = 2213.3181195757916, y = 286.30969437232034},
+            name = "子任务结束节点",
+            pos = {x = 2108.3181195757916, y = 286.30969437232034},
             propsData = {
               InputBranchQuestNumber = 3,
               BranchQuestFinishOptions = {
@@ -240,7 +243,7 @@ return {
       isStoryNode = true,
       key = "17221464276083051398",
       type = "StoryNode",
-      name = "\229\141\176\232\177\161\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "印象任务节点",
       pos = {x = 856.8806384360049, y = 683.8751817627243},
       propsData = {
         QuestId = 20021304,
@@ -264,8 +267,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Maerjie_1190646"
+        StoryGuidePointName = "Npc_Maerjie_1190646",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -277,6 +282,12 @@ return {
           },
           {
             startQuest = "17221464276083051411",
+            startPort = "Out",
+            endQuest = "17640534663403978",
+            endPort = "In"
+          },
+          {
+            startQuest = "17640534663403978",
             startPort = "Out",
             endQuest = "17221464276083051409",
             endPort = "Success"
@@ -294,7 +305,7 @@ return {
             key = "17221464276083051409",
             type = "QuestSuccessNode",
             name = "QuestSuccess",
-            pos = {x = 2240.050604567846, y = 279.82086878638603},
+            pos = {x = 2352.1094280972584, y = 295.70322172756255},
             propsData = {ModeType = 0}
           },
           ["17221464276083051410"] = {
@@ -307,8 +318,8 @@ return {
           ["17221464276083051411"] = {
             key = "17221464276083051411",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
-            pos = {x = 1642.6594623727347, y = 202.8485116719166},
+            name = "对话节点",
+            pos = {x = 1734.0230987363711, y = 260.1212389446439},
             propsData = {
               IsNpcNode = true,
               NpcNodeInteractiveName = "",
@@ -322,7 +333,7 @@ return {
               TalkType = "QuestImpression",
               TalkStageName = "Stage_20021401",
               BlendInTime = 0.5,
-              BlendOutTime = 0.5,
+              BlendOutTime = 0,
               InType = "FadeIn",
               OutType = "BlendOut",
               ShowFadeDetail = false,
@@ -332,6 +343,7 @@ return {
               HideNpcs = true,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -339,6 +351,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -361,17 +374,28 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Npc", TalkActorId = 700127},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               OptionType = "plus",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               PlusOptions = {},
               OverrideFailBlend = false
+            }
+          },
+          ["17640534663403978"] = {
+            key = "17640534663403978",
+            type = "ChangeStaticCreatorNode",
+            name = "生成/销毁节点",
+            pos = {x = 2038.3374981085983, y = 287.659357550662},
+            propsData = {
+              ActiveEnable = false,
+              EnableBlackScreenSync = true,
+              EnableFadeIn = false,
+              EnableFadeOut = true,
+              NewTargetPointName = "",
+              StaticCreatorIdList = {1190646}
             }
           }
         },
@@ -382,11 +406,11 @@ return {
       isStoryNode = true,
       key = "17221464276083051399",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 596.3703328149678, y = 686.2316003440586},
       propsData = {
         QuestId = 20021303,
-        QuestDescriptionComment = "\231\148\159\230\136\144\231\142\155\229\176\148\230\180\129",
+        QuestDescriptionComment = "生成玛尔洁",
         QuestDescription = "Description_200213_3",
         QuestDeatil = "Content_200213_3",
         TaskRegionReName = "",
@@ -406,8 +430,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "QuestPoint_20021401"
+        StoryGuidePointName = "QuestPoint_20021401",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -455,8 +481,8 @@ return {
           ["17221464276093051440"] = {
             key = "17221464276093051440",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
-            pos = {x = 2205.367083939452, y = 321.64304482067615},
+            name = "生成/销毁节点",
+            pos = {x = 2164.6527982251664, y = 338.7859019635333},
             propsData = {
               ActiveEnable = true,
               EnableBlackScreenSync = false,
@@ -469,7 +495,7 @@ return {
           ["17221464276093051441"] = {
             key = "17221464276093051441",
             type = "GoToRegionNode",
-            name = "\232\191\155\229\133\165\229\140\186\229\159\159",
+            name = "进入区域",
             pos = {x = 1839.5, y = 322},
             propsData = {
               RegionType = 1,
@@ -488,11 +514,11 @@ return {
       isStoryNode = true,
       key = "1722327008106928200",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 70.3694635366303, y = 692.3324625566005},
       propsData = {
         QuestId = 20021301,
-        QuestDescriptionComment = "\231\169\186\228\187\187\229\138\161\232\138\130\231\130\185",
+        QuestDescriptionComment = "空任务节点",
         QuestDescription = "Description_200213_1",
         QuestDeatil = "Content_200213_1",
         TaskRegionReName = "",
@@ -512,8 +538,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "QuestPoint_20021301"
+        StoryGuidePointName = "QuestPoint_20021301",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -555,7 +583,7 @@ return {
           ["17223270573721082139"] = {
             key = "17223270573721082139",
             type = "GoToRegionNode",
-            name = "\232\191\155\229\133\165\229\140\186\229\159\159",
+            name = "进入区域",
             pos = {x = 2121.403946295251, y = 338.7979797979798},
             propsData = {
               RegionType = 1,
@@ -574,14 +602,16 @@ return {
       isStoryNode = true,
       key = "17512713215858172993",
       type = "PreStoryNode",
-      name = "\228\187\187\229\138\161\229\137\141\231\189\174\232\138\130\231\130\185",
+      name = "任务前置节点",
       pos = {x = 9.234482758620516, y = 431.3060344827586},
       propsData = {
         QuestId = 20021300,
         QuestDescriptionComment = "",
         SubRegionId = 101101,
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Maerjie_1190523"
+        StoryGuidePointName = "Npc_Maerjie_1190523",
+        bIsPlayBlackScreenOnComplete = false,
+        SubRegionIdList = {}
       },
       questNodeData = {
         lineData = {
@@ -634,13 +664,13 @@ return {
           ["17512713215858172999"] = {
             key = "17512713215858172999",
             type = "ReceiveSideQuestNode",
-            name = "\230\148\175\231\186\191\228\187\187\229\138\161\230\142\165\229\143\150\232\138\130\231\130\185",
+            name = "支线任务接取节点",
             pos = {x = 953.060762766645, y = -87.97349709114415},
             propsData = {
               SideQuestChainId = 200213,
-              EnableSequence = false,
-              SequencePath = "",
-              PauseMark = ""
+              EnableSequence = true,
+              SequencePath = "/Game/UI/Sequence/SQ_Task_DepthField.SQ_Task_DepthField",
+              PauseMark = "QuestAccept"
             }
           },
           ["17512713215858173000"] = {
@@ -653,7 +683,7 @@ return {
           ["17512713215858173001"] = {
             key = "17512713215858173001",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 574.126926727682, y = -91.13712950780705},
             propsData = {
               IsNpcNode = true,
@@ -679,6 +709,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -686,13 +717,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "plus",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

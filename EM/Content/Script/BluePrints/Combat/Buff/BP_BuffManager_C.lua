@@ -4,7 +4,6 @@ local BP_BuffManager_C = Class({
   "BluePrints.Combat.Buff.BuffsChanged"
 })
 local FBuffArray = UE.FBuffArray
-
 function BP_BuffManager_C:Initialize(Initializer)
   if BP_BuffManager_C.BuffPropertys then
     return
@@ -22,11 +21,9 @@ function BP_BuffManager_C:Initialize(Initializer)
   end
   require("EMLuaConst").LuaOverrideBuffProperties = LuaOverrideBuffProperties
 end
-
 function BP_BuffManager_C:ReceiveBeginPlay()
   self.Owner = self:GetOwner()
 end
-
 function BP_BuffManager_C:InitBPVarsForBuff(Buff)
   local BuffConfig = DataMgr.Buff[Buff.BuffId]
   if BuffConfig and BuffConfig.BPVars then
@@ -35,7 +32,6 @@ function BP_BuffManager_C:InitBPVarsForBuff(Buff)
     end
   end
 end
-
 function BP_BuffManager_C:OnBuffsChanged_New(BuffPropertiesInfo)
   BuffPropertiesInfo = BuffPropertiesInfo:ToTable()
   local BuffPropNameTable = DataMgr.BuffConverts.BuffPropNameTable
@@ -53,7 +49,6 @@ function BP_BuffManager_C:OnBuffsChanged_New(BuffPropertiesInfo)
     end
   end
 end
-
 function BP_BuffManager_C:GetBuffsSnapshot()
   local Now = UE4.UGameplayStatics.GetTimeSeconds(self)
   local BuffsSnapshot = {}
@@ -92,9 +87,18 @@ function BP_BuffManager_C:GetBuffsSnapshot()
   end
   return BuffsSnapshot
 end
-
 function BP_BuffManager_C:HasDestructParts(Invincible, CurrentLockHp)
   self.Owner.BillBoardComponent:OnBuffChange_LockHp(Invincible, nil, CurrentLockHp)
 end
-
+function BP_BuffManager_C:CheckDisableSkillBuff(TargetSkillType)
+  if not self.DisableSkills or not type(self.DisableSkills) == "table" or not next(self.DisableSkills) then
+    return false
+  end
+  for _, SkillType in pairs(self.DisableSkills) do
+    if SkillType == TargetSkillType then
+      return true
+    end
+  end
+  return false
+end
 return BP_BuffManager_C

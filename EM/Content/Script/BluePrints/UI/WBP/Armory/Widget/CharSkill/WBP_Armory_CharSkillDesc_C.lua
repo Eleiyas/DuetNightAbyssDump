@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   local Decorator = self:GetRichTextDecorator()
   if Decorator then
@@ -10,7 +9,6 @@ function M:Construct()
     Decorator.BP_OnClicked:Add(self, self.OnRichTextHyperLinkClicked)
   end
 end
-
 function M:Init(Params)
   self.Owner = Params.Owner
   self.OnHyperLinkClicked = Params.OnHyperLinkClicked
@@ -24,11 +22,9 @@ function M:Init(Params)
   self.Text_SkillName:SetText(Params.Title)
   self.Text_Detail:SetText(Params.Desc)
 end
-
 function M:OnRichTextHyperLinkClicked(Url)
   if self.OnHyperLinkClicked then
     self.OnHyperLinkClicked(self.Owner, Url)
   end
 end
-
 return M

@@ -3,12 +3,10 @@ local uiconst = require("BluePrints.UI.UIConst")
 local Menu_Portrait_List_PC_C = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function Menu_Portrait_List_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.CurPortraitPath = nil
 end
-
 function Menu_Portrait_List_PC_C:InitContent(Params, PopupData, Owner)
   self:BindDialogEvent(DialogEvent.OnTitleTabSelected, self.OnTabSelected)
   self.BtnText.AudioEventPath = "event:/ui/common/click_btn_confirm"
@@ -16,6 +14,7 @@ function Menu_Portrait_List_PC_C:InitContent(Params, PopupData, Owner)
   self.IsHeadFrame = false
   self.BtnText:SetText(GText("UI_HeadFrame_Change"))
   self.Text_Btn:SetText(GText("UI_HeadFrame_Wearing"))
+  self.Com_Hint.WidgetSwitcher_State:SetActiveWidgetIndex(2)
   self:SetCurPortrait()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -35,7 +34,6 @@ function Menu_Portrait_List_PC_C:InitContent(Params, PopupData, Owner)
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function Menu_Portrait_List_PC_C:GetCount(Table)
   local Count = 0
   if not Table then
@@ -46,13 +44,11 @@ function Menu_Portrait_List_PC_C:GetCount(Table)
   end
   return Count
 end
-
 function Menu_Portrait_List_PC_C:OnTabSelected(TabWidget)
   self.IsHeadFrame = 2 == TabWidget.Idx
   self:Refresh()
   self:SetCurPortrait()
 end
-
 function Menu_Portrait_List_PC_C:Refresh()
   if self.IsHeadFrame then
     if not self.FilledHeadFrame then
@@ -79,11 +75,35 @@ function Menu_Portrait_List_PC_C:Refresh()
             Item.SelfWidget:SetGamePadFocus()
           end
         end, false, 0, nil, true)
+        self:RefreshItemClick(Item)
+        if Item.SelfWidget then
+          if Item.SelfWidget.Content.IsLocked then
+            Item.SelfWidget:PlayAnimation(Item.SelfWidget.HaveNot_Click)
+          else
+            Item.SelfWidget:PlayAnimation(Item.SelfWidget.Click)
+          end
+          Item.SelfWidget.IsSelect = true
+        end
       end
     end
   else
     self.WidgetSwitcher_List:SetActiveWidgetIndex(0)
     self.List_Item:SetFocus()
+    local AllItemCount = self.List_Item:GetNumItems()
+    for i = 0, AllItemCount - 1 do
+      local Item = self.List_Item:GetItemAt(i)
+      if Item.PortraitId == self.HeadIconId then
+        self:RefreshItemClick(Item)
+        if Item.SelfWidget then
+          if Item.SelfWidget.Content.IsLocked then
+            Item.SelfWidget:PlayAnimation(Item.SelfWidget.HaveNot_Click)
+          else
+            Item.SelfWidget:PlayAnimation(Item.SelfWidget.Click)
+          end
+          Item.SelfWidget.IsSelect = true
+        end
+      end
+    end
   end
   self.Switcher_Btn:SetActiveWidgetIndex(1)
   local Avatar = GWorld:GetAvatar()
@@ -92,9 +112,6 @@ function Menu_Portrait_List_PC_C:Refresh()
       local Find = false
       for _, value in pairs(Avatar.HeadFrameList) do
         Find = true
-      end
-      if not Find then
-        self.Switcher_Dialog:SetActiveWidgetIndex(1)
       end
       self.Text_Tips:SetText(string.format(GText("UI_HeadFrame_Own"), self:GetCount(Avatar.HeadFrameList)))
     end
@@ -105,7 +122,6 @@ function Menu_Portrait_List_PC_C:Refresh()
     end
   end
 end
-
 function Menu_Portrait_List_PC_C:SetCurPortrait()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -119,10 +135,9 @@ function Menu_Portrait_List_PC_C:SetCurPortrait()
     end
   end
 end
-
 function Menu_Portrait_List_PC_C:SetHeadFrameInfo(Id)
   if -1 == Id then
-    self.Text_RoleName:SetText("\228\184\141\228\189\169\230\136\180")
+    self.Text_RoleName:SetText(GText("UI_HeadFrame_Empty"))
     self.Head_Frame:SetVisibility(uiconst.VisibilityOp.Collapsed)
   else
     local Path = DataMgr.HeadFrame[Id].SmallIcon
@@ -137,7 +152,6 @@ function Menu_Portrait_List_PC_C:SetHeadFrameInfo(Id)
     self.Head_Frame:SetVisibility(uiconst.VisibilityOp.Visible)
   end
 end
-
 function Menu_Portrait_List_PC_C:SetPortraitInfo(Id)
   local Path = DataMgr.HeadSculpture[Id].HeadPath
   local Name = GText(DataMgr.HeadSculpture[Id].Name)
@@ -150,7 +164,6 @@ function Menu_Portrait_List_PC_C:SetPortraitInfo(Id)
     self.Text_RoleName:SetText(Name)
   end
 end
-
 function Menu_Portrait_List_PC_C:SetItemSelect(PreId)
   local UsedList = self.List_Item
   if self.IsHeadFrame then
@@ -160,28 +173,30 @@ function Menu_Portrait_List_PC_C:SetItemSelect(PreId)
   for i = 0, AllItemCount - 1 do
     local Item = UsedList:GetItemAt(i)
     if Item.PortraitId == self.SelectId then
-      Item.SelfWidget:PlayAnimation(Item.SelfWidget.Select)
+      if Item.SelfWidget and not Item.SelfWidget.Content.IsLocked then
+        Item.SelfWidget:PlayAnimation(Item.SelfWidget.Select)
+      end
     elseif Item.PortraitId == PreId then
       Item.SelfWidget:PlayAnimation(Item.SelfWidget.UnSelect)
       Item.SelfWidget:PlayAnimation(Item.SelfWidget.Normal)
+      if Item.SelfWidget and not Item.SelfWidget.Content.IsLocked then
+        Item.SelfWidget:PlayAnimation(Item.SelfWidget.UnSelect_Normal)
+      end
     end
   end
 end
-
 function Menu_Portrait_List_PC_C:TrySetHeadFrame(...)
   if self.SelectId then
     self:SetHeadFrameInfo(self.SelectId)
     UIUtils.TrySubReddotCacheDetail(self.SelectId, "PortraitFrame")
   end
 end
-
 function Menu_Portrait_List_PC_C:TrySetPortrait()
   if self.SelectId then
     self:SetPortraitInfo(self.SelectId)
     UIUtils.TrySubReddotCacheDetail(self.SelectId, "Portrait")
   end
 end
-
 function Menu_Portrait_List_PC_C:OnListItemClicked(Content)
   self.PortraitPath = Content.PortraitPath
   self.SelectId = Content.PortraitId
@@ -196,16 +211,22 @@ function Menu_Portrait_List_PC_C:OnListItemClicked(Content)
   if Avatar then
     if not (self.SelectId ~= Avatar.HeadIconId or Content.IsHeadFrame) or self.SelectId == Avatar.HeadFrameId and Content.IsHeadFrame then
       self.Switcher_Btn:SetActiveWidgetIndex(1)
+    elseif Content.IsLocked then
+      self.Switcher_Btn:SetActiveWidgetIndex(2)
+      self.Com_Hint.Text_Hint_Locked:SetText(Content.AccessText)
     else
       self.Switcher_Btn:SetActiveWidgetIndex(0)
     end
   end
   self:RefreshItemClick(Content)
   Content.SelfWidget:StopAllAnimations()
-  Content.SelfWidget:PlayAnimation(Content.SelfWidget.Click)
+  if not Content.IsLocked then
+    Content.SelfWidget:PlayAnimation(Content.SelfWidget.Click)
+  else
+    Content.SelfWidget:PlayAnimation(Content.SelfWidget.HaveNot_Click)
+  end
   Content.SelfWidget.IsSelect = true
 end
-
 function Menu_Portrait_List_PC_C:ConfirmChange()
   local Avatar = GWorld:GetAvatar()
   local PreId
@@ -244,10 +265,8 @@ function Menu_Portrait_List_PC_C:ConfirmChange()
   end
   self.Switcher_Btn:SetActiveWidgetIndex(1)
 end
-
 function Menu_Portrait_List_PC_C:ClickConfirmChangePortrait()
 end
-
 function Menu_Portrait_List_PC_C:RefreshItemClick(Content)
   local UsedList = self.List_Item
   if self.IsHeadFrame then
@@ -256,13 +275,16 @@ function Menu_Portrait_List_PC_C:RefreshItemClick(Content)
   local AllItemCount = UsedList:GetNumItems()
   for i = 0, AllItemCount - 1 do
     local Item = UsedList:GetItemAt(i)
-    if Item.SelfWidget and Item.SelfWidget.IsSelect and Item.SelfWidget ~= Content.SelfWidget then
-      Item.SelfWidget:PlayAnimation(Item.SelfWidget.Normal)
+    if Item.SelfWidget and Item.SelfWidget.IsSelect and Item.SelfWidget ~= Content.SelfWidget and Item.SelfWidget then
+      if Item.SelfWidget.Content.IsLocked then
+        Item.SelfWidget:PlayAnimation(Item.SelfWidget.HaveNot_Normal)
+      else
+        Item.SelfWidget:PlayAnimation(Item.SelfWidget.Normal)
+      end
       Item.SelfWidget.IsSelect = false
     end
   end
 end
-
 function Menu_Portrait_List_PC_C:InitPortrait()
   self.List_Item:ClearListItems()
   self.List_Item_Frame:ClearListItems()
@@ -276,32 +298,79 @@ function Menu_Portrait_List_PC_C:InitPortrait()
     MenuContent.IsHeadFrame = true
     self.List_Item_Frame:AddItem(MenuContent)
     NumCount = 1
-    local UnlockedHeadFrameIcon = Avatar.HeadFrameList
-    for _, Value in ipairs(UnlockedHeadFrameIcon) do
+    local UnlockedHeadFrameIcon = {}
+    for _, Value in pairs(Avatar.HeadFrameList) do
+      UnlockedHeadFrameIcon[Value] = true
+    end
+    local SortedItemList = {}
+    for _, Value in pairs(DataMgr.HeadFrame) do
       MenuContent = NewObject(ClassPath)
       MenuContent.Owner = self
-      MenuContent.PortraitPath = DataMgr.HeadFrame[Value].SmallIcon
-      MenuContent.PortraitId = Value
+      MenuContent.PortraitPath = Value.SmallIcon
+      MenuContent.PortraitId = Value.FrameID
       MenuContent.IsHeadFrame = true
+      MenuContent.AccessText = GText(Value.AccessText)
+      if not UnlockedHeadFrameIcon[Value.FrameID] then
+        MenuContent.IsLocked = true
+      end
+      local NeedAdd = true
+      if MenuContent.IsLocked and not Value.CanPreView then
+        NeedAdd = false
+      end
+      if NeedAdd then
+        table.insert(SortedItemList, MenuContent)
+        NumCount = NumCount + 1
+      end
+    end
+    table.sort(SortedItemList, function(a, b)
+      if a.IsLocked == b.IsLocked then
+        return a.PortraitId < b.PortraitId
+      else
+        return not a.IsLocked and b.IsLocked
+      end
+    end)
+    for _, MenuContent in pairs(SortedItemList) do
       self.List_Item_Frame:AddItem(MenuContent)
-      NumCount = NumCount + 1
     end
     NumCount = 0
-    local UnlockedHeadIcon = Avatar.HeadIconList
+    SortedItemList = {}
+    local UnlockedHeadIcon = {}
+    for _, Value in pairs(Avatar.HeadIconList) do
+      UnlockedHeadIcon[Value] = true
+    end
     ClassPath = UIUtils.GetCommonItemContentClass()
-    for _, Value in ipairs(UnlockedHeadIcon) do
+    for _, Value in pairs(DataMgr.HeadSculpture) do
       local MenuContent = NewObject(ClassPath)
       MenuContent.Owner = self
-      MenuContent.PortraitPath = DataMgr.HeadSculpture[Value].HeadPath
-      MenuContent.PortraitId = Value
+      MenuContent.PortraitPath = Value.HeadPath
+      MenuContent.PortraitId = Value.HeadId
       MenuContent.IsHeadFrame = false
+      MenuContent.AccessText = GText(Value.AccessText)
+      if not UnlockedHeadIcon[Value.HeadId] then
+        MenuContent.IsLocked = true
+      end
+      local NeedAdd = true
+      if MenuContent.IsLocked and not Value.CanPreView then
+        NeedAdd = false
+      end
+      if NeedAdd then
+        table.insert(SortedItemList, MenuContent)
+        NumCount = NumCount + 1
+      end
+    end
+    table.sort(SortedItemList, function(a, b)
+      if a.IsLocked == b.IsLocked then
+        return a.PortraitId < b.PortraitId
+      else
+        return not a.IsLocked and b.IsLocked
+      end
+    end)
+    for _, MenuContent in pairs(SortedItemList) do
       self.List_Item:AddItem(MenuContent)
-      NumCount = NumCount + 1
     end
     self:FillEmpty(self.List_Item, NumCount)
   end
 end
-
 function Menu_Portrait_List_PC_C:FillEmpty(InListView, NumCount)
   self:AddTimer(0.01, function()
     local XCount, YCount = UIUtils.GetTileViewContentMaxCount(InListView, "XY")
@@ -320,7 +389,6 @@ function Menu_Portrait_List_PC_C:FillEmpty(InListView, NumCount)
     end)
   end)
 end
-
 function Menu_Portrait_List_PC_C:CloseSelf()
   local Parent = UIManager(self):GetUI(UIConst.MenuWorld)
   if nil ~= Parent then
@@ -335,7 +403,6 @@ function Menu_Portrait_List_PC_C:CloseSelf()
     self.Close
   })
 end
-
 function Menu_Portrait_List_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -353,10 +420,8 @@ function Menu_Portrait_List_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurG
     end
   end
 end
-
 function Menu_Portrait_List_PC_C:Destruct()
   self:UnbindDialogEvent(DialogEvent.OnTitleTabSelected)
   self.Super.Destruct(self)
 end
-
 return Menu_Portrait_List_PC_C

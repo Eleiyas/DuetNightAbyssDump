@@ -1,15 +1,11 @@
 local Node = Class("StoryCreator.StoryLogic.StorylineNodes.NodeObject")
-
 function Node:NodeInit(Context)
   self.Context = Context
   self:Init()
 end
-
 Node.InitFunction = Node.NodeInit
-
 function Node:Init()
 end
-
 function Node:BuildNode(NodeId, Data, ExtraInfo)
   self.NodeId = NodeId
   self.Data = Data
@@ -27,17 +23,13 @@ function Node:BuildNode(NodeId, Data, ExtraInfo)
     end
   end
 end
-
 function Node:Start(Context, InportInfo)
 end
-
 function Node:NodeClear()
   self:Clear()
 end
-
 function Node:Clear()
 end
-
 function Node:Finish(OutPortNames, Result)
   if nil == OutPortNames then
     OutPortNames = {"Out"}
@@ -50,14 +42,12 @@ function Node:Finish(OutPortNames, Result)
   self:NodeClear()
   self.Context:FinishNode(self, OutPortNames, Result)
 end
-
 function Node:ConnectNode(OutPortName, NextNode)
   if not self.ConnectedNodeList[OutPortName] then
     self.ConnectedNodeList[OutPortName] = {}
   end
   table.insert(self.ConnectedNodeList[OutPortName], NextNode)
 end
-
 function Node:CanReach()
   self.Reachable = true
   for OutPortName, NextNodeList in pairs(self.ConnectedNodeList) do
@@ -66,7 +56,6 @@ function Node:CanReach()
     end
   end
 end
-
 function Node:ToString()
   local NameStr = self.Name or "invalid_name"
   local TypeStr = self.Type or "invalid_type"
@@ -74,16 +63,13 @@ function Node:ToString()
   local KeyStr = self.Key or "invalid_key"
   return NameStr .. "  " .. TypeStr .. "  " .. QuestChainIdStr .. "  " .. KeyStr
 end
-
 function Node:GetNextNodeList(OutPortName)
   local NextNodeList = self.ConnectedNodeList[OutPortName]
   return NextNodeList
 end
-
 function Node:IsRunning()
   return self.HasStarted and not self.HasFinished
 end
-
 function Node:GetConnectedNodeMap()
   local ConnectedNodeMap = {}
   for _, ConnectedNodeList in pairs(self.ConnectedNodeList) do
@@ -95,11 +81,9 @@ function Node:GetConnectedNodeMap()
   end
   return ConnectedNodeMap
 end
-
 function Node:GetRunningNodeTableByType(NodeType, OutRunningNodeTable)
   if self.Type == NodeType then
     table.insert(OutRunningNodeTable, self)
   end
 end
-
 return Node

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Item.WBP_Armory_Item_C"
 })
-
 function M:OnListItemObjectSet(Content)
   Content.SelfWidget = self
   self:RemoveAllEvent()
@@ -16,7 +15,6 @@ function M:OnListItemObjectSet(Content)
   end
   self:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:UpdateModItem(Content)
   local ModId = Content.UnitId
   if not ModId then
@@ -24,7 +22,9 @@ function M:UpdateModItem(Content)
   end
   local ModDataInfo = DataMgr.Mod[ModId]
   if not ModDataInfo then
-    DebugPrint(ErrorTag, LXYTag, "\230\141\162\228\184\170\229\143\183\229\144\167\239\188\140\230\156\137\228\186\155ModId\232\162\171\231\173\150\229\136\146\229\136\160\228\186\134...", ModId)
+    if 0 ~= Content.ModId then
+      DebugPrint(ErrorTag, LXYTag, "换个号吧，有些ModId被策划删了...", ModId)
+    end
     return
   end
   local ModCost, Mod
@@ -58,7 +58,6 @@ function M:UpdateModItem(Content)
       self:SetItemStartLevel(Mod.Level)
     end
     self:SetAura(Content.bAura)
-    self:SetName(GText(ModDataInfo.Name), (Mod and Mod.Level or 0) >= ModDataInfo.MaxLevel)
     self:ShowModStar(Mod)
     if self.PolarityWidget then
       self.PolarityWidget:RemoveFromParent()
@@ -74,16 +73,17 @@ function M:UpdateModItem(Content)
   end
   self:SetItemSelect(Content.IsChosen)
 end
-
 function M:BP_OnEntryReleased()
   M.Super.BP_OnEntryReleased(self)
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:InitCompView()
+  local Level = self.Level
+  self.Level = nil
   M.Super.InitCompView(self)
+  self.Level = Level
   self:SetLevel(nil)
   local Content = self.Content
   self.ParentWidget = Content.Parent
@@ -104,7 +104,9 @@ function M:InitCompView()
   self:SetIsChosen(Content.IsChosen)
   self:SetName(GText(Content.UnitName))
 end
-
+function M:ShowName(Name)
+  self:SetName(Name)
+end
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self._OnRemovedFromFocusPathEvent then
     self._OnRemovedFromFocusPathEvent(self.ParentWidget, self)
@@ -113,11 +115,9 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     self.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
   end
 end
-
 function M:SetIsChosen(bChosen)
   self:SetItemSelect(bChosen)
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   UIManager(self):SetIsMenuAnchorOpen(bIsOpen)
   if self.ItemDetails_MenuAnchor.bAllowHover then
@@ -125,25 +125,21 @@ function M:OnMenuOpenChanged(bIsOpen)
   end
   M.Super.OnMenuOpenChanged(self, bIsOpen)
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   M.Super.OnMouseEnter(self, MyGeometry, MouseEvent)
   if self._OnMouseEnter then
     self._OnMouseEnter(self.ParentWidget, self, self.Content)
   end
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   M.Super.OnMouseLeave(self, MyGeometry, MouseEvent)
   if self._OnMouseLeave then
     self._OnMouseLeave(self.ParentWidget, self, self.Content)
   end
 end
-
 function M:SetIsSelected(bSelect)
   self:SetSelected(bSelect)
 end
-
 function M:SetMinusBtn(bShow, Obj, Func)
   self:SetItemMinus(bShow)
   if IsValid(self.MinusWidget) then
@@ -159,7 +155,6 @@ function M:SetMinusBtn(bShow, Obj, Func)
     end
   end
 end
-
 function M:ShowAddIcon(IsShow)
   self.Content.bShowAdd = IsShow
   self:SetAdd(IsShow)
@@ -171,7 +166,6 @@ function M:ShowAddIcon(IsShow)
     end
   end
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   local IsShowDetails = self.IsShowDetails
   self.IsShowDetails = false
@@ -187,18 +181,15 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   self.ItemDetails_MenuAnchor:OpenItemDetailsWidget(false)
   return Handler
 end
-
 function M:DisableReddot()
   if IsValid(self.ComItemNewReddot) then
     self.ComItemNewReddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:ShowContentWarning(WarningText)
   local function Callback(CoroutineObj)
     if not IsValid(self.ConflictWidget) then
       self.ConflictWidget = self:CreateWidgetAsync("ComItemConflict", CoroutineObj)
-      
       self.Node_Widget:AddChild(self.ConflictWidget)
       local WidgetSlot = UWidgetLayoutLibrary.SlotAsOverlaySlot(self.ConflictWidget)
       WidgetSlot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
@@ -211,10 +202,8 @@ function M:ShowContentWarning(WarningText)
       self.ConflictWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
-  
   self:AsyncLoadWidgetCommon("ConflictWidget", "ShowContentWarningTask", Callback)
 end
-
 function M:ShowModStar(Mod)
   if not Mod or not Mod:HasCardLevel() then
     if IsValid(self.ModStarWidget) then
@@ -239,7 +228,6 @@ function M:ShowModStar(Mod)
     end
   end
 end
-
 function M:OnSetBottomBlackHeight(Height)
   if not IsValid(self.ModStarWidget) then
     return
@@ -255,7 +243,6 @@ function M:OnSetBottomBlackHeight(Height)
   end
   self.ModStarWidget.Base:SetBrushSize(BrushSize)
 end
-
 function M:SetAura(bAura)
   if bAura then
     if not IsValid(self.AruaWidget) then
@@ -270,5 +257,4 @@ function M:SetAura(bAura)
     self.AruaWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

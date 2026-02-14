@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class()
-
 function M:ReceiveBeginPlay()
   local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
   if "Android" == PlatformName or "IOS" == PlatformName then
@@ -32,8 +31,10 @@ function M:ReceiveBeginPlay()
   end
   self.Overridden.ReceiveBeginPlay(self)
 end
-
 function M:ResetLocation()
+  if self.bInteractiveState == false then
+    return
+  end
   local SpawnPos = self:K2_GetActorLocation()
   local HalfHeight = self.CapsuleComponent:GetScaledCapsuleHalfHeight()
   local MeshOffsetZ = -self.Mesh.RelativeLocation.Z
@@ -45,15 +46,14 @@ function M:ResetLocation()
   local HitResult = FHitResult()
   local Ret = UE4.UKismetSystemLibrary.LineTraceSingle(self, Start, End, ETraceTypeQuery.TraceScene, true, nil, 0, HitResult, true)
   if Ret then
-    DebugPrint("CustomNPC\229\141\138\233\171\152\239\188\154", HalfHeight, "\230\137\147\228\184\173\228\189\141\231\189\174\239\188\154", HitResult.ImpactPoint, "\230\137\147\228\184\173\231\155\174\230\160\135\239\188\154", HitResult.Actor:GetName(), "Pawn\229\144\141\229\173\151\239\188\154", self:GetName(), "============sssss================")
+    DebugPrint("CustomNPC半高：", HalfHeight, "打中位置：", HitResult.ImpactPoint, "打中目标：", HitResult.Actor:GetName(), "Pawn名字：", self:GetName(), "============sssss================")
     local SurfacePos = FVector(HitResult.ImpactPoint.X, HitResult.ImpactPoint.Y, HitResult.ImpactPoint.Z + HalfHeight)
     self:K2_SetActorLocation(SurfacePos, false, nil, false)
     if math.abs(HitResult.ImpactPoint.Z - SpawnPos.Z) > HalfHeight * 2 then
-      Utils.ScreenPrint("CustomNPC\233\157\153\230\128\129\229\136\183\230\150\176\231\130\185\228\189\141\231\189\174\229\188\130\229\184\184,Pawn\229\144\141\229\173\151\239\188\154" .. self:GetName() .. " SpawnPos.Z\239\188\154" .. SpawnPos.Z .. " ImpactPoint.Z:" .. HitResult.ImpactPoint.Z)
+      Utils.ScreenPrint("CustomNPC静态刷新点位置异常,Pawn名字：" .. self:GetName() .. " SpawnPos.Z：" .. SpawnPos.Z .. " ImpactPoint.Z:" .. HitResult.ImpactPoint.Z)
     end
   end
 end
-
 function M:ReceiveEndPlay()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if GameInstance then
@@ -75,7 +75,6 @@ function M:ReceiveEndPlay()
     end
   end
 end
-
 function M:SetCustomNpcFlexibShowOrHide()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -93,15 +92,15 @@ function M:SetCustomNpcFlexibShowOrHide()
     TempFlexibleMap[FNpcArrayNum] = NewFlexibleMapElement
     FNpcArrayNum = FNpcArrayNum - 1
   end
-  
   local function SetNpcShowOrHide(IsShow)
     if IsShow then
       self:SetCustomNpcHideTag("Flexible", false)
+      self:SetCollisionDisableTag("Flexible", false)
     else
       self:SetCustomNpcHideTag("Flexible", true)
+      self:SetCollisionDisableTag("Flexible", true)
     end
   end
-  
   for i = 1, self.FlexibleShowHide:Num() do
     local TargetQuestId = TempFlexibleMap[i].NpcArray.Quest.QuestId
     local TargetQuestState = TempFlexibleMap[i].NpcArray.Quest.MyQuestState
@@ -176,7 +175,6 @@ function M:SetCustomNpcFlexibShowOrHide()
     end
   end
 end
-
 function M:ActiveSetCustomNpcHideByAvatarSuitData()
   if 0 == self.AtmosphereTagArray:Num() then
     return
@@ -189,14 +187,14 @@ function M:ActiveSetCustomNpcHideByAvatarSuitData()
       for Tag, Value in pairs(SubSuitData) do
         if self.AtmosphereTagArray:Contains(Tag) then
           self:SetCustomNpcHideTag(Tag, Value)
+          self:SetCollisionDisableTag(Tag, Value)
         end
       end
     end
   end
 end
-
 function M:InitHeadWidgetComponent()
-  if self.HeadWidgetComponent then
+  if IsValid(self.HeadWidgetComponent) then
     return
   end
   local HeadUISubsystem = UNpcHeadUISubsystem.GetHeadUISubsystem(self)
@@ -205,12 +203,11 @@ function M:InitHeadWidgetComponent()
   end
   self.HeadWidgetComponent = HeadUISubsystem:InitHeadWidgetComponent(self)
 end
-
 function M:EnableHeadWidget(WidgetName, bEnable, ...)
   if bEnable then
     self:InitHeadWidgetComponent()
   end
-  if self.HeadWidgetComponent then
+  if IsValid(self.HeadWidgetComponent) then
     if bEnable then
       if self.HeadWidgetComponent:NeedForceInit() then
         self.HeadWidgetComponent:AdjustSelfTransform()
@@ -221,9 +218,7 @@ function M:EnableHeadWidget(WidgetName, bEnable, ...)
     end
   end
 end
-
 function M:EnableBubbleWidget(bEnable, Content)
   self:EnableHeadWidget("Long_Bubble", bEnable, Content)
 end
-
 return M

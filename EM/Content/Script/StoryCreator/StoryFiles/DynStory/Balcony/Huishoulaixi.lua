@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1721273301274190",
       type = "StoryNode",
-      name = "\231\167\189\229\133\189\230\157\165\232\162\173",
+      name = "秽兽来袭",
       pos = {x = 1157.2083333333333, y = 286.14946018893386},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -155,7 +157,7 @@ return {
           ["17212733843722189"] = {
             key = "17212733843722189",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1122.473585322724, y = 305.2493452871508},
             propsData = {
               ActiveEnable = true,
@@ -169,14 +171,14 @@ return {
           ["17212734119462847"] = {
             key = "17212734119462847",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1514.4090691936913, y = 314.9267646419895},
             propsData = {WaitTime = 2}
           },
           ["17212734388343539"] = {
             key = "17212734388343539",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1500.0790443797955, y = 94.09549913330466},
             propsData = {
               IsNpcNode = false,
@@ -193,7 +195,7 @@ return {
           ["17212734580154287"] = {
             key = "17212734580154287",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1856.0219724194974, y = 314.92676464198956},
             propsData = {
               ActiveEnable = true,
@@ -207,14 +209,14 @@ return {
           ["17212735265265007"] = {
             key = "17212735265265007",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 2175.376811129174, y = 312.9912807710219},
             propsData = {WaitTime = 2.5}
           },
           ["17212735347345364"] = {
             key = "17212735347345364",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 2515.054230484013, y = 312.80517655265953},
             propsData = {
               ActiveEnable = true,
@@ -232,7 +234,7 @@ return {
           ["17212741003887804"] = {
             key = "17212741003887804",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 1798.2215470384288, y = 520.0614686476614},
             propsData = {
               DialogueId = 0,
@@ -243,7 +245,7 @@ return {
           ["172127428157110151"] = {
             key = "172127428157110151",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1458.4422134687716, y = 540.2161616249355},
             propsData = {
               KillMonsterType = "Id",

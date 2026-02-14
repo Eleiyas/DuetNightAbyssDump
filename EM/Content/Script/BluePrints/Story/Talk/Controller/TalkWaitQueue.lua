@@ -1,5 +1,4 @@
 local TalkWaitQueue_C = {}
-
 function TalkWaitQueue_C.New(GroupTag, TalkWaitQueueManager, QueueFinished_Obj, QueueFinished_Func, ...)
   local Obj = {}
   setmetatable(Obj, {__index = TalkWaitQueue_C})
@@ -17,7 +16,6 @@ function TalkWaitQueue_C.New(GroupTag, TalkWaitQueueManager, QueueFinished_Obj, 
   Obj.bCompleted = false
   return Obj
 end
-
 function TalkWaitQueue_C:ResetWaitQueue()
   if not self.TalkWaitQueueManager:CheckWaitQueueValid(self.GroupTag, self) then
     return self
@@ -28,7 +26,6 @@ function TalkWaitQueue_C:ResetWaitQueue()
   self.bCompleted = false
   return self
 end
-
 function TalkWaitQueue_C:RegiserWaitItem(UniqueTag)
   if not self.TalkWaitQueueManager:CheckWaitQueueValid(self.GroupTag, self) then
     return self
@@ -38,15 +35,14 @@ function TalkWaitQueue_C:RegiserWaitItem(UniqueTag)
   self.QueueItemCount = self.QueueItemCount + 1
   return self
 end
-
 function TalkWaitQueue_C:CompleteWaitItem(UniqueTag)
-  DebugPrint("CompleteWaitItem", UniqueTag)
   if not self.TalkWaitQueueManager:CheckWaitQueueValid(self.GroupTag, self) then
     return self
   end
   if self.bClosed then
     return self
   end
+  DebugPrint("CompleteWaitItem", UniqueTag, self.Queue[UniqueTag])
   if self.Queue[UniqueTag] == false then
     self.Queue[UniqueTag] = true
     self.CompleteCount = self.CompleteCount + 1
@@ -54,7 +50,6 @@ function TalkWaitQueue_C:CompleteWaitItem(UniqueTag)
   self:TryCompleteWaitQueue()
   return self
 end
-
 function TalkWaitQueue_C:TryCompleteWaitQueue()
   if self.CompleteCount == self.QueueItemCount then
     if self.bCompleted then
@@ -67,7 +62,6 @@ function TalkWaitQueue_C:TryCompleteWaitQueue()
     end
   end
 end
-
 function TalkWaitQueue_C:IsTagOnlyUncompleted(UniqueTag)
   if self.Queue[UniqueTag] == true then
     return false
@@ -77,7 +71,6 @@ function TalkWaitQueue_C:IsTagOnlyUncompleted(UniqueTag)
   end
   return false
 end
-
 function TalkWaitQueue_C:CloseWaitQueue()
   if not self.TalkWaitQueueManager:CheckWaitQueueValid(self.GroupTag, self) then
     return self
@@ -85,7 +78,6 @@ function TalkWaitQueue_C:CloseWaitQueue()
   self.bClosed = true
   return self
 end
-
 function TalkWaitQueue_C:AddWaitItemToWaitQueue(UniqueTag)
   if not self.TalkWaitQueueManager:CheckWaitQueueValid(self.GroupTag, self) then
     DebugPrint("TalkWaitQueue_C:AddWaitItemToWaitQueue: CheckWaitQueueValid fail")
@@ -104,7 +96,6 @@ function TalkWaitQueue_C:AddWaitItemToWaitQueue(UniqueTag)
     end
   end
 end
-
 function TalkWaitQueue_C:DeleteWaitItemInWaitQueue(UniqueTag)
   if not self.TalkWaitQueueManager:CheckWaitQueueValid(self.GroupTag, self) then
     DebugPrint("TalkWaitQueue_C:DeleteWaitItemInWaitQueue: CheckWaitQueueValid fail")
@@ -126,15 +117,12 @@ function TalkWaitQueue_C:DeleteWaitItemInWaitQueue(UniqueTag)
     end
   end
 end
-
 local TalkWaitQueueManager_C = {}
-
 function TalkWaitQueueManager_C.New()
   local Obj = setmetatable({}, {__index = TalkWaitQueueManager_C})
   Obj.WaitQueueMap = {}
   return Obj
 end
-
 function TalkWaitQueueManager_C:CreateWaitQueue(GroupTag, RegisterList, Obj, Func, ...)
   local WaitQueue = TalkWaitQueue_C.New(GroupTag, self, Obj, Func, ...)
   local WaitQueueMap = self.WaitQueueMap
@@ -147,16 +135,13 @@ function TalkWaitQueueManager_C:CreateWaitQueue(GroupTag, RegisterList, Obj, Fun
   end
   return WaitQueue
 end
-
 function TalkWaitQueueManager_C:ClearGroup(GroupTag)
   self.WaitQueueMap[GroupTag] = nil
 end
-
 function TalkWaitQueueManager_C:CheckWaitQueueValid(GroupTag, WaitQueue)
   if self.WaitQueueMap[GroupTag] and self.WaitQueueMap[GroupTag][WaitQueue] then
     return true
   end
   return false
 end
-
 return {TalkWaitQueue_C = TalkWaitQueue_C, TalkWaitQueueManager_C = TalkWaitQueueManager_C}

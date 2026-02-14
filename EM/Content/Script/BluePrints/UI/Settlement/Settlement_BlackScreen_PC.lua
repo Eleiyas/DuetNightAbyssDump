@@ -1,6 +1,5 @@
 require("UnLua")
 local Settlement_BlackScreen_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function Settlement_BlackScreen_PC_C:OnLoaded(...)
   self.bIsFocusable = true
   self.OnInAnimFinished = nil
@@ -23,7 +22,6 @@ function Settlement_BlackScreen_PC_C:OnLoaded(...)
     self:FadeIn(Callback, bIsWin)
   end
 end
-
 function Settlement_BlackScreen_PC_C:FadeIn(OnInAnimFinished, bIsWin)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.OnInAnimFinished = OnInAnimFinished
@@ -40,7 +38,6 @@ function Settlement_BlackScreen_PC_C:FadeIn(OnInAnimFinished, bIsWin)
     self:PlayAnimation(self.In)
   end
 end
-
 function Settlement_BlackScreen_PC_C:FadeOut(OnOutAnimFinished, bSkipOutAnim)
   AudioManager(self):StopSound(self, "SettlementBlackScreen")
   if bSkipOutAnim then
@@ -55,5 +52,4 @@ function Settlement_BlackScreen_PC_C:FadeOut(OnOutAnimFinished, bSkipOutAnim)
     self:PlayAnimation(self.Out)
   end
 end
-
 return Settlement_BlackScreen_PC_C

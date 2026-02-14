@@ -1,13 +1,13 @@
 local M = {}
 local DefaultPath = "Blueprint'/Game/AssetDesign/Camera/CameraShake/Story/"
-
+local ScriptLogType = UE.EStoryLogType.Script
 function M:CreateNode(Flow, TalkTask, Params)
   local ShakeClassPath = Params.Path
   if not ShakeClassPath then
     local FileName = Params.FileName
     if not FileName then
-      local Message = string.format("CameraShake\232\132\154\230\156\172\230\137\167\232\161\140\229\164\177\232\180\165: \230\156\170\229\161\171\229\134\153Path\230\136\150FileName, DialogueId: %d", Flow.DialogueId)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+      local Message = string.format("CameraShake create failed: 未填写Path或FileName, DialogueId: %d", Flow.DialogueId)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "CameraShake脚本执行失败: 文件路径错误", Message)
       return
     end
     ShakeClassPath = DefaultPath .. FileName .. "." .. FileName .. "'"
@@ -16,13 +16,13 @@ function M:CreateNode(Flow, TalkTask, Params)
   local ShakeClass = LoadClass(ShakeClassPath)
   if nil == ShakeClass then
     local Message = string.format("CameraShake create failed: ShakeClass not found, ShakeClassPath: %d, DialogueId: %d", ShakeClassPath, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "CameraShake脚本执行失败: 加载蓝图类失败", Message)
     return
   end
   local PlayerCameraManager = UE4.UGameplayStatics.GetPlayerCameraManager(GWorld.GameInstance, 0)
   if nil == PlayerCameraManager then
     local Message = string.format("CameraShake create failed: PlayerCameraManager not found, DialogueId: %d", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "CameraShake脚本执行失败: 未找到PlayerCameraManager", Message)
     return
   end
   local CameraShakeNode = Flow:CreateNode(UEFNode_Delegate)
@@ -43,7 +43,6 @@ function M:CreateNode(Flow, TalkTask, Params)
         Node.FinishPin
       })
     end
-    
     CameraShakeInst = PlayerCameraManager:StartCameraShake(ShakeClass)
     TalkContext.TalkTimerManager:AddTimer(Node, CameraShakeInst.OscillationDuration, false, nil, nil, FinishCallback)
   end)
@@ -65,5 +64,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return CameraShakeNode
 end
-
 return M

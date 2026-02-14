@@ -1,7 +1,6 @@
 require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local ModModel = ModController:GetModel()
-
 local function OnItemMouseButtonUp(IntensifyPanel, Content, Event)
   local ModEnhanceWidget = Content.Parent
   if not IsValid(ModEnhanceWidget) then
@@ -15,10 +14,8 @@ local function OnItemMouseButtonUp(IntensifyPanel, Content, Event)
     ModEnhanceWidget:OnItemMinusBtnClick(Content)
   end
 end
-
 local function OnItemBtnAddClicked(Content)
 end
-
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
@@ -26,7 +23,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Armory.CardLevel.IntensifySubWidgetCommon"
 }
-
 function M:Construct()
   self:BindToAnimationFinished(self.LevelUp_In, {
     self,
@@ -35,12 +31,22 @@ function M:Construct()
   self.Text_Same:SetText(GText("Text_Same"))
   self.List_ModStar:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.List_Atrr:DisableScroll(true)
+  EventManager:AddEvent(EventID.OnUpdateBagItem, self, self.OnBagItemLockedOrUnlocked)
 end
-
+function M:OnBagItemLockedOrUnlocked(OpAction, Ret, Uuid)
+  if Ret ~= ErrorCode.RET_SUCCESS then
+    return
+  end
+  for i, Content in pairs(self.ContentHolder) do
+    if Content.Uuid == Uuid then
+      self:OnItemMinusBtnClick(Content)
+      break
+    end
+  end
+end
 function M:Init(Params)
   self:UpdateWidgetData(Params)
 end
-
 function M:UpdateWidgetData(Params)
   self.Parent = Params.Parent
   self.Target = Params.Target
@@ -54,7 +60,6 @@ function M:UpdateWidgetData(Params)
   end
   self:UpdateCostBar(self.NowLevel)
 end
-
 function M:UpdateCostBar(InPreviewLevel)
   local Count = 1
   local TotalCost = {}
@@ -93,7 +98,6 @@ function M:UpdateCostBar(InPreviewLevel)
     Count = Count + 1
   end
 end
-
 function M:SetCallbacks(Callbacks)
   self.OnItemAddClickCallback = Callbacks.OnItemAddClickCallback
   self.OnPreviewLevelChangedCallback = Callbacks.OnPreviewLevelChangedCallback
@@ -102,8 +106,8 @@ function M:SetCallbacks(Callbacks)
   self.OnLevelUpSuccessFinishedCallback = Callbacks.OnLevelUpSuccessFinishedCallback
   self.OnModItemMoveCallback = Callbacks.OnModItemMoveCallback
   self.OnLevelUpFinalCallback = Callbacks.OnLevelUpFinalCallback
+  self.OnComsumerCountChangeCb = Callbacks.OnComsumerCountChangeCb
 end
-
 function M:AddComsumerItem(InModContent)
   if self.ComsumerCount >= self.MaxComsumerCount then
     return false
@@ -111,60 +115,64 @@ function M:AddComsumerItem(InModContent)
   self:_SetComsumerCount(self.ComsumerCount + 1)
   local ItemUI = self["Item_" .. self.ComsumerCount]
   self:_SetModItemUI(ItemUI, InModContent, self.ComsumerCount)
+  self:_AddUuid2Count(ItemUI.Content)
   InModContent.IndexInEnhance = self.ComsumerCount
   if self.ComsumerCount >= self.MaxComsumerCount then
     self:CallOnPreviewLevelChangedCallback(self.PreviewLevel + 1)
   end
   return true
 end
-
 function M:AddComsumerItems(InModContents)
   for _, ModContent in ipairs(InModContents) do
     self:AddComsumerItem(ModContent)
   end
 end
-
 function M:GetComsumersParam()
   local Comsumers = {}
   local bAnyLevelUp = false
   for i, Content in pairs(self.ContentHolder) do
     if Content.Uuid then
-      if not Comsumers[Content.UnitId] then
-        Comsumers[Content.UnitId] = {}
+      local Uuid = Content.Uuid
+      local UnitId = Content.UnitId
+      if 0 == Content.ModId then
+        Uuid = UnitId
+        UnitId = "CardLevelNeedResourceId"
       end
-      if not Comsumers[Content.UnitId][Content.Uuid] then
-        Comsumers[Content.UnitId][Content.Uuid] = 0
+      if not Comsumers[UnitId] then
+        Comsumers[UnitId] = {}
       end
-      Comsumers[Content.UnitId][Content.Uuid] = Comsumers[Content.UnitId][Content.Uuid] + 1
-      if Content.Level > 0 then
+      if not Comsumers[UnitId][Uuid] then
+        Comsumers[UnitId][Uuid] = 0
+      end
+      Comsumers[UnitId][Uuid] = Comsumers[UnitId][Uuid] + 1
+      if Content.Level and Content.Level > 0 then
         bAnyLevelUp = true
       end
     end
   end
   return Comsumers, bAnyLevelUp
 end
-
-function M:CallOnPreviewLevelChangedCallback(InPreviewLevel)
+function M:CallOnPreviewLevelChangedCallback(InPreviewLevel, bRemoveAll)
   if not self.OnPreviewLevelChangedCallback then
     return
   end
   local Attrs, ComparedAttrs, Desc = self.OnPreviewLevelChangedCallback(self.Parent, InPreviewLevel)
+  local bNotAnim = bRemoveAll and InPreviewLevel == self.PreviewLevel
   self:UpdateModEnhanceLevel(InPreviewLevel)
   if Attrs then
-    self:UpdataAttrListView(Attrs, ComparedAttrs, true)
+    self:UpdataAttrListView(Attrs, ComparedAttrs, not bNotAnim)
   end
   self:UpdateDesc(Desc)
 end
-
 function M:RemoveAllAddedComsumer()
   for _, Content in pairs(self.ContentHolder) do
-    if self.OnItemMinusBtnClickCallback then
+    self:_SubUuid2Count(Content)
+    if self.OnItemMinusBtnClickCallback and Content.IncId then
       self.OnItemMinusBtnClickCallback(self.Parent, Content)
     end
   end
-  self:InitConsumerList()
+  self:InitConsumerList(true)
 end
-
 function M:OnItemMinusBtnClick(DelContent)
   if 0 == self.ComsumerCount then
     return
@@ -198,8 +206,8 @@ function M:OnItemMinusBtnClick(DelContent)
     self:CallOnPreviewLevelChangedCallback(self.PreviewLevel - 1)
   end
 end
-
-function M:InitConsumerList()
+function M:InitConsumerList(bRemoveAll)
+  self.Uuid2Count = {}
   self.MaxComsumerCount = self.Target.CardLevelNeedNum[self.NowLevel + 1]
   for i, ItemUI in pairs(self.WB_Item:GetAllChildren()) do
     self:_ResetItemUI(ItemUI, i, i <= self.MaxComsumerCount)
@@ -207,18 +215,32 @@ function M:InitConsumerList()
   self:_SetComsumerCount(0)
   self.Text_Total:SetText("/" .. self.MaxComsumerCount)
   self.Panel_Hint:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  self:CallOnPreviewLevelChangedCallback(self.NowLevel)
+  self:CallOnPreviewLevelChangedCallback(self.NowLevel, bRemoveAll)
 end
-
 function M:_SetComsumerCount(InComsumerCount)
+  if self.OnComsumerCountChangeCb and InComsumerCount ~= self.ComsumerCount then
+    self.OnComsumerCountChangeCb(self.Parent, self.ComsumerCount, InComsumerCount)
+  end
   self.ComsumerCount = InComsumerCount
   self.Text_Num:SetText(self.ComsumerCount)
 end
-
 function M:_SetModItemUI(ItemUI, InModContent, IndexInEnhance)
   ItemUI:BP_OnEntryReleased()
-  local Mod = ModModel:GetMod(InModContent.Uuid)
-  local ModContent = ArmoryUtils:NewModItemContent(Mod)
+  local ModContent
+  if 0 == InModContent.ModId then
+    local Res = ModModel:GetAvatar().Resources[InModContent.UnitId]
+    ModContent = ArmoryUtils:NewResourceItemContent(Res)
+    ModContent.UnitName = Res.ResourceName
+    ModContent.CardLevel = 0
+    ModContent.ModId = 0
+    ModContent.Uuid = InModContent.UnitId
+    ModContent.Level = nil
+  else
+    local Mod = ModModel:GetMod(InModContent.Uuid)
+    ModContent = ModModel:CreateModContent(Mod, nil, true)
+  end
+  ModContent.IncId = InModContent.IncId
+  ModContent.Count = nil
   ModContent.bEnhance = true
   ModContent.Parent = self
   ModContent.MouseButtonUpEvent = OnItemMouseButtonUp
@@ -232,7 +254,6 @@ function M:_SetModItemUI(ItemUI, InModContent, IndexInEnhance)
     ItemUI.PolarityWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:_AddOrSetContentHolder(Content, Index)
   if Index > self.ContentHolder:Length() then
     self.ContentHolder:Add(Content)
@@ -240,11 +261,27 @@ function M:_AddOrSetContentHolder(Content, Index)
     self.ContentHolder:Set(Index, Content)
   end
 end
-
+function M:_SubUuid2Count(Content)
+  local LastUuid = Content and Content.Uuid
+  if LastUuid and self.Uuid2Count[LastUuid] then
+    self.Uuid2Count[LastUuid] = self.Uuid2Count[LastUuid] - 1
+    if 0 == self.Uuid2Count[LastUuid] then
+      self.Uuid2Count[LastUuid] = nil
+    end
+  end
+end
+function M:_AddUuid2Count(Content)
+  local Uuid = Content.Uuid
+  if not self.Uuid2Count[Uuid] then
+    self.Uuid2Count[Uuid] = 0
+  end
+  self.Uuid2Count[Uuid] = self.Uuid2Count[Uuid] + 1
+end
 function M:_ResetItemUI(ItemUI, IndexInEnhance, bActivate)
   if nil == bActivate then
     bActivate = true
   end
+  self:_SubUuid2Count(ItemUI.Content)
   ItemUI:SetMinusBtn(false)
   ItemUI:BP_OnEntryReleased()
   local EmptyContent = NewObject(UIUtils.GetCommonItemContentClass())
@@ -260,7 +297,6 @@ function M:_ResetItemUI(ItemUI, IndexInEnhance, bActivate)
     ItemUI:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:InitModStart()
   self.List_ModStar:ClearListItems()
   for i = 1, self.MaxLevel do
@@ -271,7 +307,6 @@ function M:InitModStart()
     self.List_ModStar:AddItem(StarContent)
   end
 end
-
 function M:UpdateModEnhanceLevel(InPreviewLevel)
   if InPreviewLevel > self.PreviewLevel then
     for i = self.PreviewLevel + 1, InPreviewLevel do
@@ -284,7 +319,6 @@ function M:UpdateModEnhanceLevel(InPreviewLevel)
   end
   self.PreviewLevel = InPreviewLevel
 end
-
 function M:_SetActiveStar(Index, bActivate)
   local StarContent = self.List_ModStar:GetItemAt(Index - 1)
   StarContent.bActivate = bActivate
@@ -293,7 +327,6 @@ function M:_SetActiveStar(Index, bActivate)
     StarUI:PlayAnimation(StarUI.Normal)
   end
 end
-
 function M:_SetGoldStar(Index, bGloden, bNoFlick)
   local StarContent = self.List_ModStar:GetItemAt(Index - 1)
   StarContent.bGolden = bGloden
@@ -309,20 +342,18 @@ function M:_SetGoldStar(Index, bGloden, bNoFlick)
     end
   end
 end
-
 function M:StopGoldStarTimer()
   if self:IsExistTimer(self.GoldStarTimer) then
     self:RemoveTimer(self.GoldStarTimer)
     self.GoldStarTimer = nil
   end
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.LevelUp_In)
   self:StopLevelUpSuccessTimer()
   self:StopGoldStarTimer()
+  EventManager:RemoveEvent(EventID.OnUpdateBagItem, self)
 end
-
 function M:OnLevelUpSuccess()
   self.Panel_Hint:SetVisibility(UIConst.VisibilityOp.Collapsed)
   for i, ItemUI in pairs(self.WB_Item:GetAllChildren()) do
@@ -348,7 +379,6 @@ function M:OnLevelUpSuccess()
     self.SuccessToast.Text_Success:SetText(GText("UI_ModEnhance_Max"))
   end
 end
-
 function M:OnLevelUpAnimFinished()
   self:StopLevelUpSuccessTimer()
   local _, TimerKey = self:AddTimer(1.5, function()
@@ -367,13 +397,11 @@ function M:OnLevelUpAnimFinished()
   end, false, 0, nil, true)
   self.LevelUpSuccessTimer = TimerKey
 end
-
 function M:StopLevelUpSuccessTimer()
   if self:IsExistTimer(self.LevelUpSuccessTimer) then
     self:RemoveTimer(self.LevelUpSuccessTimer)
     self.LevelUpSuccessTimer = nil
   end
 end
-
 AssembleComponents(M)
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Play_Common_Root_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Play_Common_Root_C:Construct()
   self.IsInSelectState = false
   self:InitSubTab()
@@ -17,12 +16,10 @@ function WBP_Play_Common_Root_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Play_Common_Root_C:Destruct()
   self:RemoveTimer("AddPermanentItem")
   self:ClearListenEvent()
 end
-
 function WBP_Play_Common_Root_C:InitSubTab()
   local SortedSubTab = {}
   for _, SubTabData in pairs(DataMgr.PlaySubTab) do
@@ -57,7 +54,6 @@ function WBP_Play_Common_Root_C:InitSubTab()
   local TryTime = 0
   self.List_Permanent:ClearListItems()
   local HasEmptyCell = false
-  
   local function FillWrapBoxFunc()
     local ScrollBoxSize = USlateBlueprintLibrary.GetLocalSize(self.List_Permanent:GetCachedGeometry())
     local Item = self.List_Permanent:GetItemAt(0)
@@ -91,7 +87,6 @@ function WBP_Play_Common_Root_C:InitSubTab()
     HasEmptyCell = true
     return true
   end
-  
   self:AddTimer(self.IntervalTime, function()
     if Index > #SortedUnlcokSubTab then
       if not FillWrapBoxFunc() then
@@ -114,7 +109,6 @@ function WBP_Play_Common_Root_C:InitSubTab()
     self.List_Permanent.ConsumeMouseWheel = EConsumeMouseWheel.WhenScrollingPossible
   end
 end
-
 function WBP_Play_Common_Root_C:RefreshListPermanentInfo(Index)
   if self.SelectedIndex ~= nil then
     local CurSelectPermanent = self.List_Permanent:GetItemAt(math.max(self.SelectedIndex - 1, 0))
@@ -171,10 +165,27 @@ function WBP_Play_Common_Root_C:RefreshListPermanentInfo(Index)
     self.Group_Title:AddChild(self.TitleWidget)
   end
   self.ListView_Rewards:ClearListItems()
-  if SubTabInfo.RewardViewId then
-    self.Text_BossRewards:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+  local RewardViewId = SubTabInfo.RewardViewId
+  if not RewardViewId and "AbyssMain" == SubTabInfo.SubWidgetUI then
+    local Avatar = GWorld:GetAvatar()
+    if Avatar and Avatar.CurrentAbyssSeasonId then
+      local AbyssSeasonListInfo = DataMgr.AbyssSeasonList[Avatar.CurrentAbyssSeasonId]
+      if AbyssSeasonListInfo and AbyssSeasonListInfo.EventId then
+        local EventPortalInfo = DataMgr.EventPortal[AbyssSeasonListInfo.EventId]
+        if EventPortalInfo and EventPortalInfo.RewardPreview then
+          RewardViewId = EventPortalInfo.RewardPreview
+        end
+      end
+    end
+  end
+  if RewardViewId then
+    if self.HB_Rewards then
+      self.HB_Rewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    else
+      self.Text_BossRewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    end
     self.ListView_Rewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-    local RewardInfo = DataMgr.RewardView[SubTabInfo.RewardViewId]
+    local RewardInfo = DataMgr.RewardView[RewardViewId]
     if RewardInfo then
       local Ids = RewardInfo.Id or {}
       local RewardCount = RewardInfo.Quantity or {}
@@ -199,7 +210,11 @@ function WBP_Play_Common_Root_C:RefreshListPermanentInfo(Index)
       end
     end
   else
-    self.Text_BossRewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    if self.HB_Rewards then
+      self.HB_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    else
+      self.Text_BossRewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
     self.ListView_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   if SubTabInfo.ShopJumpId then
@@ -210,7 +225,6 @@ function WBP_Play_Common_Root_C:RefreshListPermanentInfo(Index)
   self.Group_Time:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text_Desc:SetText(GText(SubTabInfo.SubTabDes))
 end
-
 function WBP_Play_Common_Root_C:OnClickOpen()
   if DataMgr.PlaySubTab[self.CurSubTabName].JumpUIId then
     PageJumpUtils:JumpToTargetPageByJumpId(DataMgr.PlaySubTab[self.CurSubTabName].JumpUIId)
@@ -220,14 +234,12 @@ function WBP_Play_Common_Root_C:OnClickOpen()
     WidgetUI:InitTable()
   end
 end
-
 function WBP_Play_Common_Root_C:OnClickShop()
   local ShopJumpId = DataMgr.PlaySubTab[self.CurSubTabName].ShopJumpId
   if ShopJumpId then
     PageJumpUtils:JumpToTargetPageByJumpId(ShopJumpId)
   end
 end
-
 function WBP_Play_Common_Root_C:OnRougeMainReddotChange()
   if not ReddotManager.GetTreeNode("RougeMain") then
     ReddotManager.AddNode("RougeMain")
@@ -239,7 +251,6 @@ function WBP_Play_Common_Root_C:OnRougeMainReddotChange()
     self.Btn_Enter.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Play_Common_Root_C:OnAbyssMainReddotChange()
   if not ReddotManager.GetTreeNode("AbyssMain") then
     ReddotManager.AddNode("AbyssMain")
@@ -251,19 +262,16 @@ function WBP_Play_Common_Root_C:OnAbyssMainReddotChange()
     self.Btn_Enter.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Play_Common_Root_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Play_Common_Root_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Play_Common_Root_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -271,7 +279,6 @@ function WBP_Play_Common_Root_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Play_Common_Root_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -279,7 +286,6 @@ function WBP_Play_Common_Root_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Play_Common_Root_C:InitGamepadView()
   if self.Btn_Enter then
     self.Btn_Enter:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -296,7 +302,6 @@ function WBP_Play_Common_Root_C:InitGamepadView()
   end
   self:SetFocus()
 end
-
 function WBP_Play_Common_Root_C:InitKeyboardView()
   self:LeaveSelectMode()
   if self.Btn_Enter then
@@ -313,7 +318,6 @@ function WBP_Play_Common_Root_C:InitKeyboardView()
     self.Key_Rewards_1:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Play_Common_Root_C:InitWidgetInfoInGamePad()
   if self.Btn_Enter then
     self.Btn_Enter:SetGamePadImg("A")
@@ -336,7 +340,6 @@ function WBP_Play_Common_Root_C:InitWidgetInfoInGamePad()
     })
   end
 end
-
 function WBP_Play_Common_Root_C:BP_GetDesiredFocusTarget()
   if self.SelectedIndex then
     local CurSelectPermanent = self.List_Permanent:GetItemAt(math.max(self.SelectedIndex - 1, 0))
@@ -345,7 +348,6 @@ function WBP_Play_Common_Root_C:BP_GetDesiredFocusTarget()
     return self.List_Permanent
   end
 end
-
 function WBP_Play_Common_Root_C:OnUINavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     self:OnNavigationToIndex(self.SelectedIndex - 1)
@@ -354,7 +356,6 @@ function WBP_Play_Common_Root_C:OnUINavigation(NavigationDirection)
   end
   return nil
 end
-
 function WBP_Play_Common_Root_C:OnNavigationToIndex(Index)
   local Item = self.List_Permanent:GetItemAt(Index - 1)
   if Item then
@@ -374,7 +375,6 @@ function WBP_Play_Common_Root_C:OnNavigationToIndex(Index)
   end
   return nil
 end
-
 function WBP_Play_Common_Root_C:TrySelectFirstTime(Entry)
   if not self.SelectFirstTime then
     self.SelectFirstTime = true
@@ -382,7 +382,6 @@ function WBP_Play_Common_Root_C:TrySelectFirstTime(Entry)
     Entry:SetFocus()
   end
 end
-
 function WBP_Play_Common_Root_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -392,8 +391,10 @@ function WBP_Play_Common_Root_C:HandleKeyDown(MyGeometry, InKeyEvent)
       IsEventHandled = true
       self:OnClickOpen()
     elseif InKeyName == UIConst.GamePadKey.LeftThumb then
-      IsEventHandled = true
-      self:EnterSelectMode()
+      if self.ListView_Rewards:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
+        IsEventHandled = true
+        self:EnterSelectMode()
+      end
     elseif InKeyName == UIConst.GamePadKey.FaceButtonRight then
       if self.IsInSelectState then
         IsEventHandled = true
@@ -409,11 +410,9 @@ function WBP_Play_Common_Root_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Play_Common_Root_C:SwitchIn()
   self:InitNormalTab()
 end
-
 function WBP_Play_Common_Root_C:OnMenuOpenChanged(bIsOpen)
   if bIsOpen then
     self:InitMenuOpenTab()
@@ -423,7 +422,6 @@ function WBP_Play_Common_Root_C:OnMenuOpenChanged(bIsOpen)
     self:InitNormalTab()
   end
 end
-
 function WBP_Play_Common_Root_C:EnterSelectMode()
   if self.IsInSelectState then
     return
@@ -444,7 +442,6 @@ function WBP_Play_Common_Root_C:EnterSelectMode()
   self:SelectFirstItem(self.ListView_Rewards)
   self.IsInSelectState = true
 end
-
 function WBP_Play_Common_Root_C:LeaveSelectMode()
   if not self.IsInSelectState then
     return
@@ -465,7 +462,6 @@ function WBP_Play_Common_Root_C:LeaveSelectMode()
   self:FocusOnFirstItem()
   self.IsInSelectState = false
 end
-
 function WBP_Play_Common_Root_C:SelectFirstItem(List)
   if List then
     if List:GetNumItems() > 0 then
@@ -475,7 +471,6 @@ function WBP_Play_Common_Root_C:SelectFirstItem(List)
     end
   end
 end
-
 function WBP_Play_Common_Root_C:FocusOnFirstItem()
   if self.SelectedIndex then
     local CurSelectPermanent = self.List_Permanent:GetItemAt(math.max(self.SelectedIndex - 1, 0))
@@ -484,7 +479,6 @@ function WBP_Play_Common_Root_C:FocusOnFirstItem()
     self.List_Permanent:SetFocus()
   end
 end
-
 function WBP_Play_Common_Root_C:InitSelectTab()
   local BottomKeyInfo = {
     {
@@ -516,7 +510,6 @@ function WBP_Play_Common_Root_C:InitSelectTab()
   end
   self.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function WBP_Play_Common_Root_C:InitNormalTab()
   local BottomKeyInfo = {
     {
@@ -548,7 +541,6 @@ function WBP_Play_Common_Root_C:InitNormalTab()
   end
   self.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function WBP_Play_Common_Root_C:InitMenuOpenTab()
   local BottomKeyInfo = {
     {
@@ -570,5 +562,4 @@ function WBP_Play_Common_Root_C:InitMenuOpenTab()
   end
   self.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 return WBP_Play_Common_Root_C

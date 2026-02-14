@@ -1,12 +1,10 @@
 require("UnLua")
 require("DataMgr")
 local WBP_PickUpTips_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_PickUpTips_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.WaitingItemList = {}
 end
-
 function WBP_PickUpTips_C:Tick(MyGeometry, DeltaTime)
   if 0 == #self.WaitingItemList then
     return
@@ -17,11 +15,9 @@ function WBP_PickUpTips_C:Tick(MyGeometry, DeltaTime)
     table.remove(self.WaitingItemList, 1)
   end
 end
-
 function WBP_PickUpTips_C:OnUpdateTips(ItemId, ItemCount, TableName)
   self:DoShowPickUpTips(ItemId, ItemCount, TableName)
 end
-
 function WBP_PickUpTips_C:DoShowPickUpTips(ItemId, ItemCount, TableName)
   local TipsItem = self:GetValidTips()
   if TipsItem then
@@ -35,15 +31,12 @@ function WBP_PickUpTips_C:DoShowPickUpTips(ItemId, ItemCount, TableName)
     })
   end
 end
-
 function WBP_PickUpTips_C:OnlyShowTips(TextString)
   self.TextBlock_IsFull:SetText(TextString)
   self.TextBlock_IsFull:SetVisibility(UE4.ESlateVisibility.Visible)
 end
-
 function WBP_PickUpTips_C:DeepCopy(object)
   local lookup_table = {}
-  
   local function _copy(object)
     if type(object) ~= "table" then
       return object
@@ -57,15 +50,12 @@ function WBP_PickUpTips_C:DeepCopy(object)
     end
     return setmetatable(new_table, getmetatable(object))
   end
-  
   return _copy(object)
 end
-
 function WBP_PickUpTips_C:OnShowPickUpItems(Player)
   self.OwnerPlayer = Player
   local AllItems = self.OwnerPlayer:GetManualPickups()
 end
-
 function WBP_PickUpTips_C:GetValidTips()
   for i = 0, self.VerticalBox_PickUpTips:GetChildrenCount() - 1 do
     local TipsItem = self.VerticalBox_PickUpTips:GetChildAt(i)
@@ -75,7 +65,6 @@ function WBP_PickUpTips_C:GetValidTips()
   end
   return nil
 end
-
 function WBP_PickUpTips_C:OnTipsItemClose(TipsItem)
   local bCloseSelf = true
   for i = 0, self.VerticalBox_PickUpTips:GetChildrenCount() - 1 do
@@ -89,5 +78,4 @@ function WBP_PickUpTips_C:OnTipsItemClose(TipsItem)
     self:Close()
   end
 end
-
 return WBP_PickUpTips_C

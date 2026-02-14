@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ItemID = nil
@@ -10,7 +9,6 @@ function M:Initialize(Initializer)
   self.IsCanCloseByHotKey = nil
   self.ParentWidget = nil
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.ConfigData, self.ItemType, self.ParentWidget, self.IsCanCloseByHotKey, self.AutoOpenDetectiveGameUI = ...
@@ -41,7 +39,6 @@ function M:OnLoaded(...)
     self:UpdateStoryKeyTips()
   end)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self.WS:SetActiveWidgetIndex(1)
@@ -49,7 +46,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self.WS:SetActiveWidgetIndex(0)
   end
 end
-
 function M:FillWithData()
   if self.ItemType == "Read" then
     self.ItemID = self.ConfigData
@@ -74,7 +70,6 @@ function M:FillWithData()
     self.Text_Content:SetText(GText(self.ConfigData.Desc))
   end
 end
-
 function M:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -82,7 +77,6 @@ function M:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/reading_hud", "ItemInformation", nil)
   self:PlayAnimationForward(self.In)
 end
-
 function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "ItemInformation", {ToEnd = 1})
   if self:IsAnimationPlaying(self.Out) then
@@ -94,7 +88,6 @@ function M:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function M:UpdateStoryKeyTips()
   local BottomKeyInfo = {}
   if UIUtils.CheckScrollBoxCanScroll(self.ScrollBox_Content) then
@@ -124,7 +117,6 @@ function M:UpdateStoryKeyTips()
   end
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function M:Close()
   self.Super.Close(self)
   if IsValid(self.ParentWidget) then
@@ -145,7 +137,6 @@ function M:Close()
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -158,7 +149,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -172,7 +162,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -185,5 +174,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 return M

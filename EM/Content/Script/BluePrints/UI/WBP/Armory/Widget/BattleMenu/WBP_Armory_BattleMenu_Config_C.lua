@@ -1,15 +1,15 @@
 require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
+local FSM = require("Blueprints.UI.FocusStateMachine")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-local FocusAreas = {
-  WeaponList = 1,
-  PhatomList = 2,
-  SortWidget = 3,
-  SiftWidget = 4
+local FocusStates = {
+  WeaponList = "WeaponList",
+  PhamtomList = "PhamtomList",
+  SortWidget = "SortWidget",
+  SiftWidget = "SiftWidget"
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self:InitKeySetting()
@@ -113,9 +113,13 @@ function M:Construct()
   self.List_Weapon.OnCreateEmptyContent:Bind(self, function(self)
     return NewObject(UIUtils.GetCommonItemContentClass())
   end)
+  self.FSM = FSM:New(self, {
+    StateNames = FocusStates,
+    OnStateChanged = self.OnFocusChanged,
+    CheckFunction = self.IsFocusStateValid
+  })
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:InitKeySetting()
   self.Escape = "Escape"
   self.TabLeftKey = "A"
@@ -133,11 +137,9 @@ function M:InitKeySetting()
   self.KeyDownEvent[UIConst.GamePadKey.FaceButtonRight] = self.OnBackKeyDown
   self.KeyDownEvent[self.Escape] = self.OnBackKeyDown
 end
-
 function M:OnTabLeftKeyDown()
-  local IsWeaponListFocused = self.CurrentFocusedArea == FocusAreas.WeaponList or self.List_Weapon:HasAnyUserFocus()
   self.Tab_Switch:TabToLeft()
-  if IsWeaponListFocused then
+  if self.FSM:Peak().Name == FocusStates.WeaponList then
     if #self.FilteredItems <= 0 then
       return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.List_PhantomTab), true
     else
@@ -145,11 +147,9 @@ function M:OnTabLeftKeyDown()
     end
   end
 end
-
 function M:OnTabRightKeyDown()
-  local IsWeaponListFocused = self.CurrentFocusedArea == FocusAreas.WeaponList or self.List_Weapon:HasAnyUserFocus()
   self.Tab_Switch:TabToRight()
-  if IsWeaponListFocused then
+  if self.FSM:Peak().Name == FocusStates.WeaponList then
     if #self.FilteredItems <= 0 then
       return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.List_PhantomTab), true
     else
@@ -157,35 +157,31 @@ function M:OnTabRightKeyDown()
     end
   end
 end
-
 function M:OnLeftThumbKeyDown()
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Com_Sort), true
 end
-
 function M:OnRightThumbKeyDown()
-  local LastFocusArea = self.CurrentFocusedArea
   self.CheckBox_Recommend:OnClicked()
-  if LastFocusArea == FocusAreas.WeaponList and self.ComWeaponContent and self.List_Weapon:GetIndexForItem(self.ComWeaponContent) > 0 then
-    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:NavigateToWeaponList()), true
+  local StateName = self.FSM:Peak().Name
+  if StateName == FocusStates.WeaponList then
+    if self.ComWeaponContent and self.List_Weapon:GetIndexForItem(self.ComWeaponContent) >= 0 then
+      return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:NavigateToWeaponList()), true
+    else
+      return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:NavigateToPhantomList()), true
+    end
   end
-  self:NavigateToPhantomList():SetFocus()
 end
-
 function M:OnFaceButtonTopKeyDown()
   self:OnGoToWeaponBtnClicked()
 end
-
 function M:OnBtnGoToUpgradeClicked()
   self:OnGoToWeaponBtnClicked()
 end
-
 function M:OnSpecialRightKeyDown()
   self:OnGoToCharBtnClicked()
 end
-
 function M:OnFaceButtonLeftKeyDown()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   if UKismetInputLibrary.InputEvent_IsRepeat(InputEvent) then
@@ -201,11 +197,14 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnBackKeyDown()
-  self:Close()
+  if self.IsGamepadInput and self.FSM:Peak().Name == FocusStates.SortWidget then
+    self.FSM:Pop()
+    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:GetDesiredFocusTarget()), true
+  else
+    self:Close()
+  end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, Params)
   self.Parent = Params.Parent
@@ -213,7 +212,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   self.OnClosedCbFunc = Params.OnClosedCbFunc
   self.OnClosedCbObj = Params.OnClosedCbObj
   self:SetVisibility(UIConst.VisibilityOp.Visible)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:InitPhantomContents()
   self:SortPhantomContents()
   self.CurPhantomContent = self.PhantomContentArray[1]
@@ -223,13 +222,11 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   self:InitNavigationRules()
   AudioManager(self):PlayUISound(self, "event:/ui/common/preset_team_panel_expand", "Open", nil)
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self:BlockAllUIInput(false)
   self:SetFocus()
 end
-
 local function AddWeaponContent(self, Weapon)
   local Avatar = ArmoryUtils:GetAvatar()
   if not Weapon:HasTag("Ultra") then
@@ -268,7 +265,6 @@ local function AddWeaponContent(self, Weapon)
     return Content
   end
 end
-
 local function RemoveWeaponContent(self, WeaponUuid)
   local IsMelee = false
   if self.MeleeContentMap[WeaponUuid] then
@@ -295,7 +291,6 @@ local function RemoveWeaponContent(self, WeaponUuid)
     end
   end
 end
-
 function M:InitWeaponContents()
   local Avatar = GWorld:GetAvatar()
   self.WeaponTags = {"Melee", "Ranged"}
@@ -309,7 +304,6 @@ function M:InitWeaponContents()
     AddWeaponContent(self, Weapon)
   end
 end
-
 function M:OnWeaponTabSelected(Tab)
   if 1 == Tab.Idx then
     self:OnMeleeWeaponTabClicked()
@@ -317,15 +311,12 @@ function M:OnWeaponTabSelected(Tab)
     self:OnRangedWeaponTabClicked()
   end
 end
-
 function M:OnMeleeWeaponTabClicked()
   self:SwitchListContentsTag(self.WeaponTags[1])
 end
-
 function M:OnRangedWeaponTabClicked()
   self:SwitchListContentsTag(self.WeaponTags[2])
 end
-
 function M:SwitchListContentsTag(Tag)
   self.CurWeaponTag = Tag
   self.Com_Sift:Close()
@@ -350,7 +341,6 @@ function M:SwitchListContentsTag(Tag)
   self:UpdateEquipBtn(self.ComWeaponContent)
   self:OnFilterSelectionsChanged(self.SelectedSiftItems, self.SiftItemDatas)
 end
-
 function M:InitWeaponTabs(PhantomContent)
   self.CurWeaponContent = nil
   if not PhantomContent then
@@ -363,8 +353,9 @@ function M:InitWeaponTabs(PhantomContent)
   if Weapon then
     self.CurWeaponTag = Weapon:IsMelee() and "Melee" or "Ranged"
     self.CurWeaponContent = self[self.CurWeaponTag .. "ContentMap"][WeaponUuid]
+    ArmoryUtils:SetItemSelectTag(self.CurWeaponContent, true)
   else
-    self.CurWeaponTag = "Melee"
+    self.CurWeaponTag = self.CurWeaponTag or "Melee"
   end
   if WeaponTagBefore and self.CurWeaponTag == WeaponTagBefore then
     if self.CurWeaponTag == "Melee" then
@@ -378,7 +369,6 @@ function M:InitWeaponTabs(PhantomContent)
     self.Tab_Switch:SelectTab(2)
   end
 end
-
 function M:OnWeaponListClicked(Content)
   if self.IsGamepadInput then
     self:OnWeaponListGamepadClicked(Content)
@@ -386,7 +376,6 @@ function M:OnWeaponListClicked(Content)
     self:OnWeaponSelected(Content)
   end
 end
-
 function M:OnWeaponSelected(Content)
   if not (Content and Content.Uuid) or self.ComWeaponContent == Content then
     return
@@ -400,14 +389,12 @@ function M:OnWeaponSelected(Content)
   self:UpdateEquipBtn(self.ComWeaponContent)
   self:ShowWeaponTips(true)
 end
-
 function M:UpdateWeaponTips(Content)
   if Content then
     self.Tips_Weapon:RefreshItemInfo(Content, true)
     self.Tips_Weapon:SetConflictLine(Content.IsMainCharEquipped, Content.TipsText, 1)
   end
 end
-
 function M:UpdateEquipBtn(Content)
   if Content then
     if Content.IsMainCharEquipped then
@@ -429,7 +416,6 @@ function M:UpdateEquipBtn(Content)
     self.Btn_GoToUpgrade:ForbidBtn(true)
   end
 end
-
 function M:OnBtnEquipClicked()
   local Avatar = GWorld:GetAvatar()
   if self.ComWeaponContent then
@@ -452,13 +438,11 @@ function M:OnBtnEquipClicked()
     end
   end
 end
-
 function M:OnPopupConfirm()
   self:BlockAllUIInput(true)
   local Avatar = GWorld:GetAvatar()
   Avatar:EquipAssisterWeapon(self.CurPhantomContent.UnitId, self.ComWeaponContent.Uuid)
 end
-
 function M:OnAssisterWeaponEquiped(Ret, AssisterId, WeaponUuid)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -472,7 +456,6 @@ function M:OnAssisterWeaponEquiped(Ret, AssisterId, WeaponUuid)
   self:UpdatePhantomWeaponCount(self.CurPhantomContent)
   AudioManager(self):PlayUISound(self, "event:/ui/common/weapon_replace", nil, nil)
 end
-
 function M:OnTakeOffAssisterWeapon(Ret, AssisterId, WeaponUuid)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -487,7 +470,6 @@ function M:OnTakeOffAssisterWeapon(Ret, AssisterId, WeaponUuid)
   end
   self:UpdatePhantomWeaponCount(self.CurPhantomContent)
 end
-
 function M:ShowWeaponTips(IsShow)
   if IsShow == self.IsWeaponTipsShowed then
     return
@@ -503,7 +485,6 @@ function M:ShowWeaponTips(IsShow)
     self.Tips_Weapon:PlayOutAnim()
   end
 end
-
 local function AddPhantomContent(self, Resource, CharId2Char)
   local Content = self:NewResourceItemContent(Resource)
   if Content then
@@ -529,7 +510,6 @@ local function AddPhantomContent(self, Resource, CharId2Char)
     return Content
   end
 end
-
 function M:InitPhantomContents()
   self.PhantomContentMap = {}
   self.PhantomContentArray = {}
@@ -544,7 +524,6 @@ function M:InitPhantomContents()
     AddPhantomContent(self, Resource, CharId2Char)
   end
 end
-
 function M:UpdatePhantomsLevel()
   for index, value in ipairs(self.PhantomContentArray) do
     if value.Widget then
@@ -552,18 +531,15 @@ function M:UpdatePhantomsLevel()
     end
   end
 end
-
 function M:SortPhantomContents()
   ArmoryUtils:SortItemContents(self.PhantomContentArray, {"Rarity", "UnitId"}, CommonConst.DESC, self.CurPhantomContent)
 end
-
 function M:InitPhantomList()
   self.List_PhantomTab:ClearListItems()
   for index, value in ipairs(self.PhantomContentArray) do
     self.List_PhantomTab:AddItem(value)
   end
 end
-
 function M:NewResourceItemContent(ServerData)
   local Data = ServerData:Data()
   if not Data or ServerData.ResourceSType ~= "PhantomItem" then
@@ -583,7 +559,6 @@ function M:NewResourceItemContent(ServerData)
   Obj.OnRemovedFromFocusPath = self.OnPhantomItemRemovedFromFocusPath
   return Obj
 end
-
 function M:UpdatePhantomInfo(Content)
   self.WB_Tag:SetVisibility(UIConst.VisibilityOp.Collapsed)
   Content = Content or self.CurPhantomContent
@@ -605,7 +580,6 @@ function M:UpdatePhantomInfo(Content)
   self.Icon_Attribute:SetBrushResourceObject(AttributeIcon)
   UIUtils.AddPositioningTagToPanel(self.WB_Tag, PhantomResource.UseParam)
 end
-
 function M:UpdatePhantomWeaponCount(Content)
   Content = Content or self.CurPhantomContent
   local Avatar = ArmoryUtils:GetAvatar()
@@ -620,7 +594,6 @@ function M:UpdatePhantomWeaponCount(Content)
     self.Text_Num:SetText("0")
   end
 end
-
 function M:SetWeaponIsEquipped(PhantomContent, IsEquipped)
   if PhantomContent and self.CurWeaponTag then
     local Avatar = ArmoryUtils:GetAvatar()
@@ -631,7 +604,6 @@ function M:SetWeaponIsEquipped(PhantomContent, IsEquipped)
     end
   end
 end
-
 function M:OnPhantomListClicked(Content)
   if self.IsGamepadInput then
     self:OnPhantomListGamepadClicked(Content)
@@ -639,7 +611,6 @@ function M:OnPhantomListClicked(Content)
     self:OnPhantomSelected(Content)
   end
 end
-
 function M:OnPhantomSelected(Content, bForceUpdate)
   if Content == self.CurPhantomContent and not bForceUpdate then
     return
@@ -653,7 +624,6 @@ function M:OnPhantomSelected(Content, bForceUpdate)
   self:InitWeaponTabs(self.CurPhantomContent)
   self.List_Weapon:BP_ScrollItemIntoView(Content)
 end
-
 function M:UpdateAllPhantomAndWeaponIcon()
   local Avatar = GWorld:GetAvatar()
   for _, Content in pairs(self.PhantomContentArray) do
@@ -677,7 +647,6 @@ function M:UpdateAllPhantomAndWeaponIcon()
   end
   ArmoryUtils:SetItemSelectTag(self.CurWeaponContent, true)
 end
-
 function M:OnFilterSelectionsChanged(SelectedItems, ItemDatas)
   self.SelectedSiftItems = SelectedItems or {}
   self.SiftItemDatas = ItemDatas or {}
@@ -689,17 +658,14 @@ function M:OnFilterSelectionsChanged(SelectedItems, ItemDatas)
   self:SortWeaponContents(self.FilteredItems)
   self:InitWeaponList()
 end
-
 function M:OnSortListSelectionsChanged(SortBy, SortType)
   self:SortWeaponContents(self.FilteredItems)
   self:InitWeaponList()
 end
-
 function M:OnSortTypeChanged(SortType)
   self:SortWeaponContents(self.FilteredItems)
   self:InitWeaponList()
 end
-
 function M:FilterWeaponContents(InContentArray)
   local Result = {}
   local Avatar = ArmoryUtils:GetAvatar()
@@ -719,7 +685,6 @@ function M:FilterWeaponContents(InContentArray)
   Result = Contants
   return Result
 end
-
 function M:SortWeaponContents(InOutArr)
   local SortBy, SortType = self.Com_Sort:GetSortInfos()
   local SortByAttrNames = {
@@ -732,7 +697,6 @@ function M:SortWeaponContents(InOutArr)
   end
   ArmoryUtils:SortItemContents(InOutArr, SortByAttrNames, SortType, self.CurWeaponContent)
 end
-
 function M:InitWeaponList(bDontScroll)
   self.List_Weapon:ClearListItems()
   for _, value in ipairs(self.FilteredItems) do
@@ -751,13 +715,11 @@ function M:InitWeaponList(bDontScroll)
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
   end
 end
-
 function M:FillEmptyItems(Count)
   for i = 1, Count do
     self.List_Weapon:AddItem(NewObject(UIUtils.GetCommonItemContentClass()))
   end
 end
-
 function M:OnCheckBoxStateChanged(IsChecked)
   self.bRecommendWeapon = IsChecked
   if IsChecked then
@@ -768,7 +730,6 @@ function M:OnCheckBoxStateChanged(IsChecked)
   end
   self:InitWeaponList()
 end
-
 function M:FilterRecommendWeapon(InContentArray)
   local Result = {}
   local Data = DataMgr.Resource[self.CurPhantomContent.UnitId]
@@ -788,7 +749,6 @@ function M:FilterRecommendWeapon(InContentArray)
   end
   return Result
 end
-
 function M:OnResourcesChanged(ResourceId)
   local Avatar = ArmoryUtils:GetAvatar()
   local Resource = Avatar.Resources[ResourceId]
@@ -804,7 +764,6 @@ function M:OnResourcesChanged(ResourceId)
     end
   end
 end
-
 function M:OnNewWeaponObtained(WeaponUuid)
   local Avatar = ArmoryUtils:GetAvatar()
   local Weapon = Avatar.Weapons[WeaponUuid]
@@ -816,7 +775,6 @@ function M:OnNewWeaponObtained(WeaponUuid)
     self:OnFilterSelectionsChanged(self.SelectedSiftItems, self.SiftItemDatas)
   end
 end
-
 function M:OnWeaponDeleted(WeaponUuid)
   if not self.WeaponContentMap[WeaponUuid] then
     return
@@ -826,7 +784,6 @@ function M:OnWeaponDeleted(WeaponUuid)
   self:UpdateAllPhantomAndWeaponIcon()
   self:UpdatePhantomWeaponCount(self.CurPhantomContent)
 end
-
 function M:UpdateWeaponContentAfterPropChanged(WeaponUuid)
   if not self.WeaponContentMap[WeaponUuid] then
     return
@@ -840,15 +797,12 @@ function M:UpdateWeaponContentAfterPropChanged(WeaponUuid)
   ArmoryUtils:SetItemLevel(Content, Weapon.Level)
   self:UpdateWeaponTips(self.ComWeaponContent)
 end
-
 function M:OnWeaponUpgraded(Ret, WeaponUuid)
   self:UpdateWeaponContentAfterPropChanged(WeaponUuid)
 end
-
 function M:OnWeaponGradeLevelUp(Ret, WeaponUuid, CurrentGradeLevel, ConsumeWeaponUuids)
   self:UpdateWeaponContentAfterPropChanged(WeaponUuid)
 end
-
 function M:OnBackGroundBtnClicked()
   if self.IsWeaponTipsShowed then
     self:ShowWeaponTips(false)
@@ -857,7 +811,6 @@ function M:OnBackGroundBtnClicked()
     self:Close()
   end
 end
-
 function M:Close()
   self.Super.Close(self)
   AudioManager(self):SetEventSoundParam(self, "Open", {ToEnd = 1})
@@ -865,7 +818,6 @@ function M:Close()
     self.OnClosedCbFunc(self.OnClosedCbObj)
   end
 end
-
 function M:OnJumpToPage(FromPage, ToPage)
   if ToPage and self:IsVisible() then
     self.FromPage = FromPage
@@ -873,7 +825,6 @@ function M:OnJumpToPage(FromPage, ToPage)
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnJumpBackToPage(FromPage, ToPage)
   if self.JumpToPage and self.JumpToPage == FromPage and self.FromPage == ToPage then
     self:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -881,7 +832,6 @@ function M:OnJumpBackToPage(FromPage, ToPage)
     self.FromPage = nil
   end
 end
-
 function M:OnGoToCharBtnClicked()
   if not self.CurPhantomContent then
     return
@@ -901,7 +851,6 @@ function M:OnGoToCharBtnClicked()
     bHideWeaponTab = true
   })
 end
-
 function M:OnGoToWeaponBtnClicked()
   if not self.ComWeaponContent then
     return
@@ -928,7 +877,6 @@ function M:OnGoToWeaponBtnClicked()
   end
   self:GoToArmory(Params)
 end
-
 function M:GoToArmory(Params)
   if self.Parent and self.Parent.ActorController then
     self.LastActorModelInfo = self.Parent.ActorController.CurrentCharInfo
@@ -948,29 +896,25 @@ function M:GoToArmory(Params)
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnArmoryDetailClosed()
   self:SetFocus()
   if self.Parent and self.Parent.ActorController then
     self.Parent.ActorController:ChangeCharModel(self.LastActorModelInfo)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
-  if self.IsGamepadInput and self.IsInFocusPath and not self:IsAnyHotAreaFocused() then
+  if self.IsGamepadInput and self.IsInFocusPath and not self:IsFocusStateWidgetHasAnyFocus(self.FSM:Peak()) then
     self:NavigateToPhantomList():SetFocus()
   end
   self:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputDevice, CurGamepadName)
   if self.IsInFocusPath then
     self:OnFocusChanged()
   end
 end
-
 function M:OnFocusChanged()
   if self.IsGamepadInput then
     self.CheckBox_Recommend.Com_KeyImg:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -980,7 +924,15 @@ function M:OnFocusChanged()
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
   end
 end
-
+function M:IsFocusStateValid(State)
+  local StateName = State.Name
+  if StateName == FocusStates.WeaponList then
+    return State.Content and self.List_Weapon:GetIndexForItem(State.Content) >= 0
+  elseif StateName == FocusStates.PhamtomList then
+    return State.Content and self.List_PhantomTab:GetIndexForItem(State.Content) >= 0
+  end
+  return true
+end
 function M:NavigateToPhantomList()
   if self.CurPhantomContent then
     self.List_PhantomTab:BP_CancelScrollIntoView()
@@ -989,7 +941,6 @@ function M:NavigateToPhantomList()
   end
   return self.List_PhantomTab
 end
-
 function M:NavigateToWeaponList()
   local Content = self.ComWeaponContent or self.List_Weapon:GetItemAt(0)
   if Content then
@@ -1000,67 +951,74 @@ function M:NavigateToWeaponList()
   end
   return self
 end
-
 function M:OnAddedToFocusPath()
-  self.CurrentFocusedArea = nil
   self.IsInFocusPath = true
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Parent)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   self.IsInFocusPath = false
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Parent)
   end
 end
-
-function M:OnWeaponItemAddedToFocusPath()
-  self.CurrentFocusedArea = FocusAreas.WeaponList
-  self:OnFocusChanged()
+function M:OnWeaponItemAddedToFocusPath(Content)
+  if self.FSM:Peak().Name == FocusStates.PhamtomList then
+    self.FSM:Pop()
+  end
+  self.FSM:Push({
+    Name = FocusStates.WeaponList,
+    Content = Content
+  })
 end
-
 function M:OnWeaponItemRemovedFromFocusPath()
-  self.CurrentFocusedArea = nil
 end
-
 function M:OnPhantomItemAddedToFocusPath(Content)
-  self.CurrentFocusedArea = FocusAreas.PhatomList
+  if self.FSM:Peak().Name == FocusStates.WeaponList then
+    self.FSM:Pop()
+  end
+  self.FSM:Push({
+    Name = FocusStates.PhamtomList,
+    Content = Content
+  })
 end
-
 function M:OnPhantomItemRemovedFromFocusPath(Content)
-  self.CurrentFocusedArea = nil
 end
-
-function M:OnSortWidgetAddedToFocusPath()
-  self.CurrentFocusedArea = FocusAreas.SortWidget
+function M:OnSortWidgetAddedToFocusPath(Widget)
+  self.FSM:Push({
+    Name = FocusStates.SortWidget,
+    Content = Widget
+  })
 end
-
 function M:OnSortWidgetRemovedFromFocusPath()
-  self.CurrentFocusedArea = nil
 end
-
-function M:OnSiftWidgetAddedToFocusPath()
-  self.CurrentFocusedArea = FocusAreas.SortWidget
+function M:OnSiftWidgetAddedToFocusPath(Widget)
+  self.FSM:Push({
+    Name = FocusStates.SortWidget,
+    Content = Widget
+  })
 end
-
 function M:OnSiftWidgetRemovedFromFocusPath()
-  self.CurrentFocusedArea = nil
 end
-
 function M:OnSortWidgetGetBackFocusWidget()
-  if self.ComWeaponContent then
+  self.FSM:Pop()
+  if self.FSM:Peak().Name == FocusStates.WeaponList then
     return self:NavigateToWeaponList()
   else
     return self:NavigateToPhantomList()
   end
 end
-
-function M:IsAnyHotAreaFocused()
-  return self.CurrentFocusedArea
+function M:IsFocusStateWidgetHasAnyFocus(State)
+  local StateName = State.Name
+  if StateName == FocusStates.WeaponList then
+    return UIUtils.HasAnyFocus(self.List_Weapon)
+  elseif StateName == FocusStates.PhamtomList then
+    return UIUtils.HasAnyFocus(self.List_PhantomTab)
+  elseif StateName == FocusStates.SortWidget then
+    return UIUtils.HasAnyFocus(self.Com_Sort) or UIUtils.HasAnyFocus(self.Com_Sift)
+  end
 end
-
 function M:InitNavigationRules()
   self.List_Weapon:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.List_Weapon:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
@@ -1088,22 +1046,35 @@ function M:InitNavigationRules()
   self.Com_Sort:SetNavigationRuleExplicit(EUINavigation.Right, self.Com_Sift)
   self.Com_Sift:SetNavigationRuleExplicit(EUINavigation.Left, self.Com_Sort)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local Reply = M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
-  return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:NavigateToPhantomList())
+  return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:GetDesiredFocusTarget())
 end
-
+function M:GetDesiredFocusTarget()
+  local State = self.FSM:Peak()
+  local StateName = State.Name
+  if StateName == FocusStates.WeaponList then
+    return self:NavigateToWeaponList()
+  elseif StateName == FocusStates.PhamtomList then
+    return self:NavigateToPhantomList()
+  elseif StateName == FocusStates.SortWidget then
+    if IsValid(State.Widget) then
+      return State.Widget
+    else
+      return self.Com_Sort
+    end
+  else
+    return self:NavigateToPhantomList()
+  end
+end
 function M:OnWeaponListSelectionChanged(Content, IsSelected)
   if not IsSelected or not self.IsGamepadInput then
     return
   end
   self:OnWeaponSelected(Content)
 end
-
 local _NavigatePosOffsetPercent = FVector2D(0, 0.5)
 local _NavigatePosOffsetAlignment = FVector2D(0.8, 0.5)
-
 function M:OnWeaponListEntryInitialized(Content, Widget)
   if Content.bSelectTag then
     Widget:SetWeaponPhantomIcon(nil)
@@ -1127,20 +1098,16 @@ function M:OnWeaponListEntryInitialized(Content, Widget)
   Widget:SetNavigatePosOffsetPercent(_NavigatePosOffsetPercent)
   Widget:SetNavigatePosAngle(-90)
 end
-
 function M:OnPhantomListSelectionChanged(Content, IsSelected)
   if not IsSelected or not self.IsGamepadInput then
     return
   end
   self:OnPhantomSelected(Content)
 end
-
 function M:OnPhantomListGamepadClicked(Content)
   self:OnBtnEquipClicked()
 end
-
 function M:OnWeaponListGamepadClicked(Content)
   self:OnBtnEquipClicked()
 end
-
 return M

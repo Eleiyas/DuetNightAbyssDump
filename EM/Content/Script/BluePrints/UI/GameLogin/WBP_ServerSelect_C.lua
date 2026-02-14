@@ -4,17 +4,14 @@ local DevServerList = require("BluePrints/UI/GameLogin/DevServerList")
 local WBP_ServerSelect_C = Class("BluePrints.UI.BP_UIState_C")
 local AllServers, ServerList, CurrentServerList
 local CurrentArea = 0
-
 function WBP_ServerSelect_C:Construct()
   self.Super.Construct(self)
 end
-
 function WBP_ServerSelect_C:CloseUI()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self:Show(UIConst.VisibilityOp.Collapsed)
   self:Close()
 end
-
 function WBP_ServerSelect_C:Show(VisibilityOp)
   self:SetVisibility(VisibilityOp)
   if VisibilityOp == UIConst.VisibilityOp.Visible then
@@ -27,34 +24,36 @@ function WBP_ServerSelect_C:Show(VisibilityOp)
     end
   end
 end
-
 function WBP_ServerSelect_C:RefreshSeverList()
   self.CircularThrobber_1:SetVisibility(UIConst.VisibilityOp.Visible)
   self:TryToGetServerList()
 end
-
 function WBP_ServerSelect_C:TryToGetServerList()
   self:AddTimer(0.5, self.VerifyListViewCallBack, false, 0, "VerifyListView")
-  AllServers = DevServerList
+  AllServers = {}
+  for k, v in pairs(DevServerList) do
+    if k < 1000 or k >= 7000 and k <= 7100 or k >= 8000 and k <= 8100 then
+      AllServers[k] = v
+    end
+  end
 end
-
 function WBP_ServerSelect_C:VerifyListViewCallBack()
   if AllServers then
     self.ListView_Area:ClearListItems()
     local obj = self:NewAreaItemContent(nil)
     CurrentArea = 0
     obj.Area = CurrentArea
-    obj.Name = "\230\142\168\232\141\144"
+    obj.Name = "推荐"
     self.ListView_Area:AddItem(obj)
     ServerList = {
       {
         area = 1,
-        name = "\229\188\128\229\143\145",
+        name = "开发",
         servers = nil
       },
       {
         area = 2,
-        name = "\229\188\128\229\143\1452",
+        name = "开发2",
         servers = nil
       },
       {
@@ -64,12 +63,12 @@ function WBP_ServerSelect_C:VerifyListViewCallBack()
       },
       {
         area = 4,
-        name = "\231\173\150\229\136\146",
+        name = "策划",
         servers = nil
       },
       {
         area = 5,
-        name = "\229\133\182\228\187\150",
+        name = "其他",
         servers = nil
       }
     }
@@ -102,7 +101,6 @@ function WBP_ServerSelect_C:VerifyListViewCallBack()
     print(_G.LogTag, "Failed to get server list, error code:")
   end
 end
-
 function WBP_ServerSelect_C:NewAreaItemContent(content)
   if nil == content then
     return NewObject(self.AreaItemContentClass, self.ListView_Area)
@@ -113,7 +111,6 @@ function WBP_ServerSelect_C:NewAreaItemContent(content)
   obj.IsSelected = false
   return obj
 end
-
 function WBP_ServerSelect_C:NewServerItemContent(content)
   if nil == content then
     return NewObject(self.ServerItemContentClass, self.List)
@@ -127,7 +124,6 @@ function WBP_ServerSelect_C:NewServerItemContent(content)
   obj.IsSelected = false
   return obj
 end
-
 function WBP_ServerSelect_C:SwitchArea(area)
   if not GWorld.IsDev then
     return
@@ -162,7 +158,6 @@ function WBP_ServerSelect_C:SwitchArea(area)
     self:SearchServer(self.Input_Search_Server:GetText())
   end
 end
-
 function WBP_ServerSelect_C:SearchServer(text)
   if nil ~= CurrentServerList then
     self.List:ClearListItems()
@@ -179,7 +174,6 @@ function WBP_ServerSelect_C:SearchServer(text)
     end
   end
 end
-
 function WBP_ServerSelect_C:Confirm()
   local item = self.List:BP_GetSelectedItem()
   if nil ~= item and self.SelectedServer ~= item then
@@ -189,9 +183,7 @@ function WBP_ServerSelect_C:Confirm()
     self.IsSelectionChanged = false
   end
 end
-
 function WBP_ServerSelect_C:PlayUISound(EventPath)
   AudioManager(self):PlayUISound(self, EventPath, nil, nil)
 end
-
 return WBP_ServerSelect_C

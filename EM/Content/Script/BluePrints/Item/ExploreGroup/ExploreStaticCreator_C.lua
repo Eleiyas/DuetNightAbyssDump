@@ -2,26 +2,22 @@ require("UnLua")
 local M = Class("BluePrints.Common.TimerMgr")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function M:ReceiveEndPlay(Respon)
   self.Overridden.ReceiveEndPlay(self, Respon)
   self:CleanTimer()
 end
-
 function M:IsInBigWorld()
   local Avatar = GWorld:GetAvatar()
-  if not Avatar then
+  if not Avatar or self.IsInWC then
     return false
   end
   return Avatar:IsRealInBigWorld()
 end
-
 function M:TryDeactive()
   for i, v in pairs(self.StaticCreatorMap) do
     v:RegionDestroyAllExploreGroupData(false, EDeathReason.NoReason, EDestroyReason.RegionExploreGroup, true)
   end
 end
-
 function M:TryActive()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local SubRegionId = GameMode:GetRegionIdByLocation(self:K2_GetActorLocation())
@@ -30,31 +26,27 @@ function M:TryActive()
     Avatar:ExploreIdActive(self.ExploreGroupId, SubRegionId)
   end
 end
-
 function M:TryCompleteLimit()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:ExploreIdCompleteLimit(self.ExploreGroupId)
   end
 end
-
 function M:TryComplete()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:ExploreIdComplete(self.ExploreGroupId, true)
   end
 end
-
 function M:TrySpecialActive()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:SetExploreSpecialActiveState(self.ExploreGroupId)
   end
 end
-
 function M:AddRemainLimitTime(AddTime, MobileAddTime)
   local RealAddTime = AddTime
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+  if CommonUtils.GetRuntimePlatform(self) == "Mobile" then
     RealAddTime = MobileAddTime
   end
   if 0 == RealAddTime then
@@ -66,7 +58,6 @@ function M:AddRemainLimitTime(AddTime, MobileAddTime)
     TimeItem:AddRemainingTime(RealAddTime)
   end
 end
-
 function M:ReceiveOnExploreGroupReset()
   local Components = self:K2_GetComponentsByClass(UExploreSplineComponent:StaticClass())
   if Components then
@@ -76,7 +67,6 @@ function M:ReceiveOnExploreGroupReset()
   end
   self.Overridden.ReceiveOnExploreGroupReset(self)
 end
-
 function M:ReceiveOnExploreGroupResetUI()
   EventManager:RemoveEvent(EventID.CharDie, self)
   local TimeItem = UIManager(self):GetUIObj("DungeonCaptureFloat")
@@ -85,7 +75,7 @@ function M:ReceiveOnExploreGroupResetUI()
   else
     UIManager(self):UnLoadUI("DungeonCaptureFloat")
   end
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+  if CommonUtils.GetRuntimePlatform(self) == "PC" then
     local BattleMain = UIManager(self):GetUIObj("BattleMain")
     if BattleMain then
       local DynamicEventUI = BattleMain:GetOrAddDynamicEventWidget()
@@ -127,7 +117,7 @@ function M:ReceiveOnExploreGroupResetUI()
           local TaskBarWidget = BattleMain.Pos_TaskBar:GetChildAt(0)
           if nil ~= TaskBarWidget then
             if 0 ~= TrackingQuestChain then
-              if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+              if CommonUtils.GetRuntimePlatform(self) == "PC" then
                 TaskBarWidget.Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
               else
                 TaskBarWidget.Tips:SetVisibility(ESlateVisibility.Collapsed)
@@ -137,7 +127,7 @@ function M:ReceiveOnExploreGroupResetUI()
               end
             end
             TaskBarWidget.IsInExplore = false
-            if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+            if CommonUtils.GetRuntimePlatform(self) == "PC" then
               TaskBarWidget:PlayAnimation(TaskBarWidget.Tooltip_In)
             end
           end
@@ -147,7 +137,6 @@ function M:ReceiveOnExploreGroupResetUI()
     end
   end
 end
-
 function M:GMReceiveOnExploreGroupResetUI()
   if self.LimitTime ~= nil and self.LimitTime > 0 then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -159,7 +148,6 @@ function M:GMReceiveOnExploreGroupResetUI()
   end
   self:ReceiveOnExploreGroupResetUI()
 end
-
 function M:ReceiveOnExploreGroupSuccess(bShowToast)
   self:UpdateExploreData("bGroupInLimit", false)
   self:CleanDelayActions()
@@ -182,7 +170,6 @@ function M:ReceiveOnExploreGroupSuccess(bShowToast)
   end
   self:ReceiveOnExploreGroupResetUI()
 end
-
 function M:ReceiveOnExploreGroupFailed()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -209,7 +196,6 @@ function M:ReceiveOnExploreGroupFailed()
   end
   self:ReceiveOnExploreGroupResetUI()
 end
-
 function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if 0 ~= GameState.ActiveLimitTimeExploreGroup then
@@ -231,7 +217,7 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
   if TimeItem then
     TimeItem.TaskTitle:SetText(GText("UI_LIMITEXPLORE_TIME"))
     TimeItem:UIStateChange_OnTarget()
-    if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+    if CommonUtils.GetRuntimePlatform(self) == "Mobile" then
       TimeItem.Group_BtnCancel:SetVisibility(ESlateVisibility.Visible)
       TimeItem.Btn_Cancel:BindEventOnClicked(self, self.OnPressQuitChallenge)
     end
@@ -251,7 +237,6 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
         end
       end
     end
-    
     local function ShowExploreTaskPanel()
       local BattleMain = UIManager(self):GetUIObj("BattleMain")
       local DynamicEventIndicator = UIManager(self):GetUIObj("DynamicEventIndicator")
@@ -269,7 +254,7 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
           local TaskBarWidget = BattleMain.Pos_TaskBar:GetChildAt(0)
           if nil ~= TaskBarWidget then
             if 0 ~= TrackingQuestChain then
-              if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+              if CommonUtils.GetRuntimePlatform(self) == "PC" then
               else
                 TaskBarWidget.Tips:SetVisibility(ESlateVisibility.Collapsed)
               end
@@ -278,7 +263,7 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
               end
             end
             TaskBarWidget.IsInExplore = true
-            if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+            if CommonUtils.GetRuntimePlatform(self) == "PC" then
               TaskBarWidget:PlayAnimation(TaskBarWidget.Tooltip_Out)
             end
           end
@@ -295,7 +280,7 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
         DynamicEventUI.ExplorationChallenge.Text_Tips01:SetVisibility(ESlateVisibility.Collapsed)
         DynamicEventUI.ExplorationChallenge.Text_Tips02:SetText(GText("UI_Esc_Challenge"))
         DynamicEventUI.ExplorationChallenge.Text_Total:SetText(TotalTargetNum)
-        if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+        if CommonUtils.GetRuntimePlatform(self) == "PC" then
           DynamicEventUI:ListenForInputAction("QuitChallenge", EInputEvent.IE_Pressed, true, {
             self,
             self.OnPressQuitChallenge
@@ -317,7 +302,7 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
             self.OnPadExploraChallengeQuitRelease
           })
         end
-        if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+        if CommonUtils.GetRuntimePlatform(self) == "Mobile" then
           DynamicEventUI.ExplorationChallenge.Panel_Tips:SetVisibility(ESlateVisibility.Collapsed)
         end
         self:RemoveTimer("ShowExploreTaskPanelBindToTimer")
@@ -325,7 +310,6 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
       end
       return false
     end
-    
     if not ShowExploreTaskPanel() then
       self:AddTimer(0.1, ShowExploreTaskPanel, true, 0, "ShowExploreTaskPanelBindToTimer", false)
     end
@@ -333,7 +317,6 @@ function M:ReceiveOnExploreLimitStarted(Title, Des, TotalTargetNum)
   EventManager:AddEvent(EventID.CharDie, self, self.OnCharDie)
   self.Overridden.ReceiveOnExploreLimitStarted(self, Title, Des, TotalTargetNum)
 end
-
 function M:UpdateLimitUI(CurrentTargetNum)
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
   local DynamicEventIndicator = UIManager(self):GetUIObj("DynamicEventIndicator")
@@ -349,12 +332,10 @@ function M:UpdateLimitUI(CurrentTargetNum)
     DynamicEventUI.ExplorationChallenge.Text_Now:SetText(CurrentTargetNum)
   end
 end
-
 function M:OnPressQuitChallenge()
   local Params = {}
-  
   function Params.RightCallbackFunction(Data)
-    if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+    if CommonUtils.GetRuntimePlatform(self) == "PC" then
       local BattleMain = UIManager(self):GetUIObj("BattleMain")
       if BattleMain then
         local DynamicEventUI = BattleMain:GetOrAddDynamicEventWidget()
@@ -363,18 +344,15 @@ function M:OnPressQuitChallenge()
     end
     self:FailLimitExplore()
   end
-  
   UIManager(self):ShowCommonPopupUI(100096, Params)
 end
-
 function M:OnPadActiveGuidePress()
   DebugPrint("LHQ@@@LS Press")
   self.IsLSPress = true
   if self.IsLSPress and self.IsRSPress then
     local Params = {}
-    
     function Params.RightCallbackFunction(Data)
-      if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+      if CommonUtils.GetRuntimePlatform(self) == "PC" then
         local BattleMain = UIManager(self):GetUIObj("BattleMain")
         if BattleMain then
           local DynamicEventUI = BattleMain:GetOrAddDynamicEventWidget()
@@ -383,18 +361,15 @@ function M:OnPadActiveGuidePress()
       end
       self:FailLimitExplore()
     end
-    
     UIManager(self):ShowCommonPopupUI(100096, Params)
   end
 end
-
 function M:OnPadExploraChallengeQuitPress()
   self.IsRSPress = true
   if self.IsLSPress and self.IsRSPress then
     local Params = {}
-    
     function Params.RightCallbackFunction(Data)
-      if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+      if CommonUtils.GetRuntimePlatform(self) == "PC" then
         local BattleMain = UIManager(self):GetUIObj("BattleMain")
         if BattleMain then
           local DynamicEventUI = BattleMain:GetOrAddDynamicEventWidget()
@@ -403,33 +378,27 @@ function M:OnPadExploraChallengeQuitPress()
       end
       self:FailLimitExplore()
     end
-    
     UIManager(self):ShowCommonPopupUI(100096, Params)
   end
 end
-
 function M:OnPadActiveGuideRelease()
   self.IsLSPress = false
 end
-
 function M:OnPadExploraChallengeQuitRelease()
   self.IsRSPress = false
 end
-
 function M:ActiveGuideIcon_Lua(Eid)
   local Entity = Battle(self):GetEntity(Eid)
   if Entity and Entity.ActiveGuide then
     Entity:ActiveGuide("Add")
   end
 end
-
 function M:DeactiveGuideIcon_Lua(Eid)
   local Entity = Battle(self):GetEntity(Eid)
   if Entity and Entity.ActiveGuide then
     Entity:DeactiveGuide()
   end
 end
-
 function M:UpdateExploreData(DataKey, DataValue)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -437,7 +406,6 @@ function M:UpdateExploreData(DataKey, DataValue)
   end
   Avatar:UpdateExploreData(self.ExploreGroupId, DataKey, DataValue)
 end
-
 function M:SetChallengeState(ExitChallenge)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -449,7 +417,6 @@ function M:SetChallengeState(ExitChallenge)
     Avatar:ExitState2InExploreChanllenge(self.ExploreGroupId)
   end
 end
-
 function M:SetPlayerToTransform(Transform)
   if 0 == Transform.Translation.x and 0 == Transform.Translation.y and 0 == Transform.Translation.z then
     return
@@ -461,7 +428,6 @@ function M:SetPlayerToTransform(Transform)
   Player:GetController():SetControlRotation(Player:K2_GetActorRotation())
   Player:Landed()
 end
-
 function M:ResetCompletedExploreGroup()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState.ActiveLimitTimeExploreGroup == self.ExploreGroupId then
@@ -473,7 +439,6 @@ function M:ResetCompletedExploreGroup()
     Avatar:ResetingExplore(self.ExploreGroupId, self.RegionId)
   end
 end
-
 function M:ShowRewardUI(TotalReward)
   if not TotalReward or not next(TotalReward) then
     return
@@ -497,7 +462,6 @@ function M:ShowRewardUI(TotalReward)
   end
   UIUtils.ShowHudReward(GText("UI_COMMON_REWARD"), List)
 end
-
 function M:BPSetStoneCanTouch(CreatorId, bCanTouch)
   local Creator = self.StaticCreatorMap:Find(CreatorId)
   if not Creator or 0 == Creator.ChildEids:Length() then
@@ -509,7 +473,6 @@ function M:BPSetStoneCanTouch(CreatorId, bCanTouch)
   end
   Mechanism.bCanTouch = bCanTouch
 end
-
 function M:BPSetStoneShowEndCallback(CreatorId)
   local Creator = self.StaticCreatorMap:Find(CreatorId)
   if not Creator or 0 == Creator.ChildEids:Length() then
@@ -519,14 +482,11 @@ function M:BPSetStoneShowEndCallback(CreatorId)
   if not Mechanism or Mechanism:GetUnitRealType() ~= "OrderedStone" then
     return
   end
-  
   local function Callback()
     self:OnStoneShowEnd(CreatorId)
   end
-  
   Mechanism.ShowEndCallback = Callback
 end
-
 function M:TriggerTransferPlayer(TargetTransform, BlackScreenTime)
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:K2_SetActorLocation(TargetTransform.Translation, false, nil, false)
@@ -537,5 +497,4 @@ function M:TriggerTransferPlayer(TargetTransform, BlackScreenTime)
   Player:GetController():SetControlRotation(Player:K2_GetActorRotation())
   Player:Landed()
 end
-
 return M

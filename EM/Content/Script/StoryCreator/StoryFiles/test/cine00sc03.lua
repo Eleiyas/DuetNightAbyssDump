@@ -1,5 +1,5 @@
 return {
-  storyName = "\230\156\170\229\145\189\229\144\141\230\149\133\228\186\139",
+  storyName = "未命名故事",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "170893333261153644",
       type = "StoryNode",
-      name = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+      name = "未命名任务",
       pos = {x = 300, y = 140},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -92,7 +94,7 @@ return {
           ["170867029694633675"] = {
             key = "170867029694633675",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186-100101-\233\134\146\230\157\165",
+            name = "过场-100101-醒来",
             pos = {x = 573.7513308314179, y = 260.5971871747852},
             propsData = {
               IsNpcNode = false,
@@ -112,8 +114,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "QuestPoint6",
               CameraLookAtTartgetPoint = "",
@@ -134,11 +138,6 @@ return {
                   TalkActorId = 100001,
                   TalkActorVisible = true
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100003},
-                {TalkActorType = "Npc", TalkActorId = 100001}
               },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

@@ -3,7 +3,6 @@ local WBP_Rouge_RewardItem_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_Rouge_RewardItem_C:Construct()
   self.RewardItems = {}
   self.State2ChangeIndex = {
@@ -24,11 +23,9 @@ function WBP_Rouge_RewardItem_C:Construct()
   end
   self:InitListenEvent()
 end
-
 function WBP_Rouge_RewardItem_C:Destruct()
   self:ClearListenEvent()
 end
-
 function WBP_Rouge_RewardItem_C:OnListItemObjectSet(Content)
   if Content.NotReward then
     self:SetRenderOpacity(0)
@@ -166,7 +163,6 @@ function WBP_Rouge_RewardItem_C:OnListItemObjectSet(Content)
   end
   self:PlayAnimNew()
 end
-
 function WBP_Rouge_RewardItem_C:PlayAnim(Content)
   local currentTime = UGameplayStatics.GetTimeSeconds(self)
   if self.Index - 1 >= self.Parent.ScrollIndex and currentTime < Content.StartTime + 0.05 * (self.Index - self.Parent.ScrollIndex) + 0.1 and self.Parent.PlayInAnimation then
@@ -188,21 +184,18 @@ function WBP_Rouge_RewardItem_C:PlayAnim(Content)
     self:PlayAnimation(self.In, self.In:GetEndTime())
   end
 end
-
 function WBP_Rouge_RewardItem_C:PlayAnimNew()
   self:StopAnimation(self.In)
   if self.Parent.PlayInAnimation and self.State == "Complete" then
     self:PlayAnimation(self.In)
   end
 end
-
 function WBP_Rouge_RewardItem_C:OnClicked()
   if self.State == "Complete" then
     local Avatar = GWorld:GetAvatar()
     if Avatar then
       local function Callback(Rewards)
         self:ChangeState("Received")
-        
         self:PlayAnimation(self.Click)
         if not ReddotManager.GetTreeNode("RougeLikeReward") then
           ReddotManager.AddNode("RougeLikeReward")
@@ -215,33 +208,28 @@ function WBP_Rouge_RewardItem_C:OnClicked()
           self:SetFocus()
         end, self)
       end
-      
       Avatar:GetRougeLikeWeeklyReward(Callback, self.Index)
     end
   end
 end
-
 function WBP_Rouge_RewardItem_C:OnBtnHovered()
   if self.State == "Complete" then
     self:StopAnimation(self.Unhover)
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Rouge_RewardItem_C:OnBtnUnhovered()
   if self.State == "Complete" then
     self:StopAnimation(self.Hover)
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Rouge_RewardItem_C:OnBtnPressed()
   if self.State == "Complete" then
     self:StopAllAnimations()
     self:PlayAnimation(self.Press)
   end
 end
-
 function WBP_Rouge_RewardItem_C:ChangeState(NewState)
   if self.State2ChangeIndex[NewState] then
     self.State = NewState
@@ -253,7 +241,6 @@ function WBP_Rouge_RewardItem_C:ChangeState(NewState)
     end
   end
 end
-
 function WBP_Rouge_RewardItem_C:CheckIsCompleteState()
   if self.State == "Complete" then
     return true
@@ -261,19 +248,16 @@ function WBP_Rouge_RewardItem_C:CheckIsCompleteState()
     return false
   end
 end
-
 function WBP_Rouge_RewardItem_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_RewardItem_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_RewardItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -281,7 +265,6 @@ function WBP_Rouge_RewardItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Rouge_RewardItem_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -289,15 +272,12 @@ function WBP_Rouge_RewardItem_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_RewardItem_C:InitGamepadView()
   self.ScrollBox_ItemRewards:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function WBP_Rouge_RewardItem_C:InitKeyboardView()
   self.ScrollBox_ItemRewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function WBP_Rouge_RewardItem_C:BP_GetDesiredFocusTarget()
   self.Content.Parent:TryChangeCurFocusedItem(self)
   if self.Content.Parent.IsInSelectState then
@@ -311,7 +291,6 @@ function WBP_Rouge_RewardItem_C:BP_GetDesiredFocusTarget()
     return self.Btn_Click
   end
 end
-
 function WBP_Rouge_RewardItem_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -329,22 +308,18 @@ function WBP_Rouge_RewardItem_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Rouge_RewardItem_C:EnterSelectMode()
   self.ScrollBox_ItemRewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   local Reward = self.ScrollBox_ItemRewards:GetChildAt(1)
   Reward:SetFocus()
 end
-
 function WBP_Rouge_RewardItem_C:LeaveSelectMode()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.ScrollBox_ItemRewards:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
   self.Btn_Click:SetFocus()
 end
-
 function WBP_Rouge_RewardItem_C:OnMenuOpenChanged(bIsOpen)
   self.Parent:OnMenuOpenChanged(bIsOpen)
 end
-
 return WBP_Rouge_RewardItem_C

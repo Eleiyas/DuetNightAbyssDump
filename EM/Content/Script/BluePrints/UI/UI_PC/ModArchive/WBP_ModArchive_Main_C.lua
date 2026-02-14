@@ -1,7 +1,6 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local WBP_ModArchive_Main_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_ModArchive_Main_C:Construct()
   self.Btn_Close:Init("Close", self, self.OnCloseBtnClick)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -17,11 +16,10 @@ function WBP_ModArchive_Main_C:Construct()
     self:SwitchComKeyTipsState(3)
   end
 end
-
 function WBP_ModArchive_Main_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Owner = (...)
-  DebugPrint("\233\173\148\228\185\139\229\140\163 ", self.Owner)
+  DebugPrint("魔之匣 ", self.Owner)
   self.CurTipsIndex = 1
   self.Group_Page:ClearChildren()
   self.IsClosing = false
@@ -41,11 +39,10 @@ function WBP_ModArchive_Main_C:OnLoaded(...)
   self.Text_Title:SetText(GText("MAIN_UI_MODGUIDEBOOK"))
   self:RefreshDot()
   if self.CurInputDeviceType ~= ECommonInputType.GamePad then
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
   end
   self:AddTabReddotListen()
 end
-
 function WBP_ModArchive_Main_C:InitArchiveTab()
   DebugPrint("zwkk InitArchiveTab")
   local Tabs = {}
@@ -77,7 +74,6 @@ function WBP_ModArchive_Main_C:InitArchiveTab()
   local TabId = self:CheckTabId()
   self.ModArchive_Tab:SelectTab(TabId)
 end
-
 function WBP_ModArchive_Main_C:OnTabSelected()
   DebugPrint("zwkk OnTabSelected", self.CurTab)
   local NextTab = self.ModArchive_Tab:GetCurrentTabIndex()
@@ -109,7 +105,6 @@ function WBP_ModArchive_Main_C:OnTabSelected()
     end
   end
 end
-
 function WBP_ModArchive_Main_C:InitTaskPanel()
   self.TaskPanel = self:CreateWidgetNew("ModArchiveTask")
   self.Group_Page:AddChild(self.TaskPanel)
@@ -120,7 +115,6 @@ function WBP_ModArchive_Main_C:InitTaskPanel()
   self.TaskPanel:OnSelected(Params)
   self.TabMain[1] = self.TaskPanel
 end
-
 function WBP_ModArchive_Main_C:InitArchivePanel()
   self.ArchivePanel = self:CreateWidgetNew("ModArchiveArchive")
   self.Group_Page:AddChild(self.ArchivePanel)
@@ -131,7 +125,6 @@ function WBP_ModArchive_Main_C:InitArchivePanel()
   self.ArchivePanel:OnSelected(Params)
   self.TabMain[2] = self.ArchivePanel
 end
-
 function WBP_ModArchive_Main_C:InitRecommendPanel()
   self.RecommendPanel = self:CreateWidgetNew("ModArchiveRecommend")
   self.Group_Page:AddChild(self.RecommendPanel)
@@ -142,7 +135,6 @@ function WBP_ModArchive_Main_C:InitRecommendPanel()
   self.RecommendPanel:OnSelected(Params)
   self.TabMain[3] = self.RecommendPanel
 end
-
 function WBP_ModArchive_Main_C:PreSwitchPanel(Idx)
   for i = 1, 3 do
     if i ~= Idx and self.TabMain[i] then
@@ -150,7 +142,6 @@ function WBP_ModArchive_Main_C:PreSwitchPanel(Idx)
     end
   end
 end
-
 function WBP_ModArchive_Main_C:CheckTabId()
   local Data = DataMgr.ModGuideBookTask
   local Avatar = GWorld:GetAvatar()
@@ -163,12 +154,10 @@ function WBP_ModArchive_Main_C:CheckTabId()
   end
   return 2
 end
-
 function WBP_ModArchive_Main_C:OnCloseBtnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   self:OnClose()
 end
-
 function WBP_ModArchive_Main_C:OnClose()
   if self.IsClosing then
     return
@@ -182,7 +171,6 @@ function WBP_ModArchive_Main_C:OnClose()
   AudioManager(self):SetEventSoundParam(self, "ModArchiveOpen", {ToEnd = 1})
   AudioManager(self):StopSound(self, "ModArchiveOpen")
 end
-
 function WBP_ModArchive_Main_C:Close()
   DebugPrint("zwkkk Close")
   if self.TabMain[2] then
@@ -192,11 +180,9 @@ function WBP_ModArchive_Main_C:Close()
   self:RemoveTabReddotListen()
   WBP_ModArchive_Main_C.Super.Close(self)
 end
-
 function WBP_ModArchive_Main_C:MainTabClickSoundFunc()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
 end
-
 function WBP_ModArchive_Main_C:OnTipsOpenChanged(bIsOpen)
   DebugPrint("zwkkk OnTipsOpenChanged", bIsOpen, self:GetName())
   if not self.CurInputDeviceType or self.CurInputDeviceType ~= ECommonInputType.GamePad then
@@ -212,7 +198,6 @@ function WBP_ModArchive_Main_C:OnTipsOpenChanged(bIsOpen)
     self.ModArchive_Tab.Key_Right:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_Main_C:HideTabKey(Hide)
   if not self.CurInputDeviceType or self.CurInputDeviceType ~= ECommonInputType.GamePad then
     return
@@ -225,13 +210,11 @@ function WBP_ModArchive_Main_C:HideTabKey(Hide)
     self.ModArchive_Tab.Key_Right:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_Main_C:OnClickSpace()
   if self.TabMain[self.CurTab] and self.TabMain[self.CurTab].OnSpaceBarKeyDown then
     self.TabMain[self.CurTab]:OnSpaceBarKeyDown()
   end
 end
-
 function WBP_ModArchive_Main_C:OnFirstInFinished()
   if self.ShouldShowTips and not CommonUtils:IfExistSystemGuideUI(self) then
     self:LoadUINew("ModArchiveUpdateTips", self.TipsModShows, self.TipsModUnlocks, self)
@@ -243,7 +226,6 @@ function WBP_ModArchive_Main_C:OnFirstInFinished()
   end
   self:BlockAllUIInput(false)
 end
-
 function WBP_ModArchive_Main_C:OnShowTipsClose()
   self.InFinished = true
   self.ShouldShowTips = false
@@ -251,7 +233,6 @@ function WBP_ModArchive_Main_C:OnShowTipsClose()
     self.TabMain[self.CurTab]:OnShowTipsClose()
   end
 end
-
 function WBP_ModArchive_Main_C:RefreshData()
   self.RewardGets = {}
   local Avatar = GWorld:GetAvatar()
@@ -325,18 +306,16 @@ function WBP_ModArchive_Main_C:RefreshData()
   EMCache:Set("ModBookModsViewState", self.ModBookModsViewState, true)
   EMCache:Set("ModArchiveNewByViewState", ModArchiveNewByViewState, true)
   if #ModShows > 0 or #ModUnlocks > 0 then
-    DebugPrint("\229\138\160\232\189\189\229\188\185\231\170\151 ")
+    DebugPrint("加载弹窗 ")
     self.ShouldShowTips = true
     self.TipsModShows = ModShows
     self.TipsModUnlocks = ModUnlocks
   end
 end
-
 function WBP_ModArchive_Main_C:RefreshDot()
   self:RefreshNewdot()
   self:RefreshReddot()
 end
-
 function WBP_ModArchive_Main_C:RefreshReddot()
   local ModBookCanGetRewards = EMCache:Get("ModBookCanGetRewards", true) or {}
   local Groups = DataMgr.ModGuideBookArchive
@@ -344,7 +323,7 @@ function WBP_ModArchive_Main_C:RefreshReddot()
   local ArchiveTabRed = false
   for i, v in pairs(ModBookCanGetRewards) do
     if v then
-      DebugPrint("\229\186\148\232\175\165\230\156\137\231\186\162\231\130\185 ", tonumber(i))
+      DebugPrint("应该有红点 ", tonumber(i))
       local ArchiveId = tonumber(i)
       local TabId = DataMgr.ModGuideBookArchive[ArchiveId].TabId
       SubTabRed[TabId] = true
@@ -389,7 +368,6 @@ function WBP_ModArchive_Main_C:RefreshReddot()
     self.TabMain[1]:RefreshTabReddot()
   end
 end
-
 function WBP_ModArchive_Main_C:RefreshNewdot()
   local ModBookModsViewState = EMCache:Get("ModBookModsViewState", true) or {}
   local ModArchiveNewByViewState = false
@@ -399,7 +377,7 @@ function WBP_ModArchive_Main_C:RefreshNewdot()
   for i, v in pairs(ModBookModsViewState) do
     for ModIdString, IsNew in pairs(v) do
       if IsNew then
-        DebugPrint("\229\147\170\228\184\170\230\152\175new ", ModIdString, i)
+        DebugPrint("哪个是new ", ModIdString, i)
         local ArchiveId = tonumber(i)
         HasNewTabs[ArchiveId] = true
         if DataMgr.ModGuideBookArchive[ArchiveId] and DataMgr.ModGuideBookArchive[ArchiveId].TabId then
@@ -415,7 +393,6 @@ function WBP_ModArchive_Main_C:RefreshNewdot()
   end
   EMCache:Set("ModArchiveNewByViewState", ModArchiveNewByViewState, true)
 end
-
 function WBP_ModArchive_Main_C:AddTabReddotListen()
   local ReddotName = "ModArchive_Task"
   if ReddotName then
@@ -446,7 +423,6 @@ function WBP_ModArchive_Main_C:AddTabReddotListen()
     end)
   end
 end
-
 function WBP_ModArchive_Main_C:RemoveTabReddotListen()
   ReddotManager.RemoveListener("ModArchive_Task", self)
   ReddotManager.RemoveListener("ModArchive_Archive", self)
@@ -454,19 +430,16 @@ function WBP_ModArchive_Main_C:RemoveTabReddotListen()
     self.TabMain[2]:RemoveTabReddotListen()
   end
 end
-
 function WBP_ModArchive_Main_C:OnGuideEnd()
   EventManager:RemoveEvent(EventID.OnGuideEnd, self)
   if self.TabMain and self.TabMain[self.CurTab] and self.TabMain[self.CurTab].OnGuideEnd then
     self.TabMain[self.CurTab]:OnGuideEnd()
   end
 end
-
 function WBP_ModArchive_Main_C:Destruct()
   EventManager:RemoveEvent(EventID.OnGuideEnd, self)
   WBP_ModArchive_Main_C.Super.Destruct(self)
 end
-
 function WBP_ModArchive_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -484,7 +457,6 @@ function WBP_ModArchive_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_Main_C:Handle_OnPCDown(InKeyName)
   if "Escape" == InKeyName then
     self:OnClose()
@@ -498,7 +470,6 @@ function WBP_ModArchive_Main_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Main_C:Handle_OnGamePadDown(InKeyName)
   if "Gamepad_DPad_Up" == InKeyName or "Gamepad_LeftStick_Up" == InKeyName then
     return true
@@ -528,7 +499,6 @@ function WBP_ModArchive_Main_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Main_C:ReceiveEnterState(StackAction)
   WBP_ModArchive_Main_C.Super.ReceiveEnterState(self, StackAction)
   DebugPrint("zwkkk ReceiveEnterState", StackAction)
@@ -541,7 +511,6 @@ function WBP_ModArchive_Main_C:ReceiveEnterState(StackAction)
     end
   end
 end
-
 function WBP_ModArchive_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -550,8 +519,10 @@ function WBP_ModArchive_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGam
   self.CurInputDeviceType = CurInputDevice
   self.CurGamepadName = CurGamepadName
   self:InitBtnTipsUI()
+  if self.CurInputDeviceType == ECommonInputType.GamePad and self.TabMain and self.TabMain[self.CurTab] and self.TabMain[self.CurTab].OnSwitchToGamepad then
+    self.TabMain[self.CurTab]:OnSwitchToGamepad()
+  end
 end
-
 function WBP_ModArchive_Main_C:InitBtnTipsUI()
   if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.GamePad then
     self.ModArchive_Tab.Key_Left:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -561,7 +532,6 @@ function WBP_ModArchive_Main_C:InitBtnTipsUI()
     self:SwitchComKeyTipsState(1)
   end
 end
-
 function WBP_ModArchive_Main_C:SwitchComKeyTipsState(Index)
   if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.Touch then
     return
@@ -688,5 +658,4 @@ function WBP_ModArchive_Main_C:SwitchComKeyTipsState(Index)
     self.Com_KeyTips:UpdateKeyInfo(KeyInfo)
   end
 end
-
 return WBP_ModArchive_Main_C

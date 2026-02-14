@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Abyss_ModeSelection_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Abyss_ModeSelection_C:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnCellClicked)
   self.Btn_Click.OnHovered:Add(self, self.OnCellHovered)
@@ -12,7 +11,6 @@ function WBP_Abyss_ModeSelection_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function WBP_Abyss_ModeSelection_C:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -23,7 +21,6 @@ function WBP_Abyss_ModeSelection_C:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function WBP_Abyss_ModeSelection_C:Init(Root, Index, AbyssId, IsLocked, FirstSelectedAbyssId)
   self.Root = Root
   self.Index = Index
@@ -53,7 +50,6 @@ function WBP_Abyss_ModeSelection_C:Init(Root, Index, AbyssId, IsLocked, FirstSel
     self:OnCellClicked(true)
   end
 end
-
 function WBP_Abyss_ModeSelection_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("AbyssReward")
   if not CacheDetail[self.AbyssId] then
@@ -62,7 +58,6 @@ function WBP_Abyss_ModeSelection_C:RefreshReddot()
     self.Reddot:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Abyss_ModeSelection_C:InitNavigation()
   self.Btn_Click:SetNavigationRuleCustom(EUINavigation.Up, {
     self,
@@ -77,17 +72,14 @@ function WBP_Abyss_ModeSelection_C:InitNavigation()
     self.Root.FocusToFirstMission
   })
 end
-
 function WBP_Abyss_ModeSelection_C:TryChangeSelectedTab(NavigationDirection)
   return self.Root:TryChangeSelectedTab(NavigationDirection, self.Index)
 end
-
 function WBP_Abyss_ModeSelection_C:UnSelected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self.IsSelect = false
 end
-
 function WBP_Abyss_ModeSelection_C:Selected(DoNotPlaySound)
   self:StopAllAnimations()
   if not DoNotPlaySound then
@@ -96,7 +88,6 @@ function WBP_Abyss_ModeSelection_C:Selected(DoNotPlaySound)
   self:PlayAnimation(self.Click)
   self.IsSelect = true
 end
-
 function WBP_Abyss_ModeSelection_C:OnCellClicked(DoNotPlaySound)
   if self.IsSelect then
     return
@@ -105,7 +96,6 @@ function WBP_Abyss_ModeSelection_C:OnCellClicked(DoNotPlaySound)
     self.Func(self.Obj, table.unpack(self.Params), DoNotPlaySound)
   end
 end
-
 function WBP_Abyss_ModeSelection_C:OnCellHovered()
   self.IsHovering = true
   if self.IsSelect then
@@ -121,7 +111,6 @@ function WBP_Abyss_ModeSelection_C:OnCellHovered()
   self:PlayAnimation(self.Normal)
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Abyss_ModeSelection_C:OnCellUnhovered()
   self.IsHovering = false
   if self.IsSelect then
@@ -139,7 +128,6 @@ function WBP_Abyss_ModeSelection_C:OnCellUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Abyss_ModeSelection_C:OnCellPressed()
   self.IsPressing = true
   if self.IsLocked or self.IsSelect then
@@ -148,7 +136,6 @@ function WBP_Abyss_ModeSelection_C:OnCellPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Abyss_ModeSelection_C:OnCellReleased()
   self.IsPressing = false
   if self.IsLocked or self.IsSelect then
@@ -162,5 +149,4 @@ function WBP_Abyss_ModeSelection_C:OnCellReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 return WBP_Abyss_ModeSelection_C

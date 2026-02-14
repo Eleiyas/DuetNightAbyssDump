@@ -1,22 +1,17 @@
 local function NewClass()
   local Class = {}
-  
   function Class.New()
     local obj = {}
     obj = setmetatable(obj, {__index = Class})
     obj:Init()
     return obj
   end
-  
   return Class
 end
-
 local Heap = NewClass()
-
 local function Swap(a, b)
   return b, a
 end
-
 function Heap.MinHeapCompare(a, b)
   if a < b then
     return 1
@@ -28,7 +23,6 @@ function Heap.MinHeapCompare(a, b)
     return -1
   end
 end
-
 function Heap.MaxHeapCompare(a, b)
   if a < b then
     return -1
@@ -40,17 +34,14 @@ function Heap.MaxHeapCompare(a, b)
     return 1
   end
 end
-
 function Heap:Init()
   self.data = {}
   self.CompareFunc = self.MaxHeapCompare
 end
-
 function Heap:SetData(array, compareFunc)
   self.data = array
   self.CompareFunc = compareFunc
 end
-
 function Heap:HeapDown(index)
   local leftChild = index * 2
   local rightChild = index * 2 + 1
@@ -66,7 +57,6 @@ function Heap:HeapDown(index)
     self:HeapDown(largest)
   end
 end
-
 function Heap:HeapUp(index)
   assert(index >= 1 and index <= #self.data)
   local currentIndex = index
@@ -82,7 +72,6 @@ function Heap:HeapUp(index)
     end
   end
 end
-
 function Heap:Heapify()
   local startIndex = math.floor(#self.data / 2)
   if startIndex <= 1 then
@@ -92,12 +81,10 @@ function Heap:Heapify()
     self:HeapDown(i)
   end
 end
-
 function Heap:PushHeap(element)
   self.data[#self.data + 1] = element
   self:HeapUp(#self.data)
 end
-
 function Heap:PopHeap()
   if 0 == #self.data then
     return
@@ -113,43 +100,35 @@ function Heap:PopHeap()
   self:HeapDown(1)
   return ret
 end
-
 function Heap:HeapTop()
   if 0 == #self.data then
     return nil
   end
   return self.data[1]
 end
-
 function Heap:Print()
   print("Heap:Print()----------")
   for i = 1, #self.data do
     print(self.data[i])
   end
 end
-
 local Deque = NewClass()
-
 function Deque:Init()
   self.data = {}
   self.start = 1
   self.last = 1
 end
-
 function Deque:SetData(array)
   self.data = array
   self.start = 1
   self.last = #array + 1
 end
-
 function Deque:IsEmpty()
   return self.start == self.last
 end
-
 function Deque:Size()
   return self.last - self.start
 end
-
 function Deque:PushFront(element)
   if self:IsEmpty() then
     self.data[self.start] = element
@@ -159,40 +138,33 @@ function Deque:PushFront(element)
   self.start = self.start - 1
   self.data[self.start] = element
 end
-
 function Deque:PushBack(element)
   self.data[self.last] = element
   self.last = self.last + 1
 end
-
 function Deque:PopBack()
   self.last = self.last - 1
   local ret = self.data[self.last]
   self.data[self.last] = nil
   return ret
 end
-
 function Deque:PopFront()
   local ret = self.data[self.start]
   self.data[self.start] = nil
   self.start = self.start + 1
   return ret
 end
-
 function Deque:Get(index)
   assert(self:IsEmpty() == false and index <= self:Size(), "Deque null!!!")
   return self.data[self.start + index - 1]
 end
-
 function Deque:Set(index, element)
   assert(self:IsEmpty() == false and index <= self:Size(), "Deque null!!!")
   self.data[self.start + index - 1] = element
 end
-
 function Deque:Back()
   return self.data[self.last - 1]
 end
-
 function Deque:ToArr()
   if self:IsEmpty() then
     return {}
@@ -203,19 +175,15 @@ function Deque:ToArr()
   end
   return ret
 end
-
 local Stack = NewClass()
-
 function Stack:Init()
   self.DataItems = {}
   self.Size = 0
 end
-
 function Stack:Push(item)
   self.Size = self.Size + 1
   self.DataItems[self.Size] = item
 end
-
 function Stack:Pop()
   if self:IsEmpty() then
     return nil, "Stack is empty"
@@ -225,7 +193,6 @@ function Stack:Pop()
   self.Size = self.Size - 1
   return Item
 end
-
 function Stack:FindAndRemove(item)
   if self:IsEmpty() then
     return nil, "Stack is empty"
@@ -248,29 +215,23 @@ function Stack:FindAndRemove(item)
   end
   return FindItem
 end
-
 function Stack:Peek()
   if self:IsEmpty() then
     return nil, "Stack is empty"
   end
   return self.DataItems[self.Size]
 end
-
 function Stack:IsEmpty()
   return 0 == self.Size
 end
-
 function Stack:GetSize()
   return self.Size
 end
-
 function Stack:Clear()
   self.DataItems = {}
   self.Size = 0
 end
-
 local Utils = {}
-
 function Utils:Shuffle(array, count)
   if #array < 2 then
     return
@@ -284,7 +245,6 @@ function Utils:Shuffle(array, count)
     array[i], array[randIdx] = Swap(array[i], array[randIdx])
   end
 end
-
 return {
   Heap = Heap,
   Deque = Deque,

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClick)
   self.Btn_Click.OnHovered:Add(self, self.OnBtnHovered)
@@ -8,7 +7,6 @@ function M:Construct()
   self.Btn_Click.OnPressed:Add(self, self.OnBtnPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnBtnReleased)
 end
-
 function M:Destruct()
   self.Btn_Click.OnClicked:Remove(self, self.OnBtnClick)
   self.Btn_Click.OnHovered:Remove(self, self.OnBtnHovered)
@@ -16,7 +14,6 @@ function M:Destruct()
   self.Btn_Click.OnPressed:Remove(self, self.OnBtnPressed)
   self.Btn_Click.OnReleased:Remove(self, self.OnBtnReleased)
 end
-
 function M:SetSelected(bSelected)
   self.Content.bSelected = bSelected
   if bSelected then
@@ -28,7 +25,6 @@ function M:SetSelected(bSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnBtnClick()
   if self.Content.bSelected then
     return
@@ -36,7 +32,6 @@ function M:OnBtnClick()
   self:SetSelected(true)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
 end
-
 function M:OnBtnHovered()
   if self.Content.bSelected then
     return
@@ -44,7 +39,6 @@ function M:OnBtnHovered()
   self:StopAllBtnAnim()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.Content.bSelected then
     return
@@ -52,7 +46,6 @@ function M:OnBtnUnhovered()
   self:StopAllBtnAnim()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnBtnPressed()
   if self.Content.bSelected then
     return
@@ -60,23 +53,19 @@ function M:OnBtnPressed()
   self:StopAllBtnAnim()
   self:PlayAnimation(self.Press)
 end
-
 function M:StopAllBtnAnim()
   self:ReverseAnimation(self.Click)
   self:ReverseAnimation(self.UnHover)
   self:ReverseAnimation(self.Hover)
   self:ReverseAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
 end
-
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.UnHover then
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   Content.UI = self
   self.Content = Content
@@ -92,5 +81,4 @@ function M:OnListItemObjectSet(Content)
     self:SetSelected(true)
   end
 end
-
 return M

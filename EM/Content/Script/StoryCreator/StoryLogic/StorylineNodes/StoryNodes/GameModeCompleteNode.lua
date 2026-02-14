@@ -1,12 +1,10 @@
 local GameModeCompleteNode = Class("StoryCreator.StoryLogic.StorylineNodes.Node")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function GameModeCompleteNode:Init()
   self.QuestHintMessageId = 0
   self.IsShowGuide = false
   self.GuidePointName = ""
 end
-
 function GameModeCompleteNode:Start(Context)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -23,7 +21,6 @@ function GameModeCompleteNode:Start(Context)
   EventManager:AddEvent(EventID.OnGameModeComplete, self, self.OnGameModeCountUpdate)
   self:OnGameModeCountUpdate(true)
 end
-
 function GameModeCompleteNode:OnGameModeCountUpdate(IsStart)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -82,14 +79,12 @@ function GameModeCompleteNode:OnGameModeCountUpdate(IsStart)
   self:Finish("Success")
   EventManager:RemoveEvent(EventID.OnGameModeComplete, self)
 end
-
 function GameModeCompleteNode:Clear()
   EventManager:RemoveEvent(EventID.OnGameModeComplete, self)
   if self.IsShowGuide then
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
   end
 end
-
 function GameModeCompleteNode:TrytoSetQuestExtraInfo()
   local QuestChainId = tonumber(self.Context.QuestChainId)
   local QuestId = tonumber(self.QuestId)
@@ -101,11 +96,9 @@ function GameModeCompleteNode:TrytoSetQuestExtraInfo()
     Node = self
   })
 end
-
 function GameModeCompleteNode:TrytoSetQuestInterfaceJump()
-  TaskUtils:SetQuestInterfaceJump(self.QuestId, 0 ~= self.InterfaceJumpId, self.IsShowGuide, self.InterfaceJumpId)
+  TaskUtils:SetQuestInterfaceJump(self.QuestId, 0 ~= self.InterfaceJumpId, self.InterfaceJumpId, self.IsShowGuide)
 end
-
 function GameModeCompleteNode:OnCancelTrack()
   if self.QuestHintMessageId > 0 or self.QuestHintMessageId ~= nil then
     local TaskUIObj = TaskUtils:GetTaskBarWidget()
@@ -114,7 +107,6 @@ function GameModeCompleteNode:OnCancelTrack()
     end
   end
 end
-
 function GameModeCompleteNode:OnChooseTrack()
   if self.QuestHintMessageId > 0 or self.QuestHintMessageId ~= nil then
     local TaskUIObj = TaskUtils:GetTaskBarWidget()
@@ -145,19 +137,17 @@ function GameModeCompleteNode:OnChooseTrack()
     end
   end
 end
-
 function GameModeCompleteNode:ExecuteTaskHintShow()
   if 0 == self.QuestHintMessageId or self.QuestHintMessageId == nil then
     return
   end
   if nil == DataMgr.Message[self.QuestHintMessageId] or nil == DataMgr.Message[self.QuestHintMessageId].MessageContentPC or nil == DataMgr.Message[self.QuestHintMessageId].MessageContentPhone then
-    ScreenPrint(string.format("GameModeCompleteNode, \228\187\187\229\138\161\230\143\144\231\164\186\228\191\161\230\129\175\233\148\153\232\175\175\239\188\140MessageId\228\184\141\229\173\152\229\156\168 %s:", tostring(self.QuestHintMessageId)))
+    ScreenPrint(string.format("GameModeCompleteNode, 任务提示信息错误，MessageId不存在 %s:", tostring(self.QuestHintMessageId)))
     return
   end
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   local MessageId = CommonUtils.ChooseOptionByPlatform(DataMgr.Message[self.QuestHintMessageId].MessageContentPC, DataMgr.Message[self.QuestHintMessageId].MessageContentPhone)
   local MessageContent = GText(MessageId)
-  
   local function GenAndParseActionMapContent(Panel, SourceContent)
     local FirstIndex = string.find(SourceContent, "&")
     if not FirstIndex then
@@ -182,25 +172,21 @@ function GameModeCompleteNode:ExecuteTaskHintShow()
     Panel.Text_Tips01:SetText(sub1)
     Panel.Text_Tips02:SetText(sub2)
   end
-  
   GenAndParseActionMapContent(TaskUIObj, MessageContent)
   TaskUIObj:PlayAnimation(TaskUIObj.Tooltip_In)
   TaskUIObj.Panel_Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   TaskUIObj.Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function GameModeCompleteNode:ExecuteTaskHintHide()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if TaskUIObj.Visibility == UE4.ESlateVisibility.SelfHitTestInvisible then
     TaskUIObj:PlayAnimation(TaskUIObj.Tooltip_Out)
   end
 end
-
 function GameModeCompleteNode:ClearWhenQuestSuccess()
   TaskUtils:ClearQuestExtraInfo(self.Context.QuestChainId, self.QuestId, self.Key)
   TaskUtils:RemoveQuestInterfaceJump(self.QuestId)
 end
-
 function GameModeCompleteNode:StopQuest()
   EventManager:RemoveEvent(EventID.OnGameModeComplete, self)
   if self.IsShowGuide then
@@ -208,5 +194,4 @@ function GameModeCompleteNode:StopQuest()
   end
   TaskUtils:ClearQuestExtraInfo(self.Context.QuestChainId, self.QuestId, self.Key)
 end
-
 return GameModeCompleteNode

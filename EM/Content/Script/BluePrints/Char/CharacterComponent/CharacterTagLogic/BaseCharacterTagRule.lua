@@ -1,6 +1,5 @@
 local BaseTagInfo = require("BluePrints.Char.CharacterComponent.CharacterTagLogic.BaseTagInfo")
 local TagRules = {}
-
 function TagRules:GetTagInfo(TagName)
   if not TagName then
     return nil
@@ -13,18 +12,14 @@ function TagRules:GetTagInfo(TagName)
   end
   return self[TagName]
 end
-
 function TagRules:GetStateMachineInfo(TagName)
   return nil
 end
-
 function TagRules:GetStateLimitInfo(TagName)
   return nil
 end
-
 function TagRules:OnTagChanged(OldTag, NewTag)
 end
-
 function TagRules:CheckCanEnterTag(Owner, CurTag, NewTag, CustomCheckers)
   if not CurTag then
     return true
@@ -53,7 +48,6 @@ function TagRules:CheckCanEnterTag(Owner, CurTag, NewTag, CustomCheckers)
   end
   return true
 end
-
 function TagRules:GetDefaultTag(Owner)
   if Owner.BuffManager and Owner.BuffManager.CurrentSetCharacterTag then
     return Owner.BuffManager.CurrentSetCharacterTag
@@ -63,42 +57,29 @@ function TagRules:GetDefaultTag(Owner)
     return "Idle"
   end
 end
-
 local IdleInfo = TagRules:GetTagInfo("Idle")
-
 function IdleInfo.OnEnterTag(Owner)
   Owner:SetHitFlyState("NotHitFly")
 end
-
 function IdleInfo.OnLeaveTag(Owner)
 end
-
 local FallingInfo = TagRules:GetTagInfo("Falling")
-
 function FallingInfo.OnEnterTag(Owner)
 end
-
 function FallingInfo.OnLeaveTag(Owner)
 end
-
 local HitFlyInfo = TagRules:GetTagInfo("HitFly")
-
 function HitFlyInfo.OnEnterTag(Owner)
   Owner:SetHitFlyState("HitFly")
   if Owner.EMAnimInstance then
     Owner:SetCurrentJumpState(Const.NormalState)
   end
 end
-
 function HitFlyInfo.OnLeaveTag(Owner)
 end
-
 local HeavyHitInfo = TagRules:GetTagInfo("HeavyHit")
-
 function HeavyHitInfo.OnEnterTag(Owner)
 end
-
 function HeavyHitInfo.OnLeaveTag(Owner)
 end
-
 return TagRules

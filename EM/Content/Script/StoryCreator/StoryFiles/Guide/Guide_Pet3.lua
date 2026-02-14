@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17228506801924729",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1302, y = 378},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -167,12 +169,12 @@ return {
           ["17228507290646758"] = {
             key = "17228507290646758",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1568, y = 318},
             propsData = {
               ShowEnable = true,
               MessageId = 203007,
-              MessageNote = "\232\191\155\229\133\165\229\174\160\231\137\169\231\149\140\233\157\162",
+              MessageNote = "进入宠物界面",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -197,19 +199,19 @@ return {
           ["17229436909251233"] = {
             key = "17229436909251233",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1142, y = 588},
             propsData = {WaitTime = 4}
           },
           ["17229437048412077"] = {
             key = "17229437048412077",
             type = "ShowGuideButtonNode",
-            name = "\229\140\186\229\159\159\229\143\179\228\184\138\232\167\146UI",
+            name = "区域右上角UI",
             pos = {x = 1214, y = 216},
             propsData = {
               ShowEnable = true,
               MessageId = 203006,
-              MessageNote = "\232\191\155\229\133\165\230\149\180\229\164\135",
+              MessageNote = "进入整备",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -234,11 +236,11 @@ return {
           ["17229459999921014"] = {
             key = "17229459999921014",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 2440, y = 290},
             propsData = {
               MessageId = 203009,
-              MessageNote = "\229\174\160\231\137\169\231\149\140\233\157\162\232\167\163\233\135\138",
+              MessageNote = "宠物界面解释",
               IsTimePause = false,
               IsResetPlayer = false,
               IsForbidInAnim = true,
@@ -250,12 +252,12 @@ return {
           ["17229460055061341"] = {
             key = "17229460055061341",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2130.274509803922, y = 308.156862745098},
             propsData = {
               ShowEnable = true,
               MessageId = 203010,
-              MessageNote = "\229\174\160\231\137\169\229\135\186\230\136\152",
+              MessageNote = "宠物出战",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -280,12 +282,12 @@ return {
           ["17243182778481940"] = {
             key = "17243182778481940",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1738, y = 650},
             propsData = {
               ShowEnable = true,
               MessageId = 203008,
-              MessageNote = "\230\159\165\231\156\139\229\174\160\231\137\169\230\138\128\232\131\189",
+              MessageNote = "查看宠物技能",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -310,18 +312,18 @@ return {
           ["17268132087711736"] = {
             key = "17268132087711736",
             type = "PlatformJudgmentNode",
-            name = "PC/\230\137\139\230\156\186\229\185\179\229\143\176\229\136\164\230\150\173",
+            name = "PC/手机平台判断",
             pos = {x = 1876, y = 420},
             propsData = {}
           },
           ["17268132147632199"] = {
             key = "17268132147632199",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 2000.6666666666667, y = 116.66666666666674},
             propsData = {
               MessageId = 203011,
-              MessageNote = "\229\174\160\231\137\169\230\138\128\232\131\189\233\135\138\230\148\190",
+              MessageNote = "宠物技能释放",
               IsTimePause = false,
               IsResetPlayer = false,
               IsForbidInAnim = true,
@@ -333,12 +335,12 @@ return {
           ["17289957539447118"] = {
             key = "17289957539447118",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2170.0084033613443, y = 598.2051066580476},
             propsData = {
               ShowEnable = true,
               MessageId = 203010,
-              MessageNote = "\229\174\160\231\137\169\229\135\186\230\136\152",
+              MessageNote = "宠物出战",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,

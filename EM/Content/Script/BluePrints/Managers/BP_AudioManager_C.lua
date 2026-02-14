@@ -9,13 +9,11 @@ BP_AudioManager_C._components = {
   "BluePrints.Managers.AudioManagerComponent.ReverbLogic",
   "BluePrints.Managers.AudioManagerComponent.SaveAndRecoverDataComponent"
 }
-
 function BP_AudioManager_C:Initialize(Initializer)
   self.OpenAsync = Const.PlaySoundAsync
   self.TestAsyncObjectDestroy = false
   self.TestRegionId = -1
 end
-
 function BP_AudioManager_C:RecoverSavedData()
   if IsDedicatedServer(self) then
     return
@@ -25,8 +23,8 @@ function BP_AudioManager_C:RecoverSavedData()
   self.bOpenSoundIDOpt = true
   self.bOpenMonsterLimit = true
   self:BindEnterforegroundDelegate()
+  self:BindLogicToWindowClose()
 end
-
 function BP_AudioManager_C:PlayFMODSoundByID(WorldContext, SoundID, LogicEventPlayer, FollowedSocketName, ExtraParams)
   local PlayExtraParams = FInPlayExtraParams()
   if ExtraParams then
@@ -59,7 +57,6 @@ function BP_AudioManager_C:PlayFMODSoundByID(WorldContext, SoundID, LogicEventPl
   end
   self:PlayFMODSoundByID_CPP(WorldContext, SoundID, LogicEventPlayer, FollowedSocketName, PlayExtraParams)
 end
-
 function BP_AudioManager_C:PlaySeByIdGetExtraParams(LogicEventPlayer)
   local PlayExtraParams = FInPlayExtraParams()
   if LogicEventPlayer.HitedMaterial then
@@ -67,10 +64,8 @@ function BP_AudioManager_C:PlaySeByIdGetExtraParams(LogicEventPlayer)
   end
   PlayExtraParams.SaveLocation = LogicEventPlayer.OverlapLocation or LogicEventPlayer:GetSaveLoc("")
 end
-
 function BP_AudioManager_C:Test()
 end
-
 function BP_AudioManager_C:Test2(Event)
   DebugPrint("Error: HYY AudioManager Test3 RealEvent Loaded, SelectKey is", self.SelectKey)
   local PlayStruct = FPlayFMODSoundStruct()
@@ -88,11 +83,9 @@ function BP_AudioManager_C:Test2(Event)
     end
   end, true, 0.1, "HYYTest")
 end
-
 function BP_AudioManager_C:HYYDrawDebug(PointLocation)
   UE4.UKismetSystemLibrary.DrawDebugPoint(self, PointLocation, 10, UE4.FLinearColor(0, 1, 0, 1), 5)
 end
-
 function BP_AudioManager_C:SetEventSoundParam(Object, Key, KeyValueGroups)
   if not KeyValueGroups then
     return
@@ -103,7 +96,6 @@ function BP_AudioManager_C:SetEventSoundParam(Object, Key, KeyValueGroups)
   end
   self:SetEventSoundParam_CPP(Object, Key, KeyValueGroupsMap)
 end
-
 function BP_AudioManager_C:GetGender(IsEXGender)
   local Avatar = GWorld:GetAvatar()
   if true == IsEXGender then
@@ -118,7 +110,6 @@ function BP_AudioManager_C:GetGender(IsEXGender)
     return "_m"
   end
 end
-
 function BP_AudioManager_C:SetEventInstanceParamWithId(EventInstance, SoundConditionId, Source, Target)
   local SoundCondition = DataMgr.SoundCondition[SoundConditionId]
   if SoundCondition.Params then
@@ -134,7 +125,6 @@ function BP_AudioManager_C:SetEventInstanceParamWithId(EventInstance, SoundCondi
     print(_G.LogTag, "Warning: AudioManger not find Valid SoundCondition Function", SoundConditionId)
   end
 end
-
 local function GetMapLength(Map)
   local count = 0
   if not Map then
@@ -145,7 +135,6 @@ local function GetMapLength(Map)
   end
   return count
 end
-
 function BP_AudioManager_C:PlayItemSound(Context, ItemId, Behavior, TableName)
   local Data = TableName and DataMgr[TableName]
   if Data and Data[ItemId] then
@@ -157,7 +146,6 @@ function BP_AudioManager_C:PlayItemSound(Context, ItemId, Behavior, TableName)
     end
   end
 end
-
 function BP_AudioManager_C:ReadCommonConstDropSeConfig()
   for Index, SePath in pairs(CommonConst.DropProjectileSe) do
     self.DropProjectileSeMap:Add(Index, SePath)
@@ -172,19 +160,15 @@ function BP_AudioManager_C:ReadCommonConstDropSeConfig()
     self.DropPickupSeMap:Add(Index, SePath)
   end
 end
-
 function BP_AudioManager_C:GetCannotAsyncEventPath()
   self.CannotAsyncLoadEventPaths = CommonConst.CannotAsyncEventPath
 end
-
 function BP_AudioManager_C:GetNoNeedCacheEventPath()
   self.NoNeedCacheEventPaths = CommonConst.NoNeedCacheEventPath
 end
-
 function BP_AudioManager_C:GetNeedStoreSTLBGM()
   return Const.NeedStoreSTLBGM
 end
-
 function BP_AudioManager_C:GetCurrentRegionId()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -194,13 +178,11 @@ function BP_AudioManager_C:GetCurrentRegionId()
   DebugPrint("LogEMAudioManager Test CurrentRegionId is", self.TestRegionId)
   return self.TestRegionId
 end
-
 function BP_AudioManager_C:OnPlayerSwitchScene()
   AudioManager(self):SetVoiceLanguage(CommonConst.SystemVoice)
   UFMODBlueprintStatics.LoadExtraBanks()
   self.Overridden.OnPlayerSwitchScene(self)
 end
-
 function BP_AudioManager_C:GetAvatarCustomBGMEventId()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -208,10 +190,5 @@ function BP_AudioManager_C:GetAvatarCustomBGMEventId()
   end
   return Avatar.HomeBaseBGM
 end
-
-function BP_AudioManager_C:GetFootstepFXSlowSpeed_Lua()
-  return Const.FootstepFXSlowSpeed
-end
-
 AssembleComponents(BP_AudioManager_C)
 return BP_AudioManager_C

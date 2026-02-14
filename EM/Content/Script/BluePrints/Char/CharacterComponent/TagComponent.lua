@@ -2,11 +2,9 @@ require("UnLua")
 local TagComponent = {}
 local TagObject = {}
 TagObject.TagsDict = {}
-
 function TagObject:BindStateFunc(TwoSideFunc)
   self.TwoSideFunc = TwoSideFunc
 end
-
 function TagObject:SetTagState(TagName, State)
   if not TagName then
     return
@@ -19,12 +17,10 @@ function TagObject:SetTagState(TagName, State)
   local TagEmpty = IsEmptyTable(self.TagsDict)
   local _ = self.TwoSideFunc and self.TwoSideFunc(self.Owner, not TagEmpty)
 end
-
 function TagComponent:AddOneSwitchTag(TwoSideFunc)
   local NewTagObject = New(TagObject)
   NewTagObject:BindStateFunc(TwoSideFunc)
   NewTagObject.Owner = self
   return NewTagObject
 end
-
 return TagComponent

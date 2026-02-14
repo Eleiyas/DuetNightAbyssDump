@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Area.OnClicked:Add(self, self.OnClicked)
   self.Btn_Area.OnPressed:Add(self, self.OnPressed)
@@ -14,7 +13,6 @@ function M:Construct()
     self.Panel_Save:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Widget = self
@@ -32,17 +30,14 @@ function M:OnListItemObjectSet(Content)
     self:SetIsSaveInDraft(Content.IsSaveInDraft)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Widget = nil
   end
 end
-
 function M:SetColor(Content)
   self.Color_Lump.Brush.TintColor.SpecifiedColor = Content.Color
 end
-
 function M:SetIsSelected(IsSelected)
   if IsSelected then
     self.Panel_Used:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -50,7 +45,6 @@ function M:SetIsSelected(IsSelected)
     self.Panel_Used:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetIsSaveInDraft(IsSaveInDraft)
   if not self.Panel_Save then
     return
@@ -61,14 +55,12 @@ function M:SetIsSaveInDraft(IsSaveInDraft)
     self.Panel_Save:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnPressed()
   if self.Content.IsClicked then
     return
   end
   self:PlayAnimationForward(self.Press)
 end
-
 function M:SetIsClicked(IsClicked, Speed)
   if IsClicked then
     self:StopAllAnimations()
@@ -79,7 +71,6 @@ function M:SetIsClicked(IsClicked, Speed)
     self:PlayAnimation(self.Normal, 0, 1, 0)
   end
 end
-
 function M:OnHovered()
   if self.Content.Event_OnHovered then
     self.Content.Event_OnHovered(self.Content.Owner, self.Content)
@@ -89,7 +80,6 @@ function M:OnHovered()
   end
   self:PlayAnimationForward(self.Hover)
 end
-
 function M:OnUnhovered()
   if self.Content.Event_OnUnhovered then
     self.Content.Event_OnUnhovered(self.Content.Owner, self.Content)
@@ -99,7 +89,6 @@ function M:OnUnhovered()
   end
   self:PlayAnimationReverse(self.Hover)
 end
-
 function M:OnClicked()
   if self.Content.Event_OnClicked then
     self.Content.Event_OnClicked(self.Content.Owner, self.Content)
@@ -114,28 +103,23 @@ function M:OnClicked()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnReleased()
   if self.Content.IsClicked then
     return
   end
   self:PlayAnimationReverse(self.Press)
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Btn_Area)
 end
-
 return M

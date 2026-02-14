@@ -1,5 +1,5 @@
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
+local PauseTag = "BossFightOpen"
 function M:Init()
   self.SequencePath = ""
   self.EnableFadeIn = true
@@ -10,70 +10,70 @@ function M:Init()
   self.DisableNPCAI = false
   self.TalkContext = GWorld.GameInstance:GetTalkContext()
   self.Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+  EventManager:AddEvent(EventID.OnHardBossOpeningAllPlayerReady, self, self.OnAllPlayerReadyCallback)
 end
-
 function M:Execute(Callback)
   self.Callback = Callback
   self:ShowUI()
   self:PlaySequence()
-  self.Player:AddDisableInputTag("Talk")
+  self.Player:AddDisableInputTag(PauseTag)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if GameMode and GameMode.SetPlayerCharacterForceIdle then
     GameMode:SetPlayerCharacterForceIdle(self.Player)
   end
 end
-
 function M:Clear()
   self.Player:RemoveClearInputCache()
-  self.Player:RemoveDisableInputTag("Talk")
+  self.Player:RemoveDisableInputTag(PauseTag)
+  local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
+  if GameState then
+    GameState:ClientHideHardBossDgActor(false, "Boss")
+  end
 end
-
 function M:PlaySequence()
   local SequenceAsset = LoadObject(self.SequencePath)
   if not IsValid(SequenceAsset) then
-    DebugPrint("Warning: BossBattleOpenNode Sequence\232\183\175\229\190\132\230\156\137\232\175\175\239\188\140\232\175\183\230\163\128\230\159\165\239\188\129\239\188\129\239\188\129", self.SequencePath)
+    DebugPrint("Warning: BossBattleOpenNode Sequence路径有误，请检查！！！", self.SequencePath)
     self:OnSequencePlayFinished()
     return
   end
   local transform = UE4.UKismetMathLibrary.MakeTransform(UE4.FVector(0, 0, 0), UE4.FRotator(0, 0, 0), UE4.FVector(1, 1, 1))
   self.LevelSequenceActor = GWorld.GameInstance:GetWorld():SpawnActor(UE4.LoadClass(Const.Talk_LevelSequenceActorPath), transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
-  self.LevelSequenceActor.CameraSettings.bOverrideAspectRatioAxisConstraint = false
   self.SequencePlayer = self.LevelSequenceActor.SequencePlayer
   self.LevelSequenceActor:SetSequence(SequenceAsset)
   if self.PauseGameGlobal and Utils.IsStandAlone(GWorld.GameInstance) then
-    self:FakeTalkTaskData()
-    self.TalkContext:OnPausedBegin(self.TalkTaskData)
+    self.TalkContext:OnPausedBegin()
     local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-    GameMode:SetGamePaused(Const.Tag_GamePausedByTalk, true)
+    GameMode:SetGamePaused(PauseTag, true)
     local TS = TalkSubsystem()
-    TS:SetSequenceIgnorePause(true, self.LevelSequenceActor, self.SequencePlayer)
+    TS:AddIgnorePauseObject(self.LevelSequenceActor)
   end
   self.SequencePlayer.OnFinished:Add(SequenceAsset, function()
     self:OnSequencePlayFinished()
   end)
+  local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
+  if GameState and GameState:IsInDungeon() then
+    self.LoadingUI.Group_Coop:SetVisibility(UIConst.VisibilityOp.Visible)
+    self.LoadingUI.Com_Loading:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.LoadingUI.Text_CoopTitle:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
   self.SequencePlayer:Play()
+  if GameState then
+    GameState:ClientHideHardBossDgActor(true, "Boss")
+  end
 end
-
-function M:FakeTalkTaskData()
-  self.TalkTaskData = {}
-  self.TalkTaskData.bPauseGameGlobal = self.PauseGameGlobal
-  self.TalkTaskData.bDisableMonsterAI = self.DisableMonsterAI
-  self.TalkTaskData.bDisableNPCAI = self.DisableNPCAI
-  self.TalkTaskData.SequenceActor = self.LevelSequenceActor
-  self.TalkTaskData.SequencePlayer = self.SequencePlayer
-end
-
 function M:ShowUI()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:HideAllUI(true, Const.BossBattleOpenHideTag)
-  UIManager:LoadUINew("HardBossBattleOpen", self.EnableFadeIn, self.EnableSkip, self, self.SkipToEnd)
+  self.LoadingUI = UIManager:LoadUINew("HardBossBattleOpen", self.EnableFadeIn, self.EnableSkip, self, self.SkipToEnd)
+  self.LoadingUI.Text_CoopTitle:SetText(GText("UI_HardBoss_WaitOthers"))
+  TeamController:OpenHeadUI(self.LoadingUI.Group_Team)
+  TeamController:GetModel():SetIsInOpenCoop(true)
 end
-
 function M:SkipToEnd()
   self.SequencePlayer:GoToEndAndStop()
   self:OnSequencePlayFinished()
 end
-
 function M:UnShowUI()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BossBattleOpenUI = UIManager:GetUIObj("HardBossBattleOpen")
@@ -87,13 +87,16 @@ function M:UnShowUI()
     BossBattleOpenUI:Close()
   end
   UIManager:HideAllUI(false, Const.BossBattleOpenHideTag)
+  TeamController:GetModel():SetIsInOpenCoop(false)
 end
-
 function M:OnSequencePlayFinished()
+  EventManager:RemoveEvent(EventID.OnHardBossOpeningAllPlayerReady, self)
   if self.PauseGameGlobal and Utils.IsStandAlone(GWorld.GameInstance) then
-    self.TalkContext:OnPausedEnd(self.TalkTaskData)
+    self.TalkContext:OnPausedEnd()
+    local TS = TalkSubsystem()
+    TS:ClearIgnorePauseObjects()
     local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-    GameMode:SetGamePaused(Const.Tag_GamePausedByTalk, false)
+    GameMode:SetGamePaused(PauseTag, false)
   end
   self:UnShowUI()
   local Eid = self.Player.MechanismEid
@@ -103,6 +106,11 @@ function M:OnSequencePlayFinished()
   end
   self.LevelSequenceActor:K2_DestroyActor()
   self.Callback()
+  self.SequencePlayer = nil
 end
-
+function M:OnAllPlayerReadyCallback()
+  if self.SequencePlayer then
+    self.SequencePlayer:Play()
+  end
+end
 return M

@@ -5,14 +5,13 @@ local GMObjectUtils = require("BluePrints.UI.GMInterface.GMObjectUtils")
 local EMCache = require("EMCache.EMCache")
 local MiscUtils = require("Utils.MiscUtils")
 local GMFunctionLibrary = {}
-
 function GMFunctionLibrary.Exec(WorldContext, Command)
   if not Command or Command.Callback == "" then
-    MiscUtils.Error("GMFunctionLibrary:\230\140\135\228\187\164\229\175\185\232\177\161\230\136\150callback\228\184\186\231\169\186")
+    MiscUtils.Error("GMFunctionLibrary:指令对象或callback为空")
     return
   end
   if not GMFunctionLibrary[Command.Callback] then
-    MiscUtils.Error("GMFunctionLibrary:\230\156\170\229\174\158\231\142\176callback\229\135\189\230\149\176" .. Command.Callback)
+    MiscUtils.Error("GMFunctionLibrary:未实现callback函数" .. Command.Callback)
     return
   end
   local args = Command.FixedParameters:ToTable()
@@ -41,18 +40,15 @@ function GMFunctionLibrary.Exec(WorldContext, Command)
     print(_G.LogTag, "Undefined command mode:", Command.Mode)
   end
 end
-
 function GMFunctionLibrary.ExecConsoleCommand(WorldContext, CommandStr)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, CommandStr, nil)
 end
-
 function GMFunctionLibrary.ShowUIData(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(Player, "stat fps", nil)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(Player, "stat unit", nil)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(Player, "stat RHI", nil)
 end
-
 function GMFunctionLibrary.SetDrawDebugSphere(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player.CapsuleComponent:SetHiddenInGame(not IsEnable, false)
@@ -61,12 +57,10 @@ function GMFunctionLibrary.SetDrawDebugSphere(WorldContext, IsEnable)
   Player.DistanceFieldMesh_L:SetHiddenInGame(not IsEnable, false)
   Player.DistanceFieldMesh_R:SetHiddenInGame(not IsEnable, false)
 end
-
 function GMFunctionLibrary.SetDrawCallInfo(WorldContext, IsEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "stat SceneRendering")
   return IsEnable
 end
-
 function GMFunctionLibrary.ModifyRootAnimation(WorldContext, IsEnable)
   local World = WorldContext:GetWorld()
   local ModelPath = "BluePrints/Common/BP_FileModify.BP_FileModify"
@@ -79,20 +73,17 @@ function GMFunctionLibrary.ModifyRootAnimation(WorldContext, IsEnable)
     print(_G.LogTag, "FileModify Loads Failed!!!")
   end
   if not IsEnable then
-    print(_G.LogTag, "\229\133\179\233\151\173\229\138\159\232\131\189\229\176\154\230\156\170\229\174\158\231\142\176\227\128\130")
+    print(_G.LogTag, "关闭功能尚未实现。")
   end
 end
-
 function GMFunctionLibrary.SetUIShowModePC(WorldContext)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player:UpdateUIMode("PC")
 end
-
 function GMFunctionLibrary.SetUIShowModeMobile(WorldContext)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player:UpdateUIMode("Mobile")
 end
-
 function GMFunctionLibrary.SetShowScreenMessage(WorldContext, IsEnable)
   if IsEnable then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "EnableAllScreenMessages")
@@ -100,22 +91,25 @@ function GMFunctionLibrary.SetShowScreenMessage(WorldContext, IsEnable)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "DisableAllScreenMessages")
   end
 end
-
 function GMFunctionLibrary.SetPlayerInvincible(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player:SetInvincible(IsEnable, "GM")
 end
-
 function GMFunctionLibrary.MaxTriggerProbability(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm MaxTriggerProbability")
 end
-
+function GMFunctionLibrary.ShowMonsterEids(WorldContext, IsEnable)
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
+  GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm Eids")
+end
 function GMFunctionLibrary.ShowDamageDetails(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ShowDamageDetails")
 end
-
+function GMFunctionLibrary.SwitchIgnoreGiftShopFriendLimit(WorldContext, IsEnable)
+  return IsEnable
+end
 function GMFunctionLibrary.ClearToughness(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   if IsEnable then
@@ -124,21 +118,17 @@ function GMFunctionLibrary.ClearToughness(WorldContext, IsEnable)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ctn 0")
   end
 end
-
 function GMFunctionLibrary.ForbidDamage(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ForbidDamage")
 end
-
 function GMFunctionLibrary.ForbidPlay(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ForbidPlay")
 end
-
 function GMFunctionLibrary.SetDPIScale(WorldContext, ScaleNum)
   UE.UUIFunctionLibrary.SetGameDPI(ScaleNum)
 end
-
 function GMFunctionLibrary.DoHideUI(WorldContext, UIName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   local UINameTable = Split(UIName, ".")
@@ -158,7 +148,6 @@ function GMFunctionLibrary.DoHideUI(WorldContext, UIName)
     UIWidget:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function GMFunctionLibrary.DoShowUI(WorldContext, UIName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   local UINameTable = Split(UIName, ".")
@@ -178,7 +167,6 @@ function GMFunctionLibrary.DoShowUI(WorldContext, UIName)
     UIWidget:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function GMFunctionLibrary.DoShowUIOnly(WorldContext, UIName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player:ImmersionModel()
@@ -191,12 +179,10 @@ function GMFunctionLibrary.DoShowUIOnly(WorldContext, UIName)
     UIWidget:Show(Const.ShowUIOnlyTag)
   end
 end
-
 function GMFunctionLibrary.SetPlayerSuperArmor(WorldContext, IsEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player:SetSuperArmor(IsEnable, "GM")
 end
-
 function GMFunctionLibrary.SetTakeRecorderCapture(WorldContext, IsEnable)
   local GameInstance = UGameplayStatics.GetGameInstance(WorldContext)
   GameInstance.IsTakeRecorderCapturing = IsEnable
@@ -212,20 +198,21 @@ function GMFunctionLibrary.SetTakeRecorderCapture(WorldContext, IsEnable)
   local player = UGameplayStatics.GetPlayerCharacter(GameInstance:GetGameUIManager(), 0)
   player.CapsuleComponent:SetHiddenInGame(IsEnable)
   player:HideMonsterCapsule(IsEnable)
-  local FXPriorityManager = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GameInstance, UE4.UFXPriorityManager)
-  if IsEnable then
-    FXPriorityManager.bEnableFXPool = false
-    FXPriorityManager.bEnableFXScalabilityOpt = false
-  else
-    FXPriorityManager.bEnableFXPool = true
-    FXPriorityManager.bEnableFXScalabilityOpt = true
+  local FXPriorityManager = USubsystemBlueprintLibrary.GetWorldSubsystem(player, UE4.UFXPriorityManager)
+  if FXPriorityManager then
+    if IsEnable then
+      FXPriorityManager.bEnableFXPool = false
+      FXPriorityManager.bEnableFXScalabilityOpt = false
+    else
+      FXPriorityManager.bEnableFXPool = true
+      FXPriorityManager.bEnableFXScalabilityOpt = true
+    end
   end
   local NiagaraActor = UGameplayStatics.GetActorOfClass(WorldContext, ATakeRecorderNiagaraActor.StaticClass())
   if not NiagaraActor then
     WorldContext:GetWorld():SpawnActor(ATakeRecorderNiagaraActor:StaticClass())
   end
 end
-
 function GMFunctionLibrary.SetLogMaskIsOpen(WorldContext, IsEnable)
   if IsEnable then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "logmask nil")
@@ -233,7 +220,6 @@ function GMFunctionLibrary.SetLogMaskIsOpen(WorldContext, IsEnable)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "logmask LogInfo")
   end
 end
-
 function GMFunctionLibrary.UpdateLogMaskInfo(WorldContext, MaskName)
   if not MaskName then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "logmask nil")
@@ -241,25 +227,22 @@ function GMFunctionLibrary.UpdateLogMaskInfo(WorldContext, MaskName)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "logmask " .. MaskName)
   end
 end
-
 function GMFunctionLibrary.ModifyPlayerWorldPos(WorldContext, PosX, PosY, PosZ)
   local FinalPos = UE4.FVector(PosX, PosY, PosZ)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player:K2_SetActorLocation(FinalPos, false, nil, false)
 end
-
 function GMFunctionLibrary.SavePlayerWorldPos(WorldContext)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   GMVariable.SavedPlayerWorldPos = Player:K2_GetActorLocation()
 end
-
 function GMFunctionLibrary.PrintEnvironment(WorldContext)
   local Config = GMCommandConfig.commands[1].commands
   if Config then
     for index, value in ipairs(Config) do
-      if value.text == "\230\137\147\229\141\176\229\189\147\229\137\141\231\142\175\229\162\131" then
+      if value.text == "打印当前环境" then
         for __, Commands in ipairs(value.commands) do
-          if Commands.text ~= "\230\137\147\229\141\176\230\137\128\230\156\137\228\191\161\230\129\175" then
+          if Commands.text ~= "打印所有信息" then
             GMFunctionLibrary[Commands.callback](WorldContext)
           end
         end
@@ -268,25 +251,20 @@ function GMFunctionLibrary.PrintEnvironment(WorldContext)
     end
   end
 end
-
 function GMFunctionLibrary.ForceStartDynQuest(WorldContext, DynQuestId)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm ForceStartDynQuest " .. tostring(DynQuestId))
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm ResetDynQuestProbability " .. "1 " .. "1")
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ForceStartDynQuest " .. tostring(DynQuestId))
 end
-
 function GMFunctionLibrary.PrintPlayerInfo(WorldContext)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm PrintPlayerInfoOnScreen")
 end
-
 function GMFunctionLibrary.PrintLevelInfo(WorldContext)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm PrintGameModeInfoOnScreen")
 end
-
 function GMFunctionLibrary.PrintDynamicEventInfo(WorldContext, Id)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm PrintDynamicEventInfo " .. tostring(Id))
 end
-
 function GMFunctionLibrary.FillInPlayerWorldPos(WorldContext, CommandName)
   local Command = GMObjectUtils.FindCommandObjByName(CommandName)
   if Command and GMVariable.SavedPlayerWorldPos then
@@ -311,23 +289,18 @@ function GMFunctionLibrary.FillInPlayerWorldPos(WorldContext, CommandName)
     end
   end
 end
-
 function GMFunctionLibrary.ChangeRole(WorldContext, RoId)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ChangeToNewModel " .. RoId)
 end
-
 function GMFunctionLibrary.ChangeWeapon(WorldContext, WeaponId)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ChangeWeapon " .. WeaponId)
 end
-
 function GMFunctionLibrary.ShowOrHideBillboard(WorldContext, IsEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "EM.EnableShowBillboard " .. tostring(IsEnable))
 end
-
 function GMFunctionLibrary.GetLogMask()
   return _G.LogTag
 end
-
 function GMFunctionLibrary.PrintPlayerBuff(WorldContext)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   local buff_count = Player:GetBuffNum()
@@ -336,42 +309,36 @@ function GMFunctionLibrary.PrintPlayerBuff(WorldContext)
   local result = ""
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "logmask nil")
   if buff_count > 0 then
-    result = result .. "\229\189\147\229\137\141\231\142\169\229\174\182\232\186\171\228\184\138buff\230\149\176\233\135\143\228\184\186: " .. buff_count .. "\n"
+    result = result .. "当前玩家身上buff数量为: " .. buff_count .. "\n"
     for i = 1, buffs:Length() do
       local buff = buffs:GetRef(i)
       local buff_id = buff.BuffId
       local buff_lastTime = buff.LastTime
       local buff_Forever = buff.bForever
-      result = result .. "\231\138\182\230\128\129\231\188\150\229\143\183: " .. buff_id .. ", \230\140\129\231\187\173\230\151\182\233\151\180: " .. buff_lastTime .. ", \230\152\175\229\144\166\230\176\184\228\185\133: " .. tostring(buff_Forever) .. "\n"
+      result = result .. "状态编号: " .. buff_id .. ", 持续时间: " .. buff_lastTime .. ", 是否永久: " .. tostring(buff_Forever) .. "\n"
     end
   else
-    result = result .. "\229\189\147\229\137\141\231\142\169\229\174\182\232\186\171\228\184\138\230\154\130\230\151\160buff"
+    result = result .. "当前玩家身上暂无buff"
   end
   print(result)
 end
-
 function GMFunctionLibrary.SetOutlineEnabled(WorldContext, bEnabled)
   UProfiles.SetOutlineEnabled(bEnabled)
 end
-
 function GMFunctionLibrary.SetHairOutlineEnabled(WorldContext, bEnabled)
   UProfiles.SetHairOutlineEnabled(bEnabled)
 end
-
 function GMFunctionLibrary.SetMaterialCharacterRimEnabled(WorldContext, bEnabled)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player.CharacterFashion:EnableDrawMaterialCharacterRim(bEnabled)
 end
-
 function GMFunctionLibrary.SetPostProcessCharacterRimEnabled(WorldContext, bEnabled)
   UProfiles.SetPostProcessCharacterRimEnabled(bEnabled)
 end
-
 function GMFunctionLibrary.SetCharacterDitherEnabled(WorldContext, bEnabled)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   Player.DitherDisabled = not bEnabled
 end
-
 function GMFunctionLibrary.PrintPlayerAttr(WorldContext, attr_name)
   attr_name = string.upper(attr_name)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
@@ -389,7 +356,6 @@ function GMFunctionLibrary.PrintPlayerAttr(WorldContext, attr_name)
   end
   print(result)
 end
-
 function GMFunctionLibrary.PrintBattleHistory_Normal(WorldContext, Str)
   local Tags = Str and "" ~= Str and Split(Str, " ") or nil
   local Filter = UE4.FBattleHistoryFilter()
@@ -401,7 +367,6 @@ function GMFunctionLibrary.PrintBattleHistory_Normal(WorldContext, Str)
   end
   Battle(WorldContext):BP_PrintBattleHistory(Filter)
 end
-
 function GMFunctionLibrary.PrintBattleHistory_Verbose(WorldContext, Str)
   local Tags = Str and "" ~= Str and Split(Str, " ") or nil
   local Filter = UE4.FBattleHistoryFilter()
@@ -413,11 +378,9 @@ function GMFunctionLibrary.PrintBattleHistory_Verbose(WorldContext, Str)
   end
   Battle(WorldContext):BP_PrintBattleHistory(Filter)
 end
-
 function GMFunctionLibrary.CreateMonster(WorldContext, Id, Num, CM_Type)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM " .. (CM_Type or "CM") .. " " .. Id .. " " .. Num)
 end
-
 function GMFunctionLibrary.SetPlayerGhost(WorldContext, IsEnable)
   local Controller = UE4.UGameplayStatics.GetPlayerController(WorldContext, 0)
   if IsEnable then
@@ -426,23 +389,19 @@ function GMFunctionLibrary.SetPlayerGhost(WorldContext, IsEnable)
     Controller.CheatManager:Walk()
   end
 end
-
 function GMFunctionLibrary.Teleport(WorldContext)
   local Controller = UE4.UGameplayStatics.GetPlayerController(WorldContext, 0)
   Controller.CheatManager:Teleport()
 end
-
 function GMFunctionLibrary.SetCritRate(WorldContext, CritRate)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "ClientGM CritRateTest" .. CritRate)
 end
-
 function GMFunctionLibrary.ChangeTAAQuality(WorldContext, Quality)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.NGX.DLSS.Enable = 0")
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.NGX.DLAA.Enable = 0")
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.PostProcessAAQuality " .. 4)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.ScreenPercentage " .. Quality)
 end
-
 function GMFunctionLibrary.ChangeDLSSQuality(WorldContext, Quality)
   if UDLSSLibrary == nil then
     return
@@ -459,7 +418,6 @@ function GMFunctionLibrary.ChangeDLSSQuality(WorldContext, Quality)
   print("ChangeDLSSQuality", tonumber(Quality))
   UDLSSLibrary.SetDLSSMode(QualityValueList[tonumber(Quality)])
 end
-
 function GMFunctionLibrary.ChangeDLSSFGQuality(WorldContext, Quality)
   if UStreamlineLibraryDLSSG == nil then
     return
@@ -473,35 +431,27 @@ function GMFunctionLibrary.ChangeDLSSFGQuality(WorldContext, Quality)
   }
   UStreamlineLibraryDLSSG.SetDLSSGMode(QualityValueList[tonumber(Quality)])
 end
-
 function GMFunctionLibrary.SwitchSimpleRuntimeTexture(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.SimpleRuntimeTextures " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SwitchMobileSoftwareOcclusion(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.Mobile.AllowSoftwareOcclusion " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SwitchAllowSoftwareOcclusionForMask(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.AllowSoftwareOcclusionForMask " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SwitchSoftwareOcclusionVisualizeBuffer(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.so.VisualizeBuffer " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SwitchMobilePostProcessFog(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.MobilePostProcessFogOrVertexFog " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SwitchHardwareOcclusion(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.AllowOcclusionQueries " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SwitchHZBOcclusion(WorldContext, bEnable)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "r.HZBOcclusion " .. (bEnable and 1 or 0))
 end
-
 function GMFunctionLibrary.SetShowMemoryInfo(WorldContext)
   GMFunctionLibrary.EnableShowMemoryInfo = not GMFunctionLibrary.EnableShowMemoryInfo
   if GMFunctionLibrary.EnableShowMemoryInfo then
@@ -515,7 +465,6 @@ function GMFunctionLibrary.SetShowMemoryInfo(WorldContext)
     EMCache:Set("GMInfo", GMInfo)
   end
 end
-
 function GMFunctionLibrary.ShowMemoryInfo(WorldContext)
   if GMFunctionLibrary.EnableShowMemoryInfo == nil then
     GMFunctionLibrary.EnableShowMemoryInfo = false
@@ -535,23 +484,19 @@ function GMFunctionLibrary.ShowMemoryInfo(WorldContext)
   local MemoryInfoWidget = GMFunctionLibrary.MemoryInfoWidget
   if MemoryInfoWidget then
     function MemoryInfoWidget.UpdateTextInfo()
-      local MemoryInfo = URuntimeCommonFunctionLibrary.GetMemoryInfo(UE4.UGameplayStatics.GetRealTimeSeconds(self))
-      
+      local MemoryInfo = URuntimeCommonFunctionLibrary.GetMemoryInfo(UE4.UGameplayStatics.GetRealTimeSeconds(WorldContext))
       MemoryInfoWidget.MemoryInfoText:SetText(MemoryInfo)
     end
-    
     MemoryInfoWidget:UpdateTextInfo()
     MemoryInfoWidget:AddTimer(1, MemoryInfoWidget.UpdateTextInfo, true, 0, "MemoryInfoWidget", nil)
   end
 end
-
 function GMFunctionLibrary.CloseMemoryInfo(WorldContext)
   if IsValid(GMFunctionLibrary.MemoryInfoWidget) then
     GMFunctionLibrary.MemoryInfoWidget:RemoveFromParent()
     GMFunctionLibrary.MemoryInfoWidget = nil
   end
 end
-
 function GMFunctionLibrary.SetBGMEnabled(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetBGMVolume " .. 1)
@@ -559,7 +504,6 @@ function GMFunctionLibrary.SetBGMEnabled(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetBGMVolume " .. 0)
   end
 end
-
 function GMFunctionLibrary.SetEMPreviewSoundEnabled(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetEMPreviewMute false")
@@ -567,7 +511,6 @@ function GMFunctionLibrary.SetEMPreviewSoundEnabled(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetEMPreviewMute true")
   end
 end
-
 function GMFunctionLibrary.SetAudioListenerDebugEnabled(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetAudioListenerOpenDebug true")
@@ -575,7 +518,6 @@ function GMFunctionLibrary.SetAudioListenerDebugEnabled(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetAudioListenerOpenDebug false")
   end
 end
-
 function GMFunctionLibrary.SetBGMDebugEnabled(WorldContext, bEnable)
   if bEnable then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetBGMOpenDebug true")
@@ -583,7 +525,6 @@ function GMFunctionLibrary.SetBGMDebugEnabled(WorldContext, bEnable)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetBGMOpenDebug false")
   end
 end
-
 function GMFunctionLibrary.SetDrawDebugEnabled(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetDrawDebugEnabled true")
@@ -591,7 +532,6 @@ function GMFunctionLibrary.SetDrawDebugEnabled(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetDrawDebugEnabled false")
   end
 end
-
 function GMFunctionLibrary.SetSoundPointCompDebugEnabled(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetSoundPointCompDebugEnabled true")
@@ -599,7 +539,6 @@ function GMFunctionLibrary.SetSoundPointCompDebugEnabled(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetSoundPointCompDebugEnabled false")
   end
 end
-
 function GMFunctionLibrary.SetSoundSplineDrawDebug(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetSoundSplineDrawDebug true")
@@ -607,7 +546,6 @@ function GMFunctionLibrary.SetSoundSplineDrawDebug(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetSoundSplineDrawDebug false")
   end
 end
-
 function GMFunctionLibrary.SetReverbLogicDebug(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetReverbDebug true")
@@ -615,7 +553,6 @@ function GMFunctionLibrary.SetReverbLogicDebug(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetReverbDebug false")
   end
 end
-
 function GMFunctionLibrary.SetLineSoundDebug(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetLineSoundDebug true")
@@ -623,7 +560,6 @@ function GMFunctionLibrary.SetLineSoundDebug(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SetLineSoundDebug false")
   end
 end
-
 function GMFunctionLibrary.SetSectorSoundDebug(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SectorSoundDebug true")
@@ -631,7 +567,6 @@ function GMFunctionLibrary.SetSectorSoundDebug(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM SectorSoundDebug false")
   end
 end
-
 function GMFunctionLibrary.SetCircularSoundDebug(WorldContext, bEnabled)
   if bEnabled then
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM CircularSoundDebug true")
@@ -639,7 +574,6 @@ function GMFunctionLibrary.SetCircularSoundDebug(WorldContext, bEnabled)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "GM CircularSoundDebug false")
   end
 end
-
 function GMFunctionLibrary.SetPhantomForceUseRegionRule(WorldContext, bUse)
   local player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   local Phantoms = player:GetPhantomTeammates():ToTable()
@@ -650,7 +584,6 @@ function GMFunctionLibrary.SetPhantomForceUseRegionRule(WorldContext, bUse)
     end
   end
 end
-
 function GMFunctionLibrary.GetLevelUpResources(WorldContext, Num)
   local Resources = {}
   for key, value in pairs(DataMgr.WeaponBreak) do
@@ -675,15 +608,12 @@ function GMFunctionLibrary.GetLevelUpResources(WorldContext, Num)
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm ar " .. id .. " " .. (Num or 1))
   end
 end
-
 function GMFunctionLibrary.GetModLevelUpResources(WorldContext, Num)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm ar 102 " .. (Num or 1))
 end
-
 function GMFunctionLibrary.ChangeSysLanguage(WorldContext, Language)
   CommonConst.SystemLanguage = Language
 end
-
 function GMFunctionLibrary.SetAutoResetCameraPitch(WorldContext, Condition)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   if Player then
@@ -696,7 +626,6 @@ function GMFunctionLibrary.SetAutoResetCameraPitch(WorldContext, Condition)
   end
   return false
 end
-
 function GMFunctionLibrary.SetAutoResetSpringArm(WorldContext, Condition)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   if Player then
@@ -705,59 +634,45 @@ function GMFunctionLibrary.SetAutoResetSpringArm(WorldContext, Condition)
   end
   return false
 end
-
 function GMFunctionLibrary.SetCurrentCharGrade(WorldContext, GradeLevel)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm sccg " .. GradeLevel)
 end
-
 function GMFunctionLibrary.ChangeQualityLevel(WorldContext, Level)
   UEMGameInstance.SetOverallScalabilityLevel(Level and tonumber(Level) or -1)
 end
-
 function GMFunctionLibrary.ReuseSkill(WorldContext, Id, Index)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm ReuseSkill" .. " " .. Id .. " " .. Index)
 end
-
 function GMFunctionLibrary.AddOneChar(WorldContext, CharId, level)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm aoc " .. CharId .. " " .. level)
 end
-
 function GMFunctionLibrary.DeleteOneChar(WorldContext, CharId)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm doc " .. CharId)
 end
-
 function GMFunctionLibrary.SetCharLevel(WorldContext, Level)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm scl " .. Level)
 end
-
 function GMFunctionLibrary.AddResource(WorldContext, Id, Num)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm ar " .. Id .. " " .. (Num or ""))
 end
-
 function GMFunctionLibrary.GetDrop(WorldContext, Id, Num)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm GetDrop " .. Id .. " " .. (Num or ""))
 end
-
 function GMFunctionLibrary.SwitchSurvivalValueChange(WorldContext, Switch)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm SwitchSurvivalValueChange")
 end
-
 function GMFunctionLibrary.ChangeTouchPitchSpeed(WorldContext, speed)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm TouchSpeedPitch " .. speed)
 end
-
 function GMFunctionLibrary.ChangeTouchYawSpeed(WorldContext, speed)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm TouchSpeedYaw " .. speed)
 end
-
 function GMFunctionLibrary.ChangeTouchPitchLimit(WorldContext, TurnLimit)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm TouchLimitPitch " .. TurnLimit)
 end
-
 function GMFunctionLibrary.ChangeTouchYawLimit(WorldContext, TurnLimit)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm TouchLimitYaw " .. TurnLimit)
 end
-
 function GMFunctionLibrary.ChangeTouchConfig(WorldContext, speedPitch, speedYaw, TurnLimitPitch, TurnLimitYaw)
   if "" ~= speedPitch then
     GMFunctionLibrary.ChangeTouchPitchSpeed(WorldContext, speedPitch)
@@ -772,30 +687,24 @@ function GMFunctionLibrary.ChangeTouchConfig(WorldContext, speedPitch, speedYaw,
     GMFunctionLibrary.ChangeTouchYawLimit(WorldContext, TurnLimitYaw)
   end
 end
-
 function GMFunctionLibrary.SwitchSkillFeatureCD(WorldContext, bEnabled)
   Const.bEnableSkillFeatureCD = not bEnabled
 end
-
 function GMFunctionLibrary.UnlockRegionTeleport(WorldContext, bEnabled)
   Const.UnlockRegionTeleport = bEnabled
 end
-
 function GMFunctionLibrary.CompleteCondition(WorldContext, ConditionId)
-  GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm CompleteCondition " .. ConditionId)
+  GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm CompleteCondition " .. ConditionId)
 end
-
 function GMFunctionLibrary.MockSystemCondition(WorldContext, SystemId)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm MockSystemCondition " .. SystemId)
 end
-
 function GMFunctionLibrary.SetConstrainAspect(WorldContext, bEnable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   if Player then
     Player.CharCameraComponent.bConstrainAspectRatio = bEnable
   end
 end
-
 function GMFunctionLibrary.SwitchFXPaused(WorldContext, bEnable)
   if bEnable then
     UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "tick.AllowFXTickEvenWhenPaused 0", nil)
@@ -803,10 +712,9 @@ function GMFunctionLibrary.SwitchFXPaused(WorldContext, bEnable)
     UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "tick.AllowFXTickEvenWhenPaused 1", nil)
   end
 end
-
 function GMFunctionLibrary.ShowFlags(WorldContext, bEnable, Name)
   local GameInstance = WorldContext:GetGameInstance()
-  assert(GameInstance, "\230\137\190\228\184\141\229\136\176GameInstance")
+  assert(GameInstance, "找不到GameInstance")
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   local Controller = Player:GetController()
   if bEnable then
@@ -815,7 +723,6 @@ function GMFunctionLibrary.ShowFlags(WorldContext, bEnable, Name)
     Controller:ShowFlags(Name, false)
   end
 end
-
 function GMFunctionLibrary.SetTimeOfDay(WorldContext, timeofday)
   local EnvCreat = UGameplayStatics.GetAllActorsOfClass(WorldContext, LoadClass("/Game/Asset/Scene/common/EnvirSystem/EnvirCreat.EnvirCreat_C")):GetRef(1)
   if "day" == timeofday then
@@ -826,7 +733,6 @@ function GMFunctionLibrary.SetTimeOfDay(WorldContext, timeofday)
     EnvCreat.TimeOfDay = 1.0
   end
 end
-
 function GMFunctionLibrary.HideOrShowMiniMap(WorldContext)
   local battleMap
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
@@ -842,7 +748,6 @@ function GMFunctionLibrary.HideOrShowMiniMap(WorldContext)
     end
   end
 end
-
 function GMFunctionLibrary.HideGMBtnInHUD(WorldContext)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   local BattleMainPage = UIManager(Player):GetUI("BattleMain")
@@ -851,7 +756,6 @@ function GMFunctionLibrary.HideGMBtnInHUD(WorldContext)
     BattleMainPage.Btn_GM:SetRenderOpacity(0)
   end
 end
-
 function GMFunctionLibrary.RecordePlayerRoute(WorldContext, bEnabled)
   local player = UE4.UGameplayStatics.GetPlayerCharacter(WorldContext, 0)
   local class = LoadClass("/Game/BluePrints/Scene/BP_GMRecordPlayerRoute.BP_GMRecordPlayerRoute_C")
@@ -866,69 +770,82 @@ function GMFunctionLibrary.RecordePlayerRoute(WorldContext, bEnabled)
     UKismetSystemLibrary.FlushPersistentDebugLines(WorldContext)
   end
 end
-
 function GMFunctionLibrary.ChangeToSpecialQuestScene(WorldContext)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm SkipRegion 1 999801 1")
 end
-
 function GMFunctionLibrary.StartSpecialQuest_10000(WorldContext)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm StartSpecialQuest 10000")
 end
-
 function GMFunctionLibrary.GuideBookGetReward(WorldContext, GuideId)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm GuideBookGetReward " .. GuideId)
 end
-
 function GMFunctionLibrary.CreatePhantom(WorldContext, ID, Str)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm CP " .. ID .. " " .. Str)
 end
-
 function GMFunctionLibrary.CreateMechanismSummon(WorldContext, ID, Number)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm CMS " .. ID .. " " .. Number)
 end
-
 function GMFunctionLibrary.SpeedUp(WorldContext, Rate)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "gm SpeedUp " .. Rate)
 end
-
 function GMFunctionLibrary.sl(WorldContext, Level)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm sl " .. Level)
 end
-
 function GMFunctionLibrary.sawg(WorldContext, Level)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm sawg " .. Level)
 end
-
 function GMFunctionLibrary.scwg(WorldContext, Level)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm scwg " .. Level)
 end
-
 function GMFunctionLibrary.sawl(WorldContext, Level)
   GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm sawl " .. Level)
 end
-
+function GMFunctionLibrary.SetGiftQuota(WorldContext, Quota)
+  GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm SetGiftQuota " .. Quota)
+end
+function GMFunctionLibrary.CanSendFriendGift(WorldContext, Uid)
+  GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm CanSendFriendGift " .. Uid)
+end
 function GMFunctionLibrary.GetAllPet(WorldContext)
   local Avatar = GWorld:GetAvatar()
   for PetId, value in pairs(DataMgr.Pet) do
     GMFunctionLibrary.ExecConsoleCommand(WorldContext, "sgm PetAdd " .. PetId)
   end
 end
-
 function GMFunctionLibrary.OpenPreviewArmory(WorldContext)
   local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
   UIManager(self):LoadUINew("ArmoryMain", {
     MainTabName = ArmoryUtils.ArmoryMainTabNames.BattleWheel
   })
 end
-
+function GMFunctionLibrary.OpenOnlineActionView(WorldContext, ModeStr)
+  local OnlineActionController = require("BluePrints.UI.WBP.BattleOnlineAction.OnlineActionController")
+  local mode = tonumber(ModeStr)
+  OnlineActionController:Init()
+  if 1 == mode or 2 == mode then
+    OnlineActionController:ShowBtn(mode)
+    OnlineActionController.OpenReason = mode
+    OnlineActionController:OpenView()
+  elseif -1 == mode then
+    OnlineActionController:CloseView()
+    OnlineActionController:HideBtn()
+  else
+    UIManager(WorldContext):ShowUITip(UIConst.Tip_CommonToast, "参数错误：请输入 1/2/-1")
+  end
+end
+function GMFunctionLibrary.OpenMultiChallenge(WorldContext, ChallengeIdStr)
+  local ChallengeId = tonumber(ChallengeIdStr)
+  if not ChallengeId then
+    return
+  end
+  UIUtils.OpenMultiplayerChallengeLevelChoose(ChallengeId)
+end
 function GMFunctionLibrary.ShowRegionmapPane(WorldContext, bEnabled)
   _G.ShowRegionmapPane = bEnabled
 end
-
 function GMFunctionLibrary.ShowAchievement(WorldContext, bEnabled)
   _G.ShowAchievement = bEnabled
 end
-
 function GMFunctionLibrary.HideJumpWord()
   if require("EMLuaConst").IsHideJumpWord == false then
     require("EMLuaConst").IsHideJumpWord = true
@@ -936,37 +853,31 @@ function GMFunctionLibrary.HideJumpWord()
     require("EMLuaConst").IsHideJumpWord = false
   end
 end
-
 function GMFunctionLibrary.NetDelay(WorldContext, Delay)
   DebugPrint("gmy@GMFunctionLibrary GMFunctionLibrary.NetDelay", WorldContext, Delay)
   local Cmd = string.format("Net pktLag=%s", Delay)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, Cmd, nil)
 end
-
 function GMFunctionLibrary.NetPktLagVariance(WorldContext, Var)
   DebugPrint("gmy@GMFunctionLibrary GMFunctionLibrary.NetPktLagVariance", WorldContext, Var)
   local Cmd = string.format("Net PktLagVariance=%s", Var)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, Cmd, nil)
 end
-
 function GMFunctionLibrary.NetPktLoss(WorldContext, Var)
   DebugPrint("gmy@GMFunctionLibrary GMFunctionLibrary.PktLoss", WorldContext, Var)
   local Cmd = string.format("Net PktLoss=%s", Var)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, Cmd, nil)
 end
-
 function GMFunctionLibrary.NetPktOrder(WorldContext, Var)
   DebugPrint("gmy@GMFunctionLibrary GMFunctionLibrary.PktOrder", WorldContext, Var)
   local Cmd = string.format("Net PktOrder=1")
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, Cmd, nil)
 end
-
 function GMFunctionLibrary.NetPktDup(WorldContext, Var)
   DebugPrint("gmy@GMFunctionLibrary GMFunctionLibrary.PktDup", WorldContext, Var)
   local Cmd = string.format("Net PktDup=%s", Var)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, Cmd, nil)
 end
-
 function GMFunctionLibrary.SetUseMapPhoneInPC(WorldContext, bEnabled)
   if bEnabled then
     UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "stats.UseMapPhoneInPC true", nil)
@@ -974,12 +885,10 @@ function GMFunctionLibrary.SetUseMapPhoneInPC(WorldContext, bEnabled)
     UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "stats.UseMapPhoneInPC false", nil)
   end
 end
-
 function GMFunctionLibrary.PrintPickupTriggerTick(WorldContext, bEnabled)
   local Cmd = string.format("EM.Pickup.PrintTriggerTick %s", bEnabled and "1" or "0")
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, Cmd, nil)
 end
-
 function GMFunctionLibrary.FindDungeonForArtMap(WorldContext, MapName)
   UKismetSystemLibrary.ExecuteConsoleCommand(WorldContext, "GM UnLockAllDungeonLevels", nil)
   local MinPath
@@ -1017,7 +926,6 @@ function GMFunctionLibrary.FindDungeonForArtMap(WorldContext, MapName)
     end
   end
 end
-
 if UE and UE.URuntimeCommonFunctionLibrary.IsDistribution() then
   for k, v in pairs(GMFunctionLibrary) do
     if type(v) == "function" then

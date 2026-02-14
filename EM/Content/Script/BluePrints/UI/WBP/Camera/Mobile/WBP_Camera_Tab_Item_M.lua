@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn.OnHovered:Clear()
   self.Btn.OnUnhovered:Clear()
@@ -12,22 +11,18 @@ function M:Construct()
   self:PlayAnimation(self.Normal_UnSelect)
   self.IsOn = false
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:SetText(Text)
   self.Text_Off:SetText(Text)
   self.Text_On:SetText(Text)
 end
-
 function M:Btn_Click()
   if self.SoundFunc then
     self.SoundFunc(self.SoundFuncReceiver)
@@ -36,7 +31,6 @@ function M:Btn_Click()
     self:SetSwitchOn(true)
   end
 end
-
 function M:SetSwitchOn(IsOn)
   self.IsOn = IsOn
   self:FlushAnimations()
@@ -49,7 +43,6 @@ function M:SetSwitchOn(IsOn)
     self:PlayAnimation(self.Normal_UnSelect)
   end
 end
-
 function M:Btn_Press()
   if self.IsOn then
     return
@@ -57,7 +50,6 @@ function M:Btn_Press()
   self:FlushAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:Btn_Hover()
   if self.IsOn then
     return
@@ -65,7 +57,6 @@ function M:Btn_Hover()
   self:FlushAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:Btn_UnHover()
   if self.IsOn then
     return
@@ -73,5 +64,4 @@ function M:Btn_UnHover()
   self:FlushAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 return M

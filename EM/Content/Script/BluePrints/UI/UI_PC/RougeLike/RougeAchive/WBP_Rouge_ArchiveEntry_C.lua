@@ -1,6 +1,5 @@
 local ReddotManager = require("BluePrints.UI.Reddot.ReddotManager")
 local WBP_Rouge_ArchiveEntry_C = Class("BluePrints.UI.BP_UIState_C", "BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_ArchiveEntry_C:InitView(ArchiveType, ArchiveData)
   self.ArchiveType = ArchiveType
   self.ArchiveData = ArchiveData
@@ -15,7 +14,6 @@ function WBP_Rouge_ArchiveEntry_C:InitView(ArchiveType, ArchiveData)
   end)
   self:OnReddotChange(self.ArchiveData.HasNew)
 end
-
 function WBP_Rouge_ArchiveEntry_C:OnReddotChange(IsShow)
   if IsShow then
     self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -23,5 +21,4 @@ function WBP_Rouge_ArchiveEntry_C:OnReddotChange(IsShow)
     self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Rouge_ArchiveEntry_C

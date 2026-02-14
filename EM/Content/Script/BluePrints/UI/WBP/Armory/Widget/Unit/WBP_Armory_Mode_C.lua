@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
 local Unhandled = UE4.UWidgetBlueprintLibrary.Unhandled()
-
 function M:Construct()
   self.Button_Area.OnHovered:Clear()
   self.Button_Area.OnUnhovered:Clear()
@@ -15,19 +14,16 @@ function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnBtnPressed)
   self.Button_Area.OnReleased:Add(self, self.OnBtnReleased)
 end
-
 function M:BindEventOnMouseButtonDown(Obj, Event, Param)
   self.Obj = Obj
   self.Event = Event
   self.Param = Param
   self.Selected = false
 end
-
 function M:On(IsOn)
   self.Overridden.On(self, IsOn)
   self.Selected = IsOn
 end
-
 function M:OnBtnPressed()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   if self.Selected then
@@ -42,12 +38,10 @@ function M:OnBtnPressed()
   end, false, 0, nil, true)
   self.PressTimerKey = TimerKey
 end
-
 function M:DeSelect()
   self.Obj.IsSelected = false
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnBtnReleased()
   self:StopAllAnimations()
   if self.PressTimerKey then
@@ -61,7 +55,6 @@ function M:OnBtnReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnBtnHovered(MyGeometry, MouseEvent)
   if self.Selected then
     return
@@ -69,7 +62,6 @@ function M:OnBtnHovered(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered(MouseEvent)
   if self.Selected then
     return
@@ -77,5 +69,4 @@ function M:OnBtnUnhovered(MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 return M

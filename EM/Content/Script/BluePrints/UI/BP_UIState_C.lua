@@ -4,53 +4,27 @@ local BP_UIState_C = Class({
   "BluePrints.Common.DelayFrameComponent",
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 })
-
 function BP_UIState_C:Initialize(Initializer)
   rawset(self, "IsInit", false)
-  rawset(self, "WidgetName", nil)
   rawset(self, "IsUIPopUp", nil)
-  rawset(self, "UWidget", nil)
   rawset(self, "HideTags", {})
   rawset(self, "UIStateTag", nil)
   rawset(self, "bIsPauseWorldRendering", nil)
   rawset(self, "ListenEvent", {})
   rawset(self, "IsAllowEscape", false)
   rawset(self, "IsBeginToClose", false)
-  rawset(self, "IsMarkToUnload", false)
+  rawset(self, "IsMarkToRemove", false)
   rawset(self, "IsGlobalUI", false)
   rawset(self, "IsDestroied", false)
   rawset(self, "IsSetEntitysVisibilityWithAnim", false)
   rawset(self, "IsAddInDeque", false)
 end
-
-function BP_UIState_C:EMPreConstruct()
-  self.UWidget = self.GetUWidgetSoul and self:GetUWidgetSoul() or self.WidgetTree.RootWidget
-  self.WidgetName = self:GetName()
-  if not self.GameInputModeSubsystem then
-    self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
-  end
-end
-
 function BP_UIState_C:Construct()
   self.Overridden.Construct(self)
 end
-
-function BP_UIState_C:CreateWidgetNew(UIName, ...)
-  return UIManager(self):_CreateWidgetNew(UIName)
-end
-
-function BP_UIState_C:CreateWidgetAsync(UIName, CoroutineOrCBFunc, ...)
-  return UIManager(self):CreateWidgetAsync(UIName, CoroutineOrCBFunc, ...)
-end
-
-function BP_UIState_C:LoadUINew(UIName, ...)
-  return UIManager(self):LoadUINew(UIName, ...)
-end
-
 function BP_UIState_C:SetBaseName(Name)
   self.ConfigName = Name
 end
-
 function BP_UIState_C:GetUIConfigName()
   local NameText = self.ConfigName or self.WidgetName
   if NameText then
@@ -58,15 +32,13 @@ function BP_UIState_C:GetUIConfigName()
   end
   return self:GetName()
 end
-
 function BP_UIState_C:SetIsPauseWorldRendering(bIsPauseRendering)
   self.bIsPauseWorldRendering = bIsPauseRendering
 end
-
 function BP_UIState_C:SetUIStateTag(StateTag)
   self.UIStateTag = StateTag
 end
-
+local NEW_BlockAllUIInput = true
 function BP_UIState_C:UpdateArgs(Args)
   self.ExtraArgs = self.ExtraArgs or {}
   for k, v in pairs(Args) do
@@ -74,9 +46,8 @@ function BP_UIState_C:UpdateArgs(Args)
   end
   self.IsAllowEscape = self.ExtraArgs.IsAllowEscape
 end
-
 function BP_UIState_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
-  DebugPrint("Hy@ UIState\229\158\139\231\149\140\233\157\162\230\137\147\229\188\128 InitUIInfo\239\188\140\229\144\141\231\167\176\239\188\154", self:GetUIConfigName())
+  DebugPrint("Hy@ UIState型界面打开 InitUIInfo，名称：", self:GetUIConfigName())
   self:SetBaseName(Name)
   self:BindInOutAnimationWithConfigParam()
   self.IsInUIMode = IsInUIMode
@@ -88,12 +59,10 @@ function BP_UIState_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
   }
   if self.Auto_In ~= nil then
     local WrapFunc
-    
     function WrapFunc()
       self:UIOnLoaded(table.unpack(Params))
       self:UnbindFromAnimationFinished(self.Auto_In, {self, WrapFunc})
     end
-    
     self:BindToAnimationFinished(self.Auto_In, {self, WrapFunc})
     self:PlayAnimationForward(self.Auto_In)
   else
@@ -106,8 +75,12 @@ function BP_UIState_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
       end
     end
   end
+  self:AddDispatcher(EventID.OnNetDisconnect, self, self._ClearBlockUIInputTags)
+  self:AddDispatcher(EventID.OnConnectSuccess, self, self._ClearBlockUIInputTags)
 end
-
+function BP_UIState_C:_ClearBlockUIInputTags()
+  self:ClearBlockUIInputTags()
+end
 function BP_UIState_C:BindInOutAnimationWithConfigParam()
   local SystemUIConfig = DataMgr.SystemUI[self:GetUIConfigName()]
   if nil ~= SystemUIConfig and nil ~= SystemUIConfig.IsHideBattleUnit and SystemUIConfig.IsHideBattleUnit ~= UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAll and SystemUIConfig.IsHideBattleUnit ~= UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAllExceptSelf then
@@ -135,7 +108,6 @@ function BP_UIState_C:BindInOutAnimationWithConfigParam()
     end
   end
 end
-
 function BP_UIState_C:SetComponent(CompModulePath)
   self.assembledComponents = self.assembledComponents or {}
   if not self.assembledComponents[CompModulePath] then
@@ -144,7 +116,6 @@ function BP_UIState_C:SetComponent(CompModulePath)
     self.assembledComponents[CompModulePath] = true
   end
 end
-
 function BP_UIState_C:UIOnLoaded(...)
   self.IsInit = true
   self:AddInputMethodChangedListen()
@@ -153,11 +124,9 @@ function BP_UIState_C:UIOnLoaded(...)
     self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function BP_UIState_C:OnLoaded(...)
 end
-
-function BP_UIState_C:SetUIVisibilityTag(VisibiltyTag, Invisible)
+function BP_UIState_C:SetUIVisibilityTag(VisibiltyTag, Invisible, EDesireVisibilty)
   local IsVisibilityChange = false
   if not IsValid(self) then
     return IsVisibilityChange
@@ -172,27 +141,76 @@ function BP_UIState_C:SetUIVisibilityTag(VisibiltyTag, Invisible)
   end
   local IsHide = not IsEmptyTable(self.HideTags)
   if IsHide then
-    if self:GetVisibility() ~= ESlateVisibility.Collapsed then
+    EDesireVisibilty = EDesireVisibilty or UE4.ESlateVisibility.Collapsed
+    if self:GetVisibility() ~= EDesireVisibilty then
       if self.bIsActive then
         self:DeactivateWidget()
+      elseif self:CheckIsNeedTransitionFade(VisibiltyTag, true) then
+        self:DealWithUIWidgetWhenStackChange(true, EDesireVisibilty)
       else
-        self:SetVisibility(UE4.ESlateVisibility.Collapsed)
+        self:SetVisibility(EDesireVisibilty)
       end
       SystemGuideManager:HideUIEvent(self.WidgetName)
       IsVisibilityChange = true
     end
-  elseif self:GetVisibility() ~= UE4.ESlateVisibility.SelfHitTestInvisible then
-    if self.bIsActive then
-      self:ActivateWidget()
-    else
-      self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  else
+    EDesireVisibilty = EDesireVisibilty or UE4.ESlateVisibility.SelfHitTestInvisible
+    if self:GetVisibility() ~= EDesireVisibilty then
+      if self.bIsActive then
+        self:ActivateWidget()
+      elseif self:CheckIsNeedTransitionFade(VisibiltyTag, false) then
+        self:DealWithUIWidgetWhenStackChange(false, EDesireVisibilty)
+      else
+        self:SetVisibility(EDesireVisibilty)
+      end
+      SystemGuideManager:ShowUIEvent(self.WidgetName)
+      IsVisibilityChange = true
     end
-    SystemGuideManager:ShowUIEvent(self.WidgetName)
-    IsVisibilityChange = true
   end
   return IsVisibilityChange
 end
-
+function BP_UIState_C:CheckIsNeedTransitionFade(VisibiltyTag, bIsHide)
+  if not UIConst.IsEnablePageJumpAnimEffect then
+    return false
+  end
+  if VisibiltyTag ~= UIConst.CommonHideTagName.UIStackChange then
+    return false
+  end
+  if self:GetUIConfigName() ~= nil and nil == UIConst.AnimWithJumpConfig[self:GetUIConfigName()] then
+    return false
+  end
+  if bIsHide and self:IsAnimationPlaying(self.Out) then
+    return false
+  end
+  if not bIsHide and self:IsAnimationPlaying(self.In) then
+    return false
+  end
+  if self.IsMarkToRemove then
+    return false
+  end
+  return true
+end
+function BP_UIState_C:IsOnlyHideWithDesireTag(DesireTag)
+  if self.HideTags == nil then
+    return false
+  end
+  local FirstKey, FirstValue = next(self.HideTags)
+  if nil == FirstKey then
+    return false
+  end
+  if FirstKey ~= DesireTag then
+    return false
+  end
+  local SecondKey, SecondValue = next(self.HideTags, FirstKey)
+  return nil == SecondKey
+end
+function BP_UIState_C:IsHideWithDesireTag(DesireTag)
+  if self.HideTags == nil then
+    return false
+  end
+  local IsHide = self.HideTags[DesireTag] ~= nil
+  return IsHide
+end
 function BP_UIState_C:IsHide()
   if self.HideTags == nil then
     return false
@@ -200,17 +218,53 @@ function BP_UIState_C:IsHide()
   local IsHide = not IsEmptyTable(self.HideTags)
   return IsHide
 end
-
 function BP_UIState_C:ClearAllHideTags()
   self.HideTags = {}
 end
-
-function BP_UIState_C:ListenForInputAction(ActionName, EventType, bConsume, Callback)
-  if EventType < 0 or EventType > 5 then
-    GWorld.logger.error(self.WidgetName .. "\228\184\138\231\187\145\229\174\154\231\154\132" .. ActionName .. "\231\155\145\229\144\172\228\186\139\228\187\182 \232\190\147\229\133\165\231\177\187\229\158\139\230\156\137\233\151\174\233\162\152\239\188\140\232\175\183\230\163\128\230\159\165\230\139\188\229\134\153\239\188\129")
+function BP_UIState_C:DealWithUIWidgetWhenStackChange(IsHide, DesireVisibilty)
+  if IsHide then
+    local SelfWidgetRenderOpacityBeforeJump = self:GetRenderOpacity() or 1.0
+    local JumpConfigData = UIConst.AnimWithJumpConfig[self:GetUIConfigName()]
+    if JumpConfigData then
+      local TweenEndTime = JumpConfigData.InAnimWithJumpTime or UIManager(self):GetTopUIWidgetInAnimEndTime()
+      local TweenFinalOpacity = JumpConfigData.IsNeedFadeOut and JumpConfigData.EndFadeOutValue or SelfWidgetRenderOpacityBeforeJump
+      self:DoTweenOutWhenSystemStackChange(TweenEndTime, SelfWidgetRenderOpacityBeforeJump, TweenFinalOpacity, EaseType.Linear)
+    else
+      local TweenEndTime = math.min(UIConst.AnimWithJumpConfig.Normal.InAnimWithJumpTime, UIManager(self):GetTopUIWidgetInAnimEndTime())
+      local TweenFinalOpacity = UIConst.AnimWithJumpConfig.Normal.IsNeedFadeOut and UIConst.AnimWithJumpConfig.Normal.EndFadeOutValue or SelfWidgetRenderOpacityBeforeJump
+      self:DoTweenOutWhenSystemStackChange(TweenEndTime, SelfWidgetRenderOpacityBeforeJump, TweenFinalOpacity, EaseType.Linear)
+    end
+    self.SelfWidgetParamForStackChange = {RenderOpacityBeforeJump = SelfWidgetRenderOpacityBeforeJump, DesireVisibilty = DesireVisibilty}
+  else
+    self:CancelTweenOutSystemStackChange()
+    self:SetVisibility(DesireVisibilty)
+  end
+end
+function BP_UIState_C:BeginAnimOutToExitWithInStack(bIsForce)
+  if not self.IsAddInDeque and not bIsForce then
     return
   end
-  
+  local PreviousUI = UIManager(self):GetUnderState()
+  if PreviousUI then
+    local JumpConfigData = UIConst.AnimWithJumpConfig[PreviousUI:GetUIConfigName()]
+    if JumpConfigData and PreviousUI.In then
+      local bIsNeedMatchAnimTime = JumpConfigData.bIsNeedMatchAnimTime == nil and UIConst.AnimWithJumpConfig.Normal.IsNeedMatchAnimTime or JumpConfigData.bIsNeedMatchAnimTime
+      if bIsNeedMatchAnimTime then
+        local ExitAnimNeedTime = JumpConfigData.OutAnimWithJumpTime or UIManager(self):GetTopUIWidgetOutAnimEndTime()
+        local PreviousUIInAnimTime = PreviousUI.In:GetEndTime()
+        PreviousUI:PlayAnimationForward(PreviousUI.In, PreviousUIInAnimTime / ExitAnimNeedTime)
+      else
+        PreviousUI:PlayAnimationForward(PreviousUI.In)
+      end
+      PreviousUI:SetUIVisibilityTag(UIConst.CommonHideTagName.UIStackChange, false, UE4.ESlateVisibility.HitTestInvisible)
+    end
+  end
+end
+function BP_UIState_C:ListenForInputAction(ActionName, EventType, bConsume, Callback)
+  if EventType < 0 or EventType > 5 then
+    GWorld.logger.error(self.WidgetName .. "上绑定的" .. ActionName .. "监听事件 输入类型有问题，请检查拼写！")
+    return
+  end
   local function ActionCallback()
     local IsBanned = UIManager(self):CheckIsActionBanned(ActionName)
     if not IsBanned then
@@ -219,25 +273,21 @@ function BP_UIState_C:ListenForInputAction(ActionName, EventType, bConsume, Call
       DebugPrint("Tianyi@ Action: " .. ActionName .. " IsBanned")
     end
   end
-  
   self.Overridden.ListenForInputAction(self, ActionName, EventType, bConsume, {
     Callback[1],
     ActionCallback
   })
 end
-
 function BP_UIState_C:StopListeningForInputAction(ActionName, EventType)
   if EventType < 0 or EventType > 5 then
-    GWorld.logger.error(ActionName .. "\231\154\132stop\231\155\145\229\144\172\228\186\139\228\187\182 \232\190\147\229\133\165\231\177\187\229\158\139\230\156\137\233\151\174\233\162\152\239\188\140\232\175\183\230\163\128\230\159\165\230\139\188\229\134\153\239\188\129")
+    GWorld.logger.error(ActionName .. "的stop监听事件 输入类型有问题，请检查拼写！")
     return
   end
   self.Overridden.StopListeningForInputAction(self, ActionName, EventType)
 end
-
 function BP_UIState_C:UIActionCallback(ActionName, KeyEvent)
   DebugPrint("Tianyi@ UIActionCallback ActionName = " .. ActionName .. " KeyEvent = " .. KeyEvent)
 end
-
 function BP_UIState_C:ReceiveEnterState(StackAction)
   self.Overridden.ReceiveEnterState(self, StackAction)
   local UIManager = UIManager(self)
@@ -246,29 +296,33 @@ function BP_UIState_C:ReceiveEnterState(StackAction)
       self:CameraToViewTarget(self.CurrentCameraViewTarget)
     elseif 0 == StackAction then
       rawset(self, "OriginalViewTarget", self:GetOwningPlayer():GetViewTarget())
+      if 1 == UIManager:StateCount() then
+        rawset(UIManager, "ViewTargetBeforeOpenSystem", self.OriginalViewTarget)
+      end
     end
   end
 end
-
 function BP_UIState_C:ReceiveExitState(StackAction)
   local UIManager = UIManager(self)
   if UIManager:GetWidgetObjInTopStack() == self then
     if 1 == StackAction and 1 == UIManager:StateCount() then
-      self:DoRecoverCamera()
+      if IsValid(rawget(UIManager, "ViewTargetBeforeOpenSystem")) then
+        self:CameraToViewTarget(UIManager.ViewTargetBeforeOpenSystem)
+      else
+        self:CameraToViewTarget(UGameplayStatics.GetPlayerCharacter(self, 0))
+      end
     else
       self:SetCurrentCameraViewTarget()
     end
   end
   self.Overridden.ReceiveExitState(self, StackAction)
 end
-
 function BP_UIState_C:CameraToViewTarget(ViewTarget)
   local Controller = self:GetOwningPlayer()
-  if Controller and Controller:GetViewTarget() ~= ViewTarget then
+  if Controller and IsValid(ViewTarget) and Controller:GetViewTarget() ~= ViewTarget then
     Controller:SetViewTargetWithBlend(ViewTarget, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
   end
 end
-
 function BP_UIState_C:DoRecoverCamera()
   if IsValid(self.OriginalViewTarget) then
     self:CameraToViewTarget(self.OriginalViewTarget)
@@ -276,12 +330,11 @@ function BP_UIState_C:DoRecoverCamera()
     self:CameraToViewTarget(UGameplayStatics.GetPlayerCharacter(self, 0))
   end
 end
-
 function BP_UIState_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if (InKeyName == Const.GamepadSpecialLeft or InKeyName == Const.GamepadSpecialRight) and TeamController and TeamController:IsTeamPopupBarOpenInGamepad() then
-    DebugPrint(LXYTag, "OnPreviewKeyDown:::\231\187\132\233\152\159\231\155\184\229\133\179\231\154\132\229\188\185\230\157\161\230\173\163\229\156\168\230\137\147\229\188\128...")
+    DebugPrint(LXYTag, "OnPreviewKeyDown:::组队相关的弹条正在打开...")
     return UIUtils.UnHandled
   end
   if "Enter" == InKeyName or "Gamepad_Special_Left" == InKeyName then
@@ -292,12 +345,11 @@ function BP_UIState_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function BP_UIState_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if (InKeyName == Const.GamepadSpecialLeft or InKeyName == Const.GamepadSpecialRight) and TeamController and TeamController:IsTeamPopupBarOpenInGamepad() then
-    DebugPrint(LXYTag, "OnKeyUp:::\231\187\132\233\152\159\231\155\184\229\133\179\231\154\132\229\188\185\230\157\161\230\173\163\229\156\168\230\137\147\229\188\128...")
+    DebugPrint(LXYTag, "OnKeyUp:::组队相关的弹条正在打开...")
     return UIUtils.Unhandled
   end
   local IsEventHandled = false
@@ -314,11 +366,6 @@ function BP_UIState_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
-function BP_UIState_C:GetUWidget()
-  return self.UWidget
-end
-
 function BP_UIState_C:SetCurrentCameraViewTarget(ViewTarget)
   if nil == ViewTarget then
     rawset(self, "CurrentCameraViewTarget", self:GetOwningPlayer():GetViewTarget())
@@ -326,19 +373,15 @@ function BP_UIState_C:SetCurrentCameraViewTarget(ViewTarget)
     rawset(self, "CurrentCameraViewTarget", ViewTarget)
   end
 end
-
 function BP_UIState_C:GetCurrentCameraViewTarget()
   return rawget(self, "CurrentCameraViewTarget")
 end
-
 function BP_UIState_C:IsUIVisible()
   return self:IsVisible()
 end
-
 function BP_UIState_C:RawSeek(Nodekey)
   return self:SeekWidgetByName(Nodekey)
 end
-
 function BP_UIState_C:Seek(Nodekey, WrapType)
   local WidgetObj
   if nil ~= WrapType then
@@ -349,32 +392,24 @@ function BP_UIState_C:Seek(Nodekey, WrapType)
   end
   return WidgetObj
 end
-
-function BP_UIState_C:GetWorldPosition(Widget)
-  return self.Overridden.GetWorldPosition(self, Widget)
-end
-
 function BP_UIState_C:SetWorldPosition(Widget, Pos)
   if nil == Widget then
     return
   end
   Widget:SetRenderTranslation(Pos)
 end
-
 function BP_UIState_C:PauseAnimByName(AnimName)
   local Animation = self:GetAnimationByName(AnimName)
   if nil ~= Animation then
     self:PauseAnimation(Animation)
   end
 end
-
 function BP_UIState_C:StopAnimByName(AnimName)
   local Animation = self:GetAnimationByName(AnimName)
   if nil ~= Animation then
     self:StopAnimation(Animation)
   end
 end
-
 function BP_UIState_C:IsSpecialAnimPlaying(AnimName)
   local Animation = self:GetAnimationByName(AnimName)
   if nil ~= Animation then
@@ -382,7 +417,6 @@ function BP_UIState_C:IsSpecialAnimPlaying(AnimName)
   end
   return false
 end
-
 function BP_UIState_C:SetInputUIOnly(IsUIOnly)
   local PreMode, CurMode, CurDeviceType = "PreMode", "CurMode", CommonUtils.GetDeviceTypeByPlatformName(self)
   if not self.GameInputModeSubsystem then
@@ -405,14 +439,13 @@ function BP_UIState_C:SetInputUIOnly(IsUIOnly)
   end
   CurMode = self.GameInputModeSubsystem:GetCurrentInputMode()
   if PreMode ~= CurMode then
-    DebugPrint("InputModeChange => PreMode:" .. PreMode .. "," .. "CurMode:" .. CurMode .. " The Reason UIName is " .. UINameText)
+    DebugPrint("UIState Hy@= InputModeChange => PreMode:" .. PreMode .. "," .. "CurMode:" .. CurMode .. " The Reason UIName is " .. UINameText)
     EventManager:FireEvent(EventID.SetInputMode, IsUIOnly)
   end
 end
-
 function BP_UIState_C:Hide(HideTag)
-  if self.IsMarkToUnload then
-    DebugPrint("Hy@==UIState\229\158\139\231\149\140\233\157\162\231\167\187\233\153\164\229\189\147\229\184\167\233\156\128\232\166\129Hide\239\188\140\231\155\180\230\142\165\229\191\189\231\149\165", self:GetUIConfigName())
+  if self.IsMarkToRemove then
+    DebugPrint("Hy@==UIState型界面移除当帧需要Hide，直接忽略", self:GetUIConfigName())
     return
   end
   if self.IgnoreHideTags and CommonUtils.HasValue(self.IgnoreHideTags, HideTag) then
@@ -421,6 +454,7 @@ function BP_UIState_C:Hide(HideTag)
   HideTag = HideTag or UIConst.CommonHideTagName.DefaultTag
   local IsVisibilityChange = self:SetUIVisibilityTag(HideTag, true)
   if IsVisibilityChange then
+    DebugPrint("HY@ UI Which Named " .. self:GetUIConfigName() .. " Is desired to Hide, The Tag is " .. HideTag)
     AudioManager(self):PauseObjectAllEvent(self, true)
     if self.IsInUIMode then
       self:SetInputUIOnly(false)
@@ -438,17 +472,20 @@ function BP_UIState_C:Hide(HideTag)
       UIManager(self):SetBannedActionCallback(self.KeyboardSetName, false, self:GetName())
       self.IsBanningAction = nil
     end
+    self:OnHide(HideTag)
   end
 end
-
+function BP_UIState_C:OnHide(HideTag)
+end
 function BP_UIState_C:Show(ShowTag)
-  if self.IsMarkToUnload then
-    DebugPrint("Hy@==UIState\229\158\139\231\149\140\233\157\162\231\167\187\233\153\164\229\189\147\229\184\167\233\156\128\232\166\129Show\239\188\140\231\155\180\230\142\165\229\191\189\231\149\165", self:GetUIConfigName())
+  if self.IsMarkToRemove then
+    DebugPrint("Hy@==UIState型界面移除当帧需要Show，直接忽略", self:GetUIConfigName())
     return
   end
   ShowTag = ShowTag or UIConst.CommonHideTagName.DefaultTag
   local IsVisibilityChange = self:SetUIVisibilityTag(ShowTag, false)
   if IsVisibilityChange then
+    DebugPrint("HY@ UI Which Named " .. self:GetUIConfigName() .. " is desired to Show, The Tag is " .. ShowTag)
     AudioManager(self):PauseObjectAllEvent(self, false)
     if self.IsInUIMode then
       self:SetInputUIOnly(true)
@@ -466,36 +503,53 @@ function BP_UIState_C:Show(ShowTag)
       UIManager(self):SetBannedActionCallback(self.KeyboardSetName, true, self:GetName())
       self.IsBanningAction = true
     end
+    if self.GlobalGameUITag then
+      local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+      GameInstance:SetGlobalGameUITag(self.GlobalGameUITag)
+    end
+    self:OnShow(ShowTag)
   end
 end
-
+function BP_UIState_C:OnShow(ShowTag)
+end
 function BP_UIState_C:OnInAnimationStarted()
   local SystemUIConfig = DataMgr.SystemUI[self:GetUIConfigName()]
   self:DealWithBattleUnitVisibility(SystemUIConfig.IsHideBattleUnit, true, "AnimStart")
 end
-
 function BP_UIState_C:OnInAnimationFinished()
   local SystemUIConfig = DataMgr.SystemUI[self:GetUIConfigName()]
   self:DealWithBattleUnitVisibility(SystemUIConfig.IsHideBattleUnit, true, "AnimFinished")
 end
-
 function BP_UIState_C:OnOutAnimationStarted()
-  local IsSecondaryUI = UIManager(self):StateCount() > 1
-  if not IsSecondaryUI then
-    local MenuWorld = UIManager(self):GetUIObj(UIConst.MenuWorld)
-    if not MenuWorld then
-      UIUtils.CheckAndPlayBattleMainInAnim(self:GetUIConfigName())
-    end
-  end
+  UIUtils.CheckAndPlayBattleMainInAnim(self:GetUIConfigName())
   local SystemUIConfig = DataMgr.SystemUI[self:GetUIConfigName()]
   self:DealWithBattleUnitVisibility(SystemUIConfig.IsHideBattleUnit, false, "AnimStart")
 end
-
 function BP_UIState_C:OnOutAnimationFinished()
   local SystemUIConfig = DataMgr.SystemUI[self:GetUIConfigName()]
   self:DealWithBattleUnitVisibility(SystemUIConfig.IsHideBattleUnit, false, "AnimFinished")
 end
-
+function BP_UIState_C:OnUpdateWhenSystemJump(CurValue)
+  DebugPrint("Hy@ UIState型界面系统跳转过程中回调 OnUpdateWhenSystemJump，名称：", self:GetUIConfigName(), " CurValue:", CurValue)
+  self:SetRenderOpacity(CurValue)
+end
+function BP_UIState_C:OnCompleteAfterSystemJump(EndValue)
+  DebugPrint("Hy@ UIState型界面系统跳转完成后回调 OnCompleteAfterSystemJump，名称：", self:GetUIConfigName(), " EndValue:", EndValue)
+  self:SetRenderOpacity(EndValue)
+  if self.SelfWidgetParamForStackChange then
+    self:SetVisibility(self.SelfWidgetParamForStackChange.DesireVisibilty or UE4.ESlateVisibility.Collapsed)
+  else
+    self:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+end
+function BP_UIState_C:OnCancelWhenSystemJump()
+  DebugPrint("Hy@ UIState型界面系统跳转取消后回调 OnCancelWhenSystemJump，名称：", self:GetUIConfigName())
+  if self.SelfWidgetParamForStackChange then
+    self:SetRenderOpacity(self.SelfWidgetParamForStackChange.RenderOpacityBeforeJump or 1.0)
+  else
+    self:SetRenderOpacity(1.0)
+  end
+end
 function BP_UIState_C:DealWithBattleUnitVisibility(HideBattleUnitType, bHideOrShow, AnimType)
   self.IsSetEntitysVisibilityWithAnim = bHideOrShow
   if HideBattleUnitType == UIConst.EnumHideBattleUnitStyle.DelayHideAll or HideBattleUnitType == UIConst.EnumHideBattleUnitStyle.DelayHideAllExceptSelf then
@@ -506,15 +560,27 @@ function BP_UIState_C:DealWithBattleUnitVisibility(HideBattleUnitType, bHideOrSh
     UIManager(self):SetEntitiesVisibility(self:GetUIConfigName(), HideBattleUnitType - 10 == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAll, HideBattleUnitType - 10 == UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAllExceptSelf, bHideOrShow)
   end
 end
-
+function BP_UIState_C:MarkToRemove(bIsNeedBlockInput)
+  self.IsMarkToRemove = true
+  if bIsNeedBlockInput then
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
+  end
+end
+function BP_UIState_C:IsBeingRemoveState()
+  if self.IsMarkToRemove or self.IsBeginToClose then
+    return true
+  end
+  return false
+end
 function BP_UIState_C:Close()
   if not self or not IsValid(self) then
     return
   end
-  DebugPrint("Hy@ UIState\229\158\139\231\149\140\233\157\162\229\133\179\233\151\173 Close\239\188\140\229\144\141\231\167\176\239\188\154", self:GetUIConfigName())
   if not self.IsInit then
+    DebugPrint(ErrorTag, "::Error::  BP_UIState_C=Close 有系统界面移除异常，可能没有关闭成功，需要检查一下，系统名称：", self:GetUIConfigName())
     return
   end
+  DebugPrint("Hy@ UIState型界面关闭 Close，名称：", self:GetUIConfigName())
   self.IsBeginToClose = true
   if self.Auto_Out then
     self:BindToAnimationFinished(self.Auto_Out, {
@@ -526,9 +592,8 @@ function BP_UIState_C:Close()
     self:RealClose()
   end
 end
-
 function BP_UIState_C:RealClose()
-  self.IsMarkToUnload = true
+  self.IsMarkToRemove = true
   if self.GamePausedHandle then
     self:RemoveTimer(self.GamePausedHandle)
     self.GamePausedHandle = nil
@@ -544,25 +609,32 @@ function BP_UIState_C:RealClose()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self) or GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
   if nil ~= UIManager then
+    self.IsNeedSearchInStack = UIManager:GetCurrentState() ~= self
     UIManager:UnLoadUI(self.ConfigName, self.WidgetName)
   end
+  self:OnEndClose()
 end
-
+function BP_UIState_C:OnEndClose()
+end
 function BP_UIState_C:DestroyObject()
   self.Overridden.DestroyObject(self)
 end
-
-function BP_UIState_C:Destruct()
-  AudioManager(self):PauseObjectAllEvent(self, false)
-  AudioManager(self):StopObjectAllSound(self)
-  self.IsInit = false
+function BP_UIState_C:EMDestruct()
+  rawset(self, "IsInit", false)
+  if type(self.EMDestruct_CPP) == "function" then
+    self:EMDestruct_CPP()
+  else
+    DebugPrint(ErrorTag, "疑似小部件析构调用了UIState的EMDestruct, 蓝图类型是EMUserWidget, 脚本继承自BP_EMUserWidget_C可以更轻量化, 请检查一下是否真的需要这样写!!!，名称: ", self:GetUIConfigName())
+    self:ClearScriptRegister()
+    return
+  end
   if rawget(self, "bIsFrequentlyUI") then
     self.IsDestroied = true
   end
   if self.IsInUIMode then
     self:SetInputUIOnly(false)
   end
-  if self.bIsPauseWorldRendering then
+  if rawget(self, "bIsPauseWorldRendering") then
     UIManager(self):SetPauseWorldRenderingSwitch(self.ConfigName, false)
   end
   if rawget(self, "IsStopGame") then
@@ -572,42 +644,19 @@ function BP_UIState_C:Destruct()
   if rawget(self, "IsSetEntitysVisibilityWithAnim") then
     UIManager(self):SetEntitiesVisibility(self:GetUIConfigName(), true, true, false)
   end
-  if rawget(self, "GlobalGameUITag") then
-    local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-    local GlobalTag = GameInstance:GetGlobalGameUITag()
-    if GlobalTag == self.GlobalGameUITag then
-      local allUI = UIManager(self).UIInstances:ToTable()
-      local TopUI, MaxZOrder
-      for _, widget in pairs(allUI) do
-        if widget:IsInViewport() and widget.GlobalGameUITag and self ~= widget and (nil == MaxZOrder or MaxZOrder < widget:GetZOrder()) then
-          MaxZOrder = widget:GetZOrder()
-          TopUI = widget
-        end
-      end
-      if TopUI then
-        GameInstance:SetGlobalGameUITag(TopUI.GlobalGameUITag)
-      else
-        GameInstance:SetGlobalGameUITag("")
-      end
-    end
-  end
-  self:RemoveAllDispatcher()
-  self:CleanTimer()
-  self.Overridden.Destruct(self)
+  self:ClearScriptRegister()
 end
-
+function BP_UIState_C:Destruct()
+end
 function BP_UIState_C:CheckIsFrequentlyUI()
   return self.bIsFrequentlyUI
 end
-
 function BP_UIState_C:SetIsFrequentlyUI(bIsFrequentlyUI)
   self.bIsFrequentlyUI = bIsFrequentlyUI
 end
-
 function BP_UIState_C:SetGamePausedDelay(DelayTime)
   self.GamePausedDelayTime = DelayTime
 end
-
 function BP_UIState_C:UISetGamePaused(UIName, IsPause)
   if nil == UIName then
     return
@@ -621,25 +670,49 @@ function BP_UIState_C:UISetGamePaused(UIName, IsPause)
     EventManager:FireEvent(EventID.OnUIPauseGame)
   end
 end
-
 function BP_UIState_C:BlockAllUIInput(bBlock, Reason)
+  if NEW_BlockAllUIInput then
+    if self.WidgetName == "LoadingReconnect" then
+      return
+    end
+    local LoadingReconnectUi = UIManager():GetUIObj("LoadingReconnect")
+    if not bBlock then
+      if LoadingReconnectUi and LoadingReconnectUi.bDisplayOnly then
+        LoadingReconnectUi:Close()
+      end
+      if self:IsExistTimer(self.ReconnectUITimer) then
+        self:RemoveTimer(self.ReconnectUITimer)
+      end
+    elseif "SP_DisplayOnly" ~= Reason and not LoadingReconnectUi then
+      if self:IsExistTimer(self.ReconnectUITimer) then
+        self:RemoveTimer(self.ReconnectUITimer)
+      end
+      local _, TimerKey = self:AddTimer(UIConst.BlockingTime, function()
+        if not UIManager():GetUIObj("LoadingReconnect") then
+          UIManager():LoadUINew("LoadingReconnect", true)
+        end
+      end)
+      self.ReconnectUITimer = TimerKey
+    end
+  end
+  if "SP_DisplayOnly" == Reason then
+    Reason = nil
+  end
+  Reason = Reason or self.WidgetName
+  DebugPrint(WarningTag, string.format("%s:BlockAllUIInput(%s, %s)", self.WidgetName, bBlock, Reason))
   self:BlockAllUIInput_CPP(bBlock, Reason or self.WidgetName)
 end
-
 function BP_UIState_C:OnFocusReceived(MyGeometry, InFocusEvent)
   DebugPrint("BP_UIState_C OnFocusReceived, UIName is", self:GetUIConfigName())
-  return UIUtils.Handle
+  return UIUtils.Handled
 end
-
 function BP_UIState_C:HasAnyFocus()
   return self:HasAnyUserFocus() or self:HasFocusedDescendants()
 end
-
 function BP_UIState_C:NavigateToDefaultWidget(bIsDelaySet)
   if not self.GameInputModeSubsystem then
     self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   end
-  
   local function SetToDesiredFocusWidget()
     if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
       local DefaultFocusWidget = self:GetDesiredFocusTarget()
@@ -649,30 +722,27 @@ function BP_UIState_C:NavigateToDefaultWidget(bIsDelaySet)
       end
     end
   end
-  
   if bIsDelaySet then
     self:AddTimer(0.1, SetToDesiredFocusWidget, false, 0, "SetToDesiredFocusWidget")
   else
     SetToDesiredFocusWidget()
   end
 end
-
 function BP_UIState_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if (InKeyName == Const.GamepadSpecialLeft or InKeyName == Const.GamepadSpecialRight) and TeamController and TeamController:IsTeamPopupBarOpenInGamepad() then
-    DebugPrint(LXYTag, "OnKeyDown:::\231\187\132\233\152\159\231\155\184\229\133\179\231\154\132\229\188\185\230\157\161\230\173\163\229\156\168\230\137\147\229\188\128...")
+    DebugPrint(LXYTag, "OnKeyDown:::组队相关的弹条正在打开...")
     return UIUtils.Unhandled
   end
   if ("Escape" == InKeyName or "Android_Back" == InKeyName) and self.IsAllowEscape then
     if not self.IsBeginToClose and self.IsInit then
       self:Close()
     end
-    return UIUtils.Handle
+    return UIUtils.Handled
   end
   return UIUtils.Unhandled
 end
-
 function BP_UIState_C:HideAllChildrenNode(ParentNode, IsExcludeSelf, bHide)
   local VisiblityOp = bHide and UIConst.VisibilityOp.Collapsed or UIConst.VisibilityOp.SelfHitTestInvisible
   local AllChildren = ParentNode:GetAllChildren()
@@ -684,17 +754,14 @@ function BP_UIState_C:HideAllChildrenNode(ParentNode, IsExcludeSelf, bHide)
     ParentNode:SetVisibility(VisiblityOp)
   end
 end
-
 function BP_UIState_C:HideAllUIWithOutSelf(IsHide, Tag, bRadio)
   local ExceptUIName = TSet(FName)
   ExceptUIName:Add(self.WidgetName or self.ConfigName)
   UIManager(self):HideAllUI_EX(ExceptUIName, IsHide, Tag, bRadio)
 end
-
 function BP_UIState_C:SequenceEvent_PlayUISound(EventPath, EventKey)
   AudioManager(self):PlayUISound(self, EventPath, nil, nil)
 end
-
 function BP_UIState_C:CloseAfterAutoIn()
   if self.Auto_In ~= nil then
     self:BindToAnimationFinished(self.Auto_In, {
@@ -703,5 +770,4 @@ function BP_UIState_C:CloseAfterAutoIn()
     })
   end
 end
-
 return BP_UIState_C

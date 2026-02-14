@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Activity_FeinaEvent_RewardItem_C = Class({
   "Blueprints.UI.BP_UIState_C"
 })
-
 function WBP_Activity_FeinaEvent_RewardItem_C:Construct()
   self.Btn_Reward:BindEventOnClicked(self, self.OnClicked)
   self.Text_Ing:SetText(GText("UI_EventReward_NotAchieved"))
@@ -21,12 +20,10 @@ function WBP_Activity_FeinaEvent_RewardItem_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:Destruct()
   self:ClearListenEvent()
   self.List_Item.OnCreateEmptyContent:Unbind()
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -40,7 +37,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnListItemObjectSet(Content)
     self.List_Item:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:RefreshState()
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar.FeiNaDungeonData[self.DungeonId] then
@@ -58,19 +54,16 @@ function WBP_Activity_FeinaEvent_RewardItem_C:RefreshState()
     self.WS_State:SetActiveWidgetIndex(2)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:TryOnClicked()
   if 1 == self.WS_State:GetActiveWidgetIndex() then
     self:OnClicked()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnClicked()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Errorcode, Rewards)
       self:RefreshState()
-      
       self:RefreshRewardsList()
       self:RefreshReddotInfo()
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function()
@@ -78,11 +71,9 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnClicked()
       end, self)
       EventManager:FireEvent(EventID.OnGetFeiNaReward)
     end
-    
     Avatar:GetFeiNaProgressRewerd(Callback, self.Content.DungeonId, self.ItemIndex)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:RefreshReddotInfo()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("FeinaEventReward")
   if CacheDetail[self.Content.Type] and CacheDetail[self.Content.Type][self.Content.DungeonId][self.Content.Index] then
@@ -93,7 +84,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:RefreshReddotInfo()
     ReddotManager.DecreaseLeafNodeCount("FeinaEventReward")
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:RefreshRewardsList()
   local Rewards = {
     self.Content.RewardId
@@ -134,19 +124,16 @@ function WBP_Activity_FeinaEvent_RewardItem_C:RefreshRewardsList()
   end
   self.List_Item:RequestFillEmptyContent()
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -154,7 +141,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:RefreshOpInfoByInputDevice(CurInpu
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -162,7 +148,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:UpdateUIStyleInPlatform(IsUseKeyAn
     self:InitGamepadView()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:InitWidgetInfoInGamePad()
   self.Controller_Reward:CreateCommonKey({
     KeyInfoList = {
@@ -170,19 +155,16 @@ function WBP_Activity_FeinaEvent_RewardItem_C:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:InitKeyboardView()
   self.Btn_Reward:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.List_Item:SetVisibility(UIConst.VisibilityOp.Visible)
   self:PlayAnimation(self.Normal)
   self.Controller_Reward:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:InitGamepadView()
   self.Btn_Reward:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   self.List_Item:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -207,7 +189,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -224,7 +205,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnPreviewKeyDown(MyGeometry, InKey
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if not self.Content.Root.IsInSelectState then
@@ -244,14 +224,12 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnFocusReceived(MyGeometry, InFocu
   end
   return UIUtils.Handled
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnFocusLost(InFocusEvent)
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and not self.Content.Root.IsInSelectState then
     self.Btn_Reward:SetGamePadIconVisible(false)
     self.Controller_Reward:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:EnterOrLeaveSelectMode(Index)
   if self.Content.Root.IsInSelectState then
     self:LeaveSelectMode(Index)
@@ -259,7 +237,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:EnterOrLeaveSelectMode(Index)
     self:EnterSelectMode(Index)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:EnterSelectMode(Index)
   if self.Content.Root.IsInSelectState then
     return
@@ -292,7 +269,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:EnterSelectMode(Index)
     self.Content.Root.IsInSelectState = true
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnMouseEnter(MyGeometry, MouseEvent)
   self.IsEnter = true
   local IsGamePad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
@@ -302,7 +278,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnMouseEnter(MyGeometry, MouseEven
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsEnter = false
   local IsGamePad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
@@ -312,7 +287,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:OnMouseLeave(MyGeometry, MouseEven
   self:StopAllAnimations()
   self:PlayAnimationReverse(self.Hover)
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:FocusToRewardItem()
   self.List_Item:SetVisibility(UIConst.VisibilityOp.Visible)
   local ItemUIs = self.List_Item:GetDisplayedEntryWidgets()
@@ -328,7 +302,6 @@ function WBP_Activity_FeinaEvent_RewardItem_C:FocusToRewardItem()
     end
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:LeaveSelectMode()
   if not self.Content.Root.IsInSelectState then
     return
@@ -352,14 +325,12 @@ function WBP_Activity_FeinaEvent_RewardItem_C:LeaveSelectMode()
     self:SetFocus()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:LeaveSelectModeOrClose(Index)
   if not self.Content.Root.IsInSelectState then
     self:OnReturnKeyDown()
   end
   self:LeaveSelectMode(Index)
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:UpdateUIStyle(IsVisible)
   if IsVisible then
     self.Btn_Reward:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -367,12 +338,10 @@ function WBP_Activity_FeinaEvent_RewardItem_C:UpdateUIStyle(IsVisible)
     self.Btn_Reward:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardItem_C:OnMenuOpenChanged(bIsOpen, Obj)
   if not bIsOpen and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     Obj.SelfWidget.Item:PlayAnimation(Obj.SelfWidget.Item.Hover)
   end
   self.Content.Root:OnMenuOpenChanged(bIsOpen)
 end
-
 return WBP_Activity_FeinaEvent_RewardItem_C

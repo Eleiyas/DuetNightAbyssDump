@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.Fushu.BP_FushuItemBase_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.InteractiveSkillId = self.UnitParams.InteractiveSkillId
@@ -23,7 +22,6 @@ function M:CommonInitInfo(Info)
   self.LowThanThreshold = false
   self.CanRestorePlayer = true
 end
-
 function M:ReceiveBeginPlay()
   M.Super.ReceiveBeginPlay(self)
   self.Platform:SetVisibility(false, false)
@@ -32,13 +30,11 @@ function M:ReceiveBeginPlay()
   self.Sphere.OnComponentBeginOverlap:Add(self, self.OnBeginOverlap)
   self.Sphere.OnComponentEndOverlap:Add(self, self.OnEndOverlap)
 end
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   EventManager:AddEvent(EventID.OnMonsterAlive, self, self.OnMonsterAlive)
   EventManager:AddEvent(EventID.OnMonsterClear, self, self.OnMonsterClear)
 end
-
 function M:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
   if OtherActor.IsPlayer and OtherActor:IsPlayer() then
     self.OverlappingPlayer = OtherActor
@@ -52,14 +48,12 @@ function M:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyI
     end
   end
 end
-
 function M:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex)
   if OtherActor.IsPlayer and OtherActor:IsPlayer() then
     self.OverlappingPlayer = nil
     self:OnPlayerLeaveCheckBuff(OtherActor)
   end
 end
-
 function M:NpcSkill()
   if not self.Npc then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -83,7 +77,6 @@ function M:NpcSkill()
     end
   end
 end
-
 function M:CheckNpcState()
   if not self.Npc then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -106,7 +99,6 @@ function M:CheckNpcState()
     end
   end
 end
-
 function M:CheckShouldResetRange()
   if not self.Npc then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -136,27 +128,22 @@ function M:CheckShouldResetRange()
     end
   end
 end
-
 function M:OnMonsterAlive()
   self:ChangeState("Manual", 0, self.PauseStateId)
 end
-
 function M:OnMonsterClear()
   if self.StateId == self.PauseStateId then
     self:ChangeState("Manual", 0, self.MovingStateId)
   end
 end
-
 function M:OnFlowerLanternActive(IsRed)
 end
-
 function M:ActiveCombat()
   M.Super.ActiveCombat(self)
   self.Platform:SetVisibility(true, false)
   self:ChangeColor(self.IsRed)
   self:OnPlayerEnterCheckBuff(self.OverlappingPlayer)
 end
-
 function M:DeActiveCombat()
   M.Super.DeActiveCombat(self)
   self:ResetColor()
@@ -166,7 +153,6 @@ function M:DeActiveCombat()
     self.IsActive = true
   end
 end
-
 function M:GetCanOpen()
   if self.StateId == self.ActiveCyanStateId or self.StateId == self.CanInteractiveStateId then
     self.CanOpen = true
@@ -174,7 +160,6 @@ function M:GetCanOpen()
     self.CanOpen = false
   end
 end
-
 function M:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   if NowStateId == self.ActiveCyanStateId then
@@ -216,7 +201,6 @@ function M:OnEnterState(NowStateId)
     self.ChestInteractiveComponent.bCanUsed = true
   end
 end
-
 function M:ChangeScale()
   self.CurTimes = self.CurTimes - 1
   if self.CurTimes > self.MinTimes then
@@ -225,7 +209,6 @@ function M:ChangeScale()
     self.Sphere:SetWorldScale3D(FVector(self.InitScaleSphere.X * NewScale, self.InitScaleSphere.X * NewScale, self.InitScaleSphere.X * NewScale))
   end
 end
-
 function M:SwitchRestorePlayer(Enable)
   if Enable and not self:IsExistTimer("RestorePlayer") and self.SkillEffectCyan and self.SkillEffectCyan > 0 and self.SkillEffectCyanCd and self.SkillEffectCyanCd > 0 then
     self:AddTimer(self.SkillEffectCyanCd, self.RestorePlayer, true, -self.SkillEffectCyanCd, "RestorePlayer")
@@ -233,7 +216,6 @@ function M:SwitchRestorePlayer(Enable)
     self:RemoveTimer("RestorePlayer")
   end
 end
-
 function M:SwitchChangeScale(Enable)
   if Enable and not self:IsExistTimer("ChangeScale") then
     self:AddTimer(0.02, self.ChangeScale, true, 0, "ChangeScale")
@@ -241,7 +223,6 @@ function M:SwitchChangeScale(Enable)
     self:RemoveTimer("ChangeScale")
   end
 end
-
 function M:RestorePlayer()
   if not self.OverlappingPlayer then
     self.CanRestorePlayer = true
@@ -250,13 +231,11 @@ function M:RestorePlayer()
   self.Super.PropUseSkill(self, self.SkillEffectCyan, self.OverlappingPlayer)
   self.CanRestorePlayer = false
 end
-
 function M:ResetRange()
   self.Platform:SetWorldScale3D(FVector(self.InitScalePlatform.X, self.InitScalePlatform.Y, self.InitScalePlatform.Z))
   self.Sphere:SetWorldScale3D(FVector(self.InitScaleSphere.X, self.InitScaleSphere.Y, self.InitScaleSphere.Z))
   self.CurTimes = self.MaxTimes
 end
-
 function M:ReceiveEndPlay()
   M.Super.ReceiveEndPlay(self)
   self:RemoveTimer("ChangeScale")
@@ -267,5 +246,4 @@ function M:ReceiveEndPlay()
   EventManager:RemoveEvent(EventID.OnMonsterAlive, self)
   EventManager:RemoveEvent(EventID.OnMonsterClear, self)
 end
-
 return M

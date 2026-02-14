@@ -1,19 +1,15 @@
 local EMonitorNodeFinishType = require("StoryCreator.StoryLogic.StorylineUtils").EMonitorNodeFinishType
 local MonitorBuffStatusNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function MonitorBuffStatusNode:Init()
   self.MonitoredBuffIds = {}
   self.ImmediateResponce = false
   self.BuffsChangedDelegateHandles = {}
-  
   function self.BuffsChangedDelegate()
     self:OnBuffChanged()
   end
 end
-
 function MonitorBuffStatusNode:Start(Context, InportName)
   self.Context = Context
-  self.InPortName = InPortName
   if "Stop" == InportName then
     self:Stop()
   elseif "UnListen" == InportName then
@@ -24,14 +20,12 @@ function MonitorBuffStatusNode:Start(Context, InportName)
     end)
   end
 end
-
 function MonitorBuffStatusNode:Execute(Callback)
   self.ExecuteCallback = Callback
   if next(self.MonitoredBuffIds) ~= nil then
     self:StartListen()
   end
 end
-
 function MonitorBuffStatusNode:RegisterBuffChangedDelegate()
   for _, BuffId in pairs(self.MonitoredBuffIds) do
     self.ListenTarget.BuffManager:BP_BindOnBuffAdded(BuffId, self.BuffsChangedDelegate)
@@ -40,7 +34,6 @@ function MonitorBuffStatusNode:RegisterBuffChangedDelegate()
     table.insert(self.BuffsChangedDelegateHandles, BuffId)
   end
 end
-
 function MonitorBuffStatusNode:UnregisterBuffChangedDelegate()
   for _, BuffId in pairs(self.BuffsChangedDelegateHandles) do
     self.ListenTarget.BuffManager:BP_UnbindOnBuffAdded(BuffId, self.BuffsChangedDelegate)
@@ -49,7 +42,6 @@ function MonitorBuffStatusNode:UnregisterBuffChangedDelegate()
   end
   self.BuffsChangedDelegateHandles = {}
 end
-
 function MonitorBuffStatusNode:StartListen()
   self.MonitorNodeFinishType = EMonitorNodeFinishType.Unchanged
   local GameInstance = GWorld.GameInstance
@@ -57,7 +49,6 @@ function MonitorBuffStatusNode:StartListen()
   self.ListenTarget = PlayerCharacter
   self:RegisterBuffChangedDelegate()
 end
-
 function MonitorBuffStatusNode:StopListen()
   if self.ExecuteCallback then
     local OutPortName = self:CalOutPortName(self.MonitorNodeFinishType)
@@ -68,7 +59,6 @@ function MonitorBuffStatusNode:StopListen()
     self:Clear()
   end
 end
-
 function MonitorBuffStatusNode:OnBuffChanged()
   self.MonitorNodeFinishType = EMonitorNodeFinishType.Changed
   if self.ImmediateResponce then
@@ -83,7 +73,6 @@ function MonitorBuffStatusNode:OnBuffChanged()
     end)
   end
 end
-
 function MonitorBuffStatusNode:CalOutPortName(MonitorNodeFinishType)
   local OutPortName = "Unchanged"
   if not MonitorBuffStatusNode then
@@ -96,16 +85,13 @@ function MonitorBuffStatusNode:CalOutPortName(MonitorNodeFinishType)
   end
   return OutPortName
 end
-
 function MonitorBuffStatusNode:Stop()
   self.ExecuteCallback = nil
   self:Clear()
 end
-
 function MonitorBuffStatusNode:Clear()
   self:UnregisterBuffChangedDelegate()
   GWorld.GameInstance:RemoveTimer(self.RespondTimer)
   self.RespondTimer = nil
 end
-
 return MonitorBuffStatusNode

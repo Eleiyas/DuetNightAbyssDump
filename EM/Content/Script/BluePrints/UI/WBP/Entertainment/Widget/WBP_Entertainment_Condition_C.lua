@@ -2,17 +2,13 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Initialize(Initializer)
 end
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.JumpToTaskPanel)
 end
-
 function M:Destruct()
 end
-
 function M:JumpToTaskPanel()
   if not self.QuestChainId then
     return
@@ -21,9 +17,8 @@ function M:JumpToTaskPanel()
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:LoadUINew("TaskPanel", self.QuestChainId)
 end
-
 function M:OnListItemObjectSet(Item)
-  self.Text_Name:SetText(Item.QuestTypeName .. "\239\188\154" .. Item.QuestChainName)
+  self.Text_Name:SetText(Item.QuestTypeName .. "：" .. Item.QuestChainName)
   self.QuestChainId = Item.QuestChainId
   local Avatar = GWorld:GetAvatar()
   if Avatar:IsQuestChainUnlock(self.QuestChainId) then
@@ -48,5 +43,4 @@ function M:OnListItemObjectSet(Item)
     self.Btn_Click:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return M

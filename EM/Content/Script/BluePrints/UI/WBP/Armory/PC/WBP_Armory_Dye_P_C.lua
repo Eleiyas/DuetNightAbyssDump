@@ -12,7 +12,6 @@ local FocusAreas = {
   Plan = "Plan",
   Self = "Self"
 }
-
 function M:Construct()
   self.TabConfig = {
     TitleName = GText("UI_Dye_Name"),
@@ -63,7 +62,6 @@ function M:Construct()
   self:InitKeySetting()
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType(), UIUtils.UtilsGetCurrentGamepadName())
 end
-
 function M:InitKeySetting()
   self.TableKey = "Tab"
   self.UKey = "U"
@@ -168,7 +166,6 @@ function M:InitKeySetting()
     bLongPress = false
   }
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   if not self.IsLoaded or not self.IsInFocusPath then
@@ -183,21 +180,17 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputDevice, CurGamepadName)
   self:OnFocusChanged()
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
 end
-
 function M:OnFocusChanged()
   self:UpdateKeyEvents()
   self:UpdateKeyStyle()
 end
-
 function M:UpdateKeyStyle()
   if self.KeyDownEvents[self.TabLeftKey] then
   else
@@ -240,7 +233,6 @@ function M:UpdateKeyStyle()
   end
   self:UpdateBottomKeyInfo()
 end
-
 function M:UpdateBottomKeyInfo()
   local BottomKeyInfo = {}
   if self.IsGamepadInput then
@@ -265,7 +257,6 @@ function M:UpdateBottomKeyInfo()
   BottomKeyInfo = BottomKeyInfo or self.BottomKeyInfo
   self.Tab_Dye:UpdateBottomKeyInfo(BottomKeyInfo)
 end
-
 function M:UpdateItemConsume(...)
   M.Super.UpdateItemConsume(self, ...)
   if self.IsLoaded then
@@ -273,7 +264,6 @@ function M:UpdateItemConsume(...)
     self:UpdateKeyStyle()
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -282,24 +272,19 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnSubTabLeftKeyDown()
 end
-
 function M:OnSubTabRightKeyDown()
 end
-
 function M:OnUKeyDown()
   self:OnHideUIKeyDown()
   return self
 end
-
 function M:OnHideUIKeyDown()
   M.Super.OnHideUIKeyDown(self)
   self:UpdateKeyEvents()
-  self:SetFocus()
+  self:GetDesiredFocusWidget():SetFocus()
 end
-
 function M:UpdateKeyEvents()
   self.KeyDownEvents = {}
   self.RepeatKeyDownEvents = {}
@@ -342,7 +327,6 @@ function M:UpdateKeyEvents()
   end
   self:UpdateFunctionBtnNavigation()
 end
-
 function M:OnGamepadApplyKeyDown()
   if 0 == self.WidgetSwitcher_Preview:GetActiveWidgetIndex() then
     if self.Btn_Done.IsForbidden then
@@ -354,26 +338,21 @@ function M:OnGamepadApplyKeyDown()
     self:OnPreviewSaveBtnClicked()
   end
 end
-
 function M:OnRightThumbstickKeyDown()
   self.Tab_Dye:Handle_KeyEventOnGamePad(self.RightThumbstickKey)
 end
-
 function M:OnConsumItemFocusKeyDown()
   if self.Panel_Cost:GetVisibility() == UIConst.VisibilityOp.Visible then
     DebugPrint(self.WB_Consume:GetChildAt(1).bIsFocusable)
     return self.WB_Consume:GetChildAt(1)
   end
 end
-
 function M:OnGamepadViewKeyDown()
   return self.Btn_Hide
 end
-
 function M:OnGamepadMenuKeyDown()
   return self.Plan_Dye
 end
-
 function M:OnSaveKeyDown()
   if self.Btn_Save:IsBtnForbidden() then
     self:OnForbiddenSaveBtnClicked()
@@ -381,15 +360,12 @@ function M:OnSaveKeyDown()
     self:OnSaveBtnClicked()
   end
 end
-
 function M:OnCameraScrollBackwardKeyDown()
   self:ScrollCamera(1)
 end
-
 function M:OnCameraScrollForwardKeyDown()
   self:ScrollCamera(-1)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -405,7 +381,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnRepeatKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -418,7 +393,6 @@ function M:OnRepeatKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -434,7 +408,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.bSelfHidden then
     self.FSM:Push({
@@ -442,19 +415,26 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
       Widget = self
     })
   else
-    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:GetDesiredFocusWidget())
+    local Widget = self:GetDesiredFocusWidget()
+    if Widget == self then
+      return UIUtils.Handled
+    end
+    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), Widget)
   end
   return UIUtils.Unhandled
 end
-
 function M:GetDesiredFocusWidget()
   if not self.IsGamepadInput then
-    return
+    return self
   end
   if self.bSelfHidden then
     return self
   end
   local CurrentState = self.FSM:Peak()
+  if CurrentState.Name == FocusAreas.Self then
+    self.FSM:Pop()
+    CurrentState = self.FSM:Peak()
+  end
   if CurrentState.Name == FocusAreas.FunctionBtn then
     return CurrentState.Widget
   end
@@ -471,18 +451,14 @@ function M:GetDesiredFocusWidget()
   self.EMList_Special:BP_NavigateToItem(Content)
   return self.EMList_Special
 end
-
 function M:OnAddedToFocusPath()
   self.IsInFocusPath = true
 end
-
 function M:OnRemovedFromFocusPath()
   self.IsInFocusPath = false
 end
-
 function M:OnColorContentCreated(Content)
   Content.Owner = self
-  
   function Content.OnAddedToFocusPath(_self, _Content)
     if _Content.ColorId ~= self.DefaultColorId and _Content.ListContent then
       local Contents = _Content.ListContent.OnlyShowColor or _Content.ListContent.ColorContents
@@ -499,21 +475,17 @@ function M:OnColorContentCreated(Content)
       Widget = _Content.Widget
     })
   end
-  
   function Content.OnRemovedFromFocusPath(_self, _Content)
   end
 end
-
 function M:OnSpecialColorContentCreated(Content)
   self:OnColorContentCreated(Content)
 end
-
 function M:OnNormalColorContentCreated(Content)
   self:OnColorContentCreated(Content)
   if self.DefaultColorId == Content.ColorId then
     return
   end
-  
   function Content.OnNavigateUp()
     local Idx = self.EMList_Normal:GetIndexForItem(Content.ListContent)
     local PreItem = self.EMList_Normal:GetItemAt(Idx - 1)
@@ -524,7 +496,6 @@ function M:OnNormalColorContentCreated(Content)
       return self.ColorLump_Default
     end
   end
-  
   function Content.OnNavigateDown()
     local Idx = self.EMList_Normal:GetIndexForItem(Content.ListContent)
     local NextItem = self.EMList_Normal:GetItemAt(Idx + 1)
@@ -536,20 +507,16 @@ function M:OnNormalColorContentCreated(Content)
     end
   end
 end
-
 function M:OnNormalColorListContentCreated(Content)
   function Content.OnResourceAddedToFocusPath(_self, ResourceWidget)
     self.FSM:Push({
       Name = FocusAreas.Resource,
-      
       Content = Content,
       Widget = ResourceWidget
     })
   end
-  
   function Content.OnResourceRemovedFromFocusPath()
   end
-  
   function Content.OnResourceNavigateUp()
     local Idx = self.EMList_Normal:GetIndexForItem(Content)
     local PreItem = self.EMList_Normal:GetItemAt(Idx - 1)
@@ -560,7 +527,6 @@ function M:OnNormalColorListContentCreated(Content)
       return self.ColorLump_Default
     end
   end
-  
   function Content.OnResourceNavigateDown()
     local Idx = self.EMList_Normal:GetIndexForItem(Content)
     local NextItem = self.EMList_Normal:GetItemAt(Idx + 1)
@@ -571,7 +537,6 @@ function M:OnNormalColorListContentCreated(Content)
       return nil
     end
   end
-  
   function Content.OnMenuOpenChanged(_self, IsOpen, _Content)
     if IsOpen then
       self.FSM:Push({
@@ -581,37 +546,30 @@ function M:OnNormalColorListContentCreated(Content)
     end
   end
 end
-
 function M:OnNoramlDyeTabContentCreated(Content)
   function Content.OnAddedToFocusPath(_self, _Content)
     self.FSM:Push({
       Name = FocusAreas.NoramlDyeTab,
-      
       Content = Content,
       Widget = Content.Widget
     })
   end
-  
   function Content.OnRemovedFromFocusPath(_self, _Content)
   end
-  
   function Content.OnHovered(_self, _Content)
     if self.IsGamepadInput then
       _Content.Widget:OnClicked()
     end
   end
 end
-
 function M:OnFunctionBtnAddedToFocusPath(Widget)
   self.FSM:Push({
     Name = FocusAreas.FunctionBtn,
     Widget = Widget
   })
 end
-
 function M:OnFunctionBtnRemovedFromFocusPath()
 end
-
 function M:OnConsumItemContentCreated(Content)
   Content.OnAddedToFocusPathEvent = {
     Obj = self,
@@ -624,7 +582,6 @@ function M:OnConsumItemContentCreated(Content)
     Params = Content
   }
 end
-
 function M:OnConsumItemAddedToFocusPath(Content)
   self.FSM:Push({
     Name = FocusAreas.ConsumItem,
@@ -632,49 +589,39 @@ function M:OnConsumItemAddedToFocusPath(Content)
     Widget = Content.SelfWidget
   })
 end
-
 function M:OnConsumItemRemovedFromFocusPath()
 end
-
 function M:OnResourceBarAddedToFocusPath(Widget)
   self.FSM:Push({
     Name = FocusAreas.Coin,
     Widget = Widget
   })
 end
-
 function M:OnResourceBarRemovedFromFocusPath()
 end
-
 function M:OnModifyPlanParams(Params)
   Params.FocusKeyImgPath = "Menu"
-  
   function Params.OnGetBackReply(_self)
     local Widget = self:OnBackKeyDown()
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), Widget)
   end
-  
   function Params.OnAddedToFocusPath()
     self.FSM:Push({
       Name = FocusAreas.Plan,
       Widget = self.Plan_Dye
     })
   end
-  
   function Params.OnRemovedFromFocusPath()
   end
 end
-
 function M:OnFocusStateChanged(NewState, OladState)
   if NewState then
     self:OnFocusChanged()
   end
 end
-
 function M:IsFocusStateValid(State)
   return State and IsValid(State.Widget)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -687,12 +634,10 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:SelectDyeingTypeTab(TabIdx)
   M.Super.SelectDyeingTypeTab(self, TabIdx)
   self:InitNavigationRules()
 end
-
 function M:OnBackKeyDown()
   if not self.IsGamepadInput then
     M.Super.OnBackKeyDown(self)
@@ -719,7 +664,6 @@ function M:OnBackKeyDown()
     M.Super.OnBackKeyDown(self)
   end
 end
-
 function M:BackToColorList(BackState)
   local ColorContent = BackState.Content
   if self.CurrentTabIdx == self.NormalColorTabIdx then
@@ -736,7 +680,7 @@ function M:BackToColorList(BackState)
   elseif self.EMList_Special:GetIndexForItem(ListContent) >= 0 then
     self.EMList_Special:BP_NavigateToItem(ListContent)
   else
-    DebugPrint("Warning: \232\191\148\229\155\158\233\162\156\232\137\178\229\136\151\232\161\168\230\151\182\228\189\191\231\148\168\228\186\134\233\148\153\232\175\175\231\154\132\230\149\176\230\141\174", ColorContent and ColorContent.ColorId)
+    DebugPrint("Warning: 返回颜色列表时使用了错误的数据", ColorContent and ColorContent.ColorId)
     return self:BackToDefaultWidget()
   end
   if IsValid(BackState.Widget) then
@@ -745,7 +689,6 @@ function M:BackToColorList(BackState)
     return self:BackToDefaultWidget()
   end
 end
-
 function M:BackToResource(BackState)
   local ListContent = BackState.Content
   if self.EMList_Normal:GetIndexForItem(ListContent) >= 0 then
@@ -753,7 +696,7 @@ function M:BackToResource(BackState)
   elseif self.EMList_Special:GetIndexForItem(ListContent) >= 0 then
     self.EMList_Special:BP_NavigateToItem(ListContent)
   else
-    DebugPrint("Warning: \232\191\148\229\155\158\232\181\132\230\186\144\229\136\151\232\161\168\230\151\182\228\189\191\231\148\168\228\186\134\233\148\153\232\175\175\231\154\132\230\149\176\230\141\174")
+    DebugPrint("Warning: 返回资源列表时使用了错误的数据")
     return self:BackToDefaultWidget()
   end
   if IsValid(BackState.Widget) then
@@ -762,7 +705,6 @@ function M:BackToResource(BackState)
     return self:BackToDefaultWidget()
   end
 end
-
 function M:BackToNoramlDyeTab(BackState)
   local BackContent = BackState.Content
   if self.List_Tab:GetIndexForItem(BackContent) >= 0 then
@@ -772,11 +714,10 @@ function M:BackToNoramlDyeTab(BackState)
     end
     return self.List_Tab
   else
-    DebugPrint("Warning: \232\191\148\229\155\158\230\153\174\233\128\154\230\159\147\232\137\178Tab\230\151\182\228\189\191\231\148\168\228\186\134\233\148\153\232\175\175\231\154\132\230\149\176\230\141\174", BackContent and BackContent.Idx)
+    DebugPrint("Warning: 返回普通染色Tab时使用了错误的数据", BackContent and BackContent.Idx)
     return self:BackToDefaultWidget()
   end
 end
-
 function M:BackToDefaultWidget()
   if self.CurrentTabIdx == self.NormalColorTabIdx then
     return self:NavigateToNormalColorList(self.EMList_Normal:GetItemAt(0))
@@ -785,15 +726,12 @@ function M:BackToDefaultWidget()
     return self.EMList_Special
   end
 end
-
 function M:OnResourceGetReply()
 end
-
 function M:OnNormalDyeTabInit(...)
   M.Super.OnNormalDyeTabInit(self, ...)
   local AllContents = self.EMList_Normal:GetListItems():ToTable()
 end
-
 function M:NavigateToNormalColorList(Content)
   self.EMList_Normal:BP_NavigateToItem(Content)
   if Content.Widget then
@@ -802,7 +740,6 @@ function M:NavigateToNormalColorList(Content)
     return self.EMList_Normal
   end
 end
-
 function M:InitNavigationRules()
   if self.CurrentTabIdx == self.NormalColorTabIdx then
     self.List_Tab:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
@@ -866,7 +803,6 @@ function M:InitNavigationRules()
     self.EMList_Special:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   end
 end
-
 function M:UpdateFunctionBtnNavigation()
   local Btns = self.WB_Function:GetAllChildren():ToTable()
   local PreBtn
@@ -885,11 +821,9 @@ function M:UpdateFunctionBtnNavigation()
     end
   end
 end
-
 function M:OnColorListItemHovered(Content)
   if not self.IsGamepadInput then
     M.Super.OnColorListItemHovered(self, Content)
   end
 end
-
 return M

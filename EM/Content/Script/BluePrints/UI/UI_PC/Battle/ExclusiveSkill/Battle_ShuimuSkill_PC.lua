@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
 local SHUIMU_BATTLE_CHAR_UI_ID = 1
 local ALLOW_MAX_SUMMONER_COUNT = 5
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.OwnerPlayer = nil
@@ -14,14 +13,12 @@ function M:Initialize(Initializer)
   self.EffectList = {}
   self.TextList = {}
 end
-
 function M:OnLoaded(PlayerCharacter, SpecialUIInfo)
   self.Super.OnLoaded(self, PlayerCharacter, SpecialUIInfo)
   self:InitPanelInfo()
   self:RefreshNode(SpecialUIInfo, PlayerCharacter)
   self:InitListenEvent()
 end
-
 function M:InitPanelInfo()
   for i = 1, ALLOW_MAX_SUMMONER_COUNT do
     self.EffectList[i] = self[string.format("Battle_ShuimuSkill_Effect_PC_%d", i)]
@@ -29,12 +26,10 @@ function M:InitPanelInfo()
   self.ProgressPercentMinCache = self.ProgressPercentMin
   self.ProgressPercentMaxCache = self.ProgressPercentMax
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnCharCallSummoner, self, self.OnSummonerAdd)
   self:AddDispatcher(EventID.OnCharGradeLevelUp, self, self.OnCharGradeLevelUp)
 end
-
 function M:RefreshNode(Params, OwnerPlayer)
   self.OwnerPlayer = OwnerPlayer
   if not IsValid(self.OwnerPlayer) or not Params then
@@ -52,7 +47,6 @@ function M:RefreshNode(Params, OwnerPlayer)
     end
   end
 end
-
 function M:OnSummonerAdd(Entity, MaxLifeTime)
   if self:IsMainPlayerSummon(Entity, self.OwnerPlayer, self.SummonerId) then
     if nil ~= Entity and Entity.UnitId == self.SummonerId then
@@ -79,12 +73,13 @@ function M:OnSummonerAdd(Entity, MaxLifeTime)
       self.AllSummonerInfo[AddIndex] = {Entity = Entity, MaxLifeTime = MaxLifeTime}
       self:SetEffectItem(AddIndex, true)
     end
-    if not self:IsExistTimer("RefreshAllSummonerInfo") then
-      self:AddTimer(0.1, self.RefreshAllSummonerInfo, true, 0, "RefreshAllSummonerInfo")
+    if not self.OwnerPlayer:IsExistTimer("RefreshAllSummonerInfo") then
+      self.OwnerPlayer:AddTimer(0.1, function()
+        self:RefreshAllSummonerInfo()
+      end, true, 0, "RefreshAllSummonerInfo")
     end
   end
 end
-
 function M:RefreshAllSummonerInfo()
   local ValidSummonerCount = 0
   for i, SummonerInfo in ipairs(self.AllSummonerInfo) do
@@ -105,11 +100,10 @@ function M:RefreshAllSummonerInfo()
       self:SetSummonerItem(i, false)
     end
   end
-  if ValidSummonerCount <= 0 then
-    self:RemoveTimer("RefreshAllSummonerInfo")
+  if ValidSummonerCount <= 0 and IsValid(self.OwnerPlayer) then
+    self.OwnerPlayer:RemoveTimer("RefreshAllSummonerInfo")
   end
 end
-
 function M:SetSummonerItem(Index, bVisibility, SummonerInfo)
   self.VisibleStatus = self.VisibleStatus or {}
   local OldVisibility = self.VisibleStatus[Index]
@@ -119,18 +113,15 @@ function M:SetSummonerItem(Index, bVisibility, SummonerInfo)
     local LifeTime = UE4.UBattleFunctionLibrary.GetSummonRemainingLifeTime(SummonerInfo.Entity)
     local PercentValue = LifeTime / SummonerInfo.MaxLifeTime
     local UIPercent = self:GetPercentValue(PercentValue)
-    self.EffectList[Index].Summoner_Bar_1:SetPercent(self:GetPercentValue(UIPercent))
-    self.EffectList[Index].Summoner_Glow_1:SetPercent(self:GetPercentValue(UIPercent))
+    self:SetSummonPercent(Index, UIPercent)
     local TimeString = string.format("%.0fs", LifeTime)
     self.EffectList[Index].Text_Time:SetText(TimeString)
   elseif IsDirty then
-    self.EffectList[Index].Summoner_Bar_1:SetPercent(self:GetPercentValue(0.0))
-    self.EffectList[Index].Summoner_Glow_1:SetPercent(self:GetPercentValue(0.0))
+    self:SetSummonPercent(Index, self:GetPercentValue(0.0))
     self.EffectList[Index].Text_Time:SetText("")
     self:SetEffectItem(Index, false)
   end
 end
-
 function M:SetEffectItem(Index, bActive)
   local EffectItem = self.EffectList[Index]
   if bActive then
@@ -139,7 +130,6 @@ function M:SetEffectItem(Index, bActive)
     EffectItem:PlayAnimation(EffectItem.To_Inactive)
   end
 end
-
 function M:GetPercentValue(RealPercent)
   local res = UKismetMathLibrary.MapRangeClamped(RealPercent, 0.0, 1.0, self.ProgressPercentMinCache, self.ProgressPercentMaxCache)
   if 0 == res then
@@ -147,11 +137,9 @@ function M:GetPercentValue(RealPercent)
   end
   return res
 end
-
 function M:IsSummonerLiving(Entity)
   return Entity and IsValid(Entity) and UE4.UBattleFunctionLibrary.GetSummonRemainingLifeTime(Entity) > 0
 end
-
 function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
   if Ret == ErrorCode.RET_SUCCESS then
     CurrentGradeLevel = CurrentGradeLevel + 1
@@ -162,5 +150,11 @@ function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
     end
   end
 end
-
+function M:SetSummonPercent(Index, Percent)
+  if self.EffectList[Index] then
+    local IconDynaMaterial = self.EffectList[Index].Img_Summoner_Bar:GetDynamicMaterial()
+    local UIPercent = self:GetPercentValue(Percent)
+    IconDynaMaterial:SetScalarParameterValue("Percent", UIPercent)
+  end
+end
 return M

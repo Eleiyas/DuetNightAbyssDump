@@ -7,7 +7,6 @@ local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase",
   "BluePrints.UI.WBP.Friend.View.Base.WBP_Friend_ListBase"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.MyListView = self.List
@@ -15,13 +14,22 @@ function M:Construct()
   local Filters = {
     "UI_Friend_RequestTime"
   }
-  
   local function CommonFunc(bAnimation)
     self:RefreshList(bAnimation)
   end
-  
+  local function AgreeAddFunc(bAnimation)
+    self:RefreshList(bAnimation)
+    self:AddTimer(0.35, function()
+      if self.ListDatas == nil or 0 == #self.ListDatas then
+        self:SetFocus()
+        self.Com_EmptyBg.bIsFocusable = true
+        self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.Visible)
+        self.Com_EmptyBg:SetFocus()
+      end
+    end, false, 0, nil, true)
+  end
   self.EventSwitch = {
-    [FriendCommon.EventId.AgreeAdd] = CommonFunc,
+    [FriendCommon.EventId.AgreeAdd] = AgreeAddFunc,
     [FriendCommon.EventId.RefuseAdd] = CommonFunc,
     [FriendCommon.EventId.CancelBlackList] = function(bAnimation)
       self:RefreshList(bAnimation)
@@ -45,14 +53,12 @@ function M:Construct()
     end
   end, false, 0, nil, true)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if FriendController:IsGamepad() then
     self:SetFocus()
     self:RefreshNavigationRule()
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   self.Owner = Owner
@@ -83,13 +89,11 @@ function M:InitContent(Params, PopupData, Owner)
     self:CollapseButtonBar()
   end
   self.MyListView:SetVisibility(UIConst.VisibilityOp.Visible)
-  self.Owner:GetTitle().HorizontalBox_1:SetVisibility(UIConst.VisibilityOp.Visible)
   if self.Type == FriendCommon.FriendDialogType.FriendRequest then
     FriendModel:CleanReddotCount()
   end
   self:_SetupTitle()
   self:RefreshList()
-  self:_SetupLimit()
   if self.Type == FriendCommon.FriendDialogType.BlackList then
     self:CollapseButtonBar()
   end
@@ -112,13 +116,11 @@ function M:InitContent(Params, PopupData, Owner)
   self:ShowCheckBtn(false)
   self:SetFocus()
 end
-
 function M:PostInitContent(Params, PopupData, Owner)
   if self.Type == FriendCommon.FriendDialogType.BlackList then
     self:CollapseButtonBar()
   end
 end
-
 function M:OnBtnYesOrNoRelease(bYes)
   if bYes then
     FriendController:SendRequest(FriendCommon.EventId.AgreeAll)
@@ -141,21 +143,17 @@ function M:OnBtnYesOrNoRelease(bYes)
     UIManager(self):ShowCommonPopupUI(FriendCommon.RejectAllDialog, Params, self)
   end
 end
-
 function M:OnFilterChanged()
   self.FuncIdx, self.SortType = self.Owner:GetButtonBar().WBP_Com_Sort:GetSortInfos()
   self:RefreshList()
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "FriendWindow", {ToEnd = 1})
   M.Super.Close(self)
 end
-
 function M:OnRefreshListBegin()
   self.Switcher_Content:SetActiveWidget(1)
   if self.Type == FriendCommon.FriendDialogType.FriendRequest then
@@ -167,7 +165,6 @@ function M:OnRefreshListBegin()
     end
   end
 end
-
 function M:GetListData()
   self.ListDatas = {}
   if self.Type == FriendCommon.FriendDialogType.FriendRequest then
@@ -179,19 +176,16 @@ function M:GetListData()
     end
   end
 end
-
 function M:OnListEmpty()
   self.Switcher_Content:SetActiveWidgetIndex(1)
   self:CollapseButtonBar()
 end
-
 function M:CollapseButtonBar()
   local ButtonBar = self.Owner:GetButtonBar()
   if ButtonBar then
     ButtonBar:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetupListContent(Uid, Content)
   local Dict = {}
   if self.Type == FriendCommon.FriendDialogType.FriendRequest then
@@ -202,9 +196,8 @@ function M:SetupListContent(Uid, Content)
   Content.Data = Dict[Uid]
   Content.Type = self.Type
 end
-
 function M:OnRefreshListEnd()
-  self.Owner:GetTitle().Text_Num01:SetText(#self.ListDatas)
+  self:_SetupTitleNum()
   self:_SetupBottom()
   self:RefreshNavigationRule()
   self:ShowPlayerInfoBtn(0 ~= #self.ListDatas)
@@ -215,7 +208,6 @@ function M:OnRefreshListEnd()
   end
   self.MyListView:SetFocus()
 end
-
 function M:_SetupBottom()
   if self.Type == FriendCommon.FriendDialogType.BlackList then
     self:CollapseButtonBar()
@@ -228,15 +220,15 @@ function M:_SetupBottom()
     self.Switcher_Content:SetActiveWidgetIndex(0)
   end
 end
-
-function M:_SetupLimit()
+function M:_SetupTitleNum()
+  local LimitNum
   if self.Type == FriendCommon.FriendDialogType.BlackList then
-    self.Owner:GetTitle().Text_Num02:SetText("/" .. DataMgr.GlobalConstant.FriendBlockMax.ConstantValue)
+    LimitNum = DataMgr.GlobalConstant.FriendBlockMax.ConstantValue
   elseif self.Type == FriendCommon.FriendDialogType.FriendRequest then
-    self.Owner:GetTitle().Text_Num02:SetText("/" .. DataMgr.GlobalConstant.FriendBlockMax.ConstantValue)
+    LimitNum = DataMgr.GlobalConstant.FriendBlockMax.ConstantValue
   end
+  local NumWidget = self.Owner:GetTitle():GetTitleSubWidget(0):SetTextNum(#self.ListDatas, LimitNum)
 end
-
 function M:_SetupTitle()
   if self.Type == FriendCommon.FriendDialogType.BlackList then
     self.Text_Empty:SetText(GText("UI_Friend_BlackListEmpty"))
@@ -244,7 +236,6 @@ function M:_SetupTitle()
     self.Text_Empty:SetText(GText("UI_Friend_FriendRequestEmpty"))
   end
 end
-
 function M:Destruct()
   if self.Type == FriendCommon.FriendDialogType.FriendRequest then
     self.Owner:GetButtonBar().Btn_Yes:UnBindEventOnClicked(self, self.OnBtnYesOrNoRelease)
@@ -258,11 +249,9 @@ function M:Destruct()
   self:RemoveInputMethodChangedListen()
   M.Super.Destruct(self)
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.List
 end
-
 function M:ShowPlayerInfoBtn(bShow)
   if ModController:IsMobile() then
     return
@@ -273,7 +262,6 @@ function M:ShowPlayerInfoBtn(bShow)
     self:HideGamepadShortcut(self.PlayerInfoBtnIndex)
   end
 end
-
 function M:ShowCheckBtn(bShow)
   if ModController:IsMobile() then
     return
@@ -284,7 +272,6 @@ function M:ShowCheckBtn(bShow)
     self:HideGamepadShortcut(self.CheckBtnIndex)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -313,5 +300,4 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

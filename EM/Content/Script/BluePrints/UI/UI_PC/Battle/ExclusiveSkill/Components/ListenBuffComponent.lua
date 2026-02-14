@@ -1,5 +1,4 @@
 local FListenBuffInfo = {}
-
 function FListenBuffInfo.New(BuffId, ListenObject, ListenFunctionName)
   local Obj = setmetatable({}, {__index = FListenBuffInfo})
   Obj.HasBuff = false
@@ -11,37 +10,29 @@ function FListenBuffInfo.New(BuffId, ListenObject, ListenFunctionName)
   Obj.EndHasCallback = ListenObject["EndHas_" .. ListenFunctionName]
   return Obj
 end
-
 function FListenBuffInfo:SetBuff(Buff)
   self.HasBuff = true
   self.Buff = Buff
 end
-
 function FListenBuffInfo:ClearBuff()
   self.HasBuff = false
   self.Buff = nil
 end
-
 function FListenBuffInfo:CallStart()
   self.StartHasCallback(self.ListenObject, self)
 end
-
 function FListenBuffInfo:CallTick(InDeltaTime)
   self.TickHasCallback(self.ListenObject, self, InDeltaTime)
 end
-
 function FListenBuffInfo:CallEnd()
   self.EndHasCallback(self.ListenObject, self)
 end
-
 local FListenBuffComponent = Class()
-
 function FListenBuffComponent.New()
   local ListenBuffComponent = setmetatable({}, {__index = FListenBuffComponent})
   ListenBuffComponent.ListenBuffs = {}
   return ListenBuffComponent
 end
-
 function FListenBuffComponent:Tick(InDeltaTime)
   for _, ListenBuffInfo in pairs(self.ListenBuffs) do
     local IsValidBuff = IsValid(ListenBuffInfo.Buff)
@@ -50,11 +41,9 @@ function FListenBuffComponent:Tick(InDeltaTime)
     end
   end
 end
-
 function FListenBuffComponent:AddListenBuff(BuffId, ListenObject, ListenFunctionName)
   table.insert(self.ListenBuffs, FListenBuffInfo.New(BuffId, ListenObject, ListenFunctionName))
 end
-
 function FListenBuffComponent:OnBuffsChanged(Buffs)
   for _, ListenBuffInfo in pairs(self.ListenBuffs) do
     local IsValidBuff = IsValid(ListenBuffInfo.Buff)
@@ -77,7 +66,6 @@ function FListenBuffComponent:OnBuffsChanged(Buffs)
     end
   end
 end
-
 function FListenBuffComponent:FindBuffById(Buffs, BuffId)
   for i = 1, Buffs:Num() do
     local Buff = Buffs:GetRef(i)
@@ -87,5 +75,4 @@ function FListenBuffComponent:FindBuffById(Buffs, BuffId)
   end
   return nil
 end
-
 return {FListenBuffInfo = FListenBuffInfo, FListenBuffComponent = FListenBuffComponent}

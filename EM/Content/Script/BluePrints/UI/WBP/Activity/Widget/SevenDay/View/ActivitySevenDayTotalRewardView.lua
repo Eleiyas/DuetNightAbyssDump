@@ -1,7 +1,6 @@
 require("UnLua")
 local EnumPlayerSignRewardState = require("Blueprints.UI.WBP.Activity.ActivityUtils").EnumPlayerSignRewardState
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:InitRewardInfo(PageConfigData, ParentWidget)
   local AllDays = PageConfigData.LoginDuration
   for i = 1, AllDays do
@@ -16,7 +15,8 @@ function M:InitRewardInfo(PageConfigData, ParentWidget)
       local NorRewardWidget = self["LowItem_" .. i]
       NorRewardWidget:InitNormalReward(i, {
         ActivityId = PageConfigData.EventId,
-        RewardId = PageConfigData.EventReward[i]
+        RewardId = PageConfigData.EventReward[i],
+        bComeBackEvent = PageConfigData.bComeBackEvent
       }, ParentWidget)
     end
   end
@@ -30,7 +30,6 @@ function M:InitRewardInfo(PageConfigData, ParentWidget)
     ParentWidget.LeaveRewardViewMode
   })
 end
-
 function M:BP_GetDesiredFocusTarget()
   local NeedFocusWidget
   for i = 1, self.AllDays do
@@ -54,5 +53,4 @@ function M:BP_GetDesiredFocusTarget()
   end
   return NeedFocusWidget
 end
-
 return M

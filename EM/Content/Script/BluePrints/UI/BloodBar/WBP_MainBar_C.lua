@@ -8,11 +8,9 @@ local Const = require("Const")
 local WBP_MainBar_C = Class("BluePrints.UI.BP_UIState_C")
 UE4.UMainBar.SetIsShowMonsterName(EMCache:Get("ShowMonsterName") or false)
 UE4.UMainBar.SetIsForbidenShowBloodUI(false)
-
 function WBP_MainBar_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_MainBar_C:InitConfig_Lua(IsMainPlayer, ActorOwner)
   rawset(self, "Owner", ActorOwner)
   self.IsDestroied = nil
@@ -38,43 +36,39 @@ function WBP_MainBar_C:InitConfig_Lua(IsMainPlayer, ActorOwner)
   self.SceneMgrComponent = GameInstance:GetSceneManager()
   self:SetName()
 end
-
 function WBP_MainBar_C:Reinit_Lua(ActorOwner)
   rawset(self, "Owner", ActorOwner)
   self:RegisterEventsNormal()
 end
-
 function WBP_MainBar_C:Construct()
   WBP_MainBar_C.Super.Construct(self)
   if self.Icon_Agree then
     self.Icon_Agree:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
+  self:AddDispatcher(EventID.OnRepOwnerEidPhantomState, self, self._SyncPhantomName)
+  self:AddDispatcher(EventID.OnRepPlayerName, self, self._SyncPhantomName)
+  self:AddDispatcher(EventID.OnCloseLoading, self, self._SyncPhantomName)
 end
-
 function WBP_MainBar_C:SetInTeam()
   self.Group_FrontSpace:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Icon_Agree:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_Lv:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_BG:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_MainBar_C:SetLevelText_Lua()
   self.Lv:SetText(GText("BATTLE_UI_BLOOD_LV"))
   self.Lv:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_MainBar_C:WhileInvisibleMonsterBeAttack(Eid, NowTimeSeconds)
   if IsValid(self.SceneMgrComponent) then
     self.SceneMgrComponent.SpecialMonsterInfo[Eid] = {NowTimeSeconds}
   end
 end
-
 function WBP_MainBar_C:RegisterEventsNormal()
   if (self.Owner:IsMonster() or self.Owner:IsCombatItemBase() or self.Owner:IsNPC() or self.Owner:IsMechanismSummon()) and self.bIsDangerEnemy then
     self:AddDispatcher(EventID.MainPlayerLevelUp, self, self.OnMainPlayerLevelUp)
   end
 end
-
 function WBP_MainBar_C:OnMainPlayerLevelUp(MainPlayerNowLevel)
   if not IsValid(self.Owner) then
     return
@@ -87,7 +81,6 @@ function WBP_MainBar_C:OnMainPlayerLevelUp(MainPlayerNowLevel)
     end
   end
 end
-
 function WBP_MainBar_C:CheckIsReduceDelay(DamageEvent)
   local NowTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
   if DamageEvent.SkillId then
@@ -103,7 +96,6 @@ function WBP_MainBar_C:CheckIsReduceDelay(DamageEvent)
     end
   end
 end
-
 function WBP_MainBar_C:Reinitialize()
   self:InitValue(self.Owner)
   self:OnUpdateCharLevelAndExp()
@@ -132,16 +124,13 @@ function WBP_MainBar_C:Reinitialize()
   end
   self:SetBloodNum_Player()
   self:SetShieldNum_Player()
-  
   local function SetColor()
     self:CheckAndPlayLowHealth()
     self.HpBar:SetBarColor(false)
   end
-  
   SetColor()
   self:InitLastingEffect()
 end
-
 function WBP_MainBar_C:CharRecovery(Eid)
   local GameInstance = self:GetGameInstance()
   local UIManager = GameInstance:GetGameUIManager()
@@ -151,7 +140,6 @@ function WBP_MainBar_C:CharRecovery(Eid)
   self:Reinitialize()
   self:PlayAnimation(self.InAnimation)
 end
-
 function WBP_MainBar_C:OnUpdateCharLevelAndExp()
   if not IsValid(self.Owner) then
     return
@@ -164,7 +152,6 @@ function WBP_MainBar_C:OnUpdateCharLevelAndExp()
   end
   self.OldLevel = NowLevel
 end
-
 function WBP_MainBar_C:OnMainCharacterInitReady()
   if not IsValid(self.Owner) then
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -173,7 +160,6 @@ function WBP_MainBar_C:OnMainCharacterInitReady()
   self:RealInit(self.Owner, self.OwnerType or "", self.StyleNodeName or "")
   self:AddTimer(1.0, self.CheckMaxHpAndShieldChange, true, 0, "CheckMaxHpAndShieldChange")
 end
-
 function WBP_MainBar_C:CheckMaxHpAndShieldChange()
   if self:IsVisible() == false or not IsValid(self.Owner) then
     return
@@ -184,7 +170,6 @@ function WBP_MainBar_C:CheckMaxHpAndShieldChange()
     self:Reinitialize()
   end
 end
-
 function WBP_MainBar_C:OnShowMainPlayerHealEvent(HealEvent)
   if self.IsCharInHotUI then
     self:UpdateCharHotUIState(true)
@@ -202,7 +187,6 @@ function WBP_MainBar_C:OnShowMainPlayerHealEvent(HealEvent)
     EMUIAnimationSubsystem:EMPlayAnimation(self.PlayerBloodReturn, self.PlayerBloodReturn.Player_BloodReturn)
   end
 end
-
 function WBP_MainBar_C:UpdateCharHotUIState(HotUI)
   self.IsCharInHotUI = HotUI
   if HotUI then
@@ -211,7 +195,6 @@ function WBP_MainBar_C:UpdateCharHotUIState(HotUI)
     self:StopReturning()
   end
 end
-
 function WBP_MainBar_C:StartReturing()
   if not self.PlayerBloodReturn or self.IsPlayingReturning then
     return
@@ -220,7 +203,6 @@ function WBP_MainBar_C:StartReturing()
   EMUIAnimationSubsystem:EMPlayAnimation(self.PlayerBloodReturn, self.PlayerBloodReturn.Player_BloodReturning)
   self.IsPlayingReturning = true
 end
-
 function WBP_MainBar_C:StopReturning()
   if not self.PlayerBloodReturn or not self.IsPlayingReturning then
     return
@@ -229,7 +211,6 @@ function WBP_MainBar_C:StopReturning()
   EMUIAnimationSubsystem:EMPlayAnimation(self.PlayerBloodReturn, self.PlayerBloodReturn.Player_BloodReturnEnd)
   self.IsPlayingReturning = false
 end
-
 function WBP_MainBar_C:CheckChangeRole()
   if not self.Owner:IsPlayer() then
     return
@@ -247,7 +228,6 @@ function WBP_MainBar_C:CheckChangeRole()
     self:PlayAnimation(self.InAnimation)
   end
 end
-
 function WBP_MainBar_C:CheckIsEnemyToPlayer(Owner)
   if Owner then
     rawset(self, "Owner", Owner)
@@ -265,7 +245,61 @@ function WBP_MainBar_C:CheckIsEnemyToPlayer(Owner)
   end
   return DataMgr.CampRule[OwnerCamp].Player == Const.Enemy
 end
-
+function WBP_MainBar_C:_SyncPhantomName()
+  if self.bPendingPhantomSetName then
+    DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName _SyncPhantomName")
+    self:SetName()
+    self.bPendingPhantomSetName = false
+  end
+end
+function WBP_MainBar_C:SetPhantomName()
+  local NameKey = DataMgr.BattleChar[self.RoleId].CharName
+  DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName NameKey ", NameKey)
+  DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName ContentEN ", DataMgr.TextMap_ContentEN[NameKey].ContentEN)
+  DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName IsStandAlone(self) ", IsStandAlone(self))
+  local ShowName = ""
+  local bHasCorrectShowName = false
+  if string.find(DataMgr.TextMap_ContentEN[NameKey].ContentEN, "{nickname") and not IsStandAlone(self) then
+    local PhantomState = GameState(self):GetPhantomState(self.Owner.Eid)
+    if not PhantomState then
+      local PhantomOwner = self.Owner.PhantomOwner
+      if PhantomOwner then
+        local OwnerState = GameState(self):GetPlayerState(PhantomOwner.Eid)
+        if OwnerState and OwnerState.PlayerName then
+          ShowName = OwnerState.PlayerName
+        end
+      end
+      DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName not PhantomState")
+      self.bPendingPhantomSetName = true
+    else
+      local PhantomOwnerEid = PhantomState.OwnerEid
+      if PhantomOwnerEid then
+        local OwnerState = GameState(self):GetPlayerState(PhantomOwnerEid)
+        if OwnerState and OwnerState.PlayerName then
+          ShowName = OwnerState.PlayerName
+          bHasCorrectShowName = true
+        else
+          ShowName = GText(NameKey)
+          self.bPendingPhantomSetName = true
+          DebugPrint(ErrorTag, "WBP_MainBar_C:SetPhantomName  主角魅影找不到它的OwnerPlayerName")
+        end
+      else
+        DebugPrint(ErrorTag, "WBP_MainBar_C:SetPhantomName  主角魅影找不到它的Owner， 无法赋予名称")
+        ShowName = "<ERROR>"
+      end
+    end
+  else
+    ShowName = GText(NameKey)
+    bHasCorrectShowName = true
+  end
+  self.MonsterName:SetText(ShowName)
+  self.MonsterName:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName GetText ", self.MonsterName:GetText())
+  DebugPrint(DebugTag, "WBP_MainBar_C:SetPhantomName bHasCorrectShowName ", bHasCorrectShowName)
+  if not bHasCorrectShowName then
+    self:AddTimer(0.2, self.SetName, false, 0, "WBP_MainBar_C:SetPhantomName", true)
+  end
+end
 function WBP_MainBar_C:SetName()
   DebugPrint("WBP_MainBar_C:SetName 1", self.MonsterName, self.bIsShowName, self.Owner:GetName())
   if not self.MonsterName then
@@ -283,7 +317,8 @@ function WBP_MainBar_C:SetName()
   end
   local Name
   if self.Owner:IsPhantom() then
-    Name = DataMgr.BattleChar[self.RoleId].CharName
+    self:SetPhantomName()
+    return
   else
     Name = Data.UnitName
   end
@@ -296,14 +331,14 @@ function WBP_MainBar_C:SetName()
   self.MonsterName:SetText(GText(Name))
   self.MonsterName:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_MainBar_C:GetLastingEffectColorMap()
   return self.LastingEffectColorMap
 end
-
 function WBP_MainBar_C:Destruct()
   WBP_MainBar_C.Super.Destruct(self)
   self.IsDestroied = true
+  self:RemoveDispatcher(EventID.OnRepOwnerEidPhantomState)
+  self:RemoveDispatcher(EventID.OnRepPlayerName)
+  self:RemoveDispatcher(EventID.OnCloseLoading)
 end
-
 return WBP_MainBar_C

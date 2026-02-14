@@ -4,7 +4,6 @@ local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Callback = (...)
@@ -14,11 +13,9 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:ReviewIsMobile()
   return CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
 end
-
 function M:CreateTalkItem(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Text.WBP_Story_Review_Text"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -40,7 +37,6 @@ function M:CreateTalkItem(TalkData)
   TalkWidget.Text_Content:SetVisibility(UE4.ESlateVisibility.Collapsed)
   return TalkWidget
 end
-
 function M:CreateBlackScreenItem(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Title.WBP_Story_Review_Title"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -50,7 +46,6 @@ function M:CreateBlackScreenItem(TalkData)
   TalkWidget.Text_Title:SetText(Content)
   return TalkWidget
 end
-
 function M:CreateVoiceoverItem(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Text.WBP_Story_Review_Text"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -71,7 +66,6 @@ function M:CreateVoiceoverItem(TalkData)
   TalkWidget.Text_Content:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   return TalkWidget
 end
-
 function M:CreateNormalOption(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Interaction.WBP_Story_Review_Interaction"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -112,7 +106,6 @@ function M:CreateNormalOption(TalkData)
   TalkWidget.Panel.Slot:SetSize(FVector2D(WidgetSizeX, TalkWidget.NormalPanelSizeY))
   return TalkWidget
 end
-
 function M:CreateImpressionValueOption(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Interaction.WBP_Story_Review_Interaction"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -164,7 +157,6 @@ function M:CreateImpressionValueOption(TalkData)
   ImgMat:SetTextureParameterValue("IconTex", IconTexture)
   return TalkWidget
 end
-
 function M:CreateImpressionCheckOption(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Impression.WBP_Story_Review_Impression"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -238,7 +230,6 @@ function M:CreateImpressionCheckOption(TalkData)
   TalkWidget.Panel_Parcel.Slot:SetSize(FVector2D(WidgetSizeX, TalkWidget.CheckPanelSizeY))
   return TalkWidget
 end
-
 function M:CreateCutShowTalk(TalkData)
   local FilePath = "/Game/UI/WBP/Story_Review/Widget/WBP_Story_Review_Performance.WBP_Story_Review_Performance"
   local TalkWidget = UIManager(self):CreateWidget(FilePath, false)
@@ -267,12 +258,10 @@ function M:CreateCutShowTalk(TalkData)
   end
   return TalkWidget, Widgets
 end
-
 function M:UpdateFocusItem(FocusItem)
   self.FocusItem = FocusItem
   self:UpdateBottomTips(FocusItem and FocusItem.Item_Btn and FocusItem.Item_Btn.BtnState or "")
 end
-
 function M:HandleScrollViewItemNavigation(NavigationTable)
   self.NavigationTable = NavigationTable or {}
   local Length = #NavigationTable
@@ -336,7 +325,6 @@ function M:HandleScrollViewItemNavigation(NavigationTable)
     PreNavigationItem = CurNavigationItem
   end
 end
-
 function M:InitReviewItem()
   self.Empty.Text_Empty:SetText(GText("UI_StoryReview_Dialogue_None"))
   self.Scroll_Box:ClearChildren()
@@ -393,11 +381,9 @@ function M:InitReviewItem()
   self.Scroll_Box:ScrollToEnd()
   self:UpdateGamepadInteraction()
 end
-
 function M:BindEvents()
   self.BtnClose.Btn_Close.OnClicked:Add(self, self.Close)
 end
-
 function M:UpdateGamepadInteraction()
   for Index, v in pairs(self.NavigationTable) do
     if self.NavigationTable[Index].GamePadBtn then
@@ -405,7 +391,6 @@ function M:UpdateGamepadInteraction()
     end
   end
 end
-
 function M:ScrollToEnd()
   if self.FocusItem == self.NavigationTable[#self.NavigationTable] then
     self:AddDelayFrameFunc(function()
@@ -413,7 +398,6 @@ function M:ScrollToEnd()
     end, 2)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -432,13 +416,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:UpdateCurrentFocusWidgetPos(Frame)
   self:AddDelayFrameFunc(function()
     self.GameInputModeSubsystem:UpdateCurrentFocusWidgetPos()
   end, Frame)
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -455,7 +437,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:UpdateBottomTips(GamePadTipState)
   if not self.Com_KeyTips then
     return
@@ -512,7 +493,6 @@ function M:UpdateBottomTips(GamePadTipState)
     PanelKey:AddChild(BottomKeyWidget1)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateGamepadInteraction()
   for i, v in ipairs(self.NavigationTable) do
@@ -523,7 +503,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateBottomTips(self.FocusItem and self.FocusItem.Item_Btn and self.FocusItem.Item_Btn.BtnState or "")
   self:RefreshChangeFocusItemOnGamePad()
 end
-
 function M:RefreshChangeFocusItemOnGamePad()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   local IsGamePad = GameInputModeSubsystem and GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad
@@ -557,23 +536,19 @@ function M:RefreshChangeFocusItemOnGamePad()
     FistVisibilityItem.GamePadBtn:SetFocus()
   end
 end
-
 function M:Destruct()
   if self.Callback then
     self.Callback()
   end
   M.Super.Destruct(self)
 end
-
 function M:Close()
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   M.Super.Close(self)
 end
-
 function M:CloseForBottom()
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   M.Super.Close(self)
 end
-
 return M

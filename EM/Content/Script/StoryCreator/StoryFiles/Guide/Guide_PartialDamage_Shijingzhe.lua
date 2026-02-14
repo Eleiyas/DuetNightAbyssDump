@@ -1,5 +1,5 @@
 return {
-  storyName = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+  storyName = "未命名任务",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1704175978696174303",
       type = "StoryNode",
-      name = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+      name = "未命名任务",
       pos = {x = 402, y = 143},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,14 +121,14 @@ return {
           ["1704175978696174307"] = {
             key = "1704175978696174307",
             type = "ShowGuideMainNode",
-            name = "\230\152\190\231\164\186\229\155\190\230\150\135\229\188\149\229\175\188",
+            name = "显示图文引导",
             pos = {x = 796, y = 207},
             propsData = {GuideId = 8}
           },
           ["1704175978696174308"] = {
             key = "1704175978696174308",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 418, y = 191},
             propsData = {WaitTime = 1}
           }

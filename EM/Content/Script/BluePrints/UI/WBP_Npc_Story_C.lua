@@ -1,7 +1,6 @@
 require("UnLua")
 local BP_Npc_Story_C = Class("BluePrints.UI.BP_UIState_C")
 local UIUtils = require("Utils.UIUtils")
-
 function BP_Npc_Story_C:Construct()
   self.Super.Construct(self)
   self.Btn_Cloce.OnClicked:Add(self, self.BtnBackOnClick)
@@ -10,7 +9,6 @@ function BP_Npc_Story_C:Construct()
   self.Text_Tips:SetText(GText("UI_TRAIN_CLOSE"))
   self.ExecOnClose = nil
 end
-
 function BP_Npc_Story_C:InitUIInfo(Name, IsInUIMode, EventList, Title, Context, AnimationName, AgeInfo)
   BP_Npc_Story_C.Super.InitUIInfo(self, Name, IsInUIMode, EventList, Title, Context, AnimationName, AgeInfo)
   self.Text_StoryDetail:SetText(Context)
@@ -25,7 +23,6 @@ function BP_Npc_Story_C:InitUIInfo(Name, IsInUIMode, EventList, Title, Context, 
     self.Text_AgeNum:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function BP_Npc_Story_C:OnLoaded(Title, Context, AnimationName, AgeInfo)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   PlayerCharacter:SetCanInteractiveTrigger(false, "WBP_Story_NPC_C")
@@ -39,12 +36,10 @@ function BP_Npc_Story_C:OnLoaded(Title, Context, AnimationName, AgeInfo)
   })
   self:PlayAnimation(self.In)
 end
-
 function BP_Npc_Story_C:Destruct()
   self.ExecOnClose = nil
   BP_Npc_Story_C.Super.Destruct(self)
 end
-
 function BP_Npc_Story_C:BtnBackOnClick()
   self:ChangePlayerInputable(true)
   AudioManager(self):PlayUISound(self, "event:/ui/common/npc_info_panel", "NpcStory", nil)
@@ -52,7 +47,6 @@ function BP_Npc_Story_C:BtnBackOnClick()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   PlayerCharacter:SetCanInteractiveTrigger(true, "WBP_Story_NPC_C")
 end
-
 function BP_Npc_Story_C:Close()
   AudioManager(self):SetEventSoundParam(self, "NpcStory", {ToEnd = 1})
   self.Super.Close(self)
@@ -62,7 +56,6 @@ function BP_Npc_Story_C:Close()
     ExecOnClose()
   end
 end
-
 function BP_Npc_Story_C:RealClose()
   BP_Npc_Story_C.Super.RealClose(self)
   local ExecOnRealClose = self.ExecOnRealClose
@@ -71,23 +64,18 @@ function BP_Npc_Story_C:RealClose()
     ExecOnRealClose()
   end
 end
-
 function BP_Npc_Story_C:BindOnRealClose(OnClose)
   self.ExecOnRealClose = OnClose
 end
-
 function BP_Npc_Story_C:UnBindOnRealClose()
   self.ExecOnRealClose = nil
 end
-
 function BP_Npc_Story_C:BindOnClose(OnClose)
   self.ExecOnClose = OnClose
 end
-
 function BP_Npc_Story_C:UnBindOnClose()
   self.ExecOnClose = nil
 end
-
 function BP_Npc_Story_C:ChangePlayerInputable(Inputable)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local bInMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
@@ -97,13 +85,10 @@ function BP_Npc_Story_C:ChangePlayerInputable(Inputable)
       local CenterPos = UE4.UWidgetLayoutLibrary.GetViewportSize(self)
       PlayerController:SetMouseLocation(math.floor(CenterPos.X / 2), math.floor(CenterPos.Y / 2))
     end
-    UE4.UGameplayStatics.SetGlobalTimeDilation(self, 0)
   else
     self:SetInputUIOnly(false)
-    UE4.UGameplayStatics.SetGlobalTimeDilation(self, 1.0)
   end
 end
-
 function BP_Npc_Story_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -119,7 +104,6 @@ function BP_Npc_Story_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function BP_Npc_Story_C:Handle_OnGamePadDown(InKeyName)
   if "Gamepad_FaceButton_Right" == InKeyName then
     self:BtnBackOnClick()
@@ -127,7 +111,6 @@ function BP_Npc_Story_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function BP_Npc_Story_C:Handle_OnPCDown(InKeyName)
   if "Escape" == InKeyName then
     self:BtnBackOnClick()
@@ -135,7 +118,6 @@ function BP_Npc_Story_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function BP_Npc_Story_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -148,7 +130,6 @@ function BP_Npc_Story_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function BP_Npc_Story_C:InitDeviceInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -156,13 +137,11 @@ function BP_Npc_Story_C:InitDeviceInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function BP_Npc_Story_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function BP_Npc_Story_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("thy     CurGamepadName", CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -172,7 +151,6 @@ function BP_Npc_Story_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadNam
   self.CurGamepadName = CurGamepadName
   self:InitUI()
 end
-
 function BP_Npc_Story_C:InitUI()
   if self.CurInputDeviceType == ECommonInputType.MouseAndKeyboard or self.CurInputDeviceType == ECommonInputType.Touch then
     self.WS:SetActiveWidgetIndex(0)
@@ -198,5 +176,4 @@ function BP_Npc_Story_C:InitUI()
     self.WS:SetActiveWidgetIndex(1)
   end
 end
-
 return BP_Npc_Story_C

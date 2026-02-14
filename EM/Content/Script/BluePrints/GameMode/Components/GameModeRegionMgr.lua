@@ -1,17 +1,15 @@
 require("UnLua")
 require("Utils")
+local SpecialLoadingRule = require("Utils.LoadingUtils")
 local GameModeRegionMgr = {}
-
 function GameModeRegionMgr:GetLevelGamemModeAndLevelName(SubRegionId)
   local LevelName = self:GetLevelLoader():GetLevelIdByRegionId(SubRegionId)
   return LevelName, self.SubGameModeInfo:FindRef(LevelName)
 end
-
 function GameModeRegionMgr:IsWorldLoader(LevelLoader)
   LevelLoader = LevelLoader or self:GetLevelLoader()
   return IsValid(LevelLoader) and LevelLoader.IsWorldLoader
 end
-
 function GameModeRegionMgr:SetEnterLevelStateReady()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -19,7 +17,6 @@ function GameModeRegionMgr:SetEnterLevelStateReady()
   end
   Avatar:SetEnterLevelStateReady()
 end
-
 function GameModeRegionMgr:SaveQuestData(RegionId)
   if IsStandAlone(self) then
     local Avatar = GWorld:GetAvatar()
@@ -30,7 +27,6 @@ function GameModeRegionMgr:SaveQuestData(RegionId)
     print(_G.LogTag, "ZJT_ IsDedicatedServer Not Do ")
   end
 end
-
 function GameModeRegionMgr:SaveCommonData(RegionId)
   if IsStandAlone(self) then
     local Avatar = GWorld:GetAvatar()
@@ -41,11 +37,9 @@ function GameModeRegionMgr:SaveCommonData(RegionId)
     print(_G.LogTag, "ZJT_ IsDedicatedServer Not Do")
   end
 end
-
 function GameModeRegionMgr:SaveRarelyData(RarelyId)
   print(_G.LogTag, "ZJT_ IsDedicatedServer Not Do")
 end
-
 function GameModeRegionMgr:HandleLevelDeliverBlackCurtainEnd()
   AudioManager(self):SetEventSoundParam(self, "Loading", {ToEnd = 1})
   AudioManager(self):ResumePlayBGMCauseIsLoadingOrBlackScreen()
@@ -59,7 +53,6 @@ function GameModeRegionMgr:HandleLevelDeliverBlackCurtainEnd()
   local UI = UIManager:GetUIObj("BlackScreenXiaobai")
   if UI then
     local SceneMgrComponent = GameInstance:GetSceneManager()
-    
     local function UnLoadingUI()
       TaskIndicator = UIManager:GetUIObj("MainTaskIndicator")
       if IsValid(TaskIndicator) then
@@ -72,22 +65,37 @@ function GameModeRegionMgr:HandleLevelDeliverBlackCurtainEnd()
       if UI then
         UI:CloseUI()
       end
-      EventManager:FireEvent(EventID.OnLevelDeliverBlackCurtainEnd)
+      EventManager:FireEvent(EventID.OnLevelDeliverBlackCurtainEnd, Player.Eid)
     end
-    
     UI:BindToAnimationFinished(UI.Out, {UI, UnLoadingUI})
     UI:PlayAnimationForward(UI.Out, 1.0, true)
     if not UI.Out then
       UnLoadingUI()
     end
   end
+  local function UnLoadingCallback()
+    TaskIndicator = UIManager:GetUIObj("MainTaskIndicator")
+    if IsValid(TaskIndicator) then
+      TaskIndicator:SetVisibility(UE4.ESlateVisibility.Visible)
+    end
+    local SceneMgrComponent = GameInstance:GetSceneManager()
+    SceneMgrComponent:ShowOrHideAllSceneGuideIcon(true)
+  end
+  if self.WidgetLoading then
+    if self.WidgetLoading.CloseUI then
+      self.WidgetLoading:CloseUI(UnLoadingCallback)
+    else
+      self.WidgetLoading:RemoveFromParent()
+      UnLoadingCallback()
+    end
+    self.WidgetLoading = nil
+  end
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if IsValid(PlayerCharacter) then
     PlayerCharacter:DisablePlayerInputInDeliver(false)
   end
-  EventManager:FireEvent(EventID.OnLevelDeliverBlackCurtainEnd)
+  EventManager:FireEvent(EventID.OnLevelDeliverBlackCurtainEnd, PlayerCharacter.Eid)
 end
-
 function GameModeRegionMgr:CloseCurUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -95,7 +103,7 @@ function GameModeRegionMgr:CloseCurUI()
   for i = #UITable, 1, -1 do
     local Name = UITable[i]
     local SystemUI = UIManager:GetUI(Name)
-    if SystemUI then
+    if SystemUI and SystemUI.GetUIConfigName then
       local SystemUIConfig = DataMgr.SystemUI[SystemUI:GetUIConfigName()]
       local UnloadCheck = true
       if SystemUIConfig and (SystemUIConfig.System == "Battle" or SystemUIConfig.System == "Common" or SystemUIConfig.System == "Story") then
@@ -113,6 +121,12 @@ function GameModeRegionMgr:CloseCurUI()
       if "TalkGuideUI" == Name then
         UnloadCheck = false
       end
+      if "TheaterTaskTime" == Name then
+        UnloadCheck = false
+      end
+      if "TheaterToast" == Name then
+        UnloadCheck = false
+      end
       if UnloadCheck then
         DebugPrint("HandleLevelDeliverBlackCurtainEnd Systemui Close:", Name)
         SystemUI:Close()
@@ -120,7 +134,6 @@ function GameModeRegionMgr:CloseCurUI()
     end
   end
 end
-
 function GameModeRegionMgr:InterruptBlackCurtainEnd()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -133,7 +146,6 @@ function GameModeRegionMgr:InterruptBlackCurtainEnd()
     UI:StopAnimation(UI.FadeOutAnimation)
   end
 end
-
 function GameModeRegionMgr:HandleLevelDeliverBlackCurtainStart(IsWhite, IsFromMap)
   DebugPrint("HandleLevelDeliverBlackCurtainStart")
   AudioManager(self):PlayUISound(self, "event:/ui/common/loading_common", "Loading", nil)
@@ -160,13 +172,21 @@ function GameModeRegionMgr:HandleLevelDeliverBlackCurtainStart(IsWhite, IsFromMa
   if OldUI then
     OldUI:CloseUI()
   end
-  if not IsFromMap then
+  local LoadingData, SpecialLoadingBp = SpecialLoadingRule:GetLoadingBpPath(false)
+  if SpecialLoadingBp then
+    local WidgetLoading = UIManager:CreateWidget(SpecialLoadingBp)
+    local SystemUIConfig = DataMgr.SystemUI.BlackScreenXiaobai
+    WidgetLoading:AddToViewport(SystemUIConfig and SystemUIConfig.ZOrder or 105)
+    if WidgetLoading.InitLoadingData then
+      WidgetLoading:InitLoadingData(LoadingData, nil)
+    end
+    self.WidgetLoading = WidgetLoading
+  elseif not IsFromMap then
     local Params = {}
     Params.BlackScreenHandle = "HandleLevelDeliverBlackCurtain"
     Params.ScreenColor = IsWhite and "White" or "Black"
     Params.OutAnimationPlayTime = 0.5
     Params.OutAnimationObj = self
-    
     function Params.OutAnimationCallback()
       local SceneMgrComponent = GameInstance:GetSceneManager()
       local TaskIndicator = UIManager:GetUIObj("MainTaskIndicator")
@@ -175,9 +195,8 @@ function GameModeRegionMgr:HandleLevelDeliverBlackCurtainStart(IsWhite, IsFromMa
       end
       SceneMgrComponent = GameInstance:GetSceneManager()
       SceneMgrComponent:ShowOrHideAllSceneGuideIcon(true)
-      EventManager:FireEvent(EventID.OnLevelDeliverBlackCurtainEnd)
+      EventManager:FireEvent(EventID.OnLevelDeliverBlackCurtainEnd, PlayerCharacter.Eid)
     end
-    
     UIManager:ShowCommonBlackScreen(Params)
   else
     local UI = UIManager:LoadUINew("BlackScreenXiaobai", IsWhite)
@@ -193,7 +212,6 @@ function GameModeRegionMgr:HandleLevelDeliverBlackCurtainStart(IsWhite, IsFromMa
     self:RemoveTimer("HandleLevelDeliver", true)
   end
 end
-
 function GameModeRegionMgr:StopLimitTimeExploreGroup()
   if 0 == self.EMGameState.ActiveLimitTimeExploreGroup then
     return
@@ -201,12 +219,11 @@ function GameModeRegionMgr:StopLimitTimeExploreGroup()
   local ExploreGroup = self.EMGameState.ExploreGroupMap:FindRef(self.EMGameState.ActiveLimitTimeExploreGroup)
   ExploreGroup:FailLimitExplore()
 end
-
 function GameModeRegionMgr:AsyncSetPlayerByStartIndex(LoadLevel, LevelId, StartIndex, IsOpenSync, IsWhite, IsFromMap)
-  local LevelLoader = self:GetLevelLoader()
   self:HandleLevelDeliverBlackCurtainStart(IsWhite, IsFromMap)
+  local LevelLoader = self:GetLevelLoader()
   local WorldCompositionSubsystem = LevelLoader.WorldCompositionSubSystem
-  if WorldCompositionSubsystem then
+  if WorldCompositionSubsystem and self:IsInRegion() then
     local TargtePoint = self:GetLevelLoader():GetStartPointByManager(LevelId, StartIndex)
     local Transform = TargtePoint:GetTransform()
     local Character = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -228,33 +245,12 @@ function GameModeRegionMgr:AsyncSetPlayerByStartIndex(LoadLevel, LevelId, StartI
     })
     return
   end
-  
-  local function Callback()
-    local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-    Player:AddDisableInputTag("DeliverBlackCurtain")
-    self:AddTimer(DataMgr.GlobalConstant.DeliveryBlackCurtainTime.ConstantValue, self.HandleLevelDeliverBlackCurtainEnd, false, 0, "HandleLevelDeliver", true)
-    self:SetPlayerLocationAndRotation(LevelId, StartIndex)
-  end
-  
-  if LevelLoader:GetLevelLoaded(LevelId) then
-    Callback()
-    return
-  end
-  
-  local function LoadLevelCallBack()
-    Callback()
-    LevelLoader:RemoveArtLevelLoadedCompleteCallback(LevelId)
-  end
-  
-  LevelLoader:BindArtLevelLoadedCompleteCallback(LevelId, LoadLevelCallBack)
-  LevelLoader:LoadArtLevel(LevelId)
 end
-
 function GameModeRegionMgr:AsyncSetPlayerByLocationAndRotation(LoadLevel, LevelId, Location, Rotation, IsOpenSync, IsWhite)
   local LevelLoader = self:GetLevelLoader()
   self:HandleLevelDeliverBlackCurtainStart(IsWhite)
   local WorldCompositionSubsystem = LevelLoader.WorldCompositionSubSystem
-  if WorldCompositionSubsystem then
+  if WorldCompositionSubsystem and self:IsInRegion() then
     local Transform = UE4.UKismetMathLibrary.MakeTransform(Location, Rotation, UE4.FVector(1, 1, 1))
     local Character = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
     WorldCompositionSubsystem:RequestAsyncTravel(Character, Transform, {
@@ -267,42 +263,20 @@ function GameModeRegionMgr:AsyncSetPlayerByLocationAndRotation(LoadLevel, LevelI
     })
     return
   end
-  
-  local function Callback()
-    local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-    Player:AddDisableInputTag("DeliverBlackCurtain")
-    self:AddTimer(DataMgr.GlobalConstant.DeliveryBlackCurtainTime.ConstantValue, self.HandleLevelDeliverBlackCurtainEnd, false, 0, "HandleLevelDeliver", true)
-    local Character = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-    local Controller = UE4.UGameplayStatics.GetPlayerController(self, 0)
-    Character:K2_SetActorLocation(Location, false, nil, true)
-    Character:K2_SetActorRotation(Rotation, false)
-    Controller:SetControlRotation(Rotation)
-    LevelLoader:OpenPlayerPositionSync()
-  end
-  
-  if LevelLoader:GetLevelLoaded(LevelId) then
-    Callback()
-    return
-  end
-  
-  local function LoadLevelCallBack()
-    Callback()
-    LevelLoader:RemoveArtLevelLoadedCompleteCallback(LevelId)
-  end
-  
-  LevelLoader:BindArtLevelLoadedCompleteCallback(LevelId, LoadLevelCallBack)
-  LevelLoader:LoadArtLevel(LevelId)
 end
-
 function GameModeRegionMgr:SetPlayerLocationAndRotation(LevelId, StartIndex)
   local TargtePoint = self:GetLevelLoader():GetStartPointByManager(LevelId, StartIndex)
   TargtePoint:SetPlayerTrans()
 end
-
+function GameModeRegionMgr:PrepareLevelDelivery(Id, StartIndex)
+  self.TargetSubRegion = Id
+  self.TargetSpawnPoint = StartIndex
+end
 function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite, bIsInvitation, bIsFromMap)
   Id = tonumber(Id)
   ModeType = tonumber(ModeType)
   StartIndex = tonumber(StartIndex)
+  self:PrepareLevelDelivery(Id, StartIndex)
   local Avatar = GWorld:GetAvatar()
   local LevelLoader = self:GetLevelLoader()
   if not Avatar or ModeType == UE4.EModeType.ModeNone then
@@ -363,10 +337,12 @@ function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite,
       end
     else
       local function RegionDeliver()
+        if PlayerCharacter then
+          PlayerCharacter.IsInDeliver = true
+        end
         if LevelLoader.IsWorldLoader then
           if CurrentRegionFile == TergetRegionFile then
             local LevelId = LevelLoader:GetLevelIdByRegionId(Id)
-            
             if not self:CheckSkipRegionByStartIndex(LevelId, StartIndex) then
               return false
             end
@@ -389,7 +365,6 @@ function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite,
           Avatar:EnterRegion(Id, StartIndex, CommonConst.EnterRegionType.Deliver, nil, bIsInvitation)
         end
       end
-      
       local function RealDelivery()
         DebugPrint("zwk RealDelivery")
         PlayerCharacter:SetInvincible(false, "Delivery")
@@ -400,14 +375,12 @@ function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite,
         RegionDeliver()
         self:DeliveryHideWeapon(PlayerCharacter, false)
       end
-      
       local function NotifyBegin()
         DebugPrint("zwk OnDeliveryPreLoadingMontageNotifyBegin")
         if not GameInstance.AlreadyDeliver then
           RealDelivery()
         end
       end
-      
       local function Interrupted()
         DebugPrint("zwk OnDeliveryPreLoadingInterrupted", GameInstance.ShouldPlayDeliveryEndMontage, GameInstance.AlreadyDeliver)
         if not GameInstance.AlreadyDeliver then
@@ -418,11 +391,12 @@ function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite,
           RealDelivery()
         end
       end
-      
       local AllCallback = {OnNotifyBegin = NotifyBegin, OnInterrupted = Interrupted}
       if bIsFromMap then
         DebugPrint("zwk OnDeliveryPreLoadingMontageBeginLoad")
+        PlayerCharacter:ForceClearActorHideTag()
         GameInstance:OnCharaterReset()
+        PlayerCharacter.CameraControlComponent:RemoveStatesEXBasic()
         local CameraRot = PlayerCharacter.CharCameraComponent:K2_GetComponentRotation()
         CameraRot.Pitch = 0.0
         CameraRot.Roll = 0.0
@@ -436,7 +410,15 @@ function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite,
         self:DeliveryHideWeapon(PlayerCharacter, true)
         PlayerCharacter:SetActorHideTag("DeliveryMontage", false)
         GameInstance.ShouldPlayDeliveryEndMontage = true
-        PlayerCharacter:PlayTeleportAction(AllCallback, false, true, true)
+        if PlayerCharacter:IsMainPlayer() and PlayerCharacter:IsExistTimer("SetOnlineStateNormal") then
+          PlayerCharacter:RemoveTimer("SetOnlineStateNormal")
+        end
+        if Avatar.IsInRegionOnline and Avatar.CurrentOnlineType then
+          DebugPrint("zwk 区域联机传送 ", Avatar.IsInRegionOnline, IsClient(self), IsDedicatedServer(self), IsStandAlone(self))
+          PlayerCharacter:ForceReSyncLocation()
+          Avatar:SwitchOnlineState(Avatar.CurrentOnlineType, CommonConst.OnlineState.UseDelivery)
+        end
+        PlayerCharacter:PlayTeleportAction(AllCallback, false, true, false)
         self:AddTimer(5, function()
           if PlayerCharacter then
             PlayerCharacter:SetInvincible(false, "Delivery")
@@ -462,18 +444,15 @@ function GameModeRegionMgr:HandleLevelDeliver(ModeType, Id, StartIndex, IsWhite,
   end
   return true
 end
-
 function GameModeRegionMgr:DeliveryHideWeapon(PlayerCharacter, bHide)
   for Id, Weapon in pairs(PlayerCharacter.Weapons) do
     Weapon:SetActorHideTag("Delivery", bHide)
   end
 end
-
 function GameModeRegionMgr:CheckSkipRegionByStartIndex(LevelId, StartIndex)
   local StartPoint = self:GetLevelLoader():GetStartPointByManager(LevelId, StartIndex)
   return IsValid(StartPoint)
 end
-
 function GameModeRegionMgr:DeliverByLocationAndRotation(SubRegionId, Location, Rotation, IsWhite)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -494,7 +473,6 @@ function GameModeRegionMgr:DeliverByLocationAndRotation(SubRegionId, Location, R
     ULoadLevel.DeliverTargtePlayerByLocationAndRotation(self, LevelId, FVector(Location.X, Location.Y, Location.Z), FRotator(Rotation.Pitch, Rotation.Yaw, Rotation.Roll), true, IsWhite)
   end
 end
-
 function GameModeRegionMgr:DelDrop(DropId)
   self.LevelGameMode.DropRule[DropId] = true
   local Avatar = GWorld:GetAvatar()
@@ -502,7 +480,6 @@ function GameModeRegionMgr:DelDrop(DropId)
     Avatar:UpdateSuitKey2Value(CommonConst.SuitType.GameModeSuit, CommonConst.GameModeSuit.DropRule, DropId, true)
   end
 end
-
 function GameModeRegionMgr:RecoverDrop(DropId)
   self.LevelGameMode.DropRule[DropId] = false
   local Avatar = GWorld:GetAvatar()
@@ -510,5 +487,4 @@ function GameModeRegionMgr:RecoverDrop(DropId)
     Avatar:UpdateSuitKey2Value(CommonConst.SuitType.GameModeSuit, CommonConst.GameModeSuit.DropRule, DropId, false)
   end
 end
-
 return GameModeRegionMgr

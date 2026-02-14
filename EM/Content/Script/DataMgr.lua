@@ -1,12 +1,90 @@
 DataMgr = setmetatable({}, {
   __index = function(t, key)
-    return require("Datas." .. key)
+    local OK, Table = pcall(require, "Datas." .. key)
+    if not OK then
+      Table = nil
+    end
+    return Table
   end
 })
-
+function DataMgr.LocalTimeProxy(_value)
+  return setmetatable({
+    __Time = true,
+    RawTable = true,
+    GetTime = function()
+      return TimeUtils.TimestampToServerTimestamp(_value)
+    end
+  }, {
+    __add = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a + b
+    end,
+    __sub = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a - b
+    end,
+    __mul = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a * b
+    end,
+    __div = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a / b
+    end,
+    __lt = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a < b
+    end,
+    __le = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a <= b
+    end,
+    __eq = function(a, b)
+      if type(a) == "table" and a.__Time then
+        a = a.GetTime()
+      end
+      if type(b) == "table" and b.__Time then
+        b = b.GetTime()
+      end
+      return a == b
+    end,
+    __tostring = function(t)
+      return tostring(t.GetTime())
+    end
+  })
+end
 function DataMgr.Print_t(t)
   local print_r_cache = {}
-  
   local function sub_print_r(t, indent)
     if print_r_cache[tostring(t)] then
       print(indent .. "*" .. tostring(t))
@@ -29,7 +107,6 @@ function DataMgr.Print_t(t)
       end
     end
   end
-  
   if type(t) == "table" then
     print(tostring(t) .. " {")
     sub_print_r(t, "  ")
@@ -39,7 +116,6 @@ function DataMgr.Print_t(t)
   end
   print()
 end
-
 function DataMgr.GetData(filename)
   local pro_path = UE4.UKismetSystemLibrary.GetProjectContentDirectory()
   local file = io.open(pro_path .. "../Datas/" .. filename .. ".json", "r")
@@ -49,7 +125,6 @@ function DataMgr.GetData(filename)
   local res = json.decode(info)
   return res
 end
-
 function DataMgr.GetLevelLoaderJsonData(shortname)
   local pro_path = UE4.UKismetSystemLibrary.GetProjectContentDirectory()
   local path = pro_path .. "Script/Datas/Houdini_data/" .. shortname .. ".json"
@@ -58,16 +133,13 @@ function DataMgr.GetLevelLoaderJsonData(shortname)
   local res = json.decode(info)
   return res
 end
-
 function DataMgr.PreLoad()
   local DataNames = require("Datas.DataNames")
   for _, DataName in pairs(DataNames) do
     require("Datas." .. DataName)
   end
 end
-
 local all_tables = {}
-
 function DataMgr.CollectTable(Table)
   for k, tbl in pairs(all_tables) do
     if tbl == Table then
@@ -81,12 +153,10 @@ function DataMgr.CollectTable(Table)
     end
   end
 end
-
 DataMgr.PartitionCache = {
   Cache = {},
   MaxPartitionsPerFile = 10
 }
-
 function GetMaxPartitionsByFileName(FileName)
   local MaxVal = DataMgr.PartitionCache.MaxPartitionsPerFile
   if not FileName or "" == FileName then
@@ -104,7 +174,6 @@ function GetMaxPartitionsByFileName(FileName)
   end
   return MaxVal
 end
-
 function DataMgr.BinarySearch(Key, DataIndexTable)
   local Low, High = 1, #DataIndexTable
   while Low <= High do
@@ -120,7 +189,6 @@ function DataMgr.BinarySearch(Key, DataIndexTable)
   end
   return nil
 end
-
 local function UpdatePartitionLRU(FileName, PartitionKey)
   local FileCache = DataMgr.PartitionCache.Cache[FileName]
   if not FileCache then
@@ -134,7 +202,6 @@ local function UpdatePartitionLRU(FileName, PartitionKey)
   end
   table.insert(FileCache.LRUQueue, 1, PartitionKey)
 end
-
 function DataMgr.QueryTable(Key, FileName, Data)
   local Cache = DataMgr.PartitionCache
   local FileCache = Cache.Cache[FileName]
@@ -170,7 +237,6 @@ function DataMgr.QueryTable(Key, FileName, Data)
   end
   return PartitionData[Key]
 end
-
 function DataMgr.GetPartitionData(Key, Data)
   local PartitionData, MinKey, MaxKey = DataMgr.BinarySearch(Key, Data)
   if not PartitionData or not PartitionData[Key] then
@@ -178,13 +244,11 @@ function DataMgr.GetPartitionData(Key, Data)
   end
   return PartitionData
 end
-
 function DataMgr.ReadOnly_NewIndex(t, k, v)
   local rawset = _ENV.rawset
   local getmetatable = _ENV.getmetatable
-  error("\230\178\161\230\179\149\229\175\185\229\175\188\232\161\168\230\149\176\230\141\174\227\128\144" .. tostring(t.__name) .. "\227\128\145\228\184\173\229\173\151\230\174\181\227\128\144" .. tostring(k) .. "\227\128\145\232\191\155\232\161\140\229\134\153\230\147\141\228\189\156")
+  error("没法对导表数据【" .. tostring(t.__name) .. "】中字段【" .. tostring(k) .. "】进行写操作")
 end
-
 function DataMgr.CleanAllTable()
   all_tables = {}
   local DataNames = require("Datas.DataNames")
@@ -196,7 +260,6 @@ function DataMgr.CleanAllTable()
     end
   end
 end
-
 function read_only(name, tbl)
   if not all_tables[tbl] then
     local tbl_mt = getmetatable(tbl)
@@ -225,14 +288,13 @@ function read_only(name, tbl)
     end
     all_tables[tbl] = proxy
     for k, v in pairs(tbl) do
-      if type(v) == "table" then
+      if type(v) == "table" and not rawget(v, "RawTable") then
         tbl[k] = read_only(name, v)
       end
     end
   end
   return all_tables[tbl]
 end
-
 if URuntimeCommonFunctionLibrary.IsDebugDataTable() then
   DataMgr.ReadOnly = read_only
 else

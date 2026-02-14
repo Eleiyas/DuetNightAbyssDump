@@ -1,6 +1,5 @@
 local TalkOptionData_C = require("BluePrints.Story.Talk.Model.TalkOptionData").TalkOptionData_C
 local TalkTaskDataBase_C = {}
-
 function TalkTaskDataBase_C.New(TalkNodeData)
   local TalkTypeData = DataMgr.TalkType[TalkNodeData.TalkType]
   local GameInstance = GWorld.GameInstance
@@ -42,8 +41,7 @@ function TalkTaskDataBase_C.New(TalkNodeData)
     Obj.CameraLookAtTartgetPoint = nil
   end
   Obj.RestoreStand = TalkNodeData.RestoreStand
-  Obj.CreateTalkActors = TalkNodeData.TalkActors
-  Obj.RemoveTalkActors = TalkNodeData.RemoveTalkActors
+  Obj.TalkActors = TalkNodeData.TalkActors
   Obj.Options = TalkNodeData.Options
   Obj.Player = UE.UGameplayStatics.GetPlayerCharacter(Obj.TalkContext, 0)
   Obj.PlayerController = UE.UGameplayStatics.GetPlayerController(Obj.TalkContext, 0)
@@ -75,5 +73,4 @@ function TalkTaskDataBase_C.New(TalkNodeData)
   Obj.BeginFadeOutTime = 0.5
   return Obj
 end
-
 return TalkTaskDataBase_C

@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Archive_CharItem_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Archive_CharItem_C:Initialize(Initializer)
   self.SlotModId = nil
   self.IsDraging = false
@@ -12,7 +11,6 @@ function WBP_Archive_CharItem_C:Initialize(Initializer)
   self.CallbackUI2 = nil
   self.AddListenerFnish = false
 end
-
 function WBP_Archive_CharItem_C:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnCellClicked)
   self.Btn_Click.OnHovered:Add(self, self.OnCellHovered)
@@ -20,7 +18,6 @@ function WBP_Archive_CharItem_C:Construct()
   self.Btn_Click.OnPressed:Add(self, self.OnCellPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnCellReleased)
 end
-
 function WBP_Archive_CharItem_C:OnListItemObjectSet(Content)
   self.bHovered = false
   self.bPressed = false
@@ -57,7 +54,6 @@ function WBP_Archive_CharItem_C:OnListItemObjectSet(Content)
     self:RefreshReddot()
   end
 end
-
 function WBP_Archive_CharItem_C:SetIsEmpty(IsEmpty)
   if IsEmpty then
     self.Main:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -65,7 +61,6 @@ function WBP_Archive_CharItem_C:SetIsEmpty(IsEmpty)
     self.Main:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function WBP_Archive_CharItem_C:UpdateItem(Content)
   self:SetIsUnlock(Content.Unlock)
   self:SetName(Content.Name)
@@ -73,7 +68,6 @@ function WBP_Archive_CharItem_C:UpdateItem(Content)
   self:SetRarity(Content.Rarity)
   self:SetTag(Content.TagIcon)
 end
-
 function WBP_Archive_CharItem_C:SetIsUnlock(Unlock)
   if Unlock then
     self:PlayAnimation(self.Normal)
@@ -81,11 +75,9 @@ function WBP_Archive_CharItem_C:SetIsUnlock(Unlock)
     self:PlayAnimation(self.Lock)
   end
 end
-
 function WBP_Archive_CharItem_C:SetName(Name)
   self.Text_Name:SetText(GText(Name))
 end
-
 function WBP_Archive_CharItem_C:SetIcon(IconPath)
   local IconDynaMaterial = self.Icon:GetDynamicMaterial()
   local Icon = LoadObject(IconPath)
@@ -96,7 +88,6 @@ function WBP_Archive_CharItem_C:SetIcon(IconPath)
     self.Icon:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Archive_CharItem_C:SetRarity(Rarity)
   for i = 1, 5 do
     if i <= Rarity then
@@ -117,7 +108,6 @@ function WBP_Archive_CharItem_C:SetRarity(Rarity)
     self.Frame_Inner:SetColorAndOpacity(self.Color_Inner_Normal)
   end
 end
-
 function WBP_Archive_CharItem_C:SetTag(TagIconPath)
   if TagIconPath then
     local Icon = LoadObject(TagIconPath)
@@ -127,20 +117,16 @@ function WBP_Archive_CharItem_C:SetTag(TagIconPath)
     self.Icon_Tag:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Archive_CharItem_C:OnMouseEnter(MyGeometry, MouseEvent)
 end
-
 function WBP_Archive_CharItem_C:OnMouseLeave(MouseEvent)
 end
-
 function WBP_Archive_CharItem_C:OnCellClicked()
   self:StopAnimation(self.Click)
   if self.Content and self.Content.Parent then
     self.Content.Parent:ClickListItem(self.Content)
   end
 end
-
 function WBP_Archive_CharItem_C:OnCellHovered()
   if not self:IsAnimationPlaying(self.Click) then
     self:StopAnimation(self.UnHover)
@@ -148,7 +134,6 @@ function WBP_Archive_CharItem_C:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Archive_CharItem_C:OnCellUnhovered()
   if not self:IsAnimationPlaying(self.Click) then
     self:StopAnimation(self.Hover)
@@ -156,11 +141,9 @@ function WBP_Archive_CharItem_C:OnCellUnhovered()
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function WBP_Archive_CharItem_C:OnCellPressed()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Archive_CharItem_C:OnCellReleased()
   self:StopAnimation(self.Press)
   if self.Content.Unlock then
@@ -169,7 +152,6 @@ function WBP_Archive_CharItem_C:OnCellReleased()
     self:PlayAnimation(self.Lock)
   end
 end
-
 function WBP_Archive_CharItem_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.Content.NodeName)
   if not self.Content or not self.Content.Id then
@@ -181,5 +163,4 @@ function WBP_Archive_CharItem_C:RefreshReddot()
     self.New:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Archive_CharItem_C

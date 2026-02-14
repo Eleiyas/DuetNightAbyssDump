@@ -4,30 +4,24 @@ local Utils = require("Utils")
 local CdnTool = require("BluePrints/UI/GameLogin/CdnTool")
 local MiscUtils = require("Utils.MiscUtils")
 local M = Class()
-local SubReddotKeys = {
-  "SystemAnnouncement",
-  "ActivityAnnouncement",
-  "NewsAnnouncement"
-}
-
-function M:Init()
-  if AnnounceCommon.bUseWeb then
-    M.GetAnnouncementDataAsync = M.GetAnnouncementDataAsync_UseWeb
-  end
+function M:Init(GameInstance)
+  GameInstance = GameInstance or GWorld.GameInstance
   if not Utils then
     Utils = require("Utils")
   end
+  M.AHSS = UAnnounceHttpServerSubsystem.GetInstance(GameInstance)
   M.bInit = false
   M.LastConfs = {}
   M.Confs = {}
   M.FutureConfs = {}
+  M.AddedConfIds = {}
   M.PendingCo = nil
   M.HasNewAdd = false
   M.bFontLoading = false
   M._AnnouncementDirty = true
+  M.OldReddotCache = {}
   M:LoadResource(true)
 end
-
 function M:_GetFontPath()
   local Postfix = AnnounceCommon.FontTypeMap[CommonConst.SystemLanguage]
   local FontFile = string.format("%s.%s", CommonConst.SystemLanguage, Postfix)
@@ -35,61 +29,62 @@ function M:_GetFontPath()
   local FontUrl = CdnTool:CdnUrl() .. "/OperationGameNotice/Resource/Fonts/" .. FontFile
   return FontPath, string.format("font/%s", Postfix), FontUrl, FontFile
 end
-
 function M:LoadHtmlContent(Conf, Callback, ContentSize)
+  M.AHSS:StartAnnouncementServer()
   local HtmlPath = URuntimeCommonFunctionLibrary.ConvertRelativePathToFull(AnnounceCommon.AnnounceWeb .. string.format("%s.html", Conf.NoticeID))
-  
   local function Cb()
     local HtmlText = ""
-    local RootDir = "http://localhost:1559"
+    local RootDir = "http://localhost:" .. M.AHSS:GetPortId()
     if AnnounceCommon.PlatformName == CommonConst.CHANNEL_OS.IOS then
       RootDir = URuntimeCommonFunctionLibrary.ConvertRelativePathToFull(UEMPathFunctionLibrary.GetProjectSavedDirectory())
     end
     Conf.NoticeContent = M:ParseTimeOfContent(Conf.NoticeContent)
-    HtmlText = string.format(AnnounceCommon.HtmlBody1, RootDir, Conf.NoticeContent)
-    DebugPrint(LXYTag, "\231\156\139\231\156\139HtmlText\n", HtmlText)
+    Conf.NoticeContent = M:ParseHTMLContent(Conf.NoticeContent)
+    local OneRem = 100 / (ContentSize / 100) * AnnounceCommon.FontScale
+    HtmlText = string.format(AnnounceCommon.HtmlBody1, OneRem, RootDir, Conf.NoticeContent)
     if not Conf.HtmlUrl or not UBlueprintPathsLibrary.FileExists(HtmlPath) then
       URuntimeCommonFunctionLibrary.SaveFile(HtmlPath, HtmlText)
     end
     if AnnounceCommon.PlatformName ~= CommonConst.CHANNEL_OS.IOS then
       local _, _, _, FontFile = M:_GetFontPath()
-      local FontUrl = string.format("http://localhost:1559/AnnounceWeb/Fonts/%s", FontFile)
+      local FontUrl = string.format("http://localhost:%s/AnnounceWeb/Fonts/%s", M.AHSS:GetPortId(), FontFile)
       local FontFileParam = string.format("?fontUrl=%s", FontUrl)
-      local FontSizeParam = string.format("&ContentSize=%s", ContentSize)
-      local RawUrl = string.format("http://localhost:1559/AnnounceWeb/%s.html", Conf.NoticeID)
-      Conf.HtmlUrl = RawUrl .. FontFileParam .. FontSizeParam
+      local Param2 = string.format("&disableScroll=%s", Conf.NoticeStyle == AnnounceCommon.ContentUIStyle.ImageOnly)
+      local RawUrl = string.format("http://localhost:%s/AnnounceWeb/%s.html", M.AHSS:GetPortId(), Conf.NoticeID)
+      Conf.HtmlUrl = RawUrl .. FontFileParam .. Param2
     else
       HtmlPath = MiscUtils.CorrectUrl(HtmlPath)
       local FontPath = M:_GetFontPath()
       FontPath = MiscUtils.CorrectUrl(FontPath)
       local FontUrl = URuntimeCommonFunctionLibrary.ConvertRelativePathToFull(FontPath)
       local FontFileParam = string.format("?fontUrl=file://%s", FontUrl)
-      DebugPrint("\231\156\139\231\156\139\229\133\172\229\145\138\233\161\181\233\157\162\231\154\132\229\173\151\228\189\147\229\164\167\229\176\143", ContentSize)
-      local FontSizeParam = string.format("&ContentSize=%s", ContentSize)
-      Conf.HtmlUrl = "file://" .. HtmlPath .. FontFileParam .. FontSizeParam
+      local Param2 = string.format("&disableScroll=%s", Conf.NoticeStyle == AnnounceCommon.ContentUIStyle.ImageOnly)
+      Conf.HtmlUrl = "file://" .. HtmlPath .. FontFileParam .. Param2
     end
-    DebugPrint(LXYTag, "\231\156\139\229\133\172\229\145\138\233\161\181\233\157\162\231\154\132URL", Conf.HtmlUrl)
+    DebugPrint(LXYTag, "看公告页面的URL", Conf.HtmlUrl)
     Callback(Conf.HtmlUrl, HtmlText)
   end
-  
   if not Conf.HtmlUrl then
     M:LoadResource(false, Cb)
     return
   end
   Cb()
 end
-
 function M:LoadResource(bForceLoad, Cb)
+  local CachedVer = EMCache:Get("AnnounceVersion")
+  if CachedVer ~= AnnounceCommon.Version then
+    UBlueprintFileUtilsBPLibrary.DeleteDirectory(AnnounceCommon.AnnounceWeb, true, true)
+    EMCache:Set("AnnounceVersion", AnnounceCommon.Version)
+  end
   if M.bFontLoading then
     UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Toast_NetDelay"))
     return
   end
-  
   local function Callback(Url, Path, Response)
     try({
       exec = function()
         if not Response or "" == Response then
-          DebugPrint(WarningTag, LXYTag, "\229\133\172\229\145\138\230\178\161\230\156\137\230\139\137\229\136\176\232\132\154\230\156\172", Url)
+          DebugPrint(WarningTag, LXYTag, "公告没有拉到脚本", Url)
           return
         end
         URuntimeCommonFunctionLibrary.SaveFile(Path, Response)
@@ -99,7 +94,6 @@ function M:LoadResource(bForceLoad, Cb)
       end
     })
   end
-  
   local JsPath = AnnounceCommon.AnnounceWeb .. "Script/Announce.js"
   if not UBlueprintPathsLibrary.FileExists(JsPath) or bForceLoad then
     Callback(JsPath, JsPath, AnnounceCommon.JsContent)
@@ -117,14 +111,14 @@ function M:LoadResource(bForceLoad, Cb)
   }, bForceLoad)
   local FontPath, ContentType, FontUrl = M:_GetFontPath()
   if not UBlueprintPathsLibrary.FileExists(FontPath) then
-    DebugPrint(LXYTag, "\230\163\128\230\181\139\229\136\176\229\173\151\228\189\147\228\184\141\229\173\152\229\156\168\239\188\140\233\128\154\232\191\135httpget\232\142\183\229\143\150\229\173\151\228\189\147")
+    DebugPrint(LXYTag, "检测到字体不存在，通过httpget获取字体")
     M.bFontLoading = true
     local Delegate = {
       GWorld.GameInstance,
       function(_, bSuccess)
         M.bFontLoading = false
         if not bSuccess then
-          DebugPrint(WarningTag, LXYTag, "\231\189\145\231\187\156\229\164\170\229\183\174\239\188\140\229\133\172\229\145\138\230\178\161\230\156\137\230\139\137\229\136\176\229\173\151\228\189\147", FontUrl)
+          DebugPrint(WarningTag, LXYTag, "网络太差，公告没有拉到字体", FontUrl)
           return
         end
         if Cb then
@@ -133,18 +127,19 @@ function M:LoadResource(bForceLoad, Cb)
       end
     }
     UE.URuntimeCommonFunctionLibrary.HttpGetAndSave(FontUrl, FontPath, ContentType, Delegate, bForceLoad)
-  elseif Cb then
-    Cb()
+  else
+    M.bFontLoading = false
+    if Cb then
+      Cb()
+    end
   end
 end
-
 function M:_GetTimeZone()
   if not M.LocalTimeZone then
     M.LocalTimeZone = CommonUtils.GetTimeZone()
   end
   return M.LocalTimeZone
 end
-
 function M:_AddFormatArg(Args, ArgName, ArgValue)
   local Arg = FFormatArgumentData()
   Arg.ArgumentValueType = EFormatArgumentType.Text
@@ -152,7 +147,6 @@ function M:_AddFormatArg(Args, ArgName, ArgValue)
   Arg.ArgumentName, Arg.ArgumentValue = ArgName, ArgValue
   Args:Add(Arg)
 end
-
 function M:_TranslateTime(Year, Month, Day, Hour, Minute, DstTimeZone, SrcTimeZone)
   SrcTimeZone = SrcTimeZone or 8
   Year, Month, Day, Hour, Minute = tonumber(Year), tonumber(Month), tonumber(Day), tonumber(Hour), tonumber(Minute)
@@ -169,7 +163,6 @@ function M:_TranslateTime(Year, Month, Day, Hour, Minute, DstTimeZone, SrcTimeZo
   Year, Month, Day, Hour, Minute = Date.year, Date.month, Date.day, Date.hour, Date.min
   return Year, Month, Day, Hour, Minute
 end
-
 function M:_MakeTimeStrReal(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone, TZStr)
   TZStr = TZStr or ""
   local Year, Month, Day, Hour, Minute = self:_TranslateTime(YY, MM, DD, H, M, TimeZone)
@@ -197,30 +190,24 @@ function M:_MakeTimeStrReal(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone, T
     return UKismetTextLibrary.Format(GText("AnnouncementTimeFormatOne"), TimeArgs) .. TZStr
   end
 end
-
 function M:_MakeTimeStrCN(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
   return self:_MakeTimeStrReal(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
 end
-
 function M:_MakeTimeStrJP(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
   local AutoTZStr = GText("AnnouncementAutoTimeZone")
   local AutoTimeStr = self:_MakeTimeStrReal(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone, AutoTZStr)
   return AutoTimeStr
 end
-
 function M:_MakeTimeStrEN(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
   local AutoTZStr = string.format(GText("AnnouncementAutoTimeZone"), TimeZone >= 0 and "+" .. TimeZone or TimeZone)
   return self:_MakeTimeStrReal(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone, AutoTZStr)
 end
-
 function M:_MakeTimeStrKR(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
   return self:_MakeTimeStrJP(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
 end
-
 function M:_MakeTimeStrTC(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
   return self:_MakeTimeStrEN(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
 end
-
 function M:_MakeNewTimeStr(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1)
   local Language = CommonConst.SystemLanguage
   local Tag = ""
@@ -238,7 +225,6 @@ function M:_MakeNewTimeStr(YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1)
   local TimeZone = self:_GetTimeZone()
   return self["_MakeTimeStr" .. Tag](self, YY, MM, DD, H, M, YY1, MM1, DD1, H1, M1, TimeZone)
 end
-
 function M:ParseTimeOfContent(Content)
   local Replacement = {}
   for TimeStr in string.gmatch(Content, AnnounceCommon.LongTimeFormat) do
@@ -268,30 +254,73 @@ function M:ParseTimeOfContent(Content)
   end
   return Content
 end
-
+function M:_MakeNewFontSizeStr(Val)
+  local pt = tonumber(Val)
+  local rem = pt * 1.3333333333333333 / 100
+  return string.format("font-size:%srem", rem)
+end
+function M:ParseHTMLContent(Content)
+  local Replacement = {}
+  for FontSizeStr in string.gmatch(Content, AnnounceCommon.FontSizeFormat) do
+    if not Replacement[FontSizeStr] then
+      local FontSizeVal = string.gmatch(FontSizeStr, "(%d+)")()
+      local NewFontSizeStr = M:_MakeNewFontSizeStr(FontSizeVal)
+      Replacement[FontSizeStr] = NewFontSizeStr
+    end
+  end
+  for TableTagStr in string.gmatch(Content, AnnounceCommon.TableTagFormat) do
+    if not Replacement[TableTagStr] then
+      local Slash = string.gmatch(TableTagStr, "(/)")()
+      local NewPTagStr = Slash and "</p>" or "<p>"
+      Replacement[TableTagStr] = NewPTagStr
+    end
+  end
+  for Old, New in pairs(Replacement) do
+    Content = UKismetStringLibrary.ReplaceInline(Content, Old, New)
+  end
+  return Content
+end
 function M:_ResetReddot()
   if not ReddotManager.GetTreeNode(DataMgr.ReddotNode.AnnouncementItems.Name) then
     ReddotManager.AddNode(DataMgr.ReddotNode.AnnouncementItems.Name)
   end
-  ReddotManager.ClearLeafNodeCount("ActivityAnnouncement")
-  ReddotManager.ClearLeafNodeCount("SystemAnnouncement")
-  ReddotManager.ClearLeafNodeCount("NewsAnnouncement")
+  local Nodes = {
+    "ActivityAnnouncement",
+    "SystemAnnouncement",
+    "NewsAnnouncement"
+  }
+  for _, NodeName in ipairs(Nodes) do
+    if not M.OldReddotCache[NodeName] then
+      M.OldReddotCache[NodeName] = CommonUtils.DeepCopy(ReddotManager.GetLeafNodeCacheDetail(NodeName))
+    end
+    ReddotManager.ClearLeafNodeCount(NodeName)
+    local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(NodeName)
+    local DelKeys = {}
+    for Key, Value in pairs(CacheDetail) do
+      if Value then
+        table.insert(DelKeys, Key)
+      end
+    end
+    for _, DelKey in ipairs(DelKeys) do
+      CacheDetail[DelKey] = nil
+    end
+  end
   ReddotManager.ClearLeafNodeCount("AnnouncementDirty")
 end
-
 function M:_TryAddReddotCacheDetail(Conf)
   local CacheKey = tostring(Conf.NoticeID)
   local ReddotName = M:GetReddotNameByConf(Conf)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotName)
   if CacheDetail and nil == CacheDetail[CacheKey] then
     CacheDetail[CacheKey] = true
-    M.HasNewAdd = true
+    if not M.OldReddotCache[ReddotName][CacheKey] then
+      M.HasNewAdd = true
+    end
   end
   if CacheDetail[CacheKey] then
     ReddotManager.IncreaseLeafNodeCount(ReddotName)
   end
 end
-
 function M:GetReddotNameByConf(Conf)
   if Conf.TabTag == AnnounceCommon.TabTag.Activity then
     return "ActivityAnnouncement"
@@ -301,7 +330,6 @@ function M:GetReddotNameByConf(Conf)
     return "NewsAnnouncement"
   end
 end
-
 function M:TrySubReddotCacheDetail(Conf)
   local CacheKey = tostring(Conf.NoticeID)
   local ReddotName = M:GetReddotNameByConf(Conf)
@@ -310,9 +338,7 @@ function M:TrySubReddotCacheDetail(Conf)
     CacheDetail[CacheKey] = false
     ReddotManager.DecreaseLeafNodeCount(ReddotName)
   end
-  M:_UpdateAnnouncementReddotState()
 end
-
 function M:_SyncReddotCache()
   local CacheDetail1 = ReddotManager.GetLeafNodeCacheDetail("SystemAnnouncement")
   local CacheDetail2 = ReddotManager.GetLeafNodeCacheDetail("ActivityAnnouncement")
@@ -325,7 +351,6 @@ function M:_SyncReddotCache()
   M:_RealSyncReddotCache(CacheDetail2, ExistConf, "ActivityAnnouncement")
   M:_RealSyncReddotCache(CacheDetail3, ExistConf, "NewsAnnouncement")
 end
-
 function M:_RealSyncReddotCache(CacheDetail, ExistConf, ReddotName)
   for Key, Value in pairs(CacheDetail or {}) do
     if not ExistConf[Key] or M:GetReddotNameByConf(ExistConf[Key]) ~= ReddotName then
@@ -333,192 +358,31 @@ function M:_RealSyncReddotCache(CacheDetail, ExistConf, ReddotName)
     end
   end
 end
-
-function M:_UpdateAnnouncementReddotState()
-  local Ret = false
-  for _, ReddotKey in ipairs(SubReddotKeys) do
-    local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotKey)
-    for _, value in pairs(CacheDetail or {}) do
-      if true == value then
-        Ret = true
-        break
-      end
-    end
-    if Ret then
-      break
-    end
-  end
-  if Ret then
-    ReddotManager.IncreaseLeafNodeCount("AnnouncementDirty")
-  else
-    ReddotManager.ClearLeafNodeCount("AnnouncementDirty")
-  end
-  return Ret
-end
-
-function M:_GetLocalAnnouncement()
-  if not DataMgr.SystemNotice then
-    return
-  end
-  for _, Conf in pairs(DataMgr.SystemNotice) do
-    local NoticeDateParts = Conf.NoticeDate and Split(Conf.NoticeDate, "-")
-    local StartTimestamp = NoticeDateParts and os.time({
-      year = NoticeDateParts[1],
-      month = NoticeDateParts[2],
-      day = NoticeDateParts[3]
-    }) or os.time()
-    local EndDateParts = Conf.EndDate and Split(Conf.EndDate, "-")
-    local EndTimestamp = EndDateParts and os.time({
-      year = EndDateParts[1],
-      month = EndDateParts[2],
-      day = EndDateParts[3]
-    })
-    Conf = {
-      NoticeID = Conf.NoticeID,
-      NoticeTitle = GText(Conf.NoticeTitle),
-      NoticeContent = GText(Conf.NoticeContent),
-      NoticeStyle = Conf.NoticeStyle,
-      NoticeTag = Conf.NoticeTag,
-      NoticeBanner = Conf.NoticeBanner,
-      NoticeDate = Conf.NoticeDate and Conf.NoticeDate .. " (UTC+8)",
-      EndDate = Conf.EndDate and Conf.EndDate .. " (UTC+8)",
-      StartTimestamp = StartTimestamp,
-      EndTimestamp = EndTimestamp,
-      Sort = Conf.NoticeID,
-      Local = 1
-    }
-    M:_TryAddReddotCacheDetail(Conf)
-    table.insert(M.Confs, Conf)
-  end
-end
-
-function M:GetAnnouncementDataAsync(ShowTag, Coroutine, HostId)
-  if GWorld:GetAvatar() then
-    if not M._AnnouncementDirty then
-      return
-    end
-    M:MarkDirty(false)
-  end
-  if nil == HostId then
-    local PlayerAvatar = GWorld:GetAvatar()
-    if PlayerAvatar and PlayerAvatar.Hostnum then
-      HostId = tonumber(PlayerAvatar.Hostnum)
-    else
-      Utils.Traceback(ErrorTag, LXYTag .. "HostId\228\184\141\229\173\152\229\156\168\239\188\140\228\184\141\231\159\165\233\129\147\228\189\160\233\128\137\228\186\134\228\187\128\228\185\136\230\156\141...")
-      return
-    end
-  end
-  ForceStopAsyncTask(M, "PendingCo")
-  M.PendingCo = Coroutine
-  M:_CacheLastConf()
-  M.Confs = {}
-  M.bInit = true
-  if 0 ~= DataMgr.GlobalConstant.UseLocalSystemNotice.ConstantValue then
-    M:_GetLocalAnnouncement()
-  end
-  M:_ResetReddot()
-  DebugPrint("[Laixiaoyang] M:GetAnnoucementDataAsync \230\139\137\229\143\150\229\144\142\229\143\176\230\184\184\230\136\143\229\133\172\229\145\138\230\149\176\230\141\174...")
-  CdnTool:GetGameNotice(HostId, function(Infos)
-    try({
-      exec = function()
-        if IsEmptyTable(Infos) then
-          DebugPrint(WarningTag, LXYTag, "\229\133\172\229\145\138Json\232\167\163\230\158\144\228\184\141\229\135\186\229\134\133\229\174\185")
-          return
-        end
-        for Key, Info in pairs(Infos) do
-          DebugPrint(LogTag, LXYTag, "\232\167\163\230\158\144\229\133\172\229\145\138", Info.UniqueId)
-          local Conf = {
-            NoticeID = Info.UniqueId,
-            StartTimestamp = Info.StartTimestamp or os.time(),
-            EndTimestamp = Info.EndTimestamp or nil,
-            NoticeBanner = Info.ClientOnly.BannerPath or "",
-            NoticeStyle = tonumber(Info.ClientOnly.UIStyle) or 1,
-            NoticeTag = tonumber(Info.ClientOnly.TypeTag) or 1,
-            Sort = tonumber(Info.ClientOnly.notice_sort or "0"),
-            TabTag = tonumber(Info.ClientOnly.TypeTag) or AnnounceCommon.TabTag.System,
-            ShowTags = {},
-            Local = 0
-          }
-          M:_ParseShowTag(Conf, Info)
-          if not Conf.ShowTags[ShowTag] then
-            DebugPrint(LXYTag, Info.UniqueId .. "\229\133\172\229\145\138\228\184\141\229\156\168\232\191\153\228\184\170\229\156\186\229\144\136\230\152\190\231\164\186")
-          elseif not M:CheckChannel(Info) then
-            DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\230\184\160\233\129\147\230\163\128\230\181\139\228\184\141\233\128\154\232\191\135")
-          else
-            if not M:CheckSubChannel(Info) then
-              DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\229\173\144\230\184\160\233\129\147\230\163\128\230\181\139\228\184\141\233\128\154\232\191\135")
-              return
-            end
-            if M:IsExpired(Conf) then
-              DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\229\183\178\232\191\135\230\156\159")
-            else
-              local timeZoneOffset = CommonUtils.GetTimeZone()
-              local TimeZonePostfix = " (UTC+" .. timeZoneOffset .. ")"
-              Conf.NoticeDate = GDate_YMD_Timestamp(math.floor(Conf.StartTimestamp + 0.5)) .. TimeZonePostfix
-              Conf.EndDate = Conf.EndTimestamp and GDate_YMD_Timestamp(math.floor(Conf.EndTimestamp + 0.5)) .. TimeZonePostfix
-              Conf.NoticeTitle, Conf.NoticeContent = "", ""
-              for _, Text in pairs(Info.Content or {}) do
-                if CommonConst.SystemLanguage ~= CommonConst.SystemLanguages[Text.language] then
-                  DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\232\175\173\232\168\128\229\175\185\228\184\141\228\184\138 \232\183\179\232\191\135" .. Text.title)
-                else
-                  Conf.NoticeTitle = Text.title or ""
-                  Conf.NoticeContent = Text.body or ""
-                  Conf.NoticeContent = string.gsub(Conf.NoticeContent, "<n>", "\n")
-                  Conf.NoticeBanner = Text.BannerPath
-                  break
-                end
-              end
-              if "" == Conf.NoticeTitle or "" == Conf.NoticeContent then
-                print(_G.LogTag, Info.UniqueId .. " \229\133\172\229\145\138\229\189\147\229\137\141\232\175\173\232\168\128\231\154\132\230\150\135\230\156\172\228\184\186\231\169\186\239\188\129\239\188\129\229\189\147\229\137\141\232\175\173\232\168\128\239\188\154" .. CommonConst.SystemLanguage)
-              else
-                M:_TryAddReddotCacheDetail(Conf)
-                table.insert(M.Confs, Conf)
-              end
-            end
-          end
-        end
-      end,
-      catch = function(e)
-        print(ErrorTag, e .. "\n" .. debug.traceback())
-      end,
-      final = function()
-        self:_SortConfs()
-        self:_SyncReddotCache()
-        if M.PendingCo then
-          coroutine.resume(M.PendingCo)
-          M.PendingCo = nil
-        end
-      end
-    })
-  end)
-  if M.PendingCo then
-    coroutine.yield()
-  end
-end
-
 function M:MarkDirty(bDirty)
   M._AnnouncementDirty = bDirty
   if bDirty then
-    DebugPrint("[zhangyuhang] M:MakeDirty \229\135\134\229\164\135\233\135\141\230\150\176\232\175\183\230\177\130\229\133\172\229\145\138")
+    DebugPrint("[zhangyuhang] M:MakeDirty 准备重新请求公告")
   end
 end
-
 function M:UpdateAnnouncementDataInGame()
   local Avatar = GWorld:GetAvatar()
+  local Node = ReddotManager.GetTreeNode(DataMgr.ReddotNode.AnnouncementItems.Name)
+  local OldCount = Node and Node.Count or 0
   if Avatar then
-    M:GetAnnouncementDataAsync_UseWeb(AnnounceCommon.ShowTag.InGame, nil, Avatar.Hostnum)
+    M:GetAnnouncementDataAsync(AnnounceCommon.ShowTag.InGame, nil, Avatar.Hostnum)
   end
   M:_ActivateScheduledNotices()
-  return M:_UpdateAnnouncementReddotState()
+  local NewCount = Node and Node.Count or 0
+  if OldCount < NewCount then
+    ReddotManager.IncreaseLeafNodeCount("AnnouncementDirty")
+  end
 end
-
 function M:_CacheLastConf()
   M.LastConfs = {}
   for _, Conf in ipairs(M.Confs) do
     M.LastConfs[Conf.NoticeID] = Conf
   end
 end
-
 function M:_SortConfs()
   local function SortFunc(a, b)
     if a.Local ~= b.Local then
@@ -531,11 +395,9 @@ function M:_SortConfs()
       return a.StartTimestamp > b.StartTimestamp
     end
   end
-  
   table.sort(M.Confs, SortFunc)
 end
-
-function M:GetAnnouncementDataAsync_UseWeb(ShowTag, Coroutine, HostId)
+function M:GetAnnouncementDataAsync(ShowTag, Coroutine, HostId)
   if GWorld:GetAvatar() then
     if not M._AnnouncementDirty then
       return
@@ -547,22 +409,23 @@ function M:GetAnnouncementDataAsync_UseWeb(ShowTag, Coroutine, HostId)
     if PlayerAvatar and PlayerAvatar.Hostnum then
       HostId = tonumber(PlayerAvatar.Hostnum)
     else
-      Utils.Traceback(ErrorTag, LXYTag .. "HostId\228\184\141\229\173\152\229\156\168\239\188\140\228\184\141\231\159\165\233\129\147\228\189\160\233\128\137\228\186\134\228\187\128\228\185\136\230\156\141...")
+      Utils.Traceback(ErrorTag, LXYTag .. "HostId不存在，不知道你选了什么服...")
       return
     end
   end
   ForceStopAsyncTask(M, "PendingCo")
   M.PendingCo = Coroutine
   M:_CacheLastConf()
+  M.AddedConfIds = {}
   M.Confs = {}
   M.bInit = true
   M:_ResetReddot()
-  DebugPrint("[Laixiaoyang] M:GetAnnoucementDataAsync \230\139\137\229\143\150\229\144\142\229\143\176\230\184\184\230\136\143\229\133\172\229\145\138\230\149\176\230\141\174...")
+  DebugPrint("[Laixiaoyang] M:GetAnnoucementDataAsync 拉取后台游戏公告数据...")
   CdnTool:GetGameNotice(HostId, function(Infos)
     try({
       exec = function()
         if IsEmptyTable(Infos) then
-          DebugPrint(WarningTag, LXYTag, "\229\133\172\229\145\138Json\232\167\163\230\158\144\228\184\141\229\135\186\229\134\133\229\174\185")
+          DebugPrint(WarningTag, LXYTag, "公告Json解析不出内容")
           return
         end
         for Key, Info in pairs(Infos) do
@@ -586,9 +449,12 @@ function M:GetAnnouncementDataAsync_UseWeb(ShowTag, Coroutine, HostId)
     coroutine.yield()
   end
 end
-
 function M:_AddNewConf(Info, ShowTag)
-  DebugPrint(LogTag, LXYTag, "\232\167\163\230\158\144\229\133\172\229\145\138", Info.UniqueId)
+  if M.AddedConfIds[Info.UniqueId] then
+    return
+  end
+  M.AddedConfIds[Info.UniqueId] = true
+  DebugPrint(LogTag, LXYTag, "解析公告", Info.UniqueId)
   local Conf = {
     NoticeID = Info.UniqueId,
     StartTimestamp = Info.StartTimestamp or os.time(),
@@ -605,24 +471,27 @@ function M:_AddNewConf(Info, ShowTag)
   }
   M:_ParseShowTag(Conf, Info)
   if not Conf.ShowTags[ShowTag] then
-    DebugPrint(LXYTag, Info.UniqueId .. "\229\133\172\229\145\138\228\184\141\229\156\168\232\191\153\228\184\170\229\156\186\229\144\136\230\152\190\231\164\186, \229\189\147\229\137\141\230\184\184\230\136\143\229\156\186\229\144\136\239\188\154" .. ShowTag)
+    DebugPrint(LXYTag, Info.UniqueId .. "公告不在这个场合显示, 当前游戏场合：" .. ShowTag)
     return
   end
+  if not M:CheckPakInfos(Info) then
+    DebugPrint(LXYTag, Info.UniqueId .. "公告渠道检测不通过|PakInfo")
+  end
   if not M:CheckChannel(Info) then
-    DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\230\184\160\233\129\147\230\163\128\230\181\139\228\184\141\233\128\154\232\191\135")
+    DebugPrint(LXYTag, Info.UniqueId .. " 公告渠道检测不通过|Channel")
     return
   end
   if not M:CheckSubChannel(Info) then
-    DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\229\173\144\230\184\160\233\129\147\230\163\128\230\181\139\228\184\141\233\128\154\232\191\135")
+    DebugPrint(LXYTag, Info.UniqueId .. " 公告子渠道检测不通过|SubChannel")
     return
   end
   if M:IsExpired(Conf) then
-    DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\229\183\178\232\191\135\230\156\159")
+    DebugPrint(LXYTag, Info.UniqueId .. " 公告已过期")
     return
   end
   if M:IsFutureNotice(Conf) then
     self.FutureConfs[Info.UniqueId] = {Info = Info, ShowTag = ShowTag}
-    DebugPrint(LXYTag, Info.UniqueId .. " \229\176\134\230\157\165\231\154\132\229\133\172\229\145\138\229\183\178\231\188\147\229\173\152")
+    DebugPrint(LXYTag, Info.UniqueId .. " 将来的公告已缓存")
     return
   end
   local timeZoneOffset = CommonUtils.GetTimeZone()
@@ -631,13 +500,12 @@ function M:_AddNewConf(Info, ShowTag)
   Conf.EndDate = Conf.EndTimestamp and GDate_YMD_Timestamp(math.floor(Conf.EndTimestamp + 0.5)) .. TimeZonePostfix
   M:_ParseContent(Conf, Info)
   if "" == Conf.NoticeTitle or "" == Conf.NoticeContent then
-    DebugPrint(LXYTag, ErrorTag, Info.UniqueId .. " \229\133\172\229\145\138\229\189\147\229\137\141\232\175\173\232\168\128\231\154\132\229\134\133\229\174\185\228\184\186\231\169\186\239\188\129\239\188\129\229\189\147\229\137\141\230\184\184\230\136\143\232\175\173\232\168\128\239\188\154" .. CommonConst.SystemLanguage)
+    DebugPrint(LXYTag, ErrorTag, Info.UniqueId .. " 公告当前语言的内容为空！！当前游戏语言：" .. CommonConst.SystemLanguage)
     return
   end
   M:_TryAddReddotCacheDetail(Conf)
   table.insert(M.Confs, Conf)
 end
-
 function M:IsExpired(Conf)
   if not Conf.EndTimestamp then
     return false
@@ -652,7 +520,6 @@ function M:IsExpired(Conf)
   end
   return Res
 end
-
 function M:IsFutureNotice(Conf)
   if not Conf.StartTimestamp then
     return false
@@ -660,7 +527,6 @@ function M:IsFutureNotice(Conf)
   local NowTimestamp = os.time()
   return NowTimestamp < Conf.StartTimestamp
 end
-
 function M:_ParseContent(Conf, Info)
   Conf.NoticeTitle, Conf.NoticeContent = "", ""
   for _, Text in pairs(Info.Content or {}) do
@@ -674,15 +540,14 @@ function M:_ParseContent(Conf, Info)
       elseif Conf.NoticeStyle == AnnounceCommon.ContentUIStyle.ImageOnly then
         Conf.NoticeContent = string.format(AnnounceCommon.ImageOnlyContent, Text.noticeImageURL, Text.noticeImage)
       else
-        DebugPrint(LXYTag, ErrorTag, "\230\156\170\229\174\154\228\185\137\231\154\132\229\133\172\229\145\138\229\134\133\229\174\185\230\160\183\229\188\143\239\188\154" .. Conf.NoticeStyle)
+        DebugPrint(LXYTag, ErrorTag, "未定义的公告内容样式：" .. Conf.NoticeStyle)
       end
       return
     else
-      DebugPrint(LXYTag, Info.UniqueId .. " \229\133\172\229\145\138\232\175\173\232\168\128\229\175\185\228\184\141\228\184\138 \232\183\179\232\191\135" .. Text.title)
+      DebugPrint(LXYTag, Info.UniqueId .. " 公告语言对不上 跳过" .. Text.title)
     end
   end
 end
-
 function M:_ParseShowTag(Conf, Info)
   if MiscUtils.IsNilOrEmpty(Info.ClientOnly.noticeType) then
     Conf.ShowTags = {1, 1}
@@ -694,38 +559,36 @@ function M:_ParseShowTag(Conf, Info)
       Conf.ShowTags = {1, 1}
       break
     end
-    DebugPrint(LXYTag, "\229\133\172\229\145\138\229\133\129\232\174\184\230\152\190\231\164\186\231\154\132\229\156\186\229\144\136\239\188\154" .. ShowTag)
+    DebugPrint(LXYTag, "公告允许显示的场合：" .. ShowTag)
     Conf.ShowTags[tonumber(ShowTag)] = 1
   end
 end
-
 M.bIndepChannel = false
-
 function M:CheckChannel(Info)
   local ChannelId = Utils.HeroUSDKSubsystem():GetChannelId()
   if not ChannelId then
-    DebugPrint(ErrorTag, "\230\156\172\229\140\133\230\178\161\230\156\137ChannelId\239\188\140\232\183\179\232\191\135\229\133\172\229\145\138\230\184\160\233\129\147\230\163\128\230\181\139")
+    DebugPrint(WarningTag, "本包没有ChannelId，跳过公告渠道检测")
     return true
   end
   if not DataMgr.ChannelInfo[ChannelId] then
-    DebugPrint(ErrorTag, string.format("ChannelInfo\232\161\168\233\135\140\230\178\161\230\156\137\229\174\154\228\185\137\232\191\153\231\167\141ChannelId:%s, \232\183\179\232\191\135\229\133\172\229\145\138\230\184\160\233\129\147\230\163\128\230\181\139", ChannelId))
+    DebugPrint(WarningTag, string.format("ChannelInfo表里没有定义这种ChannelId:%s, 跳过公告渠道检测", ChannelId))
     return true
   end
   local Provider = -1 ~= ChannelId and DataMgr.ChannelInfo[ChannelId].Provider
   if Info.Channels and type(Info.Channels) ~= "table" then
-    DebugPrint(ErrorTag, "AnnounceUtils:CheckChannel  Info.Channels \229\144\142\229\143\176\228\188\160\230\157\165\231\154\132\231\177\187\229\158\139\233\157\158\230\179\149\239\188\129\239\188\129\239\188\129\228\184\141\230\152\175Table !!!!!", Info.Channels)
+    DebugPrint(WarningTag, "AnnounceUtils:CheckChannel  Info.Channels 后台传来的类型非法！！！不是Table !!!!!", Info.Channels)
     return true
   end
   if table.isempty(Info.Channels) then
-    DebugPrint(ErrorTag, "#Info.Channels \230\152\175\231\169\186\231\154\132 !!!!")
+    DebugPrint(WarningTag, "#Info.Channels 是空的 !!!!")
     return true
   end
-  DebugPrint(TXTTag, "\231\156\139\231\156\139\232\191\153\228\184\170\229\140\133\231\154\132SdkChannelId\239\188\154" .. ChannelId .. " \229\146\140\229\185\179\229\143\176\239\188\154" .. AnnounceCommon.PlatformName)
+  DebugPrint(TXTTag, "看看这个包的SdkChannelId：" .. ChannelId .. " 和平台：" .. AnnounceCommon.PlatformName)
   if -1 == ChannelId then
-    DebugPrint(WarningTag, "\229\188\128\229\143\145\231\142\175\229\162\131\231\154\132ChannelId\230\152\175-1\239\188\140\232\183\179\232\191\135\230\184\160\233\129\147\230\163\128\230\181\139")
+    DebugPrint(WarningTag, "开发环境的ChannelId是-1，跳过渠道检测")
     return true
   end
-  PrintTable(Info.Channels, 2, "\231\156\139\231\156\139\229\133\172\229\145\138\232\135\170\232\186\171\231\154\132ChannelId ")
+  PrintTable(Info.Channels, 2, "看看公告自身的ChannelId ")
   for i, Channel in pairs(Info.Channels) do
     if Channel.code == Provider or Channel.code == ChannelId then
       if AnnounceCommon.SpecialChannelName[Provider] then
@@ -736,34 +599,49 @@ function M:CheckChannel(Info)
   end
   return false
 end
-
 function M:ResetConf()
   M.bInit = false
   M.Confs = {}
+  M.AddedConfIds = {}
 end
-
+function M:CheckPakInfos(Info)
+  if table.isempty(Info.pakInfos) then
+    DebugPrint(WarningTag, "Info.packInfos是空的")
+    return true
+  end
+  local DummyInfo = {
+    Channels = {},
+    img_channel_id = {}
+  }
+  for _, pakInfo in ipairs(Info.pakInfos) do
+    local EInfo = DataMgr.ExamineInfo[pakInfo.code]
+    table.insert(DummyInfo.Channels, EInfo.ChannelID)
+    table.insert(DummyInfo.img_channel_id, EInfo.MirrorChannelID)
+  end
+  return M:CheckChannel(DummyInfo) or M:CheckSubChannel(DummyInfo)
+end
 function M:CheckSubChannel(Info)
   if M.bIndepChannel then
-    DebugPrint("\231\139\172\231\171\139\230\184\160\233\129\147\229\191\189\231\149\165\229\173\144\230\184\160\233\129\147\230\163\128\230\181\139...")
+    DebugPrint("独立渠道忽略子渠道检测...")
     M.bIndepChannel = false
     return true
   end
   local SubChannelId = Utils.HeroUSDKSubsystem():GetMirrorChannelId()
   local Provider = -1 ~= SubChannelId and DataMgr.ImgChannelInfo[SubChannelId].Provider
   if Info.img_channel_id and type(Info.img_channel_id) ~= "table" then
-    DebugPrint(ErrorTag, "AnnounceUtils:CheckSubChannel Info.img_channel_id \229\144\142\229\143\176\228\188\160\230\157\165\231\154\132\231\177\187\229\158\139\233\157\158\230\179\149\239\188\129\239\188\129\239\188\129\228\184\141\230\152\175Table !!!!!", Info.img_channel_id)
+    DebugPrint(WarningTag, "AnnounceUtils:CheckSubChannel Info.img_channel_id 后台传来的类型非法！！！不是Table !!!!!", Info.img_channel_id)
     return true
   end
   if table.isempty(Info.img_channel_id) then
-    DebugPrint(ErrorTag, "Info.img_channel_id \230\152\175\231\169\186\231\154\132 !!!!!")
+    DebugPrint(WarningTag, "Info.img_channel_id 是空的 !!!!!")
     return true
   end
-  DebugPrint(TXTTag, "\231\156\139\231\156\139\232\191\153\228\184\170\229\140\133\231\154\132(Sub)MirrorChannelId\239\188\154" .. SubChannelId)
+  DebugPrint(TXTTag, "看看这个包的(Sub)MirrorChannelId：" .. SubChannelId)
   if -1 == SubChannelId then
-    DebugPrint(WarningTag, "\229\188\128\229\143\145\231\142\175\229\162\131\231\154\132(Sub)MirrorChannelId\230\152\175-1\239\188\140\232\183\179\232\191\135\230\184\160\233\129\147\230\163\128\230\181\139")
+    DebugPrint(WarningTag, "开发环境的(Sub)MirrorChannelId是-1，跳过渠道检测")
     return true
   end
-  PrintTable(Info.img_channel_id, 2, "\231\156\139\231\156\139\229\133\172\229\145\138\232\135\170\232\186\171\231\154\132(Sub)MirrorChannelId")
+  PrintTable(Info.img_channel_id, 2, "看看公告自身的(Sub)MirrorChannelId")
   for i, SubChannel in pairs(Info.img_channel_id) do
     if tonumber(SubChannel.code) == SubChannelId or SubChannel.code == Provider then
       return true
@@ -771,7 +649,6 @@ function M:CheckSubChannel(Info)
   end
   return false
 end
-
 function M:CheckPlatform(Code)
   Code = tonumber(Code)
   if AnnounceCommon.PlatformName == DataMgr.ChannelInfo[Code].OS then
@@ -779,11 +656,9 @@ function M:CheckPlatform(Code)
   end
   return false
 end
-
 function M:ResetNew()
   M.HasNewAdd = false
 end
-
 function M:TrySetServerAreaNew(HostId)
   local CacheDetail = EMCache:Get("VisitedHostTableForAnnouncement") or {}
   if CacheDetail["Server" .. HostId] ~= nil then
@@ -793,7 +668,6 @@ function M:TrySetServerAreaNew(HostId)
   EMCache:Set("VisitedHostTableForAnnouncement", CacheDetail)
   M.HasNewAdd = true
 end
-
 function M:_ActivateScheduledNotices()
   local ToRemove = {}
   for id, value in pairs(M.FutureConfs or {}) do
@@ -810,16 +684,15 @@ function M:_ActivateScheduledNotices()
     self:_SyncReddotCache()
   end
 end
-
 function M:_RemoveExpiredNotices()
   for i = #M.Confs, 1, -1 do
     local Conf = M.Confs[i]
     if M:IsExpired(Conf) then
+      M.AddedConfIds[Conf.NoticeID] = nil
       table.remove(M.Confs, i)
     end
   end
 end
-
 function M:FilterConfForUI(TabTag, ShowTag)
   M:_ActivateScheduledNotices()
   M:_RemoveExpiredNotices()
@@ -831,7 +704,7 @@ function M:FilterConfForUI(TabTag, ShowTag)
   end
   return RetConfs
 end
-
+M.AnnounceMainUI = nil
 function M:OpenAnnouncementMain(ShowTag, bNeedRequest, HostId, ParentWidget, Coroutine)
   if M.bFontLoading then
     UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Toast_NetDelay"))
@@ -869,14 +742,22 @@ function M:OpenAnnouncementMain(ShowTag, bNeedRequest, HostId, ParentWidget, Cor
       ChildWidgetBPPath = "WidgetBlueprint'/Game/UI/WBP/Announcement/Widget/WBP_Announcement_TabItem.WBP_Announcement_TabItem'"
     }
   }
-  UIManager(GWorld.GameInstance):ShowCommonPopupUI(100134, Params, ParentWidget, Coroutine)
+  ReddotManager.ClearLeafNodeCount("AnnouncementDirty")
+  M.AnnounceMainUI = UIManager(GWorld.GameInstance):ShowCommonPopupUI(100134, Params, ParentWidget, Coroutine)
 end
-
+function M:TryCloseAnnounceMainUI()
+  if IsValid(M.AnnounceMainUI) then
+    M.AnnounceMainUI:Close()
+    self:ClearAnnounceMainUI()
+  end
+end
+function M:ClearAnnounceMainUI()
+  M.AnnounceMainUI = nil
+end
 function M:UrlDecode(s)
   s = string.gsub(s, "%%(%x%x)", function(h)
     return string.char(tonumber(h, 16))
   end)
   return s
 end
-
 return M

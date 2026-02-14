@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1754303988207560055",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1168.8500000000001, y = 292.894671169903},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -125,7 +127,7 @@ return {
           ["1754303988207560059"] = {
             key = "1754303988207560059",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1057.9179841897237, y = 351.0262917232629},
             propsData = {
               IsNpcNode = false,
@@ -140,7 +142,7 @@ return {
           ["175464433652312791156"] = {
             key = "175464433652312791156",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 911.1272214627479, y = 711.6629534258843},
             propsData = {
               IsNpcNode = false,
@@ -168,7 +170,7 @@ return {
           ["175464433652312791157"] = {
             key = "175464433652312791157",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1247.4648838004102, y = 665.5980183609493},
             propsData = {
               IsNpcNode = false,
@@ -183,7 +185,7 @@ return {
           ["175464433652312791158"] = {
             key = "175464433652312791158",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1243.6381932495815, y = 838.1519816390504},
             propsData = {
               IsNpcNode = false,

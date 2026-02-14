@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "175325262658840504049",
       type = "StoryNode",
-      name = "\232\128\182\229\176\148\230\157\190\233\156\178\228\186\146\229\138\1681",
+      name = "耶尔松露互动1",
       pos = {x = 1126, y = 308},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,7 +115,7 @@ return {
           ["175325262658840504053"] = {
             key = "175325262658840504053",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1230, y = 292},
             propsData = {
               IsNpcNode = false,
@@ -132,7 +134,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           }

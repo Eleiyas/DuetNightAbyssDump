@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Settlement_Refund_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Settlement_Refund_C:InitItemInfo(ItemId, ItemNum)
   local ItemInfo = {}
   local WalnutData = DataMgr.Walnut[ItemId]
@@ -23,7 +22,6 @@ function WBP_Settlement_Refund_C:InitItemInfo(ItemId, ItemNum)
   ItemInfo.Id = ItemId
   ItemInfo.Count = ItemNum or 1
   ItemInfo.Icon = WalnutIconPath or ItemData.Icon
-  
   function ItemInfo.AfterInitCallback(Widget)
     if Widget.CanvasPanel_0 then
       Widget.CanvasPanel_0:SetRenderOpacity(0.0)
@@ -40,7 +38,6 @@ function WBP_Settlement_Refund_C:InitItemInfo(ItemId, ItemNum)
     end
     Widget.Bg03:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
-  
   ItemInfo.Rarity = WalnutRaity or ItemData.Rarity
   ItemInfo.OnMouseButtonUpEvents = {
     Obj = self,
@@ -57,14 +54,12 @@ function WBP_Settlement_Refund_C:InitItemInfo(ItemId, ItemNum)
   ItemInfo.UIName = "DungeonSettlement"
   return ItemInfo
 end
-
 function WBP_Settlement_Refund_C:OpenWalnutDetail(WalnutId)
   if not UIManager(self):GetUIObj("WalnutRewardDialog") then
     self.DialogWidget = UIManager(self):LoadUINew("WalnutRewardDialog", WalnutId, "DungeonSettlement")
   end
   self.DialogWidget:Show("DungeonSettlement")
 end
-
 function WBP_Settlement_Refund_C:AddRefundItem(ItemInfo)
   local DungeonSettlement = UIManager(self):GetUI("DungeonSettlement")
   if not DungeonSettlement then
@@ -74,7 +69,6 @@ function WBP_Settlement_Refund_C:AddRefundItem(ItemInfo)
   Item.AfterInitCallback = nil
   self.TileView_Refund:AddItem(Item)
 end
-
 function WBP_Settlement_Refund_C:UpdateGamePadIcon(GamePadIcon)
   if GamePadIcon then
     DebugPrint("thy     UpdateGamePadIcon ", GamePadIcon)
@@ -91,34 +85,27 @@ function WBP_Settlement_Refund_C:UpdateGamePadIcon(GamePadIcon)
     self.Controller_Refund:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Settlement_Refund_C:GetShowState()
   return self.IsShow
 end
-
 function WBP_Settlement_Refund_C:GetFocusState()
   return self.IsFocus
 end
-
 function WBP_Settlement_Refund_C:Show()
   self.IsShow = true
   self.Controller_Refund:SetVisibility(ESlateVisibility.Visible)
 end
-
 function WBP_Settlement_Refund_C:Hide()
   self.IsShow = false
   self.Controller_Refund:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_Settlement_Refund_C:SetItemListFocus()
   self.IsFocus = true
   self.TileView_Refund:SetFocus()
 end
-
 function WBP_Settlement_Refund_C:CancelItemListFocus()
   self.IsFocus = false
 end
-
 function WBP_Settlement_Refund_C:InitRefund(Content)
   if not Content then
     return
@@ -144,5 +131,4 @@ function WBP_Settlement_Refund_C:InitRefund(Content)
   self.IsShow = true
   self.IsFocus = false
 end
-
 return WBP_Settlement_Refund_C

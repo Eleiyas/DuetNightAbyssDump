@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.IsSelect = false
   self:PlayAnimation(self.Normal)
@@ -12,7 +11,6 @@ function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnCellPressed)
   self.Button_Area.OnReleased:Add(self, self.OnCellReleased)
 end
-
 function M:Init(Type, Root)
   self.Avatar = GWorld:GetAvatar()
   self.Type = Type
@@ -20,7 +18,6 @@ function M:Init(Type, Root)
   self:InitInfo()
   self:InitNavigation()
 end
-
 function M:InitInfo()
   if self.Type == "Daily" then
     self.Text_MissionTab:SetText(GText("UI_BattlePass_DailyQuest"))
@@ -30,7 +27,6 @@ function M:InitInfo()
     self.Text_MissionTab:SetText(GText("UI_BattlePass_VersionQuest"))
   end
 end
-
 function M:InitNavigation()
   self:SetNavigationRuleCustom(EUINavigation.Up, {
     self.Root,
@@ -45,25 +41,20 @@ function M:InitNavigation()
     self.Root.FocusToFirstMission
   })
 end
-
 function M:OpenMissionList(ForceRefresh)
   self.Root:OpenMissionList(self.Type, ForceRefresh)
 end
-
 function M:SetReddotVisibility(Visibility)
   self.Reddot:SetVisibility(Visibility)
 end
-
 function M:SetTimeText(TextDesc, TimeDict, TimeIconPath)
   self.Time_Left:SetTimeText(TextDesc, TimeDict, TimeIconPath)
 end
-
 function M:UnSelected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self.IsSelect = false
 end
-
 function M:Selected()
   if self.IsSelect then
     return
@@ -72,7 +63,6 @@ function M:Selected()
   self:PlayAnimation(self.Click)
   self.IsSelect = true
 end
-
 function M:OnCellClicked(IsForce)
   AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_btn_click_mid", nil, nil)
   if self.IsSelect then
@@ -85,7 +75,6 @@ function M:OnCellClicked(IsForce)
     self.Root:OpenMissionList(self, IsForce)
   end
 end
-
 function M:OnCellHovered()
   if self.IsSelect then
     return
@@ -95,7 +84,6 @@ function M:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnCellUnhovered()
   if self.IsSelect then
     return
@@ -106,14 +94,12 @@ function M:OnCellUnhovered()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnCellPressed()
   if self.IsSelect then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnCellReleased()
   if self.IsSelect then
     return
@@ -121,5 +107,4 @@ function M:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 return M

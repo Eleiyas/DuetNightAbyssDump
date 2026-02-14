@@ -1,19 +1,17 @@
 require("UnLua")
 local M = Class("BluePrints/Item/CombatProp/BP_CombatPropBase_C")
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.TalkPercent = self.UnitParams.TalkPercent or 50
   self.ChargeSpeedBase = self.UnitParams.ChargeSpeedBase or 1
   self.ChargeDis = self.UnitParams.ChargeDis or 1000
+  self.ChargeMonsterUnitId = self.UnitParams.MonsterUnitId or 10002051
 end
-
 function M:ReceiveTick(DeltaSeconds)
   if self.InitSuccess then
     self:GetChargeSpeed()
   end
 end
-
 function M:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   M.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
   if self.BossBloodUI then
@@ -21,7 +19,6 @@ function M:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
     self.BossBloodUI = nil
   end
 end
-
 function M:ClientInitInfo(Info)
   M.Super.ClientInitInfo(self, Info)
   if self.Data.BloodUIParmas then
@@ -37,8 +34,18 @@ function M:ClientInitInfo(Info)
       end
       DoubleBossUI:ActiveBossUI()
       self.BossBloodUI:InitBossUI(self, false, BossType)
+      self:HideBloodUI()
     end
   end
 end
-
+function M:HideBloodUI()
+  if IsValid(self.BossBloodUI) then
+    self.BossBloodUI:Hide("ChargeHide")
+  end
+end
+function M:ShowBloodUI()
+  if IsValid(self.BossBloodUI) then
+    self.BossBloodUI:Show("ChargeHide")
+  end
+end
 return M

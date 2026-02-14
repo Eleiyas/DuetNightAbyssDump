@@ -9,7 +9,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Activity.Widget.View.ActivityTryOutView"
 }
-
 function M:Initialize(Initializer)
   self.OwnerPlayer = nil
   self.CurActivityId = nil
@@ -22,25 +21,20 @@ function M:Initialize(Initializer)
   self.ParentWidget = nil
   self.FocusWidgetName = nil
 end
-
 function M:GetPageName()
   return DataMgr.EventTab[self.ParentTabId].EventTabName
 end
-
 function M:GetActivityId()
   return self.CurActivityId
 end
-
 function M:GetParentTabId()
   return self.ParentTabId
 end
-
 function M:ResetVariable()
   self.CurSelectIndex = 1
   self.CurActivityId = self.OriginalActivityId
   self.FocusWidgetName = nil
 end
-
 function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   self.CurSelectIndex = 1
   self.CurActivityId = ActivityId
@@ -50,7 +44,6 @@ function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   self.ParentWidget = ParentWidget
   self:UpdateSubPage()
 end
-
 function M:UpdateSubPage()
   local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
   if ActivityMain and ActivityMain.TryOutActivityNeedJumpToTabIndex then
@@ -65,11 +58,11 @@ function M:UpdateSubPage()
   self.RewardEndTime = ActivityConfigData.RewardEndTime
   local PageConfigData = DataMgr.CharTrialEvent[self.CurActivityId]
   self.CurCharId = PageConfigData.CharId
+  self.CurSkinId = PageConfigData.SkinId
   self:RefreshPageStaticView(ActivityConfigData, PageConfigData, PlayerAvatar.CharTrial, self.ViewInfoBtnClick, self.GoToGachaClick, self.GoToTargetPageClick, self.TryToGetReward, self.TryToViewCharDetail, self.TryToSelectChar, self.OnStuffDetailOpenChanged)
   self:RefreshPageDynamicView(PlayerAvatar.CharTrial[self.CurActivityId])
   self:InitTimeInfo()
 end
-
 function M:InitTimeInfo()
   if (self.ActivityEndTime ~= nil or nil ~= self.RewardEndTime) and self.Activity_Time.Com_Time then
     ActivityUtils.RefreshLeftTime(self, self.Activity_Time.Com_Time)
@@ -78,11 +71,9 @@ function M:InitTimeInfo()
     ActivityUtils.SetLeftTimeView(self.Activity_Time.Com_Time, true)
   end
 end
-
 function M:IsCanChangeToGamePadViewMode()
   return self.FocusWidgetName ~= "CheckRewardDetailView"
 end
-
 function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
   IsUseGamePad = IsUseGamePad and self:IsCanChangeToGamePadViewMode()
   if IsUseGamePad then
@@ -95,6 +86,7 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
     end
     self.Key_RewardTitle:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.TryOutChar_Title.WS_DetailImg:SetActiveWidgetIndex(1)
+    self.TryOutSkin_Title.WS_DetailImg:SetActiveWidgetIndex(1)
     self.Btn_Buy.Key_Shop:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     if self.ActivityTryOutAvatarNeedWidget then
       self.ActivityTryOutAvatarNeedWidget.Key_Click:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -104,6 +96,7 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
     self.Key_Right:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Key_RewardTitle:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.TryOutChar_Title.WS_DetailImg:SetActiveWidgetIndex(0)
+    self.TryOutSkin_Title.WS_DetailImg:SetActiveWidgetIndex(0)
     self.Btn_Buy.Key_Shop:SetVisibility(UIConst.VisibilityOp.Collapsed)
     if self.ActivityTryOutAvatarNeedWidget then
       self.ActivityTryOutAvatarNeedWidget.Key_Click:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -127,7 +120,6 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
     end
   end
 end
-
 function M:UpdatePage(OperateSrc)
   local IsReBindClickFunction = false
   if IsReBindClickFunction then
@@ -139,30 +131,29 @@ function M:UpdatePage(OperateSrc)
   end
   self:UpdateSubPage()
   self:RefreshPageDynamicView(PlayerAvatar.CharTrial[self.CurActivityId])
+  if ("ActivityTab" == OperateSrc or "BackToPageWithJump" == OperateSrc) and self.FocusWidgetWidget == self.Item_1 then
+    self.FocusWidgetName = nil
+    self:EnterStuffViewMode()
+  end
 end
-
 function M:GetPageConfigData()
   return DataMgr.CharTrialEvent[self.CurActivityId]
 end
-
 function M:RefreshItemStyleByAction(ActionName, ActivityID)
   local PlayerAvatar = GWorld:GetAvatar()
   if "TryOutGetReward" == ActionName then
     self:RefreshItemStyleView(PlayerAvatar.CharTrial[ActivityID])
   end
 end
-
 function M:CleanSelf(bIsRemoveSelf)
   self:RemoveTimer("RefreshLeftTime")
   if bIsRemoveSelf then
     self:RemoveFromParent()
   end
 end
-
 function M:GetCurFocusWidgetInfo()
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:EnterStuffViewMode()
   if self.FocusWidgetName == "CheckRewardDetailView" then
     return self:LeaveStuffViewMode()
@@ -177,7 +168,6 @@ function M:EnterStuffViewMode()
   self.IsInStuffViewMode = true
   return true
 end
-
 function M:LeaveStuffViewMode()
   if self.FocusWidgetName == nil then
     return false
@@ -192,7 +182,6 @@ function M:LeaveStuffViewMode()
   self.IsInStuffViewMode = false
   return true
 end
-
 function M:SelectOtherCharItem(bIsNext)
   local NextChooseIndex
   if bIsNext then
@@ -205,7 +194,6 @@ function M:SelectOtherCharItem(bIsNext)
     CharItemWidget:OnBtnStateChange(true)
   end
 end
-
 function M:ViewInfoBtnClick()
   local ActivityConfigData = DataMgr.EventMain[self.CurActivityId]
   if not ActivityConfigData.EventRule then
@@ -217,7 +205,6 @@ function M:ViewInfoBtnClick()
   }
   UIManager(self):ShowCommonPopupUI(100192, Params, self)
 end
-
 function M:GoToTargetPageClick()
   local Params = {
     RightCallbackFunction = function(Obj, Result, PopUI)
@@ -229,7 +216,7 @@ function M:GoToTargetPageClick()
       local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
       local CurTabIndex = 1
       if ActivityMain then
-        CurTabIndex = ActivityMain.CurTabIndex
+        CurTabIndex = ActivityMain.CurTabId
       end
       local ExitDungeonInfo = {
         Type = "TryOut",
@@ -243,8 +230,11 @@ function M:GoToTargetPageClick()
   }
   UIManager(self):ShowCommonPopupUI(100214, Params, self)
 end
-
 function M:GoToGachaClick()
+  if self.ParentWidget and type(self.ParentWidget.CheckIsInCloseSelfState) == "function" and self.ParentWidget:CheckIsInCloseSelfState() then
+    DebugPrint("ActivityTryOut=GoToGachaClick, ParentWidget is in close self state, So return")
+    return
+  end
   if self.IsInStuffViewMode then
     return
   end
@@ -255,7 +245,6 @@ function M:GoToGachaClick()
     PageJumpUtils:JumpToTargetPageByJumpId(PageConfigData.InterfaceJumpId)
   end
 end
-
 function M:OnStuffDetailOpenChanged(bIsOpen, Stuff)
   if not self.ParentWidget then
     return
@@ -266,7 +255,6 @@ function M:OnStuffDetailOpenChanged(bIsOpen, Stuff)
     self.ParentWidget:UpdateActivityKeyTips(self.FocusWidgetName, self.FocusWidgetWidget, false)
   end
 end
-
 function M:TryToGetReward()
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -274,7 +262,6 @@ function M:TryToGetReward()
   end
   PlayerAvatar:GetCharTrialReward(ActivityUtils.OnGetTryOutActivityRewardBack, self.CurActivityId)
 end
-
 function M:TryToViewCharDetail()
   if self.IsInStuffViewMode then
     return
@@ -289,7 +276,6 @@ function M:TryToViewCharDetail()
     OnCloseDelegate = nil
   })
 end
-
 function M:TryToSelectChar(NewActivityId, Index, CharId)
   if self.CurActivityId == NewActivityId then
     return
@@ -306,7 +292,6 @@ function M:TryToSelectChar(NewActivityId, Index, CharId)
     self.ParentWidget:UpdateTabRedInfoByActivityID(nil, NewActivityId)
   end
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -318,12 +303,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
@@ -345,8 +328,9 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
     IsEventHandled = true
     self:TryToGetReward()
   elseif InKeyName == UIConst.GamePadKey.SpecialLeft then
-    if self.TryOutChar_Title.SkinId then
-      return
+    if self.CurSkinId then
+      self.TryOutSkin_Title:BtnClicked()
+      return true
     end
     IsEventHandled = true
     self:TryToViewCharDetail()
@@ -360,6 +344,5 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 AssembleComponents(M)
 return M

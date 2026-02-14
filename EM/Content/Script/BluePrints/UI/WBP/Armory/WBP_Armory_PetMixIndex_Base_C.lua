@@ -8,11 +8,9 @@ M._components = {
   "BluePrints.UI.UI_PC.Common.LSFocusComp",
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
 function M:Construct()
   self.IsClose = false
 end
-
 function M:Init()
   self.Btn_Close:Init("Close", self, self.OnBackKeyDown)
   self.SortType = CommonConst.DESC
@@ -36,8 +34,8 @@ function M:Init()
   self.WBP_Armory_PetAchive.Text_Empty:SetText(GText("AvailablePet_Empty"))
   self.WBP_Armory_PetAchive.Com_EmptyBg_1.Text_Empty:SetText(GText("AvailablePet_Empty"))
   self.WBP_Armory_PetAchive.Pet_Sort:Init(self, {
-    GText("Pet_Affix_Type"),
-    GText("UI_RARITY_NAME")
+    GText("UI_RARITY_NAME"),
+    GText("Pet_Affix_Type")
   }, CommonConst.DESC)
   self.WBP_Armory_PetAchive.Pet_Sort:BindEventOnSelectionsChanged(self, self.OnSortSelectionChanged)
   self.WBP_Armory_PetAchive.Pet_Sort:BindEventOnSortTypeChanged(self, self.OnSortTypeChanged)
@@ -51,6 +49,7 @@ function M:Init()
   self.WBP_Armory_PetAchive.Pet_Sift:BindEventOnSelectionsChanged(self, self.OnSiftSelectionsChanged)
   self.WBP_Armory_PetAchive.Pet_Sift:BindEventOnAddedToFocusPath(self, self.OnSiftAddedToFocusPath)
   self.WBP_Armory_PetAchive.Pet_Sift:BindEventOnRemovedFromFocusPath(self, self.OnSiftRemovedFromFocusPath)
+  self.WBP_Armory_PetAchive.Pet_Sift.bNotAutoFocus = true
   self.WBP_Armory_PetAchive.Btn_Locked.Button_Area.OnClicked:Add(self, self.LockOrUnlockPet)
   self:InitKeyInfo()
   self:RefreshBaseInfo()
@@ -60,7 +59,6 @@ function M:Init()
   self:PlayAnimation(self.In)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
 end
-
 function M:InitKeyInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
     local BottomKeyInfo = {
@@ -110,7 +108,6 @@ function M:InitKeyInfo()
   else
   end
 end
-
 function M:InitTab()
   local Tabs = {}
   Tabs[1] = {
@@ -141,7 +138,6 @@ function M:InitTab()
   local TabId = 1
   self.Tab_Archive:SelectTab(TabId)
 end
-
 function M:UpdateBottomKeyInfo(BottomKeyInfo)
   self.HB_Key:ClearChildren()
   self.BottomKeyInfo = BottomKeyInfo
@@ -165,7 +161,6 @@ function M:UpdateBottomKeyInfo(BottomKeyInfo)
   end
   self.HB_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:UpdateBottomKeyView(IsGamePad)
   if not self.BottomKeyWidget then
     return
@@ -196,7 +191,6 @@ function M:UpdateBottomKeyView(IsGamePad)
     end
   end
 end
-
 function M:OnKeyDownLeft()
   local Tab = self.Tab_Archive
   if Tab.CurrentTab >= 1 then
@@ -204,7 +198,6 @@ function M:OnKeyDownLeft()
     self:OnTabChange()
   end
 end
-
 function M:OnKeyDownRight()
   local Tab = self.Tab_Archive
   if Tab.CurrentTab and Tab.CurrentTab + 1 <= #Tab.Tabs then
@@ -212,7 +205,6 @@ function M:OnKeyDownRight()
     self:OnTabChange()
   end
 end
-
 function M:OnTabChange()
   self.ContentArray = self:FilterPetContentArray(self:GetCurrntKindPet())
   if self.ContentArray == nil then
@@ -222,7 +214,6 @@ function M:OnTabChange()
   ArmoryUtils:SortEntryPets(self.ContentArray, self.SortSelection, 2 == self.SortType)
   self:FillListview()
 end
-
 function M:GetCurrntKindPet()
   local Tab = self.Tab_Archive
   if 2 == Tab.CurrentTab then
@@ -233,7 +224,6 @@ function M:GetCurrntKindPet()
     return self.AllPetsContent
   end
 end
-
 function M:OnSiftSelectionsChanged(SelectedItems, ItemDatas)
   if self.IsClose then
     return
@@ -243,7 +233,6 @@ function M:OnSiftSelectionsChanged(SelectedItems, ItemDatas)
   self.ContentArray = self:FilterPetContentArray(self:GetCurrntKindPet())
   self:FillListview()
 end
-
 function M:FilterPetContentArray(ContentArray)
   if not self.SelectedSiftItems or next(self.SelectedSiftItems) == nil then
     return ContentArray
@@ -257,12 +246,10 @@ function M:FilterPetContentArray(ContentArray)
   self.FilteredPets = FilteredPets
   return FilteredPets
 end
-
 function M:OnBackKeyDown()
   self.IsClose = true
   self:Close()
 end
-
 function M:Close()
   self:CleanTimer()
   self:PlayAnimation(self.Out)
@@ -271,12 +258,10 @@ function M:Close()
     self.ReallyClose
   })
 end
-
 function M:ReallyClose()
   self.WBP_Armory_PetAchive.Pet_Sift:Close()
   self.M.Super.Close(self)
 end
-
 function M:ReallyInitUIInfo(Name, IsInUIMode, EventList, Params)
   self:Init()
   self.Target = Params.Target
@@ -288,7 +273,6 @@ function M:ReallyInitUIInfo(Name, IsInUIMode, EventList, Params)
   self:AddReddotListener()
   self.WBP_Armory_PetAchive.VB_Pet:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:CreateContents()
   local Avatar = GWorld:GetAvatar()
   self.ContentArray = {}
@@ -327,7 +311,6 @@ function M:CreateContents()
   end
   self.AllPetsContent = self.ContentArray
 end
-
 function M:IsAllEntriesZero(entryTable)
   for _, v in pairs(entryTable) do
     if 0 ~= v then
@@ -336,27 +319,23 @@ function M:IsAllEntriesZero(entryTable)
   end
   return true
 end
-
 function M:OnAddedToFocusPathEvent(Content)
   if self.CurInputDevice == ECommonInputType.Gamepad and self.SelectedContent ~= Content then
     self:OnItemClicked(Content, true)
   end
 end
-
 function M:UnSelectPetEntryContent()
   if self.SelectedPetEntryContent then
     self.SelectedPetEntryContent.UI:SetIsSelected(false)
     self.SelectedPetEntryContent = nil
   end
 end
-
 function M:UnSelectPet()
   if self.Pet and self.Pet.SelfWidget and self.Pet.IsSelected then
     self.Pet.SelfWidget:SetSelected(false)
     self.Pet.IsSelected = false
   end
 end
-
 function M:OnItemClicked(Content, bAutoSelect)
   if not Content or not Content.UniqueId then
     return
@@ -404,7 +383,6 @@ function M:OnItemClicked(Content, bAutoSelect)
     self:AutoSelectFirstEntry()
   end)
 end
-
 function M:ChangeItemSelected(Content, bFastSelect)
   if not Content or not Content.SelfWidget then
     return
@@ -425,7 +403,6 @@ function M:ChangeItemSelected(Content, bFastSelect)
     Content.IsSelected = true
   end
 end
-
 function M:FastSetSelected(selfWidget)
   if selfWidget.NotInteractive then
     return
@@ -437,7 +414,6 @@ function M:FastSetSelected(selfWidget)
   selfWidget.Item:PlayAnimation(selfWidget.Item.Click)
   selfWidget.Item:SetAnimationCurrentTime(selfWidget.Item.Click, selfWidget.Item.Click:GetEndTime())
 end
-
 function M:SetBreakUpLevel(Content)
   if Content.IsResourcePet then
     self.WBP_Armory_PetAchive.Star:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -453,7 +429,6 @@ function M:SetBreakUpLevel(Content)
     end
   end
 end
-
 function M:AutoSelectFirstEntry()
   if self.FirstEntryContent then
     self.bAutoSelect = true
@@ -461,7 +436,6 @@ function M:AutoSelectFirstEntry()
     self.SelectedPetEntryContent = self.FirstEntryContent
   end
 end
-
 function M:UpdatePetEntry(PetEntry)
   self.WBP_Armory_PetAchive.VB_Entry:ClearChildren()
   local PetEntryIsEmpty = true
@@ -472,7 +446,7 @@ function M:UpdatePetEntry(PetEntry)
       PetEntryIsEmpty = false
       local Data = DataMgr.PetEntry[EntryId]
       if not Data then
-        ScreenPrint("\232\161\168\229\134\133\230\178\161\230\156\137\232\175\141\230\157\161ID\229\175\185\229\186\148\231\154\132\230\149\176\230\141\174\239\188\140\230\152\175\228\184\141\230\152\175\229\136\183\229\135\186\230\157\165\231\154\132\229\174\160\231\137\169\232\175\141\230\157\161\229\161\171\233\148\153\228\186\134\239\188\159")
+        ScreenPrint("表内没有词条ID对应的数据，是不是刷出来的宠物词条填错了？")
         return
       end
       local PetEntryItem = UIManager(self):CreateWidget(PetEntryPath, false)
@@ -505,7 +479,6 @@ function M:UpdatePetEntry(PetEntry)
     EmptyPetEntryItem:Init(Content)
   end
 end
-
 function M:OnEntryClicked(Content)
   if not Content or not Content.EntryId then
     return
@@ -537,7 +510,6 @@ function M:OnEntryClicked(Content)
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   end
 end
-
 function M:IsHaveSameEntry(Entry)
   local Entrise = self.Target.Props.Entry
   if not Entrise or not self.EntryContent then
@@ -554,18 +526,15 @@ function M:IsHaveSameEntry(Entry)
   end
   return false
 end
-
 function M:CheckIsPremium()
   local Content = self.Pet
-  if Content.IsPremium or Content.Rarity >= 5 or self.Pet.BreakNum > 0 then
+  if Content.IsPremium or Content.Rarity >= 5 or Content.BreakNum > 0 or #Content.PetEntry > 1 then
     local function CancelFunc()
       Content.SelfWidget:SetFocus()
     end
-    
     local function ConfirmFunc()
       self:ReallyMix()
     end
-    
     UIManager():ShowCommonPopupUI(100174, {
       LeftCallbackFunction = CancelFunc,
       RightCallbackFunction = ConfirmFunc,
@@ -576,7 +545,6 @@ function M:CheckIsPremium()
     return false
   end
 end
-
 function M:OnConfirmClicked()
   if self:CheckIsPremium() then
     return
@@ -584,14 +552,12 @@ function M:OnConfirmClicked()
     self:ReallyMix()
   end
 end
-
 function M:ReallyMix()
   if self.OnDestructCallback2 then
     self.OnDestructCallback2(self.OnDestructObj, self.SelectedPetEntryContent, self.Pet)
   end
   self:Close()
 end
-
 function M:OnForbidBtnClick()
   if self.Pet and 1 == self.Pet.LockType then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Pet_Locked"))
@@ -599,20 +565,25 @@ function M:OnForbidBtnClick()
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("Pet_SameAffix_UnableAdd"))
   end
 end
-
 function M:OnSortSelectionChanged(Idx)
   self.SortSelection = Idx
   ArmoryUtils:SortEntryPets(self.ContentArray, Idx, 2 == self.SortType)
   self:FillListview()
+  if self.SortListWidget then
+    self.SortListWidget.ForbiddenParentFocus = true
+    self:AddTimer(1, function()
+      self.SortListWidget.ForbiddenParentFocus = false
+    end)
+  end
 end
-
 function M:OnSortTypeChanged(SortType)
   self.SortType = SortType
   self:OnSortSelectionChanged(self.SortSelection)
 end
-
 function M:FillListview()
+  self.WBP_Armory_PetAchive.List_Item:BP_ClearSelection()
   self.WBP_Armory_PetAchive.List_Item:ClearListItems()
+  self:SetFocus()
   for _, value in ipairs(self.ContentArray) do
     self.WBP_Armory_PetAchive.List_Item:AddItem(value)
   end
@@ -625,27 +596,30 @@ function M:FillListview()
     self.WBP_Armory_PetAchive.WidgetSwitcher_Item:SetActiveWidgetIndex(0)
     self.WBP_Armory_PetAchive.VB_Pet:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
+  self.WBP_Armory_PetAchive.List_Item:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:AddTimer(0.1, function()
+    self.WBP_Armory_PetAchive.List_Item:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     if self.ContentArray and CommonUtils.Size(self.ContentArray) > 0 then
       local Content = self.WBP_Armory_PetAchive.List_Item:GetItemAt(0)
-      self:OnItemClicked(Content, true)
-      if Content and Content.SelfWidget then
-        self.WBP_Armory_PetAchive.List_Item:SetSelectedIndex(0)
-        Content.SelfWidget:SetFocus()
+      self.WBP_Armory_PetAchive.List_Item:SetSelectedIndex(0)
+      self.WBP_Armory_PetAchive.List_Item:SetFocus()
+      if not self.WBP_Armory_PetAchive.List_Item:HasFocusedDescendants() and not self.WBP_Armory_PetAchive.List_Item:HasUserFocus() then
+        self.WBP_Armory_PetAchive.List_Item:SetFocus()
       end
+      self:OnItemClicked(Content, true)
     else
       self:SetFocus()
     end
   end, nil, nil, nil, true)
 end
-
 function M:OnPetLocked(ErrCode, UniqueId, IsLocked)
+  self:BlockAllUIInput(false)
   local CurrentContent = self.SelectedContent
   if not ErrorCode:Check(ErrCode) then
     return
   end
   if UniqueId ~= CurrentContent.UniqueId then
-    ScreenPrint("\230\156\141\229\138\161\229\153\168\228\188\160\230\157\165\231\154\132\229\174\160\231\137\169ID\229\146\140\229\189\147\229\137\141\233\128\137\228\184\173\231\154\132\229\174\160\231\137\169ID\228\184\141\228\184\128\232\135\180")
+    ScreenPrint("服务器传来的宠物ID和当前选中的宠物ID不一致")
     return
   end
   CurrentContent.IsLocked = IsLocked
@@ -662,19 +636,32 @@ function M:OnPetLocked(ErrCode, UniqueId, IsLocked)
   end
   self.WBP_Armory_PetAchive.Btn_Confirm:ForbidBtn(IsLocked)
 end
-
 function M:LockOrUnlockPet()
   if not self.SelectedContent then
     return
   end
   local Avatar = GWorld:GetAvatar()
   if 1 == self.SelectedContent.LockType then
-    Avatar:UnLockPet(self.SelectedContent.UniqueId)
+    local function CancelFunc()
+      self:SetFocus()
+    end
+    local function ConfirmFunc()
+      self:SetFocus()
+      local Avatar = ArmoryUtils:GetAvatar()
+      self:BlockAllUIInput(true)
+      Avatar:UnLockPet(self.SelectedContent.UniqueId)
+    end
+    UIManager(self):ShowCommonPopupUI(100019, {
+      LeftCallbackFunction = CancelFunc,
+      RightCallbackFunction = ConfirmFunc,
+      CloseBtnCallbackFunction = CancelFunc
+    }, self)
   else
+    self:BlockAllUIInput(true)
+    local Avatar = ArmoryUtils:GetAvatar()
     Avatar:LockPet(self.SelectedContent.UniqueId)
   end
 end
-
 function M:TryReadReddot(Content)
   if not Content then
     return
@@ -688,16 +675,13 @@ function M:TryReadReddot(Content)
     end
   end
 end
-
 function M:AddReddotListener()
   self:RemoveReddotListener()
 end
-
 function M:RemoveReddotListener()
   if self.ReddotNodeName then
   end
 end
-
 function M:ReallyOnKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = self.M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -736,21 +720,29 @@ function M:ReallyOnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:ReallyDestruct()
   AudioManager(self):SetEventSoundParam(self, "PetMixIndex", {ToEnd = 1})
   self:RemoveReddotListener()
   self:HorizontalListViewResize_TearDown()
   self.M.Super.Destruct(self)
 end
-
 function M:ReallyOnFocusReceived(MyGeometry, InFocusEvent)
-  if not self.WBP_Armory_PetAchive.List_Item:HasAnyUserFocus() then
+  local Sift = self.WBP_Armory_PetAchive and self.WBP_Armory_PetAchive.Pet_Sift
+  if Sift and Sift.IsExistTimer and Sift:IsExistTimer("Common_Sift_AutoFocusTimer") then
+    DebugPrint("Sift已存在自动聚焦定时器")
+    UIUtils.HideNavigateWidgetTemporarily(0.2)
+    self.WBP_Armory_PetAchive.List_Item:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    self:AddTimer(0.2, function()
+      self.WBP_Armory_PetAchive.List_Item:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    end)
+    return
+  end
+  if not self.WBP_Armory_PetAchive.List_Item:HasAnyUserFocus() and CommonUtils.Size(self.ContentArray) > 0 then
+    DebugPrint("更改聚焦:OnFocusReceived")
     self.WBP_Armory_PetAchive.List_Item:SetFocus()
   end
   return self.M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -764,7 +756,6 @@ function M:RefreshBaseInfo()
   self.WBP_Armory_PetAchive.Pet_Sift.Img_Key_L:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.WBP_Armory_PetAchive.Pet_Sift.ListWidgetOpening = false
 end
-
 function M:ReallyRefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     self.WBP_Armory_PetAchive.Key_Lock:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -782,7 +773,6 @@ function M:ReallyRefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:IsPetMatchedWithSift(PetItem)
   local fieldMapping = {}
   local SiftModelId = self.PetSiftId
@@ -792,7 +782,6 @@ function M:IsPetMatchedWithSift(PetItem)
     local field = SiftData.SelectionField[1]
     fieldMapping[i] = field
   end
-  
   local function getFieldValueByIndex(PetItem, index)
     local fieldName = fieldMapping[index]
     local BattlePetIds = {}
@@ -813,7 +802,6 @@ function M:IsPetMatchedWithSift(PetItem)
       return tostring(fieldValue)
     end
   end
-  
   for i, SiftItem in pairs(self.SelectedSiftItems) do
     local fieldValue = getFieldValueByIndex(PetItem, i)
     if not fieldValue then
@@ -853,14 +841,11 @@ function M:IsPetMatchedWithSift(PetItem)
   end
   return true
 end
-
 function M:OnSiftAddedToFocusPath()
   self.WBP_Armory_PetAchive.Pet_Sort.Img_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnSiftRemovedFromFocusPath()
   self.WBP_Armory_PetAchive.Pet_Sort.Img_Key:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 AssembleComponents(M)
 return M

@@ -1,7 +1,6 @@
 require("UnLua")
 require("DataMgr")
 local WBP_PrologueMapItem_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_PrologueMapItem_C:Construct(...)
   self.BtnMainLevelList = {
     self.Level_1,
@@ -14,12 +13,12 @@ function WBP_PrologueMapItem_C:Construct(...)
     self.Level_7
   }
   self.LevelNames = {
-    "\231\148\159\230\156\186",
-    "\229\164\177\232\144\189\231\154\132\233\129\151\232\191\185",
-    "\229\189\146\230\157\165\232\128\133",
+    "生机",
+    "失落的遗迹",
+    "归来者",
     nil,
-    "\229\145\189\230\130\172\228\184\128\231\186\191",
-    "\233\155\190\230\181\183"
+    "命悬一线",
+    "雾海"
   }
   self.LevelIndex = {
     1,
@@ -35,13 +34,11 @@ function WBP_PrologueMapItem_C:Construct(...)
   self:AddDispatcher(EventID.OnMatchStateChanged, self, self.OnMatchStateChanged)
   self:OnMatchStateChanged()
 end
-
 function WBP_PrologueMapItem_C:SetItemContent(Content)
   self.Content = Content
   Content.MainWidget = self
   self.Parent = Content.Parent
 end
-
 function WBP_PrologueMapItem_C:InitMainLevel(ChapterID)
   local ChapterData = DataMgr.Chapter[ChapterID]
   local DungeonListData = ChapterData.DungeonList
@@ -73,14 +70,12 @@ function WBP_PrologueMapItem_C:InitMainLevel(ChapterID)
   self.BtnMainLevelList[LastOpenIndex].bg_slc:SetVisibility(UIConst.VisibilityOp.Visible)
   self.LastOffset = 0
 end
-
 function WBP_PrologueMapItem_C:EnterLevel(DungeonID)
   if self.Content.Parent == nil then
     return
   end
   self.Content.Parent:ClickToSelectLevel(DungeonID)
 end
-
 function WBP_PrologueMapItem_C:OnMatchStateChanged()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -94,5 +89,4 @@ function WBP_PrologueMapItem_C:OnMatchStateChanged()
     end
   end
 end
-
 return WBP_PrologueMapItem_C

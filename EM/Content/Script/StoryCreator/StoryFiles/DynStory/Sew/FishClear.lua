@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1736494694115285",
       type = "StoryNode",
-      name = "\230\141\149\233\177\188\230\184\133\231\144\134",
+      name = "捕鱼清理",
       pos = {x = 1155.0384615384617, y = 297.3846153846153},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -227,7 +229,7 @@ return {
           ["17364947210671145"] = {
             key = "17364947210671145",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166",
+            name = "开车",
             pos = {x = 1484.784206840631, y = 64.91220330237358},
             propsData = {
               IsNpcNode = false,
@@ -244,7 +246,7 @@ return {
           ["17364947393661571"] = {
             key = "17364947393661571",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\141\149\233\177\188NPC",
+            name = "生成捕鱼NPC",
             pos = {x = 1123.6984925549168, y = 309.140774730945},
             propsData = {
               ActiveEnable = true,
@@ -258,7 +260,7 @@ return {
           ["17364947631282168"] = {
             key = "17364947631282168",
             type = "TalkNode",
-            name = "\228\186\164\228\186\146\232\175\183\230\177\130\230\184\133\231\144\134\229\158\131\229\156\190",
+            name = "交互请求清理垃圾",
             pos = {x = 1482.7001409065651, y = 270.112752752923},
             propsData = {
               IsNpcNode = true,
@@ -284,6 +286,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -291,13 +294,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "branch",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -310,14 +313,14 @@ return {
           ["1736508947624698"] = {
             key = "1736508947624698",
             type = "DynamicQuestFailNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "动态任务主动失败",
             pos = {x = 1889.7307692307695, y = 638.9306680161944},
             propsData = {UseTalkFadeOut = false, TalkFadeOutTime = 0}
           },
           ["1736508954362861"] = {
             key = "1736508954362861",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\229\143\175\231\160\180\229\157\143\231\137\169",
+            name = "生成可破坏物",
             pos = {x = 1951.461538461539, y = 285.0460526315789},
             propsData = {
               ActiveEnable = true,
@@ -337,14 +340,14 @@ return {
           ["17365089779261587"] = {
             key = "17365089779261587",
             type = "WaitQuestFinishedNode",
-            name = "\231\173\137\229\190\133\228\187\187\229\138\161\229\174\140\230\136\144",
+            name = "等待任务完成",
             pos = {x = 2626.1837606837607, y = 236.11015519568153},
             propsData = {ListenCount = 5, NeedFinishCount = 5}
           },
           ["1736509312818709015"] = {
             key = "1736509312818709015",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3304.923076923077, y = 322.4883603238866},
             propsData = {
               DialogueId = 0,
@@ -355,7 +358,7 @@ return {
           ["1736736311430703960"] = {
             key = "1736736311430703960",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 2925.4526224282813, y = 286.40541608492924},
             propsData = {
               IsNpcNode = true,
@@ -381,6 +384,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -388,13 +392,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -407,7 +411,7 @@ return {
           ["17393502619633041811"] = {
             key = "17393502619633041811",
             type = "SendMessageNode",
-            name = "\230\140\130\229\158\131\229\156\190\230\140\135\229\188\149\231\130\185",
+            name = "挂垃圾指引点",
             pos = {x = 2271.8125, y = -144.45138888888886},
             propsData = {
               MessageType = "GameMode",
@@ -418,42 +422,42 @@ return {
           ["17393511827993042903"] = {
             key = "17393511827993042903",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1972.75, y = -138.82638888888886},
             propsData = {WaitTime = 1}
           },
           ["17393617510421000"] = {
             key = "17393617510421000",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = 2300.75, y = 24.5000000000001},
             propsData = {SendMessage = "", FinishCondition = "1730134"}
           },
           ["17393617659031474"] = {
             key = "17393617659031474",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = 2309.5, y = 159.5},
             propsData = {SendMessage = "", FinishCondition = "1730135"}
           },
           ["17393617669601529"] = {
             key = "17393617669601529",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = 2309.5, y = 288.25},
             propsData = {SendMessage = "", FinishCondition = "1730136"}
           },
           ["17393617677721562"] = {
             key = "17393617677721562",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = 2320.75, y = 415.75},
             propsData = {SendMessage = "", FinishCondition = "1730162"}
           },
           ["17393617708711660"] = {
             key = "17393617708711660",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = 2304.5, y = 555.7500000000001},
             propsData = {SendMessage = "", FinishCondition = "1730163"}
           }

@@ -1,13 +1,10 @@
 local SkillCreaturePool = {}
-
 function SkillCreaturePool:GetSkillCreaturePoolRefreshTime()
   return Const.SkillCreaturePoolRefreshTime
 end
-
 function SkillCreaturePool:GetSkillCreaturePoolCleanTime()
   return Const.SkillCreaturePoolCleanTime
 end
-
 function SkillCreaturePool:PreloadSkillCreature_Lua(Source, Weapon, bPersistent)
   local BulletNum = math.max(Weapon.Data.BulletInit or 0, Weapon.Data.MagazineCapacity or 0)
   if 0 == BulletNum then
@@ -19,7 +16,6 @@ function SkillCreaturePool:PreloadSkillCreature_Lua(Source, Weapon, bPersistent)
     self:PreloadSkillCreatureBySkill(Skill, bPersistent, BulletNum)
   end
 end
-
 function SkillCreaturePool:PreloadSkillCreatureBySkill(Skill, bPersistent, BulletNum)
   if not Skill then
     return
@@ -63,5 +59,4 @@ function SkillCreaturePool:PreloadSkillCreatureBySkill(Skill, bPersistent, Bulle
     end
   end
 end
-
 return SkillCreaturePool

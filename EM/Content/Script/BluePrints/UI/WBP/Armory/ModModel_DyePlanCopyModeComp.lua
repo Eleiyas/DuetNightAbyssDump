@@ -1,6 +1,16 @@
 local json = require("rapidjson")
 local Component = {}
-
+local SKIN_VALIDATORS = {
+  Char = function(id)
+    return DataMgr.Skin[id]
+  end,
+  Weapon = function(id)
+    return DataMgr.WeaponSkin[id] and not DataMgr.Weapon[id]
+  end,
+  Hair = function(id)
+    return DataMgr.Hair[id]
+  end
+}
 function Component:CacheDyePlanInfoCopyed(DyePlanInfo)
   self.DyePlanInfoCopyed = {
     MsgCopyed = string.format(GText("UI_Chat_DyeSuitFormat"), DyePlanInfo.TargetName),
@@ -17,11 +27,9 @@ function Component:CacheDyePlanInfoCopyed(DyePlanInfo)
   end
   ULowEntryExtendedStandardLibrary.ClipboardSet(self.DyePlanInfoCopyed.MsgCopyed)
 end
-
 function Component:GetDyePlanInfoCopyed()
   return self.DyePlanInfoCopyed
 end
-
 function Component:IsDyeShareInfoMsg(InMsgStr)
   local DyePlanInfoCopyed = self:GetDyePlanInfoCopyed()
   if not DyePlanInfoCopyed then
@@ -32,7 +40,6 @@ function Component:IsDyeShareInfoMsg(InMsgStr)
   end
   return true
 end
-
 function Component:GenerateDyeShareMsg()
   local DyePlanInfoCopyed = self:GetDyePlanInfoCopyed()
   if not DyePlanInfoCopyed then
@@ -50,7 +57,6 @@ function Component:GenerateDyeShareMsg()
   }
   return ChatCommon.DyePlanCopyHeader .. json.encode(Table)
 end
-
 function Component:NumberToBase36(num, minLength)
   if not num or num < 0 then
     return string.rep("0", minLength or 1)
@@ -71,7 +77,6 @@ function Component:NumberToBase36(num, minLength)
   end
   return result
 end
-
 function Component:Base36ToNumber(str)
   if not str or "" == str then
     return 0
@@ -90,7 +95,6 @@ function Component:Base36ToNumber(str)
   end
   return result
 end
-
 function Component:GenerateShareCommunityCopyCode(DyePlanInfo)
   if not DyePlanInfo then
     return ""
@@ -98,6 +102,8 @@ function Component:GenerateShareCommunityCopyCode(DyePlanInfo)
   local code = ""
   if DyePlanInfo.SkinType == "Char" then
     code = code .. "C"
+  elseif DyePlanInfo.SkinType == "Hair" then
+    code = code .. "H"
   else
     code = code .. "W"
   end
@@ -111,7 +117,6 @@ function Component:GenerateShareCommunityCopyCode(DyePlanInfo)
   end
   return code
 end
-
 function Component:AnalysisShareCommunityCopyCode(CommunityCopyCode)
   if not CommunityCopyCode or "" == CommunityCopyCode then
     return nil
@@ -133,6 +138,8 @@ function Component:AnalysisShareCommunityCopyCode(CommunityCopyCode)
       DyePlanInfo.SkinType = "Char"
     elseif "W" == skinTypeChar then
       DyePlanInfo.SkinType = "Weapon"
+    elseif "H" == skinTypeChar then
+      DyePlanInfo.SkinType = "Hair"
     else
       return nil
     end
@@ -140,16 +147,16 @@ function Component:AnalysisShareCommunityCopyCode(CommunityCopyCode)
   else
     return nil
   end
-  if pos + 9 <= string.len(code) then
-    local skinIdStr = string.sub(code, pos, pos + 9)
-    DyePlanInfo.SkinId = self:Base36ToNumber(skinIdStr)
-    if not DataMgr.Skin[DyePlanInfo.SkinId] and not DataMgr.WeaponSkin[DyePlanInfo.SkinId] and not DataMgr.Weapon[DyePlanInfo.SkinId] then
-      return nil
-    end
-    pos = pos + 10
-  else
+  if pos + 9 > string.len(code) then
     return nil
   end
+  local skinIdStr = string.sub(code, pos, pos + 9)
+  DyePlanInfo.SkinId = self:Base36ToNumber(skinIdStr)
+  local Validator = SKIN_VALIDATORS[DyePlanInfo.SkinType]
+  if not Validator or not Validator(DyePlanInfo.SkinId) then
+    return nil
+  end
+  pos = pos + 10
   DyePlanInfo.Colors = {}
   while pos + 1 <= string.len(code) do
     local colorIdStr = string.sub(code, pos, pos + 1)
@@ -159,5 +166,4 @@ function Component:AnalysisShareCommunityCopyCode(CommunityCopyCode)
   end
   return DyePlanInfo
 end
-
 return Component

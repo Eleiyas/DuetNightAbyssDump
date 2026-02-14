@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Super.Construct(self)
   self.Btn_Close:Init("Close", self, self.OnReturnKeyDown)
@@ -64,13 +63,11 @@ function M:Construct()
   self.Achievement_SystemDetail_PC.Parent = self
   self:OpenDetail(tempId, 0)
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   EventManager:RemoveEvent(EventID.OnAchvHyperlinkClick, self)
   EventManager:RemoveEvent(EventID.OnGetAchvReward, self)
 end
-
 function M:OnAchvHyperlinkClick(url)
   local inUrl = Split(url, ".")
   local id = tonumber(inUrl[1])
@@ -88,17 +85,14 @@ function M:OnAchvHyperlinkClick(url)
     self:OpenDetail(typeId, self.Type2Index[typeId])
   end
 end
-
 function M:OpenDetail(TypeId, Index)
   self.Achievement_SystemDetail_PC:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Achievement_SystemDetail_PC:PlayIn()
   self.Achievement_SystemDetail_PC:OpenDetail(TypeId, Index)
 end
-
 function M:OnReturnKeyDown()
   self.Achievement_SystemDetail_PC:OnReturnKeyDown()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -107,7 +101,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnGetAchvReward(AchvId, Ret)
   if Ret ~= ErrorCode.RET_SUCCESS then
     local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -118,5 +111,4 @@ function M:OnGetAchvReward(AchvId, Ret)
     self.Achievement_SystemDetail_PC:OnGetAchvReward(AchvId)
   end
 end
-
 return M

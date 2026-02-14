@@ -2,7 +2,6 @@ require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local UIUtils = require("Utils.UIUtils")
 local Component = {}
-
 function Component:Construct()
   self.Arr_OrderBy = {
     "UI_LEVEL_SELECT",
@@ -44,11 +43,9 @@ function Component:Construct()
     table.insert(self.RangedFilterIcons, Data and Data.Icon)
     self.Ranged2Icon[Tag] = Data.Icon
   end
-  
   local function _concat(FromTable, ToTable)
     table.move(FromTable, 1, #FromTable, #ToTable + 1, ToTable)
   end
-  
   self.WeaponFilterTags = {}
   _concat(self.MeleeFilterTags, self.WeaponFilterTags)
   _concat(self.RangedFilterTags, self.WeaponFilterTags)
@@ -67,7 +64,6 @@ function Component:Construct()
   end
   self.IsListExpanded = false
 end
-
 function Component:CreateFilters(InTags, InTexts, InIcons, ExcelWeaponTags)
   local Filters = {}
   for i, value in ipairs(InTags) do
@@ -80,22 +76,18 @@ function Component:CreateFilters(InTags, InTexts, InIcons, ExcelWeaponTags)
   end
   return Filters
 end
-
 function Component:OnBackKeyDown()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(false)
 end
-
 function Component:OnExpandListButtonClicked()
   self:OnExpandListKeyDown()
 end
-
 function Component:OnExpandListKeyDown()
   self:ExpandList(not self.IsListExpanded)
 end
-
 function Component:ResetMainTabStyle(IsListExpanded)
   if IsListExpanded then
     local MainTabName = self.CurMainTab.Name
@@ -151,7 +143,6 @@ function Component:ResetMainTabStyle(IsListExpanded)
     self:InitKeySetting()
   end
 end
-
 function Component:SetReceivedEvent(IsReceive)
   if self.ComponentReceivedEvent == nil then
     return
@@ -163,7 +154,6 @@ function Component:SetReceivedEvent(IsReceive)
   self.ComponentReceivedEvent.RoleUp = IsReceive
   self.ComponentReceivedEvent.RoleDown = IsReceive
 end
-
 function Component:ExpandList(IsListExpanded)
   if IsListExpanded then
     self.IsListExpanded = true
@@ -187,14 +177,12 @@ function Component:ExpandList(IsListExpanded)
     })
   end
 end
-
 function Component:OnExpandListItemSelectionChanged(Content, IsSelected)
   if not self.IsGamepadInput or not IsSelected then
     return
   end
   self:OnExpandListItemClicked(Content)
 end
-
 function Component:OnExpandListItemClicked(Content)
   if not self.IsListExpanded then
     return
@@ -209,7 +197,6 @@ function Component:OnExpandListItemClicked(Content)
     self:HideLeftPanels()
   end
 end
-
 function Component:SortItemContents(InOutContentArray, SortByIdx, SortType)
   local FirtContent = self[self.CurMainTab.Name .. "Main_CurContent"] or self[self.CurMainTab.Name .. "Main_CmpContent"]
   local OrderByAttrNames = self[self.CurMainTab.Name .. "OrderByAttrNames"]
@@ -223,7 +210,6 @@ function Component:SortItemContents(InOutContentArray, SortByIdx, SortType)
   end
   ArmoryUtils:SortItemContents(InOutContentArray, SortByAttrNames, SortType, FirtContent)
 end
-
 function Component:FilterItemContents(InContentArray, FilterIdxes)
   local TabName = self.CurMainTab.Name
   local FilteredItems = {}
@@ -231,12 +217,10 @@ function Component:FilterItemContents(InContentArray, FilterIdxes)
   if TabName == ArmoryUtils.ArmoryMainTabNames.Char then
     function FilterFunc(FilterTag, Content)
       local Data = DataMgr.BattleChar[Content.UnitId]
-      
       return FilterTag == Data.Attribute
     end
   elseif TabName == ArmoryUtils.ArmoryMainTabNames.Melee or TabName == ArmoryUtils.ArmoryMainTabNames.Ranged or TabName == ArmoryUtils.ArmoryMainTabNames.Weapon then
     local Avatar = ArmoryUtils:GetAvatar()
-    
     function FilterFunc(FilterTag, Content)
       local Weapon = Avatar.Weapons[Content.Uuid]
       return Weapon:HasTag(FilterTag)
@@ -266,5 +250,4 @@ function Component:FilterItemContents(InContentArray, FilterIdxes)
   end
   return FilteredItems
 end
-
 return Component

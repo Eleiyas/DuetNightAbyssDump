@@ -11,15 +11,12 @@ local CjkUTFRanges = {
   {15380608, 15572655},
   {14909568, 14913471}
 }
-
 function PlayerNameUtils.CheckIsAllSpace(Name)
   return string.match(Name, "^%s*$")
 end
-
 function PlayerNameUtils.ReplaceMultiSpaceInName(Name)
-  return string.gsub(NewName, "%s%s+", " ")
+  return string.gsub(Name, "%s%s+", " ")
 end
-
 function PlayerNameUtils.CheckNameLegal(NewName, MaxNum)
   MaxNum = MaxNum or 12
   local IllegalRange = {}
@@ -74,7 +71,6 @@ function PlayerNameUtils.CheckNameLegal(NewName, MaxNum)
   end
   return NameLength, RealName, IllegalRange, ErrorType
 end
-
 function PlayerNameUtils.GetWordLength(WordFirstByte)
   if WordFirstByte >= 240 then
     return 4
@@ -87,7 +83,6 @@ function PlayerNameUtils.GetWordLength(WordFirstByte)
   end
   return 0
 end
-
 function PlayerNameUtils.CheckDoubleCharInAnyRange(NewName, i, AllRange)
   local CharByte1 = string.byte(NewName, i)
   local CharByte2 = string.byte(NewName, i + 1)
@@ -98,7 +93,6 @@ function PlayerNameUtils.CheckDoubleCharInAnyRange(NewName, i, AllRange)
   end
   return false
 end
-
 function PlayerNameUtils.ContainsDoubleChar(CharByte1, CharByte2, Range)
   local ByteNum = CharByte1 * 256.0 + CharByte2
   if ByteNum >= Range[1] and ByteNum <= Range[2] then
@@ -106,7 +100,6 @@ function PlayerNameUtils.ContainsDoubleChar(CharByte1, CharByte2, Range)
   end
   return false
 end
-
 function PlayerNameUtils.CheckCharInAnyRange(NewName, i, AllRange)
   local CharByte1 = string.byte(NewName, i)
   local CharByte2 = string.byte(NewName, i + 1)
@@ -118,7 +111,6 @@ function PlayerNameUtils.CheckCharInAnyRange(NewName, i, AllRange)
   end
   return false
 end
-
 function PlayerNameUtils.ContainsCJK(CharByte1, CharByte2, CharByte3, Range)
   local ByteNum = CharByte1 * 65536.0 + CharByte2 * 256.0 + CharByte3
   if ByteNum >= Range[1] and ByteNum <= Range[2] then
@@ -126,7 +118,6 @@ function PlayerNameUtils.ContainsCJK(CharByte1, CharByte2, CharByte3, Range)
   end
   return false
 end
-
 function PlayerNameUtils.HighLightWord(Str, WordStart, WordEnd)
   local InsertStrStart = "<Warning>"
   local InsertStrEnd = "</>"
@@ -135,7 +126,6 @@ function PlayerNameUtils.HighLightWord(Str, WordStart, WordEnd)
   local last = string.sub(Str, WordEnd + 1, -1)
   return string.format("%s%s%s%s%s", first, InsertStrStart, Middle, InsertStrEnd, last)
 end
-
 function PlayerNameUtils.HighLightIllegal(Name, IllegalRange)
   local InsertStrStart = "<Warning>"
   local InsertStrEnd = "</>"
@@ -146,9 +136,7 @@ function PlayerNameUtils.HighLightIllegal(Name, IllegalRange)
   end
   return Res
 end
-
 function PlayerNameUtils.DeleteHeadAndTailSpace(Name)
   return string.gsub(Name, "^%s*(.-)%s*$", "%1")
 end
-
 return PlayerNameUtils

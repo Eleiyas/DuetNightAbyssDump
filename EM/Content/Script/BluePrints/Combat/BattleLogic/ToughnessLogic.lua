@@ -1,6 +1,5 @@
 local Const = require("Const")
 local Component = {}
-
 function Component:Play_UsePenalizeSkill(Content)
   local Target = self:GetEntity(Content.TargetEid)
   local Source = self:GetEntity(Content.SourceEid)
@@ -18,14 +17,12 @@ function Component:Play_UsePenalizeSkill(Content)
     DefeatedUI:PlayAnimation(DefeatedUI.Press)
   end
 end
-
 function Component:Play_StartTargetCondemn(Content)
   local Target = self:GetEntity(Content.Eid)
   if Target then
     Target:PlayCondemnMontage()
   end
 end
-
 function Component:BossCauseHit(Target, TNValue)
   local ReturnHitLevel
   local TargetCharInfo = Target.BattleCharInfo
@@ -46,5 +43,4 @@ function Component:BossCauseHit(Target, TNValue)
   end
   return ReturnHitLevel
 end
-
 return Component

@@ -3,7 +3,6 @@ local TeamModel = TeamController:GetModel()
 local M = Class({
   "BluePrints.UI.WBP.Team.View.WBP_Team_PlayerList_Base"
 })
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   self.bIniting = true
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
@@ -63,7 +62,6 @@ function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   self.OpenedUid = nil
   self.bIniting = false
 end
-
 function M:OnInputDeviceChange()
   if TeamController:IsGamepad() then
     self.Panel_GamePad:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -75,7 +73,6 @@ function M:OnInputDeviceChange()
   end
   self.LastIsGamepad = TeamController:IsGamepad()
 end
-
 function M:FocusToFirstTeammate()
   for _, Widget in pairs(self.WB_Player:GetAllChildren()) do
     Widget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Escape)
@@ -84,7 +81,6 @@ function M:FocusToFirstTeammate()
   FirstTeammate:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   FirstTeammate:SetFocus()
 end
-
 function M:FocusUIByUid(Uid)
   if TeamModel:IsYourself(Uid) then
     self.Mine:SetFocus()
@@ -97,7 +93,6 @@ function M:FocusUIByUid(Uid)
   self.bOpenBtnList = false
   self.OpenedUid = nil
 end
-
 function M:OnFocusLost()
   if self:HasUserFocusedDescendants(GWorld:GetMainPlayer().Controller) then
     return
@@ -105,7 +100,6 @@ function M:OnFocusLost()
   self:StopAnimation(self.Auto_In)
   self:Close()
 end
-
 function M:OnMenuOpenChanged(bOpen)
   if not bOpen then
     self.Key_Back:CreateSubKeyDesc({
@@ -133,10 +127,8 @@ function M:OnMenuOpenChanged(bOpen)
     })
   end
 end
-
 function M:Close()
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
-  Traceback("\229\147\170\233\135\140\232\176\131\231\148\168\228\186\134Close")
   BattleMain:PlayAnimation(BattleMain.Team_In)
   local PlayerChar = GWorld:GetMainPlayer()
   if GWorld:IsStandAlone() then
@@ -149,7 +141,6 @@ function M:Close()
   self.IsInit = true
   M.Super.Close(self)
 end
-
 function M:_UpdateMemberTag(Uid)
   if TeamModel:IsYourself(Uid) then
     self.Mine:UpdateTag()
@@ -157,32 +148,29 @@ function M:_UpdateMemberTag(Uid)
     self.Teammate2UI[Uid]:UpdateTag()
   end
 end
-
 function M:OnKeyUp(MyGeo, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   DebugPrint(DebugTag, LXYTag, "Team_Playerlist_P  OnKeyUp", InKeyName)
   local InputAction = DataMgr.KeyboardMap.ShowTeamInfo
   if InKeyName == InputAction.Key then
-    DebugPrint(DebugTag, LXYTag, "\229\133\179\233\151\173TeamInfoUI")
+    DebugPrint(DebugTag, LXYTag, "关闭TeamInfoUI")
     self:StopAnimation(self.Auto_In)
     self:Close()
   end
   return UIUtils.Handled
 end
-
 function M:OnPreviewKeyDown(MyGeo, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   local InputAction = DataMgr.GamepadMap.ShowTeamInfo
   if InKeyName == "Gamepad_" .. InputAction.GamepadKey[1] then
-    DebugPrint(DebugTag, LXYTag, "\229\133\179\233\151\173TeamInfoUI")
+    DebugPrint(DebugTag, LXYTag, "关闭TeamInfoUI")
     self:StopAnimation(self.Auto_In)
     self:Close()
   end
   return UIUtils.Unhandled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -198,9 +186,7 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnMouseButtonDown(MyGeo, InMouseEvent)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return M

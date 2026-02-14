@@ -1,7 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
 local TipsWidgetName = {Item_Tip3 = 1, Item_Currency = 2}
-
 function M:Construct()
   self.CurrentCount = 0 == self:GetMaxCount() and 0 or 1
   self:InitCommonWidget()
@@ -21,7 +20,6 @@ function M:Construct()
     self.Owner.WBP_Com_Tab_Node_ResourceBar:SetResourceBarVisibility(100, false)
   end)
 end
-
 function M:PreInitContent(Params, PopupData, Owner)
   M.Super.PreInitContent(self, Params, PopupData, Owner)
   if 0 == self:GetMaxCount() then
@@ -32,11 +30,9 @@ function M:PreInitContent(Params, PopupData, Owner)
     self:BindDialogEvent(DialogEvent.OnRightBtnClicked, self.OnExchangeBtnClicked)
   end
 end
-
 function M:Destroy()
   self:UnbindDialogEvent(DialogEvent.OnRightBtnClicked)
 end
-
 function M:InitCommonWidget()
   local ConfigData = {
     InitValue = self.CurrentCount,
@@ -52,7 +48,6 @@ function M:InitCommonWidget()
   }
   self.Com_Slider:Init(ConfigData)
 end
-
 function M:UpdateCost(Cost)
   if not self.Owner then
     return
@@ -73,10 +68,8 @@ function M:UpdateCost(Cost)
   }
   ChildCurrencyWidget:InitContent(Params)
 end
-
 function M:OnExchangeBtnClicked()
   local Avatar = GWorld:GetAvatar()
-  
   local function TransformCallBack(Count)
     local ItemId = 100
     UIUtils.ShowGetItemPageAndOpenBagIfNeeded("Resource", ItemId, Count, nil, false, nil, self, false)
@@ -85,29 +78,37 @@ function M:OnExchangeBtnClicked()
       ShopMain:RefreshSubTabData(ShopMain.CurSubTabMap)
     end
   end
-  
   Avatar:TransformCoin4ToCoin1(self.CurrentCount, TransformCallBack)
 end
-
 function M:OnBuyBtnClicked()
-  PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
+  local Avatar = GWorld:GetAvatar()
+  local UIUnlockRule = DataMgr.UIUnlockRule
+  if not UIUnlockRule or not UIUnlockRule.Shop then
+    DebugPrint("WBP_ShopExchangePart_C OnBuyBtnClicked UIUnlockRule or UIUnlockRule.Shop is nil")
+    return
+  end
+  local UIUnlockRuleId = UIUnlockRule.Shop.UIUnlockRuleId
+  if Avatar and UIUnlockRuleId then
+    local bUnlocked = Avatar:CheckUIUnlocked(UIUnlockRuleId)
+    if bUnlocked then
+      PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
+    else
+      UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, UIUnlockRule.Shop.UIUnlockDesc)
+    end
+  end
 end
-
 function M:MinusBtnCallback()
   self.CurrentCount = self.Com_Slider.CurrentCount
   self:UpdatePricePanel()
 end
-
 function M:AddBtnCallback()
   self.CurrentCount = self.Com_Slider.CurrentCount
   self:UpdatePricePanel()
 end
-
 function M:SliderChangeCallback(Value)
   self.CurrentCount = Value
   self:UpdatePricePanel()
 end
-
 function M:UpdatePricePanel()
   local MaxCount = self:GetMaxCount()
   if MaxCount <= 0 then
@@ -119,7 +120,6 @@ function M:UpdatePricePanel()
   end
   self:UpdateCost(self.CurrentCount)
 end
-
 function M:GetMaxCount()
   local MaxValue = 0
   local Data = DataMgr.Resource[99]
@@ -130,7 +130,6 @@ function M:GetMaxCount()
   end
   return MaxValue
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -140,7 +139,6 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnContentKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -150,15 +148,12 @@ function M:OnContentKeyUp(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = self.Com_Slider:Handle_KeyDownEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:OnGamePadUp(InKeyName)
   local IsEventHandled = self.Com_Slider:Handle_KeyUpEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 return M

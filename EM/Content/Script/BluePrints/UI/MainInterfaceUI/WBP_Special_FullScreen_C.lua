@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Super.Construct(self)
   self.Common_Text.Common_Text:SetText(GText("UI_GACHA_NEXT"))
@@ -8,7 +7,6 @@ function M:Construct()
   self.Text_Skip:SetText(GText("UI_GACHA_SKIP"))
   self.Btn_Skip.OnClicked:Add(self, self.OnBtnSkipClicked)
 end
-
 function M:ShowWeaponTips(WeaponId, IsTenTimes, IsNew, LastUI)
   if nil ~= IsTenTimes then
     self.LoadMode = "Gacha"
@@ -57,11 +55,9 @@ function M:ShowWeaponTips(WeaponId, IsTenTimes, IsNew, LastUI)
   end
   self.Common_Text:PlayAnimation(self.Common_Text.Loop, 0, 0)
 end
-
 function M:OnBtnSkipClicked()
   self.Parent:OnBtnSkipClicked()
 end
-
 function M:OnClickClose()
   if not self.bShow then
     return
@@ -79,7 +75,6 @@ function M:OnClickClose()
   end
   self:PlayAnimation(self.Fade_Out, 0, 1, EUMGSequencePlayMode.Forward, 1, true)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Fade_Out then
     if self.LoadMode == "Gacha" then
@@ -98,5 +93,4 @@ function M:OnAnimationFinished(InAnimation)
     self.bShow = true
   end
 end
-
 return M

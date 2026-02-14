@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Root:SetRenderOpacity(0)
   self.ScrollBox_List:ClearChildren()
@@ -10,10 +9,15 @@ function M:OnListItemObjectSet(Content)
   self.DungeonData = Content.DungeonData
   self.DungeonIds = Content.DungeonIds
   self.Parent = Content.Parent
+  Content.SelfWidget = self
   self:InitItemContent()
   self.ScrollBox_List:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Wrap)
 end
-
+function M:BP_OnEntryReleased()
+  if self.Content then
+    self.Content.SelfWidget = nil
+  end
+end
 function M:SetWalnutTitleMatColor(WalnutType)
   if 1 == WalnutType then
     self.TextColor = self.Sx_Text_WalnutTypeTitleMatColor
@@ -29,12 +33,11 @@ function M:SetWalnutTitleMatColor(WalnutType)
     self.VX_BGLightColor = self.Hl_VX_BGLightColor
   end
 end
-
 function M:InitItemContent()
   if not self.DungeonData then
     return
   end
-  self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(CapturePanel)
+  self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(self)
   self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:PlayAnimation(self.In)
   local WalnutTypeData = DataMgr.WalnutType[self.DungeonData.WalnutType]
@@ -99,7 +102,6 @@ function M:InitItemContent()
     self.ScrollBox_List:AddChild(Item)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.IsEnter = true
   if self.IsUnLocked or self.Mobile or self:IsAnimationPlaying(self.In) then
@@ -109,7 +111,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsEnter = false
   if self.IsUnLocked or self.Mobile or self:IsAnimationPlaying(self.In) then
@@ -118,11 +119,9 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.ScrollBox_List:GetChildAt(0).Btn_Click:SetFocus()
   self.Parent:UpdatKeyDisplay()
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

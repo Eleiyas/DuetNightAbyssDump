@@ -4,7 +4,6 @@ local WBP_MiniGame_Tiaopin_List_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_MiniGame_Tiaopin_List_C:OnListItemObjectSet(TiaoPin)
   self.Owner = TiaoPin.Owner
   self.Index = TiaoPin.Index
@@ -29,13 +28,12 @@ function WBP_MiniGame_Tiaopin_List_C:OnListItemObjectSet(TiaoPin)
   self.TargetPointPositionIndex = TiaoPin.TargetPointPositionIndex
   local TargetSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Img_In)
   local TargetPositionX = TargetSlot:GetPosition().X
-  TargetSlot:SetPosition(FVector2D(PositionX, self.PointPosition[self.TargetPointPositionIndex]))
+  TargetSlot:SetPosition(FVector2D(TargetPositionX, self.PointPosition[self.TargetPointPositionIndex]))
   self.IsComplete = false
   self:InitPointInList()
   self:UpdatePointPosition()
   self.Owner:AddItemInTiaoPinList(self.Index, self)
 end
-
 function WBP_MiniGame_Tiaopin_List_C:InitPointInList()
   self.TiaoPinDotList = {}
   self.List_Deco:ClearListItems()
@@ -48,11 +46,9 @@ function WBP_MiniGame_Tiaopin_List_C:InitPointInList()
   self:AddTimer(0.1, self.UpdateDotAniamtion, false, 0.1, "InitPoint", true, 1)
   self:AddTimer(0.1, self.UpdateArrowAnimation, false, 0.1, "InitArrow", true)
 end
-
 function WBP_MiniGame_Tiaopin_List_C:AddItemInTiaoPinList(Index, TiaoPin)
   self.TiaoPinDotList[Index] = TiaoPin
 end
-
 function WBP_MiniGame_Tiaopin_List_C:UpdateDotAniamtion(CurTiaoPinListIndex)
   if CurTiaoPinListIndex and CurTiaoPinListIndex ~= self.Index then
     DebugPrint("thy    CurTiaoPinListIndex ~= self.Index", self.Index)
@@ -66,13 +62,11 @@ function WBP_MiniGame_Tiaopin_List_C:UpdateDotAniamtion(CurTiaoPinListIndex)
     end
   end
 end
-
 function WBP_MiniGame_Tiaopin_List_C:CloseDotAniamtion()
   for index = 1, #self.TiaoPinDotList do
     self.TiaoPinDotList[index]:StopLoopState()
   end
 end
-
 function WBP_MiniGame_Tiaopin_List_C:UpdatePointPosition()
   local Slot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Panel_Move)
   if not Slot then
@@ -85,7 +79,6 @@ function WBP_MiniGame_Tiaopin_List_C:UpdatePointPosition()
   self:UpdateDotAniamtion()
   self:UpdateArrowAnimation()
 end
-
 function WBP_MiniGame_Tiaopin_List_C:UpdateArrowAnimation()
   if 1 == self.CurrentPositionIndex then
     self.IsUpForbid = true
@@ -108,7 +101,6 @@ function WBP_MiniGame_Tiaopin_List_C:UpdateArrowAnimation()
     self:PlayAnimationReverse(self.Down_Forbid)
   end
 end
-
 function WBP_MiniGame_Tiaopin_List_C:ResetPointPosition()
   local Slot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Panel_Move)
   if not Slot then
@@ -120,7 +112,6 @@ function WBP_MiniGame_Tiaopin_List_C:ResetPointPosition()
   self.CurrentPositionIndex = self.OriginPointPositionIndex
   self:CheckPointPosition()
 end
-
 function WBP_MiniGame_Tiaopin_List_C:CheckCanMovePointUp()
   if self.CurrentPositionIndex - self.MoveRange < 1 then
     self:PlayAnimation(self.Up_Warning)
@@ -128,7 +119,6 @@ function WBP_MiniGame_Tiaopin_List_C:CheckCanMovePointUp()
   end
   return true
 end
-
 function WBP_MiniGame_Tiaopin_List_C:CheckCanMovePointDown()
   if self.CurrentPositionIndex + self.MoveRange > #self.PointPosition then
     self:PlayAnimation(self.Down_Warning)
@@ -136,7 +126,6 @@ function WBP_MiniGame_Tiaopin_List_C:CheckCanMovePointDown()
   end
   return true
 end
-
 function WBP_MiniGame_Tiaopin_List_C:MovePointUp()
   if not self:CheckCanMovePointUp() then
     return
@@ -144,7 +133,6 @@ function WBP_MiniGame_Tiaopin_List_C:MovePointUp()
   self.CurrentPositionIndex = self.CurrentPositionIndex - self.MoveRange
   self:UpdatePointPosition()
 end
-
 function WBP_MiniGame_Tiaopin_List_C:MovePointDown()
   if not self:CheckCanMovePointDown() then
     return
@@ -152,7 +140,6 @@ function WBP_MiniGame_Tiaopin_List_C:MovePointDown()
   self.CurrentPositionIndex = self.CurrentPositionIndex + self.MoveRange
   self:UpdatePointPosition()
 end
-
 function WBP_MiniGame_Tiaopin_List_C:CheckPointPosition()
   if self.TargetPointPositionIndex == self.CurrentPositionIndex then
     DebugPrint("thy   CheckPointPosition  Complete")
@@ -168,7 +155,6 @@ function WBP_MiniGame_Tiaopin_List_C:CheckPointPosition()
     self:PlayAnimation(self.Move_Normal)
   end
 end
-
 function WBP_MiniGame_Tiaopin_List_C:CloseSelectState()
   self.VX_Select1:SetRenderOpacity(0)
   self.Img_Up:SetRenderOpacity(0)
@@ -176,7 +162,6 @@ function WBP_MiniGame_Tiaopin_List_C:CloseSelectState()
   self:StopAllAnimations()
   self:CloseDotAniamtion()
 end
-
 function WBP_MiniGame_Tiaopin_List_C:OpenSelectState()
   self:PlayAnimation(self.Select)
   self.Img_Up:SetRenderOpacity(1)
@@ -184,5 +169,4 @@ function WBP_MiniGame_Tiaopin_List_C:OpenSelectState()
   self:UpdateDotAniamtion()
   self:UpdateArrowAnimation()
 end
-
 return WBP_MiniGame_Tiaopin_List_C

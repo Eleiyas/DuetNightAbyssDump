@@ -64,7 +64,7 @@ return {
       isStoryNode = true,
       key = "173768748732034676998",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1108.25, y = 277.17105263157896},
       propsData = {
         QuestId = 20022501,
@@ -88,8 +88,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "BP_Npc_SideQuest_Xiao_1191070"
+        StoryGuidePointName = "BP_Npc_SideQuest_Xiao_1191070",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -143,7 +145,7 @@ return {
           ["173768788788836175600"] = {
             key = "173768788788836175600",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\232\165\191\232\146\153",
+            name = "生成西蒙",
             pos = {x = 1174.941348973607, y = 319.6666666666667},
             propsData = {
               ActiveEnable = true,
@@ -157,7 +159,7 @@ return {
           ["173768792649136175853"] = {
             key = "173768792649136175853",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1499.9354838709678, y = 300.8320158102767},
             propsData = {
               IsNpcNode = true,
@@ -183,6 +185,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -190,13 +193,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -209,7 +212,7 @@ return {
           ["173768793454836176144"] = {
             key = "173768793454836176144",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129\232\165\191\232\146\153",
+            name = "销毁西蒙",
             pos = {x = 1832.4848484848485, y = 333.5418894830659},
             propsData = {
               ActiveEnable = false,
@@ -228,7 +231,7 @@ return {
       isStoryNode = true,
       key = "173768748966734677140",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1400.551724137931, y = 280.7068965517241},
       propsData = {
         QuestId = 20022502,
@@ -252,8 +255,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "BP_ShotPoint_Xiao01"
+        StoryGuidePointName = "BP_ShotPoint_Xiao01",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -313,7 +318,7 @@ return {
           ["173768750095734677527"] = {
             key = "173768750095734677527",
             type = "CameraNode",
-            name = "\230\139\141\230\145\132\229\185\191\229\156\186\229\176\143\230\145\138",
+            name = "拍摄广场小摊",
             pos = {x = 1209.1961306428125, y = 226.67272727272726},
             propsData = {
               bFadeInOut = false,
@@ -324,8 +329,11 @@ return {
               TargetPointList = {
                 "BP_ShotPoint_Xiao01"
               },
+              EventId = 0,
+              EventParams = {},
               Text_TargetFound = "",
               Text_TargetNotFound = "",
+              ForceMaxLodStaticPointList = {},
               bShouldSetCameraParams = false,
               FocalLength = 0,
               LookAtTargetName = "",
@@ -345,7 +353,7 @@ return {
           ["173768800091036177506"] = {
             key = "173768800091036177506",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\139\141\230\145\132\231\130\185",
+            name = "生成拍摄点",
             pos = {x = 641.1578947368421, y = -104.56750572082379},
             propsData = {
               ActiveEnable = true,
@@ -359,7 +367,7 @@ return {
           ["173768805783836177792"] = {
             key = "173768805783836177792",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129\230\139\141\230\145\132\231\130\185",
+            name = "销毁拍摄点",
             pos = {x = 1480.0095693779906, y = -46.37320574162666},
             propsData = {
               ActiveEnable = false,
@@ -373,7 +381,7 @@ return {
           ["173768808107236178180"] = {
             key = "173768808107236178180",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1750.2631578947369, y = 227.95789473684215},
             propsData = {
               IsNpcNode = false,
@@ -392,6 +400,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -399,6 +408,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -421,15 +431,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 700204},
-                {TalkActorType = "Npc", TalkActorId = 100001}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "Player",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -437,10 +444,11 @@ return {
           ["173770361355144178635"] = {
             key = "173770361355144178635",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\230\152\190\231\164\186\230\140\135\229\188\149\231\130\185",
+            name = "显示指引点",
             pos = {x = 962.5454545454545, y = 239.0478468899521},
             propsData = {
               IsShow = true,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "BP_ShotPoint_Xiao01"
             }
@@ -448,10 +456,11 @@ return {
           ["173770362818544179101"] = {
             key = "173770362818544179101",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\233\148\128\230\175\129\230\140\135\229\188\149\231\130\185",
+            name = "销毁指引点",
             pos = {x = 2098, y = 253.68421052631578},
             propsData = {
               IsShow = false,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "BP_ShotPoint_Xiao01"
             }
@@ -464,7 +473,7 @@ return {
       isStoryNode = true,
       key = "173768777402935426585",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1727.5439560439559, y = 294.9655172413793},
       propsData = {
         QuestId = 20022503,
@@ -488,8 +497,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "BP_ShotPoint_Xiao02"
+        StoryGuidePointName = "BP_ShotPoint_Xiao02",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -549,7 +560,7 @@ return {
           ["173768777402935426593"] = {
             key = "173768777402935426593",
             type = "CameraNode",
-            name = "\230\139\141\230\145\132\232\180\171\230\176\145\231\170\159",
+            name = "拍摄贫民窟",
             pos = {x = 1338.8690748610657, y = 251.11589318122893},
             propsData = {
               bFadeInOut = false,
@@ -560,8 +571,11 @@ return {
               TargetPointList = {
                 "BP_ShotPoint_Xiao02"
               },
+              EventId = 0,
+              EventParams = {},
               Text_TargetFound = "",
               Text_TargetNotFound = "",
+              ForceMaxLodStaticPointList = {},
               bShouldSetCameraParams = false,
               FocalLength = 0,
               LookAtTargetName = "",
@@ -581,7 +595,7 @@ return {
           ["173768809055536178550"] = {
             key = "173768809055536178550",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\139\141\230\145\132\231\130\185",
+            name = "生成拍摄点",
             pos = {x = 772.0292522911476, y = 33.40095365850897},
             propsData = {
               ActiveEnable = true,
@@ -595,7 +609,7 @@ return {
           ["173768809889036178672"] = {
             key = "173768809889036178672",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129\230\139\141\230\145\132\231\130\185",
+            name = "销毁拍摄点",
             pos = {x = 1583.3821510297482, y = 104.8466819221967},
             propsData = {
               ActiveEnable = false,
@@ -609,7 +623,7 @@ return {
           ["173768811232736179113"] = {
             key = "173768811232736179113",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 2218.1304347826085, y = 235.52173913043472},
             propsData = {
               IsNpcNode = false,
@@ -628,6 +642,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -635,6 +650,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -657,15 +673,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 700204},
-                {TalkActorType = "Npc", TalkActorId = 100001}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "Player",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -673,10 +686,11 @@ return {
           ["173770356721944176974"] = {
             key = "173770356721944176974",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\230\152\190\231\164\186\230\140\135\229\188\149\231\130\185",
+            name = "显示指引点",
             pos = {x = 1039.7949948796722, y = 267.2433135783387},
             propsData = {
               IsShow = true,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "BP_ShotPoint_Xiao02"
             }
@@ -684,10 +698,11 @@ return {
           ["173770358290644177481"] = {
             key = "173770358290644177481",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\233\154\144\232\151\143\230\140\135\229\188\149\231\130\185",
+            name = "隐藏指引点",
             pos = {x = 1874.2235663082438, y = 257.97073558162265},
             propsData = {
               IsShow = false,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "BP_ShotPoint_Xiao02"
             }
@@ -700,7 +715,7 @@ return {
       isStoryNode = true,
       key = "173768797308536177137",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 2014.923076923077, y = 300},
       propsData = {
         QuestId = 20022504,
@@ -724,8 +739,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "BP_Npc_SideQuest_Xiao_1191070"
+        StoryGuidePointName = "BP_Npc_SideQuest_Xiao_1191070",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -785,7 +802,7 @@ return {
           ["173768797308636177145"] = {
             key = "173768797308636177145",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\232\165\191\232\146\153",
+            name = "生成西蒙",
             pos = {x = 1175, y = 319.6666666666667},
             propsData = {
               ActiveEnable = true,
@@ -799,7 +816,7 @@ return {
           ["173768797308636177146"] = {
             key = "173768797308636177146",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1496, y = 308},
             propsData = {
               IsNpcNode = true,
@@ -825,6 +842,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -832,13 +850,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -851,7 +869,7 @@ return {
           ["173768797308636177147"] = {
             key = "173768797308636177147",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129\232\165\191\232\146\153",
+            name = "销毁西蒙",
             pos = {x = 1830.6666666666667, y = 334.45098039215685},
             propsData = {
               ActiveEnable = false,
@@ -865,7 +883,7 @@ return {
           ["17389955843561013854"] = {
             key = "17389955843561013854",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 2084.242424242424, y = 359.87878787878793},
             propsData = {VarName = "XiAoStage", VarValue = 2}
           }

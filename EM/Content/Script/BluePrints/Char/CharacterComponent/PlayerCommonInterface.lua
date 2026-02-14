@@ -2,7 +2,6 @@ local EMCache = require("EMCache.EMCache")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local MiscUtils = require("Utils.MiscUtils")
 local PlayerCommonInterface = {}
-
 function PlayerCommonInterface:PlayerCharacterInitialize()
   self.bWeaponByHand = false
   self.WeaponPos = Const.Shoulder
@@ -15,7 +14,6 @@ function PlayerCommonInterface:PlayerCharacterInitialize()
   self:UpdateCameraSensitivityFromCache()
   self:SetPlayerCameraSensitivityByType("Normal")
 end
-
 function PlayerCommonInterface:PrintCameraSensitivity(self)
   DebugPrint("Tianyi@ Current Pitch Sensivity: " .. tostring(self.CameraPitchSensitivity) .. " Current Yaw Sensivity: " .. tostring(self.CameraYawSensitivity))
   DebugPrint("Tianyi@ CameraPitchSensitivity_Normal: " .. tostring(self.CameraPitchSensitivity_Normal) .. " CameraYawSensitivity_Normal: " .. tostring(self.CameraYawSensitivity_Normal))
@@ -25,7 +23,6 @@ function PlayerCommonInterface:PrintCameraSensitivity(self)
   DebugPrint("Tianyi@ TurnSpeedPitch: " .. tostring(self.TurnSpeedPitch))
   DebugPrint("Tianyi@ TurnSpeedYaw: " .. tostring(self.TurnSpeedYaw))
 end
-
 function PlayerCommonInterface:SetPlayerCameraSensitivityByType(Type, bController)
   if "Normal" == Type then
     if UIUtils.IsGamepadInput() then
@@ -45,14 +42,12 @@ function PlayerCommonInterface:SetPlayerCameraSensitivityByType(Type, bControlle
     end
   end
 end
-
 function PlayerCommonInterface:SetPlayerCameraSensitivityCannon()
   self.CameraPitchSensitivity_Normal = self.CameraPitchSensitivity_Shoot
   self.CameraYawSensitivity_Normal = self.CameraYawSensitivity_Shoot
   self.GamepadCameraPitchSensitivity_Normal = self.GamepadCameraPitchSensitivity_Shoot
   self.GamepadCameraYawSensitivity_Normal = self.GamepadCameraYawSensitivity_Shoot
 end
-
 function PlayerCommonInterface:UpdateGamePadCameraSensitivityFromCache()
   local CachedCameraPitch = EMCache:Get("GamepadCameraPitch")
   if not CachedCameraPitch then
@@ -83,7 +78,6 @@ function PlayerCommonInterface:UpdateGamePadCameraSensitivityFromCache()
   end
   self.GamepadCameraYawSensitivity_Shoot = CachedCameraYawOnShoot
 end
-
 function PlayerCommonInterface:UpdateKeyBoardCameraSensitivityFromCache()
   local CachedCameraPitch = EMCache:Get("CameraPitch")
   if not CachedCameraPitch then
@@ -114,17 +108,14 @@ function PlayerCommonInterface:UpdateKeyBoardCameraSensitivityFromCache()
   end
   self.CameraYawSensitivity_Shoot = CachedCameraYawOnShoot
 end
-
 function PlayerCommonInterface:UpdateCameraSensitivityFromCache(Type, bController)
   self:UpdateGamePadCameraSensitivityFromCache()
   self:UpdateKeyBoardCameraSensitivityFromCache()
 end
-
 function PlayerCommonInterface:BeforeBeginPlay()
   self.CheckAnimNotifyOnZeroFrame = false
   self.MaxSafeLocations = 10
 end
-
 function PlayerCommonInterface:AfterBeginPlay()
   self.WeaponPos = Const.Shoulder
   if self.PlayerAnimInstance then
@@ -133,76 +124,46 @@ function PlayerCommonInterface:AfterBeginPlay()
   self:SetupActionGroups()
   self:InitPostProcessSettings()
 end
-
-function PlayerCommonInterface:SetupActionGroups()
-  self:AddToActionGroups("Battle", "Attack")
-  self:AddToActionGroups("Battle", "Jump")
-  self:AddToActionGroups("Battle", "Slide")
-  self:AddToActionGroups("Battle", "BulletJump")
-  self:AddToActionGroups("Battle", "Skill1")
-  self:AddToActionGroups("Battle", "Skill2")
-  self:AddToActionGroups("Battle", "Skill3")
-  self:AddToActionGroups("Battle", "Fire")
-  self:AddToActionGroups("Battle", "Reload")
-  self:AddToActionGroups("Battle", "ChargeBullet")
-  self:AddToActionGroups("Battle", "Avoid")
-  self:AddToActionGroups("Battle", "SwitchCrouch")
-  self:AddToActionGroups("Battle", "Locomotion")
-  self:AddToActionGroups("Region", "SwitchMaster")
-  self:AddToActionGroups("Flying", "BulletJump")
-  self:InitBattleWheelForbidGroup()
-end
-
 function PlayerCommonInterface:LoadFinished()
   print("LoadFinished")
 end
-
 function PlayerCommonInterface:LatenTick(DeltaSeconds)
 end
-
 function PlayerCommonInterface:ProcessItemsOnTouchTick()
   self:ProcessItemsOnTouch()
 end
-
 function PlayerCommonInterface:ReturnIdle(FromNoAsset)
   self:SetCharacterTagIdle()
   self.KeepWeaponOnHand = false
   self:ServerSetCharacterTag("Idle")
 end
-
 function PlayerCommonInterface:SetLogMask(MaskName)
   print("LogInfo", MaskName)
   _G.LogTag = MaskName
 end
-
 function PlayerCommonInterface:SetEmoIdleEnabled(IsEnable, IsChangeRefreshNow)
   if self.PlayerAnimInstance then
     self.PlayerAnimInstance:SetEmoIdleEnabled(IsEnable, IsChangeRefreshNow)
   end
 end
-
 function PlayerCommonInterface:KawaiiSwitch(Enabled)
   if self.PlayerAnimInstance then
     self.PlayerAnimInstance:EnableKawaiiSettings(Enabled)
   end
 end
-
 function PlayerCommonInterface:StopArmoryIdle()
   self:ShouldEnableHandIk()
   self.PlayerAnimInstance:Montage_StopSlotByName(0, "ArmoryIdle")
 end
-
-function PlayerCommonInterface:SetArmoryIdleTag()
+function PlayerCommonInterface:SetArmoryIdleTag(bHideUntilLoop)
   if not self.PlayerAnimInstance then
     return
   end
   self:ShouldEnableHandIk()
-  self.PlayerAnimInstance:SetArmoryIdleTag()
+  self.PlayerAnimInstance:SetArmoryIdleTag(bHideUntilLoop)
 end
-
 function PlayerCommonInterface:CancelSkill(JumpStage, bStillHoldFire)
 end
-
 function PlayerCommonInterface:CalcVectorAngle(Vector1, Vector2)
   Vector1:Normalize()
   Vector2:Normalize()
@@ -210,19 +171,21 @@ function PlayerCommonInterface:CalcVectorAngle(Vector1, Vector2)
   local CosToAngle = UE4.UKismetMathLibrary.DegAcos(DotResult)
   return CosToAngle
 end
-
 function PlayerCommonInterface:IsLocalPlayer()
   if URuntimeCommonFunctionLibrary.ObjIsChildOf(self:GetController(), APlayerController) and (IsStandAlone(self) or MiscUtils.IsAutonomousProxy(self)) then
     return true
   end
   return false
 end
-
 function PlayerCommonInterface:UpdatePlayerTaskInfo()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   local SceneComponentMgr = GameInstance:GetSceneManager()
   if nil == SceneComponentMgr or nil == UIManager then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
     return
   end
   local TaskBarWidget
@@ -232,27 +195,30 @@ function PlayerCommonInterface:UpdatePlayerTaskInfo()
     if nil ~= TaskBarWidget then
       BattleMainUI.Pos_TaskBar:AddChildToOverlay(TaskBarWidget)
     end
+    local QuestChain = Avatar.QuestChains[Avatar.TrackingQuestChainId]
+    if not QuestChain or QuestChain and QuestChain:IsFinish() then
+      BattleMainUI.Pos_TaskBar:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
   elseif nil ~= BattleMainUI and nil ~= BattleMainUI.Pos_TaskBar then
     TaskBarWidget = BattleMainUI.Pos_TaskBar:GetChildAt(0)
   end
   local UnlockMainStoryChain = TaskUtils:GetUnlockMainStory()
   if UnlockMainStoryChain then
-    TaskBarWidget:UpdateUnlockMainStory(UnlockMainStoryChain)
-  else
+    if TaskBarWidget then
+      TaskBarWidget:UpdateUnlockMainStory(UnlockMainStoryChain)
+    end
+  elseif TaskBarWidget then
     TaskBarWidget.Panel_Lock:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   local IconTexture = TaskUtils:GetIconTextureByTrackQuestChainType()
-  if IconTexture then
+  if IconTexture and TaskBarWidget then
     TaskBarWidget.Icon_GuidePoint:SetBrushResourceObject(IconTexture)
   end
 end
-
 function PlayerCommonInterface:InitSceneStartUI()
 end
-
 function PlayerCommonInterface:UpdatePlayerBloodEffectInfo()
 end
-
 function PlayerCommonInterface:Landed()
   if not self:PlayerLanded() then
     return
@@ -262,35 +228,27 @@ function PlayerCommonInterface:Landed()
     return
   end
 end
-
 function PlayerCommonInterface:Impending()
   if not self:PlayerImpending() then
     return
   end
 end
-
 function PlayerCommonInterface:StartSlide()
 end
-
 function PlayerCommonInterface:EnterHitFlyTag()
   if self.PlayerAnimInstance then
     self:SetCurrentJumpState(Const.NormalState)
     self:SetRotationRate("OnGround")
   end
 end
-
 function PlayerCommonInterface:GetDamageInstigatorCurrentAngle(Attacker)
 end
-
 function PlayerCommonInterface:TryToUpdateScreenEffect(DamageFrom, EnergyShieldReduce)
 end
-
 function PlayerCommonInterface:SkillEnd(Owner, SkillId)
 end
-
 function PlayerCommonInterface:PressFire()
 end
-
 function PlayerCommonInterface:ResetJumpState(KeepJumpCount)
   self:SetCurrentJumpState(Const.NormalState)
   if not KeepJumpCount then
@@ -305,7 +263,6 @@ function PlayerCommonInterface:ResetJumpState(KeepJumpCount)
   self:ChangeOrientControll()
   self:ResetCapRot()
 end
-
 function PlayerCommonInterface:ResetJumpState_Lua()
   if self.LuaTimerHandles.BulletJump then
     self:RemoveTimer(self.LuaTimerHandles.BulletJump)
@@ -316,52 +273,37 @@ function PlayerCommonInterface:ResetJumpState_Lua()
   end
   self.AutoSyncProp.IsBulletJumping = false
 end
-
 function PlayerCommonInterface:ReleaseFire()
 end
-
 function PlayerCommonInterface:StopFire(bStillHoldFire)
 end
-
-function PlayerCommonInterface:EnterIdleTag()
-  self:SetRotationRate("OnGround")
-  self:ChangeOrientControll()
-  if not self:IsAnimCrouch() then
-  end
-end
-
 function PlayerCommonInterface:EnterWalkingTag()
   self:SetRotationRate("OnGround")
   if not self:IsAnimCrouch() then
   end
 end
-
 function PlayerCommonInterface:CheckKeepBoneHit()
 end
-
 function PlayerCommonInterface:ApplyEffectBoneHit(DamageCauser, EffectParamentTable)
 end
-
 function PlayerCommonInterface:EndBoneHit()
   self.PlayerAnimInstance.InBoneHit = false
 end
-
 function PlayerCommonInterface:ChangeToNewWeapon(WeaponId)
   local WeaponData = DataMgr.BattleWeapon[WeaponId]
   if not WeaponData then
-    ScreenPrint("\232\175\183\232\190\147\229\133\165\230\173\163\231\161\174\231\154\132\230\173\166\229\153\168\231\188\150\229\143\183:" .. tostring(WeaponId))
+    ScreenPrint("请输入正确的武器编号:" .. tostring(WeaponId))
     return
   end
   local Avatar = GWorld:GetAvatar()
   if Avatar then
-    ScreenPrint("\232\191\158\230\142\165\230\156\141\229\138\161\229\153\168\230\131\133\229\134\181\228\184\139\239\188\140\232\175\183\229\156\168\229\134\155\230\162\176\229\186\147\230\155\180\230\141\162\230\173\166\229\153\168")
+    ScreenPrint("连接服务器情况下，请在军械库更换武器")
     return
   end
   if not IsAuthority(self) then
-    ScreenPrint("\229\164\154\228\186\186\232\129\148\230\156\186\230\168\161\229\188\143\228\184\141\232\131\189\230\141\162\230\173\166\229\153\168")
+    ScreenPrint("多人联机模式不能换武器")
     return
   end
-  
   local function HasTag(WeaponData, Tag)
     local WeaponTag = WeaponData.WeaponTag
     if not WeaponTag then
@@ -374,13 +316,12 @@ function PlayerCommonInterface:ChangeToNewWeapon(WeaponId)
     end
     return false
   end
-  
   if HasTag(WeaponData, "Ultra") then
-    ScreenPrint("\230\151\160\230\179\149\230\155\180\230\141\162\230\152\190\232\181\171\230\173\166\229\153\168")
+    ScreenPrint("无法更换显赫武器")
     return
   end
   if HasTag(WeaponData, "Condemn") then
-    ScreenPrint("\230\151\160\230\179\149\230\155\180\230\141\162\229\164\132\229\136\145\230\173\166\229\153\168")
+    ScreenPrint("无法更换处刑武器")
     return
   end
   local IsMelee = HasTag(WeaponData, "Melee")
@@ -404,7 +345,7 @@ function PlayerCommonInterface:ChangeToNewWeapon(WeaponId)
   end)
   local CurSkill = self:GetCurrentSkill()
   if CurSkill then
-    self:StopSkill()
+    self:StopSkill(UE.ESkillStopReason.ForceCancel)
   end
   self:ClearWeapon()
   for _, WeaponInfo in pairs(NewWeapons) do
@@ -415,21 +356,17 @@ function PlayerCommonInterface:ChangeToNewWeapon(WeaponId)
   end
   self:ChangeUsingWeaponByType("Melee")
 end
-
 function PlayerCommonInterface:AnimIdleStart()
 end
-
 function PlayerCommonInterface:StartJump()
   self:PlayerDoJump()
   if self.NeedJumpEvent then
     EventManager:FireEvent(EventID.OnJumpPressed)
   end
 end
-
 function PlayerCommonInterface:SetDebugDrawTest(Debugable)
   _G.DrawDebugTest = Debugable
 end
-
 function PlayerCommonInterface:SetCanInteractiveTrigger(bIsCanTrigger, Tag)
   local Tag = Tag or "Default"
   self.DisableInteractiveTriggerTagMap = self.DisableInteractiveTriggerTagMap or {}
@@ -447,11 +384,9 @@ function PlayerCommonInterface:SetCanInteractiveTrigger(bIsCanTrigger, Tag)
     self.InteractiveTriggerComponent:SetIsCanTrigger(not bForbidInteractiveTrigger)
   end
 end
-
 function PlayerCommonInterface:CheckCanInteractiveTrigger()
   return not self.bForbidInteractiveTrigger
 end
-
 function PlayerCommonInterface:RefreshRegionNameInfo(UId, ObjId)
   local Name = ""
   local Avatar = GWorld:GetAvatar()
@@ -468,7 +403,6 @@ function PlayerCommonInterface:RefreshRegionNameInfo(UId, ObjId)
   end
   self:EnableHeadWidget("Name", true, Name, Style, Pos)
 end
-
 function PlayerCommonInterface:RefreshTitleInfo(ObjId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -485,20 +419,22 @@ function PlayerCommonInterface:RefreshTitleInfo(ObjId)
   print(_G.LogTag, "RefreshTitleInfo", PrefixId, SuffixId, TitleFrameId)
   self:RefreshTitle(PrefixId, SuffixId, TitleFrameId)
 end
-
 function PlayerCommonInterface:EnableTitle(PrefixId, SuffixId, TitleFrameId)
   self:EnableHeadWidget("Title", true, PrefixId, SuffixId, TitleFrameId)
 end
-
 function PlayerCommonInterface:DisableTitle()
   self:EnableHeadWidget("Title", false)
 end
-
 function PlayerCommonInterface:RefreshTitle(PrefixId, SuffixId, TitleFrameId)
   self:DisableTitle()
   self:EnableTitle(PrefixId, SuffixId, TitleFrameId)
 end
-
+function PlayerCommonInterface:PlayEmoji(EmojiPath)
+  self:EnableHeadWidget("Bubble_Emoji", true, EmojiPath)
+end
+function PlayerCommonInterface:StopEmoji()
+  self:EnableHeadWidget("Bubble_Emoji", false)
+end
 function PlayerCommonInterface:InitBattleWheelForbidGroup()
   local ActionAllow = {
     W = true,
@@ -515,9 +451,7 @@ function PlayerCommonInterface:InitBattleWheelForbidGroup()
     end
   end
 end
-
 function PlayerCommonInterface:DisablePlayerInputInDeliver(bDisable)
   UIManager(self):SetBannedActionCallback("InDeliver", bDisable)
 end
-
 return PlayerCommonInterface

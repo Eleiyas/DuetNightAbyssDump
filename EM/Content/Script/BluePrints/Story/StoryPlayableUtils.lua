@@ -1,5 +1,4 @@
 local StoryPlayableUtils = {}
-
 function StoryPlayableUtils:ExecuteStoryDelegate(StoryDelegate, ...)
   if StoryDelegate then
     if StoryDelegate.Execute then
@@ -9,5 +8,4 @@ function StoryPlayableUtils:ExecuteStoryDelegate(StoryDelegate, ...)
     end
   end
 end
-
 return {StoryPlayableUtils = StoryPlayableUtils}

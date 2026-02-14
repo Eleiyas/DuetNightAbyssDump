@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(Params)
   self.Owner = Params.Owner
   self.OnCloseCallback = Params.OnClosed
@@ -15,7 +14,6 @@ function M:Init(Params)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self:PlayInAnim()
 end
-
 function M:OnFocusLost()
   if not self.bNoCloseAnim then
     self:PlayOutAnim()
@@ -24,13 +22,11 @@ function M:OnFocusLost()
     self.OnCloseCallback(self.Owner)
   end
 end
-
 function M:PlayInAnim()
   self:UnbindAllFromAnimationFinished(self.Out)
   self:StopAllAnimations()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   self:StopAllAnimations()
   self:BindToAnimationFinished(self.Out, {
@@ -39,11 +35,9 @@ function M:PlayOutAnim()
   })
   self:PlayAnimation(self.Out)
 end
-
 function M:OnOutAnimationFinished()
   self:RemoveFromParent()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   if UKismetInputLibrary.InputEvent_IsRepeat(InputEvent) then
@@ -58,17 +52,14 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner)
   end
 end
-
 return M

@@ -1,5 +1,4 @@
 local AsyncSetActorLocationAndRotationNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function AsyncSetActorLocationAndRotationNode:Init()
   self.UnitId = 0
   self.NewTargetPointName = nil
@@ -11,7 +10,6 @@ function AsyncSetActorLocationAndRotationNode:Init()
   self.bForceAsyncLoading = nil
   self.IsWhite = nil
 end
-
 function AsyncSetActorLocationAndRotationNode:Execute(Callback)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if IsValid(Player) then
@@ -31,11 +29,9 @@ function AsyncSetActorLocationAndRotationNode:Execute(Callback)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self.TalkContext)
   local NewTargetPoint = EMGameState:GetTargetPoint(self.NewTargetPointName)
   local LevelLoader = GameMode:GetLevelLoader()
-  
   local function FadeOut()
     UIManager(self):HideCommonBlackScreen("AsyncSetActorLocAndRotNode")
   end
-  
   local function FadeInCallback()
     SceneMgrComponent:ShowOrHideAllSceneGuideIcon(false)
     local TaskIndicator = UIManager(self):GetUIObj("MainTaskIndicator")
@@ -45,7 +41,6 @@ function AsyncSetActorLocationAndRotationNode:Execute(Callback)
     if TargetActorController:IsA(APlayerController) then
       TargetActor:DisableInput(TargetActorController)
     end
-    
     local function SetActorTransform()
       if IsValid(NewTargetPoint) then
         GameMode:EMSetActorLocationAndRotation(self.UnitId, self.NewTargetPointName, true, true)
@@ -57,7 +52,6 @@ function AsyncSetActorLocationAndRotationNode:Execute(Callback)
         end
       end
     end
-    
     if IsValid(LevelLoader) and IsValid(NewTargetPoint) then
       local TargetLevelId = GameMode:GetLevelLoader():GetLevelIdByLocation(NewTargetPoint:K2_GetActorLocation())
       local CurrentLevelId = GameMode:GetLevelLoader():GetLevelIdByLocation(TargetActor:K2_GetActorLocation())
@@ -100,7 +94,6 @@ function AsyncSetActorLocationAndRotationNode:Execute(Callback)
       FadeOut()
     end
   end
-  
   local function FadeOutCallback()
     TaskIndicator = UIManager(self):GetUIObj("MainTaskIndicator")
     if IsValid(TaskIndicator) then
@@ -121,7 +114,6 @@ function AsyncSetActorLocationAndRotationNode:Execute(Callback)
     end
     Callback()
   end
-  
   UIManager(self):ShowCommonBlackScreen({
     BlackScreenHandle = "AsyncSetActorLocAndRotNode",
     InAnimationPlayTime = self.FadeIn and 1 or 0,
@@ -133,7 +125,6 @@ function AsyncSetActorLocationAndRotationNode:Execute(Callback)
     ScreenColor = self.IsWhite and "White" or nil
   })
 end
-
 function AsyncSetActorLocationAndRotationNode:FinishAction(OutPortIndex)
   DebugPrint("TalkNode finished", "Option_", self, OutPortIndex)
   if OutPortIndex then
@@ -142,5 +133,4 @@ function AsyncSetActorLocationAndRotationNode:FinishAction(OutPortIndex)
     self:Finish()
   end
 end
-
 return AsyncSetActorLocationAndRotationNode

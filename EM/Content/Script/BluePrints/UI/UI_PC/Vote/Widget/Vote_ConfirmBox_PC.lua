@@ -1,11 +1,5 @@
 require("UnLua")
-local Decorator = require("BluePrints.Client.Wrapper.Decorator")
 local M = Class("BluePrints.UI.BP_UIState_C")
-for key, value in pairs(Decorator) do
-  M[key] = value
-end
-setmetatable(M, getmetatable(Decorator))
-
 function M:Init(Type, RootPage)
   self.VoteMain = RootPage
   self.bPress = false
@@ -28,7 +22,6 @@ function M:Init(Type, RootPage)
     EventManager:AddEvent(EventID.OnUpdateRewardProgress, self, self.GetAllRewardsList)
   end
 end
-
 function M:InitContinue(Type)
   self.IsContinuePanel = true
   self.Text_Title:SetText(GText("UI_Vote_Continue_Expect"))
@@ -49,11 +42,9 @@ function M:InitContinue(Type)
     OnMenuOpenChanged = self.VoteMain.OnItemMenuOpenChanged
   })
   self.Text_Continue:SetText(GText("UI_Vote_Finish_Continue"))
-  
   local function SetBtnVisibility()
     self.Btn_Continue:SetVisibility(ESlateVisibility.Visible)
   end
-  
   self.VoteMain:BindToAnimationFinished(self.VoteMain.Auto_In, {self, SetBtnVisibility})
   self.Btn_Continue.OnClicked:Add(self, self.OnClickContinue)
   self.Btn_Continue.OnPressed:Add(self, self.OnPressContinue)
@@ -77,7 +68,6 @@ function M:InitContinue(Type)
   self:PlayAnimation(self.Normal)
   self:OnReleaseContinue(true)
 end
-
 function M:InitLeave(Type)
   self.IsContinuePanel = false
   self.Text_Title:SetText(GText("UI_Vote_Retreat_Current"))
@@ -87,11 +77,9 @@ function M:InitLeave(Type)
   self.Switch_Btn:SetActiveWidgetIndex(0)
   self.Switch_Tips:SetActiveWidgetIndex(0)
   self.Text_Leave:SetText(GText("UI_Vote_Finish_Retreat"))
-  
   local function SetBtnVisibility()
     self.Btn_Leave:SetVisibility(ESlateVisibility.Visible)
   end
-  
   self.VoteMain:BindToAnimationFinished(self.VoteMain.Auto_In, {self, SetBtnVisibility})
   self.Btn_Leave.OnClicked:Add(self, self.OnClickLeave)
   self.Btn_Leave.OnPressed:Add(self, self.OnPressLeave)
@@ -115,7 +103,6 @@ function M:InitLeave(Type)
   self:PlayAnimation(self.Normal)
   self:OnReleaseLeave(true)
 end
-
 function M:GetAllRewardsList(MaxProgress)
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId() or 90401
   local DefenceWave = self.VoteMain.CurrentWave
@@ -156,7 +143,6 @@ function M:GetAllRewardsList(MaxProgress)
     end
   end
 end
-
 function M:GetRewardsList(IsCurrentWave, Type, CurrentDungeonProgress, RewardId, DefenceWave)
   local Class = LoadClass("/Game/UI/WBP/Vote/Widget/Vote_WaveReward_Content.Vote_WaveReward_Content")
   local Obj = NewObject(Class)
@@ -171,7 +157,6 @@ function M:GetRewardsList(IsCurrentWave, Type, CurrentDungeonProgress, RewardId,
     self.Box_Leave:AddItem(Obj)
   end
 end
-
 function M:OnPressContinue()
   if self.bPress then
     return
@@ -179,11 +164,8 @@ function M:OnPressContinue()
   self.bPress = true
   self:PlayAnimation(self.Press)
 end
-
-M:LimitCall(1)
-
 function M:OnClickContinue()
-  if self.bClick then
+  if self.bClick or not self.VoteMain.AutoInEnd then
     return
   end
   self.bClick = true
@@ -200,7 +182,6 @@ function M:OnClickContinue()
   self.Text_Continue:SetText(GText("UI_Vote_Finish_Continued"))
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
 end
-
 function M:OnReleaseContinue(bInit)
   self:StopAnimation(self.UnHover)
   self:StopAnimation(self.Click)
@@ -217,25 +198,21 @@ function M:OnReleaseContinue(bInit)
   self.bClick = false
   self:RemoveTimer("OnGamepadPressContinue")
 end
-
 function M:OnGamepadClickContinue()
   self:AddTimer(0.1, self.OnClickContinue)
 end
-
 function M:OnGamepadPressContinue()
   if self.VoteMain.SelectContinue then
     return
   end
   self.Key_Continue:OnButtonPressed()
 end
-
 function M:OnGamepadReleaseContinue()
   if self.VoteMain.SelectContinue then
     return
   end
   self.Key_Continue:OnButtonReleased()
 end
-
 function M:OnPressLeave()
   if self.bPress then
     return
@@ -243,11 +220,8 @@ function M:OnPressLeave()
   self.bPress = true
   self:PlayAnimation(self.Press)
 end
-
-M:LimitCall(1)
-
 function M:OnClickLeave()
-  if self.bClick then
+  if self.bClick or not self.VoteMain.AutoInEnd then
     return
   end
   self.bClick = true
@@ -261,7 +235,6 @@ function M:OnClickLeave()
   self.Text_Leave:SetText(GText("UI_Vote_Finish_Retreated"))
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
 end
-
 function M:OnReleaseLeave(bInit)
   self:StopAnimation(self.UnHover)
   self:StopAnimation(self.Click)
@@ -277,25 +250,21 @@ function M:OnReleaseLeave(bInit)
   self.bPress = false
   self.bClick = false
 end
-
 function M:OnGamepadClickLeave()
   self:AddTimer(0.1, self.OnClickLeave)
 end
-
 function M:OnGamepadPressLeave()
   if self.VoteMain.SelectContinue == false then
     return
   end
   self.Key_Leave:OnButtonPressed()
 end
-
 function M:OnGamepadReleaseLeave()
   if self.VoteMain.SelectContinue == false then
     return
   end
   self.Key_Leave:OnButtonReleased()
 end
-
 function M:OnMouseEnterButton()
   if self.VoteMain.SelectContinue == nil or self.IsContinuePanel ~= self.VoteMain.SelectContinue then
     self:StopAnimation(self.UnHover)
@@ -304,7 +273,6 @@ function M:OnMouseEnterButton()
     self.bClick = false
   end
 end
-
 function M:OnMouseLeaveButton()
   if self.VoteMain.SelectContinue == nil or self.IsContinuePanel ~= self.VoteMain.SelectContinue then
     self:StopAnimation(self.Hover)
@@ -313,7 +281,6 @@ function M:OnMouseLeaveButton()
     self.bClick = false
   end
 end
-
 function M:GetActionPoint()
   local Avatar = GWorld:GetAvatar()
   local CurrentActionPoint = 0
@@ -333,12 +300,10 @@ function M:GetActionPoint()
     self.CostActionPoint = self.CostActionPoint * 2
   end
 end
-
 function M:UpdateActionPoint()
   self:GetActionPoint()
   self.Cost:SetPossess(self.CurrentActionPoint)
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.IsContinuePanel then
     return self.Box_Continue
@@ -346,7 +311,6 @@ function M:BP_GetDesiredFocusTarget()
     return self.Box_Leave
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   print(_G.LogTag, "LXZ RefreshOpInfoByInputDevice", CurInputDevice)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.VoteMain.DeviceInPc then
@@ -359,7 +323,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   elseif CurInputDevice == ECommonInputType.Touch then
   end
 end
-
 function M:OnDpadRight()
   local Content
   local IsContinue = false
@@ -375,7 +338,6 @@ function M:OnDpadRight()
   else
   end
 end
-
 function M:OnDpadLeft()
   local Content
   if self.IsContinuePanel then
@@ -387,16 +349,13 @@ function M:OnDpadLeft()
   if Content then
   end
 end
-
 function M:ResetGamepadButton()
   self.Key_Leave:_ResetState(self.Key_Leave.LongPress)
   self.Key_Leave:PlayAnimation(self.Key_Leave.Normal)
   self.Key_Continue:_ResetState(self.Key_Continue.LongPress)
   self.Key_Continue:PlayAnimation(self.Key_Continue.Normal)
 end
-
 function M:OnClose()
   EventManager:RemoveEvent(EventID.OnUpdateRewardProgress, self)
 end
-
 return M

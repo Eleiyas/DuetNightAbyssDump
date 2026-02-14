@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_PickUpInteractiveComponent_C = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C")
-
 function BP_PickUpInteractiveComponent_C:GetInteractiveName()
   if self.CommonUIConfirmID and self.CommonUIConfirmID > 0 then
     return self.Super.GetInteractiveName(self)
@@ -9,7 +8,6 @@ function BP_PickUpInteractiveComponent_C:GetInteractiveName()
   local ItemInfo = DataMgr.Drop[ItemId]
   return GText(ItemInfo.DropName)
 end
-
 function BP_PickUpInteractiveComponent_C:GetInteractiveIcon(PlayerActor)
   if self.CommonUIConfirmID and self.CommonUIConfirmID > 0 then
     return self.Super.GetInteractiveIcon(self, PlayerActor)
@@ -23,7 +21,6 @@ function BP_PickUpInteractiveComponent_C:GetInteractiveIcon(PlayerActor)
   end
   return ImagePath, true
 end
-
 function BP_PickUpInteractiveComponent_C:BtnClicked(PlayerActor, InPressTimeSeconds)
   if not self:CheckInteractiveSucc(PlayerActor.Eid) then
     self:InteractiveFailed()
@@ -35,7 +32,6 @@ function BP_PickUpInteractiveComponent_C:BtnClicked(PlayerActor, InPressTimeSeco
     self:GetOuter():PickupOnTouch(PlayerActor)
   end
 end
-
 function BP_PickUpInteractiveComponent_C:GetRarity()
   if self.CommonUIConfirmID and self.CommonUIConfirmID > 0 then
     return 1
@@ -44,7 +40,6 @@ function BP_PickUpInteractiveComponent_C:GetRarity()
   local ItemInfo = DataMgr.Drop[ItemId]
   return ItemInfo.Rarity
 end
-
 function BP_PickUpInteractiveComponent_C:CanPickUpWithOneClick()
   local ItemId = self:GetOuter():GetItemId()
   local ItemInfo = DataMgr.Drop[ItemId]
@@ -56,7 +51,6 @@ function BP_PickUpInteractiveComponent_C:CanPickUpWithOneClick()
   end
   return Res
 end
-
 function BP_PickUpInteractiveComponent_C:GetQuestID()
   local Owner = self:GetOwner()
   if Owner then
@@ -64,7 +58,6 @@ function BP_PickUpInteractiveComponent_C:GetQuestID()
   end
   return nil
 end
-
 function BP_PickUpInteractiveComponent_C:GetSpecialQuestID()
   local Owner = self:GetOwner()
   if Owner then
@@ -72,5 +65,4 @@ function BP_PickUpInteractiveComponent_C:GetSpecialQuestID()
   end
   return nil
 end
-
 return BP_PickUpInteractiveComponent_C

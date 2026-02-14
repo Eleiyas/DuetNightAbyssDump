@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:GenerateServerData(PlayerAvatar)
   local Result = {CurProcessStr = "", AllStarCount = 0}
   local AbyssSeasonId = PlayerAvatar.CurrentAbyssSeasonId
@@ -38,7 +37,6 @@ function M:GenerateServerData(PlayerAvatar)
   end
   return Result
 end
-
 function M:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
   self.Text_Progress:SetText(GText("Abyss_SeasonFightProgress"))
   self.Text_Collect:SetText(GText("Abyss_SeasonRewardProgress"))
@@ -46,13 +44,14 @@ function M:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
   self.Text_Name:SetText(AllInfo.CurProcessStr)
   self.Text_Star:SetText(string.format("x%s", AllInfo.AllStarCount))
 end
-
 function M:Update(PlayerAvatar)
+  if not PlayerAvatar then
+    return
+  end
   local AllInfo = self:GenerateServerData(PlayerAvatar)
   self.Text_Name:SetText(AllInfo.CurProcessStr)
   self.Text_Star:SetText(string.format("X%s", AllInfo.AllStarCount))
 end
-
 function M:GetConstantAbyssSeasonId()
   for AbyssSeasonId, AbyssSeasonConfig in pairs(DataMgr.AbyssSeason) do
     if 1 == AbyssSeasonConfig.AbyssType then
@@ -61,7 +60,6 @@ function M:GetConstantAbyssSeasonId()
   end
   return nil
 end
-
 function M:IsConstantAbyssPass(PlayerAvatar)
   local ConstantAbyssId = self:GetConstantAbyssSeasonId()
   if ConstantAbyssId then
@@ -69,5 +67,4 @@ function M:IsConstantAbyssPass(PlayerAvatar)
   end
   return false
 end
-
 return M

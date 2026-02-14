@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17223492610122564026",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1359.8320035240877, y = 290.06329788085304},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,7 +115,7 @@ return {
           ["17223492814232564535"] = {
             key = "17223492814232564535",
             type = "ShowGuideToastNode",
-            name = "Toast\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Toast显示/隐藏信息",
             pos = {x = 1464.6475115454782, y = 301.0526026936872},
             propsData = {
               ShowEnable = true,

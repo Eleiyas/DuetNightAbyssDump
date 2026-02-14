@@ -1,14 +1,11 @@
 local PrologueGachaNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function PrologueGachaNode:Init()
 end
-
 function PrologueGachaNode:Start(Context)
   self.Context = Context
   DebugPrint("===============PrologueGachaNode Start===============", self)
   self:PrologueGacha()
 end
-
 function PrologueGachaNode:PrologueGacha()
   local Avatar = GWorld:GetAvatar()
   local Config = DataMgr.InitConfig[1]
@@ -34,14 +31,19 @@ function PrologueGachaNode:PrologueGacha()
     if Player then
       Player:SetActorHideTag("PrologueGacha", true)
     end
+    self.BlackHandle = UIManager:ShowCommonBlackScreen({})
     Avatar:PrologueGacha(self, self.FinishAction)
+  else
+    self:FinishAction()
   end
 end
-
 function PrologueGachaNode:FinishAction()
   DebugPrint("===============PrologueGachaNode End===============")
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
+  if self.BlackHandle then
+    UIManager:HideCommonBlackScreen(self.BlackHandle)
+  end
   local BattleMain = UIManager:GetUIObj("BattleMain")
   if BattleMain then
     BattleMain:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -52,5 +54,4 @@ function PrologueGachaNode:FinishAction()
   end
   self:Finish()
 end
-
 return PrologueGachaNode

@@ -1,6 +1,5 @@
 local MiscUtils = require("Utils.MiscUtils")
 local M = Class("BluePrints.Common.BP_LevelLoader_C")
-
 function M:LoadLevelByBPArrow(PlayerCharacter, BPArrow)
   if MiscUtils.IsSimulatedProxy(PlayerCharacter) then
     return
@@ -35,7 +34,6 @@ function M:LoadLevelByBPArrow(PlayerCharacter, BPArrow)
     end
   end
 end
-
 function M:UnloadLevelByBPArrow(PlayerCharacter, BPArrow)
   if MiscUtils.IsSimulatedProxy(PlayerCharacter) then
     return
@@ -101,13 +99,10 @@ function M:UnloadLevelByBPArrow(PlayerCharacter, BPArrow)
     end
   end
 end
-
 function M:LoadArtLevel(ID, bMakeVisibleAfterLoad, bShouldBlockOnLoad)
 end
-
 function M:UnloadArtLevel(ID)
 end
-
 function M:QueueLoadArtLevel(ID)
   if self.showAllLevel then
     M.Super.LoadArtLevel(self, ID)
@@ -124,7 +119,6 @@ function M:QueueLoadArtLevel(ID)
     M.Super.LoadArtLevel(self, self.LevelLoadQueue[1])
   end
 end
-
 function M:RemoveQueueArtLevel(IDTable)
   if not IDTable then
     return
@@ -139,12 +133,10 @@ function M:RemoveQueueArtLevel(IDTable)
   end
   self.LevelLoadQueue = NewQueue
 end
-
 function M:SetLevelDoor(door)
   M.Super.SetLevelDoor(self, door)
   door.LoadLevelByBPArrow = true
 end
-
 function M:GetConnectedLevel(LevelId)
   if not self.ConnectedLevel then
     self.ConnectedLevel = {}
@@ -152,7 +144,6 @@ function M:GetConnectedLevel(LevelId)
   local temp = self.LevelPathfinding:GetConnectedLevelID(LevelId):ToTable()
   self.ConnectedLevel[LevelId] = temp
 end
-
 function M:OnPreloadComplete()
   M.Super.OnPreloadComplete(self)
   M.Super.LoadArtLevel(self, self.enterLevelID)
@@ -198,7 +189,33 @@ function M:OnPreloadComplete()
     end
   end
 end
-
+function M:StartSynthesisLevelKeepAlive()
+  if not IsStandAlone(self) then
+    return
+  end
+  self.KeepAliveLevel = {}
+  local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
+  local DungeonInfo = DataMgr.Dungeon[DungeonId]
+  if DungeonInfo.DungeonType == "Synthesis" then
+    if UKismetStringLibrary.EndsWith(self.shortname, "synthesis01", ESearchCase.CaseSensitive) then
+      self.KeepAliveLevel = {
+        ["14"] = true,
+        ["7"] = true,
+        ["25"] = true,
+        ["26"] = true
+      }
+      DebugPrint("NewLevelLoader", "StartSynthesisLevelKeepAlive 01")
+    elseif UKismetStringLibrary.EndsWith(self.shortname, "synthesis02", ESearchCase.CaseSensitive) then
+      self.KeepAliveLevel = {
+        ["7"] = true,
+        ["0"] = true,
+        ["16"] = true,
+        ["17"] = true
+      }
+      DebugPrint("NewLevelLoader", "StartSynthesisLevelKeepAlive 02")
+    end
+  end
+end
 function M:CheckLevelCount()
   local count = 0
   for _, loaded in pairs(self.ArtLevelLoaded:ToTable()) do
@@ -207,7 +224,6 @@ function M:CheckLevelCount()
     end
   end
 end
-
 function M:GetPlayerLevels(PlayerControllerID)
   if not self.PlayerLevels then
     self.PlayerLevels = {}
@@ -223,7 +239,6 @@ function M:GetPlayerLevels(PlayerControllerID)
   end
   return self.PlayerLevels[PlayerControllerID]
 end
-
 function M:StartMinimumLoad(PlayerCharacter, BPArrow)
   local controllerID = UGameplayStatics.GetPlayerControllerID(PlayerCharacter:GetController())
   local PlayerLevels = self:GetPlayerLevels(controllerID)
@@ -265,12 +280,13 @@ function M:StartMinimumLoad(PlayerCharacter, BPArrow)
   end
   self:RemoveQueueArtLevel(UnloadLevelTable)
   for UnloadId, _ in pairs(UnloadLevelTable) do
-    M.Super.UnloadArtLevel(self, UnloadId)
-    self.MinimumLoadLevelPool:Remove(UnloadId)
-    DebugPrint("NewLevelLoader", "StartMinimumUnload:" .. UnloadId .. " By:" .. BPArrow.LevelId .. ".." .. BPArrow.OtherLevelId .. ".." .. BPArrow.DisplayName)
+    if not self.KeepAliveLevel or not self.KeepAliveLevel[UnloadId] then
+      M.Super.UnloadArtLevel(self, UnloadId)
+      self.MinimumLoadLevelPool:Remove(UnloadId)
+      DebugPrint("NewLevelLoader", "StartMinimumUnload:" .. UnloadId .. " By:" .. BPArrow.LevelId .. ".." .. BPArrow.OtherLevelId .. ".." .. BPArrow.DisplayName)
+    end
   end
 end
-
 function M:EndMinimumLoad(PlayerCharacter, BPArrow)
   local controllerID = UGameplayStatics.GetPlayerControllerID(PlayerCharacter:GetController())
   local PlayerLevels = self:GetPlayerLevels(controllerID)
@@ -332,11 +348,12 @@ function M:EndMinimumLoad(PlayerCharacter, BPArrow)
   end
   self:RemoveQueueArtLevel(UnloadLevelTable)
   for UnloadId, _ in pairs(UnloadLevelTable) do
-    M.Super.UnloadArtLevel(self, UnloadId)
-    DebugPrint("NewLevelLoader", "EndMinimumUnload:" .. UnloadId .. " By:" .. BPArrow.LevelId .. ".." .. BPArrow.OtherLevelId .. ".." .. BPArrow.DisplayName)
+    if not self.KeepAliveLevel or not self.KeepAliveLevel[UnloadId] then
+      M.Super.UnloadArtLevel(self, UnloadId)
+      DebugPrint("NewLevelLoader", "EndMinimumUnload:" .. UnloadId .. " By:" .. BPArrow.LevelId .. ".." .. BPArrow.OtherLevelId .. ".." .. BPArrow.DisplayName)
+    end
   end
 end
-
 function M:LoadNextArtLevel()
   PrintTable(self.LevelLoadQueue)
   if #self.LevelLoadQueue > 0 then
@@ -351,7 +368,6 @@ function M:LoadNextArtLevel()
     end
   end
 end
-
 function M:LoadLevelByServerBPArrow(CurrentLevelId, OtherLevelId, IsLoad, PlayerCharacter)
   if MiscUtils.IsSimulatedProxy(PlayerCharacter) then
     return
@@ -377,5 +393,80 @@ function M:LoadLevelByServerBPArrow(CurrentLevelId, OtherLevelId, IsLoad, Player
     self:EndMinimumLoad(PlayerCharacter, BPArrow)
   end
 end
-
+function M:TeleportInDedicatedServer(PlayerCharacter, TargetPosition, TargetRotation)
+  if IsDedicatedServer(self) then
+    local TargetLevelId = self:GetLevelIdByLocation(TargetPosition)
+    if not self.ConnectedLevel[TargetLevelId] then
+      self:GetConnectedLevel(TargetLevelId)
+    end
+    self:QueueLoadArtLevel(TargetLevelId)
+    for _, Level in pairs(self.ConnectedLevel[TargetLevelId]) do
+      self:QueueLoadArtLevel(Level)
+    end
+    PlayerCharacter:K2_TeleportTo(TargetPosition, TargetRotation, false, nil, false)
+    PlayerCharacter:MulticastSetPlayerRotation(TargetRotation)
+    if PlayerCharacter:GetMovementComponent() then
+      PlayerCharacter:GetMovementComponent():ForceClientUpdate()
+    end
+    PlayerCharacter.RPCComponent:TeleportInDedicatedServer(TargetPosition, TargetRotation)
+    PlayerCharacter:UpdateCurrentLevelId()
+    PlayerCharacter:GetEMPlayerState():SetIsDedicatedServerTeleporting(true)
+    DebugPrint("NewLevelLoader", "SetIsDedicatedServerTeleporting true")
+  elseif IsClient(self) then
+    local TargetLevelId = self:GetLevelIdByLocation(TargetPosition)
+    if not self.ConnectedLevel[TargetLevelId] then
+      self:GetConnectedLevel(TargetLevelId)
+    end
+    local LoadedLevels = self.ArtLevelLoaded:ToTable()
+    for Id, IsLoaded in pairs(LoadedLevels) do
+      if IsLoaded and not CommonUtils.HasValue(self.ConnectedLevel[TargetLevelId], Id) and Id ~= TargetLevelId and (not self.KeepAliveLevel or not self.KeepAliveLevel[UnloadId]) then
+        M.Super.UnloadArtLevel(self, Id)
+        DebugPrint("NewLevelLoader", "Unload By TeleportInDedicatedServer", Id, TargetLevelId)
+      end
+    end
+    if not LoadedLevels[TargetLevelId] then
+      self:QueueLoadArtLevel(TargetLevelId)
+      DebugPrint("NewLevelLoader", "Load By TeleportInDedicatedServer", TargetLevelId)
+    end
+    for _, LoadId in pairs(self.ConnectedLevel[TargetLevelId]) do
+      if not LoadedLevels[LoadId] then
+        self:QueueLoadArtLevel(LoadId)
+        DebugPrint("NewLevelLoader", "Load By TeleportInDedicatedServer", LoadId, TargetLevelId)
+      end
+    end
+    self.LoadingUI = GWorld.GameInstance:ShowLoadingUI(UIConst.COMMONCHANGESCENE)
+    self:AddTimer(0.1, function()
+      local LoadedTable = self.ArtLevelLoaded:ToTable()
+      local TotalNum = #self.ConnectedLevel[TargetLevelId] + 1
+      local LoadNum = 0
+      if not LoadedTable[TargetLevelId] then
+        DebugPrint("NewLevelLoader", "Not Loaded:", TargetLevelId)
+      else
+        LoadNum = LoadNum + 1
+      end
+      for _, LoadId in pairs(self.ConnectedLevel[TargetLevelId]) do
+        if not LoadedTable[LoadId] then
+          DebugPrint("NewLevelLoader", "Not Loaded:", LoadId)
+        else
+          LoadNum = LoadNum + 1
+        end
+      end
+      DebugPrint("NewLevelLoader", "SetLoadProgress", LoadNum, TotalNum, LoadNum / TotalNum * 2)
+      self:SetLoadProgress(LoadNum / TotalNum * 2)
+      if LoadNum ~= TotalNum then
+        return
+      end
+      DebugPrint("NewLevelLoader", "TeleportInDedicatedServer End!!!!!!!!!!!")
+      if IsValid(PlayerCharacter) then
+        PlayerCharacter.RPCComponent:TeleportInDedicatedServerEnd()
+      end
+      local GameState = UE4.UGameplayStatics.GetGameState(self)
+      if GameState.ShouldStopHookInDungeonDelivery then
+        GameState.ShouldStopHookInDungeonDelivery = false
+      end
+      EventManager:FireEvent(EventID.ForceUpdatePlayerCurrentLevelId)
+      self:RemoveTimer("TeleportInDedicatedServerHandle")
+    end, true, 0, "TeleportInDedicatedServerHandle")
+  end
+end
 return M

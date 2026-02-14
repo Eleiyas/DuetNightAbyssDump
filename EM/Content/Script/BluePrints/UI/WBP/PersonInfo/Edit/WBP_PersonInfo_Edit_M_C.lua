@@ -5,17 +5,13 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Edit.WBP_PersonInfo_EditBaseView"
 }
-
 function M:Initialize(Initializer)
 end
-
 function M:Construct()
 end
-
 function M:InitBaseView(TabName, BoxIndex)
   self:SetFocus()
 end
-
 function M:InitTabContent(TabName)
   local TabsData = DataMgr.ShowCaseTab
   local AllTabInfo = {
@@ -98,7 +94,6 @@ function M:InitTabContent(TabName)
     self.Com_Tab:SelectTab(2)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -113,10 +108,8 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:GetZOrder()
   return 0
 end
-
 AssembleComponents(M)
 return M

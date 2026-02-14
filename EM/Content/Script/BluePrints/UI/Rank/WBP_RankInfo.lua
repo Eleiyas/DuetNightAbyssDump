@@ -1,7 +1,6 @@
 require("UnLua")
 require("DataMgr")
 local WBP_RankInfo_C = Class()
-
 function WBP_RankInfo_C:SetTextByTable(Text_Table)
   self.Text_Index:SetText(Text_Table[1])
   self.Text_PlayerName:SetText(Text_Table[2])
@@ -11,7 +10,6 @@ function WBP_RankInfo_C:SetTextByTable(Text_Table)
   self.Text_RangedWeapon:SetText(Text_Table[6])
   self.Text_DamageValue:SetText(Text_Table[7])
 end
-
 function WBP_RankInfo_C:SetTextByInfo(Index, Info)
   self.Text_Index:SetText(Index)
   self.Text_PlayerName:SetText(Info.Account)
@@ -24,5 +22,4 @@ function WBP_RankInfo_C:SetTextByInfo(Index, Info)
   self.Text_RangedWeapon:SetText(RangedWeaponName)
   self.Text_DamageValue:SetText(Info.Damage)
 end
-
 return WBP_RankInfo_C

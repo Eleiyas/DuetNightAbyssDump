@@ -6,7 +6,6 @@ local ItemUtil = require("Utils.ItemUtils")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:InitBaseView()
   self.Btn_CardRefresh:Init({
     OwnerWidget = self,
@@ -26,12 +25,14 @@ function M:InitBaseView()
   })
   self.Btn_Buy.OnClicked:Add(self, self.OnBuyBtnClicked)
   self.Btn_Buy.OnHovered:Add(self, self.OnBuyBtnHovered)
+  if not MonthCardController.bInited then
+    MonthCardController:Init()
+  end
   MonthCardController:OnShopMonthCardOpen()
   MonthCardController:RegisterEvent(self)
   self:AddInputMethodChangedListen()
   self.Com_ItemHead:SetDisableAction(true)
 end
-
 function M:UpdateStaticWidget()
   self.Text_TitleFront:SetText(GText(MonthCardCommon.TextTitleFront))
   self.Text_TitleBack:SetText(GText(MonthCardCommon.TextTitleBack))
@@ -39,12 +40,14 @@ function M:UpdateStaticWidget()
   self.Text_EveryDayGetTitle:SetText(GText(MonthCardCommon.TextEveryDayGetReward))
   self.Text_BtnBuy:SetText(GText(MonthCardCommon.TextBuyButton))
 end
-
 function M:UpdateRewardInfo()
   local RewardHeadIcon = MonthCardModel:GetRewardHeadIconInfo()
   local RewardItem = MonthCardModel:GetRewardItem()
+  local RewardItemSpecIcon = MonthCardModel:GetRewardItemIcon()
   local RewardEveryDayItem = MonthCardModel:GetRewardEveryDayItem()
+  local RewardEveryDayItemIcon = MonthCardModel:GetRewardEveryDayItemIcon()
   local Avatar = MonthCardModel:GetAvatar()
+  RewardHeadIcon = RewardHeadIcon and RewardHeadIcon[1]
   if RewardHeadIcon then
     local ItemID = RewardHeadIcon.ItemId
     if RewardHeadIcon.ItemType == "HeadFrame" and DataMgr.HeadFrame[ItemID] then
@@ -62,21 +65,32 @@ function M:UpdateRewardInfo()
     end
   end
   if RewardItem then
-    local ItemID = RewardItem.ItemId
-    local Icon = ItemUtil.GetItemIcon(ItemID, RewardItem.ItemType)
-    local Name = GText(ItemUtil.GetItemName(ItemID, RewardItem.ItemType))
+    local Name, Icon = MonthCardModel:GetRewardNameAndIcon(RewardItem)
+    if Name then
+      self.Text_OnceStone:SetText(Name)
+    end
+    if RewardItemSpecIcon then
+      local SpecIcon = LoadObject(RewardItemSpecIcon)
+      if SpecIcon then
+        Icon = SpecIcon
+      end
+    end
     self.Image_MoonStone:SetBrushResourceObject(Icon)
-    self.Text_OnceStone:SetText(Name .. "*" .. RewardItem.Count)
   end
   if RewardEveryDayItem then
-    local ItemID = RewardEveryDayItem.ItemId
-    local Icon = ItemUtil.GetItemIcon(ItemID, RewardEveryDayItem.ItemType)
-    local Name = GText(ItemUtil.GetItemName(ItemID, RewardEveryDayItem.ItemType))
+    local Name, Icon = MonthCardModel:GetRewardNameAndIcon(RewardEveryDayItem)
+    if Name then
+      self.Text_EveryDayStone:SetText(Name)
+    end
+    if RewardEveryDayItemIcon then
+      local SpecIcon = LoadObject(RewardEveryDayItemIcon)
+      if SpecIcon then
+        Icon = SpecIcon
+      end
+    end
     self.Image_MoonStone_2:SetBrushResourceObject(Icon)
-    self.Text_EveryDayStone:SetText(Name .. "*" .. RewardEveryDayItem.Count)
   end
 end
-
 function M:UpdateMonthardPurchased()
   local bIsMonthCardPurchased = MonthCardModel:IsMonthCardPurchased()
   if bIsMonthCardPurchased then
@@ -86,14 +100,12 @@ function M:UpdateMonthardPurchased()
   end
   self:UpdateMonthCardLeftDays()
 end
-
 function M:UpdatePrice()
   local MonthCardPrice = MonthCardModel:GetMonthCardPrice()
   local PriceSymbol = MonthCardModel:GetPriceSymbol()
   self.Text_PriceNum:SetText(MonthCardPrice)
   self.Text_PriceNum_Symbol:SetText(PriceSymbol)
 end
-
 function M:UpdateMonthCardLeftDays()
   local bIsMonthCardPurchased = MonthCardModel:IsMonthCardPurchased()
   local Com_Time = self.Com_Time
@@ -102,26 +114,23 @@ function M:UpdateMonthCardLeftDays()
     local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(MonthCardLeftDays)
     Com_Time.Text_TimeDesc:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     Com_Time:SetTimeText(GText(MonthCardCommon.TextLastDay), RemainTimeDict)
-    Com_Time.Image_ClockIcon:SetVisibility(UIConst.VisibilityOp.Visible)
+    Com_Time.SizeBox_0:SetVisibility(UIConst.VisibilityOp.Visible)
   else
-    Com_Time.Image_ClockIcon:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    Com_Time.SizeBox_0:SetVisibility(UIConst.VisibilityOp.Collapsed)
     Com_Time.Text_TimeDesc:SetVisibility(UIConst.VisibilityOp.Collapsed)
     Com_Time.Text_TimeTitle:SetText(GText(MonthCardCommon.TextNotValidMohthCard))
   end
 end
-
 function M:UpdateMonthCardSaleTime()
   local RemainTime = MonthCardModel:GetMonthCardCanPurchaseTime()
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(RemainTime)
   local Com_CardRefreshTime = self.Com_CardRefreshTime
   Com_CardRefreshTime:SetTimeText(GText(MonthCardCommon.TextMonthCardVaildTime), RemainTimeDict)
 end
-
 function M:UpdatePurchaseState()
   local bIsMonthCardCanPurchase = MonthCardModel:IsMonthCardCanPurchase()
   self.Btn_Buy:SetForbidden(not bIsMonthCardCanPurchase)
 end
-
 function M:OnBuyBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large_crystal", nil, nil)
   if not MonthCardModel:IsMonthCardCanPurchase() then
@@ -130,18 +139,15 @@ function M:OnBuyBtnClicked()
   end
   MonthCardController:TryPurchaseMonthCard()
 end
-
 function M:OnBuyBtnHovered()
   if self.Btn_Buy:GetForbidden() then
     return
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/hover_btn_large_crystal", nil, nil)
 end
-
 function M:OnButBtnClickedForbid()
   MonthCardController:DisplayForbiddenTip()
 end
-
 function M:RefreshPageView()
   self:UpdateStaticWidget()
   self:UpdateRewardInfo()
@@ -153,36 +159,28 @@ function M:RefreshPageView()
   self.Btn_CardRefresh.Btn_Click:SetChecked(false)
   self.HandleAKeyDown = nil
 end
-
 function M:NotifyTimeTick()
   self:UpdateMonthCardSaleTime()
   self:UpdateMonthCardLeftDays()
 end
-
 function M:NotifyMonthCardRefresh()
   self:RefreshPageView()
 end
-
 function M:NotifyPurchasedRefresh()
   self:UpdateMonthardPurchased()
 end
-
 function M:NotifyPurchaseStateRefresh()
   self:UpdatePurchaseState()
 end
-
 function M:OnViewClose()
   MonthCardController:OnShopMonthCardClose()
   MonthCardController:UnRegisterEvent(self)
 end
-
 function M:PlayAnimationIn()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayAnimationOut()
   self:PlayAnimation(self.Out)
 end
-
 AssembleComponents(M)
 return M

@@ -2,13 +2,11 @@ require("UnLua")
 local BP_Shock_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_Shock_C:AuthorityInitInfo(Info)
   BP_Shock_C.Super.AuthorityInitInfo(self, Info)
   self.ActiveRange = self.UnitParams.ActiveRange
   self.SkillRange = 0
 end
-
 function BP_Shock_C:CommonInitInfo(Info)
   BP_Shock_C.Super.CommonInitInfo(self, Info)
   self.SkillEffect = self.UnitParams.SkillEffect
@@ -20,11 +18,9 @@ function BP_Shock_C:CommonInitInfo(Info)
   self.ShockRange:SetBoxExtent(FVector(self.MaxRadius, self.MaxRadius, 10))
   self.SkillRange = 0
 end
-
 function BP_Shock_C:SetActiveType()
   self.ActiveType = "Distance"
 end
-
 function BP_Shock_C:OnActiveStateChange()
   self.Super.OnActiveStateChange(self)
   if self.IsActive then
@@ -34,17 +30,14 @@ function BP_Shock_C:OnActiveStateChange()
   end
   self:PlaySound("event:/sfx/common/scene/laser_gear_open")
 end
-
 function BP_Shock_C:ReceiveBeginPlay()
   BP_Shock_C.Super.ReceiveBeginPlay(self)
   self.HitMap = UE4.TMap(AActor, AActor)
   self:DeActiveFX(self.ShockFX)
 end
-
 function BP_Shock_C:ChangeCD()
   self.InCD = false
 end
-
 function BP_Shock_C:AddHitMap(Actor)
   if not IsAuthority(self) then
     return
@@ -54,14 +47,12 @@ function BP_Shock_C:AddHitMap(Actor)
   end
   self.HitMap:Add(Actor.Eid, Actor.Eid)
 end
-
 function BP_Shock_C:RemoveHitMap(Actor)
   if not IsAuthority(self) then
     return
   end
   self.HitMap:Remove(Actor.Eid)
 end
-
 function BP_Shock_C:ShowDeath()
   self:RemoveTimer("DistanceDeActiveTimer")
   self:DeActiveFX(self.ShockFX)
@@ -69,7 +60,6 @@ function BP_Shock_C:ShowDeath()
   self:PlaySound("event:/sfx/common/scene/laser_gear_break")
   BP_Shock_C.Super.ShowDeath(self)
 end
-
 function BP_Shock_C:DeActive()
   BP_Shock_C.Super.DeActive(self)
   self.SkillRange = 0
@@ -78,5 +68,4 @@ function BP_Shock_C:DeActive()
   end
   self:PlayDeactiveMontage()
 end
-
 return BP_Shock_C

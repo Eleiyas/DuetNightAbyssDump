@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.IsSelect = false
   self.Button_Area.OnClicked:Add(self, self.OnClicked)
@@ -11,14 +10,12 @@ function M:Construct()
   self.Button_Area.OnHovered:Add(self, self.OnHovered)
   self.Button_Area.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function M:InitContent(DamageType)
   self:PlayAnimation(self.Normal)
   self.Type = DamageType
   local Icon = LoadObject(DataMgr.Attribute[DamageType].Icon)
   self.Icon_Type:SetBrushResourceObject(Icon)
 end
-
 function M:OnClicked(bDefault)
   if self.IsSelect then
     return
@@ -33,7 +30,6 @@ function M:OnClicked(bDefault)
     self:PlayAnimation(self[self.Type])
   end
 end
-
 function M:OnPressed()
   if self.IsSelect then
     return
@@ -41,10 +37,8 @@ function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
 end
-
 function M:OnHovered()
   if self.IsSelect then
     return
@@ -52,7 +46,6 @@ function M:OnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   if self.IsSelect then
     return
@@ -60,5 +53,4 @@ function M:OnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 return M

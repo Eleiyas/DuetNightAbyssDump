@@ -3,15 +3,12 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self:SetToTransparent()
 end
-
 function M:Destruct()
   self:Clear()
 end
-
 function M:PlayFadeAnim(bInAnim, ...)
   self.bInAnim = bInAnim
   self.AnimArgs = {
@@ -30,7 +27,14 @@ function M:PlayFadeAnim(bInAnim, ...)
     self.ShowPicTimer = nil
   end, nil, nil, nil, true)
 end
-
+function M:DireceShowPicture(Picture)
+  self:SetToBlack()
+  if not Picture then
+    DebugPrint("WBP_Story_ImgItem:DireceShowPicture@ Picture is nil!", Picture)
+    return
+  end
+  self.Img_Item:SetBrushFromTexture(Picture)
+end
 function M:FadeIn(Picture, fadeInTime, fadeOutTime, duration)
   if not Picture then
     DebugPrint("WBP_Story_ImgItem:FadeIn@ Picture is nil!", Picture, fadeInTime, fadeOutTime, duration)
@@ -68,7 +72,6 @@ function M:FadeIn(Picture, fadeInTime, fadeOutTime, duration)
     end)
   end
 end
-
 function M:ForceFadeOut()
   DebugPrint("WBP_Story_ImgItem:ForceFadeOut", self.Displaying)
   if not self.Displaying then
@@ -82,15 +85,12 @@ function M:ForceFadeOut()
     self.FadeOutTimer = nil
   end
 end
-
 function M:SetToBlack()
   self:SetImgAlpha(1)
 end
-
 function M:SetToTransparent()
   self:SetImgAlpha(0)
 end
-
 function M:Clear()
   if self.FadeOutTimer then
     self:RemoveTimer(self.FadeOutTimer)
@@ -101,12 +101,10 @@ function M:Clear()
     self.ShowPicTimer = nil
   end
 end
-
 function M:Close()
   DebugPrint("WBP_Story_ImgItem:Close")
   self:SetToTransparent()
   self:RemoveFromParent()
   self:Clear()
 end
-
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Overridden.Construct(self)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -10,16 +9,13 @@ function M:Construct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.OnUpdateUIStyleByInputTypeChange)
   EventManager:AddEvent(EventID.OnChangeKeyBoardSet, self, self.OnChangeKeyBoardSet)
 end
-
 function M:Destruct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnUpdateUIStyleByInputTypeChange)
   EventManager:RemoveEvent(EventID.OnChangeKeyBoardSet, self)
 end
-
 function M:OnChangeKeyBoardSet()
   self:RefreshText()
 end
-
 function M:ShowTextPC(PCMessage, GamePadMessage)
   self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   local VisibleType = self:GetVisibility()
@@ -34,19 +30,15 @@ function M:ShowTextPC(PCMessage, GamePadMessage)
   self:PlayAnimation(self.In)
   return VisibleType ~= UE4.ESlateVisibility.Visible
 end
-
 function M:HideTextPC()
   local VisibleType = self:GetVisibility()
-  
   local function End()
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  
   self:BindToAnimationFinished(self.Out, {self, End})
   self:PlayAnimation(self.Out)
   return VisibleType ~= UE4.ESlateVisibility.Collapsed
 end
-
 function M:RefreshText()
   if self.UsingGamepad then
     if self.GamePadMessage == nil then
@@ -60,7 +52,6 @@ function M:RefreshText()
     self:SetText(GText(self.PCMessage))
   end
 end
-
 function M:SetText(MessageContent)
   local strs = self:AnalyzeText(MessageContent)
   for i = 1, 7 do
@@ -80,7 +71,6 @@ function M:SetText(MessageContent)
     end
   end
 end
-
 function M:SetCommonKey(KeyInfo, TableIndex)
   local KeyType
   local ActionName = string.sub(KeyInfo, 2, -2)
@@ -129,7 +119,6 @@ function M:SetCommonKey(KeyInfo, TableIndex)
     Widget:PlayAnimation(Widget.Remind)
   end
 end
-
 function M:GetKeyName(ActionName)
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionKeys = UE4.TArray(UE4.FInputActionKeyMapping)
@@ -159,7 +148,6 @@ function M:GetKeyName(ActionName)
   end
   return nil, nil
 end
-
 function M:GetCommonKeyBlueprint(bText)
   if bText then
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyText.WBP_Com_KeyText_C'")
@@ -167,7 +155,6 @@ function M:GetCommonKeyBlueprint(bText)
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyImg.WBP_Com_KeyImg_C'")
   end
 end
-
 function M:AnalyzeText(MessageContent)
   local match_res = {}
   local match_word = string.gmatch(MessageContent, "&.[^&]*&")
@@ -180,7 +167,6 @@ function M:AnalyzeText(MessageContent)
   table.insert(match_res, MessageContent)
   return match_res
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Touch then
     return
@@ -194,5 +180,4 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:RefreshText()
   end
 end
-
 return M

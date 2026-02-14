@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Armory.WBP_Armory_PetEnhance_Base_Compoment"
 }
-
 function M:InitTabInfo()
   self.Tab_PetEnhance:Init({
     Tabs = {},
@@ -41,31 +40,25 @@ function M:InitTabInfo()
     BackCallback = self.OnReturnKeyDown
   })
 end
-
 function M:Close()
   M.Super.Close(self)
 end
-
 function M:InitListenEvent()
 end
-
 function M:OnLoaded(...)
   local P = (...)
   M.Super.OnLoaded(self, ...)
   self:InitListenEvent()
   self:PlayInAnim()
 end
-
 function M:RefreshBaseInfo()
 end
-
 function M:OnReturnKeyDown()
   if not self:CheckIsCanCloseSelf() then
     return
   end
   self:PlayOutAnim()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -76,6 +69,5 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 AssembleComponents(M)
 return M

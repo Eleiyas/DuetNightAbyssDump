@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Tick(MyGeometry, InDeltaTime)
   if not self.AchievementSystem then
     return
@@ -14,7 +13,6 @@ function M:Tick(MyGeometry, InDeltaTime)
   local scale = (1 - math.abs(position.X - parentPosition.X) / (parentSize.X / 2)) * 0.6 + 0.4
   self.Canvas:SetRenderScale(FVector2D(scale, scale))
 end
-
 function M:OnListItemObjectSet(Content)
   self.AchievementSystem = Content.AchievementSystem
   self.ID = Content.ID
@@ -51,9 +49,7 @@ function M:OnListItemObjectSet(Content)
   self.Achievement_System_Progess:SetPercent(count / #achievementId)
   self.Percent:SetText(string.format("%.0f", count / #achievementId * 100) .. "%")
 end
-
 function M:OpenDetail()
   self.AchievementSystem:OpenDetail(self.ID, self.Index)
 end
-
 return M

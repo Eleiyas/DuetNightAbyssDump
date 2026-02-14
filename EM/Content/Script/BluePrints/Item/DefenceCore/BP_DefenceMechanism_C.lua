@@ -2,12 +2,10 @@ require("UnLua")
 local BP_DefenceMechanism_C = Class({
   "BluePrints/Item/DefenceCore/BP_DefenceBase_C"
 })
-
 function BP_DefenceMechanism_C:AuthorityInitInfo(Info)
   BP_DefenceMechanism_C.Super.AuthorityInitInfo(self, Info)
   self.bDamaged = false
 end
-
 function BP_DefenceMechanism_C:ShowDamage_Lua(DamageEvent)
   if self:CheckHited(DamageEvent) then
     if DamageEvent.DamageTag:Find("Melee") then
@@ -26,7 +24,6 @@ function BP_DefenceMechanism_C:ShowDamage_Lua(DamageEvent)
     end
   end
 end
-
 function BP_DefenceMechanism_C:OnDamaged(DamageEvent)
   BP_DefenceMechanism_C.Super.OnDamaged(self, DamageEvent)
   if DamageEvent.HpBefore > DamageEvent.HpAfter and self.bDamaged == false then
@@ -37,7 +34,6 @@ function BP_DefenceMechanism_C:OnDamaged(DamageEvent)
     self.bDamaged = true
   end
 end
-
 function BP_DefenceMechanism_C:OnArtLevelLoaded(LevelId)
   if not self.CurrentLevelId:Contains(LevelId) then
     return
@@ -48,10 +44,22 @@ function BP_DefenceMechanism_C:OnArtLevelLoaded(LevelId)
     MeshComp:SetVisibility(true, false)
   end
   EventManager:RemoveEvent(EventID.OnArtLevelLoaded, self)
+  if not self:IsExistTimer("TimerSetVisibility") then
+    self:AddTimer(3, self.TimerSetVisibility, true, 0, "TimerSetVisibility")
+  end
 end
-
+function BP_DefenceMechanism_C:TimerSetVisibility()
+  local MeshComps = self:K2_GetComponentsByClass(UMeshComponent):ToTable()
+  for _, MeshComp in pairs(MeshComps) do
+    MeshComp:SetVisibility(false, false)
+    MeshComp:SetVisibility(true, false)
+  end
+end
 function BP_DefenceMechanism_C:OnFirstActive()
   self.Overridden.OnFirstActive(self)
 end
-
+function BP_DefenceMechanism_C:ReceiveEndPlay(EndReason)
+  self:RemoveTimer("TimerSetVisibility")
+  BP_DefenceMechanism_C.Super.ReceiveEndPlay(self, Reason)
+end
 return BP_DefenceMechanism_C

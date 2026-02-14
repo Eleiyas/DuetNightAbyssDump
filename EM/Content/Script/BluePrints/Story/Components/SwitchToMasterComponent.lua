@@ -1,6 +1,5 @@
 local FSwitchToMasterComponent = {}
 local ClassPath = "/Game/BluePrints/Common/EMNiagaraFunctionLibrary"
-
 function FSwitchToMasterComponent:New(MasterType, TalkTaskData)
   DebugPrint("FSwitchToMasterComponent@ New")
   local SwitchToMasterComponent = setmetatable({}, {__index = FSwitchToMasterComponent})
@@ -8,15 +7,14 @@ function FSwitchToMasterComponent:New(MasterType, TalkTaskData)
   SwitchToMasterComponent.MasterType = MasterType
   return SwitchToMasterComponent
 end
-
 function FSwitchToMasterComponent:Execute()
-  DebugPrint("FSwitchToMasterComponent@ \229\136\135\230\141\162\228\184\186\228\184\187\232\167\146")
+  DebugPrint("FSwitchToMasterComponent@ 切换为主角")
   local Player = UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not IsValid(Player) then
-    local Message = "FSwitchToMasterComponent:Execute(), \229\175\185\232\175\157\232\138\130\231\130\185\229\136\135\230\141\162\228\184\187\232\167\146\230\151\182\239\188\140\231\142\169\229\174\182PlayerCharacter\230\151\160\230\149\136\n"
-    local Title = "PlayerCharacter\230\151\160\230\149\136"
-    UStoryLogUtils.PrintToFeiShu(self, Title, Message)
-    DebugPrint("lhr@\231\142\169\229\174\182PlayerCharacter\230\151\160\230\149\136\n")
+    local Message = "FSwitchToMasterComponent:Execute(), 对话节点切换主角时，玩家PlayerCharacter无效\n"
+    local Title = "PlayerCharacter无效"
+    UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Talk, Title, Message)
+    DebugPrint("lhr@玩家PlayerCharacter无效\n")
     return
   end
   if Player.ChangeRoleTimer then
@@ -31,28 +29,29 @@ function FSwitchToMasterComponent:Execute()
   end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    GWorld.logger.error("FSwitchToMasterComponent@\230\178\161\230\156\137\230\173\163\229\184\184\231\153\187\229\189\149")
+    GWorld.logger.error("FSwitchToMasterComponent@没有正常登录")
     Avatar = {Sex = 0, WeitaSex = 1}
   end
-  local MasterGender, MasterRoleId
+  local RealMasterType, MasterGender, MasterRoleId
   if self.MasterType == "Player" then
     MasterGender = Avatar.Sex
+    RealMasterType = "PlayerLight"
   else
     MasterGender = Avatar.WeitaSex
   end
-  local MasterInfo = DataMgr.Player2RoleId[self.MasterType]
+  RealMasterType = RealMasterType or self.MasterType
+  local MasterInfo = DataMgr.Player2RoleId[RealMasterType]
   if not MasterInfo then
-    GWorld.logger.error("FSwitchToMasterComponent@\230\178\161\230\156\137\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\228\184\187\232\167\146\228\191\161\230\129\175\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\232\161\168" .. self.MasterType)
+    GWorld.logger.error("FSwitchToMasterComponent@没有找到对应的主角信息，请检查导表" .. RealMasterType)
     return
   end
   local GenderInfo = MasterInfo[MasterGender]
   if not GenderInfo then
-    GWorld.logger.error("FSwitchToMasterComponent@\229\175\185\229\186\148\230\128\167\229\136\171\230\178\161\230\156\137\232\167\146\232\137\178\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\232\161\168")
+    GWorld.logger.error("FSwitchToMasterComponent@对应性别没有角色，请检查导表")
     return
   end
   MasterRoleId = GenderInfo
-  local ExtractInfo = {UseMasterRole = 1}
-  print(_G.LogTag, "FSwitchToMasterComponent@ChangeToMaster", MasterRoleId, ExtractInfo.UseMasterRole, MasterGender)
+  print(_G.LogTag, "FSwitchToMasterComponent@ChangeToMaster", MasterRoleId, MasterGender)
   Player.HeroTempInfo = {
     RoleInfo = {
       PlayerHp = Player:GetAttr("Hp"),
@@ -72,9 +71,10 @@ function FSwitchToMasterComponent:Execute()
     self.TalkAIController:UnPossess(Player)
     self.PlayerController:Possess(Player)
   end
-  Player:ChangeRole(MasterRoleId)
+  Player:EnableRimLightModel(false)
+  local AvatarInfo = {}
+  Player:ChangeRole(MasterRoleId, AvatarInfo)
   Player:RealChangeUsingWeapon(nil)
-  Player:ClearAllSuitItem()
   Player:BanSkills()
   Player:ChangeRoleEffect()
   local BodyType = Player:GetBattleCharBodyType()
@@ -88,9 +88,21 @@ function FSwitchToMasterComponent:Execute()
     self.TalkAIController, self.PlayerController, self.TalkPawn = nil, nil, nil
   end
 end
-
+function FSwitchToMasterComponent:GetServerAppearanceSuitByCharId(CharId)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return nil
+  end
+  for key, Char in pairs(Avatar.Chars) do
+    if Char.CharId == CharId then
+      local AppearanceSuit = Char:DumpAppearanceSuit(Avatar)
+      return AppearanceSuit
+    end
+  end
+  return nil
+end
 function FSwitchToMasterComponent:Resume()
-  DebugPrint("FSwitchToMasterComponent@FSwitchToMasterComponent \232\167\163\233\153\164\229\136\135\230\141\162\228\184\187\232\167\146")
+  DebugPrint("FSwitchToMasterComponent@FSwitchToMasterComponent 解除切换主角")
   if -1 == self.TalkTaskData.BlendOutTime then
     return
   end
@@ -99,15 +111,15 @@ function FSwitchToMasterComponent:Resume()
     return
   end
   if not IsValid(Player) then
-    local Message = "FSwitchToMasterComponent:Resume(), \229\175\185\232\175\157\232\138\130\231\130\185\229\136\135\230\141\162\228\184\187\232\167\146\230\151\182\239\188\140\231\142\169\229\174\182PlayerCharacter\230\151\160\230\149\136\n"
-    local Title = "PlayerCharacter\230\151\160\230\149\136"
-    UStoryLogUtils.PrintToFeiShu(self, Title, Message)
-    DebugPrint("lhr@\231\142\169\229\174\182PlayerCharacter\230\151\160\230\149\136\n")
+    local Message = "FSwitchToMasterComponent:Resume(), 对话节点切换主角时，玩家PlayerCharacter无效\n"
+    local Title = "PlayerCharacter无效"
+    UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Talk, Title, Message)
+    DebugPrint("FSwitchToMasterComponent:Resume(), 玩家PlayerCharacter无效\n")
     return
   end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("FSwitchToMasterComponent:Resume(), Avatar\230\151\160\230\149\136\n")
+    DebugPrint("FSwitchToMasterComponent:Resume(), Avatar无效\n")
     return
   end
   if Player:GetController():GetClass():GetName() == "TalkAIController" and not self.SeamlessBlendOut then
@@ -138,5 +150,4 @@ function FSwitchToMasterComponent:Resume()
     self.TalkAIController, self.PlayerController, self.TalkPawn = nil, nil, nil
   end
 end
-
 return FSwitchToMasterComponent

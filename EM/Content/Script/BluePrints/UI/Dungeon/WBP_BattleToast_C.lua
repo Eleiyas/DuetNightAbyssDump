@@ -1,22 +1,18 @@
 local WBP_BattleToast_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_BattleToast_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ToastShowTime = 1
 end
-
 function WBP_BattleToast_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitListenEvent()
 end
-
 function WBP_BattleToast_C:InitListenEvent()
   self:AddDispatcher(EventID.OnDefenseWaveStart, self, self.OnDefenseWaveStart)
   self:AddDispatcher(EventID.OnWaveStart, self, self.OnWaveStart)
   self:AddDispatcher(EventID.OnWaveEnd, self, self.OnWaveEnd)
   self:AddDispatcher(EventID.OnDefenceWaveEnd, self, self.OnDefenceWaveEnd)
 end
-
 function WBP_BattleToast_C:GetWaveStartBP()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -29,7 +25,6 @@ function WBP_BattleToast_C:GetWaveStartBP()
   WaveStartBP:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   return WaveStartBP
 end
-
 function WBP_BattleToast_C:OnDefenseWaveStart()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -51,7 +46,6 @@ function WBP_BattleToast_C:OnDefenseWaveStart()
   end
   self:ShowCountDown()
 end
-
 function WBP_BattleToast_C:OnWaveStart()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -71,7 +65,6 @@ function WBP_BattleToast_C:OnWaveStart()
   end
   self:AddTimer(self.ToastShowTime, self.ShowCountDown)
 end
-
 function WBP_BattleToast_C:OnDefenceWaveEnd()
   local WaveStartBP = self:GetWaveStartBP()
   if WaveStartBP then
@@ -82,7 +75,6 @@ function WBP_BattleToast_C:OnDefenceWaveEnd()
     end)
   end
 end
-
 function WBP_BattleToast_C:OnWaveEnd()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -97,7 +89,6 @@ function WBP_BattleToast_C:OnWaveEnd()
   end
   self:AddTimer(self.ToastShowTime, self.ShowCountDown)
 end
-
 function WBP_BattleToast_C:ShowCountDown()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -109,5 +100,4 @@ function WBP_BattleToast_C:ShowCountDown()
   GuideCountDownFloat = GuideCountDownFloat or UIManager:LoadUINew("GuideCountDown")
   GuideCountDownFloat:InitializeData(self.HintTime)
 end
-
 return WBP_BattleToast_C

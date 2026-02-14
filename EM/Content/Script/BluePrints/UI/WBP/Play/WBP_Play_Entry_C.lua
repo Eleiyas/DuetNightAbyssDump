@@ -1,7 +1,6 @@
 require("UnLua")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local WBP_Play_Entry_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Play_Entry_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.CurSubUI = nil
@@ -17,7 +16,11 @@ function WBP_Play_Entry_C:Initialize(Initializer)
   self.AllExcelTabInfo = {
     DataMgr.PlayTab
   }
-  self.DisplayTeamHeadUIWidgetName = {DungeonSelect = 1, NewDeputeRoot = 1}
+  self.DisplayTeamHeadUIWidgetName = {
+    DungeonSelect = 1,
+    NewDeputeRoot = 1,
+    HardBossMain = 1
+  }
   self.IsKeyEventOnGamePad = true
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -54,7 +57,6 @@ function WBP_Play_Entry_C:Initialize(Initializer)
   end
   self.DefaultSubUIName = IsGetAllDailyReward and "NewDeputeRoot" or "PlayTaskRoot"
 end
-
 function WBP_Play_Entry_C:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
   if self.TeamHeadUI then
@@ -62,13 +64,9 @@ function WBP_Play_Entry_C:ReceiveEnterState(StackAction)
   end
   EventManager:FireEvent(EventID.EntryReceiveEnterState, StackAction)
 end
-
 function WBP_Play_Entry_C:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
-  if 1 == StackAction then
-  end
 end
-
 function WBP_Play_Entry_C:RecoverCamera()
   if not self.RecoveringCamera then
     self.RecoveringCamera = true
@@ -93,7 +91,6 @@ function WBP_Play_Entry_C:RecoverCamera()
     end
   end
 end
-
 function WBP_Play_Entry_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   if self.Rouge_Points then
@@ -103,15 +100,15 @@ function WBP_Play_Entry_C:OnLoaded(...)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "SystemOpenSound", nil)
   self:PlayBaiAnim()
   self:PlayInAnim()
-  self:OpenSubUI(self.DefaultSubUIName)
-  local IsCallShowFunction = (...)
-  if IsCallShowFunction then
-    self:Show()
+  local DefaultSubUIName = (...)
+  if DefaultSubUIName then
+    self:OpenSubUI(DefaultSubUIName)
+  elseif self.DefaultSubUIName then
+    self:OpenSubUI(self.DefaultSubUIName)
   end
   local AttachWidget = self:GetAttachWidget()
   if not self.TeamHeadUI then
     self.TeamHeadUI = TeamController:OpenHeadUI(AttachWidget)
-    
     function self.TeamHeadUI.OnTeamMainFocusChanged(bFocused)
       local Visibility = bFocused and "Collapsed" or "SelfHitTestInvisible"
       local KeyWidgets = {
@@ -154,11 +151,19 @@ function WBP_Play_Entry_C:OnLoaded(...)
           table.insert(KeyWidgets, DeputeWidget.DefaultList.Preview.Panel_Controller)
         end
       end
+      if self.CurTabId == "HardBossMain" then
+        local DeputeWidget = self.CurSubUI
+        if DeputeWidget.HB_Rewards:IsVisible() then
+          table.insert(KeyWidgets, DeputeWidget.Key_Rewards)
+        end
+        if DeputeWidget.Btn_Enter:IsVisible() then
+          table.insert(KeyWidgets, DeputeWidget.Btn_Enter.Key_GamePad)
+        end
+      end
       for _, KeyWidget in ipairs(KeyWidgets) do
         KeyWidget:SetVisibility(UIConst.VisibilityOp[Visibility])
       end
     end
-    
     if self.DisplayTeamHeadUIWidgetName[self.CurTabId] then
       self.TeamHeadUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     else
@@ -167,19 +172,15 @@ function WBP_Play_Entry_C:OnLoaded(...)
     end
   end
 end
-
 function WBP_Play_Entry_C:OnHardBossMainReddotChange()
   self:OnReddotChange("HardBossMain")
 end
-
 function WBP_Play_Entry_C:OnPlayCommonReddotChange()
   self:OnReddotChange("PlayCommon")
 end
-
 function WBP_Play_Entry_C:OnPlayTaskRootReddotChange()
   self:OnReddotChange("PlayTaskRoot")
 end
-
 function WBP_Play_Entry_C:OnReddotChange(SystemUIName)
   local Index = self.WidgetNameToIndex[SystemUIName]
   if Index then
@@ -198,7 +199,6 @@ function WBP_Play_Entry_C:OnReddotChange(SystemUIName)
     end
   end
 end
-
 function WBP_Play_Entry_C:PlayBaiAnim(StackAction)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -218,11 +218,9 @@ function WBP_Play_Entry_C:PlayBaiAnim(StackAction)
     })
   end
 end
-
 function WBP_Play_Entry_C:Construct()
   WBP_Play_Entry_C.Super.Construct(self)
 end
-
 function WBP_Play_Entry_C:Destruct()
   if self.CurTabId then
     SystemGuideManager:HideUIEvent(self.CurTabId)
@@ -231,7 +229,6 @@ function WBP_Play_Entry_C:Destruct()
   self:RecoverCamera()
   self.Super.Destruct(self)
 end
-
 function WBP_Play_Entry_C:PlayNPCAnim(NpcAnimId)
   local PlayNPC = UE4.ANpcCharacter.GetNpc(self, self.NpcId)
   if PlayNPC then
@@ -250,7 +247,6 @@ function WBP_Play_Entry_C:PlayNPCAnim(NpcAnimId)
     PlayNPC:PlayUITalkAction(NpcAnimId)
   end
 end
-
 function WBP_Play_Entry_C:SwitchCamera(bPlayer)
   local PlayerController = UGameplayStatics.GetPlayerController(self, 0)
   if bPlayer then
@@ -274,7 +270,6 @@ function WBP_Play_Entry_C:SwitchCamera(bPlayer)
     end
   end
 end
-
 function WBP_Play_Entry_C:MoveCamera(Camera)
   local StartPosition = Camera.RelativeLocation
   local EndPosition = FVector(0)
@@ -285,7 +280,6 @@ function WBP_Play_Entry_C:MoveCamera(Camera)
     end
   }, StartPosition, EndPosition, 0.5, 0, 17)
 end
-
 function WBP_Play_Entry_C:EnableTickWhenPaused(Value)
   local TweenActor = UE4.ALTweenActor.GetLTweenInstance(self:GetWorld())
   if Value then
@@ -300,14 +294,12 @@ function WBP_Play_Entry_C:EnableTickWhenPaused(Value)
     UE4.UGameplayStatics.GetPlayerController(self, 0).bShouldPerformFullTickWhenPaused = false
   end
 end
-
 function WBP_Play_Entry_C:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayAnimationForward(self.In)
 end
-
 function WBP_Play_Entry_C:OpenSubUI(WidgetUIName)
   local IfInitTab = true
   local IfUseSelectTab = false
@@ -351,7 +343,6 @@ function WBP_Play_Entry_C:OpenSubUI(WidgetUIName)
     return self:RealOpenSubUI({TabId = WidgetUIName})
   end
 end
-
 function WBP_Play_Entry_C:InitTabInfo()
   local PlayTab = CommonUtils.Copy(self.CurrentExcelTabInfo)
   self.SortedTabInfo = {}
@@ -375,13 +366,11 @@ function WBP_Play_Entry_C:InitTabInfo()
   end
   self:FinishInitTab()
 end
-
 function WBP_Play_Entry_C:FinishInitTab()
   self:SortTab()
   self:InitSortedTab()
   self:InitCommonTab()
 end
-
 function WBP_Play_Entry_C:SortTab()
   table.sort(self.SortedTabInfo, function(a, b)
     if a.IsLocked then
@@ -397,7 +386,6 @@ function WBP_Play_Entry_C:SortTab()
     end
   end)
 end
-
 function WBP_Play_Entry_C:InitSortedTab()
   self.AllTabInfo = {}
   self.IndexToWidgetName = {}
@@ -418,7 +406,6 @@ function WBP_Play_Entry_C:InitSortedTab()
     self.WidgetNameToIndex[TabInfo.WidgetUI] = Index
   end
 end
-
 function WBP_Play_Entry_C:AddReddotListener()
   if self.IndexToWidgetName then
     for Index, WidgetName in ipairs(self.IndexToWidgetName) do
@@ -428,7 +415,6 @@ function WBP_Play_Entry_C:AddReddotListener()
     end
   end
 end
-
 function WBP_Play_Entry_C:RemoveReddotListener()
   if self.IndexToWidgetName then
     for Index, WidgetName in ipairs(self.IndexToWidgetName) do
@@ -438,7 +424,6 @@ function WBP_Play_Entry_C:RemoveReddotListener()
     end
   end
 end
-
 function WBP_Play_Entry_C:InitCommonTab()
   self.TabConfigData = {
     TitleName = GText("MAIN_UI_PLAY"),
@@ -474,19 +459,15 @@ function WBP_Play_Entry_C:InitCommonTab()
   self.ComTab:Init(self.TabConfigData, true)
   self.ComTab:BindEventOnTabSelected(self, self.RealOpenSubUI)
 end
-
 function WBP_Play_Entry_C:SelectTabByWidgetName(WidgetName)
   self:SelectTabById(WidgetName)
 end
-
 function WBP_Play_Entry_C:SelectTabById(TabId)
   self.ComTab:SelectTabById(TabId)
 end
-
 function WBP_Play_Entry_C:SelectTab(Index)
   self.ComTab:SelectTab(Index)
 end
-
 function WBP_Play_Entry_C:InitOtherPageTab(TabConfigData, ResoucesTab, DontPlayInAnim, Object, Callback)
   if TabConfigData then
     TabConfigData.OverridenTopResouces = ResoucesTab or DataMgr.SystemUI.StyleOfPlay.TabCoin
@@ -494,19 +475,16 @@ function WBP_Play_Entry_C:InitOtherPageTab(TabConfigData, ResoucesTab, DontPlayI
   self.ComTab:Init(TabConfigData, DontPlayInAnim)
   self.ComTab:BindEventOnTabSelected(Object, Callback)
 end
-
 function WBP_Play_Entry_C:UpdateOtherPageTab(BottomKeyInfo)
   if CommonUtils.GetDeviceTypeByPlatformName() ~= "Mobile" then
     self.ComTab:UpdateBottomKeyInfo(BottomKeyInfo)
   end
 end
-
 function WBP_Play_Entry_C:GetSubUIByWidgetName(WidgetName)
   if self.SubUI then
     return self.SubUI[WidgetName]
   end
 end
-
 function WBP_Play_Entry_C:RealOpenSubUI(WidgetInfo)
   local TabId = WidgetInfo.TabId
   if WidgetInfo.GetTabId then
@@ -520,13 +498,6 @@ function WBP_Play_Entry_C:RealOpenSubUI(WidgetInfo)
       self.TeamHeadUI:SetVisibility(UIConst.VisibilityOp.Collapsed)
       AttachWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
-  end
-  if "StarterQuest" == TabId or "DailyMain" == TabId then
-    local PlayTaskRoot = self:RealOpenSubUI({
-      TabId = "PlayTaskRoot"
-    })
-    PlayTaskRoot:OpenTaskUI(TabId)
-    return PlayTaskRoot
   end
   if self.CurTabId == TabId then
     return self.CurSubUI
@@ -544,7 +515,7 @@ function WBP_Play_Entry_C:RealOpenSubUI(WidgetInfo)
     end
     if self.CurSubUI.SecondaryPageName == TabId then
       self.CurSubUI:PlayAnimationForward(self.CurSubUI.Next)
-    elseif self.CurSubUI.Out then
+    elseif self.CurSubUI.Out and self.CurTabId ~= "DungeonSelect" then
       self.CurSubUI:PlayAnimationForward(self.CurSubUI.Out)
     else
       self.CurSubUI:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -580,7 +551,7 @@ function WBP_Play_Entry_C:RealOpenSubUI(WidgetInfo)
         Widget:PlayAnimation(self.In)
         self.Group_Depute:AddChild(Widget)
         Widget.ParentPanel = self.Group_Depute
-      elseif "PlayTaskRoot" == self.CurTabId then
+      elseif self.CurTabId == "PlayTaskRoot" then
         self.Group_Task:AddChild(Widget)
         Widget.ParentPanel = self.Group_Task
       else
@@ -643,13 +614,12 @@ function WBP_Play_Entry_C:RealOpenSubUI(WidgetInfo)
   end, false)
   return self.CurSubUI
 end
-
 function WBP_Play_Entry_C:OnKeyUp(MyGeometry, InKeyEvent)
   local ParentHandled = WBP_Play_Entry_C.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if InKeyName == UIConst.GamePadKey.SpecialRight then
-    if self.TeamHeadUI then
+    if self.TeamHeadUI and self.TeamHeadUI.DoGamepadBtnRelease then
       self.TeamHeadUI:DoGamepadBtnRelease()
       if not self.TeamHeadUI.bIsFocusable and not TeamController:IsTeamPopupBarOpenInGamepad() then
         self.ComTab:Handle_KeyEventOnGamePad(InKeyName)
@@ -661,7 +631,6 @@ function WBP_Play_Entry_C:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
 function WBP_Play_Entry_C:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -678,7 +647,7 @@ function WBP_Play_Entry_C:OnKeyDown(MyGeometry, InKeyEvent)
     local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
     if UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) then
       if InKeyName == UIConst.GamePadKey.SpecialRight then
-        if self.TeamHeadUI then
+        if self.TeamHeadUI and self.TeamHeadUI.DoGamepadBtnPress then
           self.TeamHeadUI:DoGamepadBtnPress()
           IsEventHandled = true
         end
@@ -693,6 +662,10 @@ function WBP_Play_Entry_C:OnKeyDown(MyGeometry, InKeyEvent)
               Child:SetFocus()
             end
           end
+        end
+        local HardBossRoot = self.Group_HardBoss:GetChildAt(0)
+        if IsValid(HardBossRoot) and HardBossRoot:IsVisible() then
+          HardBossRoot.List_Boss:SetFocus()
         end
         self.TeamHeadUI.bIsFocusable = false
         IsEventHandled = true
@@ -719,7 +692,6 @@ function WBP_Play_Entry_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Play_Entry_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   if self.CurSubUI and self.CurSubUI.HandlePreviewKeyDown then
@@ -738,12 +710,10 @@ function WBP_Play_Entry_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return WBP_Play_Entry_C.Super.OnPreviewKeyDown(self, MyGeometry, InKeyEvent)
   end
 end
-
 function WBP_Play_Entry_C:OnReturnKeyDown()
   UIUtils.PlayCommonBtnSe(self)
   self:OnClickBack()
 end
-
 function WBP_Play_Entry_C:OnClickBack()
   if self.TeamHeadUI.bIsFocusable then
     return
@@ -753,7 +723,6 @@ function WBP_Play_Entry_C:OnClickBack()
   end
   self:PlayOutAnim()
 end
-
 function WBP_Play_Entry_C:GetAttachWidget()
   local AttachWidget
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -764,24 +733,25 @@ function WBP_Play_Entry_C:GetAttachWidget()
   AttachWidget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   return AttachWidget
 end
-
 function WBP_Play_Entry_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   AudioManager(self):SetEventSoundParam(self, "SystemOpenSound", {ToEnd = 1})
-  self:BlockAllUIInput(true)
-  if self.CurSubUI.RetainerBox and self.CurSubUI.Panel_Level then
-    self.CurSubUI.Panel_Level:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
-  end
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:BindToAnimationFinished(self.Out, {
     self,
     self.Close
   })
-  if self.CurSubUI:IsAnyAnimationPlaying() then
-    self.CurSubUI:StopAllAnimations()
+  if self.CurSubUI then
+    if self.CurSubUI.RetainerBox and self.CurSubUI.Panel_Level then
+      self.CurSubUI.Panel_Level:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+    end
+    if self.CurSubUI:IsAnyAnimationPlaying() then
+      self.CurSubUI:StopAllAnimations()
+    end
+    self.CurSubUI:PlayAnimationForward(self.CurSubUI.Out)
   end
-  self.CurSubUI:PlayAnimationForward(self.CurSubUI.Out)
   if self.IsAddInDeque then
     self:PlayAnimationForward(self.Out, UIConst.AnimOutSpeedWithPageJump.NormalFastSpeed)
   else
@@ -794,16 +764,22 @@ function WBP_Play_Entry_C:PlayOutAnim()
     self.TeamHeadUI = nil
   end
   self:RecoverCamera()
-  EventManager:FireEvent(EventID.OnReturnToActivityEntry)
+  local UIManager = UIManager(self)
+  local PreviousUI = UIManager:GetUnderState()
+  if PreviousUI then
+    local PreviousUIName = PreviousUI:GetName()
+    DebugPrint("JLY 上一个栈的UI是:", PreviousUIName)
+    if "ActivityMain" == PreviousUIName then
+      EventManager:FireEvent(EventID.OnReturnToActivityEntry)
+      EventManager:FireEvent(EventID.OnActivityEntryShowVisible)
+    end
+  end
 end
-
 function WBP_Play_Entry_C:ShowIntro()
 end
-
 function WBP_Play_Entry_C:SetFocus_Lua()
   self.CurSubUI:SetFocus()
 end
-
 function WBP_Play_Entry_C:Close()
   if self.SubUI then
     for _, Widget in pairs(self.SubUI) do
@@ -812,10 +788,12 @@ function WBP_Play_Entry_C:Close()
   end
   self:RemoveReddotListener()
   UIManager(self):HideNpcActor(false, "StyleOfPlay", self.NpcId)
-  UIManager(self):HideNpcById(self.NpcId, true, "StyleOfPlay")
+  local IsNeedRecoverNow = UIManager(self):StateCount() > 1
+  if IsNeedRecoverNow then
+    UIManager(self):HideNpcById(self.NpcId, true, "StyleOfPlay")
+  end
   self.Super.Close(self)
 end
-
 function WBP_Play_Entry_C:BP_GetDesiredFocusTarget()
   if self.CurSubUI then
     return self.CurSubUI
@@ -823,5 +801,7 @@ function WBP_Play_Entry_C:BP_GetDesiredFocusTarget()
     return self
   end
 end
-
+function WBP_Play_Entry_C:GetCurSubUI()
+  return self.CurSubUI
+end
 return WBP_Play_Entry_C

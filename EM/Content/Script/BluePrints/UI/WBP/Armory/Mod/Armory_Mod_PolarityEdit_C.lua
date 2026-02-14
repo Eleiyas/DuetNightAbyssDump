@@ -3,7 +3,6 @@ local ModModel = ModController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Key_LB:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Key_RB:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -13,29 +12,23 @@ function M:Construct()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:NotifyOnPolarityModSelectedChanged(SelectedStuff, LastSelectedStuff)
   self:SetUpWhenSelectSlot(SelectedStuff)
 end
-
 function M:NotifyOnPendingEditSlotPolarity(SlotId)
   self:CheckIsAnySlotDirty()
 end
-
 function M:NotifyOnRevertEditSlotPolarity()
   self:CheckIsAnySlotDirty()
 end
-
 function M:NotifyOnPolarityEditFailed()
   self.Button_Purchase:ForbidBtn(false)
   self:BlockAllUIInput(false)
 end
-
 function M:NotifyOnPolarityEditDone(TargetUuid)
   self:NotifyOnPolarityEditFailed()
   self:Close()
 end
-
 function M:Destruct()
   if self.IsInit then
     self.List_Polarity.OnCreateEmptyContent:Unbind()
@@ -46,7 +39,6 @@ function M:Destruct()
   end
   M.Super.Destruct(self)
 end
-
 function M:OnListPolarityAddEntry(_, Entry)
   Entry:InitSelectedState()
   Entry:SetOnItemSelectOn(function(InContent)
@@ -62,7 +54,6 @@ function M:OnListPolarityAddEntry(_, Entry)
     ModController:EditSlotPolarity(InContent.Polarity)
   end)
 end
-
 function M:InitUIInfo(Name, IsInUIMode)
   self.bEnough = false
   M.Super.InitUIInfo(self, Name, IsInUIMode)
@@ -84,7 +75,6 @@ function M:InitUIInfo(Name, IsInUIMode)
     }
   })
 end
-
 function M:SetUpFirstInit()
   self:SetUpButtonWidget()
   if self.IsInit then
@@ -103,7 +93,6 @@ function M:SetUpFirstInit()
   ModController:RegisterEvent(self)
   self:SetUpPolarityList()
 end
-
 function M:CheckIsAnySlotDirty()
   local bDirty = 0 ~= ModModel.PolarityEditModeData:GetDirtyCount()
   DebugPrint(LXYTag, "Mod_PolarityEdit:CheckIsAnySlotDirty", bDirty)
@@ -120,7 +109,6 @@ function M:CheckIsAnySlotDirty()
   end
   self:SetCostNum()
 end
-
 function M:SetCostNum()
   local ResourceId = self:GetResourceId()
   local OneCost = DataMgr.GlobalConstant["PolarizationCost_" .. ResourceId].ConstantValue
@@ -142,7 +130,6 @@ function M:SetCostNum()
     self.Panel_Cost:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:SetUpWhenSelectSlot(SelectedStuff)
   self:CheckIsAnySlotDirty()
   if not SelectedStuff or not SelectedStuff:IsSlot() then
@@ -172,26 +159,21 @@ function M:SetUpWhenSelectSlot(SelectedStuff)
   local Polarity = -1 == SlotUIData:GetPolarity() and 0 or SlotUIData:GetPolarity()
   self.List_Polarity:SetSelectedIndex(Polarity)
 end
-
 function M:_GetResourceIds()
   local TargetType = ModModel:GetTarget():GetTypeName()
   self.ResourceIds = "Char" == TargetType and DataMgr.ResourceSType2Resource.Polarization or DataMgr.ResourceSType2Resource.WeaponPolarization
   return self.ResourceIds
 end
-
 function M:GetResourceId()
   return self:_GetResourceIds()[1]
 end
-
 function M:OnApplyPolarityEdit()
   local function Callback()
     self.Button_Purchase:ForbidBtn(true)
-    
     self:BlockAllUIInput(true)
     ModController:SetSelectedStuff(nil, nil)
     ModController:SendPolarityEdit(ModModel:GetTarget())
   end
-  
   if ModModel.PolarityEditModeData:IsAnySlotOverCost() then
     local Params = {RightCallbackFunction = Callback}
     local ModNames = {}
@@ -211,7 +193,6 @@ function M:OnApplyPolarityEdit()
     Callback()
   end
 end
-
 function M:OnRevertPolarityEdit()
   local Params = {
     RightCallbackFunction = function()
@@ -221,14 +202,11 @@ function M:OnRevertPolarityEdit()
   }
   Params.OnCloseCallbackObj = self
   Params.AutoFocus = true
-  
   function Params.OnCloseCallbackFunction()
     self.Parent:SetDefaultGamepadFocus()
   end
-  
   UIManager():ShowCommonPopupUI(ModCommon.EditPolarityResetDialog, Params, self)
 end
-
 function M:SetUpButtonWidget()
   self.Button_Purchase:SetText(GText("UI_ACCEPT"))
   self.Button_Purchase:UnBindEventOnClickedByObj(self)
@@ -249,7 +227,6 @@ function M:SetUpButtonWidget()
   self.Panel_Cost:SetRenderOpacity(self.CostZeroOpacity)
   self.Panel_Cost:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:SetUpPolarityList()
   local SortedConfs = ModModel:GetSortedPolarityConfs()
   for _, Conf in pairs(SortedConfs) do
@@ -260,14 +237,11 @@ function M:SetUpPolarityList()
   end
   self.List_Polarity:RequestFillEmptyContent()
 end
-
 function M:Close()
   local function Callback()
     ModController:StopPolarityEditMode()
-    
     M.Super.Close(self)
   end
-  
   if ModModel.PolarityEditModeData:GetDirtyCount() > 0 then
     local Params = {RightCallbackFunction = Callback}
     UIManager():ShowCommonPopupUI(ModCommon.EditPolarityResetDialog, Params, self.Parent)
@@ -275,12 +249,10 @@ function M:Close()
     Callback()
   end
 end
-
 function M:RealClose()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   M.Super.RealClose(self)
 end
-
 function M:ShowWarning(Text)
   if string.isempty(Text) then
     self.bWarning = false
@@ -292,10 +264,9 @@ function M:ShowWarning(Text)
     self.Text_Title:SetText(Text)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
@@ -309,5 +280,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Key_RB:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

@@ -36,7 +36,7 @@ VariableForGM.EnableInstancedGrass = true
 VariableForGM.EnablePointLights = true
 VariableForGM.EnableReflectionEnvironment = true
 VariableForGM.EnableSkyLighting = true
-VariableForGM.EnableVolumetricFog = true
+VariableForGM.EnableMaterials = true
 VariableForGM.EnableDirectLighting = true
 VariableForGM.EnablePostProcessing = true
 VariableForGM.EnableBloom = true
@@ -46,7 +46,12 @@ VariableForGM.EnableDebugLights = true
 VariableForGM.EnableUseLightingScenario = true
 VariableForGM.EnableRecordePlayerRoute = false
 VariableForGM.EnableShowAchievement = true
+VariableForGM.IgnoreGiftShopFriendLimit = false
 VariableForGM.PrintPickupTriggerTick = false
+VariableForGM.HideEntertainmentUI = false
+VariableForGM.HideEntertainmentUIObj = {}
+VariableForGM.HideStoryUI = false
+VariableForGM.HideStoryUIObj = {}
 VariableForGM.EnableAudioListenerDebug = false
 VariableForGM.EnableBGM = true
 VariableForGM.BGMEnableDebug = false
@@ -61,7 +66,6 @@ VariableForGM.CircularSoundDebug = false
 VariableForGM.ForcePhantomUseRegionRule = false
 VariableForGM.OtherVar = {}
 VariableForGM.VarFunc = {}
-
 function VariableForGM.VarFunc.EnableScreenMessages_Get(k)
   local res
   if EMCache then
@@ -72,7 +76,6 @@ function VariableForGM.VarFunc.EnableScreenMessages_Get(k)
   end
   return not res
 end
-
 function VariableForGM.VarFunc.EnableScreenMessages_Set(k, v)
   if EMCache then
     local GMInfo = EMCache:Get("GMInfo") or {}
@@ -80,7 +83,6 @@ function VariableForGM.VarFunc.EnableScreenMessages_Set(k, v)
     EMCache:Set("GMInfo", GMInfo)
   end
 end
-
 function VariableForGM.VarFunc.UseMapPhoneInPC_Get(k)
   if EMCache then
     local GMInfo = EMCache:Get("GMInfo")
@@ -91,7 +93,6 @@ function VariableForGM.VarFunc.UseMapPhoneInPC_Get(k)
   end
   return false
 end
-
 function VariableForGM.VarFunc.UseMapPhoneInPC_Set(k, v)
   if EMCache then
     local GMInfo = EMCache:Get("GMInfo") or {}
@@ -99,7 +100,6 @@ function VariableForGM.VarFunc.UseMapPhoneInPC_Set(k, v)
     EMCache:Set("GMInfo", GMInfo)
   end
 end
-
 setmetatable(VariableForGM, {
   __index = function(t, k)
     if t.VarFunc[k .. "_Get"] then

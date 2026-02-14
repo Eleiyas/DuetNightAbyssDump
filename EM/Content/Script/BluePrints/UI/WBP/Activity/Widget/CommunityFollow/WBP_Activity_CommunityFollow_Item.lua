@@ -4,7 +4,6 @@ local M = Class({
 })
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
-
 function M:Construct()
   self.Btn_Jump.Button_Area.OnClicked:Add(self, self.OnBtnJumpClicked)
   self.Btn_Reward.Button_Area.OnClicked:Add(self, self.OnBtnRewardClicked)
@@ -14,36 +13,33 @@ function M:Construct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:OnBtnJumpClicked()
   local Url = self.Content.JumpLink
+  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" and self.Content.PhoneJumpLink and self.Content.PhoneJumpLink ~= "" then
+    Url = self.Content.PhoneJumpLink
+  end
   UE4.UKismetSystemLibrary.LaunchURL(Url)
   self:MarkCommunityFollowed()
 end
-
 function M:MarkCommunityFollowed()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       if 0 == Ret then
         self.IsCanGetReward = true
-        
         self:RefreshUI()
         ActivityReddotHelper.TryAddReddotCount(ActivityUtils, self.Content.ParentWidget.CurActivityId, "Red")
       end
     end
-    
     Avatar:CallServer("MarkCommunityFollowed", Callback, self.Content.CommunityId)
   end
 end
-
 function M:OnBtnRewardClicked()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       if 0 == Ret then
         local UIManager = GWorld.GameInstance:GetGameUIManager()
-        
         local AllRewards = RewardUtils:GetRewards(self.Content.Reward, nil)
         UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, AllRewards, false, function()
           self.Content.ParentWidget:EnterRewardViewMode()
@@ -65,17 +61,14 @@ function M:OnBtnRewardClicked()
         end
       end
     end
-    
     Avatar:CallServer("GetCommunityFollowedReward", Callback, self.Content.CommunityId)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Widget = self
   self:InitUI()
 end
-
 function M:InitUI()
   self.IsCanGetReward = false
   self.IsGetReward = false
@@ -108,7 +101,6 @@ function M:InitUI()
     self:MarkCommunityFollowed()
   end
 end
-
 function M:RefreshUI()
   if self.IsGetReward then
     self:PlayAnimation(self.Forbidden)
@@ -146,7 +138,6 @@ function M:RefreshUI()
   }
   self.Com_Item_Universal_M:Init(Content)
 end
-
 function M:OnMenuOpenChangedEvent(IsOpen)
   if IsOpen then
     self.IsOpenMenu = true
@@ -162,19 +153,16 @@ function M:OnMenuOpenChangedEvent(IsOpen)
     end
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:OnItemSelectionChanged(true)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:OnItemSelectionChanged(false)
   end
 end
-
 function M:OnItemSelectionChanged(IsSelected)
   self.bIsSelected = IsSelected
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -187,7 +175,6 @@ function M:OnItemSelectionChanged(IsSelected)
     end
   end
 end
-
 function M:SetGamepadIconVisibility(bShow)
   if bShow then
     self.Key_Item:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -199,7 +186,6 @@ function M:SetGamepadIconVisibility(bShow)
     self.Btn_Reward:SetGamePadIconVisible(false)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -239,7 +225,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.bIsSelected then
     self:PlayAnimation(self.UnHover)
@@ -248,5 +233,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Content.ParentWidget:LeaveRewardViewMode()
   end
 end
-
 return M

@@ -21,7 +21,6 @@ M.SLOT_INDEX_2_BG_INDEX = {
   [7] = 5,
   [8] = 6
 }
-
 function M:Construct()
   self.SlotDirections = {
     FVector2D(1, 0),
@@ -54,11 +53,9 @@ function M:Construct()
     })
   end
   self.Scheme_Switching:BindEventOnSchemeClicked(self, self.OnSchemeClicked)
-  
   function self.InstallSoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/combat_bag_cell_place_common", nil, nil)
   end
-  
   self.PointerPos = FVector2D(0, 0)
   self.bDeviceInPc = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
   self:AddDispatcher(EventID.OnWindowResized, self, function()
@@ -77,15 +74,12 @@ function M:Construct()
   self.bIsDealWithVirtualAccept = true
   self:TryInitBgMat()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.bIsGamepad = CurInputDevice == ECommonInputType.Gamepad
 end
-
 function M:RelayoutPrepass(FrameCount)
   self.FrameCount = FrameCount or 0
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.FrameCount < 2 then
     self.FrameCount = self.FrameCount + 1
@@ -123,10 +117,8 @@ function M:Tick(MyGeometry, InDeltaTime)
     self:HandleJoystickSelect(LastSlot)
   end
 end
-
 function M:CalcGamepadPointerDiff(Diff)
 end
-
 function M:CalcHoveredSlot(DisFromCenter)
   local NormalDiff = UKismetMathLibrary.Normal2D(DisFromCenter)
   for i = 1, self.TotalSlotNumber do
@@ -137,7 +129,6 @@ function M:CalcHoveredSlot(DisFromCenter)
     end
   end
 end
-
 function M:SetWheelRadius(InnerWheelRadius, OuterWheelRadius)
   self.DesiredInnerWheelRadius = InnerWheelRadius
   self.DesiredOuterWheelRadius = OuterWheelRadius
@@ -148,28 +139,23 @@ function M:SetWheelRadius(InnerWheelRadius, OuterWheelRadius)
     self.InnerWheelRadius = 1.0E-4
   end
 end
-
 function M:PlayInAnim()
   self.Scheme_Switching:PlayInAnim()
   self:StopAnimation(self.Auto_Out)
   self:PlayAnimation(self.Auto_In)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.Auto_In)
   self:PlayAnimation(self.Auto_Out)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:SetWheelScheme(SchemIdx)
   self.Scheme_Switching:SwitchScheme(SchemIdx)
 end
-
 function M:SetWheelMiddleStyle(Style)
   self.WidgetSwitcher_0:SetActiveWidgetIndex(Style)
 end
-
 function M:CreateCommonKey(Params)
   if Params then
     self.Key:CreateCommonKey(Params)
@@ -178,37 +164,30 @@ function M:CreateCommonKey(Params)
     self.Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetTipText(Text)
   self.Text_Tips:SetText(Text)
 end
-
 function M:SetWSNum(Num)
   self.WS_Num:SetActiveWidgetIndex(Num - 1)
 end
-
 function M:IsSlotInWheelRight(SlotIdx)
   local QuarterTotal = self.TotalSlotNumber / 4
   local HalfTotal = self.TotalSlotNumber / 2
   return HalfTotal >= SlotIdx + QuarterTotal or HalfTotal < SlotIdx - QuarterTotal
 end
-
 function M:EnablePointerDetection(bEnable)
   self.bEnablePointerDetection = bEnable
 end
-
 function M:SetWheelCenter(Widget)
   self.WidgetForCalcCenter = Widget
   self.WheelCenter = self:CalcWheelCenter()
   self:OnWheelCenterCalculated()
 end
-
 function M:CalcWheelCenter()
   local Geometry = self.WidgetForCalcCenter:GetTickSpaceGeometry()
   local LocalCenter = USlateBlueprintLibrary.GetLocalSize(Geometry) / 2
   return USlateBlueprintLibrary.LocalToAbsolute(Geometry, LocalCenter)
 end
-
 function M:OnSlotHoverChanged(LastSlot, CurrentSlot)
   if not self.bEnableHovered then
     return
@@ -222,25 +201,20 @@ function M:OnSlotHoverChanged(LastSlot, CurrentSlot)
     self.OnSlotHoverChangedEvent(self.EventReceiver, LastSlot, CurrentSlot)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.bDeviceInPc then
     self.bPointerEntered = true
   end
 end
-
 function M:OnMouseLeave(MouseEvent)
   self.bPointerEntered = false
 end
-
 function M:OnDragEnter(MyGeometry, PointerEvent, Operation)
   self.bPointerEntered = true
 end
-
 function M:OnDragLeave(PointerEvent, Operation)
   self.bPointerEntered = false
 end
-
 function M:OnDragOver(MyGeometry, PointerEvent, Operation)
   self.bPointerEntered = true
   if not self.bDeviceInPc then
@@ -248,7 +222,6 @@ function M:OnDragOver(MyGeometry, PointerEvent, Operation)
   end
   return false
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.bPointerEntered = true
   local ReturnValue
@@ -269,7 +242,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return ReturnValue or UIUtils.Unhandled
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   self.bPointerEntered = self.bDeviceInPc
   local MouseDownSlot
@@ -299,24 +271,20 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:SetPointerPositionByTouchEvnet(InTouchEvent)
   self.PointerPos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InTouchEvent)
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   self:SetPointerPositionByTouchEvnet(InTouchEvent)
   local Ret = self:OnMouseButtonDown(MyGeometry, InTouchEvent)
   self:Tick()
   return Ret
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   self.bPointerEntered = true
   self:SetPointerPositionByTouchEvnet(InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   self:SetPointerPositionByTouchEvnet(InTouchEvent)
   local Ret = self:OnMouseButtonUp(MyGeometry, InTouchEvent)
@@ -324,7 +292,6 @@ function M:OnTouchEnded(MyGeometry, InTouchEvent)
   self:Tick()
   return Ret
 end
-
 function M:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   self.OnSlotHoverChangedEvent = Events.OnSlotHoverChangedEvent
@@ -340,24 +307,20 @@ function M:BindEvents(EventReceiver, Events)
   self._OnRemovedFromFocusPath = Events.OnRemovedFromFocusPathEvent
   self._OnAnalogValueChanged = Events.OnAnalogValueChanged
 end
-
 function M:EnableEvents(bEnableHovered, bEnableClicked, bEnableDragAndDrop)
   self.bEnableHovered = bEnableHovered
   self.bEnableClicked = bEnableClicked
   self.bEnableDragAndDrop = bEnableDragAndDrop
 end
-
 function M:OnSchemeClicked(Index)
   if self.OnSchemeClickedEvent then
     self.OnSchemeClickedEvent(self.EventReceiver, Index)
   end
 end
-
 function M:SetSlotItem(SlotIndex, Content)
   self.SlotContents[SlotIndex] = Content
   self:UpdateSlotItemWidget(SlotIndex, Content)
 end
-
 function M:UpdateSlotItemWidget(SlotIndex, Content)
   if Content then
     Content.IconAnimationBP = DataMgr.Resource[Content.Id] and DataMgr.Resource[Content.Id].IconAnimationBP or nil
@@ -366,7 +329,7 @@ function M:UpdateSlotItemWidget(SlotIndex, Content)
     local PropSp = UIManager(self):CreateWidget(Content.IconAnimationBP, false)
     if PropSp then
       self["Prop_" .. SlotIndex]:RemoveChild(self["Prop_Icon" .. SlotIndex])
-      self["Prop_Icon" .. SlotIndex] = PropSp
+      rawset(self, "Prop_Icon" .. SlotIndex, PropSp)
       self["Prop_" .. SlotIndex]:AddChild(self["Prop_Icon" .. SlotIndex])
     end
   elseif Content then
@@ -374,7 +337,7 @@ function M:UpdateSlotItemWidget(SlotIndex, Content)
     local Prop = UIManager(self):CreateWidget(NormalPropBP, false)
     if Prop then
       self["Prop_" .. SlotIndex]:RemoveChild(self["Prop_Icon" .. SlotIndex])
-      self["Prop_Icon" .. SlotIndex] = Prop
+      rawset(self, "Prop_Icon" .. SlotIndex, Prop)
       self["Prop_" .. SlotIndex]:AddChild(self["Prop_Icon" .. SlotIndex])
     end
   end
@@ -390,15 +353,12 @@ function M:UpdateSlotItemWidget(SlotIndex, Content)
   end
   self["Prop_Icon" .. SlotIndex]:OnSlotPropObjectSet(Content)
 end
-
 function M:GetSlotItem(SlotIndex)
   return SlotIndex and self.SlotContents[SlotIndex]
 end
-
 function M:GetSlotWidget(SlotIndex)
   return SlotIndex and self["Prop_Icon" .. SlotIndex]
 end
-
 function M:FindFirtEmptySlotIdx()
   for i = 1, self.TotalSlotNumber do
     if not self.SlotContents[i] then
@@ -406,13 +366,11 @@ function M:FindFirtEmptySlotIdx()
     end
   end
 end
-
 function M:GetCurrentPointerHoveredSlot()
   if self.CurrentHoveredSlot then
     return self.SlotContents[self.CurrentHoveredSlot], self.CurrentHoveredSlot
   end
 end
-
 function M:SetSlotItemVisibility(SlotIdx, VisibilityOp)
   if self.SlotContents[SlotIdx] then
     self["Prop_Icon" .. SlotIdx]:SetVisibility(VisibilityOp)
@@ -420,7 +378,6 @@ function M:SetSlotItemVisibility(SlotIdx, VisibilityOp)
     self["Prop_Icon" .. SlotIdx]:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SelectSlot(bSelected, SlotIdx)
   if bSelected then
     self.CurrentSelectedSlot = SlotIdx
@@ -429,14 +386,12 @@ function M:SelectSlot(bSelected, SlotIdx)
     self:ClearSlotSelect()
   end
 end
-
 function M:ClearSlotSelect()
   if self.CurrentSelectedSlot then
     self:OnSelectedChanged(self.CurrentSelectedSlot, false)
   end
   self.CurrentSelectedSlot = nil
 end
-
 function M:InstallSlot(bSuccessful, SlotIdx, Content)
   if bSuccessful then
     self:SetSlotItem(SlotIdx, Content)
@@ -447,7 +402,6 @@ function M:InstallSlot(bSuccessful, SlotIdx, Content)
     AudioManager(self):PlayUISound(self, "event:/ui/common/err_action_warning", nil, nil)
   end
 end
-
 function M:ExchangedItem(bSuccessful, FromIdx, ToIdx)
   if bSuccessful then
     local tContent = self.SlotContents[FromIdx]
@@ -471,7 +425,6 @@ function M:ExchangedItem(bSuccessful, FromIdx, ToIdx)
     end
   end
 end
-
 function M:OnPressedChanged(SlotIdx, bPressed)
   local BgIndex = self.SLOT_INDEX_2_BG_INDEX[SlotIdx]
   if bPressed and self.BgMat then
@@ -480,7 +433,6 @@ function M:OnPressedChanged(SlotIdx, bPressed)
   else
   end
 end
-
 function M:OnSelectedChanged(SlotIdx, bSelected)
   local BgIndex = self.SLOT_INDEX_2_BG_INDEX[SlotIdx]
   if bSelected then
@@ -493,7 +445,6 @@ function M:OnSelectedChanged(SlotIdx, bSelected)
     self.BgMat:SetScalarParameterValue("LoopOpacity", 0)
   end
 end
-
 function M:OnInstallationSuccessful(SlotIdx)
   local BgIndex = self.SLOT_INDEX_2_BG_INDEX[SlotIdx]
   if self.BgMat then
@@ -506,7 +457,6 @@ function M:OnInstallationSuccessful(SlotIdx)
     end
   end
 end
-
 function M:OnInstallationFailure(SlotIdx)
   local BgIndex = self.SLOT_INDEX_2_BG_INDEX[SlotIdx]
   if self.BgMat then
@@ -519,7 +469,6 @@ function M:OnInstallationFailure(SlotIdx)
     end
   end
 end
-
 function M:OnDragDetected(MyGeometry, PointerEvent)
   self.bPointerEntered = true
   if not self.bEnableDragAndDrop then
@@ -544,7 +493,6 @@ function M:OnDragDetected(MyGeometry, PointerEvent)
   self.DragDropOperation = DragDropOperation
   return DragDropOperation
 end
-
 function M:CreateDefaultDragWidget(DragContent)
   if not IsValid(self.DefaultDragWidget) then
     self.DefaultDragWidget = UIManager(self):CreateWidget("/Game/UI/WBP/Battle/Widget/Battle_Menu/WBP_BattleMenu_Prop.WBP_BattleMenu_Prop", false)
@@ -568,7 +516,6 @@ function M:CreateDefaultDragWidget(DragContent)
   end
   return DragContent.IconAnimationBP and self.DefaultDragSPWidget or self.DefaultDragWidget
 end
-
 function M:OnDrop(MyGeometry, PointerEvent, Operation)
   self.bPointerEntered = false
   if not self.bEnableDragAndDrop or not self.bEnablePointerDetection then
@@ -603,7 +550,6 @@ function M:OnDrop(MyGeometry, PointerEvent, Operation)
   self.CurrentDragSlot = nil
   return false
 end
-
 function M:OnDragCancelled(PointerEvent, Operation)
   if self.CurrentHoveredSlot then
     self:OnDrop(nil, PointerEvent, Operation)
@@ -623,13 +569,11 @@ function M:OnDragCancelled(PointerEvent, Operation)
     self.OnDragCancelledEvent(self.EventReceiver, Content, DragSlot)
   end
 end
-
 function M:PlayInstallSound(Content)
   if self.InstallSoundFunc then
     self.InstallSoundFunc(Content)
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if self._OnAnalogValueChanged then
     local Reply, IsHandled = self._OnAnalogValueChanged(self.EventReceiver, MyGeometry, InAnalogInputEvent)
@@ -646,7 +590,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -661,7 +604,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -672,7 +614,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnFaceButtonBottomKeyDown(MyGeometry, InKeyEvent)
   if UWidgetBlueprintLibrary.IsDragDropping() then
     return UIUtils.Handled
@@ -684,7 +625,6 @@ function M:OnFaceButtonBottomKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnFaceButtonBottomKeyUp(MyGeometry, InKeyEvent)
   if self.bEnableClicked then
     if self.KeyDownSlot then
@@ -700,7 +640,6 @@ function M:OnFaceButtonBottomKeyUp(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:PreInitByParam(Params)
   if not (Params and Params.BehaviourType) or self._components and next(self._components) then
   else
@@ -720,20 +659,16 @@ function M:PreInitByParam(Params)
     self:InitContent(Params)
   end
 end
-
 function M:UpdateArgs(Params)
   self:PreInitByParam(Params)
 end
-
 function M:OnWheelCenterCalculated()
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.EventReceiver, self)
   end
 end
-
 function M:OnRemovedFromFocusPath(FocusEvent)
   if self.bEnableClicked then
     if self.KeyDownSlot then
@@ -746,15 +681,12 @@ function M:OnRemovedFromFocusPath(FocusEvent)
     self._OnRemovedFromFocusPath(self.EventReceiver, self)
   end
 end
-
 function M:HandleRemovedFromFocusPath(FocusEvent)
 end
-
 function M:UpdateWheelConfig()
   self:SetWheelCenter(self.WidgetForCalcCenter)
   self:SetWheelRadius(self.DesiredInnerWheelRadius, self.DesiredOuterWheelRadius)
 end
-
 function M:GetPointerPosition()
   if self.bDeviceInPc then
     return UWidgetLayoutLibrary.GetMousePositionOnPlatform()
@@ -762,37 +694,30 @@ function M:GetPointerPosition()
     return self.PointerPos
   end
 end
-
 function M:Hide(HideTag)
   M.Super.Hide(self, HideTag)
   self:OnHide()
 end
-
 function M:OnHide()
 end
-
 function M:OnChangeDisplayWheel()
 end
-
 function M:HandleJoystickSelect()
 end
-
 function M:CloseMenu()
 end
-
 function M:TryInitBgMat()
   if nil == self.BgMat then
     self.BgMat = self.Img_BG:GetDynamicMaterial()
   end
 end
-
 function M:UnHoverSlot()
   if self.BgMat then
     DebugPrint("gmy@WBP_Battle_Menu_C M:UnHoverSlot")
+    self:StopAnimation(self.Hover)
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:HoverSlot(SlotIndex)
   local BgIndex = self.SLOT_INDEX_2_BG_INDEX[SlotIndex]
   if self.BgMat then
@@ -801,8 +726,8 @@ function M:HoverSlot(SlotIndex)
     self.BgMat:SetScalarParameterValue("HoverOpacity", 0)
     self.BgMat:SetScalarParameterValue("InstallOpacity", 0)
     self.BgMat:SetScalarParameterValue("MenuID", BgIndex)
+    self:StopAnimation(self.UnHover)
     self:PlayAnimation(self.Hover)
   end
 end
-
 return M

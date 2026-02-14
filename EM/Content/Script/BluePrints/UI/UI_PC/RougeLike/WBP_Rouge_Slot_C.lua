@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Rouge_Slot_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_Slot_C:Construct()
   self.CurState = nil
   self.Btn_Click.OnClicked:Add(self, self.OnClicked)
@@ -18,7 +17,6 @@ function WBP_Rouge_Slot_C:Construct()
     self.Press
   }
 end
-
 function WBP_Rouge_Slot_C:Init(Parent, Data, SelectWidget, State, ClickFunction, HoverFunction, UnoverFunction, RemainingTalentPoint)
   self.Parent = Parent
   self.Data = Data
@@ -35,7 +33,6 @@ function WBP_Rouge_Slot_C:Init(Parent, Data, SelectWidget, State, ClickFunction,
   self.UnoverFunction = UnoverFunction
   self:ChangeState(State, RemainingTalentPoint)
 end
-
 function WBP_Rouge_Slot_C:ChangeState(NewState, RemainingTalentPoint)
   local LastState = self.CurState
   self.CurState = NewState
@@ -65,7 +62,6 @@ function WBP_Rouge_Slot_C:ChangeState(NewState, RemainingTalentPoint)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Rouge_Slot_C:SelectedWhenCreatingTree()
   if self.IsSelected then
     return
@@ -83,7 +79,6 @@ function WBP_Rouge_Slot_C:SelectedWhenCreatingTree()
   self.SelectWidget:StopAllAnimations()
   self.SelectWidget:PlayAnimation(self.SelectWidget.Click)
 end
-
 function WBP_Rouge_Slot_C:OnClicked()
   if self.IsSelected then
     if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -105,7 +100,6 @@ function WBP_Rouge_Slot_C:OnClicked()
   self.SelectWidget:PlayAnimation(self.SelectWidget.Click)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/spectrum_click", nil, nil)
 end
-
 function WBP_Rouge_Slot_C:OnHoveredOnGamepad()
   if self.IsSelected then
     return
@@ -124,7 +118,6 @@ function WBP_Rouge_Slot_C:OnHoveredOnGamepad()
   self.SelectWidget:PlayAnimation(self.SelectWidget.Click)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/spectrum_click", nil, nil)
 end
-
 function WBP_Rouge_Slot_C:OnHovered()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Parent.Parent:ScrollToPoint(self.Data.TalentId)
@@ -140,7 +133,6 @@ function WBP_Rouge_Slot_C:OnHovered()
   self:StopBtnAnimation()
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Rouge_Slot_C:OnUnhovered()
   if self.IsSelected then
     return
@@ -153,7 +145,6 @@ function WBP_Rouge_Slot_C:OnUnhovered()
   self:PlayAnimation(self.Unhover)
   self.SelectWidget:PlayAnimation(self.SelectWidget.Unselect)
 end
-
 function WBP_Rouge_Slot_C:OnPressed()
   if self.IsSelected then
     return
@@ -164,7 +155,6 @@ function WBP_Rouge_Slot_C:OnPressed()
   self.SelectWidget:StopAllAnimations()
   self.SelectWidget:PlayAnimation(self.SelectWidget.Press)
 end
-
 function WBP_Rouge_Slot_C:OnReleased()
   if self.IsSelected then
     return
@@ -180,7 +170,6 @@ function WBP_Rouge_Slot_C:OnReleased()
   self:PlayAnimation(self.Click)
   self.SelectWidget:PlayAnimation(self.SelectWidget.Unselect)
 end
-
 function WBP_Rouge_Slot_C:StopBtnAnimation()
   for _, Animation in pairs(self.BtnAnimation) do
     if self:IsAnimationPlaying(Animation) then
@@ -188,14 +177,12 @@ function WBP_Rouge_Slot_C:StopBtnAnimation()
     end
   end
 end
-
 function WBP_Rouge_Slot_C:SaveBtnSizeXY()
   local MainCanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Main)
   local MainSize = MainCanvasSlot:GetSize()
   self.BtnSizeX = MainSize.X
   self.BtnSizeY = MainSize.Y
 end
-
 function WBP_Rouge_Slot_C:OnUINavigation(NavigationDirection)
   local Point = self.Parent:OnUINavigation_Slot(NavigationDirection, self.Data.TalentId)
   if Point then
@@ -204,5 +191,4 @@ function WBP_Rouge_Slot_C:OnUINavigation(NavigationDirection)
     return self.Btn_Click
   end
 end
-
 return WBP_Rouge_Slot_C

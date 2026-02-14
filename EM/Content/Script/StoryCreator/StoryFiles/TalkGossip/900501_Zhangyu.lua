@@ -1,5 +1,5 @@
 return {
-  storyName = "\231\171\160\233\177\188\231\156\139\230\157\191\229\168\152",
+  storyName = "章鱼看板娘",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "story_1689129631050131",
       type = "StoryNode",
-      name = "\231\171\160\233\177\188\231\156\139\230\157\191\229\168\152",
+      name = "章鱼看板娘",
       pos = {x = 400.2410070962615, y = 141.00621859313978},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -104,7 +106,7 @@ return {
           quest_16917509034691080 = {
             key = "quest_16917509034691080",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 105, y = 155.94128009520045},
             propsData = {
               NpcInfos = {
@@ -115,7 +117,7 @@ return {
           quest_16917536493781866 = {
             key = "quest_16917536493781866",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 789.9421618738612, y = 154.41847821769744},
             propsData = {
               NpcInfos = {
@@ -166,6 +168,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = false,
               ShowAutoPlayButton = false,
               ShowReviewButton = true,
@@ -173,6 +176,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -189,10 +193,6 @@ return {
                   TalkActorId = 82301,
                   TalkActorVisible = true
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 82301}
               },
               OptionType = "normal",
               FreezeWorldComposition = false,

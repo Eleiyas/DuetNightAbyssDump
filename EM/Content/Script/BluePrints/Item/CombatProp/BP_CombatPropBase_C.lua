@@ -10,7 +10,6 @@ BP_CombatPropBase_C._components = {
   "BluePrints.Common.DelayFrameComponent",
   "BluePrints.Combat.Components.CharacterBattleEventComponent"
 }
-
 function BP_CombatPropBase_C:AuthorityInitInfo(Info)
   if self.Bpborn then
     if self.LevelAdaptDisable and UE4.UGameplayStatics.GetGameMode(self):IsInRegion() then
@@ -37,7 +36,6 @@ function BP_CombatPropBase_C:AuthorityInitInfo(Info)
     self.IsActive = true
   end
 end
-
 function BP_CombatPropBase_C:CommonInitInfo(Info)
   self:SetActiveType()
   self:AddBuffManager()
@@ -48,7 +46,6 @@ function BP_CombatPropBase_C:CommonInitInfo(Info)
   self:OnDeadStateChange(self.bIsDead)
   BP_CombatPropBase_C.Super.CommonInitInfo(self, Info)
 end
-
 function BP_CombatPropBase_C:ClientInitInfo(Info)
   BP_CombatPropBase_C.Super.ClientInitInfo(self, Info)
   self:InitUIWidgetComponent()
@@ -58,15 +55,6 @@ function BP_CombatPropBase_C:ClientInitInfo(Info)
     self.BillBoardComponent.IsInit = true
   end
 end
-
-function BP_CombatPropBase_C:RegisterToGameState()
-  if not IsAuthority(self) then
-    return
-  end
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  GameState:RegisterMechanism(self, self:GetUnitRealType())
-end
-
 function BP_CombatPropBase_C:InitInvincible()
   self:RemoveTimer(self.InitHandle)
   if self.IsActive then
@@ -75,13 +63,11 @@ function BP_CombatPropBase_C:InitInvincible()
   Battle(self):AddBuffToTarget(self, self, 6000207, -1, nil, nil)
   Battle(self):AddBuffToTarget(self, self, 301, -1, nil, nil)
 end
-
 function BP_CombatPropBase_C:GetBattleDataInfo(Info)
   self.RoleId = self.Data.BattleRoleId
   self.RewardId = self.Data.RewardId
   return DataMgr.BattleMonster[self.RoleId]
 end
-
 function BP_CombatPropBase_C:CheckIgnoreByRangeHit(TargetActor)
   if not TargetActor then
     return false
@@ -102,7 +88,6 @@ function BP_CombatPropBase_C:CheckIgnoreByRangeHit(TargetActor)
   end
   return false
 end
-
 function BP_CombatPropBase_C:PropUseSkill(SkillId, TargetActor)
   if self:CheckIgnoreByRangeHit(TargetActor) then
     return
@@ -115,11 +100,9 @@ function BP_CombatPropBase_C:PropUseSkill(SkillId, TargetActor)
     self:ExecuteTask(SkillId, TargetActor)
   end
 end
-
 function BP_CombatPropBase_C:ExecuteTask(EffectId, Target)
   Battle(self):ExecuteSkillEffect(self, EffectId, Target, nil, self)
 end
-
 function BP_CombatPropBase_C:PropAttack(TargetActor)
   if self:CheckIgnoreByRangeHit(TargetActor) then
     return
@@ -149,36 +132,30 @@ function BP_CombatPropBase_C:PropAttack(TargetActor)
     end
   end
 end
-
 function BP_CombatPropBase_C:InitCombatPropInfo()
 end
-
 function BP_CombatPropBase_C:SetActiveType()
   self.ActiveType = ""
 end
-
 function BP_CombatPropBase_C:OnServerReady()
   self.Overridden.OnServerReady(self)
 end
-
 function BP_CombatPropBase_C:ShowDeath(DissolveDuration)
   self:DeactiveGuide()
   self.CombatClientEffectComponent:OnDeadEffect()
 end
-
 function BP_CombatPropBase_C:OnBreakCountDown(SourceEid)
   if IsStandAlone(self) or IsClient(self) then
     self.CombatClientEffectComponent:OnHitedEffect()
   end
 end
-
 function BP_CombatPropBase_C:OnDamaged(DamageEvent)
   self.Overridden.OnDamaged(self, DamageEvent)
 end
-
 function BP_CombatPropBase_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   self.bIsDead = true
   self:OnDeadStateChange(self.bIsDead)
+  self:DestroyAllCreatures(ECreatureDeathWithCreator.Normal, EDeathReason.CreatureNotDelay)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameMode then
@@ -193,10 +170,16 @@ function BP_CombatPropBase_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReaso
     Player:AddBreakableItemCount()
   end
 end
-
 function BP_CombatPropBase_C:CreateReward(KillMineRoleEid)
+  if not self:CheckAutoCreateReward() then
+    return
+  end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
+    local RewardPosition = self:GetTransform()
+    if self.RewardPosition then
+      RewardPosition = self.RewardPosition:K2_GetComponentToWorld()
+    end
     local ExtraInfo = {
       UniqueSign = self.Eid,
       SourceEid = KillMineRoleEid
@@ -205,10 +188,31 @@ function BP_CombatPropBase_C:CreateReward(KillMineRoleEid)
       ExtraInfo.WorldRegionEid = self.WorldRegionEid
       ExtraInfo.RegionDataType = self.RegionDataType
     end
-    GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.BreakableItem, self:GetTransform(), ExtraInfo)
+    GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.BreakableItem, RewardPosition, ExtraInfo)
   end
 end
-
+function BP_CombatPropBase_C:StateCreateReward(PlayerId, NextStateId)
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if GameMode then
+    local RewardPosition = self:GetTransform()
+    if self.RewardPosition then
+      RewardPosition = self.RewardPosition:K2_GetComponentToWorld()
+    end
+    local ExtraInfo = {
+      UniqueSign = self.Eid,
+      SourceEid = KillMineRoleEid
+    }
+    if GameMode:IsInRegion() then
+      ExtraInfo.WorldRegionEid = self.WorldRegionEid
+      ExtraInfo.RegionDataType = self.RegionDataType
+    end
+    local function CallBack()
+      self.CombatStateChangeComponent:TriggerOnEventEnd(NextStateId)
+    end
+    return GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.BreakableItem, RewardPosition, ExtraInfo, CallBack)
+  end
+  return false
+end
 function BP_CombatPropBase_C:ActiveOnServer()
   if self:IsDead() then
     return
@@ -217,7 +221,6 @@ function BP_CombatPropBase_C:ActiveOnServer()
   Battle(self):RemoveBuffFromTarget(self, self, 6000207, false, -1)
   Battle(self):RemoveBuffFromTarget(self, self, 301, false, -1)
 end
-
 function BP_CombatPropBase_C:DeActive()
   BP_CombatPropBase_C.Super.DeActive(self)
   self.IsStart = false
@@ -227,19 +230,15 @@ function BP_CombatPropBase_C:DeActive()
     Battle(self):AddBuffToTarget(self, self, 301, -1, nil, nil)
   end
 end
-
 function BP_CombatPropBase_C:ActiveFX(Niagara)
   Niagara:SetActive(true)
 end
-
 function BP_CombatPropBase_C:DeActiveFX(Niagara)
   Niagara:Deactivate()
 end
-
 function BP_CombatPropBase_C:GetCurrentWeapon()
   return nil
 end
-
 function BP_CombatPropBase_C:CreateRegionData()
   self.RegionData = {
     MaxHp = self:GetAttr("MaxHp"),
@@ -250,11 +249,9 @@ function BP_CombatPropBase_C:CreateRegionData()
     StateId = self.StateId
   }
 end
-
 function BP_CombatPropBase_C:GetShootingTargets()
   return TArray(ACharacterBase)
 end
-
 function BP_CombatPropBase_C:GetGuidePos()
   if self.GuidePos then
     return self:K2_GetActorLocation() + self.GuidePos.RelativeLocation
@@ -262,6 +259,5 @@ function BP_CombatPropBase_C:GetGuidePos()
     return self:K2_GetActorLocation()
   end
 end
-
 AssembleComponents(BP_CombatPropBase_C)
 return BP_CombatPropBase_C

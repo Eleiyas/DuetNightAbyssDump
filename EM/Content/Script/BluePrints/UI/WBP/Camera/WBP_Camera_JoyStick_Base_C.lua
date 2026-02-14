@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
 local Handle = UE4.UWidgetBlueprintLibrary.Handled()
 local Unhandle = UE4.UWidgetBlueprintLibrary.Unhandled()
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.bMouseDown = true
   self.MousePosition = UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(MouseEvent)
@@ -11,7 +10,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.CaptureMouse(Handle, self)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   if self:HasMouseCapture() then
     self.MousePosition = UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(MouseEvent)
@@ -19,7 +17,6 @@ function M:OnMouseMove(MyGeometry, MouseEvent)
   end
   return Unhandle
 end
-
 function M:OnMouseButtonUp(MyGeometry, InKeyEvent)
   self.bMouseDown = false
   local JoyStickCanvas = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Img_Roll)
@@ -29,24 +26,19 @@ function M:OnMouseButtonUp(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.ReleaseMouseCapture(Handle)
 end
-
 function M:OnMouseCaptureLost()
   local JoyStickCanvas = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Img_Roll)
   JoyStickCanvas:SetPosition(FVector2D(0, 0))
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   return self:OnMouseButtonDown(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnMouseButtonUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnMouseMove(MyGeometry, InTouchEvent)
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.bLocked then
     return
@@ -67,16 +59,13 @@ function M:Tick(MyGeometry, InDeltaTime)
     self.Event_OnMoved(self.Obj, Dir * InDeltaTime, Percentt)
   end
 end
-
 function M:BindEvnetOnJoyStick(Obj, Events)
   self.Obj = Obj
   self.Event_OnMoved = Events.OnMoved
   self.Event_OnPointerDown = Events.OnPointerDown
   self.Event_OnPointerUp = Events.OnPointerUp
 end
-
 function M:SetJoyStickLocked(bNewLocked)
   self.bLocked = bNewLocked
 end
-
 return M

@@ -14,15 +14,12 @@ local FocusStates = {
   PhantomConfig = "PhantomConfig",
   Tips = "Tips"
 }
-
 function M:IsWheelFocusState(StateName)
   return StateName == FocusStates.Wheel or StateName == FocusStates.WheelItem or StateName == FocusStates.ListToWheel
 end
-
 function M:IsListFocusState(StateName)
   return StateName == FocusStates.List or StateName == FocusStates.WheelToList
 end
-
 function M:Construct()
   self.bIsFocusable = true
   self.AnalogValue = FVector2D(0, 0)
@@ -61,16 +58,13 @@ function M:Construct()
   self:AddInputMethodChangedListen()
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:InitNavigationRules()
   for index, value in ipairs(self.CurWheelBtns) do
     value.bIsFocusable = false
   end
-  
   local function func()
     return self.List_Item
   end
-  
   self.List_Item:SetNavigationRuleCustom(EUINavigation.Left, func)
   self.List_Item:SetNavigationRuleCustom(EUINavigation.Right, func)
   self.List_Item:SetNavigationRuleCustom(EUINavigation.Down, func)
@@ -84,7 +78,6 @@ function M:InitNavigationRules()
   self.Tips_Item:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   self.Tips_Item:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
 end
-
 function M:EndWheelAnimation()
   M.Super.EndWheelAnimation(self)
   if self.IsGamepadInput then
@@ -99,7 +92,6 @@ function M:EndWheelAnimation()
   end
   self:InitWheelNavigationRules()
 end
-
 function M:CreateBottomKeyInfo()
   self.RightMouseButtonKeyInfoList = {
     KeyInfoList = {
@@ -139,7 +131,6 @@ function M:CreateBottomKeyInfo()
     Desc = GText("BattleWheel_SwitchWheel")
   }
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   self.AnalogValue.X = 0
@@ -158,11 +149,11 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     elseif StateName == FocusStates.ListToWheel or StateName == FocusStates.WheelToList then
       self:CancelPreInstallMode()
       self.FSM:Clear()
+      self:SetFocus()
     end
   end
   self:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
 end
-
 function M:GetDesiredFocusTarget()
   local State = self.FSM:Peak()
   local StateName = State.Name
@@ -174,22 +165,20 @@ function M:GetDesiredFocusTarget()
       return self.CurWheelWidget
     end
   end
-  if IsValid(State.Widget) then
-    return State.Widget
-  elseif StateName == FocusStates.List or StateName == FocusStates.WheelToList then
+  if StateName == FocusStates.List or StateName == FocusStates.WheelToList then
     return self:NavigateToList(State.Content)
+  elseif IsValid(State.Widget) then
+    return State.Widget
   else
     return self.CurWheelWidget
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputDevice, CurGamepadName)
   if self.IsInFocusPath then
     self:OnFocusChanged()
   end
 end
-
 function M:InitKeyEvents()
   self:ClearAllKeyEvents()
   self:AddKeyDownEvent(EKeys.Escape.KeyName, self.OnBackKeyDown)
@@ -221,7 +210,6 @@ function M:InitKeyEvents()
     self:AddLongPressEvent(UIConst.GamePadKey.FaceButtonLeft, 1.5, self.OnClearWheelLongPressStart, self.OnClearWheelLongPressCancel, self.OnClearWheelLongPressEnd)
   end
 end
-
 function M:InitBottomKeyInfo()
   local BottomKeyInfo = {}
   if self.IsGamepadInput then
@@ -240,7 +228,6 @@ function M:InitBottomKeyInfo()
   self.BottomKeyInfo = BottomKeyInfo
   self.FaceButtonLeftKeyWidget = self.Btn_Wipe.Key_GamePad
 end
-
 function M:NavigateToList(Content)
   Content = Content or self.ItemtDetailContent
   local Idx = self.List_Item:GetIndexForItem(Content)
@@ -258,7 +245,6 @@ function M:NavigateToList(Content)
   end
   return self.List_Item
 end
-
 function M:OnBackKeyDown()
   if self:IsShowingItemDetail() then
     self:HideItemDetail()
@@ -272,7 +258,7 @@ function M:OnBackKeyDown()
     local BackState = self.FSM:Peak()
     local BackStateName = BackState.Name
     if not self:IsFocusStateValid(BackState) then
-      if State.Name ~= FocusStates.Wheel then
+      if State.Name ~= FocusStates.Wheel and self.FSM:GetInvalidState() ~= State then
         return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurWheelWidget), true
       end
     elseif BackStateName == FocusStates.Wheel then
@@ -288,17 +274,14 @@ function M:OnBackKeyDown()
     end
   end
 end
-
 function M:OnWheelToLeftBtnClicked(...)
   M.Super.OnWheelToLeftBtnClicked(self, ...)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurWheelWidget), true
 end
-
 function M:OnWheelToRightBtnClicked(...)
   M.Super.OnWheelToRightBtnClicked(self, ...)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurWheelWidget), true
 end
-
 function M:OnFilterToLeftKeyDown()
   local LeftContent = self.FiterContents[self.CurFilterContent.Idx - 1]
   if LeftContent then
@@ -306,7 +289,6 @@ function M:OnFilterToLeftKeyDown()
     return self:GetReplyAfterFilterChanged()
   end
 end
-
 function M:OnFilterToRightKeyDown()
   local RightContent = self.FiterContents[self.CurFilterContent.Idx + 1]
   if RightContent then
@@ -314,17 +296,12 @@ function M:OnFilterToRightKeyDown()
     return self:GetReplyAfterFilterChanged()
   end
 end
-
 function M:GetReplyAfterFilterChanged()
   local State = self.FSM:Peak()
   local StateName = State.Name
   if StateName == FocusStates.Wheel or StateName == FocusStates.WheelItem then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), State.Widget), true
   elseif StateName == FocusStates.ListToWheel then
-    local ItemIdx = self.List_Item:GetIndexForItem(State.ListContent)
-    if ItemIdx < 0 then
-      State.ListContent = self.List_Item:GetItemAt()
-    end
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), State.Widget), true
   elseif StateName == FocusStates.List then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:NavigateToList(State.Content)), true
@@ -337,7 +314,6 @@ function M:GetReplyAfterFilterChanged()
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), State.Widget), true
   end
 end
-
 function M:OnListItemSelectionChanged(Content, IsSelected)
   M.Super.OnListItemSelectionChanged(self, Content, IsSelected)
   if not self.IsGamepadInput then
@@ -356,10 +332,8 @@ function M:OnListItemSelectionChanged(Content, IsSelected)
     self.FSM:Push(State)
   end
 end
-
 local _NavigatePosOffsetPercent = FVector2D(0.5, 0)
 local _NavigatePosOffsetAlignment = FVector2D(0.5, 0.8)
-
 function M:OnEntryInitialized(Content, Widget)
   M.Super.OnEntryInitialized(self, Content, Widget)
   Widget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
@@ -384,7 +358,6 @@ function M:OnEntryInitialized(Content, Widget)
   Widget:SetNavigatePosOffsetPercent(_NavigatePosOffsetPercent)
   Widget:SetNavigatePosAngle(0)
 end
-
 function M:SelectWheelSlot(CurrentSlotIdx, LastSlotIdx)
   M.Super.SelectWheelSlot(self, CurrentSlotIdx, LastSlotIdx)
   local State = self.FSM:Peak()
@@ -400,7 +373,6 @@ function M:SelectWheelSlot(CurrentSlotIdx, LastSlotIdx)
     })
   end
 end
-
 function M:UpdateAKeyText()
   local State = self.FSM:Peak()
   local StateName = State.Name
@@ -429,7 +401,6 @@ function M:UpdateAKeyText()
   end
   self.Key_A:SetDescription(self.KeyInfo_A.Desc)
 end
-
 function M:OnWheelSlotHoverChanged(LastSlot, CurrentSlot)
   if not self.IsGamepadInput then
     return
@@ -454,7 +425,6 @@ function M:OnWheelSlotHoverChanged(LastSlot, CurrentSlot)
   self.FSM:Push(State)
   self:UpdateAKeyText()
 end
-
 function M:SetItemDetailContent(Content, WheelIdx, SlotIdx)
   local State = self.FSM:Peak()
   local StateName = State.Name
@@ -464,7 +434,6 @@ function M:SetItemDetailContent(Content, WheelIdx, SlotIdx)
     self.Super.SetItemDetailContent(self, Content, WheelIdx, SlotIdx)
   end
 end
-
 function M:CancelPreInstallMode()
   local State = self.FSM:Peak()
   local SlotIdx = State.SlotIdx or State.WheelSlotIdx
@@ -472,7 +441,6 @@ function M:CancelPreInstallMode()
     self.CurWheelWidget:SetPreInstallSlot(SlotIdx, nil)
   end
 end
-
 function M:Init(Params)
   M.Super.Init(self, Params)
   self._OnAddedToFocusPath = Params.OnAddedToFocusPath
@@ -480,26 +448,22 @@ function M:Init(Params)
   self.FSM:Clear()
   self:OnFocusChanged()
 end
-
 function M:OnAddedToFocusPath()
   self.IsInFocusPath = true
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Parent, self)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   self.IsInFocusPath = false
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Parent, self)
   end
 end
-
 function M:OnModifyWheelInitParams(Params)
   function Params.OnAddedToFocusPathEvent(_self, Widget)
     if not self.IsGamepadInput then
       self.FSM:Clear()
-      
       self.FSM:Push({
         Name = FocusStates.Wheel,
         Widget = Widget
@@ -513,7 +477,8 @@ function M:OnModifyWheelInitParams(Params)
         Name = FocusStates.ListToWheel,
         Widget = Widget,
         ListContent = State.Content,
-        SlotIdx = self.CurWheelWidget:FindFirtEmptySlotIdx() or 1
+        SlotIdx = self.CurWheelWidget:FindFirtEmptySlotIdx() or 1,
+        bHideEquipButton = true
       })
     elseif StateName == FocusStates.ListToWheel then
     elseif StateName == FocusStates.WheelItem then
@@ -524,25 +489,20 @@ function M:OnModifyWheelInitParams(Params)
       })
     end
   end
-  
   function Params.OnRemovedFromFocusPathEvent(_self, Widget)
   end
-  
   function Params.OnAnalogValueChanged(_self, MyGeometry, InAnalogInputEvent)
     if self.IsGamepadInput and self.FSM:Peak().Name == FocusStates.Wheel then
       return UIUtils.Unhandled, true
     end
   end
 end
-
 function M:OnFilterContentCreated(Content)
   function Content.OnAddedToFocusPath(_Content)
   end
-  
   function Content.OnRemovedFromFocusPath()
   end
 end
-
 function M:OnListItemContentCreated(Content)
   Content.OnAddedToFocusPathEvent = {
     Obj = self,
@@ -563,14 +523,16 @@ function M:OnListItemContentCreated(Content)
           Name = FocusStates.WheelToList,
           Content = _Content,
           WheelSlotIdx = State.SlotIdx,
-          Widget = self:NavigateToList(_Content)
+          Widget = self:NavigateToList(_Content),
+          bHideEquipButton = true
         })
       elseif StateName == FocusStates.WheelToList then
         self.FSM:Push({
           Name = FocusStates.WheelToList,
           Content = _Content,
           WheelSlotIdx = State.WheelSlotIdx,
-          Widget = self:NavigateToList(_Content)
+          Widget = self:NavigateToList(_Content),
+          bHideEquipButton = true
         })
       else
         self.FSM:Push({
@@ -589,7 +551,6 @@ function M:OnListItemContentCreated(Content)
     Params = Content
   }
 end
-
 function M:OnEmptyListItemContentCreated(Content)
   Content.OnAddedToFocusPathEvent = {
     Obj = self,
@@ -604,7 +565,6 @@ function M:OnEmptyListItemContentCreated(Content)
     Params = Content
   }
 end
-
 function M:SetContentButtonWhenPreInstall(Content)
   if Content.IsPhantom then
     Content.ItemDetailsButton01EventInfo = self:CreateOpenPhantomButtonEventInfo(Content)
@@ -618,25 +578,20 @@ function M:SetContentButtonWhenPreInstall(Content)
     Content.SelfWidget.ItemDetailsButton02EventInfo = Content.ItemDetailsButton02EventInfo
   end
 end
-
 function M:OnModifyPlanParams(Params)
   Params.FocusKeyImgPath = "LS"
-  
   function Params.OnGetBackReply(_self)
     return self:OnBackKeyDown()
   end
-  
   function Params.OnAddedToFocusPath()
     self.FSM:Push({
       Name = FocusStates.Plan,
       Widget = self.BattleMenu_Plan
     })
   end
-  
   function Params.OnRemovedFromFocusPath()
   end
 end
-
 function M:UpdateItemDetails(Content)
   if Content then
     Content.ItemDetailKeyDownEvent = {
@@ -650,7 +605,9 @@ function M:UpdateItemDetails(Content)
       Callback = function(_self, Widget)
         self.FSM:Push({
           Name = FocusStates.Tips,
-          Widget = self.Tips_Item
+          Content = Content,
+          Widget = self.Tips_Item,
+          bHideEquipButton = true
         })
       end,
       Params = self.Tips_Item
@@ -664,11 +621,9 @@ function M:UpdateItemDetails(Content)
   end
   M.Super.UpdateItemDetails(self, Content)
 end
-
 function M:UpdateItemDetailsButton(Content)
   local State = self.FSM:Peak()
-  local StateName = State.Name
-  if self.IsGamepadInput and StateName == FocusStates.WheelToList then
+  if self.IsGamepadInput and State.bHideEquipButton then
     local EventInfo01 = Content.ItemDetailsButton01EventInfo
     local EventInfo02 = Content.ItemDetailsButton02EventInfo
     if EventInfo01 and EventInfo01.ButtonClickPadKey == UIConst.GamePadKey.FaceButtonLeft then
@@ -677,17 +632,19 @@ function M:UpdateItemDetailsButton(Content)
     if EventInfo02 and EventInfo02.ButtonClickPadKey == UIConst.GamePadKey.FaceButtonLeft then
       EventInfo02 = nil
     end
-    self.Tips_Item:InitButton01Event(EventInfo01)
-    self.Tips_Item:InitButtonEvent(EventInfo02)
+    M.Super.UpdateItemDetailsButton(self, {ItemDetailsButton01EventInfo = EventInfo01, ItemDetailsButton02EventInfo = EventInfo02})
+    if State.Name == FocusStates.Tips then
+      local JumpItem = self.Tips_Item:GetFirstJumpItem()
+      if JumpItem then
+      end
+    end
     return
   end
   M.Super.UpdateItemDetailsButton(self, Content)
 end
-
 function M:IsFocusStateValid(State)
   return State and (State.Content or IsValid(State.Widget))
 end
-
 function M:IsStateHasAnyFocus(State)
   local StateName = State.Name
   if StateName == FocusStates.List then
@@ -708,11 +665,9 @@ function M:IsStateHasAnyFocus(State)
     return self:IsShowingItemDetail() and self.Tips_Item:GetFirstJumpItem()
   end
 end
-
 function M:OnFocusStateChanged(NewState, OldState, Operation)
   self:OnFocusChanged()
 end
-
 function M:OnFocusChanged()
   self:InitWheelNavigationRules()
   self:InitKeyEvents()
@@ -752,10 +707,9 @@ function M:OnFocusChanged()
     end
   end
   if self:IsShowingItemDetail() and self.ItemtDetailContent and self.ItemtDetailContent ~= self.NoneContent then
-    self:UpdateItemDetails(self.ItemtDetailContent)
+    self:UpdateItemDetailsButton(self.ItemtDetailContent)
   end
 end
-
 function M:InitWheelNavigationRules()
   local StateName = self.FSM:Peak().Name
   self.CurWheelWidget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
@@ -774,7 +728,6 @@ function M:InitWheelNavigationRules()
     self.CurWheelWidget:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   end
 end
-
 function M:InitKeyStyle()
   for index, value in ipairs(self.BattleWheelWidgets) do
     value:CreateCommonKey(nil)
@@ -823,7 +776,6 @@ function M:InitKeyStyle()
     end
   end
 end
-
 function M:UpdateClearBtn()
   if next(self.WheelContens) then
     self.Btn_Wipe:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -831,22 +783,19 @@ function M:UpdateClearBtn()
     self.Btn_Wipe:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnFocusToPlanKeyDown()
   if self.bShowMenuPlan then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.BattleMenu_Plan), true
   end
 end
-
 function M:OnSpecialLeftKeyDown()
   if self:IsShowingItemDetail() and self.ItemtDetailContent ~= self.NoneContent then
-    local IsHandled = self.Tips_Item:OnGamePadDown(UIConst.GamePadKey.SpecialLeft)
-    if IsHandled then
-      return UIUtils.Handled, true
+    local Btn = self.Tips_Item:GetFirstJumpItem()
+    if Btn then
+      return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), Btn), true
     end
   end
 end
-
 function M:OnFaceButtonTopKeyDown()
   if not self:IsShowingItemDetail() or self.ItemtDetailContent == self.NoneContent then
     return
@@ -854,8 +803,10 @@ function M:OnFaceButtonTopKeyDown()
   local State = self.FSM:Peak()
   local StateName = State.Name
   local Content
-  if StateName == FocusStates.WheelItem or StateName == FocusStates.ListToWheel then
+  if StateName == FocusStates.WheelItem then
     Content = self.CurWheelWidget:GetSlotItem(State.SlotIdx)
+  elseif StateName == FocusStates.ListToWheel then
+    Content = State.ListContent
   elseif StateName == FocusStates.List or StateName == FocusStates.WheelToList then
     Content = State.Content
   end
@@ -874,7 +825,6 @@ function M:OnFaceButtonTopKeyDown()
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), Widget), true
   end
 end
-
 function M:OpenPhantomWeaponMenu(...)
   local Widget = M.Super.OpenPhantomWeaponMenu(self, ...)
   if Widget then
@@ -885,16 +835,13 @@ function M:OpenPhantomWeaponMenu(...)
     return Widget
   end
 end
-
 function M:OnPhantomWeaponMenuClosed()
   self.FSM:Pop()
   M.Super.OnPhantomWeaponMenuClosed(self)
 end
-
 function M:OnFaceButtonRightKeyDown()
   return self:OnBackKeyDown()
 end
-
 function M:OnFaceButtonLeftKeyUp()
   local State = self.FSM:Peak()
   local StateName = State.Name
@@ -937,7 +884,6 @@ function M:OnFaceButtonLeftKeyUp()
     end
   end
 end
-
 function M:OnListItemClicked(Content)
   if not Content.Id then
     return
@@ -995,7 +941,6 @@ function M:OnListItemClicked(Content)
     self:SetItemDetailContent(Content)
   end
 end
-
 function M:OnFaceButtonBottomKeyDown()
   local State = self.FSM:Peak()
   local StateName = State.Name
@@ -1025,7 +970,6 @@ function M:OnFaceButtonBottomKeyDown()
     end
   end
 end
-
 function M:OnRightThumbKeyDown()
   local Widget
   self:OnWeaponConfigBtnClicked()
@@ -1033,7 +977,6 @@ function M:OnRightThumbKeyDown()
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), Widget), true
   end
 end
-
 function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   if UKismetInputLibrary.InputEvent_IsRepeat(InputEvent) then
@@ -1045,7 +988,6 @@ function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled, false
 end
-
 function M:OnParentKeyUp(MyGeometry, InKeyEvent)
   local Reply, IsHandled = self:ProcessOnKeyUp(MyGeometry, InKeyEvent)
   if IsHandled then
@@ -1053,13 +995,11 @@ function M:OnParentKeyUp(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled, false
 end
-
 function M:OnClearWheelLongPressStart()
   if self.FaceButtonLeftKeyWidget then
     self.FaceButtonLeftKeyWidget:OnButtonPressed(false, true, 0, self:GetLongPressAnimationTime(UIConst.GamePadKey.FaceButtonLeft))
   end
 end
-
 function M:OnClearWheelLongPressCancel()
   if self.FaceButtonLeftKeyWidget then
     self.FaceButtonLeftKeyWidget:OnButtonReleased()
@@ -1067,12 +1007,10 @@ function M:OnClearWheelLongPressCancel()
     self.FaceButtonLeftKeyWidget:PlayAnimation(self.FaceButtonLeftKeyWidget.Normal)
   end
 end
-
 function M:OnClearWheelLongPressEnd()
   self:OnClearWheelLongPressCancel()
   self:OnClearWheelBtnClicked()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local Reply = UIUtils.Handled
   if IsValid(self.PhantomWeaponMenu) then
@@ -1080,9 +1018,10 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   if self.IsGamepadInput then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:GetDesiredFocusTarget())
+  else
+    self:OnFocusChanged()
   end
   return Reply
 end
-
 AssembleComponents(M)
 return M

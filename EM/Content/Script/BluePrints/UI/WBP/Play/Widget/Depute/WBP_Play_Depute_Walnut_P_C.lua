@@ -5,7 +5,6 @@ local WalnutBagModel = WalnutBagController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddDispatcher(EventID.OnDungeonsUpdate, self, self.OnDungeonsUpdate)
@@ -13,11 +12,9 @@ function M:Construct()
   self:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   self:AddInputMethodChangedListen()
 end
-
 function M:OnDungeonsUpdate()
   self:InitContent()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -28,22 +25,32 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if IsUseKeyAndMouse then
     return
   else
-    self.List_Walnut:NavigateToIndex(0)
+    local CommonDialog = UIManager(self):GetUI("CommonDialog")
+    if CommonDialog then
+      CommonDialog:SetFocus()
+    else
+      self:FocusList_WalnutItem()
+    end
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
-  self.List_Walnut:NavigateToIndex(0)
+  self:FocusList_WalnutItem()
   self:UpdatKeyDisplay()
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
+function M:FocusList_WalnutItem()
+  local ItemData = self.List_Walnut:GetItemAt(0)
+  if ItemData.SelfWidget then
+    ItemData.SelfWidget:SetFocus()
+  else
+    self.List_Walnut:NavigateToIndex(0)
+  end
+end
 function M:UpdateTimeCountDown()
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.LeftTimeDict)
   self.Text_WalnutTime:SetText(GText("UI_Walnut_Dungeon_Refresh"))
   self.Com_Time:SetTimeText(GText("UI_Walnut_Dungeon_Refresh"), RemainTimeDict)
 end
-
 function M:InitContent(Parent)
   self.List_Walnut:ClearListItems()
   local Avatar = GWorld:GetAvatar()
@@ -73,21 +80,16 @@ function M:InitContent(Parent)
     return A.Sequence < B.Sequence
   end)
   for i, DungeonData in ipairs(WalnutSelectDungeonData) do
-    self:AddTimer(0.03 * (i - 1), function()
-      local Content = NewObject(self.LevelCellContentClass)
-      Content.DungeonData = DungeonData
-      Content.DungeonIds = DungeonIdMap[DungeonData.WalnutType]
-      Content.Parent = self
-      self.List_Walnut:AddItem(Content)
-    end, false, 0, nil, true)
+    local Content = NewObject(self.LevelCellContentClass)
+    Content.DungeonData = DungeonData
+    Content.DungeonIds = DungeonIdMap[DungeonData.WalnutType]
+    Content.Parent = self
+    self.List_Walnut:AddItem(Content)
   end
-  self:AddTimer(0.01, function()
-    self.List_Walnut:NavigateToIndex(0)
-    self:UpdatKeyDisplay()
-  end, false, 0, "_Depute_Walnut_List_Walnut")
+  self:FocusList_WalnutItem()
+  self:UpdatKeyDisplay()
   self:InitBtnExplanation()
 end
-
 function M:InitBtnExplanation()
   local BtnExplanationConfigData = {}
   BtnExplanationConfigData.ClickCallback = self.OnBtnExplanationClickCallback
@@ -101,11 +103,9 @@ function M:InitBtnExplanation()
     }
   })
 end
-
 function M:OnBtnExplanationClickCallback()
   print("lgc@ OnBtnExplanationClickCallback")
 end
-
 function M:UpdatKeyDisplay()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   if not Item then
@@ -192,7 +192,6 @@ function M:UpdatKeyDisplay()
   end
   Item:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -203,13 +202,17 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if InKeyName == UIConst.GamePadKey.SpecialRight then
-    self.WBP_Com_BtnExplanation:OnBtnClick()
+    local CommonDialog = UIManager(self):GetUI("CommonDialog")
+    if not CommonDialog then
+      self.WBP_Com_BtnExplanation:OnBtnClick()
+    else
+      CommonDialog:SetFocus()
+    end
     IsEventHandled = true
   end
   if IsEventHandled then
@@ -218,5 +221,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 return M

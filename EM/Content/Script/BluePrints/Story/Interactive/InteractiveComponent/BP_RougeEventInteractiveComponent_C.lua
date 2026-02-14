@@ -1,7 +1,6 @@
 local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
 require("UnLua")
 local M = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_HomeInteractiveComponent_C")
-
 function M:LoadUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -27,5 +26,4 @@ function M:LoadUI()
     Avatar:NotifyTriggerRougeLikeStoryEvent(ShopStoryId)
   end
 end
-
 return M

@@ -2,11 +2,9 @@ require("UnLua")
 local BP_LGUIProgressBarLogic_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_LGUIProgressBarLogic_C:ReceiveBeginPlay()
   self.Direction = 0
 end
-
 function BP_LGUIProgressBarLogic_C:ReceiveUpdate()
   if self.RootWidget and not self.RootWidget.bIsResetting and self.RootWidget.bCanDrag and self:CheckArrowIn() then
     self:CheckCanGoIn()
@@ -14,7 +12,6 @@ function BP_LGUIProgressBarLogic_C:ReceiveUpdate()
     self:OnEnter()
   end
 end
-
 function BP_LGUIProgressBarLogic_C:RegisterSelf()
   self.OverLap = 0
   self.LastBarStack = TArray(ULGUILifeCycleUIBehaviour)
@@ -25,7 +22,6 @@ function BP_LGUIProgressBarLogic_C:RegisterSelf()
     self.Direction = 1
   end
 end
-
 function BP_LGUIProgressBarLogic_C:CheckCanGoIn()
   if self.RootWidget.bIsResetting then
     return
@@ -48,7 +44,6 @@ function BP_LGUIProgressBarLogic_C:CheckCanGoIn()
     self:ChangeNowBar(self.Directions[1])
   end
 end
-
 function BP_LGUIProgressBarLogic_C:GameMapHas(Index)
   if self.RootWidget.GameMap[Index] == nil then
     return false
@@ -61,7 +56,6 @@ function BP_LGUIProgressBarLogic_C:GameMapHas(Index)
   end
   return false
 end
-
 function BP_LGUIProgressBarLogic_C:ChangeNowBar(Index)
   if self.RootWidget == nil or self.RootWidget.NowBarArray:Contains(self) then
     return
@@ -95,7 +89,6 @@ function BP_LGUIProgressBarLogic_C:ChangeNowBar(Index)
   self.RootWidget.NowBarArray[Index] = self
   self:ChangeFillType()
 end
-
 function BP_LGUIProgressBarLogic_C:ChangeFillType()
   if self.RootWidget == nil or not self.RootWidget.NowBarArray:Contains(self) then
     return
@@ -113,7 +106,6 @@ function BP_LGUIProgressBarLogic_C:ChangeFillType()
     self:SetFillType(3)
   end
 end
-
 function BP_LGUIProgressBarLogic_C:SetPercentByArrow()
   if not self.RootWidget.NowBarArray:Contains(self) then
     return
@@ -133,7 +125,6 @@ function BP_LGUIProgressBarLogic_C:SetPercentByArrow()
   end
   self:SetPercent(Percent)
 end
-
 function BP_LGUIProgressBarLogic_C:CheckArrowIn()
   for i, v in pairs(self.RootWidget.ArrowArray) do
     local ArrowPosition = v:GetOwner():Cast(UE4.AUIContainerActor):GetUIItem():GetAnchoredPosition()
@@ -143,7 +134,6 @@ function BP_LGUIProgressBarLogic_C:CheckArrowIn()
   end
   return false
 end
-
 function BP_LGUIProgressBarLogic_C:SetCrossMoveRange(PositionX, PositionY)
   local Position = self.RootWidget.PointerPosition
   if PositionX and PositionY then
@@ -183,7 +173,6 @@ function BP_LGUIProgressBarLogic_C:SetCrossMoveRange(PositionX, PositionY)
   end
   return XOut, YOut
 end
-
 function BP_LGUIProgressBarLogic_C:SetHorizenMoveRange(PositionX, PositionY)
   local Position = self.RootWidget.PointerPosition
   if PositionX and PositionY then
@@ -213,7 +202,6 @@ function BP_LGUIProgressBarLogic_C:SetHorizenMoveRange(PositionX, PositionY)
   end
   return XOut, YOut
 end
-
 function BP_LGUIProgressBarLogic_C:SetVerticalMoveRange(PositionX, PositionY)
   local Position = self.RootWidget.PointerPosition
   if PositionX and PositionY then
@@ -243,7 +231,6 @@ function BP_LGUIProgressBarLogic_C:SetVerticalMoveRange(PositionX, PositionY)
   end
   return XOut, YOut
 end
-
 function BP_LGUIProgressBarLogic_C:SetMoveRange(PositionX, PositionY)
   if 0 == self.Type then
     return self:SetCrossMoveRange(PositionX, PositionY)
@@ -254,13 +241,11 @@ function BP_LGUIProgressBarLogic_C:SetMoveRange(PositionX, PositionY)
   end
   return 0, 0
 end
-
 function BP_LGUIProgressBarLogic_C:OnEnter()
   if self.bIsEnd then
     self.RootWidget:TryGameOver()
   end
 end
-
 function BP_LGUIProgressBarLogic_C:Overlaped()
   self.RootWidget.bIsResetting = true
   self.RootWidget:ChangeColorOverlap()
@@ -269,7 +254,6 @@ function BP_LGUIProgressBarLogic_C:Overlaped()
   self.RootWidget.bCanDrag = false
   self.RootWidget:LuaReset()
 end
-
 function BP_LGUIProgressBarLogic_C:Reset()
   self.LastBarStack:Clear()
   self.OverLap = 0
@@ -284,7 +268,6 @@ function BP_LGUIProgressBarLogic_C:Reset()
   self.Arrow = nil
   self.ArrowPosition = nil
 end
-
 function BP_LGUIProgressBarLogic_C:ChangeColorOnEnd()
   local Color = UE4.UColorWheelHelper.HexToLinearColor("E9B971")
   if self.ColorHandle then
@@ -302,5 +285,4 @@ function BP_LGUIProgressBarLogic_C:ChangeColorOnEnd()
     self.EndColorHandle = nil
   end
 end
-
 return BP_LGUIProgressBarLogic_C

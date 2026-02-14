@@ -1,7 +1,6 @@
 require("UnLua")
 require("DataMgr")
 local BP_Battle_Remote_Attack_C = Class()
-
 function BP_Battle_Remote_Attack_C:Construct()
   self.Overridden.Construct(self)
   self.mat = self.Bar_Cooldown:GetDynamicMaterial()
@@ -12,7 +11,6 @@ function BP_Battle_Remote_Attack_C:Construct()
   self.IsCooldown = false
   self.CooldownStartValue = 0
 end
-
 function BP_Battle_Remote_Attack_C:Tick(MyGeometry, InDeltaTime)
   if not UE4.UKismetSystemLibrary.IsValid(self.WBP_PlayerSkill) or not UE4.UKismetSystemLibrary.IsValid(self.WBP_PlayerSkill.Owner) then
     return
@@ -52,11 +50,9 @@ function BP_Battle_Remote_Attack_C:Tick(MyGeometry, InDeltaTime)
   end
   self.mat:SetScalarParameterValue("Percent", hotvalue / MaxHotValue)
 end
-
 function BP_Battle_Remote_Attack_C:GetNowHotValue()
   return self.mat:K2_GetScalarParameterValue("Percent")
 end
-
 function BP_Battle_Remote_Attack_C:AfterClickFire(IsPress)
   if self.WBP_PlayerSkill == nil or nil == self.WBP_PlayerSkill.Owner then
     return
@@ -71,9 +67,7 @@ function BP_Battle_Remote_Attack_C:AfterClickFire(IsPress)
     ShootingTakeAim:SetInPressShootingBtn(IsPress)
   end
 end
-
 function BP_Battle_Remote_Attack_C:Destruct()
   UE4.UKismetSystemLibrary.K2_ClearTimerHandle(self, self.timerHandle)
 end
-
 return BP_Battle_Remote_Attack_C

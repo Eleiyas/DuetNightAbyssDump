@@ -1,20 +1,16 @@
 local core = require("md5.core")
-
 function core.sumhexa(k)
   k = core.sum(k)
   return (string.gsub(k, ".", function(c)
     return string.format("%02x", string.byte(c))
   end))
 end
-
 local function get_ipad(c)
   return string.char(c:byte() ~ 54)
 end
-
 local function get_opad(c)
   return string.char(c:byte() ~ 92)
 end
-
 function core.hmacmd5(data, key)
   if #key > 64 then
     key = core.sum(key)
@@ -26,5 +22,4 @@ function core.hmacmd5(data, key)
   local ostr = core.sumhexa(opad_s .. istr)
   return ostr
 end
-
 return core

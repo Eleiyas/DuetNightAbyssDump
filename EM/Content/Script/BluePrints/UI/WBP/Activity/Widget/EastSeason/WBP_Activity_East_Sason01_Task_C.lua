@@ -1,12 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local EastSeasonQuestUtils = require("BluePrints.UI.WBP.Activity.Widget.EastSeason.EastSeasonQuestUtils")
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   self:RefreshTabReddot()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self)
   self.EventId, self.TabId, self.ParentWidget = ...
@@ -14,7 +12,6 @@ function M:OnLoaded(...)
   self.List_Item:NavigateToIndex(0)
   self.Btn_GetAll.Button_Area.OnClicked:Add(self, self.OnBtnGetAllClicked)
 end
-
 function M:Construct()
   self.Tab:BindEventOnTabSelected(self, self.OnTabChange)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -22,8 +19,16 @@ function M:Construct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
+  self.List_Item.OnCreateEmptyContent:Bind(self, function()
+    local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+    Obj.IsEmpty = true
+    return Obj
+  end)
 end
-
+function M:Destruct()
+  self.List_Item.OnCreateEmptyContent:Unbind()
+  self.Super.Destruct(self)
+end
 function M:InitUI()
   self:PlayAnimation(self.In)
   self.AllTabInfo = {}
@@ -105,14 +110,12 @@ function M:InitUI()
   self.Text_Tip:SetText(GText("Event_102001_Quest01_Tips"))
   self:RefreshTabReddot()
 end
-
 function M:RefreshUI()
   self:BuildAndSortQuestList(self.TabId)
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshTabReddot()
   if not self.AllTabInfo then
     return
@@ -123,7 +126,6 @@ function M:RefreshTabReddot()
     self.Tab:ShowTabRedDot(i, nil, needShowReddot, nil)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self.IsClosingUi then
     return UE4.UWidgetBlueprintLibrary.UnHandled()
@@ -150,7 +152,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:CloseSelf()
   if self.BackgroundWidgets then
     for index, widget in pairs(self.BackgroundWidgets) do
@@ -163,14 +164,14 @@ function M:CloseSelf()
   self.ParentWidget:RefreshUI()
   self.IsClosingUi = true
   self:PlayAnimation(self.Out)
+  EventManager:FireEvent(EventID.OnReturnToActivityEntry)
+  EventManager:FireEvent(EventID.OnActivityEntryShowVisible)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Out then
     self.Super.Close(self)
   end
 end
-
 function M:OnTabChange(TabWidget)
   if self.CanPlayChange then
     self:PlayAnimation(self.Change)
@@ -179,7 +180,6 @@ function M:OnTabChange(TabWidget)
   self:InitQuestPhaseContent(TabId)
   self.List_Item:NavigateToIndex(0)
 end
-
 function M:BuildAndSortQuestList(TabId)
   for _, phaseConfig in pairs(DataMgr.CommonQuestPhase) do
     if phaseConfig.Index == TabId and phaseConfig.EventId == self.EventId then
@@ -238,8 +238,8 @@ function M:BuildAndSortQuestList(TabId)
       end
     end
   end
+  self.List_Item:RequestFillEmptyContent()
 end
-
 function M:InitQuestPhaseContent(TabId)
   self.TabId = TabId
   self:BuildAndSortQuestList(TabId)
@@ -271,19 +271,16 @@ function M:InitQuestPhaseContent(TabId)
     self.Text_Tip:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self:UpdateListItemState()
   self:UpdateGetAllBtn()
 end
-
 function M:UpdateListItemState()
   local DisplayedWidgets = self.List_Item:GetDisplayedEntryWidgets()
   for _, Widget in pairs(DisplayedWidgets) do
     Widget:UpdateListItemState()
   end
 end
-
 function M:UpdateGetAllBtn()
   if EastSeasonQuestUtils:IsQuestPhaseCanGetReward(self.EventId, self.QuestPhaseId) then
     self.Btn_GetAll:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -352,25 +349,21 @@ function M:UpdateGetAllBtn()
     end
   end
 end
-
 function M:OnBtnGetAllClicked()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       if 0 == Ret then
         UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
-        
         self:RefreshUI()
         self.Btn_GetAll:SetVisibility(UIConst.VisibilityOp.Collapsed)
         self.IsCanGetAllReward = false
         self:RefreshTabReddot()
       end
     end
-    
     Avatar:CallServer("CommonQuestActivityGetPhaseReward", Callback, self.EventId, self.QuestPhaseId)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
     self.Btn_GetAll:SetGamePadIconVisible(false)
@@ -378,5 +371,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Btn_GetAll:SetGamePadIconVisible(true)
   end
 end
-
 return M

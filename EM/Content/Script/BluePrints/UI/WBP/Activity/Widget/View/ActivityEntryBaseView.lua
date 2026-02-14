@@ -3,7 +3,6 @@ local ActivityCommon = require("BluePrints.UI.WBP.Activity.ActivityCommon")
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 local ActivityUtils = require("BluePrints.UI.WBP.Activity.ActivityUtils")
 local M = {}
-
 function M:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "Activity", nil)
   self:BindToAnimationFinished(self.In, {
@@ -14,7 +13,6 @@ function M:PlayInAnim()
   })
   self:PlayAnimationForward(self.In)
 end
-
 function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "Activity", {ToEnd = 1})
   self.WidgetBGAnchor:ClearChildren()
@@ -24,26 +22,28 @@ function M:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function M:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
   return true
 end
-
+function M:CheckIsInCloseSelfState()
+  if self:IsAnimationPlaying(self.Out) then
+    return true
+  end
+  return false
+end
 function M:CreateEmptyContent()
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.IsEmpty = true
   return Obj
 end
-
 function M:InitTabView(TopTabInfo, SubTabInfo, BtnClickFunction, VirtualClickCallback, SelectTabIndex)
   self.Activity_Tab:Init(TopTabInfo)
   self.List_Tab:ClearListItems()
   local LimitStartIndex, NormalStartIndex = 1, 1
   local LimitCount, UnLimitCount = 0, 0
-  self.LastIndex = #SubTabInfo.Tabs
   for _, TabInfo in ipairs(SubTabInfo.Tabs) do
     local ItemObject = NewObject(UIUtils.GetCommonItemContentClass())
     ItemObject.TabId = TabInfo.TabId
@@ -67,6 +67,14 @@ function M:InitTabView(TopTabInfo, SubTabInfo, BtnClickFunction, VirtualClickCal
     end
     ItemObject.IsSelected = ItemObject.Index == SelectTabIndex
     self.List_Tab:AddItem(ItemObject)
+    if ItemObject.IsSelected then
+      self:AddTimer(0.1, function()
+        self.List_Tab:BP_ScrollItemIntoView(ItemObject)
+        self.LastIndex = self.List_Tab:GetNumItems()
+        local DisplayedWidgets = self.List_Tab:GetDisplayedEntryWidgets():ToTable()
+        self.DisplayedWidgetsCount = #DisplayedWidgets
+      end)
+    end
   end
   local IsEmpty = 0 == self.List_Tab:GetNumItems()
   if IsEmpty then
@@ -102,7 +110,12 @@ function M:InitTabView(TopTabInfo, SubTabInfo, BtnClickFunction, VirtualClickCal
     self.List_Tab:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
   self.List_Tab.OnListViewScrolled:Add(self, self.OnList_TabScrolled)
-  self:OnList_TabScrolled()
+  self:AddTimer(0.2, function()
+    if not self then
+      return
+    end
+    self:OnList_TabScrolled()
+  end)
   if nil == self.InitEventTypeTabReddot then
     self.InitEventTypeTabReddot = true
     self.EventTypeTab:UpdateEventTypeTabReddot(true)
@@ -131,14 +144,13 @@ function M:InitTabView(TopTabInfo, SubTabInfo, BtnClickFunction, VirtualClickCal
     end
     local NodeName = ActivityReddotHelper.GetEventTabNodeName(Content.TabId)
     local ReddotNode = ReddotManager.GetTreeNode(NodeName)
-    if nil == ReddotNode then
+    if nil == ReddotNode or nil == ReddotNode.Count then
       return false
     else
       return ReddotNode.Count > 0 and ReddotNode.ReddotType == EReddotType.Normal
     end
   end)
 end
-
 function M:OnList_TabScrolled()
   self:AddTimer(0.033, function()
     if not self then
@@ -157,7 +169,7 @@ function M:OnList_TabScrolled()
       end
       local NodeName = ActivityReddotHelper.GetEventTabNodeName(Content.TabId)
       local ReddotNode = ReddotManager.GetTreeNode(NodeName)
-      if nil == ReddotNode then
+      if nil == ReddotNode or nil == ReddotNode.Count then
         return false
       else
         return ReddotNode.Count > 0 and ReddotNode.ReddotType == EReddotType.Normal
@@ -165,7 +177,6 @@ function M:OnList_TabScrolled()
     end)
   end)
 end
-
 function M:JumpToTargetTab(SelectTabIndex)
   if nil == SelectTabIndex then
     return
@@ -182,7 +193,6 @@ function M:JumpToTargetTab(SelectTabIndex)
     end
   end
 end
-
 function M:ShowContentView(IsEmpty, IsInMobileMode)
   if IsInMobileMode then
     if IsEmpty then
@@ -205,7 +215,6 @@ function M:ShowContentView(IsEmpty, IsInMobileMode)
     self.Group_Normal:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:RefreshViewAfterPageDataSet(ActivityConfigData, PageConfigData)
   if not ActivityConfigData then
     return
@@ -222,6 +231,11 @@ function M:RefreshViewAfterPageDataSet(ActivityConfigData, PageConfigData)
     local NewBgWidget = UIManager(self):CreateWidget(EventBgBPPath)
     if NewBgWidget.InitUI then
       NewBgWidget:InitUI(ActivityConfigData, PageConfigData)
+    end
+    if NewBgWidget.PlayBGVideo then
+      self:AddTimer(0.01, function()
+        NewBgWidget:PlayBGVideo(ActivityConfigData, PageConfigData)
+      end)
     end
     if nil ~= NewBgWidget then
       local NeedHideNodeList = PageConfigData.HideBPNode
@@ -250,7 +264,7 @@ function M:RefreshViewAfterPageDataSet(ActivityConfigData, PageConfigData)
       end
     end
     self.WidgetBGAnchor:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  elseif PageConfigData.EventBg then
+  elseif PageConfigData and PageConfigData.EventBg then
     self.WidgetBGAnchor:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Image_MainBG:SetBrushResourceObject(LoadObject(PageConfigData.EventBg))
     self.Image_MainBG:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -263,7 +277,6 @@ function M:RefreshViewAfterPageDataSet(ActivityConfigData, PageConfigData)
     AudioManager(self):PlayUISound(self, FinalEventBgSound, ActivityCommon.MainUIName, nil)
   end
 end
-
 function M:CreateActivityPage(EventConfigData)
   local PageMain
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.PC then
@@ -280,7 +293,6 @@ function M:CreateActivityPage(EventConfigData)
   ContentOverlaySlot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   return PageMain
 end
-
 function M:AddActivityPageToNewNode(PageMain)
   if nil ~= PageMain then
     self.Group_Anchor:AddChildToOverlay(PageMain)
@@ -289,5 +301,4 @@ function M:AddActivityPageToNewNode(PageMain)
     ContentOverlaySlot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   end
 end
-
 return M

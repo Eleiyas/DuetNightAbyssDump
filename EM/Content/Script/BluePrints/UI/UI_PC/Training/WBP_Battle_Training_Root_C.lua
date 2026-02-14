@@ -21,7 +21,6 @@ local GamepadKeyTip = {
   Controller_Close = 1,
   Controller_Select = 2
 }
-
 function WBP_Battle_Training_Root_C:InitMonsterGallery(Owner)
   self.Owner = Owner
   self.Text_ChooseTitle:SetText(GText("UI_DUNGEON_DES_TRAINING_12"))
@@ -74,25 +73,19 @@ function WBP_Battle_Training_Root_C:InitMonsterGallery(Owner)
   self.Tab:SelectTab(1)
   self:ClearSelectedNumView()
   self.Btn_Delete:ForbidBtn(true)
-  
   function self.Btn_Delete.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   self.Btn_Show:ForbidBtn(true)
   self.Btn_Show_ButtonArea:SetIsEnabled(false)
   self.Key_BottomNum:SetForbidKey(true)
   self.Key_BottomDelete:SetForbidKey(true)
-  
   function self.Btn_Show.SoundFunc()
   end
-  
   self.Btn_Confirm:ForbidBtn(true)
-  
   function self.Btn_Confirm.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   end
-  
   self:InitEnemyLevelSetting()
   local IsPlayerInvincible = self:GetPlayerInvincible()
   self.InvincibleSetting.Btn_Setting:SetChecked(IsPlayerInvincible)
@@ -126,18 +119,15 @@ function WBP_Battle_Training_Root_C:InitMonsterGallery(Owner)
     self.ControllerFSM:Enter(FSMStates.FocusTab)
   end
 end
-
 function WBP_Battle_Training_Root_C:OnMonsterLvTextCommitted(CurNumber, PrevNumber)
   local Number = math.clamp(CurNumber, 1, self.MaxEnemyLevelToSpawn)
   self.EnemyLevelToSpawn = Number
 end
-
 function WBP_Battle_Training_Root_C:UnInitMonsterGallery()
   self.WBP_Com_CheckBox_LeftText:UnInitCommonCheckBox()
   self:RemoveItemsFromMonsterGallery()
   self:RemoveItemsFromMonsterChecked()
 end
-
 function WBP_Battle_Training_Root_C:InitTab()
   local MonsterCampData = DataMgr.MonsterCamp
   local ConfigData = {
@@ -185,13 +175,11 @@ function WBP_Battle_Training_Root_C:InitTab()
   self.Tab:BindEventOnTabSelected(self, self.OnMonsterCampTabSelected)
   self.Tab:Init(ConfigData)
 end
-
 function WBP_Battle_Training_Root_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Battle_Training_Root_C:RefreshBaseInfo()
   self:AddLSFocusTarget(self.WBP_Com_CheckBox_LeftText.Com_KeyImg, self.WBP_Com_CheckBox_LeftText, nil, true)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -200,7 +188,6 @@ function WBP_Battle_Training_Root_C:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_Battle_Training_Root_C:BP_GetDesiredFocusTarget()
   local CurrentState = self.ControllerFSM:Current()
   if CurrentState == FSMStates.FocusTab then
@@ -214,7 +201,6 @@ function WBP_Battle_Training_Root_C:BP_GetDesiredFocusTarget()
   end
   return nil
 end
-
 function WBP_Battle_Training_Root_C:InitGamepadConfig()
   if UIUtils.IsMobileInput() then
     return
@@ -341,7 +327,6 @@ function WBP_Battle_Training_Root_C:InitGamepadConfig()
     [FSMStates.FocusNumInput] = {}
   })
 end
-
 function WBP_Battle_Training_Root_C:EnterState_FocusTab()
   self.Owner.Tab:UpdateBottomKeyInfo_Quick({
     {
@@ -350,7 +335,6 @@ function WBP_Battle_Training_Root_C:EnterState_FocusTab()
     }
   })
 end
-
 function WBP_Battle_Training_Root_C:EnterState_FocusPanel()
   self.Owner.Tab:UpdateBottomKeyInfo_Quick({
     {
@@ -363,7 +347,6 @@ function WBP_Battle_Training_Root_C:EnterState_FocusPanel()
     }
   })
 end
-
 function WBP_Battle_Training_Root_C:EnterState_FocusBottom()
   self.Owner.Tab:UpdateBottomKeyInfo_Quick({
     {
@@ -376,10 +359,8 @@ function WBP_Battle_Training_Root_C:EnterState_FocusBottom()
     }
   })
 end
-
 function WBP_Battle_Training_Root_C:LeaveState_FocusBottom()
 end
-
 function WBP_Battle_Training_Root_C:EnterState_FocusRight()
   self.Owner.Tab:UpdateBottomKeyInfo_Quick({
     {
@@ -390,14 +371,12 @@ function WBP_Battle_Training_Root_C:EnterState_FocusRight()
   self.Key_SettingTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Com_NumInput:UpdateUIStyleInPlatform(false)
 end
-
 function WBP_Battle_Training_Root_C:LeaveState_FocusRight(NewState)
   self.Com_NumInput:UpdateUIStyleInPlatform(true)
   if NewState ~= FSMStates.FocusNumInput then
     self.Key_SettingTitle:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Battle_Training_Root_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -407,7 +386,6 @@ function WBP_Battle_Training_Root_C:RefreshOpInfoByInputDevice(CurInputDevice, C
     self:InitKeyboardView()
   end
 end
-
 function WBP_Battle_Training_Root_C:InitGamepadView()
   self.MaskLevelSetting:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Key_BottomNum:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -420,14 +398,12 @@ function WBP_Battle_Training_Root_C:InitGamepadView()
     self.Com_NumInput:UpdateUIStyleInPlatform(true)
   end
 end
-
 function WBP_Battle_Training_Root_C:InitKeyboardView()
   self.MaskLevelSetting:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Key_BottomNum:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Key_BottomDelete:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Key_SettingTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Battle_Training_Root_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -440,7 +416,6 @@ function WBP_Battle_Training_Root_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_Battle_Training_Root_C:Handle_PreviewKeyDownOnGamePad(InKeyName)
   local CurrentState = self.ControllerFSM:Current()
   if InKeyName == Const.GamepadDPadLeft then
@@ -479,7 +454,6 @@ function WBP_Battle_Training_Root_C:Handle_PreviewKeyDownOnGamePad(InKeyName)
   end
   return false
 end
-
 function WBP_Battle_Training_Root_C:Handle_KeyDownOnGamePad(InKeyName)
   local CurrentState = self.ControllerFSM:Current()
   if InKeyName == Const.GamepadLeftTrigger then
@@ -525,7 +499,6 @@ function WBP_Battle_Training_Root_C:Handle_KeyDownOnGamePad(InKeyName)
     return true
   end
 end
-
 function WBP_Battle_Training_Root_C:Handle_KeyUpOnGamePad(InKeyName)
   local CurrentState = self.ControllerFSM:Current()
   if InKeyName == Const.GamepadLeftTrigger then
@@ -542,7 +515,6 @@ function WBP_Battle_Training_Root_C:Handle_KeyUpOnGamePad(InKeyName)
     self.Com_Slider:Handle_KeyUpEventOnGamePad(InKeyName)
   end
 end
-
 function WBP_Battle_Training_Root_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -563,7 +535,6 @@ function WBP_Battle_Training_Root_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
 end
-
 function WBP_Battle_Training_Root_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -577,7 +548,6 @@ function WBP_Battle_Training_Root_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
 end
-
 function WBP_Battle_Training_Root_C:OnInvincibleSettingChanged(IsChecked)
   if IsChecked then
     self.InvincibleSetting.Text_SettingType:SetText(GText("UI_DUNGEON_DES_TRAINING_29"))
@@ -586,7 +556,6 @@ function WBP_Battle_Training_Root_C:OnInvincibleSettingChanged(IsChecked)
   end
   self:SetPlayerInvincible(IsChecked)
 end
-
 function WBP_Battle_Training_Root_C:OnAISettingChanged(IsChecked)
   if IsChecked then
     self.AISetting.Text_SettingType:SetText(GText("UI_DUNGEON_DES_TRAINING_29"))
@@ -595,7 +564,6 @@ function WBP_Battle_Training_Root_C:OnAISettingChanged(IsChecked)
   end
   self:SetEnemyAIForbidden(IsChecked)
 end
-
 function WBP_Battle_Training_Root_C:InitEnemyLevelSetting()
   local Avatar = GWorld:GetAvatar()
   local PlayerLevel = math.min(Avatar and Avatar.Level or 1, #DataMgr.RegionLevel)
@@ -613,19 +581,15 @@ function WBP_Battle_Training_Root_C:InitEnemyLevelSetting()
     OwnerPanel = self
   })
 end
-
 function WBP_Battle_Training_Root_C:OnMinusEnemyLevelClicked(CurNumber, PrevNumber)
   self.EnemyLevelToSpawn = CurNumber
 end
-
 function WBP_Battle_Training_Root_C:OnAddEnemyLevelClicked(CurNumber, PrevNumber)
   self.EnemyLevelToSpawn = CurNumber
 end
-
 function WBP_Battle_Training_Root_C:OnMaxEnemyLevelClicked(CurNumber, PrevNumber)
   self.EnemyLevelToSpawn = CurNumber
 end
-
 function WBP_Battle_Training_Root_C:OnMonsterCampTabSelected(TabWidget)
   DebugPrint("Tianyi@ OnMonsterCampTabSelected: " .. TabWidget.Idx)
   self.CachedRuleId2ItemData = {}
@@ -648,7 +612,6 @@ function WBP_Battle_Training_Root_C:OnMonsterCampTabSelected(TabWidget)
     self:OnShowSelectedMonstersButtonClicked()
   end
 end
-
 function WBP_Battle_Training_Root_C:FilterItemsForMonsterGallery(MonsterCampOption)
   self.MonsterGallery = {}
   local Avatar = GWorld:GetAvatar()
@@ -673,7 +636,6 @@ function WBP_Battle_Training_Root_C:FilterItemsForMonsterGallery(MonsterCampOpti
       local function GetFirstDigit(InNumber)
         return tonumber(string.sub(tostring(InNumber), 1, 1))
       end
-      
       local FirstDigitA = GetFirstDigit(RuleA.Info.Priority)
       local FirstDigitB = GetFirstDigit(RuleB.Info.Priority)
       if FirstDigitA ~= FirstDigitB then
@@ -684,7 +646,6 @@ function WBP_Battle_Training_Root_C:FilterItemsForMonsterGallery(MonsterCampOpti
     end
   end)
 end
-
 function WBP_Battle_Training_Root_C:RemoveItemsFromMonsterGallery()
   UIUtils.StopListViewFramingInAnimation(self.List_Item, {
     TimerKeys = self._MonsterGalleryListInTimers,
@@ -692,7 +653,6 @@ function WBP_Battle_Training_Root_C:RemoveItemsFromMonsterGallery()
   })
   self.List_Item:ClearListItems()
 end
-
 function WBP_Battle_Training_Root_C:AddItemsToMonsterGallery()
   local Avatar = GWorld:GetAvatar()
   self.List_Item:ClearListItems()
@@ -732,7 +692,6 @@ function WBP_Battle_Training_Root_C:AddItemsToMonsterGallery()
   }
   self.List_Item:RequestPlayEntriesAnim()
 end
-
 function WBP_Battle_Training_Root_C:OnShowUnlockedMonstersPressed(CheckBoxChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self.OnlyShowUnlockedMonsters = CheckBoxChecked
@@ -747,7 +706,6 @@ function WBP_Battle_Training_Root_C:OnShowUnlockedMonstersPressed(CheckBoxChecke
     end)
   end
 end
-
 function WBP_Battle_Training_Root_C:CheckMonsterGalleryItemCanChecked(Item)
   local ItemData = Item.Data
   if ItemData.Locked then
@@ -758,7 +716,6 @@ function WBP_Battle_Training_Root_C:CheckMonsterGalleryItemCanChecked(Item)
   end
   return true
 end
-
 function WBP_Battle_Training_Root_C:FocusLastSelectedEntry()
   if self.LastSelectedItemData then
     local LastSelectedItemEntry = self:GetMonsterGalleryItemEntry(self.LastSelectedItemData.RuleId)
@@ -769,7 +726,6 @@ function WBP_Battle_Training_Root_C:FocusLastSelectedEntry()
   end
   return false
 end
-
 function WBP_Battle_Training_Root_C:UnSelectLastSelectedEntry()
   if self.LastSelectedItemData then
     local LastSelectedItemEntry = self:GetMonsterGalleryItemEntry(self.LastSelectedItemData.RuleId)
@@ -788,7 +744,6 @@ function WBP_Battle_Training_Root_C:UnSelectLastSelectedEntry()
     self.LastSelectedCheckedItemData = nil
   end
 end
-
 function WBP_Battle_Training_Root_C:ShowMonsterRuleInfoView(RuleId)
   self.Text_Enemy_NameTitle:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Text_Desc:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -802,12 +757,10 @@ function WBP_Battle_Training_Root_C:ShowMonsterRuleInfoView(RuleId)
     self.ScrollTextDesc:ScrollToStart()
   end
 end
-
 function WBP_Battle_Training_Root_C:ClearMonsterRuleInfoView()
   self.Text_Enemy_NameTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text_Desc:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Battle_Training_Root_C:SetMonsterGalleryEntrySelected(RuleId, bSelected, bIgnoreChecked)
   local ItemData = self:GetMonsterGalleryItemData(RuleId)
   local ItemEntry = self:GetMonsterGalleryItemEntry(RuleId)
@@ -837,7 +790,6 @@ function WBP_Battle_Training_Root_C:SetMonsterGalleryEntrySelected(RuleId, bSele
   end
   return true
 end
-
 function WBP_Battle_Training_Root_C:SetMonsterCheckedEntrySelected(RuleId, bSelected)
   local ItemData = self:GetCheckedItemData(RuleId)
   local ItemEntry = self:GetCheckedItemEntry(RuleId)
@@ -858,7 +810,6 @@ function WBP_Battle_Training_Root_C:SetMonsterCheckedEntrySelected(RuleId, bSele
     self:ClearMonsterRuleInfoView()
   end
 end
-
 function WBP_Battle_Training_Root_C:SetMonsterEntryChecked(RuleId, bChecked, CheckNumber)
   local ItemData = self:GetMonsterGalleryItemData(RuleId)
   local ItemEntry = self:GetMonsterGalleryItemEntry(RuleId)
@@ -887,7 +838,6 @@ function WBP_Battle_Training_Root_C:SetMonsterEntryChecked(RuleId, bChecked, Che
   end
   self.MonsterCheckedTotalNum = self.MonsterCheckedTotalNum + self.MonsterCheckedNum[RuleId] - LastCheckedNum
 end
-
 function WBP_Battle_Training_Root_C:OnMonsterGalleryEntryClicked(Item)
   if Item.Data.Locked then
     self:ShowLockedInfo()
@@ -904,17 +854,14 @@ function WBP_Battle_Training_Root_C:OnMonsterGalleryEntryClicked(Item)
   end
   self:UpdateSelectedNum(Item.RuleId)
 end
-
 function WBP_Battle_Training_Root_C:ShowLockedInfo()
   self.WS:SetActiveWidgetIndex(2)
 end
-
 function WBP_Battle_Training_Root_C:OnCheckedMonsterEntryClicked(Item)
   DebugPrint("Tianyi@ OnCheckedMonsterEntryClicked, RuleId = " .. Item.RuleId)
   self:SetMonsterCheckedEntrySelected(Item.RuleId, true)
   self:UpdateSelectedNum(Item.RuleId)
 end
-
 function WBP_Battle_Training_Root_C:SelectCheckedItemData(ItemData)
   self:UnSelectLastSelectedEntry()
   ItemData.Selected = true
@@ -923,7 +870,6 @@ function WBP_Battle_Training_Root_C:SelectCheckedItemData(ItemData)
   self:UpdateSelectedNum(ItemData.RuleId)
   self.Text_ChooseNum:SetText(ItemData.CheckedNum)
 end
-
 function WBP_Battle_Training_Root_C:RemoveAllCheckedItems()
   if self.IsCheckedPreviewPanelDisplayed then
     self:OnShowSelectedMonstersButtonClicked()
@@ -951,7 +897,6 @@ function WBP_Battle_Training_Root_C:RemoveAllCheckedItems()
     self.ControllerFSM:Enter(FSMStates.FocusTab)
   end
 end
-
 function WBP_Battle_Training_Root_C:RemoveItemsFromMonsterChecked()
   self:PlayAnimation(self.List_Out)
   UIUtils.StopListViewFramingInAnimation(self.List_Select_Mod, {
@@ -960,7 +905,6 @@ function WBP_Battle_Training_Root_C:RemoveItemsFromMonsterChecked()
   })
   self.List_Select_Mod:ClearListItems()
 end
-
 function WBP_Battle_Training_Root_C:AddItemsToMonsterChecked()
   self.List_Select_Mod:ClearListItems()
   local FirstItemSelected = false
@@ -1005,7 +949,6 @@ function WBP_Battle_Training_Root_C:AddItemsToMonsterChecked()
   self._SelectedMonsterListInTimers = UIUtils.PlayListViewFramingInAnimation(self, self.List_Select_Mod, Params)
   self:PlayAnimation(self.List_In)
 end
-
 function WBP_Battle_Training_Root_C:OnShowSelectedMonstersButtonClicked()
   if not self.IsCheckedPreviewPanelDisplayed then
     self.CachedRuleId2CheckedItemData = {}
@@ -1023,7 +966,6 @@ function WBP_Battle_Training_Root_C:OnShowSelectedMonstersButtonClicked()
   end
   self.IsCheckedPreviewPanelDisplayed = not self.IsCheckedPreviewPanelDisplayed
 end
-
 function WBP_Battle_Training_Root_C:OnSelectedItemDeclineClicked(ItemData)
   DebugPrint("Tianyi@ OnSelectedItemDeclineClicked")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_minus", nil, nil)
@@ -1034,7 +976,6 @@ function WBP_Battle_Training_Root_C:OnSelectedItemDeclineClicked(ItemData)
     self.Tab:SetFocus()
   end
 end
-
 function WBP_Battle_Training_Root_C:RemoveFromSelectedList(ItemData)
   local RuleId = ItemData.RuleId
   local Index = self.List_Select_Mod:GetIndexForItem(ItemData)
@@ -1067,7 +1008,6 @@ function WBP_Battle_Training_Root_C:RemoveFromSelectedList(ItemData)
     self:UpdateSelectedNum(self.LastPressedRule)
   end
 end
-
 function WBP_Battle_Training_Root_C:OnMonsterCheckedNumChanged(Value)
   AudioManager(self):PlayUISound(self, "event:/ui/common/slider_value_change", nil, nil)
   if self.LastPressedRule == nil then
@@ -1080,7 +1020,6 @@ function WBP_Battle_Training_Root_C:OnMonsterCheckedNumChanged(Value)
   self.MonsterCheckedTotalNum = self.MonsterCheckedTotalNum + self.MonsterCheckedNum[self.LastPressedRule] - LastCheckedNum
   self:UpdateSelectedNum(self.LastPressedRule)
 end
-
 function WBP_Battle_Training_Root_C:UpdateSelectedNum(RuleId)
   local SelectedItemData = self:GetMonsterGalleryItemData(RuleId)
   if SelectedItemData then
@@ -1105,7 +1044,6 @@ function WBP_Battle_Training_Root_C:UpdateSelectedNum(RuleId)
   local SelectableNum = MaxSpawnableNum - self.MonsterCheckedTotalNum + (self.MonsterCheckedNum[RuleId] or 0)
   self:UpdateSelectedNumView(SelectedNum, self.MonsterCheckedTotalNum, MaxSpawnableNum, SelectableNum)
 end
-
 function WBP_Battle_Training_Root_C:UpdateSelectedNumView(CurrentSelectedNum, TotalSelectedNum, MaxSelectedNum, CurrentSelectableNum)
   self.WS:SetActiveWidgetIndex(1)
   self.Text_SelectedChoosNum:SetText(TotalSelectedNum)
@@ -1155,7 +1093,6 @@ function WBP_Battle_Training_Root_C:UpdateSelectedNumView(CurrentSelectedNum, To
   self.Com_Slider:RefreshBaseInfo()
   self.Com_Slider:UpdateSliderAndProgress()
 end
-
 function WBP_Battle_Training_Root_C:ClearSelectedNumView()
   self.LastPressedRule = nil
   self:SetTextSelectColor(self.Text_SelectedChoosNumNormal)
@@ -1179,22 +1116,18 @@ function WBP_Battle_Training_Root_C:ClearSelectedNumView()
   self.Com_Slider:SetValue(0)
   self.Com_Slider:UpdateSliderAndProgress()
 end
-
 function WBP_Battle_Training_Root_C:SetTextSelectColor(TextColor)
   if not self.CurrentSelectedNumColor or self.CurrentSelectedNumColor ~= TextColor then
     self.Text_SelectedChoosNum:SetColorAndOpacity(TextColor)
     self.CurrentSelectedNumColor = TextColor
   end
 end
-
 function WBP_Battle_Training_Root_C:SetButtonAndSliderEnabled(BtnMinEnabled, BtnAddEnabled, BtnMaxEnabled, SliderEnabled)
   self.Com_Slider:SetEnabled(SliderEnabled)
 end
-
 function WBP_Battle_Training_Root_C:OnBtnDeleteClicked()
   self:RemoveAllCheckedItems()
 end
-
 function WBP_Battle_Training_Root_C:OnMinusSelectedMonsterNumClicked(NewValue)
   if self.LastPressedRule ~= nil then
     self.MonsterCheckedTotalNum = self.MonsterCheckedTotalNum - self.MonsterCheckedNum[self.LastPressedRule] + NewValue
@@ -1202,7 +1135,6 @@ function WBP_Battle_Training_Root_C:OnMinusSelectedMonsterNumClicked(NewValue)
     self:UpdateSelectedNum(self.LastPressedRule)
   end
 end
-
 function WBP_Battle_Training_Root_C:OnAddSelectedMonsterNumClicked(NewValue)
   if self.LastPressedRule ~= nil then
     self.MonsterCheckedTotalNum = self.MonsterCheckedTotalNum - self.MonsterCheckedNum[self.LastPressedRule] + NewValue
@@ -1210,7 +1142,6 @@ function WBP_Battle_Training_Root_C:OnAddSelectedMonsterNumClicked(NewValue)
     self:UpdateSelectedNum(self.LastPressedRule)
   end
 end
-
 function WBP_Battle_Training_Root_C:OnMaxSelectedMonsterNumClicked()
   if self.LastPressedRule ~= nil then
     local SelectableNum = self:GetMaxSpawnableNum() - self.MonsterCheckedTotalNum
@@ -1219,7 +1150,6 @@ function WBP_Battle_Training_Root_C:OnMaxSelectedMonsterNumClicked()
     self:UpdateSelectedNum(self.LastPressedRule)
   end
 end
-
 function WBP_Battle_Training_Root_C:GetMonsterGalleryItemData(RuleId)
   if self.CachedRuleId2ItemData[RuleId] and self.CachedRuleId2ItemData[RuleId].RuleId == RuleId then
     return self.CachedRuleId2ItemData[RuleId]
@@ -1234,7 +1164,6 @@ function WBP_Battle_Training_Root_C:GetMonsterGalleryItemData(RuleId)
   self.CachedRuleId2ItemData[RuleId] = nil
   return nil
 end
-
 function WBP_Battle_Training_Root_C:GetMonsterGalleryItemEntry(RuleId)
   if self.CachedRuleId2ItemEntry[RuleId] and self.CachedRuleId2ItemEntry[RuleId].Data.RuleId == RuleId then
     return self.CachedRuleId2ItemEntry[RuleId]
@@ -1249,7 +1178,6 @@ function WBP_Battle_Training_Root_C:GetMonsterGalleryItemEntry(RuleId)
   self.CachedRuleId2ItemEntry[RuleId] = nil
   return nil
 end
-
 function WBP_Battle_Training_Root_C:GetCheckedItemData(RuleId)
   if self.CachedRuleId2CheckedItemData[RuleId] and self.CachedRuleId2CheckedItemData[RuleId].RuleId == RuleId then
     return self.CachedRuleId2CheckedItemData[RuleId]
@@ -1264,7 +1192,6 @@ function WBP_Battle_Training_Root_C:GetCheckedItemData(RuleId)
   self.CachedRuleId2CheckedItemData[RuleId] = nil
   return nil
 end
-
 function WBP_Battle_Training_Root_C:GetCheckedItemEntry(RuleId)
   if self.CachedRuleId2CheckedItemEntry[RuleId] and self.CachedRuleId2CheckedItemEntry[RuleId].Data.RuleId == RuleId then
     return self.CachedRuleId2CheckedItemEntry[RuleId]
@@ -1279,7 +1206,6 @@ function WBP_Battle_Training_Root_C:GetCheckedItemEntry(RuleId)
   self.CachedRuleId2CheckedItemEntry[RuleId] = nil
   return nil
 end
-
 function WBP_Battle_Training_Root_C:CheckMonsterInCamp(MonsterId, CampOption)
   local MonsterData = DataMgr.Monster[MonsterId]
   if not MonsterData then
@@ -1303,13 +1229,11 @@ function WBP_Battle_Training_Root_C:CheckMonsterInCamp(MonsterId, CampOption)
   end
   return CampOption == self.TabId2MonsterCampOption[#self.TabId2MonsterCampOption]
 end
-
 function WBP_Battle_Training_Root_C:GetMaxSpawnableNum()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local MonsterNum = GameState.MonsterNum
   return math.max(0, self.TrainingData.MaxEnemyNum - MonsterNum)
 end
-
 function WBP_Battle_Training_Root_C:GetCheckedMonsterTypesNum()
   local CheckedMonsterTypesNum = 0
   for _, Checked in pairs(self.MonsterChecked) do
@@ -1317,7 +1241,6 @@ function WBP_Battle_Training_Root_C:GetCheckedMonsterTypesNum()
   end
   return CheckedMonsterTypesNum
 end
-
 function WBP_Battle_Training_Root_C:GetTrainingComp()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
@@ -1325,7 +1248,6 @@ function WBP_Battle_Training_Root_C:GetTrainingComp()
   end
   return nil
 end
-
 function WBP_Battle_Training_Root_C:TrainingCreateMonster()
   if not self.MonsterChecked then
     return
@@ -1353,7 +1275,6 @@ function WBP_Battle_Training_Root_C:TrainingCreateMonster()
   self.Btn_Confirm:ForbidBtn(true)
   self:ClosePanel()
 end
-
 function WBP_Battle_Training_Root_C:GetIsEnemyAIForbidden()
   local TrainingComp = self:GetTrainingComp()
   if TrainingComp then
@@ -1361,7 +1282,6 @@ function WBP_Battle_Training_Root_C:GetIsEnemyAIForbidden()
   end
   return nil
 end
-
 function WBP_Battle_Training_Root_C:SetEnemyAIForbidden(IsForbidden)
   local TrainingComp = self:GetTrainingComp()
   if TrainingComp then
@@ -1369,7 +1289,6 @@ function WBP_Battle_Training_Root_C:SetEnemyAIForbidden(IsForbidden)
     self:GetIsEnemyAIForbidden()
   end
 end
-
 function WBP_Battle_Training_Root_C:GetPlayerInvincible()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if PlayerController then
@@ -1377,7 +1296,6 @@ function WBP_Battle_Training_Root_C:GetPlayerInvincible()
     return PlayerCharacter:IsInvincible()
   end
 end
-
 function WBP_Battle_Training_Root_C:SetPlayerInvincible(IsInvincible)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if PlayerController then
@@ -1385,11 +1303,10 @@ function WBP_Battle_Training_Root_C:SetPlayerInvincible(IsInvincible)
     PlayerCharacter:SetInvincible(IsInvincible, "Training")
   end
 end
-
 function WBP_Battle_Training_Root_C:ClosePanel()
   self.IsClosing = true
+  self:SetPlayerEndInteractive()
   self.Owner:Close()
 end
-
 AssembleComponents(WBP_Battle_Training_Root_C)
 return WBP_Battle_Training_Root_C

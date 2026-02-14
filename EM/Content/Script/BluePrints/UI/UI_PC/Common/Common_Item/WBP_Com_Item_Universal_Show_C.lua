@@ -1,19 +1,18 @@
 require("UnLua")
 local M = Class({
-  "BluePrints.UI.BP_UIState_C"
+  "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(ParentWidget)
   self.ParentWidget = ParentWidget
   self.WidgetMap = {}
 end
-
 function M:InitCommonView()
   self.Node_Widget:ClearChildren()
   self:SetItem(self.ParentWidget.Type)
   self:SetItemIcon(self.ParentWidget.ItemIcon)
   self:SetTypeIcon(self.ParentWidget.TypeIcon)
-  self:SetName(self.ParentWidget.Name)
+  self:SetName(self.ParentWidget.Name, self.ParentWidget.Rarity)
+  self:SetEmpty(self.ParentWidget.IsEmpty)
   self:SetRarity(self.ParentWidget.Rarity, self.ParentWidget.IsLock)
   self:SetAscend(self.ParentWidget.Type, self.ParentWidget.Id, self.ParentWidget.EnhanceLevel)
   self:SetIntron(self.ParentWidget.Type, self.ParentWidget.Id, self.ParentWidget.GradeLevel)
@@ -21,7 +20,6 @@ function M:InitCommonView()
   self.ParentWidget:SetNew(self.ParentWidget.Content.IsNew)
   self.ParentWidget:SetSelected(self.ParentWidget.Content.IsSelect)
 end
-
 function M:SetItem(Type)
   if "Weapon" == Type then
     local Object = LoadObject("/Game/UI/Materials/CommonItem/MI_CommonItem_Show_Weapon.MI_CommonItem_Show_Weapon")
@@ -33,17 +31,24 @@ function M:SetItem(Type)
     DebugPrint("Type Error")
   end
 end
-
 function M:SetItemIcon(ItemIconPath)
-  local ItemIcon = LoadObject(ItemIconPath)
+  local ItemIcon, MainTex
+  if ItemIconPath then
+    ItemIcon = LoadObject(ItemIconPath)
+    MainTex = LoadObject("/Game/UI/Texture/Static/Image/Common/Item/T_Show_Item.T_Show_Item")
+  else
+    ItemIcon = LoadObject("/Game/UI/Texture/Dynamic/Image/Head/Avatar/T_Head_Empty.T_Head_Empty")
+    MainTex = LoadObject("/Game/UI/Texture/Static/Image/Common/Item/T_Show_Item_Empty.T_Show_Item_Empty")
+  end
   local ItemDynamicMaterial = self.Item.Image_Item:GetDynamicMaterial()
+  ItemDynamicMaterial:SetTextureParameterValue("MainTex", MainTex)
   ItemDynamicMaterial:SetTextureParameterValue("IconMap", ItemIcon)
 end
-
 function M:SetTypeIcon(TypeIconPath)
   if TypeIconPath then
     if not self.WidgetMap[self.AttributeWidget] then
-      self.AttributeWidget = self:CreateWidgetNew("ItemShowAttribute")
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.AttributeWidget = UIManager:_CreateWidgetNew("ItemShowAttribute")
       local TypeIcon = LoadObject(TypeIconPath)
       self.AttributeWidget.Attribute:SetBrushResourceObject(TypeIcon)
       self:AddWidgetToNode(self.AttributeWidget)
@@ -52,22 +57,18 @@ function M:SetTypeIcon(TypeIconPath)
     self:RemoveWidgetFromNode(self.AttributeWidget)
   end
 end
-
 function M:PlayAttributeWidgetNormal()
   if self.WidgetMap[self.AttributeWidget] then
     self.AttributeWidget:PlayAnimation(self.AttributeWidget.Normal)
   end
 end
-
 function M:PlayAttributeWidgeClick()
   if self.WidgetMap[self.AttributeWidget] then
     self.AttributeWidget:PlayAnimation(self.AttributeWidget.Click)
   end
 end
-
 function M:SetRarity(Rarity, IsLock)
   if not Rarity or Rarity < 1 or Rarity > 5 then
-    DebugPrint("No Rarity")
     return
   end
   local TempRarity = Rarity
@@ -77,7 +78,6 @@ function M:SetRarity(Rarity, IsLock)
     Saturation = self.Item.Saturation
   end
   local ItemDynamicMaterial = self.Item.Image_Item:GetDynamicMaterial()
-  local BgDynamicMaterial = self.Item.Image_Bg:GetDynamicMaterial()
   local LightBigColor = self.Item["Color_BottomBG_" .. TempRarity]
   local LightSmallColor = self.Item["Color_UpperBG_" .. TempRarity]
   local OutlineColor = self.Item["Color_OutLine_" .. Rarity]
@@ -86,26 +86,41 @@ function M:SetRarity(Rarity, IsLock)
   ItemDynamicMaterial:SetVectorParameterValue("Light_Big_Color", LightBigColor)
   ItemDynamicMaterial:SetVectorParameterValue("Light_Small_Color", LightSmallColor)
   ItemDynamicMaterial:SetVectorParameterValue("OutlineColor", OutlineColor)
-  BgDynamicMaterial:SetVectorParameterValue("OutlineColor", OutlineColor)
-  self.Item.Image_Text:SetBrushTintColor(TextColor)
 end
-
-function M:SetName(Name)
+function M:SetName(Name, Rarity)
   if Name then
     if not self.WidgetMap[self.NameWidget] then
-      self.NameWidget = self:CreateWidgetNew("ItemShowName")
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.NameWidget = UIManager:_CreateWidgetNew("ItemShowName")
       self:AddWidgetToNode(self.NameWidget)
     end
     self.NameWidget.Text_Name:SetText(GText(Name))
+    local FontMaterial = self.NameWidget.Text_Name:GetDynamicFontMaterial()
+    if Rarity and self.NameWidget["Quality_" .. Rarity] then
+      FontMaterial:SetTextureParameterValue("IconTex", self.NameWidget["Quality_" .. Rarity])
+    elseif self.NameWidget.Quality_0 then
+      FontMaterial:SetTextureParameterValue("IconTex", self.NameWidget.Quality_0)
+    end
   elseif self.WidgetMap[self.NameWidget] then
     self:RemoveWidgetFromNode(self.NameWidget)
   end
 end
-
+function M:SetEmpty(IsEmpty)
+  if IsEmpty then
+    if not self.WidgetMap[self.EmptyWidget] then
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.EmptyWidget = UIManager:_CreateWidgetNew("ItemShowEmpty")
+      self:AddWidgetToNode(self.EmptyWidget)
+    end
+  elseif self.WidgetMap[self.EmptyWidget] then
+    self:RemoveWidgetFromNode(self.EmptyWidget)
+  end
+end
 function M:SetStar(Num)
   if Num then
     if not self.WidgetMap[self.StarWidget] then
-      self.StarWidget = self:CreateWidgetNew("ItemShowStar")
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.StarWidget = UIManager:_CreateWidgetNew("ItemShowStar")
       self:AddWidgetToNode(self.StarWidget)
     end
     self.StarWidget.ListView_Star:ClearListItems()
@@ -117,22 +132,22 @@ function M:SetStar(Num)
     self:RemoveWidgetFromNode(self.StarWidget)
   end
 end
-
 function M:SetNew(IsNew)
   if IsNew then
     if not self.WidgetMap[self.NewWidget] then
-      self.NewWidget = self:CreateWidgetNew("ItemShowNew")
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.NewWidget = UIManager:_CreateWidgetNew("ItemShowNew")
       self:AddWidgetToNode(self.NewWidget)
     end
   elseif self.WidgetMap[self.NewWidget] then
     self:RemoveWidgetFromNode(self.NewWidget)
   end
 end
-
 function M:SetCheckBtn(Event)
   if Event then
     if not self.WidgetMap[self.CheckBtnWidget] then
-      self.CheckBtnWidget = self:CreateWidgetNew("ItemShowCheckBtn")
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.CheckBtnWidget = UIManager:_CreateWidgetNew("ItemShowCheckBtn")
       self:AddWidgetToNode(self.CheckBtnWidget)
     end
     if Event.Params then
@@ -147,11 +162,11 @@ function M:SetCheckBtn(Event)
     self:RemoveWidgetFromNode(self.CheckBtnWidget)
   end
 end
-
 function M:SetAscend(Type, Id, Num)
   if Num then
     if not self.WidgetMap[self.AscendWidget] then
-      self.AscendWidget = self:CreateWidgetNew("ItemShowAscend")
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      self.AscendWidget = UIManager:_CreateWidgetNew("ItemShowAscend")
       self:AddWidgetToNode(self.AscendWidget)
     end
     self.AscendWidget.ListView_Star:ClearListItems()
@@ -173,11 +188,9 @@ function M:SetAscend(Type, Id, Num)
     self:RemoveWidgetFromNode(self.AscendWidget)
   end
 end
-
 function M:SetIntron(Type, Id, Num)
   if Num then
     self.Item.Image_Type:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-    self.Item.Image_Type_Glow:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     local ImageTypeDynamicMaterial = self.Item.Image_Type:GetDynamicMaterial()
     ImageTypeDynamicMaterial:SetScalarParameterValue("Index", Num)
     local MaxIntron
@@ -193,10 +206,8 @@ function M:SetIntron(Type, Id, Num)
     end
   else
     self.Item.Image_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    self.Item.Image_Type_Glow:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:AddWidgetToNode(Widget)
   if not self.Node_Widget or not Widget then
     return
@@ -209,7 +220,6 @@ function M:AddWidgetToNode(Widget)
   Slot:SetVerticalAlignment(EVerticalAlignment.HAlign_Fill)
   Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
 end
-
 function M:RemoveWidgetFromNode(Widget)
   if not self.Node_Widget or not Widget then
     return
@@ -217,7 +227,6 @@ function M:RemoveWidgetFromNode(Widget)
   self.WidgetMap[Widget] = nil
   Widget:RemoveFromParent()
 end
-
 function M:SetCheckBtnKeyTipVisible(IsVisible)
   if not self.WidgetMap[self.CheckBtnWidget] then
     return
@@ -229,14 +238,12 @@ function M:SetCheckBtnKeyTipVisible(IsVisible)
     self.CheckBtnWidget.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:HideCheckBtnKeyTip()
   if not self.WidgetMap[self.CheckBtnWidget] then
     return
   end
   self.CheckBtnWidget.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnParentRefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
@@ -244,13 +251,10 @@ function M:OnParentRefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   self:SetCheckBtnKeyTipVisible(self.ParentWidget.Content.ShowCheckBtnKeyTip)
 end
-
 function M:InitKeyboardView()
   self:HideCheckBtnKeyTip()
 end
-
 return M

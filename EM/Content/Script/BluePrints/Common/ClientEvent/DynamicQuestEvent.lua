@@ -3,16 +3,14 @@ local DynamicQuestEvent = Class({
   "BluePrints.Common.TimerMgr"
 })
 local TimeUtils = require("Utils.TimeUtils")
-
 function DynamicQuestEvent:InitEvent(DynamicQuestId, Callback)
   self.Type = "DynamicQuest"
   self.DynamicQuestId = DynamicQuestId
   self.SpecialQuestFinishCallback = Callback
 end
-
 function DynamicQuestEvent:OnStartEvent(...)
   self.DynamicQuestConfig = DataMgr.DynQuest[self.DynamicQuestId]
-  assert(self.DynamicQuestConfig, "\230\137\190\228\184\141\229\136\176\229\138\168\230\128\129\228\187\187\229\138\161\231\188\150\229\143\183:\227\128\144" .. tostring(self.DynamicQuestConfig) .. "\227\128\145")
+  assert(self.DynamicQuestConfig, "找不到动态任务编号:【" .. tostring(self.DynamicQuestConfig) .. "】")
   self.TriggerBoxStaticCreatorId = self.DynamicQuestConfig.TriggerBoxID
   self.FailTriggerBoxID = self.DynamicQuestConfig.FailTriggerBoxID
   local Avatar = GWorld:GetAvatar()
@@ -23,9 +21,8 @@ function DynamicQuestEvent:OnStartEvent(...)
   EventManager:AddEvent(EventID.OnLeaveTriggerBox, self, self.OnLeaveTriggerBox)
   self:ActivateTrigger()
 end
-
 function DynamicQuestEvent:ActivateTrigger()
-  DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]Trigger\230\191\128\230\180\187 \229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. " " .. TimeUtils.TimeToHMSStr())
+  DebugPrint("[动态事件]Trigger激活 动态事件Id" .. tostring(self.DynamicQuestId) .. " " .. TimeUtils.TimeToHMSStr())
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if GameMode and GameMode.TriggerActiveStaticCreator_DynQuestId then
     GameMode:TriggerActiveStaticCreator_DynQuestId({
@@ -37,28 +34,28 @@ function DynamicQuestEvent:ActivateTrigger()
       }, self.DynamicQuestId)
     end
   else
-    DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]Trigger\230\191\128\230\180\187 \229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. " " .. TimeUtils.TimeToHMSStr() .. "\229\164\177\232\180\165\239\188\140GameMode\230\136\150TriggerActiveStaticCreator_DynQuestId\228\184\186\231\169\186")
+    DebugPrint("[动态事件]Trigger激活 动态事件Id" .. tostring(self.DynamicQuestId) .. " " .. TimeUtils.TimeToHMSStr() .. "失败，GameMode或TriggerActiveStaticCreator_DynQuestId为空")
   end
 end
-
 function DynamicQuestEvent:TryActivateEvent(...)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local CanTrigger = Avatar:CheckDynamicQuestIsInCantTriggerState(self.DynamicQuestId)
     if CanTrigger then
-      DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]\229\176\157\232\175\149\232\167\166\229\143\145\229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. " " .. TimeUtils.TimeToHMSStr())
+      DebugPrint("[动态事件]尝试触发动态事件Id" .. tostring(self.DynamicQuestId) .. " " .. TimeUtils.TimeToHMSStr())
       Avatar:TriggerDynamicQuestBegin(self.DynamicQuestId, function(Ret)
         if Ret == ErrorCode.RET_SUCCESS then
-          DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]\232\167\166\229\143\145\229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. "\230\136\144\229\138\159 " .. TimeUtils.TimeToHMSStr())
+          DebugPrint("[动态事件]触发动态事件Id" .. tostring(self.DynamicQuestId) .. "成功 " .. TimeUtils.TimeToHMSStr())
           self:OnActivateEvent()
         else
-          DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]\232\167\166\229\143\145\229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. "\229\164\177\232\180\165 " .. TimeUtils.TimeToHMSStr())
+          DebugPrint("[动态事件]触发动态事件Id" .. tostring(self.DynamicQuestId) .. "失败 " .. TimeUtils.TimeToHMSStr())
         end
       end)
+    else
+      DebugPrint("[动态事件]尝试触发动态事件Id" .. tostring(self.DynamicQuestId) .. "失败，任务不在可触发状态 " .. TimeUtils.TimeToHMSStr())
     end
   end
 end
-
 function DynamicQuestEvent:OnActivateEvent(...)
   PrintTable({
     OnActivateEvent = self.DynamicQuestId
@@ -92,7 +89,6 @@ function DynamicQuestEvent:OnActivateEvent(...)
     DynQuestId = self.DynamicQuestId
   })
 end
-
 function DynamicQuestEvent:TryFinishEvent(Result, Callback, NodeId, DialogueId, ForbidAnim)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -100,18 +96,15 @@ function DynamicQuestEvent:TryFinishEvent(Result, Callback, NodeId, DialogueId, 
       local function _Callback(Ret)
         self:OnFinishEvent(true, Callback, DialogueId, ForbidAnim)
       end
-      
       Avatar:TriggerDynamicQuestEnd(self.DynamicQuestId, "Success", _Callback, DialogueId)
     else
       local function _Callback(Ret)
         self:OnFinishEvent(false, Callback, nil, ForbidAnim)
       end
-      
       Avatar:TriggerDynamicQuestEnd(self.DynamicQuestId, "Fail", _Callback, DialogueId)
     end
   end
 end
-
 function DynamicQuestEvent:GetMainTaskBar()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -125,7 +118,6 @@ function DynamicQuestEvent:GetMainTaskBar()
   end
   return nil
 end
-
 function DynamicQuestEvent:OnFinishEvent(Result, Callback, DialogueId, ForbidAnim)
   local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -138,7 +130,6 @@ function DynamicQuestEvent:OnFinishEvent(Result, Callback, DialogueId, ForbidAni
     GameMode:TriggerOnDynQuestEnd(self.DynamicQuestId)
   end
   local DynEventUI = ClientEventUtils:GetDynEventUI()
-  
   local function PlayTaskBarAnim()
     local TaskBar = self:GetMainTaskBar()
     if TaskBar then
@@ -152,14 +143,13 @@ function DynamicQuestEvent:OnFinishEvent(Result, Callback, DialogueId, ForbidAni
       end
     end
   end
-  
   if false == Result then
-    DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]\229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. "\228\186\139\228\187\182\229\164\177\232\180\165 " .. TimeUtils.TimeToHMSStr())
+    DebugPrint("[动态事件]动态事件Id" .. tostring(self.DynamicQuestId) .. "事件失败 " .. TimeUtils.TimeToHMSStr())
     if true ~= ForbidAnim then
       DynEventUI:PlayFailAnim(GText("UI_DYNQUEST_FAIL"), PlayTaskBarAnim)
     end
   else
-    DebugPrint("[\229\138\168\230\128\129\228\186\139\228\187\182]\229\138\168\230\128\129\228\186\139\228\187\182Id" .. tostring(self.DynamicQuestId) .. "\228\186\139\228\187\182\230\136\144\229\138\159 " .. TimeUtils.TimeToHMSStr())
+    DebugPrint("[动态事件]动态事件Id" .. tostring(self.DynamicQuestId) .. "事件成功 " .. TimeUtils.TimeToHMSStr())
     if true ~= ForbidAnim then
       DynEventUI:PlaySuccessAnim(GText("UI_DYNQUEST_SUCCESS"), PlayTaskBarAnim)
     end
@@ -187,7 +177,6 @@ function DynamicQuestEvent:OnFinishEvent(Result, Callback, DialogueId, ForbidAni
     self.DynamicQuestFinishCallback(Result)
   end
 end
-
 function DynamicQuestEvent:ShowReward()
   local RewardId = self.DynamicQuestConfig.Reward
   local RewardList = {}
@@ -214,7 +203,6 @@ function DynamicQuestEvent:ShowReward()
   end
   UIUtils.ShowHudReward("UI_DYNQUEST_REWARD", RewardList)
 end
-
 function DynamicQuestEvent:Destroy(Result, Info)
   EventManager:RemoveEvent(EventID.OnDynamicQuestFail, self)
   EventManager:RemoveEvent(EventID.OnEnterTriggerBox, self)
@@ -239,10 +227,8 @@ function DynamicQuestEvent:Destroy(Result, Info)
     self.DynamicQuestStory = nil
   end
 end
-
 function DynamicQuestEvent:OnEnterTriggerBox(TriggerEventId, TriggerBase, EMActorEid)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
-  PrintTable({OnEnterTriggerBox = 1})
   if not Player then
     return
   end
@@ -254,7 +240,6 @@ function DynamicQuestEvent:OnEnterTriggerBox(TriggerEventId, TriggerBase, EMActo
     self:TryActivateEvent()
   end
 end
-
 function DynamicQuestEvent:OnLeaveTriggerBox(TriggerEventId, TriggerBase, EMActorEid)
   local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
   if ClientEventUtils:GetCurrentDoingDynamicEvent() ~= self then
@@ -266,12 +251,10 @@ function DynamicQuestEvent:OnLeaveTriggerBox(TriggerEventId, TriggerBase, EMActo
   end
   if TriggerEventId == self.FailTriggerBoxID and Player.Eid == EMActorEid then
     local _, LeaveTriggerTimerKey = Player:AddTimer(DataMgr.GlobalConstant.DynTriggerFailTime.ConstantValue, function()
-      PrintTable({OnLeaveTriggerBox = 1})
       self:TryFinishEvent(false)
       self.LeaveTriggerTimerKey = nil
     end, false, 0, "CheckDynamicEventFail")
     self.LeaveTriggerTimerKey = LeaveTriggerTimerKey
   end
 end
-
 return DynamicQuestEvent

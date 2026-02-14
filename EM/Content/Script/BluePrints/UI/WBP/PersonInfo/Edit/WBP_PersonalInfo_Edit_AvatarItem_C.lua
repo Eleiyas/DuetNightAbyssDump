@@ -2,35 +2,29 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnItemClick)
   self.Btn_Click.OnHovered:Add(self, self.OnItemHover)
   self.Btn_Click.OnUnHovered:Add(self, self.OnItemUnHover)
   self.Btn_Click.OnPressed:Add(self, self.OnItemPress)
 end
-
 function M:OnItemClick()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnItemHover()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/hover_btn_large_crystal", nil, nil)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnItemUnHover()
   if self:IsAnimationPlaying(self.Click) then
     return
   end
   self:PlayAnimation(self.UNHover)
 end
-
 function M:OnItemPress()
   self:PlayAnimation(self.Press)
 end
-
 function M:FreshView(image, name, lv, Rarity, Uuid)
   self.bIsEmpty = false
   self.Uuid = Uuid
@@ -55,7 +49,6 @@ function M:FreshView(image, name, lv, Rarity, Uuid)
     self:PlayAnimation(self.Yellow)
   end
 end
-
 function M:SetEmpty()
   self.bIsEmpty = true
   self.Uuid = nil
@@ -69,15 +62,13 @@ function M:SetEmpty()
   self.Group_WeaponSign:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_Removes:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SetFocusCallback(func)
   if type(func) == "function" then
     self.FocusCallback = func
   else
-    ScreenPrint("\228\188\160\229\133\165\231\154\132\229\143\130\230\149\176\228\184\141\230\152\175\229\135\189\230\149\176")
+    ScreenPrint("传入的参数不是函数")
   end
 end
-
 function M:OnFocusReceived()
   if self.FocusCallback and type(self.FocusCallback) == "function" then
     self.FocusCallback()
@@ -85,15 +76,13 @@ function M:OnFocusReceived()
   end
   return UIUtils.Handled
 end
-
 function M:SetFocusLostCallback(func)
   if type(func) == "function" then
     self.RemoveCallback = func
   else
-    ScreenPrint("\228\188\160\229\133\165\231\154\132\229\143\130\230\149\176\228\184\141\230\152\175\229\135\189\230\149\176")
+    ScreenPrint("传入的参数不是函数")
   end
 end
-
 function M:OnFocusLost()
   if self.RemoveCallback and type(self.RemoveCallback) == "function" then
     self.RemoveCallback()
@@ -101,5 +90,4 @@ function M:OnFocusLost()
   end
   return UIUtils.Handled
 end
-
 return M

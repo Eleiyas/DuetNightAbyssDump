@@ -1,16 +1,13 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:BindHoverSoundFunc(func, Receiver)
   self.HoverSoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:Update(Idx, Info)
   self.Info = Info
   Info.UI = self
@@ -40,19 +37,15 @@ function M:Update(Idx, Info)
   self.bClickEnable = true
   self:PlayAnimation(self.Normal)
 end
-
 function M:SetClickEnable(bEnable)
   self.bClickEnable = bEnable
 end
-
 function M:IsTabLocked()
   return self.IsLocked
 end
-
 function M:GetIsCanSelect()
   return self.bClickEnable
 end
-
 function M:HideTextName(bHide)
   if bHide then
     self.Panel_Name:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -61,15 +54,12 @@ function M:HideTextName(bHide)
     self:PlayAnimation(self.Panel_Name_In)
   end
 end
-
 function M:GetTabId()
   return self.Info.TabId
 end
-
 function M:GetTabIndex()
   return self.Idx
 end
-
 function M:Btn_Click()
   if not self.bClickEnable then
     return
@@ -81,7 +71,6 @@ function M:Btn_Click()
     self.SoundFunc(self.SoundFuncReceiver, self.Idx)
   end
 end
-
 function M:Btn_Press()
   if self.IsOn or not self.bClickEnable then
     return
@@ -92,7 +81,6 @@ function M:Btn_Press()
   self:UnbindAllFromAnimationFinished(self.Pressed)
   self:PlayAnimation(self.Pressed)
 end
-
 function M:Btn_Hover()
   if self.IsOn or not self.bClickEnable then
     return
@@ -106,7 +94,6 @@ function M:Btn_Hover()
     self.EventHoverOnOrOff(self.ObjHoverOnOrOff, self, true)
   end
 end
-
 function M:Btn_UnHover()
   if self.IsOn or not self.bClickEnable then
     return
@@ -120,14 +107,12 @@ function M:Btn_UnHover()
     self.EventHoverOnOrOff(self.ObjHoverOnOrOff, self, false)
   end
 end
-
 function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   self.IsOn = IsOn
   if IsOn then
     local function PlayPressAnimFinished()
       self:PlayAnimation(self.Click)
     end
-    
     if self:IsAnimationPlaying(self.Pressed) then
       self:UnbindAllFromAnimationFinished(self.Pressed)
       self:BindToAnimationFinished(self.Pressed, {self, PlayPressAnimFinished})
@@ -149,42 +134,34 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
     end
   end
 end
-
 function M:BindEventOnHoverOnOrOff(Obj, Event)
   self.ObjHoverOnOrOff = Obj
   self.EventHoverOnOrOff = Event
 end
-
 function M:UnbindEventOnHoverOnOrOff()
   self.ObjHoverOnOrOff = nil
   self.EventHoverOnOrOff = nil
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:HideReddot()
   self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SetReddot(IsNew, Upgradeable, OhterReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -205,7 +182,6 @@ function M:SetReddot(IsNew, Upgradeable, OhterReddot)
     self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetReddotNum(RedNum)
   if nil ~= RedNum and RedNum > 0 then
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -214,5 +190,4 @@ function M:SetReddotNum(RedNum)
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return M

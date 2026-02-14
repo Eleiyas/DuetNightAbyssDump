@@ -3,48 +3,59 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Initialize(Initializer)
   self.SelectedItem = nil
   self.EquippedItem = nil
 end
-
 function M:Construct()
   self.List_Title.BP_OnItemClicked:Add(self, self.OnItemClicked)
 end
-
 function M:InitBaseView()
   local Avatar = GWorld:GetAvatar()
-  local TitleFramesData = Avatar.TitleFrames
+  local OwnedFrames = Avatar.TitleFrames
   local CurrentFrameID = Avatar.TitleFrame
-  local TitleFramesContents = {}
-  for index, value in pairs(TitleFramesData) do
+  local AllFrames = DataMgr.TitleFrame or {}
+  local OwnedList, UnownedList = {}, {}
+  for frameId, _ in pairs(AllFrames) do
     local SingleFrame = NewObject(UIUtils.GetCommonItemContentClass())
-    SingleFrame.FrameId = index
-    if CurrentFrameID == SingleFrame.FrameId and self.SelectedItem == nil then
-      SingleFrame.bSelect = true
-      SingleFrame.bEquipped = true
-      self.SelectedItem = SingleFrame
-      self.EquippedItem = SingleFrame
+    SingleFrame.FrameId = frameId
+    SingleFrame.bOwned = OwnedFrames and nil ~= OwnedFrames[frameId]
+    local FrameData = AllFrames[frameId]
+    local shouldInclude = SingleFrame.bOwned or FrameData and FrameData.CanPreView
+    if shouldInclude then
+      if CurrentFrameID == SingleFrame.FrameId and nil == self.SelectedItem and SingleFrame.bOwned then
+        SingleFrame.bSelect = true
+        SingleFrame.bEquipped = true
+        self.SelectedItem = SingleFrame
+        self.EquippedItem = SingleFrame
+      end
+      SingleFrame.Father = self
+      local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("TitleFrame")
+      if CacheDetail and CacheDetail[SingleFrame.FrameId] then
+        SingleFrame.IsNew = true
+      else
+        SingleFrame.IsNew = false
+      end
+      SingleFrame.FocusEvent = self.OnFocusFrame
+      SingleFrame.FocusEventObj = self
+      if SingleFrame.bOwned then
+        table.insert(OwnedList, SingleFrame)
+      else
+        table.insert(UnownedList, SingleFrame)
+      end
     end
-    SingleFrame.Father = self
-    table.insert(TitleFramesContents, SingleFrame)
-    local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("TitleFrame")
-    if CacheDetail and CacheDetail[SingleFrame.FrameId] then
-      SingleFrame.IsNew = true
-    else
-      SingleFrame.IsNew = false
-    end
-    SingleFrame.FocusEvent = self.OnFocusFrame
-    SingleFrame.FocusEventObj = self
-    self.List_Title:AddItem(SingleFrame)
+  end
+  for _, item in ipairs(OwnedList) do
+    self.List_Title:AddItem(item)
+  end
+  for _, item in ipairs(UnownedList) do
+    self.List_Title:AddItem(item)
   end
   self.List_Title.OnCreateEmptyContent:Bind(self, function(self)
     return NewObject(UIUtils.GetCommonItemContentClass())
   end)
   self.List_Title:RequestFillEmptyContent()
 end
-
 function M:ResetEquipFrame()
   self:OnItemClicked(self.EquippedItem)
   if self.EquippedItem and self.EquippedItem.UI then
@@ -54,7 +65,6 @@ function M:ResetEquipFrame()
     end
   end
 end
-
 function M:OnItemClicked(Content)
   AudioManager(self):PlayUISound(self, "event:/ui/common/special_content_01_click", nil, nil)
   if self.SelectedItem == Content then
@@ -67,11 +77,9 @@ function M:OnItemClicked(Content)
   Content.UI:SetIsSelected(true)
   self:OnClickTitleFrame(Content.FrameId)
 end
-
 function M:OnClickTitleFrame(TitleFrameID)
   self.FatherPage:OnTietleStyleChange(TitleFrameID)
 end
-
 function M:OnFocusFrame(Content, Widget)
   if self.IsGamePad then
     self:OnItemClicked(Content)
@@ -82,7 +90,6 @@ function M:OnFocusFrame(Content, Widget)
     return
   end
 end
-
 function M:InitGamepadView()
   self.IsGamePad = true
   local FocusItem = self.SelectedItem
@@ -94,11 +101,9 @@ function M:InitGamepadView()
     end
   end, nil, nil, nil, true)
 end
-
 function M:InitKeyboardView()
   self.IsGamePad = false
 end
-
 function M:EquipSelectedTitleFrame()
   if self.EquippedItem == self.SelectedItem then
     return
@@ -110,10 +115,9 @@ function M:EquipSelectedTitleFrame()
   if self.EquippedItem.UI then
     self.EquippedItem.UI:SetIsEquipped(true)
   else
-    ScreenPrint("EquipSelectedTitleFrame: " .. "\230\137\190\228\184\141\229\136\176Item\229\175\185\229\186\148\231\154\132UI")
+    ScreenPrint("EquipSelectedTitleFrame: " .. "找不到Item对应的UI")
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonBottom and self.FatherPage:IsCanChangeTitle() then
@@ -121,7 +125,6 @@ function M:OnGamePadDown(InKeyName)
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -138,5 +141,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 return M

@@ -1,5 +1,6 @@
 require("UnLua")
 local CommonUtils = require("Utils.CommonUtils")
+local InBattleWheelMenuModel = require("BluePrints.UI.WBP.Battle.Widget.Battle_Menu.InBattleWheelMenuModel")
 local Component = {}
 local WHEEL_STATE_SELECTING = 0
 local WHEEL_STATE_NO_SELECTING = 2
@@ -11,7 +12,7 @@ local WHEEL_BAG_CAPACITY = 8
 local SUM_BAG_CAPACITY = 24
 local GAMEPAD_SELECT_ICON_PATH = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Key/XBOX/T_Key_R.T_Key_R'"
 local MOUSE_SELECT_ICON_PATH = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Key/PC/T_Key_Mouse.T_Key_Mouse'"
-
+local Prop_Icon_Path = "/Game/UI/WBP/Battle/Widget/Battle_Menu/WBP_BattleMenu_Prop.WBP_BattleMenu_Prop"
 function Component:InitContent()
   self:ResetPanel()
   self:InitPanelInfo()
@@ -22,19 +23,24 @@ function Component:InitContent()
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self.bIsFocusable = false
   self.PageTurner:InitPageTurner(WHEEL_DISPLAY_COUNT, self, self.UpdatePageTurner)
+  self.PageTurner:ForbidPointBtns(true)
   SUM_BAG_CAPACITY = DataMgr.GlobalConstant.BattleWheelPlanNum.ConstantValue
   self:SetPosition(self.Main, FVector2D(0, 0))
 end
-
 function Component:ResetPanel()
   self.DisplayIndex = 1
   self.bIsClosing = false
-  EventManager:FireEvent(EventID.OnDisplayIndexChanged, self.DisplayIndex)
+  EventManager:FireEvent(EventID.OnDisplayIndexChanged, self.DisplayIndex, self.QuestBattleWheelID)
 end
-
 function Component:OnLoaded()
+  if self.QuestBattleWheelID then
+    WHEEL_DISPLAY_COUNT = 4
+  else
+    WHEEL_DISPLAY_COUNT = 3
+  end
+  self:InitContent()
+  self:AddDispatcher(EventID.OnResource, self, self.OnMatchStateChanged)
 end
-
 function Component:InitPanelInfo()
   self.bIsMobile = self.bIsMobile or CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   if self.bIsMobile then
@@ -54,7 +60,6 @@ function Component:InitPanelInfo()
   self:RefreshNonSelectCenter()
   self.WS_Num:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Component:InitSlots()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -81,15 +86,14 @@ function Component:InitSlots()
       local PropSp = UIManager(self):CreateWidget(IconAnimationBP, false)
       if PropSp then
         self["Prop_" .. Index]:RemoveChild(self["Prop_Icon" .. Index])
-        self["Prop_Icon" .. Index] = PropSp
+        rawset(self, "Prop_Icon" .. Index, PropSp)
         self["Prop_" .. Index]:AddChild(self["Prop_Icon" .. Index])
       end
     else
-      local NormalPropBP = "/Game/UI/WBP/Battle/Widget/Battle_Menu/WBP_BattleMenu_Prop.WBP_BattleMenu_Prop"
-      local Prop = UIManager(self):CreateWidget(NormalPropBP, false)
+      local Prop = UIManager(self):CreateWidget(Prop_Icon_Path, false)
       if Prop then
         self["Prop_" .. Index]:RemoveChild(self["Prop_Icon" .. Index])
-        self["Prop_Icon" .. Index] = Prop
+        rawset(self, "Prop_Icon" .. Index, Prop)
         self["Prop_" .. Index]:AddChild(self["Prop_Icon" .. Index])
       end
     end
@@ -104,9 +108,19 @@ function Component:InitSlots()
       IconWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
     self.Slots[Index] = IconWidget
+    local PropEffectData = Resource and DataMgr.PropEffect[Resource.ResourceId]
+    local bHasStateIcon = PropEffectData and PropEffectData.UsingIcon
+    if IconWidget and bHasStateIcon then
+      if not InBattleWheelMenuModel.bInit then
+        InBattleWheelMenuModel:Init()
+      end
+      if not InBattleWheelMenuModel.SlotState[Resource.ResourceId] then
+        InBattleWheelMenuModel.SlotState[Resource.ResourceId] = InBattleWheelMenuModel.BattlePropSlotState.Default
+      end
+      self:UpdateBattlePropSlotIcon(Index, InBattleWheelMenuModel.SlotState[Resource.ResourceId])
+    end
   end
 end
-
 function Component:SelectAndCloseMenu(ForceSelectSlot)
   if not self.bIsClosing then
     self:TryUseSelectItem(ForceSelectSlot)
@@ -117,7 +131,6 @@ function Component:SelectAndCloseMenu(ForceSelectSlot)
     AudioManager(self):SetEventSoundParam(self, "BattleMenuShow", {ToEnd = 1})
   end
 end
-
 function Component:CloseMenu()
   DebugPrint("gmy@InBattleWheelMenuComponent Component:CloseMenu")
   if not self.bIsClosing then
@@ -128,7 +141,6 @@ function Component:CloseMenu()
     AudioManager(self):SetEventSoundParam(self, "BattleMenuShow", {ToEnd = 1})
   end
 end
-
 function Component:TryUseSelectItem(ForceSelectSlot)
   DebugPrint("gmy@TryUseSelectItem", self.CurrentHoveredSlot, ForceSelectSlot)
   local MyPlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
@@ -153,7 +165,15 @@ function Component:TryUseSelectItem(ForceSelectSlot)
           if Slot.ResourceCount > 0 or Resource:Data().Type == "InfiniteBattleItem" then
             local ConditionRes, ToastTextId = self:CheckResourceCanUse(ResourceId)
             if ConditionRes then
-              Avatar:UseWheelItemInBattle(ResourceId)
+              local function UseWheelItemInBattleCallBack(bUseSuccess)
+                if not bUseSuccess then
+                  return
+                end
+                if NowSelectingSlotIndex and InBattleWheelMenuModel.SlotState[Resource.ResourceId] then
+                  self:UpdateBattlePropSlotIcon(NowSelectingSlotIndex, InBattleWheelMenuModel.SlotState[Resource.ResourceId])
+                end
+              end
+              Avatar:UseWheelItemInBattle(ResourceId, UseWheelItemInBattleCallBack)
             elseif ToastTextId then
               local ToastText = GText(ToastTextId)
               UIManager(self):ShowUITip("CommonToastMain", ToastText)
@@ -169,7 +189,38 @@ function Component:TryUseSelectItem(ForceSelectSlot)
     end
   end
 end
-
+function Component:UpdateBattlePropSlotIcon(NowSelectingSlotIndex, TargetState)
+  if not NowSelectingSlotIndex or not TargetState then
+    return
+  end
+  local Slot = self:DisplaySlotIndex2WheelSlot(NowSelectingSlotIndex)
+  if not Slot or not Slot.ResourceId then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if nil == Avatar then
+    return
+  end
+  local Resource = Avatar.Resources[Slot.ResourceId]
+  if not Resource then
+    return
+  end
+  local IconPath = Resource:Data().Icon
+  if TargetState == InBattleWheelMenuModel.BattlePropSlotState.Using then
+    local PropEffectId = Resource:Data().ResourceId
+    local PropEffectData = DataMgr.PropEffect[PropEffectId]
+    if not PropEffectData then
+      return
+    end
+    if PropEffectData.UsingIcon then
+      IconPath = PropEffectData.UsingIcon
+    end
+  end
+  local IconWidget = self.Slots[NowSelectingSlotIndex]
+  if IconWidget then
+    IconWidget:SetIconByPath(IconPath)
+  end
+end
 function Component:SetEnterInputState()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.bOldMouseVisible = PlayerController.bShowMouseCursor
@@ -185,17 +236,14 @@ function Component:SetEnterInputState()
   Params.MouseLockMode = EMouseLockMode.DoNotLock
   GameInputSubsystem:EnableInputMode("BattleWheelInputSetting", EGameInputMode.GameAndUI, Params)
 end
-
 function Component:SetExitInputState()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   PlayerController.bShowMouseCursor = self.bOldMouseVisible
   local GameInputSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   GameInputSubsystem:DisableInputMode("BattleWheelInputSetting")
 end
-
 function Component:OnWheelCenterCalculated()
 end
-
 function Component:OnSlotHoverChanged(LastSlot, CurrentSlot)
   DebugPrint("gmy@OnSlotHoverChanged", LastSlot, CurrentSlot)
   if not self.bEnableHovered then
@@ -218,10 +266,8 @@ function Component:OnSlotHoverChanged(LastSlot, CurrentSlot)
     end
   end
 end
-
 function Component:InitSlotBg()
 end
-
 function Component:GetSlotInfo(CurrentSlotIndex)
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -231,7 +277,6 @@ function Component:GetSlotInfo(CurrentSlotIndex)
   local Slot = CurrentWheel[CurrentSlotIndex]
   return Slot
 end
-
 function Component:SetIconCountText(IconWidget, Resource, Slot)
   if Resource:Data().Type == "InfiniteBattleItem" then
     local ResId = Resource.ResourceId
@@ -263,7 +308,6 @@ function Component:SetIconCountText(IconWidget, Resource, Slot)
     IconWidget:SetCountState(0 ~= Count)
   end
 end
-
 function Component:CheckResourceCanUse(ResourceId)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) then
@@ -287,32 +331,26 @@ function Component:CheckResourceCanUse(ResourceId)
   end
   return true
 end
-
 function Component:OnClose()
   self.bIsClosing = true
   self:SetExitInputState()
 end
-
 function Component:HandleRemovedFromFocusPath(FocusEvent)
   if not self:IsClosing() then
     self:OnClose()
     UIManager(self):UnLoadUINew("InBattleWheelMenu")
   end
 end
-
 function Component:UpdateWheelConfig()
   self:SetWheelCenter(self.WidgetForCalcCenter)
   self:SetWheelRadius(self.DesiredInnerWheelRadius, self.DesiredOuterWheelRadius)
 end
-
 function Component:BindMenuButton(MenuButton)
   self.MenuButton = MenuButton
 end
-
 function Component:IsClosing()
   return self.bIsClosing or false
 end
-
 function Component:GetPointerPosition()
   if self.bIsMobile and self.MenuButton and self.MenuButton.TotalDeltaDis then
     local CenterPos = self:CalcWheelCenter()
@@ -320,13 +358,11 @@ function Component:GetPointerPosition()
   end
   return UWidgetLayoutLibrary.GetMousePositionOnPlatform()
 end
-
 function Component:OnHide()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   PlayerCharacter:CloseBattleWheel()
 end
-
 function Component:OnChangeDisplayWheel()
   DebugPrint("gmy@InBattleWheelMenuComponent Component:OnChangeDisplayWheel")
   self:BindToAnimationFinished(self.Switch_Out, {
@@ -335,10 +371,9 @@ function Component:OnChangeDisplayWheel()
   })
   self:PlayAnimationForward(self.Switch_Out)
 end
-
 function Component:RealChangeDisplayWheel()
   self.DisplayIndex = (self.DisplayIndex - 1 + 1) % WHEEL_DISPLAY_COUNT + 1
-  EventManager:FireEvent(EventID.OnDisplayIndexChanged, self.DisplayIndex)
+  EventManager:FireEvent(EventID.OnDisplayIndexChanged, self.DisplayIndex, self.QuestBattleWheelID)
   DebugPrint("gmy@InBattleWheelMenuComponent Component:RealChangeDisplayWheel", self.DisplayIndex)
   self:UnbindFromAnimationFinished(self.Switch_Out, {
     self,
@@ -352,29 +387,64 @@ function Component:RealChangeDisplayWheel()
   end)
   AudioManager(self):PlayUISound(self, "event:/ui/common/combat_bag_change_page", nil, nil)
 end
-
 function Component:WheelIndex2DisplaySlotIndex(WheelIndex)
   return (WheelIndex - 1) % WHEEL_BAG_CAPACITY + 1
 end
-
 function Component:DisplaySlotIndex2WheelIndex(SlotIndex)
   return SlotIndex + (self.DisplayIndex - 1) * WHEEL_BAG_CAPACITY
 end
-
 function Component:DisplaySlotIndex2WheelSlot(SlotIndex)
+  local Slot = {
+    ResourceId = 0,
+    ResourceCount = nil,
+    SlotId = SlotIndex
+  }
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
     return nil
   end
-  if nil == SlotIndex then
-    return nil
+  if self.QuestBattleWheelID and 1 == self.DisplayIndex then
+    local QuestBattleWheelData = DataMgr.QuestBattleWheel[self.QuestBattleWheelID]
+    if not QuestBattleWheelData then
+      return Slot
+    end
+    local TargetResourceId = QuestBattleWheelData["ResourceId" .. SlotIndex]
+    if not TargetResourceId then
+      return Slot
+    end
+    local TargetResourceData = Avatar.Resources[TargetResourceId]
+    if not TargetResourceData then
+      return Slot
+    end
+    local TargetResourceCount = 0
+    local BattleItemLimit = DataMgr.Resource[TargetResourceId].BattleItemLimit
+    if BattleItemLimit and BattleItemLimit > 0 then
+      TargetResourceCount = BattleItemLimit <= TargetResourceData.Count and BattleItemLimit or TargetResourceData.Count
+    end
+    Slot = {
+      ResourceId = TargetResourceId,
+      ResourceCount = TargetResourceCount,
+      SlotId = SlotIndex
+    }
+  elseif self.QuestBattleWheelID and 1 ~= self.DisplayIndex then
+    self.DisplayIndex = self.DisplayIndex - 1
+    if nil == SlotIndex then
+      return nil
+    end
+    local WheelIndex = self:DisplaySlotIndex2WheelIndex(SlotIndex)
+    local CurrentWheel = Avatar.Wheels[self.WheelIndex]
+    Slot = CurrentWheel[WheelIndex]
+    self.DisplayIndex = self.DisplayIndex + 1
+  else
+    if nil == SlotIndex then
+      return nil
+    end
+    local WheelIndex = self:DisplaySlotIndex2WheelIndex(SlotIndex)
+    local CurrentWheel = Avatar.Wheels[self.WheelIndex]
+    Slot = CurrentWheel[WheelIndex]
   end
-  local WheelIndex = self:DisplaySlotIndex2WheelIndex(SlotIndex)
-  local CurrentWheel = Avatar.Wheels[self.WheelIndex]
-  local Slot = CurrentWheel[WheelIndex]
   return Slot
 end
-
 function Component:RefreshPageTurner()
   if 1 == self.DisplayIndex then
     self.PageTurner:PageStart()
@@ -382,10 +452,8 @@ function Component:RefreshPageTurner()
     self.PageTurner:PageRight()
   end
 end
-
 function Component:UpdatePageTurner()
 end
-
 function Component:RefreshCenterTitle(CurrentSlot)
   DebugPrint("gmy@InBattleWheelMenuComponent M:RefreshCenterTitle", CurrentSlot)
   if CurrentSlot then
@@ -402,11 +470,16 @@ function Component:RefreshCenterTitle(CurrentSlot)
   end
   self:RefreshNonSelectCenter()
 end
-
 function Component:RefreshNonSelectCenter()
   if self.bIsMobile then
     self:SetWheelMiddleStyle(WHEEL_STATE_SELECTING)
-    if self.DisplayIndex then
+    if self.QuestBattleWheelID and 1 == self.DisplayIndex then
+      local TitleText = GText("UI_BattleWheel_Explore")
+      self.Text_Tips:SetText(TitleText)
+    elseif self.QuestBattleWheelID and 1 ~= self.DisplayIndex then
+      local TitleText = GText("BATTLE_WHEEL_DISPLAY_TITLE" .. self.DisplayIndex - 1)
+      self.Text_Tips:SetText(TitleText)
+    else
       local TitleText = GText("BATTLE_WHEEL_DISPLAY_TITLE" .. self.DisplayIndex)
       self.Text_Tips:SetText(TitleText)
     end
@@ -414,7 +487,6 @@ function Component:RefreshNonSelectCenter()
     self:SetWheelMiddleStyle(WHEEL_STATE_NO_SELECTING)
   end
 end
-
 function Component:HandleJoystickSelect(LastSlot)
   DebugPrint("gmy@InBattleWheelMenuComponent Component:HandleJoystickSelect", LastSlot)
   local WheelSlot = self:DisplaySlotIndex2WheelSlot(LastSlot)
@@ -426,7 +498,6 @@ function Component:HandleJoystickSelect(LastSlot)
     end
   end
 end
-
 function Component:CalcGamepadPointerDiff(Diff)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if not PlayerController then
@@ -435,5 +506,10 @@ function Component:CalcGamepadPointerDiff(Diff)
   Diff.X = PlayerController.YawInput
   Diff.Y = -PlayerController.PitchInput
 end
-
+function Component:InitQuestBattleWheel(QuestBattleWheelID)
+  if self.QuestBattleWheelID ~= QuestBattleWheelID then
+    self.QuestBattleWheelID = QuestBattleWheelID
+    self:InitSlots()
+  end
+end
 return Component

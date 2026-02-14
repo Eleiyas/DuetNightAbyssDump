@@ -3,14 +3,12 @@ local ModDatas = require("BluePrints.UI.WBP.Armory.Mod.Utils.ModDatas")
 local ImportPayload = ModDatas.ImportPayload
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local Component = {}
-
 function Component:StartImport(NewTarget)
   local PrevTarget = self:GetTarget()
   self.ImportData = ImportPayload.New()
   self.ImportData.PrevTarget = PrevTarget
   self:SetTarget(NewTarget)
 end
-
 function Component:StopImport()
   if not self:IsInImport() then
     return
@@ -24,11 +22,9 @@ function Component:StopImport()
   self:SetTarget(PrevTarget)
   self:GenerateSlotUIDatas(1)
 end
-
 function Component:IsInImport()
   return self.ImportData ~= nil
 end
-
 function Component:CalcImportSlotsList(Target, Mod, bIgnorePolarity)
   local SortedSlots = {}
   if not Mod then
@@ -42,7 +38,6 @@ function Component:CalcImportSlotsList(Target, Mod, bIgnorePolarity)
       table.insert(SortedSlots, Slot)
     end
   end
-  
   local function SortFunc(Slot1, Slot2)
     if Mod.Polarity == Slot1.Polarity and Mod.Polarity == Slot2.Polarity then
       return Slot1.SlotId < Slot2.SlotId
@@ -66,11 +61,9 @@ function Component:CalcImportSlotsList(Target, Mod, bIgnorePolarity)
     end
     return Slot1.SlotId < Slot2.SlotId
   end
-  
   table.sort(SortedSlots, SortFunc)
   return SortedSlots
 end
-
 function Component:CalcImportModList()
   local SortedModList = {}
   local Tag = self.TargetType
@@ -87,7 +80,6 @@ function Component:CalcImportModList()
       })
     end
   end
-  
   local function SortFunc(ImportMod1, ImportMod2)
     if "Char" == Tag and 9 == ImportMod1.SlotId then
       return true
@@ -103,11 +95,9 @@ function Component:CalcImportModList()
     end
     return ImportMod1.Cost > ImportMod2.Cost
   end
-  
   table.sort(SortedModList, SortFunc)
   return SortedModList
 end
-
 function Component:CacheSuitInfoCopyed()
   local Target = self:GetTarget()
   self.SuitInfoCopyed = {
@@ -118,11 +108,9 @@ function Component:CacheSuitInfoCopyed()
   }
   ULowEntryExtendedStandardLibrary.ClipboardSet(self.SuitInfoCopyed.MsgCopyed)
 end
-
 function Component:GetSuitInfoCopyed()
   return self.SuitInfoCopyed
 end
-
 function Component:IsModSuitInfoMsg(InMsgStr)
   local SuitInfoCopyed = self:GetSuitInfoCopyed()
   if not SuitInfoCopyed then
@@ -133,7 +121,6 @@ function Component:IsModSuitInfoMsg(InMsgStr)
   end
   return true
 end
-
 function Component:GenerateModSuitInfoMsg()
   local SuitInfoCopyed = self:GetSuitInfoCopyed()
   local Table = AvatarUtils:GenerateModSuitInfo(self:GetAvatar(), SuitInfoCopyed.TypeName, SuitInfoCopyed.Uuid, SuitInfoCopyed.SuitIndex)
@@ -151,9 +138,9 @@ function Component:GenerateModSuitInfoMsg()
   end
   return ChatCommon.ModSuitCopyHeader .. json.encode(Table)
 end
-
-function Component:CreateDummyAvatarForCopyMode(ModSuitInfo)
+function Component:CreateDummyAvatarForCopyMode(ModSuitInfo, SenderName)
   self.DummyAvatar_CopyMode = {}
+  self.CopyModeSenderName = SenderName
   local TargetType = ModSuitInfo.TargetInfo[1]
   local TargetId = ModSuitInfo.TargetInfo[2]
   local Level = ModSuitInfo.TargetInfo[3]
@@ -211,7 +198,6 @@ function Component:CreateDummyAvatarForCopyMode(ModSuitInfo)
   end
   self:CalcModSuitTotalCost(self:GetTarget(), 1, true)
 end
-
 function Component:_DumpModData(ModSuitInfo)
   local ModData, SlotData = {}, {}
   for SlotId, ModInfo in ipairs(ModSuitInfo.ModsInfo) do
@@ -237,7 +223,6 @@ function Component:_DumpModData(ModSuitInfo)
   end
   return ModData, SlotData
 end
-
 function Component:CreateModSuitCopyCode()
   local Target = self:GetTarget()
   local ModSuit = Target:GetModSuit()
@@ -262,7 +247,6 @@ function Component:CreateModSuitCopyCode()
   ULowEntryExtendedStandardLibrary.ClipboardSet(Code)
   return Code
 end
-
 function Component:CopyCodeToModSuitInfo(Code)
   local ModSuitInfo = {}
   local TargetInfo = {}
@@ -317,5 +301,4 @@ function Component:CopyCodeToModSuitInfo(Code)
   ModSuitInfo.ModsInfo = ModsInfo
   return ModSuitInfo
 end
-
 return Component

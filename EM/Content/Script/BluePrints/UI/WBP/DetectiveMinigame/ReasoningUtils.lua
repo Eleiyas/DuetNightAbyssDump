@@ -1,11 +1,9 @@
 require("UnLua")
 local M = {}
-
 function M:GetInferredAnswersAndDependencies()
   local Avatar = GWorld:GetAvatar()
   local UnlockedAnswers = Avatar.DetectiveGameUnlockedAnswers
   local inferredAnswers = {}
-  
   local function findDependencies(answerId, visited)
     visited = visited or {}
     if visited[answerId] then
@@ -21,13 +19,11 @@ function M:GetInferredAnswersAndDependencies()
       end
     end
   end
-  
   for answerId, _ in pairs(UnlockedAnswers) do
     findDependencies(answerId, {})
   end
   return inferredAnswers
 end
-
 function M:IsCanInferAnswer(QuestionId)
   local Avatar = GWorld:GetAvatar()
   local UnlockedAnswers = Avatar.DetectiveGameUnlockedAnswers
@@ -46,7 +42,6 @@ function M:IsCanInferAnswer(QuestionId)
   end
   return false
 end
-
 function M:IsMultiEndingQuestion(QuestionId)
   local QuestionData = DataMgr.DetectiveQuestion[QuestionId]
   if not QuestionData or not QuestionData.ProbablyNeededAnswers then
@@ -63,7 +58,6 @@ function M:IsMultiEndingQuestion(QuestionId)
   end
   return false
 end
-
 function M:IsMultiSelectCommitQuestion(QuestionId)
   local QuestionData = DataMgr.DetectiveQuestion[QuestionId]
   if not QuestionData or not QuestionData.ProbablyNeededAnswers then
@@ -76,7 +70,6 @@ function M:IsMultiSelectCommitQuestion(QuestionId)
   end
   return false
 end
-
 function M:GetMissingInferAnswers(QuestionId)
   local QuestionData = DataMgr.DetectiveQuestion[QuestionId]
   if not QuestionData or not QuestionData.ProbablyNeededAnswers then
@@ -103,7 +96,6 @@ function M:GetMissingInferAnswers(QuestionId)
   end
   return nil
 end
-
 function M:GetMissingInferAnswersNum(QuestionId)
   local QuestionData = DataMgr.DetectiveQuestion[QuestionId]
   if not QuestionData or not QuestionData.ProbablyNeededAnswers then
@@ -121,7 +113,6 @@ function M:GetMissingInferAnswersNum(QuestionId)
   end
   return 0
 end
-
 function M:GetCommitAnswers(QuestionId)
   local QuestionData = DataMgr.DetectiveQuestion[QuestionId]
   if not QuestionData then
@@ -148,7 +139,6 @@ function M:GetCommitAnswers(QuestionId)
   end
   return nil
 end
-
 function M:GetCommitFirstAnswers(QuestionId)
   local QuestionData = DataMgr.DetectiveQuestion[QuestionId]
   if not QuestionData then
@@ -164,7 +154,6 @@ function M:GetCommitFirstAnswers(QuestionId)
   end
   return nil
 end
-
 function M:IsQuestionSolved(QuestionId)
   local Avatar = GWorld:GetAvatar()
   local UnlockedResults = Avatar.DetectiveGameUnlockedResults
@@ -179,7 +168,6 @@ function M:IsQuestionSolved(QuestionId)
   end
   return false
 end
-
 function M:IsQuestionUnlockNewClue(QuestionId)
   local Avatar = GWorld:GetAvatar()
   local UnlockedResults = Avatar.DetectiveGameUnlockedResults
@@ -194,7 +182,6 @@ function M:IsQuestionUnlockNewClue(QuestionId)
   end
   return false
 end
-
 function M:GetQuestionResultAnswers(QuestionId)
   local Avatar = GWorld:GetAvatar()
   local UnlockedResults = Avatar.DetectiveGameUnlockedResults
@@ -209,7 +196,6 @@ function M:GetQuestionResultAnswers(QuestionId)
   end
   return nil
 end
-
 function M:GetQuestionClueCount(QuestionId)
   local Avatar = GWorld:GetAvatar()
   local UnlockedAnswers = Avatar.DetectiveGameUnlockedAnswersRecord
@@ -229,7 +215,6 @@ function M:GetQuestionClueCount(QuestionId)
   end
   return currentClueCount, totalClueCount
 end
-
 function M:IsQuestionHasNewClue(QuestionId)
   local Avatar = GWorld:GetAvatar()
   local UnlockedAnswers = Avatar.DetectiveGameUnlockedAnswers
@@ -251,32 +236,74 @@ function M:IsQuestionHasNewClue(QuestionId)
   end
   return false
 end
-
+function M:IsQuestionReasoningState(QuestionId)
+  if self:IsQuestionSolved(QuestionId) then
+    return false
+  end
+  local inferAnswers = self:GetMissingInferAnswers(QuestionId)
+  if inferAnswers then
+    return true
+  end
+  local commitAnswers = self:GetCommitAnswers(QuestionId)
+  if commitAnswers then
+    return true
+  end
+  return false
+end
 function M:IsHasNewQuestionOrClue(QuestionId)
+  if nil == QuestionId then
+    return 0
+  end
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("DetectiveAnswer")
   if CacheDetail then
     for AnswerId, Value in pairs(CacheDetail) do
-      if nil ~= QuestionId then
-        local answerData = DataMgr.DetectiveAnswer[AnswerId]
-        if answerData and answerData.QuestionID ~= QuestionId and Value then
-          return 2
-        end
-      elseif Value then
+      local answerData = DataMgr.DetectiveAnswer[AnswerId]
+      if answerData and answerData.QuestionID == QuestionId and Value then
         return 2
       end
     end
   end
   CacheDetail = ReddotManager.GetLeafNodeCacheDetail("DetectiveQuestion")
-  if CacheDetail then
-    for QuestionId, Value in pairs(CacheDetail) do
-      if Value then
-        return 1
-      end
-    end
+  if CacheDetail and CacheDetail[QuestionId] then
+    return 1
   end
   return 0
 end
-
+function M:IsAllQuestionReasoningState()
+  local Avatar = GWorld:GetAvatar()
+  local UnlockedQuestions = Avatar.DetectiveGameUnlockedQuestions
+  if not UnlockedQuestions then
+    return false
+  end
+  for QuestionId, _ in pairs(UnlockedQuestions) do
+    if self:IsQuestionReasoningState(QuestionId) then
+      return true
+    end
+  end
+  return false
+end
+function M:IsAllClueHasNewClue()
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("DetectiveAnswer")
+  if CacheDetail then
+    for AnswerId, Value in pairs(CacheDetail) do
+      if Value then
+        return true
+      end
+    end
+  end
+  return false
+end
+function M:IsAllQuestionHasNewQuestion()
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("DetectiveQuestion")
+  if CacheDetail then
+    for QuestionId, Value in pairs(CacheDetail) do
+      if Value then
+        return true
+      end
+    end
+  end
+  return false
+end
 function M:IsClueFromResult(AnswerId)
   for resultId, resultData in pairs(DataMgr.DetectiveResult) do
     if resultData.MainClueUnlock and self:TableContains(resultData.MainClueUnlock, AnswerId) then
@@ -285,7 +312,6 @@ function M:IsClueFromResult(AnswerId)
   end
   return nil
 end
-
 function M:ClearClueReddot(QuestionId)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("DetectiveAnswer")
   for CacheDetailKey, _ in pairs(CacheDetail) do
@@ -295,7 +321,32 @@ function M:ClearClueReddot(QuestionId)
     end
   end
 end
-
+function M:GetNeedOpenQuestionIdByIds(AnswerIds, ResultIds)
+  local Avatar = GWorld:GetAvatar()
+  local UnlockedAnswers = Avatar.DetectiveGameUnlockedAnswers
+  local UnlockedResults = Avatar.DetectiveGameUnlockedResults
+  if ResultIds then
+    for _, ResultId in pairs(ResultIds) do
+      if not UnlockedResults or not UnlockedResults[ResultId] then
+        local ResultData = DataMgr.DetectiveResult[ResultId]
+        if ResultData and ResultData.QuestionID then
+          return ResultData.QuestionID
+        end
+      end
+    end
+  end
+  if AnswerIds then
+    for _, AnswerId in pairs(AnswerIds) do
+      if not UnlockedAnswers or not UnlockedAnswers[AnswerId] then
+        local QuestionId = self:IsClueFromResult(AnswerId)
+        if QuestionId then
+          return QuestionId
+        end
+      end
+    end
+  end
+  return nil
+end
 function M:TableContains(tbl, val)
   for _, v in ipairs(tbl) do
     if v == val then
@@ -304,5 +355,4 @@ function M:TableContains(tbl, val)
   end
   return false
 end
-
 return M

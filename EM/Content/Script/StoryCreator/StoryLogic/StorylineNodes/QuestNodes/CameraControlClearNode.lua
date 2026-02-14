@@ -1,15 +1,16 @@
 local CameraControlClearNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function CameraControlClearNode:Init()
   self.Duration = 0
 end
-
 function CameraControlClearNode:Execute()
   local STLCameraControlInfo = _G.STLCameraControlInfo or {}
   _G.STLCameraControlInfo = nil
   local GameInstance = GWorld.GameInstance
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   if Player and Player.CameraControlComponent then
+    if Player.CameraControlComponent.EnableArmLengthControl then
+      Player.CameraControlComponent:EnableArmLengthControl("CameraControlNode")
+    end
     local Controller = Player:GetController()
     if Controller and Controller.RemoveDisableRotationInputTag then
       Controller:RemoveDisableRotationInputTag("CameraControlNode")
@@ -36,5 +37,4 @@ function CameraControlClearNode:Execute()
     end
   end
 end
-
 return CameraControlClearNode

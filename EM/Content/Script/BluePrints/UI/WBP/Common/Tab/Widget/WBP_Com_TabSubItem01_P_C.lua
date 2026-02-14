@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Update(Idx, Info, PlatformDeviceName)
   self.Info = Info
   Info.UI = self
@@ -36,7 +35,6 @@ function M:Update(Idx, Info, PlatformDeviceName)
     end
   end
 end
-
 function M:AddReddotListener(ReddotTreeName)
   ReddotManager.AddListener(ReddotTreeName, self, function(self, Count)
     local ReddotType = DataMgr.ReddotNode[ReddotTreeName].Type
@@ -45,29 +43,24 @@ function M:AddReddotListener(ReddotTreeName)
     self:SetReddot(IsNew, Upgradeable)
   end)
 end
-
 function M:RemoveReddotListener(ReddotTreeName)
   if nil == ReddotTreeName then
     return
   end
   ReddotManager.RemoveListener(ReddotTreeName, self)
 end
-
 function M:SetFitSize(NewSize)
   if self.Root then
     self.Root:SetWidthOverride(NewSize.X)
     self.Root:SetHeightOverride(NewSize.Y)
   end
 end
-
 function M:GetTabId()
   return self.Info.TabId
 end
-
 function M:GetTabIndex()
   return self.Idx
 end
-
 function M:Btn_Clicked()
   if self.SoundFunc then
     self.SoundFunc(self.SoundFuncReceiver)
@@ -76,7 +69,6 @@ function M:Btn_Clicked()
     self:SetSwitchOn(true)
   end
 end
-
 function M:Btn_Press()
   if self.IsOn or self.IsLocked then
     return
@@ -87,7 +79,6 @@ function M:Btn_Press()
   self:UnbindAllFromAnimationFinished(self.Press)
   self:PlayAnimation(self.Press)
 end
-
 function M:Btn_Hover()
   if self.PlatformDeviceName == "Mobile" then
     return
@@ -100,7 +91,6 @@ function M:Btn_Hover()
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:Btn_UnHover()
   if self.PlatformDeviceName == "Mobile" then
     return
@@ -113,7 +103,6 @@ function M:Btn_UnHover()
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   if self.IsLocked then
     local ShowTextContent = self.Info.LockReasonText or "Not Define!!!!"
@@ -129,7 +118,6 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
       local function PlayPressAnimFinished()
         self:PlayAnimation(self.Click)
       end
-      
       self:UnbindAllFromAnimationFinished(self.Press)
       self:BindToAnimationFinished(self.Press, {self, PlayPressAnimFinished})
       self:PlayAnimation(self.Press)
@@ -147,46 +135,38 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
     end
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:BindHoverSoundFunc(func, Receiver)
   self.HoverSoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:SetLockInfo(bUnLock)
-  self.IsLocked = bUnLock
+  self.IsLocked = not bUnLock
   if bUnLock then
     self:PlayAnimation(self.Normal)
   else
     self:PlayAnimation(self.Lock)
   end
 end
-
 function M:SetReddot(IsNew, Upgradeable, OtherReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -208,7 +188,6 @@ function M:SetReddot(IsNew, Upgradeable, OtherReddot)
     end
   end
 end
-
 function M:SetReddotNum(RedNum)
   if nil ~= RedNum and RedNum > 0 then
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -217,12 +196,10 @@ function M:SetReddotNum(RedNum)
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:Destruct()
   if self.Info then
     self:RemoveReddotListener(self.Info.RedDotTreeName)
     self.Info.UI = nil
   end
 end
-
 return M

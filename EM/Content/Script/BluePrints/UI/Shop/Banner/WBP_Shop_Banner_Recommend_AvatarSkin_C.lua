@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.Shop.Banner.WBP_Shop_Banner_Base_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.Btn_Qa:BindEventOnClicked(self, self.OnClickQa)
@@ -12,7 +11,6 @@ function M:Construct()
   self.Btn_Get.Btn_Buy.OnClicked:Add(self, self.OnGoToInterface)
   self.Btn_Get.Btn_Buy.OnHovered:Add(self, self.OnGoToHovered)
 end
-
 function M:Destruct()
   if self.Btn_Qa then
     self.Btn_Qa:UnBindEventOnClicked(self, self.OnClickQa)
@@ -24,7 +22,6 @@ function M:Destruct()
   self:RemoveTimer(self.RefreshTimerName)
   M.Super.Destruct(self)
 end
-
 function M:OnClickQa()
   if self.BannerTab and self.BannerTab.PreviewType == "Skin" and self.BannerTab.PreviewId then
     UIManager(self):LoadUINew("SkinPreview", {
@@ -35,7 +32,6 @@ function M:OnClickQa()
     })
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self.Btn_Get.Key_ControllerBuy:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -43,7 +39,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Btn_Get.Key_ControllerBuy:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -59,7 +54,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonDown then
@@ -71,7 +65,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPCKeyDown(InKeyName)
   local IsEventHandled = false
   if "SpaceBar" == InKeyName then
@@ -80,7 +73,6 @@ function M:OnPCKeyDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:InitBannerPage(BannerId)
   if BannerId and self.BannerTab.Id and self.BannerTab.Id == BannerId then
     self.BannerId = BannerId
@@ -105,7 +97,7 @@ function M:InitBannerPage(BannerId)
     end
   end
   if self.WBP_Shop_Recommend_Common_TItle_C_0 and self.WBP_Shop_Recommend_Common_TItle_C_0.Text_MainTitle and self.BannerTab.Text1 then
-    self.WBP_Shop_Recommend_Common_TItle_C_0.Text_MainTitle:SetText(GText(self.BannerTab.Text1))
+    self.WBP_Shop_Recommend_Common_TItle_C_0:SetText(GText(self.BannerTab.Text1))
   end
   if self.Text_ActivityDesc_White then
     self.Text_ActivityDesc_White:SetText(GText("UI_Skin_Preview"))
@@ -133,18 +125,22 @@ function M:InitBannerPage(BannerId)
       self.WBP_Shop_Recommend_Common_TItle_C_0.Text_MainTitle:SetFont(self.WBP_Shop_Recommend_Common_TItle_C_0[SkinNameFonts[SkinRarity]])
     end
   end
+  if self.Text_Detail and self.BannerTab.Text1Sub then
+    self.Text_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.Text_Detail:SetText(GText(self.BannerTab.Text1Sub))
+  elseif self.Text_Detail then
+    self.Text_Detail:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
   if not bQualityTag then
     self.Com_QualityTag:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   self:InitActivity_TimeInfo()
   self:AdjustGroupDetail()
 end
-
 function M:InitActivity_TimeInfo()
   self:AddTimer(1.0, self.RefreshLeftTime, true, 0, self.RefreshTimerName, true)
   self:RefreshLeftTime()
 end
-
 function M:RefreshLeftTime()
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.BannerTab.EndTime)
   if RemainTimeDict then
@@ -154,13 +150,10 @@ function M:RefreshLeftTime()
     self:RemoveTimer("RefreshLeftTime")
   end
 end
-
 function M:PlayAnimationIn()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayAnimationOut()
   self:PlayAnimation(self.Out)
 end
-
 return M

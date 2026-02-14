@@ -4,9 +4,9 @@ local NormalMailName = DataMgr.ReddotNode.NormalMail.Name
 local M = Class({
   "Blueprints.UI.BP_UIState_C"
 })
-
-function M:Init(Parent)
+function M:Init(Parent, ShowMailId)
   self.Parent = Parent
+  self.ShowMailId = ShowMailId
   self:GetCurrentSystemLanguage()
   self:InitRpcEvent()
   self:InitCommonTab()
@@ -14,24 +14,22 @@ function M:Init(Parent)
   self:PlayInAnim()
   self:AddReddotListen()
 end
-
 function M:AddReddotListen()
   ReddotManager.AddListener(NormalMailName, self, function(self, Count)
     self:SetMailTabRedDot(Count)
   end)
 end
-
 function M:RemoveReddotListen()
   ReddotManager.RemoveListener(NormalMailName, self)
 end
-
 function M:GetCurrentSystemLanguage()
   local SystemLanguages = {
     CN = "TextMapContent",
     EN = "ContentEN",
     JP = "ContentJP",
     KR = "ContentKR",
-    TC = "ContentTC"
+    TC = "ContentTC",
+    FR = "ContentFR"
   }
   self.CurrentSystemLanguage = "CN"
   for key, value in pairs(SystemLanguages) do
@@ -40,7 +38,6 @@ function M:GetCurrentSystemLanguage()
     end
   end
 end
-
 function M:InitRpcEvent()
   self:AddDispatcher(EventID.OnGetMailRewards, self, self.OnGetMailRewards)
   self:AddDispatcher(EventID.OnMarkMailStar, self, self.OnMarkMailStar)
@@ -50,7 +47,6 @@ function M:InitRpcEvent()
   self:AddDispatcher(EventID.OnGetAllMailReward, self, self.OnGetAllMailReward)
   self:AddDispatcher(EventID.OnChangePropMailUniqueID, self, self.InitMailMain)
 end
-
 function M:InitCommonTab()
   self:InitBtnTab()
   self.NowTabId = 1
@@ -61,10 +57,10 @@ function M:InitCommonTab()
   self.Button_Receive_All:SetText(GText("UI_Mail_Recieveall"))
   self.Button_Receive_All:BindEventOnClicked(self, self.OnClickButtonReceiveAll)
   self.Button_Receive_All:SetGamePadImg("Y")
-  self.Button_Receive:SetText(GText("UI_Mail_Recieve"))
   self.Button_Receive:SetGamePadIconVisible(true)
   self.Button_Receive:SetGamePadImg("A")
   self.Button_Receive:BindEventOnClicked(self, self.OnClickButtonReceive)
+  self.Btn_Normal:BindEventOnClicked(self, self.OnClickButtonReceive)
   self.Button_DeleteAllRead:SetText(GText("UI_Mail_Delete_All"))
   self.Button_DeleteAllRead:BindEventOnClicked(self, self.OnClickButtonDeleteAllRead)
   self.Button_DeleteAllRead:SetGamePadImg("X")
@@ -75,7 +71,6 @@ function M:InitCommonTab()
   self.Text_RewardTitle:SetText(GText("UI_Mail_Reward"))
   self.Button_Collect:BindEventOnClicked(self, self.OnClickButtonCollect)
 end
-
 function M:InitBtnTab()
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
   local SubTabList = {
@@ -131,7 +126,6 @@ function M:InitBtnTab()
   self.Tab01 = self.WBP_Com_TabSub01.List_Tab:GetChildAt(0)
   self.Btn_Delete:BindEventOnClicked(self, self.OnClickDeleteMail)
 end
-
 function M:InitMailMain()
   self.NormalMailList = {}
   self.NorMailNums = 0
@@ -151,6 +145,7 @@ function M:InitMailMain()
         self.NormalMailList[Id].IsStar = false
         self.NormalMailList[Id].DueTime = self:CalculateDueTime(Data)
         self.NormalMailList[Id].RealDueTime = self:CalcuateRealDueTime(Data)
+        self.NormalMailList[Id].HeadIconId = Data.HeadIconId
       end
     end
     if Avatar.StarMails then
@@ -165,13 +160,13 @@ function M:InitMailMain()
         self.StarMailList[Id].IsStar = true
         self.StarMailList[Id].DueTime = self:CalculateDueTime(Data)
         self.StarMailList[Id].RealDueTime = self:CalcuateRealDueTime(Data)
+        self.StarMailList[Id].HeadIconId = Data.HeadIconId
       end
     end
   end
   self:UpdateMailNum()
   self.WBP_Com_TabSub01:SelectTab(self.NowTabId)
 end
-
 function M:CalculateDueTime(MailData)
   local DueTime = CommonConst.MailMaxDueTime
   local NowTime = TimeUtils.NowTime()
@@ -186,7 +181,6 @@ function M:CalculateDueTime(MailData)
   end
   return DueTime
 end
-
 function M:CalcuateRealDueTime(MailData)
   if -1 == MailData.MailId then
     return MailData.MailDate + CommonConst.GMMailTimeLimit * CommonConst.SECOND_IN_DAY
@@ -198,17 +192,14 @@ function M:CalcuateRealDueTime(MailData)
     return MailData.MailDate + MailInfo.MailTimeLimit * CommonConst.SECOND_IN_DAY
   end
 end
-
 function M:UpdateMailNum()
   local ConstantInfo = DataMgr.GlobalConstant
   self.Text_NormalMailNum:SetText(self.NorMailNums + self.StarMailNums .. "/" .. math.floor(ConstantInfo.MailMaxSave.ConstantValue))
   self.Text_StarMailNum:SetText(self.StarMailNums .. "/" .. math.floor(ConstantInfo.StarMailMaxSave.ConstantValue))
 end
-
 function M:OnSubTabChanged(TabWidget)
   self:OnMailListTabClicked(TabWidget.Idx, 1)
 end
-
 function M:OnMailListTabClicked(TabId, SelectMailIndex, bKeepScrollOffset)
   SelectMailIndex = SelectMailIndex or 1
   if self.CurContent then
@@ -246,13 +237,21 @@ function M:OnMailListTabClicked(TabId, SelectMailIndex, bKeepScrollOffset)
       self.WS_MailDetail:SetActiveWidgetIndex(0)
     end
   end
-  self:UpdateFocusState("ListMail", SelectMailIndex)
+  if self.List_Mail:GetNumItems() > 0 and 1 == self.WS_MailList:GetActiveWidgetIndex() then
+    self.List_Mail.BP_OnEntryInitialized:Add(self, function()
+      self:AddTimer(0.1, function()
+        self:UpdateFocusState("ListMail", SelectMailIndex)
+      end)
+      self.List_Mail.BP_OnEntryInitialized:Clear()
+    end)
+  else
+    self:UpdateFocusState("ListMail", SelectMailIndex)
+  end
+  self:InitListReddot()
 end
-
 function M:SetMailTabRedDot(Nums)
   self.Tab01:SetReddotNum(Nums)
 end
-
 function M:CheckHaveRewardToReceiveAll()
   local HaveReward = false
   for key, value in pairs(self.NormalMailList) do
@@ -272,7 +271,6 @@ function M:CheckHaveRewardToReceiveAll()
   end
   return HaveReward
 end
-
 function M:CheckHaveReadToDeleteAll()
   local HaveRead = false
   for key, value in pairs(self.NormalMailList) do
@@ -287,15 +285,15 @@ function M:CheckHaveReadToDeleteAll()
   end
   return HaveRead
 end
-
 function M:CheckHaveRewardToReceive(IsGot)
   if 0 == IsGot then
+    self.Button_Receive:ForbidBtn(false)
+  elseif self:IsGift(self.CurContent) then
     self.Button_Receive:ForbidBtn(false)
   else
     self.Button_Receive:ForbidBtn(true)
   end
 end
-
 function M:MergeMailList(...)
   local Res = {}
   for i = 1, select("#", ...) do
@@ -306,7 +304,6 @@ function M:MergeMailList(...)
   end
   return Res
 end
-
 function M:GetMailListData(bKeepScrollOffset, ...)
   local ListData = self:MergeMailList(...)
   local SortTable
@@ -321,7 +318,6 @@ function M:GetMailListData(bKeepScrollOffset, ...)
   end
   return ListData, SortTable
 end
-
 function M:InitListMail(SelectMailIndex, bKeepScrollOffset, ...)
   local ListData, SortTable = self:GetMailListData(bKeepScrollOffset, ...)
   local ScrollOffset = self.List_Mail:GetScrollOffset()
@@ -339,22 +335,27 @@ function M:InitListMail(SelectMailIndex, bKeepScrollOffset, ...)
     MailContent.DueTime = Data.DueTime
     MailContent.ParentWidget = self
     MailContent.IsSelected = false
+    MailContent.HeadIconId = Data.HeadIconId
     table.insert(self.MailContentList, MailContent)
   end
   self:SortListMail(SortTable)
   if SelectMailIndex > #self.MailContentList then
     SelectMailIndex = #self.MailContentList
   end
-  self.MailContentList[SelectMailIndex].IsSelected = true
-  self.SelectMailUniqueId = self.MailContentList[SelectMailIndex].UniqueId
   for Index, Content in ipairs(self.MailContentList) do
     Content.Id = Index
     self.List_Mail:AddItem(Content)
+    if self.ShowMailId and self.ShowMailId == Content.MailId then
+      SelectMailIndex = Index
+    end
   end
+  self.MailContentList[SelectMailIndex].IsSelected = true
+  self.SelectMailUniqueId = self.MailContentList[SelectMailIndex].UniqueId
   if self:IsExistTimer("AddEmpty") then
     self:RemoveTimer("AddEmpty")
   end
   self:AddTimer(0.01, function()
+    self.ShowMailId = nil
     local function Final()
       if bKeepScrollOffset then
         self.List_Mail:SetScrollOffset(ScrollOffset)
@@ -362,7 +363,6 @@ function M:InitListMail(SelectMailIndex, bKeepScrollOffset, ...)
         self.List_Mail:ScrollToTop()
       end
     end
-    
     local MailItemUIs = self.List_Mail:GetDisplayedEntryWidgets()
     local RestCount = UIUtils.GetListViewContentMaxCount(self.List_Mail, MailItemUIs) - #self.MailContentList
     if RestCount <= 0 then
@@ -381,6 +381,23 @@ function M:InitListMail(SelectMailIndex, bKeepScrollOffset, ...)
     self.ScrollBox_MailList:SetScrollbarVisibility(UIConst.VisibilityOp.Collapsed)
     Final()
   end, false, 0, "AddEmpty")
+end
+function M:InitListReddot()
+  self.List_Mail.OnListViewScrolled:Clear()
+  local bShowReddot = false
+  if 1 == self.NowTabId then
+    if self.NorMailNums + self.StarMailNums > 0 then
+      bShowReddot = true
+    end
+  elseif self.StarMailNums > 0 then
+    bShowReddot = true
+  end
+  if not bShowReddot then
+    self.GroupListReddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    return
+  else
+    self.GroupListReddot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+  end
   self.List_Mail.OnListViewScrolled:Add(self, self.OnList_MailScrolled)
   self:AddTimer(0.1, function()
     self:OnList_MailScrolled()
@@ -395,7 +412,6 @@ function M:InitListMail(SelectMailIndex, bKeepScrollOffset, ...)
     return bHasReddot, bHasNew
   end)
 end
-
 function M:OnList_MailScrolled()
   if not self then
     return
@@ -416,7 +432,6 @@ function M:OnList_MailScrolled()
       self:OnList_MailScrolled()
     end
   end)
-  
   local function ReddotAndNewCalFunc(...)
     local Content = (...)
     if not Content then
@@ -426,7 +441,6 @@ function M:OnList_MailScrolled()
     local bHasNew = 0 == Content.MailReaded
     return bHasReddot, bHasNew
   end
-  
   self:AddTimer(0.033, function()
     if not self then
       return
@@ -434,7 +448,6 @@ function M:OnList_MailScrolled()
     UIUtils.UpdateListReddot(self.List_Mail, self.List_RedDotTop, self.List_RedDotBottom, nil, nil, ReddotAndNewCalFunc)
   end)
 end
-
 function M:SortListMail(SortTable)
   local SortKeys = {"MailDate", "DueTime"}
   table.sort(self.MailContentList, function(Data1, Data2)
@@ -462,14 +475,12 @@ function M:SortListMail(SortTable)
     end
   end)
 end
-
 function M:ClearMailListItemClickState(Content)
   local EntryList = self.List_Mail:GetDisplayedEntryWidgets():ToTable()
   for _, v in ipairs(EntryList) do
     v:ClearListItemObjectSelectState(Content)
   end
 end
-
 function M:OnMailListItemClicked(Content)
   if self.CurContent then
     self.CurContent.IsSelected = false
@@ -482,12 +493,15 @@ function M:OnMailListItemClicked(Content)
   local MailInfo
   MailInfo = self:GetMailInfo(Content)
   self.Text_MailTitle:SetText(GText(MailInfo.MailTitle))
-  local NpcId = MailInfo.MailSenderId
-  local Name = "Mail_Sender_Default"
-  if NpcId then
-    local NpcInfo = DataMgr.Npc[NpcId]
-    if NpcInfo and NpcInfo.UnitName then
-      Name = NpcInfo.UnitName
+  local Name = MailInfo.Nickname
+  if not Name then
+    local NpcId = MailInfo.MailSenderId
+    Name = "Mail_Sender_Default"
+    if NpcId then
+      local NpcInfo = DataMgr.Npc[NpcId]
+      if NpcInfo and NpcInfo.UnitName then
+        Name = NpcInfo.UnitName
+      end
     end
   end
   self.Text_From:SetText(GText(Name))
@@ -520,11 +534,9 @@ function M:OnMailListItemClicked(Content)
   if self:IsExistTimer("RefreshTabBottomKey") then
     self:RemoveTimer("RefreshTabBottomKey")
   end
-  
   local function RefreshTabBottomKey()
     self.Parent:RefreshTabBottomKey()
   end
-  
   self:AddTimer(0.066, RefreshTabBottomKey, false, 0, "RefreshTabBottomKey")
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_RewardTitle:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -539,8 +551,24 @@ function M:OnMailListItemClicked(Content)
     self.Group_KeyDelete:SetVisibility(ESlateVisibility.Collapsed)
     self.Key_Delete:SetVisibility(ESlateVisibility.Collapsed)
   end
+  self:UpdateBtnReceive()
 end
-
+function M:UpdateBtnReceive()
+  if self:IsGift(self.CurContent) then
+    if 1 == self.CurContent.RewardGot then
+      self.WS_Btn:SetActiveWidgetIndex(1)
+      self.Btn_Normal:SetText(GText("UI_SendGift_ViewGift2"))
+    else
+      self.WS_Btn:SetActiveWidgetIndex(0)
+      self.Button_Receive:SetText(GText("UI_SendGift_ViewGift"))
+    end
+    self.ImageGiftSign:SetVisibility(UIConst.VisibilityOp.Visible)
+  else
+    self.WS_Btn:SetActiveWidgetIndex(0)
+    self.Button_Receive:SetText(GText("UI_Mail_Recieve"))
+    self.ImageGiftSign:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
+end
 function M:GetMailInfo(Content)
   local MailInfo = {}
   local Avatar = GWorld:GetAvatar()
@@ -559,7 +587,12 @@ function M:GetMailInfo(Content)
     MailInfo.MailSenderId = MailData.MailSenderId
     MailInfo.MailTimeLimit = MailData.MailTimeLimit
     local MailData = DataMgr.Mail[Content.MailId]
-    MailInfo.MailContent = GText(MailData.MailContent)
+    if 0 ~= Mail.HeadIconId then
+      MailInfo.MailContent = GText(Mail.MailContent[self.CurrentSystemLanguage] or Mail.MailContent.CN)
+      MailInfo.Nickname = Mail.Nickname
+    else
+      MailInfo.MailContent = GText(MailData.MailContent)
+    end
     MailInfo.MailTitle = GText(MailData.MailTitle)
     for key, value in pairs(Mail.FormatText or {}) do
       MailInfo.MailContent = string.gsub(MailInfo.MailContent, "{" .. key .. "}", GText(value))
@@ -578,7 +611,6 @@ function M:GetMailInfo(Content)
   MailInfo.MailSenderId = Mail.MailSender
   return MailInfo
 end
-
 function M:CheckMailHasHref()
   local Text = self.Text_MailDetail:GetText()
   if 1 == self.WS_MailDetail:GetActiveWidgetIndex() and string.find(Text, "href") then
@@ -586,7 +618,6 @@ function M:CheckMailHasHref()
   end
   return false
 end
-
 function M:InitTileViewMailGift(RewardIds, IsGot)
   self.TileView_MailGift:ClearListItems()
   self.RewardList = {}
@@ -601,7 +632,6 @@ function M:InitTileViewMailGift(RewardIds, IsGot)
   self:SortRewardList()
   self:AddRewardListItem(IsGot)
 end
-
 function M:SortRewardList()
   table.sort(self.RewardList, function(Data1, Data2)
     if Data1.Rarity == Data2.Rarity then
@@ -611,7 +641,6 @@ function M:SortRewardList()
     end
   end)
 end
-
 function M:AddRewardListItem(IsGot)
   for _, Data in pairs(self.RewardList) do
     local MailRewardContent = NewObject(UIUtils.GetCommonItemContentClass())
@@ -631,7 +660,7 @@ function M:AddRewardListItem(IsGot)
       MailRewardContent.IsShowDetails = false
       MailRewardContent.OnMouseButtonUpEvents = {
         Obj = self,
-        Callback = self.OpenShowCharDetail,
+        Callback = self.OpenShowWeaponDetail,
         Params = {
           Data.ItemId
         }
@@ -653,8 +682,8 @@ function M:AddRewardListItem(IsGot)
     }
     self.TileView_MailGift:AddItem(MailRewardContent)
   end
+  self.TileView_MailGift:RequestPlayEntriesAnim()
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -666,7 +695,6 @@ function M:ItemMenuAnchorChanged(bIsOpen)
     self.Parent.Common_Tab.Com_KeyTips.Panel_Key:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:OpenShowCharDetail(CharId)
   UIManager(self):LoadUINew("ArmoryDetail", {
     PreviewCharIds = {CharId},
@@ -677,7 +705,6 @@ function M:OpenShowCharDetail(CharId)
     bNoEndCamera = true
   })
 end
-
 function M:OpenShowWeaponDetail(WeaponId)
   UIManager(self):LoadUINew("ArmoryDetail", {
     PreviewWeaponIds = {WeaponId},
@@ -688,7 +715,6 @@ function M:OpenShowWeaponDetail(WeaponId)
     EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon
   })
 end
-
 function M:SetTileListGotState()
   for i = 0, self.TileView_MailGift:GetNumItems() - 1 do
     local Item = self.TileView_MailGift:GetItemAt(i)
@@ -697,16 +723,14 @@ function M:SetTileListGotState()
     end
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
-  if CurInputType == ECommonInputType.Gamepad then
+  if CurInputType == ECommonInputType.Gamepad and IsValid(self.Parent) and self.Parent:HasAnyFocus() then
     self:InitGamepadView()
   else
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   self:UpdateFocusState("ListMail", self.CurContent and self.CurContent.Id or 0)
   self.Key_RewardTitle:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -715,7 +739,6 @@ function M:InitGamepadView()
   self.Group_KeyDelete:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Key_Delete:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:InitKeyboardView()
   self.Key_RewardTitle:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_KeyCollect:SetVisibility(ESlateVisibility.Collapsed)
@@ -723,16 +746,24 @@ function M:InitKeyboardView()
   self.Group_KeyDelete:SetVisibility(ESlateVisibility.Collapsed)
   self.Key_Delete:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:OnMailRootPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
-  if InKeyName == UIConst.GamePadKey.DPadRight and self.GamePadState == "ListMail" and self:CheckMailHasHref() then
-    self:UpdateFocusState("Hyperlink")
+  if InKeyName == UIConst.GamePadKey.DPadRight and self.GamePadState == "ListMail" then
+    if self:CheckMailHasHref() then
+      self:UpdateFocusState("Hyperlink")
+    end
+  elseif self.GamePadState == "Hyperlink" and self.CurrentUrlWidgetIndex >= 0 then
+    if 0 == self.CurrentUrlWidgetIndex and InKeyName == UIConst.GamePadKey.DPadLeft then
+      self:ResetFocusState()
+    elseif InKeyName == UIConst.GamePadKey.DPadUp or InKeyName == UIConst.GamePadKey.DPadLeft then
+      self.CurrentUrlWidgetIndex = self.Text_MailDetail:FindLastFocsableUrlWidget(self.CurrentUrlWidgetIndex)
+    elseif InKeyName == UIConst.GamePadKey.DPadDown or InKeyName == UIConst.GamePadKey.DPadRight then
+      self.CurrentUrlWidgetIndex = self.Text_MailDetail:FindNextFocusableUrlWidget(self.CurrentUrlWidgetIndex)
+    end
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnMailRootKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -755,7 +786,6 @@ function M:OnMailRootKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.LeftTriggerThreshold or InKeyName == UIConst.GamePadKey.RightTriggerThreshold and self.GamePadState == "ListMail" then
@@ -786,7 +816,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -802,15 +831,20 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     elseif DeltaOffset >= 1 and self.GamePadState == "ListMail" and self:CheckMailHasHref() then
       self:UpdateFocusState("Hyperlink")
     end
+  elseif InKeyName == UIConst.GamePadKey.LeftAnalogY then
+    local DeltaOffsetY = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent)
+    if self.GamePadState == "Hyperlink" then
+      local Direction = DeltaOffsetY <= 0 and "Next" or "Last"
+      self:OnNavigatUrlWithAxis(math.abs(DeltaOffsetY), Direction)
+    end
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:ResetFocusState()
+  self.CurrentUrlWidgetIndex = -1
   self.GamePadState = "ListMail"
-  self:UpdateFocusState("ListMail")
+  self:UpdateFocusState("ListMail", self.CurContent and self.CurContent.Id or 0)
 end
-
 function M:UpdateFocusState(State, SelectIndex)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -834,14 +868,13 @@ function M:UpdateFocusState(State, SelectIndex)
         end
         self.List_Mail:NavigateToIndex(SelectIndex and SelectIndex - 1 or 0)
       end
-      
       self:AddTimer(0.066, SetFocus, false, 0, "SetFocus")
     else
       self:SetFocus()
     end
   elseif "Hyperlink" == State then
     self:SetIsDealWithVirtualAccept(false)
-    self.Text_MailDetail:NavigateToTargetChildWidgetWithType("SRichTextHyperlinkWithUrl")
+    self.CurrentUrlWidgetIndex = self.Text_MailDetail:NavigateToUrlWidget()
     self:SetCommonGamePadVisibility(ESlateVisibility.Collapsed)
     self.Parent.Common_Tab.Com_KeyTips.Panel_Key:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   elseif "ListReward" == State then
@@ -849,12 +882,26 @@ function M:UpdateFocusState(State, SelectIndex)
     self:SetCommonGamePadVisibility(ESlateVisibility.Collapsed)
   end
 end
-
+function M:OnNavigatUrlWithAxis(DeltaOffsetValue, Direction)
+  local bIsPressed = DeltaOffsetValue > 0.5
+  if not self.bWasLeftStickPressedLast and bIsPressed then
+    self.bWasLeftStickPressedLast = true
+    if "Last" == Direction then
+      self.CurrentUrlWidgetIndex = self.Text_MailDetail:FindLastFocsableUrlWidget(self.CurrentUrlWidgetIndex)
+    elseif "Next" == Direction then
+      self.CurrentUrlWidgetIndex = self.Text_MailDetail:FindNextFocusableUrlWidget(self.CurrentUrlWidgetIndex)
+    end
+  elseif self.bWasLeftStickPressedLast and not bIsPressed then
+    self.bWasLeftStickPressedLast = false
+  end
+end
 function M:SetCommonGamePadVisibility(Op)
   self.WBP_Com_TabSub01.Key_Left:SetVisibility(Op)
   self.WBP_Com_TabSub01.Key_Right:SetVisibility(Op)
   self.Key_RewardTitle:SetVisibility(Op)
-  self.Parent:RefreshTabBottomKey()
+  if self.Parent then
+    self.Parent:RefreshTabBottomKey()
+  end
   self.Group_KeyCollect:SetVisibility(Op)
   self.Key_Collect:SetVisibility(Op)
   self.Group_KeyDelete:SetVisibility(Op)
@@ -863,7 +910,6 @@ function M:SetCommonGamePadVisibility(Op)
   self.Button_Receive_All:SetGamePadVisibility(Op)
   self.Button_Receive:SetGamePadVisibility(Op)
 end
-
 function M:OnClickButtonCollect()
   if not self.CurContent then
     return
@@ -871,12 +917,10 @@ function M:OnClickButtonCollect()
   local Avatar = GWorld:GetAvatar()
   if self.CurContent.IsStar then
     local CurContent = self.CurContent
-    
     local function ConfirmCancel()
       self:BlockAllUIInput(true)
       Avatar:CancelMailStar(CurContent.UniqueId)
     end
-    
     local Data = self.StarMailList[CurContent.UniqueId]
     local RealDueTime = Data and Data.RealDueTime
     if RealDueTime and RealDueTime <= TimeUtils.NowTime() then
@@ -901,11 +945,9 @@ function M:OnClickButtonCollect()
     Avatar:MarkMailStar(self.CurContent.UniqueId)
   end
 end
-
 function M:OnPressSPACE()
   self:OnClickButtonReceiveAll()
 end
-
 function M:OnClickButtonReceiveAll()
   if not self.CurContent then
     return
@@ -920,21 +962,31 @@ function M:OnClickButtonReceiveAll()
   self:BlockAllUIInput(true)
   Avatar:GetAllMailReward()
 end
-
 function M:OnClickButtonReceive()
   if not self.CurContent then
     return
   end
   local MailInfo = self:GetMailInfo(self.CurContent)
-  if 1 == self.CurContent.RewardGot or MailInfo.MailReward == nil then
+  if (1 == self.CurContent.RewardGot or MailInfo.MailReward == nil) and not self:IsGift(self.CurContent) then
     return
   else
     local Avatar = GWorld:GetAvatar()
-    self:BlockAllUIInput(true)
-    Avatar:GetMailRewards(self.CurContent.UniqueId)
+    local Mail
+    if self.CurContent.IsStar then
+      Mail = Avatar.StarMails[self.CurContent.UniqueId]
+    else
+      Mail = Avatar.MailInbox[self.CurContent.UniqueId]
+    end
+    if self:IsGift(self.CurContent) then
+      local ShopItemId = string.match(Mail.CtxId, "ShopItemId:(.-) ")
+      GiftController:OpenGiftCardView(Mail.MailSender, ShopItemId, 2, Mail)
+    else
+      local Avatar = GWorld:GetAvatar()
+      self:BlockAllUIInput(true)
+      Avatar:GetMailRewards(self.CurContent.UniqueId)
+    end
   end
 end
-
 function M:OnClickButtonDeleteAllRead()
   if 1 ~= self.NowTabId then
     return
@@ -953,7 +1005,6 @@ function M:OnClickButtonDeleteAllRead()
     end
   })
 end
-
 function M:OnClickDeleteMail()
   if not self.CurContent then
     return
@@ -973,19 +1024,15 @@ function M:OnClickDeleteMail()
     end
   })
 end
-
 function M:BindEventOnSelectionsChanged()
   self:OnMailListTabClicked(self.NowTabId, 1)
 end
-
 function M:BindEventOnSortTypeChanged()
   self:OnMailListTabClicked(self.NowTabId, 1)
 end
-
 function M:OnPressESC()
   self:PlayOutAnim()
 end
-
 function M:GetMailRewardIds(UniqueIds)
   local RewardIds = {}
   if type(UniqueIds) == "table" then
@@ -1031,7 +1078,6 @@ function M:GetMailRewardIds(UniqueIds)
   end
   return RewardIds
 end
-
 function M:OnGetMailRewards(Ret, UniqueID, UniqueIds)
   if Ret == ErrorCode.RET_SUCCESS then
     self:BlockAllUIInput(false)
@@ -1045,13 +1091,13 @@ function M:OnGetMailRewards(Ret, UniqueID, UniqueIds)
     end
     local Rewards = self:GetMailRewardIds(UniqueIds)
     self.GamePadState = "GetItemPage"
-    UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function(obj)
-      self:ResetFocusState()
-      self:CheckHaveRewardToReceive(self.CurContent.RewardGot)
-    end, self)
-    self:SetTileListGotState()
     self.CurContent.RewardGot = 1
     self.CurContent.MailReaded = 1
+    UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function(obj)
+      self:ResetFocusState()
+    end, self)
+    self:SetTileListGotState()
+    self:CheckHaveRewardToReceive(self.CurContent.RewardGot)
     if not self:CheckHaveRewardToReceiveAll() then
       self.Parent:RefreshTabBottomKey()
     end
@@ -1061,8 +1107,8 @@ function M:OnGetMailRewards(Ret, UniqueID, UniqueIds)
   else
     self:HandleAvatarRet(Ret)
   end
+  self:UpdateBtnReceive()
 end
-
 function M:OnGetAllMailReward(Ret, UniqueIds)
   if Ret == ErrorCode.RET_SUCCESS then
     self:BlockAllUIInput(false)
@@ -1078,15 +1124,16 @@ function M:OnGetAllMailReward(Ret, UniqueIds)
     self:HandleAvatarRet(Ret)
   end
 end
-
 function M:OnMarkMailStar(Ret, UniqueID, UniqueIds)
   if Ret == ErrorCode.RET_SUCCESS then
     self:BlockAllUIInput(false)
     self.StarUniqueId = UniqueID
+    self:CheckHaveRewardToReceive(1)
     if 1 ~= self.NormalMailList[UniqueID].RewardGot and self.NormalMailList[UniqueID].ItemList[1] then
       local Rewards = self:GetMailRewardIds(UniqueID)
       self.NormalMailList[UniqueID].RewardGot = 1
       self.GamePadState = "GetItemPage"
+      self.bMarkMailStar = true
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function(obj)
         self:PlayStarAnim()
       end, self)
@@ -1097,7 +1144,6 @@ function M:OnMarkMailStar(Ret, UniqueID, UniqueIds)
     self:HandleAvatarRet(Ret)
   end
 end
-
 function M:PlayStarAnim()
   self:PlayAnimation(self.Collect)
   self.CurContent.IsStar = true
@@ -1113,18 +1159,16 @@ function M:PlayStarAnim()
   if self:IsExistTimer("StarMail") then
     self:RemoveTimer("StarMail")
   end
-  
   local function StarMail()
     self:BlockAllUIInput(false)
     self:ResetFocusState()
     self:OnMailListTabClicked(self.NowTabId, SelectMailIndex, true)
     self:UpdateMailNum()
+    self.bMarkMailStar = false
   end
-  
   local AnimTime = self.CurContent.SelfWidget.List_Collect:GetEndTime()
   self:AddTimer(AnimTime, StarMail, false, 0, "StarMail", true)
 end
-
 function M:OnCancelMailStar(Ret, UniqueID)
   if Ret == ErrorCode.RET_SUCCESS then
     self:PlayAnimation(self.UnCollect)
@@ -1140,20 +1184,17 @@ function M:OnCancelMailStar(Ret, UniqueID)
     if self:IsExistTimer("CancelStar") then
       self:RemoveTimer("CancelStar")
     end
-    
     local function CancelStar()
       self:BlockAllUIInput(false)
       self:OnMailListTabClicked(self.NowTabId, SelectMailIndex, 1 == self.NowTabId)
       self:UpdateMailNum()
     end
-    
     local AnimTime = self.UnCollect:GetEndTime()
     self:AddTimer(AnimTime, CancelStar, false, 0, "CancelStar")
   else
     self:HandleAvatarRet(Ret)
   end
 end
-
 function M:OnMarkMailReaded(Ret, UniqueID)
   if Ret == ErrorCode.RET_SUCCESS then
     local MailInfo
@@ -1182,13 +1223,11 @@ function M:OnMarkMailReaded(Ret, UniqueID)
     self:HandleAvatarRet(Ret)
   end
 end
-
 function M:OnDeleteMail(Ret, UniqueID)
   self:BlockAllUIInput(false)
   UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Mail_Delete_Success"))
   self:InitMailMain()
 end
-
 function M:HandleAvatarRet(Ret)
   self:BlockAllUIInput(false)
   if DataMgr.ErrorCode[Ret] then
@@ -1198,11 +1237,11 @@ function M:HandleAvatarRet(Ret)
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText(ErrorText), 1.5)
   end
 end
-
 function M:PlayInAnim()
 end
-
 function M:PlayOutAnim()
 end
-
+function M:IsGift(Content)
+  return Content.HeadIconId and 0 ~= Content.HeadIconId
+end
 return M

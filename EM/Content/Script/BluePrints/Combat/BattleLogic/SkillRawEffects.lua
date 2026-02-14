@@ -1,7 +1,6 @@
 local SkillUtils = require("Utils.SkillUtils")
 local EffectResults = require("BluePrints.Combat.BattleLogic.EffectResults")
 local Component = {}
-
 function Component:RealExecuteOneEffect_Lua(EffectStruct, Index)
   if not IsValid(EffectStruct.Source) then
     return
@@ -13,7 +12,7 @@ function Component:RealExecuteOneEffect_Lua(EffectStruct, Index)
   })
   local FunctionName = Effect.Function
   if not self["Effect_" .. FunctionName] then
-    self:ShowBattleError("\230\138\128\232\131\189\230\149\136\230\158\156\231\188\150\229\143\183: " .. EffectId .. ", \230\137\167\232\161\140\230\149\136\230\158\156\231\188\150\229\143\183: " .. Index .. ", \230\150\185\230\179\149: " .. FunctionName .. ", \229\156\168 SkillRawEffects.lua \228\184\173\228\184\141\229\173\152\229\156\168\227\128\130")
+    self:ShowBattleError("技能效果编号: " .. EffectId .. ", 执行效果编号: " .. Index .. ", 方法: " .. FunctionName .. ", 在 SkillRawEffects.lua 中不存在。")
     return
   end
   local EffectDataParam = {
@@ -28,14 +27,12 @@ function Component:RealExecuteOneEffect_Lua(EffectStruct, Index)
     self.Result = EffectResults.Result()
   end
 end
-
 function Component:Effect_AddTnToMax(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if Source then
     Source:RecoverToMaxTN()
   end
 end
-
 function Component:Effect_RemoveRayCreature(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local CreatureId = ParamentsTable.CreatureId
@@ -48,7 +45,6 @@ function Component:Effect_RemoveRayCreature(EffectStruct, ParamentsTable)
   end
   RayCreature:EMActorDestroy()
 end
-
 function Component:Effect_FireCreature(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local CreatureId = ParamentsTable.CreatureId
@@ -69,7 +65,6 @@ function Component:Effect_FireCreature(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:StarCameraShakeByEids(Eids, ParamentsTable, SourceLocation)
   if Eids and #Eids > 0 then
     local ShakeScale = ParamentsTable.ShakeScale or 1
@@ -102,7 +97,6 @@ function Component:StarCameraShakeByEids(Eids, ParamentsTable, SourceLocation)
     end
   end
 end
-
 function Component:GetSummonOffsets(FormationId, PlayerRotation, Player)
   local ResOffsets = {}
   local TeamData = DataMgr.EliteTeamData[FormationId]
@@ -116,7 +110,6 @@ function Component:GetSummonOffsets(FormationId, PlayerRotation, Player)
   end
   return ResOffsets
 end
-
 function Component:UseTeamOffsets(TeamData, PlayerRotation)
   local ResOffsets = {}
   local Offsets = TeamData.Offsets
@@ -135,7 +128,6 @@ function Component:UseTeamOffsets(TeamData, PlayerRotation)
   end
   return ResOffsets
 end
-
 function Component:Shuffle(t)
   if type(t) ~= "table" then
     return
@@ -152,7 +144,6 @@ function Component:Shuffle(t)
   end
   return tab
 end
-
 function Component:UseTeam_Circle(TeamData, PlayerRotation)
   local ResOffsets = {}
   local SummonPresetShape = TeamData.SummonPresetShape
@@ -173,7 +164,6 @@ function Component:UseTeam_Circle(TeamData, PlayerRotation)
   end
   return ResOffsets
 end
-
 function Component:Effect_Taunt(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local HitTargets = EffectStruct.HitTargets:ToTable()
@@ -200,7 +190,6 @@ function Component:Effect_Taunt(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_GatherTargets(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local HitTargets = EffectStruct.HitTargets:ToTable()
@@ -217,7 +206,7 @@ function Component:Effect_GatherTargets(EffectStruct, ParamentsTable)
   if 0 ~= EffectStruct.CreatureInfo.CreatureEid then
     local SkillCreatureConfig = DataMgr.SkillCreature[EffectStruct.CreatureInfo.CreatureId]
     if Source:IsPlayer() and SkillCreatureConfig.ClientOwner and IsDedicatedServer(self) then
-      self:ShowBattleError("\229\189\147\229\137\141\228\184\141\230\148\175\230\140\129\231\148\177\231\142\169\229\174\182\231\155\180\230\142\165\230\137\167\232\161\140\231\154\132\230\138\128\232\131\189\230\149\136\230\158\156\231\188\150\229\143\183: " .. EffectStruct.EffectId .. ", \230\137\167\232\161\140\230\149\136\230\158\156GatherTargets\239\188\140\230\138\128\232\131\189\229\136\155\231\148\159\231\137\169id\228\184\186" .. EffectStruct.CreatureInfo.CreatureId .. "ClientOwner\228\184\186true\231\154\132\230\138\128\232\131\189\230\149\136\230\158\156")
+      self:ShowBattleError("当前不支持由玩家直接执行的技能效果编号: " .. EffectStruct.EffectId .. ", 执行效果GatherTargets，技能创生物id为" .. EffectStruct.CreatureInfo.CreatureId .. "ClientOwner为true的技能效果")
       return
     end
     for _, Eid in ipairs(HitTargets) do
@@ -235,7 +224,6 @@ function Component:Effect_GatherTargets(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_ChangeSummonLifeTime(EffectStruct, ParamentsTable)
   local HitTargets = EffectStruct.HitTargets:ToTable()
   if not next(HitTargets) then
@@ -255,7 +243,6 @@ function Component:Effect_ChangeSummonLifeTime(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_ActiveStaticCreator(EffectStruct, ParamentsTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil == GameMode then
@@ -266,7 +253,6 @@ function Component:Effect_ActiveStaticCreator(EffectStruct, ParamentsTable)
   StaticCreatorArray:Add(StaticCreatorId)
   GameMode:TriggerActiveStaticCreator(StaticCreatorArray)
 end
-
 function Component:Effect_InactiveStaticCreator(EffectStruct, ParamentsTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil == GameMode then
@@ -277,7 +263,6 @@ function Component:Effect_InactiveStaticCreator(EffectStruct, ParamentsTable)
   StaticCreatorArray:Add(StaticCreatorId)
   GameMode:TriggerInactiveStaticCreator(StaticCreatorArray)
 end
-
 function Component:Effect_QuitDefeated(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local TargetEid = Source.CondemnMonsterEid
@@ -289,7 +274,6 @@ function Component:Effect_QuitDefeated(EffectStruct, ParamentsTable)
     Target:DefeatedRecoverToIdle()
   end
 end
-
 function Component:Effect_SetToCondemnLoc(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if not Source then
@@ -318,9 +302,10 @@ function Component:Effect_SetToCondemnLoc(EffectStruct, ParamentsTable)
   NewSourceLocation.Z = MonsterPenalizeComponent:K2_GetComponentLocation().Z
   local Rotate = UE4.UKismetMathLibrary.FindLookAtRotation(NewSourceLocation, MonsterPenalizeComponent:K2_GetComponentLocation())
   Source:K2_SetActorRotation(Rotate, false)
-  Monster:SetEnableBeCondemned(ECondemnState.DefeatedStopNotify)
+  if IsAuthority(self) then
+    Monster:SetEnableBeCondemned(ECondemnState.DefeatedStopNotify)
+  end
 end
-
 function Component:Effect_StartTargetCondemn(EffectStruct, ParamentsTable)
   local TargetEid = EffectStruct.Source.CondemnMonsterEid
   if not TargetEid then
@@ -331,14 +316,12 @@ function Component:Effect_StartTargetCondemn(EffectStruct, ParamentsTable)
     Target:MultiCastPlayCondemnMontage()
   end
 end
-
 function Component:Effect_SetFloat(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local Key = ParamentsTable.Key
   local Value = ParamentsTable.Value
   Source:SetFloat(Key, Value)
 end
-
 function Component:Effect_SaveLoc(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if not Source then
@@ -378,7 +361,6 @@ function Component:Effect_SaveLoc(EffectStruct, ParamentsTable)
   Source:SetSaveLoc(TargetLocation, Tag)
   Source.SaveLoc = TargetLocation
 end
-
 function Component:Effect_SetSelfLoc(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if not Source then
@@ -448,30 +430,24 @@ function Component:Effect_SetSelfLoc(EffectStruct, ParamentsTable)
     Source:UpdateCurrentLevelId()
   end
 end
-
-function Component:CallBackSkillCreature(CallBackCreature, BindWeaponState, TargetEid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, SetSpeed, TargetWeapon)
-  local SkillCreatureConfig = DataMgr.SkillCreature[CallBackCreature.CreatureId]
-  if CallBackCreature:IsBulletCreature() then
+function Component:CallBackSkillCreature(CallBackCreature, TargetEid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, SetSpeed, TargetWeapon)
+  if not CallBackCreature then
     return
   end
+  local SkillCreatureConfig = DataMgr.SkillCreature[CallBackCreature.CreatureId]
   if CallBackCreature.bReplicates and IsClient(self) then
     return
   end
-  if BindWeaponState then
-    CallBackCreature:SetBindWeaponState(BindWeaponState)
-  end
-  CallBackCreature:MultiCastSetCallBackLocation(TargetEid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, CallBackCreature.BindWeapon, TargetWeapon, SetSpeed)
+  CallBackCreature:MultiCastSetCallBackLocation(TargetEid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, TargetWeapon, SetSpeed, CallBackCreature.DisableCallBack)
   if SkillCreatureConfig.RefreshTargetRule and 2 == SkillCreatureConfig.RefreshTargetRule then
     CallBackCreature.Targets:Clear()
   end
 end
-
 function Component:Effect_CallBackSkillCreature(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local CreatureId = ParamentsTable.CreatureId
   local TargetSocket = ParamentsTable.TargetSocket or ""
   local IsFollowing = ParamentsTable.IsFollowing
-  local BindWeaponState = ParamentsTable.BindWeapon
   local MinDistance = ParamentsTable.MinDistance or 0
   local EventDistance = ParamentsTable.EventDistance or 0
   local CallBackNum = ParamentsTable.CallBackNum or -1
@@ -486,7 +462,7 @@ function Component:Effect_CallBackSkillCreature(EffectStruct, ParamentsTable)
   local SetSpeed = ParamentsTable.SetSpeed or -1
   if BeCallBacked and 0 ~= EffectStruct.CreatureInfo.CreatureEid then
     local Creature = self:GetEntity(EffectStruct.CreatureInfo.CreatureEid)
-    self:CallBackSkillCreature(Creature, BindWeaponState, Source.Eid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, SetSpeed, TargetWeapon)
+    self:CallBackSkillCreature(Creature, Source.Eid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, SetSpeed, TargetWeapon)
   else
     local CreatureList = Source:GetCreatureList(CreatureId)
     if 0 == CreatureList:Num() then
@@ -495,7 +471,7 @@ function Component:Effect_CallBackSkillCreature(EffectStruct, ParamentsTable)
     CreatureList = CreatureList:ToTable()
     for i = 1, #CreatureList do
       local Creature = self:GetEntity(CreatureList[i])
-      self:CallBackSkillCreature(Creature, BindWeaponState, Source.Eid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, SetSpeed, TargetWeapon)
+      self:CallBackSkillCreature(Creature, Source.Eid, TargetSocket, TargetSocketLocation, MinDistance, IsFollowing, EventDistance, SetSpeed, TargetWeapon)
       CallBackNum = CallBackNum - 1
       if 0 == CallBackNum then
         break
@@ -503,7 +479,6 @@ function Component:Effect_CallBackSkillCreature(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_SkillMove(EffectStruct, ParamentsTable)
   local HitTargets = EffectStruct.HitTargets:ToTable()
   if not next(HitTargets) then
@@ -538,56 +513,55 @@ function Component:Effect_SkillMove(EffectStruct, ParamentsTable)
   end
   self.Result:Add("SkillMove", {HitTargets = HitTargets})
 end
-
 function Component:Effect_ChargeSkill(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local SkillId = ParamentsTable.SkillId
   local ChargeNum = ParamentsTable.ChargeNum
   local Skill = Source:GetSkill(SkillId)
-  assert(Source, "Source \229\191\133\233\161\187\229\173\152\229\156\168\227\128\130")
-  assert(Skill, "Skill \229\191\133\233\161\187\229\173\152\229\156\168\227\128\130")
+  assert(Source, "Source 必须存在。")
+  assert(Skill, "Skill 必须存在。")
   Skill:ChargeUseTime(ChargeNum)
 end
-
 function Component:Effect_CameraUnlock(EffectStruct, ParamentsTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if not (ParamentsTable and ParamentsTable.CantLockTime) or not EffectStruct.Source then
+    return
+  end
   for _, Player in pairs(GameMode:GetAllPlayer()) do
     if Player.CameraUnlockOnBySkill then
-      Player:CameraUnlockOnBySkill(EffectStruct.Source, ParamentsTable)
+      Player:CameraUnlockOnBySkill(EffectStruct.Source.Eid, ParamentsTable.CantLockTime)
     end
   end
 end
-
 function Component:Effect_CameraRelock(EffectStruct, ParamentsTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if not EffectStruct.Source then
+    return
+  end
   for _, Player in pairs(GameMode:GetAllPlayer()) do
     if Player.CameraRelockOnBySkill then
-      Player:CameraRelockOnBySkill(EffectStruct.Source)
+      Player:CameraRelockOnBySkill(EffectStruct.Source.Eid)
     end
   end
 end
-
 function Component:Effect_PlayerCameraUnlock(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
-  if IsValid(Source) and Source.IsPlayer and Source:IsPlayer() then
-    Source:BanCameraLockOnBySkill(ParamentsTable)
+  if IsValid(Source) and Source.IsPlayer and Source:IsPlayer() and ParamentsTable.CantLockTime then
+    Source:BanCameraLockOnBySkill(ParamentsTable.CantLockTime)
   end
 end
-
 function Component:Effect_SetCameraPitch(EffectStruct, ParametersTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   for _, Player in pairs(GameMode:GetAllPlayer()) do
     Player.CameraRotationComponent:SetCameraPitchBySkill(ParametersTable)
   end
 end
-
 function Component:Effect_EnablePitchInput(EffectStruct, ParametersTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   for _, Player in pairs(GameMode:GetAllPlayer()) do
     Player.CameraRotationComponent:EnablePitchRotInputBySkill(ParametersTable)
   end
 end
-
 function Component:Effect_LiftTargetUp(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local HitTargets = EffectStruct.HitTargets:ToTable()
@@ -601,7 +575,6 @@ function Component:Effect_LiftTargetUp(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_CreateDanmaku(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local DanmakuTemplateId = tonumber(ParamentsTable.DanmakuTemplateId)
@@ -617,7 +590,6 @@ function Component:Effect_CreateDanmaku(EffectStruct, ParamentsTable)
   local bInTransformValid = -1 == EffectStruct.SourceComponentEid
   Source:FireDanmaku(DanmakuTemplateId, Duration, BoneName, TargetEid, bInTransformValid, EffectStruct.ActorTransform)
 end
-
 function Component:Effect_TriggerSkillCreatureTriggerEvent(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local CreatureId = ParamentsTable.CreatureId
@@ -633,7 +605,6 @@ function Component:Effect_TriggerSkillCreatureTriggerEvent(EffectStruct, Paramen
     end
   end
 end
-
 function Component:Effect_AimDiffusion(EffectStruct, ParamentsTable)
   if EffectStruct.Source and EffectStruct.Source.TakeAimIndicator then
     EffectStruct.Source.TakeAimIndicator:TryToPlayAimDiffusionStartAnim()
@@ -642,42 +613,43 @@ function Component:Effect_AimDiffusion(EffectStruct, ParamentsTable)
     EffectStruct.Source.PaoTaiBattleFront:TryToPlayAimDiffusionStartAnim()
   end
 end
-
 function Component:Effect_StartAlarm(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if Source and Source:IsMonster() and Source.MonAlertComponent then
     Source.MonAlertComponent:ApplyEffectStartAlarm()
   end
 end
-
 function Component:Effect_TryAlarm(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if Source and Source:IsMonster() and Source.MonAlertComponent then
     Source.MonAlertComponent:ApplyEffectTryAlarm()
   end
 end
-
 function Component:Effect_EffectFunction(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local FunctionName = ParamentsTable.FunctionName
   local Vars = ParamentsTable.Vars
   self.EffectFunctionComponent:ExecuteFunction(Source, EffectStruct.EffectId, FunctionName, Vars)
 end
-
 function Component:Effect_RemoveUnit(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local UnitId = ParamentsTable.UnitId
+  local Num = ParamentsTable.Num or -1
+  local Count = 0
   for _, SummonEid in pairs(Source:GetAllDirectorSummon():ToTable()) do
     local Summon = self:GetEntity(SummonEid)
     if Summon and Summon.UnitId == UnitId then
+      Count = Count + 1
       self:BattleOnDead(Summon.Eid, Summon.Eid, 0, EDeathReason.SummonRemove)
+    end
+    if Count == Num then
+      break
     end
   end
   if Source:IsOwnedCreatingUnitBySummonId(UnitId) then
     Source:RemoveCreatedUnitEidBySummonId(UnitId)
   end
 end
-
 function Component:Effect_StartRecovery(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if not Source then
@@ -692,7 +664,6 @@ function Component:Effect_StartRecovery(EffectStruct, ParamentsTable)
     Battle(self):RecoverOther(Source.Eid, Eid, true, Params, UE4.ERecoverReason.RecoverReason_SkillEffect)
   end
 end
-
 function Component:Effect_EndRecovery(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   if not Source or not Source.RecoverTargets then
@@ -702,7 +673,6 @@ function Component:Effect_EndRecovery(EffectStruct, ParamentsTable)
     Battle(self):RecoverOther(Source.Eid, TargetEid, false)
   end
 end
-
 function Component:Effect_Disarm(EffectStruct, ParamentsTable)
   local HitTargets = EffectStruct.HitTargets:ToTable()
   local Source = EffectStruct.Source
@@ -755,7 +725,6 @@ function Component:Effect_Disarm(EffectStruct, ParamentsTable)
     self:TriggerBattleEvent(BattleEventName.OnDisarm, Source, TargetCount)
   end
 end
-
 function Component:Effect_ChangeWeapon(EffectStruct, ParamentsTable)
   local WeaponIndex = ParamentsTable.WeaponIndex
   local HitTargets = EffectStruct.HitTargets:ToTable()
@@ -781,7 +750,6 @@ function Component:Effect_ChangeWeapon(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_RescueAlert(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -789,7 +757,6 @@ function Component:Effect_RescueAlert(EffectStruct, ParamentsTable)
     GameMode:TriggerDungeonComponentFun("TriggerRescueAlert", Source)
   end
 end
-
 function Component:Effect_UpdateSupportSkillCd(EffectStruct, ParamentsTable)
   local HitTargets = EffectStruct.HitTargets:ToTable()
   if not next(HitTargets) then
@@ -813,7 +780,6 @@ function Component:Effect_UpdateSupportSkillCd(EffectStruct, ParamentsTable)
     end
   end
 end
-
 function Component:Effect_PlayUIAnim(EffectStruct, ParamentsTable)
   if not EffectStruct.bIsServer or IsStandAlone(self) then
     local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -822,12 +788,11 @@ function Component:Effect_PlayUIAnim(EffectStruct, ParamentsTable)
       if UI then
         EMUIAnimationSubsystem:EMPlayAnimation(UI, UI[ParamentsTable.AnimName])
       else
-        DebugPrint("SystemUI\232\161\168\230\178\161\230\137\190\229\136\176" .. tostring(ParamentsTable.UIName))
+        DebugPrint("SystemUI表没找到" .. tostring(ParamentsTable.UIName))
       end
     end
   end
 end
-
 function Component:Effect_BossSPSaveLocs(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local FormationId = ParamentsTable.FormationId
@@ -859,38 +824,6 @@ function Component:Effect_BossSPSaveLocs(EffectStruct, ParamentsTable)
     end
   end
 end
-
-function Component:Effect_BindWeaponToCreature(EffectStruct, ParamentsTable)
-  local Source = EffectStruct.Source
-  local TransWeaponDelay = ParamentsTable.TransWeaponDelay or 0
-  local WeaponSocket = ParamentsTable.WeaponSocket or ""
-  local TransWeapon = ParamentsTable.TransWeapon or ""
-  local CreatureId = ParamentsTable.CreatureId
-  local CreatureList = Source:GetCreatureList(CreatureId)
-  if 0 == CreatureList:Num() then
-    return
-  end
-  CreatureList = CreatureList:ToTable()
-  local CreatureEid = CreatureList[#CreatureList]
-  local Creature = self:GetEntity(CreatureEid)
-  if not Creature then
-    return
-  end
-  local CurWeapon = Source:GetCurrentWeapon()
-  if not CurWeapon then
-    return
-  end
-  if 0 == TransWeaponDelay then
-    CurWeapon:BindWeaponToCreature(TransWeapon, Creature, WeaponSocket)
-  else
-    Source:AddTimer_Combat(TransWeaponDelay, function()
-      if CurWeapon and Creature then
-        CurWeapon:BindWeaponToCreature(TransWeapon, Creature, WeaponSocket)
-      end
-    end)
-  end
-end
-
 function Component:Effect_Print(EffectStruct, ParamentsTable)
   local HitTargetsStr = ""
   local HitTargets = EffectStruct.HitTargets:ToTable()
@@ -899,13 +832,11 @@ function Component:Effect_Print(EffectStruct, ParamentsTable)
   end
   DebugPrint(tostring(EffectStruct.Source.Eid) .. ":Print:" .. tostring(ParamentsTable.Text) .. ",HitTargets:" .. HitTargetsStr)
 end
-
 function Component:Effect_BeginAccumulate(EffectStruct, ParamentsTable)
   if EffectStruct.Source and EffectStruct.Source.TakeAimIndicator then
     EffectStruct.Source.TakeAimIndicator:BeginAccumulate(EffectStruct.Skill)
   end
 end
-
 function Component:Effect_Catapult(EffectStruct, ParamentsTable)
   local Source = EffectStruct.Source
   local SkillEffectId = ParamentsTable.SkillEffectId
@@ -922,7 +853,6 @@ function Component:Effect_Catapult(EffectStruct, ParamentsTable)
     end
   end
   local SourceActorLocation = EffectStruct.RayHitLoc ~= Const.ZeroVector and EffectStruct.RayHitLoc or EffectStruct.ActorTransform.Translation
-  
   local function SortByDistance(AEid, BEid)
     local TargetA = self:GetEntity(AEid)
     local TargetB = self:GetEntity(BEid)
@@ -936,7 +866,6 @@ function Component:Effect_Catapult(EffectStruct, ParamentsTable)
       return DistanceA > DistanceB
     end
   end
-  
   table.sort(HitTargets, SortByDistance)
   if CatapultNum < #HitTargets then
     for i = #HitTargets, CatapultNum + 1, -1 do
@@ -948,7 +877,6 @@ function Component:Effect_Catapult(EffectStruct, ParamentsTable)
     self:ExecuteSkillEffect(Source, SkillEffectId, Target, EffectStruct.Skill, EffectStruct.SkillLevelSource)
   end
 end
-
 function Component:Effect_ClearHitTargets(EffectStruct, ParamentsTablex)
   local CreatureInfo = EffectStruct.CreatureInfo
   if 0 ~= not CreatureInfo.CreatureEid then
@@ -964,7 +892,6 @@ function Component:Effect_ClearHitTargets(EffectStruct, ParamentsTablex)
     Creature:ClearHitTargets(CreatureInfo.BulletEid)
   end
 end
-
 function Component:Effect_ReplaceBulletFXID(EffectStruct, ParamentsTablex)
   local Source = EffectStruct.Source
   local BulletManager = Source:GetBulletManager()
@@ -981,12 +908,11 @@ function Component:Effect_ReplaceBulletFXID(EffectStruct, ParamentsTablex)
     if Creature:IsRealSkillCreature() then
       Creature:ReplaceBulletFXID(FXId)
     else
-      Creature:ReplaceBulletFXID(CreatureInfo.BulletEid, FXId)
+      BulletManager:ClientReplaceBulletFXID(CreatureInfo, FXId)
     end
   end
   if BulletManager and IsDedicatedServer(self) and EffectStruct.FromServer then
     BulletManager:ClientReplaceBulletFXID(CreatureInfo, FXId)
   end
 end
-
 return Component

@@ -1,6 +1,5 @@
 require("UnLua")
 local Component = {}
-
 function Component:SetStars(StarCount, MaxStarCount, NeedStarLoopAnim)
   if not self.Star then
     return
@@ -29,14 +28,12 @@ function Component:SetStars(StarCount, MaxStarCount, NeedStarLoopAnim)
     Stars[StarCount + 1].NeedStarLoopAnim = true
   end
 end
-
 function Component:PlayStarLoopAnim(Idx)
   local Stars = self.Star:GetAllChildren()
   if Stars[Idx] then
     Stars[Idx]:PlayAnimation(Stars[Idx].Loop)
   end
 end
-
 function Component:PlayStarsInAnim(SoundEventPath)
   self.StarsInAnimDelay = self.StarsInAnimDelay or 0
   if self.StarsInAnimDelay > 0 then
@@ -45,7 +42,6 @@ function Component:PlayStarsInAnim(SoundEventPath)
     self:RealPlayStarsInAnim(SoundEventPath)
   end
 end
-
 function Component:RealPlayStarsInAnim(SoundEventPath)
   if not self.Star then
     return
@@ -57,7 +53,6 @@ function Component:RealPlayStarsInAnim(SoundEventPath)
     local StarWidget = Stars[i]
     if StarWidget:GetVisibility() ~= ESlateVisibility.Collapsed then
       StarWidget:SetRenderOpacity(0)
-      
       local function func()
         StarWidget:SetRenderOpacity(1)
         StarWidget:PlayAnimation(StarWidget.In)
@@ -65,7 +60,6 @@ function Component:RealPlayStarsInAnim(SoundEventPath)
           AudioManager(self):PlayUISound(self, SoundEventPath, nil, nil)
         end
       end
-      
       if 1 == i then
         self:AddTimer(0, func, false, 0, "StarIn" .. i, true)
       else
@@ -74,7 +68,6 @@ function Component:RealPlayStarsInAnim(SoundEventPath)
     end
   end
 end
-
 function Component:PlayStarGoldenInAnim(idx)
   local len = self.Star:GetChildrenCount()
   local Stars = self.Star:GetAllChildren()
@@ -82,5 +75,4 @@ function Component:PlayStarGoldenInAnim(idx)
     Stars[idx]:PlayAnimation(Stars[idx].Golden_In)
   end
 end
-
 return Component

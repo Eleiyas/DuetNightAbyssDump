@@ -9,7 +9,6 @@ M._components = {
   "BluePrints.UI.WBP.PersonInfo.PersonInfo_ExpandListCompoment",
   "BluePrints.Common.TimerMgr"
 }
-
 function M:Initialize()
   self.IsEditPage = true
   self.CurMainTab = nil
@@ -21,11 +20,10 @@ function M:Initialize()
   self.bHaveChange = false
   self.bIsTipsopen = false
   self.TempBoxItem = {}
+end
+function M:Construct()
   EditModel:InitEditData(self)
   self:InitEditData()
-end
-
-function M:Construct()
   self.TileView_Select_Role.BP_OnItemClicked:Clear()
   self.TileView_Select_Role.BP_OnItemClicked:Add(self, self.OnListItemClicked)
   self.TileView_Select_Role.BP_OnEntryInitialized:Clear()
@@ -45,7 +43,6 @@ function M:Construct()
     end)
   end
 end
-
 function M:InitBaseView(TabName, BoxIndex)
   self.Btn_Cancel.Text_Button:SetText(GText("UI_PATCH_CANCEL"))
   self.Btn_Confirm.Text_Button:SetText(GText("UI_RegionMap_Save"))
@@ -59,7 +56,6 @@ function M:InitBaseView(TabName, BoxIndex)
   end
   self:InitTabContent(TabName)
 end
-
 function M:InitItemSelected()
   local bisWeaopn, str
   if self.CurMainTab.Name == "Char" then
@@ -90,7 +86,6 @@ function M:InitItemSelected()
     end
   end
 end
-
 function M:InitBoxView()
   local FirstEmptyBox, bisWeaopn
   if self.CurMainTab.Name == "Char" then
@@ -112,7 +107,6 @@ function M:InitBoxView()
     self["Edit_AvatarItem_" .. Index]:OnItemClick()
   end
 end
-
 function M:FindFirstEmptyBoxIndex(bIsWeapon)
   local FirstEmptyBox
   for i = 1, 3 do
@@ -129,7 +123,6 @@ function M:FindFirstEmptyBoxIndex(bIsWeapon)
   end
   return FirstEmptyBox
 end
-
 function M:OnBoxItemClick(index)
   if index == self.SelectBoxIdx then
     return
@@ -143,7 +136,6 @@ function M:OnBoxItemClick(index)
   self["Edit_AvatarItem_" .. self.SelectBoxIdx]:PlayAnimation(self["Edit_AvatarItem_" .. self.SelectBoxIdx].Click)
   self["Edit_AvatarItem_" .. self.SelectBoxIdx].Btn_Click:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnBoxItemRemoveClick(index)
   local bisWeaopn
   if self.CurMainTab.Name == "Char" then
@@ -171,7 +163,6 @@ function M:OnBoxItemRemoveClick(index)
   end
   self:OnChangeData()
 end
-
 function M:OnChangeData()
   if not self.bHaveChange then
     self.Btn_Confirm:ForbidBtn(false)
@@ -180,12 +171,10 @@ function M:OnChangeData()
     self.bHaveChange = true
   end
 end
-
 function M:OnBGClick()
   self:TryToCloseTips()
   return UIUtils.Unhandled
 end
-
 function M:FreshBoxView(index, data)
   if nil == data then
     self["Edit_AvatarItem_" .. index]:SetEmpty()
@@ -193,14 +182,12 @@ function M:FreshBoxView(index, data)
     self["Edit_AvatarItem_" .. index]:FreshView(data.image, data.name, data.lv, data.Rarity, data.Uuid)
   end
 end
-
 function M:OnChangeBoxData(index, data, bNotCancel)
   if self["Edit_AvatarItem_" .. index].bIsEmpty == false and self["Edit_AvatarItem_" .. index].Uuid ~= nil and true ~= bNotCancel then
     self:CancelSelectItem(self["Edit_AvatarItem_" .. index].Uuid)
   end
   self:FreshBoxView(index, data)
 end
-
 function M:OnClickChangePlan(ModIndex, AppearanceIdx)
   local OldBoxIndex
   if self.SelectItem.IsChosen == true then
@@ -273,7 +260,6 @@ function M:OnClickChangePlan(ModIndex, AppearanceIdx)
   end
   self.SelectItem = nil
 end
-
 function M:CancelSelectItem(Uuid)
   local str, item
   if self.CurMainTab.Name ~= "Char" then
@@ -291,14 +277,18 @@ function M:CancelSelectItem(Uuid)
     end
   end
 end
-
 function M:ReallySaveModelData()
+  if self.Btn_Confirm and self.Btn_Confirm.IsBtnForbidden and self.Btn_Confirm:IsBtnForbidden() then
+    return
+  end
+  if not self.bHaveChange then
+    return
+  end
   self.bHaveChange = false
   PersonInfoModel:SaveShowPlan(self.TempCharShowPlan, self.TempWeaponShowPlan)
   UIManager(self):ShowUITip("CommonToastMain", GText("UI_PersonInfo_Saved"))
   PersonInfoController:CloseEditView()
 end
-
 function M:OnMeleeSelect()
   local kind = "Melee"
   if self.SelectedWeaeponTab == "Ranged" then
@@ -313,7 +303,6 @@ function M:OnMeleeSelect()
   self:TryToCloseTips()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
 end
-
 function M:OnRangedSelect()
   local kind = "Ranged"
   if self.SelectedWeaeponTab == "Melee" then
@@ -328,7 +317,6 @@ function M:OnRangedSelect()
   self:TryToCloseTips()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
 end
-
 function M:OnTabItemSelected(TabWidget, TabData)
   local InTabId = TabData.TabId
   self.CurMainTab = TabData
@@ -354,7 +342,6 @@ function M:OnTabItemSelected(TabWidget, TabData)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:TryToCloseTips(bNotCancelSelect)
   if self.bIsTipsopened then
     self.bIsTipsopened = false
@@ -377,7 +364,6 @@ function M:TryToCloseTips(bNotCancelSelect)
   end
   return false
 end
-
 function M:OpenTips()
   if not self.bIsTipsopened then
     self.WBP_PersonalInfo_Edit_Tips:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -388,20 +374,17 @@ function M:OpenTips()
     self.WBP_PersonalInfo_Edit_Tips:PlayAnimation(self.WBP_PersonalInfo_Edit_Tips.In)
   end
 end
-
 function M:FreshWeaponBoxView()
   self.Group_Tab:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Image_WeaponBG:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Text_Empty:SetText(GText("UI_Armory_Weapon_Empty"))
 end
-
 function M:FreshCharBoxView()
   self.Image_WeaponBG:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Group_Tab:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Text_Empty:SetText(GText("UI_Armory_Char_Empty"))
   self:ExpandList(true)
 end
-
 function M:OnReturnKeyDown()
   if self:TryToCloseTips() then
     return
@@ -417,13 +400,11 @@ function M:OnReturnKeyDown()
     PersonInfoController:CloseEditView()
   end
 end
-
 function M:InitEditData()
   self.MeleeItemContentsArray = self.MeleeItemContentsCache:ToTable()
   self.RangedItemContentsArray = self.RangedItemContentsCache:ToTable()
   self.CharItemContentsArray = self.CharItemContentsCache:ToTable()
 end
-
 function M:OnSortListSelectionsChanged()
   local SortByIdx, SortType = self.Common_Sort_List:GetSortInfos()
   if self.Event_SortFuncion then
@@ -431,7 +412,6 @@ function M:OnSortListSelectionsChanged()
     self:FillListView()
   end
 end
-
 function M:OnSortTypeChanged()
   local SortByIdx, SortType = self.Common_Sort_List:GetSortInfos()
   if self.Event_SortFuncion then
@@ -439,7 +419,6 @@ function M:OnSortTypeChanged()
     self:FillListView()
   end
 end
-
 function M:OnListItemInited(Content, EntryUI)
   Content.UI = EntryUI
   EntryUI:SetItemSelect(Content.IsChosen)
@@ -448,13 +427,11 @@ function M:OnListItemInited(Content, EntryUI)
     self.Event_OnEntryInitialized(self.EventReceiver, Content, EntryUI)
   end
 end
-
 function M:OnListItemClicked(Content)
   if self.Event_OnListItemClicked then
     self.Event_OnListItemClicked(self.EventReceiver, Content)
   end
 end
-
 function M:OnListItemClickedCommon(Content)
   self:OpenTips()
   self.bIsTipsopened = true
@@ -466,7 +443,6 @@ function M:OnListItemClickedCommon(Content)
   Content.UI:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   ArmoryUtils:SetItemIsSelected(Content, true)
 end
-
 function M:CharMain_OnListItemClicked(Content)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_select_role", nil, nil)
   local SelectFashionId, SelectModId
@@ -478,7 +454,6 @@ function M:CharMain_OnListItemClicked(Content)
   self.WBP_PersonalInfo_Edit_Tips:FreahCharView(Content.UnitName, Content.Rarity, SelectFashionId, SelectModId, Content.Uuid)
   self:OnListItemClickedCommon(Content)
 end
-
 function M:WeaponMain_OnListItemClicked(Content)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_select_weapon", nil, nil)
   local SelectModId
@@ -489,15 +464,12 @@ function M:WeaponMain_OnListItemClicked(Content)
   self.WBP_PersonalInfo_Edit_Tips:FreahWeaponView(Content.UnitName, Content.Rarity, PersonInfoModel:GetItemUuid(Content), SelectModId)
   self:OnListItemClickedCommon(Content)
 end
-
 function M:MeleeMain_OnListItemClicked(Content)
   self:WeaponMain_OnListItemClicked(Content)
 end
-
 function M:RangedMain_OnListItemClicked(Content)
   self:WeaponMain_OnListItemClicked(Content)
 end
-
 function M:OnListItemSelectionChanged(Content, IsSelected)
   self:UpdataGamePadBottomAInfo(1)
   if IsSelected then
@@ -507,13 +479,11 @@ function M:OnListItemSelectionChanged(Content, IsSelected)
     self.Event_OnListItemSelectionChanged(self.EventReceiver, Content, IsSelected)
   end
 end
-
 function M:OnItemIsHoverChanged(Content)
   if self.Event_OnItemIsHoverChanged then
     self.Event_OnItemIsHoverChanged(self.EventReceiver, Content)
   end
 end
-
 function M:OnFilterListItemClicked(Content)
   self.LastSelectedFilterContent = Content
   if self.FilterMod == "Single" then
@@ -545,7 +515,6 @@ function M:OnFilterListItemClicked(Content)
     end
   end
 end
-
 function M:FreshAgain()
   local FilterIdxes = self.FilterIdxes
   if self.Event_FilterFunction then
@@ -568,7 +537,6 @@ function M:FreshAgain()
     self:FillListView(false)
   end
 end
-
 function M:SetFilterContentIsSelected(Content, IsSelected)
   Content.IsSelected = IsSelected
   if Content.UI then
@@ -578,7 +546,6 @@ function M:SetFilterContentIsSelected(Content, IsSelected)
     self.SelectedFilterContents[Content.Tag] = Content
   end
 end
-
 function M:InitEditListView(Parent, Params)
   self.Parent = Parent
   self.Params = Params
@@ -636,7 +603,6 @@ function M:InitEditListView(Parent, Params)
   self:FillListView()
   self:InitNavigationRules()
 end
-
 function M:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   self.Event_OnListItemClicked = Events.OnListItemClicked
@@ -647,7 +613,6 @@ function M:BindEvents(EventReceiver, Events)
   self.Event_OnEntryInitialized = Events.OnEntryInitialized
   self.Event_OnItemIsHoverChanged = Events.OnItemIsHoverChanged
 end
-
 function M:FillListView(bfresh)
   self:PlayAnimation(self.List_Change)
   self.TileView_Select_Role:ClearListItems()
@@ -665,8 +630,8 @@ function M:FillListView(bfresh)
       self.TileView_Select_Role:ClearListItems()
       EditModel:InitEditData(self)
       self:InitEditData()
-      DebugPrint("Item\229\164\177\230\149\136\239\188\140\229\176\157\232\175\149\233\135\141\230\150\176\229\136\155\229\187\186", index)
-      UKismetSystemLibrary.PrintString(nil, index .. "Item\229\164\177\230\149\136\239\188\140\229\176\157\232\175\149\233\135\141\230\150\176\229\136\155\229\187\186", true, false, FLinearColor(1, 0, 0, 1), 2)
+      DebugPrint("Item失效，尝试重新创建", index)
+      UKismetSystemLibrary.PrintString(nil, index .. "Item失效，尝试重新创建", true, false, FLinearColor(1, 0, 0, 1), 2)
       self:FreshAgain()
       return
     end
@@ -698,7 +663,6 @@ function M:FillListView(bfresh)
     end, false, 0, "DelayAddEmptyItem", true)
   end
 end
-
 function M:UpdateFilterInfos()
   local Indexes = {}
   local bHasItem = next(self.SelectedFilterContents) ~= nil
@@ -718,25 +682,21 @@ function M:UpdateFilterInfos()
   self.FilterIdxes = Indexes
   return self.FilterIdxes
 end
-
 function M:FillEmptyItems(Count)
   for i = 1, Count do
     self.TileView_Select_Role:AddItem(NewObject(UIUtils.GetCommonItemContentClass()))
   end
 end
-
 function M:CallFunctionByName(FunctionName, ...)
   if self[FunctionName] then
     return self[FunctionName](self, ...)
   end
 end
-
 function M:Destruct()
   self.MeleeItemContentsCache:Clear()
   self.RangedItemContentsCache:Clear()
   self.CharItemContentsCache:Clear()
 end
-
 function M:InitNavigationRules()
   self.TileView_Select_Role:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.TileView_Select_Role:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
@@ -754,7 +714,6 @@ function M:InitNavigationRules()
   })
   self.TileView_Select_Role.bWrapHorizontalNavigation = not self.Panel_FilterTab:IsVisible()
 end
-
 function M:OnRoleListNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     self.EMListView_Filter:BP_SetSelectedItem(self.LastSelectedFilterContent)
@@ -763,7 +722,6 @@ function M:OnRoleListNavigation(NavigationDirection)
   end
   return self.TileView_Select_Role
 end
-
 function M:OnFilterListNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Right then
     self.TileView_Select_Role:BP_SetSelectedItem(self.LastSelectedListContent)
@@ -772,10 +730,8 @@ function M:OnFilterListNavigation(NavigationDirection)
   end
   return self.EMListView_Filter
 end
-
 function M:OnSortListRemovedFromFocusPath()
 end
-
 function M:OnSortListAddedToFocusPath()
   if UIUtils.HasAnyFocus(self.EMListView_Filter) then
     self.LastFocusList = self.EMListView_Filter
@@ -783,7 +739,6 @@ function M:OnSortListAddedToFocusPath()
     self.LastFocusList = self.TileView_Select_Role
   end
 end
-
 function M:SetFocusToList()
   self.TileView_Select_Role:SetFocus()
   if self.LastSelectedListContent then
@@ -801,6 +756,5 @@ function M:SetFocusToList()
     end
   end
 end
-
 AssembleComponents(M)
 return M

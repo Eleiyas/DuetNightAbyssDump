@@ -22,18 +22,15 @@ Achv.__Props__ = {
   CurrentValue = prop.prop("Int", "client save"),
   CompletionValue = prop.getter("Data", "CompletionValue")
 }
-
 function Achv:Init(AchvId)
   if not AchvId then
     return
   end
   self.AchvId = AchvId
 end
-
 function Achv:Data()
   return DataMgr.Achievement[self.AchvId]
 end
-
 function Achv:GetCount()
   local result = 0
   for _, Tid in ipairs(self.TargetId) do
@@ -41,7 +38,6 @@ function Achv:GetCount()
   end
   return result
 end
-
 function Achv:IsIndividual()
   local individualRule = false
   for _, Tid in ipairs(self.TargetId) do
@@ -52,7 +48,6 @@ function Achv:IsIndividual()
   end
   return self.CompletionValue and individualRule
 end
-
 function Achv:GetProgressIndex()
   local OldIndex = self.ProgressIndex
   local Count = self:GetCount()
@@ -78,11 +73,9 @@ function Achv:GetProgressIndex()
   end
   return OldIndex, self.ProgressIndex, CurrentCount
 end
-
 function Achv:IsFinished()
   return self:GetCount() >= self.TargetNeedCount
 end
-
 function Achv:OnTargetFinish(Target, UniqueAttr, FinishedCount)
   local TargetId = Target.TargetId
   local rule = Target.IndividualRule
@@ -125,18 +118,15 @@ function Achv:OnTargetFinish(Target, UniqueAttr, FinishedCount)
   end
   return false
 end
-
 function Achv:UpdateCurrentValue(value)
   if type(value) ~= "number" or value <= 0 then
     return
   end
   self.CurrentValue = value
 end
-
 function Achv:CanRecvReward()
   return not self.IsBonus
 end
-
 function Achv:Reset()
   self.FinishedTargets = {}
   self.IsBonus = false
@@ -145,17 +135,14 @@ function Achv:Reset()
   self.ProgressIndex = 0
   self.CurrentValue = 0
 end
-
 FormatProperties(Achv)
 local AchvDict = Class("AchvDict", CustomTypes.CustomDict)
 AchvDict.KeyType = BaseTypes.Int
 AchvDict.ValueType = Achv
-
 function AchvDict:NewAchv(AchvId)
   local achv = Achv(AchvId)
   return achv
 end
-
 function AchvDict:GetAchv(AchvId)
   local achv = self[AchvId]
   if not achv then
@@ -164,7 +151,6 @@ function AchvDict:GetAchv(AchvId)
   end
   return achv
 end
-
 function AchvDict:IsAchvLocked(AchvId)
   local achv = self:GetAchv(AchvId)
   if not achv.BeforeAchvs then
@@ -178,7 +164,6 @@ function AchvDict:IsAchvLocked(AchvId)
   end
   return false
 end
-
 function AchvDict:IsAchvCanGetReward(AchvId)
   local Achv = self[AchvId]
   if Achv then
@@ -186,7 +171,6 @@ function AchvDict:IsAchvCanGetReward(AchvId)
   end
   return false
 end
-
 local AchvTarget = Class("AchvTarget", CustomTypes.CustomAttr)
 AchvTarget.__Props__ = {
   TargetId = prop.prop("Int", "client save cross"),
@@ -194,18 +178,15 @@ AchvTarget.__Props__ = {
   CurrentValue = prop.prop("Int", "client save cross", -1),
   IndividualRule = prop.getter("Data", "IndividualRule")
 }
-
 function AchvTarget:Init(TargetId)
   if not TargetId then
     return
   end
   self.TargetId = TargetId
 end
-
 function AchvTarget:Data()
   return DataMgr.Target[self.TargetId]
 end
-
 function AchvTarget:AddCount(count)
   if type(count) ~= "number" or count <= 0 then
     return false
@@ -225,16 +206,13 @@ function AchvTarget:AddCount(count)
   end
   return true
 end
-
 FormatProperties(AchvTarget)
 local AchvTargetDict = Class("AchvTargetDict", CustomTypes.CustomDict)
 AchvTargetDict.KeyType = BaseTypes.Int
 AchvTargetDict.ValueType = AchvTarget
-
 function AchvTargetDict:NewAchvTarget(TargetId)
   return AchvTarget(TargetId)
 end
-
 function AchvTargetDict:GetAchvTarget(TargetId)
   local target = self[TargetId]
   if not target then
@@ -243,7 +221,6 @@ function AchvTargetDict:GetAchvTarget(TargetId)
   end
   return target
 end
-
 return {
   Achv = Achv,
   AchvDict = AchvDict,

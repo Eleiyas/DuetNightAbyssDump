@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:Construct()
   M.Super.Construct(self)
   self.ItemUIPathName = "/Game/UI/WBP/Common/FilterSort/WBP_Com_SiftDialogItem.WBP_Com_SiftDialogItem"
@@ -8,7 +7,6 @@ function M:Construct()
   self.SelectedItems = {}
   self.IsQuitBtnForbidden = true
 end
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   self.Owner = Owner
@@ -32,14 +30,12 @@ function M:InitContent(Params, PopupData, Owner)
   self:InitGamePadTarget()
   self:InitHintGamepadBtn()
 end
-
 function M:AddSelectionItem(ItemData, SelectionData)
   local UIManager = UIManager(GWorld.GameInstance)
   local ItemUI = UIManager:CreateWidget(self.SelectionItemUIPathName)
   self.WBox_Selection:AddChild(ItemUI)
   ItemUI:Init(self, SelectionData, ItemData)
 end
-
 function M:AddItem(ItemData)
   local UIManager = UIManager(GWorld.GameInstance)
   local ItemUI = UIManager:CreateWidget(self.ItemUIPathName)
@@ -48,7 +44,6 @@ function M:AddItem(ItemData)
   self.List_Selection:ScrollWidgetIntoView(ItemUI, true)
   return ItemUI
 end
-
 function M:AddSelection(itemUI, index, name)
   local itemIndex = self.List_Selection:GetChildIndex(itemUI) + 1
   if not self.SelectedItems[itemIndex] then
@@ -58,7 +53,6 @@ function M:AddSelection(itemUI, index, name)
   self.Owner:GetButtonBar().Btn_Quit:ForbidBtn(false)
   self.IsQuitBtnForbidden = false
 end
-
 function M:RemoveSelection(itemUI, index)
   local itemIndex = self.List_Selection:GetChildIndex(itemUI) + 1
   if self.SelectedItems and self.SelectedItems[itemIndex] then
@@ -78,7 +72,6 @@ function M:RemoveSelection(itemUI, index)
     self.IsQuitBtnForbidden = true
   end
 end
-
 function M:TableContains(tbl, val)
   for _, v in ipairs(tbl) do
     if v == val then
@@ -87,14 +80,12 @@ function M:TableContains(tbl, val)
   end
   return false
 end
-
 function M:OnBtnYes()
   if self.Params.OnConfirmCallback then
     self.Params.OnConfirmCallback(self, self.Owner, self.SelectedItems, self.Params.ItemDatas)
     self:Close()
   end
 end
-
 function M:OnBtnNo()
   if not IsValid(self) then
     return
@@ -117,12 +108,10 @@ function M:OnBtnNo()
   end
   self.Owner.DontCloseWhenLeftBtnClicked = true
 end
-
 function M:OnClearSelection()
   self:OnBtnNo()
   self:Close()
 end
-
 function M:Reselection(SelectedItems)
   if SelectedItems then
     for dimensionIndex, selectedIndices in pairs(SelectedItems) do
@@ -145,7 +134,6 @@ function M:Reselection(SelectedItems)
     end
   end
 end
-
 function M:Close()
   if IsValid(self) then
     M.Super.Close(self)
@@ -154,21 +142,17 @@ function M:Close()
     end
   end
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -176,7 +160,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
@@ -188,7 +171,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:InitGamePadTarget()
   self.CurInputDevice = self.GameInputModeSubsystem:GetCurrentInputType()
   if self.CurInputDevice == ECommonInputType.Gamepad then
@@ -204,7 +186,6 @@ function M:InitGamePadTarget()
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -230,7 +211,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:InitHintGamepadBtn()
   self.Owner.Gamepad_Shortcut01:CreateCommonKey({
     KeyInfoList = {
@@ -253,5 +233,4 @@ function M:InitHintGamepadBtn()
   })
   self.Owner.Gamepad_Shortcut02:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 return M

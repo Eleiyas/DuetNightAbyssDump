@@ -4,7 +4,6 @@ local StrLib = require("BluePrints.Common.DataStructure")
 local Deque = StrLib.Deque
 local GlobalConstant = DataMgr.GlobalConstant
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   M.Super.Init(self)
   self.TeamData = nil
@@ -14,16 +13,10 @@ function M:Init()
   self.InviteTable = {}
   self.CachedRecoveryTeamInfo = nil
 end
-
 function M:SetTeam(Team, bDsData)
   if nil == Team then
-    if GWorld:IsStandAlone() then
-      self.TeamData = nil
-    elseif not self.TeamData.bDsData then
-      self.TeamData = nil
-    end
+    self.TeamData = nil
     if not self.TeamData then
-      Utils.Traceback("\233\152\159\228\188\141\232\162\171\231\189\174\231\169\186\228\186\134, TeamData is nil")
       ChatController:GetModel():ClearReddotCount(ChatCommon.ChannelDef.InTeam)
       ChatController:GetModel():ClearMessage(ChatCommon.ChannelDef.InTeam)
     end
@@ -32,7 +25,6 @@ function M:SetTeam(Team, bDsData)
   end
   self.TeamData = TeamData.New(Team, bDsData)
 end
-
 function M:GetTeam()
   if not self.TeamData then
     DebugPrint(DebugTag, LXYTag, "GetTeam !!! TeamData is nil")
@@ -40,7 +32,6 @@ function M:GetTeam()
   end
   return self.TeamData
 end
-
 function M:AddTeamMember(Member)
   if self.TeamDataBackup then
     self.TeamDataBackup:AddMember(Member)
@@ -49,7 +40,6 @@ function M:AddTeamMember(Member)
     self.TeamData:AddMember(Member)
   end
 end
-
 function M:DelTeamMember(Param)
   if self.TeamDataBackup then
     local Uid
@@ -67,7 +57,37 @@ function M:DelTeamMember(Param)
     self:_RealDelTeamMember(self.TeamData, Param)
   end
 end
-
+function M:TryAddCachedRecoveryTeamInfo(TeamInfo)
+  if self.CachedRecoveryTeamInfo and self.CachedRecoveryTeamInfo.Members then
+    table.insert(self.CachedRecoveryTeamInfo.Members, TeamInfo)
+  end
+end
+function M:TryDelCachedRecoveryTeamInfo(Uid)
+  if self.CachedRecoveryTeamInfo then
+    if self.CachedRecoveryTeamInfo.Members then
+      local RemovedIdx
+      for Idx, Member in ipairs(self.CachedRecoveryTeamInfo.Members or {}) do
+        if Member.Uid == Uid then
+          RemovedIdx = Idx
+          break
+        end
+      end
+      if RemovedIdx then
+        table.remove(self.CachedRecoveryTeamInfo.Members, RemovedIdx)
+      end
+      if 1 == #self.CachedRecoveryTeamInfo.Members then
+        self.CachedRecoveryTeamInfo = nil
+      end
+    else
+      self.CachedRecoveryTeamInfo = nil
+    end
+  end
+end
+function M:TryChangeLeaderInRecoveryTeamInfo(LeaderUid)
+  if self.CachedRecoveryTeamInfo and self.CachedRecoveryTeamInfo then
+    self.CachedRecoveryTeamInfo.LeaderId = LeaderUid
+  end
+end
 function M:_RealDelTeamMember(Team, Param)
   if type(Param) == "number" then
     local Uid = Param
@@ -81,7 +101,6 @@ function M:_RealDelTeamMember(Team, Param)
     end
   end
 end
-
 function M:DelTeamMemberWithDs(Eid)
   if not self.TeamData then
     return
@@ -91,7 +110,6 @@ function M:DelTeamMemberWithDs(Eid)
   end
   self:_RealDelTeamMember(self.TeamData, Eid)
 end
-
 function M:AddTeamMemberWithDs(WorldContext, Eid, PlayerState)
   if not self.TeamData then
     return
@@ -138,22 +156,19 @@ function M:AddTeamMemberWithDs(WorldContext, Eid, PlayerState)
   self.TeamData:AddMember(Member)
   return true
 end
-
 function M:SetTeamBackup(Team)
   if nil == Team then
-    DebugPrint(LXYTag, "\230\184\133\231\169\186\233\152\159\228\188\141\229\164\135\228\187\189")
+    DebugPrint(LXYTag, "清空队伍备份")
     self.TeamDataBackup = nil
   else
-    PrintTable(Team, 1, LXYTag .. "\232\174\190\231\189\174\233\152\159\228\188\141\229\164\135\228\187\189")
+    PrintTable(Team, 1, LXYTag .. "设置队伍备份")
     self.TeamDataBackup = TeamData.New(Team)
   end
 end
-
 function M:GetTeamBackup()
-  DebugPrint(LXYTag, "\232\142\183\229\143\150\233\152\159\228\188\141\229\164\135\228\187\189")
+  DebugPrint(LXYTag, "获取队伍备份")
   return self.TeamDataBackup
 end
-
 function M:CreateTeamDataWithDs(WorldContext)
   if GWorld:IsStandAlone() then
     return
@@ -167,10 +182,10 @@ function M:CreateTeamDataWithDs(WorldContext)
   self:SetTeam(DsTeamData, true)
   for i, PlayerState in pairs(GameState(WorldContext).PlayerArray) do
     local Eid = PlayerState.Eid
+    DebugPrint("TeamSyncDebug   CreateTeamDataWithDs, Seek PlayerState", Eid)
     self:AddTeamMemberWithDs(WorldContext, Eid, PlayerState)
   end
 end
-
 function M:DestoryTeamDataWithDs()
   DebugPrint("TeamSyncDebug  TeamModel DestoryTeamDataWithDs")
   if not self:GetTeam() then
@@ -182,7 +197,6 @@ function M:DestoryTeamDataWithDs()
   self:SetTeam(self.TeamDataBackup)
   self:SetTeamBackup(nil)
 end
-
 function M:GetTeamMember(Uid)
   if self.TeamDataBackup then
     local Member, Pos = self.TeamDataBackup:GetMember(Uid)
@@ -195,7 +209,6 @@ function M:GetTeamMember(Uid)
   end
   return nil, 0
 end
-
 function M:IsMemberExist(Uid)
   if self.TeamDataBackup and self.TeamDataBackup:IsMemberExist(Uid) then
     return true
@@ -205,7 +218,6 @@ function M:IsMemberExist(Uid)
   end
   return false
 end
-
 function M:SetTeadLeaderId(Uid)
   if self.TeamDataBackup then
     self.TeamDataBackup:SetLeaderId(Uid)
@@ -215,7 +227,6 @@ function M:SetTeadLeaderId(Uid)
     self.TeamData:SetLeaderId(Uid)
   end
 end
-
 function M:GetTeamLeaderId()
   if self.TeamDataBackup then
     return self.TeamDataBackup:GetLeaderId()
@@ -225,7 +236,6 @@ function M:GetTeamLeaderId()
   end
   return nil
 end
-
 function M:IsTeamLeader(Uid)
   if not GWorld:IsStandAlone() then
     return false
@@ -238,7 +248,6 @@ function M:IsTeamLeader(Uid)
   end
   return false
 end
-
 function M:PushInviteInfo(InviteInfo)
   if self.InviteTable[InviteInfo.Uid] then
     return
@@ -248,10 +257,9 @@ function M:PushInviteInfo(InviteInfo)
     DebugPrint(ErrorTag, "PushInviteInfo Error !!! InviteQueue is full")
     return
   end
-  DebugPrint(LXYTag, "\231\187\132\233\152\159\233\130\128\232\175\183QueuePush", InviteInfo.Nickname)
+  DebugPrint(LXYTag, "组队邀请QueuePush", InviteInfo.Nickname)
   self.InviteRecvQueue:PushFront(InviteInfo)
 end
-
 function M:PopInviteInfo()
   if self.InviteRecvQueue:IsEmpty() then
     DebugPrint(DebugTag, "PopInviteInfo: InviteQueue is empty")
@@ -259,10 +267,8 @@ function M:PopInviteInfo()
   end
   local InviteInfo = self.InviteRecvQueue:PopBack()
   self.InviteTable[InviteInfo.Uid] = nil
-  Utils.Traceback(LXYTag .. "  \231\187\132\233\152\159\233\130\128\232\175\183QueuePop  " .. InviteInfo.Nickname)
   return true
 end
-
 function M:GetBackInviteInfo()
   if self.InviteRecvQueue:IsEmpty() then
     DebugPrint(LXYTag, "GetBackInviteInfo: InviteQueue is empty")
@@ -270,32 +276,25 @@ function M:GetBackInviteInfo()
   end
   return self.InviteRecvQueue:Back()
 end
-
 function M:CleanInviteInfo()
   self.InviteRecvQueue:Init()
   self.InviteTable = {}
 end
-
 function M:IsInviteExist(InviteInfo)
   return self.InviteTable[InviteInfo.Uid]
 end
-
 function M:GetTeamOrientation()
   return self:GetAvatar().TeamOrientation
 end
-
 function M:AddSentInvite(Uid, TimerKey)
   self.InviteSendBox[Uid] = TimerKey
 end
-
 function M:DelSentInvite(Uid)
   self.InviteSendBox[Uid] = nil
 end
-
 function M:GetInviteSendBox()
   return self.InviteSendBox
 end
-
 function M:GetOwnerEidOfUnknowEid(WorldContext, Eid)
   local GameState = GameState(WorldContext)
   for i, PhantomState in pairs(GameState.PhantomArray) do
@@ -303,25 +302,23 @@ function M:GetOwnerEidOfUnknowEid(WorldContext, Eid)
       return PhantomState.OwnerEid, Eid
     end
   end
-  DebugPrint(LXYTag, ErrorTag, "\233\173\133\229\189\177\229\189\146\229\177\158\228\191\161\230\129\175\229\156\168PhantomState\233\135\140\230\178\161\230\156\137\229\136\157\229\167\139\229\140\150")
+  DebugPrint(LXYTag, ErrorTag, "魅影归属信息在PhantomState里没有初始化")
   local Entity = Battle(WorldContext):GetEntity(Eid)
   local PlayerEid = Entity.PhantomOwner and Entity.PhantomOwner.Eid or nil
   if not PlayerEid then
-    DebugPrint(LXYTag, ErrorTag, "\231\148\154\232\135\179\233\173\133\229\189\177Entity\231\154\132PhantomOwner\228\185\159\230\178\161\230\156\137\229\136\157\229\167\139\229\140\150")
+    DebugPrint(LXYTag, ErrorTag, "甚至魅影Entity的PhantomOwner也没有初始化")
     PlayerEid = Entity:GetInitLogicComp().PhantomOwnerEid or Entity.InitFinalInfo.PhantomOwnerEid
     if not PlayerEid then
-      DebugPrint(LXYTag, ErrorTag, "\233\173\133\229\189\177\232\191\152\230\152\175\230\139\191\228\184\141\229\136\176PhantomOwner!!!!\232\191\153\230\152\175\232\166\129\233\128\188\230\136\145\229\142\187\230\148\185PhantomCharacter\239\188\159\239\188\159\239\188\159!!")
+      DebugPrint(LXYTag, ErrorTag, "魅影还是拿不到PhantomOwner!!!!这是要逼我去改PhantomCharacter？？？!!")
       return nil, Eid
     end
   end
   return PlayerEid, Eid
 end
-
 function M:Destory()
   self:CleanNowDungeonId()
   M.Super.Destory(self)
 end
-
 function M:IsTeammateByAvatarEid(AvatarEid)
   local Team = self:GetTeam()
   if not Team or not Team.Members then
@@ -337,7 +334,6 @@ function M:IsTeammateByAvatarEid(AvatarEid)
   end
   return false
 end
-
 function M:IsYourself(Uid)
   if not GWorld:IsStandAlone() then
     local SelfEid = GWorld:GetMainPlayer().Eid
@@ -353,27 +349,28 @@ function M:IsYourself(Uid)
   end
   return false
 end
-
 function M:IsMatching()
   local MatchTimingBar = UIManager(self):GetUIObj("DungeonMatchTimingBar")
   DebugPrint("gmy@TeamModel:IsMatching", MatchTimingBar, self.bPressedMulti, self.bPressedSolo, (MatchTimingBar or self.bPressedMulti or self.bPressedSolo) and true)
   return (MatchTimingBar or self.bPressedMulti or self.bPressedSolo) and true
 end
-
 function M:CacheNowDungeonId(DungeonId)
   self.DungeonId = DungeonId
 end
-
 function M:GetNowDungeonId()
   if not self.DungeonId then
-    Utils.Traceback(ErrorCode, LXYTag .. "\232\129\148\230\156\186\230\138\149\231\165\168\229\143\145\231\148\159\229\136\176\232\191\155\229\133\165\229\137\175\230\156\172\230\156\159\233\151\180\239\188\140\229\137\175\230\156\172ID\231\188\147\229\173\152\230\137\141\230\152\175\230\156\137\230\149\136\231\154\132\239\188\140\231\142\176\229\156\168\230\152\175nil")
+    Utils.Traceback(ErrorCode, LXYTag .. "联机投票发生到进入副本期间，副本ID缓存才是有效的，现在是nil")
     return nil
   end
   return self.DungeonId
 end
-
 function M:CleanNowDungeonId()
   self.DungeonId = nil
 end
-
+function M:SetIsInOpenCoop(bIsInOpenCoop)
+  self.IsInOpenCoop = bIsInOpenCoop
+end
+function M:GetIsInOpenCoop()
+  return self.IsInOpenCoop
+end
 return M

@@ -1,14 +1,11 @@
 require("UnLua")
 local WBP_RougeBattleFloat_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_RougeBattleFloat_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_RougeBattleFloat_C:InitListenEvent()
   self.Super.InitListenEvent(self)
 end
-
 function WBP_RougeBattleFloat_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitListenEvent()
@@ -23,7 +20,6 @@ function WBP_RougeBattleFloat_C:OnLoaded(...)
   self:PlayAnimation(self.In)
   self:RefreshVisibility()
 end
-
 function WBP_RougeBattleFloat_C:InitRougeBattleDisplayText(DisplayText)
   if "" == DisplayText then
     self.Text_AnnihilateTitle:SetText(GText("DUNGEON_EXTERMINATE_100"))
@@ -31,7 +27,6 @@ function WBP_RougeBattleFloat_C:InitRougeBattleDisplayText(DisplayText)
     self.Text_AnnihilateTitle:SetText(GText(DisplayText))
   end
 end
-
 function WBP_RougeBattleFloat_C:OnRepRougeBattleCount()
   if not self.GameState then
     return
@@ -46,7 +41,6 @@ function WBP_RougeBattleFloat_C:OnRepRougeBattleCount()
     self:RemoveDispatcher(EventID.OnRepRougeBattleCount)
   end
 end
-
 function WBP_RougeBattleFloat_C:RefreshVisibility()
   local IsRougeBattleUIStateShow = self.GameState.DungeonUIState == Const.EDungeonUIState.OnTarget
   local RoomType = DataMgr.RougeLikeRoom[GWorld.RougeLikeManager.RoomId].RoomType or 1
@@ -56,7 +50,6 @@ function WBP_RougeBattleFloat_C:RefreshVisibility()
   self.Group_Full:SetVisibility(UE4.ESlateVisibility.Hidden)
   self:AddDispatcher(EventID.OnRepRougeBattleCount, self, self.OnRepRougeBattleCount)
 end
-
 function WBP_RougeBattleFloat_C:SetRougeBattleVisibility(IsShow)
   if IsShow then
     self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -64,5 +57,4 @@ function WBP_RougeBattleFloat_C:SetRougeBattleVisibility(IsShow)
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_RougeBattleFloat_C

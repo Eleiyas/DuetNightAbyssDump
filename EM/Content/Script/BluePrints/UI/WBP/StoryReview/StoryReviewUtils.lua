@@ -1,5 +1,4 @@
 local ReviewCutShowData
-
 local function InitAvatarReviewData()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -10,7 +9,6 @@ local function InitAvatarReviewData()
     Avatar.ReviewDataMap = {}
   end
 end
-
 local function IsAddDialogueData(DialogueId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -21,24 +19,19 @@ local function IsAddDialogueData(DialogueId)
   end
   return true
 end
-
 local DialogueData = {}
-
 function DialogueData:InitReviewData(Info)
   self.DialogueStyle = Info.DialogueStyle
   self.DialogueId = Info.DialogueId
   self.SpeakerName = Info.SpeakerName
 end
-
 function DialogueData:InsertDialogueData(DialogueId, SpeakerName)
   if not self.DialogueInfo then
     self.DialogueInfo = {}
   end
   table.insert(self.DialogueInfo, {DialogueId = DialogueId, SpeakerName = SpeakerName})
 end
-
 local OptionData = {}
-
 function OptionData:InitReviewData(Info)
   self.DialogueStyle = Info.DialogueStyle
   self.Options = Info.Options
@@ -55,7 +48,6 @@ function OptionData:InitReviewData(Info)
   self.SuccessCheckData = Info.SuccessCheckData or {}
   self.FailCheckData = Info.FailCheckData or {}
 end
-
 function OptionData:InsertCheckData(CheckRes, CheckValue)
   if CheckRes then
     table.insert(self.SuccessCheckData, CheckValue)
@@ -63,7 +55,6 @@ function OptionData:InsertCheckData(CheckRes, CheckValue)
     table.insert(self.FailCheckData, CheckValue)
   end
 end
-
 local function HandleReviewData(Data, Info, Avatar, DialogueId)
   Data:InitReviewData(Info)
   table.insert(Avatar.ReviewDataList, Data)
@@ -79,7 +70,6 @@ local function HandleReviewData(Data, Info, Avatar, DialogueId)
     table.remove(Avatar.ReviewDataList, 1)
   end
 end
-
 local function AddDialogueDataWithTalk(DialogueId, SpeakerName)
   if not IsAddDialogueData(DialogueId) then
     return
@@ -99,7 +89,6 @@ local function AddDialogueDataWithTalk(DialogueId, SpeakerName)
   local Data = CommonUtils.CopyTable(DialogueData)
   HandleReviewData(Data, Info, Avatar, DialogueId)
 end
-
 local function AddDialogueDataWithBlackScreen(DialogueId)
   if not IsAddDialogueData(DialogueId) then
     return
@@ -113,7 +102,6 @@ local function AddDialogueDataWithBlackScreen(DialogueId)
   local Data = CommonUtils.CopyTable(DialogueData)
   HandleReviewData(Data, Info, Avatar, DialogueId)
 end
-
 local function AddOptionWithNormal(Options, HighLightDialogueId, PreOptions)
   if not IsAddDialogueData(HighLightDialogueId) then
     return
@@ -129,7 +117,6 @@ local function AddOptionWithNormal(Options, HighLightDialogueId, PreOptions)
   local Data = CommonUtils.CopyTable(OptionData)
   HandleReviewData(Data, Info, Avatar, HighLightDialogueId)
 end
-
 local function AddOptionWithImpressionValue(ImpressionConfigId, AddValue, Options, HighLightDialogueId, PreOptions)
   if not IsAddDialogueData(HighLightDialogueId) then
     return
@@ -147,7 +134,6 @@ local function AddOptionWithImpressionValue(ImpressionConfigId, AddValue, Option
   local Data = CommonUtils.CopyTable(OptionData)
   HandleReviewData(Data, Info, Avatar, HighLightDialogueId)
 end
-
 local function AddOptionWithImpressionCheck(ImpressionConfigId, PlayerValue, Options, HighLightDialogueId, PreOptions)
   local bCanAdd, bAlreadyExist = IsAddDialogueData(HighLightDialogueId)
   if not bCanAdd then
@@ -171,7 +157,6 @@ local function AddOptionWithImpressionCheck(ImpressionConfigId, PlayerValue, Opt
   HandleReviewData(Data, Info, Avatar, HighLightDialogueId)
   return Data
 end
-
 local function OpenCutShowReview(StartReview)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -186,7 +171,6 @@ local function OpenCutShowReview(StartReview)
   ReviewCutShowData = CommonUtils.CopyTable(DialogueData)
   HandleReviewData(ReviewCutShowData, Info, Avatar)
 end
-
 local function GetReviewDataList()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -195,9 +179,7 @@ local function GetReviewDataList()
   InitAvatarReviewData()
   return Avatar.ReviewDataList
 end
-
 local CurrentQuestChainId = -1
-
 local function ClearAllReviewData(QuestChainId)
   if CurrentQuestChainId == QuestChainId then
     return
@@ -210,7 +192,6 @@ local function ClearAllReviewData(QuestChainId)
   Avatar.ReviewDataList = {}
   Avatar.ReviewDataMap = {}
 end
-
 local StoryReviewUtils = {
   AddDialogueDataWithTalk = AddDialogueDataWithTalk,
   AddDialogueDataWithBlackScreen = AddDialogueDataWithBlackScreen,

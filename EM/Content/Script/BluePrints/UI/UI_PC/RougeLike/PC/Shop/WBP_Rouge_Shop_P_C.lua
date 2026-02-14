@@ -3,7 +3,6 @@ local M = Class("BluePrints.UI.Shop.WBP_Shop_Main_Base_C")
 M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self.Btn_Bag.Text_Btn:SetText(GText("UI_RougeLike_Bag"))
@@ -12,13 +11,11 @@ function M:Construct()
   self.DetailItem.Parent = self
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "RougeShopOpenSound", nil)
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   self:HorizontalListViewResize_TearDown()
   self:ClearListenEvent()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:PlayAnimation(self.In)
@@ -29,7 +26,6 @@ function M:OnLoaded(...)
   self:InitListenEvent()
   self:InitShop()
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnRougeShopItemSelect, self, self.RougeShopItemSelect)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -41,13 +37,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -76,19 +70,16 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.DetailItem.Switch_Key:SetActiveWidgetIndex(0)
   end
 end
-
 function M:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:SetCanInteractiveTrigger(false)
 end
-
 function M:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:SetCanInteractiveTrigger(true)
 end
-
 function M:InitShop(MainTabIdx, SubTabIdx)
   local ShopType
   if self.Type == "Blessing" then
@@ -159,7 +150,6 @@ function M:InitShop(MainTabIdx, SubTabIdx)
   self:UpdateShopDetail()
   self:InitTipsInfo()
 end
-
 function M:InitTipsInfo()
   if self.CurInputDeviceType == ECommonInputType.Touch then
     return
@@ -182,7 +172,6 @@ function M:InitTipsInfo()
     }
   })
 end
-
 function M:UpdateShopDetail(MainTabId)
   local Type = self.Type
   self.ShopItemType = "Shop" .. Type
@@ -197,7 +186,7 @@ function M:UpdateShopDetail(MainTabId)
   end
   if not self.ShopId then
     self.Group_Empty:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    DebugPrint("ZDX \228\188\160\229\133\165\231\154\132ShopId\228\184\186\231\169\186")
+    DebugPrint("ZDX 传入的ShopId为空")
     return
   end
   local ShopItemList = RougeLikeManager.Shop:FindRef(self.ShopId)[self.ShopItemType]
@@ -215,7 +204,6 @@ function M:UpdateShopDetail(MainTabId)
       table.insert(NotSoldOutList, ItemData)
     end
   end
-  
   local function SortFunc(a, b)
     local RarityA, RarityB = a[RarityName] or 0, b[RarityName] or 0
     if RarityA == RarityB then
@@ -224,7 +212,6 @@ function M:UpdateShopDetail(MainTabId)
     end
     return RarityA > RarityB
   end
-  
   table.sort(SoldOutList, SortFunc)
   table.sort(NotSoldOutList, SortFunc)
   for _, ShopData in ipairs(NotSoldOutList) do
@@ -299,7 +286,6 @@ function M:UpdateShopDetail(MainTabId)
     self:RemoveTimer("AddEmptyContent", true)
   end, false, 0, "AddEmptyContent")
 end
-
 function M:PlayAttrListFramingIn()
   self._ListAttrAnimTimerKeys = UIUtils.PlayListViewFramingInAnimation(self, self.TileList_Item, {
     Interval = self.IntervalTime,
@@ -307,14 +293,12 @@ function M:PlayAttrListFramingIn()
     bInteractableInAnim = false
   })
 end
-
 function M:StopAttrListFramingIn()
   UIUtils.StopListViewFramingInAnimation(self.TileList_Item, {
     UIState = self,
     TimerKeys = self._ListAttrAnimTimerKeys
   })
 end
-
 function M:RougeShopItemSelect(Content, ItemType, ItemId, ShopId, RealPrices, IsSoldOut, IsCanLevelUp)
   self.SelectTreasureId = nil
   if not Content then
@@ -348,7 +332,6 @@ function M:RougeShopItemSelect(Content, ItemType, ItemId, ShopId, RealPrices, Is
   end
   self:ChangeBottomGamePadInfo(false)
 end
-
 function M:UpdateGroupInfo()
   self.List_BottomTab:ClearListItems()
   for _, v in pairs(DataMgr.BlessingGroup) do
@@ -360,36 +343,30 @@ function M:UpdateGroupInfo()
     self.List_BottomTab:AddItem(Content)
   end
 end
-
 function M:OpenRougeBag()
   UIManager(self):LoadUINew("RougeBag")
   local EventSoundPath = "event:/ui/roguelike/btn_black_small_click"
   AudioManager(self):PlayUISound(self, EventSoundPath, nil, nil)
 end
-
 function M:OnFocusLost(MyGeometry, InFocusEvent)
   self.bFocusOnDetails = false
   self:ChangeBottomGamePadInfo(false)
 end
-
 function M:OnReturnKeyDown()
   self:CloseSelf()
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   self:PlayAnimation(self.Out)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     AudioManager(self):SetEventSoundParam(self, "RougeShopOpenSound", {ToEnd = 1})
     self:Close()
   end
 end
-
 function M:Close()
   if self.HasPurchased then
     if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -400,14 +377,13 @@ function M:Close()
   end
   self.Super.Close(self)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   local IsHandled = false
   if UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) and "Gamepad_FaceButton_Bottom" == InKeyName then
     if self.bFocusOnDetails then
-      self.DetailItem:OnCheckDetails()
+      UIUtils.OnDefinitionLinkClicked(self.DetailItem, self.DetailItem.ExplanationId)
     else
       self.DetailItem:RougePurchase()
     end
@@ -418,7 +394,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -434,7 +409,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   local IsEventHandled = false
   if "Escape" == InKeyName then
@@ -443,7 +417,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonRight then
@@ -482,7 +455,6 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:ChangeBottomGamePadInfo(bFoucusOnDetails)
   local CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   if CurInputDeviceType == ECommonInputType.Gamepad then
@@ -514,7 +486,6 @@ function M:ChangeBottomGamePadInfo(bFoucusOnDetails)
     self.Common_Tab:UpdateSingleBottomKeyInfo(2, {})
   end
 end
-
 function M:FocusOnPanel(bFirstOpen)
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
@@ -526,7 +497,6 @@ function M:FocusOnPanel(bFirstOpen)
   self.TileList_Item:SetSelectedIndex(SelectedIndex)
   self.TileList_Item:SetFocus()
 end
-
 function M:FocusOnSuitInfo()
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
@@ -535,7 +505,6 @@ function M:FocusOnSuitInfo()
     self.List_BottomTab:NavigateToIndex(self.SelectGroupId - 1)
   end
 end
-
 function M:FocusChanged(bFocusOnSuit)
   self.bFocusOnSuit = bFocusOnSuit
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -546,14 +515,12 @@ function M:FocusChanged(bFocusOnSuit)
     end
   end
 end
-
 function M:DetailItemOnFocus(bFocus)
   self.bFocusOnDetails = bFocus
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ChangeBottomGamePadInfo(self.bFocusOnDetails)
   end
 end
-
 function M:SetButtomGamePadTipVisibility(Visibility)
   if self.CurInputDeviceType == ECommonInputType.Touch then
     return
@@ -562,7 +529,6 @@ function M:SetButtomGamePadTipVisibility(Visibility)
     self.Key_GamePad_Bottom:SetVisibility(Visibility)
   end
 end
-
 function M:OnMenuOpenChanged(bOpen)
   if not bOpen then
     if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -578,12 +544,10 @@ function M:OnMenuOpenChanged(bOpen)
     self.Common_Tab.Com_KeyTips.Panel_Key:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self.Common_Tab.Com_KeyTips.Panel_Key:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 AssembleComponents(M)
 return M

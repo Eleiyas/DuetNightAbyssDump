@@ -2,15 +2,12 @@ require("UnLua")
 local Component = {}
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local PlayerNameUtils = require("Utils.PlayerNameUtils")
-
 function Component:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function Component:Construct(...)
   self.SpaceIndex = {}
 end
-
 function Component:GetCDKRewards(Items)
   local Rewards = {}
   for key, value in pairs(Items) do
@@ -27,7 +24,6 @@ function Component:GetCDKRewards(Items)
   end
   return Rewards
 end
-
 function Component:OnClickExchangeCode()
   local CDK = self.Text_Input:GetText()
   local Avatar = GWorld:GetAvatar()
@@ -35,10 +31,26 @@ function Component:OnClickExchangeCode()
     Avatar:UseCDK(CDK, function(Ret, Items)
       if Ret == ErrorCode.RET_SUCCESS then
         self.Owner:OnClose()
-        local Rewards = self:GetCDKRewards(Items)
+        local Rewards = self:GetCDKRewards(Items or {})
         UIManager(self):LoadUINew("GetItemPage", nil, nil, nil, Rewards)
       elseif Ret == ErrorCode.RET_CDK_CODE_INVALID then
         self:ShowTips(GText("UI_Exchange_Incorrect"), self.RedTip)
+        AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", "", nil)
+        return
+      elseif Ret == ErrorCode.RET_CDK_CHANNEL_CHECK_FAILED then
+        self:ShowTips(GText("UI_Exchange_WrongChannel"), self.RedTip)
+        AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", "", nil)
+        return
+      elseif Ret == ErrorCode.RET_CDK_USED_BY_MINE then
+        self:ShowTips(GText("UI_Exchange_Used_Self"), self.RedTip)
+        AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", "", nil)
+        return
+      elseif Ret == ErrorCode.RET_CDK_USE_LIMIT then
+        self:ShowTips(GText("UI_Exchange_Max"), self.RedTip)
+        AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", "", nil)
+        return
+      elseif Ret == ErrorCode.RET_CDK_USED_BY_OTHER then
+        self:ShowTips(GText("UI_Exchange_Used_Other"), self.RedTip)
         AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", "", nil)
         return
       else
@@ -49,7 +61,6 @@ function Component:OnClickExchangeCode()
     end)
   end
 end
-
 function Component:OnClickButtonContinue()
   local Nickname = self.Text_Input:GetText()
   if self.IsChangeName and PlayerNameUtils.CheckIsAllSpace(Nickname) then
@@ -59,13 +70,11 @@ function Component:OnClickButtonContinue()
   end
   HeroUSDKUtils.CheckStringSensitive(self, Nickname, self.OnNameSensitive, self.OnNameNotSensitive)
 end
-
 function Component:OnNameSensitive(ReplaceName, Name, Words)
   AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", nil, nil)
   self:ShowTips(GText("UI_REGISTER_BANNEDINPUT"), self.RedTip)
   self.Owner.DontCloseWhenRightBtnClicked = true
 end
-
 function Component:OnNameNotSensitive(Name)
   local NameLength, RealName, IllegalRange, ErrorType = PlayerNameUtils.CheckNameLegal(Name, self.MaxNum)
   local Avatar = GWorld:GetAvatar()
@@ -89,7 +98,6 @@ function Component:OnNameNotSensitive(Name)
   end
   self.Owner:OnClose()
 end
-
 function Component:OnNameChanged(NewName)
   if "" == NewName then
     self.IsEmpty = true
@@ -103,7 +111,6 @@ function Component:OnNameChanged(NewName)
   self.PreInputInvalid = self.NowInputInvalid
   return NewName
 end
-
 function Component:OnCodeChanged(NewCode)
   if "" == NewCode then
     self.Common_EditText:SetTextCount(0)
@@ -116,7 +123,6 @@ function Component:OnCodeChanged(NewCode)
     self.Owner:GetButtonBar().Btn_Yes:ForbidBtn(false)
   end
 end
-
 function Component:Tick(MyGeometry, InDeltaTime)
   local CurrentFocus = self.Text_Input:HasAnyUserFocus()
   if CurrentFocus == self.TextFocus then
@@ -128,7 +134,6 @@ function Component:Tick(MyGeometry, InDeltaTime)
   else
   end
 end
-
 function Component:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   Params.EditTextConfig = Params.EditTextConfig or {}
@@ -204,5 +209,4 @@ function Component:InitContent(Params, PopupData, Owner)
   self.Text_Input.ClearKeyboardFocusOnCommit = true
   self.OnNotSensitiveCallbackFunction = Params.OnNotSensitiveCallbackFunction
 end
-
 return Component

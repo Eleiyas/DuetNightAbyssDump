@@ -1,9 +1,7 @@
 local M = Class()
-
 function M:ReceiveBeginPlay()
   self.HideTags = {}
 end
-
 function M:SetActorHideTag(Tag, bHidden)
   if bHidden then
     self.HideTags[Tag] = true
@@ -16,10 +14,8 @@ function M:SetActorHideTag(Tag, bHidden)
     self:SetActorHiddenInGame(false)
   end
 end
-
 function M:ForceClearActorHideTag()
   self.HideTags = {}
   self:SetActorHiddenInGame(false)
 end
-
 return M

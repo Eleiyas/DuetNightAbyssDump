@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:UpdataAttrListView(Attrs, ComparedAttrs, bAnim)
   self.List_Atrr:ClearListItems()
   local Idx = 1
@@ -31,7 +30,6 @@ function Component:UpdataAttrListView(Attrs, ComparedAttrs, bAnim)
     self.List_Atrr:RequestPlayEntriesAnim()
   end
 end
-
 function Component:UpdateDesc(Desc)
   if not string.isempty(Desc) then
     self.Text_Detail:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -40,5 +38,4 @@ function Component:UpdateDesc(Desc)
     self.Text_Detail:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return Component

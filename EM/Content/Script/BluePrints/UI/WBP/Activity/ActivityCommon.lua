@@ -14,13 +14,6 @@ ActivityCommon.EventAllTypeId = {
   ConditionReward = 107,
   CommunityCheck = 109
 }
-ActivityCommon.NewReddotFrameEventTypes = {
-  [ActivityCommon.EventAllTypeId.ConditionReward] = 1,
-  [ActivityCommon.EventAllTypeId.CharTrial] = 1,
-  [ActivityCommon.EventAllTypeId.CommunityCheck] = 1,
-  [ActivityCommon.EventAllTypeId.StarterQuests] = 1,
-  [ActivityCommon.EventAllTypeId.JumpToOtherPage] = 1
-}
 ActivityCommon.AllTitleName = {
   RougeTitle = "RougeTitle",
   TryOutTitle = "TryOutTitle",
@@ -40,12 +33,12 @@ ActivityCommon.EventId = {
 ActivityCommon.NeedRefreshInNextDay = {
   DailyLoginFirst = 101001,
   DailyLoginSecond = 101003,
-  MidTermGoal = 103006
+  MidTermGoal = 103006,
+  WarmUp = 101004
 }
 ActivityCommon.GlobalPakForbidTabId = {
   [105001] = 1
 }
-
 function ActivityCommon.GenerateAllRewardIds(RewardIds)
   local RewardType, RewardList = DataMgr.RewardType, {}
   for ItemType, _ in pairs(RewardType) do
@@ -85,5 +78,4 @@ function ActivityCommon.GenerateAllRewardIds(RewardIds)
   end)
   return RewardInfoList
 end
-
 return ActivityCommon

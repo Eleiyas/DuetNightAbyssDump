@@ -1,6 +1,6 @@
 local ETalkVisibility = {Show = "Show", Hide = "Hide"}
 local M = {}
-
+local ScriptLogType = UE.EStoryLogType.Script
 function M:CreateNode(Flow, TalkTask, Params)
   local ActorId = Params.ActorId
   local TargetPointName = Params.TargetPoint
@@ -8,31 +8,31 @@ function M:CreateNode(Flow, TalkTask, Params)
   local TalkContext = GWorld.GameInstance:GetTalkContext()
   if not IsValid(TalkContext) then
     local Message = string.format("SetLocation create failed: TalkContext not found, DialogueId: %d", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "SetLocation脚本执行出错: TalkContext无效", Message)
     return
   end
   local TalkActorData = TalkContext:GetTalkActorData(TalkTask, ActorId)
   if not TalkActorData then
     local Message = string.format("SetLocation create failed: TalkActorData not found, DialogueId: %d, ActorId: %d", Flow.DialogueId, ActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "SetLocation脚本执行出错: TalkActorData无效", Message)
     return
   end
   local TalkActor = TalkActorData.TalkActor
   if not IsValid(TalkActor) then
     local Message = string.format("SetLocation create failed: TalkActor not found, DialogueId: %d, ActorId: %d", Flow.DialogueId, ActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "SetLocation脚本执行出错: TalkActor无效", Message)
     return
   end
   local GameState = UGameplayStatics.GetGameState(Flow)
   if not IsValid(GameState) then
     local Message = string.format("SetLocation create failed: GameState not found, DialogueId: %d", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "SetLocation脚本执行出错: GameState无效", Message)
     return
   end
   local TargetPoint = GameState:GetTargetPoint(TargetPointName)
   if not IsValid(TargetPoint) then
     local Message = string.format("SetLocation create failed: TargetPoint not found, DialogueId: %d, PointName: %s", Flow.DialogueId, TargetPointName)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "SetLocation脚本执行出错: TargetPoint无效", Message)
     return
   end
   local SetLocationNode = Flow:CreateNode(UEFNode_Delegate)
@@ -59,5 +59,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return SetLocationNode
 end
-
 return M

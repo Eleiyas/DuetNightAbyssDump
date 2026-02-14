@@ -1,5 +1,4 @@
 local Guide_Text_Task_PC = Class("BluePrints.UI.UI_PC.Guide.Guide_TipsAsyncActionUIBase")
-
 function Guide_Text_Task_PC:InitializeData(QuestChainId, IsBegin, Duration)
   local TS = TalkSubsystem()
   local IsInTalk = false
@@ -40,15 +39,12 @@ function Guide_Text_Task_PC:InitializeData(QuestChainId, IsBegin, Duration)
     self.Task_State:SetActiveWidgetIndex(1)
   end
 end
-
 function Guide_Text_Task_PC:GetTaskInfoString(TaskText)
   return GText(TaskText)
 end
-
 function Guide_Text_Task_PC:OnClose()
   self:OnTipRealEnd()
 end
-
 function Guide_Text_Task_PC:OnTipBegin()
   if self.IsShowing then
     return false
@@ -66,11 +62,9 @@ function Guide_Text_Task_PC:OnTipBegin()
   end
   return true
 end
-
 function Guide_Text_Task_PC:PlayInAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_start_in", nil, nil)
 end
-
 function Guide_Text_Task_PC:OnTipEnd()
   self:AddTimer(self.Duration, function()
     if self.Out then
@@ -85,11 +79,9 @@ function Guide_Text_Task_PC:OnTipEnd()
     end
   end)
 end
-
 function Guide_Text_Task_PC:PlayOutAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_start_out", nil, nil)
 end
-
 function Guide_Text_Task_PC:OnTipRealEnd()
   self:Hide("QuestBeginEndTip")
   self.IsShowing = false
@@ -105,5 +97,4 @@ function Guide_Text_Task_PC:OnTipRealEnd()
     self.OnGuideEnd:Broadcast()
   end
 end
-
 return Guide_Text_Task_PC

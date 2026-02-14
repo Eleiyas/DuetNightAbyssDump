@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_DungeonSurviveFloat_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_DungeonSurviveFloat_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.LastAddValue = 0
@@ -32,20 +31,17 @@ function WBP_DungeonSurviveFloat_C:Initialize(Initializer)
   self.LoadingSurvivalItemData = {}
   self.LoadingBuffIcon = {}
 end
-
 function WBP_DungeonSurviveFloat_C:Close()
   AudioManager(self):StopSound(self, "SerumLow")
   self.Super.Close(self)
 end
-
 function WBP_DungeonSurviveFloat_C:StopAnimationLoop()
   if self.CurrentAnimationName ~= "prompt01" then
     return
   end
-  self.Panel_Tip:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.WBP_ComTip:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.bShouldContinueAnim = false
 end
-
 function WBP_DungeonSurviveFloat_C:PlayAnimationUntilStop(AnimationName)
   AnimationName = AnimationName or self.CurrentAnimationName
   if self:IsAnimationPlaying(self[AnimationName]) then
@@ -64,19 +60,16 @@ function WBP_DungeonSurviveFloat_C:PlayAnimationUntilStop(AnimationName)
     Proxy.Finished:Add(self, self.PlayAnimationUntilStop)
   end
 end
-
 function WBP_DungeonSurviveFloat_C:Destruct()
   WBP_DungeonSurviveFloat_C.Super.Destruct(self)
   AudioManager(self):StopSound(self, "SerumLow")
 end
-
 function WBP_DungeonSurviveFloat_C:ResumeCountDown()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not IsValid(GameState) then
     return
   end
 end
-
 function WBP_DungeonSurviveFloat_C:OnEnd()
   AudioManager(self):StopSound(self, "SerumLow")
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -91,7 +84,6 @@ function WBP_DungeonSurviveFloat_C:OnEnd()
   end
   self.SurvivalPercent:SetText("0%")
 end
-
 function WBP_DungeonSurviveFloat_C:OnLoaded(...)
   self:CheckDungeonMode()
   self.Super.OnLoaded(self, ...)
@@ -106,8 +98,7 @@ function WBP_DungeonSurviveFloat_C:OnLoaded(...)
     self.CurTimeThres = DataMgr.GlobalConstant.SurviveStageTime.ConstantValue
   end
   self.TextBlock_9:SetText(GText("DUNGEON_SURVIVAL_100"))
-  self.Panel_Tip:SetVisibility(UE4.ESlateVisibility.Collapsed)
-  self.Common_Tip01_PC.Text_Course:SetText(GText("DUNGEON_SURVIVALPRO_113"))
+  self:InitVitaminCostPrompt()
   self:InitListenEvent()
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.In)
   self:OnRepSurvivalTime(GameState:GetSurvialTime())
@@ -127,13 +118,16 @@ function WBP_DungeonSurviveFloat_C:OnLoaded(...)
     self.Panel_Time:SetVisibility(ESlateVisibility.Collapsed)
     self.LowPercent = DataMgr.GlobalConstant.MinExtraFixVitaminMini.ConstantValue / 100
   end
-  if self.IsSurvivalMini then
-    self.Panel_Wave:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    self.Text_Wave:SetText(GText("TARGET_DUNGEON_ROUND"))
-    self:UpdateDungeonProgressDisplay(GameState.DungeonProgress)
-  end
+  self.Panel_Wave:SetVisibility(ESlateVisibility.Collapsed)
 end
-
+function WBP_DungeonSurviveFloat_C:InitVitaminCostPrompt()
+  local ConfigData = {
+    Text = "DUNGEON_SURVIVALPRO_113",
+    ColorType = 3,
+    Arrow = 10
+  }
+  self.WBP_Com_HudBubble:Init(ConfigData)
+end
 function WBP_DungeonSurviveFloat_C:CheckDungeonMode()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState.GameModeType == "SurvivalMini" then
@@ -145,7 +139,6 @@ function WBP_DungeonSurviveFloat_C:CheckDungeonMode()
     self.IsNewSurvival = true
   end
 end
-
 function WBP_DungeonSurviveFloat_C:InitListenEvent()
   self.Super.InitListenEvent(self)
   self:AddDispatcher(EventID.OnRepSurvivalTime, self, self.OnRepSurvivalTime)
@@ -154,9 +147,7 @@ function WBP_DungeonSurviveFloat_C:InitListenEvent()
   self:AddDispatcher(EventID.OnPoisonMonsterBorn, self, self.OnSpecialMonsterCreated)
   self:AddDispatcher(EventID.OnPoisonMonsterDead, self, self.OnSpecialMonsterDead)
   EventManager:AddEvent(EventID.OnRepEnergySupplyCount, self, self.OnRepEnergySupplyCount)
-  self:AddDispatcher(EventID.OnRepDungeonProgress, self, self.UpdateDungeonProgressDisplay)
 end
-
 function WBP_DungeonSurviveFloat_C:TryToAddSurvivalValue(AddValue)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not IsValid(GameState) then
@@ -170,12 +161,10 @@ function WBP_DungeonSurviveFloat_C:TryToAddSurvivalValue(AddValue)
   self.Text_Add:SetText("+" .. tostring(AddPercent) .. "%")
   if self.bIsPro then
     local AddAnim = self:GetAnimationByName("Add_Slow")
-    
     local function PlayAnimFinished()
       self:StopAllAnimations()
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Add_Slow_Out)
     end
-    
     if not self:IsAnimationPlaying(AddAnim) then
       self:PlayAnim("Add_Slow")
       self:AddTimer(1, PlayAnimFinished, false, 0, "Add_Slow_Out")
@@ -192,19 +181,16 @@ function WBP_DungeonSurviveFloat_C:TryToAddSurvivalValue(AddValue)
     end
   end
 end
-
 function WBP_DungeonSurviveFloat_C:PlayAnimationFinished()
   self.LastAddValue = 0
   self.Text_Add:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_DungeonSurviveFloat_C:PlayBuffAnim()
   local _, Proxy = UWidgetAnimationPlayCallbackProxy.CreatePlayAnimationProxyObject(nil, self, self.SwitchOut, 0, 1, 0)
   Proxy.Finished:Add(self, function()
     self:PlayAnimation(self.SwitchIn)
   end)
 end
-
 function WBP_DungeonSurviveFloat_C:UpdateBuffLevel(BuffId, BuffRate)
   local Entries = self.List_Buff_Describe:GetDisplayedEntryWidgets()
   if Entries:Length() <= 0 then
@@ -222,7 +208,6 @@ function WBP_DungeonSurviveFloat_C:UpdateBuffLevel(BuffId, BuffRate)
   end
   Entry.Text_Describe:SetText(Text .. "+" .. BuffRate)
 end
-
 function WBP_DungeonSurviveFloat_C:ShowBuffInfo(PathIconList, TextMapList, Duration)
   self.Text_Effect:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.List_Buff_Describe:ClearListItems()
@@ -255,7 +240,6 @@ function WBP_DungeonSurviveFloat_C:ShowBuffInfo(PathIconList, TextMapList, Durat
     self:AddBuffInfo(BuffIconPath, BuffTextIndex)
   end
 end
-
 function WBP_DungeonSurviveFloat_C:OnEnergyChanged(bEnergyIncreased)
   DebugPrint("Fyx EnergyChange")
   local Entries = self.List_Buff_Describe:GetDisplayedEntryWidgets()
@@ -275,7 +259,6 @@ function WBP_DungeonSurviveFloat_C:OnEnergyChanged(bEnergyIncreased)
     EMUIAnimationSubsystem:EMPlayAnimation(Entry, Entry.SerumDown)
   end
 end
-
 function WBP_DungeonSurviveFloat_C:ReshowAllBuffInfo()
   DebugPrint("Fyx SurviveUIReshow")
   self.List_Buff_Describe:ClearListItems()
@@ -289,7 +272,6 @@ function WBP_DungeonSurviveFloat_C:ReshowAllBuffInfo()
   end
   self:PlayAnimation(self.SwitchIn)
 end
-
 function WBP_DungeonSurviveFloat_C:OnSurvivalItemClassLoadFinish(ItemClass, ResourceID)
   if not ItemClass then
     return
@@ -323,7 +305,6 @@ function WBP_DungeonSurviveFloat_C:OnSurvivalItemClassLoadFinish(ItemClass, Reso
   self.List_Buff_Describe:AddItem(Item)
   Data.IsDestroied = true
 end
-
 function WBP_DungeonSurviveFloat_C:OnBuffIconLoadFinish(Object)
   local AssetName = Object:GetName()
   local Item = self.LoadingBuffIcon[AssetName]
@@ -340,7 +321,6 @@ function WBP_DungeonSurviveFloat_C:OnBuffIconLoadFinish(Object)
   self:PlayAnimation(self.SwitchIn)
   self.List_Buff_Describe:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_DungeonSurviveFloat_C:AddBuffInfo(BuffIconPath, BuffTextIndex)
   local Path = "/Game/UI/Blueprint/BP_SurvivalBuffItems.BP_SurvivalBuffItems_C"
   local Handle = UE.UResourceLibrary.LoadObjectAsyncWithId(self, Path, {
@@ -351,7 +331,6 @@ function WBP_DungeonSurviveFloat_C:AddBuffInfo(BuffIconPath, BuffTextIndex)
     self.LoadingSurvivalItemData[Handle.ResourceID] = {BuffIconPath, BuffTextIndex}
   end
 end
-
 function WBP_DungeonSurviveFloat_C:CloseBuffPanel(BuffId)
   local bNeedPlaySwitchIn = self.List_Buff_Describe:GetNumItems() > 1
   self.List_Buff_Describe:ClearListItems()
@@ -364,7 +343,6 @@ function WBP_DungeonSurviveFloat_C:CloseBuffPanel(BuffId)
     self:PlayAnimation(self.SwitchIn)
   end
 end
-
 function WBP_DungeonSurviveFloat_C:OnRepSurvivalTime(SurvivalTime)
   local TimeStr = self:GetTimeStr_Cpp(math.floor(SurvivalTime))
   self.TextBlock_LeftTime:SetText(TimeStr)
@@ -378,11 +356,9 @@ function WBP_DungeonSurviveFloat_C:OnRepSurvivalTime(SurvivalTime)
     self.TimeThreshold:SetText(Str)
   end
 end
-
 function WBP_DungeonSurviveFloat_C:OnRepSurvivalMiniValue(CurSurvivalMiniValue)
   self:OnRepSurvivalValue(CurSurvivalMiniValue)
 end
-
 function WBP_DungeonSurviveFloat_C:OnRepSurvivalValue(CurSurvivalValue)
   if not self.CurSurvivalValueCache then
     self.CurSurvivalValueCache = CurSurvivalValue
@@ -425,13 +401,6 @@ function WBP_DungeonSurviveFloat_C:OnRepSurvivalValue(CurSurvivalValue)
     end
   end
   self:ConditionalPlayAnimation()
-  if CurSurvivalValue <= 0 and not self.SurvivalValueZeroSent then
-    self.SurvivalValueZeroSent = true
-    local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-    if PlayerCharacter and PlayerCharacter.SurviveValueZero then
-      PlayerCharacter:SurviveValueZero()
-    end
-  end
   local Entries = self.List_Buff_Describe:GetDisplayedEntryWidgets()
   if 0 == Entries:Length() then
     return
@@ -445,7 +414,6 @@ function WBP_DungeonSurviveFloat_C:OnRepSurvivalValue(CurSurvivalValue)
     return
   end
 end
-
 function WBP_DungeonSurviveFloat_C:OnRepEnergySupplyCount()
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(GWorld.GameInstance)
   if not GameState then
@@ -474,18 +442,15 @@ function WBP_DungeonSurviveFloat_C:OnRepEnergySupplyCount()
     end
   end
 end
-
 function WBP_DungeonSurviveFloat_C:UIStateChange_None()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.SurvivalPanel:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_DungeonSurviveFloat_C:UIStateChange_OnTarget()
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   self.bNeedUpdateTimeLimit = true
   if self.IsSurvivalMiniPro or GameState.GameModeType == "SurvivalPro" then
-    self.Common_Tip01_PC.Text_Course:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.bIsPro = true
     self.bShouldContinueAnim = true
     self.O2List:SetVisibility(ESlateVisibility.Collapsed)
@@ -497,7 +462,6 @@ function WBP_DungeonSurviveFloat_C:UIStateChange_OnTarget()
     self:OnRepSurvivalValue(GameState.SurvivalValue)
   end
 end
-
 function WBP_DungeonSurviveFloat_C:PlayVitaminCostPrompt()
   if not self.IsSurvivalMiniPro then
     return
@@ -507,12 +471,10 @@ function WBP_DungeonSurviveFloat_C:PlayVitaminCostPrompt()
   end
   self.IsVitaminCostPromptPlayed = true
   self:PlayAnimationUntilStop("prompt01")
-  self.Common_Tip01_PC:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   if not self:IsExistTimer("AnimLoop") then
     self:AddTimer(10, self.StopAnimationLoop, false, 0, "AnimLoop")
   end
 end
-
 function WBP_DungeonSurviveFloat_C:OnSpecialMonsterCreated(Eid)
   self.SpecialMonsterAlive = true
   self.SpecialMonsterEid = Eid
@@ -520,14 +482,12 @@ function WBP_DungeonSurviveFloat_C:OnSpecialMonsterCreated(Eid)
   self:ConditionalPlayAnimation()
   self:StartSpecialMonsterGuideLoop()
 end
-
 function WBP_DungeonSurviveFloat_C:OnSpecialMonsterDead()
   self.SpecialMonsterAlive = false
   self.bShouldContinueAnim = false
   self.SpecialMonsterEid = nil
   self:StopSpecialMonsterGuideLoop()
 end
-
 function WBP_DungeonSurviveFloat_C:ConditionalPlayAnimation()
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(GWorld.GameInstance)
   if not GameState then
@@ -556,19 +516,15 @@ function WBP_DungeonSurviveFloat_C:ConditionalPlayAnimation()
     end
   end
 end
-
 function WBP_DungeonSurviveFloat_C:UpdateDungeonProgressDisplay(DungeonProgress)
   self.Num_Wave:SetText(DungeonProgress)
 end
-
 function WBP_DungeonSurviveFloat_C:StartSpecialMonsterGuideLoop()
   if self:IsExistTimer("SpecialMonsterGuideLoop") then
     return
   end
   self:AddTimer(5, self.ShowSpecialMonsterGuideLoop, true, 0, "SpecialMonsterGuideLoop", false)
-  GameState(self):ShowDungeonToast_Lua("", 2, EToastType.SabotageAlarm)
 end
-
 function WBP_DungeonSurviveFloat_C:ShowSpecialMonsterGuideLoop()
   if not self.SpecialMonsterEid then
     return
@@ -584,9 +540,7 @@ function WBP_DungeonSurviveFloat_C:ShowSpecialMonsterGuideLoop()
   end
   GuideIcon:PlayLoopAnim()
 end
-
 function WBP_DungeonSurviveFloat_C:StopSpecialMonsterGuideLoop()
   self:RemoveTimer("SpecialMonsterGuideLoop")
 end
-
 return WBP_DungeonSurviveFloat_C

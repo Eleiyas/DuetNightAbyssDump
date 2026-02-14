@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.New_Tag:SetVisibility(ESlateVisibility.Collapsed)
   self.Common_GuidePoint_PC:SetVisibility(ESlateVisibility.Collapsed)
@@ -8,12 +7,10 @@ function M:Construct()
   EventManager:AddEvent(EventID.TeamMatchTimingStart, self, self.RefreshBtnState)
   EventManager:AddEvent(EventID.TeamMatchTimingEnd, self, self.RefreshBtnState)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.TeamMatchTimingStart, self)
   EventManager:RemoveEvent(EventID.TeamMatchTimingEnd, self)
 end
-
 function M:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -24,7 +21,6 @@ function M:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function M:InitDungeonInfo(DungeonId)
   self.DungeonId = DungeonId
   local Data = DataMgr.Dungeon[DungeonId]
@@ -51,7 +47,6 @@ function M:InitDungeonInfo(DungeonId)
     self.Text_Lv:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnSubCellClicked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -67,12 +62,10 @@ function M:OnSubCellClicked()
     end
   end
 end
-
 function M:IsMatching()
   local MatchTimingBar = UIManager(self):GetUIObj("DungeonMatchTimingBar")
   return MatchTimingBar and true
 end
-
 function M:RefreshBtnState(bIsMatching)
   if nil == bIsMatching then
     bIsMatching = self:IsMatching()
@@ -97,5 +90,4 @@ function M:RefreshBtnState(bIsMatching)
     self:PlayAnimation(self.Forbidden)
   end
 end
-
 return M

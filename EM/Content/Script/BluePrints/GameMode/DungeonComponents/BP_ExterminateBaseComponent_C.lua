@@ -1,8 +1,8 @@
 require("UnLua")
 local BP_ExterminateBaseComponent_C = Class({
-  "BluePrints.Common.TimerMgr"
+  "BluePrints.Common.TimerMgr",
+  "BluePrints.Common.DelayFrameComponent"
 })
-
 function BP_ExterminateBaseComponent_C:InitExterminateBaseComponent()
   self.GameMode = self:GetOwner()
   self.NowGuideEids = {}
@@ -10,7 +10,7 @@ function BP_ExterminateBaseComponent_C:InitExterminateBaseComponent()
   self.Success = false
   self.ExterminateInfo = self:GetDataMgrInfo()
   if not self.ExterminateInfo then
-    GameState(self):ShowDungeonError("ExterminateBaseComponent:\229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.GameMode.DungeonId)
+    GameState(self):ShowDungeonError("ExterminateBaseComponent:当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.GameMode.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.TargetNum = self.ExterminateInfo.TargetNum or 80
@@ -32,14 +32,11 @@ function BP_ExterminateBaseComponent_C:InitExterminateBaseComponent()
   end
   self.GameMode.EMGameState:SetExterminateTotalNum(self.TargetNum)
 end
-
 function BP_ExterminateBaseComponent_C:GetDataMgrInfo()
   return
 end
-
 function BP_ExterminateBaseComponent_C:OnEliteNumClear()
 end
-
 function BP_ExterminateBaseComponent_C:ResetNormalNum()
   if self.NormalRange == nil then
     return false
@@ -58,7 +55,6 @@ function BP_ExterminateBaseComponent_C:ResetNormalNum()
   DebugPrint("ExterminateBaseComponent: New NormalNum:", self.NormalNum)
   return true
 end
-
 function BP_ExterminateBaseComponent_C:ResetEliteNum()
   if self.EliteRange == nil then
     return false
@@ -77,7 +73,6 @@ function BP_ExterminateBaseComponent_C:ResetEliteNum()
   DebugPrint("ExterminateBaseComponent: New EliteNum:", self.EliteNum)
   return true
 end
-
 function BP_ExterminateBaseComponent_C:InitGuideUpdateTimerLogic()
   self.GuideTimerHandle_DetectFault = "Handle_DetectFault"
   self.GuideTimerInterval_AutoUpdate = DataMgr.GlobalConstant.ExterminateGuideInterval.ConstantValue or 10
@@ -90,48 +85,39 @@ function BP_ExterminateBaseComponent_C:InitGuideUpdateTimerLogic()
     end
   end
 end
-
 function BP_ExterminateBaseComponent_C:OnPlayerEnter(PlayerEid)
-  DebugPrint("zwk  \228\184\173\233\128\148\230\156\137\231\142\169\229\174\182\229\138\160\229\133\165 Eid\239\188\154 ", PlayerEid)
+  DebugPrint("zwk  中途有玩家加入 Eid： ", PlayerEid)
   self:AddGuideTimer_AutoUpdate(PlayerEid)
 end
-
 function BP_ExterminateBaseComponent_C:AddGuideTimer_AutoUpdate(PlayerEid)
   self:AddTimer(self.GuideTimerInterval_AutoUpdate, self.OnTimerEnd_AutoUpdate, true, 0, "Handle_AutoUpdate_" .. PlayerEid, nil, PlayerEid)
 end
-
 function BP_ExterminateBaseComponent_C:OnTimerEnd_AutoUpdate(PlayerEid)
-  DebugPrint("ExterminateBaseComponent: \232\135\170\229\138\168\230\155\180\230\150\176RemoveGuideEid \232\162\171Remove\231\154\132\230\140\135\229\188\149\231\130\185Eid: " .. tostring(self.NowGuideEids[PlayerEid]) .. "  Player Eid: " .. tostring(PlayerEid))
-  self.GameMode.EMGameState:RemoveGuideEid(self.NowGuideEids[PlayerEid], PlayerEid)
+  DebugPrint("ExterminateBaseComponent: 自动更新RemoveGuideEid 被Remove的指引点Eid: " .. tostring(self.NowGuideEids[PlayerEid]) .. "  Player Eid: " .. tostring(PlayerEid))
   self:TryUpdateGuidePoint(PlayerEid)
 end
-
 function BP_ExterminateBaseComponent_C:AddGuideTimer_LimitCalls(PlayerEid)
   self:AddTimer(1, self.OnTimerEnd_LimitCalls, false, 0, "Handle_LimitCalls_" .. PlayerEid, nil, PlayerEid)
 end
-
 function BP_ExterminateBaseComponent_C:OnTimerEnd_LimitCalls(PlayerEid)
   if self.HasGuideUpdateRequest[PlayerEid] then
-    DebugPrint("ExterminateBaseComponent: \232\161\165\229\133\133\232\176\131\231\148\168\230\155\180\230\150\176\230\140\135\229\188\149 PlayerEid: " .. PlayerEid)
+    DebugPrint("ExterminateBaseComponent: 补充调用更新指引 PlayerEid: " .. PlayerEid)
     self:UpdateNearestMonsterGuide(PlayerEid)
     self.HasGuideUpdateRequest[PlayerEid] = false
   end
 end
-
 function BP_ExterminateBaseComponent_C:AddGuideTimer_DetectFault()
   self:AddTimer(2, self.OnTimerEnd_DetectFault, true, 0, self.GuideTimerHandle_DetectFault)
 end
-
 function BP_ExterminateBaseComponent_C:OnTimerEnd_DetectFault()
   for i = 0, self.GameMode:GetPlayerNum() - 1 do
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, i)
     if IsValid(Player) and self:CheckGuideLogicHasFault(Player) then
-      DebugPrint("ExterminateBaseComponent: \230\163\128\230\181\139\229\136\176\231\142\169\229\174\182Eid: " .. Player.Eid .. " \228\184\141\229\173\152\229\156\168\230\140\135\229\188\149\231\130\185\239\188\140\229\135\134\229\164\135\230\183\187\229\138\160")
+      DebugPrint("ExterminateBaseComponent: 检测到玩家Eid: " .. Player.Eid .. " 不存在指引点，准备添加")
       self:TryUpdateGuidePoint(Player.Eid)
     end
   end
 end
-
 function BP_ExterminateBaseComponent_C:CheckGuideLogicHasFault(Player)
   if not IsValid(Player) then
     return true
@@ -144,17 +130,15 @@ function BP_ExterminateBaseComponent_C:CheckGuideLogicHasFault(Player)
   end
   return false
 end
-
 function BP_ExterminateBaseComponent_C:TryUpdateGuidePoint(PlayerEid)
   if self:IsExistTimer("Handle_LimitCalls_" .. PlayerEid) then
-    DebugPrint("ExterminateBaseComponent: \230\173\164\230\172\161\232\176\131\231\148\168\230\155\180\230\150\176\230\140\135\229\188\149\233\162\145\231\142\135\232\191\135\233\171\152\239\188\140\229\183\178\230\154\130\231\188\147\232\176\131\231\148\168 PlayerEid: " .. PlayerEid)
+    DebugPrint("ExterminateBaseComponent: 此次调用更新指引频率过高，已暂缓调用 PlayerEid: " .. PlayerEid)
     self.HasGuideUpdateRequest[PlayerEid] = true
   else
     self:UpdateNearestMonsterGuide(PlayerEid)
     self:AddGuideTimer_LimitCalls(PlayerEid)
   end
 end
-
 function BP_ExterminateBaseComponent_C:OnUnitDeadEvent(MonsterC)
   if self.Success then
     return
@@ -172,39 +156,51 @@ function BP_ExterminateBaseComponent_C:OnUnitDeadEvent(MonsterC)
   end
   for PlayerEid, GuideEid in pairs(self.NowGuideEids) do
     if MonsterC.Eid == GuideEid then
-      DebugPrint("ExterminateBaseComponent: \230\128\170\231\137\169\230\173\187\228\186\161RemoveGuideEid \232\162\171Remove\231\154\132\230\140\135\229\188\149\231\130\185Eid: " .. GuideEid .. "  Player Eid: " .. PlayerEid)
-      self.GameMode.EMGameState:RemoveGuideEid(GuideEid, PlayerEid)
+      DebugPrint("ExterminateBaseComponent: 怪物死亡RemoveGuideEid 被Remove的指引点Eid: " .. GuideEid .. "  Player Eid: " .. PlayerEid)
       self:TryUpdateGuidePoint(PlayerEid)
       self:AddGuideTimer_AutoUpdate(PlayerEid)
       DebugPrint("ExterminateBaseComponent: OnUnitDeadEvent", MonsterC:GetName(), MonsterC.Eid, PlayerEid)
     end
   end
 end
-
 function BP_ExterminateBaseComponent_C:AddExterminateKilledNum(Num)
   self.GameMode.EMGameState:SetExterminateKilledNum(self.GameMode.EMGameState.ExterminateKilledNum + Num)
   if IsStandAlone(self) then
     self.GameMode.EMGameState:OnRep_ExterminateKilledNum()
   end
 end
-
 function BP_ExterminateBaseComponent_C:UpdateNearestMonsterGuide(PlayerEid)
   local Player = Battle(self):GetEntity(PlayerEid)
-  if IsValid(Player) then
-    local MonsterEid = self.GameMode:GetNearestMonsterEid(Player)
-    if nil ~= MonsterEid and MonsterEid > 0 then
-      self.NowGuideEids[PlayerEid] = MonsterEid
-      self.GameMode.EMGameState:AddGuideEid(MonsterEid, PlayerEid)
-      DebugPrint("ExterminateBaseComponent: \229\183\178\230\136\144\229\138\159\230\183\187\229\138\160\230\140\135\229\188\149\231\130\185 \230\140\135\229\188\149\231\130\185Eid: " .. MonsterEid .. "  Player Eid: " .. PlayerEid)
-    else
-      DebugPrint("ExterminateBaseComponent: Error  \230\173\188\231\129\173\231\142\169\230\179\149\229\189\147\229\137\141\229\156\186\228\184\138\230\137\190\228\184\141\229\136\176\230\128\170\231\137\169!")
-    end
+  if not IsValid(Player) then
+    return
+  end
+  local NowGuideEid = self.NowGuideEids[PlayerEid]
+  local MonsterEid = self.GameMode:GetNearestMonsterEid(Player)
+  if NowGuideEid == MonsterEid then
+    DebugPrint("ExterminateBaseComponent: 指引点未发生变化，无需更新 指引点Eid: " .. MonsterEid .. "  Player Eid: " .. PlayerEid)
+    return
+  end
+  if nil ~= NowGuideEid and NowGuideEid > 0 then
+    DebugPrint("ExterminateBaseComponent: 更新指引点，移除旧指引 RemoveGuideEid 被Remove的指引点Eid: " .. NowGuideEid .. "  Player Eid: " .. PlayerEid)
+    self.GameMode.EMGameState:RemoveGuideEid(NowGuideEid, PlayerEid)
+  end
+  if nil ~= MonsterEid and MonsterEid > 0 then
+    self.NowGuideEids[PlayerEid] = MonsterEid
+    self:AddDelayFrameFunc(function()
+      if self.NowGuideEids[PlayerEid] == MonsterEid then
+        self.GameMode.EMGameState:AddGuideEid(MonsterEid, PlayerEid)
+        DebugPrint("ExterminateBaseComponent: 已成功添加指引点 指引点Eid: " .. MonsterEid .. "  Player Eid: " .. PlayerEid)
+      else
+        DebugPrint("ExterminateBaseComponent: 延迟添加指引点时, self.NowGuideEids已发生变化. 原本准备添加的指引点Eid: " .. MonsterEid .. "  Player Eid: " .. PlayerEid)
+      end
+    end, 2)
+  else
+    DebugPrint("ExterminateBaseComponent: Error  歼灭玩法当前场上找不到怪物!")
   end
 end
-
 function BP_ExterminateBaseComponent_C:ClearGuideUpdateTimerLogic()
   for PlayerEid, GuideEid in ipairs(self.NowGuideEids) do
-    DebugPrint("ExterminateBaseComponent: \231\187\147\230\157\159\230\184\133\231\144\134RemoveGuideEid \232\162\171Remove\231\154\132\230\140\135\229\188\149\231\130\185Eid: " .. GuideEid .. "  Player Eid: " .. PlayerEid)
+    DebugPrint("ExterminateBaseComponent: 结束清理RemoveGuideEid 被Remove的指引点Eid: " .. GuideEid .. "  Player Eid: " .. PlayerEid)
     self.GameMode.EMGameState:RemoveGuideEid(GuideEid, PlayerEid)
   end
   self.NowGuideEids = {}
@@ -218,7 +214,6 @@ function BP_ExterminateBaseComponent_C:ClearGuideUpdateTimerLogic()
     end
   end
 end
-
 function BP_ExterminateBaseComponent_C:CheckTargetNum()
   self.TargetNum = self.TargetNum - 1
   if self.TargetNum <= 0 then
@@ -253,7 +248,6 @@ function BP_ExterminateBaseComponent_C:CheckTargetNum()
     end
   end
 end
-
 function BP_ExterminateBaseComponent_C:RuleToTArray(Rule)
   local ResTArray = TArray(0)
   if Rule then
@@ -261,5 +255,4 @@ function BP_ExterminateBaseComponent_C:RuleToTArray(Rule)
   end
   return ResTArray
 end
-
 return BP_ExterminateBaseComponent_C

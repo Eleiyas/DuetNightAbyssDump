@@ -25,7 +25,6 @@ AvatarInfo.__Props__ = {
   IsInDungeon = prop.prop("Bool", "client save", false),
   IsInSpecialQuest = prop.prop("Bool", "client save", false)
 }
-
 function AvatarInfo:Init(Uid, Infos)
   self.Uid = Uid
   if Infos then
@@ -33,7 +32,6 @@ function AvatarInfo:Init(Uid, Infos)
   end
   self.Mailbox = nil
 end
-
 function AvatarInfo:Update(Infos)
   if type(Infos) ~= "table" then
     return
@@ -52,25 +50,20 @@ function AvatarInfo:Update(Infos)
     self.Mailbox = nil
   end
 end
-
 function AvatarInfo:Online(mailbox)
   self.Mailbox = mailbox
   self.IsOnline = true
 end
-
 function AvatarInfo:Offline()
   self.Mailbox = nil
   self.IsOnline = false
 end
-
 function AvatarInfo:GetMailbox()
   return self.Mailbox:all_dump(self.Mailbox)
 end
-
 function AvatarInfo:GetHostnum()
   return self.Hostnum
 end
-
 function AvatarInfo:Serialize()
   local info = self:all_dump(self)
   if self.Mailbox then
@@ -78,14 +71,11 @@ function AvatarInfo:Serialize()
   end
   return info
 end
-
 FormatProperties(AvatarInfo)
 local AvatarInfoDict = Class("AvatarInfoDict", CustomTypes.CustomDict)
 AvatarInfoDict.KeyType = BaseTypes.Int
 AvatarInfoDict.ValueType = AvatarInfo
-
 function AvatarInfoDict:NewAvatarInfo(Uid, Infos)
   return AvatarInfo(Uid, Infos)
 end
-
 return {AvatarInfo = AvatarInfo, AvatarInfoDict = AvatarInfoDict}

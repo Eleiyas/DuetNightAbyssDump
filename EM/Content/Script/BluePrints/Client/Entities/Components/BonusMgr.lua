@@ -1,18 +1,15 @@
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local Component = {}
-
 function Component:EnterWorld()
   self.CachedDungeonRewards = RewardBox:New()
   self.CachedDungeonProgressRewards = {}
 end
-
 function Component:TriggerRewardEvent(LogicRewards)
   DebugPrint("TriggerRewardEvent")
   local LogicReward = LogicRewards[self.Eid]
   assert(LogicReward, "TriggerRewardEvent: LogicReward is nil")
   local UpValues = LogicReward.UpValues
   local Rewards = LogicReward.Rewards
-  
   local function Callback(RewardHandler, Rewards)
     assert(0 ~= RewardHandler, "TriggerRewardEvent RewardHandler == 0")
     local GameMode = GWorld.GameInstance:GetCurrentGameMode()
@@ -47,10 +44,8 @@ function Component:TriggerRewardEvent(LogicRewards)
       end
     end
   end
-  
   self:CallServer("TriggerRewardEvent", Callback, Rewards)
 end
-
 function Component:OnGetRewardInDungeon(GameMode, Rewards, Reason, Transform, ExtraInfo)
   DebugPrintTable(Rewards, 5)
   GameMode:ResolveRewardsInBattle(Rewards, Reason, Transform, ExtraInfo, {
@@ -58,7 +53,6 @@ function Component:OnGetRewardInDungeon(GameMode, Rewards, Reason, Transform, Ex
   })
   self:CacheDungeonRewards(Rewards)
 end
-
 function Component:OnPickUp(GameMode, Reward, Reason, ExtraInfo, bInDungeon)
   if bInDungeon then
     local Tag = ExtraInfo.bExtra and "Extra" or "Normal"
@@ -67,7 +61,7 @@ function Component:OnPickUp(GameMode, Reward, Reason, ExtraInfo, bInDungeon)
   for Type, RewardInfo in pairs(Reward) do
     UIUtils.ShowDungeonRewardUI(RewardInfo, Reason, string.sub(Type, 1, -2))
   end
-  local Resource = Reward.Resource
+  local Resource = Reward.Resources
   if not Resource then
     return
   end
@@ -75,9 +69,10 @@ function Component:OnPickUp(GameMode, Reward, Reason, ExtraInfo, bInDungeon)
   for Id, Count in pairs(Resource) do
     Count = RewardBox:GetCount(Count)
     GameMode:TriggerOnPlayerGetResource(Player, Id, Count)
+    DebugPrint("OnPlayerGetResource FireEvent", Id, ExtraInfo and ExtraInfo.WorldRegionEid or "None")
+    EventManager:FireEvent(EventID.OnPlayerGetResource, Id, ExtraInfo)
   end
 end
-
 function Component:OnShowRewardInDungeon(ClientResult)
   DebugPrint("OnShowRewardInDungeon")
   for i = 1, #ClientResult do
@@ -85,25 +80,20 @@ function Component:OnShowRewardInDungeon(ClientResult)
     self:CacheRewardsAndShowUI(Result[1], Result[2])
   end
 end
-
 function Component:CacheRewardsAndShowUI(Rewards, Reason)
   self:CacheDungeonRewards(Rewards)
   UIUtils.OnGetRewardShowUI(Rewards, Reason)
 end
-
 function Component:CacheDungeonRewards(Rewards)
   self.CachedDungeonRewards:Merge(Rewards)
 end
-
 function Component:ResetCachedDungeonRewards()
   self.CachedDungeonRewards:Clear()
   self.CachedDungeonProgressRewards = {}
 end
-
 function Component:GetCachedDungeonRewards()
   return self.CachedDungeonRewards
 end
-
 function Component:UpdateDungeonRewards(RewardList)
   DebugPrintTable(RewardList, 5)
   local MaxProgress = 0
@@ -115,11 +105,13 @@ function Component:UpdateDungeonRewards(RewardList)
   end
   EventManager:FireEvent(EventID.OnUpdateRewardProgress, MaxProgress)
 end
-
 function Component:GetCachedDungeonProgressRewards()
   return self.CachedDungeonProgressRewards
 end
-
+function Component:OnGmGetDropInDungeon(Id, Count)
+  DebugPrint("OnGmGetDropInDungeon", Id, Count)
+  GWorld:GetBPAvatar():GetDrop(Id, Count)
+end
 function Component:HandleRewardInRegion(GameMode, Rewards, Reason, Transform, ExtraInfo, RewardDropDatas)
   if not Rewards or type(Rewards) ~= "table" or next(Rewards) == nil then
     return
@@ -137,7 +129,6 @@ function Component:HandleRewardInRegion(GameMode, Rewards, Reason, Transform, Ex
   })
   UIUtils.OnGetRewardShowUI(Rewards, Reason)
 end
-
 function Component:GetCharTrialReward(Callback, EventId)
   local function cb(ret, Reward)
     if not ErrorCode:Check(ret) then
@@ -148,10 +139,8 @@ function Component:GetCharTrialReward(Callback, EventId)
       Callback(EventId, Reward)
     end
   end
-  
   self:CallServer("GetCharTrialReward", cb, EventId)
 end
-
 function Component:OnRewardRateUpdate(Type, Rate)
   print(_G.LogTag, "OnRewardRateUpdate", Type, Rate)
   self.RewardParams[Type .. "Rate"] = Rate
@@ -159,5 +148,4 @@ function Component:OnRewardRateUpdate(Type, Rate)
     GWorld.BP_Avatar.AvatarExpRate = Rate
   end
 end
-
 return Component

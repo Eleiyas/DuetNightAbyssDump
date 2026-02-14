@@ -3,7 +3,6 @@ local CommonUtils = require("Utils.CommonUtils")
 local EMCache = require("EMCache.EMCache")
 local Const = require("Const")
 local WBP_Battle_Char_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Battle_Char_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.CharHpPercent = 1.0
@@ -30,12 +29,10 @@ function WBP_Battle_Char_C:Initialize(Initializer)
   self.IsShowDeductBlood = false
   self.IsShowDeductShield = false
 end
-
 function WBP_Battle_Char_C:Construct()
   self.Overridden.Construct(self)
   self:InitCharEvent()
 end
-
 function WBP_Battle_Char_C:InitCharEvent()
   self:AddDispatcher(EventID.ShowMainPlayerBlood, self, self.UpdateState)
   self:AddDispatcher(EventID.CharDie, self, self.CharDie)
@@ -45,7 +42,6 @@ function WBP_Battle_Char_C:InitCharEvent()
   self:AddDispatcher(EventID.OnMainCharacterInitReady, self, self.OnMainCharacterInitReady)
   self:AddDispatcher(EventID.OnShowMainPlayerHealEvent, self, self.OnShowMainPlayerHealEvent)
 end
-
 function WBP_Battle_Char_C:OnMainCharacterInitReady()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) then
@@ -53,7 +49,6 @@ function WBP_Battle_Char_C:OnMainCharacterInitReady()
   end
   self:GetCharacter(Player)
 end
-
 function WBP_Battle_Char_C:GetCharacter(Character)
   self.Owner = Character
   self.NowEid = self.Owner.Eid
@@ -63,7 +58,6 @@ function WBP_Battle_Char_C:GetCharacter(Character)
   self:PlayAnimation(self.Main_In)
   self:AddTimer(1.0, self.CheckMaxHpAndShieldChange, true, 0, "CheckMaxHpAndShieldChange")
 end
-
 function WBP_Battle_Char_C:InitChar()
   self.MaxHp = self.Owner:GetMaxBloodVolume()
   self.MaxShield = self.Owner:GetAttr("MaxES")
@@ -115,7 +109,6 @@ function WBP_Battle_Char_C:InitChar()
   self:SetBloodNum()
   self:SetShieldNum()
 end
-
 function WBP_Battle_Char_C:ResetShieldBarSize()
   local CanvasSlot1 = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.bg_shield)
   self.Char_Shield_Bar = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Shield_Bar)
@@ -128,21 +121,18 @@ function WBP_Battle_Char_C:ResetShieldBarSize()
   self.ShieldBarHeight = BarSize2.Y
   self.EffectHeight = self.BloodEffect:GetSize().Y
 end
-
 function WBP_Battle_Char_C:UpdateBloodEffect()
   local Percent = math.min(math.max((self.LastHp - self.Hp) / self.MaxHp, 0), 1)
   self.BloodEffect:SetSize(FVector2D(self.ShieldBarLength * Percent, self.EffectHeight))
   self.BloodEffect:SetPosition(FVector2D(self.ShieldBarLength * self.CharHpPercent, self.BloodEffect:GetPosition().Y))
   self:PlayAnimation(self.Deduct_Blood)
 end
-
 function WBP_Battle_Char_C:UpdateShieldEffect()
   local Percent = math.min(math.max((self.LastShield - self.Shield) / self.MaxShield, 0), 1)
   self.ShieldEffect:SetSize(FVector2D(self.ShieldBarLength * Percent, self.EffectHeight))
   self.ShieldEffect:SetPosition(FVector2D(self.ShieldBarLength * self.CharShieldPercent, self.ShieldEffect:GetPosition().Y))
   self:PlayAnimation(self.Deduct_Shield)
 end
-
 function WBP_Battle_Char_C:OnUpdateCharLevelAndExp()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -154,7 +144,6 @@ function WBP_Battle_Char_C:OnUpdateCharLevelAndExp()
   self.Lv:SetText(GText("BATTLE_UI_BLOOD_LV"))
   self.Text_Lv:SetText(NowLevel)
 end
-
 function WBP_Battle_Char_C:UpdateState()
   if not IsValid(self.Owner) then
     return
@@ -216,7 +205,6 @@ function WBP_Battle_Char_C:UpdateState()
     self:DecreaseBlood()
   end
 end
-
 function WBP_Battle_Char_C:SetShieldNum(DelayShield)
   self.Num_Shield:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   if self.MaxHp > 0 and self.MaxShield <= 1.0E-4 and self.OverShield <= 1.0E-4 then
@@ -228,11 +216,9 @@ function WBP_Battle_Char_C:SetShieldNum(DelayShield)
     if self.LastOverShield < self.OverShield then
       self.IsOverShield = true
       self:UnbindAllFromAnimationFinished(self.Shield_Overload)
-      
       local function PlayAnimFinished()
         self:PlayAnimation(self.Shield_Overload_Remind)
       end
-      
       self:PlayAnimation(self.Shield_Overload)
       self:BindToAnimationFinished(self.Shield_Overload, {self, PlayAnimFinished})
     end
@@ -255,7 +241,6 @@ function WBP_Battle_Char_C:SetShieldNum(DelayShield)
     self.Num_Shield:SetText(math.floor(self.Shield))
   end
 end
-
 function WBP_Battle_Char_C:SetBloodNum()
   self.Num_Blood:SetText(math.floor(self.Hp))
   if self.CharHpPercent > 0.3 then
@@ -274,17 +259,14 @@ function WBP_Battle_Char_C:SetBloodNum()
     if self.IsLowHealth == false then
       self:PlayAnimation(self.Health_Low)
       local AnimTime = self.Health_Warning:GetEndTime()
-      
       local function PlayWarningAnimation()
         self:PlayAnimation(self.Health_Warning)
       end
-      
       self:AddTimer(AnimTime, PlayWarningAnimation, true, 0, "PlayWarningAnimation")
     end
     self.IsLowHealth = true
   end
 end
-
 function WBP_Battle_Char_C:OnShowMainPlayerHealEvent(HealEvent)
   if self.Hp == self.MaxHp then
     if self.IsPlayingReturning then
@@ -310,7 +292,6 @@ function WBP_Battle_Char_C:OnShowMainPlayerHealEvent(HealEvent)
     self:PlayAnimation(self.Blood_Return)
   end
 end
-
 function WBP_Battle_Char_C:UpdateCharHotUIState(HotUI)
   self.IsCharInHotUI = HotUI
   if self.Hp == self.MaxHp then
@@ -330,11 +311,9 @@ function WBP_Battle_Char_C:UpdateCharHotUIState(HotUI)
     self.IsPlayingReturning = false
   end
 end
-
 function WBP_Battle_Char_C:RecoveryShield()
   local TickTime = 0.033
   local AnimTime = 1.0
-  
   local function ShieldRecoveryFunc()
     local NowTime = UE4.UGameplayStatics.GetTimeSeconds(self)
     local PassedTime = NowTime - self.NowTime
@@ -353,10 +332,8 @@ function WBP_Battle_Char_C:RecoveryShield()
     self.HelpCharShieldPercent = self.CharShieldPercent
     self.Char_Shield_Deduct:SetSize(FVector2D(self.ShieldBarLength * self.HelpCharShieldPercent, self.ShieldBarHeight))
   end
-  
   self:AddTimer(TickTime, ShieldRecoveryFunc, true, 0, "RealRecoveryShield")
 end
-
 function WBP_Battle_Char_C:DecreaseShield()
   if self:IsExistTimer("RealRecoveryShield") then
     self.HelpCharShieldPercent = self.Char_Shield_Deduct:GetSize().X / self.ShieldBarLength
@@ -369,7 +346,6 @@ function WBP_Battle_Char_C:DecreaseShield()
   if not self.IsShowDeductShield then
     return
   end
-  
   local function WrapShieldFunc()
     local NowTime = UE4.UGameplayStatics.GetTimeSeconds(self)
     local PassedTime = NowTime - self.NowTime
@@ -383,10 +359,8 @@ function WBP_Battle_Char_C:DecreaseShield()
     self.HelpCharShieldPercent = self.CharShieldPercent + DelayShield * (self.AnimTime + 1.0 - PassedTime) / self.AnimTime
     self.Char_Shield_Deduct:SetSize(FVector2D(self.ShieldBarLength * self.HelpCharShieldPercent, self.ShieldBarHeight))
   end
-  
   self:AddTimer(self.TickTime, WrapShieldFunc, true, 1.0, "RealReduceShield")
 end
-
 function WBP_Battle_Char_C:DecreaseBlood()
   if self:IsExistTimer("RealReduceBlood") then
     self.HelpCharHpPercent = self.Char_Blood_Deduct.Percent
@@ -395,7 +369,6 @@ function WBP_Battle_Char_C:DecreaseBlood()
   if not self.IsShowDeductBlood then
     return
   end
-  
   local function WrapFunc()
     if self:IsExistTimer("RealReduceShield") then
       self.StartReduceTime = UE4.UGameplayStatics.GetTimeSeconds(self)
@@ -413,10 +386,8 @@ function WBP_Battle_Char_C:DecreaseBlood()
     self.HelpCharHpPercent = self.CharHpPercent + DelayBlood * (self.AnimTime + self.FixTime - PassedTime) / self.AnimTime
     self.Char_Blood_Deduct:SetPercent(self.HelpCharHpPercent)
   end
-  
   self:AddTimer(self.TickTime, WrapFunc, true, self.FixTime, "RealReduceBlood")
 end
-
 function WBP_Battle_Char_C:CheckChangeRole()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) then
@@ -427,7 +398,6 @@ function WBP_Battle_Char_C:CheckChangeRole()
     self:GetCharacter(Player)
   end
 end
-
 function WBP_Battle_Char_C:CheckMaxHpAndShieldChange()
   if self:IsVisible() == false then
     return
@@ -438,12 +408,10 @@ function WBP_Battle_Char_C:CheckMaxHpAndShieldChange()
     self:InitChar()
   end
 end
-
 function WBP_Battle_Char_C:CharRecovery(Eid)
   if self.NowEid == Eid then
     self:InitChar()
     self:PlayAnimation(self.Main_In)
   end
 end
-
 return WBP_Battle_Char_C

@@ -3,7 +3,6 @@ local WBP_CommonItemSubsize_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_CommonItemSubsize_C:Initialize(Initializer)
   self.SlotModId = nil
   self.IsDraging = false
@@ -12,7 +11,6 @@ function WBP_CommonItemSubsize_C:Initialize(Initializer)
   self.IsShowModLevelUp = false
   self.CallbackUI2 = nil
 end
-
 function WBP_CommonItemSubsize_C:OnInFinished()
   self:SetVisibility(ESlateVisibility.Visible)
   self:SetIsSelected(self.IsSelected, false)
@@ -20,7 +18,6 @@ function WBP_CommonItemSubsize_C:OnInFinished()
     self._OnInFinished(self, self.Content)
   end
 end
-
 function WBP_CommonItemSubsize_C:Construct()
   self:BindToAnimationFinished(self.In, {
     self,
@@ -43,7 +40,6 @@ function WBP_CommonItemSubsize_C:Construct()
   end)
   self:InitAnimationVariables()
 end
-
 function WBP_CommonItemSubsize_C:Destruct()
   self:UnbindFromAnimationFinished(self.In, {
     self,
@@ -60,7 +56,6 @@ function WBP_CommonItemSubsize_C:Destruct()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
   EventManager:RemoveEvent(EventID.UnLoadUI, self)
 end
-
 function WBP_CommonItemSubsize_C:InitVariables(Content)
   self.bHovered = false
   self.bPressed = false
@@ -98,7 +93,6 @@ function WBP_CommonItemSubsize_C:InitVariables(Content)
   self._OnAddedToFocusPathEvent = Content.OnAddedToFocusPathEvent
   self._OnRemovedFromFocusPathEvent = Content.OnRemovedFromFocusPathEvent
 end
-
 function WBP_CommonItemSubsize_C:OnListItemObjectSet(Content)
   self:FlushAnimations()
   if self.Content ~= nil and self.Content.Type ~= Content.Type then
@@ -139,7 +133,6 @@ function WBP_CommonItemSubsize_C:OnListItemObjectSet(Content)
   end
   self:ShowContentWarning(Content.ShowWarningText)
 end
-
 function WBP_CommonItemSubsize_C:SetIsEmpty(IsEmpty)
   if IsEmpty then
     self.Switch_Type:SetActiveWidget(self.Panel_Empty)
@@ -147,7 +140,6 @@ function WBP_CommonItemSubsize_C:SetIsEmpty(IsEmpty)
     self.Switch_Type:SetActiveWidget(self.Panel_Content)
   end
 end
-
 function WBP_CommonItemSubsize_C:ShowAddIcon(IsShow)
   if IsShow then
     self.Panel_Add:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -167,7 +159,6 @@ function WBP_CommonItemSubsize_C:ShowAddIcon(IsShow)
     self.Panel_Add:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnBtnAddClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_add_material", nil, nil)
   if self._OnBtnAddClicked then
@@ -177,7 +168,6 @@ function WBP_CommonItemSubsize_C:OnBtnAddClicked()
   self:StopAllAnimations()
   self:PlayAnimation(self.Empty_Click)
 end
-
 function WBP_CommonItemSubsize_C:OnEmpty_ClickFinished()
   if self._OnBtnAddClickedFin then
     self._OnBtnAddClickedFin(self.Content)
@@ -188,7 +178,6 @@ function WBP_CommonItemSubsize_C:OnEmpty_ClickFinished()
     self:PlayAnimation(self.Empty_Hover)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnBtnAddPressed()
   if not self:IsAnimationPlaying(self.Empty_Click) then
     self:FlushAnimations()
@@ -196,7 +185,6 @@ function WBP_CommonItemSubsize_C:OnBtnAddPressed()
     self:PlayAnimation(self.Empty_Press)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnBtnAddReleased()
   if not self:IsAnimationPlaying(self.Empty_Click) then
     self:FlushAnimations()
@@ -204,7 +192,6 @@ function WBP_CommonItemSubsize_C:OnBtnAddReleased()
     self:PlayAnimation(self.Empty_Normal)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnBtnAddHovered()
   if not self:IsAnimationPlaying(self.Empty_Click) then
     self:FlushAnimations()
@@ -212,7 +199,6 @@ function WBP_CommonItemSubsize_C:OnBtnAddHovered()
     self:PlayAnimation(self.Empty_Hover)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnBtnUnhovered()
   if not self:IsAnimationPlaying(self.Empty_Click) then
     self:FlushAnimations()
@@ -220,11 +206,9 @@ function WBP_CommonItemSubsize_C:OnBtnUnhovered()
     self:PlayAnimation(self.Empty_Unhover)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetInteractivity(bInteractive)
   self.bInteractive = bInteractive
 end
-
 function WBP_CommonItemSubsize_C:RefreshStuffNodeStyle(Content)
   if self.StuffType == "Mod" then
     self.GradeLevel:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -247,7 +231,6 @@ function WBP_CommonItemSubsize_C:RefreshStuffNodeStyle(Content)
     self.Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetStuffStyleByStateTag(Content)
   local StateTagInfo = Content.StateTagInfo
   if nil == StateTagInfo then
@@ -267,7 +250,6 @@ function WBP_CommonItemSubsize_C:SetStuffStyleByStateTag(Content)
   end
   self:RefreshItemsByStateTag(StateTagInfo, Content)
 end
-
 function WBP_CommonItemSubsize_C:RefreshItemsByStateTag(StateTagInfo, Content)
   if StateTagInfo.ExtraData ~= nil then
     if not self.SelectNumWidget then
@@ -354,7 +336,6 @@ function WBP_CommonItemSubsize_C:RefreshItemsByStateTag(StateTagInfo, Content)
   end
   self:UpdateGrey(StateTagInfo.IsShowGrey, Content)
 end
-
 function WBP_CommonItemSubsize_C:SetWalnutRealChoice(IsSelected)
   if not self.SelectNumWidget then
     self.SelectNumWidget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_SelectNum_PC.Common_Item_Subsize_SelectNum_PC_C", false)
@@ -371,7 +352,6 @@ function WBP_CommonItemSubsize_C:SetWalnutRealChoice(IsSelected)
     self.SelectNum:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:CancelSelectClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   if self.Parent ~= nil and self.Content.StateTagInfo then
@@ -379,7 +359,6 @@ function WBP_CommonItemSubsize_C:CancelSelectClick()
     self.Content.StateTagInfo.ExtraData[AllCount](self.Parent, self.Content.Uuid)
   end
 end
-
 function WBP_CommonItemSubsize_C:UpdateGrey(bGrey, Content, IsToChild)
   IsToChild = IsToChild or false
   if bGrey then
@@ -394,7 +373,6 @@ function WBP_CommonItemSubsize_C:UpdateGrey(bGrey, Content, IsToChild)
     self:ShowContentWarning()
   end
 end
-
 function WBP_CommonItemSubsize_C:UpdateCommonItem(Content)
   local ItemData = DataMgr[Content.Type][Content.UnitId]
   if not ItemData then
@@ -405,14 +383,12 @@ function WBP_CommonItemSubsize_C:UpdateCommonItem(Content)
   self:SetCount(Content.Count)
   self:SetRarity(Content.Rarity)
 end
-
 function WBP_CommonItemSubsize_C:UpdateMonsterItem(Content)
   self:SetIcon(Content.Icon)
   self:SetName(GText(Content.Name))
   self:SetRarity()
   self:SetReddot(Content.IsNew)
 end
-
 function WBP_CommonItemSubsize_C:UpdateRewardItem(Content)
   local ItemData = DataMgr[Content.Type][Content.UnitId]
   if not ItemData then
@@ -423,7 +399,6 @@ function WBP_CommonItemSubsize_C:UpdateRewardItem(Content)
   self:SetCount(Content.Count)
   self:SetRarity(Content.Rarity)
 end
-
 function WBP_CommonItemSubsize_C:UpdateResourceItem(Content)
   local ItemData = DataMgr[Content.Type][Content.UnitId]
   if not ItemData then
@@ -437,7 +412,6 @@ function WBP_CommonItemSubsize_C:UpdateResourceItem(Content)
   self:SetReddot(Content.IsNew)
   self:SetRarity(Content.Rarity)
 end
-
 function WBP_CommonItemSubsize_C:UpdateModItem(Content)
   Content.bInteractive = true
   local ModDataInfo, ModPolarity, ModCost, Mod
@@ -468,7 +442,7 @@ function WBP_CommonItemSubsize_C:UpdateModItem(Content)
     function(_, Icon)
       if not Icon then
         Icon = LoadObject("Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'")
-        DebugPrint(ErrorTag, string.format("Mod%s\230\178\161\230\156\137\233\133\141\231\189\174\229\155\190\230\160\135\230\136\150\232\128\133\231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\232\191\153\233\135\140\231\148\168\233\187\152\232\174\164\231\154\132\229\155\190\230\160\135\233\161\182\228\184\128\228\184\139\n \232\161\168\233\135\140\233\133\141\231\154\132\233\148\153\232\183\175\229\190\132\230\152\175\239\188\154%s", ModId, ModDataInfo.Icon))
+        DebugPrint(ErrorTag, string.format("Mod%s没有配置图标或者用错图标路径了！！！这里用默认的图标顶一下\n 表里配的错路径是：%s", ModId, ModDataInfo.Icon))
       end
       self:SetIcon(Icon)
     end
@@ -486,7 +460,6 @@ function WBP_CommonItemSubsize_C:UpdateModItem(Content)
   end
   self:SetIsChosen(Content.IsChosen)
 end
-
 function WBP_CommonItemSubsize_C:UpdateCharItem(Content)
   self:SetAttrIcon(Content.AttrIcon)
   self:SetIsEquipped(Content.IsEquipped)
@@ -502,13 +475,11 @@ function WBP_CommonItemSubsize_C:UpdateCharItem(Content)
   self:SetRarity(Content.Rarity)
   self:SetWeaponGradeLevel(nil)
 end
-
 function WBP_CommonItemSubsize_C:UpdateSkinItem(Content)
   self:SetIsEquipped(Content.IsEquipped)
   self:SetIcon(Content.Icon)
   self:SetRarity(Content.Rarity)
 end
-
 function WBP_CommonItemSubsize_C:UpdateWeaponItem(Content)
   self:SetAttrIcon(Content.AttrIcon)
   self:SetIsEquipped(Content.IsEquipped)
@@ -529,7 +500,6 @@ function WBP_CommonItemSubsize_C:UpdateWeaponItem(Content)
   self:SetIsChosen(Content.IsChosen)
   self:SetWeaponGradeLevel(Content.GradeLevel)
 end
-
 function WBP_CommonItemSubsize_C:UpdateNpcItem(Content)
   self:SetIcon(Content.Icon)
   self:SetIsSetted(Content.IsSetted, Content.SettedTipText)
@@ -537,7 +507,6 @@ function WBP_CommonItemSubsize_C:UpdateNpcItem(Content)
   self:SetRarity(Content.Rarity)
   self:SetReddot(false, Content.Upgradeable)
 end
-
 function WBP_CommonItemSubsize_C:UpdateCharAccessoryItem(Content)
   self:SetIsSetted(Content.IsEquipped, GText("UI_Accessory_Equipped"))
   self:SetIcon(Content.Icon)
@@ -546,7 +515,6 @@ function WBP_CommonItemSubsize_C:UpdateCharAccessoryItem(Content)
   self:SetWeaponPhantomIcon(Content.Uuid)
   self:SetRarity(Content.Rarity)
 end
-
 function WBP_CommonItemSubsize_C:UpdateWeaponAccessoryItem(Content)
   self:SetIsSetted(Content.IsEquipped, GText("UI_Accessory_Equipped"))
   self:SetIcon(Content.Icon)
@@ -555,7 +523,6 @@ function WBP_CommonItemSubsize_C:UpdateWeaponAccessoryItem(Content)
   self:SetWeaponPhantomIcon(Content.Uuid)
   self:SetRarity(Content.Rarity)
 end
-
 function WBP_CommonItemSubsize_C:UpdatePetItem(Content)
   self:SetIsEquipped(Content.IsEquipped)
   self:SetIcon(Content.Icon)
@@ -564,7 +531,6 @@ function WBP_CommonItemSubsize_C:UpdatePetItem(Content)
   self:SetRarity(Content.Rarity)
   self:SetLevel(Content.Level)
 end
-
 function WBP_CommonItemSubsize_C:UpdatePetEntryItem(Content)
   self:SetName(Content.UnitName)
   self:SetIsOwned(Content.IsOwned)
@@ -573,7 +539,6 @@ function WBP_CommonItemSubsize_C:UpdatePetEntryItem(Content)
   self:SetRarity(Content.Rarity)
   self:SetIsSelected(Content.IsSelected)
 end
-
 function WBP_CommonItemSubsize_C:UpdateWalnutItem(Content)
   self:SetIcon(Content.Icon)
   self:SetReddot(Content.IsNew, Content.Upgradeable)
@@ -586,7 +551,6 @@ function WBP_CommonItemSubsize_C:UpdateWalnutItem(Content)
     self:SetItemGrey(Content.Count)
   end
 end
-
 function WBP_CommonItemSubsize_C:UpdateDispatchAgentItem(Content)
   self.Id = Content.Id
   self.Uuid = Content.Uuid
@@ -623,7 +587,6 @@ function WBP_CommonItemSubsize_C:UpdateDispatchAgentItem(Content)
   self.WBox_Ability:ClearChildren()
   self:AddAbility(self.Uuid)
 end
-
 function WBP_CommonItemSubsize_C:UpdateFishingRodItem(Content)
   self:SetIsLock(Content.IsLocked)
   self:SetIcon(Content.Icon)
@@ -632,7 +595,6 @@ function WBP_CommonItemSubsize_C:UpdateFishingRodItem(Content)
   self:SetRarity(Content.Rarity)
   self:SetLevel(Content.Level)
 end
-
 function WBP_CommonItemSubsize_C:SetItemGrey(Count)
   if nil == Count then
     return
@@ -648,7 +610,6 @@ function WBP_CommonItemSubsize_C:SetItemGrey(Count)
     self:SetRenderOpacity(1.0)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetPhantomWeaponIcon(UnitId, IsPhantom)
   local Avatar = GWorld:GetAvatar()
   local resource = Avatar.Resources[UnitId]
@@ -674,7 +635,6 @@ function WBP_CommonItemSubsize_C:SetPhantomWeaponIcon(UnitId, IsPhantom)
     self.Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetWeaponPhantomIcon(_Uuid)
   local Avatar = GWorld:GetAvatar()
   local Uuid = _Uuid
@@ -705,7 +665,6 @@ function WBP_CommonItemSubsize_C:SetWeaponPhantomIcon(_Uuid)
     self.Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetPhantomIconInWeaponItem(Id)
   if Id then
     self.Phantom:SetVisibility(UE4.ESlateVisibility.Visibility)
@@ -723,13 +682,11 @@ function WBP_CommonItemSubsize_C:SetPhantomIconInWeaponItem(Id)
     self.Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:PlayPhantomJitterAnim()
   if IsValid(self.PhantomWidget) then
     self.PhantomWidget:PlayJitterAnim()
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIcon(Icon)
   local IconDynaMaterial = self.Img_Item:GetDynamicMaterial()
   if IconDynaMaterial then
@@ -752,7 +709,6 @@ function WBP_CommonItemSubsize_C:SetIcon(Icon)
     end
   end
 end
-
 function WBP_CommonItemSubsize_C:LoadTextureAsync(TexturePath, cb, TaskName)
   rawset(self, "LoadResourceID", nil)
   local Handle = UE.UResourceLibrary.LoadObjectAsyncWithId(self, TexturePath, {
@@ -768,7 +724,6 @@ function WBP_CommonItemSubsize_C:LoadTextureAsync(TexturePath, cb, TaskName)
     rawset(self, "LoadResourceID", Handle.ResourceID)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetLevel(Level)
   if not Level then
     self.Level:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -784,7 +739,6 @@ function WBP_CommonItemSubsize_C:SetLevel(Level)
   self.LevelWidget.Text_Lv:SetText(Level)
   self.Level:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_CommonItemSubsize_C:SetWeaponGradeLevel(GradeLevel)
   if GradeLevel and GradeLevel > 0 then
     if not self.WeaponCardLevelWidget then
@@ -805,7 +759,6 @@ function WBP_CommonItemSubsize_C:SetWeaponGradeLevel(GradeLevel)
     self.WeaponCardLevel:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetCount(Count)
   if not Count then
     self.Num:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -819,7 +772,6 @@ function WBP_CommonItemSubsize_C:SetCount(Count)
   self.NumWidget.Text_Num:SetText(Count)
   self.Num:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_CommonItemSubsize_C:SetWalnutNumber(WalnutNumber)
   if WalnutNumber then
     if not IsValid(self.WalnutNumberWidget) then
@@ -844,7 +796,6 @@ function WBP_CommonItemSubsize_C:SetWalnutNumber(WalnutNumber)
     self.Walnut_Num:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetStars(CurrentLevel, bUsePlus)
   if nil == bUsePlus then
     bUsePlus = true
@@ -861,7 +812,6 @@ function WBP_CommonItemSubsize_C:SetStars(CurrentLevel, bUsePlus)
   self:UpdateStarWidget(CurrentLevel, bUsePlus)
   self.Star:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_CommonItemSubsize_C:SetStarsInBagSell(Content, bUsePlus)
   local ModDataInfo = DataMgr.Mod[self.UnitId]
   if nil == ModDataInfo or nil == self.StarWidgetInSell then
@@ -887,7 +837,6 @@ function WBP_CommonItemSubsize_C:SetStarsInBagSell(Content, bUsePlus)
   self.StarWidgetInSell.Text_Plus:SetText(bUsePlus and "+" or GText("UI_LEVEL_NAME"))
   self.StarWidgetInSell.Text_StarLevel:SetText(CurrentLevel)
 end
-
 function WBP_CommonItemSubsize_C:UpdateStarWidget(CurrentLevel, bUsePlus)
   local ModDataInfo = DataMgr.Mod[self.UnitId]
   if nil == ModDataInfo then
@@ -908,7 +857,6 @@ function WBP_CommonItemSubsize_C:UpdateStarWidget(CurrentLevel, bUsePlus)
   self.StarWidget.Text_Plus:SetText(bUsePlus and "+" or GText("UI_LEVEL_NAME"))
   self.StarWidget.Text_StarLevel:SetText(CurrentLevel)
 end
-
 function WBP_CommonItemSubsize_C:SetIsSelected(IsSelected, bPlayClick)
   if nil == bPlayClick then
     bPlayClick = true
@@ -919,7 +867,6 @@ function WBP_CommonItemSubsize_C:SetIsSelected(IsSelected, bPlayClick)
     self._OnSelectedChanged(self, IsSelected)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsChosen(IsChosen)
   if IsChosen then
     if not self.SelectWidget then
@@ -932,7 +879,6 @@ function WBP_CommonItemSubsize_C:SetIsChosen(IsChosen)
     self.Select:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:ShowCorner(IsShow)
   if IsShow then
     self.Icon_Corner:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -940,14 +886,12 @@ function WBP_CommonItemSubsize_C:ShowCorner(IsShow)
     self.Icon_Corner:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_CommonItemSubsize_C:SetAttrIcon(AttrIcon)
   if not AttrIcon then
     self.Attribute:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -969,7 +913,6 @@ function WBP_CommonItemSubsize_C:SetAttrIcon(AttrIcon)
     self.Attribute:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsEquipped(IsEquipped)
   if not self.IsEquippedWidget then
     self.IsEquippedWidget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_InGear_PC.Common_Item_Subsize_InGear_PC", false)
@@ -982,7 +925,6 @@ function WBP_CommonItemSubsize_C:SetIsEquipped(IsEquipped)
     self.InGear:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetRarity(Rarity)
   if not Rarity or Rarity < 1 or Rarity > 5 then
     self.Switch_Style:SetActiveWidgetIndex(1)
@@ -1014,7 +956,6 @@ function WBP_CommonItemSubsize_C:SetRarity(Rarity)
     self.IsEquippedWidget.Img_InGear:SetBrushResourceObject(RarityLine)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsLock(IsLock)
   if not self.IsLockWidget then
     self.IsLockWidget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_Lock_PC.Common_Item_Subsize_Lock_PC", false)
@@ -1027,7 +968,6 @@ function WBP_CommonItemSubsize_C:SetIsLock(IsLock)
     self.Lock:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsLock_Middle(IsLock)
   if not self.IsLockWidget_Middle then
     self.IsLockWidget_Middle = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_NotUnLocked_PC.Common_Item_Subsize_NotUnLocked_PC", false)
@@ -1040,7 +980,6 @@ function WBP_CommonItemSubsize_C:SetIsLock_Middle(IsLock)
     self.NotUnLocked:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsOwned(IsOwned)
   if not self.IsOwnedWidget then
     self.IsOwnedWidget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_NotUnLocked_PC.Common_Item_Subsize_NotUnLocked_PC", false)
@@ -1054,7 +993,6 @@ function WBP_CommonItemSubsize_C:SetIsOwned(IsOwned)
     self.NotUnLocked:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsNew(IsNew)
   if not self.IsNew_Widget then
     self.IsNew_Widget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_New_PC.Common_Item_Subsize_New_PC", false)
@@ -1068,7 +1006,6 @@ function WBP_CommonItemSubsize_C:SetIsNew(IsNew)
   end
   self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_CommonItemSubsize_C:SetReddot(IsNew, Upgradeable, Ohter)
   if IsNew then
     self:SetIsNew(IsNew)
@@ -1087,7 +1024,6 @@ function WBP_CommonItemSubsize_C:SetReddot(IsNew, Upgradeable, Ohter)
     self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetGradeLevel(GradeLevel)
   if not self.GradeLevelWidget then
     self.GradeLevelWidget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_GradeLevel_PC.Common_Item_Subsize_GradeLevel_PC", false)
@@ -1101,7 +1037,6 @@ function WBP_CommonItemSubsize_C:SetGradeLevel(GradeLevel)
     self.GradeLevel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetPolarity(Polarity, Cost)
   if not Polarity or not Cost then
     return
@@ -1120,7 +1055,6 @@ function WBP_CommonItemSubsize_C:SetPolarity(Polarity, Cost)
   self.PolarityWidget.Text_Polarity:SetText(Cost)
   self.Polarity:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_CommonItemSubsize_C:SetName(Name, IsMaxLevel)
   self.Bg03:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if not self.NameWidget then
@@ -1152,7 +1086,6 @@ function WBP_CommonItemSubsize_C:SetName(Name, IsMaxLevel)
     self.NameWidget.Name:SetColorAndOpacity(self.NameWidget.Color_Normal)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetIsSetted(IsSetted, SettedText)
   if not self.IsSettedWidget then
     self.IsSettedWidget = Utils.UIManager(self):CreateWidget("/Game/UI/UI_PC/Common/Item_Subsize_Widget/Common_Item_Subsize_Set_PC.Common_Item_Subsize_Set_PC", false)
@@ -1170,7 +1103,6 @@ function WBP_CommonItemSubsize_C:SetIsSetted(IsSetted, SettedText)
     self.Set:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetMinusBtn(bShow, Obj, Func)
   if bShow then
     if not self.MinusWidget then
@@ -1188,7 +1120,6 @@ function WBP_CommonItemSubsize_C:SetMinusBtn(bShow, Obj, Func)
     self.Minus:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:SetDispatchAgent(State, SettedText)
   self.Set:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   if not self.IsSettedWidget then
@@ -1211,7 +1142,6 @@ function WBP_CommonItemSubsize_C:SetDispatchAgent(State, SettedText)
     self.IsSettedWidget.Img_Mask:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_CommonItemSubsize_C:AddAbility(Uuid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1230,7 +1160,6 @@ function WBP_CommonItemSubsize_C:AddAbility(Uuid)
     end
   end
 end
-
 function WBP_CommonItemSubsize_C:SetColor(Item, Type)
   local ColorName = UIUtils.GetDispathchColorNameByType(Type)
   if ColorName and Item["Color_BG_" .. ColorName] then
@@ -1239,7 +1168,6 @@ function WBP_CommonItemSubsize_C:SetColor(Item, Type)
     Item:PlayAnimation(Item.Special)
   end
 end
-
 function WBP_CommonItemSubsize_C:InitAnimationVariables()
   self.InteractionAnimations = {
     [self.Normal] = "Normal",
@@ -1251,7 +1179,6 @@ function WBP_CommonItemSubsize_C:InitAnimationVariables()
   }
   self.CurAnim = self.Normal
 end
-
 function WBP_CommonItemSubsize_C:TryPlayAnimation(Animation, ...)
   if self.CurAnim == Animation then
     return
@@ -1265,7 +1192,6 @@ function WBP_CommonItemSubsize_C:TryPlayAnimation(Animation, ...)
     self:PlayAnimation(Animation, ...)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnAnimationFinished(Animation)
   if self.CurAnim == Animation then
     return
@@ -1274,7 +1200,6 @@ function WBP_CommonItemSubsize_C:OnAnimationFinished(Animation)
     self:PlayAnimation(self.CurAnim, table.unpack(self.PlayAnimParams))
   end
 end
-
 function WBP_CommonItemSubsize_C:OnHoveredChanged(bHovered)
   self.bHovered = bHovered
   if self.IsSelected then
@@ -1289,7 +1214,6 @@ function WBP_CommonItemSubsize_C:OnHoveredChanged(bHovered)
     self:TryPlayAnimation(self.UnHover)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnPressedChanged(bPressed)
   self.bPressed = bPressed
   if self.IsSelected then
@@ -1303,7 +1227,6 @@ function WBP_CommonItemSubsize_C:OnPressedChanged(bPressed)
     self:TryPlayAnimation(self.Normal)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnSelectedChanged(bSelected, bPlayClick)
   if bSelected then
     if bPlayClick then
@@ -1317,15 +1240,12 @@ function WBP_CommonItemSubsize_C:OnSelectedChanged(bSelected, bPlayClick)
     self:TryPlayAnimation(self.Normal)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnSelectedLoopAnimFinished()
   self:CheckAndPlayCurrentAnim()
 end
-
 function WBP_CommonItemSubsize_C:OnUnHoverAnimFinished()
   self:CheckAndPlayCurrentAnim()
 end
-
 function WBP_CommonItemSubsize_C:CheckAndPlayCurrentAnim()
   if self.bPressed then
     self:TryPlayAnimation(self.Press)
@@ -1335,7 +1255,6 @@ function WBP_CommonItemSubsize_C:CheckAndPlayCurrentAnim()
     self:TryPlayAnimation(self.Normal)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnMouseEnter(MyGeometry, MouseEvent)
   if not self.bInteractive then
     return
@@ -1348,7 +1267,6 @@ function WBP_CommonItemSubsize_C:OnMouseEnter(MyGeometry, MouseEvent)
     self._OnMouseEnter(self, self.Content)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnMouseLeave(MouseEvent)
   if not self.bInteractive then
     return
@@ -1364,7 +1282,6 @@ function WBP_CommonItemSubsize_C:OnMouseLeave(MouseEvent)
     self._OnMouseLeave(self, self.Content)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnMenuOpenChanged(IsOpened)
   UIManager(self):SetIsMenuAnchorOpen(IsOpened)
   if self.ItemDetails_MenuAnchor.bAllowHover then
@@ -1378,7 +1295,6 @@ function WBP_CommonItemSubsize_C:OnMenuOpenChanged(IsOpened)
   end
   self:SetIsSelected(IsOpened)
 end
-
 function WBP_CommonItemSubsize_C:OnMouseButtonDown(MyGeometry, MouseEvent)
   DebugPrint(DebugTag, LXYTag, "WBP_CommonItemSubsize_C::Onmousebuttondown")
   CommonUtils:CloseGuideTouchIfExist(self)
@@ -1407,12 +1323,10 @@ function WBP_CommonItemSubsize_C:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_CommonItemSubsize_C:OnMouseCaptureLost()
   self:OnPressedChanged(false)
   self:OnHoveredChanged(false)
 end
-
 function WBP_CommonItemSubsize_C:OnMouseButtonUp(MyGeometry, MouseEvent)
   DebugPrint(DebugTag, LXYTag, "WBP_CommonItemSubsize_C::OnmousebuttonUp")
   self.MouseDownPos = nil
@@ -1430,7 +1344,6 @@ function WBP_CommonItemSubsize_C:OnMouseButtonUp(MyGeometry, MouseEvent)
   self.ItemDetails_MenuAnchor:OpenItemDetailsWidget(false)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_CommonItemSubsize_C:OnMouseMove(MyGeometry, MouseEvent)
   if self.bEnableDrag and self:HasMouseCapture() and self.MouseDownPos and UUIFunctionLibrary.HasTraveledFarEnoughToTriggerDrag(MouseEvent, self.MouseDownPos) then
     self.ItemDetails_MenuAnchor:SetAllowRetain(false)
@@ -1440,7 +1353,6 @@ function WBP_CommonItemSubsize_C:OnMouseMove(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_CommonItemSubsize_C:OnTouchStarted(MyGeometry, InTouchEvent)
   CommonUtils:CloseGuideTouchIfExist(self)
   if not self.bInteractive then
@@ -1451,7 +1363,6 @@ function WBP_CommonItemSubsize_C:OnTouchStarted(MyGeometry, InTouchEvent)
   end
   return self:OnMouseButtonDown(MyGeometry, InTouchEvent, true)
 end
-
 function WBP_CommonItemSubsize_C:OnTouchEnded(MyGeometry, InTouchEvent)
   if not self.bInteractive then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -1461,7 +1372,6 @@ function WBP_CommonItemSubsize_C:OnTouchEnded(MyGeometry, InTouchEvent)
   end
   return self:OnMouseButtonUp(MyGeometry, InTouchEvent, true)
 end
-
 function WBP_CommonItemSubsize_C:OnTouchMoved(MyGeometry, InTouchEvent)
   if self.bEnableDrag then
     self.ItemDetails_MenuAnchor:SetAllowRetain(false)
@@ -1469,7 +1379,6 @@ function WBP_CommonItemSubsize_C:OnTouchMoved(MyGeometry, InTouchEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_CommonItemSubsize_C:OnDragDetected(MyGeometry, PointerEvent)
   self:OnPressedChanged(false)
   if not self.bEnableDrag and not self._OnDragLeave then
@@ -1491,7 +1400,6 @@ function WBP_CommonItemSubsize_C:OnDragDetected(MyGeometry, PointerEvent)
   end
   return DragDropOperation
 end
-
 function WBP_CommonItemSubsize_C:OnDragLeave(PointerEvent, Operation)
   DebugPrint(LXYTag, "WBP_CommonItemSubsize_C::OnDragLeave")
   if Operation.Tag ~= "WBP_CommonItemSubsize_C" then
@@ -1501,7 +1409,6 @@ function WBP_CommonItemSubsize_C:OnDragLeave(PointerEvent, Operation)
     self._OnDragLeave(self.Parent, self.Content, PointerEvent, Operation.DefaultDragVisual)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnDragEnter(MyGeometry, PointerEvent, Operation)
   if Operation.Tag ~= "WBP_CommonItemSubsize_C" then
     return
@@ -1513,7 +1420,6 @@ function WBP_CommonItemSubsize_C:OnDragEnter(MyGeometry, PointerEvent, Operation
     self:OnDragEnter_Lua(Operation.DefaultDragVisual)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnDragCancelled(PointerEvent, Operation)
   if Operation.Tag ~= "WBP_CommonItemSubsize_C" then
     return
@@ -1527,22 +1433,18 @@ function WBP_CommonItemSubsize_C:OnDragCancelled(PointerEvent, Operation)
     self:OnDragCancel_Lua(Operation.DefaultDragVisual)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnDragCancel_Lua(CreateDragUI)
   if not CreateDragUI.Content or CreateDragUI.IsCancel then
     return
   end
   CreateDragUI.IsDraging = false
 end
-
 function WBP_CommonItemSubsize_C:OnDragEnter_Lua(CreateDragUI)
   CreateDragUI.IsDraging = true
 end
-
 function WBP_CommonItemSubsize_C:SetEnableDrag(IsEnableDrag)
   self.bEnableDrag = IsEnableDrag
 end
-
 function WBP_CommonItemSubsize_C:ShowContentWarning(Text)
   if not self.Conflict then
     return
@@ -1560,7 +1462,6 @@ function WBP_CommonItemSubsize_C:ShowContentWarning(Text)
     Widget.Text_SoldOut:SetText(Text)
   end
 end
-
 function WBP_CommonItemSubsize_C:ShowModStar(Mod)
   if not self.List_ModStar or not self.ModStar then
     return
@@ -1579,7 +1480,6 @@ function WBP_CommonItemSubsize_C:ShowModStar(Mod)
     end
   end
 end
-
 function WBP_CommonItemSubsize_C:SetGetItemInfo(Rarity, Count)
   self.Name:SetVisibility(ESlateVisibility.Collapsed)
   self:SetCount(Count)
@@ -1604,23 +1504,19 @@ function WBP_CommonItemSubsize_C:SetGetItemInfo(Rarity, Count)
   self.GradeLevel:SetVisibility(ESlateVisibility.Collapsed)
   self.New:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_CommonItemSubsize_C:OnAddedToFocusPath(InFocusEvent)
   if self._OnAddedToFocusPathEvent then
     self._OnAddedToFocusPathEvent(self.Parent, self)
   end
 end
-
 function WBP_CommonItemSubsize_C:OnRemovedFromFocusPath(InFocusEvent)
   if self._OnRemovedFromFocusPathEvent then
     self._OnRemovedFromFocusPathEvent(self.Parent, self)
   end
 end
-
 function WBP_CommonItemSubsize_C:IsMenuOpen()
   return self.IsShowDetails and self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen()
 end
-
 function WBP_CommonItemSubsize_C:OnCloseMenuAnchor(IsNeedMenuChangedCallback)
   if self:IsMenuOpen() then
     self.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
@@ -1630,6 +1526,5 @@ function WBP_CommonItemSubsize_C:OnCloseMenuAnchor(IsNeedMenuChangedCallback)
     self.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
   end
 end
-
 AssembleComponents(WBP_CommonItemSubsize_C)
 return WBP_CommonItemSubsize_C

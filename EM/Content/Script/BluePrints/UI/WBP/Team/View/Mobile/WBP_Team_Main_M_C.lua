@@ -6,7 +6,6 @@ Rule.Value = 1.0
 local M = Class({
   "BluePrints.UI.WBP.Team.View.WBP_Team_Main_Base"
 })
-
 function M:AppendToParent(ParentWidget)
   if ParentWidget then
     self.IsAddingToParent = true
@@ -14,7 +13,6 @@ function M:AppendToParent(ParentWidget)
     self.IsAddingToParent = false
   end
 end
-
 function M:AddTeammateUI(Member, bAnim, HeadUI, Index)
   if not HeadUI then
     if self.WB_Player:GetChildrenCount() < MaxTeammate then
@@ -52,7 +50,6 @@ function M:AddTeammateUI(Member, bAnim, HeadUI, Index)
     self.Panel_Add:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:DelTeammateUI(Uid)
   local DelIndex = self.Teammate2UI[Uid].Index
   if self.TeammateCount >= MaxTeammate then
@@ -77,7 +74,6 @@ function M:DelTeammateUI(Uid)
     self.Panel_Add:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OpenTeam()
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
   if nil ~= BattleMain and type(BattleMain.OpenTeamInfo) == "function" then
@@ -85,7 +81,6 @@ function M:OpenTeam()
     BattleMain:OpenTeamInfo()
   end
 end
-
 function M:OnInitAddBtn()
   self.Btn_Add.Panel_Img:SetActiveWidgetIndex(1)
   self.Btn_Add:BindOnClickEvent(function()
@@ -96,5 +91,4 @@ function M:OnInitAddBtn()
     end
   end)
 end
-
 return M

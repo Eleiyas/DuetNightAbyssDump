@@ -1,18 +1,15 @@
 local CommonConst = require("CommonConst")
 local Component = {}
-
 function Component:PrepareToBattleSingleDungeon(DungeonId, AvatarBattleInfo, CustomPreInitInfo)
   self.logger.debug("PrepareToBattle", DungeonId)
   self.AvatarBattleInfo = AvatarBattleInfo
   GWorld.GameInstance:PreInitGameMode(CustomPreInitInfo)
   WorldTravelSubsystem():ChangeDungeonByDungeonId(DungeonId, CommonConst.DungeonNetMode.Standalone)
 end
-
 function Component:PrepareToBattleMultiDungeon(DungeonId, AvatarBattleInfo)
   self.AvatarBattleInfo = AvatarBattleInfo
   WorldTravelSubsystem():ChangeDungeonByDungeonId(DungeonId, CommonConst.DungeonNetMode.ListenServer)
 end
-
 function Component:PrepareToBattleRegion(RegionId, StartIndex, EnterRegionType, DungeonNetMode, ForLogin, AvatarBattleInfo)
   print(_G.LogTag, "ZJT_ PrepareToBattleRegion ", self.CurrentRegionId, RegionId, EnterRegionType, self.StartIndex)
   self.AvatarBattleInfo = AvatarBattleInfo
@@ -33,9 +30,12 @@ function Component:PrepareToBattleRegion(RegionId, StartIndex, EnterRegionType, 
   if SubSystem then
     SubSystem:SetRegionInitState(ERegionInitState.RegionDataReceived)
   end
+  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
+  if GameMode and GameMode.PrepareLevelDelivery then
+    GameMode:PrepareLevelDelivery(RegionId, StartIndex)
+  end
   WorldTravelSubsystem():ChangeRegionByRegionId(MainReginonId, ForLogin)
 end
-
 function Component:ClearCacheByPrepareRegion()
   self.IsInRegion = false
   self.IsEnterLevelReady = false
@@ -44,7 +44,6 @@ function Component:ClearCacheByPrepareRegion()
   local SubSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, URegionDataMgrSubsystem:StaticClass())
   SubSystem:InitCacheByPrepareRegion()
 end
-
 function Component:PrepareToBattleRougeLike(DungeonId, AvatarBattleInfo, GameInfo, PlayerSlice, RougeLikeManagerInfo)
   print(_G.LogTag, "PrepareToBattleRougeLike", DungeonId)
   self.RougeLikeManagerInfo = RougeLikeManagerInfo
@@ -52,11 +51,9 @@ function Component:PrepareToBattleRougeLike(DungeonId, AvatarBattleInfo, GameInf
   PrintTable(self.RougeLikeManagerInfo, 5)
   WorldTravelSubsystem():ChangeDungeonByDungeonId(DungeonId, CommonConst.DungeonNetMode.Standalone)
 end
-
 function Component:ExitBattle(IsWin, bInterrupt)
   self:RequestLeaveBattle(IsWin, bInterrupt)
 end
-
 function Component:BattleFinish(IsWin, bInterrupt)
   if GWorld:IsListenServer() then
     self:LSBattleFinish(IsWin, bInterrupt)
@@ -72,30 +69,11 @@ function Component:BattleFinish(IsWin, bInterrupt)
   local CombatStatistics = PlayerController:GetCombatStatistics()
   local MaxEid = GameMode:GetBattleEid()
   local CustomInfo = GameMode:TriggerDungeonComponentFun("CustomFinishInfo", nil, IsWin) or {}
-  local CurDungeonType = WorldTravelSubsystem():GetCurrentDungeonType()
   GameMode:FlushRewards()
-  if self:IsInHardBoss() then
-    print(_G.LogTag, "HardBoss Finish", IsWin, TotalDamage, PlayerTime, GameTime)
-    self:CallServerMethod("FinishHardBoss", IsWin, TotalDamage, PlayerTime, GameTime, CombatStatistics)
-  elseif self:IsInRougeLike() then
-    print(_G.LogTag, "RougeLike Finish", IsWin)
-    self:CallServerMethod("FinishRougeLike", IsWin)
-  elseif self:IsInNarrowDungeon() then
-    if CurDungeonType == CommonConst.DungeonType.Abyss then
-      print(_G.LogTag, "Abyss Finish", IsWin)
-      self:CallServerMethod("FinishAbyss", IsWin, CombatStatistics)
-    else
-      print(_G.LogTag, "Finish Dungeon", IsWin, TotalDamage, PlayerTime, GameTime, MaxEid)
-      self:CallServerMethod("FinishDungeon", IsWin, TotalDamage, PlayerTime, GameTime, MaxEid, CombatStatistics, CustomInfo)
-    end
-  else
-    error("BattleFinish but not in any Dungeon, please use: 'GM ShowAvatarStatus' to check")
-  end
+  self:CallServerMethod("FinishDungeon", IsWin, TotalDamage, PlayerTime, GameTime, MaxEid, CombatStatistics, CustomInfo)
 end
-
 function Component:RequestLeaveBattle(IsWin, bInterrupt)
   self.logger.debug(string.format("Client RequestLeaveBattle"))
-  
   local function callback(ret)
     if not ErrorCode:Check(ret) then
       return
@@ -111,6 +89,10 @@ function Component:RequestLeaveBattle(IsWin, bInterrupt)
         GameMode:TriggerDungeonWin()
         return
       end
+      if GameMode.EMGameState.GameModeType == "AutoChess" then
+        GameMode:TriggerDungeonComponentFun("TriggerRealGameEnd", IsWin)
+        return
+      end
       print(_G.LogTag, "Avatar RequestLeaveBattle NormalDungeon", IsWin)
       if IsWin then
         GameMode:TriggerDungeonWin()
@@ -119,25 +101,18 @@ function Component:RequestLeaveBattle(IsWin, bInterrupt)
       end
     end
   end
-  
   self:CallServer("RequestLeaveBattle", callback)
 end
-
 function Component:OnRequestToMatch(Ret)
   print(_G.LogTag, "OnRequestToMatch", Ret)
+  EventManager:FireEvent(EventID.OnRequestToMatch, Ret)
 end
-
 function Component:OnMatchFailed(Reason)
   self.logger.info("Match Failed", Reason)
   if not self:IsInBigWorld() then
     self:ExitDungeon()
     TeamController:RecvDsServerDie()
   end
-  EventManager:FireEvent(EventID.TeamMatchCancel)
+  EventManager:FireEvent(EventID.TeamMatchCancel, Reason)
 end
-
-function Component:OnConnectDSServer(LoginSuccess)
-  self.logger.debug("OnConnectDSServer", LoginSuccess)
-end
-
 return Component

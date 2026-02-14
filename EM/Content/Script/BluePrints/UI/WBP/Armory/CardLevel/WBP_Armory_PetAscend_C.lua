@@ -7,7 +7,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Init(Params)
   self.CurrentContent = nil
   self.Parent = Params.Parent
@@ -28,7 +27,6 @@ function M:Init(Params)
   self:RefreshEntryList(true)
   self:RefreshBreakHintText()
 end
-
 function M:InitBreakLevelStars(BreakLevel)
   for i = 1, 5 do
     local Star = self["WBP_Armory_Star_" .. i]
@@ -44,7 +42,6 @@ function M:InitBreakLevelStars(BreakLevel)
     end
   end
 end
-
 function M:SetBreakLevelStars(BreakLevel)
   local Stars = BreakLevel
   for i = 1, 5 do
@@ -58,7 +55,6 @@ function M:SetBreakLevelStars(BreakLevel)
     end
   end
 end
-
 function M:Construct()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     self.SizeBox_Item:SetMaxDesiredHeight(self.Hight_M)
@@ -74,24 +70,19 @@ function M:Construct()
     self.OnLevelUpOutAnimFinished
   })
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.LevelUp_In)
   self:UnbindAllFromAnimationFinished(self.LevelUp_Out)
 end
-
 function M:IsFull()
   return self.SelectedCount == self.PreConsumeCount
 end
-
 function M:IsEmpty()
   return 0 == self.SelectedCount
 end
-
 function M:OnListItemInited(Content, EntryUI)
   self:OnPreConsumeListGenerated(Content, EntryUI)
 end
-
 function M:OnPetIntensifyDone(CostPetUniqueId, bLevelUp)
   local PreConsumeArray = self.ListWidgets
   for i = 1, self.SelectedCount do
@@ -118,12 +109,10 @@ function M:OnPetIntensifyDone(CostPetUniqueId, bLevelUp)
     end
   end
 end
-
 function M:ReInitAfterIntensify()
   self:InitPreConsumeList()
   self:InitDetails()
 end
-
 function M:HidePreConsumeList()
   self.PreConsumeCount = 0
   self.PreConsumeList:Clear()
@@ -139,7 +128,6 @@ function M:HidePreConsumeList()
     self:OnPreConsumeListGenerated(NewContent, Widget)
   end
 end
-
 function M:UpdatePreConsumeList(PreConsumeList)
   local PreConsumeArray = self.ListWidgets
   for i, Widget in pairs(PreConsumeArray) do
@@ -152,7 +140,6 @@ function M:UpdatePreConsumeList(PreConsumeList)
     self.CurrentWidget.Item:PlayAnimation(self.CurrentWidget.Item.Hover)
   end
 end
-
 function M:InitPreConsumeList(bSkipAnim)
   self.SelectedCount = 0
   self.PreConsumeCount = 1
@@ -168,14 +155,12 @@ function M:InitPreConsumeList(bSkipAnim)
   end
   self.ListWidgets = {}
 end
-
 function M:CreateSlotContent(i)
   local EmptyContent = NewObject(UIUtils.GetCommonItemContentClass())
   EmptyContent.Index = i
   self:ReInitSlotContent(EmptyContent)
   return EmptyContent
 end
-
 function M:ReInitSlotContent(Content)
   if Content.Index <= self.PreConsumeCount then
     Content.NotInteractive = false
@@ -217,7 +202,6 @@ function M:ReInitSlotContent(Content)
     Content.OnMouseButtonUpEvents = nil
   end
 end
-
 function M:HasAnyChoiceOfContent()
   local AllParentContents = self.Parent:GetAllListContent()
   local Result = false
@@ -229,7 +213,6 @@ function M:HasAnyChoiceOfContent()
   end
   return Result
 end
-
 function M:OnPreConsumeListGenerated(Content, Widget)
   local Index = Content.Index
   self.ListWidgets[Index] = Widget
@@ -259,7 +242,6 @@ function M:OnPreConsumeListGenerated(Content, Widget)
     MinusBtn:BindEventOnClicked(self, self.OnItemMinusBtnClick, Content)
   end
 end
-
 function M:CopyItemToConsumeList(AddContent)
   self.SelectedCount = self.SelectedCount + 1
   self.PreConsumeList:Clear()
@@ -270,14 +252,14 @@ function M:CopyItemToConsumeList(AddContent)
     if i == self.SelectedCount then
       if self:IsCommonResource(AddContent.Uuid) then
         Target = self.Parent._Avatar.Resources[AddContent.UnitId]
-        assert(Target and Target.Count > 0, "\233\128\154\231\148\168\229\174\160\231\137\169\229\141\135\231\186\167\231\180\160\230\157\144\228\184\141\229\173\152\229\156\168\230\136\150\229\183\178\232\128\151\229\176\189")
+        assert(Target and Target.Count > 0, "通用宠物升级素材不存在或已耗尽")
         Content = ArmoryUtils:NewResourceItemContent(Target)
         Content.Count = 1
         Content.Uuid = AddContent.Uuid
         Content.Index = i
       else
         Target = ArmoryUtils:GetPet(AddContent.Uuid)
-        assert(Target, AddContent.Uuid .. "\239\188\140\239\188\140 \232\191\153\228\184\170\229\174\160\231\137\169\230\149\176\230\141\174\229\183\178\231\187\143\229\164\177\230\149\136\228\186\134\239\188\140\232\175\183\230\141\162\230\150\176\229\143\183\229\142\187\230\181\139")
+        assert(Target, AddContent.Uuid .. "，， 这个宠物数据已经失效了，请换新号去测")
         Content = ArmoryUtils:NewPetItemContent(Target)
         Content.Index = i
       end
@@ -291,7 +273,6 @@ function M:CopyItemToConsumeList(AddContent)
   end
   self:UpdateDetails()
 end
-
 function M:OnItemMinusBtnClick(DelContent)
   if not DelContent then
     return
@@ -326,7 +307,6 @@ function M:OnItemMinusBtnClick(DelContent)
     self:UpdateDetails()
   end
 end
-
 function M:FindSelectedContent(Uuid)
   local PreConsumeArray = self.ListWidgets
   for i, Widget in pairs(PreConsumeArray) do
@@ -337,11 +317,9 @@ function M:FindSelectedContent(Uuid)
   end
   return nil
 end
-
 function M:GetCurrentContent()
   return self.CurrentContent
 end
-
 function M:RemoveCurrentContent()
   local Content = self:GetCurrentContent()
   if not Content or not Content.Uuid then
@@ -349,18 +327,15 @@ function M:RemoveCurrentContent()
   end
   self:OnItemMinusBtnClick(Content)
 end
-
 function M:UpdateAutoBtnState(bAutoSelect)
   self.Parent:SwitchAutoBtnState(bAutoSelect)
 end
-
 function M:UpdateDetails()
   local Target = self.Target
   self.Parent.Btn_Enhance:ForbidBtn(0 == self.SelectedCount)
   self.Text_Num:SetText(self.SelectedCount)
   return true
 end
-
 function M:OnAutoSelectClick(SelectContents)
   if self.bAutoSelecting then
     return
@@ -378,7 +353,6 @@ function M:OnAutoSelectClick(SelectContents)
   self:UpdateAutoBtnState(true)
   self.bAutoSelecting = false
 end
-
 function M:OnClearClick()
   if self.bClearing then
     return
@@ -392,7 +366,6 @@ function M:OnClearClick()
   self:InitDetails()
   self.bClearing = false
 end
-
 function M:ClearListItems()
   self.PreConsumeList:Clear()
   local PreConsumeArray = self.ListWidgets
@@ -407,13 +380,11 @@ function M:ClearListItems()
   self:UpdatePreConsumeList(self.PreConsumeList)
   self.SelectedCount = 0
 end
-
 function M:RevertLastSelect()
   local PreConsumeArray = self.ListWidgets
   local FinalContent = PreConsumeArray[self.SelectedCount].Content
   self:OnItemMinusBtnClick(FinalContent)
 end
-
 function M:InitDetails(CallFromUpgrade)
   local Target = self.Target
   self.Parent.Btn_Enhance:ForbidBtn(0 == self.SelectedCount)
@@ -440,7 +411,6 @@ function M:InitDetails(CallFromUpgrade)
     self.Text_Limit:SetVisibility(UIConst.VisibilityOp.Hidden)
   end
 end
-
 function M:RefreshEntryList(bNotEnhanced)
   local Target = self.Target
   local BattleData = Target:BattleData()
@@ -461,9 +431,7 @@ function M:RefreshEntryList(bNotEnhanced)
   Content.Name = GText("Pet_Affix_Activate_Num")
   Content.Value = BreakData[Target.BreakNum].EntryNum
   Content.CmpValue = BreakData[bNotEnhanced and Target.BreakNum + 1 or Target.BreakNum].EntryNum
-  if Content.Value ~= Content.CmpValue then
-    self.List_Item:AddItem(Content)
-  end
+  self.List_Item:AddItem(Content)
   local PassiveDesc = ArmoryUtils:GenPetPassiveEffectDesc(BattleData, SkillLevel, bNotEnhanced and SkillLevel + 1 or nil)
   if "" ~= PassiveDesc then
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
@@ -496,7 +464,6 @@ function M:RefreshEntryList(bNotEnhanced)
     self.List_Item:AddItem(Content)
   end
 end
-
 function M:RefreshBreakHintText()
   local BreakNum = self.Target.BreakNum
   local PetId = self.Target.PetId
@@ -519,7 +486,6 @@ function M:RefreshBreakHintText()
     self.Parent.WidgetSwitcher_Hint:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetConsumeIds()
   local PreConsumeArray = self.ListWidgets
   local ConsumeIds = {}
@@ -529,7 +495,6 @@ function M:GetConsumeIds()
   end
   return ConsumeIds
 end
-
 function M:GetConsumeContents()
   local PreConsumeArray = self.ListWidgets
   local ConsumeContents = {}
@@ -539,14 +504,12 @@ function M:GetConsumeContents()
   end
   return ConsumeContents
 end
-
 function M:IsCommonResource(Uuid)
   if not Uuid then
     return false
   end
   return type(Uuid) == "number" and Uuid < 0
 end
-
 function M:OnExpandList(bExpandList, bRefreshList)
   if self.Parent then
     if self.Parent.bItemDetailsShowed then
@@ -556,18 +519,20 @@ function M:OnExpandList(bExpandList, bRefreshList)
     self.Parent:ReNavigateToListItem(false, true)
   end
 end
-
 function M:OnLevelUpInAnimFinished()
   self:AddTimer(1.5, function()
     self:PlayAnimation(self.LevelUp_Out)
   end, false, 0, nil, true)
+  self:AddTimer(0.5, function()
+    if self.Parent then
+      self.Parent:CheckAndPlayEntryItemLock()
+    end
+  end, false, 0, nil, true)
 end
-
 function M:OnLevelUpOutAnimFinished()
   self.Panel_Hint:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   if self.Parent then
     self.Parent:OnBreakLevelUpAnimFinishedCallback()
   end
 end
-
 return M

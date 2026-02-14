@@ -3,7 +3,6 @@ local CommonUtils = require("Utils.CommonUtils")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.IsExpand = false
@@ -27,30 +26,24 @@ function M:Construct()
   self.Switch_Summon:SetChecked(self.Avatar.bAutoPhantomForDefaultSquad)
   self.Key_Controller_Show:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnCheckStateChanged(IsChecked)
   self.Avatar:SwitchSquadAutoPhantom(IsChecked)
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   self.Switch_Summon:RemoveEventOnCheckStateChanged(self)
 end
-
 function M:OpenDefaultMenuAnchor()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
   self.Btn_Qa_Summon:PlayAnimation(self.Btn_Qa_Summon.Click)
   self.Btn_Qa_Summon.Btn_Click:SetChecked(true)
   self.Btn_Qa_Summon:OpenMenuAnchor()
 end
-
 function M:CloseMenuAnchor()
   self.Btn_Qa_Summon:CloseMenuAnchor()
 end
-
 function M:OnMenuOpenChangedCallBack(bIsOpen)
 end
-
 function M:InitSquadData(Parent, bDisablePhantom, CurrentSquad)
   self.Avatar = GWorld:GetAvatar()
   if not self.Avatar then
@@ -77,7 +70,6 @@ function M:InitSquadData(Parent, bDisablePhantom, CurrentSquad)
     self.Panel_Summon:SetVisibility(NewVis)
   end
 end
-
 function M:OnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   self:PlayAnimation(self.Click)
@@ -119,35 +111,30 @@ function M:OnClicked()
     self.Panel_Controller:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:OnPressed()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnHovered()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:UpdateView(SquadInfo, Index)
   self.SquadInfo = SquadInfo
+  self.SquadIndex = Index
   self:SetIcon(SquadInfo)
   if self.bDisablePhantom then
     return
   end
   self.Panel_Summon:SetVisibility(0 == Index and ESlateVisibility.SelfHitTestInvisible or ESlateVisibility.Collapsed)
 end
-
 function M:SetIcon(SquadInfo)
   if SquadInfo.Name == "" or not SquadInfo.Name then
     self.Text_Name:SetText(GText("Squad_DefaultName1"))
   else
     self.Text_Name:SetText(self.SquadInfo.Name)
   end
-  
   local function SetIconComponent(Component, Category, Id, EmptyCategory)
     local Icon
     if Id and DataMgr[Category][Id] then
@@ -156,7 +143,6 @@ function M:SetIcon(SquadInfo)
     Component:InitIcon(Icon and Category or EmptyCategory, Icon)
     Component.Panel_Level:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  
   SetIconComponent(self.Character, "Char", SquadInfo.CharId, "Empty")
   SetIconComponent(self.Melee, "Weapon", SquadInfo.MeleeWeaponId, "Empty")
   SetIconComponent(self.Range, "Weapon", SquadInfo.RangedWeaponId, "Empty")
@@ -197,8 +183,23 @@ function M:SetIcon(SquadInfo)
   if self.IsMissing then
     self.Tips_Up.Text_InputTips:SetText(GText("UI_Squad_Miss"))
   end
+  if 0 == self.SquadIndex then
+    return
+  end
+  if not (SquadInfo.PhantomWeapon1Id and SquadInfo.PhantomWeapon2Id) or not SquadInfo.PetId then
+    local Info = {}
+    if not SquadInfo.PhantomWeapon1Id then
+      Info.PhantomWeapon1 = ""
+    end
+    if not SquadInfo.PhantomWeapon2Id then
+      Info.PhantomWeapon2 = ""
+    end
+    if not SquadInfo.PetId then
+      Info.Pet = 0
+    end
+    self.Avatar:UpdateSquad(nil, self.SquadIndex, Info)
+  end
 end
-
 function M:PlayFlashRed()
   if not self.SquadInfo.CharId then
     self.Character:PlayAnimation(self.Character.FlashRed)
@@ -210,5 +211,4 @@ function M:PlayFlashRed()
     self.Range:PlayAnimation(self.Character.FlashRed)
   end
 end
-
 return M

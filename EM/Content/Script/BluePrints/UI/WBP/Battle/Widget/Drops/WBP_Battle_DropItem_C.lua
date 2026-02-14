@@ -3,20 +3,17 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   if self.bShowing then
     return
   end
   self:CleanUp()
 end
-
 function M:Destruct()
   self:StopAllAnimations()
   self:CleanTimer()
   self:CleanUp()
 end
-
 function M:CleanUp()
   self.ItemId = nil
   self.ItemCount = nil
@@ -27,10 +24,9 @@ function M:CleanUp()
     self.Parent.ListView_Box:RemoveItem(self.Content)
     self.Parent.ListView_Box:RequestRefresh()
   else
-    DebugPrint("ZDX_\230\142\137\232\144\189\231\137\169UI\230\156\170\233\148\128\230\175\129\230\136\144\229\138\159")
+    DebugPrint("ZDX_掉落物UI未销毁成功")
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self:SetVisibility(ESlateVisibility.Collapsed)
   self.Content = Content
@@ -40,12 +36,11 @@ function M:OnListItemObjectSet(Content)
   self.TableName = Content.TableName
   self.Content.SelfWidget = self
   self.Parent = self.Content.Parent
-  self.Content.Parent.UsingItemList[self] = 1
+  self.Content.Parent.UsingItemList[self.Content] = 1
   self.Slot = UE4.UWidgetLayoutLibrary.SlotAsOverlaySlot(self.SizeBox_0)
   self.Slot:SetPadding(FMargin(0))
   self:UpdateTips(self.ItemId, self.ItemCount, self.Duration, self.TableName)
 end
-
 function M:UpdateTips(ItemId, ItemCount, Duration, TableName)
   self.bShowing = true
   self.OrdinaryMoveTime = -1
@@ -55,9 +50,9 @@ function M:UpdateTips(ItemId, ItemCount, Duration, TableName)
   self:StopAllAnimations()
   self.bNotCallAnimationDel = false
   local ItemInfo = DataMgr[TableName][ItemId]
-  assert(ItemInfo, "\230\142\137\232\144\189\231\137\169\228\184\141\229\173\152\229\156\168\239\188\154" .. TableName .. ItemId)
+  assert(ItemInfo, "掉落物不存在：" .. TableName .. ItemId)
   self.ICON:SetVisibility(ESlateVisibility.Collapsed)
-  local DisName = ItemUtils:GetDropName(ItemId, TableName) .. string.format(" \195\151%d", ItemCount)
+  local DisName = ItemUtils:GetDropName(ItemId, TableName) .. string.format(" ×%d", ItemCount)
   self.Text_Reward:SetText(DisName)
   local ImagePath = ItemInfo.Icon
   if string.find(ImagePath, "/Game/") == nil then
@@ -74,22 +69,20 @@ function M:UpdateTips(ItemId, ItemCount, Duration, TableName)
   end
   self.Duration = Duration
 end
-
 function M:AddItemCount(AddItemCount, Duration)
   Duration = Duration or 2.5
   AddItemCount = AddItemCount or 1
   self.Content.ItemCount = self.Content.ItemCount + AddItemCount
-  local DisName = ItemUtils:GetDropName(self.Content.ItemId, self.Content.TableName) .. string.format(" \195\151%d", self.Content.ItemCount)
+  local DisName = ItemUtils:GetDropName(self.Content.ItemId, self.Content.TableName) .. string.format(" ×%d", self.Content.ItemCount)
   self.Text_Reward:SetText(DisName)
   self.Content.Duration = Duration
   self:AddTimer(self.Content.Duration, function()
     self:PlayOutAnimation()
   end, false, 0, "PlayOutAnim", true)
 end
-
 function M:OnIconLoadFinish(Object, ResourceID)
   if not (Object and IsValid(self)) or self.LoadResourceID ~= ResourceID then
-    DebugPrint("ZDX_\230\142\137\232\144\189\231\137\169UIIcon\229\138\160\232\189\189\229\164\177\232\180\165")
+    DebugPrint("ZDX_掉落物UIIcon加载失败")
     self:CloseSelf()
     return
   end
@@ -101,7 +94,6 @@ function M:OnIconLoadFinish(Object, ResourceID)
     AudioManager(self):PlayItemSound(self, self.ItemId, "Pick", self.TableName)
   end
 end
-
 function M:PlayOutAnimation()
   self:PlayAnimation(self.out, 0, 1, 0, 1, true)
   self.OrdinaryMoveTime = 0
@@ -110,7 +102,6 @@ function M:PlayOutAnimation()
     self:CloseSelf()
   end, false, 0, "CloseSelf", true)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if self.bNotCallAnimationDel then
     return
@@ -121,7 +112,6 @@ function M:OnAnimationFinished(InAnimation)
     end, false, 0, "PlayOutAnim", true)
   end
 end
-
 function M:CloseSelf()
   self:CleanUp()
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
@@ -133,5 +123,4 @@ function M:CloseSelf()
     DropItemsUI:OnTipsItemClose(self.Content)
   end
 end
-
 return M

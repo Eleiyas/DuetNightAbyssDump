@@ -5,7 +5,6 @@ local Component = Class({
   "BluePrints.Combat.Components.SkillLevelInterface",
   "BluePrints.Char.CharacterComponent.CharModelComponent"
 })
-
 function Component:ServerSetRoleMod(RoleId, ModPassives, OnlySummonInherit)
   self.ModPassives = ModPassives
   if not ModPassives then
@@ -24,7 +23,6 @@ function Component:ServerSetRoleMod(RoleId, ModPassives, OnlySummonInherit)
     end
   end
 end
-
 function Component:ServerInheritModAttr(ModData)
   for k, Data in pairs(ModData) do
     local ModId = Data.ModId
@@ -32,7 +30,6 @@ function Component:ServerInheritModAttr(ModData)
     self:SetAttrByMod(ModId, ModLevel)
   end
 end
-
 function Component:CreateUnitServerSetRoleMod(RoleId, Source, OnlySummonInherit)
   local MonsterData = DataMgr.Monster[self.UnitId]
   if MonsterData and MonsterData.InheritMod then
@@ -42,12 +39,28 @@ function Component:CreateUnitServerSetRoleMod(RoleId, Source, OnlySummonInherit)
     self:ServerSetRoleMod(RoleId, Source.ModPassives, OnlySummonInherit)
   end
   if MonsterData and MonsterData.InheritWeapon then
-    if MonsterData.InheritWeapon == "Melee" and Source.InfoForInit and Source.InfoForInit.MeleeWeapon then
-      self:SummonServerSetUpMeleeWeapon(Source.InfoForInit and Source.InfoForInit.MeleeWeapon)
-    elseif MonsterData.InheritWeapon == "Ranged" and Source.InfoForInit and Source.InfoForInit.RangedWeapon then
-      self:SummonServerSetUpRangedWeapon(Source.InfoForInit and Source.InfoForInit.RangedWeapon)
+    if MonsterData.InheritWeapon == "Melee" then
+      if Source.InfoForInit and Source.InfoForInit.MeleeWeapon then
+        self:SummonServerSetUpMeleeWeapon(Source.InfoForInit.MeleeWeapon)
+      elseif Source.CurrentRoleId and DataMgr.BattleChar[Source.CurrentRoleId].WeaponId then
+        self:SummonServerSetUpMeleeWeapon({
+          WeaponId = DataMgr.BattleChar[Source.CurrentRoleId].WeaponId
+        })
+      end
+    elseif MonsterData.InheritWeapon == "Ranged" then
+      if Source.InfoForInit and Source.InfoForInit.RangedWeapon then
+        self:SummonServerSetUpRangedWeapon(Source.InfoForInit.RangedWeapon)
+      elseif Source.CurrentRoleId and DataMgr.BattleChar[Source.CurrentRoleId].RangedWeapon then
+        self:SummonServerSetUpMeleeWeapon({
+          WeaponId = DataMgr.BattleChar[Source.CurrentRoleId].RangedWeapon
+        })
+      end
     end
   end
+  local MaxHp = self:GetAttr("MaxHp")
+  if MaxHp <= 0 then
+    self:SetAttr("MaxHp", 2100000000)
+    self:SetAttr("Hp", 2100000000)
+  end
 end
-
 return Component

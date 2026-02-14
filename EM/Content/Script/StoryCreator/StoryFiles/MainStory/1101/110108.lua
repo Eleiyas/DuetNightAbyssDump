@@ -106,11 +106,11 @@ return {
       isStoryNode = true,
       key = "1722421160201347624",
       type = "StoryNode",
-      name = "\228\184\139\230\176\180\233\129\147\233\128\131\232\132\177",
-      pos = {x = 1120.1180280124324, y = -334.85769618109765},
+      name = "下水道逃脱",
+      pos = {x = 1107.8437805207936, y = -340.4374063260252},
       propsData = {
         QuestId = 11010802,
-        QuestDescriptionComment = "\228\184\139\230\176\180\233\129\147\233\128\131\232\132\177",
+        QuestDescriptionComment = "下水道逃脱",
         QuestDescription = "Description_110112_2",
         QuestDeatil = "Content_110112_2",
         TaskRegionReName = "",
@@ -130,8 +130,12 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = true,
         SubRegionId = 102103,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0,
+        FairyLandStaticCreatorId = 0,
+        FairyLandDeliverIndex = 1
       },
       questNodeData = {
         lineData = {
@@ -245,14 +249,14 @@ return {
           ["1722421160203347641"] = {
             key = "1722421160203347641",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = -1876.2105560387904, y = 154.28193443049258},
             propsData = {SpecialConfigId = 1012, BlackScreenImmediately = false}
           },
           ["1722421160204347642"] = {
             key = "1722421160204347642",
             type = "SwitchMechanismStateNode",
-            name = "\230\129\162\229\164\141\229\176\143\230\184\184\230\136\143\230\156\186\229\133\179",
+            name = "恢复小游戏机关",
             pos = {x = -1386.1138950888012, y = 1053.8365632382174},
             propsData = {
               StaticCreatorIdList = {1670005},
@@ -264,7 +268,7 @@ return {
           ["1723707132145611588"] = {
             key = "1723707132145611588",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = -1344.042633715623, y = 701.9100909570351},
             propsData = {
               UnitId = 0,
@@ -279,7 +283,7 @@ return {
           ["17250135336031463501"] = {
             key = "17250135336031463501",
             type = "GoToRegionNode",
-            name = "\231\173\137\229\190\133\232\191\155\229\133\165\230\141\174\231\130\185",
+            name = "等待进入据点",
             pos = {x = -1887.3410753691176, y = 549.9321303882693},
             propsData = {
               RegionType = 1,
@@ -293,7 +297,7 @@ return {
           ["17250135336031463502"] = {
             key = "17250135336031463502",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = -1609.9278639869365, y = 557.0396162453821},
             propsData = {
               ActiveEnable = true,
@@ -307,7 +311,7 @@ return {
           ["17250135336031463503"] = {
             key = "17250135336031463503",
             type = "TalkNode",
-            name = "\233\187\145\229\177\143 - \229\137\141\229\190\128\232\153\154\231\169\186",
+            name = "黑屏 - 前往虚空",
             pos = {x = -1320.4083525110539, y = 548.5528623589845},
             propsData = {
               IsNpcNode = true,
@@ -340,9 +344,6 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -352,7 +353,7 @@ return {
           ["17250135336031463504"] = {
             key = "17250135336031463504",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = -996.1490796058984, y = 541.4117514631056},
             propsData = {
               ActiveEnable = false,
@@ -366,7 +367,7 @@ return {
           ["17250135336031463505"] = {
             key = "17250135336031463505",
             type = "SkipRegionNode",
-            name = "\232\183\168\229\140\186\229\159\159\228\188\160\233\128\129\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174",
+            name = "跨区域传送设置玩家位置",
             pos = {x = -688.4275871385281, y = 539.4072884521771},
             propsData = {
               ModeType = 1,
@@ -378,7 +379,7 @@ return {
           ["17250135718421642806"] = {
             key = "17250135718421642806",
             type = "GoToRegionNode",
-            name = "\232\191\155\229\133\165\229\140\186\229\159\159",
+            name = "进入区域",
             pos = {x = -2134.6026392147724, y = 745.8544119725725},
             propsData = {
               RegionType = 1,
@@ -392,21 +393,21 @@ return {
           ["172534758632613091252"] = {
             key = "172534758632613091252",
             type = "RestoreRoleNode",
-            name = "\230\129\162\229\164\141\232\167\146\232\137\178",
+            name = "恢复角色",
             pos = {x = -1432.734275233657, y = 856.7344771694036},
             propsData = {}
           },
           ["172534758632613091253"] = {
             key = "172534758632613091253",
             type = "PlayerSwitchWalkRunNode",
-            name = "\231\142\169\229\174\182\232\181\176\232\183\145\229\136\135\230\141\162-\232\181\176",
+            name = "玩家走跑切换-走",
             pos = {x = -1185.6107542514578, y = 858.7173807028511},
             propsData = {Rate = 1, Mode = "ToRun"}
           },
           ["172534758632613091254"] = {
             key = "172534758632613091254",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136 \229\173\144\229\188\185\232\183\179/\230\148\187\229\135\187",
+            name = "失效 子弹跳/攻击",
             pos = {x = -938.1539925969845, y = 849.865733060908},
             propsData = {
               PlayerId = 0,
@@ -428,7 +429,7 @@ return {
           ["172664469498113812391"] = {
             key = "172664469498113812391",
             type = "SwitchMechanismStateNode",
-            name = "\229\136\135\230\141\162\230\156\186\229\133\179\231\138\182\230\128\129",
+            name = "切换机关状态",
             pos = {x = -1103.9000069268377, y = 1065.4232299496257},
             propsData = {
               StaticCreatorIdList = {},
@@ -440,7 +441,7 @@ return {
           ["17284434957418840966"] = {
             key = "17284434957418840966",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = -973.3984428389344, y = 699.6369898394546},
             propsData = {
               SoundStateType = 3,
@@ -451,7 +452,7 @@ return {
           ["17297541721265854590"] = {
             key = "17297541721265854590",
             type = "GoToRegionNode",
-            name = "\231\166\187\229\188\128\229\140\186\229\159\159",
+            name = "离开区域",
             pos = {x = -1805.7930216766217, y = 863.6239867792201},
             propsData = {
               RegionType = 1,
@@ -465,7 +466,7 @@ return {
           ["17333806709634831759"] = {
             key = "17333806709634831759",
             type = "JudgeRegionNode",
-            name = "\229\136\164\230\150\173\228\189\141\228\186\142\229\140\186\229\159\159",
+            name = "判断位于区域",
             pos = {x = -2437.26406926407, y = 634.6796536796537},
             propsData = {
               IsWaitingEnterRegion = false,
@@ -475,7 +476,7 @@ return {
           ["17345032559379110451"] = {
             key = "17345032559379110451",
             type = "SkipRegionNode",
-            name = "\233\128\129\229\155\158\230\141\174\231\130\185",
+            name = "送回据点",
             pos = {x = -1579.2712634713553, y = 221.3469308469308},
             propsData = {
               ModeType = 1,
@@ -487,7 +488,7 @@ return {
           ["173521807824622526957"] = {
             key = "173521807824622526957",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = -1581.5203588681848, y = 351.9875776397514},
             propsData = {
               UnitId = 0,
@@ -507,11 +508,11 @@ return {
       isStoryNode = true,
       key = "1722421160202347626",
       type = "StoryNode",
-      name = "\228\184\139\230\176\180\233\129\147\233\128\131\232\132\177",
-      pos = {x = 825.5295664132816, y = -338.55676290661165},
+      name = "下水道逃脱",
+      pos = {x = 823.4606008960402, y = -341.25791233189904},
       propsData = {
         QuestId = 11010801,
-        QuestDescriptionComment = "\228\184\139\230\176\180\233\129\147\233\128\131\232\132\177",
+        QuestDescriptionComment = "下水道逃脱",
         QuestDescription = "Description_110112_1",
         QuestDeatil = "Content_110112_1",
         TaskRegionReName = "",
@@ -531,8 +532,12 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = true,
         SubRegionId = 102103,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0,
+        FairyLandStaticCreatorId = 0,
+        FairyLandDeliverIndex = 1
       },
       questNodeData = {
         lineData = {
@@ -652,7 +657,7 @@ return {
           ["1722421160212347710"] = {
             key = "1722421160212347710",
             type = "TalkNode",
-            name = "\230\179\149\233\156\178\232\140\156\229\185\191\230\146\173",
+            name = "法露茜广播",
             pos = {x = -732.5269366001787, y = 1207.5458515869352},
             propsData = {
               IsNpcNode = false,
@@ -669,7 +674,7 @@ return {
           ["1722421160212347711"] = {
             key = "1722421160212347711",
             type = "GoToRegionNode",
-            name = "\232\191\155\229\133\165\229\140\186\229\159\159",
+            name = "进入区域",
             pos = {x = -1938.3217804517426, y = 1207.5187407292924},
             propsData = {
               RegionType = 1,
@@ -683,14 +688,14 @@ return {
           ["1722421160212347712"] = {
             key = "1722421160212347712",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = -1893.125738391621, y = 293.3854657696307},
             propsData = {SpecialConfigId = 1013, BlackScreenImmediately = false}
           },
           ["17236291369793504"] = {
             key = "17236291369793504",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = -1104.1717247771126, y = 1284.8334798490555},
             propsData = {
               UnitId = 0,
@@ -705,7 +710,7 @@ return {
           ["1725013293956559675"] = {
             key = "1725013293956559675",
             type = "GoToRegionNode",
-            name = "\231\173\137\229\190\133\232\191\155\229\133\165\230\141\174\231\130\185",
+            name = "等待进入据点",
             pos = {x = -1929.796582083173, y = 865.2746000182975},
             propsData = {
               RegionType = 1,
@@ -719,7 +724,7 @@ return {
           ["1725013293956559676"] = {
             key = "1725013293956559676",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = -1655.42277312863, y = 876.1129628415815},
             propsData = {
               ActiveEnable = true,
@@ -733,7 +738,7 @@ return {
           ["1725013293956559677"] = {
             key = "1725013293956559677",
             type = "TalkNode",
-            name = "\233\187\145\229\177\143 - \229\137\141\229\190\128\232\153\154\231\169\186",
+            name = "黑屏 - 前往虚空",
             pos = {x = -1333.2048489543345, y = 879.5309708599457},
             propsData = {
               IsNpcNode = true,
@@ -766,9 +771,6 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -778,7 +780,7 @@ return {
           ["1725013293956559678"] = {
             key = "1725013293956559678",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = -1032.7550998587026, y = 901.7549393291463},
             propsData = {
               ActiveEnable = false,
@@ -792,7 +794,7 @@ return {
           ["1725013293956559679"] = {
             key = "1725013293956559679",
             type = "SkipRegionNode",
-            name = "\232\183\168\229\140\186\229\159\159\228\188\160\233\128\129\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174",
+            name = "跨区域传送设置玩家位置",
             pos = {x = -773.6050359627609, y = 893.4012699690113},
             propsData = {
               ModeType = 1,
@@ -804,21 +806,21 @@ return {
           ["1725013293956559681"] = {
             key = "1725013293956559681",
             type = "RestoreRoleNode",
-            name = "\230\129\162\229\164\141\232\167\146\232\137\178",
+            name = "恢复角色",
             pos = {x = -1342.7821945294313, y = 1059.0447777590634},
             propsData = {}
           },
           ["1725013293956559682"] = {
             key = "1725013293956559682",
             type = "PlayerSwitchWalkRunNode",
-            name = "\231\142\169\229\174\182\232\181\176\232\183\145\229\136\135\230\141\162-\232\181\176",
+            name = "玩家走跑切换-走",
             pos = {x = -1041.779705293264, y = 1064.4205384353681},
             propsData = {Rate = 1, Mode = "ToRun"}
           },
           ["1725013293956559683"] = {
             key = "1725013293956559683",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136 \229\173\144\229\188\185\232\183\179/\230\148\187\229\135\187",
+            name = "失效 子弹跳/攻击",
             pos = {x = -779.6007214165684, y = 1031.0252399997742},
             propsData = {
               PlayerId = 0,
@@ -840,14 +842,14 @@ return {
           ["172587070099113036493"] = {
             key = "172587070099113036493",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = -1409.266769754302, y = 1273.7153739447403},
             propsData = {WaitTime = 0.1}
           },
           ["17271779569023523628"] = {
             key = "17271779569023523628",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = -1657.1937175948642, y = 1226.8415786231594},
             propsData = {
               UnitId = 0,
@@ -862,7 +864,7 @@ return {
           ["17284434793468659118"] = {
             key = "17284434793468659118",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = -1673.4721082260648, y = 1064.8040020387255},
             propsData = {
               SoundStateType = 3,
@@ -873,7 +875,7 @@ return {
           ["17297540427135484993"] = {
             key = "17297540427135484993",
             type = "GoToRegionNode",
-            name = "\231\166\187\229\188\128\229\140\186\229\159\159",
+            name = "离开区域",
             pos = {x = -1930.9479233567265, y = 1042.0468218896988},
             propsData = {
               RegionType = 1,
@@ -887,7 +889,7 @@ return {
           ["17343311798193649306"] = {
             key = "17343311798193649306",
             type = "SkipRegionNode",
-            name = "\233\128\129\229\155\158\230\141\174\231\130\185",
+            name = "送回据点",
             pos = {x = -1591.1140110141944, y = 345.82647847662076},
             propsData = {
               ModeType = 1,
@@ -899,7 +901,7 @@ return {
           ["173521788722521589638"] = {
             key = "173521788722521589638",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = -1601.8274479144031, y = 502.8581449061998},
             propsData = {
               UnitId = 0,
@@ -919,8 +921,8 @@ return {
       isStoryNode = true,
       key = "17225999797854392911",
       type = "StoryNode",
-      name = "\229\141\176\232\177\161\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 1448.9923358029337, y = -348.21168525395336},
+      name = "印象任务节点",
+      pos = {x = 1447.6879879768467, y = -348.21168525395336},
       propsData = {
         QuestId = 11010804,
         QuestDescriptionComment = "",
@@ -943,8 +945,12 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = true,
         SubRegionId = 102103,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0,
+        FairyLandStaticCreatorId = 0,
+        FairyLandDeliverIndex = 1
       },
       questNodeData = {
         lineData = {
@@ -1020,6 +1026,7 @@ return {
               ModeType = 1,
               Id = 102104,
               StartIndex = 1,
+              LoadingId = 0,
               IsWhite = false
             }
           },
@@ -1033,7 +1040,7 @@ return {
           ["17228313984997035145"] = {
             key = "17228313984997035145",
             type = "TalkNode",
-            name = "\229\176\143\230\136\191\233\151\180",
+            name = "小房间",
             pos = {x = 569.0355444223127, y = -21.252059337887882},
             propsData = {
               IsNpcNode = false,
@@ -1052,6 +1059,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1059,6 +1067,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1081,15 +1090,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 110005},
-                {TalkActorType = "Npc", TalkActorId = 110022},
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -1097,7 +1103,7 @@ return {
           ["17228313984997035146"] = {
             key = "17228313984997035146",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186-SC013-\230\136\145\231\154\132\230\132\191\230\156\155",
+            name = "过场-SC013-我的愿望",
             pos = {x = 1208.2414995714353, y = 80.35855646992444},
             propsData = {
               IsNpcNode = false,
@@ -1117,14 +1123,15 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -1134,7 +1141,7 @@ return {
           ["17228313984997035147"] = {
             key = "17228313984997035147",
             type = "TalkNode",
-            name = "\229\176\143\230\136\191\233\151\180",
+            name = "小房间",
             pos = {x = 601.0683668633661, y = 304.64940300635374},
             propsData = {
               IsNpcNode = false,
@@ -1153,6 +1160,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1160,6 +1168,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1182,15 +1191,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 110005},
-                {TalkActorType = "Npc", TalkActorId = 110022}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -1198,7 +1204,7 @@ return {
           ["17228313984997035148"] = {
             key = "17228313984997035148",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186-SC014-\228\186\140\228\186\186\229\185\184\231\187\136",
+            name = "过场-SC014-二人幸终",
             pos = {x = 876.2903419139938, y = 302.1285414814067},
             propsData = {
               IsNpcNode = false,
@@ -1218,14 +1224,15 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -1235,7 +1242,7 @@ return {
           ["17228313984997035149"] = {
             key = "17228313984997035149",
             type = "TalkNode",
-            name = "\228\186\140\228\186\186\229\185\184\231\187\136",
+            name = "二人幸终",
             pos = {x = 1163.2223981633579, y = 294.4035388614212},
             propsData = {
               IsNpcNode = false,
@@ -1256,7 +1263,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -1266,7 +1272,7 @@ return {
           ["17271684415142965069"] = {
             key = "17271684415142965069",
             type = "TalkNode",
-            name = "\228\186\140\228\186\186\229\185\184\231\187\136",
+            name = "二人幸终",
             pos = {x = 1422.0102723561981, y = 301.07661066027924},
             propsData = {
               IsNpcNode = false,
@@ -1287,7 +1293,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -1297,7 +1302,7 @@ return {
           ["17283947276505906043"] = {
             key = "17283947276505906043",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 578.5874000739657, y = -171.18998760263},
             propsData = {
               SoundStateType = 0,
@@ -1314,10 +1319,11 @@ return {
           ["17447052896214593585"] = {
             key = "17447052896214593585",
             type = "TalkNode",
-            name = "\232\190\190\232\138\153\230\182\133\229\155\158\229\191\134\232\191\135\229\156\186",
+            name = "达芙涅回忆过场",
             pos = {x = 324.4576896866251, y = 279.52834448160536},
             propsData = {
               IsNpcNode = false,
+              bUseFlowAssetActors = false,
               FirstDialogueId = 0,
               FlowAssetPath = "DialogueAsset'/Game/Dialogue/MainStory/1101/11015101.11015101'",
               TalkType = "FixSimple",
@@ -1333,6 +1339,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1340,6 +1347,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1362,15 +1370,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 110022},
-                {TalkActorType = "Npc", TalkActorId = 110005},
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = false,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -1383,11 +1388,11 @@ return {
       isStoryNode = true,
       key = "17237967862881226044",
       type = "StoryNode",
-      name = "\231\166\187\229\188\128",
+      name = "离开",
       pos = {x = 1299.612310701855, y = -936.9103224000537},
       propsData = {
         QuestId = 11010809,
-        QuestDescriptionComment = "\232\190\190\232\138\153\230\182\133\229\144\140\232\161\140",
+        QuestDescriptionComment = "达芙涅同行",
         QuestDescription = "Description_110111_9",
         QuestDeatil = "Content_110111_6",
         TaskRegionReName = "",
@@ -1407,8 +1412,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "questpoint1111011105"
+        StoryGuidePointName = "questpoint1111011105",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1480,7 +1487,7 @@ return {
           ["172844423166912492404"] = {
             key = "172844423166912492404",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = -2250.1932887442813, y = 132.1374535845001},
             propsData = {
               SoundStateType = 0,
@@ -1497,7 +1504,7 @@ return {
           ["17325086673122113"] = {
             key = "17325086673122113",
             type = "GoToNode",
-            name = "GOTO - \231\148\181\230\162\175\228\184\139\230\150\185",
+            name = "GOTO - 电梯下方",
             pos = {x = -1758.165526575934, y = 362.820336642243},
             propsData = {
               GuideUIEnable = true,
@@ -1509,7 +1516,7 @@ return {
           ["17340804816779075098"] = {
             key = "17340804816779075098",
             type = "TalkNode",
-            name = "\232\190\190\232\138\153\230\182\133\230\131\179\229\155\158\229\142\187",
+            name = "达芙涅想回去",
             pos = {x = -2257.0132720353854, y = 357.45921474397545},
             propsData = {
               IsNpcNode = false,
@@ -1528,6 +1535,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1535,6 +1543,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1557,15 +1566,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 110005},
-                {TalkActorType = "Npc", TalkActorId = 110022}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -1573,7 +1579,7 @@ return {
           ["17340805099429075719"] = {
             key = "17340805099429075719",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = -1116.8890583771351, y = 350.71432220960935},
             propsData = {
               IsNpcNode = false,
@@ -1592,6 +1598,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1599,6 +1606,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1621,15 +1629,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 110005},
-                {TalkActorType = "Npc", TalkActorId = 110022}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -1637,7 +1642,7 @@ return {
           ["174219471313312516021"] = {
             key = "174219471313312516021",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = -1456.6675824175823, y = 359.7863115145724},
             propsData = {
               GuideUIEnable = true,
@@ -1649,7 +1654,7 @@ return {
           ["174219474250612516440"] = {
             key = "174219474250612516440",
             type = "UpdateTaskBarAndTaskMainNode",
-            name = "\230\155\180\230\150\176\228\187\187\229\138\161\231\155\174\230\160\135\232\138\130\231\130\185",
+            name = "更新任务目标节点",
             pos = {x = -2007.779411764706, y = 382.7367801635705},
             propsData = {
               NewDescription = "Description_110111_13",
@@ -1665,11 +1670,11 @@ return {
       isStoryNode = true,
       key = "17237967862881226045",
       type = "StoryNode",
-      name = "\229\137\141\229\190\128\228\184\139\230\176\180\233\129\147\232\162\171\229\159\139\228\188\143",
+      name = "前往下水道被埋伏",
       pos = {x = 796.3978556048464, y = -674.2342907505175},
       propsData = {
         QuestId = 11010810,
-        QuestDescriptionComment = "\232\190\190\232\138\153\230\182\133\229\144\140\232\161\140",
+        QuestDescriptionComment = "达芙涅同行",
         QuestDescription = "Description_110111_6",
         QuestDeatil = "Content_110111_6",
         TaskRegionReName = "",
@@ -1689,8 +1694,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "Mechanism_questpoint_1650464"
+        StoryGuidePointName = "Mechanism_questpoint_1650464",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1768,7 +1775,7 @@ return {
           ["17237967863581226344"] = {
             key = "17237967863581226344",
             type = "GoToNode",
-            name = "GOTO - \228\184\139\230\176\180\233\129\147\229\133\165\229\143\163\232\162\171\233\148\129",
+            name = "GOTO - 下水道入口被锁",
             pos = {x = -970.6072236811583, y = 463.4112219794473},
             propsData = {
               GuideUIEnable = true,
@@ -1780,14 +1787,14 @@ return {
           ["17255325787046133477"] = {
             key = "17255325787046133477",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = -684.1356872066348, y = 462.2497717776832},
             propsData = {SpecialConfigId = 1018, BlackScreenImmediately = false}
           },
           ["17255325787046133478"] = {
             key = "17255325787046133478",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = -359.32383723127975, y = 586.3935446714557},
             propsData = {
               UnitId = 0,
@@ -1802,7 +1809,7 @@ return {
           ["172844424841812674421"] = {
             key = "172844424841812674421",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = -1391.653731077857, y = 744.466233373234},
             propsData = {
               SoundStateType = 0,
@@ -1819,7 +1826,7 @@ return {
           ["17340781181297265684"] = {
             key = "17340781181297265684",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = -1304.7568084089821, y = 452.1801242236024},
             propsData = {
               GuideUIEnable = true,
@@ -1836,8 +1843,8 @@ return {
       isStoryNode = true,
       key = "17237968221421404308",
       type = "StoryNode",
-      name = "\229\141\176\232\177\161\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 1316.409104465555, y = -700.0247236932775},
+      name = "印象任务节点",
+      pos = {x = 1316.409104465555, y = -698.9902409346568},
       propsData = {
         QuestId = 11010812,
         QuestDescriptionComment = "",
@@ -1860,8 +1867,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "questpoint1111011103"
+        StoryGuidePointName = "questpoint1111011103",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1903,7 +1912,7 @@ return {
           ["17237968221421404316"] = {
             key = "17237968221421404316",
             type = "TalkNode",
-            name = "\232\190\190\232\138\153\230\182\133\232\132\145\232\162\139\229\190\136\228\185\177",
+            name = "达芙涅脑袋很乱",
             pos = {x = 1089.8732890861445, y = 285.2821283276282},
             propsData = {
               IsNpcNode = false,
@@ -1922,6 +1931,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1929,6 +1939,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -1951,15 +1962,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 110005},
-                {TalkActorType = "Npc", TalkActorId = 110022}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -1972,11 +1980,11 @@ return {
       isStoryNode = true,
       key = "172448727847411885185",
       type = "StoryNode",
-      name = "\229\137\141\229\190\128\228\184\139\230\176\180\233\129\147\229\133\165\229\143\163",
+      name = "前往下水道入口",
       pos = {x = 1084.9524013425694, y = -691.2621544467106},
       propsData = {
         QuestId = 11010813,
-        QuestDescriptionComment = "\232\191\155\229\133\165\228\184\139\230\176\180\233\129\147",
+        QuestDescriptionComment = "进入下水道",
         QuestDescription = "Description_110111_6",
         QuestDeatil = "Content_110111_7",
         TaskRegionReName = "",
@@ -1996,8 +2004,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "questpoint1111011103"
+        StoryGuidePointName = "questpoint1111011103",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -2051,7 +2061,7 @@ return {
           ["172448728580511885524"] = {
             key = "172448728580511885524",
             type = "GoToNode",
-            name = "GOTO - \228\184\139\230\176\180\233\129\147\231\171\153\230\161\169",
+            name = "GOTO - 下水道站桩",
             pos = {x = 1357.1946083568187, y = 237.80387686683736},
             propsData = {
               GuideUIEnable = true,
@@ -2063,7 +2073,7 @@ return {
           ["172844426683612856495"] = {
             key = "172844426683612856495",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 1055.7207241882415, y = 547.6128584715611},
             propsData = {
               SoundStateType = 0,
@@ -2080,7 +2090,7 @@ return {
           ["17344917704525470886"] = {
             key = "17344917704525470886",
             type = "CreatePhantomNode",
-            name = "\229\143\172\229\148\164/\233\148\128\230\175\129\229\137\167\230\131\133\233\173\133\229\189\177",
+            name = "召唤/销毁剧情魅影",
             pos = {x = 1602.1465978240826, y = 249.39575029433055},
             propsData = {
               IsCreate = false,
@@ -2097,8 +2107,8 @@ return {
       isStoryNode = true,
       key = "172535469310614776764",
       type = "StoryNode",
-      name = "\228\187\142\229\160\161\229\158\146\229\142\187\228\184\139\230\176\180\233\129\147",
-      pos = {x = 1581.7730539861973, y = -688.5283203472261},
+      name = "从堡垒去下水道",
+      pos = {x = 1583.439720652864, y = -689.5628031058468},
       propsData = {
         QuestId = 11010814,
         QuestDescriptionComment = "",
@@ -2113,7 +2123,7 @@ return {
         bIsStartChapter = false,
         bIsEndChapter = false,
         bIsShowOnComplete = true,
-        bIsPlayBlackScreenOnComplete = true,
+        bIsPlayBlackScreenOnComplete = false,
         bIsPlayBlackScreenOnFail = false,
         bIsDynamicEvent = false,
         ResurgencePoint = "",
@@ -2121,8 +2131,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
-        StoryGuideType = "Point",
-        StoryGuidePointName = "BP_TPSew"
+        SubRegionIdList = {},
+        StoryGuideType = "Npc",
+        StoryGuidePointName = "Npc_TpSew_1650136",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -2135,11 +2147,11 @@ return {
           {
             startQuest = "172535469310614776765",
             startPort = "QuestStart",
-            endQuest = "17581987465409084",
+            endQuest = "17582007921462231",
             endPort = "In"
           },
           {
-            startQuest = "17581987465409084",
+            startQuest = "17582007921462231",
             startPort = "Out",
             endQuest = "172535469310714776768",
             endPort = "Success"
@@ -2157,11 +2169,12 @@ return {
             key = "172535469310714776768",
             type = "QuestSuccessNode",
             name = "QuestSuccess",
-            pos = {x = 1482.9030100334448, y = -441.9197324414716},
+            pos = {x = 1570.9030100334448, y = -425.9197324414716},
             propsData = {
               ModeType = 1,
               Id = 102103,
               StartIndex = 1,
+              LoadingId = 0,
               IsWhite = false
             }
           },
@@ -2172,11 +2185,47 @@ return {
             pos = {x = 2800, y = 700},
             propsData = {}
           },
+          ["172535469512314776889"] = {
+            key = "172535469512314776889",
+            type = "TalkNode",
+            name = "黑屏去下水道",
+            pos = {x = 1546.483751513943, y = -675.8634508880162},
+            propsData = {
+              IsNpcNode = true,
+              NpcNodeInteractiveName = "",
+              NpcId = 110042,
+              GuideUIEnable = true,
+              GuideType = "N",
+              GuidePointName = "Npc_TpSew_1650136",
+              DelayShowGuideTime = 0,
+              FirstDialogueId = 11017409,
+              FlowAssetPath = "",
+              TalkType = "BlackISS",
+              BlendInTime = 1,
+              BlendOutTime = 1,
+              ShowFadeDetail = false,
+              BlendEaseExp = 2,
+              ForceAutoPlay = true,
+              ShowSkipButton = true,
+              ShowAutoPlayButton = true,
+              ShowReviewButton = true,
+              ShowWikiButton = true,
+              BeginNewTargetPointName = "",
+              EndNewTargetPointName = "",
+              CameraLookAtTartgetPoint = "",
+              RestoreStand = false,
+              TalkActors = {},
+              FreezeWorldComposition = false,
+              bTravelFullLoadWorldComposition = false,
+              SwitchToMaster = "None",
+              OverrideFailBlend = false
+            }
+          },
           ["172844428541713038520"] = {
             key = "172844428541713038520",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
-            pos = {x = 1120.5936736072433, y = -316.90109687134213},
+            name = "BGM节点",
+            pos = {x = 1118.5936736072433, y = -316.90109687134213},
             propsData = {
               SoundStateType = 0,
               SoundPriority = 0,
@@ -2189,11 +2238,11 @@ return {
               bStoreToServer = true
             }
           },
-          ["17581987465409084"] = {
-            key = "17581987465409084",
+          ["17582007921462231"] = {
+            key = "17582007921462231",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
-            pos = {x = 1118, y = -464},
+            name = "拾取物品",
+            pos = {x = 1145.4243579964404, y = -513.2930968726164},
             propsData = {
               bActiveEnable = true,
               StaticCreatorIdList = {1650748},
@@ -2202,7 +2251,7 @@ return {
               UnitCount = 1,
               bGuideUIEnable = true,
               GuideType = "P",
-              GuidePointName = "BP_TPSew",
+              GuidePointName = "BP_TPsew",
               IsUseCount = false
             }
           }
@@ -2214,11 +2263,11 @@ return {
       isStoryNode = true,
       key = "17344913204799595",
       type = "StoryNode",
-      name = "\231\170\129\229\155\180\229\142\187\228\184\139\230\176\180\233\129\147\230\181\129\231\168\139",
-      pos = {x = 1026.0474520804114, y = -939.2852813852817},
+      name = "突围去下水道流程",
+      pos = {x = 1026.0474520804114, y = -940.2227813852817},
       propsData = {
         QuestId = 11010808,
-        QuestDescriptionComment = "\232\190\190\232\138\153\230\182\133\229\144\140\232\161\140",
+        QuestDescriptionComment = "达芙涅同行",
         QuestDescription = "Description_110111_11",
         QuestDeatil = "Content_110111_6",
         TaskRegionReName = "",
@@ -2238,8 +2287,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "BP_TaoLiSTART"
+        StoryGuidePointName = "BP_TaoLiSTART",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -2284,6 +2335,12 @@ return {
             startPort = "Out",
             endQuest = "17344913204799602",
             endPort = "In"
+          },
+          {
+            startQuest = "17344913204799599",
+            startPort = "QuestStart",
+            endQuest = "1757579116892965405",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -2311,7 +2368,7 @@ return {
           ["17344913204799602"] = {
             key = "17344913204799602",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\228\184\128\229\160\134\230\128\170",
+            name = "生成一堆怪",
             pos = {x = -2593.1666984945937, y = 364.28756251824655},
             propsData = {
               ActiveEnable = true,
@@ -2343,7 +2400,7 @@ return {
           ["17344913204799603"] = {
             key = "17344913204799603",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\231\155\174\230\160\135\230\128\170",
+            name = "击杀目标怪",
             pos = {x = -2197.8542184946723, y = 365.4428051757101},
             propsData = {
               KillMonsterType = "Id",
@@ -2376,7 +2433,7 @@ return {
           ["17344913204799604"] = {
             key = "17344913204799604",
             type = "CreatePhantomNode",
-            name = "\229\143\172\229\148\164\232\190\190\232\138\153\230\182\133\233\173\133\229\189\177",
+            name = "召唤达芙涅魅影",
             pos = {x = -2581.8517807873422, y = 191.10380876502433},
             propsData = {
               IsCreate = true,
@@ -2388,7 +2445,7 @@ return {
           ["17344913204799605"] = {
             key = "17344913204799605",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = -1839.8673674998406, y = 193.53312936429467},
             propsData = {
               SoundStateType = 0,
@@ -2405,7 +2462,7 @@ return {
           ["17448881350901937"] = {
             key = "17448881350901937",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129NPC",
+            name = "销毁NPC",
             pos = {x = -2181.029643495757, y = 187.11146953405017},
             propsData = {
               ActiveEnable = true,
@@ -2427,7 +2484,7 @@ return {
           ["17466065396312223"] = {
             key = "17466065396312223",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = -2912.8862365894965, y = 288.4864906832298},
             propsData = {
               GuideUIEnable = true,
@@ -2435,6 +2492,13 @@ return {
               GuideType = "M",
               GuidePointName = "Mechanism_1650702"
             }
+          },
+          ["1757579116892965405"] = {
+            key = "1757579116892965405",
+            type = "PrintVarNode",
+            name = "打印变量值",
+            pos = {x = -2890, y = 56},
+            propsData = {VarName = "NPC110108"}
           }
         },
         commentData = {}
@@ -2444,11 +2508,11 @@ return {
       isStoryNode = true,
       key = "17352142456139386096",
       type = "StoryNode",
-      name = "\229\188\128\233\151\168",
+      name = "开门",
       pos = {x = 1555.833600164204, y = -932.9671176478},
       propsData = {
         QuestId = 11010815,
-        QuestDescriptionComment = "\232\190\190\232\138\153\230\182\133\229\144\140\232\161\140",
+        QuestDescriptionComment = "达芙涅同行",
         QuestDescription = "Description_110111_9",
         QuestDeatil = "Content_110111_6",
         TaskRegionReName = "",
@@ -2468,8 +2532,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 102102,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "questpoint1111011105"
+        StoryGuidePointName = "questpoint1111011105",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -2535,7 +2601,7 @@ return {
           ["17352142456149386104"] = {
             key = "17352142456149386104",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = -1887.2456122688648, y = 812.4957445655118},
             propsData = {
               CreateType = "StaticCreator",
@@ -2548,7 +2614,7 @@ return {
           ["17352142456149386105"] = {
             key = "17352142456149386105",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = -2533.1210526661844, y = 568.4426402093231},
             propsData = {
               MessageType = "GameMode",
@@ -2559,7 +2625,7 @@ return {
           ["17352142456149386106"] = {
             key = "17352142456149386106",
             type = "TalkNode",
-            name = "\229\188\128\233\151\168",
+            name = "开门",
             pos = {x = -1444.988824500149, y = 595.8929186799006},
             propsData = {
               IsNpcNode = false,
@@ -2579,8 +2645,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -2592,9 +2660,6 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Npc", TalkActorId = 110005}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "EXPlayer",
@@ -2604,7 +2669,7 @@ return {
           ["173521830230823467170"] = {
             key = "173521830230823467170",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = -1955.9774287497403, y = 561.6440607447472},
             propsData = {
               SendMessage = "",
@@ -2614,10 +2679,11 @@ return {
           ["173521836549824403759"] = {
             key = "173521836549824403759",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\230\152\190\231\164\186/\233\154\144\232\151\143\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185",
+            name = "显示/隐藏任务指引点节点",
             pos = {x = -2237.7956105679223, y = 585.2804243811108},
             propsData = {
               IsShow = true,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "BP_1650400"
             }
@@ -2625,10 +2691,11 @@ return {
           ["173521837741324404219"] = {
             key = "173521837741324404219",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\230\152\190\231\164\186/\233\154\144\232\151\143\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185",
+            name = "显示/隐藏任务指引点节点",
             pos = {x = -1699.238870397338, y = 578.5531516538382},
             propsData = {
               IsShow = false,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "BP_1650400"
             }
@@ -2641,8 +2708,8 @@ return {
       isStoryNode = true,
       key = "17439936217821320366",
       type = "StoryNode",
-      name = "\231\155\145\231\139\177\229\174\161\229\136\164\229\137\141",
-      pos = {x = 1810.2540726817044, y = -342.54448621553854},
+      name = "监狱审判前",
+      pos = {x = 1813.5874060150377, y = -342.54448621553854},
       propsData = {
         QuestId = 11010816,
         QuestDescriptionComment = "",
@@ -2665,8 +2732,12 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = true,
         SubRegionId = 102104,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0,
+        FairyLandStaticCreatorId = 0,
+        FairyLandDeliverIndex = 1
       },
       questNodeData = {
         lineData = {
@@ -2720,7 +2791,7 @@ return {
           ["17439936850071321298"] = {
             key = "17439936850071321298",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 1552, y = 302},
             propsData = {SpecialConfigId = 1048, BlackScreenImmediately = true}
           }
@@ -2732,13 +2803,13 @@ return {
   commentData = {
     ["1722421186285504136"] = {
       key = "1722421186285504136",
-      name = "\229\138\160\230\184\169\229\140\186\230\181\129\231\168\139",
+      name = "加温区流程",
       position = {x = 740.9168769826667, y = -471.7334082584086},
       size = {width = 1008.3333333333334, height = 368.33333333333337}
     },
     ["17343155333104729"] = {
       key = "17343155333104729",
-      name = "\229\160\161\229\158\146\230\181\129\231\168\139",
+      name = "堡垒流程",
       position = {x = 740.2210526315789, y = -1086.241985645933},
       size = {width = 1094.6456140350876, height = 588.8567042606513}
     }

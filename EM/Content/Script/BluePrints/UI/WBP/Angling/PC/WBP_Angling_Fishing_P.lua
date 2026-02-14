@@ -39,7 +39,6 @@ local EaseFuc = {
   InOutBounce = 27,
   CurveFloat = 28
 }
-
 function M:Init(RootPage, FishingSpotId)
   self.RootPage = RootPage
   self.FishingSpotId = FishingSpotId
@@ -68,7 +67,6 @@ function M:Init(RootPage, FishingSpotId)
   self:RefreshInfoByInputTypeChange(self.CurMode)
   self:InitExitButton()
   EventManager:AddEvent(EventID.OnFishHook, self, self.OnFishHook)
-  print(_G.LogTag, "LXZ Init", self.DeviceInPc)
   self.ResourceBar:InitResourceBar({
     DataMgr.FishingLure[self.RootPage.FishingLureId].ResourceId
   })
@@ -132,11 +130,10 @@ function M:Init(RootPage, FishingSpotId)
       Desc = GText("UI_CTL_Quit")
     })
   end
+  self.Tip_DayAndNight:Init()
   self.InitGameStateFrame = 0
 end
-
 function M:SwitchWaitStart(FromSpecial)
-  print(_G.LogTag, "LXZ SwitchWaitStart", self.bIsSpecial, self.SpacePress, self.FishingGameState == FishingGameState.WaitStart, FromSpecial)
   if self.FishingGameState == FishingGameState.WaitStart and not FromSpecial then
     return
   end
@@ -177,9 +174,7 @@ function M:SwitchWaitStart(FromSpecial)
     end
   end
 end
-
 function M:SwitchWaitFishing(bIsSpecial)
-  print(_G.LogTag, "LXZ SwitchWaitFishing", bIsSpecial)
   if self.FishingGameState == FishingGameState.WaitFishing then
     return
   end
@@ -192,12 +187,10 @@ function M:SwitchWaitFishing(bIsSpecial)
     self.Key_FishingPC_A:ChangeText(GText("UI_CTL_Fish_Collect"))
     self.Key_Fishing_A:ChangeText(GText("UI_CTL_Fish_Collect"))
   end
-  self.RootPage:PlayPlayerMontage("Fish_StartFish_Montage")
+  self.RootPage:PlayPlayerMontage(1)
   self:AvatarStartFish(bIsSpecial)
 end
-
 function M:SwitchFishing()
-  print(_G.LogTag, "LXZ SwitchFishing", self.FishId, self.bIsSpecial)
   if self.FishingGameState == FishingGameState.Fishing then
     return
   end
@@ -214,9 +207,8 @@ function M:SwitchFishing()
     self.Key_Fishing_B:ChangeText(GText("UI_CTL_Fish_Collect"))
   end
   self:InitFishingGameState()
-  self.RootPage:PlayPlayerMontage("Fish_GetFish_Montage")
+  self.RootPage:PlayPlayerMontage(2)
 end
-
 function M:SwitchEndFishing(bInterupt, bSuccess)
   if self.FishingGameState == FishingGameState.EndFishing then
     return
@@ -250,13 +242,11 @@ function M:SwitchEndFishing(bInterupt, bSuccess)
   if bSuccess then
     self.RootPage.FishingSpot:OnGetFishEnd()
   end
-  self.RootPage:PlayPlayerMontage("Fish_GetFishEnd_Montage", Callback)
+  self.RootPage:PlayPlayerMontage(3, Callback)
   AudioManager(self):StopSound(self, "OnFishHook")
   AudioManager(self):StopSound(self, "FishItemInRegion")
 end
-
 function M:OnSpecialFishingPanelOut()
-  print(_G.LogTag, "LXZ OnSpecialFishingPanelOut")
   if self.DeviceInPc then
     self.WidgetSwitcher_MP:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
@@ -267,9 +257,7 @@ function M:OnSpecialFishingPanelOut()
     self:SwitchWaitFishing(true)
   end
 end
-
 function M:OnClickExit()
-  print(_G.LogTag, "LXZ OnClickExit", self.FishingGameState)
   if not self.bCanEsc then
     return
   end
@@ -283,25 +271,22 @@ function M:OnClickExit()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
 end
-
 function M:InitExitButton()
-  self.Btn_Quit.OnClicked:Add(self, self.OnClickExit)
+  self.Btn_Quit.OnClicked:Add(self, self.OnClickEsc)
 end
-
 function M:OnClickAnglingButton()
-  print(_G.LogTag, "LXZ OnClickAnglingButton", self.bCanSpace, self.FishingGameState)
   if self.WBP_Angling_Fishing_Btn:GetVisibility() == ESlateVisibility.Collapsed or not self.bCanSpace then
     return
   end
-  local Avatar = GWorld:GetAvatar()
-  if Avatar then
-    local FishSpotAvatar = Avatar.FishingSpots[self.FishingSpotId]
-    if FishSpotAvatar and FishSpotAvatar.RemainFishCount <= 0 then
-      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, string.format(GText("UI_Fishing_Toast_NoFish"), self.RootPage.RemainTimeStr))
-      return
-    end
-  end
   if self.FishingGameState == FishingGameState.WaitStart then
+    local Avatar = GWorld:GetAvatar()
+    if Avatar and not self.bIsSpecial then
+      local FishSpotAvatar = Avatar.FishingSpots[self.FishingSpotId]
+      if FishSpotAvatar and FishSpotAvatar.RemainFishCount <= 0 then
+        UIManager(self):ShowUITip(UIConst.Tip_CommonTop, string.format(GText("UI_Fishing_Toast_NoFish"), self.RootPage.RemainTimeStr))
+        return
+      end
+    end
     self:SwitchWaitFishing(false)
   elseif self.FishingGameState == FishingGameState.WaitFishing then
     AudioManager(self):StopSound(self, "OnFishHook")
@@ -315,7 +300,6 @@ function M:OnClickAnglingButton()
   elseif self.FishingGameState == FishingGameState.Fishing then
   end
 end
-
 function M:InitFishingGameState()
   self.InitSucc = false
   self.Angling_Bar:SetPercent(0)
@@ -336,9 +320,7 @@ function M:InitFishingGameState()
   Size.Y = self.ItemLength
   CanvasSlot3:SetSize(Size)
   self.bInitGame = true
-  print(_G.LogTag, "LXZ InitFishingGameState")
 end
-
 function M:InitWidgetPosition()
   local BGSize = UIManager(self):GetWidgetRenderSize(self.Bg01)
   self.MaxFishY = BGSize.Y / 2
@@ -352,26 +334,23 @@ function M:InitWidgetPosition()
   self:UpdateFishingItem()
   self:CheckFish(0)
   self.InitSucc = true
-  print(_G.LogTag, "LXZ InitWidgetPosition", BGSize, ItemSize)
 end
-
 function M:InitFishCurve()
   local FishData = DataMgr.Fish[self.LastFishId]
   if not FishData then
-    GWorld.logger.error("LXZ InitFishingGameState \233\177\188\231\154\132Id\233\148\153\232\175\175,\228\184\141\229\173\152\229\156\168\233\177\188\232\161\168\231\154\132\230\149\176\230\141\174\239\188\140 FishId:", self.LastFishId)
+    GWorld.logger.error("LXZ InitFishingGameState 鱼的Id错误,不存在鱼表的数据， FishId:", self.LastFishId)
   end
   local FishMoveId = FishData.FishMoveId
   if not FishMoveId or not DataMgr.FishMove[FishMoveId] then
-    GWorld.logger.error("LXZ InitFishingGameState \233\177\188\231\154\132\232\191\144\229\138\168Id\233\148\153\232\175\175,\228\184\141\229\173\152\229\156\168\233\177\188\232\191\144\229\138\168\232\161\168\231\154\132\230\149\176\230\141\174\239\188\140 FishMoveId:", FishMoveId)
+    GWorld.logger.error("LXZ InitFishingGameState 鱼的运动Id错误,不存在鱼运动表的数据， FishMoveId:", FishMoveId)
   end
   local FishMoveCurvePath = DataMgr.FishMove[FishMoveId].FishMoveCurve
   self.Curve = LoadObject(FishMoveCurvePath)
   self.CurveMaxTime = DataMgr.FishMove[FishMoveId].MaxTime
   if not FishMoveCurvePath or not self.Curve then
-    GWorld.logger.error("LXZ InitFishingGameState \233\177\188\231\154\132\232\191\144\229\138\168\230\155\178\231\186\191\232\183\175\229\190\132\233\148\153\232\175\175,\228\184\141\229\173\152\229\156\168\230\155\178\231\186\191\232\183\175\229\190\132\230\136\150\229\175\185\229\186\148\230\155\178\231\186\191\232\181\132\228\186\167\239\188\140 FishMoveId:", FishMoveId)
+    GWorld.logger.error("LXZ InitFishingGameState 鱼的运动曲线路径错误,不存在曲线路径或对应曲线资产， FishMoveId:", FishMoveId)
   end
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.bInitGame then
     self.InitGameStateFrame = self.InitGameStateFrame + 1
@@ -392,7 +371,6 @@ function M:Tick(MyGeometry, InDeltaTime)
   self:UpdateFishingItem()
   self:CheckFish(InDeltaTime)
 end
-
 function M:FishIconMove()
   local CanvasSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Icon01)
   local Position = CanvasSlot:GetPosition()
@@ -401,7 +379,6 @@ function M:FishIconMove()
   Position.Y = math.max(CurveY, self.MinFishY)
   CanvasSlot:SetPosition(Position)
 end
-
 function M:UpdateFishingItem()
   local ItemSize = UIManager(self):GetWidgetRenderSize(self.WBP_Angling_Fishing_Item)
   local CanvasSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.WBP_Angling_Fishing_Item)
@@ -410,7 +387,6 @@ function M:UpdateFishingItem()
   self.EffectMaxY = Position.Y + ItemSize.Y / 2
   self.EffectMinY = Position.Y - ItemSize.Y / 2
 end
-
 function M:ChangeItemMove(bPress)
   if self.FishingGameState ~= FishingGameState.Fishing then
     return
@@ -438,7 +414,6 @@ function M:ChangeItemMove(bPress)
     })
   end
 end
-
 function M:CheckFish(InDeltaTime)
   local CanvasSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Icon01)
   local Position = CanvasSlot:GetPosition()
@@ -472,41 +447,32 @@ function M:CheckFish(InDeltaTime)
     AudioManager(self):StopSound(self, "FishItemInRegion")
   end
 end
-
 function M:OnClickTip()
   local Params = {}
-  print(_G.LogTag, "LXZ OnClickTip")
   UIManager(self):LoadUINew("GuideBook", 5, 84)
 end
-
 function M:OnSpaceDown()
-  print(_G.LogTag, "LXZ OnSpaceDown", self.SpacePress, self.InitSucc, self.bCanSpace)
   if not (not self.SpacePress and self.InitSucc) or not self.bCanSpace then
     return
   end
   self.SpacePress = true
   self:ChangeItemMove(true)
 end
-
 function M:OnSpaceUp()
-  print(_G.LogTag, "LXZ OnSpaceUp", self.SpacePress, self.InitSucc, self.bCanSpace)
   if not (self.SpacePress and self.InitSucc) or not self.bCanSpace then
     return
   end
   self.SpacePress = false
   if self.FishingGameState == FishingGameState.WaitFishing then
-    print(_G.LogTag, "LXZ OnSpaceUp")
   else
     self:ChangeItemMove(false)
   end
 end
-
 function M:OnCommonBtnSpaceUp()
   self.WBP_Angling_Fishing_Btn:OnReleaseButton(true)
   self.WBP_Angling_Fishing_Btn:OnClickButton()
   self:OnSpaceUp()
 end
-
 function M:OnClickEsc()
   if self.Angling_Special:GetVisibility() ~= ESlateVisibility.Collapsed then
     self.Angling_Special:OnClickQuit()
@@ -514,7 +480,6 @@ function M:OnClickEsc()
     self:OnClickExit()
   end
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   if "SpaceBar" == InKeyName then
     self.WBP_Angling_Fishing_Btn:OnPressButton()
@@ -526,7 +491,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return true
 end
-
 function M:Handle_KeyUpEventOnPC(InKeyName)
   if "SpaceBar" == InKeyName then
     self.WBP_Angling_Fishing_Btn:OnReleaseButton(true)
@@ -535,9 +499,7 @@ function M:Handle_KeyUpEventOnPC(InKeyName)
   end
   return true
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
-  print(_G.LogTag, "LXZ Handle_KeyEventOnGamePad", InKeyName)
   if "Gamepad_FaceButton_Bottom" == InKeyName then
     if self.Angling_Special:GetVisibility() ~= ESlateVisibility.Collapsed then
       self.Angling_Special:OnClickAngling()
@@ -560,9 +522,7 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return true
 end
-
 function M:Handle_KeyUpEventOnGamePad(InKeyName)
-  print(_G.LogTag, "LXZ Handle_KeyUpEventOnGamePad", InKeyName)
   if "Gamepad_FaceButton_Bottom" == InKeyName then
     self.WBP_Angling_Fishing_Btn:OnReleaseButton(true)
     self.WBP_Angling_Fishing_Btn:OnClickButton()
@@ -570,29 +530,24 @@ function M:Handle_KeyUpEventOnGamePad(InKeyName)
   end
   return true
 end
-
 function M:Handle_PreviewKeyEventOnGamePad(InKeyName)
   return true
 end
-
 function M:GetEaseValue(Start, End, Time, Type, func)
   return UE4.ULTweenBPLibrary.FloatTo(self, func, Start, End, Time, 0, Type)
 end
-
 function M:ChangeItemMoveUp(value)
   local CanvasSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.WBP_Angling_Fishing_Item)
   local Position = CanvasSlot:GetPosition()
   Position.Y = math.max(value, self.MinItemY)
   CanvasSlot:SetPosition(Position)
 end
-
 function M:ChangeItemMoveDown(value)
   local CanvasSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.WBP_Angling_Fishing_Item)
   local Position = CanvasSlot:GetPosition()
   Position.Y = math.min(value, self.MaxItemY)
   CanvasSlot:SetPosition(Position)
 end
-
 function M:OnFishHook(FishId, bIsSpecial)
   if DataMgr.Fish[FishId] then
     self.SuccessTime = DataMgr.Fish[FishId].FishGetDuration or 10
@@ -608,16 +563,14 @@ function M:OnFishHook(FishId, bIsSpecial)
     self:AddTimer(self.FishingHookResponseTime, self.OnFishHookTimeOut, false, 0, "OnFishHookTimeOut")
   end
 end
-
 function M:OnFishHookTimeOut()
   UIManager(self):LoadUINew("ExploreToastFail", "UI_Fishing_FishEscape")
   AudioManager(self):StopSound(self, "OnFishHook")
   self:SwitchEndFishing(true, false)
 end
-
 function M:CheckSkipAngling()
   if not self.LastFishId or -1 == self.LastFishId then
-    print(_G.LogTag, "Error: LXZ \230\178\161\230\156\137\228\184\138\233\146\169\231\154\132\233\177\188\231\154\132id\239\188\140\229\143\175\232\131\189\230\152\175\230\178\161\230\156\137\233\177\188\231\171\191\232\181\132\230\186\144\230\136\150\233\177\188\233\165\181\232\181\132\230\186\144")
+    print(_G.LogTag, "Error: LXZ 没有上钩的鱼的id，可能是没有鱼竿资源或鱼饵资源")
     return
   end
   local AutoFishLevel = DataMgr.FishingRod[self.RootPage.FishingRodId].AutoFishingLevel or 1
@@ -631,7 +584,6 @@ function M:CheckSkipAngling()
   local Res = self.RootPage:CheckSkipFishingPet()
   return Res
 end
-
 function M:AvatarStartFish(bIsSpecial)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -645,7 +597,6 @@ function M:AvatarStartFish(bIsSpecial)
     self:AddTimer(3, self.OnFishHook)
   end
 end
-
 function M:AvatarStopFish()
   self.bIsSpecial = false
   local Avatar = GWorld:GetAvatar()
@@ -654,39 +605,42 @@ function M:AvatarStopFish()
   else
   end
 end
-
 function M:AvatarCompleteFish(IsSuccess, LastFishId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
-    local function ShowFishMap(Ret, FishId, FishSize, AvatarIsSuccess)
+    local function ShowFishMap(Ret, FishId, FishSize, AvatarIsSuccess, RewardReturn)
+      print(_G.LogTag, "LXZ Avatar:GetFishCountByFishId0000000", RewardReturn)
+      PrintTable(RewardReturn, 10)
       if AvatarIsSuccess then
         print(_G.LogTag, "LXZ Avatar:GetFishCountByFishId", Avatar:GetFishCountByFishId(FishId))
-        
         self.RootPage.FishingSpot:OnFishSuccess()
         if 1 == Avatar:GetFishCountByFishId(FishId) then
           UIManager(self):LoadUINew("AnglingNewFish", {
             FishId = LastFishId,
             FishingPage = self,
             IsNew = true,
-            FishSize = FishSize
+            FishSize = FishSize,
+            FishingSpotId = self.RootPage.FishingSpotId,
+            Rewards = RewardReturn
           })
         else
           UIManager(self):LoadUINew("AnglingNewFish", {
             FishId = LastFishId,
             FishingPage = self,
             IsNew = false,
-            FishSize = FishSize
+            FishSize = FishSize,
+            FishingSpotId = self.RootPage.FishingSpotId,
+            Rewards = RewardReturn
           })
         end
         local UnLockData = EMCache:Get("FishUnLockData", true)
-        local FishIdStr = tostring(LastFishId)
         if not UnLockData then
           UnLockData = {}
-          UnLockData[FishIdStr] = 2
+          UnLockData[LastFishId] = 2
           EMCache:Set("FishUnLockData", UnLockData, true)
           ReddotManager.IncreaseLeafNodeCount("AnglingMap", 1)
-        elseif 1 == UnLockData[FishIdStr] or nil == UnLockData[FishIdStr] then
-          UnLockData[FishIdStr] = 2
+        elseif 1 == UnLockData[LastFishId] or nil == UnLockData[LastFishId] then
+          UnLockData[LastFishId] = 2
           EMCache:Set("FishUnLockData", UnLockData, true)
           ReddotManager.IncreaseLeafNodeCount("AnglingMap", 1)
         end
@@ -695,12 +649,10 @@ function M:AvatarCompleteFish(IsSuccess, LastFishId)
         self.RootPage.FishingSpot:OnFishFail()
       end
     end
-    
     Avatar:OnCompleteFishGame(IsSuccess, ShowFishMap)
   else
   end
 end
-
 function M:ShowRewardUI(FishId)
   local ResourceId = DataMgr.Fish[FishId].ResourceId
   UIUtils.ShowHudReward(GText("UI_Fishing_Reward"), {
@@ -712,7 +664,6 @@ function M:ShowRewardUI(FishId)
     }
   })
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.DeviceInPc then
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
@@ -730,5 +681,4 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   end
   self.Angling_Special:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
 end
-
 return M

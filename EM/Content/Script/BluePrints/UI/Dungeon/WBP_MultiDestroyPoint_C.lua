@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_MultiDestroyPoint_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_MultiDestroyPoint_C:Construct()
   self.StateToName = {
     [1] = "Lock",
@@ -12,12 +11,10 @@ function WBP_MultiDestroyPoint_C:Construct()
   }
   self.CurState = 1
 end
-
 function WBP_MultiDestroyPoint_C:InitWidget(Owner, Index)
   self.Owner = Owner
   self.PointIndex = Index
 end
-
 function WBP_MultiDestroyPoint_C:SetState(NewState)
   if self.CurState == NewState then
     return false
@@ -37,16 +34,13 @@ function WBP_MultiDestroyPoint_C:SetState(NewState)
   self.CurState = NewState
   return true
 end
-
 function WBP_MultiDestroyPoint_C:OnEnter_CountDown()
   self.Owner.CurCountDownIndex = self.PointIndex
 end
-
 function WBP_MultiDestroyPoint_C:SetCountDownImagePercet(Percent)
   if self.CountDownDynamicMaterial == nil then
     self.CountDownDynamicMaterial = self.BG_Bar_Color:GetDynamicMaterial()
   end
   self.CountDownDynamicMaterial:SetScalarParameterValue("Percent", Percent)
 end
-
 return WBP_MultiDestroyPoint_C

@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Init(bUseGamePad)
   self:UpdateKeyImg(bUseGamePad)
   self.Key_Auto:AddPressLogic(self, self.OnAutoPlayPressed)
@@ -11,7 +10,6 @@ function M:Init(bUseGamePad)
   self.Key_Skip:AddPressLogic(self, self.OnSkipPressed)
   self.Key_Skip:AddReleaseLogic(self, self.OnSkipReleased)
 end
-
 function M:UpdateKeyImg(bUseGamePad)
   if self.InDiceThrowMode then
     self:ChangeToDiceThrowMode(bUseGamePad)
@@ -19,7 +17,6 @@ function M:UpdateKeyImg(bUseGamePad)
     self:ChangeToDiceSkipMode(bUseGamePad)
   end
 end
-
 function M:ChangeToDiceThrowMode(bUseGamePad)
   local KeyType = "Text"
   if bUseGamePad then
@@ -50,7 +47,6 @@ function M:ChangeToDiceThrowMode(bUseGamePad)
   })
   self.InDiceThrowMode = true
 end
-
 function M:ChangeToDiceSkipMode(bUseGamePad)
   local KeyType = "Text"
   if bUseGamePad then
@@ -70,31 +66,26 @@ function M:ChangeToDiceSkipMode(bUseGamePad)
   })
   self.InDiceThrowMode = false
 end
-
 function M:OnAutoPlayPressed()
   if self.AutoPlayPressCallback then
     self.AutoPlayPressCallback.Func(self.AutoPlayPressCallback.Obj)
   end
 end
-
 function M:OnAutoPlayReleased()
   if self.AutoPlayReleaseCallback then
     self.AutoPlayReleaseCallback.Func(self.AutoPlayReleaseCallback.Obj)
   end
 end
-
 function M:OnSkipPressed()
   if self.SkipPressCallback then
     self.SkipPressCallback.Func(self.SkipPressCallback.Obj)
   end
 end
-
 function M:OnSkipReleased()
   if self.SkipReleaseCallback then
     self.SkipReleaseCallback.Func(self.SkipReleaseCallback.Obj)
   end
 end
-
 function M:SwitchBindAutoPlay(bBind, InObj, InFunc, bPress)
   if bBind then
     self:BindAutoPlay_Internal(InObj, InFunc, bPress)
@@ -102,7 +93,6 @@ function M:SwitchBindAutoPlay(bBind, InObj, InFunc, bPress)
     self:UnbindAutoPlay_Internal(bPress)
   end
 end
-
 function M:SwitchBindSkip(bBind, InObj, InFunc, bPress)
   if bBind then
     self:BindSkip_Internal(InObj, InFunc, bPress)
@@ -110,7 +100,6 @@ function M:SwitchBindSkip(bBind, InObj, InFunc, bPress)
     self:UnbindSkip_Internal(bPress)
   end
 end
-
 function M:BindAutoPlay_Internal(InObj, InFunc, bPress)
   if bPress then
     self.AutoPlayPressCallback = {Func = InFunc, Obj = InObj}
@@ -118,7 +107,6 @@ function M:BindAutoPlay_Internal(InObj, InFunc, bPress)
     self.AutoPlayReleaseCallback = {Func = InFunc, Obj = InObj}
   end
 end
-
 function M:UnbindAutoPlay_Internal(bPress)
   if bPress then
     self.AutoPlayPressCallback = nil
@@ -126,7 +114,6 @@ function M:UnbindAutoPlay_Internal(bPress)
     self.AutoPlayReleaseCallback = nil
   end
 end
-
 function M:BindSkip_Internal(InObj, InFunc, bPress)
   if bPress then
     self.SkipPressCallback = {Func = InFunc, Obj = InObj}
@@ -134,7 +121,6 @@ function M:BindSkip_Internal(InObj, InFunc, bPress)
     self.SkipReleaseCallback = {Func = InFunc, Obj = InObj}
   end
 end
-
 function M:UnbindSkip_Internal(bPress)
   if bPress then
     self.SkipPressCallback = nil
@@ -142,7 +128,6 @@ function M:UnbindSkip_Internal(bPress)
     self.SkipReleaseCallback = nil
   end
 end
-
 function M:ShowAutoPlayButton(bShow)
   if bShow then
     self.Key_Auto:SetVisibility(ESlateVisibility.Visible)
@@ -150,7 +135,6 @@ function M:ShowAutoPlayButton(bShow)
     self.Key_Auto:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:ShowSkipButton(bShow)
   if bShow then
     self.Key_Skip:SetVisibility(ESlateVisibility.Visible)
@@ -161,32 +145,25 @@ function M:ShowSkipButton(bShow)
     self.Key_Skip:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnAutoKeyPressed()
   self.Key_Auto:OnShortCutPressed()
 end
-
 function M:OnAutoKeyReleased()
   self.Key_Auto:OnShortCutReleased()
   self.Key_Auto:OnButtonReleasedInsideButtonFrame()
 end
-
 function M:OnSkipKeyPressed()
   self.Key_Skip:OnShortCutPressed()
 end
-
 function M:OnSkipKeyReleased()
   self.Key_Skip:OnShortCutReleased()
 end
-
 function M:OnActive()
   DebugPrint("WBP_Story_PlayKey:Active")
   self:PlayAnimation(self.In)
 end
-
 function M:OnDeactive()
   DebugPrint("WBP_Story_PlayKey:Deactive")
   self:PlayAnimation(self.Out)
 end
-
 return M

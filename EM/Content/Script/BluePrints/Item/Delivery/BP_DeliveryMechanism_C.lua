@@ -3,18 +3,15 @@ local BP_DeliveryMechanism_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_DeliveryMechanism_C:ReceiveBeginPlay()
   BP_DeliveryMechanism_C.Super.ReceiveBeginPlay(self)
   self.DeliveryInteractiveBaseComponent.DisPlayInteractiveName = GText(self.DeliveryInteractiveBaseComponent.InteractiveName)
   self.DefaultInteractiveComponent = self.DeliveryInteractiveBaseComponent
 end
-
 function BP_DeliveryMechanism_C:ReceiveEndPlay(Reason)
   UIManager(self):RemoveWidgetComponentToList(self.Eid, "DeliverMechanism")
   BP_DeliveryMechanism_C.Super.ReceiveEndPlay(self, Reason)
 end
-
 function BP_DeliveryMechanism_C:AuthorityInitInfo(Info)
   BP_DeliveryMechanism_C.Super.AuthorityInitInfo(self, Info)
   if self.ManualItemId > 0 then
@@ -23,17 +20,17 @@ function BP_DeliveryMechanism_C:AuthorityInitInfo(Info)
     self.CanOpen = true
   end
 end
-
 function BP_DeliveryMechanism_C:OnActorReady(Info)
   BP_DeliveryMechanism_C.Super.OnActorReady(self, Info)
 end
-
 function BP_DeliveryMechanism_C:OpenMechanism(PlayerActorEid)
+  if not self.InitSuccess then
+    return
+  end
   if not self:HandleLevelDeliver() then
     return
   end
 end
-
 function BP_DeliveryMechanism_C:HandleLevelDeliver()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -41,7 +38,6 @@ function BP_DeliveryMechanism_C:HandleLevelDeliver()
   end
   return GameMode:HandleLevelDeliver(self.ModeType, self.Id, self.StartIndex)
 end
-
 function BP_DeliveryMechanism_C:SetDeliveryInfo(StartIndex, Id, ModeType)
   self.StartIndex = StartIndex
   self.Id = Id
@@ -53,14 +49,12 @@ function BP_DeliveryMechanism_C:SetDeliveryInfo(StartIndex, Id, ModeType)
   }
   self:UpdateRegionDataByTable(Data)
 end
-
 function BP_DeliveryMechanism_C:CreateRegionData()
   self.RegionData = {
     CanOpen = self.CanOpen,
     StateId = self.StateId
   }
 end
-
 function BP_DeliveryMechanism_C:ClientInitInfo(Info)
   BP_DeliveryMechanism_C.Super.ClientInitInfo(self, Info)
   if self.BubbleIconTexture then
@@ -80,7 +74,6 @@ function BP_DeliveryMechanism_C:ClientInitInfo(Info)
     end
   end
 end
-
 function BP_DeliveryMechanism_C:SetBubbleWidgetShowOrHide(InIsShow)
   if IsAuthority(self) and not IsStandAlone(self) then
     return
@@ -110,11 +103,9 @@ function BP_DeliveryMechanism_C:SetBubbleWidgetShowOrHide(InIsShow)
     end
   end
 end
-
 function BP_DeliveryMechanism_C:GMUnlock()
   if 25 == self.StateId then
     self:ChangeState("GM", 0, 26)
   end
 end
-
 return BP_DeliveryMechanism_C

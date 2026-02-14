@@ -18,7 +18,6 @@ M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_ExpandListComponent",
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self.bShoulFocusToLastFocusedWidget = false
@@ -48,7 +47,6 @@ function M:Construct()
     CheckFunction = self.IsFocusStateValid
   })
 end
-
 function M:CreateConstInfos()
   M.Super.CreateConstInfos(self)
   self.MainTabsStyle.BackCallback = self.OnBackKeyDown
@@ -57,19 +55,16 @@ function M:CreateConstInfos()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.IsGamepadInput = self.CurInputDeviceType == ECommonInputType.Gamepad
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:ReceiveEnterState(StackAction)
   if not UIUtils.HasAnyFocus(self) then
     self:SetFocus()
   end
   M.Super.ReceiveEnterState(self, StackAction)
 end
-
 function M:CreateKeySetting()
   self.TableKey = "Tab"
   self.MainTabLeftKey = "Q"
@@ -126,7 +121,6 @@ function M:CreateKeySetting()
   self.EditNameKeyDownEvents = {}
   self:AddKeyEvent(self.EditNameKeyDownEvents, self.OnEditNameKeyDown, UIConst.GamePadKey.DPadLeft)
 end
-
 function M:AddKeyEvent(Events, Event, KeyName)
   if not Events then
     return
@@ -139,7 +133,6 @@ function M:AddKeyEvent(Events, Event, KeyName)
     end
   end
 end
-
 function M:CreateKeyInfoLists()
   self.ESCKeyInfoList = {
     KeyInfoList = {
@@ -233,7 +226,6 @@ function M:CreateKeyInfoLists()
     self.ESCKeyInfoList
   }
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return Handled
@@ -260,7 +252,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return Unhandled
 end
-
 function M:OnRepeatKeyDown(MyGeometry, InKeyEvent)
   local Reply, IsHandled
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -274,7 +265,6 @@ function M:OnRepeatKeyDown(MyGeometry, InKeyEvent)
   end
   return Handled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return Handled
@@ -304,7 +294,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return Handled
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return Handled
@@ -334,8 +323,13 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return Handled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
+  if self.CurrentSubUI and self.CurrentSubUI.UnlockDialog then
+    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurrentSubUI.UnlockDialog)
+  end
+  if not self.IsGamepadInput then
+    return UIUtils.Handled
+  end
   local Reply = M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
   local ReplyInfo = {}
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnFocusReceived", ReplyInfo)
@@ -343,11 +337,10 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     return ReplyInfo.Reply
   else
     self:GetDesiredFocusTargetInfo(ReplyInfo)
-    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), ReplyInfo.Widget or self)
+    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), ReplyInfo.Widget)
   end
   return Reply
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -360,7 +353,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return Unhandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self.IsGamepadInput = self.CurInputDeviceType == ECommonInputType.Gamepad
@@ -373,20 +365,16 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputDevice, CurGamepadName)
   self:OnFocusChanged()
 end
-
 function M:OnTableKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnTableKeyDown", ...)
 end
-
 function M:OnTableKeyUp(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnTableKeyUp", ...)
 end
-
 function M:OnMainTabLeftKeyDown()
   if self.ComponentReceivedEvent.MainTabLeft then
     return
@@ -394,7 +382,6 @@ function M:OnMainTabLeftKeyDown()
   self.Tab_Arm:TabToLeft()
   return self:GetReplyWhenMainTabChanged(), true
 end
-
 function M:OnMainTabRightKeyDown()
   if self.ComponentReceivedEvent.MainTabRight then
     return
@@ -402,7 +389,6 @@ function M:OnMainTabRightKeyDown()
   self.Tab_Arm:TabToRight()
   return self:GetReplyWhenMainTabChanged(), true
 end
-
 function M:GetReplyWhenMainTabChanged()
   local StateName = self.FSM:Peak().Name
   local Widget
@@ -415,29 +401,24 @@ function M:GetReplyWhenMainTabChanged()
   end
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), Widget or self), true
 end
-
 function M:OnSubTabLeftKeyDown(...)
   if self.ComponentReceivedEvent.SubTabLeft then
     return
   end
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnSubTabLeftKeyDown", ...)
 end
-
 function M:OnSubTabRightKeyDown(...)
   if self.ComponentReceivedEvent.SubTabRight then
     return
   end
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnSubTabRightKeyDown", ...)
 end
-
 function M:OnOpenKeyDown()
   return self:OnBackKeyDown()
 end
-
 function M:OnOpenKeyUp()
   self.bUserLongPressOpenKeyWhenOpen = false
 end
-
 function M:OnBackKeyDown()
   if self.ComponentReceivedEvent.Back then
     return
@@ -464,61 +445,49 @@ function M:OnBackKeyDown()
   end
   return self:OnBackBtnClicked()
 end
-
 function M:OnViewKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnViewKeyDown", ...)
 end
-
 function M:OnMenuCloseKeyDown()
   EventManager:FireEvent(EventID.OnMenuClose)
 end
-
 function M:OnUKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnUKeyDown", ...)
 end
-
 function M:OnUpgradeKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnBtnIntensifyClicked", ...)
 end
-
 function M:OnLeftThumbstickKeyDown(...)
   if self.ComponentReceivedEvent.OnLeftThumbstickKeyDown then
     return
   end
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnLeftThumbstickKeyDown", ...)
 end
-
 function M:OnLeftThumbstickKeyUp()
   if self.ComponentReceivedEvent.OnLeftThumbstickKeyUp then
     return
   end
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnLeftThumbstickKeyUp")
 end
-
 function M:OnRightThumbstickKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnRightThumbstickKeyDown", ...)
 end
-
 function M:CallKeyFunctionByName(FunctionName, ...)
   local ReplyInfo = {}
   self:CallFunctionByName(FunctionName, ReplyInfo, ...)
   return ReplyInfo.Reply, ReplyInfo.IsHandled
 end
-
 function M:OnCameraScrollBackwardKeyDown()
   self:ScrollCamera(1)
 end
-
 function M:OnCameraScrollForwardKeyDown()
   self:ScrollCamera(-1)
 end
-
 function M:InitSubUI(...)
   M.Super.InitSubUI(self, ...)
   self:InitNavigationRulesCommon()
   self:OnFocusChanged()
 end
-
 function M:InitNavigationRulesCommon()
   self.EMListView_Role:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.EMListView_Role:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
@@ -544,7 +513,6 @@ function M:InitNavigationRulesCommon()
     })
   end
 end
-
 function M:OnRoleListNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Right then
     if self.EMListView_SubTab:IsVisible() then
@@ -556,7 +524,6 @@ function M:OnRoleListNavigation(NavigationDirection)
   end
   return self.EMListView_Role
 end
-
 function M:OnSubTabListNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Right then
     if IsValid(self.CurrentSubUI) and self.CurrentSubUI.bIsFocusable then
@@ -568,13 +535,11 @@ function M:OnSubTabListNavigation(NavigationDirection)
   end
   return self.EMListView_SubTab
 end
-
 function M:OnSubUINavigation(NavigationDirection)
   local Info = {}
   self:OnGetSubUINavigationInfo(Info, NavigationDirection)
   return Info.Widget
 end
-
 function M:OnGetSubUINavigationInfo(Info, NavigationDirection)
   if self.ComponentReceivedEvent.OnGetSubUINavigationInfo then
     return
@@ -587,7 +552,6 @@ function M:OnGetSubUINavigationInfo(Info, NavigationDirection)
     end
   end
 end
-
 function M:OnRoleListItemSelectionChanged(Content, IsSelected)
   if not IsSelected then
     return
@@ -600,7 +564,6 @@ function M:OnRoleListItemSelectionChanged(Content, IsSelected)
     self.EMListView_Role:BP_NavigateToItem(Content)
   end
 end
-
 function M:OnRoleListItemClicked(Content)
   if self.IsGamepadInput then
     local CmpContent = self[self.CurMainTab.Name .. "Main_CmpContent"]
@@ -613,7 +576,6 @@ function M:OnRoleListItemClicked(Content)
     M.Super.OnRoleListItemClicked(self, Content)
   end
 end
-
 function M:OnRoleUpKeyDown()
   if self.ComponentReceivedEvent.RoleUp then
     return
@@ -629,7 +591,6 @@ function M:OnRoleUpKeyDown()
     end
   end
 end
-
 function M:OnRoleDownKeyDown()
   if self.ComponentReceivedEvent.RoleDown then
     return
@@ -645,14 +606,12 @@ function M:OnRoleDownKeyDown()
     end
   end
 end
-
 function M:OnRoleListContentCreated(Content)
   Content.Owner = self
   Content.OnAddedToFocusPath = self.OnRoleItemAddToFocusPath
   Content.OnRemovedFromFocusPath = self.OnRoleItemRemovedFromFocusPath
   Content.OnPreviewKeyDown = self.OnRoleListContentPreviewKeyDown
 end
-
 function M:NavigateToRoleList()
   local CmpContent = self[self.CurMainTab.Name .. "Main_CmpContent"]
   if CmpContent then
@@ -665,15 +624,12 @@ function M:NavigateToRoleList()
   end
   return self.EMListView_Role
 end
-
 function M:OnLockKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnLockKeyDown", ...)
 end
-
 function M:OnEditNameKeyDown(...)
   return self:CallKeyFunctionByName(self.CurMainTab.Name .. "Main_OnEditNameKeyDown", ...)
 end
-
 function M:OnPreviewModeStateChanged()
   if not self.IsPreviewMode then
     return
@@ -683,7 +639,6 @@ function M:OnPreviewModeStateChanged()
     self:NavigateToRoleList()
   end
 end
-
 function M:NavigateToSubTab()
   if self.CurSubTab and self.CurSubTab ~= self.NoneTab then
     self.EMListView_SubTab:BP_CancelScrollIntoView()
@@ -695,7 +650,6 @@ function M:NavigateToSubTab()
   end
   return self.EMListView_SubTab
 end
-
 function M:UpdateSubTabs(SubTabs)
   local TabToSelect = M.Super.UpdateSubTabs(self, SubTabs)
   for key, value in pairs(SubTabs) do
@@ -704,7 +658,6 @@ function M:UpdateSubTabs(SubTabs)
   end
   return TabToSelect
 end
-
 function M:OnSubTabItemSelectionChanged(Content, IsSelected)
   if not IsSelected then
     return
@@ -713,7 +666,6 @@ function M:OnSubTabItemSelectionChanged(Content, IsSelected)
     M.Super.OnSubTabItemClicked(self, Content)
   end
 end
-
 function M:OnSubTabItemClicked(Content)
   if self.IsGamepadInput then
     if Content ~= self.CurSubTab then
@@ -735,13 +687,11 @@ function M:OnSubTabItemClicked(Content)
     M.Super.OnSubTabItemClicked(self, Content)
   end
 end
-
 function M:ModifySubUIInitParams(Params)
   M.Super.ModifySubUIInitParams(self, Params)
   Params.OnAddedToFocusPath = self.OnSubUIAddedToFocusPath
   Params.OnRemovedFromFocusPath = self.OnSubUIRemovedFromFocusPath
 end
-
 function M:OnFocusChanged()
   if not self.Loaded then
     return
@@ -753,7 +703,6 @@ function M:OnFocusChanged()
   self:InitNavigationRules()
   self:UpdateGamepadStyle()
 end
-
 function M:IsFocusStateValid(State)
   local StateName = State.Name
   if StateName == FocusStates.RoleList then
@@ -764,7 +713,6 @@ function M:IsFocusStateValid(State)
     return IsValid(self.CurrentSubUI) and self.CurrentSubUI.bIsFocusable
   end
 end
-
 function M:IsFocusStateWidgetHasAnyFocus(State)
   local bIsFocusStateValid = self:IsFocusStateValid(State)
   if not bIsFocusStateValid then
@@ -779,7 +727,6 @@ function M:IsFocusStateWidgetHasAnyFocus(State)
     return UIUtils.HasAnyFocus(self.CurrentSubUI)
   end
 end
-
 function M:InitKeySetting()
   if self.ComponentReceivedEvent.InitKeySetting then
     return
@@ -788,7 +735,6 @@ function M:InitKeySetting()
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_InitKeySetting", self.KeyDownEvents, self.KeyUpEvents, self.BottomKeyInfo)
   self:UpdateBottomKeyInfo(self.BottomKeyInfo)
 end
-
 function M:InitKeySettingCommon()
   self.BottomKeyInfo = {}
   self.KeyDownEvents = {}
@@ -813,7 +759,6 @@ function M:InitKeySettingCommon()
   end
   self:AddKeyEvents(self.KeyUpEvents, self.OpenKeyUpEvents)
 end
-
 function M:AddKeyEvents(InKeyEvents, ...)
   local ConstKeyDownEventsTable = {
     ...
@@ -824,7 +769,6 @@ function M:AddKeyEvents(InKeyEvents, ...)
     end
   end
 end
-
 function M:UpdateBottomKeyInfo(BottomKeyInfo)
   if self.ComponentReceivedEvent.UpdateBottomKeyInfo then
     return
@@ -832,15 +776,12 @@ function M:UpdateBottomKeyInfo(BottomKeyInfo)
   BottomKeyInfo = BottomKeyInfo or self.BottomKeyInfo
   self.Tab_Arm:UpdateBottomKeyInfo(BottomKeyInfo)
 end
-
 function M:GetBottomKeyWidget(Index)
   return self.Tab_Arm.BottomKeyWidget and self.Tab_Arm.BottomKeyWidget[Index]
 end
-
 function M:InitNavigationRules()
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_InitNavigationRules")
 end
-
 function M:UpdateGamepadStyle()
   if self.IsGamepadInput then
     local State = self.FSM:Peak()
@@ -863,7 +804,6 @@ function M:UpdateGamepadStyle()
   end
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_UpdateGamepadStyle")
 end
-
 function M:ShowListShadow(List, IsShow)
   local Contents = List:GetListItems():ToTable()
   for _, value in ipairs(Contents) do
@@ -873,7 +813,6 @@ function M:ShowListShadow(List, IsShow)
     end
   end
 end
-
 function M:OnRoleItemAddToFocusPath(Content)
   local StateName = self.FSM:Peak().Name
   if StateName ~= FocusStates.RoleList then
@@ -884,18 +823,15 @@ function M:OnRoleItemAddToFocusPath(Content)
     Content = Content
   })
 end
-
 function M:OnRoleListContentPreviewKeyDown(KeyName)
   if "Gamepad_FaceButton_Bottom" == KeyName and self.EMListView_SubTab:IsVisible() then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:NavigateToSubTab()), true
   end
   return UIUtils.Unhandled
 end
-
 function M:OnRoleItemRemovedFromFocusPath()
   self.EMListView_Role:BP_CancelScrollIntoView()
 end
-
 function M:OnSubTabAddToFocusPath(Content)
   if self.FSM:Peak().Name == FocusStates.SubUI then
     self.FSM:Pop()
@@ -905,32 +841,29 @@ function M:OnSubTabAddToFocusPath(Content)
     Content = Content
   })
 end
-
 function M:OnSubTabRemovedFromFocusPath(Content)
   self.EMListView_SubTab:BP_CancelScrollIntoView()
 end
-
 function M:OnSubUIAddedToFocusPath(Widget)
   self.FSM:Push({
     Name = FocusStates.SubUI,
     Widget = Widget
   })
 end
-
 function M:OnSubUIRemovedFromFocusPath()
 end
-
 function M:OnAddedToFocusPath()
   self.IsInFocusPath = true
 end
-
 function M:OnRemovedFromFocusPath()
   self.IsInFocusPath = false
   self.EMListView_SubTab:BP_CancelScrollIntoView()
   self.EMListView_Role:BP_CancelScrollIntoView()
 end
-
 function M:GetDesiredFocusTarget()
+  if self.CurrentSubUI and self.CurrentSubUI.UnlockDialog then
+    return self.CurrentSubUI.UnlockDialog
+  end
   local State = self.FSM:Peak()
   if not self:IsFocusStateValid(State) then
     self.FSM:Pop()
@@ -948,18 +881,16 @@ function M:GetDesiredFocusTarget()
   elseif IsValid(self.CurrentSubUI) and self.CurrentSubUI.bIsFocusable then
     return self.CurrentSubUI
   else
-    DebugPrint("Error: \230\149\180\229\164\135\232\129\154\231\132\166\231\138\182\230\128\129\233\148\153\232\175\175!")
+    DebugPrint("Error: 整备聚焦状态错误!")
     Traceback()
     return self
   end
 end
-
 function M:GetDesiredFocusTargetInfo(Info)
   if self.ComponentReceivedEvent.GetDesiredFocusTargetInfo then
     return
   end
   Info.Widget = self:GetDesiredFocusTarget()
 end
-
 AssembleComponents(M)
 return M

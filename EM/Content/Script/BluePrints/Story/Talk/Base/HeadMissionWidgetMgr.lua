@@ -1,7 +1,6 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local HeadMissionWidgetMgr = Class("BluePrints.Common.TimerMgr")
-
 function HeadMissionWidgetMgr.New(HeadWidgetComponent, OwnerNpc)
   local Obj = setmetatable({}, {__index = HeadMissionWidgetMgr})
   Obj.HeadWidgetComponent = HeadWidgetComponent
@@ -9,15 +8,12 @@ function HeadMissionWidgetMgr.New(HeadWidgetComponent, OwnerNpc)
   Obj:InitMissionData()
   return Obj
 end
-
 function HeadMissionWidgetMgr:InitMissionData()
   self:RefreshMissionWidget()
 end
-
 function HeadMissionWidgetMgr:OnQuestTrackingChanged()
   self:RefreshMissionWidget()
 end
-
 function HeadMissionWidgetMgr:RefreshMissionWidget()
   local Avatar = GWorld:GetAvatar()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -31,7 +27,6 @@ function HeadMissionWidgetMgr:RefreshMissionWidget()
     self.HeadWidgetComponent:DisableWidget("Mission")
   end
 end
-
 function HeadMissionWidgetMgr:TryGetTrackedId()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -57,5 +52,4 @@ function HeadMissionWidgetMgr:TryGetTrackedId()
     return TargetStaticCreator.UnitId
   end
 end
-
 return HeadMissionWidgetMgr

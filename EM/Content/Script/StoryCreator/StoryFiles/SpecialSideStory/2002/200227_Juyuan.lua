@@ -4,7 +4,7 @@ return {
   lineData = {
     {
       startStory = "1742969086843523404",
-      startPort = "\233\128\137\233\161\1852",
+      startPort = "选项2",
       endStory = "1742969119483524170",
       endPort = "In"
     },
@@ -22,7 +22,7 @@ return {
     },
     {
       startStory = "1742969086843523404",
-      startPort = "\233\128\137\233\161\1851",
+      startPort = "选项1",
       endStory = "17430656948292907039",
       endPort = "In"
     },
@@ -64,11 +64,11 @@ return {
       isStoryNode = true,
       key = "1742969086843523404",
       type = "StoryNode",
-      name = "\229\146\140\229\137\167\233\153\162\230\136\144\229\145\152\229\175\185\232\175\157",
+      name = "和剧院成员对话",
       pos = {x = 1330.910692036012, y = 298.3382597794362},
       propsData = {
         QuestId = 20022701,
-        QuestDescriptionComment = "\228\184\142\231\131\173\230\131\133\231\154\132\229\137\167\229\155\162\230\136\144\229\145\152\229\175\185\232\175\157",
+        QuestDescriptionComment = "与热情的剧团成员对话",
         QuestDescription = "Description_200227_1",
         QuestDeatil = "Content_200227_1",
         TaskRegionReName = "",
@@ -88,8 +88,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Juyuan01_SSS_1191279"
+        StoryGuidePointName = "Npc_Juyuan01_SSS_1191279",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -155,7 +157,7 @@ return {
           ["1742969139749524550"] = {
             key = "1742969139749524550",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1206.5714285714287, y = 255.85714285714286},
             propsData = {
               IsNpcNode = true,
@@ -180,6 +182,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -187,6 +190,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -209,15 +213,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700240}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {
                 {
                   OptionText = "510090051",
@@ -238,7 +239,7 @@ return {
           ["1742969141595524634"] = {
             key = "1742969141595524634",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1493.9800959909653, y = 207.67052512704686},
             propsData = {
               IsNpcNode = false,
@@ -257,6 +258,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -264,6 +266,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -286,15 +289,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700240}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -302,7 +302,7 @@ return {
           ["1742969176870525052"] = {
             key = "1742969176870525052",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1486.048385757465, y = 446.7786146078986},
             propsData = {
               IsNpcNode = false,
@@ -321,6 +321,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -328,6 +329,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -350,15 +352,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700240}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -366,21 +365,21 @@ return {
           ["1742969386967528509"] = {
             key = "1742969386967528509",
             type = "QuestConditionNode",
-            name = "\233\128\137\233\161\1851\239\188\154\230\156\137\231\169\186",
+            name = "选项1：有空",
             pos = {x = 1804.4055230787967, y = 213.09736938253573},
-            propsData = {PortName = "\233\128\137\233\161\1851"}
+            propsData = {PortName = "选项1"}
           },
           ["1742969396207528775"] = {
             key = "1742969396207528775",
             type = "QuestConditionNode",
-            name = "\233\128\137\233\161\1852\239\188\154\230\178\161\231\169\186",
+            name = "选项2：没空",
             pos = {x = 1805.526641091219, y = 453.9627329192548},
-            propsData = {PortName = "\233\128\137\233\161\1852"}
+            propsData = {PortName = "选项2"}
           },
           ["17429868967833922693"] = {
             key = "17429868967833922693",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 965.8545870605365, y = 292.22529644268764},
             propsData = {
               ActiveEnable = true,
@@ -399,11 +398,11 @@ return {
       isStoryNode = true,
       key = "1742969119483524170",
       type = "StoryNode",
-      name = "\230\139\146\231\187\157\229\144\142\229\134\141\230\172\161\229\146\140\229\137\167\233\153\162\230\136\144\229\145\152\229\175\185\232\175\157",
+      name = "拒绝后再次和剧院成员对话",
       pos = {x = 1677.2345642422367, y = 487.99299251473184},
       propsData = {
         QuestId = 20022702,
-        QuestDescriptionComment = "\228\184\142\231\131\173\230\131\133\231\154\132\229\137\167\229\155\162\230\136\144\229\145\152\229\175\185\232\175\157",
+        QuestDescriptionComment = "与热情的剧团成员对话",
         QuestDescription = "Description_200227_1",
         QuestDeatil = "Content_200227_1",
         TaskRegionReName = "",
@@ -423,8 +422,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Juyuan01_SSS_1191279"
+        StoryGuidePointName = "Npc_Juyuan01_SSS_1191279",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -484,7 +485,7 @@ return {
           ["1742969539722531915"] = {
             key = "1742969539722531915",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1325.570512820513, y = 332.26282051282055},
             propsData = {
               IsNpcNode = true,
@@ -509,6 +510,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -516,6 +518,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -538,15 +541,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700240}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {
                 {
                   OptionText = "510090081",
@@ -567,7 +567,7 @@ return {
           ["1742969542192532020"] = {
             key = "1742969542192532020",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1702.9375, y = 251.5},
             propsData = {
               IsNpcNode = false,
@@ -586,6 +586,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -593,6 +594,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -615,15 +617,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700240}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -631,7 +630,7 @@ return {
           ["1742969544891532051"] = {
             key = "1742969544891532051",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1704.0576923076924, y = 457.62087912087907},
             propsData = {
               IsNpcNode = false,
@@ -650,6 +649,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -657,6 +657,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -679,15 +680,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700240}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -700,11 +698,11 @@ return {
       isStoryNode = true,
       key = "17430656948292907039",
       type = "StoryNode",
-      name = "\228\188\170\232\138\130\231\130\185",
+      name = "伪节点",
       pos = {x = 1674.7467518503502, y = 241.3662398015402},
       propsData = {
         QuestId = 20022703,
-        QuestDescriptionComment = "\231\148\168\228\186\142\231\187\147\230\157\159\228\187\187\229\138\161",
+        QuestDescriptionComment = "用于结束任务",
         QuestDescription = "Description_200227_1",
         QuestDeatil = "Content_200227_1",
         TaskRegionReName = "",
@@ -724,8 +722,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Juyuan01_SSS_1191279"
+        StoryGuidePointName = "Npc_Juyuan01_SSS_1191279",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -767,7 +767,7 @@ return {
           ["17430657013732907191"] = {
             key = "17430657013732907191",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1162.5714285714287, y = 344},
             propsData = {WaitTime = 0.1}
           }

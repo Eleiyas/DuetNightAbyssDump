@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17485894894881190504",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1248, y = 286},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -82,19 +84,7 @@ return {
             endPort = "In"
           },
           {
-            startQuest = "17485894894881190505",
-            startPort = "QuestStart",
-            endQuest = "17600804294256843763",
-            endPort = "In"
-          },
-          {
             startQuest = "17489354962031090",
-            startPort = "Out",
-            endQuest = "17600804435326844042",
-            endPort = "In"
-          },
-          {
-            startQuest = "17600804435326844042",
             startPort = "Out",
             endQuest = "17485894894891190508",
             endPort = "Success"
@@ -112,7 +102,7 @@ return {
             key = "17485894894891190508",
             type = "QuestSuccessNode",
             name = "QuestSuccess",
-            pos = {x = 1810, y = 304},
+            pos = {x = 1716, y = 294},
             propsData = {ModeType = 0}
           },
           ["17485894894891190511"] = {
@@ -125,8 +115,8 @@ return {
           ["17489354962031090"] = {
             key = "17489354962031090",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
-            pos = {x = 1202, y = 306},
+            name = "对话节点",
+            pos = {x = 1274, y = 296},
             propsData = {
               IsNpcNode = false,
               FirstDialogueId = 80150201,
@@ -144,6 +134,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -151,6 +142,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -173,44 +165,14 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Npc", TalkActorId = 790044},
-                {TalkActorType = "Npc", TalkActorId = 790008},
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
-            }
-          },
-          ["17600804294256843763"] = {
-            key = "17600804294256843763",
-            type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
-            pos = {x = 1204, y = 490},
-            propsData = {
-              SoundStateType = 0,
-              SoundPriority = 1,
-              SoundType = 0,
-              SoundPath = "event:/bgm/cbt01/0016_judian",
-              ParamKey = "",
-              ParamValue = 0,
-              RelatedRegionId = {},
-              ClientRelatedRegionId = {}
-            }
-          },
-          ["17600804435326844042"] = {
-            key = "17600804435326844042",
-            type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
-            pos = {x = 1524, y = 310},
-            propsData = {
-              SoundStateType = 3,
-              SoundPriority = 1,
-              SoundType = 0
             }
           }
         },

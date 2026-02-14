@@ -1,7 +1,6 @@
 require("UnLua")
 local SkillUtils = require("Utils.SkillUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.TabUI = {
     self.First,
@@ -9,7 +8,6 @@ function M:Construct()
   }
   self.WBP_VideoPlayer:HideSkipButton(true)
 end
-
 function M:SetKeyInfo(SwitchKey, DetailsKey)
   self.SwitchKey = SwitchKey
   self.DetailsKey = DetailsKey
@@ -46,7 +44,6 @@ function M:SetKeyInfo(SwitchKey, DetailsKey)
     })
   end
 end
-
 function M:UpdateInfos(SkillId, Level, WeaponId)
   self.SkillId = SkillId
   self.Level = Level
@@ -139,7 +136,6 @@ function M:UpdateInfos(SkillId, Level, WeaponId)
     self.HorizontalBox_Dot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:PlayInAnim()
   if self.SkillData and self.SkillData.SkillDemo then
     local VideoName = "Video_" .. self.SkillData.SkillDemo
@@ -156,7 +152,6 @@ function M:PlayInAnim()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   self.WBP_VideoPlayer:Stop()
   self:StopAnimation(self.In)
@@ -167,11 +162,9 @@ function M:PlayOutAnim()
     self.OnOutAnimFinished
   })
 end
-
 function M:OnOutAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SwitchPage(Page)
   if self.Type == "Weapon" or self.AttrCount <= 0 then
     return
@@ -187,5 +180,4 @@ function M:SwitchPage(Page)
     self:PlayAnimation(self.Change)
   end
 end
-
 return M

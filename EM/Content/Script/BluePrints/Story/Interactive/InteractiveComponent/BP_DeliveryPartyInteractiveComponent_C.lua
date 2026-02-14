@@ -1,7 +1,7 @@
 require("UnLua")
 require("DataMgr")
 local BP_DeliveryPartyInteractiveComponent_C = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C")
-
+local LuaConst = require("EMLuaConst")
 function BP_DeliveryPartyInteractiveComponent_C:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.Owner = self:GetOwner()
@@ -9,11 +9,9 @@ function BP_DeliveryPartyInteractiveComponent_C:ReceiveBeginPlay()
   self.LockByCondition = false
   self.ConditionId = 0
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:TriggerTick(PlayerActor)
   self.Overridden.TriggerTick(self, PlayerActor)
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:IsCanInteractive(PlayerActor)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -28,12 +26,12 @@ function BP_DeliveryPartyInteractiveComponent_C:IsCanInteractive(PlayerActor)
   if Controller:GetStoryModeState() then
     return false
   end
-  if self:GetInteractiveName() ~= "" and self.DistanceCheckComponent(self, PlayerActor, self.InteractiveDistance, false) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle, false) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle, false) then
-    return true
+  if LuaConst.OpenComputeInteractive then
+    return self:GetInteractiveName() ~= "" and self:GetDistanceCheckResult() and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle, false) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle, false)
+  else
+    return self:GetInteractiveName() ~= "" and self.DistanceCheckComponent(self, PlayerActor, self.InteractiveDistance, false) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle, false) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle, false)
   end
-  return false
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:UpdateDisplayInteractiveBtn(PlayerActor)
   local bCanInteractive = self:IsCanInteractive(PlayerActor)
   if not PlayerActor:IsMainPlayer() then
@@ -47,7 +45,6 @@ function BP_DeliveryPartyInteractiveComponent_C:UpdateDisplayInteractiveBtn(Play
     self:NotDisplayInteractiveBtn(PlayerActor)
   end
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:DisplayInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:GetUIObj(UIConst.InteractiveUIName)
@@ -72,7 +69,6 @@ function BP_DeliveryPartyInteractiveComponent_C:DisplayInteractiveBtn(PlayerActo
   self:SetBtnDisplayed(PlayerActor, true)
   self:RefreshInteractiveBtn(PlayerActor)
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
@@ -82,7 +78,6 @@ function BP_DeliveryPartyInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerA
   end
   InteractiveUI:RemoveInteractiveItem(self)
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:GetInteractiveName()
   if 0 ~= self.PartyId then
     local DungeonInfo = DataMgr.Dungeon[self.PartyId]
@@ -93,7 +88,6 @@ function BP_DeliveryPartyInteractiveComponent_C:GetInteractiveName()
   end
   return ""
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:StartInteractive(PlayerActor)
   if self:IsCanInteractive(PlayerActor) and not self:IsForbidden() then
     local DungeonInfo = DataMgr.Dungeon[self.PartyId]
@@ -107,7 +101,6 @@ function BP_DeliveryPartyInteractiveComponent_C:StartInteractive(PlayerActor)
     self.Owner:NotDisplayInteractiveBtn(PlayerActor)
   end
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:EnterParty()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -116,11 +109,9 @@ function BP_DeliveryPartyInteractiveComponent_C:EnterParty()
         UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disabled_Des_Temple"))
       end
     end
-    
     Avatar:EnterDungeon(self.PartyId, nil, Callback)
   end
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:BtnPressed(PlayerActor)
   if self:IsLocked() then
     self:LockInteractive()
@@ -128,15 +119,12 @@ function BP_DeliveryPartyInteractiveComponent_C:BtnPressed(PlayerActor)
   end
   self:StartInteractive(PlayerActor)
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:OnClicked_Forbidden()
   UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disabled_Des_Temple"))
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:GetUUID()
   return self:GetClass():GetName() .. tostring(self.PartyId)
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:IsLocked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -169,7 +157,6 @@ function BP_DeliveryPartyInteractiveComponent_C:IsLocked()
   end
   return false
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:LockInteractive()
   if self.LockByCondition and self.ConditionId > 0 then
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, string.format(GText("UI_Party_Lockedcondition"), GText("Name_" .. self.ConditionId)))
@@ -177,12 +164,10 @@ function BP_DeliveryPartyInteractiveComponent_C:LockInteractive()
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Tosat_Party_Locked"))
   end
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:IsForbidden()
   local Avatar = GWorld:GetAvatar()
   return Avatar:IsInTeam() or Avatar.InSpecialQuest
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:GetStars()
   if self:IsLocked() then
     return nil
@@ -213,16 +198,13 @@ function BP_DeliveryPartyInteractiveComponent_C:GetStars()
     return 0
   end
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:GetInteractiveIcon(PlayerActor)
   if self:IsLocked() then
     return "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Interactive/T_Interactive_Lock.T_Interactive_Lock'"
   end
   return nil
 end
-
 function BP_DeliveryPartyInteractiveComponent_C:SetPartyId(Id)
   self.PartyId = Id
 end
-
 return BP_DeliveryPartyInteractiveComponent_C

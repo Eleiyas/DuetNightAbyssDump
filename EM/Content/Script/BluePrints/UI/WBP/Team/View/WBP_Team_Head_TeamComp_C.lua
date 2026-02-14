@@ -1,7 +1,6 @@
 local FriendModel = FriendController:GetModel()
 local TeamModel = TeamController:GetModel()
 local Component = {}
-
 function Component:InitComp(Owner, MemberInfo, Index, bAnim)
   self.MemberInfo = MemberInfo
   self.Owner = Owner
@@ -28,7 +27,6 @@ function Component:InitComp(Owner, MemberInfo, Index, bAnim)
     self:PlayAnimation(self.Add)
   end
 end
-
 function Component:SetHeadState(HeadState)
   self.HeadState = HeadState or self.MemberInfo.HeadState
   if not self.HeadState then
@@ -61,7 +59,6 @@ function Component:SetHeadState(HeadState)
     self:PlayAnimation(self.Disagree, 0, 1, EUMGSequencePlayMode.Forward, 1.0, false)
   end
 end
-
 function Component:OnAnimationFinishedComp(InAnim)
   if InAnim == self.Add then
     self.Owner:ProcessAddQueue()
@@ -77,33 +74,26 @@ function Component:OnAnimationFinishedComp(InAnim)
     self:SetHeadState()
   end
 end
-
 function Component:OnGetMenuContentComp(Anchor)
   if not self.Head_Team.bSelected then
     return
   end
-  
   local function InitTeamKickBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Team_Kick")
-    
     function Content.Callback()
       TeamController:OpenKickMemberDialog(AvatarInfo, FriendController:GetView(self))
       self.Head_Anchor:Close()
     end
   end
-  
   local function InitTeamLeaderTransBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Team_Transfer")
-    
     function Content.Callback()
       TeamController:SendTeamChangeLeader(AvatarInfo.Uid)
       self.Head_Anchor:Close()
     end
   end
-  
   local function InitShowRecordBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Chat_ShowRecord")
-    
     function Content.Callback()
       if TeamModel:IsYourself(AvatarInfo.Uid) then
         PersonInfoController:OpenView()
@@ -113,25 +103,20 @@ function Component:OnGetMenuContentComp(Anchor)
       self.Head_Anchor:Close()
     end
   end
-  
   local function InitLeaveTeamBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Team_Leave")
-    
     function Content.Callback()
       TeamController:SendTeamLeave()
       self.Head_Anchor:Close()
     end
   end
-  
   local function InitAddFriendBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Friend_AddFriend")
-    
     function Content.Callback()
       self.Head_Anchor:Close()
       FriendController:OpenAddFriendDialog(self, AvatarInfo)
     end
   end
-  
   local Switch = {}
   if TeamModel:IsYourself(self.MemberInfo.Uid) then
     if TeamModel:GetTeam() then
@@ -153,9 +138,11 @@ function Component:OnGetMenuContentComp(Anchor)
       table.insert(Switch, InitAddFriendBtn)
     end
   end
+  if TeamModel:GetIsInOpenCoop() then
+    Switch = {}
+  end
   return ChatController:OpenPlayerBtnList(self, self.MemberInfo, Switch)
 end
-
 function Component:OnMenuOpenChangedComp(bOpen)
   if bOpen then
     self.Owner.bOpenBtnList = true
@@ -171,13 +158,11 @@ function Component:OnMenuOpenChangedComp(bOpen)
   self.Owner.bOpenBtnList = false
   self.Owner.OpenedUid = nil
 end
-
 function Component:OnTeammateDelete()
   DebugPrint(DebugTag, LXYTag, "Quit  ", self.MemberInfo.Uid)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:PlayAnimation(self.Quit)
 end
-
 function Component:PlayMove(bReverse)
   DebugPrint(DebugTag, LXYTag, "PlayMove , MoveUI ", self.MemberInfo.Uid)
   self:UpdateTag()
@@ -187,7 +172,6 @@ function Component:PlayMove(bReverse)
     self:PlayAnimationForward(self.Slide_Left)
   end
 end
-
 function Component:UpdateTag()
   local Uid = self.MemberInfo.Uid
   self.Index = self.MemberInfo.Index
@@ -197,5 +181,4 @@ function Component:UpdateTag()
     self.Tag_Team:Init(false, 1, Uid)
   end
 end
-
 return Component

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   if CommonUtils.GetDeviceTypeByPlatformName() == "Mobile" then
@@ -12,7 +11,6 @@ function M:Construct()
     self.List_Item:SetControlScrollbarInside(true)
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self:BindDialogEvent(DialogEvent.OnTitleTabSelected, self.OnTabSelected)
@@ -21,12 +19,11 @@ function M:InitContent(Params, PopupData, Owner)
   end
   self.DataMap = Params.DataMap
   if self.DataMap.Tabs then
-    self:InitPage(self.DataMap.Tabs[1])
+    self:InitPage(self.DataMap.Tabs[1], true)
   else
     self:InitPage(self.DataMap)
   end
 end
-
 function M:InitPage(DataMap, IsTabPage)
   self.List_Item:ClearChildren()
   local Keys = {}
@@ -55,7 +52,6 @@ function M:InitPage(DataMap, IsTabPage)
     self:ShowGamepadABtn(true)
   end, false, 0, "__DeputeDetailDialog_List_Drop")
 end
-
 function M:OnTabSelected(TabWidget)
   local Idx = TabWidget.Idx
   if Idx and self.DataMap.Tabs and self.DataMap.Tabs[Idx] then
@@ -64,7 +60,6 @@ function M:OnTabSelected(TabWidget)
     self:InitPage(self.DataMap, false)
   end
 end
-
 function M:ShowGamepadABtn(bIsShow)
   if bIsShow then
     self.GamepadCheckItemKeyInfo = self.GamepadCheckItemKeyInfo or self:ShowGamepadShortcutBtn({
@@ -81,14 +76,12 @@ function M:ShowGamepadABtn(bIsShow)
     self.GamepadCheckItemKeyInfo = nil
   end
 end
-
 function M:OnContentFocusReceived(MyGeometry, InFocusEvent)
   if self.List_Item:GetChildAt(0) then
     self.List_Item:GetChildAt(0):SetFocus()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -99,5 +92,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

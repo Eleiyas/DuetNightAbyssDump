@@ -1,7 +1,6 @@
 require("UnLua")
 local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.IsSelected = false
   self.Button_Item.OnHovered:Add(self, self.OnBtnHovered)
@@ -11,7 +10,6 @@ function M:Construct()
   self.Button_Item.OnClicked:Add(self, self.OnBtnClicked)
   self.Text_CanUpgrade:SetText(GText("UI_RougeLike_Blessing_Upgraded"))
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.RougeDataModel = Content.DataModel
@@ -63,7 +61,6 @@ function M:OnListItemObjectSet(Content)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:InitEmptyItem(bEmpty)
   if bEmpty then
     self.Group_Normal:SetVisibility(ESlateVisibility.Collapsed)
@@ -73,7 +70,6 @@ function M:InitEmptyItem(bEmpty)
     self.Group_Empty:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetIcon(IconPath)
   if not IconPath then
     return
@@ -96,7 +92,6 @@ function M:SetIcon(IconPath)
     self.Image_TreasureIcon:SetBrushResourceObject(LoadObject(IconPath))
   end
 end
-
 function M:SetBuffType(IconPath)
   if not IconPath then
     return
@@ -104,7 +99,6 @@ function M:SetBuffType(IconPath)
   self.Group_Buff:SetVisibility(ESlateVisibility.Visible)
   self.Image_BuffType:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetRarity(Rarity)
   local Quality, QualityLine
   if Rarity > 0 and Rarity <= 3 then
@@ -117,7 +111,6 @@ function M:SetRarity(Rarity)
   self.Img_Quality:SetBrushResourceObject(Quality)
   self.Img_QualityLine:SetBrushResourceObject(QualityLine)
 end
-
 function M:InitNewTag()
   if self.RougeDataModel:CheckArchiveItemIsNew(RougeConst.ArchiveType[self.RougeGuideName], self.ItemId) then
     self.New:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -125,13 +118,11 @@ function M:InitNewTag()
     self.New:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetItemWatched()
   self.RougeDataModel:MarkArchiveItemSeened(RougeConst.ArchiveType[self.RougeGuideName], self.ItemId)
   self.RougeDataModel:UpdateArchiveReddot(RougeConst.ArchiveType[self.RougeGuideName])
   self:InitNewTag()
 end
-
 function M:SetDesc()
   local Desc
   if self.ItemType == "Blessing" then
@@ -146,9 +137,9 @@ function M:SetDesc()
     end
     Desc = UIUtils.GenRougeBlessingDesc(self.ItemId, self.Level)
     local GroupId = DataMgr.RougeLikeBlessing[self.ItemId].BlessingGroup
-    assert(GroupId, "\230\156\170\230\137\190\229\136\176\231\165\157\231\166\143\229\175\185\229\186\148\229\165\151\232\163\133Id\239\188\154" .. self.ItemId)
+    assert(GroupId, "未找到祝福对应套装Id：" .. self.ItemId)
     local GroupData = DataMgr.BlessingGroup[GroupId]
-    assert(GroupData, "\230\156\170\230\137\190\229\136\176\229\165\151\232\163\133\230\149\176\230\141\174\239\188\154" .. GroupId)
+    assert(GroupData, "未找到套装数据：" .. GroupId)
     self.Text_SuitName:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.Text_SuitName:SetText(GText(GroupData.Name))
   elseif self.ItemType == "Treasure" then
@@ -166,7 +157,6 @@ function M:SetDesc()
   Desc = UIUtils.GenRougeCombatTermDesc(Desc, TermsList)
   self.Text_Desc:SetText(GText(Desc))
 end
-
 function M:OnBtnHovered()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -177,7 +167,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -188,14 +177,12 @@ function M:OnBtnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnBtnPressed()
   if self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -203,7 +190,6 @@ function M:OnBtnReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnBtnClicked()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -215,7 +201,6 @@ function M:OnBtnClicked()
     self:SetItemWatched()
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.UnHover then
     self:PlayAnimation(self.Normal)
@@ -227,7 +212,6 @@ function M:OnAnimationFinished(InAnimation)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:ShowItemDetail()
   if self.RougeGuideName then
     if self.IsUnlocked then
@@ -239,7 +223,6 @@ function M:ShowItemDetail()
     UIManager(self):LoadUINew("RougeItemDetailPopUp", self.ItemId, self.ItemType, self.Level, false, true)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.Content.Focused = true
   if self.RougeItemFocusChanged then
@@ -249,14 +232,12 @@ function M:OnAddedToFocusPath(InFocusEvent)
     self.Parent.Owner.CatalogueScroll:ScrollWidgetIntoView(self, true, UE4.EDescendantScrollDestination.IntoView)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.Content.Focused = false
   if self.RougeItemFocusChanged then
     self.RougeItemFocusChanged(self.Parent, false)
   end
 end
-
 function M:OnDetailNavigateUp()
   if self.Index > 0 then
     return self.Parent.List_Box:GetChildAt(self.Index - 1)
@@ -265,7 +246,6 @@ function M:OnDetailNavigateUp()
     return self.Parent.Title_Button
   end
 end
-
 function M:OnDetailNavigateDown()
   if self.Index < self.Parent.List_Box:GetChildrenCount() - 1 then
     return self.Parent.List_Box:GetChildAt(self.Index + 1)
@@ -273,5 +253,4 @@ function M:OnDetailNavigateDown()
     return self.Parent:GetNextListSuitItem()
   end
 end
-
 return M

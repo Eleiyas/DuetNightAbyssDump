@@ -6,7 +6,6 @@ local FDialogueNode = Class({
   "BluePrints.Story.StoryIteration.StoryIterationNode"
 })
 FDialogueNode.NodeType = EDialogueNodeType.Dialogue
-
 function FDialogueNode:CreateNodeData(DialogueId)
   local Dialogue = self.Dialogues[DialogueId]
   self.Dialogue = Dialogue
@@ -14,12 +13,14 @@ function FDialogueNode:CreateNodeData(DialogueId)
   self.NextDialogue = Dialogue.NextDialogue
   self.FinalDialogue = Dialogue.FinalDialogueId
   self.Content = TalkUtils:DialogueIdToContent(DialogueId)
+  self.bDone = false
+  self.bPaused = false
+  self.IterateArgs = {}
   self.IterGraph.DialogueNodeMap[DialogueId] = self
-  if Dialogue.RelatedWikiId then
+  if Dialogue.RelatedWikiId and self.DialogueWikiComponent then
     self.DialogueWikiComponent:AddListenWikiId(Dialogue.RelatedWikiId)
   end
 end
-
 function FDialogueNode:GenerateNextNodes()
   if self.NextDialogue and self.NextOptions then
     local DialogueId = self.Dialogue.DialogueId
@@ -43,27 +44,39 @@ function FDialogueNode:GenerateNextNodes()
     self:SetOutPort(EDialogueIterType.Out, NextNode)
   end
 end
-
 function FDialogueNode:Enter(bSkip)
   FDialogueNode.Super.Enter(self, bSkip)
   self:Record()
 end
-
 function FDialogueNode:Execute(bSkip)
   self.TalkTask:PlayDialogue(nil, bSkip)
 end
-
-function FDialogueNode:Resume()
-  self.TalkTask:PlayDialogue(true)
+function FDialogueNode:Pause()
+  self.bPaused = true
 end
-
+function FDialogueNode:Resume()
+  self.bPaused = false
+  if self.bDone then
+    self:Iterate(table.unpack(self.IterateArgs))
+  else
+    self.TalkTask:PlayDialogue(true)
+  end
+end
+function FDialogueNode:Iterate(...)
+  if self.bPaused then
+    self.bDone = true
+    self.IterateArgs = {
+      ...
+    }
+    return
+  end
+  FDialogueNode.Super.Iterate(self, ...)
+end
 function FDialogueNode:RealSkip()
   self.TalkTask:SkipDialogue()
 end
-
 function FDialogueNode:Record()
   FDialogueNode.Super.Record(self)
   self.DialogueRecordComponent:OnDialogueRecord(self.Dialogue.DialogueId, self.Dialogue)
 end
-
 return FDialogueNode

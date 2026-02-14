@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Archive_BookTab_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Archive_BookTab_C:Construct()
   self.IsSelect = false
   self.AddListenerFnish = false
@@ -12,7 +11,6 @@ function WBP_Archive_BookTab_C:Construct()
   self.Btn_Click.OnPressed:Add(self, self.OnCellPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnCellReleased)
 end
-
 function WBP_Archive_BookTab_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -40,19 +38,16 @@ function WBP_Archive_BookTab_C:OnListItemObjectSet(Content)
     self:RefreshReddot()
   end
 end
-
 function WBP_Archive_BookTab_C:UnSelected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self.IsSelect = false
 end
-
 function WBP_Archive_BookTab_C:Selected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
   self.IsSelect = true
 end
-
 function WBP_Archive_BookTab_C:OnCellClicked()
   if not self.Content.Unlock then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_BookArchive_BookLockedToast"))
@@ -65,7 +60,6 @@ function WBP_Archive_BookTab_C:OnCellClicked()
   self.Content.Root:RefreshBookDetailInfo(self)
   self:SetArchiveReddotRead()
 end
-
 function WBP_Archive_BookTab_C:OnCellHovered()
   if not self.Content.Unlock then
     return
@@ -78,7 +72,6 @@ function WBP_Archive_BookTab_C:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Archive_BookTab_C:OnCellUnhovered()
   if not self.Content.Unlock then
     return
@@ -92,7 +85,6 @@ function WBP_Archive_BookTab_C:OnCellUnhovered()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Archive_BookTab_C:OnCellPressed()
   if not self.Content.Unlock then
     return
@@ -102,7 +94,6 @@ function WBP_Archive_BookTab_C:OnCellPressed()
   end
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Archive_BookTab_C:OnCellReleased()
   if not self.Content.Unlock then
     return
@@ -113,7 +104,6 @@ function WBP_Archive_BookTab_C:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Archive_BookTab_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("ArchiveNewReadBook")
   if not self.Content or not self.Content.Id then
@@ -125,7 +115,6 @@ function WBP_Archive_BookTab_C:RefreshReddot()
     self.New:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Archive_BookTab_C:SetArchiveReddotRead()
   if self.Content and self.Content.Id then
     if not ReddotManager.GetTreeNode("ArchiveNewReadBook") then
@@ -138,5 +127,4 @@ function WBP_Archive_BookTab_C:SetArchiveReddotRead()
     end
   end
 end
-
 return WBP_Archive_BookTab_C

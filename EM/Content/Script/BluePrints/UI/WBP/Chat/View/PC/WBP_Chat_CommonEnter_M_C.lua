@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Com_ChatBtn.Button_Area.OnClicked:Add(self, self.OnClick)
   ReddotManager.AddListener(ChatCommon.ReddotName, self, function(self, Count)
@@ -18,10 +17,9 @@ function M:Construct()
     end
   end)
 end
-
 function M:Destruct()
+  ReddotManager.RemoveListener(ChatCommon.ReddotName, self)
 end
-
 function M:OnClick()
   self:PlayAnimation(self.Click)
   local Params = {
@@ -33,5 +31,4 @@ function M:OnClick()
     ChatMainUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 return M

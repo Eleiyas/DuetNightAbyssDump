@@ -1,10 +1,8 @@
 require("Unlua")
 local M = Class("BluePrints.Item.MiniGame.BP_MiniGame_C")
-
 function M:GetMonsterAnimTrans()
   return self.MonsterPosition:K2_GetComponentToWorld()
 end
-
 function M:TriggerFunctionOnSelf()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if self.IsGameSuccess or self.AlwaysSuccess then
@@ -23,7 +21,6 @@ function M:TriggerFunctionOnSelf()
     end
   end
 end
-
 function M:GetCanOpen()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState:IsInDungeon() then
@@ -39,5 +36,4 @@ function M:GetCanOpen()
     return
   end
 end
-
 return M

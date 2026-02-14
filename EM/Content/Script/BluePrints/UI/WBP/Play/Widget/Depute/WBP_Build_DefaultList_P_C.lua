@@ -2,16 +2,16 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
-  EventManager:AddEvent(EventID.EntryReceiveEnterState, self, self.OnEntryReceiveEnterState)
+  self:AddDispatcher(EventID.EntryReceiveEnterState, self, self.OnEntryReceiveEnterState)
+  self:AddDispatcher(EventID.GuilfWarLevelSelectReceiveEnterState, self, self.OnEntryReceiveEnterState)
   self.List_Default:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.List_Default:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   self.List_Default:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self.List_Default:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   self:AddInputMethodChangedListen()
-  EventManager:AddEvent(EventID.NightBookSpecialRightUp, self, self.OnSpecialRightUp)
+  self:AddDispatcher(EventID.NightBookSpecialRightUp, self, self.OnSpecialRightUp)
   self.IsShow = false
   self.Btn_Build:SetVisibility(UE4.ESlateVisibility.Collapsed)
   local ArmoryConfigData = {
@@ -37,7 +37,6 @@ function M:Construct()
   self.Text_Title_Armory:SetText(GText("UI_ArmourySquad_Title"))
   self.Text_Title_Default:SetText(GText("UI_CustomSquad_Title"))
 end
-
 function M:OnSpecialRightUp()
   local Parent = self.Parent
   if not Parent then
@@ -46,10 +45,13 @@ function M:OnSpecialRightUp()
   if Parent.GetName then
     DebugPrint("OnSpecialRightUp Parent", Parent:GetName())
   end
-  local hasFocusFn = type(Parent.IsFocusList) == "function"
-  local isFocus = hasFocusFn and Parent:IsFocusList() and true or false
-  local doOpen = not self.IsShow and (not hasFocusFn or not isFocus)
-  local doClose = self.IsShow and (not hasFocusFn or not isFocus)
+  local hasFocusListFn = type(Parent.IsFocusList) == "function"
+  local isFocusList = hasFocusListFn and Parent:IsFocusList() or false
+  local hasAutoNextFn = "function" == type(Parent.IsFocusAutoNextRound)
+  local isAutoNext = hasAutoNextFn and Parent:IsFocusAutoNextRound() or false
+  local allowToggle = not isFocusList and not isAutoNext
+  local doOpen = not self.IsShow and allowToggle
+  local doClose = self.IsShow and allowToggle
   if doOpen then
     self:OnOpenSquadGamepad()
     Parent.CurrentFocusType = "DefaultList"
@@ -57,26 +59,21 @@ function M:OnSpecialRightUp()
     self:OnCloseSquadGamepad()
   end
 end
-
 function M:OpeArmorynMenuAnchor()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:OpenDefaultMenuAnchor()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
   self.Btn_Qa_Default:PlayAnimation(self.Btn_Qa_Default.Click)
   self.Btn_Qa_Default.Btn_Click:SetChecked(true)
   self.Btn_Qa_Default:OpenMenuAnchor()
 end
-
 function M:IsMenuAnchorOpen()
   return self.Btn_Qa_Default:IsMenuAnchorOpen()
 end
-
 function M:CloseMenuAnchor()
   self.Btn_Qa_Default:CloseMenuAnchor()
 end
-
 function M:OnMenuOpenChangedCallBack(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -96,12 +93,12 @@ function M:OnMenuOpenChangedCallBack(bIsOpen)
     self.Btn_Close:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
-function M:Init(Parent, bDisablePhantom, Index, CurSelectedDungeonId)
+function M:Init(Parent, bDisablePhantom, Index, CurSelectedDungeonId, bGuildWar)
   self.Avatar = GWorld:GetAvatar()
   if not self.Avatar then
     return
   end
+  self.bGuildWar = bGuildWar
   self.CurSelectedDungeonId = CurSelectedDungeonId
   self.CurrentSquad = Index
   self.bDisablePhantom = bDisablePhantom
@@ -126,7 +123,6 @@ function M:Init(Parent, bDisablePhantom, Index, CurSelectedDungeonId)
     self.Team_Armory:UpSelected()
   end
 end
-
 function M:RefreshData()
   self.SquadList = self.Avatar.Squad
   self:UpdateSquadListInfo()
@@ -134,7 +130,6 @@ function M:RefreshData()
   self:UpdateCurrentDungeonSquad(self.CurrentSquad)
   self.Preview:InitSquadData(self, self.bDisablePhantom, self.CurrentSquad)
 end
-
 function M:OnGoToSystem()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   if 0 == self.CurrentSquad then
@@ -149,11 +144,9 @@ function M:OnGoToSystem()
     PageJumpUtils:JumpToTargetPage("SquadMainUINew", self.CurrentSquad)
   end
 end
-
 function M:UpdateCurrentDungeonSquad(Index)
   local function HandleEmptySquadView()
     self.CurrentSquad = 0
-    
     self.Preview:UpdateView(self.SquadNewInfo, Index)
     self.CurrentCharId = self.SquadNewInfo.CharId
     self.CurrentCharLevel = self.SquadNewInfo.CharLevel
@@ -169,7 +162,6 @@ function M:UpdateCurrentDungeonSquad(Index)
     self.Btn_Build:BindForbidStateExecuteEvent(self, self.OnForbiddenBtnClicked)
     EventManager:FireEvent(EventID.CurrentSquadChange, 0, false, self.CurSelectedDungeonId)
   end
-  
   if 0 == Index then
     HandleEmptySquadView()
     return
@@ -189,7 +181,6 @@ function M:UpdateCurrentDungeonSquad(Index)
   end
   HandleEmptySquadView()
 end
-
 function M:UpdateSquadListInfo()
   self.SquadInfoList = {}
   local Index = 0
@@ -248,7 +239,6 @@ function M:UpdateSquadListInfo()
   end
   self.SquadNewInfo.Name = GText("UI_ArmourySquad_Title")
 end
-
 function M:InitSquadList()
   self.List_Default:ClearListItems()
   for _, value in pairs(self.SquadInfoList) do
@@ -271,7 +261,6 @@ function M:InitSquadList()
   })
   self.Team_Armory:InitItemContent(self.SquadNewInfo, self)
 end
-
 function M:OnItemIsHoverChanged(Item, bIsHovered)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     local Entry = Item.UI
@@ -285,7 +274,6 @@ function M:OnItemIsHoverChanged(Item, bIsHovered)
     end
   end
 end
-
 function M:OnListItemSelected(Content)
   if not Content or self.CurSelectContent == Content then
     return
@@ -316,7 +304,6 @@ function M:OnListItemSelected(Content)
     Content.UI:SetIsSelected(true)
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.In then
     self.Btn_Close:SetVisibility(ESlateVisibility.Visible)
@@ -324,7 +311,6 @@ function M:OnAnimationFinished(InAnimation)
     self.Btn_Close:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnEntryReceiveEnterState(StackAction)
   if 1 == StackAction and self.IsShow then
     self:UpdatKeyDisplay("NotSelected")
@@ -332,28 +318,44 @@ function M:OnEntryReceiveEnterState(StackAction)
     self.Team_Armory:SetFocus()
   end
 end
-
 function M:OnOpenSquadGamepad()
   self.Preview.Parent = self
   self.Preview:OnClicked()
   if 0 == self.CurrentSquad then
-    self.Team_Armory:SetFocus()
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
+    self:AddTimer(0.1, function()
+      self:BlockAllUIInput(false)
+      self.Team_Armory:SetFocus()
+    end, false, 0, "OnOpenSquadGamepad")
     self.Team_Armory:OnMouseButtonDown()
   else
     self.List_Default:NavigateToIndex(0)
     self:UpdatKeyDisplay("")
   end
 end
-
 function M:OnCloseSquadGamepad()
   self.Preview.Parent = self
   self.Preview:OnClicked()
-  if self.Parent.SelectCell and not self.Parent.SelectCell.Bg_List.Button_Area:HasAnyUserFocus() and type(self.Parent.SelectCellFocus) == "function" then
-    self.Parent:SelectCellFocus()
+  if self.Parent.SelectCell then
+    local LevelButton
+    if not self.bGuildWar then
+      LevelButton = self.Parent.SelectCell.Bg_List.Button_Area
+    else
+      LevelButton = self.Parent.SelectCell.Btn_Click
+    end
+    if not LevelButton then
+      return
+    end
+    if not LevelButton:HasAnyUserFocus() and type(self.Parent.SelectCellFocus) == "function" then
+      self.Parent:SelectCellFocus()
+    end
   end
 end
-
 function M:InitWidgetInfoInGamePad()
+  self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(self)
+  if self.Mobile then
+    return
+  end
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
   end
@@ -387,7 +389,6 @@ function M:InitWidgetInfoInGamePad()
   self.Btn_Build:SetGamePadImg("X")
   self.Btn_Build:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -403,7 +404,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:ApplyPcUiLayout()
   if CommonUtils.GetDeviceTypeByPlatformName() == "Mobile" then
     return
@@ -414,7 +414,6 @@ function M:ApplyPcUiLayout()
   self.Preview.Key_Controller_Summon_Switch:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Btn_Build:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if not self.IsShow then
     return UWidgetBlueprintLibrary.UnHandled()
@@ -439,7 +438,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   local StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
   if not StyleOfPlay then
@@ -557,7 +555,6 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -571,7 +568,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonRight and self.Parent.FocusTypeName ~= "RewardWidget" then
@@ -597,12 +593,13 @@ function M:OnGamePadDown(InKeyName)
       self:OnForbiddenBtnClicked()
     end
     IsEventHandled = true
+  elseif "Gamepad_Special_Right" == InKeyName and self.bGuildWar then
+    self:OnSpecialRightUp()
+    IsEventHandled = true
   end
   return IsEventHandled
 end
-
 function M:OnForbiddenBtnClicked()
   UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "UI_ArmourySquad_Edit_Toast")
 end
-
 return M

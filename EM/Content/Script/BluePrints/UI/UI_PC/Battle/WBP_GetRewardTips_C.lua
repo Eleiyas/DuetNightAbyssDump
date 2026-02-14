@@ -5,7 +5,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Overridden.Construct(self)
   self:SetVisibility(ESlateVisibility.Collapsed)
@@ -21,12 +20,10 @@ function M:Construct()
     self.VerticalBox_Bottom:RemoveChildAt(2)
   end
 end
-
 function M:Destruct()
   self:StopAllAnimations()
   self:CleanTimer()
 end
-
 function M:OnUpdateTips(ItemId, ItemCount, TableName)
   self:SetVisibility(ESlateVisibility.Visible)
   if not self:AddValidTipsItem(ItemId, ItemCount, TableName) then
@@ -36,7 +33,6 @@ function M:OnUpdateTips(ItemId, ItemCount, TableName)
     table.insert(self.WaitingList[TableName], {ItemId, ItemCount})
   end
 end
-
 function M:AddValidTipsItem(ItemId, ItemCount, TableName)
   local ItemData = DataMgr[TableName][ItemId]
   if not ItemData then
@@ -87,7 +83,6 @@ function M:AddValidTipsItem(ItemId, ItemCount, TableName)
   end
   return false
 end
-
 function M:AddTopItem(ItemId, ItemCount, TableName)
   local ItemData = DataMgr[TableName][ItemId]
   if not ItemData then
@@ -120,11 +115,9 @@ function M:AddTopItem(ItemId, ItemCount, TableName)
   TipsItem:UpdateTips(ItemId, ItemCount, nil, TableName, bChangeBackground)
   return true
 end
-
 function M:LoadTipsItem(UIClass)
   return UE4.UWidgetBlueprintLibrary.Create(self, UIClass)
 end
-
 function M:OnTipsItemClose(InItem)
   if not InItem then
     return
@@ -143,7 +136,6 @@ function M:OnTipsItemClose(InItem)
     self:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:TryPlayOutAnimation()
   local OriItemCount = 0
   for i = 0, self.VerticalBox_Bottom:GetChildrenCount() - 1 do
@@ -155,9 +147,7 @@ function M:TryPlayOutAnimation()
     end
   end
 end
-
 function M:SpecialRewardIsCanUse()
   return self.WBP_Special_Reward:IsTipsCanUse()
 end
-
 return M

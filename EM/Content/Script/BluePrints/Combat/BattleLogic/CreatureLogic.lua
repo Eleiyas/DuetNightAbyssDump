@@ -1,33 +1,28 @@
 local Component = {}
-
 function Component:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.TalkPauseGame, self, self.ClearPauseRemovableCreature)
   EventManager:AddEvent(EventID.TalkResumeGame, self, self.ResetPauseCreature)
 end
-
 function Component:ReceiveEndPlay()
   EventManager:RemoveEvent(EventID.TalkPauseGame, self)
   EventManager:RemoveEvent(EventID.TalkResumeGame, self)
 end
-
 function Component:ClearPauseRemovableCreature()
   local Entities = self:GetAllEntities()
   for Eid, Ent in pairs(Entities) do
-    if Ent and Ent:IsSkillCreature() then
+    if Ent and not Ent:IsSkillCreature() then
       Ent:ClearPauseRemovableCreature()
     end
   end
 end
-
 function Component:ResetPauseCreature()
   local Entities = self:GetAllEntities()
   for Eid, Ent in pairs(Entities) do
-    if Ent and Ent:IsSkillCreature() then
+    if Ent and not Ent:IsSkillCreature() then
       Ent:ResetPauseCreature()
     end
   end
 end
-
 function Component:TargetFilterAndSetEndHitLocationOnFiringRay(SkillCreatureData, BornLocation, Direction)
   local CreatureConfig = DataMgr.RayCreature[SkillCreatureData.CreatureId]
   local RayCreatureConfig = CreatureConfig
@@ -92,7 +87,6 @@ function Component:TargetFilterAndSetEndHitLocationOnFiringRay(SkillCreatureData
   end
   return RealHitResult, RayHitLocation, FinalHitComponent
 end
-
 function Component:ExecuteRaySkillEffect(SkillCreatureData, OtherActor, RayHitLocation, HitComponent)
   local Source = SkillCreatureData.Source
   local CreatureConfig = DataMgr.RayCreature[SkillCreatureData.CreatureId]
@@ -125,11 +119,11 @@ function Component:ExecuteRaySkillEffect(SkillCreatureData, OtherActor, RayHitLo
   if CreatureConfig.SkillEffectsDelayTime and CreatureConfig.SkillEffectsDelayTime > 0 then
     RealSource:AddTimer_Combat(CreatureConfig.SkillEffectsDelayTime, function()
       local CollisionName = HitComponent and UE4.UKismetSystemLibrary.GetObjectName(HitComponent) or ""
-      RealSource:SetString("CollisionName", CollisionName)
       local SkillEffectInfo = FSkillEffectInfo()
       SkillEffectInfo.IsLaunchRayCreature = true
       SkillEffectInfo.MultiShootValue = MultiShootValue
       SkillEffectInfo.RayHitLoc = RayHitLocation
+      SkillEffectInfo.CollisionName = CollisionName
       for _, EffectId in pairs(Effects) do
         local SkillLevelStruct = FSkillLevelStruct()
         SkillLevelStruct.SkillLevel = SkillLevel
@@ -139,11 +133,11 @@ function Component:ExecuteRaySkillEffect(SkillCreatureData, OtherActor, RayHitLo
     end)
   else
     local CollisionName = HitComponent and UE4.UKismetSystemLibrary.GetObjectName(HitComponent) or ""
-    RealSource:SetString("CollisionName", CollisionName)
     local SkillEffectInfo = FSkillEffectInfo()
     SkillEffectInfo.IsLaunchRayCreature = true
     SkillEffectInfo.MultiShootValue = MultiShootValue
     SkillEffectInfo.RayHitLoc = RayHitLocation
+    SkillEffectInfo.CollisionName = CollisionName
     for _, EffectId in pairs(Effects) do
       local SkillLevelStruct = FSkillLevelStruct()
       SkillLevelStruct.SkillLevel = SkillLevel
@@ -152,7 +146,6 @@ function Component:ExecuteRaySkillEffect(SkillCreatureData, OtherActor, RayHitLo
     end
   end
 end
-
 function Component:FiringRaySkillCreature(SkillCreatureData)
   local CreatureId = SkillCreatureData.CreatureId
   local CreatureConfig = DataMgr.RayCreature[CreatureId]
@@ -162,13 +155,6 @@ function Component:FiringRaySkillCreature(SkillCreatureData)
   local BornLocation = self:CalcRayBornLocation(Source, CreatureId)
   SkillCreatureData.BornLocation = BornLocation
   local Distance = SkillCreatureData.Distance
-  if CreatureConfig.AllowAttackRangeModify then
-    local LocalRanges = {1}
-    self:ApplyRangeModify(SkillCreatureData.Source, {
-      AttackRangeType = CreatureConfig.AttackRangeType
-    }, LocalRanges)
-    Distance = Distance * LocalRanges[1]
-  end
   if CreatureConfig.AllowSkillRangeModify then
     local LocalRanges = {1}
     self:ApplyRangeModify(SkillCreatureData.Source, {AllowSkill = 1}, LocalRanges)
@@ -187,13 +173,11 @@ function Component:FiringRaySkillCreature(SkillCreatureData)
   end
   self["RayStrategy" .. Strategy](self, SkillCreatureData)
 end
-
 function Component:RayStrategy1(SkillCreatureData)
   local RayCreature = self:CreateRayCreature(SkillCreatureData, false, false)
   RayCreature:InitRaySkillEffectInfo(SkillCreatureData.MultiShootValue, SkillCreatureData.Skill, SkillCreatureData.SkillLevelInfo)
   RayCreature:RefreshTargetEffect()
 end
-
 function Component:RayStrategy2(SkillCreatureData)
   local Source = SkillCreatureData.Source
   local CreatureId = SkillCreatureData.CreatureId
@@ -213,13 +197,11 @@ function Component:RayStrategy2(SkillCreatureData)
     self:ExecuteRaySkillEffect(SkillCreatureData, HitResults[i].Actor, RayHitLocation, HitComponent)
   end
 end
-
 function Component:RayStrategy3(SkillCreatureData)
   local RayCreature = self:CreateRayCreature(SkillCreatureData, false, true)
   RayCreature:InitRaySkillEffectInfo(SkillCreatureData.MultiShootValue, SkillCreatureData.Skill, SkillCreatureData.SkillLevelInfo)
   RayCreature:RefreshTargetEffect()
 end
-
 function Component:RayStrategy4(SkillCreatureData)
   local Source = SkillCreatureData.Source
   local CreatureId = SkillCreatureData.CreatureId
@@ -233,5 +215,4 @@ function Component:RayStrategy4(SkillCreatureData)
     self:ExecuteRaySkillEffect(SkillCreatureData, HitResults[i].Actor, RayHitLocation, HitComponent)
   end
 end
-
 return Component

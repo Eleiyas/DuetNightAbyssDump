@@ -5,18 +5,19 @@ local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local TimeUtils = require("Utils.TimeUtils")
 local CdnTool = require("BluePrints/UI/GameLogin/CdnTool")
 local MiscUtils = require("Utils.MiscUtils")
+local SettingUtils = require("Utils.SettingUtils")
 local WBP_GameStartMainPage_C = Class("BluePrints.UI.BP_UIState_C")
 WBP_GameStartMainPage_C._components = {
   "BluePrints.UI.WBP.Announcement.View.WBP_LoginMainComponent_Announcement"
 }
 local RightBottomBtnName = {
+  "Log",
   "Fix",
   "Set",
   "Support",
   "Announcement",
   "Back"
 }
-
 function WBP_GameStartMainPage_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.AccountId = ""
@@ -36,7 +37,6 @@ function WBP_GameStartMainPage_C:Initialize(Initializer)
   self.PatchFinish = false
   self.bRetryRedownload = false
 end
-
 function WBP_GameStartMainPage_C:ReceiveEnterState(EnteredState)
   self.Super.ReceiveEnterState(self, EnteredState)
   if 1 == EnteredState then
@@ -47,14 +47,12 @@ function WBP_GameStartMainPage_C:ReceiveEnterState(EnteredState)
     self.bIsFocusable = true
   end
 end
-
 function WBP_GameStartMainPage_C:ReceiveExitState(ExitedState)
   if 0 == ExitedState then
   else
     self:DestroyObject()
   end
 end
-
 function WBP_GameStartMainPage_C:BindPatchDelegate()
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   HotUpdateSubsystem.AssetStartDownloadDelegate:Bind(self, self.OnAssetStartDownload)
@@ -66,7 +64,6 @@ function WBP_GameStartMainPage_C:BindPatchDelegate()
   HotUpdateSubsystem.RepairGameFailedDelegate:Bind(self, self.OnRepairGameFailed)
   HotUpdateSubsystem.OnExamineDelegate:Add(self, self.OnExamineChanged)
 end
-
 function WBP_GameStartMainPage_C:Construct()
   self.Super.Construct(self)
   if UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
@@ -83,8 +80,7 @@ function WBP_GameStartMainPage_C:Construct()
   end
   local bank = LoadObject("/Game/Asset/Audio/FMOD/Banks/ambience/ambience_login.ambience_login")
   UFMODBlueprintStatics.LoadBank(bank, true, true)
-  AudioManager(self):PlayFMODSound(self, nil, "event:/bgm/cbt01/0015_login", "LoginBGM")
-  AudioManager(self):PlayFMODSound(self, nil, "event:/ambience/2d/login", "LoginAmb")
+  self:PlayAudio()
   self:PlayAnimation(self.Click)
   self.IsQuickLogin = not HeroUSDKUtils.IsEnable()
   if not self.IsQuickLogin and HeroUSDKUtils.HasLogin() then
@@ -122,6 +118,7 @@ function WBP_GameStartMainPage_C:Construct()
   self.Btn_Close:BindEventOnClicked(self, self.ExitGame)
   self.Btn_Back:BindEventOnClicked(self, self.SwitchAccount)
   self.Btn_Fix:BindEventOnClicked(self, self.RepairGame)
+  self.Btn_Log:BindEventOnClicked(self, self.OpenLogDialog)
   self.Btn_Set:BindEventOnClicked(self, self.OnClickSet)
   self.Btn_Set:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(TimeUtils.NowTime())
@@ -189,15 +186,41 @@ function WBP_GameStartMainPage_C:Construct()
     self.MediaPlayer:Pause()
     self.WidgetSwitcher_Bg:SetActiveWidgetIndex(1)
   end
+  UIManager(self):InitGlobalVersionDisplay()
 end
-
+function WBP_GameStartMainPage_C:PlayAudio()
+  AudioManager(self):PlayFMODSound(self, nil, "event:/bgm/cbt01/0015_login", "LoginBGM")
+  local PlayStruct = FPlayFMODSoundStruct()
+  PlayStruct.FMODEventPath = "event:/ambience/2d/login"
+  PlayStruct.EventKey = "LoginAmb"
+  PlayStruct.bStopWhenAttachedToDestoryed = true
+  PlayStruct.DynamicAfterSoundPlayFinish = {
+    self,
+    function()
+      self:OnAmbienceSoundPlayed()
+    end
+  }
+  PlayStruct = UE4.UAudioManager.SetObjectToFPlayFMODSoundStruct(PlayStruct, self)
+  AudioManager(self):PlayFMODSound_Async(PlayStruct)
+end
+function WBP_GameStartMainPage_C:OnAmbienceSoundPlayed()
+  self:AddTimer(0.1, function()
+    local Time = math.floor(UKismetMathLibrary.GetTotalSeconds(self.MediaPlayer:GetTime()) * 1000)
+    DebugPrint("Video Pos", Time)
+    AudioManager(self):SetEventInstanceTimelinePosition(AudioManager(self):GetPlayingFMODEventInstance(self, "LoginAmb"), Time)
+    self.MediaPlayer.OnPlaybackResumed:Add(self, self.OnVideoBegin)
+  end, false)
+end
+function WBP_GameStartMainPage_C:OnVideoBegin()
+  DebugPrint("Login Main Page Video Restart")
+  AudioManager(self):SetEventSoundParam(self, "LoginAmb", {ToStart = 1})
+end
 function WBP_GameStartMainPage_C:OnExamineChanged()
   if AHotUpdateGameMode.IsExamineDistribution() then
     self.MediaPlayer:Pause()
     self.WidgetSwitcher_Bg:SetActiveWidgetIndex(1)
   end
 end
-
 function WBP_GameStartMainPage_C:InitWidgetInfoInGamePad()
   self.KeyControllerClose:CreateCommonKey({
     KeyInfoList = {
@@ -246,7 +269,6 @@ function WBP_GameStartMainPage_C:InitWidgetInfoInGamePad()
     end
   end
 end
-
 function WBP_GameStartMainPage_C:Tick(MyGeometry, InDeltaTime)
   if not self.bIsDownloading then
     return
@@ -288,13 +310,12 @@ function WBP_GameStartMainPage_C:Tick(MyGeometry, InDeltaTime)
   end
   self.TickSpeedDuration = self.TickSpeedInterval
 end
-
 function WBP_GameStartMainPage_C:OnLogout()
   if GWorld.NetworkMgr then
     GWorld.NetworkMgr:Disconnect()
   end
   if not GWorld.IsDev then
-    self.ServerInfo = nil
+    self:SetServerInfo(nil)
   end
   self.UID:HideUid()
   self.UID:SetUid()
@@ -307,9 +328,7 @@ function WBP_GameStartMainPage_C:OnLogout()
     HeroUSDKSubsystem(self):HeroSDKLogin()
   end
   self.Panel_OverSeaSeverSelect:SetVisibility(ESlateVisibility.Collapsed)
-  self.Btn_Announcement:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_GameStartMainPage_C:ShowPatchUI()
   self.Group_Patches:SetVisibility(ESlateVisibility.Collapsed)
   self:PlayAnimation(self.CheckPatch_In)
@@ -317,13 +336,11 @@ function WBP_GameStartMainPage_C:ShowPatchUI()
   self.Group_DownloadPatch:SetVisibility(ESlateVisibility.Collapsed)
   self.Text_CheckPatch:SetText(GText("UI_Loading_Checking"))
 end
-
 function WBP_GameStartMainPage_C:PreBindDelegates()
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   HotUpdateSubsystem.OnCompilePSODelegateStart:Add(self, self.OnCompilePSODelegateStart)
   HotUpdateSubsystem.OnCompilePSODelegateTick:Add(self, self.OnCompilePSODelegateTick)
 end
-
 function WBP_GameStartMainPage_C:BindDelegates()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   EventManager:AddEvent(EventID.OnGetAllAvatars, self, self.OnGetAllAvatars)
@@ -339,21 +356,30 @@ function WBP_GameStartMainPage_C:BindDelegates()
   self.Btn_Close:Construct()
   self.Btn_Back:Construct()
   self.Btn_Fix:Construct()
+  self.Btn_Log:Construct()
   self.Btn_Set:Construct()
   self.Btn_Support:Construct()
   self.Btn_Close:BindEventOnClicked(self, self.ExitGame)
   self.Btn_Back:BindEventOnClicked(self, self.SwitchAccount)
   self.Btn_Fix:BindEventOnClicked(self, self.RepairGame)
+  self.Btn_Log:BindEventOnClicked(self, self.OpenLogDialog)
   self.Btn_Set:BindEventOnClicked(self, self.OnClickSet)
   self.Btn_Support:BindEventOnClicked(self, self.OnClickSupport)
   self.Btn_ChangeOverSeaSever.OnClicked:Add(self, self.OnClickServerSelect)
   self:BindForAnnouncement()
 end
-
 function WBP_GameStartMainPage_C:OnCloseLoading()
-  HeroUSDKSubsystem(self):HeroSDKLogin()
+  if not self.RealPatchFinish then
+    return
+  end
+  DebugPrint("OnCloseLoading bAccountCancallation :", tostring(HeroUSDKSubsystem(self).bAccountCancallation))
+  local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName()
+  if "IOS" == PlatformName and HeroUSDKSubsystem(self).bAccountCancallation then
+    HeroUSDKSubsystem(self).bAccountCancallation = false
+  else
+    HeroUSDKSubsystem(self):HeroSDKLogin()
+  end
 end
-
 function WBP_GameStartMainPage_C:OnClickServerSelect()
   local RecommandSelectHostnum
   if self.RecommandServerInfo then
@@ -378,7 +404,7 @@ function WBP_GameStartMainPage_C:OnClickServerSelect()
         return
       end
       if not GWorld.GetAvatarInfos[ServerInfo.hostnum] then
-        ServerInfos = {}
+        local ServerInfos = {}
         for k, v in pairs(self.ServerInfos) do
           if v.area == ServerInfo.area then
             ServerInfos[k] = v
@@ -386,7 +412,7 @@ function WBP_GameStartMainPage_C:OnClickServerSelect()
         end
         ServerInfo = self:RandomServerInfo(ServerInfos)
       end
-      self.ServerInfo = ServerInfo
+      self:SetServerInfo(ServerInfo)
       self.VB_ServerLocation:SetVisibility(ESlateVisibility.Visible)
       self.Text_ServerLoaction:SetText(GText(ServerInfo.area))
       self.Text_OverSeaSeverTitle:SetText(GText(ServerInfo.area))
@@ -394,9 +420,8 @@ function WBP_GameStartMainPage_C:OnClickServerSelect()
   }
   UIManager(self):ShowCommonPopupUI(100244, Params)
 end
-
 function WBP_GameStartMainPage_C:RandomServerInfo(InServerInfos)
-  if not InServerInfos or not next(InServerInfos) then
+  if not InServerInfos or 0 == CommonUtils.TableLength(InServerInfos) then
     return nil
   end
   local ServerList = {}
@@ -406,6 +431,7 @@ function WBP_GameStartMainPage_C:RandomServerInfo(InServerInfos)
     end
   end
   if 0 == #ServerList then
+    DebugPrint("WBP_GameStartMainPage_C:RandomServerInfo No Recommend Server, Use All Servers")
     for _, ServerInfo in pairs(InServerInfos) do
       table.insert(ServerList, ServerInfo)
     end
@@ -432,19 +458,24 @@ function WBP_GameStartMainPage_C:RandomServerInfo(InServerInfos)
   local RandomIndex = math.random(1, #ServerList)
   return ServerList[RandomIndex]
 end
-
 function WBP_GameStartMainPage_C:OnGetAllAvatars()
   DebugPrint("OnGetAllAvatars")
   self:ResetGetAllAvatarsBlock()
-  self.ServerInfo = nil
+  self:SetServerInfo(nil)
+  self.RecommandServerInfo = nil
   local CachedServerInfo = EMCache:Get("CacheServerInfo")
   if CachedServerInfo and CachedServerInfo.ServerInfo and CachedServerInfo.SdkUserId == HeroUSDKUtils.GetUserInfo().sdkUserId then
+    DebugPrint("OnGetAllAvatars Use Cache ServerInfo", CachedServerInfo.ServerInfo.hostnum, CachedServerInfo.SdkUserId)
     for _, ServerInfo in pairs(self.ServerInfos) do
       if ServerInfo.hostnum == CachedServerInfo.ServerInfo.hostnum then
-        self.ServerInfo = ServerInfo
+        self:SetServerInfo(ServerInfo)
         break
       end
     end
+  end
+  if self.ServerInfo and not GWorld.GetAvatarInfos[self.ServerInfo.hostnum] then
+    DebugPrint("OnGetAllAvatars Cache ServerInfo Invalid, Clear it")
+    self:SetServerInfo(nil)
   end
   if AHotUpdateGameMode.IsGlobalPak() then
     self.Panel_OverSeaSeverSelect:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -460,7 +491,8 @@ function WBP_GameStartMainPage_C:OnGetAllAvatars()
       if MaxLevelHostnum then
         for _, ServerInfo in pairs(self.ServerInfos) do
           if ServerInfo.hostnum == MaxLevelHostnum then
-            self.ServerInfo = ServerInfo
+            self:SetServerInfo(ServerInfo)
+            DebugPrint("OnGetAllAvatars Select ServerInfo by Max Level Avatar Hostnum", self.ServerInfo.hostnum)
             break
           end
         end
@@ -477,7 +509,8 @@ function WBP_GameStartMainPage_C:OnGetAllAvatars()
               end
             end
           end
-          self.ServerInfo = self:RandomServerInfo(ServerInfos)
+          self:SetServerInfo(self:RandomServerInfo(ServerInfos))
+          DebugPrint("OnGetAllAvatars Select ServerInfo by RegionCode", RegionCode, self.ServerInfo and self.ServerInfo.hostnum or "nil")
         end
         if not self.ServerInfo then
           local ServerList = {}
@@ -495,26 +528,29 @@ function WBP_GameStartMainPage_C:OnGetAllAvatars()
                 table.insert(NewServerInfos, ServerInfo)
               end
             end
-            self.ServerInfo = self:RandomServerInfo(NewServerInfos)
+            self:SetServerInfo(self:RandomServerInfo(NewServerInfos))
+            DebugPrint("OnGetAllAvatars Select ServerInfo by Alphabetical Order", self.ServerInfo and self.ServerInfo.hostnum or "nil")
           end
         end
       end
     end
     if not self.ServerInfo then
       HeroUSDKSubsystem(self):UploadTrackLog_Lua("login_fail", {
-        fail_info = "ServerInfo\230\152\175nil"
+        fail_info = "ServerInfo是nil"
       })
       return
     end
     self.VB_ServerLocation:SetVisibility(ESlateVisibility.Visible)
     self.Text_ServerLoaction:SetText(GText(self.ServerInfo.area))
     self.Text_OverSeaSeverTitle:SetText(GText(self.ServerInfo.area))
-  elseif not next(GWorld.GetAvatarInfos) then
-    self.ServerInfo = self:RandomServerInfo(self.ServerInfos)
+  elseif 0 == CommonUtils.TableLength(GWorld.GetAvatarInfos) then
+    DebugPrint("OnGetAllAvatars No Avatar, Random Select ServerInfo")
+    self:SetServerInfo(self:RandomServerInfo(self.ServerInfos))
   elseif not self.ServerInfo then
     for _, Avatar in pairs(GWorld.GetAvatarInfos) do
       if self.ServerInfos[Avatar.Hostnum] then
-        self.ServerInfo = self.ServerInfos[Avatar.Hostnum]
+        self:SetServerInfo(self.ServerInfos[Avatar.Hostnum])
+        DebugPrint("OnGetAllAvatars Select ServerInfo by Avatar Hostnum", self.ServerInfo.hostnum)
         break
       end
     end
@@ -522,7 +558,7 @@ function WBP_GameStartMainPage_C:OnGetAllAvatars()
   if not self.ServerInfo then
     HeroUSDKSubsystem(self):HeroSDKLogout()
     HeroUSDKSubsystem(self):UploadTrackLog_Lua("login_fail", {
-      fail_info = "ServerInfo\230\152\175nil"
+      fail_info = "ServerInfo是nil"
     })
     UIManager(self):ShowCommonPopupUI(100109)
   else
@@ -530,27 +566,40 @@ function WBP_GameStartMainPage_C:OnGetAllAvatars()
   end
   self.RecommandServerInfo = self.ServerInfo
 end
-
 function WBP_GameStartMainPage_C:OnCompilePSODelegateStart(NumPrecompilesRemaining, NumPrecompilesComplete)
   DebugPrint("OnCompilePSODelegateStart", NumPrecompilesRemaining, NumPrecompilesComplete)
   self.Progress_Download:SetVisibility(ESlateVisibility.Visible)
   self.Progress_Download:SetPercent(NumPrecompilesComplete / (NumPrecompilesRemaining + NumPrecompilesComplete))
   self.Text_CheckPatch:SetText(string.format(GText("UI_Login_Shader"), string.format("%.1f", NumPrecompilesComplete / (NumPrecompilesRemaining + NumPrecompilesComplete) * 100)))
+  local CompiledPSONum = EMCache:Get("CompiledPSONum") or -100
+  if CompiledPSONum >= 0 then
+    EMCache:Set("LastCompiledPSONum", CompiledPSONum)
+    EMCache:Set("CompiledPSONum", nil)
+  end
+  self:SaveCompiledPSONum(NumPrecompilesComplete)
 end
-
 function WBP_GameStartMainPage_C:OnCompilePSODelegateTick(NumPrecompilesRemaining, NumPrecompilesComplete)
   DebugPrint("OnCompilePSODelegateTick", NumPrecompilesRemaining, NumPrecompilesComplete)
   self.Progress_Download:SetPercent(NumPrecompilesComplete / (NumPrecompilesRemaining + NumPrecompilesComplete))
   self.Text_CheckPatch:SetText(string.format(GText("UI_Login_Shader"), string.format("%.1f", NumPrecompilesComplete / (NumPrecompilesRemaining + NumPrecompilesComplete) * 100)))
+  self:SaveCompiledPSONum(NumPrecompilesComplete)
 end
-
+function WBP_GameStartMainPage_C:SaveCompiledPSONum(NumPrecompilesComplete)
+  local LastSavedNum = EMCache:Get("CompiledPSONum") or -100
+  local LastDivisor = LastSavedNum // 100
+  local Divisor = NumPrecompilesComplete // 100
+  if LastDivisor < Divisor then
+    DebugPrint("SaveCompiledPSONum", NumPrecompilesComplete)
+    EMCache:Set("CompiledPSONum", NumPrecompilesComplete)
+    EMCache:SaveCommon()
+  end
+end
 function WBP_GameStartMainPage_C:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Touch then
     return
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputType, CurGamepadName)
 end
-
 function WBP_GameStartMainPage_C:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   local IsUseGamePad = CurInputType == ECommonInputType.Gamepad
   if self.IsInRightBtnSelectState then
@@ -559,7 +608,6 @@ function WBP_GameStartMainPage_C:OnUpdateUIStyleByInputTypeChange(CurInputType, 
   self:UpdateUIStyleInPlatform(IsUseGamePad)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
 end
-
 function WBP_GameStartMainPage_C:UpdateUIStyleInPlatform(IsUseGamePad)
   local ActiveWidgetIndex = IsUseGamePad and 1 or 0
   self.WS_Close:SetActiveWidgetIndex(ActiveWidgetIndex)
@@ -588,7 +636,6 @@ function WBP_GameStartMainPage_C:UpdateUIStyleInPlatform(IsUseGamePad)
     end
   end
 end
-
 function WBP_GameStartMainPage_C:GetServerIdStr()
   if not AHotUpdateGameMode.IsGlobalPak() then
     return "Default"
@@ -600,7 +647,6 @@ function WBP_GameStartMainPage_C:GetServerIdStr()
     return GWorld.ChooseServerArea
   end
 end
-
 function WBP_GameStartMainPage_C:GetDefaultServerInfo()
   if not self.ServerInfo then
     self.ServerInfo = {}
@@ -613,12 +659,12 @@ function WBP_GameStartMainPage_C:GetDefaultServerInfo()
         self.ServerInfo.port = v.port
         break
       end
+      self:SetServerInfo(self.ServerInfo)
     end
   end
 end
-
 function WBP_GameStartMainPage_C:Destruct()
-  DebugPrint("\231\153\187\229\189\149\231\149\140\233\157\162\230\158\144\230\158\132 Destruct \229\188\128\229\167\139\239\188\154", UE4.URuntimeCommonFunctionLibrary.GetInputMode(self:GetWorld()))
+  DebugPrint("登录界面析构 Destruct 开始：", UE4.URuntimeCommonFunctionLibrary.GetInputMode(self:GetWorld()))
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   HotUpdateSubsystem.AssetStartDownloadDelegate:Unbind()
   HotUpdateSubsystem.AssetDownloadProgressDelegate:Unbind()
@@ -633,15 +679,15 @@ function WBP_GameStartMainPage_C:Destruct()
   AudioManager(self):StopSound(self, "LoginAmb")
   self:UnbindForAnnouncement()
   self.Super.Destruct(self)
+  self.MediaPlayer.OnPlaybackResumed:Clear()
   self.MediaPlayer:Close()
   AudioManager(self):StopObjectAllSound(self)
   self:ClearOpenAnnouncementAsync()
   EventManager:RemoveEvent(EventID.OnLoginSuccess, self)
   EventManager:RemoveEvent(EventID.OnGetAllAvatars, self)
   EventManager:RemoveEvent(EventID.CloseLoading, self)
-  DebugPrint("\231\153\187\229\189\149\231\149\140\233\157\162\230\158\144\230\158\132 Destruct \231\187\147\230\157\159\239\188\154", UE4.URuntimeCommonFunctionLibrary.GetInputMode(self:GetWorld()))
+  DebugPrint("登录界面析构 Destruct 结束：", UE4.URuntimeCommonFunctionLibrary.GetInputMode(self:GetWorld()))
 end
-
 function WBP_GameStartMainPage_C:OnLoginSuccess()
   if not GWorld.IsDev then
     EMCache:Set("CacheServerInfo", {
@@ -653,7 +699,6 @@ function WBP_GameStartMainPage_C:OnLoginSuccess()
   local CdnTool = require("BluePrints/UI/GameLogin/CdnTool")
   CdnTool:GetCdnHideData(self.ServerInfo.hostnum)
 end
-
 function WBP_GameStartMainPage_C:TryToGoToHomeCity()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -661,11 +706,9 @@ function WBP_GameStartMainPage_C:TryToGoToHomeCity()
   self:PlayAnimation(self.Out)
   self.IsGoToHomeCity = true
 end
-
 function WBP_GameStartMainPage_C:EnterMainCity()
   WorldTravelSubsystem():ChangeSceneByAssetPath(Const.DefaultMainCityFile)
 end
-
 function WBP_GameStartMainPage_C:GetAllAvatars()
   self:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   self.ServerInfos = nil
@@ -702,7 +745,6 @@ function WBP_GameStartMainPage_C:GetAllAvatars()
     end
   end, false, 0, "GetAllAvatarsTimer")
 end
-
 function WBP_GameStartMainPage_C:ConnectServer()
   DebugPrint("OnClicked Login Button")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_enter_game", nil, nil)
@@ -731,7 +773,6 @@ function WBP_GameStartMainPage_C:ConnectServer()
   end
   self:EMLogin()
 end
-
 function WBP_GameStartMainPage_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
   if self.bSwitchAccount then
     return
@@ -742,12 +783,12 @@ function WBP_GameStartMainPage_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
   self.UID:HideUid()
   self.UID:SetUid()
   if not GWorld.IsDev then
-    self.ServerInfo = nil
+    self:SetServerInfo(nil)
   end
   local Json = require("rapidjson")
   if 0 == Result then
     self:SetSwitchBtnVisable(true)
-    DebugPrint("HeroSDK\231\153\187\229\189\149\230\136\144\229\138\159: ", UserInfoStr, Msg)
+    DebugPrint("HeroSDK登录成功: ", UserInfoStr, Msg)
     DebugPrint("sdk user id", HeroUSDKUtils.GetUserInfo().sdkUserId, type(HeroUSDKUtils.GetUserInfo().sdkUserId))
     HeroUSDKSubsystem(self):SetNewBDCPublicAttriubuteOnInit()
     local BDCSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, UNewBdcSubsystem)
@@ -768,7 +809,6 @@ function WBP_GameStartMainPage_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
     if GWorld.IsDev then
       self.Text_Login:SetText(GText("UI_LOGIN_ENTERGAME"))
     end
-    
     local function LoginFunc()
       if AHotUpdateGameMode.IsExamineDistribution() then
         local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -788,8 +828,7 @@ function WBP_GameStartMainPage_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
         end
         assert(ExamineServerInfo, "ExamineServerInfo is nil, ChannelId: " .. HeroUSDKSubsystem(self):GetChannelId() .. " MirrorChannelId: " .. MirrorChannelId)
         local HostNum = ExamineServerInfo.HostNum
-        self.ServerInfo = {}
-        self.ServerInfo.hostnum = HostNum
+        self:SetServerInfo({hostnum = HostNum})
       elseif GWorld.IsDev then
         self:LoadLoginInfo()
       else
@@ -799,16 +838,14 @@ function WBP_GameStartMainPage_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
       end
       self:OpenAnnouncementOnce(true)
     end
-    
     LoginFunc()
     self:SendInputDiviceChangeMessage()
   elseif -1 == Result then
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Login_Fail"))
     HeroUSDKSubsystem(self):UploadTrackLog("sdk_login", Json.encode({login_state = 2}))
-    DebugPrint("HeroSDK\231\153\187\229\189\149\229\164\177\232\180\165: ", Msg)
+    DebugPrint("HeroSDK登录失败: ", Msg)
   end
 end
-
 function WBP_GameStartMainPage_C:LoginIOSGameCenter()
   UEPrint("LoginIOSGameCenter")
   local PlatformName = UGameplayStatics.GetPlatformName()
@@ -819,7 +856,6 @@ function WBP_GameStartMainPage_C:LoginIOSGameCenter()
   local Proxy = UE4.UShowLoginUICallbackProxy.ShowExternalLoginUI(GWorld.GameInstance, PlayerController)
   Proxy:Activate()
 end
-
 function WBP_GameStartMainPage_C:EMLogin()
   DebugPrint("Tianyi@ Start EMLogin....")
   self.IsQuickLogin = not HeroUSDKUtils.IsEnable()
@@ -833,9 +869,8 @@ function WBP_GameStartMainPage_C:EMLogin()
     return
   end
   local bUploaded = false
-  
   local function TimerFunc()
-    self:AddTimer(2, function()
+    self:AddTimer(3, function()
       local GameInstance = self:GetGameInstance()
       if GWorld.NetworkMgr then
         DebugPrint("Disconnecting existing network connection...")
@@ -868,11 +903,10 @@ function WBP_GameStartMainPage_C:EMLogin()
       end)
     end, false, 0, "LoadLoadingReconnect")
   end
-  
   local function LoginFunc()
     if GWorld.IsDev then
       if not self.ServerInfo or type(self.ServerInfo) == "table" and next(self.ServerInfo) == nil then
-        DebugPrint("\229\188\128\229\143\145\230\168\161\229\188\143\228\184\139\239\188\140\230\156\170\233\128\137\230\139\169\230\156\141\229\138\161\229\153\168\239\188\129\239\188\129\239\188\129")
+        DebugPrint("开发模式下，未选择服务器！！！")
       else
         local hostnum = self.ServerInfo.hostnum
         local ip = self.ServerInfo.ip
@@ -900,8 +934,7 @@ function WBP_GameStartMainPage_C:EMLogin()
       local Ip = ExamineServerInfo.IP
       local Port = ExamineServerInfo.Port
       DebugPrint("ExamineServerInfo", HostNum, Ip, Port)
-      self.ServerInfo = {}
-      self.ServerInfo.hostnum = HostNum
+      self:SetServerInfo({hostnum = HostNum})
       GWorld.NetworkMgr:ConnectServer(HostNum, Ip, Port, self.AccountId, self.IsQuickLogin)
       TimerFunc()
     else
@@ -909,11 +942,9 @@ function WBP_GameStartMainPage_C:EMLogin()
       TimerFunc()
     end
   end
-  
   LoginFunc()
   self:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
 end
-
 function WBP_GameStartMainPage_C:SwitchAccount()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if self.bLogin then
@@ -932,40 +963,40 @@ function WBP_GameStartMainPage_C:SwitchAccount()
   end
   HeroUSDKSubsystem(self):EMHeroSDKSwitchAccount()
 end
-
 function WBP_GameStartMainPage_C:DeleteFileAndReentryGame()
   local GameMode = UGameplayStatics.GetGameMode(self)
   GameMode:RepairGame()
 end
-
 function WBP_GameStartMainPage_C:RepairGame()
   local Params = {}
   Params.RightCallbackObj = self
   Params.RightCallbackFunction = self.DeleteFileAndReentryGame
   UIManager(self):ShowCommonPopupUI(100186, Params, self)
 end
-
+function WBP_GameStartMainPage_C:OpenLogDialog()
+  local Params = {
+    Parent = self,
+    Data = {}
+  }
+  UIManager(self):ShowCommonPopupUI(100304, Params, self)
+end
 function WBP_GameStartMainPage_C:OnSwitchAccount(Result, Msg)
   if 0 == Result then
     self:OnLogout()
   end
   DebugPrint("HERO SDK SWITCH ACCOUNT : ", Result, Msg)
 end
-
 function WBP_GameStartMainPage_C:ReleaseLoginBtn()
   self.bLogin = false
   DebugPrint("Login cooldown complete")
 end
-
 function WBP_GameStartMainPage_C:TryToVerifyAccount()
   self.AccountId = self.EditableText_Account:GetText()
   self:AddTimer(0.5, self.LoginAccountCallback)
 end
-
 function WBP_GameStartMainPage_C:LoginAccountCallback()
   self.IsVerifyAccount = true
 end
-
 function WBP_GameStartMainPage_C:ShowServerSelect()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -981,29 +1012,26 @@ function WBP_GameStartMainPage_C:ShowServerSelect()
   end
   self.WidgetSwitcher_Server:SetActiveWidgetIndex(1)
 end
-
 function WBP_GameStartMainPage_C:DevLoginServer(HostNum, Account)
   local DevServerList = require("BluePrints/UI/GameLogin/DevServerList")
   local Server = DevServerList[HostNum]
   GWorld.NetworkMgr:ConnectServer(Server.hostnum, Server.ip, Server.port, Account, true)
 end
-
 function WBP_GameStartMainPage_C:VerifyServerInfo()
   if self.Widget_ServerSelect ~= nil and self.Widget_ServerSelect.IsSelectionChanged == true then
     self.Widget_ServerSelect.IsSelectionChanged = false
-    self.ServerInfo = {
+    self:SetServerInfo({
       hostnum = self.Widget_ServerSelect.SelectedServer.HostId,
       name = self.Widget_ServerSelect.SelectedServer.Name,
       area = self.Widget_ServerSelect.SelectedServer.Area,
       ip = self.Widget_ServerSelect.SelectedServer.Ip,
       port = self.Widget_ServerSelect.SelectedServer.Port
-    }
+    })
     self.Text_Server_Select:SetText(self.ServerInfo.hostnum .. " " .. self.ServerInfo.name)
     self:AddTimer(0.01, self.OpenAnnouncementOnce, false, 0, nil, true, true)
   end
   self.WidgetSwitcher_Server:SetActiveWidgetIndex(0)
 end
-
 function WBP_GameStartMainPage_C:ExitGame()
   local PlatformName = UGameplayStatics.GetPlatformName()
   local HeroUSDKSubsystem = HeroUSDKSubsystem(self)
@@ -1013,7 +1041,6 @@ function WBP_GameStartMainPage_C:ExitGame()
     self:ShowExitGamePopupUI()
   end
 end
-
 function WBP_GameStartMainPage_C:ShowExitGamePopupUI()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -1029,10 +1056,8 @@ function WBP_GameStartMainPage_C:ShowExitGamePopupUI()
     end, nil, true)
   end
 end
-
 function WBP_GameStartMainPage_C:RealExitGame()
 end
-
 function WBP_GameStartMainPage_C:CacheLoginInfo()
   if GWorld.IsDev then
     local LoginInfo = {
@@ -1050,20 +1075,19 @@ function WBP_GameStartMainPage_C:CacheLoginInfo()
     EMCache:Set("LoginInfo", LoginInfo)
   end
 end
-
 function WBP_GameStartMainPage_C:LoadLoginInfo(bFirst)
   local LoginInfo = EMCache:Get("LoginInfo")
   if not HeroUSDKUtils.IsEnable() and nil ~= LoginInfo then
     self.EditableText_Account:SetText(LoginInfo.AccountId)
     if LoginInfo.name and LoginInfo.name and LoginInfo.hostnum then
       self.Text_Server_Select:SetText(LoginInfo.hostnum .. " " .. LoginInfo.name)
-      self.ServerInfo = {
+      self:SetServerInfo({
         hostnum = LoginInfo.hostnum,
         area = LoginInfo.area,
         name = LoginInfo.name,
         ip = LoginInfo.ip,
         port = LoginInfo.port
-      }
+      })
       self:ChangeEnterMode(nil, LoginInfo.EnterMode)
     end
     if not UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
@@ -1079,13 +1103,13 @@ function WBP_GameStartMainPage_C:LoadLoginInfo(bFirst)
     self:ChangePlatformMode()
     if LoginInfo and nil ~= LoginInfo.name and LoginInfo.name ~= "" then
       self.Text_Server_Select:SetText(LoginInfo.hostnum .. " " .. LoginInfo.name)
-      self.ServerInfo = {
+      self:SetServerInfo({
         hostnum = LoginInfo.hostnum,
         area = LoginInfo.area,
         name = LoginInfo.name,
         ip = LoginInfo.ip,
         port = LoginInfo.port
-      }
+      })
       self:ChangeEnterMode(nil, LoginInfo.EnterMode)
     else
       self:GetDefaultServerInfo()
@@ -1094,7 +1118,6 @@ function WBP_GameStartMainPage_C:LoadLoginInfo(bFirst)
     self.Text_Server_Select:SetText(self.ServerInfo.hostnum .. " " .. self.ServerInfo.name)
   end
 end
-
 function WBP_GameStartMainPage_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:CloseLoadingReconnect()
@@ -1119,6 +1142,7 @@ function WBP_GameStartMainPage_C:OnAnimationFinished(InAnimation)
     self.Text_CheckPatch:SetText(GText("UI_Loading_Verifying"))
     self.bEnableGamePadKeyForPatchUpdate = false
   elseif InAnimation == self.CheckPatch_Out then
+    self.RealPatchFinish = true
     self:ShowLoginUI(true)
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
     if not HeroUSDKUtils.IsEnable() and GWorld.IsDev then
@@ -1135,14 +1159,18 @@ function WBP_GameStartMainPage_C:OnAnimationFinished(InAnimation)
       if GameInstance and GameInstance:GetLoadingUI() then
         return
       end
-      HeroUSDKSubsystem(self):HeroSDKLogin()
+      local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName()
+      if "IOS" == PlatformName and HeroUSDKSubsystem(self).bAccountCancallation then
+        HeroUSDKSubsystem(self).bAccountCancallation = false
+      else
+        HeroUSDKSubsystem(self):HeroSDKLogin()
+      end
     end
   elseif InAnimation == self.CheckPatch_In and self.PatchFinish and not self.bCheckPatchOutPlayed then
     DebugPrint("Play Anim CheckPatch_In CheckPatch_Out")
     self:PlayAnimation(self.CheckPatch_Out)
   end
 end
-
 function WBP_GameStartMainPage_C:OnClickProtocol()
   if not HeroUSDKUtils.IsEnable() then
     return
@@ -1154,7 +1182,6 @@ function WBP_GameStartMainPage_C:OnClickProtocol()
   local ProtocolStr = string.format(GText("UI_LOGIN_PROTOCOL"), Protocol.userAgrUrl, Protocol.userAgrName, Protocol.priAgrUrl, Protocol.priAgrName, Protocol.childAgrUrl, Protocol.childAgrName)
   self.Text_Agreement:SetText(ProtocolStr)
 end
-
 function WBP_GameStartMainPage_C:OnClickCloseProtocol()
   if not HeroUSDKUtils.IsEnable() then
     return
@@ -1162,7 +1189,6 @@ function WBP_GameStartMainPage_C:OnClickCloseProtocol()
   self.Panel_Agreement:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Panel_Pos:SetVisibility(UE4.ESlateVisibility.Visible)
 end
-
 function WBP_GameStartMainPage_C:OnClickAgreeProtocol()
   if not HeroUSDKUtils.IsEnable() then
     return
@@ -1176,30 +1202,24 @@ function WBP_GameStartMainPage_C:OnClickAgreeProtocol()
     self.Text_Tips:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 function WBP_GameStartMainPage_C:OnClickSet()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   UIManager(self):LoadUINew("Setting", true, self)
 end
-
 function WBP_GameStartMainPage_C:OnClickSupport()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   HeroUSDKSubsystem(self):OpenService()
 end
-
 function WBP_GameStartMainPage_C:OnAccountTextChanged(Text)
 end
-
 function WBP_GameStartMainPage_C:OnPress_Development()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   self:ChangeEnterMode(self.Switch_Development, "Development")
 end
-
 function WBP_GameStartMainPage_C:OnPress_Player()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   self:ChangeEnterMode(self.Switch_Player, "Player")
 end
-
 function WBP_GameStartMainPage_C:ChangeEnterMode(Btn, Mode)
   if HeroUSDKUtils.IsEnable() then
     return
@@ -1227,27 +1247,22 @@ function WBP_GameStartMainPage_C:ChangeEnterMode(Btn, Mode)
     self.Switch_Development:SetActiveWidgetIndex(0)
   end
 end
-
 function WBP_GameStartMainPage_C:OnUnHovered_Development()
   self:OnUnHovered(self.Switch_Development, "Development", self.CurrentMode)
 end
-
 function WBP_GameStartMainPage_C:OnUnHovered_Player()
   self:OnUnHovered(self.Switch_Player, "Player", self.CurrentMode)
 end
-
 function WBP_GameStartMainPage_C:OnClick_PCMode()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   self:ChangePlatformMode(self.Switch_PC, "PC")
   EMCache:Set("DebugPlatform", "PC")
 end
-
 function WBP_GameStartMainPage_C:OnClick_MobileMode()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   self:ChangePlatformMode(self.Switch_Phone, "Mobile")
   EMCache:Set("DebugPlatform", "Mobile")
 end
-
 function WBP_GameStartMainPage_C:ChangePlatformMode(Btn, Mode)
   if HeroUSDKUtils.IsEnable() then
     return
@@ -1269,7 +1284,7 @@ function WBP_GameStartMainPage_C:ChangePlatformMode(Btn, Mode)
   self.CurrentPlatform = Mode
   GWorld.EnterPlatform = Mode
   Btn:SetActiveWidgetIndex(2)
-  if "PC" == Mode then
+  if Mode == CommonConst.CLIENT_DEVICE_TYPE.PC then
     UInputSettings.GetInputSettings().bUseMouseForTouch = false
     UE4.UUIFunctionLibrary.SetGameIsFakingTouchEvents(false)
     self.Switch_Phone:SetActiveWidgetIndex(0)
@@ -1279,7 +1294,6 @@ function WBP_GameStartMainPage_C:ChangePlatformMode(Btn, Mode)
     self.Switch_PC:SetActiveWidgetIndex(0)
   end
 end
-
 function WBP_GameStartMainPage_C:SetUsePhoneMap(Mode)
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
     if "PC" == Mode then
@@ -1289,22 +1303,18 @@ function WBP_GameStartMainPage_C:SetUsePhoneMap(Mode)
     end
   end
 end
-
 function WBP_GameStartMainPage_C:OnHovered_Login()
   if self.bLogin then
     return
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/hover_enter_game", nil, nil)
 end
-
 function WBP_GameStartMainPage_C:OnUnHovered_PCMode()
   self:OnUnHovered(self.Switch_PC, "PC", self.CurrentPlatform)
 end
-
 function WBP_GameStartMainPage_C:OnUnHovered_MobileMode()
   self:OnUnHovered(self.Switch_Phone, "Mobile", self.CurrentPlatform)
 end
-
 function WBP_GameStartMainPage_C:OnUnHovered(Btn, Mode, CompareModeValue)
   local bCurrentMode = Mode == CompareModeValue
   if bCurrentMode then
@@ -1313,14 +1323,12 @@ function WBP_GameStartMainPage_C:OnUnHovered(Btn, Mode, CompareModeValue)
     Btn:SetActiveWidgetIndex(0)
   end
 end
-
 function WBP_GameStartMainPage_C:OnAssetStartDownload(TotalBytes, DownloadedBytes)
   if not self.bStartedPatch then
     self.TotalBytes = TotalBytes
     self.BytesSoFar = 0
     self.LastBytesSoFar = 0
     self.bIsDownloading = true
-    self.PaksInfo = {}
     self.Text_DownloadSpeed_Num:SetText("0")
     self.Text_DownloadSpeed_Unit:SetText("KB/s")
     self.Text_DownloadSize_Num1:SetText("0")
@@ -1337,18 +1345,16 @@ function WBP_GameStartMainPage_C:OnAssetStartDownload(TotalBytes, DownloadedByte
       self.MediaPlayer:Pause()
       self.WidgetSwitcher_Bg:SetActiveWidgetIndex(1)
     end
+    self.RealPatchFinish = false
   end
   self.bStartedPatch = true
   self.DownloadedBytes = DownloadedBytes
-  if self.DownloadedBytes > 0 then
-    self.PaksInfo = {}
-  end
   self.Group_CheckPatch:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_DownloadPatch:SetVisibility(ESlateVisibility.Visible)
   self.Text_DownloadPack:SetText(GText("UI_Loading_Downloading"))
   self:ShowPauseUI(true)
+  self:UpdateProgress()
 end
-
 function WBP_GameStartMainPage_C:OnAssetDownloadProgress(Url, InBytesSoFar, InTotalBytes, PatchSign)
   if not self.PaksInfo then
     self.PaksInfo = {}
@@ -1358,12 +1364,27 @@ function WBP_GameStartMainPage_C:OnAssetDownloadProgress(Url, InBytesSoFar, InTo
   end
   self.PaksInfo[Url].BytesSoFar = InBytesSoFar
   self.BytesSoFar = 0
-  self.BytesSoFar = self.BytesSoFar + self.DownloadedBytes
   for _, PakInfo in pairs(self.PaksInfo) do
     self.BytesSoFar = self.BytesSoFar + PakInfo.BytesSoFar
   end
 end
-
+function WBP_GameStartMainPage_C:UpdateProgress()
+  if not self.PaksInfo then
+    self.PaksInfo = {}
+  end
+  self.BytesSoFar = 0
+  for _, PakInfo in pairs(self.PaksInfo) do
+    self.BytesSoFar = self.BytesSoFar + PakInfo.BytesSoFar
+  end
+  self.Progress_Download:SetPercent(self.BytesSoFar / self.TotalBytes)
+  self.Text_DownloadPercent:SetText(string.format("%.0f%%", self.BytesSoFar / self.TotalBytes * 100))
+  local TotalMB = self.TotalBytes / 1024 / 1024
+  local SoFarMB = self.BytesSoFar / 1024 / 1024
+  self.Text_DownloadSize_Num1:SetText(string.format("%.0f", SoFarMB))
+  self.Text_DownloadSize_Num2:SetText(string.format("%.0f", TotalMB))
+  self.LastBytesSoFar = self.BytesSoFar
+  DebugPrint("Download Progress: ", self.BytesSoFar, self.TotalBytes, SoFarMB, TotalMB)
+end
 function WBP_GameStartMainPage_C:OnHotUpdateEventChanged(UpdateEvent)
   if UpdateEvent == EUpdateEvent.DownloadCompleted then
     self.Group_CheckPatch:SetVisibility(ESlateVisibility.Visible)
@@ -1373,11 +1394,9 @@ function WBP_GameStartMainPage_C:OnHotUpdateEventChanged(UpdateEvent)
     EMCache:SaveCommon(true)
   end
 end
-
 function WBP_GameStartMainPage_C:OnVertifyAssets()
   self:PlayAnimation(self.Group_Patches_Out)
 end
-
 function WBP_GameStartMainPage_C:OnMuteMouseClick(bMute)
   if bMute then
     self:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
@@ -1385,13 +1404,11 @@ function WBP_GameStartMainPage_C:OnMuteMouseClick(bMute)
     self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_GameStartMainPage_C:OnRepairGameFailed()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
   UIManger:ShowUITip(UIConst.Tip_CommonToast, GText("UI_Patch_Fix_Fail"))
 end
-
 function WBP_GameStartMainPage_C:OnPatchFailed(UpdateEvent, bRetry)
   if UpdateEvent == EUpdateEvent.GetRemoteVersionFailed then
     if bRetry then
@@ -1420,7 +1437,6 @@ function WBP_GameStartMainPage_C:OnPatchFailed(UpdateEvent, bRetry)
       end)
     end
   elseif UpdateEvent == EUpdateEvent.DownloadFailed then
-    self.PaksInfo = {}
     if bRetry then
       local GameMode = UGameplayStatics.GetGameMode(self)
       self.bStartedPatch = false
@@ -1478,13 +1494,12 @@ function WBP_GameStartMainPage_C:OnPatchFailed(UpdateEvent, bRetry)
     end
   end
 end
-
 function WBP_GameStartMainPage_C:OnPatchPreSuccess(bFrist)
-  DebugPrint("Login Main Page Play Sound")
-  AudioManager(self):PlayFMODSound(self, nil, "event:/bgm/cbt01/0015_login", "LoginBGM")
-  AudioManager(self):PlayFMODSound(self, nil, "event:/ambience/2d/login", "LoginAmb")
+  if bFrist then
+    DebugPrint("Login Main Page Play Sound")
+    self:PlayAudio()
+  end
 end
-
 function WBP_GameStartMainPage_C:OnPatchFinished(bFrist)
   local totalVersionNumber = UE.AHotUpdateGameMode.GetTotalVersionNumber()
   self.Text_Version:SetText(totalVersionNumber)
@@ -1505,8 +1520,8 @@ function WBP_GameStartMainPage_C:OnPatchFinished(bFrist)
     DebugPrint("Play Anim OnPatchFinished CheckPatch_Out")
     self:PlayAnimation(self.CheckPatch_Out)
   end
+  SettingUtils.InitPerformanceSetting()
 end
-
 function WBP_GameStartMainPage_C:ShowLoginUI(bShow)
   if bShow then
     self.main:SetVisibility(ESlateVisibility.Visible)
@@ -1518,7 +1533,6 @@ function WBP_GameStartMainPage_C:ShowLoginUI(bShow)
     self.Group_CheckPatch:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 function WBP_GameStartMainPage_C:ShowPatchPopUI(Id, RightBtnCallBack, LeftBtnCallBack)
   local Params = {}
   Params.CloseBtnCallbackFunction = LeftBtnCallBack
@@ -1527,7 +1541,6 @@ function WBP_GameStartMainPage_C:ShowPatchPopUI(Id, RightBtnCallBack, LeftBtnCal
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(Id, Params, self)
 end
-
 function WBP_GameStartMainPage_C:ShowPatchPopUI_ReplaceText(Id, ReplaceText, RightBtnCallBack, LeftBtnCallBack)
   local Params = {}
   Params.LeftCallbackFunction = LeftBtnCallBack
@@ -1537,7 +1550,6 @@ function WBP_GameStartMainPage_C:ShowPatchPopUI_ReplaceText(Id, ReplaceText, Rig
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(Id, Params, self)
 end
-
 function WBP_GameStartMainPage_C:ShowPauseUI(bShow)
   if bShow then
     self.HB_StopDownload:SetVisibility(ESlateVisibility.Visible)
@@ -1554,26 +1566,22 @@ function WBP_GameStartMainPage_C:ShowPauseUI(bShow)
     self.bShowPauseUI = false
   end
 end
-
 function WBP_GameStartMainPage_C:TryPauseDownload()
   self:ShowPatchPopUI(100026, function()
     self:PauseDownload()
   end, function()
   end)
 end
-
 function WBP_GameStartMainPage_C:PauseDownload()
   self:ShowPauseUI(false)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:CancelDownloadAssets()
 end
-
 function WBP_GameStartMainPage_C:ResumeDownload()
   self:ShowPauseUI(true)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:ReDownloadAssets()
 end
-
 function WBP_GameStartMainPage_C:ShowOptionPatchPopUI(OptionalAssetsSize, TotalSize)
   local Id = -1
   local ReplaceText
@@ -1604,9 +1612,16 @@ function WBP_GameStartMainPage_C:ShowOptionPatchPopUI(OptionalAssetsSize, TotalS
     GameMode:EnsureDonwloadOptionAssets(false)
   end)
 end
-
-function WBP_GameStartMainPage_C:ShowDownloadBasepakUI()
-  self:ShowPatchPopUI(100031, function()
+function WBP_GameStartMainPage_C:ShowDownloadBasepakUI(bLargeVersion)
+  self:ShowPatchPopUI(bLargeVersion and 100020 or 100031, function()
+    local NewGMHyperLink = GWorld.GameInstance.GMHyperLink
+    DebugPrint("1 ShowDownloadBasepakUI NewGMHyperLink:", NewGMHyperLink)
+    if NewGMHyperLink then
+      DebugPrint("1 ShowDownloadBasepakUI launch NewGMHyperLink and quit game")
+      UE4.UKismetSystemLibrary.LaunchURL(NewGMHyperLink)
+      self:ForceQuitGame()
+      return
+    end
     local HyperLink = ""
     for _, v in pairs(DataMgr.ExamineInfo) do
       if v.ChannelID and v.ChannelID == HeroUSDKSubsystem(self):GetChannelId() then
@@ -1622,13 +1637,21 @@ function WBP_GameStartMainPage_C:ShowDownloadBasepakUI()
         end
       end
     end
-    if "" == HyperLink then
+    if "" == HyperLink or bLargeVersion then
       self:ForceQuitGame()
     else
       UE4.UKismetSystemLibrary.LaunchURL(HyperLink)
       self:ForceQuitGame()
     end
   end, function()
+    local NewGMHyperLink = GWorld.GameInstance.GMHyperLink
+    DebugPrint("2 ShowDownloadBasepakUI NewGMHyperLink:", NewGMHyperLink)
+    if NewGMHyperLink then
+      DebugPrint("2 ShowDownloadBasepakUI launch NewGMHyperLink and quit game")
+      UE4.UKismetSystemLibrary.LaunchURL(NewGMHyperLink)
+      self:ForceQuitGame()
+      return
+    end
     local HyperLink = ""
     for _, v in pairs(DataMgr.ExamineInfo) do
       if v.ChannelID and v.ChannelID == HeroUSDKSubsystem(self):GetChannelId() then
@@ -1644,7 +1667,7 @@ function WBP_GameStartMainPage_C:ShowDownloadBasepakUI()
         end
       end
     end
-    if "" == HyperLink then
+    if "" == HyperLink or bLargeVersion then
       self:ForceQuitGame()
     else
       UE4.UKismetSystemLibrary.LaunchURL(HyperLink)
@@ -1652,7 +1675,6 @@ function WBP_GameStartMainPage_C:ShowDownloadBasepakUI()
     end
   end)
 end
-
 function WBP_GameStartMainPage_C:OnClickAgeBtn()
   local Params = {}
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -1660,7 +1682,6 @@ function WBP_GameStartMainPage_C:OnClickAgeBtn()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self:PlayAnimation(self.CADPA_Click)
 end
-
 function WBP_GameStartMainPage_C:SetSwitchBtnVisable(bShow)
   local bIsWegameChannel = UE4.UUsdkSettings:GetDefaultObject().Channel == UE4.EHeroUSDKChannel.WeGame
   if bShow and not bIsWegameChannel and not UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
@@ -1669,7 +1690,6 @@ function WBP_GameStartMainPage_C:SetSwitchBtnVisable(bShow)
     self.Btn_Back:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_GameStartMainPage_C:OnKeyDown(MyGeometry, InKeyEvent)
   if self:GetVisibility() == UE4.ESlateVisibility.HitTestInvisible then
     return UE4.UWidgetBlueprintLibrary.UnHandled()
@@ -1719,7 +1739,6 @@ function WBP_GameStartMainPage_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_GameStartMainPage_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1734,7 +1753,6 @@ function WBP_GameStartMainPage_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_GameStartMainPage_C:EnterRightBtnSelectMode()
   if self.IsInRightBtnSelectState then
     return
@@ -1742,7 +1760,6 @@ function WBP_GameStartMainPage_C:EnterRightBtnSelectMode()
   self.IsInRightBtnSelectState = true
   self:OnSelectModeChange(false)
 end
-
 function WBP_GameStartMainPage_C:LeaveRightBtnSelectMode()
   if not self.IsInRightBtnSelectState then
     return
@@ -1750,7 +1767,6 @@ function WBP_GameStartMainPage_C:LeaveRightBtnSelectMode()
   self.IsInRightBtnSelectState = false
   self:OnSelectModeChange(true)
 end
-
 function WBP_GameStartMainPage_C:OnSelectModeChange(IsUseGamePadMode)
   self:UpdateUIStyleInPlatform(IsUseGamePadMode)
   if self.IsInRightBtnSelectState then
@@ -1776,19 +1792,16 @@ function WBP_GameStartMainPage_C:OnSelectModeChange(IsUseGamePadMode)
     self.Key_Other:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_GameStartMainPage_C:CloseLoadingReconnect(bLoginSuccess)
   self:RemoveTimer("LoadLoadingReconnect")
   if not bLoginSuccess then
     self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_GameStartMainPage_C:ForceQuitGame()
   local GameMode = UGameplayStatics.GetGameMode(self)
   GameMode:ForceQuitGame(false)
 end
-
 function WBP_GameStartMainPage_C:SendInputDiviceChangeMessage()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   local CurInputDeviceType = GameInputModeSubsystem:GetCurrentInputType()
@@ -1800,19 +1813,17 @@ function WBP_GameStartMainPage_C:SendInputDiviceChangeMessage()
     [ECommonInputType.Count] = "Count"
   }
   local NewTrack = {
-    device_type = DeviceTypeMap[CurInputDeviceType] or "\230\156\170\231\159\165\232\174\190\229\164\135\231\177\187\229\158\139"
+    device_type = DeviceTypeMap[CurInputDeviceType] or "未知设备类型"
   }
   if not DeviceTypeMap[CurInputDeviceType] then
-    DebugPrint("yklua \229\136\135\230\141\162\232\174\190\229\164\135\230\151\182\230\151\160\230\179\149\232\175\134\229\136\171\232\190\147\229\133\165\232\174\190\229\164\135\231\177\187\229\158\139")
+    DebugPrint("yklua 切换设备时无法识别输入设备类型")
   end
   HeroUSDKSubsystem(self):UploadTrackLog_Lua("input_device", NewTrack)
 end
-
 function WBP_GameStartMainPage_C:ResetGetAllAvatarsBlock()
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:RemoveTimer("GetAllAvatarsTimer")
 end
-
 function WBP_GameStartMainPage_C:SetInputUIOnly(IsUIOnly)
   local PreMode, CurMode, CurDeviceType = "PreMode", "CurMode", CommonUtils.GetDeviceTypeByPlatformName(self)
   if not self.GameInputModeSubsystem then
@@ -1825,13 +1836,19 @@ function WBP_GameStartMainPage_C:SetInputUIOnly(IsUIOnly)
     if self.bIsFocusable then
       Params.WidgetToFocus = self
     end
-    if "PC" == CurDeviceType then
+    local bPCCloudGame = UE4.UUCloudGameInstanceSubsystem.IsPCCloudGame()
+    if "PC" == CurDeviceType and not bPCCloudGame then
       Params.bShowMouseCursor = true
-    elseif UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
-      self.GameInputModeSubsystem:SetMouseCursorVisable(false)
+    elseif bPCCloudGame then
+      self.GameInputModeSubsystem:SetMouseCursorVisable(true)
+      self.GameInputModeSubsystem:SetMouseCursorOpacity(1.0)
+      UInputSettings.GetInputSettings().bAlwaysShowTouchInterface = false
+      UE4.UUIFunctionLibrary.SetGameIsFakingTouchEvents(false)
+      Params.bShowMouseCursor = true
     end
     Params.MouseLockMode = EMouseLockMode.DoNotLock
     self.GameInputModeSubsystem:EnableInputMode(UINameText, EGameInputMode.UI, Params)
+    DebugPrint("lgc@WBP_GameStartMainPage_C:SetInputUIOnly CurDeviceType:" .. CurDeviceType .. " IsPCCloudGame:" .. tostring(UE4.UUCloudGameInstanceSubsystem.IsPCCloudGame()) .. " bShowMouseCursor:" .. tostring(Params.bShowMouseCursor))
   else
     self.GameInputModeSubsystem:DisableInputMode(UINameText)
   end
@@ -1841,7 +1858,6 @@ function WBP_GameStartMainPage_C:SetInputUIOnly(IsUIOnly)
     EventManager:FireEvent(EventID.SetInputMode, IsUIOnly)
   end
 end
-
 function WBP_GameStartMainPage_C:LoginToTargetServer(TargetHostNum)
   if not self.ServerInfos then
     DebugPrint("LoginToTargetServer ServerInfos is nil")
@@ -1852,9 +1868,11 @@ function WBP_GameStartMainPage_C:LoginToTargetServer(TargetHostNum)
     DebugPrint("LoginToTargetServer TargetServerInfo is nil")
     return
   end
-  self.ServerInfo = TargetServerInfo
+  self:SetServerInfo(TargetServerInfo)
   self:EMLogin()
 end
-
+function WBP_GameStartMainPage_C:SetServerInfo(SInfo)
+  self.ServerInfo = SInfo
+end
 AssembleComponents(WBP_GameStartMainPage_C)
 return WBP_GameStartMainPage_C

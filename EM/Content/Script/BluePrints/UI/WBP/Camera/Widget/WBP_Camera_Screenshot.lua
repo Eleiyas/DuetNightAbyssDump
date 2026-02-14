@@ -8,11 +8,10 @@ local FilePath = UKismetSystemLibrary.GetProjectSavedDirectory() .. "HighResScre
 local AlbumName = GText("ScreenShot_FolderName")
 local DateTimeStr = ULowEntryExtendedStandardLibrary.DateTime_ToString(UKismetMathLibrary.Now("%Y.%m.%d-%H.%M.%S"))
 local FileName = "Screenshot-" .. DateTimeStr .. ".png"
-
 function M:Construct()
   local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
   if "Android" == PlatformName then
-    FilePath = "/sdcard/Pictures/Screenshots/" .. AlbumName .. "/"
+    FilePath = UE4.URuntimeCommonFunctionLibrary.ConvertRelativePathToFull(UE4.UBlueprintPathsLibrary.ProjectSavedDir() .. "HighResScreenshots/")
   elseif "IOS" == PlatformName then
     FilePath = UE4.URuntimeCommonFunctionLibrary.GetProjectSavedPath() .. "HighResScreenshots/"
     FilePath = FilePath:gsub("%.%.%/", "")
@@ -55,7 +54,8 @@ function M:Construct()
     [CommonConst.SystemLanguages.EN] = "EN",
     [CommonConst.SystemLanguages.JP] = "JA",
     [CommonConst.SystemLanguages.KR] = "KR",
-    [CommonConst.SystemLanguages.TC] = "ZH_CHT"
+    [CommonConst.SystemLanguages.TC] = "ZH_CHT",
+    [CommonConst.SystemLanguages.FR] = "EN"
   }
   self.CheckBox_Watermark:BindEventOnClicked({
     Inst = self,
@@ -67,6 +67,10 @@ function M:Construct()
     Func = self.OnInformationCheckStateChanged
   })
   self.Text_Information:SetText(GText("UI_CameraSystem_PlayerPersonalInformation"))
+  if self.Btn_Save then
+    self.Btn_Quit_1:SetGamePadImg("Y")
+    self.Btn_Save:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
   self.CheckBox_Watermark:SetKey("Img", "Left")
   self.CheckBox_Information:SetKey("Img", "Right")
   self.Btn_Yes_1:SetGamePadImg("A")
@@ -88,12 +92,22 @@ function M:Construct()
     Func = self.TrySaveScreenshot,
     Self = self
   }
+  self.KeyDownEvent.Escape = {
+    Func = self.HideWithAnim,
+    Self = self
+  }
+  if self.Btn_Upload then
+    self.Btn_Upload:SetGamePadImg("Y")
+    self.KeyDownEvent[Const.GamepadFaceButtonUp] = {
+      Func = self.UploadToPhotoWall,
+      Self = self
+    }
+  end
 end
-
-function M:Init(Image, Parent, OnHideCallback)
-  self.Parent = Parent
-  self.OnHideCallback = OnHideCallback
-  if not IsValid(Image) then
+function M:Init(Params)
+  self.Parent = Params.Parent
+  self.OnHideCallback = Params.OnHiddenCallback
+  if not IsValid(Params.Image) then
     self:Hide()
     return
   end
@@ -102,8 +116,8 @@ function M:Init(Image, Parent, OnHideCallback)
   self.CheckBox_Watermark:SetIsChecked(true)
   self.CheckBox_Information:SetIsChecked(true)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
-  self.ScreenshotImage = Image
-  self.Parent:BlockAllUIInput(true)
+  self.ScreenshotImage = Params.Image
+  self.Parent:BlockAllUIInput(true, "SP_DisplayOnly")
   self.Screenshot:SetBrushResourceObject(self.ScreenshotImage)
   self.WaterMarkIcon = LoadObject("/Game/UI/Texture/Dynamic/Image/Lang/" .. self.LanguageMap[CommonConst.SystemLanguage] .. "/T_BG_GameNameIcon_Camera.T_BG_GameNameIcon_Camera")
   self.Img_Watermark:SetBrushResourceObject(self.WaterMarkIcon)
@@ -116,12 +130,42 @@ function M:Init(Image, Parent, OnHideCallback)
   self.Parent.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   DateTimeStr = ULowEntryExtendedStandardLibrary.DateTime_ToString(UKismetMathLibrary.Now("%Y.%m.%d-%H.%M.%S"))
   FileName = "Screenshot-" .. DateTimeStr .. ".png"
+  self.bHasFoundTargets = Params.bHasFoundTargets
+  local EventId = tonumber(Params.EventId)
+  if EventId and 0 ~= EventId then
+    self.EventId = math.floor(EventId)
+    self.EventParams = Params.EventParams
+    self.KeyDownEvent[Const.GamepadFaceButtonDown] = {
+      Func = self.JumpToActivityPage,
+      Self = self
+    }
+    self.Btn_Yes_1:SetText(GText("前往查看（未配）"))
+    self.Btn_Yes_1:UnBindEventOnClickedByObj(self)
+    self.Btn_Yes_1:BindEventOnClicked(self, self.JumpToActivityPage)
+    self.KeyDownEvent[Const.GamepadFaceButtonUp] = {
+      Func = self.TrySaveScreenshot,
+      Self = self
+    }
+    self.Btn_Save:SetVisibility(UIConst.VisibilityOp.Visible)
+    self.Btn_Save:UnBindEventOnClickedByObj(self)
+    self.Btn_Save:BindSingleEventOnClicked(self, self.TrySaveScreenshot)
+    if Params.bHasFoundTargets then
+    end
+  elseif Params.bAprilFoolsDayActivity then
+    self.Btn_Upload:SetText(GText("AFDayEvent_PhotoWall_Upload"))
+    self.Btn_Upload:UnBindEventOnClickedByObj(self)
+    if not Params.bHasFoundTargets then
+      self.Btn_Upload:ForbidBtn(true)
+      self.Btn_Upload:BindForbidStateExecuteEvent(self, self.UploadToPhotoWall)
+    else
+      self.Btn_Upload:ForbidBtn(false)
+      self.Btn_Upload:BindSingleEventOnClicked(self, self.UploadToPhotoWall)
+    end
+  end
 end
-
 function M:OnDestroy()
   self:ShareUninit()
 end
-
 function M:SharedInit()
   if UE.AHotUpdateGameMode.IsExamineDistribution() then
     self.VB_SNS:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -241,16 +285,13 @@ function M:SharedInit()
     end
   end
 end
-
 function M:ShareUninit()
   self.HeroUSDKSubsystem.HeroSDKShareDelegate:Unbind()
 end
-
 function M:ShareDelegateCallback(Result, SharePlatform, msg)
   DebugPrint("LogEMHeroUsdk ShareDelegateCallback: ", Result, SharePlatform, msg)
   UIManager(self):ShowUITip(UIConst.Tip_CommonToast, string.format(msg), 2.5)
 end
-
 function M:OnShareButtonClicked(ShareConfig)
   if not ShareConfig then
     return
@@ -267,11 +308,18 @@ function M:OnShareButtonClicked(ShareConfig)
   ShareInfo.imagePath = FilePath .. FileName
   self.HeroUSDKSubsystem:RequestShare(ShareInfo)
 end
-
 function M:OnCheeseFinished()
   self.Parent:BlockAllUIInput(false)
 end
-
+function M:JumpToActivityPage()
+  if not self.EventId then
+    return
+  end
+  local PageConfigData = DataMgr.EventPortal[self.EventId]
+  if PageConfigData and PageConfigData.JumpUIId then
+    PageJumpUtils:JumpToTargetPageByJumpId(PageConfigData.JumpUIId, self.EventId, self.EventParams)
+  end
+end
 function M:TrySaveScreenshot()
   if not UE4.UBlueprintFileUtilsBPLibrary.DirectoryExists(FilePath) then
     UE4.UBlueprintFileUtilsBPLibrary.MakeDirectory(FilePath)
@@ -284,7 +332,17 @@ function M:TrySaveScreenshot()
   end
   self:SaveScreenshotImp()
 end
-
+function M:UploadToPhotoWall()
+  if not self.bHasFoundTargets then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, string.format(GText("AFDayEvent_PhotoWall_UploadFailed")))
+    return
+  end
+  AudioManager(self):PlayUISound(self, "event:/ui/activity/fools_day_btn_common", nil, nil)
+  if self.Parent then
+    self.Parent:OnExButtonClicked_CPP()
+  end
+  self:HideWithAnim()
+end
 function M:SaveScreenshotToLocal()
   local ImageWidth = self.ScreenshotImage:Blueprint_GetSizeX()
   local ImageHeight = self.ScreenshotImage:Blueprint_GetSizeY()
@@ -339,7 +397,6 @@ function M:SaveScreenshotToLocal()
   UKismetRenderingLibrary.ExportRenderTarget(self, self.RenderTarget, FilePath, FileName)
   self.bSavedInLocal = true
 end
-
 function M:SaveScreenshotImp()
   AudioManager(self):PlayUISound(self, "event:/ui/common/camera_photo_save", "Camera_Save", nil)
   self:PlayAnimation(self.Save)
@@ -351,7 +408,7 @@ function M:SaveScreenshotImp()
     self.HeroUSDKSubsystem:RequestSaveToAlbum(FilePath .. FileName, AlbumName)
   end
   self.bSaved = true
-  self.Parent:BlockAllUIInput(true)
+  self.Parent:BlockAllUIInput(true, "SP_DisplayOnly")
   self:AddTimer(0.5, function()
     if not UUCloudGameInstanceSubsystem.IsCloudGame() then
       UIManager(self):ShowUITip(UIConst.Tip_CommonToast, string.format(GText("UI_CameraSystem_PhotoSave"), FilePath), 2.5)
@@ -362,17 +419,14 @@ function M:SaveScreenshotImp()
     end
   end, false, 0, "ShowSavePathToast")
 end
-
 function M:HideWithAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_cancel", "Camera_Cancel_Save", nil)
-  self.Parent:BlockAllUIInput(true)
+  self.Parent:BlockAllUIInput(true, "SP_DisplayOnly")
   self:PlayAnimation(self.Auto_Out)
 end
-
 function M:Hide()
   self:OnHideAnimFinished()
 end
-
 function M:OnHideAnimFinished()
   self.Parent:BlockAllUIInput(false)
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -380,7 +434,6 @@ function M:OnHideAnimFinished()
     self.OnHideCallback(self.Parent, self.bSaved)
   end
 end
-
 function M:OnWatermarkCheckStateChanged(IsChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", "Camera_WatermarkClicked", nil)
   if IsChecked then
@@ -389,7 +442,6 @@ function M:OnWatermarkCheckStateChanged(IsChecked)
     self.Img_Watermark:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnInformationCheckStateChanged(IsChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", "Camera_WatermarkClicked", nil)
   if IsChecked then
@@ -400,7 +452,6 @@ function M:OnInformationCheckStateChanged(IsChecked)
     self.Role_UID:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.CheckBox_Watermark.Com_KeyImg:SetVisibility(CurInputType == ECommonInputType.Gamepad and UIConst.VisibilityOp.SelfHitTestInvisible or UIConst.VisibilityOp.Collapsed)
   self.CheckBox_Information.Com_KeyImg:SetVisibility(CurInputType == ECommonInputType.Gamepad and UIConst.VisibilityOp.SelfHitTestInvisible or UIConst.VisibilityOp.Collapsed)
@@ -410,11 +461,9 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self.Btn_Yes_1:PlayAnimation(self.Btn_Yes_1.Normal)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   return self:OnKeyDown(MyGeometry, InKeyEvent)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -425,5 +474,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return Unhandle
 end
-
 return M

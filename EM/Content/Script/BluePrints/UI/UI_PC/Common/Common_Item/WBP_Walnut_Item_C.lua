@@ -2,14 +2,12 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Item.WBP_Com_item_Universal_L_C"
 })
-
 function M:InitData(Content)
   M.Super.InitData(self, Content)
   self.bAllUseAsyncLoadWidget = false
   self.Content.StuffType = self.ItemType
   self.bDontRemoveSubWidget = true
 end
-
 function M:InitCompView()
   M.Super.InitCompView(self)
   if self.ItemType == "EmptyGrid" then
@@ -25,19 +23,18 @@ function M:InitCompView()
     self:ClearBackGroundHeight(true)
   end
 end
-
 function M:SetItemMinus(bMinus)
   self.Super.SetItemMinus(self, bMinus)
   self.Content.bMinus = bMinus
 end
-
 function M:SetStuffStyleByStateTag(Content)
   local StateTagInfo = Content.StateTagInfo
+  self.Content.StateTagInfo = StateTagInfo
   if nil == StateTagInfo then
     self:RefreshItemsViewWithStateTag({Name = "Normal"}, Content)
     return
   end
-  if nil ~= self.Content and nil ~= self.Content.StateTagInfo then
+  if self.Content ~= nil and self.Content.StateTagInfo ~= nil then
     if self.Content.StateTagInfo.Name == "IsToChoose" then
       self:CheckAndSetVisibility(self.SelectWidget, UIConst.VisibilityOp.Collapsed)
       self:CheckAndSetVisibility(self.SelectCountWidget, UIConst.VisibilityOp.Collapsed)
@@ -50,7 +47,6 @@ function M:SetStuffStyleByStateTag(Content)
   end
   self:RefreshItemsViewWithStateTag(Content)
 end
-
 function M:RefreshItemsViewWithStateTag(Content)
   self:SetItemMinus(false)
   Content = Content or self.Content
@@ -91,7 +87,6 @@ function M:RefreshItemsViewWithStateTag(Content)
   end
   self:SetItemShowGrey(StateTagInfo.IsShowGrey)
 end
-
 function M:CheckAndSetVisibility(WidgetComp, VisibilityOp)
   if self.WidgetMap[WidgetComp] then
     WidgetComp:SetVisibility(VisibilityOp)
@@ -99,7 +94,6 @@ function M:CheckAndSetVisibility(WidgetComp, VisibilityOp)
   end
   return false
 end
-
 function M:SetItemShowGrey(bShowGrey)
   if bShowGrey then
     self:SetItemConflict(true)
@@ -107,7 +101,6 @@ function M:SetItemShowGrey(bShowGrey)
     self:SetItemConflict(false)
   end
 end
-
 function M:CancelSelectClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   if self.ParentWidget ~= nil and self.Content.StateTagInfo then
@@ -119,11 +112,9 @@ function M:CancelSelectClick()
     end
   end
 end
-
 function M:SetItemConflict(bConflict)
   self:_SetItemConflictImpl(bConflict, GText("UI_Tips_CantSell"))
 end
-
 function M:SetItemMoney(CurrencyId, CurrencyNum)
   if CurrencyId and CurrencyNum then
     if not self.WidgetMap[self.MoneyWidget] then
@@ -144,19 +135,16 @@ function M:SetItemMoney(CurrencyId, CurrencyNum)
     self:RemoveWidgetFromNode(self.MoneyWidget)
   end
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.ItemType == "EmptyGrid" then
     return UWidgetBlueprintLibrary.Handled()
   end
   return M.Super.OnMouseButtonDown(self, MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.ItemType == "EmptyGrid" then
     return UWidgetBlueprintLibrary.Handled()
   end
   return M.Super.OnMouseButtonUp(self, MyGeometry, MouseEvent)
 end
-
 return M

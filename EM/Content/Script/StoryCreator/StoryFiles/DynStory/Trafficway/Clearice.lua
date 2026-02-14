@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "173510955551293",
       type = "StoryNode",
-      name = "\230\184\133\231\144\134\229\134\176\233\148\165",
+      name = "清理冰锥",
       pos = {x = 1182, y = 295.59999999999997},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -206,6 +208,12 @@ return {
             startPort = "Out",
             endQuest = "17351096122601397",
             endPort = "Stop"
+          },
+          {
+            startQuest = "17351097555033399",
+            startPort = "Out",
+            endQuest = "176189371989620420405",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -233,7 +241,7 @@ return {
           ["1735109576243774"] = {
             key = "1735109576243774",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/NPC",
+            name = "生成/NPC",
             pos = {x = 1155, y = 299.2499999999999},
             propsData = {
               ActiveEnable = true,
@@ -247,7 +255,7 @@ return {
           ["17351095892201084"] = {
             key = "17351095892201084",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\229\134\176\233\148\165",
+            name = "生成冰锥",
             pos = {x = 1155, y = -157.8152173913045},
             propsData = {
               ActiveEnable = true,
@@ -265,7 +273,7 @@ return {
           ["17351096122601397"] = {
             key = "17351096122601397",
             type = "TalkNode",
-            name = "\230\184\133\231\144\134\229\175\185\232\175\157",
+            name = "清理对话",
             pos = {x = 1501.25, y = 261.7499999999999},
             propsData = {
               IsNpcNode = true,
@@ -290,6 +298,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -297,13 +306,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "branch",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -316,14 +325,14 @@ return {
           ["17351096589642293"] = {
             key = "17351096589642293",
             type = "DynamicQuestFailNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "动态任务主动失败",
             pos = {x = 2090.5072463768115, y = 428.4189892233371},
             propsData = {UseTalkFadeOut = false, TalkFadeOutTime = 0}
           },
           ["17351096960902575"] = {
             key = "17351096960902575",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2025.8152173913043, y = -170.64130434782618},
             propsData = {
               CreateType = "StaticCreator",
@@ -336,21 +345,21 @@ return {
           ["17351097431073148"] = {
             key = "17351097431073148",
             type = "ListenActorDestroyNode",
-            name = "\231\155\145\229\144\172Actor\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "监听Actor销毁节点",
             pos = {x = 2299.565217391304, y = -143.03260869565224},
             propsData = {StaticCreatorId = 1180534, DestroyReason = "Default"}
           },
           ["17351097555033399"] = {
             key = "17351097555033399",
             type = "WaitQuestFinishedNode",
-            name = "\231\173\137\229\190\133\228\187\187\229\138\161\229\174\140\230\136\144",
+            name = "等待任务完成",
             pos = {x = 2645.156882591093, y = 188.99190283400796},
             propsData = {ListenCount = 3, NeedFinishCount = 3}
           },
           ["17351098028014167"] = {
             key = "17351098028014167",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 2953.891700404859, y = 233.5263157894737},
             propsData = {
               IsNpcNode = true,
@@ -376,6 +385,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -383,13 +393,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -402,7 +412,7 @@ return {
           ["17351098187934517"] = {
             key = "17351098187934517",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3271.1993927125513, y = 226.6032388663968},
             propsData = {
               DialogueId = 0,
@@ -413,7 +423,7 @@ return {
           ["1735111555773699624"] = {
             key = "1735111555773699624",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166\229\175\185\232\175\157",
+            name = "开车对话",
             pos = {x = 1394.6728757512515, y = 43.90217181750337},
             propsData = {
               IsNpcNode = false,
@@ -430,7 +440,7 @@ return {
           ["1735111828580702284"] = {
             key = "1735111828580702284",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2031.7109192295131, y = -9.032610791192209},
             propsData = {
               CreateType = "StaticCreator",
@@ -443,14 +453,14 @@ return {
           ["1735111828580702285"] = {
             key = "1735111828580702285",
             type = "ListenActorDestroyNode",
-            name = "\231\155\145\229\144\172Actor\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "监听Actor销毁节点",
             pos = {x = 2300.852223577339, y = 1.010867469677379},
             propsData = {StaticCreatorId = 1180535, DestroyReason = "Default"}
           },
           ["1735111829866702342"] = {
             key = "1735111829866702342",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2038.2326583599477, y = 154.01086746967732},
             propsData = {
               CreateType = "StaticCreator",
@@ -463,9 +473,20 @@ return {
           ["1735111829866702343"] = {
             key = "1735111829866702343",
             type = "ListenActorDestroyNode",
-            name = "\231\155\145\229\144\172Actor\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "监听Actor销毁节点",
             pos = {x = 2314.591354012121, y = 182.3152152957643},
             propsData = {StaticCreatorId = 1180536, DestroyReason = "Default"}
+          },
+          ["176189371989620420405"] = {
+            key = "176189371989620420405",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 2957.5652173913045, y = 5.391304347826008},
+            propsData = {
+              NewDescription = "DynQuest_Clearice_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
+            }
           }
         },
         commentData = {}

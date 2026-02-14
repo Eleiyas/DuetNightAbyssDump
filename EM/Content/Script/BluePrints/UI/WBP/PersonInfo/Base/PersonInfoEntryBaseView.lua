@@ -6,7 +6,6 @@ local M = {}
 M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:Construct()
   self:RefreshBaseInfo()
   local co = coroutine.create(function()
@@ -16,7 +15,7 @@ function M:Construct()
     self:SetRenderOpacity(0)
   end
   self:AddTimer(self.delta1 or 0.05, function()
-    ScreenPrint("\229\188\128\229\167\139\229\138\160\232\189\189\232\167\146\232\137\178")
+    DebugPrint("开始加载角色")
     if PersonInfoController.CurPage == nil then
       return
     end
@@ -26,7 +25,7 @@ function M:Construct()
       ScreenPrint("[LUA_ERROR] Coroutine (model):\n" .. trace)
     end
     self:AddTimer(self.delta2 or 0.1, function()
-      ScreenPrint("\229\188\128\229\167\139\229\138\160\232\189\189\229\156\186\230\153\175")
+      DebugPrint("开始加载场景")
       if PersonInfoController.CurPage == nil then
         return
       end
@@ -48,33 +47,28 @@ function M:Construct()
     end)
   end)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
-  AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "MailMain", nil)
   self:AddTimer(self.StartDelay or 0, function()
     if self.HideBegin then
       self:SetRenderOpacity(1)
     end
-    ScreenPrint("\229\188\128\229\167\139\230\146\173\229\138\168\231\148\187")
+    DebugPrint("开始播动画")
     self.WBP_Com_BgSwitch:PlayAnimationForward(self.WBP_Com_BgSwitch.In, self.AniSpeed or 1)
     self:PlayInAnim()
   end)
 end
-
 function M:Close()
-  ScreenPrint("\229\188\128\229\167\139\229\133\179\233\151\173")
+  DebugPrint("开始关闭")
   self.Content:ClearChildren()
   self.PersonInfoMainPage:OnClose()
   PersonInfoController:OnClose()
 end
-
 function M:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "PersonInfoPageMain", nil)
   self:PlayAnimationForward(self.In)
 end
-
 function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "PersonInfoPageMain", {ToEnd = 1})
   self:UnbindAllFromAnimationFinished(self.Out)
@@ -85,7 +79,6 @@ function M:PlayOutAnim()
   self.PersonInfoMainPage:PlayAnimationForward(self.PersonInfoMainPage.Out)
   self:PlayAnimationForward(self.Out)
 end
-
 function M:CheckIsCanCloseSelf()
   if self.PersonInfoMainPage.IsEditOpen then
     self.PersonInfoMainPage.IsEditOpen = false
@@ -97,7 +90,6 @@ function M:CheckIsCanCloseSelf()
   end
   return true
 end
-
 function M:CreatePersonInfoMainPage(ConfigData)
   PersonInfoController.MainPage = self
   local PageMain
@@ -115,5 +107,4 @@ function M:CreatePersonInfoMainPage(ConfigData)
   ContentOverlaySlot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   return PageMain
 end
-
 return M

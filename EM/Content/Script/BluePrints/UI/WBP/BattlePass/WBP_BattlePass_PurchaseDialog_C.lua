@@ -6,7 +6,6 @@ local STATE_GAMEPAD_FOCUS = {
   FOCUS_CURRENCY = 3,
   FOCUS_CURRENCY_TAB = 4
 }
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:InitContent")
@@ -16,10 +15,8 @@ function M:InitContent(Params, PopupData, Owner)
   self.OKCallbackObj = Params.RightCallbackObj
   self.CurrencyGamepadKey = Params.CurrencyGamepadKey
   self:InitGamepadView()
-  self.bIsFocusable = true
   self:BindDialogEvent(DialogEvent.OnCurrencyItemSelected, self.Focus2CurrencyItem)
 end
-
 function M:InitGamepadView()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -28,7 +25,6 @@ function M:InitGamepadView()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:InitLevelSlider(MinLevel, MaxLevel)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:InitLevelSlider", MinLevel, MaxLevel)
   self.MinLevel = MinLevel
@@ -46,18 +42,14 @@ function M:InitLevelSlider(MinLevel, MaxLevel)
   })
   self:OnNumChanged(MinLevel)
 end
-
 function M:OnMinusNumClicked(CurrentCount)
   self:OnNumChanged(CurrentCount)
 end
-
 function M:OnAddNumClicked(CurrentCount)
   self:OnNumChanged(CurrentCount)
 end
-
 function M:OnNumChanged(Value)
   if Value > self.MaxLevel or Value < self.MinLevel then
-    DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:OnNumChanged", Value, self.CurrentCount, debug.traceback())
     return
   end
   if Value ~= self.CurrentCount then
@@ -67,7 +59,6 @@ function M:OnNumChanged(Value)
     self:RefreshBtnState()
   end
 end
-
 function M:RefreshRewardList()
   self.Avatar = GWorld:GetAvatar()
   if self.Avatar then
@@ -81,18 +72,29 @@ function M:RefreshRewardList()
     self.Num_Purchase:SetText(tostring(SelectedLevel))
   end
 end
-
 function M:SetRewardList(StartLevel, EndLevel)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:GetRewardList", StartLevel, EndLevel)
   local NowVersion = self.Avatar.BattlePassVersion
   local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(NowVersion)
+  local BattlePassMain = NowVersion and DataMgr.BattlePassMain[NowVersion] or nil
+  local LoopRewardPeriod = BattlePassMain and BattlePassMain.LoopRewardPeriod or 0
   local Rewards = {}
   for Level = StartLevel, EndLevel do
-    if BattlePassRewardData and BattlePassRewardData[Level] then
+    if Level <= BattlePassUtils:GetMaxLevel() and BattlePassRewardData and BattlePassRewardData[Level] then
       local RewardInfo = BattlePassRewardData[Level]
       table.insert(Rewards, RewardInfo.Rank1Reward)
       if self.Avatar.BattlePassUnlockRank2 then
         table.insert(Rewards, RewardInfo.Rank2Reward)
+      end
+    elseif Level <= BattlePassUtils:GetCurLoopMaxLevel() then
+      local LoopLevel = Level - BattlePassUtils:GetMaxLevel()
+      local LoopLevel = LoopLevel % LoopRewardPeriod
+      if 0 == LoopLevel then
+        LoopLevel = LoopRewardPeriod
+      end
+      table.insert(Rewards, BattlePassMain.LoopFreeRewardId[LoopLevel])
+      if self.Avatar.BattlePassUnlockRank2 then
+        table.insert(Rewards, BattlePassMain.LoopPaidRewardId[LoopLevel])
       end
     else
       DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:GetRewardList", Level)
@@ -151,13 +153,11 @@ function M:SetRewardList(StartLevel, EndLevel)
     end
   end
 end
-
 function M:PackageData()
   local PackageResult = {}
   PackageResult.Level = self.CurrentCount or 1
   return PackageResult
 end
-
 function M:RefreshCurrency()
   local CurrentCount = self.CurrentCount or 1
   local Params = {
@@ -171,7 +171,6 @@ function M:RefreshCurrency()
   }
   self:BroadcastDialogEvent("UpdateFunds", Params)
 end
-
 function M:RefreshBtnState()
   local FundId = DataMgr.GlobalConstant.BattlePassBuyLvMoney.ConstantValue
   local Avatar = GWorld:GetAvatar()
@@ -188,7 +187,6 @@ function M:RefreshBtnState()
   end
   self.bCanBuy = AvatarCount >= NeedCount
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -218,7 +216,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Key_GamePad:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:OnKeyDown", MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -229,7 +226,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return self.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -252,7 +248,6 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnContentKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -265,7 +260,6 @@ function M:OnContentKeyUp(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadDown(InKeyName)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:OnGamePadDown", InKeyName)
   local IsEventHandled = self.Com_Slider:Handle_KeyDownEventOnGamePad(InKeyName)
@@ -282,7 +276,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadUp(InKeyName)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:OnGamePadUp", InKeyName)
   local IsEventHandled = self.Com_Slider:Handle_KeyUpEventOnGamePad(InKeyName)
@@ -295,7 +288,7 @@ function M:OnGamePadUp(InKeyName)
       IsEventHandled = self:HandleCancel()
     end
   elseif InKeyName == Const.GamepadFaceButtonDown then
-    if self.FocusState == STATE_GAMEPAD_FOCUS.FOCUS_DIALOG and self.bCanBuy then
+    if self.FocusState == STATE_GAMEPAD_FOCUS.FOCUS_DIALOG then
       self.OKCallback(self.OKCallbackObj, {
         BattlePass = self:PackageData()
       })
@@ -305,9 +298,7 @@ function M:OnGamePadUp(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Change2State(State)
-  DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:RefreshFocusState", State, debug.traceback())
   self.FocusState = State
   if State == STATE_GAMEPAD_FOCUS.FOCUS_DIALOG then
     self.GameInputModeSubsystem:SetNavigateWidgetVisibility(false)
@@ -335,7 +326,6 @@ function M:Change2State(State)
     self.Key_GamePad:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function M:RefreshGamepadShortCut(bShow)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:RefreshGamepadShortCut", bShow)
   if bShow then
@@ -372,7 +362,6 @@ function M:RefreshGamepadShortCut(bShow)
     end
   end
 end
-
 function M:Focus2CurrencyItem(bFocus)
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:Focus2CurrencyItem", bFocus)
   if bFocus then
@@ -382,21 +371,17 @@ function M:Focus2CurrencyItem(bFocus)
     self:RefreshGamepadShortCut(false)
   end
 end
-
 function M:Focus2CurrencyTab()
   self:Change2State(STATE_GAMEPAD_FOCUS.FOCUS_CURRENCY_TAB)
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   self:AddTimer(0.1, function()
     self.TipsOpening = bIsOpen
   end)
 end
-
 function M:HandleDialogFocused()
   return self
 end
-
 function M:HandleCancel()
   DebugPrint("gmy@WBP_BattlePass_PurchaseDialog_C M:HandleCancel", self.FocusState)
   if self.FocusState == STATE_GAMEPAD_FOCUS.FOCUS_DIALOG then
@@ -413,5 +398,4 @@ function M:HandleCancel()
   end
   return false
 end
-
 return M

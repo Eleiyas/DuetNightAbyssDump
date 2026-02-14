@@ -34,13 +34,13 @@ return {
     },
     {
       startStory = "17413167906035948",
-      startPort = "\233\128\137\233\161\18512",
+      startPort = "选项12",
       endStory = "17413356261481647572",
       endPort = "In"
     },
     {
       startStory = "17413167906035948",
-      startPort = "\233\128\137\233\161\1853",
+      startPort = "选项3",
       endStory = "17413354689081644598",
       endPort = "In"
     },
@@ -82,11 +82,11 @@ return {
       isStoryNode = true,
       key = "1715927831624311379",
       type = "StoryNode",
-      name = "\229\146\140\233\156\178\229\168\156\229\175\185\232\175\157",
+      name = "和露娜对话",
       pos = {x = 308.8787008110203, y = 686.185277460673},
       propsData = {
         QuestId = 20020901,
-        QuestDescriptionComment = "\229\142\187\229\185\191\229\156\186\230\137\190\233\156\178\229\168\156\229\175\185\232\175\157",
+        QuestDescriptionComment = "去广场找露娜对话",
         QuestDescription = "Description_200209_1",
         QuestDeatil = "Content_200209_1",
         TaskRegionReName = "",
@@ -106,8 +106,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
-        StoryGuidePointName = "Mechanism_20020901box_1191209"
+        StoryGuidePointName = "Mechanism_20020901box_1191209",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -197,7 +199,7 @@ return {
           ["17413164071713740"] = {
             key = "17413164071713740",
             type = "TalkNode",
-            name = "\232\167\166\229\143\145\233\156\178\229\168\156",
+            name = "触发露娜",
             pos = {x = 1454.4885261307481, y = 128.7594797855144},
             propsData = {
               IsNpcNode = false,
@@ -216,6 +218,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -223,6 +226,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -250,16 +254,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 700225},
-                {TalkActorType = "Npc", TalkActorId = 700226},
-                {TalkActorType = "Npc", TalkActorId = 700227}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "Player",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -267,7 +267,7 @@ return {
           ["17413164585834273"] = {
             key = "17413164585834273",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\228\184\128\233\152\159\233\157\162\229\140\133\228\186\186",
+            name = "生成一队面包人",
             pos = {x = 1699.5056597100765, y = 136.83924110445918},
             propsData = {
               ActiveEnable = true,
@@ -281,7 +281,7 @@ return {
           ["17413164629194378"] = {
             key = "17413164629194378",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 2237.946328623123, y = 155.03366981691877},
             propsData = {
               KillMonsterType = "Id",
@@ -296,7 +296,7 @@ return {
           ["17413166140774941"] = {
             key = "17413166140774941",
             type = "UpdateTaskBarAndTaskMainNode",
-            name = "\230\155\180\230\150\176\228\187\187\229\138\161\231\155\174\230\160\135\232\138\130\231\130\185",
+            name = "更新任务目标节点",
             pos = {x = 1960.1356798573545, y = 78.97021221678511},
             propsData = {
               NewDescription = "Description_200209_7",
@@ -307,7 +307,7 @@ return {
           ["17413169028007820"] = {
             key = "17413169028007820",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = 1064.3797772639118, y = 269.7470425720061},
             propsData = {
               GuideUIEnable = true,
@@ -319,21 +319,21 @@ return {
           ["174765382924017385"] = {
             key = "174765382924017385",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1968.5575924075924, y = 455.5306693306694},
             propsData = {WaitTime = 0.5}
           },
           ["17524835752331930982"] = {
             key = "17524835752331930982",
             type = "WaitingSpecialQuestStartAndFinishNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\188\128\229\167\139\229\185\182\229\174\140\230\136\144",
+            name = "等待特殊任务开始并完成",
             pos = {x = 1591.1692922141106, y = 407.8176831058844},
             propsData = {SpecialConfigId = 20020901, BlackScreenImmediately = false}
           },
           ["17524835925441931590"] = {
             key = "17524835925441931590",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = 1923.5607528615576, y = 614.7579537865447},
             propsData = {
               UnitId = 0,
@@ -353,11 +353,11 @@ return {
       isStoryNode = true,
       key = "17413167906035948",
       type = "StoryNode",
-      name = "\230\137\147\229\174\140\230\158\182\229\134\141\229\146\140\233\156\178\229\168\156\229\175\185\232\175\157",
+      name = "打完架再和露娜对话",
       pos = {x = 575.5232551472338, y = 656.2118562736625},
       propsData = {
         QuestId = 20020902,
-        QuestDescriptionComment = "\229\142\187\229\185\191\229\156\186\230\137\190\233\156\178\229\168\156\229\175\185\232\175\157",
+        QuestDescriptionComment = "去广场找露娜对话",
         QuestDescription = "Description_200209_2",
         QuestDeatil = "Content_200209_2",
         TaskRegionReName = "",
@@ -377,8 +377,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Luna_1190435"
+        StoryGuidePointName = "Npc_Luna_1190435",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -432,21 +434,21 @@ return {
           ["17413355537881645912"] = {
             key = "17413355537881645912",
             type = "QuestConditionNode",
-            name = "\233\128\137\233\161\18512",
+            name = "选项12",
             pos = {x = 1320.4622736257054, y = 208.51653054142614},
-            propsData = {PortName = "\233\128\137\233\161\18512"}
+            propsData = {PortName = "选项12"}
           },
           ["17413355548411645949"] = {
             key = "17413355548411645949",
             type = "QuestConditionNode",
-            name = "\233\128\137\233\161\1853",
+            name = "选项3",
             pos = {x = 1329.1359880558655, y = 426.0908727417196},
-            propsData = {PortName = "\233\128\137\233\161\1853"}
+            propsData = {PortName = "选项3"}
           },
           ["17413376566841653663"] = {
             key = "17413376566841653663",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 916.7125737707346, y = 364.7766401032303},
             propsData = {
               IsNpcNode = true,
@@ -471,6 +473,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -478,13 +481,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "branch",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -502,11 +505,11 @@ return {
       isStoryNode = true,
       key = "1741317245436823824",
       type = "StoryNode",
-      name = "\229\133\187\232\128\129\233\153\162\230\137\190\232\141\175\230\150\185",
+      name = "养老院找药方",
       pos = {x = 1155.6680174721264, y = 641.8233498830318},
       propsData = {
         QuestId = 20020905,
-        QuestDescriptionComment = "\229\142\187\229\185\191\229\156\186\230\137\190\233\156\178\229\168\156\229\175\185\232\175\157",
+        QuestDescriptionComment = "去广场找露娜对话",
         QuestDescription = "Description_200209_5",
         QuestDeatil = "Content_200209_5",
         TaskRegionReName = "",
@@ -526,8 +529,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101106,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = "1200162point"
+        StoryGuidePointName = "1200162point",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -611,7 +616,7 @@ return {
           ["1741317627147826074"] = {
             key = "1741317627147826074",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1717.216681730803, y = 333.8139466582254},
             propsData = {
               IsNpcNode = false,
@@ -632,7 +637,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -642,7 +646,7 @@ return {
           ["1741317629229826182"] = {
             key = "1741317629229826182",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1749.255474834251, y = 524.3786018306394},
             propsData = {
               IsNpcNode = false,
@@ -663,7 +667,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -673,7 +676,7 @@ return {
           ["1741317629444826188"] = {
             key = "1741317629444826188",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1679.8007334549404, y = 826.7983919355876},
             propsData = {
               IsNpcNode = false,
@@ -694,7 +697,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -704,7 +706,7 @@ return {
           ["17416944608724091897"] = {
             key = "17416944608724091897",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1444.4137072590208, y = 829.8952387830243},
             propsData = {
               bActiveEnable = true,
@@ -721,7 +723,7 @@ return {
           ["17416944618234091951"] = {
             key = "17416944618234091951",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1520.0669505674366, y = 536.8627253194761},
             propsData = {
               bActiveEnable = true,
@@ -738,7 +740,7 @@ return {
           ["17416944619744091957"] = {
             key = "17416944619744091957",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1453.1663248773373, y = 308.4928933970126},
             propsData = {
               bActiveEnable = true,
@@ -755,7 +757,7 @@ return {
           ["17477419093373170333"] = {
             key = "17477419093373170333",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 2170.1083656736228, y = 820.5284471998455},
             propsData = {
               IsNpcNode = false,
@@ -776,7 +778,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -786,7 +787,7 @@ return {
           ["17477419095033170340"] = {
             key = "17477419095033170340",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1921.6085216960898, y = 823.2268557706795},
             propsData = {
               IsNpcNode = false,
@@ -807,7 +808,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -822,11 +822,11 @@ return {
       isStoryNode = true,
       key = "1741317276015824163",
       type = "StoryNode",
-      name = "\230\139\191\232\141\175\230\150\185\229\155\158\229\164\141\233\156\178\229\168\156",
+      name = "拿药方回复露娜",
       pos = {x = 1434.8780252718275, y = 654.1298771087565},
       propsData = {
         QuestId = 20020906,
-        QuestDescriptionComment = "\229\142\187\229\185\191\229\156\186\230\137\190\233\156\178\229\168\156\229\175\185\232\175\157",
+        QuestDescriptionComment = "去广场找露娜对话",
         QuestDescription = "Description_200209_6",
         QuestDeatil = "Content_200209_6",
         TaskRegionReName = "",
@@ -846,8 +846,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Luna_1190435"
+        StoryGuidePointName = "Npc_Luna_1190435",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -889,7 +891,7 @@ return {
           ["1741317276016824172"] = {
             key = "1741317276016824172",
             type = "TalkNode",
-            name = "\233\156\178\229\168\156",
+            name = "露娜",
             pos = {x = 1204.1451893808073, y = 316.69508963716186},
             propsData = {
               IsNpcNode = true,
@@ -914,6 +916,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -921,13 +924,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -945,11 +948,11 @@ return {
       isStoryNode = true,
       key = "17413354689081644598",
       type = "StoryNode",
-      name = "3\229\134\141\230\172\161\229\146\140\233\156\178\229\168\156\229\175\185\232\175\157",
+      name = "3再次和露娜对话",
       pos = {x = 842.9131749417622, y = 768.1055775441671},
       propsData = {
         QuestId = 20020904,
-        QuestDescriptionComment = "\229\142\187\229\185\191\229\156\186\230\137\190\233\156\178\229\168\156\229\175\185\232\175\157",
+        QuestDescriptionComment = "去广场找露娜对话",
         QuestDescription = "Description_200209_4",
         QuestDeatil = "Content_200209_4",
         TaskRegionReName = "",
@@ -969,8 +972,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Luna_1190435"
+        StoryGuidePointName = "Npc_Luna_1190435",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1012,7 +1017,7 @@ return {
           ["17413354689081644607"] = {
             key = "17413354689081644607",
             type = "TalkNode",
-            name = "\232\167\166\229\143\145\233\156\178\229\168\156",
+            name = "触发露娜",
             pos = {x = 1271.0770075626256, y = 357.12690781898004},
             propsData = {
               IsNpcNode = true,
@@ -1037,6 +1042,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1044,13 +1050,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -1068,11 +1074,11 @@ return {
       isStoryNode = true,
       key = "17413356261481647572",
       type = "StoryNode",
-      name = "12\229\134\141\230\172\161\229\146\140\233\156\178\229\168\156\229\175\185\232\175\157",
+      name = "12再次和露娜对话",
       pos = {x = 826.8133476244022, y = 566.523058993153},
       propsData = {
         QuestId = 20020903,
-        QuestDescriptionComment = "\229\142\187\229\185\191\229\156\186\230\137\190\233\156\178\229\168\156\229\175\185\232\175\157",
+        QuestDescriptionComment = "去广场找露娜对话",
         QuestDescription = "Description_200209_3",
         QuestDeatil = "Content_200209_3",
         TaskRegionReName = "",
@@ -1092,8 +1098,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Luna_1190435"
+        StoryGuidePointName = "Npc_Luna_1190435",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -1135,7 +1143,7 @@ return {
           ["17413356261481647581"] = {
             key = "17413356261481647581",
             type = "TalkNode",
-            name = "\232\167\166\229\143\145\233\156\178\229\168\156",
+            name = "触发露娜",
             pos = {x = 1204.8270075626256, y = 317.37690781898004},
             propsData = {
               IsNpcNode = true,
@@ -1160,6 +1168,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -1167,13 +1176,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

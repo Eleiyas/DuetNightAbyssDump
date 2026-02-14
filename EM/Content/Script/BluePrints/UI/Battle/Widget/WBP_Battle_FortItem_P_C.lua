@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Battle_FortItem_P_C = Class("BluePrints.UI.Battle.Widget.WBP_Battle_FortItem_Base_C")
-
 function WBP_Battle_FortItem_P_C:InitItem_PaoTai(SkillName, Skill, OwnerPlayer, Index, Root)
   WBP_Battle_FortItem_P_C.Super.InitItem_PaoTai(self, SkillName, Skill, OwnerPlayer, Index, Root)
   self.Text_CDPaoTai = self.Text_CD
@@ -27,7 +26,6 @@ function WBP_Battle_FortItem_P_C:InitItem_PaoTai(SkillName, Skill, OwnerPlayer, 
     self.OverHeating_CDPaoTai:SetRenderOpacity(1.0)
   end
 end
-
 function WBP_Battle_FortItem_P_C:OnSkillActionInput_PaoTai()
   if self.CurButtonState == "InCDTime" then
     self.Icon_Skill:SetRenderOpacity(0.2)
@@ -41,5 +39,4 @@ function WBP_Battle_FortItem_P_C:OnSkillActionInput_PaoTai()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Click)
   end
 end
-
 return WBP_Battle_FortItem_P_C

@@ -1,11 +1,9 @@
 require("UnLua")
 local WBP_ImpressionItem_PC = Class("BluePrints.Story.Talk.UI.Common.WBP_ImpressionItem_Common")
-
 function WBP_ImpressionItem_PC:AdaptPlatform()
   self:InitPickUpKey()
   self.KeyNode:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_ImpressionItem_PC:InitPickUpKey()
   self.Key_PickUp:CreateCommonKey({
     KeyInfoList = {
@@ -24,7 +22,6 @@ function WBP_ImpressionItem_PC:InitPickUpKey()
     }
   })
 end
-
 function WBP_ImpressionItem_PC:OnSelectedByPlatform(bIsSelect)
   DebugPrint("WBP_ImpressionItem_PC:OnSelectByPlatform", bIsSelect)
   if bIsSelect then
@@ -46,11 +43,9 @@ function WBP_ImpressionItem_PC:OnSelectedByPlatform(bIsSelect)
     self.KeyNode:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ImpressionItem_PC:ClearByPlatform()
   self.KeyNode:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_ImpressionItem_PC:OnReleasedByPlatform()
   if self:IsSelfEnabled() then
     self:PlayAnimation(self.Hover, 0, 1)
@@ -59,25 +54,20 @@ function WBP_ImpressionItem_PC:OnReleasedByPlatform()
     self:StopAnimation(self.Forbidden_Hover)
   end
 end
-
 function WBP_ImpressionItem_PC:OnHoveredByPlatform()
   DebugPrint("WBP_ImpressionItem_PC: OnHovered", self, self.ItemIndex)
   self:FireButtonDelegate(self.OnHoveredEvent, self.ItemIndex)
 end
-
 function WBP_ImpressionItem_PC:OnUnhoveredByPlatform()
   DebugPrint("WBP_ImpressionItem_PC: OnUnhovered", self, self.ItemIndex)
   self:FireButtonDelegate(self.OnUnhoveredEvent, self.ItemIndex)
 end
-
 function WBP_ImpressionItem_PC:SetOnHovered(Delegate)
   self.OnHoveredEvent = Delegate
 end
-
 function WBP_ImpressionItem_PC:SetOnUnhovered(Delegate)
   self.OnUnhoveredEvent = Delegate
 end
-
 function WBP_ImpressionItem_PC:UpdateKeyImg(IsGamePad)
   if IsGamePad then
     self.WS_Node:SetActiveWidgetIndex(1)
@@ -85,5 +75,4 @@ function WBP_ImpressionItem_PC:UpdateKeyImg(IsGamePad)
     self.WS_Node:SetActiveWidgetIndex(0)
   end
 end
-
 return WBP_ImpressionItem_PC

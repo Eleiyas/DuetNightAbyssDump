@@ -1,7 +1,6 @@
 require("UnLua")
 local EnumPlayerSignRewardState = require("Blueprints.UI.WBP.Activity.ActivityUtils").EnumPlayerSignRewardState
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:FillWithData(Content)
   self.Content = Content
   self.ParentWidget = Content.ParentWidget
@@ -14,11 +13,9 @@ function M:FillWithData(Content)
   self:UnBindButtonPerformances()
   self:BindButtonPerformances()
 end
-
 function M:GetRewardStuffIndex()
   return self.Index
 end
-
 function M:UpdateView(Content)
   local IconDynaMaterial = self.Image_Item:GetDynamicMaterial()
   if IconDynaMaterial then
@@ -29,7 +26,6 @@ function M:UpdateView(Content)
   self.ItemDetails_MenuAnchor.ParentWidget = self
   self:PlayAnimation(self.Normal)
 end
-
 function M:RefreshState(RewardState)
   if RewardState == EnumPlayerSignRewardState.Completed then
     self.Image_Got:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -37,7 +33,6 @@ function M:RefreshState(RewardState)
     self.Image_Got:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:BindButtonPerformances()
   self.Btn_Item.OnClicked:Add(self, self.OnBtnClicked)
   self.Btn_Item.OnPressed:Add(self, self.OnBtnPressed)
@@ -45,7 +40,6 @@ function M:BindButtonPerformances()
   self.Btn_Item.OnUnhovered:Add(self, self.OnBtnUnhovered)
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnStuffDetailViewOpenChanged)
 end
-
 function M:UnBindButtonPerformances()
   self.Btn_Item.OnClicked:Clear()
   self.Btn_Item.OnPressed:Clear()
@@ -53,13 +47,11 @@ function M:UnBindButtonPerformances()
   self.Btn_Item.OnUnhovered:Clear()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnStuffDetailViewOpenChanged)
 end
-
 function M:OnStuffDetailViewOpenChanged(IsOpened)
   if type(self.StuffClickCallback) == "function" then
     self.StuffClickCallback(self.ParentWidget, IsOpened, self.Index)
   end
 end
-
 function M:OnBtnClicked()
   if not self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
     local Content = {
@@ -73,7 +65,6 @@ function M:OnBtnClicked()
     AudioManager(self):PlayItemSound(self, self.Id, "Click", self.ItemType)
   end
 end
-
 function M:HideBtn(bHide)
   if bHide then
     self.Btn_Item:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -81,10 +72,8 @@ function M:HideBtn(bHide)
     self.Btn_Item:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:OnBtnPressed()
 end
-
 function M:OnBtnHovered()
   if self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
     return
@@ -92,7 +81,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
     return
@@ -100,5 +88,4 @@ function M:OnBtnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 return M

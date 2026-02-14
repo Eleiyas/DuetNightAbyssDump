@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
@@ -14,7 +13,6 @@ function M:Construct()
   self.MenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
   self:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   if not bIsOpen then
     self:StopAllAnimations()
@@ -22,7 +20,6 @@ function M:OnMenuOpenChanged(bIsOpen)
     self.IsSelect = false
   end
 end
-
 function M:OnButClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if not self.MenuAnchor:IsOpen() then
@@ -32,7 +29,6 @@ function M:OnButClicked()
     self.Parent:OnClickedCell(self)
   end
 end
-
 function M:OnCellUnSelect()
   if not self.IsSelect then
     return
@@ -41,19 +37,16 @@ function M:OnCellUnSelect()
   self.IsSelect = false
   self:PlayAnimation(self.Normal)
 end
-
 function M:SelectCell()
   self.IsSelect = true
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnGetMenuContent(Anchor)
   self.DeputeEvent = UIManager(self):_CreateWidgetNew("DeputeEvent")
   self.DeputeEvent.Text_Event:SetText(GText(self.Des))
   return self.DeputeEvent
 end
-
 function M:Init(IconPath, Des, Parent, Index)
   self:PlayAnimation(self.Normal)
   self:SetIcon(IconPath)
@@ -61,17 +54,14 @@ function M:Init(IconPath, Des, Parent, Index)
   self.Parent = Parent
   self.Index = Index
 end
-
 function M:SetIcon(IconPath)
   local IconObj = LoadObject(string.format("Texture2D'%s'", IconPath))
   self.Img_Event:SetBrushFromTexture(IconObj)
 end
-
 function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnHovered()
   if self.IsSelect or not self.IsPC then
     return
@@ -82,7 +72,6 @@ function M:OnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   if self.IsSelect or not self.IsPC then
     return
@@ -93,7 +82,6 @@ function M:OnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -107,7 +95,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   DebugPrint("SL OnGamePadDown is InKeyName", InKeyName)
   local IsEventHandled = false
@@ -118,10 +105,8 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.Parent:UpdatKeyDisplay("EventWidget")
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

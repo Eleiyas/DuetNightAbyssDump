@@ -2,15 +2,12 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClicked)
 end
-
 function M:SetText(Text)
   self.Text_Store:SetText(Text)
 end
-
 function M:BindEventOnClicked(Obj, Func, Params)
   if not Obj or not Func then
     return
@@ -19,7 +16,6 @@ function M:BindEventOnClicked(Obj, Func, Params)
   self.Func = Func
   self.Params = Params
 end
-
 function M:OnBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/activity/shop_small_btn_click", nil, nil)
   if self.Obj and self.Func then
@@ -30,5 +26,4 @@ function M:OnBtnClicked()
     end
   end
 end
-
 return M

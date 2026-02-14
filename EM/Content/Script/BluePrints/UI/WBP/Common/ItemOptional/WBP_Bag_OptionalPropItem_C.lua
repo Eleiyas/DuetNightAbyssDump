@@ -1,17 +1,13 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
 end
-
 function M:Destruct()
 end
-
 function M:OnListItemObjectSet(Content)
   self:Init(Content)
   self:InitListenEvent()
 end
-
 function M:Init(Content)
   if not Content.ItemType then
     return
@@ -41,11 +37,9 @@ function M:Init(Content)
   self.MaxLimit = Content.OptCount - Content.ParentWidget.CurrentCount + self.ChooseDataInfo.ConsumeCount
   self:InitCommonView(Content)
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdateNumInputLimit, self, self.UpdateNumInputLimit)
 end
-
 function M:InitCommonView(Content)
   self.Text_Name:SetText(Content.Name)
   self.Text_Hold:SetText(GText("UI_Bag_Sellconfirm_Hold"))
@@ -69,9 +63,9 @@ function M:InitCommonView(Content)
     self:InitComInput()
   end)
 end
-
 function M:InitComInput()
   if self.bIsInited then
+    self.Com_NumInput:OverrideValueLimit(self.ChooseDataInfo.ConsumeCount, self.MaxLimit, 0, true)
     return
   end
   self.Com_NumInput:Init({
@@ -97,19 +91,17 @@ function M:InitComInput()
   self.Com_NumInput:UpdateUIStyleInPlatform(true)
   self.bIsInited = true
 end
-
-function M:OnClickMinus()
+function M:OnClickMinus(CurrentNumber, OldValue)
   self.ChooseDataInfo.ConsumeCount = self.Com_NumInput.CurInputNumber
   if type(self.ChooseCallback) == "function" then
     self.ChooseCallback(self.ParentWidget, true, self.ChooseDataInfo)
   end
-  self.ParentWidget.CurrentCount = self.ParentWidget.CurrentCount - 1
+  self.ParentWidget.CurrentCount = self.ParentWidget.CurrentCount + CurrentNumber - OldValue
   self.ParentWidget:RefreshDialogTip()
   self.ParentWidget.Id2ConsumeCount[self.ChooseId] = self.ChooseDataInfo.ConsumeCount
   EventManager:FireEvent(EventID.OnUpdateNumInputLimit, self.ChooseId, self.OptCount - self.ParentWidget.CurrentCount, 0, true)
 end
-
-function M:OnClickAdd()
+function M:OnClickAdd(CurrentNumber, OldValue)
   if self.ParentWidget.CurrentCount >= self.OptCount then
     return
   end
@@ -117,12 +109,11 @@ function M:OnClickAdd()
   if type(self.ChooseCallback) == "function" then
     self.ChooseCallback(self.ParentWidget, true, self.ChooseDataInfo)
   end
-  self.ParentWidget.CurrentCount = self.ParentWidget.CurrentCount + 1
+  self.ParentWidget.CurrentCount = self.ParentWidget.CurrentCount + CurrentNumber - OldValue
   self.ParentWidget:RefreshDialogTip()
   self.ParentWidget.Id2ConsumeCount[self.ChooseId] = self.ChooseDataInfo.ConsumeCount
   EventManager:FireEvent(EventID.OnUpdateNumInputLimit, self.ChooseId, self.OptCount - self.ParentWidget.CurrentCount, 0, true)
 end
-
 function M:OnClickMin()
   local Value = self.ChooseDataInfo.ConsumeCount
   self.Com_NumInput.CurInputNumber = 0
@@ -135,7 +126,6 @@ function M:OnClickMin()
   self.ParentWidget.Id2ConsumeCount[self.ChooseId] = self.ChooseDataInfo.ConsumeCount
   EventManager:FireEvent(EventID.OnUpdateNumInputLimit, self.ChooseId, self.OptCount - self.ParentWidget.CurrentCount, 0, true)
 end
-
 function M:OnClickMax()
   if self.ParentWidget.CurrentCount >= self.OptCount then
     return
@@ -151,7 +141,6 @@ function M:OnClickMax()
   self.ParentWidget.Id2ConsumeCount[self.ChooseId] = self.ChooseDataInfo.ConsumeCount
   EventManager:FireEvent(EventID.OnUpdateNumInputLimit, self.ChooseId, self.OptCount - self.ParentWidget.CurrentCount, 0, true)
 end
-
 function M:OnMenuOpenChangedEvents(bIsOpen)
   self.ParentWidget:OnMenuOpenChangedEvents(bIsOpen)
   if not bIsOpen then
@@ -161,12 +150,16 @@ function M:OnMenuOpenChangedEvents(bIsOpen)
     end
   end
 end
-
 function M:OnKeyDownEvent(InKey)
   local IsEventHandled = self.Com_NumInput:Handle_KeyEventOnGamePad(InKey)
   return IsEventHandled
 end
-
+function M:UpdateNumInputLimit(Id, MaxValue, MinValue, bRefresh)
+  if Id == self.ChooseId then
+    return
+  end
+  self.Com_NumInput:OverrideValueLimit(self.ChooseDataInfo.ConsumeCount, MaxValue + self.ChooseDataInfo.ConsumeCount, MinValue, bRefresh)
+end
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local CurInputDevice = self.GameInputModeSubsystem:GetCurrentInputType()
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -177,17 +170,8 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return true
 end
-
 function M:OnFocusLost(InFocusEvent)
   self.Com_List:PlayAnimation(self.Com_List.UnHover)
   self.Com_NumInput:UpdateUIStyleInPlatform(true)
 end
-
-function M:UpdateNumInputLimit(Id, MaxValue, MinValue, bRefresh)
-  if Id == self.ChooseId then
-    return
-  end
-  self.Com_NumInput:OverrideValueLimit(self.ChooseDataInfo.ConsumeCount, MaxValue + self.ChooseDataInfo.ConsumeCount, MinValue, bRefresh)
-end
-
 return M

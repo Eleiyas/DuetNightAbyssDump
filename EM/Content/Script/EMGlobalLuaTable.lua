@@ -1,29 +1,24 @@
 local MiscUtils = require("Utils.MiscUtils")
+local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local EMGlobalLuaTable = {}
-
 function EMGlobalLuaTable.TriggerBattleEvent(Battle, EventName, ...)
   Battle:TriggerLuaBattleEvent(EventName, ...)
 end
-
 function EMGlobalLuaTable.TriggerEventManager(EventName, ...)
   EventManager:FireEvent(EventName, ...)
 end
-
 function EMGlobalLuaTable.RemoveEvent(EventName, Object)
   EventManager:RemoveEvent(EventName, Object)
 end
-
 function EMGlobalLuaTable.TriggerDungeonComponentFun(GameMode, EventName, ...)
   if GameMode and EventName then
     GameMode:TriggerDungeonComponentFun(EventName, ...)
   end
 end
-
 function EMGlobalLuaTable.SkillUtilsSplitEval(Desc)
   local SkillUtils = require("Utils.SkillUtils")
   return SkillUtils.SplitEval(Desc, "$")
 end
-
 function EMGlobalLuaTable.GetTaskTargetPointPos()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local TaskIndicator = UIManager:GetUIObj("TaskIndicator")
@@ -32,16 +27,13 @@ function EMGlobalLuaTable.GetTaskTargetPointPos()
   end
   return UE4.FVector(0, 0, 0)
 end
-
 function EMGlobalLuaTable.GetTransEPhysicalSurface(PhysicalSurface)
   return MiscUtils.TransEPhysicalSurface(PhysicalSurface)
 end
-
 function EMGlobalLuaTable.ShowRougeLikeError(Text)
   local BP_RougeLikeManager_C = require("BluePrints.GameMode.BP_RougeLikeManager_C")
   BP_RougeLikeManager_C:ShowRougeLikeError(Text)
 end
-
 function EMGlobalLuaTable.MakeTempFlexibleMap(FlexibleShowHideTags)
   local NewFlexibleMap = {}
   local FNpcArrayNum = FlexibleShowHideTags:Num()
@@ -54,7 +46,6 @@ function EMGlobalLuaTable.MakeTempFlexibleMap(FlexibleShowHideTags)
   end
   return NewFlexibleMap
 end
-
 function EMGlobalLuaTable.CustomNpcFlexibShow(FlexibleShowHideTags)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -126,7 +117,43 @@ function EMGlobalLuaTable.CustomNpcFlexibShow(FlexibleShowHideTags)
   end
   return true
 end
-
+function EMGlobalLuaTable.GenerateEnhanceLogName()
+  local SystemTime = os.time()
+  local FinalLogName = os.date("%Y_%m_%d_%H_%M", SystemTime)
+  local SdkUserId = HeroUSDKUtils.GetUserInfo().sdkUserId
+  if "" ~= SdkUserId then
+    FinalLogName = string.format("%s-%s", FinalLogName, SdkUserId)
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    FinalLogName = string.format("%s-%d", FinalLogName, Avatar.Uid)
+  end
+  return FinalLogName
+end
+function EMGlobalLuaTable.ShowEnhanceLogUploadTip(...)
+  local UIManager = GWorld.GameInstance:GetGameUIManager()
+  if not UIManager then
+    return
+  end
+  local Args = {
+    ...
+  }
+  local Result = Args[1]
+  local FileName = Args[2]
+  if Result == UE4.EUploadEnhanceLogResult.Success then
+    local TipText = string.format(GText("UI_Opition_Log_Finish"), FileName)
+    UIManager:ShowUITip(UIConst.Tip_CommonToast, TipText)
+  else
+    UIManager:ShowUITip(UIConst.Tip_CommonToast, string.format(GText("UI_Opition_Log_UpdateFail"), tostring(Result)))
+  end
+end
+function EMGlobalLuaTable.ShowClearLogTip()
+  local UIManager = GWorld.GameInstance:GetGameUIManager()
+  if not UIManager then
+    return
+  end
+  UIManager:ShowUITip(UIConst.Tip_CommonToast, GText("UI_Opition_Log_Cleand"))
+end
 function EMGlobalLuaTable.CustomNpcAtmosShow(AtmosphereTagArray)
   if 0 == AtmosphereTagArray:Num() then
     return true
@@ -145,5 +172,4 @@ function EMGlobalLuaTable.CustomNpcAtmosShow(AtmosphereTagArray)
   end
   return true
 end
-
 return EMGlobalLuaTable

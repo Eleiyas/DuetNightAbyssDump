@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:SetIcon(IconPath)
   self.Icon_Ability:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetDispathchColor(DispatchTag, bIsLocked)
   local AnimName = UIUtils.GetDispathchColorNameByType(DispatchTag)
   if "Special" == AnimName then
@@ -23,5 +21,4 @@ function M:SetDispathchColor(DispatchTag, bIsLocked)
   end
   self:PlayAnimation(self[AnimName])
 end
-
 return M

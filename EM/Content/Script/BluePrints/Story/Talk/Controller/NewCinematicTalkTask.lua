@@ -1,8 +1,8 @@
 local CinematicDialogueData_C = require("BluePrints.Story.Talk.Model.DialogueData").CinematicDialogueData_C
-local TalkAudioComp_C = require("BluePrints.Story.Talk.Controller.TalkAudioComp")
 local ReviewUtils = require("BluePrints.UI.WBP.StoryReview.StoryReviewUtils")
 local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local EDialogueNodeType = TalkUtils.EDialogueNodeType
+local LibraryPath = "/Game/Asset/Effect/Blueprint/PostProcess/PostProcessFunctionLibrary.PostProcessFunctionLibrary"
 local WaitItemUniqueTag = {
   UIPlayDialogue = 1,
   DelayTime = 2,
@@ -12,7 +12,20 @@ local WaitItemUniqueTag = {
   DialogueSequencePause = 6
 }
 local M = Class("BluePrints.Story.Talk.Controller.CommonTalkTask")
-
+function M:End()
+  local PlayerController = UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
+  AudioManager(self):StopSound(PlayerController, Const.TalkSoundKey)
+  if self.TalkTaskData.SequenceActor then
+    self.TalkTaskData.SequenceActor:K2_DestroyActor()
+  end
+  local TalkSequenceMgrSubSystem = USubsystemBlueprintLibrary.GetWorldSubsystem(self.TalkContext, UTalkSequenceMgrSubSystem)
+  if IsValid(TalkSequenceMgrSubSystem) then
+    TalkSequenceMgrSubSystem:UnRegisterTalkSequencerProxy(self.TalkTaskData.SequencePlayer)
+  end
+  ReviewUtils.OpenCutShowReview(false)
+  self.TalkContext:OnSequencePlayEnd(self.TalkTaskData)
+  M.Super.End(self)
+end
 function M:BindDelegate()
   self.UI:AddDelegate_SkipButtonClicked(self, self.OnSkipButtonClicked)
   self.UI:AddDelegate_DialoguePanelClicked(self, self.OnUIDialoguePanelClicked)
@@ -29,13 +42,11 @@ function M:BindDelegate()
     })
   end
 end
-
 function M:OnSequenceShowVideoUI(bState)
   if self.UI then
     self.UI:ShowVideo(bState)
   end
 end
-
 function M:UnbindDelegate()
   if not self.UI then
     return
@@ -50,7 +61,6 @@ function M:UnbindDelegate()
     self.SequenceProxy.OnEndPlayDialogue:Clear()
   end
 end
-
 function M:OnCinematicBegin()
   M.Super.OnCinematicBegin(self)
   self.TalkContext:OnSequencePlayBegin(self.TalkTaskData)
@@ -72,35 +82,34 @@ function M:OnCinematicBegin()
     self.SequenceProxy:SetUpLua(self)
   end
   DebugPrint("CinematicTalkTask:OnCinematicBegin", self.SequenceProxy, TalkSequenceMgrSubSystem)
+  local UPostProcessFunctionLibrary = LoadClass(LibraryPath)
+  if UPostProcessFunctionLibrary and UPostProcessFunctionLibrary.MobileCloseLights then
+    UPostProcessFunctionLibrary.MobileCloseLights(self.TalkTaskData.SequenceActor)
+  end
 end
-
-function M:TalkEndFadeIn()
-  self:OnTalkEndFadeInFinished()
-end
-
 function M:OnCinematicTalkEndFadeIn()
   self.BlackUI:FadeIn(self.FinishFadeInTime)
 end
-
 function M:PlayDialogue(bPauseResume, bSkipping)
   local NodeType = self.DialogueIterationComponent:GetCurrentNodeType()
   if NodeType ~= EDialogueNodeType.Dialogue then
-    DebugPrint("lhr@Dialogue Iteration Error: NodeType", NodeType, "\228\184\141\229\144\136\230\179\149")
+    DebugPrint("lhr@Dialogue Iteration Error: NodeType", NodeType, "不合法")
     return
   end
-  if bSkipping then
+  if bSkipping or self.TalkTaskData.bSkippedSequence then
     return
   end
   local Dialogue = self.DialogueIterationComponent:GetDialogue()
   DebugPrint("CinematicTalkTask:PlayDialogue", Dialogue and Dialogue.DialogueId)
   if not Dialogue then
-    DebugPrint("lhr@Dialogue Iteration Error: Dialogue\228\184\186\231\169\186")
+    DebugPrint("lhr@Dialogue Iteration Error: Dialogue为空")
     return
   end
   local CurrentDialogueId = Dialogue.DialogueId
   local DialogueData = CinematicDialogueData_C.New(self, CurrentDialogueId, self.TalkContext)
   if not DialogueData.Content then
     self:IterateDialogue()
+    self:RecordDialogueCompleted(DialogueData.DialogueId)
     return
   end
   if self.WaitQueue then
@@ -117,21 +126,17 @@ function M:PlayDialogue(bPauseResume, bSkipping)
   local WaitQueuePointer = self.WaitQueue
   self.UI:SetTextBorderHidden(false)
   self.UI:PlayDialogue(self, DialogueData, self.TalkTaskData)
-  self.TalkAudioComp:PlayDialogue(DialogueData, self.TalkTaskData, self, {
-    Func = function()
-      WaitQueuePointer:CompleteWaitItem(WaitItemUniqueTag.PlayAudio)
-    end
-  }, true)
+  self:PlayAudio(DialogueData, function()
+    WaitQueuePointer:CompleteWaitItem(WaitItemUniqueTag.PlayAudio)
+  end)
   self.TalkContext.TalkTimerManager:AddTimer(self, DialogueData.Duration, nil, nil, self, function()
     WaitQueuePointer:CompleteWaitItem(WaitItemUniqueTag.DelayTime)
   end)
   self:RecordDialogueCompleted(DialogueData.DialogueId)
 end
-
 function M:EndDialogue()
   self.UI:SetTextBorderHidden(true)
 end
-
 function M:OnSkipButtonClicked()
   DebugPrint("CinematicTalkTask:OnSkipButtonClicked")
   self.TalkTaskData.bSkippedSequence = true
@@ -143,15 +148,11 @@ function M:OnSkipButtonClicked()
   if self.WaitQueue then
     self.WaitQueue:CloseWaitQueue()
   end
-  if self.TalkTaskData.BlendOutType == "FadeOut" then
-    self.BlackUI:FadeIn(0)
-  end
   self.TalkTaskData.SequencePlayer:GoToEnd()
   if self.TalkTaskData.SequencePlayer:IsPaused() then
     self.TalkTaskData.SequencePlayer:Play()
   end
 end
-
 function M:OnUIDialoguePanelClicked()
   if not self:CanResponseUIClick() then
     return
@@ -159,17 +160,16 @@ function M:OnUIDialoguePanelClicked()
   self:SequenceTryResumeDialogue()
   self.UI:SwitchEnableTalkClick(false)
 end
-
 function M:OnSequencePlayDialogue(DialogueId, bStart)
   DebugPrint("CinematicTalkTask:OnSequencePlayDialogue", DialogueId, bStart)
 end
-
 function M:SequenceDrivePlayDialogue(DialogueId)
   DebugPrint("CinematicTalkTask:SequenceDrivePlayDialogue", DialogueId)
   self:CinematicStartIteration(DialogueId)
-  self.WaitQueue:RegiserWaitItem(WaitItemUniqueTag.DialogueSequenceDrive)
+  if self.WaitQueue then
+    self.WaitQueue:RegiserWaitItem(WaitItemUniqueTag.DialogueSequenceDrive)
+  end
 end
-
 function M:SequenceEndPlayDialogue(DialogueId)
   DebugPrint("CinematicTalkTask:SequenceEndPlayDialogue", DialogueId)
   self:TryHideDialogueBlackUI()
@@ -179,17 +179,14 @@ function M:SequenceEndPlayDialogue(DialogueId)
     WaitQuque:CloseWaitQueue()
   end
 end
-
 function M:SequenceTryPauseDialogue()
   DebugPrint("CinematicTalkTask:SequenceTryPauseDialogue")
   self.TalkTaskData.SequencePlayer:Pause()
 end
-
 function M:SequenceTryResumeDialogue()
   DebugPrint("CinematicTalkTask:SequenceTryResumeDialogue")
   self.TalkTaskData.SequencePlayer:Play()
 end
-
 function M:TalkTryPauseDialogue()
   DebugPrint("CinematicTalkTask:TalkTryPauseDialogue")
   self.TalkTaskData.SequencePlayer:Pause()
@@ -198,7 +195,6 @@ function M:TalkTryPauseDialogue()
   end
   self.WaitQueue:RegiserWaitItem(WaitItemUniqueTag.DialogueSequencePause)
 end
-
 function M:TalkTryResumeDialogue()
   DebugPrint("CinematicTalkTask:TalkTryResumeDialogue")
   self.TalkTaskData.SequencePlayer:Play()
@@ -207,61 +203,39 @@ function M:TalkTryResumeDialogue()
   end
   self.WaitQueue:CompleteWaitItem(WaitItemUniqueTag.DialogueSequencePause)
 end
-
 function M:OnTaskPlayDialogueFinished()
   DebugPrint("CinematicTalkTask:OnTaskPlayDialogueFinished")
   self.UI:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:IterateDialogue()
 end
-
 function M:OnSequencePlayPaused()
   DebugPrint("OnSequencePlayPaused")
 end
-
 function M:OnSequencePlayFinished()
   DebugPrint("CinematicTalkTask:OnSequencePlayFinished")
+  self.BlackUI:FadeIn(0)
+  self.BlackUI:FadeOut(0)
   self.TalkContext:UnBindOnSequenceFadeInStart()
   local PlayerController = UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
   UTalkSequenceFunctionLibrary.UpdatePlayerCameraManager(PlayerController)
   self:FinishDialogue()
 end
-
 function M:StartDialogueIteration()
 end
-
 function M:CinematicStartIteration(DialogueId)
   self.DialogueIterationComponent:Initialize(DataMgr.Dialogue, DialogueId)
   self.DialogueIterationComponent:Start()
 end
-
 function M:OnPaused()
   M.Super.OnPaused(self)
   self:TalkTryPauseDialogue()
   EventManager:FireEvent(EventID.PauseQTE)
-  self.BlackUI:Pause(true)
 end
-
 function M:OnPauseResumed()
   M.Super.OnPauseResumed(self)
   self:TalkTryResumeDialogue()
   EventManager:FireEvent(EventID.ResumeQTE)
-  self.BlackUI:Pause(false)
 end
-
-function M:End()
-  local PlayerController = UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
-  AudioManager(self):StopSound(PlayerController, Const.TalkSoundKey)
-  if self.TalkTaskData.SequenceActor then
-    self.TalkTaskData.SequenceActor:K2_DestroyActor()
-  end
-  local TalkSequenceMgrSubSystem = USubsystemBlueprintLibrary.GetWorldSubsystem(self.TalkContext, UTalkSequenceMgrSubSystem)
-  if IsValid(TalkSequenceMgrSubSystem) then
-    TalkSequenceMgrSubSystem:UnRegisterTalkSequencerProxy(self.TalkTaskData.SequencePlayer)
-  end
-  ReviewUtils.OpenCutShowReview(false)
-  M.Super.End(self)
-end
-
 function M:CheckResource()
   if not M.Super.CheckResource() then
     return false
@@ -283,5 +257,4 @@ function M:CheckResource()
   end
   return true
 end
-
 return M

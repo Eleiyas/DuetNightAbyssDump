@@ -1,35 +1,28 @@
 local FEntertainmentUtils = require("BluePrints.UI.WBP.Entertainment.EntertainmentUtils")
 local Component = Class()
-
 function Component:OnInitialize()
   self.ChangeCharacterSound = "event:/ui/common/role_replace"
 end
-
 function Component:OnConstruct()
   self.EMListView_Role.BP_OnItemClicked:Add(self, self.OnCharacterItemClicked)
   self.SelectItem = nil
 end
-
 function Component:OnDestruct()
   self.EMListView_Role.BP_OnItemClicked:Remove(self, self.OnCharacterItemClicked)
   self.SelectItem = nil
   self.RoleContentList = nil
 end
-
 function Component:OpenComponentPanel()
   self.Tab_L:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:RefreshSelect()
 end
-
 function Component:CloseComponentPanel()
   self.Tab_L:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function Component:OnInitUIInfo()
   self:InitRoleContentList()
   self:InitRoleListView()
 end
-
 function Component:CreateRoleListItem(CharacterData, IsSelected)
   local BPClass = UIUtils.GetCommonItemContentClass()
   local ContentObj = NewObject(BPClass)
@@ -46,7 +39,6 @@ function Component:CreateRoleListItem(CharacterData, IsSelected)
   ContentObj.bPriority = CharacterData.bPriority
   return ContentObj
 end
-
 function Component:RefreshRedDot()
   for _, Content in pairs(self.RoleContentList) do
     Content.Upgradeable = FEntertainmentUtils:IsCharacterShowRedDot(Content.Id)
@@ -55,7 +47,6 @@ function Component:RefreshRedDot()
     end
   end
 end
-
 function Component:SetSelectItem(Item)
   local OldItem = self.SelectItem
   self.SelectItem = Item
@@ -73,7 +64,6 @@ function Component:SetSelectItem(Item)
     self.EMListView_Role:BP_NavigateToItem(Item)
   end
 end
-
 function Component:RefreshSelect()
   if self.SelectItem and self.CharacterData then
     if self.SelectItem.Id ~= self.CharacterData.Id then
@@ -88,7 +78,6 @@ function Component:RefreshSelect()
     self:InitRoleListView()
   end
 end
-
 function Component:InitRoleContentList()
   self.RoleContentList = {}
   local OwnedCharacterDataMap = self.OwnedCharacterDataMap
@@ -103,7 +92,6 @@ function Component:InitRoleContentList()
   end
   self:SortItem()
 end
-
 function Component:SortItem()
   local CharacterData = self.CharacterData
   local SelectId = CharacterData.Id
@@ -127,7 +115,6 @@ function Component:SortItem()
   end)
   self:SetSelectItem(self.SelectItem)
 end
-
 function Component:InitRoleListView()
   self.EMListView_Role:ClearListItems()
   for _, Content in ipairs(self.RoleContentList) do
@@ -135,7 +122,6 @@ function Component:InitRoleListView()
   end
   self.EMListView_Role:ScrollToTop()
 end
-
 function Component:EnsureFillListView()
   local nCnt = UIUtils.GetListViewContentMaxCount(self.EMListView_Role)
   local nItemCnt = #self.RoleContentList
@@ -143,7 +129,6 @@ function Component:EnsureFillListView()
     self.EMListView_Role:AddItem(self:CreateRoleListItem(nil))
   end
 end
-
 function Component:OnCharacterItemClicked(Item)
   if Item == self.SelectItem then
     return
@@ -155,5 +140,4 @@ function Component:OnCharacterItemClicked(Item)
   self.SwitchCharacter:SetSettedCharacterData(CharacterData)
   AudioManager(self):PlayUISound(self, self.ChangeCharacterSound, nil, nil)
 end
-
 return Component

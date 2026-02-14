@@ -1,13 +1,14 @@
 require("UnLua")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
+  self.PlayEndSequence = {}
   local GameMode = UGameplayStatics.GetGameMode(self)
-  GameMode.LevelSequenceStateRecorders:Add(self.SubRegionId, self)
+  if GameMode then
+    GameMode.LevelSequenceStateRecorders:Add(self.SubRegionId, self)
+  end
   self:ClearBinding()
 end
-
 function M:Active()
   self:ClearBinding()
   local Avatar = GWorld:GetAvatar()
@@ -19,12 +20,13 @@ function M:Active()
       elseif Recorder.PlayState == ELevelSequenceRuntimeState.EComplete then
         DebugPrint("LevelStateRecorder", "Recover,EComplete:", self.SubRegionId, Recorder.RecorderId, Recorder.SequenceState)
         self:PlaySequence_CPP(Recorder.RecorderId, Recorder.SequenceState, true, false, true)
+        self.PlayEndSequence[Recorder.RecorderId] = Recorder.SequenceState
       end
     end
   end
 end
-
 function M:PlaySequence_Lua(Id, State, LevelSequenceActor, PlayToEnd, ForceFromStart)
+  self.PlayEndSequence[Id] = nil
   local LableFrom, LableTo
   if State.IsRevrse then
     LableFrom = State.MarkLableTo
@@ -68,7 +70,6 @@ function M:PlaySequence_Lua(Id, State, LevelSequenceActor, PlayToEnd, ForceFromS
     end
   end
 end
-
 function M:OnMarkedFrameEnd(Id, State, LevelSequenceActor, Action)
   if self.PauseTag then
     return
@@ -93,11 +94,13 @@ function M:OnMarkedFrameEnd(Id, State, LevelSequenceActor, Action)
     State.RuntimeState = ELevelSequenceRuntimeState.EComplete
     self:ReportLevelSequenceState(Id, State.StateId, ELevelSequenceRuntimeState.EComplete)
   end
-  if not State.IsLoop and IsValid(Action) and Action.OnSequencePlayEnd then
-    Action.OnSequencePlayEnd:Broadcast()
+  if not State.IsLoop then
+    self.PlayEndSequence[Id] = State.StateId
+    if IsValid(Action) and Action.OnSequencePlayEnd then
+      Action.OnSequencePlayEnd:Broadcast()
+    end
   end
 end
-
 function M:ReportLevelSequenceState(RecroderId, StateId, State)
   local Avatar = GWorld:GetAvatar()
   for UniqueId, Recorder in pairs(Avatar.LevelSequenceStateRecorder) do
@@ -109,11 +112,10 @@ function M:ReportLevelSequenceState(RecroderId, StateId, State)
       end
     end
   end
-  DebugPrint("LevelSequenceState", "Report", self.SubRegionId, RecroderId, StateId, State)
+  DebugPrint("LevelStateRecorder", "Report", self.SubRegionId, RecroderId, StateId, State)
   Avatar:ReportLevelSequenceState(self.SubRegionId, RecroderId, StateId, State)
 end
-
-function M:AddBinding(LevelSequenceActor, LevelSequenceBindingParams)
+function M:AddBinding(LevelSequenceActor, LevelSequenceBindingParams, Id, StateId)
   local GameState = UGameplayStatics.GetGameState(self)
   for _, Param in pairs(LevelSequenceBindingParams:ToTable()) do
     local Creator = GameState.StaticCreatorMap:Find(Param.CreatorId)
@@ -129,6 +131,9 @@ function M:AddBinding(LevelSequenceActor, LevelSequenceBindingParams)
       Creator.OnStaticCreatorChildReadyDelegate:Add(self, function(self, NewEntity)
         if IsValid(NewEntity) then
           LevelSequenceActor:AddBindingByTag(Param.Tag, NewEntity, false)
+          if self.PlayEndSequence[Id] == StateId then
+            self:PlaySequence_CPP(Id, StateId, true, false, true)
+          end
         end
       end)
     else
@@ -136,7 +141,6 @@ function M:AddBinding(LevelSequenceActor, LevelSequenceBindingParams)
     end
   end
 end
-
 function M:ClearBinding()
   if self.BindingCreator then
     for _, Creator in pairs(self.BindingCreator) do
@@ -145,5 +149,4 @@ function M:ClearBinding()
   end
   self.BindingCreator = {}
 end
-
 return M

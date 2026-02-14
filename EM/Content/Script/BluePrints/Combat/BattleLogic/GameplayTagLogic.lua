@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:HasAnyTags_Table(Source, FilterTags, bExactMatch)
   if nil == Source then
     return false
@@ -19,9 +18,7 @@ function Component:HasAnyTags_Table(Source, FilterTags, bExactMatch)
   self.GameplayTagsTable[FilterTags] = false
   return false
 end
-
 function Component:HasAnyTags_Table_CaptureMonster()
   return self:HasAnyTags_Table(self, Const.CaptureMonster, false)
 end
-
 return Component

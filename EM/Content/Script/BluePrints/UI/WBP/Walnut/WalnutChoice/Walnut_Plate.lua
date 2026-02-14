@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Text_None:SetText(GText("UI_Walnut_Not_Select"))
   self.Text_Hint:SetText(GText("UI_Reward_Walnut_Preview"))
@@ -17,7 +16,6 @@ function M:Construct()
   self:BindEvents()
   self.WalnutRewardList = {}
 end
-
 function M:SetNoWalnut(bPlayAnimation)
   DebugPrint("SetNoWalnut")
   self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
@@ -26,13 +24,13 @@ function M:SetNoWalnut(bPlayAnimation)
   self.Panel_Ordinal:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Icon_Walnut:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Panel_Bg:SetVisibility(UE4.ESlateVisibility.Collapsed)
-  self.Num_Total:SetText(0)
+  self.Panel_Hint:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.Text_Name:SetText(GText("UI_Walnut_NoWalnutReward"))
   if bPlayAnimation then
     self:PlayAnimation(self.Refresh)
   end
   self.WalnutId = -1
 end
-
 function M:SetWalnutContent(WalnutId, bPlayAnimation)
   if not WalnutId or WalnutId < 0 then
     self:SetNoWalnut(bPlayAnimation)
@@ -45,6 +43,7 @@ function M:SetWalnutContent(WalnutId, bPlayAnimation)
   self.Panel_Ordinal:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Icon_Walnut:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_Bg:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.Panel_Hint:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   if bPlayAnimation then
     self:PlayAnimation(self.Refresh)
   end
@@ -60,13 +59,14 @@ function M:SetWalnutContent(WalnutId, bPlayAnimation)
   local Avatar = GWorld:GetAvatar()
   self.Text_Total:SetText(GText("UI_Walnut_CompleteCount"))
   self.Num_Total:SetText(Avatar.Walnuts.ConsumeRecord[WalnutId] or 0)
+  self.Text_Name:SetText(GText(WalnutData.Name))
   self.WalnutRewardList = {}
   for i = 1, 6 do
     local RewardUI = self.RewardUIList[i]
     local CurrentType = WalnutData.Type[i]
     local CurrentId = WalnutData.Id[i]
-    local RewardCount = WalnutData.Count[i][1]
     local ItemData = DataMgr[CurrentType][CurrentId]
+    local RewardCount = WalnutData.Count[i][1]
     if ItemData then
       local Img = LoadObject(ItemData.Icon)
       local Rarity = ItemData.Rarity or ItemData[CurrentType .. "Rarity"] or 0
@@ -85,7 +85,7 @@ function M:SetWalnutContent(WalnutId, bPlayAnimation)
       end
       table.insert(self.WalnutRewardList, {ItemType = CurrentType, ItemId = CurrentId})
     else
-      DebugPrint("ERROR::", "Draft\231\154\132Id:" .. CurrentId .. "\228\184\141\229\173\152\229\156\168, \232\175\183\230\163\128\230\159\165\230\160\184\230\161\131\229\165\150\229\138\177\233\133\141\231\189\174")
+      DebugPrint("ERROR::", "Draft的Id:" .. CurrentId .. "不存在, 请检查核桃奖励配置")
     end
   end
   local PerCentGold, PerCentSilver, PerCentBronze = ItemUtils.GetWalnutItemPercent(WalnutId)
@@ -96,7 +96,6 @@ function M:SetWalnutContent(WalnutId, bPlayAnimation)
   self.Ordinal_2nd.ProgressBar:GetDynamicMaterial():SetScalarParameterValue("Percent", 1 - PerCentSilver)
   self.Ordinal_3rd.ProgressBar:GetDynamicMaterial():SetScalarParameterValue("Percent", 1 - PerCentBronze)
 end
-
 function M:BindEvents()
   self.Reward_1st.Button_Area.OnClicked:Add(self, self.OnClickReward1st)
   self.Reward_2nd.Button_Area.OnClicked:Add(self, self.OnClickReward2nd)
@@ -123,7 +122,6 @@ function M:BindEvents()
   self.Reward_3rd_2.Button_Area.OnUnhovered:Add(self, self.OnUnhoverReward3rd2)
   self.Reward_3rd_3.Button_Area.OnUnhovered:Add(self, self.OnUnhoverReward3rd3)
 end
-
 function M:OnClickReward1st()
   self.Reward_1st:PlayAnimation(self.Reward_1st.Click)
   if not self.Reward_1st.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
@@ -143,7 +141,6 @@ function M:OnClickReward1st()
   end
   AudioManager(self):PlayItemSound(self, self.WalnutRewardList[1].ItemId, "Click", self.WalnutRewardList[1].ItemType)
 end
-
 function M:OnClickReward2nd()
   self.Reward_2nd:PlayAnimation(self.Reward_2nd.Click)
   if not self.Reward_2nd.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
@@ -163,7 +160,6 @@ function M:OnClickReward2nd()
   end
   AudioManager(self):PlayItemSound(self, self.WalnutRewardList[2].ItemId, "Click", self.WalnutRewardList[2].ItemType)
 end
-
 function M:OnClickReward2nd2()
   self.Reward_2nd_2:PlayAnimation(self.Reward_2nd_2.Click)
   if not self.Reward_2nd_2.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
@@ -183,7 +179,6 @@ function M:OnClickReward2nd2()
   end
   AudioManager(self):PlayItemSound(self, self.WalnutRewardList[3].ItemId, "Click", self.WalnutRewardList[3].ItemType)
 end
-
 function M:OnClickReward3rd1()
   self.Reward_3rd_1:PlayAnimation(self.Reward_3rd_1.Click)
   if not self.Reward_3rd_1.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
@@ -204,7 +199,6 @@ function M:OnClickReward3rd1()
   end
   AudioManager(self):PlayItemSound(self, self.WalnutRewardList[4].ItemId, "Click", self.WalnutRewardList[4].ItemType)
 end
-
 function M:OnClickReward3rd2()
   self.Reward_3rd_2:PlayAnimation(self.Reward_3rd_2.Click)
   if not self.Reward_3rd_2.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
@@ -224,7 +218,6 @@ function M:OnClickReward3rd2()
   end
   AudioManager(self):PlayItemSound(self, self.WalnutRewardList[5].ItemId, "Click", self.WalnutRewardList[5].ItemType)
 end
-
 function M:OnClickReward3rd3()
   self.Reward_3rd_3:PlayAnimation(self.Reward_3rd_3.Click)
   if not self.Reward_3rd_3.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
@@ -244,31 +237,24 @@ function M:OnClickReward3rd3()
   end
   AudioManager(self):PlayItemSound(self, self.WalnutRewardList[6].ItemId, "Click", self.WalnutRewardList[6].ItemType)
 end
-
 function M:OnPressReward1st()
   self.Reward_1st:PlayAnimation(self.Reward_1st.Presss)
 end
-
 function M:OnPressReward2nd()
   self.Reward_2nd:PlayAnimation(self.Reward_2nd.Presss)
 end
-
 function M:OnPressReward2nd2()
   self.Reward_2nd_2:PlayAnimation(self.Reward_2nd_2.Presss)
 end
-
 function M:OnPressReward3rd1()
   self.Reward_3rd_1:PlayAnimation(self.Reward_3rd_1.Presss)
 end
-
 function M:OnPressReward3rd2()
   self.Reward_3rd_2:PlayAnimation(self.Reward_3rd_2.Presss)
 end
-
 function M:OnPressReward3rd3()
   self.Reward_3rd_3:PlayAnimation(self.Reward_3rd_3.Presss)
 end
-
 function M:OnHoverReward1st()
   if self.Reward_1st:IsMenuOpen() then
     return
@@ -276,7 +262,6 @@ function M:OnHoverReward1st()
   self.Reward_1st:PlayAnimation(self.Reward_1st.Hover)
   self.Reward_1st.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnHoverReward2nd()
   if self.Reward_2nd:IsMenuOpen() then
     return
@@ -284,7 +269,6 @@ function M:OnHoverReward2nd()
   self.Reward_2nd:PlayAnimation(self.Reward_2nd.Hover)
   self.Reward_2nd.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnHoverReward2nd2()
   if self.Reward_2nd_2:IsMenuOpen() then
     return
@@ -292,7 +276,6 @@ function M:OnHoverReward2nd2()
   self.Reward_2nd_2:PlayAnimation(self.Reward_2nd_2.Hover)
   self.Reward_2nd_2.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnHoverReward3rd1()
   if self.Reward_3rd_1:IsMenuOpen() then
     return
@@ -300,7 +283,6 @@ function M:OnHoverReward3rd1()
   self.Reward_3rd_1:PlayAnimation(self.Reward_3rd_1.Hover)
   self.Reward_3rd_1.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnHoverReward3rd2()
   if self.Reward_3rd_2:IsMenuOpen() then
     return
@@ -308,7 +290,6 @@ function M:OnHoverReward3rd2()
   self.Reward_3rd_2:PlayAnimation(self.Reward_3rd_2.Hover)
   self.Reward_3rd_2.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnHoverReward3rd3()
   if self.Reward_3rd_3:IsMenuOpen() then
     return
@@ -316,7 +297,6 @@ function M:OnHoverReward3rd3()
   self.Reward_3rd_3:PlayAnimation(self.Reward_3rd_3.Hover)
   self.Reward_3rd_3.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnUnhoverReward1st()
   if self.Reward_1st:IsMenuOpen() then
     return
@@ -324,7 +304,6 @@ function M:OnUnhoverReward1st()
   self.Reward_1st:PlayAnimation(self.Reward_1st.Unhover)
   self.Reward_1st.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnUnhoverReward2nd()
   if self.Reward_2nd:IsMenuOpen() then
     return
@@ -332,7 +311,6 @@ function M:OnUnhoverReward2nd()
   self.Reward_2nd:PlayAnimation(self.Reward_2nd.Unhover)
   self.Reward_2nd.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnUnhoverReward2nd2()
   if self.Reward_2nd_2:IsMenuOpen() then
     return
@@ -340,7 +318,6 @@ function M:OnUnhoverReward2nd2()
   self.Reward_2nd_2:PlayAnimation(self.Reward_2nd_2.Unhover)
   self.Reward_2nd_2.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnUnhoverReward3rd1()
   if self.Reward_3rd_1:IsMenuOpen() then
     return
@@ -348,7 +325,6 @@ function M:OnUnhoverReward3rd1()
   self.Reward_3rd_1:PlayAnimation(self.Reward_3rd_1.Unhover)
   self.Reward_3rd_1.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnUnhoverReward3rd2()
   if self.Reward_3rd_2:IsMenuOpen() then
     return
@@ -356,7 +332,6 @@ function M:OnUnhoverReward3rd2()
   self.Reward_3rd_2:PlayAnimation(self.Reward_3rd_2.Unhover)
   self.Reward_3rd_2.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnUnhoverReward3rd3()
   if self.Reward_3rd_3:IsMenuOpen() then
     return
@@ -364,5 +339,4 @@ function M:OnUnhoverReward3rd3()
   self.Reward_3rd_3:PlayAnimation(self.Reward_3rd_3.Unhover)
   self.Reward_3rd_3.Bg_Glow_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 return M

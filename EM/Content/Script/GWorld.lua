@@ -39,53 +39,40 @@ GWorld.DevServerAreaToGroupId = {
 GWorld.GetAvatarInfos = nil
 GWorld.IsOpenWroldRegion = false
 GWorld.HotfixDataIndex = DataMgr.HotfixData.index
-
 function GWorld:IsGlobalServer()
   return AHotUpdateGameMode.IsGlobalPak()
 end
-
 function GWorld:IsChinaServer()
   return AHotUpdateGameMode.IsGlobalPak() == false
 end
-
 function GWorld:OpenWorldRegionState()
   GWorld.IsOpenWroldRegion = true
 end
-
 function GWorld:CloseWorldRegionState()
   GWorld.IsOpenWroldRegion = false
 end
-
 function GWorld:GetWorldRegionState()
   return GWorld.IsOpenWroldRegion
 end
-
 function GWorld:GenCallbackId()
   self.GlobalCallbackId = self.GlobalCallbackId + 1
   return self.GlobalCallbackId
 end
-
 function GWorld:GetBPAvatar()
-  if self.GameInstance then
-    return self.GameInstance:GetAvatar()
-  end
-  return nil
+  return self.BP_Avatar
 end
-
 function GWorld:GetAvatar()
   if self.BP_Avatar then
     return self.BP_Avatar:GetClientAvatar()
   end
   return nil
 end
-
 function GWorld:GetDSEntity()
   if self.BP_Avatar then
     return self.BP_Avatar:GetDSEntity()
   end
   return nil
 end
-
 function GWorld:GetServerEntity()
   if not self.BP_Avatar then
     return nil
@@ -100,7 +87,6 @@ function GWorld:GetServerEntity()
   end
   return nil
 end
-
 function GWorld:DSBLog(...)
   local DSEntity = self:GetDSEntity()
   if not DSEntity then
@@ -108,15 +94,12 @@ function GWorld:DSBLog(...)
   end
   DSEntity:BLog(...)
 end
-
 function GWorld:GetCurrentTime()
   return UE4.UGameplayStatics.GetTimeSeconds(self.GameInstance)
 end
-
 function GWorld:IsSkynetServer()
   return false
 end
-
 function GWorld:GetMainPlayer()
   if self.GameInstance then
     local PC = UE4.UGameplayStatics.GetPlayerController(self.GameInstance, 0)
@@ -126,40 +109,46 @@ function GWorld:GetMainPlayer()
   end
   return nil
 end
-
 function GWorld:ForbidEntityMessage(flag)
   GWorld.IsForbidEntityMessage = 1 == tonumber(flag) and true or false
 end
-
 function GWorld:IsStandAlone()
   return IsStandAlone(self.GameInstance)
 end
-
 function GWorld:IsDedicatedServer()
-  return IsDedicatedServer(self.GameInstance)
+  if GWorld.IsDev then
+    return IsDedicatedServer(self.GameInstance)
+  end
+  if GWorld._IsDedicatedServer == nil then
+    GWorld._IsDedicatedServer = IsDedicatedServer(self.GameInstance)
+  end
+  return GWorld._IsDedicatedServer
 end
-
 function GWorld:IsListenServer()
   return MiscUtils.IsListenServer(self.GameInstance)
 end
-
 function GWorld:IsClient()
   return IsClient(self.GameInstance)
 end
-
 GWorld.GameModeIndex = 0
 GWorld.GameModes = {}
 GWorld._CurrentGameMode = nil
 GWorld.GameModeNumber = 0
 local OldGetGameMode = UE4.UGameplayStatics.GetGameMode
-
 function UE4.UGameplayStatics.GetGameMode(...)
   if GWorld._CurrentGameMode then
     return GWorld._CurrentGameMode
   end
   return OldGetGameMode(...)
 end
-
+local Key_GetFName = UE4.UFormulaFunctionLibrary.Key_GetFName
+function UE4.UFormulaFunctionLibrary.Key_GetFName(Key)
+  local KeyName = Key_GetFName(Key)
+  if "^" == KeyName and UUIFunctionLibrary.IsFRKeyboard() then
+    return "RightBracket"
+  end
+  return KeyName
+end
 function GWorld:AddGameMode(GameMode)
   self.GameModeIndex = self.GameModeIndex + 1
   self.GameModes[self.GameModeIndex] = GameMode
@@ -170,19 +159,16 @@ function GWorld:AddGameMode(GameMode)
   end
   return self.GameModeIndex
 end
-
 function GWorld:RemoveGameMode(GameModeIndex)
   GWorld.GameModeNumber = GWorld.GameModeNumber - 1
   self.GameModes[self.GameModeIndex] = nil
   self._CurrentGameMode = nil
 end
-
 GWorld.GameStateIndex = 0
 GWorld.GameStates = {}
 GWorld._CurrentGameState = nil
 GWorld.GameStateNumber = 0
 local OldGetGameState = UE4.UGameplayStatics.GetGameState
-
 function UE4.UGameplayStatics.GetGameState(...)
   if URuntimeCommonFunctionLibrary.IsPlayInEditor(...) then
     return OldGetGameState(...)
@@ -192,7 +178,6 @@ function UE4.UGameplayStatics.GetGameState(...)
   end
   return OldGetGameState(...)
 end
-
 function GWorld:AddGameState(GameState)
   self.GameStateIndex = self.GameStateIndex + 1
   self.GameStates[self.GameStateIndex] = GameState
@@ -203,11 +188,9 @@ function GWorld:AddGameState(GameState)
   end
   return self.GameStateIndex
 end
-
 function GWorld:RemoveGameState(GameStateIndex)
   GWorld.GameStateNumber = GWorld.GameStateNumber - 1
   self.GameStates[self.GameStateIndex] = nil
   self._CurrentGameState = nil
 end
-
 return GWorld

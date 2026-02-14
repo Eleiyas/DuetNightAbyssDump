@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self.Tab01.Btn_Click.OnClicked:Add(self, self.OnBtnClick1)
@@ -66,7 +65,6 @@ function M:Construct()
   end
   self.FeinaEventBtn.Text_Button:SetText(GText("DUNGEONSINGLE"))
 end
-
 function M:Destruct()
   self.Tab01.Btn_Click.OnClicked:Remove(self, self.OnBtnClick1)
   self.Tab02.Btn_Click.OnClicked:Remove(self, self.OnBtnClick2)
@@ -76,7 +74,6 @@ function M:Destruct()
   self.List_Reward.OnCreateEmptyContent:Unbind()
   self.Super.Destruct(self)
 end
-
 function M:GoToDungeon()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -87,7 +84,7 @@ function M:GoToDungeon()
   local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
   local CurTabIndex = 1
   if ActivityMain then
-    CurTabIndex = ActivityMain.CurTabIndex
+    CurTabIndex = ActivityMain.CurTabId
   end
   local ExitDungeonInfo = {Type = "FeinaEvent", CurTabIndex = CurTabIndex}
   GWorld.GameInstance:SetExitDungeonData(ExitDungeonInfo)
@@ -96,17 +93,14 @@ function M:GoToDungeon()
   end, DungeonId, nil, EventId)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_btn_enter_level", nil, nil)
 end
-
 function M:ShowPreDungeon()
   self.RootPanel:RefreshCurSubUI(self.Index - 1)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_btn_small", nil, nil)
 end
-
 function M:ShowNextDungeon()
   self.RootPanel:RefreshCurSubUI(self.Index + 1)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_btn_small", nil, nil)
 end
-
 function M:OnBtnClick1()
   if 1 == #self.DungeonId or self.Tab01.IsClick then
     return
@@ -115,7 +109,6 @@ function M:OnBtnClick1()
   self:PlayAnimation(self.Switch_Tab)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_tab_btn_click", nil, nil)
 end
-
 function M:OnBtnClick2()
   if 1 == #self.DungeonId or self.Tab02.IsClick then
     return
@@ -129,7 +122,6 @@ function M:OnBtnClick2()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_tab_btn_click", nil, nil)
 end
-
 function M:ShowDungeon1()
   self.Tab01.IsClick = true
   self.Tab02.IsClick = false
@@ -145,7 +137,6 @@ function M:ShowDungeon1()
   end
   self:ShowDungeonById(self.DungeonId[1], 1)
 end
-
 function M:ShowDungeon2()
   self.Tab02.IsClick = true
   self.Tab01.IsClick = false
@@ -155,7 +146,6 @@ function M:ShowDungeon2()
   self.Tab01:PlayAnimation(self.Tab01.Finish)
   self:ShowDungeonById(self.DungeonId[2], 2)
 end
-
 function M:ShowDungeonById(DungeonId, Index)
   local FeinaEventDungeonConfig = DataMgr.FeinaEventDungeon[DungeonId]
   self.Text_Name:SetText(GText(FeinaEventDungeonConfig.DungeonName))
@@ -169,7 +159,6 @@ function M:ShowDungeonById(DungeonId, Index)
   local PassReward = FeinaEventDungeonConfig.PassReward
   self:RefreshRewardItemList(PassReward, IsGetReward)
 end
-
 function M:InitLevelDetail(DungeonId, IsPassDungeon1, IsPassDungeon2, Index)
   self.IsGamepadClickItem = false
   self.IsClose = false
@@ -186,7 +175,6 @@ function M:InitLevelDetail(DungeonId, IsPassDungeon1, IsPassDungeon2, Index)
   self:ShowDungeon1()
   self:RefreshOpInfoByInputDevice()
 end
-
 function M:RefreshRewardItemList(DungeonReward, IsGetReward)
   self.List_Reward:ClearListItems()
   if not DungeonReward then
@@ -220,7 +208,6 @@ function M:RefreshRewardItemList(DungeonReward, IsGetReward)
   end
   self.List_Reward:RequestFillEmptyContent()
 end
-
 function M:UpdateLevelBanner()
   for Index = 1, 4 do
     self.Level["Bg_Level0" .. Index]:SetVisibility(Index == self.Index and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
@@ -231,7 +218,6 @@ function M:UpdateLevelBanner()
   CurBanner.Spine_Story:AddAnimation(0, "Loop", true, 0)
   self.Level.Text_Num:SetText(self.Index)
 end
-
 function M:InitLevelDetailTap()
   self.Panel_Tab:SetVisibility(1 == #self.DungeonId and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Tab01.IsClick = true
@@ -254,25 +240,21 @@ function M:InitLevelDetailTap()
     self.Tab02.IsLock = false
   end
 end
-
 function M:CloseSelf()
   self.IsClose = true
   self.IsGamepadClickItem = false
   self:PlayAnimation(self.Out)
 end
-
 function M:DirectlyClose()
   self.IsClose = true
   self.IsGamepadClickItem = false
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.Controller_L then
     self.Controller_L:SetVisibility(UIUtils.IsGamepadInput() and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
@@ -283,7 +265,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.FeinaEventBtn.Key_GamePad:SetVisibility(UIUtils.IsGamepadInput() and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:HideGamepadTips(IsHide)
   if self.Controller_L then
     self.Controller_L:SetVisibility(not IsHide and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
@@ -295,7 +276,6 @@ function M:HideGamepadTips(IsHide)
     self.RootPanel.Reward.Key_Controller:SetVisibility(not IsHide and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnMenuOpenChanged(IsOpen)
   if not UIUtils.IsGamepadInput() then
     return
@@ -306,5 +286,4 @@ function M:OnMenuOpenChanged(IsOpen)
     self.RootPanel:UpdateBottomKeyInfo()
   end
 end
-
 return M

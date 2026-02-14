@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_BattleAimFire_C = Class({
   "BluePrints.UI.Indicator.WBP_BattleAimDiffusion_C"
 })
-
 function WBP_BattleAimFire_C:Init(Root)
   WBP_BattleAimFire_C.Super.Init(self, Root)
   self.Diffusion = {
@@ -21,7 +20,6 @@ function WBP_BattleAimFire_C:Init(Root)
   }
   self:UpdateFrontSightinfo()
 end
-
 function WBP_BattleAimFire_C:UpdateDiffusionVector(DiffuseDis)
   local XandY = DiffuseDis * math.cos(math.pi / 4)
   self.MaxXY = {
@@ -40,5 +38,4 @@ function WBP_BattleAimFire_C:UpdateDiffusionVector(DiffuseDis)
     {XandY, XandY}
   }
 end
-
 return WBP_BattleAimFire_C

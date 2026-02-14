@@ -12,9 +12,9 @@ Dungeon.__Props__ = {
   PassCount = prop.prop("Int", "client save"),
   IsPass = prop.prop("Bool", "client save"),
   MaxStar = prop.prop("Int", "client save", 0),
-  DungeonProgress = prop.prop("Int", "client", 0),
   DungeonSid = prop.prop("ObjId", "save"),
   PersistenceData = prop.prop("Str", "save"),
+  AutoProgress = prop.prop("Int", "client save", 0),
   DungeonName = prop.getter("Data", "DungeonName"),
   DungeonReward = prop.getter("Data", "DungeonReward"),
   DungeonType = prop.getter("Data", "DungeonType"),
@@ -23,11 +23,9 @@ Dungeon.__Props__ = {
   IsWeeklyDungeon = prop.getter("Data", "IsWeeklyDungeon"),
   IsModDungeon = prop.getter("Data", "IsModDungeon")
 }
-
 function Dungeon:Data()
   return DataMgr.Dungeon[self.DungeonId]
 end
-
 function Dungeon:Init(DungeonId)
   if not DungeonId then
     return
@@ -35,15 +33,12 @@ function Dungeon:Init(DungeonId)
   self.DungeonId = DungeonId
   self.IsPass = false
 end
-
 function Dungeon:AddEnterCount()
   self.EnterCount = self.EnterCount + 1
 end
-
 function Dungeon:RefreshDungeonSid(Sid)
   self.DungeonSid = Sid
 end
-
 function Dungeon:SetPass()
   self.PassCount = self.PassCount + 1
   if self.IsPass then
@@ -53,26 +48,28 @@ function Dungeon:SetPass()
     return true
   end
 end
-
 function Dungeon:PersistentData(DataStr)
   if not DataStr then
     return
   end
   self.PersistenceData = DataStr
 end
-
 function Dungeon:GetPersistenceData()
   return self.PersistenceData
 end
-
 FormatProperties(Dungeon)
 local DungeonDict = Class("DungeonDict", CustomTypes.CustomDict)
 DungeonDict.KeyType = BaseTypes.Int
 DungeonDict.ValueType = Dungeon
-
 function DungeonDict:NewDungeon(DungeonId)
   local dungeon = Dungeon(DungeonId)
   return dungeon
 end
-
+function DungeonDict:IsPassed(DungeonId)
+  local Dungeon = self[DungeonId]
+  if not Dungeon then
+    return false
+  end
+  return Dungeon.IsPass
+end
 return {Dungeon = Dungeon, DungeonDict = DungeonDict}

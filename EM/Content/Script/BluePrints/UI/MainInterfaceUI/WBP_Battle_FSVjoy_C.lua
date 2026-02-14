@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Battle_FSVjoy_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_Battle_FSVjoy_C:SetPosition()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -13,5 +12,4 @@ function WBP_Battle_FSVjoy_C:SetPosition()
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Bg)
   CanvasSlot:SetPosition(Position)
 end
-
 return WBP_Battle_FSVjoy_C

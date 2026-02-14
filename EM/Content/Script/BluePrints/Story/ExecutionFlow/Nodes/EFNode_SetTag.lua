@@ -1,5 +1,4 @@
 local M = {}
-
 function M:CreateNode(Flow, TalkTask, Params)
   local Tag = Params.Tag
   local Value = Params.Value
@@ -20,5 +19,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return SetTagNode
 end
-
 return M

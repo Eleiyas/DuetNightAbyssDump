@@ -8,7 +8,6 @@ local M = Class("BluePrints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:Initialize(Initializer)
   self.MainTabs = {
     {
@@ -27,7 +26,6 @@ function M:Initialize(Initializer)
     CommonConst.SystemVoices.KR
   }
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.RecordTabs = {}
@@ -74,14 +72,12 @@ function M:Construct()
   self.Common_SortList:BindEventOnSelectionsChanged(self, self.OnVoiceLanguageChanged)
   self:InitKeySetting()
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.Auto_In)
   local Language = AudioManager(self):GetLanguage(self.OriginalVoiceLanguage)
   UFMODBlueprintStatics.LoadBanksWithLanguage(Language)
   self.Super.Destruct(self)
 end
-
 function M:InitKeySetting()
   self.TopTabLeftKey = "Q"
   self.TopTabRightKey = "E"
@@ -97,39 +93,30 @@ function M:InitKeySetting()
   self.KeyDownEvent[self.Escape] = self.OnBackKeyDown
   self.KeyDownEvent[self.LeftMouseButton] = self.OnMenuCloseKeyDown
 end
-
 function M:OnMenuCloseKeyDown()
   EventManager:FireEvent(EventID.OnMenuClose)
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   return self:OnMouseWheelScroll(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return self:OnPointerMove(MyGeometry, MouseEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnPointerMove(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -140,20 +127,16 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnTopTabLeftKeyDown()
   self.Tab_Record:TabToLeft()
 end
-
 function M:OnTopTabRightKeyDown()
   self.Tab_Record:TabToRight()
 end
-
 function M:OnBackKeyDown()
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:Close()
 end
-
 function M:Close()
   self:ClearPlayingVoice()
   if self.CurrentSubTabWidget and self.CurrentTopTabType == RecordTag then
@@ -172,7 +155,6 @@ function M:Close()
     ArmoryMain:UpdateMontageAndCamera()
   end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Parent, self.Char, self.InitTabName, self.bEnableReddot = ...
@@ -182,14 +164,13 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
     self.ArmoryHelper = ArmoryMain.ArmoryHelper
   end
   self:Init(self.Char)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   if ArmoryUtils.FilesTabType[1] == self.InitTabName then
     self.Tab_Record:SelectTab(1)
   else
     self.Tab_Record:SelectTab(2)
   end
 end
-
 function M:AddReddotListen()
   if not self.bEnableReddot then
     return
@@ -197,14 +178,12 @@ function M:AddReddotListen()
   if not self.ReddotNames then
     self.ReddotNames = {}
   end
-  
   local function TabCallback(Count, TabConf, TabWidget, Type)
     TabConf[Type].IsNew = Count > 0
     if TabWidget and TabWidget.Idx == Type then
       TabWidget:SetReddot(Count > 0)
     end
   end
-  
   local CharId = self.Char.CharId
   local CharacterData = DataMgr.CharacterDataTarget[CharId]
   for RecordType, _ in ipairs(self.RecordTabs) do
@@ -273,13 +252,11 @@ function M:AddReddotListen()
     end
   end
 end
-
 function M:RemoveReddotlisten()
   for NodeName, _ in pairs(self.ReddotNames or {}) do
     ReddotManager.RemoveListener(NodeName, self)
   end
 end
-
 function M:Init(Char)
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
   if ArmoryMain then
@@ -328,7 +305,6 @@ function M:Init(Char)
   self.Tab_Record:UpdateReddots()
   self:InitCharInfos()
 end
-
 function M:InitCharInfos()
   local CharData = DataMgr.CharacterData[self.Char.CharId]
   if CharData then
@@ -351,13 +327,11 @@ function M:InitCharInfos()
     self.Common_SortList:SelectItem(self.Language2Idx[self.CurrentVoiceLanguage])
   end
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:BlockAllUIInput(false)
   self:SetFocus()
 end
-
 function M:OnTopTabSelected(TabWidget, Content)
   EventManager:FireEvent(EventID.OnMenuClose)
   self:ClearPlayingVoice()
@@ -369,7 +343,6 @@ function M:OnTopTabSelected(TabWidget, Content)
   self.Tab_Switch:UpdateReddots()
   self.Tab_Switch:SelectTab(1)
 end
-
 function M:OnListItemClicked(Content)
   EventManager:FireEvent(EventID.OnMenuClose)
   if Content.IsEmptyItem then
@@ -387,11 +360,9 @@ function M:OnListItemClicked(Content)
     self["On" .. self.CurrentTopTabType .. "ItemClicked"](self, Content)
   end
 end
-
 function M:SetItemReddotRead(Content)
   ArmoryUtils:SetReddotRead(Content, true)
 end
-
 function M:ChangeSelectedContent(Content)
   if self.SelectedContent == Content then
     self.SelectedContent = nil
@@ -405,7 +376,6 @@ function M:ChangeSelectedContent(Content)
     self.SelectedContent = Content
   end
 end
-
 function M:OnRecordSubTabSelected(TabWidget)
   self.Common_SortList:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.ScrollBox:ClearChildren()
@@ -455,7 +425,6 @@ function M:OnRecordSubTabSelected(TabWidget)
   self:FillEmptyItems(RestCount)
   self.ScrollBox:ScrollToStart()
 end
-
 function M:CalcRestItemCount(TotalCount)
   local UIMgr = UIManager(self)
   local ItemUI = self.ScrollBox:GetChildAt(0)
@@ -467,7 +436,6 @@ function M:CalcRestItemCount(TotalCount)
   local RestCount = math.floor(ScrollBoxSize.Y / ItemSize.Y + 0.5) - TotalCount
   return RestCount
 end
-
 function M:OnCharVoiceSubTabSelected(TabWidget)
   self.Common_SortList:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.ScrollBox:ClearChildren()
@@ -529,7 +497,6 @@ function M:OnCharVoiceSubTabSelected(TabWidget)
   self:FillEmptyItems(RestCount)
   self.ScrollBox:ScrollToStart()
 end
-
 function M:FillEmptyItems(Count)
   local UIMgr = UIManager(self)
   for i = 1, Count do
@@ -540,7 +507,6 @@ function M:FillEmptyItems(Count)
     self.ScrollBox:AddChild(Widget)
   end
 end
-
 function M:OnPlayVoiceBtnClicked(Content)
   if not Content then
     return
@@ -552,16 +518,16 @@ function M:OnPlayVoiceBtnClicked(Content)
     self:ChangeVoicePlayingContent(Content)
     local AudioManager = AudioManager(self)
     local Language = AudioManager:GetLanguage(self.CurrentVoiceLanguage)
-    self.VoiceEventInstance = AudioManager:PlayCharVoice(self.ArmoryPlayer, DataMgr.CharVoice[Content.CharId][Content.VoiceId].VoiceChar, Content.VoiceRes, Language, "ArmoryRoleVoice", true)
+    local OriginModelId = self.ArmoryPlayer.GetOriginModelId and self.ArmoryPlayer:GetOriginModelId() or 0
+    local CharName = DataMgr.CharVoice[Content.CharId][Content.VoiceId].VoiceChar or AudioManager:GetPlayerName_CPP(OriginModelId, OriginModelId)
+    self.VoiceEventInstance = AudioManager:PlayCharVoice(self.ArmoryPlayer, CharName, Content.VoiceRes, Language, "ArmoryRoleVoice", true)
   end
 end
-
 function M:OnCharVoiceItemClicked(Content)
   if not Content then
     return
   end
 end
-
 function M:Tick()
   if self.VoiceEventInstance then
     local AudioManager = AudioManager(self)
@@ -572,7 +538,6 @@ function M:Tick()
     end
   end
 end
-
 function M:ChangeVoicePlayingContent(Content)
   if self.VoicePlayingContent then
     self.VoicePlayingContent.IsPlaying = false
@@ -588,11 +553,9 @@ function M:ChangeVoicePlayingContent(Content)
     end
   end
 end
-
 function M:ClearPlayingVoice()
   self:OnCharVoiceEnd()
 end
-
 function M:OnCharVoiceEnd()
   if self.VoiceEventInstance then
     AudioManager(self):StopSound(self.ArmoryPlayer, "ArmoryRoleVoice")
@@ -600,14 +563,12 @@ function M:OnCharVoiceEnd()
   self.VoiceEventInstance = nil
   self:ChangeVoicePlayingContent(nil)
 end
-
 function M:OnVoiceLanguageChanged(VoiceActorIndex)
   self.CurrentVoiceLanguage = self.Languages[VoiceActorIndex]
   local Language = AudioManager(self):GetLanguage(self.CurrentVoiceLanguage)
   UFMODBlueprintStatics.LoadBanksWithLanguage(Language)
   self:ClearPlayingVoice()
 end
-
 function M:OnSubTabSelected(TabWidget)
   self.SelectedContent = nil
   EventManager:FireEvent(EventID.OnMenuClose)
@@ -629,15 +590,12 @@ function M:OnSubTabSelected(TabWidget)
     self["On" .. TabType .. "SubTabSelected"](self, TabWidget)
   end
 end
-
 function M:OnSubTabLeftKeyDown()
   self.Tab_Switch:TabToLeft()
 end
-
 function M:OnSubTabRightKeyDown()
   self.Tab_Switch:TabToRight()
 end
-
 function M:BP_GetDesiredFocusTarget()
   local SelectedContent = self.SelectedContent
   local UI = SelectedContent and SelectedContent.UI
@@ -647,6 +605,5 @@ function M:BP_GetDesiredFocusTarget()
   end
   return self
 end
-
 AssembleComponents(M)
 return M

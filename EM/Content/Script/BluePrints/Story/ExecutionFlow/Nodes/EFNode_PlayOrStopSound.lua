@@ -1,5 +1,4 @@
 local M = {}
-
 function M:CreatePlayNormalSoundNode(Flow, TalkTask, Params)
   local EventPath = Params.EventPath
   local TargetPointName = Params.TargetPointName
@@ -25,7 +24,6 @@ function M:CreatePlayNormalSoundNode(Flow, TalkTask, Params)
   end)
   return PlayNormalSoundNode
 end
-
 function M:CreateStopNormalSoundNode(Flow, TalkTask, Params)
   local TargetPointName = Params.TargetPointName
   local EventKey = Params.EventKey
@@ -48,5 +46,4 @@ function M:CreateStopNormalSoundNode(Flow, TalkTask, Params)
   end)
   return StopNormalSoundNode
 end
-
 return M

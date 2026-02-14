@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.SoundFunc = self.PlayClickSound
   self.SoundFuncReceiver = self
 end
-
 function M:Init(ConfigData, DontPlayInAnim)
   self.ConfigData = ConfigData
   self.BackCallback = ConfigData.BackCallback
@@ -62,7 +60,6 @@ function M:Init(ConfigData, DontPlayInAnim)
   self:AddDispatcher(EventID.OnPropSetResources, self, self.OnPropSetResources)
   self:AddDispatcher(EventID.OnChangeActionPoint, self, self.OnPropSetResources)
 end
-
 function M:ResetDynamicNode()
   local DynamicNodeName = {
     "Panel_Back",
@@ -117,7 +114,7 @@ function M:ResetDynamicNode()
             ItemType = "Resource",
             HandleMouseDown = true
           })
-          ResourceBarWidget:SetResourceId(CoinId)
+          ResourceBarWidget:SetItemId(CoinId)
           self.Panel_ResourceBar:AddChild(ResourceBarWidget)
         end
         self.Panel_ResourceBar:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -136,7 +133,6 @@ function M:ResetDynamicNode()
     end
   end
 end
-
 function M:UpdateBottomKeyInfo(BottomKeyInfo)
   local BottomKeyWidgetIdx = 1
   for i, KeyInfo in ipairs(BottomKeyInfo) do
@@ -161,10 +157,9 @@ function M:UpdateBottomKeyInfo(BottomKeyInfo)
   end
   self.Panel_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:UpdateBottomKeyInfo_Quick(Infos)
   local BottomKeyInfos = {}
-  for ImgShortPath, TextMap in pairs(Info) do
+  for ImgShortPath, TextMap in pairs(Infos) do
     local BottomKeyInfo = {
       GamePadInfoList = {
         {Type = "Img", ImgShortPath = ImgShortPath}
@@ -175,20 +170,17 @@ function M:UpdateBottomKeyInfo_Quick(Infos)
   end
   self:UpdateBottomKeyInfo(BottomKeyInfos)
 end
-
 function M:UpdateResource()
   for k, v in pairs(self.ResourceBarWidget) do
     if IsValid(v) then
-      v:RefreshResourceInfo()
+      v:RefreshItemInfo()
     end
   end
 end
-
 function M:UpdateTopTitle(TitleName)
   self.TitleName = TitleName
   self.Title_Tab:SetText(self.TitleName)
 end
-
 function M:UpdateTabs(Tabs)
   self.Tabs = Tabs
   if #Tabs < 1 then
@@ -228,20 +220,17 @@ function M:UpdateTabs(Tabs)
   self.Title_Tab:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.EMScrollBox_TabItem:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnReturnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   if type(self.BackCallback) == "function" then
     self.BackCallback(self.OwnerPanel)
   end
 end
-
 function M:OnInfoClick()
   if type(self.InfoCallback) == "function" then
     self.InfoCallback(self.OwnerPanel)
   end
 end
-
 function M:OnTabSwitchOn(TabWidget)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
@@ -255,12 +244,10 @@ function M:OnTabSwitchOn(TabWidget)
     self.EventTabSelected(self.ObjTabSelected, TabWidget, self.Tabs[TabWidget.Idx])
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     local ChildWidget = self.EMScrollBox_TabItem:GetChildAt(math.max(Idx - 1, 0))
@@ -268,14 +255,12 @@ function M:SelectTab(Idx)
     self.EMScrollBox_TabItem:ScrollWidgetIntoView(ChildWidget)
   end
 end
-
 function M:ShowTabRedDot(Idx, IsNew, Upgradeable, OhterReddot)
   if self.Tabs[Idx] then
     local TabWidget = self.EMScrollBox_TabItem:GetChildAt(math.max(Idx - 1, 0))
     TabWidget:SetReddot(IsNew, Upgradeable, OhterReddot)
   end
 end
-
 function M:TabToLeft()
   if not self.bEnableSelectTab then
     return
@@ -287,7 +272,6 @@ function M:TabToLeft()
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab - 1)
   end
 end
-
 function M:TabToRight()
   if not self.bEnableSelectTab then
     return
@@ -299,7 +283,6 @@ function M:TabToRight()
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab + 1)
   end
 end
-
 function M:SetEnableSelectTab(bEnable)
   self.bEnableSelectTab = bEnable
   local AllItemCount = self.EMScrollBox_TabItem:GetChildrenCount()
@@ -308,12 +291,10 @@ function M:SetEnableSelectTab(bEnable)
     Child:SetClickEnable(bEnable)
   end
 end
-
 function M:Destruct()
   self:PlayOutAnim()
   self.Super.Destruct(self)
 end
-
 function M:PlayInAnim()
   if self.In == nil then
     return -1
@@ -322,7 +303,6 @@ function M:PlayInAnim()
   self:PlayAnimation(self.In)
   return self.In:GetEndTime()
 end
-
 function M:PlayOutAnim()
   if self.Out == nil then
     return -1
@@ -331,17 +311,14 @@ function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
   return self.Out:GetEndTime()
 end
-
 function M:PlayTabInAnim()
   self:StopAnimation(self.Panel_Tab_Out)
   self:PlayAnimation(self.Panel_Tab_In)
 end
-
 function M:PlayTabOutAnim()
   self:StopAnimation(self.Panel_Tab_In)
   self:PlayAnimation(self.Panel_Tab_Out)
 end
-
 function M:SetBackBtnAttrColor(AttrName)
   AttrName = AttrName or "Fire"
   if self.BackWidget then
@@ -349,17 +326,14 @@ function M:SetBackBtnAttrColor(AttrName)
     self.BackWidget.VX_BackWave:SetBrushFromMaterial(img)
   end
 end
-
 function M:OnPropSetResources(ResourceId, OldValue)
   if self.ResourceBarWidget and self.ResourceBarWidget[ResourceId] then
-    self.ResourceBarWidget[ResourceId]:RefreshResourceInfo()
+    self.ResourceBarWidget[ResourceId]:RefreshItemInfo()
   end
 end
-
 function M:PlayClickSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -367,5 +341,4 @@ function M:UpdateReddots()
     end
   end
 end
-
 return M

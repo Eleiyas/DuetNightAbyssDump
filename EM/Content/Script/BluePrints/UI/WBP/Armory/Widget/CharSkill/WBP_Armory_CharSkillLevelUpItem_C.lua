@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   if Content.Style == "ShowValue" then
     self:InitShowValue(Content)
   end
 end
-
 function M:InitShowValue(Content)
   if not Content.CmpValue or Content.Value == Content.CmpValue then
     self.Num_Preview:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -33,5 +31,4 @@ function M:InitShowValue(Content)
     self.Icon_Up:SetColorAndOpacity(self[ColorType].SpecifiedColor)
   end
 end
-
 return M

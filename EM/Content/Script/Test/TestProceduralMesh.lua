@@ -1,12 +1,10 @@
 local M = Class()
-
 function M:ReceiveBeginPlay()
   self.ProceduralMesh:SetBoundsScale(1000000.0)
 end
-
 function M:GenerateStripMesh(XCount, YCount, UnitSize)
   if not self.ProceduralMesh then
-    DebugPrint("\231\188\186\229\176\145 ProceduralMesh \231\187\132\228\187\182")
+    DebugPrint("缺少 ProceduralMesh 组件")
     return
   end
   XCount = XCount or 10
@@ -36,7 +34,6 @@ function M:GenerateStripMesh(XCount, YCount, UnitSize)
   self.ProceduralMesh:CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, nil, nil, false)
   local DebugMat = UE4.UMaterial.Load("/Engine/EngineDebugMaterials/WireframeMaterial")
   self.ProceduralMesh:SetMaterial(0, DebugMat)
-  DebugPrint(string.format("\229\185\179\233\157\162\231\148\159\230\136\144\230\136\144\229\138\159\239\188\154%d \232\161\140 \195\151 %d \229\136\151\239\188\140\229\133\177 %d \233\157\162\239\188\136\228\184\137\232\167\146\230\149\176 %d\239\188\137", YCount, XCount, XCount * YCount, #Triangles / 3))
+  DebugPrint(string.format("平面生成成功：%d 行 × %d 列，共 %d 面（三角数 %d）", YCount, XCount, XCount * YCount, #Triangles / 3))
 end
-
 return M

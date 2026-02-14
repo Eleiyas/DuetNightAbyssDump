@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.btn_close.AudioEventPath = "event:/ui/common/click_btn_return"
   self.btn_return.AudioEventPath = "event:/ui/common/click_btn_return"
 end
-
 function M:Init(BtnType, Reciver, ReciverFunc, ...)
   self.Reciver = Reciver
   self.ReciverFunc = ReciverFunc
@@ -23,11 +21,9 @@ function M:Init(BtnType, Reciver, ReciverFunc, ...)
     self.OnClickAnimationFinish
   })
 end
-
 function M:OnClickClose()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnClickAnimationFinish()
   if self.Reciver and self.ReciverFunc then
     if self.Params then
@@ -37,7 +33,6 @@ function M:OnClickAnimationFinish()
     end
   end
 end
-
 function M:OnClickBack()
   if self.Reciver and self.ReciverFunc then
     if self.Params then
@@ -47,17 +42,14 @@ function M:OnClickBack()
     end
   end
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
   return self.In:GetEndTime()
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
   return self.Out:GetEndTime()
 end
-
 return M

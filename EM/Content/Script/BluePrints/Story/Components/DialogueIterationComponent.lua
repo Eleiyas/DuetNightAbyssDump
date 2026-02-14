@@ -3,7 +3,6 @@ local EDialogueIterType = require("BluePrints.Story.Talk.View.TalkUtils").EDialo
 local FStoryIterationGraph = require("BluePrints.Story.StoryIteration.StoryIterationGraph")
 local ReviewUtils = require("BluePrints.UI.WBP.StoryReview.StoryReviewUtils")
 local FDialogueIterationComponent = {}
-
 function FDialogueIterationComponent:New(Dialogues, InitialDialogueId, TalkTask)
   local DialogueIterationComponent = setmetatable({}, {__index = FDialogueIterationComponent})
   DialogueIterationComponent.TalkTask = TalkTask
@@ -15,7 +14,6 @@ function FDialogueIterationComponent:New(Dialogues, InitialDialogueId, TalkTask)
   DialogueIterationComponent:Initialize(Dialogues, InitialDialogueId)
   return DialogueIterationComponent
 end
-
 function FDialogueIterationComponent:Initialize(Dialogues, InitialDialogueId)
   if nil == Dialogues then
     DebugPrint("Error: Dialogues is nil")
@@ -25,7 +23,6 @@ function FDialogueIterationComponent:Initialize(Dialogues, InitialDialogueId)
   self.InitialDialogueId = InitialDialogueId
   self.StoryIterGraph = FStoryIterationGraph:New(Dialogues, InitialDialogueId, self.TalkTask)
 end
-
 function FDialogueIterationComponent:Start()
   if self.bUseFlow then
     self.FlowCompoent:Execute()
@@ -42,14 +39,12 @@ function FDialogueIterationComponent:Start()
     end
   end
 end
-
 function FDialogueIterationComponent:Pause()
   if self.bUseFlow then
     self.FlowCompoent:Pause()
     return
   end
 end
-
 function FDialogueIterationComponent:Resume()
   if self.bUseFlow then
     self.FlowCompoent:Resume()
@@ -62,7 +57,6 @@ function FDialogueIterationComponent:Resume()
     DebugPrint("lhr@FDialogueIterationComponent:Start(),CurrentNode is nil")
   end
 end
-
 function FDialogueIterationComponent:Iterate(...)
   if self.bUseFlow then
     self.FlowCompoent:Iterate(...)
@@ -70,11 +64,9 @@ function FDialogueIterationComponent:Iterate(...)
   end
   self.StoryIterGraph:Iterate(...)
 end
-
 function FDialogueIterationComponent:Skip()
   return self.StoryIterGraph:Skip()
 end
-
 function FDialogueIterationComponent:GetDialogue()
   if self.bUseFlow then
     return self.FlowCompoent:GetDialogue()
@@ -84,7 +76,6 @@ function FDialogueIterationComponent:GetDialogue()
   end
   return self.StoryIterGraph:GetCurrentNode().Dialogue
 end
-
 function FDialogueIterationComponent:GetSavedOptions()
   if self.bUseFlow then
     return self.FlowCompoent:GetSavedOptions()
@@ -98,7 +89,6 @@ function FDialogueIterationComponent:GetSavedOptions()
   end
   return nil
 end
-
 function FDialogueIterationComponent:GetOptions()
   if self.bUseFlow then
     return self.FlowCompoent:GetOptions()
@@ -112,7 +102,6 @@ function FDialogueIterationComponent:GetOptions()
   end
   return nil
 end
-
 function FDialogueIterationComponent:SkipToFinalOrOption()
   if self:IsEnd() then
     self:Initialize(self.Dialogues, self.InitialDialogueId)
@@ -122,7 +111,6 @@ function FDialogueIterationComponent:SkipToFinalOrOption()
     self:Skip()
   end
 end
-
 function FDialogueIterationComponent:SkipToEndOrOption()
   DebugPrint("lhr@SkipToEndOrOption")
   if self.bUseFlow then
@@ -135,7 +123,6 @@ function FDialogueIterationComponent:SkipToEndOrOption()
   self.TalkTask.UI:ToPageEnd()
   self:Start()
 end
-
 function FDialogueIterationComponent:SkipToEnd()
   DebugPrint("lhr@SkipToEnd")
   if self.bUseFlow then
@@ -146,7 +133,6 @@ function FDialogueIterationComponent:SkipToEnd()
   self.TalkTask.UI:ToPageEnd()
   self:Start()
 end
-
 function FDialogueIterationComponent:SkipToRestartTag()
   local RestartTag = self.StoryIterGraph:GetRestartTag()
   local CurrentDialogue
@@ -159,27 +145,22 @@ function FDialogueIterationComponent:SkipToRestartTag()
   self.TalkTask.UI:ToPageEnd()
   self:Start()
 end
-
 function FDialogueIterationComponent:IsInImpression()
   local CurrentNode = self.StoryIterGraph:GetCurrentNode()
   return CurrentNode and CurrentNode.IsImpression
 end
-
 function FDialogueIterationComponent:IsInText()
   local CurrentNode = self.StoryIterGraph:GetCurrentNode()
   return CurrentNode and CurrentNode:GetType() == EDialogueNodeType.Dialogue
 end
-
 function FDialogueIterationComponent:IsInOption()
   local CurrentNode = self.StoryIterGraph:GetCurrentNode()
   return CurrentNode and CurrentNode:GetType() == EDialogueNodeType.Option
 end
-
 function FDialogueIterationComponent:IsStart()
   local CurrentNode = self.StoryIterGraph:GetCurrentNode()
   return CurrentNode and CurrentNode:GetType() == EDialogueNodeType.Start
 end
-
 function FDialogueIterationComponent:IsLastText()
   if not self:IsInText() then
     return false
@@ -191,7 +172,6 @@ function FDialogueIterationComponent:IsLastText()
   end
   return NextNode:GetType() == EDialogueNodeType.End
 end
-
 function FDialogueIterationComponent:IsLastAndOnlyOption()
   if not self:IsInOption() then
     return false
@@ -207,12 +187,10 @@ function FDialogueIterationComponent:IsLastAndOnlyOption()
   end
   return NextNode:GetType() == EDialogueNodeType.End
 end
-
 function FDialogueIterationComponent:IsEnd()
   local CurrentNode = self.StoryIterGraph:GetCurrentNode()
   return CurrentNode and CurrentNode:GetType() == EDialogueNodeType.End
 end
-
 function FDialogueIterationComponent:IsSelectedOption(OptionId)
   if self.bUseFlow then
     return self.FlowCompoent:IsSelectedOption(OptionId)
@@ -223,7 +201,6 @@ function FDialogueIterationComponent:IsSelectedOption(OptionId)
   end
   return CurrentNode.VisitedOptions[OptionId]
 end
-
 function FDialogueIterationComponent:HasFinalDialogue()
   if self.bUseFlow then
     return self.FlowCompoent:HasFinalDialogue()
@@ -234,18 +211,15 @@ function FDialogueIterationComponent:HasFinalDialogue()
   end
   return CurrentNode:HasFinalDialogue()
 end
-
 function FDialogueIterationComponent:GetCurrentNodeType()
   if self.bUseFlow then
     return self.FlowCompoent:GetCurrentNodeType()
   end
   return self.StoryIterGraph:GetCurrentNode().NodeType
 end
-
 function FDialogueIterationComponent:ForceToDialogueEnd(bSkip)
   if self.bUseFlow then
     return self.FlowCompoent:ForceToDialogueEnd(bSkip)
   end
 end
-
 return FDialogueIterationComponent

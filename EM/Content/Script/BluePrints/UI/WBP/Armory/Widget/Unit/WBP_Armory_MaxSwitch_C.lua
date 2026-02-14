@@ -3,7 +3,6 @@ local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   rawset(self, "GameInputModeSubsystem", UGameInputModeSubsystem.GetGameInputModeSubsystem(self))
   if rawget(self, "GameInputModeSubsystem") then
@@ -11,7 +10,6 @@ function M:Construct()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   rawset(self, "IsGamepadInput", CurInputDevice == ECommonInputType.Gamepad)
   if self.IsGamepadInput then
@@ -20,7 +18,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Key_Switch:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:Init(Params)
   local Avatars = Params and Params.Avatars
   if Avatars then
@@ -40,7 +37,6 @@ function M:Init(Params)
   self:UpdateText()
   self.Key_Switch:CreateCommonKey(Params.KeyInfo)
 end
-
 function M:UpdateText()
   if self.CurrentAvatar == self.AvatarPrime then
     self.Text_MaxSwitch:SetText(GText("UI_Preview_SwitchtoMax"))
@@ -48,12 +44,10 @@ function M:UpdateText()
     self.Text_MaxSwitch:SetText(GText("UI_Preview_SwitchtoInit"))
   end
 end
-
 function M:BindEventOnClicked(Obj, Event)
   rawset(self, "Obj", Obj)
   rawset(self, "Event", Event)
 end
-
 function M:OnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if self.CurrentAvatar == self.AvatarPrime then
@@ -70,9 +64,7 @@ function M:OnClicked()
     ArmoryUtils:SwitchPreviewTargetState(ArmoryUtils.PreviewTargetStates.Max)
   end
 end
-
 function M:GetCurrentAvatar()
   return self.CurrentAvatar
 end
-
 return M

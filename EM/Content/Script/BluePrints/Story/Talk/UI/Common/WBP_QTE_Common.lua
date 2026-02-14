@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local ProgressBarRefreshIntervel = 0.1
 local ProgressBarRefreshTimerTag = "QTE_ProgressBar"
-
 function M:ResponseQTE(Config)
   DebugPrint("QTE: ResponseQTE", Config.SuccessClickNum)
   self:InitQTEData(Config)
@@ -18,17 +17,14 @@ function M:ResponseQTE(Config)
   self:AddEvent()
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:AddEvent()
   EventManager:AddEvent(EventID.PauseQTE, self, self.PauseQTE)
   EventManager:AddEvent(EventID.ResumeQTE, self, self.ResumeQTE)
 end
-
 function M:RemoveEvent()
   EventManager:RemoveEvent(EventID.PauseQTE, self)
   EventManager:RemoveEvent(EventID.ResumeQTE, self)
 end
-
 function M:SwitchType(Config)
   if Config.ClickType == "Single" then
     self.bRefreshProgressBar = true
@@ -45,7 +41,6 @@ function M:SwitchType(Config)
     })
   end
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if not self:CheckCanWorking() then
     return
@@ -59,7 +54,6 @@ function M:Tick(MyGeometry, InDeltaTime)
     self:RefreshProgressBar(InDeltaTime)
   end
 end
-
 function M:PlayRemindAnimation()
   self:PlayAnimation(self.Remind)
   self:BindToAnimationFinished(self.Remind, {
@@ -72,7 +66,6 @@ function M:PlayRemindAnimation()
     end
   })
 end
-
 function M:SwitchShowVX_Par(bShow)
   if bShow then
     self.VX_Par:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -80,7 +73,6 @@ function M:SwitchShowVX_Par(bShow)
     self.VX_Par:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SwitchHideProgressBar(bHide)
   if bHide then
     self.Progress_Bar_BG:SetVisibility(ESlateVisibility.Collapsed)
@@ -90,7 +82,6 @@ function M:SwitchHideProgressBar(bHide)
     self.Progress_Bar_1:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 function M:InitQTEData(Config)
   self.bQteResponded = false
   self.QTEConfig = Config
@@ -101,7 +92,6 @@ function M:InitQTEData(Config)
   self.ProgressBarPercent = 1
   self.ProgressBarMat = self.Progress_Bar_1:GetDynamicMaterial()
 end
-
 function M:RefreshProgressBar(DeltaTime)
   DebugPrint("QTE: UI RefreshProgressBar", self.ProgressBarPercent)
   if self.bWorking_QTE and self.QTEConfig then
@@ -113,14 +103,12 @@ function M:RefreshProgressBar(DeltaTime)
     end
   end
 end
-
 function M:GetClickButtonText()
   if not (self.QTEConfig and self.QTEConfig.InputActionName) or not self.QTEConfig.InputGamePadActionName then
     return
   end
   return self.QTEConfig.InputActionName
 end
-
 function M:OnInputPress()
   if not self:CheckCanWorking() then
     return
@@ -134,7 +122,6 @@ function M:OnInputPress()
     self:PlayQTERightPressAudio()
   end
 end
-
 function M:GetTargetKeyName()
   if not (self.QTEConfig and self.QTEConfig.InputActionName) or not self.QTEConfig.InputGamePadActionName then
     return
@@ -148,7 +135,6 @@ function M:GetTargetKeyName()
   end
   return self.QTEConfig.InputActionName
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   if not self:CheckCanWorking() then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -161,16 +147,15 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.Unhandled()
   end
   self.FaultClickCount = self.FaultClickCount + 1
-  DebugPrint("QTE: \230\140\137\233\148\174\233\148\153\232\175\175\239\188\140\233\148\153\232\175\175\230\172\161\230\149\176", self.FaultClickCount)
+  DebugPrint("QTE: 按键错误，错误次数", self.FaultClickCount)
   if self.FaultClickCount > self.QTEConfig.ClickFaultToleranceCount then
-    DebugPrint("QTE: \231\148\177\228\186\142\230\140\137\233\148\153\230\172\161\230\149\176\232\182\133\232\191\135\232\174\190\231\189\174\229\128\188\239\188\140QTE\229\164\177\232\180\165", self.QTEConfig.ClickFaultToleranceCount)
+    DebugPrint("QTE: 由于按错次数超过设置值，QTE失败", self.QTEConfig.ClickFaultToleranceCount)
     self:OnQTEFailed()
   else
     self:PlayQTEFaultPressAudio()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnQTESucceed()
   if not self:CheckCanWorking() then
     return
@@ -182,7 +167,6 @@ function M:OnQTESucceed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Success)
 end
-
 function M:OnQTEFailed()
   if not self.bWorking_QTE then
     return
@@ -197,11 +181,9 @@ function M:OnQTEFailed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Fail)
 end
-
 function M:CheckCanWorking()
   return self.bWorking_QTE
 end
-
 function M:ClearQTE()
   self.bWorking_QTE = false
   self.FaultDownKeys = {}
@@ -214,7 +196,6 @@ function M:ClearQTE()
   self:StopQTEShowAudio()
   self:RemoveEvent()
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Success then
     if self.OnSuccCallbackObj and self.OnSuccCallbackFunc then
@@ -228,17 +209,14 @@ function M:OnAnimationFinished(Animation)
     self:SetOnFailCallback()
   end
 end
-
 function M:SetOnSuccCallback(Obj, Func)
   self.OnSuccCallbackObj = Obj
   self.OnSuccCallbackFunc = Func
 end
-
 function M:SetOnFailCallback(Obj, Func)
   self.OnFailCallbackObj = Obj
   self.OnFailCallbackFunc = Func
 end
-
 function M:OnTimeOut(bForceSuccess, CB)
   DebugPrint("QTE: WBP_QTE_Common: OnTimeOut")
   self.bWorking_QTE = false
@@ -268,57 +246,44 @@ function M:OnTimeOut(bForceSuccess, CB)
     CB()
   end
 end
-
 function M:PauseQTE()
   self.bWorking_QTE = false
 end
-
 function M:ResumeQTE()
   self.bWorking_QTE = true
 end
-
 function M:PlayQTEShowAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/qte_show", "QTEShow", nil)
 end
-
 function M:StopQTEShowAudio()
   AudioManager(self):StopSound(self, "QTEShow")
 end
-
 function M:PlayQTEFailAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/qte_fail", "", nil)
 end
-
 function M:PlayQTESuccessAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/qte_success", "", nil)
 end
-
 function M:PlayQTERightPressAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/qte_press", "", nil)
 end
-
 function M:PlayQTEFaultPressAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/qte_press_err_key", "", nil)
 end
-
 function M:InitButtonPerformance()
-  DebugPrint("WBP_QTE_Common:InitButtonPerformance \230\156\170\229\174\158\231\142\176")
+  DebugPrint("WBP_QTE_Common:InitButtonPerformance 未实现")
 end
-
 function M:SwitchBindButtonClickEvents(bBind)
-  DebugPrint("WBP_QTE_Common:SwitchBindButtonClickEvents \230\156\170\229\174\158\231\142\176")
+  DebugPrint("WBP_QTE_Common:SwitchBindButtonClickEvents 未实现")
 end
-
 function M:AdaptPlatform()
-  DebugPrint("WBP_QTE_Common:AdaptPlatform \230\156\170\229\174\158\231\142\176")
+  DebugPrint("WBP_QTE_Common:AdaptPlatform 未实现")
 end
-
 function M:SwitchShowMouseCursorInPIE(bShow)
-  DebugPrint("WBP_QTE_Common:SwitchShowMouseCursorInPIE\230\156\170\229\174\158\231\142\176")
+  DebugPrint("WBP_QTE_Common:SwitchShowMouseCursorInPIE未实现")
   if URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
     local PlayerController = UGameplayStatics.GetPlayerController(self, 0)
     PlayerController.bShowMouseCursor = bShow
   end
 end
-
 return M

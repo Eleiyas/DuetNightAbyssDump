@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_DungeonDefenseFloat_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_DungeonDefenseFloat_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.IsPause = false
@@ -11,10 +10,14 @@ function WBP_DungeonDefenseFloat_C:Initialize(Initializer)
   self.WavesRemained = nil
   self.CurTargetActor = nil
   self.ToastShowTime = 1
+  self.DefenseCoreNameSet = false
   rawset(self, "NormalColor", FLinearColor(0.274677, 0.637597, 0.341915, 1.0))
   rawset(self, "CriticalColor", FLinearColor(0.63, 0, 0, 1.0))
+  local PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self)
+  if "PC" ~= PlatformName then
+    self.UpdateTickTime = 1.0
+  end
 end
-
 function WBP_DungeonDefenseFloat_C:InitListenEvent()
   self.Super.InitListenEvent(self)
   self:AddDispatcher(EventID.CloseDungeonUI, self, self.CloseDungeonUI)
@@ -25,9 +28,7 @@ function WBP_DungeonDefenseFloat_C:InitListenEvent()
   self:AddDispatcher(EventID.OnWaveStart, self, self.OnWaveStart)
   self:AddDispatcher(EventID.OnWaveEnd, self, self.OnWaveEnd)
   self:AddDispatcher(EventID.OnDefenceWaveEnd, self, self.OnDefenceWaveEnd)
-  self:AddDispatcher(EventID.OnRepDungeonProgress, self, self.UpdateDungeonProgressDisplay)
 end
-
 function WBP_DungeonDefenseFloat_C:UIStateChange_OnTarget()
   if self.TempleMode then
     return
@@ -56,7 +57,6 @@ function WBP_DungeonDefenseFloat_C:UIStateChange_OnTarget()
   end
   self.BattlePanel:SetVisibility(UE4.ESlateVisibility.Visible)
 end
-
 function WBP_DungeonDefenseFloat_C:CloseDungeonUI()
   if self.TempleMode then
     return
@@ -69,19 +69,15 @@ function WBP_DungeonDefenseFloat_C:CloseDungeonUI()
   end
   self:RemoveFromParent()
 end
-
 function WBP_DungeonDefenseFloat_C:PauseCountDown()
   self.IsPause = true
 end
-
 function WBP_DungeonDefenseFloat_C:ResumeCountDown()
   self.IsPause = false
 end
-
 function WBP_DungeonDefenseFloat_C:OnEnd()
   print(_G.LogTag, "WBP_DungeonDefenseFloat_C:OnEnd()")
 end
-
 function WBP_DungeonDefenseFloat_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -103,7 +99,6 @@ function WBP_DungeonDefenseFloat_C:OnLoaded(...)
   self:LoadHpBar()
   self:LoadShieldBar()
 end
-
 function WBP_DungeonDefenseFloat_C:ReActiveCurGuideAnim()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -127,7 +122,6 @@ function WBP_DungeonDefenseFloat_C:ReActiveCurGuideAnim()
     end
   end
 end
-
 function WBP_DungeonDefenseFloat_C:UpdateTargetInfo()
   local CurTargetActor = self:GetTargetActor()
   if not CurTargetActor and not self.IsClient then
@@ -139,8 +133,9 @@ function WBP_DungeonDefenseFloat_C:UpdateTargetInfo()
   if not self:IsAnimationPlaying(self.HP_Glow) then
     self.HP_glowLine:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  if not self.IsRescueMode and CurTargetActor and DataMgr.Mechanism[CurTargetActor.UnitId].UnitName then
+  if not self.DefenseCoreNameSet and not self.IsRescueMode and CurTargetActor and DataMgr.Mechanism[CurTargetActor.UnitId].UnitName then
     self.DefenseCoreName:SetText(GText(DataMgr.Mechanism[CurTargetActor.UnitId].UnitName))
+    self.DefenseCoreNameSet = true
   end
   local NewShield = self:GetAttrFromTarget(CurTargetActor, "ES")
   local MaxShield = self:GetAttrFromTarget(CurTargetActor, "MaxES")
@@ -157,64 +152,67 @@ function WBP_DungeonDefenseFloat_C:UpdateTargetInfo()
     self.LastOverShield = OverShield
   end
   local NewShieldPercent = (NewShield + OverShield) / MaxShield
-  if NewShield < self.LastShield then
-    self.ShieldBar:SetBarPercent(NewShieldPercent)
-    if NewShield < self.LastShield then
-      self.ShieldBar:PlayDeduct(true)
+  local ShieldBar = self.ShieldBar
+  local HpBar = self.HpBar
+  local LastShield = self.LastShield
+  local LastHp = self.LastHp
+  if NewShield < LastShield then
+    ShieldBar:SetBarPercent(NewShieldPercent)
+    if NewShield < LastShield then
+      ShieldBar:PlayDeduct(true)
     end
-  elseif NewShield > self.LastShield then
-    self.ShieldBar:SetBarPercent(NewShieldPercent, false)
-    self.ShieldBar:PlayRecoveryShield()
+  elseif NewShield > LastShield then
+    ShieldBar:SetBarPercent(NewShieldPercent, false)
+    ShieldBar:PlayRecoveryShield()
   else
-    self.ShieldBar:DirectSetBarPercent(NewShieldPercent, 0.0)
+    ShieldBar:DirectSetBarPercent(NewShieldPercent, 0.0)
   end
   if self.IsRescueMode then
     local NewOverShieldPercent = MaxShield > 0 and OverShield / MaxShield or 0
     if OverShield < self.LastOverShield or NewOverShieldPercent < 0.001 then
-      self.ShieldBar:SetOverShieldPercent(NewOverShieldPercent)
-      self.ShieldBar:PlayOverShieldDeduct(true)
+      ShieldBar:SetOverShieldPercent(NewOverShieldPercent)
+      ShieldBar:PlayOverShieldDeduct(true)
       if NewOverShieldPercent < 0.001 then
-        self.ShieldBar:ShowOrHideOverShieldGroup(false)
+        ShieldBar:ShowOrHideOverShieldGroup(false)
       end
     elseif OverShield > self.LastOverShield then
-      self.ShieldBar:SetOverShieldPercent(NewOverShieldPercent)
+      ShieldBar:SetOverShieldPercent(NewOverShieldPercent)
       if self.LastOverShield < 0.001 then
-        self.ShieldBar:ShowOrHideOverShieldGroup(true)
+        ShieldBar:ShowOrHideOverShieldGroup(true)
       end
-      self.ShieldBar:PlayOverShieldRecover()
+      ShieldBar:PlayOverShieldRecover()
     end
   end
   local NewHpPercent = NewHp / MaxHp
-  self.HpBar:SetBarPercent(NewHpPercent)
-  if NewHp < self.LastHp and NewHp < self.LastHp then
-    self.HpBar:PlayDeduct(true)
+  HpBar:SetBarPercent(NewHpPercent)
+  if NewHp < LastHp and NewHp < LastHp then
+    HpBar:PlayDeduct(true)
   end
   if not self.IsRescueMode then
     if not CurTargetActor or not CurTargetActor.ForbideLowHealthUI then
       self:LoadLowHealthUI(NewHpPercent)
     end
-    if NewHp < self.LastHp then
+    if NewHp < LastHp then
       if NewHpPercent < self.LastHpPercent then
         self:PlayGlowAnim(NewHp / MaxHp, self.HP_glowLine, self.Warning_Glow)
       else
         self:PlayGlowAnim(NewHp / MaxHp, self.HP_glowLine, self.HP_Glow)
       end
     end
-    if NewShield < self.LastShield then
+    if NewShield < LastShield then
       self:PlayGlowAnim(NewShield / MaxShield, self.Shield_glowLine, self.Shield_Glow)
     end
   end
   if NewHpPercent < (self.LowHpPercent or 0.5) then
-    self.HpBar:SetProgressBarColorInner(self.CriticalColor)
+    HpBar:SetProgressBarColorInner(self.CriticalColor)
   else
-    self.HpBar:SetProgressBarColorInner(self.NormalColor)
+    HpBar:SetProgressBarColorInner(self.NormalColor)
   end
   self.LastShield = NewShield
   self.LastHp = NewHp
   self.LastHpPercent = NewHpPercent
   self:SetBloodAndShieldNum(NewHp, NewShield, NewHpPercent)
 end
-
 function WBP_DungeonDefenseFloat_C:PlayGlowAnim(NewPercent, Glow, GlowAnim)
   if self.IsRescueMode then
     return
@@ -230,7 +228,6 @@ function WBP_DungeonDefenseFloat_C:PlayGlowAnim(NewPercent, Glow, GlowAnim)
   Glow:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   EMUIAnimationSubsystem:EMPlayAnimation(self, GlowAnim)
 end
-
 function WBP_DungeonDefenseFloat_C:SetInvincibility(bIsInvincibility)
   if nil == bIsInvincibility then
     bIsInvincibility = true
@@ -242,7 +239,6 @@ function WBP_DungeonDefenseFloat_C:SetInvincibility(bIsInvincibility)
     self.ShieldBar:PlayInvincibility(bIsInvincibility)
   end
 end
-
 function WBP_DungeonDefenseFloat_C:SetBloodAndShieldNum(NewHp, NewShield, HpPercent)
   self.Num_Shield:SetText(math.floor(NewShield))
   self.Num_Blood:SetText(math.floor(NewHp))
@@ -270,11 +266,9 @@ function WBP_DungeonDefenseFloat_C:SetBloodAndShieldNum(NewHp, NewShield, HpPerc
     end
   end
 end
-
 function WBP_DungeonDefenseFloat_C:UpdateDungeonProgressDisplay(DungeonProgress)
   self.Num_Wave_Now:SetText(DungeonProgress)
 end
-
 function WBP_DungeonDefenseFloat_C:TryOnDefenceCoreActive()
   if self:OnDefenceCoreActive() then
     return
@@ -286,7 +280,6 @@ function WBP_DungeonDefenseFloat_C:TryOnDefenceCoreActive()
     end, true, 0, "TryOnDefenceCoreActive")
   end
 end
-
 function WBP_DungeonDefenseFloat_C:OnDefenceCoreActive()
   if self.TempleMode then
     return
@@ -306,17 +299,11 @@ function WBP_DungeonDefenseFloat_C:OnDefenceCoreActive()
   if self.IsNewDefenceMode then
     self.Defensivewave:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.LeftWave:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    if self.IsEndlessMode then
-      self.Panel_Wave_Now:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    end
     self.Panel_Wave:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    self.Text_Wave_Now:SetText(GText("TARGET_DUNGEON_ROUND"))
-    self:UpdateDungeonProgressDisplay(GameState(self).DungeonProgress)
     self.Text_Wave:SetText(GText("TARGET_DUNGEON_DEFENCE_WAVE"))
   end
   return true
 end
-
 function WBP_DungeonDefenseFloat_C:OnDefenceCoreDead(Callback)
   if self.TempleMode then
     return
@@ -332,7 +319,6 @@ function WBP_DungeonDefenseFloat_C:OnDefenceCoreDead(Callback)
     Callback()
   end
 end
-
 function WBP_DungeonDefenseFloat_C:LoadLowHealthUI(CurrentPercent)
   if not CurrentPercent then
     return
@@ -361,7 +347,6 @@ function WBP_DungeonDefenseFloat_C:LoadLowHealthUI(CurrentPercent)
     end
   end
 end
-
 function WBP_DungeonDefenseFloat_C:LoadSubWidget(Container, WidgetName, ...)
   if not Container then
     return
@@ -371,25 +356,21 @@ function WBP_DungeonDefenseFloat_C:LoadSubWidget(Container, WidgetName, ...)
   SubWidget:Init(...)
   return Container:GetChildAt(0)
 end
-
 function WBP_DungeonDefenseFloat_C:LoadHpBar()
   local BarLength = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SizeBox_HP):GetSize().X
   self.HpBar = self:LoadSubWidget(self.SizeBox_HP, "HPBar", false, BarLength)
 end
-
 function WBP_DungeonDefenseFloat_C:LoadShieldBar()
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SizeBox_Shield)
   local Size = CanvasSlot:GetSize()
   self.ShieldBar = self:LoadSubWidget(self.SizeBox_Shield, "ShieldBar", Size.X, Size.Y)
 end
-
 function WBP_DungeonDefenseFloat_C:HideUselessWidget()
   local function SafeHide(Target, Level)
     if Target and Level then
       Target:SetVisibility(Level)
     end
   end
-  
   SafeHide(self.HorizontalBox_HP, UE4.ESlateVisibility.Collapsed)
   SafeHide(self.Deduct_Blood, UE4.ESlateVisibility.Collapsed)
   SafeHide(self.Deduct_Shield, UE4.ESlateVisibility.Collapsed)
@@ -402,7 +383,6 @@ function WBP_DungeonDefenseFloat_C:HideUselessWidget()
     SafeHide(self.LeftWave, UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_DungeonDefenseFloat_C:GetTargetActor()
   local Target
   if self.IsRescueMode then
@@ -414,7 +394,6 @@ function WBP_DungeonDefenseFloat_C:GetTargetActor()
     return Target
   end
 end
-
 function WBP_DungeonDefenseFloat_C:GetDefenseCore()
   if IsValid(self.CurTargetActor) then
     return self.CurTargetActor
@@ -435,7 +414,6 @@ function WBP_DungeonDefenseFloat_C:GetDefenseCore()
   self.CurTargetActor = CurTargetActor
   return self.CurTargetActor
 end
-
 function WBP_DungeonDefenseFloat_C:GetRescueActor()
   if IsValid(self.CurTargetActor) then
     return self.CurTargetActor
@@ -452,7 +430,6 @@ function WBP_DungeonDefenseFloat_C:GetRescueActor()
   end
   return self.CurTargetActor
 end
-
 function WBP_DungeonDefenseFloat_C:CheckDungeonMode()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if not GameInstance then
@@ -478,7 +455,6 @@ function WBP_DungeonDefenseFloat_C:CheckDungeonMode()
     self.IsSynthesisMode = true
   end
 end
-
 function WBP_DungeonDefenseFloat_C:InitTemple()
   self.BattlePanel:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Bar_Blood:SetVisibility(ESlateVisibility.Collapsed)
@@ -499,7 +475,6 @@ function WBP_DungeonDefenseFloat_C:InitTemple()
     self:InitTargetInfo()
   end
 end
-
 function WBP_DungeonDefenseFloat_C:OnTempleTimeChanged(CurrentTime, ThresholdTime)
   if self.TempleInfo.SucRule == "Time" then
     local Time = self:GetTimeStr(CurrentTime)
@@ -512,7 +487,6 @@ function WBP_DungeonDefenseFloat_C:OnTempleTimeChanged(CurrentTime, ThresholdTim
     end
   end
 end
-
 function WBP_DungeonDefenseFloat_C:OnSetTempleLimit(Limit, Value)
   self.Limit = Limit
   self.DefenseCoreName:SetVisibility(ESlateVisibility.Visible)
@@ -527,17 +501,14 @@ function WBP_DungeonDefenseFloat_C:OnSetTempleLimit(Limit, Value)
     self:InitTargetInfo()
   end
 end
-
 function WBP_DungeonDefenseFloat_C:OnTempleScoreCollectChanged(Value)
   self.TextBlock_2:SetText(GText("UI_TEMPLE_TOTAL_" .. string.upper(self.TempleInfo.SucRule)) .. ": " .. Value)
 end
-
 function WBP_DungeonDefenseFloat_C:OnTempleDeathFallChanged(Value)
   if Value >= 0 then
     self.DefenseCoreName:SetText(GText("UI_TEMPLE_LIMIT_" .. self.Limit) .. Value)
   end
 end
-
 function WBP_DungeonDefenseFloat_C:InitTargetInfo()
   local TextRule2 = ""
   if self.TempleInfo.SucRule == "Time" then
@@ -573,7 +544,6 @@ function WBP_DungeonDefenseFloat_C:InitTargetInfo()
   self.TextBlock_1:SetText(Text)
   self.BattlePanel:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_DungeonDefenseFloat_C:GetWaveStartBP()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -586,7 +556,6 @@ function WBP_DungeonDefenseFloat_C:GetWaveStartBP()
   WaveStartBP:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   return WaveStartBP
 end
-
 function WBP_DungeonDefenseFloat_C:OnDefenseWaveStart()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -595,10 +564,10 @@ function WBP_DungeonDefenseFloat_C:OnDefenseWaveStart()
   self.HintTime = GameState.DefenceWaveInterval
   local WaveStartBP = self:GetWaveStartBP()
   if WaveStartBP then
-    WaveStartBP:SetVisibility(ESlateVisibility.Collapsed)
+    WaveStartBP:Hide("OnDefenseWaveStart")
     WaveStartBP.Text_WaveStart:SetText(GText("DUNGEON_DEFENCE_101"))
     self:AddTimer(self.HintTime, function()
-      WaveStartBP:SetVisibility(ESlateVisibility.HitTestInvisible)
+      WaveStartBP:Show("OnDefenseWaveStart")
       WaveStartBP:PlayInAnimation()
       AudioManager(self):PlayUISound(nil, "event:/ui/common/battle_warning", nil, nil)
     end)
@@ -610,7 +579,6 @@ function WBP_DungeonDefenseFloat_C:OnDefenseWaveStart()
   self:UpdateWaveCount()
   self:AddTimer(self.UpdateTickTime, self.UpdateTargetInfo, true, 0, "UpdateMechanism", false)
 end
-
 function WBP_DungeonDefenseFloat_C:OnWaveStart()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -630,7 +598,6 @@ function WBP_DungeonDefenseFloat_C:OnWaveStart()
   end
   self:AddTimer(self.ToastShowTime, self.ShowCountDown)
 end
-
 function WBP_DungeonDefenseFloat_C:OnDefenceWaveEnd()
   local WaveStartBP = self:GetWaveStartBP()
   if WaveStartBP then
@@ -641,7 +608,6 @@ function WBP_DungeonDefenseFloat_C:OnDefenceWaveEnd()
     end)
   end
 end
-
 function WBP_DungeonDefenseFloat_C:OnWaveEnd()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -656,7 +622,6 @@ function WBP_DungeonDefenseFloat_C:OnWaveEnd()
   end
   self:AddTimer(self.ToastShowTime, self.ShowCountDown)
 end
-
 function WBP_DungeonDefenseFloat_C:ShowCountDown()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -668,7 +633,6 @@ function WBP_DungeonDefenseFloat_C:ShowCountDown()
   GuideCountDownFloat = GuideCountDownFloat or UIManager:LoadUINew("GuideCountDown")
   GuideCountDownFloat:InitializeData(self.HintTime)
 end
-
 function WBP_DungeonDefenseFloat_C:InitWidgetInfo()
   self.Bar_Blood:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Num_Shield:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -684,7 +648,6 @@ function WBP_DungeonDefenseFloat_C:InitWidgetInfo()
   self.TextBlock_2:SetVisibility(ESlateVisibility.Visible)
   self.DefenseCoreName:SetText(GText("UI_DUNGEON_HOSTAGE"))
 end
-
 function WBP_DungeonDefenseFloat_C:UpdateWaveCount()
   if not GameState then
     return
@@ -700,7 +663,6 @@ function WBP_DungeonDefenseFloat_C:UpdateWaveCount()
     self.RemainingWaveCount:SetText(self.WavesRemained)
   end
 end
-
 function WBP_DungeonDefenseFloat_C:GetAttrFromTarget(CurTargetActor, AttrName)
   if CurTargetActor then
     return CurTargetActor:GetAttr(AttrName)
@@ -713,5 +675,4 @@ function WBP_DungeonDefenseFloat_C:GetAttrFromTarget(CurTargetActor, AttrName)
     return GameState.HostageState["Hostage" .. AttrName] or 0
   end
 end
-
 return WBP_DungeonDefenseFloat_C

@@ -1,9 +1,7 @@
 local Component = {}
-
 function Component:ReceiveInitialize()
   self.DelayFuncs = {}
 end
-
 function Component:ReceiveTick(DeltaSeconds)
   if not self.DelayFuncs then
     return
@@ -33,11 +31,13 @@ function Component:ReceiveTick(DeltaSeconds)
     end
   end
 end
-
 function Component:AddDelayFrameFunc(Object, Func, DelayFrame, Key, ...)
   DelayFrame = DelayFrame or 1
   if not Object then
     return
+  end
+  if not self.DelayFuncs then
+    self.DelayFuncs = {}
   end
   if not self.DelayFuncs[Object] then
     self.DelayFuncs[Object] = {}
@@ -63,5 +63,4 @@ function Component:AddDelayFrameFunc(Object, Func, DelayFrame, Key, ...)
     self.bAllowTick = true
   end
 end
-
 return Component

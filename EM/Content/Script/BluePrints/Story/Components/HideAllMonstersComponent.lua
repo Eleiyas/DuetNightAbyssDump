@@ -1,10 +1,8 @@
 local FHideAllMonstersComponent = {}
-
 function FHideAllMonstersComponent:New()
   local HideAllMonstersComponent = setmetatable({}, {__index = FHideAllMonstersComponent})
   return HideAllMonstersComponent
 end
-
 function FHideAllMonstersComponent:DoHide()
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if IsValid(GameState) then
@@ -21,7 +19,6 @@ function FHideAllMonstersComponent:DoHide()
     Battle:HideAllDanmaku(true)
   end
 end
-
 function FHideAllMonstersComponent:ResumeHide()
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if IsValid(GameState) then
@@ -37,5 +34,4 @@ function FHideAllMonstersComponent:ResumeHide()
     Battle:HideAllDanmaku(false)
   end
 end
-
 return FHideAllMonstersComponent

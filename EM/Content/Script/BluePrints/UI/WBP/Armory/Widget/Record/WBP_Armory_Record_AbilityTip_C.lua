@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self:UnbindAllFromAnimationFinished(self.Out)
   self:BindToAnimationFinished(self.Out, {
@@ -12,7 +11,6 @@ function M:Construct()
   self:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   self:RefreshBaseInfo()
 end
-
 function M:Init(Owner, Params)
   self:SetFocus()
   self.Owner = Owner
@@ -38,14 +36,12 @@ function M:Init(Owner, Params)
     Desc = GText("UI_Controller_Close")
   })
 end
-
 function M:OnOutAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.OnMenuRealClosed then
     self.OnMenuRealClosed(self.Owner)
   end
 end
-
 function M:OnFocusLost()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
@@ -53,7 +49,6 @@ function M:OnFocusLost()
     self.OnMenuClosed(self.Owner)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   if UKismetInputLibrary.InputEvent_IsRepeat(InputEvent) then
@@ -66,11 +61,9 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -78,7 +71,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseGamepad = CurInputDevice == ECommonInputType.Gamepad
@@ -89,5 +81,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 return M

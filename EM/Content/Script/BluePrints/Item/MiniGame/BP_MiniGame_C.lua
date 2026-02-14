@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_MiniGame_C = Class("BluePrints/Item/Chest/BP_MechanismBase_C")
-
 function BP_MiniGame_C:AuthorityInitInfo(Info)
   BP_MiniGame_C.Super.AuthorityInitInfo(self, Info)
   if self.UnitParams then
@@ -12,7 +11,6 @@ function BP_MiniGame_C:AuthorityInitInfo(Info)
     self.FiniStateId = self.UnitParams.FiniStateId
   end
 end
-
 function BP_MiniGame_C:CommonInitInfo(Info)
   BP_MiniGame_C.Super.CommonInitInfo(self, Info)
   self.InteractiveType = Const.EndByTargetInteractive
@@ -27,20 +25,10 @@ function BP_MiniGame_C:CommonInitInfo(Info)
   self.UIPath = self.UnitParams.UIPath or "/Game/LGUI/UI_IPHONE/MiniGame/MiniGame"
   self.MiniGameType = self.UnitParams.MiniGameType or "ConnectLine"
 end
-
 function BP_MiniGame_C:OnActorReady(Info)
   BP_MiniGame_C.Super.OnActorReady(self, Info)
-  local StateData = DataMgr.MechanismState[self.StateId]
-  if StateData then
-    for i, v in pairs(StateData.StateEvent) do
-      if v.TypeNextState and v.TypeNextState.Type == "InteractBreak" then
-        self:ChangeState("InteractBreak", 0)
-      end
-    end
-  end
   EventManager:FireEvent(EventID.OnMiniGameCreated, self)
 end
-
 function BP_MiniGame_C:SetPlayerRotation()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0):Cast(UE4.LoadClass("Blueprint'/Game/BluePrints/Char/BP_PlayerCharacter.BP_PlayerCharacter_C'"))
   self.CharSpringArmComponent = Player.CharSpringArmComponent
@@ -56,7 +44,6 @@ function BP_MiniGame_C:SetPlayerRotation()
   CameraControlStruct.ProbeSize = 3
   Player.CameraControlComponent:PushCameraState("MiniGame", CameraControlStruct, 0, 9999999)
 end
-
 function BP_MiniGame_C:LoadMiniGameUMG()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -80,7 +67,6 @@ function BP_MiniGame_C:LoadMiniGameUMG()
   self.MiniGameLogic.bCanCrack = self:CheckCanCrack()
   self.MiniGameLogic:InitAfterBeginPlay()
 end
-
 function BP_MiniGame_C:CheckCanCrack()
   if self.OpenState then
     return false
@@ -105,14 +91,12 @@ function BP_MiniGame_C:CheckCanCrack()
   end
   return false
 end
-
 function BP_MiniGame_C:GetRandomMapIndex()
   math.randomseed(tostring(os.time()):reverse():sub(1, 7))
   self.MapIndex = self.RecordMapIndex or math.random(1, 1000)
   self.RecordMapIndex = self.MapIndex
   UEPrint("Random MapIndex " .. self.MapIndex)
 end
-
 function BP_MiniGame_C:LoadGameUI(Id)
   if IsAuthority(self) and not IsStandAlone(self) then
     return
@@ -126,13 +110,8 @@ function BP_MiniGame_C:LoadGameUI(Id)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:HideAllUI(true, Const.MiniGameHideTag)
-  local PlayerCharacter = Battle(self):GetEntity(Id)
-  local PlayerController = PlayerCharacter:GetController()
-  PlayerCharacter:SetCharacterTag("Idle")
-  PlayerCharacter:SetCharacterTag("Interactive")
   self:LoadMiniGameUMG()
 end
-
 function BP_MiniGame_C:UnLoadGameUI(PlayerId)
   if not IsClient(self) and not IsStandAlone(self) then
     return
@@ -151,7 +130,6 @@ function BP_MiniGame_C:UnLoadGameUI(PlayerId)
     self:ResetPlayerRotation()
   end
 end
-
 function BP_MiniGame_C:ResetPlayerRotation()
   self.CharSpringArmComponent.bUsePawnControlRotation = true
   self.CharSpringArmComponent:K2_SetWorldRotation(self.OriginalRotation, false, nil, false)
@@ -159,14 +137,12 @@ function BP_MiniGame_C:ResetPlayerRotation()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0):Cast(UE4.LoadClass("Blueprint'/Game/BluePrints/Char/BP_PlayerCharacter.BP_PlayerCharacter_C'"))
   Player.CameraControlComponent:PopCameraState("MiniGame")
 end
-
 function BP_MiniGame_C:OnMiniGameStartServer(Id)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   self.FailedTime = GameMode.MiniGameFailedTime[self.MiniGameType] or 0
   self.PlayerEid = Id
   self:OnMiniGameStartClient(Id)
 end
-
 function BP_MiniGame_C:OpenMechanism(Id)
   if self.OpenState then
     return
@@ -179,28 +155,23 @@ function BP_MiniGame_C:OpenMechanism(Id)
     self:OnMiniGameStartServer(Id)
   end
 end
-
 function BP_MiniGame_C:CrackMiniGame(Id)
   self:SetVariableBool("IsGameSuccess", true, Id)
   self.PlayerEid = Id
   self:CloseMechanism(Id, true)
 end
-
 function BP_MiniGame_C:CloseMechanism(PlayerId, IsSuccess)
   self:OnMiniGameEndSever(PlayerId)
 end
-
 function BP_MiniGame_C:ForceCloseMechanism(PlayerId, IsSuccess)
   self:BroadcastCloseMechanism(PlayerId)
   self:OnMiniGameEndSever(PlayerId)
 end
-
 function BP_MiniGame_C:BroadcastCloseMechanism_Lua(PlayerId)
   if self.MiniGameLogic then
     self.MiniGameLogic:GameFailed()
   end
 end
-
 function BP_MiniGame_C:TriggerFunctionOnSelf()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if self.IsGameSuccess or self.AlwaysSuccess then
@@ -215,7 +186,6 @@ function BP_MiniGame_C:TriggerFunctionOnSelf()
     GameMode:TriggerOnMiniGameFail(self.MiniGameType, self.CreatorId)
   end
 end
-
 function BP_MiniGame_C:TriggerFunctionOnParent()
   if self.IsGameSuccess or self.AlwaysSuccess then
     self:UpdateRegionData("OpenState", true)
@@ -230,5 +200,4 @@ function BP_MiniGame_C:TriggerFunctionOnParent()
     end
   end
 end
-
 return BP_MiniGame_C

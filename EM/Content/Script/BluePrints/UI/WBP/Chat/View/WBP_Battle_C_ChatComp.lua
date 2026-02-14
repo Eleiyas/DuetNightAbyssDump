@@ -4,13 +4,12 @@ local ChatModel = ChatController:GetModel()
 local StrLib = require("BluePrints.Common.DataStructure")
 local Deque = StrLib.Deque
 local Component = {}
-
 function Component:EndChat()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
-  ReddotManager.RemoveListener(ChatCommon.UIName, self)
+  ReddotManager.RemoveListener(ChatCommon.ReddotName, self)
   ChatController:UnRegisterEvent(self)
   self.ChatSimpleOpenQueue = nil
   self:RemoveChatSimpleProcessTimer()
@@ -21,14 +20,13 @@ function Component:EndChat()
     Avatar:UnBindOnUIFirstTimeUnlock(ChatEntryConf.UIUnlockRuleName, self.ChatUnlockKey)
   end
 end
-
 function Component:InitChat()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
   local ChatEntryConf = DataMgr.MainUI[ChatCommon.MainUIId]
-  assert(ChatEntryConf, "\232\129\138\229\164\169\231\154\132\229\133\165\229\143\163\233\133\141\231\189\174\228\184\141\229\173\152\229\156\168\239\188\140\231\173\150\229\136\146\233\156\128\232\166\129\230\163\128\230\159\165MainUI\233\133\141\232\161\168\239\188\140\232\129\138\229\164\169\231\179\187\231\187\159\231\154\132id\228\184\186" .. ChatCommon.MainUIId)
+  assert(ChatEntryConf, "聊天的入口配置不存在，策划需要检查MainUI配表，聊天系统的id为" .. ChatCommon.MainUIId)
   self.ChatSimpleOpenQueue = Deque.New()
   local PlatfromType = CommonUtils.GetDeviceTypeByPlatformName(self)
   self["_InitChat" .. PlatfromType](self, Avatar, ChatEntryConf)
@@ -51,7 +49,6 @@ function Component:InitChat()
     self:_EnterChannel()
   end
 end
-
 function Component:_InitChatPC(Avatar, ...)
   local ChatEntryConf = (...)
   self.Group_Normal:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -86,7 +83,7 @@ function Component:_InitChatPC(Avatar, ...)
     elseif EventId == ChatCommon.EventID.ChatMsgRecv then
       local TimeWrap, MsgWrap = ...
       if 1 == Avatar.ChatChannelMute[MsgWrap.Message.ChannelType] then
-        print("yklua \230\148\182\229\136\176\230\182\136\230\129\175\239\188\140\228\189\134\230\152\175\229\156\168\229\133\141\230\137\147\230\137\176\229\136\151\232\161\168\228\184\173")
+        print("yklua 收到消息，但是在免打扰列表中")
         return
       end
       self:UpdateChatSimple(MsgWrap)
@@ -150,7 +147,6 @@ function Component:_InitChatPC(Avatar, ...)
     end
   end)
 end
-
 function Component:_InitChatMobile(Avatar, ...)
   local ChatEntryConf = (...)
   local ChatEntryObj = NewObject(UE4.LoadClass("/Game/UI/WBP/Battle/Widget/WBP_Main_Btnlist_Content.WBP_Main_Btnlist_Content_C"))
@@ -180,31 +176,17 @@ function Component:_InitChatMobile(Avatar, ...)
       end
     end
   end)
-  ReddotManager.AddListener(ChatCommon.ReddotName, self, function(self, Count)
-    if 0 == Count then
-      self.Chat_Entry.Reddot_Num:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    else
-      self.Chat_Entry.Reddot_Num:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-      local NumText = tostring(Count)
-      if Count >= ChatCommon.ReddotMaxCount then
-        NumText = ChatCommon.ReddotMaxCount .. "+"
-      end
-      self.Chat_Entry.Reddot_Num:SetNum(NumText)
-    end
-  end)
 end
-
 function Component:_EndChatPC(Avatar, ...)
   self:StopListeningForInputAction(DataMgr.KeyboardMap.OpenChat.ActionName, EInputEvent.IE_Pressed)
   self.Btn_ChatEntry.OnClicked:Remove(self, self.ChatEntryOnClicked)
   self.Btn_ChatEntry.OnHovered:Remove(self, self.ChatEntryOnHovered)
   self.Btn_ChatEntry.OnUnhovered:Remove(self, self.ChatEntryOnLeaved)
   self.ChatFocusArea.OnClicked:Remove(self, self.OnChatFocusAreaClicked)
+  ReddotManager.RemoveListener(ChatCommon.UIName, self)
 end
-
 function Component:_EndChatMobile(Avatar, ...)
 end
-
 function Component:_EnterChannel()
   ChatModel:UpdateCurrentChannel()
   for _, Channel in pairs(ChatCommon.ChannelDef) do
@@ -217,10 +199,8 @@ function Component:_EnterChannel()
     })
   end
 end
-
 function Component:_LeaveChannel()
 end
-
 function Component:OpenChat()
   if IsValid(ChatController:GetView(self)) then
     return
@@ -230,7 +210,6 @@ function Component:OpenChat()
   end
   self:OpenSystemByAction(DataMgr.KeyboardMap.OpenChat.ActionName, true, true)
 end
-
 function Component:InitChatSimple()
   if not self.bRebuildChatSimple then
     return
@@ -249,7 +228,6 @@ function Component:InitChatSimple()
   self.Pos_ChatSimple:ClearListItems()
   self.bRebuildChatSimple = false
 end
-
 function Component:UpdateChatSimple(MsgWrap)
   DebugPrint("Battle_PC_ChatComp:UpdateChatSimple", self.Pos_ChatSimple:GetVisibility())
   if IsValid(ChatController:GetView(self)) then
@@ -271,7 +249,6 @@ function Component:UpdateChatSimple(MsgWrap)
   self.SimpleChatMovingTime = nil
   self:TryAddChatSimpleProcessTimer()
 end
-
 function Component:TryAddChatSimpleProcessTimer()
   if not self:IsExistTimer(self.ProcessTicker) then
     local Interval = 0.05
@@ -295,7 +272,6 @@ function Component:TryAddChatSimpleProcessTimer()
     self.ProcessTicker = TimerKey
   end
 end
-
 function Component:_ProcessChatSimpleListModify()
   local MaxCount = DataMgr.GlobalConstant.ChatMsgCountInBattleMain.ConstantValue
   local ListCount = self.Pos_ChatSimple:GetNumItems()
@@ -313,7 +289,6 @@ function Component:_ProcessChatSimpleListModify()
     end
   end
 end
-
 function Component:_ProcessChatSimpleMove(Interval)
   if self.SimpleChatMovingTime < self.SCItemAnimTotalTime then
     for i, UI in pairs(self.Pos_ChatSimple:GetDisplayedEntryWidgets()) do
@@ -334,12 +309,10 @@ function Component:_ProcessChatSimpleMove(Interval)
     end
   end
 end
-
 function Component:OnSimpleChatClose(ClosingUI)
   self.SimpleChatMovingTime = 0
   self.SCItemAnimTotalTime = math.max(ClosingUI.Out:GetEndTime(), 0.2)
 end
-
 function Component:RemoveChatSimpleProcessTimer()
   if not self:IsExistTimer(self.ProcessTicker) then
     return
@@ -347,27 +320,22 @@ function Component:RemoveChatSimpleProcessTimer()
   self:RemoveTimer(self.ProcessTicker)
   self.ProcessTicker = nil
 end
-
 function Component:ChatEntryOnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_system_entrance", nil, nil)
   ChatController:OpenView(self, true)
 end
-
 function Component:ChatEntryOnHovered()
   self.Chat_Entry:OnBtnHovered()
 end
-
 function Component:OnChatFocusAreaClicked()
   local ChatView = ChatController:GetView(self)
   if IsValid(ChatView) then
     ChatView:SetFocus()
   end
 end
-
 function Component:ChatEntryOnLeaved()
   self.Chat_Entry:OnBtnUnhovered()
 end
-
 function Component:_SetUpChannelText()
   local ChannelConf = DataMgr.Channel[ChatModel:GetCurrentChannel()]
   if ChannelConf and ChannelConf.SIcon then
@@ -377,12 +345,10 @@ function Component:_SetUpChannelText()
     end
   end
 end
-
 function Component:InitChatKeyTip()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
-    local IsGamepad = self.CurInputDeviceType == UE4.ECommonInputType.Gamepad
+    local IsGamepad = UIUtils.UtilsGetCurrentInputType() == UE4.ECommonInputType.Gamepad
     self.Group_NormalKey:SetVisibility(IsGamepad and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return Component

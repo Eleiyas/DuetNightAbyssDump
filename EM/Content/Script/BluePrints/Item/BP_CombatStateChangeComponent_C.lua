@@ -1,6 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.Common.TimerMgr")
-
+local Params = TArray("")
 function M:InitComponent_Lua()
   self.Owner = self:GetOwner()
   self:SetComponentTickEnabled(false)
@@ -26,18 +26,17 @@ function M:InitComponent_Lua()
   self:InitStateTable_Lua()
   self:InitFirstState_Lua()
 end
-
 function M:InitStateTable_Lua()
   self.StateTableLua = {}
   for i, StateId in pairs(self.StateIdListLua) do
     if self.StateTableLua[StateId] then
-      assert(nil, "Error: Mechanism StateIdList \233\135\141\229\164\141")
+      assert(nil, "Error: Mechanism StateIdList 重复")
     end
     self.StateTableLua[StateId] = {}
     local EventsCurrentState, NextStateIds, TypeNextStates, EventsNextStates = self:GetStateInfo_Lua(StateId)
     for i, v in pairs(NextStateIds) do
       if self.StateTableLua[StateId][v] then
-        assert(nil, "Error: Mechanism NextStateId \233\135\141\229\164\141, NowStateId: " .. StateId)
+        assert(nil, "Error: Mechanism NextStateId 重复, NowStateId: " .. StateId)
       end
       self.StateTableLua[StateId][v] = {
         NextStateId = NextStateIds[i],
@@ -48,7 +47,6 @@ function M:InitStateTable_Lua()
     self.StateTableLua[StateId].EventsCurrentState = EventsCurrentState
   end
 end
-
 function M:InitFirstState_Lua()
   self.Owner:OnEnterState(self.FirstStateId)
   self.NowState = self.FirstStateId
@@ -71,7 +69,6 @@ function M:InitFirstState_Lua()
     end
   end
 end
-
 function M:UpdateStateIdCache(ManualItemId, CreatorId, StateId)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if ManualItemId > 0 then
@@ -88,7 +85,6 @@ function M:UpdateStateIdCache(ManualItemId, CreatorId, StateId)
     EventManager:FireEvent(EventID.OnMechanismEnterState, CreatorId, StateId)
   end
 end
-
 function M:UpdateStateIdCache_Lua()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if self.Owner.ManualItemId > 0 then
@@ -105,7 +101,6 @@ function M:UpdateStateIdCache_Lua()
     EventManager:FireEvent(EventID.OnMechanismEnterState, self.Owner.CreatorId, self.Owner.StateId)
   end
 end
-
 function M:GetStateInfo_Lua(StateId)
   local Info = DataMgr.MechanismState[StateId]
   assert(Info, "Error: Can't find State Info, StateId: " .. StateId .. self.Owner:GetName())
@@ -121,20 +116,17 @@ function M:GetStateInfo_Lua(StateId)
   end
   return Info.EventsCurrentState or {}, NextStateId, TypeNextState, EventsNextState
 end
-
 function M:ChangeToState_Lua(StateId)
   assert(StateId, "Error: StateId is nil, CombatItem: " .. self.Owner.UnitId)
   assert(self.StateTableLua[StateId], "Error: Can't find State Info, NowStateId: " .. StateId)
   self:LeaveState_Lua(self.NowState, StateId, self.EnterState_Lua)
 end
-
 function M:ClientChangeToState_Lua(StateId)
   if StateId == self.NowState then
     return
   end
   self:ClientLeaveState_Lua(self.NowState, StateId, self.ClientEnterState_Lua)
 end
-
 function M:EnterState_Lua(StateId)
   self.Owner:OnEnterState(StateId)
   self.NowState = StateId
@@ -166,7 +158,6 @@ function M:EnterState_Lua(StateId)
     end
   end
 end
-
 function M:ClientEnterState_Lua(StateId, NextStateId, Callback)
   self.Owner:OnEnterState(StateId)
   self.NowState = StateId
@@ -183,7 +174,6 @@ function M:ClientEnterState_Lua(StateId, NextStateId, Callback)
     end
   end
 end
-
 function M:LeaveState_Lua(StateId, NextStateId, Callback)
   self.Owner:OnLeaveState(StateId, NextStateId)
   self.Owner:RemoveTimer("DistanceActiveTimer")
@@ -214,7 +204,6 @@ function M:LeaveState_Lua(StateId, NextStateId, Callback)
     end
   end
 end
-
 function M:ClientLeaveState_Lua(StateId, NextStateId, Callback)
   self.Owner:OnLeaveState(StateId, NextStateId)
   self.Owner:RemoveTimer("DistanceActiveTimer")
@@ -244,18 +233,15 @@ function M:ClientLeaveState_Lua(StateId, NextStateId, Callback)
     end
   end
 end
-
 function M:CleanMutexEvent(StateId, NextStateId, Callback)
   self.InteractiveEffectUsedLua = {}
 end
-
 function M:FireEvent(EventName, ...)
   if not self[EventName] then
     return
   end
   self[EventName]:Broadcast(...)
 end
-
 function M:StateChangeCountDownLua(TotalTime, NextStateId)
   self.CurrentCountDownLua = self.CurrentCountDownLua + 0.1
   if TotalTime < self.CurrentCountDownLua then
@@ -266,11 +252,9 @@ function M:StateChangeCountDownLua(TotalTime, NextStateId)
   end
   self:FireEvent("OnStateChangeCountDownDelegate", NextStateId, self.CurrentCountDownLua / TotalTime, self.CurrentCountDownLua)
 end
-
 function M:CurrentStateEvent_Test(ParamentsTable)
   print(_G.LogTag, "TestTest")
 end
-
 function M:CurrentStateEvent_OpenMechanism(ParamentsTable)
   local PlayerEid = 0
   if self.PlayerEid and 0 ~= self.PlayerEid then
@@ -280,7 +264,6 @@ function M:CurrentStateEvent_OpenMechanism(ParamentsTable)
     self.Owner:OpenMechanism(PlayerEid)
   end
 end
-
 function M:CurrentStateEvent_CloseMechanism(ParamentsTable)
   local PlayerEid
   if self.PlayerEid and 0 ~= self.PlayerEid then
@@ -290,15 +273,12 @@ function M:CurrentStateEvent_CloseMechanism(ParamentsTable)
     self.Owner:CloseMechanism(PlayerEid)
   end
 end
-
 function M:CurrentStateEvent_CombatPropActive(ParamentsTable)
   self.Owner:ActiveCombat()
 end
-
 function M:CurrentStateEvent_CombatPropDeActive(ParamentsTable)
   self.Owner:DeActiveCombat()
 end
-
 function M:CurrentStateEvent_SetParam(ParamentsTable)
   if self.Owner[ParamentsTable.Param] == nil then
     return
@@ -312,15 +292,12 @@ function M:CurrentStateEvent_SetParam(ParamentsTable)
     end
   end
 end
-
 function M:CurrentStateEvent_ActiveGuide(ParamentsTable)
   self.Owner:CreateGuideHandle(false)
 end
-
 function M:CurrentStateEvent_DeactiveGuide(ParamentsTable)
   self.Owner:DeactiveGuide()
 end
-
 function M:CurrentStateEvent_AfterInteractiveEffect(ParamentsTable)
   if self.InteractiveEffectUsedLua.InteractiveEffect then
     return
@@ -328,7 +305,6 @@ function M:CurrentStateEvent_AfterInteractiveEffect(ParamentsTable)
   self.InteractiveEffectUsedLua.InteractiveEffect = true
   self.Owner.CombatClientEffectComponent:AfterInteractiveEffect()
 end
-
 function M:CurrentStateEvent_PlayFX(ParamentsTable)
   local EffectId = ParamentsTable.EffectId
   local FXTag = ParamentsTable.Tag
@@ -341,7 +317,6 @@ function M:CurrentStateEvent_PlayFX(ParamentsTable)
     self.Owner.FXComponent:SpawnFXById_Level(EffectId, nil, false)
   end
 end
-
 function M:CurrentStateEvent_StopFX(ParamentsTable)
   local FXTag = ParamentsTable.Tag
   local NiagaraCompName = ParamentsTable.CompName
@@ -351,7 +326,6 @@ function M:CurrentStateEvent_StopFX(ParamentsTable)
     self.Owner.FXComponent:StopFX_Level(NiagaraCompName)
   end
 end
-
 function M:CurrentStateEvent_ChangeFX(ParamentsTable)
   local FXTag = ParamentsTable.Tag
   local NiagaraCompName = ParamentsTable.CompName
@@ -387,7 +361,6 @@ function M:CurrentStateEvent_ChangeFX(ParamentsTable)
     end
   end
 end
-
 function M:CurrentStateEvent_SetConditionDoorState(ParamentsTable)
   local DoorType = ParamentsTable.DoorType
   local MiniGame = Battle(self):GetEntity(self.Owner.MiniGameEid)
@@ -414,16 +387,13 @@ function M:CurrentStateEvent_SetConditionDoorState(ParamentsTable)
     GameMode:TriggerOnGateChange(self.Owner.DoorId, DoorType)
   end
 end
-
 function M:CurrentStateEvent_DestroySelf(ParamentsTable)
   self.Owner:EMActorDestroy(EDestroyReason.CombatStateChange)
 end
-
 function M:CurrentStateEvent_ChangeColor(ParamentsTable)
   local ColorType = ParamentsTable.ColorId or 0
   self.Owner.CombatClientEffectComponent:ChangeColor(ColorType)
 end
-
 function M:CurrentStateEvent_PlayTalk(ParamentsTable)
   local TalkId = ParamentsTable.TalkId
   if not TalkId then
@@ -437,7 +407,6 @@ function M:CurrentStateEvent_PlayTalk(ParamentsTable)
   Player = Player or UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   UE4.UPlayTalkAsyncAction.PlayTalk(self.Owner, TalkId, nil)
 end
-
 function M:CurrentStateEvent_ChangeTrapSkillOpen(ParamentsTable)
   local bUseful = ParamentsTable.Open
   if not self.Owner.SetSkillUseful then
@@ -445,7 +414,6 @@ function M:CurrentStateEvent_ChangeTrapSkillOpen(ParamentsTable)
   end
   self.Owner:SetSkillUseful(bUseful)
 end
-
 function M:CurrentStateEvent_SetBubbleWidget(ParamentsTable)
   local bShow = ParamentsTable.Show
   if not self.Owner.SetBubbleWidgetShowOrHide then
@@ -453,24 +421,20 @@ function M:CurrentStateEvent_SetBubbleWidget(ParamentsTable)
   end
   self.Owner:SetBubbleWidgetShowOrHide(bShow)
 end
-
 function M:EventsNextState_Test(ParamentsTable, NextStateId, Callback)
   self:EventsNextStateCallback()
   if self:CheckCallback(Index) then
     Callback(self, NextStateId)
   end
 end
-
 function M:EventsNextState_PlayFX(ParamentsTable, NextStateId, Callback)
   local EffectId = ParamentsTable.EffectId
   local FXTag = ParamentsTable.Tag
   local NiagaraCompName = ParamentsTable.CompName
   local NeedFinish = ParamentsTable.NeedFinish or false
-  
   local function PlayFXCallback()
     self:EventsNextStateCallback(Callback, NextStateId)
   end
-  
   if FXTag then
     self.Owner.FXComponent:SpawnFXById_Level(EffectId, FXTag, false)
     if NeedFinish then
@@ -486,7 +450,6 @@ function M:EventsNextState_PlayFX(ParamentsTable, NextStateId, Callback)
     PlayFXCallback()
   end
 end
-
 function M:EventsNextState_StopFX(ParamentsTable, NextStateId, Callback)
   local FXTag = ParamentsTable.Tag
   local NiagaraCompName = ParamentsTable.CompName
@@ -497,7 +460,6 @@ function M:EventsNextState_StopFX(ParamentsTable, NextStateId, Callback)
   end
   self:EventsNextStateCallback(Callback, NextStateId)
 end
-
 function M:EventsNextState_ShowToast(ParamentsTable, NextStateId, Callback)
   local ToastText = ParamentsTable.ToastText
   if ToastText then
@@ -510,7 +472,6 @@ function M:EventsNextState_ShowToast(ParamentsTable, NextStateId, Callback)
   end
   self:EventsNextStateCallback(Callback, NextStateId)
 end
-
 function M:EventsNextState_InteractiveEffect(ParamentsTable, NextStateId, Callback)
   if self.InteractiveEffectUsedLua.InteractiveEffect then
     return
@@ -519,13 +480,11 @@ function M:EventsNextState_InteractiveEffect(ParamentsTable, NextStateId, Callba
   self.Owner.CombatClientEffectComponent:OnInteractiveEffect()
   self:EventsNextStateCallback(Callback, NextStateId)
 end
-
 function M:EventsNextState_ChangeColor(ParamentsTable, NextStateId, Callback)
   local ColorType = ParamentsTable.ColorId
   self.Owner.CombatClientEffectComponent:ChangeColor(ColorType)
   self:EventsNextStateCallback(Callback, NextStateId)
 end
-
 function M:EventsNextState_CreateSpecialMonster(ParamentsTable, NextStateId, Callback)
   local RuleId = ParamentsTable.RuleId
   if not RuleId then
@@ -535,14 +494,12 @@ function M:EventsNextState_CreateSpecialMonster(ParamentsTable, NextStateId, Cal
   self.Owner:CreateSpecialMonster(RuleId)
   self:EventsNextStateCallback(Callback, NextStateId)
 end
-
 function M:EventsNextStateCallback(Callback, NextStateId)
   self.EventCallbackNum = self.EventCallbackNum - 1
   if self.EventCallbackNum <= 0 then
     Callback(self, NextStateId)
   end
 end
-
 function M:TypeNextState_Time(ParamentsTable, NextStateId)
   local Time = ParamentsTable.Param
   local NeedCountDown = ParamentsTable.NeedCountDown or false
@@ -552,7 +509,6 @@ function M:TypeNextState_Time(ParamentsTable, NextStateId)
     self.StateChangeCountDownHandle = self:AddTimer(0.1, self.StateChangeCountDownLua, true, 0, nil, nil, Time, NextStateId)
   end
 end
-
 function M:TypeNextState_Interactive(ParamentsTable, NextStateId)
   local InteractiveId = ParamentsTable.InteractiveId
   local StateChangeParam = ParamentsTable.StateChangeParam
@@ -600,7 +556,6 @@ function M:TypeNextState_Interactive(ParamentsTable, NextStateId)
     self.Type_Interactive[self.NowState][NextStateId] = {CompIndex = CompIndex, StateChangeParam = StateChangeParam}
   end
 end
-
 function M:TypeNextState_DistanceActive(ParamentsTable, NextStateId)
   if not self.Type_DistanceActive then
     self.Type_DistanceActive = {}
@@ -610,7 +565,6 @@ function M:TypeNextState_DistanceActive(ParamentsTable, NextStateId)
   end
   self.Type_DistanceActive[self.NowState] = NextStateId
 end
-
 function M:TypeNextState_DistanceDeActive(ParamentsTable, NextStateId)
   if not self.Type_DistanceDeActive then
     self.Type_DistanceDeActive = {}
@@ -620,14 +574,12 @@ function M:TypeNextState_DistanceDeActive(ParamentsTable, NextStateId)
   end
   self.Type_DistanceDeActive[self.NowState] = NextStateId
 end
-
 function M:TypeNextState_TriggerBox(ParamentsTable, NextStateId)
   if not self.Type_TriggerBox then
     self.Type_TriggerBox = {}
   end
   self.Type_TriggerBox[self.NowState] = NextStateId
 end
-
 function M:TypeNextState_Manual(ParamentsTable, NextStateId)
   if not self.Type_Manual then
     self.Type_Manual = {}
@@ -637,7 +589,6 @@ function M:TypeNextState_Manual(ParamentsTable, NextStateId)
   end
   table.insert(self.Type_Manual[self.NowState], NextStateId)
 end
-
 function M:TypeNextState_InteractDone(ParamentsTable, NextStateId)
   if not self.Type_Press then
     self.Type_Press = {}
@@ -647,7 +598,6 @@ function M:TypeNextState_InteractDone(ParamentsTable, NextStateId)
   end
   self.Type_Press[self.NowState].Success = NextStateId
 end
-
 function M:TypeNextState_InteractBreak(ParamentsTable, NextStateId)
   if not self.Type_Press then
     self.Type_Press = {}
@@ -657,7 +607,6 @@ function M:TypeNextState_InteractBreak(ParamentsTable, NextStateId)
   end
   self.Type_Press[self.NowState].Fail = NextStateId
 end
-
 function M:TypeNextState_Hit(ParamentsTable, NextStateId)
   if not self.Type_Hit then
     self.Type_Hit = {}
@@ -667,7 +616,6 @@ function M:TypeNextState_Hit(ParamentsTable, NextStateId)
   end
   self.Type_Hit[self.NowState] = NextStateId
 end
-
 function M:ChangeState_Interactive(PlayerEid, NextStateId)
   local CompIndex = self.Type_Interactive[self.NowState][NextStateId].CompIndex
   local StateChangeParam = self.Type_Interactive[self.NowState][NextStateId].StateChangeParam
@@ -698,19 +646,16 @@ function M:ChangeState_Interactive(PlayerEid, NextStateId)
     end
   end
 end
-
 function M:ChangeState_DistanceActive(PlayerEid, NextStateId)
   local ActiveNextState = self.Type_DistanceActive[self.NowState]
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(ActiveNextState)
 end
-
 function M:ChangeState_DistanceDeActive(PlayerEid, NextStateId)
   local DeActiveNextState = self.Type_DistanceDeActive[self.NowState]
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(DeActiveNextState)
 end
-
 function M:ChangeState_TriggerBox(PlayerEid, NextStateId)
   if not self.Type_TriggerBox or not self.Type_TriggerBox[self.NowState] then
     return
@@ -719,11 +664,9 @@ function M:ChangeState_TriggerBox(PlayerEid, NextStateId)
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(TriggerBoxNextState)
 end
-
 function M:ChangeState_Time(PlayerEid, NextStateId)
   self:ChangeToState_Lua(NextStateId)
 end
-
 function M:ChangeState_Manual(PlayerEid, NextStateId)
   if not self.Type_Manual[self.NowState] then
     return
@@ -736,7 +679,6 @@ function M:ChangeState_Manual(PlayerEid, NextStateId)
     end
   end
 end
-
 function M:ChangeState_InteractBreak(PlayerEid, NextStateId)
   if not self.Type_Press[self.NowState] then
     return
@@ -745,7 +687,6 @@ function M:ChangeState_InteractBreak(PlayerEid, NextStateId)
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(PressFailNextState)
 end
-
 function M:ChangeState_InteractDone(PlayerEid, NextStateId)
   if not self.Type_Press[self.NowState] then
     return
@@ -754,7 +695,6 @@ function M:ChangeState_InteractDone(PlayerEid, NextStateId)
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(PressSuccessNextState)
 end
-
 function M:ChangeState_Hit(PlayerEid, NextStateId)
   if not self.Type_Hit or not self.Type_Hit[self.NowState] then
     return
@@ -763,12 +703,10 @@ function M:ChangeState_Hit(PlayerEid, NextStateId)
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(RealNextStateId)
 end
-
 function M:ChangeState_GM(PlayerEid, NextStateId)
   self.PlayerEid = PlayerEid
   self:ChangeToState_Lua(NextStateId)
 end
-
 function M:RemoveTimerLua(bIsServer)
   self.Owner:RemoveTimer("DistanceActiveTimer")
   self.Owner:RemoveTimer("DistanceDeActiveTimer")
@@ -776,11 +714,9 @@ function M:RemoveTimerLua(bIsServer)
     self:RemoveTimer("MechanismChangeState")
   end
 end
-
 function M:RemoveTimerCountDown()
   self:RemoveTimer(self.StateChangeCountDownHandle, false)
 end
-
 function M:AddTimerLua(Time, NextStateId, NeedCountDown)
   self:AddTimer(Time, self.ChangeState_Time, false, nil, "MechanismChangeState", nil, 0, NextStateId)
   if NeedCountDown and 0 ~= Time then
@@ -788,21 +724,21 @@ function M:AddTimerLua(Time, NextStateId, NeedCountDown)
     self.StateChangeCountDownHandle = self:AddTimer(0.1, self.StateChangeCountDown, true, 0, nil, nil, Time, NextStateId)
   end
 end
-
 function M:TriggerAchievement(StateId)
+  local UnitId = self.Owner.UnitId
+  local CreatorId = self.Owner.CreatorId
   local Avatar = GWorld:GetAvatar()
   if IsStandAlone(self) and Avatar then
-    Avatar:CombatItemTargetFinish(CommonConst.TargetTypeMechanismId, self.Owner.UnitId, 1, self.Owner.UnitId, StateId)
-    Avatar:CombatItemTargetFinish(CommonConst.TargetTypeCreatorIdAndStateId, self.Owner.CreatorId, 1, self.Owner.CreatorId, StateId)
+    Avatar:CombatItemTargetFinish(CommonConst.TargetTypeMechanismId, UnitId, 1, UnitId, StateId)
+    Avatar:CombatItemTargetFinish(CommonConst.TargetTypeCreatorIdAndStateId, CreatorId, 1, CreatorId, StateId)
   end
   local DSEntity = GWorld:GetDSEntity()
   if DSEntity and self.PlayerEid > 0 then
     local AvatarEid = Battle(self):GetEntity(self.PlayerEid):GetOwner().AvatarId
-    DSEntity:CombatItemTargetFinish(AvatarEid, CommonConst.TargetTypeMechanismId, self.Owner.UnitId, 1, self.Owner.UnitId, StateId)
-    DSEntity:CombatItemTargetFinish(AvatarEid, CommonConst.TargetTypeCreatorIdAndStateId, self.Owner.CreatorId, 1, self.Owner.CreatorId, StateId)
+    DSEntity:CombatItemTargetFinish(AvatarEid, CommonConst.TargetTypeMechanismId, UnitId, 1, UnitId, StateId)
+    DSEntity:CombatItemTargetFinish(AvatarEid, CommonConst.TargetTypeCreatorIdAndStateId, CreatorId, 1, CreatorId, StateId)
   end
 end
-
 function M:CurrentStateEvent_SetConditionDoorState_CPP(DoorType)
   if -1 == DoorType then
     return
@@ -833,7 +769,6 @@ function M:CurrentStateEvent_SetConditionDoorState_CPP(DoorType)
   end
   EventManager:FireEvent("OnDoorStateChange", DoorType, self.Owner.ManualItemId)
 end
-
 function M:CurrentStateEvent_PlayMontage_CPP(MontagePath, MeshName, SectionName)
   local Mesh = self.Owner[MeshName]
   assert(Mesh, "Error: Can't find Mesh:  ", self.Owner.UnitId, MeshName)
@@ -846,23 +781,18 @@ function M:CurrentStateEvent_PlayMontage_CPP(MontagePath, MeshName, SectionName)
     local function OnNotifyBegin()
       self.Owner:OnMontageNotifyBegin(RealSectionName)
     end
-    
     local function OnNotifyEnd()
       self.Owner:OnMontageNotifyEnd(RealSectionName)
     end
-    
     local function OnBlendOut()
       self.Owner:OnMontageBlendOut(RealSectionName)
     end
-    
     local function OnInterrupted()
       self.Owner:OnMontageInterrupted(RealSectionName)
     end
-    
     local function OnCompleted()
       self.Owner:OnMontageEnd(RealSectionName)
     end
-    
     local MontageCallback = {
       OnNotifyBegin = OnNotifyBegin,
       OnNotifyEnd = OnNotifyEnd,
@@ -875,21 +805,18 @@ function M:CurrentStateEvent_PlayMontage_CPP(MontagePath, MeshName, SectionName)
     self.Owner:PlayMontage_Mechanism(MeshName, SectionName, "", 0)
   end
 end
-
 function M:CurrentStateEvent_ChangeTrapSkillOpen_CPP(bUseful)
   if not self.Owner.SetSkillUseful then
     return
   end
   self.Owner:SetSkillUseful(bUseful)
 end
-
 function M:CurrentStateEvent_SetBubbleWidget_CPP(bShow)
   if not self.Owner.SetBubbleWidgetShowOrHide then
     return
   end
   self.Owner:SetBubbleWidgetShowOrHide(bShow)
 end
-
 function M:EventsNextState_PlayFX_CPP(EffectId, NeedFinish, NextStateId)
   local FXObject
   if self.Owner.FXComponent then
@@ -898,18 +825,15 @@ function M:EventsNextState_PlayFX_CPP(EffectId, NeedFinish, NextStateId)
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
     FXObject = Player.FXComponent:PlayEffectByIDParams(EffectId)
   end
-  
   local function PlayFXCallback()
     self:TriggerOnEventEnd(NextStateId)
   end
-  
   if FXObject and NeedFinish then
     FXObject.OnSystemFinished:Add(self, PlayFXCallback)
   else
     self:TriggerOnEventEnd(NextStateId)
   end
 end
-
 function M:EventsNextState_StopFX_CPP(FXTag, NiagaraCompName, NextStateId)
   if "None" ~= FXTag and self.FXTable[FXTag] then
     for i, FX in pairs(self.FXTable[FXTag]) do
@@ -923,7 +847,6 @@ function M:EventsNextState_StopFX_CPP(FXTag, NiagaraCompName, NextStateId)
   end
   self:TriggerOnEventEnd(NextStateId)
 end
-
 function M:EventsNextState_PlayMontage_CPP(MontagePath, MeshName, SectionName, CallBackName, NextStateId)
   local Mesh = self.Owner[MeshName]
   assert(Mesh, "Error: Can't find Mesh:  ", self.Owner.UnitId, MeshName)
@@ -931,40 +854,34 @@ function M:EventsNextState_PlayMontage_CPP(MontagePath, MeshName, SectionName, C
   if not UseMaterialAnim then
     local function OnNotifyBegin()
       self.Owner:OnMontageNotifyBegin(SectionName)
-      
       if "OnNotifyBegin" == CallBackName then
         self:TriggerOnEventEnd(NextStateId)
       end
     end
-    
     local function OnNotifyEnd()
       self.Owner:OnMontageNotifyEnd(SectionName)
       if "OnNotifyEnd" == CallBackName then
         self:TriggerOnEventEnd(NextStateId)
       end
     end
-    
     local function OnBlendOut()
       self.Owner:OnMontageBlendOut(SectionName)
       if "OnBlendOut" == CallBackName then
         self:TriggerOnEventEnd(NextStateId)
       end
     end
-    
     local function OnInterrupted()
       self.Owner:OnMontageInterrupted(SectionName)
       if "OnInterrupted" == CallBackName then
         self:TriggerOnEventEnd(NextStateId)
       end
     end
-    
     local function OnCompleted()
       self.Owner:OnMontageEnd(SectionName)
       if "OnCompleted" == CallBackName then
         self:TriggerOnEventEnd(NextStateId)
       end
     end
-    
     local MontageCallback = {
       OnNotifyBegin = OnNotifyBegin,
       OnNotifyEnd = OnNotifyEnd,
@@ -981,7 +898,6 @@ function M:EventsNextState_PlayMontage_CPP(MontagePath, MeshName, SectionName, C
     self.Owner:PlayMontage_Mechanism(MeshName, SectionName, CallBackName, NextStateId)
   end
 end
-
 function M:EventsNextState_ShowToast_CPP(ToastText, NextStateId)
   if "None" ~= ToastText then
     if self.Owner.ShowToast then
@@ -993,7 +909,6 @@ function M:EventsNextState_ShowToast_CPP(ToastText, NextStateId)
   end
   self:EventsNextStateCallback(nil, NextStateId)
 end
-
 function M:AddConditionCallBackLua(ConditionId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -1007,14 +922,15 @@ function M:AddConditionCallBackLua(ConditionId)
     EventManager:AddEvent(EventID.ConditionComplete, self, self.ChangeState_Condition_CPP)
   end
 end
-
 function M:RemoveConditionCallBackLua()
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
 end
-
+function M:ShowMechanismError(Text)
+  local GameState = UE4.UGameplayStatics.GetGameState(self)
+  GameState:ShowDungeonError(Text, Const.DungeonErrorType.Mechanism, Const.DungeonErrorTitle.FindObject)
+end
 function M:ReceiveEndPlay(EndPlayReason)
   self.Overridden.ReceiveEndPlay(self, EndPlayReason)
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
 end
-
 return M

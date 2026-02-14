@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17546441475392692611",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1270, y = 288},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -131,28 +133,28 @@ return {
           ["17546441548892692907"] = {
             key = "17546441548892692907",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1403.6630434782608, y = 292.4021739130435},
             propsData = {WaitTime = 120}
           },
           ["17547225062863888706"] = {
             key = "17547225062863888706",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 1802.5986975401765, y = 292.83212463267},
             propsData = {}
           },
           ["17547225167033889034"] = {
             key = "17547225167033889034",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1436.3486975401765, y = 609.08212463267},
             propsData = {}
           },
           ["17549969783351732"] = {
             key = "17549969783351732",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = 1151.8260869565215, y = 288.26086956521726},
             propsData = {
               GuideUIEnable = true,

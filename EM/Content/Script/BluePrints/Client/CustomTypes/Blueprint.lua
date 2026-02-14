@@ -25,15 +25,12 @@ Draft.__Props__ = {
   Rarity = prop.getter("Data", "Rarity"),
   Batch = prop.getter("Data", "Batch")
 }
-
 function Draft:Init(DraftId)
   self.DraftId = DraftId
 end
-
 function Draft:Data()
   return DataMgr.Draft[self.DraftId]
 end
-
 function Draft:RedirectData()
   local RedirectData = {}
   RedirectData.Resource = self:RedirectResourceData()
@@ -41,7 +38,6 @@ function Draft:RedirectData()
   RedirectData.Mod = self:RedirectModData()
   return RedirectData
 end
-
 function Draft:RedirectResourceData()
   local DraftInfo = DataMgr.Draft[self.DraftId]
   local Resource = {}
@@ -58,7 +54,6 @@ function Draft:RedirectResourceData()
   end
   return Resource
 end
-
 function Draft:RedirectWeaponData()
   local DraftInfo = DataMgr.Draft[self.DraftId]
   local Weapon = {}
@@ -75,7 +70,6 @@ function Draft:RedirectWeaponData()
   end
   return Weapon
 end
-
 function Draft:RedirectModData()
   local DraftInfo = DataMgr.Draft[self.DraftId]
   local Mod = {}
@@ -92,7 +86,6 @@ function Draft:RedirectModData()
   end
   return Mod
 end
-
 function Draft:ReSetting()
   self:SetState(CommonConst.DraftState.ToBeProduced)
   self.StartTime = 0
@@ -100,7 +93,6 @@ function Draft:ReSetting()
   self.DraftCompleteNum = 0
   self.DraftStageStartTime = 0
 end
-
 function Draft:AddCount(count)
   if type(count) == "number" and count > 0 and not self.IsInfinity then
     self.Count = self.Count + count
@@ -108,7 +100,6 @@ function Draft:AddCount(count)
   end
   return false
 end
-
 function Draft:ReduceCount(count)
   if type(count) == "number" and count > 0 and count <= self.Count and not self.IsInfinity then
     self.Count = self.Count - count
@@ -116,18 +107,15 @@ function Draft:ReduceCount(count)
   end
   return false
 end
-
 function Draft:GetCurrentState()
   return self.State
 end
-
 function Draft:SetState(NewState)
   if self.State == NewState then
     return
   end
   self.State = NewState
 end
-
 function Draft:StartProduct(DoingNum)
   if DoingNum <= 0 then
     return false
@@ -141,7 +129,6 @@ function Draft:StartProduct(DoingNum)
   self:SetDraftState_Doing(DoingNum)
   return true
 end
-
 function Draft:ReduceDraftDoingNumAndAddCompleteNum()
   if self.DraftDoingNum <= 0 then
     return false
@@ -150,71 +137,55 @@ function Draft:ReduceDraftDoingNumAndAddCompleteNum()
   self.DraftCompleteNum = self.DraftCompleteNum + 1
   return true
 end
-
 function Draft:SetDraftStageStartTime(StageStartTime)
   self.DraftStageStartTime = StageStartTime
 end
-
 function Draft:GetDraftStageRemaningTime()
   return self:NextDraftStageCompleteTime() - TimeUtils.NowTime()
 end
-
 function Draft:NextDraftStageCompleteTime()
   return self.DraftStageStartTime + self.Time * 60
 end
-
 function Draft:GetDraftDoingNum()
   return self.DraftDoingNum
 end
-
 function Draft:IsDraftDoingNum()
   return 0 == self.DraftDoingNum
 end
-
 function Draft:GetDraftStageStartTime()
   return self.DraftStageStartTime
 end
-
 function Draft:SetDraftState_Doing(DoingNum)
   self:SetState(CommonConst.DraftState.Doing)
   self.DraftDoingNum = DoingNum
   self.DraftCompleteNum = 0
   self:SetDraftCastingTime()
 end
-
 function Draft:SetDraftCompleteNum(CompleteNum)
   CompleteNum = math.max(CompleteNum, 0)
   self.DraftCompleteNum = self.DraftCompleteNum + CompleteNum
 end
-
 function Draft:GetDraftDoingNum()
   return self.DraftDoingNum
 end
-
 function Draft:SetDraftCastingTime()
   self.StartTime = TimeUtils.NowTime()
 end
-
 function Draft:GetRemaningTime()
   return self.StartTime + self.Time * 60 - TimeUtils.NowTime()
 end
-
 function Draft:IsComplete()
   return self.State == CommonConst.DraftState.Complete
 end
-
 function Draft:IsToBeProduced()
   return self.State == CommonConst.DraftState.ToBeProduced
 end
-
 function Draft:IsDoing()
   return self.State == CommonConst.DraftState.Doing
 end
-
 function Draft:CompleteProduct()
   self:SetState(CommonConst.DraftState.Complete)
 end
-
 FormatProperties(Draft)
 local DraftMataAttr = Class("DraftMataAttr", CustomTypes.CustomAttr)
 DraftMataAttr.__Props__ = {
@@ -224,42 +195,34 @@ FormatProperties(DraftMataAttr)
 local Draft2MataDict = Class("Draft2MataDict", CustomTypes.CustomDict)
 Draft2MataDict.KeyType = BaseTypes.Int
 Draft2MataDict.ValueType = DraftMataAttr
-
 function Draft2MataDict:NewDraftMataAttr()
   return DraftMataAttr()
 end
-
 function Draft2MataDict:GetNewDraftMataAttr(DraftId)
   if not self[DraftId] then
     self[DraftId] = self:NewDraftMataAttr()
   end
   return self[DraftId]
 end
-
 function Draft2MataDict:GetDraftMataAttr(DraftId)
   return self[DraftId]
 end
-
 local DraftDict = Class("DraftDict", CustomTypes.CustomDict)
 DraftDict.KeyType = BaseTypes.Int
 DraftDict.ValueType = Draft
-
 function DraftDict:NewDraftPrint(DraftId)
   local NewDraft = Draft(DraftId)
   return NewDraft
 end
-
 function DraftDict:GetNewDraft(DraftId)
   if not self[DraftId] then
     return self:NewDraftPrint(DraftId)
   end
   return self[DraftId]
 end
-
 function DraftDict:GetDraft(DraftId)
   return self[DraftId]
 end
-
 return {
   Draft = Draft,
   DraftDict = DraftDict,

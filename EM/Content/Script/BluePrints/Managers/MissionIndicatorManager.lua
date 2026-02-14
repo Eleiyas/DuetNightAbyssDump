@@ -6,7 +6,6 @@ MissionIndicatorManager.SpecialSideIndicatorNames = {}
 MissionIndicatorManager.MissionNpcSideBubbles = {}
 MissionIndicatorManager.bTriggerCollapsAll = true
 MissionIndicatorManager.TrackingSpecialSideQuestChainId = nil
-
 function MissionIndicatorManager:ActiveMissionIndicatorByNode(InNode)
   local IndicatorData = {
     GuideType = nil,
@@ -19,12 +18,12 @@ function MissionIndicatorManager:ActiveMissionIndicatorByNode(InNode)
     self["SetIndicatorDataBy_" .. InNode.Type](self, IndicatorData, InNode)
   end
   if IndicatorData.GuideType == nil or nil == IndicatorData.PointKey then
-    GWorld.logger.errorlog("STL\232\138\130\231\130\185\230\140\135\229\188\149\230\149\176\230\141\174\230\156\137\232\175\175, STL\232\138\130\231\130\185Key", InNode.Key)
+    GWorld.logger.errorlog("STL节点指引数据有误, STL节点Key", InNode.Key)
     return
   end
   self:SetSTLIndicatorUniqueData(IndicatorData, InNode)
   if nil == IndicatorData.GuideTag then
-    GWorld.logger.errorlog("STL\230\140\135\229\188\149\232\138\130\231\130\185\231\148\159\230\136\144\231\154\132GuideTag\228\184\186\231\169\186, STL\232\138\130\231\130\185Key", InNode.Key)
+    GWorld.logger.errorlog("STL指引节点生成的GuideTag为空, STL节点Key", InNode.Key)
     return
   end
   local UIObj = self:LoadMissionIndicatorUI(IndicatorData, InNode)
@@ -33,7 +32,22 @@ function MissionIndicatorManager:ActiveMissionIndicatorByNode(InNode)
     EventManager:FireEvent(EventID.OnChangeTaskIndicator, TaskUtils.MissionNpcGuideMaps)
   end
 end
-
+function MissionIndicatorManager:ActiveFailryQuestIndicatorBy(InNode)
+  local IndicatorData = {
+    GuideType = nil,
+    PointKey = nil,
+    StaticCreatorKey = nil,
+    GuideTag = nil,
+    SourceId = 0
+  }
+  self:SetIndicatorDataBy_FairyLandNode(IndicatorData, InNode)
+  self:SetSTLIndicatorUniqueData(IndicatorData, InNode)
+  local UIObj = self:LoadMissionIndicatorUI(IndicatorData, InNode)
+  if nil ~= UIObj then
+    MissionIndicatorManager.MissionIndicatorNames[UIObj:GetName()] = IndicatorData.SourceId
+    EventManager:FireEvent(EventID.OnChangeTaskIndicator, TaskUtils.MissionNpcGuideMaps)
+  end
+end
 function MissionIndicatorManager:ReactiveMissionIndicatorByNode(InNode)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -44,19 +58,22 @@ function MissionIndicatorManager:ReactiveMissionIndicatorByNode(InNode)
     UIName = "TaskIndicator_" .. InNode.Key
   end
   if InNode.Type == "ShowOrHideTaskIndicatorNode" then
-    UIName = "TaskIndicator_" .. InNode.GuideName
+    if InNode.bIsDynamicEvent then
+      UIName = "DynamicEventIndicator_" .. InNode.GuideName
+    else
+      UIName = "TaskIndicator_" .. InNode.GuideName
+    end
   end
   if MissionIndicatorManager.MissionIndicatorNames[UIName] then
     MissionIndicatorManager.MissionIndicatorNames[UIName] = nil
   else
-    GWorld.logger.errorlog("\229\136\160\233\153\164\228\186\134\228\184\141\229\173\152\229\156\168\231\154\132STL\230\140\135\229\188\149\231\130\185\239\188\140NodeKey:", InNode.Key)
+    GWorld.logger.errorlog("删除了不存在的STL指引点，NodeKey:", InNode.Key)
   end
   local UIObj = UIManager:GetUIObj(UIName)
   if UIObj then
     UIObj:CloseIndicator()
   end
 end
-
 function MissionIndicatorManager:ActiveMissionIndicatorByRegionMap(InDisplayName, InQuestNpcId)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -64,7 +81,6 @@ function MissionIndicatorManager:ActiveMissionIndicatorByRegionMap(InDisplayName
   self.SpecialSideIndicatorNames[InDisplayName] = "UnSpecialSide_" .. InQuestNpcId
   return UIManager:LoadUI(UIConst.TASKINDICATORUI, "TaskIndicator#" .. "UnSpecialSide_" .. InQuestNpcId, SystemUIConfig.ZOrder, "UnSpecialSide", InDisplayName, InQuestNpcId)
 end
-
 function MissionIndicatorManager:ReactiveMissionIndicatorByRegionMap(InQuestNpcId)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -74,10 +90,8 @@ function MissionIndicatorManager:ReactiveMissionIndicatorByRegionMap(InQuestNpcI
     UIObj:CloseIndicator()
   end
 end
-
 function MissionIndicatorManager:GenIndicatorGuideTag(InNode)
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_QuestStartNode(InData, InNode)
   InData.GuideType = InNode.StoryGuideType
   InData.PointKey = InNode.StoryGuidePointName
@@ -90,7 +104,6 @@ function MissionIndicatorManager:SetIndicatorDataBy_QuestStartNode(InData, InNod
   end
   InData.StaticCreatorKey = InNode.StoryGuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_ElevatorNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuideDisplayName
@@ -103,7 +116,6 @@ function MissionIndicatorManager:SetIndicatorDataBy_ElevatorNode(InData, InNode)
   end
   InData.StaticCreatorKey = InNode.GuideDisplayName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_GoToNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuidePointName
@@ -116,7 +128,6 @@ function MissionIndicatorManager:SetIndicatorDataBy_GoToNode(InData, InNode)
   end
   InData.StaticCreatorKey = InNode.GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_GoToRegionNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuideName
@@ -129,7 +140,18 @@ function MissionIndicatorManager:SetIndicatorDataBy_GoToRegionNode(InData, InNod
   end
   InData.StaticCreatorKey = InNode.GuideName
 end
-
+function MissionIndicatorManager:SetIndicatorDataBy_SitOnNode(InData, InNode)
+  InData.GuideType = InNode.GuideType
+  InData.PointKey = InNode.GuidePointName
+  if InNode.GuideType == "N" then
+    local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
+    local TargetStaticCreator = GameState.StaticCreatorStringNameMap:FindRef(InNode.GuidePointName)
+    if TargetStaticCreator then
+      InData.PointKey = TargetStaticCreator.UnitId
+    end
+  end
+  InData.StaticCreatorKey = InNode.GuidePointName
+end
 function MissionIndicatorManager:SetIndicatorDataBy_MiniGameOpenGateNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuidePointName
@@ -142,13 +164,11 @@ function MissionIndicatorManager:SetIndicatorDataBy_MiniGameOpenGateNode(InData,
   end
   InData.StaticCreatorKey = InNode.GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_PickUpNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuidePointName
   InData.StaticCreatorKey = InNode.GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_ResourceCollectNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuidePointName
@@ -161,7 +181,6 @@ function MissionIndicatorManager:SetIndicatorDataBy_ResourceCollectNode(InData, 
   end
   InData.StaticCreatorKey = InNode.GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_TalkNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   if InData.GuideType == "N" then
@@ -171,11 +190,10 @@ function MissionIndicatorManager:SetIndicatorDataBy_TalkNode(InData, InNode)
   end
   InData.StaticCreatorKey = InNode.GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_WaitImpressionTalkCompleteNode(InData, InNode)
   InData.GuideType = InNode.GuideType
-  InData.PointKey = InNode.GuideStaticCreatorId
-  if InNode.GuideType == "N" and (InNode.GuideStaticCreatorId == nil or 0 == InNode.GuideStaticCreatorId) then
+  InData.PointKey = InNode.NPCStaticCreaterName
+  if InNode.GuideType == "N" then
     local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
     local TargetStaticCreator = GameState.StaticCreatorStringNameMap:FindRef(InNode.NPCStaticCreaterName)
     if TargetStaticCreator then
@@ -184,7 +202,16 @@ function MissionIndicatorManager:SetIndicatorDataBy_WaitImpressionTalkCompleteNo
   end
   InData.StaticCreatorKey = InNode.NPCStaticCreaterName
 end
-
+function MissionIndicatorManager:SetIndicatorDataBy_FairyLandNode(InData, InNode)
+  InData.GuideType = "M"
+  local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
+  local Point = GameState.StaticCreatorMap:FindRef(InNode.CreateId)
+  if Point then
+    InData.PointKey = Point.DisplayName
+    InData.StaticCreatorKey = Point.DisplayName
+  end
+  InData.GuideTag = "FairyLand" .. InNode.Key
+end
 function MissionIndicatorManager:SetIndicatorDataBy_ShowOrHideTaskIndicatorNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuideName
@@ -198,7 +225,6 @@ function MissionIndicatorManager:SetIndicatorDataBy_ShowOrHideTaskIndicatorNode(
   InData.StaticCreatorKey = InNode.GuideName
   InData.GuideTag = InNode.GuideName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_GameModeCompleteNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuidePointName
@@ -211,7 +237,6 @@ function MissionIndicatorManager:SetIndicatorDataBy_GameModeCompleteNode(InData,
   end
   InData.StaticCreatorKey = InNode.GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_WaitingMechanismEnterStateNode(InData, InNode)
   InData.GuideType = "M"
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
@@ -233,30 +258,26 @@ function MissionIndicatorManager:SetIndicatorDataBy_WaitingMechanismEnterStateNo
     InData.StaticCreatorKey = InNode.GuidePointName
   end
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_FirstObservationCompleteNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.ObservationPointName
   InData.StaticCreatorKey = InNode.ObservationPointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_CameraNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode._GuidePointName
   InData.StaticCreatorKey = InNode._GuidePointName
 end
-
 function MissionIndicatorManager:SetIndicatorDataBy_KillMonsterNode(InData, InNode)
   InData.GuideType = InNode.GuideType
   InData.PointKey = InNode.GuideName
   InData.StaticCreatorKey = InNode.GuideName
 end
-
 function MissionIndicatorManager:SetSTLIndicatorUniqueData(InData, InNode)
   local Avatar = GWorld:GetAvatar()
   local GuideTag
   if not Avatar then
-    GWorld.logger.errorlog("STL\232\138\130\231\130\185\230\140\135\229\188\149\230\149\176\230\141\174\230\156\137\232\175\175, Avatar\228\184\186\231\169\186")
+    GWorld.logger.errorlog("STL节点指引数据有误, Avatar为空")
     return
   end
   if InData.GuideTag == nil then
@@ -270,7 +291,6 @@ function MissionIndicatorManager:SetSTLIndicatorUniqueData(InData, InNode)
   end
   InData.SourceId = GuidePointChainId
 end
-
 function MissionIndicatorManager:LoadMissionIndicatorUI(IndicatorData, InNode)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -302,7 +322,6 @@ function MissionIndicatorManager:LoadMissionIndicatorUI(IndicatorData, InNode)
     end
   end
 end
-
 function MissionIndicatorManager:GetIndicatorUIObjByQuestChainId(InChainId)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -316,7 +335,6 @@ function MissionIndicatorManager:GetIndicatorUIObjByQuestChainId(InChainId)
   end
   return UIObjs
 end
-
 function MissionIndicatorManager:GetSpecialSideIndicatorUIObj()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -328,7 +346,6 @@ function MissionIndicatorManager:GetSpecialSideIndicatorUIObj()
   end
   return UIObjs
 end
-
 function MissionIndicatorManager:TriggerAllIndicatorVisible(bShow)
   self.bTriggerCollapsAll = bShow
   local AllObj = self:GetAllIndicatorUIObjs()
@@ -342,7 +359,6 @@ function MissionIndicatorManager:TriggerAllIndicatorVisible(bShow)
     end
   end
 end
-
 function MissionIndicatorManager:GetTargetTaskSubRegionId(QuestChainId, QuestId)
   local TargetSubRegionId = 0
   local Info = TaskUtils:GetQuestDetail(QuestChainId, QuestId)
@@ -364,7 +380,6 @@ function MissionIndicatorManager:GetTargetTaskSubRegionId(QuestChainId, QuestId)
   end
   return TargetSubRegionId
 end
-
 function MissionIndicatorManager:GetIndicatorUIObjByQuestChainIdWithType(InChainId, Type)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -379,7 +394,6 @@ function MissionIndicatorManager:GetIndicatorUIObjByQuestChainIdWithType(InChain
   end
   return UIObjs
 end
-
 function MissionIndicatorManager:GetIndicatorUIObjBySTLType(InType)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -394,7 +408,6 @@ function MissionIndicatorManager:GetIndicatorUIObjBySTLType(InType)
   end
   return UIObjs
 end
-
 function MissionIndicatorManager:GetAllIndicatorUIObjs()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -417,7 +430,6 @@ function MissionIndicatorManager:GetAllIndicatorUIObjs()
   end
   return UIObjs
 end
-
 function MissionIndicatorManager:CheckIsShowingAnyNpcIndicatorByUnitId(UnitId)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -431,7 +443,6 @@ function MissionIndicatorManager:CheckIsShowingAnyNpcIndicatorByUnitId(UnitId)
   end
   return false
 end
-
 function MissionIndicatorManager:TryToArrangeIndicatorBySmartPointInfo()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -473,5 +484,4 @@ function MissionIndicatorManager:TryToArrangeIndicatorBySmartPointInfo()
     end
   end
 end
-
 return MissionIndicatorManager

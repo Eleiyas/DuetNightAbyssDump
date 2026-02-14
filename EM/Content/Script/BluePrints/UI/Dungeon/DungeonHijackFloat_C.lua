@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
 local IsInDungeon = true
 local EscortPanelUIName = "DungeonHijackFloatPanel"
-
 function M:OnLoaded(...)
   local GameMode = UGameplayStatics.GetGameMode(self)
   if GameMode and GameMode:IsInRegion() then
@@ -39,11 +38,9 @@ function M:OnLoaded(...)
   self.Text_03:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text_Time:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:UIStateChange_None()
   self:UIStateChange_BeforeTarget()
 end
-
 function M:UIStateChange_BeforeTarget()
   self:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_Information:SetVisibility(ESlateVisibility.Collapsed)
@@ -51,7 +48,6 @@ function M:UIStateChange_BeforeTarget()
     self.InformationPanel:HideSelfAndSubWidget()
   end
 end
-
 function M:UIStateChange_OnTarget()
   DebugPrint("DungeonHijackFloat UIStateChange_OnTarget")
   if IsInDungeon then
@@ -66,16 +62,13 @@ function M:UIStateChange_OnTarget()
   self:InitAllTargetPoint()
   self:UpdateUILength(0)
 end
-
 function M:UIStateChange_AfterTarget()
 end
-
 function M:UpdateTime()
   self.NowTime = URuntimeCommonFunctionLibrary.GetTimeSeconds(self)
   local TimeDiff = self.NowTime - self.BeginTime
   self.Text_Time:SetText(self:GetTimeStr(math.floor(TimeDiff)))
 end
-
 function M:OnCarDamage(NewHp, MaxHp)
   local Percent = NewHp / MaxHp
   self.Bar_Health:SetPercent(Percent)
@@ -83,7 +76,6 @@ function M:OnCarDamage(NewHp, MaxHp)
     self.InformationPanel:UpdateHp(Percent)
   end
 end
-
 function M:UpdateSpeed(Speed, Acc, MaxSpeed, MinSpeed, TrollyStateId, Trolly)
   if not IsInDungeon then
     return
@@ -100,7 +92,10 @@ function M:UpdateSpeed(Speed, Acc, MaxSpeed, MinSpeed, TrollyStateId, Trolly)
   if Speed <= MinSpeed then
     self.SpeedState = self.SpeedStates.Slowest
     self:PanelChange(self.InformationPanel.Panel_Slowest, 0, 0)
-    if 240 == TrollyStateId then
+    local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+    local CurrentDungeonId = GameInstance and GameInstance:GetCurrentDungeonId() or 0
+    local SpecialStateId = DataMgr.Hijack[CurrentDungeonId].SpecialTrollyStateIdInStop
+    if TrollyStateId == SpecialStateId then
       local GameState = UGameplayStatics.GetGameState(self)
       local AllPlayer = {}
       if GameState then
@@ -141,7 +136,6 @@ function M:UpdateSpeed(Speed, Acc, MaxSpeed, MinSpeed, TrollyStateId, Trolly)
     return
   end
 end
-
 function M:PanelChange(Panel)
   if self.LastPanel then
     if self.LastPanel == Panel then
@@ -153,7 +147,6 @@ function M:PanelChange(Panel)
   Panel:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.LastPanel = Panel
 end
-
 function M:UpdateUILength(Length)
   if not self.SplineLength then
     return
@@ -166,7 +159,6 @@ function M:UpdateUILength(Length)
     self.Text_Stronghold:SetText(tostring(math.max(self.TriggerBoxNum - self.PointIndex, 0)))
   end
 end
-
 function M:TriggerBoxStop()
   if not self.PercentToWidget or not self.PercentToWidget[self.PointIndex] then
     self.Text_Stronghold:SetText(tostring((math.max(self.TriggerBoxNum - self.PointIndex, 0))))
@@ -183,7 +175,6 @@ function M:TriggerBoxStop()
   self.Text_Stronghold:SetText(tostring((math.max(self.TriggerBoxNum - self.PointIndex, 0))))
   self.PointIndex = self.PointIndex + 1
 end
-
 function M:InitAllMainPathSpline(SplineActor)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local HijackPathInfo = GameState.HijackPathInfo
@@ -193,7 +184,6 @@ function M:InitAllMainPathSpline(SplineActor)
   self.UISpline = SplineActor
   SplineActor.Spline:ClearSplinePoints(false)
 end
-
 function M:InitSplineInfo()
   if self.AlreadInitSplineInfo then
     return
@@ -223,7 +213,6 @@ function M:InitSplineInfo()
     self.AlreadInitSplineInfo = true
   end
 end
-
 function M:InitAllTargetPoint()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   DebugPrint("111111111111111111111 InitAllTargetPoint", GameState, GameState.HijackPathInfo, self.UISpline)
@@ -273,14 +262,12 @@ function M:InitAllTargetPoint()
   DebugPrint("InitAllTargetPoint RemoveTimer")
   self:RemoveTimer("TryInitAllTargetPoint")
 end
-
 function M:UpdatePath(SplineActor)
   DebugPrint("11111111111111111111111111111111111 DungeonHijackFloat UpdatePath", SplineActor)
   if not self.UISpline then
     self:InitAllMainPathSpline(SplineActor)
   end
 end
-
 function M:CloseDungeonUI()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if UIManager then
@@ -292,7 +279,6 @@ function M:CloseDungeonUI()
     UIManager:RemoveUserWidgetFromParent("DungeonHijackFloat")
   end
 end
-
 function M:AfterAddToParent()
   self.Super.AfterAddToParent(self)
   if not self.AlreadInitSplineInfo and IsClient(self) then
@@ -300,5 +286,4 @@ function M:AfterAddToParent()
   end
   self.InformationPanel:AfterAddToParent()
 end
-
 return M

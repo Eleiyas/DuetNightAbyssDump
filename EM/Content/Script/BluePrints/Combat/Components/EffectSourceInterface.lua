@@ -6,19 +6,15 @@ local Component = Class({
   "BluePrints.Combat.Components.EffectSourceAttrOperate",
   "BluePrints.Common.TimerMgr"
 })
-
 function Component:GetEid()
   return self:GetEid_Lua()
 end
-
 function Component:GetEid_Lua()
   return self.Eid
 end
-
 function Component:OnDead_Lua(...)
   self:OnDead(...)
 end
-
 function Component:GetLevelTable()
   if self.IsCharacter and self:IsCharacter() then
     return DataMgr.LevelUp
@@ -26,7 +22,6 @@ function Component:GetLevelTable()
     return DataMgr.WeaponLevelUp
   end
 end
-
 function Component:SetLevel(Level)
   if nil == Level then
     return
@@ -38,7 +33,6 @@ function Component:SetLevel(Level)
   end
   self:SetAttr("Level", Level)
 end
-
 function Component:SetTimeDilationByBattle(TimeDilation, bPause)
   if not bPause then
     self:SetCanNotChangeTimeDilation(false)
@@ -61,7 +55,6 @@ function Component:SetTimeDilationByBattle(TimeDilation, bPause)
   end
   Battle(self).CustomTimeDilation = TimeDilation
 end
-
 function Component:ApplyHitPerformLiftHeight(Source, Content)
   if not Content.LiftHeight or not Content.LiftTime then
     return
@@ -80,15 +73,12 @@ function Component:ApplyHitPerformLiftHeight(Source, Content)
   self.LiftHeightDeltaValue = Content.LiftHeight / Content.LiftTime
   self:GetMovementComponent().bSkipLaunchSetFalling = true
 end
-
 function Component:GetMaxBloodVolume()
   return self:GetAttr("MaxHp")
 end
-
 function Component:GetCurrentBloodVolume()
   return self:GetAttr("Hp")
 end
-
 function Component:SetAttrByAttrData(RealAttrName, AttrData, RateIndex, ModId, ModLevel, ReverseValue)
   if AttrData.Rate then
     local FinalRate
@@ -121,7 +111,6 @@ function Component:SetAttrByAttrData(RealAttrName, AttrData, RateIndex, ModId, M
     self:SetAddAttr(RealAttrName, "Mod", FinalValue)
   end
 end
-
 function Component:SetAttrByMod(ModId, ModLevel, ReverseValue)
   ModLevel = ModLevel or 0
   local ModData = DataMgr.Mod[ModId]
@@ -154,7 +143,6 @@ function Component:SetAttrByMod(ModId, ModLevel, ReverseValue)
   end
   self:CalcATK()
 end
-
 function Component:GetCurrentWeaponAttr(AttrName, DefaultValue)
   if self.GetCurrentWeapon then
     local Weapon = self:GetCurrentWeapon()
@@ -164,16 +152,13 @@ function Component:GetCurrentWeaponAttr(AttrName, DefaultValue)
   end
   return DefaultValue
 end
-
 function Component:OnDropDistanceChangedByMod()
   if self.InteractiveTriggerComponent then
     self:SetInteractiveTriggerDistance(self:GetAttr("DropDistance"))
   end
 end
-
 function Component:GetEMObject(EMObjectClassName)
   local EMObject = self.Overridden.GetEMObject(self, EMObjectClassName)
   return EMObject
 end
-
 return Component

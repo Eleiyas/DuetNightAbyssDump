@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:InitInfo(ShopItemData)
   if self.In then
     self:PlayAnimation(self.In)
@@ -22,14 +21,12 @@ function M:InitInfo(ShopItemData)
     self:SetLevelUp()
   end
 end
-
 function M:SetIcon(IconPath)
   if not IconPath then
     return
   end
   self.Img_Item:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetRarity(Rarity)
   local Quality, QualityLine
   if Rarity > 0 and Rarity <= 3 then
@@ -42,7 +39,6 @@ function M:SetRarity(Rarity)
   self.Img_Quality:SetBrushResourceObject(Quality)
   self.Img_QualityLine:SetBrushResourceObject(QualityLine)
 end
-
 function M:SetBuffType(IconPath)
   if not IconPath then
     return
@@ -50,7 +46,6 @@ function M:SetBuffType(IconPath)
   self.Group_Buff:SetVisibility(ESlateVisibility.Visible)
   self.Image_BuffType:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetLevelUp()
   if self.Panel_Upgrade then
     local RougeLikeManager = GWorld.RougeLikeManager
@@ -67,7 +62,6 @@ function M:SetLevelUp()
     end
   end
 end
-
 function M:InitEmptyItem()
   self.Group_Item:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Bg_Base:SetRenderOpacity(0.5)
@@ -75,5 +69,4 @@ function M:InitEmptyItem()
     self.Bg_Pattern:SetRenderOpacity(0.5)
   end
 end
-
 return M

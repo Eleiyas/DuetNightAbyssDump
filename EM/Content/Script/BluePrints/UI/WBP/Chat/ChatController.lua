@@ -3,8 +3,8 @@ local ChatCommon = require("BluePrints.UI.WBP.Chat.ChatCommon")
 local TimeUtils = require("Utils.TimeUtils")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local MiscUtils = require("Utils.MiscUtils")
+local json = require("rapidjson")
 local M = Class("BluePrints.Common.MVC.Controller")
-
 function M:Init()
   M.Super.Init(self)
   EventManager:AddEvent(EventID.OnlineRegionChange, self, self.OnRegionChange)
@@ -13,7 +13,6 @@ function M:Init()
     self:SendInitQuickMessage(CommonConst.SystemLanguage)
   end
 end
-
 function M:Destory()
   EventManager:RemoveEvent(EventID.OnlineRegionChange, self)
   for _, ChannelType in pairs(ChatCommon.ChannelDef) do
@@ -23,7 +22,6 @@ function M:Destory()
   end
   M.Super.Destory(self)
 end
-
 function M:OnRegionChange(OldState, NewState)
   if NewState == OldState then
     return
@@ -32,29 +30,23 @@ function M:OnRegionChange(OldState, NewState)
     ChatModel:ReadChannelMessage(ChatCommon.ChannelDef.Region)
   end
 end
-
 function M:GetModel()
   return ChatModel
 end
-
 function M:GetEventName()
   return EventID.ChatControllerEvent
 end
-
 function M:OpenView(WorldContex, bBattle)
   return M.Super.OpenView(self, WorldContex, ChatCommon.MainUIId, true, bBattle)
 end
-
 function M:GetView(WorldContex)
   return M.Super.GetView(self, WorldContex, ChatCommon.UIName)
 end
-
 function M:OverrideButtonSound(button, soundEvent, eventKey)
   button:TryOverrideSoundFunc(function()
     AudioManager(button):PlayUISound(button, soundEvent, eventKey, nil)
   end)
 end
-
 function M:SendChatToPlayer(Uid, ContentText)
   local ModContent = self:TryParseMyModSuitInfo(ContentText)
   if ModContent then
@@ -64,16 +56,18 @@ function M:SendChatToPlayer(Uid, ContentText)
   if DyeShareContent and not ModContent then
     ContentText = DyeShareContent
   end
+  local GiftContent = self:TryParseGiftInfo(ContentText)
+  if GiftContent and not ModContent and not DyeShareContent then
+    ContentText = GiftContent
+  end
   self:GetAvatar():ChatToPlayer(Uid, ContentText)
 end
-
 function M:RecvChatToPlayer(Uid, ContentText)
   if ChatModel:IsChannelExclude(ChatCommon.ChannelDef.Friend) then
     return
   end
   self:SendChatNewMsgRead()
 end
-
 function M:RecvChatChannelSwitch(ChannelType, bOff)
   local LastCurrChannel = ChatModel:GetCurrentChannel()
   ChatModel:UpdateCurrentChannel()
@@ -97,7 +91,6 @@ function M:RecvChatChannelSwitch(ChannelType, bOff)
     self:NotifyEvent(ChatCommon.EventID.CloseChatChannel, bCloseCurrentChannel)
   end
 end
-
 function M:SendRequestEnterChatChannel(ChannelType)
   if nil == ChannelType then
     ChannelType = ChatModel:GetCurrentChannel()
@@ -106,7 +99,7 @@ function M:SendRequestEnterChatChannel(ChannelType)
     return
   end
   if not self:GetModel().EnteredChannels then
-    DebugPrint(ErrorTag, "\229\133\182\228\187\150\230\168\161\229\157\151\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165\229\175\188\232\135\180\232\129\138\229\164\169\230\168\161\229\157\151\229\136\157\229\167\139\229\140\150\232\191\155\232\161\140\228\184\141\228\184\139\229\142\187\239\188\140\232\191\153\228\184\141\230\152\175\232\129\138\229\164\169\231\154\132\233\151\174\233\162\152!!!!\231\156\139\231\156\139\228\184\138\232\190\185\230\156\137\230\178\161\230\156\137trace!!!!!!!")
+    DebugPrint(ErrorTag, "其他模块初始化失败导致聊天模块初始化进行不下去，这不是聊天的问题!!!!看看上边有没有trace!!!!!!!")
     return
   end
   if not ChatCommon.WorldChannels[ChannelType] or self:GetModel().EnteredChannels[ChannelType] then
@@ -119,12 +112,10 @@ function M:SendRequestEnterChatChannel(ChannelType)
   end
   self:GetAvatar():RequestEnterWorldChannel(ChannelType)
 end
-
 function M:RecvRequestEnterChatChannel(ErrCode, ChannelType)
   self:GetModel().EnteredChannels[ChannelType] = 1
   self:NotifyEvent(ChatCommon.EventID.EnterChatChannel, ErrCode, ChannelType)
 end
-
 function M:SendRequestLeaveChatChannel(ChannelType)
   self:GetModel().EnteredChannels[ChannelType] = nil
   if nil == ChannelType then
@@ -139,7 +130,6 @@ function M:SendRequestLeaveChatChannel(ChannelType)
     self:GetModel():ClearReddotCount(ChannelType)
   end
 end
-
 function M:SendChatToWorld(ChannelType, ContentText)
   local ModContent = self:TryParseMyModSuitInfo(ContentText)
   if ModContent then
@@ -151,18 +141,13 @@ function M:SendChatToWorld(ChannelType, ContentText)
   end
   self:GetAvatar():ChatToWorld(ChannelType, ContentText)
 end
-
 function M:RecvChatToWorld(ChannelType, ContentText)
   if ChatModel:IsChannelExclude(ChannelType) then
     return
   end
   local FakeMessage = self:CreateFakeMsg(ContentText, CommonConst.MESSAGE_TYPE_SELF, ChannelType)
-  local TimeWrap, MsgWrap = self:GetModel():AddMessage(FakeMessage, false)
-  if FakeMessage.ChannelType == ChatModel:GetCurrentChannel() then
-    self:NotifyEvent(ChatCommon.EventID.ChatMsgSent, TimeWrap, MsgWrap)
-  end
+  self:_AddMessage(FakeMessage, false)
 end
-
 function M:SendChatToTeam(ContentText)
   local ModContent = self:TryParseMyModSuitInfo(ContentText)
   if ModContent then
@@ -184,18 +169,13 @@ function M:SendChatToTeam(ContentText)
   end
   self:GetAvatar():ChatToTeam(ContentText)
 end
-
 function M:RecvChatToTeam(ContentText)
   if ChatModel:IsChannelExclude(ChatCommon.ChannelDef.InTeam) then
     return
   end
   local FakeMessage = self:CreateFakeMsg(ContentText, CommonConst.MESSAGE_TYPE_SELF, ChatCommon.ChannelDef.InTeam)
-  local TimeWrap, MsgWrap = self:GetModel():AddMessage(FakeMessage, false)
-  if FakeMessage.ChannelType == ChatCommon.ChannelDef.InTeam then
-    self:NotifyEvent(ChatCommon.EventID.ChatMsgSent, TimeWrap, MsgWrap)
-  end
+  self:_AddMessage(FakeMessage, false)
 end
-
 function M:SendChatToSettlementOnline(ContentText)
   local ModContent = self:TryParseMyModSuitInfo(ContentText)
   if ModContent then
@@ -207,18 +187,13 @@ function M:SendChatToSettlementOnline(ContentText)
   end
   self:GetAvatar():ChatToSettlementOnline(ContentText)
 end
-
 function M:RecvChatToSettlementOnline(ContentText)
   if ChatModel:IsChannelExclude(ChatCommon.ChannelDef.SettlementOnline) then
     return
   end
   local FakeMessage = self:CreateFakeMsg(ContentText, CommonConst.MESSAGE_TYPE_SELF, ChatCommon.ChannelDef.SettlementOnline)
-  local TimeWrap, MsgWrap = self:GetModel():AddMessage(FakeMessage, false)
-  if FakeMessage.ChannelType == ChatCommon.ChannelDef.SettlementOnline then
-    self:NotifyEvent(ChatCommon.EventID.ChatMsgSent, TimeWrap, MsgWrap)
-  end
+  self:_AddMessage(FakeMessage, false)
 end
-
 function M:SendMemberChangeTipsToTeam(MemberInfo, EventType)
   local TextMessage
   if EventType == TeamCommon.EventId.TeamOnAddPlayer then
@@ -230,44 +205,31 @@ function M:SendMemberChangeTipsToTeam(MemberInfo, EventType)
     self:RecvSystemInfoToTeam(TextMessage)
   end
 end
-
 function M:RecvSystemInfoToTeam(ContentText)
   local FakeMessage = self:CreateFakeMsg(ContentText, CommonConst.MESSAGE_TYPE_SYSTEM, ChatCommon.ChannelDef.InTeam)
-  local TimeWrap, MsgWrap = self:GetModel():AddMessage(FakeMessage, false)
-  if FakeMessage.ChannelType ~= ChatModel:GetCurrentChannel() then
-    return
-  end
-  self:NotifyEvent(ChatCommon.EventID.ChatMsgRecv, TimeWrap, MsgWrap)
+  self:_AddMessage(FakeMessage, false)
 end
-
 function M:SendChangeQuickMessage(Index, ContentText)
   self:GetAvatar():ChangeQuickMessage(Index, ContentText)
 end
-
 function M:SendInitQuickMessage(SystemLanguage)
   self:GetAvatar():InitQuickMessage(SystemLanguage)
 end
-
 function M:RecvChangeQuickMessage(Index)
   self:NotifyEvent(ChatCommon.EventID.QuickMsgChanged, Index)
 end
-
 function M:SendAddEmotion(GroupId)
   self:GetAvatar():AddEmotion(GroupId)
 end
-
 function M:RecvAddEmotion(GroupId)
   self:NotifyEvent(ChatCommon.EventID.EmotionAdded, GroupId)
 end
-
 function M:SendRemoveEmotion(EmotionId)
   self:GetAvatar():RemoveEmotion(EmotionId)
 end
-
 function M:RecvRemoveEmotion(EmotionId)
   self:NotifyEvent(ChatCommon.EventID.EmotionRemoved, EmotionId)
 end
-
 function M:SendChatNewMsgRead(CurrFriendUid)
   if self:GetModel():GetCurrentChannel() ~= ChatCommon.ChannelDef.Friend then
     ChatModel:ClearReddotCount(self.CurrChannel)
@@ -280,14 +242,12 @@ function M:SendChatNewMsgRead(CurrFriendUid)
   end
   self:GetAvatar():ReadChat(CurrFriendUid)
 end
-
 function M:RecvChatNewMsgRead(Uid)
   if Uid ~= ChatModel:GetCurrentFriendUid() then
     return
   end
   ChatModel:ReadChannelMessage(ChatCommon.ChannelDef.Friend, Uid)
 end
-
 function M:TryParseMyModSuitInfo(MsgStr)
   local ModModel = ModController:GetModel()
   if ModModel:IsModSuitInfoMsg(MsgStr) then
@@ -297,7 +257,6 @@ function M:TryParseMyModSuitInfo(MsgStr)
   end
   return nil
 end
-
 function M:TryParseMyDyePlanInfo(MsgStr)
   local ModModel = ModController:GetModel()
   if ModModel:IsDyeShareInfoMsg(MsgStr) then
@@ -307,7 +266,14 @@ function M:TryParseMyDyePlanInfo(MsgStr)
   end
   return nil
 end
-
+function M:TryParseGiftInfo(MsgStr)
+  if MsgStr == ChatCommon.GiftCopyHeader then
+    local GiftContent = self:GenerateGiftMessage()
+    return GiftContent
+  else
+    return nil
+  end
+end
 function M:HandleChatMessage(Message)
   if not self.bInited then
     return
@@ -321,8 +287,38 @@ function M:HandleChatMessage(Message)
   if ChatModel:IsChannelExclude(Message.ChannelType) then
     return
   end
-  local TimeWrap, MsgWrap = self:GetModel():AddMessage(Message, true)
-  if Message.ChannelType ~= ChatModel:GetCurrentChannel() then
+  self:_AddMessage(Message, true)
+end
+function M:SendGiftMessage(UID, Index)
+  self.GiftInfo = {
+    Index = Index or 1
+  }
+  self:SendChatToPlayer(UID, ChatCommon.GiftCopyHeader)
+end
+function M:SendGiftReceivedMessage(UID, Index)
+  self.GiftInfo = {
+    bGiftReceived = true,
+    Index = Index or 1
+  }
+  self:SendChatToPlayer(UID, ChatCommon.GiftCopyHeader)
+end
+function M:GenerateGiftMessage()
+  if not self.GiftInfo then
+    return nil
+  end
+  return ChatCommon.GiftCopyHeader .. json.encode(self.GiftInfo)
+end
+function M:_AddMessage(Message, bCalcUnread)
+  local TimeWrap, MsgWrap = self:GetModel():AddMessage(Message, bCalcUnread)
+  local Channel = Message.ChannelType
+  if MsgWrap:IsSticker() and Channel ~= ChatCommon.ChannelDef.Friend then
+    local Uid = Message.Sender.Uid
+    local GroupId = MsgWrap.EmojiInfos[1].GroupId
+    local Id = MsgWrap.EmojiInfos[1].Id
+    local StickerTexPath = DataMgr.ChatEmoji[GroupId][Id]
+    self:NotifyEvent(ChatCommon.EventID.RecvStickerInPubChannels, Uid, StickerTexPath)
+  end
+  if Channel ~= ChatModel:GetCurrentChannel() then
     return
   end
   if Message.Type == CommonConst.MESSAGE_TYPE_SELF then
@@ -331,7 +327,6 @@ function M:HandleChatMessage(Message)
     self:NotifyEvent(ChatCommon.EventID.ChatMsgRecv, TimeWrap, MsgWrap)
   end
 end
-
 function M:CreateFakeMsg(ContentText, MsgType, Channel)
   return {
     Content = ContentText,
@@ -341,14 +336,12 @@ function M:CreateFakeMsg(ContentText, MsgType, Channel)
     ChannelType = Channel
   }
 end
-
 function M:SelectPlayerToChat(Uid)
   self:GetModel():SetCurrentFriendUid(Uid)
   self:NotifyEvent(ChatCommon.EventID.SelectPlayerToChat, Uid)
 end
-
 function M:OpenPlayerBtnList(WorldContext, AvatarInfo, FuncList)
-  if not FuncList then
+  if table.isempty(FuncList) then
     return nil
   end
   local HeadOptionWidget = UIManager(WorldContext):_CreateWidgetNew(DataMgr.WidgetUI.ChatHeadOption.UIName)
@@ -356,16 +349,13 @@ function M:OpenPlayerBtnList(WorldContext, AvatarInfo, FuncList)
   HeadOptionWidget.Owner = WorldContext
   return HeadOptionWidget
 end
-
 function M:OnMainClose(bBattle)
   ChatModel:SetCurrentFriendUid(nil)
   self:NotifyEvent(ChatCommon.EventID.CloseMainView, bBattle)
 end
-
 function M:OnMainOpen(bBattle)
   self:NotifyEvent(ChatCommon.EventID.OpenMainView, bBattle)
 end
-
 function M:CheckTextValid(Text, Callback, ShowTipFunc, TextMap, bAllowEmpty)
   if ModController:GetModel():IsModSuitInfoMsg(Text) then
     Callback(true, Text)
@@ -416,7 +406,6 @@ function M:CheckTextValid(Text, Callback, ShowTipFunc, TextMap, bAllowEmpty)
     Callback(true, Text)
   end)
 end
-
 function M:OpenForbidChatDialog(Time, Reason, TimeDelta)
   local View = self:GetView()
   if not IsValid(View) then
@@ -437,15 +426,10 @@ function M:OpenForbidChatDialog(Time, Reason, TimeDelta)
   }
   self:GetUIMgr(View):ShowCommonPopupUI(ChatCommon.ForbidChatDialog, Params, View)
 end
-
 function M:OpenChatReportDialog(Params)
   local View = self:GetView()
-  if not IsValid(View) then
-    return
-  end
   self:GetUIMgr(View):ShowCommonPopupUI(ChatCommon.AccuseDialog, Params, View)
 end
-
 function M:SetUpSendCDTimer(ChannelType)
   local CdTimer = self:GetModel():GetChannelCDTimerKey(ChannelType)
   self:StopTimer(CdTimer)
@@ -469,13 +453,11 @@ function M:SetUpSendCDTimer(ChannelType)
     self:NotifyEvent(ChatCommon.EventID.SendCDTimerUpdate, RawCDRemainTime)
   end
 end
-
 function M:IsSendCDTimerExist(ChannelType)
   local CdTimer = self:GetModel():GetChannelCDTimerKey(ChannelType)
   DebugPrint("ChatController :: IsSendCdTimerExist CdTimer = " .. CdTimer)
   return self:IsExistTimer(CdTimer)
 end
-
 function M:ParseEmojiToText(MsgWrap)
   local Content = MsgWrap.Message.Content
   if #MsgWrap.EmojiInfos > 0 then
@@ -501,7 +483,6 @@ function M:ParseEmojiToText(MsgWrap)
   end
   return Content
 end
-
 function M:ParseSpeakerHeader(MsgWrap)
   local Message = MsgWrap.Message
   local YouTo = ""
@@ -528,21 +509,19 @@ function M:ParseSpeakerHeader(MsgWrap)
   })
   return Spacker, RawSpacker
 end
-
 function M:GetRawContent(MsgWrap)
   local Spacker, RawSpacker = self:ParseSpeakerHeader(MsgWrap)
   local Content = self:ParseEmojiToText(MsgWrap)
   return RawSpacker .. Content
 end
-
 function M:ParseModSuitText(MsgWrap)
   local Content = MsgWrap.Message.Content
   if not MsgWrap.ModSuitInfo then
-    return Content
+    return nil
   end
   local TargetType = MsgWrap.ModSuitInfo.TargetInfo[1]
   local TargetId = MsgWrap.ModSuitInfo.TargetInfo[2]
-  local Name = "\232\167\146\232\137\178\230\136\150\230\173\166\229\153\168\232\162\171\229\136\160\233\153\164\228\186\134!!!!"
+  local Name = "角色或武器被删除了!!!!"
   local Conf = DataMgr[TargetType][TargetId]
   if "Char" == TargetType then
     Name = Conf.CharName
@@ -551,19 +530,17 @@ function M:ParseModSuitText(MsgWrap)
   end
   return string.format(GText("UI_Chat_ModSuitFormat"), GText(Name))
 end
-
 function M:ParseDyePlanText(MsgWrap)
   local Content = MsgWrap.Message.Content
   if not MsgWrap.DyePlanInfo then
-    return Content
+    return nil
   end
   if not MsgWrap.DyePlanInfo.TargetName then
-    return Content
+    return nil
   end
   local Name = MsgWrap.DyePlanInfo.TargetName
   return string.format(GText("UI_Chat_DyeSuitFormat"), GText(Name))
 end
-
 function M:ClearChannelReddot(ChannelType)
   if ChannelType ~= ChatCommon.ChannelDef.Friend then
     self:GetModel():ClearReddotCount(ChannelType)
@@ -574,6 +551,5 @@ function M:ClearChannelReddot(ChannelType)
     end
   end
 end
-
 _G.ChatController = M
 return M

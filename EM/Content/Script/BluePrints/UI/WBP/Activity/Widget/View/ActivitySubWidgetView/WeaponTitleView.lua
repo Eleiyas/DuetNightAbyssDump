@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(WeaponId, ClickCallback, ParentWiget)
   local WeaponInfo = DataMgr.Weapon[WeaponId]
   if WeaponInfo then
@@ -11,7 +10,6 @@ function M:Init(WeaponId, ClickCallback, ParentWiget)
   self.Btn_Detail.OnClicked:Clear()
   self.Btn_Detail.OnClicked:Add(self, self.BtnClicked)
 end
-
 function M:FillWithTitleInfo(TargetName, TargetRarity, WeaponId)
   self.Text_CharName:SetText(GText(TargetName))
   for i = 1, CommonConst.GachaRarityMax do
@@ -30,12 +28,10 @@ function M:FillWithTitleInfo(TargetName, TargetRarity, WeaponId)
     end
   end
 end
-
 function M:BtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if self.ClickCallback then
     self.ClickCallback(self.ParentWiget)
   end
 end
-
 return M

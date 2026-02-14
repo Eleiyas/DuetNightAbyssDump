@@ -1,5 +1,4 @@
 local TalkTaskFactory = {}
-
 function TalkTaskFactory:CreateTalkTask(TalkNodeData)
   local TalkTypeData = DataMgr.TalkType[TalkNodeData.TalkType]
   local BasicTalkType = TalkTypeData.BasicType
@@ -8,7 +7,7 @@ function TalkTaskFactory:CreateTalkTask(TalkNodeData)
   elseif "Guide" == BasicTalkType or "Audio" == BasicTalkType or "Boss" == BasicTalkType or "Bubble" == BasicTalkType then
     return self:CreateLightTalkTask(TalkNodeData)
   end
-  DebugPrint("@@@ \229\136\155\229\187\186TalkTask ", TalkNodeData.TalkType, BasicTalkType)
+  DebugPrint("@@@ 创建TalkTask ", TalkNodeData.TalkType, BasicTalkType)
   local TalkTask_C = require("BluePrints.Story.Talk.Controller." .. BasicTalkType .. "TalkTask")
   local TalkTaskData_C = require("BluePrints.Story.Talk.Model." .. BasicTalkType .. "TalkTaskData")
   local TalkTaskData = TalkTaskData_C.New(TalkNodeData)
@@ -21,11 +20,10 @@ function TalkTaskFactory:CreateTalkTask(TalkNodeData)
   TalkTaskData.TalkNodeName = TalkNodeData.Name
   return TalkTask, TalkTaskData
 end
-
 function TalkTaskFactory:CreateCommonTalkTask(TalkNodeData)
   local TalkTypeData = DataMgr.TalkType[TalkNodeData.TalkType]
   local BasicTalkType = TalkTypeData.BasicType
-  DebugPrint("@@@ \229\136\155\229\187\186TalkTask ", TalkNodeData.TalkType, BasicTalkType)
+  DebugPrint("@@@ 创建TalkTask ", TalkNodeData.TalkType, BasicTalkType)
   local TalkTask_C
   local TalkTaskData_C = require("BluePrints.Story.Talk.Model.CommonTalkTaskData")
   if "Cinematic" == BasicTalkType then
@@ -38,11 +36,10 @@ function TalkTaskFactory:CreateCommonTalkTask(TalkNodeData)
   TalkTaskData.TalkNodeName = TalkNodeData.Name
   return TalkTask, TalkTaskData
 end
-
 function TalkTaskFactory:CreateLightTalkTask(TalkNodeData)
   local TalkTypeData = DataMgr.TalkType[TalkNodeData.TalkType]
   local BasicTalkType = TalkTypeData.BasicType
-  DebugPrint("@@@ \229\136\155\229\187\186TalkTask ", TalkNodeData.TalkType, BasicTalkType)
+  DebugPrint("@@@ 创建TalkTask ", TalkNodeData.TalkType, BasicTalkType)
   local TalkTask_C
   local TalkTaskData_C = require("BluePrints.Story.Talk.Model.CommonTalkTaskData")
   if "Bubble" == BasicTalkType then
@@ -59,7 +56,6 @@ function TalkTaskFactory:CreateLightTalkTask(TalkNodeData)
   TalkTaskData.TalkNodeName = TalkNodeData.Name
   return TalkTask, TalkTaskData
 end
-
 function TalkTaskFactory:AttachCompsToTask(TalkTask, TalkTaskData, TalkType)
   local TalkComps = require("BluePrints.Story.Talk.Controller.TalkComps")
   if not TalkTaskData.bShowGameUI then
@@ -99,13 +95,8 @@ function TalkTaskFactory:AttachCompsToTask(TalkTask, TalkTaskData, TalkType)
   end
   if TalkTaskData.bHideElseCharacter then
     local TalkComp_HideElseCharacter_C = require("BluePrints.Story.Talk.Controller.TalkComps").TalkComp_HideElseCharacter_C
-    local TalkComp_HideElseCharacter = TalkComp_HideElseCharacter_C.New(TalkTaskData.TalkContext, TalkTaskData.CreateTalkActors)
+    local TalkComp_HideElseCharacter = TalkComp_HideElseCharacter_C.New(TalkTaskData.TalkContext, TalkTaskData.TalkActors)
     self:AttachCompToTask(TalkTask, TalkComp_HideElseCharacter)
-  end
-  if TalkTaskData.bDisableMonsterAIForSimpleTalk then
-    local TalkComp_DisableAndHideMonster_C = require("BluePrints.Story.Talk.Controller.TalkComps").TalkComp_DisableAndHideMonster_C
-    local TalkComp_DisableAndHideMonster = TalkComp_DisableAndHideMonster_C.New(TalkTaskData.TalkContext)
-    self:AttachCompToTask(TalkTask, TalkComp_DisableAndHideMonster)
   end
   if TalkTaskData.bDisableGameInput then
     local SoundEffect = TalkComps.TalkComp_SoundEffect_C.New(TalkTaskData.TalkContext)
@@ -116,11 +107,9 @@ function TalkTaskFactory:AttachCompsToTask(TalkTask, TalkTaskData, TalkType)
     self:AttachCompToTask(TalkTask, HideNpcHeadUI)
   end
 end
-
 function TalkTaskFactory:AttachCompToTask(TalkTask, TalkComp)
   DebugPrint("Attach prop to task", TalkTask, TalkComp)
   local TalkCompType = TalkComp:GetType()
   TalkTask.TalkComps[TalkCompType] = TalkComp
 end
-
 return TalkTaskFactory

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1756032377236372514",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1274, y = 268},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -203,11 +205,11 @@ return {
           ["1756032377236372518"] = {
             key = "1756032377236372518",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 1028.275862084085, y = 498.06896584987453},
             propsData = {
               MessageId = 302801,
-              MessageNote = "\230\150\176\233\130\174\228\187\182\230\143\144\231\164\186",
+              MessageNote = "新邮件提示",
               IsTimePause = true,
               IsResetPlayer = false,
               IsForbidInAnim = false,
@@ -219,12 +221,12 @@ return {
           ["1756032377236372519"] = {
             key = "1756032377236372519",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1672.343880900811, y = 280.13995556795544},
             propsData = {
               ShowEnable = true,
               MessageId = 302802,
-              MessageNote = "\230\137\147\229\188\128\232\143\156\229\141\149",
+              MessageNote = "打开菜单",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -249,12 +251,12 @@ return {
           ["1756032377236372521"] = {
             key = "1756032377236372521",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2110.0856791311794, y = 501.71995841304573},
             propsData = {
               ShowEnable = true,
               MessageId = 302803,
-              MessageNote = "\231\130\185\229\135\187\233\130\174\228\187\182",
+              MessageNote = "点击邮件",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -279,12 +281,12 @@ return {
           ["1756032377236372522"] = {
             key = "1756032377236372522",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2488.441407382622, y = 565.3435727915403},
             propsData = {
               ShowEnable = true,
               MessageId = 302805,
-              MessageNote = "\233\162\134\229\143\150\229\133\168\233\131\168\229\165\150\229\138\177",
+              MessageNote = "领取全部奖励",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -309,12 +311,12 @@ return {
           ["1756032377236372523"] = {
             key = "1756032377236372523",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2370.927431226131, y = 242.30581958761724},
             propsData = {
               ShowEnable = true,
               MessageId = 302804,
-              MessageNote = "\229\156\136\228\184\128\229\176\129\233\130\174\228\187\182",
+              MessageNote = "圈一封邮件",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -339,12 +341,12 @@ return {
           ["1756032377236372524"] = {
             key = "1756032377236372524",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1593.0531391666373, y = 787.4363954532284},
             propsData = {
               ShowEnable = true,
               MessageId = 302807,
-              MessageNote = "\232\191\148\229\155\158",
+              MessageNote = "返回",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -369,11 +371,11 @@ return {
           ["1756032377236372525"] = {
             key = "1756032377236372525",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 998.0384978341551, y = 843.221341453414},
             propsData = {
               MessageId = 302806,
-              MessageNote = "\229\144\136\230\136\144\230\143\144\231\164\186",
+              MessageNote = "合成提示",
               IsTimePause = true,
               IsResetPlayer = false,
               IsForbidInAnim = true,
@@ -385,12 +387,12 @@ return {
           ["1756032377236372526"] = {
             key = "1756032377236372526",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1906.756844030274, y = 855.5104696494009},
             propsData = {
               ShowEnable = true,
               MessageId = 302808,
-              MessageNote = "\231\130\185\229\135\187\230\149\180\229\164\135",
+              MessageNote = "点击整备",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -415,12 +417,12 @@ return {
           ["1756032377236372527"] = {
             key = "1756032377236372527",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1586.641904582128, y = 971.0481429299334},
             propsData = {
               ShowEnable = true,
               MessageId = 302807,
-              MessageNote = "\232\191\148\229\155\158",
+              MessageNote = "返回",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -445,12 +447,12 @@ return {
           ["1756032377236372528"] = {
             key = "1756032377236372528",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1587.1696292314225, y = 609.2251258540724},
             propsData = {
               ShowEnable = true,
               MessageId = 302802,
-              MessageNote = "\230\137\147\229\188\128\232\143\156\229\141\149",
+              MessageNote = "打开菜单",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -475,19 +477,19 @@ return {
           ["1756032377236372529"] = {
             key = "1756032377236372529",
             type = "PlatformJudgmentNode",
-            name = "PC/\230\137\139\230\156\186\229\185\179\229\143\176\229\136\164\230\150\173",
+            name = "PC/手机平台判断",
             pos = {x = 1284.9177672670812, y = 834.3942513648569},
             propsData = {}
           },
           ["1756032377236372530"] = {
             key = "1756032377236372530",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 676.1828630099483, y = 1812.5955716285314},
             propsData = {
               ShowEnable = true,
               MessageId = 302809,
-              MessageNote = "\229\133\179\233\151\173\232\142\183\229\190\151\231\137\169\229\147\129\231\149\140\233\157\162",
+              MessageNote = "关闭获得物品界面",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -512,12 +514,12 @@ return {
           ["1756032377236372531"] = {
             key = "1756032377236372531",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 948.2672974409656, y = 1284.5112051940234},
             propsData = {
               ShowEnable = true,
               MessageId = 302810,
-              MessageNote = "\229\177\149\229\188\128\232\167\146\232\137\178\229\136\151\232\161\168",
+              MessageNote = "展开角色列表",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -542,12 +544,12 @@ return {
           ["1756032377236372532"] = {
             key = "1756032377236372532",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1282.128640449419, y = 1254.4479892767722},
             propsData = {
               ShowEnable = true,
               MessageId = 302811,
-              MessageNote = "\231\130\185\229\135\187\233\187\145\230\161\131",
+              MessageNote = "点击黑桃",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -572,12 +574,12 @@ return {
           ["1756032377236372533"] = {
             key = "1756032377236372533",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2180.9341088454657, y = 882.477314898538},
             propsData = {
               ShowEnable = true,
               MessageId = 302812,
-              MessageNote = "\231\130\185\229\135\187\229\144\136\230\136\144",
+              MessageNote = "点击合成",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -602,12 +604,12 @@ return {
           ["1756032377236372534"] = {
             key = "1756032377236372534",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1233.8799725754009, y = 1800.772292012126},
             propsData = {
               ShowEnable = true,
               MessageId = 302808,
-              MessageNote = "\229\177\149\229\188\128\232\167\146\232\137\178\229\136\151\232\161\168",
+              MessageNote = "展开角色列表",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -632,7 +634,7 @@ return {
           ["1756106078344634575"] = {
             key = "1756106078344634575",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = 3551.463850565692, y = 787.9272843900114},
             propsData = {
               MessageType = "GameMode",
@@ -643,14 +645,14 @@ return {
           ["17561101592131847"] = {
             key = "17561101592131847",
             type = "InputDeviceBranchNode",
-            name = "\232\190\147\229\133\165\232\174\190\229\164\135\229\136\134\230\148\175",
+            name = "输入设备分支",
             pos = {x = 1278.707734064924, y = 457.9139766153891},
             propsData = {}
           },
           ["17561101941382547"] = {
             key = "17561101941382547",
             type = "ShowGuideNode",
-            name = "\230\152\190\231\164\186\229\188\149\229\175\188\239\188\136\230\148\175\230\140\129\230\137\167\232\161\140\230\147\141\228\189\156\229\144\142\232\135\170\229\138\168\229\133\179\233\151\173/\229\188\186\229\136\182\229\188\149\229\175\188\239\188\137",
+            name = "显示引导（支持执行操作后自动关闭/强制引导）",
             pos = {x = 1561.163253874991, y = 471.78103433782775},
             propsData = {
               MessageId = 301611,
@@ -663,7 +665,7 @@ return {
               UIShape = "Square",
               IsForbidInAnim = false,
               IsForbidOutAnim = false,
-              ForbidSuccessAnim = false,
+              ForbidSuccessAnim = true,
               IsNotForceRelease = false,
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},

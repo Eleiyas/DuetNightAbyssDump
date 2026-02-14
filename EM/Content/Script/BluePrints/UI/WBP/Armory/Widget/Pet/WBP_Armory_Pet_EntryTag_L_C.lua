@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(Content)
   if Content.IsLocked then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(2)
@@ -13,5 +12,4 @@ function M:Init(Content)
     self.Panel_EntryTag:Init(Content)
   end
 end
-
 return M

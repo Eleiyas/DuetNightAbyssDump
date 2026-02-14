@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:InitItemInfo(ItemType, ItemId, UnitId)
   local PlayerAvatar = GWorld:GetAvatar()
   self.ParentWidget.Text_Phantom:SetText(GText("UI_Shadow_Name"))
@@ -34,5 +33,4 @@ function M:InitItemInfo(ItemType, ItemId, UnitId)
   end
   self.Weapon:AddChild(WeaponItem)
 end
-
 return M

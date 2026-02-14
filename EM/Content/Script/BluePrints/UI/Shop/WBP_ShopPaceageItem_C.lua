@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(TableName, ItemId, ItemCount)
   self.Text_Name:SetText(ItemUtils:GetDropName(ItemId, TableName))
   self.Text_Num:SetText("x" .. tostring(ItemCount))
@@ -21,5 +20,4 @@ function M:Init(TableName, ItemId, ItemCount)
   Object.UIName = "ShopMain"
   self.Package_Item:Init(Object)
 end
-
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Com_Dialog_RewardTab_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Com_Dialog_RewardTab_C:Construct()
   self.IsSelect = false
   self.AddListenerFinish = false
@@ -12,11 +11,9 @@ function WBP_Com_Dialog_RewardTab_C:Construct()
   self.Btn_Click.OnPressed:Add(self, self.OnCellPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnCellReleased)
 end
-
 function WBP_Com_Dialog_RewardTab_C:Destruct()
   ReddotManager.RemoveListener(self.ReddotName, self)
 end
-
 function WBP_Com_Dialog_RewardTab_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.ReddotName = Content.ReddotName
@@ -45,14 +42,12 @@ function WBP_Com_Dialog_RewardTab_C:OnListItemObjectSet(Content)
     ReddotManager.AddListener(self.ReddotName, self, self.RefreshReddot)
   end
 end
-
 function WBP_Com_Dialog_RewardTab_C:UnSelected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self.Btn_Click:SetChecked(false)
   self.IsSelect = false
 end
-
 function WBP_Com_Dialog_RewardTab_C:Selected(NotPlaySound)
   self.Btn_Click:SetChecked(true)
   self:StopAllAnimations()
@@ -63,14 +58,12 @@ function WBP_Com_Dialog_RewardTab_C:Selected(NotPlaySound)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_sort_tab", nil, nil)
 end
-
 function WBP_Com_Dialog_RewardTab_C:OnCellClicked(NotPlaySound)
   if self.IsSelect then
     return
   end
   self.Content.Root:RefreshListRewardInfo(self, NotPlaySound)
 end
-
 function WBP_Com_Dialog_RewardTab_C:OnCellHovered()
   if self.IsSelect then
     return
@@ -83,7 +76,6 @@ function WBP_Com_Dialog_RewardTab_C:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Com_Dialog_RewardTab_C:OnCellUnhovered()
   if self.IsSelect then
     return
@@ -94,14 +86,12 @@ function WBP_Com_Dialog_RewardTab_C:OnCellUnhovered()
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function WBP_Com_Dialog_RewardTab_C:OnCellPressed()
   if self.IsSelect then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Com_Dialog_RewardTab_C:OnCellReleased()
   if self.IsSelect then
     return
@@ -109,7 +99,6 @@ function WBP_Com_Dialog_RewardTab_C:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Com_Dialog_RewardTab_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.ReddotName)
   if not CacheDetail[self.Content.Type] then
@@ -118,5 +107,4 @@ function WBP_Com_Dialog_RewardTab_C:RefreshReddot()
     self.Reddot:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return WBP_Com_Dialog_RewardTab_C

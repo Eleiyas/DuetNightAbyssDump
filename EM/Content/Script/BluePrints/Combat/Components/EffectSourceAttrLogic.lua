@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:GetTableAttrNames_Lua()
   return {
     "Attribute",
@@ -55,7 +54,6 @@ function Component:GetTableAttrNames_Lua()
     "DropDistance"
   }
 end
-
 function Component:SetReplaceAttrs(ReplaceAttrs)
   local FromSkynet = true
   for AttrName, Value in pairs(ReplaceAttrs.TotalValues or {}) do
@@ -66,7 +64,6 @@ function Component:SetReplaceAttrs(ReplaceAttrs)
     self:FillReplaceAttr(AttrName, CardValue, CardLevelValue, ModRateValue, ModAddValue, FromSkynet)
   end
 end
-
 function Component:SetTableAttr(ReplaceAttrs)
   self:SetTableAttrCpp()
   if ReplaceAttrs then
@@ -76,7 +73,6 @@ function Component:SetTableAttr(ReplaceAttrs)
   end
   self:AfterSetTableAttr()
 end
-
 function Component:InitAllWeaponModifier(ReplaceAttrs)
   if not ReplaceAttrs then
     return
@@ -85,5 +81,4 @@ function Component:InitAllWeaponModifier(ReplaceAttrs)
     self:SetAllWeaponModifier(AttrName)
   end
 end
-
 return Component

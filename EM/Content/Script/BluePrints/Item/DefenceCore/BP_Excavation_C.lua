@@ -3,7 +3,6 @@ local BP_Excavation_C = Class({
   "BluePrints/Item/DefenceCore/BP_DefenceBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_Excavation_C:AuthorityInitInfo(Info)
   BP_Excavation_C.Super.AuthorityInitInfo(self, Info)
   self.DepleteRate = 1
@@ -24,14 +23,12 @@ function BP_Excavation_C:AuthorityInitInfo(Info)
   RandomCreator:AddUserEid(self)
   self.GuideOrderIndex = GameMode:TriggerDungeonComponentFun("RegisterGuideOrder", self.Eid)
 end
-
 function BP_Excavation_C:CommonInitInfo(Info)
   self.StartDigStateId = self.UnitParams.StartDigStateId
   self.StopDigStateId = self.UnitParams.StopDigStateId
   BP_Excavation_C.Super.CommonInitInfo(self, Info)
   self.Efficiency = self.UnitParams.Efficiency
 end
-
 function BP_Excavation_C:InitExcavationMonsterSpawn(Info)
   local MonsterSpawnId
   MonsterSpawnId = Info.IntParams:Find("MonsterSpawnId")
@@ -45,7 +42,6 @@ function BP_Excavation_C:InitExcavationMonsterSpawn(Info)
   GameState.ExcavationMechanismInfos:Add(self.Eid, MonsterSpawnId)
   GameMode:TriggerCreateMonsterSpawn(Ids)
 end
-
 function BP_Excavation_C:StartDig()
   if IsAuthority(self) then
     self:RemoveTimer("ExcavationCreateReward")
@@ -56,7 +52,6 @@ function BP_Excavation_C:StartDig()
     self.Mesh:PlayAnimation(self.DigAnim, true)
   end
 end
-
 function BP_Excavation_C:StopDig()
   if not IsAuthority(self) or IsStandAlone(self) then
     self:OnStopDig()
@@ -66,7 +61,6 @@ function BP_Excavation_C:StopDig()
     self:RemoveTimer("ExcavationCreateReward")
   end
 end
-
 function BP_Excavation_C:ActiveOnServer()
   if self.IsActive == true then
     self:ActiveDefence()
@@ -75,14 +69,12 @@ function BP_Excavation_C:ActiveOnServer()
     end
   end
 end
-
 function BP_Excavation_C:OnActiveStateChange()
   self.Super.OnActiveStateChange(self)
   if self.IsActive then
     AudioManager(self):PlayFMODSound(self, nil, "event:/sfx/common/scene/gear/excavation_create", "ExcavationCreate")
   end
 end
-
 function BP_Excavation_C:AttractBattery()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -115,7 +107,6 @@ function BP_Excavation_C:AttractBattery()
     end
   end
 end
-
 function BP_Excavation_C:CreateReward()
   self.NowEnergy = math.max(self.NowEnergy - self.DepleteRate, 0)
   self.Progress = self.Progress + self.DepleteRate
@@ -143,12 +134,10 @@ function BP_Excavation_C:CreateReward()
     self:ChangeState("Manual", 0, self.StopDigStateId)
   end
 end
-
 function BP_Excavation_C:CreateNextExcavation()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:TriggerDungeonComponentFun("TriggerPrepareActiveExcavation")
 end
-
 function BP_Excavation_C:RealCreateReward(CreateNum)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -161,74 +150,58 @@ function BP_Excavation_C:RealCreateReward(CreateNum)
   end
   self:TriggerBluePrintEvent("OnCreateReward")
 end
-
 function BP_Excavation_C:MissionComplete()
   self:RemoveTimer(self.BatteryHandle)
-  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  GameMode:TriggerDungeonComponentFun("UpdateNowExcavNum", -1)
-  GameMode:TriggerDungeonComponentFun("UpdateFinishedExcavNum", 1)
-  self:TriggerGameModeEvent("OnExcavationProgressEnough")
-  self:ChangeState("Manual", 0, self.StopDigStateId)
-  self:TriggerBluePrintEvent("OnMissionComplete")
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  GameState.DefBaseMap:Remove(self.Eid)
-  GameState.HatredCombatProp:Remove(self.Eid)
+  if not self.bTriggerGameMode then
+    self.bTriggerGameMode = true
+    local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+    GameMode:TriggerDungeonComponentFun("UpdateNowExcavNum", -1)
+    GameMode:TriggerDungeonComponentFun("UpdateFinishedExcavNum", 1)
+    self:TriggerGameModeEvent("OnExcavationProgressEnough")
+    self:ChangeState("Manual", 0, self.StopDigStateId)
+    self:TriggerBluePrintEvent("OnMissionComplete")
+    local GameState = UE4.UGameplayStatics.GetGameState(self)
+    GameState.DefBaseMap:Remove(self.Eid)
+    GameState.HatredCombatProp:Remove(self.Eid)
+    GameMode:TriggerDungeonComponentFun("JudgeNextTurn")
+  end
   self:EMActorDestroy(EDestroyReason.MechanismDead)
-  GameMode:TriggerDungeonComponentFun("JudgeNextTurn")
 end
-
 function BP_Excavation_C:ShowDeath()
   BP_Excavation_C.Super.ShowDeath(self)
   EventManager:FireEvent(EventID.OnExcavationItemChange, "Remove", self.Eid)
 end
-
 function BP_Excavation_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   BP_Excavation_C.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if IsAuthority(self) then
+  if IsAuthority(self) and not self.bTriggerDeadGameMode then
+    self.bTriggerDeadGameMode = true
     GameMode:TriggerDungeonComponentFun("UpdateNowExcavNum", -1)
     GameMode:TriggerDungeonComponentFun("UpdateTurnDeadExcavNum", 1)
     self:CreateNextExcavation()
-  end
-  self:ChangeState("Manual", 0, self.StopDigStateId)
-  if IsAuthority(self) then
     GameMode:TriggerGameModeEvent("OnExcavationDestroyed")
     GameMode:TriggerDungeonComponentFun("JudgeNextTurn")
   end
+  self:ChangeState("Manual", 0, self.StopDigStateId)
   if IsStandAlone(self) or IsClient(self) then
     self:OnExcavationDestroyed()
   end
   self:RemoveTimer(self.BatteryHandle)
   self:EMActorDestroy(EDestroyReason.MechanismDead)
 end
-
-function BP_Excavation_C:RegisterToGameState()
-  if not IsAuthority(self) then
-    print(_G.LogTag, "not IsAuthority")
-    return
-  end
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  if nil == GameState then
-    print(_G.LogTag, "GameState is nil")
-    return
-  end
-  GameState:RegisterMechanism(self, self:GetUnitRealType())
-end
-
 function BP_Excavation_C:OnActorReady(Info)
   BP_Excavation_C.Super.OnActorReady(self, Info)
   if IsAuthority(self) then
     self:InitExcavationMonsterSpawn(Info)
   end
 end
-
 function BP_Excavation_C:ClientInitInfo(Info)
   BP_Excavation_C.Super.ClientInitInfo(self, Info)
   local ExcavationUI = Utils.UIManager(self):GetUIObj("DungenonExcavation")
   if ExcavationUI then
     ExcavationUI:OnExcavationItemChange("Add", self.Eid)
   else
-    DebugPrint("BP_Excavation_C\230\137\190\228\184\141\229\136\176ExcavationUI", self.Eid)
+    DebugPrint("BP_Excavation_C找不到ExcavationUI", self.Eid)
     self:AddTimer(5, function()
       ExcavationUI = Utils.UIManager(self):GetUIObj("DungenonExcavation")
       if ExcavationUI then
@@ -243,11 +216,9 @@ function BP_Excavation_C:ClientInitInfo(Info)
     SceneManager:UpdateOneSceneGuideIcon(self.Eid, true, false)
   end
 end
-
 function BP_Excavation_C:OnCharge(Eid)
   self.Overridden.OnCharge(self)
 end
-
 function BP_Excavation_C:OnMissionComplete()
   self:OnExcavationProgressEnough()
   EventManager:FireEvent(EventID.OnExcavationFinish, self.Eid)
@@ -255,7 +226,6 @@ function BP_Excavation_C:OnMissionComplete()
   GameState.DefBaseMap:Remove(self.Eid)
   GameState.HatredCombatProp:Remove(self.Eid)
 end
-
 function BP_Excavation_C:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   if NowStateId == self.StartDigStateId then
@@ -264,11 +234,9 @@ function BP_Excavation_C:OnEnterState(NowStateId)
     self:StopDig()
   end
 end
-
 function BP_Excavation_C:OnAttractBattery_Lua(ExcavationEid, BatteryEnergy)
   if not IsAuthority(self) or IsStandAlone(self) then
     EventManager:FireEvent(EventID.OnAttractBattery, ExcavationEid, BatteryEnergy)
   end
 end
-
 return BP_Excavation_C

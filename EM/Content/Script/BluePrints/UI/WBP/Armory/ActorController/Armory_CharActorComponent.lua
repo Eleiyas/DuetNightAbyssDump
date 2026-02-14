@@ -1,16 +1,14 @@
+local HitResult = FHitResult()
 local M = {}
 local PlayerActorRefs = {}
-
 function M:Init(Params)
   self.PlayerMontageTimerKeys = {}
   self.PlayerFXTimerKeys = {}
   self.PlayerActorHideTags = {}
 end
-
 local function MakeUncalculatedTrans(self)
   return UE4.UKismetMathLibrary.MakeTransform(self.UncalculatedTrans.Translation, self.UncalculatedTrans.Rotation:ToRotator(), FVector(1, 1, 1))
 end
-
 local function CalculatePlayerTrans(self, Params)
   local TargetTrans = MakeUncalculatedTrans(self)
   if self.bPreviewSceneLoaded then
@@ -31,7 +29,6 @@ local function CalculatePlayerTrans(self, Params)
   self.ArmoryHelper.OriginalRootTrans = self.PlayerOriginalRootTrans
   return TargetTrans
 end
-
 function M:OnOpened()
   if self.IsPreviewMode or self.IsSecondary then
     return
@@ -53,7 +50,6 @@ function M:OnOpened()
   end
   self:SavePlayerInfo()
 end
-
 function M:SavePlayerInfo()
   local Avatar = GWorld:GetAvatar()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self.ViewUI, 0)
@@ -104,7 +100,6 @@ function M:SavePlayerInfo()
     MagazineBulletRate = MagazineBulletRate
   }
 end
-
 function M:LoadPlayerInfo()
   if not self.PlayerInfo then
     return
@@ -156,8 +151,7 @@ function M:LoadPlayerInfo()
   EventManager:FireEvent(EventID.RefreshMainPlayerBlood)
   EventManager:FireEvent(EventID.UpdateMainPlayerSp, nil, nil, Player)
 end
-
-function M:ChangeCharModel(Info, bIfNoDelay, bNoCharVoice, bForceChange)
+function M:ChangeCharModel(Info, bIfNoDelay, bNoCharVoice, bForceChange, IsProtagonist)
   self:BeforeViewActorChanged()
   local PlayCharacter = self:GetPlayerActor(true)
   self.ArmoryHelper:SetViewActor(PlayCharacter)
@@ -184,13 +178,16 @@ function M:ChangeCharModel(Info, bIfNoDelay, bNoCharVoice, bForceChange)
   local CharId
   local AvatarBattleInfo = {}
   local GameMode = UE4.UGameplayStatics.GetGameMode(PlayCharacter)
-  PlayCharacter:ClearWeapon()
   if Char and GameMode then
     CharId = Char.CharId
     AvatarBattleInfo = AvatarUtils:GetDefaultBattleInfo(Avatar, {Char = Char})
     AvatarBattleInfo = {AvatarInfo = AvatarBattleInfo}
     AvatarBattleInfo = GameMode:SimplifyInfoForInit(AvatarBattleInfo)
     AvatarBattleInfo.FromArmory = true
+    if AvatarBattleInfo.AvatarInfo then
+      AvatarBattleInfo.AvatarInfo.MeleeWeapon = nil
+      AvatarBattleInfo.AvatarInfo.RangedWeapon = nil
+    end
     PlayCharacter:InitCharacterInfo(AvatarBattleInfo)
   else
     CharId = Info.CharId
@@ -198,16 +195,13 @@ function M:ChangeCharModel(Info, bIfNoDelay, bNoCharVoice, bForceChange)
     AvatarBattleInfo.FromArmory = true
     PlayCharacter:ChangeRole(CharId, AvatarBattleInfo)
   end
+  PlayCharacter:ClearWeapon()
   PlayCharacter:SetCharacterTag("Interactive")
-  if PlayCharacter.MeleeWeapon then
-    PlayCharacter.MeleeWeapon:SetActorHideTag(self.UIName, true)
-  end
-  local Gender2RoleIds = DataMgr.Player2RoleId.Player
-  if CharId == Gender2RoleIds[1] or CharId == Gender2RoleIds[0] then
+  if IsProtagonist then
     self.IsProtagonist = true
     self.bWaitForNotifyToChangePet = true
   else
-    self:ChangePetModel(nil, PlayCharacter)
+    self:ChangePetModel(nil)
     self.IsProtagonist = false
     self.bWaitForNotifyToChangePet = false
   end
@@ -232,7 +226,6 @@ function M:ChangeCharModel(Info, bIfNoDelay, bNoCharVoice, bForceChange)
   end
   return true
 end
-
 function M:StopPlayerSound()
   local Player = self:GetPlayerActor()
   if Player then
@@ -242,8 +235,7 @@ function M:StopPlayerSound()
     _AudioManager:RemoveCharacterFromEndStopAndLoopPlayRecordMapWhenCharacterEndPlay(Player, 0)
   end
 end
-
-function M:ChangeToProtagonist(bIfNoDelay, bNoCharVoice)
+function M:ChangeToProtagonist(bIfNoDelay, bNoCharVoice, bForceChange)
   local IsRoleChanged
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -252,7 +244,7 @@ function M:ChangeToProtagonist(bIfNoDelay, bNoCharVoice)
   self.ProtagonistCharInfo = self.ProtagonistCharInfo or {
     CharId = DataMgr.Player2RoleId.Player[Avatar.Sex]
   }
-  IsRoleChanged = self:ChangeCharModel(self.ProtagonistCharInfo, bIfNoDelay, bNoCharVoice)
+  IsRoleChanged = self:ChangeCharModel(self.ProtagonistCharInfo, bIfNoDelay, bNoCharVoice, bForceChange, true)
   local PlayCharacter = self:GetPlayerActor(true)
   if PlayCharacter.CharacterFashion then
     for key, value in pairs(CommonConst.CharAccessoryTypes) do
@@ -264,22 +256,19 @@ function M:ChangeToProtagonist(bIfNoDelay, bNoCharVoice)
   end
   return IsRoleChanged
 end
-
 function M:GetPlayerActor(bCreate)
   if self.ArmoryPlayer == nil and bCreate then
     self:CreatePlayerActor()
   end
   return self.ArmoryPlayer
 end
-
 function M:DoSomethingWithPlayer()
 end
-
 function M:CreatePlayerActor()
   local UIManager = UIManager(self.ViewUI)
   local IsCharActorFistCreated
   self.ArmoryPlayer, IsCharActorFistCreated = UIManager:CreateOrGetArmoryPlayerActor(self.CurrentCharInfo, self:GetAvatar())
-  self.ArmoryPlayer:ForceClearActorHideTag()
+  self:ClearPlayerHideTag()
   PlayerActorRefs[self] = self.ArmoryPlayer
   local Params = {}
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self.ViewUI, 0)
@@ -300,10 +289,10 @@ function M:CreatePlayerActor()
     self.ArmoryPlayer.PlayerAnimInstance:SetKawiiLayerState(EKawaiiLayerState.EKLS_Armory)
   end
   self.ArmoryPlayer:SetCharacterTag("Interactive")
-  self.ArmoryPlayer.IsInArmory = true
   self.ArmoryPlayer:K2_SetActorTransform(Player:GetTransform(), false, nil, false)
   self.ArmoryHelper:SetPlayer(self.ArmoryPlayer)
   self.ArmoryHelper:SetViewActor(self.ArmoryPlayer)
+  self.ViewActorType = self.ViewActorTypes.Player
   if not self.bPreviewSceneLoaded then
     local Trans = self.ArmoryHelper:OpenArmoryTransformCheck()
     if Trans then
@@ -312,7 +301,6 @@ function M:CreatePlayerActor()
   end
   CalculatePlayerTrans(self, Params)
 end
-
 function M:ChangeRealPlayerInfo()
   if self.IsPreviewMode or self.IsSecondary then
     return
@@ -337,13 +325,9 @@ function M:ChangeRealPlayerInfo()
     Player:RecoverBanSkills()
     UE4.UPhantomFunctionLibrary.CancelAllPhantom(Player, EDestroyReason.PhantomChangeRole)
     EventManager:FireEvent(EventID.OnSwitchRole, Avatar.CurrentChar)
-    Player:SyncLocationImmediately()
   else
-    Player:SyncUsingWeaponDelay()
-    Player:SyncLocationImmediately()
   end
 end
-
 function M:HidePlayerActor(Tag, IsHidden, bDontSaveTag)
   if not IsValid(self.ArmoryPlayer) then
     return
@@ -354,24 +338,29 @@ function M:HidePlayerActor(Tag, IsHidden, bDontSaveTag)
   self.ArmoryPlayer:SetActorHideTag(Tag, IsHidden, false, true)
   self.ArmoryPlayer:HideAllEffectCreature(Tag, IsHidden)
 end
-
+function M:ClearPlayerHideTag()
+  if not IsValid(self.ArmoryPlayer) then
+    return
+  end
+  local Tags = self.ArmoryPlayer.HideTags:ToTable()
+  for key, Tag in pairs(Tags) do
+    self:HidePlayerActor(Tag, false)
+  end
+end
 function M:BeforeViewActorChanged()
   if self.ViewActorType == self.ViewActorTypes.Player then
     self:HidePlayerActor(self.UIName, true)
   end
 end
-
 function M:AfterViewActorChanged()
   if self.ViewActorType == self.ViewActorTypes.Player and not self.LTweenHandle_PlayDisappearFX then
     self:HidePlayerActor(self.UIName, false)
   end
 end
-
 function M:CharLvUpOrBreakUp()
   local ArmoryPlayer = self.ArmoryPlayer
   ArmoryPlayer.FXComponent:PlayEffectByIDParams(303, {bTickEvenWhenPaused = true, NotAttached = true})
 end
-
 function M:StopPlayerMontage()
   for key, value in pairs(self.PlayerMontageTimerKeys) do
     self.ViewUI:RemoveTimer(key)
@@ -379,21 +368,20 @@ function M:StopPlayerMontage()
   self.PlayerMontageTimerKeys = {}
   local Player = self:GetPlayerActor()
   Player:StopMontage()
+  self:StopMVPSequence()
+  self.CurMontageTag = "None"
 end
-
 function M:StopPlayerFX()
   for key, value in pairs(self.PlayerFXTimerKeys) do
     self.ViewUI:RemoveTimer(key)
   end
   self.PlayerFXTimerKeys = {}
 end
-
 function M:Component_OnClosed()
   self:StopPlayerSound()
   self:HidePlayerActor(self.UIName, true)
 end
-
-function M:Component_OnDestruct()
+function M:Component_DestroyActors()
   self.CurrentCharInfo = nil
   for Tag, bIsHidden in pairs(self.PlayerActorHideTags) do
     if bIsHidden then
@@ -420,5 +408,4 @@ function M:Component_OnDestruct()
   end
   self:LoadPlayerInfo()
 end
-
 return M

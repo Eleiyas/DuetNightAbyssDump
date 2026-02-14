@@ -23,7 +23,6 @@ local M = Class("BluePrints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:Initialize(Initializer)
   self.MainTabs = {
     {
@@ -42,7 +41,6 @@ function M:Initialize(Initializer)
     CommonConst.SystemVoices.KR
   }
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.RecordTabs = {}
@@ -78,7 +76,6 @@ function M:Construct()
   self:InitKeySetting()
   self:RefreshBaseInfo()
 end
-
 function M:Destruct()
   AudioManager(self):SetEventSoundParam(self, "CharVoice", {ToEnd = 1})
   self:PlayAnimation(self.Out)
@@ -95,7 +92,6 @@ function M:Destruct()
   UFMODBlueprintStatics.LoadBanksWithLanguage(Language)
   self.Super.Destruct(self)
 end
-
 function M:InitKeySetting()
   self.TopTabLeftKey = "Q"
   self.GamepadTopTabLeftKey = Const.GamepadLeftShoulder
@@ -119,39 +115,30 @@ function M:InitKeySetting()
   self.KeyDownEvent[self.LeftMouseButton] = self.OnMenuCloseKeyDown
   self.KeyDownEvent[self.SortUpKey] = self.OnSortUpKeyDown
 end
-
 function M:OnMenuCloseKeyDown()
   EventManager:FireEvent(EventID.OnMenuClose)
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   return self:OnMouseWheelScroll(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return self:OnPointerMove(MyGeometry, MouseEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnPointerMove(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -162,15 +149,12 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnTopTabLeftKeyDown()
   self.Tab_File:TabToLeft()
 end
-
 function M:OnTopTabRightKeyDown()
   self.Tab_File:TabToRight()
 end
-
 function M:OnBackKeyDown()
   if self.SelectedContent then
     if self.SelectedContent.UI then
@@ -189,11 +173,10 @@ function M:OnBackKeyDown()
     self:RefreshScrollGamepadVisibility(false)
     return
   end
-  self:AddTimer(0.15, function()
+  self:AddTimer(0.25, function()
     self:Close()
   end)
 end
-
 function M:OnBackBtnClicked()
   if self.SelectedContent then
     if self.SelectedContent.UI then
@@ -205,7 +188,6 @@ function M:OnBackBtnClicked()
     self:Close()
   end)
 end
-
 function M:Close()
   self:ClearPlayingVoice()
   CommonConst.ArmoryVoice = nil
@@ -225,7 +207,6 @@ function M:Close()
     ArmoryMain:UpdateMontageAndCamera()
   end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Parent, self.Char, self.InitTabName, self.bEnableReddot = ...
@@ -251,7 +232,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "CharVoice", nil)
 end
-
 function M:AddReddotListen()
   if not self.bEnableReddot then
     return
@@ -259,14 +239,12 @@ function M:AddReddotListen()
   if not self.ReddotNames then
     self.ReddotNames = {}
   end
-  
   local function TabCallback(Count, TabConf, TabWidget, Type)
     TabConf[Type].IsNew = Count > 0
     if TabWidget and TabWidget.Idx == Type then
       TabWidget:SetReddot(Count > 0)
     end
   end
-  
   local CharId = self.Char.CharId
   local CharacterData = DataMgr.CharacterDataTarget[CharId]
   for Idx, TabTag in ipairs(ArmoryUtils.FilesTabType) do
@@ -294,13 +272,11 @@ function M:AddReddotListen()
     end
   end
 end
-
 function M:RemoveReddotlisten()
   for NodeName, _ in pairs(self.ReddotNames or {}) do
     ReddotManager.RemoveListener(NodeName, self)
   end
 end
-
 function M:Init(Char)
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
   if ArmoryMain then
@@ -372,7 +348,6 @@ function M:Init(Char)
   self.Tab_File:UpdateReddots()
   self:InitCharInfos()
 end
-
 function M:InitCharInfos()
   local CharData = DataMgr.CharacterData[self.Char.CharId]
   if CharData then
@@ -386,22 +361,30 @@ function M:InitCharInfos()
     }, CommonConst.SystemLanguage))
     self.Force:SetText(GText("UI_Chardata_Char_Force") .. ": ", GText(CharData.CharForce))
     self.Language2Idx = {}
+    self.LanguageDownloadedList = {}
     self.LanguageDisplayList = {}
+    local CacheName = TArray("")
     for i, value in ipairs(self.Languages) do
-      table.insert(self.LanguageDisplayList, GText("UI_Voice_Actor_" .. value) .. ": " .. GText(CharData["Cv" .. value .. "Name"] or ""))
-      self.Language2Idx[value] = i
+      CacheName:Add(value)
+    end
+    local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
+    local VoiceDownloadedRes = HotUpdateSubsystem:IsVoicesDownloaded(CacheName):ToTable()
+    for i, value in ipairs(self.Languages) do
+      if VoiceDownloadedRes[value] then
+        table.insert(self.LanguageDisplayList, GText("UI_Voice_Actor_" .. value) .. ": " .. GText(CharData["Cv" .. value .. "Name"] or ""))
+        self.Language2Idx[value] = #self.LanguageDisplayList
+        table.insert(self.LanguageDownloadedList, value)
+      end
     end
     self.Sort_Voice:Init(self.LanguageDisplayList, "LS", self)
     self.Sort_Voice:SelectItem(self.Language2Idx[self.CurrentVoiceLanguage])
   end
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:BlockAllUIInput(false)
   self:SetFocus()
 end
-
 function M:OnTopTabSelected(TabWidget, Content)
   EventManager:FireEvent(EventID.OnMenuClose)
   self:ClearPlayingVoice()
@@ -426,28 +409,47 @@ function M:OnTopTabSelected(TabWidget, Content)
     self:InitSubTabs()
   end)
 end
-
 function M:InitSubTabs()
   local subTabs = self[self.CurrentTopTabType .. "Tabs"] or {}
   self.List_Tab:ClearListItems()
   self.List_Tab:SetVisibility(UIConst.VisibilityOp.Visible)
+  local CharDataTarget
+  if self.CurrentTopTabType == RecordTag then
+    CharDataTarget = DataMgr.CharacterDataTarget[self.Char.CharId]
+  end
+  local firstValidIdx
   for i, subTab in ipairs(subTabs) do
-    local Item = NewObject(UIUtils.GetCommonItemContentClass())
-    Item.Idx = i
-    Item.Text = subTab.Text
-    Item.Parent = self
-    Item.OnClicked = self.OnSubTabClicked
-    Item.OnAddedToFocusPath = {
-      Obj = self,
-      Callback = self.OnSubTabAddedToFocusPath,
-      Params = Item
-    }
-    Item.IconPath = SubItemIconPath[subTab.Type][i]
-    Item.Info = subTab
-    Item.IsSelected = 1 == i
-    Item.TabType = self.CurrentTopTabType
-    Item.CharId = self.Char.CharId
-    self.List_Tab:AddItem(Item)
+    local shouldAdd = true
+    if self.CurrentTopTabType == RecordTag then
+      shouldAdd = false
+      if CharDataTarget then
+        for _, Data in pairs(CharDataTarget) do
+          if Data.CharDataType == i then
+            shouldAdd = true
+            break
+          end
+        end
+      end
+    end
+    if shouldAdd then
+      firstValidIdx = firstValidIdx or i
+      local Item = NewObject(UIUtils.GetCommonItemContentClass())
+      Item.Idx = i
+      Item.Text = subTab.Text
+      Item.Parent = self
+      Item.OnClicked = self.OnSubTabClicked
+      Item.OnAddedToFocusPath = {
+        Obj = self,
+        Callback = self.OnSubTabAddedToFocusPath,
+        Params = Item
+      }
+      Item.IconPath = SubItemIconPath[subTab.Type][i]
+      Item.Info = subTab
+      Item.IsSelected = i == firstValidIdx
+      Item.TabType = self.CurrentTopTabType
+      Item.CharId = self.Char.CharId
+      self.List_Tab:AddItem(Item)
+    end
   end
   self.List_Tab:RegenerateAllEntries()
   if not self.IsFirstOpen then
@@ -464,7 +466,6 @@ function M:InitSubTabs()
     end
   end)
 end
-
 function M:OnSubTabClicked(Item)
   if not Item then
     return
@@ -495,18 +496,15 @@ function M:OnSubTabClicked(Item)
   end
   self:OnSubTabSelected(Item)
 end
-
 function M:OnSubTabAddedToFocusPath(Item)
   if not self.AutoSelectSubTab and self.CurInputDevice == ECommonInputType.Gamepad then
     self.AutoSelectSubTab = true
     Item.Widget:Btn_Clicked()
   end
 end
-
 function M:SetItemReddotRead(Content)
   ArmoryUtils:SetReddotRead(Content, true)
 end
-
 function M:ChangeSelectedContent(Content)
   if self.SelectedContent == Content then
     self.SelectedContent = nil
@@ -517,7 +515,6 @@ function M:ChangeSelectedContent(Content)
     self.SelectedContent = Content
   end
 end
-
 function M:OnRecordSubTabSelected(TabWidget)
   self.Sort_Voice:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.Panel_Voice:IsVisible() then
@@ -556,7 +553,7 @@ function M:OnRecordSubTabSelected(TabWidget)
     local perfix = Data.CharDataName and Data.CharDataName[1] or " "
     local suffix = Data.CharDataName and Data.CharDataName[2] or " "
     if " " == perfix and " " == suffix then
-      print("Error: \230\161\163\230\161\136\229\137\141\229\144\142\231\188\128\231\154\134\231\169\186")
+      print("Error: 档案前后缀皆空")
     end
     Obj.Title = GText(perfix) .. GText(suffix)
     Obj.SubTitle = GText(Data.CharDataTargetDescribe)
@@ -587,7 +584,6 @@ function M:OnRecordSubTabSelected(TabWidget)
     self.ScrollBox_File:SetFocus()
   end
 end
-
 function M:OnCharVoiceSubTabSelected(TabWidget)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Sort_Voice:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -642,35 +638,41 @@ function M:OnCharVoiceSubTabSelected(TabWidget)
     Obj.IsSelected = false
     Obj.IsPlaying = false
     Obj.Title = Des
-    if Data.UnlockDialogue then
-      Obj.UnlockDialogue = Data.UnlockDialogue
-      local DialogueUnlocked = Avatar:CheckSignBoardNpcTalkIsRecord(Data.UnitId, Data.UnlockDialogue)
-      if not DialogueUnlocked and (not Data.UnlockOption or not ConditionUtils.CheckCondition(Avatar, Data.UnlockOption, false)) then
-        Obj.IsLocked = true
-        Obj.Title = GText(Data.LockedDes)
-      end
-    elseif Data.UnlockOption then
-      local IsUnlocked = ConditionUtils.CheckCondition(Avatar, Data.UnlockOption, false)
-      if not IsUnlocked then
-        Obj.IsLocked = true
-        Obj.Title = GText(Data.LockedDes)
-      end
+    if Data.VoiceChar then
+      local CurrentSkinTag = self:GetCharSkinTag()
+      if Data.VoiceChar ~= CurrentSkinTag then
     end
-    if not Obj.IsLocked then
-      local WildcardSubsystem = UWildcardGameInstanceSubsystem.GetSubsystem(GWorld.GameInstance)
-      Obj.Details = WildcardSubsystem:ReplaceWildcard(GText(Data.VoiceText and Data.VoiceText[1]))
-      Obj.VoiceRes = Data.VoiceRes and Data.VoiceRes[1]
-      if Data.Dialogue then
-        local Dialogue = DataMgr.Dialogue[Data.Dialogue]
-        Obj.CharDetails = GText(Dialogue.Content)
+    else
+      if Data.UnlockDialogue then
+        Obj.UnlockDialogue = Data.UnlockDialogue
+        local DialogueUnlocked = Avatar:CheckSignBoardNpcTalkIsRecord(Data.UnitId, Data.UnlockDialogue)
+        if not DialogueUnlocked and (not Data.UnlockOption or not ConditionUtils.CheckCondition(Avatar, Data.UnlockOption, false)) then
+          Obj.IsLocked = true
+          Obj.Title = GText(Data.LockedDes)
+        end
+      elseif Data.UnlockOption then
+        local IsUnlocked = ConditionUtils.CheckCondition(Avatar, Data.UnlockOption, false)
+        if not IsUnlocked then
+          Obj.IsLocked = true
+          Obj.Title = GText(Data.LockedDes)
+        end
       end
+      if not Obj.IsLocked then
+        local WildcardSubsystem = UWildcardGameInstanceSubsystem.GetSubsystem(GWorld.GameInstance)
+        Obj.Details = WildcardSubsystem:ReplaceWildcard(GText(Data.VoiceText and Data.VoiceText[1]))
+        Obj.VoiceRes = Data.VoiceRes and Data.VoiceRes[1]
+        if Data.Dialogue then
+          local Dialogue = DataMgr.Dialogue[Data.Dialogue]
+          Obj.CharDetails = GText(Dialogue.Content)
+        end
+      end
+      Obj.OnBtnClicked = self.OnPlayVoiceBtnClicked
+      Obj.IsShowBtnPlay = true
+      local Widget = UIMgr:CreateWidget(ItemPath)
+      Widget:OnListItemObjectSet(Obj)
+      FileList:AddToContentList(Widget)
+      table.insert(self.Contents, Obj)
     end
-    Obj.OnBtnClicked = self.OnPlayVoiceBtnClicked
-    Obj.IsShowBtnPlay = true
-    local Widget = UIMgr:CreateWidget(ItemPath)
-    Widget:OnListItemObjectSet(Obj)
-    FileList:AddToContentList(Widget)
-    table.insert(self.Contents, Obj)
   end
   self.ScrollBox_File:ScrollToStart()
   if self.AutoSelectSubTab then
@@ -679,7 +681,17 @@ function M:OnCharVoiceSubTabSelected(TabWidget)
     self.ScrollBox_File:SetFocus()
   end
 end
-
+function M:GetCharSkinTag()
+  local Appearance = self.Char:GetAppearance(self.Char.CurrentAppearanceIndex)
+  if not Appearance then
+    return nil
+  end
+  local SkinData = DataMgr.Skin[Appearance.SkinId]
+  if SkinData and SkinData.SkinTag then
+    return SkinData.SkinTag
+  end
+  return nil
+end
 function M:OnListItemClicked(Content)
   if Content.IsLocked then
     ConditionUtils.CheckCondition(GWorld:GetAvatar(), Content.UnlockCondition, true)
@@ -696,7 +708,6 @@ function M:OnListItemClicked(Content)
     self["On" .. self.CurrentTopTabType .. "ItemClicked"](self, Content)
   end
 end
-
 function M:OnPlayVoiceBtnClicked(Content)
   if not Content then
     return
@@ -711,10 +722,11 @@ function M:OnPlayVoiceBtnClicked(Content)
     self:SetItemReddotRead(Content)
     local AudioManager = AudioManager(self)
     local Language = AudioManager:GetLanguage(self.CurrentVoiceLanguage)
-    self.VoiceEventInstance = AudioManager:PlayCharVoice(self.ArmoryPlayer, DataMgr.CharVoice[Content.CharId][Content.VoiceId].VoiceChar, Content.VoiceRes, Language, "ArmoryRoleVoice", true)
+    local OriginModelId = self.ArmoryPlayer.GetOriginModelId and self.ArmoryPlayer:GetOriginModelId() or 0
+    local CharName = DataMgr.CharVoice[Content.CharId][Content.VoiceId].VoiceChar or AudioManager:GetPlayerName_CPP(OriginModelId, OriginModelId)
+    self.VoiceEventInstance = AudioManager:PlayCharVoice(self.ArmoryPlayer, CharName, Content.VoiceRes, Language, "ArmoryRoleVoice", true)
   end
 end
-
 function M:OnCharVoiceItemClicked(Content)
   if not Content then
     return
@@ -735,7 +747,6 @@ function M:OnCharVoiceItemClicked(Content)
   end
   self.Text_Voice:SetText(Content.Details)
 end
-
 function M:OnRecordItemClicked(Content)
   if not Content then
     return
@@ -759,7 +770,6 @@ function M:OnRecordItemClicked(Content)
   self.Text_FileDetail:SetText(Content.Details)
   self.ScrollBox_FileDetail:ScrollToStart()
 end
-
 function M:RefreshScrollGamepadVisibility(bFileIn)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -843,7 +853,6 @@ function M:RefreshScrollGamepadVisibility(bFileIn)
     })
   end
 end
-
 function M:Tick()
   if self.VoiceEventInstance then
     local AudioManager = AudioManager(self)
@@ -854,7 +863,6 @@ function M:Tick()
     end
   end
 end
-
 function M:ChangeVoicePlayingContent(Content)
   if not Content then
     return
@@ -872,11 +880,9 @@ function M:ChangeVoicePlayingContent(Content)
     Content.IsPlaying = true
   end
 end
-
 function M:ClearPlayingVoice()
   self:OnCharVoiceEnd()
 end
-
 function M:OnCharVoiceEnd()
   if self.VoiceEventInstance then
     AudioManager(self):StopSound(self.ArmoryPlayer, "ArmoryRoleVoice")
@@ -890,15 +896,13 @@ function M:OnCharVoiceEnd()
   self.VoiceEventInstance = nil
   self.VoicePlayingContent = nil
 end
-
 function M:OnVoiceLanguageChanged(VoiceActorIndex)
-  self.CurrentVoiceLanguage = self.Languages[VoiceActorIndex]
+  self.CurrentVoiceLanguage = self.LanguageDownloadedList[VoiceActorIndex]
   CommonConst.ArmoryVoice = self.CurrentVoiceLanguage
   local Language = AudioManager(self):GetLanguage(self.CurrentVoiceLanguage)
   UFMODBlueprintStatics.LoadBanksWithLanguage(Language)
   self:ClearPlayingVoice()
 end
-
 function M:OnSubTabSelected(TabWidget)
   self.SelectedContent = nil
   self.VoicePlayingContent = nil
@@ -926,15 +930,12 @@ function M:OnSubTabSelected(TabWidget)
     self["On" .. TabType .. "SubTabSelected"](self, TabWidget)
   end
 end
-
 function M:OnSubTabLeftKeyDown()
   self.Tab_File:TabToLeft()
 end
-
 function M:OnSubTabRightKeyDown()
   self.Tab_File:TabToRight()
 end
-
 function M:OnSubTabUpKeyDown()
   local SubTabIdx = self.SelectedSubTab.Idx
   if SubTabIdx > 1 then
@@ -944,7 +945,6 @@ function M:OnSubTabUpKeyDown()
     end
   end
 end
-
 function M:OnSubTabDownKeyDown()
   local SubTabIdx = self.SelectedSubTab.Idx
   if SubTabIdx < self.List_Tab:GetNumItems() then
@@ -954,11 +954,9 @@ function M:OnSubTabDownKeyDown()
     end
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -967,7 +965,6 @@ function M:RefreshBaseInfo()
   end
   self:InitNavigationRules()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -986,11 +983,9 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:InitNavigationRules()
   self.List_Tab:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
 end
-
 function M:OnSortUpKeyDown()
   if self.CurrentTopTabType == RecordTag then
     return
@@ -998,7 +993,6 @@ function M:OnSortUpKeyDown()
   self.Sort_Voice:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Sort_Voice:FocusToSelf()
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.SelectedContent then
     return self.SelectedContent.UI
@@ -1011,7 +1005,6 @@ function M:BP_GetDesiredFocusTarget()
     end
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1025,6 +1018,5 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 AssembleComponents(M)
 return M

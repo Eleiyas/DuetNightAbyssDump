@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Rouge_DifficultyListItem_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Rouge_DifficultyListItem_C:Construct()
   self.Text_LvName:SetText(GText("UI_RL_LevelLimit"))
   self.Bg_List:BindEventOnClicked(self, self.OnSubCellClicked)
@@ -10,7 +9,6 @@ function WBP_Rouge_DifficultyListItem_C:Construct()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   end)
 end
-
 function WBP_Rouge_DifficultyListItem_C:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -21,12 +19,10 @@ function WBP_Rouge_DifficultyListItem_C:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function WBP_Rouge_DifficultyListItem_C:ItemSetNavigationRuleCustom(Obj, Func)
   self:SetNavigationRuleCustom(EUINavigation.Up, {Obj, Func})
   self:SetNavigationRuleCustom(EUINavigation.Down, {Obj, Func})
 end
-
 function WBP_Rouge_DifficultyListItem_C:InitInfo(DifficultyId, Index, Unlock)
   self.DifficultyId = DifficultyId
   local RougeLikeDifficulty = DataMgr.RougeLikeDifficulty
@@ -37,7 +33,6 @@ function WBP_Rouge_DifficultyListItem_C:InitInfo(DifficultyId, Index, Unlock)
   self:PlayAnimation(self.Normal)
   self.Bg_List:PlayAnimation(self.Bg_List.Normal)
 end
-
 function WBP_Rouge_DifficultyListItem_C:OnSubCellClicked()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -51,7 +46,6 @@ function WBP_Rouge_DifficultyListItem_C:OnSubCellClicked()
     return self.Func(self.Obj, table.unpack(self.Params))
   end
 end
-
 function WBP_Rouge_DifficultyListItem_C:UnSelected()
   self:StopAllAnimations()
   self:PlayAnimationReverse(self.Select)
@@ -60,7 +54,6 @@ function WBP_Rouge_DifficultyListItem_C:UnSelected()
   self.Bg_List.IsSelect = false
   self.IsSelect = false
 end
-
 function WBP_Rouge_DifficultyListItem_C:Selected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Select)
@@ -69,7 +62,6 @@ function WBP_Rouge_DifficultyListItem_C:Selected()
   self.Bg_List.IsSelect = true
   self.IsSelect = true
 end
-
 function WBP_Rouge_DifficultyListItem_C:RefreshState(Unlock)
   local Avatar = GWorld:GetAvatar()
   if nil == Unlock then
@@ -95,5 +87,4 @@ function WBP_Rouge_DifficultyListItem_C:RefreshState(Unlock)
     self.Image_Lock:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 return WBP_Rouge_DifficultyListItem_C

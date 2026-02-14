@@ -14,7 +14,6 @@ local RarityAnim = {
   "Purple",
   "Yellow"
 }
-
 function M:OnLoaded(...)
   local Info = (...)
   print(_G.LogTag, "LXZ OnLoaded", Info.FishingSpotId, Info.FishId)
@@ -22,8 +21,9 @@ function M:OnLoaded(...)
   self.FishId = Info.FishId
   self.FishingPage = Info.FishingPage
   self.FishSize = Info.FishSize
+  self.FishingSpotId = Info.FishingSpotId
   self.bIsNew = Info.IsNew
-  self:PlayAnimation(self.IN)
+  self.ExtraRewards = Info.Rewards
   self:BindToAnimationFinished(self.Out, {
     self,
     self.OnOutEnd
@@ -38,22 +38,58 @@ function M:OnLoaded(...)
       },
       Desc = GText("UI_CTL_Continue")
     })
+    self.Key_Check_Gamepad:CreateCommonKey({
+      KeyInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = UIConst.GamePadImgKey.RightTriggerAnalog
+        }
+      },
+      Desc = GText("UI_Controller_Introduction")
+    })
+    self.Key_Check_Gamepad_1:CreateCommonKey({
+      KeyInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
+        }
+      },
+      Desc = GText("UI_Controller_CheckDetails")
+    })
+    self.Key_Back_Gamepad:CreateCommonKey({
+      KeyInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = UIConst.GamePadImgKey.FaceButtonRight
+        }
+      },
+      Desc = GText("UI_BACK")
+    })
+    self.Key_Extra_GamePad:CreateGamepadKey(UIConst.GamePadImgKey.LeftThumb)
   end
   self:InitUnLockWidget()
+  self:InitExtraRewardList()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshInfoByInputTypeChange)
   self.CurMode = self.GameInputModeSubsystem:GetCurrentInputType()
   self:RefreshInfoByInputTypeChange(self.CurMode)
-  AudioManager(self):PlayUISound(self, "event:/ui/minigame/fish_info_unlock", nil, nil)
+  self:BindToAnimationFinished(self.Get_In, {
+    self,
+    self.OnINEnd
+  })
+  self.VX_Waterwave:SetVisibility(ESlateVisibility.HitTestInvisible)
 end
-
 function M:OnClickEmpty()
-  if self:IsPlayingAnimation(self.IN) then
+  if self:IsPlayingAnimation(self.Get_In) then
     return
   end
   self:PlayAnimation(self.Out)
 end
-
+function M:OnINEnd()
+  if not UIUtils.CheckScrollBoxCanScroll(self.Scroll_Box) then
+    self.Key_Check_Gamepad:SetVisibility(ESlateVisibility.Collapsed)
+  end
+end
 function M:OnOutEnd()
   local ResourceId = DataMgr.Fish[self.FishId].ResourceId
   UIUtils.ShowHudReward(GText("UI_Fishing_Reward"), {
@@ -66,16 +102,15 @@ function M:OnOutEnd()
   })
   self:Close()
 end
-
 function M:InitUnLockWidget()
   local Data = DataMgr.Fish[self.FishId]
   if not Data or not Data.ResourceId then
-    GWorld.logger.error("\233\177\188" .. self.FishId .. "\230\178\161\230\156\137\230\149\176\230\141\174\230\136\150\232\181\132\230\186\144id")
+    GWorld.logger.error("鱼" .. self.FishId .. "没有数据或资源id")
     return
   end
   local ResourceData = DataMgr.Resource[Data.ResourceId]
   if not ResourceData then
-    GWorld.logger.error("\233\177\188\232\181\132\230\186\144" .. Data.ResourceId .. "\230\178\161\230\156\137\232\181\132\230\186\144\230\149\176\230\141\174")
+    GWorld.logger.error("鱼资源" .. Data.ResourceId .. "没有资源数据")
     return
   end
   local IconPath = DataMgr.Fish[self.FishId].IconPath
@@ -83,27 +118,20 @@ function M:InitUnLockWidget()
     local Icon = LoadObject(IconPath)
     self.Icon_Fish:SetBrushResourceObject(Icon)
   end
-  print(_G.LogTag, "LXZ InitUnLockWidget", self.FishId, Data.FishType)
   if 3 == Data.FishType then
     self.Panel_Title:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    local Icon = LoadObject("/Game/UI/WBP/Common/VX/Angling/MI_Angling_FishMap_Tag_King.MI_Angling_FishMap_Tag_King")
-    self.RB_Tag:SetEffectMaterial(Icon)
-    self.VX_TagGlow:SetColorAndOpacity(self.Tag_Glow_King)
     self.Text_Title:SetText(GText("UI_Fishing_FishType_3"))
+    self.Text_Title:SetColorAndOpacity(self.Text_King)
     self.WS_Type:SetActiveWidgetIndex(0)
   elseif 2 == Data.FishType then
     self.Panel_Title:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    local Icon = LoadObject("/Game/UI/WBP/Common/VX/Angling/MI_Angling_FishMap_Tag_Variation.MI_Angling_FishMap_Tag_Variation")
-    self.RB_Tag:SetEffectMaterial(Icon)
-    self.VX_TagGlow:SetColorAndOpacity(self.Tag_Glow_Variation)
     self.Text_Title:SetText(GText("UI_Fishing_FishType_2"))
+    self.Text_Title:SetColorAndOpacity(self.Text_Variation)
     self.WS_Type:SetActiveWidgetIndex(1)
   elseif 4 == Data.FishType then
     self.Panel_Title:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    local Icon = LoadObject("/Game/UI/WBP/Common/VX/Angling/MI_Angling_FishMap_Tag_Variation.MI_Angling_FishMap_Tag_Variation")
-    self.RB_Tag:SetEffectMaterial(Icon)
-    self.VX_TagGlow:SetColorAndOpacity(self.Tag_Glow_Variation)
     self.Text_Title:SetText(GText("UI_Fishing_FishType_4"))
+    self.Text_Title:SetColorAndOpacity(self.Text_Variation)
     self.WS_Type:SetActiveWidgetIndex(1)
   else
     self.Panel_Title:SetVisibility(ESlateVisibility.Collapsed)
@@ -112,25 +140,43 @@ function M:InitUnLockWidget()
   local Icon = LoadObject(RarityBG[Rarity])
   self.Img_Quality:GetDynamicMaterial():SetTextureParameterValue("MainTex", Icon)
   self:PlayAnimation(self[RarityAnim[Rarity]])
+  if self.bIsNew then
+    if Rarity > 3 then
+      self:PlayAnimation(self.Unlock_SSR)
+    else
+      self:PlayAnimation(self.Unlock_R)
+    end
+  else
+    self:PlayAnimation(self.Get_In)
+  end
+  if 5 ~= Rarity then
+    AudioManager(self):PlayUISound(self, "event:/ui/minigame/fish_info_unlock", nil, nil)
+  else
+    AudioManager(self):PlayUISound(self, "event:/ui/minigame/fish_info_unlock_gold", nil, nil)
+  end
   self.Text_FishName:SetText(GText(ResourceData.ResourceName))
   self.Text_Describe:SetText(GText(ResourceData.DetailDes))
   self.Text_Lv:SetText(Data.FishLevel)
   self.List_Text:ClearListItems()
   local Weight = self:GetWeight()
-  local WeightContent = self:NewTextContent("/Game/UI/Texture/Static/Atlas/Angling/T_Angling_Icon06.T_Angling_Icon06", Weight)
+  local WeightContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Size.T_Angling_Size", Weight)
   self.List_Text:AddItem(WeightContent)
   local Place = self:GetPlace()
-  local PlaceContent = self:NewTextContent("/Game/UI/Texture/Static/Atlas/Angling/T_Angling_Icon08.T_Angling_Icon08", Place)
+  local PlaceContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Location.T_Angling_Location", Place)
   self.List_Text:AddItem(PlaceContent)
   if self.bIsNew then
     self.New:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.Text_Top:SetText(GText("UI_Fishing_UnlockFishBook"))
+    self.Text_VX:SetText(GText("UI_Fishing_UnlockFishBook"))
   else
     self.New:SetVisibility(ESlateVisibility.Collapsed)
     self.Text_Top:SetText(GText("UI_Fishing_Success"))
+    self.Text_VX:SetText(GText("UI_Fishing_Success"))
   end
+  local Text, FishAppearPeriod = self:GetDayNight()
+  local DayNightContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Time.T_Angling_Time", Text, FishAppearPeriod)
+  self.List_Text:AddItem(DayNightContent)
 end
-
 function M:GetWeight()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -138,42 +184,176 @@ function M:GetWeight()
   end
   return self.FishSize
 end
-
 function M:GetPlace()
-  local Data = DataMgr.Fish2FishingSpot[self.FishId]
+  local SpotData = DataMgr.FishingSpot[self.FishingSpotId]
+  if not SpotData or not SpotData.FishingSpotName then
+    return "找不到钓鱼点"
+  end
+  local Name = SpotData.FishingSpotName
+  return Name
+end
+function M:GetDayNight()
+  local Data = DataMgr.Fish[self.FishId]
   if not Data then
-    return "\230\137\190\228\184\141\229\136\176\233\146\147\233\177\188\231\130\185"
+    return "找不到鱼数据", nil
   end
-  for SpotId, Weight in pairs(Data) do
-    local SpotData = DataMgr.FishingSpot[SpotId]
-    if SpotData and SpotData.FishingSpotName then
-      local Name = SpotData.FishingSpotName
-      return Name
-    end
+  local FishAppearPeriod = Data.FishAppearPeriod
+  if not FishAppearPeriod then
+    return "找不到鱼活跃时段", nil
   end
-  return "\230\137\128\230\156\137\233\146\147\233\177\188\231\130\185\233\131\189\230\178\161\230\156\137\229\144\141\229\173\151"
+  return nil, FishAppearPeriod
 end
-
-function M:GetWeather()
-  return "bbbb"
-end
-
-function M:NewTextContent(IconPath, Text)
+function M:NewTextContent(IconPath, Text, FishAppearPeriod)
   local Class = LoadClass("/Game/UI/WBP/Angling/Widget/Angling_TextItem_Content.Angling_TextItem_Content")
   local Obj = NewObject(Class)
   Obj.IconPath = IconPath
   Obj.Text = Text
+  if FishAppearPeriod then
+    Obj.IsTime = true
+    for i, v in pairs(FishAppearPeriod) do
+      if 1 == v then
+        Obj.IsMorn = true
+      elseif 2 == v then
+        Obj.IsNoon = true
+      elseif 3 == v then
+        Obj.IsNight = true
+      end
+    end
+  end
   return Obj
 end
-
+function M:Play_ItemGlow()
+  if self.ExtraRewards then
+    AudioManager(self):PlayUISound(self, "event:/ui/minigame/fish_info_unlock_bonus", nil, nil)
+  end
+end
+function M:InitExtraRewardList()
+  self.List_ExtraItem:ClearListItems()
+  if not self.ExtraRewards then
+    self.Panel_Extra:SetVisibility(ESlateVisibility.Collapsed)
+  else
+    self.Text_Extra:SetText(GText("UI_Fishing_ExtraReward"))
+    self.Panel_Extra:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.VX_List:SetVisibility(ESlateVisibility.HitTestInvisible)
+    if self.ExtraRewards.PetUniqueId then
+      local Avatar = GWorld:GetAvatar()
+      local PetUnique = Avatar.Pets[self.ExtraRewards.PetUniqueId]
+      local Entry = PetUnique.Entry
+      local EntryList = {}
+      for i, v in pairs(Entry) do
+        table.insert(EntryList, v)
+      end
+      local Content = self:NewItemContent("Pet", PetUnique.PetId, nil, EntryList)
+      Content.Type = "Pet"
+      Content.BreakNum = 0
+      Content.IsPremium = false
+      self.List_ExtraItem:AddItem(Content)
+    else
+      for RewardType, RewardInfo in pairs(self.ExtraRewards) do
+        local RealType = string.gsub(RewardType, "s$", "")
+        for ItemId, ItemTable in pairs(RewardInfo) do
+          local Content = self:NewItemContent(RealType, ItemId, ItemTable["1"])
+          self.List_ExtraItem:AddItem(Content)
+        end
+      end
+    end
+  end
+end
+function M:NewItemContent(ItemType, ItemId, Count, EntryIds)
+  if 0 == ItemId or not DataMgr[ItemType] then
+    return nil
+  end
+  local ItemData = DataMgr[ItemType][ItemId]
+  if not ItemData then
+    print(_G.LogTag, "Error: Item Data is nil, ItemType:", ItemType, "ItemId", ItemId)
+    return nil
+  end
+  print(_G.LogTag, "LXZ NewItemContent", ItemId, Count, ItemData.Icon, EntryIds)
+  PrintTable(EntryIds)
+  local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+  Obj.ItemType = ItemType:gsub("^%l", string.upper)
+  Obj.Id = ItemId
+  Obj.Rarity = ItemData.Rarity or ItemData.WeaponRarity or 1
+  Obj.Icon = ItemData.Icon
+  Obj.Count = Count
+  Obj.IsShowDetails = true
+  Obj.PetEntry = EntryIds
+  return Obj
+end
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.DeviceInPc then
     self.Switcher_Text:SetActiveWidgetIndex(0)
+    self.Key_Extra_GamePad:SetVisibility(ESlateVisibility.Collapsed)
+    self.Scroll_Box:SetVisibility(ESlateVisibility.Visible)
   elseif CurInputDevice == ECommonInputType.Gamepad and self.DeviceInPc then
     self.Switcher_Text:SetActiveWidgetIndex(1)
+    self.Key_Extra_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Scroll_Box:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   elseif CurInputDevice == ECommonInputType.Touch then
     self.Switcher_Text:SetActiveWidgetIndex(0)
+    self.Key_Extra_GamePad:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
+function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "Gamepad_RightX" == InKeyName then
+    self.MoveDeltaX = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent)
+  elseif "Gamepad_RightY" == InKeyName then
+    self.MoveDeltaY = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent)
+  end
+  local InKeyName
+  if self.MoveDeltaY and 0 ~= self.MoveDeltaY then
+    if self.MoveDeltaY > 0.5 then
+      InKeyName = "Gamepad_RightStick_Up"
+    elseif self.MoveDeltaY < -0.5 then
+      InKeyName = "Gamepad_RightStick_Down"
+    end
+    local DeltaOffset = -1 * UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 5
+    local CurrentOffset = self.Scroll_Box:GetScrollOffset()
+    local NextOffset = math.clamp(CurrentOffset + DeltaOffset, 0, self.Scroll_Box:GetScrollOffsetOfEnd())
+    self.Scroll_Box:SetScrollOffset(NextOffset)
+  end
+  self.MoveDeltaY = 0
+  self.MoveDeltaY = 0
+  return UIUtils.Handled
+end
+function M:OnKeyDown(MyGeometry, InKeyEvent)
+  if not self.DeviceInPc then
+    return UE4.UWidgetBlueprintLibrary.UnHandled()
+  end
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) then
+    if "Gamepad_LeftThumbstick" == InKeyName then
+      self:OnClickLeftThumbstick()
+    elseif "Gamepad_FaceButton_Right" == InKeyName then
+      self:OnClickFaceButtonRight()
+    elseif "Gamepad_FaceButton_Bottom" == InKeyName then
+      self:OnClickFaceButtonBottom()
+    end
+  end
+  if "Escape" == InKeyName then
+    self:OnClickEmpty()
+  end
+end
+function M:OnClickLeftThumbstick()
+  if 1 == self.Switcher_Text:GetActiveWidgetIndex() then
+    self.List_ExtraItem:SetFocus()
+    self.Switcher_Text:SetActiveWidgetIndex(2)
+    self.Key_Extra_GamePad:SetVisibility(ESlateVisibility.Collapsed)
+  end
+end
+function M:OnClickFaceButtonRight()
+  if 2 == self.Switcher_Text:GetActiveWidgetIndex() then
+    self:SetFocus()
+    self.Switcher_Text:SetActiveWidgetIndex(1)
+    self.Key_Extra_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  end
+end
+function M:OnClickFaceButtonBottom()
+  if 1 == self.Switcher_Text:GetActiveWidgetIndex() then
+    self:OnClickEmpty()
+  end
+end
 return M

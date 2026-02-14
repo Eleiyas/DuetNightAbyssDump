@@ -1,6 +1,5 @@
 local function AssembleComponents(M, _components)
   local components = _components or rawget(M, "__Component__")
-  
   if not components then
     return
   end
@@ -36,12 +35,10 @@ local function AssembleComponents(M, _components)
           func(...)
         end
       end
-      
       M[name] = wrapper
     end
   end
 end
-
 local function AddSuperProps(Super, PropType, Target)
   if not Super then
     return
@@ -54,7 +51,6 @@ local function AddSuperProps(Super, PropType, Target)
     Target[k] = v
   end
 end
-
 local function FormatProperties(M)
   local implement_name = rawget(M, "__Props__")
   if not implement_name then
@@ -107,5 +103,4 @@ local function FormatProperties(M)
   M.Getters = getters
   rawset(M, "__Props__", nil)
 end
-
 return {AssembleComponents = AssembleComponents, FormatProperties = FormatProperties}

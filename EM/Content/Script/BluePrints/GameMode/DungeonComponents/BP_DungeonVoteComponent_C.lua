@@ -1,16 +1,15 @@
 require("UnLua")
 local BP_DungeonVoteComponent_C = Class()
-
 function BP_DungeonVoteComponent_C:InitVoteComponent()
   self.GameMode.EMGameState.DungeonVoteInterval = DataMgr.GlobalConstant.DungeonVoteInterval.ConstantValue or 15
 end
-
 function BP_DungeonVoteComponent_C:TriggerDungeonVoteBegin()
   if not self.GameMode.EMGameState:CheckGameModeStateEnable() then
-    DebugPrint("\229\137\175\230\156\172\231\138\182\230\128\129\228\184\141\230\173\163\231\161\174 \232\167\166\229\143\145\228\186\134TriggerDungeonVoteBegin")
+    DebugPrint("副本状态不正确 触发了TriggerDungeonVoteBegin")
     return
   end
   DebugPrint("DungeonVoteComponent:TriggerDungeonVoteBegin")
+  self.GameMode.IsInDungeonVote = true
   self.IsAllPlayersVotedTriggered = false
   self.GameMode:KickNotEnteredPlayers("VoteStart")
   self:InitDungeonVoteValues()
@@ -21,7 +20,6 @@ function BP_DungeonVoteComponent_C:TriggerDungeonVoteBegin()
     self.GameMode:AddDungeonEvent("OnDungeonVoteBegin")
   end
 end
-
 function BP_DungeonVoteComponent_C:InitDungeonVoteValues()
   self.GameMode.EMGameState.VoteValues:Clear()
   for _, PlayerCharacter in pairs(self.GameMode:GetAllPlayer()) do
@@ -29,7 +27,6 @@ function BP_DungeonVoteComponent_C:InitDungeonVoteValues()
   end
   UMapSyncHelper.SyncMap(self.GameMode.EMGameState, "VoteValues")
 end
-
 function BP_DungeonVoteComponent_C:OnAllPlayersVoted()
   if self.IsAllPlayersVotedTriggered then
     DebugPrint("DungeonVoteComponent:OnAllPlayersVoted Already triggered")
@@ -45,5 +42,4 @@ function BP_DungeonVoteComponent_C:OnAllPlayersVoted()
     self.GameMode:BpResetTimer("OnDungeonVoteBegin", VoteReadyCountTime, true, Const.GameModeEventServerClient)
   end
 end
-
 return BP_DungeonVoteComponent_C

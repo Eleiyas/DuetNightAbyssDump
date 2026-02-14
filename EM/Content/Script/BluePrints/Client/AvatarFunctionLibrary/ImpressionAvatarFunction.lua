@@ -1,5 +1,4 @@
 local M = {}
-
 function M:IsStorylineComplete(TalkTriggerId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -7,7 +6,6 @@ function M:IsStorylineComplete(TalkTriggerId)
   end
   return false
 end
-
 function M:IsStorylineUnComplete(TalkTriggerId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -15,7 +13,6 @@ function M:IsStorylineUnComplete(TalkTriggerId)
   end
   return false
 end
-
 function M:IsImpressionCheckSuccess(DialogueId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -23,7 +20,6 @@ function M:IsImpressionCheckSuccess(DialogueId)
   end
   return false
 end
-
 function M:IsImpressionCheckFailure(DialogueId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -31,5 +27,4 @@ function M:IsImpressionCheckFailure(DialogueId)
   end
   return false
 end
-
 return M

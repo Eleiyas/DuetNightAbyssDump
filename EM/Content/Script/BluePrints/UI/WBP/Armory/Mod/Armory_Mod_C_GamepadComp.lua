@@ -1,6 +1,5 @@
 local Component = {}
 local ModModel = ModController:GetModel()
-
 function Component:InitGamePad()
   if ModController:IsMobile() then
     return
@@ -49,14 +48,12 @@ function Component:InitGamePad()
     Desc = GText("UI_CTL_Select_Mod")
   })
 end
-
 function Component:FocusListSelectMod()
   if self.needNavigation then
     self.List_Select_Mod:SetFocus()
     self.IsFocusInSpecialItem = false
   end
 end
-
 function Component:Handle_OnGamePadDown(InKeyName)
   DebugPrint("thy    Handle_OnGamePadDown", InKeyName)
   if ModModel.PolarityEditModeData ~= nil then
@@ -197,10 +194,6 @@ function Component:Handle_OnGamePadDown(InKeyName)
     elseif "Gamepad_RightThumbstick" == InKeyName then
       self.Btn_EditPolarity:OnBtnClicked()
       return true
-    elseif "Gamepad_LeftThumbstick" == InKeyName then
-      self.Common_SortList_PC:SetFocus()
-      self.IsFocusInSpecialItem = true
-      return true
     elseif "Gamepad_Special_Left" == InKeyName then
       self.Btn_Info:SetFocus()
       self.Key_Gamepad:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -210,7 +203,6 @@ function Component:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function Component:Handle_OnGamePadUp(InKeyName)
   DebugPrint("thy    Handle_OnGamePadDown", InKeyName)
   if "Gamepad_FaceButton_Top" == InKeyName then
@@ -228,7 +220,6 @@ function Component:Handle_OnGamePadUp(InKeyName)
   end
   return false
 end
-
 function Component:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -243,7 +234,6 @@ function Component:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function Component:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if not ModController:IsGamepad() then
     self.Btn_Discharge:SetButtonIsLongPress(false)
@@ -268,7 +258,6 @@ function Component:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:SwitchMainUIToGamePad()
   end
 end
-
 function Component:BP_GetDesiredFocusTarget()
   if ModModel:IsInAutoEquip() then
     return nil
@@ -278,7 +267,6 @@ function Component:BP_GetDesiredFocusTarget()
   end
   return self:SetDefaultGamepadFocus()
 end
-
 function Component:SwitchMainUIToPCOrMoble()
   if self.Key_Gamepad then
     self.Key_Gamepad:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -296,7 +284,6 @@ function Component:SwitchMainUIToPCOrMoble()
   ModModel:SetGamePadSelectedStuff(nil, nil)
   self.IsFocusOnResourceBar = false
 end
-
 function Component:SetDefaultGamepadFocus()
   if ModModel.PolarityEditModeData ~= nil or ModModel:IsModUIPreview() then
     self.Mod_1:SetFocus()
@@ -330,7 +317,6 @@ function Component:SetDefaultGamepadFocus()
   self.LastSelectedItem = self.List_Role
   return self.List_Role
 end
-
 function Component:SwitchMainUIToGamePad()
   if self.Key_Gamepad then
     self.Key_Select:CreateCommonKey({
@@ -357,8 +343,6 @@ function Component:SwitchMainUIToGamePad()
   self.List_Select_Mod.BP_OnItemSelectionChanged:Add(self, self.OnModListItemChange)
   self:SetGamepadNavigationRule()
   self:SetDefaultGamepadFocus()
-  self.Sift:BindEventOnAddedToFocusPath(self, self.OnSiftAddedToFocusPath)
-  self.Sift:BindEventOnRemovedFromFocusPath(self, self.OnSiftRemovedFromFocusPath)
   self.Btn_Share:BindEventOnAddedToFocusPath(self, self.OnBtnCopyLinkAddedToFocusPath)
   self.Btn_Share:BindEventOnRemovedFromFocusPath(self, self.OnBtnCopyLinkRemovedFromFocusPath)
   if self.ItemDetailsWidget then
@@ -368,23 +352,12 @@ function Component:SwitchMainUIToGamePad()
   end
   self.Btn_Info:SetGamepadIconVisibility(false)
 end
-
-function Component:OnSiftAddedToFocusPath()
-  self.Common_SortList_PC.Img_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
-end
-
-function Component:OnSiftRemovedFromFocusPath()
-  self.Common_SortList_PC.Img_Key:SetVisibility(UIConst.VisibilityOp.Visible)
-end
-
 function Component:OnBtnCopyLinkAddedToFocusPath()
   self.Mod_Plan.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Component:OnBtnCopyLinkRemovedFromFocusPath()
   self.Mod_Plan.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function Component:SetGamepadNavigationRule()
   for i = 1, 9 do
     local mod = self["Mod_" .. i]
@@ -415,11 +388,6 @@ function Component:SetGamepadNavigationRule()
       })
     end
   end
-  self.Common_SortList_PC.Btn_SortType:SetNavigationRuleExplicit(EUINavigation.Right, self.Sift)
-  self.Common_SortList_PC.Btn_SortType:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
-  self.Common_SortList_PC.Btn_Filter_List:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
-  self.Common_SortList_PC.Btn_Filter_List:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
-  self.Sift:SetNavigationRuleExplicit(EUINavigation.Left, self.Common_SortList_PC.Btn_SortType)
   self.Sift:SetNavigationRuleExplicit(EUINavigation.Right, self.CheckBox_Mod)
   self.CheckBox_Mod:SetNavigationRuleExplicit(EUINavigation.Left, self.Sift)
   self.Mod_Plan.Btn_Plan:SetNavigationRuleExplicit(EUINavigation.Right, self.Mod_Plan.Btn_Edit)
@@ -444,7 +412,6 @@ function Component:SetGamepadNavigationRule()
     SkillItem.UI:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   end
 end
-
 function Component:OnModPlanNavigationDown()
   if not self.Mod_Plan.bExpandList then
     return nil
@@ -453,7 +420,6 @@ function Component:OnModPlanNavigationDown()
     self.Mod_Plan.List_Plan:NavigateToIndex(index - 1)
   end
 end
-
 function Component:RecoverFromGamepad()
   self:AddTimer(0.03, self.SetGamepadNavigationRule)
   self:PlayAnimationReverse(self.GamePad_Dark)
@@ -466,7 +432,6 @@ function Component:RecoverFromGamepad()
     self.Btn_EditPolarity:SetGamePadVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Component:SetModSlotHighlight(index)
   if nil == index then
     for i = 1, 9 do
@@ -482,7 +447,6 @@ function Component:SetModSlotHighlight(index)
     self.Image_Remind:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function Component:SetModListHighlight(Widget)
   if nil == Widget then
     for i = 1, 9 do
@@ -506,7 +470,6 @@ function Component:SetModListHighlight(Widget)
     self.LastHighlightWidget = Widget
   end
 end
-
 function Component:UpdatePolarityListIndex(indexChange)
   if self.PolarityEditWidget.List_Polarity == nil then
     return
@@ -520,13 +483,11 @@ function Component:UpdatePolarityListIndex(indexChange)
   local newIndex = math.clamp(index + indexChange, 0, MaxIndex)
   self.PolarityEditWidget.List_Polarity:SetSelectedIndex(newIndex)
 end
-
 function Component:OnModListItemChange(SelectItem, bIsSelect)
   if SelectItem then
     self.LastSelectedItem = SelectItem.UI
   end
 end
-
 function Component:HandleGamepadModSelection(Content)
   if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
     return
@@ -563,7 +524,6 @@ function Component:HandleGamepadModSelection(Content)
     end
   end
 end
-
 function Component:HandleGamepadModSlotSelection(SlotUIData)
   if ModModel:IsInPolarityEditMode() or ModModel:IsModUIPreview() then
     return UE.UWidgetBlueprintLibrary.Handled()
@@ -594,14 +554,12 @@ function Component:HandleGamepadModSlotSelection(SlotUIData)
     end
   end
 end
-
 function Component:EnterGamepadSelectionMode()
   self.Tip_Mod.Panel_Button:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:PlayAnimation(self.GamePad_Dark)
   self.Mod_Plan.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_EditPolarity:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 local HorizontalNavOrder = {
   [1] = {
     1,
@@ -618,7 +576,6 @@ local HorizontalNavOrder = {
     6
   }
 }
-
 function Component:GetNextAvailableModInRow(currentIndex, direction, rowIndex)
   local row = HorizontalNavOrder[rowIndex]
   local currentPosition = 1
@@ -647,7 +604,6 @@ function Component:GetNextAvailableModInRow(currentIndex, direction, rowIndex)
   end
   return nil
 end
-
 function Component:OnUINavigationMod(currentMod, direction, isFobidNavigation)
   local currentIndex = tonumber(string.match(currentMod:GetName(), "Mod_(%d+)"))
   local rowIndex = currentIndex <= 4 and 1 or 2
@@ -691,7 +647,6 @@ function Component:OnUINavigationMod(currentMod, direction, isFobidNavigation)
   end
   return currentMod
 end
-
 function Component:OnListModNavigationMod()
   if self.IsSelectModToItem then
     return nil
@@ -701,7 +656,6 @@ function Component:OnListModNavigationMod()
   end
   return self.Mod_5
 end
-
 function Component:OnResourceBarRemovedFromFocusPath()
   if self.IsFocusOnResourceBar and not self.IsProcessingFocusChange then
     self.IsProcessingFocusChange = true
@@ -710,7 +664,6 @@ function Component:OnResourceBarRemovedFromFocusPath()
     self.IsProcessingFocusChange = false
   end
 end
-
 function Component:SetFocus_Lua()
   if ModModel:IsInAutoEquip() then
     return
@@ -724,14 +677,12 @@ function Component:SetFocus_Lua()
     end
   end
 end
-
 function Component:OnRemovedFromFocusPath(InFocusEvent)
   self.IsFocusInSpecialItem = false
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_Gamepad:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Component:OnRoleListItemSelectionChanged(Content, IsSelected)
   if not IsSelected then
     return
@@ -743,7 +694,6 @@ function Component:OnRoleListItemSelectionChanged(Content, IsSelected)
     ModModel:SetGamePadSelectedStuff(nil, nil)
   end
 end
-
 function Component:UpdatePolarityListIndex(indexChange)
   if self.PolarityEditWidget.List_Polarity == nil then
     return
@@ -757,7 +707,6 @@ function Component:UpdatePolarityListIndex(indexChange)
   local newIndex = math.clamp(index + indexChange, 0, MaxIndex)
   self.PolarityEditWidget.List_Polarity:SetSelectedIndex(newIndex)
 end
-
 function Component:ChangePolarityListIndex(indexChange)
   self.Common_PolarityList_PC:UpdateListIndex(indexChange)
   if self.List_Select_Mod:HasFocusedDescendants() or self.List_Select_Mod:HasAnyUserFocus() then
@@ -765,7 +714,6 @@ function Component:ChangePolarityListIndex(indexChange)
   end
   ModModel:SetGamePadSelectedStuff(nil, nil)
 end
-
 function Component:SetKeySelectModGamePad(Desc)
   if not self.Key_SelectMod_GamePad then
     return
@@ -784,5 +732,4 @@ function Component:SetKeySelectModGamePad(Desc)
     })
   end
 end
-
 return Component

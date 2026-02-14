@@ -1,5 +1,4 @@
 local M = Class()
-
 function M:StartCameraKeepSightOnActor(Actor, KeepSightTime, CameraAxisLockType, Speed, OnFinish)
   self.KeepSightActor = Actor
   self.KeepSightTime = KeepSightTime
@@ -42,7 +41,6 @@ function M:StartCameraKeepSightOnActor(Actor, KeepSightTime, CameraAxisLockType,
     self:FinishKeepSight()
   end
 end
-
 function M:FinishKeepSight()
   self.bKeepingSightOnActor = false
   self.OwnerController:RemoveDisableRotationInputTag("CameraKeepSight")
@@ -65,7 +63,6 @@ function M:FinishKeepSight()
     NewFunc()
   end
 end
-
 function M:CameraKeepSightOnActorInTick(DeltaTime)
   if self.bKeepingSightOnActor then
     local X, Y
@@ -105,25 +102,20 @@ function M:CameraKeepSightOnActorInTick(DeltaTime)
     end
   end
 end
-
 function M:CameraLookToActor(Actor, Duration, EasingFunc, bDisableUserInput)
   local Owner = self:GetOwner()
-  
   local function OnEnd()
     if Owner and Owner.OnCameraLookToActorEnd and Owner.OnCameraLookToActorEnd:IsBound() then
       Owner.OnCameraLookToActorEnd:Broadcast(self)
     end
   end
-  
   local function OnNoneFound()
     if Owner and Owner.OnCameraLookToActorNoneFound and Owner.OnCameraLookToActorNoneFound:IsBound() then
       Owner.OnCameraLookToActorNoneFound:Broadcast(self)
     end
   end
-  
   self:CameraLookToTarget(Actor, nil, Duration, EasingFunc, bDisableUserInput, nil, nil, nil, false, false, OnEnd, OnNoneFound)
 end
-
 function M:CameraLookToTarget(Actor, BoneName, Duration, EasingFunc, bDisableUserInput, MaxAngle, MaxDistance, ObscuredMaxTime, bPauseWhenShooting, bLookAndLockOnTarget, OnEnd, OnNoneFound, OnInterrupt)
   if self.IsCameraLookingToTarget then
     self:StopCameraLookToTarget()
@@ -177,7 +169,6 @@ function M:CameraLookToTarget(Actor, BoneName, Duration, EasingFunc, bDisableUse
     self.OwnerPlayer:AddTimer(0.01, self.OnLookToTargetNoneFound, false, 0, "NoneFound")
   end
 end
-
 function M:StopCameraLookToTarget()
   self:ClearCurrentLockOnInfo()
   self.OwnerPlayer:RemoveTimer("CameraLineTrace")
@@ -200,11 +191,9 @@ function M:StopCameraLookToTarget()
     self.OnLookToTargetEnd()
   end
 end
-
 function M:StartCameraLineTrace()
   self.ObscuredTime = 0
   self.CameraLineTracingTickTime = 0.3
-  
   local function LineTraceTest()
     if not self.OwnerController or not self.OwnerController:IsPlayerController() then
       return
@@ -228,10 +217,8 @@ function M:StartCameraLineTrace()
       self.ObscuredTime = self.CameraLineTracingTickTime
     end
   end
-  
   self.OwnerPlayer:AddTimer(self.CameraLineTracingTickTime, LineTraceTest, true, 0, "CameraLineTrace")
 end
-
 function M:SetCameraPitchBySkill(ParametersTable)
   local NewRotation = FRotator(ParametersTable.Pitch, 0, 0)
   self:SetControlRotation_Lerp(NewRotation, ParametersTable.InterpTime, ParametersTable.InterpSpeed, false, nil)
@@ -239,12 +226,10 @@ function M:SetCameraPitchBySkill(ParametersTable)
     self.OwnerController:AddDisablePitchRotationInputTag(ParametersTable.InputTag)
   end
 end
-
 function M:EnablePitchRotInputBySkill(ParametersTable)
   if ParametersTable.InputTag then
     self.OwnerController:RemoveDisablePitchRotationInputTag(ParametersTable.InputTag)
     self:ResetCameraPitch()
   end
 end
-
 return M

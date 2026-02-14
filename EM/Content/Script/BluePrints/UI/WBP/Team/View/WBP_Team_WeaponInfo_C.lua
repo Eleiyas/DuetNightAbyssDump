@@ -2,14 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Text_Level_Name:SetText(GText("BATTLE_UI_BLOOD_LV"))
 end
-
 function M:Destruct()
 end
-
 function M:Init(WeaponId, WeaponLevel, WeaponType)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   DebugPrint(DebugTag, LXYTag, "WBP_Team_WeaponInfo_C:: WeaponId", WeaponId)
@@ -28,11 +25,9 @@ function M:Init(WeaponId, WeaponLevel, WeaponType)
   })
   self.Text_Level:SetText(WeaponLevel)
 end
-
 function M:OnIconLoadFinish(Object)
   if IsValid(self) and self.Icon_Info then
     self.Icon_Info:SetBrushResourceObject(Object)
   end
 end
-
 return M

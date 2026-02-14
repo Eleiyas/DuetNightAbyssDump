@@ -1,19 +1,16 @@
 require("unlua")
 local WBP_Common_Dialog_Item_Currency_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_Item_Currency_PC_C:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   self:BindDialogEvent(DialogEvent.HideDialogItem, self.HideDialogItem)
   self:BindDialogEvent("UpdateFunds", self.Show_Funds)
 end
-
 function WBP_Common_Dialog_Item_Currency_PC_C:InitContent(Params, PopupData, Owner)
   self.Owner = Owner
   self.PosIndex = self.Owner:GetItemIndex()
   self.SupportLSFocus = Params and Params.SupportLSFocus or false
   self:Show_Funds(Params, PopupData)
 end
-
 function WBP_Common_Dialog_Item_Currency_PC_C:Show_Funds(Params, PopupData)
   if Params and Params.Funds then
     local Widgets = self.HB_Item:GetAllChildren()
@@ -30,7 +27,8 @@ function WBP_Common_Dialog_Item_Currency_PC_C:Show_Funds(Params, PopupData)
           Denominator = value.FundNeed,
           CostText = value.CostText,
           CurrencyGamepadKey = Params.CurrencyGamepadKey,
-          NoColor = value.NoColor
+          NoColor = value.NoColor,
+          bShowNumerator = value.bShowNumerator
         }
         if value.PriceSign then
           InParams.PriceSign = value.PriceSign
@@ -52,7 +50,6 @@ function WBP_Common_Dialog_Item_Currency_PC_C:Show_Funds(Params, PopupData)
     self.Panel_Currency:SetVisibility(UE.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_Item_Currency_PC_C:HideDialogItem(Params, PopupData)
   if Params.DialogItemIndex == self.PosIndex then
     if Params.bHideDialogItem then
@@ -63,7 +60,6 @@ function WBP_Common_Dialog_Item_Currency_PC_C:HideDialogItem(Params, PopupData)
   end
   self.Owner:AutofitDialog()
 end
-
 function WBP_Common_Dialog_Item_Currency_PC_C:Focus2Currency(IsFocus)
   local IsFocusing = self:HasAnyFocus()
   if IsFocus and not IsFocusing then
@@ -81,7 +77,6 @@ function WBP_Common_Dialog_Item_Currency_PC_C:Focus2Currency(IsFocus)
   end
   return false
 end
-
 function WBP_Common_Dialog_Item_Currency_PC_C:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -94,5 +89,4 @@ function WBP_Common_Dialog_Item_Currency_PC_C:OnContentKeyDown(MyGeometry, InKey
   end
   return false
 end
-
 return WBP_Common_Dialog_Item_Currency_PC_C

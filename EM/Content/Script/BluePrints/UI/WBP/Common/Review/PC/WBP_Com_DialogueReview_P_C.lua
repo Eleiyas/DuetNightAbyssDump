@@ -1,9 +1,8 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
-    local KeyText = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("OpenMenu"))
+    local KeyText = CommonUtils:GetActionMappingKeyName("OpenMenu")
     self.Key_Close:CreateCommonKey({
       KeyInfoList = {
         {
@@ -18,7 +17,6 @@ function M:Construct()
   end
   self.Btn_Close:Init("Close", self, self.CloseSelf)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, DialogueList, ParentUI)
   self:SetFocus()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/level_event_review_show", nil, nil)
@@ -26,7 +24,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, DialogueList, ParentUI)
   self.ParentUI = ParentUI
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, DialogueList, ParentUI)
 end
-
 function M:InitList(DialogueList)
   self.ListView:ClearListItems()
   DebugPrint(#DialogueList)
@@ -38,7 +35,6 @@ function M:InitList(DialogueList)
     self.ListView:AddItem(Obj)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -49,7 +45,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return self.Super.OnPreviewKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function M:CloseSelf()
   if not self.IsInit then
     return
@@ -59,5 +54,4 @@ function M:CloseSelf()
     self.ParentUI:SetFocus()
   end
 end
-
 return M

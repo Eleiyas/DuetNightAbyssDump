@@ -3,7 +3,6 @@ local BP_SurvivalProComponent_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.GameMode.DungeonComponents.BP_SurvivalComponent_C"
 })
-
 function BP_SurvivalProComponent_C:InitSurvivalProComponent()
   self.GameMode = self:GetOwner()
   self.GameState = self.GameMode.EMGameState
@@ -13,7 +12,7 @@ function BP_SurvivalProComponent_C:InitSurvivalProComponent()
   self.MaxSurvivalValue = DataMgr.GlobalConstant.SurvivalValue.ConstantValue
   self.SurvivalProInfo = DataMgr.SurvivalPro[self.GameMode.DungeonId]
   if not self.SurvivalProInfo then
-    GameState(self):ShowDungeonError("SurvivalProComponent:\229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.GameMode.DungeonId)
+    GameState(self):ShowDungeonError("SurvivalProComponent:当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.GameMode.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.RoundTime = self.SurvivalProInfo.RoundTime or 180.0
@@ -28,10 +27,8 @@ function BP_SurvivalProComponent_C:InitSurvivalProComponent()
   self.SpMonsterInfos = {}
   self.GameMode:InitCreateEmergencyMonsterProb("Butcher", self, self.SurvivalProInfo)
 end
-
 function BP_SurvivalProComponent_C:InitSurvivalProBaseInfo()
 end
-
 function BP_SurvivalProComponent_C:RecordDungeonRoundData()
   local RoundData = {
     DungeonProgress = self.GameMode.EMGameState.DungeonProgress,
@@ -44,7 +41,6 @@ function BP_SurvivalProComponent_C:RecordDungeonRoundData()
   PrintTable(RoundData, 3)
   return RoundData
 end
-
 function BP_SurvivalProComponent_C:RecoverDungeonRoundData(Data)
   PrintTable(Data, 3)
   self.GameMode.EMGameState:SetDungeonProgress(Data.DungeonProgress)
@@ -54,7 +50,6 @@ function BP_SurvivalProComponent_C:RecoverDungeonRoundData(Data)
   self.MonsterSpawnIndex = Data.MonsterSpawnIndex
   self.bIsFirstRound = Data.bIsFirstRound
 end
-
 function BP_SurvivalProComponent_C:OnMonsterDeadOut()
   if not IsStandAlone(self) then
     return
@@ -68,7 +63,6 @@ function BP_SurvivalProComponent_C:OnMonsterDeadOut()
     self.MonsterDeadOut = 0
   end
 end
-
 function BP_SurvivalProComponent_C:TryToPostSurpossedLeave()
   local SupplyArray = UE4.UGameplayStatics.GetGameState(self).MechanismMap:FindRef("Supply").Array
   for i = 1, SupplyArray:Length() do
@@ -81,21 +75,18 @@ function BP_SurvivalProComponent_C:TryToPostSurpossedLeave()
     self.HasPostSurpossedLeave = true
   end
 end
-
 function BP_SurvivalProComponent_C:TryToPostBeginTutorial()
   if not self.HasPostBeginTutorial then
     self.GameMode:PostCustomEvent("SurvivalProBeginTutorial", Const.GameModeEventServerClient)
     self.HasPostBeginTutorial = true
   end
 end
-
 function BP_SurvivalProComponent_C:TryToPostFinishTutorial()
   if not self.HasPostFinishTutorial and self.HasPostBeginTutorial then
     self.GameMode:PostCustomEvent("SurvivalProFinishTutorial", Const.GameModeEventServerClient)
     self.HasPostFinishTutorial = true
   end
 end
-
 function BP_SurvivalProComponent_C:RoundsStart()
   DebugPrint("SurvivalProComponent: RoundsStart", self.GameMode.EMGameState.DungeonProgress)
   if 2 == self.GameMode.EMGameState.DungeonProgress and self.GameMode:GetNeedCreateEmergencyMonster("Pet") then
@@ -103,7 +94,6 @@ function BP_SurvivalProComponent_C:RoundsStart()
   end
   self:AddTimer(self.RoundTime, self.RoundsEnd, false, 0, "RoundsTimer")
 end
-
 function BP_SurvivalProComponent_C:RoundsEnd()
   if not self.GameMode.EMGameState:CheckGameModeStateEnable() then
     return
@@ -116,7 +106,6 @@ function BP_SurvivalProComponent_C:RoundsEnd()
   end
   self.GameMode:TriggerGameModeEvent("OnEachRoundEnd")
 end
-
 function BP_SurvivalProComponent_C:TriggerMonsterSpawn()
   if self.bIsFirstRound then
     return
@@ -129,19 +118,16 @@ function BP_SurvivalProComponent_C:TriggerMonsterSpawn()
   self:UpdateNewMonsterSpawnRule()
   self:RoundsStart()
 end
-
 function BP_SurvivalProComponent_C:ClearPreviousMonsterSpawnRule()
   if self.MonsterSpawnIndex > 0 then
     self.GameMode:TriggerDestoryMonsterSpawn(self:GetMonsterSpawnIdPro())
   end
 end
-
 function BP_SurvivalProComponent_C:UpdateNewMonsterSpawnRule()
   self.MonsterSpawnIndex = self.MonsterSpawnIndex + 1
   self.GameMode:TriggerCreateMonsterSpawn(self:GetMonsterSpawnIdPro())
   self.GameMode:CreateEmergencyMonsterEachWave("Butcher", self, self.SurvivalProInfo)
 end
-
 function BP_SurvivalProComponent_C:GetMonsterSpawnIdPro()
   local RealIndex = self.MonsterSpawnIndex % #self.LoopRule
   if 0 == RealIndex then
@@ -149,13 +135,11 @@ function BP_SurvivalProComponent_C:GetMonsterSpawnIdPro()
   end
   return self:TableToTArray(self.MonsterSpawnIds[self.LoopRule[RealIndex]])
 end
-
 function BP_SurvivalProComponent_C:TriggerMonsterFirstSpawn()
   if self.bIsFirstRound then
     self.GameMode:TriggerCreateMonsterSpawn(self:TableToTArray(self.MonsterFirstSpawnId))
   end
 end
-
 function BP_SurvivalProComponent_C:TriggerSpecialMonsterSpawn()
   local SpMonsterId = self:GetSpMonsterId()
   local SpMonsterSpawnRule = self.SpMonsterSpawnRules[SpMonsterId]
@@ -168,11 +152,10 @@ function BP_SurvivalProComponent_C:TriggerSpecialMonsterSpawn()
       self.GameMode:TriggerGameModeEvent("OnSpMonsterTimerEnd", SpMonsterId)
     end)
   else
-    GameState(self):ShowDungeonError("SurvivalProComponent:SurvivalPro\232\161\168\229\134\133\230\178\161\230\156\137\229\175\185\229\186\148\231\137\185\230\174\138\230\128\170\228\191\161\230\129\175\239\188\140Id\239\188\154" .. SpMonsterId .. ", " .. self.MonsterSpawnIndex)
+    GameState(self):ShowDungeonError("SurvivalProComponent:SurvivalPro表内没有对应特殊怪信息，Id：" .. SpMonsterId .. ", " .. self.MonsterSpawnIndex, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
   end
   self.GameMode:CreateEmergencyMonsterEachWave("Butcher", self, self.SurvivalProInfo)
 end
-
 function BP_SurvivalProComponent_C:GetSpMonsterId()
   local SpMonsterIndex = self.MonsterSpawnIndex // 2 + 1
   local RealIndex = SpMonsterIndex % #self.SpLoopRule
@@ -181,7 +164,6 @@ function BP_SurvivalProComponent_C:GetSpMonsterId()
   end
   return RealIndex
 end
-
 function BP_SurvivalProComponent_C:RealSpMonsterSpawn(SpMonsterId)
   DebugPrint("ljl_RealSpMonsterSpawn", SpMonsterId)
   local SpMonsterSpawnRule = self.SpMonsterSpawnRules[SpMonsterId]
@@ -189,14 +171,12 @@ function BP_SurvivalProComponent_C:RealSpMonsterSpawn(SpMonsterId)
     local SpMonsterSpawnId = SpMonsterSpawnRule.SpMonsterSpawnId
     self.GameMode:TriggerCreateMonsterSpawn(self:TableToTArray(SpMonsterSpawnId))
   else
-    GameState(self):ShowDungeonError("SurvivalProComponent:\231\137\185\230\174\138\230\128\170Id\233\148\153\232\175\175\239\188\140\230\163\128\230\159\165\232\147\157\229\155\190\239\188\129Id\239\188\154" .. SpMonsterId)
+    GameState(self):ShowDungeonError("SurvivalProComponent:特殊怪Id错误，检查蓝图！Id：" .. SpMonsterId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
   end
   self:ClearPreviousMonsterSpawnRule()
   self:AddTimer(self.MonsterSpawnDelay, self.UpdateNewMonsterSpawnRule, false, 0, "MonsterSpawnDelay")
 end
-
 function BP_SurvivalProComponent_C:GetWaveIndex()
   return self.MonsterSpawnIndex
 end
-
 return BP_SurvivalProComponent_C

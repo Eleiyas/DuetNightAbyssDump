@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
@@ -10,8 +9,7 @@ function M:Construct()
   EventManager:AddEvent(EventID.OnDungeonsUpdate, self, self.OnDungeonsUpdate)
   self:OpenDeputeUI("Regular")
   self:InitTab()
-  
-  function self.SubUIJumpFunc(...)
+  function self.SubUIJumpFunc(Root, ...)
     local args = {
       ...
     }
@@ -28,7 +26,6 @@ function M:Construct()
     self.JumpNightBooKTabName = nil
   end
 end
-
 function M:GetDeputeTabIndex(deputeType)
   local deputeTabMap = {
     Regular = 1,
@@ -38,11 +35,9 @@ function M:GetDeputeTabIndex(deputeType)
   }
   return deputeTabMap[deputeType] or 1
 end
-
 function M:Destruct()
   self:PlayAnimation(self.Out)
 end
-
 function M:RefreshDepute(ui, uiName)
   if ui then
     ui:InitContent(self)
@@ -50,8 +45,10 @@ function M:RefreshDepute(ui, uiName)
     print("Error: " .. uiName .. " SL is not initialized.")
   end
 end
-
 function M:OpenDeputeUI(deputeType)
+  if self.DeputeTabType == deputeType and IsValid(self[deputeType .. "UI"]) then
+    return
+  end
   self.DeputeTabType = deputeType
   self.PanelRoot:ClearChildren()
   local uiName = deputeType .. "UI"
@@ -65,7 +62,6 @@ function M:OpenDeputeUI(deputeType)
   Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   self:RefreshDepute(ui, uiName)
 end
-
 function M:InitTab()
   local SubTabList = {}
   local PlayTabInfo = {}
@@ -120,7 +116,6 @@ function M:InitTab()
   self.DeputeTab:SelectTab(1)
   self.DeputeTab:BindEventOnTabSelected(self, self.OnSubTabChanged)
 end
-
 function M:OnSubTabChanged(TabWidget)
   local SubTabData = self.PlayTabInfo[TabWidget.Idx]
   if not SubTabData then
@@ -136,7 +131,6 @@ function M:OnSubTabChanged(TabWidget)
     self:OpenDeputeUI("WeeklySelectDungeon")
   end
 end
-
 function M:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -154,37 +148,30 @@ function M:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnDungeonsUpdate()
   if self.Depute_WalnutUI then
     self:RefreshDepute(self.Depute_WalnutUI, "Depute_Walnut")
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
   end
   if self:HasFocusedDescendants() or self:HasAnyUserFocus() then
-    self:AddTimer(0.01, function()
-      if self.DeputeTabType == "Regular" then
-        self.RegularUI.List_Depute:NavigateToIndex(0)
-      elseif self.DeputeTabType == "NightBook" then
-        self.NightBookUI.List_NightBookItem:NavigateToIndex(0)
-      elseif self.DeputeTabType == "Walnut" then
-        self.WalnutUI.List_Walnut:SetFocus()
-      elseif self.DeputeTabType == "WeeklySelectDungeon" then
-        self.WeeklySelectDungeonUI.List_Weekly:SetFocus()
-      end
-    end, false, 0, "DeputeDetailListView")
+    if self.DeputeTabType == "Regular" then
+      self.RegularUI.List_Depute:NavigateToIndex(0)
+    elseif self.DeputeTabType == "NightBook" then
+      self.NightBookUI.List_NightBookItem:NavigateToIndex(0)
+    elseif self.DeputeTabType == "Walnut" then
+    elseif self.DeputeTabType == "WeeklySelectDungeon" then
+      self.WeeklySelectDungeonUI.List_Weekly:SetFocus()
+    end
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:SwitchIn()
   self:UpdatKeyDisplay()
 end
-
 function M:UpdatKeyDisplay()
   if not UIUtils.IsGamepadInput() then
     local Item = UIManager(self):GetUIObj("StyleOfPlay")
@@ -215,13 +202,11 @@ function M:UpdatKeyDisplay()
     Item:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 function M:CloseSelf()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   self:PlayAnimation(self.Out)
   Item:OnClickBack()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -231,18 +216,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if IsUseKeyAndMouse then
     self:UpdatKeyDisplay()
   elseif self:HasFocusedDescendants() or self:HasAnyUserFocus() then
-    self:AddTimer(0.01, function()
-      if self.DeputeTabType == "Regular" then
-        self.RegularUI.List_Depute:NavigateToIndex(0)
-      elseif self.DeputeTabType == "NightBook" then
-        self.NightBookUI.List_NightBookItem:NavigateToIndex(0)
-      elseif self.DeputeTabType == "Walnut" then
-        self.WalnutUI.List_Walnut:SetFocus()
-      elseif self.DeputeTabType == "WeeklySelectDungeon" then
-        self.WeeklySelectDungeonUI.List_Weekly:SetFocus()
-      end
-    end, false, 0, "DeputeDetailListView")
   end
 end
-
 return M

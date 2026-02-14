@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Text_Input.OnTextChanged:Add(self, self.OnInputTextChanged)
   self.Text_Input.OnReleased:Add(self, self.OnInputTextReleased)
@@ -15,7 +14,6 @@ function M:Construct()
   self.TipOutTimer = "TipOutTimer"
   self.NextFrameKey = "WBP_Chat_InputBlock_C_NextFrame"
 end
-
 function M:Destruct()
   self.Text_Input.OnTextChanged:Remove(self, self.OnInputTextChanged)
   self.Text_Input.OnReleased:Remove(self, self.OnInputTextReleased)
@@ -27,23 +25,18 @@ function M:Destruct()
     self:RemoveTimer(self.NextFrameKey, true)
   end
 end
-
 function M:SetOnTextChangedCallback(Callback)
   self.OnTextChangedCallback = Callback
 end
-
 function M:SetOnTextCommittedCallback(Callback)
   self.OnTextCommittedCallback = Callback
 end
-
 function M:FocusInputField()
-  Utils.Traceback(LXYTag, "ChatInputBlock::FocusInputField")
   self._bFocusing = true
   self.Text_Input:SetFocus()
   self:PlayAnimationForward(self.Click)
   self._bFocusing = false
 end
-
 function M:OnInputTextCommitted(Text, CommitType)
   if self._bFocusing then
     return
@@ -63,11 +56,9 @@ function M:OnInputTextCommitted(Text, CommitType)
     end, false, 0, self.NextFrameKey, true)
   end
 end
-
 function M:OnInputTextReleased()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_input_bar", nil, nil)
 end
-
 function M:OnInputTextChanged(Text)
   if "" == Text then
     self.Text_Input:SetHintText(GText("UI_Chat_InputHint"))
@@ -87,11 +78,9 @@ function M:OnInputTextChanged(Text)
     self.OnTextChangedCallback(self:GetText(), bOverLength)
   end
 end
-
 function M:GetText()
   return self.Text_Input:GetText()
 end
-
 function M:SetText(Text)
   self.Text_Input:SetText(Text)
   self:OnInputTextChanged(Text)
@@ -99,7 +88,6 @@ function M:SetText(Text)
     self.Text_Input:SetHintText(GText("UI_Chat_InputHint"))
   end
 end
-
 function M:ShowTip(bWaring, Text)
   if self:IsExistTimer(self.TipOutTimer) then
     self:RemoveTimer(self.TipOutTimer, true)
@@ -119,5 +107,4 @@ function M:ShowTip(bWaring, Text)
     self:PlayAnimation(self.Remind_Out)
   end, false, 0, self.TipOutTimer, true)
 end
-
 return M

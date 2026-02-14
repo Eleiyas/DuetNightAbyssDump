@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self:AddDispatcher(EventID.OnGetGuideBookReward, self, self.OnCellGetReward)
   self.Common_List_Subcell_PC:TryOverrideSoundFunc(function()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
   end)
 end
-
 function M:OnListItemObjectSet(Obj)
   self.IsEmpty = Obj.IsEmpty
   if self.IsEmpty then
@@ -53,7 +51,6 @@ function M:OnListItemObjectSet(Obj)
     self:_OnCellUnSelect()
   end
 end
-
 function M:OpenDetail()
   if self.IsEmpty then
     return
@@ -64,7 +61,6 @@ function M:OpenDetail()
   self.Parent.SelectedItem = self
   self.Parent:OpenDetail(self.GuideId, self.Index)
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   if self.IsEmpty then
     return
@@ -75,19 +71,16 @@ function M:BP_OnItemSelectionChanged(IsSelected)
     self:_SelectCell()
   end
 end
-
 function M:OnCellGetReward(GuideNoteId)
   if self.GuideNoteId ~= GuideNoteId then
     return
   end
   self.Common_Item_Subsize_New_PC:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:_OnCellUnSelect()
   self.Text_GuideName:SetDefaultColorAndOpacity(self.Text_NormalColor)
   self.Common_List_Subcell_PC:OnCellUnSelect()
 end
-
 function M:_SelectCell()
   self.Text_GuideName:SetDefaultColorAndOpacity(self.Text_SelectColor)
   self.Common_List_Subcell_PC:SelectCell()
@@ -96,5 +89,4 @@ function M:_SelectCell()
     self:OpenDetail()
   end
 end
-
 return M

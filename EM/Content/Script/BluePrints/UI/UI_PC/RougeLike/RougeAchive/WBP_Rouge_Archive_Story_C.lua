@@ -5,7 +5,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self)
   self.List_Item:ClearListItems()
@@ -19,7 +18,6 @@ function M:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:InitUIInfo(StoryInfo, DataModel)
   self.DataModel = DataModel
   self:InitReddot()
@@ -39,11 +37,9 @@ function M:InitUIInfo(StoryInfo, DataModel)
   end
   self:AddInputMethodChangedListen()
 end
-
 function M:InitReddot()
   ReddotManager.AddListener("RougeArchiveReward", self, self.OnArchiveRewardReddotChange)
 end
-
 function M:OnArchiveRewardReddotChange(Count)
   DebugPrint("Tianyi@ OnArchiveRewardReddotChange", Count)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("RougeArchiveReward")
@@ -52,7 +48,6 @@ function M:OnArchiveRewardReddotChange(Count)
   end
   self.ArchiveRewardBtn:SetReddot(Count > 0)
 end
-
 function M:InitTab()
   local TabConfigData = {
     PlatformName = self.PlatformName,
@@ -86,7 +81,6 @@ function M:InitTab()
   }
   self.Root:InitOtherPageTab(TabConfigData, nil, true, self, nil)
 end
-
 function M:ResortStoryData(StoryInfo)
   self.SeriesList = {}
   for Id, Data in pairs(DataMgr.RLRoomStorySeries) do
@@ -143,7 +137,6 @@ function M:ResortStoryData(StoryInfo)
   end
   self.CurSelectIndex = FirstIndex
 end
-
 function M:InitStoryItems()
   for Index, Data in ipairs(self.SeriesList) do
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -162,7 +155,6 @@ function M:InitStoryItems()
     self:SetAllNavigationRule()
   end, 2)
 end
-
 function M:SetAllNavigationRule()
   local ItemNum = self.List_Item:GetNumItems()
   for Index = 0, ItemNum - 1 do
@@ -173,7 +165,6 @@ function M:SetAllNavigationRule()
     end
   end
 end
-
 function M:InitBtns()
   self.Btn_Click.Group_PriceBG:SetVisibility(ESlateVisibility.Collapsed)
   self.Btn_Click.Panel_Group_Currency:SetVisibility(ESlateVisibility.Collapsed)
@@ -195,7 +186,6 @@ function M:InitBtns()
   self.ArchiveRewardBtn:InitView(self.DataModel)
   self.ArchiveRewardBtn:SetItemNum(RougeConst.ArchiveType.Story)
 end
-
 function M:HoverSeries(Item)
   self:ChangeBackGround(Item, Item.IsUnlocked)
   self.Btn_Click:SetVisibility(ESlateVisibility.Collapsed)
@@ -262,7 +252,6 @@ function M:HoverSeries(Item)
     })
   end
 end
-
 function M:ChooseSeries(Index, Item)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.LastSelectIndex and self.LastSelectIndex ~= Index then
     self.List_Item:GetItemAt(self.LastSelectIndex).UI:OnItemLoseSelection()
@@ -277,7 +266,6 @@ function M:ChooseSeries(Index, Item)
   self:PlayAnimation(self.Change)
   self:PlayAnimation(self.Change_Title)
 end
-
 function M:ChooseItem(Item)
   self.Btn_Click:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:SelectItem(Item)
@@ -291,7 +279,6 @@ function M:ChooseItem(Item)
     end, 4)
   end
 end
-
 function M:SelectItem(Item)
   self.Btn_Click.Btn_Click:SetForbidden(not Item.IsUnlocked)
   self.CurSelectIndex = nil
@@ -320,7 +307,6 @@ function M:SelectItem(Item)
   self.CurSelectSubItem = Item
   self.CurSelectItem = nil
 end
-
 function M:ChangeBackGround(Item, IsUnlocked)
   if IsUnlocked then
     if self.Group_Img:GetVisibility() == ESlateVisibility.Collapsed then
@@ -338,7 +324,6 @@ function M:ChangeBackGround(Item, IsUnlocked)
     self.Group_Img:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OpenItem()
   if not self.CurSelectSubItem then
     return
@@ -360,7 +345,6 @@ function M:OpenItem()
     self:AddTimer(self.Hide:GetEndTime(), self:SetVisibility(UIConst.VisibilityOp.Collapsed))
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   DebugPrint("@zyh OnUpdateUIStyleByInputTypeChange")
   self.Super.RefreshOpInfoByInputDevice(self, CurInputType, CurGamepadName)
@@ -370,7 +354,6 @@ function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   if UIUtils.HasAnyFocus(self.Root) then
     if self.CurSelectSubItem then
@@ -382,17 +365,14 @@ function M:InitGamepadView()
   self.Btn_Click.Key_GamePad:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Click.ImageSlot:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:InitKeyboardView()
   self.Btn_Click.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_Click.ImageSlot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:ReturnToArchive()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:PlayAnimationReverse(self.Hide)
 end
-
 function M:OnReturnKeyDown()
   self.Btn_Click.Btn_Click.OnClicked:Remove(self, self.OpenItem)
   self:RemoveAllDispatcher()
@@ -404,73 +384,75 @@ function M:OnReturnKeyDown()
     WidgetUI.Archive_StoryItem:SetFocus()
   end
 end
-
 function M:OpenReward()
   local Params = self:MakeRewardData()
   Params.ConfigData.Type = RougeConst.ArchiveType.Story
   UIManager(self):ShowCommonPopupUI(100173, Params, self)
 end
-
 function M:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local HaveReWardToGet = false
-      
+      DebugPrint("@@@RougeArchive GetAllRewards CallBack")
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Item = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
-        local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.Type)
-        local CanReceive = CurrentNum >= Item.ConfigData.Num
-        local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
-        if CanReceive and not IsGot then
-          HaveReWardToGet = true
-        end
-        Item.ConfigData.CanReceive = CanReceive
-        Item.ConfigData.RewardsGot = IsGot
-        if Item.SelfWidget then
-          Item.SelfWidget:RefreshBtn(IsGot)
+        if Item then
+          local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.ConfigData.Type)
+          local CanReceive = CurrentNum >= Item.ConfigData.Num
+          local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
+          if CanReceive and not IsGot then
+            HaveReWardToGet = true
+          end
+          DebugPrint("@@@RougeArchive GetAllRewards ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
+          Item.ConfigData.CanReceive = CanReceive
+          Item.ConfigData.RewardsGot = IsGot
+          if Item.SelfWidget then
+            Item.SelfWidget:RefreshBtn(IsGot)
+          end
         end
       end
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward, false, function()
         ReceiveAllParm.SelfWidget:SetFocus()
       end, ReceiveAllParm.SelfWidget)
       ReceiveAllParm.SelfWidget:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetAllRewards HaveReWardToGet", HaveReWardToGet)
     end
-    
     Avatar:GetRougeLikeManualReward(CallBack, ReceiveAllParm.SelfWidget.Type, -1)
   end
 end
-
 function M:GetReward(Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Errorcode, Rewards)
+      DebugPrint("@@@RougeArchive GetReward CallBack")
       local HaveReWardToGet = false
-      
       for i = 0, Content.Owner.List_Item:GetNumItems() - 1 do
         local Item = Content.Owner.List_Item:GetItemAt(i)
-        local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.Type)
-        local CanReceive = CurrentNum >= Content.ConfigData.Num
-        local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.SelfWidget.Type, Item.SelfWidget.ItemId)
-        if CanReceive and not IsGot then
-          HaveReWardToGet = true
-        end
-        Item.ConfigData.CanReceive = CanReceive
-        Item.ConfigData.RewardsGot = IsGot
-        if Item.SelfWidget then
-          Item.SelfWidget:RefreshBtn(IsGot)
+        if Item then
+          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.ConfigData.Type)
+          local CanReceive = CurrentNum >= Item.ConfigData.Num
+          local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.SelfWidget.Type, Item.SelfWidget.ItemId)
+          if CanReceive and not IsGot then
+            HaveReWardToGet = true
+          end
+          DebugPrint("@@@RougeArchive GetReward ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
+          Item.ConfigData.CanReceive = CanReceive
+          Item.ConfigData.RewardsGot = IsGot
+          if Item.SelfWidget then
+            Item.SelfWidget:RefreshBtn(IsGot)
+          end
         end
       end
       Content.Owner:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetReward HaveReWardToGet", HaveReWardToGet)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function()
         Content.SelfWidget:SetFocus()
       end, Content.SelfWidget)
     end
-    
     Avatar:GetRougeLikeManualReward(Callback, Content.SelfWidget.Type, Content.SelfWidget.ItemId)
   end
 end
-
 function M:MakeRewardData()
   local Avatar = GWorld:GetAvatar()
   local Params = {}
@@ -558,7 +540,6 @@ function M:MakeRewardData()
   Params.ConfigData.ReddotName = "RougeArchiveReward"
   return Params
 end
-
 function M:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -573,5 +554,15 @@ function M:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
+function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  local AddOffset = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent)
+  if "Gamepad_RightY" == InKeyName then
+    local CurrentOffset = self.List_Item:GetScrollOffset()
+    local ScrollOffset = math.clamp(CurrentOffset - AddOffset, 0, self.List_Item:GetScrollOffsetOfEnd())
+    self.List_Item:SetScrollOffset(ScrollOffset)
+  end
+  return UE4.UWidgetBlueprintLibrary.UnHandled()
+end
 return M

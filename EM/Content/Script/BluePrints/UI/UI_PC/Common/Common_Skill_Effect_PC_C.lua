@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:OnListItemObjectSet(Content)
   self.Text_SkillDescribe:SetText(Content.AttrName)
   self.Text_Basic:SetText(Content.AttrValue)
@@ -15,5 +14,4 @@ function M:OnListItemObjectSet(Content)
     self.Text_Rev:SetText("")
   end
 end
-
 return M

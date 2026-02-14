@@ -1,12 +1,12 @@
 require("UnLua")
+local LuaConst = require("EMLuaConst")
 local BP_TempleComponent_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_TempleComponent_C:InitTempleBaseInfo()
   self.GameMode = self:GetOwner().LevelGameMode
   self.TempleData = DataMgr.Temple[self.GameMode.DungeonId]
-  assert(self.TempleData, "TempleComponent: \231\165\158\229\186\153\231\142\169\230\179\149\232\175\187\232\161\168\229\164\177\232\180\165\239\188\140\228\188\160\229\133\165\231\154\132DungeonId: " .. tostring(self.GameMode.DungeonId))
+  assert(self.TempleData, "TempleComponent: 神庙玩法读表失败，传入的DungeonId: " .. tostring(self.GameMode.DungeonId))
   self.SuccessRule = self.TempleData.SucRule
   self.IsNoStarTemple = false
   local RewardId = self.TempleData.RewardId
@@ -37,20 +37,16 @@ function BP_TempleComponent_C:InitTempleBaseInfo()
   EventManager:FireEvent(EventID.OnTempleEnter)
   self.OnStageStart:Add(self, self.InterruptByArchiveID)
 end
-
 function BP_TempleComponent_C:TriggerTempleOnEnd()
   self:PauseTempleTimer()
 end
-
 function BP_TempleComponent_C:SetStarLevel(Value)
   DebugPrint("TempleComponent: SetStarLevel:", Value, "DungeonId:", self.GameMode.DungeonId, "SuccRule", self.SuccessRule)
   self.StarLevel = Value
 end
-
 function BP_TempleComponent_C:GetStarLevel()
   return self.StarLevel
 end
-
 function BP_TempleComponent_C:TempleSucceed()
   if self.IsNoStarTemple then
     self:SetStarLevel(1)
@@ -67,17 +63,14 @@ function BP_TempleComponent_C:TempleSucceed()
   end
   self.GameMode:TriggerDungeonWin()
 end
-
 function BP_TempleComponent_C:TempleFail()
   self.GameMode:TriggerDungeonFailed()
 end
-
 function BP_TempleComponent_C:CustomFinishInfo(AvatarStr)
   return {
     Star = self.StarLevel
   }
 end
-
 function BP_TempleComponent_C:GetSuccResult()
   if self.SuccessRule == "CountDown" then
     return self:GetRemainTempleTime()
@@ -91,8 +84,7 @@ function BP_TempleComponent_C:GetSuccResult()
     return 0
   end
 end
-
-function BP_TempleComponent_C:StartTempleDelay(Duration, DelayNode, ArchiveID, BreakID, ShowUI, Title)
+function BP_TempleComponent_C:StartTempleDelay(Duration, DelayNode, ArchiveID, BreakID, ShowUI, Title, RedCountdownTime)
   if not self.CurKey and not self.DelayKeys then
     self.CurKey = 0
     self.DelayKeys = {}
@@ -106,15 +98,14 @@ function BP_TempleComponent_C:StartTempleDelay(Duration, DelayNode, ArchiveID, B
     Time
   }
   self:AddTimer(Duration, self.DelayTimerEnd, false, 0, Key, nil, Key, DelayNode, ShowUI)
-  DebugPrint("zwk \230\183\187\229\138\160\228\186\134\228\184\128\228\184\170DelayNode ", Key, self:GetName())
+  DebugPrint("zwk 添加了一个DelayNode ", Key, self:GetName())
   if ShowUI then
-    EventManager:FireEvent(EventID.OnTempleDelayStart, Duration, Title)
+    EventManager:FireEvent(EventID.OnTempleDelayStart, Duration, Title, RedCountdownTime)
     self.CurShowingKey = Key
   end
 end
-
 function BP_TempleComponent_C:DelayTimerEnd(Key, DelayNode, ShowUI)
-  DebugPrint("zwk \230\137\167\232\161\140DelayTimerEnd ", Key, self:GetName())
+  DebugPrint("zwk 执行DelayTimerEnd ", Key, self:GetName())
   if not IsValid(DelayNode) then
     return
   end
@@ -125,7 +116,6 @@ function BP_TempleComponent_C:DelayTimerEnd(Key, DelayNode, ShowUI)
   end
   self.DelayKeys[Key] = nil
 end
-
 function BP_TempleComponent_C:InterruptAll()
   for k, _ in pairs(self.DelayKeys) do
     if self.CurShowingKey == k then
@@ -134,9 +124,8 @@ function BP_TempleComponent_C:InterruptAll()
     self:RemoveTimer(k)
     self.DelayKeys[k] = nil
   end
-  DebugPrint("zwk \230\137\147\230\150\173\229\133\168\233\131\168Delay\229\174\140\230\136\144")
+  DebugPrint("zwk 打断全部Delay完成")
 end
-
 function BP_TempleComponent_C:InterruptByBreakID(BreakID)
   if BreakID <= 0 then
     return
@@ -152,7 +141,6 @@ function BP_TempleComponent_C:InterruptByBreakID(BreakID)
     end
   end
 end
-
 function BP_TempleComponent_C:InterruptByArchiveID(ArchiveID, UseTimes)
   if ArchiveID <= 0 then
     return
@@ -167,13 +155,11 @@ function BP_TempleComponent_C:InterruptByArchiveID(ArchiveID, UseTimes)
       self.DelayKeys[k] = nil
     end
   end
-  DebugPrint("zwk \230\160\185\230\141\174Archive\233\152\182\230\174\181\230\137\147\230\150\173Delay\229\174\140\230\136\144")
+  DebugPrint("zwk 根据Archive阶段打断Delay完成")
 end
-
 function BP_TempleComponent_C:StartTempleTimer()
   self:AddTimer(1, self.TempleTiming, true, 0, "TempleTimer")
 end
-
 function BP_TempleComponent_C:TempleTiming()
   if not self.GameMode.EMGameState:CheckGameModeStateEnable() then
     self:PauseTempleTimer()
@@ -183,7 +169,6 @@ function BP_TempleComponent_C:TempleTiming()
   self.GameMode:TriggerGameModeEvent("OnAddingTempleTime")
   DebugPrint("TempleComponent: TempleTime =", self:GetTempleTime())
 end
-
 function BP_TempleComponent_C:AddToTempleTime(Value)
   self.GameMode.EMGameState.TempleTime = self.GameMode.EMGameState.TempleTime + Value
   EventManager:FireEvent(EventID.OnTempleTimeChanged, self.GameMode.EMGameState.TempleTime, self.TempleTimeThreshold)
@@ -195,89 +180,72 @@ function BP_TempleComponent_C:AddToTempleTime(Value)
     self.GameMode:TriggerGameModeEvent("OnTempleTimeReachesThreshold")
   end
 end
-
 function BP_TempleComponent_C:GetTempleTime()
   return self.GameMode.EMGameState.TempleTime
 end
-
 function BP_TempleComponent_C:GetRemainTempleTime()
   return self.TempleTimeThreshold - self.GameMode.EMGameState.TempleTime
 end
-
 function BP_TempleComponent_C:StopTempleTimer()
   self:RemoveTimer("TempleTimer")
   self.GameMode.EMGameState.TempleTime = 0
   EventManager:FireEvent(EventID.OnTempleTimeChanged, self.GameMode.EMGameState.TempleTime, self.TempleTimeThreshold)
 end
-
 function BP_TempleComponent_C:PauseTempleTimer()
   self:RemoveTimer("TempleTimer")
 end
-
 function BP_TempleComponent_C:SetTempleTimeThreshold(Value)
   EventManager:FireEvent(EventID.OnSetTempleLimit, "TIME", Value)
   self.TempleTimeThreshold = Value
 end
-
 function BP_TempleComponent_C:CheckScoreThreshold()
   if self.Score >= self.ScoreThreshold then
     self.GameMode:TriggerGameModeEvent("OnScoreReachesThreshold")
   end
 end
-
 function BP_TempleComponent_C:AddToScore(Value)
   EventManager:FireEvent(EventID.OnTempleScoreCollectChanged, self.Score + Value)
   self.Score = math.max(0, self.Score + Value)
   self.GameMode:TriggerGameModeEvent("OnAddingScore", self.Score)
   self:CheckScoreThreshold()
 end
-
 function BP_TempleComponent_C:SetScore(Value)
   EventManager:FireEvent(EventID.OnTempleScoreCollectChanged, Value)
   self.Score = math.max(0, Value)
   self:CheckScoreThreshold()
 end
-
 function BP_TempleComponent_C:GetScore()
   return self.Score
 end
-
 function BP_TempleComponent_C:SetScoreThreshold(Value)
   self.ScoreThreshold = Value
 end
-
 function BP_TempleComponent_C:CheckCollectionThreshold()
   if self.Collection >= self.CollectionThreshold then
     self.GameMode:TriggerGameModeEvent("OnCollectionReachesThreshold")
   end
 end
-
 function BP_TempleComponent_C:AddToCollection(Value)
   self.Collection = self.Collection + Value
   EventManager:FireEvent(EventID.OnTempleScoreCollectChanged, self.Collection)
   self.GameMode:TriggerGameModeEvent("OnAddingCollection", self.Collection)
   self:CheckCollectionThreshold()
 end
-
 function BP_TempleComponent_C:SetCollection(Value)
   self.Collection = Value
   EventManager:FireEvent(EventID.OnTempleScoreCollectChanged, self.Collection)
   self:CheckCollectionThreshold()
 end
-
 function BP_TempleComponent_C:GetCollection()
   return self.Collection
 end
-
 function BP_TempleComponent_C:SetCollectionThreshold(Value)
   self.CollectionThreshold = Value
 end
-
 function BP_TempleComponent_C:SetPlayerDeathMaxNum(Value)
   EventManager:FireEvent(EventID.OnSetTempleLimit, "LIFE", Value)
   self.PlayerDeathMaxNum = Value
 end
-
 function BP_TempleComponent_C:OnPlayerDead()
   self.PlayerDeathNum = self.PlayerDeathNum + 1
   EventManager:FireEvent(EventID.OnTempleDeathFallChanged, self.PlayerDeathMaxNum - self.PlayerDeathNum)
@@ -287,16 +255,13 @@ function BP_TempleComponent_C:OnPlayerDead()
     self.GameMode:TriggerGameModeEvent("OnPlayerDeathNumExceedMaxNum")
   end
 end
-
 function BP_TempleComponent_C:GetPlayerDeathNum()
   return self.PlayerDeathNum
 end
-
 function BP_TempleComponent_C:SetPlayerTriggerFallTriggerMaxNum(Value)
   EventManager:FireEvent(EventID.OnSetTempleLimit, "FALL", Value)
   self.PlayerTriggerFallTriggerMaxNum = Value
 end
-
 function BP_TempleComponent_C:OnPlayerTriggerFallTrigger()
   self.PlayerTriggerFallTriggerNum = self.PlayerTriggerFallTriggerNum + 1
   EventManager:FireEvent(EventID.OnTempleDeathFallChanged, self.PlayerTriggerFallTriggerMaxNum - self.PlayerTriggerFallTriggerNum)
@@ -306,15 +271,12 @@ function BP_TempleComponent_C:OnPlayerTriggerFallTrigger()
     self.GameMode:TriggerGameModeEvent("OnPlayerTriggerFallTriggerNumExceedMaxNum")
   end
 end
-
 function BP_TempleComponent_C:GetPlayerTriggerFallTriggerNum()
   return self.PlayerTriggerFallTriggerNum
 end
-
 function BP_TempleComponent_C:GetPlayerFailReason()
   return self.FailReason
 end
-
 function BP_TempleComponent_C:CheckScore(Score)
   if Score > self.Score then
     self.FailReason = "SCORE"
@@ -322,7 +284,6 @@ function BP_TempleComponent_C:CheckScore(Score)
   end
   return true
 end
-
 function BP_TempleComponent_C:AddStepPlatForm(GroupId, StepPlatFormEid)
   if not self.StepPlatformGroup then
     self.StepPlatformGroup = {}
@@ -332,7 +293,6 @@ function BP_TempleComponent_C:AddStepPlatForm(GroupId, StepPlatFormEid)
   end
   self.StepPlatformGroup[GroupId][StepPlatFormEid] = false
 end
-
 function BP_TempleComponent_C:AddDrone(GroupId, ManualItemId)
   if not self.DroneGroup then
     self.DroneGroup = {}
@@ -342,18 +302,15 @@ function BP_TempleComponent_C:AddDrone(GroupId, ManualItemId)
   end
   table.insert(self.DroneGroup[GroupId], ManualItemId)
 end
-
 function BP_TempleComponent_C:RemoveStepPlatForm(GroupId, StepPlatFormEid)
   if not self.StepPlatformGroup[GroupId] or not self.StepPlatformGroup[GroupId][StepPlatFormEid] then
     return
   end
   self.StepPlatformGroup[GroupId][StepPlatFormEid] = nil
 end
-
 function BP_TempleComponent_C:ActiveStepPlatform(StepPlatFormEid)
   self.CurrentStepPlayformEid = StepPlatFormEid
 end
-
 function BP_TempleComponent_C:OnStepPlatformChangeGreen(GroupId, StepPlatFormEid)
   if not self.StepPlatformGroup or not self.StepPlatformGroup[GroupId] then
     return
@@ -368,22 +325,18 @@ function BP_TempleComponent_C:OnStepPlatformChangeGreen(GroupId, StepPlatFormEid
   end
   self.GameMode:TriggerGameModeEvent("OnPlatformAllGreen", GroupId)
 end
-
 function BP_TempleComponent_C:OnStepPlatformLeaveGreen(GroupId, StepPlatFormEid)
   if not self.StepPlatformGroup or not self.StepPlatformGroup[GroupId] then
     return
   end
   self.StepPlatformGroup[GroupId][StepPlatFormEid] = false
 end
-
 function BP_TempleComponent_C:OnPlatformChangedColor(GroupId, ManualItemId, ColorType)
   self.GameMode:TriggerGameModeEvent("OnChangedColor", GroupId, ManualItemId, ColorType)
 end
-
 function BP_TempleComponent_C:OnPlayerOverlap(ManualItemId)
   self.GameMode:TriggerGameModeEvent("OnPlayerOverlapPlatform", ManualItemId)
 end
-
 function BP_TempleComponent_C:GetColorPlatformNum(GroupId, ColorType)
   local AllActors = TArray(AActor)
   local PlatformClass = LoadClass("/Game/BluePrints/Item/StepPlatform/BP_StepPlatFormBase.BP_StepPlatFormBase")
@@ -396,7 +349,6 @@ function BP_TempleComponent_C:GetColorPlatformNum(GroupId, ColorType)
   end
   return Num
 end
-
 function BP_TempleComponent_C:MovePlatform(ManualItemIds)
   for i, v in pairs(ManualItemIds:ToTable()) do
     local PlatForm = self.GameMode.EMGameState.ManualActiveCombat:Find(v)
@@ -405,20 +357,17 @@ function BP_TempleComponent_C:MovePlatform(ManualItemIds)
     end
   end
 end
-
 function BP_TempleComponent_C:MoveStepPlatform(ManualItemIds)
   self:MovePlatform(ManualItemIds)
   local PlatForm = self.GameMode.EMGameState.ManualActiveCombat:Find(ManualItemIds[1])
   return PlatForm.LinkArchiveID
 end
-
 function BP_TempleComponent_C:SetIsStepPlatformMoveEnd(ManualItemId, IsEnd)
   if not self.MoveStepPlatformStates then
     self.MoveStepPlatformStates = {}
   end
   self.MoveStepPlatformStates[ManualItemId] = IsEnd
 end
-
 function BP_TempleComponent_C:IsAllManualItemsMoveEnd(ManualItemIds)
   for i, v in pairs(ManualItemIds:ToTable()) do
     if self.MoveStepPlatformStates[v] == false then
@@ -427,11 +376,9 @@ function BP_TempleComponent_C:IsAllManualItemsMoveEnd(ManualItemIds)
   end
   return true
 end
-
 function BP_TempleComponent_C:OnPlayerLeaveColorRange()
   self.CurrentStepPlayformEid = -1
 end
-
 function BP_TempleComponent_C:SetStepPlatformSpeed(ManualItemIds, NewSpeed)
   for i, v in pairs(ManualItemIds:ToTable()) do
     local Platform = self.GameMode.EMGameState.ManualActiveCombat:Find(v)
@@ -440,7 +387,6 @@ function BP_TempleComponent_C:SetStepPlatformSpeed(ManualItemIds, NewSpeed)
     end
   end
 end
-
 function BP_TempleComponent_C:MoveRotator(ManualItemIds)
   for i, v in pairs(ManualItemIds:ToTable()) do
     local Rotator = self.GameMode.EMGameState.ManualActiveCombat:Find(v)
@@ -449,21 +395,18 @@ function BP_TempleComponent_C:MoveRotator(ManualItemIds)
     end
   end
 end
-
 function BP_TempleComponent_C:SetRotatorSequence(ManualItemId, Start, End)
   local Rotator = self.GameMode.EMGameState.ManualActiveCombat:Find(ManualItemId)
   Rotator:SetTargetRotation(Start)
   Rotator:StartRotate()
   Rotator:SetSequence(Start, End)
 end
-
 function BP_TempleComponent_C:SetIsRotateEnd(ManualItemId, IsEnd)
   if not self.RotatorStates then
     self.RotatorStates = {}
   end
   self.RotatorStates[ManualItemId] = IsEnd
 end
-
 function BP_TempleComponent_C:GetRotatorStateID(Id)
   local Rotator = self.GameMode.EMGameState.ManualActiveCombat:Find(Id)
   if Rotator then
@@ -471,7 +414,6 @@ function BP_TempleComponent_C:GetRotatorStateID(Id)
   end
   return -2
 end
-
 function BP_TempleComponent_C:IsAllManualItemsRotateEnd(ManualItemIds)
   for i, v in pairs(ManualItemIds:ToTable()) do
     if self.RotatorStates[v] == false then
@@ -480,14 +422,12 @@ function BP_TempleComponent_C:IsAllManualItemsRotateEnd(ManualItemIds)
   end
   return true
 end
-
 function BP_TempleComponent_C:IsManualItemRotateEnd(ManualItemId)
   if self.RotatorStates[ManualItemId] == false then
     return false
   end
   return true
 end
-
 function BP_TempleComponent_C:ActiveTempleMechanism(ManualItemIds)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   for i, v in pairs(ManualItemIds:ToTable()) do
@@ -499,7 +439,6 @@ function BP_TempleComponent_C:ActiveTempleMechanism(ManualItemIds)
     end
   end
 end
-
 function BP_TempleComponent_C:InactiveTempleMechanism(ManualItemIds)
   for i, v in pairs(ManualItemIds:ToTable()) do
     local TempleMechanism = self.GameMode.EMGameState.ManualActiveCombat:Find(v)
@@ -510,7 +449,6 @@ function BP_TempleComponent_C:InactiveTempleMechanism(ManualItemIds)
     end
   end
 end
-
 function BP_TempleComponent_C:OnDroneFoundPlayer(GroupId, ManualItemId)
   if not self.DroneGroup or not self.DroneGroup[GroupId] then
     return
@@ -530,7 +468,6 @@ function BP_TempleComponent_C:OnDroneFoundPlayer(GroupId, ManualItemId)
     self.GameMode:TriggerGameModeEvent("OnDroneStateChange", 1, GroupId)
   end
 end
-
 function BP_TempleComponent_C:OnDroneChangeToInit(GroupId, ManualItemId)
   DebugPrint("zwkk OnDroneChangeToInit", ManualItemId)
   if not self.DroneGroup or not self.DroneGroup[GroupId] then
@@ -549,7 +486,6 @@ function BP_TempleComponent_C:OnDroneChangeToInit(GroupId, ManualItemId)
   end
   return GroupDroneAllFinish
 end
-
 function BP_TempleComponent_C:OnDroneAlertValueReset(GroupId, ManualItemId)
   if not self.DroneGroup or not self.DroneGroup[GroupId] then
     return
@@ -574,10 +510,8 @@ function BP_TempleComponent_C:OnDroneAlertValueReset(GroupId, ManualItemId)
     end
   end
 end
-
 function BP_TempleComponent_C:OnDroneDestroyed(GroupId, ManualItemId)
 end
-
 function BP_TempleComponent_C:SetPlatformColor(ManualItemId, GroupId, ColorType)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if 0 ~= ManualItemId then
@@ -598,7 +532,6 @@ function BP_TempleComponent_C:SetPlatformColor(ManualItemId, GroupId, ColorType)
     end
   end
 end
-
 function BP_TempleComponent_C:SetPlatformPattern(ManualItemId, GroupId, PatternType)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if 0 ~= ManualItemId then
@@ -619,7 +552,6 @@ function BP_TempleComponent_C:SetPlatformPattern(ManualItemId, GroupId, PatternT
     end
   end
 end
-
 function BP_TempleComponent_C:HitVentilatorSpeedup(AddSpeed, ManualItemIds)
   for i, v in pairs(ManualItemIds:ToTable()) do
     local HitVentilator = self.GameMode.EMGameState.ManualActiveCombat:Find(v)
@@ -630,7 +562,6 @@ function BP_TempleComponent_C:HitVentilatorSpeedup(AddSpeed, ManualItemIds)
     end
   end
 end
-
 function BP_TempleComponent_C:HitVentilatorBroken(GroupId, ManualItemId)
   self.HitVentilatorGroup[GroupId][ManualItemId] = true
   local Res = true
@@ -642,11 +573,9 @@ function BP_TempleComponent_C:HitVentilatorBroken(GroupId, ManualItemId)
   end
   self.GameMode:TriggerGameModeEvent("OnHitAllVentilatorClear", GroupId)
 end
-
 function BP_TempleComponent_C:HitVentilatorReset(GroupId, ManualItemId)
   self.HitVentilatorGroup[GroupId][ManualItemId] = false
 end
-
 function BP_TempleComponent_C:AddHitVentilator(GroupId, ManualItemId)
   if not self.HitVentilatorGroup then
     self.HitVentilatorGroup = {}
@@ -656,28 +585,24 @@ function BP_TempleComponent_C:AddHitVentilator(GroupId, ManualItemId)
   end
   self.HitVentilatorGroup[GroupId][ManualItemId] = false
 end
-
 function BP_TempleComponent_C:SpawnBall(UnitId, ManualItemId)
   local Mechanism = self.GameMode.EMGameState.ManualActiveCombat:Find(ManualItemId)
   if Mechanism then
     Mechanism:SpawnBall(UnitId)
   end
 end
-
 function BP_TempleComponent_C:AddBombLaunchPad(ManualItemId)
   if not self.BombLaunchPadGroup then
     self.BombLaunchPadGroup = {}
   end
   self.BombLaunchPadGroup[ManualItemId] = ManualItemId
 end
-
 function BP_TempleComponent_C:AddSpawnBallPlatform(ManualItemId)
   if not self.SpawnBallPlatformGroup then
     self.SpawnBallPlatformGroup = {}
   end
   self.SpawnBallPlatformGroup[ManualItemId] = ManualItemId
 end
-
 function BP_TempleComponent_C:CheckCanInteractiveBomb()
   if not self.BombLaunchPadGroup then
     return
@@ -693,14 +618,18 @@ function BP_TempleComponent_C:CheckCanInteractiveBomb()
     SpawnBallPlatform:AllBallForbid()
   end
 end
-
 function BP_TempleComponent_C:ChangeAllBombToNormal()
   for i, v in pairs(self.SpawnBallPlatformGroup) do
     local SpawnBallPlatform = self.GameMode.EMGameState.ManualActiveCombat:Find(v)
     SpawnBallPlatform:AllBallNormal()
   end
 end
-
+function BP_TempleComponent_C:OnTempleEnergyToZero()
+  self.GameMode:TriggerGameModeEvent("OnTempleEnergyComplete")
+end
+function BP_TempleComponent_C:OnCageMonsterDead(Monster, CageId)
+  self.GameMode:TriggerGameModeEvent("OnTempleCageKillMonster", Monster, CageId)
+end
 function BP_TempleComponent_C:TempleForbid(ForbidRule, IsForbid)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not Player then
@@ -711,7 +640,7 @@ function BP_TempleComponent_C:TempleForbid(ForbidRule, IsForbid)
   elseif ForbidRule == ETempleForbidRule.Ranged then
     Player:ForbidRangedSkills(IsForbid)
   elseif ForbidRule == ETempleForbidRule.Skill then
-    Player:ForbidAllSkills(IsForbid)
+    Player:ForbidAllSkillsByBuff(IsForbid)
   elseif ForbidRule == ETempleForbidRule.BattleWheel then
     if IsForbid then
       Player:DisableBattleWheel()
@@ -720,7 +649,6 @@ function BP_TempleComponent_C:TempleForbid(ForbidRule, IsForbid)
     end
   end
 end
-
 function BP_TempleComponent_C:ResetPlayerLocation()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local GameMode = UE4.UGameplayStatics.GetGameMode(Player)
@@ -759,7 +687,6 @@ function BP_TempleComponent_C:ResetPlayerLocation()
     end)
   end
 end
-
 function BP_TempleComponent_C:RestoreStatus(RestoreBullet, RestoreHp, RestoreSp, RestoreCD)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local BulletMax = Player.RangedWeapon:GetAttr("BulletMax")
@@ -774,7 +701,7 @@ function BP_TempleComponent_C:RestoreStatus(RestoreBullet, RestoreHp, RestoreSp,
   end
   if RestoreHp then
     Player:AddHp(MaxHp)
-    Battle(Player):AddEnergyShield(Player, Player, MaxES)
+    Battle(Player):AddEnergyShield(Player, Player, MaxES, false, false, "")
   end
   if RestoreSp then
     Battle(Player):AddSpToTarget(Player, Player, MaxSp, EChangedSpReason.SkillEffectBullet)
@@ -785,7 +712,6 @@ function BP_TempleComponent_C:RestoreStatus(RestoreBullet, RestoreHp, RestoreSp,
     end
   end
 end
-
 function BP_TempleComponent_C:SetPickupInteractiveTickInterval(Interval)
   local PlayerCharacter = UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if PlayerCharacter then
@@ -794,6 +720,42 @@ function BP_TempleComponent_C:SetPickupInteractiveTickInterval(Interval)
       InteractiveComponent:SetComponentTickInterval(Interval)
     end
   end
+  if self.TempleRecoverPC ~= LuaConst.PCInterativeTickCount or self.TempleRecoverMobiel ~= LuaConst.MobileInterativeTickCount then
+    self.TempleRecoverPC = LuaConst.PCInterativeTickCount
+    self.TempleRecoverMobiel = LuaConst.MobileInterativeTickCount
+    LuaConst.PCInterativeTickCount = Const.TempleInteractiveCount
+    LuaConst.MobileInterativeTickCount = Const.TempleInteractiveCount
+  end
+  DebugPrint("BP_TempleComponent_C: SetPickupInteractiveTickInterval", Interval)
 end
-
+function BP_TempleComponent_C:ReceiveEndPlay(EndPlayReason)
+  DebugPrint("BP_TempleComponent_C: ReceiveEndPlay", self.TempleRecoverPC, self.TempleRecoverMobiel)
+  if self.TempleRecoverPC then
+    LuaConst.PCInterativeTickCount = self.TempleRecoverPC
+  end
+  if self.TempleRecoverMobiel then
+    LuaConst.MobileInterativeTickCount = self.TempleRecoverMobiel
+  end
+end
+function BP_TempleComponent_C:ShowNearestMonsterGuide(bFirstHighLight)
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if not Player then
+    return
+  end
+  local NearestMonsterEid = self.GameMode:GetMonsterEidNearestToPlayer(Player)
+  if NearestMonsterEid > 0 then
+    if bFirstHighLight then
+      local ScenceManager = GWorld.GameInstance:GetSceneManager()
+      ScenceManager.PlayLoopGuideIcons:Add(NearestMonsterEid)
+    end
+    self.GameMode.EMGameState:AddGuideEid(NearestMonsterEid)
+  end
+end
+function BP_TempleComponent_C:ShowTempleTipButton(IsShow)
+  EventManager:FireEvent(EventID.OnTempleTipButtonShow, IsShow)
+end
+function BP_TempleComponent_C:OnClickShowTips()
+  self.GameMode:TriggerGameModeEvent("OnShowTempleTip")
+  EventManager:FireEvent(EventID.OnTempleTipButtonShow, false)
+end
 return BP_TempleComponent_C

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:UpdateKeyInfo(BottomKeyInfo)
   self.Panel_Key:ClearChildren()
   self.ComKeys = {}
@@ -17,7 +16,6 @@ function M:UpdateKeyInfo(BottomKeyInfo)
     end
   end
 end
-
 function M:UpdateKeyInfoNew(BottomKeyInfo)
   self.ComKeys = self.ComKeys or {}
   for i, _ in ipairs(BottomKeyInfo) do
@@ -46,14 +44,11 @@ function M:UpdateKeyInfoNew(BottomKeyInfo)
     end
   end
 end
-
 function M:GetComKeyById(Index)
   return self.ComKeys[Index]
 end
-
 function M:ClearChildren()
   self.Panel_Key:ClearChildren()
   self.ComKeys = nil
 end
-
 return M

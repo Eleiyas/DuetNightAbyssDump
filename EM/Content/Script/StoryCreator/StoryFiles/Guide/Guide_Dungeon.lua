@@ -46,8 +46,8 @@ return {
       isStoryNode = true,
       key = "170117529939627953",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 1233.6371691775712, y = 337.2263967800347},
+      name = "任务节点",
+      pos = {x = 1235.6371691775712, y = 335.2263967800347},
       propsData = {
         QuestId = 0,
         QuestDescriptionComment = "",
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -148,12 +150,6 @@ return {
             endPort = "In"
           },
           {
-            startQuest = "1720336421379431050",
-            startPort = "Out",
-            endQuest = "17466882291168181",
-            endPort = "In"
-          },
-          {
             startQuest = "17507664087241972109",
             startPort = "Out",
             endQuest = "17563696431933180660",
@@ -182,6 +178,18 @@ return {
             startPort = "Out",
             endQuest = "1715589607749139244",
             endPort = "In"
+          },
+          {
+            startQuest = "1720336421379431050",
+            startPort = "Out",
+            endQuest = "17683746948345098175",
+            endPort = "In"
+          },
+          {
+            startQuest = "17683746948345098175",
+            startPort = "Out",
+            endQuest = "170117530804028774",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -209,11 +217,11 @@ return {
           ["170117530804028774"] = {
             key = "170117530804028774",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 1736.4065696983466, y = 389.17452330005676},
             propsData = {
               MessageId = 300802,
-              MessageNote = "\233\128\154\232\191\135\230\140\145\230\136\152\229\174\140\230\136\144\228\184\141\229\144\140\231\154\132\229\167\148\230\137\152\239\188\140\229\143\175\228\187\165\232\142\183\229\190\151\231\170\129\231\160\180\230\157\144\230\150\153\227\128\129\233\147\182\229\184\129\227\128\129\233\173\148\228\185\139\230\165\148\227\128\129\233\147\184\233\128\160\230\157\144\230\150\153\227\128\129\233\147\184\233\128\160\229\155\190\231\186\184\231\173\137\230\157\144\230\150\153\227\128\130",
+              MessageNote = "通过挑战完成不同的委托，可以获得突破材料、银币、魔之楔、铸造材料、铸造图纸等材料。",
               IsTimePause = false,
               IsResetPlayer = false,
               IsForbidInAnim = true,
@@ -225,12 +233,12 @@ return {
           ["170117530804028775"] = {
             key = "170117530804028775",
             type = "ShowGuideButtonNode",
-            name = "\229\140\186\229\159\159\229\143\179\228\184\138\232\167\146UI",
+            name = "区域右上角UI",
             pos = {x = 1136.5860329329566, y = 75.94332515593968},
             propsData = {
               ShowEnable = true,
               MessageId = 300801,
-              MessageNote = "\231\130\185\229\135\187\226\128\156\231\142\169\230\179\149\226\128\157\232\191\155\229\133\165\229\167\148\230\137\152\231\179\187\231\187\159\227\128\130",
+              MessageNote = "点击“玩法”进入委托系统。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -248,19 +256,19 @@ return {
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},
               MessageParentLoc = "HighLightUI",
-              MessageLoc = "Left",
+              MessageLoc = "DownLeft",
               MessageLocOffset = {X = 0, Y = 0}
             }
           },
           ["1701334172778142340"] = {
             key = "1701334172778142340",
             type = "ShowGuideButtonNode",
-            name = "\230\153\174\233\128\154\230\140\137\233\146\174",
+            name = "普通按钮",
             pos = {x = 2306.6756407671533, y = 271.7459015846183},
             propsData = {
               ShowEnable = true,
               MessageId = 300819,
-              MessageNote = "\231\130\185\229\135\187<H>\226\128\156\232\191\189\231\188\137\226\128\157</>\239\188\140\232\191\155\229\133\165\232\191\189\231\188\137\229\167\148\230\137\152\227\128\130",
+              MessageNote = "点击<H>“追缉”</>，进入追缉委托。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -285,11 +293,11 @@ return {
           ["1715589607749139244"] = {
             key = "1715589607749139244",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 423.7784896141537, y = 283.1219641520529},
             propsData = {
               MessageId = 300804,
-              MessageNote = "\233\128\154\232\191\135\230\140\145\230\136\152\229\174\140\230\136\144\228\184\141\229\144\140\231\154\132\229\167\148\230\137\152\239\188\140\229\143\175\228\187\165\232\142\183\229\190\151\231\170\129\231\160\180\230\157\144\230\150\153\227\128\129\233\147\182\229\184\129\227\128\129\233\173\148\228\185\139\230\165\148\227\128\129\233\147\184\233\128\160\230\157\144\230\150\153\227\128\129\233\147\184\233\128\160\229\155\190\231\186\184\231\173\137\230\157\144\230\150\153\227\128\130",
+              MessageNote = "通过挑战完成不同的委托，可以获得突破材料、银币、魔之楔、铸造材料、铸造图纸等材料。",
               IsTimePause = true,
               IsResetPlayer = false,
               IsForbidInAnim = false,
@@ -301,19 +309,19 @@ return {
           ["1720334861033429232"] = {
             key = "1720334861033429232",
             type = "PlatformJudgmentNode",
-            name = "PC/\230\137\139\230\156\186\229\185\179\229\143\176\229\136\164\230\150\173",
+            name = "PC/手机平台判断",
             pos = {x = 2011.071145726595, y = 302.316713336318},
             propsData = {}
           },
           ["1720334873236429679"] = {
             key = "1720334873236429679",
             type = "ShowGuideButtonNode",
-            name = "\230\153\174\233\128\154\230\140\137\233\146\174",
+            name = "普通按钮",
             pos = {x = 2299.142192197301, y = 420.41831761439283},
             propsData = {
               ShowEnable = true,
               MessageId = 300819,
-              MessageNote = "\231\130\185\229\135\187<H>\226\128\156\232\191\189\231\188\137\226\128\157</>\239\188\140\232\191\155\229\133\165\232\191\189\231\188\137\229\167\148\230\137\152\227\128\130",
+              MessageNote = "点击<H>“追缉”</>，进入追缉委托。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -338,19 +346,19 @@ return {
           ["1720336283671430413"] = {
             key = "1720336283671430413",
             type = "PlatformJudgmentNode",
-            name = "PC/\230\137\139\230\156\186\229\185\179\229\143\176\229\136\164\230\150\173",
+            name = "PC/手机平台判断",
             pos = {x = 1724.8614759509787, y = -430.05558343640996},
             propsData = {}
           },
           ["1720336421379431050"] = {
             key = "1720336421379431050",
             type = "ShowGuideButtonNode",
-            name = "\229\140\186\229\159\159\229\143\179\228\184\138\232\167\146UI",
-            pos = {x = 1111.5072519138937, y = 543.2359452504587},
+            name = "区域右上角UI",
+            pos = {x = 1109.5072519138937, y = 541.2359452504587},
             propsData = {
               ShowEnable = true,
               MessageId = 300801,
-              MessageNote = "\231\130\185\229\135\187\226\128\156\231\142\169\230\179\149\226\128\157\232\191\155\229\133\165\229\167\148\230\137\152\231\179\187\231\187\159\227\128\130",
+              MessageNote = "点击“玩法”进入委托系统。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -368,14 +376,14 @@ return {
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},
               MessageParentLoc = "HighLightUI",
-              MessageLoc = "Left",
+              MessageLoc = "DownLeft",
               MessageLocOffset = {X = 0, Y = 0}
             }
           },
           ["17344022520466046"] = {
             key = "17344022520466046",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 1727.6201559116982, y = -24.0040542096653},
             propsData = {
               MessageId = 300806,
@@ -391,8 +399,8 @@ return {
           ["17466882291168181"] = {
             key = "17466882291168181",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
-            pos = {x = 1457.0644419777389, y = 397.1110945720997},
+            name = "Button显示/隐藏信息",
+            pos = {x = 1501.0644419777389, y = 251.11109457209972},
             propsData = {
               ShowEnable = true,
               MessageId = 300813,
@@ -414,19 +422,19 @@ return {
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},
               MessageParentLoc = "HighLightUI",
-              MessageLoc = "Right",
+              MessageLoc = "Down",
               MessageLocOffset = {X = 0, Y = 0}
             }
           },
           ["17474669401624610"] = {
             key = "17474669401624610",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 3465.288739639728, y = 706.0452400000295},
             propsData = {
               ShowEnable = true,
               MessageId = 300816,
-              MessageNote = "\231\161\174\229\174\154\228\191\157\229\173\152",
+              MessageNote = "确定保存",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -451,7 +459,7 @@ return {
           ["174775735717126177942"] = {
             key = "174775735717126177942",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 759.9273962788018, y = 1270.3865542301655},
             propsData = {
               ShowEnable = true,
@@ -481,12 +489,12 @@ return {
           ["17507663826161971741"] = {
             key = "17507663826161971741",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 3623.5095179185946, y = 1208.7340190099658},
             propsData = {
               ShowEnable = true,
               MessageId = 300818,
-              MessageNote = "\230\148\182\232\181\183\233\162\132\232\174\190",
+              MessageNote = "收起预设",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -511,12 +519,12 @@ return {
           ["17507664087241972109"] = {
             key = "17507664087241972109",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2785.4686639557694, y = 330.10076840502063},
             propsData = {
               ShowEnable = true,
               MessageId = 300817,
-              MessageNote = "\229\188\128\229\167\139\230\140\145\230\136\152",
+              MessageNote = "开始挑战",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -541,7 +549,7 @@ return {
           ["175427467209589119"] = {
             key = "175427467209589119",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1597.9782032809314, y = 651.0714148894339},
             propsData = {
               ShowEnable = true,
@@ -571,14 +579,14 @@ return {
           ["17563692069152543631"] = {
             key = "17563692069152543631",
             type = "InputDeviceBranchNode",
-            name = "\232\190\147\229\133\165\232\174\190\229\164\135\229\136\134\230\148\175",
+            name = "输入设备分支",
             pos = {x = 677.7223429146059, y = 265.3251088274271},
             propsData = {}
           },
           ["17563692069152543632"] = {
             key = "17563692069152543632",
             type = "ShowGuideNode",
-            name = "\230\152\190\231\164\186\229\188\149\229\175\188\239\188\136\230\148\175\230\140\129\230\137\167\232\161\140\230\147\141\228\189\156\229\144\142\232\135\170\229\138\168\229\133\179\233\151\173/\229\188\186\229\136\182\229\188\149\229\175\188\239\188\137",
+            name = "显示引导（支持执行操作后自动关闭/强制引导）",
             pos = {x = 922.5396132950215, y = 308.5328073449733},
             propsData = {
               MessageId = 301611,
@@ -591,7 +599,7 @@ return {
               UIShape = "Square",
               IsForbidInAnim = false,
               IsForbidOutAnim = false,
-              ForbidSuccessAnim = false,
+              ForbidSuccessAnim = true,
               IsNotForceRelease = false,
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},
@@ -603,12 +611,12 @@ return {
           ["17563692216522543943"] = {
             key = "17563692216522543943",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1140.8534709620717, y = 317.30662607879503},
             propsData = {
               ShowEnable = true,
               MessageId = 300801,
-              MessageNote = "\231\130\185\229\135\187<H>\226\128\156\230\149\180\229\164\135\226\128\157</>\232\191\155\229\133\165\230\149\180\229\164\135\231\179\187\231\187\159\227\128\130",
+              MessageNote = "点击<H>“整备”</>进入整备系统。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -633,7 +641,7 @@ return {
           ["17563696431933180660"] = {
             key = "17563696431933180660",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 3074.2294957125323, y = 347.25080318021594},
             propsData = {
               ShowEnable = true,
@@ -663,10 +671,40 @@ return {
           ["17581026465841858526"] = {
             key = "17581026465841858526",
             type = "MSDKUploadNode",
-            name = "\230\181\183\229\164\150\229\184\130\229\156\186SDK\229\159\139\231\130\185\228\184\138\230\138\165",
+            name = "海外市场SDK埋点上报",
             pos = {x = 148, y = 268},
             propsData = {
               EventName = "task_training_end"
+            }
+          },
+          ["17683746948345098175"] = {
+            key = "17683746948345098175",
+            type = "ShowGuideButtonNode",
+            name = "Button显示/隐藏信息",
+            pos = {x = 1464.5860329329566, y = 483.9433251559396},
+            propsData = {
+              ShowEnable = true,
+              MessageId = 300813,
+              MessageNote = "",
+              DelayTime = 0,
+              IsForceClick = true,
+              IsControlPlayer = false,
+              IsTimePause = true,
+              IsShowCursor = true,
+              HighLightUIPath = "StyleOfPlay.ComTab.EMScrollBox_TabItem:2",
+              UICompName = "Btn",
+              GamePadWidgetName = "",
+              IsAutoClick = false,
+              IsAutoClickByGamepad = false,
+              UIShape = "Square",
+              IsResetPlayer = false,
+              IsForbidInAnim = true,
+              IsForbidOutAnim = true,
+              UICompSizeOffset = {X = 0, Y = 0},
+              UICompLocOffset = {X = 0, Y = 0},
+              MessageParentLoc = "HighLightUI",
+              MessageLoc = "Right",
+              MessageLocOffset = {X = 0, Y = 0}
             }
           }
         },

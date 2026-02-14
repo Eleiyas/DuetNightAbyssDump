@@ -4,23 +4,52 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 })
 local StoryInteractiveController = require("BluePrints.UI.WBP.StoryInteractive.StoryInteractiveController")
+local CommonUtils = require("Utils.CommonUtils")
 M.State = {
   Normal = 0,
   Press = 1,
   Hover = 2
 }
-
 function M:Initialize(Initializer)
+  self.ForbiddenAnimLookup = {}
+  if self.Forbidden_Normal then
+    self.ForbiddenAnimLookup[self.Forbidden_Normal] = 1
+  end
+  if self.Forbidden_Click then
+    self.ForbiddenAnimLookup[self.Forbidden_Click] = 1
+  end
+  if self.Forbidden_Hover then
+    self.ForbiddenAnimLookup[self.Forbidden_Hover] = 1
+  end
+  if self.Forbidden_Press then
+    self.ForbiddenAnimLookup[self.Forbidden_Press] = 1
+  end
+  if self.Forbidden_UnHover then
+    self.ForbiddenAnimLookup[self.Forbidden_UnHover] = 1
+  end
+  self.LockAnimLookup = {}
+  if self.Lock_Normal then
+    self.LockAnimLookup[self.Lock_Normal] = 1
+  end
+  if self.Lock_Click then
+    self.LockAnimLookup[self.Lock_Click] = 1
+  end
+  if self.Lock_Hover then
+    self.LockAnimLookup[self.Lock_Hover] = 1
+  end
+  if self.Lock_Press then
+    self.LockAnimLookup[self.Lock_Press] = 1
+  end
+  if self.Lock_UnHover then
+    self.LockAnimLookup[self.Lock_UnHover] = 1
+  end
 end
-
 function M:BindOnItemClicked(ExecuteCallback)
   self.OnItemClicked = ExecuteCallback
 end
-
 function M:BindOnItemSelected(ExecuteCallback)
   self.OnItemSelected = ExecuteCallback
 end
-
 function M:Construct()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.Key:SetVisibility(ESlateVisibility.Hidden)
@@ -36,13 +65,12 @@ function M:Construct()
     KeyInfoList = {
       {
         Type = "Text",
-        Text = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("StoryInteractive"))
+        Text = CommonUtils:GetActionMappingKeyName("StoryInteractive")
       }
     }
   })
   self:InitWidgetInfoInGamePad()
 end
-
 function M:InitWidgetInfoInGamePad()
   local GamepadKeys = UIUtils.GetIconListByActionName("StoryInteractive")
   local ImgShortPath = GamepadKeys[1]
@@ -52,10 +80,8 @@ function M:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function M:Destruct()
 end
-
 function M:InitInteractiveInfo(ShowName, SpecIcon, QuestChainId, SpecialQuestId, DynQuestId, bForbidden, ForbiddenMsg)
   self.ShowName = ShowName
   self.QuestChainId = QuestChainId
@@ -68,18 +94,15 @@ function M:InitInteractiveInfo(ShowName, SpecIcon, QuestChainId, SpecialQuestId,
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:UseGamePadStyle(UseGamePadStyle)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     local ActiveWidgetIndex = UseGamePadStyle and 1 or 0
     self.WidgetSwitcher_Key:SetActiveWidgetIndex(ActiveWidgetIndex)
   end
 end
-
 function M:GetTextColor()
   return self.NormalColor
 end
-
 function M:SelectEntryItem(bSelected, IsGamePad)
   self:UseGamePadStyle(IsGamePad)
   if self.bSelected == bSelected then
@@ -93,7 +116,7 @@ function M:SelectEntryItem(bSelected, IsGamePad)
     end
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_add", nil, nil)
     self:UpdateIcon()
-    if not self.bSelected then
+    if not self.bSelected and CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
       self:StopAllAnimations()
       self:PlayAnimation(self.Hover)
     end
@@ -105,36 +128,31 @@ function M:SelectEntryItem(bSelected, IsGamePad)
       self.Key:SetVisibility(ESlateVisibility.Collapsed)
     end
     self:UpdateIcon()
-    if self.bSelected then
+    if self.bSelected and CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
       self:StopAllAnimations()
       self:PlayAnimation(self.UnHover)
     end
     self.bSelected = false
   end
 end
-
 function M:OnInteractiveItemClicked()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
 end
-
 function M:OnInteractiveItemPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnInteractiveItemReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnInteractiveItemHovered()
   if self.OnItemSelected then
     self.OnItemSelected(self)
   end
 end
-
 function M:OnInteractiveItemUnhovered()
   if self.bSelected then
     return
@@ -142,10 +160,15 @@ function M:OnInteractiveItemUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnAnimationStarted(InAnimation)
+  if self.ForbiddenAnimLookup[InAnimation] then
+    self.Text_Interactive:SetColorAndOpacity(self.ForbiddenColor)
+  elseif self.LockAnimLookup[InAnimation] then
+    self.Text_Interactive:SetColorAndOpacity(self.LockColor)
+  else
+    self.Text_Interactive:SetColorAndOpacity(self.NormalColor)
+  end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if self.Click == InAnimation then
     if not self.bForbidden and self.OnItemClicked then
@@ -156,14 +179,12 @@ function M:OnAnimationFinished(InAnimation)
   elseif self.Out == InAnimation then
   end
 end
-
 function M:UpdateInteractiveItemState()
   self:UpdateIcon()
   self:UpdateText()
   self:UpdateCondition()
   self:UpdateStateAnim()
 end
-
 function M:UpdateIcon()
   local QuestID = self.QuestChainId
   local SpecialQuestID = self.SpecialQuestId
@@ -193,7 +214,6 @@ function M:UpdateIcon()
     self.Img_Item:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnIconLoadFinish(Object, ResourceID)
   if not IsValid(self) or nil ~= ResourceID and rawget(self, "LoadResourceID") ~= ResourceID then
     return
@@ -213,24 +233,19 @@ function M:OnIconLoadFinish(Object, ResourceID)
     self.Img_Item:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:UpdateStateAnim()
 end
-
 function M:UpdateText()
   self:SetInteractiveText(GText(self.ShowName), self:GetTextColor())
 end
-
 function M:SetInteractiveText(Text, Color)
   self.Text_Interactive:SetText(Text)
   self.Text_Interactive:SetColorAndOpacity(Color)
   self.WidgetSwitcher_1:SetActiveWidgetIndex(0)
 end
-
 function M:UpdateCondition()
   self.Text_ExploreKeyNum:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:GetQuestInteractiveIconPath(InQuestChainId, InSpecialQuestId, DynQuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -255,7 +270,6 @@ function M:GetQuestInteractiveIconPath(InQuestChainId, InSpecialQuestId, DynQues
   end
   return self.SpecIcon, true
 end
-
 function M:PlayAnimation(InAnimation, ...)
   if self.bForbidden then
     if InAnimation == self.Normal then
@@ -272,5 +286,4 @@ function M:PlayAnimation(InAnimation, ...)
   end
   self.Overridden.PlayAnimation(self, InAnimation, ...)
 end
-
 return M

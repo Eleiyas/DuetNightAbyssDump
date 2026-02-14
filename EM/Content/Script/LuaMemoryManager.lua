@@ -1,7 +1,6 @@
 local LuaMemoryManager = {
   LastGCMemory = collectgarbage("count")
 }
-
 function LuaMemoryManager:EnableLuaMemoryMonitor()
   self:DisableLuaMemoryMonitor()
   if IsDedicatedServer(GWorld.GameInstance) then
@@ -17,7 +16,6 @@ function LuaMemoryManager:EnableLuaMemoryMonitor()
     bIsIOS = true
   end
   print(_G.LogTag, "EnableLuaMemoryMonitor")
-  
   local function LuaMemoryMonitor()
     local CurLuaMemory = collectgarbage("count")
     print(_G.LogTag, "Lua Memor6y Cost Now: ", CurLuaMemory)
@@ -34,13 +32,11 @@ function LuaMemoryManager:EnableLuaMemoryMonitor()
       self:FullGC()
     end
   end
-  
   self.Monitor = UE4.UKismetSystemLibrary.K2_SetTimerDelegate({
     GWorld.GameInstance,
     LuaMemoryMonitor
   }, GCTime, true)
 end
-
 function LuaMemoryManager:DisableLuaMemoryMonitor()
   print(_G.LogTag, "DisableLuaMemoryMonitor")
   if self.Monitor == nil then
@@ -48,7 +44,6 @@ function LuaMemoryManager:DisableLuaMemoryMonitor()
   end
   UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(GWorld.GameInstance, self.Monitor)
 end
-
 function LuaMemoryManager:FullGC(bCollectTable)
   if bCollectTable then
     DataMgr.CleanAllTable()
@@ -58,5 +53,4 @@ function LuaMemoryManager:FullGC(bCollectTable)
   self.LastGCMemory = collectgarbage("count")
   print(_G.LogTag, "Lua Memory FullGC, Pre Memory: ", PreMemory, " Now Memory: ", self.LastGCMemory)
 end
-
 return LuaMemoryManager

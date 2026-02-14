@@ -5,7 +5,6 @@ M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp",
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddLSFocusTarget(self.Btn_DimensionDrawArea.Key_Dimension, self.Btn_DimensionDrawArea, "Menu", true)
@@ -14,16 +13,15 @@ function M:Construct()
     self.Common_SortList_PC
   })
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
   self:RemoveFocusTarget("Menu")
   self:RemoveFocusTarget("LS")
   self:RemoveFocusTarget("X")
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
+  local MainTabIdx, SubTabIdx, ShopItemId, bNotPlayBgBlend = ...
   self.ExtraShopItemInfos = {}
   self.Filters = {
     "UI_Select_Default",
@@ -31,94 +29,23 @@ function M:OnLoaded(...)
   }
   self.bFilterOwned = false
   self.List_Item:SetVisibility(ESlateVisibility.Visible)
-  self:InitShop()
-  self:SetGText()
-  self:BindAnimations()
   self:PlayAnimation(self.In)
-  self:SwitchHideHeadWidget(true)
-  self:InitDimensionBtn()
+  self:InitImpressionShop(MainTabIdx, SubTabIdx, ShopItemId, bNotPlayBgBlend)
+  self:SetGText()
   self:PlayInAudio()
 end
-
 function M:PlayInAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "ImpressionShopIn", nil)
-  AudioManager(self):PlaySystemUIBGM("event:/bgm/1_0/0084_system_shop_danjiao", nil, "ImpressionShop")
+  AudioManager(self):PlaySystemUIBGM(self.ShopBGM, nil, "ImpressionShop")
 end
-
+function M:PlaySwitchRegionAudio()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/map_five_dimension_region_change", "ImpressionShopSwitchRegion", nil)
+end
 function M:PlayCloseAudio()
   AudioManager(self):SetEventSoundParam(self, "ImpressionShopIn", {ToEnd = 1})
   AudioManager(self):StopSystemUIBGM("ImpressionShop")
 end
-
 function M:InitDimensionBtn()
-  self.Btn_DimensionDrawArea:Init()
-end
-
-function M:SwitchHideHeadWidget(bHide)
-  local ImpressionShopNPC = UE4.ANpcCharacter.GetNpc(self, 700050)
-  if ImpressionShopNPC then
-    local HeadUISubsystem = UNpcHeadUISubsystem.GetHeadUISubsystem(self)
-    HeadUISubsystem:HideNpcHeadUI(ImpressionShopNPC.NpcId, bHide, "ImpressionShop")
-  end
-end
-
-function M:SetGText()
-  self.Text_ImpressionShopTips:SetText(GText("UI_ImpressionShop_Tips"))
-end
-
-function M:BindAnimations()
-  self:BindToAnimationFinished(self.In, {
-    self,
-    self.OnInAnimationFinished
-  })
-end
-
-function M:OnInAnimationFinished()
-  self:BindButtonEvents()
-end
-
-function M:BindButtonEvents()
-  self.Btn_DimensionDrawArea:BindEventOnClicked(self, self.OnBtn_DimensionClicked)
-  self.CheckBox_Own:BindEventOnClicked({
-    Inst = self,
-    Func = self.OnClickFilterOwned
-  })
-end
-
-function M:UnBindButtonEvents()
-  self.CheckBox_Own:UnBindEventOnClickedByObj(self)
-  self.Btn_DimensionDrawArea:UnBindEventOnClicked(self, self.OnBtn_DimensionClicked)
-end
-
-function M:OnClickFilterOwned()
-  DebugPrint("WBP_Impression_Shop_P:OnClickFilterOwned")
-  AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
-  self.bFilterOwned = not self.bFilterOwned
-  self:UpdateShopDetail(nil, true)
-end
-
-function M:OnBtn_DimensionClicked()
-  local DimensionPanel = UIManager(self):LoadUINew("RegionMapImpression")
-  DimensionPanel:Init(self.RegionId, self, true)
-  self.Btn_DimensionDrawArea:SetIsChecked(false)
-end
-
-function M:InitShop(MainTabIdx, SubTabIdx)
-  self.bIsFocusable = true
-  self:UpdateResource()
-  self.Text_None:SetText(GText("UI_SHOP_NOTOWNED"))
-  self:InitSortList()
-  self:InitShopTabInfo(MainTabIdx, SubTabIdx, 2)
-  self:InitRegionInfo()
-end
-
-function M:InitRegionInfo()
-  self.RegionId = 1011
-  self.WorldId = nil
-  local Avatar = GWorld:GetAvatar()
-  if Avatar then
-    self.RegionId = Avatar:GetSubRegionId2RegionId()
-  end
   for _, MapData in pairs(DataMgr.WorldMap) do
     for _, regionMapId in pairs(MapData.WorldMapRegion) do
       if self.RegionId == DataMgr.RegionMap[regionMapId].RegionId then
@@ -128,8 +55,170 @@ function M:InitRegionInfo()
       end
     end
   end
+  self.Btn_DimensionDrawArea:Init(self.RegionId)
 end
-
+function M:SetGText()
+  self.Text_ImpressionShopTips:SetText(GText("UI_ImpressionShop_Tips"))
+end
+function M:BindButtonEvents()
+  self.Btn_DimensionDrawArea:BindEventOnClicked(self, self.OnBtn_DimensionClicked)
+  self.CheckBox_Own:BindEventOnClicked({
+    Inst = self,
+    Func = self.OnClickFilterOwned
+  })
+end
+function M:UnBindButtonEvents()
+  self.CheckBox_Own:UnBindEventOnClickedByObj(self)
+  self.Btn_DimensionDrawArea:UnBindEventOnClicked(self, self.OnBtn_DimensionClicked)
+end
+function M:OnClickFilterOwned()
+  DebugPrint("WBP_Impression_Shop_P:OnClickFilterOwned")
+  AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
+  self.bFilterOwned = not self.bFilterOwned
+  self:UpdateShopDetail(nil, true)
+end
+function M:OnBtn_DimensionClicked()
+  local DimensionPanel = UIManager(self):LoadUINew("RegionMapImpression")
+  DimensionPanel:Init(self.RegionId, self, true)
+  self.Btn_DimensionDrawArea:SetIsChecked(false)
+end
+function M:InitBg(bNotPlayBgBlend)
+  self.PlayBgBlend = not bNotPlayBgBlend
+end
+function M:InitImpressionShop(MainTabIdx, SubTabIdx, ShopItemId, bNotPlayBgBlend)
+  self.bIniting = true
+  self.bIsFocusable = true
+  self.Text_None:SetText(GText("UI_SHOP_NOTOWNED"))
+  local MainTabIdx = MainTabIdx
+  if not MainTabIdx then
+    local Avatar = GWorld:GetAvatar()
+    if Avatar then
+      local RegionId = Avatar:GetSubRegionId2RegionId()
+      MainTabIdx = DataMgr.RegionId2ImpressionMainTab[RegionId]
+    end
+  end
+  self:InitBg(bNotPlayBgBlend)
+  self:InitSortList()
+  self:InitShopTabInfo(MainTabIdx, SubTabIdx, 2)
+  self.SelectItemId = nil
+  if ShopItemId then
+    self.SelectItemId = ShopItemId
+    if not self:IsAnimationPlaying(self.In) then
+      self:BlockAllUIInput(true, "SP_DisplayOnly")
+      self:AddTimer(0.1, function()
+        self:BlockAllUIInput(false)
+        self:ShowItemDetail()
+      end, false, 0, "OpenShopItemDialog", true)
+    end
+  end
+  self.bIniting = false
+end
+function M:ShowItemDetail()
+  if not self.SelectItemId then
+    return
+  end
+  local ShopItemContent = self.ShopItemContentsMap[self.SelectItemId]
+  if not ShopItemContent or not IsValid(ShopItemContent.UI) then
+    return
+  end
+  ShopItemContent.UI:ShowItemDetail()
+end
+function M:CloseItemDetail()
+  if not self.SelectItemId then
+    return
+  end
+  local ShopItemContent = self.ShopItemContentsMap[self.SelectItemId]
+  if not ShopItemContent or not IsValid(ShopItemContent.UI) then
+    return
+  end
+  ShopItemContent.UI:CloseItemDetail()
+end
+function M:InitRegionInfo(MainTabIdx)
+  local RegionId
+  if MainTabIdx then
+    local MainTabData = DataMgr.ImpressionShopMainTab[MainTabIdx]
+    RegionId = MainTabData and MainTabData.RegionId
+  end
+  if not RegionId then
+    local Message = string.format("未在ImpressionShopMainTab中找到对应的区域信息，MainTabId：%d", MainTabIdx)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Impression, "印象商店MainTab未填写区域Id", Message)
+    local Avatar = GWorld:GetAvatar()
+    if Avatar then
+      RegionId = Avatar:GetSubRegionId2RegionId()
+    end
+  end
+  RegionId = RegionId and tonumber(RegionId)
+  self.RegionId = RegionId
+  if not DataMgr.ImpressionShopInfo[self.RegionId] then
+    local Message = string.format("未在ImpressionShopInfo中找到当前区域的商店信息，RegionId：%d", self.RegionId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Impression, "未获取印象商店信息", Message)
+    return
+  end
+  self.ShopData = DataMgr.ImpressionShopInfo[self.RegionId]
+  self:UpdateBgBP()
+  self:UpdateTitle()
+  self:UpdateResource()
+  self:InitDimensionBtn()
+  self.ShopBGM = self.ShopData.PlaySystemUIBGM
+end
+function M:SwitchRegion(MainTabIdx)
+  local OldPlayBgBlend = self.PlayBgBlend
+  self.PlayBgBlend = false
+  if IsValid(self.Btn_DimensionDrawArea) then
+    self.Btn_DimensionDrawArea:PlayAnimation(self.Btn_DimensionDrawArea.Change)
+  end
+  self:PlaySwitchRegionAudio()
+  self:InitRegionInfo(MainTabIdx)
+  self.PlayBgBlend = OldPlayBgBlend
+end
+function M:UpdateBgBP(BPPath)
+  self.BgItem = nil
+  local BPPath = BPPath or self.ShopData and self.ShopData.ShopBgBPPath
+  if not BPPath then
+    return
+  end
+  local Widget = UE4.UWidgetBlueprintLibrary.Create(self, LoadClass(BPPath))
+  if Widget then
+    self.Group_BG:ClearChildren()
+    local Slot = self.Group_BG:AddChild(Widget)
+    Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
+    Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
+    self.BgItem = Widget
+    self.BgItem.bPlayBgBlend = self.PlayBgBlend
+    self.BgItem:PlayBgIn()
+  end
+end
+function M:UpdateTitle(TitleName)
+  local TitleName = TitleName or self.ShopData and self.ShopData.ShopName
+  if not TitleName then
+    return
+  end
+  self.Common_Tab:UpdateTopTitle(GText(TitleName))
+end
+function M:UpdateResource(ResourceId)
+  local ResourceId = ResourceId or self.ShopData and self.ShopData.TabCoin
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local SubRegionId = Avatar:GetSubRegionId2RegionId()
+    local Data = DataMgr.ImpressionResource[SubRegionId]
+    ResourceId = ResourceId or Data and Data.ResourceId
+  end
+  ResourceId = ResourceId or {3001}
+  self.Common_Tab:OverrideTopResource(ResourceId, true)
+end
+function M:OnMainTabChanged(TabWidget)
+  M.Super.OnMainTabChanged(self, TabWidget)
+  local MainTabId = self.MainTabMap[TabWidget.Idx]
+  if not MainTabId then
+    return
+  end
+  if self.bIniting then
+    self:InitRegionInfo(MainTabId)
+  else
+    self:SwitchRegion(MainTabId)
+  end
+  self:UpdateSortList()
+end
 function M:SetFocus_Lua()
   if self.ShopItemNum > 0 then
     self.List_Item:SetFocus()
@@ -137,48 +226,33 @@ function M:SetFocus_Lua()
     self:SetFocus()
   end
 end
-
-function M:UpdateResource()
-  local Avatar = GWorld:GetAvatar()
-  local SubRegionId = Avatar:GetSubRegionId2RegionId()
-  local Data = DataMgr.ImpressionResource[SubRegionId]
-  local ResourceId = 3001
-  if not Data then
-    Utils.ScreenPrint("Error: ImpressionResource\228\184\173\230\156\170\233\133\141\231\189\174\229\189\147\229\137\141RegionId" .. SubRegionId)
-  else
-    ResourceId = Data.ResourceId
-  end
-  self.OverrideTopResource = {ResourceId}
-end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   self:UnBindButtonEvents()
   self:PlayAnimation(self.Out)
+  if self.BgItem then
+    self.BgItem.bPlayBgBlend = self.PlayBgBlend
+    self.BgItem:PlayBgOut()
+  end
 end
-
 function M:BindSortListEvents()
   self.Common_SortList_PC:BindEventOnSelectionsChanged(self, self.OnSelectionsChanged)
   self.Common_SortList_PC:BindEventOnSortTypeChanged(self, self.OnSortTypeChanged)
 end
-
 function M:InitSortList()
   self.Common_SortList_PC:Init(self, self.Filters, CommonConst.ASC)
   self:BindSortListEvents()
 end
-
 function M:OnSelectionsChanged()
   DebugPrint("WBP_Impression_Shop_P:OnSelectionsChanged")
   self:UpdateSortList()
 end
-
 function M:OnSortTypeChanged()
   DebugPrint("WBP_Impression_Shop_P:OnSortTypeChanged")
   self:UpdateSortList()
 end
-
 function M:GetAllAvailableImpressionShopItemDatas(CheckFunc)
   local ShopItems = {}
   for _, v in pairs(DataMgr.ImpressionShop) do
@@ -188,7 +262,6 @@ function M:GetAllAvailableImpressionShopItemDatas(CheckFunc)
   end
   return ShopItems
 end
-
 function M:ProcessShopItemData(ItemInfos)
   for _, ItemInfo in pairs(ItemInfos) do
     ItemInfo.bUnlocked = ItemInfo.bUnlocked or self:CheckShopItemUnlocked(ItemInfo)
@@ -196,7 +269,6 @@ function M:ProcessShopItemData(ItemInfos)
     ItemInfo.ItemSeq = ItemInfo.ItemSeq or 0
   end
 end
-
 function M:CheckShopItemUnlocked(ItemInfo)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -204,7 +276,6 @@ function M:CheckShopItemUnlocked(ItemInfo)
   end
   return ConditionUtils.CheckCondition(Avatar, ItemInfo.UnlockCondition, false)
 end
-
 function M:AddOrRefreshShopItemSoldOut(ShopItemDatas)
   local Avatar = GWorld:GetAvatar()
   for _, ItemData in pairs(ShopItemDatas) do
@@ -223,17 +294,17 @@ function M:AddOrRefreshShopItemSoldOut(ShopItemDatas)
     end
   end
 end
-
 function M:OnShopItemSold()
   self:UpdateShopDetail()
 end
-
 function M:UpdateSortList(SubTabData)
   SubTabData = SubTabData or self.CachedSubTabData
   self.CachedSubTabData = SubTabData
   local Avatar = GWorld:GetAvatar()
-  
   local function GetShopItemCheckFunc(ShopItemData)
+    if ShopItemData.RegionId ~= self.RegionId then
+      return false
+    end
     if ShopItemData.SubTabId ~= SubTabData.SubTabId then
       return false
     end
@@ -242,7 +313,6 @@ function M:UpdateSortList(SubTabData)
     end
     return true
   end
-  
   local ItemInfos = self:GetAllAvailableImpressionShopItemDatas(GetShopItemCheckFunc)
   local Filter1, SortType = self.Common_SortList_PC:GetSortInfos()
   self:ProcessShopItemData(ItemInfos)
@@ -307,12 +377,14 @@ function M:UpdateSortList(SubTabData)
   self:StopAttrListFramingIn()
   self.List_Item:ClearListItems()
   self.ShopItemNum = #ShopDataList
+  self.ShopItemContentsMap = {}
   for i = 1, self.ShopItemNum do
     local ShopData = ShopDataList[i]
     local Content = NewObject(self.ShopItemContentClass)
     Content.ShopItemData = ShopData
     Content.ShopUI = self
     self.List_Item:AddItem(Content)
+    self.ShopItemContentsMap[ShopData.ImpressionShopId] = Content
   end
   local XAnchor = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" and 0 or 0.5
   self:HorizontalListViewResize_SetUp(self.Group_Item, self.List_Item, XAnchor)
@@ -337,14 +409,13 @@ function M:UpdateSortList(SubTabData)
       self.List_Item:RegenerateAllEntries()
     end
     if not CommonUtils:IfExistSystemGuideUI(self) then
-      self:SetFocus()
+      self:SetFocus_Lua()
     end
     self:AddTimer(0.01, function()
       self:PlayAttrListFramingIn()
     end)
   end)
 end
-
 function M:PlayAttrListFramingIn()
   self.List_Item:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self._ListAttrAnimTimerKeys = UIUtils.PlayListViewFramingInAnimation(self, self.List_Item, {
@@ -355,44 +426,48 @@ function M:PlayAttrListFramingIn()
     end
   })
 end
-
 function M:StopAttrListFramingIn()
   UIUtils.StopListViewFramingInAnimation(self.List_Item, {
     UIState = self,
     TimerKeys = self._ListAttrAnimTimerKeys
   })
 end
-
 function M:UpdateShopDetail(SubTabData)
   self:UpdateSortList(SubTabData)
 end
-
 function M:OnReturnKeyDown()
   self:CloseSelf()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
+  elseif InAnimation == self.In then
+    self:BindButtonEvents()
+    if self.SelectItemId then
+      self:BlockAllUIInput(true, "SP_DisplayOnly")
+      self:AddTimer(0.1, function()
+        self:BlockAllUIInput(false)
+        self:ShowItemDetail()
+      end, false, 0, "OpenShopItemDialog", true)
+    end
   end
 end
-
 function M:Close()
   DebugPrint("WBP_Impression_Shop_P:Close")
-  self:SwitchHideHeadWidget(false)
   self:HorizontalListViewResize_TearDown()
   self:PlayCloseAudio()
   M.Super.Close(self)
 end
-
+function M:ReceiveExitState(StackAction)
+  self:CloseItemDetail()
+  M.Super.ReceiveExitState(self, StackAction)
+end
 function M:IsShopItemUnlocked(ShopItemData)
   return ShopItemData.bUnlocked
 end
-
 function M:IsShopItemSoldOut(ShopItemData)
   return ShopItemData.bSoldOut
 end
-
 function M:GetShopItemNum(ShopItemData)
   local AvailableTime, LimitTime = 0, 0
   local Avatar = GWorld:GetAvatar()
@@ -405,7 +480,6 @@ function M:GetShopItemNum(ShopItemData)
   end
   return AvailableTime, LimitTime
 end
-
 function M:CheckSelfOwnShopItem(ShopItemData, bForceRefresh)
   if ShopItemData.bOwn ~= nil and not bForceRefresh then
     return ShopItemData.bOwn
@@ -425,15 +499,9 @@ function M:CheckSelfOwnShopItem(ShopItemData, bForceRefresh)
   end
   return false
 end
-
-function M:GetOverrideTopResource()
-  return self.OverrideTopResource
-end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   self:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   return M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
 end
-
 AssembleComponents(M)
 return M

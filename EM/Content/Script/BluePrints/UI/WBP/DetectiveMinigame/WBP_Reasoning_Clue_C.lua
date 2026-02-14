@@ -1,30 +1,25 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.ReddotName = "DetectiveAnswer"
   self:BindEvents()
-  self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:BindEvents()
   self.Btn_Click.OnClicked:Add(self, self.OnClickButton)
   self.Btn_Click.OnPressed:Add(self, self.OnPressButton)
   self.Btn_Click.OnHovered:Add(self, self.OnHoverButton)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhoverButton)
 end
-
 function M:Destruct()
   self:UnbindEvents()
 end
-
 function M:UnbindEvents()
   self.Btn_Click.OnClicked:Remove(self, self.OnClickButton)
   self.Btn_Click.OnPressed:Remove(self, self.OnPressButton)
   self.Btn_Click.OnHovered:Remove(self, self.OnHoverButton)
   self.Btn_Click.OnUnhovered:Remove(self, self.OnUnhoverButton)
 end
-
 function M:InitUIInfo(Content)
   self.Content = Content
   self.Content.UI = self
@@ -41,29 +36,30 @@ function M:InitUIInfo(Content)
   self:SetIsMultiSelected(Content.IsMultiSelected)
   self:SetCanMultiSelected(Content.CanMultiSelected)
   self.Text_Submit:SetText(GText("Minigame_Textmap_100324"))
+  self.Text_Clue_2:SetText(GText("Minigame_Textmap_100303"))
   if Content.IsSumbit then
     self.Panel_Submit:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self:PlayAnimation(self.Submitted)
   else
     self.Panel_Submit:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self:PlayAnimation(self.NotSubmitted)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:OnClickButton()
   self:SelectSelf()
   self.Content.Parent:UpdateItemInfo(self.Content)
   if self.Content.Parent.Book:GetIsClueUi() then
-    self.Content.Parent.Book:PlayAnimation(self.Content.Parent.Book.xiang)
+    self.Content.Parent.Book:PlayChangeAnimation(self.Content.AnswerId)
   else
+    self.Content.Parent.Book.AnswerId = self.Content.AnswerId
     self.Content.Parent.Book:SwitchToClueUi(true)
   end
 end
-
 function M:SelectSelf()
   if not self.Content or self.Content.IsEmpty then
     return
@@ -79,7 +75,6 @@ function M:SelectSelf()
   self:PlaySelectAnimation()
   self.Content.Parent:OnListItemClicked(self.Content)
 end
-
 function M:OnPressButton()
   if not self.Content or self.Content.IsEmpty then
     return
@@ -89,7 +84,6 @@ function M:OnPressButton()
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnHoverButton()
   if not self.Content or self.Content.IsEmpty then
     return
@@ -109,7 +103,6 @@ function M:OnHoverButton()
     end
   end
 end
-
 function M:OnUnhoverButton()
   if not self.Content or self.Content.IsEmpty then
     return
@@ -119,12 +112,10 @@ function M:OnUnhoverButton()
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SetIsSingleSelected(bIsSingleSelected)
   DebugPrint("Reasoning SetIsSingleSelected: ", self.Content.AnswerId, bIsSingleSelected)
   self.Content.IsSingleSelected = bIsSingleSelected
 end
-
 function M:SetIsMultiSelected(bIsMultiSelected)
   DebugPrint("Reasoning SetIsMultiSelected: ", self.Content.AnswerId, bIsMultiSelected)
   if not self.Content then
@@ -132,7 +123,6 @@ function M:SetIsMultiSelected(bIsMultiSelected)
   end
   self.Content.IsMultiSelected = bIsMultiSelected
 end
-
 function M:PlaySelectAnimation()
   if not self.Content.CanMultiSelected then
     if self.IsCommitAnswer then
@@ -173,14 +163,12 @@ function M:PlaySelectAnimation()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_checkbox_uncheck", nil, nil)
   end
 end
-
 function M:SetCanMultiSelected(bCanMultiSelected)
   if not self.Content then
     return
   end
   self.Content.CanMultiSelected = bCanMultiSelected
 end
-
 function M:UpdateReddotDetail(AnswerId)
   local CacheKey = AnswerId
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.ReddotName)
@@ -188,15 +176,14 @@ function M:UpdateReddotDetail(AnswerId)
     if nil == CacheDetail[CacheKey] then
       CacheDetail[CacheKey] = true
       ReddotManager.IncreaseLeafNodeCount(self.ReddotName)
-      self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     elseif CacheDetail[CacheKey] then
-      self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     else
-      self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
   end
 end
-
 function M:DecreaseReddotDetail()
   local AnswerId = self.Content.AnswerId
   local CacheKey = AnswerId
@@ -204,19 +191,16 @@ function M:DecreaseReddotDetail()
   if CacheDetail and CacheDetail[CacheKey] then
     CacheDetail[CacheKey] = false
     ReddotManager.DecreaseLeafNodeCount(self.ReddotName)
-    self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:IsEmpty()
   return self.Content.IsEmpty
 end
-
 function M:Reset()
   self.Text_Clue:SetText("")
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -230,5 +214,4 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

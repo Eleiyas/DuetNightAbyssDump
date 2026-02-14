@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Initialize(Initializer)
   self.CircleLimitArea = 55
   self.LocalTurnSpeed_Horizontal = 4.5
@@ -14,7 +13,6 @@ function M:Initialize(Initializer)
   self.YawRotateSpeed = 30
   self.BtnHoldCD = 3
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.AutoYawRotate then
     local YawSpeed = self.YawRotateSpeed
@@ -30,7 +28,6 @@ function M:Tick(MyGeometry, InDeltaTime)
     self.OwnerPlayer:AddControllerYawInput(YawSpeed * InDeltaTime)
   end
 end
-
 function M.ButtonFireDown(Battle_Button_Phone, Index, StartPos)
   local FireBtn = Battle_Button_Phone.Btn_Shoot
   FireBtn.LockShooting = EMCache:Get("LongPressLockShooting")
@@ -46,7 +43,6 @@ function M.ButtonFireDown(Battle_Button_Phone, Index, StartPos)
     FireBtn.Joystick_Border:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M.ButtonFireMove(Battle_Button_Phone, TouchFingerCount, Index, LastPos, TotalDeltaDis, LastDeltaDis, TouchLocalPos)
   DebugPrint("ButtonFireMove")
   local FireBtn = Battle_Button_Phone.Btn_Shoot
@@ -64,7 +60,6 @@ function M.ButtonFireMove(Battle_Button_Phone, TouchFingerCount, Index, LastPos,
   local FinalAngle = FireBtn:CalcFinalAngle(LastPos)
   FireBtn.Joystick_Border:SetRenderTransformAngle(FinalAngle)
 end
-
 function M.ButtonFireUp(Battle_Button_Phone, Index, WidgetLocalPos, LastWidgetTouchPos, EndTouchPos, TotalDeltaDis)
   local FireBtn = Battle_Button_Phone.Btn_Shoot
   if FireBtn.LockShooting and FireBtn.OwnerPlayer:CharacterInTag("Shooting") then
@@ -85,7 +80,6 @@ function M.ButtonFireUp(Battle_Button_Phone, Index, WidgetLocalPos, LastWidgetTo
     EMUIAnimationSubsystem:EMPlayAnimation(FireBtn, FireBtn.Normal)
   end)
 end
-
 function M:CalcFinalAngle(LastPos)
   local DirectionVec = FVector2D(LastPos.X, -LastPos.Y)
   DirectionVec:Normalize()
@@ -102,5 +96,4 @@ function M:CalcFinalAngle(LastPos)
   end
   return FinalAngle
 end
-
 return M

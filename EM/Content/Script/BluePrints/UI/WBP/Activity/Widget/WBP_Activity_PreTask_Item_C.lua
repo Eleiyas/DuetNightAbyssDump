@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   Content.SelfWidget = self
@@ -13,10 +12,10 @@ function M:OnListItemObjectSet(Content)
   self.IsShowLock = Content.IsShowLock
   self.IsForbidClick = Content.IsForbidClick
   self.IsShowFinish = Content.IsShowFinish
+  self.IsShowTip = Content.IsShowTip
   self:UpdateLockDisplay()
   self:UpdateClickAbility()
 end
-
 function M:UpdateLockDisplay()
   if self.IsShowFinish then
     self:PlayAnimation(self.State_Done)
@@ -26,17 +25,18 @@ function M:UpdateLockDisplay()
     self:PlayAnimation(self.State_Normal)
   end
 end
-
 function M:UpdateClickAbility()
   self.Btn_Click:SetForbidden(self.IsForbidClick)
 end
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnClickedBtn)
 end
-
 function M:OnClickedBtn()
   if self.IsForbidClick then
+    return
+  end
+  if self.IsShowTip then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Event_PretextTasks2_UnlockTips"))
     return
   end
   if not self.OnClickedParams then
@@ -48,5 +48,4 @@ function M:OnClickedBtn()
     self.OnClickedParams.Callback(self.OnClickedParams.Obj)
   end
 end
-
 return M

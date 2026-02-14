@@ -1,6 +1,5 @@
 require("UnLua")
 local G = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function G:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self:BindDialogEvent(DialogEvent.OnTitleTabSelected, self.OnTabSelected)
@@ -26,7 +25,6 @@ function G:InitContent(Params, PopupData, Owner)
   self.Params = Params
   self:Init(Params.Parent, Params.Parent.NowGachaId)
 end
-
 function G:Init(Parent, NowTabId)
   self.Parent = Parent
   self.GachaIndex = NowTabId
@@ -42,7 +40,6 @@ function G:Init(Parent, NowTabId)
   self:InitListText()
   self.List_Probability:SetFocus()
 end
-
 function G:OnTabSelected(TabWidget)
   self.NowTabId = TabWidget.Idx
   if self.FocusOnSubItem then
@@ -63,7 +60,6 @@ function G:OnTabSelected(TabWidget)
     GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   end
 end
-
 function G:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -75,7 +71,6 @@ function G:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function G:InitListProbability()
   local CurListNums = self.List_Probability:GetNumItems()
   local Count = 0
@@ -125,7 +120,6 @@ function G:InitListProbability()
   end
   self.List_Probability:RequestRefresh()
 end
-
 function G:InitListText()
   self.List_Desc:ClearListItems()
   local GachaInfo = DataMgr.Gacha[self.GachaIndex]
@@ -166,12 +160,10 @@ function G:InitListText()
   Content.ParentWidget = self
   self.List_Desc:AddItem(Content)
 end
-
 function G:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function G:PlayOutAnim()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Out) then
     return
@@ -180,5 +172,4 @@ function G:PlayOutAnim()
   self:PlayAnimation(self.Out)
   self.Owner:OnClose()
 end
-
 return G

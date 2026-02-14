@@ -1,12 +1,10 @@
 local M = Class("Blueprints.UI.WBP.StoryInteractive.View.StoryInteractiveView")
 local Common = require("BluePrints.UI.WBP.StoryInteractive.StoryInteractiveCommon")
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, NpcId, EndCallback)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, NpcId, EndCallback)
   self:InitBaseView(NpcId, EndCallback)
   self:SetFocus()
 end
-
 function M:UpdateKeyImg(IsGamePad, GamepadName)
   self.Super.UpdateKeyImg(self, IsGamePad, GamepadName)
   if not IsGamePad then
@@ -14,7 +12,7 @@ function M:UpdateKeyImg(IsGamePad, GamepadName)
       KeyInfoList = {
         {
           Type = "Text",
-          Text = GText(CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("StoryInteractiveClose")))
+          Text = CommonUtils:GetActionMappingKeyName("StoryInteractiveClose")
         }
       },
       Desc = GText(Common.TextMap_Btn_Close)
@@ -32,7 +30,6 @@ function M:UpdateKeyImg(IsGamePad, GamepadName)
   end
   self.Img_Mouse:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:BindCloseDelegate(bBind)
   M.Super.BindCloseDelegate(self, bBind)
   self:StopListeningForInputAction("StoryInteractiveClose", EInputEvent.IE_Pressed)
@@ -51,18 +48,15 @@ function M:BindCloseDelegate(bBind)
     self.Key_Close:RemoveExecuteLogic()
   end
 end
-
 function M:OnTalkExitPressed()
   self.TalkExitPress = true
 end
-
 function M:OnTalkExitReleased()
   if self.TalkExitPress then
     self:OnNormalExit()
   end
   self.TalkExitPress = false
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -88,7 +82,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -101,15 +94,12 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(...)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, ...)
   self:SetFocus()
 end
-
 function M:RefreshInteractiveItem(...)
   M.Super.RefreshInteractiveItem(self, ...)
   self:TrySelectItemAt(0)
 end
-
 return M

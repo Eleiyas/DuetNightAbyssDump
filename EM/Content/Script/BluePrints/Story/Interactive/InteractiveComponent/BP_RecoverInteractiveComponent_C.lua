@@ -1,21 +1,20 @@
+local LuaConst = require("EMLuaConst")
 require("UnLua")
 local BP_RecoverInteractiveComponent_C = Class({
   "BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_RecoverInteractiveComponent_C:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.InteractStartTimer = 0
   self.Priority = "Normal"
   self.IsBeginRecoverOther = false
-  self.InteractiveDistance = 200
+  self:SetInteractiveDistance(200)
   local RecoveryData = DataMgr.PlayerRotationRates
   self.RecoverySpeed = RecoveryData.RecoverySpeed.ParamentValue[1] or 0
   self.CommonUIConfirmID = 20001
   UE4.URuntimeCommonFunctionLibrary.SetSceneCompSkipUpdateOverlap(self)
 end
-
 function BP_RecoverInteractiveComponent_C:InitCharInfo()
   local Owner = self:GetOwner()
   if Owner:IsPhantom() then
@@ -26,7 +25,6 @@ function BP_RecoverInteractiveComponent_C:InitCharInfo()
     end
   end
 end
-
 function BP_RecoverInteractiveComponent_C:CheckPlayerTag(PlayerActor)
   local Owner = self:GetOwner()
   local Res = PlayerActor.PlayerAnimInstance.CurrentJumpState == Const.NormalState and PlayerActor:CheckCanEnterTag("Interactive")
@@ -35,8 +33,10 @@ function BP_RecoverInteractiveComponent_C:CheckPlayerTag(PlayerActor)
   end
   return Res
 end
-
 function BP_RecoverInteractiveComponent_C:IsCanInteractive(PlayerActor)
+  if PlayerActor and not self.bPressing and PlayerActor.WaitCallBack then
+    return false
+  end
   local Owner = self:GetOwner()
   if not Owner:IsDead() or not Owner:IsWaitingForRecover() then
     return false
@@ -50,12 +50,12 @@ function BP_RecoverInteractiveComponent_C:IsCanInteractive(PlayerActor)
   if Owner:IsPhantom() and not Owner.IsHostage and Owner.PhantomOwner.Eid ~= PlayerActor.Eid then
     return false
   end
-  if self:DistanceCheckComponent(PlayerActor, self.InteractiveDistance) then
-    return true
+  if LuaConst.OpenComputeInteractive then
+    return self:GetDistanceCheckResult()
+  else
+    return self:DistanceCheckComponent(PlayerActor, self.InteractiveDistance)
   end
-  return false
 end
-
 function BP_RecoverInteractiveComponent_C:DisplayInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:LoadUINew(UIConst.InteractiveUIName)
@@ -65,7 +65,6 @@ function BP_RecoverInteractiveComponent_C:DisplayInteractiveBtn(PlayerActor)
   InteractiveUI:AddInteractiveItem(self)
   self:SetBtnDisplayed(PlayerActor, true)
 end
-
 function BP_RecoverInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
@@ -78,7 +77,6 @@ function BP_RecoverInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerActor)
     self:EndPressInteractive(PlayerActor, false)
   end
 end
-
 function BP_RecoverInteractiveComponent_C:StartInteractive(PlayerActor)
   local Owner = self:GetOwner()
   if self:IsCanInteractive(PlayerActor) and not PlayerActor.WaitCallBack then
@@ -89,8 +87,8 @@ function BP_RecoverInteractiveComponent_C:StartInteractive(PlayerActor)
     self.CanEnd = true
   end
 end
-
 function BP_RecoverInteractiveComponent_C:BtnPressed(PlayerActor)
+  self.bPressing = true
   if not self.bForbidden then
     self:StartInteractive(PlayerActor)
   else
@@ -104,8 +102,8 @@ function BP_RecoverInteractiveComponent_C:BtnPressed(PlayerActor)
     end
   end
 end
-
 function BP_RecoverInteractiveComponent_C:EndPressInteractive(PlayerActor, IsSuccess, ReasonId)
+  self.bPressing = false
   local Owner = self:GetOwner()
   self:CheckPlayerTag(PlayerActor)
   if self.IsBeginRecoverOther == true then
@@ -117,25 +115,20 @@ function BP_RecoverInteractiveComponent_C:EndPressInteractive(PlayerActor, IsSuc
   end
   self.IsBeginRecoverOther = false
 end
-
 function BP_RecoverInteractiveComponent_C:BtnReleased(PlayerActor)
   self:EndPressInteractive(PlayerActor, false)
 end
-
 function BP_RecoverInteractiveComponent_C:GetInteractiveName()
   local Owner = self:GetOwner()
   local CharName = GText(DataMgr.BattleChar[Owner.CurrentRoleId].CharName)
   return string.format(GText("BATTLE_RECOVERY_LONGPRESSHELP"), CharName)
 end
-
 function BP_RecoverInteractiveComponent_C:TriggerTick(PlayerActor)
   self:UpdateDisplayInteractiveBtn(PlayerActor)
 end
-
 function BP_RecoverInteractiveComponent_C:IsLastingInteract()
   return true
 end
-
 function BP_RecoverInteractiveComponent_C:IsForbidden(PlayerActor)
   local Owner = self:GetOwner()
   if Owner:IsRealDead() then
@@ -149,11 +142,9 @@ function BP_RecoverInteractiveComponent_C:IsForbidden(PlayerActor)
   end
   return false
 end
-
 function BP_RecoverInteractiveComponent_C:TriggerExit(PlayerActor)
   if self:IsBtnDisplayed(PlayerActor) then
     self:NotDisplayInteractiveBtn(PlayerActor)
   end
 end
-
 return BP_RecoverInteractiveComponent_C

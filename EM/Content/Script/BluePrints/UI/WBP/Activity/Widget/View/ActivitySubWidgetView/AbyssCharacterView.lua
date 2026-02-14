@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
   self.Text_Title:SetText(GText("Abyss_CharReward_Title"))
   local AbyssSeasonId = PlayerAvatar.CurrentAbyssSeasonId
@@ -13,5 +12,4 @@ function M:Init(ActivityConfigData, PageConfigData, PlayerAvatar)
   local Icon = LoadObject(CharConfig.Icon)
   self.Icon_Head:SetBrushFromTexture(Icon)
 end
-
 return M

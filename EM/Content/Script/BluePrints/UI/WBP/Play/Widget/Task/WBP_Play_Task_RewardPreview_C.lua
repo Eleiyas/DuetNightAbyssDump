@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:Construct()
   self.AllQuestPhaseIdValue = {}
   self.AllRewardPreview = {}
@@ -8,7 +7,6 @@ function M:Construct()
   self.List_Reward:SetControlScrollbarInside(true)
   self:AddInputMethodChangedListen()
 end
-
 function M:InitAllRewardInfo()
   for k, v in pairs(DataMgr.StarterQuestPhaseMap) do
     if DataMgr.StarterQuestPhase[k] then
@@ -21,7 +19,6 @@ function M:InitAllRewardInfo()
     self.AllRewardPreview[PhaseId] = QuestPhaseConfigData.RewardPreview
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   self.List_Reward:ClearListItems()
@@ -36,7 +33,6 @@ function M:InitContent(Params, PopupData, Owner)
   end
   self.List_Reward:NavigateToIndex(0)
 end
-
 function M:InitGamepadView()
   if not self.GamepadAKeyIndex then
     self.GamepadAKeyIndex = self:ShowGamepadShortcutBtn({
@@ -52,7 +48,6 @@ function M:InitGamepadView()
     })
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -66,7 +61,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonRight and self.FocusTypeName == "RewardWidget" then
@@ -75,7 +69,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self.Mobile then
     return
@@ -88,7 +81,6 @@ function M:UpdatKeyDisplay(FocusTypeName)
     self:ShowGamepadShortcut(self.GamepadAKeyIndex + 1)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -96,5 +88,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.List_Reward:NavigateToIndex(0)
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 return M

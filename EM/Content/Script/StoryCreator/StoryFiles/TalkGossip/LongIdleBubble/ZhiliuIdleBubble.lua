@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1756125463702938362",
       type = "StoryNode",
-      name = "\230\173\162\230\181\129\230\148\190\231\189\174",
+      name = "止流放置",
       pos = {x = 1091.6521739130435, y = 287.7391304347827},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,7 +115,7 @@ return {
           ["1756125463703938366"] = {
             key = "1756125463703938366",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1104.2727272727273, y = 286.5454545454546},
             propsData = {
               IsNpcNode = false,
@@ -132,7 +134,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           }

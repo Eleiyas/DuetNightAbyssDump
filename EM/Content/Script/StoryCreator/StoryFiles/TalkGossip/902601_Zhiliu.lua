@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "174247822269435",
       type = "StoryNode",
-      name = "\230\173\162\230\181\129\231\156\139\230\157\191\229\168\152",
+      name = "止流看板娘",
       pos = {x = 1082.8383838383838, y = 287.3030303030303},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -104,7 +106,7 @@ return {
           ["174247822269540"] = {
             key = "174247822269540",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 85, y = 156.94128009520045},
             propsData = {
               NpcInfos = {
@@ -115,7 +117,7 @@ return {
           ["174247822269541"] = {
             key = "174247822269541",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 642.7993047310042, y = 156.82449325529143},
             propsData = {
               NpcInfos = {
@@ -166,6 +168,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = false,
               ShowAutoPlayButton = false,
               ShowReviewButton = true,
@@ -173,6 +176,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -189,10 +193,6 @@ return {
                   TalkActorId = 84102,
                   TalkActorVisible = true
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 84102}
               },
               OptionType = "normal",
               FreezeWorldComposition = false,

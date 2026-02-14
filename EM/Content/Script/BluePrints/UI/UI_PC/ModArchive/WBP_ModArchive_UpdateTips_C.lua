@@ -1,13 +1,11 @@
 require("UnLua")
 local WBP_ModArchive_UpdateTips_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_ModArchive_UpdateTips_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function WBP_ModArchive_UpdateTips_C:OnLoaded(...)
   self.Super:OnLoaded(...)
   self.ModShows, self.ModUnlocks, self.Owner = ...
@@ -40,7 +38,6 @@ function WBP_ModArchive_UpdateTips_C:OnLoaded(...)
   self:InitModUnlock()
   self:InitModShow()
 end
-
 function WBP_ModArchive_UpdateTips_C:InitModUnlock()
   if not self.ModUnlocks or #self.ModUnlocks <= 0 then
     self.Group_ModUnlock:SetVisibility(ESlateVisibility.Collapsed)
@@ -58,20 +55,17 @@ function WBP_ModArchive_UpdateTips_C:InitModUnlock()
     Content.ItemType = "Mod"
     Content.IsShowDetails = true
     Content.UIName = self:GetUIConfigName()
-    
     function Content.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnTipsOpenChanged
       })
     end
-    
     self.List_ModUnlock:AddItem(Content)
   end
   self:AddDelayFrameFunc(function()
     self.List_ModUnlock:SetFocus()
   end, 4, "FocusUnlock")
 end
-
 function WBP_ModArchive_UpdateTips_C:InitModShow()
   if not self.ModShows or #self.ModShows <= 0 then
     self.Group_ModUnlockArchive:SetVisibility(ESlateVisibility.Collapsed)
@@ -89,24 +83,20 @@ function WBP_ModArchive_UpdateTips_C:InitModShow()
     Content.ItemType = "Mod"
     Content.IsShowDetails = true
     Content.UIName = self:GetUIConfigName()
-    
     function Content.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnTipsOpenChanged
       })
     end
-    
     self.List_ModUnlockArchive:AddItem(Content)
   end
   self:AddDelayFrameFunc(function()
     self.List_ModUnlockArchive:SetFocus()
   end, 3, "FocusShow")
 end
-
 function WBP_ModArchive_UpdateTips_C:OnInFinished()
   self.IsIn = false
 end
-
 function WBP_ModArchive_UpdateTips_C:OnClose()
   if self.IsClosing then
     return
@@ -127,7 +117,6 @@ function WBP_ModArchive_UpdateTips_C:OnClose()
   AudioManager(self):SetEventSoundParam(self, "ModArchiveUpdateTips", {ToEnd = 1})
   AudioManager(self):StopSound(self, "ModArchiveUpdateTips")
 end
-
 function WBP_ModArchive_UpdateTips_C:RealOnClose()
   if self.Owner then
     self.Owner:SetFocus()
@@ -135,7 +124,6 @@ function WBP_ModArchive_UpdateTips_C:RealOnClose()
   end
   self:Close()
 end
-
 function WBP_ModArchive_UpdateTips_C:OnTipsOpenChanged(bIsOpen)
   if self.CurInputDeviceType ~= ECommonInputType.GamePad then
     return
@@ -148,7 +136,6 @@ function WBP_ModArchive_UpdateTips_C:OnTipsOpenChanged(bIsOpen)
     self.WS_Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_UpdateTips_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -164,7 +151,6 @@ function WBP_ModArchive_UpdateTips_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_UpdateTips_C:Handle_OnGamePadDown(InKeyName)
   DebugPrint("zwkkk  Handle_OnGamePadUp", InKeyName, self:GetName())
   if "Gamepad_FaceButton_Right" == InKeyName then
@@ -175,7 +161,6 @@ function WBP_ModArchive_UpdateTips_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_UpdateTips_C:Handle_OnPCDown(InKeyName)
   if "Escape" == InKeyName then
     if not self.IsClosing then
@@ -185,7 +170,6 @@ function WBP_ModArchive_UpdateTips_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_UpdateTips_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -194,7 +178,6 @@ function WBP_ModArchive_UpdateTips_C:RefreshOpInfoByInputDevice(CurInputDevice, 
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function WBP_ModArchive_UpdateTips_C:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self.WS_Tips:SetActiveWidgetIndex(1)
@@ -202,5 +185,4 @@ function WBP_ModArchive_UpdateTips_C:UpdateOnInputDeviceTypeChange()
     self.WS_Tips:SetActiveWidgetIndex(0)
   end
 end
-
 return WBP_ModArchive_UpdateTips_C

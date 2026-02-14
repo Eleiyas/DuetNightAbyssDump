@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Super.Construct(self)
   self.List_Weekly:ClearListItems()
@@ -13,17 +12,18 @@ function M:Construct()
   self.List_Weekly:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   self.List_Weekly:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.List_Weekly:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
+  self.Btn_ShopExChange:SetGamePadImg("Y")
   self.List_Weekly.OnCreateEmptyContent:Bind(self, function(self)
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     Content.IsEmpty = true
     return Content
   end)
+  self.Btn_ShopExChange:SetText(GText("UI_WeeklyDungeon_Goto"))
+  self.Btn_ShopExChange.Button_Area.OnClicked:Add(self, self.OnGoToSystem)
 end
-
 function M:Destruct()
   self.List_Weekly.OnCreateEmptyContent:Unbind()
 end
-
 function M:InitContent(Parent)
   self:PlayAnimation(self.Switch)
   local DungeonData = CommonUtils.DeepCopy(DataMgr.WeeklySelectDungeon)
@@ -37,6 +37,7 @@ function M:InitContent(Parent)
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     Content.ChapterId = DungeonData[i].ChapterId
     Content.Parent = Parent
+    Content.DeputeWeekly = self
     Content.IsEmpty = false
     self.List_Weekly:AddItem(Content)
   end
@@ -65,13 +66,18 @@ function M:InitContent(Parent)
   end
   self.Text_WeeklyDescNumTitle:SetText(GText("UI_WeeklyDungeon_ChancesRemain"))
 end
-
+function M:SetBtn_ShopExChangeState(bGamePad)
+  if bGamePad then
+    self.Btn_ShopExChange:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+  else
+    self.Btn_ShopExChange:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
+  end
+end
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.IsEmpty = true
   self.List_Weekly:AddItem(Content)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -84,7 +90,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.List_Weekly:NavigateToIndex(0)
   end
 end
-
 function M:UpdatKeyDisplay()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   if not Item then
@@ -112,5 +117,8 @@ function M:UpdatKeyDisplay()
   }
   Item:UpdateOtherPageTab(BottomKeyInfo)
 end
-
+function M:OnGoToSystem()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
+  PageJumpUtils:JumpToShopPage(nil, nil, nil, "WeeklyDungeonShop")
+end
 return M

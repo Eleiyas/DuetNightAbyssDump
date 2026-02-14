@@ -2,26 +2,22 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/ExploreGroup/BP_DongGuoBreakableItem_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.InitLoc = self.Ball:K2_GetComponentLocation()
   self.InitRot = self.Ball:K2_GetComponentRotation()
   self.CanUse = true
 end
-
 function M:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.ResetRange.OnComponentEndOverlap:Add(self, self.OnEndOverlap)
 end
-
 function M:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex)
   if OtherActor and OtherActor == self and self.CanUse then
     self.CanUse = false
     self:OnLeaveMaxDistance()
   end
 end
-
 function M:OnSpecialBulletHitted(SourceId)
   if not self.IsActive then
     return
@@ -45,15 +41,17 @@ function M:OnSpecialBulletHitted(SourceId)
     self.Ball:AddTorqueInRadians(Torque, "", true)
   end
 end
-
 function M:OnComplete()
   self:ChangeState("Manual", 0, self.CompleteStateId)
   self.Ball:SetSimulatePhysics(false)
 end
-
+function M:GetGuidePos()
+  return self.Ball:K2_GetComponentLocation()
+end
 function M:ResetState()
   self.CanUse = true
   self.Ball:K2_SetWorldLocationAndRotation(self.InitLoc, self.InitRot, false, nil, false)
+  self.Ball:SetPhysicsAngularVelocity(FVector(0, 0, 0))
+  self.Ball:SetPhysicsLinearVelocity(FVector(0, 0, 0))
 end
-
 return M

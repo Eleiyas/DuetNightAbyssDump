@@ -5,7 +5,6 @@ local Int2Str = {
   [2] = "Option",
   [3] = "Fail"
 }
-
 function M:CreateNode(Flow, TalkTask, Params)
   local FinishType = Params.FinishType
   local OptionIdx = Params.OptionIdx
@@ -27,7 +26,7 @@ function M:CreateNode(Flow, TalkTask, Params)
     elseif "Option" == FinishType or "Option" == Int2Str[FinishType] then
       OutportName = ETalkNodeFinishType.Option
       if not OptionIdx then
-        DebugPrint("Error: TalkDSL SetOutport \233\135\141\232\189\189\229\135\186\229\143\163\231\177\187\229\158\139\228\184\186\233\128\137\233\161\185\239\188\140\228\189\134\230\156\170\229\161\171\229\134\153OptionIdx")
+        DebugPrint("Error: TalkDSL SetOutport 重载出口类型为选项，但未填写OptionIdx")
         Node:Finish({
           Node.FinishPin
         })
@@ -48,5 +47,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return SetOutportNode
 end
-
 return M

@@ -11,7 +11,6 @@ M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp",
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.CurTabId = nil
@@ -30,12 +29,11 @@ function M:Initialize(Initializer)
   self.CurSelectStuffContent = nil
   self.bIsWalnutSelling = false
 end
-
 function M:Construct()
   self.Super.Construct(self)
   self:RefreshBaseInfo()
+  self:CheckIsCanSellWalnut()
 end
-
 function M:Close()
   local SellPageMainUI = UIManager(self):GetUIObj(WalnutBagCommon.WalnutSelectUIName)
   if nil ~= SellPageMainUI then
@@ -47,24 +45,19 @@ function M:Close()
   self:_StopListFramingInAnim()
   M.Super.Close(self)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.Walnut_Detail:ResetInfo()
   self:RefreshBottomKeyInfo()
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
-  if 1 == StackAction then
-    self:RefreshList(true, WalnutBagCommon.AllOptionName.TabClick)
-    if self.GameInputModeSubsystem then
-      self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
-    end
+  if 1 == StackAction and self.GameInputModeSubsystem then
+    self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
   self.AllReddotItemsId = WalnutBagModel:GetAllNewItemsId()
+  self:InitTabInfo()
 end
-
 function M:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
   if 0 == StackAction then
@@ -74,7 +67,6 @@ function M:ReceiveExitState(StackAction)
     end
   end
 end
-
 function M:InitTabInfo()
   self.AllTabInfo = {
     {
@@ -138,16 +130,13 @@ function M:InitTabInfo()
     self.Tab_WalnutBag:SelectTabById(self.NeedSelectTabId or WalnutBagCommon.DefaultSelectTabId)
   end, 1, "FillWithWalnutItemInfo")
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdateWalnutItem, self, self.OnUpdateWalnutItemByAction)
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self.NeedSelectTabId, self.NeedSelectItemId = ...
   self:PlayInAnim()
-  self:SwitchToNpcCamera(true)
   self:InitBtnExplanation()
   self.Com_BtnExplanation.Com_KeyImg:CreateCommonKey({
     KeyInfoList = {
@@ -155,7 +144,6 @@ function M:OnLoaded(...)
     }
   })
 end
-
 function M:InitBtnExplanation()
   local BtnExplanationConfigData = {}
   BtnExplanationConfigData.ClickCallback = self.OnBtnExplanationClickCallback
@@ -164,11 +152,9 @@ function M:InitBtnExplanation()
   BtnExplanationConfigData.Desc = "UI_Walnut_Gacha_Des"
   self.Com_BtnExplanation:Init(BtnExplanationConfigData)
 end
-
 function M:OnBtnExplanationClickCallback()
   print("lgc@ OnBtnExplanationClickCallback")
 end
-
 function M:RefreshBottomKeyInfo(FocusTypeName)
   FocusTypeName = FocusTypeName or "DefaultWidget"
   if self.CurFocusWidget == FocusTypeName then
@@ -324,7 +310,6 @@ function M:RefreshBottomKeyInfo(FocusTypeName)
   end
   self.CurFocusWidget = FocusTypeName
 end
-
 function M:WalnutTabItemClick(TabWidget)
   local TabId = TabWidget:GetTabId()
   self.CurTabId = TabId
@@ -333,8 +318,10 @@ function M:WalnutTabItemClick(TabWidget)
   self:RefreshList(true, WalnutBagCommon.AllOptionName.TabClick)
   self:HorizontalListViewResize_SetUp(self.Panel_ItemList, self.List_Item, 0)
 end
-
 function M:OnUpdateWalnutItemByAction(OpAction, ErrCode, ...)
+  if not ErrCode then
+    return
+  end
   if not ErrorCode:Check(ErrCode, UIConst.Tip_CommonToast) then
     return
   end
@@ -363,7 +350,6 @@ function M:OnUpdateWalnutItemByAction(OpAction, ErrCode, ...)
   end
   self.bIsWalnutSelling = false
 end
-
 function M:IsCanChangeToGamePadViewMode()
   if self.CurFocusWidget == "DefaultWidget" then
     return true
@@ -371,7 +357,6 @@ function M:IsCanChangeToGamePadViewMode()
     return not self.Walnut_Detail:IsInGamePadViewMode()
   end
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad, CurGamepadName)
   IsUseGamePad = IsUseGamePad and self:IsCanChangeToGamePadViewMode()
   self.Walnut_Detail:UpdateUIStyleInPlatform(IsUseGamePad)
@@ -394,7 +379,6 @@ function M:UpdateUIStyleInPlatform(IsUseGamePad, CurGamepadName)
     end
   end
 end
-
 function M:UpdateFocusInGamepad()
   if self.BagSellState then
     local SellPageMainUI = UIManager(self):GetUI("WalnutSelectToList")
@@ -407,7 +391,6 @@ function M:UpdateFocusInGamepad()
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -433,7 +416,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
@@ -449,14 +431,13 @@ function M:OnGamePadButtonDown(InKeyName)
   IsEventHandled = IsEventHandled or self.Tab_WalnutBag:Handle_KeyEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
     if self.BagSellState then
       if self.HoverItem then
         self:OnHoverItemKeyPressed()
       end
-    else
+    elseif self.SellUnlocked then
       self:OnSellButtonClicked()
     end
     return true
@@ -478,7 +459,6 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return false
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -490,7 +470,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   self:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   return M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
 end
-
 function M:OnGamePadButtonUp(InKeyName)
   local IsEventHandled = false
   if self.BagSellState then
@@ -501,7 +480,6 @@ function M:OnGamePadButtonUp(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnReturnKeyDown()
   if self.bIsWalnutSelling then
     return
@@ -520,42 +498,25 @@ function M:OnReturnKeyDown()
     self:PlayOutAnim()
   end
 end
-
 function M:EnterWalnutSellState()
   if self.bIsWalnutSelling then
     return
   end
   self.Tab_WalnutBag:EnterViewSingleMode()
+  self.BagSellState = true
   self:RefreshList(true, "ShowHaveWalnutOnly")
   self.DesireSaleWalnutObjList = {}
-  self.BagSellState = true
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   if nil ~= UIManager then
     local SelectWalnutDatas
     if self.CurSelectContent then
-      if self:CheckIsCanAddToSaleList(self.CurSelectContent, false) then
-        local WalnutUuid = self.CurSelectContent.Id
-        local WalnutServerData = self:GetWalnutServerData(WalnutUuid)
-        local WalnutStateTagInfo = {
-          Name = "IsToChoose",
-          ExtraData = {
-            1,
-            WalnutServerData.StuffCount,
-            WalnutServerData.Price,
-            WalnutServerData.CoinId
-          }
-        }
-        self.CurSelectContent.StateTagInfo = WalnutStateTagInfo
-        if self.CurSelectContent.SelfWidget then
-          self.CurSelectContent.SelfWidget:SetStuffStyleByStateTag(self.CurSelectContent)
-        end
-        self.DesireSaleStuffObjList[WalnutUuid] = self.CurSelectContent
-      elseif self.CurSelectContent.SelfWidget then
+      if self.CurSelectContent.SelfWidget then
         self.CurSelectContent.SelfWidget:SetSelected(false)
       else
         self.CurSelectContent.IsSelect = false
       end
+      self.WS_Detail:SetActiveWidgetIndex(1)
     end
     if self:IsAnimationPlaying(self.Sell_Close) then
       self:StopAnimation(self.Sell_Close)
@@ -565,11 +526,10 @@ function M:EnterWalnutSellState()
   end
   self:UpdateAllItemsStyle(false)
 end
-
 function M:LeaveWalnutSellState()
   self.Tab_WalnutBag:LeaveViewSingleMode()
-  self:RefreshList(true, WalnutBagCommon.AllOptionName.TabClick)
   self.BagSellState = false
+  self:RefreshList(true, WalnutBagCommon.AllOptionName.TabClick)
   local tempList = self.DesireSaleStuffObjList
   local Length = self.List_Item:GetNumItems()
   for i = 0, Length - 1 do
@@ -584,10 +544,8 @@ function M:LeaveWalnutSellState()
   end
   self:PlayAnimation(self.Sell_Close)
 end
-
 function M:RemoveWalnutSaleState()
 end
-
 function M:RealToSaleWalnuts(AllStuffContentList, AllStuffSellInfo)
   local PlayerAvatar = GWorld:GetAvatar()
   local WalnutList = {}
@@ -605,7 +563,6 @@ function M:RealToSaleWalnuts(AllStuffContentList, AllStuffSellInfo)
   end
   self.bIsWalnutSelling = true
 end
-
 function M:GetWalnutServerData(WalnutId)
   local PlayerAvatar = GWorld:GetAvatar()
   local StuffServerData = {}
@@ -616,23 +573,42 @@ function M:GetWalnutServerData(WalnutId)
   StuffServerData.Count = PlayerAvatar.Walnuts:GetCount(WalnutId) or 0
   return StuffServerData
 end
-
 function M:OnHoverItemKeyPressed()
   if self.HoverItem then
     EventManager:FireEvent(EventID.OnRemoveWalnutItemInList, self.HoverItem.Uuid)
     self:RefreshBottomKeyInfo("SelectWalnutSell")
   end
 end
-
 function M:ShowGetItemPage(AllRewards)
+  local function Cb()
+    if self.List_Item:GetNumItems() > 0 then
+      local FirstItem = self.List_Item:GetItemAt(0)
+      if FirstItem then
+        self:OnListItemSelected(FirstItem)
+      end
+    end
+  end
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
-    self:AddTimer(0.1, function()
-      UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, AllRewards, false, nil, self, true)
+    self:AddDelayFrameFunc(function()
+      UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, AllRewards, false, Cb, self, true)
     end)
   else
-    UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, AllRewards, false, nil, self, true)
+    UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, AllRewards, false, Cb, self, true)
   end
 end
-
+function M:CheckIsCanSellWalnut()
+  local UIUnlockRule = DataMgr.UIUnlockRule
+  local UIUnlockRuleId = UIUnlockRule.WalnutSell.UIUnlockRuleId
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  self.SellUnlocked = Avatar:CheckUIUnlocked(UIUnlockRuleId)
+  if not self.SellUnlocked then
+    self.Btn_Sell:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  else
+    self.Btn_Sell:SetVisibility(UE4.ESlateVisibility.Visable)
+  end
+end
 AssembleComponents(M)
 return M

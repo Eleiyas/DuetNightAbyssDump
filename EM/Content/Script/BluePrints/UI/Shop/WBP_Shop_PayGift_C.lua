@@ -5,19 +5,17 @@ local M = Class({
 M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
 function M:Construct()
+  self:AddInputMethodChangedListen()
   self.List_PayGift.OnCreateEmptyContent:Bind(self, function(self)
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     Content.ShopId = nil
     return Content
   end)
 end
-
 function M:Destruct()
   self:HorizontalListViewResize_TearDown()
 end
-
 function M:InitPayGiftInfo(ShopItemsData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -33,14 +31,22 @@ function M:InitPayGiftInfo(ShopItemsData)
   end
   if self.List_PayGift:GetNumItems() > 0 then
     self.List_PayGift:RequestFillEmptyContent()
-    self:AddTimer(0.01, function()
-      local ShopMain = UIManager(self):GetUIObj("ShopMain")
-      if (ShopMain and ShopMain:HasAnyFocus() or self:HasFocusedDescendants()) and not CommonUtils:IfExistSystemGuideUI(self) then
+    self.List_PayGift:RequestPlayEntriesAnim()
+    local ShopMain = UIManager(self):GetUIObj("ShopMain")
+    if ShopMain and (ShopMain:HasAnyFocus() or ShopMain:HasFocusedDescendants()) and not CommonUtils:IfExistSystemGuideUI(self) then
+      self:AddTimer(0.01, function()
         self.List_PayGift:SetFocus()
-      end
-    end)
+      end)
+    end
   end
 end
-
+function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
+  if CurInputDevice == ECommonInputType.Gamepad then
+    local ShopMain = UIManager(self):GetUIObj("ShopMain")
+    if (ShopMain and ShopMain:HasAnyFocus() or self:HasFocusedDescendants()) and not CommonUtils:IfExistSystemGuideUI(self) then
+      self.List_PayGift:SetFocus()
+    end
+  end
+end
 AssembleComponents(M)
 return M

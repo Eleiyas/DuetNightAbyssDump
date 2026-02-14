@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Text_Title:SetText(GText("Minigame_Textmap_100310"))
   self.Btn_FullClose.OnClicked:Add(self, self.Close)
@@ -11,17 +10,14 @@ function M:Construct()
   })
   self:InitDeviceInfo()
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self:InitReasoningDetail(...)
 end
-
 function M:OnLoaded(...)
   self.Super:OnLoaded(...)
   self:SetFocus()
 end
-
 function M:InitReasoningDetail(...)
   local AnswerId = (...)
   DebugPrint("InitReasoningDetail AnswerId: ", AnswerId)
@@ -31,7 +27,6 @@ function M:InitReasoningDetail(...)
     self.Text_ItemName:SetText(DetectiveAnswerData.Name)
   end
 end
-
 function M:InitDeviceInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -39,7 +34,6 @@ function M:InitDeviceInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("WBP_Reasoning_Detail_C RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   self.CurInputDevice = CurInputDevice
@@ -54,7 +48,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -63,5 +56,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return M

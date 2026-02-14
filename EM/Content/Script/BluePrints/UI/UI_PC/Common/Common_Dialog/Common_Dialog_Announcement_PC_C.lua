@@ -1,10 +1,8 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:GetLocalizationContent(Content)
 end
-
 function M:InitContent(Params, PopupData, Owner)
   local Info = Params.NoticeInfo
   if not Info then
@@ -33,5 +31,4 @@ function M:InitContent(Params, PopupData, Owner)
   self.Text_Title:SetText(Title)
   self.Text_Details:SetText(Body)
 end
-
 return M

@@ -13,15 +13,12 @@ Message.__Props__ = {
   Type = prop.prop("Int", "client save"),
   ChannelType = prop.prop("Int", "client save", 0)
 }
-
 function Message:Init(mtype)
   self.Type = mtype
 end
-
 function Message:Serialize()
   return self:all_dump(self)
 end
-
 FormatProperties(Message)
 local Messages = Class("Messages", CustomTypes.CustomList)
 Messages.ValueType = Message

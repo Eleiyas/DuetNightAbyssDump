@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints/Item/CombatProp/BP_CombatPropBase_C")
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   self.RareProb = self.UnitParams.RareProb or -1
   self.RareRewardId = self.UnitParams.RareRewardId or 0
   self.bRare = false
 end
-
 function M:OnToughnessToZero()
   local NextStateId = self.Normal_State_Id
   if math.random() <= self.RareProb then
@@ -18,11 +16,9 @@ function M:OnToughnessToZero()
   end
   self:ChangeState("Manual", 0, NextStateId)
 end
-
 function M:GetCanOpen(PlayerId)
   self.CanOpen = true
 end
-
 function M:OpenMechanism(PlayerId)
   print(_G.LogTag, "LXZ OpenMechanism", self.OpenState)
   if not self.OpenState then
@@ -30,8 +26,10 @@ function M:OpenMechanism(PlayerId)
   end
   self:UpdateRegionData("OpenState", true)
 end
-
 function M:CreateReward(PlayerId)
+  if not self:CheckAutoCreateReward() then
+    return
+  end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
     local RewardPosition = self:GetTransform()
@@ -39,13 +37,31 @@ function M:CreateReward(PlayerId)
       SourceEid = PlayerId,
       UniqueSign = self.Eid,
       ParentEid = self.Eid,
-      bRare = self.bRare
+      bRare = self.bRare,
+      WorldRegionEid = self.WorldRegionEid,
+      RegionDataType = self.RegionDataType
     }
-    print(_G.LogTag, "LXZ CreateReward", self.bRare)
     GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.Chest, RewardPosition, ExtraInfo)
   end
 end
-
+function M:StateCreateReward(PlayerId, NextStateId)
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if GameMode then
+    local ExtraInfo = {
+      SourceEid = PlayerId,
+      UniqueSign = self.Eid,
+      ParentEid = self.Eid,
+      bRare = self.bRare,
+      WorldRegionEid = self.WorldRegionEid,
+      RegionDataType = self.RegionDataType
+    }
+    local function CallBack()
+      self.CombatStateChangeComponent:TriggerOnEventEnd(NextStateId)
+    end
+    return GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.Chest, self:GetTransform(), ExtraInfo, CallBack)
+  end
+  return false
+end
 function M:CreateRegionData()
   self.TN = self:GetAttr("TN")
   self.RegionData = {
@@ -53,7 +69,6 @@ function M:CreateRegionData()
     IsActive = self.IsActive
   }
 end
-
 function M:RecoverSavedData(DataTable)
   if not DataTable then
     return
@@ -64,5 +79,4 @@ function M:RecoverSavedData(DataTable)
     end
   end
 end
-
 return M

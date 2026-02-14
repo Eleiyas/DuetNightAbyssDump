@@ -1,11 +1,10 @@
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 local ReddotTreeNode_DailySignIn = Class("BluePrints.UI.Reddot.Child.Activity.ActivityBase")
-
 function ReddotTreeNode_DailySignIn:_Judge(ActivityID)
   local PlayerAvatar = GWorld:GetAvatar()
   local AllSignServerData = PlayerAvatar.DailyLogin
-  if not self:CheckActivityIsValid() then
+  if not self:CheckActivityIsValid(ActivityID) then
     return false
   end
   for k, SignInfo in pairs(AllSignServerData) do
@@ -22,13 +21,11 @@ function ReddotTreeNode_DailySignIn:_Judge(ActivityID)
   end
   return false
 end
-
-function ReddotTreeNode_DailySignIn:CheckActivityIsValid()
+function ReddotTreeNode_DailySignIn:CheckActivityIsValid(ActivityID)
   local CacheDetail = self.Cache.Detail
-  if CacheDetail.bClose then
+  if CacheDetail.bClose and CacheDetail.CurrentEventId == ActivityID then
     return false
   end
   return true
 end
-
 return ReddotTreeNode_DailySignIn

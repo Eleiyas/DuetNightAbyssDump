@@ -1,9 +1,14 @@
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local EMCache = require("EMCache.EMCache")
+local ReasoningUtils = require("BluePrints.UI.WBP.DetectiveMinigame.ReasoningUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local QuestState = {Unlock = 1, Doing = 2}
-
+local DisplayDungeonProgress = {
+  SurvivalMini = true,
+  Excavation = true,
+  Defence = true
+}
 function M:Initialize(Initializer)
   self.CurTaskInfo = {}
   self.CurSpecialTaskInfo = {}
@@ -12,7 +17,6 @@ function M:Initialize(Initializer)
   self.Platform = "PC"
   self.IsInLoading = false
 end
-
 function M:Construct()
   self.Super.Construct(self)
   self.Text_Complete:SetText(GText("UI_QUEST_SUCCESS"))
@@ -30,7 +34,6 @@ function M:Construct()
   end
   EventManager:AddEvent(EventID.OnReceiveTask, self, self.SetTaskIconAndName)
   EventManager:AddEvent(EventID.StartRougeCanonMiniGame, self, self.SetRougeCanonInfo)
-  EventManager:AddEvent(EventID.EndRougeCanonMiniGame, self, self.RemoveRougeCanonInfo)
   EventManager:AddEvent(EventID.QuestChainFinished, self, self.QuestChainFinished)
   EventManager:AddEvent(EventID.OnUpdateQuestChain, self, self.UpdateQuestChain)
   EventManager:AddEvent(EventID.OnDungeonTaskProgress, self, self.OnDungeonTaskProgress)
@@ -45,13 +48,12 @@ function M:Construct()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
+  self:InitDungeonProgressDisplay()
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   EventManager:RemoveEvent(EventID.OnReceiveTask, self)
   EventManager:RemoveEvent(EventID.StartRougeCanonMiniGame, self)
-  EventManager:RemoveEvent(EventID.EndRougeCanonMiniGame, self)
   EventManager:RemoveEvent(EventID.QuestChainFinished, self)
   EventManager:RemoveEvent(EventID.OnUpdateQuestChain, self)
   EventManager:RemoveEvent(EventID.OnDungeonTaskProgress, self)
@@ -70,7 +72,6 @@ function M:Destruct()
   self.Button_Area.OnPressed:Clear()
   self.Button_Area.OnReleased:Clear()
 end
-
 function M:OnCloseLoading()
   self.IsInLoading = false
   GWorld.GameInstance:AddTimer(3, function()
@@ -82,7 +83,6 @@ function M:OnCloseLoading()
     end
   end, false)
 end
-
 function M:OnInLoading()
   self.IsInLoading = true
   if self.Panel_Tips2:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
@@ -92,7 +92,6 @@ function M:OnInLoading()
     end
   end
 end
-
 function M:SetTaskIconAndName(TaskIconPath, TextTitle, TaskContent)
   self.Text_TaskContent:SetText("")
   self.Text_TaskContent:SetVisibility(ESlateVisibility.Collapsed)
@@ -103,7 +102,7 @@ function M:SetTaskIconAndName(TaskIconPath, TextTitle, TaskContent)
   end
   self.ReceiveTaskContent = TaskContent
   local CurContent = TaskContent
-  if string.find(GText(CurContent), "%\239\188\136%%d/%%d%\239\188\137") then
+  if string.find(GText(CurContent), "%（%%d/%%d%）") then
     if not self.CurProgress then
       self.CurProgress = GameState(self).CurProgressCache or 0
     end
@@ -163,16 +162,14 @@ function M:SetTaskIconAndName(TaskIconPath, TextTitle, TaskContent)
     self:PlayAnimation(self.Main_Task_In)
   end
 end
-
 function M:OnDungeonTaskProgress(CurProgress, TotalProgress)
   self.CurProgress = CurProgress
   self.TotalProgress = TotalProgress
-  if self.ReceiveTaskContent ~= nil and string.find(GText(self.ReceiveTaskContent), "%\239\188\136%%d/%%d%\239\188\137") then
+  if self.ReceiveTaskContent ~= nil and string.find(GText(self.ReceiveTaskContent), "%（%%d/%%d%）") then
     local CurStr = string.format(GText(self.ReceiveTaskContent), self.CurProgress, self.TotalProgress)
     self.Text_TaskContent:SetText(CurStr)
   end
 end
-
 function M:SetCurTaskBarInfo(QuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -213,7 +210,7 @@ function M:SetCurTaskBarInfo(QuestChainId)
     end
   end
   if not CurTaskDescribe or not DataMgr.TextMap[CurTaskDescribe] then
-    ScreenPrint(string.format("TaskBar: \228\187\187\229\138\161\230\160\143\228\187\187\229\138\161\230\143\143\232\191\176\228\184\141\229\173\152\229\156\168TextMap: %s", CurTaskDescribe))
+    ScreenPrint(string.format("TaskBar: 任务栏任务描述不存在TextMap: %s", CurTaskDescribe))
     CurTaskDescribe = GText("UI_QUEST_UNKNOWN")
   end
   local RetTaskDescribe = GText(CurTaskDescribe)
@@ -228,7 +225,6 @@ function M:SetCurTaskBarInfo(QuestChainId)
   self.CurTaskInfo.IsChapterEnd = IsChapterEnd
   self.CurTaskInfo.QuestUIId = QuestUIId
 end
-
 function M:GetBranchQuestCountInfo(QuestChainId, QuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -266,7 +262,6 @@ function M:GetBranchQuestCountInfo(QuestChainId, QuestId)
   end
   return ""
 end
-
 function M:TrySetUpdateTaskBarNodeInfo(QuestChainId, QuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -288,7 +283,6 @@ function M:TrySetUpdateTaskBarNodeInfo(QuestChainId, QuestId)
     end
   end
 end
-
 function M:TrySetSubTaskCountInfo(CurQuestChainId, CurQuestId, InNodeKey)
   local ChildWidgetNum = self.VBox_SubTasks:GetChildrenCount()
   if 0 == ChildWidgetNum then
@@ -307,7 +301,6 @@ function M:TrySetSubTaskCountInfo(CurQuestChainId, CurQuestId, InNodeKey)
     return false
   end
 end
-
 function M:UpdateTaskExtraInfo(OpType, ExtraInfo)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -343,7 +336,6 @@ function M:UpdateTaskExtraInfo(OpType, ExtraInfo)
     end
   end
 end
-
 function M:SetCurTaskBarInfoWithExtraInfo(ChainId, DoingQuestId, NodeKey)
   local UpdateCountInfo = TaskUtils:GetQuestCountExtraInfoString(ChainId, DoingQuestId, NodeKey)
   if "" == UpdateCountInfo or nil == NodeKey then
@@ -361,7 +353,6 @@ function M:SetCurTaskBarInfoWithExtraInfo(ChainId, DoingQuestId, NodeKey)
     self.Text_TaskContent:SetText(RetContent)
   end
 end
-
 function M:ClearCurTaskBarExtraInfo()
   local CheckEndsWithCountInfo = string.match(self.Text_TaskContent.Text, "%(%d+/%d+%)$") ~= nil
   local NewCotent = ""
@@ -370,7 +361,6 @@ function M:ClearCurTaskBarExtraInfo()
     self.Text_TaskContent:SetText(NewCotent)
   end
 end
-
 function M:UpdateTaskInfo(STLTaskInfo, OpType)
   self:SetCurTaskBarInfo(STLTaskInfo.TaskChainId)
   self:SetTaskBarTextContent()
@@ -380,7 +370,6 @@ function M:UpdateTaskInfo(STLTaskInfo, OpType)
     self:TryUpdateTaskBarByDelete(STLTaskInfo)
   end
 end
-
 function M:UpdateSpecialTaskInfo(OpType, SpecialNodeInfo)
   if "AddSpecialTaskInfo" == OpType then
     local BattleFortUI = UIManager(GWorld.GameInstance):GetUIObj("BattleFort")
@@ -388,9 +377,8 @@ function M:UpdateSpecialTaskInfo(OpType, SpecialNodeInfo)
       self.Panel_Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       self.Panel_Tips:SetRenderOpacity(1.0)
       local MessageContent = GText("UI_QUEST_TRACK")
-      
       local function GenAndParseActionMapContent(Panel)
-        local ActionMapText = GText(CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("ActiveGuide")))
+        local ActionMapText = CommonUtils:GetActionMappingKeyName("ActiveGuide")
         Panel.Key:CreateCommonKey({
           KeyInfoList = {
             {Type = "Text", Text = ActionMapText}
@@ -399,7 +387,6 @@ function M:UpdateSpecialTaskInfo(OpType, SpecialNodeInfo)
         Panel.Text_Tips01:SetVisibility(UE4.ESlateVisibility.Collapsed)
         Panel.Text_Tips02:SetText(MessageContent)
       end
-      
       GenAndParseActionMapContent(self, MessageContent)
     end
     if self:IsAnimationPlaying(self.Main_Task_In) then
@@ -434,7 +421,6 @@ function M:UpdateSpecialTaskInfo(OpType, SpecialNodeInfo)
     end
   end
 end
-
 function M:TryUpdateTaskBarByAdd(STLTaskInfo)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -457,7 +443,6 @@ function M:TryUpdateTaskBarByAdd(STLTaskInfo)
     self:PlayTaskBarAnimByState("UpdateIn")
   end
 end
-
 function M:TryUpdateTaskBarByDelete(STLTaskInfo)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -471,7 +456,6 @@ function M:TryUpdateTaskBarByDelete(STLTaskInfo)
     self:PlayTaskBarAnimByState("UpdateOut")
   end
 end
-
 function M:OnTipEndPlayTaskBarAnim(QuestChainId, QuestId, IsBeginOrEnd)
   if IsBeginOrEnd then
     local TaskDetail = TaskUtils:GetQuestDetail(QuestChainId, QuestId)
@@ -514,17 +498,14 @@ function M:OnTipEndPlayTaskBarAnim(QuestChainId, QuestId, IsBeginOrEnd)
     self:ChangeTrackingChainByFinishQuest()
   end
 end
-
 function M:SetTaskBarTextContent()
   self.Text_TaskName:SetText(self.CurTaskInfo.TaskName)
   self.Text_TaskContent:SetText(self.CurTaskInfo.TaskDescribe)
 end
-
 function M:SetTaskBarSpecialTextContent()
   self.Text_TaskName:SetText(self.CurSpecialTaskInfo.TaskName)
   self.Text_TaskContent:SetText(self.CurSpecialTaskInfo.TaskDescribe)
 end
-
 function M:ChangeMainTaskBarCountInfoByBranchQuestNode(InQuestChainId, InQuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -545,8 +526,11 @@ function M:ChangeMainTaskBarCountInfoByBranchQuestNode(InQuestChainId, InQuestId
     CurrentText = self.CurTaskInfo.TaskDescribe
   end
   local CheckEndsWithCountInfo = string.match(CurrentText, "%(%d+/%d+%)$") ~= nil
-  
   local function SetTaskContentUICountInfo(InCountInfo)
+    local TrackId = Avatar.TrackingQuestChainId
+    if ChainId ~= TrackId then
+      return
+    end
     if CheckEndsWithCountInfo then
       CurrentText = string.gsub(CurrentText, "%(%d+/%d+%)$", "") .. InCountInfo
     else
@@ -554,7 +538,6 @@ function M:ChangeMainTaskBarCountInfoByBranchQuestNode(InQuestChainId, InQuestId
     end
     self.Text_TaskContent:SetText(CurrentText)
   end
-  
   if self:IsAnimationPlaying(self.Main_Task_In) then
     self:BindToAnimationFinished(self.Main_Task_In, {
       self,
@@ -575,7 +558,6 @@ function M:ChangeMainTaskBarCountInfoByBranchQuestNode(InQuestChainId, InQuestId
     SetTaskContentUICountInfo(UpdateCount)
   end
 end
-
 function M:PlayTaskBarAnimByState(State)
   self.Panel_NewTask:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_CompleteText:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -655,9 +637,8 @@ function M:PlayTaskBarAnimByState(State)
   elseif "UpdateIn" == State then
     if self.Panel_Tips.Visibility == UE4.ESlateVisibility.Collapsed and self.Platform ~= "Mobile" then
       local MessageContent = GText("UI_QUEST_TRACK")
-      
       local function GenAndParseActionMapContent(Panel)
-        local ActionMapText = GText(CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("ActiveGuide")))
+        local ActionMapText = CommonUtils:GetActionMappingKeyName("ActiveGuide")
         Panel.Key:CreateCommonKey({
           KeyInfoList = {
             {Type = "Text", Text = ActionMapText}
@@ -666,7 +647,6 @@ function M:PlayTaskBarAnimByState(State)
         Panel.Text_Tips01:SetVisibility(UE4.ESlateVisibility.Collapsed)
         Panel.Text_Tips02:SetText(MessageContent)
       end
-      
       GenAndParseActionMapContent(self, MessageContent)
       self:PlayAnimation(self.Tooltip_In)
       if self.Panel_Tips2:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
@@ -679,18 +659,19 @@ function M:PlayTaskBarAnimByState(State)
         function()
           self:UnbindAllFromAnimationFinished(self.MissonComplete_Out)
           self:SetTaskBarTextContent()
+          self:SetExtraText(self.CurTaskInfo.QuestChainId, self.CurTaskInfo.QuestId)
           self:PlayAnimation(self.Main_Task_In)
         end
       })
     elseif not self:IsAnimationPlaying(self.Main_Task_In) and not self:IsAnimationPlaying(self.Main_Task_Out) then
       self:PlayAnimation(self.Main_Task_In)
       self:SetTaskBarTextContent()
+      self:SetExtraText(self.CurTaskInfo.QuestChainId, self.CurTaskInfo.QuestId)
     end
   elseif "UpdateOut" == State then
     local function IndicatorLoopFunc()
       self:BindToAnimationFinished(self.Main_Task_In, {
         self,
-        
         function()
           self:UnbindAllFromAnimationFinished(self.Main_Task_In)
           EventManager:FireEvent(EventID.PlayLoopAnimAfterBarAnim)
@@ -698,7 +679,6 @@ function M:PlayTaskBarAnimByState(State)
       })
       self:PlayAnimation(self.Main_Task_In)
     end
-    
     if not self:IsAnimationPlaying(self.Main_Task_In) and not self:IsAnimationPlaying(self.Main_Task_Out) then
       self:SetTaskBarTextContent()
       self:PlayAnimation(self.Main_Task_Out)
@@ -712,7 +692,7 @@ function M:PlayTaskBarAnimByState(State)
       return
     end
   elseif "TrackIn" == State then
-    if self.Panel_Tips.Visibility == UE4.ESlateVisibility.SelfHitTestInvisible then
+    if self.Panel_Tips.Visibility == UE4.ESlateVisibility.SelfHitTestInvisible and self.Platform == "Mobile" then
       self.Panel_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
     if not self:IsAnimationPlaying(self.TaskBar_In) and not self:IsAnimationPlaying(self.TaskBar_Out) then
@@ -746,7 +726,16 @@ function M:PlayTaskBarAnimByState(State)
     return
   end
 end
-
+function M:SetExtraText(QuestChainId, QuestId)
+  local Info = TaskUtils:GetQuestExtraInfo(QuestChainId, QuestId)
+  if Info then
+    for k, v in pairs(Info) do
+      if v then
+        self:SetCurTaskBarInfoWithExtraInfo(QuestChainId, QuestId, k)
+      end
+    end
+  end
+end
 function M:TryListenNewQuestChainDataChange(OldQuestChainId, OldQuestId)
   local TaskDetail = TaskUtils:GetQuestDetail(OldQuestChainId, OldQuestId)
   local IsEndChapter = false
@@ -759,7 +748,6 @@ function M:TryListenNewQuestChainDataChange(OldQuestChainId, OldQuestId)
     self:ChangeTrackingChainByFinishQuest()
   end
 end
-
 function M:LoopListenNewChainData(OldQuestChainId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -772,7 +760,6 @@ function M:LoopListenNewChainData(OldQuestChainId)
     end
   end
 end
-
 function M:ChangeTrackingChainByFinishQuest()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -797,6 +784,7 @@ function M:ChangeTrackingChainByFinishQuest()
     self:SetCurTaskBarInfo(STLTaskInfo.TaskChainId)
     self:TrySetUpdateTaskBarNodeInfo(TrackingQuestChainId, DoingQuestId)
     self:SetTaskBarTextContent()
+    self:SetExtraText(self.CurTaskInfo.QuestChainId, self.CurTaskInfo.QuestId)
     local IconTexture = TaskUtils:GetIconTextureByTrackQuestChainType()
     if IconTexture then
       self.Icon_GuidePoint:SetBrushResourceObject(IconTexture)
@@ -816,26 +804,21 @@ function M:ChangeTrackingChainByFinishQuest()
     end
   end
 end
-
 function M:PlayMissionStateChange()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_state_change", nil, nil)
 end
-
 function M:PlayGetInAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_update", nil, nil)
 end
-
 function M:PlayCompleteAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_complete", nil, nil)
 end
-
 function M:RefreshGuideInfo()
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
   if GameState then
     GameState:TryShowDungeonFirstGuide(GameState.GameModeType)
   end
 end
-
 function M:ShowQuestHint(InMessageId)
   if self:IsPlayingAnimation(self.Tooltip_Out) then
     self:StopAnimation(self.Tooltip_Out)
@@ -844,7 +827,6 @@ function M:ShowQuestHint(InMessageId)
   if DataMgr.Message[InMessageId] and DataMgr.Message[InMessageId].MessageContentPC and DataMgr.Message[InMessageId].MessageContentPhone then
     local MessageId = CommonUtils.ChooseOptionByPlatform(DataMgr.Message[InMessageId].MessageContentPC, DataMgr.Message[InMessageId].MessageContentPhone)
     local MessageContent = GText(MessageId)
-    
     local function GenAndParseActionMapContent(Panel, SourceContent)
       local FirstIndex = string.find(SourceContent, "&")
       if not FirstIndex then
@@ -869,7 +851,6 @@ function M:ShowQuestHint(InMessageId)
       Panel.Text_Tips01:SetText(sub1)
       Panel.Text_Tips02:SetText(sub2)
     end
-    
     GenAndParseActionMapContent(self, MessageContent)
     self:PlayAnimation(self.Tooltip_In)
     if self.Panel_Tips2:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
@@ -879,7 +860,6 @@ function M:ShowQuestHint(InMessageId)
     self.Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:HideQuestHint(InMessageId)
   if self:IsPlayingAnimation(self.Tooltip_In) then
     self:StopAnimation(self.Tooltip_In)
@@ -895,18 +875,15 @@ function M:HideQuestHint(InMessageId)
     self:PlayAnimation(self.Tooltip_Out)
   end
 end
-
 function M:CreateSTLTaskInfo(QuestChainId, QuestId)
   local TaskInfo
   local TaskDetail = TaskUtils:GetQuestDetail(QuestChainId, QuestId)
   if nil == TaskDetail then
     return nil
   end
-  
   local function GetTaskInfoString(TaskText)
     return GText(TaskText)
   end
-  
   local CurTaskName
   if DataMgr.QuestChain[TaskDetail.QuestChainId] and DataMgr.QuestChain[TaskDetail.QuestChainId].QuestChainName then
     CurTaskName = GetTaskInfoString(DataMgr.QuestChain[TaskDetail.QuestChainId].QuestChainName)
@@ -928,7 +905,6 @@ function M:CreateSTLTaskInfo(QuestChainId, QuestId)
   end
   return TaskInfo
 end
-
 function M:SwitchTaskBarContentByTracking(IsTrack, IsPlayTextAnim)
   self.Panel_NewTask:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local Avatar = GWorld:GetAvatar()
@@ -997,6 +973,16 @@ function M:SwitchTaskBarContentByTracking(IsTrack, IsPlayTextAnim)
       AudioManager(self):UpdateQuestChainIdAndQuestId(TrackingQuestId, DoingQuestId)
       self:SetCurTaskBarInfo(CurQuestChainId)
       self:SetTaskBarTextContent()
+      self:SetExtraText(self.CurTaskInfo.QuestChainId, self.CurTaskInfo.QuestId)
+      local Info = TaskUtils:GetQuestExtraInfo(self.CurTaskInfo.QuestChainId, self.CurTaskInfo.QuestId)
+      if Info then
+        for _, Data in pairs(Info) do
+          if Data.Node and Data.Node.Type == "BranchQuestStartNode" then
+            local Count = self:GetBranchQuestCountInfo(self.CurTaskInfo.QuestChainId, self.CurTaskInfo.QuestId)
+            self.Text_TaskContent:SetText(self.CurTaskInfo.TaskDescribe .. Count)
+          end
+        end
+      end
       local TipCache = EMCache:Get("TextTaskTipAnim", true) or {}
       if TrackTaskInfo.bIsStartChapter and 0 == TrackTaskInfo.QuestUIId and true == IsPlayTextAnim and (nil == TipCache[DoingQuestId] or false == TipCache[DoingQuestId]) then
         TipCache[DoingQuestId] = true
@@ -1037,7 +1023,6 @@ function M:SwitchTaskBarContentByTracking(IsTrack, IsPlayTextAnim)
     end
   end
 end
-
 function M:AddOptionalTask(Text)
   local OptionalTaskWidgetClass = LoadClass("/Game/UI/WBP/Battle/Widget/TaskBar/WBP_Battle_TaskBar_OptionalTask")
   local Widget = UE4.UWidgetBlueprintLibrary.Create(self, OptionalTaskWidgetClass)
@@ -1047,12 +1032,10 @@ function M:AddOptionalTask(Text)
     Widget.Text_Describe:SetText(GText(Text))
   end
 end
-
 function M:RemoveOptionalTask()
   self.VBox_OptionalTasks:SetVisibility(ESlateVisibility.Collapsed)
   self.VBox_OptionalTasks:ClearChildren()
 end
-
 function M:AddSynthesisOptionalTask(Text, IconName)
   local Widget = UIManager(self):_CreateWidgetNew("SynthesisDestructionSubTask", IconName)
   if Widget then
@@ -1067,7 +1050,6 @@ function M:AddSynthesisOptionalTask(Text, IconName)
     Widget:PlayAnimation(Widget.In)
   end
 end
-
 function M:RemoveSynthesisOptionalTask()
   local Widget = self.VBox_OptionalTasks:GetChildAt(0)
   if not Widget then
@@ -1081,7 +1063,6 @@ function M:RemoveSynthesisOptionalTask()
   end)
   Widget:PlayAnimation(Widget.Out)
 end
-
 function M:SetVisibilityEx(Visibility)
   DebugPrint("WBP_Battle_TaskBar_C SetVisibilityEx", Visibility)
   if self.IsHideByNode then
@@ -1091,7 +1072,6 @@ function M:SetVisibilityEx(Visibility)
   end
   self.VBox_TaskBar:SetVisibility(Visibility)
 end
-
 function M:OnClickedButtonArea()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1105,7 +1085,8 @@ function M:OnClickedButtonArea()
     return
   end
   if self.NeedOpenDetectiveGame then
-    UIManager(GWorld.GameInstance):LoadUINew("DetectiveMinigame")
+    local NeedOpenQuestionId = ReasoningUtils:GetNeedOpenQuestionIdByIds(self.NeedOpenDetectiveAnswerIds, self.NeedOpenDetectiveResultIds)
+    UIManager(GWorld.GameInstance):LoadUINew("DetectiveMinigame", nil, NeedOpenQuestionId)
     return
   end
   if self:IsAnimationPlaying(self.Press) then
@@ -1120,7 +1101,6 @@ function M:OnClickedButtonArea()
     TaskUtils:QuestOpenMainMapByQuestTrack()
   end
 end
-
 function M:TriggerQuestTrackPanelTips(IsShow)
   if self.Platform == "Mobile" then
     if (self.Panel_Lock:GetVisibility() == ESlateVisibility.Visible or self.Panel_Lock:GetVisibility() == ESlateVisibility.HitTestInvisible) and self.VBox_SubTasks:GetChildrenCount() > 0 then
@@ -1167,7 +1147,6 @@ function M:TriggerQuestTrackPanelTips(IsShow)
     if self.NeedOpenDetectiveGame then
       MessageContent = GText("Minigame_Textmap_100304")
     end
-    
     local function GenAndParseActionMapContent(Panel)
       local ActionMapText = GText(CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("ActiveGuide")))
       Panel.Key:CreateCommonKey({
@@ -1178,35 +1157,61 @@ function M:TriggerQuestTrackPanelTips(IsShow)
       Panel.Text_Tips01:SetVisibility(UE4.ESlateVisibility.Collapsed)
       Panel.Text_Tips02:SetText(MessageContent)
     end
-    
     GenAndParseActionMapContent(self)
-  else
+  elseif 0 == self.VBox_SubTasks:GetChildrenCount() then
+    if self:IsPlayingAnimation(self.Tooltip_In) then
+      self:StopAnimation(self.Tooltip_In)
+    end
+    self:BindToAnimationFinished(self.Tooltip_Out, {
+      self,
+      function()
+        self:UnbindAllFromAnimationFinished(self.Tooltip_Out)
+        self.Panel_Tips:SetRenderOpacity(0)
+      end
+    })
+    self:PlayAnimation(self.Tooltip_Out)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("LHQ@TaskBar:OnUpdateUIStyleByInputTypeChange, InputDevice", CurInputDevice, "GamepadName:", CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self.WS_Key:SetActiveWidgetIndex(1)
+    if self.WS_Key_Tips03 then
+      self.WS_Key_Tips03:SetActiveWidgetIndex(1)
+    end
     self:SetGamepadIcons()
   elseif CurInputDevice == ECommonInputType.MouseAndKeyboard then
     self.WS_Key:SetActiveWidgetIndex(0)
+    if self.WS_Key_Tips03 then
+      self.WS_Key_Tips03:SetActiveWidgetIndex(0)
+    end
     self.Key:CreateCommonKey({
       KeyInfoList = {
         {
           Type = "Text",
-          Text = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("ActiveGuide", false))
+          Text = CommonUtils:GetActionMappingKeyName("ActiveGuide")
         }
       }
     })
+    if self.Key_Tips03 then
+      self.Key_Tips03:CreateCommonKey({
+        KeyInfoList = {
+          {Type = "Text", Text = "X"}
+        },
+        bLongPress = true,
+        bButton = true
+      })
+    end
   end
 end
-
 function M:RefreshKeyName()
-  local KeyName = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("ActiveGuide", false))
+  local KeyName = CommonUtils:GetActionMappingKeyName("ActiveGuide")
+  local Key_Tips03Name = CommonUtils:GetActionMappingKeyName("Recovery")
+  if self.Key_Tips03 then
+    self.Key_Tips03:SetImage("Text", Key_Tips03Name)
+  end
   self.Key:SetImage("Text", KeyName)
 end
-
 function M:SetGamepadIcons()
   local ActiveGuide1 = UIUtils.GetIconListByActionName("ActiveGuide")[1]
   local ActiveGuide2 = UIUtils.GetIconListByActionName("ActiveGuide")[2]
@@ -1217,39 +1222,30 @@ function M:SetGamepadIcons()
     },
     Type = "Add"
   })
+  local ActiveGuide3 = UIUtils.GetIconListByActionName("Recovery")[1]
+  if self.Key_Controller_Tips03 then
+    self.Key_Controller_Tips03:CreateCommonKey({
+      KeyInfoList = {
+        {Type = "Img", ImgShortPath = ActiveGuide3}
+      },
+      bLongPress = true
+    })
+  end
 end
-
 function M:SetRougeCanonInfo()
   self.Text_TaskName:SetText(GText("RougePaotaiMiniGameName"))
   self.Text_TaskContent:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Text_TaskContent:SetText(GText("RougePaotaiMiniGameDescribe"))
-  self.VBox_SubTasks:ClearChildren()
-  self.VBox_SubTasks:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-  local CurrentEventId = GWorld.RougeLikeManager.EventId
-  local MiniGameScoreId = DataMgr.RougeLikeEventSelect[CurrentEventId].MiniGameScoreId
-  local Info = DataMgr.RougeLikeMiniGameScore[MiniGameScoreId]
-  for Index, Score in ipairs(Info.MiniGameScore) do
-    local Widget = self:CreateWidgetNew("RougeGameTarget")
-    self.VBox_SubTasks:AddChild(Widget)
-    Widget:Init(EventID.OnRougeLikeCanonScoreAdd, Index, Score)
-  end
-end
-
-function M:RemoveRougeCanonInfo()
-  self.VBox_SubTasks:ClearChildren()
   self.VBox_SubTasks:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:OnPressedButtonArea()
   if not self:IsAnimationPlaying(self.Click) then
     self:PlayAnimation(self.Press)
   end
 end
-
 function M:OnReleasedButtonArea()
   self:PlayAnimation(self.Normal)
 end
-
 function M:QuestChainFinished(QuestChainId)
   local QuestChainType = DataMgr.QuestChain[QuestChainId].QuestChainType
   if 1 == QuestChainType then
@@ -1261,7 +1257,6 @@ function M:QuestChainFinished(QuestChainId)
     end
   end
 end
-
 function M:UpdateUnlockMainStory(QuestChainId)
   self.UnlockChainId = QuestChainId
   local UnlockText = DataMgr.QuestChain[QuestChainId].MainStoryUnlockMessage
@@ -1271,7 +1266,6 @@ function M:UpdateUnlockMainStory(QuestChainId)
     self.Text_Lock:SetText(GText(UnlockText))
   end
 end
-
 function M:UpdateQuestChain(QuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1286,7 +1280,6 @@ function M:UpdateQuestChain(QuestChainId)
     self.Panel_Lock:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:CheckCanHide(QuestChainId)
   local QuestChainType = DataMgr.QuestChain[QuestChainId].QuestChainType
   if 3 == QuestChainType and self.Panel_Lock:GetVisibility() == ESlateVisibility.Visible and self:CheckIsExistDynamicOrLimit() then
@@ -1295,7 +1288,6 @@ function M:CheckCanHide(QuestChainId)
     return false
   end
 end
-
 function M:CheckIsExistDynamicOrLimit()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local CurrentDynamic = ClientEventUtils:GetCurrentDoingDynamicEvent()
@@ -1305,8 +1297,7 @@ function M:CheckIsExistDynamicOrLimit()
     return false
   end
 end
-
-function M:SetTaskBarSubTaskIcon(Index, Type)
+function M:SetTaskBarSubTaskIcon(Index, InContent, Type)
   if self.SubTaskWidgetsTable == nil then
     return
   end
@@ -1315,8 +1306,120 @@ function M:SetTaskBarSubTaskIcon(Index, Type)
     return
   end
   if "Optional" == Type then
-    SubWidget:SetOptional()
+    SubWidget:SetOptional(InContent)
+  elseif "Diff" == Type then
+    SubWidget:SetABCImg(Index, InContent)
+  elseif "DiffOptional" == Type then
+    SubWidget:SetABCImgDiffOptional(Index, InContent)
   end
 end
-
+function M:SetTeleportBubble(IsShow)
+  self:PlayAnimation(self.Transmit_In)
+  AudioManager(self):PlayUISound(self, "event:/ui/common/mission_transmit", nil, nil)
+  self.Panel_Tips3:SetRenderOpacity(1.0)
+  if self.Key_Tips03 then
+    self.Key_Tips03.ProgressBar_LongPress:SetPercent(0)
+    self.Key_Tips03:PlayAnimation(self.Key_Tips03.Normal)
+    self.Key_Controller_Tips03:PlayAnimation(self.Key_Controller_Tips03.Normal)
+  end
+  local ConfigData = {
+    IconPath = "",
+    Text = "DUNGEON_TELEPORT_TIPS"
+  }
+  self.Bubble:Init(ConfigData)
+  if self.TeleportTipsTimer then
+    self:RemoveTimer(self.TeleportTipsTimer)
+    self.TeleportTipsTimer = nil
+  end
+  if self.TeleportTipsRefreshTimer then
+    self:RemoveTimer(self.TeleportTipsRefreshTimer)
+    self.TeleportTipsRefreshTimer = nil
+  end
+  self._TeleportTipsPlaying = true
+  self:UnbindAllFromAnimationFinished(self.Transmit_Tips_In)
+  self:UnbindAllFromAnimationFinished(self.Transmit_Tips_Loop)
+  self:UnbindAllFromAnimationFinished(self.Transmit_Tips_Out)
+  self:BindToAnimationFinished(self.Transmit_Tips_In, {
+    self,
+    function()
+      if not self._TeleportTipsPlaying then
+        return
+      end
+      self:UnbindAllFromAnimationFinished(self.Transmit_Tips_Loop)
+      self:BindToAnimationFinished(self.Transmit_Tips_Loop, {
+        self,
+        function()
+          if not self._TeleportTipsPlaying then
+            return
+          end
+          self:PlayAnimation(self.Transmit_Tips_Loop)
+        end
+      })
+      self:PlayAnimation(self.Transmit_Tips_Loop)
+    end
+  })
+  self:PlayAnimation(self.Transmit_Tips_In)
+  local ExitTime = self.BubbleExitTime or 10
+  local RefreshTime = (self.RefreshBubbleTime or 30) + ExitTime
+  self.TeleportTipsTimer = self:AddTimer(ExitTime, function()
+    self:PlayAnimation(self.Transmit_Tips_Out)
+    self.TeleportTipsTimer = nil
+  end, false)
+  self.TeleportTipsRefreshTimer = self:AddTimer(RefreshTime, function()
+    DebugPrint("ayff test SetTeleportBubble Refresh Timer Triggered")
+    if self.Panel_Tips3:GetVisibility() ~= UE4.ESlateVisibility.SelfHitTestInvisible then
+      return
+    end
+    self:RefreshTeleportBubble()
+  end, false)
+end
+function M:RefreshTeleportBubble(IsHide)
+  if self.TeleportTipsRefreshTimer then
+    self:RemoveTimer(self.TeleportTipsRefreshTimer)
+    self.TeleportTipsRefreshTimer = nil
+  end
+  if self.TeleportTipsTimer then
+    self:RemoveTimer(self.TeleportTipsTimer)
+    self.TeleportTipsTimer = nil
+  end
+  local ExitTime = self.BubbleExitTime or 10
+  local RefreshTime = (self.RefreshBubbleTime or 30) + ExitTime
+  if true == IsHide then
+    self.SizeBox_Tips3:SetRenderOpacity(0)
+    self.TeleportTipsRefreshTimer = self:AddTimer(RefreshTime, function()
+      DebugPrint("ayff test SetTeleportBubble Refresh Timer Triggered")
+      if self.Panel_Tips3:GetVisibility() ~= UE4.ESlateVisibility.SelfHitTestInvisible then
+        return
+      end
+      self:RefreshTeleportBubble()
+    end, false)
+    return
+  end
+  self:PlayAnimation(self.Transmit_Tips_In)
+  self.TeleportTipsTimer = self:AddTimer(ExitTime, function()
+    self:PlayAnimation(self.Transmit_Tips_Out)
+    self.TeleportTipsTimer = nil
+  end, false)
+  self.TeleportTipsRefreshTimer = self:AddTimer(RefreshTime, function()
+    DebugPrint("ayff test SetTeleportBubble Refresh Timer Triggered")
+    if self.Panel_Tips3:GetVisibility() ~= UE4.ESlateVisibility.SelfHitTestInvisible then
+      return
+    end
+    self:RefreshTeleportBubble()
+  end, false)
+end
+function M:InitDungeonProgressDisplay()
+  local GameModeType = GameState(self).GameModeType
+  if not DisplayDungeonProgress[GameModeType] then
+    self.Panel_Wave:SetVisibility(ESlateVisibility.Collapsed)
+    return
+  end
+  self.Panel_Wave:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.Text_Wave:SetText(GText("TARGET_DUNGEON_ROUND"))
+  self:UpdateDungeonProgressDisplay(GameState(self).DungeonProgress)
+  self:AddDispatcher(EventID.OnRepDungeonProgress, self, self.UpdateDungeonProgressDisplay)
+end
+function M:UpdateDungeonProgressDisplay(DungeonProgress)
+  self.Num_Wave:SetText(DungeonProgress)
+end
 return M

@@ -4,7 +4,6 @@ local EMCache = require("EMCache.EMCache")
 local WBP_Rouge_DifficultySelection_P_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_Rouge_DifficultySelection_P_C:Construct()
   self:Init()
   self.RoomIndex = nil
@@ -12,16 +11,13 @@ function WBP_Rouge_DifficultySelection_P_C:Construct()
   self.IsInSelectState = false
   self:AddDispatcher(EventID.CurrentSquadChange, self, self.OnCurrentSquadChange)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:Destruct()
   self:ClearListenEvent()
   EventManager:RemoveEvent(EventID.OnRougeLikeInfoUpdate, self)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitParent(Parent)
   self.Parent = Parent
 end
-
 function WBP_Rouge_DifficultySelection_P_C:Init()
   ContractModel:InitModel(GWorld:GetAvatar())
   self.Btn_Enter.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
@@ -64,7 +60,6 @@ function WBP_Rouge_DifficultySelection_P_C:Init()
   end
   self:UpdateRougeLikeInfoAbstract()
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitWidgetInfoInGamePad()
   if self.Icon_Key_Reward then
     self.Icon_Key_Reward:CreateCommonKey({
@@ -102,19 +97,16 @@ function WBP_Rouge_DifficultySelection_P_C:InitWidgetInfoInGamePad()
     })
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -149,7 +141,6 @@ function WBP_Rouge_DifficultySelection_P_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnClickEsc()
   if self.DefaultList:GetVisibility() == ESlateVisibility.SelfHitTestInvisible and self.DefaultList.IsShow then
     self.DefaultList:OnCloseSquadGamepad()
@@ -158,7 +149,6 @@ function WBP_Rouge_DifficultySelection_P_C:OnClickEsc()
     self.Parent:BackToRougeMain()
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -166,7 +156,6 @@ function WBP_Rouge_DifficultySelection_P_C:RefreshOpInfoByInputDevice(CurInputDe
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -174,7 +163,6 @@ function WBP_Rouge_DifficultySelection_P_C:UpdateUIStyleInPlatform(IsUseKeyAndMo
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitGamepadView()
   if self.Controller_Reward then
     self.Controller_Reward:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -190,7 +178,6 @@ function WBP_Rouge_DifficultySelection_P_C:InitGamepadView()
     self:SetFocusWhenSwitch()
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:SetFocusWhenSwitch()
   if self.DefaultList.Preview.IsExpand then
     self.DefaultList.List_Default:NavigateToIndex(0)
@@ -198,7 +185,6 @@ function WBP_Rouge_DifficultySelection_P_C:SetFocusWhenSwitch()
     self:FocusOnFirstItem()
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitKeyboardView()
   self:LeaveSelectMode()
   if self.Controller_Reward then
@@ -212,13 +198,11 @@ function WBP_Rouge_DifficultySelection_P_C:InitKeyboardView()
   self.Btn_Out.Img_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_Out.Icon:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:FocusOnFirstItem()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem:SetTargetUIFocusWidget(self.SelectCell)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:EnterSelectMode()
   if self.IsInSelectState then
     return
@@ -230,7 +214,6 @@ function WBP_Rouge_DifficultySelection_P_C:EnterSelectMode()
   end
   self.IsInSelectState = true
 end
-
 function WBP_Rouge_DifficultySelection_P_C:LeaveSelectMode()
   if not self.IsInSelectState then
     return
@@ -240,7 +223,6 @@ function WBP_Rouge_DifficultySelection_P_C:LeaveSelectMode()
   self:FocusOnFirstItem()
   self.IsInSelectState = false
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnUINavigation(NavigationDirection)
   local Index
   if self.SelectCell then
@@ -255,7 +237,6 @@ function WBP_Rouge_DifficultySelection_P_C:OnUINavigation(NavigationDirection)
   end
   return nil
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnNavigationToIndex(Index)
   local Item = self.ScrollBox_List:GetChildAt(Index)
   if Item then
@@ -268,7 +249,6 @@ function WBP_Rouge_DifficultySelection_P_C:OnNavigationToIndex(Index)
   end
   return nil
 end
-
 function WBP_Rouge_DifficultySelection_P_C:UpdateRougeLikeScore()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -285,22 +265,18 @@ function WBP_Rouge_DifficultySelection_P_C:UpdateRougeLikeScore()
     end
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:UpdateRougeLikeInfoAbstract()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Abstract)
       self.RoomIndex = Abstract.RoomIndex
-      
       self.Score = Abstract.Score
       self.Panel_Progress:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
       self.Text_Now:SetText(self.RoomIndex)
     end
-    
     Avatar:GetProgressingRougeLikeAbstract(Callback)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnClickedLevelCell(LevelCell)
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar:IsRougeLikeInProgress() and Avatar.RougeLike.ProgressingDifficultyId ~= LevelCell.DifficultyId then
@@ -319,7 +295,6 @@ function WBP_Rouge_DifficultySelection_P_C:OnClickedLevelCell(LevelCell)
     return true
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:SetInfo()
   self.CurCellDifficultyId = nil
   self.SelectCell = nil
@@ -378,7 +353,6 @@ function WBP_Rouge_DifficultySelection_P_C:SetInfo()
   end
   self:RefreshSquad()
 end
-
 function WBP_Rouge_DifficultySelection_P_C:RefreshDifficultyInfo(DifficultyId)
   local RougeLikeDifficulty = DataMgr.RougeLikeDifficulty
   self.Text_Point:SetText(RougeLikeDifficulty[DifficultyId].CompleteScore)
@@ -415,7 +389,6 @@ function WBP_Rouge_DifficultySelection_P_C:RefreshDifficultyInfo(DifficultyId)
   end
   self:RefreshRewardsList(DifficultyId)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:RefreshRewardsList(DifficultyId)
   local Avatar = GWorld:GetAvatar()
   local IsGot = false
@@ -456,7 +429,6 @@ function WBP_Rouge_DifficultySelection_P_C:RefreshRewardsList(DifficultyId)
     end
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnBtnClicked()
   if self.IsInSelectState then
     return
@@ -469,13 +441,11 @@ function WBP_Rouge_DifficultySelection_P_C:OnBtnClicked()
   if Avatar then
     local function Callback(Ret)
       self:BlockAllUIInput(false)
-      
-      if ErrorCode:Check(Ret) then
+      if Ret == ErrorCode.RET_SUCCESS then
         local ExitDungeonInfo = {Type = "Rouge"}
         GWorld.GameInstance:SetExitDungeonData(ExitDungeonInfo)
       end
     end
-    
     if not self:CheckSeasonTimeValid(self.SeasonId) then
       local UIManager = GWorld.GameInstance:GetGameUIManager()
       UIManager:ShowUITip(UIConst.Tip_CommonToast, GText("UI_Rou_Toast_27005"))
@@ -491,11 +461,9 @@ function WBP_Rouge_DifficultySelection_P_C:OnBtnClicked()
     end
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnBtnHovered()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/confirm_btn_hover", nil, nil)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:EarlySettlement()
   if not self.Score then
     return
@@ -520,7 +488,6 @@ function WBP_Rouge_DifficultySelection_P_C:EarlySettlement()
     end
   }, self)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:CheckSeasonTimeValid(SeasonId)
   if not SeasonId then
     return false
@@ -532,7 +499,6 @@ function WBP_Rouge_DifficultySelection_P_C:CheckSeasonTimeValid(SeasonId)
   local NowTime = TimeUtils.NowTime()
   return NowTime >= SeasonInfo.SeasonStartTime and NowTime <= SeasonInfo.SeasonEndTime
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OpenContractPanelByGamePad()
   if self.IsInSelectState then
     return
@@ -542,17 +508,14 @@ function WBP_Rouge_DifficultySelection_P_C:OpenContractPanelByGamePad()
   end
   self:OpenContractPanel()
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OpenContractPanel()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_mid_click", nil, nil)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:LoadUINew("RougeLikeContractPanel", self)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnBtnHeatHovered()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_hover", nil, nil)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:RefreshHeatValue()
   local HeatPoints = ContractModel:GetCurrentHeatValue()
   self.Text_HeatPoints:SetText(ContractModel:GetCurrentHeatValue())
@@ -565,7 +528,6 @@ function WBP_Rouge_DifficultySelection_P_C:RefreshHeatValue()
     self:HideHeatPointBouns(false)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:HideHeatPointBouns(IsHide)
   local Visibility = UIConst.VisibilityOp.Visible
   if IsHide then
@@ -578,7 +540,6 @@ function WBP_Rouge_DifficultySelection_P_C:HideHeatPointBouns(IsHide)
   self.Text_Percent:SetVisibility(Visibility)
   self.Text_02:SetVisibility(Visibility)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:RefreshListItemAndSelectedInfo()
   local AllChildren = self.ScrollBox_List:GetAllChildren()
   for i = 1, AllChildren:Length() do
@@ -587,26 +548,22 @@ function WBP_Rouge_DifficultySelection_P_C:RefreshListItemAndSelectedInfo()
   end
   self:RefreshDifficultyInfo(self.SelectCell.DifficultyId)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:SetVisibility(Visibility)
   self.Overridden.SetVisibility(self, Visibility)
   if self.Weekly_Points then
     self.Weekly_Points:SetVisibility(Visibility)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:HideWeeklyPoints()
   if self.Weekly_Points then
     self.Weekly_Points:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:HideSquad()
   if self.DefaultList then
     self.DefaultList:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:RefreshSquad()
   self.DefaultList:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   local Avatar = GWorld:GetAvatar()
@@ -619,11 +576,9 @@ function WBP_Rouge_DifficultySelection_P_C:RefreshSquad()
   end
   self.DefaultList:Init(self, true, self.SquadId)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnCurrentSquadChange(SquadId, IsComMissing)
   self.SquadId = SquadId
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self.DefaultList:GetVisibility() == ESlateVisibility.SelfHitTestInvisible and self.DefaultList.IsShow then
     return UWidgetBlueprintLibrary.UnHandled()
@@ -651,7 +606,6 @@ function WBP_Rouge_DifficultySelection_P_C:OnPreviewKeyDown(MyGeometry, InKeyEve
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:UpdateTabDifficultySelection()
   local BottomKeyInfo = {
     {
@@ -672,7 +626,6 @@ function WBP_Rouge_DifficultySelection_P_C:UpdateTabDifficultySelection()
   }
   self.Parent.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitSelectTab()
   local BottomKeyInfo = {
     {
@@ -700,11 +653,9 @@ function WBP_Rouge_DifficultySelection_P_C:InitSelectTab()
   }
   self.Parent.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitNormalTab()
   self:UpdateTabDifficultySelection()
 end
-
 function WBP_Rouge_DifficultySelection_P_C:InitMenuOpenTab()
   local BottomKeyInfo = {
     {
@@ -717,7 +668,6 @@ function WBP_Rouge_DifficultySelection_P_C:InitMenuOpenTab()
   }
   self.Parent.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function WBP_Rouge_DifficultySelection_P_C:OnMenuOpenChanged(bIsOpen)
   if bIsOpen then
     self:InitMenuOpenTab()
@@ -727,9 +677,7 @@ function WBP_Rouge_DifficultySelection_P_C:OnMenuOpenChanged(bIsOpen)
     self:InitNormalTab()
   end
 end
-
 function WBP_Rouge_DifficultySelection_P_C:BP_GetDesiredFocusTarget()
   self:FocusOnFirstItem()
 end
-
 return WBP_Rouge_DifficultySelection_P_C

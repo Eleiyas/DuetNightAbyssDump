@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Button_Item.OnHovered:Add(self, self.OnBtnHovered)
   self.Button_Item.OnUnhovered:Add(self, self.OnBtnUnhovered)
@@ -17,7 +16,6 @@ function M:Construct()
     self.Text_SoldOut:SetText(GText("UI_SHOP_SOLDOUT"))
   end
 end
-
 function M:InitEmptyItem()
   self.Group_Item:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Bg_Base:SetRenderOpacity(0.5)
@@ -28,7 +26,6 @@ function M:InitEmptyItem()
     self.Bg_Base2:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToLinearColor("000000CC"))
   end
 end
-
 function M:OnBtnHovered()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -36,7 +33,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -44,7 +40,6 @@ function M:OnBtnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnBtnPressed()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -52,7 +47,6 @@ function M:OnBtnPressed()
   self.StartPressTime = os.clock()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -63,7 +57,6 @@ function M:OnBtnReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnBtnClicked()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -74,11 +67,9 @@ function M:OnBtnClicked()
   end
   self.IsLongPress = false
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.UnHover then
     self:PlayAnimation(self.Normal)
   end
 end
-
 return M

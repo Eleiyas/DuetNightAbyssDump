@@ -1,5 +1,4 @@
 local WBP_Rouge_TalentPage_C = Class("BluePrints.UI.BP_UIState_C", "BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_TalentPage_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -9,12 +8,10 @@ function WBP_Rouge_TalentPage_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Rouge_TalentPage_C:Destruct()
   AudioManager(self):StopSound(self, "TalentPageOpenSound")
   self:ClearListenEvent()
 end
-
 function WBP_Rouge_TalentPage_C:SetInfo()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -78,7 +75,6 @@ function WBP_Rouge_TalentPage_C:SetInfo()
     self["Entrance_0" .. i]:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Rouge_TalentPage_C:CheckReachable(TalentId)
   if 1 == self.ReachableTable[TalentId] then
     return true
@@ -105,7 +101,6 @@ function WBP_Rouge_TalentPage_C:CheckReachable(TalentId)
     return false
   end
 end
-
 function WBP_Rouge_TalentPage_C:InitTable()
   self:SetInfo()
   self.TabConfigData = {
@@ -146,7 +141,6 @@ function WBP_Rouge_TalentPage_C:InitTable()
   local ResoucesTab = DataMgr.SystemUI.RougeTalentPage.TabCoin
   self.Root:InitOtherPageTab(self.TabConfigData, ResoucesTab, true, self)
 end
-
 function WBP_Rouge_TalentPage_C:OpenTalentMenu(BranchId)
   if not self:IsAnyAnimationPlaying() then
     self.SecondaryPageName = "RougeTalentMenu"
@@ -155,7 +149,6 @@ function WBP_Rouge_TalentPage_C:OpenTalentMenu(BranchId)
     TalentMenu:InitTable(BranchId)
   end
 end
-
 function WBP_Rouge_TalentPage_C:OnReturnKeyDown()
   if not self:IsAnyAnimationPlaying() then
     local WidgetUI = self.Root:OpenSubUI("RougeMain")
@@ -163,7 +156,6 @@ function WBP_Rouge_TalentPage_C:OnReturnKeyDown()
     WidgetUI:InitTable()
   end
 end
-
 function WBP_Rouge_TalentPage_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -175,19 +167,16 @@ function WBP_Rouge_TalentPage_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Rouge_TalentPage_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_TalentPage_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_TalentPage_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -195,7 +184,6 @@ function WBP_Rouge_TalentPage_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Rouge_TalentPage_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self.IsInSelectState = false
   if IsUseKeyAndMouse then
@@ -204,25 +192,19 @@ function WBP_Rouge_TalentPage_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_TalentPage_C:InitGamepadView()
   if UIUtils.HasAnyFocus(self) then
     self.Entrance_01.Btn_Click:SetFocus()
   end
 end
-
 function WBP_Rouge_TalentPage_C:InitKeyboardView()
 end
-
 function WBP_Rouge_TalentPage_C:InitWidgetInfoInGamePad()
 end
-
 function WBP_Rouge_TalentPage_C:SwitchIn()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/strengthen_open", "TalentPageOpenSound", nil)
 end
-
 function WBP_Rouge_TalentPage_C:SwitchOut()
   AudioManager(self):SetEventSoundParam(self, "TalentPageOpenSound", {ToEnd = 1})
 end
-
 return WBP_Rouge_TalentPage_C

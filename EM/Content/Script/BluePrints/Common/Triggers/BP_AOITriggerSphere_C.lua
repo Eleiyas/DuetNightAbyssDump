@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_AOITriggerSphere_C = Class("BluePrints.Common.Triggers.BP_AOITriggerBox_C")
-
 function BP_AOITriggerSphere_C:SetSphereRadius_Lua(Size, TipSize)
   if Size and 0 ~= Size then
     self.CollisionComponent:SetSphereRadius(Size)
@@ -15,7 +14,6 @@ function BP_AOITriggerSphere_C:SetSphereRadius_Lua(Size, TipSize)
     end
   end
 end
-
 function BP_AOITriggerSphere_C:BindEvent(Info)
   if not IsAuthority(self) then
     return
@@ -28,5 +26,4 @@ function BP_AOITriggerSphere_C:BindEvent(Info)
     self:SetSphereRadius(nil, nil)
   end
 end
-
 return BP_AOITriggerSphere_C

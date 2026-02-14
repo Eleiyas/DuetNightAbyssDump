@@ -5,11 +5,9 @@ BP_AttributesSet_C._components = {
   "BluePrints.Common.DelayFrameComponent"
 }
 BP_AttributesSet_C.CppAttrs = {}
-
 function BP_AttributesSet_C:IsAttrbutesSetOnRep(Owner)
   return Owner:IsMonster() or Owner:IsCombatItemBase() or Owner:IsMechanismSummon()
 end
-
 function BP_AttributesSet_C:OnRep_Exp()
   self:AddDelayFrameFunc(function()
     local Owner = self.OwnerActor
@@ -24,7 +22,6 @@ function BP_AttributesSet_C:OnRep_Exp()
     end
   end, 2)
 end
-
 function BP_AttributesSet_C:LevelUp(NewLevel)
   if NewLevel <= 0 then
     return
@@ -38,11 +35,9 @@ function BP_AttributesSet_C:LevelUp(NewLevel)
     Owner.BillboardComponent:RefreshLevelInfo(NewLevel)
   end
 end
-
 function BP_AttributesSet_C:AddSpAnim(TargetEid)
   EventManager:FireEvent(EventID.TriggerAddSpAnim, TargetEid)
 end
-
 function BP_AttributesSet_C:OnAttrChanged_Lua(AttrName, OldValue, NewValue)
   local FunctionName = "OnAttrChanged_Lua_" .. AttrName
   if type(self[FunctionName]) == "function" then
@@ -53,30 +48,26 @@ function BP_AttributesSet_C:OnAttrChanged_Lua(AttrName, OldValue, NewValue)
     self.AttrListener[LowerAttrName](self, OldValue, NewValue)
   end
 end
-
 function BP_AttributesSet_C:InitLuaOnAttrChangedArray()
   for Name, Value in pairs(getmetatable(self)) do
     local AttrName = string.match(Name, "OnAttrChanged_Lua_(.+)")
     if AttrName then
-      self.LuaOnAttrChangedArray:Add(AttrName)
+      self.LuaOnAttrChangedSet:Add(AttrName)
     end
   end
 end
-
 function BP_AttributesSet_C:AddAttrChangeListener(AttrName, Function)
-  self.LuaOnAttrChangedArray:Add(AttrName)
+  self.LuaOnAttrChangedSet:Add(AttrName)
   local LowerAttrName = string.lower(AttrName)
   self.AttrListener = self.AttrListener or {}
   self.AttrListener[LowerAttrName] = Function
 end
-
 function BP_AttributesSet_C:RemoveAttrChangeListener(AttrName)
   self.AttrListener = self.AttrListener or {}
   if self.AttrListener[AttrName] then
     self.AttrListener[AttrName] = nil
   end
 end
-
 function BP_AttributesSet_C:SetAttr(AttrName, Value)
   local OldValue
   if type(Value) == "number" then
@@ -84,11 +75,10 @@ function BP_AttributesSet_C:SetAttr(AttrName, Value)
   end
   self.Super.SetAttr(self, AttrName, Value)
   if type(Value) == "number" then
-    self:CallOnChangedFunctionIfExists(AttrName, OldValue, Value)
+    self:CallOnChangedFunctionIfExists(AttrName, Value)
   else
     self:CallOnChangedFunctionIfExists(AttrName)
   end
 end
-
 AssembleComponents(BP_AttributesSet_C)
 return BP_AttributesSet_C

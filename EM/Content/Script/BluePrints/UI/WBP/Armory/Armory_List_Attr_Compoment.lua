@@ -3,7 +3,6 @@ local UIUtils = require("Utils.UIUtils")
 local SkillUtils = require("Utils.SkillUtils")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local Component = {}
-
 function Component:RegisterListAttrBtn(ListView)
   if not self.List_Attr then
     self.List_Attr = ListView
@@ -14,23 +13,19 @@ function Component:RegisterListAttrBtn(ListView)
     self.Btn_Info:SetText(GText("UI_Armory_View"))
     self.Btn_Info:SetGamepadIconVisibility(false)
   end
-  
   function self:OnListScrolled(OffsetInItem, DistanceRemaining)
     if not self.MaxScrollOffset then
       return
     end
   end
-  
   self.List_Attr.OnListViewScrolled:Add(self, self.OnListScrolled)
 end
-
 function Component:UnRegisterListAttrBtn()
   if self.RetainerBox and self.OriginBlur then
     self.ShadowMat:SetScalarParameterValue("Blur", self.OriginBlur)
     self.List_Attr.OnListViewScrolled:Clear()
   end
 end
-
 function Component:OnBtnDetailsClick()
   if not self.AttrDetails or #self.AttrDetails < 1 then
     return
@@ -44,13 +39,11 @@ function Component:OnBtnDetailsClick()
       bShowLine = i ~= #self.AttrDetails
     })
   end
-  
   local function OnAttrDetailsClosed()
     if self.Parent then
       self.Parent:SetFocus()
     end
   end
-  
   local Params = {
     Text03_ListView = TitleAndTexts,
     LeftCallbackObj = self,
@@ -61,7 +54,6 @@ function Component:OnBtnDetailsClick()
   }
   UIManager(self):ShowCommonPopupUI(100043, Params, self)
 end
-
 function Component:PlayAttrListFramingIn(ListView)
   self._ListAttrAnimTimerKeys = UIUtils.PlayListViewFramingInAnimation(self, ListView, {
     Visibility = UIConst.VisibilityOp.HitTestInvisible,
@@ -73,7 +65,6 @@ function Component:PlayAttrListFramingIn(ListView)
     end
   })
 end
-
 function Component:StopAttrListFramingIn(ListView)
   UIUtils.StopListViewFramingInAnimation(ListView, {
     UIState = self,
@@ -81,7 +72,6 @@ function Component:StopAttrListFramingIn(ListView)
     Visibility = UIConst.VisibilityOp.Collapsed
   })
 end
-
 function Component:UpdateAttrListView(IsMod, ListView, bShowSign)
   if not self.List_Attr then
     self.List_Attr = ListView
@@ -143,7 +133,6 @@ function Component:UpdateAttrListView(IsMod, ListView, bShowSign)
   end
   self.List_Attr:RequestPlayEntriesAnim()
 end
-
 function Component:TryLimitAttr(Data, Attr)
   if Data.AttrLimit then
     local AttrLimitData = DataMgr.AttrLimit[Data.AttrLimit]
@@ -151,7 +140,6 @@ function Component:TryLimitAttr(Data, Attr)
   end
   return Attr
 end
-
 function Component:UpdateSkillPanel(Target, Type)
   Type = Type or self.Type
   if "Weapon" == Type then
@@ -174,13 +162,10 @@ function Component:UpdateSkillPanel(Target, Type)
     self.Describe:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Component:InsertWeaponType(WeaponId, AttrTable)
   ArmoryUtils:InsertWeaponTypeImpl(WeaponId, AttrTable)
 end
-
 function Component:InsertExcelWeaponTag(CharId, AttrTable)
   AttrTable.ExcelWeaponTag = UIUtils.GetExcelWeaponTagString(CharId)
 end
-
 return Component

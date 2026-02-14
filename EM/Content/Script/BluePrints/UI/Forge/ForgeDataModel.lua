@@ -15,7 +15,6 @@ local ProductPriority = setmetatable({
     return #ProductPriority + 1
   end
 })
-
 function ForgeDataModel:Initialize()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -27,6 +26,7 @@ function ForgeDataModel:Initialize()
     SeenDraftIds[DraftId] = true
   end
   EMCache:Set("SeenDraftIds", SeenDraftIds, true)
+  self.Drafts = {}
   self:UpdateData()
   self:InitReddotTree()
   EventManager:AddEvent(EventID.OnCompleteProduce, self, self.OnCompleteProduce)
@@ -35,7 +35,6 @@ function ForgeDataModel:Initialize()
   EventManager:AddEvent(EventID.OnGetNewDraft, self, self.OnGetNewDraft)
   EventManager:AddEvent(EventID.OnAccerateProduce, self, self.OnAccerateProduce)
 end
-
 function ForgeDataModel:OnCompleteProduce(DraftIds, Ret)
   for DraftId, CompleteNum in pairs(DraftIds) do
     local DraftInfo = self:CheckState(DraftId)
@@ -43,15 +42,12 @@ function ForgeDataModel:OnCompleteProduce(DraftIds, Ret)
     self:_DecreaseReddotNodeInner(DraftId, ForgeConst.ReddotNodeName[ForgeConst.TabType.Producing])
   end
 end
-
 function ForgeDataModel:OnAccerateProduce(DraftId, Ret)
   self:IncreaseReddotByDraftInfo(DraftId)
 end
-
 function ForgeDataModel:OnBlueComplete(DraftId)
   self:IncreaseReddotByDraftInfo(DraftId)
 end
-
 function ForgeDataModel:OnGetNewDraft(DraftIdTable)
   for _, DraftId in ipairs(DraftIdTable) do
     if self:IsDraftNotSeen(DraftId) then
@@ -63,7 +59,6 @@ function ForgeDataModel:OnGetNewDraft(DraftIdTable)
     end
   end
 end
-
 function ForgeDataModel:GetDraftInfoById(DraftId)
   if not self.Drafts[DraftId] then
     local Draft = self:ConstructDraftInfoByDraftId(DraftId)
@@ -71,23 +66,17 @@ function ForgeDataModel:GetDraftInfoById(DraftId)
   end
   return self.Drafts[DraftId]
 end
-
 function ForgeDataModel:RemoveDraftInfoById(DraftId)
   self.Drafts[DraftId] = nil
 end
-
 function ForgeDataModel:OnDraftStartProduce(DraftId)
 end
-
 function ForgeDataModel:OnDraftCompleteProduce(DraftId)
 end
-
 function ForgeDataModel:OnDraftCompleteBatchProduce(DraftId)
 end
-
 function ForgeDataModel:OnDraftCancelProduce(DraftId)
 end
-
 function ForgeDataModel:ConstructDraftInfoByDraftId(DraftId)
   local PlayerAvatar = GWorld:GetAvatar()
   if PlayerAvatar.Drafts and PlayerAvatar.Drafts[DraftId] then
@@ -95,7 +84,6 @@ function ForgeDataModel:ConstructDraftInfoByDraftId(DraftId)
   end
   return nil
 end
-
 function ForgeDataModel:ConstructDraftInfoByServerDraftData(DraftId, Data)
   local Draft = {}
   Draft.Id = DraftId
@@ -143,7 +131,6 @@ function ForgeDataModel:ConstructDraftInfoByServerDraftData(DraftId, Data)
   end
   return Draft
 end
-
 function ForgeDataModel:UpdateData()
   local PlayerAvatar = GWorld:GetAvatar()
   self.ServerData = PlayerAvatar.Drafts
@@ -158,7 +145,6 @@ function ForgeDataModel:UpdateData()
     end
   end
 end
-
 function ForgeDataModel:InitReddotTree()
   local NewdotTabNode = {}
   for _, TabType in pairs(ForgeConst.TabType) do
@@ -207,13 +193,33 @@ function ForgeDataModel:InitReddotTree()
   end
   ReddotManager.PrintNodeTree(ForgeConst.NewdotNodeName.Root)
   ReddotManager.PrintNodeTree(ForgeConst.ReddotNodeName.Root)
+  ReddotManager.AddNodeEx("ForgeConvert", nil, 1, UE4.EReddotType.New)
+  local ForgeConvertReddotNode = ReddotManager.GetTreeNode("ForgeConvert")
+  local ConvertReddotDetails = ForgeConvertReddotNode.Cache.Detail
+  local ConvertData = DataMgr.Convert
+  if ConvertData then
+    for Id, _ in pairs(ConvertData) do
+      local bIsNew = true
+      for _, Details in pairs(ConvertReddotDetails) do
+        if Id == Details.Id then
+          bIsNew = false
+          break
+        end
+      end
+      if bIsNew then
+        table.insert(ConvertReddotDetails, {Id = Id, IsClicked = false})
+        ReddotManager.IncreaseLeafNodeCount("ForgeConvert")
+      end
+    end
+  end
+  DebugPrint("Yihan@ 111111111111111111", #ConvertReddotDetails)
   ReddotManager.AddNodeEx("ForgeEntry", {
     [ForgeConst.NewdotNodeName.Root] = {},
-    [ForgeConst.ReddotNodeName.Root] = {}
+    [ForgeConst.ReddotNodeName.Root] = {},
+    ForgeConvert = {}
   }, 1)
   ReddotManager.PrintNodeTree("ForgeEntry")
 end
-
 function ForgeDataModel:ForeachNodeByDraftInfo(DraftInfo, ForeachFunc, NodeNameTable)
   local ProductTabType = DraftInfo.TabType
   local ProductSubTabType = DraftInfo.SubTabType
@@ -229,7 +235,6 @@ function ForgeDataModel:ForeachNodeByDraftInfo(DraftInfo, ForeachFunc, NodeNameT
     end
   end
 end
-
 function ForgeDataModel:_IncreaseReddotNodeInner(DraftId, NodeName)
   local Detail = ReddotManager.GetLeafNodeCacheDetail(NodeName)
   if Detail and not Detail[DraftId] then
@@ -237,7 +242,6 @@ function ForgeDataModel:_IncreaseReddotNodeInner(DraftId, NodeName)
     ReddotManager.IncreaseLeafNodeCount(NodeName)
   end
 end
-
 function ForgeDataModel:IncreaseNewdotByDraftInfo(DraftId)
   local DraftInfo = self:CheckState(DraftId)
   if not DraftInfo then
@@ -245,10 +249,12 @@ function ForgeDataModel:IncreaseNewdotByDraftInfo(DraftId)
     return
   end
   self:ForeachNodeByDraftInfo(DraftInfo, function(NodeName)
+    if NodeName == ForgeConst.NewdotNodeName[ForgeConst.TabType.ToBeProduced] or NodeName == ForgeConst.NewdotNodeName[ForgeConst.TabType.Producing] then
+      return
+    end
     self:_IncreaseReddotNodeInner(DraftId, NodeName)
   end, ForgeConst.NewdotNodeName)
 end
-
 function ForgeDataModel:IncreaseReddotByDraftInfo(DraftId)
   local DraftInfo = self:CheckState(DraftId)
   if not DraftInfo then
@@ -259,7 +265,6 @@ function ForgeDataModel:IncreaseReddotByDraftInfo(DraftId)
     self:_IncreaseReddotNodeInner(DraftId, NodeName)
   end, ForgeConst.ReddotNodeName)
 end
-
 function ForgeDataModel:_DecreaseReddotNodeInner(DraftId, NodeName)
   local Detail = ReddotManager.GetLeafNodeCacheDetail(NodeName)
   if Detail and Detail[DraftId] then
@@ -267,7 +272,6 @@ function ForgeDataModel:_DecreaseReddotNodeInner(DraftId, NodeName)
     ReddotManager.DecreaseLeafNodeCount(NodeName)
   end
 end
-
 function ForgeDataModel:DecreaseNewdotByDraftInfo(DraftId)
   local DraftInfo = self:CheckState(DraftId)
   if not DraftInfo then
@@ -275,10 +279,12 @@ function ForgeDataModel:DecreaseNewdotByDraftInfo(DraftId)
     return
   end
   self:ForeachNodeByDraftInfo(DraftInfo, function(NodeName)
+    if NodeName == ForgeConst.NewdotNodeName[ForgeConst.TabType.ToBeProduced] or NodeName == ForgeConst.NewdotNodeName[ForgeConst.TabType.Producing] then
+      return
+    end
     self:_DecreaseReddotNodeInner(DraftId, NodeName)
   end, ForgeConst.NewdotNodeName)
 end
-
 function ForgeDataModel:DecreaseReddotByDraftInfo(DraftId)
   local DraftInfo = self:CheckState(DraftId)
   if not DraftInfo then
@@ -289,7 +295,6 @@ function ForgeDataModel:DecreaseReddotByDraftInfo(DraftId)
     self:_DecreaseReddotNodeInner(DraftId, NodeName)
   end, ForgeConst.ReddotNodeName)
 end
-
 function ForgeDataModel:ForceClearNodeByDraftId(DraftId)
   for _, NodeName in pairs(ForgeConst.NewdotNodeName) do
     self:_DecreaseReddotNodeInner(DraftId, NodeName)
@@ -298,7 +303,6 @@ function ForgeDataModel:ForceClearNodeByDraftId(DraftId)
     self:_DecreaseReddotNodeInner(DraftId, NodeName)
   end
 end
-
 function ForgeDataModel:CheckState(DraftId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -331,7 +335,6 @@ function ForgeDataModel:CheckState(DraftId)
   DraftInfo.IsFoundryEnough = IsFoundryEnough
   return DraftInfo
 end
-
 function ForgeDataModel:CanProduce(Draft)
   local PlayerAvatar = GWorld:GetAvatar()
   local flag = true
@@ -366,7 +369,30 @@ function ForgeDataModel:CanProduce(Draft)
   end
   return MaxNum, IsResourceEnough, IsFoundryEnough
 end
-
+function ForgeDataModel:GetMaxProduceNumByDraftId(DraftId)
+  local DraftData = DataMgr.Draft[DraftId]
+  local Avatar = GWorld:GetAvatar()
+  local AvatarDraftData = Avatar.Drafts[DraftId]
+  if not DraftData then
+    return nil
+  end
+  if not AvatarDraftData then
+    return 0
+  end
+  local MaxNum = INF
+  for _, Res in ipairs(DraftData.Resource) do
+    local ResourceNeed = Res.Num
+    local ResourceHave = self:GetResourceNum(Res.Type, Res.Id) or 0
+    MaxNum = math.min(MaxNum, ResourceHave // ResourceNeed)
+    if ResourceNeed > ResourceHave then
+      return 0
+    end
+  end
+  if not DraftData.IsInfinity then
+    MaxNum = math.min(MaxNum, AvatarDraftData.Count)
+  end
+  return MaxNum
+end
 function ForgeDataModel:ConstructForgeItemContent(Obj, DraftInfo)
   local PlayerAvatar = GWorld:GetAvatar()
   local DraftData = DataMgr.Draft[DraftInfo.Id]
@@ -414,14 +440,11 @@ function ForgeDataModel:ConstructForgeItemContent(Obj, DraftInfo)
   Obj.IsResourceEnough = DraftInfo.IsResourceEnough
   Obj.IsFoundryEnough = DraftInfo.IsFoundryEnough
   Obj.IsNotSeen = DraftInfo.IsNotSeen
-  
   function Obj.GetDataModel()
     return self
   end
-  
   return Obj
 end
-
 function ForgeDataModel:ConstructForgeCompendiumItemContent(Obj, DraftInfo)
   local PlayerAvatar = GWorld:GetAvatar()
   local DraftData = DataMgr.Draft[DraftInfo.Id]
@@ -433,31 +456,25 @@ function ForgeDataModel:ConstructForgeCompendiumItemContent(Obj, DraftInfo)
   Obj.OwnedCount = DraftInfo.OwnedCount or 0
   Obj.IsInfinity = DraftInfo.IsInfinity or false
   Obj.IsNew = DraftInfo.IsNew or false
-  
   function Obj.GetDataModel()
     return self
   end
-  
   return Obj
 end
-
 function ForgeDataModel:AddDraftToTarget(DraftId)
   local TargetDraftIds = EMCache:Get("TargetDraftIds", true) or {}
   TargetDraftIds[DraftId] = true
   EMCache:Set("TargetDraftIds", TargetDraftIds, true)
 end
-
 function ForgeDataModel:RemoveDraftFromTarget(DraftId)
   local TargetDraftIds = EMCache:Get("TargetDraftIds", true) or {}
   TargetDraftIds[DraftId] = nil
   EMCache:Set("TargetDraftIds", TargetDraftIds, true)
 end
-
 function ForgeDataModel:IsDraftSetTarget(DraftId)
   local TargetDraftIds = EMCache:Get("TargetDraftIds", true) or {}
   return TargetDraftIds[DraftId] or false
 end
-
 function ForgeDataModel:GetTargetDraftCount()
   local Count = 0
   local TargetDraftIds = EMCache:Get("TargetDraftIds", true) or {}
@@ -466,7 +483,6 @@ function ForgeDataModel:GetTargetDraftCount()
   end
   return Count
 end
-
 function ForgeDataModel:GetCanProduceDraftIds()
   local CanProduceDraftIds = {}
   local TargetDraftIds = EMCache:Get("TargetDraftIds", true)
@@ -480,7 +496,6 @@ function ForgeDataModel:GetCanProduceDraftIds()
   end
   return CanProduceDraftIds
 end
-
 function ForgeDataModel:GetProductNameByTypeAndId(Type, Id)
   if "Weapon" == Type then
     local WeaponData = DataMgr.Weapon[Id]
@@ -498,7 +513,6 @@ function ForgeDataModel:GetProductNameByTypeAndId(Type, Id)
     return nil
   end
 end
-
 function ForgeDataModel:GetAccerateCost(DraftId)
   local Cost
   local DraftInfo = self:GetDraftInfoById(DraftId)
@@ -517,7 +531,6 @@ function ForgeDataModel:GetAccerateCost(DraftId)
   end
   return Cost or 0
 end
-
 function ForgeDataModel:CheckResourceEnough(ResourceNeed, FoundriesNeed)
   local PlayerAvatar = GWorld:GetAvatar()
   local MaxNum = 9999999999
@@ -538,7 +551,6 @@ function ForgeDataModel:CheckResourceEnough(ResourceNeed, FoundriesNeed)
   end
   return MaxNum
 end
-
 function ForgeDataModel:GetResourceNum(ResType, ResId)
   local PlayerAvatar = GWorld:GetAvatar()
   if "Mod" == ResType then
@@ -548,7 +560,6 @@ function ForgeDataModel:GetResourceNum(ResType, ResId)
   end
   return 0
 end
-
 function ForgeDataModel:HasAccessory(Id)
   local PlayerAvatar = GWorld:GetAvatar()
   for _, AccessoryId in pairs(PlayerAvatar.CharAccessorys) do
@@ -558,17 +569,23 @@ function ForgeDataModel:HasAccessory(Id)
   end
   return false
 end
-
 function ForgeDataModel:GetDatasByFilter(Filter, SubFilter, CommonFilter)
   self:UpdateData()
   local FilterResult = {HasFilterItem = false, HasSubFilterItem = false}
+  local GlobalReleaseVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   local FiltedDrafts = {}
   for _, Item in pairs(self.Drafts) do
-    local FilterItemResult = self:IsFilteredItem(Item, Filter, SubFilter, CommonFilter)
+    local ReleaseVersion = DataMgr.Draft[Item.Id].ReleaseVersion
     local IsValidItem = true
-    for k, v in pairs(FilterItemResult) do
-      IsValidItem = IsValidItem and v
-      FilterResult[k] = FilterResult[k] or v
+    if ReleaseVersion and GlobalReleaseVersion < ReleaseVersion then
+      IsValidItem = false
+    end
+    if IsValidItem then
+      local FilterItemResult = self:IsFilteredItem(Item, Filter, SubFilter, CommonFilter)
+      for k, v in pairs(FilterItemResult) do
+        IsValidItem = IsValidItem and v
+        FilterResult[k] = FilterResult[k] or v
+      end
     end
     if IsValidItem then
       table.insert(FiltedDrafts, Item)
@@ -576,32 +593,35 @@ function ForgeDataModel:GetDatasByFilter(Filter, SubFilter, CommonFilter)
   end
   return FiltedDrafts, FilterResult
 end
-
 function ForgeDataModel:GetCompendiumDatasByFilter(Filter)
   local Avatar = GWorld:GetAvatar()
   local FiltedDrafts = {}
   for Id, Data in pairs(DataMgr.Draft) do
     if not Data.ShowInDraftArchive then
-    elseif Filter and (Filter == ForgeConst.TabType.All or Filter == Data.ProductType) then
-      local CompendiumInfo = {}
-      CompendiumInfo.Id = Id
-      if Avatar.Drafts[Id] then
-        CompendiumInfo.OwnedCount = Avatar.Drafts[Id].Count or 0
-        CompendiumInfo.IsInfinity = Avatar.Drafts[Id].IsInfinity or false
-      else
-        CompendiumInfo.OwnedCount = 0
-        CompendiumInfo.IsInfinity = false
+    else
+      local ReleaseVersion = Data.ReleaseVersion
+      local GlobalReleaseVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
+      if ReleaseVersion and ReleaseVersion > GlobalReleaseVersion and Avatar.Drafts[Id] == nil then
+      elseif Filter and (Filter == ForgeConst.TabType.All or Filter == Data.ProductType) then
+        local CompendiumInfo = {}
+        CompendiumInfo.Id = Id
+        if Avatar.Drafts[Id] then
+          CompendiumInfo.OwnedCount = Avatar.Drafts[Id].Count or 0
+          CompendiumInfo.IsInfinity = Avatar.Drafts[Id].IsInfinity or false
+        else
+          CompendiumInfo.OwnedCount = 0
+          CompendiumInfo.IsInfinity = false
+        end
+        CompendiumInfo.TypePriority = DataMgr.RewardType[Data.ProductType].DungeonRewardSeq
+        CompendiumInfo.Rarity = Data.Rarity
+        CompendiumInfo.IsNew = (CompendiumInfo.OwnedCount > 0 or CompendiumInfo.IsInfinity) and self:IsDraftNotSeen(Id)
+        CompendiumInfo.SubTabType = DataMgr.DraftId2TabAndSubTab[Id].SubTabType
+        table.insert(FiltedDrafts, CompendiumInfo)
       end
-      CompendiumInfo.TypePriority = DataMgr.RewardType[Data.ProductType].DungeonRewardSeq
-      CompendiumInfo.Rarity = Data.Rarity
-      CompendiumInfo.IsNew = (CompendiumInfo.OwnedCount > 0 or CompendiumInfo.IsInfinity) and self:IsDraftNotSeen(Id)
-      CompendiumInfo.SubTabType = DataMgr.DraftId2TabAndSubTab[Id].SubTabType
-      table.insert(FiltedDrafts, CompendiumInfo)
     end
   end
   return FiltedDrafts
 end
-
 local function SortByState(Item_1, Item_2)
   local function GetPriority(Item)
     if Item.State == ForgeConst.DraftState.NotStarted and not Item.IsSetTarget then
@@ -622,7 +642,6 @@ local function SortByState(Item_1, Item_2)
       return 5
     end
   end
-  
   local Priority_1 = GetPriority(Item_1)
   local Priority_2 = GetPriority(Item_2)
   if Priority_1 ~= Priority_2 then
@@ -630,21 +649,18 @@ local function SortByState(Item_1, Item_2)
   end
   return false
 end
-
 local function SortByIsSetTarget(Item_1, Item_2)
   if Item_1.IsSetTarget ~= Item_2.IsSetTarget then
     return true, Item_1.IsSetTarget
   end
   return false
 end
-
 local function SortByIsNotSeen(Item_1, Item_2)
   if Item_1.IsNotSeen ~= Item_2.IsNotSeen then
     return true, Item_1.IsNotSeen
   end
   return false
 end
-
 local function SortByRarity(Item_1, Item_2, IsIncrease)
   if Item_1.Rarity ~= Item_2.Rarity then
     if IsIncrease then
@@ -655,7 +671,6 @@ local function SortByRarity(Item_1, Item_2, IsIncrease)
   end
   return false
 end
-
 local function SortByTypePriority(Item_1, Item_2, IsIncrease)
   if Item_1.TypePriority ~= Item_2.TypePriority then
     if IsIncrease then
@@ -666,14 +681,12 @@ local function SortByTypePriority(Item_1, Item_2, IsIncrease)
   end
   return false
 end
-
 local function SortByDraftId(Item_1, Item_2)
   if Item_1.Id ~= Item_2.Id then
     return true, Item_1.Id < Item_2.Id
   end
   return false
 end
-
 local function SortBySubTabType(Item_1, Item_2, IsIncrease)
   local ForgeSTabData = DataMgr.ForgeSTab
   if Item_1.SubTabType ~= Item_2.SubTabType then
@@ -685,7 +698,6 @@ local function SortBySubTabType(Item_1, Item_2, IsIncrease)
   end
   return false
 end
-
 local SortMethods_MainTab_ByType = {
   SortByIsNotSeen,
   SortByState,
@@ -720,7 +732,6 @@ local SortMethods_Compendium_All_ByType = {SortByTypePriority, SortByRarity}
 local SortMethods_Compendium_All_ByRarity = {SortByRarity, SortByTypePriority}
 local SortMethods_Compendium_ByType = {SortBySubTabType, SortByRarity}
 local SortMethods_Compendium_ByRarity = {SortByRarity, SortBySubTabType}
-
 function ForgeDataModel:SortDraftDatas(DraftInfos, TabType, SubTabType, SortType, IsIncrease)
   local SortTypeMap = {"Type", "Rarity"}
   local IsIncreaseMap = {true, false}
@@ -736,7 +747,6 @@ function ForgeDataModel:SortDraftDatas(DraftInfos, TabType, SubTabType, SortType
   end
   return self:_SortDatas(DraftInfos, SortMethod, IsIncrease)
 end
-
 function ForgeDataModel:SortCompendiumDatas(CompendiumDatas, TabType, SortType, IsIncrease)
   local SortTypeMap = {"Type", "Rarity"}
   local IsIncreaseMap = {true, false}
@@ -750,12 +760,10 @@ function ForgeDataModel:SortCompendiumDatas(CompendiumDatas, TabType, SortType, 
   end
   return self:_SortDatas(CompendiumDatas, SortMethod, IsIncrease)
 end
-
 function ForgeDataModel:_SortDatas(DraftInfos, SortMethod, IsIncrease)
   local function Cmp(Item_1, Item_2)
     for _, SortMethod in ipairs(SortMethod) do
       local IsBreak, Result = SortMethod(Item_1, Item_2, IsIncrease)
-      
       if IsBreak then
         return Result
       end
@@ -766,11 +774,9 @@ function ForgeDataModel:_SortDatas(DraftInfos, SortMethod, IsIncrease)
       return Item_1.Id > Item_2.Id
     end
   end
-  
   table.sort(DraftInfos, Cmp)
   return DraftInfos
 end
-
 function ForgeDataModel:GetCompletedDraftIdsByFilter(Filter, SubFilter)
   self:UpdateData()
   local FiltedCompletedDrafts = {}
@@ -781,20 +787,17 @@ function ForgeDataModel:GetCompletedDraftIdsByFilter(Filter, SubFilter)
   end
   return FiltedCompletedDrafts
 end
-
 function ForgeDataModel:DoCommonFilter(Drafts, CommonFilter)
   if not CommonFilter then
     return
   end
 end
-
 function ForgeDataModel:IsFilteredItem(Item, Filter, SubFilter, CommonFilter)
   if self["Filter_" .. Filter] then
     return self["Filter_" .. Filter](self, Item, SubFilter, CommonFilter)
   end
   return false
 end
-
 function ForgeDataModel:CheckFilterResult(FilterItemResult)
   if false == FilterItemResult then
     return false
@@ -805,24 +808,20 @@ function ForgeDataModel:CheckFilterResult(FilterItemResult)
   end
   return Result
 end
-
 function ForgeDataModel:Filter_All(Item, SubFilter)
   return {HasFilterItem = true}
 end
-
 function ForgeDataModel:Filter_Forging(Item, SubFilter)
   return {
     HasFilterItem = Item.State == ForgeConst.DraftState.InProgress or Item.State == ForgeConst.DraftState.Complete
   }
 end
-
 function ForgeDataModel:Filter_Ready(Item, SubFilter)
   local CanProduce, IsResourceEnough, IsFoundryEnough = self:CanProduce(Item)
   return {
     HasFilterItem = CanProduce > 0
   }
 end
-
 function ForgeDataModel:Filter_Weapon(Item, SubFilter)
   if Item.ProductType ~= "Weapon" then
     return {HasFilterItem = false}
@@ -835,7 +834,6 @@ function ForgeDataModel:Filter_Weapon(Item, SubFilter)
   end
   return {HasFilterItem = true, HasSubFilterItem = true}
 end
-
 function ForgeDataModel:Filter_Mod(Item, SubFilter, CommonFilter)
   if Item.ProductType ~= "Mod" then
     return {HasFilterItem = false}
@@ -858,7 +856,6 @@ function ForgeDataModel:Filter_Mod(Item, SubFilter, CommonFilter)
   end
   return {HasFilterItem = true, HasSubFilterItem = true}
 end
-
 function ForgeDataModel:Filter_Resource(Item, SubFilter)
   if Item.ProductType ~= "Resource" then
     return {HasFilterItem = false}
@@ -871,7 +868,6 @@ function ForgeDataModel:Filter_Resource(Item, SubFilter)
   end
   return {HasFilterItem = true, HasSubFilterItem = true}
 end
-
 function ForgeDataModel:Filter_CharAccessory(Item, SubFilter)
   if Item.ProductType ~= "CharAccessory" then
     return {HasFilterItem = false}
@@ -884,8 +880,8 @@ function ForgeDataModel:Filter_CharAccessory(Item, SubFilter)
   end
   return {HasFilterItem = true, HasSubFilterItem = true}
 end
-
-function ForgeDataModel:ChooseCostItems(DraftId)
+function ForgeDataModel:ChooseCostItems(DraftId, Count)
+  Count = Count or 1
   local CostItemList = {}
   local DraftInfo = DataMgr.Draft[DraftId]
   local PlayerAvatar = GWorld:GetAvatar()
@@ -907,8 +903,8 @@ function ForgeDataModel:ChooseCostItems(DraftId)
       local TotalChoosedNum = 0
       for _, Mod in ipairs(Mods) do
         local ChoosedNum = 0
-        if Mod.Count >= ResInfo.Num - TotalChoosedNum then
-          ChoosedNum = ResInfo.Num - TotalChoosedNum
+        if Mod.Count >= ResInfo.Num * Count - TotalChoosedNum then
+          ChoosedNum = ResInfo.Num * Count - TotalChoosedNum
         else
           ChoosedNum = Mod.Count
         end
@@ -919,10 +915,11 @@ function ForgeDataModel:ChooseCostItems(DraftId)
           Level = Mod.Level,
           Count = ChoosedNum,
           IsLock = Mod.LockState > 0,
-          IsEquipped = Mod:IsEquipped() and ChoosedNum >= Mod.Count
+          IsEquipped = Mod:IsEquipped() and ChoosedNum >= Mod.Count,
+          Instance = Mod
         })
         TotalChoosedNum = TotalChoosedNum + ChoosedNum
-        if TotalChoosedNum >= ResInfo.Num then
+        if TotalChoosedNum >= ResInfo.Num * Count then
           break
         end
       end
@@ -930,19 +927,16 @@ function ForgeDataModel:ChooseCostItems(DraftId)
   end
   return CostItemList
 end
-
 function ForgeDataModel:IsDraftNotSeen(DraftId)
   local SeenDraftIds = EMCache:Get("SeenDraftIds", true) or {}
   return not SeenDraftIds[DraftId]
 end
-
 function ForgeDataModel:MarkDraftAsSeen(DraftId)
   local SeenDraftIds = EMCache:Get("SeenDraftIds", true) or {}
   SeenDraftIds[DraftId] = true
   EMCache:Set("SeenDraftIds", SeenDraftIds, true)
   self:DecreaseNewdotByDraftInfo(DraftId)
 end
-
 function ForgeDataModel:ClearNewRedDots()
   local SeenDraftIds = {}
   for DraftId, Data in pairs(self.ServerData) do
@@ -956,5 +950,14 @@ function ForgeDataModel:ClearNewRedDots()
     end
   end
 end
-
+function ForgeDataModel:ClearConvertNewRedDots()
+  local ForgeConvertReddotNode = ReddotManager.GetTreeNode("ForgeConvert")
+  local ConvertReddotDetails = ForgeConvertReddotNode.Cache.Detail
+  for _, Details in pairs(ConvertReddotDetails) do
+    Details.IsClicked = true
+  end
+  if ForgeConvertReddotNode:IsLeaf() then
+    ReddotManager.ClearLeafNodeCount("ForgeConvert", false)
+  end
+end
 return ForgeDataModel

@@ -1,16 +1,13 @@
 local pb = require("pb")
 local Component = {}
-
 function Component:EnterWorld()
   self.logger.debug("EntityBase EnterWorld")
   self.in_world = true
 end
-
 function Component:LeaveWorld()
   self.logger.debug("EntityBase LeaveWorld")
   self.in_world = false
 end
-
 function Component:InitFromDict(attrs, use_protoattr)
   self.UseProtoAttr = use_protoattr
   local _type = self.__Class__
@@ -34,14 +31,12 @@ function Component:InitFromDict(attrs, use_protoattr)
     end
   end
 end
-
 function Component:CreateSuccess()
   self:CallServerMethod("OnCreateClientEntity", true)
   if self.OnEntityInitSuccess then
     self.OnEntityInitSuccess(self)
   end
 end
-
 function Component:GetClientAttrs()
   if not self.ClientProps then
     return {}
@@ -60,7 +55,6 @@ function Component:GetClientAttrs()
   end
   return result
 end
-
 function Component:GetCrossAttrs()
   if not self.CrossProps then
     return {}
@@ -80,7 +74,6 @@ function Component:GetCrossAttrs()
   end
   return result
 end
-
 function Component:ClientPropChanged(name, value)
   self.logger.debug("ClientPropChanged", name)
   local _type = self.__Class__
@@ -102,7 +95,6 @@ function Component:ClientPropChanged(name, value)
     func(self, {})
   end
 end
-
 function Component:ClientPropSet(name, key, value)
   self.logger.debug("ClientPropSet", name, key)
   local _type = self.__Class__
@@ -130,7 +122,6 @@ function Component:ClientPropSet(name, key, value)
     func(self, {key}, OldValue)
   end
 end
-
 function Component:ClientPropDictChange(prop_name, key, second_prop_name, attr_value)
   self.logger.info("ClientPropDictChange", prop_name, key, second_prop_name, attr_value)
   local first_attr = self[prop_name]
@@ -164,7 +155,6 @@ function Component:ClientPropDictChange(prop_name, key, second_prop_name, attr_v
     func(self, {key, second_prop_name}, OldValue)
   end
 end
-
 function Component:ClientFlashSyncProp(CacheSyncProp)
   self.logger.info("ClientFlashSyncProp")
   if type(CacheSyncProp) ~= "table" then
@@ -180,7 +170,6 @@ function Component:ClientFlashSyncProp(CacheSyncProp)
     end
   end
 end
-
 function Component:OnDestroy()
   self.logger.debug("EntityBase OnDestroy")
   if self.in_world then
@@ -192,5 +181,4 @@ function Component:OnDestroy()
   EMCache:SaveUser(true, self)
   self.Super.OnDestroy(self)
 end
-
 return Component

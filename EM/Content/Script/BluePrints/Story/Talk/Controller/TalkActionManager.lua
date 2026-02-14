@@ -2,7 +2,7 @@ require("Const")
 local TalkActionManager_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
+local ActionLogType = UE.EStoryLogType.TalkAction
 function TalkActionManager_C.New()
   local Obj = setmetatable({}, {__index = TalkActionManager_C})
   Obj.NpcPlayActionRecordMap = {}
@@ -12,29 +12,24 @@ function TalkActionManager_C.New()
   Obj.NpcRotateOffsetRecordMap = {}
   return Obj
 end
-
 function TalkActionManager_C:ReceiveTick(DeltaTime)
 end
-
 function TalkActionManager_C:RecordNpcPlayAction(TalkTask, TalkActor)
   DebugPrint("RecordNpcPlayAction", TalkTask, TalkActor, TalkActor:GetName())
   local RecordMap = self.NpcPlayActionRecordMap[TalkTask] or {}
   RecordMap[TalkActor] = true
   self.NpcPlayActionRecordMap[TalkTask] = RecordMap
 end
-
 function TalkActionManager_C:RecordNpcSitOrStand(TalkTask, TalkActor)
   local RecordMap = self.NpcSitOrStandRecordMap[TalkTask] or {}
   RecordMap[TalkActor] = true
   self.NpcSitOrStandRecordMap[TalkTask] = RecordMap
 end
-
 function TalkActionManager_C:RecordLookAt(TalkTask, TalkActor)
   local RecordMap = self.NpcLookAtRecordMap[TalkTask] or {}
   RecordMap[TalkActor] = true
   self.NpcLookAtRecordMap[TalkTask] = RecordMap
 end
-
 function TalkActionManager_C:RecordRotateTo(Key, TalkActor)
   local RecordMap = self.NpcRotateToRecordMap[Key] or {}
   if not RecordMap[TalkActor] then
@@ -43,7 +38,6 @@ function TalkActionManager_C:RecordRotateTo(Key, TalkActor)
   self.NpcRotateToRecordMap[Key] = RecordMap
   self.GlobalNpcRotateToRecord = RecordMap
 end
-
 function TalkActionManager_C:StopAllNpcMontage(TalkTask)
   DebugPrint("TalkActionManager_C:StopAllNpcMontage", TalkTask)
   if self.NpcPlayActionRecordMap[TalkTask] then
@@ -51,14 +45,18 @@ function TalkActionManager_C:StopAllNpcMontage(TalkTask)
       if IsValid(TalkActor) and TalkActor.Mesh then
         local AnimInstance = TalkActor.Mesh:GetAnimInstance()
         if AnimInstance then
-          if TalkActor.IsSitting then
-            if TalkTask.TalkTaskData.RestoreStand then
+          if not TalkActor.IsSitting then
+            TalkActor:StopAllTalkAction()
+          elseif TalkTask.TalkTaskData.RestoreStand then
+            if not TalkActor.IsSpecialSit then
               TalkActor:SetIdlePose(true, function()
                 TalkActor:StopAllTalkAction()
               end)
+            else
+              TalkActor:RealSetIdlePoseBySpecialSit(function()
+                TalkActor:StopAllTalkAction()
+              end, false)
             end
-          else
-            TalkActor:StopAllTalkAction()
           end
         end
       end
@@ -66,7 +64,6 @@ function TalkActionManager_C:StopAllNpcMontage(TalkTask)
     self.NpcPlayActionRecordMap[TalkTask] = nil
   end
 end
-
 function TalkActionManager_C:StopAllLookAt(TalkTask)
   if self.NpcLookAtRecordMap[TalkTask] then
     for TalkActor, _ in pairs(self.NpcLookAtRecordMap[TalkTask]) do
@@ -77,7 +74,6 @@ function TalkActionManager_C:StopAllLookAt(TalkTask)
     self.NpcLookAtRecordMap[TalkTask] = nil
   end
 end
-
 function TalkActionManager_C:ClearAllAsynchronousCall(TalkTask)
   DebugPrint("TalkActionManager_C:ClearAllAsynchronousCall")
   if self.NpcRotateOffsetRecordMap[TalkTask] == nil then
@@ -91,13 +87,11 @@ function TalkActionManager_C:ClearAllAsynchronousCall(TalkTask)
   end
   self.NpcRotateOffsetRecordMap[TalkTask] = nil
 end
-
 function TalkActionManager_C:Clear(TalkTask)
   self:StopAllLookAt(TalkTask)
   self:StopAllNpcMontage(TalkTask)
   self:ClearAllAsynchronousCall(TalkTask)
 end
-
 function TalkActionManager_C:PlayTalkAction(TalkActor, TalkActorId, TalkActionData, TalkContext, TalkTask, Callback, IsSync, IgnoreBlendInTime)
   if not TalkActor then
     return
@@ -109,7 +103,6 @@ function TalkActionManager_C:PlayTalkAction(TalkActor, TalkActorId, TalkActionDa
   end
   TalkActor:PlayTalkAction(TalkActionData.TalkActionId, {Obj, Func}, nil, nil, IsSync, IgnoreBlendInTime)
 end
-
 function TalkActionManager_C:DefaultLookAt(TalkContext, TalkTask, TalkTaskData, SpeakActorId, LookAtType)
   if "TalkNpc" == LookAtType then
     local SpeakActorData = TalkContext:GetTalkActorData(TalkTask, SpeakActorId)
@@ -117,7 +110,7 @@ function TalkActionManager_C:DefaultLookAt(TalkContext, TalkTask, TalkTaskData, 
       return
     end
     local SpeakActor = SpeakActorData.TalkActor
-    for _, CreateTalkActorData in ipairs(TalkTaskData.CreateTalkActors) do
+    for _, CreateTalkActorData in ipairs(TalkTaskData.TalkActors) do
       local UnitId = CreateTalkActorData.TalkActorId
       if UnitId ~= SpeakActorId then
         local TalkActorData = TalkContext:GetTalkActorData(TalkTask, UnitId)
@@ -130,7 +123,7 @@ function TalkActionManager_C:DefaultLookAt(TalkContext, TalkTask, TalkTaskData, 
       end
     end
   elseif "Self" == LookAtType then
-    for _, CreateTalkActorData in ipairs(TalkTaskData.CreateTalkActors) do
+    for _, CreateTalkActorData in ipairs(TalkTaskData.TalkActors) do
       local UnitId = CreateTalkActorData.TalkActorId
       local TalkActorData = TalkContext:GetTalkActorData(TalkTask, UnitId)
       if TalkActorData and TalkActorData.TalkActor then
@@ -140,30 +133,29 @@ function TalkActionManager_C:DefaultLookAt(TalkContext, TalkTask, TalkTaskData, 
     end
   end
 end
-
 function TalkActionManager_C:LookAtReady(TalkTaskData, TalkTask, LookAtDescription, NotUsingSocket, CallBack)
   local LookId, LookedInfo = LookAtDescription.LookId, LookAtDescription.LookedInfo
   if not LookId then
     local Message = string.format("Look at ready failed: LookId not found, LookAtDescription: %s, TalkNodeId: %s", LookAtDescription, TalkTaskData.TalkNodeId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: LookId 无效", Message)
     return
   end
   local TalkContext = TalkTaskData.TalkContext
   if not IsValid(TalkContext) then
     local Message = string.format("Look at ready failed: TalkContext not found, ActorId: %s, TalkNodeId: %s", LookId, TalkTaskData.TalkNodeId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: TalkContext 无效", Message)
     return
   end
   local LookActorData = TalkContext:GetTalkActorData(TalkTask, LookId)
   if not LookActorData then
     local Message = string.format("Look at ready failed: LookActorData not found, ActorId: %s, TalkNodeId: %s", LookId, TalkTaskData.TalkNodeId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: LookActorData 无效", Message)
     return
   end
   local LookActor = LookActorData.TalkActor
   if not IsValid(LookActor) then
     local Message = string.format("Look at ready failed: LookActor not found, ActorId: %s, TalkNodeId: %s", LookId, TalkTaskData.TalkNodeId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: LookActor 无效", Message)
     return
   end
   if not LookActor then
@@ -179,13 +171,13 @@ function TalkActionManager_C:LookAtReady(TalkTaskData, TalkTask, LookAtDescripti
     local LookedActorData = TalkContext:GetTalkActorData(TalkTask, LookedInfo)
     if not LookedActorData then
       local Message = string.format("Look at ready failed: LookedActorData not found, ActorId: %s, TalkNodeId: %s", LookedInfo, TalkTaskData.TalkNodeId)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: LookedActorData 无效", Message)
       return
     end
     LookedActor = LookedActorData.TalkActor
     if not IsValid(LookedActor) then
       local Message = string.format("Look at ready failed: LookedActor not found, ActorId: %s, TalkNodeId: %s", LookedInfo, TalkTaskData.TalkNodeId)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: LookedActor 无效", Message)
       return
     end
   elseif "string" == type(LookedInfo) then
@@ -193,7 +185,7 @@ function TalkActionManager_C:LookAtReady(TalkTaskData, TalkTask, LookAtDescripti
     LookedActor = GameState:GetTargetPoint(LookedInfo)
     if not IsValid(LookedActor) then
       local Message = string.format("Look at ready failed: LookedActor not found, ActorId: %s, TalkNodeId: %s", LookedInfo, TalkTaskData.TalkNodeId)
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "LookAtReady出错: LookedActor 无效", Message)
       return
     end
   end
@@ -213,7 +205,6 @@ function TalkActionManager_C:LookAtReady(TalkTaskData, TalkTask, LookAtDescripti
   end
   return LookActor
 end
-
 function TalkActionManager_C:LookAtFinishImmediate(TalkTaskData, TalkTask, LookAtDescription, NotUsingSocket)
   local LookId, LookedInfo = LookAtDescription.LookId, LookAtDescription.LookedInfo
   local TalkContext = TalkTaskData.TalkContext
@@ -241,12 +232,16 @@ function TalkActionManager_C:LookAtFinishImmediate(TalkTaskData, TalkTask, LookA
     DebugPrint(UE4.UKismetSystemLibrary.GetDisplayName(LookActor) .. " look at Immediate" .. UE4.UKismetSystemLibrary.GetDisplayName(LookedActor))
   end
 end
-
 function TalkActionManager_C:SetLookAtAngles(TalkActor)
+  if not IsValid(TalkActor) then
+    local Message = "Set look at angles failed, TalkActor is invalid"
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "SetLookAtAngles出错: TalkActor无效", Message)
+    return
+  end
   local AnimInstance = TalkActor.Mesh:GetAnimInstance()
-  if IsValid(AnimInstance) == false then
+  if not IsValid(AnimInstance) then
     local Message = string.format("Set look at angles failed, AnimInstance is invalid, ActorName: %s", TalkActor:GetName())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "SetLookAtAngles出错: AnimInstance无效", Message)
     return
   end
   AnimInstance.LookAtMaxX = 20
@@ -256,7 +251,6 @@ function TalkActionManager_C:SetLookAtAngles(TalkActor)
   AnimInstance.LookAtMaxZ = 45
   AnimInstance.LookAtMinZ = -45
 end
-
 function TalkActionManager_C:ResetLookAtImmediate(TalkActor)
   if TalkActor.Mesh and TalkActor.Mesh:GetAnimInstance() then
     local AnimInstance = TalkActor.Mesh:GetAnimInstance()
@@ -269,7 +263,6 @@ function TalkActionManager_C:ResetLookAtImmediate(TalkActor)
     DebugPrint("error: TalkActionManager_C:ResetLookAt:TalkActor.Mesh or TalkActor.Mesh:GetAnimInstance() is nil")
   end
 end
-
 function TalkActionManager_C:ResetLookAt(TalkActor)
   if TalkActor.Mesh and TalkActor.Mesh:GetAnimInstance() then
     local AnimInstance = TalkActor.Mesh:GetAnimInstance()
@@ -282,8 +275,17 @@ function TalkActionManager_C:ResetLookAt(TalkActor)
     DebugPrint("error: TalkActionManager_C:ResetLookAt:TalkActor.Mesh or TalkActor.Mesh:GetAnimInstance() is nil")
   end
 end
-
 function TalkActionManager_C:StartLookAt(TalkActor, TargetTalkActor, NotUsingSocket)
+  if not IsValid(TalkActor) then
+    local Message = "Start look at failed, TalkActor is invalid"
+    UE4.UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "StartLookAt出错: TalkActor无效", Message)
+    return
+  end
+  if not IsValid(TalkActor.Mesh) then
+    local Message = string.format("Start look at failed, TalkActor.Mesh is invalid, ActorName: %s", TalkActor:GetName())
+    UE4.UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "StartLookAt出错: TalkActor.Mesh无效", Message)
+    return
+  end
   if TalkActor.Mesh and TalkActor.Mesh:GetAnimInstance() then
     local AnimInstance = TalkActor.Mesh:GetAnimInstance()
     if TalkActor.NPCAnimInstance and AnimInstance:Cast(UNPCAnimInstance) then
@@ -293,7 +295,6 @@ function TalkActionManager_C:StartLookAt(TalkActor, TargetTalkActor, NotUsingSoc
     DebugPrint("error: TalkActionManager_C:StartLookAt:TalkActor.Mesh or TalkActor.Mesh:GetAnimInstance() is nil")
   end
 end
-
 function TalkActionManager_C:StartLookAtImmediate(TalkActor, TargetTalkActor, NotUsingSocket)
   if TalkActor.Mesh and TalkActor.Mesh:GetAnimInstance() then
     local AnimInstance = TalkActor.Mesh:GetAnimInstance()
@@ -305,7 +306,6 @@ function TalkActionManager_C:StartLookAtImmediate(TalkActor, TargetTalkActor, No
     DebugPrint("error: TalkActionManager_C:StartLookAt:TalkActor.Mesh or TalkActor.Mesh:GetAnimInstance() is nil")
   end
 end
-
 function TalkActionManager_C:SyncSetActorRotation(TalkTask, TalkContext, SetRotationDescription, Callback)
   DebugPrint("TalkActionManager_C:SyncSetActorRotation", SetRotationDescription, Callback)
   if not SetRotationDescription then
@@ -332,7 +332,6 @@ function TalkActionManager_C:SyncSetActorRotation(TalkTask, TalkContext, SetRota
   end
   Callback()
 end
-
 function TalkActionManager_C:RotateToReady(TalkContext, TalkTask, TalkTaskData, RotateToDescription, MontageName, CallBack)
   if not RotateToDescription then
     return
@@ -344,72 +343,69 @@ function TalkActionManager_C:RotateToReady(TalkContext, TalkTask, TalkTaskData, 
     return self:RotateToActorById(TalkContext, TalkTask, P1, P2, MontageName, CallBack)
   end
 end
-
 function TalkActionManager_C:RotateToDegree(TalkContext, TalkTask, SrcActorId, RotDegree, MontageName, CallBack)
   if not IsValid(TalkContext) then
     local Message = string.format("Rotate to degree failed: TalkContext is invalid, SrcActorId: %s, RotDegree: %s", SrcActorId, RotDegree)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToDegree出错: AnimInstance无效", Message)
     return
   end
   local SrcActorData = TalkContext:GetTalkActorData(TalkTask, SrcActorId)
   if not SrcActorData then
     local Message = string.format("Rotate to degree failed: SrcActorData is nil, SrcActorId: %s, RotDegree: %s", SrcActorId, RotDegree)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToDegree出错: SrcActorData无效", Message)
     return
   end
   local SrcActor = SrcActorData.TalkActor
   if not IsValid(SrcActor) then
     local Message = string.format("Rotate to degree failed: SrcActor is nil, SrcActorId: %s, RotDegree: %s", SrcActorId, RotDegree)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToDegree出错: SrcActor无效", Message)
     return
   end
   self:RotateOffset(SrcActor, RotDegree, MontageName, CallBack, TalkTask, TalkTask.TalkTaskData)
   local Rotation = SrcActor:K2_GetActorRotation()
   return SrcActor, Rotation.Yaw + RotDegree, nil
 end
-
 function TalkActionManager_C:RotateToActorById(TalkContext, TalkTask, SrcActorId, DstActorId, MontageName, CallBack)
   if not IsValid(TalkContext) then
     local Message = string.format("Rotate to actor failed: TalkContext is invalid, SrcActorId: %s, DstActorId: %s", SrcActorId, DstActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActorById出错: TalkContext无效", Message)
     return
   end
   local SrcActorData = TalkContext:GetTalkActorData(TalkTask, SrcActorId)
   if not SrcActorData then
     local Message = string.format("Rotate to actor failed: SrcActorData is nil, SrcActorId: %s, DstActorId: %s", SrcActorId, DstActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActorById出错: SrcActorData无效", Message)
     return
   end
   local SrcActor = SrcActorData.TalkActor
   if not IsValid(SrcActor) then
     local Message = string.format("Rotate to actor failed: SrcActor is nil, SrcActorId: %s, DstActorId: %s", SrcActorId, DstActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActorById出错: SrcActor无效", Message)
     return
   end
   local DstActorData = TalkContext:GetTalkActorData(TalkTask, DstActorId)
   if not DstActorData then
     local Message = string.format("Rotate to actor failed: DstActorData is nil, SrcActorId: %s, DstActorId: %s", SrcActorId, DstActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActorById出错: DstActorData无效", Message)
     return
   end
   local DstActor = DstActorData.TalkActor
   if not IsValid(DstActor) then
     local Message = string.format("Rotate to actor failed: DstActor is nil, SrcActorId: %s, DstActorId: %s", SrcActorId, DstActorId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActorById出错: DstActor无效", Message)
     return
   end
   return self:RotateToActor(TalkTask, SrcActor, DstActor, MontageName, CallBack)
 end
-
 function TalkActionManager_C:RotateToActor(TalkTask, SrcActor, DstActor, MontageName, CallBack)
   if IsValid(SrcActor) == false then
     local Message = "Rotate to actor failed: SrcActor is invalid"
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActor出错: SrcActor无效", Message)
     return
   end
   if IsValid(DstActor) == false then
     local Message = "Rotate to actor failed: DstActor is invalid"
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ActionLogType, "RotateToActor出错: DstActor无效", Message)
     return
   end
   local SrcActorLoc = SrcActor:K2_GetActorLocation()
@@ -434,7 +430,6 @@ function TalkActionManager_C:RotateToActor(TalkTask, SrcActor, DstActor, Montage
   end
   return SrcActor, LookAtRot.Yaw, DstActor
 end
-
 function TalkActionManager_C:FinishRotateTo(TalkActor, TargetYaw, LookAtedActor)
   if not IsValid(TalkActor) then
     return
@@ -458,8 +453,7 @@ function TalkActionManager_C:FinishRotateTo(TalkActor, TargetYaw, LookAtedActor)
     AnimInstance:Montage_Stop(0.1, AnimInstance.TurnIPStandMontageInfo.Montage)
   end
 end
-
-function TalkActionManager_C:FreeTalkNpcRotateToPlayer(TalkTask, Npc, Callback)
+function TalkActionManager_C:FreeTalkNpcRotateToPlayer(TalkTask, Npc, Callback, bImmediate)
   if not (-1 ~= TalkTask.TalkTaskData.BlendInTime and TalkTask.TalkTaskData.IsNPCTurnToPlayer) or Npc:IsA(ATalkInteractiveItem) then
     if Callback then
       Callback.Func(Callback.Obj)
@@ -469,20 +463,30 @@ function TalkActionManager_C:FreeTalkNpcRotateToPlayer(TalkTask, Npc, Callback)
   assert(Npc:IsA(ANpcCharacter))
   Npc:PlayTalkGroupEndAnimation(function()
     self:RecordRotateTo(TalkTask, Npc)
-    self:RotateToActor(TalkTask, Npc, TalkTask.Player, nil, Callback)
+    if not bImmediate then
+      self:RotateToActor(TalkTask, Npc, TalkTask.Player, nil, Callback)
+    else
+      self:FinishRotateTo(self:RotateToActor(TalkTask, Npc, TalkTask.Player))
+      if Callback then
+        Callback.Func(Callback.Obj)
+      end
+    end
   end)
 end
-
-function TalkActionManager_C:FreeTalkPlayerRotateToNpc(TalkTask, Npc, Callback)
+function TalkActionManager_C:FreeTalkPlayerRotateToNpc(TalkTask, Npc, Callback, bImmediate)
   if -1 == TalkTask.TalkTaskData.BlendInTime or not TalkTask.TalkTaskData.bIsPlayerTurnToNPC then
     if Callback then
       Callback.Func(Callback.Obj)
     end
-  else
+  elseif not bImmediate then
     self:RotateToActor(TalkTask, TalkTask.Player, Npc, nil, Callback)
+  else
+    self:FinishRotateTo(self:RotateToActor(TalkTask, TalkTask.Player, Npc))
+    if Callback then
+      Callback.Func(Callback.Obj)
+    end
   end
 end
-
 function TalkActionManager_C:RotateToActorNew(Key, NpcA, NpcB, Callback)
   if not NpcA or not NpcB then
     if Callback then
@@ -508,10 +512,8 @@ function TalkActionManager_C:RotateToActorNew(Key, NpcA, NpcB, Callback)
     self:RotateOffsetNew(Key, NpcA, DeltaRot, Callback)
   end
 end
-
 function TalkActionManager_C:RotateOffsetNew(Key, Npc, RotDegree, Callback)
   local bHasExecuteCallback = false
-  
   local function RealCallback()
     if bHasExecuteCallback then
       return
@@ -521,7 +523,6 @@ function TalkActionManager_C:RotateOffsetNew(Key, Npc, RotDegree, Callback)
       Callback.Func(Callback.Obj)
     end
   end
-  
   if not Npc then
     RealCallback()
     return
@@ -544,7 +545,6 @@ function TalkActionManager_C:RotateOffsetNew(Key, Npc, RotDegree, Callback)
     end
   })
 end
-
 function TalkActionManager_C:FreeTalkNpcRotateRecover(Npc, TalkTask, TalkTaskData, Callback)
   local RecordMap
   if -1 ~= TalkTaskData.BlendOutTime then
@@ -577,17 +577,14 @@ function TalkActionManager_C:FreeTalkNpcRotateRecover(Npc, TalkTask, TalkTaskDat
   end
   self.NpcRotateToRecordMap[TalkTask] = nil
 end
-
 function TalkActionManager_C:RotateToTargetRotation(TalkActor, TargetRot, Callback, TalkTask, TalkTaskData)
   local ActiveTalkActorRot = TalkActor:K2_GetActorRotation()
   local DeltaRot = UE4.UKismetMathLibrary.NormalizedDeltaRotator(TargetRot, ActiveTalkActorRot).Yaw
   DebugPrint("TalkActionManager_C:RotateToTargetRotation", TalkActor:GetName(), DeltaRot)
   self:RotateOffset(TalkActor, DeltaRot, nil, Callback, TalkTask, TalkTaskData)
 end
-
 function TalkActionManager_C:RotateOffset(ActiveTalkActor, RotDegree, MontageName, Callback, TalkTask, TalkTaskData)
   local bHasExecuteCallback = false
-  
   local function RealCallback()
     if bHasExecuteCallback then
       return
@@ -597,7 +594,6 @@ function TalkActionManager_C:RotateOffset(ActiveTalkActor, RotDegree, MontageNam
       Callback.Func(Callback.Obj)
     end
   end
-  
   if not ActiveTalkActor or not TalkTask then
     RealCallback()
     return
@@ -618,5 +614,4 @@ function TalkActionManager_C:RotateOffset(ActiveTalkActor, RotDegree, MontageNam
     end
   }, MontageName)
 end
-
 return TalkActionManager_C

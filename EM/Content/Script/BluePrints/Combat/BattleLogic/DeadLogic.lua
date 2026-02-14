@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:AddCaptureResult(ResultName, TargetEid, KillMineRoleEid, KillMineSkillId, DeathReason)
   self.Result:Add(ResultName, {
     TargetEid = TargetEid,
@@ -8,7 +7,6 @@ function Component:AddCaptureResult(ResultName, TargetEid, KillMineRoleEid, Kill
     DeathReason = DeathReason
   })
 end
-
 function Component:Play_CaptureMonster(Content)
   local Target = self:GetEntity(Content.TargetEid)
   if not Target then
@@ -16,7 +14,6 @@ function Component:Play_CaptureMonster(Content)
   end
   self:CaptureMonster(Content.TargetEid, Content.KillMineRoleEid, Content.KillMineSkillId, Content.DeathReason)
 end
-
 function Component:CaptureMonsterSuccess(TargetEid, KillMineRoleEid, KillMineSkillId, DeathReason)
   local Entity = self:GetEntity(TargetEid)
   if not Entity then
@@ -31,7 +28,6 @@ function Component:CaptureMonsterSuccess(TargetEid, KillMineRoleEid, KillMineSki
     DeathReason = DeathReason
   })
 end
-
 function Component:Play_CaptureMonsterSuccess(Content)
   local Target = self:GetEntity(Content.TargetEid)
   if not Target then
@@ -39,18 +35,18 @@ function Component:Play_CaptureMonsterSuccess(Content)
   end
   self:CaptureMonsterSuccess(Content.TargetEid, Content.KillMineRoleEid, Content.KillMineSkillId, Content.DeathReason)
 end
-
 function Component:BattleOnDead_Lua(TargetEid, KillMineRoleEid, KillMineSkillId, DeathReason)
 end
-
 function Component:QuickRecovery_Impl(Target)
   Target:QuickRecovery()
 end
-
 function Component:Recovery(TargetEid)
   local Target = self:GetEntity(TargetEid)
   local Avatar = GWorld:GetAvatar()
-  if Avatar then
+  if not Target then
+    return
+  end
+  if Avatar and Target and Target:IsMainPlayer() then
     local IsInHomebase = Avatar:GetIsInHome()
     if Target:GetCurRespawnRuleName() == "CommonRegion" and not IsInHomebase then
       self:RegionTeleportRecovery(Target)
@@ -59,7 +55,6 @@ function Component:Recovery(TargetEid)
   end
   Target:Recovery()
 end
-
 function Component:TeleportRecovery(TargetEid, Location, Rotation, DelayTime)
   local Target = self:GetEntity(TargetEid)
   if not Target or not Target:CheckCanRecovery() then
@@ -73,14 +68,12 @@ function Component:TeleportRecovery(TargetEid, Location, Rotation, DelayTime)
     })
   end)
 end
-
 function Component:RegionTeleportRecovery(Player)
   Player.IsTeleportRecovery = true
   local UIManager = UIManager(GWorld.GameInstance)
   local Params = {}
   Params.BlackScreenHandle = "Teleport"
   Params.InAnimationObj = self
-  
   function Params.InAnimationCallback()
     Player:QuickRecovery()
     Player:TeleportToCloestTeleportPoint(function()
@@ -88,13 +81,11 @@ function Component:RegionTeleportRecovery(Player)
       Player.IsTeleportRecovery = false
     end)
   end
-  
   Params.InAnimationPlayTime = 1
   Params.OutAnimationObj = self
   Params.OutAnimationPlayTime = 1
   UIManager:ShowCommonBlackScreen(Params)
 end
-
 function Component:Play_EntityRecovery(Content)
   DebugPrint("Tianyi@ Client Play_EntityRecovery")
   local EntityEid = Content.EntityEid
@@ -104,7 +95,6 @@ function Component:Play_EntityRecovery(Content)
   end
   self:Recovery(Content.EntityEid)
 end
-
 function Component:RecoverOther(RecovererEid, TargetEid, IsBegin, Params, Reason)
   local Recoverer = self:GetEntity(RecovererEid)
   local Target = self:GetEntity(TargetEid)
@@ -144,7 +134,6 @@ function Component:RecoverOther(RecovererEid, TargetEid, IsBegin, Params, Reason
     })
   end
 end
-
 function Component:Play_RecoverOther(Content)
   DebugPrint("Tianyi@ Client Play_RecoverOther")
   local TargetEid = Content.TargetEid
@@ -161,7 +150,6 @@ function Component:Play_RecoverOther(Content)
     Target:TriggerRescueTimerFloatVisibility(false)
   end
 end
-
 function Component:CaptureMonsterStandUp(TargetEid)
   local Target = self:GetEntity(TargetEid)
   if not Target then
@@ -175,7 +163,6 @@ function Component:CaptureMonsterStandUp(TargetEid)
     EntityEid = Target.Eid
   })
 end
-
 function Component:Play_CaptureMonsterStandUp(Content)
   local EntityEid = Content.EntityEid
   local Entity = self:GetEntity(EntityEid)
@@ -184,5 +171,4 @@ function Component:Play_CaptureMonsterStandUp(Content)
   end
   self:CaptureMonsterStandUp(Content.EntityEid)
 end
-
 return Component

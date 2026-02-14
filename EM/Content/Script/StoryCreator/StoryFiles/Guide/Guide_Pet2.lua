@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1722582502754774",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1224.923076923077, y = 296.72296124927686},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -131,12 +133,12 @@ return {
           ["17225825300743005"] = {
             key = "17225825300743005",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1152.5224985540776, y = 436.74994216309983},
             propsData = {
               ShowEnable = true,
               MessageId = 203002,
-              MessageNote = "\233\128\137\230\139\169\231\189\144\231\189\144",
+              MessageNote = "选择罐罐",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -161,12 +163,12 @@ return {
           ["17225825306893058"] = {
             key = "17225825306893058",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1353.364603817235, y = 171.4604684788893},
             propsData = {
               ShowEnable = true,
               MessageId = 203003,
-              MessageNote = "\230\141\149\232\142\183\230\157\161",
+              MessageNote = "捕获条",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
@@ -191,12 +193,12 @@ return {
           ["17228505044121250"] = {
             key = "17228505044121250",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1583.5, y = 462},
             propsData = {
               ShowEnable = true,
               MessageId = 203004,
-              MessageNote = "\231\130\185\229\135\187\230\141\149\232\142\183",
+              MessageNote = "点击捕获",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -221,12 +223,12 @@ return {
           ["172355488017910909"] = {
             key = "172355488017910909",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1826.9999999999995, y = 163.99999999999983},
             propsData = {
               ShowEnable = true,
               MessageId = 203005,
-              MessageNote = "\230\138\149\229\135\186\231\189\144\231\189\144",
+              MessageNote = "投出罐罐",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,

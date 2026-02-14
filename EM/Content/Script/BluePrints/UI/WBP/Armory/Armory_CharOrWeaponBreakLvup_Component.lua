@@ -1,15 +1,12 @@
 require("UnLua")
 local UpgradeUtils = require("Utils.UpgradeUtils")
 local Component = {}
-
 function Component:Construct()
 end
-
 Component.BreakLevelUpWidgetMap = {
   [CommonConst.ArmoryType.Char] = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Intensify/WBP_Armory_Ascend.WBP_Armory_Ascend'",
   [CommonConst.ArmoryType.Weapon] = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Intensify/WBP_Armory_Ascend.WBP_Armory_Ascend'"
 }
-
 function Component:InitBreakLevelUpComp(...)
   local User, Target, SubWidget, Params = ...
   self.Target = Target
@@ -46,13 +43,11 @@ function Component:InitBreakLevelUpComp(...)
     self:RefreshBaseInfo()
   end)
 end
-
 function Component:OnUpgradeBtnClicked()
   if self.CurrentMode == "BreakLevelUp" then
     self:TryToBreakLevelUp()
   end
 end
-
 function Component:InitBreakLevelUpIntensify(WidgetPath, Params)
   if self.IntensifyWidget then
     return
@@ -60,7 +55,6 @@ function Component:InitBreakLevelUpIntensify(WidgetPath, Params)
   self.VB_Node:ClearChildren()
   self:CreateBreakLevelUpWidget(WidgetPath, Params)
 end
-
 function Component:CreateBreakLevelUpWidget(WidgetPath, Params)
   self.IntensifyWidget = UIManager(self):CreateWidget(WidgetPath, true)
   self.VB_Node:AddChild(self.IntensifyWidget)
@@ -80,7 +74,6 @@ function Component:CreateBreakLevelUpWidget(WidgetPath, Params)
     self.CurrentSubUI = self.IntensifyWidget
   end
 end
-
 function Component:InitBreakLevelUpPanelInfo()
   self.Panel_Info:SetVisibility(UIConst.VisibilityOp.Visible)
   local TargetData = self.Target.Props
@@ -111,7 +104,6 @@ function Component:InitBreakLevelUpPanelInfo()
   end
   self.CurrentSubUI:InitBreakLevelStars(self.Target.EnhanceLevel + 1)
 end
-
 function Component:SetElementIcon(ElementType)
   if ElementType then
     self.Panel_Element:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -128,7 +120,6 @@ function Component:SetElementIcon(ElementType)
     self.Stats_ListView:AddItem(self:NewElmtIconContent(Type, ElmtNames[idx], Type == ElementType))
   end
 end
-
 function Component:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   local IconName = "Armory_" .. ElmtType
@@ -137,16 +128,12 @@ function Component:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   Obj.IsSelected = IsSelected
   return Obj
 end
-
 function Component:CloseComp()
 end
-
 function Component:OnBackgroundClickedComp()
 end
-
 function Component:DestructComp()
 end
-
 function Component:OnBreakLvUpResourcesChanged(ResourceId)
   if self.CurrentMode ~= "BreakLevelUp" then
     return
@@ -160,7 +147,6 @@ function Component:OnBreakLvUpResourcesChanged(ResourceId)
     end
   end
 end
-
 function Component:InitBreakLevelUpView()
   local Avatar = GWorld:GetAvatar()
   if not (Avatar and self.Target) or not self.Type then
@@ -168,7 +154,6 @@ function Component:InitBreakLevelUpView()
   end
   self:UpdateBreakLevelUpInfo()
 end
-
 function Component:UpdateBreakLevelUpInfo(ResourcesChanged)
   local BreakLevelUpData = DataMgr[self.Type .. "Break"][self.TargetId]
   local BreakLevel = self.BreakLevel
@@ -247,7 +232,6 @@ function Component:UpdateBreakLevelUpInfo(ResourcesChanged)
   self:SetBreakHintText(Res.CanUpgrade, Res.BreakHintText, Res.FirstUpgrade)
   self.Params.bShouldPlayAnim = true
 end
-
 function Component:SetBreakHintText(CanUpgrade, BreakHintText, FirstUpgrade)
   if not CanUpgrade then
     DebugPrint(TXTTag, "UpdateBreakLevelUpInfo", GText(BreakHintText))
@@ -255,7 +239,6 @@ function Component:SetBreakHintText(CanUpgrade, BreakHintText, FirstUpgrade)
     self.Panel_Warning:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     self.WidgetSwitcher_Hint:SetActiveWidgetIndex(0)
     self.WidgetSwitcher_Hint:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-    UIManager(self):LoadUI(UIConst.COMMONTOASTMAIN, "CommonToastMain", UIConst.ZORDER_FOR_COMMON_TIP, GText(BreakHintText), 2)
     return
   end
   if FirstUpgrade then
@@ -263,12 +246,10 @@ function Component:SetBreakHintText(CanUpgrade, BreakHintText, FirstUpgrade)
     self.Text_ExpHint:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     self.WidgetSwitcher_Hint:SetActiveWidgetIndex(1)
     self.WidgetSwitcher_Hint:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-    UIManager(self):LoadUI(UIConst.COMMONTOASTMAIN, "CommonToastMain", UIConst.ZORDER_FOR_COMMON_TIP, GText(BreakHintText), 2)
   else
     self.WidgetSwitcher_Hint:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Component:GetDispatchTagAttrs(Attrs, ComparedAttrs, BreakLevel, ComparedBreakLevel)
   Attrs = Attrs or {}
   ComparedAttrs = ComparedAttrs or {}
@@ -297,7 +278,6 @@ function Component:GetDispatchTagAttrs(Attrs, ComparedAttrs, BreakLevel, Compare
   end
   return Attrs, ComparedAttrs
 end
-
 function Component:UpdateBreakLvUpResourceItems(ResourceUse)
   for i = 1, 5 do
     local itemWidget = self["Item_" .. i]
@@ -323,7 +303,8 @@ function Component:UpdateBreakLvUpResourceItems(ResourceUse)
           Icon = resourceConfig.Icon,
           Rarity = resourceConfig.Rarity or 1,
           NotInteractive = false,
-          IsShowDetails = true
+          IsShowDetails = true,
+          MenuPlacement = EMenuPlacement.MenuPlacement_AboveAnchor
         }
         local Avatar = GWorld:GetAvatar()
         local hasCount = Avatar and Avatar:GetResourceNum(Resource.ResourceId) or 0
@@ -337,7 +318,6 @@ function Component:UpdateBreakLvUpResourceItems(ResourceUse)
     end
   end
 end
-
 function Component:TryToBreakLevelUp()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -357,11 +337,9 @@ function Component:TryToBreakLevelUp()
     UIManager(self):ShowUITip("CommonToastMain", GText(self.BreakHintText))
   end
 end
-
 function Component:ForbiddenUpgradeBtnClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText(self.BreakHintText))
 end
-
 function Component:OnTargetBreakLevelUp(Ret, Uuid, TargetBreakLevel)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -376,7 +354,7 @@ function Component:OnTargetBreakLevelUp(Ret, Uuid, TargetBreakLevel)
       elseif self.Type == "Weapon" then
         self.BreakHintText = "Weapon_BreakLevelUp_Success"
       end
-      self:BlockAllUIInput(true)
+      self:BlockAllUIInput(true, "SP_DisplayOnly")
       self.CurrentSubUI:OnBreakLevelUpSuccess(self.Target.EnhanceLevel)
       self.Btn_Upgrade:ForbidBtn(true)
       self:UpdateBreakLvUpResourceItems({})
@@ -392,7 +370,6 @@ function Component:OnTargetBreakLevelUp(Ret, Uuid, TargetBreakLevel)
     UIManager:ShowError(Ret, 1.5)
   end
 end
-
 function Component:OnBreakLevelUpAnimFinishedCallback()
   if self.CurrentMode ~= "BreakLevelUp" then
     return
@@ -419,7 +396,6 @@ function Component:OnBreakLevelUpAnimFinishedCallback()
   end
   return
 end
-
 function Component:PlayBreakLevelUpVoice()
   local AudioManager = AudioManager(self)
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
@@ -429,7 +405,6 @@ function Component:PlayBreakLevelUpVoice()
   end
   AudioManager:PlayCharVoice(self.ArmoryPlayer, nil, "vo_lvup", nil, "ArmoryRoleVoice", true)
 end
-
 function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -468,14 +443,12 @@ function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName
     end
   end
 end
-
 function Component:OnFocusReceivedComp(MyGeometry, InFocusEvent)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ReNavigateToListItem()
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Component:ReNavigateToListItem()
   if self.CurrentMode == "LevelUp" then
     if self.bListExpand then
@@ -493,7 +466,6 @@ function Component:ReNavigateToListItem()
     end
   end
 end
-
 function Component:OnKeyDownComp(MyGeometry, InKeyName)
   if InKeyName == UIConst.GamePadKey.FaceButtonTop and self.CurrentMode == "BreakLevelUp" then
     self:OnUpgradeBtnClicked()
@@ -510,7 +482,7 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
   elseif InKeyName == UIConst.GamePadKey.RightTriggerThreshold then
     self:NextLevel()
     return true
-  elseif InKeyName == UIConst.GamePadKey.RightThumb then
+  elseif InKeyName == UIConst.GamePadKey.LeftThumb then
     self.Item_1:SetFocus()
     self.IsFocusInItem = true
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -519,5 +491,4 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
   end
   return false
 end
-
 return Component

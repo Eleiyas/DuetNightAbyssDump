@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(WildMap, IdicatorLimitSize, TrackTarget, IsGamer)
   self.IsPc = CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile"
   self.BgHeight = WildMap.BgHeight
@@ -35,7 +34,6 @@ function M:Init(WildMap, IdicatorLimitSize, TrackTarget, IsGamer)
   end
   self.Location = FVector2D()
 end
-
 function M:OnPointerMove(CurrentDragOffset, GamerLoc)
   if not self.IsInRegion and self.IsGamer then
     return
@@ -84,12 +82,10 @@ function M:OnPointerMove(CurrentDragOffset, GamerLoc)
     end
   end
 end
-
 function M:SetIcon(Icon)
   if not Icon then
     return
   end
   self.Img_Role:SetBrushFromTexture(Icon)
 end
-
 return M

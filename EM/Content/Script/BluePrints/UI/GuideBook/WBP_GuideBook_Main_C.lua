@@ -7,7 +7,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function M:Construct()
   self.Categories = {
     {
@@ -55,7 +54,6 @@ function M:Construct()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.CurInputType = UIUtils.UtilsGetCurrentInputType()
 end
-
 function M:InitGuideNoteData()
   self.Categories[1].GuideNotes = {}
   local GuideBookData = DataMgr.GuideBook
@@ -83,7 +81,6 @@ function M:InitGuideNoteData()
     end
   end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self:SetFocus()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "SwitchGuideBook", nil)
@@ -111,16 +108,13 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:BindButtonLogics()
 end
-
 function M:InitGuideBookUI(MainTabIdx)
   self:InitMainTab(MainTabIdx)
 end
-
 function M:InitMainTab(MainTabIdx)
   local TabList = {
     {
@@ -231,7 +225,6 @@ function M:InitMainTab(MainTabIdx)
   end
   self.Com_Tab:SelectTab(self.CurrentTabIndex)
 end
-
 function M:OnTabChanged(TabWidget)
   self.CurrentTabIndex = TabWidget.Idx
   self:ChangeListContent()
@@ -241,7 +234,6 @@ function M:OnTabChanged(TabWidget)
     end, 2)
   end
 end
-
 function M:ChangeListContent()
   self.CurrentPageIndex = nil
   self.CurrentTabsNum = 0
@@ -252,21 +244,19 @@ function M:ChangeListContent()
   if self.GuideNotes then
     for GuideNoteId, Content in pairs(self.GuideNotes) do
       local GuideId = Content.GuideId
-      assert(DataMgr.UIGuide[GuideId], "\228\184\141\229\173\152\229\156\168" .. GuideId .. "\229\143\183UIGuide")
+      assert(DataMgr.UIGuide[GuideId], "不存在" .. GuideId .. "号UIGuide")
       local MainGuideTitle = DataMgr.UIGuide[GuideId].MainGuideTitle
       TargetList[GuideNoteId] = GText(MainGuideTitle)
     end
   end
   self:RefreshTargetList(TargetList, true)
 end
-
 function M:RefreshTargetList(NewTargetList, NeedFilter)
   self.TargetList = NewTargetList
   if NeedFilter then
     self:OnContentChanged(self.CurrentSearchContent)
   end
 end
-
 function M:OnContentChanged(NewText)
   self.CurrentSearchContent = NewText
   local SearchResult = self.TargetList
@@ -275,7 +265,6 @@ function M:OnContentChanged(NewText)
   end
   self:OnFilteredBySearch(SearchResult)
 end
-
 function M:UpdateListView(GuideNotes)
   local TempTable = {}
   for Id, Content in pairs(GuideNotes) do
@@ -285,6 +274,11 @@ function M:UpdateListView(GuideNotes)
   if Avatar then
     table.sort(TempTable, function(A, B)
       local Id_A, Id_B = A[1], B[1]
+      if Id_A == self.InitGuideNoteId then
+        return true
+      elseif Id_B == self.InitGuideNoteId then
+        return false
+      end
       if self.UnlockedGuideNotes[Id_A].Reward ~= self.UnlockedGuideNotes[Id_B].Reward then
         return self.UnlockedGuideNotes[Id_A].Reward > self.UnlockedGuideNotes[Id_B].Reward
       else
@@ -298,7 +292,7 @@ function M:UpdateListView(GuideNotes)
   DebugPrint("ClearListItems")
   if self.SelectedItem then
     self.SelectedItem:_OnCellUnSelect()
-    DebugPrint("\230\184\133\231\169\186\233\128\137\230\139\169\233\161\185")
+    DebugPrint("清空选择项")
     self.SelectedItem = nil
   end
   self.List:ClearListItems()
@@ -347,7 +341,7 @@ function M:UpdateListView(GuideNotes)
     self:AddTimer(0.01, function()
       local ListItemUIs = self.List:GetDisplayedEntryWidgets()
       local RestCount = UIUtils.GetListViewContentMaxCount(self.List, ListItemUIs) - ListItemUIs:Length()
-      DebugPrint(RestCount, "\233\156\128\232\166\129\231\148\159\230\136\144\231\154\132\231\169\186\230\160\188")
+      DebugPrint(RestCount, "需要生成的空格")
       for i = 1, RestCount do
         self.List:AddItem(self:CreateEmptyContent())
       end
@@ -355,13 +349,11 @@ function M:UpdateListView(GuideNotes)
     end)
   end
 end
-
 function M:CreateEmptyContent()
   local Obj = NewObject(self.ListContentClass)
   Obj.IsEmpty = true
   return Obj
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -372,7 +364,7 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   elseif "E" == InKeyName or InKeyName == Const.GamepadRightShoulder then
     self.Com_Tab:TabToRight()
   elseif "W" == InKeyName then
-    DebugPrint("\230\137\167\232\161\140\228\184\128\230\172\161\228\184\138\231\167\187")
+    DebugPrint("执行一次上移")
     if self.CurrentListIndex > 0 then
       AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
       local GuideId = self.List:GetItemAt(self.CurrentListIndex - 1).GuideId
@@ -405,7 +397,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -414,7 +405,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -426,7 +416,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OpenDetail(GuideId, Index)
   if not self.IsOpenDetail then
     self.Group_Title:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -453,7 +442,6 @@ function M:OpenDetail(GuideId, Index)
     self:GetReward(GuideNoteId)
   end
 end
-
 function M:OnFilteredBySearch(SearchResult)
   DebugPrint("OnFilteredBySearch")
   local FilteredGuideNotes = {}
@@ -463,14 +451,12 @@ function M:OnFilteredBySearch(SearchResult)
   end
   self:UpdateListView(FilteredGuideNotes)
 end
-
 function M:GetReward(GuideNoteId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:GuideBookGetReward(GuideNoteId)
   end
 end
-
 function M:OnGetGuideBookReward(GuideNoteId)
   self:UpdateTabsRedDot()
   local RewardId = DataMgr.GuideBook[GuideNoteId].RewardId
@@ -497,7 +483,6 @@ function M:OnGetGuideBookReward(GuideNoteId)
     end
   end
 end
-
 function M:UpdateTabsRedDot()
   DebugPrint("UpdateTabsRedDot Called!")
   for GuideNoteTab, Category in pairs(self.Categories) do
@@ -512,12 +497,10 @@ function M:UpdateTabsRedDot()
     end
   end
 end
-
 function M:BindButtonLogics()
   self.Button_Previous:BindEventOnClicked(self, self.SwitchToLeft)
   self.Button_Next:BindEventOnClicked(self, self.SwitchToRight)
 end
-
 function M:InitInfo(GuideId)
   self.Button_Previous:SetText(GText("UI_UIGUIDE_PREV"))
   self.Button_Next:SetText(GText("UI_UIGUIDE_NEXT"))
@@ -551,7 +534,6 @@ function M:InitInfo(GuideId)
   self:UpdateUIVisibility()
   self:UpdateTextInfo(self.GuideMessageArray[self.CurrentPageIndex])
 end
-
 function M:UpdateGuideInfo(NewPageIndex)
   if self.CurrentPageIndex == NewPageIndex then
     DebugPrint("@zyh 111", NewPageIndex, self.CurrentPageIndex)
@@ -566,13 +548,11 @@ function M:UpdateGuideInfo(NewPageIndex)
   self:UpdateUIVisibility()
   self:UpdateTextInfo(self.GuideMessageArray[self.CurrentPageIndex])
 end
-
 function M:UpdateNumStep()
   for i = 1, 4 do
     self["Guide_" .. i]:SetNumStep(i)
   end
 end
-
 function M:UpdateTextInfo(ChildGuideId)
   if not ChildGuideId then
     return
@@ -666,7 +646,6 @@ function M:UpdateTextInfo(ChildGuideId)
     end
   end)
 end
-
 function M:GatherAllCellText(ChildGuideId, i, isPC, ChildGuideType)
   self.ChildInfo = DataMgr.UIChildGuide[ChildGuideId]["GuideInfo" .. i]
   local ContentText
@@ -686,21 +665,18 @@ function M:GatherAllCellText(ChildGuideId, i, isPC, ChildGuideType)
   end
   self.DescText = self.DescText .. ContentText .. "\r\n"
 end
-
 function M:SwitchToLeft()
   if not self:CheckCanSwitchPage(-1) then
     return
   end
   self.PageTurner:PageLeft()
 end
-
 function M:SwitchToRight()
   if not self:CheckCanSwitchPage(1) then
     return
   end
   self.PageTurner:PageRight()
 end
-
 function M:CheckCanSwitchPage(Adjective)
   if not self.CurrentPageIndex then
     return false
@@ -710,7 +686,6 @@ function M:CheckCanSwitchPage(Adjective)
   end
   return true
 end
-
 function M:PureCheckCanChangePage(Adjective)
   if not self.CurrentPageIndex then
     return false
@@ -721,7 +696,6 @@ function M:PureCheckCanChangePage(Adjective)
   end
   return true
 end
-
 function M:UpdateUIVisibility()
   if self.CurrentPageIndex == self.EndPageIndex and not self.HasReachEnd then
     self.HasReachEnd = true
@@ -737,7 +711,6 @@ function M:UpdateUIVisibility()
     self.Button_Next:ForbidBtn(false)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if self.CurInputType ~= CurInputType then
@@ -755,7 +728,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   end
   self.CurInputType = CurInputType
 end
-
 function M:InitGamepadView()
   self.CurrentInputDevice = {"GamepadKey"}
   self.Button_Previous:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -764,7 +736,6 @@ function M:InitGamepadView()
   self.Key_Next:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.List:SetFocus()
 end
-
 function M:InitKeyboardView()
   self.CurrentInputDevice = {
     "KeyboardKey",
@@ -777,7 +748,6 @@ function M:InitKeyboardView()
     self.Key_Next:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Auto_In) then
     return
@@ -797,6 +767,5 @@ function M:CloseSelf()
     end
   end
 end
-
 AssembleComponents(M)
 return M

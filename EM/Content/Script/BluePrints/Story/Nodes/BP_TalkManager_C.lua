@@ -1,13 +1,11 @@
 require("UnLua")
 local BP_TalkManager_C = Class()
-
 function BP_TalkManager_C:Initialize(Initializer)
   self.bInTalk = false
   self.bDisableInput = false
   self.bHideGameUI = false
   self.SequenceTalkContext = nil
 end
-
 function BP_TalkManager_C:CreateTalkContext(TalkId)
   local TalkInfo = DataMgr.Talk[TalkId]
   local TalkContext = self.Overridden.CreateTalkContext(self, TalkId)
@@ -16,7 +14,6 @@ function BP_TalkManager_C:CreateTalkContext(TalkId)
   end
   return TalkContext
 end
-
 function BP_TalkManager_C:DestroyTalkContext(TalkId)
   local TalkInfo = DataMgr.Talk[TalkId]
   if TalkInfo.TalkType == "Show" then
@@ -24,7 +21,6 @@ function BP_TalkManager_C:DestroyTalkContext(TalkId)
   end
   self.Overridden.DestroyTalkContext(self, TalkId)
 end
-
 function BP_TalkManager_C:CheckInterruptOtherTalkContext(CheckTalkId)
   local CheckTalkInfo = DataMgr.Talk[CheckTalkId]
   local InterruptTalkIds = {}
@@ -49,35 +45,28 @@ function BP_TalkManager_C:CheckInterruptOtherTalkContext(CheckTalkId)
   end
   return true
 end
-
 function BP_TalkManager_C:IsInTalk()
   return self.bInTalk
 end
-
 function BP_TalkManager_C:HasHiddenGameUI()
   return self.bHideGameUI
 end
-
 function BP_TalkManager_C:HasDisableInput()
   return self.bHideGameUI
 end
-
 function BP_TalkManager_C:EnterTalk(bHideGameUI)
   self.bInTalk = true
   self.bHideGameUI = bHideGameUI
   self.bDisableInput = bHideGameUI
 end
-
 function BP_TalkManager_C:ExitTalk()
   self.bInTalk = false
   self.bHideGameUI = false
   self.bDisableInput = false
 end
-
 function BP_TalkManager_C:SequenceSetActorHidden(Actor, bHidden)
   if IsValid(self.SequenceTalkContext) then
     self.SequenceTalkContext:SetActorHiddenInContext(Actor, bHidden)
   end
 end
-
 return BP_TalkManager_C

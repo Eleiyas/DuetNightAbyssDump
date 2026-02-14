@@ -8,7 +8,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self:SetFocus()
@@ -26,7 +25,6 @@ function M:OnLoaded(...)
   UIManager(self):SwitchFixedCamera(true, 220040, "Zhiliu", self, "ZhiliuEventTask", {bDestroyNpc = true, IsHaveInOutAnim = false})
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "OpenZhiliuEvent", nil)
 end
-
 function M:Close()
   self:BindToAnimationFinished(self.Out, function()
     UIManager(self):SwitchFixedCamera(false, 220040, "Zhiliu", self, "ZhiliuEventTask", {bDestroyNpc = true, IsHaveInOutAnim = false})
@@ -35,7 +33,6 @@ function M:Close()
   AudioManager(self):SetEventSoundParam(self, "OpenZhiliuEvent", {ToEnd = 1})
   self:PlayAnimation(self.Out)
 end
-
 function M:InitMainTitle()
   self.Text_DescTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text_Desc:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -44,15 +41,12 @@ function M:InitMainTitle()
   self.Btn_Shop.OnHovered:Add(self, self.OnHovered_Shop)
   self.Group_Shop:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnClicked_Shop()
   DebugPrint("ZhiliuEventTask:OnClicked_Shop")
 end
-
 function M:OnHovered_Shop()
   AudioManager(self):PlayUISound(self, "event:/ui/activity/zhiliu_shop_hover", nil, nil)
 end
-
 function M:InitRewardProgress()
   local RewardResource = DataMgr.EventConstant.ZhiLiuEntrustRewardResource.ConstantValue or 10100
   local IconPath = DataMgr.Resource[RewardResource].Icon
@@ -69,14 +63,12 @@ function M:InitRewardProgress()
   self.Btn_TaskProgress.OnUnhovered:Add(self, self.OnUnhovered_RewardBtn)
   self:UpdateRewardProgress()
 end
-
 function M:OnRewardProgressIconLoaded(Obj)
   if Obj and IsValid(self) then
     self.Image_RewardIcon01:SetBrushFromTexture(Obj)
     self.Image_RewardIcon02:SetBrushFromTexture(Obj)
   end
 end
-
 function M:OnClicked_RewardBtn()
   DebugPrint("ZhiliuEventTask: OnClicked_RewardBtn", self.IsRewardBtnClickable)
   if not self.IsRewardBtnClickable then
@@ -89,7 +81,6 @@ function M:OnClicked_RewardBtn()
   if not Avatar then
     return
   end
-  
   local function cb(ErrCode, RewardBox)
     DebugPrint("ZhiliuEventTask:OnClicked_RewardBtnCallback")
     if ErrorCode:Check(ErrCode) then
@@ -97,25 +88,21 @@ function M:OnClicked_RewardBtn()
       self:SetRewardBtnClickable(false)
     end
   end
-  
   Avatar:RpcZhiLiuEntrustGrandRewards(cb)
   self:PlayAnimation(self.Shop_Click)
 end
-
 function M:OnHovered_RewardBtn()
   if not self.IsRewardBtnClickable then
     return
   end
   self:PlayAnimation(self.Shop_Hover)
 end
-
 function M:OnUnhovered_RewardBtn()
   if not self.IsRewardBtnClickable then
     return
   end
   self:PlayAnimation(self.Shop_UnHover)
 end
-
 function M:UpdateRewardProgress()
   local CurrentProgress = self:GetCurrentProgress()
   self.Text_TaskProgress_1:SetText(CurrentProgress)
@@ -126,7 +113,6 @@ function M:UpdateRewardProgress()
   end
   self:SetRewardBtnClickable(IsClickable)
 end
-
 function M:SetRewardBtnClickable(IsClickable)
   if self.IsRewardBtnClickable ~= nil and self.IsRewardBtnClickable == IsClickable then
     return
@@ -145,7 +131,6 @@ function M:SetRewardBtnClickable(IsClickable)
   end
   self.Btn_TaskProgress:SetForbidden(not IsClickable)
 end
-
 function M:IsPlayerAlreadyGotReward()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -153,7 +138,6 @@ function M:IsPlayerAlreadyGotReward()
   end
   return Avatar.ZhiLiuEntrustGrandRewardGot or false
 end
-
 function M:GetCurrentProgress()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -168,7 +152,6 @@ function M:GetCurrentProgress()
   end
   return CurProgress
 end
-
 function M:InitDaySwitchButton()
   local FirstShowIndex = 0
   local IsCurIndexCompleted = false
@@ -202,7 +185,6 @@ function M:InitDaySwitchButton()
     self["Tab_" .. FirstShowIndex]:OnClickedEvent()
   end
 end
-
 function M:OnDaySwitchButtonClicked(TabIndex)
   self:ShowDailyPanel(TabIndex)
   for i = 1, self.ZhiliuTotalDayNum do
@@ -217,7 +199,6 @@ function M:OnDaySwitchButtonClicked(TabIndex)
     AudioManager(self):PlayUISound(self, "event:/ui/activity/zhiliu_btn_mid_btn", nil, nil)
   end
 end
-
 function M:OnDaySwitchButtonLockedClicked(TabIndex)
   if not self:IsTimeSatisfied(TabIndex) then
     local NowTime = TimeUtils.NowTime()
@@ -246,7 +227,6 @@ function M:OnDaySwitchButtonLockedClicked(TabIndex)
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, string.format(GText("ZhiLiuEntrust_Lock_PretextTasks"), TabIndex - 1))
   end
 end
-
 function M:InitTypeSwitchButton()
   self.Btn_TabBattle.OnPressed:Add(self, self.OnPressed_CombatTab)
   self.Btn_TabBattle.OnHovered:Add(self, self.OnHovered_CombatTab)
@@ -258,7 +238,6 @@ function M:InitTypeSwitchButton()
   self.Btn_TabTrade.OnClicked:Add(self, self.OnClicked_SubmitTab)
   self.Group_List:SetRenderOpacity(0)
 end
-
 function M:SetTypeSwitchButtonState(IsCombat, IsShow)
   local NewVisibility
   if IsShow then
@@ -272,7 +251,6 @@ function M:SetTypeSwitchButtonState(IsCombat, IsShow)
     self.Trade_New:SetVisibility(NewVisibility)
   end
 end
-
 function M:OnClicked_CombatTab(IsForceUpdate)
   self:StopAnimation(self.Battle_Press)
   self:PlayAnimation(self.Battle_Click)
@@ -291,28 +269,24 @@ function M:OnClicked_CombatTab(IsForceUpdate)
     AudioManager(self):PlayUISound(self, "event:/ui/activity/zhiliu_btn_small_tab", nil, nil)
   end
 end
-
 function M:OnPressed_CombatTab()
   if self.IsShowCombatPanel then
     return
   end
   self:PlayAnimation(self.Battle_Press)
 end
-
 function M:OnHovered_CombatTab()
   if self.IsShowCombatPanel then
     return
   end
   self:PlayAnimation(self.Battle_Hover)
 end
-
 function M:OnUnHovered_CombatTab()
   if self.IsShowCombatPanel then
     return
   end
   self:PlayAnimation(self.Battle_UnHover)
 end
-
 function M:OnClicked_SubmitTab(IsForceUpdate)
   self:StopAnimation(self.Trade_Press)
   self:PlayAnimation(self.Trade_Click)
@@ -331,28 +305,24 @@ function M:OnClicked_SubmitTab(IsForceUpdate)
     AudioManager(self):PlayUISound(self, "event:/ui/activity/zhiliu_btn_small_tab", nil, nil)
   end
 end
-
 function M:OnPressed_SubmitTab()
   if not self.IsShowCombatPanel then
     return
   end
   self:PlayAnimation(self.Trade_Press)
 end
-
 function M:OnHovered_SubmitTab()
   if not self.IsShowCombatPanel then
     return
   end
   self:PlayAnimation(self.Trade_Hover)
 end
-
 function M:OnUnHovered_SubmitTab()
   if not self.IsShowCombatPanel then
     return
   end
   self:PlayAnimation(self.Trade_UnHover)
 end
-
 function M:ShowDailyPanel(DayIndex)
   if self.CurDayIndex == DayIndex then
     return
@@ -368,7 +338,6 @@ function M:ShowDailyPanel(DayIndex)
     self:OnClicked_CombatTab(true)
   end
 end
-
 function M:IsSubmitCompleted(DayIndex)
   if DebugUnlockAllCondition then
     return true
@@ -382,7 +351,6 @@ function M:IsSubmitCompleted(DayIndex)
   end
   return false
 end
-
 function M:IsCombatCompleted(DayIndex)
   if DebugUnlockAllCondition then
     return true
@@ -396,7 +364,6 @@ function M:IsCombatCompleted(DayIndex)
   end
   return false
 end
-
 function M:IsTimeSatisfied(DayIndex)
   if DebugUnlockAllCondition then
     return true
@@ -412,7 +379,6 @@ function M:IsTimeSatisfied(DayIndex)
   local CurTime = TimeUtils.NowTime()
   return ConfigedTime <= CurTime
 end
-
 function M:RequestSubmitInfo()
   self.CurSubmitId = DataMgr.ZhiliuDateTab[self.CurDayIndex].SubmitEntrustID
   local SubmitConfig = DataMgr.ZhiliuEntrust[self.CurSubmitId]
@@ -427,7 +393,6 @@ function M:RequestSubmitInfo()
   local IsSubmitCompleted = self:IsSubmitCompleted(self.CurDayIndex)
   self:ShowSubmitCompleted(IsSubmitCompleted)
 end
-
 function M:RequestCombatInfo()
   self.CurCombatId = DataMgr.ZhiliuDateTab[self.CurDayIndex].CombatEntrustID
   local CombatConfig = DataMgr.ZhiliuEntrust[self.CurCombatId]
@@ -441,7 +406,6 @@ function M:RequestCombatInfo()
   local IsCombatCompleted = self:IsCombatCompleted(self.CurDayIndex)
   self:ShowCombatCompleted(IsCombatCompleted)
 end
-
 function M:ShowCombatCompleted(IsShow)
   if IsShow then
     self:PlayAnimation(self.Battle_Complete)
@@ -449,7 +413,6 @@ function M:ShowCombatCompleted(IsShow)
     self:PlayAnimation(self.Battle_Complete, self.Battle_Complete:GetEndTime(), 1, UE4.EUMGSequencePlayMode.Reverse)
   end
 end
-
 function M:ShowSubmitCompleted(IsShow)
   if IsShow then
     self:PlayAnimation(self.Trade_Complete)
@@ -457,7 +420,6 @@ function M:ShowSubmitCompleted(IsShow)
     self:PlayAnimation(self.Trade_Complete, self.Trade_Complete:GetEndTime(), 1, UE4.EUMGSequencePlayMode.Reverse)
   end
 end
-
 function M:ShowCombatPanel()
   self.IsShowCombatPanel = true
   DebugPrint("ZhiliuEventTask:ShowCombatPanel", self.CurDayIndex)
@@ -472,10 +434,11 @@ function M:ShowCombatPanel()
   self.TradeItem:ClearListItems()
   for _, UnitId in pairs(self.CurMonsterTargets) do
     local MonsterInfo = DataMgr.Monster[UnitId]
+    local MonsterGalleryInfo = DataMgr.GalleryRule[MonsterInfo.GalleryRuleId]
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     Content.Id = UnitId
     Content.ItemType = "Monster"
-    Content.Icon = MonsterInfo.Icon
+    Content.Icon = MonsterGalleryInfo.MonsterIcon
     Content.ParentWidget = self
     Content.NotInteractive = true
     self.TradeItem:AddItem(Content)
@@ -488,7 +451,6 @@ function M:ShowCombatPanel()
     self:BP_GetDesiredFocusTarget():SetFocus()
   end)
 end
-
 function M:GetMainButtonState_Combat()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -496,7 +458,7 @@ function M:GetMainButtonState_Combat()
   end
   local QuestChain = Avatar.QuestChains[self.CurCombatQuestChainId]
   if not QuestChain then
-    ScreenPrint("\233\133\141\231\189\174\228\186\134\228\184\128\228\184\170\228\184\141\229\173\152\229\156\168\231\154\132\228\187\187\229\138\161\233\147\190Id\239\188\129\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165\239\188\129Id:" .. self.CurCombatQuestChainId)
+    ScreenPrint("配置了一个不存在的任务链Id！请策划检查！Id:" .. self.CurCombatQuestChainId)
     return "Normal"
   end
   if self:IsCombatCompleted(self.CurDayIndex) then
@@ -507,7 +469,6 @@ function M:GetMainButtonState_Combat()
   end
   return "Normal"
 end
-
 function M:ShowSubmitPanel()
   self.IsShowCombatPanel = false
   DebugPrint("ZhiliuEventTask:ShowSubmitPanel", self.CurDayIndex)
@@ -531,7 +492,6 @@ function M:ShowSubmitPanel()
     self:BP_GetDesiredFocusTarget():SetFocus()
   end)
 end
-
 function M:InitSubmitContent_1()
   self.CurSubmitInfoTable = {}
   local Avatar = GWorld:GetAvatar()
@@ -573,7 +533,6 @@ function M:InitSubmitContent_1()
     table.insert(self.SubmitContentList, Content)
   end
 end
-
 function M:InitSubmitContent_2()
   self.TileView_Select_Role:ClearListItems()
   self.CurSubmitInfoTable = {}
@@ -641,7 +600,6 @@ function M:InitSubmitContent_2()
     self.SubmitContentList[i] = Content
   end
 end
-
 function M:OnBagItemClicked(ItemContent)
   DebugPrint("ZhiliuEventTask:OnBagItemClicked", ItemContent.Id)
   if #self.PendingSubmitList >= self.CurSubmitListLen then
@@ -657,7 +615,7 @@ function M:OnBagItemClicked(ItemContent)
   ItemContent.SelectTotalCount = TotalNumInBag
   ItemContent.SelfWidget:SetSelectNum(SelectNum, TotalNumInBag)
   if self.SubmitContentIndex > #self.SubmitContentList then
-    ScreenPrint("ZhiliuEventTask:\229\176\157\232\175\149\229\138\160\229\133\165\229\190\133\230\143\144\228\186\164\229\136\151\232\161\168\231\154\132\229\134\133\229\174\185\229\164\167\228\186\142\229\143\175\230\143\144\228\186\164\229\134\133\229\174\185\231\154\132\233\149\191\229\186\166\239\188\129")
+    ScreenPrint("ZhiliuEventTask:尝试加入待提交列表的内容大于可提交内容的长度！")
     return
   end
   local SubmitContent = self.SubmitContentList[self.SubmitContentIndex]
@@ -675,13 +633,11 @@ function M:OnBagItemClicked(ItemContent)
     self.Btn_Trade:SetTaskBtnNormal()
   end
 end
-
 function M:OnSubmitItemClicked(ItemContent)
   DebugPrint("ZhiliuEventTask:OnSubmitItemClicked", ItemContent.Id)
   self:ShowListPanel(true)
   self.TileView_Select_Role:SetFocus()
 end
-
 function M:GetMainButtonState_Submit()
   if self:IsSubmitCompleted(self.CurDayIndex) then
     return "Complete"
@@ -689,7 +645,6 @@ function M:GetMainButtonState_Submit()
     return "Normal"
   end
 end
-
 function M:InitRewardList()
   local IsShowGot = false
   if self.IsShowCombatPanel then
@@ -727,7 +682,6 @@ function M:InitRewardList()
     end
   end
 end
-
 function M:ShowListPanel(IsShow)
   if self.IsListPanelShow == IsShow then
     return
@@ -739,7 +693,6 @@ function M:ShowListPanel(IsShow)
     self:PlayAnimation(self.List_Out)
   end
 end
-
 function M:ShowTargetCompleteBanner(IsShow)
   if IsShow then
     self.Group_Done:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -752,11 +705,9 @@ function M:ShowTargetCompleteBanner(IsShow)
     self.Group_Done:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:InitMainButton()
   self.Btn_Trade:InitTaskBtn(self)
 end
-
 function M:OnTaskMainBtnClicked()
   if self.IsShowCombatPanel then
     self:OnCombatMainBtnClicked()
@@ -765,7 +716,6 @@ function M:OnTaskMainBtnClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/activity/zhiliu_btn_accept", nil, nil)
 end
-
 function M:OnCombatMainBtnClicked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -773,18 +723,17 @@ function M:OnCombatMainBtnClicked()
   end
   local QuestChain = Avatar.QuestChains[self.CurCombatQuestChainId]
   if not QuestChain then
-    ScreenPrint("Zhiliu \233\133\141\231\189\174\228\186\134\228\184\128\228\184\170\228\184\141\229\173\152\229\156\168\231\154\132\228\187\187\229\138\161\233\147\190Id\239\188\129\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165\239\188\129Id:" .. self.CurCombatQuestChainId)
+    ScreenPrint("Zhiliu 配置了一个不存在的任务链Id！请策划检查！Id:" .. self.CurCombatQuestChainId)
     return
   end
   if not DataMgr.QuestChain[self.CurCombatQuestChainId] then
-    ScreenPrint("Zhiliu \232\175\165\228\187\187\229\138\161\233\147\190Id\228\184\141\229\173\152\229\156\168\228\186\142QuestChain\232\161\168\228\184\173\239\188\129Id:" .. self.CurCombatQuestChainId)
+    ScreenPrint("Zhiliu 该任务链Id不存在于QuestChain表中！Id:" .. self.CurCombatQuestChainId)
     return
   end
   if QuestChain:IsDoing() or QuestChain:IsFinish() then
-    ScreenPrint("Zhiliu \232\175\165\228\187\187\229\138\161\233\147\190Id\229\183\178\231\187\143\229\156\168\232\191\155\232\161\140\228\184\173\230\136\150\229\183\178\229\174\140\230\136\144\239\188\129Id:" .. self.CurCombatQuestChainId)
+    ScreenPrint("Zhiliu 该任务链Id已经在进行中或已完成！Id:" .. self.CurCombatQuestChainId)
     return
   end
-  
   local function cb(Ret)
     DebugPrint("ZhiliuEventTask:OnCombatMainBtnClickedCallback")
     self:BlockAllUIInput(false)
@@ -793,12 +742,10 @@ function M:OnCombatMainBtnClicked()
       PageJumpUtils:JumpToTargetPageByJumpId(23, self.CurCombatQuestChainId)
     end
   end
-  
   self:BlockAllUIInput(true)
   DebugPrint("ZhiliuEventTask:OnCombatMainBtnClicked")
   Avatar:HandleQuestChainDoing(self.CurCombatQuestChainId, cb)
 end
-
 function M:OnSubmitMainBtnClicked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -806,7 +753,6 @@ function M:OnSubmitMainBtnClicked()
   end
   DebugPrint("ZhiliuEventTask:OnSubmitMainBtnClicked")
   PrintTable(self.PendingSubmitList)
-  
   local function cb(ErrCode, RewardBox)
     DebugPrint("ZhiliuEventTask:OnSubmitMainBtnClickedCallback")
     if ErrorCode:Check(ErrCode) then
@@ -816,11 +762,9 @@ function M:OnSubmitMainBtnClicked()
     end
     self:BlockAllUIInput(false)
   end
-  
   self:BlockAllUIInput(true)
   Avatar:RpcZhiLiuEntrustSubmitResource(self.CurDayIndex, self.PendingSubmitList, cb)
 end
-
 function M:OnSubmitSucceed(RewardBox, DayIndex)
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, RewardBox, false, nil, self)
   self.Btn_Trade:StopAnimation(self.Btn_Trade.Click)
@@ -849,7 +793,6 @@ function M:OnSubmitSucceed(RewardBox, DayIndex)
   self:ShowTargetCompleteBanner(true)
   self:UpdateRewardProgress()
 end
-
 function M:CheckSubmitItemAndSetRed()
   local OuterItems = self.TradeItem:GetDisplayedEntryWidgets()
   for i, Item in pairs(OuterItems) do
@@ -864,7 +807,6 @@ function M:CheckSubmitItemAndSetRed()
     end
   end
 end
-
 function M:InitTabs()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     local ConfigData = {
@@ -897,7 +839,6 @@ function M:InitTabs()
     self.Com_Tab_M:Init(ConfigData, false)
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.TileView_Select_Role.OnCreateEmptyContent:Bind(self, function(self)
@@ -908,12 +849,10 @@ function M:Construct()
     return Content
   end)
 end
-
 function M:Destruct()
   self.TileView_Select_Role.OnCreateEmptyContent:Unbind()
   M.Super.Destruct(self)
 end
-
 function M:InitInputDeviceInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -964,7 +903,6 @@ function M:InitInputDeviceInfo()
   })
   self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -975,7 +913,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self:ShowGamepadView()
   end
 end
-
 function M:ShowMouseAndKeyboardView()
   self.Key_TabLeft:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Key_TabRight:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -987,7 +924,6 @@ function M:ShowMouseAndKeyboardView()
   self.Key_TaskProgress:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self:UpdateBottomTabTips("MouseAndKeyboard")
 end
-
 function M:ShowGamepadView()
   self.Key_TabLeft:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Key_TabRight:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -1000,7 +936,6 @@ function M:ShowGamepadView()
   self.Key_TaskProgress:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:UpdateBottomTabTips("Gamepad")
 end
-
 function M:UpdateBottomTabTips(InputType)
   if "MouseAndKeyboard" == InputType then
     self.Com_KeyTips:UpdateKeyInfo({
@@ -1034,11 +969,9 @@ function M:UpdateBottomTabTips(InputType)
     })
   end
 end
-
 function M:FocusToCombatSubmitList()
   self.TradeItem:SetFocus()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1058,7 +991,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1079,7 +1011,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:SwitchFocusRewardList()
   if not self.IsFocusRewardList then
     self.RewardItem:SetFocus()
@@ -1089,7 +1020,6 @@ function M:SwitchFocusRewardList()
     self.IsFocusRewardList = false
   end
 end
-
 function M:DaySwitchBtnMoveRight(Value)
   if not self.CurDayIndex then
     return
@@ -1101,7 +1031,6 @@ function M:DaySwitchBtnMoveRight(Value)
   end
   NewActiveTab:OnClickedEvent()
 end
-
 function M:BP_GetDesiredFocusTarget()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -1115,5 +1044,4 @@ function M:BP_GetDesiredFocusTarget()
     return self.TradeItem
   end
 end
-
 return M

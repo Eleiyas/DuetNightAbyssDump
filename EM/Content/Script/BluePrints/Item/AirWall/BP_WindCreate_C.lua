@@ -4,20 +4,17 @@ local BP_WindCreate_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_WindCreate_C:AuthorityInitInfo(Info)
   BP_WindCreate_C.Super.AuthorityInitInfo(self, Info)
   self:AddBuffOnBegin()
   self:NotifyFieldCover()
 end
-
 function BP_WindCreate_C:AddBuffOnBegin()
   local OutActors = self:GetTrapOverlapActors()
   for i = 1, OutActors:Length() do
     self:TargetEnter(nil, OutActors:GetRef(i))
   end
 end
-
 function BP_WindCreate_C:NotifyFieldCover()
   if IsStandAlone(self) or IsClient(self) or MiscUtils.IsSimulatedProxy(self) then
     local ObjectTypes = TArray(EObjectTypeQuery)
@@ -33,7 +30,6 @@ function BP_WindCreate_C:NotifyFieldCover()
     end
   end
 end
-
 function BP_WindCreate_C:ReceiveBeginPlay()
   BP_WindCreate_C.Super.ReceiveBeginPlay(self)
   self.PrimaryActorTick.bCanEverTick = true
@@ -43,7 +39,6 @@ function BP_WindCreate_C:ReceiveBeginPlay()
   self.AllowPlayer = {}
   self.DeltaSeconds = 0.01
 end
-
 function BP_WindCreate_C:TargetEnter(OverlappedComponent, Target, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
   if self.IsCastFieldCover and self:IsCastFieldCover(Target) then
     Target:FieldCoverIsHitEnter(self)
@@ -62,7 +57,6 @@ function BP_WindCreate_C:TargetEnter(OverlappedComponent, Target, OtherComp, Oth
   end
   self:SetTargetActorLocation(Target)
 end
-
 function BP_WindCreate_C:TargetLeave(OverlappedComponent, Target, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
   if self.IsCastFieldCover and self:IsCastFieldCover(Target) then
     Target:FieldCoverIsHitLeave(self)
@@ -73,7 +67,6 @@ function BP_WindCreate_C:TargetLeave(OverlappedComponent, Target, OtherComp, Oth
   end
   self.AllowPlayer[Target.Eid] = nil
 end
-
 function BP_WindCreate_C:LineTraceCheck(TargetActor)
   if not IsValid(TargetActor) then
     return false
@@ -88,7 +81,6 @@ function BP_WindCreate_C:LineTraceCheck(TargetActor)
   local HitColor = UE4.FLinearColor(0, 256, 0, 1)
   return UE4.UKismetSystemLibrary.LineTraceSingleByProfile(self, StartPosition, EndPosition, "SceneCollision", false, ActorsToIgnore, EDrawDebugTrace.None, nil, true, TraceColor, HitColor, 5)
 end
-
 function BP_WindCreate_C:GetTrapOverlapActors()
   local ObjectTypes = TArray(EObjectTypeQuery)
   ObjectTypes:Add(EObjectTypeQuery.Pawn)
@@ -96,7 +88,6 @@ function BP_WindCreate_C:GetTrapOverlapActors()
   OutActors = UE4.UKismetSystemLibrary.ComponentOverlapActors(self.TrapArea, self:GetTransform(), ObjectTypes)
   return OutActors
 end
-
 function BP_WindCreate_C:SetTargetActorLocation(TargetActor)
   if TargetActor.IsCharacterInAir and TargetActor:IsCharacterInAir() then
     local TargetLocation = TargetActor:K2_GetActorLocation()
@@ -114,7 +105,6 @@ function BP_WindCreate_C:SetTargetActorLocation(TargetActor)
     TargetActor:K2_AddActorWorldOffset(OffsetLocation, false, nil, false)
   end
 end
-
 function BP_WindCreate_C:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   local SinginTable = {}
@@ -144,7 +134,6 @@ function BP_WindCreate_C:ReceiveTick(DeltaSeconds)
     self.AllowPlayer[Eid] = nil
   end
 end
-
 function BP_WindCreate_C:SetWindCreator(Grade, IsActive)
   self:SwitchBefore()
   self.Grade = Grade
@@ -152,14 +141,11 @@ function BP_WindCreate_C:SetWindCreator(Grade, IsActive)
   self:AddBuffOnBegin()
   self:UpdateRegionData("Grade", self.Grade, false)
 end
-
 function BP_WindCreate_C:CreateRegionData()
   BP_WindCreate_C.Super.CreateRegionData(self)
   self.RegionData = {}
 end
-
 function BP_WindCreate_C:RecoverSavedData(DataTable)
   BP_WindCreate_C.Super.RecoverSavedData(self, DataTable)
 end
-
 return BP_WindCreate_C

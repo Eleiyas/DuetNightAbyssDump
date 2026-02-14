@@ -8,27 +8,22 @@ local bUseAssetPathStaticData = true
 UE4.URolePreloadGameInstanceSubsystem.SetUseAssetPathStaticData(bUseAssetPathStaticData)
 local DungeonPreloadOutTime = 15
 UE4.URolePreloadGameInstanceSubsystem.SetDungeonPreloadOutTime(DungeonPreloadOutTime)
-
 function M:Init_Lua()
   self:SetMaxAsyncLoadNum(15)
   self.DungeonAssetsPreloading = false
   self.DungeonAssetsPreloadFinishCb = nil
   self.OutTimeHandle = nil
 end
-
 function M:GetUseAssetPathStaticData()
   return bUseAssetPathStaticData
 end
-
 function M:EnableOptimization()
   return Const.EnableDungeonAssetsPreload
 end
-
 function M:EnablePIELimit()
   local IsPIE = UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self)
   return PIELoadLimit and IsPIE
 end
-
 function M:CacheDungeonPhantomAssets_Lua(UnitId)
   if not UnitId then
     return
@@ -39,7 +34,6 @@ function M:CacheDungeonPhantomAssets_Lua(UnitId)
   Paths = Paths + BPMeshs + Montages
   self:BuildDungeonRoleAssetRequest_Lua(UnitId, Paths)
 end
-
 function M:CommonPrepareMonSkillEffects(UnitId)
   local AllData = require("Utils.MonsterEffectsPath")
   if not AllData then
@@ -61,7 +55,20 @@ function M:CommonPrepareMonSkillEffects(UnitId)
   end
   return RetPathTable
 end
-
+function M:CommonPrepareMainPlayerAsserts()
+  local AllData = require("Utils.PlayerEffectsPath")
+  if not AllData then
+    return {}
+  end
+  local RetPathTable = {}
+  local MainPlayerTable = AllData.MainPlayer
+  if MainPlayerTable and not IsEmptyTable(MainPlayerTable) then
+    for _, v in ipairs(MainPlayerTable) do
+      table.insert(RetPathTable, FEMLoadPath(v))
+    end
+  end
+  return RetPathTable
+end
 function M:CommonPreparePlayerSkillEffects(UnitId)
   local AllData = require("Utils.PlayerEffectsPath")
   if not AllData then
@@ -76,7 +83,6 @@ function M:CommonPreparePlayerSkillEffects(UnitId)
   end
   return RetPathTable
 end
-
 function M:CommonPrepareAllMontage(ObjType, UnitId)
   local ModelData = self:GetModelData(ObjType, UnitId)
   if nil == ModelData then
@@ -91,11 +97,9 @@ function M:CommonPrepareAllMontage(ObjType, UnitId)
   local _, Paths = self.GetFolderAssetPaths(MontageFolder)
   return Paths:ToTable()
 end
-
 function M:CommonPrepareAllExceptBattleMontage(ObjType, UnitId)
   return {}
 end
-
 function M:GetModelData(ObjType, UnitId)
   if ObjType == EObjType.MonsterCharacter then
     local Data = DataMgr.Monster[UnitId]
@@ -118,7 +122,6 @@ function M:GetModelData(ObjType, UnitId)
     return nil
   end
 end
-
 function M:GetPathsTable()
   local Paths = setmetatable({}, {
     __add = function(Paths, newtable)
@@ -130,7 +133,6 @@ function M:GetPathsTable()
   })
   return Paths
 end
-
 function M:CacheDungeonGameAssetsOuter_Test(FinishCallback)
   self.DungeonAssetsPreloading = true
   self.DungeonAssetsPreloadFinishCb = FinishCallback
@@ -157,15 +159,12 @@ function M:CacheDungeonGameAssetsOuter_Test(FinishCallback)
     UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.OutTimeHandle)
     self.OutTimeHandle = nil
   end
-  
   local function OutTimeFunc()
-    GWorld.logger.errorlog("wzj- \229\137\175\230\156\172\232\181\132\230\186\144\233\162\132\229\138\160\232\189\189\232\182\133\230\151\182, \232\182\133\230\151\182\230\151\182\233\151\180:" .. DungeonPreloadOutTime .. "\231\167\146")
+    GWorld.logger.errorlog("wzj- 副本资源预加载超时, 超时时间:" .. DungeonPreloadOutTime .. "秒")
     self:PreloadDungeonGameAssetsFinished_Lua()
   end
-  
   self.OutTimeHandle = UE4.UKismetSystemLibrary.K2_SetTimerDelegate({self, OutTimeFunc}, DungeonPreloadOutTime, false, 0)
   self:ConsumeDungeonRoleAssetRequest_Lua()
   return true
 end
-
 return M

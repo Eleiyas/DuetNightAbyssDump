@@ -1,11 +1,9 @@
 local EntityManager = {}
 EntityManager._entities = {}
 EntityManager._entities_num = 0
-
 function EntityManager:EntityNumber()
   return self._entities_num
 end
-
 function EntityManager:HasEntity(entity_id)
   for id, entity in pairs(self._entities) do
     if entity_id == id and nil ~= entity then
@@ -14,11 +12,9 @@ function EntityManager:HasEntity(entity_id)
   end
   return false
 end
-
 function EntityManager:GetEntity(entity_id)
   return self._entities[entity_id]
 end
-
 function EntityManager:AddEntity(entity_id, entity, override)
   if self:HasEntity(entity_id) then
     if not override then
@@ -31,14 +27,12 @@ function EntityManager:AddEntity(entity_id, entity, override)
   end
   self._entities[entity_id] = entity
 end
-
 function EntityManager:DelEntity(entity_id)
   if self:HasEntity(entity_id) then
     self._entities_num = self._entities_num - 1
   end
   self._entities[entity_id] = nil
 end
-
 function EntityManager:DelAllEntities()
   DebugPrint("EntityManager DelAllEntities")
   local entity_ids = {}
@@ -50,5 +44,4 @@ function EntityManager:DelAllEntities()
     self:DelEntity(id)
   end
 end
-
 return EntityManager

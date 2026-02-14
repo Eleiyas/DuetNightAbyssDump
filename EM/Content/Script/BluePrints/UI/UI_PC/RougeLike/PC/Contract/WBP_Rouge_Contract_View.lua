@@ -1,11 +1,9 @@
 local TimeUtils = require("Utils.TimeUtils")
 local EMCache = require("EMCache.EMCache")
 local WBP_Rouge_Contract_View = Class("BluePrints.UI.UI_PC.RougeLike.PC.Contract.WBP_Rouge_Contract_ViewBase")
-
 function WBP_Rouge_Contract_View:Construct()
   self.Super.Construct(self)
 end
-
 function WBP_Rouge_Contract_View:InitView()
   self.Super.InitView(self)
   local ContractItemObjs = self.ContractModel:GetContractItemList()
@@ -34,20 +32,17 @@ function WBP_Rouge_Contract_View:InitView()
   self.Btn_Qa.Btn_Click.OnClicked:Add(self, self.OnBtnQaClicked)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/depth_panel_open", "ContractView", nil)
 end
-
 function WBP_Rouge_Contract_View:OnBtnConfirmClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_mid_click", nil, nil)
   self.ContractModel:ConfirmSelectedContract()
   self.RougeMainUI:RefreshHeatValue()
   self:Close()
 end
-
 function WBP_Rouge_Contract_View:UpdateContractHeat()
   self.Super.UpdateContractHeat(self)
   local TotalHeatValue = self.ContractModel:GetCurrentHeatValue()
   self.Text_Heat:SetText(TotalHeatValue)
 end
-
 function WBP_Rouge_Contract_View:InitKeyboardView()
   self.Super.InitKeyboardView(self)
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
@@ -59,7 +54,6 @@ function WBP_Rouge_Contract_View:InitKeyboardView()
   self.Btn_Reset:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Btn_Qa:SetVisibility(UE4.ESlateVisibility.Visible)
 end
-
 function WBP_Rouge_Contract_View:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -81,21 +75,17 @@ function WBP_Rouge_Contract_View:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Rouge_Contract_View:OnBtnResetClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_small_click", nil, nil)
   self.ContractModel:ResetContractLevel()
   self:UpdateView()
 end
-
 function WBP_Rouge_Contract_View:OnBtnQaClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   UIManager(self):ShowCommonPopupUI(100142, {}, self)
 end
-
 function WBP_Rouge_Contract_View:OnClose()
   AudioManager(self):SetEventSoundParam(self, "ContractView", {ToEnd = 1})
   self.Super.OnClose(self)
 end
-
 return WBP_Rouge_Contract_View

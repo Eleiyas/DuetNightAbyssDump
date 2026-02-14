@@ -1,5 +1,4 @@
 local PlayerHeadWidgetUtils = {}
-
 function PlayerHeadWidgetUtils:EnableHeadWidget(WidgetComp, WidgetName, bEnable, ...)
   if not WidgetComp then
     return
@@ -10,7 +9,6 @@ function PlayerHeadWidgetUtils:EnableHeadWidget(WidgetComp, WidgetName, bEnable,
     WidgetComp:DisableWidget(WidgetName, ...)
   end
 end
-
 function PlayerHeadWidgetUtils:RefreshRegionNameInfo(WidgetComp, UId, ObjId)
   local Name = ""
   local Avatar = GWorld:GetAvatar()
@@ -27,7 +25,6 @@ function PlayerHeadWidgetUtils:RefreshRegionNameInfo(WidgetComp, UId, ObjId)
   end
   self:EnableHeadWidget(WidgetComp, "Name", true, Name, Style, Pos)
 end
-
 function PlayerHeadWidgetUtils:RefreshTitleInfo(WidgetComp, ObjId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -44,18 +41,20 @@ function PlayerHeadWidgetUtils:RefreshTitleInfo(WidgetComp, ObjId)
   print(_G.LogTag, "RefreshTitleInfo", PrefixId, SuffixId, TitleFrameId)
   self:RefreshTitle(WidgetComp, PrefixId, SuffixId, TitleFrameId)
 end
-
 function PlayerHeadWidgetUtils:EnableTitle(WidgetComp, PrefixId, SuffixId, TitleFrameId)
   self:EnableHeadWidget(WidgetComp, "Title", true, PrefixId, SuffixId, TitleFrameId)
 end
-
 function PlayerHeadWidgetUtils:DisableTitle(WidgetComp)
   self:EnableHeadWidget(WidgetComp, "Title", false)
 end
-
 function PlayerHeadWidgetUtils:RefreshTitle(WidgetComp, PrefixId, SuffixId, TitleFrameId)
   self:DisableTitle(WidgetComp)
   self:EnableTitle(WidgetComp, PrefixId, SuffixId, TitleFrameId)
 end
-
+function PlayerHeadWidgetUtils:PlayEmoji(WidgetComp, EmojiPath)
+  self:EnableHeadWidget(WidgetComp, "Bubble_Emoji", true, EmojiPath)
+end
+function PlayerHeadWidgetUtils:StopEmoji(WidgetComp)
+  self:EnableHeadWidget(WidgetComp, "Bubble_Emoji", false)
+end
 return PlayerHeadWidgetUtils

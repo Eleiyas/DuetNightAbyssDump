@@ -1,11 +1,9 @@
 require("UnLua")
 local WBP_Task_NpcSideTaskTips_C = Class("BluePrints.UI.BP_UIState_C")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function WBP_Task_NpcSideTaskTips_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_Task_NpcSideTaskTips_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.ReceiveNode = (...)
@@ -58,12 +56,10 @@ function WBP_Task_NpcSideTaskTips_C:OnLoaded(...)
   AudioManager(self):PlayUISound(self, "event:/snapshot/ui/filter_talk_stage", "OpenNpcSideTips", nil)
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_task_panel_show", "OpenNpcSideTips_Extra", nil)
 end
-
 function WBP_Task_NpcSideTaskTips_C:Destruct()
   self.Super.Destruct(self)
   AudioManager(self):SetEventSoundParam(self, "OpenNpcSideTips", {ToEnd = 1})
 end
-
 function WBP_Task_NpcSideTaskTips_C:InitRewardList()
   local RewardList = DataMgr.QuestChain[self.ReceiveNode.SideQuestChainId].QuestChainReward
   local TempRewardRetTable = {}
@@ -107,16 +103,13 @@ function WBP_Task_NpcSideTaskTips_C:InitRewardList()
     end
   end
 end
-
 function WBP_Task_NpcSideTaskTips_C:Approve()
   self.ReceiveNode:FinishAction("ApproveOut")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm_positive", nil, nil)
 end
-
 function WBP_Task_NpcSideTaskTips_C:Cancel()
   self.ReceiveNode:FinishAction("CancelOut")
 end
-
 function WBP_Task_NpcSideTaskTips_C:CloseTips()
   self.List_Reward:ClearListItems()
   self:BindToAnimationFinished(self.Out, {
@@ -128,7 +121,6 @@ function WBP_Task_NpcSideTaskTips_C:CloseTips()
   })
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Task_NpcSideTaskTips_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local KeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -161,7 +153,6 @@ function WBP_Task_NpcSideTaskTips_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Task_NpcSideTaskTips_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self.EMScrollBox_3:SetControlScrollbarInside(false)
@@ -182,12 +173,11 @@ function WBP_Task_NpcSideTaskTips_C:RefreshOpInfoByInputDevice(CurInputDevice, C
       self.Btn_Start:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
   else
-    self:_SetUpScrollBox(self.EMScrollBox_3)
+    UIUtils.SetUpScrollBox(self.EMScrollBox_3)
     self:ShowGamepadRewardKey(false)
     self.Com_MidKeyTips:UpdateKeyInfo({})
   end
 end
-
 function WBP_Task_NpcSideTaskTips_C:OnRewardItemMenuAnchorChanged(bIsOpen)
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -197,7 +187,6 @@ function WBP_Task_NpcSideTaskTips_C:OnRewardItemMenuAnchorChanged(bIsOpen)
     end
   end
 end
-
 function WBP_Task_NpcSideTaskTips_C:SetWatchTaskContentGamePadKeys()
   if not self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     return
@@ -221,7 +210,6 @@ function WBP_Task_NpcSideTaskTips_C:SetWatchTaskContentGamePadKeys()
     self.Com_MidKeyTips:UpdateKeyInfo(self.BackGamePadKey)
   end
 end
-
 function WBP_Task_NpcSideTaskTips_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -233,7 +221,6 @@ function WBP_Task_NpcSideTaskTips_C:OnAnalogValueChanged(MyGeometry, InAnalogInp
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Task_NpcSideTaskTips_C:TileViewSelectFirst()
   local Items = self.List_Reward:GetListItems()
   if Items and Items:Num() > 0 then
@@ -242,11 +229,9 @@ function WBP_Task_NpcSideTaskTips_C:TileViewSelectFirst()
     self.List_Reward:NavigateToIndex(0)
   end
 end
-
 function WBP_Task_NpcSideTaskTips_C:TileViewQuit()
   self:SetFocus()
 end
-
 function WBP_Task_NpcSideTaskTips_C:ShowGamepadRewardKey(flag)
   if flag then
     self.Key_TitleRewards:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -256,7 +241,6 @@ function WBP_Task_NpcSideTaskTips_C:ShowGamepadRewardKey(flag)
     self.EMScrollBox_3:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function WBP_Task_NpcSideTaskTips_C:InitCommonWidget()
   self.WatchTaskContentGamePadKeys = {
     {
@@ -295,5 +279,4 @@ function WBP_Task_NpcSideTaskTips_C:InitCommonWidget()
     }
   }
 end
-
 return WBP_Task_NpcSideTaskTips_C

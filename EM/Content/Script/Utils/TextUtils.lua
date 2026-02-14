@@ -1,5 +1,4 @@
 local EWildcardClassification = {Story = "Story"}
-
 local function Localize(TextMapId, Language)
   Language = Language or CommonConst.SystemLanguage or CommonConst.SystemLanguages.Default
   if nil == TextMapId then
@@ -19,7 +18,6 @@ local function Localize(TextMapId, Language)
   end
   return LocalizedText
 end
-
 local function ReplaceWildcards(TextMapId, Text)
   if nil == TextMapId then
     return Text
@@ -37,13 +35,10 @@ local function ReplaceWildcards(TextMapId, Text)
   end
   return ReplacedWildcardsText
 end
-
 local M = {}
-
 function M:GetDisplayText(Text, Language)
   local DisplayText = Localize(Text, Language)
   DisplayText = ReplaceWildcards(Text, DisplayText)
   return DisplayText
 end
-
 return M

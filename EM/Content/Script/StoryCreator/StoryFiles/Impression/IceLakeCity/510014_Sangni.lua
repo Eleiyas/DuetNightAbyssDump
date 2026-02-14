@@ -26,7 +26,7 @@ return {
       isStoryNode = true,
       key = "169823376500632444",
       type = "StoryNode",
-      name = "\229\141\176\232\177\161\231\179\187\231\187\159\232\138\130\231\130\185",
+      name = "印象系统节点",
       pos = {x = 1213.0076996913883, y = 287.8557172199182},
       propsData = {
         QuestId = 0,
@@ -50,8 +50,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -78,7 +80,7 @@ return {
           ["169823382680035289"] = {
             key = "169823382680035289",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1119.7319421156308, y = 286.88067265663824},
             propsData = {
               IsNpcNode = false,
@@ -97,6 +99,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -104,6 +107,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -125,11 +129,6 @@ return {
                   TalkActorId = 700085,
                   TalkActorVisible = true
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Npc", TalkActorId = 700083},
-                {TalkActorType = "Npc", TalkActorId = 700084},
-                {TalkActorType = "Npc", TalkActorId = 700085}
               },
               OptionType = "plus",
               FreezeWorldComposition = false,

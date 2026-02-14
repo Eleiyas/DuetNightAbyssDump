@@ -4,12 +4,12 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:InitNormalReward(Index, ConfigData, ParentWidget)
   self.Index = Index
   self.ActivityId = ConfigData.ActivityId
   self.RewardType = "NormalReward"
   self.ParentWidget = ParentWidget
+  self.bComeBackEvent = ConfigData.bComeBackEvent or false
   self.Text_ItemIndex:SetText(string.format("%02d", Index))
   local RewardInfo = DataMgr.Reward[ConfigData.RewardId]
   if RewardInfo then
@@ -40,7 +40,6 @@ function M:InitNormalReward(Index, ConfigData, ParentWidget)
   self.Btn_ClickRecv.OnClicked:Clear()
   self.Btn_ClickRecv.OnClicked:Add(self, self.OnReceiveRewardClicked)
 end
-
 function M:InitSpecialReward(Index, ConfigData, ParentWidget)
   self.Index = Index
   self.ActivityId = ConfigData.ActivityId
@@ -107,7 +106,6 @@ function M:InitSpecialReward(Index, ConfigData, ParentWidget)
   self.Btn_Click.OnClicked:Clear()
   self.Btn_Click.OnClicked:Add(self, self.OnReceiveRewardClicked)
 end
-
 function M:HideAllStuffBtn(bHide)
   if self.IconItem then
     self.IconItem:HideBtn(bHide)
@@ -119,7 +117,6 @@ function M:HideAllStuffBtn(bHide)
     self.SevenDayIconItem_2:HideBtn(bHide)
   end
 end
-
 function M:OnViewStuffDetailClick(IsOpenDetail, RewardStuffIdx)
   self:UpdateKeyTipsWithStuffDetailShow(IsOpenDetail)
   if not IsOpenDetail then
@@ -132,7 +129,6 @@ function M:OnViewStuffDetailClick(IsOpenDetail, RewardStuffIdx)
     end, false, 0, "OnViewStuffDetailClose", true)
   end
 end
-
 function M:OnReceiveRewardClicked()
   if self.CurRewardState == EnumPlayerSignRewardState.Completed then
     return
@@ -141,9 +137,13 @@ function M:OnReceiveRewardClicked()
   if not PlayerAvatar then
     return
   end
-  PlayerAvatar:DailyLoginGetReward(self.ActivityId, self.Index)
+  if self.bComeBackEvent then
+    PlayerAvatar:ComeBackGetLoginReward(nil, self.ParentWidget, self.ParentWidget.AllValidIndex)
+    AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_tab_btn_click", nil, nil)
+  else
+    PlayerAvatar:DailyLoginGetReward(self.ActivityId, self.Index)
+  end
 end
-
 function M:RefreshRewardByState(RewardState)
   self.CurRewardState = RewardState
   self:PlayAnimByRewardState(RewardState)
@@ -175,7 +175,6 @@ function M:RefreshRewardByState(RewardState)
     self.Text_ItemIndex:SetColorAndOpacity(self.Color_Normal_Got)
   end
 end
-
 function M:PlayAnimByRewardState(RewardState)
   if nil == RewardState or RewardState == EnumPlayerSignRewardState.NotSign then
     self:PlayAnimation(self.Normal)
@@ -186,7 +185,6 @@ function M:PlayAnimByRewardState(RewardState)
     self:PlayAnimation(self.Received)
   end
 end
-
 function M:ShowSelectFrameInGamePad(bShowSelect)
   if bShowSelect then
     self.Image_LightFrame:SetRenderOpacity(1.0)
@@ -194,22 +192,18 @@ function M:ShowSelectFrameInGamePad(bShowSelect)
     self.Image_LightFrame:SetRenderOpacity(0.0)
   end
 end
-
 function M:GetRewardState()
   return self.CurRewardState
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self:UpdateKeyTipsWithStuffDetailShow(false)
   if UIUtils.IsGamepadInput() then
     self:ShowSelectFrameInGamePad(true)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self:ShowSelectFrameInGamePad(false)
 end
-
 function M:UpdateKeyTipsWithStuffDetailShow(IsOpenDetail)
   if IsOpenDetail then
     self.ParentWidget:UpdateParentActivityKeyTips("EmptyView", self, false)
@@ -217,7 +211,6 @@ function M:UpdateKeyTipsWithStuffDetailShow(IsOpenDetail)
     self:ResetParentBottomKeyTips()
   end
 end
-
 function M:ResetParentBottomKeyTips()
   if self.ParentWidget then
     local FocusWidgetName
@@ -236,7 +229,6 @@ function M:ResetParentBottomKeyTips()
     self.ParentWidget:UpdateParentActivityKeyTips(FocusWidgetName, self, false)
   end
 end
-
 function M:EnterSpecialRewardItemViewMode()
   self.SevenDayIconItem_1:SetFocus()
   if self.ParentWidget then
@@ -245,7 +237,6 @@ function M:EnterSpecialRewardItemViewMode()
   end
   return true
 end
-
 function M:LeaveSpecialRewardItemViewMode()
   local IsEventHandled = false
   local PlayerController = self:GetOwningPlayer()
@@ -259,7 +250,6 @@ function M:LeaveSpecialRewardItemViewMode()
   end
   return IsEventHandled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -282,7 +272,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.RewardType == "SpecialReward" then
     if self.IsReceiveBtnVisible then
@@ -293,5 +282,4 @@ function M:BP_GetDesiredFocusTarget()
   end
   return self
 end
-
 return M

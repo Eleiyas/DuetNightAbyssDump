@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.UIComponent.TouchComponent"
 }
-
 function M:Construct()
   self.HideUITable = {
     Pos_Entry = 1,
@@ -24,13 +23,12 @@ function M:Construct()
   self.IsLoading = true
   self.CollectLevel = 0
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.FeinaPassive = self.Player:GetPassiveEffectById(self.PassiveEffectId)
   if not IsValid(self.FeinaPassive) then
-    DebugPrint("\230\137\190\228\184\141\229\136\176FeinaPassive")
+    DebugPrint("找不到FeinaPassive")
     return
   end
   self:InitDungeonInfo()
@@ -42,12 +40,12 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self:InitButtons()
   self:AddDispatcher(EventID.OnRepFeinaStar, self, self.OnCollectFeinaStar)
   self:AddDispatcher(EventID.CloseLoading, self, self.OnCloseLoading)
+  self:AddDispatcher(EventID.OnMobileHookShow, self, self.OnMobileHookShow)
 end
-
 function M:InitDungeonInfo()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not IsValid(GameState) then
-    DebugPrint("\230\137\190\228\184\141\229\136\176GameState")
+    DebugPrint("找不到GameState")
     return
   end
   self.DungeonId = GameState.DungeonId
@@ -56,7 +54,6 @@ function M:InitDungeonInfo()
   self.Text_Title:SetText(GText(DungeonName))
   self.Text_Target:SetText(GText(DungeonDes))
 end
-
 function M:InitEsc()
   self.Btn_Esc.bForceInvisible = nil
   self.Btn_Esc.Btn_top.OnClicked:Add(self, function()
@@ -64,15 +61,12 @@ function M:InitEsc()
   end)
   self.Btn_Esc:LoadImage(11)
 end
-
 function M:PlayInAnim()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
 end
-
 function M:InitPaintIcon()
   for i = 1, 3 do
     if i <= self.ColorMax then
@@ -88,7 +82,6 @@ function M:InitPaintIcon()
     self.Btn_Change:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:UpdatePaintIcon(ColorMax)
   self.ColorMax = ColorMax
   if self.IsLoading then
@@ -97,7 +90,6 @@ function M:UpdatePaintIcon(ColorMax)
     self:InitHUDToast()
   end
 end
-
 function M:InitHUDToast()
   self:InitPaintIcon()
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_brush_unlock", nil, nil)
@@ -110,7 +102,6 @@ function M:InitHUDToast()
     self.Toast:PlayAnimation(self.Toast.Out)
   end, false, nil, nil, false)
 end
-
 function M:OnCloseLoading()
   self.IsLoading = false
   if self.NeedToast then
@@ -118,7 +109,6 @@ function M:OnCloseLoading()
     self.NeedToast = false
   end
 end
-
 function M:InitCollectProgress()
   if not self.DungeonId then
     return
@@ -132,7 +122,6 @@ function M:InitCollectProgress()
   self.CollectProgress.Text_Num:SetText(0)
   self.CollectProgress.Bar:SetPercent(0)
 end
-
 function M:OnCollectFeinaStar(StarNum)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/feina_add_feather", nil, nil)
   self:PlayAnimation(self.Add)
@@ -147,13 +136,11 @@ function M:OnCollectFeinaStar(StarNum)
     end
   end
 end
-
 function M:ChangeColor()
   self:AddDelayFrameFunc(function()
     self:ChoosePaint(self.FeinaPassive.ColorIndex)
   end, 2)
 end
-
 function M:ChoosePaint(Index)
   if Index > self.ColorMax then
     return
@@ -176,7 +163,6 @@ function M:ChoosePaint(Index)
     end
   end
 end
-
 function M:InitButtons()
   if self.Btn_Jump then
     self.Btn_Jump.Btn_Click.OnPressed:Add(self, function()
@@ -210,7 +196,6 @@ function M:InitButtons()
     })
   end
 end
-
 function M:TryToPlayTargetCommand(KeyName, IsAddInputCache)
   if not IsValid(self.Player) then
     return
@@ -227,7 +212,6 @@ function M:TryToPlayTargetCommand(KeyName, IsAddInputCache)
     self.Player:ActionCallback("Jump", EInputEvent.IE_Pressed)
   end
 end
-
 function M:TryToStopTargetCommand(KeyName, IsAddInputCache)
   if not IsValid(self.Player) then
     return
@@ -241,6 +225,9 @@ function M:TryToStopTargetCommand(KeyName, IsAddInputCache)
     self.Player:ActionCallback("Fire", EInputEvent.IE_Released)
   end
 end
-
+function M:OnMobileHookShow(Hook)
+  Hook.InteractiveUI = self.HookLock
+  Hook.InteractiveUI:Init(Hook)
+end
 AssembleComponents(M)
 return M

@@ -36,7 +36,6 @@ Weapon.__Props__ = {
   MaxLevel = prop.getter("Data", "WeaponMaxLevel"),
   DecomposeReward = prop.getter("Data", "DecomposeReward")
 }
-
 function Weapon:Init(Uuid, WeaponId, Level)
   Weapon.Super.Init(self)
   if not Uuid or not WeaponId then
@@ -51,14 +50,12 @@ function Weapon:Init(Uuid, WeaponId, Level)
     self:_Init()
   end
 end
-
 function Weapon:InitAppearanceConfig()
   if self:IsUltra() then
     return
   end
   self:InitAppearance()
 end
-
 function Weapon:InitModConfig()
   local WeaponInfo = self:Data()
   if not WeaponInfo then
@@ -90,45 +87,36 @@ function Weapon:InitModConfig()
     end
   end
 end
-
 function Weapon:InitAppearance()
   self.AppearanceSuits:AddWeaponAppearance(self.WeaponId)
   self.CurrentAppearanceIndex = 1
   self.UsedSkins:GetNewSkin(self.WeaponId, CommonConst.SkinType.Weapon)
 end
-
 function Weapon:AddSkin(SkinId)
   return self.UsedSkins:GetNewSkin(SkinId, CommonConst.SkinType.Weapon)
 end
-
 function Weapon:GetSkin(SkinId)
   return self.UsedSkins:GetSkin(SkinId)
 end
-
 function Weapon:GetAppearance()
   return self.AppearanceSuits[self.CurrentAppearanceIndex]
 end
-
 function Weapon:GetModVolume()
   return self.ModVolume
 end
-
 function Weapon:GetCurrentSkin()
   local Appearance = self:GetAppearance()
   return self:GetSkin(Appearance.SkinId)
 end
-
 function Weapon:CheckCurrentLevelOfBreakUpLevel()
   if self.Level == self:GetCurrentMaxLevel() then
     return true
   end
   return false
 end
-
 function Weapon:_Init()
   AvatarUtils:RebuildModSuit(self)
 end
-
 function Weapon:GetCurrentMaxLevel()
   local WeaponBreakInfo = DataMgr.WeaponBreak[self.WeaponId]
   if not WeaponBreakInfo then
@@ -140,70 +128,58 @@ function Weapon:GetCurrentMaxLevel()
   end
   return WeaponBreakLevelUpInfo.WeaponBreakLevel
 end
-
 function Weapon:GetName()
   return GText(self.WeaponName)
 end
-
 function Weapon:Data()
   local WData = DataMgr.Weapon[self.WeaponId]
   if not WData then
     if -1 == self.Uuid then
       WData = DataMgr.BattleWeapon[self.WeaponId]
     elseif not skynet then
-      DebugPrint("ERROR::", string.format("\230\173\166\229\153\168Id%s \230\151\160\230\149\136\239\188\140\229\133\136\230\155\180\230\150\176\239\188\140\228\184\141\232\166\129\231\148\168\232\128\129\229\143\183\239\188\140\231\148\168\230\150\176\229\143\183\233\135\141\232\175\149\239\188\140\232\191\152\230\156\137\233\151\174\233\162\152\229\176\177\230\137\190\231\173\150\229\136\146\230\163\128\230\159\165\228\184\139Weapon\232\161\168\230\152\175\229\144\166\229\144\140\230\173\165\229\143\140\231\171\175", self.WeaponId))
+      DebugPrint("ERROR::", string.format("武器Id%s 无效，先更新，不要用老号，用新号重试，还有问题就找策划检查下Weapon表是否同步双端", self.WeaponId))
     end
   end
   return WData
 end
-
 function Weapon:GetModSlotUnlock()
   local WeaponInfo = self:Data()
   return WeaponInfo.ModSlotUnlock
 end
-
 function Weapon:BattleData()
   return DataMgr.BattleWeapon[self.WeaponId]
 end
-
 function Weapon:BattleDefaultData()
   return DataMgr.BattleWeaponAttr
 end
-
 function Weapon:IsMelee()
   if CommonUtils.HasValue(self.WeaponTag, CommonConst.WeaponType.MeleeWeapon) then
     return true
   end
   return false
 end
-
 function Weapon:IsRanged()
   if CommonUtils.HasValue(self.WeaponTag, CommonConst.WeaponType.RangedWeapon) then
     return true
   end
   return false
 end
-
 function Weapon:IsUltra()
   if CommonUtils.HasValue(self.WeaponTag, CommonConst.WeaponType.UltraWeapon) then
     return true
   end
   return false
 end
-
 function Weapon:WeaponLevelData()
   return DataMgr.WeaponLevelUp[self.Level]
 end
-
 function Weapon:LevelUpData(level)
   level = level or self.Level
   return DataMgr.WeaponLevelUp[level]
 end
-
 function Weapon:IsLock()
   return self.Status == CommonConst.CommonStatus.Lock
 end
-
 function Weapon:Lock()
   if not self:IsLock() then
     self.Status = CommonConst.CommonStatus.Lock
@@ -211,7 +187,6 @@ function Weapon:Lock()
   end
   return false
 end
-
 function Weapon:UnLock()
   if self:IsLock() then
     self.Status = CommonConst.CommonStatus.UnLock
@@ -219,7 +194,6 @@ function Weapon:UnLock()
   end
   return false
 end
-
 function Weapon:GetModSuit(SuitIndex)
   SuitIndex = SuitIndex or self.ModSuitIndex
   if skynet then
@@ -228,17 +202,14 @@ function Weapon:GetModSuit(SuitIndex)
     return self.ModSuits[SuitIndex]
   end
 end
-
 function Weapon:GetModSuitCost(SuitIndex)
   SuitIndex = SuitIndex or self.ModSuitIndex
   return self.ModSuitsCostMap[SuitIndex] or 0
 end
-
 function Weapon:SetModSuitCost(Cost, SuitIndex)
   SuitIndex = SuitIndex or self.ModSuitIndex
   self.ModSuitsCostMap[SuitIndex] = Cost
 end
-
 function Weapon:AddExp(Count)
   if type(Count) ~= "number" or Count <= 0 then
     return
@@ -270,7 +241,6 @@ function Weapon:AddExp(Count)
   }
   return Result
 end
-
 function Weapon:SetLevel(Level)
   if Level <= self.Level then
     return false
@@ -282,7 +252,6 @@ function Weapon:SetLevel(Level)
   self.Level = Level
   return true
 end
-
 function Weapon:HandleSetLevel(Level, NeedEnhance)
   if nil == NeedEnhance or 1 == NeedEnhance then
     NeedEnhance = true
@@ -310,11 +279,9 @@ function Weapon:HandleSetLevel(Level, NeedEnhance)
   end
   return false
 end
-
 function Weapon:GMSetLevel(Level, NeedEnhance)
   return self:HandleSetLevel(Level, NeedEnhance)
 end
-
 function Weapon:SetEnhanceLevel(EnhanceLevel)
   local BreakInfo = DataMgr.WeaponBreak[self.WeaponId][EnhanceLevel]
   if BreakInfo or 0 == EnhanceLevel then
@@ -331,7 +298,6 @@ function Weapon:SetEnhanceLevel(EnhanceLevel)
   end
   return false
 end
-
 function Weapon:UpGradeLevel(IsUWeapon, TargetLevel)
   local MaxGradeLevel
   if IsUWeapon then
@@ -348,7 +314,6 @@ function Weapon:UpGradeLevel(IsUWeapon, TargetLevel)
   end
   self.GradeLevel = math.min(self.GradeLevel + TargetLevel, MaxGradeLevel)
 end
-
 function Weapon:SetGradeLevel(IsUWeapon, TargetLevel)
   local MaxGradeLevel
   if IsUWeapon then
@@ -365,26 +330,22 @@ function Weapon:SetGradeLevel(IsUWeapon, TargetLevel)
   end
   self.GradeLevel = TargetLevel
 end
-
 function Weapon:AddConsumeWeaponLevel(Level)
   if Level > 0 then
     self.ConsumeWeaponLevel = self.ConsumeWeaponLevel + Level
   end
 end
-
 function Weapon:AddConsumeWeaponEnhanceLevel(Level)
   if Level > 0 then
     self.ConsumeWeaponEnhanceLevel = self.ConsumeWeaponEnhanceLevel + Level
   end
 end
-
 Weapon.CommunityAttrs = {
   "CRI",
   "CRD",
   "AttackSpeed_Normal",
   "TriggerProbability"
 }
-
 function Weapon:_GetCommunityWeaponTag()
   local BattleInfo = self:BattleData()
   for _, v in pairs(BattleInfo.WeaponTag) do
@@ -393,7 +354,6 @@ function Weapon:_GetCommunityWeaponTag()
     end
   end
 end
-
 function Weapon:GetCommunityData(Avatar)
   local ExtraInfo = {}
   ExtraInfo.ModSuit = self.ModSuitIndex
@@ -415,7 +375,6 @@ function Weapon:GetCommunityData(Avatar)
   CommunityData.WeaponTag = self:_GetCommunityWeaponTag()
   return CommunityData
 end
-
 function Weapon:BattleDump(Avatar, ExtraInfo)
   local ExtraInfo = ExtraInfo or {}
   AvatarUtils:InitModInfo(Avatar, ExtraInfo, self)
@@ -435,7 +394,6 @@ function Weapon:BattleDump(Avatar, ExtraInfo)
   }
   return result
 end
-
 function Weapon:DumpAppearanceInfo()
   if self:IsUltra() then
     return
@@ -448,12 +406,17 @@ function Weapon:DumpAppearanceInfo()
   AppearanceInfo.WeaponId = self.WeaponId
   return AppearanceInfo
 end
-
+function Weapon:OnlineDumpInfo()
+  local WeaponInfo = self:DumpAppearanceInfo() or {}
+  WeaponInfo.WeaponId = self.WeaponId
+  WeaponInfo.EnhanceLevel = self.EnhanceLevel
+  WeaponInfo.GradeLevel = self.GradeLevel
+  return WeaponInfo
+end
 function Weapon:DumpAccessory()
   local Appearance = self:GetAppearance()
   return Appearance and Appearance.Accessory[1]
 end
-
 function Weapon:DumpColors(SkinId)
   if self:IsUltra() then
     return
@@ -473,11 +436,9 @@ function Weapon:DumpColors(SkinId)
   Colors.Colors = Skin:GetColors():all_dump(Skin:GetColors())
   return Colors
 end
-
 function Weapon:GetSkillLevel()
   return 1
 end
-
 function Weapon:DumpSkillInfos(Avatar, ExtraInfo)
   local Skills = {}
   local BattleWeaponInfo = DataMgr.BattleWeapon[self.WeaponId]
@@ -501,7 +462,31 @@ function Weapon:DumpSkillInfos(Avatar, ExtraInfo)
         for SkillId1, SkillId2 in pairs(ModData.ModActivateSkills) do
           if Skills[SkillId1] then
             Skills[SkillId2] = Skills[SkillId1]
+            if ModData.ModLevelAsSkillLevel then
+              Skills[SkillId2].Level = Mod.Level + 1
+            end
             Skills[SkillId1] = nil
+          end
+        end
+      end
+    end
+  end
+  local ModSuit = ExtraInfo and ExtraInfo.ModSuit
+  local SecondModSuit = ExtraInfo and ExtraInfo.SecondModSuit
+  if not ModSuit and SecondModSuit then
+    for ModSlotId, ModSlotEid in pairs(self:GetModSuit(SecondModSuit)) do
+      local Mod = Avatar.Mods[ModSlotEid]
+      if Mod then
+        local ModData = Mod:Data()
+        if ModData.ModActivateSkills and ModData.ActivateInRouge then
+          for SkillId1, SkillId2 in pairs(ModData.ModActivateSkills) do
+            if Skills[SkillId1] then
+              Skills[SkillId2] = Skills[SkillId1]
+              if ModData.ModLevelAsSkillLevel then
+                Skills[SkillId2].Level = Mod.Level + 1
+              end
+              Skills[SkillId1] = nil
+            end
           end
         end
       end
@@ -509,7 +494,6 @@ function Weapon:DumpSkillInfos(Avatar, ExtraInfo)
   end
   return Skills
 end
-
 function Weapon:DumpPassiveEffects(Avatar, ExtraInfo)
   local PassiveEffects = {}
   local ModPolarityMap = {}
@@ -544,7 +528,6 @@ function Weapon:DumpPassiveEffects(Avatar, ExtraInfo)
   end
   return PassiveEffects
 end
-
 function Weapon:SaLogDump(Avatar)
   local Mods = {}
   for ModSlotId, ModSlotEid in pairs(self:GetModSuit()) do
@@ -558,7 +541,6 @@ function Weapon:SaLogDump(Avatar)
   end
   return Mods
 end
-
 Weapon.Attrs = {
   "DEF",
   "CRI",
@@ -567,6 +549,7 @@ Weapon.Attrs = {
   "AttackSpeed_Reload",
   "AttackSpeed_FallAttack",
   "AttackSpeed_HeavyAttack",
+  "AttackSpeed_SlideAttack",
   "AttackRange_Normal",
   "AttackRange_RayLength",
   "TriggerProbability",
@@ -578,7 +561,6 @@ Weapon.Attrs = {
   "MaxDistance",
   "ComboHoldTime"
 }
-
 function Weapon:GetDefaultAttrValue(AttrName)
   local BattleInfo = self:BattleData()
   if BattleInfo[AttrName] then
@@ -593,7 +575,6 @@ function Weapon:GetDefaultAttrValue(AttrName)
   end
   return AttrData.DefaultValue or 0
 end
-
 function Weapon:CalcTotalValue(CardValues, BaseValues, ModRateValues, ModAddValues)
   local TotalValues = {}
   for AttrName, Value in pairs(BaseValues) do
@@ -624,7 +605,6 @@ function Weapon:CalcTotalValue(CardValues, BaseValues, ModRateValues, ModAddValu
   end
   return TotalValues
 end
-
 function Weapon:CalcBaseValue(CardValues, CardLevelValues)
   local BaseValues = {}
   for AttrName, Value in pairs(CardValues) do
@@ -632,7 +612,6 @@ function Weapon:CalcBaseValue(CardValues, CardLevelValues)
   end
   return BaseValues
 end
-
 function Weapon:DumpDefaultBattleAttr(Avatar, ExtraInfo)
   ExtraInfo = ExtraInfo or {}
   ExtraInfo.ModSuit = self.ModSuitIndex
@@ -640,7 +619,6 @@ function Weapon:DumpDefaultBattleAttr(Avatar, ExtraInfo)
   local BattleAttrs = self:DumpBattleAttr(Avatar, ExtraInfo)
   return BattleAttrs
 end
-
 function Weapon:DumpBattleAttr(Avatar, ExtraInfo)
   ExtraInfo = ExtraInfo or {}
   local CardValues, CardLevelValues = self:DumpCardValues()
@@ -688,7 +666,6 @@ function Weapon:DumpBattleAttr(Avatar, ExtraInfo)
   }
   return BattleAttrs
 end
-
 function Weapon:CalcAddAttrs(Avatar, BaseValues, ModRateValues, ModAddValues)
   local AddData = self:BattleData()
   if not AddData.AddAttrs then
@@ -707,7 +684,6 @@ function Weapon:CalcAddAttrs(Avatar, BaseValues, ModRateValues, ModAddValues)
     end
   end
 end
-
 function Weapon:CalcCharAddAttrs(BaseValues, ModRateValue, ModAddValues)
   local AddData = self:BattleData()
   if not AddData.AddAttrs then
@@ -726,7 +702,6 @@ function Weapon:CalcCharAddAttrs(BaseValues, ModRateValue, ModAddValues)
     end
   end
 end
-
 function Weapon:CalcOneAttrData(BaseValues, ModRateValues, ModAddValues, AttrData, UniteNum, UniqueName)
   local AttrName = AvatarUtils:GetAttrNameFromAttrData(AttrData, UniqueName)
   if "ATK" == AttrName then
@@ -737,7 +712,6 @@ function Weapon:CalcOneAttrData(BaseValues, ModRateValues, ModAddValues, AttrDat
     self:CalcOneAttrs(AttrName, BaseValues, ModRateValues, CommonConst.RateIndex.Default, ModAddValues, AttrData, UniteNum)
   end
 end
-
 function Weapon:CalcOneAttrs(AttrName, BaseValues, ModRateValues, RateIndex, ModAddValues, AttrData, UniteNum)
   if AttrData.Rate then
     if not ModRateValues[AttrName] then
@@ -760,7 +734,6 @@ function Weapon:CalcOneAttrs(AttrName, BaseValues, ModRateValues, RateIndex, Mod
     end
   end
 end
-
 function Weapon:CalcExcelWeaponAttr(Avatar, ModRateValues, Char)
   if not Char then
     return
@@ -784,12 +757,10 @@ function Weapon:CalcExcelWeaponAttr(Avatar, ModRateValues, Char)
     end
   end
 end
-
 function Weapon:HasTag(_WeaponTag)
   local WeaponTags = self:GetTags()
   return WeaponTags and WeaponTags[_WeaponTag]
 end
-
 function Weapon:GetTags()
   if not self.WeaponTags then
     local BattleInfo = self:BattleData()
@@ -807,7 +778,6 @@ function Weapon:GetTags()
   end
   return self.WeaponTags
 end
-
 function Weapon:FillCardValues(CardValues, CardLevelValues, AttrName, CardValue, LevelGrowAttrName)
   CardValue = CardValue or self:GetDefaultAttrValue(AttrName)
   if not CardValue then
@@ -816,7 +786,6 @@ function Weapon:FillCardValues(CardValues, CardLevelValues, AttrName, CardValue,
   CardValues[AttrName] = CardValue
   CardLevelValues[AttrName] = self:GetAttrLevelGrow(LevelGrowAttrName)
 end
-
 function Weapon:DumpCardValues()
   local CardValues = {}
   local CardLevelValues = {}
@@ -848,7 +817,6 @@ function Weapon:DumpCardValues()
   end
   return CardValues, CardLevelValues
 end
-
 function Weapon:GetAttrLevelGrow(AttrName)
   local BattleInfo = self:BattleData()
   local LevelGrow = BattleInfo[AttrName .. "LevelGrow"]
@@ -859,7 +827,6 @@ function Weapon:GetAttrLevelGrow(AttrName)
   local GrowFactor = LevelUpInfo[LevelGrow]
   return GrowFactor
 end
-
 function Weapon:HasApplicationType(ApplicationType)
   for _, value in ipairs(self.ModApplicationType) do
     if ApplicationType == value then
@@ -868,7 +835,6 @@ function Weapon:HasApplicationType(ApplicationType)
   end
   return false
 end
-
 function Weapon:CalculateWeaponLevelUpResources(ExpNeed, ExpResources)
   table.sort(ExpResources, function(a, b)
     return a.UseParam > b.UseParam
@@ -920,7 +886,6 @@ function Weapon:CalculateWeaponLevelUpResources(ExpNeed, ExpResources)
   end
   return Res
 end
-
 function Weapon:GetSimpleInfo(Avatar)
   local ModSlots = {}
   for ModSlotId, ModSlotEid in pairs(self:GetModSuit(self.ModSuitIndex)) do
@@ -944,11 +909,9 @@ function Weapon:GetSimpleInfo(Avatar)
     ModSlots = ModSlots
   }
 end
-
 function Weapon:ResetAssisterId()
   self.AssisterId = 0
 end
-
 function Weapon:CheckUnconstrainedMCByMod(ModRateValues, ModAddValues)
   local WeaponInfo = self:BattleData()
   if WeaponInfo.UnconstrainedMC then
@@ -956,18 +919,15 @@ function Weapon:CheckUnconstrainedMCByMod(ModRateValues, ModAddValues)
     ModAddValues.MagazineCapacity = nil
   end
 end
-
 FormatProperties(Weapon)
 local WeaponDict = Class("WeaponDict", CustomTypes.CustomDict)
 WeaponDict.KeyType = BaseTypes.ObjId
 WeaponDict.ValueType = Weapon
 WeaponDict.META_LIMIT = 50
-
 function WeaponDict:NewWeapon(Uuid, WeaponId, Level)
   local weapon = Weapon(Uuid, WeaponId, Level)
   return weapon
 end
-
 local UWeapon = Class("UWeapon", Weapon)
 UWeapon.__Props__ = {
   Uuid = prop.prop("ObjId", "client save"),
@@ -994,19 +954,17 @@ UWeapon.__Props__ = {
   ModApplicationType = prop.getter("BattleData", "ModApplicationType"),
   MaxLevel = prop.getter("Data", "WeaponMaxLevel")
 }
-
 function UWeapon:Data()
   local UWData = DataMgr.UWeapon[self.WeaponId]
   if not UWData then
     if -1 == self.Uuid then
       UWData = DataMgr.BattleWeapon[self.WeaponId]
     elseif not skynet then
-      DebugPrint("ERROR::", string.format("\230\152\190\232\181\171\230\173\166\229\153\168Id%s \230\151\160\230\149\136\239\188\140\229\133\136\230\155\180\230\150\176\239\188\140\228\184\141\232\166\129\231\148\168\232\128\129\229\143\183\239\188\140\231\148\168\230\150\176\229\143\183\233\135\141\232\175\149\239\188\140\232\191\152\230\156\137\233\151\174\233\162\152\229\176\177\230\137\190\231\173\150\229\136\146\230\163\128\230\159\165\228\184\139UWeapon\232\161\168\228\191\174\230\148\185\230\152\175\229\144\166\229\144\140\230\173\165\229\143\140\231\171\175", self.WeaponId))
+      DebugPrint("ERROR::", string.format("显赫武器Id%s 无效，先更新，不要用老号，用新号重试，还有问题就找策划检查下UWeapon表修改是否同步双端", self.WeaponId))
     end
   end
   return UWData
 end
-
 function UWeapon:UnlockModSlotAfterUWeaponBreakUp()
   local WeaponInfo = DataMgr.UWeapon[self.WeaponId]
   if WeaponInfo and WeaponInfo.ModSlotUnlock then
@@ -1017,7 +975,6 @@ function UWeapon:UnlockModSlotAfterUWeaponBreakUp()
     end
   end
 end
-
 function UWeapon:WeaponSkillLevelInheritCharSkillLevel(Skill)
   local WeaponData = DataMgr.BattleWeapon[self.WeaponId]
   if WeaponData and WeaponData.InheritSkillId and Skill.SkillId == WeaponData.InheritSkillId then
@@ -1025,26 +982,21 @@ function UWeapon:WeaponSkillLevelInheritCharSkillLevel(Skill)
     self.InheritSkillExtraLevel = Skill.ExtraLevel
   end
 end
-
 function UWeapon:BattleData()
   return DataMgr.BattleWeapon[self.WeaponId]
 end
-
 function UWeapon:GetSkillLevel()
   return self.InheritSkillLevel + self.InheritSkillExtraLevel
 end
-
 FormatProperties(UWeapon)
 local UWeaponDict = Class("UWeaponDict", CustomTypes.CustomDict)
 UWeaponDict.KeyType = BaseTypes.ObjId
 UWeaponDict.ValueType = UWeapon
 UWeaponDict.META_LIMIT = 50
-
 function UWeaponDict:NewWeapon(Uuid, WeaponId, Level)
   local weapon = UWeapon(Uuid, WeaponId, Level)
   return weapon
 end
-
 return {
   Weapon = Weapon,
   WeaponDict = WeaponDict,

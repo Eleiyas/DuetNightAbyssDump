@@ -3,11 +3,9 @@ local RootBar = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function RootBar:ReceiveBeginPlay()
   self.Direction = 0
 end
-
 function RootBar:Tick()
   if self.IsArrow then
     return
@@ -18,7 +16,6 @@ function RootBar:Tick()
     self:OnEnter()
   end
 end
-
 function RootBar:SetLeftRightTopDown()
   local Size = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.GamePanel):GetSize()
   local ViewportPos = FVector2D(0, 0)
@@ -48,7 +45,6 @@ function RootBar:SetLeftRightTopDown()
     self.RootWidget.ViewportLocalRate = self.ViewportLocalRate
   end
 end
-
 function RootBar:RegisterSelf()
   self.OverLap = 0
   self.LastBarStack = TArray(UObject)
@@ -58,7 +54,6 @@ function RootBar:RegisterSelf()
     self.Direction = 1
   end
 end
-
 function RootBar:CheckCanGoIn()
   if self.RootWidget.bIsResetting then
     return
@@ -81,7 +76,6 @@ function RootBar:CheckCanGoIn()
     self:ChangeNowBar(self.Directions[1])
   end
 end
-
 function RootBar:GameMapHas(Index)
   if self.RootWidget.GameMap[Index] == nil then
     return false
@@ -94,7 +88,6 @@ function RootBar:GameMapHas(Index)
   end
   return false
 end
-
 function RootBar:ChangeNowBar(Index)
   if self.RootWidget == nil or self.RootWidget.NowBarArray:Contains(self) then
     return
@@ -128,7 +121,6 @@ function RootBar:ChangeNowBar(Index)
   self.RootWidget.NowBarArray[Index] = self
   self:ChangeFillType()
 end
-
 function RootBar:ChangeFillType()
   if self.RootWidget == nil or not self.RootWidget.NowBarArray:Contains(self) then
     return
@@ -150,7 +142,6 @@ function RootBar:ChangeFillType()
     self:SetFillType(3)
   end
 end
-
 function RootBar:SetPercentByArrow()
   if not self.RootWidget.NowBarArray:Contains(self) then
     return
@@ -174,7 +165,6 @@ function RootBar:SetPercentByArrow()
   end
   self:SetPercent(Percent, 0, 0, 0)
 end
-
 function RootBar:CheckArrowIn()
   for i, v in pairs(self.RootWidget.ArrowArray) do
     local ArrowPosition = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(v):GetPosition() + FVector2D(v.Width / 2, v.Height / 2)
@@ -184,7 +174,6 @@ function RootBar:CheckArrowIn()
   end
   return false
 end
-
 function RootBar:SetCrossMoveRange(PositionX, PositionY)
   local Position = self.RootWidget.PointerPosition
   if PositionX and PositionY then
@@ -249,7 +238,6 @@ function RootBar:SetCrossMoveRange(PositionX, PositionY)
   end
   return XOut, YOut, HasNeighbor, 30
 end
-
 function RootBar:SetHorizenMoveRange(PositionX, PositionY)
   local Position = self.RootWidget.PointerPosition
   if PositionX and PositionY then
@@ -281,7 +269,6 @@ function RootBar:SetHorizenMoveRange(PositionX, PositionY)
   end
   return XOut, YOut, HasNeighbor, 30
 end
-
 function RootBar:SetVerticalMoveRange(PositionX, PositionY)
   local Position = self.RootWidget.PointerPosition
   if PositionX and PositionY then
@@ -313,7 +300,6 @@ function RootBar:SetVerticalMoveRange(PositionX, PositionY)
   end
   return XOut, YOut, HasNeighbor, 30
 end
-
 function RootBar:SetMoveRange(PositionX, PositionY)
   if 0 == self.Type then
     return self:SetCrossMoveRange(PositionX, PositionY)
@@ -324,7 +310,6 @@ function RootBar:SetMoveRange(PositionX, PositionY)
   end
   return 0, 0
 end
-
 function RootBar:OnEnter()
   if self.bIsEnd then
     local Arrow = self.RootWidget.ArrowArray[self.RootWidget.CurrentDragArrowIndex]
@@ -336,7 +321,6 @@ function RootBar:OnEnter()
     end
   end
 end
-
 function RootBar:Overlaped()
   self.RootWidget.bIsResetting = true
   self.RootWidget:ChangeColorOverlap(UE4.UUIFunctionLibrary.StringToLinearColor("B43131"))
@@ -345,7 +329,6 @@ function RootBar:Overlaped()
   self.RootWidget.bCanDrag = false
   self.RootWidget:LuaReset()
 end
-
 function RootBar:Reset()
   self.LastBarStack:Clear()
   self.OverLap = 0
@@ -358,7 +341,6 @@ function RootBar:Reset()
   self.Arrow = nil
   self.ArrowPosition = nil
 end
-
 function RootBar:ChangeColorOnEnd()
   local Color = UE4.UUIFunctionLibrary.StringToLinearColor("E9B971")
   if self.ColorHandle then
@@ -372,7 +354,6 @@ function RootBar:ChangeColorOnEnd()
     self.EndColorHandle = nil
   end
 end
-
 function RootBar:CheckNeighborIsEnd(Index)
   for i, v in pairs(self.RootWidget.EndBarArray) do
     if v.Index == Index then
@@ -381,5 +362,4 @@ function RootBar:CheckNeighborIsEnd(Index)
   end
   return nil
 end
-
 return RootBar

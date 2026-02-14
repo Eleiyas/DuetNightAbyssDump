@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   if Content.IsSelected then
     self.Bg_On:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -16,5 +15,4 @@ function M:OnListItemObjectSet(Content)
   end
   self.Stats_Name:SetText(Content.Text)
 end
-
 return M

@@ -2,28 +2,23 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.ProbPercent = 0
   self:BindEvents()
   self:SetVisibility(ESlateVisibility.HitTestInvisible)
 end
-
 function M:BindEvents()
   self.Button_Area.OnHovered:Add(self, self.OnHoverOrdinal)
   self.Button_Area.OnUnhovered:Add(self, self.OnUnhoverOrdinal)
   self.Button_Area.OnCheckStateChanged:Add(self, self.OnClickOrdinal)
   self.Tips_MenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function M:OnClickOrdinal()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnPressOrdinal()
   self:PlayAnimation(self.Presss)
 end
-
 function M:OnHoverOrdinal()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -32,7 +27,6 @@ function M:OnHoverOrdinal()
   end
   self:OpenMenuAnchor()
 end
-
 function M:OnUnhoverOrdinal()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -41,7 +35,6 @@ function M:OnUnhoverOrdinal()
   end
   self:CloseMenuAnchor()
 end
-
 function M:OpenMenuAnchor()
   if self.Tips_MenuAnchor:IsOpen() then
     return
@@ -52,18 +45,15 @@ function M:OpenMenuAnchor()
     self.OrdinalProb:PlayAnimation(self.OrdinalProb.In)
   end
 end
-
 function M:CloseMenuAnchor()
   if not self.Tips_MenuAnchor:IsOpen() then
     return
   end
   self.Tips_MenuAnchor:Close()
 end
-
 function M:SetPercent(Percent)
   self.ProbPercent = Percent
 end
-
 function M:OnClickOrdinal(IsChecked)
   if IsChecked then
     self:OpenMenuAnchor()
@@ -72,7 +62,6 @@ function M:OnClickOrdinal(IsChecked)
     self:CloseMenuAnchor()
   end
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   UIManager(self):SetIsMenuAnchorOpen(bIsOpen)
   if not bIsOpen then
@@ -80,11 +69,9 @@ function M:OnMenuOpenChanged(bIsOpen)
     self:OnMenuClose()
   end
 end
-
 function M:OnMenuClose()
   self.Button_Area:SetChecked(false)
 end
-
 function M:DoCustomNavigation_Left()
   if self.MainUI then
     self.MainUI.WalnutPlate.Ordinal_3rd.Button_Area:SetFocus()
@@ -94,7 +81,6 @@ function M:DoCustomNavigation_Left()
   end
   return true
 end
-
 function M:DoCustomNavigation_Right()
   if self.MainUI then
     self.MainUI.WalnutPlate.Ordinal_2nd.Button_Area:SetFocus()
@@ -104,7 +90,6 @@ function M:DoCustomNavigation_Right()
   end
   return true
 end
-
 function M:DoCustomNavigation_Up()
   if self.MainUI then
     self.MainUI.WalnutPlate.Ordinal_1st.Button_Area:SetFocus()
@@ -114,5 +99,4 @@ function M:DoCustomNavigation_Up()
   end
   return true
 end
-
 return M

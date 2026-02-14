@@ -4,6 +4,7 @@ local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local SkillUtils = require("Utils.SkillUtils")
 local MiscUtils = require("Utils.MiscUtils")
 local CommonUtils = require("Utils.CommonUtils")
+local Mod = require("BluePrints.Client.CustomTypes.Mod").Mod
 local ModSlotUIData = ModDatas.ModSlotUIData
 local SelectedStuff = ModDatas.SelectedStuff
 local PolarityEditModePayload = ModDatas.PolarityEditModePayload
@@ -13,7 +14,6 @@ M._components = {
   "BluePrints.UI.WBP.Armory.Mod.Utils.ModModel_CopyModeComp",
   "BluePrints.UI.WBP.Armory.ModModel_DyePlanCopyModeComp"
 }
-
 function M:Init()
   M.Super.Init(self)
   self:InitSortFunc()
@@ -22,8 +22,8 @@ function M:Init()
   self.TargetMods = {}
   self:ResetUIData()
   self.SuitInfoCopyed = nil
+  self.Context = {}
 end
-
 function M:Destory()
   self.CurModTarget = nil
   self.TargetType = nil
@@ -32,7 +32,6 @@ function M:Destory()
   self:ResetUIData()
   M.Super.Destory(self)
 end
-
 function M:GetAvatar()
   if self:IsInImport() then
     return M.Super.GetAvatar(self)
@@ -42,7 +41,6 @@ function M:GetAvatar()
   end
   return ArmoryUtils:GetAvatar()
 end
-
 function M:ResetUIData()
   self.CurModList = {}
   self.CurModToIndex = {}
@@ -59,8 +57,8 @@ function M:ResetUIData()
   self.MainUICase = ModCommon.MainUICase.Normal
   self.GamePadSelectedStuff = nil
   self.DummyAvatar_CopyMode = nil
+  self.CopyModeSenderName = nil
 end
-
 function M:GenerateSlotUIDatas(SuitIndex)
   if not self.CurModTarget then
     return
@@ -76,26 +74,26 @@ function M:GenerateSlotUIDatas(SuitIndex)
     end
   end
 end
-
-function M:CreateModContent(Mod)
+function M:CreateModContent(Mod, IsArmoryMod, bNeedLock)
   local ModContent = ArmoryUtils:NewModItemContent(Mod)
+  ModContent.IsArmoryMod = IsArmoryMod
   ModContent.bEnableDrag = true
   ModContent.IsSelected = false
-  ModContent.IsArmoryMod = true
-  ModContent.IsNew = ArmoryUtils:TryAddNewModReddot(Mod)
   ModContent.bDontOpenTipsWhenClick = true
   ModContent.bAura = false
   local ApplySlot = Mod:Data().ApplySlot
   if ApplySlot and 1 == #ApplySlot and table.findValue(ApplySlot, 9) then
     ModContent.bAura = true
   end
+  if Mod.Level > 0 and bNeedLock then
+    ModContent.LockType = Mod.LockState
+    ModContent.IsLocked = Mod:IsLock()
+  end
   return ModContent
 end
-
 function M:SetMainUICase(MainUICase)
   self.MainUICase = MainUICase
 end
-
 function M:SetSelectedStuff(ModUuid, SlotId)
   if self:IsInPolarityEditMode() then
     self.PolarityEditModeData:SetSelectedStuff(SlotId)
@@ -111,14 +109,12 @@ function M:SetSelectedStuff(ModUuid, SlotId)
   self.SelectedStuff.SlotId = SlotId
   self:_SetCurrSelectMod(ModUuid)
 end
-
 function M:SetEquipedMod(SlotId, ModUuid)
   if not self.EquipedMods[ModUuid] then
     self.EquipedMods[ModUuid] = {}
   end
   table.insert(self.EquipedMods[ModUuid], SlotId)
 end
-
 function M:RemoveEquipedMod(SlotId, ModUuid)
   if self.EquipedMods[ModUuid] then
     local Res, i = table.findValue(self.EquipedMods[ModUuid], SlotId)
@@ -130,7 +126,6 @@ function M:RemoveEquipedMod(SlotId, ModUuid)
     end
   end
 end
-
 function M:CalcQuickEquipSlotsList(ModUuid)
   local SortedSlots = {}
   local Mod = self:GetMod(ModUuid)
@@ -143,7 +138,6 @@ function M:CalcQuickEquipSlotsList(ModUuid)
       table.insert(SortedSlots, SlotUIData)
     end
   end
-  
   local function SortFunc(SlotUIData1, SlotUIData2)
     if Mod.Polarity == SlotUIData1:GetPolarity() and Mod.Polarity == SlotUIData2:GetPolarity() then
       return SlotUIData1.SlotId < SlotUIData2.SlotId
@@ -167,17 +161,14 @@ function M:CalcQuickEquipSlotsList(ModUuid)
     end
     return SlotUIData1.SlotId < SlotUIData2.SlotId
   end
-  
   table.sort(SortedSlots, SortFunc)
   return SortedSlots
 end
-
 function M:AddMod(ModUuid)
   self:GenerateModRepeatData(ModUuid)
   table.insert(self.CurModList, ModUuid)
   self:SortMods()
 end
-
 function M:RemoveMod(ModUuid)
   local Index = self.CurModToIndex[ModUuid]
   if Index then
@@ -186,7 +177,6 @@ function M:RemoveMod(ModUuid)
     self.CurModToIndex[ModUuid] = nil
   end
 end
-
 function M:GenerateModRepeatData(ModUuid, Target)
   Target = Target or self:GetTarget()
   local Tag = self.TargetType
@@ -206,14 +196,15 @@ function M:GenerateModRepeatData(ModUuid, Target)
   end
   Mod.ConflictUuids:Clear()
   if not Res then
+    local UsedUuid = {}
     for _, OtherConflictMod in ipairs(OtherConflictMods or {}) do
-      if OtherConflictMod and OtherConflictMod.Uuid ~= ModUuid and not self:IsEquipedInCurrSuit(ModUuid) then
+      if OtherConflictMod and not self:IsEquipedInCurrSuit(ModUuid) and OtherConflictMod.Uuid ~= ModUuid and not UsedUuid[OtherConflictMod.Uuid] then
         Mod.ConflictUuids:Append(OtherConflictMod.Uuid)
+        UsedUuid[OtherConflictMod.Uuid] = 1
       end
     end
   end
 end
-
 function M:_SetCurrSelectMod(ModUuid)
   if not ModUuid then
     self.CurSelectMod = nil
@@ -222,7 +213,6 @@ function M:_SetCurrSelectMod(ModUuid)
     self.CurSelectMod = Mod
   end
 end
-
 function M:SetTarget(Target)
   self:CalcModSuitTotalCost(Target, Target.ModSuitIndex, true)
   self.CurModTarget = Target.Uuid
@@ -235,7 +225,6 @@ function M:SetTarget(Target)
   end
   self:UpdateConflictMods()
 end
-
 function M:CalcModSuitTotalCost(Target, ModSuitIndex, bCache)
   ModSuitIndex = ModSuitIndex or Target.ModSuitIndex
   local Cost = AvatarUtils:GetModCostInSuit_SwitchMod(self:GetAvatar(), Target:GetTypeName(), Target.Uuid, ModSuitIndex, nil, nil, function(_, Avatar, Tag, Uuid, ModSuitIndex)
@@ -258,7 +247,6 @@ function M:CalcModSuitTotalCost(Target, ModSuitIndex, bCache)
   end
   return Cost
 end
-
 function M:CalcModVolumeDiff(Case, Target, ...)
   local MaxModVolume = Target:GetModVolume()
   local ModSuitIndex = Target.ModSuitIndex
@@ -292,7 +280,6 @@ function M:CalcModVolumeDiff(Case, Target, ...)
   end
   return true, PreviewModVolume - CurrentModVolume
 end
-
 function M:CalcSlotRealCost(SlotId, SuitInfo, ModInfo, SlotPolarity)
   local ModSuit = SuitInfo:GetModSuit()
   local TargetSlot = ModSuit[SlotId]
@@ -306,7 +293,6 @@ function M:CalcSlotRealCost(SlotId, SuitInfo, ModInfo, SlotPolarity)
   local SlotCost = TargetSlot:GetModCost(ModInfo.Polarity, ModInfo.Cost, SlotPolarity)
   return math.max(0, SlotCost - ReduceCost)
 end
-
 function M:ForceCalcSlotsCost(ExcludeModUuid, bTakeOff)
   local ExcludeMod = self:GetMod(ExcludeModUuid)
   local DirtySlotIds = {}
@@ -316,7 +302,7 @@ function M:ForceCalcSlotsCost(ExcludeModUuid, bTakeOff)
       local Mod = self:GetMod(ModUuid)
       if ExcludeMod.AddCharModCost or Mod.Polarity == ExcludeMod.ReducePolarityEffect[1] then
         self.CurSlots[SlotId] = ModSlotUIData.New()
-        self.CurSlots[SlotId]:Init(SlotId, self:GetTarget())
+        self.CurSlots[SlotId]:Init(SlotId, self:GetTarget(), SlotUIData.bEquiping)
         if not self:IsModUuidValid(self.CurSlots[SlotId].ModEid) then
           self:RemoveEquipedMod(SlotId, ModUuid)
           DirtySlotIds[SlotId] = ModUuid
@@ -330,30 +316,25 @@ function M:ForceCalcSlotsCost(ExcludeModUuid, bTakeOff)
   end
   return DirtySlotIds
 end
-
 function M:UpdateConflictMods()
   for i, ModUuid in ipairs(self.CurModList) do
     self:GenerateModRepeatData(ModUuid)
   end
 end
-
 function M:GetSelectStuff()
   if self:IsInPolarityEditMode() then
     return self.PolarityEditModeData.SelectedStuff
   end
   return self.SelectedStuff
 end
-
 function M:GetSlotUIData(SlotId)
   return self.CurSlots[SlotId]
 end
-
 function M:GetSlotIdsWhichEquiped(ModUuid)
   return self.EquipedMods[ModUuid]
 end
-
 function M:IsEquipedInCurrSuit(ModUuid)
-  local ClentRes = not table.isempty(self:GetSlotIdsWhichEquiped(ModUuid))
+  local ClientRes = not table.isempty(self:GetSlotIdsWhichEquiped(ModUuid))
   local ServerRes = false
   local Target = self:GetTarget()
   for _, Uuid in ipairs(AvatarUtils:GetTargetModSuit(Target, Target.ModSuitIndex)) do
@@ -364,7 +345,6 @@ function M:IsEquipedInCurrSuit(ModUuid)
   end
   return ClientRes or ServerRes
 end
-
 function M:GetModCountById(Id)
   local Count = 0
   for _, Mod in pairs(self:GetAvatar().Mods) do
@@ -374,7 +354,6 @@ function M:GetModCountById(Id)
   end
   return Count
 end
-
 function M:GetSlotUIDatasWhichConflict(ModUuid)
   local Res = {}
   local Mod = self:GetMod(ModUuid)
@@ -389,7 +368,6 @@ function M:GetSlotUIDatasWhichConflict(ModUuid)
   end
   return Res
 end
-
 function M:IsAnyModEquiped()
   if self:IsInImport() then
     local Target = self:GetTarget()
@@ -398,7 +376,6 @@ function M:IsAnyModEquiped()
   end
   return not table.isempty(self.EquipedMods)
 end
-
 function M:GetTarget()
   if not self.TargetType then
     return nil
@@ -411,16 +388,13 @@ function M:GetTarget()
     return self:GetAvatar().UWeapons[self.CurModTarget]
   end
 end
-
 function M:GetCurrSelectMod()
   return self.CurSelectMod
 end
-
 function M:IsSpecificSlot(ModUuid, SlotId)
   local Mod = self:GetMod(ModUuid)
   return self:IsSpecificSlotByMod(Mod, SlotId)
 end
-
 function M:IsSpecificSlotByMod(Mod, SlotId)
   local SpecificSlots = Mod:Data().ApplySlot
   if table.isempty(SpecificSlots) then
@@ -433,14 +407,16 @@ function M:IsSpecificSlotByMod(Mod, SlotId)
   end
   return false
 end
-
 function M:GetMod(ModUuid)
   if not self:IsModUuidValid(ModUuid) then
     return
   end
-  return self:GetAvatar().Mods[ModUuid]
+  local _Mod = self:GetAvatar().Mods[ModUuid]
+  if not _Mod and self.InvalidMods then
+    return self.InvalidMods[ModUuid]
+  end
+  return _Mod
 end
-
 function M:IsBugMod(ModUuid)
   if not GWorld.IsDev then
     return false
@@ -449,20 +425,19 @@ function M:IsBugMod(ModUuid)
   local ModConf = Mod:Data()
   local GenDesc = ArmoryUtils:GenModPassiveEffectDesc(ModConf, Mod.Level)
   if GenDesc == ModConf.PassiveEffectsDesc then
-    GWorld.logger.error(string.format("ModId: %s \231\154\132\232\162\171\229\138\168\230\143\143\232\191\176\230\178\161\230\156\137\229\161\171\229\165\189 \230\143\143\232\191\176\230\150\135\230\156\172:%s", Mod.ModId, GenDesc))
+    GWorld.logger.error(string.format("ModId: %s 的被动描述没有填好 描述文本:%s", Mod.ModId, GenDesc))
     return true
   end
   for _, AddAttr in ipairs(ModConf.AddAttrs or {}) do
     AddAttr = SkillUtils.GrowProxyBySkillLevel("Mod", Mod.ModId, Mod.Level, AddAttr)
     local AttrVal = AddAttr.Value or AddAttr.Rate
     if type(AttrVal) ~= "number" then
-      GWorld.logger.error(string.format("ModId: %s \231\154\132\229\177\158\230\128\167\233\133\141\231\189\174\230\156\137\233\151\174\233\162\152\239\188\140\229\177\158\230\128\167\229\144\141%s\231\154\132\231\180\162\229\188\149%s\230\137\190\228\184\141\229\136\176\231\155\184\229\133\179\231\154\132\230\136\144\233\149\191\233\133\141\231\189\174\n(AllowModMultiplier:%s)", Mod.ModId, AddAttr.AttrName, AttrVal, AddAttr.AllowModMultiplier or "\230\151\160"))
+      GWorld.logger.error(string.format("ModId: %s 的属性配置有问题，属性名%s的索引%s找不到相关的成长配置\n(AllowModMultiplier:%s)", Mod.ModId, AddAttr.AttrName, AttrVal, AddAttr.AllowModMultiplier or "无"))
       return true
     end
   end
   return false
 end
-
 function M:IsModUuidValid(ModUuid)
   if type(ModUuid) == "number" then
     return -1 ~= ModUuid
@@ -472,23 +447,19 @@ function M:IsModUuidValid(ModUuid)
   end
   return false
 end
-
 function M:GetCurrentSuitCost(Target)
   Target = Target or self:GetTarget()
   return Target:GetModSuitCost()
 end
-
 function M:GetTargetMaxCost(Target)
   Target = Target or self:GetTarget()
   return Target:GetModVolume()
 end
-
 function M:GetModSlot(Target, SlotId, SuitIndex)
   local ModSuit = Target:GetModSuit(SuitIndex)
   local ModSlot = ModSuit[SlotId]
   return ModSlot
 end
-
 function M:IsRecommendedMod(SlotUIData, ModUuid)
   if not SlotUIData.ModEid then
     return false
@@ -503,7 +474,6 @@ function M:IsRecommendedMod(SlotUIData, ModUuid)
   end
   return false
 end
-
 function M:IsOwnedBySkillTree(SkillId)
   local Target = self:GetTarget()
   if not Target or Target:GetTypeName() ~= "Char" then
@@ -518,7 +488,6 @@ function M:IsOwnedBySkillTree(SkillId)
   end
   return false
 end
-
 function M:GetSuitName(SuitIndex, Target)
   Target = Target or self:GetTarget()
   SuitIndex = SuitIndex or Target.ModSuitIndex
@@ -542,11 +511,9 @@ function M:GetSuitName(SuitIndex, Target)
   end
   return SuitName
 end
-
 function M:GetPolarityText(Polarity)
   return DataMgr.ModPolarity[Polarity].Char or ""
 end
-
 function M:GetSortedPolarityConfs()
   local SortedConfs = MiscUtils.Values(DataMgr.ModPolarity)
   table.sort(SortedConfs, function(a, b)
@@ -554,19 +521,15 @@ function M:GetSortedPolarityConfs()
   end)
   return SortedConfs
 end
-
 function M:IsModUINormal()
   return self.MainUICase == ModCommon.MainUICase.Normal
 end
-
 function M:IsModUICopyMode()
   return self.MainUICase == ModCommon.MainUICase.CopyMode
 end
-
 function M:IsModUIPreview()
   return self.MainUICase == ModCommon.MainUICase.Preview
 end
-
 function M:FilterModsOfTarget()
   if not self.CurModTarget then
     return
@@ -581,7 +544,6 @@ function M:FilterModsOfTarget()
   end
   self:SortMods()
 end
-
 function M:IsModMatchApplicationType(Mod)
   if not Mod or not Mod.ApplicationType then
     return false
@@ -591,14 +553,12 @@ function M:IsModMatchApplicationType(Mod)
   end
   return true
 end
-
 function M:IsModMatchPolarity(Mod, Polarity, bStrictMatch)
   if Mod.Polarity ~= Polarity and (bStrictMatch or Polarity > 0) then
     return false
   end
   return true
 end
-
 function M:FilterSingleModOfTarget(Polarity, bStrictMatch, Mod)
   if not self:IsModMatchApplicationType(Mod) then
     return false
@@ -611,7 +571,6 @@ function M:FilterSingleModOfTarget(Polarity, bStrictMatch, Mod)
   end
   return true
 end
-
 function M:InitSortFunc()
   if not self.ModSortFunc then
     self.ModSortFunc = {
@@ -675,11 +634,9 @@ function M:InitSortFunc()
     }
   end
 end
-
 function M:_Compare(x, y)
   return CommonUtils:Compare(x, y, self.SortType)
 end
-
 function M:SetSortConf(SortBy, SortType)
   if SortType and SortType ~= self.SortType then
     self.SortType = SortType
@@ -688,12 +645,10 @@ function M:SetSortConf(SortBy, SortType)
     self.SortBy = SortBy
   end
 end
-
 function M:SetSiftConf(SelectedItems, ItemDatas)
   self.SelectedSiftItems = SelectedItems
   self.SiftItemDatas = ItemDatas
 end
-
 function M:SortMods()
   table.sort(self.CurModList, self.ModSortFunc[self.SortBy])
   self.CurModToIndex = {}
@@ -701,7 +656,6 @@ function M:SortMods()
     self.CurModToIndex[ModUuid] = i
   end
 end
-
 function M:IsModMatchSift(ModItem)
   if table.isempty(self.SelectedSiftItems) then
     return true
@@ -771,7 +725,34 @@ function M:IsModMatchSift(ModItem)
   end
   return true
 end
-
+function M:DoModSearch(Mod, SearchText)
+  if string.isempty(SearchText) then
+    return true
+  end
+  if string.find(Mod:GetName(), SearchText) then
+    return true
+  end
+  local ModConf = Mod:Data()
+  if ModConf.AddAttrs then
+    for _, ModAttr in ipairs(ModConf.AddAttrs) do
+      local AttrConfig = DataMgr.AttrConfig[ModAttr.AttrName]
+      if AttrConfig and string.find(GText(AttrConfig.Name), SearchText) then
+        return true
+      end
+    end
+  end
+  if ModConf.PassiveEffectsDesc and string.find(GText(ModConf.PassiveEffectsDesc), SearchText) then
+    return true
+  end
+  if ModConf.FilterTag then
+    for _, Tag in ipairs(ModConf.FilterTag) do
+      if string.find(GText(Tag), SearchText) then
+        return true
+      end
+    end
+  end
+  return false
+end
 function M:StartPolarityEditMode()
   local SelectedStuff = self:GetSelectStuff()
   self.PolarityEditModeData = PolarityEditModePayload.New(self:GetCurrentSuitCost())
@@ -782,22 +763,18 @@ function M:StartPolarityEditMode()
     SlotUIData:SetPolarityEditMode(true)
   end
 end
-
 function M:StopPolarityEditMode()
   self.PolarityEditModeData = nil
   for SlotId, SlotUIData in pairs(self.CurSlots) do
     SlotUIData:SetPolarityEditMode(false)
   end
 end
-
 function M:IsInPolarityEditMode()
   return self.PolarityEditModeData ~= nil
 end
-
 function M:IsInAutoEquip()
   return self.AutoEquipData ~= nil
 end
-
 function M:StartAutoEquip(CoroutineObj, ModSuitCopyInfo)
   self.AutoEquipData = AutoEquipPayload.New(CoroutineObj)
   self.ModListForAutoEquip = {}
@@ -822,30 +799,27 @@ function M:StartAutoEquip(CoroutineObj, ModSuitCopyInfo)
   if not self.SortSlotForAutoEquip then
     function self.SortSlotForAutoEquip(Id1, Id2)
       local Slot1 = self:GetSlotUIData(Id1)
-      
       local Slot2 = self:GetSlotUIData(Id2)
-      local Res = Slot1:GetPolarity() > Slot2:GetPolarity()
+      local polarity1 = Slot1:GetPolarity()
+      local polarity2 = Slot2:GetPolarity()
       local bAuraSlot1 = Id1 == ModCommon.MaxSlotCount
       local bAuraSlot2 = Id2 == ModCommon.MaxSlotCount
-      if bAuraSlot1 == bAuraSlot2 then
-        return Res
-      end
-      if bAuraSlot1 then
+      if bAuraSlot1 and not bAuraSlot2 then
         return true
-      end
-      if bAuraSlot2 then
+      elseif not bAuraSlot1 and bAuraSlot2 then
         return false
       end
-      return Res
+      if polarity1 ~= polarity2 then
+        return polarity1 > polarity2
+      end
+      return Id1 < Id2
     end
   end
 end
-
 function M:StopAutoEquip()
   self.AutoEquipData = nil
   self.ModListForAutoEquip = nil
 end
-
 function M:PickSuitableModForSlot(SlotUIData, bAllSlotPolarized)
   local FilteredList = self:_FilterListOfPolarity(SlotUIData:GetPolarity(), false, SlotUIData)
   local ModPendingList = {}
@@ -883,7 +857,6 @@ function M:PickSuitableModForSlot(SlotUIData, bAllSlotPolarized)
   end
   return nil
 end
-
 function M:_FilterListOfPolarity(Polarity, bStrictMatch, SlotUIData)
   local ModPendingList = {}
   for _, ModUuid in ipairs(self.ModListForAutoEquip) do
@@ -897,7 +870,6 @@ function M:_FilterListOfPolarity(Polarity, bStrictMatch, SlotUIData)
   end
   return ModPendingList
 end
-
 function M:_PickSuitableModInPendingList(ModPendingList, SlotUIData)
   for _, Mod in ipairs(ModPendingList) do
     if Mod.ConflictUuids:Length() > 0 then
@@ -915,7 +887,6 @@ function M:_PickSuitableModInPendingList(ModPendingList, SlotUIData)
   end
   return nil
 end
-
 function M:GetPureAttrsOfTarget(WeaponOwnerChar, Target)
   Target = Target or self:GetTarget()
   local PureTargetAttrs = {}
@@ -926,7 +897,6 @@ function M:GetPureAttrsOfTarget(WeaponOwnerChar, Target)
   PureTargetAttrs = Target:DumpBattleAttr(self:GetAvatar(), ExtraInfo).TotalValues or {}
   return PureTargetAttrs
 end
-
 function M:GenerateAttrList(PreAttrs, NowAttrs, Index2AttrKey, bPinned, PureTargetAttrs, bModAdditionOnly, ExtraVolume)
   local Target = self:GetTarget()
   local DisplayAttrs = {}
@@ -1020,7 +990,6 @@ function M:GenerateAttrList(PreAttrs, NowAttrs, Index2AttrKey, bPinned, PureTarg
   end)
   return bDiff, PreAttrs, NowAttrs
 end
-
 function M:IsRecommendAttr(AttrKey)
   local Target = self:GetTarget()
   for _, Key in ipairs(Target:BattleData().RecommendAttr or {}) do
@@ -1030,10 +999,21 @@ function M:IsRecommendAttr(AttrKey)
   end
   return false
 end
-
+function M:GenerateEnhanceData()
+  self.InvalidMods = {}
+end
+function M:CreateEnhanceInvalidMod(DummyUuid, ModId)
+  local InvalidMod = Mod(DummyUuid, ModId, 0)
+  InvalidMod.Count = 0
+  self.InvalidMods[DummyUuid] = InvalidMod
+  return InvalidMod
+end
+function M:DisposeEnhanceData()
+  self.InvalidMods = nil
+end
 function M:_GenerateModUserOverCostMsg(TargetMod, PreviewLevel, User, Res)
   if not User then
-    DebugPrint(ErrorTag, LXYTag, "Mod\231\154\132User\228\184\141\229\186\148\232\175\165\228\184\186\231\169\186\239\188\140Mod\231\154\132\229\143\141\229\144\145\229\188\149\231\148\168Uuid\229\136\151\232\161\168\230\156\137\233\151\174\233\162\152\239\188\140 Mod\239\188\154", TargetMod:GetName())
+    DebugPrint(ErrorTag, LXYTag, "Mod的User不应该为空，Mod的反向引用Uuid列表有问题， Mod：", TargetMod:GetName())
     return
   end
   local ExtraVolume = TargetMod:CalcExtralCharVolume(TargetMod:ExpectCost(PreviewLevel))
@@ -1076,7 +1056,6 @@ function M:_GenerateModUserOverCostMsg(TargetMod, PreviewLevel, User, Res)
     end
   end
 end
-
 function M:GetOtherModUserOverCostMsg(TargetMod, PreviewLevel)
   local Res = {}
   local VisitedUuid = {}
@@ -1100,7 +1079,6 @@ function M:GetOtherModUserOverCostMsg(TargetMod, PreviewLevel)
   end
   return Res
 end
-
 function M:UpdateModAttrListForIntensify(Attrs, ComparedAttrs, TargetMod, InPreviewLevel)
   local ModConf = TargetMod:Data()
   for _, Attr in pairs(ModConf.AddAttrs or {}) do
@@ -1120,7 +1098,6 @@ function M:UpdateModAttrListForIntensify(Attrs, ComparedAttrs, TargetMod, InPrev
     end
   end
 end
-
 function M:UpdateModCostPreviewForIntensify(Attrs, ComparedAttrs, TargetMod, InPreviewLevel)
   local bTakeOff = false
   local OldCost = TargetMod.Cost
@@ -1175,7 +1152,6 @@ function M:UpdateModCostPreviewForIntensify(Attrs, ComparedAttrs, TargetMod, InP
   end
   return bTakeOff
 end
-
 function M:SetGamePadSelectedStuff(ModUuid, SlotId)
   if not ModUuid and not SlotId then
     self.GamePadSelectedStuff = nil
@@ -1185,20 +1161,34 @@ function M:SetGamePadSelectedStuff(ModUuid, SlotId)
   self.GamePadSelectedStuff.ModUuid = ModUuid
   self.GamePadSelectedStuff.SlotId = SlotId
 end
-
 function M:GetGamePadSelectedStuff()
   return self.GamePadSelectedStuff
 end
-
 function M:FetchRunningGuide()
   self.bRunningGuide = CommonUtils:IfExistSystemGuideUI()
 end
-
 function M:GetOnceRunningGuide()
   local bRunning = self.bRunningGuide
   self.bRunningGuide = false
   return bRunning
 end
-
+function M:GetConvertMods(CurConvertPoolId)
+  local ShowMods = {}
+  local Mods = self:GetAvatar().Mods
+  for _, Mod in pairs(Mods) do
+    local ConvertPoolId, ConvertWeight = Mod:GetConvert()
+    if ConvertPoolId and (ConvertPoolId == CurConvertPoolId or nil == CurConvertPoolId) then
+      table.insert(ShowMods, Mod)
+    end
+  end
+  return ShowMods
+end
+function M:GetModFullNameByConf(ModId)
+  local ModInfo = DataMgr.Mod[ModId]
+  if CommonConst.SystemLanguage == CommonConst.SystemLanguages.FR then
+    return string.format("%s %s", GText(ModInfo.Name), GText(ModInfo.TypeName))
+  end
+  return GText(ModInfo.TypeName) .. GText(ModInfo.Name)
+end
 AssembleComponents(M)
 return M

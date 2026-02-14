@@ -1,9 +1,9 @@
+local BloodBarUtils = require("BluePrints.UI.BloodBar.BloodBarUtils")
 require("UnLua")
 local TeamModel = TeamController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Img_Down:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Img_Up:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -29,11 +29,9 @@ function M:Construct()
     end
   end)
 end
-
 function M:SetOwner(Owner)
   self.Owner = Owner
 end
-
 function M:AddEid(PlayerEid, PhantomEid, PosIndex)
   if not self.Phantoms then
     self.Phantoms = {}
@@ -48,11 +46,11 @@ function M:AddEid(PlayerEid, PhantomEid, PosIndex)
     end
     self.Eid = PlayerEid
     if not self.PlayerState then
-      self.PlayerState = GameState(self).PlayerArray:GetRef(MemberData.Index)
+      self.PlayerState = GameState(self):GetPlayerState(PlayerEid)
       self.PlayerState.OnRepbIsEMInactiveDelegate:Add(self, self.PlayOfflineAnim)
       self.PlayerState.OnReceiveActorStateChangeDelegate:Add(self, self.SetBloodBarState)
     end
-    DebugPrint(LXYTag, "\228\188\160\231\187\153\232\161\128\230\157\161\231\154\132\231\142\169\229\174\182\229\175\185\232\177\161\229\144\141\231\167\176" .. Player.PlayerState.PlayerName)
+    DebugPrint(LXYTag, "传给血条的玩家对象名称" .. Player.PlayerState.PlayerName)
     if not IsValid(self.PlayerBar.Owner) then
       self.PlayerBar:InitConfig(Player)
     end
@@ -83,7 +81,6 @@ function M:AddEid(PlayerEid, PhantomEid, PosIndex)
     self:PlayAnimation(self.Shadow_Add)
   end
 end
-
 function M:PlayOfflineAnim(bToast)
   if nil == bToast then
     bToast = true
@@ -111,19 +108,28 @@ function M:PlayOfflineAnim(bToast)
     end
   end
 end
-
 function M:RemoveEid(PlayerEid, PhantomEid)
   local bClose = false
   if PlayerEid == PhantomEid then
     self:Close()
     bClose = true
-  elseif self.Phantoms[PhantomEid] then
+  elseif self.Phantoms[PhantomEid] and self.Teammate.Eid == PhantomEid then
     self.VB_Teammate_Phantom:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Img_Down:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Img_Up:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Teammate.Eid = 0
     self.Teammate.Owner = nil
     self.Phantoms[PhantomEid] = nil
+    for Eid, _ in pairs(self.Phantoms) do
+      local PhantomChar = Battle(self):GetEntity(Eid)
+      if IsValid(PhantomChar) then
+        self:AddEid(PlayerEid, Eid, nil)
+        break
+      end
+      self:AddEidWithOutCharacter(PlayerEid, Eid, nil)
+      break
+    end
+    return bClose
   end
   if self.PlayerState then
     self.PlayerState.OnRepbIsEMInactiveDelegate:Remove(self, self.PlayOfflineAnim)
@@ -132,7 +138,6 @@ function M:RemoveEid(PlayerEid, PhantomEid)
   self.PlayerState = nil
   return bClose
 end
-
 function M:AddEidWithOutCharacter(PlayerEid, PhantomEid, PosIndex)
   if not self.Phantoms then
     self.Phantoms = {}
@@ -142,7 +147,7 @@ function M:AddEidWithOutCharacter(PlayerEid, PhantomEid, PosIndex)
     self.Tag_Player:Init(false, MemberData.Index, MemberData.Uid)
     self.Eid = PlayerEid
     if not self.PlayerState then
-      self.PlayerState = GameState(self).PlayerArray:GetRef(MemberData.Index)
+      self.PlayerState = GameState(self):GetPlayerState(PlayerEid)
       self.PlayerState.OnRepbIsEMInactiveDelegate:Add(self, self.PlayOfflineAnim)
       self.PlayerState.OnReceiveActorStateChangeDelegate:Add(self, self.SetBloodBarState)
     end
@@ -161,6 +166,7 @@ function M:AddEidWithOutCharacter(PlayerEid, PhantomEid, PosIndex)
     local PhantomState = GameState(self):GetPhantomState(PhantomEid)
     if 0 == self.Teammate.Eid then
       self.Teammate:InitWithOutCharacter(PhantomState)
+      self.Teammate:AddBloodState(PhantomEid, BloodBarUtils.AllBloodState.OverReach)
     end
     if PhantomState.TeamRecoveryState ~= ETeamRecoveryState.Alive then
       self.Teammate:OnDead()
@@ -170,7 +176,6 @@ function M:AddEidWithOutCharacter(PlayerEid, PhantomEid, PosIndex)
     self:PlayAnimation(self.Shadow_Add)
   end
 end
-
 function M:SetBloodBarState(Eid, State, bIsWithPhantom, bIsRemove)
   if bIsRemove then
     if bIsWithPhantom then
@@ -190,7 +195,6 @@ function M:SetBloodBarState(Eid, State, bIsWithPhantom, bIsRemove)
     self.PlayerBar:AddBloodState(Eid, State)
   end
 end
-
 function M:Close()
   self.PlayerBar:ClearBloodAllState(self.Eid)
   for Eid, _ in pairs(self.Phantoms) do
@@ -198,7 +202,6 @@ function M:Close()
   end
   self:RealClose()
 end
-
 function M:RealClose()
   self:RemoveFromParent()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -210,10 +213,8 @@ function M:RealClose()
   self.PlayerState = nil
   self.Phantoms = {}
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnTeamRecoveryStateChange, self)
   EventManager:RemoveEvent(EventID.CharRecover, self)
 end
-
 return M

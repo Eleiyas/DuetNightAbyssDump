@@ -2,7 +2,6 @@ local ShowGuideTextNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questlin
 ShowGuideTextNode._components = {
   "StoryCreator.StoryLogic.StorylineNodes.QuestNodes.GuideNodeComp"
 }
-
 function ShowGuideTextNode:Init()
   self.MessageId = 0
   self.IsTimePause = true
@@ -12,8 +11,11 @@ function ShowGuideTextNode:Init()
   self.IsForbidInAnim = false
   self.IsForbidOutAnim = false
 end
-
 function ShowGuideTextNode:Start(Context)
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+  if Player.IsImmersionModel then
+    Player:ImmersionModel()
+  end
   if self.Context.IsFail and UE4.UKismetSystemLibrary.GetFrameCount() == self.Context.FrameCount then
     self:FinishAction()
     return
@@ -21,7 +23,6 @@ function ShowGuideTextNode:Start(Context)
   self.Context = Context
   self:ShowMessage(self.Context)
 end
-
 function ShowGuideTextNode:ShowMessage(Context)
   DebugPrint("------------ ShowGuideTextNode ------------------")
   local GameInstance = GWorld.GameInstance
@@ -30,16 +31,13 @@ function ShowGuideTextNode:ShowMessage(Context)
     self:FinishAction()
   end)
 end
-
 function ShowGuideTextNode:FinishAction()
   self:Finish()
 end
-
 function ShowGuideTextNode:Clear()
   if self.UIStateAsyncActionBase and self.UIStateAsyncActionBase.OnGuideEnd:IsBound() then
     self.UIStateAsyncActionBase.OnGuideEnd:Clear()
   end
 end
-
 AssembleComponents(ShowGuideTextNode)
 return ShowGuideTextNode

@@ -1,12 +1,10 @@
 local ActivePlayerSkillsNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function ActivePlayerSkillsNode:Init()
   self.PlayerId = 0
   self.bActiveEnable = false
   self.ActiveType = "Lock"
   self.SkillNameList = {}
 end
-
 function ActivePlayerSkillsNode:Execute()
   DebugPrint("------------ ActivePlayerSkillsNode ------------------")
   local GameInstance = GWorld.GameInstance
@@ -44,7 +42,6 @@ function ActivePlayerSkillsNode:Execute()
     end
   end
 end
-
 function ActivePlayerSkillsNode:OnQuestlineFail()
   local GameInstance = GWorld.GameInstance
   local Controller = UE4.UGameplayStatics.GetPlayerController(GameInstance, self.PlayerID)
@@ -63,5 +60,4 @@ function ActivePlayerSkillsNode:OnQuestlineFail()
     end
   end
 end
-
 return ActivePlayerSkillsNode

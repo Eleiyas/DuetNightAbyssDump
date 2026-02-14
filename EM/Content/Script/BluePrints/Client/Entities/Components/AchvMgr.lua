@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:OnProgressChange(OldIndex, NewIndex, AchvId, CurrentCount)
   self.logger.debug("ZJT_ OldIndex NewIndex AchvId CurrentCount", OldIndex, NewIndex, AchvId, CurrentCount)
   if not (OldIndex and NewIndex and CurrentCount) or 0 == CurrentCount or OldIndex == NewIndex then
@@ -35,7 +34,6 @@ function Component:OnProgressChange(OldIndex, NewIndex, AchvId, CurrentCount)
     end
   end
 end
-
 function Component:_OnPropChangeAchvs(Keys)
   self:HandleIOSAchievement(Keys)
   if Keys[2] and "FinishedTargets" == Keys[2] then
@@ -45,7 +43,6 @@ function Component:_OnPropChangeAchvs(Keys)
     end
   end
 end
-
 function Component:HandleIOSAchievement(Keys)
   local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(GWorld.GameInstance)
   if "IOS" ~= PlatformName then
@@ -70,16 +67,13 @@ function Component:HandleIOSAchievement(Keys)
   local Proxy = UE4.UAchievementWriteCallbackProxy.WriteAchievementProgress(GWorld.GameInstance, PlayerController, AchvID, Progress)
   Proxy:Activate()
 end
-
 function Component:OnAchvFinish(AchvId)
   self.logger.debug("OnAchvFinish", AchvId)
   EventManager:FireEvent(EventID.OnAchvFinished, AchvId)
 end
-
 function Component:GetAchvReward(AchvId, cb)
   local function ServerCallClientBack(Ret, Rewards)
     self.logger.debug("ZJT_ ServerCallClient GetAchvReward ", Ret, Rewards)
-    
     EventManager:FireEvent(EventID.OnGetAchvReward, AchvId, Ret)
     if ErrorCode:Check(Ret) then
       local Achv = self.Achvs:GetAchv(AchvId)
@@ -91,14 +85,11 @@ function Component:GetAchvReward(AchvId, cb)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(rewardData.Type[1], rewardData.Id[1], rewardData.Count[1][1], Rewards, nil, cb, nil, nil)
     end
   end
-  
   self:CallServer("GetAchvReward", ServerCallClientBack, AchvId)
 end
-
 function Component:GetAllAchvRewardByType(AchvTypeId, AchvId, cb)
   local function ServerCallClientBack(Ret, Rewards)
     self.logger.debug("JZN_ ServerCallClient GetAllAchvRewardByType ", Ret, Rewards)
-    
     EventManager:FireEvent(EventID.OnGetAchvReward, nil, Ret)
     if ErrorCode:Check(Ret) then
       ReddotManager.ClearLeafNodeCount("AchvType" .. AchvTypeId)
@@ -108,14 +99,11 @@ function Component:GetAllAchvRewardByType(AchvTypeId, AchvId, cb)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, nil, cb, nil, nil)
     end
   end
-  
   self:CallServer("GetAllAchvRewardByType", ServerCallClientBack, AchvTypeId)
 end
-
 function Component:EnterWorld()
   self:RefreshAchieveReddot()
 end
-
 function Component:RefreshAchieveReddot()
   if not ReddotManager.GetTreeNode("AchieveMain") then
     ReddotManager.AddNodeEx("AchieveMain")
@@ -131,7 +119,6 @@ function Component:RefreshAchieveReddot()
     self:TryAddAchieveReddot(Type, Count)
   end
 end
-
 function Component:TryAddAchieveReddot(AchievementType, Count)
   local TypeNodeName = "AchvType" .. AchievementType
   local Node = ReddotManager.GetTreeNode(TypeNodeName)
@@ -142,5 +129,4 @@ function Component:TryAddAchieveReddot(AchievementType, Count)
   end
   ReddotManager.IncreaseLeafNodeCount(TypeNodeName, Count)
 end
-
 return Component

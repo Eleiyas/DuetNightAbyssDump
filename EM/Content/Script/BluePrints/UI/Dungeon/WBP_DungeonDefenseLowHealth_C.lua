@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_DungeonDefenseLowHeal_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_DungeonDefenseLowHeal_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self:CheckDungeonMode()
   self:SetHealthText()
@@ -13,7 +12,6 @@ function WBP_DungeonDefenseLowHeal_C:InitUIInfo(Name, IsInUIMode, EventList, ...
   self.PlayBreakAnimInterval = self.PlayBreakAnimInterval or 2.0
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function WBP_DungeonDefenseLowHeal_C:OnLoaded(...)
   self.Root:SetVisibility(ESlateVisibility.Collapsed)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -29,7 +27,6 @@ function WBP_DungeonDefenseLowHeal_C:OnLoaded(...)
     end
   end
 end
-
 function WBP_DungeonDefenseLowHeal_C:SetHealthText()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local Keys = GameState.DefBaseMap:Keys()
@@ -45,7 +42,6 @@ function WBP_DungeonDefenseLowHeal_C:SetHealthText()
     self.Text_Health:SetText(tostring(math.ceil(NewHpPercent * 100)))
   end
 end
-
 function WBP_DungeonDefenseLowHeal_C:OnDefenceCoreDead(Callback)
   if self.bIsDefenceCoreDead then
     return
@@ -63,12 +59,10 @@ function WBP_DungeonDefenseLowHeal_C:OnDefenceCoreDead(Callback)
     end
   end)
 end
-
 function WBP_DungeonDefenseLowHeal_C:OnAnimationFinished(Animation)
   if Animation == self.Auto_Out then
   end
 end
-
 function WBP_DungeonDefenseLowHeal_C:CheckDungeonMode()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -78,5 +72,4 @@ function WBP_DungeonDefenseLowHeal_C:CheckDungeonMode()
     self.IsSynthesisMode = true
   end
 end
-
 return WBP_DungeonDefenseLowHeal_C

@@ -3,7 +3,6 @@ local PersonalTitleUtils = require("Utils.PersonalTitleUtils")
 local M = Class({
   "Blueprints.UI.BP_UIState_C"
 })
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self, Initializer)
   self.AttachedWidgetComponent = nil
@@ -11,7 +10,6 @@ function M:Initialize(Initializer)
   self.bHasConstruct = false
   self.ExternWidget = {}
 end
-
 function M:Construct(...)
   M.Super.Construct(self, ...)
   self.bHasConstruct = true
@@ -20,7 +18,6 @@ function M:Construct(...)
     self.EnableParamsPreConstruct = nil
   end
 end
-
 function M:InitSubWidgets()
   self.NPC_Bubble_Long:Init(self)
   self.NPC_Bubble_Short:Init(self)
@@ -44,7 +41,6 @@ function M:InitSubWidgets()
   self.InTimer = nil
   self.OutTimer = nil
 end
-
 function M:TryInsertNewWidget(WidgetName)
   if self.ExternWidget[WidgetName] then
     return self.ExternWidget[WidgetName]
@@ -56,6 +52,10 @@ function M:TryInsertNewWidget(WidgetName)
   local Item = UIManager(self):CreateWidget(WidgetClass)
   self.ExternWidget[WidgetName] = Item
   if "Bubble_Reward" == WidgetName then
+    self.Pos_Bubble:ClearChildren()
+    self.Pos_Bubble:AddChildToOverlay(Item)
+  elseif "Bubble_Emoji" == WidgetName then
+    self.Pos_Bubble:ClearChildren()
     self.Pos_Bubble:AddChildToOverlay(Item)
   else
     self.VB:AddChildToVerticalBox(Item)
@@ -63,21 +63,18 @@ function M:TryInsertNewWidget(WidgetName)
   Item:Init(self)
   return self.ExternWidget[WidgetName]
 end
-
 function M:EnableWidget(WidgetName, ...)
   if not self:CheckCanWork() then
     return
   end
   self:TryEnableWidget(WidgetName, true, ...)
 end
-
 function M:DisableWidget(WidgetName, ...)
   if not self:CheckCanWork() then
     return
   end
   self:TryEnableWidget(WidgetName, false, ...)
 end
-
 function M:TryEnableWidget(WidgetName, bEnable, ...)
   if not self:CheckCanWork() then
     return
@@ -98,7 +95,6 @@ function M:TryEnableWidget(WidgetName, bEnable, ...)
   end
   self:EnableWidgetInternal(WidgetNameOrign, bEnable, ...)
 end
-
 function M:ConstructRefreshEnable(EnableParams)
   local EnabledWidgets = self.EnabledWidgets
   for WidgetName, Param in pairs(EnableParams) do
@@ -109,7 +105,6 @@ function M:ConstructRefreshEnable(EnableParams)
     self:EnableWidgetInternal(WidgetNameOrign, EnabledWidgets[WidgetName], table.unpack(Param))
   end
 end
-
 function M:EnableWidgetInternal(WidgetName, bEnable, ...)
   if bEnable then
     self.ActiveCount = self.ActiveCount + 1
@@ -117,10 +112,11 @@ function M:EnableWidgetInternal(WidgetName, bEnable, ...)
     self.ActiveCount = self.ActiveCount - 1
   end
   local SpecialWidget = self:TryGetSpecailWidget(WidgetName)
+  local Widget
   if IsValid(SpecialWidget) then
     self:EnableSpecialWidget(WidgetName, SpecialWidget, bEnable, ...)
   else
-    local Widget = self:TryGetWidget(WidgetName)
+    Widget = self:TryGetWidget(WidgetName)
     if IsValid(Widget) then
       if bEnable then
         Widget:OnEnabled(...)
@@ -131,13 +127,19 @@ function M:EnableWidgetInternal(WidgetName, bEnable, ...)
   end
   if self.AttachedWidgetComponent then
     self.AttachedWidgetComponent:OnChangeActiveWidgets(self.ActiveCount)
+    local bEnableScale, MinScale, MaxScale, MinScaleDis, MaxScaleDis = self:GetWidgetScaleParams(WidgetName)
+    if bEnableScale then
+      if bEnable then
+        self.AttachedWidgetComponent:AddDistanceTestInfo(Widget or SpecialWidget, MinScale, MaxScale, MinScaleDis, MaxScaleDis)
+      else
+        self.AttachedWidgetComponent:RemoveDistanceTestInfo(Widget or SpecialWidget)
+      end
+    end
   end
 end
-
 function M:CheckCanWork()
   return self.bHasInitialized
 end
-
 function M:TryGetWidget(WidgetName)
   if "Name" == WidgetName then
     return self.NPC_Name_PC
@@ -157,7 +159,6 @@ function M:TryGetWidget(WidgetName)
     return self:TryInsertNewWidget(WidgetName)
   end
 end
-
 function M:PlayHideAnimation(bHidden)
   if not self.AttachedWidgetComponent then
     return
@@ -188,7 +189,6 @@ function M:PlayHideAnimation(bHidden)
     end
   end
 end
-
 function M:SelectBubbleWidget()
   local HeadUISubsystem = UNpcHeadUISubsystem.GetHeadUISubsystem(self)
   local Owner = self.AttachedWidgetComponent:GetOwner()
@@ -199,7 +199,6 @@ function M:SelectBubbleWidget()
   local ActiveBubbleIdx = bUseShortBubble and 1 or 0
   return self:SetBubbleWidget(ActiveBubbleIdx)
 end
-
 function M:SetBubbleWidget(Index)
   local OldIndex = self.NPC_Bubble_Switcher:GetActiveWidgetIndex()
   if OldIndex ~= Index then
@@ -211,20 +210,19 @@ function M:SetBubbleWidget(Index)
   self.NPC_Bubble_Switcher:SetActiveWidgetIndex(Index)
   return self.NPC_Bubble_Switcher:GetActiveWidget()
 end
-
 function M:SetAttachedWidget(AttachedWidgetComponent)
   self.AttachedWidgetComponent = AttachedWidgetComponent
 end
-
 function M:UnsetAttachedWidget()
   self.AttachedWidgetComponent = nil
+  if self.Title then
+    self.Title:ClearChildren()
+  end
   self.bHasConstruct = false
 end
-
 function M:SetWidgetInitBubble()
   self.Com_GuidePoint:InitBubble(self)
 end
-
 function M:EnableSpecialWidget(WidgetName, Widget, bEnable, ...)
   if "Title" == WidgetName then
     if bEnable then
@@ -234,27 +232,22 @@ function M:EnableSpecialWidget(WidgetName, Widget, bEnable, ...)
     end
   end
 end
-
 function M:EnableTitleWidget(Widget, TitlePrefix, TitleSuffix, TitleFrameId)
   UIUtils.SetTitle(self.Title, {
     TitleBefore = TitlePrefix,
     TitleAfter = TitleSuffix,
     TitleFrame = TitleFrameId
-  })
+  }, true)
 end
-
 function M:DisableTitleWidget(Widget)
   self.Title:SetVisibility(UE.ESlateVisibility.Collapsed)
 end
-
 function M:InitSpecialWidget()
   self.Title:SetVisibility(UE.ESlateVisibility.Collapsed)
 end
-
 function M:TryGetSpecailWidget(WidgetName)
   if "Title" == WidgetName then
     return self.Title
   end
 end
-
 return M

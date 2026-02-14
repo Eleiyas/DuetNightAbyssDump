@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:ShowTempleInfo(TempleInfo)
   self.TempleInfo = TempleInfo
   self.Image_Complete:SetVisibility(ESlateVisibility.Collapsed)
@@ -14,7 +13,7 @@ function M:ShowTempleInfo(TempleInfo)
   self.Text_TempleConveyDesc:SetColorAndOpacity(self.TempleConveyDesc_Normal)
   print(_G.LogTag, "LXZ ShowTempleInfo", TempleInfo.PassInfo)
   if TempleInfo.PassInfo == "NoConfigReward" then
-    DebugPrint("\231\165\158\229\186\153\230\156\170\233\133\141\231\189\174\229\165\150\229\138\177")
+    DebugPrint("神庙未配置奖励")
   elseif TempleInfo.PassInfo == "Lock" or TempleInfo.PassInfo == "NoCompleteCondition" then
     self.WS_Item:SetActiveWidgetIndex(1)
     self.WS_Sign:SetActiveWidgetIndex(0)
@@ -63,7 +62,6 @@ function M:ShowTempleInfo(TempleInfo)
     end
   end
 end
-
 function M:SetGreyImage(TempleInfo)
   if TempleInfo.IsStarLevel then
     self.WS_Star:SetActiveWidgetIndex(2)
@@ -76,7 +74,6 @@ function M:SetGreyImage(TempleInfo)
   end
   self.Image_NoComplete:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnClickTempleItem()
   if not self.TempleInfo then
     return
@@ -93,7 +90,7 @@ function M:OnClickTempleItem()
   elseif self.TempleInfo.PassInfo == "NoCompleteCondition" and self.TempleInfo.ConditionId > 0 then
     UIManager:ShowUITip(UIConst.Tip_CommonTop, string.format(GText("UI_Temple_Lockedcondition"), GText("Name_" .. self.TempleInfo.ConditionId)))
   elseif Avatar:IsInTeam() and DataMgr.Temple[self.TempleInfo.TempleId] ~= nil then
-    UIManager:ShowUITip(UIConst.Tip_CommonTop, GText("UI_Temple_FAIL_INTEAM"))
+    UIManager:ShowUITip(UIConst.Tip_CommonTop, GText("UI_TEMPLE_FAIL_INTEAM"))
   elseif self.TempleInfo.PassInfo == "InSpecialQuest" then
     UIManager:ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disabled_Des_Temple"))
   else
@@ -105,7 +102,6 @@ function M:OnClickTempleItem()
     UIManager:ShowCommonPopupUI(PopupId, Params, self)
   end
 end
-
 function M:EnterTemple()
   if self.TempleInfo.CloseFunc then
     self.TempleInfo.CloseFunc()
@@ -126,7 +122,6 @@ function M:EnterTemple()
     Avatar:EnterDungeon(self.TempleInfo.TempleId)
   end
 end
-
 function M.HandleEnterDungeonRetCode(RetCode, ...)
   ErrorCode:Check(RetCode)
   if RetCode == ErrorCode.RET_SUCCESS then
@@ -137,5 +132,4 @@ function M.HandleEnterDungeonRetCode(RetCode, ...)
     return false
   end
 end
-
 return M

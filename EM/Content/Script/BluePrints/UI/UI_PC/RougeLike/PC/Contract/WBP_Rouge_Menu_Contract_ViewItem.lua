@@ -1,7 +1,6 @@
 local TimeUtils = require("Utils.TimeUtils")
 local EMCache = require("EMCache.EMCache")
 local WBP_Rouge_Menu_Contract_ViewItem = Class("BluePrints.UI.BP_UIState_C", "BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_Menu_Contract_ViewItem:OnListItemObjectSet(ListItemObject)
   self.Item = ListItemObject
   self.Owner = ListItemObject.Owner
@@ -20,7 +19,6 @@ function WBP_Rouge_Menu_Contract_ViewItem:OnListItemObjectSet(ListItemObject)
     end
   end
 end
-
 function WBP_Rouge_Menu_Contract_ViewItem:OnAnimationFinished(InAnimation)
   if InAnimation == self.In then
     self:AddTimer(0.1, function()
@@ -28,10 +26,8 @@ function WBP_Rouge_Menu_Contract_ViewItem:OnAnimationFinished(InAnimation)
     end)
   end
 end
-
 function WBP_Rouge_Menu_Contract_ViewItem:SetVisibility(InVisibility)
   DebugPrint("Tianyi@ InVisibility = ", InVisibility)
   self.Overridden.SetVisibility(self, InVisibility)
 end
-
 return WBP_Rouge_Menu_Contract_ViewItem

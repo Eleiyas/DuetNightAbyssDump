@@ -1,34 +1,35 @@
 local Component = {}
-
+function Component:EnterWorld()
+  UIUtils.RefreshFeinaRewardReddot()
+end
 function Component:GetFeiNaProgressRewerd(InCallBack, FeiNaId, Index)
   local function Callback(Ret, Rewards)
     self.logger.debug("ZJT_ GetFeiNaProgressRewerd ", Ret, Rewards)
-    
+    if ErrorCode:Check(Ret) == false then
+      return
+    end
     if InCallBack then
       InCallBack(Ret, Rewards)
     end
   end
-  
   self:CallServer("GetFeiNaProgressRewerd", Callback, FeiNaId, Index)
 end
-
 function Component:GetAllFeiNaProgressRewerd(FeiNaId, InCallBack)
   local function Callback(Ret, Rewards)
     self.logger.debug("ZJT_ GetAllFeiNaProgressRewerd ", Ret, Rewards)
-    
+    if ErrorCode:Check(Ret) == false then
+      return
+    end
     if InCallBack then
       InCallBack(Ret, Rewards)
     end
   end
-  
   self:CallServer("GetAllFeiNaProgressRewerd", Callback, FeiNaId)
 end
-
 function Component:GetFeinaRewardInfo(DungeonId)
   local RewardsGot = self.FeiNaDungeonData[DungeonId] and self.FeiNaDungeonData[DungeonId].RewardsGot
   return RewardsGot
 end
-
 function Component:IsPassDungeon(DungeonId)
   if not DungeonId then
     return false
@@ -36,7 +37,6 @@ function Component:IsPassDungeon(DungeonId)
   local IsPass = self.Dungeons and self.Dungeons[DungeonId] and self.Dungeons[DungeonId].IsPass or false
   return IsPass
 end
-
 function Component:_OnPropChangeFeiNaDungeonData()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -69,5 +69,4 @@ function Component:_OnPropChangeFeiNaDungeonData()
     end
   end
 end
-
 return Component

@@ -2,12 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:InitPage(EventId)
   self.EventId = EventId
   self.EventInfo = DataMgr.EventMain[self.EventId]
   if not self.EventInfo then
-    ScreenPrint("\229\136\157\229\167\139\229\140\150\229\137\141\231\189\174\228\187\187\229\138\161\231\187\132\228\187\182\232\175\187\232\161\168\229\164\177\232\180\165\239\188\129EventId:", self.EventId)
+    ScreenPrint("初始化前置任务组件读表失败！EventId:", self.EventId)
     return
   end
   self:UpdateVisibility()
@@ -44,6 +43,7 @@ function M:InitPage(EventId)
     SideQuestContent.IsShowLock = SideQuestInfo.IsShowLock
     SideQuestContent.IsForbidClick = SideQuestInfo.IsForbidClick
     SideQuestContent.IsShowFinish = SideQuestInfo.IsShowFinish
+    SideQuestContent.IsShowTip = SideQuestInfo.IsShowTip
     self.List_Task:AddItem(SideQuestContent)
     table.insert(self.TaskListContents, SideQuestContent)
   end
@@ -57,7 +57,6 @@ function M:InitPage(EventId)
     self:OnUpdateSubUIViewStyle(self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad)
   end
 end
-
 function M:UpdatePage()
   self:UpdateVisibility()
   for _, QuestContent in pairs(self.TaskListContents) do
@@ -72,11 +71,12 @@ function M:UpdatePage()
       QuestContent.DisplayText = NewQuestInfo.DisplayTextName
       QuestContent.IsShowLock = NewQuestInfo.IsShowLock
       QuestContent.IsForbidClick = NewQuestInfo.IsForbidClick
+      QuestContent.IsShowFinish = NewQuestInfo.IsShowFinish
+      QuestContent.IsShowTip = NewQuestInfo.IsShowTip
       QuestContent.SelfWidget:OnListItemObjectSet(QuestContent)
     end
   end
 end
-
 function M:UpdateVisibility()
   self.IsShow = self:IsNeedShow()
   DebugPrint("PreTaskSubWidget:UpdateVisibility IsShow", self.IsShow)
@@ -86,7 +86,6 @@ function M:UpdateVisibility()
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnSubWidgetReceivedFocus()
   if self.IsShow then
     self.List_Task:SetFocus()
@@ -94,14 +93,12 @@ function M:OnSubWidgetReceivedFocus()
   end
   return "SelectView", self.List_Task
 end
-
 function M:OnSubWidgetLostFocus()
   if self.IsShow then
     self.Key_PerTaskTitle:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
   return nil, nil
 end
-
 function M:OnUpdateSubUIViewStyle(IsUseGamePad)
   if self.IsShow then
     if IsUseGamePad then
@@ -111,7 +108,6 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad)
     end
   end
 end
-
 function M:IsNeedShow()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -119,7 +115,7 @@ function M:IsNeedShow()
   end
   local EventInfo = DataMgr.EventMain[self.EventId]
   if not EventInfo then
-    ScreenPrint("EventMain\232\161\168\228\184\173\230\137\190\228\184\141\229\136\176\230\173\162\230\181\129\230\180\187\229\138\168\231\155\184\229\133\179\228\191\161\230\129\175\239\188\129\232\175\187\229\143\150\231\154\132EventId:" .. self.EventId)
+    ScreenPrint("EventMain表中找不到止流活动相关信息！读取的EventId:" .. self.EventId)
     return false
   end
   local PrerequisiteQuestId = {}
@@ -130,22 +126,18 @@ function M:IsNeedShow()
     table.insert(PrerequisiteQuestId, QuestId)
   end
   for _, QuestId in pairs(PrerequisiteQuestId) do
-    local QuestChain = Avatar.QuestChains[QuestId]
-    if not QuestChain then
-      return true
-    end
-    if not QuestChain:IsFinish() then
+    local IsQuestFinished = Avatar:IsQuestFinished(QuestId)
+    local IsQuestAssumeFinished = Avatar:IsQuestAssumeFinished(QuestId)
+    if not IsQuestFinished and not IsQuestAssumeFinished then
       return true
     end
   end
   return false
 end
-
 function M:OnClicked_TaskBtn(JumpQuestChainId)
   DebugPrint("OnClicked_JumpQuestChainId", JumpQuestChainId)
   PageJumpUtils:JumpToTargetPageByJumpId(23, JumpQuestChainId)
 end
-
 function M:GetMainQuestInfo()
   local Res = {}
   local ConfigedMainQuestChainId = self.EventInfo.PretextTasks1
@@ -177,10 +169,9 @@ function M:GetMainQuestInfo()
   end
   local ChapterName = DataMgr.QuestChain[ConfigedMainQuestChainId].ChapterName or ""
   local QuestChainName = DataMgr.QuestChain[ConfigedMainQuestChainId].QuestChainName or ""
-  Res.DisplayTextName = GText(ChapterName) .. "\194\183" .. GText(QuestChainName)
+  Res.DisplayTextName = GText(ChapterName) .. "·" .. GText(QuestChainName)
   return Res
 end
-
 function M:GetSideQuestInfo()
   local Res = {}
   local ConfigedSideQuestChainIds = self.EventInfo.PretextTasks2
@@ -200,14 +191,14 @@ function M:GetSideQuestInfo()
   local LastQuestChainId = ConfigedSideQuestChainIds[#ConfigedSideQuestChainIds]
   local ChapterName = DataMgr.QuestChain[LastQuestChainId].ChapterName or ""
   local QuestChainName = DataMgr.QuestChain[LastQuestChainId].QuestChainName or ""
-  Res.DisplayTextName = GText(ChapterName) .. "\194\183" .. GText(QuestChainName)
+  Res.DisplayTextName = GText(ChapterName) .. "·" .. GText(QuestChainName)
   Res.IsShowLock = FirstDoingQuestChainId ~= LastQuestChainId
-  Res.IsForbidClick = 0 == FirstDoingQuestChainId
+  Res.IsForbidClick = IsAllFinished
+  Res.IsShowTip = 0 == FirstDoingQuestChainId
   Res.JumpQuestChainId = FirstDoingQuestChainId
   Res.IsShowFinish = IsAllFinished
   return Res
 end
-
 function M:GetQuestChainState(QuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -224,5 +215,4 @@ function M:GetQuestChainState(QuestChainId)
     return "Unlock"
   end
 end
-
 return M

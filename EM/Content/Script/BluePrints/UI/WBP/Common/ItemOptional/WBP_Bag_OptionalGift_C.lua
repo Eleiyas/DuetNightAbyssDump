@@ -1,7 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
 local StuffIconObject = require("BluePrints.UI.WBP.Bag.Widget.BagStuffIconObject")
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   self.OptionalItemsList = Params.OptionalItemsList
@@ -13,7 +12,7 @@ function M:InitContent(Params, PopupData, Owner)
   self.CurrentCount = 1
   self.Text_Title:SetText(GText("UI_Shop_Contain"))
   self.ShortcutBtn = {}
-  self.GamePadMode = nil
+  self.GamePadMode = "Default"
   self.OptCount = Params.OptionalItemsList[1].OptCount
   self.GamePadKeyLS = self:ShowGamepadShortcutBtn({
     KeyInfoList = {
@@ -39,7 +38,6 @@ function M:InitContent(Params, PopupData, Owner)
   self:InitUI()
   self:InitListenEvent()
 end
-
 function M:InitAllOptionalItemsInfo()
   self.List_Gift:ClearListItems()
   for Index, ItemInfo in ipairs(self.OptionalItemsList) do
@@ -72,28 +70,11 @@ function M:InitAllOptionalItemsInfo()
       }
       self:UpdateConsumeNumber()
     end
-    table.insert(self.AllItemsWidget, Item)
-  end
-  local AllCanNavigateCount = #self.AllItemsWidget
-  for Idx, TargetWidget in ipairs(self.AllItemsWidget) do
-    if TargetWidget then
-      TargetWidget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
-      TargetWidget:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
-      if 1 == Idx then
-        TargetWidget:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
-        TargetWidget:SetNavigationRuleExplicit(EUINavigation.Right, self.AllItemsWidget[Idx + 1])
-      elseif Idx == AllCanNavigateCount then
-        TargetWidget:SetNavigationRuleExplicit(EUINavigation.Left, self.AllItemsWidget[Idx - 1])
-        TargetWidget:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
-      else
-        TargetWidget:SetNavigationRuleExplicit(EUINavigation.Left, self.AllItemsWidget[Idx - 1])
-        TargetWidget:SetNavigationRuleExplicit(EUINavigation.Right, self.AllItemsWidget[Idx + 1])
-      end
-    end
   end
 end
-
 function M:InitUI()
+  self.List_Gift:SetScrollbarVisibility(UE4.ESlateVisibility.Hidden)
+  self.List_Gift:SetControlScrollbarInside(true)
   self.Num_Exchange:SetText(tostring(1))
   self.Num_Limit:SetText(tostring(self.OptCount))
   self.Text_Exchange:SetText(GText("UI_Consumable_Open_Count"))
@@ -114,57 +95,35 @@ function M:InitUI()
   }
   self.Com_Slider:Init(ConfigData)
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
   elseif CurInputDevice == ECommonInputType.Gamepad then
     self:UpdateGamePadKey("Default")
   end
 end
-
 function M:ChangeChooseClickCallback(bSelectState, Count)
-  if self.CurrentChooseWidget then
-    self.CurrentChooseWidget:SetSelected(false)
-  end
-  self.CurrentChooseInfo = ChooseInfo
-  if bSelectState then
-    self.CurrentChooseWidget = ChooseInfo.ChooseWidget
-    if type(self.ChooseCallbackFunction) == "function" then
-      self.ChooseCallbackFunction(self.FunctionCallbackObj, self.CurrentChooseInfo)
-    end
-    self.Owner:ForbidRightBtn(false)
-  else
-    self.CurrentChooseWidget = nil
-    self.Owner:ForbidRightBtn(true)
-  end
 end
-
 function M:ScrollToTargetItem(TargetItem)
   self.ScrollBox_Avatar:ScrollWidgetIntoView(TargetItem)
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.CurrentChooseWidget or self.ScrollBox_Avatar
 end
-
 function M:OnBtnYes()
   if self.Owner then
     self.Owner:OnRightBtnClicked()
   end
 end
-
 function M:HideSelf(bIsHide, IsNeedFocus)
   if self.Owner then
     if bIsHide then
@@ -181,13 +140,11 @@ function M:HideSelf(bIsHide, IsNeedFocus)
     end
   end
 end
-
 function M:CloseDialog()
   if self.Owner then
     self.Owner:Close()
   end
 end
-
 function M:GetCurrentHoverItem()
   local TargetWidget
   local AllChildren = self.WB_Avatar:GetAllChildren()
@@ -200,7 +157,6 @@ function M:GetCurrentHoverItem()
   end
   return TargetWidget
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -210,13 +166,16 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   if not IsEventHandled then
     if InKeyName == UIConst.GamePadKey.LeftThumb then
-      self.List_Gift:SetFocus()
-      self.List_Gift:NavigateToIndex(0)
-      self:UpdateGamePadKey("CheckItems")
-      IsEventHandled = true
+      if self.GamePadMode == "Default" then
+        self.List_Gift:SetFocus()
+        self:UpdateGamePadKey("CheckItems")
+        IsEventHandled = true
+      end
     elseif InKeyName == UIConst.GamePadKey.FaceButtonLeft then
       if self.CurrentChooseInfo ~= nil then
-        self:OnBtnYes()
+        if self.Owner then
+          self.Owner:OnRightBtnClicked()
+        end
         IsEventHandled = true
       end
     elseif InKeyName == UIConst.GamePadKey.FaceButtonRight and self.GamePadMode == "CheckItems" then
@@ -227,7 +186,6 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnContentKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -241,32 +199,26 @@ function M:OnContentKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = self.Com_Slider:Handle_KeyDownEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:OnGamePadButtonUp(InKeyName)
   local IsEventHandled = self.Com_Slider:Handle_KeyUpEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:MinusBtnCallback()
   self.CurrentCount = self.Com_Slider.CurrentCount
   self:UpdateConsumeNumber()
 end
-
 function M:AddBtnCallback()
   self.CurrentCount = self.Com_Slider.CurrentCount
   self:UpdateConsumeNumber()
 end
-
 function M:SliderChangeCallback(Value)
   self.CurrentCount = Value
   self:UpdateConsumeNumber()
 end
-
 function M:UpdateConsumeNumber()
   self.Num_Exchange:SetText(tostring(self.CurrentCount))
   self.CurrentChooseInfo.ConsumeCount = self.CurrentCount
@@ -274,7 +226,6 @@ function M:UpdateConsumeNumber()
     self.ChooseCallbackFunction(self.FunctionCallbackObj, self.CurrentChooseInfo)
   end
 end
-
 function M:UpdateGamePadKey(Mode)
   if "CheckItems" == Mode then
     self:HideGamepadShortcut(self.GamePadKeyLS)
@@ -298,7 +249,6 @@ function M:UpdateGamePadKey(Mode)
     self.GamePadMode = "OpenTips"
   end
 end
-
 function M:OnMenuOpenChangedEvents(bIsOpen)
   if bIsOpen then
     self:UpdateGamePadKey("OpenTips")
@@ -306,5 +256,4 @@ function M:OnMenuOpenChangedEvents(bIsOpen)
     self:UpdateGamePadKey("CheckItems")
   end
 end
-
 return M

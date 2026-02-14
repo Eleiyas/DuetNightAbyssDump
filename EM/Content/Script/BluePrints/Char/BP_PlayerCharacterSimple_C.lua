@@ -11,11 +11,9 @@ BP_PlayerCharacterSimple_C._components = {
   "BluePrints.Char.CharacterComponent.TeamRecoveryComponent"
 }
 BP_PlayerCharacterSimple_C.IsSimplePlayer = true
-
 function BP_PlayerCharacterSimple_C:Initialize(Initializer)
   self:PlayerCharacterInitialize()
 end
-
 function BP_PlayerCharacterSimple_C:ReceiveBeginPlay()
   if self.IsHide == true then
     self:Deactivate()
@@ -26,18 +24,14 @@ function BP_PlayerCharacterSimple_C:ReceiveBeginPlay()
   BP_PlayerCharacterSimple_C.Super.ReceiveBeginPlay(self)
   self:AfterBeginPlay()
 end
-
 function BP_PlayerCharacterSimple_C:ReceiveTick(DeltaSeconds)
 end
-
 function BP_PlayerCharacterSimple_C:IsFlying()
   return false
 end
-
 function BP_PlayerCharacterSimple_C:CheckCanShoot(bLoose)
   return false
 end
-
 function BP_PlayerCharacterSimple_C:CheckJumpStage(TempJumpInfo)
   local CurrentJumpState = self.PlayerAnimInstance.CurrentJumpState
   local IsMoveOnGround = not self.IsInAir
@@ -47,18 +41,15 @@ function BP_PlayerCharacterSimple_C:CheckJumpStage(TempJumpInfo)
   end
   return nil
 end
-
 function BP_PlayerCharacterSimple_C:GetLogMask()
   return _G.LogTag
 end
-
 function BP_PlayerCharacterSimple_C:IsCharacterInAir()
   if not self.PlayerAnimInstance then
     return self.Overridden.IsCharacterInAir(self)
   end
   return self.PlayerAnimInstance.CurrentJumpState ~= Const.Climb and self.Overridden.IsCharacterInAir(self)
 end
-
 function BP_PlayerCharacterSimple_C:CheckNoRotationInputTime(DeltaSeconds)
   if self:CanResetCamera() then
     self.fNoControlRotationInputTime = self.fNoControlRotationInputTime + DeltaSeconds
@@ -70,7 +61,6 @@ function BP_PlayerCharacterSimple_C:CheckNoRotationInputTime(DeltaSeconds)
   end
   return false
 end
-
 function BP_PlayerCharacterSimple_C:HideDirectSourceBattlePet(IsHide)
   local DirectSource = self:GetDirectSource()
   local BattlePet = DirectSource and DirectSource:GetBattlePet()
@@ -79,20 +69,16 @@ function BP_PlayerCharacterSimple_C:HideDirectSourceBattlePet(IsHide)
   end
   BattlePet:HideBattlePet("Support", IsHide)
 end
-
 function BP_PlayerCharacterSimple_C:LeaveSkillTag(NewTag)
 end
-
 function BP_PlayerCharacterSimple_C:EnterSkillTag(NewTag)
 end
-
 function BP_PlayerCharacterSimple_C:SetActorShowOrHide(State)
   self:SetActorHiddenInGame(not State)
   self:SetActorTickEnabled(State)
   self.Mesh:SetComponentTickEnabled(State)
   self.Mesh.VisibilityBasedAnimTickOption = State and EVisibilityBasedAnimTickOption.AlwaysTickPose or EVisibilityBasedAnimTickOption.OnlyTickMontagesWhenNotRendered
 end
-
 function BP_PlayerCharacterSimple_C:Deactivate()
   self.IsHide = true
   local Movement = self:GetMovementComponent()
@@ -101,7 +87,6 @@ function BP_PlayerCharacterSimple_C:Deactivate()
   self:SetActorShowOrHide(false)
   self.IsInAir = false
 end
-
 function BP_PlayerCharacterSimple_C:Activate()
   self.IsHide = false
   local Movement = self:GetMovementComponent()
@@ -109,7 +94,6 @@ function BP_PlayerCharacterSimple_C:Activate()
   Movement:SetActive(true)
   self:SetActorShowOrHide(true)
 end
-
 function BP_PlayerCharacterSimple_C:CheckSkillInActive(SkillName)
   local Controller = self:GetController()
   if Controller:Cast(UE4.ASinglePlayerController) then
@@ -117,7 +101,6 @@ function BP_PlayerCharacterSimple_C:CheckSkillInActive(SkillName)
   end
   return false
 end
-
 AssembleComponents(BP_PlayerCharacterSimple_C, {
   "CheckJumpStage"
 })

@@ -2,7 +2,6 @@ require("UnLua")
 local Str = require("BluePrints.Common.DataStructure")
 local Deque = Str.Deque
 local CoroutineComponent = {}
-
 function CoroutineComponent:Initialize(Initializer)
   self.IsNeedExecByTurn = nil
   self.OtherArgs = nil
@@ -12,19 +11,16 @@ function CoroutineComponent:Initialize(Initializer)
   self.FunctionToThread = {}
   self.OnCompletedCallback = nil
 end
-
 function CoroutineComponent:InitCoroutine(IsNeedExecByTurn, ...)
   self.IsNeedExecByTurn = IsNeedExecByTurn
   self.OtherArgs = table.pack(...)
 end
-
 function CoroutineComponent:CleanCoroutine()
   self:StopCoroutine()
   self.OnCompletedCallback = nil
   self.CoroutineParamsTable = {}
   self.FunctionToThread = {}
 end
-
 function CoroutineComponent:AddCoroutineTask(FunctionObj, ...)
   local FunctionThread = coroutine.create(FunctionObj, ...)
   if self.IsNeedExecByTurn then
@@ -37,14 +33,12 @@ function CoroutineComponent:AddCoroutineTask(FunctionObj, ...)
     ...
   }
 end
-
 function CoroutineComponent:RemoveCoroutineTask(FunctionObj)
   local ToRemoveTask = self.FunctionToThread[FunctionObj]
   if nil ~= ToRemoveTask and coroutine.status(ToRemoveTask) ~= "dead" then
     coroutine.close(ToRemoveTask)
   end
 end
-
 function CoroutineComponent:AddCompletedCallback(CallbackFunction, FunctionObj, ...)
   self.OnCompletedCallback = {
     Func = CallbackFunction,
@@ -52,7 +46,6 @@ function CoroutineComponent:AddCompletedCallback(CallbackFunction, FunctionObj, 
     Param = table.pack(...)
   }
 end
-
 function CoroutineComponent:StartCoroutine()
   if self.IsNeedExecByTurn then
     if self.CoroutineTaskQueue:Size() <= 0 then
@@ -99,7 +92,6 @@ function CoroutineComponent:StartCoroutine()
     return false
   end
 end
-
 function CoroutineComponent:StopCoroutine()
   if self.IsNeedExecByTurn then
     while self.CoroutineTaskQueue:Size() > 0 do
@@ -117,5 +109,4 @@ function CoroutineComponent:StopCoroutine()
     self.CoroutineTaskTable = {}
   end
 end
-
 return CoroutineComponent

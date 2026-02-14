@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:InitBtnInfo(State, Label, Callback, bIsDiscount, OriginPrice, KeyShortPath, bLongPress)
   DebugPrint("gmy@WBP_BattlePass_BtnUnlock_C M:InitBtnInfo", State, Label, Callback, bIsDiscount, OriginPrice, os.time())
   self.KeyShortPath = KeyShortPath
@@ -13,16 +12,18 @@ function M:InitBtnInfo(State, Label, Callback, bIsDiscount, OriginPrice, KeyShor
   self.Button_Area.OnReleased:Clear()
   self.Button_Area.OnHovered:Clear()
   self.Button_Area.OnUnhovered:Clear()
-  self.Button_Area.OnClicked:Add(self, Callback)
-  self.Button_Area.OnHovered:Add(self, function()
-    self:PlayAnimation(self.Hover)
-  end)
-  self.Button_Area.OnUnhovered:Add(self, function()
-    self:PlayAnimation(self.UnHover)
-  end)
-  self.Button_Area.OnPressed:Add(self, function()
-    self:PlayAnimation(self.Press)
-  end)
+  if "Forbidden" ~= State and "UnlockForbidden" ~= State then
+    self.Button_Area.OnClicked:Add(self, Callback)
+    self.Button_Area.OnHovered:Add(self, function()
+      self:PlayAnimation(self.Hover)
+    end)
+    self.Button_Area.OnUnhovered:Add(self, function()
+      self:PlayAnimation(self.UnHover)
+    end)
+    self.Button_Area.OnPressed:Add(self, function()
+      self:PlayAnimation(self.Press)
+    end)
+  end
   if "Forbidden" == State then
     self.Button_Area:SetForbidden(true)
     self:PlayAnimation(self.Forbidden)
@@ -43,7 +44,6 @@ function M:InitBtnInfo(State, Label, Callback, bIsDiscount, OriginPrice, KeyShor
   end
   self:InitInputSettings()
 end
-
 function M:InitBtnInfo_GetAll(State, Label, Callback, KeyShortPath, bLongPress)
   self.KeyShortPath = KeyShortPath
   self.bLongPress = bLongPress
@@ -74,7 +74,6 @@ function M:InitBtnInfo_GetAll(State, Label, Callback, KeyShortPath, bLongPress)
   end
   self:InitInputSettings()
 end
-
 function M:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -89,7 +88,6 @@ function M:InitInputSettings()
   })
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_BattlePass_BtnUnlock_C M:RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -105,9 +103,7 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:Destruct()
   self.Button_Area.OnClicked:Clear()
 end
-
 return M

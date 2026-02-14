@@ -1,7 +1,6 @@
 require("UnLua")
 local StuffIconObject = require("BluePrints.UI.WBP.Bag.Widget.BagStuffIconObject")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   self.StuffInfoList = Params.StuffInfoList
@@ -10,7 +9,6 @@ function M:InitContent(Params, PopupData, Owner)
   self:InitAllWeaponInfo()
   self:InitAllRewardInfo()
 end
-
 function M:InitBaseInfo(LeftText, RightText, bIsShowEmptyText)
   self.Text_ForSale:SetText(LeftText)
   self.Text_Gain:SetText(RightText)
@@ -21,7 +19,6 @@ function M:InitBaseInfo(LeftText, RightText, bIsShowEmptyText)
     self.WidgetSwitcher_Empty:SetActiveWidgetIndex(0)
   end
 end
-
 function M:InitAllWeaponInfo()
   local AllStuffCount = #self.StuffInfoList
   if AllStuffCount < 3 then
@@ -51,7 +48,6 @@ function M:InitAllWeaponInfo()
     end)
   end
 end
-
 function M:InitAllRewardInfo()
   self.WB_Gain:ClearChildren()
   for Index, RewardInfo in ipairs(self.RewardList) do
@@ -63,7 +59,6 @@ function M:InitAllRewardInfo()
     Item:Init(ItemObject)
   end
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -74,5 +69,4 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     self.List_ForSale:SetScrollOffset(ScrollOffset)
   end
 end
-
 return M

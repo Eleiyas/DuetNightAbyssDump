@@ -3,11 +3,9 @@ local AttrModel = require("BluePrints.UI.UI_PC.Experience.WBP_Experience_Attr_Mo
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Avatar = GWorld:GetAvatar()
 end
-
 function M:Destruct()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -15,7 +13,6 @@ function M:Destruct()
     GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Owner = Owner
   self.Parent = Params.Parent
@@ -26,7 +23,6 @@ function M:InitContent(Params, PopupData, Owner)
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Init()
   self.CurrentLevel = self.Avatar.Level
   self.BuffId = DataMgr.PlayerLevelUp[self.CurrentLevel].PlayerBuffId
@@ -57,7 +53,6 @@ function M:Init()
     self.List_Buff:AddItem(Content)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -66,13 +61,10 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:InitGamepadView()
   end
 end
-
 function M:InitGamepadView()
   self:SetFocus()
 end
-
 function M:InitKeyBoardView()
   self:SetFocus()
 end
-
 return M

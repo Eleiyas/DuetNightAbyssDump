@@ -1,20 +1,16 @@
 require("UnLua")
 require("Const")
 local Component = {}
-
 function Component:ComponentReceiveBeginPlay()
 end
-
 function Component:InitComponent()
   self.AlertingEid = 0
 end
-
 function Component:TickComponent(DeltaSeconds)
   if self.RemainTriggerAlertCD > 0 then
     self.RemainTriggerAlertCD = math.max(0, self.RemainTriggerAlertCD - DeltaSeconds)
   end
 end
-
 function Component:RequestCommonAlertingEid(Monster)
   if not IsValid(Monster) then
     return false
@@ -26,7 +22,6 @@ function Component:RequestCommonAlertingEid(Monster)
     return self:RegionRequestCommonAlertingEid(Monster)
   end
 end
-
 function Component:DungeonRequestCommonAlertingEid(Monster)
   if 0 ~= self.AlertingEid then
     return false
@@ -38,7 +33,6 @@ function Component:DungeonRequestCommonAlertingEid(Monster)
   end
   return false
 end
-
 function Component:RegionRequestCommonAlertingEid(Monster)
   if self:RegionCheckCanEnterAlert(Monster) then
     local ClanMgr = self:GetClan(Monster.ClanId)
@@ -48,7 +42,6 @@ function Component:RegionRequestCommonAlertingEid(Monster)
   end
   return false
 end
-
 function Component:RegionCheckCanEnterAlert(Monster)
   if not Monster.ClanId or 0 == Monster.ClanId then
     return false
@@ -68,7 +61,6 @@ function Component:RegionCheckCanEnterAlert(Monster)
   end
   return true
 end
-
 function Component:CheckIsInCommonAlert(ClanId)
   if self:IsInDungeon() then
     return self:DungeonCheckIsInCommonAlert()
@@ -78,7 +70,6 @@ function Component:CheckIsInCommonAlert(ClanId)
   end
   return false
 end
-
 function Component:RegionCheckIsInCommonAlert(ClanId)
   local ClanMgr = self:GetClan(ClanId)
   if not ClanMgr then
@@ -86,11 +77,9 @@ function Component:RegionCheckIsInCommonAlert(ClanId)
   end
   return ClanMgr.InCommonAlert
 end
-
 function Component:RegionCheckCanExitAlert(ClanId)
   return self:RegionCheckIsInCommonAlert(ClanId)
 end
-
 function Component:RequestCommonAlarmTargetInfo(Monster)
   if self:IsInDungeon() then
     if self.CommonAlarmTarget ~= nil then
@@ -117,7 +106,6 @@ function Component:RequestCommonAlarmTargetInfo(Monster)
   end
   return nil
 end
-
 function Component:GetAlertMechanismInfo(Monster)
   if self:IsInDungeon() then
     return self:DungeonGetAlertMechanismInfo(Monster)
@@ -127,7 +115,6 @@ function Component:GetAlertMechanismInfo(Monster)
   end
   return nil
 end
-
 function Component:DungeonGetAlertMechanismInfo(Monster)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState.MechanismMap:FindRef("AlertMiniGame") then
@@ -148,7 +135,6 @@ function Component:DungeonGetAlertMechanismInfo(Monster)
   end
   return Res
 end
-
 function Component:RegionGetAlertMechanismInfo(Monster)
   local Clan = self:GetClan(Monster.ClanId)
   if not Clan then
@@ -156,9 +142,7 @@ function Component:RegionGetAlertMechanismInfo(Monster)
   end
   return Clan:GetAlertMechanism(Monster)
 end
-
 function Component:GetClan(ClanManagerId)
   return self.EMGameState.ClanManagerMap:Find(ClanManagerId)
 end
-
 return Component

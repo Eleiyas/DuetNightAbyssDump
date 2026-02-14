@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_BattleAimBow_C = Class({
   "BluePrints.UI.Indicator.WBP_BattleAim_C"
 })
-
 function WBP_BattleAimBow_C:Init(Root)
   self.Root = Root
   self.CurSightUI = Root.SightUI
@@ -32,7 +31,6 @@ function WBP_BattleAimBow_C:Init(Root)
   }
   DebugPrint("gyy@ BattleAimBow Init")
 end
-
 function WBP_BattleAimBow_C:GetHeavyChargeId()
   local HeavyChargeId = self.HeavyChargeId
   local BattleWeaponConfigData = DataMgr.BattleWeapon[self.Root.CurrentWeapon.WeaponId]
@@ -44,7 +42,6 @@ function WBP_BattleAimBow_C:GetHeavyChargeId()
   end
   return HeavyChargeId
 end
-
 function WBP_BattleAimBow_C:Refresh()
   DebugPrint("gyy@ BattleAimBow Refresh")
   self.BowPinAngle = 0
@@ -55,10 +52,8 @@ function WBP_BattleAimBow_C:Refresh()
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Bow_Normal)
   self.CurSightUI = self.Root.SightUI
 end
-
 function WBP_BattleAimBow_C:SetInfo_NoCharge()
 end
-
 function WBP_BattleAimBow_C:SetInfo_TwoStageCharge()
   local HeavyChargeId = self:GetHeavyChargeId()
   self.HeavyChargeId = HeavyChargeId
@@ -94,7 +89,6 @@ function WBP_BattleAimBow_C:SetInfo_TwoStageCharge()
   self.BowNormalChargeInPercent = (self.BowNormalTime + self.BowPerfectChargeTime) / RealSumTime
   self.BowPerfectChargePercent = (self.BowNormalTime + self.BowPerfectChargeTime + self.BowPerfectChargeTime) / RealSumTime
 end
-
 function WBP_BattleAimBow_C:SetInfo_OneStageCharge()
   local HeavyChargeId = self:GetHeavyChargeId()
   self.HeavyChargeId = HeavyChargeId
@@ -124,7 +118,6 @@ function WBP_BattleAimBow_C:SetInfo_OneStageCharge()
   self.BowPinAngle = 0
   self.AccumulatePercent = 0
 end
-
 function WBP_BattleAimBow_C:BeginAccumulate(Skill)
   self.AccumulateNodeId = Skill.NodeId
   if not self.LeaveNodeEventFlag then
@@ -142,7 +135,6 @@ function WBP_BattleAimBow_C:BeginAccumulate(Skill)
     self.Root.UpdateAccumulateStateTimer = self.Root:AddTimer(0.033, self.Root.UpdateAccumulateStateInTick, true, 0, "UpdateAccumulateStateTimer", false, 0.033)
   end
 end
-
 function WBP_BattleAimBow_C:EndAccumulateOnLeaveNode(Owner, NodeId, SkillNode)
   if self.AccumulateNodeId and self.AccumulateNodeId ~= NodeId then
     return
@@ -165,7 +157,6 @@ function WBP_BattleAimBow_C:EndAccumulateOnLeaveNode(Owner, NodeId, SkillNode)
     self.LeaveNodeEventFlag = false
   end
 end
-
 function WBP_BattleAimBow_C:TryToPlayAimDiffusionStartAnim()
   if self.Root.IsAccumulateState then
     self["ChangeAccumulateState_" .. self.SightUI2FunctionType[self.CurSightUI]](self, "End")
@@ -178,7 +169,6 @@ function WBP_BattleAimBow_C:TryToPlayAimDiffusionStartAnim()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Bow_NormalAttack)
   end
 end
-
 function WBP_BattleAimBow_C:UpdateAccumulateStateInTick(InDeltaTime)
   self.BowPinAngle = self.BowPinAngle + self.AccumulateSpeed * InDeltaTime
   if self.BowPinAngle > self.CircleAngle then
@@ -189,7 +179,6 @@ function WBP_BattleAimBow_C:UpdateAccumulateStateInTick(InDeltaTime)
   self.Bow_Pin:SetRenderTransformAngle(self.BowPinAngle)
   self.BowChargeMat:SetScalarParameterValue("Percent", self.AccumulatePercent)
 end
-
 function WBP_BattleAimBow_C:ChangeAccumulateState_TwoStageCharge(NewAccumulateState)
   if not NewAccumulateState then
     if self.AccumulatePercent >= self.BowPerfectChargePercent then
@@ -236,7 +225,6 @@ function WBP_BattleAimBow_C:ChangeAccumulateState_TwoStageCharge(NewAccumulateSt
     end
   end
 end
-
 function WBP_BattleAimBow_C:ChangeAccumulateState_OneStageCharge(NewAccumulateState)
   if not NewAccumulateState then
     if self.AccumulatePercent >= self.BowNormalPercent then
@@ -272,13 +260,11 @@ function WBP_BattleAimBow_C:ChangeAccumulateState_OneStageCharge(NewAccumulateSt
     end
   end
 end
-
 function WBP_BattleAimBow_C:StopAllAimAnimations()
   for _, Aniamtion in pairs(self.AimAnimations) do
     EMUIAnimationSubsystem:EMStopAnimation(self, Aniamtion)
   end
 end
-
 function WBP_BattleAimBow_C:SetBowChargeMatPercent(AccumulatePercent)
   if not IsValid(self.BowChargeMat) then
     self.BowChargeMat = self.Bow_Charge:GetDynamicMaterial()
@@ -287,5 +273,4 @@ function WBP_BattleAimBow_C:SetBowChargeMatPercent(AccumulatePercent)
     self.BowChargeMat:SetScalarParameterValue("Percent", AccumulatePercent)
   end
 end
-
 return WBP_BattleAimBow_C

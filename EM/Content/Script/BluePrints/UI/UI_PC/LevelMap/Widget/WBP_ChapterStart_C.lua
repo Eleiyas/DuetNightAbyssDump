@@ -3,7 +3,6 @@ local Utils = require("Utils")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Text_Title:SetText(GText("ChapterIntro_PurgatorioIsland"))
@@ -12,7 +11,6 @@ function M:OnLoaded(...)
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_name_show", "", nil)
 end
-
 function M:SetFontSize()
   local Language = CommonConst.SystemLanguage
   if Language == CommonConst.SystemLanguages.CN or Language == CommonConst.SystemLanguages.TC then
@@ -26,5 +24,4 @@ function M:SetFontSize()
     self.Text_Title.Font.Size = self.TextSize_KR
   end
 end
-
 return M

@@ -8,7 +8,6 @@ WBP_NpcSwitchMain_PC_C._components = {
   "BluePrints.UI.UIComponent.CoroutineComponent",
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function WBP_NpcSwitchMain_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.SignBoardNpcState = {}
@@ -36,7 +35,6 @@ function WBP_NpcSwitchMain_PC_C:Initialize(Initializer)
   self.CancelCurrentNpc = false
   self.DelegateIsBind = false
 end
-
 function WBP_NpcSwitchMain_PC_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:Reset()
@@ -52,12 +50,10 @@ function WBP_NpcSwitchMain_PC_C:OnLoaded(...)
   self:OnOpenMain(false)
   self:AddDispatcher(EventID.UpdateSignBoardNpc, self, self.UpdateSignBoardNpc)
 end
-
 function WBP_NpcSwitchMain_PC_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "NpcSwitchMain", nil)
 end
-
 function WBP_NpcSwitchMain_PC_C:Reset()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.PlayerCurrentTag = Player:GetCharacterTag()
@@ -105,7 +101,6 @@ function WBP_NpcSwitchMain_PC_C:Reset()
   self.Panel_Selected:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.PressedBtn = {}
 end
-
 function WBP_NpcSwitchMain_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -127,7 +122,6 @@ function WBP_NpcSwitchMain_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -141,7 +135,6 @@ function WBP_NpcSwitchMain_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UIUtils.Unhandled()
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:OnGamePadUp(InKeyName, MyGeometry, InKeyEvent)
   local IsEventHandled = false
   if not self.PressedBtn[InKeyName] then
@@ -159,7 +152,6 @@ function WBP_NpcSwitchMain_PC_C:OnGamePadUp(InKeyName, MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_NpcSwitchMain_PC_C:OnGamePadDown(InKeyName, MyGeometry, InKeyEvent)
   local IsEventHandled = false
   if self.OpenUI == "Main" then
@@ -183,7 +175,6 @@ function WBP_NpcSwitchMain_PC_C:OnGamePadDown(InKeyName, MyGeometry, InKeyEvent)
   self.PressedBtn[InKeyName] = true
   return IsEventHandled
 end
-
 function WBP_NpcSwitchMain_PC_C:OnMouseButtonDown(MyGeometry, InKeyEvent)
   if UE4.UKismetInputLibrary.PointerEvent_IsMouseButtonDown(InKeyEvent, UE4.EKeys.RightMouseButton) then
   else
@@ -191,7 +182,6 @@ function WBP_NpcSwitchMain_PC_C:OnMouseButtonDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_NpcSwitchMain_PC_C:InitNpcInfo()
   self.CameraLocation = {}
   self.CameraRotation = {}
@@ -208,7 +198,6 @@ function WBP_NpcSwitchMain_PC_C:InitNpcInfo()
     end
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:InitNowTabId()
   self.NowTabId = 1
   local CurrentMinDis = 501
@@ -223,7 +212,6 @@ function WBP_NpcSwitchMain_PC_C:InitNowTabId()
   end
   self.LastTabId = self.NowTabId
 end
-
 function WBP_NpcSwitchMain_PC_C:UpdateBottomKeyInfo()
   if not IsValid(self.GameInputModeSubsystem) then
     return
@@ -292,7 +280,6 @@ function WBP_NpcSwitchMain_PC_C:UpdateBottomKeyInfo()
   end
   self.Common_Tab_PC:UpdateBottomKeyInfo(BottomInfo)
 end
-
 function WBP_NpcSwitchMain_PC_C:InitNpcTab(DontPlayInAnim)
   if self.Platform == "PC" then
     self.Common_Tab_PC = self.WBP_Com_Tab_P
@@ -342,7 +329,6 @@ function WBP_NpcSwitchMain_PC_C:InitNpcTab(DontPlayInAnim)
   self.Common_Tab_PC:UpdateTopTitle(GText("MAIN_UI_NPCSWITCH"))
   self.Common_Tab_PC:SelectTab(self.NowTabId)
 end
-
 function WBP_NpcSwitchMain_PC_C:OnTabSelected(TabWidget)
   if self.NowTabId ~= TabWidget.Idx then
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -353,7 +339,6 @@ function WBP_NpcSwitchMain_PC_C:OnTabSelected(TabWidget)
   self:PlayBlackScreenIn()
   self:OnOpenMain(false)
 end
-
 function WBP_NpcSwitchMain_PC_C:InitNpcList(IsByFrame)
   self:StopAttrListFramingIn()
   self.Panel_Selected.List_Character:ClearListItems()
@@ -414,13 +399,11 @@ function WBP_NpcSwitchMain_PC_C:InitNpcList(IsByFrame)
   end)
   self.Panel_Selected.List_Character:ScrollToTop()
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayListAnim()
   UIUtils.PlayListViewFramingInAnimation(self, self.Panel_Selected.List_Character, {
     Visibility = UIConst.VisibilityOp.HitTestInvisible
   })
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayAttrListFramingIn()
   self.Panel_Selected.List_Character:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self._ListAttrAnimTimerKeys = UIUtils.PlayListViewFramingInAnimation(self, self.Panel_Selected.List_Character, {
@@ -431,14 +414,12 @@ function WBP_NpcSwitchMain_PC_C:PlayAttrListFramingIn()
     end
   })
 end
-
 function WBP_NpcSwitchMain_PC_C:StopAttrListFramingIn()
   UIUtils.StopListViewFramingInAnimation(self.Panel_Selected.List_Character, {
     UIState = self,
     TimerKeys = self._ListAttrAnimTimerKeys
   })
 end
-
 function WBP_NpcSwitchMain_PC_C:CreateNpcContent(NpcInfo)
   local NpcObj = NewObject(UIUtils.GetCommonItemContentClass())
   NpcObj.Id = NpcInfo.Id
@@ -457,7 +438,6 @@ function WBP_NpcSwitchMain_PC_C:CreateNpcContent(NpcInfo)
   }
   return NpcObj
 end
-
 function WBP_NpcSwitchMain_PC_C:InitStaticCreator()
   self.NpcLocation = {}
   self.NpcRotation = {}
@@ -502,9 +482,7 @@ function WBP_NpcSwitchMain_PC_C:InitStaticCreator()
     }
   }
   self.LevelSequenceActor = self:GetWorld():SpawnActor(ALevelSequenceActor:StaticClass())
-  self.LevelSequenceActor.CameraSettings.bOverrideAspectRatioAxisConstraint = false
 end
-
 function WBP_NpcSwitchMain_PC_C:EnableNpcDitherAlpha(bEnable)
   local GameInstance = GWorld.GameInstance
   local GameState = UE4.UGameplayStatics.GetGameState(GameInstance)
@@ -519,14 +497,12 @@ function WBP_NpcSwitchMain_PC_C:EnableNpcDitherAlpha(bEnable)
     end)
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:InitSpecialEffectActor()
   local SpecialEffectPath = UE4.UClass.Load("/Game/UI/WBP/Invitation/Widget/NpcSpecialEffect.NpcSpecialEffect")
   self.SpecialEffectActor = self:GetWorld():SpawnActor(SpecialEffectPath, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
   self.SpecialEffectActor:K2_SetActorLocation(self.NpcLocation[self.NowTabId], false, nil, false)
   UE4.URuntimeCommonFunctionLibrary.SetActorHidden(self.SpecialEffectActor, false)
 end
-
 function WBP_NpcSwitchMain_PC_C:InitCameraTab()
   if self.RestoreNpc then
     self:TriggerNpcStaticCreator(true)
@@ -549,9 +525,8 @@ function WBP_NpcSwitchMain_PC_C:InitCameraTab()
   controller:SetViewTargetWithBlend(self.Camera, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
   self:InitLevelSequence()
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayBlackScreenIn()
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local Params = {}
   Params.BlackScreenHandle = "NPCSwitch"
@@ -564,16 +539,13 @@ function WBP_NpcSwitchMain_PC_C:PlayBlackScreenIn()
   Params.OutAnimationBPSetting = "NPC_Switch"
   UIManager:ShowCommonBlackScreen(Params)
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayBlackScreenOut()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:HideCommonBlackScreen("NPCSwitch")
 end
-
 function WBP_NpcSwitchMain_PC_C:CloseBlackScreen()
   self:BlockAllUIInput(false)
 end
-
 function WBP_NpcSwitchMain_PC_C:InitLevelSequence()
   if self.Sequence_Player then
     self.Sequence_Player:Stop()
@@ -599,7 +571,6 @@ function WBP_NpcSwitchMain_PC_C:InitLevelSequence()
   self.LevelSequenceActor:SetBindingByTag("ShowNpc", BindingArray, false)
   self.Sequence_Player = self.LevelSequenceActor.SequencePlayer
   self.IsReverse = false
-  
   local function PlaySequence()
     if 3 == self.NowTabId then
       return
@@ -612,7 +583,6 @@ function WBP_NpcSwitchMain_PC_C:InitLevelSequence()
       self.Sequence_Player:PlayReverse()
     end
   end
-  
   if not self.DelegateIsBind then
     self.DelegateIsBind = true
     self.Sequence_Player.OnFinished:Add(self, PlaySequence)
@@ -624,7 +594,6 @@ function WBP_NpcSwitchMain_PC_C:InitLevelSequence()
   end
   self:PlayBlackScreenOut()
 end
-
 function WBP_NpcSwitchMain_PC_C:CreateSortItemContent(Content, ClassPath)
   if nil == Content then
     return
@@ -638,7 +607,6 @@ function WBP_NpcSwitchMain_PC_C:CreateSortItemContent(Content, ClassPath)
   SortObj.IsSelected = Content.IsSelected
   return SortObj
 end
-
 function WBP_NpcSwitchMain_PC_C:SortAllNpc(DataTable)
   table.sort(DataTable, function(Data1, Data2)
     if Data1.IsShowInCurrentTab ~= Data2.IsShowInCurrentTab then
@@ -649,13 +617,11 @@ function WBP_NpcSwitchMain_PC_C:SortAllNpc(DataTable)
   end)
   return DataTable
 end
-
 function WBP_NpcSwitchMain_PC_C:OnButtonAddClicked()
   if self.OpenUI == "Main" then
     self:OnOpenList()
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:OnOpenMain(PlayTabInAnim)
   if 3 == self.NowTabId then
     self.SpecialEffectActor:K2_SetActorLocation(self.NpcLocation[self.NowTabId], false, nil, false)
@@ -690,7 +656,6 @@ function WBP_NpcSwitchMain_PC_C:OnOpenMain(PlayTabInAnim)
     self:BP_GetDesiredFocusTarget():SetFocus()
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:OnOpenList()
   self.OpenUI = "List"
   self.Panel_Selected.Panel_Selected:SetRenderOpacity(1.0)
@@ -718,7 +683,6 @@ function WBP_NpcSwitchMain_PC_C:OnOpenList()
     self:BP_GetDesiredFocusTarget():SetFocus()
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:SetTextNpcName(IsName)
   local Font = self.Text_NpcName.Font
   local SlateColor = self.Text_NpcName.ColorAndOpacity
@@ -733,7 +697,6 @@ function WBP_NpcSwitchMain_PC_C:SetTextNpcName(IsName)
   end
   self.Text_NpcName:SetFont(Font)
 end
-
 function WBP_NpcSwitchMain_PC_C:CheckSignBoardNpcState()
   self.CancelCurrentNpc = false
   if self.SignBoardNpcState[self.NowTabId] == CommonConst.UnsetState then
@@ -757,7 +720,6 @@ function WBP_NpcSwitchMain_PC_C:CheckSignBoardNpcState()
     self.CancelCurrentNpc = true
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:ClearListSelectedState()
   for i = 0, self.Panel_Selected.List_Character:GetNumItems() - 1 do
     local Item = self.Panel_Selected.List_Character:GetItemAt(i)
@@ -766,7 +728,6 @@ function WBP_NpcSwitchMain_PC_C:ClearListSelectedState()
     end
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:OnNpcListItemClicked(Content)
   if Content.IsEmpty then
     return
@@ -847,7 +808,6 @@ function WBP_NpcSwitchMain_PC_C:OnNpcListItemClicked(Content)
   end)
   self:SwitchNpcPose(self.NpcStaticCreator[self.NowTabId].UnitId, true, true)
 end
-
 function WBP_NpcSwitchMain_PC_C:TriggerNpcStaticCreator(IsActive)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local StaticIds = TArray(0)
@@ -858,7 +818,6 @@ function WBP_NpcSwitchMain_PC_C:TriggerNpcStaticCreator(IsActive)
     GameMode:TriggerInactiveStaticCreator(StaticIds)
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:SwitchNpcPose(NpcId, IsSet, PlayAppear, PlayDisappear)
   local NpcInfo = DataMgr.Npc[NpcId]
   if nil == NpcInfo then
@@ -871,7 +830,7 @@ function WBP_NpcSwitchMain_PC_C:SwitchNpcPose(NpcId, IsSet, PlayAppear, PlayDisa
   local ShowAnimationId = ShowAnimation[self.NowTabId]
   local GameInstance = GWorld.GameInstance
   local GameState = UE4.UGameplayStatics.GetGameState(GameInstance)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   GameState:GetNpcInfoAsync(self.NpcStaticCreator[self.NowTabId].UnitId, function(Npc)
     self:BlockAllUIInput(false)
     Npc:InitNpcAccessories(NpcInfo.CharId)
@@ -890,7 +849,6 @@ function WBP_NpcSwitchMain_PC_C:SwitchNpcPose(NpcId, IsSet, PlayAppear, PlayDisa
     end
   end)
 end
-
 function WBP_NpcSwitchMain_PC_C:OnBtnChangeNpcClicked()
   if self.OpenUI == "Main" then
     self:OnOpenList()
@@ -918,15 +876,12 @@ function WBP_NpcSwitchMain_PC_C:OnBtnChangeNpcClicked()
     end
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:OnOptionItemClicked()
 end
-
 function WBP_NpcSwitchMain_PC_C:OnButtonOrderClicked()
   self.SortByReserveOrder = not self.SortByReserveOrder
   self:InitNpcList(true)
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayNpcVoice()
   local NpcId = self.SignBoardNpcState[self.NowTabId]
   local NpcInfo = DataMgr.Npc[NpcId]
@@ -940,7 +895,6 @@ function WBP_NpcSwitchMain_PC_C:PlayNpcVoice()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   AudioManager(self):PlayCharVoice(Player, PlayerName, "vo_idle", nil, "NpcSwitchVoice", true)
 end
-
 function WBP_NpcSwitchMain_PC_C:SplitPlayerInfo(PlayerInfo)
   if not PlayerInfo then
     return ""
@@ -950,7 +904,6 @@ function WBP_NpcSwitchMain_PC_C:SplitPlayerInfo(PlayerInfo)
   end
   return PlayerInfo
 end
-
 function WBP_NpcSwitchMain_PC_C:UpdateSignBoardNpc(Ret, Index, NpcId)
   if Ret == ErrorCode.RET_SUCCESS then
     self.SignBoardNpcState[Index] = NpcId
@@ -985,7 +938,6 @@ function WBP_NpcSwitchMain_PC_C:UpdateSignBoardNpc(Ret, Index, NpcId)
   self.SelectedUnitId = self.SignBoardNpcState[self.NowTabId]
   self:BlockAllUIInput(false)
 end
-
 function WBP_NpcSwitchMain_PC_C:UpdateSignBoardNpcFailed()
   local Avatar = GWorld:GetAvatar()
   for i = 1, self.SignBoardNums do
@@ -1003,7 +955,6 @@ function WBP_NpcSwitchMain_PC_C:UpdateSignBoardNpcFailed()
   self:OnOpenList()
   self:InitNpcTab(true)
 end
-
 function WBP_NpcSwitchMain_PC_C:CloseNpcSwitchMain()
   if self.OpenUI == "List" then
     self:CloseList()
@@ -1011,7 +962,6 @@ function WBP_NpcSwitchMain_PC_C:CloseNpcSwitchMain()
     self:CloseMain()
   end
 end
-
 function WBP_NpcSwitchMain_PC_C:CloseList()
   self.RestoreNpc = false
   if self.SelectedUnitId ~= self.SignBoardNpcState[self.NowTabId] and self.SelectedUnitId ~= CommonConst.UnsetState then
@@ -1025,20 +975,17 @@ function WBP_NpcSwitchMain_PC_C:CloseList()
       self.NpcStaticCreator[self.NowTabId].UnitId = 0
     end
   end
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self.Panel_Selected:StopAnimation(self.Panel_Selected.In)
   self.Panel_Selected:PlayAnimation(self.Panel_Selected.Out)
-  
   local function OpenMain()
     self:BlockAllUIInput(false)
     self:InitNpcTab(true)
     self:OnOpenMain(true)
   end
-  
   local OpenMainTime = self.Panel_Selected.Out:GetEndTime()
   self:AddTimer(OpenMainTime, OpenMain, false, 0, "OpenMain", true)
 end
-
 function WBP_NpcSwitchMain_PC_C:CloseMain()
   if self:IsExistTimer("PlaySequence") then
     self:RemoveTimer("PlaySequence")
@@ -1054,24 +1001,19 @@ function WBP_NpcSwitchMain_PC_C:CloseMain()
   self.SpecialEffectActor:K2_DestroyActor()
   self:PlayOutAnim()
 end
-
 function WBP_NpcSwitchMain_PC_C:SetCannotClose(time)
-  self:BlockAllUIInput(true)
-  
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   local function func()
     self:BlockAllUIInput(false)
   end
-  
   self:AddTimer(time or 1, func, false, 0, "SetCanClose", true)
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayInAnim()
   self:PlayAnimation(self.Main_In)
   self.Common_Tab_PC:PlayInAnim()
   local MainInTime = self.Main_In:GetEndTime()
   self:SetCannotClose(MainInTime)
 end
-
 function WBP_NpcSwitchMain_PC_C:PlayOutAnim()
   self:PlayAnimation(self.Main_Out)
   local MainOutTime = self.Main_Out:GetEndTime()
@@ -1086,7 +1028,6 @@ function WBP_NpcSwitchMain_PC_C:PlayOutAnim()
   })
   AudioManager(self):SetEventSoundParam(self, "NpcSwitchMain", {ToEnd = 1})
 end
-
 function WBP_NpcSwitchMain_PC_C:BP_GetDesiredFocusTarget()
   if self.OpenUI == "List" and not self.Panel_Selected:IsAnimationPlaying(self.Panel_Selected.Out) then
     return self.Panel_Selected.List_Character
@@ -1094,6 +1035,5 @@ function WBP_NpcSwitchMain_PC_C:BP_GetDesiredFocusTarget()
     return self
   end
 end
-
 AssembleComponents(WBP_NpcSwitchMain_PC_C)
 return WBP_NpcSwitchMain_PC_C

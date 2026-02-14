@@ -4,29 +4,31 @@ local BP_LevelLoader_C = Class({
   "BluePrints.Common.TimerMgr"
 })
 local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
-
+local EMLuaConst = require("EMLuaConst")
 function BP_LevelLoader_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   if IsDedicatedServer(self) then
     self.IsPC = true
   else
-    self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
+    self.IsPC = CommonUtils.GetRuntimePlatform(self) == "PC"
   end
-  self.PCScalabilityLevelNum = {
-    [0] = 6,
-    [1] = 7,
-    [2] = 8
-  }
-  self.MobileScalabilityLevelNum = {IOS = 5, Android = 8}
+  if EMLuaConst and IsClient(self) then
+    self.UseCCDOldValue = EMLuaConst.UseCCDInPC
+    EMLuaConst.UseCCDInPC = false
+  end
   self.MinimumLoadMaxLevelNum = 5
+  local ScalabilityLevel = GWorld.GameInstance.GetGameplayScalabilityLevel()
   if self.IsPC then
-    local ScalabilityLevel = GWorld.GameInstance.GetGameplayScalabilityLevel()
-    self.MinimumLoadMaxLevelNum = self.PCScalabilityLevelNum[ScalabilityLevel] or self.MinimumLoadMaxLevelNum
+    self.MinimumLoadMaxLevelNum = Const.PCScalabilityLevelNum[ScalabilityLevel] or self.MinimumLoadMaxLevelNum
   else
     local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
-    self.MinimumLoadMaxLevelNum = self.MobileScalabilityLevelNum[PlatformName] or self.MinimumLoadMaxLevelNum
+    if Const.MobileScalabilityLevelNum[PlatformName] then
+      self.MinimumLoadMaxLevelNum = Const.MobileScalabilityLevelNum[PlatformName][ScalabilityLevel] or self.MinimumLoadMaxLevelNum
+    else
+      self.MinimumLoadMaxLevelNum = self.MinimumLoadMaxLevelNum
+    end
   end
-  DebugPrint("NewLevelLoader", "MinimumLoadMaxLevelNum:", self.MinimumLoadMaxLevelNum)
+  DebugPrint("NewLevelLoader", "MinimumLoadMaxLevelNum:", self.MinimumLoadMaxLevelNum, ScalabilityLevel)
   self:BeginPlay()
   self.EnvironmentManager.bFixLightDirection = false
   self.showAllLevel = false
@@ -113,17 +115,22 @@ function BP_LevelLoader_C:ReceiveBeginPlay()
   self.UseDungeonLevelBounds = _G.UseDungeonLevelBounds or "Android" == platformName or "IOS" == platformName
   coroutine.resume(coroutine.create(self.PreloadLevels), self)
   EventManager:AddEvent(EventID.ElevatorMechanismCompleteNotify, self, self.OnElevatorMechanismCompleteNotify)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  if GameInstance then
+    GameInstance:UpdatePostProcessMaterial()
+  end
+  self:EnableSoftwareOcclusion()
 end
-
 function BP_LevelLoader_C:ReceiveEndPlay(reason)
+  if EMLuaConst and self.UseCCDOldValue ~= nil then
+    EMLuaConst.UseCCDInPC = self.UseCCDOldValue
+  end
   self.Overridden.ReceiveEndPlay(self, reason)
   EventManager:RemoveEvent(EventID.ElevatorMechanismCompleteNotify, self)
 end
-
 function BP_LevelLoader_C:GetShortName()
   return self.shortname
 end
-
 function BP_LevelLoader_C:GetLevelIdByLevel(InLevel)
   local LuaTable = self.StreamLevel2ID:ToTable()
   for Level, Id in pairs(LuaTable) do
@@ -138,8 +145,8 @@ function BP_LevelLoader_C:GetLevelIdByLevel(InLevel)
   end
   return ""
 end
-
 function BP_LevelLoader_C:PreloadLevels()
+  self.PreLoadComplete = false
   local isPIE = UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self)
   local gridframeActor = TArray(AActor)
   for i = 1, self.numOfLevels do
@@ -309,10 +316,25 @@ function BP_LevelLoader_C:PreloadLevels()
   if IsAuthority(self) then
     self:ReleaseInitialBuildingLock()
   end
+  if IsClient(self) then
+    self.WaitForPlayerStateTime = UGameplayStatics.GetRealTimeSeconds(self)
+    while true do
+      local playerController = UGameplayStatics.GetPlayerController(self, 0)
+      if playerController and playerController.PlayerState then
+        break
+      end
+      if UGameplayStatics.GetRealTimeSeconds(self) - self.WaitForPlayerStateTime > 60 then
+        DebugPrint("NewLevelLoader", "Wait for PlayerState OverLimit!!!!")
+        break
+      end
+      UKismetSystemLibrary.Delay(self, 0.1)
+      DebugPrint("NewLevelLoader", "Wait for PlayerState")
+    end
+  end
+  self.PreLoadComplete = true
   self:NextStep()
   DebugPrint("PreloadLevel Complete")
 end
-
 function BP_LevelLoader_C:OnHomeLevelLoaded()
   if self.levelLoadComplete == true then
     return
@@ -328,7 +350,6 @@ function BP_LevelLoader_C:OnHomeLevelLoaded()
   self:OnStreamingLevelLoaded()
   self.StreamLevelLoadFlag = false
 end
-
 function BP_LevelLoader_C:OnDesignLevelLoaded()
   if self.levelLoadComplete == true then
     return
@@ -337,7 +358,6 @@ function BP_LevelLoader_C:OnDesignLevelLoaded()
   self:OnStreamingLevelLoaded()
   self.StreamLevelLoadFlag = false
 end
-
 function BP_LevelLoader_C:OnArtLevelUnloaded()
   if self.levelLoadComplete then
     return
@@ -346,11 +366,9 @@ function BP_LevelLoader_C:OnArtLevelUnloaded()
   self:OnStreamingLevelLoaded()
   self.StreamLevelLoadFlag = false
 end
-
 function BP_LevelLoader_C:OnPostAttachNavMeshDataChunk_Lua(InLevel)
   self.StreamLevelLoadFlag = false
 end
-
 function BP_LevelLoader_C:OnArtLevelLoaded(loadedID)
   DebugPrint("zzzzzz", "OnArtLevelLoaded")
   PrintTable(self.ArtLevelLoaded:ToTable())
@@ -369,7 +387,6 @@ function BP_LevelLoader_C:OnArtLevelLoaded(loadedID)
   end
   self:OnStreamingLevelLoaded()
 end
-
 function BP_LevelLoader_C:LevelLoaderCheckArtLevelLoaded(level, id)
   while not URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) do
     if not UE4.UKismetSystemLibrary.IsValid(level) then
@@ -418,6 +435,10 @@ function BP_LevelLoader_C:LevelLoaderCheckArtLevelLoaded(level, id)
   if id == self.enterLevelID and not self.levelLoadComplete then
     self:SetLoadProgress(self.loadProgress + 0.125)
     self:OnStreamingLevelLoaded()
+    if IsDedicatedServer(self) and self.PreLoadComplete then
+      self.levelLoadComplete = true
+      self:NextStep()
+    end
   end
   if self.CapturePathLevel and not self.levelLoadComplete then
     for _, captureId in pairs(self.CapturePathLevel) do
@@ -431,7 +452,6 @@ function BP_LevelLoader_C:LevelLoaderCheckArtLevelLoaded(level, id)
   self:LoadNextArtLevel()
   self.CoroutineTable[id] = nil
 end
-
 function BP_LevelLoader_C:OnStreamingLevelLoaded()
   if self.showAllLevel then
     return
@@ -448,7 +468,6 @@ function BP_LevelLoader_C:OnStreamingLevelLoaded()
   end
   self.Overridden.OnStreamingLevelLoaded(self)
 end
-
 function BP_LevelLoader_C:OnPreloadComplete()
   self.LevelBoundArray = UGameplayStatics.GetAllActorsOfClass(self, AAutoLevelBound.StaticClass())
   for Index = 1, self.LevelBoundArray:Length() do
@@ -483,11 +502,15 @@ function BP_LevelLoader_C:OnPreloadComplete()
     local tempLoc
     local playerCharacter = UGameplayStatics.GetPlayerCharacter(self, 0)
     self.LevelPathfinding:UpdateAllPathfinding(playerCharacter.CurrentLevelId)
-    if playerController.PlayerState.bIsEMInactive then
+    DebugPrint("NewLevelLoader playerController.PlayerState", playerController and playerController.PlayerState)
+    if playerController and playerController.PlayerState and playerController.PlayerState.bIsEMInactive then
       tempLoc = playerCharacter:K2_GetActorLocation()
+      DebugPrint("NewLevelLoader", "bIsEMInactive", tempLoc)
     elseif not UKismetMathLibrary.EqualEqual_VectorVector(playerController.TargetBornLocation, FVector(0, 0, 0), 0.001) then
       tempLoc = playerController.TargetBornLocation
+      DebugPrint("NewLevelLoader", "TargetBornLocation", tempLoc)
     end
+    DebugPrint("NewLevelLoader", "Client TempLoc", tempLoc)
     self:SetEnterLevelID(tempLoc)
   elseif IsStandAlone(self) and gameMode and gameMode:NeedProgressRecover() then
     self:SetEnterLevelID(self.ProgressLoc)
@@ -510,8 +533,15 @@ function BP_LevelLoader_C:OnPreloadComplete()
   end
   self:SetForceGCAfterLevelStreamedOut(false)
   if self.showAllLevel or URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
-    self.levelLoadComplete = true
-    self:NextStep()
+    if IsDedicatedServer(self) then
+      if self.ArtLevelLoaded:Find(self.enterLevelID) then
+        self.levelLoadComplete = true
+        self:NextStep()
+      end
+    else
+      self.levelLoadComplete = true
+      self:NextStep()
+    end
   end
   if not IsDedicatedServer(self) then
     local BattleMain = UIManager(self):GetUI("BattleMain")
@@ -520,7 +550,6 @@ function BP_LevelLoader_C:OnPreloadComplete()
     end
   end
 end
-
 function BP_LevelLoader_C:SetEnterLevelID(StartLoc)
   local id = self:GetLevelIdByLocation(StartLoc)
   if StartLoc and "" ~= id then
@@ -544,18 +573,15 @@ function BP_LevelLoader_C:SetEnterLevelID(StartLoc)
     end
   end
 end
-
 function BP_LevelLoader_C:OnLevelLoadComplete()
   for _, func in ipairs(self.loadCompleteCallback) do
     func()
   end
   self.Overridden.OnLevelLoadComplete(self)
 end
-
 function BP_LevelLoader_C:BindLoadCompleteCallback(func)
   self.loadCompleteCallback[#self.loadCompleteCallback + 1] = func
 end
-
 function BP_LevelLoader_C:NextStep()
   if self.startPoint == nil then
     self:GetRandStartPoint()
@@ -576,7 +602,6 @@ function BP_LevelLoader_C:NextStep()
     self:OnPreloadComplete()
   end
 end
-
 function BP_LevelLoader_C:SetPlayerTrans()
   local gameMode = UGameplayStatics.GetGameMode(self)
   if IsStandAlone(self) and gameMode and gameMode:NeedProgressRecover() then
@@ -593,14 +618,12 @@ function BP_LevelLoader_C:SetPlayerTrans()
     self.startPoint:InitSetPlayerTrans()
   end
 end
-
 function BP_LevelLoader_C:SetEnteredPlayerTrans(PlayerController)
   if self.startPoint == nil then
     self:GetRandStartPoint()
   end
   self.startPoint:SetEnteredPlayerTrans(PlayerController)
 end
-
 function BP_LevelLoader_C:SetInitTrans(PlayerController)
   if self.startPoint == nil then
     self:GetRandStartPoint()
@@ -609,22 +632,55 @@ function BP_LevelLoader_C:SetInitTrans(PlayerController)
     self.startPoint:SetInitTrans(PlayerController)
   end
 end
-
 function BP_LevelLoader_C:RealSetNewEnteredPlayerTrans(AvatarEidStr)
   if self.startPoint == nil then
     self:GetRandStartPoint()
   end
   self.startPoint:RealSetNewEnteredPlayerTrans(AvatarEidStr)
 end
-
+function BP_LevelLoader_C:GetRandStartPoint()
+  if self.startPoint then
+    return
+  end
+  local function GetFunc()
+    for _, StartPoint in pairs(self.StartPoints) do
+      if self.enterLevelID and (self:GetGamePlayActorLevelName(StartPoint) == self.enterLevelID or self:GetDesignActorLevelName(StartPoint) == self.enterLevelID) then
+        self.startPoint = StartPoint
+        DebugPrint("NewLevelLoader", "GetRandStartPoint EnterLevel", self.enterLevelID, self:GetGamePlayActorLevelName(StartPoint), self:GetDesignActorLevelName(StartPoint))
+        break
+      end
+    end
+  end
+  if 0 == #self.StartPoints then
+    self.StartPoints = UGameplayStatics.GetAllActorsOfClass(self, LoadClass("/Game/BluePrints/Common/Level/BP_StartPoint.BP_StartPoint_C")):ToTable()
+  end
+  GetFunc()
+  if not self.startPoint then
+    self.StartPoints = UGameplayStatics.GetAllActorsOfClass(self, LoadClass("/Game/BluePrints/Common/Level/BP_StartPoint.BP_StartPoint_C")):ToTable()
+  else
+    return
+  end
+  GetFunc()
+  if not self.startPoint and #self.StartPoints > 0 then
+    self.startPoint = self.StartPoints[1]
+    DebugPrint("NewLevelLoader", "GetRandStartPoint Random")
+  end
+end
+function BP_LevelLoader_C:GetGamePlayActorLevelName(Actor)
+  local Level = UE4.URuntimeCommonFunctionLibrary.GetLevel(Actor)
+  for StreamLevel, Id in pairs(self.homeStreamingLevel2ID) do
+    if StreamLevel:GetLoadedLevel() == Level then
+      return Id
+    end
+  end
+  return nil
+end
 function BP_LevelLoader_C:GetLayoutStreamingLevels(LevelId)
   return self.layoutStreamingLevels[LevelId]
 end
-
 function BP_LevelLoader_C:SetNeedLoadLevelState(Id)
   DebugPrint("Level Check, Set Need Load Level State. ID:" .. Id)
 end
-
 function BP_LevelLoader_C:LoadArtLevel(id, bMakeVisibleAfterLoad, bShouldBlockOnLoad)
   if nil == bMakeVisibleAfterLoad and nil == bShouldBlockOnLoad then
     bMakeVisibleAfterLoad = true
@@ -687,7 +743,6 @@ function BP_LevelLoader_C:LoadArtLevel(id, bMakeVisibleAfterLoad, bShouldBlockOn
   end
   DebugPrint("NewLevelLoader", "Load", id)
 end
-
 function BP_LevelLoader_C:UnloadArtLevel(id)
   if not (not self.showAllLevel or self.DungeonShowAllLevel) or URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
     DebugPrint("Server Unload", id)
@@ -755,7 +810,6 @@ function BP_LevelLoader_C:UnloadArtLevel(id)
     self:LoadNextArtLevel()
   end
 end
-
 function BP_LevelLoader_C:OnHomeLevelLoadedCallback(LevelName)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil == GameMode then
@@ -771,7 +825,6 @@ function BP_LevelLoader_C:OnHomeLevelLoadedCallback(LevelName)
   end
   GameMode:AddSubGameModeInfo(LevelName, Level)
 end
-
 function BP_LevelLoader_C:SetLevelDoor(door)
   self.Doors[#self.Doors + 1] = door
   if self.DoorClass then
@@ -804,14 +857,13 @@ function BP_LevelLoader_C:SetLevelDoor(door)
   if door.if_door and not IsDedicatedServer(self) then
     local BattleMain = UIManager(self):GetUI("BattleMain")
     if BattleMain then
-      GWorld.GameInstance:GetSceneManager():AddMinimapDoor(door)
-    else
       local Minimap = BattleMain.Battle_Map
       Minimap:AddDoorToMinimap(door)
+    else
+      GWorld.GameInstance:GetSceneManager():AddMinimapDoor(door)
     end
   end
 end
-
 function BP_LevelLoader_C:StartPathfindingToActorByEid(eid)
   local thisBattle = Battle(self)
   if nil == thisBattle or not self.levelLoadComplete then
@@ -869,11 +921,9 @@ function BP_LevelLoader_C:StartPathfindingToActorByEid(eid)
   end
   return false
 end
-
 function BP_LevelLoader_C:StopPathfindingToActorByEid(eid)
   self.LevelPathfinding:StopPathfinding(eid)
 end
-
 function BP_LevelLoader_C:CheckIsTwoActorInSameLevelId(Actor1, Actor2)
   if not UE4.UKismetSystemLibrary.IsValid(Actor1) or not UE4.UKismetSystemLibrary.IsValid(Actor2) then
     return false
@@ -887,7 +937,6 @@ function BP_LevelLoader_C:CheckIsTwoActorInSameLevelId(Actor1, Actor2)
   end
   return false
 end
-
 function BP_LevelLoader_C:MultiLevelTrans(InActor, InTransform)
   local level = UE4.URuntimeCommonFunctionLibrary.GetLevel(InActor)
   for streamLevel, _ in pairs(self.artStreamingLevel2ID) do
@@ -896,13 +945,11 @@ function BP_LevelLoader_C:MultiLevelTrans(InActor, InTransform)
     end
   end
 end
-
 function BP_LevelLoader_C:CreateNavLinkProxy()
   for _, door in pairs(self.Doors) do
     self:CreateNavLinkProxyCPP(FTransform(door:K2_GetActorRotation():ToQuat(), door:K2_GetActorLocation()), door.LevelId, door.OtherLevelId)
   end
 end
-
 function BP_LevelLoader_C:LoadCapturePathLevel(PathLevelArray)
   if not (not self.CapturePathLevel and Utils.IsAuthority(self)) or self.levelLoadComplete then
     return
@@ -914,7 +961,6 @@ function BP_LevelLoader_C:LoadCapturePathLevel(PathLevelArray)
     end
   end
 end
-
 function BP_LevelLoader_C:IsCapturePathLevel(LevelId)
   if not self.CapturePathLevel then
     return false
@@ -926,7 +972,6 @@ function BP_LevelLoader_C:IsCapturePathLevel(LevelId)
   end
   return false
 end
-
 function BP_LevelLoader_C:RecoverArtLevelBreakable()
   local DirPath = UKismetSystemLibrary.GetProjectSavedDirectory() .. "Breakable/"
   for ArtName, ArtId in pairs(self.levelName2Id) do
@@ -956,7 +1001,6 @@ function BP_LevelLoader_C:RecoverArtLevelBreakable()
     end
   end
 end
-
 function BP_LevelLoader_C:GetNextLevelIsLoaded(StartActor, TargetVector)
   local startLevelIdArray = StartActor.CurrentLevelId
   if not startLevelIdArray then
@@ -980,7 +1024,6 @@ function BP_LevelLoader_C:GetNextLevelIsLoaded(StartActor, TargetVector)
   local doorLoc = self.LevelPathfinding.Name2BpArrowPos:FindRef(doorName):K2_GetActorLocation()
   return doorLoc, self:GetLevelLoaded(LevelTo)
 end
-
 function BP_LevelLoader_C:SetLoadProgress(Num)
   if not Num or Num <= 0 then
     return
@@ -991,15 +1034,12 @@ function BP_LevelLoader_C:SetLoadProgress(Num)
     self.LoadingUI:AddQuene(self.loadProgress * 0.5 * 100)
   end
 end
-
 function BP_LevelLoader_C:GetLoadProgress()
   return self.loadProgress
 end
-
 function BP_LevelLoader_C:GetFirstArrowByLevelId(LevelId)
   return self.LevelId2Doors[LevelId] and self.LevelId2Doors[LevelId][1] or nil
 end
-
 function BP_LevelLoader_C:OnElevatorMechanismCompleteNotify()
   if IsDedicatedServer(self) then
     return
@@ -1007,7 +1047,6 @@ function BP_LevelLoader_C:OnElevatorMechanismCompleteNotify()
   local playerCharacter = UGameplayStatics.GetPlayerCharacter(self, 0)
   self.LevelPathfinding:UpdateAllPathfinding(playerCharacter.CurrentLevelId)
 end
-
 function BP_LevelLoader_C:GetArtPathByLevelId(LevelId)
   for i = 1, self.numOfLevels do
     local Level = self.points[i]
@@ -1020,7 +1059,6 @@ function BP_LevelLoader_C:GetArtPathByLevelId(LevelId)
     end
   end
 end
-
 function BP_LevelLoader_C:K2_GetArtPathByLevelId(LevelId)
   for i = 1, self.numOfLevels do
     local Level = self.points[i]
@@ -1035,19 +1073,16 @@ function BP_LevelLoader_C:K2_GetArtPathByLevelId(LevelId)
     end
   end
 end
-
 function BP_LevelLoader_C:GetArtLevelByLevelId(LevelId)
   if self.ID2ArtStreamingLevel[LevelId] then
     return self.ID2ArtStreamingLevel[LevelId]:GetLoadedLevel()
   end
   return nil
 end
-
 function BP_LevelLoader_C:GetExitLevelLocation()
   if -1 ~= self.exitLevelID and self.id2LevelLocationAndRotation[self.exitLevelID] then
     return self.id2LevelLocationAndRotation[self.exitLevelID][2]
   end
   return nil
 end
-
 return BP_LevelLoader_C

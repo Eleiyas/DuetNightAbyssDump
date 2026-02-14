@@ -1,6 +1,5 @@
 require("UnLua")
 local Component = {}
-
 function Component:InitSpecialView(ItemData, ...)
   self.WidgetSwitcher_Level:SetActiveWidgetIndex(1)
   if ItemData.GradeLevel ~= nil and ItemData.GradeLevel > 0 then
@@ -25,5 +24,4 @@ function Component:InitSpecialView(ItemData, ...)
   end
   self.WB_Star:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 return Component

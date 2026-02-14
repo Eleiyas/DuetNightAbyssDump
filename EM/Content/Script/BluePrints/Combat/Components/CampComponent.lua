@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:SetCamp(CampValue)
   local CampValueType = type(CampValue)
   if "number" == CampValueType then
@@ -8,5 +7,4 @@ function Component:SetCamp(CampValue)
     self.Overridden.SetCamp(self, Const.CampType[CampValue])
   end
 end
-
 return Component

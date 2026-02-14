@@ -4,7 +4,6 @@ local UpgradeUtils = require("Utils.UpgradeUtils")
 local SkillUtils = require("Utils.SkillUtils")
 local Component = {}
 Component.BreakLevelUpWidget = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Pet/WBP_Armory_PetAscend.WBP_Armory_PetAscend'"
-
 function Component:InitBreakLevelUpComp(...)
   local User, Target, SubWidget, Params = ...
   self.Target = Target
@@ -46,7 +45,6 @@ function Component:InitBreakLevelUpComp(...)
   self.EnhancePressed = false
   self:InitEntryItems()
 end
-
 function Component:InitEntryItems()
   self.bHasLockEntryItem = false
   local BreakConf = self.Target:BreakData()
@@ -69,7 +67,6 @@ function Component:InitEntryItems()
   end
   self:UpdateEntryInfos(self.Target)
 end
-
 function Component:CloseEntryItems()
   if self.Panel_EntryItem:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
     self.Panel_EntryItem:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -80,24 +77,20 @@ function Component:CloseEntryItems()
     end
   end
 end
-
 function Component:OnExpandListComp(bListExpand, bRefreshList)
   if self.CurrentMode == "BreakLevelUp" then
   end
 end
-
 function Component:OnUpgradeBtnClicked()
   if self.CurrentMode == "BreakLevelUp" then
     self:TryToBreakLevelUp()
   end
 end
-
 function Component:OnUpgradeBtnForbiddenClicked()
   if self.CurrentMode == "BreakLevelUp" then
     UIManager(self):ShowUITip("CommonToastMain", GText("UI_Armory_SelectedConsumeIsEmpty"), 1.5)
   end
 end
-
 function Component:SwitchAutoBtnState(bClear)
   if self.CurrentMode == "BreakLevelUp" then
     if self.bBtnClear == bClear then
@@ -111,7 +104,6 @@ function Component:SwitchAutoBtnState(bClear)
     end
   end
 end
-
 function Component:OnAutoBtnClicked()
   if self.CurrentMode == "BreakLevelUp" then
     if self.Target:IsFinalMaxLevel() then
@@ -167,7 +159,6 @@ function Component:OnAutoBtnClicked()
     end
   end
 end
-
 function Component:InitBreakLvUpIntensify(WidgetPath, Params)
   if self.EnhanceWidget then
     return
@@ -175,7 +166,6 @@ function Component:InitBreakLvUpIntensify(WidgetPath, Params)
   self.VB_Node:ClearChildren()
   self:CreateBreakLvUpWidget(WidgetPath, Params)
 end
-
 function Component:CreateBreakLvUpWidget(WidgetPath, Params)
   self.EnhanceWidget = UIManager(self):CreateWidget(WidgetPath, true)
   self.VB_Node:AddChild(self.EnhanceWidget)
@@ -189,7 +179,6 @@ function Component:CreateBreakLvUpWidget(WidgetPath, Params)
     self.CurrentSubUI = self.EnhanceWidget
   end
 end
-
 function Component:InitBreakLvUpPanelInfo()
   self.Panel_Info:SetVisibility(UIConst.VisibilityOp.Visible)
   local TargetData = self.Target.Props
@@ -211,7 +200,6 @@ function Component:InitBreakLvUpPanelInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function Component:RefreshListComp()
   if self.CurrentMode == "BreakLevelUp" then
     local PetContents = {}
@@ -300,11 +288,9 @@ function Component:RefreshListComp()
     self:SetListEmptyState(0 == #PetContents)
   end
 end
-
 function Component:IsBreakCommonResource(Uuid)
   return type(Uuid) == "number" and Uuid < 0
 end
-
 function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
   if self.CurrentMode == "BreakLevelUp" then
     self.SortType = SortType
@@ -351,7 +337,6 @@ function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
     self.SortType = nil
   end
 end
-
 function Component:OnBreakLvupListItemClicked(Content)
   if self.CurrentMode == "BreakLevelUp" then
     if self.CurrentSelected and self.CurrentSelected ~= Content and IsValid(self.CurrentSelected.SelfWidget) then
@@ -389,11 +374,9 @@ function Component:OnBreakLvupListItemClicked(Content)
     self.CurrentSubUI:CopyItemToConsumeList(Content)
   end
 end
-
 function Component:SetListEmptyState(bListEmpty)
   self.bListEmpty = bListEmpty
 end
-
 function Component:SetContentSelected(Content, bSelect)
   if self.CurrentMode == "BreakLevelUp" then
     if bSelect then
@@ -415,10 +398,8 @@ function Component:SetContentSelected(Content, bSelect)
     end
   end
 end
-
 function Component:OnChosenItemChanged(CardLevelWidgetContents)
 end
-
 function Component:CloseComp()
   if self.CurrentMode == "BreakLevelUp" then
     if not self.bItemDetailsShowed then
@@ -437,7 +418,6 @@ function Component:CloseComp()
   end
   self:CloseEntryItems()
 end
-
 function Component:RealCloseComp()
   if self.CurrentMode == "BreakLevelUp" then
     self.Btn_Enhance:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -445,7 +425,6 @@ function Component:RealCloseComp()
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   end
 end
-
 function Component:OnBackgroundClickedComp()
   if self.CurrentMode == "BreakLevelUp" then
     if self.CurrentSelected and self.CurrentSelected.SelfWidget then
@@ -460,13 +439,11 @@ function Component:OnBackgroundClickedComp()
     end
   end
 end
-
 function Component:OnDetailLockBtnClickComp()
   if self.CurrentMode == "BreakLevelUp" then
     self:LockOrUnlockPet()
   end
 end
-
 function Component:LockOrUnlockPet()
   if self.CurrentMode ~= "BreakLevelUp" then
     return
@@ -481,39 +458,35 @@ function Component:LockOrUnlockPet()
   if self:IsContentLocked(self.ItemDetailsContent) then
     local function CancelFunc()
       self:SetFocus()
-      
       if self.ItemDetailsWidget then
         self.ItemDetailsWidget.Btn_Locked.Switcher_Lock:SetActiveWidgetIndex(0)
       end
     end
-    
     local function ConfirmFunc()
       self:SetFocus()
       local Avatar = GWorld:GetAvatar()
-      self:BlockAllUIInput(true)
+      self:BlockAllUIInputWithDelayUnblock(5)
       Avatar:UnLockPet(self.ItemDetailsContent.UniqueId)
       self.BreakLvupLockTimer = self:AddTimer(5, function()
-        UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "\232\167\163\233\148\129\232\175\183\230\177\130\232\182\133\230\151\182", 1.5)
+        UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "解锁请求超时", 1.5)
         self:BlockAllUIInput(false)
       end)
     end
-    
     UIManager(self):ShowCommonPopupUI(100019, {
       LeftCallbackFunction = CancelFunc,
       RightCallbackFunction = ConfirmFunc,
       CloseBtnCallbackFunction = CancelFunc
     }, self)
   else
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInputWithDelayUnblock(5)
     local Avatar = GWorld:GetAvatar()
     Avatar:LockPet(self.ItemDetailsContent.UniqueId)
     self.BreakLvupLockTimer = self:AddTimer(5, function()
-      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "\233\148\129\229\174\154\232\175\183\230\177\130\232\182\133\230\151\182", 1.5)
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "锁定请求超时", 1.5)
       self:BlockAllUIInput(false)
     end)
   end
 end
-
 function Component:OnPetLocked(ErrCode, UniqueId, IsLocked)
   if self.CurrentMode == "BreakLevelUp" then
     local CurrentContent = self.ItemDetailsContent
@@ -547,20 +520,16 @@ function Component:OnPetLocked(ErrCode, UniqueId, IsLocked)
     end
   end
 end
-
 function Component:DestructComp()
 end
-
 function Component:Construct()
 end
-
 function Component:InitBreakLevelUpView()
   self.TargetId = self.Target[self.Type .. "Id"]
   self.BreakLevel = self.Target.BreakNum
   self.MaxBreakLevel = #DataMgr[self.Type .. "Break"][self.TargetId]
   self:UpdateBreakLevelUpInfo()
 end
-
 function Component:UpdateBreakLevelUpInfo()
   local BreakLevelUpData = DataMgr[self.Type .. "Break"][self.TargetId]
   local BreakLevel = self.BreakLevel
@@ -570,7 +539,6 @@ function Component:UpdateBreakLevelUpInfo()
     return
   end
 end
-
 function Component:TryToBreakLevelUp()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -601,7 +569,7 @@ function Component:TryToBreakLevelUp()
           UIManager(self):ShowUITip("CommonToastMain", GText("UI_Armory_SelectedConsumeIsEmpty"), 1.5)
           return
         end
-        self:BlockAllUIInput(true)
+        self:BlockAllUIInputWithDelayUnblock(5)
         local Avatar = GWorld:GetAvatar()
         if self:IsBreakCommonResource(ConsumeId) then
           Avatar:PetBreak(self.Target.UniqueId, 0)
@@ -622,7 +590,7 @@ function Component:TryToBreakLevelUp()
       UIManager(self):ShowUITip("CommonToastMain", GText("UI_Armory_SelectedConsumeIsEmpty"), 1.5)
       return
     end
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInputWithDelayUnblock(5)
     local Avatar = GWorld:GetAvatar()
     if self:IsBreakCommonResource(ConsumeId) then
       Avatar:PetBreak(self.Target.UniqueId, 0)
@@ -636,7 +604,6 @@ function Component:TryToBreakLevelUp()
     ArmoryMain.ActorController:PetLvUpOrBreakUp()
   end
 end
-
 function Component:UpdateEntryInfos(Pet)
   if not Pet or not Pet.Entry then
     return
@@ -678,6 +645,7 @@ function Component:UpdateEntryInfos(Pet)
       self.EntryItem_4:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
+  local HasNextUnlockEntry = false
   for i = 1, 4 do
     EntryId = Pet.Entry[i]
     Data = DataMgr.PetEntry[EntryId]
@@ -694,12 +662,15 @@ function Component:UpdateEntryInfos(Pet)
     end
     Content.IsEmpty = not EntryId or EntryId <= 0
     Content.IsLocked = UnlockedEntryNum < i
+    if Content.IsLocked and not HasNextUnlockEntry then
+      HasNextUnlockEntry = true
+      Content.bPendingUnLock = true
+    end
     if EntryItemWidgets[i] then
       EntryItemWidgets[i]:Init(Content)
     end
   end
 end
-
 function Component:OnPetIntensifyDone(ErrCode, UniqueId, CostPetUniqueID, bLevelUp)
   if self.CurrentMode == "BreakLevelUp" then
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -743,68 +714,64 @@ function Component:OnPetIntensifyDone(ErrCode, UniqueId, CostPetUniqueID, bLevel
     })
   end
 end
-
-function Component:OnBreakLevelUpAnimFinishedCallback()
-  self:AddTimer(0.5, function()
-    if not self.bHasLockEntryItem then
-      return
-    end
-    self:BlockAllUIInput(false)
-    self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
-    self:SetFocus()
-    local BreakConf = self.Target:BreakData()
-    local EntryIndex = {
+function Component:CheckAndPlayEntryItemLock()
+  if not self.bHasLockEntryItem then
+    return
+  end
+  self:BlockAllUIInput(false)
+  self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
+  self:SetFocus()
+  local BreakConf = self.Target:BreakData()
+  local EntryIndex = {
+    1,
+    3,
+    2
+  }
+  if self.Target:IsPremium() then
+    EntryIndex = {
       1,
       3,
+      4,
       2
     }
-    if self.Target:IsPremium() then
-      EntryIndex = {
-        1,
-        3,
-        4,
-        2
-      }
-    end
-    local CurrentEntrynum = BreakConf[self.Target.BreakNum].EntryNum
-    local UnlockEntryName = "EntryItem_" .. tostring(EntryIndex[CurrentEntrynum])
-    local UnlockEntry = self[UnlockEntryName]
-    if BreakConf and BreakConf[self.Target.BreakNum] and UnlockEntry and UnlockEntry.IsLocked then
-      UnlockEntry:PlayAnimation(UnlockEntry.UnLock)
-      AudioManager(self):PlayUISound(self, "event:/ui/common/pet_potential_point_unlock", "", nil)
-      UnlockEntry.WidgetSwitcher_State:SetActiveWidgetIndex(1)
-      UnlockEntry.IsLocked = false
-    end
-    if self.Target.BreakNum >= 3 and self.Target.IsLock ~= nil and false == self.Target.IsLock then
-      self:BlockAllUIInput(true)
-      local Avatar = ArmoryUtils:GetAvatar()
-      Avatar:LockPet(self.Target.UniqueId)
-    end
-  end)
-  self:AddTimer(1.5, function()
-    if not self then
-      return
-    end
-    self.VB_Node:ClearChildren()
-    local Params = {
-      Target = self.Target,
-      Type = self.Type,
-      Tag = self.Tag,
-      BehaviourType = "LevelUp",
-      LeftCallbackObj = self.Params.LeftCallbackObj,
-      LeftCallbackFunction = self.Params.LeftCallbackFunction,
-      CloseBtnCallbackObj = self.Params.CloseBtnCallbackObj,
-      CloseBtnCallbackFunction = self.Params.CloseBtnCallbackFunction,
-      IsSwitch = true
-    }
-    local UIConfig = DataMgr.SystemUI.ArmoryCardLevelWeapon
-    self:CloseComp()
-    self:InitUIInfo(UIConfig.UIName, true, nil, self.Type, self.Target, self, Params)
-    self:BlockAllUIInput(false)
-  end)
+  end
+  local CurrentEntrynum = BreakConf[self.Target.BreakNum].EntryNum
+  local UnlockEntryName = "EntryItem_" .. tostring(EntryIndex[CurrentEntrynum])
+  local UnlockEntry = self[UnlockEntryName]
+  if BreakConf and BreakConf[self.Target.BreakNum] and UnlockEntry and UnlockEntry.IsLocked then
+    UnlockEntry:PlayAnimation(UnlockEntry.UnLock)
+    AudioManager(self):PlayUISound(self, "event:/ui/common/pet_potential_point_unlock", "", nil)
+    UnlockEntry.WidgetSwitcher_State:SetActiveWidgetIndex(1)
+    UnlockEntry.IsLocked = false
+  end
+  if self.Target.BreakNum >= 3 and self.Target.IsLock ~= nil and false == self.Target.IsLock then
+    self:BlockAllUIInputWithDelayUnblock(5)
+    local Avatar = ArmoryUtils:GetAvatar()
+    Avatar:LockPet(self.Target.UniqueId)
+  end
+end
+function Component:OnBreakLevelUpAnimFinishedCallback()
+  if not self then
+    return
+  end
+  self.VB_Node:ClearChildren()
+  local Params = {
+    Target = self.Target,
+    Type = self.Type,
+    Tag = self.Tag,
+    BehaviourType = "LevelUp",
+    LeftCallbackObj = self.Params.LeftCallbackObj,
+    LeftCallbackFunction = self.Params.LeftCallbackFunction,
+    CloseBtnCallbackObj = self.Params.CloseBtnCallbackObj,
+    CloseBtnCallbackFunction = self.Params.CloseBtnCallbackFunction,
+    IsSwitch = true
+  }
+  local UIConfig = DataMgr.SystemUI.ArmoryCardLevelWeapon
+  self:CloseComp()
+  self:InitUIInfo(UIConfig.UIName, true, nil, self.Type, self.Target, self, Params)
+  self:BlockAllUIInput(false)
   return
 end
-
 function Component:UpdateBtnState(bIsMaxLevel)
   if self.CurrentMode == "BreakLevelUp" then
     if bIsMaxLevel then
@@ -817,7 +784,23 @@ function Component:UpdateBtnState(bIsMaxLevel)
     end
   end
 end
-
+function Component:BlockAllUIInputWithDelayUnblock(DelayTime)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
+  local TargetTime = DelayTime
+  if not TargetTime or TargetTime <= 0 then
+    TargetTime = 5
+  end
+  self:AddTimer(TargetTime, function()
+    if not self then
+      return
+    end
+    if not self:IsAllUIInputBlocked() then
+      return
+    end
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "超时解锁输入", 1.5)
+    self:BlockAllUIInput(false)
+  end)
+end
 function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName)
   if self.CurrentMode == "BreakLevelUp" then
     self.CurInputDeviceType = CurInputDevice
@@ -826,13 +809,11 @@ function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName
     end
   end
 end
-
 function Component:OnFocusReceivedComp(MyGeometry, InFocusEvent)
   if self.CurrentMode == "BreakLevelUp" and self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ReNavigateToListItem()
   end
 end
-
 function Component:ReNavigateToListItem(bToList, bExpandingList)
   if self.CurrentMode == "BreakLevelUp" then
     if not bToList and self.bListExpand then
@@ -849,7 +830,6 @@ function Component:ReNavigateToListItem(bToList, bExpandingList)
     end
   end
 end
-
 function Component:OnKeyDownComp(MyGeometry, InKeyName)
   if self.CurrentMode == "BreakLevelUp" then
     if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
@@ -863,7 +843,6 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
     end
   end
 end
-
 function Component:OnKeyUpComp(MyGeometry, InKeyName)
   if self.CurrentMode == "BreakLevelUp" then
     if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
@@ -885,5 +864,4 @@ function Component:OnKeyUpComp(MyGeometry, InKeyName)
     end
   end
 end
-
 return Component

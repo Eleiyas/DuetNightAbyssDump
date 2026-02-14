@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.Balls = {
@@ -23,13 +22,11 @@ function M:CommonInitInfo(Info)
   self.WaitBall = {}
   self.WaitIndex = 0
 end
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:GetDungeonComponent():AddSpawnBallPlatform(self.ManualItemId)
 end
-
 function M:ResetInfo()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
@@ -54,20 +51,16 @@ function M:ResetInfo()
   self.WaitBall = {}
   self.WaitIndex = 0
 end
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   EventManager:AddEvent(EventID.OnSpawnTempleBomb, self, self.OnSpawnTempleBomb)
 end
-
 function M:ActiveCombat(bFromGameMode)
   self.IsActive = true
 end
-
 function M:InactiveCombat(bFromGameMode)
   self.IsActive = false
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   self.ElapsedTime = self.ElapsedTime + DeltaSeconds
@@ -79,7 +72,6 @@ function M:ReceiveTick(DeltaSeconds)
     end
   end
 end
-
 function M:OnSpawnTempleBomb(Eid, CreatorId)
   for i = 1, 3 do
     if CreatorId == self["Point" .. i].StaticCreatorId then
@@ -90,11 +82,13 @@ function M:OnSpawnTempleBomb(Eid, CreatorId)
       if 1 ~= i then
         Bomb.ChestInteractiveComponent.bCanUsed = false
       end
+      if self.ForbidInteractive then
+        Bomb:ChangeToForbiddenState()
+      end
       break
     end
   end
 end
-
 function M:SpawnBall(UnitId)
   if not self.IsActive then
     return
@@ -124,11 +118,9 @@ function M:SpawnBall(UnitId)
   GameMode:TriggerActiveStaticCreator(Array, "SpawnBall")
   self.Balls[Index] = true
 end
-
 function M:OnBombInteractived()
   local function MoveEnd()
     self:SetActorTickEnabled(false)
-    
     self.ElapsedTime = 0
     if self.Bombs[2] then
       self.Bombs[1] = self.Bombs[2]
@@ -154,7 +146,6 @@ function M:OnBombInteractived()
       self.WaitBall = {}
     end
   end
-  
   self:OnGetBall()
   self:PlaySound("event:/sfx/common/scene/shenmiao/ball_get")
   self:SetActorTickEnabled(true)
@@ -166,7 +157,6 @@ function M:OnBombInteractived()
     self:AddTimer(self.MoveTime, MoveEnd, false, 0, "MoveEnd")
   end
 end
-
 function M:AllBallNormal()
   for i, Ball in pairs(self.Bombs) do
     if Ball then
@@ -176,8 +166,8 @@ function M:AllBallNormal()
       end
     end
   end
+  self.ForbidInteractive = false
 end
-
 function M:AllBallForbid()
   for i, Ball in pairs(self.Bombs) do
     if Ball then
@@ -187,6 +177,6 @@ function M:AllBallForbid()
       end
     end
   end
+  self.ForbidInteractive = true
 end
-
 return M

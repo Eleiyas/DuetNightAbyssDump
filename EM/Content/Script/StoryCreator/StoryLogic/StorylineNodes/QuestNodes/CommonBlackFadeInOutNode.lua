@@ -1,11 +1,9 @@
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function M:Init()
   self.FadeTime = 0
   self.FadeType = "FadeIn"
   self.Tag = "CommonBlackFadeInOutNode"
 end
-
 function M:Execute(Callback)
   DebugPrint("------------ CommonBlackFadeInOutNode Execute------------------")
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -44,10 +42,8 @@ function M:Execute(Callback)
     })
   end
 end
-
 function M:Clear()
 end
-
 function M:SetPlayerCharacterInputEnabled(bNewEnabled)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not IsValid(PlayerCharacter) then
@@ -61,7 +57,6 @@ function M:SetPlayerCharacterInputEnabled(bNewEnabled)
     UIManager(GWorld.GameInstance):SetBannedActionCallback("BlackScreen", true)
   end
 end
-
 function M:SetPlayerCharacterEmoIdleEnabled(bNewEnabled)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not IsValid(PlayerCharacter) then
@@ -69,7 +64,6 @@ function M:SetPlayerCharacterEmoIdleEnabled(bNewEnabled)
   end
   PlayerCharacter:SetEmoIdleEnabled(bNewEnabled)
 end
-
 function M:SetMonstersVisibility(bNewVisibility)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if not IsValid(GameState) then
@@ -78,5 +72,4 @@ function M:SetMonstersVisibility(bNewVisibility)
   GameState:HideAllRealMonsters(not bNewVisibility, self.Tag)
   GameState:HideAllPhantom(not bNewVisibility, self.Tag)
 end
-
 return M

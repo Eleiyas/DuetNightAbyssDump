@@ -4,7 +4,6 @@ local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.TreeNodeWidget = {
     self.Skill_Main,
@@ -14,15 +13,12 @@ function M:Construct()
   self.MaxNodeNumber = #self.TreeNodeWidget
   EventManager:AddEvent(EventID.OnResourcesChanged, self, self.OnResourcesChanged)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnResourcesChanged, self)
 end
-
 function M:GetChar(BranchInfo)
   return ArmoryUtils:GetCharByUuid(BranchInfo.Target.Uuid) or BranchInfo.Target
 end
-
 function M:Init(SkillTreeBranchInfo, IsPreviewMode)
   self.IsPreviewMode = IsPreviewMode
   self.SkillTreeBranchInfo = SkillTreeBranchInfo
@@ -81,7 +77,6 @@ function M:Init(SkillTreeBranchInfo, IsPreviewMode)
     SkillItemWidget:Init(SkillTreeNodeInfo)
   end
 end
-
 function M:UpdateSubNodeWidget(SkillTreeBranchInfo, SkillTreeNodeInfo)
   self:UpdateSubNodeInfo(SkillTreeBranchInfo, SkillTreeNodeInfo)
   if SkillTreeNodeInfo.IsLocked then
@@ -90,7 +85,6 @@ function M:UpdateSubNodeWidget(SkillTreeBranchInfo, SkillTreeNodeInfo)
     self:PlayAnimation(self["Unlock_0" .. SkillTreeNodeInfo.NodeIdx - 1], 0, 1, 0, 1000)
   end
 end
-
 function M:UpdateSubNodeInfo(BracnInfo, NodeInfo)
   local AttrData = DataMgr.CharAddonAttr[NodeInfo.AttrId]
   if AttrData then
@@ -138,7 +132,6 @@ function M:UpdateSubNodeInfo(BracnInfo, NodeInfo)
     end
   end
 end
-
 function M:OnNodeClicked(TreeNodeInfo)
   local BranchInfo = self.SkillTreeBranchInfo
   if not BranchInfo then
@@ -148,7 +141,6 @@ function M:OnNodeClicked(TreeNodeInfo)
     BranchInfo.OnNodeClickedFunc(BranchInfo.Owner, BranchInfo, TreeNodeInfo)
   end
 end
-
 function M:UpdateNodeSate()
   local SkillTreeBranchInfo = self.SkillTreeBranchInfo
   local SkillTreeNodeInfo, SkillItemWidget
@@ -160,7 +152,7 @@ function M:UpdateNodeSate()
     SkillItemWidget = self.TreeNodeWidget[i]
     if 1 == i then
       local CharSkill = SkillTreeNodeInfo.Skill
-      local Ret = SkillUtils.CalcSkillCanLvup(CharSkill.SkillId, CharSkill.Level, CharSkill.Level + 1, SkillTreeBranchInfo.CharUuid)
+      local Ret = SkillUtils.CalcSkillCanLvup(CharSkill.SkillId, CharSkill.Level, CharSkill.Level + 1, SkillTreeBranchInfo.Target.Uuid)
       SkillTreeNodeInfo.bCanUpgrad = Ret.CanLevelUp
       SkillItemWidget:SetCanUpgrade(SkillTreeNodeInfo.bCanUpgrad)
     else
@@ -183,11 +175,9 @@ function M:UpdateNodeSate()
     end
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.TreeNodeWidget[1])
 end
-
 function M:OnResourcesChanged(ResourceId)
   local BranchInfo = self.SkillTreeBranchInfo
   if not BranchInfo then
@@ -203,5 +193,4 @@ function M:OnResourcesChanged(ResourceId)
     end
   end
 end
-
 return M

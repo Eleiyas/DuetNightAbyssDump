@@ -4,7 +4,6 @@ local BP_Trolly_C = Class({
   "BluePrints.Common.TimerMgr"
 })
 local ToastTimerCD = DataMgr.GlobalConstant.HijackToastTime.ConstantValue
-
 function BP_Trolly_C:AuthorityInitInfo(Info)
   BP_Trolly_C.Super.AuthorityInitInfo(self, Info)
   self.ESAbsorbRatio = self.UnitParams.ESAbsorbRatio or 0.1
@@ -31,7 +30,6 @@ function BP_Trolly_C:AuthorityInitInfo(Info)
   end
   self:SetCollisionType("BodyCollision", "Item", ECollisionResponse.ECR_OverLap, false)
 end
-
 function BP_Trolly_C:CommonInitInfo(Info)
   BP_Trolly_C.Super.CommonInitInfo(self, Info)
   self:AddTimer(0.5, self.AbsorbES, true)
@@ -41,7 +39,6 @@ function BP_Trolly_C:CommonInitInfo(Info)
   self.RunStateId = self.UnitParams.RunStateId or 0
   self.Distance = 0
 end
-
 function BP_Trolly_C:ClientInitInfo(Info)
   BP_Trolly_C.Super.ClientInitInfo(self, Info)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -58,12 +55,10 @@ function BP_Trolly_C:ClientInitInfo(Info)
   self:CreateUISpline()
   self.ToastTimerCD = DataMgr.GlobalConstant.HijackToastTime.ConstantValue
 end
-
 function BP_Trolly_C:ReceiveTick(DeltaSeconds)
   self:Move(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
 end
-
 function BP_Trolly_C:OpenMechanism(PlayerId)
   if self.CurrentWall then
     print(_G.LogTag, "Error: Attack Wall")
@@ -78,11 +73,9 @@ function BP_Trolly_C:OpenMechanism(PlayerId)
     self.bFirstActive = true
   end
 end
-
 function BP_Trolly_C:GetCanOpen(PlayerId)
   self.CanOpen = self.bMove == false or self.bMove ~= true or not not self.CurrentWall
 end
-
 function BP_Trolly_C:CreateSpline()
   local SplinePath = UE4.UClass.Load("/Game/BluePrints/Item/DefenceCore/BP_TrollySpline.BP_TrollySpline")
   local Transform = FTransform()
@@ -94,7 +87,6 @@ function BP_Trolly_C:CreateSpline()
   GameState.NextPathId = self.NextPathId
   self:AddNewPath()
 end
-
 function BP_Trolly_C:CreateUISpline()
   DebugPrint("1111111111111111111111 CreateUISpline")
   self.AlreadyCreateUISpline = true
@@ -110,7 +102,6 @@ function BP_Trolly_C:CreateUISpline()
   DebugPrint("1111111111111111111111 CreateUISpline", self.UISpline)
   self:UpdatePath(self.UISpline)
 end
-
 function BP_Trolly_C:AddNewPath()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode:GetDungeonComponent() then
@@ -138,7 +129,6 @@ function BP_Trolly_C:AddNewPath()
     self:K2_SetActorTransform(Transform, false, nil, false)
   end
 end
-
 function BP_Trolly_C:Move(DeltaSeconds)
   if IsClient(self) and self.AlreadyCreateUISpline and (not self.UIPanel or not self.UIPanel.UISpline) then
     self.UIPanel = UIManager(self):GetUIObj("DungeonHijackFloat")
@@ -157,7 +147,6 @@ function BP_Trolly_C:Move(DeltaSeconds)
   self:Move_Sound(DeltaSeconds)
   self:UpdateUIStateAfterMove()
 end
-
 function BP_Trolly_C:Stop(Wall)
   self.bMove = false
   self.Speed = 0
@@ -170,15 +159,12 @@ function BP_Trolly_C:Stop(Wall)
   end
   self:UpdateSpeed()
 end
-
 function BP_Trolly_C:GetSplineMoveTransform(Wall)
   return self.Spline:GetMoveTransform(self.Percent)
 end
-
 function BP_Trolly_C:Crash(Wall)
   Wall:OnCrashed(self)
 end
-
 function BP_Trolly_C:RefreshHp()
   if not IsValid(self.UIPanel) then
     self.UIPanel = nil
@@ -189,7 +175,6 @@ function BP_Trolly_C:RefreshHp()
     self.UIPanel:OnCarDamage(NewHp, MaxHp)
   end
 end
-
 function BP_Trolly_C:UpdateSpeed()
   if not IsValid(self.UIPanel) then
     self.UIPanel = nil
@@ -199,7 +184,6 @@ function BP_Trolly_C:UpdateSpeed()
     self.UIPanel:UpdateSpeed(CurrentSpeed, self.CurrentAccelerationValue, self.MaxSpeed, self.MinSpeed, self.StateId, self)
   end
 end
-
 function BP_Trolly_C:UpdateUILength()
   if not IsValid(self.UIPanel) then
     self.UIPanel = nil
@@ -208,7 +192,6 @@ function BP_Trolly_C:UpdateUILength()
     self.UIPanel:UpdateUILength(self.Distance)
   end
 end
-
 function BP_Trolly_C:UpdatePath(SplineActor)
   if not IsValid(self.UIPanel) then
     self.UIPanel = nil
@@ -217,7 +200,6 @@ function BP_Trolly_C:UpdatePath(SplineActor)
     self.UIPanel:UpdatePath(SplineActor)
   end
 end
-
 function BP_Trolly_C:TriggerBoxStop()
   if not IsValid(self.UIPanel) then
     self.UIPanel = nil
@@ -226,7 +208,6 @@ function BP_Trolly_C:TriggerBoxStop()
     self.UIPanel:TriggerBoxStop()
   end
 end
-
 function BP_Trolly_C:TryToShowToast()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -237,36 +218,29 @@ function BP_Trolly_C:TryToShowToast()
     UIManager:ShowUITip(UIConst.Tip_CommonTop, GText(Text))
   end
 end
-
 function BP_Trolly_C:OnFirstActive()
 end
-
 function BP_Trolly_C:PlayMoveSound()
   AudioManager(self):PlayFMODSound(self, nil, self.MoveSoundPath, "TrollyMove", nil, nil, true, false, nil, true)
   self:AddTimer(0.5, self.SetMoveSoundParam, true, 0, "TrollyMoveSound")
 end
-
 function BP_Trolly_C:SetMoveSoundParam()
   AudioManager(self):SetEventSoundParam(self, "TrollyMove", {
     Speed = self.Speed / self.MaxSpeed
   })
 end
-
 function BP_Trolly_C:StopMoveSound()
   AudioManager(self):StopSound(self, "TrollyMove")
   self:RemoveTimer("TrollyMoveSound")
 end
-
 function BP_Trolly_C:PlayMaxSpeedSound()
   AudioManager(self):StopSound(self, "TrollyExitMaxSpeed")
   AudioManager(self):PlayFMODSound(self, nil, self.MaxSpeedSoundPath, "TrollyMaxSpeed", nil, nil, true, false, nil, true)
 end
-
 function BP_Trolly_C:PlayExitMaxSpeedSound()
   AudioManager(self):StopSound(self, "TrollyMaxSpeed")
   AudioManager(self):PlayFMODSound(self, nil, self.ExitMaxSpeedSoundPath, "TrollyExitMaxSpeed")
 end
-
 function BP_Trolly_C:OnRep_PositionArray()
   if not self.SplineClient then
     local SplinePath = UE4.UClass.Load("/Game/BluePrints/Item/DefenceCore/BP_TrollySpline.BP_TrollySpline")
@@ -292,5 +266,4 @@ function BP_Trolly_C:OnRep_PositionArray()
   DebugPrint("TrollyClientDebug OnRep_PositionArray", self.SplinePercent, self.Distance)
   self:OnRep_ServerPosInfo()
 end
-
 return BP_Trolly_C

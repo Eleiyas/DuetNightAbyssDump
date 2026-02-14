@@ -1,10 +1,8 @@
 local StopNormalSoundNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function StopNormalSoundNode:Init()
   self.TargetPointName = ""
   self.EventKey = ""
 end
-
 function StopNormalSoundNode:Start(Context)
   DebugPrint("===============================StopNormalSoundNode================================")
   DebugPrint("TargetPointName", self.TargetPointName, "EventKey", self.EventKey)
@@ -17,5 +15,4 @@ function StopNormalSoundNode:Start(Context)
   AudioManager(GameInstance):StopSound(TargetPoint, self.EventKey)
   self:Finish()
 end
-
 return StopNormalSoundNode

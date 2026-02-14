@@ -1,7 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function M:OnLoaded(...)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.OnRepEidsDelegate:Add(self, self.OnNewEid)
@@ -27,14 +26,12 @@ function M:OnLoaded(...)
   self:InitListenEvent()
   self:AddDispatcher(EventID.OnRepSabotageCountDownTime, self, self.SabotageCountDown)
 end
-
 function M:InitOptionTask()
   self.OptionalTask = self:CreateWidgetNew("DestroyTaskBar")
   if self.OptionalTask then
     self.OptionalTask.Text_Describe:SetText(GText("DUNGEON_SABOTAGE_102"))
   end
 end
-
 function M:AfterAddToParent()
   self.Super.AfterAddToParent(self)
   local BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -42,7 +39,6 @@ function M:AfterAddToParent()
     BattleMainUI.Task:AddChildToOverlay(self.OptionalTask)
   end
 end
-
 function M:InitCountDownBar()
   local ProgressBarLength = 0
   for i = 1, #self.SabotageTimer do
@@ -65,11 +61,9 @@ function M:InitCountDownBar()
     Mat:SetScalarParameterValue("percent", Percent)
   end
 end
-
 function M:OnGameStateTimerAdded(TimerHandleName, Time, TimeStamp)
   self.RemainingTime = Time
 end
-
 function M:OnNewEid()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if nil ~= Player then
@@ -77,7 +71,6 @@ function M:OnNewEid()
     Player.RPCComponent:RequestSabotageGuideInfo_Client(self, self.UpdateGuide)
   end
 end
-
 function M:UpdateGuide(Eids, UnitIds)
   print(_G.LogTag, "OnRepEidsDelegateRec")
   if self.OptionalTask.Visibility == UE4.ESlateVisibility.Collapsed then
@@ -108,17 +101,14 @@ function M:UpdateGuide(Eids, UnitIds)
     end
   end
 end
-
 function M:UIStateChange_None()
   self.Group_DestoryProgress:SetVisibility(ESlateVisibility.Collapsed)
   self:PlayAnimationReverse(self.SToA)
 end
-
 function M:UIStateChange_BeforeTarget()
   self.Group_DestoryProgress:SetVisibility(ESlateVisibility.Collapsed)
   self:PlayAnimationReverse(self.SToA)
 end
-
 function M:UIStateChange_OnTarget()
   self.OptionalTask:SetVisibility(ESlateVisibility.Collapsed)
   if self.NoCountDown then
@@ -132,7 +122,6 @@ function M:UIStateChange_OnTarget()
   self:SabotageCountDown()
   AudioManager(self):PlayUISound(self, "event:/ui/common/reward_countdown", nil, nil)
 end
-
 function M:SabotageCountDown()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -163,7 +152,6 @@ function M:SabotageCountDown()
   local Percent = CurrentTimePassed / TotalTimeWindow
   Mat:SetScalarParameterValue("percent", 1 - Percent)
 end
-
 function M:ChangeRewardLevel(TargetRewardLevel)
   AudioManager(self):PlayUISound(self, "event:/ui/common/reward_countdown", nil, nil)
   local RewardLevelUp = TargetRewardLevel > self.CurrentRewardLevel
@@ -180,12 +168,9 @@ function M:ChangeRewardLevel(TargetRewardLevel)
   self:PlayAnimation(self[AnimString], 0, 1, PlayMode)
   self.CurrentRewardLevel = TargetRewardLevel
 end
-
 function M:UIStateChange_AfterTarget()
 end
-
 function M:OnImageGuideBecameRelative(Index)
   self:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 return M

@@ -4,7 +4,6 @@ local WalnutBagController = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBa
 local WalnutBagModel = WalnutBagController:GetModel()
 local WalnutBagCommon = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBagCommon")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:GetListData()
   local Dict = WalnutBagModel:GetAllWalnutDict(self.CurTabId - 1, self.SearchKeyWords, self.bShowNotHaveState)
   self.ListDatas = {}
@@ -26,7 +25,6 @@ function M:GetListData()
     end
   end)
 end
-
 function M:SetupListContent(ItemIndex, ItemInfo, Content)
   local ItemId = ItemInfo.Id
   local WalnutConfigData = DataMgr.Walnut[ItemId]
@@ -49,7 +47,6 @@ function M:SetupListContent(ItemIndex, ItemInfo, Content)
   Content.ParentWidget = self
   Content.Uuid = tostring(ItemId)
 end
-
 function M:RefreshList(bAnimation, FromSrc)
   if nil == bAnimation then
     bAnimation = true
@@ -79,8 +76,34 @@ function M:RefreshList(bAnimation, FromSrc)
       self.List_Item:ScrollToTop()
     end
   end, false, 0, "OnRefreshListLater", true)
+  if self.BagSellState then
+    if 0 == self.List_Item:GetNumItems() then
+      self.Text_Empty_Search:SetText(GText("UI_NoWalnut_Sell"))
+      self.Text_Empty_World_1:SetText(EnText("UI_NoWalnut_Sell"))
+      self.Panel_Empty_Search:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+      self.Panel_Empty_Detail:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      self.List_Item:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    else
+      self.Panel_Empty_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      self.List_Item:SetVisibility(UE4.ESlateVisibility.Visable)
+    end
+  else
+    self.Panel_Empty_Search:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Panel_Empty_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.List_Item:SetVisibility(UE4.ESlateVisibility.Visable)
+  end
+  if self.BagSellState and self.CurSelectContent and self.CurSelectContent.Count > 0 then
+  else
+    self:AddTimer(0.05, function()
+      if self.List_Item:GetNumItems() > 0 then
+        local FirstItem = self.List_Item:GetItemAt(0)
+        if FirstItem then
+          self:OnListItemSelected(FirstItem, nil, true)
+        end
+      end
+    end, false, 0, "SelectFirstWalnutItem", true)
+  end
 end
-
 function M:OnRefreshListLater(bAnimation)
   local ItemUIs = self.List_Item:GetDisplayedEntryWidgets()
   local ListItemNum = self.List_Item:GetNumItems()
@@ -118,17 +141,14 @@ function M:OnRefreshListLater(bAnimation)
     })
   end
 end
-
 function M:OnRefreshListBegin()
 end
-
 function M:OnRefreshListEnd()
   if not self.InputBox:HasUserFocusedDescendants(self:GetOwningPlayer()) then
     self:SetFocus()
   end
   self:JumpToSelectItem()
 end
-
 function M:JumpToSelectItem()
   local AllItemCount = self.List_Item:GetNumItems()
   if AllItemCount > 0 and self.NeedSelectGridIndex >= 0 then
@@ -138,10 +158,11 @@ function M:JumpToSelectItem()
   end
   self.NeedSelectItemId = nil
 end
-
 function M:OnListEmpty(FromSrc)
   if FromSrc == WalnutBagCommon.AllOptionName.SearchClick or FromSrc == WalnutBagCommon.AllOptionName.ShowNotHaveClick or self.SearchKeyWords ~= "" then
     self.HB_Empty:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Text_Empty_Search:SetText(GText("UI_Walnut_Not_Find"))
+    self.Text_Empty_World_1:SetText(EnText("UI_Walnut_Not_Find"))
     self.Panel_Empty_Search:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.Panel_ItemList:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   else
@@ -149,7 +170,6 @@ function M:OnListEmpty(FromSrc)
     self.Panel_ItemList:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnListFillWith(FromSrc)
   self.HB_Empty:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_ItemList:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -168,7 +188,6 @@ function M:OnListFillWith(FromSrc)
     end
   end
 end
-
 function M:_StopListFramingInAnim()
   local Params = {UIState = self}
   if self._ListAnimTimerKeys then
@@ -176,7 +195,6 @@ function M:_StopListFramingInAnim()
   end
   UIUtils.StopListViewFramingInAnimation(self.List_Item, Params)
 end
-
 function M:RefreshListItem(Data, bForceAll)
   if nil == bForceAll then
     bForceAll = true
@@ -199,14 +217,12 @@ function M:RefreshListItem(Data, bForceAll)
     self:OnRefreshListLater(false)
   end
 end
-
-function M:RefreshWalnutSaleItemSelect(StuffData, Num)
+function M:RefreshWalnutSaleItemSelect(StuffData)
   if self.BagSellState and self.DesireSaleWalnutObjList[StuffData.Id] ~= nil then
     local SellPageMainUI = UIManager(self):GetUI("WalnutSelectToList")
     if SellPageMainUI then
-      SellPageMainUI:AddWalnutItemToList(StuffData, Num)
+      SellPageMainUI:AddWalnutItemToList(StuffData)
     end
   end
 end
-
 return M

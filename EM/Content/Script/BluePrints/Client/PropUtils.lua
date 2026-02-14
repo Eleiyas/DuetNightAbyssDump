@@ -1,5 +1,4 @@
 local PropUtils = {}
-
 function PropUtils.IsObjId(str)
   if type(str) ~= "string" then
     return false
@@ -9,7 +8,6 @@ function PropUtils.IsObjId(str)
   end
   return false
 end
-
 function PropUtils.IsObjIdStr(ObjIdStr)
   if 36 ~= string.len(ObjIdStr) then
     return false
@@ -19,12 +17,10 @@ function PropUtils.IsObjIdStr(ObjIdStr)
   end
   return true
 end
-
 function PropUtils.ObjId2Str(ObjId)
   local ret = PropUtils.ObjId2Str2(ObjId)
   return "ObjectId('" .. ret .. "')"
 end
-
 function PropUtils.ObjId2Str2(ObjId)
   local ret = ""
   if nil == ObjId then
@@ -35,7 +31,6 @@ function PropUtils.ObjId2Str2(ObjId)
   end
   return ret
 end
-
 function PropUtils.DeepCopy(Object)
   local function _copy(object)
     if type(object) ~= "table" then
@@ -47,10 +42,8 @@ function PropUtils.DeepCopy(Object)
     end
     return setmetatable(new_table, getmetatable(object))
   end
-  
   return _copy(Object)
 end
-
 function PropUtils.Split(str, reps)
   local Results = {}
   string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -58,7 +51,6 @@ function PropUtils.Split(str, reps)
   end)
   return Results
 end
-
 function PropUtils.Keys(Table)
   local keys = {}
   for k, v in pairs(Table) do
@@ -66,5 +58,4 @@ function PropUtils.Keys(Table)
   end
   return keys
 end
-
 return PropUtils

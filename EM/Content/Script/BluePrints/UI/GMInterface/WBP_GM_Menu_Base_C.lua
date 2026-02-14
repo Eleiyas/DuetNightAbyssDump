@@ -1,12 +1,10 @@
 require("UnLua")
 local WBP_GM_Menu_Base_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_GM_Menu_Base_C:Construct(...)
   self.Overridden.Construct(self)
   self.bIsFocusable = true
   self:SetFocus()
 end
-
 function WBP_GM_Menu_Base_C:InitMenu(Command)
   self.Command = Command
   if self.Bg_AutoSize and self.Vertical_AutoSize then
@@ -26,7 +24,6 @@ function WBP_GM_Menu_Base_C:InitMenu(Command)
     BGSlot:SetSize(TemSize)
   end
 end
-
 function WBP_GM_Menu_Base_C:OnEntryNumChanged(Entry)
   if not (self.Bg_AutoSize and self.Vertical_AutoSize) or not Entry.Panel_Size then
     return
@@ -63,7 +60,6 @@ function WBP_GM_Menu_Base_C:OnEntryNumChanged(Entry)
     self:ShowScrollbar(NewHeight)
   end
 end
-
 function WBP_GM_Menu_Base_C:ShowScrollbar(NewHeight)
   local TopHeight = 0.0
   local TopSizeValue = 0.0
@@ -91,7 +87,6 @@ function WBP_GM_Menu_Base_C:ShowScrollbar(NewHeight)
   SlateSize.SizeRule = UE4.ESlateSizeRule.Fill
   ListSlot:SetSize(SlateSize)
 end
-
 function WBP_GM_Menu_Base_C:RefreshItems()
   local Entrys = self.List:GetDisplayedEntryWidgets()
   local Length = Entrys:Length()
@@ -101,7 +96,6 @@ function WBP_GM_Menu_Base_C:RefreshItems()
     end
   end
 end
-
 function WBP_GM_Menu_Base_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -110,5 +104,4 @@ function WBP_GM_Menu_Base_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return WBP_GM_Menu_Base_C

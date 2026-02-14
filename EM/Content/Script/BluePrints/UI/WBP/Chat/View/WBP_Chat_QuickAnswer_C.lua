@@ -1,10 +1,8 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn_Edit:BindEventOnClicked(self, self.OnBtnClicked)
 end
-
 function M:OnBtnClicked()
   local Params = {
     OnDialogCloseCallback = function()
@@ -15,7 +13,6 @@ function M:OnBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   UIManager(self):ShowCommonPopupUI(ChatCommon.QuickMsgEditDialog, Params, self.Owner)
 end
-
 function M:Destruct()
   self.Btn_Edit:UnBindEventOnClicked(self, self.OnBtnClicked)
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
@@ -25,7 +22,6 @@ function M:Destruct()
     end
   end
 end
-
 function M:Open(Owner, ViewName)
   self:PlayAnimation(self.In)
   self.Owner = Owner
@@ -62,20 +58,16 @@ function M:Open(Owner, ViewName)
     end
   end
 end
-
 function M:UpdateWidth()
   self.Root:SetWidthOverride(self.Owner:GetWidthOverrideForInput())
 end
-
 function M:Close()
   self.Owner:OnExtraPanelClose()
   self:PlayAnimation(self.Out)
 end
-
 function M:OnItemClick(QuickMsgText)
   self.Owner:ApplyQuickMsg(QuickMsgText)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -83,13 +75,11 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self:UpdateUIStyleInPlatform()
 end
-
 function M:UpdateUIStyleInPlatform()
   local IsGamepad = self.CurInputDeviceType == ECommonInputType.Gamepad
   local Visibility = IsGamepad and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed
   self.Key_Edit:SetVisibility(Visibility)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -102,7 +92,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadSpecialRight then
@@ -114,5 +103,4 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

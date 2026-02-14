@@ -6,7 +6,6 @@ local ChatCommon = require("BluePrints.UI.WBP.Chat.ChatCommon")
 local ChatModel = ChatController:GetModel()
 local FriendModel = FriendController:GetModel()
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.bBtnDragPressed = false
@@ -74,7 +73,6 @@ function M:Construct()
   self.CurrExtraPanelName = ""
   self.MaxScrollOffset = 0
 end
-
 function M:_Stop_SetUpChatMsgListTimer()
   if self:IsExistTimer(self._SetUpChatMsgListTimer) then
     self:RemoveTimer(self._SetUpChatMsgListTimer)
@@ -82,7 +80,6 @@ function M:_Stop_SetUpChatMsgListTimer()
     self.SB_Dialog:SetRenderOpacity(1)
   end
 end
-
 function M:_SetUpChatMsgList()
   self:_Stop_SetUpChatMsgListTimer()
   self.bDialogListRefreshed = false
@@ -101,7 +98,6 @@ function M:_SetUpChatMsgList()
     self._ChatItemList = {}
   end
 end
-
 function M:OpenDisturbWindows()
   local Parms = {
     RightCallbackFunction = function()
@@ -114,7 +110,6 @@ function M:OpenDisturbWindows()
   }
   UIManager(self):ShowCommonPopupUI(100193, Parms, self)
 end
-
 function M:BtnEmptyOnClicked()
   if self.CurrChannel == ChatCommon.ChannelDef.InTeam then
     self:HandleGoToTeamType()
@@ -127,7 +122,6 @@ function M:BtnEmptyOnClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
 end
-
 function M:BtnNewMsgOnClicked(bMuteSound)
   self:_AutoScrollToEnd()
   self.Group_NewMessage:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -135,7 +129,6 @@ function M:BtnNewMsgOnClicked(bMuteSound)
     AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
   end
 end
-
 function M:BtnfaceOnPressed()
   local ChatEmoji = DataMgr.WidgetUI.ChatEmoji.UIName
   if self.CurrExtraPanelName ~= ChatEmoji then
@@ -144,7 +137,6 @@ function M:BtnfaceOnPressed()
     self.CurrExtraPanelName = ""
   end
 end
-
 function M:BtnFaceOnReleased()
   local ChatEmoji = DataMgr.WidgetUI.ChatEmoji.UIName
   if self.CurrExtraPanelName == ChatEmoji then
@@ -153,7 +145,6 @@ function M:BtnFaceOnReleased()
     self.PanelAnchor_Face:Close()
   end
 end
-
 function M:BtnQuickReplyOnPressed()
   local ChatQuickMsg = DataMgr.WidgetUI.ChatQuickMsg.UIName
   if self.CurrExtraPanelName ~= ChatQuickMsg then
@@ -162,7 +153,6 @@ function M:BtnQuickReplyOnPressed()
     self.CurrExtraPanelName = ""
   end
 end
-
 function M:BtnQuickReplyOnReleased()
   local ChatQuickMsg = DataMgr.WidgetUI.ChatQuickMsg.UIName
   if self.CurrExtraPanelName == ChatQuickMsg then
@@ -171,7 +161,6 @@ function M:BtnQuickReplyOnReleased()
     self.PanelAnchor:Close()
   end
 end
-
 function M:BtnSendOnClicked(bSkipCheck)
   self.Com_Input:FocusInputField()
   if self.CurrChannel == ChatCommon.ChannelDef.Friend and not ChatModel:GetCurrentFriendUid() then
@@ -216,7 +205,6 @@ function M:BtnSendOnClicked(bSkipCheck)
     self.PanelAnchor_Face:Close()
   end
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
   local bBattle = (...)
@@ -233,7 +221,6 @@ function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   AudioManager(self):PauseObjectAllEvent(self, false)
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_msg_panel_open", "ChatMainPC", nil)
 end
-
 function M:_SendChatMsg(MsgText)
   if self.CurrChannel == ChatCommon.ChannelDef.TeamUp then
     ChatController:SendChatToWorld(self.CurrChannel, MsgText)
@@ -249,12 +236,10 @@ function M:_SendChatMsg(MsgText)
     ChatController:SendChatToSettlementOnline(MsgText)
   end
 end
-
 function M:OnCreatePanel()
   self.CurrExtraPanel = self:CreateWidgetNew(self.CurrExtraPanelName)
   return self.CurrExtraPanel
 end
-
 function M:OnMenuOpenChanged(bOpen)
   if self.RefreshUIWithMenuChanged then
     self:RefreshUIWithMenuChanged(bOpen)
@@ -265,7 +250,6 @@ function M:OnMenuOpenChanged(bOpen)
     self.CurrExtraPanel:Close()
   end
 end
-
 function M:ApplyEmoji(EmojiData)
   local EmojiText = string.format("[%s|%s]", EmojiData.GroupId, EmojiData.Id)
   local EmojiTextShow = string.format("[%s]", EmojiData.Id)
@@ -279,7 +263,6 @@ function M:ApplyEmoji(EmojiData)
     self.PanelAnchor_Face:Close()
   end
 end
-
 function M:ApplyQuickMsg(QuickMsgText)
   local Text = self.Com_Input:GetText()
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
@@ -292,7 +275,6 @@ function M:ApplyQuickMsg(QuickMsgText)
     self.PanelAnchor:Close()
   end
 end
-
 function M:OnExtraPanelClose()
   self.Com_Input:FocusInputField()
   if self.CurrExtraPanelName == self.CurrExtraPanel.ViewName then
@@ -301,12 +283,10 @@ function M:OnExtraPanelClose()
   self.CurrExtraPanel = nil
   self:TryToDefaultFocusWidget()
 end
-
 function M:OnTabSelected_TeamUp(TabWidget, TabItemInfo)
   self:HandleEnterChatChannel(ErrorCode.RET_SUCCESS, ChatCommon.ChannelDef.TeamUp)
   self:_SetUpBtnSentState()
 end
-
 function M:OnTabSelected_Friend(TabWidget, TabItemInfo)
   self.Group_ChatEmpty:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Group_ChatNormal:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -320,27 +300,22 @@ function M:OnTabSelected_Friend(TabWidget, TabItemInfo)
   self.Btn_Sent:SetForbidden()
   FriendController:SendRequest(FriendCommon.EventId.RefreshFriend)
 end
-
 function M:OnTabSelected_Public(TabWidget, TabItemInfo)
   self:HandleEnterChatChannel(ErrorCode.RET_SUCCESS, ChatCommon.ChannelDef.Public)
   self:_SetUpBtnSentState()
 end
-
 function M:OnTabSelected_Region(TabWidget, TabItemInfo)
   self:HandleEnterChatChannel(ErrorCode.RET_SUCCESS, ChatCommon.ChannelDef.Region)
   self:_SetUpBtnSentState()
 end
-
 function M:OnTabSelected_SettlementOnline(TabWidget, TabItemInfo)
   self:HandleEnterChatChannel(ErrorCode.RET_SUCCESS, ChatCommon.ChannelDef.SettlementOnline)
   self:_SetUpBtnSentState()
   self:_SetUpChatMsgList()
 end
-
 function M:OnTabSelected_League(TabWidget, TabItemInfo)
   self:_SetUpFullEmpty(GText("UI_Chat_LeagueEmpty"), GText("UI_Chat_GotoLeague"))
 end
-
 function M:OnTabSelected_InTeam(TabWidget, TabItemInfo)
   local CurrentPlatform = CommonUtils.GetDeviceTypeByPlatformName(self)
   if "PC" == CurrentPlatform then
@@ -359,17 +334,14 @@ function M:OnTabSelected_InTeam(TabWidget, TabItemInfo)
     self:_SetUpBtnSentState()
   end
 end
-
 function M:AddReddotListen()
   for ChannelName, ChannelType in pairs(ChatCommon.ChannelDef) do
     self:_AddReddotListenInner(ChannelName, ChannelType)
   end
   self._bAddedReddotListen = true
 end
-
 function M:_AddReddotListenInner(ChannelName, ChannelType)
 end
-
 function M:RemoveReddotListen()
   if not self._bAddedReddotListen then
     return
@@ -382,23 +354,19 @@ function M:RemoveReddotListen()
     ReddotManager.RemoveListener(NodeName, self)
   end
 end
-
 function M:SetUpNewTipIndex(NewTipIndex)
   self._NewTipIndex = NewTipIndex
 end
-
 function M:_SetUpBtnSentState()
   if ChatController:IsSendCDTimerExist(self.CurrChannel) then
     self.Btn_Sent:SetForbidden()
     self:HandleSendCDTimerUpdate(ChatModel:GetChannelCDReaminTime(self.CurrChannel))
   end
 end
-
 function M:_SetUpMsgCache()
   local MsgCache = ChatModel:GetChannelMsgCache()
   self.Com_Input:SetText(MsgCache)
 end
-
 function M:_SetUpChatEmpty(Text, BtnText)
   self.Group_BottomNormal:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Group_BottomEmpty:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -412,13 +380,11 @@ function M:_SetUpChatEmpty(Text, BtnText)
     self.Text_Recruit:SetText(BtnText)
   end
 end
-
 function M:_SetUpFullEmpty(Text, BtnText)
   self:_SetUpChatEmpty(Text, BtnText)
   self.Group_BottomNormal:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Group_BottomEmpty:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:Close()
   if self.IsBeginToClose then
     return
@@ -431,7 +397,6 @@ function M:Close()
   ChatController:OnMainClose(self.bBattle)
   M.Super.Close(self)
 end
-
 function M:_AddNewMsgToListView(MsgWrap)
   if not MsgWrap then
     return
@@ -444,7 +409,6 @@ function M:_AddNewMsgToListView(MsgWrap)
   Content.Data = MsgWrap
   self.List_Dialog:AddItem(Content)
 end
-
 function M:OnPlayerListUISelected(Content)
   if self.CurrSelectPlayer and Content ~= self.CurrSelectPlayer then
     self.CurrSelectPlayer.bSelected = false
@@ -472,7 +436,6 @@ function M:OnPlayerListUISelected(Content)
     self:UpdateUIStyleInPlatform()
   end
 end
-
 function M:HandleChatMsgRecv(TimeWrap, MsgWrap)
   if self.CurrChannel == ChatCommon.ChannelDef.Friend and not ChatModel:GetCurrentFriendUid() then
     return
@@ -481,7 +444,6 @@ function M:HandleChatMsgRecv(TimeWrap, MsgWrap)
   self:_AddNewMsgToListView(TimeWrap)
   self:_AddNewMsgToListView(MsgWrap)
 end
-
 function M:HandleChatMsgSent(TimeWrap, MsgWrap)
   ChatController:SetUpSendCDTimer(MsgWrap.Message.ChannelType)
   if not MsgWrap:IsSticker() then
@@ -491,18 +453,13 @@ function M:HandleChatMsgSent(TimeWrap, MsgWrap)
   self:_AddNewMsgToListView(TimeWrap)
   self:_AddNewMsgToListView(MsgWrap)
 end
-
 function M:_AutoScrollToEnd()
   self.SB_Dialog:EndInertialScrolling()
   self.SB_Dialog:ScrollToEnd()
   ChatController:SendChatNewMsgRead()
   self:_ReduceOverflowMessage()
 end
-
 function M:_ReduceOverflowMessage()
-  if self:IsExistTimer(self.RemoveItemDelayTimer) then
-    self:RemoveTimer(self.RemoveItemDelayTimer)
-  end
   local RemovedMsgs = ChatModel:GetChannelRemovedMsgs()
   for i, Msg in ipairs(RemovedMsgs) do
     local Item = self.List_Dialog:GetItemAt(0)
@@ -511,9 +468,7 @@ function M:_ReduceOverflowMessage()
       self.List_Dialog:RemoveItem(Item)
     end
   end
-  self.RemoveItemDelayTimer = TimerKey
 end
-
 function M:HandleEnterChatChannel(ErrCode, ChannelType)
   if ChannelType ~= self.CurrChannel then
     return
@@ -532,7 +487,6 @@ function M:HandleEnterChatChannel(ErrCode, ChannelType)
     self:_SetUpFullEmpty(GText("UI_Chat_SettlementOnlineEmpty"))
   end
 end
-
 function M:HandleSendCDTimerUpdate(RemainTime)
   if RemainTime < 1 then
     self.Btn_Sent:SetText(GText("UI_Chat_Send"))
@@ -543,7 +497,6 @@ function M:HandleSendCDTimerUpdate(RemainTime)
     self.Btn_Sent:SetText(string.format(GText("UI_SHOP_REMAINTIME_SECOND"), RemainTime))
   end
 end
-
 function M:HandleRefreshFriend(ErrCode)
   if ErrCode ~= ErrorCode.RET_SUCCESS then
     return
@@ -562,7 +515,6 @@ function M:HandleRefreshFriend(ErrCode)
     self:_HandleRefreshTeamMateInTeamChannel()
   end
 end
-
 function M:_HandleRefreshFriendInRegionChannel()
   if ChatModel:IsInRegionOnline() then
     self:_HandleRefreshFriendInOpenChannel()
@@ -570,7 +522,6 @@ function M:_HandleRefreshFriendInRegionChannel()
     self:_SetUpFullEmpty(GText("UI_Chat_NotInOnlineRegion"))
   end
 end
-
 function M:Destruct()
   ChatController:UnRegisterEvent(self)
   FriendController:UnRegisterEvent(self)
@@ -590,7 +541,6 @@ function M:Destruct()
   self.BackgroundBlur_50:SetBlurStrength(self.OriginBlurStrength)
   M.Super.Destruct(self)
 end
-
 function M:_HandleRefreshFriendInPrivateChannel()
   local NowCount, TotalCount = 0, DataMgr.GlobalConstant.FriendHoldMax.ConstantValue
   FriendModel:SortFriends(3, CommonConst.DESC)
@@ -628,14 +578,12 @@ function M:_HandleRefreshFriendInPrivateChannel()
   end
   self.Com_Input:SetText("")
 end
-
 function M:_HandleRefreshFriendInOpenChannel()
   self.Group_ChatEmpty:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Group_ChatNormal:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:_SetUpChatMsgList()
   self:_SetUpMsgCache()
 end
-
 function M:_HandleRefreshTeamMateInTeamChannel()
   local CurrentPlatform = CommonUtils.GetDeviceTypeByPlatformName(self)
   if "PC" == CurrentPlatform then
@@ -651,5 +599,4 @@ function M:_HandleRefreshTeamMateInTeamChannel()
   self:_SetUpChatMsgList()
   self:_SetUpMsgCache()
 end
-
 return M

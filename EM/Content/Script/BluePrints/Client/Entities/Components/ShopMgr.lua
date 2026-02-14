@@ -1,6 +1,5 @@
 local Component = {}
 local TimeUtils = require("Utils.TimeUtils")
-
 function Component:CheckShopItemHasRequire(ShopItemId)
   local Require = DataMgr.ShopItem[ShopItemId].Require
   if Require then
@@ -15,7 +14,6 @@ function Component:CheckShopItemHasRequire(ShopItemId)
   end
   return false
 end
-
 function Component:CheckShopItemHasRexclusionGroup(ShopItemId)
   local RexclusionGroup = DataMgr.ShopItem[ShopItemId].RexclusionGroup
   if RexclusionGroup then
@@ -31,14 +29,13 @@ function Component:CheckShopItemHasRexclusionGroup(ShopItemId)
   end
   return false
 end
-
 function Component:CheckShopItemUnique(ShopItemId)
   local ItemType = DataMgr.ShopItem[ShopItemId].ItemType
   local ItemId = DataMgr.ShopItem[ShopItemId].TypeId
   if "Reward" ~= ItemType then
     local TypeInfo = DataMgr.RewardType[ItemType]
     if not TypeInfo then
-      return true
+      return false
     end
     if TypeInfo.UniqueType then
       local CheckFuncName = "Check" .. ItemType .. "Enough"
@@ -55,21 +52,19 @@ function Component:CheckShopItemUnique(ShopItemId)
   end
   return false
 end
-
 function Component:CheckIsEffective(ShopItemId)
   local ShopItemData = DataMgr.ShopItem[ShopItemId]
   local CurTime = TimeUtils.NowTime()
   local StartTime = ShopItemData.StartTime
   local EndTime = ShopItemData.EndTime
   if StartTime and CurTime >= StartTime then
-    if EndTime and CurTime > EndTime then
+    if EndTime and CurTime >= EndTime then
       return false
     end
     return true
   end
   return false
 end
-
 function Component:GetShopItemAlreadyPurchaseTimes(ShopItemId)
   if not ShopItemId then
     return 0
@@ -80,7 +75,6 @@ function Component:GetShopItemAlreadyPurchaseTimes(ShopItemId)
   end
   return 0
 end
-
 function Component:CheckIsFirstBonus(ShopItemId)
   if not DataMgr.FirstBonusNum[ShopItemId] then
     return false
@@ -90,7 +84,29 @@ function Component:CheckIsFirstBonus(ShopItemId)
   end
   return true
 end
-
+function Component:CheckShopItemUnlockRaidPoint(ShopItemId)
+  if not ShopItemId then
+    return false
+  end
+  local ShopItemData = DataMgr.ShopItem[ShopItemId]
+  if ShopItemData.UnlockRaidPoint then
+    local MaxRaidScore = AvatarUtils:GetRaidSeasonMaxScore(self) or 0
+    if MaxRaidScore < ShopItemData.UnlockRaidPoint then
+      return false
+    end
+  end
+  return true
+end
+function Component:CheckShopItemCondition(ShopItemId)
+  if not ShopItemId then
+    return false
+  end
+  local ShopItemData = DataMgr.ShopItem[ShopItemId]
+  if ShopItemData.ItemCondition and not self:CheckCondition(ShopItemData.ItemCondition) then
+    return false
+  end
+  return true
+end
 function Component:CheckShopItemCanPurchase(ShopItemId, Count)
   local ShopItem = self.ShopItems[ShopItemId]
   local ShopItemData = DataMgr.ShopItem[ShopItemId]
@@ -101,7 +117,13 @@ function Component:CheckShopItemCanPurchase(ShopItemId, Count)
   if ShopItemData.UnlockLevel and ShopItemData.UnlockLevel > self.Level then
     return false
   end
+  if not self:CheckShopItemUnlockRaidPoint(ShopItemId) then
+    return false
+  end
   if not self:CheckIsEffective(ShopItemId) then
+    return false
+  end
+  if not self:CheckShopItemCondition(ShopItemId) then
     return false
   end
   if self:CheckShopItemHasRequire(ShopItemId) then
@@ -123,7 +145,6 @@ function Component:CheckShopItemCanPurchase(ShopItemId, Count)
   end
   return true
 end
-
 function Component:PurchaseShopItem(ShopItemId, Count, NotShow, PurchaseCallback)
   if DataMgr.ShopItem2PayGoods[ShopItemId] then
     self.logger.info("PurchaseShopItem is Paygood", ShopItemId, Count)
@@ -146,7 +167,6 @@ function Component:PurchaseShopItem(ShopItemId, Count, NotShow, PurchaseCallback
       bFreeBefore = ShopUtils:IsFree(ShopItemId)
     end
   end
-  
   local function Callback(Ret, PackRewards)
     EventManager:FireEvent(EventID.OnPurchaseShopItem, Ret, ShopItemId, Count)
     local ShopMain = UIManager(GWorld.GameInstance):GetUIObj("ShopMain")
@@ -162,17 +182,6 @@ function Component:PurchaseShopItem(ShopItemId, Count, NotShow, PurchaseCallback
       SkinPreview:BlockAllUIInput(false)
     end
     self.logger.info("PurchaseShopItem callback", Ret, ShopItemId, Count, PackRewards)
-    if Ret == ErrorCode.RET_SUCCESS then
-      local ShopItemData = DataMgr.ShopItem[ShopItemId]
-      if not NotShow then
-        UIManager(GWorld.GameInstance):UnLoadUI("ShopItemSingle")
-        UIManager(GWorld.GameInstance):UnLoadUI("ShopItemPackage")
-        UIUtils.ShowGetItemPageAndOpenBagIfNeeded(ShopItemData.ItemType, ShopItemData.TypeId, ShopItemData.TypeNum * Count, PackRewards, ShopItemData.IsSpPopup, nil, nil)
-      end
-      EventManager:FireEvent(EventID.OnPurchaseShopItemSuccess, Ret, ShopItemData.TypeId, Count, PackRewards)
-    else
-      UIManager(GWorld.GameInstance):ShowError(Ret, 1.0, "CommonToastMain")
-    end
     if ShopMain then
       ShopMain:RefreshSubTabData(ShopMain.CurSubTabMap, true, true)
     end
@@ -186,6 +195,17 @@ function Component:PurchaseShopItem(ShopItemId, Count, NotShow, PurchaseCallback
     if SkinPreview then
       SkinPreview:RefreshPurchaseState()
     end
+    if Ret == ErrorCode.RET_SUCCESS then
+      local ShopItemData = DataMgr.ShopItem[ShopItemId]
+      if not NotShow then
+        UIManager(GWorld.GameInstance):UnLoadUI("ShopItemSingle")
+        UIManager(GWorld.GameInstance):UnLoadUI("ShopItemPackage")
+        UIUtils.ShowGetItemPageAndOpenBagIfNeeded(ShopItemData.ItemType, ShopItemData.TypeId, ShopItemData.TypeNum * Count, PackRewards, ShopItemData.IsSpPopup, nil, nil)
+      end
+      EventManager:FireEvent(EventID.OnPurchaseShopItemSuccess, Ret, ShopItemData.TypeId, Count, PackRewards)
+    else
+      UIManager(GWorld.GameInstance):ShowError(Ret, 1.0, "CommonToastMain")
+    end
     if ReddotNodeName then
       local bFree = ShopUtils:IsFree(ShopItemId)
       if false == bFree and true == bFreeBefore then
@@ -193,13 +213,11 @@ function Component:PurchaseShopItem(ShopItemId, Count, NotShow, PurchaseCallback
       end
     end
     if PurchaseCallback then
-      PurchaseCallback()
+      PurchaseCallback(Ret)
     end
   end
-  
   self:CallServer("PurchaseShopItem", Callback, ShopItemId, Count)
 end
-
 function Component:OnRefreshShop(ServerTime)
   self.logger.info("--OnRefreshShop--", TimeUtils.TimeToStr(ServerTime))
   local TimeOffset = ServerTime - TimeUtils.NowTime()
@@ -226,20 +244,16 @@ function Component:OnRefreshShop(ServerTime)
     end
   end
 end
-
 function Component:PurchaseShopItemUseCoin1(ShopItemId, Count, InCallBack)
   self.logger.info("PurchaseShopItemUseCoin1 Begin", ShopItemId, Count)
-  
   local function Callback(Ret, PackRewards)
     self.logger.info("PurchaseShopItemUseCoin1 callback", Ret, ShopItemId, Count, PackRewards)
     if InCallBack then
       InCallBack(Ret, ShopItemId, Count, PackRewards)
     end
   end
-  
   self:CallServer("PurchaseShopItemUseCoin1", Callback, ShopItemId, Count)
 end
-
 function Component:CheckShopItemEnhanceRedDot(ShopItemId)
   if not self:CheckIsEffective(ShopItemId) then
     return false
@@ -263,10 +277,8 @@ function Component:CheckShopItemEnhanceRedDot(ShopItemId)
   end
   return true
 end
-
 function Component:CleanShopItemEnhanceRedDot(ShopItemId, InCallback)
   self.logger.info("CleanShopItemEnhanceRedDot Begin", ShopItemId)
-  
   local function Callback(Ret)
     self.logger.info("CleanShopItemEnhanceRedDot callback", Ret, ShopItemId)
     local ShopItemConf = DataMgr.ShopItem[ShopItemId]
@@ -280,10 +292,8 @@ function Component:CleanShopItemEnhanceRedDot(ShopItemId, InCallback)
       InCallback()
     end
   end
-  
   self:CallServer("CleanShopItemEnhanceRedDot", Callback, ShopItemId)
 end
-
 function Component:CheckShopItemSoldOutDisplay(ShopItemId)
   if not ShopItemId then
     return false
@@ -305,5 +315,4 @@ function Component:CheckShopItemSoldOutDisplay(ShopItemId)
     return ShopItemData.PurchaseLimit > 0 and ShopItemData.SoldOutDisplay == true
   end
 end
-
 return Component

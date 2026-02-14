@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:AddLSFocusTarget(KeyImg, WidgetOrGroup, OverriddenKeyName, bSingleWidget)
   if not self.Initialized then
     self:BindInputEventForLSComp()
@@ -48,7 +47,6 @@ function Component:AddLSFocusTarget(KeyImg, WidgetOrGroup, OverriddenKeyName, bS
   end
   self:RefreshOpInfoByInputDeviceForLSComp(self.GameInputModeSubsystem:GetCurrentInputType())
 end
-
 function Component:InitGamePadImgForLSComp(KeyImg, KeyName)
   if not KeyImg or not KeyName then
     return
@@ -64,17 +62,14 @@ function Component:InitGamePadImgForLSComp(KeyImg, KeyName)
     })
   end
 end
-
 function Component:HideGamepadKeyForLSComp()
   self.HideCompKeyImg = true
   self:UpdateGamepadKeyState()
 end
-
 function Component:ShowGamepadKeyForLSComp()
   self.HideCompKeyImg = false
   self:UpdateGamepadKeyState()
 end
-
 function Component:BindInputEventForLSComp()
   if not self.GameInputModeSubsystem then
     self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
@@ -83,13 +78,11 @@ function Component:BindInputEventForLSComp()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDeviceForLSComp)
   end
 end
-
 function Component:Destruct()
   if IsValid(self) and IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDeviceForLSComp)
   end
 end
-
 function Component:RemoveFocusTarget(KeyName)
   self.SingleWidget = self.SingleWidget or {}
   self.GroupWidgets = self.GroupWidgets or {}
@@ -103,7 +96,6 @@ function Component:RemoveFocusTarget(KeyName)
     return
   end
 end
-
 function Component:RefreshOpInfoByInputDeviceForLSComp(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -129,7 +121,6 @@ function Component:RefreshOpInfoByInputDeviceForLSComp(CurInputDevice, CurGamepa
   end
   self:UpdateGamepadKeyState()
 end
-
 function Component:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -145,12 +136,10 @@ function Component:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function Component:OnKeyUpForLSComp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
 end
-
 function Component:FocusOnWidget(TargetWidget, FocusKey, bSingleWidget)
   if nil ~= TargetWidget and TargetWidget:IsVisible() then
     if bSingleWidget then
@@ -164,14 +153,12 @@ function Component:FocusOnWidget(TargetWidget, FocusKey, bSingleWidget)
   end
   return false
 end
-
 function Component:IsWidgetFocused(TargetWidget)
   if nil ~= TargetWidget and TargetWidget:IsVisible() and (TargetWidget:HasFocusedDescendants() or TargetWidget:HasAnyUserFocus()) then
     return true
   end
   return false
 end
-
 function Component:EnterLSMode(FocusKey)
   if self:IsInLSMode(FocusKey) then
     return false
@@ -195,7 +182,6 @@ function Component:EnterLSMode(FocusKey)
   end
   return false
 end
-
 function Component:LeaveLSMode()
   local FocusKey = self.CurrentFocusKey
   if not FocusKey then
@@ -227,7 +213,6 @@ function Component:LeaveLSMode()
   end
   return true
 end
-
 function Component:UpdateGamepadKeyState(FocusKey)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     if not self:IsInLSMode(FocusKey) and not self.HideCompKeyImg then
@@ -239,7 +224,6 @@ function Component:UpdateGamepadKeyState(FocusKey)
     self:ShowKeyImg(false)
   end
 end
-
 function Component:IsInLSMode(FocusKey)
   local FocusKey = FocusKey or self.CurrentFocusKey
   if not FocusKey then
@@ -262,7 +246,6 @@ function Component:IsInLSMode(FocusKey)
   end
   return false
 end
-
 function Component:ShowKeyImg(bShow)
   for _, v in pairs(self.SingleWidget) do
     local KeyImg = v.KeyImg
@@ -273,7 +256,6 @@ function Component:ShowKeyImg(bShow)
     self:SetKeyVisibility(KeyImg, bShow)
   end
 end
-
 function Component:SetKeyVisibility(Key, bShow)
   if not Key then
     return
@@ -284,17 +266,14 @@ function Component:SetKeyVisibility(Key, bShow)
     Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Component:ActivateWidget(TargetWidget)
   if TargetWidget.Activate then
     TargetWidget:Activate()
   end
 end
-
 function Component:InActivateWidget(TargetWidget)
   if TargetWidget.InActivate then
     TargetWidget:InActivate()
   end
 end
-
 return Component

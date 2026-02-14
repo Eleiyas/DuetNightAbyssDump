@@ -7,7 +7,6 @@ SceneItemBase._components = {
   "BluePrints.Combat.Components.ActorTypeComponent",
   "BluePrints.Char.CharacterComponent.AddGuideComponent"
 }
-
 function SceneItemBase:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.OnBattleReady, self, self.OnBattleReady_TryInitCharacterInfo)
   self.Overridden.ReceiveBeginPlay(self)
@@ -29,13 +28,11 @@ function SceneItemBase:ReceiveBeginPlay()
   end
   self.IsDestroied = false
 end
-
 function SceneItemBase:OnBattleReady_TryInitCharacterInfo(_Battle)
   if Battle(self) == _Battle then
     self:TryInitActorInfo("Battle")
   end
 end
-
 function SceneItemBase:RegionInitBpActor()
   local BpBornRegionActorID = self.ManualItemId
   local SubSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, URegionDataMgrSubsystem:StaticClass())
@@ -55,14 +52,12 @@ function SceneItemBase:RegionInitBpActor()
     self:RegisterInfoNew(Context)
   end
 end
-
 function SceneItemBase:RegisterInfo(Info)
   if Info then
     self.InfoForInit = Info
   end
   self:TryInitActorInfo("InitInfo")
 end
-
 function SceneItemBase:OnRep_ServerInitSuccess()
   if self.ServerInitSuccess then
     self.InfoForInitNew.UnitId = self.UnitId
@@ -72,20 +67,18 @@ function SceneItemBase:OnRep_ServerInitSuccess()
     self.InitSuccess = false
   end
 end
-
 function SceneItemBase:BeginInitInfo()
   if self.InitSuccess then
     return
   end
   self:InitActorInfo_New()
 end
-
 function SceneItemBase:OnEMActorDestroy(DestroyReason)
   self.Overridden.OnEMActorDestroy(self, DestroyReason)
 end
-
-function SceneItemBase:RegionOnEMActorDestroy(DestroyReason, GameMode)
-  if GameMode:IsInDungeon() then
+function SceneItemBase:WCOnEMActorDestroy(DestroyReason, GameMode)
+  local WCSubSystem = GameMode:GetWCSubSystem()
+  if not IsValid(WCSubSystem) then
     return
   end
   if self.BpBorn and (not self:CheckManuItemRegionStorage() or DestroyReason == EDestroyReason.RecoverSubRegionDataCacheButBpBornHasAlreadyDead) then
@@ -93,21 +86,15 @@ function SceneItemBase:RegionOnEMActorDestroy(DestroyReason, GameMode)
   end
   if self.WorldRegionEid == "" then
     if self.Data then
-      GWorld.logger.errorlog("Error : Actor\229\156\168Destroy\230\151\182\230\178\161\230\156\137\232\181\139\229\128\188WorldRegionEid", self.UnitId, self.UnitType, self.Eid)
+      GWorld.logger.errorlog("Error : Actor在Destroy时没有赋值WorldRegionEid", self.UnitId, self.UnitType, self.Eid)
     end
   else
     GameMode:GetRegionDataMgrSubSystem():DeadRegionActorData(self, DestroyReason)
   end
-  local WCSubSystem = GameMode:GetWCSubSystem()
-  if not IsValid(WCSubSystem) then
-    return
-  end
   WCSubSystem:UnregisterEntryToWorldComposition(self)
 end
-
 function SceneItemBase:InitActorInfo(Info)
 end
-
 function SceneItemBase:CreateMechanismData_Lua(UnitType, UnitId)
   self.Data = DataMgr[UnitType][UnitId]
   if self.Data then
@@ -116,35 +103,27 @@ function SceneItemBase:CreateMechanismData_Lua(UnitType, UnitId)
     return false
   end
 end
-
 function SceneItemBase:PreInitInfo(Info)
 end
-
 function SceneItemBase:InitGamePlayTags()
   self.GameplayTagsInitSuccess = true
 end
-
 function SceneItemBase:OnActorReady(Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode and GameMode:IsInRegion() then
     self:CreateRegionData()
   end
 end
-
 function SceneItemBase:CommonInitInfo(Info)
 end
-
 function SceneItemBase:AuthorityInitInfo(Info)
 end
-
 function SceneItemBase:ClientInitInfo()
 end
-
 function SceneItemBase:GetShowGuideDis(InitGuideInfo)
   self.ShowGuideDistance = InitGuideInfo
   return true
 end
-
 function SceneItemBase:CreateGuideHandle(bInit)
   if not IsAuthority(self) then
     return
@@ -172,7 +151,6 @@ function SceneItemBase:CreateGuideHandle(bInit)
     self.FixTryToAddGuideHandle = self:AddTimer(1, self.TryToAddRangeGuide, true, 0, nil, false, "out")
   end
 end
-
 function SceneItemBase:StopTryToAddGuideTimer()
   if not IsValid(self) then
     self:StopAddGuideTimer()
@@ -180,7 +158,6 @@ function SceneItemBase:StopTryToAddGuideTimer()
   end
   return false
 end
-
 function SceneItemBase:InitCreatorInfo(Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode:IsInRegion() then
@@ -195,25 +172,20 @@ function SceneItemBase:InitCreatorInfo(Info)
     end
   end
 end
-
 function SceneItemBase:GetUnitRealType()
   return ""
 end
-
 function SceneItemBase:SetRegionState()
 end
-
 function SceneItemBase:GetManualItemId()
   return self.ManualItemId or -1
 end
-
 function SceneItemBase:CheckUnitNeedStorage()
   if self.RegionDataType and CommonUtils.HasValue(Const.RegionDataStorageType, self.RegionDataType) then
     return true
   end
   return false
 end
-
 function SceneItemBase:IsBpbornRegionStorage()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -222,10 +194,8 @@ function SceneItemBase:IsBpbornRegionStorage()
   local BPBornActor = GameMode.BPBornRegionActor:FindRef(self.ManualItemId)
   return self.BpBorn and IsValid(BPBornActor)
 end
-
 function SceneItemBase:CreateRegionData()
 end
-
 function SceneItemBase:UpdateRegionData(DataName, DataValue)
   self[DataName] = DataValue
   if self.BpBorn and not self:CheckManuItemRegionStorage() then
@@ -240,7 +210,6 @@ function SceneItemBase:UpdateRegionData(DataName, DataValue)
     GameMode:GetRegionDataMgrSubSystem():UpdateRegionActorData(self, self.RegionData)
   end
 end
-
 function SceneItemBase:UpdateRegionDataByTable(DataTable)
   for DataName, DataValue in pairs(DataTable) do
     self[DataName] = DataValue
@@ -259,7 +228,6 @@ function SceneItemBase:UpdateRegionDataByTable(DataTable)
     GameMode:GetRegionDataMgrSubSystem():UpdateRegionActorData(self, self.RegionData)
   end
 end
-
 function SceneItemBase:OnRegionDataAllocated_Lua(LuaTableIndex, LevelName, RegionDataType, SubRegionId, UnitType, UnitId, Location)
   local GameMode = UGameplayStatics.GetGameMode(self)
   if GameMode then
@@ -276,7 +244,6 @@ function SceneItemBase:OnRegionDataAllocated_Lua(LuaTableIndex, LevelName, Regio
     GameMode:GetRegionDataMgrSubSystem():InitRegionDataTable(LuaTableIndex, Context)
   end
 end
-
 function SceneItemBase:RecoverSavedData(DataTable)
   if not DataTable then
     return
@@ -287,11 +254,9 @@ function SceneItemBase:RecoverSavedData(DataTable)
     end
   end
 end
-
 function SceneItemBase:GetDungeonSaveData()
   return {}
 end
-
 function SceneItemBase:OnRep_CurrentLevelId()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local SceneMgr
@@ -302,11 +267,9 @@ function SceneItemBase:OnRep_CurrentLevelId()
     SceneMgr:GetLevelLoader().LevelPathfinding:UpdatePathfindingByEid(self.Eid, self.CurrentLevelId, false)
   end
 end
-
 function SceneItemBase:RecoverBpBornData()
   print(_G.LogTag, "LXZ RecoverBpBornData", self:GetName())
 end
-
 function SceneItemBase:ReceiveEndPlay()
   EventManager:RemoveEvent(EventID.OnBattleReady, self)
   EventManager:RemoveEvent(EventID.OnInitReady, self)
@@ -315,6 +278,5 @@ function SceneItemBase:ReceiveEndPlay()
   end
   self.IsDestroied = true
 end
-
 AssembleComponents(SceneItemBase)
 return SceneItemBase

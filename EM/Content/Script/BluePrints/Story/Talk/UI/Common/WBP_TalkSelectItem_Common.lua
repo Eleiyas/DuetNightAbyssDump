@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr"
 })
 local FirstInitTime = 0.25
-
 function M:Init(InSelectUI, InItem, OptionIdx, ListIdx)
   self.SelectUI = InSelectUI
   self.Item = InItem
@@ -20,25 +19,28 @@ function M:Init(InSelectUI, InItem, OptionIdx, ListIdx)
     self:BindMouseTriggerEvents()
   end, false, 0, "BindMouseTriggerEvents", true)
 end
-
 function M:InitText()
   self.Text_Talk:SetText(self.Item.OptionTopic)
 end
-
 function M:InitPlatform()
   local Platform = CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance)
   self.bInMobile = "Mobile" == Platform
 end
-
 function M:InitKey()
   self.Key_Talk:CreateCommonKey({
     KeyInfoList = {
-      {Type = "Text", Text = "F"}
+      {
+        Type = "Text",
+        Text = CommonUtils:GetActionMappingKeyName("TalkOption")
+      }
     }
   })
   self.Key_Talk_GamePad:CreateCommonKey({
     KeyInfoList = {
-      {Type = "Img", ImgShortPath = "A"}
+      {
+        Type = "Img",
+        ImgShortPath = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("TalkOption", true))
+      }
     }
   })
   if self.bInMobile then
@@ -47,7 +49,6 @@ function M:InitKey()
     self.Key:SetVisibility(ESlateVisibility.Hidden)
   end
 end
-
 function M:ShowKey(bShow)
   if self.bInMobile then
     return
@@ -58,7 +59,6 @@ function M:ShowKey(bShow)
     self.Key:SetVisibility(ESlateVisibility.Hidden)
   end
 end
-
 function M:BindMouseTriggerEvents()
   self.Button_Area.OnClicked:Add(self, self.OnItemClicked)
   self.Button_Area.OnHovered:Add(self, self.OnItemHovered)
@@ -66,7 +66,6 @@ function M:BindMouseTriggerEvents()
   self.Button_Area.OnPressed:Add(self, self.OnItemPressed)
   self.Button_Area.OnReleased:Add(self, self.OnItemReleased)
 end
-
 function M:UnBindAllEvents()
   self.Button_Area.OnClicked:Clear()
   self.Button_Area.OnHovered:Clear()
@@ -74,13 +73,11 @@ function M:UnBindAllEvents()
   self.Button_Area.OnPressed:Clear()
   self.Button_Area.OnReleased:Clear()
 end
-
 function M:Clear()
   self:UnBindAllEvents()
   self:StopListeningForInputAction("TalkOption", EInputEvent.IE_Pressed)
   self:CleanTimer()
 end
-
 function M:SwitchPlayInAnimation(InItem)
   if InItem.bIsSelected then
     self.bIsSelected = true
@@ -89,21 +86,18 @@ function M:SwitchPlayInAnimation(InItem)
     self:PlayAnimation(self.In)
   end
 end
-
 function M:BindAnimationEvents()
   self:BindToAnimationFinished(self.Click, {
     self,
     self.OnClickAnimationFinished
   })
 end
-
 function M:OnClickAnimationFinished()
   if self.bIsSelected then
     return
   end
   self.SelectUI:OnItemClicked(self.OptionIdx)
 end
-
 function M:OnItemClicked()
   DebugPrint("OnItemClicked", self)
   if self.bIsSelected then
@@ -121,12 +115,10 @@ function M:OnItemClicked()
     self.SelectUI:OnItemClickStart()
   end
 end
-
 function M:OnItemHovered()
   DebugPrint("OnItemHovered", self)
   self.SelectUI:SelectNewItem(self.ListIdx)
 end
-
 function M:OnItemUnhovered()
   DebugPrint("OnItemUnhovered", self)
   if self.bInMobile then
@@ -139,20 +131,17 @@ function M:OnItemUnhovered()
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:OnItemPressed()
   DebugPrint("OnItemPressed", self)
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnItemReleased()
   DebugPrint("OnItemReleased", self)
   if self.bInMobile then
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnSelectItem(bIsDefault)
   DebugPrint("OnSelectItem", self, bIsDefault)
   if bIsDefault then
@@ -173,7 +162,6 @@ function M:OnSelectItem(bIsDefault)
   end
   self:ShowKey(true)
 end
-
 function M:OnUnselectItem()
   DebugPrint("OnUnselectItem", self)
   self:StopListeningForInputAction("TalkOption", EInputEvent.IE_Pressed)
@@ -183,7 +171,6 @@ function M:OnUnselectItem()
   end
   self:ShowKey(false)
 end
-
 function M:UpdateKeyImg(IsGamePad)
   if IsGamePad then
     self.WidgetSwitcher_Key:SetActiveWidgetIndex(1)
@@ -191,5 +178,4 @@ function M:UpdateKeyImg(IsGamePad)
     self.WidgetSwitcher_Key:SetActiveWidgetIndex(0)
   end
 end
-
 return M

@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:StartAutoBattleTest(DungeonId, AvatarBattleInfo)
   print(_G.LogTag, "StartAutoBattleTest")
   self.IsAutoBattle = true
@@ -14,12 +13,10 @@ function Component:StartAutoBattleTest(DungeonId, AvatarBattleInfo)
     GameMode:StartAutoBattleTest()
   end
 end
-
 function Component:OnStartAutoBattleTest(bClientMode)
   print(_G.LogTag, "OnStartAutoBattleTest")
   self:CallServerMethod("GMOnStartAutoBattleTest", bClientMode)
 end
-
 function Component:RealStartAutoBattleTest(AutoBattleId)
   print(_G.LogTag, "RealStartAutoBattleTest", AutoBattleId)
   self.AutoBattleId = AutoBattleId
@@ -30,12 +27,10 @@ function Component:RealStartAutoBattleTest(AutoBattleId)
   end
   GameMode:RealStartAutoBattleTest()
 end
-
 function Component:RealOnStartAutoBattleTest(bClientMode)
   print(_G.LogTag, "RealOnStartAutoBattleTest")
   self:CallServerMethod("GMRealOnStartAutoBattleTest", bClientMode)
 end
-
 function Component:TestAutoBattleEnd(Callback, bClientMode)
   print(_G.LogTag, "TestAutoBattleEnd", self.AutoBattleId)
   if self.AutoBattleId == nil then
@@ -131,5 +126,4 @@ function Component:TestAutoBattleEnd(Callback, bClientMode)
   end
   GameMode.IsAutoBattle = false
 end
-
 return Component

@@ -1,9 +1,9 @@
 local TimeUtils = require("Utils.TimeUtils")
 local MiscUtils = require("Utils.MiscUtils")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local Component = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function Component:InitGameStateInterface()
   if not IsAuthority(self) then
     return
@@ -15,15 +15,13 @@ function Component:InitGameStateInterface()
   self:RegisterGameModeEvent("OnExit", self, self.OnExit)
   self:RegisterGameModeEvent("OnDisconnect", self, self.OnDisconnect)
 end
-
 function Component:GameModeEvent_Lua(Func, ...)
   local FuncName = Func .. "_Lua"
   if nil ~= self[FuncName] then
-    DebugPrint("GameStateInterface \230\148\182\229\136\176Custom\228\186\139\228\187\182\229\185\191\230\146\173\232\191\155\232\161\140\232\189\172\229\143\145\239\188\154", Func)
+    DebugPrint("GameStateInterface 收到Custom事件广播进行转发：", Func)
     self[FuncName](self, ...)
   end
 end
-
 function Component:InitTimeCheckMgr()
   if IsStandAlone(self) or IsClient(self) then
     self:AddTimer(60, function()
@@ -31,60 +29,48 @@ function Component:InitTimeCheckMgr()
     end, true, 30, "ClientTimeReset", true)
   end
 end
-
 function Component:OnEnter(Eid)
   self:MulticastOnEnter(Eid)
 end
-
 function Component:OnExit(EidArr)
   self:MulticastOnExit(EidArr)
 end
-
 function Component:OnDisconnect(AvatarEidStr)
   self:MulticastOnDisconnect(AvatarEidStr)
 end
-
 function Component:OnCustomEvent(EventName, Channel)
   if Channel == Const.GameModeEventServerClient then
     self:MulticastOnCustomeEvent(EventName)
   end
 end
-
 function Component:OnInit()
   self:MulticastGameModeEvent("OnInit")
 end
-
 function Component:OnEnd(Result)
   self:MulticastOnEnd(Result)
 end
-
 function Component:OnBattle()
   self:MulticastGameModeEvent("OnBattle")
 end
-
 function Component:OnPause()
   self:MulticastGameModeEvent("OnPause")
 end
-
 function Component:OnAlert()
   self:MulticastGameModeEvent("OnAlert")
 end
-
 function Component:OnEnterCommonAlert()
   self:MulticastGameModeEvent("OnEnterCommonAlert")
 end
-
 function Component:OnExitCommonAlert()
   self:MulticastGameModeEvent("OnExitCommonAlert")
 end
-
 function Component:OnRep_DungeonEvent_Lua()
   if not self.IsCanFreshDungeonEvent then
     DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua IsCanFreshDungeonEvent==false")
     return
   end
-  if GWorld.GameInstance.IsInSettlementScene == true then
-    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \229\155\160\228\184\186\229\156\168\231\187\147\231\174\151\231\149\140\233\157\162\232\128\140\233\152\187\230\150\173")
+  if GWorld.GameInstance:IsInTempScene() then
+    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 因为在结算界面而阻断")
     return
   end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -96,7 +82,7 @@ function Component:OnRep_DungeonEvent_Lua()
     self.LastDungeonEvent = {}
   end
   local DungeonEventNum = self.DungeonEvent:Num()
-  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\148\182\229\136\176\228\186\139\228\187\182\229\185\191\230\146\173, \228\184\138\228\184\128\230\172\161\228\186\139\228\187\182\230\149\176\233\135\143\239\188\154" .. #self.LastDungeonEvent .. "    \229\189\147\229\137\141\228\186\139\228\187\182\230\149\176\233\135\143\239\188\154" .. DungeonEventNum)
+  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 收到事件广播, 上一次事件数量：" .. #self.LastDungeonEvent .. "    当前事件数量：" .. DungeonEventNum)
   self:PrintAllDungeonEvents()
   self:TriggerUpdateDungeonEvent()
   self.LastDungeonEvent = {}
@@ -109,28 +95,26 @@ function Component:OnRep_DungeonEvent_Lua()
     end
   end
 end
-
 function Component:PrintAllDungeonEvents()
   local EventString = ""
   for _, Event in pairs(self.LastDungeonEvent or {}) do
     EventString = EventString .. Event .. ", "
   end
-  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\137\147\229\141\176\228\184\138\228\184\128\230\172\161\228\186\139\228\187\182\229\134\133\229\174\185   " .. EventString)
+  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 打印上一次事件内容   " .. EventString)
   EventString = ""
   for i = 1, self.DungeonEvent:Num() do
     local Event = self.DungeonEvent:GetValueByIdx(i - 1)
     EventString = EventString .. Event .. ", "
   end
-  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\137\147\229\141\176\229\189\147\229\137\141DungeonEvent\229\134\133\229\174\185   " .. EventString)
+  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 打印当前DungeonEvent内容   " .. EventString)
 end
-
 function Component:TriggerUpdateDungeonEvent()
   local DungeonEventNum = self.DungeonEvent:Num()
   local IgnoreIdx = 0
   local IgnoreIdxCanChange = true
   local RemoveEvents = {}
   local AddEvents = {}
-  DebugPrint("GameStateInterface @@@@@@  \230\173\164\230\172\161OnRep\230\148\182\229\136\176TriggerUpdateDungeonEvent", IgnoreIdx, self.DungeonEvent:Num())
+  DebugPrint("GameStateInterface @@@@@@  此次OnRep收到TriggerUpdateDungeonEvent", IgnoreIdx, self.DungeonEvent:Num())
   if #self.LastDungeonEvent == DungeonEventNum and 0 ~= #self.LastDungeonEvent then
     local HasNewEvent = false
     for i = 1, self.DungeonEvent:Num() do
@@ -171,16 +155,15 @@ function Component:TriggerUpdateDungeonEvent()
     self:TriggerAddDungeonEvent(AddEvent)
   end
 end
-
 function Component:TriggerAddDungeonEvent(Event)
   if "" == Event then
-    DebugPrint("GameStateInterface  TriggerAddDungeonEvent \229\135\186\231\142\176\231\169\186\228\186\139\228\187\182")
+    DebugPrint("GameStateInterface  TriggerAddDungeonEvent 出现空事件")
     return
   end
   local FuncName = Event .. "_Lua"
-  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\148\182\229\136\176\229\162\158\233\135\143\228\186\139\228\187\182\239\188\154", Event)
+  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 收到增量事件：", Event)
   if nil ~= self[FuncName] then
-    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\137\167\232\161\140\229\162\158\233\135\143\228\186\139\228\187\182\239\188\154", FuncName)
+    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 执行增量事件：", FuncName)
     try({
       exec = function()
         self[FuncName](self)
@@ -191,19 +174,18 @@ function Component:TriggerAddDungeonEvent(Event)
       end
     })
   else
-    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\228\186\139\228\187\182\239\188\154", FuncName)
+    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 未找到对应的事件：", FuncName)
   end
 end
-
 function Component:TriggerRemoveDungeonEvent(Event)
   if "" == Event then
-    DebugPrint("GameStateInterface  TriggerRemoveDungeonEvent \229\135\186\231\142\176\231\169\186\228\186\139\228\187\182")
+    DebugPrint("GameStateInterface  TriggerRemoveDungeonEvent 出现空事件")
     return
   end
   local FuncName = "Remove" .. Event .. "_Lua"
-  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\148\182\229\136\176Remove\228\186\139\228\187\182\239\188\154", Event)
+  DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 收到Remove事件：", Event)
   if nil ~= self[FuncName] then
-    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\137\167\232\161\140Remove\228\186\139\228\187\182\239\188\154", FuncName)
+    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 执行Remove事件：", FuncName)
     try({
       exec = function()
         self[FuncName](self)
@@ -214,51 +196,49 @@ function Component:TriggerRemoveDungeonEvent(Event)
       end
     })
   else
-    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua \230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\228\186\139\228\187\182\239\188\154", FuncName)
+    DebugPrint("GameStateInterface  OnRep_DungeonEvent_Lua 未找到对应的事件：", FuncName)
   end
 end
-
 function Component:OnRep_GameModeReady()
-  DebugPrint("GameStateInterface  Client \230\148\182\229\136\176OnRep_GameModeReady")
+  DebugPrint("GameStateInterface  Client 收到OnRep_GameModeReady")
   if self.bGameModeReady then
     self:TryEndLoading("GameModeReady")
   end
 end
-
 function Component:OnInit_Lua()
-  DebugPrint("GameStateInterface  Client \230\148\182\229\136\176\228\186\139\228\187\182OnInit_Lua")
+  DebugPrint("GameStateInterface  Client 收到事件OnInit_Lua")
   self:LoadDungeonUI()
   self:InitFbdRule()
-  self:UpdatePhonePostProcessMaterial()
+  self:TriggerClientEvent("OnClientInit")
+  if self.GameModeType == "SoloRaid" then
+    self.SoloRaidHistoryMaxScore = 0
+    local Avatar = GWorld:GetAvatar()
+    if Avatar and Avatar.RaidSeasons and Avatar.CurrentRaidSeasonId and Avatar.RaidSeasons[Avatar.CurrentRaidSeasonId] then
+      self.SoloRaidHistoryMaxScore = Avatar.RaidSeasons[Avatar.CurrentRaidSeasonId]:GetMaxRaidScore()
+    end
+  end
 end
-
 function Component:RemoveOnInit_Lua()
-  DebugPrint("GameStateInterface  Client \230\148\182\229\136\176\228\186\139\228\187\182RemoveOnInit_Lua")
+  DebugPrint("GameStateInterface  Client 收到事件RemoveOnInit_Lua")
   self:ResetFbdRule()
 end
-
 function Component:OnBattle_Lua()
 end
-
 function Component:OnExit_Lua(Avatars)
 end
-
 function Component:OnDisconnect_Lua(AvatarEidStr)
 end
-
 function Component:OnCustomeEvent_Lua(EventName)
   local FunName = "On" .. EventName .. "_Lua"
-  DebugPrint("GameStateInterface \230\148\182\229\136\176\228\186\139\228\187\182OnCustomeEvent_Lua\239\188\154", EventName)
+  DebugPrint("GameStateInterface 收到事件OnCustomeEvent_Lua：", EventName)
   if nil ~= self[FunName] then
     self[FunName](self)
   end
 end
-
 function Component:OnDungeonVoteBegin_Lua()
   EventManager:FireEvent(EventID.OnDungeonVoteBegin, self.VoteValues)
   UIManager(self):LoadUINew("Vote")
 end
-
 function Component:OnDungeonOneEnter_Lua(Eid)
   DebugPrint("gmy@Component:OnDungeonOneEnter_Lua", Eid)
   local PlayerArray = self.PlayerArray
@@ -273,11 +253,9 @@ function Component:OnDungeonOneEnter_Lua(Eid)
     end
   end
 end
-
 function Component:IsTeammate(PlayerState)
   return TeamController:GetModel():IsTeammateByAvatarEid(PlayerState.AvatarEidStr)
 end
-
 function Component:DungeonOtherPlayerChange(PlayerState, bIsIn)
   if IsClient(self) and not self:IsTeammate(PlayerState) then
     local UIObj = UIManager(self):GetUIObj("TeamToast")
@@ -287,10 +265,8 @@ function Component:DungeonOtherPlayerChange(PlayerState, bIsIn)
     UIManager(self):LoadUINew("TeamToast", PlayerState, bIsIn)
   end
 end
-
 function Component:RemoveOnDungeonVoteBegin_Lua(Time, NowTimestamp)
 end
-
 function Component:RescueCountDownUI_Lua()
   DebugPrint("RescueUI: ShowCountDown")
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -303,7 +279,6 @@ function Component:RescueCountDownUI_Lua()
     CaptureFloat:InitCaptureTimeUIOnShowDownTime()
   end
 end
-
 function Component:RemoveRescueCountDownUI_Lua()
   DebugPrint("RescueUI: CloseCountDown")
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -315,7 +290,6 @@ function Component:RemoveRescueCountDownUI_Lua()
     end
   end
 end
-
 function Component:OnRep_RescueCountDownTime()
   DebugPrint("RescueUI: OnRep_RescueCountDownTime CurTime:", self.RescueCountDownTime)
   EventManager:FireEvent(EventID.OnRepRescueCountDownTime)
@@ -332,12 +306,10 @@ function Component:OnRep_RescueCountDownTime()
     end
   end
 end
-
 function Component:OnRep_bHostageInvincible()
   DebugPrint("OnRep_bHostageInvincible", self.bHostageInvincible)
   EventManager:FireEvent(EventID.NotifyClientChangeHostageInvincible, self.bHostageInvincible)
 end
-
 function Component:HostageDyingCountDown_Lua()
   DebugPrint("RescueUI: HostageDyingCountDown")
   EventManager:FireEvent(EventID.TriggerHostageGuideLoop, true)
@@ -352,7 +324,6 @@ function Component:HostageDyingCountDown_Lua()
   end
   CaptureFloat:InitCaptureTimeUIOnHostageDead(self:GetHostagePhantomState())
 end
-
 function Component:GetHostagePhantomState()
   for _, PhantomState in pairs(self.PhantomArray) do
     if IsValid(PhantomState) and PhantomState.bIsHostage then
@@ -360,7 +331,6 @@ function Component:GetHostagePhantomState()
     end
   end
 end
-
 function Component:RemoveHostageDyingCountDown_Lua()
   DebugPrint("RescueUI: RemoveHostageDyingCountDown")
   EventManager:FireEvent(EventID.TriggerHostageGuideLoop, false)
@@ -373,7 +343,6 @@ function Component:RemoveHostageDyingCountDown_Lua()
     CaptureFloat:Close()
   end
 end
-
 function Component:OnRepDungeonExitInfo(Info, bIsWaiting)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -407,7 +376,6 @@ function Component:OnRepDungeonExitInfo(Info, bIsWaiting)
     CountDownUI:UIStateChange_AfterTarget()
   end
 end
-
 function Component:OnRep_ExitInfo()
   local ExitMechanismArray = self.MechanismMap:FindRef("ExitTrigger")
   local ExitMechanism
@@ -423,7 +391,6 @@ function Component:OnRep_ExitInfo()
     self:OnRepDungeonExitInfo(self.ExitInfo, bIsWaiting)
   end
 end
-
 function Component:SurvivalValueFinished_Lua()
   DebugPrint("SurvivalUI: SurvivalValueFinished")
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -433,12 +400,10 @@ function Component:SurvivalValueFinished_Lua()
     DungenonSurviveFloat:OnEnd()
   end
 end
-
 function Component:CaptureMonsterRecovery_Lua()
   DebugPrint("CaptureComponent: ShowCaptureMonsterRecovery_Lua")
   EventManager:FireEvent(EventID.ShowDungeonUI)
 end
-
 function Component:RemoveCaptureMonsterRecovery_Lua()
   DebugPrint("CaptureComponent: CloseCaptureMonsterRecovery_Lua")
   EventManager:FireEvent(EventID.CloseDungeonUI)
@@ -453,51 +418,41 @@ function Component:RemoveCaptureMonsterRecovery_Lua()
     SceneMgrComponent:RecoverGuideIcon()
   end
 end
-
 function Component:Chapter01_Trafficway_Hunt3_Lua()
   local Info = self.ClientTimerStruct:GetTimerInfo("Chapter01_Trafficway_Hunt3")
   DebugPrint("RegionDefenceUI: Chapter01_Trafficway_Hunt3", Info.Time, Info.TimeSeconds, GWorld:IsStandAlone())
   EventManager:FireEvent(EventID.DefenseTimerAdded, Info.Key, Info.Time, Info.TimeSeconds)
   EventManager:FireEvent(EventID.ShowDungeonUI)
 end
-
 function Component:RemoveChapter01_Trafficway_Hunt3_Lua()
   local Info = self.ClientTimerStruct:GetTimerInfo("Chapter01_Trafficway_Hunt3")
   DebugPrint("RemoveRegionDefenceUI: Chapter01_Trafficway_Hunt3", Info.Time, Info.TimeSeconds, GWorld:IsStandAlone())
   EventManager:FireEvent(EventID.CloseDungeonUI)
 end
-
 function Component:DefenceCountDown_Lua()
   local Info = self.ClientTimerStruct:GetTimerInfo("DefenceCountDown")
-  DebugPrint("GameStateInterface \230\148\182\229\136\176 DefenceCountDown_Lua", self:GetLocalRole())
+  DebugPrint("GameStateInterface 收到 DefenceCountDown_Lua", self:GetLocalRole())
   EventManager:FireEvent(EventID.DefenseTimerAdded, Info.Key, Info.Time, Info.TimeSeconds)
   EventManager:FireEvent(EventID.ShowDungeonUI)
 end
-
 function Component:RemoveDefenceCountDown_Lua()
-  DebugPrint("GameStateInterface \230\148\182\229\136\176 RemoveDefenceCountDown_Lua", self:GetLocalRole())
+  DebugPrint("GameStateInterface 收到 RemoveDefenceCountDown_Lua", self:GetLocalRole())
 end
-
 function Component:OnWaveStart_Lua()
   EventManager:FireEvent(EventID.OnWaveStart)
 end
-
 function Component:OnWaveEnd_Lua()
   EventManager:FireEvent(EventID.OnWaveEnd)
 end
-
 function Component:OnSurvivalProFinishTutorial_Lua()
   EventManager:FireEvent(EventID.SurvivalProFinishTutorial)
 end
-
 function Component:OnSurvivalProSurpossedLeave_Lua()
   EventManager:FireEvent(EventID.SurvivalProSurpossedLeave)
 end
-
 function Component:OnSurvivalProBeginTutorial_Lua()
   EventManager:FireEvent(EventID.SurvivalProBeginTutorial)
 end
-
 function Component:OnSabotageOptionalMissionSucceed_Lua()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -505,7 +460,6 @@ function Component:OnSabotageOptionalMissionSucceed_Lua()
     return
   end
 end
-
 function Component:InitFbdRule()
   DebugPrint("InitFbdRule", self.DungeonId)
   local DungeonData = DataMgr.Dungeon[self.DungeonId]
@@ -522,7 +476,7 @@ function Component:InitFbdRule()
   end
   if Player then
     if FbdRule.NoSkill and 0 ~= FbdRule.NoSkill then
-      Player:ForbidAllSkills(true)
+      Player:ForbidAllSkillsByBuff(true)
     end
     if FbdRule.NoMelee and 0 ~= FbdRule.NoMelee then
       Player:ForbidMeleeSkills(true)
@@ -532,7 +486,6 @@ function Component:InitFbdRule()
     end
   end
 end
-
 function Component:ResetFbdRule()
   DebugPrint("ResetFbdRule", self.DungeonId)
   local DungeonData = DataMgr.Dungeon[self.DungeonId]
@@ -549,7 +502,7 @@ function Component:ResetFbdRule()
   end
   if Player then
     if FbdRule.NoSkill and 0 ~= FbdRule.NoSkill then
-      Player:ForbidAllSkills(false)
+      Player:ForbidAllSkillsByBuff(false)
     end
     if FbdRule.NoMelee and 0 ~= FbdRule.NoMelee then
       Player:ForbidMeleeSkills(false)
@@ -559,7 +512,6 @@ function Component:ResetFbdRule()
     end
   end
 end
-
 function Component:LoadDungeonUI(DungeonType)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -572,19 +524,40 @@ function Component:LoadDungeonUI(DungeonType)
     if "Region" == GameModeType then
       return
     end
+    local NeedManualAddGuideBook = true
     if self.DungeonId and Avatar:CheckIsFirstEnterDungeonType(self.DungeonId) and not self.bShown then
       self.bShown = true
-      self:TryShowDungeonFirstGuide(self.GameModeType)
+      local ShowGuideUISuccess = self:TryShowDungeonFirstGuide(self.GameModeType)
+      NeedManualAddGuideBook = not ShowGuideUISuccess
+    end
+    if NeedManualAddGuideBook and DataMgr.DungeonTypeToId[GameModeType] then
+      local DungeonGuideId = DataMgr.DungeonTypeToId[GameModeType].GuideId
+      if DungeonGuideId then
+        local RelateData = DataMgr.GuideBookConditionTwo.CompleteUIGuideId[DungeonGuideId]
+        if RelateData then
+          for _, data in pairs(RelateData) do
+            if data.GuideNoteId and not Avatar.GuideBook[data.GuideNoteId] then
+              DebugPrint("Not UnLock Last Time", DungeonGuideId)
+              Avatar:GuideBookFinishSomething("CompleteUIGuideId", DungeonGuideId)
+              break
+            end
+          end
+        end
+      end
     end
   end
   local DungeonUIName = CommonConst.DungeonUINameMap[GameModeType]
   if "Disable" == DungeonUIName then
     return
   end
-  local ParamUINameTable = self:GetToLoadDungeonUINames()
-  if ("Defence" == GameModeType or "DefencePro" == GameModeType or "Training" == GameModeType) and not UIManager(self):GetUIObj("DungeonToastFloat") then
-    UIManager(self):LoadUI(UIConst.DUNGEONTOASTFLOAT, "DungeonToastFloat", UIConst.ZORDER_FOR_DESKTOP_TEMP)
+  if "WidgetUI" == DungeonUIName then
+    self:LoadDungeonUIEMWdiget(GameModeType)
+  else
+    self:LoadDungeonUIState(GameModeType, DungeonUIName)
   end
+end
+function Component:LoadDungeonUIState(GameModeType, DungeonUIName)
+  local ParamUINameTable = self:GetToLoadDungeonUINames()
   if ParamUINameTable then
     for _, UIName in pairs(ParamUINameTable) do
       self:RealLoadDungeonUI(UIName)
@@ -592,10 +565,9 @@ function Component:LoadDungeonUI(DungeonType)
   elseif DungeonUIName then
     self:RealLoadDungeonUI(DungeonUIName)
   else
-    ScreenPrint("LoadDungeonUI\229\138\160\232\189\189\229\175\185\229\186\148\229\137\175\230\156\172UI\229\164\177\232\180\165\239\188\140\230\178\161\230\156\137\229\161\171\229\134\153\233\187\152\232\174\164\229\128\188\239\188\129GameModeType " .. GameModeType)
+    ScreenPrint("LoadDungeonUI加载对应副本UI失败，没有填写默认值！GameModeType " .. GameModeType)
   end
 end
-
 function Component:RealLoadDungeonUI(DungeonUIName)
   if "DungeonHijackFloat" == DungeonUIName then
     return
@@ -610,7 +582,6 @@ function Component:RealLoadDungeonUI(DungeonUIName)
     UIManager(self):LoadUINew(DungeonUIName)
   end
 end
-
 function Component:UnloadDungeonUI(DungeonType)
   local GameModeType = self.GameModeType
   if DungeonType then
@@ -627,17 +598,15 @@ function Component:UnloadDungeonUI(DungeonType)
   elseif DungeonUIName then
     self:RealCloseDungeonUI(DungeonUIName)
   else
-    ScreenPrint("CloseDungeonUI\229\141\184\232\189\189\229\175\185\229\186\148\229\137\175\230\156\172UI\229\164\177\232\180\165\239\188\129GameModeType " .. GameModeType)
+    ScreenPrint("CloseDungeonUI卸载对应副本UI失败！GameModeType " .. GameModeType)
   end
 end
-
 function Component:RealCloseDungeonUI(DungeonUIName)
   local DungeonUI = UIManager(self):GetUIObj(DungeonUIName)
   if DungeonUI and DungeonUI.CloseDungeonUI then
     DungeonUI:CloseDungeonUI()
   end
 end
-
 function Component:GetToLoadDungeonUINames()
   if not self:IsInRegion() then
     return
@@ -652,30 +621,48 @@ function Component:GetToLoadDungeonUINames()
   end
   return UIParamData.UIName
 end
-
+function Component:LoadDungeonUIEMWdiget(GameModeType)
+  local WidgetUIName = CommonConst.DungeonEMWidgetUINameMap[GameModeType]
+  if not WidgetUIName then
+    ScreenPrint("LoadDungoenUI加载对应副本WidgetUI失败，没有填写默认值！GameModeType " .. GameModeType)
+    return
+  end
+  if type(WidgetUIName) == "table" then
+    for _, UIName in pairs(WidgetUIName) do
+      self:RealLoadDungeonUIEMWdiget(UIName)
+    end
+  else
+    self:RealLoadDungeonUIEMWdiget(WidgetUIName)
+  end
+end
+function Component:RealLoadDungeonUIEMWdiget(WidgetUIName)
+  local EMDungeonWidget = UIManager(self):_CreateWidgetNew(WidgetUIName)
+  if not EMDungeonWidget then
+    ScreenPrint("LoadDungoenUI加载对应副本WidgetUI失败，创建Widget失败！WidgetUIName " .. WidgetUIName)
+    return
+  end
+  EMDungeonWidget:InitDungeonWidget()
+end
 function Component:OnRep_DungeonUIInfo()
-  DebugPrint("GameState:OnRep_DungeonUIInfo \229\174\162\230\136\183\231\171\175\230\148\182\229\136\176DungeonUIInfo\230\149\176\230\141\174", self.DungeonUIInfo.TexturePath, self.DungeonUIInfo.TextTitle, self.DungeonUIInfo.TextMap)
+  DebugPrint("GameState:OnRep_DungeonUIInfo 客户端收到DungeonUIInfo数据", self.DungeonUIInfo.TexturePath, self.DungeonUIInfo.TextTitle, self.DungeonUIInfo.TextMap)
   self.HasDungeonUIInfoData = true
   self:RealShowDungeonTask()
 end
-
 function Component:ShowDungeonTask_Lua()
-  DebugPrint("GameState:ShowDungeonTask_Lua \229\174\162\230\136\183\231\171\175\230\148\182\229\136\176DungeonUIInfo\228\186\139\228\187\182 \228\185\139\229\137\141\231\154\132self.HasDungeonUIInfoEvent", self.HasDungeonUIInfoEvent)
+  DebugPrint("GameState:ShowDungeonTask_Lua 客户端收到DungeonUIInfo事件 之前的self.HasDungeonUIInfoEvent", self.HasDungeonUIInfoEvent)
   if self.HasDungeonUIInfoEvent then
     return
   end
   self.HasDungeonUIInfoEvent = true
   self:RealShowDungeonTask()
 end
-
 function Component:RealShowDungeonTask()
-  DebugPrint("GameState:RealShowDungeonTask \229\174\162\230\136\183\231\171\175\230\152\175\229\144\166\230\148\182\229\136\176\230\149\176\230\141\174", self.HasDungeonUIInfoData, "\229\174\162\230\136\183\231\171\175\230\152\175\229\144\166\230\148\182\229\136\176\228\186\139\228\187\182", self.HasDungeonUIInfoEvent)
+  DebugPrint("GameState:RealShowDungeonTask 客户端是否收到数据", self.HasDungeonUIInfoData, "客户端是否收到事件", self.HasDungeonUIInfoEvent)
   if not self.HasDungeonUIInfoData or not self.HasDungeonUIInfoEvent then
     return
   end
   self.HasDungeonUIInfoData = false
-  DebugPrint("GameState:RealShowDungeonTask \229\174\162\230\136\183\231\171\175\230\155\180\230\150\176\228\187\187\229\138\161\230\160\143")
-  
+  DebugPrint("GameState:RealShowDungeonTask 客户端更新任务栏")
   local function WrapFuncEventFire()
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
     local UIManager = GameInstance:GetGameUIManager()
@@ -693,16 +680,13 @@ function Component:RealShowDungeonTask()
     BattleMainUI.Pos_TaskBar:GetChildAt(0):OnLoaded()
     EventManager:FireEvent(EventID.OnReceiveTask, RealTexturePath, self.DungeonUIInfo.TextTitle, self.DungeonUIInfo.TextMap)
   end
-  
   WrapFuncEventFire()
 end
-
 function Component:ShowRescuePanel_Lua()
   if self.GameModeType == "Rescue" then
     self:TryToShowRescuePanel()
   end
 end
-
 function Component:UpdateSurvivalProBuffInfo_Lua()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -714,7 +698,6 @@ function Component:UpdateSurvivalProBuffInfo_Lua()
     SurvivalProUI:ShowBuffInfo(self.SurvivalProBuffInfo.PathIconList, self.SurvivalProBuffInfo.TextMapList, self.SurvivalProBuffInfo.Duration)
   end
 end
-
 function Component:TryToShowRescuePanel()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -728,36 +711,35 @@ function Component:TryToShowRescuePanel()
     UIManager:LoadUI(UIConst.DUNGEONDEFENCEFLOAT, "DungeonRescueFloat", UIConst.ZORDER_FOR_DESKTOP_TEMP, true)
   end
 end
-
 function Component:TryShowDungeonFirstGuide(GameModeType)
   if not GWorld:IsStandAlone() then
-    return
+    return false
   end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
-    return
+    return false
   end
   if not GameMode:GetLevelLoader() then
-    return
+    return false
   end
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   if nil == UIManager then
-    return
+    return false
   end
   if DataMgr.DungeonTypeToId[GameModeType] then
-    local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-    local Flow = FlowManager:CreateFlow("GuideMain")
-    Flow.OnBegin:Add(Flow, function()
-      local UIStateAsyncActionBase = UE4.UUIStateAsyncActionBase.ShowGuideUI(self, DataMgr.DungeonTypeToId[GameModeType].GuideId)
-      UIStateAsyncActionBase.OnGuideEnd:Add(self, function()
-        FlowManager:RemoveFlow(Flow)
-      end)
-    end)
-    FlowManager:AddFlow(Flow)
+    GameFlowUtils:AddFlow("GuideMain", {
+      GWorld.GameInstance,
+      function(_, Flow)
+        local UIStateAsyncActionBase = UE4.UUIStateAsyncActionBase.ShowGuideUI(self, DataMgr.DungeonTypeToId[GameModeType].GuideId)
+        UIStateAsyncActionBase.OnGuideEnd:Add(self, function()
+          GameFlowUtils:RemoveFlow(Flow)
+        end)
+      end
+    })
   end
+  return true
 end
-
 function Component:ShowDungeonToast_Lua(TextMapIndex, Duration, ToastType, ToastColor)
   DebugPrint("ShowDungeonToast_Lua TextMapIndex", TextMapIndex, "Duration", Duration, "ToastType", ToastType)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -798,7 +780,6 @@ function Component:ShowDungeonToast_Lua(TextMapIndex, Duration, ToastType, Toast
     end
   end
 end
-
 function Component:UnShowDungeonToast_Lua(Key, ToastType)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -809,7 +790,6 @@ function Component:UnShowDungeonToast_Lua(Key, ToastType)
     UIManager:HideWarningUITip(Key)
   end
 end
-
 function Component:ShowCountDownUI_Lua(TextMap, CountDownTime, EnterWarningTime)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -822,7 +802,6 @@ function Component:ShowCountDownUI_Lua(TextMap, CountDownTime, EnterWarningTime)
     CountDownUI:UIStateChange_OnTarget()
   end
 end
-
 function Component:HideCountDownUI_Lua(TextMap)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -834,7 +813,54 @@ function Component:HideCountDownUI_Lua(TextMap)
     UIManager:UnLoadUINew("DungeonCaptureFloat")
   end
 end
-
+function Component:ShowRankStarUI_Lua(TextMapTitle, TextMapStar3, TextMapStar2, TextMapStar1, TimerHandle, TimerStar3, TimeStar2, TimeStar1)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local UIManager = GameInstance:GetGameUIManager()
+  if nil == UIManager then
+    return
+  end
+  local BattleMainUI = UIManager:GetUIObj("BattleMain")
+  if not BattleMainUI then
+    DebugPrint("zzwwkk ShowRankStarUI_Lua BattleMainUI is nil")
+    return
+  end
+  self.RankStarUI = UIManager:_CreateWidgetNew("DungeonCommonRankStar")
+  self.RankStarUI:InitWidgetUI(TextMapTitle, TextMapStar3, TextMapStar2, TextMapStar1, TimerHandle, TimerStar3, TimeStar2, TimeStar1)
+  BattleMainUI.Group_Temple:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  BattleMainUI.Pos_TempleRight:ClearChildren()
+  BattleMainUI.Pos_TempleRight:AddChildToOverlay(self.RankStarUI)
+end
+function Component:UnShowRankStarUI_Lua()
+  if self.RankStarUI then
+    self.RankStarUI:RemoveFromParent()
+    local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+    local UIManager = GameInstance:GetGameUIManager()
+    if nil == UIManager then
+      return
+    end
+    local BattleMainUI = UIManager:GetUIObj("BattleMain")
+    if BattleMainUI then
+      BattleMainUI.Group_Temple:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+  end
+end
+function Component:ShowRankStarScoreUI_Lua(TextMapTitle, TextMapStar3, TextMapStar2, TextMapStar1, ScoreStar3, ScoreStar2, ScoreStar1, InitScore)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local UIManager = GameInstance:GetGameUIManager()
+  if nil == UIManager then
+    return
+  end
+  local BattleMainUI = UIManager:GetUIObj("BattleMain")
+  if not BattleMainUI then
+    DebugPrint("zzwwkk ShowRankStarUI_Lua BattleMainUI is nil")
+    return
+  end
+  self.RankStarUI = UIManager:_CreateWidgetNew("DungeonCommonRankStar")
+  self.RankStarUI:InitWidgetUIScore(TextMapTitle, TextMapStar3, TextMapStar2, TextMapStar1, ScoreStar3, ScoreStar2, ScoreStar1, InitScore)
+  BattleMainUI.Group_Temple:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  BattleMainUI.Pos_TempleRight:ClearChildren()
+  BattleMainUI.Pos_TempleRight:AddChildToOverlay(self.RankStarUI)
+end
 function Component:ShowBuffInfo_Lua(PathIconList, TextMapList, Duration)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -847,9 +873,8 @@ function Component:ShowBuffInfo_Lua(PathIconList, TextMapList, Duration)
   end
   TaskPanel:ShowBuffInfo(PathIconList, TextMapList, Duration)
 end
-
 function Component:FireEventBuffChange_Lua(BuffId, bAdd, Eid)
-  if not GWorld.GameInstance or not GWorld.Battle then
+  if not (GWorld.GameInstance and GWorld.Battle) or nil == Eid then
     return
   end
   local Entity = Battle(GWorld.GameInstance):GetEntity(Eid)
@@ -858,13 +883,11 @@ function Component:FireEventBuffChange_Lua(BuffId, bAdd, Eid)
     TeammateUI:ShowShortageUI(BuffId, bAdd)
   end
 end
-
 function Component:OnActiveSurvivalTime_Lua()
   if IsAuthority(self) then
     self:SetDungeonUIState(Const.EDungeonUIState.OnTarget)
   end
 end
-
 function Component:OnDefenceWaveStart_Lua()
   EventManager:FireEvent(EventID.OnDefenseWaveStart)
   for Eid, DefenceCore in pairs(self.DefBaseMap) do
@@ -873,7 +896,6 @@ function Component:OnDefenceWaveStart_Lua()
     end
   end
 end
-
 function Component:OnDefenceWaveEnd_Lua()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/battle_stage_success", nil, nil)
   EventManager:FireEvent(EventID.OnDefenceWaveEnd)
@@ -883,7 +905,6 @@ function Component:OnDefenceWaveEnd_Lua()
     end
   end
 end
-
 function Component:UpdateDungeonVote_Lua(VoteValues)
   local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
   EventManager:RemoveEvent(EventID.OnDungeonVoteBegin, self)
@@ -904,7 +925,17 @@ function Component:UpdateDungeonVote_Lua(VoteValues)
     return
   end
   print(_G.LogTag, "LXZ  UpdateDungeonVote_Lua Load Vote bushiren")
-  if not UIManager(self):GetUIObj("Vote") then
+  if not UIManager(self):GetUIObj("Vote") and not GWorld.GameInstance:IsInTempScene() then
+    local NeedVote = false
+    for i = 1, self.DungeonEvent:Num() do
+      local Event = self.DungeonEvent:GetValueByIdx(i - 1)
+      if "OnDungeonVoteBegin" == Event then
+        NeedVote = true
+      end
+    end
+    if not NeedVote then
+      return
+    end
     for Eid, Value in pairs(VoteValues) do
       if Value ~= EVoteState.Wait then
         return
@@ -923,7 +954,6 @@ function Component:UpdateDungeonVote_Lua(VoteValues)
     end
   end
 end
-
 function Component:UpdateDungeonLoadingProgress()
   self.LoadingProgressInfo = 0
   if self.LevelLoaderReady then
@@ -942,7 +972,6 @@ function Component:UpdateDungeonLoadingProgress()
     UI:AddQuene(self.LoadingProgressInfo)
   end
 end
-
 function Component:TryEndLoading(Reason)
   if not self.LevelLoaderReady then
     if self:GetCurrentLevelLoader() then
@@ -984,14 +1013,11 @@ function Component:TryEndLoading(Reason)
           SubSystem:SetRegionInitState(ERegionInitState.AllReady)
         end
       end
-      print(_G.LogTag, "SetSyncLoaderOptimization True")
-      GWorld.GameInstance:SetSyncLoaderOptimization(true)
     else
       self.EndLoadingSuccess = false
     end
   end
 end
-
 function Component:PreCreateUnit()
   if not self:RegionNeedPreCreateUnit() then
     self.bRegionPreCreateUnitReady = true
@@ -1010,7 +1036,6 @@ function Component:PreCreateUnit()
   GameMode:GetRegionDataMgrSubSystem():OnInitRecoverRegionData(false)
   WorldCompositionSubSystem:PreCreateUnit()
 end
-
 function Component:IsPreloadGameAssetsReady()
   local PreloadSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UE4.URolePreloadGameInstanceSubsystem)
   if not PreloadSystem or not PreloadSystem:EnableOptimization() then
@@ -1018,7 +1043,6 @@ function Component:IsPreloadGameAssetsReady()
   end
   return self.bPreloadAssetsReady
 end
-
 function Component:GetPreloadProgress()
   local PreloadSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UE4.URolePreloadGameInstanceSubsystem)
   if not (PreloadSystem and PreloadSystem:EnableOptimization()) or self.bPreloadAssetsReady then
@@ -1026,11 +1050,9 @@ function Component:GetPreloadProgress()
   end
   return PreloadSystem:GetAsyncLoadingProgress()
 end
-
 function Component:NeedPreloadGameAssets()
   return not self:IsPreloadGameAssetsReady() and not self.bAssetsPreloading
 end
-
 function Component:PreloadGameAssets()
   local PreloadSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UE4.URolePreloadGameInstanceSubsystem)
   if not PreloadSystem then
@@ -1040,6 +1062,20 @@ function Component:PreloadGameAssets()
   end
   local UnitBudgetSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UE4.UUnitBudgetAllocatorSubsystem)
   if UnitBudgetSystem then
+    if self:IsInDungeon() then
+      local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
+      local DungeonInfo = DataMgr.Dungeon[DungeonId]
+      if DungeonInfo and DungeonInfo.DungeonType == "AutoChess" then
+        print(_G.LogTag, "wzj- 自走棋跳过EnableAnimBudget")
+        UnitBudgetSystem:SetEnableAnimBudget(false)
+      else
+        print(_G.LogTag, "wzj- 打开EnableAnimBudget")
+        UnitBudgetSystem:SetEnableAnimBudget(true)
+      end
+    else
+      print(_G.LogTag, "wzj- 打开EnableAnimBudget")
+      UnitBudgetSystem:SetEnableAnimBudget(true)
+    end
     local bSkip = false
     if IsClient(self) then
       bSkip = true
@@ -1077,9 +1113,11 @@ function Component:PreloadGameAssets()
   end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local PhantomTable = Player and Player:GetPhantomTeammates(false, false):ToTable() or {}
-  PreloadSystem:ReleaseAllCacheBeforeChangeScene({
-    Player and Player.CurrentRoleId or 0
-  })
+  local SkipPlayerId = Player and Player.CurrentRoleId or 0
+  if Player.GetCharPreloadComp and Player:GetCharPreloadComp() and Player:GetCharPreloadComp():GetPlayerCacheLoadId() > 0 then
+    SkipPlayerId = Player:GetCharPreloadComp():GetPlayerCacheLoadId()
+  end
+  PreloadSystem:ReleaseAllCacheBeforeChangeScene({SkipPlayerId})
   PreloadSystem:ReleaseAllCacheObj(false)
   PreloadSystem:PreloadScatteredAsset_All()
   if Player and true == Player.DelayCacheLoadPlayerAssets then
@@ -1094,14 +1132,39 @@ function Component:PreloadGameAssets()
   if self:IsInDungeon() then
     PreloadSystem:PreloadScatteredAsset_Dungeon(DungeonId or 0)
   elseif self:IsInRegion() then
+    if IsStandAlone(self) and UEMGameInstance.IsLowMemoryDevice() then
+      local AnimCacheSys = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UAnimOptGameInstanceSubsystem)
+      if AnimCacheSys then
+        print(_G.LogTag, "@gulinan- 区域资源预加载前打开移动端被关闭的动画缓存")
+        AnimCacheSys.SystemEnableState = 1
+      end
+    end
     PreloadSystem:PreloadScatteredAsset_Region()
   end
-  if nil == DungeonId then
+  if nil == DungeonId or -1 == DungeonId then
+    print(_G.LogTag, "wzj- 副本资源预加载 StartEnd", UE4.UGameplayStatics.GetTimeSeconds(self), DungeonId)
     self.bPreloadAssetsReady = true
     self.bAssetsPreloading = false
     return
   end
-  print(_G.LogTag, "wzj- \229\137\175\230\156\172\232\181\132\230\186\144\233\162\132\229\138\160\232\189\189 Start", UE4.UGameplayStatics.GetTimeSeconds(self), DungeonId)
+  print(_G.LogTag, "wzj- 副本资源预加载 Start", UE4.UGameplayStatics.GetTimeSeconds(self), DungeonId)
+  if IsStandAlone(self) and UEMGameInstance.IsLowMemoryDevice() then
+    local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
+    local DungeonInfo = DataMgr.Dungeon[DungeonId]
+    if DungeonInfo.DungeonType == "Synthesis" then
+      local AnimCacheSys = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UAnimOptGameInstanceSubsystem)
+      if AnimCacheSys then
+        print(_G.LogTag, "@gulinan- 副本资源预加载前关闭低内存机型竞逐本动画缓存", DungeonId)
+        AnimCacheSys.SystemEnableState = 0
+      end
+    else
+      local AnimCacheSys = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UAnimOptGameInstanceSubsystem)
+      if AnimCacheSys then
+        print(_G.LogTag, "@gulinan- 副本资源预加载前开启非低内存机型或非竞逐本动画缓存", DungeonId)
+        AnimCacheSys.SystemEnableState = 1
+      end
+    end
+  end
   self.bPreloadAssetsReady = false
   self.bAssetsPreloading = true
   local Res = PreloadSystem:CacheDungeonGameAssetsOuter({
@@ -1112,14 +1175,12 @@ function Component:PreloadGameAssets()
     self:PreloadGameAssetsCallback()
   end
 end
-
 function Component:PreloadGameAssetsCallback()
-  print(_G.LogTag, "wzj- \229\137\175\230\156\172\232\181\132\230\186\144\233\162\132\229\138\160\232\189\189 End", UE4.UGameplayStatics.GetTimeSeconds(self), GWorld.GameInstance:GetCurrentDungeonId())
+  print(_G.LogTag, "wzj- 副本资源预加载 End", UE4.UGameplayStatics.GetTimeSeconds(self), GWorld.GameInstance:GetCurrentDungeonId())
   self.bPreloadAssetsReady = true
   self.bAssetsPreloading = false
   self:TryEndLoading("AssetsPreload")
 end
-
 function Component:ShowPetDefenseDynamicEvent_Lua()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMain = UIManager:GetUIObj("BattleMain")
@@ -1129,9 +1190,9 @@ function Component:ShowPetDefenseDynamicEvent_Lua()
     DynamicEventUI:PetPlayInAnim()
     DynamicEventUI:SetEventInfo(GText(self.PetEventName), GText(self.PetEventDescribe))
     DynamicEventUI:HidePetProgressRoot()
+    DynamicEventUI.Name:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Component:ShowPetDefenseProgress_Lua()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMain = UIManager:GetUIObj("BattleMain")
@@ -1144,7 +1205,6 @@ function Component:ShowPetDefenseProgress_Lua()
     self:PetCaputreDefenceWidgetShow()
   end
 end
-
 function Component:RemoveShowPetDefenseProgress_Lua()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMain = UIManager:GetUIObj("BattleMain")
@@ -1154,14 +1214,12 @@ function Component:RemoveShowPetDefenseProgress_Lua()
     self:PetCaputreDefenceWidgetHide()
   end
 end
-
 function Component:PetPlayFailureMontage_Lua()
   local DefencePet = self:GetNpcInfo(self.PetId)
   if IsValid(DefencePet) then
     DefencePet:PlayFailureMontageThenDestroy()
   end
 end
-
 function Component:PetAddGuideAllPlayer()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   for i, Player in pairs(GameMode:GetAllPlayer()) do
@@ -1171,19 +1229,16 @@ function Component:PetAddGuideAllPlayer()
     end
   end
 end
-
 function Component:PetAddGuide(PlayerEid)
   local Pet = self:GetNpcInfo(self.PetId)
   DebugPrint("================================PetAddGuide======Pet.Eid, Player.Eid:", Pet.Eid, PlayerEid)
   self:AddGuideEid(Pet.Eid, PlayerEid)
 end
-
 function Component:PetRemoveGuide(PetEid)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   DebugPrint("=======================================PetRemoveGuide===PetEid,Player.Eid=", PetEid, Player.Eid)
   self:RemoveGuideEid(PetEid, Player.Eid)
 end
-
 function Component:UpdatePetDefenseProgress()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMain = UIManager:GetUIObj("BattleMain")
@@ -1193,37 +1248,59 @@ function Component:UpdatePetDefenseProgress()
     self:PetCaputreDefenceWidgetUpdate()
   end
 end
-
 function Component:PetDefenceCoreDestory()
   local DefenceCore = self:GetDefenceCore(self.PetDefenceCoreId)
   if DefenceCore then
     DefenceCore:K2_DestroyActor()
   end
 end
-
 function Component:PetCaputreDefenceWidgetShow()
   local DefenceCore = self:GetDefenceCore(self.PetDefenceCoreId)
   if IsValid(DefenceCore) and DefenceCore.PetCaptureDefense then
     self:PetCaputreDefenceWidgetUpdateByDefenceCore(DefenceCore)
     DefenceCore.PetCaptureDefense:SetHiddenInGame(false)
-    DefenceCore.PetCaptureDefense.PetRoot = DefenceCore.PetRoot
+    self.PetDefenceCore = DefenceCore
+    if not self:IsExistTimer("PetCaptureWidget") then
+      self:AddTimer(0.02, self.UpdatePetWidgetRotation, true, 0, "PetCaptureWidget")
+    end
   end
 end
-
 function Component:PetCaputreDefenceWidgetHide()
   local DefenceCore = self:GetDefenceCore(self.PetDefenceCoreId)
   if IsValid(DefenceCore) and DefenceCore.PetCaptureDefense then
     local Widget = DefenceCore.PetCaptureDefense:GetWidget()
     Widget:PlayAnimation(Widget.Out)
-    DefenceCore.PetCaptureDefense.PetRoot = nil
+    self.PetDefenceCore = nil
+    self:RemoveTimer("PetCaptureWidget")
   end
 end
-
+function Component:UpdatePetWidgetRotation()
+  if IsValid(self.PetDefenceCore) and self.PetDefenceCore.PetCaptureDefense and self.PetDefenceCore.PetRoot then
+    local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+    local PlayerLocation = Player:K2_GetActorLocation()
+    local SelfLocation = self.PetDefenceCore:K2_GetActorLocation()
+    PlayerLocation.Z = 0
+    SelfLocation.Z = 0
+    local Dir = PlayerLocation - SelfLocation
+    local Forward = self.PetDefenceCore:GetActorForwardVector()
+    Forward.Z = 0
+    Dir:Normalize()
+    Forward:Normalize()
+    local Angle = Dir:Dot(Forward)
+    local Cross = Dir:Cross(Forward)
+    local OnRight = Cross.Z < 0
+    local Degree = UE.UKismetMathLibrary.DegAcos(Angle)
+    if false == OnRight then
+      Degree = 360 - Degree
+    end
+    self.PetDefenceCore.PetRoot:K2_SetRelativeRotation(FRotator(0, Degree, 0), false, nil, true)
+    self.PetDefenceCore:UpdatePetFXRotation(Degree)
+  end
+end
 function Component:PetCaputreDefenceWidgetUpdate()
   local DefenceCore = self:GetDefenceCore(self.PetDefenceCoreId)
   self:PetCaputreDefenceWidgetUpdateByDefenceCore(DefenceCore)
 end
-
 function Component:PetCaputreDefenceWidgetUpdateByDefenceCore(DefenceCore)
   if IsValid(DefenceCore) and DefenceCore.PetCaptureDefense then
     local Widget = DefenceCore.PetCaptureDefense:GetWidget()
@@ -1234,7 +1311,6 @@ function Component:PetCaputreDefenceWidgetUpdateByDefenceCore(DefenceCore)
     Widget.Text_Process:SetText(math.floor(Rate * 100))
   end
 end
-
 function Component:GetDefenceCore(UnitId)
   local Mechanisms = self.MechanismMap:FindRef("DefenceCore")
   if nil ~= Mechanisms then
@@ -1247,17 +1323,14 @@ function Component:GetDefenceCore(UnitId)
   end
   return nil
 end
-
 function Component:OnRep_PetDefenceKilled()
   self:UpdatePetDefenseProgress()
   UE4.UGameplayStatics.GetGameState(self):MarkPetDefenceKilledNumAsDirtyData()
 end
-
 function Component:SelectTicket_Lua()
   print(_G.LogTag, "LXZ SelectTicket")
   if IsStandAlone(self) then
     local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
-    
     local function OnRightConfirm(_, PackageData)
       local Avatar = GWorld:GetAvatar()
       if not Avatar then
@@ -1265,9 +1338,9 @@ function Component:SelectTicket_Lua()
       end
       Avatar:SelectTicket(nil, DungeonId, PackageData.Content_1.TicketId)
       local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+      GameMode:RemoveDungeonEvent("SelectTicket")
       GameMode:ExecuteNextStepOfTicket()
     end
-    
     if self:CheckAvatarHasTicket() then
       local CommonDialog = UIManager(self):ShowCommonPopupUI(100252, {
         DungeonId = DungeonId,
@@ -1283,53 +1356,44 @@ function Component:SelectTicket_Lua()
         Content_1 = {TicketId = 0}
       })
     end
-  end
-end
-
-function Component:OnRep_NextTicketPlayer()
-  local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-  local Eid = Player.Eid
-  local ClientRes = self.NextTicketPlayer:Find(Eid)
-  if false ~= ClientRes or UIManager(self):GetUIObj("CommonDialog") then
-    for i, v in pairs(self.NextTicketPlayer) do
-      if not v then
+  else
+    local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
+    local function OnRightConfirm(_, PackageData)
+      local Avatar = GWorld:GetAvatar()
+      if not Avatar then
         return
       end
+      Avatar:SelectTicket(nil, DungeonId, PackageData.Content_1.TicketId)
+      local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+      local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
+      PlayerCharacter.RPCComponent:SendDungeonTicket(PlayerCharacter.Eid, true)
     end
-    EventManager:FireEvent(EventID.DungeonSelectTicketEnd)
-    return
-  end
-  local Avatar = GWorld:GetAvatar()
-  if not Avatar then
-    return
-  end
-  local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
-  
-  local function OnRightConfirm(_, PackageData)
-    Avatar:SelectTicket(nil, DungeonId, PackageData.Content_1.TicketId)
-    local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-    local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
-    PlayerCharacter.RPCComponent:SendDungeonTicket(Eid, true)
-  end
-  
-  if self:CheckAvatarHasTicket() then
-    local ResourceServerData = Avatar.Resources[TicketId]
-    local CommonDialog = UIManager(self):ShowCommonPopupUI(100252, {
-      DungeonId = DungeonId,
-      RightCallbackObj = self,
-      RightCallbackFunction = OnRightConfirm,
-      ForbiddenRightCallbackObj = self,
-      DontCloseWhenRightBtnClicked = true,
-      DisableEscClose = true
-    }, self)
-    EventManager:AddEvent(EventID.OnSelectTicketTimeout, self, self.OnSelectTicketTimeout)
-  else
-    OnRightConfirm(_, {
-      Content_1 = {TicketId = 0}
-    })
+    print(_G.LogTag, "LXZ SelectTicket OnRep_NextTicketPlayer", self.IsInSelectTicket, NeedVote)
+    if self:CheckAvatarHasTicket() then
+      local CommonDialog = UIManager(self):ShowCommonPopupUI(100252, {
+        DungeonId = DungeonId,
+        RightCallbackObj = self,
+        RightCallbackFunction = OnRightConfirm,
+        ForbiddenRightCallbackObj = self,
+        DontCloseWhenRightBtnClicked = true,
+        DisableEscClose = true
+      }, self)
+      EventManager:AddEvent(EventID.OnSelectTicketTimeout, self, self.OnSelectTicketTimeout)
+    else
+      OnRightConfirm(_, {
+        Content_1 = {TicketId = 0}
+      })
+    end
   end
 end
-
+function Component:RemoveSelectTicket_Lua()
+  print(_G.LogTag, "LXZ SelectTicket RemoveSelectTicket_Lua", IsClient(self))
+  if IsClient(self) then
+    EventManager:FireEvent(EventID.DungeonSelectTicketEnd)
+  end
+end
+function Component:OnRep_NextTicketPlayer()
+end
 function Component:CheckAvatarHasTicket()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1350,7 +1414,6 @@ function Component:CheckAvatarHasTicket()
   end
   return false
 end
-
 function Component:OnSelectTicketTimeout(TicketId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1368,29 +1431,30 @@ function Component:OnSelectTicketTimeout(TicketId)
     PlayerCharacter.RPCComponent:SendDungeonTicket(PlayerCharacter.Eid, true)
   end
 end
-
 function Component:UpdateDungeonTicket_Lua(NextTicketPlayer)
   if not IsAuthority(self) then
     return
   end
+  print(_G.LogTag, "LXZ SelectTicket UpdateDungeonTicket_Lua")
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   for _, Player in pairs(GameMode:GetAllPlayer()) do
+    print(_G.LogTag, "LXZ SelectTicket UpdateDungeonTicket_Lua111", Player.Eid, NextTicketPlayer:Find(Player.Eid))
     if not NextTicketPlayer:Find(Player.Eid) then
       return
     end
   end
   GameMode:BpDelTimer("SelectTicket", false, Const.GameModeEventServerClient)
   GameMode:RemoveDungeonEvent("SelectTicket")
+  self.NextTicketPlayer:Clear()
+  UE.UMapSyncHelper.SyncMap(self, "NextTicketPlayer")
   GameMode:ExecuteNextStepOfTicket()
 end
-
 function Component:ShowWalnutReward_Lua()
   DebugPrint("WalnutReward ShowWalnutReward_Lua")
   if not UIManager(self):GetUIObj("WalnutReward") then
     UIManager(self):LoadUINew("WalnutReward")
   end
 end
-
 function Component:RemoveShowWalnutReward_Lua()
   DebugPrint("WalnutReward RemoveShowWalnutReward_Lua")
   local WalnutRewardUI = UIManager(self):GetUIObj("WalnutReward")
@@ -1398,7 +1462,6 @@ function Component:RemoveShowWalnutReward_Lua()
     WalnutRewardUI:Close()
   end
 end
-
 function Component:OnRep_WalnutRewardPlayer()
   DebugPrint("WalnutReward OnRep_WalnutRewardPlayer")
   local WalnutRewardUI = UIManager(self):GetUIObj("WalnutReward")
@@ -1406,14 +1469,15 @@ function Component:OnRep_WalnutRewardPlayer()
     WalnutRewardUI:ReceiveWalnutRewardChoose()
   end
 end
-
 function Component:NextWalnut_Lua()
   DebugPrint("DungeonWalnutChoice NextWalnut_Lua")
   if not UIManager(self):GetUIObj("WalnutChoice") then
-    UIManager(self):LoadUINew("WalnutChoice", CommonConst.WalnutUser.Dungeon)
+    local WalnutChoiceUI = UIManager(self):LoadUINew("WalnutChoice", CommonConst.WalnutUser.Dungeon)
+    local WalnutUtils = require("BluePrints.UI.WBP.Walnut.WalnutChoice.WalnutUtils")
+    local WalnutId = WalnutUtils:GetWalnutCacheIdByDungeonId(self.DungeonId)
+    WalnutChoiceUI:SelectWalnutById(WalnutId)
   end
 end
-
 function Component:RemoveNextWalnut_Lua()
   DebugPrint("DungeonWalnutChoice RemoveNextWalnut_Lua")
   local WalnutChoiceUI = UIManager(self):GetUIObj("WalnutChoice")
@@ -1425,11 +1489,9 @@ function Component:RemoveNextWalnut_Lua()
     end
   end
 end
-
 function Component:WalnutReady_Lua()
   DebugPrint("WalnutReady_Lua")
 end
-
 function Component:RemoveWalnutReady_Lua()
   DebugPrint("DungeonWalnutChoice RemoveWalnutReady_Lua")
   local WalnutChoiceUI = UIManager(self):GetUIObj("WalnutChoice")
@@ -1437,7 +1499,6 @@ function Component:RemoveWalnutReady_Lua()
     WalnutChoiceUI:Close()
   end
 end
-
 function Component:OnRep_NextWalnutPlayer()
   DebugPrint("DungeonWalnutChoice OnRep_NextWalnutPlayer")
   local NextWalnutPlayer = self.NextWalnutPlayer:ToTable()
@@ -1447,14 +1508,12 @@ function Component:OnRep_NextWalnutPlayer()
     WalnutChoiceUI:ReceiveTeammateChoose(NextWalnutPlayer)
   end
 end
-
 function Component:AbyssBattleNew_Lua()
   DebugPrint("AbyssBattleNew_Lua")
   local AbyssCountDownUI = UIManager(self):GetUIObj("Abyss_CountDown_Progress")
   AbyssCountDownUI = AbyssCountDownUI or UIManager(self):LoadUINew("Abyss_CountDown_Progress")
   AbyssCountDownUI:ShowAbyssCountDown("AbyssBattleNew")
 end
-
 function Component:RemoveAbyssBattleNew_Lua()
   DebugPrint("RemoveAbyssBattleNew_Lua")
   local AbyssCountDownUI = UIManager(self):GetUIObj("Abyss_CountDown_Progress")
@@ -1463,14 +1522,12 @@ function Component:RemoveAbyssBattleNew_Lua()
   end
   AbyssCountDownUI:HideAbyssCountDown("AbyssBattleNew")
 end
-
 function Component:AbyssBattle_Lua()
   DebugPrint("AbyssBattle_Lua")
   local AbyssCountDownUI = UIManager(self):GetUIObj("Abyss_CountDown")
   AbyssCountDownUI = AbyssCountDownUI or UIManager(self):LoadUINew("Abyss_CountDown")
   AbyssCountDownUI:ShowAbyssCountDown("AbyssBattle")
 end
-
 function Component:RemoveAbyssBattle_Lua()
   DebugPrint("RemoveAbyssBattle_Lua")
   local AbyssCountDownUI = UIManager(self):GetUIObj("Abyss_CountDown")
@@ -1479,14 +1536,12 @@ function Component:RemoveAbyssBattle_Lua()
   end
   AbyssCountDownUI:HideAbyssCountDown("AbyssBattle")
 end
-
 function Component:AbyssNextRoom_Lua()
   DebugPrint("AbyssNextRoom_Lua")
   local AbyssCountDownUI = UIManager(self):GetUIObj("Abyss_CountDown")
   AbyssCountDownUI = AbyssCountDownUI or UIManager(self):LoadUINew("Abyss_CountDown")
   AbyssCountDownUI:ShowAbyssCountDown("AbyssNextRoom")
 end
-
 function Component:RemoveAbyssNextRoom_Lua()
   DebugPrint("RemoveAbyssNextRoom_Lua")
   local AbyssCountDownUI = UIManager(self):GetUIObj("Abyss_CountDown")
@@ -1495,13 +1550,11 @@ function Component:RemoveAbyssNextRoom_Lua()
   end
   AbyssCountDownUI:HideAbyssCountDown("AbyssNextRoom")
 end
-
 function Component:PartyWaitPlayerEnter_Lua()
   local PartyWaitUI = UIManager(self):GetUIObj("DungeonCaptureFloat")
   PartyWaitUI = PartyWaitUI or UIManager(self):LoadUINew("DungeonCaptureFloat", 60)
   PartyWaitUI:InitPartyWaitUI()
 end
-
 function Component:RemovePartyWaitPlayerEnter_Lua()
   local PartyWaitUI = UIManager(self):GetUIObj("DungeonCaptureFloat")
   if not PartyWaitUI then
@@ -1509,7 +1562,6 @@ function Component:RemovePartyWaitPlayerEnter_Lua()
   end
   PartyWaitUI:ClosePartyWaitUI()
 end
-
 function Component:OnRep_PartyTime()
   local Eid = UGameplayStatics.GetPlayerCharacter(self, 0).Eid
   local CompletionRate = 0
@@ -1527,30 +1579,24 @@ function Component:OnRep_PartyTime()
   EventManager:FireEvent(EventID.OnUpdatePartyLeftUI, self.PartyTime)
   EventManager:FireEvent(EventID.OnUpdatePartyRightUI, CompletionRate, PlayerRank, NumOfPlayers)
 end
-
 function Component:OnPartyPlayerGetBuff(Eid, BuffId, IsPositive, Time)
   EventManager:FireEvent(EventID.OnPartyPlayerGetBuff, Eid, BuffId, IsPositive, Time)
 end
-
 function Component:OnPartyPlayerTriggerFallTrigger(Eid)
   EventManager:FireEvent(EventID.OnPartyPlayerTriggerFallTrigger, Eid)
 end
-
 function Component:OnPartyPlayerFirstComplete(Eid)
   EventManager:FireEvent(EventID.OnOnePlayerEnd, Eid)
 end
-
 function Component:OnNotifyPartyBuff_Lua(BuffId, LastTime, Eid)
   EventManager:FireEvent(EventID.OnPlayerGetDeBuff, BuffId, LastTime, Eid)
 end
-
 function Component:SabotageProLimitTimer_Lua()
   DebugPrint("SabotageProComponent:Client SabotageProLimitTimer_Lua", self.DungeonId)
   local CommonClientTimerUI = UIManager(self):GetUIObj("DungeonCaptureFloat")
   CommonClientTimerUI = CommonClientTimerUI or UIManager(self):LoadUINew("DungeonCaptureFloat")
   CommonClientTimerUI:InitClientTimerByHandleName("SabotageProLimitTimer", "UI_TEMPLE_LIMIT_TIME", 10)
 end
-
 function Component:RemoveSabotageProLimitTimer_Lua()
   DebugPrint("SabotageProComponent:Client RemoveSabotageProLimitTimer_Lua", self.DungeonId)
   local CommonClientTimerUI = UIManager(self):GetUIObj("DungeonCaptureFloat")
@@ -1559,7 +1605,6 @@ function Component:RemoveSabotageProLimitTimer_Lua()
   end
   CommonClientTimerUI:CloseClientTimerByHandleName()
 end
-
 function Component:SynthesisBuffList_Lua()
   self.SynthesisBuffList = UIManager(self):_CreateWidgetNew("SynthesisBuffList")
   local BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -1567,18 +1612,15 @@ function Component:SynthesisBuffList_Lua()
   BattleMainUI.Task:AddChildToOverlay(self.SynthesisBuffList)
   self.SynthesisBuffList:Init()
 end
-
 function Component:RemoveSynthesisBuffList_Lua()
   if self.SynthesisBuffList then
     self.SynthesisBuffList:RemoveFromParent()
   end
 end
-
 function Component:SynthesisDestruction_Lua()
   local SynthesisUI = UIManager(self):GetUIObj("DungeonSynthesisFloat")
   SynthesisUI = SynthesisUI or UIManager(self):LoadUINew("DungeonSynthesisFloat")
 end
-
 function Component:RemoveSynthesisDestruction_Lua()
   local SynthesisUI = UIManager(self):GetUIObj("DungeonSynthesisFloat")
   if SynthesisUI then
@@ -1586,21 +1628,22 @@ function Component:RemoveSynthesisDestruction_Lua()
   end
   self:ShowSynthesisSuccessEffect()
 end
-
+function Component:RemoveMonsterRush_Wuyou_Lua()
+  if self.RankStarUI then
+    self.RankStarUI:OnTimerDel()
+  end
+end
 function Component:OnRep_RageValue()
   EventManager:FireEvent(EventID.OnRepSynthesisRageValue, self.RageValue)
   self:UpdateSynthesisDestructionTaskProgress()
 end
-
 function Component:OnRep_GuideSupervisorEids()
   EventManager:FireEvent(EventID.OnRepGuideSupervisorEids, self.GuideSupervisorEids, self.DeadSupervisorEids)
   self:UpdateSynthesisDestructionTaskProgress()
 end
-
 function Component:OnRep_DeadSupervisorEids()
   EventManager:FireEvent(EventID.OnRepDeadSupervisorEids, self.GuideSupervisorEids, self.DeadSupervisorEids)
 end
-
 function Component:UpdateSynthesisDestructionTaskProgress()
   local DungeonInfo = DataMgr.Synthesis[self.DungeonId]
   if not DungeonInfo then
@@ -1617,22 +1660,18 @@ function Component:UpdateSynthesisDestructionTaskProgress()
   DebugPrint("Synthesis Destruction UpdateDungeonTaskProgress", GuideSupervisorNum, #DungeonInfo.RageValueStages)
   self:UpdateDungeonTaskProgress(GuideSupervisorNum, #DungeonInfo.RageValueStages)
 end
-
 function Component:ShowDiscoverSupervisorToast_Lua(Percent)
   local SynthesisUI = UIManager(self):GetUIObj("DungeonSynthesisFloat")
   if SynthesisUI then
     SynthesisUI:ShowDiscoverSupervisorToast(Percent)
   end
 end
-
 function Component:SynthesisOccupation_Lua()
   self:OnRep_OccupationFinishNum()
 end
-
 function Component:RemoveSynthesisOccupation_Lua()
   self:ShowSynthesisSuccessEffect()
 end
-
 function Component:OnRep_OccupationFinishNum()
   local DungeonInfo = DataMgr.Synthesis[self.DungeonId]
   if not DungeonInfo then
@@ -1644,11 +1683,9 @@ function Component:OnRep_OccupationFinishNum()
   DebugPrint("Synthesis Occupation UpdateDungeonTaskProgress", self.OccupationFinishNum, DungeonInfo.OccupationTargetNum)
   self:UpdateDungeonTaskProgress(self.OccupationFinishNum, DungeonInfo.OccupationTargetNum)
 end
-
 function Component:SynthesisCrack_Lua()
   UIManager(self):LoadUINew("DungeonSynthesisCrack")
 end
-
 function Component:RemoveSynthesisCrack_Lua()
   local SynthesisCrackUI = UIManager(self):GetUIObj("DungeonSynthesisCrack")
   if SynthesisCrackUI then
@@ -1657,17 +1694,14 @@ function Component:RemoveSynthesisCrack_Lua()
   EventManager:FireEvent(EventID.CloseDungeonUI)
   self:ShowSynthesisSuccessEffect(2)
 end
-
 function Component:OnRep_KeySubmitNum()
   EventManager:FireEvent(EventID.OnRepKeySubmitNum, self.KeySubmitNum)
 end
-
 function Component:OpenChestTime_Lua()
   local CommonClientTimerUI = UIManager(self):GetUIObj("DungeonCaptureFloat")
   CommonClientTimerUI = CommonClientTimerUI or UIManager(self):LoadUINew("DungeonCaptureFloat")
   CommonClientTimerUI:InitClientTimerByHandleName("OpenChestTime", "DUNGEON_SYNTHESIS_112", 0)
 end
-
 function Component:RemoveOpenChestTime_Lua()
   local CommonClientTimerUI = UIManager(self):GetUIObj("DungeonCaptureFloat")
   if not CommonClientTimerUI then
@@ -1675,79 +1709,48 @@ function Component:RemoveOpenChestTime_Lua()
   end
   CommonClientTimerUI:CloseClientTimerByHandleName()
 end
-
 function Component:ShowSynthesisSuccessEffect(DelayTime)
   local function ShowSuccessEffect()
     local SuccessEffectUI = UIManager(self):LoadUINew("SynthesisSuccessEffect")
-    
     if SuccessEffectUI then
       SuccessEffectUI:ShowEffect()
     end
   end
-  
   if DelayTime and DelayTime > 0 then
     self:AddTimer(DelayTime, ShowSuccessEffect)
   else
     ShowSuccessEffect()
   end
 end
-
 function Component:UpdateDungeonTaskProgress(CurProgress, TotalProgress)
   self.CurProgressCache = CurProgress
   self.TotalProgressCache = TotalProgress
   EventManager:FireEvent(EventID.OnDungeonTaskProgress, CurProgress, TotalProgress)
 end
-
 function Component:OnRep_DungeonProgress()
   EventManager:FireEvent(EventID.OnRepDungeonProgress, self.DungeonProgress)
 end
-
-function Component:UpdatePhonePostProcessMaterial()
-  if not self:IsMobile() then
-    return
-  end
-  local Res = self:IsNeedPostProcessMaterial()
-  self:SetPostProcessMaterial(Res)
-  DebugPrint("BP_EMGameMode_C:UpdatePhonePostProcessMaterial", Res)
+function Component:BattleProgress_Lua()
+  local CommonBattleProgressWidget = UIManager(self):_CreateWidgetNew("CommonBattleProgress")
+  CommonBattleProgressWidget:InitWidgetUI()
+  local CommonBattleCountWidget = UIManager(self):_CreateWidgetNew("CommonBattleCount")
+  CommonBattleCountWidget:InitWidgetUI()
+  local CommonBattleCountDownWidget = UIManager(self):_CreateWidgetNew("CommonBattleCountDown")
+  CommonBattleCountDownWidget:InitWidgetUI()
 end
-
-function Component:IsNeedPostProcessMaterial()
-  if self:IsInDungeon() then
-    return true
-  end
-  local Avatar = GWorld:GetAvatar()
-  if not Avatar then
-    return true
-  end
-  local SubRegionId = Avatar.CurrentRegionId or 0
-  local SubRegionInfo = DataMgr.SubRegion[SubRegionId]
-  if not SubRegionInfo or SubRegionInfo.RegionId ~= Const.BigIceLakeRegionId then
-    return true
-  end
-  if not GWorld.GameInstance then
-    return true
-  end
-  local IsLowScalabilityLevel = GWorld.GameInstance:GetGameplayScalabilityLevel() <= 1
-  local IsLowMemoryDevice = GWorld.GameInstance:IsLowMemoryDevice()
-  if IsLowScalabilityLevel and IsLowMemoryDevice then
-    return false
-  else
-    return true
-  end
+function Component:RemoveBattleProgress_Lua()
+  local BattleMain = UIManager(self):GetUIObj("BattleMain")
+  BattleMain.Pos_Abyss_CountDown_1:ClearChildren()
+  BattleMain.Task:ClearChildren()
+  BattleMain.Pos_Abyss_CountDown:ClearChildren()
 end
-
-function Component:SetPostProcessMaterial(IsActive)
-  if IsActive then
-    UKismetSystemLibrary.ExecuteConsoleCommand(self, "r.Mobile.PostProcessMaterial 1")
-  else
-    UKismetSystemLibrary.ExecuteConsoleCommand(self, "r.Mobile.PostProcessMaterial 0")
-  end
+function Component:OnRep_BattleProgressNum()
+  EventManager:FireEvent(EventID.OnRepBattleProgressNum, self.BattleProgressNum, self.BattleProgressInfo.MaxProgressNum)
 end
-
-function Component:IsMobile()
-  local IsUseMapPhone = GWorld.GameInstance and GWorld.GameInstance:GetUseMapPhoneInPC()
-  local PlatformName = UGameplayStatics.GetPlatformName()
-  return IsUseMapPhone or "IOS" == PlatformName or "Android" == PlatformName
+function Component:OnRep_BattleProgressInfo()
+  EventManager:FireEvent(EventID.OnRepBattleProgressInfo, self.BattleProgressInfo)
 end
-
+function Component:OnRep_RaidScore()
+  EventManager:FireEvent(EventID.OnRepRaidScore, self.RaidScore)
+end
 return Component

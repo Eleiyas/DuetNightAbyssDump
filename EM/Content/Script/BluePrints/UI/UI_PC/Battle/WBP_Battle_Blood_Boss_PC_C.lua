@@ -3,23 +3,19 @@ local CommonConst = require("CommonConst")
 local Const = require("Const")
 local BloodBarUtils = require("BluePrints.UI.BloodBar.BloodBarUtils")
 local WBP_Battle_Blood_Boss_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Battle_Blood_Boss_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ShowES = true
 end
-
 function WBP_Battle_Blood_Boss_PC_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitBossUI(...)
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitBossUI(Owner, IsBossInPart, BossUIType)
   self.Owner = Owner
   self.IsBossInPart = IsBossInPart
   self.BossUIType = BossUIType
   self:K2_SetBuffsOwner(self.Owner)
-  
   local function DoInit()
     if not self.Owner or not self.Owner.BillboardComponent then
       return
@@ -32,24 +28,23 @@ function WBP_Battle_Blood_Boss_PC_C:InitBossUI(Owner, IsBossInPart, BossUIType)
     end
     self.InitSuccess = true
   end
-  
   if not self.Owner.BillboardComponent and IsClient(self) then
     self:AddTimer(0.1, DoInit, true, 0, "DelayInitBossBloodUI")
   else
     DoInit()
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitBossComponent()
+  local BossData = DataMgr.Monster[self.Owner.UnitId]
   if self.Owner:IsBossMonster() then
-    if DataMgr.Monster[self.Owner.UnitId].BossUIValues.PhaseValues ~= nil then
-      self.PhaseValues = DataMgr.Monster[self.Owner.UnitId].BossUIValues.PhaseValues
+    if BossData.BossUIValues.PhaseValues ~= nil then
+      self.PhaseValues = BossData.BossUIValues.PhaseValues
     else
       self.IsBossInPart = false
       self.PhaseValues = {1}
     end
-    if nil ~= DataMgr.Monster[self.Owner.UnitId].BossUIValues.ShowES then
-      self.ShowES = DataMgr.Monster[self.Owner.UnitId].BossUIValues.ShowES
+    if nil ~= BossData.BossUIValues.ShowES then
+      self.ShowES = BossData.BossUIValues.ShowES
     end
     self.ToughnessHit = DataMgr.BattleMonster[self.Owner.Data.BattleRoleId].DeductToughnessHit or {}
     self.Part_Count = #self.PhaseValues
@@ -74,9 +69,14 @@ function WBP_Battle_Blood_Boss_PC_C:InitBossComponent()
   self:InitBossParams()
   self:InitBossConfig()
   self:ResetBossPart()
+  self:InitMultiHpBar(BossData)
   self.SizeBox_BossHP:ClearChildren()
   self.Group_BuffRoot:ClearChildren()
   self.HpBar = BloodBarUtils.LoadSubWidget(self, self.SizeBox_BossHP, "HPBar", true, self.BloodBarLenght, self.Hp / self.MaxHp)
+  if self.HpBar and self.bMultiHpBar then
+    self.HpBar:InitMultiHpBar(self.MaxHpLayer)
+    self:SetMultiHpBarColor()
+  end
   self.WeaknessBar = BloodBarUtils.LoadSubWidget(self, self.Group_BuffRoot, "BuffBar", true)
   if self.WeaknessBar then
     local Slot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.WeaknessBar)
@@ -101,7 +101,6 @@ function WBP_Battle_Blood_Boss_PC_C:InitBossComponent()
   end
   self:UpdateBossInvincibleState()
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitBossParams()
   self.MaxHp = self.Owner:GetMaxBloodVolume()
   self.Hp = self.Owner:GetCurrentBloodVolume()
@@ -135,14 +134,12 @@ function WBP_Battle_Blood_Boss_PC_C:InitBossParams()
   self.WeaknessList = {}
   self.InvincinbleTags = {}
 end
-
 function WBP_Battle_Blood_Boss_PC_C:ShowToughnessBar(IsShow)
   if not self.IsShowToughnessBar then
     return
   end
   self.SizeBox_Toughness:SetVisibility(IsShow and ESlateVisibility.SelfHitTestInvisible or ESlateVisibility.Collapsed)
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitBossConfig()
   self.Boss_Part:SetRenderOpacity(0.0)
   local BossName = GText(self.Owner.Data.UnitName)
@@ -175,7 +172,6 @@ function WBP_Battle_Blood_Boss_PC_C:InitBossConfig()
   self.Boss_Part:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.HB_Buff_BP:ClearChildren()
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetBossBarPosition()
   if self.BossUIType and self.BossUIType ~= EBossUIType.None then
     return
@@ -195,7 +191,6 @@ function WBP_Battle_Blood_Boss_PC_C:SetBossBarPosition()
     OverlaySlot:SetPadding(Padding)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:ResetBossPart()
   self.ToughnessEffect = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.DeductToughness)
   local SizeBoxSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SizeBoxBar)
@@ -223,7 +218,6 @@ function WBP_Battle_Blood_Boss_PC_C:ResetBossPart()
     end
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:ResetBossToughness()
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Bar_In)
   if not self.IsShowToughnessBar then
@@ -278,11 +272,9 @@ function WBP_Battle_Blood_Boss_PC_C:ResetBossToughness()
   end
   self.IsResetBossToughness = true
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitBossWeakness()
   self:RefreshWeaknessIcons()
 end
-
 function WBP_Battle_Blood_Boss_PC_C:RefreshWeaknessIcons()
   local BuffManager = self.Owner.BuffManager
   local Buffs = BuffManager.Buffs
@@ -302,11 +294,11 @@ function WBP_Battle_Blood_Boss_PC_C:RefreshWeaknessIcons()
     self.WeaknessBar:RefreshWeaknessIcons(Ids)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitChargeBar()
   if self.BossUIType ~= UE4.EBossUIType.ChargeLeft and self.BossUIType ~= UE4.EBossUIType.ChargeRight then
     return
   end
+  self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Bar_Energy:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.PanelTip:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.PanelTipText:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -315,9 +307,10 @@ function WBP_Battle_Blood_Boss_PC_C:InitChargeBar()
   self.IsWarning = false
   self.TargetEnergy = 0
   self.NowEnergy = 0
+  self.EnergyText = 0
   self.DeltaEnergy = 0
   self.UpdateProgressHandle = nil
-  self:UpdateEnergyBar(self.Owner.Eid, self.Owner.NowEnergy)
+  self:UpdateEnergyBar(self.Owner.Eid, self.Owner.NowEnergy, true)
   self:BindToAnimationFinished(self.Energy_In, function()
     if self.BossUIType == UE4.EBossUIType.ChargeLeft then
       self:PlayAnimation(self.Energy_ColorL)
@@ -327,7 +320,6 @@ function WBP_Battle_Blood_Boss_PC_C:InitChargeBar()
   end)
   self:PlayAnimation(self.Energy_In)
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InitBossEvent()
   self:AddDispatcher(EventID.ShowBossBlood, self, self.RefreshBossInfoByAction)
   self:AddDispatcher(EventID.StartTalk, self, self.HideBossBillboard)
@@ -335,8 +327,65 @@ function WBP_Battle_Blood_Boss_PC_C:InitBossEvent()
   self:AddDispatcher(EventID.UpdateBossToughness, self, self.UpdateBossToughness)
   self:AddDispatcher(EventID.RecoveryBossShield, self, self.RecoveryBossShield)
   self:AddDispatcher(EventID.OnBloodEnergyChanged, self, self.UpdateEnergyBar)
+  self:AddDispatcher(EventID.UpdateDamageRate, self, self.UpdateDamageRate)
+  if self.bMultiHpBar then
+    self:AddDispatcher(EventID.OnMultiHpBarLayerChange, self, self.OnMultiHpBarLayerChange)
+  end
 end
-
+function WBP_Battle_Blood_Boss_PC_C:InitMultiHpBar(BossData)
+  self.bMultiHpBar = false
+  local BossBattleData
+  if BossData and BossData.BattleRoleId then
+    BossBattleData = DataMgr.BattleMonster[BossData.BattleRoleId]
+  end
+  if not (BossBattleData and BossBattleData.MultiHpBar) or BossBattleData.MultiHpBar <= 1 then
+    self.Text_BloodNum:SetVisibility(UE.ESlateVisibility.Collapsed)
+    self.Group_BloodNum:SetVisibility(UE.ESlateVisibility.Collapsed)
+    return
+  end
+  self.bMultiHpBar = true
+  self.CurMultiColorArrayIndex = 0
+  self.MaxHpLayer = BossBattleData.MultiHpBar
+  self.CurHpLayer = BossBattleData.MultiHpBar
+  self.Text_BloodNum:SetText(string.format("%d", self.CurHpLayer))
+  self.Text_BloodNum:SetVisibility(UE.ESlateVisibility.SelfHitTestInvisible)
+  self.Group_BloodNum:SetVisibility(UE.ESlateVisibility.SelfHitTestInvisible)
+  self.BloodBarLenght = self.BloodBarLenght - self.Group_BloodNum.WidthOverride
+end
+function WBP_Battle_Blood_Boss_PC_C:OnMultiHpBarLayerChange(bAdd, ChangeNum, Caller)
+  if self.HpBar ~= Caller then
+    return
+  end
+  local NewHpLayer = math.floor(self.Hp / self.MaxHp * self.MaxHpLayer)
+  ChangeNum = math.abs(NewHpLayer - self.CurHpLayer)
+  DebugPrint("WBP_Battle_Blood_Boss_PC_C:OnMultiHpBarLayerChange ChangeNum: ", ChangeNum)
+  if bAdd then
+    self.CurHpLayer = self.CurHpLayer + ChangeNum
+    self.CurMultiColorArrayIndex = self.CurMultiColorArrayIndex - ChangeNum
+  else
+    self.CurHpLayer = self.CurHpLayer - ChangeNum
+    self.CurMultiColorArrayIndex = self.CurMultiColorArrayIndex + ChangeNum
+  end
+  local ArrayNum = self.MultiHpBarColorArray:Num()
+  if self.CurMultiColorArrayIndex < 0 then
+    self.CurMultiColorArrayIndex = ArrayNum - math.abs(self.CurMultiColorArrayIndex) % ArrayNum
+  elseif ArrayNum <= self.CurMultiColorArrayIndex then
+    self.CurMultiColorArrayIndex = self.CurMultiColorArrayIndex % ArrayNum
+  end
+  self.Text_BloodNum:SetText(string.format("%d", self.CurHpLayer))
+  self:SetMultiHpBarColor()
+end
+function WBP_Battle_Blood_Boss_PC_C:SetMultiHpBarColor()
+  if not self.HpBar then
+    return
+  end
+  local Index = self.CurMultiColorArrayIndex + 1
+  local BGColorIndex = (Index + 1) % (self.MultiHpBarColorArray:Num() + 1)
+  if BGColorIndex <= 0 then
+    BGColorIndex = 1
+  end
+  self.HpBar:OnChangeLayerSetColor(self.MultiHpBarColorArray[Index], self.MultiDeductBarColorArray[Index], self.CurHpLayer > 1 and self.MultiHpBarColorArray[BGColorIndex] or FLinearColor(1.0, 1.0, 1.0, 0.3))
+end
 function WBP_Battle_Blood_Boss_PC_C:UpdateToughnessEffect()
   if not self.IsShowToughnessBar then
     return
@@ -346,7 +395,6 @@ function WBP_Battle_Blood_Boss_PC_C:UpdateToughnessEffect()
   self.ToughnessEffect:SetPosition(FVector2D(self.ToughnessLength * self.BossTNPercent, self.ToughnessEffect:GetPosition().Y))
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Deduct_toughness)
 end
-
 function WBP_Battle_Blood_Boss_PC_C:RefreshBossInfoByAction(ActionName, DamageEvent)
   if self.Owner == nil then
     return
@@ -372,7 +420,6 @@ function WBP_Battle_Blood_Boss_PC_C:RefreshBossInfoByAction(ActionName, DamageEv
   end
   self:PlayWeaknessEffect(DamageEvent.DamageValues)
 end
-
 function WBP_Battle_Blood_Boss_PC_C:PlayWeaknessEffect(DamageValues)
   if not self.WeaknessBar then
     return
@@ -381,15 +428,15 @@ function WBP_Battle_Blood_Boss_PC_C:PlayWeaknessEffect(DamageValues)
     self.WeaknessBar:PlayWeaknessEffect(DamageType)
   end
 end
-
-function WBP_Battle_Blood_Boss_PC_C:UpdateBossBlood(ActionName, ShieldReduce)
+function WBP_Battle_Blood_Boss_PC_C:UpdateBossBlood(ActionName)
+  self.MaxHp = self.Owner:GetMaxBloodVolume()
   self.LastShield = self.Shield
   self.LastHp = self.Hp
   self.Shield = self.Owner:GetAttr("ES") or 0
   self.BloodNowTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
   self.Hp = self.Owner:GetCurrentBloodVolume()
   self.StartReduceTime = self.BloodNowTime
-  ShieldReduce = self.LastShield - self.Shield
+  local ShieldReduce = self.LastShield - self.Shield
   if "Attack" == ActionName then
     local IsRealReduceBlood = self.Hp < self.LastHp
     local IsRealReduceShield = self.Shield < self.LastShield
@@ -403,13 +450,15 @@ function WBP_Battle_Blood_Boss_PC_C:UpdateBossBlood(ActionName, ShieldReduce)
     if self.HpBar then
       self.HpBar:SetBarPercent(self.BossHpPercent)
       if IsRealReduceBlood then
-        self.HpBar:PlayDeduct(true)
+        self.HpBar:PlayDeduct(false)
+      elseif self.bMultiHpBar then
+        self.HpBar:HealingCheckNeedChangeLayer()
       end
     end
     if self.MaxShield > 0 and self.ShieldBar then
       self.ShieldBar:SetBarPercent(self.BossShieldPercent)
       if IsRealReduceShield then
-        self.ShieldBar:PlayDeduct(true)
+        self.ShieldBar:PlayDeduct(false)
       end
     end
   elseif "Heal" == ActionName then
@@ -423,13 +472,18 @@ function WBP_Battle_Blood_Boss_PC_C:UpdateBossBlood(ActionName, ShieldReduce)
     self:SetPanelTipVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:UpdateTakeDownTipText()
   local DamageRate = self.Owner:GetAttr(UEMNameRegisterLibrary.GetAttrNameAttributeType("DamagedRate", "NoTag_BossDown")) + 1
   DamageRate = DamageRate * 100
-  self.TakeDownTip:SetText(GText("UI_STAT_SUFFER") .. "\195\151" .. DamageRate .. "%")
+  DamageRate = CommonUtils.Round(DamageRate)
+  self.TakeDownTip:SetText(GText("UI_STAT_SUFFER") .. "×" .. DamageRate .. "%")
 end
-
+function WBP_Battle_Blood_Boss_PC_C:UpdateDamageRate(SourceEid)
+  if self.Owner.Eid ~= SourceEid then
+    return
+  end
+  self:UpdateTakeDownTipText()
+end
 function WBP_Battle_Blood_Boss_PC_C:ShowPanelTip()
   if not self.CanShowPanelTip then
     return
@@ -442,7 +496,6 @@ function WBP_Battle_Blood_Boss_PC_C:ShowPanelTip()
     self.IsPlayOut = true
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:UpdateBossToughness(bNowBossInDefeated)
   if not IsValid(self.Owner) or not self.IsShowToughnessBar then
     return
@@ -501,35 +554,36 @@ function WBP_Battle_Blood_Boss_PC_C:UpdateBossToughness(bNowBossInDefeated)
     self:ReduceBossTN()
   end
 end
-
-function WBP_Battle_Blood_Boss_PC_C:UpdateEnergyBar(InEid, NewEnergy)
+function WBP_Battle_Blood_Boss_PC_C:UpdateEnergyBar(InEid, NewEnergy, isInit)
   if InEid ~= self.Owner.Eid then
     return
   end
   self.TargetEnergy = NewEnergy
   self.DeltaEnergy = (self.TargetEnergy - self.NowEnergy) / 10.0
-  
   local function UpdateProgress()
     self.NowEnergy = self.NowEnergy + self.DeltaEnergy
     self.NowEnergy = math.min(self.NowEnergy, self.TargetEnergy)
-    self.TextBlock_Energy_Num:SetText(math.floor(self.NowEnergy))
     UUIFunctionLibrary.BP_SetSingleScalarParamToImageMat(self.Bar_Energy_L, "Percent", self.NowEnergy / 100.0)
     UUIFunctionLibrary.BP_SetSingleScalarParamToImageMat(self.Bar_Energy_R, "Percent", self.NowEnergy / 100.0)
     if not self.IsWarning and self.NowEnergy >= self.EnergyWarnPercent then
       self.IsWarning = true
       self:PlayAnimation(self.Energy_Warning)
     end
+    local NewEnergyText = math.floor(self.NowEnergy)
+    if true == isInit or NewEnergyText > self.EnergyText then
+      self.TextBlock_Energy_Num:SetText(NewEnergyText)
+      EventManager:FireEvent(EventID.DoubleBossChargeTextUpdate, self.IsWarning)
+      self.EnergyText = NewEnergyText
+    end
     if self.NowEnergy >= self.TargetEnergy then
       self:RemoveTimer(self.UpdateProgressHandle)
       self.UpdateProgressHandle = nil
     end
   end
-  
   if not self.UpdateProgressHandle then
     self.UpdateProgressHandle = self:AddTimer(0.1, UpdateProgress, true, 0, "UpdateChargeProgress", true)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:RecoverBossTN()
   if not self.IsShowToughnessBar then
     return
@@ -545,7 +599,6 @@ function WBP_Battle_Blood_Boss_PC_C:RecoverBossTN()
     AnimTime = Const.BossTNToZeroRecoverTickInterival
   end
   local TickTime = AnimTime / Const.BossTNRecoverTickFrequency
-  
   local function TNRecoveryFunc()
     local NowTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
     local PassedTime = NowTime - self.NowTNTime
@@ -570,10 +623,8 @@ function WBP_Battle_Blood_Boss_PC_C:RecoverBossTN()
       self.VX_percent:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
   end
-  
   self:AddTimer(TickTime, TNRecoveryFunc, true, -TickTime, "RealRecoveryTN")
 end
-
 function WBP_Battle_Blood_Boss_PC_C:ReduceBossTN()
   self.Toughness_BarDeduct:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local DelayTime = self.BossDelayTime
@@ -600,7 +651,6 @@ function WBP_Battle_Blood_Boss_PC_C:ReduceBossTN()
     self.HelpBossTNPercent = self.Toughness_BarDeduct.Percent
   end
   BloodBarUtils:SetDeductEffect(DeductEffectHeight, self.ToughnessLength, self.DeductToughness, self.HelpBossTNPercent, self.BossTNPercent, StartOpacity, self.DeductTNOriginalPositionX)
-  
   local function RealReduceBossTN()
     local NowTime = UE4.UGameplayStatics.GetTimeSeconds(self)
     local PassTime = NowTime - StartReductTime
@@ -619,10 +669,8 @@ function WBP_Battle_Blood_Boss_PC_C:ReduceBossTN()
       BloodBarUtils:SetDeductEffect(DeductEffectHeight, self.ToughnessLength, self.DeductToughness, Temp, self.BossTNPercent, NowOpacity, self.DeductTNOriginalPositionX)
     end
   end
-  
   self:AddTimer(TickTime, RealReduceBossTN, true, DelayTime, "RealReduceBossTN")
 end
-
 function WBP_Battle_Blood_Boss_PC_C:RecoveryBossShield()
   if not self.ShieldBar or self.MaxShield <= 0 then
     return
@@ -633,7 +681,6 @@ function WBP_Battle_Blood_Boss_PC_C:RecoveryBossShield()
   self.ShieldBar:SetBarPercent(CurPercent, false)
   self.ShieldBar:PlayRecoveryShield()
 end
-
 function WBP_Battle_Blood_Boss_PC_C:CheckToughnessPartBroken()
   if not self.IsShowToughnessBar then
     return
@@ -648,7 +695,6 @@ function WBP_Battle_Blood_Boss_PC_C:CheckToughnessPartBroken()
     end
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:UpdateBossInvincibleState(IsInvincible, Tag)
   if nil == IsInvincible then
     IsInvincible = self.Owner.bIsInvincible or self.Owner:IsInvincible()
@@ -667,11 +713,9 @@ function WBP_Battle_Blood_Boss_PC_C:UpdateBossInvincibleState(IsInvincible, Tag)
     self.Toughness_Bar.WidgetStyle.FillImage.TintColor = self.BossInvincibilityColor
     self.Toughness_Bar_Light.WidgetStyle.FillImage.TintColor = self.BossInvincibilityColor
     local AnimTime = self.invincibility:GetEndTime()
-    
     local function PlayLoopAnimation()
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.invincibility)
     end
-    
     self:AddTimer(AnimTime, PlayLoopAnimation, true, 0, "PlayLoopAnimation")
   else
     self.VX_Boss_InvincibilLight:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -689,29 +733,24 @@ function WBP_Battle_Blood_Boss_PC_C:UpdateBossInvincibleState(IsInvincible, Tag)
     self.ShieldBar:PlayInvincibility(IsInvincible)
   end
 end
-
-function WBP_Battle_Blood_Boss_PC_C:HideBossBillboard(TalkGameInput)
-  if TalkGameInput then
+function WBP_Battle_Blood_Boss_PC_C:HideBossBillboard(Message)
+  if not Message.bDisableGameInput then
     return
   end
   self.Boss_Part:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
-function WBP_Battle_Blood_Boss_PC_C:ShowBossBillboard(TalkGameInput)
-  if TalkGameInput then
+function WBP_Battle_Blood_Boss_PC_C:ShowBossBillboard(Message)
+  if not Message.bDisableGameInput then
     return
   end
   self.Boss_Part:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Battle_Blood_Boss_PC_C:CloseBossBlood()
   self:Close()
 end
-
 function WBP_Battle_Blood_Boss_PC_C:OutHideTag()
   self:AddTimer(self.BossTickTime, self.ResetBossToughness, false, 0, "ResetBossToughness")
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetProgressbarSegmentNum(Target, SegmentNum)
   if not Target then
     return
@@ -722,7 +761,6 @@ function WBP_Battle_Blood_Boss_PC_C:SetProgressbarSegmentNum(Target, SegmentNum)
     DynamicMaterial:SetScalarParameterValue("SegmentsNumber", SegmentNum)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetImageSegmentNum(Target, SegmentNum)
   if not Target then
     return
@@ -733,7 +771,6 @@ function WBP_Battle_Blood_Boss_PC_C:SetImageSegmentNum(Target, SegmentNum)
     DynamicMaterial:SetScalarParameterValue("SegmentsNumber", SegmentNum)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetToughnessBarPercent(Percent)
   Percent = Percent or 0
   Percent = math.clamp(Percent, 0, 1)
@@ -754,11 +791,9 @@ function WBP_Battle_Blood_Boss_PC_C:SetToughnessBarPercent(Percent)
     AudioManager(self):StopSound(self, "BossShiedBarLoop")
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:StopBossShiedBarLoopSound()
   AudioManager(self):StopSound(self, "BossShiedBarLoop")
 end
-
 function WBP_Battle_Blood_Boss_PC_C:ShowOrHideToughnessBar(bIsShow)
   self.CanShowBossTouughness = bIsShow
   if bIsShow then
@@ -767,7 +802,6 @@ function WBP_Battle_Blood_Boss_PC_C:ShowOrHideToughnessBar(bIsShow)
     self.SizeBox_Toughness:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:ShowOrHidePanelTip(bIsShow)
   self.CanShowPanelTip = bIsShow
   if bIsShow then
@@ -776,7 +810,6 @@ function WBP_Battle_Blood_Boss_PC_C:ShowOrHidePanelTip(bIsShow)
     self:SetPanelTipVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetBossLockHpState(bIsLock, Value, Percent)
   Value = Value or 0
   local LockPercent = Percent and Percent > 0 and Percent or Value / self.MaxHp
@@ -790,7 +823,6 @@ function WBP_Battle_Blood_Boss_PC_C:SetBossLockHpState(bIsLock, Value, Percent)
     self.HpBar:DirectSetBarPercent(LockPercent)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetPanelTipVisibility(Option)
   if self.PanelTipVisibility == Option then
     return
@@ -804,6 +836,7 @@ function WBP_Battle_Blood_Boss_PC_C:SetPanelTipVisibility(Option)
     local Padding = self.HB_Buff_BP.Slot.Padding
     Padding.Top = self.Buff_BP_TopOffset_NoTips
     self.HB_Buff_BP.Slot:SetPadding(Padding)
+    self.TakeDownTip:SetText(GText("UI_BOSSBATTLE_TAKEDOWN"))
   else
     local Padding = self.HB_Buff_BP.Slot.Padding
     Padding.Top = self.Buff_BP_TopOffset_HaveTips
@@ -812,7 +845,6 @@ function WBP_Battle_Blood_Boss_PC_C:SetPanelTipVisibility(Option)
     self.VX_percent_R:SetRenderTranslation(FVector2D(self.ToughnessWeakLength * 1 + -self.ToughnessWeakLength / 2, 0))
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:UnLoadSelf()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance and GameInstance:GetGameUIManager()
@@ -826,13 +858,11 @@ function WBP_Battle_Blood_Boss_PC_C:UnLoadSelf()
     end
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetEquipartition(PromptTime, ExecuteTime, NewPercent, bReduce, bConsiderTimeDilation)
   if self.HpBar then
     self.HpBar:SetEquipartition(PromptTime, ExecuteTime, NewPercent, bReduce, bConsiderTimeDilation, self.Owner)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InterruptEquipartition()
   local Res = true
   if self.HpBar then
@@ -847,7 +877,6 @@ function WBP_Battle_Blood_Boss_PC_C:InterruptEquipartition()
     UIManager:ShowUITip(UIConst.Tip_CommonToast, GText("TODO"))
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:SetBossRecoverInfo(PromptTime, ExecuteTime, Percent)
   if self.HpBar then
     self:UpdateBossInvincibleState(true, "BossRecover")
@@ -857,7 +886,6 @@ function WBP_Battle_Blood_Boss_PC_C:SetBossRecoverInfo(PromptTime, ExecuteTime, 
     self.HpBar:SetBossRecoverInfo(self.Owner, PromptTime, ExecuteTime, Percent)
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:InterruptBossRecover()
   local Res = true
   if self.HpBar then
@@ -878,11 +906,9 @@ function WBP_Battle_Blood_Boss_PC_C:InterruptBossRecover()
     end
   end
 end
-
 function WBP_Battle_Blood_Boss_PC_C:UpdateEquipartitionInfo(NewPercent, bReduce)
   if self.HpBar then
     self.HpBar:UpdateEquipartitionInfo(NewPercent, bReduce)
   end
 end
-
 return WBP_Battle_Blood_Boss_PC_C

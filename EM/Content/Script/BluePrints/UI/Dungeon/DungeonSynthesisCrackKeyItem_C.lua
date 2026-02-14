@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.ParentWidget = Content.ParentWidget
@@ -10,7 +9,6 @@ function M:OnListItemObjectSet(Content)
   self.Index = Content.Index
   self:UpdateState(Content.State)
 end
-
 function M:UpdateState(NewState)
   self.State = NewState
   self:StopAllAnimations()
@@ -23,5 +21,4 @@ function M:UpdateState(NewState)
     AudioManager(self):PlayUISound(self, "event:/ui/common/week_level_get_key", nil, nil)
   end
 end
-
 return M

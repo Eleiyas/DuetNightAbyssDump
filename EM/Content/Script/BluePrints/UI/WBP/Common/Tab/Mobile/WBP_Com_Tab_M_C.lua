@@ -5,13 +5,11 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.SoundFunc = self.PlayClickSound
   self.SoundFuncReceiver = self
   self.Panel_Team:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Destruct()
   if self.BubbleTimers then
     for TimerId, _ in pairs(self.BubbleTimers) do
@@ -23,7 +21,6 @@ function M:Destruct()
   end
   self:ClearListenEvent()
 end
-
 function M:Init(ConfigData, NotPlayInAnim)
   self.ConfigData = ConfigData
   self.BackCallback = ConfigData.BackCallback
@@ -50,15 +47,12 @@ function M:Init(ConfigData, NotPlayInAnim)
   end
   self:InitListenEvent()
 end
-
 function M:InitListenEvent()
   EventManager:RemoveEvent(EventID.OnPropSetResources, self, self.OnPropSetResources)
 end
-
 function M:ClearListenEvent()
   EventManager:RemoveEvent(EventID.OnPropSetResources, self)
 end
-
 function M:RefreshBaseInfo()
   if self.TitleName ~= nil then
     self.Text_Title:SetText(self.TitleName)
@@ -73,7 +67,6 @@ function M:RefreshBaseInfo()
   self.Btn_Back.Btn_Back.OnClicked:Clear()
   self.Btn_Back.Btn_Back.OnClicked:Add(self, self.OnReturnClick)
 end
-
 function M:ResetDynamicNode()
   local DynamicNodeName = {
     Panel_ResourceBar = {NeedRemoveChild = true}
@@ -114,7 +107,7 @@ function M:ResetDynamicNode()
             ItemType = "Resource",
             HandleMouseDown = true
           })
-          ResourceBarWidget:SetResourceId(CoinId)
+          ResourceBarWidget:SetItemId(CoinId)
           self.Panel_ResourceBar:AddChild(ResourceBarWidget)
           if self.bShowBubble then
             self:CheckAndShowLimitedResourceBubble(CoinId, ResourceBarWidget)
@@ -138,39 +131,33 @@ function M:ResetDynamicNode()
     self.Panel_Chat:ClearChildren()
   end
 end
-
 function M:SetBgRenderOpacity(Value)
   self.Bg_Bottom:SetRenderOpacity(Value)
   self.Bg_Top:SetRenderOpacity(Value)
 end
-
 function M:OverrideTopResource(OverridenTopResouces, bIsRequestRefresh)
   self.OverridenTopResouces = OverridenTopResouces
   if bIsRequestRefresh then
     self:ResetDynamicNode()
   end
 end
-
 function M:SetPopupInfoId(PopupInfoId, IsNeedRefresh)
   self.PopupInfoId = PopupInfoId
   if IsNeedRefresh then
     self:UpdateTopRightTips()
   end
 end
-
 function M:UpdateInfoBySelectTabItem(TabWidget)
   self:UpdateTopRightTips()
   self:UpdateTopSubTitle(TabWidget:GetShowText())
 end
-
 function M:UpdateResource()
   for k, v in pairs(self.ResourceBarWidget) do
     if IsValid(v) then
-      v:RefreshResourceInfo()
+      v:RefreshItemInfo()
     end
   end
 end
-
 function M:UpdateTopRightTips()
   local function RealUpdateTopRightTips()
     if self.PopupInfoId ~= nil or type(self.InfoCallback) == "function" then
@@ -179,7 +166,6 @@ function M:UpdateTopRightTips()
       self.Panel_Tip:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
-  
   if self.PopupInfoId == nil and nil ~= self.OwnerPanel and type(self.OwnerPanel.GetUIConfigName) == "function" then
     local UIConfigName = self.OwnerPanel:GetUIConfigName()
     local SystemUIConfig = DataMgr.SystemUI[UIConfigName] or {}
@@ -187,7 +173,6 @@ function M:UpdateTopRightTips()
   end
   RealUpdateTopRightTips()
 end
-
 function M:UpdateTopTitle(TitleName)
   self.TitleName = TitleName
   if nil ~= TitleName then
@@ -197,7 +182,6 @@ function M:UpdateTopTitle(TitleName)
     self.Text_Title:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateTopSubTitle(SubTitleName)
   self.SubTitleName = SubTitleName or self.SubTitleName
   if self.SubTitleName ~= nil then
@@ -209,12 +193,10 @@ function M:UpdateTopSubTitle(SubTitleName)
     self.Text_SubTitle:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateTabs(Tabs)
   local function SortFunc(ComPareA, ComPareB)
-    local IsALocked = ComPareA.IsLocked
-    
-    local IsBLocked = ComPareB.IsLocked
+    local IsALocked = ComPareA.IsLocked or false
+    local IsBLocked = ComPareB.IsLocked or false
     if IsALocked == IsBLocked then
       local SortA = ComPareA.SortId
       local SortB = ComPareB.SortId
@@ -229,7 +211,6 @@ function M:UpdateTabs(Tabs)
       return not IsALocked
     end
   end
-  
   table.sort(Tabs, SortFunc)
   self.Tabs = Tabs
   if #Tabs < 1 then
@@ -282,14 +263,12 @@ function M:UpdateTabs(Tabs)
     self.Entrance_Build:InitUI()
   end
 end
-
 function M:OnReturnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   if type(self.BackCallback) == "function" then
     self.BackCallback(self.OwnerPanel)
   end
 end
-
 function M:OnInfoClick()
   if self.PopupInfoId ~= nil then
     local Params = {
@@ -304,7 +283,6 @@ function M:OnInfoClick()
     self.InfoCallback(self.OwnerPanel)
   end
 end
-
 function M:OnTabSwitchOn(TabWidget)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
@@ -322,12 +300,10 @@ function M:OnTabSwitchOn(TabWidget)
     self.EventTabSelected(self.ObjTabSelected, TabWidget, self.Tabs[TabWidget.Idx])
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     local ChildWidget = self.EMScrollBox_TabItem:GetChildAt(math.max(Idx - 1, 0))
@@ -335,7 +311,6 @@ function M:SelectTab(Idx)
     self.EMScrollBox_TabItem:ScrollWidgetIntoView(ChildWidget)
   end
 end
-
 function M:SelectTabById(TabId)
   local AllItemCount = self.EMScrollBox_TabItem:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -347,14 +322,12 @@ function M:SelectTabById(TabId)
     end
   end
 end
-
 function M:ShowTabRedDot(Idx, IsNew, Upgradeable, OhterReddot)
   if self.Tabs[Idx] then
     local TabWidget = self.EMScrollBox_TabItem:GetChildAt(math.max(Idx - 1, 0))
     TabWidget:SetReddot(IsNew, Upgradeable, OhterReddot)
   end
 end
-
 function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
   local AllItemCount = self.EMScrollBox_TabItem:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -365,7 +338,6 @@ function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
     end
   end
 end
-
 function M:TabToLeft()
   if not self.bEnableSelectTab then
     return
@@ -377,7 +349,6 @@ function M:TabToLeft()
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab - 1)
   end
 end
-
 function M:TabToRight()
   if not self.bEnableSelectTab then
     return
@@ -389,7 +360,6 @@ function M:TabToRight()
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab + 1)
   end
 end
-
 function M:EnableTabByIndex(bEnable, TabIndex)
   self.bEnableSelectTab = bEnable
   local AllItemCount = self.EMScrollBox_TabItem:GetChildrenCount()
@@ -408,7 +378,6 @@ function M:EnableTabByIndex(bEnable, TabIndex)
     end
   end
 end
-
 function M:UnLockTabByIndex(bUnLock, TabIndex)
   local AllItemCount = self.EMScrollBox_TabItem:GetChildrenCount()
   if nil ~= TabIndex then
@@ -426,7 +395,6 @@ function M:UnLockTabByIndex(bUnLock, TabIndex)
     end
   end
 end
-
 function M:PlayInAnim()
   if self.In == nil then
     return -1
@@ -435,7 +403,6 @@ function M:PlayInAnim()
   self:PlayAnimation(self.In)
   return self.In:GetEndTime()
 end
-
 function M:PlayOutAnim()
   if self.Out == nil then
     return -1
@@ -444,17 +411,14 @@ function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
   return self.Out:GetEndTime()
 end
-
 function M:PlayTabInAnim()
   self:StopAnimation(self.Panel_Tab_Out)
   self:PlayAnimation(self.Panel_Tab_In)
 end
-
 function M:PlayTabOutAnim()
   self:StopAnimation(self.Panel_Tab_In)
   self:PlayAnimation(self.Panel_Tab_Out)
 end
-
 function M:SetBackBtnAttrColor(AttrName, bAsyncLoadIcon)
   AttrName = AttrName or "Fire"
   if self.Btn_Back then
@@ -462,7 +426,7 @@ function M:SetBackBtnAttrColor(AttrName, bAsyncLoadIcon)
     if bAsyncLoadIcon then
       self:LoadTextureAsync(IconPath, function(Texture)
         if not Texture then
-          DebugPrint(ErrorTag, string.format("SetBackBtnAttrColor \231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\233\148\153\232\175\175\231\154\132\232\183\175\229\190\132\230\152\175\239\188\154%s", IconPath))
+          DebugPrint(ErrorTag, string.format("SetBackBtnAttrColor 用错图标路径了！！！错误的路径是：%s", IconPath))
           return
         end
         if Texture then
@@ -475,27 +439,22 @@ function M:SetBackBtnAttrColor(AttrName, bAsyncLoadIcon)
     end
   end
 end
-
 function M:OnPropSetResources(ResourceId)
   if self.ResourceBarWidget and self.ResourceBarWidget[ResourceId] then
-    self.ResourceBarWidget[ResourceId]:RefreshResourceInfo()
+    self.ResourceBarWidget[ResourceId]:RefreshItemInfo()
   end
 end
-
 function M:EnterViewSingleMode()
   self.Panel_Tab:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_ResourceBar:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:LeaveViewSingleMode()
   self.Panel_Tab:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Panel_ResourceBar:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:PlayClickSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -503,7 +462,6 @@ function M:UpdateReddots()
     end
   end
 end
-
 function M:Handle_KeyEventOnTouch(InKeyName)
   local IsEventHandled = true
   if InKeyName == UE4.EKeys.Escape.KeyName then
@@ -513,11 +471,9 @@ function M:Handle_KeyEventOnTouch(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   return false
 end
-
 function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBarWidget)
   local ResourceInfo = DataMgr.Resource[ResourceId]
   local LimitedInfo = ItemUtils.GetItemLimitedInfo(ResourceId)
@@ -532,14 +488,16 @@ function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBarWidget)
           if TimeDiff > 0 and TimeDiff < CommonConst.SECOND_IN_DAY then
             local ConfigData = {
               Text = GText("UI_GachaTicket_Bubble"),
-              TextColor = 1
+              ColorType = 2,
+              Arrow = 1
             }
             ResourceBarWidget:ShowBubble(ConfigData)
             self:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, 3.0)
           elseif TimeDiff >= CommonConst.SECOND_IN_DAY and TimeDiff < CommonConst.SECOND_IN_WEEKDAY then
             local ConfigData = {
               Text = GText("UI_GachaTicket_Bubble"),
-              TextColor = 0
+              ColorType = 1,
+              Arrow = 1
             }
             ResourceBarWidget:ShowBubble(ConfigData)
             self:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, 3.0)
@@ -549,16 +507,14 @@ function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBarWidget)
     end
   end
 end
-
 function M:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, DelayTime)
   if not self.BubbleTimers then
     self.BubbleTimers = {}
   end
-  local TimerId = "LimitedResourceBubble_" .. tostring(ResourceBarWidget.RId)
+  local TimerId = "LimitedResourceBubble_" .. tostring(ResourceBarWidget.Id)
   if self:IsExistTimer(TimerId) then
     self:RemoveTimer(TimerId)
   end
-  
   local function HideBubbleFunc()
     if IsValid(ResourceBarWidget) then
       ResourceBarWidget:HideBubble()
@@ -570,12 +526,9 @@ function M:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, DelayTime)
       self.BubbleTimers[TimerId] = nil
     end
   end
-  
   self:AddTimer(DelayTime, HideBubbleFunc, false, 0.1, TimerId, true)
   self.BubbleTimers[TimerId] = true
 end
-
 function M:UpdateSingleBottomKeyInfo(SubKeyIndex, SingleKeyInfo)
 end
-
 return M

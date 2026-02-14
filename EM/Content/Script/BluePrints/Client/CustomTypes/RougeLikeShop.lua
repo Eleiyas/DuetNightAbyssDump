@@ -9,13 +9,11 @@ RougeLikeShop.__Props__ = {
   ShopTreasure = prop.prop("Int2IntDict", "save"),
   ShopItem = prop.prop("Int2IntDict", "save")
 }
-
 function RougeLikeShop:Init(ShopBlessing, ShopTreasure, ShopItem)
   self:NewShopBlessing(ShopBlessing)
   self:NewShopTreasure(ShopTreasure)
   self:NewShopItem(ShopItem)
 end
-
 function RougeLikeShop:NewShopBlessing(Blessings)
   if not Blessings then
     return
@@ -24,7 +22,6 @@ function RougeLikeShop:NewShopBlessing(Blessings)
     self.ShopBlessing[Blessings[i]] = 1
   end
 end
-
 function RougeLikeShop:NewShopTreasure(Treasures)
   if not Treasures then
     return
@@ -33,7 +30,6 @@ function RougeLikeShop:NewShopTreasure(Treasures)
     self.ShopTreasure[Treasures[i]] = 1
   end
 end
-
 function RougeLikeShop:NewShopItem(Items)
   if not Items then
     return
@@ -42,14 +38,11 @@ function RougeLikeShop:NewShopItem(Items)
     self.ShopItem[k] = v
   end
 end
-
 FormatProperties(RougeLikeShop)
 local RougeLikeShopDict = Class("RougeLikeShop", CustomTypes.CustomDict)
 RougeLikeShopDict.KeyType = BaseTypes.Int
 RougeLikeShopDict.ValueType = RougeLikeShop
-
 function RougeLikeShopDict:NewShop(Blessings, Treasures, Items)
   return RougeLikeShop(Blessings, Treasures, Items)
 end
-
 return {RougeLikeShop = RougeLikeShop, RougeLikeShopDict = RougeLikeShopDict}

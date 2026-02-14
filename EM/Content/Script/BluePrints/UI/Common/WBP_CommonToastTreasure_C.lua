@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local ShowMessage, Duration = ...
@@ -11,5 +10,4 @@ function M:OnLoaded(...)
     self:AddTimer(Duration, self.Close, false, 0, "TreasureToast", true)
   end
 end
-
 return M

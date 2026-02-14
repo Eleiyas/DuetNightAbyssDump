@@ -2,11 +2,9 @@ local M = Class({
   "BluePrints.Item.CombatProp.BP_CombatPropBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:IsFushuItem()
   return true
 end
-
 function M:OnPlayerEnterCheckBuff(Player)
   if self.IsActive and Player and Player.IsPlayer and Player:IsPlayer() then
     if self.RemoveTag then
@@ -16,7 +14,6 @@ function M:OnPlayerEnterCheckBuff(Player)
     end
   end
 end
-
 function M:OnPlayerLeaveCheckBuff(Player)
   if Player and Player.IsPlayer and Player:IsPlayer() then
     local State = self:CheckPlayerOverlap(Player)
@@ -31,5 +28,4 @@ function M:OnPlayerLeaveCheckBuff(Player)
     end
   end
 end
-
 return M

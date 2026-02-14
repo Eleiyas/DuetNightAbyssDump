@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Initialize()
   self.ChannelId = 1
   self.EnableNotDisturb = false
   self.EnableNormalHoverAnimation = true
 end
-
 function M:Construct()
   self.Btn_Click.OnClicked:Clear()
   self.Btn_Click.OnHovered:Clear()
@@ -21,7 +19,6 @@ function M:Construct()
   self.Btn_Disturb.Button_Area.OnClicked:Add(self, self.OnDisturbClicked)
   self.Btn_DontDisturb.Button_Area.OnClicked:Add(self, self.OnDisturbClicked)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Text_ChatChannelName:SetText(Content.ChannelName)
   self.Image_ChatChannel:SetBrushFromTexture(Content.ChannelIcon)
@@ -40,18 +37,15 @@ function M:OnListItemObjectSet(Content)
     self.WS_Item:SetActiveWidgetIndex(1)
   end
 end
-
 function M:SetClickCallback(Callback, CallbackObj)
   self.OnDisturbClickedCallBack = Callback
   self.OnDisturbClickedCallBackObj = CallbackObj
 end
-
 function M:OnDisturbItemClicked()
   self:PlayDisturbClicked()
   UIUtils.PlayCommonBtnSe(self)
   self:OnDisturbClicked()
 end
-
 function M:PlayDisturbClicked()
   if self.EnableNotDisturb then
     self.Btn_Disturb:PlayAnimation(self.Btn_Disturb.Click)
@@ -59,7 +53,6 @@ function M:PlayDisturbClicked()
     self.Btn_DontDisturb:PlayAnimation(self.Btn_DontDisturb.Click)
   end
 end
-
 function M:OnDisturbClicked()
   self.EnableNotDisturb = not self.EnableNotDisturb
   if self.EnableNotDisturb then
@@ -71,18 +64,15 @@ function M:OnDisturbClicked()
     self.OnDisturbClickedCallBack(self.OnDisturbClickedCallBackObj)
   end
 end
-
 function M:SetEnableHover(bIsEnable)
   self.EnableNormalHoverAnimation = bIsEnable
 end
-
 function M:OnHovered()
   if not self.EnableNormalHoverAnimation then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   if not self.EnableNormalHoverAnimation then
     return
@@ -90,5 +80,4 @@ function M:OnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 return M

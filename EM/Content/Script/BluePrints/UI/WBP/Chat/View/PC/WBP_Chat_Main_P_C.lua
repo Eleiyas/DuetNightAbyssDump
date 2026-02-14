@@ -12,7 +12,6 @@ local ChatEventType = {
 local M = Class({
   "BluePrints.UI.WBP.Chat.View.WBP_Chat_MainBase_C"
 })
-
 function M:Test()
   local Json = [[
 {
@@ -26,7 +25,6 @@ function M:Test()
   self:OnRecvCloudGameKeyBoardInput(Json)
   self.EditingInputField:SetFocus()
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.LastMousePos = nil
@@ -47,6 +45,7 @@ function M:Construct()
     HintText = GText("UI_Chat_InputHint"),
     TextLimit = DataMgr.GlobalConstant.ChatMsgMaxLen.ConstantValue,
     bLimitSpaces = true,
+    bNeedPasteBtn = true,
     PasteKeyName = "RS",
     Events = {
       OnTextChanged = function(self, Text)
@@ -127,7 +126,6 @@ function M:Construct()
   self.Key_DontDisturb:CreateGamepadKey("View")
   self.Btn_DontDisturb.Button_Area.OnClicked:Add(self, self.OpenDisturbWindows)
 end
-
 function M:Destruct()
   self.Image_TabBG.OnMouseButtonDownEvent:Unbind()
   self.Btn_DragRT.OnMouseButtonDownEvent:Unbind()
@@ -138,7 +136,6 @@ function M:Destruct()
   self.Btn_Min:UnBindEventOnReleased(self, self.BtnMinOnReleased)
   M.Super.Destruct(self)
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
   self.BackgroundBlur_50:SetRenderOpacity(1)
@@ -191,7 +188,6 @@ function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   self.WBP_Com_TabSub01.Key_Right:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:AddReddotListen()
 end
-
 function M:FreshTabDisturbIcon()
   local Avatar = GWorld:GetAvatar()
   for index, TabWidget in pairs(self.WBP_Com_TabSub01.List_Tab:GetAllChildren()) do
@@ -199,7 +195,6 @@ function M:FreshTabDisturbIcon()
     TabWidget:SetDisturbIcon(1 == Avatar.ChatChannelMute[ChannelId])
   end
 end
-
 function M:GetWidthOverrideForInput()
   local ChatEmoji = DataMgr.WidgetUI.ChatEmoji.UIName
   local ChatQuickMsg = DataMgr.WidgetUI.ChatQuickMsg.UIName
@@ -210,12 +205,10 @@ function M:GetWidthOverrideForInput()
     return self.WidgetSlot:GetSize().X
   end
 end
-
 function M:BtnMinOnReleased()
   self:Close()
   self:SetFocus()
 end
-
 function M:BtnResetOnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_click_btn_small_main", nil, nil)
   ChatModel:ResetCachedMainUITransform()
@@ -224,7 +217,6 @@ function M:BtnResetOnClicked()
   self.Btn_Reset:SetVisibility(UIConst.VisibilityOp.Hidden)
   self.Key_Reset:SetVisibility(UIConst.VisibilityOp.Hidden)
 end
-
 function M:OnTabSelected(TabWidget, TabItemInfo)
   ChatModel:GetChannelRemovedMsgs()
   self:ResetUI()
@@ -253,7 +245,6 @@ function M:OnTabSelected(TabWidget, TabItemInfo)
   self:UpdateUIStyleInPlatform()
   self:SetFocus()
 end
-
 function M:_AddReddotListenInner(ChannelName, ChannelType)
   local NodeName = ChatCommon.ReddotNamePre .. ChannelName
   local Node = ReddotManager.GetTreeNode(NodeName)
@@ -280,7 +271,6 @@ function M:_AddReddotListenInner(ChannelName, ChannelType)
     end)
   end
 end
-
 function M:ResetUI()
   self.CurrSelectPlayer = nil
   self.Group_NewMessage:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -293,7 +283,6 @@ function M:ResetUI()
   self.List_Dialog:ClearListItems()
   self.Btn_Sent:SetText(GText("UI_Chat_Send"))
 end
-
 function M:RefreshTeamMemberListInPC()
   local NowCount, TotalCount = 0, DataMgr.GlobalConstant.MaxTeamMember.ConstantValue
   self.List_Player:ClearListItems()
@@ -316,7 +305,6 @@ function M:RefreshTeamMemberListInPC()
   self.Text_PlayerNum:SetText(string.format("%d/%d", TeamNumber, TotalCount))
   return NowCount
 end
-
 function M:_SetUpChatMsgListTimerCallback(MsgList)
   if self._SetUpChatMsgListIndex == #MsgList then
     self:_Stop_SetUpChatMsgListTimer()
@@ -333,7 +321,6 @@ function M:_SetUpChatMsgListTimerCallback(MsgList)
   self:_AddNewMsgToListView(MsgList[self._SetUpChatMsgListIndex])
   self.bDialogListRefreshed = false
 end
-
 function M:CalcWrapTextAt()
   local PlayerListWidth = 0
   if self.Group_PlayerList:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
@@ -341,30 +328,24 @@ function M:CalcWrapTextAt()
   end
   return self.WidgetSlot:GetSize().X - self.DialogPadding - PlayerListWidth
 end
-
 function M:HandleGoToTeamType()
   self.WBP_Com_TabSub01:SelectTab(ChatCommon.ChannelDef.TeamUp)
 end
-
 function M:HandleAddBlackList()
   self.WBP_Com_TabSub01:SelectTab(self.CurrChannel)
 end
-
 function M:HandleSelectPlayerToChat(Uid)
   self._bSelectedPlayerToChat = true
   self.WBP_Com_TabSub01:SelectTab(ChatCommon.ChannelDef.Friend)
   self._bSelectedPlayerToChat = false
 end
-
 function M:FreshGamePadView()
   self.Group_DontDisturb:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Key_DontDisturb:PlayAnimation(self.Key_DontDisturb.Normal)
 end
-
 function M:FreshMouseAndKeyboardView()
   self.Group_DontDisturb:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnPreviewKeyDown(MyGeo, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -413,7 +394,6 @@ function M:OnPreviewKeyDown(MyGeo, InKeyEvent)
   end
   return Unhandled
 end
-
 function M:OnKeyDown(MyGeo, InKeyEvent)
   if self.IsBeginToClose then
     return Unhandled
@@ -440,7 +420,6 @@ function M:OnKeyDown(MyGeo, InKeyEvent)
   end
   return ParentHandled
 end
-
 function M:OnKeyUp(MyGeo, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -450,14 +429,12 @@ function M:OnKeyUp(MyGeo, InKeyEvent)
   end
   return Unhandled
 end
-
 function M:OnRefreshTeamChannelInfo(bIsOverallRefresh)
   if bIsOverallRefresh then
     self:OnTabSelected_InTeam()
   end
   self:RefreshTeamMemberListInPC()
 end
-
 function M:OnMouseButtonUp(MyGeometry, InMouseEvent)
   if self.bBtnDragPressed then
     self.bBtnDragPressed = false
@@ -473,7 +450,6 @@ function M:OnMouseButtonUp(MyGeometry, InMouseEvent)
   local Reply = UE4.UWidgetBlueprintLibrary.DetectDragIfPressed(InMouseEvent, self, EKeys.LeftMouseButton)
   return UE4.UWidgetBlueprintLibrary.ReleaseMouseCapture(Reply)
 end
-
 function M:OnMouseMove(MyGeometry, InMouseEvent)
   if not self.bBtnDragPressed and not self.bBtnTabPressed then
     self:SetCursor(EMouseCursor.Default)
@@ -512,7 +488,6 @@ function M:OnMouseMove(MyGeometry, InMouseEvent)
   end
   return Unhandled
 end
-
 function M:ImageTabBGOnMouseButtonDown(MyGeometry, InMouseEvent)
   self:SetCursor(EMouseCursor.GrabHandClosed)
   local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InMouseEvent)
@@ -523,27 +498,22 @@ function M:ImageTabBGOnMouseButtonDown(MyGeometry, InMouseEvent)
   local Reply = UE4.UWidgetBlueprintLibrary.DetectDragIfPressed(InMouseEvent, self, EKeys.LeftMouseButton)
   return UE4.UWidgetBlueprintLibrary.CaptureMouse(Reply, self)
 end
-
 function M:BtnDragOnMouseButtonDownLB(MyGeometry, InMouseEvent)
   self:SetCursor(EMouseCursor.ResizeSouthWest)
   return self:BtnDragOnMouseButtonDown(MyGeometry, InMouseEvent, 1, 0)
 end
-
 function M:BtnDragOnMouseButtonDownRB(MyGeometry, InMouseEvent)
   self:SetCursor(EMouseCursor.ResizeSouthEast)
   return self:BtnDragOnMouseButtonDown(MyGeometry, InMouseEvent, 0, 0)
 end
-
 function M:BtnDragOnMouseButtonDownLT(MyGeometry, InMouseEvent)
   self:SetCursor(EMouseCursor.ResizeSouthEast)
   return self:BtnDragOnMouseButtonDown(MyGeometry, InMouseEvent, 1, 1)
 end
-
 function M:BtnDragOnMouseButtonDownRT(MyGeometry, InMouseEvent)
   self:SetCursor(EMouseCursor.ResizeSouthWest)
   return self:BtnDragOnMouseButtonDown(MyGeometry, InMouseEvent, 0, 1)
 end
-
 function M:BtnDragOnMouseButtonDown(MyGeometry, InMouseEvent, X, Y)
   local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InMouseEvent)
   self.LastMousePos = UE4.USlateBlueprintLibrary.AbsoluteToViewport(self, MousePos)
@@ -554,7 +524,6 @@ function M:BtnDragOnMouseButtonDown(MyGeometry, InMouseEvent, X, Y)
   local Reply = UE4.UWidgetBlueprintLibrary.DetectDragIfPressed(InMouseEvent, self, EKeys.LeftMouseButton)
   return UE4.UWidgetBlueprintLibrary.CaptureMouse(Reply, self)
 end
-
 function M:_SetAnchorPivot(X, Y)
   local DeltaX = X - self.WidgetPivot.X
   local DeltaY = Y - self.WidgetPivot.Y
@@ -569,7 +538,6 @@ function M:_SetAnchorPivot(X, Y)
   CachePos.X, CachePos.Y = WidgetPos.X, WidgetPos.Y
   self:RefreshUIReset()
 end
-
 function M:InitGamepadKeyTable(InKeyName)
   self.GamepadKeyTable = {
     [Const.GamepadLeftShoulder] = function()
@@ -623,7 +591,6 @@ function M:InitGamepadKeyTable(InKeyName)
     end
   }
 end
-
 function M:OnGamePadDown(InKeyName)
   if self:CheckIsOpenHeadBtnList() then
     return false
@@ -648,6 +615,10 @@ function M:OnGamePadDown(InKeyName)
         self.Com_Input:OnDeleteBtnClicked()
         self:RefreshFocusWidget(ChatFocusType.InputField)
         IsEventHandled = true
+      else
+        self.Com_Input:OnPasteBtnClicked()
+        self:RefreshFocusWidget(ChatFocusType.InputField)
+        IsEventHandled = true
       end
     elseif InKeyName == Const.GamepadFaceButtonUp then
       self:BtnSendOnClicked()
@@ -656,7 +627,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -676,7 +646,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:UpdateUIStyleInPlatform()
 end
-
 function M:CheckIsOpenHeadBtnList()
   local IsOpenHead = false
   if self.CurrSelectPlayer then
@@ -696,7 +665,6 @@ function M:CheckIsOpenHeadBtnList()
   self.IsOpenHead = IsOpenHead
   return IsOpenHead
 end
-
 function M:RefreshUIReset()
   local IsGamepad = self.CurInputDeviceType == ECommonInputType.Gamepad
   local IsShowReset = ChatModel:HasMainUIChanged()
@@ -705,7 +673,6 @@ function M:RefreshUIReset()
   self.Btn_Reset:SetVisibility(IsShowReset and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Hidden)
   self.Key_Reset:SetVisibility(IsShowKeyReset and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Hidden)
 end
-
 function M:RefreshUIPlayerItem()
   if not self.CurrSelectPlayer or self.CurrChannel ~= ChatCommon.ChannelDef.InTeam then
     return
@@ -714,7 +681,6 @@ function M:RefreshUIPlayerItem()
   local IsGamepad = self.CurInputDeviceType == ECommonInputType.Gamepad and self.FocusStateType == ChatFocusType.PlayerList
   UI:RefreshSelect(IsGamepad)
 end
-
 function M:UpdateUIStyleInPlatform()
   local IsGamepad = self.CurInputDeviceType == ECommonInputType.Gamepad and not self:CheckIsOpenHeadBtnList()
   local Visibility = IsGamepad and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed
@@ -914,7 +880,6 @@ function M:UpdateUIStyleInPlatform()
   self:RefreshUIReset()
   self:RefreshUIPlayerItem()
 end
-
 function M:RefreshUIWithMenuChanged(bOpen)
   self.IsOpenMenu = bOpen
   local IsMenuFace = self.CurrExtraPanelName == DataMgr.WidgetUI.ChatEmoji.UIName
@@ -932,7 +897,6 @@ function M:RefreshUIWithMenuChanged(bOpen)
     self.Btn_QuickReply:SetHoldUpAnim(bOpen)
   end
 end
-
 function M:InitUIStyleInPlatform()
   self:AddTimer(0.01, function()
     self.Btn_Sent.Key_Text:CreateCommonKey({
@@ -1015,7 +979,6 @@ function M:InitUIStyleInPlatform()
   self.GameInputModeSubsystem = GameInputModeSubsystem
   self:RefreshOpInfoByInputDevice(GameInputModeSubsystem:GetCurrentInputType(), GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:InitFocusWidget()
   self:SetFocusStateType(ChatFocusType.Default)
   self:StopWidgetNavgationRuleBase(self.Com_MidKeyTips)
@@ -1024,7 +987,6 @@ function M:InitFocusWidget()
   self:StopWidgetNavgationRuleBase(self.List_Dialog)
   self:StopWidgetNavgationRuleBase(self.SB_Dialog)
 end
-
 function M:StopWidgetNavgationRuleBase(Widget)
   Widget:SetIsShowNavigateGuide(false)
   Widget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
@@ -1032,7 +994,6 @@ function M:StopWidgetNavgationRuleBase(Widget)
   Widget:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   Widget:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:TryToDefaultFocusWidget()
   if self.Com_Input:HasFocusedDescendants() then
     self:SetFocusStateType(ChatFocusType.InputField)
@@ -1045,7 +1006,6 @@ function M:TryToDefaultFocusWidget()
     self:SetFocusStateType(FocusStateType)
   end
 end
-
 function M:InitDefaultFocusWidget(EventType, EventId)
   if self.FocusStateType ~= ChatFocusType.Default then
     return
@@ -1066,7 +1026,6 @@ function M:InitDefaultFocusWidget(EventType, EventId)
     end
   end)
 end
-
 function M:OnInitSelectMask()
   if self.CanSelectChat then
     return
@@ -1076,7 +1035,6 @@ function M:OnInitSelectMask()
     self:SetScrollBoxFocus()
   end
 end
-
 function M:SetFocusStateType(FocusStateType)
   if self.FocusStateType == FocusStateType then
     return
@@ -1092,7 +1050,6 @@ function M:SetFocusStateType(FocusStateType)
   end
   self.FocusStateType = FocusStateType
 end
-
 function M:SetPlayerListFocus()
   if self.FocusStateType == ChatFocusType.Default then
     if self:HasAnyFocus() then
@@ -1105,14 +1062,12 @@ function M:SetPlayerListFocus()
   self:SetFocusStateType(ChatFocusType.PlayerList)
   self:UpdateUIStyleInPlatform()
 end
-
 function M:SetScrollBoxFocus()
   self:SetFocusStateType(ChatFocusType.ScrollBox)
   self.Com_MidKeyTips:SetFocus()
   self:UpdateUIStyleInPlatform()
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
 end
-
 function M:SetSelectChatFocus()
   if not self:NavigateToDialogIndex() then
     return
@@ -1120,14 +1075,12 @@ function M:SetSelectChatFocus()
   self:UpdateUIStyleInPlatform()
   self.SB_Dialog:SetScrollWhenFocusChanges(UE4.EScrollWhenFocusChanges.AnimatedScroll)
 end
-
 function M:SetInputFieldFocus()
   self:SetFocusStateType(ChatFocusType.InputField)
   self:_SetUpMsgCache()
   self.Com_Input:FocusInputField()
   self:UpdateUIStyleInPlatform()
 end
-
 function M:SetQuickReplyFocus()
   if not self.CurrExtraPanel then
     return
@@ -1136,7 +1089,6 @@ function M:SetQuickReplyFocus()
   self.CurrExtraPanel:SetFocus()
   self:UpdateUIStyleInPlatform()
 end
-
 function M:SetChatFaceFocus()
   if not self.CurrExtraPanel then
     return
@@ -1145,7 +1097,6 @@ function M:SetChatFaceFocus()
   self.CurrExtraPanel:SetFocus()
   self:UpdateUIStyleInPlatform()
 end
-
 function M:RefreshFocusWidget(RefreshState)
   if self.FocusStateType == RefreshState then
     return
@@ -1162,7 +1113,6 @@ function M:RefreshFocusWidget(RefreshState)
     SwitchFocusFuncs[RefreshState](self)
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.FocusStateType == ChatFocusType.InputField then
     self:TryToDefaultFocusWidget()
@@ -1187,7 +1137,6 @@ function M:BP_GetDesiredFocusTarget()
   end
   return self.Com_MidKeyTips
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local CanScroll = self.FocusStateType == ChatFocusType.ScrollBox or self.FocusStateType == ChatFocusType.PlayerList
   if not CanScroll or self.IsOpenHead or self.IsOpenMenu then
@@ -1213,7 +1162,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:FindCurrentDialogItem()
   local ChatItemList = self._ChatItemList
   if not ChatItemList then
@@ -1249,7 +1197,6 @@ function M:FindCurrentDialogItem()
   end
   return SelectItem, false
 end
-
 function M:NavigateToDialogIndex()
   local SelectItem, IsInScroll = self:FindCurrentDialogItem()
   if SelectItem then
@@ -1264,12 +1211,10 @@ function M:NavigateToDialogIndex()
   end
   return SelectItem
 end
-
 function M:NavigateToLastMsg()
   if self.FocusStateType ~= ChatFocusType.SelectChat or not self._ChatItemList then
     return
   end
   self.List_Dialog:NavigateToIndex(#self._ChatItemList - 1)
 end
-
 return M

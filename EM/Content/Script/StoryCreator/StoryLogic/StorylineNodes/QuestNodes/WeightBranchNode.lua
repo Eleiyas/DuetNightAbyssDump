@@ -1,11 +1,9 @@
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function M:Start()
   local IndexArray = self:WeightedRandomSelection(self.WeightBranchArray, self.RandomTriggerBranchCount)
   local PortNameArray = self:IndexToPortName(IndexArray)
   self:Finish(PortNameArray)
 end
-
 function M:WeightedRandomSelection(WeightArray, RandomCount)
   local TotalWeight = 0
   for _, Weight in pairs(WeightArray) do
@@ -28,10 +26,9 @@ function M:WeightedRandomSelection(WeightArray, RandomCount)
       end
     end
   end
-  assert(#SelectedArray == RandomCount, "\233\128\137\228\184\173\231\154\132\229\136\134\230\148\175\230\149\176\233\135\143\228\184\141\229\175\185")
+  assert(#SelectedArray == RandomCount, "选中的分支数量不对")
   return SelectedArray
 end
-
 function M:IndexToPortName(IndexArray)
   local PortNameArray = {}
   for _, Index in pairs(IndexArray) do
@@ -39,5 +36,4 @@ function M:IndexToPortName(IndexArray)
   end
   return PortNameArray
 end
-
 return M

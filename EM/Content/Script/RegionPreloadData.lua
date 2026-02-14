@@ -1,4 +1,18 @@
 local T = {
+  Dongguo = {
+    RT_1 = {
+      MonsterSpawn = {
+        [9804001] = 5,
+        [9805001] = 5,
+        [9806001] = 5,
+        [9806002] = 5,
+        [9807001] = 5,
+        [9808001] = 5,
+        [9809001] = 5,
+        [9809002] = 5
+      }
+    }
+  },
   Prologue_optimization = {
     RT_1 = {
       MonsterSpawn = {
@@ -15,6 +29,7 @@ local T = {
   }
 }
 local ReadOnly = {
+  Dongguo = T.Dongguo.RT_1,
   Prologue_optimization = T.Prologue_optimization.RT_1
 }
 return ReadOnly

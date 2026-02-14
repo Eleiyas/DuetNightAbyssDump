@@ -5,13 +5,11 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Armory.WBP_Armory_PetEnhance_Base_Compoment"
 }
-
 function M:Construct()
   self.IsPc = true
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:InitTabInfo()
   self.Tab_PetEnhance:Init({
     Tabs = {},
@@ -59,11 +57,9 @@ function M:InitTabInfo()
     end
   })
 end
-
 function M:Close()
   M.Super.Close(self)
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self:PlayInAnim()
@@ -71,7 +67,6 @@ function M:OnLoaded(...)
     self:SetOriginFocus()
   end, nil, nil, nil, true)
 end
-
 function M:OnReturnKeyDown(bIsForceClose)
   if self.IsListExpanded == true and true ~= bIsForceClose then
     self:ExpandList(false)
@@ -85,7 +80,6 @@ function M:OnReturnKeyDown(bIsForceClose)
   end
   self:PlayOutAnim()
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -95,7 +89,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   if UKismetInputLibrary.InputEvent_IsRepeat(InputEvent) then
@@ -112,7 +105,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if self.GamePadKeyTable == nil then
@@ -149,7 +141,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.CurInputDeviceType = CurInputType
   if CurInputType == ECommonInputType.Gamepad then
@@ -160,7 +151,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   else
   end
 end
-
 function M:SetOriginFocus()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   local Type = self.GameInputModeSubsystem:GetCurrentLocalPlayerFocusWidgetType()
@@ -179,14 +169,12 @@ function M:SetOriginFocus()
   self.EntryItemWidgets[index]:SetFocus()
   self:SetSingleBottomKeyInfo(2)
 end
-
 function M:LuaNavOutItemRight()
   if self.Item_1.Panel_Add.Visibility == UIConst.VisibilityOp.SelfHitTestInvisible then
     return self.Item_1
   end
   return nil
 end
-
 function M:OnEntryGamePadNavigationLeft()
   local index = self.CurEntryContent.index - 1
   if index >= 1 and self.EntryItemWidgets[index] then
@@ -196,7 +184,6 @@ function M:OnEntryGamePadNavigationLeft()
   end
   return nil
 end
-
 function M:OnEntryGamePadNavigationRight()
   local index = self.CurEntryContent.index + 1
   if self.EntryItemWidgets[index] then
@@ -206,7 +193,6 @@ function M:OnEntryGamePadNavigationRight()
   end
   return nil
 end
-
 function M:OnGamePadADown()
   if self.IsListExpanded == false then
     if self.CurEntryContent.IsLocked or self.CurEntryContent.IsEmpty then
@@ -228,14 +214,13 @@ function M:OnGamePadADown()
     end
   end
 end
-
 function M:SetSingleBottomKeyInfo(KindIndex)
   local Keys = {
     "UI_CTL_Add/Remove",
     "UI_CTL_Pet_Select"
   }
   if nil ~= KindIndex and nil == Keys[KindIndex] then
-    ScreenPrint("\228\188\160\229\133\165index\233\148\153\232\175\175\239\188\140\230\178\161\230\156\137\229\175\185\229\186\148\230\150\135\230\156\172")
+    ScreenPrint("传入index错误，没有对应文本")
     return
   end
   local AKeyInfo = {
@@ -255,25 +240,19 @@ function M:SetSingleBottomKeyInfo(KindIndex)
     self.Tab_PetEnhance:SetSingleBottomKeyInfo(self.Tab_PetEnhance.BottomKeyWidget[1], AKeyInfo)
   end
 end
-
 function M:ChanegeSelectEntry()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:SetSingleBottomKeyInfo(2)
   end
 end
-
 function M:InitEnhaceEntry()
 end
-
 function M:InitMaxEntry()
 end
-
 function M:InitLockedEntry()
 end
-
 function M:InitLNullEntry()
   self:SetSingleBottomKeyInfo(nil)
 end
-
 AssembleComponents(M)
 return M

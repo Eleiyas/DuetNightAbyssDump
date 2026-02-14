@@ -2,61 +2,42 @@ require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local Common_Key_PC = Class("BluePrints.UI.BP_EMUserWidget_C")
 local ImgPathTransformer = {}
-
 function ImgPathTransformer:Short2Long(ImgShortPath)
   return ""
 end
-
 local CommonKeyFactory = {}
-
 function CommonKeyFactory:CreateTextKey(Text)
 end
-
 function CommonKeyFactory:CreateImgKey(ImgPath)
 end
-
 function CommonKeyFactory:CreateTextKeyWithDesc(Text, Desc)
 end
-
 function CommonKeyFactory:CreateImgKeyWithDesc(ImgPath, Desc)
 end
-
 function CommonKeyFactory:CreateTextAndTextKey(Text1, Text2)
 end
-
 function CommonKeyFactory:CreateTextAndImgKey(Text, ImgPath)
 end
-
 function CommonKeyFactory:CreateTextAndTextKeyWithDesc(Text1, Text2, Desc)
 end
-
 function CommonKeyFactory:CreateTextAndImgKeyWithDesc(Text, ImgPath, Desc)
 end
-
 function CommonKeyFactory:CreateTextButton(Text, bLongPress)
 end
-
 function CommonKeyFactory:CreateImgButton(ImgPath, bLongPress)
 end
-
 function CommonKeyFactory:CreateTextButtonWithDesc(Text, Desc)
 end
-
 function CommonKeyFactory:CreateImgButtonWithDesc(ImgPath, Desc)
 end
-
 function CommonKeyFactory:CreateTextAndTextButton(Text1, Text2, bLongPress)
 end
-
 function CommonKeyFactory:CreateTextAndImgButton(Text, ImgPath, bLongPress)
 end
-
 function CommonKeyFactory:CreateTextAndTextButtonWithDesc(Text1, Text2, Desc)
 end
-
 function CommonKeyFactory:CreateTextAndImgButtonWithDesc(Text, ImgPath, Desc)
 end
-
 function Common_Key_PC:Construct()
   if ChatController and ChatController.bInited then
     ChatController:RegisterEvent(self, function(self, EventId, ...)
@@ -78,7 +59,6 @@ function Common_Key_PC:Construct()
   end
   rawset(self, "bIsSubKeyDesc", false)
 end
-
 function Common_Key_PC:Destruct()
   if ChatController and ChatController.bInited then
     ChatController:UnRegisterEvent(self)
@@ -87,7 +67,6 @@ function Common_Key_PC:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshInfoByInputTypeChange)
   end
 end
-
 function Common_Key_PC:SetForbidKey(bOn)
   if bOn == self.IsCurForbidkey then
     return
@@ -101,14 +80,12 @@ function Common_Key_PC:SetForbidKey(bOn)
   end
   self.IsCurForbidkey = bOn
 end
-
 function Common_Key_PC:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if not self.CreateInfo then
     return
   end
   self:CreateCommonKey(self.CreateInfo)
 end
-
 function Common_Key_PC:CreateGamepadKey(GamepadImgKey)
   self:CreateCommonKey({
     KeyInfoList = {
@@ -116,7 +93,6 @@ function Common_Key_PC:CreateGamepadKey(GamepadImgKey)
     }
   })
 end
-
 function Common_Key_PC:CreateCommonKey(CreateInfo)
   rawset(self, "CreateInfo", CreateInfo)
   rawset(self, "bLongPress", CreateInfo.bLongPress or false)
@@ -137,7 +113,6 @@ function Common_Key_PC:CreateCommonKey(CreateInfo)
     local function func()
       AudioManager(self):PlayUISound(self, "event:/ui/common/btn_press", "LongPress", nil)
     end
-    
     rawset(self, "SoundFunc", func)
   else
     local func = CreateInfo.SoundFunc or function()
@@ -168,7 +143,6 @@ function Common_Key_PC:CreateCommonKey(CreateInfo)
   self:_InitInternal(CreateInfo)
   self:_Reset2InitState()
 end
-
 function Common_Key_PC:_InitInternal(CreateInfo)
   if CreateInfo.bBattleKey then
     UIManager(self):RegisterBattleShortCutHudKey(self)
@@ -194,6 +168,9 @@ function Common_Key_PC:_InitInternal(CreateInfo)
   end
   if self:_CanHandleButtonEvent(CreateInfo) and not self:IsDisableMouseKeyEvent(CreateInfo.KeyInfoList[1]) then
     self:_BindButtonEvent(self.Button_Key)
+    if self.bButton then
+      self.Button_Key:SetVisibility(UIConst.VisibilityOp.Visible)
+    end
   elseif self.bButton then
     self.Button_Key:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
@@ -224,7 +201,6 @@ function Common_Key_PC:_InitInternal(CreateInfo)
     self:_ResetWhenNotNeedUpdate()
   end
 end
-
 function Common_Key_PC:_ResetWhenNotNeedUpdate()
   if not self.SubWidgetList then
     return
@@ -237,18 +213,15 @@ function Common_Key_PC:_ResetWhenNotNeedUpdate()
     end
   end
 end
-
 function Common_Key_PC:_Reset2InitState()
   if self.bDisableResetWhenChangeDevice then
     return
   end
   self:_ResetState(self.Normal)
 end
-
 function Common_Key_PC:_CanHandleButtonEvent(CreateInfo)
   return (CreateInfo.bEnableEvent or self.IsButton) and self.Button_Key
 end
-
 function Common_Key_PC:_CreateSubKey(KeyInfo, KeyName)
   local Widget = UE4.UWidgetBlueprintLibrary.Create(self, self:_GetBlueprintClass(KeyInfo.Type))
   Widget:CreateCommonKey({
@@ -263,7 +236,6 @@ function Common_Key_PC:_CreateSubKey(KeyInfo, KeyName)
   self[KeyName]:ClearChildren()
   self[KeyName]:AddChild(Widget)
 end
-
 function Common_Key_PC:CreateSubKeyDesc(KeyInfo)
   self.bIsSubKeyDesc = true
   KeyInfo.bIsSubKeyDesc = true
@@ -287,7 +259,6 @@ function Common_Key_PC:CreateSubKeyDesc(KeyInfo)
   self.Key:AddChild(KeyWidget)
   self:_Reset2InitState()
 end
-
 function Common_Key_PC:_InitSingleKeyContent(KeyInfo)
   if KeyInfo.Type == "Text" then
     if self.bIsSubKeyDesc then
@@ -302,7 +273,6 @@ function Common_Key_PC:_InitSingleKeyContent(KeyInfo)
     self:_SetImage(KeyInfo.Type, KeyInfo.ImgShortPath, KeyInfo.ImgLongPath, KeyInfo.bLargeSize)
   end
 end
-
 function Common_Key_PC:_AdjustSpacers(text)
   local isSingleChar = utf8.len(text) <= 1
   if self.Spacer_L then
@@ -312,11 +282,9 @@ function Common_Key_PC:_AdjustSpacers(text)
     self.Spacer_R:SetVisibility(isSingleChar and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.Visible)
   end
 end
-
 function Common_Key_PC:_IsCompound()
   return self.Desc or #self.KeyInfoList > 1
 end
-
 function Common_Key_PC:_CheckAndRegisterCallback(KeyInfo)
   if KeyInfo.ClickCallback and type(KeyInfo.ClickCallback) == "function" then
     self:AddExecuteLogic(KeyInfo.Owner, KeyInfo.ClickCallback)
@@ -328,11 +296,9 @@ function Common_Key_PC:_CheckAndRegisterCallback(KeyInfo)
     self:AddReleaseLogic(KeyInfo.Owner, KeyInfo.ReleaseCallback)
   end
 end
-
 function Common_Key_PC:_IsLongPressButton()
   return self.bButton and self.bLongPress or self.bSpecialLongPress
 end
-
 function Common_Key_PC:_BindButtonEvent(Button)
   local OnPressed = Button.OnPressed
   local OnReleased = Button.OnReleased
@@ -350,13 +316,11 @@ function Common_Key_PC:_BindButtonEvent(Button)
   OnHovered:Add(self, self.OnButtonHovered)
   OnUnhovered:Add(self, self.OnButtonUnhovered)
 end
-
 function Common_Key_PC:OnListItemObjectSet(ListItemObject)
   if ListItemObject.Owner ~= nil and nil ~= ListItemObject.Owner.InitCommonKey then
     ListItemObject.Owner:InitCommonKey(self, ListItemObject.Index)
   end
 end
-
 function Common_Key_PC:_SetBattleShortCutKeyHidden()
   local Avatar = GWorld:GetAvatar()
   local CurrentHidden
@@ -367,7 +331,6 @@ function Common_Key_PC:_SetBattleShortCutKeyHidden()
     self:SetVisibility(ESlateVisibility.Hidden)
   end
 end
-
 function Common_Key_PC:_GetBlueprintClass(Type)
   if "Text" == Type then
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyText.WBP_Com_KeyText_C'")
@@ -379,11 +342,9 @@ function Common_Key_PC:_GetBlueprintClass(Type)
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyOr.WBP_Com_KeyOr_C'")
   end
 end
-
 function Common_Key_PC:SetDescription(Description)
   self.Text_Desc:SetText(Description)
 end
-
 function Common_Key_PC:_SetImage(Type, ImgShortPath, ImgLongPath, bLargeSize)
   if not self._bSetImageInit then
     if self.Img then
@@ -416,6 +377,9 @@ function Common_Key_PC:_SetImage(Type, ImgShortPath, ImgLongPath, bLargeSize)
       end
     end
     local ReplaceKey = string.gsub(ImgShortPath, " ", "_")
+    if DataMgr.KeyboardText[ReplaceKey] then
+      ReplaceKey = DataMgr.KeyboardText[ReplaceKey].KeyText
+    end
     ImgPath = string.format(FixPath, ReplaceKey, ReplaceKey)
     Img = UE4.UResourceLibrary.LoadObjectAsync(self, ImgPath, {
       self,
@@ -444,7 +408,6 @@ function Common_Key_PC:_SetImage(Type, ImgShortPath, ImgLongPath, bLargeSize)
   end
   self.ImgPath = ImgPath
 end
-
 function Common_Key_PC:_AsyncLoadImgCallBack(Object, requestID)
   if self.Img then
     self.Img:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -453,7 +416,7 @@ function Common_Key_PC:_AsyncLoadImgCallBack(Object, requestID)
     return
   end
   if not IsValid(Object) then
-    DebugPrint("Common_Key_PC_C:\231\188\186\229\176\145\229\155\190\231\137\135\232\181\132\230\186\144: ImgPath = " .. self.ImgPath)
+    DebugPrint("Common_Key_PC_C:缺少图片资源: ImgPath = " .. self.ImgPath)
     return
   end
   if self.Img then
@@ -471,12 +434,14 @@ function Common_Key_PC:_AsyncLoadImgCallBack(Object, requestID)
     end
   end
 end
-
 function Common_Key_PC:_SetImageByInstruction(ImgShortPath, ImgLongPath)
   local ImgPath, Img
   if ImgShortPath then
     local FixPath = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Instruction/T_Key_%s_L.T_Key_%s_L'"
     local ReplaceKey = string.gsub(ImgShortPath, " ", "_")
+    if DataMgr.KeyboardText[ReplaceKey] then
+      ReplaceKey = DataMgr.KeyboardText[ReplaceKey].KeyText
+    end
     ImgPath = string.format(FixPath, ReplaceKey, ReplaceKey)
     Img = LoadObject(ImgPath)
     if not IsValid(Img) then
@@ -487,7 +452,7 @@ function Common_Key_PC:_SetImageByInstruction(ImgShortPath, ImgLongPath)
     Img = LoadObject(ImgLongPath)
   end
   if not IsValid(Img) then
-    DebugPrint("\231\188\186\229\176\145\229\155\190\231\137\135\232\181\132\230\186\144: ImgPath = " .. ImgPath)
+    DebugPrint("缺少图片资源: ImgPath = " .. ImgPath)
     return
   end
   if self.Img then
@@ -496,22 +461,18 @@ function Common_Key_PC:_SetImageByInstruction(ImgShortPath, ImgLongPath)
     self.Img:SetBrushResourceObject(Img)
   end
 end
-
 function Common_Key_PC:SetImage(Type, ImgShortPath, ImgLongPath)
   self:_SetImage(Type, ImgShortPath, ImgLongPath)
 end
-
 function Common_Key_PC:SetImageByInstruction(ImgShortPath, ImgLongPath)
   self:_SetImageByInstruction(ImgShortPath, ImgLongPath)
 end
-
 function Common_Key_PC:ShowBanImg()
   local CommonWidget = self.Key:GetChildAt(0)
   if CommonWidget then
     CommonWidget.Group_Ban:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function Common_Key_PC:MobileBanTextImg()
   local CommonWidget = self.Key:GetChildAt(0)
   if CommonWidget and CommonWidget.Img then
@@ -523,7 +484,6 @@ function Common_Key_PC:MobileBanTextImg()
     CommonWidget.Bg_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Common_Key_PC:_GetCurrentGamepadName()
   if self.GameInputModeSubsystem == nil then
     local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -534,7 +494,6 @@ function Common_Key_PC:_GetCurrentGamepadName()
   end
   return "Generic"
 end
-
 function Common_Key_PC:GetCurrentInputType()
   if self.GameInputModeSubsystem == nil then
     local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -545,63 +504,51 @@ function Common_Key_PC:GetCurrentInputType()
   end
   return ECommonInputType.MouseAndKeyboard
 end
-
 function Common_Key_PC:AddExecuteLogic(Object, ObjectFunc)
   self.ExecuteLogicObject = Object
   self.ExecuteLogicObjectFunc = ObjectFunc
 end
-
 function Common_Key_PC:RemoveExecuteLogic()
   self.ExecuteLogicObject = nil
   self.ExecuteLogicObjectFunc = nil
 end
-
 function Common_Key_PC:AddPressLogic(Object, ObjectFunc)
   self.PressLogicObject = Object
   self.PressLogicObjectFunc = ObjectFunc
 end
-
 function Common_Key_PC:RemovePressLogic()
   self.PressLogicObject = nil
   self.PressLogicObjectFunc = nil
 end
-
 function Common_Key_PC:AddReleaseLogic(Object, ObjectFunc)
   self.ReleaseLogicObject = Object
   self.ReleaseLogicObjectFunc = ObjectFunc
 end
-
 function Common_Key_PC:RemoveReleaseLogic()
   self.ReleaseLogicObject = nil
   self.ReleaseLogicObjectFunc = nil
 end
-
 function Common_Key_PC:_ExecuteLogic()
   if type(self.ExecuteLogicObjectFunc) == "function" then
     self.ExecuteLogicObjectFunc(self.ExecuteLogicObject)
   end
 end
-
 function Common_Key_PC:_PressLogic()
   if type(self.PressLogicObjectFunc) == "function" then
     self.PressLogicObjectFunc(self.PressLogicObject)
   end
 end
-
 function Common_Key_PC:_ReleaseLogic()
   if type(self.ReleaseLogicObjectFunc) == "function" then
     self.ReleaseLogicObjectFunc(self.ReleaseLogicObject)
   end
 end
-
 function Common_Key_PC:OnShortCutPressed()
   self:OnButtonPressed()
 end
-
 function Common_Key_PC:OnShortCutReleased()
   self:OnButtonReleased()
 end
-
 function Common_Key_PC:OnButtonPressed(bChild, bSetTimeRange, StartAtTime, EndAtTime)
   bChild = bChild or false
   bSetTimeRange = bSetTimeRange or false
@@ -636,6 +583,9 @@ function Common_Key_PC:OnButtonPressed(bChild, bSetTimeRange, StartAtTime, EndAt
     self.PressTimer = 0
     self.bHasTriggerLongPress = false
     self.bHasTriggerLongRelease = false
+    if self.UpdateTimer then
+      URuntimeCommonFunctionLibrary.K2_ClearAndInvalidateTimerHandle(self, self.UpdateTimer)
+    end
     self.UpdateTimer = URuntimeCommonFunctionLibrary.K2_SetTimerDelegate({
       self,
       function()
@@ -644,7 +594,6 @@ function Common_Key_PC:OnButtonPressed(bChild, bSetTimeRange, StartAtTime, EndAt
     }, self.LongPressTimerInterval, true, 0)
   end
 end
-
 function Common_Key_PC:_ForeachChildren(func)
   if self.SubWidgetList and self.SubWidgetList:Num() > 0 then
     for i = 1, self.SubWidgetList:Num() do
@@ -652,7 +601,6 @@ function Common_Key_PC:_ForeachChildren(func)
     end
   end
 end
-
 function Common_Key_PC:OnButtonReleased()
   DebugPrint("OnButtonReleased", self.bEnable)
   if not self.bEnable then
@@ -674,7 +622,6 @@ function Common_Key_PC:OnButtonReleased()
     self.bHasTriggerLongRelease = false
   end
 end
-
 function Common_Key_PC:OnButtonReleasedInsideButtonFrame()
   if not self.bEnable then
     return
@@ -687,7 +634,6 @@ function Common_Key_PC:OnButtonReleasedInsideButtonFrame()
   else
   end
 end
-
 function Common_Key_PC:_OnButtonRealShortPressed()
   DebugPrint("OnButtonRealShortPressed", self.Press)
   if self.Press then
@@ -698,7 +644,6 @@ function Common_Key_PC:_OnButtonRealShortPressed()
   end
   self:_PressLogic()
 end
-
 function Common_Key_PC:_OnButtonRealShortReleased()
   if self.Normal then
     self:PlayAnimation(self.Normal)
@@ -708,7 +653,6 @@ function Common_Key_PC:_OnButtonRealShortReleased()
   end
   self:_ReleaseLogic()
 end
-
 function Common_Key_PC:_OnButtonRealLongPressed(bSetTimeRange, StartAtTime, EndAtTime)
   bSetTimeRange = bSetTimeRange or false
   StartAtTime = StartAtTime or 0
@@ -729,7 +673,6 @@ function Common_Key_PC:_OnButtonRealLongPressed(bSetTimeRange, StartAtTime, EndA
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function Common_Key_PC:_OnButtonRealLongReleased()
   if not self.bHasTriggerLongPress then
     return
@@ -745,7 +688,6 @@ function Common_Key_PC:_OnButtonRealLongReleased()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function Common_Key_PC:OnButtonHovered()
   if self.LongPress and self:IsAnimationPlaying(self.LongPress) then
     return
@@ -767,7 +709,6 @@ function Common_Key_PC:OnButtonHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function Common_Key_PC:OnButtonUnhovered()
   if self.LongPress and self:IsAnimationPlaying(self.LongPress) then
     return
@@ -789,7 +730,6 @@ function Common_Key_PC:OnButtonUnhovered()
     self:PlayAnimationReverse(self.Hover)
   end
 end
-
 function Common_Key_PC:DisableKey()
   self:_ForeachChildren(function(v)
     v:DisableKey()
@@ -809,7 +749,6 @@ function Common_Key_PC:DisableKey()
     self:PlayAnimation(self.Forbidden)
   end
 end
-
 function Common_Key_PC:EnableKey()
   self:_ForeachChildren(function(v)
     v:EnableKey()
@@ -823,14 +762,12 @@ function Common_Key_PC:EnableKey()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function Common_Key_PC:ResetHasButtonPressed()
   self:_ForeachChildren(function(v)
     v.bHasButtonPressed = false
   end)
   self.bHasButtonPressed = false
 end
-
 function Common_Key_PC:PlayLoopAnim()
   self:_ForeachChildren(function(v)
     v:PlayLoopAnim()
@@ -839,7 +776,6 @@ function Common_Key_PC:PlayLoopAnim()
     self:PlayAnimation(self.Loop)
   end
 end
-
 function Common_Key_PC:StopLoopAnim()
   self:_ForeachChildren(function(v)
     v:StopLoopAnim()
@@ -848,7 +784,6 @@ function Common_Key_PC:StopLoopAnim()
     self:_ResetState(self.Loop)
   end
 end
-
 function Common_Key_PC:_Update(bSetTimeRange, StartAtTime, EndAtTime)
   if self.bEnable and self.bHasButtonPressed and self.bLongPress then
     self.PressTimer = self.PressTimer + self.LongPressTimerInterval
@@ -858,25 +793,18 @@ function Common_Key_PC:_Update(bSetTimeRange, StartAtTime, EndAtTime)
     end
     if not self.bHasTriggerLongRelease and self.PressTimer >= self.LongPressDuration then
       self.bHasTriggerLongRelease = true
-      if self.LongPress then
-        self:_ResetState(self.LongPress)
-      end
-      self:OnButtonReleased()
       self:_ResetWhenNotNeedUpdate()
       self:_ExecuteLogic()
     end
   end
 end
-
 function Common_Key_PC:_ResetState(Anim)
   self:PlayAnimation(Anim)
   self:StopAnimation(Anim)
 end
-
 function Common_Key_PC:OnMouseButtonDown(MyGeometry, InKeyEvent)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function Common_Key_PC:ChangeText(KeyName)
   if self.Text_Key then
     self.Text_Key:SetText(KeyName)
@@ -886,7 +814,6 @@ function Common_Key_PC:ChangeText(KeyName)
     return
   end
 end
-
 function Common_Key_PC:IsDisableMouseKeyEvent(KeyInfo)
   local ImageShortPath = KeyInfo.Text or KeyInfo.ImgShortPath
   local MouseKeys = {
@@ -907,5 +834,4 @@ function Common_Key_PC:IsDisableMouseKeyEvent(KeyInfo)
     return false
   end
 end
-
 return Common_Key_PC

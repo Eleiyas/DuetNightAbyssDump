@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:OpenWalnut()
   if self.bClientEntity then
     self:CallServerMethod("OpenWalnut")
@@ -7,17 +6,14 @@ function Component:OpenWalnut()
     self:ServerMulticast("OpenWalnut")
   end
 end
-
 function Component:OnSelectWalnut(AvatarEidStr, WalnutId)
   print(_G.LogTag, "OnSelectWalnut", AvatarEidStr, WalnutId)
   EventManager:FireEvent(EventID.OnSelectWalnut, AvatarEidStr, WalnutId)
 end
-
 function Component:OnSelectWalnutReward(AvatarEidStr)
   print(_G.LogTag, "OnSelectWalnutReward", AvatarEidStr)
   EventManager:FireEvent(EventID.OnSelectWalnutReward, AvatarEidStr)
 end
-
 function Component:SelectWalnutReward(Callback, WalnutIndex)
   if self.bClientEntity then
     local function cb(ret)
@@ -28,7 +24,6 @@ function Component:SelectWalnutReward(Callback, WalnutIndex)
         Callback(ret)
       end
     end
-    
     self:CallServer("SelectWalnutReward", cb, WalnutIndex)
   else
     for i = 1, #Callback do
@@ -37,5 +32,4 @@ function Component:SelectWalnutReward(Callback, WalnutIndex)
     end
   end
 end
-
 return Component

@@ -4,7 +4,6 @@ local Model = require("BluePrints.UI.WBP.StoryInteractive.StoryInteractiveModel"
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:InitBaseView(NpcId, EndCallback)
   self.NpcId = NpcId
   self.EndCallback = EndCallback
@@ -17,7 +16,6 @@ function M:InitBaseView(NpcId, EndCallback)
   self:SetInputModeEnabled(true)
   self:RefreshView()
 end
-
 function M:RefreshView()
   self:PlayAnimation(self.In)
   self:RefreshInteractiveItem()
@@ -30,11 +28,9 @@ function M:RefreshView()
     self:BindDelegate(true)
   end)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(InputType, DeviceName)
   self:UpdateKeyImg(InputType == ECommonInputType.Gamepad, DeviceName)
 end
-
 function M:RefreshNpcName()
   local NpcData = DataMgr.Npc[self.NpcId]
   local NpcName
@@ -43,11 +39,9 @@ function M:RefreshNpcName()
   end
   self.NpcNameText:SetText(GText(NpcName))
 end
-
 function M:TryPlayContent()
   self.TypingText:Typing("...")
 end
-
 function M:RefreshInteractiveItem()
   self.SelectItem = nil
   self.ScrollBox_Interactive:ClearChildren()
@@ -104,21 +98,18 @@ function M:RefreshInteractiveItem()
     self:OnItemSelected(Item)
   end)
 end
-
 function M:TrySelectItemAt(Index)
   local Item = self.ScrollBox_Interactive:GetChildAt(Index)
   if Item then
     self:OnItemSelected(Item)
   end
 end
-
 function M:BindDelegate(bBind)
   self:BindClickItem(bBind)
   self:BindCloseDelegate(bBind)
   self:BindClickDelegate(bBind)
   self:BindUpDownKey(bBind)
 end
-
 function M:BindClickDelegate(bBind)
   self:StopListeningForInputAction("StoryInteractiveClick", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("StoryInteractiveClick", EInputEvent.IE_Released)
@@ -133,7 +124,6 @@ function M:BindClickDelegate(bBind)
     })
   end
 end
-
 function M:BindCloseDelegate(bBind)
   if bBind then
     self.ExitIteractiveItem:BindOnItemClicked(function(ExcludeItem)
@@ -143,7 +133,6 @@ function M:BindCloseDelegate(bBind)
     self.ExitIteractiveItem:BindOnItemClicked(nil)
   end
 end
-
 function M:BindClickItem(bBind)
   for Item, Index in pairs(self.InteractiveItems) do
     if bBind then
@@ -167,7 +156,6 @@ function M:BindClickItem(bBind)
     })
   end
 end
-
 function M:UpdateKeyImg(IsGamePad, GamepadName)
   local ChildMaxIndex = self.ScrollBox_Interactive:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -186,7 +174,6 @@ function M:UpdateKeyImg(IsGamePad, GamepadName)
     self.Img_Mouse:SetBrushResourceObject(Common.Scroll_Mouse:get())
   end
 end
-
 function M:BindUpDownKey(bBind)
   self:StopListeningForInputAction("UpSelect", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("DownSelect", EInputEvent.IE_Pressed)
@@ -202,22 +189,18 @@ function M:BindUpDownKey(bBind)
     self.DownSelectAction
   })
 end
-
 function M:OnUIPanelClicked()
   self.TypingText:ToPageEnd()
 end
-
 function M:OnTalkClickPressed()
   self.bClickPressed = true
 end
-
 function M:OnTalkClickReleased()
   if self.bClickPressed then
     self:OnUIPanelClicked()
   end
   self.bClickPressed = false
 end
-
 function M:OnNormalExit(ExcludeItem)
   if self.EndCallback then
     local EndCallback = self.EndCallback
@@ -237,11 +220,9 @@ function M:OnNormalExit(ExcludeItem)
     self:OnOutFinished()
   end)
 end
-
 function M:OnOutFinished()
   self:Close()
 end
-
 function M:PlayOptionOut(ExcludeItem)
   local ChildMaxIndex = self.ScrollBox_Interactive:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -251,7 +232,6 @@ function M:PlayOptionOut(ExcludeItem)
     end
   end
 end
-
 function M:OnItemClicked(Index, Item)
   local InteractiveInfo = self.InteractiveInfos[Index]
   if InteractiveInfo then
@@ -264,7 +244,6 @@ function M:OnItemClicked(Index, Item)
   end
   self:PlayOptionOut(Item)
 end
-
 function M:OnItemSelected(Item)
   self.SelectItem = Item
   local bUseGamePad = self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad
@@ -279,7 +258,6 @@ function M:OnItemSelected(Item)
   end
   Item:SelectEntryItem(true, bUseGamePad)
 end
-
 function M:PressedSelectAction()
   self.bPressSelectAction = true
   if self.bPressSelectAction then
@@ -289,14 +267,12 @@ function M:PressedSelectAction()
     self.SelectItem:OnInteractiveItemPressed()
   end
 end
-
 function M:ReleasedSelectAction()
   if self.bPressSelectAction and IsValid(self.SelectItem) then
     self.SelectItem:OnInteractiveItemClicked()
   end
   self.bPressSelectAction = false
 end
-
 function M:UpSelectAction()
   if 0 == self.ScrollBox_Interactive:GetChildrenCount() then
     return
@@ -321,7 +297,6 @@ function M:UpSelectAction()
   self.ScrollBox_Interactive:ScrollWidgetIntoView(self.ScrollBox_Interactive:GetChildAt(Index), true)
   self:TrySelectItemAt(Index)
 end
-
 function M:DownSelectAction()
   if 0 == self.ScrollBox_Interactive:GetChildrenCount() then
     return
@@ -346,13 +321,11 @@ function M:DownSelectAction()
   self.ScrollBox_Interactive:ScrollWidgetIntoView(self.ScrollBox_Interactive:GetChildAt(Index), true)
   self:TrySelectItemAt(Index)
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.MouseWheelTime and self.MouseWheelTime > 0 then
     self.MouseWheelTime = self.MouseWheelTime - InDeltaTime
   end
 end
-
 function M:SetInputModeEnabled(bIsEnable)
   if self.bInputModeEnabled ~= bIsEnable then
     self.bInputModeEnabled = bIsEnable
@@ -369,19 +342,15 @@ function M:SetInputModeEnabled(bIsEnable)
     end
   end
 end
-
 function M:SetGameInputActionBlocking(bShouldBlock)
   UIManager(self):SetUIInputEnable(not bShouldBlock, "StoryInteractive")
 end
-
 function M:OnConsumeInputAction()
 end
-
 function M:Close()
   self:SetInputModeEnabled(false)
   self:SetGameInputActionBlocking(false)
   Controller:ClearController()
   M.Super.Close(self)
 end
-
 return M

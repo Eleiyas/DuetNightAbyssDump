@@ -11,26 +11,21 @@ LevelSequenceState.__Props__ = {
   SequenceState = prop.prop("Int", "client save"),
   PlayState = prop.prop("Int", "client save")
 }
-
 function LevelSequenceState:Init(RegionId, RecorderId)
   self.RegionId = RegionId
   self.RecorderId = RecorderId
 end
-
 FormatProperties(LevelSequenceState)
 local LevelSequenceStateDict = Class("LevelSequenceStateDict", CustomTypes.CustomDict)
 LevelSequenceStateDict.KeyType = BaseTypes.Int
 LevelSequenceStateDict.ValueType = LevelSequenceState
-
 function LevelSequenceStateDict:Add(RegionId, RecorderId)
   local UniqueId = CommonUtils.MathConcat(RegionId, RecorderId)
   self[UniqueId] = LevelSequenceState(RegionId, RecorderId)
   return self[UniqueId]
 end
-
 function LevelSequenceStateDict:Query(RegionId, RecorderId)
   local UniqueId = CommonUtils.MathConcat(RegionId, RecorderId)
   return self[UniqueId]
 end
-
 return {LevelSequenceState = LevelSequenceState, LevelSequenceStateDict = LevelSequenceStateDict}

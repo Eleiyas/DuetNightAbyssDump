@@ -1,7 +1,6 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   self.RootPage = Params.RootPage
   self.LureContentList = {}
@@ -17,7 +16,6 @@ function M:InitContent(Params, PopupData, Owner)
   self.List_Item.BP_OnItemSelectionChanged:Add(self, self.OnItemSelectionChanged)
   self.List_Item:SetFocus()
 end
-
 function M:InitLureContent()
   self.List_Item:ClearListItems()
   local LureNum = 0
@@ -74,7 +72,6 @@ function M:InitLureContent()
   self:PlayAnimation(self.Pattern_Change)
   self:UISetGamePaused("CommonDialog", false)
 end
-
 function M:InitRodContent()
   self.List_Item:ClearListItems()
   local RodNum = 0
@@ -142,7 +139,6 @@ function M:InitRodContent()
   self:PlayAnimation(self.Pattern_Change)
   self:UISetGamePaused("CommonDialog", false)
 end
-
 function M:InitRodIcon(RodId, Num, Level)
   local ResourceId = DataMgr.FishingRod[RodId].ResourceId
   local Count = self.RootPage.Angling_Main:GetResourceCount(ResourceId)
@@ -164,7 +160,6 @@ function M:InitRodIcon(RodId, Num, Level)
     end
   end
 end
-
 function M:InitLureIcon(LureId, Num, Level)
   local ResourceId = DataMgr.FishingLure[LureId].ResourceId
   local Count = self.RootPage.Angling_Main:GetResourceCount(ResourceId)
@@ -184,7 +179,6 @@ function M:InitLureIcon(LureId, Num, Level)
     end
   end
 end
-
 function M:OnRodItemClicked(Content)
   print(_G.LogTag, "LXZ OnRodItemClicked", Content, self.SelectRodContent)
   if Content == self.SelectRodContent then
@@ -207,7 +201,6 @@ function M:OnRodItemClicked(Content)
     end
   end
 end
-
 function M:OnLureItemClicked(Content)
   print(_G.LogTag, "LXZ OnLureItemClicked", Content, self.SelectLureContent)
   if Content == self.SelectLureContent then
@@ -230,7 +223,6 @@ function M:OnLureItemClicked(Content)
     end
   end
 end
-
 function M:RefreshSelectRodDetail(Content)
   self.CurrentRodId = Content.RodOrLureId
   local Data = DataMgr.Resource[Content.Id]
@@ -244,15 +236,15 @@ function M:RefreshSelectRodDetail(Content)
   else
     self.Switcher_Btn:SetActiveWidgetIndex(0)
   end
-  assert(Content.Icon, "\229\189\147\229\137\141\229\183\178\232\163\133\229\164\135\233\177\188\231\171\191\229\155\190\230\160\135 \228\188\160\229\133\165Icon\232\183\175\229\190\132\228\184\186\231\169\186")
+  assert(Content.Icon, "当前已装备鱼竿图标 传入Icon路径为空")
   local Icon = LoadObject(Content.Icon)
   self.Icon_Head:SetBrushFromTexture(Icon)
   self.Text_RoleName:SetText(GText(Data.ResourceName))
   self.Text_Unlock:SetText(GText(Data.IpDes))
   self.BtnText:SetText(GText("UI_Armory_Weapon_Equipe"))
+  self.RootPage:UpdateFishingRodModelId(Content.RodOrLureId)
   self:PlayAnimation(self.Pattern_Change)
 end
-
 function M:RefreshSelectLureDetail(Content)
   self.CurrentLureId = Content.RodOrLureId
   local Data = DataMgr.Resource[Content.Id]
@@ -261,12 +253,12 @@ function M:RefreshSelectLureDetail(Content)
     return nil
   end
   print(_G.LogTag, "LXZ RefreshSelectRodDetail", Content.RodOrLureId, self.RootPage.FishingLureId, Content.Count)
-  if Content.RodOrLureId == self.RootPage.FishingLureId then
+  if Content.RodOrLureId == self.RootPage.FishingLureId and Content.Count > 0 then
     self.Switcher_Btn:SetActiveWidgetIndex(1)
   else
     self.Switcher_Btn:SetActiveWidgetIndex(0)
   end
-  assert(Content.Icon, "\229\189\147\229\137\141\229\183\178\232\163\133\229\164\135\233\177\188\233\165\181\229\155\190\230\160\135 \228\188\160\229\133\165Icon\232\183\175\229\190\132\228\184\186\231\169\186")
+  assert(Content.Icon, "当前已装备鱼饵图标 传入Icon路径为空")
   local Icon = LoadObject(Content.Icon)
   self.Icon_Head:SetBrushFromTexture(Icon)
   self.Text_RoleName:SetText(GText(Data.ResourceName))
@@ -278,9 +270,8 @@ function M:RefreshSelectLureDetail(Content)
   end
   self:PlayAnimation(self.Pattern_Change)
 end
-
 function M:OnWearBtnClick()
-  print(_G.LogTag, "LXZ OnWearBtnClick", self.CurrentTabIdx)
+  print(_G.LogTag, "LXZ OnWearBtnClick", self.CurrentTabIdx, self.CurrentLureId)
   if 1 == self.CurrentTabIdx then
     self.RootPage.FishingRodId = self.CurrentRodId
     if self.WearRodContent == self.SelectRodContent then
@@ -294,7 +285,7 @@ function M:OnWearBtnClick()
     self.RootPage.Angling_Main:RefreshFishRod(self.CurrentRodId)
     self.RootPage:UpdateFishingRodModelId()
   else
-    if self.WearLureContent == self.SelectLureContent then
+    if self.WearLureContent == self.SelectLureContent and 0 ~= self.SelectLureContent.Count then
       return
     end
     if 0 == self.SelectLureContent.Count then
@@ -311,7 +302,6 @@ function M:OnWearBtnClick()
     end
   end
 end
-
 function M:OnGetLure(ResourceId)
   print(_G.LogTag, "LXZ OnGetLure", ResourceId)
   if not self.LureContentList[ResourceId] then
@@ -329,7 +319,6 @@ function M:OnGetLure(ResourceId)
     self:RefreshSelectLureDetail(Content)
   end
 end
-
 function M:NewItemContent(ItemType, ItemId, Level, Count, RodOrLureId)
   if 0 == ItemId then
     local Class = UIUtils.GetCommonItemContentClass()
@@ -359,7 +348,6 @@ function M:NewItemContent(ItemType, ItemId, Level, Count, RodOrLureId)
   Obj.NotCountFormat = true
   return Obj
 end
-
 function M:UpdateContent(TabWidget, Index)
   print(_G.LogTag, "LXZ UpdateContent", TabWidget:GetName(), Index)
   self.CurrentTabIdx = TabWidget.Idx
@@ -369,11 +357,9 @@ function M:UpdateContent(TabWidget, Index)
     self:InitLureContent()
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.List_Item
 end
-
 function M:OnItemSelectionChanged(Content, bIsSelected)
   print(_G.LogTag, "LXZ OnItemSelectionChanged", bIsSelected)
   if not bIsSelected then
@@ -391,7 +377,6 @@ function M:OnItemSelectionChanged(Content, bIsSelected)
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -404,5 +389,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 return M

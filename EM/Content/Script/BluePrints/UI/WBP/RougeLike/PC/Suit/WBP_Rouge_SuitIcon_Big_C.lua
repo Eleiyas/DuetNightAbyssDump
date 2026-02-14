@@ -2,36 +2,37 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
-  local RougeLikeManager = GWorld.RougeLikeManager
-  assert(RougeLikeManager, "@zyh RougeLikeManager is nil!")
   self.SuitId = Content.SuitId
   self.Parent = Content.Parent
   self.Index = Content.Index
   self.Count = Content.Count
+  self.IsGuide = Content.IsGuide
   Content.UI = self
   if Content.IsSelected then
     self.IsSelected = true
   else
     self:PlayAnimation(self.Normal)
   end
-  if Content.UseBigFont then
-    self.Text_IconNum:SetTextStyleSet(self.RichText_26)
+  if self.IsGuide then
+    self.Text_IconNum:SetVisibility(UIConst.VisibilityOp.Collapsed)
   else
-    self.Text_IconNum:SetTextStyleSet(self.RichText_18)
-  end
-  if Content.IsPreAdd then
-    self.Text_IconNum:SetText("<G>" .. Content.Count .. "</>")
-  else
-    self.Text_IconNum:SetText(Content.Count)
+    if Content.UseBigFont then
+      self.Text_IconNum:SetTextStyleSet(self.RichText_26)
+    else
+      self.Text_IconNum:SetTextStyleSet(self.RichText_18)
+    end
+    if Content.IsPreAdd then
+      self.Text_IconNum:SetText("<G>" .. Content.Count .. "</>")
+    else
+      self.Text_IconNum:SetText(Content.Count)
+    end
   end
   self.ActivateNeedMap = Content.ActivateNeedMap
   self:SetSuitImage(self.SuitId, Content.Count)
   self.Btn_Click.OnClicked:Add(self, self.OpenDetail)
   self.Btn_Click.OnHovered:Add(self, self.OnHover)
 end
-
 function M:SetSuitImage(SuitId, CurrentCount)
   local Icon = LoadObject(DataMgr.BlessingGroup[SuitId].Icon)
   self.Image_SuitIcon.Image_SuitIcon:SetBrushFromTexture(Icon)
@@ -51,17 +52,14 @@ function M:SetSuitImage(SuitId, CurrentCount)
     end
   end
 end
-
 function M:OpenDetail()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_btn_affix_click", nil, nil)
   self.IsSelected = true
   self.Parent:UpdateSuitInfo(self.SuitId, self.Index)
 end
-
 function M:OnHover()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_btn_affix_hover", nil, nil)
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   if IsSelected then
     self.IsSelected = true
@@ -88,7 +86,6 @@ function M:BP_OnItemSelectionChanged(IsSelected)
     end
   end
 end
-
 function M:ChooseLevelAnimation(CurCount)
   local NextLevelCount = self.ActivateNeedMap[self.SuitId][self.CurrentLevel + 1]
   if NextLevelCount and CurCount >= NextLevelCount then
@@ -100,5 +97,4 @@ function M:ChooseLevelAnimation(CurCount)
     self.Image_SuitIcon:PlayAnimation(self.Image_SuitIcon[self.CurrentLevel])
   end
 end
-
 return M

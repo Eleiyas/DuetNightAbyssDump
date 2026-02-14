@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(DispatchDetail)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -28,7 +27,6 @@ function M:Init(DispatchDetail)
     end
   end
 end
-
 function M:GetIdByUuid(Uuid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -40,5 +38,4 @@ function M:GetIdByUuid(Uuid)
     end
   end
 end
-
 return M

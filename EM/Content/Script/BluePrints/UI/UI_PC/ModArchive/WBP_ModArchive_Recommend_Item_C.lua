@@ -1,16 +1,15 @@
 require("UnLua")
+local PageJumpFunctionLibrary = require("Utils.PageJumpFunctionConfig")
 local WBP_ModArchive_Recommend_Item_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_ModArchive_Recommend_Item_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnListItemObjectSet(ListItemObject)
   ListItemObject.SelfWidget = self
   self.Info = ListItemObject
@@ -25,15 +24,13 @@ function WBP_ModArchive_Recommend_Item_C:OnListItemObjectSet(ListItemObject)
   self:RefreshList()
   self.List_RecommendMod:DisableScroll(true)
 end
-
 function WBP_ModArchive_Recommend_Item_C:RefreshList()
   self:InitGroupInfo()
   self:InitListMod()
 end
-
 function WBP_ModArchive_Recommend_Item_C:InitGroupInfo()
   self.TargetInfo = {}
-  if self.Info.TargetType == "Char" then
+  if self.Info.TargetType and string.find(self.Info.TargetType, "Char") then
     self.Image_Head:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.Image_Weapon:SetVisibility(ESlateVisibility.Collapsed)
     self.TargetInfo = DataMgr.Char[self.Info.TargetId]
@@ -43,7 +40,7 @@ function WBP_ModArchive_Recommend_Item_C:InitGroupInfo()
       IconDynaMaterial:SetTextureParameterValue("IconMap", LoadObject(Path))
     end
     self.Text_Title:SetText(GText(self.TargetInfo.CharName))
-  elseif self.Info.TargetType == "Weapon" then
+  elseif self.Info.TargetType and string.find(self.Info.TargetType, "Weapon") then
     self.Image_Head:SetVisibility(ESlateVisibility.Collapsed)
     self.Image_Weapon:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.TargetInfo = DataMgr.Weapon[self.Info.TargetId]
@@ -60,7 +57,6 @@ function WBP_ModArchive_Recommend_Item_C:InitGroupInfo()
     self.Text_Title:SetText(GText(self.TargetInfo.WeaponName))
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:InitListMod()
   self.Mods = {}
   self.List_RecommendMod:ClearListItems()
@@ -79,20 +75,21 @@ function WBP_ModArchive_Recommend_Item_C:InitListMod()
   self.Btn_Build:SetGamePadImg("X")
   self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnClickJumpTo()
-  DebugPrint("zwkk \232\183\179\232\189\172\239\188\159 ", self.Info.InterfaceJumpId)
-  PageJumpUtils:JumpToTargetPageByJumpId(self.Info.InterfaceJumpId)
-end
-
-function WBP_ModArchive_Recommend_Item_C:OnClickForbidden()
-  if self.Info.TargetType == "Char" then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("\230\178\161\230\156\137\229\189\147\229\137\141\232\167\146\232\137\178111"))
-  elseif self.Info.TargetType == "Weapon" then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("\230\178\161\230\156\137\229\189\147\229\137\141\230\173\166\229\153\168111"))
+  DebugPrint("zwkk 跳转？ ", self.Info.InterfaceJumpId)
+  if self.Info.InterfaceJumpId and self.Info.InterfaceJumpId > 0 then
+    PageJumpUtils:JumpToTargetPageByJumpId(self.Info.InterfaceJumpId)
+  else
+    PageJumpFunctionLibrary.JumpToArmory(self.Info.TargetType, "Mod", self.Info.TargetId)
   end
 end
-
+function WBP_ModArchive_Recommend_Item_C:OnClickForbidden()
+  if self.Info.TargetType and string.find(self.Info.TargetType, "Char") then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("没有当前角色111"))
+  elseif self.Info.TargetType and string.find(self.Info.TargetType, "Weapon") then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("没有当前武器111"))
+  end
+end
 function WBP_ModArchive_Recommend_Item_C:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     DebugPrint("11122233 OnFocusReceived", self:GetName())
@@ -112,7 +109,6 @@ function WBP_ModArchive_Recommend_Item_C:OnFocusReceived(MyGeometry, InFocusEven
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnFocusLost(InFocusEvent)
   if not self:HasFocusedDescendants() then
     DebugPrint("11122233 OnFocusLost", self:GetName())
@@ -124,7 +120,6 @@ function WBP_ModArchive_Recommend_Item_C:OnFocusLost(InFocusEvent)
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:SetGamepadBtnState(Show)
   if Show then
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -132,10 +127,9 @@ function WBP_ModArchive_Recommend_Item_C:SetGamepadBtnState(Show)
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnSelected()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
-    DebugPrint("11122233 Item\233\128\137\228\184\173", self:GetName())
+    DebugPrint("11122233 Item选中", self:GetName())
     self.Image_Select:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.Image_Head:SetRenderOpacity(1.0)
     self.Image_Weapon:SetRenderOpacity(1.0)
@@ -145,7 +139,6 @@ function WBP_ModArchive_Recommend_Item_C:OnSelected()
     self.InSelect = true
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnDeSelected()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     DebugPrint("11122233 OnDeSelected", self:GetName())
@@ -156,7 +149,6 @@ function WBP_ModArchive_Recommend_Item_C:OnDeSelected()
     self.InSelect = false
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnRemovedFromFocusPath(InFocusEvent)
   if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
     return
@@ -168,7 +160,6 @@ function WBP_ModArchive_Recommend_Item_C:OnRemovedFromFocusPath(InFocusEvent)
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnMenuOpenChanged(bIsOpen)
   self.HasTipsOpen = bIsOpen
   DebugPrint("zwjki ", self.Owner:GetName())
@@ -185,7 +176,6 @@ function WBP_ModArchive_Recommend_Item_C:OnMenuOpenChanged(bIsOpen)
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -202,10 +192,8 @@ function WBP_ModArchive_Recommend_Item_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:Handle_OnPCDown(InKeyName)
 end
-
 function WBP_ModArchive_Recommend_Item_C:Handle_OnGamePadDown(InKeyName)
   DebugPrint("zwkkk  Handle_OnGamePadDown", InKeyName, self:GetName())
   if "Gamepad_DPad_Up" == InKeyName or "Gamepad_LeftStick_Up" == InKeyName then
@@ -224,7 +212,6 @@ function WBP_ModArchive_Recommend_Item_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Recommend_Item_C:OnKeyUp(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -238,7 +225,6 @@ function WBP_ModArchive_Recommend_Item_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_Recommend_Item_C:Handle_OnGamePadUp(InKeyName)
   DebugPrint("zwkkk  Handle_OnGamePadUp", InKeyName, self:GetName())
   if "Gamepad_FaceButton_Bottom" == InKeyName then
@@ -256,7 +242,6 @@ function WBP_ModArchive_Recommend_Item_C:Handle_OnGamePadUp(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Recommend_Item_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -266,7 +251,6 @@ function WBP_ModArchive_Recommend_Item_C:RefreshOpInfoByInputDevice(CurInputDevi
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function WBP_ModArchive_Recommend_Item_C:UpdateOnInputDeviceTypeChange()
   DebugPrint("zwzwzwk ", self.CurInputDeviceType)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -295,5 +279,4 @@ function WBP_ModArchive_Recommend_Item_C:UpdateOnInputDeviceTypeChange()
     self.Btn_Build:SetGamePadVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_ModArchive_Recommend_Item_C

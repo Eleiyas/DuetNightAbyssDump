@@ -1,7 +1,6 @@
 local WikiCommon = require("BluePrints.UI.WBP.Wiki.WikiCommon")
 local EMCache = require("EMCache.EMCache")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   M.Super.Init(self)
   self.AllGuideNotes = DataMgr.WikiMain or {}
@@ -10,12 +9,10 @@ function M:Init()
   self:InitCategories()
   self:InitNewStateStructure()
 end
-
 function M:Destory()
   self:SaveNewStateToCache()
   M.Super.Destory(self)
 end
-
 function M:GetWikiSubType(tabId)
   local WikiSubType = DataMgr.WikiSubType or {}
   if not tabId then
@@ -32,7 +29,6 @@ function M:GetWikiSubType(tabId)
   end
   return subTypes
 end
-
 function M:GetWikiTextByEntryId(entryId)
   local WikiText = DataMgr.WikiText or {}
   local entryTexts = {}
@@ -46,7 +42,6 @@ function M:GetWikiTextByEntryId(entryId)
   end)
   return entryTexts
 end
-
 function M:GetEntriesBySubType(tabId)
   local wikiData = DataMgr.WikiMain or {}
   local entriesBySubType = {}
@@ -67,7 +62,6 @@ function M:GetEntriesBySubType(tabId)
   end
   return entriesBySubType
 end
-
 function M:GetTextNum(tabId)
   local NumNow, NumAll = 0, 0
   if self.AllGuideNotes then
@@ -89,7 +83,6 @@ function M:GetTextNum(tabId)
   end
   return NumNow, NumAll
 end
-
 function M:GetUnlockedWikiEntryIds()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -101,7 +94,6 @@ function M:GetUnlockedWikiEntryIds()
   end
   return UnlockedWikiNotes
 end
-
 function M:GetUnlockTexts()
   local UnlockedWikiNotes = self:GetUnlockedWikiEntryIds() or {}
   local UnlockTexts = {}
@@ -114,7 +106,6 @@ function M:GetUnlockTexts()
   end
   return UnlockTexts
 end
-
 function M:InitCategories()
   self.Categories = {}
   self.Categories[1] = {
@@ -133,7 +124,6 @@ function M:InitCategories()
     DebugPrint(TXTTag, "AllGuideNotes is nil")
   end
 end
-
 function M:InitNewStateStructure()
   self.NewStateStructure = {
     Tabs = {},
@@ -143,7 +133,6 @@ function M:InitNewStateStructure()
   }
   self:LoadNewStateFromCache()
 end
-
 function M:LoadNewStateFromCache()
   local cachedState = EMCache:Get("WikiNewState", true)
   if cachedState then
@@ -154,22 +143,18 @@ function M:LoadNewStateFromCache()
     self.NewStateStructure = cachedState
   end
 end
-
 function M:SaveNewStateToCache()
   EMCache:Set("WikiNewState", self.NewStateStructure, true)
 end
-
 function M:GetCategories()
   return self.Categories
 end
-
 function M:GetCategoryWikiNotes(categoryId)
   if not self.Categories[categoryId] then
     return {}
   end
   return self.Categories[categoryId].WikiNotes or {}
 end
-
 function M:SortAndFilterEntries(entries)
   if not entries or CommonUtils.Size(entries) <= 0 then
     return {}
@@ -193,7 +178,6 @@ function M:SortAndFilterEntries(entries)
   end)
   return sortedEntries
 end
-
 function M:FilterEntriesByUnlock(entries)
   if not entries then
     return {}
@@ -210,7 +194,6 @@ function M:FilterEntriesByUnlock(entries)
   end
   return filteredEntries
 end
-
 function M:HasUnlockedText(entryId)
   local unlockedTexts = self:GetUnlockTexts()
   if not unlockedTexts then
@@ -224,7 +207,6 @@ function M:HasUnlockedText(entryId)
   end
   return false
 end
-
 function M:SortTextsByTextId(entryTexts)
   local textArray = {}
   for _, textData in pairs(entryTexts) do
@@ -235,7 +217,6 @@ function M:SortTextsByTextId(entryTexts)
   end)
   return textArray
 end
-
 function M:GetReadableDialogueEntries(entryIds)
   if not entryIds then
     return {}
@@ -257,40 +238,32 @@ function M:GetReadableDialogueEntries(entryIds)
   end
   return readableEntries
 end
-
 function M:AddNewStateListener(listener, callback)
   self.NewStateListeners[listener] = callback
 end
-
 function M:RemoveNewStateListener(listener)
   self.NewStateListeners[listener] = nil
 end
-
 function M:NotifyNewStateChanged(subTypeId, tabId)
   for _, callback in pairs(self.NewStateListeners) do
     callback(subTypeId, tabId)
   end
 end
-
 function M:IsTextNew(textId)
   if not self.NewStateStructure or not self.NewStateStructure.Texts then
     return false
   end
   return self.NewStateStructure.Texts[textId]
 end
-
 function M:IsEntryNew(entryId)
   return self.NewStateStructure.Entries[entryId] == true
 end
-
 function M:IsSubTypeNew(subTypeId)
   return self.NewStateStructure.SubTypes[subTypeId] == true
 end
-
 function M:IsTabNew(tabId)
   return self.NewStateStructure.Tabs[tabId] == true
 end
-
 function M:MarkTextAsNew(textId, entryId)
   local entryData = self.AllGuideNotes[entryId]
   if not entryData then
@@ -305,7 +278,6 @@ function M:MarkTextAsNew(textId, entryId)
   self.NewStateStructure.Tabs[1] = true
   self:SaveNewStateToCache()
 end
-
 function M:MarkTextAsRead(textId)
   if not self.NewStateStructure or not self.NewStateStructure.Texts then
     return
@@ -313,7 +285,6 @@ function M:MarkTextAsRead(textId)
   self.NewStateStructure.Texts[textId] = false
   self:SaveNewStateToCache()
 end
-
 function M:ClearEntryNewState(entryId)
   local entryData = self.AllGuideNotes[entryId]
   if not entryData then
@@ -331,7 +302,6 @@ function M:ClearEntryNewState(entryId)
   self:SaveNewStateToCache()
   self:NotifyNewStateChanged(subTypeId, tabId)
 end
-
 function M:UpdateParentNewStates()
   for entryId, _ in pairs(self.NewStateStructure.Entries) do
     local hasNewText = false
@@ -371,7 +341,6 @@ function M:UpdateParentNewStates()
   end
   self.NewStateStructure.Tabs[WikiCommon.CategoryType.All] = hasAnyTabNew
 end
-
 function M:UpdateEntranceRedDot(entranceWidget)
   if not entranceWidget then
     return
@@ -404,16 +373,13 @@ function M:UpdateEntranceRedDot(entranceWidget)
     end
   end
 end
-
 function M:GetTextEntryId(textId)
   return math.floor(textId / 100)
 end
-
 function M:GetEntrySubTypeId(entryId)
   local entryData = self.AllGuideNotes[entryId]
   return entryData and entryData.SubType
 end
-
 function M:GetSubTypeTabId(subTypeId)
   local WikiSubType = DataMgr.WikiSubType
   for _, data in pairs(WikiSubType) do
@@ -423,7 +389,6 @@ function M:GetSubTypeTabId(subTypeId)
   end
   return nil
 end
-
 function M:GetWikiRewardList()
   local rewardItems = {}
   for Id, rewardData in pairs(DataMgr.WikiReward) do
@@ -434,5 +399,4 @@ function M:GetWikiRewardList()
   end)
   return rewardItems
 end
-
 return M

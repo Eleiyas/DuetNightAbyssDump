@@ -5,14 +5,11 @@ local M = Class("BluePrints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:AddReddotListener()
   self:RemoveReddotListener()
 end
-
 function M:RemoveReddotListener()
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.CharSkillTipPath = "/Game/UI/WBP/Armory/Widget/CharSkill/WBP_Armory_CharSkillTip.WBP_Armory_CharSkillTip_C"
@@ -52,34 +49,27 @@ function M:Construct()
   self:AddDispatcher(EventID.OnCharSkillTreeNodeActivated, self, self.OnCharSkillTreeNodeActivated)
   self.WidgetSwitcher_Page:SetActiveWidgetIndex(0)
 end
-
 function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   if self.IsHyperLinkTipOpened then
     return UIUtils.Unhandled
   end
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function M:OnBackgroundClicked()
   self:OnCloseBtnClicked()
 end
-
 function M:OnCloseBtnClicked()
   if self.IsHyperLinkTipOpened then
   elseif self.IsNexLevelInfoShowed then
@@ -89,7 +79,6 @@ function M:OnCloseBtnClicked()
     self:PlayOutAnim()
   end
 end
-
 function M:OnLevelUpBtnClicked()
   if not self.CurrentNodeInfo or not self.CanUpgrade then
     return
@@ -106,14 +95,12 @@ function M:OnLevelUpBtnClicked()
     Avatar:ActivateCharSkillTreeNode(self.Target.Uuid, self.CurrentNodeInfo.BranchIdx, self.CurrentNodeInfo.NodeIdx)
   end
 end
-
 function M:OnCharSkillLevelUp(Ret, SkillId, Level, NewLevel)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
     return
   end
   local BranchInfo, SkillNodeInfo = self:FindTreeNodeInfo(self.SkillTreeInfo, SkillId)
-  
   local function Callback()
     if SkillNodeInfo == self.CurrentNodeInfo then
       self:UpdateSkillNodeDetails(SkillNodeInfo)
@@ -126,7 +113,6 @@ function M:OnCharSkillLevelUp(Ret, SkillId, Level, NewLevel)
     end
     self:SetFocus()
   end
-  
   local ExLevel = SkillNodeInfo.Skill.ExtraLevel
   local ExText
   if ExLevel and ExLevel > 0 then
@@ -148,7 +134,6 @@ function M:OnCharSkillLevelUp(Ret, SkillId, Level, NewLevel)
     self:UpdateSkillNodeDetails(self.CurrentNodeInfo)
   end
 end
-
 function M:OnCharSkillTreeNodeActivated(Ret, CharUuid, TreeIndex, NodeIndex)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -174,10 +159,8 @@ function M:OnCharSkillTreeNodeActivated(Ret, CharUuid, TreeIndex, NodeIndex)
     end
   end
 end
-
 function M:OnForbiddenLevelUpBtnClicked()
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, Params)
   local CharUuid = Params.CharUuid
@@ -190,13 +173,14 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   self.OnDestructCallback = Params.OnDestructCallback
   self.OnDestructObj = Params.OnDestructObj
   self.IsPreviewMode = Params.IsPreviewMode
-  self.PreviewCharInfo = Params.PreviewCharInfo
-  if self.PreviewCharInfo and not ArmoryUtils:GetDummyAvatar() then
+  if Params.PreviewCharInfos and not ArmoryUtils:GetDummyAvatar() then
     self.bDestroyDummyAvatarWhenClose = true
     ArmoryUtils:CreateDummyAvatarByDumpInfo({
-      CharInfos = {
-        self.PreviewCharInfo
-      }
+      CharInfos = Params.PreviewCharInfos,
+      WeaponInfos = Params.PreviewWeaponInfos,
+      CurrentChar = not Params.CurrentChar and Params.PreviewCharInfos and Params.PreviewCharInfos[1],
+      MeleeWeapon = Params.MeleeWeapon,
+      RangedWeapon = Params.RangedWeapon
     })
     ArmoryUtils:SwitchPreviewTargetState(ArmoryUtils.PreviewTargetStates.Custom)
   end
@@ -251,10 +235,8 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   self:PlayInAnim()
   self:SetFocus()
 end
-
 function M:ModifyCharSkillInitParams(Params)
 end
-
 function M:UpdateTargetInfo(Char)
   local CharId = Char.CharId
   local Data = DataMgr.Char[CharId]
@@ -265,7 +247,6 @@ function M:UpdateTargetInfo(Char)
   local AttributeIcon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Armory/T_" .. IconName .. ".T_" .. IconName)
   self.Image_Attribute:SetBrushResourceObject(AttributeIcon or LoadObject("/Game/UI/Texture/Dynamic/Atlas/Armory/T_Armory_Default.T_Armory_Default"))
 end
-
 function M:SetStars(StarNum)
   local StarWidgets = self.Star:GetAllChildren()
   local Length = StarWidgets:Length()
@@ -278,7 +259,6 @@ function M:SetStars(StarNum)
     end
   end
 end
-
 function M:FindFirtSkillIdOrAttrId(Char)
   local SkillId, AttrId
   local SkillTreeData = DataMgr.SkillTree[Char.CharId]
@@ -290,7 +270,6 @@ function M:FindFirtSkillIdOrAttrId(Char)
   end
   return SkillId, AttrId
 end
-
 function M:FindTreeNodeInfo(SkillTreeInfo, SkillId, AttrId)
   for BranchIdx, BranchInfo in ipairs(SkillTreeInfo) do
     for NodeIdx, NodeInfo in ipairs(BranchInfo) do
@@ -304,7 +283,6 @@ function M:FindTreeNodeInfo(SkillTreeInfo, SkillId, AttrId)
     end
   end
 end
-
 function M:OnTreeNodeClicked(BranchInfo, NodeInfo)
   if self.CurrentNodeInfo and self.CurrentNodeInfo.UI then
     self.CurrentNodeInfo.UI:SetIsSelected(false)
@@ -320,7 +298,6 @@ function M:OnTreeNodeClicked(BranchInfo, NodeInfo)
     self:UpdateAttrNodeDetails(NodeInfo)
   end
 end
-
 function M:UpdateSkillNodeDetails(NodeInfo)
   self.ScrollBox_Detail:ScrollToStart()
   self.Panel_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -355,7 +332,6 @@ function M:UpdateSkillNodeDetails(NodeInfo)
   end
   self:UpdateBtnCheckVisibility()
 end
-
 function M:UpdateSubNodeCommon(NodeInfo)
   if self.IsPreviewMode then
     self:SetSkillUpgradeWidgetsVisibility(UIConst.VisibilityOp.Collapsed)
@@ -387,7 +363,6 @@ function M:UpdateSubNodeCommon(NodeInfo)
   end
   self:UpdateResourceList(NodeInfo.ResourceUse)
 end
-
 function M:InitSkillDesc(SkillData)
   self.Text_SkillName:SetText(GText(SkillData.SkillName))
   if SkillData.SkillType == "Passive" then
@@ -423,13 +398,12 @@ function M:InitSkillDesc(SkillData)
         OnHyperLinkClicked = self.OnRichTextHyperLinkClicked
       })
     else
-      DebugPrint("Error: \230\137\190\228\184\141\229\136\176CombatTerm:" .. Item)
+      DebugPrint("Error: 找不到CombatTerm:" .. Item)
     end
   end
   self:UpdateDesc(SkillDescInfos)
   self.SkillDescInfos = SkillDescInfos
 end
-
 function M:UpdateDesc(DescInfos)
   local DescWidgetIdx = 1
   for index, DescInfo in ipairs(DescInfos) do
@@ -446,7 +420,6 @@ function M:UpdateDesc(DescInfos)
     self.ScrollBox_Detail:GetChildAt(self.ScrollBox_Detail:GetChildrenCount() - 1):RemoveFromParent()
   end
 end
-
 function M:InitSkillKeyInfo(SkillData)
   local IsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   local Key = CommonUtils:GetActionMappingKeyName(SkillData.SkillType)
@@ -490,7 +463,6 @@ function M:InitSkillKeyInfo(SkillData)
     self.Skill_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:InitSkillDemo(SkillData)
   if SkillData.SkillDemo then
     local VideoName = "Video_" .. SkillData.SkillDemo
@@ -505,7 +477,6 @@ function M:InitSkillDemo(SkillData)
     self.Panel_Video:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:CreateDescWidthHyperLink(SkillDesc, Terms)
   local results = {SkillDesc}
   self:AddHyperLink(results, Terms, 1)
@@ -515,7 +486,6 @@ function M:CreateDescWidthHyperLink(SkillDesc, Terms)
   end
   return DescText
 end
-
 function M:AddHyperLink(StrArray, Terms, TermIdx)
   if TermIdx > #Terms then
     return
@@ -533,7 +503,6 @@ function M:AddHyperLink(StrArray, Terms, TermIdx)
     self:AddHyperLink(StrArray, Terms, TermIdx)
   end
 end
-
 function M:UpdateAttrList(CharSkill, SkillData)
   local Avatar = ArmoryUtils:GetAvatar()
   local Char = Avatar.Chars[self.Target.Uuid] or self.Target
@@ -621,10 +590,8 @@ function M:UpdateAttrList(CharSkill, SkillData)
     ContentGroups = ContentGroups
   })
 end
-
 function M:OnSkillAttrContentCreated(Content)
 end
-
 function M:OnSkillAttrBtnCLicked(Content)
   Content.IsShowDesc = not Content.IsShowDesc
   if Content.UI then
@@ -639,11 +606,9 @@ function M:OnSkillAttrBtnCLicked(Content)
     ComparedContent.UI:ShowDesc(ComparedContent.IsShowDesc, true)
   end
 end
-
 function M:OnBtnChekClicked()
   self:ShowNextLevelInfo(not self.IsNexLevelInfoShowed)
 end
-
 function M:ShowNextLevelInfo(bShow)
   self.IsNexLevelInfoShowed = bShow
   if bShow then
@@ -659,7 +624,6 @@ function M:ShowNextLevelInfo(bShow)
     self:PlayAnimation(self.Preview_Out)
   end
 end
-
 function M:UpdateLevelInfos(Skill)
   self.ShouldShowBtnCheck = false
   self.IsLocked = Skill:IsLocked()
@@ -707,13 +671,11 @@ function M:UpdateLevelInfos(Skill)
     self.Hint_Skill:SetText(GText("Max_Level_Achieved"))
   end
 end
-
 function M:SetSkillUpgradeWidgetsVisibility(VisibilityOp)
   self.HB_Consume:SetVisibility(VisibilityOp)
   self.HB_Item:SetVisibility(VisibilityOp)
   self.Panel_LevelUp:SetVisibility(VisibilityOp)
 end
-
 function M:UpdateBtnCheckVisibility()
   if self.ShouldShowBtnCheck and 1 == self.WidgetSwitcher_Page:GetActiveWidgetIndex() then
     self.SizeBox_Check:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -721,7 +683,6 @@ function M:UpdateBtnCheckVisibility()
     self.SizeBox_Check:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnTabSelected(Tab)
   self:PlayAnimation(self.Tab_Switch)
   if 1 == Tab.Idx then
@@ -730,7 +691,6 @@ function M:OnTabSelected(Tab)
     self:OnSkillTab2Clicked()
   end
 end
-
 function M:OnSkillTab1Clicked()
   self.WidgetSwitcher_Page:SetActiveWidgetIndex(0)
   self:UpdateBtnCheckVisibility()
@@ -738,36 +698,35 @@ function M:OnSkillTab1Clicked()
     self:ShowNextLevelInfo(not self.self.IsNexLevelInfoShowed)
   end
 end
-
 function M:OnSkillTab2Clicked()
   self.WidgetSwitcher_Page:SetActiveWidgetIndex(1)
   self:UpdateBtnCheckVisibility()
 end
-
 function M:OnRichTextHyperLinkClicked(Term)
   local TermData = DataMgr.CombatProperTerm[Term]
   if not TermData then
     return
   end
-  self.HyperLinkTipWidget = UIManager(self):CreateWidget(self.CharSkillTipPath, true, self:GetZOrder())
+  local Params = {}
+  Params.DefinitionItems = {
+    {
+      Index = 0,
+      Name = GText(Term),
+      Des = GText(TermData.CombatProperTermExplaination)
+    }
+  }
+  Params.CurrentItemIndex = 4
+  function Params.RightCallbackFunction()
+    self:OnRichTextHyperLinkTipClosed()
+  end
+  self.HyperLinkTipWidget = UIManager(self):ShowCommonPopupUI(100266, Params)
   if not self.HyperLinkTipWidget then
     return
   end
-  self.HyperLinkTipWidget:Init({
-    Title = GText(Term),
-    Desc = GText(TermData.CombatProperTermExplaination),
-    Owner = self,
-    OnClosed = self.OnRichTextHyperLinkTipClosed
-  })
-  local Success, X, Y = ULowEntryExtendedStandardLibrary.GetMousePosition()
-  self.HyperLinkTipWidget:SetPositionInViewport(FVector2D(X, Y), true)
-  self.IsHyperLinkTipOpened = Success
 end
-
 function M:OnRichTextHyperLinkTipClosed()
   self.IsHyperLinkTipOpened = false
 end
-
 function M:UpdateAttrNodeDetails(NodeInfo)
   self.Panel_Tab:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_Level:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -809,14 +768,12 @@ function M:UpdateAttrNodeDetails(NodeInfo)
   self.Text_SkillName:SetText(Name .. GText("UI_SkillTree_Attr_Add"))
   self:UpdateSubNodeCommon(NodeInfo)
 end
-
 function M:SetDetailsIcon(IconObj)
   local DMI = self.Icon_CharSkill:GetDynamicMaterial()
   if DMI then
     DMI:SetTextureParameterValue("IconTex", IconObj)
   end
 end
-
 function M:OnTreeNodeStateChanged(BranchInfo, NodeInfo)
   if NodeInfo == self.CurrentNodeInfo then
     if 1 == NodeInfo.NodeIdx then
@@ -826,7 +783,6 @@ function M:OnTreeNodeStateChanged(BranchInfo, NodeInfo)
     end
   end
 end
-
 function M:UpdateResourceList(ResourcesUse)
   local Avatar = GWorld:GetAvatar()
   local Content, ResourceId
@@ -859,10 +815,8 @@ function M:UpdateResourceList(ResourcesUse)
     self.HB_Item:RemoveChildAt(i)
   end
 end
-
 function M:OnResourceContentCreated(Content)
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
@@ -872,15 +826,14 @@ function M:PlayInAnim()
     self,
     self.OnInAnimationFinished
   })
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:PlayAnimation(self.Detail_In)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
+  AudioManager(self):PlayUISound(self, "event:/ui/common/skill_panel_expand", "SkillPanel", nil)
 end
-
 function M:OnInAnimationFinished()
   self:BlockAllUIInput(false)
 end
-
 function M:PlayOutAnim()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.In)
@@ -903,12 +856,11 @@ function M:PlayOutAnim()
   if self.OnClosedCallback then
     self.OnClosedCallback(self.OnClosedObj)
   end
+  AudioManager(self):SetEventSoundParam(self, "SkillPanel", {ToEnd = 1})
 end
-
 function M:OnOutAnimationFinished()
   self:Close()
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.Out)
   self:RemoveReddotListener()
@@ -920,6 +872,5 @@ function M:Destruct()
   end
   M.Super.Destruct(self)
 end
-
 AssembleComponents(M)
 return M

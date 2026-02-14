@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self:AddInputMethodChangedListen()
@@ -38,20 +37,16 @@ function M:InitContent(Params, PopupData, Owner)
     Desc = GText("UI_GACHA_DESDETAIL")
   })
 end
-
 function M:HandleDialogFocused()
   return self.CommonTileView_Rewards
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if self:HasAnyFocus() then
     self.CommonTileView_Rewards:SetFocus()
   end
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
 end
-
 return M

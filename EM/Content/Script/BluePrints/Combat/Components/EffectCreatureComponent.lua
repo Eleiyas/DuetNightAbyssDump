@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:InitEffectCreatureComponent()
   if not self.EffectCreatures then
     self.EffectCreatures = {}
@@ -11,15 +10,21 @@ function Component:InitEffectCreatureComponent()
     self.AsyncEffectCreatures = {}
   end
 end
-
-function Component:GetReplaceEffectCreatureIdBySkinId(EffectCreatureId)
+function Component:GetReplaceEffectCreatureIdBySkinId(EffectCreatureId, SourceEid)
   local EffectCreatureData = DataMgr.EffectCreature[EffectCreatureId]
   if EffectCreatureData and EffectCreatureData.ReplaceBySkin then
-    local ModelId = self.ModelId
-    return ModelId and EffectCreatureData.ReplaceBySkin[ModelId]
+    if SourceEid and 0 ~= SourceEid then
+      local Source = Battle(self):GetEntity(SourceEid)
+      if Source and Source:IsCharacter() then
+        local ModelId = Source.ModelId
+        return ModelId and EffectCreatureData.ReplaceBySkin[ModelId]
+      end
+    else
+      local ModelId = self.ModelId
+      return ModelId and EffectCreatureData.ReplaceBySkin[ModelId]
+    end
   end
 end
-
 function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
   local Effect
   local AttachToCharacter = CreateEffectInfo.AttachToCharacter
@@ -27,11 +32,13 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
   local LoadFinishCallBack = CreateEffectInfo.LoadFinishCallBack
   local SocketName = CreateEffectInfo.SocketName
   local SkillSpeed = CreateEffectInfo.SkillSpeed
-  local ReplaceSkinEffectCreatureId = self:GetReplaceEffectCreatureIdBySkinId(EffectCreatureId)
+  local SourceEid = CreateEffectInfo.SourceEid
+  local ReplaceSkinEffectCreatureId = self:GetReplaceEffectCreatureIdBySkinId(EffectCreatureId, SourceEid)
   local CurSumDeltaSeconds = self.SumDeltaSeconds
-  if self.EffectRecyclePool[EffectCreatureId] and #self.EffectRecyclePool[EffectCreatureId] > 0 then
-    local Index = #self.EffectRecyclePool[EffectCreatureId]
-    Effect = self.EffectRecyclePool[EffectCreatureId][Index]
+  local RealEffectCreatureId = ReplaceSkinEffectCreatureId or EffectCreatureId
+  if self.EffectRecyclePool[RealEffectCreatureId] and #self.EffectRecyclePool[RealEffectCreatureId] > 0 then
+    local Index = #self.EffectRecyclePool[RealEffectCreatureId]
+    Effect = self.EffectRecyclePool[RealEffectCreatureId][Index]
     Effect.LoadTime = CurSumDeltaSeconds
     Effect.SkillSpeed = SkillSpeed
     if Effect.ReplaceSkinEffectCreatureId ~= ReplaceSkinEffectCreatureId then
@@ -40,7 +47,7 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
     else
       Effect:Active()
     end
-    self.EffectRecyclePool[EffectCreatureId][Index] = nil
+    self.EffectRecyclePool[RealEffectCreatureId][Index] = nil
     if not AttachToCharacter then
       Effect:K2_SetActorLocation(Transform.Translation, false, nil, false)
       Effect:K2_SetActorRotation(Transform.Rotation:ToRotator(), false, nil, false)
@@ -51,6 +58,7 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
     end
     if Effect and not Effect.IsDestroy then
       self:AddOrRemoveEffectCreature(Effect, true)
+      Effect:PlaySe()
       if Effect.LoadMeshCallBack then
         Effect.LoadMeshCallBack()
       end
@@ -58,7 +66,7 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
       Effect.Overridden.ReceiveBeginPlay(Effect)
     end
   else
-    local EffectCreatureData = DataMgr.EffectCreature[EffectCreatureId]
+    local EffectCreatureData = ReplaceSkinEffectCreatureId and DataMgr.EffectCreature[ReplaceSkinEffectCreatureId] or DataMgr.EffectCreature[EffectCreatureId]
     local RealEffectCreaturePath = EffectCreatureData.EffectCreaturePath or "/Game/BluePrints/Combat/SkillCreatures/BP_EffectCreature.BP_EffectCreature"
     if not self.AsyncEffectCreatures[EffectCreatureId] then
       self.AsyncEffectCreatures[EffectCreatureId] = {}
@@ -78,7 +86,7 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
         end
         self.AsyncEffectCreatures[EffectCreatureId][CreateEffectInfo] = nil
         if not BPCLass then
-          DebugPrint("\231\137\185\230\149\136\229\136\155\231\148\159\231\137\169\232\183\175\229\190\132\228\184\186\231\169\186" .. RealEffectCreaturePath)
+          DebugPrint("特效创生物路径为空" .. RealEffectCreaturePath)
           return
         end
         if not AttachToCharacter then
@@ -90,14 +98,15 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
           else
             OriginTransform = FTransform(self:K2_GetActorRotation():ToQuat(), self:K2_GetActorLocation(), self:GetActorScale3D())
           end
-          Effect = self:GetWorld():SpawnActor(BPCLass, OriginTransform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
+          Effect = self:GetWorld():SpawnActor(BPCLass)
+          local ScaleRule = EffectCreatureData.NotScaledByParent and UE4.EAttachmentRule.KeepWorld or UE4.EAttachmentRule.SnapToTarget
           if self.Mesh then
-            Effect:K2_AttachToComponent(self.Mesh, SocketName, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld)
+            Effect:K2_AttachToComponent(self.Mesh, SocketName, UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget, ScaleRule)
           else
-            Effect:K2_AttachToActor(self, "", UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld)
+            Effect:K2_AttachToActor(self, "", UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget, ScaleRule)
           end
           Effect.CustomTimeDilation = self.CustomTimeDilation
-          if Transform then
+          if Transform and (Transform.Translation ~= Const.ZeroVector or Transform.Rotation:ToRotator() ~= Const.ZeroRotator or Transform.Scale3D ~= Const.OneVector) then
             Effect:K2_AddActorLocalTransform(Transform, false, nil, false)
           end
         end
@@ -112,6 +121,7 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
         end
         if Effect and not Effect.IsDestroy then
           self:AddOrRemoveEffectCreature(Effect, true)
+          Effect:PlaySe()
           Effect:LoadEffectCreatureResource()
           Effect.Overridden.ReceiveBeginPlay(Effect)
         end
@@ -119,17 +129,18 @@ function Component:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectI
     })
   end
 end
-
 function Component:CreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
   local Effect
   local Transform = CreateEffectInfo.Transform
   local AttachToCharacter = CreateEffectInfo.AttachToCharacter
   local SocketName = CreateEffectInfo.SocketName
   local SkillSpeed = CreateEffectInfo.SkillSpeed
-  local ReplaceSkinEffectCreatureId = self:GetReplaceEffectCreatureIdBySkinId(EffectCreatureId)
-  if self.EffectRecyclePool[EffectCreatureId] and #self.EffectRecyclePool[EffectCreatureId] > 0 then
-    local Index = #self.EffectRecyclePool[EffectCreatureId]
-    Effect = self.EffectRecyclePool[EffectCreatureId][Index]
+  local SourceEid = CreateEffectInfo.SourceEid
+  local ReplaceSkinEffectCreatureId = self:GetReplaceEffectCreatureIdBySkinId(EffectCreatureId, SourceEid)
+  local RealEffectCreatureId = ReplaceSkinEffectCreatureId or EffectCreatureId
+  if self.EffectRecyclePool[RealEffectCreatureId] and #self.EffectRecyclePool[RealEffectCreatureId] > 0 then
+    local Index = #self.EffectRecyclePool[RealEffectCreatureId]
+    Effect = self.EffectRecyclePool[RealEffectCreatureId][Index]
     Effect.LoadTime = self.SumDeltaSeconds
     Effect.SkillSpeed = SkillSpeed
     if Effect.ReplaceSkinEffectCreatureId ~= ReplaceSkinEffectCreatureId then
@@ -138,19 +149,20 @@ function Component:CreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
     else
       Effect:Active()
     end
-    self.EffectRecyclePool[EffectCreatureId][Index] = nil
+    self.EffectRecyclePool[RealEffectCreatureId][Index] = nil
     if not AttachToCharacter then
       Effect:K2_SetActorLocation(Transform.Translation, false, nil, false)
       Effect:K2_SetActorRotation(Transform.Rotation:ToRotator(), false, nil, false)
       Effect:SetActorScale3D(Transform.Scale3D)
     end
     self:AddOrRemoveEffectCreature(Effect, true)
+    Effect:PlaySe()
   else
-    local EffectCreatureData = DataMgr.EffectCreature[EffectCreatureId]
+    local EffectCreatureData = ReplaceSkinEffectCreatureId and DataMgr.EffectCreature[ReplaceSkinEffectCreatureId] or DataMgr.EffectCreature[EffectCreatureId]
     local RealEffectCreaturePath = EffectCreatureData.EffectCreaturePath or "/Game/BluePrints/Combat/SkillCreatures/BP_EffectCreature.BP_EffectCreature"
     local BPCLass = LoadClass(RealEffectCreaturePath)
     if not BPCLass then
-      DebugPrint("\231\137\185\230\149\136\229\136\155\231\148\159\231\137\169\232\183\175\229\190\132\228\184\186\231\169\186" .. RealEffectCreaturePath)
+      DebugPrint("特效创生物路径为空" .. RealEffectCreaturePath)
       return
     end
     if not AttachToCharacter then
@@ -162,14 +174,15 @@ function Component:CreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
       else
         OriginTransform = FTransform(self:K2_GetActorRotation():ToQuat(), self:K2_GetActorLocation(), self:GetActorScale3D())
       end
-      Effect = self:GetWorld():SpawnActor(BPCLass, OriginTransform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
+      Effect = self:GetWorld():SpawnActor(BPCLass)
+      local ScaleRule = EffectCreatureData.NotScaledByParent and UE4.EAttachmentRule.KeepWorld or UE4.EAttachmentRule.SnapToTarget
       if self.Mesh then
-        Effect:K2_AttachToComponent(self.Mesh, SocketName, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld)
+        Effect:K2_AttachToComponent(self.Mesh, SocketName, UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget, ScaleRule)
       else
-        Effect:K2_AttachToActor(self, "", UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld)
+        Effect:K2_AttachToActor(self, "", UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget, ScaleRule)
       end
       Effect.CustomTimeDilation = self.CustomTimeDilation
-      if Transform then
+      if Transform and (Transform.Translation ~= Const.ZeroVector or Transform.Rotation:ToRotator() ~= Const.ZeroRotator or Transform.Scale3D ~= Const.OneVector) then
         Effect:K2_AddActorLocalTransform(Transform, false, nil, false)
       end
     end
@@ -181,6 +194,7 @@ function Component:CreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
     self:HideEffectCreatureByTags(Effect)
     Effect:LoadEffectCreatureResource()
     self:AddOrRemoveEffectCreature(Effect, true)
+    Effect:PlaySe()
   end
   if 0 == Effect.InitialLifeSpan then
     if not self.EffectCreatures[EffectCreatureId] then
@@ -190,7 +204,6 @@ function Component:CreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
   end
   return Effect
 end
-
 function Component:AsyncCreateEffectCreatureWithCallBack(EffectCreatureId, Transform, AttachToCharacter, SocketName, CreateCallBack)
   self:InitEffectCreatureComponent()
   if 0 == EffectCreatureId then
@@ -201,14 +214,12 @@ function Component:AsyncCreateEffectCreatureWithCallBack(EffectCreatureId, Trans
   if not self.EffectCreatures[EffectCreatureId] then
     self.EffectCreatures[EffectCreatureId] = {}
   end
-  
   local function LoadFinishCallBack(EffectCreature)
     if 0 == EffectCreature.InitialLifeSpan then
       table.insert(self.EffectCreatures[EffectCreatureId], EffectCreature)
     end
     CreateCallBack:Execute(EffectCreature)
   end
-  
   local CurSkill = self:IsCharacter() and self:GetCurrentSkill()
   local SkillConfig = CurSkill and CurSkill.Data
   local SkillSpeedModify = SkillConfig and SkillConfig.SkillSpeedModify
@@ -222,7 +233,6 @@ function Component:AsyncCreateEffectCreatureWithCallBack(EffectCreatureId, Trans
   }
   self:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
 end
-
 function Component:AsyncCreateEffectCreature(EffectCreatureId, Transform, AttachToCharacter, SocketName, LuaCallBack, IsNotEnterList)
   self:InitEffectCreatureComponent()
   if 0 == EffectCreatureId then
@@ -233,7 +243,6 @@ function Component:AsyncCreateEffectCreature(EffectCreatureId, Transform, Attach
   if not self.EffectCreatures[EffectCreatureId] then
     self.EffectCreatures[EffectCreatureId] = {}
   end
-  
   local function LoadFinishCallBack(EffectCreature)
     if 0 == EffectCreature.InitialLifeSpan and not IsNotEnterList then
       table.insert(self.EffectCreatures[EffectCreatureId], EffectCreature)
@@ -242,7 +251,6 @@ function Component:AsyncCreateEffectCreature(EffectCreatureId, Transform, Attach
       LuaCallBack(EffectCreature)
     end
   end
-  
   local CurSkill = self:IsCharacter() and self:GetCurrentSkill()
   local SkillConfig = CurSkill and CurSkill.Data
   local SkillSpeedModify = SkillConfig and SkillConfig.SkillSpeedModify
@@ -256,8 +264,7 @@ function Component:AsyncCreateEffectCreature(EffectCreatureId, Transform, Attach
   }
   self:AsyncCreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
 end
-
-function Component:CreateEffectCreature(EffectCreatureId, Transform, AttachToCharacter, SocketName)
+function Component:CreateEffectCreature(EffectCreatureId, Transform, AttachToCharacter, SocketName, SourceEid)
   self:InitEffectCreatureComponent()
   if 0 == EffectCreatureId then
     return
@@ -272,14 +279,14 @@ function Component:CreateEffectCreature(EffectCreatureId, Transform, AttachToCha
     Transform = Transform,
     AttachToCharacter = AttachToCharacter,
     SocketName = SocketName,
-    SkillSpeed = SkillSpeed
+    SkillSpeed = SkillSpeed,
+    SourceEid = SourceEid
   }
   local EffectCreature = self:CreateEffectCreatureById(EffectCreatureId, CreateEffectInfo)
   EffectCreature.Overridden.ReceiveBeginPlay(EffectCreature)
   return EffectCreature
 end
-
-function Component:RefreshEffectCreatureByBuff(EffectCreatureId, BuffId, Layer)
+function Component:RefreshEffectCreatureByBuff(EffectCreatureId, BuffId, Layer, SourceEid)
   local EffectCreatures = self.EffectCreatures and self.EffectCreatures[EffectCreatureId]
   if EffectCreatures and #EffectCreatures > 0 then
     for i, EffectCreature in ipairs(EffectCreatures) do
@@ -290,7 +297,7 @@ function Component:RefreshEffectCreatureByBuff(EffectCreatureId, BuffId, Layer)
       end
     end
   else
-    local EffectCreature = self:CreateEffectCreature(EffectCreatureId, nil, true)
+    local EffectCreature = self:CreateEffectCreature(EffectCreatureId, nil, true, nil, SourceEid)
     if not EffectCreature then
       return
     end
@@ -299,7 +306,6 @@ function Component:RefreshEffectCreatureByBuff(EffectCreatureId, BuffId, Layer)
     EffectCreature:OnEffectCreatureBuffChanged(0, Layer)
   end
 end
-
 function Component:CreateEffectCreatureByPet(EffectCreatureId)
   self:AsyncCreateEffectCreature(EffectCreatureId, nil, true, nil, function(PetEffectCreature)
     local BattlePet = self:GetBattlePet()
@@ -308,21 +314,18 @@ function Component:CreateEffectCreatureByPet(EffectCreatureId)
     end
     BattlePet.EffectCreature = PetEffectCreature
     PetEffectCreature:SetActorHiddenInGame(BattlePet.IsHideCreature)
-    
     function PetEffectCreature.LoadMeshCallBack()
       EventManager:FireEvent(EventID.OnPetEffectCreatureCreated, BattlePet, self)
     end
   end, true)
 end
-
 function Component:RecycleEffectCreature(EffectCreature)
-  local EffectCreatureId = EffectCreature.EffectCreatureId
+  local EffectCreatureId = EffectCreature.ReplaceSkinEffectCreatureId or EffectCreature.EffectCreatureId
   if not self.EffectRecyclePool[EffectCreatureId] then
     self.EffectRecyclePool[EffectCreatureId] = {}
   end
   table.insert(self.EffectRecyclePool[EffectCreatureId], EffectCreature)
 end
-
 function Component:RemoveEffectCreature(EffectCreatureId)
   if not self.EffectCreatures or not self.EffectCreatures[EffectCreatureId] then
     return
@@ -331,13 +334,12 @@ function Component:RemoveEffectCreature(EffectCreatureId)
     if IsValid(EffectCreature) then
       EffectCreature:DestroyEffectCreature()
     else
-      DebugPrint("\231\137\185\230\149\136\229\136\155\231\148\159\231\137\169\228\184\186\231\169\186\228\189\134\230\152\175\230\149\176\230\141\174\228\190\157\230\151\167\229\173\152\229\156\168\239\188\140id\239\188\154" .. EffectCreatureId)
+      DebugPrint("特效创生物为空但是数据依旧存在，id：" .. EffectCreatureId)
     end
   end
   self.EffectCreatures[EffectCreatureId] = nil
   self.AsyncEffectCreatures[EffectCreatureId] = nil
 end
-
 function Component:RemoveEffectCreatureByRef(DeleteEffectCreature)
   local EffectCreatureId = DeleteEffectCreature.EffectCreatureId
   if not self.EffectCreatures or not self.EffectCreatures[EffectCreatureId] then
@@ -352,12 +354,11 @@ function Component:RemoveEffectCreatureByRef(DeleteEffectCreature)
         table.insert(EffectCreatures, EffectCreature)
       end
     else
-      DebugPrint("\231\137\185\230\149\136\229\136\155\231\148\159\231\137\169\228\184\186\231\169\186\228\189\134\230\152\175\230\149\176\230\141\174\228\190\157\230\151\167\229\173\152\229\156\168\239\188\140id\239\188\154" .. EffectCreatureId)
+      DebugPrint("特效创生物为空但是数据依旧存在，id：" .. EffectCreatureId)
     end
   end
   self.EffectCreatures[EffectCreatureId] = EffectCreatures
 end
-
 function Component:RemoveEffectCreatureByBuff(EffectCreatureId, BuffUniqueId)
   if not self.EffectCreatures or not self.EffectCreatures[EffectCreatureId] then
     return
@@ -369,16 +370,36 @@ function Component:RemoveEffectCreatureByBuff(EffectCreatureId, BuffUniqueId)
       EffectCreature:DestroyEffectCreature()
       table.remove(EffectCreatures, Index)
     else
-      DebugPrint("\231\137\185\230\149\136\229\136\155\231\148\159\231\137\169\228\184\186\231\169\186\228\189\134\230\152\175\230\149\176\230\141\174\228\190\157\230\151\167\229\173\152\229\156\168\239\188\140id\239\188\154" .. EffectCreatureId)
+      DebugPrint("特效创生物为空但是数据依旧存在，id：" .. EffectCreatureId)
       table.remove(EffectCreatures, Index)
     end
   end
 end
-
-function Component:RemoveAllEffectCreature(NormalDeath)
-  if not self.EffectCreatures or NormalDeath then
-    return
+function Component:RemoveAllEffectCreatureOnCharacterDead()
+  if self.AsyncEffectCreatures then
+    for EffectCreatureId, v in pairs(self.AsyncEffectCreatures) do
+      local EffectCreatureConfig = DataMgr.EffectCreature[EffectCreatureId]
+      if EffectCreatureConfig.IsDestroyWithOwner then
+        self.AsyncEffectCreatures[EffectCreatureId] = nil
+      end
+    end
   end
+  for EffectCreatureId, EffectCreatures in pairs(self.EffectCreatures) do
+    local EffectCreatureConfig = DataMgr.EffectCreature[EffectCreatureId]
+    if EffectCreatureConfig.IsDestroyWithOwner then
+      for i = 1, #EffectCreatures do
+        local EffectCreature = EffectCreatures[i]
+        if IsValid(EffectCreature) then
+          EffectCreature:DestroyEffectCreature()
+        else
+          DebugPrint("特效创生物为空但是数据依旧存在，id：" .. EffectCreatureId)
+        end
+      end
+      self.EffectCreatures[EffectCreatureId] = {}
+    end
+  end
+end
+function Component:RemoveAllEffectCreatureOnCharacterDestroy()
   self.AsyncEffectCreatures = {}
   for EffectCreatureId, EffectCreatures in pairs(self.EffectCreatures) do
     for i = 1, #EffectCreatures do
@@ -386,7 +407,7 @@ function Component:RemoveAllEffectCreature(NormalDeath)
       if IsValid(EffectCreature) then
         EffectCreature:DestroyEffectCreature()
       else
-        DebugPrint("\231\137\185\230\149\136\229\136\155\231\148\159\231\137\169\228\184\186\231\169\186\228\189\134\230\152\175\230\149\176\230\141\174\228\190\157\230\151\167\229\173\152\229\156\168\239\188\140id\239\188\154" .. EffectCreatureId)
+        DebugPrint("特效创生物为空但是数据依旧存在，id：" .. EffectCreatureId)
       end
     end
   end
@@ -407,7 +428,16 @@ function Component:RemoveAllEffectCreature(NormalDeath)
     end
   end
 end
-
+function Component:RemoveAllEffectCreature(NormalDeath)
+  if not self.EffectCreatures then
+    return
+  end
+  if NormalDeath then
+    self:RemoveAllEffectCreatureOnCharacterDead()
+  else
+    self:RemoveAllEffectCreatureOnCharacterDestroy()
+  end
+end
 function Component:HideAllEffectCreature(HideTag, IsHide)
   self:InitEffectCreatureComponent()
   if not self.EffectCreatureHideTags then
@@ -430,8 +460,44 @@ function Component:HideAllEffectCreature(HideTag, IsHide)
     end
   end
 end
-
+function Component:SkillFeatureHideAllEffectCreature(HideTag, IsHide)
+  self:InitEffectCreatureComponent()
+  if not self.SkillFeatureEffectCreatureHideTags then
+    self.SkillFeatureEffectCreatureHideTags = {}
+  end
+  if not HideTag then
+    return
+  end
+  if IsHide then
+    self.SkillFeatureEffectCreatureHideTags[HideTag] = true
+  else
+    self.SkillFeatureEffectCreatureHideTags[HideTag] = nil
+  end
+  for CreatureId, EffectCreatures in pairs(self.EffectCreatures) do
+    local EffectCreatureData = DataMgr.EffectCreature[CreatureId]
+    if EffectCreatureData and EffectCreatureData.HideOnSkillFeature then
+      for i = 1, #EffectCreatures do
+        local EffectCreature = EffectCreatures[i]
+        if IsValid(EffectCreature) then
+          EffectCreature:HideEffectCreatureByTag(HideTag, IsHide)
+        end
+      end
+    end
+  end
+end
 function Component:HideEffectCreatureByTags(EffectCreature)
+  if not IsValid(EffectCreature) then
+    return
+  end
+  if self.SkillFeatureEffectCreatureHideTags then
+    local CreatureId = EffectCreature.EffectCreatureId
+    local Cfg = CreatureId and DataMgr.EffectCreature[CreatureId]
+    if Cfg and Cfg.HideOnSkillFeature then
+      for SkillFeatureHideTag, _ in pairs(self.SkillFeatureEffectCreatureHideTags) do
+        EffectCreature:HideEffectCreatureByTag(SkillFeatureHideTag, true)
+      end
+    end
+  end
   if not self.EffectCreatureHideTags then
     return
   end
@@ -439,7 +505,6 @@ function Component:HideEffectCreatureByTags(EffectCreature)
     EffectCreature:HideEffectCreatureByTag(HideTag, true)
   end
 end
-
 function Component:HideEffectCreatureById(HideTag, IsHide, EffectCreatureId)
   self:InitEffectCreatureComponent()
   for CreatureId, EffectCreatures in pairs(self.EffectCreatures) do
@@ -453,7 +518,6 @@ function Component:HideEffectCreatureById(HideTag, IsHide, EffectCreatureId)
     end
   end
 end
-
 function Component:UpdateEffectCreatureModel(EffectCreatureId, ModelId)
   if not self.EffectCreatures or not self.EffectCreatures[EffectCreatureId] then
     return
@@ -468,7 +532,6 @@ function Component:UpdateEffectCreatureModel(EffectCreatureId, ModelId)
     end
   end
 end
-
 function Component:GetEffectCreatureByTag(EffectCreatureTag)
   local EffectCreatureList = TArray(UE4.AEffectCreature)
   if not self.EffectCreatures then
@@ -498,7 +561,6 @@ function Component:GetEffectCreatureByTag(EffectCreatureTag)
   end
   return EffectCreatureList
 end
-
 function Component:RemoveEffectCreatureByTag(EffectCreatureTag)
   if not self.EffectCreatures then
     return
@@ -528,5 +590,4 @@ function Component:RemoveEffectCreatureByTag(EffectCreatureTag)
     end
   end
 end
-
 return Component

@@ -9,7 +9,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Activity.Widget.View.ActivityTryOutView"
 }
-
 function M:Initialize(Initializer)
   self.OwnerPlayer = nil
   self.CurActivityId = nil
@@ -21,25 +20,20 @@ function M:Initialize(Initializer)
   self.ParentTabId = nil
   self.ParentWidget = nil
 end
-
 function M:GetPageName()
   return DataMgr.EventTab[self.ParentTabId].EventTabName
 end
-
 function M:GetActivityId()
   return self.CurActivityId
 end
-
 function M:GetParentTabId()
   return self.ParentTabId
 end
-
 function M:ResetVariable()
   self.CurSelectIndex = 1
   self.CurActivityId = self.OriginalActivityId
   self.FocusWidgetName = nil
 end
-
 function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   self.CurSelectIndex = 1
   self.CurActivityId = ActivityId
@@ -49,7 +43,6 @@ function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   self.ParentWidget = ParentWidget
   self:UpdateSubPage()
 end
-
 function M:UpdateSubPage()
   local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
   if ActivityMain and ActivityMain.TryOutActivityNeedJumpToTabIndex then
@@ -68,7 +61,6 @@ function M:UpdateSubPage()
   self:RefreshPageDynamicView(PlayerAvatar.CharTrial[self.CurActivityId])
   self:InitTimeInfo()
 end
-
 function M:InitTimeInfo()
   if (self.ActivityEndTime ~= nil or nil ~= self.RewardEndTime) and self.Activity_Time.Com_Time then
     ActivityUtils.RefreshLeftTime(self, self.Activity_Time.Com_Time)
@@ -77,10 +69,8 @@ function M:InitTimeInfo()
     ActivityUtils.SetLeftTimeView(self.Activity_Time.Com_Time, true)
   end
 end
-
 function M:OnUpdateSubUIViewStyle()
 end
-
 function M:UpdatePage(OperateSrc)
   local IsReBindClickFunction = false
   if IsReBindClickFunction then
@@ -93,25 +83,21 @@ function M:UpdatePage(OperateSrc)
   self:UpdateSubPage()
   self:RefreshPageDynamicView(PlayerAvatar.CharTrial[self.CurActivityId])
 end
-
 function M:GetPageConfigData()
   return DataMgr.CharTrialEvent[self.CurActivityId]
 end
-
 function M:RefreshItemStyleByAction(ActionName, ActivityID)
   local PlayerAvatar = GWorld:GetAvatar()
   if "TryOutGetReward" == ActionName then
     self:RefreshItemStyleView(PlayerAvatar.CharTrial[ActivityID])
   end
 end
-
 function M:CleanSelf(bIsRemoveSelf)
   self:RemoveTimer("RefreshLeftTime")
   if bIsRemoveSelf then
     self:RemoveFromParent()
   end
 end
-
 function M:ViewInfoBtnClick()
   local ActivityConfigData = DataMgr.EventMain[self.CurActivityId]
   if not ActivityConfigData.EventRule then
@@ -123,7 +109,6 @@ function M:ViewInfoBtnClick()
   }
   UIManager(self):ShowCommonPopupUI(100192, Params, self)
 end
-
 function M:GoToTargetPageClick()
   local Params = {
     RightCallbackFunction = function(Obj, Result, PopUI)
@@ -135,7 +120,7 @@ function M:GoToTargetPageClick()
       local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
       local CurTabIndex = 1
       if ActivityMain then
-        CurTabIndex = ActivityMain.CurTabIndex
+        CurTabIndex = ActivityMain.CurTabId
       end
       local ExitDungeonInfo = {
         Type = "TryOut",
@@ -149,7 +134,6 @@ function M:GoToTargetPageClick()
   }
   UIManager(self):ShowCommonPopupUI(100214, Params, self)
 end
-
 function M:GoToGachaClick()
   local PageConfigData = DataMgr.CharTrialEvent[self.CurActivityId]
   if PageConfigData.GachaTabId then
@@ -158,10 +142,8 @@ function M:GoToGachaClick()
     PageJumpUtils:JumpToTargetPageByJumpId(PageConfigData.InterfaceJumpId)
   end
 end
-
 function M:OnStuffDetailOpenChanged(bIsOpen, Stuff)
 end
-
 function M:TryToGetReward()
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -169,7 +151,6 @@ function M:TryToGetReward()
   end
   PlayerAvatar:GetCharTrialReward(ActivityUtils.OnGetTryOutActivityRewardBack, self.CurActivityId)
 end
-
 function M:TryToViewCharDetail()
   local PageConfigData = self:GetPageConfigData()
   local CharId = PageConfigData.CharId
@@ -181,7 +162,6 @@ function M:TryToViewCharDetail()
     OnCloseDelegate = nil
   })
 end
-
 function M:TryToSelectChar(NewActivityId, Index, CharId)
   if self.CurActivityId == NewActivityId then
     return
@@ -198,7 +178,6 @@ function M:TryToSelectChar(NewActivityId, Index, CharId)
     self.ParentWidget:UpdateTabRedInfoByActivityID(nil, NewActivityId)
   end
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -210,15 +189,12 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad()
   return true
 end
-
 AssembleComponents(M)
 return M

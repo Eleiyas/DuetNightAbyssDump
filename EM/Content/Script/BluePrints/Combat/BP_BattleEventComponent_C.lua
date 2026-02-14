@@ -1,7 +1,6 @@
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
 local BP_BattleEventComponent_C = Class()
-
 function BP_BattleEventComponent_C:ReceiveBeginPlay()
   self.Battle = self:GetOwner()
   if not IsAuthority(self.Battle) then
@@ -11,5 +10,4 @@ function BP_BattleEventComponent_C:ReceiveBeginPlay()
     return
   end
 end
-
 return BP_BattleEventComponent_C

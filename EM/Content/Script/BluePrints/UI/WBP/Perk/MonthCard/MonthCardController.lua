@@ -4,7 +4,6 @@ local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.Common.MVC.Controller")
-
 function M:Init()
   M.Super.Init(self)
   self.RefreshTimer = nil
@@ -12,30 +11,24 @@ function M:Init()
   self.PurchaseOrder = 0
   EventManager:AddEvent(EventID.OnDailyRefresh, self, self.OnRefresh)
 end
-
 function M:Destory()
   M.Super.Destory(self)
   self.RefreshTimer = nil
   self.WaitPayTag = false
   EventManager:RemoveEvent(EventID.OnDailyRefresh, self)
 end
-
 function M:GetModel()
   return MonthCardModel
 end
-
 function M:GetEventName()
   return EventID.MonthCardControllerEvent
 end
-
 function M:OpenView(WorldContex, Param)
   return M.Super.OpenView(self, WorldContex, MonthCardCommon.UIName, Param)
 end
-
 function M:GetView(WorldContex)
   return M.Super.GetView(self, WorldContex, MonthCardCommon.UIName)
 end
-
 function M:MakeCacheData()
   local MonthCard = MonthCardModel:GetNowMonthCard()
   self.TimerCacheData = {
@@ -44,7 +37,6 @@ function M:MakeCacheData()
     bCanPurchase = MonthCardModel:IsMonthCardCanPurchase()
   }
 end
-
 function M:OnShopMonthCardOpen()
   if self.RefreshTimer then
     self:StopTimer(self.RefreshTimer)
@@ -54,24 +46,20 @@ function M:OnShopMonthCardOpen()
     self:TryRefreshShopMonthCard()
   end, true, nil, nil, true)
 end
-
 function M:OnRefresh()
   self:NotifyEvent(MonthCardCommon.EventId.MonthCardRefresh)
   self:NotifyEvent(MonthCardCommon.EventId.PurchasedRefresh)
   self:NotifyEvent(MonthCardCommon.EventId.PurchaseStateRefresh)
 end
-
 function M:TryRefreshShopMonthCard()
   self:NotifyEvent(MonthCardCommon.EventId.TimeTick)
 end
-
 function M:OnShopMonthCardClose()
   if self.RefreshTimer then
     self:StopTimer(self.RefreshTimer)
     self.RefreshTimer = nil
   end
 end
-
 function M:TryPurchaseMonthCard()
   if self.WaitPayTag then
     return
@@ -86,7 +74,7 @@ function M:TryPurchaseMonthCard()
     return
   end
   self.WaitPayTag = true
-  self.PurchaseOrder = self.PurchaseOrder + 1
+  self.PurchaseOrder = (self.PurchaseOrder or 0) + 1
   local PurchaseOrder = self.PurchaseOrder
   self:AddTimer(10, function()
     self:FinishPurchase(PurchaseOrder)
@@ -125,18 +113,15 @@ function M:TryPurchaseMonthCard()
     end)
   end)
 end
-
 function M:FinishPurchase(PurchaseOrder)
   if PurchaseOrder ~= self.PurchaseOrder then
     return
   end
   self.WaitPayTag = false
 end
-
 function M:DisplayForbiddenTip()
   self:ShowToast(MonthCardCommon.TextToastCannotPurchase)
 end
-
 local function MergeReward(MergeReward, TotalReward)
   local RewardCount = 0
   if not MergeReward then
@@ -168,9 +153,27 @@ local function MergeReward(MergeReward, TotalReward)
   end
   return RewardCount
 end
-
 function M:DisplayPurchaseRewards(MonthlyCardId, TotalReward)
   if not TotalReward then
+    return
+  end
+  local GameInstance = GWorld.GameInstance
+  if GameInstance then
+    local LoadingUI = GameInstance:GetLoadingUI()
+    local LoginMainPage = UIManager(GameInstance):GetUIObj("LoginMainPage")
+    DebugPrint("DisplayPurchaseRewards", LoadingUI)
+    if LoadingUI or LoginMainPage then
+      MonthCardModel:SetPurchaseRewardCache(TotalReward)
+      return
+    end
+  end
+  self:RealDisplayPurchaseRewards(TotalReward)
+end
+function M:RealDisplayPurchaseRewards(TotalReward, Callback)
+  if not TotalReward then
+    if Callback then
+      Callback()
+    end
     return
   end
   local BuyReward = TotalReward.BuyReward
@@ -189,11 +192,13 @@ function M:DisplayPurchaseRewards(MonthlyCardId, TotalReward)
     Count = Count + MergeReward(UniqueReward, Rewards)
   end
   if Count <= 0 then
+    if Callback then
+      Callback()
+    end
     return
   end
-  UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
+  UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, Callback, self)
 end
-
 function M:DisplayMonthCardPop(DailyReward, ...)
   if not DailyReward then
     return
@@ -210,13 +215,20 @@ function M:DisplayMonthCardPop(DailyReward, ...)
   end
   self:TryDisplayMonthCardPop(DailyReward)
 end
-
+function M:TryPopUpCacheReward()
+  local DailyReward = MonthCardModel.DailyRewardCache
+  local PurchaseReward = MonthCardModel.PurchaseRewardCache
+  MonthCardModel:ClearDailyRewardCache()
+  MonthCardModel:ClearPurchaseRewardCache()
+  self:RealDisplayPurchaseRewards(PurchaseReward, function()
+    self:TryDisplayMonthCardPop(DailyReward)
+  end)
+end
 function M:TryDisplayMonthCardPop(DailyReward)
-  DailyReward = DailyReward or MonthCardModel.DailyRewardCache
   if not DailyReward then
     return
   end
-  local Reward
+  local Reward = {}
   local RewardType = DataMgr.RewardType
   for ItemType, _ in pairs(RewardType) do
     local ItemKey = ItemType .. "s"
@@ -231,22 +243,17 @@ function M:TryDisplayMonthCardPop(DailyReward)
           count = ItemCount
         end
         if count > 0 then
-          Reward = {
+          table.insert(Reward, {
             ItemType = ItemType,
             ItemId = ItemId,
             Count = count
-          }
-          break
+          })
         end
-      end
-      if Reward then
-        break
       end
     end
   end
   self:GetUIMgr():LoadUINew("MonthCardPop", Reward)
   MonthCardModel:ClearDailyRewardCache()
 end
-
 _G.MonthCardController = M
 return M

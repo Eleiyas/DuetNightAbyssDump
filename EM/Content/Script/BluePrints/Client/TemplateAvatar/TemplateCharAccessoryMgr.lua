@@ -1,9 +1,7 @@
 local Component = {}
-
 function Component:CheckRepeatPressup(AccessoryId)
   return self.CharAccessorys:HasValue(AccessoryId)
 end
-
 function Component:AddAccessory(AccessoryId, Reason, GiveNotOpen)
   local Info = DataMgr.CharAccessory[AccessoryId]
   if not AccessoryId or not Info then
@@ -18,7 +16,6 @@ function Component:AddAccessory(AccessoryId, Reason, GiveNotOpen)
   end
   self.CharAccessorys:Append(AccessoryId)
 end
-
 function Component:GMAddAccessory(AccessoryId, Reason)
   local Info = DataMgr.CharAccessory[AccessoryId]
   if not Info or 1 == Info.GMNot then
@@ -26,5 +23,4 @@ function Component:GMAddAccessory(AccessoryId, Reason)
   end
   self:AddAccessory(AccessoryId, Reason, true)
 end
-
 return Component

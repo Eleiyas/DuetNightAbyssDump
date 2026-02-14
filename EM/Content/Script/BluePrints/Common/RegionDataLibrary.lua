@@ -1,7 +1,6 @@
 require("UnLua")
 require("Const")
 local Library = Class()
-
 function Library:RegionDataLibraryInit()
   self.FullRegionStoreDatas = {}
   self.RegionSSDatas = {}
@@ -14,7 +13,6 @@ function Library:RegionDataLibraryInit()
   self.SerializedNpcs = {}
   self.ManualItemIdMap = {}
 end
-
 function Library:ClearRegionCacheDatas()
   self.RegionCacheDatas = {
     [ERegionDataType.RDT_CommonData] = {},
@@ -27,30 +25,24 @@ function Library:ClearRegionCacheDatas()
   }
   self.WorldEid2RegionCacheData = {}
 end
-
 function Library:ClearSSData()
   self.RegionSSDatas = {}
   self.WorldRegionEid2SSData = {}
   self.LogHelper:Clear()
   self:OnSpecialQuestEnd()
 end
-
 function Library:GetFullRegionStoreDatas()
   return self.FullRegionStoreDatas
 end
-
 function Library:GetRegionSSDatas()
   return self.RegionSSDatas
 end
-
 function Library:GetLevelRegionSSDatas(LevelName)
   return self.RegionSSDatas[LevelName]
 end
-
 function Library:GetRegionCacheDatasByIdType(Type)
   return self.RegionCacheDatas[Type]
 end
-
 function Library:AddUnitRegionCacheData(UnitRegionData)
   local RegionDataType = UnitRegionData.RegionDataType
   local SubRegionId = UnitRegionData.SubRegionId
@@ -65,14 +57,13 @@ function Library:AddUnitRegionCacheData(UnitRegionData)
     self:_CheckCacheDataDuplication(RegionDataType, SubRegionId, LevelName, WorldRegionEid)
   end
 end
-
 function Library:_CheckCacheDataDuplication(RegionDataType, SubRegionId, LevelName, WorldRegionEid)
   for _RegionDataType, _SubRegionDatas in pairs(self.RegionCacheDatas) do
     for _SubRegionId, _LevelRegionDatas in pairs(_SubRegionDatas) do
       for _LevelName, _RegionDatas in pairs(_LevelRegionDatas) do
         for _WorldRegionEid, _ in pairs(_RegionDatas) do
           if _WorldRegionEid == WorldRegionEid and (RegionDataType ~= _RegionDataType or SubRegionId ~= _SubRegionId or LevelName ~= _LevelName) then
-            GWorld.logger.error("\229\144\140\228\184\128\228\187\189\229\140\186\229\159\159\230\149\176\230\141\174\233\148\153\232\175\175\229\173\152\229\156\168\228\184\164\228\184\170\230\149\176\230\141\174\233\155\134\233\135\140\239\188\154WorldRegionEid\239\188\154" .. WorldRegionEid .. "  Type\239\188\154" .. RegionDataType .. "  RegionId\239\188\154" .. SubRegionId .. "  " .. LevelName)
+            GWorld.logger.error("同一份区域数据错误存在两个数据集里：WorldRegionEid：" .. WorldRegionEid .. "  Type：" .. RegionDataType .. "  RegionId：" .. SubRegionId .. "  " .. LevelName)
             PrintTable(_RegionDatas)
           end
         end
@@ -80,7 +71,6 @@ function Library:_CheckCacheDataDuplication(RegionDataType, SubRegionId, LevelNa
     end
   end
 end
-
 function Library:RemoveUnitRegionCacheData(WorldRegionEid)
   local UnitRegionData = self:GetUnitRegionCacheDataByWorldRegionEid(WorldRegionEid)
   if not UnitRegionData then
@@ -97,7 +87,6 @@ function Library:RemoveUnitRegionCacheData(WorldRegionEid)
   self.LogHelper:OnClientCacheDeleted(UnitRegionData.WorldRegionEid, UnitRegionData.Eid, UnitRegionData.LevelName)
   return true
 end
-
 function Library:UpdateUnitRegionCacheData(TargetActor)
   local WorldRegionEid = TargetActor.WorldRegionEid
   local OldUnitRegionData = self.WorldEid2RegionCacheData[WorldRegionEid]
@@ -119,7 +108,6 @@ function Library:UpdateUnitRegionCacheData(TargetActor)
   self.LogHelper:OnClientCacheUpdated(OldUnitRegionData.WorldRegionEid, OldUnitRegionData.Eid, OldUnitRegionData.LevelName)
   return OldUnitRegionData
 end
-
 function Library:RegionActorCacheDataDeadByCreatorId(CreatorId)
   local RegionDatas = self:GetClientCacheDataByCreatorId(CreatorId)
   for _, RegionData in pairs(RegionDatas) do
@@ -134,7 +122,6 @@ function Library:RegionActorCacheDataDeadByCreatorId(CreatorId)
   end
   return RegionDatas
 end
-
 function Library:RegionActorCacheDataDeadByUnitLabel(UnitId, UnitType)
   local RegionDatas = self:GetClientCacheDataByUnitLabel(UnitId, UnitType)
   for _, RegionData in pairs(RegionDatas) do
@@ -149,7 +136,6 @@ function Library:RegionActorCacheDataDeadByUnitLabel(UnitId, UnitType)
   end
   return RegionDatas
 end
-
 function Library:CheckUnitIsDeadByWorldRegionEid(WorldRegionEid)
   local Data = self:GetUnitRegionCacheDataByWorldRegionEid(WorldRegionEid)
   if not Data then
@@ -157,7 +143,6 @@ function Library:CheckUnitIsDeadByWorldRegionEid(WorldRegionEid)
   end
   return Data.IsDead
 end
-
 function Library:SetUnitIsDeadByWorldRegionEid(WorldRegionEid)
   local Data = self:GetUnitRegionCacheDataByWorldRegionEid(WorldRegionEid)
   if not Data or Data and Data.IsDead then
@@ -166,7 +151,6 @@ function Library:SetUnitIsDeadByWorldRegionEid(WorldRegionEid)
   Data.IsDead = true
   return true
 end
-
 function Library:UpdateRegionDataStateCacheByCreatorId(CreatorId, StateData)
   local RegionDatas = self:GetClientCacheDataByCreatorId(CreatorId)
   for _, RegionData in pairs(RegionDatas) do
@@ -178,7 +162,6 @@ function Library:UpdateRegionDataStateCacheByCreatorId(CreatorId, StateData)
   end
   return RegionDatas
 end
-
 function Library:GetClientCacheDataByCreatorId(CreatorId)
   local RegionDatas = {}
   for _, TypeData in pairs(self.RegionCacheDatas) do
@@ -194,7 +177,6 @@ function Library:GetClientCacheDataByCreatorId(CreatorId)
   end
   return RegionDatas
 end
-
 function Library:GetClientCacheDataByUnitLabel(UnitId, UnitType)
   local RegionDatas = {}
   for _, TypeData in pairs(self.RegionCacheDatas) do
@@ -210,7 +192,6 @@ function Library:GetClientCacheDataByUnitLabel(UnitId, UnitType)
   end
   return RegionDatas
 end
-
 function Library:SetUnitRegionCacheData(RegionDataType, SubRegionId, LevelName, WorldRegionEid, UnitRegionData)
   if self.WorldEid2RegionCacheData == nil then
     self.WorldEid2RegionCacheData = {}
@@ -221,8 +202,8 @@ function Library:SetUnitRegionCacheData(RegionDataType, SubRegionId, LevelName, 
   if nil == SubRegionId or nil == LevelName or nil == WorldRegionEid then
     local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
     local WCSubSystem = GameMode:GetWCSubSystem()
-    if WCSubSystem then
-      WCSubSystem:ShowRegionError_Lua("SetUnitRegionCacheData: \232\174\190\231\189\174\229\140\186\229\159\159\230\149\176\230\141\174\230\151\182\230\149\176\230\141\174\230\152\175\231\169\186\231\154\132. " .. "SubRegionId:" .. (SubRegionId and SubRegionId or "nil") .. "LevelName:" .. (LevelName and LevelName or "nil") .. "WorldRegionEid:" .. (WorldRegionEid and WorldRegionEid or "nil"))
+    if WCSubSystem and GameMode:IsInRegion() then
+      WCSubSystem:ShowRegionError_Lua("SetUnitRegionCacheData: 设置区域数据时数据是空的. " .. "SubRegionId:" .. (SubRegionId and SubRegionId or "nil") .. "LevelName:" .. (LevelName and LevelName or "nil") .. "WorldRegionEid:" .. (WorldRegionEid and WorldRegionEid or "nil"))
     end
     return
   end
@@ -235,15 +216,13 @@ function Library:SetUnitRegionCacheData(RegionDataType, SubRegionId, LevelName, 
   self.WorldEid2RegionCacheData[WorldRegionEid] = CopyData
   self.WorldRegionEidExist:Add(WorldRegionEid)
 end
-
 function Library:GetUnitRegionCacheDataByWorldRegionEid(WorldRegionEid)
   local UnitRegionData = self.WorldEid2RegionCacheData[WorldRegionEid]
   if not UnitRegionData then
-    ScreenPrint("WorldEid2RegionCacheData\228\184\173\230\137\190\228\184\141\229\136\176WorldRegionEid:\227\128\144" .. tostring(WorldRegionEid) .. "\227\128\145\231\154\132\230\149\176\230\141\174")
+    ScreenPrint("WorldEid2RegionCacheData中找不到WorldRegionEid:【" .. tostring(WorldRegionEid) .. "】的数据")
   end
   return UnitRegionData
 end
-
 function Library:GetUnitRegionCacheData(TypeRegionDatas, SubRegionId, LevelName, WorldRegionEid)
   SubRegionId = tonumber(SubRegionId)
   if not TypeRegionDatas then
@@ -259,16 +238,13 @@ function Library:GetUnitRegionCacheData(TypeRegionDatas, SubRegionId, LevelName,
   end
   return LevelData[WorldRegionEid]
 end
-
 function Library:GetManualItemData(ManualItemId)
   return self.ManualItemIdMap[ManualItemId]
 end
-
 function Library:ClearManualItemDatas()
   self.ManualItemIdMap = {}
   self.ManualItemWorldRegionEidExist:Clear()
 end
-
 function Library:AddRegionSSDatas(UnitRegionData)
   if URuntimeCommonFunctionLibrary.UseCppRegionData(GWorld.GameInstance) then
     local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -278,9 +254,9 @@ function Library:AddRegionSSDatas(UnitRegionData)
   local LevelName = UnitRegionData.LevelName
   self.RegionSSDatas[LevelName] = self.RegionSSDatas[LevelName] or {}
   if self.RegionSSDatas[LevelName][UnitRegionData.WorldRegionEid] then
-    DebugPrint("RegionDataMgr: Error AddRegionSSDatas\230\183\187\229\138\160\228\185\139\229\137\141\229\176\177\229\183\178\231\187\143\229\173\152\229\156\168\229\175\185\229\186\148\231\154\132\230\149\176\230\141\174\239\188\140\228\184\165\230\159\165\227\128\130RegionSSDatas[" .. LevelName .. "][" .. UnitRegionData.WorldRegionEid .. "]")
+    DebugPrint("RegionDataMgr: Error AddRegionSSDatas添加之前就已经存在对应的数据，严查。RegionSSDatas[" .. LevelName .. "][" .. UnitRegionData.WorldRegionEid .. "]")
   end
-  DebugPrint("RegionDataMgr: AddRegionSSDatas \230\183\187\229\138\160RegionSSDatas[" .. LevelName .. "][" .. UnitRegionData.WorldRegionEid .. "]")
+  DebugPrint("RegionDataMgr: AddRegionSSDatas 添加RegionSSDatas[" .. LevelName .. "][" .. UnitRegionData.WorldRegionEid .. "]")
   self.RegionSSDatas[LevelName][UnitRegionData.WorldRegionEid] = UnitRegionData
   if UnitRegionData.WorldRegionEid then
     self.WorldRegionEid2SSData[UnitRegionData.WorldRegionEid] = UnitRegionData
@@ -289,14 +265,12 @@ function Library:AddRegionSSDatas(UnitRegionData)
     self.SerializedNpcs[UnitRegionData.UnitId] = 1
   end
 end
-
 function Library:GetRegionSSDataByKey(LevelName, WorldRegionEid)
   if self.RegionSSDatas[LevelName] then
     return self.RegionSSDatas[LevelName][WorldRegionEid]
   end
   return nil
 end
-
 function Library:RemoveRegionSSDatas(LevelName, WorldRegionEid)
   if self.RegionSSDatas[LevelName] and self.RegionSSDatas[LevelName][WorldRegionEid] then
     local DeletedData = self.RegionSSDatas[LevelName][WorldRegionEid]
@@ -310,22 +284,20 @@ function Library:RemoveRegionSSDatas(LevelName, WorldRegionEid)
   end
   return false
 end
-
 function Library:RemoveRegionSSDataByWorldRegionEid(WorldRegionEid)
   local RegionBaseData = self.WorldRegionEid2SSData[WorldRegionEid]
   if not RegionBaseData then
-    GWorld.logger.errorlog("\229\136\160\233\153\164RegionSSData\230\151\182RegionSSDatas\230\137\190\228\184\141\229\136\176WorldRegionEid:" .. WorldRegionEid .. "\231\154\132\230\149\176\230\141\174")
+    GWorld.logger.errorlog("删除RegionSSData时RegionSSDatas找不到WorldRegionEid:" .. WorldRegionEid .. "的数据")
     return
   end
   local LevelName = RegionBaseData.LevelName
   if not self.RegionSSDatas[LevelName] or not self.RegionSSDatas[LevelName][WorldRegionEid] then
-    GWorld.logger.errorlog("\229\136\160\233\153\164RegionSSData\230\151\182RegionSSDatas\230\137\190\228\184\141\229\136\176\229\136\160\233\153\164RegionSSData\230\151\182RegionSSDatas\230\137\190\228\184\141\229\136\176WorldRegionEid:" .. WorldRegionEid .. "\231\154\132\230\149\176\230\141\174")
+    GWorld.logger.errorlog("删除RegionSSData时RegionSSDatas找不到删除RegionSSData时RegionSSDatas找不到WorldRegionEid:" .. WorldRegionEid .. "的数据")
     return
   end
   self.RegionSSDatas[LevelName][WorldRegionEid] = nil
   self.WorldRegionEid2SSData[WorldRegionEid] = nil
 end
-
 function Library:RemoveLevelRegionSSData(LevelName)
   local TmpSSData = self.RegionSSDatas[LevelName]
   if nil == TmpSSData then
@@ -336,17 +308,16 @@ function Library:RemoveLevelRegionSSData(LevelName)
   end
   self.RegionSSDatas[LevelName] = nil
 end
-
 function Library:UpdateRegionSSDatas(UnitRegionData)
   local LevelName = UnitRegionData.LevelName
   local WorldRegionEid = UnitRegionData.WorldRegionEid
   if nil == LevelName or nil == WorldRegionEid then
-    GWorld.logger.errorlog("UpdateRegionSSDatas \230\155\180\230\150\176SSData\230\149\176\230\141\174\228\188\160\229\133\165\231\154\132\230\149\176\230\141\174\233\148\153\232\175\175")
+    GWorld.logger.errorlog("UpdateRegionSSDatas 更新SSData数据传入的数据错误")
     PrintTable(UnitRegionData)
     return
   end
   if nil == self.RegionSSDatas[LevelName] or nil == self.RegionSSDatas[LevelName][WorldRegionEid] then
-    GWorld.logger.errorlog("UpdateRegionSSDatas \230\155\180\230\150\176SSData\230\149\176\230\141\174\230\151\182\228\188\160\229\133\165SSData\228\184\141\229\173\152\229\156\168\231\154\132\230\149\176\230\141\174")
+    GWorld.logger.errorlog("UpdateRegionSSDatas 更新SSData数据时传入SSData不存在的数据")
     PrintTable(UnitRegionData)
     return
   end
@@ -354,7 +325,6 @@ function Library:UpdateRegionSSDatas(UnitRegionData)
   self.WorldRegionEid2SSData[WorldRegionEid] = self.RegionSSDatas[LevelName][WorldRegionEid]
   self.LogHelper:OnSSDataUpdated(WorldRegionEid, self.RegionSSDatas[LevelName][WorldRegionEid].Eid, LevelName)
 end
-
 function Library:UpdateRegionSSDatasState(LevelName, WorldRegionEid, UpdateStateData)
   if self.RegionSSDatas[LevelName] == nil or self.RegionSSDatas[LevelName][WorldRegionEid] == nil then
     return
@@ -362,14 +332,13 @@ function Library:UpdateRegionSSDatasState(LevelName, WorldRegionEid, UpdateState
   local BaseSSData = self.RegionSSDatas[LevelName][WorldRegionEid]
   self:SetStateValue(BaseSSData, UpdateStateData)
 end
-
 function Library:ConstructUnitRegionDataByCreatorData(Eid, LevelName, Creator, WorldRegionEid)
   local Avatar = GWorld:GetAvatar()
   local WorldRegionEid = WorldRegionEid or Avatar:GetWorldRegionEid(Creator, Eid)
   local UnitRegionData = {}
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not Eid then
-    DebugPrint("RegionDataMgr: Error ConstructUnitRegionDataByCreatorData \231\172\172\228\184\128\230\172\161\231\148\159\230\136\144\231\188\186\229\176\145eid", WorldRegionEid)
+    DebugPrint("RegionDataMgr: Error ConstructUnitRegionDataByCreatorData 第一次生成缺少eid", WorldRegionEid)
   end
   local UnitRegionData = self:ConstructCommonUnitRegionData({
     UnitId = Creator.UnitId,
@@ -393,7 +362,6 @@ function Library:ConstructUnitRegionDataByCreatorData(Eid, LevelName, Creator, W
   DebugPrint("RegionDataMgr:  ConstructUnitRegionDataByCreatorData", UnitRegionData.WorldRegionEid, UnitRegionData.LevelName, UnitRegionData.RegionDataType)
   return UnitRegionData
 end
-
 function Library:ConstructUnitRegionDataByRandomData(LevelName, RuleId, Param, TmpEid, SpawnRandomTableId, SpawnIdxInRule, WorldRegionEid)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local SubRegionId = GameMode:GetRegionIdByLocation(Param:GetLoc())
@@ -424,7 +392,6 @@ function Library:ConstructUnitRegionDataByRandomData(LevelName, RuleId, Param, T
   DebugPrint("RegionDataMgr:  ConstructUnitRegionDataByRandomData", UnitRegionData.WorldRegionEid, UnitRegionData.LevelName, UnitRegionData.RegionDataType)
   return UnitRegionData
 end
-
 function Library:ConstructUnitRegionDataByUnit(TargetActor)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local OriginLevelName = GameMode:GetActorLevelName(TargetActor)
@@ -459,7 +426,6 @@ function Library:ConstructUnitRegionDataByUnit(TargetActor)
   DebugPrint("RegionDataMgr:  ConstructUnitRegionDataByUnit", UnitRegionData.WorldRegionEid, UnitRegionData.LevelName, UnitRegionData.RegionDataType)
   return UnitRegionData
 end
-
 function Library:ConstructCommonUnitRegionData(Info)
   local UnitRegionData = {}
   UnitRegionData.UnitId = Info.UnitId
@@ -487,7 +453,6 @@ function Library:ConstructCommonUnitRegionData(Info)
   UnitRegionData.State = Info.State
   return UnitRegionData
 end
-
 function Library:SetRotation(UnitRegionData, Rotation)
   if not Rotation then
     return
@@ -499,7 +464,6 @@ function Library:SetRotation(UnitRegionData, Rotation)
   UnitRegionData.Rotation.yaw = Rotation.yaw
   UnitRegionData.Rotation.roll = Rotation.roll
 end
-
 function Library:SetBornLocation(UnitRegionData, Location)
   if not Location then
     return
@@ -511,7 +475,6 @@ function Library:SetBornLocation(UnitRegionData, Location)
   UnitRegionData.BornLocation.Y = Location.Y
   UnitRegionData.BornLocation.Z = Location.Z
 end
-
 function Library:SetLocation(RegionBaseData, Location)
   if not Location then
     return
@@ -523,7 +486,6 @@ function Library:SetLocation(RegionBaseData, Location)
   RegionBaseData.Location.Y = Location.Y
   RegionBaseData.Location.Z = Location.Z
 end
-
 function Library:SetStateValue(RegionBaseData, StateTable)
   if not StateTable or type(StateTable) ~= "table" then
     return
@@ -536,7 +498,6 @@ function Library:SetStateValue(RegionBaseData, StateTable)
     RegionBaseData.State[_] = State
   end
 end
-
 function Library:GetStateValue(WorldRegionEid)
   local ClientCacheData = self:GetUnitRegionCacheDataByWorldRegionEid(WorldRegionEid)
   if WorldRegionEid and ClientCacheData.State then
@@ -544,37 +505,32 @@ function Library:GetStateValue(WorldRegionEid)
   end
   return nil
 end
-
 function Library:GetUnitTypeWorldRegionEid(UnitType, Eid)
   Eid = Eid or tostring(math.random())
   if not UnitType or "" == UnitType then
-    DebugPrint("ZJT_ GetUnitTypeWorldRegionEid UnitType \230\178\161\233\133\141\232\161\168 ", Eid)
+    DebugPrint("ZJT_ GetUnitTypeWorldRegionEid UnitType 没配表 ", Eid)
   end
   local WorldRegionEid = UnitType .. "_" .. Eid .. "_" .. os.time()
   return WorldRegionEid
 end
-
 function Library:OnSpecialQuestBegin(QuestChainId, SpecialQuestId, RegionDataTypeStrList)
   assert(SpecialQuestId, "OnSpecialQuestBegin ParamError")
-  assert(type(RegionDataTypeStrList) == "table", "\233\156\128\228\191\157\231\149\153\231\154\132\230\149\176\230\141\174\231\177\187\229\158\139\228\184\141\228\184\186List,\230\163\128\230\159\165UniversalConfig\232\161\168,SpecialQuestId = ", SpecialQuestId)
+  assert(type(RegionDataTypeStrList) == "table", "需保留的数据类型不为List,检查UniversalConfig表,SpecialQuestId = ", SpecialQuestId)
   self.CurSpecialQuestChainId = QuestChainId
   self.CurSpecialQuestid = SpecialQuestId
   for _, RDT in pairs(RegionDataTypeStrList) do
-    assert(UE4.ERegionDataType[RDT] >= 0, "\230\158\154\228\184\190\228\184\173\230\137\190\228\184\141\229\136\176\232\175\165\229\128\188, RDT = " .. RDT or "")
+    assert(UE4.ERegionDataType[RDT] >= 0, "枚举中找不到该值, RDT = " .. RDT or "")
     self.SpecialQuestHoldRegionDataType[UE4.ERegionDataType[RDT]] = true
   end
 end
-
 function Library:OnSpecialQuestEnd()
   self.CurSpecialQuestChainId = nil
   self.CurSpecialQuestid = nil
   self.SpecialQuestHoldRegionDataType = {}
 end
-
 function Library:IsInSpecialQuest()
   return self.CurSpecialQuestid ~= nil
 end
-
 function Library:CheckCanCreateWhileSpecialQuest(RegionBaseData)
   if self.CurSpecialQuestChainId == nil or nil == self.CurSpecialQuestid or 0 == self.CurSpecialQuestid then
     return true
@@ -587,7 +543,6 @@ function Library:CheckCanCreateWhileSpecialQuest(RegionBaseData)
   end
   return not self:CheckRegionDataTypeNeedDestroy(RegionBaseData.RegionDataType, RegionBaseData.QuestChainId)
 end
-
 function Library:CheckRegionDataTypeNeedDestroy(RegionDataType, QuestChainId)
   if not RegionDataType then
     return
@@ -601,7 +556,6 @@ function Library:CheckRegionDataTypeNeedDestroy(RegionDataType, QuestChainId)
   end
   return false
 end
-
 function Library:GetSpecialQuestUniversalConfig()
   if not self.CurSpecialQuestid then
     return
@@ -611,5 +565,4 @@ function Library:GetSpecialQuestUniversalConfig()
     return DataMgr.UniversalConfig[SpecialQuestConfig.UniversalConfigId]
   end
 end
-
 return Library

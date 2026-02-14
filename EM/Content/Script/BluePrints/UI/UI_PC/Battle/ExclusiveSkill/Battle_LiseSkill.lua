@@ -1,14 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
-
 function M:Construct()
   self:InitListenEvent()
   self.Progress_Lise:SetPercent(0)
 end
-
 function M:Destruct()
 end
-
 function M:OnLoaded(OwnerPlayer, Params)
   DebugPrint("gmy@Battle_LiseSkill M:OnLoaded", OwnerPlayer, Params)
   self.OwnerPlayer = OwnerPlayer
@@ -17,26 +14,22 @@ function M:OnLoaded(OwnerPlayer, Params)
   self:PlayAnimation(self.In)
   self:UpdateSSp()
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.UpdateMainPlayerSecondSp, self, self.OnUpdateSSp)
   self:AddDispatcher(EventID.UpdateMainPlayerMaxSecondSp, self, self.OnUpdateMaxSSp)
 end
-
 function M:OnUpdateSSp(SSp, OwnerActor)
   if OwnerActor == self.OwnerPlayer then
     self.SSp = SSp
     self:UpdateSSp()
   end
 end
-
 function M:OnUpdateMaxSSp(MaxSSp, OwnerActor)
   if OwnerActor == self.OwnerPlayer then
     self.MaxSSp = MaxSSp
     self:UpdateSSp()
   end
 end
-
 function M:UpdateSSp()
   if self.SSp and self.MaxSSp then
     local SSpText = string.format("%.0f", self.SSp)
@@ -47,5 +40,4 @@ function M:UpdateSSp()
     self.Progress_Lise:SetPercent(SSpPercent)
   end
 end
-
 return M

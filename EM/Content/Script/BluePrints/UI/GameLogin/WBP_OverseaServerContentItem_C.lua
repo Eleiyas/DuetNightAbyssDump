@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   if not Content then
@@ -31,14 +30,12 @@ function M:OnListItemObjectSet(Content)
     self.Btn_Click:SetChecked(true)
   end
 end
-
 function M:OnHovered()
   if UIUtils.UtilsGetCurrentInputType() ~= UE4.ECommonInputType.Gamepad then
     return
   end
   self:SetSelected(true)
 end
-
 function M:OnSelected(bIsChecked)
   if not self.Content then
     DebugPrint("Content is nil, cannot clear list item object.")
@@ -52,9 +49,7 @@ function M:OnSelected(bIsChecked)
   self:SetVisibility(bIsChecked and ESlateVisibility.HitTestInvisible or ESlateVisibility.Visible)
   self:SetFocus(bIsChecked)
 end
-
 function M:SetSelected(bIsChecked)
   self.Btn_Click:SetChecked(bIsChecked)
 end
-
 return M

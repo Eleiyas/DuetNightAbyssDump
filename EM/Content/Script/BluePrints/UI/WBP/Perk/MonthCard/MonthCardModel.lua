@@ -1,14 +1,13 @@
 local TimeUtils = require("Utils.TimeUtils")
 local MonthCardCommon = require("BluePrints.UI.WBP.Perk.MonthCard.MonthCardCommon")
+local ItemUtil = require("Utils.ItemUtils")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   M.Super.Init(self)
   self._Avatar = nil
   self:GetAvatar()
   self.NowMonthCardId = nil
 end
-
 function M:IsMonthCardPurchased()
   local Avatar = self:GetAvatar()
   if Avatar then
@@ -17,7 +16,6 @@ function M:IsMonthCardPurchased()
     return false
   end
 end
-
 function M:IsMonthCardCanPurchase()
   local Avatar = self:GetAvatar()
   local MonthCardHoldMax = DataMgr.GlobalConstant.MonthlyCardHoldMax
@@ -30,7 +28,6 @@ function M:IsMonthCardCanPurchase()
     return false
   end
 end
-
 function M:GetMonthCardLeftDays()
   local Avatar = self:GetAvatar()
   if Avatar then
@@ -39,7 +36,6 @@ function M:GetMonthCardLeftDays()
     return false
   end
 end
-
 function M:GetMonthCardLeftTimes()
   local Avatar = self:GetAvatar()
   if Avatar then
@@ -50,7 +46,6 @@ function M:GetMonthCardLeftTimes()
     return 0
   end
 end
-
 function M:GetMonthCardCanPurchaseTime()
   local MonthCard = self:GetNowMonthCard()
   if MonthCard then
@@ -59,7 +54,6 @@ function M:GetMonthCardCanPurchaseTime()
     return 0
   end
 end
-
 function M:GetRewardHeadIconInfo()
   local MonthCard = self:GetNowMonthCard()
   if MonthCard then
@@ -68,7 +62,14 @@ function M:GetRewardHeadIconInfo()
     return nil
   end
 end
-
+function M:GetRewardItemIcon()
+  local MonthCard = self:GetNowMonthCard()
+  if MonthCard then
+    return MonthCard.BuyRewardIcon
+  else
+    return nil
+  end
+end
 function M:GetRewardItem()
   local MonthCard = self:GetNowMonthCard()
   if MonthCard then
@@ -77,7 +78,36 @@ function M:GetRewardItem()
     return nil
   end
 end
-
+function M:GetRewardNameAndIcon(RewardInfos)
+  if not RewardInfos then
+    return
+  end
+  local Results = {}
+  for _, Reward in ipairs(RewardInfos) do
+    table.insert(Results, GText(ItemUtil.GetItemName(Reward.ItemId, Reward.ItemType)))
+    table.insert(Results, "*")
+    table.insert(Results, Reward.Count)
+    table.insert(Results, "\n")
+  end
+  if #Results > 0 then
+    Results[#Results] = nil
+  end
+  local Result = table.concat(Results)
+  local Icon
+  if #RewardInfos > 0 then
+    local Reward = RewardInfos[1]
+    Icon = ItemUtils.GetItemIcon(Reward.ItemId, Reward.ItemType)
+  end
+  return Result, Icon
+end
+function M:GetRewardEveryDayItemIcon()
+  local MonthCard = self:GetNowMonthCard()
+  if MonthCard then
+    return MonthCard.DailyRewardIcon
+  else
+    return nil
+  end
+end
 function M:GetRewardEveryDayItem()
   local MonthCard = self:GetNowMonthCard()
   if MonthCard then
@@ -86,7 +116,6 @@ function M:GetRewardEveryDayItem()
     return nil
   end
 end
-
 function M:GetMonthCardPrice()
   local MonthCard = self:GetNowMonthCard()
   if MonthCard then
@@ -98,12 +127,10 @@ function M:GetMonthCardPrice()
     return 30
   end
 end
-
 function M:GetPriceSymbol()
   local CurrencySymbol = ShopUtils:GetCurrencyType()
   return CurrencySymbol
 end
-
 function M:GetNowMonthCard()
   local Avatar = self:GetAvatar()
   if not Avatar then
@@ -127,44 +154,42 @@ function M:GetNowMonthCard()
   end
   return nil
 end
-
 function M:GetRewardInfo(RewardId)
   local Reward = DataMgr.Reward[RewardId]
   if not Reward then
     return
   end
+  local Result = {}
   local RewardTypes = Reward.Type
-  local RewardType = RewardTypes and RewardTypes[1]
-  if not RewardType then
-    return
-  end
   local RewardItemIds = Reward.Id
-  local RewardItemIdId = RewardItemIds and RewardItemIds[1]
-  if not RewardId then
-    return
-  end
   local RewardCounts = Reward.Count
-  local RewardCount = RewardCounts and RewardCounts[1]
-  if not RewardCount then
-    return
+  local Count = Reward.Type and #Reward.Type or 0
+  for i = 1, Count do
+    local Type = RewardTypes and RewardTypes[i]
+    local ItemId = RewardItemIds and RewardItemIds[i]
+    local Count = RewardCounts and RewardCounts[i]
+    local Item = {
+      ItemType = Type,
+      ItemId = ItemId,
+      Count = Count[1]
+    }
+    table.insert(Result, Item)
   end
-  return {
-    ItemType = RewardType,
-    ItemId = RewardItemIdId,
-    Count = RewardCount[1]
-  }
+  return Result
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 function M:SetDailyRewardCache(DailyReward)
   self.DailyRewardCache = DailyReward
 end
-
+function M:SetPurchaseRewardCache(PurchaseReward)
+  self.PurchaseRewardCache = PurchaseReward
+end
+function M:ClearPurchaseRewardCache()
+  self.PurchaseRewardCache = nil
+end
 function M:ClearDailyRewardCache()
   self.DailyRewardCache = nil
 end
-
 return M

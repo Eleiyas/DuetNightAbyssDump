@@ -1,7 +1,6 @@
 local SkillUtils = require("Utils.SkillUtils")
 local TimeUtils = require("Utils.TimeUtils")
 local Component = {}
-
 function Component:SyncLocation_Lua(ActorLoc, ActorRot, CurVel, Acceleration, MovementMode)
   local SyncInfo = {}
   SyncInfo.Type = "Move"
@@ -26,6 +25,14 @@ function Component:SyncLocation_Lua(ActorLoc, ActorRot, CurVel, Acceleration, Mo
     Z = Acceleration.Z
   }
   SyncInfo.MovementMode = MovementMode
+  SyncInfo.ForceReSyncLocation = self.bForceReSyncLocation
+  if self:GetMovementComponent() then
+    SyncInfo.MaxWalkSpeed = self:GetMovementComponent().MaxWalkSpeed
+    SyncInfo.MaxAcceleration = self:GetMovementComponent().MaxAcceleration
+  else
+    SyncInfo.MaxWalkSpeed = 500
+    SyncInfo.MaxAcceleration = 2048
+  end
   if CurVel:Size() > 0 or Acceleration:Size() > 0 then
     self.CurResourceId = 0
   end
@@ -41,27 +48,9 @@ function Component:SyncLocation_Lua(ActorLoc, ActorRot, CurVel, Acceleration, Mo
     return
   end
   SyncInfo.TimeStamp = TimeUtils:NowTime()
-  Avatar:SendSyncInfo(SyncInfo)
+  local ActionBaseInfo = self:GetPlayerLocationAndRotation()
+  Avatar:SendSyncInfo(SyncInfo, ActionBaseInfo)
 end
-
-function Component:SyncnUsingWeapon_Lua(UsingWeaponType)
-  local SyncInfo = {}
-  SyncInfo.Type = "SwitchShowWeapon"
-  SyncInfo.ShowWeapon = UsingWeaponType
-  local Avatar = GWorld:GetAvatar()
-  if not Avatar then
-    return
-  end
-  if not Avatar.CurrentOnlineType then
-    return
-  end
-  if Avatar.CurrentOnlineType < 0 then
-    return
-  end
-  print(_G.LogTag, "SyncnUsingWeapon_Lua", UsingWeaponType)
-  Avatar:SendSyncInfo(SyncInfo)
-end
-
 function Component:PackSyncInfo(MoveInfo, MainPlayer)
   local ActorLoc = FVector(MoveInfo.Location.X, MoveInfo.Location.Y, MoveInfo.Location.Z)
   local ActorRot = FRotator(MoveInfo.Rotation.Pitch, MoveInfo.Rotation.Yaw, MoveInfo.Rotation.Roll)
@@ -81,7 +70,59 @@ function Component:PackSyncInfo(MoveInfo, MainPlayer)
   end
   self:PackSyncInfo_Cpp(ActorLoc, ActorRot, CurVel, Acceleration, MovementMode, TimeStamp)
 end
-
+function Component:UpdateCharacterMoveInfo(MoveInfo)
+  local ActorLoc = FVector(MoveInfo.Location.X, MoveInfo.Location.Y, MoveInfo.Location.Z)
+  local ActorRot = FRotator(MoveInfo.Rotation.Pitch, MoveInfo.Rotation.Yaw, MoveInfo.Rotation.Roll)
+  local CurVel = FVector(MoveInfo.Velocity.X, MoveInfo.Velocity.Y, MoveInfo.Velocity.Z)
+  local Acceleration = FVector(MoveInfo.Acceleration.X, MoveInfo.Acceleration.Y, MoveInfo.Acceleration.Z)
+  local MovementMode = MoveInfo.MovementMode
+  local MovementComp = self:GetMovementComponent()
+  local CachedMaxSpeed = 0
+  local CachedMaxAcc = 0
+  if MoveInfo.MaxWalkSpeed and MoveInfo.MaxWalkSpeed > 0 then
+    self:SetMaxWalkSpeed(MoveInfo.MaxWalkSpeed)
+    CachedMaxSpeed = MoveInfo.MaxWalkSpeed
+  end
+  if MoveInfo.MaxAcceleration and MoveInfo.MaxAcceleration > 0 and MovementComp then
+    MovementComp.MaxAcceleration = MoveInfo.MaxAcceleration
+    CachedMaxAcc = MoveInfo.MaxAcceleration
+  end
+  if not self:CharacterInTag("Slide") then
+    self.OtherWorldCrouching = MoveInfo.IsCrouching or false
+    self:SetCrouch(self.OtherWorldCrouching)
+  end
+  self:SetMaxSpeedAndAcc(CachedMaxSpeed, CachedMaxAcc)
+  self:PackSyncInfo_Cpp(ActorLoc, ActorRot, CurVel, Acceleration, MovementMode, 0)
+  if MoveInfo.ForceReSyncLocation and MovementComp then
+    MovementComp:ForceRegionSync()
+  end
+end
+function Component:UpdateActionLocAndRot(MoveInfo)
+  if not MoveInfo.ActionBaseInfo then
+    return
+  end
+  local ActionBaseInfo = MoveInfo.ActionBaseInfo
+  local ActorLoc = FVector(ActionBaseInfo.Location.X, ActionBaseInfo.Location.Y, ActionBaseInfo.Location.Z)
+  local ActorRot = FRotator(ActionBaseInfo.Rotation.Pitch, ActionBaseInfo.Rotation.Yaw, ActionBaseInfo.Rotation.Roll)
+  self:PackSyncLocAndRot(ActorLoc, ActorRot)
+end
+function Component:SyncnUsingWeapon_Lua(UsingWeaponType)
+  local SyncInfo = {}
+  SyncInfo.Type = "SwitchShowWeapon"
+  SyncInfo.ShowWeapon = UsingWeaponType
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if not Avatar.CurrentOnlineType then
+    return
+  end
+  if Avatar.CurrentOnlineType < 0 then
+    return
+  end
+  print(_G.LogTag, "SyncnUsingWeapon_Lua", UsingWeaponType)
+  Avatar:SendSyncInfo(SyncInfo)
+end
 function Component:SendPrepareInfoNew_Lua(FeatureObj)
   local SyncInfo = {}
   SyncInfo.Type = "Action"
@@ -100,11 +141,11 @@ function Component:SendPrepareInfoNew_Lua(FeatureObj)
   if Avatar.CurrentOnlineType < 0 then
     return
   end
+  local ActionBaseInfo = self:GetPlayerLocationAndRotation()
   SyncInfo.TimeStamp = TimeUtils:NowTime()
   SyncInfo.UsingActionNew = 1
-  Avatar:SendSyncInfo(SyncInfo)
+  Avatar:SendSyncInfo(SyncInfo, ActionBaseInfo)
 end
-
 function Component:SendPrepareInfo_Lua(ClassName, IntMap, FloatMap, VectorMap, RotatorMap, EnumMap)
   local SyncInfo = {}
   SyncInfo.Type = "Action"
@@ -146,7 +187,6 @@ function Component:SendPrepareInfo_Lua(ClassName, IntMap, FloatMap, VectorMap, R
   SyncInfo.TimeStamp = TimeUtils:NowTime()
   Avatar:SendSyncInfo(SyncInfo)
 end
-
 function Component:SendVisibleMessage(ShouldHide)
   local SyncInfo = {}
   SyncInfo.Type = "Hide"
@@ -161,14 +201,20 @@ function Component:SendVisibleMessage(ShouldHide)
   if Avatar.CurrentOnlineType < 0 then
     return
   end
-  Avatar:SendSyncInfo(SyncInfo)
+  ActionBaseInfo = self:GetPlayerLocationAndRotation()
+  Avatar:SendSyncInfo(SyncInfo, ActionBaseInfo)
 end
-
 function Component:ReceiveHideInfo_Lua(MoveInfo)
   local ActorVisible = MoveInfo.ActorVisible
+  print(_G.LogTag, "ReceiveHideInfo_Lua", MoveInfo.ActorVisible)
+  if not self:CharacterInTag("Slide") and MoveInfo.ActionBaseInfo then
+    local CrouchInt = MoveInfo.ActionBaseInfo.IsCrouching
+    local IsCrouching = nil ~= CrouchInt and CrouchInt > 0.1
+    self.OtherWorldCrouching = IsCrouching or false
+    self:SetCrouch(self.OtherWorldCrouching)
+  end
   self:ReceiveVisibleMessage(ActorVisible)
 end
-
 function Component:ReceivePrepareInfo_Lua(MoveInfo)
   print(_G.LogTag, "ReceivePrepareInfo_Lua", MoveInfo.UsingActionNew)
   if MoveInfo.UsingActionNew and MoveInfo.UsingActionNew > 0 then
@@ -176,6 +222,12 @@ function Component:ReceivePrepareInfo_Lua(MoveInfo)
     local FeatureClass
     if UE4["U" .. ClassName] then
       FeatureClass = UE4["U" .. ClassName]:StaticClass()
+    end
+    if not self:CharacterInTag("Slide") and MoveInfo.ActionBaseInfo then
+      local CrouchInt = MoveInfo.ActionBaseInfo.IsCrouching
+      local IsCrouching = nil ~= CrouchInt and CrouchInt > 0.1
+      self.OtherWorldCrouching = IsCrouching or false
+      self:SetCrouch(self.OtherWorldCrouching)
     end
     self:ReceivePrepareInfoNew(FeatureClass, MoveInfo)
     return
@@ -240,7 +292,18 @@ function Component:ReceivePrepareInfo_Lua(MoveInfo)
   end
   self:ReceivePrepareInfo(FeatureClass, IntMap, FloatMap, VectorMap, RotatorMap, EnumMap)
 end
-
+function Component:IsStateFeature(MoveInfo)
+  print(_G.LogTag, "ReceivePrepareInfo_Lua", MoveInfo.UsingActionNew)
+  if MoveInfo.UsingActionNew and MoveInfo.UsingActionNew > 0 then
+    local ClassName = MoveInfo.ClassName
+    local FeatureClass
+    if UE4["U" .. ClassName] then
+      FeatureClass = UE4["U" .. ClassName]:StaticClass()
+    end
+    return self:IsStateFeatureCpp(FeatureClass)
+  end
+  return false
+end
 function Component:SendStopActionInfo(ClassName)
   local SyncInfo = {}
   SyncInfo.Type = "StopAction"
@@ -255,17 +318,42 @@ function Component:SendStopActionInfo(ClassName)
   if Avatar.CurrentOnlineType < 0 then
     return
   end
+  local ActionBaseInfo = self:GetPlayerLocationAndRotation()
   SyncInfo.TimeStamp = TimeUtils:NowTime()
-  Avatar:SendSyncInfo(SyncInfo)
+  Avatar:SendSyncInfo(SyncInfo, ActionBaseInfo)
 end
-
 function Component:ReceiveStopActionInfo_Lua(MoveInfo)
   local ClassName = MoveInfo.ClassName
   local FeatureClass
   if UE4["U" .. ClassName] then
     FeatureClass = UE4["U" .. ClassName]:StaticClass()
   end
+  if not self:CharacterInTag("Slide") and MoveInfo.ActionBaseInfo then
+    local CrouchInt = MoveInfo.ActionBaseInfo.IsCrouching
+    local IsCrouching = nil ~= CrouchInt and CrouchInt > 0.1
+    self.OtherWorldCrouching = IsCrouching or false
+    self:SetCrouch(self.OtherWorldCrouching)
+  end
   self:ReceiveStopActionInfo(FeatureClass)
 end
-
+function Component:CacheAction(FuncName, FunParam)
+  self.CurrentCacheAction = {FuncName = FuncName, FunParam = FunParam}
+  self.HasCacheAction = true
+end
+function Component:DoRegionCacheAction()
+  if not self.CurrentCacheAction then
+    self.HasCacheAction = false
+    return
+  end
+  print(_G.LogTag, "[RegionOnline] DoRegionCacheAction", self.CurrentCacheAction.FuncName)
+  local FuncName = self.CurrentCacheAction.FuncName
+  local FunParam = self.CurrentCacheAction.FunParam
+  self[FuncName](self, FunParam)
+  self.CurrentCacheAction = nil
+  self.HasCacheAction = false
+end
+function Component:ClearCacheAction()
+  self.CurrentCacheAction = nil
+  self.HasCacheAction = false
+end
 return Component

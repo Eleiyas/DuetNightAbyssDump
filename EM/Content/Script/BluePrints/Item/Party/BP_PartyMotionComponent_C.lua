@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function M:ReceiveTick(DeltaSeconds)
   if self.IsMoveOneTgt then
     self:InMoveOneTgt(DeltaSeconds)
@@ -11,11 +10,9 @@ function M:ReceiveTick(DeltaSeconds)
   elseif self.IsRotateKeep then
   end
 end
-
 function M:OnForcePause()
   self.ForcePause = true
 end
-
 function M:MoveOneTgt()
   self.Motion = self:GetOwner()
   if not self.Motion then
@@ -34,7 +31,6 @@ function M:MoveOneTgt()
   end
   self.ForcePause = false
 end
-
 function M:InMoveOneTgt(DeltaTime)
   if IsClient(self.Motion) and not self.Motion.UseClient then
     if self.bMovingToTarget then
@@ -67,7 +63,6 @@ function M:InMoveOneTgt(DeltaTime)
     self.Motion:MoveLocationLerp(DeltaTime, self.TargetLocationAbs, self.StartLocation, 0, self.MoveTime, self.MoveUniformly and 0 or 1)
   end
 end
-
 function M:InterpolateLinear(Progress)
   if self.bMovingToTarget then
     return self.StartLocation + (self.TargetLocationAbs - self.StartLocation) * Progress
@@ -75,7 +70,6 @@ function M:InterpolateLinear(Progress)
     return self.TargetLocationAbs + (self.StartLocation - self.TargetLocationAbs) * Progress
   end
 end
-
 function M:InterpolateAccelerated(Progress)
   local t = Progress * Progress * (3 - 2 * Progress)
   if self.bMovingToTarget then
@@ -84,7 +78,6 @@ function M:InterpolateAccelerated(Progress)
     return self.TargetLocationAbs + (self.StartLocation - self.TargetLocationAbs) * t
   end
 end
-
 function M:PauseBeforeReverse()
   self.bIsPaused = true
   self.CurrentTime = 0
@@ -102,7 +95,6 @@ function M:PauseBeforeReverse()
     end
   end, false, 0)
 end
-
 function M:RotateOneTgt()
   self.Motion = self:GetOwner()
   if not self.Motion then
@@ -122,7 +114,6 @@ function M:RotateOneTgt()
   end
   self.ForcePause = false
 end
-
 function M:InRotateOneTgt(DeltaTime)
   if IsClient(self.Motion) and not self.Motion.UseClient then
     self.CurrentTime = self.CurrentTime + DeltaTime
@@ -160,20 +151,17 @@ function M:InRotateOneTgt(DeltaTime)
     self:PauseBeforeReverseRot()
   end
 end
-
 function M:InterpolateLinearRot(progress)
   local target = self.TargetRotation
   local factor = self.bRotatingToTarget and progress or 1.0 - progress
   return FRotator(target.Pitch * factor, target.Yaw * factor, target.Roll * factor)
 end
-
 function M:InterpolateAcceleratedRot(progress)
   local t = progress * progress * (3 - 2 * progress)
   local target = self.TargetRotation
   local factor = self.bRotatingToTarget and t or 1.0 - t
   return FRotator(target.Pitch * factor, target.Yaw * factor, target.Roll * factor)
 end
-
 function M:PauseBeforeReverseRot()
   self.bIsPaused = true
   self.CurrentTime = 0
@@ -189,5 +177,4 @@ function M:PauseBeforeReverseRot()
     end
   end, false, 0)
 end
-
 return M

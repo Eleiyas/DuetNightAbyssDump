@@ -1,9 +1,7 @@
 local SelectGenderAndNameNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function SelectGenderAndNameNode:Init()
   self.IsGM = false
 end
-
 function SelectGenderAndNameNode:Start(Context)
   self.Context = Context
   print("-----------------------------------SelectGenderAndNameNode node start-----------------------------------")
@@ -29,7 +27,6 @@ function SelectGenderAndNameNode:Start(Context)
   end
   self:SetGameInputDisable(true)
 end
-
 function SelectGenderAndNameNode:FinishAction()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local RealGameMode = GameMode.SubGameModeInfo:Find("Prologue_Void")
@@ -47,13 +44,11 @@ function SelectGenderAndNameNode:FinishAction()
   Player:SetESCMenuForbiddenState(false)
   self:Finish()
 end
-
 function SelectGenderAndNameNode:Clear()
   EventManager:RemoveEvent(EventID.OnSelectRole, self)
   EventManager:RemoveEvent(EventID.OnSelectRoleUIOpen, self)
   EventManager:RemoveEvent(EventID.OnSelectFinish, self)
 end
-
 function SelectGenderAndNameNode:SwitchSequence(Target, UI)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local RealGameMode = GameMode.SubGameModeInfo:Find("Prologue_Void")
@@ -65,7 +60,6 @@ function SelectGenderAndNameNode:SwitchSequence(Target, UI)
     print(_G.LogTag, "Error: GameMode dont have PlayCastingSequence")
   end
 end
-
 function SelectGenderAndNameNode:NodePlayCastingSequence(GameMode, Target, UI)
   if not GameMode or not GameMode.PlayCastingSequence then
     return
@@ -73,12 +67,10 @@ function SelectGenderAndNameNode:NodePlayCastingSequence(GameMode, Target, UI)
   print(_G.LogTag, "LXZ NodePlayCastingSequence", self.NodeType, Target)
   GameMode:PlayCastingSequence(Target, self.NodeType == "Current")
 end
-
 function SelectGenderAndNameNode:OnSelectRoleUIOpen(Widget)
   Widget.SelectNodeType = self.NodeType
   Widget.IsGM = self.IsGM
 end
-
 function SelectGenderAndNameNode:SetGameInputDisable(bDisable)
   local TmpPlayer = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if bDisable then
@@ -93,5 +85,4 @@ function SelectGenderAndNameNode:SetGameInputDisable(bDisable)
     TmpPlayer:SetActorHideTag("Talk", false)
   end
 end
-
 return SelectGenderAndNameNode

@@ -2,7 +2,6 @@ local ShowGuideToastButtonNode = Class("StoryCreator.StoryLogic.StorylineNodes.Q
 ShowGuideToastButtonNode._components = {
   "StoryCreator.StoryLogic.StorylineNodes.QuestNodes.GuideNodeComp"
 }
-
 function ShowGuideToastButtonNode:Init()
   self.ShowEnable = false
   self.MessageId = 0
@@ -20,8 +19,11 @@ function ShowGuideToastButtonNode:Init()
   self.IsForbidInAnim = false
   self.IsForbidOutAnim = false
 end
-
 function ShowGuideToastButtonNode:Start(Context)
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+  if Player.IsImmersionModel then
+    Player:ImmersionModel()
+  end
   if self.Context.IsFail and UE4.UKismetSystemLibrary.GetFrameCount() == self.Context.FrameCount then
     self:FinishAction()
     return
@@ -29,7 +31,6 @@ function ShowGuideToastButtonNode:Start(Context)
   self.Context = Context
   self:ShowMessage(self.Context)
 end
-
 function ShowGuideToastButtonNode:ShowMessage(Context)
   DebugPrint("------------ ShowGuideToastButtonNode ------------------")
   local GameInstance = GWorld.GameInstance
@@ -66,7 +67,6 @@ function ShowGuideToastButtonNode:ShowMessage(Context)
     end
   end
 end
-
 function ShowGuideToastButtonNode:FinishAction()
   local StorylineUtils = require("StoryCreator.StoryLogic.StorylineUtils")
   if StorylineUtils.GetOnceGuideStoryError() then
@@ -75,7 +75,6 @@ function ShowGuideToastButtonNode:FinishAction()
   end
   self:Finish()
 end
-
 function ShowGuideToastButtonNode:Clear()
   if self.UIStateAsyncActionBase and self.UIStateAsyncActionBase.OnGuideEnd:IsBound() then
     self.UIStateAsyncActionBase.OnGuideEnd:Clear()
@@ -87,6 +86,5 @@ function ShowGuideToastButtonNode:Clear()
     self.GuideTextPanel.OnGuideEnd:Clear()
   end
 end
-
 AssembleComponents(ShowGuideToastButtonNode)
 return ShowGuideToastButtonNode

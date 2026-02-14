@@ -3,10 +3,8 @@ local ModModel = ModController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
 end
-
 function M:InitUIInfo(Params)
   self.Parent = Params.Parent
   self.DyeDraftModel = Params.DyeDraftModel
@@ -38,7 +36,6 @@ function M:InitUIInfo(Params)
     end
   })
 end
-
 function M:OnBtn_ShareChatClick()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -54,7 +51,6 @@ function M:OnBtn_ShareChatClick()
   UIManger:ShowUITip(UIConst.Tip_CommonToast, GText("UI_Dye_Output_CopyBoard"))
   self:Close()
 end
-
 function M:GetCurrentDyePlanInfo()
   local Parent = self.Parent
   if not Parent or not Parent.CurrentSkin then
@@ -64,11 +60,26 @@ function M:GetCurrentDyePlanInfo()
   local CurrentSkin = Parent.CurrentSkin
   local CurrentPlan = Parent.CurrentPlan or 1
   if Parent.Type == CommonConst.ArmoryType.Char then
-    DyePlanInfo.SkinType = "Char"
-    DyePlanInfo.SkinId = CurrentSkin.SkinId
-    local SkinData = DataMgr.Skin[CurrentSkin.SkinId]
-    if SkinData then
-      DyePlanInfo.TargetName = GText(SkinData.SkinName)
+    if Parent.SkinType == CommonConst.DataType.Hair then
+      DyePlanInfo.SkinType = Parent.SkinType
+      DyePlanInfo.SkinId = CurrentSkin.SkinId
+      DyePlanInfo.CharId = self.Parent.Target and self.Parent.Target.CharId
+      local CharData = DataMgr.Char[DyePlanInfo.CharId]
+      local HairData = DataMgr.Hair[CurrentSkin.SkinId]
+      if CharData and HairData then
+        DyePlanInfo.TargetName = table.concat({
+          GText(CharData.CharName),
+          ": ",
+          GText(HairData.Name)
+        })
+      end
+    else
+      DyePlanInfo.SkinType = "Char"
+      DyePlanInfo.SkinId = CurrentSkin.SkinId
+      local SkinData = DataMgr.Skin[CurrentSkin.SkinId]
+      if SkinData then
+        DyePlanInfo.TargetName = GText(SkinData.SkinName)
+      end
     end
   else
     DyePlanInfo.SkinType = "Weapon"
@@ -84,7 +95,7 @@ function M:GetCurrentDyePlanInfo()
     end
   end
   local PlanNames = Parent:GetPlanNames()
-  DyePlanInfo.PlanName = PlanNames[CurrentPlan] or "\230\150\185\230\161\136" .. CurrentPlan
+  DyePlanInfo.PlanName = PlanNames[CurrentPlan] or "方案" .. CurrentPlan
   local Colors = CurrentSkin:GetColors(CurrentPlan)
   DyePlanInfo.Colors = {}
   for i = 1, Parent.ColorPartCount do
@@ -92,7 +103,6 @@ function M:GetCurrentDyePlanInfo()
   end
   return DyePlanInfo
 end
-
 function M:OnBtn_ShareCommunityClick()
   self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
   self.Btn_CopyCode:SetFocus()
@@ -100,21 +110,18 @@ function M:OnBtn_ShareCommunityClick()
   self.ShareCommunityCopyCode = ModModel:GenerateShareCommunityCopyCode(DyePlanInfo)
   self.Btn_CopyCode:SetText(GText(self.ShareCommunityCopyCode))
 end
-
 function M:OnBtn_CopyCodeClick()
   ULowEntryExtendedStandardLibrary.ClipboardSet(self.ShareCommunityCopyCode)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
   UIManger:ShowUITip(UIConst.Tip_CommonToast, GText("UI_Dye_Output_Copy"))
 end
-
 function M:Close()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.Parent and self.Parent.Btn_Share then
     self.Parent.Btn_Share:SetFocus()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -124,14 +131,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.HasAnyFocus = true
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.HasAnyFocus = false
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 return M

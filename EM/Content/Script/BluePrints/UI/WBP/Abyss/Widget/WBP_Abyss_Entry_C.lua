@@ -1,9 +1,7 @@
 require("UnLua")
 local M = Class("Blueprints.UI.BP_UIState_C")
-
 function M:Construct()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Btn_Close:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -45,7 +43,6 @@ function M:OnLoaded(...)
   self:RefreshBaseInfo()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/affix_info_panel_show", "AbyssEntry", nil)
 end
-
 function M:DecreaseReddotDetail()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.ReddotName)
   if CacheDetail and CacheDetail[self.ConfigData.AbyssId] then
@@ -53,11 +50,9 @@ function M:DecreaseReddotDetail()
     ReddotManager.DecreaseLeafNodeCount(self.ReddotName)
   end
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   self:CloseSelf()
 end
-
 function M:InitItems()
   self.List_Entry:ClearListItems()
   self.List_Entry02:ClearListItems()
@@ -144,7 +139,6 @@ function M:InitItems()
     UIUtils.PlayListViewFramingInAnimation(self, self.List_Entry, Params)
   end)
 end
-
 function M:IntiListItems(AllAbyssBuffIDs, NowDungeonBuffIds, PreDungeon1BuffIds, IsDungeon1)
   for _, value in pairs(AllAbyssBuffIDs) do
     local ClassPath = UIUtils.GetCommonItemContentClass()
@@ -188,7 +182,6 @@ function M:IntiListItems(AllAbyssBuffIDs, NowDungeonBuffIds, PreDungeon1BuffIds,
     self.List_Entry02:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:Find(Table, Check)
   for _, value in pairs(Table) do
     if value == Check then
@@ -197,7 +190,6 @@ function M:Find(Table, Check)
   end
   return false
 end
-
 function M:InitConfig(AbyssBuffData)
   local ItemConfigData = {}
   ItemConfigData.BuffInfo = AbyssBuffData.BuffInfo
@@ -210,12 +202,10 @@ function M:InitConfig(AbyssBuffData)
   ItemConfigData.AbyssBuffParameter = AbyssBuffData.AbyssBuffParameter
   return ItemConfigData
 end
-
 function M:CloseSelf()
   self:Close()
   AudioManager(self):SetEventSoundParam(self, "AbyssEntry", {ToEnd = 1})
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -223,7 +213,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIVisibility(IsUseKeyAndMouse)
@@ -233,13 +222,11 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:InitGamepadView()
   end
 end
-
 function M:InitGamepadView()
   if self:HasFocusedDescendants() or self:HasAnyUserFocus() then
     self.List_Entry:SetFocus()
   end
 end
-
 function M:UpdateUIVisibility(IsUseKeyAndMouse)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -259,7 +246,6 @@ function M:UpdateUIVisibility(IsUseKeyAndMouse)
     self.Text_Tips:SetText(GText("UI_RougeLike_End__ClickEmpty"))
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -267,7 +253,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     self:CloseSelf()
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
@@ -280,5 +265,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 return M

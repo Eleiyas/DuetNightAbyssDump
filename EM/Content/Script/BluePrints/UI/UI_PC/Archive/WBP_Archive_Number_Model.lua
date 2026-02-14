@@ -1,11 +1,19 @@
 local MonsterUtils = require("Utils.MonsterUtils")
 local ArchiveNumberModel = {}
-
+ArchiveNumberModel.ArchiveType2Name = {
+  [1001] = "Character",
+  [1002] = "Melee",
+  [1003] = "Ranged",
+  [1004] = "Resource",
+  [1005] = "Read",
+  [1006] = "Enemy"
+}
 function ArchiveNumberModel:GetCharacterSumNumber()
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   local Sum = 0
   local Flag = false
   for _, Info in pairs(DataMgr.Char) do
-    if not Info.IsNotOpen then
+    if not Info.IsNotOpen and (not Info.ReleaseVersion or CurrentVersion >= Info.ReleaseVersion) then
       if Info.GenderTag then
         if not Flag then
           Flag = true
@@ -18,12 +26,12 @@ function ArchiveNumberModel:GetCharacterSumNumber()
   end
   return Sum
 end
-
 function ArchiveNumberModel:GetMeleeSumNumber()
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   local Sum = 0
   for _, Info in pairs(DataMgr.Weapon) do
     local WeaponTags = DataMgr.BattleWeapon[Info.WeaponId].WeaponTag
-    if not Info.IsNotOpen and WeaponTags then
+    if not Info.IsNotOpen and WeaponTags and (not Info.ReleaseVersion or CurrentVersion >= Info.ReleaseVersion) then
       for _, Tag in pairs(WeaponTags) do
         if "Melee" == Tag then
           Sum = Sum + 1
@@ -34,12 +42,12 @@ function ArchiveNumberModel:GetMeleeSumNumber()
   end
   return Sum
 end
-
 function ArchiveNumberModel:GetRangedSumNumber()
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   local Sum = 0
   for _, Info in pairs(DataMgr.Weapon) do
     local WeaponTags = DataMgr.BattleWeapon[Info.WeaponId].WeaponTag
-    if not Info.IsNotOpen and WeaponTags then
+    if not Info.IsNotOpen and WeaponTags and (not Info.ReleaseVersion or CurrentVersion >= Info.ReleaseVersion) then
       for _, Tag in pairs(WeaponTags) do
         if "Ranged" == Tag then
           Sum = Sum + 1
@@ -50,7 +58,6 @@ function ArchiveNumberModel:GetRangedSumNumber()
   end
   return Sum
 end
-
 function ArchiveNumberModel:GetResourceSumNumber()
   local Sum = 0
   for _, Info in pairs(DataMgr.Resource) do
@@ -60,7 +67,6 @@ function ArchiveNumberModel:GetResourceSumNumber()
   end
   return Sum
 end
-
 function ArchiveNumberModel:GetReadSumNumber()
   local BookSeries = {}
   local Sum = 0
@@ -72,7 +78,6 @@ function ArchiveNumberModel:GetReadSumNumber()
   end
   return Sum
 end
-
 function ArchiveNumberModel:GetEnemySumNumber()
   local Sum = 0
   for _, Info in pairs(DataMgr.GalleryRule) do
@@ -82,7 +87,6 @@ function ArchiveNumberModel:GetEnemySumNumber()
   end
   return Sum
 end
-
 function ArchiveNumberModel:GetCurrentNumber(ArchiveType)
   local Avatar = GWorld:GetAvatar()
   local CurrentNum = 0
@@ -108,7 +112,6 @@ function ArchiveNumberModel:GetCurrentNumber(ArchiveType)
   end
   return CurrentNum
 end
-
 function ArchiveNumberModel:GetCurrentBookNumber()
   local Avatar = GWorld:GetAvatar()
   local RemainBookSeries = {}
@@ -140,5 +143,4 @@ function ArchiveNumberModel:GetCurrentBookNumber()
   local CurrentNum = ReadSumNumber - RemainBookSeriesNum
   return CurrentNum
 end
-
 return ArchiveNumberModel

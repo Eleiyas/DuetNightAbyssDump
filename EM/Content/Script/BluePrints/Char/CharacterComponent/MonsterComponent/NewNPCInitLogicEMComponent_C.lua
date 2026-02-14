@@ -3,66 +3,63 @@ local EffectResults = require("BluePrints.Combat.BattleLogic.EffectResults")
 local M = Class({
   "BluePrints.Common.TimerMgr"
 })
-
-function M:TriggerSTLPostStaticCreatorEvent(Mode, Actor)
+function M:NewNpcInitComponent_TriggerSTLPostStaticCreatorEvent(Mode, Actor)
   Mode:TriggerSTLEvent("STLPostStaticCreatorEvent", Actor)
 end
-
-function M:PreInit_Lua(UnitType, UnitId)
-  self.Owner.Data = DataMgr[UnitType][UnitId]
-  if not self.Owner.BornInfo then
-    self.Owner.BornInfo = EffectResults.Result()
+function M:NewNpcInitComponent_PreInit_Lua(Owner, UnitType, UnitId)
+  Owner.Data = DataMgr[UnitType][UnitId]
+  if not Owner.BornInfo then
+    Owner.BornInfo = EffectResults.Result()
   end
 end
-
-function M:CacheBornInfo()
-  if not self.Owner.BornInfo then
-    self.Owner.BornInfo = EffectResults.Result()
+function M:NewNpcInitComponent_CacheBornInfo(Owner)
+  if not Owner.BornInfo then
+    Owner.BornInfo = EffectResults.Result()
   end
 end
-
-function M:GetData(UnitType, UnitId)
-  self.Owner.Data = DataMgr[UnitType][UnitId]
+function M:NewNpcInitComponent_GetData(Owner, UnitType, UnitId)
+  Owner.Data = DataMgr[UnitType][UnitId]
 end
-
-function M:PrepareWaitInitTags_Lua()
-  if self.Owner:IsNeedHideInTalk() then
+function M:NewNpcInitComponent_GetDataInfo(Owner)
+  Owner.BattleCharInfo = nil
+  local RoleId = Owner.CurrentRoleId
+  if not RoleId or 0 == RoleId then
+    return
+  end
+  Owner.BattleCharInfo = DataMgr.BattleMonster[RoleId]
+end
+function M:NewNpcInitComponent_PrepareWaitInitTags_Lua(Owner)
+  if Owner:IsNeedHideInTalk() then
     EventManager:AddEvent(EventID.TalkEnableMonsterSpawn, self, self.OnTalkEnableMonsterSpawn)
-    self:SetWaitInitTag(true, Const.CharWaitInitTag.HideInTalk)
+    Owner:NewInitComponentBase_SetWaitInitTag(true, Const.CharWaitInitTag.HideInTalk)
   end
-  if self.Owner.LoadingAssetState == ENpcLoadingAssetState.EBodyMesh then
-    self:SetWaitInitTag(true, "NpcMeshLoading")
-  end
-end
-
-function M:SyncServerBornInfo()
-  self.Owner.ServerBornInfo = self.Owner.BornInfo:ToEffectStruct()
-end
-
-function M:CallBPReceiveBeginAndCharacterReady()
-  self.Owner.Overridden.ReceiveBeginPlay(self.Owner)
-  self.Owner.Overridden.OnCharacterReady(self.Owner)
-end
-
-function M:OnPostInitSucc()
-  if self.Owner.OnPostInitSucc then
-    self.Owner:OnPostInitSucc()
+  if Owner.bIsTalkNpc and Owner.LoadingAssetState <= ENpcLoadingAssetState.EBodyMesh then
+    Owner:NewInitComponentBase_SetWaitInitTag(true, "NpcMeshLoading")
   end
 end
-
-function M:ClientInteractiveStateRecover()
-  if self.Owner.ClientInteractiveStateRecover then
-    self.Owner:ClientInteractiveStateRecover(Info)
+function M:NewNpcInitComponent_SyncServerBornInfo(Owner)
+  Owner.ServerBornInfo = Owner.BornInfo:ToEffectStruct()
+end
+function M:NewNpcInitComponent_CallBPReceiveBeginAndCharacterReady(Owner)
+  Owner.Overridden.ReceiveBeginPlay(Owner)
+  Owner.Overridden.OnCharacterReady(Owner)
+end
+function M:NewNpcInitComponent_OnPostInitSucc(Owner)
+  if Owner.OnPostInitSucc then
+    Owner:OnPostInitSucc()
   end
 end
-
-function M:InitInteractiveState(WorldRegionEid)
-  if self.Owner.InitInteractiveState then
-    self.Owner:InitInteractiveState(WorldRegionEid)
+function M:NewNpcInitComponent_ClientInteractiveStateRecover(Owner)
+  if Owner.ClientInteractiveStateRecover then
+    Owner:ClientInteractiveStateRecover()
   end
 end
-
-function M:CheckIsActiveFlexibleDestory(Object)
+function M:NewNpcInitComponent_InitInteractiveState(Owner, WorldRegionEid)
+  if Owner.InitInteractiveState then
+    Owner:InitInteractiveState(WorldRegionEid)
+  end
+end
+function M:NewNpcInitComponent_CheckIsActiveFlexibleDestory(Object)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return false
@@ -145,14 +142,13 @@ function M:CheckIsActiveFlexibleDestory(Object)
   end
   return false
 end
-
-function M:TrySetRandomPetShowOrHideState(RandomCreatorId, WorldRegionEid)
+function M:NewNpcInitComponent_TrySetRandomPetShowOrHideState(Owner, RandomCreatorId, WorldRegionEid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return false
   end
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  local OwnerUnitId = self.Owner.UnitId
+  local GameState = UE4.UGameplayStatics.GetGameState(Owner)
+  local OwnerUnitId = Owner.UnitId
   local IsCarryRarity = false
   if DataMgr.Pet[OwnerUnitId] and DataMgr.Pet[OwnerUnitId].Rarity >= DataMgr.GlobalConstant.PetRareLevel.ConstantValue then
     IsCarryRarity = true
@@ -161,16 +157,15 @@ function M:TrySetRandomPetShowOrHideState(RandomCreatorId, WorldRegionEid)
   local CurrentRegionId = Avatar:GetSubRegionId2RegionId()
   if 0 == Avatar.TryMaxPetRegionId then
     if GameState.RegionRandomPetLimitedDailyCount <= 0 and IsCarryRarity then
-      self.Owner:SetActorHideTag("RandomDailyLimit", true)
-      self.Owner:SetActorNoCollisionTag(true, "RandomDailyLimit")
+      Owner:SetActorHideTag("RandomDailyLimit", true)
+      Owner:SetCollisionDisableTag("RandomDailyLimit", true)
     else
-      self.Owner:SetActorHideTag("RandomDailyLimit", false)
-      self.Owner:SetActorNoCollisionTag(false, "RandomDailyLimit")
+      Owner:SetActorHideTag("RandomDailyLimit", false)
+      Owner:SetCollisionDisableTag("RandomDailyLimit", false)
     end
   elseif CurrentRegionId == AvatarTryMaxPetRegionId then
-    self.Owner:SetActorHideTag("RandomDailyLimit", false)
-    self.Owner:SetActorNoCollisionTag(false, "RandomDailyLimit")
+    Owner:SetActorHideTag("RandomDailyLimit", false)
+    Owner:SetCollisionDisableTag("RandomDailyLimit", false)
   end
 end
-
 return M

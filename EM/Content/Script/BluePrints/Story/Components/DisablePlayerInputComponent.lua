@@ -1,20 +1,16 @@
 local FDisablePlayerInputComponent = {}
-
 function FDisablePlayerInputComponent:New(Player, TalkTaskData)
   local Obj = setmetatable({}, {__index = FDisablePlayerInputComponent})
   Obj.Player = Player
   Obj.TalkTaskData = TalkTaskData
   return Obj
 end
-
 function FDisablePlayerInputComponent:Execute()
   self:SetGameInputDisable(true)
 end
-
 function FDisablePlayerInputComponent:Resume()
   self:SetGameInputDisable(false)
 end
-
 function FDisablePlayerInputComponent:SetGameInputDisable(bDisable)
   local Player = self.Player
   if not IsValid(Player) then
@@ -43,5 +39,4 @@ function FDisablePlayerInputComponent:SetGameInputDisable(bDisable)
   EventManager:FireEvent(EventID.SetInputMode, bDisable)
   EventManager:FireEvent(EventID.TalkComp, bDisable)
 end
-
 return FDisablePlayerInputComponent

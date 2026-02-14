@@ -8,7 +8,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Activity.Widget.View.ActivityJumpPageView"
 }
-
 function M:Initialize(Initializer)
   self.OwnerPlayer = nil
   self.ParentWidget = nil
@@ -16,7 +15,6 @@ function M:Initialize(Initializer)
   self.ParentTabId = nil
   self.FocusWidgetName = nil
 end
-
 function M:UpdatePage(OperateSrc)
   local IsReBindClickFunction = false
   if IsReBindClickFunction then
@@ -24,14 +22,19 @@ function M:UpdatePage(OperateSrc)
   end
   self:ResetVariable()
   self:RefreshPageDynamicView()
+  self:UpdatePageDynamicView()
   self.FocusWidgetName = "BackToPageWithJump"
 end
-
 function M:IsCanChangeToGamePadViewMode()
   return self.FocusWidgetName ~= "CheckRewardDetailView"
 end
-
 function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
+  if nil == bIsWithButton then
+    self.FocusWidgetName = nil
+    self.FocusWidgetWidget = nil
+  end
+  DebugPrint("JLY OnUpdateSubUIViewStyle, IsUseGamePad:", IsUseGamePad)
+  DebugPrint("JLY OnUpdateSubUIViewStyle, self:IsCanChangeToGamePadViewMode():", self:IsCanChangeToGamePadViewMode())
   IsUseGamePad = IsUseGamePad and self:IsCanChangeToGamePadViewMode()
   self.Com_BtnExplanation:UpdateUIStyleInPlatform(IsUseGamePad)
   local ChildItemSubWidget = self:GetSupportsKeyDownSubWidget()
@@ -56,8 +59,14 @@ function M:OnUpdateSubUIViewStyle(IsUseGamePad, bIsWithButton)
     self.Key_Task:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Key_More:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
+  local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
+  if ActivityMain then
+    local JumpPageBG = ActivityMain.WidgetBGAnchor:GetChildAt(0)
+    if JumpPageBG and JumpPageBG.UpdateUIStyleInPlatform then
+      JumpPageBG:UpdateUIStyleInPlatform(IsUseGamePad)
+    end
+  end
 end
-
 function M:OnStuffDetailOpenChanged(bIsOpen, Stuff)
   if not self.ParentWidget then
     return
@@ -68,11 +77,9 @@ function M:OnStuffDetailOpenChanged(bIsOpen, Stuff)
     self.ParentWidget:UpdateActivityKeyTips(self.FocusWidgetName, self.FocusWidgetWidget, false)
   end
 end
-
 function M:GetCurFocusWidgetInfo()
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:EnterStuffViewMode()
   if self.IsHideReward then
     return false
@@ -97,9 +104,8 @@ function M:EnterStuffViewMode()
   end
   return true
 end
-
 function M:LeaveStuffViewMode()
-  if self.FocusWidgetName == nil then
+  if self.FocusWidgetName == nil or self.FocusWidgetName == "BackToPageWithJump" then
     return false
   end
   self.FocusWidgetName = nil
@@ -120,27 +126,27 @@ function M:LeaveStuffViewMode()
   end
   return true
 end
-
 function M:GetSupportsFocusSubWidget()
   local ChildItemSubWidget = self.Group_Task:GetChildAt(0)
   return ChildItemSubWidget
 end
-
 function M:GetSupportCommonSubItemWidget()
   local CommonSubItemWidget = self.Group_LimitTimeReward:GetChildAt(0)
   return CommonSubItemWidget
 end
-
 function M:GetSupportsKeyDownSubWidget()
   local ChildItemSubWidget = self.Group_Task:GetChildAt(0)
   ChildItemSubWidget = ChildItemSubWidget or self.Group_TaskProgress:GetChildAt(0)
   ChildItemSubWidget = ChildItemSubWidget or self.Group_Common_SubItem:GetChildAt(0)
   return ChildItemSubWidget
 end
-
 function M:GetCurFocusWidgetInfo()
   local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
   if ActivityMain then
+    local GoToBtnWidgetIndex = self.WS:GetActiveWidgetIndex()
+    if 1 == GoToBtnWidgetIndex then
+      return self.FocusWidgetName, self.FocusWidgetWidget
+    end
     local JumpPageBG = ActivityMain.WidgetBGAnchor:GetChildAt(0)
     if JumpPageBG then
       return JumpPageBG.FocusWidgetName, JumpPageBG.FocusWidgetWidget
@@ -148,7 +154,6 @@ function M:GetCurFocusWidgetInfo()
   end
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -160,12 +165,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.SpecialLeft then
@@ -177,6 +180,7 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
       if self.ParentWidget then
         self.ParentWidget:UpdateActivityKeyTips(self.FocusWidgetName, self.FocusWidgetWidget)
       end
+      self.IsFocusInSpecialLeft = true
     end
   elseif InKeyName == UIConst.GamePadKey.FaceButtonLeft then
     local PageConfigData = DataMgr.EventPortal[self.CurActivityId]
@@ -187,7 +191,11 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
       IsEventHandled = false
     else
       IsEventHandled = true
-      self:GoToShopClick()
+      if self.RewardWidget and self.RewardWidget.GoToShopClick then
+        self.RewardWidget:GoToShopClick()
+      else
+        self:GoToShopClick()
+      end
     end
   elseif InKeyName == UIConst.GamePadKey.FaceButtonBottom then
     local PageConfigData = DataMgr.EventPortal[self.CurActivityId]
@@ -203,8 +211,7 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   elseif InKeyName == UIConst.GamePadKey.LeftThumb then
     IsEventHandled = self:EnterStuffViewMode()
   elseif InKeyName == UIConst.GamePadKey.RightThumb then
-    IsEventHandled = true
-    self:GoToMoreClick()
+    IsEventHandled = self:GoToMoreClick()
   elseif InKeyName == UIConst.GamePadKey.FaceButtonRight then
     local ChildItemSubWidget = self:GetSupportsFocusSubWidget()
     local PlayerController = self:GetOwningPlayer()
@@ -217,6 +224,7 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
         self.ParentWidget:UpdateActivityKeyTips()
         self.ParentWidget:SetFocus()
       end
+      self.IsFocusInSpecialLeft = false
     else
       IsEventHandled = self:LeaveStuffViewMode()
     end
@@ -236,14 +244,31 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
       IsEventHandled = ChildItemSubWidget:HandleKeyDownOnGamePad(InKeyName)
     end
   end
+  if not IsEventHandled then
+    local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
+    if ActivityMain then
+      local JumpPageBG = ActivityMain.WidgetBGAnchor:GetChildAt(0)
+      if JumpPageBG and "function" == type(JumpPageBG.HandleKeyDownOnGamePad) then
+        IsEventHandled = JumpPageBG:HandleKeyDownOnGamePad(InKeyName)
+      end
+    end
+  end
   return IsEventHandled
 end
-
 function M:Destruct()
   if self.CurActivityId then
     ActivityReddotHelper.RemoveReddotListenByEventId(self.CurActivityId, self)
   end
 end
-
+function M:ReceiveEnterStateSelf(StackAction)
+  if 1 == StackAction then
+    if self.FocusWidgetName ~= nil and self.FocusWidgetWidget == self.List_Reward then
+      self:EnterStuffViewMode()
+    end
+    if self.IsFocusInSpecialLeft then
+      self.FocusWidgetWidget:SetFocus()
+    end
+  end
+end
 AssembleComponents(M)
 return M

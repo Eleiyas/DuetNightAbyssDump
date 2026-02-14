@@ -14,7 +14,6 @@ local QuestChainTypeEnum = {
   Normal = 2,
   Side = 3
 }
-
 function WBP_TaskSubItem_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.Index = nil
@@ -27,25 +26,30 @@ function WBP_TaskSubItem_C:Initialize(Initializer)
   self.IsExpansion = false
   self.IsDoingQuest = false
 end
-
+function WBP_TaskSubItem_C:OnAnimationStarted(Anim)
+  if Anim == self.Text_Normal then
+    self.Text_TaskName:SetColorAndOpacity(self.Text_TaskName_NormalColor)
+    self.Text_TaskPosition:SetColorAndOpacity(self.Text_TaskPos_NormalColor)
+  elseif Anim == self.Text_Select then
+    self.Text_TaskName:SetColorAndOpacity(self.Text_TaskName_SelectColor)
+    self.Text_TaskPosition:SetColorAndOpacity(self.Text_TaskPos_SelectColor)
+  end
+end
 function WBP_TaskSubItem_C:Construct()
   EventManager:AddEvent(EventID.OnSelectQuestSubItem, self, self.OnQuestSelectedToStopAnimation)
   self.IsDestroied = false
 end
-
 function WBP_TaskSubItem_C:Destruct()
   self.Super.Destruct(self)
   self.Common_List_Subcell_PC.Button_Area.OnClicked:Clear()
   EventManager:RemoveEvent(EventID.OnSelectQuestSubItem, self, self.OnQuestSelectedToStopAnimation)
   self.IsDestroied = true
 end
-
 function WBP_TaskSubItem_C:OnQuestSelectedToStopAnimation(SelectId)
   if nil == SelectId or self.QuestChainId ~= SelectId then
     self:OnQuestUnSelect()
   end
 end
-
 function WBP_TaskSubItem_C:RefreshTaskSubItemInfo(Content)
   if not Content then
     print(_G.LogTag, "WBP_TaskSubItem_C.OnListItemObjectSet: Content is nil!")
@@ -105,23 +109,25 @@ function WBP_TaskSubItem_C:RefreshTaskSubItemInfo(Content)
     self.Text_TaskName:SetText(GText("Quest_ToBeContinued"))
     self.Text_TaskPosition:SetVisibility(UE4.ESlateVisibility.Collapsed)
   else
-    self.Text_TaskPosition:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    local UnlockTitle = DataMgr.QuestChain[self.QuestChainId].UnlockTitle
     if self.State == QuestRealStateEnum.Lock and UnlockTitle then
       self.Text_TaskName:SetText(GText(UnlockTitle))
     else
       self.Text_TaskName:SetText(self.QuestName)
     end
+  end
+  if "" ~= self.QuestPosition then
+    self.Text_TaskPosition:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.Text_TaskPosition:SetText(self.QuestPosition)
+  else
+    self.Text_TaskPosition:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_TaskSubItem_C:OnSubItemClicked()
   self.MainWidget.RootWidget:SetFocus()
 end
-
 function WBP_TaskSubItem_C:FoldButtonOnClited()
 end
-
 function WBP_TaskSubItem_C:OnQuestSelected()
   if -1 ~= self.QuestChainId then
     local Type = DataMgr.QuestChain[self.QuestChainId].QuestChainType
@@ -152,19 +158,15 @@ function WBP_TaskSubItem_C:OnQuestSelected()
   end
   EventManager:FireEvent(EventID.OnSelectQuestSubItem, self.QuestChainId)
 end
-
 function WBP_TaskSubItem_C:OnQuestUnSelect()
   self.Common_List_Subcell_PC:OnCellUnSelect()
   self:PlayTextAnimation(self.Text_Normal)
-  self.OwnerWidget.Common_List_Cell_PC.Bg_Select:SetRenderOpacity(0)
   self.OwnerWidget.Common_List_Cell_PC:OnCellUnSelect()
   self.OwnerWidget.Common_List_Cell_PC.IsSelected = false
 end
-
 function WBP_TaskSubItem_C:SelectQuestProactively()
   self.Common_List_Subcell_PC:OnCellClicked()
 end
-
 function WBP_TaskSubItem_C:GetDetailInfo()
   local Info = TaskUtils:GetQuestDetail(self.QuestChainId, self.QuestID)
   if Info and Info.SubRegionId ~= nil and Info.SubRegionId > 0 then
@@ -189,7 +191,7 @@ function WBP_TaskSubItem_C:GetDetailInfo()
         self.SubRegionId = DataMgr.QuestChain[self.QuestChainId].LockShowSubRegionId
         self.TeleportPointName = DataMgr.QuestChain[self.QuestChainId].LockShowTeleportPointName
       else
-        ScreenPrint(string.format("WBP_TaskSubItem_C: \228\187\187\229\138\161\233\157\162\230\157\191Item\229\138\160\232\189\189\229\140\186\229\159\159\228\191\161\230\129\175\232\142\183\229\143\150\229\164\177\232\180\165\239\188\140\232\175\183\230\163\128\230\159\165STL\230\152\175\229\144\166\233\133\141\231\189\174\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185, \228\187\187\229\138\161Id: %s", self.QuestID))
+        ScreenPrint(string.format("WBP_TaskSubItem_C: 任务面板Item加载区域信息获取失败，请检查STL是否配置指引点节点, 任务Id: %s", self.QuestID))
       end
     end
     for _, v in pairs(UIObjs) do
@@ -199,12 +201,12 @@ function WBP_TaskSubItem_C:GetDetailInfo()
         self.TeleportPointName = GuidePointLocData[TargetKey].TeleportPointName
         break
       end
-      ScreenPrint(string.format("WBP_TaskSubItem_C: \230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \228\187\187\229\138\161\229\140\186\229\159\159\228\191\161\230\129\175\232\142\183\229\143\150\229\164\177\232\180\165\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\229\135\186\230\149\176\230\141\174, \230\140\135\229\188\149\231\130\185: %s", v:GetName()))
+      ScreenPrint(string.format("WBP_TaskSubItem_C: 指引点区域数据不存在, 任务区域信息获取失败，请检查导出数据, 指引点: %s", v:GetName()))
       break
     end
   end
   if not Info then
-    ScreenPrint(string.format("WBP_TaskSubItem_C: \228\187\187\229\138\161\232\138\130\231\130\185\228\191\161\230\129\175\232\142\183\229\143\150\229\164\177\232\180\165\239\188\140\232\175\183\230\163\128\230\159\165STL\232\138\130\231\130\185, \228\187\187\229\138\161Id: %s", self.QuestID))
+    ScreenPrint(string.format("WBP_TaskSubItem_C: 任务节点信息获取失败，请检查STL节点, 任务Id: %s", self.QuestID))
     return
   end
   if self.SubRegionId == nil then
@@ -214,9 +216,9 @@ function WBP_TaskSubItem_C:GetDetailInfo()
   if self.SubRegionId and self.SubRegionId > 0 then
     self.RegionId = math.floor(self.SubRegionId / 100)
     if Info.TaskRegionReName ~= "" then
-      self.QuestPosition = GText(Info.TaskRegionReName) .. " \226\128\148\226\128\148 "
+      self.QuestPosition = GText(Info.TaskRegionReName) .. " —— "
     else
-      self.QuestPosition = GText(DataMgr.Region[self.RegionId].RegionName) .. " \226\128\148\226\128\148 "
+      self.QuestPosition = GText(DataMgr.Region[self.RegionId].RegionName) .. " —— "
     end
     if "" ~= Info.TaskSubRegionReName then
       self.QuestPosition = self.QuestPosition .. GText(Info.TaskSubRegionReName)
@@ -227,7 +229,7 @@ function WBP_TaskSubItem_C:GetDetailInfo()
     end
   else
     if Info.TaskRegionReName ~= "" then
-      self.QuestPosition = GText(Info.TaskRegionReName) .. " \226\128\148\226\128\148 "
+      self.QuestPosition = GText(Info.TaskRegionReName) .. " —— "
     end
     if "" ~= Info.TaskSubRegionReName then
       self.QuestPosition = self.QuestPosition .. GText(Info.TaskSubRegionReName)
@@ -245,7 +247,6 @@ function WBP_TaskSubItem_C:GetDetailInfo()
   end
   self:TrySetSTLDetail(self.QuestChainId, self.QuestID)
 end
-
 function WBP_TaskSubItem_C:TrySetSTLDetail(InQuestChain, InQuestId)
   local QuestExtraInfo = TaskUtils:GetQuestExtraInfo(InQuestChain, InQuestId)
   if not QuestExtraInfo or IsEmptyTable(QuestExtraInfo) then
@@ -276,7 +277,6 @@ function WBP_TaskSubItem_C:TrySetSTLDetail(InQuestChain, InQuestId)
     self.QuestName = GText(NewDescription) .. TaskUtils:GetQuestCountExtraInfoString(self.QuestChainId, self.QuestID)
   end
 end
-
 function WBP_TaskSubItem_C:OnTracking(QuestChainId)
   local Texture = TaskUtils:GetIconTextureByTrackQuestChainType(QuestChainId)
   if Texture then
@@ -291,12 +291,10 @@ function WBP_TaskSubItem_C:OnTracking(QuestChainId)
     self.Common_GuidePoint_PC.ClickFunction = nil
   end
 end
-
 function WBP_TaskSubItem_C:CancelTracking()
   self.Group_Guide_Point:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Common_GuidePoint_PC:StopAnimation(self.Common_GuidePoint_PC.Loop)
 end
-
 function WBP_TaskSubItem_C:PlayTextAnimation(Anim)
   if self:IsAnimationPlaying(self.Text_Normal) then
     self:StopAnimation(self.Text_Normal)
@@ -305,7 +303,6 @@ function WBP_TaskSubItem_C:PlayTextAnimation(Anim)
   end
   self:PlayAnimation(Anim)
 end
-
 function WBP_TaskSubItem_C:PlayImageTaskTypeAnimation()
   local QuestChainType
   if -1 == self.QuestChainId then
@@ -323,7 +320,6 @@ function WBP_TaskSubItem_C:PlayImageTaskTypeAnimation()
     self:PlayAnimation(self.Task_SpecialColor)
   end
 end
-
 function WBP_TaskSubItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.MainWidget.CurSelectId ~= self.QuestChainId then
     self:OnQuestSelected()
@@ -331,7 +327,6 @@ function WBP_TaskSubItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self.OwnerWidget.OwnerWidget:InitTabPadKeyInfoForBack()
   return UIUtils.Handle
 end
-
 function WBP_TaskSubItem_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -345,5 +340,4 @@ function WBP_TaskSubItem_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return WBP_TaskSubItem_C

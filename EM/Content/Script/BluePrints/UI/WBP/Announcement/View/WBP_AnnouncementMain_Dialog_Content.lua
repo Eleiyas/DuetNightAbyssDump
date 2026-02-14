@@ -10,56 +10,20 @@ local ReddotNames = {
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self:SetUpFixedText()
-  if AnnounceCommon.bUseWeb then
-    self.WebContent:SetVisibility(UIConst.VisibilityOp.Visible)
-    self.SizeBox_ContentRoot:SetVisibility(UIConst.VisibilityOp.Collapsed)
-  else
-    self.WebContent:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    self.SizeBox_ContentRoot:SetVisibility(UIConst.VisibilityOp.Visible)
-  end
-  local ReconnectSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Loading_Reconnect)
-  local Offset = ReconnectSlot:GetOffsets()
-  Offset.Bottom = -37
-  Offset.Left = 330
-  ReconnectSlot:SetOffsets(Offset)
-  self.Loading_Reconnect.Base:SetRenderOpacity(1)
+  self.WebContent:SetVisibility(UIConst.VisibilityOp.Visible)
+  self.SizeBox_ContentRoot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.WebContent.BindUObject then
     self.WebContent:BindUObject("obj", self, true)
   end
   self.WebContent.OnLoadCompleted:Add(self, function()
-    local function Callback()
-      self.Loading_Reconnect:Close()
-      
-      if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
-        if self._HasLinkImage then
-          self.WebContent:SetVisibility(UE4.ESlateVisibility.Visible)
-          self.List_Announcement:SetNavigationRuleCustom(EUINavigation.Right, {
-            self,
-            self.OnListAnnouncementNavigationRight
-          })
-        else
-          self.WebContent:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
-          self.List_Announcement:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
-        end
-        self._HasLinkImage = false
-      else
-        self.WebContent:SetVisibility(UE4.ESlateVisibility.Visible)
-      end
-    end
-    
-    if self:IsExistTimer(self._WebDelay) then
-      self:RemoveTimer(self._WebDelay)
-    end
-    local _, TimerKey = self:AddTimer(1, Callback)
-    self._WebDelay = TimerKey
+    self:ToggleWebContentVisiblity()
   end)
   self.WebContent.OnLoadError:Add(self, function()
-    self.Loading_Reconnect:Close()
-    self.WebContent:SetVisibility(UIConst.VisibilityOp.Visible)
+    self._LoadError = true
+    self:ToggleWebContentVisiblity()
   end)
   self.List_Announcement.OnCreateEmptyContent:Bind(self, function(self)
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
@@ -83,33 +47,61 @@ function M:Construct()
     self,
     self.OnListAnnouncementNavigationRight
   })
+  self:AddDispatcher(EventID.OnToggleDisconnectUI, self, function(_, HasConfirmUI)
+    self._HasConfirmUIOnWebContent = HasConfirmUI
+    self:ToggleWebContentVisiblity()
+  end)
 end
-
+function M:ToggleWebContentVisiblity()
+  if self._HasConfirmUIOnWebContent then
+    self.WebContent:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    return
+  end
+  if self._LoadError then
+    self.WebContent:SetVisibility(UE4.ESlateVisibility.Visible)
+    self._LoadError = nil
+    return
+  end
+  if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+    if self._HasLinkImage then
+      self.WebContent:SetVisibility(UE4.ESlateVisibility.Visible)
+      self.List_Announcement:SetNavigationRuleCustom(EUINavigation.Right, {
+        self,
+        self.OnListAnnouncementNavigationRight
+      })
+    else
+      self.WebContent:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+      self.List_Announcement:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
+    end
+    self._HasLinkImage = false
+  else
+    self.WebContent:SetVisibility(UE4.ESlateVisibility.Visible)
+  end
+end
 function M:OnBeforePopup(RawUrl, Frame)
   RawUrl = AnnouncementUtils:UrlDecode(RawUrl)
   local NewUrl = string.lower(RawUrl)
-  DebugPrint("\231\156\139\231\156\139Url\230\152\175\229\149\165 ", NewUrl)
+  DebugPrint("看看Url是啥 ", NewUrl)
   if string.find(NewUrl, "opengamesystem|") then
-    DebugPrint("\229\186\148\232\175\165\230\152\175\230\137\190\229\136\176\228\186\134\231\179\187\231\187\159\232\183\179\232\189\172\231\154\132\229\133\179\233\148\174\229\173\151\228\186\134")
+    DebugPrint("应该是找到了系统跳转的关键字了")
     if self.ShowTag ~= AnnounceCommon.ShowTag.InGame then
-      DebugPrint(ErrorTag, "\232\175\165\229\133\172\229\145\138\231\177\187\229\158\139\228\184\141\230\152\175\226\128\156\230\184\184\230\136\143\229\134\133\229\133\172\229\145\138\226\128\157\239\188\140\228\184\141\229\133\129\232\174\184\231\179\187\231\187\159\232\183\179\232\189\172\239\188\129\239\188\129\239\188\129\239\188\129\239\188\129\239\188\140\229\133\172\229\145\138\230\160\135\233\162\152\239\188\154", self.CurContent.Conf.NoticeTitle)
+      DebugPrint(ErrorTag, "该公告类型不是“游戏内公告”，不允许系统跳转！！！！！，公告标题：", self.CurContent.Conf.NoticeTitle)
     end
     local OpenGameSystemInfo = string.split(NewUrl, "opengamesystem|")
     OpenGameSystemInfo = string.split(OpenGameSystemInfo[#OpenGameSystemInfo], ",")
-    OpenGameSystemInfo = string.split(OpenGameSystemInfo[1], "\239\188\140")
+    OpenGameSystemInfo = string.split(OpenGameSystemInfo[1], "，")
     local SystemId = tonumber(OpenGameSystemInfo[1])
     if DataMgr.MainUI[SystemId].AnnouncementMain == "AnnouncementMain" then
-      DebugPrint(ErrorTag, "\229\133\172\229\145\138\228\184\141\229\135\134\232\135\170\229\183\177\232\183\179\232\135\170\229\183\177")
+      DebugPrint(ErrorTag, "公告不准自己跳自己")
       return
     end
     if SystemId then
       function self.Owner.OnCloseCallbackFunction()
         UIUtils.OpenSystem(SystemId, "ResumeAnnouncementMain")
       end
-      
       self.Owner:OnCloseBtnClicked()
     else
-      DebugPrint(ErrorTag, "\232\175\165\229\133\172\229\145\138\231\154\132\232\183\179\232\189\172\232\182\133\233\147\190\230\142\165\230\160\188\229\188\143\228\184\141\229\175\185\239\188\140\228\184\141\229\133\129\232\174\184\231\179\187\231\187\159\232\183\179\232\189\172\239\188\129\239\188\129\239\188\129\239\188\129\239\188\129\239\188\140\229\133\172\229\145\138\230\160\135\233\162\152\239\188\154", self.CurContent.Conf.NoticeTitle)
+      DebugPrint(ErrorTag, "该公告的跳转超链接格式不对，不允许系统跳转！！！！！，公告标题：", self.CurContent.Conf.NoticeTitle)
     end
     return
   end
@@ -117,15 +109,11 @@ function M:OnBeforePopup(RawUrl, Frame)
     UE4.UKismetSystemLibrary.LaunchURL(RawUrl)
   end
 end
-
 function M:Destruct()
   for _, Widget in pairs(self.StyleToContent) do
     if Widget then
       Widget:RemoveFromParent()
     end
-  end
-  if self:IsExistTimer(self._WebDelay) then
-    self:RemoveTimer(self._WebDelay)
   end
   self:UnbindDialogEvent(DialogEvent.OnTitleTabSelected)
   if self.WebContent.UnBindUObject then
@@ -136,13 +124,12 @@ function M:Destruct()
   self.CurrUrl = nil
   self.List_Announcement.OnCreateEmptyContent:Unbind()
   M.Super.Destruct(self)
+  AnnouncementUtils:ClearAnnounceMainUI()
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
 end
-
 function M:SetUpFixedText()
   self.Text_AnnouncementEmpty:SetText(GText("UI_Notice_None"))
 end
-
 function M:PreInitContent(Params, PopupData, Owner)
   M.Super.PreInitContent(self, Params, PopupData, Owner)
   self.Group_Normal:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -159,37 +146,33 @@ function M:PreInitContent(Params, PopupData, Owner)
   self:BindDialogEvent(DialogEvent.OnTitleTabSelected, function(self, TabWidget)
     self.CurrTabIdx = TabWidget.Idx
     self.CurrUrl = nil
-    if self:IsExistTimer(self._WebDelay) then
-      self:RemoveTimer(self._WebDelay)
-    end
+    self.List_Announcement:ScrollToTop()
     self:UpdateAnnoucement()
   end)
   for i, NodeName in ipairs(ReddotNames) do
     self:AddReddotListener(NodeName, i)
   end
-  
   function self.Owner.CloseBtnCallbackFunction()
     AudioManager(self):SetEventSoundParam(self, "AnnouncementMainOpen", {ToEnd = 1})
     ForceStopAsyncTask(self, "UpdateAnnoucementTask")
     self:StopAllAnimations()
     self:PlayAnimation(self.Out)
+    self.WebContent:LoadUrl("about:blank")
     self.WebContent:SetVisibility(UIConst.VisibilityOp.Collapsed)
     for i, NodeName in ipairs(ReddotNames) do
       self:RemoveReddotListener(NodeName)
     end
   end
-  
   self:AddDispatcher(EventID.GameViewportSizeChanged, self, function()
     if self.CurContent then
       self:RealLoadWeb(self.CurContent)
     end
   end)
 end
-
 function M:AddReddotListener(ReddotName, TabIdx)
   ReddotManager.AddListener(ReddotName, self, function(self, Count)
     if not self.Owner.DialogTitle then
-      DebugPrint(ErrorTag, LXYTag, "\229\133\172\229\145\138\229\188\185\231\170\151\231\154\132Tab\229\135\186\233\148\153\239\188\140\230\152\175\229\155\160\228\184\186\233\128\154\231\148\168\229\188\185\231\170\151\231\154\132Tab\229\136\157\229\167\139\229\140\150\230\151\182\229\186\143\230\148\185\228\186\134")
+      DebugPrint(ErrorTag, LXYTag, "公告弹窗的Tab出错，是因为通用弹窗的Tab初始化时序改了")
       return
     end
     local NodeConf = DataMgr.ReddotNode[ReddotName]
@@ -197,11 +180,9 @@ function M:AddReddotListener(ReddotName, TabIdx)
     self.Owner.DialogTitle.Com_Tab:ShowTabRedDot(TabIdx, IsNew, false, false)
   end)
 end
-
 function M:RemoveReddotListener(ReddotName)
   ReddotManager.RemoveListener(ReddotName, self)
 end
-
 function M:InitContent(Params, PopupData, Owner)
   M.Super.InitContent(self, Params, PopupData, Owner)
   AudioManager(self):PlayUISound(self, "event:/ui/common/window_filter_common", "AnnouncementMainOpen", nil)
@@ -213,7 +194,6 @@ function M:InitContent(Params, PopupData, Owner)
     Desc = GText("UI_Controller_Go")
   })
 end
-
 function M:UpdateAnnoucement()
   if self.bNeedRequest then
     ForceStopAsyncTask(self, "UpdateAnnoucementTask")
@@ -235,7 +215,6 @@ function M:UpdateAnnoucement()
   end)
   self:ShowGoBtn(false)
 end
-
 function M:RefreshAllAnnouncement()
   HeroUSDKSubsystem(self):UploadTrackLog_Lua("game_show_notice")
   local Confs = AnnouncementUtils:FilterConfForUI(self.CurrTabIdx, self.ShowTag)
@@ -262,13 +241,13 @@ function M:RefreshAllAnnouncement()
       if not bFirst then
         bFirst = true
         Content.IsSelected = true
+        Content.bForce = true
       end
       self.List_Announcement:AddItem(Content)
     end
   end
   self.List_Announcement:RequestFillEmptyContent()
 end
-
 function M:RealLoadWeb(Content)
   AnnouncementUtils:LoadHtmlContent(Content.Conf, function(DummyUrl, HtmlText)
     if DummyUrl == self.CurrUrl then
@@ -281,37 +260,16 @@ function M:RealLoadWeb(Content)
     end
   end, UIManager(self):GetWidgetRenderSize(self.WebContent).X)
 end
-
 function M:ChangeMainContent(Content, bForce)
-  if AnnounceCommon.bUseWeb then
-    if not self.CurContent or self.CurContent.Conf.NoticeID ~= Content.Conf.NoticeID or bForce then
-      if self:IsExistTimer(self._WebDelay) then
-        self:RemoveTimer(self._WebDelay)
-      end
-      self.Loading_Reconnect:ExInit(true, true)
-      local SlateColor = UE4.UUIFunctionLibrary.StringToSlateColor("151515FF")
-      self.Loading_Reconnect.Base:SetColorAndOpacity(SlateColor.SpecifiedColor)
-      self:RemoveTimer(self.GetHtmlHandle)
-      local _, key = self:AddTimer(0.1, function()
-        self:RealLoadWeb(Content)
-      end)
-      self.GetHtmlHandle = key
-    end
-    self.CurContent = Content
-  else
-    if self.CurrWidget then
-      self.CurrWidget:Close()
-    end
-    self.CurrWidget = self.StyleToContent[Content.Conf.NoticeStyle]
-    if not self.CurrWidget then
-      self.CurrWidget = self:CreateWidgetNew(AnnounceCommon.StyleToContent[Content.Conf.NoticeStyle])
-      self.CurrWidget:AddToParent(self.SizeBox_ContentRoot)
-      self.StyleToContent[Content.Conf.NoticeStyle] = self.CurrWidget
-    end
-    self.CurrWidget:Open(Content)
+  if not self.CurContent or self.CurContent.Conf.NoticeID ~= Content.Conf.NoticeID or bForce then
+    self:RemoveTimer(self.GetHtmlHandle)
+    local _, key = self:AddTimer(0.1, function()
+      self:RealLoadWeb(Content)
+    end)
+    self.GetHtmlHandle = key
   end
+  self.CurContent = Content
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
@@ -330,7 +288,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:RefreshScrollTips()
   end
 end
-
 function M:RefreshScrollTips()
   local Confs = AnnouncementUtils:FilterConfForUI(self.CurrTabIdx, self.ShowTag)
   local length = #Confs
@@ -338,7 +295,6 @@ function M:RefreshScrollTips()
     self:ShowGamepadScrollBtn(true)
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -348,7 +304,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:ShowGoBtn(bShow)
   if bShow then
     self:ShowGamepadShortcut(self.GoBtnIndex)
@@ -356,15 +311,12 @@ function M:ShowGoBtn(bShow)
     self:HideGamepadShortcut(self.GoBtnIndex)
   end
 end
-
 function M:OnWebContentNavigationLeft(MyGeometry, InKeyEvent)
   self:ShowGoBtn(false)
   return self.List_Announcement
 end
-
 function M:OnListAnnouncementNavigationRight(MyGeometry, InKeyEvent)
   self:ShowGoBtn(true)
   return self.WebContent
 end
-
 return M

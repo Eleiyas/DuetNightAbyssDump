@@ -2,7 +2,6 @@ require("UnLua")
 local CircleAroundBlock = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function CircleAroundBlock:Construct()
   self.IsDestroied = false
   self.ActiveState = nil
@@ -13,15 +12,12 @@ function CircleAroundBlock:Construct()
   self:AddDispatcher(EventID.CircleAroundGameSuccess, self, self.GameSuccess)
   self:AddDispatcher(EventID.CircleAroundGameFailed, self, self.GameFailed)
 end
-
 function CircleAroundBlock:GameFailed()
   self:PlayAnimation(self.Fail)
 end
-
 function CircleAroundBlock:GameSuccess()
   self:PlayAnimation(self.Success, 0, 1, UE4.EUMGSequencePlayMode.Reverse)
 end
-
 function CircleAroundBlock:ChangeActiveState(str)
   if str == self.ActiveState then
     return
@@ -45,7 +41,6 @@ function CircleAroundBlock:ChangeActiveState(str)
   end
   self.ActiveState = str
 end
-
 function CircleAroundBlock:ChangeHoverState(str)
   if str == self.HoverState then
     return
@@ -55,7 +50,6 @@ function CircleAroundBlock:ChangeHoverState(str)
   elseif "UnHover" == str then
   end
 end
-
 function CircleAroundBlock:Trigger()
   if self.ActiveState == "CanActive" then
     AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_rotate_pointer_push", "", nil)
@@ -65,5 +59,4 @@ function CircleAroundBlock:Trigger()
     self:ChangeActiveState("CanActive")
   end
 end
-
 return CircleAroundBlock

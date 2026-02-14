@@ -4,14 +4,14 @@ local M = Class({
   "BluePrints.UI.Shop.Banner.WBP_Shop_Banner_Base_C",
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   local BannerTab = self:GetBannerTabData("WBP_Shop_Recommend_WeaponSkin")
   if not BannerTab then
     return
   end
-  self.BannerTab = BannerTab
+  self.BannerTab = setmetatable({}, {__index = BannerTab})
+  self.BannerTab.ItemId = self:GetValidItemId(self.BannerTab)
   self.Btn_Qa:BindEventOnClicked(self, self.OnClickQa)
   self.Btn_Pay.Btn_Buy.OnClicked:Add(self, self.OnBtn_BuyClick)
   self:AddDispatcher(EventID.OnNewWeaponSkinObtained, self, self.OnNewWeaponSkinObtained)
@@ -23,7 +23,6 @@ function M:Construct()
   local bIsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
   self:UpdateGamePadKeyInfo(bIsGamepad)
 end
-
 function M:Destruct()
   if self.Btn_Qa then
     self.Btn_Qa:UnBindEventOnClicked(self, self.OnClickQa)
@@ -36,7 +35,6 @@ function M:Destruct()
   self:RemoveTimer("RefreshLeftTime")
   M.Super.Destruct(self)
 end
-
 function M:OnClickQa()
   if self.BannerTab and self.BannerTab.PreviewType == "WeaponSkin" and self.BannerTab.PreviewId then
     UIManager(self):LoadUINew("ArmorySkin", {
@@ -47,7 +45,6 @@ function M:OnClickQa()
     })
   end
 end
-
 function M:OnBtn_BuyClick()
   local ShopItemData = self:GetShopItemInfo(self.BannerTab.ItemId)
   if not ShopItemData then
@@ -75,7 +72,6 @@ function M:OnBtn_BuyClick()
   }, self)
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_btn_click_normal", nil, nil)
 end
-
 function M:PurchaseWeaponSkin()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -85,17 +81,28 @@ function M:PurchaseWeaponSkin()
   if not ShopItemData then
     return
   end
-  Avatar:PurchaseShopItem(ShopItemData.ItemId, 1)
+  local CurrentCount = Avatar:GetResourceNum(ShopItemData.PriceType)
+  if CurrentCount < self.FinalPrice then
+    local function JumpToShop()
+      self:AddTimer(0.3, function()
+        PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
+      end)
+    end
+    local PopupId = 100263
+    local Params = {}
+    Params.LeftCallbackObj = self
+    Params.RightCallbackObj = self
+    Params.RightCallbackFunction = JumpToShop
+    self.GotoPayWidget = UIManager(self):ShowCommonPopupUI(PopupId, Params, self)
+    return
+  end
+  Avatar:PurchaseShopItem(ShopItemData.ItemId, 1, false)
   self:AddTimer(0.3, function()
-    if self.Parent and self.Parent.List_Recommend then
-      local Item = self.Parent.List_Recommend:GetItemAt(self.BannerId - 1)
-      if Item and Item.SelfWidget then
-        Item.SelfWidget:SetFocus()
-      end
+    if self.GotoPayWidget then
+      self.GotoPayWidget:SetFocus()
     end
   end)
 end
-
 function M:OnNewWeaponSkinObtained(SkinId)
   if SkinId and self.BannerTab and self.BannerTab.PreviewId then
     for _, PreviewSkinId in ipairs(self.BannerTab.PreviewId) do
@@ -106,11 +113,9 @@ function M:OnNewWeaponSkinObtained(SkinId)
     end
   end
 end
-
 function M:OnSoldOutClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText("UI_SHOP_SOLDOUT"))
 end
-
 function M:InitBannerPage(BannerId, Parent)
   self.Parent = Parent
   if BannerId and self.BannerTab.Id and self.BannerTab.Id == BannerId then
@@ -131,9 +136,6 @@ function M:InitBannerPage(BannerId, Parent)
   if not bQualityTag then
     self.Com_QualityTag:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
-  if self.WBP_Shop_Recommend_Common_TItle and self.WBP_Shop_Recommend_Common_TItle.Text_MainTitle and self.BannerTab.Text1 then
-    self.WBP_Shop_Recommend_Common_TItle.Text_MainTitle:SetText(GText(self.BannerTab.Text1))
-  end
   if self.WBP_Shop_Recommend_Common_TItle and self.WBP_Shop_Recommend_Common_TItle.Text_MainTitle and SkinRarity then
     local SkinNameFonts = {
       nil,
@@ -147,8 +149,17 @@ function M:InitBannerPage(BannerId, Parent)
       self.WBP_Shop_Recommend_Common_TItle.Text_MainTitle:SetFont(self.WBP_Shop_Recommend_Common_TItle[SkinNameFonts[SkinRarity]])
     end
   end
+  if self.WBP_Shop_Recommend_Common_TItle and self.WBP_Shop_Recommend_Common_TItle.Text_MainTitle and self.BannerTab.Text1 then
+    self.WBP_Shop_Recommend_Common_TItle:SetText(GText(self.BannerTab.Text1))
+  end
   if self.Text_ActivityDesc_White then
     self.Text_ActivityDesc_White:SetText(GText("UI_WeaponSkin_Preview"))
+  end
+  if self.Text_Detail and self.BannerTab.Text1Sub then
+    self.Text_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.Text_Detail:SetText(GText(self.BannerTab.Text1Sub))
+  elseif self.Text_Detail then
+    self.Text_Detail:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
   self:InitActivity_TimeInfo()
   if not self:IsAnyAnimationPlaying() then
@@ -158,7 +169,6 @@ function M:InitBannerPage(BannerId, Parent)
   self:InitBtn_PayInfo()
   AudioManager(self):PlayUISound(self, "event:/ui/common/shop_recommend_lightblade", nil, nil)
 end
-
 function M:InitBtn_PayInfo()
   local CutoffInfo = self:GetCutoffInfo(self.BannerTab.ItemId)
   local ShopItemInfo = self:GetShopItemInfo(self.BannerTab.ItemId)
@@ -169,7 +179,7 @@ function M:InitBtn_PayInfo()
       self.Btn_Pay.Text_BtnEmpty:SetText(GText("UI_SHOP_SOLDOUT"))
       self.Btn_Pay.Text_BtnEmpty:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
       self.Btn_Pay.Text_BtnBuy:SetVisibility(UIConst.VisibilityOp.Collapsed)
-      self.Btn_Pay.Btn_Buy:SetForbidden(true)
+      self.Btn_Pay:ForbidBtn(true)
       self.Btn_Pay.Group_More:SetVisibility(UIConst.VisibilityOp.Collapsed)
       self.Btn_Pay.Group_BuyNum:SetVisibility(UIConst.VisibilityOp.Collapsed)
       self.Btn_Pay.WS_Detail:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -224,16 +234,14 @@ function M:InitBtn_PayInfo()
     end
   end
 end
-
 function M:InitActivity_TimeInfo()
   if self.BannerTab and self.BannerTab.EndTime then
     self:AddTimer(1.0, self.RefreshLeftTime, true, 0, "RefreshLeftTime", true)
     self:RefreshLeftTime()
-  elseif self.HB_Time then
-    self.HB_Time:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  elseif self.HB then
+    self.HB:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetCutoffInfo(ItemId)
   if not ItemId then
     return nil
@@ -245,7 +253,6 @@ function M:GetCutoffInfo(ItemId)
   end
   return nil
 end
-
 function M:GetShopItemInfo(ItemId)
   if not ItemId then
     return nil
@@ -257,7 +264,6 @@ function M:GetShopItemInfo(ItemId)
   end
   return nil
 end
-
 function M:RefreshLeftTime()
   local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.BannerTab.EndTime)
   if RemainTimeDict then
@@ -267,26 +273,22 @@ function M:RefreshLeftTime()
     self:RemoveTimer("RefreshLeftTime")
   end
 end
-
 function M:PlayInAnimation()
   if self.In then
     self:PlayAnimation(self.In)
   end
 end
-
 function M:PlayOutAnimation()
   if self.Out then
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:IsAnyAnimationPlaying()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Out) then
     return true
   end
   return false
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -302,7 +304,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonBottom then
@@ -314,7 +315,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPCKeyDown(InKeyName)
   local IsEventHandled = false
   if "SpaceBar" == InKeyName then
@@ -323,17 +323,14 @@ function M:OnPCKeyDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local bGamePad = CurInputDevice == ECommonInputType.Gamepad
   self:UpdateGamePadKeyInfo(bGamePad)
 end
-
 function M:UpdateGamePadKeyInfo(bGamePad)
   local TargetVisiblity = bGamePad and UIConst.VisibilityOp.SelfHitTestInvisible or UIConst.VisibilityOp.Collapsed
   if self.Btn_Pay and self.Btn_Pay.Key_ControllerBuy then
     self.Btn_Pay.Key_ControllerBuy:SetVisibility(TargetVisiblity)
   end
 end
-
 return M

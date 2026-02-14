@@ -14,49 +14,39 @@ GachaBase.__Props__ = {
   GachaTimes = prop.getter("Data", "GachaTimes"),
   GachaLimit = prop.getter("Data", "GachaLimit")
 }
-
 function GachaBase:Init(GachaId)
   if not GachaId then
     return
   end
   self.GachaId = GachaId
 end
-
 function GachaBase:SelfSelectData()
   return nil
 end
-
 function GachaBase:IsSelfSelectGacha()
   return self:SelfSelectData() ~= nil
 end
-
 function GachaBase:Type()
   return ""
 end
-
 FormatProperties(GachaBase)
 local Gacha = Class("Gacha", GachaBase)
 Gacha.__Props__ = {
   IsSendGachaResource = prop.prop("Int", "save", 0)
 }
-
 function Gacha:Data()
   return DataMgr.Gacha[self.GachaId]
 end
-
 function Gacha:SelfSelectData()
   return DataMgr.GachaSelect[self.GachaId]
 end
-
 FormatProperties(Gacha)
 local GachaDictBase = Class("GachaDictBase", CustomTypes.CustomDict)
 GachaDictBase.KeyType = BaseTypes.Int
 GachaDictBase.ValueType = GachaBase
-
 function GachaDictBase:NewGacha(GachaId)
   return self.ValueType(GachaId)
 end
-
 function GachaDictBase:UpdateUsable(GachaId, NewState)
   if not self[GachaId] then
     return
@@ -64,7 +54,6 @@ function GachaDictBase:UpdateUsable(GachaId, NewState)
   self[GachaId].Usable = NewState
   self[GachaId] = self[GachaId]
 end
-
 function GachaDictBase:SelfSelectItem(GachaId, ItemId)
   if not self[GachaId] then
     return
@@ -72,7 +61,6 @@ function GachaDictBase:SelfSelectItem(GachaId, ItemId)
   self[GachaId].SelfSelect = ItemId
   self[GachaId] = self[GachaId]
 end
-
 local GachaDict = Class("GachaDict", GachaDictBase)
 GachaDict.ValueType = Gacha
 local GachaRecord = Class("GachaRecord", CustomTypes.CustomAttr)
@@ -85,7 +73,6 @@ GachaRecord.__Props__ = {
   Star = prop.prop("Int", "save"),
   Time = prop.prop("Int", "save")
 }
-
 function GachaRecord:Init(GachaEntity, Record, Time)
   self.GachaId = GachaEntity.GachaId
   self.GachaType = GachaEntity:Type()
@@ -95,7 +82,6 @@ function GachaRecord:Init(GachaEntity, Record, Time)
   self.Star = Record.Star
   self.Time = Time
 end
-
 function GachaRecord:Replace(GachaEntity, Record, Time)
   local GachaId = GachaEntity.GachaId
   if self.GachaId ~= GachaId then
@@ -121,7 +107,6 @@ function GachaRecord:Replace(GachaEntity, Record, Time)
     self.Time = Time
   end
 end
-
 function GachaRecord:Dump()
   return {
     GachaId = self.GachaId,
@@ -133,16 +118,13 @@ function GachaRecord:Dump()
     Time = self.Time
   }
 end
-
 FormatProperties(GachaRecord)
 local GachaRecordQueue = Class("GachaRecordQueue", CustomTypes.CustomDict)
 GachaRecordQueue.KeyType = BaseTypes.Int
 GachaRecordQueue.ValueType = GachaRecord
-
 function GachaRecordQueue:NewRecord(GachaEntity, Record, Time)
   return GachaRecord(GachaEntity, Record, Time)
 end
-
 local GuaranteedDict = Class("GuaranteedDict", CustomTypes.CustomDict)
 GuaranteedDict.KeyType = BaseTypes.Str
 GuaranteedDict.ValueType = CustomTypes.Str2IntDict
@@ -150,19 +132,15 @@ local SkinGacha = Class("SkinGacha", GachaBase)
 SkinGacha.__Props__ = {
   CumulativeRewardGot = prop.prop("IntSet", "client save")
 }
-
 function SkinGacha:Data()
   return DataMgr.SkinGacha[self.GachaId]
 end
-
 function Gacha:SelfSelectData()
   return DataMgr.SkinGachaSelect[self.GachaId]
 end
-
 function GachaBase:Type()
   return "Skin"
 end
-
 FormatProperties(SkinGacha)
 local SkinGachaDict = Class("SkinGachaDict", GachaDictBase)
 SkinGachaDict.ValueType = SkinGacha

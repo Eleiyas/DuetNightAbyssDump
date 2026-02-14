@@ -1,18 +1,15 @@
 require("UnLua")
 local BagCommon = require("BluePrints.UI.WBP.Bag.BagCommon")
 local M = Class({
-  "BluePrints.UI.BP_EMUserWidget_C"
+  "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Item.ItemDetails_MenuAnchor:SetLastFocusWidget(self)
   self.Item.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function M:Destruct()
   self.Item.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
 end
-
 function M:Init(ItemType, ItemData, ChooseCallback, ParentWidget, ...)
   if not ItemType then
     return
@@ -54,7 +51,6 @@ function M:Init(ItemType, ItemData, ChooseCallback, ParentWidget, ...)
     self:InitSpecialView(ItemData, ...)
   end
 end
-
 function M:InitCommonView(ItemData)
   self.Text_Name:SetText(ItemData.StuffName)
   if ItemData.AttrIcon then
@@ -82,13 +78,12 @@ function M:InitCommonView(ItemData)
   self.Button_Area.OnClicked:Add(self, self.OnBtnChooseClicked)
   self.Btn_Check.AudioEventPath = "event:/ui/common/click_btn_small"
 end
-
 function M:SetIcon(IconPath, bAsyncLoadIcon)
   if bAsyncLoadIcon then
     self:LoadTextureAsync(IconPath, function(Texture)
       if not Texture then
         Texture = LoadObject("Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'")
-        DebugPrint(ErrorTag, string.format("\231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\232\191\153\233\135\140\231\148\168\233\187\152\232\174\164\231\154\132\229\155\190\230\160\135\233\161\182\228\184\128\228\184\139\n \233\148\153\232\175\175\231\154\132\232\183\175\229\190\132\230\152\175\239\188\154%s", IconPath))
+        DebugPrint(ErrorTag, string.format("用错图标路径了！！！这里用默认的图标顶一下\n 错误的路径是：%s", IconPath))
       end
       if Texture then
         local __IconDynaMaterial = self.Item.Item_BG:GetDynamicMaterial()
@@ -98,20 +93,19 @@ function M:SetIcon(IconPath, bAsyncLoadIcon)
       end
     end, "LoadIcon")
   else
-    assert(IconPath, "\233\129\147\229\133\183\230\161\134\228\188\160\229\133\165Icon\232\183\175\229\190\132\228\184\186\231\169\186")
+    assert(IconPath, "道具框传入Icon路径为空")
     local Icon = LoadObject(IconPath)
     if not Icon then
       Icon = LoadObject("Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'")
-      DebugPrint(ErrorTag, string.format("\231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\232\191\153\233\135\140\231\148\168\233\187\152\232\174\164\231\154\132\229\155\190\230\160\135\233\161\182\228\184\128\228\184\139\n \233\148\153\232\175\175\231\154\132\232\183\175\229\190\132\230\152\175\239\188\154%s", IconPath))
+      DebugPrint(ErrorTag, string.format("用错图标路径了！！！这里用默认的图标顶一下\n 错误的路径是：%s", IconPath))
     end
     local DynamicMaterial = self.Item.Item_BG:GetDynamicMaterial()
     if not IsValid(DynamicMaterial) then
-      DebugPrint("ZDX_DynamicMaterial\228\184\141\229\144\136\230\179\149")
+      DebugPrint("ZDX_DynamicMaterial不合法")
     end
     DynamicMaterial:SetTextureParameterValue("IconMap", Icon)
   end
 end
-
 function M:SetSelected(IsSelected)
   self.IsSelected = IsSelected
   self.Item:StopAllAnimations()
@@ -124,11 +118,9 @@ function M:SetSelected(IsSelected)
     self.Item_Select:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetRarity(Rarity)
   self.Item:SetRarity(Rarity)
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if UIUtils.IsGamepadInput() then
     self:OnBtnChooseHovered()
@@ -137,27 +129,22 @@ function M:OnAddedToFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if UIUtils.IsGamepadInput() then
     self:OnBtnChooseUnHovered()
   end
 end
-
 function M:CheckIsInHovered()
   return self.IsInHovered
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   self.IsShowTips = bIsOpen
   if self.Event_OnMenuOpenChanged then
     self.Event_OnMenuOpenChanged(self.ParentWidget, bIsOpen)
   end
 end
-
 function M:InitSpecialView(ItemData, ...)
 end
-
 function M:OnBtnCheckClicked()
   if self.ParentWidget then
     self.ParentWidget:CloseDialog()
@@ -212,16 +199,16 @@ function M:OnBtnCheckClicked()
     })
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:OnBtnChooseHovered()
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:OnBtnChooseUnHovered()
 end
-
 function M:OnBtnChooseClicked()
+  if UIUtils.IsGamepadInput() and self.IsSelected then
+    return true
+  end
   local bNewSelectState = not self.IsSelected
   self:SetSelected(bNewSelectState)
   local CallbackData
@@ -238,7 +225,6 @@ function M:OnBtnChooseClicked()
   AudioManager(self):PlayItemSound(self, self.ChooseDataInfo.ChooseId, "Click", ItemType)
   return true
 end
-
 function M:OnBtnChooseHovered()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -252,7 +238,6 @@ function M:OnBtnChooseHovered()
   end
   self.IsInHovered = true
 end
-
 function M:OnBtnChooseUnHovered()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -266,5 +251,21 @@ function M:OnBtnChooseUnHovered()
   end
   self.IsInHovered = false
 end
-
+function M:OnFocusReceived(MyGeometry, InFocusEvent)
+  self:AddTimer(0, function()
+    if UIUtils.IsGamepadInput() then
+      self:OnBtnChooseClicked()
+    end
+  end)
+  return true
+end
+function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  local IsEventHandled = false
+  if "Gamepad_FaceButton_Bottom" == InKeyName then
+    IsEventHandled = true
+  end
+  return IsEventHandled
+end
 return M

@@ -1,11 +1,9 @@
 require("UnLua")
 local BP_NetworkManager_C = Class()
 local CONFIRM_RECONNECT = 100074
-
 function BP_NetworkManager_C:Initialize(Initializer)
   print(_G.LogTag, "BP_NetworkManager_C:Initialize")
 end
-
 function BP_NetworkManager_C:LogoutEvent()
   local EMSentrySubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, UEMSentrySubsystem)
   if EMSentrySubsystem then
@@ -19,13 +17,18 @@ function BP_NetworkManager_C:LogoutEvent()
   if ACESubsystem then
     ACESubsystem:Logout()
   end
+  if GWorld.GameInstance and GWorld.GameInstance.ClearKeyListRecord then
+    GWorld.GameInstance:ClearKeyListRecord()
+  end
 end
-
 function BP_NetworkManager_C:DisconnectAndShowUI(info)
   local Uid = "Error"
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Uid = Avatar.Uid
+  end
+  if "Error" == Uid and info and type(info) == "table" and info.Uid then
+    Uid = info.Uid
   end
   self:Disconnect()
   self:LogoutEvent()
@@ -33,9 +36,9 @@ function BP_NetworkManager_C:DisconnectAndShowUI(info)
   PrintTable(info, 2)
   local BanReason = info.Reason
   local BanTime = info.BanTime
-  local RetCode = info.RetCode
+  local RetCode = info.RetCode or info.ErrorCode
   if RetCode == CommonConst.KickAvatarType.KICK_AVATAR_FORCE_PATCH then
-    DebugPrint("\229\188\186\229\136\182patch \232\162\171\232\184\162\228\184\139\231\186\191")
+    DebugPrint("强制patch 被踢下线")
     local Params = {
       LeftCallbackObj = self,
       LeftCallbackFunction = self.TryToGoToLoginScene,
@@ -44,21 +47,47 @@ function BP_NetworkManager_C:DisconnectAndShowUI(info)
     }
     UIManager(self):ShowDisconnectUIConfirm(100151, true, Params)
     return
+  elseif RetCode == CommonConst.KickAvatarType.KICK_AVATAR_BAN or RetCode == ErrorCode.RET_LOGIN_BY_LIMIT_AVATAR then
+    local function GetEnumBanReason(BanReason)
+      BanReason = tostring(BanReason)
+      if "1" == BanReason then
+        return GText("UI_COMMONPOP_TEXT_100052_1")
+      elseif "2" == BanReason then
+        return GText("UI_COMMONPOP_TEXT_100052_2")
+      elseif "3" == BanReason then
+        return GText("UI_COMMONPOP_TEXT_100052_3")
+      elseif "4" == BanReason then
+        return GText("UI_COMMONPOP_TEXT_100052_4")
+      end
+      return GText("UI_COMMONPOP_TEXT_100052_0")
+    end
+    local EnumBanReason = GetEnumBanReason(BanReason)
+    local ShortText = string.format(GText("UI_COMMONPOP_TEXT_100052"), tonumber(Uid) or 0, EnumBanReason, os.date("%Y-%m-%d %H:%M:%S", BanTime))
+    local Params = {
+      ShortText = ShortText,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = self.TryToGoToLoginScene,
+      RightCallbackObj = self,
+      RightCallbackFunction = self.TryToGoToLoginScene
+    }
+    UIManager(self):ShowDisconnectUIConfirm(100051, true, Params)
+    return
   end
+  DebugPrint("lgc@BP_NetworkManager_C:DisconnectAndShowUI RetCode = " .. tostring(RetCode) .. " BanReason = " .. tostring(BanReason) .. " BanTime = " .. os.date("%Y-%m-%d %H:%M:%S", BanTime))
   if "RelayAvatar" == BanReason then
     local Params = {
       LeftCallbackObj = self,
       LeftCallbackFunction = self.TryToGoToLoginScene,
       RightCallbackObj = self,
       RightCallbackFunction = self.TryToGoToLoginScene,
-      ShortText = string.format(GText("UI_COMMONPOP_TEXT_100073"), tostring(Uid))
+      ShortText = string.format(GText("UI_COMMONPOP_TEXT_100073"), tonumber(Uid) or 0)
     }
     UIManager(self):ShowDisconnectUIConfirm(100073, true, Params)
   elseif not BanTime or not BanReason then
     self:EndReConnect(false)
     if not GWorld.bLoginConnectFailed then
       EventManager:FireEvent(EventID.OnNetDisconnect)
-      self:ShowNetDisconnectUIConfirm()
+      self:ShowNetDisconnectUIConfirm(RetCode)
     end
   else
     local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -72,8 +101,16 @@ function BP_NetworkManager_C:DisconnectAndShowUI(info)
     if "Default" == SystemLanguage then
       SystemLanguage = "CN"
     end
+    local ShortText = ""
+    if info.ErrorCode == ErrorCode.RET_LOGIN_BY_LIMIT_IP then
+      ShortText = string.format(GText("UI_Forbidden_IP"), os.date("%Y-%m-%d %H:%M:%S", BanTime))
+    elseif info.ErrorCode == ErrorCode.RET_LOGIN_BY_LIMIT_DEVICE then
+      ShortText = string.format(GText("UI_Forbidden_Equipment"), os.date("%Y-%m-%d %H:%M:%S", BanTime))
+    else
+      ShortText = string.format(GText("UI_COMMONPOP_TEXT_100051"), tonumber(Uid) or 0, os.date("%Y-%m-%d %H:%M:%S", BanTime))
+    end
     local Params = {
-      ShortText = string.format(GText("UI_COMMONPOP_TEXT_100051"), info.Uid or 0, os.date("%Y-%m-%d %H:%M:%S", BanTime)),
+      ShortText = ShortText,
       LeftCallbackObj = self,
       LeftCallbackFunction = self.TryToGoToLoginScene,
       RightCallbackObj = self,
@@ -91,35 +128,31 @@ function BP_NetworkManager_C:DisconnectAndShowUI(info)
     end
   end
 end
-
 function BP_NetworkManager_C:DisconnectAndReturnLogin()
   self:Disconnect()
   self:TryToGoToLoginScene()
   self:LogoutEvent()
 end
-
 function BP_NetworkManager_C:TryToGoToLoginScene()
   GWorld.GameInstance:ClearExitDungeonData()
   self:EndReConnect(false)
   HeroUSDKSubsystem():TryToGoToLoginScene()
 end
-
 function BP_NetworkManager_C:SendResolutionTrack()
   local NewTrack = {}
   local SceneManager = GWorld.GameInstance:GetSceneManager()
   local size = SceneManager:GetWindowSize()
   local NowInterfaceMode = UE4.UGameUserSettings:GetGameUserSettings():GetFullscreenMode()
   local ModeStr = {
-    [EWindowMode.Fullscreen] = "\229\133\168\229\177\143",
-    [EWindowMode.WindowedFullscreen] = "\230\151\160\232\190\185\230\161\134\231\170\151\229\143\163\229\140\150",
-    [EWindowMode.Windowed] = "\231\170\151\229\143\163\229\140\150"
+    [EWindowMode.Fullscreen] = "全屏",
+    [EWindowMode.WindowedFullscreen] = "无边框窗口化",
+    [EWindowMode.Windowed] = "窗口化"
   }
   local str = string.format("%dx%d", size.X, size.Y)
   NewTrack.display_mode = ModeStr[NowInterfaceMode]
   NewTrack.display_resolution = str
   HeroUSDKSubsystem(self):UploadTrackLog_Lua("display_settings", NewTrack)
 end
-
 function BP_NetworkManager_C:OnDisconnectAndLoginAgain()
   self:SendResolutionTrack()
   self:Disconnect()
@@ -133,8 +166,8 @@ function BP_NetworkManager_C:OnDisconnectAndLoginAgain()
   self:LogoutEvent()
   WorldTravelSubsystem():ChangeSceneByAssetPath(Const.DefaultLoginSceneFile)
 end
-
-function BP_NetworkManager_C:ShowNetDisconnectUIConfirm()
+function BP_NetworkManager_C:ShowNetDisconnectUIConfirm(RetCode)
+  DebugPrint("lgc@BP_NetworkManager_C:ShowNetDisconnectUIConfirm RetCode", tostring(RetCode))
   local IsStopGame = true
   if GWorld.GameInstance:GetLoadingUI() then
     IsStopGame = false
@@ -153,10 +186,14 @@ function BP_NetworkManager_C:ShowNetDisconnectUIConfirm()
       RightCallbackObj = self,
       RightCallbackFunction = self.TryToGoToLoginScene
     }
+    if RetCode == CommonConst.KickAvatarType.KICK_AVATAR_CHECK_SCRIPT then
+      Params.ShortText = GText("UI_COMMONPOP_TEXT_100078")
+    else
+      Params.ShortText = GText("UI_COMMONPOP_TEXT_100074")
+    end
     UIManager:ShowDisconnectUIConfirm(CONFIRM_RECONNECT, IsStopGame, Params)
   end
 end
-
 function BP_NetworkManager_C:UpdateNetDisconnectUIConfirm()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local NetDisConnectedDialogUI = UIManager:GetUIObj("NetDisConnectedDialog")
@@ -173,7 +210,6 @@ function BP_NetworkManager_C:UpdateNetDisconnectUIConfirm()
     end
   end
 end
-
 function BP_NetworkManager_C:StartShowReConnectUI()
   if not GWorld.GameInstance:GetLoadingUI() and UGameplayStatics.GetCurrentLevelName(self) == "Login" then
     return
@@ -182,15 +218,16 @@ function BP_NetworkManager_C:StartShowReConnectUI()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   self.bUIReConnecting = true
   if UIManager then
-    UIManager:LoadUINew("LoadingReconnect")
+    local ReconnectUI = UIManager:GetUIObj("LoadingReconnect")
+    if not ReconnectUI then
+      UIManager:LoadUINew("LoadingReconnect")
+    end
   end
 end
-
 function BP_NetworkManager_C:ConnectSuccess()
   DebugPrint("NetworkMgr:ConnectSuccess")
   self:EndReConnect(true)
 end
-
 function BP_NetworkManager_C:EndReConnect(bReConnectSucceed, bHeartbeatCall)
   if not bHeartbeatCall then
     DebugPrint("NetworkMgr:EndReConnect")
@@ -217,5 +254,4 @@ function BP_NetworkManager_C:EndReConnect(bReConnectSucceed, bHeartbeatCall)
     end
   end
 end
-
 return BP_NetworkManager_C

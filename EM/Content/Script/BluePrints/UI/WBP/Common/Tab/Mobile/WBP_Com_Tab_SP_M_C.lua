@@ -5,12 +5,10 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.SoundFunc = self.PlayClickSound
   self.SoundFuncReceiver = self
 end
-
 function M:Destruct()
   if self.BubbleTimers then
     for TimerId, _ in pairs(self.BubbleTimers) do
@@ -22,7 +20,6 @@ function M:Destruct()
   end
   self:ClearListenEvent()
 end
-
 function M:Init(ConfigData, NotPlayInAnim)
   self.ConfigData = ConfigData
   self.BackCallback = ConfigData.BackCallback
@@ -48,15 +45,12 @@ function M:Init(ConfigData, NotPlayInAnim)
   end
   self:InitListenEvent()
 end
-
 function M:InitListenEvent()
   EventManager:RemoveEvent(EventID.OnPropSetResources, self, self.OnPropSetResources)
 end
-
 function M:ClearListenEvent()
   EventManager:RemoveEvent(EventID.OnPropSetResources, self)
 end
-
 function M:RefreshBaseInfo()
   if self.TitleName ~= nil then
     self.Text_Title:SetText(self.TitleName)
@@ -73,7 +67,6 @@ function M:RefreshBaseInfo()
     end
   end
 end
-
 function M:ResetDynamicNode()
   local DynamicNodeName = {
     Panel_ResourceBar = {NeedRemoveChild = true}
@@ -112,7 +105,7 @@ function M:ResetDynamicNode()
             ItemType = "Resource",
             HandleMouseDown = true
           })
-          ResourceBar:SetResourceId(CoinId)
+          ResourceBar:SetItemId(CoinId)
           if self.bShowBubble then
             self:CheckAndShowLimitedResourceBubble(CoinId, ResourceBar)
           end
@@ -124,24 +117,20 @@ function M:ResetDynamicNode()
     end
   end
 end
-
 function M:SetBgRenderOpacity(Value)
   self.Bg_Bottom:SetRenderOpacity(Value)
   self.Bg_Top:SetRenderOpacity(Value)
 end
-
 function M:OverrideTopResource(OverridenTopResouces)
   self.OverridenTopResouces = OverridenTopResouces
 end
-
 function M:UpdateResource()
   for k, v in pairs(self.ResourceBar) do
     if IsValid(v) then
-      v:RefreshResourceInfo()
+      v:RefreshItemInfo()
     end
   end
 end
-
 function M:UpdateTopTitle(TitleName)
   self.TitleName = TitleName
   if nil ~= TitleName then
@@ -151,12 +140,10 @@ function M:UpdateTopTitle(TitleName)
     self.Text_Title:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateTabs(Tabs)
   local function SortFunc(ComPareA, ComPareB)
-    local IsALocked = ComPareA.IsLocked
-    
-    local IsBLocked = ComPareB.IsLocked
+    local IsALocked = ComPareA.IsLocked or false
+    local IsBLocked = ComPareB.IsLocked or false
     if IsALocked == IsBLocked then
       local SortA = ComPareA.SortId
       local SortB = ComPareB.SortId
@@ -171,7 +158,6 @@ function M:UpdateTabs(Tabs)
       return not IsALocked
     end
   end
-  
   table.sort(Tabs, SortFunc)
   self.Tabs = Tabs
   if #Tabs < 1 then
@@ -194,14 +180,12 @@ function M:UpdateTabs(Tabs)
   end
   self.ScrollBox_Tab:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnReturnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   if type(self.BackCallback) == "function" then
     self.BackCallback(self.OwnerPanel)
   end
 end
-
 function M:OnTabSwitchOn(TabWidget)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
@@ -218,12 +202,10 @@ function M:OnTabSwitchOn(TabWidget)
     self.EventTabSelected(self.ObjTabSelected, TabWidget, self.Tabs[TabWidget.Idx])
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     local ChildWidget = self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0))
@@ -231,7 +213,6 @@ function M:SelectTab(Idx)
     self.ScrollBox_Tab:ScrollWidgetIntoView(ChildWidget)
   end
 end
-
 function M:SelectTabById(TabId)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -243,14 +224,12 @@ function M:SelectTabById(TabId)
     end
   end
 end
-
 function M:ShowTabRedDot(Idx, IsNew, Upgradeable, OhterReddot)
   if self.Tabs[Idx] then
     local TabWidget = self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0))
     TabWidget:SetReddot(IsNew, Upgradeable, OhterReddot)
   end
 end
-
 function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -261,7 +240,6 @@ function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
     end
   end
 end
-
 function M:TabToUp()
   if not self.bEnableSelectTab then
     return
@@ -273,7 +251,6 @@ function M:TabToUp()
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab - 1)
   end
 end
-
 function M:TabToDown()
   if not self.bEnableSelectTab then
     return
@@ -285,7 +262,6 @@ function M:TabToDown()
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab + 1)
   end
 end
-
 function M:EnableTabByIndex(bEnable, TabIndex)
   self.bEnableSelectTab = bEnable
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
@@ -304,7 +280,6 @@ function M:EnableTabByIndex(bEnable, TabIndex)
     end
   end
 end
-
 function M:UnLockTabByIndex(bUnLock, TabIndex)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   if nil ~= TabIndex then
@@ -322,7 +297,6 @@ function M:UnLockTabByIndex(bUnLock, TabIndex)
     end
   end
 end
-
 function M:PlayInAnim()
   if self.In == nil then
     return -1
@@ -331,7 +305,6 @@ function M:PlayInAnim()
   self:PlayAnimation(self.In)
   return self.In:GetEndTime()
 end
-
 function M:PlayOutAnim()
   if self.Out == nil then
     return -1
@@ -340,17 +313,14 @@ function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
   return self.Out:GetEndTime()
 end
-
 function M:PlayTabInAnim()
   self:StopAnimation(self.Panel_Tab_Out)
   self:PlayAnimation(self.Panel_Tab_In)
 end
-
 function M:PlayTabOutAnim()
   self:StopAnimation(self.Panel_Tab_In)
   self:PlayAnimation(self.Panel_Tab_Out)
 end
-
 function M:SetBackBtnAttrColor(AttrName)
   AttrName = AttrName or "Fire"
   if self.Btn_Back then
@@ -358,23 +328,18 @@ function M:SetBackBtnAttrColor(AttrName)
     self.Btn_Back.VX_BackWave:SetBrushFromMaterial(img)
   end
 end
-
 function M:OnPropSetResources(ResourceId)
   if self.ResourceBar and self.ResourceBar[ResourceId] then
-    self.ResourceBar[ResourceId]:RefreshResourceInfo()
+    self.ResourceBar[ResourceId]:RefreshItemInfo()
   end
 end
-
 function M:EnterViewSingleMode()
 end
-
 function M:LeaveViewSingleMode()
 end
-
 function M:PlayClickSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -382,7 +347,6 @@ function M:UpdateReddots()
     end
   end
 end
-
 function M:Handle_KeyEventOnTouch(InKeyName)
   local IsEventHandled = true
   if InKeyName == UE4.EKeys.Escape.KeyName then
@@ -392,11 +356,9 @@ function M:Handle_KeyEventOnTouch(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   return false
 end
-
 function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBar)
   local ResourceInfo = DataMgr.Resource[ResourceId]
   local LimitedInfo = ItemUtils.GetItemLimitedInfo(ResourceId)
@@ -428,16 +390,14 @@ function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBar)
     end
   end
 end
-
 function M:HideLimitedResourceBubbleAfterDelay(ResourceBar, DelayTime)
   if not self.BubbleTimers then
     self.BubbleTimers = {}
   end
-  local TimerId = "LimitedResourceBubble_" .. tostring(ResourceBar.RId)
+  local TimerId = "LimitedResourceBubble_" .. tostring(ResourceBar.Id)
   if self:IsExistTimer(TimerId) then
     self:RemoveTimer(TimerId)
   end
-  
   local function HideBubbleFunc()
     if IsValid(ResourceBar) then
       ResourceBar:HideBubble()
@@ -449,9 +409,7 @@ function M:HideLimitedResourceBubbleAfterDelay(ResourceBar, DelayTime)
       self.BubbleTimers[TimerId] = nil
     end
   end
-  
   self:AddTimer(DelayTime, HideBubbleFunc, false, 0.1, TimerId, true)
   self.BubbleTimers[TimerId] = true
 end
-
 return M

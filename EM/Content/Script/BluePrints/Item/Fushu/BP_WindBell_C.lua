@@ -1,7 +1,6 @@
 local M = Class({
   "BluePrints.Item.Fushu.BP_FushuItemBase_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.InteractiveType = Const.EndByTargetInteractive
@@ -10,29 +9,24 @@ function M:CommonInitInfo(Info)
   self.SkillEffectSp = self.UnitParams.SkillEffectSp
   self.FirstInteractive = true
 end
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   self.Sphere.OnComponentBeginOverlap:Add(self, self.OnPlayerIn)
   self.Sphere.OnComponentEndOverlap:Add(self, self.OnPlayerOut)
   self.Sphere:SetCollisionProfileName("OnlyPlayer", true)
 end
-
 function M:OnPlayerIn(Component, OtherActor, OtherComp)
   self:OnPlayerEnterCheckBuff(OtherActor)
   self.OverlappingPlayer = OtherActor
 end
-
 function M:OnPlayerOut(Component, OtherActor, OtherComp)
   self:OnPlayerLeaveCheckBuff(OtherActor)
   self.OverlappingPlayer = nil
 end
-
 function M:ActiveCombat()
   M.Super.ActiveCombat(self)
   self:OnPlayerEnterCheckBuff(self.OverlappingPlayer)
 end
-
 function M:GetCanOpen()
   if self.StateId == self.InitStateId then
     self.CanOpen = true
@@ -40,7 +34,6 @@ function M:GetCanOpen()
     self.CanOpen = false
   end
 end
-
 function M:OnShowEnd()
   self.ChestInteractiveComponent.bCanUsed = true
   if self.StateId == self.FirstInteractiveStateId then
@@ -49,7 +42,6 @@ function M:OnShowEnd()
     self:ChangeState("Manual", 0, self.InteractiveDoneStateId)
   end
 end
-
 function M:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -71,5 +63,4 @@ function M:OnEnterState(NowStateId)
     self.ChestInteractiveComponent.bCanUsed = false
   end
 end
-
 return M

@@ -1,13 +1,11 @@
 require("UnLua")
 local WBP_DungeonCapture_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_DungeonCapture_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.RemainingTime = 30
   self.TurnRedTime = -1
   self.BGDefaultColor = FLinearColor(0.0, 0.0, 0.0, 0.8)
 end
-
 function WBP_DungeonCapture_C:NotifyBulletJump()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -27,7 +25,6 @@ function WBP_DungeonCapture_C:NotifyBulletJump()
     GuideTextPanel:DeleteGuideMessage(100009)
   end
 end
-
 function WBP_DungeonCapture_C:ShowMessage()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -48,7 +45,6 @@ function WBP_DungeonCapture_C:ShowMessage()
     end
   })
 end
-
 function WBP_DungeonCapture_C:ReActiveCurGuideAnim()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -72,7 +68,6 @@ function WBP_DungeonCapture_C:ReActiveCurGuideAnim()
     end
   end
 end
-
 function WBP_DungeonCapture_C:OnLoaded(...)
   self.bNotAddToTaskPanel = true
   self.KeyToHideSelf = nil
@@ -109,11 +104,9 @@ function WBP_DungeonCapture_C:OnLoaded(...)
     self:AddMessageTimer()
   end
 end
-
 function WBP_DungeonCapture_C:AddMessageTimer()
   self:AddTimer(15, self.ShowMessage, false, 0, "ShowBulletJumpMessage", false)
 end
-
 function WBP_DungeonCapture_C:InitListenEvent()
   self:AddDispatcher(EventID.OnDungeonUIStateUpdated, self, self.OnDungeonUIStateUpdated)
   self:AddDispatcher(EventID.OnRepCaptureRecoveryTime, self, self.OnCaptureRecoveryTimeUpdated)
@@ -122,7 +115,6 @@ function WBP_DungeonCapture_C:InitListenEvent()
   self:AddDispatcher(EventID.OnRepRescueCountDownTime, self, self.UpdateRemainingTimeInRescue)
   self:AddDispatcher(EventID.UpdateHostageDyingCountDown, self, self.UpdateRemainingTimeInHostage)
 end
-
 function WBP_DungeonCapture_C:OnCaptureRecoveryTimeUpdated()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -141,14 +133,12 @@ function WBP_DungeonCapture_C:OnCaptureRecoveryTimeUpdated()
     end
   end
 end
-
 function WBP_DungeonCapture_C:ShowDungeonUI()
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.FadeIn)
   self.panel_time:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.TextBlock_LeftTime:SetColorAndOpacity(self.NormalColor)
   self.AlreadyClose = false
 end
-
 function WBP_DungeonCapture_C:CloseDungeonUI()
   if self.AlreadyClose then
     return
@@ -162,7 +152,6 @@ function WBP_DungeonCapture_C:CloseDungeonUI()
     self.panel_time:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_DungeonCapture_C:UIStateChange_OnTarget()
   self.AlreadyClose = false
   self.StartCountDownTime = UE4.UGameplayStatics.GetGameState(self).ReplicatedTimeSeconds
@@ -173,7 +162,6 @@ function WBP_DungeonCapture_C:UIStateChange_OnTarget()
   self:AddTimer(1, self.UpdateRemainingTime, true, 0, "UpdateCaptureRemainingTime", false)
   self:AddTimer(2, self.AfterGuideIconReplaced, true, 0, "AfterGuideIconReplaced")
 end
-
 function WBP_DungeonCapture_C:AfterGuideIconReplaced()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -197,11 +185,9 @@ function WBP_DungeonCapture_C:AfterGuideIconReplaced()
     end
   end
 end
-
 function WBP_DungeonCapture_C:UIStateChange_AfterTarget()
   self:CloseDungeonUI()
 end
-
 function WBP_DungeonCapture_C:InitTempleDelayTimeUI(Title)
   local TimeStr = self:GetTimeStr(math.floor(self.RemainingTime))
   self.TaskTitle:SetText(GText(Title))
@@ -210,34 +196,29 @@ function WBP_DungeonCapture_C:InitTempleDelayTimeUI(Title)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.FadeIn)
   self.Panel_Time:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_DungeonCapture_C:InitCaptureTimeUIOnShowDownTime()
   local TimeStr = self:GetTimeStr(math.floor(self.RemainingTime))
   self.TaskTitle:SetText(GText("UI_DUNGEON_DES_RESCUE_5"))
   self.TextBlock_LeftTime:SetText(TimeStr)
   self.Panel_Time:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_DungeonCapture_C:InitPartyWaitUI()
   self.TaskTitle:SetText(GText("UI_PARTY_PARKOUR_PRESTART"))
   self:AddTimer(1, self.UpdatePartyWaitUI, true, 0, "UpdatePartyWait")
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.FadeIn)
   self.Panel_Time:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_DungeonCapture_C:UpdatePartyWaitUI()
   local RemainTime = CommonUtils.GetClientTimerStructRemainTime("PartyWaitPlayerEnter")
   local TimeStr = self:GetTimeStr(math.floor(RemainTime))
   self.TextBlock_LeftTime:SetText(TimeStr)
 end
-
 function WBP_DungeonCapture_C:ClosePartyWaitUI()
   self:RemoveTimer("UpdatePartyWait")
   self:Close()
 end
-
 function WBP_DungeonCapture_C:InitClientTimerByHandleName(TimerHandleName, DisplayText, TurnRedTime)
-  assert(TimerHandleName, "\229\191\133\233\161\187\228\188\160\229\133\165TimerHandleName\239\188\129\239\188\129")
+  assert(TimerHandleName, "必须传入TimerHandleName！！")
   self.CurTimerHandleName = TimerHandleName
   self.CurTurnRedTime = TurnRedTime or 0
   self.LastRemainTime = nil
@@ -247,7 +228,6 @@ function WBP_DungeonCapture_C:InitClientTimerByHandleName(TimerHandleName, Displ
   self.Panel_Time:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:UpdateTimerByHandleName()
 end
-
 function WBP_DungeonCapture_C:UpdateTimerByHandleName()
   local RawRemainTime = CommonUtils.GetClientTimerStructRemainTime(self.CurTimerHandleName)
   local RemainTime = math.max(math.floor(RawRemainTime), 0)
@@ -264,7 +244,6 @@ function WBP_DungeonCapture_C:UpdateTimerByHandleName()
   end
   self.LastRemainTime = RemainTime
 end
-
 function WBP_DungeonCapture_C:CloseClientTimerByHandleName()
   self:RemoveTimer("UpdateTimerByHandleName")
   self.CurTimerHandleName = ""
@@ -272,7 +251,6 @@ function WBP_DungeonCapture_C:CloseClientTimerByHandleName()
   self.LastRemainTime = nil
   self:Close()
 end
-
 function WBP_DungeonCapture_C:InitCaptureTimeUIOnHostageDead(HostagePhantomState)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_time:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -286,7 +264,6 @@ function WBP_DungeonCapture_C:InitCaptureTimeUIOnHostageDead(HostagePhantomState
   end
   self:AddDispatcher(EventID.OnTeamRecoveryStateChange, self, self.OnHostageRecoverStateChange)
 end
-
 function WBP_DungeonCapture_C:OnHostageRecoverStateChange(Eid, NewState, _)
   DebugPrint("WBP_DungeonCapture_C:UpdateRemainingTimeInHostage", Eid, NewState, _)
   if NewState == UE4.ETeamRecoveryState.IsWaitingRecover then
@@ -295,7 +272,6 @@ function WBP_DungeonCapture_C:OnHostageRecoverStateChange(Eid, NewState, _)
     self:RemoveDispatcher(EventID.OnRepPhantomDyingDuration)
   end
 end
-
 function WBP_DungeonCapture_C:InitRescueTimeFloatOnHostageDead()
   if self.IsRescuing ~= nil then
     if self.Progress_Rescue then
@@ -313,7 +289,6 @@ function WBP_DungeonCapture_C:InitRescueTimeFloatOnHostageDead()
   self.Progress_Rescue:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Progress_Rescue:SetPercent(0)
 end
-
 function WBP_DungeonCapture_C:UpdateRemainingTimeInHostage(HostageDyingDuration)
   DebugPrint("WBP_DungeonCapture_C:UpdateRemainingTimeInHostage", HostageDyingDuration)
   self.RemainingTime = 15 - (HostageDyingDuration or 0)
@@ -323,7 +298,6 @@ function WBP_DungeonCapture_C:UpdateRemainingTimeInHostage(HostageDyingDuration)
     self.TextBlock_LeftTime_1:SetText(TimeStr)
   end
 end
-
 function WBP_DungeonCapture_C:OnHostageRecoverState(IsShow)
   if IsShow then
     self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -343,12 +317,10 @@ function WBP_DungeonCapture_C:OnHostageRecoverState(IsShow)
     self:RemoveDispatcher(EventID.OnRepPhantomRecoveryValue, self)
   end
 end
-
 function WBP_DungeonCapture_C:UpdateRecoveryValue(RecoveryValue)
   self.Progress_Rescue:SetPercent(RecoveryValue / 100)
   self.TextBlock_LeftTime:SetText(tostring(math.floor(RecoveryValue)) .. "%")
 end
-
 function WBP_DungeonCapture_C:UpdateRemainingTimeInRescue()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   self.RemainingTime = GameState.RescueCountDownTime
@@ -364,7 +336,6 @@ function WBP_DungeonCapture_C:UpdateRemainingTimeInRescue()
     end
   end
 end
-
 function WBP_DungeonCapture_C:UpdateRemainingTime()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -386,7 +357,6 @@ function WBP_DungeonCapture_C:UpdateRemainingTime()
     self:CloseDungeonUI()
   end
 end
-
 function WBP_DungeonCapture_C:UpdateRemainingTimeInTemple()
   self.RemainingTime = self.RemainingTime - 1
   if self.RemainingTime >= 0 then
@@ -396,7 +366,6 @@ function WBP_DungeonCapture_C:UpdateRemainingTimeInTemple()
     self:RemoveTimer("TempleDelayTimer")
   end
 end
-
 function WBP_DungeonCapture_C:RemainingDistance(SelfActor, AnotherActor)
   EMUIAnimationSubsystem:EMStopAnimation(self, self.FadeInRed)
   self.Bg:SetColorAndOpacity(FLinearColor(0.0, 0.0, 0.0, 0.8))
@@ -406,27 +375,22 @@ function WBP_DungeonCapture_C:RemainingDistance(SelfActor, AnotherActor)
   self.TaskTitle:SetText(GText("UI_LIMITEXPLORE_DISTANCE"))
   self.SelfActor = SelfActor
   self.AnotherActor = AnotherActor
-  
   local function RefreshDistance()
     local Distance = self.SelfActor:GetDistanceTo(self.AnotherActor)
     local Meters = math.floor(Distance / 100)
     self.TextBlock_LeftTime:SetText(Meters .. GText("UI_SCALE_METER"))
   end
-  
   RefreshDistance()
   self:AddTimer(0.1, RefreshDistance, true, 0, "RefreshDistanceTimer", false)
 end
-
 function WBP_DungeonCapture_C:PauseRemainingDistance()
   self:RemoveTimer("RefreshDistanceTimer")
 end
-
 function WBP_DungeonCapture_C:EndRemainingDistance()
   self.SelfActor = nil
   self.AnotherActor = nil
   self:Close()
 end
-
 function WBP_DungeonCapture_C:OnImageGuideBecameRelative(Index)
   if 1 == Index then
     self:SetVisibility(ESlateVisibility.Collapsed)
@@ -445,14 +409,12 @@ function WBP_DungeonCapture_C:OnImageGuideBecameRelative(Index)
     return
   end
 end
-
 function WBP_DungeonCapture_C:OutRedState()
   local Bg = self.Bg
   if Bg and self.BGDefaultColor then
     Bg:SetColorAndOpacity(self.BGDefaultColor)
   end
 end
-
 function WBP_DungeonCapture_C:OnDungeonVoteBegin()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -461,7 +423,6 @@ function WBP_DungeonCapture_C:OnDungeonVoteBegin()
   end
   UIManager:LoadUINew("Vote")
 end
-
 function WBP_DungeonCapture_C:AddRemainingTime(Time)
   if not Time or not self.RemainingTime then
     return
@@ -470,20 +431,16 @@ function WBP_DungeonCapture_C:AddRemainingTime(Time)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.AddTime)
   self.RemainingTime = self.RemainingTime + Time
 end
-
 function WBP_DungeonCapture_C:Reset(RemainTime, WarningTime, Now)
   self.StartCountDownTime = Now
   self.RemainingTime = RemainTime
   self.TurnRedTime = WarningTime
 end
-
 function WBP_DungeonCapture_C:SetTitle(Str)
   self.TaskTitle:SetText(Str)
 end
-
 function WBP_DungeonCapture_C:SetTextFromGameMode(Text)
   self.TaskTitle:SetText(GText(Text))
   self.KeyToHideSelf = Text
 end
-
 return WBP_DungeonCapture_C

@@ -7,7 +7,6 @@ local UIUtils = require("Utils.UIUtils")
 Menu_Level_PC_C._components = {
   "BluePrints.UI.UI_PC.Menu.MenuLevelAbyssComponent"
 }
-
 function Menu_Level_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.BtnName = {
@@ -32,14 +31,14 @@ function Menu_Level_PC_C:Initialize(Initializer)
     UI_DUNGEON_DES_TRAINING_28 = "/Game/UI/Texture/Dynamic/Atlas/Menu/T_Menu_Exit.T_Menu_Exit",
     UI_SpecialQuest_GiveUp = "/Game/UI/Texture/Dynamic/Atlas/Menu/T_Menu_Exit.T_Menu_Exit",
     UI_CharTrial_LeaveTitle = "/Game/UI/Texture/Dynamic/Atlas/Menu/T_Menu_Exit.T_Menu_Exit",
-    FeinaEvent_Exit_Title = "/Game/UI/Texture/Dynamic/Atlas/Menu/T_Menu_Exit.T_Menu_Exit"
+    FeinaEvent_Exit_Title = "/Game/UI/Texture/Dynamic/Atlas/Menu/T_Menu_Exit.T_Menu_Exit",
+    UI_Esc_ExitTemple = "/Game/UI/Texture/Dynamic/Atlas/Menu/T_Menu_Exit.T_Menu_Exit"
   }
   self.BtnIdx = 0
   self.CloseBySelf = false
   self.CloseByChild = false
   self.GamePadGiveUpKeyName = "UI_Esc_Challenge"
 end
-
 function Menu_Level_PC_C:OnLoaded()
   self.Super.OnLoaded(self)
   AudioManager(self):PlayUISound(self, "event:/ui/common/esc_menu_open", "EscMenuOpen", nil)
@@ -47,7 +46,6 @@ function Menu_Level_PC_C:OnLoaded()
   self:Init()
   self:PlayInAnim()
 end
-
 function Menu_Level_PC_C:Init()
   self.MaxBtnNum = 10
   self:InitCommonInfo()
@@ -70,11 +68,9 @@ function Menu_Level_PC_C:Init()
     FeinaHud:PlayOutAnim()
   end
 end
-
 function Menu_Level_PC_C:InitCommonInfo()
   self.Text_Title:SetText(GText("UI_Dungeon_DetailTitle"))
 end
-
 function Menu_Level_PC_C:InitByType()
   local Avatar = GWorld:GetAvatar()
   self.InHardBoss = false
@@ -127,13 +123,28 @@ function Menu_Level_PC_C:InitByType()
     elseif GameState.GameModeType == "Paotai" then
       self:InitPaotaiEvent()
       self.InPaotaiEvent = true
+    elseif GameState.GameModeType == "SoloTreasure" then
+      self:InitSoloTreasure()
+      self.InSoloTreasure = true
+    elseif GameState.GameModeType == "MonsterRush" then
+      self:InitMonsterRush()
+      self.InMonsterRush = true
+    elseif GameState.GameModeType == "AutoChess" then
+      self:InitAutoChess()
+      self.IsInAutoChess = true
+      return
     end
   end
   self.IsInCommonDungeon = true
   table.insert(self.BtnName, "UI_HardBoss_TabName_2")
   table.insert(self.ClickFunction, "OnClickExitGame")
 end
-
+function Menu_Level_PC_C:InitSoloTreasure()
+  self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.WidgetSwitcher_Show:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  table.remove(self.BtnName, 3)
+  table.remove(self.ClickFunction, 3)
+end
 function Menu_Level_PC_C:InitFeinaEvent()
   self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.WidgetSwitcher_Show:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -142,7 +153,20 @@ function Menu_Level_PC_C:InitFeinaEvent()
   table.insert(self.BtnName, "FeinaEvent_Exit_Title")
   table.insert(self.ClickFunction, "OnClickExitGame")
 end
-
+function Menu_Level_PC_C:InitMonsterRush()
+  self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.WidgetSwitcher_Show:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  table.remove(self.BtnName, 3)
+  table.remove(self.ClickFunction, 3)
+end
+function Menu_Level_PC_C:InitAutoChess()
+  self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.WidgetSwitcher_Show:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  table.remove(self.BtnName, 3)
+  table.remove(self.ClickFunction, 3)
+  table.insert(self.BtnName, "UI_HardBoss_TabName_2")
+  table.insert(self.ClickFunction, "OnClickExitGame")
+end
 function Menu_Level_PC_C:InitPaotaiEvent()
   self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.WidgetSwitcher_Show:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -151,11 +175,10 @@ function Menu_Level_PC_C:InitPaotaiEvent()
   table.remove(self.BtnName, 2)
   table.remove(self.ClickFunction, 2)
 end
-
 function Menu_Level_PC_C:InitTemple()
   self.WidgetSwitcher_Type:SetActiveWidgetIndex(3)
   table.insert(self.BtnName, "UI_TEMPLE_RESTART")
-  table.insert(self.BtnName, "UI_Rouge_ESC_EndOut")
+  table.insert(self.BtnName, "UI_Esc_ExitTemple")
   table.insert(self.ClickFunction, "TempleRestart")
   table.insert(self.ClickFunction, "OnClickExitGame")
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -163,20 +186,24 @@ function Menu_Level_PC_C:InitTemple()
   local StarLevel = GameState.MaxTempleStar or 0
   local Ids = TempleInfo.RewardId
   local FailReason = "Quit"
+  local IsEventTemple = DataMgr.TempleEventLevel[GameState.DungeonId] ~= nil
   if 3 == #Ids then
     self.IsStarLevel = true
     if StarLevel < 0 or StarLevel > 3 then
-      error("\230\156\172\229\133\179\232\174\190\231\189\174\230\152\159\231\186\167\232\182\133\229\135\186\229\143\175\232\142\183\229\190\151\231\154\132\232\140\131\229\155\180")
+      error("本关设置星级超出可获得的范围")
     end
   elseif 1 == #Ids then
     self.IsStarLevel = false
   else
-    error("\230\156\172\229\133\179\229\165\150\229\138\177\233\133\141\231\189\174\230\156\137\232\175\175\239\188\140\232\175\183\230\173\163\231\161\174\233\133\141\231\189\174\230\152\159\231\186\167\229\165\150\229\138\177\230\136\150\230\151\160\230\152\159\231\186\167\229\165\150\229\138\177")
+    error("本关奖励配置有误，请正确配置星级奖励或无星级奖励")
   end
   self.SizeBox_Rewards:ClearChildren()
   self.WidgetRewards = self:CreateWidgetNew("TempleItem")
   self.WidgetRewards.ParentUI = self
   local RewardsInfo = {}
+  if IsEventTemple then
+    self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
   if self.IsStarLevel then
     local MaxTempleStar = GameState.MaxTempleStar or 0
     for i = 1, #Ids do
@@ -220,10 +247,9 @@ function Menu_Level_PC_C:InitTemple()
   self.WidgetRewards.Btn_Qa:Init(ConfigData)
   self.WidgetRewards.Btn_Qa:SetVisibility(ESlateVisibility.Visible)
 end
-
 function Menu_Level_PC_C:InitParty()
   self.WidgetSwitcher_Type:SetActiveWidgetIndex(3)
-  table.insert(self.BtnName, "UI_Rouge_ESC_EndOut")
+  table.insert(self.BtnName, "UI_Esc_ExitTemple")
   table.insert(self.ClickFunction, "OnClickExitGame")
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local PartyInfo = DataMgr.Party[GameState.DungeonId]
@@ -233,12 +259,12 @@ function Menu_Level_PC_C:InitParty()
   if 3 == #Ids then
     self.IsStarLevel = true
     if StarLevel < 0 or StarLevel > 3 then
-      error("\230\156\172\229\133\179\232\174\190\231\189\174\230\152\159\231\186\167\232\182\133\229\135\186\229\143\175\232\142\183\229\190\151\231\154\132\232\140\131\229\155\180")
+      error("本关设置星级超出可获得的范围")
     end
   elseif 1 == #Ids then
     self.IsStarLevel = false
   else
-    error("\230\156\172\229\133\179\229\165\150\229\138\177\233\133\141\231\189\174\230\156\137\232\175\175\239\188\140\232\175\183\230\173\163\231\161\174\233\133\141\231\189\174\230\152\159\231\186\167\229\165\150\229\138\177\230\136\150\230\151\160\230\152\159\231\186\167\229\165\150\229\138\177")
+    error("本关奖励配置有误，请正确配置星级奖励或无星级奖励")
   end
   self.SizeBox_Rewards:ClearChildren()
   self.WidgetRewards = self:CreateWidgetNew("TempleItem")
@@ -286,26 +312,22 @@ function Menu_Level_PC_C:InitParty()
   self.WidgetRewards.Btn_Qa:Init(ConfigData)
   self.WidgetRewards.Btn_Qa:SetVisibility(ESlateVisibility.Visible)
 end
-
 function Menu_Level_PC_C:InitTraining()
   self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.BtnName[3] = "UI_DUNGEON_DES_TRAINING_27"
   table.insert(self.BtnName, "UI_DUNGEON_DES_TRAINING_28")
   table.insert(self.ClickFunction, "OnClickExitGame")
 end
-
 function Menu_Level_PC_C:InitTrail()
   self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
   table.insert(self.BtnName, "UI_CharTrial_LeaveTitle")
   table.insert(self.ClickFunction, "OnClickExitGame")
 end
-
 function Menu_Level_PC_C:InitHardBoss()
   self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
   table.insert(self.BtnName, "UI_HardBoss_TabName_2")
   table.insert(self.ClickFunction, "OnClickExitGame")
 end
-
 function Menu_Level_PC_C:InitSpecialQuest()
   self.WidgetSwitcher_Type:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_ExpGain:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -315,7 +337,6 @@ function Menu_Level_PC_C:InitSpecialQuest()
   table.insert(self.ClickFunction, "OnClickExitGame")
   self.GamePadGiveUpKeyName = "UI_SpecialQuest_GiveUp"
 end
-
 function Menu_Level_PC_C:InitRougeLike()
   table.insert(self.BtnName, "UI_Rouge_ESC_HalfwayOut")
   table.insert(self.BtnName, "UI_Rouge_ESC_EndOut")
@@ -348,7 +369,6 @@ function Menu_Level_PC_C:InitRougeLike()
     self:InitContractHeatPanel()
   end
 end
-
 function Menu_Level_PC_C:InitContractHeatPanel()
   if GWorld.RougeLikeManager then
     self.Contracts = GWorld.RougeLikeManager.Contract
@@ -367,11 +387,9 @@ function Menu_Level_PC_C:InitContractHeatPanel()
     self.Text_Heat:SetText(CurrentHeatValue)
   end
 end
-
 function Menu_Level_PC_C:OpenContractHeatPanel()
   UIManager(GWorld.GameInstance):LoadUINew("RougeLikeMenuContractPanel")
 end
-
 function Menu_Level_PC_C:ReceiveEnterState(EnteredState)
   self.Super.ReceiveEnterState(self, EnteredState)
   if 1 == EnteredState then
@@ -381,7 +399,6 @@ function Menu_Level_PC_C:ReceiveEnterState(EnteredState)
     end
   end
 end
-
 function Menu_Level_PC_C:InitSetupList()
   self.BtnNums = #self.BtnName
   local ClassPath = UIUtils.GetCommonItemContentClass()
@@ -407,7 +424,6 @@ function Menu_Level_PC_C:InitSetupList()
     end
   end
 end
-
 function Menu_Level_PC_C:InitRoleItemInfos()
   if self.InAbyss or self.InFeinaEvent or self.InTemple or self.InParty then
     return
@@ -428,7 +444,6 @@ function Menu_Level_PC_C:InitRoleItemInfos()
   }
   self:CalcRoleAndRewardsInfo()
 end
-
 function Menu_Level_PC_C:CalcRoleAndRewardsInfo()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -442,7 +457,6 @@ function Menu_Level_PC_C:CalcRoleAndRewardsInfo()
   self:PreInitPropInfo()
   self:CalcPropInfo(Avatar)
 end
-
 function Menu_Level_PC_C:CalcPropInfo(Avatar)
   self.Rewards = Avatar:GetCachedDungeonRewards()
   if self.IsTemple then
@@ -496,7 +510,6 @@ function Menu_Level_PC_C:CalcPropInfo(Avatar)
     self:InitRewardsInfo(self.RewardsArray, self.TileView_Prop)
   end, false, 0, nil, true)
 end
-
 function Menu_Level_PC_C:FillSpRewards(Tag, ItemType, ItemId, Count)
   DebugPrint("@@@ ESC FillSpRewards", Tag, ItemType, ItemId, Count)
   if not self.SpRewards[ItemType] then
@@ -512,7 +525,6 @@ function Menu_Level_PC_C:FillSpRewards(Tag, ItemType, ItemId, Count)
     self.SpRewards[ItemType][ItemId][tostring(Tag)] = self.SpRewards[ItemType][ItemId][tostring(Tag)] + Count
   end
 end
-
 function Menu_Level_PC_C:SortRewardsArray(RewardsArray)
   table.sort(RewardsArray, function(a, b)
     if a.IsFirst ~= b.IsFirst then
@@ -542,7 +554,6 @@ function Menu_Level_PC_C:SortRewardsArray(RewardsArray)
     return false
   end)
 end
-
 function Menu_Level_PC_C:RewardsAddToArray(TotalRewards, Rewards, IsSpecial)
   if not Rewards then
     return
@@ -585,7 +596,6 @@ function Menu_Level_PC_C:RewardsAddToArray(TotalRewards, Rewards, IsSpecial)
     end
   end
 end
-
 function Menu_Level_PC_C:CreateOneReward(RewardType, RewardTypeValue, Id, Num, IsSpecial, IsExtra, IsWalnut, IsFirst, RewardTag)
   if 0 == Num then
     return
@@ -617,7 +627,6 @@ function Menu_Level_PC_C:CreateOneReward(RewardType, RewardTypeValue, Id, Num, I
     return
   end
 end
-
 function Menu_Level_PC_C:CalcRoleInfo(Avatar)
   local NowExps = self:SetNowExps()
   local InitSuccess = false
@@ -629,11 +638,10 @@ function Menu_Level_PC_C:CalcRoleInfo(Avatar)
     Widget.Widget:PlayInAnimation()
   end
   if not InitSuccess then
-    DebugPrint("ljh@:\229\133\179\229\141\161ESC RoleInfo\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165")
+    DebugPrint("ljh@:关卡ESC RoleInfo初始化失败")
     self.Panel_ExpGain:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Menu_Level_PC_C:SetNowExps()
   local NowExps = {}
   for k, _ in pairs(self.RoleItemInfos) do
@@ -652,7 +660,6 @@ function Menu_Level_PC_C:SetNowExps()
   end
   return NowExps
 end
-
 function Menu_Level_PC_C:CalcIncrsExps(NowExps, RoleName)
   local IncrsExps = {}
   for k, _ in pairs(self.RoleItemInfos) do
@@ -680,7 +687,6 @@ function Menu_Level_PC_C:CalcIncrsExps(NowExps, RoleName)
   end
   return IncrsExps
 end
-
 function Menu_Level_PC_C:GetRoleLevelMaxExp(RoleName, Level)
   if "Char" == RoleName then
     return DataMgr.LevelUp[Level].CharLevelMaxExp
@@ -690,31 +696,29 @@ function Menu_Level_PC_C:GetRoleLevelMaxExp(RoleName, Level)
     return DataMgr.WeaponLevelUp[Level].WeaponLevelMaxExp
   end
 end
-
 function Menu_Level_PC_C:InitTimeInfo()
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   self.Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.PlayerState = self.PlayerController.PlayerState
-  if GameState then
-    self.PlayerTime = GameState.ReplicatedAudioTimeSeconds
+  if self.PlayerState then
+    self.PlayerTime = self.PlayerState:GetPlayerEndTime()
   else
+    DebugPrint("Ljh PlayerTime: Empty PlayerState")
     self.PlayerTime = 0
   end
-  local GameMode = UE4.UGameplayStatics.GetGameMode(GameInstance)
+  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if GameMode then
     self.GameTime = GameMode.EMGameState:GetGameEndTime()
   end
   DebugPrint("Ljh PlayerTime:" .. tostring(self.PlayerTime) .. " player start time" .. tostring(self.PlayerState.PlayerStartTime) .. " Replicated Time Seconds:" .. tostring(GameState.ReplicatedTimeSeconds))
 end
-
 function Menu_Level_PC_C:InitStageInfo()
   self:InitTimeInfo()
   self:InitDungeonClearanceTime()
   self:InitDungeonName()
   self.Time:SetTimeText(self.Describe, self.TimeDict)
 end
-
 function Menu_Level_PC_C:InitDungeonLevelIndex(DungeonId)
   local DungeonInfo = self:GetDungeonInfo(DungeonId)
   if DungeonInfo.DungeonType and DungeonInfo.DungeonType == "Temple" then
@@ -756,7 +760,6 @@ function Menu_Level_PC_C:InitDungeonLevelIndex(DungeonId)
   local RomanNum = Const.RomanNum
   self.DungeonLevelIndex = GText(RomanNum[Index])
 end
-
 function Menu_Level_PC_C:PreInitPropInfo()
   self.IntervalTime = 0.06666666666666667
   self.FirstDelayTime = 0.3333333333333333 - self.IntervalTime
@@ -777,15 +780,12 @@ function Menu_Level_PC_C:PreInitPropInfo()
     return Content
   end)
 end
-
 function Menu_Level_PC_C:GetDungeonInfo(DungeonId)
   return DataMgr.Dungeon[DungeonId]
 end
-
 function Menu_Level_PC_C:GetDungeonName(DungeonInfo)
   return GText(DungeonInfo.DungeonName)
 end
-
 function Menu_Level_PC_C:InitDungeonName()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -817,7 +817,6 @@ function Menu_Level_PC_C:InitDungeonName()
     self.DungeonLevelIndex = nil
   end
 end
-
 function Menu_Level_PC_C:InitDungeonClearanceTime()
   if not self.PlayerTime then
     return
@@ -828,7 +827,6 @@ function Menu_Level_PC_C:InitDungeonClearanceTime()
   table.insert(self.TimeDict, 1, {TimeType = "Min", TimeValue = Minute})
   table.insert(self.TimeDict, 2, {TimeType = "Sec", TimeValue = Second})
 end
-
 function Menu_Level_PC_C:InitRewardsInfo(RewardArr, RewardViewWidget)
   local DropItemNumEachRow, DropRowNum = UIUtils.GetTileViewContentMaxCount(RewardViewWidget, "XY", true)
   local RewardTotalNum = #RewardArr
@@ -859,7 +857,6 @@ function Menu_Level_PC_C:InitRewardsInfo(RewardArr, RewardViewWidget)
     RewardViewWidget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function Menu_Level_PC_C:NewPropContent(Content)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   if nil ~= Content then
@@ -867,7 +864,6 @@ function Menu_Level_PC_C:NewPropContent(Content)
     Obj.Id = Content.Id
     Obj.Count = Content.Count
     Obj.IsShowDetails = true
-    
     function Obj.AfterInitCallback(Widget)
       if self.IsAllowPropInAnimation and not Widget.Content.IsPlayedInAnimation then
         Widget:PlayInAnimation()
@@ -877,7 +873,6 @@ function Menu_Level_PC_C:NewPropContent(Content)
       end
       self:OpenTipsBindEvents(Widget)
     end
-    
     if Content.Icon then
       Obj.Icon = Content.Icon
     end
@@ -899,13 +894,11 @@ function Menu_Level_PC_C:NewPropContent(Content)
   end
   return Obj
 end
-
 function Menu_Level_PC_C:OpenTipsBindEvents(Widget)
   local Events = {}
   Events.OnMenuOpenChanged = self.ItemMenuAnchorChanged
   Widget:BindEvents(self, Events)
 end
-
 function Menu_Level_PC_C:ItemMenuAnchorChanged()
   if UIManager(self):IsHaveMenuAnchorOpen() then
     self.KeyTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -913,20 +906,16 @@ function Menu_Level_PC_C:ItemMenuAnchorChanged()
     self.KeyTips:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Menu_Level_PC_C:UpdateMainUIInGamePadClick()
   self.KeyTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:ShowOrHideGamepadRewardKey(false)
 end
-
 function Menu_Level_PC_C:SwitchMainUIPCToGamePad()
   self.KeyTips:SetVisibility(UIConst.VisibilityOp.Visible)
   self:ShowOrHideGamepadRewardKey(true)
 end
-
 function Menu_Level_PC_C:UpdateMainUIWithPCOrMoble()
 end
-
 function Menu_Level_PC_C:SetFocusInGamePad()
   if self.InParty or self.InTemple then
     if self.IsStarLevel then
@@ -936,10 +925,8 @@ function Menu_Level_PC_C:SetFocusInGamePad()
     end
   end
 end
-
 function Menu_Level_PC_C:UpdateBottomTabsInfo()
 end
-
 function Menu_Level_PC_C:SwitchSelectedMode()
   if self.IsInViewMode then
     self.IsInViewMode = false
@@ -989,7 +976,6 @@ function Menu_Level_PC_C:SwitchSelectedMode()
     self:ShowOrHideGamepadRewardKey(false)
   end
 end
-
 function Menu_Level_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   local DungenonBattleCount = UIManager(self):GetUI("DungenonBattleCount")
   local CommonConfirmPanel = UIManager(self):GetUI("CommonConfirmPanel")
@@ -1026,7 +1012,6 @@ function Menu_Level_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function Menu_Level_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1045,12 +1030,10 @@ function Menu_Level_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function Menu_Level_PC_C:OnListBtnClicked(Content)
   UIUtils.PlayCommonBtnSe(self)
   if not self:IsPlayingAnimation(self.Out) then
     local SetUpListUI = Content.SelfWidget
-    
     local function PlayAnimFinished()
       if self[Content.OnClickFunction] == nil then
         return
@@ -1060,31 +1043,25 @@ function Menu_Level_PC_C:OnListBtnClicked(Content)
         self.BtnIdx = Content.Id - 1
       end
     end
-    
     PlayAnimFinished()
   end
 end
-
 function Menu_Level_PC_C:SetFirstSelect()
   local CurContent = self.List_Btn:GetItemAt(0)
   CurContent.SelfWidget:PlayAnimation(CurContent.SelfWidget.Select)
 end
-
 function Menu_Level_PC_C:OnClickContinueGame()
   self:CloseSelf()
 end
-
 function Menu_Level_PC_C:OnClickShowStatistics()
   UIManager(self):LoadUI(UIConst.DUNGEONBATTLECOUNT, "DungenonBattleCount", UIConst.ZORDER_FOR_SECONDARY_POPUP, nil, true)
 end
-
 function Menu_Level_PC_C:OnClickCommonSet()
   local Setting = UIManager(self):LoadUINew("Setting")
   if Setting then
     self:PlayOutAnim()
   end
 end
-
 function Menu_Level_PC_C:OnClickExitGame()
   local PopupId = 100001
   local Params = {}
@@ -1105,7 +1082,7 @@ function Menu_Level_PC_C:OnClickExitGame()
       end
     end
   end
-  if self.InFeinaEvent then
+  if self.InFeinaEvent or self.InSoloTreasure then
     PopupId = 100229
   end
   if self.InRougeLike then
@@ -1125,19 +1102,23 @@ function Menu_Level_PC_C:OnClickExitGame()
     Params.RightCallbackFunction = self.ExitPaotaiEvent
     PopupId = 100226
   end
+  if self.InMonsterRush then
+    PopupId = 100096
+  end
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar:IsInTeam() then
     PopupId = 100105
   end
+  if self.IsInAutoChess then
+    PopupId = 100096
+  end
   UIManager(self):ShowCommonPopupUI(PopupId, Params, self)
 end
-
 function Menu_Level_PC_C:OnClickHalfwayOut()
   if GWorld.RougeLikeManager then
     GWorld.RougeLikeManager:HalfWayOut()
   end
 end
-
 function Menu_Level_PC_C:ExitRougeLike()
   if self.HasRequestedExit then
     return
@@ -1149,7 +1130,6 @@ function Menu_Level_PC_C:ExitRougeLike()
   end
   self:CloseSelf()
 end
-
 function Menu_Level_PC_C:OnClickSkill()
   local AnimObj = self:GetAnimationByName("Out")
   if self:IsAnimationPlaying(self.Out) then
@@ -1168,7 +1148,6 @@ function Menu_Level_PC_C:OnClickSkill()
     end
   })
 end
-
 function Menu_Level_PC_C:ClickConfirmExitInBattle()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if nil ~= GameInstance then
@@ -1190,7 +1169,6 @@ function Menu_Level_PC_C:ClickConfirmExitInBattle()
     Avatar:ExitBattle(false, true)
   end
 end
-
 function Menu_Level_PC_C:ExitHardBossBattle()
   local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
   if CommonDialog then
@@ -1206,7 +1184,6 @@ function Menu_Level_PC_C:ExitHardBossBattle()
     Avatar:ExitBattle(false, true)
   end
 end
-
 function Menu_Level_PC_C:ExitHardBattle()
   local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
   if CommonDialog then
@@ -1218,7 +1195,6 @@ function Menu_Level_PC_C:ExitHardBattle()
   EventManager:FireEvent(EventID.OnSpecialQuestFail, "Exit")
   self:CloseSelf()
 end
-
 function Menu_Level_PC_C:ExitPaotaiEvent()
   local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
   if CommonDialog then
@@ -1227,8 +1203,8 @@ function Menu_Level_PC_C:ExitPaotaiEvent()
   EventManager:FireEvent(EventID.EndCanonMiniGame)
   self:CloseSelf()
 end
-
 function Menu_Level_PC_C:CloseSelf()
+  EventManager:FireEvent(EventID.OnDungeonEscClose)
   if self:IsAnimationPlaying(self.In) then
     return
   end
@@ -1246,7 +1222,6 @@ function Menu_Level_PC_C:CloseSelf()
     return
   end
   self.CloseBySelf = true
-  
   local function PlayAnimFinished()
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
     if IsStandAlone(Player) then
@@ -1254,7 +1229,6 @@ function Menu_Level_PC_C:CloseSelf()
     end
     self:Close()
   end
-  
   if self.CloseByChild then
     PlayAnimFinished()
   else
@@ -1263,7 +1237,6 @@ function Menu_Level_PC_C:CloseSelf()
   end
   self:RemoveInputMethodChangedListen()
 end
-
 function Menu_Level_PC_C:SetPlayerInfo(Player)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -1308,7 +1281,6 @@ function Menu_Level_PC_C:SetPlayerInfo(Player)
     Player:SetCanInteractiveTrigger(false)
   end
 end
-
 function Menu_Level_PC_C:TempleRestart()
   local PopupId = 100097
   local Params = {}
@@ -1318,35 +1290,29 @@ function Menu_Level_PC_C:TempleRestart()
   if GameMode then
     function Params.RightCallbackFunction()
       GameMode:TriggerDungeonComponentFun("ResetPlayerLocation")
-      
       self:CloseSelf()
     end
   end
   UIManager(self):ShowCommonPopupUI(PopupId, Params, self)
 end
-
 function Menu_Level_PC_C:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function Menu_Level_PC_C:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 function Menu_Level_PC_C:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function Menu_Level_PC_C:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function Menu_Level_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if self.InAbyss then
@@ -1360,7 +1326,6 @@ function Menu_Level_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadNa
   end
   self.CurInputDeviceType = CurInputDevice
 end
-
 function Menu_Level_PC_C:InitGamepadView()
   if self:HasFocusedDescendants() or self:HasAnyUserFocus() then
     self.GameInputModeSubsystem:SetTargetUIFocusWidget(self.Btn_1.Button_Area)
@@ -1371,7 +1336,6 @@ function Menu_Level_PC_C:InitGamepadView()
   end
   self:ShowOrHideGamepadRewardKey(true)
 end
-
 function Menu_Level_PC_C:ShowOrHideGamepadRewardKey(show)
   if show then
     if 0 == self.WidgetSwitcher_State:GetActiveWidgetIndex() then
@@ -1381,14 +1345,12 @@ function Menu_Level_PC_C:ShowOrHideGamepadRewardKey(show)
     self.Key_Reward:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Menu_Level_PC_C:InitKeyBoardView()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.KeyTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self:ShowOrHideGamepadRewardKey(false)
   end
 end
-
 function Menu_Level_PC_C:InitCommonButton()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.Key_Reward:CreateCommonKey({
@@ -1419,7 +1381,6 @@ function Menu_Level_PC_C:InitCommonButton()
     self.KeyTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Menu_Level_PC_C:GetFirstRewardInfoById(RewardId)
   local RewardInfo = {}
   local RewardData = DataMgr.Reward[RewardId]
@@ -1442,7 +1403,6 @@ function Menu_Level_PC_C:GetFirstRewardInfoById(RewardId)
   end
   return RewardInfo
 end
-
 function Menu_Level_PC_C:NewTempleContent(Content, index)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   if nil ~= Content then
@@ -1455,7 +1415,6 @@ function Menu_Level_PC_C:NewTempleContent(Content, index)
     Obj.IsShowDetails = true
     Obj.bHasGot = Content.IsGot or false
     Obj.UIName = "DungeonSettlement"
-    
     function Obj.AfterInitCallback(Widget)
       if self.IsAllowPropInAnimation and not Widget.Content.IsPlayedInAnimation then
         Widget:PlayInAnimation()
@@ -1463,7 +1422,6 @@ function Menu_Level_PC_C:NewTempleContent(Content, index)
       else
       end
     end
-    
     Obj.OnMouseButtonUpEvents = {
       Obj = self,
       Callback = function()
@@ -1473,16 +1431,13 @@ function Menu_Level_PC_C:NewTempleContent(Content, index)
   end
   return Obj
 end
-
 function Menu_Level_PC_C:OnMenuOpenChangedCallBack()
 end
-
 function Menu_Level_PC_C:DoNavigateLeft()
   if self.InParty or self.InTemple then
     self.RewardItems[3]:SetFocus()
   end
   return true
 end
-
 AssembleComponents(Menu_Level_PC_C)
 return Menu_Level_PC_C

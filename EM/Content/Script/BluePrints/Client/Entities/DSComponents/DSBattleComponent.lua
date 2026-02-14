@@ -1,12 +1,10 @@
 local Component = {}
-
 function Component:EnterWorld()
   self.logger.debug("DSBattleComponent EnterWorld")
   self.AvatarInfos = {}
   self.PersistPlayerInfos = {}
   self.HasLeaveAvatars = {}
 end
-
 function Component:HandleAvatarBattleInfo(Callback, AvatarBattleInfos)
   self.logger.debug("HandleAvatarBattleInfo [GetAvatarCrossInfo Success]", CommonUtils.TableToString(AvatarBattleInfos))
   local GameMode = UE.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -26,10 +24,9 @@ function Component:HandleAvatarBattleInfo(Callback, AvatarBattleInfos)
     table.insert(PlayerInfos, Info.PlayerInfo)
   end
   self:ServerMulticast("TryAddRecentMatchedFriendList", PlayerInfos)
-  GameMode:OnAvatarInfoInitDS()
+  GameMode:InitDungeonRandomEvent(AvatarBattleInfos)
   self:CallSkynetServerCallback(Callback)
 end
-
 function Component:GetAvatarInfo(GameMode, AvatarEid)
   print(_G.LogTag, "GetAvatarInfo", CommonUtils.Size(self.AvatarInfos))
   local Info = GameMode.AvatarInfos[AvatarEid]
@@ -42,7 +39,6 @@ function Component:GetAvatarInfo(GameMode, AvatarEid)
   end
   return Info
 end
-
 function Component:RequestDSLeaveBattle(Callback, AvatarEid)
   AvatarEid = CommonUtils.ObjId2Str(AvatarEid)
   ServerPrint("RequestDSLeaveBattle", AvatarEid)
@@ -62,54 +58,49 @@ function Component:RequestDSLeaveBattle(Callback, AvatarEid)
   GameMode:TriggerPlayerFailed({AvatarEid})
   self:CallSkynetServerCallback(Callback, ErrorCode.RET_SUCCESS)
 end
-
 function Component:HandleClientNetworkError(AvatarEid)
   ServerPrint("HandleClientNetworkError", CommonUtils.ObjId2Str(AvatarEid))
   local result = self:OnAvatarDestroy(AvatarEid)
   self:CallServerMethod("OnHandleClientNetworkError", AvatarEid, result)
 end
-
 function Component:OnAvatarDestroy(AvatarEid)
-  AvatarEid = CommonUtils.ObjId2Str(AvatarEid)
-  ServerPrint("OnAvatarDestroy", AvatarEid)
-  local PlayerController = UE4.URuntimeCommonFunctionLibrary.GetPlayerControllerByAvatarEid(GWorld.GameInstance, AvatarEid)
+  local AvatarEidStr = CommonUtils.ObjId2Str(AvatarEid)
+  ServerPrint("OnAvatarDestroy", AvatarEidStr)
+  local PlayerController = UE4.URuntimeCommonFunctionLibrary.GetPlayerControllerByAvatarEid(GWorld.GameInstance, AvatarEidStr)
   if PlayerController then
-    PlayerController:OnRealDisconnectWithParams(true)
+    PlayerController:OnRealDisconnect()
     return true
   else
     DebugPrint("OnAvatarDestroy with Controller not found")
-    local GameMode = GWorld.GameInstance:GetCurrentGameMode()
-    GameMode:TriggerPlayerFailed({AvatarEid})
-    GameMode:OnAvatarLogout(AvatarEid)
+    self:HandleNotValidForReconnect(AvatarEidStr)
   end
   return false
 end
-
-function Component:HandleNotValidForReconnect(AvatarEid)
-  ServerPrint("HandleNotValidForReconnect", AvatarEid)
+function Component:HandleNotValidForReconnect(AvatarEidStr)
+  ServerPrint("HandleNotValidForReconnect", AvatarEidStr)
   local GameMode = GWorld.GameInstance:GetCurrentGameMode()
   if not GameMode then
     return
   end
-  GameMode:OnAvatarLogout(AvatarEid)
+  if not self.HasLeaveAvatars[AvatarEidStr] then
+    GameMode:TriggerPlayerFailed({AvatarEidStr})
+  end
+  GameMode:OnAvatarLogout(AvatarEidStr)
 end
-
-function Component:OnAvatarLoseClient(AvatarEid)
-  ServerPrint("OnAvatarLoseClient", AvatarEid)
-  local PlayerController = UE4.URuntimeCommonFunctionLibrary.GetPlayerControllerByAvatarEid(GWorld.GameInstance, AvatarEid)
+function Component:OnAvatarLoseClient(AvatarEidStr)
+  ServerPrint("OnAvatarLoseClient", AvatarEidStr)
+  local PlayerController = UE4.URuntimeCommonFunctionLibrary.GetPlayerControllerByAvatarEid(GWorld.GameInstance, AvatarEidStr)
   if PlayerController then
     PlayerController:OnLoseClient()
   end
 end
-
-function Component:OnAvatarLeaveServer(AvatarEid)
-  if not self.AvatarInfos[AvatarEid] then
+function Component:OnAvatarLeaveServer(AvatarEidStr)
+  if not self.AvatarInfos[AvatarEidStr] then
     return
   end
-  ServerPrint("OnAvatarLeaveServer but still in DS", AvatarEid)
-  self:HandleNotValidForReconnect(AvatarEid)
+  ServerPrint("OnAvatarLeaveServer but still in DS", AvatarEidStr)
+  self:HandleNotValidForReconnect(AvatarEidStr)
 end
-
 function Component:BattleFinish(IsWin, AvatarEids)
   ServerPrint("BattleFinish", IsWin)
   local RealFinishAvatar = {}
@@ -142,8 +133,10 @@ function Component:BattleFinish(IsWin, AvatarEids)
   ServerPrint("Finish Player Count", AvatarArrLen, SumAvatars)
   self:CallSkynetServerMethod("BattleFinish", IsWin, GameMode.EMGameState.DungeonProgress - 1, GameTime, ExtraInfo)
   GameMode:TriggerOnExit(AvatarArr)
+  if AvatarArrLen == SumAvatars then
+    self:CallServerMethod("OnAllPlayerFinished")
+  end
 end
-
 function Component:AddFinishAvatar(ExtraInfo, AvatarEid, RealFinishAvatar, AvatarArr, IsWin)
   local AvatarStr = AvatarEid
   AvatarEid = CommonUtils.Str2ObjId(AvatarEid)
@@ -178,21 +171,26 @@ function Component:AddFinishAvatar(ExtraInfo, AvatarEid, RealFinishAvatar, Avata
   ExtraInfo[AvatarEid].PlayerTime = PlayerTime
   ExtraInfo[AvatarEid].CombatStatistics = PlayerController and PlayerController:GetCombatStatistics() or {}
   ExtraInfo[AvatarEid].CustomInfo = GameMode:TriggerDungeonComponentFun("CustomFinishInfo", AvatarStr, IsWin) or {}
-  ExtraInfo[AvatarEid].PlayerInfo = self.PersistPlayerInfos[AvatarStr] or self.AvatarInfos[AvatarStr].PlayerInfo
+  ExtraInfo[AvatarEid].PlayerInfo = self.PersistPlayerInfos[AvatarStr] and self.PersistPlayerInfos[AvatarStr].PlayerInfo
   ExtraInfo[AvatarEid].bInactive = bInactive
   rawset(self.HasLeaveAvatars, AvatarStr, IsWin)
   self.CacheRewards[AvatarStr] = nil
   self.PersistenceRewards[AvatarStr] = nil
   self.ImmediateResources[AvatarStr] = nil
+  self.AvatarInfos[AvatarStr] = nil
+  self.PersistPlayerInfos[AvatarStr] = nil
+  GameMode.AvatarInfos[AvatarStr] = nil
   RealFinishAvatar[#RealFinishAvatar + 1] = AvatarStr
   AvatarArr:Add(AvatarStr)
 end
-
 function Component:BlockEntrance()
-  ServerPrint("BlockEntrance")
-  self:CallServerMethod("BlockEntrance")
+  self.bBlock = true
+  local GameMode = GWorld.GameInstance:GetCurrentGameMode()
+  if not GameMode then
+    return
+  end
+  GameMode:BlockEntrance()
 end
-
 function Component:UpdateDungeonProgress()
   ServerPrint("UpdateDungeonProgress")
   for Eid, _ in pairs(self.AvatarInfos) do
@@ -205,5 +203,4 @@ function Component:UpdateDungeonProgress()
   self.CommonRewards:Clear()
   self:CallServerMethod("UpdateDungeonProgress")
 end
-
 return Component

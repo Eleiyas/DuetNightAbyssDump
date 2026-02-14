@@ -1,35 +1,29 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.ItemUIPathName = "/Game/UI/UI_PC/Story/BP_TalkSelectItemUI.BP_TalkSelectItemUI"
   self.ItemClickedInfo = nil
   self.DelayDestoryCount = 0
   self.MouseWheelTime = 0
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.MouseWheelTime > 0 then
     self.MouseWheelTime = self.MouseWheelTime - InDeltaTime
   end
 end
-
 function M:BindItemClicked(InObj, InFunc)
   self.ItemClickedInfo = {}
   self.ItemClickedInfo.Obj = InObj
   self.ItemClickedInfo.Func = InFunc
 end
-
 function M:UnBindItemClicked()
   self.ItemClickedInfo = nil
 end
-
 function M:OnItemClicked(InItem)
   if self.ItemClickedInfo then
     self.ItemClickedInfo.Func(self.ItemClickedInfo.Obj, InItem)
   end
 end
-
 function M:AddItem(InItem)
   local UIManager = UIManager(self)
   local ItemUI = UIManager:CreateWidget(self.ItemUIPathName)
@@ -37,7 +31,6 @@ function M:AddItem(InItem)
   ItemUI:Init(self, InItem)
   self:PostChangeItemNum()
 end
-
 function M:SetItemsVisibility(InVisibility)
   local ChildMaxIndex = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -45,17 +38,14 @@ function M:SetItemsVisibility(InVisibility)
     Child:SetVisibility(InVisibility)
   end
 end
-
 function M:ClearListItems()
   self.ScrollBox_TalkOptions:ClearChildren()
 end
-
 function M:PostChangeItemNum()
   local TalkOptionNum = self.ScrollBox_TalkOptions:GetChildrenCount()
   self:SetKeyMap(0 ~= TalkOptionNum)
   self:UpdateImgMouse()
 end
-
 function M:SetKeyMap(IsSet)
   if IsSet then
     self.CurrentSelectItemIdx = 0
@@ -72,7 +62,6 @@ function M:SetKeyMap(IsSet)
     self.CurrentSelectItemIdx = nil
   end
 end
-
 function M:UpdateImgMouse()
   if CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance) == "Mobile" then
     return
@@ -90,7 +79,6 @@ function M:UpdateImgMouse()
     self.Img_Mouse.Slot:SetPosition(FVector2D(CurPosition.X, SizeY))
   end
 end
-
 function M:UpSelectAction()
   if self.MouseWheelTime > 0 then
     return
@@ -107,7 +95,6 @@ function M:UpSelectAction()
   end
   self:SelectNewItem(NewSelectItemIdx)
 end
-
 function M:SelectNewItem(NewItemIdx)
   if self.CurrentSelectItemIdx == NewItemIdx then
     return
@@ -117,7 +104,6 @@ function M:SelectNewItem(NewItemIdx)
   self.CurrentSelectItemIdx = NewItemIdx
   self.ScrollBox_TalkOptions:ScrollWidgetIntoView(self.ScrollBox_TalkOptions:GetChildAt(self.CurrentSelectItemIdx), true)
 end
-
 function M:GetItemIndex(Item)
   local ChildMaxIndex = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -128,7 +114,6 @@ function M:GetItemIndex(Item)
   end
   return -1
 end
-
 function M:DownSelectAction()
   if self.MouseWheelTime > 0 then
     return
@@ -150,5 +135,4 @@ function M:DownSelectAction()
   end
   self.ScrollBox_TalkOptions:ScrollWidgetIntoView(self.ScrollBox_TalkOptions:GetChildAt(self.CurrentSelectItemIdx), true)
 end
-
 return M

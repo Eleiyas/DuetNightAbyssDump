@@ -1,5 +1,4 @@
 local DialogueWaitQueue_C = {}
-
 function DialogueWaitQueue_C.New(QueueFinished_Obj, QueueFinished_Func, ...)
   local Obj = {}
   setmetatable(Obj, {__index = DialogueWaitQueue_C})
@@ -14,19 +13,16 @@ function DialogueWaitQueue_C.New(QueueFinished_Obj, QueueFinished_Func, ...)
   Obj.bClosed = false
   return Obj
 end
-
 function DialogueWaitQueue_C:ResetWaitQueue()
   self.Queue = {}
   self.QueueItemCount = 0
   self.CompleteCount = 0
 end
-
 function DialogueWaitQueue_C:RegiserWaitItem(UniqueTag)
   DebugPrint("RegisterWaitItem", UniqueTag)
   self.Queue[UniqueTag] = false
   self.QueueItemCount = self.QueueItemCount + 1
 end
-
 function DialogueWaitQueue_C:CompleteWaitItem(UniqueTag)
   DebugPrint("CompleteWaitItem", UniqueTag)
   if self.bClosed then
@@ -41,9 +37,7 @@ function DialogueWaitQueue_C:CompleteWaitItem(UniqueTag)
     QueueFinished_Func(QueueFinished_Obj, table.unpack(QueueFinished_Params))
   end
 end
-
 function DialogueWaitQueue_C:CloseWaitQueue()
   self.bClosed = true
 end
-
 return DialogueWaitQueue_C

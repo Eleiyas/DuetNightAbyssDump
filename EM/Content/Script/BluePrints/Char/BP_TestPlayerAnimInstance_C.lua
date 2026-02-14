@@ -8,23 +8,19 @@ local HighLevelKawaiiState = {
 }
 local IdleTagToZero = {EmoIdle = 1, Gesture01_Idle = 1}
 local BP_TestPlayerAnimInstance_C = Class()
-
 function BP_TestPlayerAnimInstance_C:LuaAnimBeginPlay()
 end
-
 function BP_TestPlayerAnimInstance_C:GetPawnOwner()
   if not self.Pawn then
     self.Pawn = self:TryGetPawnOwner()
   end
   return self.Pawn
 end
-
 function BP_TestPlayerAnimInstance_C:OnLeaveGesture01_Idle(NewIdleTag)
   if self:IsAnymontagePlaying() then
     self:Montage_StopSlotByName(0, "Gesture")
   end
 end
-
 function BP_TestPlayerAnimInstance_C:OnEnterEmoIdle()
   if self.IdleTag == "EmoIdle" and self:CanPlayEmoIdleVoice() and not self:GetPawnOwner().bHidden then
     AudioManager(self):PlaySeById(self:GetPawnOwner(), 214, self:GetPawnOwner(), false, true, "", "EmoIdle")
@@ -34,14 +30,12 @@ function BP_TestPlayerAnimInstance_C:OnEnterEmoIdle()
     }, Const.EmoIdleVoiceCoolDown, false, 0)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:OnLeaveEmoIdle()
   if self.EmoIdleVoiceHandle then
     self:RemoveEmoIdleVoiceHandle()
     AudioManager(self):StopSound(self:GetPawnOwner(), "EmoIdle")
   end
 end
-
 function BP_TestPlayerAnimInstance_C:CanPlayEmoIdleVoice()
   if not self:GetPawnOwner():IsPlayer() then
     return false
@@ -58,7 +52,6 @@ function BP_TestPlayerAnimInstance_C:CanPlayEmoIdleVoice()
   end
   return false
 end
-
 function BP_TestPlayerAnimInstance_C:SetEmoIdleEnabled(IsEnable, IsChangeRefreshNow)
   if self.IsEmoIdleEnable == IsEnable then
     return
@@ -78,16 +71,13 @@ function BP_TestPlayerAnimInstance_C:SetEmoIdleEnabled(IsEnable, IsChangeRefresh
     end
   end
 end
-
 function BP_TestPlayerAnimInstance_C:EnterEmojiIdle()
   self:SetIdleTag("EmoIdle")
 end
-
 function BP_TestPlayerAnimInstance_C:RemoveEmoIdleVoiceHandle()
   UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.EmoIdleVoiceHandle)
   self.EmoIdleVoiceHandle = nil
 end
-
 function BP_TestPlayerAnimInstance_C:EnterArmoryIdle()
   self:RemoveIdleHandle()
   if self.IsEnterArmory == "None" then
@@ -95,31 +85,38 @@ function BP_TestPlayerAnimInstance_C:EnterArmoryIdle()
     return
   end
 end
-
-function BP_TestPlayerAnimInstance_C:SetArmoryIdleTag()
+function BP_TestPlayerAnimInstance_C:SetArmoryIdleTag(bHideUntilLoop)
   if self.IsEnterArmory ~= "None" then
     self:SetIdleTag(self:GetArmoryIdleTag())
     if self:GetPawnOwner() and (self:GetPawnOwner():IsPlayer() or self:GetPawnOwner():IsPhantom()) then
       self.EnableHandIk = false
-      self:GetPawnOwner():PlayShowIdleMontage(self.IdleTag)
+      self:GetPawnOwner():PlayShowIdleMontage(self.IdleTag, bHideUntilLoop)
     end
   end
 end
-
 function BP_TestPlayerAnimInstance_C:GetArmoryIdleTag()
   local Pawn = self:TryGetPawnOwner(self:GetPawnOwner())
   if not Pawn then
     return "0"
   end
-  if self.IsEnterArmory and Const.ArmoryIdleTags[self.IsEnterArmory] then
-    return Const.ArmoryIdleTags[self.IsEnterArmory]
+  if self.IsEnterArmory then
+    if Const.ArmoryIdleTags[self.IsEnterArmory] then
+      return Const.ArmoryIdleTags[self.IsEnterArmory]
+    elseif Const.ArmoryWeaponIdleTags[self.IsEnterArmory] then
+      return self.IsEnterArmory .. "_" .. Pawn:GetUsingWeaponType(Const.ArmoryWeaponIdleTag2WeaponType[self.IsEnterArmory])
+    end
   end
   return Pawn:GetUsingWeaponType(self.IsEnterArmory)
 end
-
+function BP_TestPlayerAnimInstance_C:IsArmoryIdleTag(Tag)
+  if not Tag then
+    return false
+  end
+  local CurrentTag = self:GetArmoryIdleTag()
+  return CurrentTag == Tag
+end
 function BP_TestPlayerAnimInstance_C:OnAnimationEnded(Montage, Interrupted)
 end
-
 function BP_TestPlayerAnimInstance_C:RealMontage_RepPlay(MontagePath, InPlayRate, StartSectionName, ReturnValueType, InTimeToStartMontageAt, bStopAllMontages)
   local Pawn = self:TryGetPawnOwner(self:GetPawnOwner())
   if Pawn.PlayerAnimInstance then
@@ -158,14 +155,12 @@ function BP_TestPlayerAnimInstance_C:RealMontage_RepPlay(MontagePath, InPlayRate
     end
   end
 end
-
 function BP_TestPlayerAnimInstance_C:EndAnimationTrigger()
   if self.CurrentAnimation then
     self:Montage_Stop(0.01, self.CurrentAnimation)
     self.CurrentAnimation = nil
   end
 end
-
 function BP_TestPlayerAnimInstance_C:PlayEyeAnimation(Animation)
   if not Animation then
     return
@@ -173,7 +168,6 @@ function BP_TestPlayerAnimInstance_C:PlayEyeAnimation(Animation)
   DebugPrint("Eye animation:", Animation)
   self.EyeSequence = Animation
 end
-
 function BP_TestPlayerAnimInstance_C:PlayMouthAnimation(Animation)
   if not Animation then
     return
@@ -181,7 +175,6 @@ function BP_TestPlayerAnimInstance_C:PlayMouthAnimation(Animation)
   DebugPrint("Mouth animation:", Animation)
   self.MouthSequence = Animation
 end
-
 function BP_TestPlayerAnimInstance_C:SetNpcDefaultAnim(Animation)
   if not Animation then
     DebugPrint("ERROR: DefaultAnim Is Null", self:GetPawnOwner():GetName())
@@ -190,20 +183,16 @@ function BP_TestPlayerAnimInstance_C:SetNpcDefaultAnim(Animation)
   DebugPrint("NpcDefaultAnim: ", Animation)
   self.NpcDefaultAnim = Animation
 end
-
 function BP_TestPlayerAnimInstance_C:SetNpcDefaultAnimEnable(bEnable)
   self.EnableNpcDefaultAnim = bEnable
 end
-
 function BP_TestPlayerAnimInstance_C:SwitchEnableTalkAction(bEnable)
   self.bEnableTalkAction = bEnable and true or false
 end
-
 function BP_TestPlayerAnimInstance_C:SwitchEnableAnimInstanceIK(bEnable)
   DebugPrint("BP_TestPlayerAnimInstance_C:SwitchEnableAnimInstanceIK", bEnable)
   self.bUseIK = bEnable and true or false
 end
-
 function BP_TestPlayerAnimInstance_C:CheckParamentVaild(KawaiiInfo, CurrentState)
   if not KawaiiInfo then
     return false
@@ -216,7 +205,6 @@ function BP_TestPlayerAnimInstance_C:CheckParamentVaild(KawaiiInfo, CurrentState
   end
   return true
 end
-
 function BP_TestPlayerAnimInstance_C:TryCallLuaOverriden(NotifyName, MeshComponent, Sequence)
   local LuaFuncName = "Lua_" .. NotifyName
   local LuaFunc = self[LuaFuncName]
@@ -229,36 +217,30 @@ function BP_TestPlayerAnimInstance_C:TryCallLuaOverriden(NotifyName, MeshCompone
   self[LuaFuncName](self, MeshComponent, Sequence)
   return true
 end
-
 function BP_TestPlayerAnimInstance_C:Lua_AnimNotify_BindNewWeaponType(Mesh, Anim)
   print(_G.LogTag, "Lua_AnimNotify_BindNewWeaponType", Mesh, Anim)
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_SecondJumpEnd()
   if self.CurrentJumpState == Const.SecondJump and self:GetPawnOwner() then
     self:GetPawnOwner():SetCurrentJumpState(Const.JumpFall)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveJump()
   if self.CurrentJumpState == Const.FirstJump and self:GetPawnOwner() then
     self:GetPawnOwner():SetCurrentJumpState(Const.JumpFall)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveJumpSec()
   if self.CurrentJumpState == Const.SecondJump and self:GetPawnOwner() then
     self:GetPawnOwner():SetCurrentJumpState(Const.JumpFall)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterLand()
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterGround()
   self.ShouldInAir = true
+  self.ForceIdle = false
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveGround()
   if not self:GetPawnOwner() then
     return
@@ -275,7 +257,6 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveGround()
   end
   self.ShouldInAir = false
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_ShrinkEnd()
   if not self:GetPawnOwner() then
     return
@@ -285,81 +266,64 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_ShrinkEnd()
   end
   self:GetPawnOwner():ResetCapSize()
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_Enter_SlideLoop()
   self.IsSlideLoop = true
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_Out_SlideLoop()
   self.IsSlideLoop = false
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_FirstJumpEnd()
   if self.CurrentJumpState == Const.FirstJump and self:GetPawnOwner() then
     self:GetPawnOwner():SetCurrentJumpState(Const.JumpFall)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_ClimbEnd()
   if self.CurrentJumpState == Const.Climb and self:GetPawnOwner() then
     self:GetPawnOwner():SetCurrentJumpState(Const.JumpFall)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterWallJumpLoop()
   self.CanPlayWallJumpLoop = true
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveWallJumpLoop()
   self.CanPlayWallJumpLoop = false
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterBindNewWeaponType()
   self:GetPawnOwner():PlayWeaponNewTypeIn()
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_PauseAnimation()
   if self.CurrentAnimation then
     self:Montage_Pause(self.CurrentAnimation)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_DeadAnimationEnd()
   local Pawn = self:TryGetPawnOwner(self:GetPawnOwner())
   if Pawn:IsMonster() then
     Pawn:MonsterDeadAnimationEnd(Pawn:GetVector("DamageCauserLocation"), 0.0, 0.0, 3.0, 3.0)
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterIdle()
   self:SetKawaiiPhysics_Cpp("Idle")
   self.ForceIdle = false
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterArmoryIdle()
   self:SetKawaiiPhysics_Cpp("ArmoryIdle")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterJump()
   self:SetKawaiiPhysics_Cpp("Jump")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterSecJump()
   self:SetKawaiiPhysics_Cpp("SecJump")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterRunstart()
   self:SetKawaiiPhysics_Cpp("RunStart")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterRunLoop()
   self:SetKawaiiPhysics_Cpp("RunLoop")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterShootHoldEx()
   self:StartShootHoldToIdle()
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterShootHold()
   self:SetKawaiiPhysics_Cpp("ShootHold")
   if 0 ~= self.StopShootHoldHandle.Handle then
@@ -370,7 +334,6 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_EnterShootHold()
     self.StopShootHold
   }, Const.WholeShootHoldTime, false, 0)
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_StartShootHold()
   self:SetKawaiiPhysics_Cpp("ShootHold")
   if self.StartHoldHandle then
@@ -388,7 +351,6 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_StartShootHold()
     self.StopShootHoldEx
   }, Const.WholeShootHoldTime, false, 0)
 end
-
 function BP_TestPlayerAnimInstance_C:StartShootHoldToIdle()
   self:StopShootHold()
   do return end
@@ -402,7 +364,6 @@ function BP_TestPlayerAnimInstance_C:StartShootHoldToIdle()
   end
   self.StartHoldHandle = nil
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterHoldToIdle()
   self.StopShootHoldHandle = UE4.UKismetSystemLibrary.K2_SetTimerDelegate({
     self,
@@ -410,7 +371,6 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_EnterHoldToIdle()
   }, Const.StopShootHoldDelay, false, 0)
   self:GetPawnOwner():ShouldEnableHandIk()
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveShootHold()
   if self.IsOnServer then
     return
@@ -422,7 +382,6 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_LeaveShootHold()
     self.StartHoldHandle = nil
   end
 end
-
 function BP_TestPlayerAnimInstance_C:StopShootHoldEx()
   if self.CurVelocity:Size() > 0 then
     self:StopShootHold()
@@ -430,7 +389,6 @@ function BP_TestPlayerAnimInstance_C:StopShootHoldEx()
     self:StartShootHoldToIdle()
   end
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterRunStop()
   if self.IsOnServer then
     return
@@ -444,51 +402,43 @@ function BP_TestPlayerAnimInstance_C:AnimNotify_EnterRunStop()
   self.Pivot = false
   self:SetKawaiiPhysics_Cpp("RunStop")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_SlideStart()
   if self.IsOnServer then
     return
   end
   self:SetKawaiiPhysics_Cpp("SlideStart")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterSlideToIdle()
   if self.IsOnServer then
     return
   end
   self:SetKawaiiPhysics_Cpp("SlideToIdle")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterSlideToRun()
   if self.IsOnServer then
     return
   end
   self:SetKawaiiPhysics_Cpp("SlideToRun")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EnterLand()
   if self.IsOnServer then
     return
   end
   self:SetKawaiiPhysics_Cpp("Land")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_ShowPet()
   EventManager:FireEvent(EventID.OnArmoryShowPet)
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EndShoot_Bow01()
   if self.IsOnServer then
     return
   end
   AudioManager(self:GetPawnOwner()):PlayNormalSound(self:GetPawnOwner(), nil, "event:/sfx/weapon/Bow/Lieyan/end", "EndShoot_Bow")
 end
-
 function BP_TestPlayerAnimInstance_C:AnimNotify_EndShoot_Bow02()
   if self.IsOnServer then
     return
   end
   AudioManager(self:GetPawnOwner()):StopSound(self:GetPawnOwner(), "EndShoot_Bow")
 end
-
 return BP_TestPlayerAnimInstance_C

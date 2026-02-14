@@ -3,15 +3,12 @@ local ReviewUtils = require("BluePrints.UI.WBP.StoryReview.StoryReviewUtils")
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local ETalkType = require("BluePrints.Story.Talk.Base.ETalkType")
 local FDialogueRecordComponent = {}
-
 function FDialogueRecordComponent:New(TalkTask, TalkTaskData)
   local DialogueRecordComponent = setmetatable({}, {__index = FDialogueRecordComponent})
   DialogueRecordComponent:Initialize(TalkTask, TalkTaskData)
   return DialogueRecordComponent
 end
-
 local DialogueNodeChain = {}
-
 function FDialogueRecordComponent:Initialize(TalkTask, TalkTaskData)
   self.bShowInStoryReview = TalkTaskData.bShowInStoryReview
   self.DialogueNodeChain = DialogueNodeChain
@@ -23,11 +20,9 @@ function FDialogueRecordComponent:Initialize(TalkTask, TalkTaskData)
     ReviewUtils.ClearAllReviewData(self.TalkTaskData.QuestChainId)
   end
 end
-
 function FDialogueRecordComponent:IsBlack()
   return self.BasicTalkType == ETalkType.Black
 end
-
 function FDialogueRecordComponent:RecordOption(OptionData)
   DebugPrint("lhr@RecordOption", DataMgr.Dialogue[OptionData.SelectedOption].Content)
   if not OptionData then
@@ -50,7 +45,7 @@ function FDialogueRecordComponent:RecordOption(OptionData)
       local AreaId = OptionInfo.RegionId
       local Avatar = GWorld:GetAvatar()
       if not Avatar then
-        DebugPrint("FStoryIterationGraph@RecordOption\230\151\182\239\188\140Avatar\228\184\141\229\173\152\229\156\168")
+        DebugPrint("FStoryIterationGraph@RecordOption时，Avatar不存在")
         return
       end
       local ImpressionInfo = Avatar:GetRegionImpression(AreaId)
@@ -67,7 +62,6 @@ function FDialogueRecordComponent:RecordOption(OptionData)
     ReviewUtils.AddOptionWithNormal(OptionData.Options, OptionData.SelectedOption, OptionData.VisitedOptions)
   end
 end
-
 function FDialogueRecordComponent:OnOptionRecord(OptionId, OptionData, NotRecordChain)
   if self.PlayDialogueCallBack and self.PlayDialogueCallBack.Func then
     self.PlayDialogueCallBack.Func(self.PlayDialogueCallBack.Obj, OptionId)
@@ -80,7 +74,6 @@ function FDialogueRecordComponent:OnOptionRecord(OptionId, OptionData, NotRecord
   end
   self:RecordOption(OptionData)
 end
-
 function FDialogueRecordComponent:OnDialogueRecord(DialogueId, DialogueData)
   if self.PlayDialogueCallBack and self.PlayDialogueCallBack.Func then
     self.PlayDialogueCallBack.Func(self.PlayDialogueCallBack.Obj, DialogueId)
@@ -121,7 +114,6 @@ function FDialogueRecordComponent:OnDialogueRecord(DialogueId, DialogueData)
     self.PlayDialogueCallBack.Func(self.PlayDialogueCallBack.Obj, DialogueId)
   end
 end
-
 function FDialogueRecordComponent:OnTalkStart(FirstDialogueId)
   local DialogueId = FirstDialogueId
   if DataMgr.DialogueCurrentNode2PreNode[DialogueId] then
@@ -130,19 +122,15 @@ function FDialogueRecordComponent:OnTalkStart(FirstDialogueId)
     self:RecordChain(FirstDialogueId)
   end
 end
-
 function FDialogueRecordComponent:RecordCheckResult(CheckRes, CheckValue)
   if self.CheckHandle then
     self.CheckHandle:InsertCheckData(CheckRes, CheckValue)
   end
 end
-
 function FDialogueRecordComponent:RecordChain(DialogueId)
   table.insert(self.DialogueNodeChain, DialogueId)
 end
-
 function FDialogueRecordComponent:GetChain()
   return self.DialogueNodeChain
 end
-
 return FDialogueRecordComponent

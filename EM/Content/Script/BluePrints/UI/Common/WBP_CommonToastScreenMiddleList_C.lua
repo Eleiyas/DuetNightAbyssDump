@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_CommonToastScreenMiddleList_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_CommonToastScreenMiddleList_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.LatestSubUI = nil
@@ -9,7 +8,6 @@ function WBP_CommonToastScreenMiddleList_C:Initialize(Initializer)
   self.MaxCount = 3
   self.IsTimer = false
 end
-
 function WBP_CommonToastScreenMiddleList_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.RootWidget:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -19,7 +17,6 @@ function WBP_CommonToastScreenMiddleList_C:OnLoaded(...)
   end
   self:LoadSubUI(...)
 end
-
 function WBP_CommonToastScreenMiddleList_C:RefreshShowText(newText)
   if self.IsTimer then
     self:RemoveTimer("CloseBattleMiddleList")
@@ -55,7 +52,6 @@ function WBP_CommonToastScreenMiddleList_C:RefreshShowText(newText)
     end
   end
 end
-
 function WBP_CommonToastScreenMiddleList_C:LoadSubUI(...)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -73,7 +69,6 @@ function WBP_CommonToastScreenMiddleList_C:LoadSubUI(...)
     SubUI:PlayAnimAndCollapsed()
   end
 end
-
 function WBP_CommonToastScreenMiddleList_C:ReduceSubUI()
   self.CurrentVisibleCount = self.CurrentVisibleCount - 1
   if self.CurrentVisibleCount <= 0 then
@@ -81,7 +76,6 @@ function WBP_CommonToastScreenMiddleList_C:ReduceSubUI()
     self.IsTimer = true
   end
 end
-
 function WBP_CommonToastScreenMiddleList_C:Close()
   self.RootWidget:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.CurrentCount = 0
@@ -93,5 +87,4 @@ function WBP_CommonToastScreenMiddleList_C:Close()
   self.Panel_List:ClearChildren()
   self.Super.Close(self)
 end
-
 return WBP_CommonToastScreenMiddleList_C

@@ -1,6 +1,5 @@
 local TimeUtils = require("Utils.TimeUtils")
 local ReddotTreeNode_ModArchive = Class("BluePrints.UI.Reddot.ReddotTreeNode")
-
 function ReddotTreeNode_ModArchive:OnInitNodeCache(NodeCache)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -44,11 +43,11 @@ function ReddotTreeNode_ModArchive:OnInitNodeCache(NodeCache)
             if Condition and ConditionUtils.CheckCondition(Avatar, Condition) then
               self:CheckFirstNew(ArchiveInfo, NodeCache)
             end
-            for ModId, State in pairs(NodeCache.Detail.States) do
-              if true == State then
-                NodeCache.Detail.NewNum = NodeCache.Detail.NewNum + 1
-              end
-            end
+          end
+        end
+        for ModId, State in pairs(NodeCache.Detail.States) do
+          if true == State then
+            NodeCache.Detail.NewNum = NodeCache.Detail.NewNum + 1
           end
         end
         NodeCache.Count = NodeCache.Detail.RedNum + NodeCache.Detail.NewNum
@@ -57,7 +56,6 @@ function ReddotTreeNode_ModArchive:OnInitNodeCache(NodeCache)
   end
   self:RefreshInfo()
 end
-
 function ReddotTreeNode_ModArchive:OnDecreaseCount(SubValue, CacheDetailChangedParams, OldCount)
   if CacheDetailChangedParams and CacheDetailChangedParams.NewNum and 0 == CacheDetailChangedParams.NewNum and self.Cache.Detail and self.Cache.Detail.RedNum then
     self.Cache.Count = self.Cache.Detail.RedNum
@@ -68,11 +66,9 @@ function ReddotTreeNode_ModArchive:OnDecreaseCount(SubValue, CacheDetailChangedP
   end
   self:RefreshInfo()
 end
-
 function ReddotTreeNode_ModArchive:OnIncreaseCount(AddValue, CacheDetailChangedParams, OldCount)
   self:RefreshInfo()
 end
-
 function ReddotTreeNode_ModArchive:RefreshInfo()
   if self.Cache.Detail and self.Cache.Detail.RedNum and self.Cache.Detail.RedNum > 0 then
     self.ReddotType = EReddotType.Normal
@@ -86,7 +82,6 @@ function ReddotTreeNode_ModArchive:RefreshInfo()
   end
   self:UpdateRdType()
 end
-
 function ReddotTreeNode_ModArchive:CheckFirstNew(ArchiveInfo, NodeCache)
   local NewNum = #ArchiveInfo.ModList
   for i = 1, NewNum do
@@ -96,5 +91,4 @@ function ReddotTreeNode_ModArchive:CheckFirstNew(ArchiveInfo, NodeCache)
     end
   end
 end
-
 return ReddotTreeNode_ModArchive

@@ -1,20 +1,25 @@
 require("UnLua")
 local M = Class("BluePrints.Common.Triggers.BP_AOITriggerBox_C")
-
 function M:AuthorityInitInfo(Info)
   print(_G.LogTag, "LXZ SpawnTriggerBox AuthorityInitInfo", self:GetName())
   M.Super.AuthorityInitInfo(self, Info)
   self.PathPoint = Info:FindObjectParams("TriggerCreator")
   local GameState = UGameplayStatics.GetGameState(self)
   if GameState then
-    GameState.StopTrollyBoxLocation:AddUnique(self:K2_GetActorLocation())
+    local Location = self:K2_GetActorLocation()
+    local LastNum = GameState.StopTrollyBoxLocation:Num()
+    GameState.StopTrollyBoxLocation:AddUnique(Location)
+    local NewNum = GameState.StopTrollyBoxLocation:Num()
+    DebugPrint("StopTrollyBoxLocation add location:", Location.X, " ", Location.Y, " ", Location.Z)
+    DebugPrint("StopTrollyBoxLocation LastNum:", LastNum, " NewNum:", NewNum)
+    if LastNum < NewNum then
+      EventManager:FireEvent(EventID.OnDungeonUIStateUpdated)
+    end
   end
 end
-
 function M:GetUnitRealType()
   return "AOITriggerBox"
 end
-
 function M:CollisionBeginOverlap(Component, OtherActor)
   if not OtherActor.IsCombatItemBase or not OtherActor:IsCombatItemBase("Trolly") then
     if OtherActor.IsCombatItemBase then
@@ -37,10 +42,8 @@ function M:CollisionBeginOverlap(Component, OtherActor)
   end
   M.Super.CollisionBeginOverlap(self, Component, OtherActor)
 end
-
 function M:OnEMActorDestroy(DestroyReason)
   self.Overridden.OnEMActorDestroy(self, DestroyReason)
   print(_G.LogTag, "LXZ OnEMActorDestroy", DestroyReason)
 end
-
 return M

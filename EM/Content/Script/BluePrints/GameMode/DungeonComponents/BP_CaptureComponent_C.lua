@@ -2,17 +2,16 @@ require("UnLua")
 local BP_CaptureComponent_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_CaptureComponent_C:InitCaptureComponent()
   self.GameMode = self:GetOwner()
   local CaptureData = DataMgr.Capture[self.GameMode.DungeonId]
   if not CaptureData then
-    GameState(self):ShowDungeonError("CaptureComponent:\229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.GameMode.DungeonId)
+    GameState(self):ShowDungeonError("CaptureComponent:当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.GameMode.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.CaptureMonsterId = self:GetCaptureMonsterId(CaptureData)
   if not self.CaptureMonsterId then
-    GameState(self):ShowDungeonError("CaptureComponent:\232\142\183\229\143\150\230\141\149\232\142\183\230\128\170Id\229\164\177\232\180\165!")
+    GameState(self):ShowDungeonError("CaptureComponent:获取捕获怪Id失败!", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.CaptureMonsterLoc, self.CaptureLevelId, self.CapturePathLevelArray = self.GameMode.TacMapManager:GenerateCapturePath(CaptureData.Dis)
@@ -28,7 +27,6 @@ function BP_CaptureComponent_C:InitCaptureComponent()
   self.CaptureMonsterData = {}
   self.IsFirstSeen = false
 end
-
 function BP_CaptureComponent_C:InitCaptureBaseInfo()
   if not (self.CaptureMonsterId and self.GameMode.TacMapManager) or not self.CaptureLevelId then
     return
@@ -38,34 +36,31 @@ function BP_CaptureComponent_C:InitCaptureBaseInfo()
   local CaptureExitCreatorInfos = TMap(0, UObject)
   self.GameMode.EMGameState:GetSubStaticCreatorInfo(self.CaptureLevelId, CaptureExitCreatorInfos)
   if CaptureExitCreatorInfos:Length() <= 0 then
-    GameState(self):ShowDungeonError("CaptureComponent:\230\128\170\231\137\169\233\128\131\232\132\177\229\133\179\229\141\161\229\134\133\228\184\141\229\173\152\229\156\168\233\128\131\232\132\177\231\130\185\239\188\140\232\175\183\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140LevelName\239\188\154" .. self.CaptureLevelId)
+    GameState(self):ShowDungeonError("CaptureComponent:怪物逃脱关卡内不存在逃脱点，请检查配置，LevelName：" .. self.CaptureLevelId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
   end
   for Id, Creator in pairs(CaptureExitCreatorInfos) do
     if IsValid(Creator) and Creator.CaptureMonsterExit then
       self.EscapeLoc = Creator:K2_GetActorLocation()
       self.GameMode:TriggerActiveCustomStaticCreator(Id, "", true, self.CaptureLevelId)
-      DebugPrint("\230\141\149\232\142\183\231\142\169\230\179\149\239\188\140\229\136\183\230\150\176\230\128\170\231\137\169\233\128\131\232\132\177\231\130\185  CaptureLevelName:", self.CaptureLevelId, "CreatorId:", Creator.StaticCreatorId)
+      DebugPrint("捕获玩法，刷新怪物逃脱点  CaptureLevelName:", self.CaptureLevelId, "CreatorId:", Creator.StaticCreatorId)
       self:ActiveCaptureMonster()
       return
     end
   end
   self:ActiveCaptureMonster()
-  GameState(self):ShowDungeonError("CaptureComponent:\232\142\183\231\142\169\230\179\149\229\136\183\230\150\176\233\128\131\232\132\177\231\130\185\229\164\177\232\180\165! \232\175\183\230\163\128\230\159\165\232\147\157\229\155\190\233\133\141\231\189\174    LevelId:   " .. self.CaptureLevelId)
+  GameState(self):ShowDungeonError("CaptureComponent:获玩法刷新逃脱点失败! 请检查蓝图配置    LevelId:   " .. self.CaptureLevelId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
 end
-
 function BP_CaptureComponent_C:ActiveCaptureMonster()
   local CpatureArray = TArray(0)
   CpatureArray:Add(self.CaptureCreator.StaticCreatorId)
   self.GameMode:TriggerActiveStaticCreator(CpatureArray, "CaptureMonster")
 end
-
 function BP_CaptureComponent_C:OnStaticCreatorEvent(EventName, Eid, UnitId, UnitType)
   if "CaptureMonster" == EventName then
     self.CaptureMonsterEid = Eid
-    DebugPrint("CaptureComponent: \230\141\149\232\142\183\230\128\170\229\183\178\230\191\128\230\180\187\239\188\140Eid", Eid, "UnitId", UnitId, self.CaptureMonsterId)
+    DebugPrint("CaptureComponent: 捕获怪已激活，Eid", Eid, "UnitId", UnitId, self.CaptureMonsterId)
   end
 end
-
 function BP_CaptureComponent_C:GetCaptureMonsterId(CaptureData)
   local TotalWeight = 0
   for i, Data in pairs(CaptureData.Capture) do
@@ -81,7 +76,6 @@ function BP_CaptureComponent_C:GetCaptureMonsterId(CaptureData)
   end
   return CaptureData.Capture[1].CaptureMonsterId
 end
-
 function BP_CaptureComponent_C:OnCaptureSuccess()
   if self.GameMode:GetNeedCreateEmergencyMonster("Treasure") == true then
     self.GameMode:TryCreateEmergencyMonster("Treasure")
@@ -90,7 +84,6 @@ function BP_CaptureComponent_C:OnCaptureSuccess()
     self.GameMode:TriggerSpawnPet()
   end
 end
-
 function BP_CaptureComponent_C:InitTreasureMonsterEecapeLoc(TreasureMonster)
   local mechanimArray = self.GameMode.EMGameState.MechanismMap:FindRef("AOITriggerBox")
   if mechanimArray then
@@ -100,12 +93,11 @@ function BP_CaptureComponent_C:InitTreasureMonsterEecapeLoc(TreasureMonster)
     end
   end
 end
-
 function BP_CaptureComponent_C:OnMonsterWaitForCapture(CaptureMonster)
   DebugPrint("CaptureComponent: OnMonsterWaitForCapture  UnitId: " .. self.CaptureMonsterId .. "Eid: " .. self.CaptureMonsterEid)
   local CaptureParam = CaptureMonster.Data.CaptureParam
   if not CaptureParam or not CaptureParam.RecoverTime then
-    GameState(self):ShowDungeonError("CaptureComponent:\230\141\149\232\142\183\230\128\170\230\178\161\230\156\137CaptureParam\239\188\129 UnitId:" .. self.CaptureMonsterId .. "Eid: " .. self.CaptureMonsterEid .. "==" .. CaptureMonster.Eid)
+    GameState(self):ShowDungeonError("CaptureComponent:捕获怪没有CaptureParam！ UnitId:" .. self.CaptureMonsterId .. "Eid: " .. self.CaptureMonsterEid .. "==" .. CaptureMonster.Eid, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self:SetCaptureRecoveryTime(CaptureParam.RecoverTime)
@@ -114,7 +106,6 @@ function BP_CaptureComponent_C:OnMonsterWaitForCapture(CaptureMonster)
   self.GameMode.EMGameState:SetIsMonsterWaitForCapture(true)
   self.CaptureMonsterData = CaptureMonster.Data
 end
-
 function BP_CaptureComponent_C:UpdateCaptureRecoveryTimer()
   self:AddCaptureRecoveryTime(-0.1)
   if self:GetCaptureRecoveryTime() <= 0 then
@@ -122,12 +113,11 @@ function BP_CaptureComponent_C:UpdateCaptureRecoveryTimer()
     self:OnCaptureRecoveryTimerEnd()
   end
 end
-
 function BP_CaptureComponent_C:OnCaptureRecoveryTimerEnd()
   self.GameMode.EMGameState:SetIsMonsterWaitForCapture(false)
   local CaptureMonster = Battle(self):GetEntity(self.CaptureMonsterEid)
   if IsValid(CaptureMonster) then
-    DebugPrint("CaptureComponent: OnCaptureRecoveryTimerEnd \230\141\149\232\142\183\230\128\170\229\156\168\229\156\186")
+    DebugPrint("CaptureComponent: OnCaptureRecoveryTimerEnd 捕获怪在场")
     CaptureMonster:SetMonWaitForCaught(false)
     CaptureMonster:SetCharacterTag("Idle")
     CaptureMonster:StopMontage()
@@ -137,43 +127,36 @@ function BP_CaptureComponent_C:OnCaptureRecoveryTimerEnd()
       CaptureMonster.InteractiveComponent:EndPressInteractive(CaptureMonster.CapturePlayer, false)
     end
   else
-    DebugPrint("CaptureComponent: OnCaptureRecoveryTimerEnd \230\141\149\232\142\183\230\128\170\228\184\141\229\156\168\229\156\186")
+    DebugPrint("CaptureComponent: OnCaptureRecoveryTimerEnd 捕获怪不在场")
     self.GameMode:TriggerGameModeEvent("OnCaptureTargetRecover", nil)
   end
   self.GameMode:RemoveDungeonEvent("CaptureMonsterRecovery")
 end
-
 function BP_CaptureComponent_C:SetCaptureRecoveryTime(Value)
   self.GameMode.EMGameState:SetCaptureRecoveryTime(Value)
   if IsStandAlone(self) then
     self.GameMode.EMGameState:OnRep_CaptureRecoveryTime()
   end
 end
-
 function BP_CaptureComponent_C:AddCaptureRecoveryTime(Value)
   self.GameMode.EMGameState:SetCaptureRecoveryTime(self.GameMode.EMGameState.CaptureRecoveryTime + Value)
   if IsStandAlone(self) then
     self.GameMode.EMGameState:OnRep_CaptureRecoveryTime()
   end
 end
-
 function BP_CaptureComponent_C:GetCaptureRecoveryTime()
   return self.GameMode.EMGameState.CaptureRecoveryTime
 end
-
 function BP_CaptureComponent_C:RemoveCaptureRecoveryTimer()
-  DebugPrint("CaptureComponent: CaptureRecoveryTimer\229\183\178\231\167\187\233\153\164")
+  DebugPrint("CaptureComponent: CaptureRecoveryTimer已移除")
   self:RemoveTimer("CaptureRecovery")
 end
-
 function BP_CaptureComponent_C:PauseCaptureRecoveryTimer()
-  DebugPrint("CaptureComponent: CaptureRecoveryTimer\229\183\178\230\154\130\229\129\156")
+  DebugPrint("CaptureComponent: CaptureRecoveryTimer已暂停")
   self:PauseTimer("CaptureRecovery")
 end
-
 function BP_CaptureComponent_C:UnPauseCaptureRecoveryTimer()
-  DebugPrint("CaptureComponent: CaptureRecoveryTimer\230\129\162\229\164\141\230\154\130\229\129\156")
+  DebugPrint("CaptureComponent: CaptureRecoveryTimer恢复暂停")
   self:UnPauseTimer("CaptureRecovery")
 end
-
 return BP_CaptureComponent_C

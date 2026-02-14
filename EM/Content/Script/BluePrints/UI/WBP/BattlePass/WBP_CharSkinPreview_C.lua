@@ -9,10 +9,15 @@ local OBTAIN_SKIN_POP = 100210
 local HAS_SKIN_ALERT_POP = 100264
 M.PreviewBehaviorType = {
   BattlePassPreview = "BattlePassPreview",
-  SkinSelect = "SkinSelect"
+  SkinSelect = "SkinSelect",
+  SelectWeaponSkin = "SelectWeaponSkin",
+  SelectCharAccessory = "SelectCharAccessory",
+  SelectWeaponAccessory = "SelectWeaponAccessory",
+  SelectGestureItem = "SelectGestureItem",
+  ShopRecommend = "ShopRecommend"
 }
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
-
+local BattlePassController = require("BluePrints.UI.WBP.BattlePass.Controller.BattlePassController")
 function M:Construct(...)
   M.Super.Construct(self, ...)
   self.KeyDownEvents = self.KeyDownEvents or {}
@@ -49,34 +54,91 @@ function M:Construct(...)
   self.Btn_Confirm:UnBindEventOnClicked(self)
   self.Btn_Confirm:SetText(GText("UI_CONFIRM_SELECTION"))
   self.Btn_Confirm:BindEventOnClicked(self, self.OnConfirmClicked)
+  self.TileView_Pendant.BP_OnItemClicked:Clear()
+  self.TileView_Pendant.BP_OnItemClicked:Add(self, self.OnAccessoryItemClicked)
+  self.TileView_Pendant.BP_OnItemSelectionChanged:Clear()
+  self.TileView_Pendant.BP_OnItemSelectionChanged:Add(self, function(self, Content, bIsSelected)
+    if bIsSelected and self:IsGamepadInput() and Content and Content ~= self.CurRoleContent then
+      self:OnAccessoryItemClicked(Content)
+    end
+  end)
+  self.List_Skin.BP_OnItemClicked:Clear()
+  self.List_Skin.BP_OnItemClicked:Add(self, self.OnSkinItemClicked)
+  self.List_Skin.BP_OnItemSelectionChanged:Clear()
+  self.List_Skin.BP_OnItemSelectionChanged:Add(self, function(self, Content, bIsSelected)
+    if bIsSelected and self:IsGamepadInput() and Content and Content ~= self.CurRoleContent then
+      self:OnSkinItemClicked(Content)
+    end
+  end)
+  self.List_Skin.OnCreateEmptyContent:Bind(self, function(self)
+    local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+    rawset(Obj, "IsEmpty", true)
+    return Obj
+  end)
+  self.TileView_Pendant.OnCreateEmptyContent:Bind(self, function(self)
+    local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+    rawset(Obj, "IsEmpty", true)
+    return Obj
+  end)
+  self.Tab_Change.Text_Alive:SetText(GText("UI_Armory_Meleeweapon"))
+  self.Tab_Change.Text_Dying:SetText(GText("UI_Armory_Longrange"))
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   DebugPrint("gmy@WBP_CharSkinPreview_C M:OnLoaded", ...)
-  self.ActorController, self.Params = ...
+  self.Params = (...)
   self.bIsFocusable = true
   self:SetFocus()
-  self:InitParams()
+  if self.Params.Type == "SelectCharAccessory" then
+    self:InitAccessoryParams()
+  elseif self.Params.Type == "SelectWeaponAccessory" then
+    self:InitWeaponAccessoryParams()
+  elseif self.Params.Type == "SelectWeaponSkin" then
+    self:InitWeaponParams()
+  elseif self.Params.Type == "SelectSkin" then
+    self:InitCharParams()
+  elseif self.Params.Type == "SelectGestureItem" then
+    self:InitGestureItemParams()
+  else
+    self:InitParams()
+  end
   self:InitTabInfo()
-  self:InitRoleList()
   self:InitSelectiveListing()
   self:InitInputSettings()
-  self:UpdatePreviewSkinActor()
   self.bRoleListOpen = false
   self.CurState = M.State_Tab
   self:PlayAnimation(self.In)
-  self:RefreshDetailPanel()
+  if self.Params.Type == "SkinSelect" or self.Params.Type == "BattlePassPreview" or self.Params.Type == "ShopRecommend" then
+    self:InitRoleList()
+    self:RefreshDetailPanel()
+    if self.CurRoleContent then
+      local SelectedRoleContent = self.CurRoleContent
+      self.CurRoleContent = nil
+      self:OnRoleListItemClicked(SelectedRoleContent)
+    end
+  end
+  if self.Params.Type == "SelectWeaponAccessory" then
+    self.Tab_Change:SetVisibility(ESlateVisibility.Visable)
+  else
+    self.Tab_Change:SetVisibility(ESlateVisibility.Collapsed)
+  end
   self:InitKeySetting()
   self:ApplyRoleListVisibility()
+  self:InitConsumeInfo()
+  self.Tab_Change:Init({
+    Parent = self,
+    TabIdx = 1,
+    OnTabClicked = self.OnTabChangeClicked
+  })
 end
-
 function M:InitParams()
+  self.Switch_Type:SetActiveWidgetIndex(0)
   if self.Params then
     self.BehaviorType = self.Params.Type
     self.InitSkinId = self.Params.SkinId
     self.SkinOptRewardId = self.Params.SkinOptRewardId
     self.ResourceId = self.Params.ResourceId
+    self.SkinSeriesId = self.Params.SkinSeriesId
     DebugPrint("gmy@WBP_CharSkinPreview_C M:InitParams", self.BehaviorType, self.InitSkinId, self.SkinSeriesId, self.SkinOptRewardId)
     if self.SkinOptRewardId then
       local OptCfg = DataMgr.OptReward and DataMgr.OptReward[self.SkinOptRewardId]
@@ -122,48 +184,47 @@ function M:InitParams()
       self.SkinSeriesId = SkinData and SkinData.SkinSeries
     end
   end
-  if nil == self.ActorController then
-    local Avatar = GWorld:GetAvatar()
-    if Avatar and Avatar.Chars and Avatar.CurrentChar then
-      local CurrentChar = Avatar.Chars[Avatar.CurrentChar]
-      local CurrentSkinId = CurrentChar and CurrentChar:GetAppearance().SkinId
-      local PreviewSkinId
-      if self.bUseOptRewardSkinList and self.InitSkinId then
-        PreviewSkinId = self.InitSkinId
-      elseif self.SkinSeriesId then
-        local PreferredId, MinId
-        for SkinId, Info in pairs(DataMgr.Skin) do
-          if Info.SkinSeries == self.SkinSeriesId then
-            if Info.CharId == (CurrentChar and CurrentChar.CharId) then
-              PreferredId = SkinId
-              break
-            end
-            if not MinId or SkinId < MinId then
-              MinId = SkinId
-            end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar and Avatar.Chars and Avatar.CurrentChar then
+    local CurrentChar = Avatar.Chars[Avatar.CurrentChar]
+    local CurrentSkinId = CurrentChar and CurrentChar:GetAppearance().SkinId
+    local PreviewSkinId
+    if self.bUseOptRewardSkinList and self.InitSkinId then
+      PreviewSkinId = self.InitSkinId
+    elseif self.SkinSeriesId then
+      local PreferredId, MinId
+      for SkinId, Info in pairs(DataMgr.Skin) do
+        if Info.SkinSeries == self.SkinSeriesId then
+          if Info.CharId == (CurrentChar and CurrentChar.CharId) then
+            PreferredId = SkinId
+            break
+          end
+          if not MinId or SkinId < MinId then
+            MinId = SkinId
           end
         end
-        PreviewSkinId = PreferredId or MinId
       end
-      PreviewSkinId = PreviewSkinId or self.InitSkinId or CurrentSkinId
-      if not self.InitSkinId then
-        self.InitSkinId = PreviewSkinId
-      end
-      local PreviewParams = {
-        Type = "Char",
-        SkinId = PreviewSkinId,
-        EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
-        ViewUI = self
-      }
-      self.Target = self:CreatePreviewTargetData(PreviewParams)
-      PreviewParams.Target = self.Target
-      self.ActorController = self:CreatePreviewActor(PreviewParams)
-      self.ActorController:OnOpened()
-      self.IsPreviewMode = true
+      PreviewSkinId = PreferredId or MinId
     end
+    PreviewSkinId = PreviewSkinId or self.InitSkinId or CurrentSkinId
+    if not self.InitSkinId then
+      self.InitSkinId = PreviewSkinId
+    end
+    local PreviewParams = {
+      Type = "Char",
+      SkinId = PreviewSkinId,
+      EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+      ViewUI = self
+    }
+    local Target = self:CreatePreviewTargetData(PreviewParams)
+    PreviewParams.Target = Target
+    self.ActorController = self:CreatePreviewActor(PreviewParams)
+    BattlePassController:SetModelData("BagActorController", self.ActorController)
+    BattlePassController:GetModelData("BagActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("BagActorController")
+    self.IsPreviewMode = true
   end
 end
-
 function M:InitRoleList()
   self:BuildRoleItemContents()
   self.EMListView_Role:ClearListItems()
@@ -171,11 +232,11 @@ function M:InitRoleList()
     self.EMListView_Role:AddItem(Content)
     if Content.IsSelect then
       self.EMListView_Role:BP_ScrollItemIntoView(Content)
+      self.CurRoleContent = Content
     end
   end
   self.EMListView_Role:RegenerateAllEntries()
 end
-
 function M:BuildRoleItemContents()
   local Avatar = GWorld:GetAvatar()
   if not Avatar or not Avatar.Chars then
@@ -190,7 +251,6 @@ function M:BuildRoleItemContents()
   if Avatar and Gender2RoleIds and Avatar.Sex ~= nil then
     ExcludeCharId = Gender2RoleIds[1 - Avatar.Sex]
   end
-  
   local function ShouldIncludeChar(CharId)
     if not CharId then
       return false
@@ -207,7 +267,6 @@ function M:BuildRoleItemContents()
     end
     return true
   end
-  
   local TargetCharIds
   if self.bUseOptRewardSkinList and self.SkinOptRewardId then
     local OptCfg = DataMgr.OptReward and DataMgr.OptReward[self.SkinOptRewardId]
@@ -230,7 +289,7 @@ function M:BuildRoleItemContents()
               self.CharId2SkinId[CharId] = SkinId
             end
           else
-            DebugPrint("WBP_CharSkinPreview_C BuildRoleItemContents \229\165\150\229\138\177\232\191\135\230\187\164\230\142\146\233\153\164", SkinId, CharId)
+            DebugPrint("WBP_CharSkinPreview_C BuildRoleItemContents 奖励过滤排除", SkinId, CharId)
           end
         end
         DebugPrint("gmy@WBP_CharSkinPreview_C M:BuildRoleItemContents UseOptReward", self.SkinOptRewardId)
@@ -252,7 +311,7 @@ function M:BuildRoleItemContents()
           TargetCharIds[CharId] = true
           self.CharId2SkinId[CharId] = SkinId
         else
-          DebugPrint("WBP_CharSkinPreview_C BuildRoleItemContents \231\179\187\229\136\151\232\191\135\230\187\164\230\142\146\233\153\164", SkinId, CharId)
+          DebugPrint("WBP_CharSkinPreview_C BuildRoleItemContents 系列过滤排除", SkinId, CharId)
         end
       end
     end
@@ -279,6 +338,7 @@ function M:BuildRoleItemContents()
       Content.SortHasSkin = bHasSkin
       Content.SortIsOwned = true
       Content.SortSkinId = SkinIdForChar
+      Content.CharId = Char.CharId
       self.RoleItemContentsMap[Uuid] = Content
       table.insert(self.RoleItemContentsArray, Content)
       OwnedCharIds[Char.CharId] = true
@@ -313,6 +373,7 @@ function M:BuildRoleItemContents()
           Content.SortHasSkin = bHasSkin
           Content.SortIsOwned = false
           Content.SortSkinId = SkinIdForChar
+          Content.CharId = CharId
           self.RoleItemContentsMap[Content.Uuid] = Content
           self.UnownedCharContentMap[CharId] = Content
           table.insert(self.RoleItemContentsArray, Content)
@@ -326,7 +387,6 @@ function M:BuildRoleItemContents()
     local BHasSkin = b.SortHasSkin and 1 or 0
     local AOwned = a.SortIsOwned and 1 or 0
     local BOwned = b.SortIsOwned and 1 or 0
-    
     local function Group(Owned, HasSkin)
       if 1 == Owned then
         if 0 == HasSkin then
@@ -340,7 +400,6 @@ function M:BuildRoleItemContents()
         return 4
       end
     end
-    
     local GroupA = Group(AOwned, AHasSkin)
     local GroupB = Group(BOwned, BHasSkin)
     if GroupA ~= GroupB then
@@ -393,7 +452,6 @@ function M:BuildRoleItemContents()
     end
   end
 end
-
 function M:OnRoleListEntryInitialized(_Content, _Widget)
   local Content, Widget = _Content, _Widget
   if Content then
@@ -412,7 +470,6 @@ function M:OnRoleListEntryInitialized(_Content, _Widget)
     end
   end
 end
-
 function M:OnRoleListItemClicked(Content)
   if self.CurRoleContent == Content then
     return
@@ -433,68 +490,67 @@ function M:OnRoleListItemClicked(Content)
   self:UpdatePreviewSkinActorForContent(Content)
   self:RefreshDetailPanel()
 end
-
 function M:UpdatePreviewSkinActorForContent(Content)
   local RealAvatar = GWorld:GetAvatar()
   local RealChar = RealAvatar.Chars[Content.Uuid]
   local CharId
   if RealChar then
     CharId = RealChar.CharId or Content.CharId or Content.UnitId
-    self.ActorController:ChangeCharModel(RealChar)
+    BattlePassController:GetModelData("BagActorController"):ChangeCharModel(RealChar)
   elseif Content.Target then
     if Content.Avatar then
-      self.ActorController:SetAvatar(Content.Avatar)
+      BattlePassController:GetModelData("BagActorController"):SetAvatar(Content.Avatar)
     end
-    self.ActorController:ChangeCharModel(Content.Target)
+    BattlePassController:GetModelData("BagActorController"):ChangeCharModel(Content.Target)
     CharId = Content.Target and Content.Target.CharId or Content.CharId or Content.UnitId
-    self.ActorController:SetAvatar(RealAvatar)
+    BattlePassController:GetModelData("BagActorController"):SetAvatar(RealAvatar)
   end
   if CharId then
     self:ApplyCurrentSkinAppearance(CharId)
   end
   self:EnterSkinCameraAnimation()
 end
-
 function M:Close()
   M.Super.Close(self)
   DebugPrint("gmy@@@WBP_CharSkinPreview_C M:Close111")
-  EventManager:FireEvent(EventID.BattlePassSkinClose)
+  if self.BehaviorType == M.PreviewBehaviorType.BattlePassPreview then
+    EventManager:FireEvent(EventID.BattlePassSkinClose)
+  end
 end
-
 function M:Destruct(...)
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnUpdateUIStyleByInputTypeChange)
   end
   local UIBattleMain = UIManager(self):GetUI("BattlePassMain")
-  if UIBattleMain then
-    if self.BehaviorType == M.PreviewBehaviorType.BattlePassPreview and self.InitSkinId and self.ActorController then
-      local SkinData = DataMgr.Skin[self.InitSkinId]
-      local Avatar = GWorld:GetAvatar()
-      local RestoreChar
-      for _, C in pairs(Avatar.Chars) do
-        if C.CharId == SkinData.CharId then
-          RestoreChar = C
-          break
-        end
-      end
-      if RestoreChar then
-        self.ActorController:ChangeCharModel(RestoreChar)
-        local AppearanceInfo = {
-          CharId = SkinData.CharId,
-          SkinId = self.InitSkinId,
-          AccessorySuit = {}
-        }
-        self.ActorController:ChangeCharAppearance(AppearanceInfo)
+  if UIBattleMain and self.BehaviorType == M.PreviewBehaviorType.BattlePassPreview and self.InitSkinId and BattlePassController:GetModelData("BagActorController") then
+    local SkinData = DataMgr.Skin[self.InitSkinId]
+    local Avatar = GWorld:GetAvatar()
+    local RestoreChar
+    for _, C in pairs(Avatar.Chars) do
+      if C.CharId == SkinData.CharId then
+        RestoreChar = C
+        break
       end
     end
-  else
-    self.ActorController:OnClosed()
-    self.ActorController:OnDestruct()
+    if RestoreChar then
+      BattlePassController:GetModelData("BagActorController"):ChangeCharModel(RestoreChar)
+      local AppearanceInfo = {
+        CharId = SkinData.CharId,
+        SkinId = self.InitSkinId,
+        AccessorySuit = {}
+      }
+      BattlePassController:GetModelData("BagActorController"):ChangeCharAppearance(AppearanceInfo)
+    end
   end
-  DebugPrint("gmy@@@WBP_CharSkinPreview_C M:Destruct")
   M.Super.Destruct(self, ...)
+  BattlePassController:GetModel():RemoveModelDataRefCount("BagActorController", function(Target)
+    if not Target or not IsValid(Target) then
+      return
+    end
+    Target:OnClosed()
+    Target:OnDestruct()
+  end)
 end
-
 function M:InitTabInfo()
   self.MainTabsStyle = {
     TitleName = GText("UI_Armory_Appearance"),
@@ -529,7 +585,6 @@ function M:InitTabInfo()
   }
   self.Tab_SkinPreview:Init(self.MainTabsStyle)
 end
-
 function M:ExitSkin()
   self:BindToAnimationFinished(self.Out, {
     self,
@@ -537,7 +592,6 @@ function M:ExitSkin()
   })
   self:PlayAnimation(self.Out)
 end
-
 function M:UpdatePreviewSkinActor()
   local RealAvatar = GWorld:GetAvatar()
   local CharUuid = RealAvatar.CurrentChar
@@ -548,25 +602,23 @@ function M:UpdatePreviewSkinActor()
   local CharId
   if RealChar then
     CharId = RealChar.CharId
-    self.ActorController:ChangeCharModel(RealChar)
+    BattlePassController:GetModelData("BagActorController"):ChangeCharModel(RealChar)
   elseif self.CurRoleContent and self.CurRoleContent.Target then
     if self.CurRoleContent.Avatar then
-      self.ActorController:SetAvatar(self.CurRoleContent.Avatar)
+      BattlePassController:GetModelData("BagActorController"):SetAvatar(self.CurRoleContent.Avatar)
     end
-    self.ActorController:ChangeCharModel(self.CurRoleContent.Target)
+    BattlePassController:GetModelData("BagActorController"):ChangeCharModel(self.CurRoleContent.Target)
     CharId = self.CurRoleContent.Target and self.CurRoleContent.Target.CharId or self.CurRoleContent.CharId or self.CurRoleContent.UnitId
-    self.ActorController:SetAvatar(RealAvatar)
+    BattlePassController:GetModelData("BagActorController"):SetAvatar(RealAvatar)
   end
   if CharId then
     self:ApplyCurrentSkinAppearance(CharId)
   end
   self:EnterSkinCameraAnimation()
 end
-
 function M:EnterSkinCameraAnimation()
-  self.ActorController:SetMontageAndCamera(CommonConst.ArmoryType.Char)
+  BattlePassController:GetModelData("BagActorController"):SetMontageAndCamera(CommonConst.ArmoryType.Char)
 end
-
 function M:GetPreviewSkinIdForChar(CharId)
   if not CharId then
     return nil
@@ -583,9 +635,8 @@ function M:GetPreviewSkinIdForChar(CharId)
   end
   return SkinId
 end
-
 function M:ApplyCurrentSkinAppearance(CharId)
-  if not self.ActorController or not CharId then
+  if not BattlePassController:GetModelData("BagActorController") or not CharId then
     return
   end
   local SkinId = self:GetPreviewSkinIdForChar(CharId)
@@ -597,9 +648,8 @@ function M:ApplyCurrentSkinAppearance(CharId)
     SkinId = SkinId,
     AccessorySuit = {}
   }
-  self.ActorController:ChangeCharAppearance(AppearanceInfo)
+  BattlePassController:GetModelData("BagActorController"):ChangeCharAppearance(AppearanceInfo)
 end
-
 function M:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -624,7 +674,6 @@ function M:InitInputSettings()
     })
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_CharSkinPreview_C M:OnUpdateUIStyleByInputTypeChange", CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -650,10 +699,19 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Btn_Confirm:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:FocusFirstForInputMode()
   DebugPrint("gmy@WBP_CharSkinPreview_C M:FocusFirstForInputMode111")
-  if self.bRoleListOpen then
+  if self.Params.Type == "SelectWeaponSkin" or self.Params.Type == "SelectSkin" then
+    if self:HasAnyFocus() then
+      self.List_Skin:SetFocus()
+      self.List_Skin:SetSelectedIndex(0)
+    end
+  elseif self.Params.Type == "SelectWeaponAccessory" or self.Params.Type == "SelectCharAccessory" or self.Params.Type == "SelectGestureItem" then
+    if self:HasAnyFocus() then
+      self.TileView_Pendant:SetFocus()
+      self.TileView_Pendant:SetSelectedIndex(0)
+    end
+  elseif self.bRoleListOpen then
     local Target = self.CurRoleContent
     if Target then
       self.TileView_Select_Role:BP_SetSelectedItem(Target)
@@ -676,11 +734,9 @@ function M:FocusFirstForInputMode()
   end
   self.bConsumeFocused = false
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   return self:OnMouseWheelScroll(MyGeometry, MouseEvent)
 end
-
 function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   DebugPrint("gmy@WBP_CharSkinPreview_C M:On_Image_Click_MouseButtonDown")
   if self.bRoleListOpen then
@@ -689,27 +745,21 @@ function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   end
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return self:OnPointerMove(MyGeometry, MouseEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnPointerMove(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function M:OnKeyDown(_, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -746,9 +796,15 @@ function M:OnKeyDown(_, InKeyEvent)
     self:ToggleRoleListPanel()
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
+  if InKeyName == Const.GamepadRightTrigger then
+    self:OnTabChangeClicked(2)
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  elseif InKeyName == Const.GamepadLeftTrigger then
+    self:OnTabChangeClicked(1)
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnRepeatKeyDown(_MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -759,7 +815,6 @@ function M:OnRepeatKeyDown(_MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:InitKeySetting()
   self.KeyDownEvents[self.EscapeKey] = self.OnBackKeyDown
   self.KeyDownEvents[self.GamePadBackKey] = self.OnBackKeyDown
@@ -791,7 +846,6 @@ function M:InitKeySetting()
   self.RepeatKeyDownEvents[self.RightTriggerKey] = self.OnCameraScrollForwardKeyDown
   self:BuildBottomKeyInfo()
 end
-
 function M:BuildBottomKeyInfo()
   self.ESCKeyInfoList = {
     KeyInfoList = {
@@ -867,21 +921,27 @@ function M:BuildBottomKeyInfo()
     self.Tab_SkinPreview:UpdateBottomKeyInfo(self.BottomKeyInfo)
   end
 end
-
 function M:OnBackKeyDown()
-  if self.bRoleListOpen then
+  if self.bSelfHidden then
+    self:OnHideUIKeyDown()
+  elseif self.bRoleListOpen then
     self:CloseRoleListPanel()
   else
     self:ExitSkin()
   end
 end
-
 function M:OnConfirmKeyDown()
   if self.Btn_Confirm.IsEnabled ~= false then
     self:OnConfirmClicked()
   end
 end
-
+function M:OnGamepadConfirmKeyDonw(Content)
+  if self:IsGamepadInput() then
+    self:OnConfirmKeyDown()
+  else
+    self:OnSkinItemClicked(Content)
+  end
+end
 function M:OnHideUIKeyDown()
   self.bSelfHidden = not self.bSelfHidden
   if self.bSelfHidden then
@@ -898,19 +958,16 @@ function M:OnHideUIKeyDown()
     self.GameInputModeSubsystem:SetNavigateWidgetVisibility(true)
   end
 end
-
 function M:OnCameraScrollBackwardKeyDown()
   if not self.bSelfHidden then
     self:ScrollCamera(1)
   end
 end
-
 function M:OnCameraScrollForwardKeyDown()
   if not self.bSelfHidden then
     self:ScrollCamera(-1)
   end
 end
-
 function M:InitSelectiveListing()
   if self.bSelectiveInited then
     return
@@ -945,7 +1002,6 @@ function M:InitSelectiveListing()
   self:BuildFilterContents()
   self:FillSelectiveTileView()
 end
-
 function M:BuildFilterContents()
   self.EMListView_Filter:ClearListItems()
   self.FilterContents = {}
@@ -981,18 +1037,15 @@ function M:BuildFilterContents()
   self.CurrentFilterTag = "ALL"
   self.EMListView_Filter:RegenerateAllEntries()
 end
-
 function M:OnFilterEntryInitialized(Content, Widget)
   if Widget and Widget.SetIsSelected then
     Widget:SetIsSelected(Content.IsSelected == true)
     Content.UI = Widget
   end
 end
-
 function M:GetSelectiveSourceContents()
   return self.RoleItemContentsArray or {}
 end
-
 function M:FillSelectiveTileView()
   local Source = self:GetSelectiveSourceContents()
   local FilterTag = self.CurrentFilterTag
@@ -1037,7 +1090,6 @@ function M:FillSelectiveTileView()
     self.TileView_Select_Role:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:SetIsEmpty(bIsEmpty)
   if bIsEmpty then
     self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -1045,11 +1097,9 @@ function M:SetIsEmpty(bIsEmpty)
     self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnTileRoleItemClicked(Content)
   self:OnRoleListItemClicked(Content)
 end
-
 function M:OnFilterListItemClicked(Content)
   if Content.Tag == self.CurrentFilterTag then
     return
@@ -1073,10 +1123,8 @@ function M:OnFilterListItemClicked(Content)
   end
   self:FillSelectiveTileView()
 end
-
 function M:OnSelectiveSortChanged()
 end
-
 function M:CreateFilters(InTags, InTexts, InIcons, ExcelWeaponTags)
   local Filters = {}
   for i, value in ipairs(InTags) do
@@ -1089,7 +1137,6 @@ function M:CreateFilters(InTags, InTexts, InIcons, ExcelWeaponTags)
   end
   return Filters
 end
-
 function M:HasSkin(CharId, SkinId)
   if not CharId or not SkinId then
     return false
@@ -1116,11 +1163,36 @@ function M:HasSkin(CharId, SkinId)
   end
   return false
 end
-
+function M:HasWeaponSkin(SkinId)
+  if not SkinId then
+    return false
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar.OwnedWeaponSkins[SkinId] then
+    return true
+  else
+    return false
+  end
+end
+function M:HasAccessory(Type, Id)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  local AccessoryList = Avatar[Type .. "s"]
+  if AccessoryList then
+    for _, AccessoryId in pairs(AccessoryList) do
+      if AccessoryId == Id then
+        return true
+      end
+    end
+  end
+  return false
+end
 function M:RefreshDetailPanel()
   local Content = self.CurRoleContent
   local CharId = Content.UnitId
-  local SkinId = self.CharId2SkinId[CharId] or self.InitSkinId
+  local SkinId = self.CharId2SkinId and self.CharId2SkinId[CharId] or self.InitSkinId
   DebugPrint("gmy@WBP_CharSkinPreview_C M:RefreshDetailPanel", self.CurRoleContent, CharId, SkinId)
   local SkinData = DataMgr.Skin[SkinId]
   local CharCfg = DataMgr.Char[CharId]
@@ -1206,94 +1278,358 @@ function M:RefreshDetailPanel()
     end
     self.Item_Consume:SetIsGot(bHasSkin)
   else
-    DebugPrint("WBP_CharSkinPreview_C RefreshDetailPanel \231\154\174\232\130\164\231\188\186\229\176\145\229\155\190\230\160\135", SkinId)
+    DebugPrint("WBP_CharSkinPreview_C RefreshDetailPanel 皮肤缺少图标", SkinId)
   end
 end
-
 function M:OnConfirmClicked()
-  local Content = self.CurRoleContent
-  local CharId = Content.UnitId
-  local SkinId = self.CharId2SkinId[CharId] or self.InitSkinId
-  local bHasChar = Content.IsOwned == true
-  local bHasSkin = self:HasSkin(CharId, SkinId)
-  local ConfirmId = OBTAIN_SKIN_POP
-  local CharName = GText(DataMgr.Char[CharId].CharName)
-  local SkinName = GText(DataMgr.Skin[SkinId].SkinName)
-  DebugPrint("gmy@WBP_CharSkinPreview_C M:OnConfirmClicked111", CharId, SkinId, bHasChar, bHasSkin, ConfirmId)
-  local ConfirmText, ItemList
-  if bHasSkin then
-    ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm_Have_Skin"), SkinName)
-    ConfirmId = HAS_SKIN_ALERT_POP
-    local RegainItemNum = DataMgr.Skin[SkinId].RegainItemNum
-    local RegainItemId = DataMgr.Skin[SkinId].RegainItemId
-    if RegainItemId and RegainItemNum then
-      ItemList = {
-        {
-          ItemId = RegainItemId,
-          ItemType = CommonConst.ItemType.Resource,
-          ItemNum = RegainItemNum
+  local ConfirmId
+  if self.Params.Type == "SkinSelect" then
+    local Content = self.CurRoleContent
+    local CharId = Content.UnitId
+    local SkinId = self.CharId2SkinId[CharId] or self.InitSkinId
+    local bHasChar = Content.IsOwned == true
+    local bHasSkin = self:HasSkin(CharId, SkinId)
+    ConfirmId = OBTAIN_SKIN_POP
+    local CharName = GText(DataMgr.Char[CharId].CharName)
+    local SkinName = GText(DataMgr.Skin[SkinId].SkinName)
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:OnConfirmClicked111", CharId, SkinId, bHasChar, bHasSkin, ConfirmId)
+    local ConfirmText, ItemList
+    if bHasSkin then
+      ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm_Have_Skin"), SkinName)
+      ConfirmId = HAS_SKIN_ALERT_POP
+      local RegainItemNum = DataMgr.Skin[SkinId].RegainItemNum
+      local RegainItemId = DataMgr.Skin[SkinId].RegainItemId
+      if RegainItemId and RegainItemNum then
+        ItemList = {
+          {
+            ItemId = RegainItemId,
+            ItemType = CommonConst.ItemType.Resource,
+            ItemNum = RegainItemNum
+          }
         }
-      }
-    end
-  elseif bHasChar then
-    ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm"), SkinName)
-  else
-    ConfirmText = string.format(GText("UI_Skin_CharHasnotGottenReminder"), CharName, SkinName)
-  end
-  DebugPrint("WBP_CharSkinPreview_C OnConfirmClicked", ConfirmId, CharId, SkinId, bHasChar, bHasSkin, ConfirmText)
-  local Params = {
-    CharId = CharId,
-    SkinId = SkinId,
-    bHasChar = bHasChar,
-    bHasSkin = bHasSkin,
-    SkinOptRewardId = self.SkinOptRewardId,
-    ResourceId = self.ResourceId,
-    Content = Content
-  }
-  local PopupParams = {
-    RightCallbackObj = self,
-    RightCallbackFunction = function()
-      if self._ApplyingSkin then
-        return
       end
-      self._ApplyingSkin = true
-      self:DoApplySkinOptReward(Params)
-      self._ApplyingSkin = nil
-    end,
-    LeftCallbackObj = self,
-    LeftCallbackFunction = function()
-    end,
-    CloseBtnCallbackObj = self,
-    CloseBtnCallbackFunction = function()
-    end,
-    ShortText = ConfirmText,
-    LongText = ConfirmText
-  }
-  PopupParams.ItemList = ItemList
-  self.SecondConfirmPopup = UIManager(self):ShowCommonPopupUI(ConfirmId, PopupParams, self.EMListView_Role)
+    elseif bHasChar then
+      ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm"), SkinName)
+    else
+      ConfirmText = string.format(GText("UI_Skin_CharHasnotGottenReminder"), CharName, SkinName)
+    end
+    DebugPrint("WBP_CharSkinPreview_C OnConfirmClicked", ConfirmId, CharId, SkinId, bHasChar, bHasSkin, ConfirmText)
+    local Params = {
+      CharId = CharId,
+      SkinId = SkinId,
+      bHasChar = bHasChar,
+      bHasSkin = bHasSkin,
+      SkinOptRewardId = self.SkinOptRewardId,
+      ResourceId = self.ResourceId,
+      Content = Content
+    }
+    local PopupParams = {
+      RightCallbackObj = self,
+      RightCallbackFunction = function()
+        if self._ApplyingSkin then
+          return
+        end
+        self._ApplyingSkin = true
+        self:DoApplySkinOptReward(Params)
+        self._ApplyingSkin = nil
+      end,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = function()
+      end,
+      CloseBtnCallbackObj = self,
+      CloseBtnCallbackFunction = function()
+      end,
+      ShortText = ConfirmText,
+      LongText = ConfirmText
+    }
+    PopupParams.ItemList = ItemList
+    self.SecondConfirmPopup = UIManager(self):ShowCommonPopupUI(ConfirmId, PopupParams, self.EMListView_Role)
+  elseif self.Params.Type == "SelectWeaponSkin" then
+    self:OnConfirmClicked_WeaponSkin()
+    return
+  elseif self.Params.Type == "SelectCharAccessory" or self.Params.Type == "SelectWeaponAccessory" then
+    self:OnConfirmClicked_Accessory()
+    return
+  elseif self.Params.Type == "SelectSkin" then
+    self:OnConfirmClicked_CharSkin()
+    return
+  elseif self.Params.Type == "SelectGestureItem" then
+    self:OnConfirmClicked_Gesture()
+    return
+  end
   if ConfirmId == HAS_SKIN_ALERT_POP then
     self:PopupUIGamepadSetting()
   end
 end
-
-function M:DoApplySkinOptReward(Context)
-  DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward", Context.CharId, Context.SkinId, Context.SkinOptRewardId, Context.bHasSkin)
+function M:OnConfirmClicked_WeaponSkin()
+  if self.Params.Type == "SelectWeaponSkin" then
+    local Content = self.CurRoleContent
+    local SkinId = Content.Id
+    local bHasSkin = self:HasWeaponSkin(SkinId)
+    local ConfirmId = OBTAIN_SKIN_POP
+    local SkinName = GText(DataMgr.WeaponSkin[SkinId].Name)
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:OnConfirmClicked111", SkinId, bHasSkin, ConfirmId)
+    local ConfirmText, ItemList
+    if bHasSkin then
+      ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm_Have_Skin"), SkinName)
+      ConfirmId = HAS_SKIN_ALERT_POP
+      local RegainItemNum = DataMgr.WeaponSkin[SkinId].RegainItemNum
+      local RegainItemId = DataMgr.WeaponSkin[SkinId].RegainItemId
+      if RegainItemId and RegainItemNum then
+        ItemList = {
+          {
+            ItemId = RegainItemId,
+            ItemType = CommonConst.ItemType.Resource,
+            ItemNum = RegainItemNum
+          }
+        }
+      end
+    else
+      ConfirmText = string.format(GText("UI_Skin_CharHasnotGottenReminder"), SkinName, SkinName)
+    end
+    DebugPrint("WBP_CharSkinPreview_C OnConfirmClicked", ConfirmId, SkinId, bHasSkin, ConfirmText)
+    local Params = {
+      SkinId = SkinId,
+      bHasSkin = bHasSkin,
+      WeaponSkinOptRewardId = self.WeaponSkinOptRewardId,
+      ResourceId = self.ResourceId,
+      Content = Content
+    }
+    local PopupParams = {
+      RightCallbackObj = self,
+      RightCallbackFunction = function()
+        if self._ApplyingSkin then
+          return
+        end
+        self._ApplyingSkin = true
+        self:DoApplyWeaponSkinOptReward(Params)
+        self._ApplyingSkin = nil
+      end,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = function()
+      end,
+      CloseBtnCallbackObj = self,
+      CloseBtnCallbackFunction = function()
+      end,
+      ShortText = ConfirmText,
+      LongText = ConfirmText
+    }
+    PopupParams.ItemList = ItemList
+    self.SecondConfirmPopup = UIManager(self):ShowCommonPopupUI(ConfirmId, PopupParams, self.List_Skin)
+    if ConfirmId == HAS_SKIN_ALERT_POP then
+      self:PopupUIGamepadSetting()
+    end
+  end
+end
+function M:OnConfirmClicked_CharSkin()
+  if self.Params.Type == "SelectSkin" then
+    local Content = self.CurRoleContent
+    local SkinId = Content.SkinId
+    local CharId = Content.CharId
+    local bHasSkin = self:HasSkin(CharId, SkinId)
+    local ConfirmId = OBTAIN_SKIN_POP
+    local SkinName = GText(DataMgr.Skin[SkinId].SkinName)
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:OnConfirmClicked111", SkinId, bHasSkin, ConfirmId)
+    local ConfirmText, ItemList
+    if bHasSkin then
+      ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm_Have_Skin"), SkinName)
+      ConfirmId = HAS_SKIN_ALERT_POP
+      local RegainItemNum = DataMgr.Skin[SkinId].RegainItemNum
+      local RegainItemId = DataMgr.Skin[SkinId].RegainItemId
+      if RegainItemId and RegainItemNum then
+        ItemList = {
+          {
+            ItemId = RegainItemId,
+            ItemType = CommonConst.ItemType.Resource,
+            ItemNum = RegainItemNum
+          }
+        }
+      end
+    else
+      ConfirmText = string.format(GText("UI_Skin_CharHasnotGottenReminder"), SkinName, SkinName)
+    end
+    DebugPrint("WBP_CharSkinPreview_C OnConfirmClicked", ConfirmId, SkinId, bHasSkin, ConfirmText)
+    local Params = {
+      SkinId = SkinId,
+      bHasSkin = bHasSkin,
+      CharSkinOptRewardId = self.CharSkinOptRewardId,
+      ResourceId = self.ResourceId,
+      Content = Content
+    }
+    local PopupParams = {
+      RightCallbackObj = self,
+      RightCallbackFunction = function()
+        if self._ApplyingSkin then
+          return
+        end
+        self._ApplyingSkin = true
+        self:DoApplyCharSkinOptReward(Params)
+        self._ApplyingSkin = nil
+      end,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = function()
+      end,
+      CloseBtnCallbackObj = self,
+      CloseBtnCallbackFunction = function()
+      end,
+      ShortText = ConfirmText,
+      LongText = ConfirmText
+    }
+    PopupParams.ItemList = ItemList
+    self.SecondConfirmPopup = UIManager(self):ShowCommonPopupUI(ConfirmId, PopupParams, self.List_Skin)
+    if ConfirmId == HAS_SKIN_ALERT_POP then
+      self:PopupUIGamepadSetting()
+    end
+  end
+end
+function M:OnConfirmClicked_Accessory()
+  if self.Params.Type == "SelectCharAccessory" or self.Params.Type == "SelectWeaponAccessory" then
+    local Content = self.CurRoleContent
+    local SkinId = Content.Id
+    local Type = self.Params.Type == "SelectCharAccessory" and "CharAccessory" or "WeaponAccessory"
+    local bHasSkin = self:HasAccessory(Type, SkinId)
+    local ConfirmId = OBTAIN_SKIN_POP
+    local SkinName = GText(DataMgr[Type][SkinId].Name)
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:OnConfirmClicked111", SkinId, bHasSkin, ConfirmId)
+    local ConfirmText, ItemList
+    if bHasSkin then
+      ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm_Have_Skin"), SkinName)
+      ConfirmId = HAS_SKIN_ALERT_POP
+      local RegainItemNum = DataMgr[Type][SkinId].RegainItemNum
+      local RegainItemId = DataMgr[Type][SkinId].RegainItemId
+      if RegainItemId and RegainItemNum then
+        ItemList = {
+          {
+            ItemId = RegainItemId,
+            ItemType = CommonConst.ItemType.Resource,
+            ItemNum = RegainItemNum
+          }
+        }
+      end
+    else
+      ConfirmText = string.format(GText("UI_Skin_CharHasnotGottenReminder"), SkinName, SkinName)
+    end
+    DebugPrint("WBP_CharSkinPreview_C OnConfirmClicked", ConfirmId, SkinId, bHasSkin, ConfirmText)
+    local Params = {
+      SkinId = SkinId,
+      bHasSkin = bHasSkin,
+      AccessoryOptRewardId = self.AccessoryOptRewardId,
+      ResourceId = self.ResourceId,
+      Content = Content,
+      Type = Type
+    }
+    local PopupParams = {
+      RightCallbackObj = self,
+      RightCallbackFunction = function()
+        if self._ApplyingSkin then
+          return
+        end
+        self._ApplyingSkin = true
+        self:DoApplyAccessoryOptReward(Params)
+        self._ApplyingSkin = nil
+      end,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = function()
+      end,
+      CloseBtnCallbackObj = self,
+      CloseBtnCallbackFunction = function()
+      end,
+      ShortText = ConfirmText,
+      LongText = ConfirmText
+    }
+    PopupParams.ItemList = ItemList
+    self.SecondConfirmPopup = UIManager(self):ShowCommonPopupUI(ConfirmId, PopupParams, self.TileView_Pendant)
+    if ConfirmId == HAS_SKIN_ALERT_POP then
+      self:PopupUIGamepadSetting()
+    end
+  end
+end
+function M:OnConfirmClicked_Gesture()
+  if self.Params.Type == "SelectGestureItem" then
+    local Avatar = GWorld:GetAvatar()
+    if not Avatar then
+      return
+    end
+    local Content = self.CurRoleContent
+    local GestureId = Content.Id
+    local Type = Content.ItemType
+    local bHasSkin = Avatar.Resources[GestureId] and Avatar.Resources[GestureId].Count > 0
+    local ConfirmId = OBTAIN_SKIN_POP
+    local SkinName = GText(Content.Name)
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:OnConfirmClicked111", GestureId, bHasSkin, ConfirmId)
+    local ConfirmText, ItemList
+    if bHasSkin then
+      ConfirmText = string.format(GText("UI_Consumable_Choose_Confirm_Have_Skin"), SkinName)
+      ConfirmId = HAS_SKIN_ALERT_POP
+      local RegainItemNum = DataMgr[Type][GestureId].RegainItemNum
+      local RegainItemId = DataMgr[Type][GestureId].RegainItemId
+      if RegainItemId and RegainItemNum then
+        ItemList = {
+          {
+            ItemId = RegainItemId,
+            ItemType = CommonConst.ItemType.Resource,
+            ItemNum = RegainItemNum
+          }
+        }
+      else
+        Traceback(ErrorTag, string.format("商品Id %s 不存在，策划还没配重复获取的相关信息，别急", GestureId))
+      end
+    else
+      ConfirmText = string.format(GText("UI_Skin_CharHasnotGottenReminder"), SkinName, SkinName)
+    end
+    DebugPrint("WBP_CharSkinPreview_C OnConfirmClicked", ConfirmId, GestureId, bHasSkin, ConfirmText)
+    local Params = {
+      SkinId = GestureId,
+      bHasSkin = bHasSkin,
+      GeatureOptRewardId = self.GestureOptRewardId,
+      ResourceId = self.ResourceId,
+      Content = Content,
+      Type = Type
+    }
+    local PopupParams = {
+      RightCallbackObj = self,
+      RightCallbackFunction = function()
+        if self._ApplyingSkin then
+          return
+        end
+        self._ApplyingSkin = true
+        self:DoApplyGestureOptReward(Params)
+        self._ApplyingSkin = nil
+      end,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = function()
+      end,
+      CloseBtnCallbackObj = self,
+      CloseBtnCallbackFunction = function()
+      end,
+      ShortText = ConfirmText,
+      LongText = ConfirmText
+    }
+    PopupParams.ItemList = ItemList
+    self.SecondConfirmPopup = UIManager(self):ShowCommonPopupUI(ConfirmId, PopupParams, self.TileView_Pendant)
+    if ConfirmId == HAS_SKIN_ALERT_POP then
+      self:PopupUIGamepadSetting()
+    end
+  end
+end
+function M:DoApplySkinOptReward(Content)
+  DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward", Content.CharId, Content.SkinId, Content.SkinOptRewardId, Content.bHasSkin)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward \230\151\160\230\179\149\232\142\183\229\143\150 Avatar")
+    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward 无法获取 Avatar")
     return
   end
-  local ResourceId = Context.ResourceId
-  local SkinOptRewardId = Context.SkinOptRewardId
-  local SkinId = Context.SkinId
-  local bHasSkin = Context.bHasSkin
+  local ResourceId = Content.ResourceId
+  local SkinOptRewardId = Content.SkinOptRewardId
+  local SkinId = Content.SkinId
+  local bHasSkin = Content.bHasSkin
   if not (ResourceId and SkinOptRewardId) or not SkinId then
-    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward \229\143\130\230\149\176\231\188\186\229\164\177", ResourceId, SkinOptRewardId, SkinId)
+    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward 参数缺失", ResourceId, SkinOptRewardId, SkinId)
     return
   end
   local OptCfg = DataMgr.OptReward and DataMgr.OptReward[SkinOptRewardId]
   if not OptCfg or not OptCfg.Id then
-    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward \230\137\190\228\184\141\229\136\176\232\135\170\233\128\137\229\165\150\229\138\177\233\133\141\231\189\174", SkinOptRewardId)
+    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward 找不到自选奖励配置", SkinOptRewardId)
     return
   end
   local ChooseIndex
@@ -1304,14 +1640,13 @@ function M:DoApplySkinOptReward(Context)
     end
   end
   if not ChooseIndex then
-    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward \230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\174\232\130\164\231\180\162\229\188\149", SkinId)
+    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward 未找到对应皮肤索引", SkinId)
     return
   end
   local OptIdxList = {ChooseIndex}
-  DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward \232\176\131\231\148\168RPC UseOptResourceInBag", ResourceId, ChooseIndex)
-  
+  DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward 调用RPC UseOptResourceInBag", ResourceId, ChooseIndex)
   local function OnFinish(ErrCode)
-    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward \229\155\158\232\176\131\230\136\144\229\138\159", ErrCode, ResourceId, SkinId, ChooseIndex, bHasSkin)
+    DebugPrint("WBP_CharSkinPreview_C DoApplySkinOptReward 回调成功", ErrCode, ResourceId, SkinId, ChooseIndex, bHasSkin)
     if ErrCode == ErrorCode.RET_SUCCESS then
       local BagMainPage = UIManager(self):GetUIObj("BagMain")
       if BagMainPage then
@@ -1324,15 +1659,266 @@ function M:DoApplySkinOptReward(Context)
             UIUtils.ShowGetItemPage("Skin", SkinId, 1, nil, nil, nil, nil, true, true)
           end
         end)
+      else
+        local ArmorySkinPage = UIManager(self):GetUIObj("ArmorySkin")
+        if ArmorySkinPage then
+          ArmorySkinPage:AddTimer(0.3, function()
+            UIUtils.ShowGetItemPage("Skin", SkinId, 1, nil, nil, nil, nil, true, true)
+          end)
+        end
       end
     end
     self:Close()
   end
-  
   Avatar:UseOptResourceInBag(ResourceId, OptIdxList, OnFinish)
   self:Close()
 end
-
+function M:DoApplyWeaponSkinOptReward(Content)
+  DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward", Content.SkinId, Content.WeaponSkinOptRewardId, Content.bHasSkin)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 无法获取 Avatar")
+    return
+  end
+  local ResourceId = Content.ResourceId
+  local WeaponSkinOptRewardId = Content.WeaponSkinOptRewardId
+  local SkinId = Content.SkinId
+  local bHasSkin = Content.bHasSkin
+  if not (ResourceId and WeaponSkinOptRewardId) or not SkinId then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 参数缺失", ResourceId, WeaponSkinOptRewardId, SkinId)
+    return
+  end
+  local OptCfg = DataMgr.OptReward and DataMgr.OptReward[WeaponSkinOptRewardId]
+  if not OptCfg or not OptCfg.Id then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 找不到自选奖励配置", WeaponSkinOptRewardId)
+    return
+  end
+  local ChooseIndex
+  for idx, id in ipairs(OptCfg.Id) do
+    if id == SkinId then
+      ChooseIndex = idx
+      break
+    end
+  end
+  if not ChooseIndex then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 未找到对应皮肤索引", SkinId)
+    return
+  end
+  local OptIdxList = {ChooseIndex}
+  DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 调用RPC UseOptResourceInBag", ResourceId, ChooseIndex)
+  local function OnFinish(ErrCode)
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 回调成功", ErrCode, ResourceId, SkinId, ChooseIndex, bHasSkin)
+    if ErrCode == ErrorCode.RET_SUCCESS then
+      local BagMainPage = UIManager(self):GetUIObj("BagMain")
+      if BagMainPage then
+        BagMainPage:AddTimer(0.3, function()
+          if bHasSkin then
+            local RegainItemId = DataMgr.WeaponSkin[SkinId].RegainItemId
+            local RegainItemNum = DataMgr.WeaponSkin[SkinId].RegainItemNum
+            UIUtils.ShowGetItemPage(CommonConst.ItemType.Resource, RegainItemId, RegainItemNum, nil, nil, nil, nil, true, true)
+          else
+            UIUtils.ShowGetItemPage("WeaponSkin", SkinId, 1, nil, nil, nil, nil, true, true)
+          end
+        end)
+      else
+        local ArmorySkinPage = UIManager(self):GetUIObj("ArmorySkin")
+        if ArmorySkinPage then
+          ArmorySkinPage:AddTimer(0.3, function()
+            UIUtils.ShowGetItemPage("WeaponSkin", SkinId, 1, nil, nil, nil, nil, true, true)
+          end)
+        end
+      end
+    end
+    self:Close()
+  end
+  Avatar:UseOptResourceInBag(ResourceId, OptIdxList, OnFinish)
+  self:Close()
+end
+function M:DoApplyCharSkinOptReward(Content)
+  DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward", Content.SkinId, Content.CharSkinOptRewardId, Content.bHasSkin)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 无法获取 Avatar")
+    return
+  end
+  local ResourceId = Content.ResourceId
+  local CharSkinOptRewardId = Content.CharSkinOptRewardId
+  local SkinId = Content.SkinId
+  local bHasSkin = Content.bHasSkin
+  if not (ResourceId and CharSkinOptRewardId) or not SkinId then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 参数缺失", ResourceId, CharSkinOptRewardId, SkinId)
+    return
+  end
+  local OptCfg = DataMgr.OptReward and DataMgr.OptReward[CharSkinOptRewardId]
+  if not OptCfg or not OptCfg.Id then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 找不到自选奖励配置", CharSkinOptRewardId)
+    return
+  end
+  local ChooseIndex
+  for idx, id in ipairs(OptCfg.Id) do
+    if id == SkinId then
+      ChooseIndex = idx
+      break
+    end
+  end
+  if not ChooseIndex then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 未找到对应皮肤索引", SkinId)
+    return
+  end
+  local OptIdxList = {ChooseIndex}
+  DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 调用RPC UseOptResourceInBag", ResourceId, ChooseIndex)
+  local function OnFinish(ErrCode)
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 回调成功", ErrCode, ResourceId, SkinId, ChooseIndex, bHasSkin)
+    if ErrCode == ErrorCode.RET_SUCCESS then
+      local BagMainPage = UIManager(self):GetUIObj("BagMain")
+      if BagMainPage then
+        BagMainPage:AddTimer(0, function()
+          if bHasSkin then
+            local RegainItemId = DataMgr.Skin[SkinId].RegainItemId
+            local RegainItemNum = DataMgr.Skin[SkinId].RegainItemNum
+            UIUtils.ShowGetItemPage(CommonConst.ItemType.Resource, RegainItemId, RegainItemNum, nil, nil, nil, nil, true, true)
+          else
+            UIUtils.ShowGetItemPage("Skin", SkinId, 1, nil, nil, nil, nil, true, true)
+          end
+        end)
+      else
+        local ArmorySkinPage = UIManager(self):GetUIObj("ArmorySkin")
+        if ArmorySkinPage then
+          ArmorySkinPage:AddTimer(0.3, function()
+            UIUtils.ShowGetItemPage("Skin", SkinId, 1, nil, nil, nil, nil, true, true)
+          end)
+        end
+      end
+    end
+    self:Close()
+  end
+  Avatar:UseOptResourceInBag(ResourceId, OptIdxList, OnFinish)
+  self:Close()
+end
+function M:DoApplyAccessoryOptReward(Content)
+  DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward", Content.SkinId, Content.AccessoryOptRewardId, Content.bHasSkin)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 无法获取 Avatar")
+    return
+  end
+  local ResourceId = Content.ResourceId
+  local AccessoryOptRewardId = Content.AccessoryOptRewardId
+  local SkinId = Content.SkinId
+  local bHasSkin = Content.bHasSkin
+  local Type = Content.Type
+  if not (ResourceId and AccessoryOptRewardId) or not SkinId then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 参数缺失", ResourceId, AccessoryOptRewardId, SkinId)
+    return
+  end
+  local OptCfg = DataMgr.OptReward and DataMgr.OptReward[AccessoryOptRewardId]
+  if not OptCfg or not OptCfg.Id then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 找不到自选奖励配置", AccessoryOptRewardId)
+    return
+  end
+  local ChooseIndex
+  for idx, id in ipairs(OptCfg.Id) do
+    if id == SkinId then
+      ChooseIndex = idx
+      break
+    end
+  end
+  if not ChooseIndex then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 未找到对应皮肤索引", SkinId)
+    return
+  end
+  local OptIdxList = {ChooseIndex}
+  DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 调用RPC UseOptResourceInBag", ResourceId, ChooseIndex)
+  local function OnFinish(ErrCode)
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 回调成功", ErrCode, ResourceId, SkinId, ChooseIndex, bHasSkin)
+    if ErrCode == ErrorCode.RET_SUCCESS then
+      local BagMainPage = UIManager(self):GetUIObj("BagMain")
+      if BagMainPage then
+        BagMainPage:AddTimer(0.3, function()
+          if bHasSkin then
+            local RegainItemId = DataMgr[Type][SkinId].RegainItemId
+            local RegainItemNum = DataMgr[Type][SkinId].RegainItemNum
+            UIUtils.ShowGetItemPage(CommonConst.ItemType.Resource, RegainItemId, RegainItemNum, nil, nil, nil, nil, true, true)
+          else
+            UIUtils.ShowGetItemPage(Type, SkinId, 1, nil, nil, nil, nil, true, true)
+          end
+        end)
+      else
+        local ArmorySkinPage = UIManager(self):GetUIObj("ArmorySkin")
+        if ArmorySkinPage then
+          ArmorySkinPage:AddTimer(0.3, function()
+            UIUtils.ShowGetItemPage(Type, SkinId, 1, nil, nil, nil, nil, true, true)
+          end)
+        end
+      end
+    end
+    self:Close()
+  end
+  Avatar:UseOptResourceInBag(ResourceId, OptIdxList, OnFinish)
+  self:Close()
+end
+function M:DoApplyGestureOptReward(Content)
+  DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward", Content.SkinId, Content.ResourceId, Content.bHasSkin)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 无法获取 Avatar")
+    return
+  end
+  local ResourceId = Content.ResourceId
+  local SkinId = Content.SkinId
+  local bHasSkin = Content.bHasSkin
+  local Type = Content.Type
+  local GestureOptRewardId = Content.GeatureOptRewardId
+  if not ResourceId or not SkinId then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 参数缺失", ResourceId, SkinId)
+    return
+  end
+  local OptCfg = DataMgr.OptReward and DataMgr.OptReward[GestureOptRewardId]
+  if not OptCfg or not OptCfg.Id then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 找不到自选奖励配置", GestureOptRewardId)
+    return
+  end
+  local ChooseIndex
+  for idx, id in ipairs(OptCfg.Id) do
+    if id == SkinId then
+      ChooseIndex = idx
+      break
+    end
+  end
+  if not ChooseIndex then
+    DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 未找到对应皮肤索引", SkinId)
+    return
+  end
+  local OptIdxList = {ChooseIndex}
+  DebugPrint("WBP_CharSkinPreview_C DoApplyAccessoryOptReward 调用RPC UseOptResourceInBag", ResourceId, ChooseIndex)
+  local function OnFinish(ErrCode)
+    DebugPrint("WBP_CharSkinPreview_C DoApplyWeaponSkinOptReward 回调成功", ErrCode, ResourceId, SkinId, ChooseIndex, bHasSkin)
+    if ErrCode == ErrorCode.RET_SUCCESS then
+      local BagMainPage = UIManager(self):GetUIObj("BagMain")
+      if BagMainPage then
+        BagMainPage:AddTimer(0.3, function()
+          if bHasSkin then
+            local RegainItemId = DataMgr[Type][SkinId].RegainItemId
+            local RegainItemNum = DataMgr[Type][SkinId].RegainItemNum
+            UIUtils.ShowGetItemPage(CommonConst.ItemType.Resource, RegainItemId, RegainItemNum, nil, nil, nil, nil, true, true)
+          else
+            UIUtils.ShowGetItemPage(Type, SkinId, 1, nil, nil, nil, nil, true, true)
+          end
+        end)
+      else
+        local ArmorySkinPage = UIManager(self):GetUIObj("ArmorySkin")
+        if ArmorySkinPage then
+          ArmorySkinPage:AddTimer(0.3, function()
+            UIUtils.ShowGetItemPage(Type, SkinId, 1, nil, nil, nil, nil, true, true)
+          end)
+        end
+      end
+    end
+    self:Close()
+  end
+  Avatar:UseOptResourceInBag(ResourceId, OptIdxList, OnFinish)
+  self:Close()
+end
 function M:ToggleRoleListPanel()
   if self.bRoleListOpen then
     self:CloseRoleListPanel()
@@ -1340,7 +1926,6 @@ function M:ToggleRoleListPanel()
     self:OpenRoleListPanel()
   end
 end
-
 function M:PlayRoleListAnimation()
   DebugPrint("gmy@WBP_CharSkinPreview_C M:PlayRoleListAnimation", self.Change_List)
   self:StopAllAnimations()
@@ -1348,7 +1933,6 @@ function M:PlayRoleListAnimation()
     self:PlayAnimation(self.Change_List)
   end
 end
-
 function M:PlayTabAnimation()
   DebugPrint("gmy@WBP_CharSkinPreview_C M:PlayTabAnimation", self.Change_Tab)
   self:StopAllAnimations()
@@ -1356,7 +1940,6 @@ function M:PlayTabAnimation()
     self:PlayAnimation(self.Change_Tab)
   end
 end
-
 function M:ResetFilterToDefault()
   DebugPrint("gmy@WBP_CharSkinPreview_C M:ResetFilterToDefault", self.CurrentFilterTag)
   if not self.EMListView_Filter or not self.EMListView_Filter.GetListItems then
@@ -1407,7 +1990,6 @@ function M:ResetFilterToDefault()
     self:FillSelectiveTileView()
   end
 end
-
 function M:OpenRoleListPanel()
   if self.bRoleListOpen then
     return
@@ -1424,7 +2006,6 @@ function M:OpenRoleListPanel()
   self.TileView_Select_Role:SetFocus()
   self.bConsumeFocused = false
 end
-
 function M:CloseRoleListPanel()
   if not self.bRoleListOpen then
     return
@@ -1444,7 +2025,6 @@ function M:CloseRoleListPanel()
   end
   self.bConsumeFocused = false
 end
-
 function M:ApplyRoleListVisibility()
   DebugPrint("gmy@WBP_CharSkinPreview_C M:ApplyRoleListVisibility", self.bRoleListOpen)
   local bShow = self.bRoleListOpen
@@ -1480,22 +2060,19 @@ function M:ApplyRoleListVisibility()
     self.Btn_Confirm:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnAnalogValueChanged(_MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
-  if "Gamepad_RightX" == InKeyName and self.ActorController then
+  if "Gamepad_RightX" == InKeyName and BattlePassController:GetModelData("BagActorController") then
     local DeltaX = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 10
-    self.ActorController:OnDragging({X = DeltaX})
+    BattlePassController:GetModelData("BagActorController"):OnDragging({X = DeltaX})
     return UIUtils.Handled
   end
   return UIUtils.Unhandled
 end
-
 function M:IsGamepadInput()
   return self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad
 end
-
 function M:PopupUIGamepadSetting()
   self.SecondConfirmPopup.OpenTipsButtonIndex = self.SecondConfirmPopup:InitGamepadShortcut({
     KeyInfoList = {
@@ -1530,10 +2107,11 @@ function M:PopupUIGamepadSetting()
   if ItemWidget then
     ItemWidget.OnContentKeyDown = self.OnContentKeyDown
     local Item = ItemWidget.Item:GetChildAt(0)
-    Item:BindEventOnMenuOpenChanged(self, self.ItemMenuAnchorChanged)
+    if Item then
+      Item:BindEventOnMenuOpenChanged(self, self.ItemMenuAnchorChanged)
+    end
   end
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1548,7 +2126,7 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
       self.Owner:HideGamepadShortcut(self.Owner.OpenTipsButtonIndex)
       IsEventHandled = true
     end
-  elseif InKeyName == UIConst.GamePadKey.FaceButtonRight and Item:HasAnyFocus() then
+  elseif InKeyName == UIConst.GamePadKey.FaceButtonRight and (Item:HasAnyUserFocus() or Item:HasFocusedDescendants()) then
     self.Owner.ButtonBar:SetGamepadBtnKeyVisibility(true)
     self.Owner:HideGamepadShortcut(self.Owner.ConfirmButtonIndex)
     self.Owner:HideGamepadShortcut(self.Owner.CancelButtonIndex)
@@ -1558,10 +2136,871 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnFocusReceivedEvent()
   self.IsFromListContent = true
 end
-
+function M:InitWeaponParams()
+  self.Switch_Type:SetActiveWidgetIndex(1)
+  if self.Params then
+    self.BehaviorType = self.Params.Type
+    self.WeaponSkinOptRewardId = self.Params.WeaponSkinOptRewardId
+    self.ResourceId = self.Params.ResourceId
+    self.PreSelectSkinId = self.Params.SkinId
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local OptReward = DataMgr.OptReward[self.WeaponSkinOptRewardId]
+    local PreviewSkinId = OptReward and OptReward.Id[1]
+    local PreviewParams = {
+      Type = "Weapon",
+      SkinId = PreviewSkinId,
+      EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+      ViewUI = self
+    }
+    local Target = self:CreatePreviewTargetData(PreviewParams)
+    PreviewParams.Target = Target
+    self.ActorController = self:CreatePreviewActor(PreviewParams)
+    BattlePassController:SetModelData("BagActorController", self.ActorController)
+    BattlePassController:GetModelData("BagActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("BagActorController")
+    self.IsPreviewMode = true
+  end
+  self:InitWeaponSkinList()
+end
+function M:InitWeaponSkinList()
+  self.WeaponSkinContents = {}
+  local OptReward = DataMgr.OptReward[self.WeaponSkinOptRewardId]
+  for Index, Id in pairs(OptReward.Id) do
+    local SkinData = DataMgr.WeaponSkin[Id]
+    if SkinData then
+      local Content = NewObject(UIUtils.GetCommonItemContentClass())
+      Content.ItemType = CommonConst.DataType.WeaponSkin
+      Content.Icon = SkinData.Icon or ""
+      Content.IconPath = SkinData.LongIcon
+      Content.Id = SkinData.SkinID
+      Content.SortPriority = SkinData.SortPriority or 0
+      Content.IsHide = SkinData.IsHide
+      Content.LockType = false
+      Content.Rarity = SkinData.Rarity or 0
+      Content.bSelectTag = false
+      Content.IsSelect = false
+      Content.Parent = self
+      Content.Name = SkinData.Name
+      Content.Des = SkinData.Dec
+      Content.ApplicationType = SkinData.ApplicationType
+      Content.IsOwned = false
+      Content.Owner = self
+      Content.IsPreviewMode = false
+      Content.OnClicked = self.OnGamepadConfirmKeyDonw
+      Content.IsNew = false
+      Content.bHasGot = self:HasWeaponSkin(SkinData.SkinID)
+      table.insert(self.WeaponSkinContents, Content)
+    end
+  end
+  table.sort(self.WeaponSkinContents, function(a, b)
+    local aOwn = a.bHasGot and 1 or 0
+    local bOwn = b.bHasGot and 1 or 0
+    if aOwn ~= bOwn then
+      return aOwn < bOwn
+    end
+    local aId = a.Id or 0
+    local bId = b.Id or 0
+    return aId < bId
+  end)
+  self:InitSkinList(self.WeaponSkinContents)
+end
+function M:InitSkinList(FilteredContents)
+  self.FilteredContents = FilteredContents
+  self.List_Skin:ClearListItems()
+  self.List_Skin:SetVisibility(UIConst.VisibilityOp.Visible)
+  local SelectFirstItem = false
+  local PreSelectSkinContent
+  for _, Content in ipairs(FilteredContents) do
+    if self.JumpToAccessoryId and self.JumpToAccessoryId == Content.AccessoryId then
+      self.ComparedContent = Content
+    end
+    if Content.bSelectTag then
+      self.CurrentContent = Content
+      if self.IsCharacterTrialMode then
+        Content.TryOutText = GText("UI_CharPreview_Accessory_In_Trial")
+      end
+    end
+    if not SelectFirstItem then
+      Content.IsSelect = true
+      SelectFirstItem = true
+    end
+    if self.PreSelectSkinId and Content.SkinId == self.PreSelectSkinId then
+      PreSelectSkinContent = Content
+    end
+    self.List_Skin:AddItem(Content)
+  end
+  self.List_Skin:RequestFillEmptyContent()
+  if PreSelectSkinContent then
+    self:AddDelayFrameFunc(function()
+      self:OnSkinItemClicked(PreSelectSkinContent)
+      if PreSelectSkinContent.SelfWidget then
+        PreSelectSkinContent.SelfWidget:SetFocus()
+      end
+    end, 3)
+  else
+    local FirstItem = self.List_Skin:GetListItems()[1]
+    if FirstItem then
+      self:OnSkinItemClicked(FirstItem)
+    end
+  end
+end
+function M:InitCharParams()
+  self.Switch_Type:SetActiveWidgetIndex(1)
+  if self.Params then
+    self.BehaviorType = self.Params.Type
+    self.CharSkinOptRewardId = self.Params.CharSkinOptRewardId
+    self.ResourceId = self.Params.ResourceId
+    self.PreSelectSkinId = self.Params.SkinId
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local OptReward = DataMgr.OptReward[self.WeaponSkinOptRewardId]
+    local PreviewSkinId = OptReward and OptReward.Id[1]
+    local PreviewParams = {
+      Type = "Char",
+      SkinId = PreviewSkinId,
+      EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+      ViewUI = self
+    }
+    local Target = self:CreatePreviewTargetData(PreviewParams)
+    PreviewParams.Target = Target
+    self.ActorController = self:CreatePreviewActor(PreviewParams)
+    BattlePassController:SetModelData("BagActorController", self.ActorController)
+    BattlePassController:GetModelData("BagActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("BagActorController")
+    self.IsPreviewMode = true
+  end
+  self:InitCharSkinList()
+end
+function M:InitCharSkinList()
+  self.CharSkinContents = {}
+  local OptReward = DataMgr.OptReward[self.CharSkinOptRewardId]
+  for Index, Id in pairs(OptReward.Id) do
+    local SkinData = DataMgr.Skin[Id]
+    if SkinData then
+      local Content = NewObject(UIUtils.GetCommonItemContentClass())
+      Content.ItemType = CommonConst.DataType.Skin
+      Content.Icon = SkinData.Icon or ""
+      Content.IconPath = SkinData.LongIcon
+      Content.SkinId = SkinData.SkinId
+      Content.CharId = SkinData.CharId
+      Content.SortPriority = SkinData.SortPriority or 0
+      Content.IsHide = SkinData.IsHide
+      Content.LockType = false
+      Content.Rarity = SkinData.Rarity or 0
+      Content.IsSelect = false
+      Content.Parent = self
+      Content.Name = SkinData.SkinName
+      Content.Des = SkinData.SkinDescribe
+      Content.ApplicationType = SkinData.ApplicationType
+      Content.Owner = self
+      Content.OnClicked = self.OnGamepadConfirmKeyDonw
+      Content.IsPreviewMode = false
+      Content.IsOwned = false
+      Content.bHasGot = self:HasSkin(SkinData.CharId, SkinData.SkinId)
+      table.insert(self.CharSkinContents, Content)
+    end
+  end
+  table.sort(self.CharSkinContents, function(a, b)
+    local aOwn = a.bHasGot and 1 or 0
+    local bOwn = b.bHasGot and 1 or 0
+    if aOwn ~= bOwn then
+      return aOwn < bOwn
+    end
+    local aId = a.Id or 0
+    local bId = b.Id or 0
+    return aId < bId
+  end)
+  self:InitSkinList(self.CharSkinContents)
+end
+function M:InitAccessoryParams()
+  self.Switch_Type:SetActiveWidgetIndex(2)
+  if self.Params then
+    self.BehaviorType = self.Params.Type
+    self.AccessoryOptRewardId = self.Params.AccessoryOptRewardId
+    self.ResourceId = self.Params.ResourceId
+    self.PreSelectAccessoryId = self.Params.AccessoryId
+  end
+  local OptReward = DataMgr.OptReward[self.Params.AccessoryOptRewardId]
+  local Type = OptReward and OptReward.Type[1]
+  self.AccessoryContents = {}
+  self.Map_AccessoryContents = {}
+  local Avatar = GWorld:GetAvatar()
+  for Index, Id in pairs(OptReward.Id) do
+    local Content = self:CreateCharAccessoryContent(DataMgr.CharAccessory[Id])
+    if Content then
+      Content.SoundDataName = "CharAccessory"
+      table.insert(self.AccessoryContents, Content)
+      self.Map_AccessoryContents[Id] = Content
+    end
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local PreviewAccessoryId = OptReward and OptReward.Id[1]
+    local PreviewParams = {
+      Type = "Char",
+      EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+      ViewUI = self,
+      SkinId = self.Params.SkinId
+    }
+    local Target = self:CreatePreviewTargetData(PreviewParams)
+    PreviewParams.Target = Target
+    self.ActorController = self:CreatePreviewActor(PreviewParams)
+    BattlePassController:SetModelData("BagActorController", self.ActorController)
+    BattlePassController:GetModelData("BagActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("BagActorController")
+    self.IsPreviewMode = true
+  end
+  self:InitAccessoryList()
+end
+function M:CreateCharAccessoryContent(Data)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if Data.AccessoryType then
+    local bCreateContent = true
+    if bCreateContent then
+      local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+      Obj.ItemType = CommonConst.DataType.CharAccessory
+      Obj.Icon = Data.Icon or ""
+      Obj.Id = Data.AccessoryId
+      Obj.AccessoryId = Data.AccessoryId
+      Obj.SortPriority = Data.SortPriority or 0
+      Obj.IsHide = Data.IsHide
+      Obj.LockType = 0
+      Obj.Rarity = Data.Rarity or 0
+      Obj.bSelectTag = false
+      Obj.IsSelect = false
+      Obj.AccessoryType = Data.AccessoryType
+      Obj.PartName = Data.PartName
+      Obj.UnlockOptionText = GText(Data.UnlockOption or "")
+      Obj.Parent = self
+      Obj.Name = Data.Name
+      Obj.Des = Data.Des
+      Obj.ItemName = self:HasAccessory(CommonConst.DataType.CharAccessory, Data.AccessoryId) and GText("UI_SHOP_ALREADYOWNED")
+      Obj.OnMouseButtonDownEvent = {
+        Obj = self,
+        Callback = self.OnGamepadConfirmKeyDonw,
+        Params = {Content = Obj, bIgnoreRightMouseDown = true}
+      }
+      return Obj
+    end
+  end
+end
+function M:InitAccessoryList()
+  local Len = #self.AccessoryContents
+  local FilteredContents = {}
+  for i = 1, Len do
+    local Content = self.AccessoryContents[i]
+    if Content.AccessoryId then
+      table.insert(FilteredContents, Content)
+    end
+  end
+  self:InitList(FilteredContents)
+end
+function M:InitList(FilteredContents)
+  self.FilteredContents = FilteredContents
+  self.TileView_Pendant:ClearListItems()
+  table.sort(FilteredContents, function(a, b)
+    local aOwn = a.ItemName and a.ItemName ~= "" and 1 or 0
+    local bOwn = b.ItemName and b.ItemName ~= "" and 1 or 0
+    if aOwn ~= bOwn then
+      return aOwn < bOwn
+    end
+    local aId = a.Id or 0
+    local bId = b.Id or 0
+    return aId < bId
+  end)
+  self.TileView_Pendant:SetVisibility(UIConst.VisibilityOp.Visible)
+  local PreSelectAccessoryContent
+  for _, Content in ipairs(FilteredContents) do
+    if self.JumpToAccessoryId and self.JumpToAccessoryId == Content.AccessoryId then
+      self.ComparedContent = Content
+    end
+    if Content.bSelectTag then
+      self.CurrentContent = Content
+      if self.IsCharacterTrialMode then
+        Content.TryOutText = GText("UI_CharPreview_Accessory_In_Trial")
+      end
+    end
+    if self.PreSelectAccessoryId and self.PreSelectAccessoryId == Content.AccessoryId then
+      PreSelectAccessoryContent = Content
+    end
+    self.TileView_Pendant:AddItem(Content)
+  end
+  self.TileView_Pendant:RequestFillEmptyContent()
+  if PreSelectAccessoryContent then
+    self:AddDelayFrameFunc(function()
+      self:OnAccessoryItemClicked(PreSelectAccessoryContent)
+      if PreSelectAccessoryContent.SelfWidget then
+        PreSelectAccessoryContent.SelfWidget:SetFocus()
+      end
+    end, 3)
+  else
+    local FirstItem = self.TileView_Pendant:GetListItems()[1]
+    if FirstItem then
+      self:OnAccessoryItemClicked(FirstItem)
+    end
+  end
+end
+function M:InitWeaponAccessoryParams()
+  self.Switch_Type:SetActiveWidgetIndex(2)
+  if self.Params then
+    self.BehaviorType = self.Params.Type
+    self.AccessoryOptRewardId = self.Params.AccessoryOptRewardId
+    self.ResourceId = self.Params.ResourceId
+    self.PreSelectAccessoryId = self.Params.AccessoryId
+  end
+  local OptReward = DataMgr.OptReward[self.Params.AccessoryOptRewardId]
+  local Type = OptReward and OptReward.Type[1]
+  self.AccessoryContents = {}
+  self.Map_AccessoryContents = {}
+  local Avatar = GWorld:GetAvatar()
+  for Index, Id in pairs(OptReward.Id) do
+    local Content = self:CreateWeaponAccessoryContent(DataMgr.WeaponAccessory[Id])
+    if Content then
+      Content.SoundDataName = "WeaponAccessory"
+      table.insert(self.AccessoryContents, Content)
+      self.Map_AccessoryContents[Id] = Content
+    end
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local PreviewAccessoryId = OptReward and OptReward.Id[1]
+    local PreviewParams = {
+      Type = "Weapon",
+      EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+      ViewUI = self
+    }
+    local Target = self:CreatePreviewTargetData(PreviewParams)
+    PreviewParams.Target = Target
+    self.ActorController = self:CreatePreviewActor(PreviewParams)
+    BattlePassController:SetModelData("BagActorController", self.ActorController)
+    BattlePassController:GetModelData("BagActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("BagActorController")
+    self.IsPreviewMode = true
+  end
+  self:InitAccessoryList()
+end
+function M:CreateWeaponAccessoryContent(Data)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if Data then
+    local bCreateContent = true
+    if bCreateContent then
+      local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+      Obj.ItemType = CommonConst.DataType.WeaponAccessory
+      Obj.Icon = Data.Icon or ""
+      Obj.Id = Data.WeaponAccessoryId
+      Obj.AccessoryId = Data.WeaponAccessoryId
+      Obj.SortPriority = Data.SortPriority or 0
+      Obj.IsHide = Data.IsHide
+      Obj.LockType = 0
+      Obj.Rarity = Data.Rarity or 0
+      Obj.bSelectTag = false
+      Obj.IsSelect = false
+      Obj.AccessoryType = "WeaponAccessory"
+      Obj.PartName = Data.PartName
+      Obj.UnlockOptionText = GText(Data.UnlockOption or "")
+      Obj.Parent = self
+      Obj.Name = Data.Name
+      Obj.Des = Data.Des
+      Obj.ItemName = self:HasAccessory(CommonConst.DataType.WeaponAccessory, Data.WeaponAccessoryId) and GText("UI_SHOP_ALREADYOWNED")
+      Obj.OnMouseButtonDownEvent = {
+        Obj = self,
+        Callback = self.OnGamepadConfirmKeyDonw,
+        Params = {Content = Obj, bIgnoreRightMouseDown = true}
+      }
+      return Obj
+    end
+  end
+end
+function M:InitGestureItemParams()
+  self.Switch_Type:SetActiveWidgetIndex(2)
+  if self.Params then
+    self.BehaviorType = self.Params.Type
+    self.GestureOptRewardId = self.Params.GestureOptRewardId
+    self.ResourceId = self.Params.ResourceId
+    self.PreSelectAccessoryId = self.Params.GestureId
+  end
+  local OptReward = DataMgr.OptReward[self.Params.GestureOptRewardId]
+  local Type = OptReward and OptReward.Type[1]
+  self.GestureContents = {}
+  self.Map_GestureContents = {}
+  local Avatar = GWorld:GetAvatar()
+  for Index, Id in pairs(OptReward.Id) do
+    local Content = self:CreateGestureContent(DataMgr.Resource[Id])
+    if Content then
+      Content.SoundDataName = "WeaponAccessory"
+      table.insert(self.GestureContents, Content)
+      self.Map_GestureContents[Id] = Content
+    end
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local PreviewGestureId = OptReward and OptReward.Id[1]
+    local PreviewParams = {
+      Type = "Char",
+      EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+      ViewUI = self
+    }
+    local Target = self:CreatePreviewTargetData(PreviewParams)
+    PreviewParams.Target = Target
+    self.ActorController = self:CreatePreviewActor(PreviewParams)
+    BattlePassController:SetModelData("BagActorController", self.ActorController)
+    BattlePassController:GetModelData("BagActorController"):OnOpened()
+    BattlePassController:GetModel():AddModelDataRefCount("BagActorController")
+    self.IsPreviewMode = true
+  end
+  self:InitGestureList()
+end
+function M:CreateGestureContent(Data)
+  if Data then
+    local bCreateContent = true
+    local Avatar = GWorld:GetAvatar()
+    if not Avatar then
+      return
+    end
+    if bCreateContent then
+      local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+      Obj.Id = Data.ResourceId
+      Obj.ItemType = CommonConst.DataType.Resource
+      Obj.Icon = Data.Icon or ""
+      Obj.SortPriority = Data.SortPriority or 0
+      Obj.IsHide = Data.IsHide
+      Obj.LockType = 0
+      Obj.Rarity = Data.Rarity or 0
+      Obj.bSelectTag = false
+      Obj.IsSelect = false
+      Obj.AccessoryType = "Gesture"
+      Obj.UnlockOptionText = GText(Data.UnlockOption or "")
+      Obj.Parent = self
+      Obj.Name = Data.ResourceName
+      Obj.Des = Data.DetailDes
+      Obj.ItemName = Avatar.Resources[Data.ResourceId] and Avatar.Resources[Data.ResourceId].Count > 0 and GText("UI_SHOP_ALREADYOWNED")
+      Obj.OnMouseButtonDownEvent = {
+        Obj = self,
+        Callback = self.OnGamepadConfirmKeyDonw,
+        Params = {Content = Obj, bIgnoreRightMouseDown = true}
+      }
+      return Obj
+    end
+  end
+end
+function M:InitGestureList()
+  local Len = #self.GestureContents
+  local FilteredContents = {}
+  for i = 1, Len do
+    local Content = self.GestureContents[i]
+    if Content.Id then
+      table.insert(FilteredContents, Content)
+    end
+  end
+  self:InitList(FilteredContents)
+end
+function M:OnAccessoryItemClicked(Content)
+  if Content.AccessoryType == "Gesture" then
+    self:TrySelectGestureItem(Content)
+  else
+    self:TrySelectAccessoryItem(Content)
+  end
+end
+function M:TrySelectAccessoryItem(Content)
+  if self.ComparedContent == Content or not Content.Icon then
+    return
+  end
+  AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
+  if Content.AccessoryId then
+    AudioManager(self):PlayItemSound(self, Content.AccessoryId, "Equip", Content.SoundDataName)
+  end
+  self:SelectAccessoryItem(Content)
+end
+function M:SelectAccessoryItem(Content)
+  ArmoryUtils:SetItemIsSelected(self.ComparedContent, false)
+  self.ComparedContent = Content
+  ArmoryUtils:SetItemIsSelected(self.ComparedContent, true)
+  self.CurRoleContent = Content
+  self:UpdateAccessoryDetails(Content)
+  if self.Params.Type == "SelectCharAccessory" then
+    self:ClearCharAccessoryPreview()
+    self.ActorController:DestoryPlayerMeleeWeapon()
+    BattlePassController:GetModelData("BagActorController"):StopPlayerFX()
+    BattlePassController:GetModelData("BagActorController"):StopPlayerMontage()
+    self.ActorController:HidePlayerActor("CharSkinPreview", false)
+    if UIConst.FXAccessoryTypes[Content.AccessoryType] then
+      BattlePassController:GetModelData("BagActorController"):ShowPlayerFXAccessory(Content.AccessoryId, Content.AccessoryType)
+      if UIConst.HidePlayerAccessoryTypes[Content.AccessoryType] then
+        self.ActorController:HidePlayerActor("CharSkinPreview", true)
+      end
+    else
+      BattlePassController:GetModelData("BagActorController"):ChangeCharAccessory(Content.AccessoryId, Content.AccessoryType)
+    end
+    self.ActorController:SetArmoryCameraTag("Char", Content.AccessoryType, "")
+  else
+    BattlePassController:GetModelData("BagActorController"):ChangeWeaponAccessory(Content.AccessoryId)
+  end
+end
+function M:UpdateAccessoryDetails(Content)
+  Content = Content or self.TileView_Pendant:GetItemAt(0)
+  self.Text_SkinName:SetText(GText(Content.Name))
+  self:UpdateSkinNameFontByRarity(Content.Rarity)
+  if Content.ItemType == "CharAccessory" then
+    local Name = DataMgr.CharAccessory[Content.AccessoryId] or DataMgr.CharPartMesh[Content.AccessoryId]
+    self.Text_CharName:SetText(GText(UIConst.AccessoryTypeTextMap[Name.AccessoryType] or ""))
+  else
+    local Name = DataMgr.WeaponAccessory[Content.AccessoryId]
+    self.Text_CharName:SetText(GText(UIConst.AccessoryTypeTextMap.WeaponAccessory))
+  end
+  self.Text_Char_None:SetVisibility(ESlateVisibility.Collapsed)
+  self.Text_Info:SetText(GText(Content.Des))
+  self.Tag_Quality:Init(Content.Rarity)
+  local AccessoryIconPath = ArmoryUtils:GetCharNoneAccessoryIconPaths()[Content.AccessoryType]
+  if AccessoryIconPath then
+    local AccessoryIcon = LoadObject(AccessoryIconPath)
+    self.Icon_Element:SetBrushResourceObject(AccessoryIcon)
+    self.Icon_Element:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Icon_Element:SetVisibility(ESlateVisibility.Collapsed)
+  end
+  local IconPath = Content and Content.Icon or ""
+  local Rarity = Content and Content.Rarity or 0
+  if IconPath then
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:RefreshDetailPanel", Content.Id)
+    local ConsumeContent = {
+      Id = Content.Id,
+      ItemType = "CharAccessory",
+      Rarity = Rarity,
+      Icon = IconPath,
+      bAsyncLoadIcon = true,
+      IsShowDetails = true,
+      bDisableCommonClick = true,
+      Des = GText("ASJHKAJKADSJFSJKDF")
+    }
+    if not self.Item_Consume.Content or self.Item_Consume.Content.Id ~= Content.Id then
+      if self.Item_Consume.Init then
+        self.Item_Consume:Init(ConsumeContent)
+      elseif self.Item_Consume.OnListItemObjectSet then
+        self.Item_Consume:OnListItemObjectSet(ConsumeContent)
+      end
+    elseif self.Item_Consume.SetIcon then
+      self.Item_Consume:SetIcon(IconPath)
+    end
+  end
+end
+function M:TrySelectGestureItem(Content)
+  if self.ComparedContent == Content or not Content.Icon then
+    return
+  end
+  AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
+  if Content.Id then
+    AudioManager(self):PlayItemSound(self, Content.Id, "Equip", Content.SoundDataName)
+  end
+  self:SelectGestureItem(Content)
+end
+function M:SelectGestureItem(Content)
+  ArmoryUtils:SetItemIsSelected(self.ComparedContent, false)
+  self.ComparedContent = Content
+  ArmoryUtils:SetItemIsSelected(self.ComparedContent, true)
+  self.CurRoleContent = Content
+  local ItemData = {}
+  ItemData.ItemType = Content.ItemType
+  ItemData.TypeId = Content.Id
+  ItemData.SinglePreview = true
+  ItemData.HidePurchase = true
+  self:UpdateGesturePreview(Content)
+  self:UpdateGestureDetails(Content)
+end
+function M:UpdateGestureDetails(Content)
+  Content = Content or self.TileView_Pendant:GetItemAt(0)
+  self.Text_SkinName:SetText(GText(Content.Name))
+  self:UpdateSkinNameFontByRarity(Content.Rarity)
+  local Name = DataMgr.Resource[Content.Id]
+  self.Text_CharName:SetText(GText(Name.ResourceName))
+  self.Text_Char_None:SetVisibility(ESlateVisibility.Collapsed)
+  self.Text_Info:SetText(GText(Content.Des))
+  self.Tag_Quality:Init(Content.Rarity)
+  local AccessoryIconPath = ArmoryUtils:GetCharNoneAccessoryIconPaths()[Content.AccessoryType]
+  if AccessoryIconPath then
+    local AccessoryIcon = LoadObject(AccessoryIconPath)
+    self.Icon_Element:SetBrushResourceObject(AccessoryIcon)
+    self.Icon_Element:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Icon_Element:SetVisibility(ESlateVisibility.Collapsed)
+  end
+  local IconPath = Content and Content.Icon or ""
+  local Rarity = Content and Content.Rarity or 0
+  if IconPath then
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:RefreshDetailPanel", Content.Id)
+    local ConsumeContent = {
+      Id = Content.Id,
+      ItemType = "GeatureItem",
+      Rarity = Rarity,
+      Icon = IconPath,
+      bAsyncLoadIcon = true,
+      IsShowDetails = true,
+      bDisableCommonClick = true,
+      Des = GText("")
+    }
+    if not self.Item_Consume.Content or self.Item_Consume.Content.Id ~= Content.Id then
+      if self.Item_Consume.Init then
+        self.Item_Consume:Init(ConsumeContent)
+      elseif self.Item_Consume.OnListItemObjectSet then
+        self.Item_Consume:OnListItemObjectSet(ConsumeContent)
+      end
+    elseif self.Item_Consume.SetIcon then
+      self.Item_Consume:SetIcon(IconPath)
+    end
+  end
+end
+function M:UpdateGesturePreview(Content)
+  local ResourceData = DataMgr.Resource[Content.Id]
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if ResourceData then
+    if ResourceData.ResourceSType == "GestureItem" then
+      self.ActorController:ChangeWeaponModel(Avatar.Weapons[Avatar.MeleeWeapon])
+      self.ActorController:ChangeWeaponModel(Avatar.Weapons[Avatar.RangedWeapon])
+      self.EffectCreatureHideTags = {}
+      if self.ActorController.ArmoryPlayer.EffectCreatureHideTags then
+        for k, v in pairs(self.ActorController.ArmoryPlayer.EffectCreatureHideTags) do
+          self.EffectCreatureHideTags[k] = v
+          self.ActorController.ArmoryPlayer:HideAllEffectCreature(k, false)
+        end
+      end
+      self.ActorController:SetArmoryMontageTag(self.ActorController.ArmoryPlayer, "Armory")
+      self.ActorController:SetArmoryCameraTag(ResourceData.CameraName or "Char", "", "")
+      self.ActorController.ArmoryPlayer:InvokeResourceBPFunction(Content.Id)
+    elseif ResourceData.ResourceSType == "MountItem" then
+    end
+  end
+end
+function M:OnSkinItemClicked(Content)
+  self:TrySelectSkinItem(Content)
+end
+function M:TrySelectSkinItem(Content)
+  if self.ComparedContent == Content or not Content.Icon then
+    return
+  end
+  AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
+  if Content.AccessoryId then
+    AudioManager(self):PlayItemSound(self, Content.AccessoryId, "Equip", Content.SoundDataName)
+  end
+  self:SelectSkinItem(Content)
+end
+function M:SelectSkinItem(Content)
+  if not Content then
+    return
+  end
+  local SelectedContent = self.CurRoleContent
+  if SelectedContent then
+    SelectedContent.IsSelect = false
+    if SelectedContent.Widget then
+      SelectedContent.Widget:SetIsSelected(SelectedContent.IsSelect)
+    end
+  end
+  SelectedContent = Content
+  if SelectedContent then
+    SelectedContent.IsSelect = true
+    if SelectedContent.Widget then
+      SelectedContent.Widget:SetIsSelected(SelectedContent.IsSelect)
+    else
+      self:AddTimer(0.01, function()
+        SelectedContent.Widget:SetIsSelected(SelectedContent.IsSelect)
+      end)
+    end
+  end
+  self.ComparedContent = Content
+  self.CurRoleContent = Content
+  if Content.ItemType == "WeaponSkin" then
+    self:UpdatePreviewWeaponSkinActorForContent(Content)
+    self:UpdateWeaponSkinDetails(Content)
+  else
+    self:UpdatePreviewCharSkinActorForContent(Content)
+    self:UpdateCharSkinDetails(Content)
+  end
+end
+function M:UpdatePreviewWeaponSkinActorForContent(Content)
+  local WeaponData = self:CreatePreviewTargetData({
+    Type = "Weapon",
+    SkinId = Content.Id,
+    EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
+    ViewUI = self
+  })
+  BattlePassController:GetModelData("BagActorController"):ChangeSingleWeapon(WeaponData)
+  self.IsPreviewMode = true
+end
+function M:UpdatePreviewCharSkinActorForContent(Content)
+  local CharData = self:CreatePreviewTargetData({
+    Type = "Char",
+    SkinId = Content.SkinId
+  })
+  local AppearanceInfo = {
+    CharId = Content.CharId,
+    SkinId = Content.SkinId,
+    AccessorySuit = {}
+  }
+  BattlePassController:GetModelData("BagActorController").bStandaloneWeapon = false
+  BattlePassController:GetModelData("BagActorController").ArmoryHelper:SetOriginalRotation(FRotator(0, 90, 0))
+  BattlePassController:GetModelData("BagActorController").ExCameraOffset = FVector(0, 0, 0)
+  BattlePassController:GetModelData("BagActorController"):ChangeCharModel(CharData)
+  BattlePassController:GetModelData("BagActorController").ArmoryHelper:SetPlayer(BattlePassController:GetModelData("BagActorController").ArmoryPlayer)
+  BattlePassController:GetModelData("BagActorController").DelayFrame = 30
+  BattlePassController:GetModelData("BagActorController"):SetMontageAndCamera("Char", nil, nil)
+  BattlePassController:GetModelData("BagActorController"):ChangeCharAppearance(AppearanceInfo)
+  self.IsPreviewMode = true
+end
+function M:UpdateWeaponSkinDetails(Content)
+  Content = Content or self.List_Skin:GetItemAt(0)
+  local WeaponTypeInfo = DataMgr.WeaponTypeContrast[Content.ApplicationType]
+  if not WeaponTypeInfo then
+    return
+  end
+  self:PlayAnimation(self.Change)
+  self.Text_CharName:SetText(string.format(GText("UI_SkinPreview_WeaponType"), GText(WeaponTypeInfo.WeaponTagTextmap)))
+  if WeaponTypeInfo.Icon then
+    local TagIcon = LoadObject(WeaponTypeInfo.Icon)
+    self.Icon_Element:SetBrushResourceObject(TagIcon)
+    self.Icon_Element:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+  else
+    self.Icon_Element:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
+  self.Text_SkinName:SetText(GText(Content.Name))
+  self:UpdateSkinNameFontByRarity(Content.Rarity)
+  self.Text_Char_None:SetVisibility(ESlateVisibility.Collapsed)
+  self.Text_Info:SetText(GText(Content.Des))
+  self.Tag_Quality:Init(Content.Rarity)
+  local IconPath = Content and Content.Icon or ""
+  local Rarity = Content and Content.Rarity or 0
+  if IconPath then
+    DebugPrint("gmy@WBP_CharSkinPreview_C M:RefreshDetailPanel", Content.Id)
+    local ConsumeContent = {
+      Id = Content.Id,
+      ItemType = "WeaponSkin",
+      Rarity = Rarity,
+      Icon = IconPath,
+      bAsyncLoadIcon = true,
+      IsShowDetails = true,
+      bDisableCommonClick = true,
+      Des = GText(Content.Des)
+    }
+    if not self.Item_Consume.Content or self.Item_Consume.Content.Id ~= Content.Id then
+      if self.Item_Consume.Init then
+        self.Item_Consume:Init(ConsumeContent)
+      elseif self.Item_Consume.OnListItemObjectSet then
+        self.Item_Consume:OnListItemObjectSet(ConsumeContent)
+      end
+    elseif self.Item_Consume.SetIcon then
+      self.Item_Consume:SetIcon(IconPath)
+    end
+  end
+end
+function M:UpdateCharSkinDetails(Content)
+  local SkinData = DataMgr.Skin[Content.SkinId]
+  if not SkinData then
+    return
+  end
+  local CharInfo = DataMgr.Char[Content.CharId]
+  if not CharInfo then
+    return
+  end
+  self.Text_CharName:SetText(GText(CharInfo.CharName))
+  self.Text_SkinName:SetText(GText(SkinData.SkinName))
+  self:UpdateSkinNameFontByRarity(SkinData.Rarity)
+  self.Text_Info:SetText(GText(SkinData.SkinDescribe))
+  self.Tag_Quality:Init(SkinData.Rarity)
+  self.Tag_Quality:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  local ElementType = DataMgr.BattleChar[SkinData.CharId].Attribute
+  if ElementType then
+    local IconName = "Armory_" .. ElementType
+    local AttributeIcon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Armory/T_" .. IconName .. ".T_" .. IconName)
+    self.Icon_Element:SetBrushResourceObject(AttributeIcon)
+    self.Icon_Element:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Icon_Element:SetVisibility(ESlateVisibility.Collapsed)
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if Avatar:CheckCharEnough({
+    [SkinData.CharId] = 1
+  }) then
+    self.Text_Char_None:SetVisibility(ESlateVisibility.Collapsed)
+  else
+    self.Text_Char_None:SetText(GText("UI_SkinPreview_CharNotOwned"))
+    self.Text_Char_None:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  end
+  local IconPath = Content and Content.Icon or ""
+  local Rarity = Content and Content.Rarity or 0
+  if IconPath then
+    local ConsumeContent = {
+      Id = Content.SkinId,
+      ItemType = "CharSkin",
+      Rarity = Rarity,
+      Icon = IconPath,
+      bAsyncLoadIcon = true,
+      IsShowDetails = true,
+      bDisableCommonClick = true,
+      Des = GText(Content.Des)
+    }
+    if not self.Item_Consume.Content or self.Item_Consume.Content.Id ~= Content.Id then
+      if self.Item_Consume.Init then
+        self.Item_Consume:Init(ConsumeContent)
+      elseif self.Item_Consume.OnListItemObjectSet then
+        self.Item_Consume:OnListItemObjectSet(ConsumeContent)
+      end
+    elseif self.Item_Consume.SetIcon then
+      self.Item_Consume:SetIcon(IconPath)
+    end
+  end
+end
+function M:InitConsumeInfo()
+  if self.Params.Type == "BattlePassPreview" or self.Params.Type == "ShopRecommend" then
+    return
+  end
+  self.Switch_Coin:SetActiveWidgetIndex(1)
+  self.Panel_Buy:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  local Params = {
+    ResourceId = self.ResourceId,
+    CostText = GText("UI_Armory_Trace_Cost"),
+    Numerator = 1,
+    Owner = self
+  }
+  self.WBP_Com_Cost:InitContent(Params)
+  self.WBP_Com_Cost.Key:SetVisibility(ESlateVisibility.Collapsed)
+end
+function M:OnTabChangeClicked(TabIdx)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if self.SwitchSuitChecked then
+    self.CheckBox_Preview:OnBtnClicked()
+  elseif self.SwitchWeaponAccessoryPreview then
+    self:SwitchWeaponAccessoryPreview(TabIdx)
+  end
+end
+function M:UpdateSkinNameFontByRarity(Rarity)
+  local rarityFontMap = {
+    [6] = self.Font_Red,
+    [5] = self.Font_Gold,
+    [4] = self.Font_Purple,
+    [3] = self.Font_Blue
+  }
+  local fontToSet = rarityFontMap[Rarity]
+  if fontToSet then
+    self.Text_SkinName:SetFont(fontToSet)
+  end
+end
 AssembleComponents(M)
 return M

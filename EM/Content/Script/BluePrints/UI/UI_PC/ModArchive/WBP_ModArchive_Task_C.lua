@@ -4,24 +4,24 @@ local WBP_ModArchive_Task_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_ModArchive_Task_C:OnSelected(Params)
   if Params then
     self.Owner = Params.Owner
   end
+  self.Avatar = GWorld:GetAvatar()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
   self:UpdateOnInputDeviceTypeChange()
   self:SetFocus()
+  self.LastFocusItem = nil
   self.HasSelected = true
   self.MaxPhase = #DataMgr.ModTaskPhase
-  self.Avatar = GWorld:GetAvatar()
   if not self.CurPhaseId then
-    self.CurPhaseId = 1
+    self:CheckFirstPhaseId()
   end
-  if self.Flag or self.Flag == nil then
+  if self.Flag or nil == self.Flag then
     self.Flag = true
   else
     self.Flag = false
@@ -63,7 +63,6 @@ function WBP_ModArchive_Task_C:OnSelected(Params)
     self.Owner:SwitchComKeyTipsState(1)
   end
 end
-
 function WBP_ModArchive_Task_C:InitTasks()
   self.ValidTask = {}
   self.CanGetRewardTask = {}
@@ -172,7 +171,6 @@ function WBP_ModArchive_Task_C:InitTasks()
   end
   self.TaskDoNotInAnim = false
 end
-
 function WBP_ModArchive_Task_C:RefreshInfo()
   DebugPrint("zwjk123 RefreshInfo")
   local PreTaskId = 0
@@ -261,7 +259,6 @@ function WBP_ModArchive_Task_C:RefreshInfo()
     end, DelayFrame, "TaskReturnFocus")
   end
 end
-
 function WBP_ModArchive_Task_C:RefreshPhaseProgress()
   self.PhaseAddedNum[self.CurPhaseId] = 0
   local PreArchivePhase = EMCache:Get("ModBookArchivePhase", true)
@@ -289,7 +286,6 @@ function WBP_ModArchive_Task_C:RefreshPhaseProgress()
   end
   EMCache:Set("ModBookArchivePhase", NewArchivePhase, true)
 end
-
 function WBP_ModArchive_Task_C:OnShowTipsClose()
   if self.List_Task then
     self.SelectItem = nil
@@ -308,7 +304,6 @@ function WBP_ModArchive_Task_C:OnShowTipsClose()
   end
   self:AddProgress(self.CompleteNum, self.MaxValidTaskNum)
 end
-
 function WBP_ModArchive_Task_C:OnTipsOpenChanged(bIsOpen, Widget)
   DebugPrint("zwkkk OnTipsOpenChanged", bIsOpen, self:GetName())
   if not self.CurInputDeviceType or self.CurInputDeviceType ~= ECommonInputType.GamePad then
@@ -316,7 +311,6 @@ function WBP_ModArchive_Task_C:OnTipsOpenChanged(bIsOpen, Widget)
   end
   self.Owner:OnTipsOpenChanged(bIsOpen)
 end
-
 function WBP_ModArchive_Task_C:OnSelectionChange(Item)
   if self.CurInputDeviceType ~= ECommonInputType.GamePad then
     return
@@ -337,7 +331,6 @@ function WBP_ModArchive_Task_C:OnSelectionChange(Item)
   end
   self.CurWidget = Item.SelfWidget
 end
-
 function WBP_ModArchive_Task_C:OnGuideEnd()
   local SelectItem = self.List_Task:GetItemAt(0)
   if not self.Flag then
@@ -349,7 +342,6 @@ function WBP_ModArchive_Task_C:OnGuideEnd()
     SelectItem.SelfWidget:OnFocusNew()
   end
 end
-
 function WBP_ModArchive_Task_C:ClickLeftBtn()
   if self.CantSwitch then
     return
@@ -369,7 +361,6 @@ function WBP_ModArchive_Task_C:ClickLeftBtn()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
 end
-
 function WBP_ModArchive_Task_C:ClickRightBtn()
   if self.CantSwitch then
     return
@@ -389,7 +380,6 @@ function WBP_ModArchive_Task_C:ClickRightBtn()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
 end
-
 function WBP_ModArchive_Task_C:HandleIndexFunc(NewPageIndex)
   if NewPageIndex ~= self.CurPhaseId then
     self.CurPhaseId = NewPageIndex
@@ -414,7 +404,6 @@ function WBP_ModArchive_Task_C:HandleIndexFunc(NewPageIndex)
     self.TaskDoNotInAnim = true
   end
 end
-
 function WBP_ModArchive_Task_C:Stage_Change()
   self.CantSwitch = false
   self:InitTasks()
@@ -422,7 +411,6 @@ function WBP_ModArchive_Task_C:Stage_Change()
   self.CurWidget = nil
   AudioManager(self):PlayUISound(self, "event:/ui/common/mozhixia_page_change", nil, nil)
 end
-
 function WBP_ModArchive_Task_C:RefreshLRBtnState()
   self.StillHasReward = false
   if 1 == self.CurPhaseId then
@@ -456,6 +444,9 @@ function WBP_ModArchive_Task_C:RefreshLRBtnState()
       end
     end
   end
+  if not self.Avatar then
+    return
+  end
   local AllComplete = true
   local HasGetReward = self.Avatar.ModBookQuestPhaseRewardsGot[self.CurPhaseId]
   local CompleteNum = 0
@@ -483,7 +474,7 @@ function WBP_ModArchive_Task_C:RefreshLRBtnState()
     end
     local MaterialGlow = self.TitleItem.Progress_AddGlow:GetDynamicMaterial()
     if MaterialGlow then
-      DebugPrint("111\232\174\190\231\189\174 Glow ", 1 - (CompleteNum - self.PhaseAddedNum[self.CurPhaseId]) / MaxValidTaskNum)
+      DebugPrint("111设置 Glow ", 1 - (CompleteNum - self.PhaseAddedNum[self.CurPhaseId]) / MaxValidTaskNum)
       MaterialGlow:SetScalarParameterValue("InitialPosition", 1 - (CompleteNum - self.PhaseAddedNum[self.CurPhaseId]) / MaxValidTaskNum)
       MaterialGlow:SetScalarParameterValue("Percent", 0.0)
     end
@@ -535,13 +526,11 @@ function WBP_ModArchive_Task_C:RefreshLRBtnState()
     else
       Content.bHasGot = false
     end
-    
     function Content.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnTipsOpenChanged
       })
     end
-    
     Content.OnMouseButtonUpEvents = {
       Obj = self,
       Callback = self.OnClickItem,
@@ -553,7 +542,7 @@ function WBP_ModArchive_Task_C:RefreshLRBtnState()
     local Num = self.TitleItem.ListView_Rewards:GetNumItems()
     local ItemUIs = self.TitleItem.ListView_Rewards:GetDisplayedEntryWidgets()
     local RestCount = UIUtils.GetListViewContentMaxCount(self.TitleItem.ListView_Rewards, ItemUIs) - ItemUIs:Length()
-    DebugPrint("\233\156\128\232\166\129\229\161\171\229\133\133\231\154\132\231\169\186\230\160\188\229\173\144\230\149\176 ", RestCount)
+    DebugPrint("需要填充的空格子数 ", RestCount)
     if RestCount > 0 then
       for i = 1, RestCount do
         self.TitleItem.ListView_Rewards:AddItem(self:CreateEmptyContent())
@@ -579,20 +568,17 @@ function WBP_ModArchive_Task_C:RefreshLRBtnState()
     end
   end
 end
-
 function WBP_ModArchive_Task_C:CreateEmptyContent()
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.IsEmpty = true
   return Obj
 end
-
 function WBP_ModArchive_Task_C:OnMainInFinish()
   if self.Owner.ShouldShowTips then
   else
     self:AddProgress(self.CompleteNum, self.MaxValidTaskNum)
   end
 end
-
 function WBP_ModArchive_Task_C:AddProgress(CompleteNum, MaxValidTaskNum)
   if not CompleteNum or not MaxValidTaskNum then
     return
@@ -602,8 +588,7 @@ function WBP_ModArchive_Task_C:AddProgress(CompleteNum, MaxValidTaskNum)
   end
   local SetNum = 25
   local PerPercent = self.PhaseAddedNum[self.CurPhaseId] / MaxValidTaskNum / SetNum
-  DebugPrint("111\232\174\190\231\189\174 AddProgress", self.PhaseAddedNum[self.CurPhaseId] / MaxValidTaskNum, CompleteNum, MaxValidTaskNum)
-  
+  DebugPrint("111设置 AddProgress", self.PhaseAddedNum[self.CurPhaseId] / MaxValidTaskNum, CompleteNum, MaxValidTaskNum)
   local function Func()
     SetNum = SetNum - 1
     local Material = self.TitleItem.Image_TaskProgress:GetDynamicMaterial()
@@ -624,12 +609,10 @@ function WBP_ModArchive_Task_C:AddProgress(CompleteNum, MaxValidTaskNum)
       self.TitleItem.VX_Glow:SetRenderTransformAngle(AimPercent * 360.0)
     end
   end
-  
   self.TitleItem:PlayAnimation(self.TitleItem.Up)
   AudioManager(self):PlayUISound(self, "event:/ui/common/mozhixia_processbar_add", nil, nil)
   self:AddTimer(0.02, Func, true, 0, "PhaseProgressAdd", true)
 end
-
 function WBP_ModArchive_Task_C:CheckAllRewardBtnState()
   local ShouldShow = false
   local AllComplete = true
@@ -650,10 +633,8 @@ function WBP_ModArchive_Task_C:CheckAllRewardBtnState()
     self.Group_GetAll:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Task_C:ClickLeftBtnForbid()
 end
-
 function WBP_ModArchive_Task_C:ClickRightBtnForbid()
   if self.CurPhaseId ~= self.MaxPhase then
     local NextPhase = self.CurPhaseId + 1
@@ -663,26 +644,21 @@ function WBP_ModArchive_Task_C:ClickRightBtnForbid()
     end
   end
 end
-
 function WBP_ModArchive_Task_C:CheckPhaseValid()
   for i = 1, self.MaxPhase do
     if DataMgr.ModTaskPhase and DataMgr.ModTaskPhase[i] and DataMgr.ModTaskPhase[i].Condition and not ConditionUtils.CheckCondition(self.Avatar, DataMgr.ModTaskPhase[i].Condition) then
       local function ForbidClick()
         if DataMgr.ModTaskPhase and DataMgr.ModTaskPhase[i] and DataMgr.ModTaskPhase[i].Condition then
           local Condition = DataMgr.ModTaskPhase[i].Condition
-          
           UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText(DataMgr.Condition[Condition].ConditionText))
         end
       end
-      
       self.TitleItem.Com_PageTurner:ReBindClickEvent(i, ForbidClick)
     end
   end
 end
-
 function WBP_ModArchive_Task_C:OnClickGetPhaseReward()
   local Avatar = GWorld:GetAvatar()
-  
   local function CallBack(ErrCode, Reward)
     if ErrorCode:Check(ErrCode) then
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward, false, nil, self, false)
@@ -690,13 +666,10 @@ function WBP_ModArchive_Task_C:OnClickGetPhaseReward()
       self.Owner:RefreshReddot()
     end
   end
-  
   Avatar:ModBookQuestGetRewardByPhase(self.CurPhaseId, CallBack)
 end
-
 function WBP_ModArchive_Task_C:OnClickGetAllReward()
   local Avatar = GWorld:GetAvatar()
-  
   local function CallBack(ErrCode, Reward)
     if ErrorCode:Check(ErrCode) then
       local ItemPage = UIManager(self):LoadUINew("GetItemPage", nil, nil, nil, Reward)
@@ -705,10 +678,8 @@ function WBP_ModArchive_Task_C:OnClickGetAllReward()
       self.Owner:RefreshReddot()
     end
   end
-  
   Avatar:ModBookQuestGetAllRewardByPhase(self.CurPhaseId, CallBack)
 end
-
 function WBP_ModArchive_Task_C:RefreshTabReddot()
   if self.Owner and self.Owner.TaskHasReddotIndex then
     self.TitleItem.Reddot_Left:SetVisibility(ESlateVisibility.Collapsed)
@@ -731,7 +702,32 @@ function WBP_ModArchive_Task_C:RefreshTabReddot()
     end
   end
 end
-
+function WBP_ModArchive_Task_C:CheckFirstPhaseId()
+  self.CurPhaseId = 1
+  local Avatar = GWorld:GetAvatar()
+  for i = 1, self.MaxPhase do
+    local Tasks = {}
+    for _, k in pairs(DataMgr.ModGuideBookTask) do
+      if k.QuestPhaseId == i then
+        table.insert(Tasks, k)
+      end
+    end
+    local AllRewardHasGot = true
+    for _, v in pairs(Tasks) do
+      local ModBookQuest = Avatar.ModBookQuests:GetModBookQuest(v.TaskId)
+      if not ModBookQuest.RewardsGot then
+        AllRewardHasGot = false
+        break
+      end
+    end
+    local PhaseHasGetReward = Avatar.ModBookQuestPhaseRewardsGot[i]
+    if not AllRewardHasGot or not PhaseHasGetReward then
+      self.CurPhaseId = i
+      break
+    end
+    self.CurPhaseId = i
+  end
+end
 function WBP_ModArchive_Task_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -747,7 +743,6 @@ function WBP_ModArchive_Task_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_Task_C:Handle_OnPCDown(InKeyName)
   if "SpaceBar" == InKeyName then
     self:OnSpaceBarKeyDown()
@@ -755,13 +750,11 @@ function WBP_ModArchive_Task_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Task_C:OnSpaceBarKeyDown()
   if self.StillHasReward then
     self:OnClickGetAllReward()
   end
 end
-
 function WBP_ModArchive_Task_C:OnKeyUp(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -775,7 +768,6 @@ function WBP_ModArchive_Task_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_Task_C:Handle_OnGamePadDown(InKeyName)
   if "Gamepad_FaceButton_Left" == InKeyName then
     if self.CurWidget and not self.XInPress and not self.CurWidget.ListView_Rewards:HasFocusedDescendants() then
@@ -857,7 +849,6 @@ function WBP_ModArchive_Task_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Task_C:Handle_OnGamePadUp(InKeyName)
   DebugPrint("zwkkk  Handle_OnGamePadUp", InKeyName, self:GetName())
   if "Gamepad_FaceButton_Bottom" == InKeyName then
@@ -885,7 +876,6 @@ function WBP_ModArchive_Task_C:Handle_OnGamePadUp(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Task_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -895,16 +885,23 @@ function WBP_ModArchive_Task_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGam
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function WBP_ModArchive_Task_C:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType == ECommonInputType.GamePad then
     self.Btn_Reward:SetVisibility(ESlateVisibility.HitTestInvisible)
     self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.TitleItem.Com_PageTurner:SetVisibility(ESlateVisibility.HitTestInvisible)
+    if self.TitleItem.WS_Right and self.TitleItem.WS_Left then
+      self.TitleItem.WS_Right:SetActiveWidgetIndex(1)
+      self.TitleItem.WS_Left:SetActiveWidgetIndex(1)
+    end
   else
     self.Btn_Reward:SetGamePadVisibility(ESlateVisibility.Collapsed)
     self.Btn_Reward:SetVisibility(ESlateVisibility.Visible)
     self.TitleItem.Com_PageTurner:SetVisibility(ESlateVisibility.Visible)
+    if self.TitleItem.WS_Right and self.TitleItem.WS_Left then
+      self.TitleItem.WS_Right:SetActiveWidgetIndex(0)
+      self.TitleItem.WS_Left:SetActiveWidgetIndex(0)
+    end
     if self.TitleItem.IsHovering then
       self.TitleItem:PlayAnimation(self.TitleItem.Unhover)
     end
@@ -913,9 +910,9 @@ function WBP_ModArchive_Task_C:UpdateOnInputDeviceTypeChange()
     else
       self.Owner:SwitchComKeyTipsState(1)
     end
+    self.LastFocusItem = self.List_Task:BP_GetSelectedItem()
   end
 end
-
 function WBP_ModArchive_Task_C:OnNavigateRight()
   local SelectItem = self.List_Task:GetItemAt(0)
   if not self.Flag then
@@ -927,5 +924,20 @@ function WBP_ModArchive_Task_C:OnNavigateRight()
     SelectItem.SelfWidget:OnFocusNew()
   end
 end
-
+function WBP_ModArchive_Task_C:OnSwitchToGamepad()
+  if self.LastFocusItem and self.LastFocusItem.SelfWidget then
+    self.List_Task:SetFocus()
+    self.List_Task:SetSelectedIndex(self.LastFocusItem.Index - 1)
+    self.LastFocusItem.SelfWidget:OnFocusNew()
+  else
+    self.List_Task:SetFocus()
+    self.List_Task:SetSelectedIndex(0)
+    self:AddDelayFrameFunc(function()
+      local FirstItem = self.List_Task:GetItemAt(0)
+      if FirstItem and FirstItem.SelfWidget then
+        FirstItem.SelfWidget:OnFocusNew()
+      end
+    end, 2, "DelayReturnFocusFirstItem")
+  end
+end
 return WBP_ModArchive_Task_C

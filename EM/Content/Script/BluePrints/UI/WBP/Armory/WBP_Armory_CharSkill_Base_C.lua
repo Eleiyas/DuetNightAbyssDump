@@ -6,7 +6,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:Construct()
   self.BranchWidgets = {
     self.CharSkill_1,
@@ -19,7 +18,6 @@ function M:Construct()
     self.OnOutAnimFinished
   })
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.Target = Params.Target
@@ -29,7 +27,6 @@ function M:Init(Params)
   self.OnTreeNodeStateChangedCallback = Params.OnTreeNodeStateChanged
   self:UpdateSkillInfos(self.Target)
 end
-
 function M:UpdateSkillInfos(Target)
   local Char = ArmoryUtils:GetCharByUuid(Target.Uuid) or Target
   local SkillTreeData = DataMgr.SkillTree[Char.CharId]
@@ -71,31 +68,26 @@ function M:UpdateSkillInfos(Target)
     BranchWidget:Init(SkillTreeInfo[index], self.IsPreviewMode)
   end
 end
-
 function M:GetSkillTreeInfo()
   return self.SkillTreeInfo
 end
-
 function M:PlayInAnim()
   self.IsShowed = true
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:StopAnimation(self.Out)
   self:PlayAnimationForward(self.In)
 end
-
 function M:PlayOutAnim()
   self.IsShowed = false
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.In)
   self:PlayAnimationForward(self.Out)
 end
-
 function M:OnOutAnimFinished()
   if not self.IsShowed then
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnTreeNodeClicked(BranchInfo, TreeNodeInfo)
   if self.OnTreeNodeClickedCallback then
     self.OnTreeNodeClickedCallback(self.Parent, BranchInfo, TreeNodeInfo)
@@ -103,13 +95,11 @@ function M:OnTreeNodeClicked(BranchInfo, TreeNodeInfo)
     self:LoadSkillDetailsUI(TreeNodeInfo)
   end
 end
-
 function M:OnTreeNodeStateChanged(BranchInfo, TreeNodeInfo)
   if self.OnTreeNodeStateChangedCallback then
     self.OnTreeNodeStateChangedCallback(self.Parent, BranchInfo, TreeNodeInfo)
   end
 end
-
 function M:LoadSkillDetailsUI(TreeNodeInfo)
   TreeNodeInfo = TreeNodeInfo or {}
   local UIConfig = DataMgr.SystemUI.SkillDetails
@@ -126,7 +116,6 @@ function M:LoadSkillDetailsUI(TreeNodeInfo)
     IsPreviewMode = self.IsPreviewMode
   })
 end
-
 function M:OnSkillDetailsClosed()
   self:UpdateSkillInfos(self.Target)
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
@@ -140,7 +129,6 @@ function M:OnSkillDetailsClosed()
     ArmoryMain:UpdateMontageAndCamera()
   end
 end
-
 function M:OnSkillDetailsDestruct()
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
   if ArmoryMain then
@@ -148,6 +136,5 @@ function M:OnSkillDetailsDestruct()
     ArmoryMain.Panel_SubUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 AssembleComponents(M)
 return M

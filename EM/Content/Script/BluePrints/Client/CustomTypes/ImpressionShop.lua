@@ -18,7 +18,6 @@ ImpressionShopItem.__Props__ = {
   UnlockCondition = prop.getter("Data", "UnlockCondition"),
   ImprCheckId = prop.getter("Data", "ImprCheckId")
 }
-
 function ImpressionShopItem:SetShopState(NewState)
   if NewState == self.ImpressionShopState then
     return false
@@ -26,37 +25,29 @@ function ImpressionShopItem:SetShopState(NewState)
   self.ImpressionShopState = NewState
   return true
 end
-
 function ImpressionShopItem:AddAlreadyPurchaseTimes()
   self.AlreadyPurchaseTimes = self.AlreadyPurchaseTimes + 1
 end
-
 function ImpressionShopItem:Init(ImpressionShopId)
   self.ImpressionShopId = ImpressionShopId
 end
-
 function ImpressionShopItem:Data()
   return DataMgr.ImpressionShop[self.ImpressionShopId]
 end
-
 FormatProperties(ImpressionShopItem)
 local ImpressionShopItemDict = Class("ImpressionShopItemDict", CustomTypes.CustomDict)
 ImpressionShopItemDict.KeyType = BaseTypes.Int
 ImpressionShopItemDict.ValueType = ImpressionShopItem
-
 function ImpressionShopItemDict:NewImpressionShopItem(ItemId)
   return ImpressionShopItem(ItemId)
 end
-
 function ImpressionShopItemDict:GetNewImpressionShopItem(ImpressionShopId)
   if not self[ImpressionShopId] then
     self[ImpressionShopId] = self:NewImpressionShopItem(ImpressionShopId)
   end
   return self[ImpressionShopId]
 end
-
 function ImpressionShopItemDict:GetImpressionShopItem(ItemId)
   return self[ItemId]
 end
-
 return {ImpressionShopItemDict = ImpressionShopItemDict, ImpressionShopItem = ImpressionShopItem}

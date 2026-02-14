@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Group_DownloadSign:SetVisibility(ESlateVisibility.Visible)
   self.Content = Content
@@ -23,14 +22,12 @@ function M:OnListItemObjectSet(Content)
     self.Btn_Click:SetChecked(true)
   end
 end
-
 function M:OnHovered()
   if UIUtils.UtilsGetCurrentInputType() ~= UE4.ECommonInputType.Gamepad then
     return
   end
   self:SetSelected(true)
 end
-
 function M:OnSelected(bIsChecked)
   if not self.Content then
     DebugPrint("Content is nil, cannot clear list item object.")
@@ -44,11 +41,9 @@ function M:OnSelected(bIsChecked)
   self:SetVisibility(bIsChecked and ESlateVisibility.HitTestInvisible or ESlateVisibility.Visible)
   self:SetFocus(bIsChecked)
 end
-
 function M:SetSelected(bIsChecked)
   self.Btn_Click:SetChecked(bIsChecked)
 end
-
 function M:Tick(DeltaTime)
   if self.Content and self.Content.DownloadProcess then
     local BytesSoFar = self.Content.DownloadProcess.BytesSoFar or 0
@@ -61,7 +56,6 @@ function M:Tick(DeltaTime)
     end
   end
 end
-
 function M:UpdateVoiceDownloadState()
   if not self.Content then
     return
@@ -89,5 +83,4 @@ function M:UpdateVoiceDownloadState()
     self:PlayAnimation(self.IsNotDownload)
   end
 end
-
 return M

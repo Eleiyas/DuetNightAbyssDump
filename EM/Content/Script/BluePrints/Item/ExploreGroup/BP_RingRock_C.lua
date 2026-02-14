@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Item.ExploreGroup.BP_DongGuoBreakableItem_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.InitLoc = self.Mesh:K2_GetComponentLocation()
@@ -13,7 +12,6 @@ function M:ReceiveBeginPlay()
   self.IsInReset = false
   self.InitForward = self.Arrow:GetForwardVector()
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   local CurLocation = self.Rock:K2_GetComponentLocation()
@@ -23,7 +21,8 @@ function M:ReceiveTick(DeltaSeconds)
       self.Rock:K2_SetWorldLocation(self.EndLoc, false, nil, false)
       self.Finish = true
       self:SetActorTickEnabled(false)
-      EventManager:FireEvent(EventID.OnRingRockFinish, self.IsRightOne)
+      DebugPrint("zzz222 发出OnRingRockFinish", self.Eid)
+      EventManager:FireEvent(EventID.OnRingRockFinish, self.IsRightOne, self.Eid)
     else
       self.Rock:K2_SetWorldLocation(AimLocation, false, nil, false)
     end
@@ -38,7 +37,6 @@ function M:ReceiveTick(DeltaSeconds)
     end
   end
 end
-
 function M:CheckPlayerFaceToAim(SourceId)
   if self.IsInReset then
     return false
@@ -56,17 +54,14 @@ function M:CheckPlayerFaceToAim(SourceId)
   end
   return false
 end
-
 function M:OnValidHit()
   local function ResetState()
     self.Energy = 0
   end
-  
   if self.Energy < self.MaxEnergy then
     self:AddTimer(self.WaitTime, ResetState, false, 0, "ResetState")
   end
 end
-
 function M:OnMaxEnergyHit()
   self:RemoveTimer("ResetState")
   if self.Finish then
@@ -77,19 +72,15 @@ function M:OnMaxEnergyHit()
   end
   self:SetActorTickEnabled(true)
   self.AlreadyPull = true
-  
   local function DisableTick()
     if self.IsInReset then
       return
     end
     self:SetActorTickEnabled(false)
   end
-  
   self:AddTimer(self.SpecialWaitTime, DisableTick, false, 0, "DisableTick")
 end
-
 function M:StartReset()
   self:SetActorTickEnabled(true)
 end
-
 return M

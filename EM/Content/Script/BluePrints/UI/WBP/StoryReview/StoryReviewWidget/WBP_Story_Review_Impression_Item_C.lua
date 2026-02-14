@@ -3,7 +3,6 @@ local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   local HighDialogueId = Content.HighDialogueId
   local ImpressionConfig = DataMgr.ImpressionConfig[Content.ImpressionConfigId]
@@ -22,5 +21,4 @@ function M:OnListItemObjectSet(Content)
     self.Text_NormalVerifieNum:SetText("+" .. Content.PlayerValue)
   end
 end
-
 return M

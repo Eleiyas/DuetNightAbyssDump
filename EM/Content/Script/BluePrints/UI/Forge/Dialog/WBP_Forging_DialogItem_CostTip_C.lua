@@ -1,11 +1,9 @@
 local TimeUtils = require("Utils.TimeUtils")
 local WBP_Forging_DialogItem_CostTip_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Forging_DialogItem_CostTip_C:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   self:BindDialogEvent("UpdateDialogCostTip", self.UpdateDialogCostTip)
 end
-
 function WBP_Forging_DialogItem_CostTip_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local ForgeItemContent = Params.ForgeItemContent
@@ -20,7 +18,6 @@ function WBP_Forging_DialogItem_CostTip_C:InitContent(Params, PopupData, Owner)
   self:UpdateDialogCostTip(ProduceNum)
   self.Cost:SwitchToPC()
 end
-
 function WBP_Forging_DialogItem_CostTip_C:UpdateDialogCostTip(ProduceNum)
   self.Cost:InitContent({
     ResourceId = self.FoundryId,
@@ -34,5 +31,4 @@ function WBP_Forging_DialogItem_CostTip_C:UpdateDialogCostTip(ProduceNum)
     self.Time:SetTimeText("")
   end
 end
-
 return WBP_Forging_DialogItem_CostTip_C

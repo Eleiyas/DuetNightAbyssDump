@@ -1,5 +1,4 @@
 local TalkTimer_C = {}
-
 function TalkTimer_C.New(GroupTag, Manager, DelayTime, bLoop, LoopTime, Obj, Func, ...)
   local o = setmetatable({}, {__index = TalkTimer_C})
   o.GroupTag = GroupTag
@@ -20,7 +19,6 @@ function TalkTimer_C.New(GroupTag, Manager, DelayTime, bLoop, LoopTime, Obj, Fun
   end
   return o
 end
-
 function TalkTimer_C:ReceiveTick(DeltaTime)
   if self.bPaused == true then
     return
@@ -30,7 +28,6 @@ function TalkTimer_C:ReceiveTick(DeltaTime)
     self:Execute()
   end
 end
-
 function TalkTimer_C:Execute()
   self.bExecuted = true
   local Func = self.Callback.Func
@@ -44,9 +41,7 @@ function TalkTimer_C:Execute()
   end
   Func(Obj, table.unpack(Params))
 end
-
 local TalkTimerManager_C = {}
-
 function TalkTimerManager_C.New()
   local Obj = setmetatable({}, {__index = TalkTimerManager_C})
   Obj.TimerMap = {}
@@ -55,7 +50,6 @@ function TalkTimerManager_C.New()
   Obj.AddTimerList = {}
   return Obj
 end
-
 function TalkTimerManager_C:ReceiveTick(DeltaTime)
   if #self.AddTimerList > 0 then
     for _, AddTimerData in ipairs(self.AddTimerList) do
@@ -86,7 +80,6 @@ function TalkTimerManager_C:ReceiveTick(DeltaTime)
     end
   end
 end
-
 function TalkTimerManager_C:PauseTimer(GroupTag)
   DebugPrint("TalkTimerManager_C:PauseTimer", GroupTag)
   if not GroupTag then
@@ -106,7 +99,6 @@ function TalkTimerManager_C:PauseTimer(GroupTag)
     end
   end
 end
-
 function TalkTimerManager_C:UnPauseTimer(GroupTag)
   DebugPrint("TalkTimerManager_C:UnPauseTimer", GroupTag)
   if not GroupTag then
@@ -126,7 +118,6 @@ function TalkTimerManager_C:UnPauseTimer(GroupTag)
     end
   end
 end
-
 function TalkTimerManager_C:ClearTimer(GroupTag)
   if not GroupTag then
     return
@@ -134,7 +125,6 @@ function TalkTimerManager_C:ClearTimer(GroupTag)
   self:TryClearTimesAddTimerList(GroupTag)
   self.TimerMap[GroupTag] = nil
 end
-
 function TalkTimerManager_C:DestroyTimer(GroupTag, Timer)
   if not GroupTag or not Timer then
     return
@@ -144,7 +134,6 @@ function TalkTimerManager_C:DestroyTimer(GroupTag, Timer)
     self.TimerMap[GroupTag][Timer] = nil
   end
 end
-
 function TalkTimerManager_C:AddTimer(GroupTag, DelayTime, bLoop, LoopTime, Obj, Func, ...)
   local TalkTimer = TalkTimer_C.New(GroupTag, self, DelayTime, bLoop, LoopTime, Obj, Func, ...)
   if not TalkTimer.bExecuted then
@@ -152,7 +141,6 @@ function TalkTimerManager_C:AddTimer(GroupTag, DelayTime, bLoop, LoopTime, Obj, 
   end
   return TalkTimer
 end
-
 function TalkTimerManager_C:TryRemoveTimerInAddTimerList(Timer)
   local NewAddTimerList = {}
   for Index, TimerData in pairs(self.AddTimerList) do
@@ -162,7 +150,6 @@ function TalkTimerManager_C:TryRemoveTimerInAddTimerList(Timer)
   end
   self.AddTimerList = NewAddTimerList
 end
-
 function TalkTimerManager_C:TryClearTimesAddTimerList(GroupTag)
   local NewAddTimerList = {}
   for Index, TimerData in pairs(self.AddTimerList) do
@@ -172,5 +159,4 @@ function TalkTimerManager_C:TryClearTimesAddTimerList(GroupTag)
   end
   self.AddTimerList = NewAddTimerList
 end
-
 return {TalkTimerManager_C = TalkTimerManager_C, TalkTimer_C = TalkTimer_C}

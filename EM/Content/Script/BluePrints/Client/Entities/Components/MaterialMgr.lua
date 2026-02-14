@@ -1,6 +1,5 @@
 require("UnLua")
 local MaterialMgr = {}
-
 function MaterialMgr:AddMaterial(MaterialId, Count)
   assert(Count >= 0)
   if self.Materials[MaterialId] == nil then
@@ -11,7 +10,6 @@ function MaterialMgr:AddMaterial(MaterialId, Count)
   end
   return self.Materials[MaterialId]:AddCount(Count)
 end
-
 function MaterialMgr:SubMaterial(MaterialId, Count)
   assert(Count >= 0)
   if self.Materials[MaterialId] == nil then
@@ -25,5 +23,4 @@ function MaterialMgr:SubMaterial(MaterialId, Count)
   end
   return self.Materials[MaterialId]:SubCount(Count)
 end
-
 return MaterialMgr

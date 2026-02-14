@@ -1,12 +1,13 @@
 require("DataMgr")
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
-local FSoundOralComponent = require("BluePrints.Story.Talk.Component.SoundOralComponent").FSoundOralComponent
+local TalkAudioComp_C = require("BluePrints.Story.Talk.Controller.TalkAudioComp")
 local StoryPlayableUtils = require("BluePrints.Story.StoryPlayableUtils").StoryPlayableUtils
+local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local BP_NPC_C = Class({
   "BluePrints.Char.BP_NpcCharacterBase_C"
 })
-
+local NpcLogType = UE.EStoryLogType.NPC
 function BP_NPC_C:ReceiveBeginPlay()
   rawset(self, "AutoSyncProp", self.AutoSyncProp)
   EventManager:AddEvent(EventID.OnBattleReady, self, self.OnBattleReady_TryInitCharacterInfo)
@@ -22,33 +23,27 @@ function BP_NPC_C:ReceiveBeginPlay()
   self.IsInSpecialQuest = false
   self.IsNeedCollapsedOtherBubble = false
 end
-
 function BP_NPC_C:OnBattleReady_TryInitCharacterInfo(_Battle)
   if Battle(self) == _Battle then
     self:TryInitCharacterInfo("Battle")
   end
 end
-
 function BP_NPC_C:AuthorityInitInfo(Info)
   BP_NPC_C.Super.AuthorityInitInfo(self, Info)
   if self.NpcAnimInstance then
     self.NpcAnimInstance.CanTurn = self.CanTurn
   end
 end
-
 function BP_NPC_C:CommonInitInfo(Info)
   BP_NPC_C.Super.CommonInitInfo(self, Info)
   self:InitInfo(Info)
 end
-
 function BP_NPC_C:OnCharacterReady(Info)
   BP_NPC_C.Super.OnCharacterReady(self, Info)
 end
-
 function BP_NPC_C:OverrideOnPostInitSucc(Func)
   self.OnPostInitSucc = Func
 end
-
 function BP_NPC_C:JointFinalAnimPath(UnitId, Path)
   local ModelId = DataMgr.Npc[UnitId].ModelId
   assert(ModelId, "Can't find model id for npc: " .. UnitId)
@@ -59,7 +54,6 @@ function BP_NPC_C:JointFinalAnimPath(UnitId, Path)
   DebugPrint(UnitId, ModelId, "SequenceFolder", SequenceFolder, "Prefix", Prefix)
   return SequenceFolder .. "Interactive/" .. Prefix .. Path
 end
-
 function BP_NPC_C:JointFinalAnimPathMechInteractive(UnitId, Path)
   local ModelId = DataMgr.Npc[UnitId].ModelId
   assert(ModelId, "Can't find model id for npc: " .. UnitId)
@@ -70,11 +64,9 @@ function BP_NPC_C:JointFinalAnimPathMechInteractive(UnitId, Path)
   DebugPrint(UnitId, ModelId, "SequenceFolder", SequenceFolder, "Prefix", Prefix)
   return SequenceFolder .. "Interactive/MechInteractive/" .. Prefix .. Path
 end
-
 function BP_NPC_C:AuthorityCommonInitMonsterInfo()
   BP_NPC_C.Super.AuthorityCommonInitMonsterInfo(self)
 end
-
 function BP_NPC_C:ReceiveEndPlay()
   BP_NPC_C.Super.ReceiveEndPlay(self)
   EventManager:RemoveEvent(EventID.EnableNpcSideBubble, self)
@@ -88,41 +80,54 @@ function BP_NPC_C:ReceiveEndPlay()
   self:UnRegisterHeadUI()
   self.IsDestroied = true
 end
-
+function BP_NPC_C:CallFromCPPDelegete(Type)
+  DebugPrint("NPC:CallFromCPPDelegete", Type)
+end
+function BP_NPC_C:ForceResetDynamics()
+  if self.Mesh then
+    self.Mesh:ResetAnimInstanceDynamics(ETeleportType.ResetPhysics)
+  end
+end
+function BP_NPC_C:ResetDynamicsWithCurrentMontageSection(InNewMontageName, InNewSection)
+  if self.CurrentAnimationMontageSectionName == "" then
+    return
+  end
+  if self.CurrentAnimationMontageSectionName == InNewMontageName then
+    return
+  end
+  DebugPrint("LHQPlayMontage DoRest NewMontageName:", InNewMontageName, "Section:", InNewSection, "CurrentNewMontageName:", self.CurrentAnimationMontageSectionName)
+  if self.Mesh then
+    self.Mesh:ResetAnimInstanceDynamics(ETeleportType.ResetPhysics)
+  end
+end
 function BP_NPC_C:CheckCanPart()
   return true
 end
-
 function BP_NPC_C:StartTalkContext(TalkId, PlayerActor)
   self.NpcTalkInteractiveComponent:StartTalkContext(TalkId, PlayerActor)
 end
-
 function BP_NPC_C:IsCustomNPC()
   return self.Hair_SM ~= nil
 end
-
 function BP_NPC_C:StartOral(VoiceName, OralBaked)
   self:StopOral(self.CurrentVoiceName)
   self.CurrentVoiceName = VoiceName
   self:BeginLipSync(OralBaked)
 end
-
 function BP_NPC_C:StopOral(VoiceName)
   if self.CurrentVoiceName ~= VoiceName then
     return
   end
   self:EndLipSync()
 end
-
 function BP_NPC_C:StartSequentialDialogueLipSync(StartDialogueId)
-  if not self.SoundOralComponent then
-    self.SoundOralComponent = FSoundOralComponent.New()
+  if not self.TalkAudioComp then
+    self.TalkAudioComp = TalkAudioComp_C.New()
   end
   self.CurrentDialogueSequentialId = StartDialogueId
   self.LipSyncComponent.OnBlendStop:Add(self, self.DialogueNextLipSync)
   self:DialogueNextLipSync()
 end
-
 function BP_NPC_C:DialogueNextLipSync()
   local DialogueInfo = DataMgr.Dialogue[self.CurrentDialogueSequentialId]
   if not DialogueInfo then
@@ -139,20 +144,16 @@ function BP_NPC_C:DialogueNextLipSync()
   if not DisableMouth then
     NPC = self
   end
-  local AudioManager = AudioManager(self)
-  self.SoundOralComponent:PlaySoundWithOral(AudioManager, VoiceName, NPC)
+  self.TalkAudioComp:PlayAudio(VoiceName, NPC, nil, DialogueInfo)
   self.CurrentDialogueSequentialId = self.CurrentDialogueSequentialId + 1
 end
-
 function BP_NPC_C:StopSequentialDialogueLipSync()
   self.LipSyncComponent.OnBlendStop:Remove(self, self.DialogueNextLipSync)
   self.CurrentDialogueSequentialId = nil
 end
-
 function BP_NPC_C:IsNeedHideInTalk()
   return false
 end
-
 function BP_NPC_C:SetSitPoseInteractive(CallBackFunc, IsImmediately)
   if self.IsSitting == true then
     EventManager:FireEvent(EventID.OnNpcPoseChange)
@@ -189,8 +190,7 @@ function BP_NPC_C:SetSitPoseInteractive(CallBackFunc, IsImmediately)
     end
   end
 end
-
-function BP_NPC_C:SetSitPoseWithoutInteractive(CallBackFunc)
+function BP_NPC_C:SetSitPoseWithoutInteractive(CallBackFunc, IsImmediately, MontageObj)
   if self.IsSitting == true then
     EventManager:FireEvent(EventID.OnNpcPoseChange)
     return
@@ -199,12 +199,14 @@ function BP_NPC_C:SetSitPoseWithoutInteractive(CallBackFunc)
   self.IsSpecialSit = true
   self:SetCharacterTag("Seating")
   self.CapsuleComponent:IgnoreActorWhenMoving(self, true)
+  local AllNeedIgnoreActor = TArray(AActor)
   local StaticMeshResult = TArray(AActor)
   local MeshClass = UE4.AStaticMeshActor
   UE4.UKismetSystemLibrary.BoxOverlapActors(self, self.RootComponent:K2_GetComponentLocation(), FVector(80, 80, 30), nil, MeshClass, nil, StaticMeshResult)
   for _, Actor in pairs(StaticMeshResult) do
     if Actor then
       self.CapsuleComponent:IgnoreActorWhenMoving(Actor, true)
+      AllNeedIgnoreActor:Add(Actor)
     end
   end
   local MechanismResult = TArray(AActor)
@@ -213,32 +215,103 @@ function BP_NPC_C:SetSitPoseWithoutInteractive(CallBackFunc)
   for _, Actor in pairs(MechanismResult) do
     if Actor then
       self.CapsuleComponent:IgnoreActorWhenMoving(Actor, true)
+      AllNeedIgnoreActor:Add(Actor)
     end
   end
-  self:GetMovementComponent():LockMovementMode(true, EMovementMode.Move_Walking)
   if self:GetMovementComponent() then
     self:GetMovementComponent().GravityScale = 0
     if not self:GetMovementComponent():IsComponentTickEnabled() then
-      self:GetMovementComponent():SetComponentTickEnabled(false)
+      self:GetMovementComponent():SetComponentTickEnabled(true)
     end
+    self:GetMovementComponent():OnNpcSeatingBegin()
   end
-  self:K2_SetActorLocation(self.BrothLoc, false, nil, false)
+  self:ResetLocation(AllNeedIgnoreActor)
   if self.NpcAnimInstance then
-    self.NpcAnimInstance.EnableDataFootIK = true
+    self.NpcAnimInstance.EnableDataFootIK = false
   end
-  local DefaultMontageName = DataMgr.Npc[self.UnitId].DefaultAction
+  local DefaultMontageNames = DataMgr.Npc[self.UnitId].DefaultAction
+  local DefaultMontageName
+  if self.StaticCreatorDefaultActionIndex and self.StaticCreatorDefaultActionIndex > 0 and DefaultMontageNames and DefaultMontageNames[self.StaticCreatorDefaultActionIndex] then
+    DefaultMontageName = DefaultMontageNames[self.StaticCreatorDefaultActionIndex]
+  end
   if self.UnitId and DataMgr.Npc[self.UnitId] and DataMgr.Npc[self.UnitId].SpecialSit then
     DefaultMontageName = DataMgr.Npc[self.UnitId].SpecialSit
   end
-  self:PlayTalkAction(DefaultMontageName, {
-    self,
-    function()
-      if CallBackFunc then
-        CallBackFunc()
-      end
-      EventManager:FireEvent(EventID.OnNpcPoseChange)
+  if MontageObj then
+    UE4.UPlayMontageCallbackProxy.CreateProxyObjectForPlayMontage(self.Mesh, MontageObj, 1, 0)
+    EventManager:FireEvent(EventID.OnNpcPoseChange)
+    if CallBackFunc then
+      CallBackFunc()
     end
-  })
+    self:AddTimer(3, function()
+      local HasSection = self.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("Loop") or self.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("SitLoop")
+      if HasSection then
+        if self:GetMovementComponent() and self:GetMovementComponent().OnNpcSeatingEnd then
+          self:GetMovementComponent():OnNpcSeatingEnd(EMovementMode.MOVE_NavWalking)
+        end
+        self:RemoveTimer("DelayCloseNpcMovementTickBySit")
+      end
+      self:SetNpcMovementTickEnable(false)
+    end, true, 0, "DelayCloseNpcMovementTickBySit")
+    return
+  end
+  if nil == IsImmediately or false == IsImmediately then
+    self:PlayTalkAction(DefaultMontageName, {
+      self,
+      function()
+        if CallBackFunc then
+          CallBackFunc()
+        end
+        self:AddTimer(3, function()
+          local HasSection = self.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("Loop") or self.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("SitLoop")
+          if self:GetMovementComponent() and self:GetMovementComponent().OnNpcSeatingEnd then
+            self:GetMovementComponent():OnNpcSeatingEnd(EMovementMode.MOVE_NavWalking)
+          end
+          if HasSection then
+            self:SetNpcMovementTickEnable(false)
+            self:RemoveTimer("DelayCloseNpcMovementTickBySit")
+          end
+        end, true, 0, "DelayCloseNpcMovementTickBySit")
+        EventManager:FireEvent(EventID.OnNpcPoseChange)
+      end
+    })
+  else
+    local MontageName
+    local MontagePrePath = "Interactive/"
+    local TalkActionData = DataMgr.TalkAction[DefaultMontageName]
+    if TalkActionData then
+      MontageName = TalkActionData.ActionMontage .. "_Montage" or MontageName
+      MontagePrePath = TalkActionData.MontagePrePath or MontagePrePath
+    end
+    local MontPath = self:GetMontagePath(MontagePrePath, MontageName)
+    UResourceLibrary.LoadObjectAsync(self, MontPath, {
+      self,
+      function(_, Montage)
+        if self.NpcAnimInstance then
+          if self.NpcAnimInstance:IsMontageHasSection(Montage, "Loop") then
+            UE4.UPlayMontageCallbackProxy.CreateProxyObjectForPlayMontage(self.Mesh, Montage, 1, 0, "Loop")
+          elseif self.NpcAnimInstance:IsMontageHasSection(Montage, "SitLoop") then
+            UE4.UPlayMontageCallbackProxy.CreateProxyObjectForPlayMontage(self.Mesh, Montage, 1, 0, "SitLoop")
+          end
+        end
+        EventManager:FireEvent(EventID.OnNpcPoseChange)
+        if CallBackFunc then
+          CallBackFunc()
+        end
+        self:AddTimer(3, function()
+          local HasSection = self.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("Loop") or self.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("SitLoop")
+          if self:GetMovementComponent() and self:GetMovementComponent().OnNpcSeatingEnd then
+            self:GetMovementComponent():OnNpcSeatingEnd(EMovementMode.MOVE_NavWalking)
+          end
+          if HasSection then
+            self:RemoveTimer("DelayCloseNpcMovementTickBySit")
+          end
+          self:SetNpcMovementTickEnable(false)
+        end, true, 0, "DelayCloseNpcMovementTickBySit")
+      end
+    })
+    return
+  end
   self:AddTimer(0.1, function()
     local Section = self.Mesh:GetAnimInstance():Montage_GetCurrentSection()
     if "SitLoop" == Section then
@@ -247,7 +320,6 @@ function BP_NPC_C:SetSitPoseWithoutInteractive(CallBackFunc)
     end
   end, true, 0, "SitToLoop")
 end
-
 function BP_NPC_C:SetSitPoseWithInteractiveAndNoDown(CallBackFunc)
   if self.IsSitting == true then
     EventManager:FireEvent(EventID.OnNpcPoseChange)
@@ -287,7 +359,6 @@ function BP_NPC_C:SetSitPoseWithInteractiveAndNoDown(CallBackFunc)
     end
   end
 end
-
 function BP_NPC_C:RealSetSitPoseWithInteractiveAndNoDown(CallBackFunc)
   self.IsSitting = true
   self.IsSpecialSit = true
@@ -318,9 +389,13 @@ function BP_NPC_C:RealSetSitPoseWithInteractiveAndNoDown(CallBackFunc)
   end
   self:K2_SetActorLocation(self.BrothLoc, false, nil, false)
   if self.NpcAnimInstance then
-    self.NpcAnimInstance.EnableDataFootIK = true
+    self.NpcAnimInstance.EnableDataFootIK = false
   end
-  local DefaultMontageName = DataMgr.Npc[self.UnitId].DefaultAction
+  local DefaultMontageNames = DataMgr.Npc[self.UnitId].DefaultAction
+  local DefaultMontageName
+  if self.StaticCreatorDefaultActionIndex and self.StaticCreatorDefaultActionIndex > 0 and DefaultMontageNames and DefaultMontageNames[self.StaticCreatorDefaultActionIndex] then
+    DefaultMontageName = DefaultMontageNames[self.StaticCreatorDefaultActionIndex]
+  end
   local MontagePath = self:GetNpcTalkActionPath(DefaultMontageName)
   UResourceLibrary.LoadObjectAsync(self, MontagePath, {
     self,
@@ -336,11 +411,30 @@ function BP_NPC_C:RealSetSitPoseWithInteractiveAndNoDown(CallBackFunc)
     end
   })
 end
-
+function BP_NPC_C:GetStandNearlyStaticMeshAndMechanism()
+  local AllActor = TArray(AActor)
+  local StaticMeshResult = TArray(AActor)
+  local MeshClass = UE4.AStaticMeshActor
+  UE4.UKismetSystemLibrary.BoxOverlapActors(self, self.RootComponent:K2_GetComponentLocation(), FVector(80, 80, 30), nil, MeshClass, nil, StaticMeshResult)
+  for _, Actor in pairs(StaticMeshResult) do
+    if Actor then
+      AllActor:Add(Actor)
+    end
+  end
+  local MechanismResult = TArray(AActor)
+  local MechanismClass = UE4.AMechanismBase
+  UE4.UKismetSystemLibrary.BoxOverlapActors(self, self.RootComponent:K2_GetComponentLocation(), FVector(80, 80, 30), nil, MechanismClass, nil, MechanismResult)
+  for _, Actor in pairs(MechanismResult) do
+    if Actor then
+      AllActor:Add(Actor)
+    end
+  end
+  return AllActor
+end
 function BP_NPC_C:GetNpcTalkActionPath(InActionId)
   local TalkActionData = DataMgr.TalkAction[InActionId]
   if nil == TalkActionData then
-    Utils.ScreenPrint("ActionId \228\184\141\229\173\152\229\156\168:" .. tostring(InActionId))
+    Utils.ScreenPrint("ActionId 不存在:" .. tostring(InActionId))
     return ""
   end
   local MontagePath = ""
@@ -352,7 +446,6 @@ function BP_NPC_C:GetNpcTalkActionPath(InActionId)
   end
   return MontagePath
 end
-
 function BP_NPC_C:MoveToSeat(Loc, Rot)
   if nil == Loc or nil == Rot then
     DebugPrint("NPC Can not MoveToSeat Loc == nil or Rot == nil ", self:GetName())
@@ -362,7 +455,6 @@ function BP_NPC_C:MoveToSeat(Loc, Rot)
   self:GetMovementComponent().GravityScale = 0
   self:K2_SetActorLocationAndRotation(Loc, Rot, false, nil, false)
 end
-
 function BP_NPC_C:SetIdlePose(NeedMontage, Callback)
   if self.IsSitting == false then
     DebugPrint("NPC Was already Standing :", self:GetName(), self.UnitId)
@@ -385,13 +477,34 @@ function BP_NPC_C:SetIdlePose(NeedMontage, Callback)
     self.CurrentSeat:CloseMechanismWithoutMontage(self)
   end
 end
-
-function BP_NPC_C:RealSetIdlePoseBySpecialSit(Callback)
+function BP_NPC_C:RealSetIdlePoseBySpecialSit(Callback, IsImmediately, Montage)
+  if self.IsSitting == true then
+    self.IsSitting = false
+  end
   self:GetMovementComponent().bAllowPhysicsRotationDuringAnimRootMotion = true
-  self.Mesh:GetAnimInstance():Montage_JumpToSection("SitEnd")
+  if Montage then
+    UE4.UPlayMontageCallbackProxy.CreateProxyObjectForPlayMontage(self.Mesh, Montage, 1, 0)
+    if Callback then
+      Callback()
+    end
+  elseif nil == IsImmediately or false == IsImmediately then
+    if self.NpcAnimInstance then
+      if self.NpcAnimInstance:IsPlayingMontagesSection("End") then
+        self.Mesh:GetAnimInstance():Montage_JumpToSection("End")
+      elseif self.NpcAnimInstance:IsPlayingMontagesSection("SitEnd") then
+        self.Mesh:GetAnimInstance():Montage_JumpToSection("SitEnd")
+      end
+    end
+  elseif self.NpcAnimInstance then
+    if self.NpcAnimInstance:IsPlayingMontagesSection("End") then
+      self.Mesh:GetAnimInstance():Montage_JumpToSectionsEnd("End")
+    elseif self.NpcAnimInstance:IsPlayingMontagesSection("SitEnd") then
+      self.Mesh:GetAnimInstance():Montage_JumpToSectionsEnd("SitEnd")
+    end
+  end
   self.IsSpecialSit = false
-  
-  local function NewCallBack()
+  self:SetNpcMovementTickEnable(true)
+  function self.StandCallBack()
     if Callback then
       Callback()
     end
@@ -400,20 +513,11 @@ function BP_NPC_C:RealSetIdlePoseBySpecialSit(Callback)
     if self.SetNpcMovementTickEnable then
       self:SetNpcMovementTickEnable(false)
     end
-  end
-  
-  local AllCallback = {OnCompleted = NewCallBack}
-  
-  function self.StandCallBack()
-    local DefaultMontageName = "Interactive_SitEnd_Montage"
-    self:PlayActionMontage("Interactive/MechInteractive", DefaultMontageName, AllCallback, false, true, true)
     self.Mesh:GetAnimInstance().OnMontageEnded:Remove(self, self.StandCallBack)
     self:GetMovementComponent():LockMovementMode(false, EMovementMode.Move_Walking)
   end
-  
   self.Mesh:GetAnimInstance().OnMontageEnded:Add(self, self.StandCallBack)
 end
-
 function BP_NPC_C:InitNpcInteractiveComponent()
   local NpcData = DataMgr[self.UnitType][self.UnitId]
   if not NpcData then
@@ -421,7 +525,7 @@ function BP_NPC_C:InitNpcInteractiveComponent()
   end
   if NpcData.InteractiveInfo then
     for InteractiveType, CommonUIConfirmID in pairs(NpcData.InteractiveInfo) do
-      if DataMgr.InteractiveInfo[InteractiveType].BPPath then
+      if DataMgr.InteractiveInfo[InteractiveType].BPPath and self[InteractiveType .. "Component"] == nil then
         UResourceLibrary.LoadClassAsync(self, DataMgr.InteractiveInfo[InteractiveType].BPPath, {
           self,
           function(_, ClassObject)
@@ -433,19 +537,19 @@ function BP_NPC_C:InitNpcInteractiveComponent()
   end
   if NpcData.NpcBiographyId then
     local BiographyData = DataMgr.NpcBiography[NpcData.NpcBiographyId]
-    UResourceLibrary.LoadClassAsync(self, DataMgr.InteractiveInfo.Biography.BPPath, {
-      self,
-      function(_, ClassObject)
-        self:OnInteractiveComponentClassLoaded(ClassObject, 100011, "Biography")
-      end
-    })
+    if nil == self.BiographyComponent then
+      UResourceLibrary.LoadClassAsync(self, DataMgr.InteractiveInfo.Biography.BPPath, {
+        self,
+        function(_, ClassObject)
+          self:OnInteractiveComponentClassLoaded(ClassObject, 100011, "Biography")
+        end
+      })
+    end
   end
 end
-
 function BP_NPC_C:ReinitDefaultFacial()
   self:NewInitDefaultFacial()
 end
-
 function BP_NPC_C:InitDefaultFacial()
   local NpcInfo = DataMgr.Npc[self.UnitId]
   if NpcInfo and NpcInfo.DefaultExpression then
@@ -453,23 +557,42 @@ function BP_NPC_C:InitDefaultFacial()
     self:NewPlayFacial(NpcInfo.DefaultExpression)
   end
 end
-
 function BP_NPC_C:NewPlayAction(InDefaultAction)
   self:PlayTalkAction(InDefaultAction)
 end
-
 function BP_NPC_C:PlayDefaultAnimation(CallBackObj)
   local NpcInfo = DataMgr.Npc[self.UnitId]
   if NpcInfo and NpcInfo.DefaultAction then
-    DebugPrint("BP_NPC_C:InitDefaultAnimation", self:GetName(), self.UnitId)
-    self:PlayTalkAction(NpcInfo.DefaultAction, CallBackObj)
+    DebugPrint("BP_NPC_C:PlayDefaultAnimation", self:GetName(), self.UnitId)
+    local DefaultMontageNames = NpcInfo.DefaultAction
+    local DefaultMontageName
+    if self.StaticCreatorDefaultActionIndex and self.StaticCreatorDefaultActionIndex > 0 and DefaultMontageNames and DefaultMontageNames[self.StaticCreatorDefaultActionIndex] then
+      DefaultMontageName = DefaultMontageNames[self.StaticCreatorDefaultActionIndex]
+    end
+    self:PlayTalkAction(DefaultMontageName, CallBackObj)
   end
 end
-
+function BP_NPC_C:StopDefaultAnimation()
+  local NpcInfo = DataMgr.Npc[self.UnitId]
+  if NpcInfo and NpcInfo.DefaultAction then
+    DebugPrint("BP_NPC_C:StopDefaultAnimation", self:GetName(), self.UnitId)
+    local DefaultMontageNames = NpcInfo.DefaultAction
+    local DefaultMontageName
+    if self.StaticCreatorDefaultActionIndex and self.StaticCreatorDefaultActionIndex > 0 and DefaultMontageNames and DefaultMontageNames[self.StaticCreatorDefaultActionIndex] then
+      DefaultMontageName = DefaultMontageNames[self.StaticCreatorDefaultActionIndex]
+    end
+    self:StopTalkAction(DefaultMontageName)
+  end
+end
 function BP_NPC_C:PlayDefaultAnimStartAnimation(CallFunc)
   local NpcInfo = DataMgr.Npc[self.UnitId]
-  if NpcInfo.DefaultAction and DataMgr.TalkAction[NpcInfo.DefaultAction] and DataMgr.TalkAction[NpcInfo.DefaultAction].AnimationId then
-    local StartAnimName = self:GetStartOrEndAnimtionName(DataMgr.TalkAction[NpcInfo.DefaultAction].AnimationId, "Start")
+  local DefaultMontageNames = NpcInfo.DefaultAction
+  local DefaultMontageName
+  if self.StaticCreatorDefaultActionIndex and self.StaticCreatorDefaultActionIndex > 0 and DefaultMontageNames and DefaultMontageNames[self.StaticCreatorDefaultActionIndex] then
+    DefaultMontageName = DefaultMontageNames[self.StaticCreatorDefaultActionIndex]
+  end
+  if DefaultMontageName and DataMgr.TalkAction[DefaultMontageName] and DataMgr.TalkAction[DefaultMontageName].AnimationId then
+    local StartAnimName = self:GetStartOrEndAnimtionName(DataMgr.TalkAction[DefaultMontageName].AnimationId, "Start")
     local MontagePath = self:GetNpcTalkActionPath(StartAnimName)
     UResourceLibrary.LoadObjectAsync(self, MontagePath, {
       self,
@@ -484,7 +607,6 @@ function BP_NPC_C:PlayDefaultAnimStartAnimation(CallFunc)
     CallFunc()
   end
 end
-
 function BP_NPC_C:PlayTalkGroupEndAnimation(CallFunc)
   if self.CurrentTalkGroupMontageName ~= nil then
     local EndAnimName = self:GetStartOrEndAnimtionName(self.CurrentTalkGroupMontageName, "End")
@@ -514,7 +636,6 @@ function BP_NPC_C:PlayTalkGroupEndAnimation(CallFunc)
     CallFunc()
   end
 end
-
 function BP_NPC_C:GetStartOrEndAnimtionName(AnimName, Postfix)
   local lastUnderscorePos = string.match(AnimName, ".*()_")
   if lastUnderscorePos then
@@ -529,7 +650,18 @@ function BP_NPC_C:GetStartOrEndAnimtionName(AnimName, Postfix)
     return ""
   end
 end
-
+function BP_NPC_C:CleanAllTimer()
+  local NpcData = DataMgr[self.UnitType][self.UnitId]
+  if NpcData and NpcData.InteractiveInfo then
+    for InteractiveType, CommonUIConfirmID in pairs(NpcData.InteractiveInfo) do
+      if DataMgr.InteractiveInfo[InteractiveType].BPPath then
+        self[InteractiveType .. "Component"] = nil
+      end
+    end
+  end
+  self.BiographyComponent = nil
+  self.Overridden.CleanAllTimer(self)
+end
 function BP_NPC_C:OnInteractiveComponentClassLoaded(ClassObject, CommonUIConfirmID, InteractiveType)
   local Component = self:AddInteractiveComponent(ClassObject)
   if not IsValid(Component) then
@@ -540,11 +672,9 @@ function BP_NPC_C:OnInteractiveComponentClassLoaded(ClassObject, CommonUIConfirm
     self[InteractiveType .. "Component"] = Component
   end
 end
-
 function BP_NPC_C:GetFreeCameraOffset()
   return self.NpcTalkInteractiveComponent:GetSimpleTalkCenterOffset()
 end
-
 function BP_NPC_C:PlayTalkSound(SoundPath, bPlayAs2D)
   if nil == SoundPath then
     DebugPrint("Error: Play talk sound failed, sound path is nil.")
@@ -560,18 +690,16 @@ function BP_NPC_C:PlayTalkSound(SoundPath, bPlayAs2D)
   local Event = UE4.UFMODBlueprintStatics.FindEventbyName(EventPath)
   AudioManager:PlayNormalSound(self, Event, EventPath, Const.TalkSoundKey, bPlayAs2D)
 end
-
 function BP_NPC_C:StopTalkSound()
   local AudioManager = AudioManager(self)
   assert(AudioManager, "Stop talk sound failed, AudioManager is nil.")
   AudioManager:StopSound(self, Const.TalkSoundKey)
 end
-
 function BP_NPC_C:PlayFacial(FacialId)
   local FacialData = DataMgr.Facial[FacialId]
   if nil == FacialData then
-    local Message = string.format("\230\137\190\228\184\141\229\136\176\232\161\168\230\131\133\230\149\176\230\141\174\239\188\140NpcId: %s\239\188\140\232\161\168\230\131\133Id: %s", self.NpcData.UnitId, FacialId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\161\168\230\131\133\230\149\176\230\141\174\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+    local Message = string.format("找不到表情数据，NpcId: %s，表情Id: %s", self.NpcData.UnitId, FacialId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, NpcLogType, "表情数据缺失/配置错误", Message)
     return
   end
   if FacialData.NpcEye then
@@ -584,7 +712,6 @@ function BP_NPC_C:PlayFacial(FacialId)
     self:PlayFacialMontage(FacialData.SoundBaseMouth, nil, nil, true)
   end
 end
-
 function BP_NPC_C:StopFacial()
   if self.NpcAnimInstance == nil then
     return
@@ -592,11 +719,10 @@ function BP_NPC_C:StopFacial()
   self.NpcAnimInstance:Montage_StopGroupByName(0, Const.CharacterFacialMouthMontageGroupName)
   self.NpcAnimInstance:Montage_StopGroupByName(0, Const.CharacterFacialEyeMontageGroupName)
 end
-
 function BP_NPC_C:PlayFacialMontage(MontageName, BlendInTime, PlayParams, bLoadAsync)
   if nil == MontageName then
     local Message = string.format("Play facial montage failed, montage name is nil, NpcId: %s", self.NpcData.UnitId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\161\168\230\131\133\232\146\153\229\164\170\229\165\135\232\181\132\230\186\144\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, NpcLogType, "表情蒙太奇资源缺失/配置错误", Message)
     return
   end
   PlayParams = PlayParams or {
@@ -611,7 +737,7 @@ function BP_NPC_C:PlayFacialMontage(MontageName, BlendInTime, PlayParams, bLoadA
       function(_, MontageObj)
         if IsValid(MontageObj) == false then
           local Message = string.format("Play facial montage failed, montage is invalid, NpcId: %s, MontagePath: %s", self.NpcData.UnitId, MontagePath)
-          UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\161\168\230\131\133\232\146\153\229\164\170\229\165\135\232\181\132\230\186\144\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+          UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, NpcLogType, "表情蒙太奇资源缺失/配置错误", Message)
           return
         end
         if BlendInTime then
@@ -627,7 +753,7 @@ function BP_NPC_C:PlayFacialMontage(MontageName, BlendInTime, PlayParams, bLoadA
   local Montage = LoadObject(MontagePath)
   if IsValid(Montage) == false then
     local Message = string.format("Play facial montage failed, montage is invalid, NpcId: %s, MontagePath: %s", self.NpcData.UnitId, MontagePath)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\161\168\230\131\133\232\146\153\229\164\170\229\165\135\232\181\132\230\186\144\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, NpcLogType, "表情蒙太奇资源缺失/配置错误", Message)
     return
   end
   if BlendInTime then
@@ -637,12 +763,11 @@ function BP_NPC_C:PlayFacialMontage(MontageName, BlendInTime, PlayParams, bLoadA
     self.NpcAnimInstance:Montage_Play(Montage, 1.0)
   end
 end
-
 function BP_NPC_C:GetFacialMontagePath(MontageName)
   local ModelData = DataMgr.Model[self.NpcData.ModelId]
   if nil == ModelData then
-    local Message = string.format("\230\137\190\228\184\141\229\136\176\230\168\161\229\158\139\230\149\176\230\141\174\239\188\140NpcId: %s\239\188\140\230\168\161\229\158\139Id: %s", self.NpcData.UnitId, self.NpcData.ModelId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\161\168\230\131\133\230\168\161\229\158\139\230\149\176\230\141\174\231\188\186\229\164\177/\233\133\141\231\189\174\233\148\153\232\175\175", Message)
+    local Message = string.format("找不到模型数据，NpcId: %s，模型Id: %s", self.NpcData.UnitId, self.NpcData.ModelId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, NpcLogType, "表情模型数据缺失/配置错误", Message)
     return
   end
   local FacePrefix = ""
@@ -652,7 +777,6 @@ function BP_NPC_C:GetFacialMontagePath(MontageName)
   end
   return string.format("%sFacial/%s%s_Montage", ModelData.MontageFolder, ModelData.MontagePrefix, MontageName)
 end
-
 function BP_NPC_C:TickActorGlobalTimeDilation()
   if not self.NpcData.GlobalGameUITagList then
     return
@@ -671,7 +795,11 @@ function BP_NPC_C:TickActorGlobalTimeDilation()
     end
   end
 end
-
+function BP_NPC_C:TriggerFaceBlend(bOpen)
+  if self.NpcAnimInstance then
+    self.NpcAnimInstance.bForbiddenFaceByActionData = bOpen
+  end
+end
 function BP_NPC_C:SetActorsImmunePause(TargetActors, bImmune)
   if not TargetActors then
     return
@@ -680,7 +808,6 @@ function BP_NPC_C:SetActorsImmunePause(TargetActors, bImmune)
     self:SetActorImmunePause(TargetActor, bImmune)
   end
 end
-
 function BP_NPC_C:SetActorImmunePause(TargetActor, bImmune)
   if nil ~= TargetActor and IsValid(TargetActor) then
     TargetActor:SetTickableWhenPaused(bImmune)
@@ -698,25 +825,22 @@ function BP_NPC_C:SetActorImmunePause(TargetActor, bImmune)
     end
   end
 end
-
 function BP_NPC_C:PlayUITalkAction(ActionId, OnFinished)
   local TalkActionInfo = DataMgr.NPCDialogue[ActionId]
-  assert(TalkActionInfo, string.format("%s \229\156\168 NPCDialogue \232\161\168\228\184\173\228\184\141\229\173\152\229\156\168\227\128\130", ActionId))
+  assert(TalkActionInfo, string.format("%s 在 NPCDialogue 表中不存在。", ActionId))
   local MontagePath = TalkActionInfo.ActionMontage
   local Montage = LoadObject(MontagePath)
-  assert(Montage, string.format("%s \228\184\141\229\173\152\229\156\168", MontagePath))
+  assert(Montage, string.format("%s 不存在", MontagePath))
   if TalkActionInfo.EndLoopMontage then
     local function OnMontageFinished()
       local EndLoopMontagePath = TalkActionInfo.EndLoopMontage
-      
       local EndLoopMontage = LoadObject(EndLoopMontagePath)
-      assert(EndLoopMontage, string.format("%s \228\184\141\229\173\152\229\156\168", EndLoopMontage))
+      assert(EndLoopMontage, string.format("%s 不存在", EndLoopMontage))
       UE4.UPlayMontageCallbackProxy.CreateProxyObjectForPlayMontage(self.Mesh, EndLoopMontage, 1, 0, TalkActionInfo.EndLoopMontageSection)
       if type(OnFinished) == "table" then
         OnFinished[2](OnFinished[1])
       end
     end
-    
     local MontParam = {
       OnCompleted = OnMontageFinished,
       StartSec = TalkActionInfo.MontageSection,
@@ -729,7 +853,6 @@ function BP_NPC_C:PlayUITalkAction(ActionId, OnFinished)
         OnFinished[2](OnFinished[1])
       end
     end
-    
     local MontParam = {
       OnCompleted = OnMontageFinished,
       StartSec = TalkActionInfo.MontageSection,
@@ -738,22 +861,14 @@ function BP_NPC_C:PlayUITalkAction(ActionId, OnFinished)
     MiscUtils.PlayMontageBySkeletaMesh(self, self.Mesh, Montage, MontParam)
   end
 end
-
 function BP_NPC_C:TriggerNpcGlobalTimeDilation(IsPause)
   self:SetActorImmunePause(self, IsPause)
 end
-
 function BP_NPC_C:PreEnterStory(OnFinished, bCacheMeshMaterials, bPauseBT)
   self.bInStory = true
   if bCacheMeshMaterials then
     self.CharacterFashion:CacheMeshMaterials(self.Mesh)
     self.CharacterFashion:ReplaceMeshAllDynamicMaterialAsParent(self.Mesh)
-  end
-  if self.UnitId == 200003 then
-    local NpcData = DataMgr.Npc[self.UnitId]
-    if NpcData and NpcData.BT and self.NpcAnimInstance then
-      self.NpcAnimInstance.EnableDataFootIK = true
-    end
   end
   self:AddTimer(0.01, function()
     self.NativeMeshTickOptions = {}
@@ -770,13 +885,15 @@ function BP_NPC_C:PreEnterStory(OnFinished, bCacheMeshMaterials, bPauseBT)
   end
   StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
 end
-
 function BP_NPC_C:PreExitStory(OnFinished, bStartBT)
   self.bInStory = false
   if bStartBT and self.RestartBT then
     self:RestartBT()
   end
-  self:StopFacial()
+  local Controller = self:GetController()
+  if Controller and Controller.BrainComponent and Controller.BrainComponent:IsRunning() then
+    self:SwitchEnableAnimInstanceIK(false)
+  end
   local MaterialArray = TArray(UMaterialInterface)
   self.CharacterFashion:UncacheMeshMaterials(self.Mesh, MaterialArray)
   self.CharacterFashion:SetMeshMaterials(self.Mesh, MaterialArray)
@@ -788,40 +905,48 @@ function BP_NPC_C:PreExitStory(OnFinished, bStartBT)
   self.NativeMeshTickOptions = nil
   StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
 end
-
 function BP_NPC_C:IsInStory()
   return self.bInStory
 end
-
 function BP_NPC_C:InitNpcAccessories(CharId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     for _, Char in pairs(Avatar.Chars) do
       if Char.CharId == CharId then
         local AppearanceSuit = Char:DumpAppearanceSuit(Avatar)
+        if self.CurrentCompositeMesh then
+          self.CurrentCompositeMesh = nil
+        end
         self:InitAppearanceSuit(AppearanceSuit)
         break
       end
     end
   end
 end
-
+function BP_NPC_C:InitNpcAccessoriesInStory(CharId)
+  self:InitNpcAccessories(CharId)
+end
 function BP_NPC_C:RefreshNpcAccessories(Char)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local AppearanceSuit = Char:DumpAppearanceSuit(Avatar)
+    if self.CurrentCompositeMesh then
+      self.CurrentCompositeMesh = nil
+    end
+    self:LoadCurrentModel()
     self:InitAppearanceSuit(AppearanceSuit)
   end
 end
-
 function BP_NPC_C:CommonOnEMActorDestroy(DestroyReason)
   self.GameplayTagsTable = nil
 end
-
 function BP_NPC_C:OnEMActorDestroy_Lua(DestroyReason)
   local GameMode = UGameplayStatics.GetGameMode(self)
   if IsValid(self.CurrentSeat) then
     self.CurrentSeat:CloseMechanismNpcSpecial(self)
+  end
+  if self.UnitId == 818054 then
+    self:RemoveTimer("TempSetMoveMode")
   end
   if GameMode then
     GameMode:GetRegionDataMgrSubSystem():DeadRegionActorData(self, DestroyReason, GameMode:GetActorLevelName(self))
@@ -831,18 +956,14 @@ function BP_NPC_C:OnEMActorDestroy_Lua(DestroyReason)
     self:ServerOnEMActorDestroy(DestroyReason)
   end
 end
-
 function BP_NPC_C:ServerOnEMActorDestroy(DestroyReason)
   self:ServerClearMonsterExtraInfo(DestroyReason)
 end
-
 function BP_NPC_C:PlayMonsterBirthFX()
 end
-
 function BP_NPC_C:GetBlueprintPath()
   return self.Data.UnitBPPath
 end
-
 function BP_NPC_C:TempSetNpcData(InNpcId)
   local NpcData = DataMgr.Npc[InNpcId]
   if InNpcId and InNpcId > 0 and nil ~= NpcData then
@@ -856,7 +977,6 @@ function BP_NPC_C:TempSetNpcData(InNpcId)
     end
   end
 end
-
 function BP_NPC_C:InitNpcSideQuestBubbleBrush(InQuestChainId)
   if self.HeadWidgetComponent and self.HeadWidgetComponent:GetWidget() then
     if DataMgr.QuestChain[InQuestChainId] and DataMgr.QuestChain[InQuestChainId].QuestChainType == Const.SpecialSideQuestChainType then
@@ -866,14 +986,12 @@ function BP_NPC_C:InitNpcSideQuestBubbleBrush(InQuestChainId)
     end
   end
 end
-
 function BP_NPC_C:UpdateNpcSpecialState()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     self.IsInSpecialQuest = Avatar.InSpecialQuest
   end
 end
-
 function BP_NPC_C:TryEnableNpcSideBubble(InNpcId, IsEnable)
   if MissionIndicatorManager.MissionNpcSideBubbles[self.UnitId] and InNpcId == self.UnitId and IsEnable then
     self.IsShowSideIndicator = IsEnable
@@ -884,7 +1002,6 @@ function BP_NPC_C:TryEnableNpcSideBubble(InNpcId, IsEnable)
     self:EnableNpcSideBubbleWidget(IsEnable)
   end
 end
-
 function BP_NPC_C:EnableHeadIconWidget(bEnable)
   if self.IsNeedCollapsedOtherBubble == false then
     self:EnableHeadWidget("HeadIcon", bEnable, self)
@@ -892,7 +1009,6 @@ function BP_NPC_C:EnableHeadIconWidget(bEnable)
     self:EnableHeadWidget("HeadIcon", false, self)
   end
 end
-
 function BP_NPC_C:EnableNpcSideBubbleWidget(bEnable)
   if self.IsShowSideIndicator and bEnable and (self.IsInSpecialQuest == false or self.IsInSpecialQuest == nil) then
     self:EnableHeadWidget("NpcSideIndicator", bEnable, self)
@@ -900,12 +1016,10 @@ function BP_NPC_C:EnableNpcSideBubbleWidget(bEnable)
     self:EnableHeadWidget("NpcSideIndicator", false, self)
   end
 end
-
 function BP_NPC_C:CollapsedOtherBubble()
   self:EnableHeadIconWidget(false)
   self:EnableImpressionWidget(false)
 end
-
 function BP_NPC_C:EnableImpressionWidget(bEnable)
   if self.IsNeedCollapsedOtherBubble == false then
     self:EnableHeadWidget("Impression", bEnable, self)
@@ -913,13 +1027,11 @@ function BP_NPC_C:EnableImpressionWidget(bEnable)
     self:EnableHeadWidget("Impression", false, self)
   end
 end
-
 function BP_NPC_C:EnableNameWidget(bEnable)
   local NpcData = DataMgr[self.UnitType][self.UnitId]
   local Name = NpcData and NpcData.UnitName or ""
   self:EnableHeadWidget("Name", bEnable, GText(Name))
 end
-
 function BP_NPC_C:EnableBubbleWidget(bEnable, Content, Style)
   if self.IsNeedCollapsedOtherBubble == false then
     self:EnableHeadWidget("Bubble", bEnable, Content, Style)
@@ -927,7 +1039,6 @@ function BP_NPC_C:EnableBubbleWidget(bEnable, Content, Style)
     self:EnableHeadWidget("Bubble", false, Content, Style)
   end
 end
-
 function BP_NPC_C:EnableBubbleRewardWidget(bEnable)
   if self.IsNeedCollapsedOtherBubble == false then
     self:EnableHeadWidget("Bubble_Reward", bEnable)
@@ -935,24 +1046,19 @@ function BP_NPC_C:EnableBubbleRewardWidget(bEnable)
     self:EnableHeadWidget("Bubble", false)
   end
 end
-
 function BP_NPC_C:GetHitMontageRule()
   return nil
 end
-
 function BP_NPC_C:GetHitMontageFolderAndPrefix()
   return nil, nil
 end
-
 function BP_NPC_C:DisableInteractiveScene(bDisable)
   self.bDisableInteractiveScene = bDisable
 end
-
 function BP_NPC_C:IsbDisableInteractiveScene()
   return self.bDisableInteractiveScene or false
 end
-
-function BP_NPC_C:ResetLocation()
+function BP_NPC_C:ResetLocation(IgNorActors)
   if self.Data and self.Data.IgnoreFixLocation == true then
     return
   end
@@ -965,39 +1071,35 @@ function BP_NPC_C:ResetLocation()
   local HitResult = FHitResult()
   local HitResultLine = FHitResult()
   local OffsetZ = HalfHeight - Radius
-  local Ret = UE4.UKismetSystemLibrary.CapsuleTraceSingle(self, Start, End, Radius, Radius, ETraceTypeQuery.TraceScene, false, nil, 0, HitResult, true)
-  local RetLine = UE4.UKismetSystemLibrary.LineTraceSingle(self, StartLine, End, ETraceTypeQuery.TraceScene, false, nil, 0, HitResultLine, true)
+  local Ret = UE4.UKismetSystemLibrary.CapsuleTraceSingle(self, Start, End, Radius, Radius, ETraceTypeQuery.TraceScene, false, IgNorActors, 0, HitResult, true)
+  local RetLine = UE4.UKismetSystemLibrary.LineTraceSingle(self, StartLine, End, ETraceTypeQuery.TraceScene, false, IgNorActors, 0, HitResultLine, true)
   if Ret and RetLine and Radius < HitResult.ImpactPoint.Z - HitResultLine.Location.Z then
-    DebugPrint("BP_NPC_C CapsuleTraceSingle \230\137\147\228\184\173\228\189\141\231\189\174\239\188\154", HitResult.ImpactPoint, "\230\137\147\228\184\173\231\155\174\230\160\135\239\188\154", HitResult.Actor:GetName(), "Pawn\229\144\141\229\173\151\239\188\154", self:GetName())
+    DebugPrint("BP_NPC_C CapsuleTraceSingle 打中位置：", HitResult.ImpactPoint, "打中目标：", HitResult.Actor:GetName(), "Pawn名字：", self:GetName())
     Ret = RetLine
     HitResult = HitResultLine
     OffsetZ = HalfHeight
   end
   if Ret then
     local SurfacePos = FVector(HitResult.Location.X, HitResult.Location.Y, HitResult.Location.Z + OffsetZ)
-    DebugPrint("BP_NPC_C\229\141\138\233\171\152\239\188\154", HalfHeight, "\230\137\147\228\184\173\228\189\141\231\189\174\239\188\154", HitResult.ImpactPoint, "\230\137\147\228\184\173\231\155\174\230\160\135\239\188\154", HitResult.Actor:GetName(), "Pawn\229\144\141\229\173\151\239\188\154", self:GetName(), "SurfacePos\239\188\154", SurfacePos, "============sssss================")
+    DebugPrint("BP_NPC_C半高：", HalfHeight, "打中位置：", HitResult.ImpactPoint, "打中目标：", HitResult.Actor:GetName(), "Pawn名字：", self:GetName(), "SurfacePos：", SurfacePos, "============sssss================")
     self:K2_SetActorLocation(SurfacePos, false, nil, false)
     if math.abs(HitResult.ImpactPoint.Z - SpawnPos.Z) > HalfHeight * 2 then
-      Utils.ScreenPrint("BP_NPC_C\233\157\153\230\128\129\229\136\183\230\150\176\231\130\185\228\189\141\231\189\174\229\188\130\229\184\184,Pawn\229\144\141\229\173\151\239\188\154" .. self:GetName() .. " SpawnPos.Z\239\188\154" .. SpawnPos.Z .. " ImpactPoint.Z:" .. HitResult.ImpactPoint.Z)
+      Utils.ScreenPrint("BP_NPC_C静态刷新点位置异常,Pawn名字：" .. self:GetName() .. " SpawnPos.Z：" .. SpawnPos.Z .. " ImpactPoint.Z:" .. HitResult.ImpactPoint.Z)
     end
   end
+  self:AdjustNpcFloorHeight()
 end
-
 function BP_NPC_C:TriggerFallingCallable()
   return
 end
-
 function BP_NPC_C:TriggerWaterFallingCallable()
   return
 end
-
 function BP_NPC_C:GetTalkInteractiveComponent()
   return self.NpcTalkInteractiveComponent
 end
-
 function BP_NPC_C:ClearCharacterBattleInfo(NormalDeath, DeathReason)
   BP_NPC_C.Super.ClearCharacterBattleInfo(self, NormalDeath, DeathReason)
   self.IsSitting = false
 end
-
 return BP_NPC_C

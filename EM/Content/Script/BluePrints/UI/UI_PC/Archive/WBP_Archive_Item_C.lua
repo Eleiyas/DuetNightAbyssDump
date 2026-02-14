@@ -1,25 +1,21 @@
 require("UnLua")
 local M = Class({
-  "BluePrints.UI.BP_UIState_C"
+  "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Entry = nil
   end
 end
-
 function M:Init(Content)
   self:OnListItemObjectSet(Content)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.Entry = self
   self.Content = Content
   self:InitData(Content)
   self:InitCompView()
 end
-
 function M:InitData(Content)
   self.IsEmpty = Content.IsEmpty
   self.Id = Content.Id
@@ -42,11 +38,9 @@ function M:InitData(Content)
   self.OnAddedToFocusPathEvent = Content.OnAddedToFocusPathEvent
   self.OnRemovedFromFocusPathEvent = Content.OnRemovedFromFocusPathEvent
 end
-
 function M:InitCompView()
   self:InitCommonView()
 end
-
 function M:InitCommonView()
   self:SetEmpty(self.IsEmpty)
   if not self.IsEmpty then
@@ -62,7 +56,6 @@ function M:InitCommonView()
     self:PlayInAnimation()
   end
 end
-
 function M:SetEmpty(IsEmpty)
   if IsEmpty then
     self.WS_Type:SetActiveWidgetIndex(1)
@@ -70,33 +63,33 @@ function M:SetEmpty(IsEmpty)
     self.WS_Type:SetActiveWidgetIndex(0)
   end
 end
-
 function M:SetIcon(IconPath)
   local Object = LoadObject(IconPath)
   local ImgMat = self.Icon:GetDynamicMaterial()
   ImgMat:SetTextureParameterValue("MainTex", Object)
 end
-
 function M:SetName(Name)
   self.Text_Name:SetText(GText(Name))
 end
-
 function M:SetRarity(Rarity)
   local TempRarity = Rarity
-  if not TempRarity or TempRarity < 1 or TempRarity > 5 then
-    TempRarity = 1
+  if not TempRarity or TempRarity < 0 or TempRarity > 5 then
+    TempRarity = 0
   end
-  self.BG:SetBrushResourceObject(self["Img_" .. TempRarity])
+  local FontMaterial = self.Text_Name:GetDynamicFontMaterial()
+  if TempRarity and self["Quality_" .. TempRarity] then
+    FontMaterial:SetTextureParameterValue("IconTex", self["Quality_" .. TempRarity])
+  else
+    FontMaterial:SetTextureParameterValue("IconTex", self.Quality_0)
+  end
 end
-
 function M:SetLock(IsLock)
   if IsLock then
-    self.Panel_Lock:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    self:PlayAnimation(self.Lock)
   else
-    self.Panel_Lock:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self:PlayAnimation(self.Unlock)
   end
 end
-
 function M:SetDraftType(IsDraftType)
   if IsDraftType then
     local Widget = UIManager(self):CreateWidget("WidgetBlueprint'/Game/UI/WBP/Common/Item/Widget/WBP_Com_Item_Draft.WBP_Com_Item_Draft'", false)
@@ -105,7 +98,6 @@ function M:SetDraftType(IsDraftType)
     WidgetSlot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   end
 end
-
 function M:SetSelected(IsSelect)
   if self.NotInteractive then
     return
@@ -118,7 +110,6 @@ function M:SetSelected(IsSelect)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:SetNew(IsNew)
   self.Content.IsNew = IsNew
   if IsNew then
@@ -127,15 +118,12 @@ function M:SetNew(IsNew)
     self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetDoNotPlaySoundGamePad(DoNotPlaySoundGamePad)
   self.Content.DoNotPlaySoundGamePad = DoNotPlaySoundGamePad
 end
-
 function M:SetDoNotPlaySound(DoNotPlaySound)
   self.Content.DoNotPlaySound = DoNotPlaySound
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -153,7 +141,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -172,7 +159,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.HandleMouseDown then
     return UWidgetBlueprintLibrary.Handled()
@@ -194,7 +180,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.bMouseButtonDown = true
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.NotInteractive or self:IsInAnimationPlaying() or not self.bMouseButtonDown then
     return UWidgetBlueprintLibrary.Unhandled()
@@ -217,15 +202,12 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnTouchEnded(MyGeometry, TouchEvent)
   return self:OnMouseButtonUp(MyGeometry, TouchEvent)
 end
-
 function M:OnTouchStarted(MyGeometry, TouchEvent)
   return self:OnMouseButtonDown(MyGeometry, TouchEvent)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.OnFocusReceivedEvent then
     local Obj = self.OnFocusReceivedEvent.Obj
@@ -237,9 +219,8 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
       Callback(Obj)
     end
   end
-  return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
+  return UIUtils.Handled
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.OnAddedToFocusPathEvent then
     local Obj = self.OnAddedToFocusPathEvent.Obj
@@ -252,7 +233,6 @@ function M:OnAddedToFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.OnRemovedFromFocusPathEvent then
     local Obj = self.OnRemovedFromFocusPathEvent.Obj
@@ -265,11 +245,8 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:PlayInAnimation()
 end
-
 function M:IsInAnimationPlaying()
 end
-
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(RootPage, FishingSpotId, NeedMontage)
   self.RootPage = RootPage
   self.RootPage.FishingRodId = 0
@@ -20,7 +19,7 @@ function M:Init(RootPage, FishingSpotId, NeedMontage)
   if NeedMontage then
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
     Player:AsyncCreateEffectCreature(30101, FTransform(), true, nil)
-    self.RootPage:PlayPlayerMontage("Fish_Prepare_Montage")
+    self.RootPage:PlayPlayerMontage(4)
     self:AddTimer(0.1, self.UpdateFishingRodModelId, true, 0, "UpdateFishingRodModelId")
   end
   if self.PopupUI then
@@ -28,8 +27,9 @@ function M:Init(RootPage, FishingSpotId, NeedMontage)
   else
     self.Main:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
+  self.Tip_DayAndNight:Init()
+  self:CheckReddotCount()
 end
-
 function M:UpdateFishingRodModelId()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local Creatures = Player:GetEffectCreatureByTag("Fish")
@@ -39,7 +39,6 @@ function M:UpdateFishingRodModelId()
   self:RemoveTimer("UpdateFishingRodModelId")
   self.RootPage:UpdateFishingRodModelId()
 end
-
 function M:InitCommonWidget(NeedBindEvent)
   if not NeedBindEvent then
     return
@@ -115,6 +114,10 @@ function M:InitCommonWidget(NeedBindEvent)
   })
   self.Com_Tab:BindEventOnTabSelected(self, self.OnTabItemClick)
   self.Com_Tab:SelectTab(1)
+  self.DayNightButton = UIManager(self):CreateWidget("WidgetBlueprint'/Game/UI/WBP/Angling/Widget/WBP_Angling_DayAndNightBtn.WBP_Angling_DayAndNightBtn'", true)
+  self.DayNightButton:Init()
+  self.Com_Tab.Pos_DayAndNight:AddChild(self.DayNightButton)
+  self.Com_Tab.Pos_DayAndNight:SetVisibility(ESlateVisibility.Visible)
   self.BtnText:SetText(GText("UI_Fishing_StartFishing"))
   self.BtnText:BindEventOnClicked(self, self.OnClickGameStart)
   self.BtnText:TryOverrideSoundFunc(function()
@@ -163,26 +166,24 @@ function M:InitCommonWidget(NeedBindEvent)
   self:AddReddotListener()
   self.Btn_Empty.OnClicked:Add(self, self.OnClickEmpty)
 end
-
 function M:InitText()
   local SpotData = DataMgr.FishingSpot[self.RootPage.FishingSpotId]
   self:RefreshShopRefreshTime(SpotData.ReplenishDay)
   self.Text_Place:SetText(string.format(GText("UI_Fishing_UpdateTime"), self.RootPage.RemainTimeStr))
   self:AddTimer(1, self.UpdateReplenishTime, true, 0, "FishUpdateReplenishTime")
 end
-
 function M:UpdateReplenishTime()
   local SpotData = DataMgr.FishingSpot[self.RootPage.FishingSpotId]
   self:RefreshShopRefreshTime(SpotData.ReplenishDay)
   self.Text_Place:SetText(string.format(GText("UI_Fishing_UpdateTime"), self.RootPage.RemainTimeStr))
 end
-
 function M:InitDisplayFish()
   self.List_Fish:ClearListItems()
   local ShowFishIds = DataMgr.FishingSpot[self.RootPage.FishingSpotId].ShowFishId
-  local Num = 0
+  self.DisplayNum = 0
   for i, v in pairs(ShowFishIds) do
-    local FishResourceId = DataMgr.Fish[v].ResourceId
+    local FishData = DataMgr.Fish[v]
+    local FishResourceId = FishData.ResourceId
     if FishResourceId and DataMgr.Resource[FishResourceId] then
       local Params = {
         Obj = self,
@@ -202,10 +203,15 @@ function M:InitDisplayFish()
             Callback = self.OnRemovedFocusDisplayFish
           }
           if Avatar:GetFishCountByFishId(v) < 1 then
+            local TimeTagList = FishData.FishAppearPeriod
+            print(_G.LogTag, "LXZ InitDisplayFish", TimeTagList, #TimeTagList)
+            if TimeTagList and #TimeTagList < 3 and #TimeTagList > 0 then
+              Content.TimeTagList = TimeTagList
+            end
             Content.NotInteractive = true
             Content.bOutline = true
           else
-            Num = Num + 1
+            self.DisplayNum = self.DisplayNum + 1
             Content.NotInteractive = false
             Content.IsShowDetails = true
           end
@@ -214,11 +220,10 @@ function M:InitDisplayFish()
       end
     end
   end
-  if 0 == Num and self.RootPage.DeviceInPc then
+  if 0 == self.DisplayNum and self.RootPage.DeviceInPc then
     self.Key_GamePad:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:InitFishRodButton()
   self.RootPage.FishingRodId = self:GetDefaultFishRodId()
   local ResourceId = DataMgr.FishingRod[self.RootPage.FishingRodId].ResourceId
@@ -234,7 +239,6 @@ function M:InitFishRodButton()
     self.Item02:Init(Content)
   end
 end
-
 function M:InitFishLureButton()
   local Avatar = GWorld:GetAvatar()
   local CacheLureId
@@ -263,11 +267,9 @@ function M:InitFishLureButton()
     self.BtnText:ForbidBtn(false)
   end
 end
-
 function M:OnClickTabInfo()
   UIManager(self):LoadUINew("GuideBook", 5, 84)
 end
-
 function M:OnClickReturn(TabWidget)
   if self.PopupUI then
     if self.PopupUI.CloseBtnCallbackFunction then
@@ -276,56 +278,44 @@ function M:OnClickReturn(TabWidget)
     end
     return
   end
-  local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-  local AnimInstance = Player.Mesh:GetAnimInstance()
-  local Montage = AnimInstance:GetCurrentActiveMontage()
-  if Montage then
-    AnimInstance:Montage_Stop(0, Montage)
-  end
   self:RemoveReddotListener()
   self:RemoveTimer("FishUpdateReplenishTime")
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:RemoveEffectCreature(30101)
+  self.RootPage:PlayPlayerMontage(-1, nil)
   self.RootPage:Close()
 end
-
 function M:OnClickGameStart()
   print(_G.LogTag, "LXZ OnClickGameStart")
   self.RootPage:SwitchOnGamePage()
 end
-
 function M:OnClickOpenShop()
   print(_G.LogTag, "LXZ OnClickOpenShop")
   PageJumpUtils:JumpToShopPage(801, 8010, nil, "FishingShop")
 end
-
 function M:OnClickOpenBag()
   print(_G.LogTag, "LXZ OnClickOpenBag")
   UIUtils.OpenSystem(2, false, 6)
 end
-
 function M:OnClickOpenDialog()
   print(_G.LogTag, "LXZ OnClickOpenDialog")
   PageJumpUtils:JumpToAnglingMap({
     FishingSpotId = self.RootPage.FishingSpotId
   })
 end
-
 function M:OnClickDisplayFish(FishResourceId)
   print(_G.LogTag, "LXZ OnClickDisplayFish", FishResourceId)
 end
-
 function M:OnAddFocusDisplayFish()
-  if self.RootPage.DeviceInPc then
+  if self.RootPage.DeviceInPc and not self.RootPage.CurMode then
     self.BtnText:SetPCVisibility(true)
   end
 end
-
 function M:OnRemovedFocusDisplayFish()
-  if self.RootPage.DeviceInPc then
+  if self.RootPage.DeviceInPc and not self.RootPage.CurMode then
     self.BtnText:SetPCVisibility(false)
   end
 end
-
 function M:OnClickFishRod(RodId)
   local PopParam = {
     RodId = RodId,
@@ -336,8 +326,14 @@ function M:OnClickFishRod(RodId)
     ShowBKeyClose = false,
     TabConfigData = {
       Tabs = {
-        {Text = "\233\177\188\231\171\191", TabId = 1},
-        {Text = "\233\177\188\233\165\181", TabId = 2}
+        {
+          Text = GText("UI_Fishing_FishingRod"),
+          TabId = 1
+        },
+        {
+          Text = GText("UI_Fishing_FishingLure"),
+          TabId = 2
+        }
       },
       DefaultTabId = 1
     }
@@ -347,7 +343,6 @@ function M:OnClickFishRod(RodId)
   self.PopupUI:InitWidgetView(100159, PopParam)
   self:OnDialogOpen()
 end
-
 function M:OnClickSelectFishLureButton(LureResourceId)
   print(_G.LogTag, "LXZ OnClickSelectFishLureButton", self.bSelectingLure)
   local PopParam = {
@@ -359,8 +354,14 @@ function M:OnClickSelectFishLureButton(LureResourceId)
     ShowBKeyClose = false,
     TabConfigData = {
       Tabs = {
-        {Text = "\233\177\188\231\171\191", TabId = 1},
-        {Text = "\233\177\188\233\165\181", TabId = 2}
+        {
+          Text = GText("UI_Fishing_FishingRod"),
+          TabId = 1
+        },
+        {
+          Text = GText("UI_Fishing_FishingLure"),
+          TabId = 2
+        }
       },
       DefaultTabId = 2
     }
@@ -370,7 +371,6 @@ function M:OnClickSelectFishLureButton(LureResourceId)
   self.PopupUI:InitWidgetView(100159, PopParam)
   self:OnDialogOpen()
 end
-
 function M:OnSelectFirstDisplayFish()
   local ListItems = self.List_Fish:GetListItems()
   for i, v in pairs(ListItems) do
@@ -381,7 +381,6 @@ function M:OnSelectFirstDisplayFish()
     end
   end
 end
-
 function M:RefreshFishRod(RodId)
   print(_G.LogTag, "LXZ RefreshFishRod", RodId)
   local Avatar = GWorld:GetAvatar()
@@ -401,7 +400,6 @@ function M:RefreshFishRod(RodId)
     self.Item02:Init(Content)
   end
 end
-
 function M:RefreshFishLure(LureId)
   print(_G.LogTag, "LXZ RefreshFishLure", LureId)
   local Avatar = GWorld:GetAvatar()
@@ -423,7 +421,6 @@ function M:RefreshFishLure(LureId)
   self.RootPage.Angling_Fishing.WBP_Angling_Fishing_Btn:SwitchWaitStart(false)
   self.BtnText:ForbidBtn(false)
 end
-
 function M:NewItemContent(ItemType, ItemId, Count, NotInteractive, NotCountFormat, OnMouseButtonUpEvents, IsShowDetails)
   if 0 == ItemId then
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -447,7 +444,6 @@ function M:NewItemContent(ItemType, ItemId, Count, NotInteractive, NotCountForma
   Obj.IsShowDetails = IsShowDetails
   return Obj
 end
-
 function M:OnGetLure(ResourceId)
   print(_G.LogTag, "LXZ OnGetLure", ResourceId, self.RootPage.FishingLureId)
   if ResourceId == DataMgr.FishingLure[self.RootPage.FishingLureId].ResourceId then
@@ -460,7 +456,6 @@ function M:OnGetLure(ResourceId)
   local DialogContent = self.PopupUI:GetContentWidgetByName("Angling_Rod")
   DialogContent:OnGetLure(ResourceId)
 end
-
 function M:GetResourceCount(ResourceId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -469,7 +464,6 @@ function M:GetResourceCount(ResourceId)
     return 1
   end
 end
-
 function M:GetDefaultFishRodId()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -506,7 +500,6 @@ function M:GetDefaultFishRodId()
     return 101
   end
 end
-
 function M:OnDialogOpen()
   self.RootPage.FishingSpot:SetCamera("Select")
   self.Main:SetVisibility(ESlateVisibility.Collapsed)
@@ -515,7 +508,6 @@ function M:OnDialogOpen()
     self.Com_Tab:UpdateSingleBottomKeyInfo(3, {})
   end
 end
-
 function M:OnDialogClose()
   print(_G.LogTag, "LXZ OnDialogClose")
   self.Item02:SetSelected(false)
@@ -549,7 +541,6 @@ function M:OnDialogClose()
     })
   end
 end
-
 function M:AddReddotListener()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -559,7 +550,6 @@ function M:AddReddotListener()
   ReddotManager.AddListener("AnglingMap", self, self.OnAnglingMapReddotChange)
   self.ListenedReddot = true
 end
-
 function M:RemoveReddotListener()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -571,7 +561,6 @@ function M:RemoveReddotListener()
   ReddotManager.RemoveListener("AnglingMap", self)
   self.ListenedReddot = false
 end
-
 function M:OnAnglingMapReddotChange(Count)
   print(_G.LogTag, "LXZ OnReddotChange", Count)
   if self.BtnImg03.Reddot:GetVisibility() ~= ESlateVisibility.Collapsed then
@@ -583,7 +572,6 @@ function M:OnAnglingMapReddotChange(Count)
     self.BtnImg03.New:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   print(_G.LogTag, "LXZ Handle_KeyEventOnPC")
   if "Escape" == InKeyName then
@@ -593,7 +581,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return true
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   print(_G.LogTag, "LXZ Handle_KeyEventOnGamePad", InKeyName, self.bDisplayLure)
   if self.PopupUI then
@@ -619,17 +606,17 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
     self:OnSelectFirstDisplayFish()
   elseif "Gamepad_RightThumbstick" == InKeyName then
     self.Com_Tab.WBP_Com_Tab_ResourceBar:FocusToResource()
+  elseif "Gamepad_Special_Left" == InKeyName then
+    self.DayNightButton:OnOpenDayAndNight()
   else
     self.Com_Tab:Handle_KeyEventOnGamePad(InKeyName)
   end
   return true
 end
-
 function M:Handle_KeyUpEventOnGamePad(InKeyName)
   print(_G.LogTag, "LXZ Handle_KeyUpEventOnGamePad", InKeyName, self.bDisplayLure)
   return true
 end
-
 function M:Handle_PreviewKeyEventOnGamePad(InKeyName)
   print(_G.LogTag, "LXZ Handle_PreviewKeyEventOnGamePad", InKeyName, self.bDisplayLure)
   if self.bDisplayLure or self.PopupUI then
@@ -644,7 +631,6 @@ function M:Handle_PreviewKeyEventOnGamePad(InKeyName)
   end
   return true
 end
-
 function M:CheckCompleteAchieveCount()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -654,7 +640,7 @@ function M:CheckCompleteAchieveCount()
   local AchievementList = DataMgr.FishingAchievement
   for AchievementId, Data in pairs(AchievementList) do
     local FishiAchv = Avatar.FishAchvs[AchievementId]
-    if FishiAchv:IsComplete() and FishiAchv:CanRecvReward() then
+    if FishiAchv and FishiAchv:IsComplete() and FishiAchv:CanRecvReward() then
       CanReceiveCount = CanReceiveCount + 1
     end
   end
@@ -665,7 +651,6 @@ function M:CheckCompleteAchieveCount()
     self.BtnImg03.Reddot:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:CheckSkipFishingPet()
   local bCanSkip = self.RootPage:CheckSkipFishingPet()
   if bCanSkip then
@@ -675,21 +660,20 @@ function M:CheckSkipFishingPet()
     self.Panel_Auto:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.RootPage.DeviceInPc then
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
     self.Key_GamePad:SetVisibility(ESlateVisibility.Collapsed)
   elseif CurInputDevice == ECommonInputType.Gamepad and self.RootPage.DeviceInPc then
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(1)
-    self.Key_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    if 0 ~= self.DisplayNum then
+      self.Key_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    end
   elseif CurInputDevice == ECommonInputType.Touch then
   end
 end
-
 function M:LureNavigation(Navigation)
 end
-
 function M:OnLureItemNavigation(NavigationDirection)
   print(_G.LogTag, "LXZ OnLureItemNavigation", NavigationDirection)
   local MaxItemIdx = self.VB01:GetChildrenCount()
@@ -704,7 +688,6 @@ function M:OnLureItemNavigation(NavigationDirection)
   local Lure = self.VB01:GetChildAt(self.CurrentItemIdx)
   return Lure
 end
-
 function M:RefreshShopRefreshTime(RefreshTime)
   local ShopRefreshBeginTime = CommonConst.ShopRefreshBeginTime
   local StartTime = os.time({
@@ -748,15 +731,36 @@ function M:RefreshShopRefreshTime(RefreshTime)
   end
   self.RootPage.RemainTimeStr = RemainTimeStr
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.PopupUI then
     return self.PopupUI
   end
   return self
 end
-
 function M:OnClickEmpty()
 end
-
+function M:CheckReddotCount()
+  local UnLockData = EMCache:Get("FishUnLockData", true)
+  local UnLockMapData = EMCache:Get("FishMapUnLockData", true)
+  ReddotManager.ClearLeafNodeCount("AnglingMap")
+  if not UnLockData then
+    return
+  end
+  local UnLockCount = 0
+  if UnLockData then
+    for Id, State in pairs(UnLockData) do
+      UnLockCount = UnLockCount + 1
+    end
+  end
+  local UnLockMapCount = 0
+  if UnLockMapData then
+    for Id, State in pairs(UnLockMapData) do
+      UnLockMapCount = UnLockMapCount + 1
+    end
+  end
+  if UnLockCount <= UnLockMapCount then
+    return
+  end
+  ReddotManager.IncreaseLeafNodeCount("AnglingMap", UnLockCount - UnLockMapCount)
+end
 return M

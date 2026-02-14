@@ -8,27 +8,22 @@ local BP_NpcCharacterBase_C = Class({
   "BluePrints.Combat.Components.MonsterInitLogic"
 })
 BP_NpcCharacterBase_C._components = {}
-
 function BP_NpcCharacterBase_C:Initialize(Initializer)
   self.bIsBossInPart = false
 end
-
 function BP_NpcCharacterBase_C:ReceiveBeginPlay()
   BP_NpcCharacterBase_C.Super.ReceiveBeginPlay(self)
   self.MonBattleComponentTickTime = 0.1
   self.MonBattleComponentRemainTime = self.MonBattleComponentTickTime
 end
-
 function BP_NpcCharacterBase_C:TryResumeRootMotionFromPush()
   if not self.bBePushed and self:GetRootMotionTagState(ESourceTags.ApplyPush) then
     self:EnableRootMotion(ESourceTags.ApplyPush)
   end
 end
-
 function BP_NpcCharacterBase_C:GetBlueprintPath()
   return self.Data.UnitBPPath
 end
-
 function BP_NpcCharacterBase_C:OnEMActorDestroy_Lua(DestroyReason)
   local GameMode = UGameplayStatics.GetGameMode(self)
   if GameMode then
@@ -46,37 +41,29 @@ function BP_NpcCharacterBase_C:OnEMActorDestroy_Lua(DestroyReason)
     self.TeammateUI = nil
   end
 end
-
 function BP_NpcCharacterBase_C:Recovery(...)
   BP_NpcCharacterBase_C.Super.Recovery(self, ...)
   self:SetCharacterTagIdle()
 end
-
 function BP_NpcCharacterBase_C:SetIsFallTrigger()
   self.IsFallTrigger = true
 end
-
 function BP_NpcCharacterBase_C:LeaveHitFlyTag()
 end
-
 function BP_NpcCharacterBase_C:OnTalkEnableMonsterSpawn()
   self:SetWaitInitTag(false, Const.CharWaitInitTag.HideInTalk)
   EventManager:RemoveEvent(EventID.TalkEnableMonsterSpawn, self)
 end
-
 function BP_NpcCharacterBase_C:ReceiveEndPlay(EndPlayReason)
   EventManager:RemoveEvent(EventID.TalkEnableMonsterSpawn, self)
   GWorld.GameInstance.GlobalLockOnTargets:Remove(self.Eid)
 end
-
 function BP_NpcCharacterBase_C:CallSuperFunction(FuncName, ...)
   BP_NpcCharacterBase_C.Super[FuncName](self, ...)
 end
-
 function BP_NpcCharacterBase_C:GetManualItemId()
   return -1
 end
-
 function BP_NpcCharacterBase_C:CommonOnEMActorDestroy(DestroyReason)
   EventManager:RemoveEvent(EventID.TalkEnableMonsterSpawn, self)
   if DestroyReason == EDestroyReason.EngineDestroy then
@@ -85,6 +72,5 @@ function BP_NpcCharacterBase_C:CommonOnEMActorDestroy(DestroyReason)
   self:ClearFXComponent()
   self.GameplayTagsTable = nil
 end
-
 AssembleComponents(BP_NpcCharacterBase_C)
 return BP_NpcCharacterBase_C

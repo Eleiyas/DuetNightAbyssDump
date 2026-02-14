@@ -1,12 +1,10 @@
 local M = Class("BluePrints.Common.MVC.Controller")
 local SignBoardBubbleTalkModel = require("BluePrints.UI.WBP.SignBoardBubble.SignBoardBubbleTalkModel")
-
 function M:Init()
   M.Super.Init(self)
   EventManager:AddEvent(EventID.UpdateSignBoardNpc, self, self.OnUpdateSignBoardNpc)
   EventManager:AddEvent(EventID.CloseLoading, self, self.OnCloseLoading)
 end
-
 function M:Destory()
   M.Super.Destory(self)
   EventManager:RemoveEvent(EventID.UpdateSignBoardNpc, self)
@@ -17,14 +15,12 @@ function M:Destory()
   BoardSystem:RemoveTimer(self.Timer)
   self.Timer = nil
 end
-
 function M:OnCloseLoading()
   local Avatar = self:GetAvatar()
   if Avatar and Avatar:CheckSubRegionType(Avatar:GetCurrentRegionId(), CommonConst.SubRegionType.Home) then
     self:StaryHomeBase()
   end
 end
-
 function M:StopTalkTrigger(RunningTriggerId)
   if RunningTriggerId ~= SignBoardBubbleTalkModel:GetRunningTalkTrigger() then
     return
@@ -40,7 +36,6 @@ function M:StopTalkTrigger(RunningTriggerId)
     SignBoardBubbleTalkModel:ResetTalkWaitTime(RunningTriggerId)
   end
 end
-
 function M:RecordBubbleDialogue(DialogueId)
   local Avatar = self:GetAvatar()
   if not Avatar then
@@ -50,15 +45,11 @@ function M:RecordBubbleDialogue(DialogueId)
   if not DialogueData then
     return
   end
-  if Avatar:CheckSignBoardNpcTalkIsRecord(DialogueData.SpeakNpcId, DialogueId) then
-    return
-  end
   if not Avatar:CheckSignBoardNpcTalkValid(DialogueData.SpeakNpcId, DialogueId) then
     return
   end
   Avatar:TriggerRecordSignBoardNpcTalk(DialogueData.SpeakNpcId, DialogueId)
 end
-
 function M:StartTalkTrigger(GossipTriggerId)
   local TalkTriggerId = SignBoardBubbleTalkModel:GetTalkTriggerId(GossipTriggerId)
   local Avatar = self:GetAvatar()
@@ -69,11 +60,9 @@ function M:StartTalkTrigger(GossipTriggerId)
     return
   end
   SignBoardBubbleTalkModel:SetRunningTalkTrigger(GossipTriggerId)
-  
   local function OnTriggerFailedOrEnd()
     self:StopTalkTrigger(GossipTriggerId)
   end
-  
   local function OnTriggerSucces()
     local GameInstance = GWorld.GameInstance
     local TalkContext = GameInstance:GetTalkContext()
@@ -85,7 +74,6 @@ function M:StartTalkTrigger(GossipTriggerId)
       SignBoardBubbleTalkModel:SetRunningTalkTrigger(GossipTriggerId, InvitateBubbleTalkKey)
     end
   end
-  
   local NpcId = SignBoardBubbleTalkModel:GetServerCanTriggerNpc(GossipTriggerId)
   Avatar:TriggerAddSignBoardNpcDailyTalk(NpcId, function(bSuccess)
     if bSuccess and GossipTriggerId == SignBoardBubbleTalkModel:GetRunningTalkTrigger() then
@@ -95,7 +83,6 @@ function M:StartTalkTrigger(GossipTriggerId)
     end
   end)
 end
-
 function M:TickCheck()
   local Avatar = self:GetAvatar()
   if not Avatar then
@@ -144,7 +131,6 @@ function M:TickCheck()
     self:StartTalkTrigger(NewTriggerId)
   end
 end
-
 function M:StaryHomeBase()
   local BoardSystem = UBoardBubbleSubsystem.GetSubsystem(GWorld.GameInstance)
   if not BoardSystem then
@@ -156,7 +142,6 @@ function M:StaryHomeBase()
     self:TickCheck()
   end, true, 0, nil, false, UE4.ETickingGroup.TG_EndPhysics)
 end
-
 function M:OnUpdateSignBoardNpc()
   self:StopTalkTrigger(SignBoardBubbleTalkModel:GetRunningTalkTrigger())
   SignBoardBubbleTalkModel:ResetTalkData()
@@ -165,13 +150,10 @@ function M:OnUpdateSignBoardNpc()
     self:StaryHomeBase()
   end
 end
-
 function M:GetModel()
   return SignBoardBubbleTalkModel
 end
-
 function M:GetEventName()
   return "SignBoardBubbleTalkModel"
 end
-
 return M

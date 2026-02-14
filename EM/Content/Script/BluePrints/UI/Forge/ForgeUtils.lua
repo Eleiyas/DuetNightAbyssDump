@@ -1,6 +1,5 @@
 require("UnLua")
 local ForgeUtils = {}
-
 function ForgeUtils:ConstructItemContentFromResourceId(ResType, ResId)
   local ItemIcon = ItemUtils.GetItemIconPath(ResId, ResType)
   local ItemRarity = ItemUtils.GetItemRarity(ResId, ResType)
@@ -14,7 +13,6 @@ function ForgeUtils:ConstructItemContentFromResourceId(ResType, ResId)
   }
   return Content
 end
-
 function ForgeUtils:ConstructItemContentFromDraftId(DraftId)
   local DraftInfo = DataMgr.Draft[DraftId]
   local Content = {
@@ -55,7 +53,6 @@ function ForgeUtils:ConstructItemContentFromDraftId(DraftId)
   Content.ProductName = ProductName
   return Content
 end
-
 function ForgeUtils:SecondsToHMS(Second)
   local Hour = math.floor(Second / 3600)
   Second = Second % 3600
@@ -63,7 +60,6 @@ function ForgeUtils:SecondsToHMS(Second)
   Second = Second % 60
   return Hour, Minute, Second
 end
-
 function ForgeUtils:GetResourceNum(ResType, ResId)
   local PlayerAvatar = GWorld:GetAvatar()
   if "Mod" == ResType then
@@ -73,5 +69,4 @@ function ForgeUtils:GetResourceNum(ResType, ResId)
   end
   return 0
 end
-
 return ForgeUtils

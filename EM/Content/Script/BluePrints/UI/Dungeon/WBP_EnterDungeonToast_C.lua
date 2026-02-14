@@ -1,10 +1,8 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local DURATION_TIME = 2.0
-
 function M:Initialize(Initializer)
 end
-
 function M:OnLoaded(Player, bIsIn)
   DebugPrint("gmy@WBP_EnterDungeonToast_C", Player, bIsIn)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -28,7 +26,6 @@ function M:OnLoaded(Player, bIsIn)
     self:Close()
   end, false)
 end
-
 function M:Close()
   self.IsBeginToClose = true
   self:BindToAnimationFinished(self.Out, {
@@ -37,7 +34,6 @@ function M:Close()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function M:SetHeadIconByRoleId(RoleId)
   local IconName = DataMgr.BattleChar[RoleId].GuideIconImg
   local MiniIconPath = "/Game/UI/Texture/Dynamic/Image/Head/Mini/"
@@ -48,5 +44,4 @@ function M:SetHeadIconByRoleId(RoleId)
   end
   self.Img_Head:SetBrushResourceObject(HeadIcon)
 end
-
 return M

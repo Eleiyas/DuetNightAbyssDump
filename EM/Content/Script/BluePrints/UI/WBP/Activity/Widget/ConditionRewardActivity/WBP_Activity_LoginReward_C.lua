@@ -1,9 +1,9 @@
 require("UnLua")
+local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.WBP.Activity.Widget.ConditionRewardActivity.ConditionRewardActiviyBase"
 })
-
 function M:InitUI()
   for i = 1, 2 do
     local ItemWidget = self["LoginReward_Item0" .. i]
@@ -58,8 +58,8 @@ function M:InitUI()
   self.LoginReward_Item01:PlayAnimationByType(self.IsCanGetReward, self.IsComplete or self.IsGetReward)
   self.LoginReward_Item02:PlayAnimationByType(self.IsCanGetReward, self.IsComplete or self.IsGetReward)
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClick)
+  ActivityUtils.SetUpJustifyOfJap(self.LoginReward_Title.Text_ActivityDesc)
 end
-
 function M:OnViewStuffDetailClick(IsOpenDetail, RewardItem)
   self.IsOpenTip = IsOpenDetail
   if ModController:IsMobile() then
@@ -78,12 +78,10 @@ function M:OnViewStuffDetailClick(IsOpenDetail, RewardItem)
     end
   end
 end
-
 function M:GetCurFocusWidgetInfo()
   self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:UpdateUIByInputDevice(CurInputDeviceType)
   if CurInputDeviceType == ECommonInputType.Gamepad then
     self.WS_BtnSign:SetActiveWidgetIndex(1)
@@ -97,7 +95,6 @@ function M:UpdateUIByInputDevice(CurInputDeviceType)
     self.Key_BtnSign:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -108,12 +105,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.LeftThumb then
@@ -128,7 +123,6 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -146,5 +140,4 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UIUtils.Handled
   end
 end
-
 return M

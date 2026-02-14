@@ -10,7 +10,6 @@ local TalkState2EventId = {
   }
 }
 local TalkStateManager_C = {}
-
 function TalkStateManager_C.New()
   local Obj = setmetatable({}, {__index = TalkStateManager_C})
   Obj.TalkStateListTagMap = {
@@ -25,7 +24,6 @@ function TalkStateManager_C.New()
   }
   return Obj
 end
-
 function TalkStateManager_C:SetTalkStateByTag(StateName, bPush, Tag)
   local TagList = self.TalkStateListTagMap[StateName]
   if not TagList then
@@ -57,9 +55,7 @@ function TalkStateManager_C:SetTalkStateByTag(StateName, bPush, Tag)
     end
   end
 end
-
 function TalkStateManager_C:GetTalkState(StateName)
   return self.TalkStateVarMap[StateName]
 end
-
 return TalkStateManager_C

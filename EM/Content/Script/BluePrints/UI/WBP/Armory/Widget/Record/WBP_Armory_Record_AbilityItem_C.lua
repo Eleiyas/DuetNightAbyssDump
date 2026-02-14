@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.WBP.Armory.Widget.Pet.WBP_Armory_Pet_SkillItem_C"
 })
-
 function M:OnListItemObjectSet(Content)
   if not Content then
     return
@@ -19,6 +18,7 @@ function M:OnListItemObjectSet(Content)
   self.Icon_Ability:SetDispathchColor(Content.DispatchTag, not Content.Unlocked)
   if Content.Unlocked then
     self.Icon_Lock:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Name_Ability:SetRenderOpacity(self.Normal_NameOpacity)
   else
     self.Icon_Lock:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.Name_Ability:SetRenderOpacity(self.Locked_NameOpacity)
@@ -27,7 +27,6 @@ function M:OnListItemObjectSet(Content)
   Content.OnMenuRealClosed = self.OnMenuRealClosed
   self.MenuInitParams = Content
 end
-
 function M:_OnMenuOpenChanged(bIsOpen)
   if bIsOpen then
     self:SetTipsMode(true)
@@ -35,5 +34,4 @@ function M:_OnMenuOpenChanged(bIsOpen)
     self:SetTipsMode(false)
   end
 end
-
 return M

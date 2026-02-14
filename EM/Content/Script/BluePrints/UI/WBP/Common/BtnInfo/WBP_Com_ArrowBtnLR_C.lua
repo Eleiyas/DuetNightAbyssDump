@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn.OnUnhovered:Add(self, self.OnBtnUnhovered)
@@ -11,7 +10,6 @@ function M:Construct()
   self.Btn.OnClicked:Add(self, self.OnBtnClicked)
   self.IsFobidden = false
 end
-
 function M:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -22,7 +20,6 @@ function M:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function M:BindForbidStateExecuteEvent(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -33,7 +30,6 @@ function M:BindForbidStateExecuteEvent(Obj, Func, ...)
     ...
   }
 end
-
 function M:OnBtnHovered()
   if self.IsForbidden then
     return
@@ -45,7 +41,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsForbidden then
     return
@@ -56,7 +51,6 @@ function M:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function M:OnBtnPressed()
   if self.IsForbidden then
     return
@@ -65,7 +59,6 @@ function M:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self.IsForbidden then
     return
@@ -79,7 +72,6 @@ function M:OnBtnReleased()
     self:PlayAnimationReverse(self.Hover)
   end
 end
-
 function M:OnBtnClicked()
   if self.IsForbidden then
     self:StopAllAnimations()
@@ -94,7 +86,6 @@ function M:OnBtnClicked()
     self.Func(self.Obj, table.unpack(self.Params))
   end
 end
-
 function M:ForbidBtn(IsForbid)
   if IsForbid and self.IsForbidden ~= true then
     self.IsForbidden = true
@@ -107,5 +98,4 @@ function M:ForbidBtn(IsForbid)
     self:PlayAnimation(self.Normal)
   end
 end
-
 return M

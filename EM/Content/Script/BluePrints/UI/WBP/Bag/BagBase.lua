@@ -3,7 +3,6 @@ local CommonUtils = require("Utils.CommonUtils")
 local StuffIconObject = require("BluePrints.UI.WBP.Bag.Widget.BagStuffIconObject")
 local BagCommon = require("BluePrints.UI.WBP.Bag.BagCommon")
 local M = Class()
-
 function M:InitMultiSelectWidget()
   for key, value in pairs(BagCommon.RarityColorInfo) do
     local ConfigData = {
@@ -35,19 +34,16 @@ function M:InitMultiSelectWidget()
   self.CheckBox_Retain:HideKey(true)
   self.CheckBox_Ignore:HideKey(true)
 end
-
 function M:StartMultiSelectWidget()
   for key, value in pairs(BagCommon.RarityColorInfo) do
     self[key]:Start()
   end
 end
-
 function M:ResetMultiSelectWidget()
   for key, value in pairs(BagCommon.RarityColorInfo) do
     self[key]:Reset()
   end
 end
-
 function M:ToSelectBagItemWithRarity(IsChecked, Rarity)
   local AllItemCount, ResultList = self.List_Item:GetNumItems(), {}
   local SellPageMainUI = UIManager(self):GetUI(BagCommon.BagStuffSelectUIName)
@@ -79,7 +75,6 @@ function M:ToSelectBagItemWithRarity(IsChecked, Rarity)
     end
   end
 end
-
 function M:FilterStuffDataBySift(StuffItems)
   if not self.SelectedSiftItems or next(self.SelectedSiftItems) == nil then
     return StuffItems
@@ -93,17 +88,14 @@ function M:FilterStuffDataBySift(StuffItems)
   self.FilteredStuffData = FilteredItems
   return FilteredItems
 end
-
 function M:OnSiftAddedToFocusPath()
   self.Filter.Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnSiftRemovedFromFocusPath()
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     self.Filter.Controller:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:IsStuffItemMatchedWithSift(StuffItem)
   local fieldMapping = {}
   local SiftModelId = self.SiftModelId
@@ -113,7 +105,6 @@ function M:IsStuffItemMatchedWithSift(StuffItem)
     local field = SiftData.SelectionField[1]
     fieldMapping[i] = "WeaponRarity" == field and "Rarity" or field
   end
-  
   local function getFieldValueByIndex(StuffItem, index)
     local fieldName = fieldMapping[index]
     if "WeaponTag" == fieldName then
@@ -139,7 +130,6 @@ function M:IsStuffItemMatchedWithSift(StuffItem)
       end
     end
   end
-  
   for i, SiftItem in pairs(self.SelectedSiftItems) do
     local fieldValue = getFieldValueByIndex(StuffItem, i)
     if fieldValue then
@@ -192,13 +182,11 @@ function M:IsStuffItemMatchedWithSift(StuffItem)
   end
   return true
 end
-
 function M:SortAllItemsByType(StuffDataTable)
   local Filter1Idx, SortType = self.Filter:GetSortInfos()
   self:SortItemContents(StuffDataTable, BagCommon.SortFilters[self.CurTabId][Filter1Idx], SortType)
   return StuffDataTable
 end
-
 function M:SortItemContents(InOutArr, Key, SortType)
   local OrderBy, SortFunc
   if self.CurTabId == BagCommon.ItemTypeToTabId.MeleeWeapon or self.CurTabId == BagCommon.ItemTypeToTabId.RangedWeapon then
@@ -207,7 +195,6 @@ function M:SortItemContents(InOutArr, Key, SortType)
       "SortPriority",
       "StuffId"
     }
-    
     function SortFunc(a, b)
       if a.IsEquipped and not b.IsEquipped then
         return true
@@ -238,7 +225,6 @@ function M:SortItemContents(InOutArr, Key, SortType)
       OrderBy[3] = "Rarity"
       OrderBy[4] = "Level"
     end
-    
     function SortFunc(a, b)
       if a.IsEquipped and not b.IsEquipped then
         return true
@@ -259,7 +245,6 @@ function M:SortItemContents(InOutArr, Key, SortType)
       OrderBy[2] = "Rarity"
       OrderBy[3] = "StuffId"
     end
-    
     function SortFunc(a, b)
       return self:GetFinalSortResult(a, b, OrderBy, SortType, 1, 3)
     end
@@ -269,22 +254,32 @@ function M:SortItemContents(InOutArr, Key, SortType)
       "ConsumableType",
       "StuffId"
     }
-    
     function SortFunc(a, b)
       a.ConsumableType = BagCommon.ConsumableItemTypeSortWeight[a.UseEffectType] or 1
       b.ConsumableType = BagCommon.ConsumableItemTypeSortWeight[b.UseEffectType] or 1
       return self:GetFinalSortResult(a, b, OrderBy, SortType, 1, 3)
     end
+  elseif self.CurTabId == BagCommon.ItemTypeToTabId.Draft then
+    OrderBy = {
+      "ApplicationType",
+      "Rarity",
+      "StuffId"
+    }
+    if "UI_Select_Unique" == Key then
+      OrderBy[1] = "Rarity"
+      OrderBy[2] = "ApplicationType"
+    end
+    function SortFunc(a, b)
+      return self:GetFinalSortResult(a, b, OrderBy, SortType, 1, 3)
+    end
   else
     OrderBy = {"Rarity", "StuffId"}
-    
     function SortFunc(a, b)
       return self:GetFinalSortResult(a, b, OrderBy, SortType, 1, 2)
     end
   end
   table.sort(InOutArr, SortFunc)
 end
-
 function M:GetFinalSortResult(CompareA, ComPareB, OrderBy, SortType, StartIndex, MaxDepth)
   if StartIndex == MaxDepth then
     if SortType == CommonConst.ASC then
@@ -301,7 +296,6 @@ function M:GetFinalSortResult(CompareA, ComPareB, OrderBy, SortType, StartIndex,
     return CompareA[OrderBy[StartIndex]] > ComPareB[OrderBy[StartIndex]]
   end
 end
-
 function M:FillWithListViewData(TabId, NeedDelayJumpToItem)
   if self.LoadMode == "FrameBlocking" then
     if self:IsExistTimer("DelayToLoadItemByFrame") then
@@ -322,7 +316,6 @@ function M:FillWithListViewData(TabId, NeedDelayJumpToItem)
     self:FillPlayerDataByType(TabId, NeedDelayJumpToItem)
   end
 end
-
 function M:FillPlayerDataByType(TabId, NeedDelayJump)
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -335,6 +328,8 @@ function M:FillPlayerDataByType(TabId, NeedDelayJump)
     PlayerStuffs = Avatar.Weapons
   elseif TabId == BagCommon.ItemTypeToTabId.Mod then
     PlayerStuffs = Avatar.Mods
+  elseif TabId == BagCommon.ItemTypeToTabId.Draft then
+    PlayerStuffs = Avatar.Drafts
   else
     PlayerStuffs = Avatar.Resources
   end
@@ -354,6 +349,8 @@ function M:FillPlayerDataByType(TabId, NeedDelayJump)
         if nil ~= StuffData then
           StuffData.IsEquipped = self:GetIsStuffIsEquiped(StuffData)
         end
+      elseif TabId == BagCommon.ItemTypeToTabId.Draft then
+        StuffData = StuffIconObject:GetDraftsStuffData(StuffServerData, self)
       else
         local StuffConfigData = StuffServerData:Data()
         if StuffConfigData and StuffConfigData.MaterialClassify == TabId then
@@ -422,7 +419,6 @@ function M:FillPlayerDataByType(TabId, NeedDelayJump)
   end
   self:JumpToSelectItem(NeedDelayJump)
 end
-
 function M:JumpToSelectItem(NeedDelay)
   if NeedDelay then
     self:AddDelayFrameFunc(function()
@@ -432,7 +428,6 @@ function M:JumpToSelectItem(NeedDelay)
     self:RealToJumpToSelectItem()
   end
 end
-
 function M:RealToJumpToSelectItem()
   local AllItemCount = self.List_Item:GetNumItems()
   if self.BagCurState == BagCommon.AllBagState.NormalState and AllItemCount > 0 and self.NeedSelectGridIndex >= 0 then
@@ -452,14 +447,16 @@ function M:RealToJumpToSelectItem()
     else
       self:RefreshDetail(-1, nil)
     end
-  elseif not self.Panel_Detail:IsVisible() then
-    self.CurSelectGridIndex = -1
-    self.CurSelectStuffContent = nil
-    self.List_Item:ScrollIndexIntoView(0)
+  else
+    if not self.Panel_Detail:IsVisible() then
+      self.CurSelectGridIndex = -1
+      self.CurSelectStuffContent = nil
+      self.List_Item:ScrollIndexIntoView(0)
+    end
+    self:RefreshDetail(-1, nil)
   end
   self:AfterFillDataInfo()
 end
-
 function M:CheckIsCanAddToSaleList(CurStuffContent, bIsShowToast, IsFromAutoSelect)
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -489,7 +486,6 @@ function M:CheckIsCanAddToSaleList(CurStuffContent, bIsShowToast, IsFromAutoSele
   end
   return nil == ShowTextId
 end
-
 function M:CheckIsCanAddToResolveList(CurStuffContent, bIsShowToast)
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -511,11 +507,13 @@ function M:CheckIsCanAddToResolveList(CurStuffContent, bIsShowToast)
   end
   return nil == ShowTextId
 end
-
 function M:GetStuffSaleCondition()
-  return self.CheckBox_Retain:IsChecked(), self.CheckBox_Ignore:IsChecked()
+  if self.CurTabId ~= BagCommon.ItemTypeToTabId.Mod then
+    return false, false
+  else
+    return self.CheckBox_Retain:IsChecked(), self.CheckBox_Ignore:IsChecked()
+  end
 end
-
 function M:RefreshSaleItemSelect(StuffUuid, GridIndex, AddNum)
   if self.BagCurState == BagCommon.AllBagState.ChooseSaleState then
     local StuffServerData = self:GetStuffServerData(self.CurSelectStuffContent.Uuid, self.CurSelectStuffContent.StuffType, self.CurSelectStuffContent.FishInfo)
@@ -527,14 +525,17 @@ function M:RefreshSaleItemSelect(StuffUuid, GridIndex, AddNum)
       if AddNum > 0 then
         local SellPageMainUI = UIManager(self):GetUI(BagCommon.BagStuffSelectUIName)
         if SellPageMainUI then
-          local ExtraData = SaleObj.StateTagInfo.ExtraData
-          local CurCount, MaxCount = ExtraData[1], ExtraData[2]
-          local NewCount = CurCount + AddNum
-          local FinalCount = math.min(NewCount, MaxCount)
-          if CurCount <= FinalCount then
-            local DeltaNum = FinalCount - CurCount
-            ExtraData[1] = FinalCount
-            SellPageMainUI:UpdateItemNumFromList(SaleObj, DeltaNum)
+          local StateTagInfo = SaleObj.StateTagInfo
+          local ExtraData = StateTagInfo and StateTagInfo.ExtraData
+          if type(ExtraData) == "table" and ExtraData[1] and ExtraData[2] then
+            local CurCount, MaxCount = ExtraData[1], ExtraData[2]
+            local NewCount = CurCount + AddNum
+            local FinalCount = math.min(NewCount, MaxCount)
+            if CurCount <= FinalCount then
+              local DeltaNum = FinalCount - CurCount
+              ExtraData[1] = FinalCount
+              SellPageMainUI:UpdateItemNumFromList(SaleObj, DeltaNum)
+            end
           end
         end
       else
@@ -546,14 +547,14 @@ function M:RefreshSaleItemSelect(StuffUuid, GridIndex, AddNum)
     local StuffData = {}
     if self.CurTabId == BagCommon.ItemTypeToTabId.Mod then
       StuffData = StuffIconObject:GetModStuffData(StuffServerData, nil, "ClickChooseStuff")
+    elseif self.CurTabId == BagCommon.ItemTypeToTabId.Draft then
+      StuffData = StuffIconObject:GetDraftsStuffData(StuffServerData, nil, "ClickChooseStuff")
     else
       StuffData = StuffIconObject:GetItemStuffData(StuffServerData, nil, "ClickChooseStuff")
     end
-    
     local function RemoveStuffCallback()
       EventManager:FireEvent(EventID.OnRemoveBagItemInList, StuffUuid)
     end
-    
     local StuffStateTagInfo = {
       Name = "IsToChoose",
       ExtraData = {
@@ -572,7 +573,6 @@ function M:RefreshSaleItemSelect(StuffUuid, GridIndex, AddNum)
     EventManager:FireEvent(EventID.OnAddBagItemToList, StuffData)
   end
 end
-
 function M:RefreshResolveWeaponSelect(StuffUuid, GridIndex)
   if self.BagCurState == BagCommon.AllBagState.WeaponResolveState then
     if not self:CheckIsCanAddToResolveList(nil, true) then
@@ -581,11 +581,9 @@ function M:RefreshResolveWeaponSelect(StuffUuid, GridIndex)
     if self.DesireResolveWeaponList[StuffUuid] ~= nil then
       return
     end
-    
     local function RemoveWeaponCallback()
       EventManager:FireEvent(EventID.OnRemoveBagItemInList, StuffUuid)
     end
-    
     local StuffServerData = self:GetStuffServerData(self.CurSelectStuffContent.Uuid, self.CurSelectStuffContent.StuffType)
     local StuffData = StuffIconObject:GetWeaponStuffData(StuffServerData, nil, "ClickChooseStuff")
     local StuffStateTagInfo = {
@@ -606,7 +604,6 @@ function M:RefreshResolveWeaponSelect(StuffUuid, GridIndex)
     EventManager:FireEvent(EventID.OnAddBagItemToList, StuffData)
   end
 end
-
 function M:RemoveItemSaleState(StuffId)
   local StuffContent = self.DesireSaleStuffObjList[StuffId]
   if not IsValid(StuffContent) then
@@ -630,6 +627,8 @@ function M:RemoveItemSaleState(StuffId)
   if StuffContent.StuffType == BagCommon.StuffType.Mod then
     local IsCurInModTab = self.CurTabId == BagCommon.ItemTypeToTabId.Mod
     IsNeedCancelSelect = self.CurSelectStuffContent ~= nil and StuffContent.Uuid == self.CurSelectStuffContent.Uuid
+  elseif StuffContent.StuffType == BagCommon.StuffType.Draft then
+    IsNeedCancelSelect = self.CurTabId == BagCommon.ItemTypeToTabId.Draft and self.CurSelectStuffContent ~= nil and StuffContent.Uuid == self.CurSelectStuffContent.Uuid
   elseif StuffContent.StuffType == BagCommon.StuffType.Resource then
     local StuffConfigData = DataMgr.Resource[StuffContent.UnitId]
     IsNeedCancelSelect = self.CurTabId == StuffConfigData.MaterialClassify and self.CurSelectStuffContent ~= nil and StuffContent.Uuid == self.CurSelectStuffContent.Uuid
@@ -639,7 +638,6 @@ function M:RemoveItemSaleState(StuffId)
     self.List_Item:BP_ClearSelection()
   end
 end
-
 function M:RemoveWeaponResolveState(StuffUuid)
   local StuffContent = self.DesireResolveWeaponList[StuffUuid]
   if not IsValid(StuffContent) then
@@ -666,17 +664,14 @@ function M:RemoveWeaponResolveState(StuffUuid)
     self.List_Item:BP_ClearSelection()
   end
 end
-
 function M:TryToAddItemToTargetListWithRarity(StuffContent)
   local StuffType = StuffContent.ItemType
   local StuffUuid = StuffContent.Uuid
   local StuffServerData = self:GetStuffServerData(StuffContent.Uuid, StuffType, StuffContent.FishInfo)
   local StuffData
-  
   local function RemoveStuffCallback()
     EventManager:FireEvent(EventID.OnRemoveBagItemInList, StuffUuid)
   end
-  
   if StuffType == BagCommon.StuffType.Weapon then
     if self:CheckIsCanAddToResolveList(StuffContent, false) and self.DesireResolveWeaponList[StuffUuid] == nil then
       StuffData = StuffIconObject:GetWeaponStuffData(StuffServerData, nil, "ClickChooseStuff")
@@ -705,6 +700,9 @@ function M:TryToAddItemToTargetListWithRarity(StuffContent)
       else
         NowAddToSaleListCount = StuffData.StuffCount
       end
+    elseif self.CurTabId == BagCommon.ItemTypeToTabId.Draft then
+      StuffData = StuffIconObject:GetDraftsStuffData(StuffServerData, nil, "ClickChooseStuff")
+      NowAddToSaleListCount = StuffData.StuffCount
     else
       StuffData = StuffIconObject:GetItemStuffData(StuffServerData, nil, "ClickChooseStuff")
       NowAddToSaleListCount = StuffData.StuffCount
@@ -729,7 +727,6 @@ function M:TryToAddItemToTargetListWithRarity(StuffContent)
   end
   return StuffData
 end
-
 function M:TryToRemoveItemToTargetListWithRarity(StuffContent)
   local StuffType = StuffContent.StuffType
   local StuffUuid = StuffContent.Uuid
@@ -789,7 +786,6 @@ function M:TryToRemoveItemToTargetListWithRarity(StuffContent)
   end
   return bIsNeedRemove
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   local IsUseGamePad = CurInputType == ECommonInputType.Gamepad and self:IsCanChangeToGamePadViewMode()
   self.Panel_Detail:UpdateUIStyleInPlatform(IsUseGamePad)
@@ -798,7 +794,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:RefreshBottomKeyInfo("ChooseSaleState")
   end
 end
-
 function M:IsCanChangeToGamePadViewMode()
   if self.CurFocusWidget == "DefaultWidget" then
     return true
@@ -827,7 +822,6 @@ function M:IsCanChangeToGamePadViewMode()
     return true
   end
 end
-
 function M:GetIsStuffIsEquiped(SelectStuffContent)
   local PlayerAvatar = GWorld:GetAvatar()
   SelectStuffContent = SelectStuffContent or self.CurSelectStuffContent
@@ -845,20 +839,16 @@ function M:GetIsStuffIsEquiped(SelectStuffContent)
   end
   return IsEquiped
 end
-
 function M:BindEventOnSelectionsChanged(Filter1, Filter2, Filter3, SortType)
   self:RefreshStuffListItem(true)
 end
-
 function M:BindEventOnSortTypeChanged(SortType)
   self:RefreshStuffListItem(false)
 end
-
 function M:RefreshStuffListItem(IsFilterSelectionsChanged)
   self.IsFilterSelectionsChanged = IsFilterSelectionsChanged
   self:ReGenerateBagList()
 end
-
 function M:ReGenerateBagList()
   self:CancelStuffClickAndHideDetail()
   self.List_Item:BP_ClearSelection()
@@ -871,7 +861,6 @@ function M:ReGenerateBagList()
     self:FillPlayerDataByType(self.CurTabId)
   end
 end
-
 function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
   if not SelectItem then
     return
@@ -879,6 +868,12 @@ function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     if self.BagCurState == BagCommon.AllBagState.NormalState then
       self:OnListSelectStuffClicked(SelectItem)
+      if 1 ~= SelectItem.GridIndex then
+        local FirstFocusSelectStuffContent = self.List_Item:GetItemAt(0)
+        if FirstFocusSelectStuffContent.IsSelect and FirstFocusSelectStuffContent.SelfWidget then
+          FirstFocusSelectStuffContent.SelfWidget:SetSelected(false)
+        end
+      end
     elseif self.BagCurState == BagCommon.AllBagState.ChooseSaleState or self.BagCurState == BagCommon.AllBagState.WeaponResolveState then
       local SellPageMainUI = UIManager(self):GetUI(BagCommon.BagStuffSelectUIName)
       if nil ~= SellPageMainUI then
@@ -895,7 +890,6 @@ function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
     end
   end
 end
-
 function M:GetStuffObjId(StuffUuid)
   local FinalObjId = StuffUuid
   if type(FinalObjId) == "string" and CommonUtils.IsObjIdStr(FinalObjId) then
@@ -903,7 +897,6 @@ function M:GetStuffObjId(StuffUuid)
   end
   return FinalObjId
 end
-
 function M:UpdatePageInfoFromStackAction()
   if IsValid(self.CurSelectStuffContent) then
     if self.CurSelectStuffContent.SelfWidget then
@@ -917,7 +910,6 @@ function M:UpdatePageInfoFromStackAction()
   self:RefreshBottomKeyInfo()
   self:UpdateUIStyleInPlatform(self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad)
 end
-
 function M:SetFocus_Lua()
   if UIManager(self):IsHaveMenuAnchorOpen() then
     return
@@ -930,6 +922,10 @@ function M:SetFocus_Lua()
   if nil ~= ComSortFullScreen then
     return
   end
+  local ComGetItemPage = UIManager(self):GetUIObj("GetItemPage")
+  if nil ~= ComGetItemPage then
+    return
+  end
   self:RefreshBottomKeyInfo()
   local AllItemCount = self.List_Item:GetNumItems()
   if AllItemCount > 0 then
@@ -938,7 +934,6 @@ function M:SetFocus_Lua()
     self:SetFocus()
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   local DesiredFocusTarget
   if nil == DesiredFocusTarget then
@@ -957,7 +952,6 @@ function M:BP_GetDesiredFocusTarget()
   end
   return DesiredFocusTarget
 end
-
 function M:RefreshButtonInfoInDiffTab()
   local BagTabData, bIsShowSellBtn = DataMgr.BagTab[self.CurTabId], false
   if BagTabData and BagTabData.HideSell then
@@ -976,7 +970,6 @@ function M:RefreshButtonInfoInDiffTab()
     self.Button_Sell:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnRetainOneCheckStateChanged(IsChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local NeedUpdateList, NeedRemoveList
@@ -1014,7 +1007,6 @@ function M:OnRetainOneCheckStateChanged(IsChecked)
     SellPageMainUI:MultiRemoveBagItemInList(NeedRemoveList)
   end
 end
-
 function M:OnIgnoreEquipedCheckStateChanged(IsChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local NeedRemoveList
@@ -1036,13 +1028,11 @@ function M:OnIgnoreEquipedCheckStateChanged(IsChecked)
     SellPageMainUI:MultiRemoveBagItemInList(NeedRemoveList)
   end
 end
-
 function M:OnClickGoToAmory()
   self.IsNeedPlayNpcAnim = false
   self.GoToArmoryWhenClose = true
   self:Close()
 end
-
 function M:ReClickGoToUseConsume()
   if not self.CurSelectStuffContent then
     return
@@ -1050,16 +1040,17 @@ function M:ReClickGoToUseConsume()
   local StuffUuid = self.CurSelectStuffContent.Uuid
   local StuffType = self.CurSelectStuffContent.StuffType
   local StuffServerData = self:GetStuffServerData(StuffUuid, StuffType)
-  if StuffServerData then
-    local StuffConfigData = StuffServerData:Data()
-    self:OnClickGoToUseConsume(StuffConfigData)
-  end
+  self:AddTimer(0.15, function()
+    if StuffServerData then
+      local StuffConfigData = StuffServerData:Data()
+      self:OnClickGoToUseConsume(StuffConfigData)
+    end
+  end)
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   self:AddTimer(0.01, function()
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   end)
 end
-
 function M:OnClickGoToUseConsume(StuffConfigData)
   self.CurrentChooseInfo = nil
   local CommonDialogParams = {}
@@ -1072,11 +1063,47 @@ function M:OnClickGoToUseConsume(StuffConfigData)
     end
     CommonDialogParams.OptionalItemsList = ResultData
   end
+  DebugPrint("ayff test use resourceID:" .. StuffConfigData.ResourceId)
   if UseEffectType == CommonConst.ResUseEffectType.SelectGeneralSkin then
     DebugPrint("gmy@BagBase M:OnClickGoToUseConsume", StuffConfigData.UseParam)
-    UIManager(self):LoadUINew("CharSkinPreview", nil, {
+    UIManager(self):LoadUINew("CharSkinPreview", {
       Type = "SkinSelect",
       SkinOptRewardId = StuffConfigData.UseParam,
+      ResourceId = StuffConfigData.ResourceId
+    })
+    return
+  elseif UseEffectType == CommonConst.ResUseEffectType.SelectCharAccessory then
+    UIManager(self):LoadUINew("CharSkinPreview", {
+      Type = "SelectCharAccessory",
+      AccessoryOptRewardId = StuffConfigData.UseParam,
+      ResourceId = StuffConfigData.ResourceId
+    })
+    return
+  elseif UseEffectType == CommonConst.ResUseEffectType.SelectWeaponSkin then
+    UIManager(self):LoadUINew("CharSkinPreview", {
+      Type = "SelectWeaponSkin",
+      WeaponSkinOptRewardId = StuffConfigData.UseParam,
+      ResourceId = StuffConfigData.ResourceId
+    })
+    return
+  elseif UseEffectType == CommonConst.ResUseEffectType.SelectWeaponAccessory then
+    UIManager(self):LoadUINew("CharSkinPreview", {
+      Type = "SelectWeaponAccessory",
+      AccessoryOptRewardId = StuffConfigData.UseParam,
+      ResourceId = StuffConfigData.ResourceId
+    })
+    return
+  elseif UseEffectType == CommonConst.ResUseEffectType.SelectSkin then
+    UIManager(self):LoadUINew("CharSkinPreview", {
+      Type = "SelectSkin",
+      CharSkinOptRewardId = StuffConfigData.UseParam,
+      ResourceId = StuffConfigData.ResourceId
+    })
+    return
+  elseif UseEffectType == CommonConst.ResUseEffectType.SelectGestureItem then
+    UIManager(self):LoadUINew("CharSkinPreview", {
+      Type = "SelectGestureItem",
+      GestureOptRewardId = StuffConfigData.UseParam,
       ResourceId = StuffConfigData.ResourceId
     })
     return
@@ -1084,7 +1111,7 @@ function M:OnClickGoToUseConsume(StuffConfigData)
   CommonDialogParams.Title = GText(StuffConfigData.ResourceName)
   if "ResourcePack" == UseEffectType then
     CommonDialogParams.Tips = {
-      string.format(ExtraString, "\230\157\144\230\150\153\229\140\133", 1, 1, 1)
+      string.format(ExtraString, "材料包", 1, 1, 1)
     }
   elseif "SelectResource" == UseEffectType then
     CommonDialogParams.Tips = {
@@ -1101,7 +1128,9 @@ function M:OnClickGoToUseConsume(StuffConfigData)
   CommonDialogParams.ChooseCallbackFunction = self.TryToChooseConsumableItems
   CommonDialogParams.RightGamepadImg = EKeys.X.KeyName
   CommonDialogParams.ParentWidget = self
-  
+  CommonDialogParams.RightGamepadKey = Const.GamepadFaceButtonLeft
+  CommonDialogParams.HideItemTips = true
+  CommonDialogParams.ResourceId = StuffConfigData.ResourceId
   function CommonDialogParams.RightCallbackFunction(_, FirstData, FirstPopUIWidget)
     local ConfirmParams, TargetStuffName, PopConfirmUIId = {}, "", 100210
     if "SelectWeapon" == UseEffectType then
@@ -1143,12 +1172,10 @@ function M:OnClickGoToUseConsume(StuffConfigData)
     elseif ConfirmParams.ShortText then
       FirstPopUIWidget.DontFocusParentWidget = true
       ConfirmParams.AutoFocus = true
-      
       function ConfirmParams.RightCallbackFunction(_, Data, PopUIWidget)
         PopUIWidget:RemoveFirstItemInPopupQueue()
         self:ConfirmDealWithConsumableItems(UseEffectType, StuffConfigData.UseParam)
       end
-      
       ConfirmParams.DontFocusParentWidget = true
       UIManager(self):ShowCommonPopupUI_Interrupt(PopConfirmUIId, ConfirmParams, self)
     else
@@ -1156,7 +1183,6 @@ function M:OnClickGoToUseConsume(StuffConfigData)
       self:ConfirmDealWithConsumableItems(UseEffectType, StuffConfigData.UseParam)
     end
   end
-  
   if "ResourcePack" == UseEffectType then
     UIManager(self):ShowCommonPopupUI(100207, CommonDialogParams, self)
   elseif "SelectResource" == UseEffectType then
@@ -1165,11 +1191,9 @@ function M:OnClickGoToUseConsume(StuffConfigData)
     UIManager(self):ShowCommonPopupUI(100209, CommonDialogParams, self)
   end
 end
-
 function M:TryToChooseConsumableItems(CurrentChooseInfo)
   self.CurrentChooseInfo = CurrentChooseInfo
 end
-
 function M:ConfirmDealWithConsumableItems(UseEffectType, UseParam)
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -1181,7 +1205,7 @@ function M:ConfirmDealWithConsumableItems(UseEffectType, UseParam)
     return
   end
   DebugPrint("Now ConfirmDealWithConsumableItems The ChooseId is ", self.CurrentChooseInfo.ChooseId)
-  local ResourceId, OptionalId, OptIdxList
+  local ResourceId, OptionalId, OptIdxList, bIsNew = nil, nil, nil, true
   ResourceId, OptionalId = self.CurrentChooseInfo.ResourceId, self.CurrentChooseInfo.OptionalId
   local OptIndex = 1
   for Index, Id in pairs(DataMgr.OptReward[UseParam].Id) do
@@ -1191,7 +1215,11 @@ function M:ConfirmDealWithConsumableItems(UseEffectType, UseParam)
     end
   end
   OptIdxList = {OptIndex}
-  
+  if "SelectCharacter" == UseEffectType then
+    bIsNew = not PlayerAvatar:CheckCharEnough({
+      [self.CurrentChooseInfo.ChooseId] = 1
+    })
+  end
   local function DealWithConsumableItemsCallback()
     local OptionalItemsDataConfig = DataMgr.OptReward[OptionalId]
     if "SelectWeapon" == UseEffectType then
@@ -1232,7 +1260,7 @@ function M:ConfirmDealWithConsumableItems(UseEffectType, UseParam)
     elseif "SelectCharacter" == UseEffectType then
       local CharChooseId = OptionalItemsDataConfig.Id[OptIdxList[1]]
       if CharChooseId then
-        UIUtils.ShowGetItemPage("Char", CharChooseId, 1)
+        UIUtils.ShowGetItemPage("Char", CharChooseId, 1, nil, nil, nil, nil, nil, nil, bIsNew)
       end
       local AllItemCount = self.List_Item:GetNumItems()
       for i = 0, AllItemCount - 1 do
@@ -1270,7 +1298,7 @@ function M:ConfirmDealWithConsumableItems(UseEffectType, UseParam)
         local GameInstance = GWorld.GameInstance
         local UIManager = GameInstance:GetGameUIManager()
         local SystemUIName = "GetItemPage"
-        UIManager:LoadUINew(SystemUIName, BagCommon.OptionalItemType.Pet, PetChooseId, 1, PurchaseRewards, -1, -1)
+        UIManager:LoadUINew(SystemUIName, BagCommon.OptionalItemType.Pet, PetChooseId, 1, nil, -1, -1)
       end
       local AllItemCount = self.List_Item:GetNumItems()
       for i = 0, AllItemCount - 1 do
@@ -1304,11 +1332,9 @@ function M:ConfirmDealWithConsumableItems(UseEffectType, UseParam)
       end
     end
   end
-  
   PlayerAvatar:UseOptResourceInBag(ResourceId, OptIdxList, DealWithConsumableItemsCallback)
   self.CurrentChooseInfo = nil
 end
-
 function M:ConfirmDealWithConsumableResource(UseEffectType)
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -1342,7 +1368,6 @@ function M:ConfirmDealWithConsumableResource(UseEffectType)
       }
     end
   end
-  
   local function DealWithConsumableItemsCallback()
     local OptionalItemsDataConfig = DataMgr.OptReward[OptionalId]
     local AllRewards = {
@@ -1385,11 +1410,9 @@ function M:ConfirmDealWithConsumableResource(UseEffectType)
       self.Panel_Detail:UpdateItemNumber()
     end
   end
-  
   PlayerAvatar:UseOptResourceInBag(ResourceId, OptIdxList, DealWithConsumableItemsCallback)
   self.CurrentChooseInfo = nil
 end
-
 function M:ConfirmDealWithConsumablePacks(UseEffectType)
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -1399,7 +1422,6 @@ function M:ConfirmDealWithConsumablePacks(UseEffectType)
   local ResourceId = self.CurrentChooseInfo.ResourceId
   local OptionalId = self.CurrentChooseInfo.OptionalId
   local ConsumeCount = self.CurrentChooseInfo.ConsumeCount or 1
-  
   local function DealWithConsumableItemsCallback()
     local OptionalItemsDataConfig = DataMgr.Reward[OptionalId]
     local Count = self.ConsumeCount
@@ -1442,10 +1464,8 @@ function M:ConfirmDealWithConsumablePacks(UseEffectType)
       self.Panel_Detail:UpdateItemNumber()
     end
   end
-  
   PlayerAvatar:UseResourceInBag(ResourceId, ConsumeCount, DealWithConsumableItemsCallback)
 end
-
 function M:GenerateDataWith_SelectWeapon(ResourceId, UseParam)
   local ResultData, OptionalItemsDataConfig = {}, DataMgr.OptReward[UseParam]
   local Avatar = GWorld:GetAvatar()
@@ -1492,7 +1512,6 @@ function M:GenerateDataWith_SelectWeapon(ResourceId, UseParam)
   end
   return ResultData, GText("UI_SHOP_SUBTAB_NAME_WEAPON")
 end
-
 function M:GenerateDataWith_SelectCharacter(ResourceId, UseParam)
   local ResultData, OptionalItemsDataConfig = {}, DataMgr.OptReward[UseParam]
   local Avatar = GWorld:GetAvatar()
@@ -1535,7 +1554,6 @@ function M:GenerateDataWith_SelectCharacter(ResourceId, UseParam)
   end
   return ResultData, GText("UI_Armory_Char")
 end
-
 function M:GenerateDataWith_SelectPet(ResourceId, UseParam)
   local ResultData, OptionalItemsDataConfig = {}, DataMgr.OptReward[UseParam]
   local Avatar = GWorld:GetAvatar()
@@ -1570,7 +1588,6 @@ function M:GenerateDataWith_SelectPet(ResourceId, UseParam)
   end
   return ResultData, GText("MAIN_UI_PET")
 end
-
 function M:GenerateDataWith_SelectResource(ResourceId, UseParam)
   local ResultData, OptionalItemsDataConfig, OptCount = {}, DataMgr.OptReward[UseParam]
   local Avatar = GWorld:GetAvatar()
@@ -1605,7 +1622,6 @@ function M:GenerateDataWith_SelectResource(ResourceId, UseParam)
   end
   return ResultData, GText("UI_Consumable_Effect_ResourcePack"), OptCount
 end
-
 function M:GenerateDataWith_ResourcePack(ResourceId, UseParam)
   local ResultData, OptionalItemsDataConfig, OptCount = {}, DataMgr.Reward[UseParam]
   local Avatar = GWorld:GetAvatar()
@@ -1640,7 +1656,6 @@ function M:GenerateDataWith_ResourcePack(ResourceId, UseParam)
   local ResourcePackText = GText("UI_Consumable_Effect_ResourcePack"), OptCount
   return ResultData, ResourcePackText
 end
-
 function M:ClickToUnlockStuff()
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -1679,10 +1694,9 @@ function M:ClickToUnlockStuff()
     else
       PlayerAvatar:LockResourceInBag(CommonConst.AllType.Resource, StuffUnitId)
     end
-    self:BlockAllUIInput(false)
+    self:BlockAllUIInput(true)
   end
 end
-
 function M:OnClickBlank()
   if not self.Panel_Detail:IsVisible() then
     return
@@ -1696,7 +1710,6 @@ function M:OnClickBlank()
   end
   self:CancelStuffClickAndHideDetail()
 end
-
 function M:RealToUnLockItems()
   local PlayerAvatar = GWorld:GetAvatar()
   if self.CurSelectStuffContent then
@@ -1714,11 +1727,14 @@ function M:RealToUnLockItems()
         PlayerAvatar:UnLockResourceInBag(CommonConst.AllType.Resource, StuffUnitId)
       end
     end
+    self:BlockAllUIInput(true)
   end
 end
-
 function M:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
   if not ErrorCode:Check(ErrCode, UIConst.Tip_CommonToast) then
+    if "StateChange" == OpAction or "FishStateChange" == OpAction then
+      self:BlockAllUIInput(false)
+    end
     return
   end
   if "StateChange" == OpAction then
@@ -1866,7 +1882,7 @@ function M:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
           end
         end
       end
-    elseif "FishResourceBulkSale" == OpAction then
+    elseif "FishResourceBulkSale" == OpAction and self.CurTabId == BagCommon.ItemTypeToTabId.FishItem then
       local SaleFishResources, SaleFishPrice = ...
       local Avatar = GWorld:GetAvatar()
       for ResourceId, FishInfos in pairs(SaleFishResources) do
@@ -1881,11 +1897,11 @@ function M:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
             break
           end
         end
-        local PlayerBagFish = Avatar.FishSizes[ResourceId]
         for _, FishInfo in ipairs(FishInfos) do
           local FishCount
-          if PlayerBagFish and PlayerBagFish.FishSize2Count then
-            FishCount = PlayerBagFish.FishSize2Count[FishInfo.Size]
+          local FishSize2Count = BagCommon:GetFishSize2Count(ResourceId)
+          if FishSize2Count then
+            FishCount = FishSize2Count[FishInfo.Size]
           end
           local FishStuffId = ResourceId .. "_" .. FishInfo.Size
           local FishSaleStuffObj = self.DesireSaleStuffObjList[FishStuffId]
@@ -1900,6 +1916,29 @@ function M:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
             FishSaleStuffObj.Count = FishCount
             if FishSaleStuffObj.SelfWidget then
               FishSaleStuffObj.SelfWidget:SetCount(FishCount)
+            end
+          end
+        end
+      end
+    elseif "DraftBulkSale" == OpAction and self.CurTabId == BagCommon.ItemTypeToTabId.Draft then
+      local SaleDraftSucc = (...)
+      for k, v in pairs(SaleDraftSucc) do
+        local StuffUnitId = k
+        local StuffServerData = self:GetStuffServerData(StuffUnitId, BagCommon.StuffType.Draft)
+        if nil == StuffServerData or "number" == type(StuffServerData.Count) and StuffServerData.Count <= 0 then
+          local NeedRemoveObj = self.DesireSaleStuffObjList[tostring(StuffUnitId)]
+          if NeedRemoveObj then
+            self.List_Item:RemoveItem(NeedRemoveObj)
+            SellCount = SellCount + 1
+          else
+            IsNeedRefreshAll = true
+          end
+        else
+          local NeedUpdateObj = self.DesireSaleStuffObjList[tostring(StuffUnitId)]
+          if NeedUpdateObj then
+            NeedUpdateObj.Count = StuffServerData.Count
+            if NeedUpdateObj.SelfWidget then
+              NeedUpdateObj.SelfWidget:SetCount(StuffServerData.Count)
             end
           end
         end
@@ -1969,5 +2008,4 @@ function M:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
     end
   end
 end
-
 return M

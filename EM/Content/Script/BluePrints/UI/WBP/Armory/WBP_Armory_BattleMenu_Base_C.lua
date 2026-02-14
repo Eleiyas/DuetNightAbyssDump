@@ -6,11 +6,9 @@ local M = Class({
 M._components = {
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:CheckNeedAutoFocusWithInputType()
   return false
 end
-
 function M:Construct()
   self.Btn_Config:SetText(GText("UI_STAT_Sigil_Weapon_Config"))
   self.Btn_Wipe:SetText(GText("UI_Clear_BattleWheel"))
@@ -56,7 +54,7 @@ function M:Construct()
     value:SetTipText(GText("UI_Armory_BattleBag"))
     value:SetWSNum(value.WheelIdx)
     value:EnableEvents(true, true, true)
-    value:SetWheelRadius(130, 400)
+    value:SetWheelRadius(110, 360)
     value:SetWheelMiddleStyle(0)
     self:EnableWheelWidgetPointerDetection(value, false)
     local Params = {
@@ -70,7 +68,6 @@ function M:Construct()
     }
     self:OnModifyWheelInitParams(Params)
     value:BindEvents(self, Params)
-    
     function value.InstallSoundFunc(Content)
       if not Content or not Content.UnitId then
         return
@@ -101,7 +98,6 @@ function M:Construct()
     self,
     self.OnInAnimFinished
   })
-  
   local function OnWheelBtnClicked(Btn)
     if Btn == self.CurWheelBtns[1] then
       self:OnWheelToLeftBtnClicked()
@@ -109,7 +105,6 @@ function M:Construct()
       self:OnWheelToRightBtnClicked()
     end
   end
-  
   self.Button_Menu_L.OnClicked:Clear()
   self.Button_Menu_R.OnClicked:Clear()
   self.Button_Menu_M.OnClicked:Clear()
@@ -132,14 +127,15 @@ function M:Construct()
   self.Btn_Config:BindEventOnClicked(self, self.OnWeaponConfigBtnClicked)
   self.Filters = {
     {"All"},
-    {"BattleItem"},
+    {"BattleItem", "EventItem"},
     {
       "GestureItem"
     },
     {
       "PhantomItem",
       "PhantomItem_Empty"
-    }
+    },
+    {"MountItem"}
   }
   self.List_Item.OnCreateEmptyContent:Bind(self, function(self)
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
@@ -147,23 +143,17 @@ function M:Construct()
     return Content
   end)
 end
-
 function M:OnEmptyListItemContentCreated(Content)
 end
-
 function M:EnableWheelWidgetPointerDetection(WheelWidget, bEnable)
   WheelWidget:EnablePointerDetection(bEnable)
 end
-
 function M:OnModifyWheelInitParams(Params)
 end
-
 function M:OnModifySortWidgetParams(Params)
 end
-
 function M:OnWheelSlotHoverChanged(LastSlot, CurrentSlot)
 end
-
 function M:InitDispatcher()
   self:AddDispatcher(EventID.OnChangeWheel, self, self.OnWheelChanged)
   self:AddDispatcher(EventID.OnExchangeBattleWheel, self, self.OnWheelItemExchanged)
@@ -175,72 +165,75 @@ function M:InitDispatcher()
   self:AddDispatcher(EventID.OnTakeOffAssisterWeapon, self, self.OnTakeOffAssisterWeapon)
   self:AddDispatcher(EventID.OnResourcesChanged, self, self.OnResourcesChanged)
 end
-
 function M:WheelSlotIdx2ServerSlotIdx(SlotIdx, WheelIdx)
   return ((WheelIdx or self.CurWheelWidget.WheelIdx) - 1) * self.SlotNumberPerWheel + SlotIdx
 end
-
 function M:ServerSlotIdx2WheelSlotIdx(ServerSlotIdx)
   return ServerSlotIdx - (self.CurWheelWidget.WheelIdx - 1) * self.SlotNumberPerWheel
 end
-
 function M:CalcWheelWidgetAndSlotIdx(SlotIdx)
   local WheelIdx, SlotIdx = self:CalcWheelIdxAndSlotIdx(SlotIdx)
   return self.BattleWheelWidgets[WheelIdx], SlotIdx
 end
-
 function M:CalcWheelIdxAndSlotIdx(SlotIdx)
   SlotIdx = SlotIdx - 1
   local WheelIdx = SlotIdx // self.SlotNumberPerWheel + 1
   return WheelIdx, SlotIdx % self.SlotNumberPerWheel + 1
 end
-
 function M:SetSlotItem(_SlotIdx, Content)
   if nil == _SlotIdx then
     return
   end
   local WheelWidget, SlotIdx = self:CalcWheelWidgetAndSlotIdx(_SlotIdx)
-  WheelWidget:SetSlotItem(SlotIdx, Content)
+  if WheelWidget then
+    WheelWidget:SetSlotItem(SlotIdx, Content)
+  end
 end
-
 function M:GetSlotItem(_SlotIdx)
   if nil == _SlotIdx then
     return
   end
   local WheelWidget, SlotIdx = self:CalcWheelWidgetAndSlotIdx(_SlotIdx)
-  return WheelWidget:GetSlotItem(SlotIdx)
+  if WheelWidget then
+    return WheelWidget:GetSlotItem(SlotIdx)
+  end
 end
-
 function M:SelectSlot(IsSelected, _SlotIdx)
   if nil == _SlotIdx then
     return
   end
   local WheelWidget, SlotIdx = self:CalcWheelWidgetAndSlotIdx(_SlotIdx)
-  WheelWidget:SelectSlot(IsSelected, SlotIdx)
+  if WheelWidget then
+    WheelWidget:SelectSlot(IsSelected, SlotIdx)
+  end
 end
-
 function M:IsSlotInWheelRight(_SlotIdx)
   if nil == _SlotIdx then
     return
   end
   local WheelWidget, SlotIdx = self:CalcWheelWidgetAndSlotIdx(_SlotIdx)
-  return WheelWidget:IsSlotInWheelRight(SlotIdx)
+  if WheelWidget then
+    return WheelWidget:IsSlotInWheelRight(SlotIdx)
+  end
 end
-
 function M:InstallSlot(bSuccessful, _SlotIdx, Content)
   if nil == _SlotIdx then
     return
   end
   local WheelWidget, SlotIdx = self:CalcWheelWidgetAndSlotIdx(_SlotIdx)
-  WheelWidget:InstallSlot(bSuccessful, SlotIdx, Content)
+  if WheelWidget then
+    WheelWidget:InstallSlot(bSuccessful, SlotIdx, Content)
+  end
 end
-
 function M:ExchangedItem(bSuccessful, _FromIdx, _ToIdx)
   if nil == _FromIdx or nil == _ToIdx then
     return
   end
   local FromWheelWidget, FromIdx = self:CalcWheelWidgetAndSlotIdx(_FromIdx)
   local ToWheelWidget, ToIdx = self:CalcWheelWidgetAndSlotIdx(_ToIdx)
+  if not FromWheelWidget or not ToWheelWidget then
+    return
+  end
   local FromContent = FromWheelWidget:GetSlotItem(FromIdx)
   local ToContent = FromWheelWidget:GetSlotItem(ToIdx)
   if FromContent then
@@ -254,19 +247,16 @@ function M:ExchangedItem(bSuccessful, _FromIdx, _ToIdx)
     FromWheelWidget:SetSlotItem(FromIdx, nil)
   end
 end
-
 function M:OnWheelToLeftBtnClicked()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_mid", nil, nil)
   AudioManager(self):PlayUISound(nil, "event:/ui/common/combat_bag_change_page", nil, nil)
   self:WheelScrollToRight()
 end
-
 function M:OnWheelToRightBtnClicked()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_mid", nil, nil)
   AudioManager(self):PlayUISound(nil, "event:/ui/common/combat_bag_change_page", nil, nil)
   self:WheelScrollToLeft()
 end
-
 function M:ModifyWheelAnimationVariable(Params)
   local TotalDiff = Params.DesiredPanelMainOffset - self.DesiredPanelMainOffset.Right
   local CurDiff = self.CurrentPanelMainOffset.Right - self.DesiredPanelMainOffset.Right
@@ -299,7 +289,6 @@ function M:ModifyWheelAnimationVariable(Params)
     }
   }
 end
-
 function M:CreateWheelAnimationVariable()
   self.IsWheelScrolling = false
   self.DefaultScaleLR = self.DefaultScaleLR or 0.6
@@ -421,7 +410,6 @@ function M:CreateWheelAnimationVariable()
     }
   }
 end
-
 function M:CalcAnimationValue(i, j, _Percent)
   local PositionCurveValue
   local PositionCurveInfo = self.Curves_Position[i][j]
@@ -459,7 +447,6 @@ function M:CalcAnimationValue(i, j, _Percent)
   local RenderOpacity = UKismetMathLibrary.Lerp(self.RenderOpacityLR, self.RenderOpacityM, RenderOpacityCurveValue)
   return Position, Scale, RenderOpacity
 end
-
 function M:EndWheelAnimation()
   self.CurWheelWidgets[1].Slot:SetPosition(FVector2D(self.DesiredPositionX, 0))
   self.CurWheelWidgets[2].Slot:SetPosition(FVector2D(0, 0))
@@ -481,7 +468,6 @@ function M:EndWheelAnimation()
   self.CurWheelWidget:UpdateWheelConfig()
   self:EnableWheelWidgetPointerDetection(self.CurWheelWidget, true)
 end
-
 function M:WheelScrollToLeft()
   if self.IsWheelScrolling then
     return
@@ -501,7 +487,6 @@ function M:WheelScrollToLeft()
   self.WheelScrollDirection = self.EWheelScrollDirection.Left
   self.IsWheelScrolling = true
 end
-
 function M:WheelScrollCommonLogic()
   self:HideItemDetail()
   self.CurWheelWidgets[1].Slot:SetZOrder(0)
@@ -522,7 +507,6 @@ function M:WheelScrollCommonLogic()
     self.BattleMenu_Plan:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:WheelScrollToRight()
   if self.IsWheelScrolling then
     return
@@ -542,10 +526,8 @@ function M:WheelScrollToRight()
   self.WheelScrollDirection = self.EWheelScrollDirection.Right
   self.IsWheelScrolling = true
 end
-
 local TempPosition = FVector2D(0, 0)
 local TempScale = FVector2D(0, 0)
-
 function M:Tick(MyGeometry, InDeltaTime)
   local ShowTipsPercent = 1
   local ScrollAnimPercent = 1
@@ -609,27 +591,23 @@ function M:Tick(MyGeometry, InDeltaTime)
     self.WheelWidgetsForTick[WheelIdx1]:SetRenderOpacity(RendreOpacity)
   end
 end
-
 function M:OnWheelScrollAnimationEnd()
   self.IsWheelScrolling = false
   self.PassedTime_WheelScroll = 0
   self:OnWheelAnimationEnd()
 end
-
 function M:OnShowTipsAnimationEnd()
   self.IsShowTipsAnimationPlaying = false
   self.CurrentPanelMainOffset.Right = self.DesiredPanelMainOffset.Right
   self.CurWheelWidget:RelayoutPrepass()
   self:OnWheelAnimationEnd()
 end
-
 function M:OnWheelAnimationEnd()
   if self.IsShowTipsAnimationPlaying or self.IsWheelScrolling then
     return
   end
   self:EndWheelAnimation()
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.IsPreviewMode = Params.IsPreviewMode
@@ -641,11 +619,10 @@ function M:Init(Params)
   self:ResetWheelPlanName()
   self.FilteredItems = {}
   self:InitFilters()
-  self:ResetListView()
+  self:ResetListView(true)
   self:EndWheelAnimation()
   self.CurWheelWidget:UpdateWheelConfig()
 end
-
 function M:GetWheelPlanName()
   local Avatar = ArmoryUtils:GetAvatar()
   local WheelsName = {}
@@ -658,7 +635,6 @@ function M:GetWheelPlanName()
   end
   return WheelsName
 end
-
 function M:ResetWheelPlanName()
   if not self.bShowMenuPlan then
     self.BattleMenu_Plan:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -676,10 +652,8 @@ function M:ResetWheelPlanName()
   self:OnModifyPlanParams(Params)
   self.BattleMenu_Plan:Init(Params)
 end
-
 function M:OnModifyPlanParams(Params)
 end
-
 function M:OnWheelNameEditBtnClicked()
   local WheelPlanNames = self:GetWheelPlanName()
   local Data = DataMgr.GlobalConstant.BattleWheelNameMaxLen or {ConstantValue = 14}
@@ -714,14 +688,12 @@ function M:OnWheelNameEditBtnClicked()
     }
   }, self)
 end
-
 function M:OnWheelNameChanged(Ret, NewName, WheelIndex)
   if not ErrorCode:Check(Ret) then
     return
   end
   self:ResetWheelPlanName()
 end
-
 local function AddContent(self, Resource, CharId2Char)
   if not CharId2Char then
     CharId2Char = {}
@@ -748,11 +720,9 @@ local function AddContent(self, Resource, CharId2Char)
     self.ContentMap[Content.UnitId] = Content
     table.insert(self.ContentArray, Content)
     Content.ButtonIcon = 1
-    
     function Content.OnMouseButtonDownEarly(Widget, Content, MouseEvent)
       return self:OnRightMouseButtonDown(Content, MouseEvent)
     end
-    
     Content.OnMouseEnterEvent = {
       Callback = function(_Content)
         if not _Content.Id then
@@ -766,7 +736,6 @@ local function AddContent(self, Resource, CharId2Char)
     return Content
   end
 end
-
 function M:CreateItemContents()
   self.ContentMap = {}
   self.ContentArray = {}
@@ -789,10 +758,8 @@ function M:CreateItemContents()
     self.Btn_Config:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnListItemContentCreated(Content)
 end
-
 function M:NewItemContent(ServerData)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Type = CommonConst.DataType.Resource
@@ -800,7 +767,7 @@ function M:NewItemContent(ServerData)
   Obj.Id = ServerData.ResourceId
   Obj.UnitId = ServerData.ResourceId
   Obj.ResourceCount = 0
-  Obj.ResourceSType = ServerData.ResourceSType
+  Obj.ResourceSType = ServerData.ResourceSType or ""
   local Data = ServerData:Data()
   if Data.Type == "InfiniteBattleItem" then
     Obj.ResourceCount = ""
@@ -814,6 +781,9 @@ function M:NewItemContent(ServerData)
         local IconName = "Armory_" .. Element
         Obj.AttrIcon = "/Game/UI/Texture/Dynamic/Atlas/Armory/T_" .. IconName .. ".T_" .. IconName
       end
+    elseif Obj.ResourceSType == "MountItem" then
+      Obj.ItemDetailsButton01EventInfo = self:CreateOpenMountButtonEventInfo(Obj)
+      Obj.ItemDetailsButton02EventInfo = self:CreateQuickEquipButtonEventInfo(Obj)
     else
       Obj.ItemName = GText("INFINITY_SYMBOL")
       Obj.ItemDetailsButton01EventInfo = self:CreateQuickEquipButtonEventInfo(Obj)
@@ -828,6 +798,7 @@ function M:NewItemContent(ServerData)
     end
     Obj.ItemDetailsButton01EventInfo = self:CreateQuickEquipButtonEventInfo(Obj)
   end
+  rawset(Obj, "IsEventItemt", Obj.ResourceSType == "EventItem")
   Obj.IsEquiped = false
   Obj.Rarity = Data.Rarity or 0
   Obj.Icon = Data.Icon
@@ -838,7 +809,6 @@ function M:NewItemContent(ServerData)
   Obj.CreateDragWidget = self.CreateDragWidget
   return Obj
 end
-
 function M:CreatePreviewButtonEventInfo(Content)
   if Content.IsPhantom and not self:IsContentHasWeapon(Content) then
     return nil
@@ -852,7 +822,6 @@ function M:CreatePreviewButtonEventInfo(Content)
     ButtonIcon = 1
   }
 end
-
 function M:CreateQuickEquipButtonEventInfo(Content)
   if Content.IsPhantom and not self:IsContentHasWeapon(Content) then
     return nil
@@ -866,7 +835,6 @@ function M:CreateQuickEquipButtonEventInfo(Content)
     ButtonIcon = 1
   }
 end
-
 function M:CreateQuickUnequipButtonEventInfo(Content)
   return {
     ButtonClickCallBack = function()
@@ -877,7 +845,6 @@ function M:CreateQuickUnequipButtonEventInfo(Content)
     ButtonIcon = 1
   }
 end
-
 function M:CreateOpenPhantomButtonEventInfo(Content)
   local ButtonClickText
   if not self:IsContentHasWeapon(Content) then
@@ -894,7 +861,16 @@ function M:CreateOpenPhantomButtonEventInfo(Content)
     ButtonIcon = 1
   }
 end
-
+function M:CreateOpenMountButtonEventInfo()
+  return {
+    ButtonClickCallBack = function()
+      UIManager(self):LoadUINew("MountsMain")
+    end,
+    ButtonClickPadKey = "Gamepad_FaceButton_Top",
+    ButtonClickText = GText("UI_JumpMount"),
+    ButtonIcon = 1
+  }
+end
 function M:OnResourcesChanged(ResourceId)
   local Avatar = ArmoryUtils:GetAvatar()
   local Resource = Avatar.Resources[ResourceId]
@@ -932,9 +908,9 @@ function M:OnResourcesChanged(ResourceId)
     end
   end
 end
-
 function M:ResetWheelSlotItems()
   local Avatar = GWorld:GetAvatar()
+  local OldContentCounts = {}
   if self.WheelContens then
     for _, Content in pairs(self.WheelContens) do
       Content.IsEquiped = false
@@ -944,12 +920,10 @@ function M:ResetWheelSlotItems()
       local Resource = Avatar.Resources[Content.UnitId]
       local Data = Resource:Data()
       if Data.Type ~= "InfiniteBattleItem" then
+        OldContentCounts[Content] = Content.Count or 0
         Content.Count = Resource.Count
         if Data.BattleItemLimit then
           Content.ResourceCount = math.min(Resource.Count, Data.BattleItemLimit)
-        end
-        if Content.SelfWidget then
-          Content.SelfWidget:SetCount(Content.Count)
         end
       end
     end
@@ -965,20 +939,24 @@ function M:ResetWheelSlotItems()
       self:ResetContentButtonInfo(Content)
       local Resource = Avatar.Resources[Content.UnitId]
       if Resource:Data().Type ~= "InfiniteBattleItem" then
+        if not OldContentCounts[Content] then
+          OldContentCounts[Content] = Content.Count or 0
+        end
         Content.ResourceCount = Slot.ResourceCount
         Content.Count = Resource.Count - Slot.ResourceCount
-        if Content.SelfWidget then
-          Content.SelfWidget:SetCount(Content.Count)
-        end
       end
       self:SetSlotItem(index, Content)
     else
       self:SetSlotItem(index, nil)
     end
   end
+  for Content, value in pairs(OldContentCounts) do
+    if Content.SelfWidget and value ~= Content.Count then
+      Content.SelfWidget:SetCount(Content.Count)
+    end
+  end
   self:UpdateClearBtn()
 end
-
 function M:IsContentHasWeapon(Content)
   if Content and Content.IsPhantom then
     local Avatar = GWorld:GetAvatar()
@@ -990,7 +968,6 @@ function M:IsContentHasWeapon(Content)
     end
   end
 end
-
 function M:CreateDragWidget(Content, Slot)
   if not self:CanEquipContent(Content) then
     return
@@ -1004,26 +981,22 @@ function M:CreateDragWidget(Content, Slot)
   end
   return self._DragWidget
 end
-
-function M:ResetListView()
+function M:ResetListView(bAnim)
   self.FilteredItems = self:FilterContents(self.ContentArray)
   self:SortContents(self.FilteredItems)
-  self:InitListView()
+  self:InitListView(bAnim)
   if self.ItemtDetailContent and self.ContentMap[self.ItemtDetailContent.UnitId] then
     self.ItemtDetailContent = self.ContentMap[self.ItemtDetailContent.UnitId]
   end
 end
-
 function M:OnSortListSelectionsChanged(SortBy, SortType)
   self:SortContents(self.FilteredItems)
   self:InitListView()
 end
-
 function M:OnSortTypeChanged(SortType)
   self:SortContents(self.FilteredItems)
   self:InitListView()
 end
-
 function M:InitFilters()
   self.FiterContents = self.FiterContents or {
     {
@@ -1035,32 +1008,33 @@ function M:InitFilters()
   local FiterWidgets = self.WB_Tab:GetAllChildren():ToTable()
   local Data = DataMgr.BattleWheelTab
   for index, value in ipairs(FiterWidgets) do
-    self.FiterContents[index] = self.FiterContents[index] or {
-      Owner = self,
-      OnClicked = self.OnFilterWidgetClicked,
-      IsSelected = false
-    }
-    local Content = self.FiterContents[index]
-    Content.Idx = index
-    Content.Icon = Data[index].IconPath
-    self:OnFilterContentCreated(Content)
-    value:Init(Content)
-    if Content.IsSelected then
-      self.CurFilterContent = Content
+    if index <= #Data then
+      self.FiterContents[index] = self.FiterContents[index] or {
+        Owner = self,
+        OnClicked = self.OnFilterWidgetClicked,
+        IsSelected = false
+      }
+      local Content = self.FiterContents[index]
+      Content.Idx = index
+      Content.Icon = Data[index].IconPath
+      self:OnFilterContentCreated(Content)
+      value:Init(Content)
+      if Content.IsSelected then
+        self.CurFilterContent = Content
+      end
+    else
+      FiterWidgets[index]:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
 end
-
 function M:OnFilterContentCreated(Content)
 end
-
 function M:OnFilterWidgetClicked(Content)
   ArmoryUtils:SetContentIsSelected(self.CurFilterContent, false)
   self.CurFilterContent = Content
   ArmoryUtils:SetContentIsSelected(self.CurFilterContent, true)
-  self:ResetListView()
+  self:ResetListView(true)
 end
-
 function M:FilterContents(Contents)
   local Res = {}
   local FilterStrs = {}
@@ -1093,7 +1067,6 @@ function M:FilterContents(Contents)
   end
   return Res
 end
-
 function M:SortContents(InOutContents)
   local SortBy, SortType = 1, CommonConst.DESC
   local SortByAttrNames = {
@@ -1104,10 +1077,16 @@ function M:SortContents(InOutContents)
       table.insert(SortByAttrNames, value)
     end
   end
-  ArmoryUtils:SortItemContents(InOutContents, SortByAttrNames, SortType, self.CurWeaponContent)
+  ArmoryUtils:SortItemContents(InOutContents, SortByAttrNames, SortType, nil, function(a, b)
+    if a.IsEventItemt then
+      return true
+    end
+    if b.IsEventItemt then
+      return false
+    end
+  end)
 end
-
-function M:InitListView()
+function M:InitListView(bAnim)
   self.List_Item:ClearListItems()
   for index, Obj in ipairs(self.FilteredItems) do
     self.List_Item:AddItem(Obj)
@@ -1116,23 +1095,21 @@ function M:InitListView()
   if #self.FilteredItems <= 0 then
     self.List_Item:RegenerateAllEntries()
   end
-  self:AddTimer(0.01, function()
-    self.List_Item:RequestFillEmptyContent()
-  end)
+  self.List_Item:RequestFillEmptyContent()
+  if bAnim then
+    self.List_Item:RequestPlayEntriesAnim()
+  end
 end
-
 function M:OnListItemClicked(Content)
   if not Content.Id then
     return
   end
   self:SetItemDetailContent(Content)
 end
-
 function M:OnEntryInitialized(Content, Widget)
   Widget.Item.ItemDetails_MenuAnchor:SetRenderTranslation(FVector2D(0, -80))
   self:UpdatePhantomItem(Content)
 end
-
 function M:UpdatePhantomItem(Content)
   if Content.IsPhantom then
     local Widget = Content.SelfWidget
@@ -1148,14 +1125,12 @@ function M:UpdatePhantomItem(Content)
     Widget:SetRedDot(Content.RedDotType)
   end
 end
-
 function M:OnListItemSelectionChanged(Content, IsSelected)
   if not IsSelected or not Content.Id then
     return
   end
   ArmoryUtils:SetItemReddotRead(Content, Content.IsNew)
 end
-
 function M:CanEquipContent(Content)
   if Content.IsPhantom and not self:IsContentHasWeapon(Content) then
     if Content.SelfWidget then
@@ -1167,22 +1142,18 @@ function M:CanEquipContent(Content)
   end
   return true
 end
-
 function M:IsPhantomWeaponMenuOpened()
   return IsValid(self.PhantomWeaponMenu)
 end
-
 function M:SetPhantomWeaponMenuFocus()
   if self:IsPhantomWeaponMenuOpened() then
     self.PhantomWeaponMenu:SetVisibility(UIConst.VisibilityOp.Visible)
     self.PhantomWeaponMenu:SetFocus()
   end
 end
-
 function M:OnWeaponConfigBtnClicked()
   return self:OpenPhantomWeaponMenu()
 end
-
 function M:OpenPhantomWeaponMenu(Content)
   self.PhantomWeaponMenu = UIManager(self):LoadUI(nil, "ArmoryBattleMenuWeaponConfig", self.Parent:GetZOrder(), {
     Parent = self.Parent,
@@ -1192,7 +1163,6 @@ function M:OpenPhantomWeaponMenu(Content)
   })
   return self.PhantomWeaponMenu
 end
-
 function M:OnPhantomWeaponMenuClosed(ResourceId)
   self.PhantomWeaponMenu = nil
   self:ResetWheelSlotItems()
@@ -1202,7 +1172,6 @@ function M:OnPhantomWeaponMenuClosed(ResourceId)
   end
   self:SetFocus()
 end
-
 function M:ResetPhantomWeapon()
   for _, Content in pairs(self.ContentArray) do
     if Content.IsPhantom and not self.WheelContens[Content.UnitId] then
@@ -1216,13 +1185,20 @@ function M:ResetPhantomWeapon()
     end
   end
 end
-
 function M:ResetContentButtonInfo(Content)
   if Content.IsPhantom then
     Content.ItemDetailsButton01EventInfo = self:CreateOpenPhantomButtonEventInfo(Content)
     if Content.WheelIdx then
       Content.ItemDetailsButton02EventInfo = self:CreateQuickUnequipButtonEventInfo(Content)
     else
+      Content.ItemDetailsButton02EventInfo = self:CreateQuickEquipButtonEventInfo(Content)
+    end
+  elseif Content.ResourceSType == "MountItem" then
+    if Content.WheelIdx then
+      Content.ItemDetailsButton01EventInfo = self:CreateOpenMountButtonEventInfo(Content)
+      Content.ItemDetailsButton02EventInfo = self:CreateQuickUnequipButtonEventInfo(Content)
+    else
+      Content.ItemDetailsButton01EventInfo = self:CreateOpenMountButtonEventInfo(Content)
       Content.ItemDetailsButton02EventInfo = self:CreateQuickEquipButtonEventInfo(Content)
     end
   else
@@ -1242,7 +1218,6 @@ function M:ResetContentButtonInfo(Content)
     Content.SelfWidget.ItemDetailsButton02EventInfo = Content.ItemDetailsButton02EventInfo
   end
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   if self.IsLoaded and self.PhantomWeaponMenu then
@@ -1250,27 +1225,22 @@ function M:ReceiveEnterState(StackAction)
     self.PhantomWeaponMenu:SetFocus()
   end
 end
-
 function M:OnBagItemDetailButtonClicked()
   self:OpenPhantomWeaponMenu(self.ItemtDetailContent)
 end
-
 function M:OnWheelSlotClicked(CurrentSlotIdx, LastSlotIdx)
   self:SelectWheelSlot(CurrentSlotIdx, LastSlotIdx)
 end
-
 function M:OnWheelSlotRightMouseClicked(CurrentSlotIdx, LastSlotIdx)
   local Content = self.CurWheelWidget:GetSlotItem(CurrentSlotIdx)
   if Content then
     self:TryQuickUnequipContent(Content)
   end
 end
-
 function M:SelectWheelSlot(CurrentSlotIdx, LastSlotIdx)
   local Content = self.CurWheelWidget:GetSlotItem(CurrentSlotIdx)
   self:SetItemDetailContent(Content, self.CurWheelWidget.WheelIdx, CurrentSlotIdx)
 end
-
 function M:SetItemDetailContent(Content, WheelIdx, SlotIdx)
   WheelIdx = Content and Content.WheelIdx or WheelIdx
   SlotIdx = Content and Content.SlotIdx or SlotIdx
@@ -1293,11 +1263,9 @@ function M:SetItemDetailContent(Content, WheelIdx, SlotIdx)
   self.ItemtDetailContent = NewContent
   self:ShowItemDetail(Content)
 end
-
 function M:IsShowingItemDetail()
   return self.IsShowTips
 end
-
 function M:UpdateItemDetails(Content)
   if nil == Content or Content == self.NoneContent then
     self.WS_Tips:SetActiveWidgetIndex(1)
@@ -1305,17 +1273,18 @@ function M:UpdateItemDetails(Content)
   end
   self.WS_Tips:SetActiveWidgetIndex(0)
   AudioManager(self):PlayUISound(nil, "event:/ui/common/tip_show_click", nil, nil)
-  self.Tips_Item:HideButtons()
   Content.bHideGamePad = true
   self.Tips_Item:RefreshItemInfo(Content, true)
   self:UpdateItemDetailsButton(Content)
 end
-
 function M:UpdateItemDetailsButton(Content)
+  self.Tips_Item:HideButtons()
   self.Tips_Item:InitButton01Event(Content.ItemDetailsButton01EventInfo)
   self.Tips_Item:InitButtonEvent(Content.ItemDetailsButton02EventInfo)
+  if Content.ItemDetailsButton01EventInfo or Content.ItemDetailsButton02EventInfo then
+    self.Tips_Item:InitButtonStyle()
+  end
 end
-
 function M:ShowItemDetail()
   self:UpdateItemDetails(self.ItemtDetailContent)
   self:StopAnimation(self.Tips_Out)
@@ -1333,7 +1302,6 @@ function M:ShowItemDetail()
     DesiredPanelMainOffset = self.TipsPanelMainOffset
   })
 end
-
 function M:HideItemDetail()
   ArmoryUtils:SetItemIsSelected(self.ItemtDetailContent, false)
   self.CurWheelWidget:ClearSlotSelect()
@@ -1354,13 +1322,11 @@ function M:HideItemDetail()
   })
   self.CurWheelWidget:ClearSlotSelect()
 end
-
 function M:OnButtonBGClicked()
   if self:IsShowingItemDetail() then
     self:HideItemDetail()
   end
 end
-
 function M:UpdateClearBtn()
   if next(self.WheelContens) then
     self.Btn_Wipe:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -1368,7 +1334,6 @@ function M:UpdateClearBtn()
     self.Btn_Wipe:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnSwitchWheelPlan(WheelIdx)
   if WheelIdx == self.CurrentWheelIndex then
     return
@@ -1377,7 +1342,6 @@ function M:OnSwitchWheelPlan(WheelIdx)
   local Avatar = GWorld:GetAvatar()
   Avatar:ChangeWheel(WheelIdx)
 end
-
 function M:OnRightMouseButtonDown(Content, MouseEvent)
   if not UKismetInputLibrary.PointerEvent_IsMouseButtonDown(MouseEvent, EKeys.RightMouseButton) then
     return
@@ -1385,7 +1349,6 @@ function M:OnRightMouseButtonDown(Content, MouseEvent)
   self:TryQuickEquipContent(Content)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:TryQuickEquipContent(Content, SuccessCallback)
   local ContentInWheel = self.WheelContens[Content.UnitId]
   local TargetWheelIdx, TargetSlotIdx
@@ -1401,7 +1364,6 @@ function M:TryQuickEquipContent(Content, SuccessCallback)
     UIManager(self):ShowUITip("CommonToastMain", GText("UI_BattleWheel_Full"))
   end
 end
-
 function M:TryEquipContent(Content, WheelIdx, WheelSlotIdx, SuccessCallback)
   if not self:CanEquipContent(Content) then
     return
@@ -1419,7 +1381,10 @@ function M:TryEquipContent(Content, WheelIdx, WheelSlotIdx, SuccessCallback)
     Avatar:ChangeBattleWheel(self.CurrentWheelIndex, ServerSlotIdx, Content.UnitId)
   end
 end
-
+function M:TestFunc()
+  local Avatar = GWorld:GetAvatar()
+  Avatar:TakeOffAssisterWeapon(1011601)
+end
 function M:IsContentInWheelAndFull(Content)
   local ContentInWheel = self.WheelContens[Content.UnitId]
   if ContentInWheel then
@@ -1440,7 +1405,6 @@ function M:IsContentInWheelAndFull(Content)
     end
   end
 end
-
 function M:GetServerSlotIdxByRId(ResourceId)
   local Avatar = GWorld:GetAvatar()
   local CurrentWheel = Avatar.Wheels[self.CurrentWheelIndex]
@@ -1450,13 +1414,11 @@ function M:GetServerSlotIdxByRId(ResourceId)
     end
   end
 end
-
 function M:ShowEquippedWarning(ServerSlotIdx, Content)
   AudioManager(self):PlayUISound(nil, "event:/ui/common/err_action_warning", nil, nil)
   self:InstallSlot(false, ServerSlotIdx, Content)
   UIManager(self):ShowUITip("CommonToastMain", GText("UI_BattleWheel_Equipped"))
 end
-
 function M:OnWheelSlotDroped(Content, DropedSlot)
   if not Content then
     return
@@ -1484,7 +1446,6 @@ function M:OnWheelSlotDroped(Content, DropedSlot)
   self.EquippedContentIndex = self.List_Item:GetIndexForItem(Content)
   Avatar:ChangeBattleWheel(self.CurrentWheelIndex, ServerSlotIdx, Content.UnitId)
 end
-
 function M:OnWheelSlotItemExchanged(FromContent, ToContent, FromSlotIdx, ToSlotIdx)
   if not FromSlotIdx or not ToSlotIdx then
     return
@@ -1493,13 +1454,11 @@ function M:OnWheelSlotItemExchanged(FromContent, ToContent, FromSlotIdx, ToSlotI
   local Avatar = GWorld:GetAvatar()
   Avatar:ExchangeBattleWheel(self.CurrentWheelIndex, self:WheelSlotIdx2ServerSlotIdx(FromSlotIdx), self:WheelSlotIdx2ServerSlotIdx(ToSlotIdx))
 end
-
 function M:TryQuickUnequipContent(Content)
   if self.WheelContens[Content.UnitId] then
     self:OnWheelDragCancelled(Content, Content.SlotIdx)
   end
 end
-
 function M:OnWheelDragCancelled(Content, SlotIdx, SuccessCallback)
   if not Content then
     return
@@ -1510,11 +1469,9 @@ function M:OnWheelDragCancelled(Content, SlotIdx, SuccessCallback)
   local Avatar = GWorld:GetAvatar()
   Avatar:TakeOffBattleWheel(self.CurrentWheelIndex, CancelledSlotIdx)
 end
-
 function M:OnTakeOffAssisterWeapon(Ret, AssisterId, WeaponUuid)
   self:OnAssisterWeaponEquiped(Ret, AssisterId, WeaponUuid)
 end
-
 function M:OnWheelChanged(Ret)
   self.Parent:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -1528,7 +1485,6 @@ function M:OnWheelChanged(Ret)
     value:PlayInAnim()
   end
 end
-
 function M:OnWheelItemExchanged(Ret, WheelIndex, SlotId, TargetSlotId)
   self.Parent:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -1539,7 +1495,6 @@ function M:OnWheelItemExchanged(Ret, WheelIndex, SlotId, TargetSlotId)
   self:ResetWheelSlotItems()
   self:SetItemDetailContent(self.ItemtDetailContent)
 end
-
 function M:OnWheelItemInstalled(Ret, WheelIndex, SlotId, ResourceId)
   self.Parent:BlockAllUIInput(false)
   local Content = self.ContentMap[ResourceId]
@@ -1557,7 +1512,6 @@ function M:OnWheelItemInstalled(Ret, WheelIndex, SlotId, ResourceId)
     self.SuccessCallbackOnce()
   end
 end
-
 function M:OnWheelItemUninstalled(Ret, WheelIndex, SlotId)
   self.Parent:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -1574,7 +1528,6 @@ function M:OnWheelItemUninstalled(Ret, WheelIndex, SlotId)
     self.SuccessCallbackOnce()
   end
 end
-
 function M:OnAssisterWeaponEquiped(Ret, AssisterId)
   self:ResetWheelSlotItems()
   self:ResetListView()
@@ -1583,7 +1536,6 @@ function M:OnAssisterWeaponEquiped(Ret, AssisterId)
     self:UpdateItemDetails(self.ItemtDetailContent)
   end
 end
-
 function M:OnClearWheelBtnClicked()
   UIManager(self):ShowCommonPopupUI(100175, {
     RightCallbackObj = self,
@@ -1594,7 +1546,6 @@ function M:OnClearWheelBtnClicked()
     end
   })
 end
-
 function M:OnWheelItemCleared(Ret, WheelIndex)
   self.Parent:BlockAllUIInput(false)
   if not ErrorCode:Check(Ret) then
@@ -1603,7 +1554,6 @@ function M:OnWheelItemCleared(Ret, WheelIndex)
   self:ResetWheelSlotItems()
   self:ResetListView()
 end
-
 function M:TryOpenPreview(Content)
   local ItemData = {}
   ItemData.ItemType = Content.Type
@@ -1612,17 +1562,14 @@ function M:TryOpenPreview(Content)
   ItemData.HidePurchase = true
   UIManager(self):LoadUINew("SkinPreview", ItemData, self)
 end
-
 function M:Destruct()
   if IsValid(self.PhantomWeaponMenu) then
     self.PhantomWeaponMenu:Close()
   end
 end
-
 function M:OnScrollingByDrag(MyGeometry, PointerEvent)
   return IsValid(self._DragWidget) and self._DragWidget:IsVisible()
 end
-
 function M:PlayInAnim()
   for key, value in pairs(self.BattleWheelWidgets) do
     value:PlayInAnim()
@@ -1631,7 +1578,6 @@ function M:PlayInAnim()
   self:PlayAnimation(self.Auto_In)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:PlayOutAnim()
   if IsValid(self.PhantomWeaponMenu) then
     self.PhantomWeaponMenu:Close()
@@ -1643,14 +1589,11 @@ function M:PlayOutAnim()
   self:PlayAnimation(self.Auto_Out)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnInAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnOutAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 AssembleComponents(M)
 return M

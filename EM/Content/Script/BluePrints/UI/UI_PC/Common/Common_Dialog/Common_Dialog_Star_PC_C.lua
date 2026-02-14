@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   if Params then
@@ -13,5 +12,4 @@ function M:PreInitContent(Params, PopupData, Owner)
     end
   end
 end
-
 return M

@@ -5,7 +5,6 @@ local HeadState = {
   Disconnent = 3,
   WaitLoop = 4
 }
-
 function Component:InitComp(...)
   local PlayerState, Index, IsFirstInit, bMainPlayer, RootPage, bNotInDungeon, bTeamLeader = ...
   self.RootPage = RootPage
@@ -51,7 +50,6 @@ function Component:InitComp(...)
   self.Head_Anchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
   self.Panel_Level:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function Component:OnMenuOpenChanged(IsOpen)
   UIManager(self):SetIsMenuAnchorOpen(IsOpen)
   if not IsOpen and self.Head_Team.bSelected then
@@ -59,7 +57,6 @@ function Component:OnMenuOpenChanged(IsOpen)
     self.Head_Team:PlayNormal()
   end
 end
-
 function Component:BindAnimation()
   self:BindToAnimationFinished(self.In, {
     self,
@@ -73,7 +70,6 @@ function Component:BindAnimation()
     end
   })
 end
-
 function Component:SetHeadInfo(...)
   local PlayerState, Index, bMainPlayer, bTeamLeader = ...
   if not PlayerState then
@@ -110,17 +106,14 @@ function Component:SetHeadInfo(...)
     self.Icon_Self:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function Component:SetHeadState()
   self.WidgetSwitcher_State:SetActiveWidgetIndex(2)
   self.WidgetSwitcher_State:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function Component:SetHeadIconByRoleId(PlayerState)
   self.Head_Team:SetHeadIconById(PlayerState.HeadIconId, true)
   self.Head_Team:SetHeadFrame(PlayerState.HeadFrameId)
 end
-
 function Component:OnPlayerInactive()
   self:WalnutHeadStopAllAnimation()
   if self.PlayerState.bIsEMInactive then
@@ -131,7 +124,6 @@ function Component:OnPlayerInactive()
     self:PlayAnimation(self.WaitLoop, 0, 0)
   end
 end
-
 function Component:SetIsChosenState(IsChosen)
   if self.IsChosen == IsChosen then
     return
@@ -146,26 +138,21 @@ function Component:SetIsChosenState(IsChosen)
     end
   end
 end
-
 function Component:WalnutHeadStopAllAnimation()
   self:StopAnimation(self.WaitLoop)
   self:StopAnimation(self.Agree)
   self:StopAnimation(self.Disconnect)
   self:StopAnimation(self.Normal)
 end
-
 function Component:OnReleaseSelected(bNeedBubbleOut)
   self.Head_Team:PlayNormal()
 end
-
 function Component:OnGetMenuContentComp(Anchor)
   return self:OpenPlayerBubble()
 end
-
 function Component:OpenPlayerBubble()
   local PlayerBubbleWidget = UIManager(self):_CreateWidgetNew("VotePlayerBubble")
   PlayerBubbleWidget:Init(self.PlayerLevel, self.PlayerName, self.bVoteContinue)
   return PlayerBubbleWidget
 end
-
 return Component

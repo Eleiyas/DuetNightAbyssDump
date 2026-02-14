@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local LastWidget
@@ -73,14 +72,12 @@ function M:InitContent(Params, PopupData, Owner)
   self:HideGamepadShortcut(self.ButtonIndexA)
   self:HideGamepadShortcut(self.ButtonIndexB)
 end
-
 function M:InitGamepadView()
   self:RefreshBottomKey()
   if self.bItemMenuOpen or self:HasFocusDetail() then
     return
   end
 end
-
 function M:NewItemContent(ItemType, ItemId, Count, NeedCount)
   if 0 == ItemId then
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -103,18 +100,15 @@ function M:NewItemContent(ItemType, ItemId, Count, NeedCount)
   Obj.UIName = "Exchange"
   return Obj
 end
-
 function M:GetFocusTarget()
   return self.HighLevel:GetChildAt(0) or self.LowLevel:GetChildAt(0) or self.HighLevel
 end
-
 function M:HasFocusDetail()
   if self.HighLevel:HasFocusedDescendants() or self.HighLevel:HasAnyUserFocus() or self.LowLevel:HasFocusedDescendants() or self.LowLevel:HasAnyUserFocus() then
     return true
   end
   return false
 end
-
 function M:RefreshBottomKey()
   if self.bItemMenuOpen then
     self:HideGamepadShortcut(self.ButtonIndexA)
@@ -133,7 +127,6 @@ function M:RefreshBottomKey()
     self:SetGamepadBtnKeyVisibility(true)
   end
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -150,14 +143,11 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return false
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self
 end
-
 function M:OnMenuOpenChanged(IsOpen)
   self.bItemMenuOpen = IsOpen
   self:RefreshBottomKey()
 end
-
 return M

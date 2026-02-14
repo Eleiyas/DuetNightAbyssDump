@@ -1,7 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function M:Construct()
   self.TotalBarLength = 320
   self.RageValueStages = {100}
@@ -15,7 +14,6 @@ function M:Construct()
   self.RealRageValue = 0
   self.DisplayRageValue = 0
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -28,23 +26,20 @@ function M:OnLoaded(...)
   self:PlayAnimation(self.In)
   self.IsInit = true
 end
-
 function M:AddTaskToOverlay(BattleMainUI)
   BattleMainUI.Pos_Weekly:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   BattleMainUI.Pos_Weekly:AddChildToOverlay(self)
 end
-
 function M:InitDungeonInfo()
   self.DungeonId = GameState(self).DungeonId
   local DungeonData = DataMgr.Synthesis[self.DungeonId]
   if not DungeonData then
-    GameState(self):ShowDungeonError("SynthesisComponent:Client \229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.DungeonId)
+    GameState(self):ShowDungeonError("SynthesisComponent:Client 当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.RageValueStages = DungeonData.RageValueStages or {100}
   self.MaxRangeValue = self.RageValueStages[#self.RageValueStages]
 end
-
 function M:InitDisplay()
   local GameState = GameState(self)
   self:SetTotalProgressPercent(1)
@@ -57,13 +52,11 @@ function M:InitDisplay()
   GameState:UpdateSynthesisDestructionTaskProgress()
   self:AddTimer(self.TickInterval, self.TickUpdateProgress, true)
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnRepSynthesisRageValue, self, self.UpdateRageValue)
   self:AddDispatcher(EventID.OnRepGuideSupervisorEids, self, self.UpdateDestructionPoints)
   self:AddDispatcher(EventID.OnRepDeadSupervisorEids, self, self.UpdateDestructionPoints)
 end
-
 function M:UpdateRageValue(RageValue)
   if RageValue > self.MaxRangeValue then
     self.RealRageValue = self.MaxRangeValue
@@ -71,7 +64,6 @@ function M:UpdateRageValue(RageValue)
     self.RealRageValue = RageValue
   end
 end
-
 function M:TickUpdateProgress(IsForceUpdate)
   if not IsForceUpdate and self.DisplayRageValue == self.RealRageValue then
     self:SetProgressFXVisibility(false)
@@ -104,7 +96,6 @@ function M:TickUpdateProgress(IsForceUpdate)
   self:SetCurProgressPercent(TargetPercent)
   self:ShowProgressFXAtPercent(TargetPercent)
 end
-
 function M:ShowOut()
   self:AddTimer(1, function()
     self:PlayAnimation(self.Out)
@@ -112,7 +103,6 @@ function M:ShowOut()
   self:ShowSideTaskBar(false)
   self.IsShowOut = true
 end
-
 function M:InitDestructionPoints()
   self.Group_BottomAnchor:ClearChildren()
   local TotalPointNum = #self.RageValueStages
@@ -126,13 +116,11 @@ function M:InitDestructionPoints()
     DestructionPoint:InitItem(i, self.RageValueStages[i])
   end
 end
-
 function M:SetDestructionPointPosByPercent(DestructionPoint, Percent)
   local PosX = self.TotalBarLength * Percent
   local Pos = FVector2D(PosX, 0)
   DestructionPoint:SetRenderTranslation(Pos)
 end
-
 function M:UpdateDestructionPoints(GuideSupervisorEids, DeadSupervisorEids)
   for i, GuideEid in pairs(GuideSupervisorEids) do
     local DestructionPoint = self.DestructionPoints[i]
@@ -147,12 +135,11 @@ function M:UpdateDestructionPoints(GuideSupervisorEids, DeadSupervisorEids)
     return
   end
   if DeadSupervisorEids:Num() >= #self.RageValueStages then
-    DebugPrint("SynthesisComponent: ShowOut \229\135\187\230\157\128\230\137\128\230\156\137\228\184\187\231\174\161")
+    DebugPrint("SynthesisComponent: ShowOut 击杀所有主管")
     self:ShowOut()
   end
   self:UpdateSideTaskBar(GuideSupervisorEids, DeadSupervisorEids)
 end
-
 function M:GetShownByRageValuePointNum()
   local Count = 0
   for _, DestructionPoint in pairs(self.DestructionPoints) do
@@ -164,7 +151,6 @@ function M:GetShownByRageValuePointNum()
   end
   return Count
 end
-
 function M:UpdateSideTaskBar(GuideSupervisorEids, DeadSupervisorEids)
   local GuideSupervisorNum = (GuideSupervisorEids or GameState(self).GuideSupervisorEids):Num()
   local DeadSupervisorNum = (DeadSupervisorEids or GameState(self).DeadSupervisorEids):Num()
@@ -172,18 +158,15 @@ function M:UpdateSideTaskBar(GuideSupervisorEids, DeadSupervisorEids)
   local IsShow = GuideSupervisorNum > DeadSupervisorNum and GuideSupervisorNum < SupervisorTotalNum
   self:ShowSideTaskBar(IsShow)
 end
-
 function M:SetCurProgressPercent(Percent)
   self.CurDisplayPercent = Percent
   self.Progress_01:SetPercent(Percent)
 end
-
 function M:SetTotalProgressPercent(Percent)
   self.FinishPercent = Percent
   self.Progress_02:SetPercent(Percent)
   self.Progress_03:SetPercent(1 - Percent)
 end
-
 function M:ShowProgressFXAtPercent(Percent)
   if Percent > 1 then
     Percent = 1
@@ -197,7 +180,6 @@ function M:ShowProgressFXAtPercent(Percent)
   end, false, 0, "ProgressFXTimer")
   AudioManager(self):PlayUISound(self, "event:/ui/common/week_level_progress_add", nil, nil)
 end
-
 function M:SetProgressFXVisibility(IsVisible)
   if IsVisible then
     self.FX_Progress:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -205,7 +187,6 @@ function M:SetProgressFXVisibility(IsVisible)
     self.FX_Progress:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:ShowSideTaskBar(IsShow)
   local TaskBar = TaskUtils:GetTaskBarWidget()
   if not TaskBar then
@@ -224,11 +205,9 @@ function M:ShowSideTaskBar(IsShow)
   end
   self.IsShowSideTaskBar = IsShow
 end
-
 function M:ShowDiscoverSupervisorToast(Percent)
   self.Text_Title_1:SetText(GText("DUNGEON_SYNTHESIS_132"))
   self:PlayAnimation(self.Up)
   AudioManager(self):PlayUISound(self, "event:/ui/common/week_level_target_update", nil, nil)
 end
-
 return M

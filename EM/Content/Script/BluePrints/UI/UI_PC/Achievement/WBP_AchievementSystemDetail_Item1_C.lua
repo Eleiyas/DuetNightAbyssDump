@@ -1,12 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Destruct()
   if self.ID then
     ReddotManager.RemoveListener("AchvType" .. self.ID, self)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   if self.ID then
     ReddotManager.RemoveListener("AchvType" .. self.ID, self)
@@ -82,11 +80,9 @@ function M:OnListItemObjectSet(Content)
   self.Common_List_Subcell_PC_0.Button_Area.OnClicked:Add(self, self.OnAchievementClicked)
   ReddotManager.AddListenerEx("AchvType" .. self.ID, self, self.OnReddotUpdate, nil, Const.ReddotCacheType.NoneCache, EReddotType.Normal)
 end
-
 function M:OpenDetail()
   self.AchievementSystem:OpenDetail(self.ID, self.Index)
 end
-
 function M:OnReddotUpdate(Count, RdType, RdName)
   if RdName ~= "AchvType" .. self.ID then
     return
@@ -97,7 +93,6 @@ function M:OnReddotUpdate(Count, RdType, RdName)
     self.Reddot:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:UpdateRedDot(AchvId)
   if not self.Reddot or not self.IdTable then
     return
@@ -114,7 +109,6 @@ function M:UpdateRedDot(AchvId)
     end
   end
 end
-
 function M:OnAchvFinished(AchvId)
   if not self.IdTable then
     return
@@ -134,7 +128,6 @@ function M:OnAchvFinished(AchvId)
   self.Percent:SetText(string.format("%.0f", count / #achievementId * 100) .. "%")
   self:UpdateRedDot()
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   self:StopAllAnimations()
   if not IsSelected then
@@ -144,11 +137,9 @@ function M:BP_OnItemSelectionChanged(IsSelected)
     self:PlayAnimation(self.TextSelect)
   end
 end
-
 function M:OnClickSound()
   UE4.UFMODBlueprintStatics.PlayEvent2D(nil, UE4.UFMODBlueprintStatics.FindEventbyName("event:/ui/common/click_level_02"))
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -157,15 +148,14 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     self:OpenDetail()
     self.Common_List_Subcell_PC_0.Button_Area:SetFocus()
     self.AchievementSystem.Achievement_Root.BP_Common_OneClickGet.Common_Button_Reward_PC.Img_GamePad:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.AchievementSystem:UpdateComTab(nil, false)
   end
   return self.ID
 end
-
 function M:NavigateRight()
   self.AchievementSystem.Achievement_Root.List_Item:NavigateToIndex(0)
   return true
 end
-
 function M:NavigateDown()
   if self.AchievementSystem.Achievement_Root.List_Achievement:GetItemAt(self.Index + 1) == nil then
     return false
@@ -173,7 +163,6 @@ function M:NavigateDown()
   self.AchievementSystem.Achievement_Root.List_Achievement:NavigateToIndex(self.Index + 1)
   return true
 end
-
 function M:NavigateUp()
   if self.AchievementSystem.Achievement_Root.List_Achievement:GetItemAt(self.Index - 1) == nil then
     return false
@@ -181,7 +170,6 @@ function M:NavigateUp()
   self.AchievementSystem.Achievement_Root.List_Achievement:NavigateToIndex(self.Index - 1)
   return true
 end
-
 function M:OnAchievementClicked()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -189,5 +177,4 @@ function M:OnAchievementClicked()
     self:NavigateRight()
   end
 end
-
 return M

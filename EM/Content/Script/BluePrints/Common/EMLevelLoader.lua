@@ -3,7 +3,7 @@ local EMCache = require("EMCache.EMCache")
 local EMDungeonPreloadData = require("DungeonPreloadData")
 local EMRegionPreloadData = require("RegionPreloadData")
 local EMAbyssPreloadData = require("AbyssPreloadData")
-
+local EMDataNames = require("Datas.DataNames")
 function EMLevelLoader:Initialize(Initializer)
   self.artLevelLoadedCompleteCallback = {}
   self.volumeArray = nil
@@ -15,14 +15,12 @@ function EMLevelLoader:Initialize(Initializer)
   self.id2LevelLocationAndRotation = {}
   self.artStreamingLevel2ID = {}
 end
-
 function EMLevelLoader:BeginPlay()
   self:InitEnvironment()
   self:InitSettings()
   self:InitGameScreenFilter()
-  self:InitGameDLSS()
+  self:InitGameGraphicsSettings()
 end
-
 function EMLevelLoader:InitEnvironment()
   if not self.EnvironmentManager then
     local EnvironmentManager = UE4.UGameplayStatics.GetActorOfClass(self, UE4.AEnvironmentManager:StaticClass())
@@ -33,13 +31,11 @@ function EMLevelLoader:InitEnvironment()
     end
   end
 end
-
 function EMLevelLoader:InitSettings()
   DebugPrint("LevelLoaderInitSettings")
   local WorldContext = GWorld.GameInstance
-  URuntimeCommonFunctionLibrary.SetConsoleVariableIntValue("r.Mobile.EnableReadSurface", 1, true)
+  URuntimeCommonFunctionLibrary.SetConsoleVariableIntValue("r.Mobile.EnableReadSurface", 1, 1)
 end
-
 function EMLevelLoader:InitGameScreenFilter()
   local OptionName = "ScreenFilter"
   local GameCache = EMCache:Get(OptionName)
@@ -63,34 +59,92 @@ function EMLevelLoader:InitGameScreenFilter()
     EMCache:Set(OptionName, DefaultScreenFilter)
   end
 end
-
-function EMLevelLoader:InitGameDLSS()
-  DebugPrint("InitGameDLSS Initialize")
-  if URuntimeCommonFunctionLibrary.IsDLSSSupported() then
-    local OptionName = "DLSS"
-    local GameDLSS = URuntimeCommonFunctionLibrary.GetDefaultDLSSQualityMode()
-    if 0 == GameDLSS then
-      GameDLSS = EMCache:Get(OptionName)
+function EMLevelLoader:InitGameGraphicsSettings()
+  if IsDedicatedServer(self) then
+    DebugPrint("Skip InitGameGraphicsSettings")
+    return
+  end
+  DebugPrint("InitGameGraphicsSettings")
+  local IsMobilePlatform = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
+  if UUCloudGameInstanceSubsystem and UUCloudGameInstanceSubsystem.IsCloudGame() then
+    IsMobilePlatform = false
+  end
+  local AAValue
+  if not IsMobilePlatform then
+    local AAOptionName = "AntiAliasing"
+    AAValue = EMCache:Get(AAOptionName)
+    if nil == AAValue then
+      AAValue = 2
     end
-    if nil == GameDLSS then
-      GameDLSS = UDLSSMode.Quality
-      EMCache:Set(OptionName, GameDLSS)
-    end
-    if 3 == GameDLSS then
-      GameDLSS = 1
-    end
-    UDLSSLibrary.SetDLSSMode(GameDLSS)
+    UE4.UKismetSystemLibrary.ExecuteConsoleCommand(self, "r.DefaultFeature.AntiAliasing " .. AAValue)
+    EMCache:Set(AAOptionName, AAValue)
   else
-    local OptionName = "FSR"
-    local GameFSR = EMCache:Get(OptionName)
-    if nil == GameFSR then
-      GameFSR = false
-      EMCache:Set(OptionName, false)
+    local AAMOptionName = "AntiAliasingMobile"
+    local AAMSwitch = EMCache:Get(AAMOptionName)
+    AAValue = 4
+    if nil == AAMSwitch then
+      AAMSwitch = true
     end
-    URuntimeCommonFunctionLibrary.SetFSREnabled(GameFSR)
+    if AAMSwitch then
+      AAValue = 2
+    else
+      AAValue = 4
+    end
+    AAValue = 2
+    UE4.UKismetSystemLibrary.ExecuteConsoleCommand(self, "r.DefaultFeature.AntiAliasing " .. AAValue)
+    EMCache:Set(AAMOptionName, AAMSwitch)
+  end
+  local ScreenPercentage = 100
+  if not IsMobilePlatform then
+    local RenderingValue = EMCache:Get("RenderingValue")
+    if nil ~= RenderingValue then
+      ScreenPercentage = RenderingValue
+      UKismetSystemLibrary.ExecuteConsoleCommand(self, "r.ScreenPercentage " .. ScreenPercentage)
+    end
+  end
+  if 2 == AAValue and nil ~= USRMBlueprintLibrary and 100 == ScreenPercentage then
+    local UMOptionName = "UpscalingMethodValue"
+    local QMOptionName = "QualityModeValue"
+    local UpscalingMethod = EMCache:Get(UMOptionName)
+    local QualityMode = EMCache:Get(QMOptionName)
+    if nil == UpscalingMethod or nil == QualityMode then
+      if IsMobilePlatform then
+        UpscalingMethod = ESuperResolutionType.Default
+        QualityMode = 0
+      elseif USRMBlueprintLibrary.IsSRTypeAvailable(ESuperResolutionType.DLSS) then
+        UpscalingMethod = ESuperResolutionType.DLSS
+        local DefaultQualityMode = URuntimeCommonFunctionLibrary.GetDefaultDLSSQualityMode()
+        if 0 ~= DefaultQualityMode then
+          QualityMode = DefaultQualityMode
+        else
+          QualityMode = 4
+        end
+      else
+        UpscalingMethod = ESuperResolutionType.Default
+        QualityMode = 0
+      end
+    end
+    if UpscalingMethod >= ESuperResolutionType.Default and UpscalingMethod <= ESuperResolutionType.GSR then
+      USRMBlueprintLibrary.SetSRTypeAndQuality(UpscalingMethod, QualityMode)
+      EMCache:Set(UMOptionName, UpscalingMethod)
+      EMCache:Set(QMOptionName, QualityMode)
+    end
+  end
+  if not IsMobilePlatform and UStreamlineLibraryDLSSG and UStreamlineLibraryDLSSG.IsDLSSGSupported() then
+    local DLSSFGMode = EMCache:Get("DLSSFG")
+    if nil ~= DLSSFGMode then
+      UStreamlineLibraryDLSSG.SetDLSSGMode(DLSSFGMode)
+    end
+  end
+  if not IsMobilePlatform then
+    local WQOptionName = "WaterQuality"
+    local WaterQuality = EMCache:Get(WQOptionName)
+    if nil == WaterQuality then
+      WaterQuality = 3
+    end
+    URuntimeCommonFunctionLibrary.SetWaterQuality(math.tointeger(WaterQuality - 1))
   end
 end
-
 function EMLevelLoader:OnArtLevelLoadedCallback(LevelId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil == GameMode then
@@ -112,7 +166,6 @@ function EMLevelLoader:OnArtLevelLoadedCallback(LevelId)
     self:AfterLevelLoadeCallback(LevelId)
   end
 end
-
 function EMLevelLoader:OnArtLevelUnloadedCallback(LevelId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil == GameMode then
@@ -120,7 +173,6 @@ function EMLevelLoader:OnArtLevelUnloadedCallback(LevelId)
   end
   GameMode:TriggerDeActiveSubGameModeInfo(LevelId)
 end
-
 function EMLevelLoader:BeforeLevelUnloadedCallback(LevelName)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if nil ~= GameMode then
@@ -129,16 +181,13 @@ function EMLevelLoader:BeforeLevelUnloadedCallback(LevelName)
     GameMode:UpdateMonsterSpawnInfo()
   end
 end
-
 function EMLevelLoader:GetAllLevelVolume()
   self.volumeArray = UGameplayStatics.GetAllActorsOfClass(self, LoadClass("/Game/BluePrints/Common/Level/BP_LevelVolume.BP_LevelVolume_C"))
   PrintTable(self.volumeArray)
 end
-
 function EMLevelLoader:GetAllLevelBounds()
   self.LevelBoundsArray = UGameplayStatics.GetAllActorsOfClass(self, ALevelBounds.StaticClass())
 end
-
 function EMLevelLoader:GetRandStartPoint()
   if #self.StartPoints > 0 then
     self.startPoint = self.StartPoints[1]
@@ -149,7 +198,6 @@ function EMLevelLoader:GetRandStartPoint()
     self.startPoint = temp:GetRef(1)
   end
 end
-
 function EMLevelLoader:LevelLoaderReady()
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
   GameState.LevelLoaderReady = true
@@ -160,6 +208,7 @@ function EMLevelLoader:LevelLoaderReady()
   self:InitGameStatePickupUnitPool()
   self:InitGameStateBloodbarSubWidgetPool()
   self:InitGameStatePickupIconComponentPool()
+  self:WaitNavigationLoading()
   if IsAuthority(self) then
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
     if GameMode.RandomActorManager and not GameMode:IsInRegion() then
@@ -169,13 +218,11 @@ function EMLevelLoader:LevelLoaderReady()
     GameMode:TryTriggerOnPrepare("LevelActorInit")
   end
 end
-
 function EMLevelLoader:TriggerLevelInitIndicatorPool(IsOpen)
   if IsOpen then
     self:InitGameStateIndicatorPool()
   end
 end
-
 function EMLevelLoader:InitGameStateIndicatorPool()
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
   local DungeonData = DataMgr.Dungeon[DungeonId]
@@ -187,7 +234,6 @@ function EMLevelLoader:InitGameStateIndicatorPool()
     return
   end
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
-  
   local function AddMonsterIndicatorToPool(Index)
     local Annihilate_S = "/Game/UI/WBP/GuidePoint/WBP_GuidePoint_Annihilate.WBP_GuidePoint_Annihilate"
     local PoolClass = UIManager:LoadUI(Annihilate_S, "PoolClass_Monster_" .. Index, UIConst.ZORDER_FOR_INDICATORS)
@@ -196,12 +242,10 @@ function EMLevelLoader:InitGameStateIndicatorPool()
     PoolClass.IsActiveInPoor = false
     GameState:AddIndicatorToPool("Monster", PoolClass)
   end
-  
   for i = 0, 7 do
     AddMonsterIndicatorToPool(i)
   end
 end
-
 function EMLevelLoader:InitGameStatePickupUnitPool()
   local Avatar = GWorld:GetAvatar()
   if self.IsWorldLoader and Avatar and Avatar:GetIsInHome() then
@@ -269,10 +313,8 @@ function EMLevelLoader:InitGameStatePickupUnitPool()
     self:AddPickupUnitToPool(BPPath)
   end
 end
-
 function EMLevelLoader:AddPickupUnitToPool(BPPath)
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
-  
   local function LoadClassFinished(self, UnitBlueprint)
     local Rotation = FRotator(0, 0, 0)
     local Transform = UE4.FTransform(Rotation:ToQuat(), FVector(100000, 100000, 100000))
@@ -284,20 +326,16 @@ function EMLevelLoader:AddPickupUnitToPool(BPPath)
     Unit:TryInitActorInfo("OnInit")
     GameState:DoPickUpUnitToCache(BPPath[1], Unit)
   end
-  
   for i = 1, BPPath[2] + 1 do
     UResourceLibrary.LoadClassAsync(self, BPPath[1], {self, LoadClassFinished})
   end
 end
-
 function EMLevelLoader:GetSkeletalMeshAccessoryBPPath()
   return Const.CharResourcePaths.AccessoryBP
 end
-
 function EMLevelLoader:GetStaticMeshAccessoryBPPath()
   return Const.CharResourcePaths.StaticAccessoryBP
 end
-
 function EMLevelLoader:InitGameStateBloodbarSubWidgetPool()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not UIManager then
@@ -328,24 +366,18 @@ function EMLevelLoader:InitGameStateBloodbarSubWidgetPool()
     end
   end
 end
-
 function EMLevelLoader:AddStartPoint(StartPoint)
   self.StartPoints[#self.StartPoints + 1] = StartPoint
 end
-
 function EMLevelLoader:AddStartPointManager(StartPointManager)
   self.StartPointManagers[#self.StartPointManagers + 1] = StartPointManager
 end
-
 function EMLevelLoader:SetPlayerTrans()
 end
-
 function EMLevelLoader:SetNewEnteredPlayerTrans(AvatarEidStr)
 end
-
 function EMLevelLoader:RealSetNewEnteredPlayerTrans(AvatarEidStr)
 end
-
 function EMLevelLoader:BindArtLevelLoadedCompleteCallback(LevelId, FunctionCallBack)
   print(_G.LogTag, "ZJT_ BindArtLevelLoadedCompleteCallback ", LevelId, self.artLevelLoadedCompleteCallback[LevelId])
   if self.artLevelLoadedCompleteCallback[LevelId] then
@@ -355,20 +387,17 @@ function EMLevelLoader:BindArtLevelLoadedCompleteCallback(LevelId, FunctionCallB
     self.artLevelLoadedCompleteCallback[LevelId][#self.artLevelLoadedCompleteCallback[LevelId] + 1] = FunctionCallBack
   end
 end
-
 function EMLevelLoader:RemoveArtLevelLoadedCompleteCallback(LevelId)
   if self.artLevelLoadedCompleteCallback[LevelId] then
     self.artLevelLoadedCompleteCallback[LevelId] = nil
   end
 end
-
 function EMLevelLoader:CheckActorInGridframeByLevelId(LevelId, Actor)
   if not Actor then
     return false
   end
   return self:CheckLocationInGridframeByLevelId(LevelId, Actor:K2_GetActorLocation())
 end
-
 function EMLevelLoader:GetActorInLevelTransform(InActor)
   print("EnvirSystemActor GetActorInLevelTransform")
   if not self.artStreamingLevel2ID then
@@ -382,7 +411,6 @@ function EMLevelLoader:GetActorInLevelTransform(InActor)
   end
   return FTransform()
 end
-
 function EMLevelLoader:GetDesignActorLevelName(Actor)
   local level = UE4.URuntimeCommonFunctionLibrary.GetLevel(Actor)
   for id, streamLevel in pairs(self.ID2DesignStreamingLevel) do
@@ -392,12 +420,10 @@ function EMLevelLoader:GetDesignActorLevelName(Actor)
   end
   return nil
 end
-
 function EMLevelLoader:GetLevelTransformByLevelName(LevelName)
   local Level = self.ID2DesignStreamingLevel[LevelName]
   return Level.LevelTransform
 end
-
 function EMLevelLoader:AddGridFrame(GridFrame)
   local level = UE4.URuntimeCommonFunctionLibrary.GetLevel(GridFrame)
   PrintTable(self.ID2DesignStreamingLevel)
@@ -436,26 +462,21 @@ function EMLevelLoader:AddGridFrame(GridFrame)
     end
   end
 end
-
 function EMLevelLoader:SetDesignLevelHidden(bHidden)
   for _, DesignStreamingLevel in pairs(self.ID2DesignStreamingLevel) do
     DebugPrint("SetDesignLevelHidden", DesignStreamingLevel:GetName())
     DesignStreamingLevel:SetShouldBeVisible(not bHidden)
   end
 end
-
 function EMLevelLoader:CheckIsRougeLike()
   return false
 end
-
 function EMLevelLoader:GetConstStandAloneMonsterCanCache()
   return Const.StandAloneMonsterCanCache
 end
-
 function EMLevelLoader:GetConstOnlineMonsterCanCache()
   return Const.OnlineMonsterCanCache
 end
-
 function EMLevelLoader:LoadPreviewLevel(Name, Path, Callback, Position, Rotation, IsHide)
   local Success
   if not self[Name] then
@@ -473,7 +494,6 @@ function EMLevelLoader:LoadPreviewLevel(Name, Path, Callback, Position, Rotation
     return true
   end
 end
-
 function EMLevelLoader:UnloadPreviewLevel(Name)
   if self[Name] then
     local WCSubsystem = UGameplayStatics.GetGameMode(self):GetWCSubSystem()
@@ -484,7 +504,6 @@ function EMLevelLoader:UnloadPreviewLevel(Name)
     coroutine.resume(coroutine.create(self.LatentPrevewLevelAction), self, false, Name)
   end
 end
-
 function EMLevelLoader:LatentPrevewLevelAction(IsLoad, LevelName, IsHide)
   if IsLoad then
     UGameplayStatics.LoadStreamLevel(self, LevelName, not IsHide, true)
@@ -492,15 +511,17 @@ function EMLevelLoader:LatentPrevewLevelAction(IsLoad, LevelName, IsHide)
     UGameplayStatics.UnloadStreamLevel(self, LevelName, true)
   end
 end
-
 function EMLevelLoader:SetLevelVisible(LevelName)
   if self[LevelName] then
     self[LevelName]:SetShouldBeVisible(true)
   end
 end
-
 function EMLevelLoader:GetDungeonPreloadData(DungeonId)
   local Ret = FDungeonPreloadData()
+  local InvalidDungeonId = {}
+  if IsDedicatedServer(self) and true == InvalidDungeonId[DungeonId] then
+    return Ret
+  end
   if nil == EMDungeonPreloadData[DungeonId] then
     return Ret
   end
@@ -509,12 +530,73 @@ function EMLevelLoader:GetDungeonPreloadData(DungeonId)
   for key, value in pairs(Data.MonsterSpawn) do
     Ret.MonsterSpawn:Add(key, value)
   end
+  local EMGameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
+  local Exist = false
+  for _, DataName in pairs(EMDataNames) do
+    if DataName == EMGameState.GameModeType then
+      Exist = true
+      break
+    end
+  end
+  if Exist then
+    local GameModeData = EMGameState.GameModeType and DataMgr[EMGameState.GameModeType] or nil
+    local DungeonData = GameModeData and GameModeData[DungeonId] or nil
+    if DungeonData then
+      local DungeonTreasureMonsterId = DungeonData["Treasure" .. "MonsterId"]
+      if DungeonTreasureMonsterId then
+        Ret.FixedMonsterSpawn:Add(DungeonTreasureMonsterId, 1)
+      end
+      local DungeonButcherMonsterId = DungeonData["Butcher" .. "MonsterId"]
+      if DungeonButcherMonsterId then
+        Ret.FixedMonsterSpawn:Add(DungeonButcherMonsterId, 1)
+      end
+    end
+  end
+  if Data.FixedMonster then
+    for key, value in pairs(Data.FixedMonster) do
+      Ret.FixedMonsterSpawn:Add(key, value)
+    end
+  end
   return Ret
 end
-
-function EMLevelLoader:GetRegionPreloadData(RegionName)
+function EMLevelLoader:GetStoryRegionPreloadData(RegionId)
   local Ret = FDungeonPreloadData()
-  if nil == EMRegionPreloadData[RegionName] then
+  local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
+  if "IOS" == PlatformName then
+    return Ret
+  end
+  local StorySubSystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, UStorySubsystem:StaticClass())
+  if nil == StorySubSystem then
+    return Ret
+  end
+  if 1001 ~= RegionId then
+    return Ret
+  end
+  local RegionName = "Prologue_optimization"
+  local Tag = StorySubSystem:GetOptimizeTag(RegionName)
+  local Data
+  if Tag == EStoryOptimizeTag.None or Tag == EStoryOptimizeTag.On then
+    Data = EMRegionPreloadData[RegionName]
+  end
+  if nil ~= Data then
+    Ret.OnlineCoefficient = 1.0
+    for key, value in pairs(Data.MonsterSpawn) do
+      Ret.MonsterSpawn:Add(key, value)
+    end
+  end
+  return Ret
+end
+function EMLevelLoader:GetRegionPreloadData(RegionId)
+  local Ret = FDungeonPreloadData()
+  local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
+  if "IOS" == PlatformName then
+    return Ret
+  end
+  local SceneIdToRegionName = {
+    [1041] = "Dongguo"
+  }
+  local RegionName = SceneIdToRegionName[RegionId]
+  if nil == RegionName or nil == EMRegionPreloadData[RegionName] then
     return Ret
   end
   local Data = EMRegionPreloadData[RegionName]
@@ -524,7 +606,6 @@ function EMLevelLoader:GetRegionPreloadData(RegionName)
   end
   return Ret
 end
-
 function EMLevelLoader:GetAbyssPreloadData(AbyssId)
   local Ret = FDungeonPreloadData()
   if nil == EMAbyssPreloadData[AbyssId] then
@@ -537,5 +618,4 @@ function EMLevelLoader:GetAbyssPreloadData(AbyssId)
   end
   return Ret
 end
-
 return EMLevelLoader

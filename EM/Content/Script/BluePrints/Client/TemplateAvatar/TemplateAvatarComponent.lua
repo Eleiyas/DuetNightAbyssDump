@@ -13,7 +13,6 @@ TemplateAvatar.__Component__ = {
   "BluePrints.Client.TemplateAvatar.TemplateSquadMgr",
   "BluePrints.Client.TemplateAvatar.TemplatePetMgr"
 }
-
 function TemplateAvatar:Init()
   if skynet then
     local Logger = require("engine.common.logger")
@@ -23,7 +22,6 @@ function TemplateAvatar:Init()
     self.logger = LogManager:GenClientLogger("TemplateAvatar", self.__Name__)
   end
 end
-
 Assemble.AssembleComponents(TemplateAvatar)
 Assemble.FormatProperties(TemplateAvatar)
 return TemplateAvatar

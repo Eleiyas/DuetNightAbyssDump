@@ -1,7 +1,6 @@
 local Questline = require("StoryCreator.StoryLogic.StorylineNodes.Questline.Questline")
 local StoryNode = Class("StoryCreator.StoryLogic.StorylineNodes.Node")
 local EMCache = require("EMCache.EMCache")
-
 function StoryNode:Start(Context, NodeId)
   self.Questline = Questline(self.Data, Context, self)
   local Cache = EMCache:Get(tonumber(self.Data.key), true)
@@ -17,32 +16,27 @@ function StoryNode:Start(Context, NodeId)
     self.Questline:StartQuest(NodeId)
   end
 end
-
 function StoryNode:FinishQuest(OutPortName, bSucceeded)
   self.Questline = nil
   self:Finish(OutPortName, bSucceeded)
 end
-
 function StoryNode:StopQuest(IgnoreFinishClear)
   if self.Questline then
     self.Questline:StopQuest(IgnoreFinishClear)
   end
   self.Questline = nil
 end
-
 function StoryNode:SuccessQuest()
   if self.Questline then
     self.Questline:SuccessQuest()
   end
   self.Questline = nil
 end
-
 function StoryNode:PrintInfo()
   if self.Questline then
     self.Questline:PrintInfo()
   end
 end
-
 function StoryNode:ToString()
   local NameStr = self.Name or "invalid_name"
   local TypeStr = self.Type or "invalid_type"
@@ -52,16 +46,13 @@ function StoryNode:ToString()
   local KeyStr = self.Key or "invalid_key"
   return NameStr .. "  " .. TypeStr .. "  " .. QuestChainIdStr .. "  " .. QuestIdStr .. "  " .. QuestDesc .. "  " .. KeyStr
 end
-
 function StoryNode:GetChildNodes()
   local Questline = self.Questline or Questline(self.Data, self.Context, self)
   return Questline:GetNodes()
 end
-
 function StoryNode:StopStory()
   self.Context:StopStory()
 end
-
 function StoryNode:GetRunningNodeTableByType(NodeType, OutRunningNodeTable)
   if self.Type == NodeType then
     table.insert(OutRunningNodeTable, self)
@@ -70,5 +61,4 @@ function StoryNode:GetRunningNodeTableByType(NodeType, OutRunningNodeTable)
     self.Questline:GetRunningNodeTableByType(NodeType, OutRunningNodeTable)
   end
 end
-
 return StoryNode

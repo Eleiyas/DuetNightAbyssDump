@@ -2,7 +2,6 @@ require("UnLua")
 local BP_AbyssComponent_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_AbyssComponent_C:InitAbyssComponent()
   self.GameMode = self:GetOwner()
   self:InitListenEvent()
@@ -13,65 +12,61 @@ function BP_AbyssComponent_C:InitAbyssComponent()
   else
     self.AbyssLogicServerInfo = self.GameMode.PreInitInfo
     if not self.AbyssLogicServerInfo then
-      DebugPrint("BP_AbyssComponent_C:InitAbyssComponent \228\187\142\230\149\176\230\141\174\230\129\162\229\164\141\230\139\191\228\191\161\230\129\175")
+      DebugPrint("BP_AbyssComponent_C:InitAbyssComponent 从数据恢复拿信息")
       self.AbyssLogicServerInfo = self.GameMode:GetProgressDataAbyssLogicServerInfo()
       if not self.AbyssLogicServerInfo then
-        GameState(self):ShowDungeonError("BP_AbyssComponent_C:\228\187\142\233\128\187\232\190\145\230\156\141\230\139\191\229\136\176\231\154\132\228\191\161\230\129\175\228\184\186\231\169\186 \228\184\148 \230\178\161\230\156\137\228\187\142\230\149\176\230\141\174\230\129\162\229\164\141\230\139\191\229\136\176\228\191\161\230\129\175")
+        GameState(self):ShowDungeonError("BP_AbyssComponent_C:从逻辑服拿到的信息为空 且 没有从数据恢复拿到信息", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.ServerData)
         return
       end
     end
-    DebugPrint("BP_AbyssComponent_C:InitAbyssComponent \228\187\142\233\128\187\232\190\145\230\156\141\230\139\191\229\136\176\231\154\132\228\191\161\230\129\175 AbyssId", self.AbyssLogicServerInfo.AbyssId, "AbyssLevelId", self.AbyssLogicServerInfo.AbyssLevelId, "AbyssDungeonId", self.AbyssLogicServerInfo.AbyssDungeonId)
+    DebugPrint("BP_AbyssComponent_C:InitAbyssComponent 从逻辑服拿到的信息 AbyssId", self.AbyssLogicServerInfo.AbyssId, "AbyssLevelId", self.AbyssLogicServerInfo.AbyssLevelId, "AbyssDungeonId", self.AbyssLogicServerInfo.AbyssDungeonId)
     self.AbyssDungeonId = self.AbyssLogicServerInfo.AbyssDungeonId
     self.AbyssDifficulty = self:GetAbyssDifficulty()
   end
   self.GameMode:SetGameModeLevel(self.AbyssDifficulty)
   self.AbyssDungeonInfo = DataMgr.AbyssDungeon[self.AbyssDungeonId]
   if not self.AbyssDungeonInfo then
-    GameState(self):ShowDungeonError("BP_AbyssComponent_C:\229\189\147\229\137\141AbyssDungeonId\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132AbyssDungeon\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.AbyssDungeonId)
+    GameState(self):ShowDungeonError("BP_AbyssComponent_C:当前AbyssDungeonId没有填写在对应的AbyssDungeon表中, 读表失败! 读入Id：" .. self.AbyssDungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.AbyssRoomIndex = 0
   self.CurRoomId = 0
   DebugPrint("BP_AbyssComponent_C:InitAbyssComponent AbyssDungeonId", self.AbyssDungeonId, "AbyssDifficulty", self.AbyssDifficulty)
 end
-
 function BP_AbyssComponent_C:InitListenEvent()
   EventManager:AddEvent(EventID.OnAbyssSeasonEnd, self, self.OnAbyssSeasonEnd)
 end
-
 function BP_AbyssComponent_C:RemoveListenEvent()
   EventManager:RemoveEvent(EventID.OnAbyssSeasonEnd, self)
 end
-
 function BP_AbyssComponent_C:ReceiveEndPlay(EndPlayReason)
   self:RemoveListenEvent()
 end
-
 function BP_AbyssComponent_C:GetAbyssDifficulty()
   local AbyssId = self.AbyssLogicServerInfo.AbyssId
   local AbyssLevelIndex = self.AbyssLogicServerInfo.AbyssLevelId
   local AbyssLevelIdList = DataMgr.AbyssSeason[AbyssId].AbyssLevelId
+  local LoopTime = AbyssLevelIndex // #AbyssLevelIdList
   local RealAbyssLevelIndex = AbyssLevelIndex % #AbyssLevelIdList
   if 0 == RealAbyssLevelIndex then
     RealAbyssLevelIndex = #AbyssLevelIdList
+    LoopTime = LoopTime - 1
   end
   local CurLevelId = AbyssLevelIdList[RealAbyssLevelIndex]
   local AbyssLevelInfo = DataMgr.AbyssLevel[CurLevelId]
-  return AbyssLevelInfo.InitLevel + (AbyssLevelInfo.LevelAddOn or 0) * (AbyssLevelIndex // #AbyssLevelIdList)
+  return AbyssLevelInfo.InitLevel + (AbyssLevelInfo.LevelAddOn or 0) * LoopTime
 end
-
 function BP_AbyssComponent_C:GetAbyssId()
   return self.AbyssLogicServerInfo.AbyssId
 end
-
 function BP_AbyssComponent_C:InitGlobalPassive()
   if not self.AbyssDungeonId then
-    GameState(self):ShowDungeonError("\230\139\191\228\184\141\229\136\176\229\189\147\229\137\141\229\164\167\231\167\152\229\162\131\231\154\132Id")
+    GameState(self):ShowDungeonError("拿不到当前大秘境的Id", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.ServerData)
     return
   end
   local AbyssDungeonData = DataMgr.AbyssDungeon[self.AbyssDungeonId]
   if not AbyssDungeonData then
-    GameState(self):ShowDungeonError("\232\175\187\228\184\141\229\136\176\229\189\147\229\137\141\229\164\167\231\167\152\229\162\131\233\133\141\231\189\174, Id\228\184\186 " .. self.AbyssDungeonId)
+    GameState(self):ShowDungeonError("读不到当前大秘境配置, Id为 " .. self.AbyssDungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   local AbyssBuffList = AbyssDungeonData.AbyssBuffID or {}
@@ -83,25 +78,23 @@ function BP_AbyssComponent_C:InitGlobalPassive()
       if GlobalPassiveId and GlobalPassiveLevel then
         local Battle = Battle(self)
         Battle:AddGlobalPassive(GlobalPassiveId, nil, GlobalPassiveLevel)
-        DebugPrint("\230\183\187\229\138\160\229\133\168\229\177\128\232\162\171\229\138\168, Id = " .. GlobalPassiveId .. " Level = " .. GlobalPassiveLevel .. " AbyssDungeonId = " .. self.AbyssDungeonId)
+        DebugPrint("添加全局被动, Id = " .. GlobalPassiveId .. " Level = " .. GlobalPassiveLevel .. " AbyssDungeonId = " .. self.AbyssDungeonId)
       end
     else
-      DebugPrint("Tianyi@ \230\137\190\228\184\141\229\136\176\229\164\167\231\167\152\229\162\131\232\175\141\230\157\161, Id = " .. AbyssBuffID)
+      DebugPrint("Tianyi@ 找不到大秘境词条, Id = " .. AbyssBuffID)
     end
   end
 end
-
 function BP_AbyssComponent_C:InitAbyssBaseInfo()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not Player then
-    GameState(self):ShowDungeonError("BP_AbyssComponent_C:InitAbyssBaseInfo \230\139\191\228\184\141\229\136\176Player")
+    GameState(self):ShowDungeonError("BP_AbyssComponent_C:InitAbyssBaseInfo 拿不到Player", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.FindObject)
     return
   end
   self:InitGlobalPassive()
   local LevelId = self.GameMode:GetActorLevelName(Player)
   self:TriggerStartNextRoom("", LevelId)
 end
-
 function BP_AbyssComponent_C:TriggerStartNextRoom(LastLevelId, NewLevelId)
   self:RealSendAbyssPassedTime()
   local gamestate = GameState(self)
@@ -112,7 +105,7 @@ function BP_AbyssComponent_C:TriggerStartNextRoom(LastLevelId, NewLevelId)
   self.CurRoomId = AbyssRoomId
   self.AbyssRoomInfo = DataMgr.AbyssRoom[AbyssRoomId]
   if not self.AbyssRoomInfo then
-    GameState(self):ShowDungeonError("BP_AbyssComponent_C: AbyssRoom\232\161\168\232\175\187\232\161\168\229\164\177\232\180\165\239\188\129 AbyssRoomId " .. AbyssRoomId)
+    GameState(self):ShowDungeonError("BP_AbyssComponent_C: AbyssRoom表读表失败！ AbyssRoomId " .. AbyssRoomId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.GameMode:InitAbyssSubGameMode(self.AbyssRoomInfo.SubGamemode, NewLevelId)
@@ -121,10 +114,9 @@ function BP_AbyssComponent_C:TriggerStartNextRoom(LastLevelId, NewLevelId)
     self.GameMode:OnStartNextRoom(LastLevelId, NewLevelId)
     SubGameMode:OnAbyssRoomBegin(NewLevelId, AbyssRoomId)
   else
-    GameState(self):ShowDungeonError("Error: BP_AbyssComponent_C:TriggerStartNextRoom \228\188\160\229\133\165\229\143\130\230\149\176\228\184\141\229\144\136\230\179\149" .. LastLevelId .. NewLevelId)
+    GameState(self):ShowDungeonError("Error: BP_AbyssComponent_C:TriggerStartNextRoom 传入参数不合法" .. LastLevelId .. NewLevelId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Implement)
   end
 end
-
 function BP_AbyssComponent_C:RealSendAbyssPassedTime()
   if self.CachedPassedTime then
     local Avatar = GWorld:GetAvatar()
@@ -135,17 +127,14 @@ function BP_AbyssComponent_C:RealSendAbyssPassedTime()
     self.CachedPassedTime = nil
   end
 end
-
 function BP_AbyssComponent_C:GetAbyssRoomIndex()
   return self.AbyssRoomIndex
 end
-
 function BP_AbyssComponent_C:SendAbyssPassedTime(_PassedTime)
   local PassedTime = math.ceil(_PassedTime)
   self.CachedPassedTime = PassedTime
   DebugPrint("BP_AbyssComponent_C: SendAbyssPassedTime To Cache RoomId", self.CurRoomId, "PassedTime", PassedTime)
 end
-
 function BP_AbyssComponent_C:TriggerAbyssOnEnd()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -272,7 +261,6 @@ function BP_AbyssComponent_C:TriggerAbyssOnEnd()
     ReddotManager.IncreaseLeafNodeCount("AbyssEntry2")
   end
 end
-
 function BP_AbyssComponent_C:OnAbyssSeasonEnd(AbyssSeasonId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -289,15 +277,18 @@ function BP_AbyssComponent_C:OnAbyssSeasonEnd(AbyssSeasonId)
     self:ShowSeasonEndPopup()
   end
 end
-
 function BP_AbyssComponent_C:ShowSeasonEndPopup()
   local Params = {}
-  
   function Params.RightCallbackFunction()
     self.GameMode:TriggerDungeonWin()
   end
-  
   UIManager(self):ShowCommonPopupUI(100225, Params)
 end
-
+function BP_AbyssComponent_C:SetReEnteringAbyss()
+  DebugPrint("BP_AbyssComponent_C:SetReEnteringAbyss")
+  self.IsReEntering = true
+end
+function BP_AbyssComponent_C:IsReEnteringAbyss()
+  return self.IsReEntering or false
+end
 return BP_AbyssComponent_C

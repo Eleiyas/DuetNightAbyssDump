@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
-
 function M:Construct()
   self.Base:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.ProgressMaterial = self.Progress:GetDynamicMaterial()
 end
-
 function M:OnLoaded(OwnerPlayer, Params)
   self.Super.OnLoaded(self)
   self.BuffIcons = {}
@@ -21,19 +19,16 @@ function M:OnLoaded(OwnerPlayer, Params)
   self:InitBuffParam(OwnerPlayer, Params)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.In)
 end
-
 function M:InitBuffParam(OwnerPlayer, Params)
   self.Owner = OwnerPlayer
   self.BuffId = Params.BuffId
   self:K2_SetBuffsOwner(OwnerPlayer)
   self:RegisterOnBuffsChangedDelegate()
 end
-
 function M:ReceiveOnBuffsChanged()
   local Buffs = self.Owner.BuffManager.Buffs
   self:OnBuffsChanged(Buffs)
 end
-
 function M:OnBuffsChanged(Buffs)
   local NewBuffState = {
     Layer = 0,
@@ -42,7 +37,7 @@ function M:OnBuffsChanged(Buffs)
   }
   local BaonuBuff
   for _, Buff in pairs(Buffs) do
-    if Buff.BuffId == self.BuffId then
+    if IsValid(Buff) and Buff.BuffId == self.BuffId then
       NewBuffState.Layer = Buff.Layer
       NewBuffState.LastTime = Buff.LastTime
       NewBuffState.IsCountDown = Buff.LastTime >= 0
@@ -54,7 +49,6 @@ function M:OnBuffsChanged(Buffs)
   self:SwitchBuffIconState(NewBuffState, BaonuBuff)
   self.BuffState = NewBuffState
 end
-
 function M:LightBuffIcon(NewBuffState)
   if self.BuffState.Layer == NewBuffState.Layer then
     return
@@ -79,7 +73,6 @@ function M:LightBuffIcon(NewBuffState)
     end
   end
 end
-
 function M:SwitchBuffIconState(NewBuffState, BaonuBuff)
   self.BaonuBuff = BaonuBuff
   self.LastTime = NewBuffState.LastTime
@@ -90,7 +83,6 @@ function M:SwitchBuffIconState(NewBuffState, BaonuBuff)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Switch_Out)
   EMUIAnimationSubsystem:EMPlayAnimation(self.Num, self.Num.Switch)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Switch_Out then
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Switch_In)
@@ -106,7 +98,6 @@ function M:OnAnimationFinished(InAnimation)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Switch_Loop, EUMGSequencePlayMode.Forward, true)
   end
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if not self.BuffState.IsCountDown or not self.BaonuBuff then
     return
@@ -120,7 +111,6 @@ function M:Tick(MyGeometry, InDeltaTime)
   local Percent = LeftTime / self.LastTime
   self.ProgressMaterial:SetScalarParameterValue("Percent", Percent)
 end
-
 function M:Destruct()
   self:ReceiveOnBuffsChanged()
   self.WB_Num:SetVisibility(self.BuffState.IsCountDown and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -128,5 +118,4 @@ function M:Destruct()
   self.VX:SetVisibility(not self.BuffState.IsCountDown and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Text_Time:SetVisibility(not self.BuffState.IsCountDown and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 return M

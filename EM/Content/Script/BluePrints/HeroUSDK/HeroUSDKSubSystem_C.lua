@@ -2,13 +2,36 @@ require("UnLua")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local Json = require("rapidjson")
 local EMCache = require("EMCache.EMCache")
+local MiscUtils = require("Utils.MiscUtils")
 local HeroUSDKSubSystem_C = Class()
-
+function HeroUSDKSubSystem_C:LoadCloudGameCursorTexture()
+  DebugPrint("HeroUSDKSubSystem_C:LoadCloudGameCursorTexture")
+  local TexPaths = {
+    "",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_Default.T_Mouse_Default",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_EditText.T_Mouse_EditText",
+    "",
+    "",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_ResizeSE.T_Mouse_ResizeSE",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_ResizeSW.T_Mouse_ResizeSW",
+    "",
+    "",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_Click.T_Mouse_Click",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_Hand.T_Mouse_Hand",
+    "/Game/UI/Texture/Static/Image/CloudGame/T_Mouse_Grab.T_Mouse_Grab"
+  }
+  for _, Path in pairs(TexPaths) do
+    DebugPrint("HeroUSDKSubSystem_C:LoadCloudGameCursorTexture,", Path)
+    local Texture = not string.isempty(Path) and MiscUtils.LazyLoadObject(Path):get() or nil
+    self.MouseCursors:Add(Texture)
+  end
+end
 function HeroUSDKSubSystem_C:BindDelegates()
   self.HeroSDKLogoutDelegate:Bind(self, self.OnLogout)
   self.HeroSDKSwitchAccountDelegate:Bind(self, self.OnSwitchAccount)
   self.HeroSDKLoginInvalidDelegate:Bind(self, self.OnLoginInvalid)
   self.HeroSDKPayDelegate:Bind(self, self.PayCallBack)
+  self.HeroSDKExternalPayDelegate:Bind(self, self.OnExternalPay)
   self.HeroSDKExitDelegate:Bind(self, self.OnExit)
   self.HeroSDKAccountCancallationDelegate:Bind(self, self.OnAccountCancallation)
   if self.HeroMarketConversionDataSuccessDelegate then
@@ -19,11 +42,9 @@ function HeroUSDKSubSystem_C:BindDelegates()
   self.HeroSDKCmpDelegate:Bind(self, self.OnHeroSDKCmp)
   EventManager:AddEvent(EventID.OnCharLevelUpInBattle, self, self.OnLevelUp)
 end
-
 function HeroUSDKSubSystem_C:OnHeroSDKCmp(Result, Msg)
   DebugPrint("USDK OnHeroSDKCmp: Result:", Result, Msg)
 end
-
 function HeroUSDKSubSystem_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
   DebugPrint("USDK OnHeroSDKLogin: Result:", Result, Msg)
   if UGameplayStatics.GetCurrentLevelName(self) == "Login" then
@@ -34,23 +55,14 @@ function HeroUSDKSubSystem_C:OnHeroSDKLogin(Result, UserInfoStr, Msg)
   else
     self:TryToGoToLoginScene()
   end
-  local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
-  if 0 == Result and "Mobile" == Platform then
-    local ACESubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, UACESubsystem)
-    if ACESubsystem then
-      ACESubsystem:Login(UserInfoStr.sdkUserId, 99, 0, "")
-    end
-  end
   self.bSwitchAccount = false
 end
-
 function HeroUSDKSubSystem_C:OnAccountUnCancallation(Result, Msg)
   DebugPrint("USDK OnAccountUnCancallation: Result:", Result, Msg)
   if 0 == Result then
     self:TryToGoToLoginScene()
   end
 end
-
 function HeroUSDKSubSystem_C:OnMarketConversionDataSuccess(Data)
   DebugPrint("USDK OnMarketConversionDataSuccess Data:", Data)
   local MarketConversionDataSuccessData = EMCache:Get("MarketConversionDataSuccess")
@@ -59,24 +71,25 @@ function HeroUSDKSubSystem_C:OnMarketConversionDataSuccess(Data)
     EMCache:Set("MarketConversionDataSuccess", Data)
   end
 end
-
 function HeroUSDKSubSystem_C:OnAccountCancallation(Result, Msg)
   DebugPrint("USDK OnAccountCancallation: Result:", Result, "Msg:", Msg)
   if 0 == Result then
     if GWorld.NetworkMgr then
       GWorld.NetworkMgr:Disconnect()
     end
+    local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName()
+    if "IOS" == PlatformName then
+      self.bAccountCancallation = true
+    end
     self:TryToGoToLoginScene()
   end
 end
-
 function HeroUSDKSubSystem_C:OnExit(Result, Msg)
   DebugPrint("USDK OnExit: Result:", Result, "Msg:", Msg)
   if HeroUSDKSubsystem():IsBilibili() then
     HeroUSDKSubsystem():EMRequestExit()
   end
 end
-
 function HeroUSDKSubSystem_C:OnLogout(Result, Msg)
   DebugPrint("USDK OnLogOut: Result:", Result, "Msg:", Msg)
   if 0 == Result then
@@ -87,7 +100,6 @@ function HeroUSDKSubSystem_C:OnLogout(Result, Msg)
     BDCSubsystem:Logout()
   end
 end
-
 function HeroUSDKSubSystem_C:OnSwitchAccount(Result, Msg)
   DebugPrint("USDK OnSwitchAccount: Result:", Result, "Msg:", Msg)
   if 0 == Result then
@@ -95,24 +107,47 @@ function HeroUSDKSubSystem_C:OnSwitchAccount(Result, Msg)
     self.bSwitchAccount = true
   end
 end
-
 function HeroUSDKSubSystem_C:PayCallBack(Result, PaymentOrder, Msg)
   DebugPrint("USDK PayCallBack: Msg:", Result, PaymentOrder, Msg)
   local Json = require("rapidjson")
-  local PayCallBackMsg = "" ~= Msg and Json.decode(Msg) or {}
-  if PayCallBackMsg.code == 20002 then
+  local PayCallBackMsg = Msg and "" ~= Msg and Json.decode(Msg) or {}
+  local PayCallBackPaymentOrder = PaymentOrder and "" ~= PaymentOrder and Json.decode(PaymentOrder) or {}
+  local bHasError = false
+  if not bHasError and PayCallBackMsg.code == 20002 then
+    bHasError = true
     local CommonDialog = UIManager(self):ShowCommonPopupUI(100235, {
       ShortText = PayCallBackMsg.msg
     }, self)
   end
+  if not bHasError and PayCallBackPaymentOrder.code == 20002 then
+    bHasError = true
+    local CommonDialog = UIManager(self):ShowCommonPopupUI(100235, {
+      ShortText = PayCallBackPaymentOrder.msg
+    }, self)
+  end
   EventManager:FireEvent(EventID.OnPayCallBack, Result, PaymentOrder, Msg)
 end
-
+function HeroUSDKSubSystem_C:OnExternalPay(Type, GoodsId, Amount)
+  DebugPrint("USDK OnExternalPay: Msg:", Type, GoodsId, Amount)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  Avatar:RequestPay(GoodsId, function(ret, OrderId, CallbackUrl)
+    if not ErrorCode:Check(ret) then
+      return
+    end
+    local PaymentParameters = FHeroUPaymentParameters()
+    PaymentParameters.goodsId = GoodsId
+    PaymentParameters.cpOrder = OrderId
+    PaymentParameters.callbackUrl = CallbackUrl
+    HeroUSDKSubsystem():RedeemExternalPay(Type, PaymentParameters)
+  end)
+end
 function HeroUSDKSubSystem_C:OnLoginInvalid(KickOffType)
   DebugPrint("OnLoginInvalid: KickOffType:", KickOffType)
   self:TryToGoToLoginScene(true, KickOffType)
 end
-
 function HeroUSDKSubSystem_C:UploadTrackLog_Lua(EventName, Properties)
   if not Properties then
     self:UploadEmptyTrackLog(EventName)
@@ -124,7 +159,6 @@ function HeroUSDKSubSystem_C:UploadTrackLog_Lua(EventName, Properties)
     self:UploadTrackLog(EventName, Properties)
   end
 end
-
 function HeroUSDKSubSystem_C:TryToGoToLoginScene(bAnti, KickOffType)
   print("TryToGoToLogin")
   if self.bSwitchAccount then
@@ -136,11 +170,9 @@ function HeroUSDKSubSystem_C:TryToGoToLoginScene(bAnti, KickOffType)
   if GWorld.NetworkMgr then
     GWorld.NetworkMgr:Disconnect()
   end
-  
   local function QuitGame()
     UKismetSystemLibrary.QuitGame(self, UGameplayStatics.GetPlayerController(self, 0), EQuitPreference.Quit, true)
   end
-  
   if UGameplayStatics.GetCurrentLevelName(self) == "Login" then
     local LoginMainPage = GWorld.GameInstance:GetGameUIManager():GetUIObj("LoginMainPage")
     if LoginMainPage then
@@ -172,7 +204,6 @@ function HeroUSDKSubSystem_C:TryToGoToLoginScene(bAnti, KickOffType)
     end
     return
   end
-  
   local function GoLoginFunc()
     local bHasLogOut = self.UserInfo.sdkUserId == ""
     if HeroUSDKSubsystem():IsHeroSDKEnable() and not UUCloudGameInstanceSubsystem.IsCloudGame() then
@@ -189,7 +220,6 @@ function HeroUSDKSubSystem_C:TryToGoToLoginScene(bAnti, KickOffType)
     end
     WorldTravelSubsystem():ChangeSceneByAssetPath(Const.DefaultLoginSceneFile)
   end
-  
   if bAnti and not bIsBilibili then
     if not self:IsAntiAddctionType(KickOffType) then
       GoLoginFunc()
@@ -211,14 +241,12 @@ function HeroUSDKSubSystem_C:TryToGoToLoginScene(bAnti, KickOffType)
     GoLoginFunc()
   end
 end
-
 function HeroUSDKSubSystem_C:IsAntiAddctionType(KickOffType)
   if KickOffType == UE4.EUsdkKickOffType.AccountCancel or KickOffType == UE4.EUsdkKickOffType.LoginInvalid then
     return false
   end
   return true
 end
-
 function HeroUSDKSubSystem_C:NeedShowAntiAddctionDialog(KickOffType)
   local bIsWeGame = UUsdkSettings:GetDefaultObject().Channel == EHeroUSDKChannel.WeGame
   if bIsWeGame and (KickOffType == UE4.EUsdkKickOffType.WeGame_kSystemStatePlatformOffline or KickOffType == UE4.EUsdkKickOffType.WeGame_kSystemStatePlatformExit or KickOffType == UE4.EUsdkKickOffType.WeGame_kSystemStatePlayerOwnershipExpired or KickOffType == UE4.EUsdkKickOffType.WeGame_kSystemStatePlayerOwnershipBanned) then
@@ -226,14 +254,12 @@ function HeroUSDKSubSystem_C:NeedShowAntiAddctionDialog(KickOffType)
   end
   return true
 end
-
 function HeroUSDKSubSystem_C:CloseLoadingReconnect()
   local LoginMainPage = UIManager(self):GetUIObj("LoginMainPage")
   if LoginMainPage then
     LoginMainPage:CloseLoadingReconnect()
   end
 end
-
 function HeroUSDKSubSystem_C:OnLevelUp()
   local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(MainPlayer) then
@@ -242,7 +268,6 @@ function HeroUSDKSubSystem_C:OnLevelUp()
   local GameRoleInfo = HeroUSDKUtils.GenHeroHDCGameRoleInfo(MainPlayer.CurrentRoleId, MainPlayer.BattleCharInfo.CharName, MainPlayer:GetAttr("Level"))
   self:HeroSDKRoleLevelUp(GameRoleInfo)
 end
-
 function HeroUSDKSubSystem_C:OnLoginSuccess()
   local PlayerAvatar = GWorld:GetAvatar()
   if PlayerAvatar then
@@ -256,19 +281,15 @@ function HeroUSDKSubSystem_C:OnLoginSuccess()
     self:SetNewBDCPublicAttriubute(tostring(PlayerAvatar.Uid), tostring(PlayerAvatar.Hostnum))
   end
 end
-
 function HeroUSDKSubSystem_C:RequestUploadChatData_Lua(ChatContents, DelegateReceiver, DelegateFunc)
   self:RequestUploadChatData(HeroUSDKUtils.GenHeroUSDKUploadChatItemData(ChatContents), {DelegateReceiver, DelegateFunc})
 end
-
 function HeroUSDKSubSystem_C:RequestUploadReportData_Lua(ReportData, DelegateReceiver, DelegateFunc)
   self:RequestUploadChatData(HeroUSDKUtils.GenHeroUSDKUploadChatItemData(ReportData), {DelegateReceiver, DelegateFunc})
 end
-
 function HeroUSDKSubSystem_C:RequestUploadBanLog_Lua(BanLogData, DelegateReceiver, DelegateFunc)
   self:RequestUploadLogData(HeroUSDKUtils.GenHeroUSDKUploadLogItemData(BanLogData), {DelegateReceiver, DelegateFunc})
 end
-
 function HeroUSDKSubSystem_C:UploadBDCTrackInfoWhenChangeScene()
   if USubsystemBlueprintLibrary.GetWorldSubsystem(self, UBDCUploadSubsystem) then
     USubsystemBlueprintLibrary.GetWorldSubsystem(self, UBDCUploadSubsystem):UploadAllBDCTrackInfo()
@@ -281,7 +302,6 @@ function HeroUSDKSubSystem_C:UploadBDCTrackInfoWhenChangeScene()
     return
   end
 end
-
 function HeroUSDKSubSystem_C:UploadBigWorldPathInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo then
     return
@@ -293,7 +313,6 @@ function HeroUSDKSubSystem_C:UploadBigWorldPathInfo(PlayerCharacter)
     self:UploadTrackLog_Lua("event_explore", Info)
   end
 end
-
 function HeroUSDKSubSystem_C:UploadWeaponUseCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo then
     return
@@ -306,7 +325,6 @@ function HeroUSDKSubSystem_C:UploadWeaponUseCountInfo(PlayerCharacter)
   end
   PlayerCharacter.UploadBDCTrackInfo.WeaponUseCount = {}
 end
-
 function HeroUSDKSubSystem_C:UploadSkillUseCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.SkillUseCount then
     return
@@ -318,7 +336,6 @@ function HeroUSDKSubSystem_C:UploadSkillUseCountInfo(PlayerCharacter)
     self:UploadTrackLog_Lua("sentence_number", PlayerCharacter.UploadBDCTrackInfo.CondemnSkillCountInfo)
   end
 end
-
 function HeroUSDKSubSystem_C:UploadPlayerHurtInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.DamageTrack then
     return
@@ -327,49 +344,42 @@ function HeroUSDKSubSystem_C:UploadPlayerHurtInfo(PlayerCharacter)
     self:UploadTrackLog_Lua("player_hurt_record", Info)
   end
 end
-
 function HeroUSDKSubSystem_C:UploadBulletJumpCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.BulletJumpCountTrack then
     return
   end
   self:UploadTrackLog_Lua("bullet_jump_number", PlayerCharacter.UploadBDCTrackInfo.BulletJumpCountTrack)
 end
-
 function HeroUSDKSubSystem_C:UploadSlideCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.SlideCountTrack then
     return
   end
   self:UploadTrackLog_Lua("sliding_tackle_number", PlayerCharacter.UploadBDCTrackInfo.SlideCountTrack)
 end
-
 function HeroUSDKSubSystem_C:UploadJumpCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.JumpCountInfo then
     return
   end
   self:UploadTrackLog_Lua("jump_number", PlayerCharacter.UploadBDCTrackInfo.JumpCountInfo)
 end
-
 function HeroUSDKSubSystem_C:UploadSecondJumpCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.JumpSecondCountInfo then
     return
   end
   self:UploadTrackLog_Lua("double_jump_number", PlayerCharacter.UploadBDCTrackInfo.JumpSecondCountInfo)
 end
-
 function HeroUSDKSubSystem_C:UploadWallJumpCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.JumpWallCountInfo then
     return
   end
   self:UploadTrackLog_Lua("climb_wall_number", PlayerCharacter.UploadBDCTrackInfo.JumpWallCountInfo)
 end
-
 function HeroUSDKSubSystem_C:UploadFlyShootCountInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.FlyShootCountInfo then
     return
   end
   self:UploadTrackLog_Lua("fly_shoot_number", PlayerCharacter.UploadBDCTrackInfo.FlyShootCountInfo)
 end
-
 function HeroUSDKSubSystem_C:UploadDeadInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.DeadInfo then
     return
@@ -378,7 +388,6 @@ function HeroUSDKSubSystem_C:UploadDeadInfo(PlayerCharacter)
     self:UploadTrackLog_Lua("player_death", Info)
   end
 end
-
 function HeroUSDKSubSystem_C:UploadRecoveryInfo(PlayerCharacter)
   if not PlayerCharacter.UploadBDCTrackInfo.RecoveryInfo then
     return
@@ -387,24 +396,22 @@ function HeroUSDKSubSystem_C:UploadRecoveryInfo(PlayerCharacter)
     self:UploadTrackLog_Lua("player_recovery", Info)
   end
 end
-
 function HeroUSDKSubSystem_C:UploadSkipTalkInfo(PlayerCharacter)
 end
-
 function HeroUSDKSubSystem_C:ShowExitGameDialog()
   local LoginMainPage = GWorld.GameInstance:GetGameUIManager():GetUIObj("LoginMainPage")
   if LoginMainPage then
     LoginMainPage:ShowExitGamePopupUI()
   end
 end
-
 function HeroUSDKSubSystem_C:EMHeroSDKSwitchAccount()
   local Platform = UE4.UUIFunctionLibrary.GetDevicePlatformName()
   if "Android" == Platform and not self:IsGlobalSDK() then
+    DebugPrint("HeroUSDKSubSystem_C HeroSDKLogout")
     self:HeroSDKLogout()
   else
+    DebugPrint("HeroUSDKSubSystem_C HeroSDKSwitchAccount")
     self:HeroSDKSwitchAccount()
   end
 end
-
 return HeroUSDKSubSystem_C

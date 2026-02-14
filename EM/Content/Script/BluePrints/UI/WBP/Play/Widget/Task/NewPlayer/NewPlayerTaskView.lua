@@ -2,7 +2,6 @@ require("UnLua")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local EMCache = require("EMCache.EMCache")
 local M = {}
-
 function M:GenerateAllListItem(AllQuestConfigInfo, AllQuestServerInfo, ItemObjClass)
   self.PlayInAnimation = true
   self:OnSelectChange(nil)
@@ -12,7 +11,6 @@ function M:GenerateAllListItem(AllQuestConfigInfo, AllQuestServerInfo, ItemObjCl
   for k, v in pairs(AllQuestConfigInfo) do
     table.insert(AllQuestId, k)
   end
-  
   local function SortFunc(CompareA, ComPareB)
     local ConfigDataA = DataMgr.StarterQuestDetail[CompareA]
     local ConfigDataB = DataMgr.StarterQuestDetail[ComPareB]
@@ -43,7 +41,6 @@ function M:GenerateAllListItem(AllQuestConfigInfo, AllQuestServerInfo, ItemObjCl
       return ConfigDataA.JumpUIId ~= nil
     end
   end
-  
   table.sort(AllQuestId, SortFunc)
   local StartIndex = 0
   for _, QuestId in ipairs(AllQuestId) do
@@ -62,7 +59,6 @@ function M:GenerateAllListItem(AllQuestConfigInfo, AllQuestServerInfo, ItemObjCl
   self.List_Task:RequestPlayEntriesAnim()
   self:TryNavigateToIndex(0)
 end
-
 function M:ReGenerateAllListItem(AllQuestConfigData, AllQuestServerData, ItemObjClass, IsHideGetAllBtn)
   self:GenerateAllListItem(AllQuestConfigData, AllQuestServerData, ItemObjClass)
   if IsHideGetAllBtn then
@@ -71,7 +67,6 @@ function M:ReGenerateAllListItem(AllQuestConfigData, AllQuestServerData, ItemObj
     self:RefreshGetAllBtnView(AllQuestServerData)
   end
 end
-
 function M:RefreshItemStyleView(TargetQuestId, QuestConfigData, QuestServerData)
   local AllItemCount, CanGetTaskRewardCount = self.List_Task:GetNumItems(), 0
   for i = 0, AllItemCount - 1 do
@@ -89,7 +84,6 @@ function M:RefreshItemStyleView(TargetQuestId, QuestConfigData, QuestServerData)
     self.Btn_Reward:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:RefreshAllItemStyleView(AllQuestConfigData, AllQuestServerData)
   local AllItemCount = self.List_Task:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -101,7 +95,6 @@ function M:RefreshAllItemStyleView(AllQuestConfigData, AllQuestServerData)
   end
   self.Btn_Reward:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:RefreshGetAllBtnView(AllQuestServerData)
   local CanGetTaskRewardCount = 0
   for _, QuestInfo in pairs(AllQuestServerData) do
@@ -116,7 +109,6 @@ function M:RefreshGetAllBtnView(AllQuestServerData)
   end
   self:UpdateUIStyleInPlatform()
 end
-
 function M:InitQuestData()
   self.PhaseId2TabId = {}
   self.QuestTabInfo = {}
@@ -137,7 +129,6 @@ function M:InitQuestData()
     EMCache:Set("StarterQuestsCurPhaseId", self.PlayerPhaseId, true)
   end
 end
-
 function M:RefreshTabItemInfo(CurrentPhaseId)
   local CurrentPhaseIndex = self.PhaseId2TabId[CurrentPhaseId]
   if CurrentPhaseIndex < self.MaxPhaseIndex and ActivityUtils.CheckIsCurrentStarterQuestAllDone(CurrentPhaseId) then
@@ -148,7 +139,6 @@ function M:RefreshTabItemInfo(CurrentPhaseId)
     self:ReGenerateAllListItem(self.AllQuestConfigData[self.CurPhaseId], self.AllQuestServerData[self.CurPhaseId], self.TaskObjectClass)
   end
 end
-
 function M:FillWithQuestData(PlayerAvatar)
   for PhaseIndex, PhaseId in ipairs(self.AllQuestPhaseIdValue) do
     local ShowTabText = string.format(GText("UI_GameEvent_StarterQuest_Phase"), PhaseIndex)
@@ -179,7 +169,6 @@ function M:FillWithQuestData(PlayerAvatar)
     })
   end
 end
-
 function M:RefreshPhaseIndex(PhaseId)
   if not self.AllQuestConfigData[PhaseId] then
     return
@@ -198,7 +187,6 @@ function M:RefreshPhaseIndex(PhaseId)
   self:SetTabWidgetState(self.Btn_Left, CurrentPhaseIndex > 1)
   self:SetTabWidgetState(self.Btn_Right, CurrentPhaseIndex < self.MaxPhaseIndex)
 end
-
 function M:SetForbidKey_Widget(Widget, bOn)
   if bOn then
     EMUIAnimationSubsystem:EMStopAnimation(Widget, Widget.Normal)
@@ -208,7 +196,6 @@ function M:SetForbidKey_Widget(Widget, bOn)
     EMUIAnimationSubsystem:EMPlayAnimation(Widget, Widget.Normal)
   end
 end
-
 function M:SetTabWidgetState(Widget, IsNormal, IsKeyWidget, IsGamepad)
   if IsKeyWidget then
     self:SetForbidKey_Widget(Widget, not IsNormal)
@@ -218,7 +205,6 @@ function M:SetTabWidgetState(Widget, IsNormal, IsKeyWidget, IsGamepad)
     Widget:SetVisibility(IsNormal and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:BindAllClickFunction()
   self.Btn_Left.Btn.OnClicked:Add(self, self.OnBtnArrowLeftClicked)
   self.Btn_Right.Btn.OnClicked:Add(self, self.OnBtnArrowRightClicked)
@@ -229,22 +215,18 @@ function M:BindAllClickFunction()
   ReddotManager.AddListener(self.NodeName, self, self.RefreshRightBtnReddot)
   self:AddDispatcher(EventID.OnUpdateActivityEvent, self, self.OnUpdateActivityByAction)
 end
-
 function M:RefreshRightBtnReddot()
   local Node = ReddotManager.GetTreeNode(self.NodeName)
   local IsShowRedDot = Node and Node.Count and Node.Count > 0
   IsShowRedDot = IsShowRedDot and self.CurPhaseId < self.PlayerPhaseId
   self.Right_Reddot:SetVisibility(IsShowRedDot and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnBtnArrowLeftClicked()
   self:RefreshPhaseIndex(self.CurPhaseId - 1)
 end
-
 function M:OnBtnArrowRightClicked()
   self:RefreshPhaseIndex(self.CurPhaseId + 1)
 end
-
 function M:PreviewRewardBtnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local SelectWidget
@@ -273,7 +255,6 @@ function M:PreviewRewardBtnClick()
   }
   UIManager(self):ShowCommonPopupUI(100202, Params, self)
 end
-
 function M:GetAllRewardBtnClick()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -281,5 +262,4 @@ function M:GetAllRewardBtnClick()
   end
   PlayerAvatar:GetAllStarterQuest(self.CurPhaseId)
 end
-
 return M

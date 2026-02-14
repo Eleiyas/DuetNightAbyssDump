@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1748586454518583",
       type = "StoryNode",
-      name = "\230\138\164\233\128\129\229\164\154\231\186\179\231\137\185\231\154\132\231\172\172\228\184\128\229\156\186\230\136\152\230\150\151",
+      name = "护送多纳特的第一场战斗",
       pos = {x = 1192.8665028152852, y = 326.5714285973789},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -143,14 +145,14 @@ return {
           ["17485869558243166"] = {
             key = "17485869558243166",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1331.6923169468992, y = 610.9230579624502},
             propsData = {}
           },
           ["17485869708163575"] = {
             key = "17485869708163575",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\169",
+            name = "生成怪物",
             pos = {x = 1221.2074684328595, y = 248.43820944841062},
             propsData = {
               ActiveEnable = true,
@@ -170,7 +172,7 @@ return {
           ["17485870697294172"] = {
             key = "17485870697294172",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1577.6923169468992, y = 216.92305796245023},
             propsData = {
               KillMonsterType = "Id",
@@ -191,7 +193,7 @@ return {
           ["17485872102845127"] = {
             key = "17485872102845127",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 2180.5408019992215, y = 207.20877217031352},
             propsData = {
               IsNpcNode = false,
@@ -210,6 +212,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -217,6 +220,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -239,15 +243,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 700301}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -255,14 +256,14 @@ return {
           ["17485872381495595"] = {
             key = "17485872381495595",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 2470.861148501339, y = 191.20877253361803},
             propsData = {}
           },
           ["1749007362655599760"] = {
             key = "1749007362655599760",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1865.1428486571021, y = 222.0000038146971},
             propsData = {WaitTime = 1}
           }

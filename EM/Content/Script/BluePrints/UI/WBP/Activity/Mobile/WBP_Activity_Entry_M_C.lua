@@ -7,7 +7,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Activity.Widget.View.ActivityEntryBaseView"
 }
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.OwnerPlayer = nil
@@ -17,7 +16,6 @@ function M:Initialize(Initializer)
   self.AllCurrentActivityID = {}
   self.AllCurrentActivityPage = {}
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.OwnerPlayer, self.NeedJumpToTabId, self.NeedJumpToActivityId, self.TryOutActivityNeedJumpToTabIndex = ...
@@ -37,19 +35,19 @@ function M:OnLoaded(...)
     end
     if not self.NeedJumpToTabId then
       self.EventTypeTab:ResetPos()
+      self.NeedJumpToTabId = nil
     end
   end)
   self.OpenKey = CommonUtils:GetActionMappingKeyName("OpenEvent")
   EventManager:AddEvent(EventID.OnReturnToActivityEntry, self, self.OnReturnToActivityEntry)
   EventManager:AddEvent(EventID.OnLeaveActivityEntry, self, self.OnLeaveActivityEntry)
+  EventManager:AddEvent(EventID.OnActivityEntryShowVisible, self, self.OnActivityEntryShowVisible)
   EventManager:AddEvent(EventID.OnActivityComplete, self, self.OnActivityComplete)
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdateActivityEvent, self, self.OnUpdateActivityByAction)
   self:AddDispatcher(EventID.ActivityControllerEvent, self, self.OnUpdateActivityByControllerEvent)
 end
-
 function M:ReceiveEnterState(StackAction)
   if 1 == StackAction then
     self:OnRefreshCurrentPageAfterJump()
@@ -58,11 +56,9 @@ function M:ReceiveEnterState(StackAction)
   end
   self.Super.ReceiveEnterState(self, StackAction)
 end
-
 function M:Close()
   self.Super.Close(self)
 end
-
 function M:Destruct()
   self.WidgetBGAnchor:ClearChildren()
   self.Group_Anchor:ClearChildren()
@@ -72,7 +68,6 @@ function M:Destruct()
   EventManager:RemoveEvent(EventID.OnActivityComplete, self)
   self.Super.Destruct(self)
 end
-
 function M:RefreshBaseInfo(TopTabInfo, SubTabItems, BtnClickFunction, VirtualClickFunction, SelectTabIndex)
   local SubTabInfo = {
     Tabs = SubTabItems,
@@ -83,7 +78,6 @@ function M:RefreshBaseInfo(TopTabInfo, SubTabItems, BtnClickFunction, VirtualCli
   self:InitTabView(TopTabInfo, SubTabInfo, BtnClickFunction, VirtualClickFunction, SelectTabIndex)
   self:ShowContentView(nil == SubTabItems or 0 == #SubTabItems, true)
 end
-
 function M:GetTopTabInfo()
   local TopTabInfo = {
     Tabs = self.AllTabInfo,
@@ -98,10 +92,8 @@ function M:GetTopTabInfo()
   }
   return TopTabInfo
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -127,7 +119,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:HandleVirtualClickInGamePad(TabWidget)
   if self.GameInputModeSubsystem:GetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -137,7 +128,6 @@ function M:HandleVirtualClickInGamePad(TabWidget)
     CurrentActivePage:OnGamePadButtonDown(UIConst.GamePadKey.FaceButtonBottom)
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Left" == InKeyName then
@@ -147,22 +137,20 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad()
   return true
 end
-
 function M:OnReturnToActivityEntry()
   self:PlayAnimationForward(self.In)
 end
-
 function M:OnLeaveActivityEntry()
   self:PlayAnimationForward(self.Out)
 end
-
 function M:OnActivityComplete(EventID)
   self:SetActivityComplete(EventID)
 end
-
+function M:OnActivityEntryShowVisible()
+  self:SetUIVisibilityTag(UIConst.CommonHideTagName.UIStackChange, false)
+end
 AssembleComponents(M)
 return M

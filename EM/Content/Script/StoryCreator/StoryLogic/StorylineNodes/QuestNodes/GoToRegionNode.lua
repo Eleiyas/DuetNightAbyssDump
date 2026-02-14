@@ -1,5 +1,4 @@
 local GoToRegionNode = Class("StoryCreator.StoryLogic.storylineNodes.BaseAsynQuestNode")
-
 function GoToRegionNode:Init()
   self.RegionType = 1
   self.IsEnter = ""
@@ -7,13 +6,11 @@ function GoToRegionNode:Init()
   self.bGuideUIEnable = false
   self.GuideType = ""
   self.GuideName = ""
-  self.GuideStaticCreatorId = 0
   self.EnterSubRegionCallback = nil
   self.LeaveSubRegionCallback = nil
   self.EnterRegionCallback = nil
   self.LeaveRegionCallback = nil
 end
-
 function GoToRegionNode:Execute(ReturnCallback)
   self.ReturnCallback = ReturnCallback
   if 1 == self.RegionType then
@@ -28,7 +25,6 @@ function GoToRegionNode:Execute(ReturnCallback)
     self:LeaveToRegion()
   end
 end
-
 function GoToRegionNode:GoToRegion()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local Avatar = GWorld:GetAvatar()
@@ -40,7 +36,6 @@ function GoToRegionNode:GoToRegion()
     self:FinishAction()
     return
   end
-  
   local function Callback()
     if Avatar:GetSubRegionId2RegionId() ~= self.RegionId then
       return
@@ -49,7 +44,6 @@ function GoToRegionNode:GoToRegion()
     self:FinishAction()
     Avatar:RemoveRegionSkipCallback(self.RegionId, self, self.EnterRegionCallback)
   end
-  
   self.EnterRegionCallback = Callback
   DebugPrint("ZJT_ Add RegionSkipCallBack GoToRegionNode ", self.RegionId, Avatar.CurrentRegionId)
   Avatar:AddRegionSkipCallback(self.RegionId, self, self.EnterRegionCallback)
@@ -57,7 +51,6 @@ function GoToRegionNode:GoToRegion()
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
   end
 end
-
 function GoToRegionNode:LeaveToRegion()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local Avatar = GWorld:GetAvatar()
@@ -69,7 +62,6 @@ function GoToRegionNode:LeaveToRegion()
     self:FinishAction()
     return
   end
-  
   local function Callback()
     if Avatar:GetSubRegionId2RegionId() == self.RegionId then
       return
@@ -77,11 +69,9 @@ function GoToRegionNode:LeaveToRegion()
     self:FinishAction()
     Avatar:RemoveRegionSkipCallback(self.RegionId, self, self.LeaveRegionCallback)
   end
-  
   self.LeaveRegionCallback = Callback
   Avatar:AddRegionSkipCallback(self.RegionId, self, self.LeaveRegionCallback)
 end
-
 function GoToRegionNode:GoToSubRegion()
   self:CheckResurgencePoint()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -93,7 +83,6 @@ function GoToRegionNode:GoToSubRegion()
     self:FinishAction()
     return
   end
-  
   local function Callback()
     local Avatar = GWorld:GetAvatar()
     if Avatar.CurrentRegionId ~= self.RegionId then
@@ -103,7 +92,6 @@ function GoToRegionNode:GoToSubRegion()
     Avatar:RemoveSubRegionSkipCallback(self.RegionId, self, self.EnterSubRegionCallback)
     DebugPrint(string.format("ZJT_ RegionSkipCallBack GoToSubRegion Callback TargetSubRegionId : %d CurrentSubRegionId: %d ", self.RegionId, Avatar.CurrentRegionId))
   end
-  
   self.EnterSubRegionCallback = Callback
   Avatar:AddRegionSkipCallback(self.RegionId, self, self.EnterSubRegionCallback)
   DebugPrint(string.format("ZJT_ RegionSkipCallBack GoToSubRegion : %d CurrentSubRegionId %d ", self.RegionId, Avatar.CurrentRegionId))
@@ -111,7 +99,6 @@ function GoToRegionNode:GoToSubRegion()
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
   end
 end
-
 function GoToRegionNode:LeaveFromSubRegion()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local Avatar = GWorld:GetAvatar()
@@ -122,7 +109,6 @@ function GoToRegionNode:LeaveFromSubRegion()
     self:FinishAction()
     return
   end
-  
   local function Callback()
     local Avatar = GWorld:GetAvatar()
     if Avatar.CurrentRegionId == self.RegionId then
@@ -131,27 +117,23 @@ function GoToRegionNode:LeaveFromSubRegion()
     self:FinishAction()
     Avatar:RemoveSubRegionSkipCallback(self.RegionId, self, self.LeaveSubRegionCallback)
   end
-  
   self.LeaveSubRegionCallback = Callback
   Avatar:AddRegionSkipCallback(self.RegionId, self, self.LeaveSubRegionCallback)
   if self.bGuideUIEnable then
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
   end
 end
-
 function GoToRegionNode:FinishAction()
   if self.bGuideUIEnable then
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
   end
-  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-  local WCSubsystem = GameMode.WorldCompositionSubSystem
+  local WCSubsystem = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE4.UWorldCompositionSubSystem)
   if WCSubsystem then
     self:CheckIsAsyncTraveling(WCSubsystem)
     return
   end
   self.ReturnCallback()
 end
-
 function GoToRegionNode:CheckIsAsyncTraveling(WCSubsystem)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not Player then
@@ -169,11 +151,9 @@ function GoToRegionNode:CheckIsAsyncTraveling(WCSubsystem)
   end
   WCSubsystem:AddOnAsyncTravelEnded(self, self.Finish)
 end
-
 function GoToRegionNode:Reactive()
   self:Start(self.Context)
 end
-
 function GoToRegionNode:Clear()
   if self.bGuideUIEnable then
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
@@ -195,7 +175,6 @@ function GoToRegionNode:Clear()
     end
   end
 end
-
 function GoToRegionNode:CheckResurgencePoint()
   if self.Context.QuestData.bUseQuestCoordinate and self.Context.QuestData.ResurgencePoint == "" then
     local Avatar = GWorld:GetAvatar()
@@ -208,19 +187,14 @@ function GoToRegionNode:CheckResurgencePoint()
       return
     end
     if self.RegionId ~= QuestCoordinate.SubRegionId then
-      local Message = "GoToRegionNode\230\137\128\229\156\168\228\187\187\229\138\161\233\147\190\231\154\132StoryNode\233\156\128\232\166\129\233\133\141\231\189\174ResurgencePoint" .. [[
-
+      local Message = "GoToRegionNode所在任务链的StoryNode需要配置ResurgencePoint" .. [[
 FileName:]] .. self.Context.FileName .. [[
-
 QuestChainId:]] .. self.Context.QuestChainId .. [[
-
 QuestId:]] .. self.Context.QuestId .. [[
-
 StoryNodeKey:]] .. self.Context.Data.key
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "GoToRegionNode\230\137\128\229\156\168\228\187\187\229\138\161\233\147\190\231\154\132StoryNode\233\156\128\232\166\129\233\133\141\231\189\174ResurgencePoint", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Quest, "GoToRegionNode所在任务链的StoryNode需要配置ResurgencePoint", Message)
       return
     end
   end
 end
-
 return GoToRegionNode

@@ -6,7 +6,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Common.Input.WBP_Com_Input_Base_Component_C"
 }
-
 function M:Construct()
   self.Group_Btn:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.HB_ControllerChoose:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -16,7 +15,9 @@ function M:Construct()
   self.Btn_Paste.OnClicked:Add(self, self.OnBtnClicked)
   self.bIsFocusable = true
 end
-
+function M:SetLineHeightPercentage(LineHeight)
+  self.Text_Input.LineHeightPercentage = LineHeight
+end
 function M:OnBtnClicked()
   if self:GetText() == "" then
     self:OnPasteBtnClicked()
@@ -24,7 +25,6 @@ function M:OnBtnClicked()
     self:OnDeleteBtnClicked()
   end
 end
-
 function M:UpdateBtns()
   self.Group_Btn:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Image_Btn_BG:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -49,13 +49,15 @@ function M:UpdateBtns()
       self.Group_Btn:SetVisibility(UIConst.VisibilityOp.Collapsed)
       self.Image_Btn_BG:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
-  else
+  elseif self.bNeedPasteBtn then
     self.WS_Icon:SetActiveWidgetIndex(1)
     self.Text_Btn:SetText(GText("UI_Input_Clean"))
+  else
+    self.Group_Btn:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Image_Btn_BG:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   self:UpdateGamePadFocusKey()
 end
-
 function M:UpdateGamePadFocusKey()
   if self.IsShowGamPadKey then
     if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -71,11 +73,9 @@ function M:UpdateGamePadFocusKey()
     self.HB_ControllerChoose:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnEditTextFocusReceived()
   self:UpdateGamePadFocusKey()
 end
-
 function M:OnEditTextFocusLost()
   self:UpdateGamePadFocusKey()
   if self.IsLastInputDeviceTypeGamepad then
@@ -83,13 +83,11 @@ function M:OnEditTextFocusLost()
     self:UpdateBtns()
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if not self.Text_Input:HasAnyUserFocus() then
     self:FocusInputField()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 AssembleComponents(M)
 return M

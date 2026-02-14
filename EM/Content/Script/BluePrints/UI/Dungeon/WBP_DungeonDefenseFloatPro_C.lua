@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_DungeonDefenseFloatPro_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_DungeonDefenseFloatPro_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.LastShield = nil
@@ -13,7 +12,6 @@ function WBP_DungeonDefenseFloatPro_C:Initialize(Initializer)
   rawset(self, "NormalColor", FLinearColor(0.274677, 0.637597, 0.341915, 1.0))
   rawset(self, "CriticalColor", FLinearColor(0.63, 0, 0, 1.0))
 end
-
 function WBP_DungeonDefenseFloatPro_C:InitListenEvent()
   self.Super.InitListenEvent(self)
   self:AddDispatcher(EventID.DefenseTimerAdded, self, self.DefenseTimerAdded)
@@ -24,7 +22,6 @@ function WBP_DungeonDefenseFloatPro_C:InitListenEvent()
   self:AddDispatcher(EventID.OnWaveEnd, self, self.OnWaveEnd)
   self:AddDispatcher(EventID.OnDefenceWaveEnd, self, self.OnDefenceWaveEnd)
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.BattlePanel:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -39,7 +36,6 @@ function WBP_DungeonDefenseFloatPro_C:OnLoaded(...)
   self:InitListenEvent()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_DungeonDefenseFloatPro_C:InitDisplayTexts()
   self.DefenceProTexts = {
     DefenceProTitle = "DUNGEON_NAME_20003",
@@ -53,7 +49,6 @@ function WBP_DungeonDefenseFloatPro_C:InitDisplayTexts()
   self.Timelimit:SetText(GText(self.DefenceProTexts.DefenceProTitle))
   self.Text_Timelimit:SetText(GText(self.DefenceProTexts.DefenceProSubTitle))
 end
-
 function WBP_DungeonDefenseFloatPro_C:UpdateMechanismInfo()
   local CurTargetActor = self:GetDefenseCore()
   if not CurTargetActor then
@@ -141,7 +136,6 @@ function WBP_DungeonDefenseFloatPro_C:UpdateMechanismInfo()
   self:SetBloodAndShieldNum(NewHp, NewShield, NewHpPercent)
   self.LastHpPercent = NewHpPercent
 end
-
 function WBP_DungeonDefenseFloatPro_C:PlayGlowAnim(NewPercent, Glow, GlowAnim)
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SizeBox_HP)
   local SlotSize = CanvasSlot:GetSize()
@@ -154,7 +148,6 @@ function WBP_DungeonDefenseFloatPro_C:PlayGlowAnim(NewPercent, Glow, GlowAnim)
   Glow:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   EMUIAnimationSubsystem:EMPlayAnimation(self, GlowAnim)
 end
-
 function WBP_DungeonDefenseFloatPro_C:DefenseTimerAdded(TimerHandleName, Time, TimeStamp)
   self.TimeStamp = TimeStamp
   self.CountDownTime = Time
@@ -162,14 +155,12 @@ function WBP_DungeonDefenseFloatPro_C:DefenseTimerAdded(TimerHandleName, Time, T
   self:AddTimer(1.0, self.UpdateCountDownTime, true, 0, "UpdateCountDownTime", false)
   self:AddTimer(self.UpdateTickTime, self.UpdateMechanismInfo, true, 0, "UpdateMechanism", false)
 end
-
 function WBP_DungeonDefenseFloatPro_C:ShowDungeonUI()
   self.IsShowDungeonUI = true
   self:OnDefenceCoreActive()
   self.Bar_Blood:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.BattlePanel:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnDefenceCoreActive()
   if self.IsActive then
     return
@@ -182,7 +173,6 @@ function WBP_DungeonDefenseFloatPro_C:OnDefenceCoreActive()
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.IsActive = true
 end
-
 function WBP_DungeonDefenseFloatPro_C:CloseDungeonUI()
   self.IsShowDungeonUI = false
   local LowHealthUI = UIManager(self):GetUIObj("DefenseLowHealth")
@@ -191,7 +181,6 @@ function WBP_DungeonDefenseFloatPro_C:CloseDungeonUI()
   end
   UIManager(self):RemoveUserWidgetFromParent("DungenonDefenseProFloat")
 end
-
 function WBP_DungeonDefenseFloatPro_C:UpdateCountDownTime()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local LeftTime = self.CountDownTime - (GameState.ReplicatedTimeSeconds - self.TimeStamp)
@@ -202,7 +191,6 @@ function WBP_DungeonDefenseFloatPro_C:UpdateCountDownTime()
     return
   end
 end
-
 function WBP_DungeonDefenseFloatPro_C:SetBloodAndShieldNum(NewHp, NewShield, HpPercent)
   self.Num_Shield:SetText(math.floor(NewShield))
   self.Num_Blood:SetText(math.floor(NewHp))
@@ -219,7 +207,6 @@ function WBP_DungeonDefenseFloatPro_C:SetBloodAndShieldNum(NewHp, NewShield, HpP
     self.Num_Blood:SetColorAndOpacity(Color)
   end
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnDefenceCoreDead(Callback)
   self.HpBar:SetBarPercent(0)
   self.Hp_glowLine:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -232,7 +219,6 @@ function WBP_DungeonDefenseFloatPro_C:OnDefenceCoreDead(Callback)
     Callback()
   end
 end
-
 function WBP_DungeonDefenseFloatPro_C:LoadSubWidget(Container, WidgetName, ...)
   if not Container then
     return
@@ -242,30 +228,25 @@ function WBP_DungeonDefenseFloatPro_C:LoadSubWidget(Container, WidgetName, ...)
   SubWidget:Init(...)
   return Container:GetChildAt(0)
 end
-
 function WBP_DungeonDefenseFloatPro_C:LoadHpBar()
   local BarLength = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SizeBox_HP):GetSize().X
   self.HpBar = self:LoadSubWidget(self.SizeBox_HP, "HPBar", false, BarLength)
 end
-
 function WBP_DungeonDefenseFloatPro_C:LoadShieldBar()
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SizeBox_Shield)
   local Size = CanvasSlot:GetSize()
   self.ShieldBar = self:LoadSubWidget(self.SizeBox_Shield, "ShieldBar", Size.X, Size.Y)
 end
-
 function WBP_DungeonDefenseFloatPro_C:HideUselessWidget()
   local function SafeHide(Target, Level)
     if Target and Level then
       Target:SetVisibility(Level)
     end
   end
-  
   SafeHide(self.HorizontalBox_HP, UE4.ESlateVisibility.Collapsed)
   SafeHide(self.Deduct_Blood, UE4.ESlateVisibility.Collapsed)
   SafeHide(self.Deduct_Shield, UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_DungeonDefenseFloatPro_C:GetDefenseCore()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -282,7 +263,6 @@ function WBP_DungeonDefenseFloatPro_C:GetDefenseCore()
   end
   return CurTargetActor
 end
-
 function WBP_DungeonDefenseFloatPro_C:GetWaveStartBP()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -295,7 +275,6 @@ function WBP_DungeonDefenseFloatPro_C:GetWaveStartBP()
   WaveStartBP:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   return WaveStartBP
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnDefenseWaveStart()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -317,7 +296,6 @@ function WBP_DungeonDefenseFloatPro_C:OnDefenseWaveStart()
   end
   self:ShowCountDown()
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnWaveStart()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -337,7 +315,6 @@ function WBP_DungeonDefenseFloatPro_C:OnWaveStart()
   end
   self:AddTimer(self.ToastShowTime, self.ShowCountDown)
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnDefenceWaveEnd()
   local WaveStartBP = self:GetWaveStartBP()
   if WaveStartBP then
@@ -348,7 +325,6 @@ function WBP_DungeonDefenseFloatPro_C:OnDefenceWaveEnd()
     end)
   end
 end
-
 function WBP_DungeonDefenseFloatPro_C:OnWaveEnd()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -363,7 +339,6 @@ function WBP_DungeonDefenseFloatPro_C:OnWaveEnd()
   end
   self:AddTimer(self.ToastShowTime, self.ShowCountDown)
 end
-
 function WBP_DungeonDefenseFloatPro_C:ShowCountDown()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -375,5 +350,4 @@ function WBP_DungeonDefenseFloatPro_C:ShowCountDown()
   GuideCountDownFloat = GuideCountDownFloat or UIManager:LoadUINew("GuideCountDown")
   GuideCountDownFloat:InitializeData(self.HintTime)
 end
-
 return WBP_DungeonDefenseFloatPro_C

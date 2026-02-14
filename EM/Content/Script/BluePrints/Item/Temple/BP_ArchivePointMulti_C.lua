@@ -1,12 +1,10 @@
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   self.Box:SetCollisionProfileName("OnlyPlayer", true)
   local GameState = UGameplayStatics.GetGameState(self)
   GameState.ArchivePointMap:Add(self.ArchiveID, self)
 end
-
 function M:OnPlayerEnter(Player)
   print(_G.LogTag, "LXZ OnPlayerEnter", Player:GetName(), Player.Eid, self:CheckIsActive(Player.Eid))
   if self:CheckIsActive(Player.Eid) then
@@ -40,22 +38,18 @@ function M:OnPlayerEnter(Player)
   end
   self.EnterPlayerList:Add(Player.Eid, true)
 end
-
 function M:OnFX(PlayerEid)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
     GameState:ArchiveMutiShowFX(self, PlayerEid)
   end
 end
-
 function M:CheckIsActive(PlayerEid)
   return self.EnterPlayerList:Find(PlayerEid)
 end
-
 function M:ResetInfo()
   self.EnterPlayerList:Clear()
 end
-
 function M:CheckShouldToast()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
@@ -83,5 +77,4 @@ function M:CheckShouldToast()
   end
   return true
 end
-
 return M

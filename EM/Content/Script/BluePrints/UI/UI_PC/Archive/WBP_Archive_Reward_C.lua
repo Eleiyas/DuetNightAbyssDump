@@ -1,7 +1,6 @@
 require("UnLua")
 local NumberModel = require("BluePrints.UI.UI_PC.Archive.WBP_Archive_Number_Model")
 local WBP_Archive_Reward_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Archive_Reward_C:Construct()
   self.Super.Construct(self)
   self.CantGetAll = false
@@ -13,7 +12,6 @@ function WBP_Archive_Reward_C:Construct()
   self.Text_Progress:SetVisibility(ESlateVisibility.Collapsed)
   self.Btn_GetAll:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_Archive_Reward_C:Destruct()
   self.Super.Destruct(self)
   ReddotManager.RemoveListener("ArchiveReward", self)
@@ -25,7 +23,6 @@ function WBP_Archive_Reward_C:Destruct()
   self.List_Tab:ClearListItems()
   self.List_Reward:ClearListItems()
 end
-
 function WBP_Archive_Reward_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Type = (...)
@@ -46,7 +43,6 @@ function WBP_Archive_Reward_C:OnLoaded(...)
     end
   end, false, 0, "SelectRewardTab", true)
 end
-
 function WBP_Archive_Reward_C:Init()
   self:InitNormalInfo()
   self:InitListTabInfo()
@@ -61,7 +57,6 @@ function WBP_Archive_Reward_C:Init()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Archive_Reward_C:InitNormalInfo()
   self.ArchiveType2Name = {
     [1001] = "Character",
@@ -74,17 +69,13 @@ function WBP_Archive_Reward_C:InitNormalInfo()
   self.Text_Title:SetText(GText("UI_ArchiveCollectionReward"))
   self.Btn_GetAll:SetText(GText("UI_Archive_CollectionClaimAll"))
 end
-
 function WBP_Archive_Reward_C:InitBtnInfo()
   self.Btn_GetAll:BindEventOnClicked(self, self.GetAllRewards)
   self.Btn_Close:BindEventOnClicked(self, self.OnClickClose)
-  
   local function EmptyFunction()
   end
-  
   self.Btn_Close:TryOverrideSoundFunc(EmptyFunction)
 end
-
 function WBP_Archive_Reward_C:InitListTabInfo()
   self.List_Tab.BP_OnItemSelectionChanged:Add(self, self.OnSelectItemChanged)
   self.List_Tab:SetVisibility(ESlateVisibility.HitTestInvisible)
@@ -118,7 +109,6 @@ function WBP_Archive_Reward_C:InitListTabInfo()
     self.Type2Index[ArchiveInfo.ArchiveType] = Index
   end
 end
-
 function WBP_Archive_Reward_C:RefreshListRewardInfo(Item)
   if self.SelectedContent then
     self.SelectedContent.Entry:UnSelected()
@@ -127,14 +117,12 @@ function WBP_Archive_Reward_C:RefreshListRewardInfo(Item)
   self.SelectedContent.Entry:Selected()
   self:RealRefreshListRewardInfo(self.SelectedContent.Type)
 end
-
 function WBP_Archive_Reward_C:RealRefreshListRewardInfo(ArchiveType)
   local Sum = NumberModel["Get" .. self.ArchiveType2Name[ArchiveType] .. "SumNumber"](NumberModel)
   self:AddListReward(ArchiveType, Sum)
   self:RefreshProgressInfo(ArchiveType, Sum)
   self:RefreshBtnGetAll()
 end
-
 function WBP_Archive_Reward_C:AddListReward(ArchiveType, SumNum)
   local ArchiveInfo = DataMgr.ArchiveInfo[ArchiveType]
   local Step = ArchiveInfo.ArchiveStep
@@ -154,30 +142,25 @@ function WBP_Archive_Reward_C:AddListReward(ArchiveType, SumNum)
     Index = Index + 1
   end
 end
-
 function WBP_Archive_Reward_C:RefreshProgressInfo(ArchiveType, SumNum)
   self.CurrentNum = NumberModel:GetCurrentNumber(ArchiveType)
   self.SumNum = SumNum
   self.Text_Progress:SetText(string.format(GText("UI_Archive_CollectionProgress"), self.CurrentNum, self.SumNum))
 end
-
 function WBP_Archive_Reward_C:RefreshCurrentNum(ArchiveType)
   self.CurrentNum = NumberModel:GetCurrentNumber(ArchiveType)
   self.Text_Progress:SetText(string.format(GText("UI_Archive_CollectionProgress"), self.CurrentNum, self.SumNum))
 end
-
 function WBP_Archive_Reward_C:TryGetAllRewards()
   if self.Btn_GetAll:GetVisibility() ~= UIConst.VisibilityOp.Collapsed and not self.CantGetAll then
     self:GetAllRewards()
   end
 end
-
 function WBP_Archive_Reward_C:GetAllRewards()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       self:RefreshItemState()
-      
       self:RefreshReddotInfo()
       if not ErrorCode:Check(Ret) then
         return
@@ -187,11 +170,9 @@ function WBP_Archive_Reward_C:GetAllRewards()
         self:SetFocus()
       end, self)
     end
-    
     Avatar:GetAllArchiveReward(Callback, self.SelectedContent.Type)
   end
 end
-
 function WBP_Archive_Reward_C:RefreshItemState()
   local Items = self.List_Reward:GetDisplayedEntryWidgets()
   for i = 1, Items:Length() do
@@ -200,7 +181,6 @@ function WBP_Archive_Reward_C:RefreshItemState()
     Item:RefreshRewardsList()
   end
 end
-
 function WBP_Archive_Reward_C:RefreshReddotInfo()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("ArchiveReward")
   if CacheDetail[self.SelectedContent.Type] then
@@ -212,7 +192,6 @@ function WBP_Archive_Reward_C:RefreshReddotInfo()
     ReddotManager.DecreaseLeafNodeCount("ArchiveReward", Num)
   end
 end
-
 function WBP_Archive_Reward_C:RefreshBtnGetAll()
   if not self.SelectedContent then
     self.Btn_GetAll:SetVisibility(ESlateVisibility.Collapsed)
@@ -230,7 +209,6 @@ function WBP_Archive_Reward_C:RefreshBtnGetAll()
     self.Btn_GetAll:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Archive_Reward_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -256,28 +234,23 @@ function WBP_Archive_Reward_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Archive_Reward_C:OnReturnKeyDown()
   self:OnClickClose()
 end
-
 function WBP_Archive_Reward_C:OnClickClose()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   self:Close()
 end
-
 function WBP_Archive_Reward_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_Reward_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_Reward_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -285,7 +258,6 @@ function WBP_Archive_Reward_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGame
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Archive_Reward_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -293,7 +265,6 @@ function WBP_Archive_Reward_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Archive_Reward_C:InitGamepadView()
   self.Controller:SetVisibility(UE4.ESlateVisibility.Visible)
   if self.Btn_GetAll:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
@@ -312,7 +283,6 @@ function WBP_Archive_Reward_C:InitGamepadView()
     self.List_Tab:BP_NavigateToItem(self.SelectedContent)
   end
 end
-
 function WBP_Archive_Reward_C:InitKeyboardView()
   if self.CurFocusedRewardItem then
     self.CurFocusedRewardItem:StopHover(true)
@@ -330,7 +300,6 @@ function WBP_Archive_Reward_C:InitKeyboardView()
     ItemView:InitKeyboardView()
   end
 end
-
 function WBP_Archive_Reward_C:InitWidgetInfoInGamePad()
   self.Key_01:CreateCommonKey({
     KeyInfoList = {
@@ -353,7 +322,6 @@ function WBP_Archive_Reward_C:InitWidgetInfoInGamePad()
   })
   self.Btn_GetAll:SetDefaultGamePadImg("X")
 end
-
 function WBP_Archive_Reward_C:EnterOrLeaveSelectMode(Entry)
   if self.IsInSelectState then
     self:LeaveSelectMode(Entry)
@@ -361,7 +329,6 @@ function WBP_Archive_Reward_C:EnterOrLeaveSelectMode(Entry)
     self:EnterSelectMode(Entry)
   end
 end
-
 function WBP_Archive_Reward_C:EnterSelectMode(Entry)
   if self.IsInSelectState then
     return
@@ -375,7 +342,6 @@ function WBP_Archive_Reward_C:EnterSelectMode(Entry)
   FirstReward:SetFocus()
   self.IsInSelectState = true
 end
-
 function WBP_Archive_Reward_C:LeaveSelectMode(Entry)
   if not self.IsInSelectState then
     return
@@ -390,7 +356,6 @@ function WBP_Archive_Reward_C:LeaveSelectMode(Entry)
   Entry:UpdateUIStyle(true)
   self.List_Reward:BP_NavigateToItem(Entry.Content)
 end
-
 function WBP_Archive_Reward_C:LeaveSelectModeOrClose(Entry)
   if not self.IsInSelectState then
     self:OnReturnKeyDown()
@@ -398,7 +363,6 @@ function WBP_Archive_Reward_C:LeaveSelectModeOrClose(Entry)
     self:LeaveSelectMode(Entry)
   end
 end
-
 function WBP_Archive_Reward_C:OnSelectItemChanged(SelectItem)
   if not SelectItem then
     return
@@ -407,13 +371,11 @@ function WBP_Archive_Reward_C:OnSelectItemChanged(SelectItem)
     self:ClickListItemWhenSelectItemChanged(SelectItem)
   end
 end
-
 function WBP_Archive_Reward_C:ClickListItemWhenSelectItemChanged(Content)
   if Content and Content.Entry then
     Content.Entry:OnCellClicked()
   end
 end
-
 function WBP_Archive_Reward_C:OnUINavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     if self.CurFocusedRewardItem then
@@ -425,7 +387,6 @@ function WBP_Archive_Reward_C:OnUINavigation(NavigationDirection)
     return self:NavigateToFirstDisplayedItem(self.List_Reward)
   end
 end
-
 function WBP_Archive_Reward_C:TryChangeCurFocusedRewardItem(RewardItem)
   if self.CurFocusedRewardItem then
     self.CurFocusedRewardItem:StopHover()
@@ -433,7 +394,6 @@ function WBP_Archive_Reward_C:TryChangeCurFocusedRewardItem(RewardItem)
   self.CurFocusedRewardItem = RewardItem
   self.CurFocusedRewardItem:BeginHover()
 end
-
 function WBP_Archive_Reward_C:NavigateToFirstDisplayedItem(List)
   local ItemUIs = List:GetDisplayedEntryWidgets()
   if ItemUIs:Length() > 0 then
@@ -452,7 +412,6 @@ function WBP_Archive_Reward_C:NavigateToFirstDisplayedItem(List)
   end
   return List
 end
-
 function WBP_Archive_Reward_C:BP_GetDesiredFocusTarget()
   if self.SelectedContent then
     self.List_Tab:BP_NavigateToItem(self.SelectedContent)
@@ -461,7 +420,6 @@ function WBP_Archive_Reward_C:BP_GetDesiredFocusTarget()
     return self.List_Tab
   end
 end
-
 function WBP_Archive_Reward_C:OnMenuOpenChanged(bIsOpen)
   if bIsOpen then
     self:UpdateUIStyle(false)
@@ -471,7 +429,6 @@ function WBP_Archive_Reward_C:OnMenuOpenChanged(bIsOpen)
     self:UpdateUIStyle(true)
   end
 end
-
 function WBP_Archive_Reward_C:UpdateUIStyle(IsVisible)
   if IsVisible then
     self.CantGetAll = false
@@ -481,5 +438,4 @@ function WBP_Archive_Reward_C:UpdateUIStyle(IsVisible)
     self.Btn_GetAll:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return WBP_Archive_Reward_C

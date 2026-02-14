@@ -1,11 +1,12 @@
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function M:Init()
   self.bIsForceOpenCamera = false
   self.bGuideUIEnable = false
   self.GuideType = nil
   self._GuidePointName = ""
   self.TargetPointList = {}
+  self.EventId = nil
+  self.EventParams = {}
   self.Text_TargetFound = ""
   self.Text_TargetNotFound = ""
   self.bShouldSetCameraParams = false
@@ -26,38 +27,43 @@ function M:Init()
   self.bLockHiddenPet = false
   self.bLockGamePause = false
   self.bForceGamePause = false
+  self.ForceMaxLodStaticPointList = {}
 end
-
 function M:Execute(Callback)
-  self.Callback = Callback
-  DebugPrint("------------ CameraNode Execute------------------")
-  local UIManager = GWorld.GameInstance:GetGameUIManager()
-  if not UIManager then
-    Callback()
-    return
+  local function ExecuteLogic()
+    self.Callback = Callback
+    DebugPrint("------------ CameraNode Execute------------------")
+    local UIManager = GWorld.GameInstance:GetGameUIManager()
+    if not UIManager then
+      Callback()
+      return
+    end
+    EventManager:AddEvent(EventID.OnInitScreenshotParams, self, self.OnInitScreenshotParams)
+    if self.bIsForceOpenCamera then
+      local function OpenCamera()
+        UIManager:HideCommonBlackScreen(self.BlackScreenHandle)
+        UIManager:LoadUINew(self.CameraUIName)
+      end
+      if self.bFadeInOut then
+        self:DisablePlayerInput(true)
+        UIManager:ShowCommonBlackScreen({
+          BlackScreenHandle = self.BlackScreenHandle,
+          InAnimationObj = self,
+          InAnimationCallback = OpenCamera,
+          InAnimationPlayTime = 1
+        })
+      else
+        OpenCamera()
+      end
+    end
   end
-  EventManager:AddEvent(EventID.OnInitScreenshotParams, self, self.OnInitScreenshotParams)
-  if self.bIsForceOpenCamera then
-    local function OpenCamera()
-      UIManager:HideCommonBlackScreen(self.BlackScreenHandle)
-      
-      UIManager:LoadUINew(self.CameraUIName)
-    end
-    
-    if self.bFadeInOut then
-      self:DisablePlayerInput(true)
-      UIManager:ShowCommonBlackScreen({
-        BlackScreenHandle = self.BlackScreenHandle,
-        InAnimationObj = self,
-        InAnimationCallback = OpenCamera,
-        InAnimationPlayTime = 1
-      })
-    else
-      OpenCamera()
-    end
+  if self.ForceMaxLodStaticPointList and next(self.ForceMaxLodStaticPointList) then
+    self:HandleStaticPointActorsLOD(true)
+    GWorld.GameInstance:AddTimer(0.05, ExecuteLogic)
+  else
+    ExecuteLogic()
   end
 end
-
 function M:DisablePlayerInput(bDisable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not IsValid(Player) then
@@ -72,9 +78,10 @@ function M:DisablePlayerInput(bDisable)
     end
   end
 end
-
 function M:OnInitScreenshotParams(InOutParams)
   InOutParams.TargetPointNames = self.TargetPointList
+  InOutParams.EventId = self.EventId
+  InOutParams.EventParams = self.EventParams
   InOutParams.Text_TargetFound = GText(self.Text_TargetFound)
   if not self.Text_TargetFound or self.Text_TargetFound == "" then
     InOutParams.Text_TargetFound = GText("UI_CameraSystem_QuestSucc_Default")
@@ -115,7 +122,6 @@ function M:OnInitScreenshotParams(InOutParams)
   if self.LookAtTargetName and "" ~= self.LookAtTargetName then
     InOutParams.LookAtTargetName = self.LookAtTargetName
   end
-  
   function InOutParams.CloseCallback(Params)
     if self.bIsForceOpenCamera and self.bFadeInOut then
       local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -135,9 +141,9 @@ function M:OnInitScreenshotParams(InOutParams)
     end
   end
 end
-
 function M:OnCameraUIClosed(Params)
   self:DisablePlayerInput(false)
+  self:HandleStaticPointActorsLOD(false)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if UIManager then
     local TaskIndicator = UIManager:GetUIObj("TaskIndicator_" .. self.Key)
@@ -152,7 +158,6 @@ function M:OnCameraUIClosed(Params)
   self:Clear()
   self.Cleared = true
 end
-
 function M:Clear()
   if self.Cleared then
     return
@@ -163,5 +168,47 @@ function M:Clear()
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
   end
 end
-
+function M:HandleStaticPointActorsLOD(bSetMaxLOD)
+  if bSetMaxLOD then
+    if not self.ForceMaxLodStaticPointList or not next(self.ForceMaxLodStaticPointList) then
+      return
+    end
+    self.SavedLodActors = {}
+    local GameState = UE4.UGameplayStatics.GetGameState(self)
+    if not IsValid(GameState) then
+      return
+    end
+    local MaxLod = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" and 1 or 1
+    for _, StaticCreatorId in pairs(self.ForceMaxLodStaticPointList) do
+      local CreatorInfo = GameState:GetStaticCreatorInfo(StaticCreatorId)
+      if IsValid(CreatorInfo) then
+        local Actors = UE4.URuntimeCommonFunctionLibrary.GetStaticCreatorChildActors(GWorld.GameInstance, CreatorInfo)
+        for _, Actor in pairs(Actors) do
+          if IsValid(Actor) and IsValid(Actor.Mesh) and type(Actor.Mesh.SetForcedLOD) == "function" then
+            local OriginalLOD = Actor.Mesh:GetForcedLOD()
+            self.SavedLodActors[Actor] = OriginalLOD
+            Actor.Mesh:SetForcedLOD(MaxLod)
+            DebugPrint("lgc@HandleStaticPointActorsLOD(Set): StaticCreatorId = " .. tostring(StaticCreatorId) .. ", Actor = " .. Actor:GetName() .. ", OriginalLOD = " .. tostring(OriginalLOD) .. ", NewLOD = " .. tostring(MaxLod))
+          end
+        end
+        if not Actors or 0 == Actors:Num() then
+          DebugPrint("lgc@HandleStaticPointActorsLOD(Set): 没有找到静态刷新点ID = " .. tostring(StaticCreatorId) .. " 对应的Actors")
+        end
+      else
+        DebugPrint("lgc@HandleStaticPointActorsLOD(Set): 找不到静态刷新点ID = " .. tostring(StaticCreatorId))
+      end
+    end
+  else
+    if not self.SavedLodActors or not next(self.SavedLodActors) then
+      return
+    end
+    for Actor, OriginalLOD in pairs(self.SavedLodActors) do
+      if IsValid(Actor) and IsValid(Actor.Mesh) and type(Actor.Mesh.SetForcedLOD) == "function" then
+        Actor.Mesh:SetForcedLOD(OriginalLOD)
+        DebugPrint("lgc@HandleStaticPointActorsLOD(Restore): Actor = " .. Actor:GetName() .. ", RestoredLOD = " .. tostring(OriginalLOD))
+      end
+    end
+    self.SavedLodActors = {}
+  end
+end
 return M

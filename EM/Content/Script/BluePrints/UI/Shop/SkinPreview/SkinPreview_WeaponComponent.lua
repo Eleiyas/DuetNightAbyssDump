@@ -1,5 +1,4 @@
 local M = {}
-
 function M:UpdateWeaponSkinParams(SkinInfo)
   local WeaponSkinData = DataMgr.WeaponSkin[SkinInfo.TypeId]
   if not WeaponSkinData then
@@ -12,7 +11,6 @@ function M:UpdateWeaponSkinParams(SkinInfo)
   }
   return Params
 end
-
 function M:UpdateWeaponSkinDescription(SkinInfo)
   local WeaponSkinData = DataMgr.WeaponSkin[SkinInfo.TypeId]
   if not WeaponSkinData then
@@ -40,7 +38,6 @@ function M:UpdateWeaponSkinDescription(SkinInfo)
     self.Image_Element:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateWeaponAccessoryParams(SkinInfo, Avatar)
   local WeaponAccessoryData = DataMgr.WeaponAccessory[SkinInfo.TypeId]
   if not WeaponAccessoryData then
@@ -62,7 +59,6 @@ function M:UpdateWeaponAccessoryParams(SkinInfo, Avatar)
   end
   return Params
 end
-
 function M:UpdateWeaponAccessoryDescription(SkinInfo)
   local WeaponAccessoryData = DataMgr.WeaponAccessory[SkinInfo.TypeId]
   if not WeaponAccessoryData then
@@ -80,5 +76,4 @@ function M:UpdateWeaponAccessoryDescription(SkinInfo)
   self.HorizontalBox_Color:SetVisibility(ESlateVisibility.Collapsed)
   self.Tab_Change:SetVisibility(ESlateVisibility.Visible)
 end
-
 return M

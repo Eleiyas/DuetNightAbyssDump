@@ -3,7 +3,6 @@ local MiGongLogic = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function MiGongLogic:OnKeyDown(MyGeometry, InKeyEvent)
   if self.bIsAnim then
     return
@@ -24,7 +23,6 @@ function MiGongLogic:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function MiGongLogic:Construct()
   self.Overridden.Construct(self)
   self.GameMap = {}
@@ -54,7 +52,6 @@ function MiGongLogic:Construct()
     self.UseGamepadControl = true
   end
 end
-
 function MiGongLogic:InitAfterBeginPlay()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   self.UIManager = GameInstance:GetGameUIManager()
@@ -68,7 +65,6 @@ function MiGongLogic:InitAfterBeginPlay()
   self:PlayInAnim()
   self:PlayAnimation(self.Gear_Loop, 0, 0)
 end
-
 function MiGongLogic:InitAll()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local PlayerController = PlayerCharacter:GetController()
@@ -80,7 +76,6 @@ function MiGongLogic:InitAll()
   self:InitCrack()
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function MiGongLogic:InitTextTimerAndButton()
   if self.DeviceInPc then
     self.Key_Close:CreateCommonKey({
@@ -119,14 +114,12 @@ function MiGongLogic:InitTextTimerAndButton()
   self.MiniGame_Text.Text_Success:SetText(GText("UI_MiniGame_Success"))
   self.MiniGame_Text.Text_Fail:SetText(GText("UI_MiniGame_Fail"))
 end
-
 function MiGongLogic:InitProgressBar()
   local UIChildren = self.GamePanel:GetAllChildren()
   for i, v in pairs(UIChildren) do
     self:InitAllProgressBar(v)
   end
 end
-
 function MiGongLogic:InitAllProgressBar(InActor)
   if InActor.IsArrow then
     return
@@ -136,7 +129,6 @@ function MiGongLogic:InitAllProgressBar(InActor)
   InActor:RegisterSelf()
   InActor:ChangeColor(self.NormalColor)
 end
-
 function MiGongLogic:InitCrack()
   local Param = {
     RootPage = self,
@@ -151,18 +143,15 @@ function MiGongLogic:InitCrack()
   self.MiniGame_Crack:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.MiniGame_Crack:Init(Param)
 end
-
 function MiGongLogic:PlayInAnim()
   self:PlayAnimation(self.In)
   for i, v in pairs(self.ArrowArray) do
     v:PlayAnimation(v.Loop, 0, 3)
   end
 end
-
 function MiGongLogic:PlayTimeOutAnim()
   self:PlayAnimation(self.Warning, 0, 15)
 end
-
 function MiGongLogic:PlayOnEndAnim()
   AudioManager(self):SetEventSoundParam(self, "MiGongArrowMove", {drag = 0})
   self.bIsAnim = true
@@ -176,7 +165,6 @@ function MiGongLogic:PlayOnEndAnim()
   self.UseActor:SetVariableBool("IsGameSuccess", true, UE4.UGameplayStatics.GetPlayerPawn(self, 0).Eid)
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_rotate_pointer_success", "", nil)
 end
-
 function MiGongLogic:PlayFailAnim()
   if self.bIsAnim then
     return
@@ -194,7 +182,6 @@ function MiGongLogic:PlayFailAnim()
   self:PlayAnimation(self.FailFail)
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_rotate_fail", "", nil)
 end
-
 function MiGongLogic:PlayErrorAnim()
   AudioManager(self):SetEventSoundParam(self, "MiGongArrowMove", {drag = 0})
   self.bIsAnim = true
@@ -202,24 +189,20 @@ function MiGongLogic:PlayErrorAnim()
   self.MiniGame_Text.Text_Fail:SetText(GText("UI_MiniGame_Hint_LianXian_2"))
   self:PlayAnimation(self.Error)
 end
-
 function MiGongLogic:GameOverTrue()
   AudioManager(self):SetEventSoundParam(self, "MiGongArrowMove", {drag = 0})
   self.bIsAnim = false
   self:GameOver(true)
 end
-
 function MiGongLogic:GameFailed()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_rotate_fail", "", nil)
   self:RealGameFailed()
 end
-
 function MiGongLogic:RealGameFailed()
   AudioManager(self):SetEventSoundParam(self, "MiGongArrowMove", {drag = 0})
   self.bIsAnim = false
   self:GameOver(false)
 end
-
 function MiGongLogic:SetCountDownText()
   if self.Finish then
     return
@@ -241,7 +224,6 @@ function MiGongLogic:SetCountDownText()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_maze_countdown", nil, nil)
 end
-
 function MiGongLogic:TryGameOver()
   for i, v in pairs(self.EndBarArray) do
     if 1 ~= v:GetPercent() then
@@ -253,7 +235,6 @@ function MiGongLogic:TryGameOver()
   self.Finish = true
   self:PlayOnEndAnim()
 end
-
 function MiGongLogic:GameOver(Value)
   if self.bIsAnim then
     return
@@ -272,7 +253,6 @@ function MiGongLogic:GameOver(Value)
   self:Close()
   self.UIManager:UnLoadUI("ConnectLine")
 end
-
 function MiGongLogic:Tick()
   if not (not self.bIsResetting and self.bCanDrag) or self.NowBarArray:Length() < 1 or self.bIsAnim then
     return
@@ -283,7 +263,6 @@ function MiGongLogic:Tick()
   local ArrowX, ArrowY = self.NowBarArray[self.CurrentDragArrowIndex]:SetMoveRange(nil, nil)
   self:SetArrowPosition(ArrowX, ArrowY)
 end
-
 function MiGongLogic:GetMouseLocal(InputLoc)
   local ViewportPos = FVector2D(0, 0)
   UE4.USlateBlueprintLibrary.LocalToViewport(self, self.GamePanel:GetCachedGeometry(), FVector2D(0, 0), nil, ViewportPos)
@@ -293,7 +272,6 @@ function MiGongLogic:GetMouseLocal(InputLoc)
     self.PointerPosition = InputLoc - ViewportPos
   end
 end
-
 function MiGongLogic:OnTouchStarted(MyGeometry, InTouchEvent)
   self.bTouchInJoystickArea = self:IsTouchInJoystickArea(InTouchEvent)
   if self.bTouchInJoystickArea then
@@ -311,7 +289,6 @@ function MiGongLogic:OnTouchStarted(MyGeometry, InTouchEvent)
   local UnHandled = UE4.UWidgetBlueprintLibrary.UnHandled()
   return UnHandled
 end
-
 function MiGongLogic:OnTouchMoved(MyGeometry, InTouchEvent)
   if self.bTouchInJoystickArea then
     local Scale = UE4.UWidgetLayoutLibrary.GetViewportScale(self)
@@ -327,11 +304,9 @@ function MiGongLogic:OnTouchMoved(MyGeometry, InTouchEvent)
   local Handled = UE4.UWidgetBlueprintLibrary.Handled()
   return Handled
 end
-
 function MiGongLogic:OnTouchEnded(InGeometry, InGestureEvent)
   return self:ButtonUp(nil, nil)
 end
-
 function MiGongLogic:IsTouchInJoystickArea(InTouchEvent)
   if not self.Joystick then
     return false
@@ -346,7 +321,6 @@ function MiGongLogic:IsTouchInJoystickArea(InTouchEvent)
   end
   return false
 end
-
 function MiGongLogic:GetWorldPos(Widget)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -355,7 +329,6 @@ function MiGongLogic:GetWorldPos(Widget)
   end
   return UIManager:GetWorldPosition(Widget), UIManager:GetWidgetRenderSize(Widget)
 end
-
 function MiGongLogic:OnMouseMove(MyGeometry, InTouchEvent)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player.UIModePlatform ~= "PC" then
@@ -369,12 +342,10 @@ function MiGongLogic:OnMouseMove(MyGeometry, InTouchEvent)
   local Handled = UE4.UWidgetBlueprintLibrary.Handled()
   return Handled
 end
-
 function MiGongLogic:LuaReset()
   self:AddTimer(2, self.Reset, false)
   self:PlayErrorAnim()
 end
-
 function MiGongLogic:Reset()
   for i, v in pairs(self.BarMap) do
     v:Reset()
@@ -388,18 +359,15 @@ function MiGongLogic:Reset()
   self.bIsResetting = false
   self.bIsAnim = false
 end
-
 function MiGongLogic:OnMousePress()
   self:CheckIfPointerInArrow()
 end
-
 function MiGongLogic:OnMouseRelease()
   self.bCanDrag = false
   self.CurrentDragArrowIndex = nil
   self.ArrowItem = nil
   AudioManager(self):SetEventSoundParam(self, "MiGongArrowMove", {drag = 0})
 end
-
 function MiGongLogic:CheckIfPointerInArrow()
   for i, v in pairs(self.ArrowArray) do
     print(_G.LogTag, self.PointerPosition, v.Left, v.Right, v.Top, v.Down)
@@ -418,7 +386,6 @@ function MiGongLogic:CheckIfPointerInArrow()
   self.CurrentDragArrowIndex = nil
   self.ArrowItem = nil
 end
-
 function MiGongLogic:InitArrow(Arrow, Direction)
   for i, v in pairs(self.StartBarArray) do
     local x = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(v):GetPosition().X
@@ -440,7 +407,6 @@ function MiGongLogic:InitArrow(Arrow, Direction)
     v:SetZOrder(127)
   end
 end
-
 function MiGongLogic:SetArrowPosition(PositionX, PositionY)
   local CanSetArrow = true
   local OtherPositionX = PositionX
@@ -479,7 +445,6 @@ function MiGongLogic:SetArrowPosition(PositionX, PositionY)
     end
   end
 end
-
 function MiGongLogic:ResetArrowsPosition()
   for i, v in pairs(self.StartBarArray) do
     local StartPrefabPosition = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(v):GetPosition() + FVector2D(self.Discrete / 2, self.Discrete / 2)
@@ -489,7 +454,6 @@ function MiGongLogic:ResetArrowsPosition()
     v.ArrowPosition = StartPrefabPosition
   end
 end
-
 function MiGongLogic:GetGameMap()
   if self.MapTable == nil then
     return false
@@ -502,7 +466,6 @@ function MiGongLogic:GetGameMap()
     print(_G.LogTag, "GameMap value " .. Value)
   end
 end
-
 function MiGongLogic:InitMap()
   local Size = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.GamePanel):GetSize()
   local OriginalPos = FVector2D(0, 0)
@@ -552,7 +515,6 @@ function MiGongLogic:InitMap()
   end
   self:GetGameMap()
 end
-
 function MiGongLogic:LoadBar(Type, StartRow, EndRow, StartCol, EndCol, Info)
   local x, y, z, Bar
   local SetPosNumber = 10
@@ -648,7 +610,6 @@ function MiGongLogic:LoadBar(Type, StartRow, EndRow, StartCol, EndCol, Info)
   self.GameMap[self.Index] = {}
   self.Index = self.Index + 1
 end
-
 function MiGongLogic:FindInUp(Index)
   local Cross = self.CrossTable[Index]
   if 0 ~= Cross.Up or Cross.CanUp == nil then
@@ -677,7 +638,6 @@ function MiGongLogic:FindInUp(Index)
   end
   UEPrint(Index .. " find Up failed")
 end
-
 function MiGongLogic:FindInDown(Index)
   local Cross = self.CrossTable[Index]
   if 0 ~= Cross.Down or Cross.CanDown == nil then
@@ -706,7 +666,6 @@ function MiGongLogic:FindInDown(Index)
   end
   UEPrint(Index .. " find Down failed")
 end
-
 function MiGongLogic:FindInLeft(Index)
   local Cross = self.CrossTable[Index]
   if 0 ~= Cross.Left or Cross.CanLeft == nil then
@@ -735,7 +694,6 @@ function MiGongLogic:FindInLeft(Index)
   end
   UEPrint(Index .. " find Left failed")
 end
-
 function MiGongLogic:FindInRight(Index)
   local Cross = self.CrossTable[Index]
   if 0 ~= Cross.Right or Cross.CanRight == nil then
@@ -764,7 +722,6 @@ function MiGongLogic:FindInRight(Index)
   end
   UEPrint(Index .. " find Right failed")
 end
-
 function MiGongLogic:split(str, reps)
   local resultStrList = {}
   string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -772,7 +729,6 @@ function MiGongLogic:split(str, reps)
   end)
   return resultStrList
 end
-
 function MiGongLogic:Handle_OnPCDown(InKeyName)
   if "SpaceBar" == InKeyName then
     self.MiniGame_Crack:OnClickResetButton()
@@ -786,7 +742,6 @@ function MiGongLogic:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function MiGongLogic:Handle_OnGamePadDown(InKeyName)
   if "Gamepad_FaceButton_Left" == InKeyName then
     self.MiniGame_Crack:OnClickResetButton()
@@ -819,7 +774,6 @@ function MiGongLogic:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function MiGongLogic:PlayArrowAnimation()
   for i = 1, #self.ArrowArray do
     if i == self.GamepadCurrentDragArrowIndex then
@@ -829,13 +783,11 @@ function MiGongLogic:PlayArrowAnimation()
     end
   end
 end
-
 function MiGongLogic:PlayArrowNormalAnimation()
   for i = 1, #self.ArrowArray do
     self.ArrowArray[i]:PlayAnimation(self.ArrowArray[i].Normal)
   end
 end
-
 function MiGongLogic:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if self.bIsResetting or self.bIsAnim then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -868,7 +820,6 @@ function MiGongLogic:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function MiGongLogic:ChangeArrowPosition(x, y)
   self.CurrentDragArrowIndex = self.GamepadCurrentDragArrowIndex
   if not self.NowBarArray or self.NowBarArray:Length() < 1 then
@@ -897,7 +848,6 @@ function MiGongLogic:ChangeArrowPosition(x, y)
   local finalX, finalY = arrow:SetMoveRange(self.PointerPosition.X, self.PointerPosition.Y)
   self:SetArrowPosition(finalX, finalY)
 end
-
 function MiGongLogic:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.UseGamepadControl = CurInputDevice == ECommonInputType.Gamepad
   if ModController:IsMobile() then
@@ -933,7 +883,6 @@ function MiGongLogic:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:SetFocus()
 end
-
 function MiGongLogic:ButtonDown(Index, StartPos)
   if self.Joystick then
     self.Joystick:SetRenderOpacity(1.0)
@@ -941,7 +890,6 @@ function MiGongLogic:ButtonDown(Index, StartPos)
   self.StartPos = StartPos
   self.CurrentDirection = "None"
 end
-
 function MiGongLogic:ButtonMove(TotalDeltaDis)
   if self.bIsResetting or self.bIsAnim then
     return
@@ -950,7 +898,6 @@ function MiGongLogic:ButtonMove(TotalDeltaDis)
   self:HandleVirtualJoystickMove(TotalDeltaDis)
   self:UpdateJoystickDisplay(TotalDeltaDis)
 end
-
 function MiGongLogic:ButtonUp(Index, StartPos)
   if self.Joystick then
     self.Joystick:SetRenderOpacity(0.5)
@@ -967,10 +914,9 @@ function MiGongLogic:ButtonUp(Index, StartPos)
   self:PlayArrowNormalAnimation()
   AudioManager(self):SetEventSoundParam(self, "MiGongArrowMove", {drag = 0})
 end
-
 function MiGongLogic:HandleVirtualJoystickMove(Distance)
-  local MinSpeed = 1.0
-  local MaxSpeed = 64
+  local MinSpeed = self.VirtualJoystickMinSpeed or 5
+  local MaxSpeed = self.VirtualJoystickMaxSpeed or 64
   local scale = MaxSpeed / self.Radius
   local MoveX = 0
   local MoveY = 0
@@ -988,7 +934,6 @@ function MiGongLogic:HandleVirtualJoystickMove(Distance)
   self.MobileMoveX = MoveX * scale
   self.MobileMoveY = MoveY * scale
 end
-
 function MiGongLogic:UpdateJoystickDisplay(DeltaPos)
   if not self.Joystick then
     return
@@ -1004,20 +949,16 @@ function MiGongLogic:UpdateJoystickDisplay(DeltaPos)
     CanvasSlot:SetPosition(DeltaPos)
   end
 end
-
 function MiGongLogic:MobileMove()
   if 0 == self.MobileMoveX and 0 == self.MobileMoveY then
     return
   end
   self:ChangeArrowPosition(self.MobileMoveX, self.MobileMoveY)
 end
-
 function MiGongLogic:Destruct()
   if self.bGameStart then
-    self:SetInputUIOnly(false)
     self.UseActor:ChangeState("InteractBreak", self.UseActor.PlayerEid)
   end
   self.Super.Destruct(self)
 end
-
 return MiGongLogic

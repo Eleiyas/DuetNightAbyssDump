@@ -1,39 +1,35 @@
 local EMCache = require("EMCache.EMCache")
 local WBP_Rouge_FilterSort_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Rouge_FilterSort_C:Construct()
   self.RomanNum = {
-    "\226\133\160",
-    "\226\133\161",
-    "\226\133\162",
-    "\226\133\163",
-    "\226\133\164",
-    "\226\133\165",
-    "\226\133\166",
-    "\226\133\167",
-    "\226\133\168",
-    "\226\133\169",
-    "\226\133\170",
-    "\226\133\171"
+    "Ⅰ",
+    "Ⅱ",
+    "Ⅲ",
+    "Ⅳ",
+    "Ⅴ",
+    "Ⅵ",
+    "Ⅶ",
+    "Ⅷ",
+    "Ⅸ",
+    "Ⅹ",
+    "Ⅺ",
+    "Ⅻ"
   }
   self.Btn_Filter_List.OnClicked:Add(self, self.ListOpenBtnClicked)
   self.Btn_Filter_List.OnPressed:Add(self, self.OnBtn_Filter_List_Pressed)
   self.Btn_Filter_List.OnHovered:Add(self, self.OnBtn_Filter_List_Hovered)
   self.Btn_Filter_List.OnUnhovered:Add(self, self.OnBtn_Filter_List_Unhovered)
 end
-
 function WBP_Rouge_FilterSort_C:ChangeSelectedItem(Index)
   self.SelectedItem.IsSelected = false
   self.SelectedItem = self.List:GetItemAt(Index)
   self.SelectedItem.IsSelected = true
   self.Text_Filterlist:SetText(self.SelectedItem.Text)
 end
-
 function WBP_Rouge_FilterSort_C:SetUnLockTable(UnLockedDifficulty, DifficultyLevel)
   self.UnLockedDifficulty = UnLockedDifficulty
   self.DifficultyLevel = DifficultyLevel
 end
-
 function WBP_Rouge_FilterSort_C:OnListItemClicked(Content)
   if self.IsListOutAnimPlaying then
     return
@@ -47,12 +43,10 @@ function WBP_Rouge_FilterSort_C:OnListItemClicked(Content)
   self.Text_Filterlist:SetText(self.SelectedItem.Text)
   self:OnListClosed()
 end
-
 function WBP_Rouge_FilterSort_C:SwitchClose()
   self.IsListViewOpened = false
   self.Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_Rouge_FilterSort_C:SetFirstSelectedItem()
   local RougeLikeDifficulty = EMCache:Get("RougeLikeDifficulty", true)
   for Index, DifficultyId in pairs(self.UnLockedDifficulty) do
@@ -62,7 +56,6 @@ function WBP_Rouge_FilterSort_C:SetFirstSelectedItem()
     end
   end
 end
-
 function WBP_Rouge_FilterSort_C:ListOpenBtnClicked()
   self:PlayAnimation(self.Click)
   self.Filter_List:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -79,7 +72,6 @@ function WBP_Rouge_FilterSort_C:ListOpenBtnClicked()
     self.Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Rouge_FilterSort_C:Init(SortBy_List, SortType)
   self.CurSortType = SortType or CommonConst.DESC
   self.SortBy_List = SortBy_List or {}
@@ -119,34 +111,27 @@ function WBP_Rouge_FilterSort_C:Init(SortBy_List, SortType)
     self.Sort_Type:SetRenderTransformAngle(180)
   end
 end
-
 function WBP_Rouge_FilterSort_C:OnBtn_Filter_List_Pressed()
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Rouge_FilterSort_C:OnBtn_Filter_List_Hovered()
   self:StopAnimation(self.Normal)
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Rouge_FilterSort_C:OnBtn_Filter_List_Unhovered()
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Rouge_FilterSort_C:OnBtn_SortType_Hovered()
   self:PlayAnimation(self.Hover_Btn)
 end
-
 function WBP_Rouge_FilterSort_C:OnBtn_SortType_Unhovered()
   self:PlayAnimationReverse(self.Hover_Btn)
 end
-
 function WBP_Rouge_FilterSort_C:PlayListInAnim()
   self:StopListOutAnim()
   self.IsListInAnimPlaying = true
-  
   local function WarpFunc()
     self.Filter_List:SetRenderOpacity(1)
     self:StopAnimation(self.List_Out)
@@ -157,10 +142,8 @@ function WBP_Rouge_FilterSort_C:PlayListInAnim()
     for i = Len, 1, -1 do
       local function func()
         Entrys[i]:SetRenderOpacity(1)
-        
         Entrys[i]:PlayInAnim()
       end
-      
       Entrys[i]:SetRenderOpacity(0)
       TotalTime = TotalTime + 0.02
       self:AddTimer(TotalTime, func, false, 0, "ListEntryInAnim" .. i)
@@ -169,22 +152,18 @@ function WBP_Rouge_FilterSort_C:PlayListInAnim()
     TotalTime = math.max(EndTime, TotalTime)
     if TotalTime > 0 then
       TotalTime = TotalTime + Entrys[1]:GetInAnimTime()
-      
       local function EndListInAnimPlaying()
         self.IsListInAnimPlaying = false
       end
-      
       self:AddTimer(TotalTime, EndListInAnimPlaying, false, 0, "ListInAnimPlaying")
     else
       self.IsListInAnimPlaying = false
     end
   end
-  
   self:AddTimer(0.01, WarpFunc, false, 0, "List_In")
   self.Filter_List:SetRenderOpacity(0)
   self.Filter_List:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function WBP_Rouge_FilterSort_C:StopListInAnim()
   self:RemoveTimer("List_In")
   self:RemoveTimer("ListInAnimPlaying")
@@ -194,7 +173,6 @@ function WBP_Rouge_FilterSort_C:StopListInAnim()
     self:RemoveTimer("ListEntryInAnim" .. i)
   end
 end
-
 function WBP_Rouge_FilterSort_C:PlayListOutnAnim()
   self:StopListInAnim()
   self.IsListOutAnimPlaying = true
@@ -213,25 +191,20 @@ function WBP_Rouge_FilterSort_C:PlayListOutnAnim()
     if TimeToPlayFilterOutAnim > 0 then
       local function func()
         self:StopAnimation(self.List_In)
-        
         self:PlayAnimation(self.List_Out)
       end
-      
       self:AddTimer(TimeToPlayFilterOutAnim, func, false, 0, "ListBG_OutAnim")
     else
       self:PlayAnimation(self.List_Out)
       TotalTime = EndTime
     end
   end
-  
   local function ListOutAnimPlayEnd()
     self.IsListOutAnimPlaying = false
     self.Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
-  
   self:AddTimer(TotalTime, ListOutAnimPlayEnd, false, 0, "ListOutAnimPlaying")
 end
-
 function WBP_Rouge_FilterSort_C:StopListOutAnim()
   self:RemoveTimer("ListOutAnimPlaying")
   self:RemoveTimer("ListBG_OutAnim")
@@ -241,7 +214,6 @@ function WBP_Rouge_FilterSort_C:StopListOutAnim()
     self:AddTimer("ListEntryOutAnim" .. i)
   end
 end
-
 function WBP_Rouge_FilterSort_C:OnListClosed()
   if self.SortBy_List then
     if self.IsListViewOpened then
@@ -252,7 +224,6 @@ function WBP_Rouge_FilterSort_C:OnListClosed()
     self.Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Rouge_FilterSort_C:GetSortInfos()
   if self.SelectedItem and self.SelectedItem.Index then
     return self.SelectedItem.Index
@@ -260,5 +231,4 @@ function WBP_Rouge_FilterSort_C:GetSortInfos()
     return nil
   end
 end
-
 return WBP_Rouge_FilterSort_C

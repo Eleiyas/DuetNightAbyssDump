@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.CoinItem = {
     self.ConsumeItem01,
@@ -24,12 +23,10 @@ function M:Construct()
   self.Key_Tips:CreateCommonKey(Key_RewardDesc_Params)
   self:AddInputMethodChangedListen()
 end
-
 function M:OpenJumpShop()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large", nil, nil)
   PageJumpUtils:JumpToTargetPageByJumpId(self.JumpShopData.InterfaceJumpId)
 end
-
 function M:OpenJumpShopTips()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if self.JumpShopData.RegionPointId then
@@ -42,14 +39,15 @@ function M:OpenJumpShopTips()
     end
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.JumpShopData = Content.JumpShopData
   self:InitJumpShopInfo()
 end
-
 function M:InitJumpShopInfo()
   if not self.JumpShopData then
+    if self.Vx then
+      self.Vx:SetVisibility(ESlateVisibility.Collapsed)
+    end
     self.WS_Item:SetActiveWidgetIndex(1)
     self.WBP_Com_EmptyBg.Slot_Text:SetVisibility(ESlateVisibility.Collapsed)
     return
@@ -68,8 +66,11 @@ function M:InitJumpShopInfo()
   else
     self.Btn_Tips:SetVisibility(ESlateVisibility.Collapsed)
   end
+  if self.JumpShopData.BackgroundVx and self.Vx and self[self.JumpShopData.BackgroundVx] then
+    self.Vx:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self[self.JumpShopData.BackgroundVx]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  end
 end
-
 function M:SetCoin()
   local Avatar = GWorld:GetAvatar()
   for i = 1, #self.CoinItem do
@@ -95,7 +96,6 @@ function M:SetCoin()
     self.CoinItem[i].WS_Consume:SetActiveWidgetIndex(activeIndex)
   end
 end
-
 function M:SetIcon()
   local IconPath = self.JumpShopData.BackgroundIcon or "/Game/UI/Texture/Dynamic/Image/RougeLike/T_Rouge_Event02"
   if string.find(IconPath, "/Game/") == nil then
@@ -106,7 +106,6 @@ function M:SetIcon()
     IconDynaMaterial:SetTextureParameterValue("IconMap", LoadObject(IconPath))
   end
 end
-
 function M:UpdateShopItemRefreshTime(RefreshTime)
   if not RefreshTime then
     self.Panel_RefreshTime:SetVisibility(ESlateVisibility.Collapsed)
@@ -116,7 +115,6 @@ function M:UpdateShopItemRefreshTime(RefreshTime)
     self:AddTimer(1, ShopUtils.RefreshShopRefreshTime, true, 0, "RefreshTimeTimer", true, RefreshTime, self.Text_RefreshTime)
   end
 end
-
 function M:UpdateKeyTipsVisibility()
   if not self.Key_Tips then
     return
@@ -126,7 +124,6 @@ function M:UpdateKeyTipsVisibility()
   local shouldShow = isGamepadMode and self.IsSelected and hasRegionPoint
   self.Key_Tips:SetVisibility(shouldShow and ESlateVisibility.SelfHitTestInvisible or ESlateVisibility.Collapsed)
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   if self.IsEmpty then
     return
@@ -134,16 +131,15 @@ function M:BP_OnItemSelectionChanged(IsSelected)
   self.IsSelected = IsSelected
   self:UpdateKeyTipsVisibility()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if InKeyName == Const.GamepadSpecialLeft or InKeyName == Const.GamepadSpecialRight then
     self:OpenJumpShopTips()
+    return UIUtils.Handle
   end
   return UIUtils.Unhandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -153,9 +149,7 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   end
   self:UpdateKeyTipsVisibility()
 end
-
 function M:Destruct()
   self:RemoveInputMethodChangedListen()
 end
-
 return M

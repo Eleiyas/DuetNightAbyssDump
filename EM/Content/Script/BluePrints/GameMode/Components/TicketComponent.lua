@@ -1,7 +1,6 @@
 require("UnLua")
 require("Const")
 local TicketComponent = {}
-
 function TicketComponent:IsTicketDungeon()
   local DungeonInfo = DataMgr.Dungeon[self.DungeonId]
   print(_G.LogTag, "LXZ IsTicketDungeon")
@@ -11,9 +10,12 @@ function TicketComponent:IsTicketDungeon()
   end
   return nil
 end
-
 function TicketComponent:TriggerShowTicket()
   if IsStandAlone(self) then
+    for _, Player in pairs(self:GetAllPlayer()) do
+      local Eid = Player.Eid
+      self.EMGameState.NextTicketPlayer:Add(Eid, false)
+    end
     self:AddDungeonEvent("SelectTicket")
   else
     local TicketSelectTime = DataMgr.GlobalConstant.TicketSelectTime.ConstantValue or 30
@@ -21,8 +23,8 @@ function TicketComponent:TriggerShowTicket()
     self:InitNextTicketPlayerMap()
   end
 end
-
 function TicketComponent:InitNextTicketPlayerMap()
+  self.EMGameState.IsInSelectTicket = true
   self.EMGameState.NextTicketPlayer:Clear()
   for _, Player in pairs(self:GetAllPlayer()) do
     local Eid = Player.Eid
@@ -31,5 +33,4 @@ function TicketComponent:InitNextTicketPlayerMap()
   end
   UE.UMapSyncHelper.SyncMap(self.EMGameState, "NextTicketPlayer")
 end
-
 return TicketComponent

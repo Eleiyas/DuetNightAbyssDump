@@ -1,6 +1,5 @@
 require("UnLua")
 local G = Class("BluePrints.UI.BP_UIState_C")
-
 function G:Construct()
   self.Btn_FullClose.OnClicked:Add(self, self.OnBtnFullCloseClicked)
   self.Text_Tip:SetText(GText("UI_GACHA_NEXT"))
@@ -27,7 +26,6 @@ function G:Construct()
     self.Key_Share:CreateGamepadKey(UIConst.GamePadImgKey.FaceButtonTop)
   end
 end
-
 function G:Init(Parent, Result, IsForceSkip)
   self.Parent = Parent
   self.Parent.CantClick = true
@@ -100,7 +98,6 @@ function G:Init(Parent, Result, IsForceSkip)
     self:RefreshGachaOnceUI()
   end
 end
-
 function G:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
   if UIUtils.IsMobileInput() then
     return
@@ -114,7 +111,6 @@ function G:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function G:InitGamepadView()
   self:SetFocus()
   self.GamePadState = "GachaOnceMain"
@@ -128,7 +124,6 @@ function G:InitGamepadView()
   end
   self.Group_Skip:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function G:InitKeyboardView()
   if UIUtils.IsMobileInput() then
     return
@@ -140,7 +135,6 @@ function G:InitKeyboardView()
     self.Group_Skip:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function G:OnKeyDown(MyGeometry, InKeyEvent)
   if self.CantClick == true then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -178,7 +172,6 @@ function G:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function G:HandleResult()
   for key, GachaResult in pairs(self.ResultData) do
     if GachaResult.Sign == CommonConst.GachaCharType then
@@ -201,7 +194,6 @@ function G:HandleResult()
     self.ResultData[key].Index = key
   end
 end
-
 function G:CheckCharGradeCanMax(CharId)
   if not CharId then
     return false
@@ -214,7 +206,6 @@ function G:CheckCharGradeCanMax(CharId)
   end
   return false
 end
-
 function G:RefreshGachaOnceUI()
   self:SetFocus()
   self.GamePadState = "GachaOnceMain"
@@ -240,7 +231,7 @@ function G:RefreshGachaOnceUI()
       self:GetGachaOnceSpineUI(TargetId, CharInfo.SpineBp)
     else
       self:GetGachaOnceSpineUI(TargetId, "WBP_Gacha_Pool_WidgetMaer")
-      DebugPrint(ErrorTag, "----jzn---\230\138\189\229\141\161\229\189\147\229\137\141\232\167\146\232\137\178\230\151\160Spine\232\147\157\229\155\190\232\181\132\230\186\144----", TargetId)
+      DebugPrint(ErrorTag, "----jzn---抽卡当前角色无Spine蓝图资源----", TargetId)
     end
     self.IsSpineAnimation = true
     self:SetCharImgRole(TargetId)
@@ -259,7 +250,6 @@ function G:RefreshGachaOnceUI()
   end
   self.Text_WeaponName:SetText(GText(TargetName))
 end
-
 function G:SetTargetNew(IsNew)
   if IsNew then
     self.Gacha_New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -267,7 +257,6 @@ function G:SetTargetNew(IsNew)
     self.Gacha_New:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function G:PlayCharVoiceAndText()
   self.Text_VoiceText:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if not self.VoiceCharId then
@@ -311,7 +300,6 @@ function G:PlayCharVoiceAndText()
   end
   self.Text_VoiceText:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function G:SplitPlayerInfo(PlayerInfo)
   if not PlayerInfo then
     return ""
@@ -321,7 +309,6 @@ function G:SplitPlayerInfo(PlayerInfo)
   end
   return PlayerInfo
 end
-
 function G:SetCharImgRole(TargetId)
   local CharInfo = DataMgr.Char[TargetId]
   local IconPath = CharInfo.BigIcon
@@ -349,7 +336,6 @@ function G:SetCharImgRole(TargetId)
   self.WS_DetailIcon:SetActiveWidgetIndex(0)
   self.WS_Icon:SetActiveWidgetIndex(1)
 end
-
 function G:SetWeaponImgRole(TargetId)
   local IconPath = DataMgr.Weapon[TargetId].BigIcon
   local Icon = LoadObject(IconPath)
@@ -392,7 +378,6 @@ function G:SetWeaponImgRole(TargetId)
     end
   end
 end
-
 function G:ShowExtraItem()
   local GachaResult = self.ResultData[self.CurGachaResultIndex]
   local TargetId
@@ -469,7 +454,6 @@ function G:ShowExtraItem()
     end
   end
 end
-
 function G:OnBtnFullCloseClicked()
   if self.CantClick then
     return
@@ -496,7 +480,6 @@ function G:OnBtnFullCloseClicked()
     self:RefreshGachaOnceUI()
   end
 end
-
 function G:OnBtnSkipClicked()
   if self.NotGacha then
     return
@@ -517,7 +500,6 @@ function G:OnBtnSkipClicked()
   AudioManager(self):StopSound(self, "GachaWeapon")
   self.Parent:ShowGachaTentimesResult(self.ResultData, self.IsSingleGacha)
 end
-
 function G:CheckHaveShowResult()
   for i = self.CurGachaResultIndex + 1, self.GachaTimes do
     local GachaResult = self.ResultData[i]
@@ -538,7 +520,6 @@ function G:CheckHaveShowResult()
   end
   return false
 end
-
 function G:OnClickBtnClose()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if self.NotGacha then
@@ -557,7 +538,6 @@ function G:OnClickBtnClose()
     self.Parent:OnClickBtnClose()
   end
 end
-
 function G:OnBtnShareClicked()
   self.Group_Share:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Group_Skip:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -573,7 +553,6 @@ function G:OnBtnShareClicked()
   self.Parent:TakeGachaScreenShot(self, self.OnShareCallback)
   self.CantClick = true
 end
-
 function G:OnShareCallback()
   self:SetFocus()
   self.GamePadState = "GachaOnceMain"
@@ -588,7 +567,6 @@ function G:OnShareCallback()
   local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
   GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
 end
-
 function G:PlayInAnim(Rarity, CharId)
   self.CantClick = true
   local AnimTime
@@ -597,7 +575,6 @@ function G:PlayInAnim(Rarity, CharId)
   else
     self:PlayAnimation(self.In_Normal)
   end
-  
   local function SetClick()
     self.CantClick = false
     if self.CanShare then
@@ -607,7 +584,6 @@ function G:PlayInAnim(Rarity, CharId)
       end
     end
   end
-  
   if 3 == Rarity then
     self:PlayAnimation(self.In_Blue)
     self.WS_Color:SetActiveWidgetIndex(0)
@@ -625,7 +601,6 @@ function G:PlayInAnim(Rarity, CharId)
     local function FiveStarFinish()
       if CharId then
         self:PlayAnimation(self.Character_Yellow)
-        
         self:PlayCharUISound(CharId)
         AnimTime = self.Character_Yellow:GetEndTime()
       else
@@ -640,7 +615,6 @@ function G:PlayInAnim(Rarity, CharId)
         self:AddTimer(AnimTime, SetClick, false, 0, "SetClick")
       end
     end
-    
     self:UnbindAllFromAnimationFinished(self.Icon_In)
     self:PlayAnimation(self.Icon_In)
     self:BindToAnimationFinished(self.Icon_In, {self, FiveStarFinish})
@@ -664,18 +638,15 @@ function G:PlayInAnim(Rarity, CharId)
   end
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function G:PlayCharUISound(CharId)
   local CharInfo = DataMgr.Char[CharId]
   local CharName = CharInfo.GUIPathVariable
   local SoundPath = "event:/ui/char/gacha_show_" .. CharName
   AudioManager(self):PlayUISound(self, SoundPath, "GachaShow", nil)
 end
-
 function G:PlayFiveStarSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_five_star_on_card", "GachaFiveStar", nil)
 end
-
 function G:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -697,13 +668,11 @@ function G:PlayOutAnim()
     self.OnClickBtnClose
   })
 end
-
 function G:PlayCampIn()
   if self.IsCampAnimation and self.GachaCampUI then
     self.GachaCampUI:PlayAnimation(self.GachaCampUI.In)
   end
 end
-
 function G:GetGachaCampUI(BpPath)
   self.IsCampAnimation = true
   self.Group_Camp:ClearChildren()
@@ -721,13 +690,11 @@ function G:GetGachaCampUI(BpPath)
   self.GachaCampUI = GachaCampUI
   return self.GachaCampUI
 end
-
 function G:PlayCharSpineSpecialIn()
   if self.IsSpineAnimation and self.GachaOnceSpineUI then
     self.GachaOnceSpineUI:PlayAnimation(self.GachaOnceSpineUI.Special_In)
   end
 end
-
 function G:PlayCharSpine()
   self.Image_Avatar:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   if self.IsSpineAnimation and self.GachaOnceSpineUI then
@@ -741,7 +708,6 @@ function G:PlayCharSpine()
     end
   end
 end
-
 function G:GetGachaOnceSpineUI(CharId, SpineName)
   self.SpineContent:ClearChildren()
   local BgPath
@@ -765,7 +731,6 @@ function G:GetGachaOnceSpineUI(CharId, SpineName)
   self.GachaOnceSpineUI = GachaOnceSpineUI
   return self.GachaOnceSpineUI
 end
-
 function G:CommonInit(Params)
   self:SetFocus()
   self:UISetGamePaused(self.WidgetName or self.ConfigName, true)
@@ -793,7 +758,6 @@ function G:CommonInit(Params)
   self.Group_Skip:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self:RefreshCommonOnceUI()
 end
-
 function G:RefreshCommonOnceUI()
   self:SetFocus()
   self:SetInputUIOnly(true)
@@ -815,7 +779,7 @@ function G:RefreshCommonOnceUI()
     else
       self:GetGachaOnceSpineUI(ShowResult.TargetId, "WBP_Gacha_Pool_WidgetMaer")
       self.IsSpineAnimation = true
-      DebugPrint(ErrorTag, "----jzn---\230\138\189\229\141\161\229\189\147\229\137\141\232\167\146\232\137\178\230\151\160Spine\232\147\157\229\155\190\232\181\132\230\186\144----", ShowResult.TargetId)
+      DebugPrint(ErrorTag, "----jzn---抽卡当前角色无Spine蓝图资源----", ShowResult.TargetId)
     end
     self:SetCharImgRole(ShowResult.TargetId)
     self:PlayInAnim(ShowResult.Rarity, ShowResult.TargetId)
@@ -827,7 +791,6 @@ function G:RefreshCommonOnceUI()
   end
   self.Text_WeaponName:SetText(GText(TargetName))
 end
-
 function G:HandleShowResult(ShowResult)
   self.IsNeedChange = false
   ShowResult.IsNew = false
@@ -857,7 +820,6 @@ function G:HandleShowResult(ShowResult)
     ShowResult.IsNew = true
   end
 end
-
 function G:OnCloseCallback()
   self:UISetGamePaused(self.WidgetName or self.ConfigName, false)
   self:SetInputUIOnly(false)
@@ -866,7 +828,6 @@ function G:OnCloseCallback()
   end
   self:Close()
 end
-
 function G:Destruct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -874,5 +835,4 @@ function G:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshInfoByInputTypeChange)
   end
 end
-
 return G

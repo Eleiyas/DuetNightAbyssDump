@@ -5,11 +5,9 @@ local Component = {}
 local WikiEntryReddotName = DataMgr.ReddotNode.WikiEntrance.Name
 local WikiItemReddotName = DataMgr.ReddotNode.WikiItems.Name
 local WikiRewardReddotName = DataMgr.ReddotNode.WikiReward.Name
-
 function Component:WikiEntryGetAllRewards(InCallBack)
   local function Cb(ErrCode, ret)
     self.logger.debug("WikiEntryGetAllRewards", ErrorCode:Name(ErrCode), ret)
-    
     DebugPrint("WikiEntryGetAllRewardsErr:Code,ret", ErrCode, ret)
     local rewardId = self:GetWikiRewardIdByProgress(10)
     local AllCount = self:GetCurrentRewardCount()
@@ -26,34 +24,26 @@ function Component:WikiEntryGetAllRewards(InCallBack)
       InCallBack(ErrCode, ret, rewardId, AllCount)
     end
   end
-  
   self:CallServer("WikiEntryGetAllRewards", Cb)
 end
-
 function Component:WikiEntryGetReward(Num, InCallBack)
   local function Cb(ErrCode)
     DebugPrint("WikiEntryGetReward", ErrorCode:Name(ErrCode))
-    
     DebugPrint("WikiEntryGetRewardErr:Code", ErrCode, Num)
     local rewardId = self:GetWikiRewardIdByProgress(Num)
     if InCallBack then
       InCallBack(Num, rewardId)
     end
   end
-  
   self:CallServer("WikiEntryGetReward", Cb, Num)
 end
-
 function Component:WikiEntryTextReaded(WikiEntryId, TextId)
   local function Cb(ErrCode)
     self.logger.debug("WikiEntryTextReaded", ErrorCode:Name(ErrCode))
-    
     self:SubWikiEntryReddotCount(WikiEntryId)
   end
-  
   self:CallServer("WikiEntryTextReaded", Cb, WikiEntryId, TextId)
 end
-
 function Component:NotifyWikiEntryUnlock(WikiEntryId, TextId)
   DebugPrint("NotifyWikiEntryUnlock", WikiEntryId, TextId)
   self:InitWikiEntryReddotNode()
@@ -63,7 +53,6 @@ function Component:NotifyWikiEntryUnlock(WikiEntryId, TextId)
   self:ShowWikiTips(WikiNoteId)
   EventManager:FireEvent(EventID.OnEntryTextUnlocked, WikiEntryId, TextId)
 end
-
 function Component:ShowWikiTips(WikiNoteId)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not UIManager then
@@ -73,23 +62,19 @@ function Component:ShowWikiTips(WikiNoteId)
     UIManager:LoadUINew("GuideBook_Tips", WikiNoteId)
   end
 end
-
 function Component:Init()
   self.RewardStateChangeCallbacks = {}
 end
-
 function Component:EnterWorld()
   WikiController:Init()
   self:InitWikiEntryReddotNode()
   self:LoadWikiRewardList()
   self:InitWikiRewardReddotNode()
 end
-
 function Component:LeaveWorld()
   self:SaveWikiRewardList()
   WikiController:Destory()
 end
-
 function Component:InitWikiEntryReddotNode()
   ReddotManager.AddNode(WikiItemReddotName)
   ReddotManager.GetTreeNode(WikiItemReddotName).Count = 0
@@ -97,19 +82,16 @@ function Component:InitWikiEntryReddotNode()
     self:AddWikiEntryReddotCount(Id, Content)
   end
 end
-
 function Component:AddWikiEntryReddotCount(WikiEntryId, WikiEntryData)
   if ReddotManager.GetTreeNode(WikiItemReddotName) then
     ReddotManager.IncreaseLeafNodeCount(WikiItemReddotName)
   end
 end
-
 function Component:SubWikiEntryReddotCount(WikiEntryId)
   if ReddotManager.GetTreeNode(WikiItemReddotName) and ReddotManager.GetTreeNode(WikiItemReddotName).Count > 0 then
     ReddotManager.DecreaseLeafNodeCount(WikiItemReddotName)
   end
 end
-
 function Component:ClearWikiEntryReddotCount()
   local NewWikiEntryNode = ReddotManager.GetTreeNode(WikiItemReddotName)
   if not NewWikiEntryNode then
@@ -118,7 +100,6 @@ function Component:ClearWikiEntryReddotCount()
   NewWikiEntryNode.Count = 1
   ReddotManager.DecreaseLeafNodeCount(WikiItemReddotName)
 end
-
 function Component:InitWikiRewardList()
   local UnlockedCount = 0
   for _, Content in pairs(self.WikiEntries) do
@@ -139,7 +120,6 @@ function Component:InitWikiRewardList()
   self:SaveWikiRewardList()
   self:UpdateWikiRewardReddot()
 end
-
 function Component:LoadWikiRewardList()
   if not self.WikiGotRewards then
     return
@@ -154,13 +134,11 @@ function Component:LoadWikiRewardList()
     self:SaveWikiRewardList()
   end
 end
-
 function Component:SaveWikiRewardList()
   if self.RewardGotList and next(self.RewardGotList) then
     EMCache:Set("WikiRewardGotList", self.RewardGotList, true)
   end
 end
-
 function Component:CheckWikiRewardIsGot(Progress)
   if not self.RewardGotList then
     return false
@@ -170,7 +148,6 @@ function Component:CheckWikiRewardIsGot(Progress)
   end
   return false
 end
-
 function Component:CheckWikiRewardCanGet(Progress)
   if not self.RewardGotList or not self.RewardGotList[Progress] then
     return false
@@ -180,7 +157,6 @@ function Component:CheckWikiRewardCanGet(Progress)
   end
   return 0 == self.RewardGotList[Progress][2]
 end
-
 function Component:GetWikiReward(Progress)
   if self.RewardGotList[Progress] then
     self.RewardGotList[Progress][2] = 1
@@ -188,7 +164,6 @@ function Component:GetWikiReward(Progress)
   end
   self:UpdateWikiRewardReddot()
 end
-
 function Component:CheckHaveWikiRewardToGet()
   if not self.RewardGotList then
     return false
@@ -200,7 +175,6 @@ function Component:CheckHaveWikiRewardToGet()
   end
   return false
 end
-
 function Component:GetWikiRewardIdByProgress(Progress)
   if not self.RewardGotList then
     return
@@ -210,7 +184,6 @@ function Component:GetWikiRewardIdByProgress(Progress)
   end
   return nil
 end
-
 function Component:GetCurrentRewardCount()
   local count = 0
   for Progress, Content in pairs(self.RewardGotList) do
@@ -222,36 +195,30 @@ function Component:GetCurrentRewardCount()
   end
   return count
 end
-
 function Component:EchoWikiEntries()
   PrintTable(self.WikiEntries:all_dump(self.WikiEntries), 10, "WikiEntries")
 end
-
 function Component:InitWikiRewardReddotNode()
   ReddotManager.AddNode(WikiRewardReddotName)
   ReddotManager.GetTreeNode(WikiRewardReddotName).Count = self:GetCurrentRewardCount()
   self:UpdateWikiRewardReddot()
 end
-
 function Component:UpdateWikiRewardReddot()
   self:ClearWikiRewardReddotCount()
   if self:CheckHaveWikiRewardToGet() then
     self:AddWikiRewardReddotCount()
   end
 end
-
 function Component:AddWikiRewardReddotCount()
   if ReddotManager.GetTreeNode(WikiRewardReddotName) then
     ReddotManager.IncreaseLeafNodeCount(WikiRewardReddotName)
   end
 end
-
 function Component:SubWikiRewardReddotCount()
   if ReddotManager.GetTreeNode(WikiRewardReddotName) and ReddotManager.GetTreeNode(WikiRewardReddotName).Count > 0 then
     ReddotManager.DecreaseLeafNodeCount(WikiRewardReddotName)
   end
 end
-
 function Component:ClearWikiRewardReddotCount()
   local WikiRewardNode = ReddotManager.GetTreeNode(WikiRewardReddotName)
   if not WikiRewardNode then
@@ -260,5 +227,4 @@ function Component:ClearWikiRewardReddotCount()
   WikiRewardNode.Count = 1
   ReddotManager.DecreaseLeafNodeCount(WikiRewardReddotName)
 end
-
 return Component

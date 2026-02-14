@@ -2,7 +2,6 @@ require("UnLua")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local PlayerNameUtils = require("Utils.PlayerNameUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init()
   self.Btn_Continue:BindEventOnClicked(self, self.OnClickButtonContinue)
   self.Btn_Continue:SetText(GText("UI_LOGIN_ENSURE"))
@@ -49,7 +48,6 @@ function M:Init()
     end
   })
 end
-
 function M:FinishNode()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local RealGameMode = GameMode.SubGameModeInfo:Find("Prologue_Void")
@@ -60,7 +58,6 @@ function M:FinishNode()
   end
   EventManager:FireEvent(EventID.OnSelectFinish)
 end
-
 function M:OnClickButtonContinue()
   print(_G.LogTag, "LXZ OnClickButtonContinue")
   local Nickname = self.Text_Input:GetText()
@@ -72,13 +69,11 @@ function M:OnClickButtonContinue()
   self.Text_Tips02:SetText(GText("UI_REGISTER_BANNEDINPUT"))
   HeroUSDKUtils.CheckStringSensitive(self, Nickname, self.OnNameSensitive, self.OnNameNotSensitive)
 end
-
 function M:OnNameSensitive(ReplaceName, Name, Words)
   self.Text_Input:ShowTips(GText("UI_REGISTER_BANNEDINPUT"), 1)
   self.WaitCallBack = false
   self.RootPage.bCanChangeRole = true
 end
-
 function M:OnNameNotSensitive(Name)
   if self.WaitCallBack == true then
     return
@@ -88,16 +83,18 @@ function M:OnNameNotSensitive(Name)
   if not Avatar then
     return
   end
-  
-  local function Callback()
-    self:SetInputUIOnly(false)
-    self.RootPage:PlayAnimation(self.RootPage.Out)
+  local function Callback(Res)
+    print(_G.LogTag, "LXZ AvatarCreateRole Callback", Res)
+    self.Btn_Continue:ForbidBtn(false)
     self.WaitCallBack = false
-    local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
-    HeroUSDKSubsystem():HeroSDKRoleEnterGame(HeroUSDKUtils.GenHeroHDCGameRoleInfo())
-    AudioManager(self):SetVoiceGender()
+    if Res then
+      self:SetInputUIOnly(false)
+      self.RootPage:PlayAnimation(self.RootPage.Out)
+      local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
+      HeroUSDKSubsystem():HeroSDKRoleEnterGame(HeroUSDKUtils.GenHeroHDCGameRoleInfo())
+      AudioManager(self):SetVoiceGender()
+    end
   end
-  
   self.Btn_Continue:ForbidBtn(true)
   local Sex = self.RootPage.Page_Role.NowRole == "Male" and 0 or 1
   local UsedName = PlayerNameUtils.DeleteHeadAndTailSpace(Name)
@@ -107,7 +104,6 @@ function M:OnNameNotSensitive(Name)
     Avatar:SetWeitaInfo(UsedName, Sex, Callback)
   end
 end
-
 function M:OnClickButtonBack()
   self.RootPage:ChangeWidget("SelectRole")
   self.RootPage.Page_Role.NowState = self.RootPage.Page_Role.NowRole == "Male" and 7 or 6
@@ -117,7 +113,6 @@ function M:OnClickButtonBack()
     self.RootPage.Key_Observe:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   print(_G.LogTag, "LXZ Handle_KeyEventOnGamePad", InKeyName)
   if "Escape" == InKeyName or "Gamepad_FaceButton_Right" == InKeyName then
@@ -139,11 +134,9 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return true
 end
-
 function M:OnNameComposing(Text)
   self.Text_Show:SetText("")
 end
-
 function M:OnNameChanged(NewName)
   print(_G.LogTag, "LXZ OnNameChanged", NewName)
   if "" == NewName then
@@ -153,13 +146,11 @@ function M:OnNameChanged(NewName)
   self:CheckStrLen()
   self.Btn_Continue:ForbidBtn(false)
 end
-
 function M:PlayWariningAnimation(Type)
   self.Switch_Tips:SetActiveWidgetIndex(Type)
   AudioManager(self):PlayUISound(self, "event:/ui/common/input_err", nil, nil)
   self:PlayAnimation(self.Warning)
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   print(_G.LogTag, "LXZ RefreshInfoByInputTypeChange Name")
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
@@ -170,7 +161,6 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Btn_Continue:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:CheckStrLen()
   if not self.RootPage.DeviceInPc then
     return
@@ -183,5 +173,4 @@ function M:CheckStrLen()
     self.RootPage.Key_Continue:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return M

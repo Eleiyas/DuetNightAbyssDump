@@ -1,17 +1,14 @@
 require("UnLua")
 local BP_AutoDoor_C = Class("BluePrints.Item.Mechanism.BP_PrologueDoor")
-
 function BP_AutoDoor_C:RegisterComponent(CompArray)
   BP_AutoDoor_C.Super.RegisterComponent(self, CompArray)
   self:AddTimer(1, self.Init)
 end
-
 function BP_AutoDoor_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self.IsDoorOpen = false
   self.UpdateOffsetTime = UKismetMathLibrary.RandomFloatInRange(0, 2.0)
 end
-
 function BP_AutoDoor_C:StartWait(Character)
   if self.CloseHandle then
     self:RemoveTimer(self.CloseHandle)
@@ -29,7 +26,6 @@ function BP_AutoDoor_C:StartWait(Character)
     self:PlayDoorSound(true)
   end
 end
-
 function BP_AutoDoor_C:EndWait(Character)
   self.CurrentTriggerPlayerNum = math.max(self.CurrentTriggerPlayerNum, 0)
   if not self.DoorOpenState then
@@ -42,30 +38,57 @@ function BP_AutoDoor_C:EndWait(Character)
     self.CloseHandle = self:AddTimer(2, self.DelayCloseDoor, false, 0, nil, nil, Character)
   end
 end
-
 function BP_AutoDoor_C:OpenMechanism(CharacterEid)
   print(_G.LogTag, "LXZ OpenMechanism")
   self:UpdateRegionData("DoorOpenState", true)
+  local NeedRepair = false
+  for i, v in pairs(self.ComponentLoc) do
+    if not IsValid(i) then
+      NeedRepair = true
+      break
+    end
+  end
+  if NeedRepair then
+    local Components = self:GetMeshComponents()
+    local Index = 1
+    for i, v in pairs(self.ComponentLoc) do
+      if Index <= Components:Length() then
+        i = Components:GetRef(Index)
+        Index = Index + 1
+      end
+    end
+  end
   self:OpenDoor(CharacterEid, self.Eid)
 end
-
 function BP_AutoDoor_C:CloseMechanism(CharacterEid)
   print(_G.LogTag, "LXZ CloseMechanism")
   self:UpdateRegionData("DoorOpenState", false)
+  local NeedRepair = false
+  for i, v in pairs(self.ComponentLoc) do
+    if not IsValid(i) then
+      NeedRepair = true
+      break
+    end
+  end
+  if NeedRepair then
+    local Components = self:GetMeshComponents()
+    local Index = 1
+    for i, v in pairs(self.ComponentLoc) do
+      if Index <= Components:Length() then
+        i = Components:GetRef(Index)
+        Index = Index + 1
+      end
+    end
+  end
   self:CloseDoor(CharacterEid, self.Eid)
 end
-
 function BP_AutoDoor_C:DelayCloseDoor(Character)
   self:CloseMechanism()
   self:PlayDoorSound(false)
 end
-
 function BP_AutoDoor_C:Init()
   if self.if_door then
     self.RunnerMaterial_Mid = UE4.UKismetMaterialLibrary.CreateDynamicMaterialInstance(self, self.RunnerMaterial)
-    if not self.door_state then
-      self.Box:K2_DestroyComponent(self)
-    end
   else
     self:K2_DestroyActor()
   end
@@ -83,7 +106,6 @@ function BP_AutoDoor_C:Init()
     self:LockDoor()
   end
 end
-
 function BP_AutoDoor_C:OnRep_DoorOpenState()
   if self.InitSuccess then
     if self.DoorOpenState then
@@ -102,11 +124,9 @@ function BP_AutoDoor_C:OnRep_DoorOpenState()
         self:RemoveTimer("OnRep_DoorOpenState")
       end
     end
-    
     self:AddTimer(0.5, Callback, true, 0, "OnRep_DoorOpenState", false)
   end
 end
-
 function BP_AutoDoor_C:UnLockDoor()
   if self.bNeedGuide then
     self:ActiveGuide("Add")
@@ -115,11 +135,7 @@ function BP_AutoDoor_C:UnLockDoor()
   self.door_state = true
   self:IndicatorColor()
   self:OnUnLockDoor()
-  if self.EMNavModifierComponent then
-    self.EMNavModifierComponent:K2_DestroyComponent(self)
-  end
 end
-
 function BP_AutoDoor_C:LockDoor()
   self.DoorOpenState = false
   if self.CloseHandle then
@@ -134,9 +150,7 @@ function BP_AutoDoor_C:LockDoor()
   self.door_state = false
   self:IndicatorColor()
   self:OnLockDoor()
-  self:AddNavModifier()
 end
-
 function BP_AutoDoor_C:OnCharacterChangeLevel(Character)
   if not IsAuthority(self) or not Character:IsPlayer() then
     return
@@ -151,7 +165,6 @@ function BP_AutoDoor_C:OnCharacterChangeLevel(Character)
   self:OnLockDoor()
   print(_G.LogTag, "LXZ OnCharacterChangeLevel", self.BPArrow:GetName(), self.BPArrow.LevelId, self.BPArrow.OtherLevelId)
 end
-
 function BP_AutoDoor_C:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   self.UpdateOffsetTime = self.UpdateOffsetTime + DeltaSeconds
@@ -185,5 +198,4 @@ function BP_AutoDoor_C:ReceiveTick(DeltaSeconds)
     self.UpdateOffsetTime = 0
   end
 end
-
 return BP_AutoDoor_C

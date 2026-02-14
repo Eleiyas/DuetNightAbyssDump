@@ -1,9 +1,11 @@
 require("UnLua")
 local UIUtils = require("Utils.UIUtils")
-local M = Class("BluePrints.UI.BP_UIState_C")
+local M = Class({
+  "BluePrints.UI.BP_EMUserWidget_C",
+  "BluePrints.UI.BP_EMUserWidgetUtils_C"
+})
 local IconPathFiltered = "/Game/UI/UI_PNG_Static/Atlas/Common/Common_Filter02.Common_Filter02"
 local IconPathUnFiltered = "/Game/UI/UI_PNG_Static/Atlas/Common/Common_Filter.Common_Filter"
-
 function M:Init(Filters)
   self.Filters = Filters or {}
   self.IsSelected = false
@@ -32,26 +34,21 @@ function M:Init(Filters)
   self:UpdateFilterInfos()
   self.Image_Filiter_1:SetBrushResourceObject(self.IconUnfiltered)
 end
-
 function M:BindEventOnSelectionsChanged(Obj, Event)
   self.Obj_OnSelectionsChanged = Obj
   self.Event_OnSelectionsChanged = Event
 end
-
 function M:BindEventOnAddedToFocusPath(Obj, Event)
   self.Obj_OnAddedToFocusPath = Obj
   self.Event_OnAddedToFocusPath = Event
 end
-
 function M:BindEventOnRemovedFromFocusPath(Obj, Event)
   self.Obj_OnRemovedFromFocusPath = Obj
   self.Event_OnRemovedFromFocusPath = Event
 end
-
 function M:GetFilterInfos()
   return self.FiltersRes
 end
-
 function M:UpdateFilterInfos()
   local FiltersHintText = ""
   local Indexes = {}
@@ -74,9 +71,7 @@ function M:UpdateFilterInfos()
   self.FiltersRes = Indexes
   return self.FiltersRes, FiltersHintText
 end
-
 function M:Construct()
-  M.Super.Construct(self)
   self:AddDispatcher(EventID.OnMenuClose, self, self.OnListClosed)
   self.Button_FIiliter_List:BindEventOnClicked(self, self.ListOpenBtnClicked)
   self.Button_FIiliter_List:BindEventOnHover(self, self.OnBtn_Filter_List_Hovered)
@@ -89,24 +84,17 @@ function M:Construct()
   self.SiftModelId = nil
   self.SiftPreviewWidget = self.SiftPreview_Middle
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
-  self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
-  if IsValid(self.GameInputModeSubsystem) then
-    self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
-  end
   self.FocusKeyName = "LS"
   self:SetGamepadKey(self.FocusKeyName)
   self:InitNavigationRules()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
 end
-
 function M:SetGetBackFocusWidget(OnGetBackFocusWidget)
   self.OnGetBackFocusWidget = OnGetBackFocusWidget
 end
-
 function M:OnListOutFin()
   self.Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Destruct()
   self.Button_FIiliter_List:UnbindEventOnHover()
   self.Button_FIiliter_List:UnbindEventOnUnhover()
@@ -119,9 +107,7 @@ function M:Destruct()
   self.SiftBox = nil
   self.Event_OnSelectionsChanged = nil
   self.Obj_OnSelectionsChanged = nil
-  M.Super.Destruct(self)
 end
-
 function M:OnBtn_Filter_List_Hovered()
   if self.IsListViewOpened then
     return
@@ -130,7 +116,6 @@ function M:OnBtn_Filter_List_Hovered()
     self.Properties:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnBtn_Filter_List_Unhovered()
   if self.IsListViewOpened then
     return
@@ -139,7 +124,6 @@ function M:OnBtn_Filter_List_Unhovered()
     self.Properties:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetSiftModelData(SiftModelId)
   local SiftModelDataList = {}
   local SubIds = DataMgr.SiftModel[SiftModelId].SubId
@@ -148,12 +132,11 @@ function M:GetSiftModelData(SiftModelId)
     table.insert(SiftModelDataList, SiftData)
   end
   if 0 == #SiftModelDataList then
-    DebugPrint("\233\148\153\232\175\175\239\188\154\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\231\173\155\233\128\137\230\168\161\229\158\139\230\149\176\230\141\174\239\188\140SiftModelId:", SiftModelId)
+    DebugPrint("错误：未找到对应的筛选模型数据，SiftModelId:", SiftModelId)
     return nil
   end
   return SiftModelDataList
 end
-
 function M:OnSiftBoxConfirmed(ItemUI, SelectedItems, ItemDatas)
   self.SelectedSiftItems = SelectedItems
   if SelectedItems and next(SelectedItems) then
@@ -167,16 +150,14 @@ function M:OnSiftBoxConfirmed(ItemUI, SelectedItems, ItemDatas)
     self:PreViewDelete(true)
   end
   self:AddTimer(0.2, function()
-    if self.CurInputDeviceType == ECommonInputType.Gamepad then
+    if self.CurInputDeviceType == ECommonInputType.Gamepad and not self.bNotAutoFocus then
       self.Button_FIiliter_List:SetFocus()
     end
   end)
 end
-
 function M:ClearSiftSelection()
   self.SiftPreviewWidget:ClearItemSelection()
 end
-
 function M:PreViewDelete(bResetFocus2Btn)
   self.SelectedSiftItems = {}
   self.Switch_Icon:SetActiveWidgetIndex(0)
@@ -187,15 +168,13 @@ function M:PreViewDelete(bResetFocus2Btn)
     self.Button_FIiliter_List:SetFocus()
   end
 end
-
 function M:AfterSiftBoxClosed()
   self:AddTimer(0.3, function()
-    if self.CurInputDeviceType == ECommonInputType.Gamepad then
-      self.Button_FIiliter_List:SetFocus()
+    if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
     end
-  end)
+    self.Button_FIiliter_List:SetFocus()
+  end, false, 0, "Common_Sift_AutoFocusTimer", true)
 end
-
 function M:OpenSiftBox(SiftModelId)
   local ModSiftDatas = self:GetSiftModelData(SiftModelId)
   local Params = {
@@ -228,11 +207,9 @@ function M:OpenSiftBox(SiftModelId)
   }
   local Dialog = UIManager(self):ShowCommonPopupUI(100129, Params, self)
 end
-
 function M:SetSiftModelId(SiftModelId)
   self.SiftModelId = SiftModelId
 end
-
 function M:SetSiftPreviewSideWidget(bSideWidget, bRight)
   if bSideWidget then
     if bRight then
@@ -244,7 +221,6 @@ function M:SetSiftPreviewSideWidget(bSideWidget, bRight)
     self.SiftPreviewWidget = self.SiftPreview_Middle
   end
 end
-
 function M:ListOpenBtnClicked()
   if not self.SiftModelId then
     print("Error: SiftModelId is not set.")
@@ -270,7 +246,6 @@ function M:ListOpenBtnClicked()
     self:OnListClosed()
   end
 end
-
 function M:OnListItemClicked(Content)
   if self:IsAnimationPlaying(self.List_In) then
     return
@@ -293,7 +268,6 @@ function M:OnListItemClicked(Content)
     self.Event_OnSelectionsChanged(self.Obj_OnSelectionsChanged, Filters)
   end
 end
-
 function M:OnListClosed()
   if self.Filters and self.IsListViewOpened then
     self:PlayAnimation(self.List_Out)
@@ -301,7 +275,6 @@ function M:OnListClosed()
   else
   end
 end
-
 function M:IsSifted()
   local hasSelectedItems = self.SelectedSiftItems and next(self.SelectedSiftItems) ~= nil
   local isSiftPreviewGenerated = self.SiftPreviewWidget and self.SiftPreviewWidget:GetVisibility() ~= UIConst.VisibilityOp.Collapsed
@@ -311,9 +284,9 @@ function M:IsSifted()
     return false
   end
 end
-
 function M:UpdateGamepadKeyState()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
+  DebugPrint("UpdateGamepadKeyState", self.CurInputDeviceType)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     if self.IsInFocusPath or IsValid(self.ListWidget) and self.ListWidget.IsInFocusPath or self.ListWidgetOpening then
       self.Controller_L:SetRenderOpacity(0)
@@ -325,21 +298,17 @@ function M:UpdateGamepadKeyState()
     self.Controller_L:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:InitNavigationRules()
   self.Button_FIiliter_List:SetNavigationRuleExplicit(EUINavigation.Up, self.SiftPreviewWidget)
 end
-
-function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
+function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   local ActiveWidgetIndex = IsUseKeyAndMouse and 0 or 1
   if IsUseKeyAndMouse then
   else
   end
   self:UpdateGamepadKeyState()
-  self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -358,28 +327,23 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:SetFocus()
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAddedToFocusPath(MyGeometry, InFocusEvent)
   if self.Event_OnAddedToFocusPath then
     self.Event_OnAddedToFocusPath(self.Obj_OnAddedToFocusPath, self)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.Event_OnRemovedFromFocusPath then
     self.Event_OnRemovedFromFocusPath(self.Obj_OnRemovedFromFocusPath, self)
   end
 end
-
 function M:SetGamepadKeyVisibility(VisibilityOp)
   self.Img_Key_L:SetVisibility(VisibilityOp)
 end
-
 function M:SetGamepadKey(FocusKeyName)
   local FocusKeyImgPath = UIUtils.UtilsGetKeyIconPathInGamepad(self.FocusKeyName)
   self.Img_Key_L:CreateCommonKey({
@@ -389,14 +353,12 @@ function M:SetGamepadKey(FocusKeyName)
   })
   self:UpdateGamepadKeyState()
 end
-
 function M:Close()
   self.SiftPreviewWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:PreViewDelete(false)
   if IsValid(self.SiftBox) then
     self.SiftBox:Close()
   end
-  M.Super.Close(self)
+  self:ClearScriptRegister()
 end
-
 return M

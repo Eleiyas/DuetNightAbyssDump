@@ -2,7 +2,6 @@ require("UnLua")
 local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
 local GMVariable = require("BluePrints.UI.GMInterface.GMVariable")
 local WBP_GM_Item_Base_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_GM_Item_Base_C:SetItem()
   if self.Arrow then
     self.Arrow:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -11,9 +10,9 @@ function WBP_GM_Item_Base_C:SetItem()
     self.Text_Name_Btn:SetText(self.Command.Text)
   elseif self.Command.Mode == "switch" then
     if self.Command.IsEnable then
-      self.Text_Name_Btn:SetText(self.Command.Text .. "\239\188\154\229\188\128")
+      self.Text_Name_Btn:SetText(self.Command.Text .. "：开")
     else
-      self.Text_Name_Btn:SetText(self.Command.Text .. "\239\188\154\229\133\179")
+      self.Text_Name_Btn:SetText(self.Command.Text .. "：关")
     end
   elseif self.Command.Mode == "edit" then
     if self.Text_Name_Para then
@@ -47,13 +46,11 @@ function WBP_GM_Item_Base_C:SetItem()
     self.Command.ParentWidget:OnEntryNumChanged(self)
   end
 end
-
 function WBP_GM_Item_Base_C:OnSelfRemove()
   if self.MenuAnchor and self.MenuAnchor:IsOpen() then
     self.MenuAnchor:Close()
   end
 end
-
 function WBP_GM_Item_Base_C:Exec(...)
   UIUtils.PlayCommonBtnSe(self)
   if self.Command.CloseGM == true then
@@ -72,15 +69,14 @@ function WBP_GM_Item_Base_C:Exec(...)
       self.Command.IsEnable = GMVariable[self.Command.VarName]
     end
     if self.Command.IsEnable then
-      self.Text_Name_Btn:SetText(self.Command.Text .. "\239\188\154\229\188\128")
+      self.Text_Name_Btn:SetText(self.Command.Text .. "：开")
     else
-      self.Text_Name_Btn:SetText(self.Command.Text .. "\239\188\154\229\133\179")
+      self.Text_Name_Btn:SetText(self.Command.Text .. "：关")
     end
   elseif self.Command.Mode == "menu" then
     self:SubMenuToggleOpen()
   end
 end
-
 function WBP_GM_Item_Base_C:SubMenuToggleOpen()
   if self.Command.Parameters:Length() > 0 then
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -114,5 +110,4 @@ function WBP_GM_Item_Base_C:SubMenuToggleOpen()
     end
   end
 end
-
 return WBP_GM_Item_Base_C

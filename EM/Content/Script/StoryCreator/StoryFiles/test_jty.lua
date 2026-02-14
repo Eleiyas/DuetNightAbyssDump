@@ -52,7 +52,7 @@ return {
       isStoryNode = true,
       key = "1716548642237680346",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1217.4763906779417, y = 289.0876656393516},
       propsData = {
         QuestId = 0,
@@ -76,8 +76,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -137,26 +139,26 @@ return {
           ["1719487578290134124"] = {
             key = "1719487578290134124",
             type = "ShowPopupUINode",
-            name = "\230\152\190\231\164\186\229\188\185\231\170\151",
+            name = "显示弹窗",
             pos = {x = 1042.5952380952383, y = 342.5},
             propsData = {PopupId = 100001}
           },
           ["1719488907735134907"] = {
             key = "1719488907735134907",
             type = "TestPrintNode",
-            name = "\230\181\139\232\175\149\230\137\147\229\141\176",
+            name = "测试打印",
             pos = {x = 1521.61038961039, y = 268.939393939394},
             propsData = {
-              Text = "\229\188\185\231\170\151\232\191\148\229\155\158True"
+              Text = "弹窗返回True"
             }
           },
           ["1719488910210135041"] = {
             key = "1719488910210135041",
             type = "TestPrintNode",
-            name = "\230\181\139\232\175\149\230\137\147\229\141\176",
+            name = "测试打印",
             pos = {x = 1521.61038961039, y = 471.5151515151514},
             propsData = {
-              Text = "\229\188\185\231\170\151\232\191\148\229\155\158False"
+              Text = "弹窗返回False"
             }
           }
         },

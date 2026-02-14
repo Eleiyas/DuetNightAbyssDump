@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17544679066532579017",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1308, y = 322},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -245,21 +247,21 @@ return {
           ["17544679066532579028"] = {
             key = "17544679066532579028",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1377.6799845536298, y = 460.2884573392704},
             propsData = {}
           },
           ["175448420318815358276"] = {
             key = "175448420318815358276",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 3439.6955691367457, y = 279.11688311688295},
             propsData = {}
           },
           ["17545584868181341370"] = {
             key = "17545584868181341370",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1380.7656819533622, y = 239.2969823137966},
             propsData = {
               ActiveEnable = true,
@@ -273,7 +275,7 @@ return {
           ["17545584868181341371"] = {
             key = "17545584868181341371",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1687.0024147590063, y = 239.04630236849732},
             propsData = {
               IsNpcNode = true,
@@ -298,6 +300,7 @@ return {
               HideNpcs = true,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -305,6 +308,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -352,20 +356,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 211012},
-                {TalkActorType = "Npc", TalkActorId = 211013},
-                {TalkActorType = "Npc", TalkActorId = 211001},
-                {TalkActorType = "Npc", TalkActorId = 211011},
-                {TalkActorType = "Npc", TalkActorId = 211010},
-                {TalkActorType = "Npc", TalkActorId = 100001},
-                {TalkActorType = "Npc", TalkActorId = 211014}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -373,7 +369,7 @@ return {
           ["17546201238321832"] = {
             key = "17546201238321832",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = 2045.0425730100653, y = 238.59874954766605},
             propsData = {
               GuideUIEnable = true,
@@ -385,7 +381,7 @@ return {
           ["17546346914432430478"] = {
             key = "17546346914432430478",
             type = "UpdateTaskBarAndTaskMainNode",
-            name = "\230\155\180\230\150\176\228\187\187\229\138\161\231\155\174\230\160\135\232\138\130\231\130\185",
+            name = "更新任务目标节点",
             pos = {x = 2043.2974917239626, y = 110.15211491295075},
             propsData = {
               NewDescription = "Description_120114_6",
@@ -396,14 +392,14 @@ return {
           ["175758168967139004757"] = {
             key = "175758168967139004757",
             type = "ChangeRoleNode",
-            name = "\229\136\135\230\141\162\232\167\146\232\137\178",
+            name = "切换角色",
             pos = {x = 1398.2374980761372, y = -310.67875375365844},
             propsData = {QuestRoleId = 10301002, IsPlayFX = false}
           },
           ["175758168967139004758"] = {
             key = "175758168967139004758",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136\232\191\144\229\138\168\232\131\189\229\138\155/\229\176\143\230\138\128\232\131\189/\230\148\187\229\135\187",
+            name = "失效运动能力/小技能/攻击",
             pos = {x = 1415.00587698288, y = -148.33757626257216},
             propsData = {
               PlayerId = 0,
@@ -420,7 +416,7 @@ return {
           ["175758168967139004759"] = {
             key = "175758168967139004759",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1392.069770464337, y = -466.5715146465187},
             propsData = {
               Function = "HideUIInScreen",
@@ -432,7 +428,7 @@ return {
           ["175758168967139004760"] = {
             key = "175758168967139004760",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1669.5658214053624, y = -473.3582933182038},
             propsData = {
               Function = "HideUIInScreen",
@@ -444,7 +440,7 @@ return {
           ["175758168967139004761"] = {
             key = "175758168967139004761",
             type = "CameraControlNode",
-            name = "\233\149\156\229\164\180\230\142\167\229\136\182\232\138\130\231\130\185",
+            name = "镜头控制节点",
             pos = {x = 1692.9302295356633, y = -319.5589721794569},
             propsData = {
               Duration = 4,
@@ -459,21 +455,21 @@ return {
           ["175758171979339005757"] = {
             key = "175758171979339005757",
             type = "RestoreRoleNode",
-            name = "\230\129\162\229\164\141\232\167\146\232\137\178",
+            name = "恢复角色",
             pos = {x = 1695.5995592294146, y = 642.2637752509867},
             propsData = {}
           },
           ["175758171979339005758"] = {
             key = "175758171979339005758",
             type = "CameraControlClearNode",
-            name = "\233\149\156\229\164\180\230\129\162\229\164\141",
+            name = "镜头恢复",
             pos = {x = 1933.9057156632803, y = 691.2297144974988},
             propsData = {Duration = 3}
           },
           ["175758171979339005759"] = {
             key = "175758171979339005759",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1695.6903085032493, y = 932.2492307537375},
             propsData = {
               Function = "HideUIInScreen",
@@ -485,7 +481,7 @@ return {
           ["175758171979339005760"] = {
             key = "175758171979339005760",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1940.265554758764, y = 1004.7891645852353},
             propsData = {
               Function = "HideUIInScreen",
@@ -497,7 +493,7 @@ return {
           ["175758171979339005761"] = {
             key = "175758171979339005761",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136\232\191\144\229\138\168\232\131\189\229\138\155/\229\176\143\230\138\128\232\131\189/\230\148\187\229\135\187",
+            name = "失效运动能力/小技能/攻击",
             pos = {x = 1825.599223660756, y = 800.3598032514442},
             propsData = {
               PlayerId = 0,
@@ -514,14 +510,14 @@ return {
           ["175758173578539006302"] = {
             key = "175758173578539006302",
             type = "WaitQuestFinishedNode",
-            name = "\231\173\137\229\190\133\228\187\187\229\138\161\229\174\140\230\136\144",
+            name = "等待任务完成",
             pos = {x = 3086.570220879985, y = 246.50677341326298},
             propsData = {ListenCount = 3, NeedFinishCount = 3}
           },
           ["175758173578539006303"] = {
             key = "175758173578539006303",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136\232\191\144\229\138\168\232\131\189\229\138\155/\229\176\143\230\138\128\232\131\189/\230\148\187\229\135\187",
+            name = "失效运动能力/小技能/攻击",
             pos = {x = 2604.3929320016414, y = 425.40986128490226},
             propsData = {
               PlayerId = 0,
@@ -538,7 +534,7 @@ return {
           ["175758173578539006304"] = {
             key = "175758173578539006304",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 2496.6282264415267, y = 112.29484230186486},
             propsData = {
               Function = "HideUIInScreen",
@@ -550,7 +546,7 @@ return {
           ["175758173578539006305"] = {
             key = "175758173578539006305",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 2776.6393725814705, y = 109.64307855131969},
             propsData = {
               Function = "HideUIInScreen",
@@ -562,7 +558,7 @@ return {
           ["175758173578539006306"] = {
             key = "175758173578539006306",
             type = "CameraControlClearNode",
-            name = "\233\149\156\229\164\180\230\129\162\229\164\141",
+            name = "镜头恢复",
             pos = {x = 2603.406390476083, y = 267.51455019698557},
             propsData = {Duration = 3}
           }

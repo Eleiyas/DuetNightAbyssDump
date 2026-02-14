@@ -1,5 +1,4 @@
 local M = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_HomeInteractiveComponent_C")
-
 function M:IsShowInteractiveComp()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -18,11 +17,12 @@ function M:IsShowInteractiveComp()
   end
   return true
 end
-
 function M:LoadUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
-  UIManager:LoadUINew(self.UIName, nil, nil, nil, self.SystemName)
+  local NpcId = self.Owner.NpcId
+  local NpcData = DataMgr.Npc[NpcId]
+  assert(NpcData, "Npc信息不存在:" .. NpcId)
+  UIManager:LoadUINew(self.UIName, NpcData.AddonInteract, nil, nil, self.SystemName)
 end
-
 return M

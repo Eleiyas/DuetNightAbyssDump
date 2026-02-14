@@ -2,12 +2,10 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Head_Anchor.OnGetMenuContentEvent:Bind(self, self.OnGetMenuContent)
   self.Head_Anchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function M:OnMenuOpenChanged(bOpen)
   if true == bOpen then
     local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -24,20 +22,16 @@ function M:OnMenuOpenChanged(bOpen)
   end
   self:OnMenuOpenChangedComp(bOpen)
 end
-
 function M:OnGetMenuContent(Anchor)
   return self:OnGetMenuContentComp(Anchor)
 end
-
 function M:OnAnimationFinished(InAnim)
   self:OnAnimationFinishedComp(InAnim)
 end
-
 function M:Destruct()
   self.Head_Anchor.OnGetMenuContentEvent:Unbind()
   self.Head_Anchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
 end
-
 function M:Init(User, ...)
   if not User or "" == User then
     return
@@ -60,23 +54,16 @@ function M:Init(User, ...)
   end
   self:InitComp(...)
 end
-
 function M:InitComp(...)
 end
-
 function M:OnGetMenuContentComp(Anchor)
 end
-
 function M:OnMenuOpenChangedComp(bOpen)
 end
-
 function M:OnAnimationFinishedComp(InAnim)
 end
-
 function M:UpdateTag()
 end
-
 function M:SetHeadState()
 end
-
 return M

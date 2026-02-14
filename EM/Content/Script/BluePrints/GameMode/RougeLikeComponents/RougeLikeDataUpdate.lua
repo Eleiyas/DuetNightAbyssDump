@@ -1,15 +1,14 @@
 local FShop = FShop()
 local FRougeAwardInfo = FRougeAwardInfo()
 local Component = {}
-
 function Component:RefreshRougeInfo(Info, ExtraInfo)
-  local IsCanonMiniGameReward = false
+  local UseDedicatedSettlementUI = false
   if ExtraInfo then
-    IsCanonMiniGameReward = ExtraInfo.IsCanonMiniGameReward
+    UseDedicatedSettlementUI = ExtraInfo.UseDedicatedSettlementUI
     self.NoNeedTriggerGetAward = ExtraInfo.NoNeedTriggerGetAward
     self.IsPassRoomAward = ExtraInfo.IsPassRoomAward
   else
-    IsCanonMiniGameReward = false
+    UseDedicatedSettlementUI = false
     self.IsPassRoomAward = nil
     self.NoNeedTriggerGetAward = nil
   end
@@ -21,18 +20,17 @@ function Component:RefreshRougeInfo(Info, ExtraInfo)
     for k, v in pairs(InfoTable) do
       local func = self["Set" .. k]
       if func then
-        func(self, v, IsCanonMiniGameReward)
+        func(self, v, UseDedicatedSettlementUI)
       else
         print(_G.LogTag, "Cannot set info ", k)
       end
     end
   end
-  if IsCanonMiniGameReward then
-    self:CanonMiniGameRewardAddFinishMark_Add()
+  if UseDedicatedSettlementUI then
+    self:DedicatedSettlemenRewardAddFinishMark_Add()
   end
   EventManager:FireEvent(EventID.OnRougeInfoUpdate)
 end
-
 function Component:RefreshShopBlessing(ShopRandomId, Id, Value)
   print(_G.LogTag, "RougeLikeManager RefreshShopBlessing", ShopRandomId, Id, Value)
   local Shop = self.Shop:FindRef(ShopRandomId)
@@ -41,7 +39,6 @@ function Component:RefreshShopBlessing(ShopRandomId, Id, Value)
   end
   Shop.ShopBlessing:Add(Id, Value)
 end
-
 function Component:RefreshShopTreasure(ShopRandomId, Id, Value)
   print(_G.LogTag, "RougeLikeManager RefreshShopTreasure", ShopRandomId, Id, Value)
   local Shop = self.Shop:FindRef(ShopRandomId)
@@ -50,7 +47,6 @@ function Component:RefreshShopTreasure(ShopRandomId, Id, Value)
   end
   Shop.ShopTreasure:Add(Id, Value)
 end
-
 function Component:RefreshShopItem(ShopRandomId, Id, Value)
   print(_G.LogTag, "RougeLikeManager RefreshShopItem", ShopRandomId, Id, Value)
   local Shop = self.Shop:FindRef(ShopRandomId)
@@ -59,7 +55,6 @@ function Component:RefreshShopItem(ShopRandomId, Id, Value)
   end
   Shop.ShopItem:Add(Id, Value)
 end
-
 function Component:GetBlessingLevel(Id)
   local Info = self.Blessings:FindRef(Id)
   if not Info then
@@ -67,7 +62,6 @@ function Component:GetBlessingLevel(Id)
   end
   return Info.Level
 end
-
 function Component:GetTreasureLevel(Id)
   local Info = self.Treasures:FindRef(Id)
   if not Info then
@@ -75,37 +69,30 @@ function Component:GetTreasureLevel(Id)
   end
   return Info.Level
 end
-
 function Component:SetSeasonId(_SeasonId)
   self.SeasonId = _SeasonId
 end
-
 function Component:SetDifficultyId(_DifficultyId)
   self.DifficultyId = _DifficultyId
 end
-
 function Component:SetRoomIndex(_RoomIndex)
   self.RoomIndex = _RoomIndex
 end
-
 function Component:SetRoomId(_RoomId)
   self.RoomId = _RoomId
 end
-
 function Component:SetPassRooms(_PassRooms)
   self.PassRooms:Clear()
   for i = 1, #_PassRooms do
     self.PassRooms:Add(_PassRooms[i])
   end
 end
-
 function Component:SetRandomRooms(_RandomRooms)
   self.RandomRooms:Clear()
   for i = 1, #_RandomRooms do
     self.RandomRooms:Add(_RandomRooms[i])
   end
 end
-
 function Component:SetRandomBlessings(_RandomBlessings)
   self.RandomBlessings:Clear()
   local UpdateInfo = {
@@ -123,7 +110,6 @@ function Component:SetRandomBlessings(_RandomBlessings)
     self:OnUpdateAward(UpdateInfo)
   end
 end
-
 function Component:SetRandomTreasures(_RandomTreasures)
   self.RandomTreasures:Clear()
   local UpdateInfo = {
@@ -141,35 +127,28 @@ function Component:SetRandomTreasures(_RandomTreasures)
     self:OnUpdateAward(UpdateInfo)
   end
 end
-
 function Component:SetMaxRefreshTime(_MaxRefreshTime)
   self.MaxRefreshTime = _MaxRefreshTime
 end
-
 function Component:SetRefreshTime(_RefreshTime)
   self.RefreshTime = _RefreshTime
 end
-
 function Component:SetRefreshCost(_RefreshCost)
   self.RefreshCost = _RefreshCost
 end
-
 local function UpdateCharInfo()
   local Avatar = GWorld:GetAvatar()
   EventManager:FireEvent(EventID.OnSwitchRole, Avatar.CurrentChar)
 end
-
 function Component:SetAwardInfo(OldInfo, NewInfo)
   for k, v in pairs(NewInfo) do
     OldInfo[k] = v
   end
 end
-
-function Component:CanonMiniGameRewardAddFinishMark_Add()
+function Component:DedicatedSettlemenRewardAddFinishMark_Add()
   local UpdateInfo = {Event = "Mark"}
   self:OnUpdateAward(UpdateInfo)
 end
-
 function Component:SetBlessings(_Blessings)
   for k, v in pairs(_Blessings) do
     self:ResetRougeLikeAwardInfo(FRougeAwardInfo)
@@ -180,13 +159,12 @@ function Component:SetBlessings(_Blessings)
   end
   UpdateCharInfo()
 end
-
-function Component:SetBlessing_Add(_Blessings, IsCanonMiniGameReward)
+function Component:SetBlessing_Add(_Blessings, UseDedicatedSettlementUI)
   self:SetBlessings(_Blessings)
   local UpdateInfo = {
     Type = "Blessing",
     Event = "Add",
-    IsCanonMiniGameReward = IsCanonMiniGameReward,
+    UseDedicatedSettlementUI = UseDedicatedSettlementUI,
     AwardsId = {}
   }
   for BlessingId, _ in pairs(_Blessings) do
@@ -199,7 +177,6 @@ function Component:SetBlessing_Add(_Blessings, IsCanonMiniGameReward)
     self:OnUpdateAward(UpdateInfo)
   end
 end
-
 function Component:SetBlessing_Remove(_Blessings)
   local UpdateInfo = {
     Type = "Blessing",
@@ -219,7 +196,6 @@ function Component:SetBlessing_Remove(_Blessings)
   end
   UpdateCharInfo()
 end
-
 function Component:SetBlessing_Update(_Blessings)
   local UpdateInfo = {
     Type = "Blessing",
@@ -253,11 +229,9 @@ function Component:SetBlessing_Update(_Blessings)
   end
   UpdateCharInfo()
 end
-
 function Component:SetBlessing_ABA(_Blessings)
   EventManager:FireEvent(EventID.OnRougeDealEventReward)
 end
-
 function Component:SetTreasures(_Treasures)
   for k, v in pairs(_Treasures) do
     self:ResetRougeLikeAwardInfo(FRougeAwardInfo)
@@ -268,13 +242,12 @@ function Component:SetTreasures(_Treasures)
   end
   UpdateCharInfo()
 end
-
-function Component:SetTreasure_Add(_Treasures, IsCanonMiniGameReward)
+function Component:SetTreasure_Add(_Treasures, UseDedicatedSettlementUI)
   self:SetTreasures(_Treasures)
   local UpdateInfo = {
     Type = "Treasure",
     Event = "Add",
-    IsCanonMiniGameReward = IsCanonMiniGameReward,
+    UseDedicatedSettlementUI = UseDedicatedSettlementUI,
     AwardsId = {}
   }
   for TreasureId, _ in pairs(_Treasures) do
@@ -287,7 +260,6 @@ function Component:SetTreasure_Add(_Treasures, IsCanonMiniGameReward)
     self:OnUpdateAward(UpdateInfo)
   end
 end
-
 function Component:SetTreasure_Remove(_Treasures)
   local UpdateInfo = {
     Type = "Treasure",
@@ -307,11 +279,9 @@ function Component:SetTreasure_Remove(_Treasures)
   end
   UpdateCharInfo()
 end
-
 function Component:SetTreasure_ABA(_Treasures)
   EventManager:FireEvent(EventID.OnRougeDealEventReward)
 end
-
 function Component:SetTreasure_Update(_Treasures)
   for k, v in pairs(_Treasures) do
     local ExistAward = self.Treasures:FindRef(k)
@@ -327,7 +297,6 @@ function Component:SetTreasure_Update(_Treasures)
   EventManager:FireEvent(EventID.OnRougeDealEventReward)
   UpdateCharInfo()
 end
-
 function Component:SetShop(_Shop)
   self.Shop:Clear()
   for k, v in pairs(_Shop) do
@@ -346,11 +315,9 @@ function Component:SetShop(_Shop)
     self.Shop:Add(k, FShop)
   end
 end
-
 function Component:SetEventId(_EventId)
   self.EventId = _EventId
 end
-
 function Component:SetTalent(_Talent)
   for k, v in pairs(_Talent) do
     if self.Talents:Find(k) then
@@ -365,35 +332,28 @@ function Component:SetTalent(_Talent)
   local Avatar = GWorld:GetAvatar()
   EventManager:FireEvent(EventID.OnSwitchRole, Avatar.CurrentChar)
 end
-
 function Component:SetTokenExtraRate(_TokenExtraRate)
   self.TokenExtraRate = _TokenExtraRate
 end
-
 function Component:SetEndPointsExtraRate(_EndPointsExtraRate)
   self.EndPointsExtraRate = _EndPointsExtraRate
 end
-
 function Component:SetShopDiscount(_ShopDiscount)
   self.ShopDiscount = _ShopDiscount
 end
-
 function Component:SetStoryId(_StoryId)
-  DebugPrint("@zyh \229\143\145\231\148\159\229\137\167\230\131\133\228\186\139\228\187\182", _StoryId)
+  DebugPrint("@zyh 发生剧情事件", _StoryId)
   self.StoryId = _StoryId
 end
-
 function Component:SetCanGetToken(_CanGetToken)
   self.bCanGetToken = _CanGetToken
 end
-
 function Component:SetContract(_Contract)
   self.Contract:Clear()
   for k, v in pairs(_Contract) do
     self.Contract:Add(k, v)
   end
 end
-
 function Component:ResortRougeInfo(Info)
   local SortInfo = {
     {},
@@ -413,5 +373,4 @@ function Component:ResortRougeInfo(Info)
   end
   return SortInfo
 end
-
 return Component

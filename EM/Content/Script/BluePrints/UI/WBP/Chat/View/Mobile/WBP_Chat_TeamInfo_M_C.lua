@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:InitTeamInfo(ParentWidget)
   self.List_TeamInfo_M:ClearListItems()
   local TeamData = ChatController:GetModel():GetTeamForChat()
@@ -17,5 +16,4 @@ function M:InitTeamInfo(ParentWidget)
     self.List_TeamInfo_M:AddItem(Content)
   end
 end
-
 return M

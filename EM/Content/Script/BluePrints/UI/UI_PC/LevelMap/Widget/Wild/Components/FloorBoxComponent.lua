@@ -1,12 +1,10 @@
 require("UnLua")
 local Component = {}
-
 function Component:InitComponentCoroutine()
   local Coroutine = CreateCoroutine(self.InitFloorBox)
   table.insert(self.InitCoroutines, Coroutine)
   coroutine.resume(Coroutine, self, #self.InitCoroutines)
 end
-
 function Component:ClearData()
   if self.BuildingFloor2Map then
     for _, floorTable in pairs(self.BuildingFloor2Map) do
@@ -17,7 +15,6 @@ function Component:ClearData()
     self.BuildingFloor2Map = {}
   end
 end
-
 function Component:InitFloorBox(CoroutineIndex)
   self.DefaultFloorId = nil
   local sortFloor = {}
@@ -119,7 +116,6 @@ function Component:InitFloorBox(CoroutineIndex)
   end
   self:InitCoroutineCheck(CoroutineIndex)
 end
-
 function Component:OnFloorBtnClicked(FloorId, NeedClickAni)
   self:ShowFloor(FloorId)
   local Floor = self.FloorWidgetTable[FloorId]
@@ -128,6 +124,7 @@ function Component:OnFloorBtnClicked(FloorId, NeedClickAni)
   end
   Floor.IsSelected = true
   if self.LastFloorWidget and self.LastFloorWidget ~= Floor then
+    self.LastFloorWidget:StopAllAnimations()
     self.LastFloorWidget:PlayAnimation(self.LastFloorWidget.Normal)
     self.LastFloorWidget.IsSelected = false
   end
@@ -137,7 +134,6 @@ function Component:OnFloorBtnClicked(FloorId, NeedClickAni)
   end
   self:OnScaleChange(self.CurrentPercent)
 end
-
 function Component:ShowFloor_Component(FloorId)
   for floor, mapArray in pairs(self.BuildingFloor2Map) do
     for _, map in pairs(mapArray) do
@@ -174,5 +170,4 @@ function Component:ShowFloor_Component(FloorId)
     end
   end
 end
-
 return Component

@@ -1,6 +1,5 @@
 require("DataMgr")
 local Component = {}
-
 function Component:PrintBuff(Target)
   local Buffs = Target.BuffManager.Buffs
   local t = {
@@ -35,5 +34,4 @@ function Component:PrintBuff(Target)
   end
   PrintTable(t, 5)
 end
-
 return Component

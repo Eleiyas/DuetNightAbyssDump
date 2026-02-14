@@ -29,6 +29,14 @@ Str2Vector3Dict.ValueType = Vector3
 local Str2RotationDict = Class("Str2RotationDict", CustomTypes.CustomDict)
 Str2RotationDict.KeyType = BaseTypes.Str
 Str2RotationDict.ValueType = Rotation
+local ActionBaseInfo = Class("ActionBaseInfo", CustomTypes.CustomAttr)
+ActionBaseInfo.__Props__ = {
+  Location = prop.prop("Vector3", ""),
+  Rotation = prop.prop("Rotation", ""),
+  ForceSyncLocation = prop.prop("Int", ""),
+  IsCrouching = prop.prop("Int", "")
+}
+FormatProperties(ActionBaseInfo)
 local MoveMessage = Class("MoveMessage", CustomTypes.CustomAttr)
 MoveMessage.__Props__ = {
   Type = prop.prop("Str", ""),
@@ -38,7 +46,10 @@ MoveMessage.__Props__ = {
   Velocity = prop.prop("Vector3", ""),
   MovementMode = prop.prop("Int", ""),
   TimeStamp = prop.prop("Int", ""),
-  CurResourceId = prop.prop("Int", "")
+  CurResourceId = prop.prop("Int", ""),
+  MaxWalkSpeed = prop.prop("Float", "", 0),
+  MaxAcceleration = prop.prop("Float", "", 0),
+  ForceReSyncLocation = prop.prop("Bool", "")
 }
 FormatProperties(MoveMessage)
 local ActionMessage = Class("ActionMessage", CustomTypes.CustomAttr)
@@ -71,14 +82,16 @@ ActionMessage.__Props__ = {
   CtrlForward = prop.prop("Vector3", ""),
   CtrlRight = prop.prop("Vector3", ""),
   WallJumpDirection = prop.prop("Vector3", ""),
-  UsingActionNew = prop.prop("Int", "")
+  UsingActionNew = prop.prop("Int", ""),
+  ActionBaseInfo = prop.prop("ActionBaseInfo", "")
 }
 FormatProperties(ActionMessage)
 local StopActionMessage = Class("StopActionMessage", CustomTypes.CustomAttr)
 StopActionMessage.__Props__ = {
   Type = prop.prop("Str", ""),
   TimeStamp = prop.prop("Int", ""),
-  ClassName = prop.prop("Str", "")
+  ClassName = prop.prop("Str", ""),
+  ActionBaseInfo = prop.prop("ActionBaseInfo", "")
 }
 FormatProperties(StopActionMessage)
 local HideActionMessage = Class("HideActionMessage", CustomTypes.CustomAttr)
@@ -93,6 +106,32 @@ SwitchShowWeapon.__Props__ = {
   ShowWeapon = prop.prop("Str", "")
 }
 FormatProperties(SwitchShowWeapon)
+local UseTargetParam = Class("UseTargetParam", CustomTypes.CustomAttr)
+UseTargetParam.__Props__ = {
+  SubState = prop.prop("Int", ""),
+  SubType = prop.prop("Str", ""),
+  ResourceId = prop.prop("Int", ""),
+  FishId = prop.prop("Int", ""),
+  FishingRodId = prop.prop("Int", ""),
+  CreatorId = prop.prop("Int", "")
+}
+FormatProperties(UseTargetParam)
+local SwitchOnlineState = Class("SwitchOnlineState", CustomTypes.CustomAttr)
+SwitchOnlineState.__Props__ = {
+  Type = prop.prop("Str", ""),
+  State = prop.prop("Int", ""),
+  UseTargetParam = prop.prop("UseTargetParam", ""),
+  PreState = prop.prop("Int", ""),
+  IsUpdateState = prop.prop("Bool", ""),
+  ActionBaseInfo = prop.prop("ActionBaseInfo", "")
+}
+FormatProperties(SwitchOnlineState)
+local UseGouSuoMessage = Class("UseGouSuoMessage", CustomTypes.CustomAttr)
+UseGouSuoMessage.__Props__ = {
+  Type = prop.prop("Str", ""),
+  CreatorId = prop.prop("Int", "")
+}
+FormatProperties(UseGouSuoMessage)
 local OnlineClientMessage = Class("OnlineClientMessage", CustomTypes.CustomAttr)
 OnlineClientMessage.__Props__ = {
   Sender = prop.prop("ObjId", ""),
@@ -101,7 +140,9 @@ OnlineClientMessage.__Props__ = {
   Action = prop.prop("ActionMessage", ""),
   StopAction = prop.prop("StopActionMessage", ""),
   Hide = prop.prop("HideActionMessage", ""),
-  SwitchShowWeapon = prop.prop("SwitchShowWeapon", "")
+  SwitchShowWeapon = prop.prop("SwitchShowWeapon", ""),
+  SwitchOnlineState = prop.prop("SwitchOnlineState", ""),
+  UseGouSuo = prop.prop("UseGouSuoMessage", "")
 }
 FormatProperties(OnlineClientMessage)
 local OnlineClientMessageList = Class("OnlineClientMessageList", CustomTypes.CustomList)
@@ -116,7 +157,11 @@ return {
   ActionMessage = ActionMessage,
   StopActionMessage = StopActionMessage,
   HideActionMessage = HideActionMessage,
-  OnlineClientMessage = OnlineClientMessage,
+  UseGouSuoMessage = UseGouSuoMessage,
   SwitchShowWeapon = SwitchShowWeapon,
-  OnlineClientMessageList = OnlineClientMessageList
+  OnlineClientMessage = OnlineClientMessage,
+  OnlineClientMessageList = OnlineClientMessageList,
+  SwitchOnlineState = SwitchOnlineState,
+  ActionBaseInfo = ActionBaseInfo,
+  UseTargetParam = UseTargetParam
 }

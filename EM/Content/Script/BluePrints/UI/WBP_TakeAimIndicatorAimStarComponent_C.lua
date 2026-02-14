@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:SwitchAimStar(StyleNode)
   StyleNode = StyleNode or self.CurWeaponStyleNode
   local Widget = self["Panel_Aim_" .. StyleNode]
@@ -16,7 +15,7 @@ function Component:SwitchAimStar(StyleNode)
   if self.LastPanel then
     if self.LastPanel.SwitchOut then
       self.LastPanel:SwitchOut()
-    else
+    elseif self.LastPanel ~= self.CurPanel then
       self.LastPanel:SetVisibility(UE4.ESlateVisibility.Collapsed)
       if self.LastPanel == self.Panel_Aim_BulletReload then
         EMUIAnimationSubsystem:EMStopAnimation(self, self.Reload)
@@ -42,14 +41,16 @@ function Component:SwitchAimStar(StyleNode)
     self.Panel_Kill:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function Component:RefreshAimStar()
   if self.CurPanel and self.CurPanel.Refresh then
     self.CurPanel:Refresh()
   end
 end
-
 function Component:PlayHitFeedbackAnim()
+  if self.CurPanel and self.CurPanel.PlayHitFeedbackAnim then
+    self.CurPanel:PlayHitFeedbackAnim()
+    return
+  end
   if self.CurPanel and self.CurPanel.CurActorRelation == "Enemy" and not EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Aim_Critical) then
     EMUIAnimationSubsystem:EMStopAnimation(self, self.Aim_Hit)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Aim_Critical)
@@ -58,7 +59,6 @@ function Component:PlayHitFeedbackAnim()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Aim_Hit)
   end
 end
-
 function Component:GetScreenCenterPos()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -67,7 +67,6 @@ function Component:GetScreenCenterPos()
   end
   return UIManager:GetScreenCenterPos()
 end
-
 function Component:GetAimNeedChangeState(SourceActor, TargetActor)
   if not IsValid(SourceActor) or not IsValid(TargetActor) then
     return "Default"
@@ -106,7 +105,6 @@ function Component:GetAimNeedChangeState(SourceActor, TargetActor)
     return "Default"
   end
 end
-
 function Component:RefreshAimColorByState(ActorRelation)
   self.NextActorRelation = ActorRelation
   if self.CurWeaponStyleNode == "Melee" or self.CurState == "Reload" or self["Panel_Aim_" .. self.CurWeaponStyleNode] == nil then
@@ -125,31 +123,26 @@ function Component:RefreshAimColorByState(ActorRelation)
     self:RealRefreshAimColor(ColorIntensty)
   end
 end
-
 function Component:RefreshHitEffectEnhanceVisibility()
   if self.CurPanel and self.CurPanel.RefreshHitEffectEnhanceVisibility then
     self.CurPanel:RefreshHitEffectEnhanceVisibility()
   end
 end
-
 function Component:RealRefreshAimColor(ColorIntensty)
   if self.CurPanel and self.CurPanel.RealRefreshAimColor then
     self.CurPanel:RealRefreshAimColor(ColorIntensty)
   end
 end
-
 function Component:UpdateDiffusionStateInTick(InDeltaTime)
   if self.IsDiffuseState and self.CurPanel and self.CurPanel.UpdateDiffusionStateInTick then
     self.CurPanel:UpdateDiffusionStateInTick(InDeltaTime)
   end
 end
-
 function Component:TryToPlayAimDiffusionStartAnim()
   if self.CurPanel and self.CurPanel.TryToPlayAimDiffusionStartAnim then
     self.CurPanel:TryToPlayAimDiffusionStartAnim()
   end
 end
-
 function Component:CheckNotShootHold()
   if not self.OwnerPlayer:CharacterInTag("Shooting") or self.CurState == "Reload" then
     return true
@@ -162,7 +155,6 @@ function Component:CheckNotShootHold()
     end
   end
 end
-
 function Component:UpdateAimStarOpacity()
   if self.CurPanel and self.CurPanel.UpdateAimStarOpacity then
     if self.CurrentWeapon:GetAttr("MagazineBulletNum") <= 0 and self.CurrentWeapon:GetAttr("BulletNum") <= 0 then
@@ -172,29 +164,24 @@ function Component:UpdateAimStarOpacity()
     end
   end
 end
-
 function Component:BeginAccumulate(Skill)
   if self.CurPanel and self.CurPanel.BeginAccumulate then
     self.CurPanel:BeginAccumulate(Skill)
   end
 end
-
 function Component:EndAccumulateOnLeaveNode(Owner, NodeId, SkillNode)
   if self.CurPanel and self.CurPanel.EndAccumulateOnLeaveNode then
     self.CurPanel:EndAccumulateOnLeaveNode(Owner, NodeId, SkillNode)
   end
 end
-
 function Component:UpdateAccumulateStateInTick(InDeltaTime)
   if self.IsAccumulateState and self.CurPanel and self.CurPanel.UpdateAccumulateStateInTick then
     self.CurPanel:UpdateAccumulateStateInTick(InDeltaTime)
   end
 end
-
 function Component:UpdateTrackingBowAimColor()
   if self.IsAccumulateState and self.CurPanel and self.CurPanel.UpdateTrackingBowAimColor then
     self.CurPanel:UpdateTrackingBowAimColor()
   end
 end
-
 return Component

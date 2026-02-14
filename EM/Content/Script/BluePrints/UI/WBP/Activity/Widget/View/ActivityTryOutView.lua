@@ -3,7 +3,6 @@ local ActivityCommon = require("BluePrints.UI.WBP.Activity.ActivityCommon")
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 require("UnLua")
 local M = {}
-
 function M:PlayFadeIn()
   self:PlayAnimation(self.In)
   local TitleWidget = self.Title:GetChildAt(0)
@@ -11,7 +10,6 @@ function M:PlayFadeIn()
     TitleWidget:PlayAnimationForward(TitleWidget.In)
   end
 end
-
 function M:PlayFadeOut(IsRemoveFromParent)
   self:PlayAnimation(self.Out)
   if IsRemoveFromParent then
@@ -21,25 +19,21 @@ function M:PlayFadeOut(IsRemoveFromParent)
     })
   end
 end
-
 function M:HidePage(IsNeedPlayOutAnim)
   if IsNeedPlayOutAnim then
     self:PlayFadeOut()
   end
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ShowPage(IsNeedPlayInAnim)
   if IsNeedPlayInAnim then
     self:PlayFadeIn()
   end
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:IsPageInVisible()
   return self:IsVisible()
 end
-
 function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, PageServerData, InfoClickFunction, GachaClickFunction, GoToTargetPageFunction, RewardGetClickFunction, ViewCharDetailFunction, SelectCharFunction, StuffDetailOpenFunction)
   if ActivityConfigData.EventNameBPPath then
     self.Title:ClearChildren()
@@ -151,7 +145,13 @@ function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, PageServerD
       {Type = "Img", ImgShortPath = "X"}
     }
   })
-  self.TryOutChar_Title:Init(PageConfigData.CharId, PageConfigData.SkinId, PageConfigData.ColorVarName, ViewCharDetailFunction, self)
+  if PageConfigData.SkinId then
+    self.WS_Title:SetActiveWidgetIndex(1)
+    self.TryOutSkin_Title:Init(PageConfigData.SkinId)
+  else
+    self.WS_Title:SetActiveWidgetIndex(0)
+    self.TryOutChar_Title:Init(PageConfigData.CharId, PageConfigData.SkinId, PageConfigData.ColorVarName, ViewCharDetailFunction, self)
+  end
   self.Text_RewardTitle:SetText(GText("UI_GameEvent_TrialReward"))
   self.Btn_Goto:SetText(GText("UI_GameEvent_TrialPortal"))
   self.Btn_Goto:SetGamePadImg("A")
@@ -170,7 +170,6 @@ function M:RefreshPageStaticView(ActivityConfigData, PageConfigData, PageServerD
     AudioManager(self):PlayUISound(self, "event:/ui/activity/confirm_click", nil, nil)
   end)
 end
-
 function M:InitUIInfoByPlatform()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.PC then
     self.Key_Left:CreateCommonKey({
@@ -191,14 +190,12 @@ function M:InitUIInfoByPlatform()
   else
   end
 end
-
 function M:CancelCharSelectView()
   local LastCharItemWidget = self["CharacterItem_" .. self.CurSelectIndex]
   if LastCharItemWidget then
     LastCharItemWidget:SetIsSelected(false)
   end
 end
-
 function M:BindAllClickFunction(InfoClickFunction, GachaClickFunction, GoToTargetPageFunction, RewardGetClickFunction)
   self.Activity_Time.Btn_Detail:BindEventOnClicked(self, InfoClickFunction)
   self.Btn_Gacha:BindEventOnClicked(self, GachaClickFunction)
@@ -206,7 +203,6 @@ function M:BindAllClickFunction(InfoClickFunction, GachaClickFunction, GoToTarge
   self.Btn_Goto:BindEventOnClicked(self, GoToTargetPageFunction)
   self.Btn_Reward:BindEventOnClicked(self, RewardGetClickFunction)
 end
-
 function M:UnBindAllClickFunction()
   self.Activity_Time.Btn_Detail:UnBindEventOnClickedByObj(self)
   self.Btn_Gacha:UnBindEventOnClickedByObj(self)
@@ -214,7 +210,6 @@ function M:UnBindAllClickFunction()
   self.Btn_Goto:UnBindEventOnClickedByObj(self)
   self.Btn_Reward:UnBindEventOnClickedByObj(self)
 end
-
 function M:RefreshPageDynamicView(ActivityServerData)
   local bGetReward, bFinished = false, false
   if ActivityServerData then
@@ -246,9 +241,7 @@ function M:RefreshPageDynamicView(ActivityServerData)
     end
   end
 end
-
 function M:RefreshItemStyleView(ActivityServerData)
   self:RefreshPageDynamicView(ActivityServerData)
 end
-
 return M

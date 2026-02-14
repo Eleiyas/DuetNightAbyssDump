@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(RootPage)
   self.VoteMain = RootPage
   self.TeamHeadList = {}
@@ -25,10 +24,8 @@ function M:Init(RootPage)
   self.bSelectLeave = false
   self:AddDispatcher(EventID.UpdateVotePlayerActiveState, self, self.UpdateVotePlayerActiveState)
 end
-
 function M:UpdateVotePlayerActiveState(Eid, bIsInactive)
 end
-
 function M:OnPlayerVote(VoteValue, Eid, bMainPlayer, bFirstMainPlayer)
   if 0 == self.WB_Player_L:GetChildrenCount() and 0 == self.WB_Player_R:GetChildrenCount() then
     self:PlayAnimation(self.Left_In)
@@ -40,7 +37,6 @@ function M:OnPlayerVote(VoteValue, Eid, bMainPlayer, bFirstMainPlayer)
     self:OnPlayerVoteLeave(Eid, bMainPlayer, bFirstMainPlayer)
   end
 end
-
 function M:OnPlayerVoteContinue(Eid, bMainPlayer, bFirstMainPlayer)
   local TeamHead = self.TeamHeadList[Eid].TeamHead
   self:SortHead(TeamHead, self.WB_Player_R)
@@ -64,7 +60,6 @@ function M:OnPlayerVoteContinue(Eid, bMainPlayer, bFirstMainPlayer)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_select_continue", nil, nil)
 end
-
 function M:OnPlayerVoteLeave(Eid, bMainPlayer, bFirstMainPlayer)
   local TeamHead = self.TeamHeadList[Eid].TeamHead
   self.WB_Player_L:AddChild(TeamHead)
@@ -88,7 +83,6 @@ function M:OnPlayerVoteLeave(Eid, bMainPlayer, bFirstMainPlayer)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_select_finish", nil, nil)
 end
-
 function M:SortHead(TeamHead, Widget)
   local TmpList = Widget:GetAllChildren()
   Widget:ClearChildren()
@@ -101,7 +95,6 @@ function M:SortHead(TeamHead, Widget)
     v:Init("Vote", PlayerState, Index, false, bMainPlayer, self)
   end
 end
-
 function M:ChangeSelectedHead(TeamHead)
   self.VoteMain:OnGamePadOpenTeamInfo()
   if TeamHead == self.SelectedHead then
@@ -114,7 +107,6 @@ function M:ChangeSelectedHead(TeamHead)
   end
   self.SelectedHead = TeamHead
 end
-
 function M:CloseAllAnchor()
   for i = 0, self.WB_Player_L:GetChildrenCount() do
     local Widget = self.WB_Player_L:GetChildAt(i)
@@ -135,7 +127,6 @@ function M:CloseAllAnchor()
     end
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   if 0 ~= self.WB_Player_L:GetChildrenCount() then
     return self.WB_Player_L:GetChildAt(0).Head_Team.Button_Area
@@ -145,5 +136,4 @@ function M:BP_GetDesiredFocusTarget()
     return self.WB_Player_R:GetChildAt(0).Head_Team.Button_Area
   end
 end
-
 return M

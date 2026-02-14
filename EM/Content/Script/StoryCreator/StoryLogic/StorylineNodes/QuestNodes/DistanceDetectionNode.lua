@@ -1,5 +1,4 @@
 local DistanceDetectionNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function DistanceDetectionNode:Init()
   self.PointType1 = "StaticCreator"
   self.PointId1 = 0
@@ -8,7 +7,6 @@ function DistanceDetectionNode:Init()
   self.Target1 = nil
   self.Target2 = nil
 end
-
 function DistanceDetectionNode:Start(QuestLine, InportName)
   if "Stop" == InportName then
     self:FinishAction()
@@ -16,13 +14,12 @@ function DistanceDetectionNode:Start(QuestLine, InportName)
     self:Execute()
   end
 end
-
 function DistanceDetectionNode:Execute()
   self.Widget = UIManager(self):GetUIObj("DungeonCaptureFloat")
   if not self.Widget then
     self.Widget = UIManager(self):LoadUINew("DungeonCaptureFloat")
     if not self.Widget then
-      error("\232\183\157\231\166\187UI\229\136\155\229\187\186\229\164\177\232\180\165")
+      error("距离UI创建失败")
     end
   end
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -44,35 +41,29 @@ function DistanceDetectionNode:Execute()
     self.Target2 = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   end
   if not self.Target1 then
-    error("\230\156\170\232\131\189\230\137\190\229\136\176\230\163\128\230\181\139\231\130\1851\229\174\158\228\189\147")
+    error("未能找到检测点1实体")
   end
   if not self.Target2 then
-    error("\230\156\170\232\131\189\230\137\190\229\136\176\230\163\128\230\181\139\231\130\1852\229\174\158\228\189\147")
+    error("未能找到检测点2实体")
   end
   self.Widget:RemainingDistance(self.Target1, self.Target2)
 end
-
 function DistanceDetectionNode:RemoveWidget()
   if self.Widget then
     self.Widget:EndRemainingDistance()
     self.Widget = nil
   end
 end
-
 function DistanceDetectionNode:OnQuestlineFail()
   self:RemoveWidget()
 end
-
 function DistanceDetectionNode:OnQuestlineSuccess()
   self:RemoveWidget()
 end
-
 function DistanceDetectionNode:FinishAction()
   self:Finish()
 end
-
 function DistanceDetectionNode:Clear()
   self:RemoveWidget()
 end
-
 return DistanceDetectionNode

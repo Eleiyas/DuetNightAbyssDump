@@ -1,5 +1,4 @@
 local CameraControlNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function CameraControlNode:Init()
   self.Duration = 0
   self.CameraName = ""
@@ -9,7 +8,6 @@ function CameraControlNode:Init()
   self.FOV = 0
   self.PPMaterialPath = ""
 end
-
 function CameraControlNode:Execute(Callback)
   DebugPrint("------------ CameraControlNode ------------------")
   local STLCameraControlInfo = {}
@@ -29,6 +27,9 @@ function CameraControlNode:Execute(Callback)
         Controller:AddDisableRotationInputTag("CameraControlNode")
       end
     end
+    if Player.CameraControlComponent.DisableArmLengthControl then
+      Player.CameraControlComponent:DisableArmLengthControl("CameraControlNode")
+    end
     self.TimerHandle = GWorld.GameInstance:AddTimer(self.Duration, function()
       Callback()
     end)
@@ -38,7 +39,6 @@ function CameraControlNode:Execute(Callback)
     Callback()
   end
 end
-
 function CameraControlNode:SetPPMaterial(CameraComponent, PPMaterialPath, InOutInfo)
   if not IsValid(CameraComponent) then
     return
@@ -59,9 +59,9 @@ function CameraControlNode:SetPPMaterial(CameraComponent, PPMaterialPath, InOutI
   if PPMaterialPath and "" ~= PPMaterialPath then
     Material = LoadObject(PPMaterialPath)
     if not Material then
-      local Message = "\229\144\142\229\164\132\231\144\134\230\157\144\232\180\168\228\184\141\229\173\152\229\156\168\239\188\140\232\183\175\229\190\132\239\188\154" .. PPMaterialPath
-      local Title = "\233\149\156\229\164\180\230\142\167\229\136\182\232\138\130\231\130\185Error\239\188\154\229\144\142\229\164\132\231\144\134\230\157\144\232\180\168\228\184\141\229\173\152\229\156\168"
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, Title, Message)
+      local Message = "后处理材质不存在，路径：" .. PPMaterialPath
+      local Title = "镜头控制节点Error：后处理材质不存在"
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Quest, Title, Message)
       return
     end
   end
@@ -73,12 +73,10 @@ function CameraControlNode:SetPPMaterial(CameraComponent, PPMaterialPath, InOutI
   InOutInfo.DynamicInstance = DynamicInstance
   CameraComponent:AddOrUpdateBlendable(DynamicInstance, 1)
 end
-
 function CameraControlNode:Clear()
   if self.TimerHandle then
     GWorld.GameInstance:RemoveTimer(self.TimerHandle)
   end
   self.TimerHandle = nil
 end
-
 return CameraControlNode

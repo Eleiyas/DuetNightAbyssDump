@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
 function M:OnActorReady(Info)
   print(_G.LogTag, "LXZ OnActorReady", self:GetName())
   M.Super.OnActorReady(self, Info)
@@ -17,47 +16,47 @@ function M:OnActorReady(Info)
   if 0 ~= self.HookInteractiveComponent.InteractiveDistance then
     self.MinDis = self.HookInteractiveComponent.InteractiveDistance
   end
-  local GameMode = URuntimeCommonFunctionLibrary.GetSubGameModeByLoc(self, self:K2_GetActorLocation())
-  if nil == GameMode then
-    GameMode = UGameplayStatics.GetGameMode(self)
-  end
-  self.HookGameModeComp = GameMode:GetComponentByClass(UHookGameModeComponent:StaticClass())
-  self.HookInteractiveComponent.HookGameModeComp = self.HookGameModeComp
   self.HookInteractiveComponent:InitCommonUIConfirmID(self.Data.InteractiveId)
   self.DeviceInPc = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
 end
-
 function M:OpenMechanism(PlayerId)
-  if self.Player then
+  if self:CheckPlayerEid(PlayerId) then
     return
   end
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local PlayerCharacter = Battle(self):GetEntity(PlayerId)
-  if GameInstance.ShouldPlayDeliveryEndMontage then
+  local GameState = UGameplayStatics.GetGameState(self)
+  if GameInstance.ShouldPlayDeliveryEndMontage or GameState.ShouldStopHookInDungeonDelivery then
     return
   end
-  local TraceInfo = "From BP_Hook_C:CheckCanInteractive"
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
   if not PlayerCharacter:SetCharacterTag("Hook") then
-    local UIManager = GWorld.GameInstance:GetGameUIManager()
-    UIManager:ShowUITip(UIConst.Tip_CommonTop, GText("UI_Mechanism_CannotHook"))
+    if MainPlayer == PlayerCharacter then
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      UIManager:ShowUITip(UIConst.Tip_CommonTop, GText("UI_Mechanism_CannotHook"))
+    end
     return
   end
   PlayerCharacter.IsInHook = true
   PlayerCharacter:SetMechanismEid(self.Eid)
   self.Overridden.OpenMechanism(self, PlayerId)
   self.HookInteractiveComponent:OnStartInteractive(PlayerCharacter, self.HookInteractiveComponent.MontageName, self.Eid)
-  self.Player = PlayerCharacter
-  if self.HookGameModeComp.ValidHook then
-    self.HookGameModeComp.ValidHook.HookInteractiveComponent:ForceEndInteractive(PlayerCharacter)
+  print(_G.LogTag, "LXZ SetPlayer OpenMechanism", PlayerCharacter)
+  self:SetPlayer(PlayerCharacter, true)
+  self:SetPlayerEid(PlayerId, true)
+  local GameState = UGameplayStatics.GetGameState(self)
+  if GameState.ValidHook then
+    GameState.ValidHook.HookInteractiveComponent:ForceEndInteractive(PlayerCharacter)
   end
-  self.HookGameModeComp.ValidHook = self
-  PlayerCharacter:ForbidSkillsInHooking(true)
-  PlayerCharacter:DisableBattleWheel()
-  PlayerCharacter:AddForbidTag("Battle")
-  PlayerCharacter.MoveInput = FVector(0, 0, 0)
-  PlayerCharacter.MoveInputCache = FVector(0, 0, 0)
-  local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
-  PlayerCharacter:AddMoveBlock(ESourceTags.Interactive)
+  GameState.ValidHook = self
+  if MainPlayer.Eid == PlayerId and (IsStandAlone(self) or IsClient(self)) then
+    PlayerCharacter:ForbidSkillsInHooking(true)
+    PlayerCharacter:DisableBattleWheel()
+    PlayerCharacter:AddForbidTag("Battle")
+    PlayerCharacter.MoveInput = FVector(0, 0, 0)
+    PlayerCharacter.MoveInputCache = FVector(0, 0, 0)
+    PlayerCharacter:AddMoveBlock(ESourceTags.Interactive)
+  end
   local Rot = UKismetMathLibrary.FindLookAtRotation(PlayerCharacter:K2_GetActorLocation(), self:K2_GetActorLocation())
   Rot.Pitch = 0
   Rot.Roll = 0
@@ -65,109 +64,129 @@ function M:OpenMechanism(PlayerId)
   PlayerCharacter:SetCollisionType("CapsuleComponent", "WorldStatic", ECollisionResponse.ECR_OverLap, false)
   PlayerCharacter:K2_SetActorRotation(Rot, false, nil, false)
 end
-
 function M:CloseMechanism(PlayerId, IsSuccess)
+  print(_G.LogTag, "LXZ Hook CloseMechanism")
   self.Overridden.CloseMechanism(self, PlayerId, IsSuccess)
   local PlayerCharacter = Battle(self):GetEntity(PlayerId)
-  PlayerCharacter.IsInHook = false
-  PlayerCharacter:SetMechanismEid(0)
-  self.HookInteractiveComponent:OnEndInteractive(PlayerCharacter, self.HookInteractiveComponent.MontageName, self.Eid)
-  self.Player = nil
-  if self.HookGameModeComp then
-    self.HookGameModeComp.LastValidHook = self
-    self.HookGameModeComp.ValidHook = nil
+  if PlayerCharacter then
+    PlayerCharacter.IsInHook = false
+    PlayerCharacter:SetMechanismEid(0)
+    self.HookInteractiveComponent:OnEndInteractive(PlayerCharacter, self.HookInteractiveComponent.MontageName, self.Eid)
   end
-  PlayerCharacter:ForbidSkillsInHooking(false)
-  PlayerCharacter:EnableBattleWheel()
-  PlayerCharacter:MinusForbidTag("Battle")
-  if not PlayerCharacter:IsDead() then
-    PlayerCharacter:SetCharacterTag("Falling")
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  self:SetPlayer(PlayerCharacter, false)
+  self:SetPlayerEid(PlayerId, false)
+  local GameState = UGameplayStatics.GetGameState(self)
+  if GameState then
+    GameState.LastValidHook = self
+    GameState.ValidHook = nil
   end
-  local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
-  PlayerCharacter:RemoveMoveBlock(ESourceTags.Interactive)
-  PlayerCharacter:SetCollisionType("CapsuleComponent", "MonsterPawn", ECollisionResponse.ECR_Block, false)
-  PlayerCharacter:SetCollisionType("CapsuleComponent", "WorldStatic", ECollisionResponse.ECR_Block, false)
+  if MainPlayer and MainPlayer.Eid == PlayerId and (IsStandAlone(self) or IsClient(self)) then
+    PlayerCharacter:ForbidSkillsInHooking(false)
+    PlayerCharacter:EnableBattleWheel()
+    PlayerCharacter:MinusForbidTag("Battle")
+    PlayerCharacter:RemoveMoveBlock(ESourceTags.Interactive)
+  end
+  if PlayerCharacter then
+    PlayerCharacter:SetCollisionType("CapsuleComponent", "MonsterPawn", ECollisionResponse.ECR_Block, false)
+    PlayerCharacter:SetCollisionType("CapsuleComponent", "WorldStatic", ECollisionResponse.ECR_Block, false)
+  end
 end
-
 function M:ForceCloseMechanism(PlayerId, IsSuccess)
   self.Overridden.ForceCloseMechanism(self, PlayerId, IsSuccess)
   local PlayerCharacter = Battle(self):GetEntity(PlayerId)
-  PlayerCharacter:ForbidSkillsInHooking(false)
-  PlayerCharacter:EnableBattleWheel()
-  PlayerCharacter:MinusForbidTag("Battle")
-  PlayerCharacter:SetCharacterTag("Falling")
-  PlayerCharacter:SetMechanismEid(0)
-  self.Player = nil
-  self.HookGameModeComp.LastValidHook = self
-  self.HookGameModeComp.ValidHook = nil
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  self:SetPlayer(PlayerCharacter, false)
+  self:SetPlayerEid(PlayerId, false)
+  local GameState = UGameplayStatics.GetGameState(self)
+  GameState.LastValidHook = self
+  GameState.ValidHook = nil
+  if PlayerCharacter then
+    if MainPlayer and MainPlayer.Eid == PlayerId and (IsStandAlone(self) or IsClient(self)) then
+      PlayerCharacter:ForbidSkillsInHooking(false)
+      PlayerCharacter:EnableBattleWheel()
+      PlayerCharacter:MinusForbidTag("Battle")
+    end
+    print(_G.LogTag, "LXZ HandleUseGouSuo ForceCloseMechanism")
+    PlayerCharacter:SetCharacterTag("Falling")
+    PlayerCharacter:SetMechanismEid(0)
+  end
 end
-
 function M:GetCanOpen()
-  return self.Player == nil
+  local Avatar = GWorld:GetAvatar()
+  if Avatar and Avatar.IsInRegionOnline then
+    return true
+  end
+  return self.Players:Length() > 0
 end
-
 function M:BoxBeginOverlap(Component, OtherActor)
-  self.Player = OtherActor
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  if OtherActor ~= MainPlayer then
+    return
+  end
+  self:SetPlayer(OtherActor, true)
 end
-
 function M:BoxEndOverlap(Component, OtherActor)
-  self.Player = nil
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  if OtherActor ~= MainPlayer then
+    return
+  end
+  self:SetPlayer(OtherActor, false)
 end
-
 function M:ShowUI()
   self.Overridden.ShowUI(self)
 end
-
 function M:CloseUI()
   self.Overridden.CloseUI(self)
 end
-
 function M:RefreshUI(Player)
 end
-
 function M:OnCharacterEnterLanding(Character, Speed)
-  if not Character:IsPlayer() or Character ~= self.Player then
+  if not Character:IsPlayer() or self:CheckPlayer(Character) then
     return
   end
   self.HookInteractiveComponent:EndInteractive(Character)
 end
-
-function M:ReceiveEndPlay(EndReason)
-  M.Super.ReceiveEndPlay(self, EndReason)
-end
-
 function M:PlayEndMontage(Character, MontageName)
   Character:PlayActionMontage("Interactive/MechInteractive", MontageName .. "_Montage", {}, false)
 end
-
+function M:OnRep_PlayerEid()
+end
 function M:DisplayInteractiveBtn(PlayerActor)
-  if not self.HookGameModeComp then
-    print(_G.LogTag, "Error: GameMode\231\188\186\229\176\145\233\146\169\233\148\129\231\187\132\228\187\182")
+  local GameState = UGameplayStatics.GetGameState(self)
+  if not GameState then
     return
   end
-  self.HookGameModeComp:AddInteractiveHook(self)
+  GameState:AddInteractiveHook(self)
   self:SetBtnDisplay(true)
 end
-
 function M:RefreshInteractiveBtn(PlayerActor)
-  if not self.HookGameModeComp then
-    print(_G.LogTag, "Error: GameMode\231\188\186\229\176\145\233\146\169\233\148\129\231\187\132\228\187\182")
+  local GameState = UGameplayStatics.GetGameState(self)
+  if not GameState then
     return
   end
-  local ValidHook = self.HookGameModeComp:GetValidHook(PlayerActor, self.TargetLoc)
+  local ValidHook = GameState:GetValidHook(PlayerActor, self.TargetLoc)
   if ValidHook ~= self then
     return
   end
   if not IsValid(self.InteractiveUI) then
-    self.InteractiveUI = UIManager(self):GetUIObj("HookInteractive")
-    if not self.InteractiveUI then
-      self.InteractiveUI = UIManager(self):LoadUINew("HookInteractive")
+    if self.DeviceInPc then
+      self.InteractiveUI = UIManager(self):GetUIObj("HookInteractive")
+      if not IsValid(self.InteractiveUI) then
+        self.InteractiveUI = UIManager(self):LoadUINew("HookInteractive")
+        self.InteractiveUI:Init(self)
+      end
+    else
+      EventManager:FireEvent(EventID.OnMobileHookShow, self)
     end
-    self.InteractiveUI:Init()
   end
-  if IsValid(self.InteractiveUI) and not UIManager(self):GetUIObj("HookInteractive") then
-    self.InteractiveUI = UIManager(self):LoadUINew("HookInteractive")
-    self.InteractiveUI:Init()
+  if IsValid(self.InteractiveUI) then
+    if not UIManager(self):GetUIObj("HookInteractive") and self.DeviceInPc then
+      self.InteractiveUI = UIManager(self):LoadUINew("HookInteractive")
+      self.InteractiveUI:Init(self)
+    elseif not self.DeviceInPc then
+      EventManager:FireEvent(EventID.OnMobileHookShow, self)
+    end
   end
   if IsValid(self.InteractiveUI) and self.InteractiveUI.Hook and self.InteractiveUI.Hook ~= ValidHook then
     self.InteractiveUI.Hook:CloseUI()
@@ -179,20 +198,37 @@ function M:RefreshInteractiveBtn(PlayerActor)
   end
   self:RefreshUI(PlayerActor)
 end
-
 function M:NotDisplayInteractiveBtn(PlayerActor)
-  if not self.HookGameModeComp then
-    print(_G.LogTag, "Error: GameMode\231\188\186\229\176\145\233\146\169\233\148\129\231\187\132\228\187\182")
+  local GameState = UGameplayStatics.GetGameState(self)
+  if not GameState then
     return
   end
   self:SetBtnDisplay(false)
-  self.HookGameModeComp:RemoveInteractiveHook(self)
+  GameState:RemoveInteractiveHook(self)
   if not IsValid(self.InteractiveUI) or self.InteractiveUI.Hook ~= self then
     return
   end
-  self.InteractiveUI:Close()
+  self.InteractiveUI:Close(self)
   self.InteractiveUI = nil
   self:CloseUI()
 end
-
+function M:OnEMActorDestroy(...)
+  if self.Players:Length() > 0 then
+    for i, v in pairs(self.Players) do
+      self.HookInteractiveComponent:EndInteractive(v)
+    end
+  end
+  M.Super.OnEMActorDestroy(self, ...)
+end
+function M:ReceiveEndPlay(Reason)
+  if self.bDisplayBtn then
+    self:NotDisplayInteractiveBtn()
+  end
+  if self.Players:Length() > 0 then
+    for i, v in pairs(self.Players) do
+      self.HookInteractiveComponent:EndInteractive(v)
+    end
+  end
+  M.Super.ReceiveEndPlay(self, Reason)
+end
 return M

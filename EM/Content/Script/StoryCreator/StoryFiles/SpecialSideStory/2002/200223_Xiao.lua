@@ -52,7 +52,7 @@ return {
       isStoryNode = true,
       key = "173763418225831432062",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1196.9290617848967, y = 272.1464530892449},
       propsData = {
         QuestId = 20022301,
@@ -76,8 +76,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Xiao_1190087"
+        StoryGuidePointName = "Npc_Xiao_1190087",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,7 +121,7 @@ return {
           ["1741921111103404"] = {
             key = "1741921111103404",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1141.373466755123, y = 459.6084107327141},
             propsData = {
               IsNpcNode = true,
@@ -145,6 +147,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -152,13 +155,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -176,14 +179,16 @@ return {
       isStoryNode = true,
       key = "175127151538911440652",
       type = "PreStoryNode",
-      name = "\228\187\187\229\138\161\229\137\141\231\189\174\232\138\130\231\130\185",
+      name = "任务前置节点",
       pos = {x = 969.916101942763, y = 131.33454238647366},
       propsData = {
         QuestId = 20022300,
         QuestDescriptionComment = "",
         SubRegionId = 101101,
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_Xiao_1190087"
+        StoryGuidePointName = "Npc_Xiao_1190087",
+        bIsPlayBlackScreenOnComplete = false,
+        SubRegionIdList = {}
       },
       questNodeData = {
         lineData = {
@@ -249,14 +254,14 @@ return {
           ["175127151538911440659"] = {
             key = "175127151538911440659",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 2134.7046843557737, y = 257.50100862033725},
             propsData = {VarName = "XiAoStage", VarValue = 1}
           },
           ["175127151538911440660"] = {
             key = "175127151538911440660",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1501.2953156442263, y = 278.49899137966275},
             propsData = {
               IsNpcNode = true,
@@ -281,6 +286,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -288,13 +294,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -307,19 +313,19 @@ return {
           ["175127151538911440661"] = {
             key = "175127151538911440661",
             type = "ReceiveSideQuestNode",
-            name = "\230\148\175\231\186\191\228\187\187\229\138\161\230\142\165\229\143\150\232\138\130\231\130\185",
+            name = "支线任务接取节点",
             pos = {x = 1843.879973474801, y = 259.4432972546831},
             propsData = {
               SideQuestChainId = 200223,
-              EnableSequence = false,
-              SequencePath = "",
-              PauseMark = ""
+              EnableSequence = true,
+              SequencePath = "/Game/UI/Sequence/SQ_Task_DepthField.SQ_Task_DepthField",
+              PauseMark = "QuestAccept"
             }
           },
           ["175127151538911440662"] = {
             key = "175127151538911440662",
             type = "SetVarNode",
-            name = "\232\174\190\231\189\174\229\143\152\233\135\143\229\128\188",
+            name = "设置变量值",
             pos = {x = 1189.2953156442265, y = 273.44635980071547},
             propsData = {VarName = "XiAoStage", VarValue = 0}
           }

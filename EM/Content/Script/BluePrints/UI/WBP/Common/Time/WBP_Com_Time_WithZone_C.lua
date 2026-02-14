@@ -1,7 +1,6 @@
 require("UnLua")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:SetTimeText(Timestamp, StyleType, Joiner1, Joiner2, bUserServerTimezone, bShowTimeIcon, bHideTimeZone)
   if StyleType == UIConst.EnumTimeStyleType.YMDAndHMS then
     local TimeYMDStr = TimeUtils.TimeToYMDStr(Timestamp, bUserServerTimezone, Joiner1)
@@ -37,5 +36,4 @@ function M:SetTimeText(Timestamp, StyleType, Joiner1, Joiner2, bUserServerTimezo
     end
   end
 end
-
 return M

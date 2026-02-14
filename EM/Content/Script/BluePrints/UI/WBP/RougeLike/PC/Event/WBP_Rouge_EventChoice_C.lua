@@ -1,18 +1,16 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.BtnCD = 0.5
   self.IsCoinEnough = true
 end
-
 function M:BindChooseEvent()
   self.StartTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
   if self.Parent then
     self.Btn_Click.OnClicked:Add(self, self.OnBtnClicked)
   end
   local Avatar = GWorld:GetAvatar()
-  assert(Avatar, "\230\137\190\228\184\141\229\136\176Avatar")
+  assert(Avatar, "找不到Avatar")
   local Currency = Avatar.Resources:QueryResourceCount(self.Parent.CoinId)
   if self.SelectId then
     self.ChoicePrice = DataMgr.RougeLikeEventSelect[self.SelectId].Price
@@ -22,7 +20,6 @@ function M:BindChooseEvent()
     self.IsCoinEnough = false
   end
 end
-
 function M:OnBtnClicked()
   self.CurrentTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
   if self.CurrentTime - self.StartTime < self.BtnCD then
@@ -34,9 +31,9 @@ function M:OnBtnClicked()
     return
   end
   local Avatar = GWorld:GetAvatar()
-  assert(Avatar, "\230\137\190\228\184\141\229\136\176Avatar")
+  assert(Avatar, "找不到Avatar")
   local UIManager = GWorld.GameInstance:GetGameUIManager()
-  assert(UIManager, "\230\137\190\228\184\141\229\136\176UIManager")
+  assert(UIManager, "找不到UIManager")
   local Currency = Avatar.Resources:QueryResourceCount(self.Parent.CoinId)
   if self.ChoicePrice and Currency < self.ChoicePrice then
     UIManager:ShowUITip(UIConst.Tip_CommonToast, GText("RL_Event_CantSelect"))
@@ -50,5 +47,4 @@ function M:OnBtnClicked()
     self.Parent:ChooseItem(self.OptionIndex)
   end)
 end
-
 return M

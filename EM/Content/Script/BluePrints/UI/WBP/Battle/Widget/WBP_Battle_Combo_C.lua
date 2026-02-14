@@ -1,18 +1,15 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local REFRESH_TIME = 0.016
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.CurLevel = 0
   self.IsShowingCombo = false
 end
-
 function M:OnLoaded()
   self.Text_Combo:SetText(GText("BATTLE_COMBO_NAME"))
   self:Hide("BattleCombo")
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if not self.IsShowingCombo then
     return
@@ -21,7 +18,6 @@ function M:Tick(MyGeometry, InDeltaTime)
     self:HideCombo()
   end
 end
-
 function M:OnBattleCountChanged(BeforeCount, BeforeLevel, CurCount, CurLevel, Reason)
   CurCount = CurCount or 0
   BeforeCount = BeforeCount or 0
@@ -31,7 +27,6 @@ function M:OnBattleCountChanged(BeforeCount, BeforeLevel, CurCount, CurLevel, Re
     self:PendingHide(Reason)
   end
 end
-
 function M:ShowCombo(BeforeCount, BeforeLevel, CurCount, CurLevel)
   self.CurLevel = CurLevel
   self.Text_ComboNum:SetText(CurCount)
@@ -65,7 +60,6 @@ function M:ShowCombo(BeforeCount, BeforeLevel, CurCount, CurLevel)
     self:Show("BattleCombo")
   end
 end
-
 function M:PendingHide(Reason)
   if self.IsPendingHide then
     return
@@ -76,7 +70,6 @@ function M:PendingHide(Reason)
   self.IsPendingHide = true
   self.HideReason = Reason
 end
-
 function M:HideCombo()
   self.IsShowingCombo = false
   self.IsPendingHide = false
@@ -92,18 +85,15 @@ function M:HideCombo()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Out)
   end
 end
-
 function M:RealHideCombo()
   self.IsPendingHide = false
   self:Hide("BattleCombo")
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out and not self.IsShowingCombo then
     self:RealHideCombo()
   end
 end
-
 function M:SetComboColorInPC(ComboLevelColor, ComboLightColor, ComboLevelMat)
   local Font = self.VX_Text_Appraise.Font
   Font.FontMaterial = ComboLevelMat
@@ -112,7 +102,6 @@ function M:SetComboColorInPC(ComboLevelColor, ComboLightColor, ComboLevelMat)
   self.VX_Light:SetColorAndOpacity(ComboLevelColor)
   self.VX_BgGlow:SetColorAndOpacity(ComboLightColor)
 end
-
 function M:SetComboColorInMobile(ComboLevelColor, ComboLightColor, ComboLevelMat)
   local Font = self.VX_Text_Appraise.Font
   Font.FontMaterial = ComboLevelMat
@@ -121,7 +110,6 @@ function M:SetComboColorInMobile(ComboLevelColor, ComboLightColor, ComboLevelMat
   self.VX_Light:SetColorAndOpacity(ComboLevelColor)
   self.VX_BgGlow:SetColorAndOpacity(ComboLightColor)
 end
-
 function M:SetConsumeColor(ComboConsumeColor)
   local SlateColor = FSlateColor()
   SlateColor.SpecifiedColor = ComboConsumeColor
@@ -130,14 +118,12 @@ function M:SetConsumeColor(ComboConsumeColor)
   self.VX_01Line_3:SetColorAndOpacity(ComboConsumeColor)
   self.VX_01Line_4:SetColorAndOpacity(ComboConsumeColor)
 end
-
 function M:SetComboHoldTimeProgress(Progress)
   local FontMt = self.VX_Text_Appraise:GetDynamicFontMaterial()
   if FontMt then
     FontMt:SetScalarParameterValue("percent", Progress)
   end
 end
-
 function M:GetComboLevelText(Level)
   local Data = DataMgr.ComboLevel[Level]
   if Data then
@@ -146,5 +132,4 @@ function M:GetComboLevelText(Level)
     return "?"
   end
 end
-
 return M

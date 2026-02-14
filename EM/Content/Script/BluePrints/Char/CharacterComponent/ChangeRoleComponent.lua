@@ -1,10 +1,8 @@
 local Component = {}
-
 function Component:ChangeRole(RoleId, AvatarInfo)
-  DebugPrint("BuffLogic ChangeRole", tostring(RoleId))
   if not IsStandAlone(self) then
     PrintTable({
-      Error = "\229\164\154\228\186\186\232\129\148\230\156\186\230\168\161\229\188\143\228\184\141\232\131\189\230\141\162\228\186\186"
+      Error = "多人联机模式不能换人"
     })
     return
   end
@@ -12,7 +10,6 @@ function Component:ChangeRole(RoleId, AvatarInfo)
   self:RealChangeRole(RoleId, AvatarInfo)
   self:SetupCameraControlComponent()
 end
-
 function Component:RealChangeRole(RoleId, AvatarInfo)
   if self.ClearMaterialEffect then
     self:ClearMaterialEffect()
@@ -22,7 +19,6 @@ function Component:RealChangeRole(RoleId, AvatarInfo)
   self:QuickRecovery(true)
   self:RealChangeRoleByAvatarInfo(RoleId, AvatarInfo)
 end
-
 function Component:RealChangeRoleByAvatarInfo(RoleId, AvatarInfo)
   self:GetCharPreloadComp():ReleaseCacheAssets()
   self.BornInfo = nil
@@ -34,5 +30,4 @@ function Component:RealChangeRoleByAvatarInfo(RoleId, AvatarInfo)
   }
   self:InitCharacterInfo(InfoForInit)
 end
-
 return Component

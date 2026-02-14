@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.Common.Triggers.BP_AOITriggerBox_C")
-
 function M:InitTriggerEventId(Info)
   M.Super.InitTriggerEventId(self, Info)
   local SpecialConfigId = DataMgr.SpecialQuestMechanism2SpecialConfigId[self.CreatorId]
@@ -10,7 +9,6 @@ function M:InitTriggerEventId(Info)
   self.TriggerQuestId = SpecialConfigId[1]
   self.TriggerTalkId = DataMgr.SpecialQuestConfig[SpecialConfigId[1]].TalkTriggerId or 600308
 end
-
 function M:BindEvent(Info)
   if not IsAuthority(self) then
     return
@@ -30,7 +28,6 @@ function M:BindEvent(Info)
     end
   end
 end
-
 function M:SetCapsuleSize_Lua(NewRadius, NewHalfHeight, NewTipsRadius, NewTipsHalfHeight)
   if self.TipTrigger then
     self.TipTrigger.OnComponentBeginOverlap:Add(self, self.TalkBeginOverlap)
@@ -38,10 +35,8 @@ function M:SetCapsuleSize_Lua(NewRadius, NewHalfHeight, NewTipsRadius, NewTipsHa
     self.TipTrigger:SetCapsuleSize(NewTipsRadius, NewTipsHalfHeight)
   end
 end
-
 function M:TalkBeginOverlap(Component, OtherActor)
 end
-
 function M:TalkEndOverlap(Component, OtherActor)
   if not OtherActor:IsPlayer() or not self.TriggerTalkId then
     return
@@ -49,12 +44,10 @@ function M:TalkEndOverlap(Component, OtherActor)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   UE4.UPlayTalkAsyncAction.PlayTalk(GameInstance, self.TriggerTalkId, nil)
 end
-
 function M:CreateTriggerRule(Creator)
   M.Super.CreateTriggerRule(self, Creator)
   if self.TipTrigger then
     self.InOrOutTrigger = "All"
   end
 end
-
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.SelectDone then
     return
@@ -43,7 +42,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
     end
   end
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if self.SelectDone then
     return
@@ -53,10 +51,7 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:PlayGoldFlipAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choose_gold_flip", nil, nil)
-  DebugPrint("ayff test gold flip audio")
 end
-
 return M

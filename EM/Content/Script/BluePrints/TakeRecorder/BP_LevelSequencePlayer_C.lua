@@ -1,5 +1,4 @@
-local M = Class()
-
+local M = Class("BluePrints.Common.TimerMgr")
 function M:OnObjectSpawned_Lua(Object)
   if Object.ForceClearActorHideTag then
     Object:ForceClearActorHideTag()
@@ -18,9 +17,17 @@ function M:OnObjectSpawned_Lua(Object)
   if Object:Cast(ACharacterBase) then
     Object:HandleModelFashion()
     Object.Overridden.ReceiveBeginPlay(Object)
+    self:AddTimer(0.01, function()
+      if Object.ModelId and DataMgr.Model[Object.ModelId] and DataMgr.Model[Object.ModelId].PartModelsId then
+        local Array = TArray(0)
+        for _, Id in pairs(DataMgr.Model[Object.ModelId].PartModelsId) do
+          Array:Add(Id)
+        end
+        Object:InitPartMeshComp(Array)
+      end
+    end)
   end
 end
-
 function M:DelayInitDistructableBodyActor(Actor)
   while Actor:GetAttachParentActor() == nil do
     UKismetSystemLibrary.Delay(self, 0.001)
@@ -31,5 +38,4 @@ function M:DelayInitDistructableBodyActor(Actor)
   end
   boss:RegisterAttachment(Actor.AttachmentName, Actor)
 end
-
 return M

@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:NotifyModBookQuestComplete(ModBookQuestId)
   EventManager:FireEvent(EventID.OnModBookQuestFinished, ModBookQuestId)
   local PhaseId = DataMgr.ModGuideBookTask[ModBookQuestId].QuestPhaseId
@@ -14,7 +13,6 @@ function Component:NotifyModBookQuestComplete(ModBookQuestId)
   end
   ReddotManager.IncreaseLeafNodeCount(ReddotNode, 1, CacheDetail)
 end
-
 function Component:GMCompleteModBookQuest(ModBookQuestId)
   ModBookQuestId = tonumber(ModBookQuestId)
   if not ModBookQuestId then
@@ -22,10 +20,8 @@ function Component:GMCompleteModBookQuest(ModBookQuestId)
   end
   self:CallServerMethod("GMCompleteModBookQuest", ModBookQuestId)
 end
-
 function Component:ModBookQuestGetReward(ModBookQuestId, CallBack)
   self.logger.debug("ModBookQuestGetReward", ModBookQuestId)
-  
   local function callback(ret, rewards)
     self.logger.debug("ModBookQuestGetReward callback", ret)
     DebugPrintTable({rewards = rewards})
@@ -33,13 +29,10 @@ function Component:ModBookQuestGetReward(ModBookQuestId, CallBack)
       CallBack(ret, rewards)
     end
   end
-  
   self:CallServer("ModBookQuestGetReward", callback, ModBookQuestId)
 end
-
 function Component:ModBookQuestGetRewardByPhase(ModBookQuestPhaseId, CallBack)
   self.logger.debug("ModBookQuestGetRewardByPhase", ModBookQuestPhaseId)
-  
   local function callback(ret, rewards)
     self.logger.debug("ModBookQuestGetRewardByPhase callback", ret)
     DebugPrintTable({rewards = rewards})
@@ -47,13 +40,10 @@ function Component:ModBookQuestGetRewardByPhase(ModBookQuestPhaseId, CallBack)
       CallBack(ret, rewards)
     end
   end
-  
   self:CallServer("ModBookQuestGetRewardByPhase", callback, ModBookQuestPhaseId)
 end
-
 function Component:ModBookQuestGetAllRewardByPhase(ModBookQuestPhaseId, CallBack)
   self.logger.debug("ModBookQuestGetAllRewardByPhase", ModBookQuestPhaseId)
-  
   local function callback(ret, rewards)
     self.logger.debug("ModBookQuestGetAllRewardByPhase callback", ret)
     DebugPrintTable({rewards = rewards})
@@ -61,8 +51,6 @@ function Component:ModBookQuestGetAllRewardByPhase(ModBookQuestPhaseId, CallBack
       CallBack(ret, rewards)
     end
   end
-  
   self:CallServer("ModBookQuestGetAllRewardByPhase", callback, ModBookQuestPhaseId)
 end
-
 return Component

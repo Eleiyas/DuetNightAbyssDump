@@ -1,7 +1,5 @@
-require("UnLua")
 local PickupUseComponent = require("BluePrints.Item.Pickups.PickupUseComponent")
 local BP_WeaponSelect_C = Class("BluePrints.UI.BP_UIState_C")
-
 function BP_WeaponSelect_C:Construct()
   self.WidgetSwitcher:SetActiveWidgetIndex(1)
   self.FindWeapon = false
@@ -22,7 +20,6 @@ function BP_WeaponSelect_C:Construct()
     self.LeftMouse:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function BP_WeaponSelect_C:Tick(MyGeometry, InDeltaTime)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
@@ -35,7 +32,6 @@ function BP_WeaponSelect_C:Tick(MyGeometry, InDeltaTime)
     return
   end
 end
-
 function BP_WeaponSelect_C:InitDeviceInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -43,15 +39,12 @@ function BP_WeaponSelect_C:InitDeviceInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function BP_WeaponSelect_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function BP_WeaponSelect_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
-  DebugPrint("thy     CurGamepadName", CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
   end
@@ -59,7 +52,6 @@ function BP_WeaponSelect_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepad
   self.CurGamepadName = CurGamepadName
   self:InitBtnTipsUI()
 end
-
 function BP_WeaponSelect_C:InitBtnTipsUI()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:SwitchGamepadIconShowOrHide(true)
@@ -76,7 +68,6 @@ function BP_WeaponSelect_C:InitBtnTipsUI()
     end
   end
 end
-
 function BP_WeaponSelect_C:SwitchGamepadIconShowOrHide(IsShow)
   if IsShow then
     self.HB_Key:SetVisibility(ESlateVisibility.Visibility)
@@ -117,7 +108,6 @@ function BP_WeaponSelect_C:SwitchGamepadIconShowOrHide(IsShow)
   }
   self.Com_KeyTips:UpdateKeyInfo(KeyInfo3)
 end
-
 function BP_WeaponSelect_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -125,7 +115,6 @@ function BP_WeaponSelect_C:OnKeyDown(MyGeometry, InKeyEvent)
   if UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) then
     DebugPrint("thy    Key_IsGamepadKey", InKeyName)
     IsEventHandled = self:Handle_OnGamePadDown(InKeyName)
-  else
   end
   if IsEventHandled then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -133,7 +122,6 @@ function BP_WeaponSelect_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function BP_WeaponSelect_C:OnKeyUp(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -141,7 +129,6 @@ function BP_WeaponSelect_C:OnKeyUp(MyGeometry, InKeyEvent)
   if UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) then
     DebugPrint("thy    Key_IsGamepadKey", InKeyName)
     IsEventHandled = self:Handle_OnGamePadUp(InKeyName)
-  else
   end
   if IsEventHandled then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -149,7 +136,6 @@ function BP_WeaponSelect_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function BP_WeaponSelect_C:IsSubstringContained(parentStr, subStr)
   local startPos, endPos = string.find(parentStr, subStr)
   if startPos and endPos then
@@ -157,7 +143,6 @@ function BP_WeaponSelect_C:IsSubstringContained(parentStr, subStr)
   end
   return false
 end
-
 function BP_WeaponSelect_C:GetWeapon(StaticCreatorId)
   local EMGameState = UE4.UGameplayStatics.GetGameState(self)
   local StaticCreator = EMGameState.StaticCreatorMap:Find(StaticCreatorId)
@@ -169,14 +154,11 @@ function BP_WeaponSelect_C:GetWeapon(StaticCreatorId)
   end
   return Actor
 end
-
 function BP_WeaponSelect_C:FindRangedWeaponActor()
   self.RightRangedWeapon = self:GetWeapon(1510010302)
   self.LefttRangedWeapon = self:GetWeapon(1510010303)
 end
-
 function BP_WeaponSelect_C:Handle_OnGamePadDown(InKeyName)
-  DebugPrint("thy    Handle_OnGamePadDown", InKeyName)
   if "Gamepad_LeftShoulder" == InKeyName then
     if self.LeftShoulderIsPress or self.IsPressing then
       return true
@@ -209,7 +191,6 @@ function BP_WeaponSelect_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function BP_WeaponSelect_C:Handle_OnGamePadUp(InKeyName)
   DebugPrint("thy    Handle_OnGamePadDown", InKeyName)
   if "Gamepad_FaceButton_Bottom" == InKeyName then
@@ -233,7 +214,6 @@ function BP_WeaponSelect_C:Handle_OnGamePadUp(InKeyName)
   end
   return false
 end
-
 function BP_WeaponSelect_C:SetWeaponEffectBox()
   if self.WeaponEffectBox[self.SelectActor.Eid] then
     return
@@ -249,17 +229,34 @@ function BP_WeaponSelect_C:SetWeaponEffectBox()
     self.WeaponEffectBox[self.SelectActor.Eid] = EffectBoxs:GetRef(1)
   end
 end
-
 function BP_WeaponSelect_C:TraceWeaponMobile(InKeyEvent)
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+  local IsCloudGamePC = UE4.UUCloudGameInstanceSubsystem.IsCloudGame(self) and CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
+  if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" and not UE4.UUCloudGameInstanceSubsystem.IsCloudGame(self) then
     return
   end
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local ObjectTypes = TArray(EObjectTypeQuery)
   ObjectTypes:Add(EObjectTypeQuery.Item)
-  local MousePosition = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InKeyEvent)
-  DebugPrint("MousePosition:", MousePosition)
-  local Results = PlayerController:GetHitResultsAtScreenPosition(MousePosition, ObjectTypes, true)
+  local Results = UE4.TArray(UE4.FHitResult)
+  if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
+    PlayerController:GetHitResultsUnderCursorForObjects(ObjectTypes, true, Results)
+  elseif IsCloudGamePC then
+    DebugPrint("jly    TraceWeaponMobile CloudGamePC")
+    local MousePosition = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InKeyEvent)
+    DebugPrint("MousePosition before scale:", MousePosition)
+    local ViewportScale = UE4.UWidgetLayoutLibrary.GetViewportScale(self)
+    DebugPrint("ViewportScale:", ViewportScale)
+    if ViewportScale and 1.0 ~= ViewportScale then
+      MousePosition.X = MousePosition.X * ViewportScale
+      MousePosition.Y = MousePosition.Y * ViewportScale
+      DebugPrint("MousePosition after scale:", MousePosition)
+    end
+    Results = PlayerController:GetHitResultsAtScreenPosition(MousePosition, ObjectTypes, true)
+  else
+    local MousePosition = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InKeyEvent)
+    DebugPrint("MousePosition:", MousePosition)
+    Results = PlayerController:GetHitResultsAtScreenPosition(MousePosition, ObjectTypes, true)
+  end
   DebugPrint("Results:Length():", Results:Length())
   for i = 1, Results:Length() do
     local Actori = Results[i].Actor
@@ -277,14 +274,18 @@ function BP_WeaponSelect_C:TraceWeaponMobile(InKeyEvent)
     self:SetWeaponEffectBox()
   end
 end
-
 function BP_WeaponSelect_C:OnMouseButtonDown(MyGeometry, InKeyEvent)
   DebugPrint("BP_WeaponSelect_C:OnMouseButtonDown")
   self:TraceWeaponMobile(InKeyEvent)
   self:OnSelectWeapon()
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
+function BP_WeaponSelect_C:OnTouchStarted(MyGeometry, InTouchEvent)
+  DebugPrint("JLY    BP_WeaponSelect_C:OnMouseButtonDown")
+  self:TraceWeaponMobile(InTouchEvent)
+  self:OnSelectWeapon()
+  return UE4.UWidgetBlueprintLibrary.Handled()
+end
 function BP_WeaponSelect_C:OnSelectWeapon()
   print(_G.LogTag, "OnSelectWeapon", self.SelectActor, self.ControlEid)
   if not (self.SelectActor and self.ControlEid) or self.SelectActor.Eid == self.ControlEid then
@@ -307,7 +308,6 @@ function BP_WeaponSelect_C:OnSelectWeapon()
   self.Interduction:SetText(GText(DropData.DropDescribe))
   AudioManager(self):PlayFMODSound(self, nil, "event:/ui/common/select_gun")
 end
-
 function BP_WeaponSelect_C:HasWeapon(WeaponId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -320,9 +320,7 @@ function BP_WeaponSelect_C:HasWeapon(WeaponId)
   end
   return false
 end
-
 function BP_WeaponSelect_C:OnChooseWeapon()
-  print(_G.LogTag, "OnChooseWeapon")
   if 0 == self.ControlEid then
     return
   end
@@ -335,7 +333,6 @@ function BP_WeaponSelect_C:OnChooseWeapon()
       break
     end
   end
-  
   local function SelectWeaponSuccess()
     self:RefreshWeapon(WeaponId)
     SelectWeapon:EMActorDestroy(EDestroyReason.Pickup)
@@ -345,39 +342,30 @@ function BP_WeaponSelect_C:OnChooseWeapon()
     UIManager(self):UnLoadUI("StoryWeaponSelect")
     EventManager:FireEvent(EventID.OnSelectWeapon)
   end
-  
   if self:HasWeapon(WeaponId) then
     SelectWeaponSuccess()
     return
   end
   local Avatar = GWorld:GetAvatar()
   if Avatar then
-    local function OnChooseWeaponCallback(Ret)
-      if not self then
+    Avatar:ChooseRangedWeapon(Index, function(Ret)
+      if not ErrorCode:Check(Ret) then
         return
       end
-      if 6010 == Ret and self:HasWeapon(WeaponId) then
-        SelectWeaponSuccess()
-        return
-      elseif 0 ~= Ret then
+      if not IsValid(self) then
         return
       end
       SelectWeaponSuccess()
-    end
-    
-    Avatar:ChooseRangedWeapon(Index, OnChooseWeaponCallback)
+    end)
   end
 end
-
 function BP_WeaponSelect_C:PlaySoundOnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/select_gun_click", nil, nil)
 end
-
 function BP_WeaponSelect_C:RefreshWeapon(WeaponId)
   local Avatar = GWorld:GetAvatar()
   local InfoForInit = AvatarUtils:GetDefaultBattleInfo(Avatar)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:InitCharacterInfo(InfoForInit)
 end
-
 return BP_WeaponSelect_C

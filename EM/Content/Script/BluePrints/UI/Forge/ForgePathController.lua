@@ -10,11 +10,9 @@ local ForgePathController = Class()
 ForgePathController._components = {
   "BluePrints.UI.Forge.ForgePathView"
 }
-
 function ForgePathController:PreInit(ForgeModel)
   self.ForgeModel = ForgeModel
 end
-
 function ForgePathController:Init(DraftId, Owner, ForgeModel)
   if not self.HasPreInit then
     self:PreInit(ForgeModel)
@@ -32,7 +30,6 @@ function ForgePathController:Init(DraftId, Owner, ForgeModel)
     self:InitCompendiumView()
   end
 end
-
 function ForgePathController:InitCallbacks()
   self.OnClosedCallback = nil
   self.OnDetailsViewBtnCancelClickedCallback = nil
@@ -40,7 +37,6 @@ function ForgePathController:InitCallbacks()
   self.OnFocusToDetailsView = nil
   self.OnFocusToPathView = nil
 end
-
 function ForgePathController:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -50,7 +46,6 @@ function ForgePathController:RefreshOpInfoByInputDevice(CurInputDevice, CurGamep
     self:InitKeyboardView()
   end
 end
-
 function ForgePathController:HandleTipShowDetails(bIsShow)
   if bIsShow then
     local IsSucceed = self.ItemDetails:TryGoToFirstItem()
@@ -77,12 +72,10 @@ function ForgePathController:HandleTipShowDetails(bIsShow)
     return true
   end
 end
-
 function ForgePathController:HandleTipPreviewDetails(InKeyName)
   local IsSucceed = self.ItemDetails:OnGamePadDown(InKeyName)
   return IsSucceed
 end
-
 function ForgePathController:GetNavigateUpWidget(RowIndex, ColIndex)
   if 1 == RowIndex then
     return nil
@@ -92,7 +85,6 @@ function ForgePathController:GetNavigateUpWidget(RowIndex, ColIndex)
   local WidgetCol = math.min(#PrevRowInfo, ColIndex)
   return self.ItemMap[WidgetRow][WidgetCol]
 end
-
 function ForgePathController:GetNavigateDownWidget(RowIndex, ColIndex)
   if RowIndex >= MaxRowNum then
     return nil
@@ -102,7 +94,6 @@ function ForgePathController:GetNavigateDownWidget(RowIndex, ColIndex)
   local WidgetCol = math.min(#NextRowInfo, ColIndex)
   return self.ItemMap[WidgetRow][WidgetCol]
 end
-
 function ForgePathController:ShowSelectedDraftDetails(ItemInfo)
   local ItemDetailParam = {}
   local DraftInfo = DataMgr.Draft[ItemInfo.DraftId]
@@ -112,7 +103,6 @@ function ForgePathController:ShowSelectedDraftDetails(ItemInfo)
   ItemDetailParam.HandleKeyDown = false
   self:RealShowForgeDetails(ItemDetailParam, ItemInfo.DraftId)
 end
-
 function ForgePathController:ShowSelectedResourceDetails(ItemInfo)
   local ItemDetailParam = {}
   ItemDetailParam.ItemId = ItemInfo.ResourceId
@@ -121,7 +111,6 @@ function ForgePathController:ShowSelectedResourceDetails(ItemInfo)
   ItemDetailParam.HandleKeyDown = false
   self:RealShowForgeDetails(ItemDetailParam, ItemInfo.DraftId)
 end
-
 function ForgePathController:RealShowForgeDetails(ItemDetailParam, DraftId)
   self.ItemDetails:RefreshItemInfo(ItemDetailParam, true)
   if not DraftId then
@@ -146,7 +135,6 @@ function ForgePathController:RealShowForgeDetails(ItemDetailParam, DraftId)
     DebugPrint("Tianyi@ CurrentDraftId = " .. DraftId)
   end
 end
-
 function ForgePathController:Refresh()
   for RowIndex, RowInfo in pairs(self.PathModel.RowInfos) do
     if RowIndex > 1 then
@@ -168,7 +156,6 @@ function ForgePathController:Refresh()
   self:RefreshView(DraftInfo)
   self:RefreshDetails(DraftInfo)
 end
-
 function ForgePathController:RefreshDetails(DraftInfo)
   if not self.CurrentDraftId then
     DebugPrint("Tianyi@ Current DraftId is null")
@@ -179,7 +166,6 @@ function ForgePathController:RefreshDetails(DraftInfo)
     self:TickRefreshView(DraftInfo)
   end
 end
-
 function ForgePathController:TickRefreshDetails(DraftInfo)
   if not self.CurrentDraftId then
     return
@@ -189,7 +175,6 @@ function ForgePathController:TickRefreshDetails(DraftInfo)
     self:TickRefreshView(DraftInfo)
   end
 end
-
 function ForgePathController:OnDetailsViewBtnStartClicked()
   DebugPrint("Tianyi@ OnBtnStartClicked")
   if not self.CurrentDraftId then
@@ -205,7 +190,6 @@ function ForgePathController:OnDetailsViewBtnStartClicked()
     end
   end
 end
-
 function ForgePathController:OnDetailsViewBtnCancelClicked()
   DebugPrint("TianyI@ OnBtnCancelClicked")
   if not self.CurrentDraftId then
@@ -220,11 +204,9 @@ function ForgePathController:OnDetailsViewBtnCancelClicked()
     end
   end
 end
-
 function ForgePathController:ControllerOnItemSelected(RowIndex, ColIndex)
   self:OnDetailsViewBtnStartClicked()
 end
-
 function ForgePathController:OnItemSelected(RowIndex, ColIndex, bSelectedByGamepadClick)
   if bSelectedByGamepadClick then
     self:ControllerOnItemSelected(RowIndex, ColIndex)
@@ -237,7 +219,7 @@ function ForgePathController:OnItemSelected(RowIndex, ColIndex, bSelectedByGamep
     return
   end
   if CurRowSelectedIndex == ColIndex and not self.PathModel.RowSelectedIndex[RowIndex + 1] then
-    DebugPrint("Tianyi@ \229\183\178\231\187\143\233\128\137\228\184\173\228\186\134\232\191\153\228\184\170\232\138\130\231\130\185\228\186\134", RowIndex, ColIndex)
+    DebugPrint("Tianyi@ 已经选中了这个节点了", RowIndex, ColIndex)
     return
   end
   if 1 == RowIndex then
@@ -258,7 +240,7 @@ function ForgePathController:OnItemSelected(RowIndex, ColIndex, bSelectedByGamep
     local DraftInfo = DataMgr.Draft[ProductDraftId]
     if DraftInfo.Resource and #DraftInfo.Resource > 0 then
       if RowIndex == MaxRowNum then
-        DebugPrint("Tianyi@ \229\189\147\229\137\141\233\147\184\233\128\160\233\147\190\230\157\161\233\149\191\229\186\166\229\164\167\228\186\1424,\231\156\139\231\156\139\230\156\137\228\187\128\228\185\136\233\151\174\233\162\152", RowIndex, ColIndex)
+        DebugPrint("Tianyi@ 当前铸造链条长度大于4,看看有什么问题", RowIndex, ColIndex)
         return
       end
       local NextRowInfo = {}
@@ -290,26 +272,21 @@ function ForgePathController:OnItemSelected(RowIndex, ColIndex, bSelectedByGamep
   end
   self:SelectNode(RowIndex, ColIndex)
 end
-
 function ForgePathController:UnselectNode(RowIndex, ColIndex)
   local LastSelectedRowNode = self.PathModel.RowInfos[RowIndex][ColIndex]
   self.PathModel.RowSelectedIndex[RowIndex] = nil
   self:UnSelectNodeView(RowIndex, LastSelectedRowNode.ColIndex)
 end
-
 function ForgePathController:SelectNode(RowIndex, ColIndex)
   self.PathModel.RowSelectedIndex[RowIndex] = ColIndex
   local HasNextRowItems = self.PathModel:GetRowNum(RowIndex + 1) > 0
   self:SelectNodeView(RowIndex, ColIndex, HasNextRowItems)
 end
-
 function ForgePathController:OnClose()
   self:CloseView()
 end
-
 function ForgePathController:SetCompendiumMode()
   self.IsInCompendiumMode = true
 end
-
 AssembleComponents(ForgePathController)
 return ForgePathController

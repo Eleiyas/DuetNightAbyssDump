@@ -2,13 +2,11 @@ require("UnLua")
 local WBP_Activity_FeinaEvent_RewardTargetList_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:Construct()
   self.IsSelect = false
   self.AddListenerFinish = false
   self.List_Item:ClearListItems()
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:OnListItemObjectSet(Content)
   self.List_Item:ClearListItems()
   self.List_Item:DisableScroll(true)
@@ -20,15 +18,12 @@ function WBP_Activity_FeinaEvent_RewardTargetList_C:OnListItemObjectSet(Content)
   self:Init(RewardInfo)
   self.Text_Title:SetText(GText(self.Content.Title))
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:OnListNavigateBoundary(NavigationDirection)
   return self.Content.Root:NavigateToNextDisplayedItem()
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:OnListNavigateBoundaryUp(NavigationDirection)
   return self.Content.Root:NavigateToPreviousDisplayedItem()
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:Init(RewardInfo)
   self.Text_Title:SetText(GText(RewardInfo.DungeonName))
   for Index, Des in pairs(RewardInfo.Level) do
@@ -44,28 +39,24 @@ function WBP_Activity_FeinaEvent_RewardTargetList_C:Init(RewardInfo)
     self.List_Item:AddItem(Obj)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:InitKeyboardView()
   local ItemViews = self.List_Item:GetDisplayedEntryWidgets()
   for _, ItemView in pairs(ItemViews) do
     ItemView:InitKeyboardView()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:InitGamepadView()
   local ItemViews = self.List_Item:GetDisplayedEntryWidgets()
   for _, ItemView in pairs(ItemViews) do
     ItemView:InitGamepadView()
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:NavigateToFisrtItem()
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.List_Item:SetFocus()
     self.List_Item:SetSelectedIndex(1)
   end
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:NavigateToFirstDisplayedItem()
   local ItemUIs = self.List_Item:GetDisplayedEntryWidgets()
   if ItemUIs:Length() > 0 then
@@ -84,8 +75,6 @@ function WBP_Activity_FeinaEvent_RewardTargetList_C:NavigateToFirstDisplayedItem
   end
   return self.List_Item
 end
-
 function WBP_Activity_FeinaEvent_RewardTargetList_C:OnFocusLost(InFocusEvent)
 end
-
 return WBP_Activity_FeinaEvent_RewardTargetList_C

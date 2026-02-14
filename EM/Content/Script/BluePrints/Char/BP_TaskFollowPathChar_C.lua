@@ -1,16 +1,13 @@
 require("UnLua")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local FollowingChar = Class()
-
 function FollowingChar:Initialize(Initializer)
 end
-
 function FollowingChar:ReceiveBeginPlay()
   self:SetTargetPosition()
   self:OnCreate()
   TaskUtils.IsCanMakeTaskPathActor = false
 end
-
 function FollowingChar:SetTargetPosition()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if UIManager then
@@ -31,9 +28,7 @@ function FollowingChar:SetTargetPosition()
     self:K2_SetActorLocation(PlayerCharacter:K2_GetActorLocation(), false, nil, false)
   end
 end
-
 function FollowingChar:ReceiveEndPlay()
   TaskUtils.IsCanMakeTaskPathActor = true
 end
-
 return FollowingChar

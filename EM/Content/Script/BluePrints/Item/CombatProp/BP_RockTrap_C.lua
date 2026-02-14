@@ -2,14 +2,12 @@ require("UnLua")
 local BP_RockTrap_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_RockTrap_C:AuthorityInitInfo(Info)
   BP_RockTrap_C.Super.AuthorityInitInfo(self, Info)
   self.Skill_Damage = self.UnitParams.SkillEffect or 900002
   self.Effect_Warning = self.UnitParams.WarningEffect or 900001
   self.IsActive = false
 end
-
 function BP_RockTrap_C:CommonInitInfo(Info)
   self.WarningTime = self.UnitParams.WarningTime or 5
   self.SetupTime = self.UnitParams.SetupTime or 1
@@ -21,7 +19,6 @@ function BP_RockTrap_C:CommonInitInfo(Info)
   self.ActiveBox:SetCollisionEnabled(1)
   BP_RockTrap_C.Super.CommonInitInfo(self, Info)
 end
-
 function BP_RockTrap_C:CalDropSpeed()
   local StartPos = self:K2_GetActorLocation()
   local bHit, HitResult = self:GetFloor()
@@ -35,37 +32,31 @@ function BP_RockTrap_C:CalDropSpeed()
   self:SetMovementParam(FVector(0, 0, -self.InitSpeed), self.DropAcceleration)
   self.DropTime = (-self.InitSpeed + math.sqrt(self.InitSpeed * self.InitSpeed + 2 * -self.DropAcceleration.Z * MoveZ)) / -self.DropAcceleration.Z
 end
-
 function BP_RockTrap_C:SetActiveType()
   self.ActiveType = "PlayerAttack"
 end
-
 function BP_RockTrap_C:OnActiveBoxOverlap()
   if not self.IsActive then
     self.IsActive = true
     self:ActiveCombat()
   end
 end
-
 function BP_RockTrap_C:OnBreakCountDown(SourceEid)
   if not self.IsActive then
     self.IsActive = true
     self:ActiveCombat()
   end
 end
-
 function BP_RockTrap_C:ActiveOnServer(StateId)
   if self.IsActive then
     self:AddTimer(self.SetupTime, self.StartDrop, false)
   end
 end
-
 function BP_RockTrap_C:OnActiveStateChange(StateId)
   if self.IsActive then
     self:PlaySmokeEffect()
   end
 end
-
 function BP_RockTrap_C:StartDrop()
   if self.DropTime < self.WarningTime then
     self:PlayWarningEffect()
@@ -78,7 +69,6 @@ function BP_RockTrap_C:StartDrop()
     self:AddTimer(self.DropTime - self.WarningTime, self.PlayWarningEffect, false)
   end
 end
-
 function BP_RockTrap_C:PlaySmokeEffect()
   if not IsAuthority(self) or IsStandAlone(self) then
     local FXObject = self.FXComponent:PlayFX(self.SmokeFX, self.Mesh, self:GetCurrentModelInfo().DamageFXSockets[1], self.Smoke:K2_GetComponentLocation(), FRotator(0, 0, 0), true, nil)
@@ -86,20 +76,17 @@ function BP_RockTrap_C:PlaySmokeEffect()
     self:OnPreFall()
   end
 end
-
 function BP_RockTrap_C:PlayWarningEffect()
   if not IsAuthority(self) or IsStandAlone(self) then
     self.FXComponent:PlayFxDecalByID(self.Effect_Warning, self.FloorPos, true)
   end
 end
-
 function BP_RockTrap_C:Droping()
   if not IsAuthority(self) or IsStandAlone(self) then
     self:OnFallDown()
   end
   self.bIsDroping = true
 end
-
 function BP_RockTrap_C:OnCrash(HitLoc)
   if not self.IsActive then
     return
@@ -115,7 +102,6 @@ function BP_RockTrap_C:OnCrash(HitLoc)
   self:EMActorDestroy(EDestroyReason.MechanismDead)
   self.IsActive = false
 end
-
 function BP_RockTrap_C:TryToShakeCamera()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local Result = TArray(AActor)
@@ -127,6 +113,5 @@ function BP_RockTrap_C:TryToShakeCamera()
   end
   self:CameraShake(Result)
 end
-
 AssembleComponents(BP_RockTrap_C)
 return BP_RockTrap_C

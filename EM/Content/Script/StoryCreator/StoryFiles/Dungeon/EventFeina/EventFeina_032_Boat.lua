@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17549843021631815374",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1512, y = 272},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,17 +115,15 @@ return {
           ["1754984512592318"] = {
             key = "1754984512592318",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
-            pos = {x = 1390, y = 298},
+            name = "对话节点",
+            pos = {x = 1390, y = 300},
             propsData = {
               IsNpcNode = false,
               TalkType = "Cinematic",
               TalkStageName = "",
               ShowFilePath = "/Game/AssetDesign/Level/Sequencer/Special/Event/Feina/Feina_03_2/LS_Feina032_03_4_Mechanism",
-              BlendOutTime = 2,
               InType = "BlendIn",
-              OutType = "FadeOut",
-              ShowFadeDetail = false,
+              OutType = "BlendOut",
               ShowSkipButton = false,
               ShowReviewButton = false,
               ShowWikiButton = false,
@@ -132,8 +132,10 @@ return {
               HideMonsters = false,
               HideAllBattleEntity = false,
               HideEffectCreature = false,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -144,9 +146,6 @@ return {
                   TalkActorId = 0,
                   TalkActorVisible = false
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
               },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,

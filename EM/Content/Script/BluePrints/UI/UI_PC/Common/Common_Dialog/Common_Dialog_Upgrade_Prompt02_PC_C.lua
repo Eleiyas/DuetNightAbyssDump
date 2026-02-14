@@ -4,7 +4,6 @@ local M = Class("BluePrints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.UIComponent.StarsUIComponent"
 }
-
 function M:Construct()
   self.Button_Close.OnClicked:Clear()
   self.Button_Close.OnClicked:Add(self, self.OnCloseBtnClicked)
@@ -18,7 +17,6 @@ function M:Construct()
   })
   AudioManager(self):PlayUISound(self, "event:/ui/armory/strength_success", nil, nil)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -28,7 +26,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.BehaviorType, self.TargetType, self.Level, self.NewLevel, self.Attrs, self.ComparedAttrs, self.OnClosedCallbackObj, self.OnClosedCallbackFunc = ...
@@ -37,7 +34,6 @@ function M:OnLoaded(...)
   self:PlayInAnim()
   self:SetFocus()
 end
-
 function M:UpdateUpgradeInfo()
   if self.BehaviorType == "LevelUp" then
     self.Text_Num:SetText(self.NewLevel)
@@ -59,11 +55,9 @@ function M:UpdateUpgradeInfo()
   else
     self:SetStars(self.Level, self.NewLevel)
     self:PlayStarsInAnim()
-    
     local function func()
       self:PlayStarGoldenInAnim(self.Level + 1)
     end
-    
     self:AddTimer(self.NewLevel * 0.1 + 0.1, func)
     if self.TargetType == "Char" then
       self.Text_Description:SetText(GText("Char_BreakLevelUp_Success"))
@@ -81,7 +75,6 @@ function M:UpdateUpgradeInfo()
   self.Mod_lvup:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.SW:SetActiveWidgetIndex(1)
 end
-
 function M:UpdataAttrListView(Attrs, ComparedAttrs)
   self.NowListView = self.ListView
   self.Attrs = Attrs
@@ -102,13 +95,11 @@ function M:UpdataAttrListView(Attrs, ComparedAttrs)
   end
   self.NowListView:RequestRefresh()
 end
-
 function M:PlayInAnim()
   self.CannotClose = true
   self.Button_Close:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:PlayAnimation(self.In)
 end
-
 function M:SequenceEvent_PlayAttrAnim()
   self.SW:SetActiveWidgetIndex(0)
   self.Text_Details:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -126,24 +117,20 @@ function M:SequenceEvent_PlayAttrAnim()
   end)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/strength_success_next_page", nil, nil)
 end
-
 function M:OnInAnimationFinished()
   self.CannotClose = false
   self.Button_Close:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnCloseBtnClicked()
   if self.CannotClose then
     return
   end
   self:PlayOutAnim()
 end
-
 function M:PlayOutAnim()
   self.CannotClose = true
   self:PlayAnimation(self.Out)
 end
-
 function M:OnOutAnimationFinished()
   self:Close()
   if self.OnClosedCallbackFunc then
@@ -154,6 +141,5 @@ function M:OnOutAnimationFinished()
     UIState = self
   })
 end
-
 AssembleComponents(M)
 return M

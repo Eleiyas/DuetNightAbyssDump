@@ -1,5 +1,4 @@
 local MonitorPlayerStatusNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function MonitorPlayerStatusNode:Init()
   self.ListenInterval = 0.5
   self.ListenHPPercent = false
@@ -7,7 +6,6 @@ function MonitorPlayerStatusNode:Init()
   self.ListenSPPercent = false
   self.ListenDead = false
 end
-
 function MonitorPlayerStatusNode:Execute(Callback)
   if self.ListenHPPercent or self.ListenESPercent or self.ListenSPPercent or self.ListenDead then
     self.Callback = Callback
@@ -16,11 +14,9 @@ function MonitorPlayerStatusNode:Execute(Callback)
     self:StopListen(false)
   end
 end
-
 function MonitorPlayerStatusNode:Clear()
   self:StopListen(false)
 end
-
 function MonitorPlayerStatusNode:StartListen()
   local GameInstance = GWorld.GameInstance
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -39,7 +35,6 @@ function MonitorPlayerStatusNode:StartListen()
     self:LoopListen()
   end, true)
 end
-
 function MonitorPlayerStatusNode:LoopListen()
   if not self.ListenTarget then
     self:StopListen(false)
@@ -54,7 +49,6 @@ function MonitorPlayerStatusNode:LoopListen()
     self:StopListen(true)
   end
 end
-
 function MonitorPlayerStatusNode:StopListen(TriggerCallback)
   DebugPrint("Tianyi@ MonitorPlayerStatus StopListen")
   if self.ExecuteTimer then
@@ -66,7 +60,6 @@ function MonitorPlayerStatusNode:StopListen(TriggerCallback)
     self.Callback()
   end
 end
-
 function MonitorPlayerStatusNode:AddListenPercent(AttrName)
   local ListenAttr = {
     Name = AttrName,
@@ -75,5 +68,4 @@ function MonitorPlayerStatusNode:AddListenPercent(AttrName)
   ListenAttr.RecordPercent = self.ListenTarget:GetAttr(ListenAttr.Name) / self.ListenTarget:GetAttr(ListenAttr.MaxName)
   table.insert(self.ListenPercentMap, ListenAttr)
 end
-
 return MonitorPlayerStatusNode

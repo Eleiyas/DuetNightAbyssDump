@@ -1,12 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.StateId1 = self.UnitParams.StateId1
   self.StateId2 = self.UnitParams.StateId2
 end
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   local MainStoryType = self:CheckMainStoryType()
@@ -16,7 +14,6 @@ function M:OnActorReady(Info)
     self:ChangeState("Manual", 0, self.StateId2)
   end
 end
-
 function M:CheckMainStoryType()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -33,5 +30,4 @@ function M:CheckMainStoryType()
   end
   return nil
 end
-
 return M

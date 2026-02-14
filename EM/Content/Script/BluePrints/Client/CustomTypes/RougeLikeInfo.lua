@@ -21,7 +21,6 @@ RougeLikeInfo.__Props__ = {
   Contract = prop.prop("Int2IntDict", "client save"),
   PassCount = prop.prop("Int2IntDict", "client save")
 }
-
 function RougeLikeInfo:EnterDump(SeasonId, bHighestDifficulty)
   local res = {}
   local RougeLikeSeason = self.RougeLikeSeasons[SeasonId]
@@ -51,7 +50,6 @@ function RougeLikeInfo:EnterDump(SeasonId, bHighestDifficulty)
   end
   return res
 end
-
 function RougeLikeInfo:FinishDump(RougeLike)
   local res = {}
   RougeLike = RougeLike or self.RougeLikeSeasons[self.ProgressingSeasonId]
@@ -63,28 +61,23 @@ function RougeLikeInfo:FinishDump(RougeLike)
   res.PassRooms = RougeLike.PassRooms
   return res
 end
-
 function RougeLikeInfo:GetSeason(SeasonId)
   return self.RougeLikeSeasons[SeasonId]
 end
-
 function RougeLikeInfo:NewRougeLike(SeasonId, Difficulty, PlayerInfo, SquadInfo, CommonCombatInfo)
   local Session = self.RougeLikeSeasons:NewRougeLike(SeasonId, Difficulty)
   Session:SaveDungeonInfo(PlayerInfo, SquadInfo, CommonCombatInfo)
   self.RougeLikeSeasons[SeasonId] = Session
   return Session
 end
-
 function RougeLikeInfo:ClearRougeLike(SeasonId)
   if self.RougeLikeSeasons[SeasonId] then
     self.RougeLikeSeasons[SeasonId] = nil
   end
 end
-
 function RougeLikeInfo:IsInProgress()
   return 1 == self.InProgress
 end
-
 function RougeLikeInfo:GetHeatSum()
   local HeatSum = 0
   for k, v in pairs(self.Contract) do
@@ -93,26 +86,21 @@ function RougeLikeInfo:GetHeatSum()
   end
   return HeatSum
 end
-
 function RougeLikeInfo:GetContractRate(SeasonId)
   local PointContractRate = DataMgr.RougeLikeSeason[SeasonId].PointContractRate or 0
   local HeatSum = self:GetHeatSum()
   return HeatSum * PointContractRate + 1
 end
-
 function RougeLikeInfo:SetPass(DifficultyId)
   local PreCount = self.PassCount[DifficultyId] or 0
   self.PassCount[DifficultyId] = PreCount + 1
   return 0 == PreCount
 end
-
 function RougeLikeInfo:IsManualUnlocked(ManualType, Key)
   return self.Manual:HasElement(ManualType, Key)
 end
-
 function RougeLikeInfo:IsManualRewardGot(ManualType, Index)
   return self.ManualRewardGot:HasElement(ManualType, Index)
 end
-
 FormatProperties(RougeLikeInfo)
 return {RougeLikeInfo = RougeLikeInfo}

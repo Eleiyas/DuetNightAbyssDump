@@ -63,6 +63,8 @@ Const.Falling = 3
 Const.Custom = 6
 Const.Slide = 2
 Const.InvincibleBuffId = 301
+Const.SynthesisSpeedUpBuffId = 5000301
+Const.MuteBuffId = 859900
 Const.Forward = 0
 Const.Right = 1
 Const.Left = 2
@@ -102,6 +104,7 @@ Const.OneVector = FVector(1, 1, 1)
 Const.UpFootHeight = FVector(0.0, 0.0, 50)
 Const.DownFootHeight = FVector(0.0, 0.0, 45)
 Const.XAxisVector = FVector(1, 0, 0)
+Const.ZeroRotator = FRotator(0, 0, 0)
 Const.FootCheckRadius = 15
 Const.FootHeight = 10
 Const.FootHeight2 = 9.5
@@ -315,9 +318,56 @@ Const.ProgressRecoverDungeonType = {
   Excavation = true,
   Rouge = true
 }
+Const.DungeonErrorType = {
+  DungeonGame = "拼接关玩法",
+  StaticCreator = "静态刷新点",
+  MonsterSpawn = "动态刷怪规则",
+  Pet = "宠物系统",
+  Common = "通用错误",
+  Settlement = "结算系统",
+  DungeonIndicator = "关卡指引",
+  Mechanism = "机关",
+  GameMode = "GameMode报错",
+  DungeonDelivery = "副本传送点",
+  DungeonVote = "副本投票"
+}
+Const.DungeonErrorTitle = {
+  Config = "配置错误",
+  CallTiming = "调用时机错误",
+  FindObject = "找不到对象",
+  Process = "流程错误",
+  Implement = "方法未实现/参数不合法",
+  ServerData = "服务器数据不存在",
+  DataNil = "数据为空",
+  Other = "其他错误"
+}
+Const.RegionErrorType = {
+  RegionData = "区域数据",
+  LevelProxy = "LevelProxy",
+  RandomCreator = "随机点"
+}
+Const.RegionErrorTitle = {
+  DataSthNil = "部分数据为空",
+  DataType = "区域数据处理类型错误",
+  CreatorNotFound = "静态点不存在",
+  RandomCreatorNotFound = "随机点不存在",
+  RalyIdNil = "RalyId为空",
+  QuestNotDoing = "任务不在进行中",
+  QuesDatatRepeated = "任务数据重复创建",
+  DataNotFound = "数据不存在",
+  LevelProxyNotFound = "LevelProxy不存在",
+  CanNotCreate = "数据无法恢复",
+  CanNotDestroy = "数据Actor无法销毁",
+  GetRandomCreatorNil = "随机点GetCreator失败",
+  GetRnadomParamActorNil = "随机点GetParamActorId失败"
+}
 Const.DungeonEnd_NoReason = 0
 Const.DungeonEnd_PlayerDead = 1
 Const.DungeonEnd_DefenceCoreDead = 2
+Const.ClientEventManagerClassPath = "/Game/AssetDesign/GameMode/ClientEventManager/BP_%sClientEventMananger.BP_%sClientEventMananger"
+Const.BattleProgressTimerHandle = "BattleProgress"
+Const.DunegonDeliveryPointUpdateInterval = 5
+Const.DunegonDeliveryPointUpdateTimerHandle = "DunegonDeliveryPointUpdateTimerHandle"
 Const.GameModeEventServer = 0
 Const.GameModeEventServerClient = 1
 Const.AimProtectYaw = 175
@@ -375,6 +425,7 @@ Const.SurvivalResourceItemId = 1006
 Const.DefaultRoleId = 1101
 Const.DeafaultMeleeWeapon = nil
 Const.DeafaultRangedWeapon = nil
+Const.DeafaultCharAccessoryTypes = {}
 Const.DefaultBattlePet = 101
 Const.DefaultPetLocation = FVector(0, 50, 0)
 Const.RandomLimitedPetRarity = 4
@@ -481,8 +532,14 @@ Const.ArmoryIdleTags = {
   Armory = "Armory",
   Armory_Mod = "Armory_Mod",
   Armory_Grade = "Armory_Grade",
-  Armory_Pet = "Armory_Pet"
+  Armory_Pet = "Armory_Pet",
+  Armory_BullutJump = "Armory_BullutJump",
+  Armory_FallAttack_Sword = "Armory_FallAttack_Sword"
 }
+Const.ArmoryWeaponIdleTags = {
+  Armory_FallAttack = "Armory_FallAttack"
+}
+Const.ArmoryWeaponIdleTag2WeaponType = {Armory_FallAttack = "Melee"}
 Const.ArmoryActionIdToArmoryTag = {
   [1] = "Melee",
   [2] = "Ranged",
@@ -497,7 +554,6 @@ Const.DefaultMainCityFile = "/Game/Maps/Chapter01_HomeBase"
 Const.DefaultLoginSceneFile = "/Game/Maps/Login"
 Const.DefaultMainCityRegionId = 210101
 Const.DefaultPrologueRegionId = 100103
-Const.BigIceLakeRegionId = 1011
 Const.BaseSummonOffset = 100
 local L = Const.BaseSummonOffset
 Const.SummonOffset = {}
@@ -663,8 +719,8 @@ Const.EDungeonUIState = {
 }
 Const.BrushStaticMesh = {
   "SM_Zhanshijia_01",
-  "\229\156\176\229\155\190B",
-  "\229\156\176\229\155\190\232\180\180\231\186\184"
+  "地图B",
+  "地图贴纸"
 }
 Const.CharWaitInitTag = {
   AssetsLoading = "AssetsLoading",
@@ -705,6 +761,8 @@ Const.DungeonSettlementHideTag = "DungeonSettlement"
 Const.GuideMainHideTag = "GuideMain"
 Const.BossBattleOpenHideTag = "BossBattleOpen"
 Const.LevelSequenceStateRecorderTag = "LevelSequenceStateRecorder"
+Const.BossOpeningEnsureTime = 30
+Const.HardBossDgPrepareAirwallId = 11012
 Const.Common = 0
 Const.Hijack = 1
 Const.RougeLike = 2
@@ -796,6 +854,15 @@ Const.SkillFeatureCD = 30
 Const.bEnableSkillFeatureCD = true
 Const.bHideSkillCD = 1
 Const.DungeonBgBluePrint = "/Game/UI/UI_PC/LevelSelect/LevelSelect_Bg/LevelSelect_Bg_Training.LevelSelect_Bg_Training"
+Const.LoadingBgBluePrint = "/Game/UI/UI_PC/LevelSelect/LevelSelect_Bg/LevelSelect_Bg_Login.LevelSelect_Bg_Login"
+Const.ReChargeLst = {
+  [1] = 110101,
+  [2] = 110102,
+  [3] = 110103,
+  [4] = 110104,
+  [5] = 110105,
+  [6] = 110106
+}
 Const.BloodBarAnimTime = 0.3
 Const.BloodBarDelayTime = 0.1
 Const.SignalStrength = {
@@ -819,15 +886,15 @@ Const.TestGMRegionType = {
   CompareServer = 2
 }
 Const.RegionDataTypeDebugText = {
-  "\233\157\158\229\173\152\229\130\168\230\149\176\230\141\174",
-  "\229\133\179\229\141\161\230\149\176\230\141\174, \230\176\184\228\184\141\229\141\184\232\189\189",
-  "\228\187\187\229\138\161\230\149\176\230\141\174",
-  "\230\142\162\231\180\162\231\187\132\230\149\176\230\141\174",
-  "Boss\230\149\176\230\141\174",
-  "\229\133\179\229\141\161\230\149\176\230\141\174, \230\175\143\228\184\128\229\164\169\230\184\133\233\153\164",
-  "\229\133\179\229\141\161\230\149\176\230\141\174, \230\175\143\228\184\137\229\164\169\230\184\133\233\153\164",
-  "\229\133\179\229\141\161\230\149\176\230\141\174, \230\175\143\228\184\128\229\145\168\230\184\133\233\153\164",
-  "\232\183\168\228\187\187\229\138\161\230\149\176\230\141\174"
+  "非存储数据",
+  "关卡数据, 永不卸载",
+  "任务数据",
+  "探索组数据",
+  "Boss数据",
+  "关卡数据, 每一天清除",
+  "关卡数据, 每三天清除",
+  "关卡数据, 每一周清除",
+  "跨任务数据"
 }
 Const.RegionDataStorageType = {
   ERegionDataType.RDT_CommonData,
@@ -861,6 +928,7 @@ Const.CampType = {
 }
 Const.EnableCreateUnitLog = false
 Const.IsOpenNpcInitOpt = true
+Const.IsNpcUseNavFixPawnLoc = false
 Const.EnableFXOptimization = true
 Const.ToughnessTimeDilation = 0.33
 Const.ToughnessShowBloodTip = 0.4
@@ -870,30 +938,30 @@ Const.InVaildModUnlockLevel = 99
 Const.PlaySoundAsync = true
 Const.EveryAttackLimitSeNum = 3
 Const.RomanNum = {
-  "\226\133\160",
-  "\226\133\161",
-  "\226\133\162",
-  "\226\133\163",
-  "\226\133\164",
-  "\226\133\165",
-  "\226\133\166",
-  "\226\133\167",
-  "\226\133\168",
-  "\226\133\169",
-  "\226\133\170",
-  "\226\133\171"
+  "Ⅰ",
+  "Ⅱ",
+  "Ⅲ",
+  "Ⅳ",
+  "Ⅴ",
+  "Ⅵ",
+  "Ⅶ",
+  "Ⅷ",
+  "Ⅸ",
+  "Ⅹ",
+  "Ⅺ",
+  "Ⅻ"
 }
 Const.IndexNum = {
-  "\226\145\160",
-  "\226\145\161",
-  "\226\145\162",
-  "\226\145\163",
-  "\226\145\164",
-  "\226\145\165",
-  "\226\145\166",
-  "\226\145\167",
-  "\226\145\168",
-  "\226\145\169"
+  "①",
+  "②",
+  "③",
+  "④",
+  "⑤",
+  "⑥",
+  "⑦",
+  "⑧",
+  "⑨",
+  "⑩"
 }
 Const.bShowDamageDetails = false
 Const.bEditorOpenFXBudget = true
@@ -906,10 +974,12 @@ Const.DialogueSnapShot = {
   OUTDOOR = 6,
   ELECTRIC = 7,
   BROADCAST = 8,
-  ECHO = 9
+  ECHO = 9,
+  WUYOU = 10
 }
 Const.DungeonFrameLoadBreakableItemMaxNum = 2
-Const.MaxDungeonMonNum = 60
+Const.MaxDungeonMonNum_PC = 150
+Const.MaxDungeonMonNum_Mobile = 100
 Const.bOverrideHLODDistance = false
 Const.HLODDistanceDefault = {
   [0] = 12000,
@@ -953,7 +1023,24 @@ Const.IOSSerializeDistanceRatio = {
   [3] = 1.0,
   [4] = 1.0
 }
+Const.WCDungeonUnloadSmall = true
+Const.WCDungeonDistanceRatio = 0.7
+Const.WCDungeonLevelProxyDistanceRatio = 0.7
 Const.CanUnloadNavMeshLevel = true
+Const.HuaxuFoliagePC = {
+  High = {
+    "_TypH",
+    "_TypM",
+    "_TypL_DenH"
+  },
+  Mid = {"_TypM", "_TypL_DenH"},
+  Low = {"_TypM", "_TypL_DenM"}
+}
+Const.HuaxuFoliagePhone = {
+  High = {"_TypM", "_TypL_DenM"},
+  Mid = {"_TypM", "_TypL_DenL"},
+  Low = {"_TypL_DenL"}
+}
 Const.SimulateMovementDebugPlatform = ""
 Const.CheckDungeonMonId = false
 Const.PreFrameRealInitNum = 1
@@ -965,6 +1052,7 @@ Const.bSpawnAIUnitAddToEventQueue = true
 Const.bWeaponAndAccessoryItemHcc = true
 Const.bMonsterInitByPropertySync = true
 Const.OpenLookAtProtect = true
+Const.bALSameLM = true
 Const.StandAloneMonsterCanCache = true
 Const.OnlineMonsterCanCache = true
 Const.DungeonPreloadMonster = true
@@ -981,8 +1069,22 @@ Const.NPCDeadCache_IOS = false
 Const.NPCDeadCache_Andriod = true
 Const.LowMemoryDeviceNPCOptimize = true
 Const.OnlineNPCCreateOptimize = true
+Const.CNPCDelHide = true
+Const.EnableCacheSummonID = {
+  [2] = 210101,
+  [3] = 230101,
+  [11] = 530101
+}
+Const.RegionPreloadSupportSceneId = {
+  [0] = 1041
+}
+Const.RegionStoryPreloadSupportSceneId = {
+  [0] = 1001
+}
 Const.NeedStoreSTLBGM = true
 Const.FootstepFXSlowSpeed = 230
+Const.FootstepFXFastSpeed = 800
+Const.WaterDepth = 0.2
 Const.GamepadSpecialLeft = "Gamepad_Special_Left"
 Const.GamepadSpecialRight = "Gamepad_Special_Right"
 Const.GamepadDPadLeft = "Gamepad_DPad_Left"
@@ -1103,8 +1205,8 @@ Const.ShopCacheReason = {
   Persistent = 2,
   Read = 0
 }
-Const.bOpenAntiCheat = true
-Const.AntiCheatInterval = 60
+Const.bOpenScriptDetectionCheck = true
+Const.bIsUseCppVersion = true
 Const.IsShowRayCreature = false
 Const.IsOpenBulletCreature = true
 Const.IsOpenSkillCreature = true
@@ -1116,4 +1218,33 @@ Const.DefaultAttributeMaster = {
 }
 Const.SkipShadowBudgetConfig = {3102}
 Const.OpenVerifyArray = true
+Const.bUseDynamicResolution = true
+Const.WCDungeonAirBoxUnitId = 11002
+Const.TempleInteractiveCount = 100
+Const.ScriptDetectionCheckType = {OnMouse = "OnMouse", OnKeyboard = "OnKeyboard"}
+Const.bOutAirWallBoxCheckRangeVisualDebug = false
+Const.PCScalabilityLevelNum = {
+  [0] = 6,
+  [1] = 7,
+  [2] = 8,
+  [3] = 8,
+  [4] = 8
+}
+Const.MobileScalabilityLevelNum = {
+  IOS = {
+    [0] = 5,
+    [1] = 5,
+    [2] = 5,
+    [3] = 5,
+    [4] = 5
+  },
+  Android = {
+    [0] = 8,
+    [1] = 8,
+    [2] = 8,
+    [3] = 8,
+    [4] = 8
+  }
+}
+Const.EnableRougeLikeBornCheck = false
 return Const

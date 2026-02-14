@@ -3,22 +3,18 @@ local Deque = require("BluePrints.Common.DataStructure").Deque
 local EntertainmentUtil = require("BluePrints.UI.WBP.Entertainment.EntertainmentUtils")
 local WaitProcess = {}
 WaitProcess.__metatable = {__index = WaitProcess}
-
 function WaitProcess.New(...)
   local Obj = {}
   setmetatable(Obj, WaitProcess.__metatable)
   Obj:Init(...)
   return Obj
 end
-
 function WaitProcess:Init(...)
   self.Queue = Deque.New()
 end
-
 function WaitProcess:AddProcess(Task)
   self.Queue:PushBack(Task)
 end
-
 function WaitProcess:NextTask()
   if not self.bIsApply then
     return
@@ -32,7 +28,6 @@ function WaitProcess:NextTask()
     self:NextTask()
   end)
 end
-
 function WaitProcess:ApplyTask()
   if self.Queue:IsEmpty() or self.bIsApply then
     return
@@ -40,11 +35,9 @@ function WaitProcess:ApplyTask()
   self.bIsApply = true
   self:NextTask()
 end
-
 function WaitProcess:Stop()
   self.bIsApply = false
 end
-
 function M:Init()
   M.Super.Init(self)
   self:RefreshRedState()
@@ -52,7 +45,6 @@ function M:Init()
   EventManager:AddEvent(EventID.OnCharDeleted, self, self.OnCharDeleted)
   self:TryListenEvent()
 end
-
 function M:TryListenEvent()
   local Avatar = self:GetAvatar()
   if Avatar and Avatar:CheckSubRegionType(Avatar:GetCurrentRegionId(), CommonConst.SubRegionType.Home) then
@@ -61,7 +53,6 @@ function M:TryListenEvent()
     EventManager:AddEvent(EventID.OnPropSetResources, self, self.RefreshRedState)
   end
 end
-
 function M:Destory()
   M.Super.Destory(self)
   EventManager:RemoveEvent(EventID.OnNewCharObtained, self)
@@ -74,22 +65,18 @@ function M:Destory()
     self.WaitQueue = nil
   end
 end
-
 function M:OnNewCharObtained(CharUuid)
   self:RefreshCharReddot(CharUuid)
 end
-
 function M:OnCharDeleted(CharUuid)
   self:RefreshCharReddot(CharUuid)
 end
-
 function M:GetCharNodeName()
   if not self._NodeName then
     self._NodeName = DataMgr.ReddotNode.Entertainment_Char.Name
   end
   return self._NodeName
 end
-
 function M:RefreshCharReddot(Uuid)
   local NodeName = self:GetCharNodeName()
   if not ReddotManager.GetTreeNode(NodeName) then
@@ -108,7 +95,6 @@ function M:RefreshCharReddot(Uuid)
     CacheDetail[Uuid] = true
   end
 end
-
 function M:RefreshRedState()
   local Avatar = self:GetAvatar()
   if not Avatar then
@@ -119,12 +105,11 @@ function M:RefreshRedState()
     self:RefreshCharReddot(Uuid)
   end
 end
-
 function M:TryGetWaitQueue()
-  if not self.WaitQueue then
-    self.WaitQueue = WaitProcess.New()
+  if self.WaitQueue then
+    self.WaitQueue:Stop()
   end
+  self.WaitQueue = WaitProcess.New()
   return self.WaitQueue
 end
-
 return M

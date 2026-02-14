@@ -3,11 +3,9 @@ local custom_types_path = "../../BluePrints/Client/CustomTypes"
 local avatar_path = "../../BluePrints/Client/Implements"
 local proto_file_path = "./file/"
 local GWorld = {}
-
 function GWorld:IsSkynetServer()
   return false
 end
-
 _G.TypeClass = require("NetworkEngine.Class").Class
 _G.GWorld = GWorld
 local class_module = require("NetworkEngine.Class")
@@ -45,7 +43,6 @@ local ExcludedCustomTypes = {
   CustomSet = true,
   CustomSetDict = true
 }
-
 local function traverse_folder(path)
   local result = {}
   for file in lfs.dir(path) do
@@ -62,7 +59,6 @@ local function traverse_folder(path)
   end
   return result
 end
-
 local function process_custom_attr(attr_name, attr)
   local message = ""
   message = message .. "message " .. attr_name .. " {\n"
@@ -95,7 +91,6 @@ local function process_custom_attr(attr_name, attr)
   message = message .. "}\n"
   return message
 end
-
 local function process_custom_dict(attr_name, attr)
   local key_type_name = attr.KeyType.__Name__
   local value_type_name = attr.ValueType.__Name__
@@ -115,7 +110,6 @@ local function process_custom_dict(attr_name, attr)
   message = message .. "}\n"
   return message
 end
-
 local function process_custom_list(attr_name, attr)
   local message = ""
   local value_type_name = attr.ValueType.__Name__
@@ -131,7 +125,6 @@ local function process_custom_list(attr_name, attr)
   message = message .. "}\n"
   return message
 end
-
 local function GetAttrMessage(file_path, file_name)
   if ExcludedFiles[file_name] then
     return
@@ -163,7 +156,6 @@ local function GetAttrMessage(file_path, file_name)
   table.sort(message_list)
   return message_list
 end
-
 local function GenCustomTypeProto()
   local attr_message_list = {}
   local attr_names = PropUtils.Keys(CustomTypes)
@@ -186,7 +178,6 @@ local function GenCustomTypeProto()
   table.sort(attr_message_list)
   return table.concat(attr_message_list, "\n")
 end
-
 local function GenImplementsProto(name)
   local proto_path = avatar_path .. "/" .. name
   local props = require(proto_path)
@@ -221,7 +212,6 @@ local function GenImplementsProto(name)
   message = message .. "}\n"
   return message
 end
-
 local function GenAttrProp()
   local attr_proto_path = proto_file_path .. "Attr.proto"
   local attr_proto_file = io.open(attr_proto_path, "w")
@@ -232,7 +222,6 @@ local function GenAttrProp()
   local attr_proto_str = ""
   attr_proto_str = attr_proto_str .. [[
 syntax = "proto3";
-
 ]]
   local attr_message = ""
   local attr_message_list = {}
@@ -253,16 +242,12 @@ syntax = "proto3";
   attr_message = table.concat(attr_message_list, "\n")
   local custom_type_message = GenCustomTypeProto()
   attr_proto_str = attr_proto_str .. custom_type_message .. [[
-
-
 ]] .. attr_message .. "\n"
   attr_proto_str = attr_proto_str .. GenImplementsProto("Avatar") .. "\n"
   attr_proto_file:write(attr_proto_str)
   attr_proto_file:close()
 end
-
 local function GenProtos()
   GenAttrProp()
 end
-
 GenProtos()

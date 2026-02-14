@@ -1,6 +1,5 @@
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ReddotTreeNode_ConditionReward = Class("BluePrints.UI.Reddot.Child.Activity.ActivityBase")
-
 function ReddotTreeNode_ConditionReward:_Judge(ActivityID)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -18,5 +17,4 @@ function ReddotTreeNode_ConditionReward:_Judge(ActivityID)
   end
   return true
 end
-
 return ReddotTreeNode_ConditionReward

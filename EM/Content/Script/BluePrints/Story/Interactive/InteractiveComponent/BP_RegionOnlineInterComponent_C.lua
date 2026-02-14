@@ -1,17 +1,17 @@
 require("UnLua")
 require("DataMgr")
 local EMCache = require("EMCache.EMCache")
-local BP_RegionOnlineInterComponent_C = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C")
-
+local BP_RegionOnlineInterComponent_C = Class({
+  "BluePrints.Common.TimerMgr",
+  "BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C"
+})
 function BP_RegionOnlineInterComponent_C:ReceiveBeginPlay()
   self.Priority = "Normal"
 end
-
 function BP_RegionOnlineInterComponent_C:InitRegionInfo(Eid, ObjId)
   self.CharEid = Eid
   self.CharObjId = ObjId
 end
-
 function BP_RegionOnlineInterComponent_C:SetInteractiveName(Name)
   self.InteractiveName = Name
   self.DisplayInteractiveName = GText(Name)
@@ -19,7 +19,6 @@ function BP_RegionOnlineInterComponent_C:SetInteractiveName(Name)
     self.DisplayInteractiveName = Name
   end
 end
-
 function BP_RegionOnlineInterComponent_C:DisplayInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:LoadUINew(UIConst.InteractiveUIName)
@@ -30,8 +29,17 @@ function BP_RegionOnlineInterComponent_C:DisplayInteractiveBtn(PlayerActor)
   InteractiveUI:AddInteractiveItem(self)
   self:SetBtnDisplayed(PlayerActor, true)
   self:RefreshInteractiveBtn(PlayerActor)
+  local Owner = self:GetOwner()
+  if Owner.RegionInterAddFriendComp then
+    Owner.RegionInterAddFriendComp.CanOpen = true
+  end
+  if Owner.RegionInterInviteTeamComp then
+    Owner.RegionInterInviteTeamComp.CanOpen = true
+  end
+  if Owner.RegionInterPersonInfoComp then
+    Owner.RegionInterPersonInfoComp.CanOpen = true
+  end
 end
-
 function BP_RegionOnlineInterComponent_C:RefreshInteractiveBtn(PlayerActor)
   local bChanged, bLocked = self:UpdateLockState()
   if not bLocked and not bChanged then
@@ -41,7 +49,6 @@ function BP_RegionOnlineInterComponent_C:RefreshInteractiveBtn(PlayerActor)
     self:UpdateInteractiveUIState()
   end
 end
-
 function BP_RegionOnlineInterComponent_C:CheckAndDisplayAddFriendBtn(PlayerActor, RegionInterAddFriendComp)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -58,21 +65,21 @@ function BP_RegionOnlineInterComponent_C:CheckAndDisplayAddFriendBtn(PlayerActor
     end
   end
 end
-
 function BP_RegionOnlineInterComponent_C:BtnClicked(PlayerActor, InPressTimeSeconds)
   self:NotDisplayInteractiveBtnSelf(PlayerActor)
   local Owner = self:GetOwner()
-  if Owner.RegionInterAddFriendComp then
-    self:CheckAndDisplayAddFriendBtn(PlayerActor, Owner.RegionInterAddFriendComp)
-  end
-  if Owner.RegionInterInviteTeamComp then
-    Owner.RegionInterInviteTeamComp:DisplayInteractiveBtn(PlayerActor)
-  end
-  if Owner.RegionInterPersonInfoComp then
-    Owner.RegionInterPersonInfoComp:DisplayInteractiveBtn(PlayerActor)
-  end
+  self:AddTimer(0.1, function()
+    if Owner.RegionInterAddFriendComp then
+      self:CheckAndDisplayAddFriendBtn(PlayerActor, Owner.RegionInterAddFriendComp)
+    end
+    if Owner.RegionInterInviteTeamComp then
+      Owner.RegionInterInviteTeamComp:DisplayInteractiveBtn(PlayerActor)
+    end
+    if Owner.RegionInterPersonInfoComp then
+      Owner.RegionInterPersonInfoComp:DisplayInteractiveBtn(PlayerActor)
+    end
+  end)
 end
-
 function BP_RegionOnlineInterComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   self:NotDisplayInteractiveBtnSelf(PlayerActor)
   local Owner = self:GetOwner()
@@ -86,7 +93,6 @@ function BP_RegionOnlineInterComponent_C:NotDisplayInteractiveBtn(PlayerActor)
     Owner.RegionInterPersonInfoComp:NotDisplayInteractiveBtn(PlayerActor)
   end
 end
-
 function BP_RegionOnlineInterComponent_C:NotDisplayInteractiveBtnSelf(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
@@ -96,7 +102,6 @@ function BP_RegionOnlineInterComponent_C:NotDisplayInteractiveBtnSelf(PlayerActo
   end
   InteractiveUI:RemoveInteractiveItem(self)
 end
-
 function BP_RegionOnlineInterComponent_C:CheckCanEnterOrEixt()
   if not self:GetOwner().UnitId then
     return false
@@ -110,7 +115,6 @@ function BP_RegionOnlineInterComponent_C:CheckCanEnterOrEixt()
   end
   return true
 end
-
 function BP_RegionOnlineInterComponent_C:GetInteractiveIcon(PlayerActor)
   if self:IsLocked() then
     return "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Interactive/T_Interactive_Lock.T_Interactive_Lock'"
@@ -124,7 +128,6 @@ function BP_RegionOnlineInterComponent_C:GetInteractiveIcon(PlayerActor)
   end
   return Data.Icon
 end
-
 function BP_RegionOnlineInterComponent_C:GetInteractiveName()
   local Avatar = GWorld:GetAvatar()
   local Name = ""
@@ -139,17 +142,15 @@ function BP_RegionOnlineInterComponent_C:GetInteractiveName()
   end
   return GText(Name)
 end
-
 function BP_RegionOnlineInterComponent_C:InitCommonUIConfirmID(CommonUIConfirmID)
   self.CommonUIConfirmID = CommonUIConfirmID
   local Data = DataMgr.CommonUIConfirm[CommonUIConfirmID]
   if not Data then
     return
   end
-  self.InteractiveDistance = Data.InteractiveRadius or self.InteractiveDistance
+  self:SetInteractiveDistance(Data.InteractiveRadius or self.InteractiveDistance)
   self.InteractiveAngle = Data.InteractiveAngle or self.InteractiveAngle
   self.InteractiveFaceAngle = Data.PlayerFaceAngle or self.InteractiveFaceAngle
   self.ListPriority = Data.InteractivePriority or 0
 end
-
 return BP_RegionOnlineInterComponent_C

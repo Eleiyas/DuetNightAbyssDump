@@ -1,12 +1,9 @@
 local Component = {}
-
 function Component:ReceiveBeginPlay()
 end
-
 function Component:OnCharacterReady()
   self.RecoverMontageName = "Interactive_01_Montage"
 end
-
 function Component:UpdateRecoveryValue(DeltaSeconds)
   if self.CurRecoverySpeed > 0 then
     self.RecoveryValue = math.min(self.RecoveryValue + self.CurRecoverySpeed * DeltaSeconds, Const.MaxRecoverValue)
@@ -17,7 +14,6 @@ function Component:UpdateRecoveryValue(DeltaSeconds)
     end
   end
 end
-
 function Component:TryEnterRecovery()
   local Reason, Recoverer
   if self:IsPhantom() then
@@ -40,7 +36,6 @@ function Component:TryEnterRecovery()
     self:OnRecoverSuccess(Reason)
   end
 end
-
 function Component:ClearRecovererList()
   if self.RecovererList then
     for Id, RecoveryInfo in pairs(self.RecovererList) do
@@ -54,7 +49,6 @@ function Component:ClearRecovererList()
   end
   self.RecovererList = {}
 end
-
 function Component:BindTeamReocveryEffect(RecovererEid, EffectId)
   if not IsStandAlone(self) and not IsClient(self) then
     return
@@ -64,7 +58,6 @@ function Component:BindTeamReocveryEffect(RecovererEid, EffectId)
     self.RecovererList[RecovererEid].RecoveryEffectCreature = self:CreateEffectCreature(EffectId, FTransform(), true, "Root")
   end
 end
-
 function Component:UnbindTeamRecoveryEffect(RecovererEid)
   if not IsStandAlone(self) and not IsClient(self) then
     return
@@ -76,19 +69,17 @@ function Component:UnbindTeamRecoveryEffect(RecovererEid)
     self.RecovererList[RecovererEid].RecoveryEffectCreature = nil
   end
 end
-
 function Component:RefreshRecovererInfo(Recoverer, RecoverSpeed)
   Recoverer.RecoverTargets = Recoverer.RecoverTargets or {}
   Recoverer.RecoverTargets[self.Eid] = RecoverSpeed
   if not next(Recoverer.RecoverTargets) then
-    DebugPrint("Tianyi@ \230\149\145\229\138\169\232\128\133: " .. Recoverer.Eid .. "\228\184\141\229\134\141\230\149\145\229\138\169\229\175\185\232\177\161")
+    DebugPrint("Tianyi@ 救助者: " .. Recoverer.Eid .. "不再救助对象")
     Recoverer.IsRecoveringOthers = false
   else
-    DebugPrint("Tianyi@ \230\149\145\229\138\169\232\128\133: " .. Recoverer.Eid .. "\230\173\163\229\156\168\230\149\145\229\138\169\229\175\185\232\177\161")
+    DebugPrint("Tianyi@ 救助者: " .. Recoverer.Eid .. "正在救助对象")
     Recoverer.IsRecoveringOthers = true
   end
 end
-
 function Component:CalcRecoverySpeed()
   local Speed = 0
   for _, RecoveryInfo in pairs(self.RecovererList) do
@@ -100,7 +91,6 @@ function Component:CalcRecoverySpeed()
   end
   self.CurRecoverySpeed = Speed
 end
-
 function Component:CheckCanRecoverOther(Target, Reason)
   if not Reason or Reason == UE4.ERecoverReason.RecoverReason_NoReason then
     return true
@@ -118,15 +108,13 @@ function Component:CheckCanRecoverOther(Target, Reason)
   end
   return true
 end
-
 function Component:OnRecoverSuccess(Reason)
   if Reason ~= UE4.ERecoverReason.RecoverReason_SkillEffect then
     self:AddRecoveryCount(1)
   end
 end
-
 function Component:OnRecoverOtherSuccess(Target, Reason)
-  DebugPrint("Tianyi@ " .. self:GetName() .. " \229\143\130\228\184\142\229\164\141\230\180\187\231\155\174\230\160\135: " .. Target:GetName() .. " \230\136\144\229\138\159, Reason = " .. Reason)
+  DebugPrint("Tianyi@ " .. self:GetName() .. " 参与复活目标: " .. Target:GetName() .. " 成功, Reason = " .. Reason)
   if Reason == UE4.ERecoverReason.RecoverReason_SelfRecover then
   elseif Reason == UE4.ERecoverReason.RecoverReason_TeammateRecover then
   elseif Reason == UE4.ERecoverReason.RecoverReason_SkillEffect then
@@ -140,17 +128,17 @@ function Component:OnRecoverOtherSuccess(Target, Reason)
     end
   end
 end
-
 function Component:GetCanRecover(PlayerId)
   return self:CheckCanRecovery()
 end
-
 function Component:GetCurRecoveryUIName()
   local RespawnRuleName = self:GetCurRespawnRuleName()
   local RespawnRule = DataMgr.RespawnRule[RespawnRuleName]
+  if RespawnRule and RespawnRule.RecoverUI and RespawnRule.RecoverUI == "None" then
+    return nil
+  end
   return RespawnRule and RespawnRule.RecoverUI or "BattleResurgence"
 end
-
 function Component:ClientPlayAnimOnRecoverInteractive(TargetEid, RecoverInteractiveState)
   if 0 == RecoverInteractiveState then
     self.WaitCallBack = true
@@ -159,5 +147,4 @@ function Component:ClientPlayAnimOnRecoverInteractive(TargetEid, RecoverInteract
     self:SetEnterInteractive(false, self.RecoverMontageName)
   end
 end
-
 return Component

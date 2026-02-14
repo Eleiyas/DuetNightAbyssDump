@@ -4,26 +4,25 @@ local FacialActionListenType = {
   Player = "Player"
 }
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function M:Init()
   self.FacialActionTag = ""
   self.ListenType = 0
   self.ListenInterval = 0.5
 end
-
 function M:Execute(Callback)
   self.Callback = Callback
   self:StartListen()
 end
-
 function M:Clear()
-  self:StopListen(true)
   if self.ExecuteTimer then
     GWorld.GameInstance:RemoveTimer(self.ExecuteTimer)
     self.ExecuteTimer = nil
   end
 end
-
+function M:Stop()
+  self.Callback = nil
+  self:Clear()
+end
 function M:StartListen()
   local GameInstance = GWorld.GameInstance
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -36,7 +35,6 @@ function M:StartListen()
     self:LoopListen()
   end, true)
 end
-
 function M:LoopListen()
   if self.IsStopListen then
     return
@@ -69,7 +67,6 @@ function M:LoopListen()
     self:StopListen(true)
   end
 end
-
 function M:StopListen(TriggerCallback)
   self.IsStopListen = true
   DebugPrint("TTT:ListenPlayerFacialActionTagNode:Stop")
@@ -82,5 +79,4 @@ function M:StopListen(TriggerCallback)
     self.Callback()
   end
 end
-
 return M

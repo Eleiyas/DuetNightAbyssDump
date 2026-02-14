@@ -6,7 +6,6 @@ local Guide_Image_Main = Class({
 Guide_Image_Main._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function Guide_Image_Main:OnLoaded(...)
   self:ChangePlayerInputable(false)
   self.isPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
@@ -19,7 +18,6 @@ function Guide_Image_Main:OnLoaded(...)
   AudioManager(self):PlayUISound(self, "event:/snapshot/ui/filter_guider_window", "Guide_Image_Main", nil)
   self.IsDestroied = false
 end
-
 function Guide_Image_Main:Init_CloseShortCut()
   if not self.isPC then
     return
@@ -46,26 +44,22 @@ function Guide_Image_Main:Init_CloseShortCut()
   })
   self.Key_Close_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function Guide_Image_Main:BindButtonLogics()
   self.Button_Previous:BindEventOnClicked(self, self.SwitchToLeft)
   self.Button_Next:BindEventOnClicked(self, self.SwitchToRight)
   self.Button_Close:BindEventOnClicked(self, self.CloseButtonLogic)
 end
-
 function Guide_Image_Main:AfterLoadingClose()
   self:SetFocus(true)
   self:StopAllAnimations()
   AudioManager(self):PlayUISound(self, "event:/snapshot/ui/filter_guider_window", "Guide_Image_Main", nil)
   self:PlayAnimation(self.In)
 end
-
 function Guide_Image_Main:Destruct()
   AudioManager(self):SetEventSoundParam(self, "Guide_Image_Main", {ToEnd = 1})
   self.Super.Destruct(self)
   self.IsDestroied = true
 end
-
 function Guide_Image_Main:CloseButtonLogic()
   if self.IsClosing or not self.HasReachEnd then
     return
@@ -73,7 +67,6 @@ function Guide_Image_Main:CloseButtonLogic()
   self.IsClosing = true
   self:PreClose()
 end
-
 function Guide_Image_Main:PreClose()
   self:BindToAnimationFinished(self.Out, {
     self,
@@ -83,8 +76,8 @@ function Guide_Image_Main:PreClose()
   })
   self:PlayAnimation(self.Out)
 end
-
 function Guide_Image_Main:Close()
+  self:RemoveDispatcher(EventID.CloseLoading)
   AudioManager(self):SetEventSoundParam(self, "Guide_Image_Main", {ToEnd = 1})
   self:RemoveTimer("GuideMainRefreshInput")
   self:ChangePlayerInputable(true)
@@ -94,7 +87,6 @@ function Guide_Image_Main:Close()
   self:FinishGuideBookCondition()
   self.Super.Close(self)
 end
-
 function Guide_Image_Main:RealClose()
   self.Super.RealClose(self)
   self.bIsShowing = false
@@ -102,14 +94,12 @@ function Guide_Image_Main:RealClose()
     self.OnGuideEnd:Broadcast()
   end
 end
-
 function Guide_Image_Main:FinishGuideBookCondition()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:GuideBookFinishSomething("CompleteUIGuideId", self.GuideId)
   end
 end
-
 function Guide_Image_Main:ChangePlayerInputable(IfAble)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   if not IfAble then
@@ -123,12 +113,10 @@ function Guide_Image_Main:ChangePlayerInputable(IfAble)
     self:SetInputUIOnly(false)
   end
 end
-
 function Guide_Image_Main:GuideUIInit(UIKey, GuideId, Time, ExecuteLogic, IsTimeDilation, IsForceClick)
   self.bIsShowing = true
   self:InitInfo(GuideId)
 end
-
 function Guide_Image_Main:InitInfo(GuideId)
   if not DataMgr[self.GuideTable][GuideId] then
     print(_G.LogTag, "Error: GuideId is Wrong", GuideId)
@@ -161,7 +149,6 @@ function Guide_Image_Main:InitInfo(GuideId)
   self:UpdateTextInfo(self.GuideMessageArray[self.CurrentPageIndex])
   self:UpdateUIByInputDevice()
 end
-
 function Guide_Image_Main:InitButton()
   if self.isPC then
     self.Key_L:CreateCommonKey({
@@ -180,7 +167,6 @@ function Guide_Image_Main:InitButton()
   self.Button_Close:SetText(GText("UI_UIGUIDE_CLOSE"))
   self.Button_Close:SetGamePadImg("B")
 end
-
 function Guide_Image_Main:UpdateGuideInfo(NewPageIndex)
   if self.CurrentPageIndex == NewPageIndex then
     return
@@ -192,13 +178,11 @@ function Guide_Image_Main:UpdateGuideInfo(NewPageIndex)
   self:UpdateUIVisibility()
   self:UpdateTextInfo(self.GuideMessageArray[self.CurrentPageIndex])
 end
-
 function Guide_Image_Main:UpdateNumStep()
   for i = 1, 4 do
     self["Guide_" .. i]:SetNumStep(i)
   end
 end
-
 function Guide_Image_Main:UpdateTextInfo(ChildGuideId)
   local TitleTextMapId = DataMgr[self.ChildGuideTable][ChildGuideId].GuideTitle
   self.Text_Title:SetText(GText(TitleTextMapId))
@@ -216,7 +200,6 @@ function Guide_Image_Main:UpdateTextInfo(ChildGuideId)
     self:UpdateScrollBoxTip()
   end, 3)
 end
-
 function Guide_Image_Main:CheckCanSwitchPage(Adjective)
   if self.IsClosing then
     return false
@@ -226,14 +209,12 @@ function Guide_Image_Main:CheckCanSwitchPage(Adjective)
   end
   return true
 end
-
 function Guide_Image_Main:SwitchToLeft()
   if not self:CheckCanSwitchPage(-1) then
     return
   end
   self.PageTurner:PageLeft()
 end
-
 function Guide_Image_Main:SwitchToRight()
   if not self:CheckCanSwitchPage(1) then
     if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -244,7 +225,6 @@ function Guide_Image_Main:SwitchToRight()
   end
   self.PageTurner:PageRight()
 end
-
 function Guide_Image_Main:UpdateUIVisibility()
   if self.CurrentPageIndex == self.EndPageIndex and not self.HasReachEnd then
     self.HasReachEnd = true
@@ -273,7 +253,6 @@ function Guide_Image_Main:UpdateUIVisibility()
     end
   end
 end
-
 function Guide_Image_Main:Handle_OnPCDown(InKeyName)
   if "Escape" == InKeyName then
     self.Button_Close:OnBtnClicked()
@@ -291,7 +270,6 @@ function Guide_Image_Main:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function Guide_Image_Main:Handle_OnGamePadDown(InKeyName)
   if InKeyName == UIConst.GamePadKey.LeftTriggerThreshold then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
@@ -310,7 +288,6 @@ function Guide_Image_Main:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function Guide_Image_Main:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -328,11 +305,9 @@ function Guide_Image_Main:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function Guide_Image_Main:OnReturnKeyDown()
   self.Button_Close:OnBtnClicked()
 end
-
 function Guide_Image_Main:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -340,7 +315,6 @@ function Guide_Image_Main:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadN
   self.CurInputDeviceType = CurInputDevice
   self:UpdateUIByInputDevice()
 end
-
 function Guide_Image_Main:UpdateUIByInputDevice()
   if not self.isPC then
     return
@@ -371,7 +345,6 @@ function Guide_Image_Main:UpdateUIByInputDevice()
     self["Guide_" .. i]:UpdateTextOnInputDeviceChanged(self.CurInputDeviceType)
   end
 end
-
 function Guide_Image_Main:UpdateKeyCloseVisiable()
   if not self.isPC then
     return
@@ -397,7 +370,6 @@ function Guide_Image_Main:UpdateKeyCloseVisiable()
     self.Key_Close_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Guide_Image_Main:UpdateScrollBoxTip()
   if not self.isPC then
     return
@@ -423,7 +395,6 @@ function Guide_Image_Main:UpdateScrollBoxTip()
   end
   self:UpdateKeyCloseVisiable()
 end
-
 function Guide_Image_Main:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if not self.IsShowingRV then
     return UE4.UWidgetBlueprintLibrary.UnHandled()
@@ -438,6 +409,5 @@ function Guide_Image_Main:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 AssembleComponents(Guide_Image_Main)
 return Guide_Image_Main

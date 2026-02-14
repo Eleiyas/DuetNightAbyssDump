@@ -1,6 +1,5 @@
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local Component = {}
-
 function Component:PetMain_Init()
   if not self.PetItemContentsArray then
     self:PetMain_CreateItemContents()
@@ -8,7 +7,6 @@ function Component:PetMain_Init()
   self:SetContentIsChosen(self.PetMain_CurContent, false)
   self:PetMain_InitListView()
 end
-
 function Component:PetMain_InitWidget()
   self.PetItemContentsMap = nil
   self.PetItemContentsArray = nil
@@ -16,7 +14,6 @@ function Component:PetMain_InitWidget()
   self.CurrentPetUuid = nil
   self.PetMain_CurContent = nil
 end
-
 function Component:PetMain_InitListView()
   if self.PetMain_CurContent then
     self.PetMain_CurContent = nil
@@ -32,9 +29,8 @@ function Component:PetMain_InitListView()
     "UnitId"
   }, CommonConst.DESC, self.PetMain_CurContent)
 end
-
 function Component:PetMain_CreateItemContents()
-  local Avatar = ArmoryUtils:GetAvatar()
+  local Avatar = GWorld:GetAvatar()
   self.PetItemContentsMap = {}
   self.PetItemContentsArray = {}
   self.BP_PetItemContents:Clear()
@@ -48,11 +44,9 @@ function Component:PetMain_CreateItemContents()
     end
   end
 end
-
 function Component:CheckPetType(PetId)
   return 1 == DataMgr.Pet[PetId].PetType
 end
-
 function Component:PetMain_OnListItemClicked(Content)
   if self.PetMain_CurContent == Content then
     self.PetMain_CurContent = nil
@@ -63,7 +57,6 @@ function Component:PetMain_OnListItemClicked(Content)
     self:PetMain_SelectListItem(Content)
   end
 end
-
 function Component:PetMain_SelectListItem(Content)
   if Content then
     Content.TeamIdx = self.CurDungeonPanel.DungeonIndex
@@ -74,8 +67,7 @@ function Component:PetMain_SelectListItem(Content)
   if self.CurDungeonPanel then
     self.CurDungeonPanel:UpdateSlot(self.CurSlotName, Content)
   else
-    DebugPrint("lhr@CharMain_SelectListItem\239\188\154\233\152\181\229\174\185\233\157\162\230\157\191\229\164\177\230\149\136\230\136\150\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165")
+    DebugPrint("lhr@CharMain_SelectListItem：阵容面板失效或初始化失败")
   end
 end
-
 return Component

@@ -1,10 +1,8 @@
 local SetNpcPatrolNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function SetNpcPatrolNode:Init()
   self.NpcId = 0
   self.PatrolId = 0
 end
-
 function SetNpcPatrolNode:Start(Context)
   self.Context = Context
   print("-----------------------------------SetNpcPatrolNode node start-----------------------------------")
@@ -24,11 +22,9 @@ function SetNpcPatrolNode:Start(Context)
   GameMode:SetNpcPatrol(self.NpcId, self.PatrolId)
   self:FinishAction()
 end
-
 function SetNpcPatrolNode:FinishAction()
   self:Finish()
 end
-
 function SetNpcPatrolNode:OnQuestlineFail()
   local GameInstance = GWorld.GameInstance
   local GameMode = UE4.UGameplayStatics.GetGameMode(GameInstance)
@@ -37,5 +33,4 @@ function SetNpcPatrolNode:OnQuestlineFail()
   end
   GameMode:SetNpcPatrol(self.NpcId, self.NpcPrePatrolId)
 end
-
 return SetNpcPatrolNode

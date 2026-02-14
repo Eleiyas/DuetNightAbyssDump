@@ -8,12 +8,10 @@ local RewardTag = {
   Walnut = 3,
   First = 4
 }
-
 local function RewardKeyReadIndex(t, key)
   rawset(t, key, 0)
   return rawget(t, key)
 end
-
 local function RewardTableIndex(t, key)
   if type(key) ~= "number" then
     return
@@ -23,13 +21,11 @@ local function RewardTableIndex(t, key)
   rawset(t, key, i_t)
   return rawget(t, key)
 end
-
 local function InitRewardTypeTable(self, TypeName)
   local t = {}
   setmetatable(t, {__index = RewardTableIndex})
   rawset(self, TypeName, t)
 end
-
 local function IndexFunc(t, key)
   local func = SimpleRewardBox[key]
   if func then
@@ -42,13 +38,11 @@ local function IndexFunc(t, key)
   end
   return nil
 end
-
 local function AddFunction(Key, Name)
   rawset(SimpleRewardBox, Key, function(self, ...)
     SimpleRewardBox.AddByRewardType(self, Name, ...)
   end)
 end
-
 function SimpleRewardBox.InitConfigCache()
   RewardTypeSet = {}
   RewardTypeSet.Exp = true
@@ -63,7 +57,6 @@ function SimpleRewardBox.InitConfigCache()
     CacheValidGetName[RewardType .. "s"] = true
   end
 end
-
 function SimpleRewardBox:New()
   local _self = {}
   if not RewardTypeSet then
@@ -76,7 +69,6 @@ function SimpleRewardBox:New()
   setmetatable(_self, {__index = IndexFunc})
   return _self
 end
-
 local function FastInsertTag(t, Tag)
   if 0 == Tag then
     return 0
@@ -100,7 +92,6 @@ local function FastInsertTag(t, Tag)
   table.insert(t, low, Tag)
   return low
 end
-
 local function GenRewardTag(self, Tag)
   local Tags = rawget(self, "Tags")
   Tag = Tag or 0
@@ -120,7 +111,6 @@ local function GenRewardTag(self, Tag)
   CacheTagStr[Tag] = TagStr
   return TagStr
 end
-
 local function AddReward(self, RewardType, Tag, k, v)
   if not v or v <= 0 then
     return
@@ -136,7 +126,6 @@ local function AddReward(self, RewardType, Tag, k, v)
     self.bEmpty = false
   end
 end
-
 function SimpleRewardBox:AddByRewardType(RewardType, Id, Count, Tag)
   if type(Id) == "table" then
     for key, value in pairs(Id) do
@@ -146,7 +135,6 @@ function SimpleRewardBox:AddByRewardType(RewardType, Id, Count, Tag)
     AddReward(self, RewardType, Tag, Id, Count)
   end
 end
-
 local function InnerMerge(T1, T2, Key, Tag)
   local s_t = rawget(T2, Key)
   if not s_t or not next(s_t) then
@@ -170,7 +158,6 @@ local function InnerMerge(T1, T2, Key, Tag)
   end
   return true
 end
-
 function SimpleRewardBox:Merge(Box, Tag)
   if not Box then
     return
@@ -195,7 +182,6 @@ function SimpleRewardBox:Merge(Box, Tag)
     self.bEmpty = false
   end
 end
-
 function SimpleRewardBox:IsEmpty(TableName)
   if TableName then
     return rawget(self, TableName) and next(self[TableName]) == nil
@@ -204,7 +190,6 @@ function SimpleRewardBox:IsEmpty(TableName)
   end
   return true
 end
-
 function SimpleRewardBox:Clear()
   for RewardType, _ in pairs(RewardTypeSet) do
     rawset(self, CacheRewardName[RewardType], nil)
@@ -213,7 +198,6 @@ function SimpleRewardBox:Clear()
   self.Tags = {}
   self.CacheTagStr = {}
 end
-
 function SimpleRewardBox:Dump()
   local result = {}
   for RewardType, _ in pairs(RewardTypeSet) do
@@ -228,13 +212,11 @@ function SimpleRewardBox:Dump()
   end
   return result
 end
-
 function SimpleRewardBox:DumpWithOriginRewardIds()
   local result = self:Dump()
   result.OriginRewardIds = self.OriginRewardIds
   return result
 end
-
 function SimpleRewardBox:DumpAll()
   local result = {}
   for RewardType, _ in pairs(RewardTypeSet) do
@@ -246,7 +228,6 @@ function SimpleRewardBox:DumpAll()
   end
   return result
 end
-
 function SimpleRewardBox:AppendTag(Tag)
   if not Tag then
     return
@@ -254,7 +235,6 @@ function SimpleRewardBox:AppendTag(Tag)
   FastInsertTag(rawget(self, "Tags"), Tag)
   rawset(self, "CacheTagStr", {})
 end
-
 function SimpleRewardBox:RemoveTag(Tag)
   if not Tag then
     return
@@ -278,7 +258,6 @@ function SimpleRewardBox:RemoveTag(Tag)
   end
   rawset(self, "CacheTagStr", {})
 end
-
 function SimpleRewardBox:GetCount(InnerReward)
   if not InnerReward then
     return 0
@@ -289,11 +268,9 @@ function SimpleRewardBox:GetCount(InnerReward)
   end
   return count
 end
-
 function SimpleRewardBox:GetTag(Tag)
   return RewardTag[Tag]
 end
-
 function SimpleRewardBox:ParseTag(TagStr)
   local result_table = {}
   for number in string.gmatch(TagStr, "%d+") do
@@ -301,22 +278,18 @@ function SimpleRewardBox:ParseTag(TagStr)
   end
   return result_table
 end
-
 function SimpleRewardBox:HasTag(TagTable, Tag)
   if type(TagTable) == "string" then
     TagTable = self:ParseTag(TagTable)
   end
   return CommonUtils.HasValue(TagTable, Tag)
 end
-
 function SimpleRewardBox:FindCountByTag(InnerReward, Tag)
   return InnerReward[tostring(self:GetTag(Tag))] or 0
 end
-
 function SimpleRewardBox:AppendOriginRewardId(Id, Count)
   local OriginRewardIds = rawget(self, "OriginRewardIds")
   Count = Count or 1
   OriginRewardIds[Id] = (OriginRewardIds[Id] or 0) + Count
 end
-
 return SimpleRewardBox

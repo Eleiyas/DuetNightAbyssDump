@@ -1,8 +1,6 @@
 local M = {}
-
 function M:Construct()
 end
-
 function M:SetPreInstallSlot(SlotIdx, Content)
   local SlotWidget = self:GetSlotWidget(SlotIdx)
   if SlotWidget then
@@ -21,13 +19,10 @@ function M:SetPreInstallSlot(SlotIdx, Content)
     end
   end
 end
-
 function M:CalcGamepadPointerDiff(Diff)
   Diff.X = self.AnalogValue.X
   Diff.Y = self.AnalogValue.Y
 end
-
 function M:HandleRemovedFromFocusPath(FocusEvent)
 end
-
 return M

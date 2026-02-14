@@ -14,11 +14,9 @@ local OriginPlanname = {
   [3] = "UI_Squad_Appearance_TITLE3"
 }
 local TipsEnum = {Weapon = 1, Char = 0}
-
 function M:Initialize(Initializer)
   self.TipsType = nil
 end
-
 function M:Construct()
   self.SelectAppearanceIndex = nil
   self.SelectModIndex = nil
@@ -74,12 +72,10 @@ function M:Construct()
     end)
   end
 end
-
 function M:SetComfirmCallball(Callback, obj)
   self.ComfirmCallback = Callback
   self.ComfirmCallbackobj = obj
 end
-
 function M:OnComfirmClicked()
   if self.ComfirmCallback then
     self.ComfirmCallback(self.ComfirmCallbackobj, self.SelectModIndex, self.SelectAppearanceIndex)
@@ -91,11 +87,9 @@ function M:OnComfirmClicked()
   end
   UIUtils.PlayCommonBtnSe(self)
 end
-
 function M:GetPlan()
   return self.SelectAppearanceIndex, self.SelectModIndex
 end
-
 function M:OnFashionSelected(index)
   if index == self.SelectAppearanceIndex then
     return
@@ -110,7 +104,6 @@ function M:OnFashionSelected(index)
   self["FashionType0" .. self.SelectAppearanceIndex]:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:SetIsDealWithVirtualAccept(true)
 end
-
 function M:OnModSelected(index)
   if index == self.SelectModIndex then
     return
@@ -125,11 +118,9 @@ function M:OnModSelected(index)
   self["ModType0" .. self.SelectModIndex]:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:SetIsDealWithVirtualAccept(true)
 end
-
 function M:SetTitle(NameId)
-  self.Text_Title:SetText(GText("nameid"))
+  self.Text_Title:SetText(GText(NameId))
 end
-
 function M:FreshModText(uuid)
   ModController:SyncTarget(self.Uuid)
   for i = 1, 3 do
@@ -137,7 +128,6 @@ function M:FreshModText(uuid)
     self["ModType0" .. i].Text_Item:SetText(GText(ModName))
   end
 end
-
 function M:FreshSuitText(Uuid)
   local Avatar = GWorld:GetAvatar()
   local Char = Avatar.Chars[Uuid]
@@ -149,7 +139,6 @@ function M:FreshSuitText(Uuid)
     self["FashionType0" .. i].Text_Item:SetText(GText(SuitName))
   end
 end
-
 function M:FreshModText(Uuid)
   ModController:SyncTarget(Uuid)
   for i = 1, 3 do
@@ -159,7 +148,6 @@ function M:FreshModText(Uuid)
     end
   end
 end
-
 function M:FreahWeaponView(Name, Rarity, Uuid, SelectModId, IsCharSound)
   if IsCharSound then
     self.TipsType = TipsEnum.Char
@@ -173,13 +161,12 @@ function M:FreahWeaponView(Name, Rarity, Uuid, SelectModId, IsCharSound)
   end
   UIUtils:SetTextColorInMaterialByRarity(self, self.Text_Title, Rarity)
   self.Text_Title:SetText(GText(Name))
-  self.Text_FashionTypeTitle:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Panel_Fashion:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.HB_FashionType:SetVisibility(UIConst.VisibilityOp.Collapsed)
   local currentSize = self.Group_Tips.Slot:GetSize()
   self.Group_Tips.Slot:SetSize(FVector2D(currentSize.X, self.Group_TipsSize_Weapon))
   self:FreshModText(Uuid)
 end
-
 function M:FreahCharView(Name, Rarity, SelectFashionId, SelectModId, Uuid)
   self.TipsType = TipsEnum.Char
   if Uuid then
@@ -199,11 +186,10 @@ function M:FreahCharView(Name, Rarity, SelectFashionId, SelectModId, Uuid)
   end
   local currentSize = self.Group_Tips.Slot:GetSize()
   self.Group_Tips.Slot:SetSize(FVector2D(currentSize.X, self.Group_TipsSize_Avatar))
-  self.Text_FashionTypeTitle:SetVisibility(UIConst.VisibilityOp.Visible)
+  self.Panel_Fashion:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.HB_FashionType:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:FreshModText(Uuid)
 end
-
 function M:FocuesFirstItem()
   if self.Text_FashionTypeTitle.Visibility == UIConst.VisibilityOp.Visible then
     self.FashionType01:SetFocus()
@@ -211,26 +197,21 @@ function M:FocuesFirstItem()
     self.ModType01:SetFocus()
   end
 end
-
 function M:SetOnFocusSelectedItemCallback(Callback)
   self.OnFocusSelectedItem = Callback
 end
-
 function M:SetOnFocusNotSelectedItemCallback(Callback)
   self.OnFocusNotSelectedItem = Callback
 end
-
 function M:OnFocusSelectedItem(ItemWidget)
   if self.OnFocusSelectedItem and self.ComfirmCallbackobj then
     self.OnFocusSelectedItem(self.ComfirmCallbackobj, ItemWidget)
   end
   self:SetIsDealWithVirtualAccept(true)
 end
-
 function M:OnFocusNotSelectedItem(ItemWidget)
   if self.OnFocusNotSelectedItem and self.ComfirmCallbackobj then
     self.OnFocusNotSelectedItem(self.ComfirmCallbackobj, ItemWidget)
   end
 end
-
 return M

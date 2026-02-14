@@ -1,11 +1,9 @@
 require("UnLua")
 local WBP_Common_Dialog_Text02_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_Text02_PC_C:Construct()
   WBP_Common_Dialog_Text02_PC_C.Super.Construct(self)
   self.OriginJustfication = self.Text_Details.Justification
 end
-
 function WBP_Common_Dialog_Text02_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local Text
@@ -32,7 +30,6 @@ function WBP_Common_Dialog_Text02_PC_C:InitContent(Params, PopupData, Owner)
     end
   end)
 end
-
 function WBP_Common_Dialog_Text02_PC_C:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -40,5 +37,4 @@ function WBP_Common_Dialog_Text02_PC_C:OnContentAnalogValueChanged(MyGeometry, I
     UIUtils.ScrollBoxByGamepad(self.Scroll_Box, InAnalogInputEvent)
   end
 end
-
 return WBP_Common_Dialog_Text02_PC_C

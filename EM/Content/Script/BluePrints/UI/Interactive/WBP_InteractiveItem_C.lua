@@ -14,7 +14,7 @@ local InteractiveTypeEnum = {
   PickUpAll = 3
 }
 local QuestInteractiveTypeEnum = {CommonQuest = 1, SpecialQuest = 2}
-
+local LongPressAnimationTime = 1
 function WBP_InteractiveItem_C:Initialize(Initializer)
   self.InteractiveInfo = nil
   self.CurrentInputDevice = {
@@ -23,7 +23,6 @@ function WBP_InteractiveItem_C:Initialize(Initializer)
   }
   self.PlayingAnimations = {}
 end
-
 function WBP_InteractiveItem_C:Construct()
   if rawget(self, "bConstruct") then
     return
@@ -51,8 +50,39 @@ function WBP_InteractiveItem_C:Construct()
   self.Tag_New:SetVisibility(ESlateVisibility.Collapsed)
   self.State = WBP_InteractiveItem_C.State.Normal
 end
-
-function WBP_InteractiveItem_C:InitWidgetInfoInGamePad()
+function WBP_InteractiveItem_C:GetAnimationNameByAnimation(Ainmation)
+  if not rawget(self, "AnimationNames") then
+    local AnimationNames = {
+      [self.In] = "In",
+      [self.Out] = "Out",
+      [self.Normal] = "Normal",
+      [self.Hover] = "Hover",
+      [self.UnHover] = "UnHover",
+      [self.Press] = "Press",
+      [self.Click] = "Click",
+      [self.Forbidden_Normal] = "Forbidden_Normal",
+      [self.Forbidden_Hover] = "Forbidden_Hover",
+      [self.Forbidden_UnHover] = "Forbidden_UnHover",
+      [self.Forbidden_Press] = "Forbidden_Press",
+      [self.Forbidden_Click] = "Forbidden_Click",
+      [self.Lock_Normal] = "Lock_Normal",
+      [self.Lock_Hover] = "Lock_Hover",
+      [self.Lock_UnHover] = "Lock_UnHover",
+      [self.Lock_Press] = "Lock_Press",
+      [self.Lock_Click] = "Lock_Click",
+      [self.UnLock] = "UnLock",
+      [self.LongPress_Normal] = "LongPress_Normal",
+      [self.LongPress] = "LongPress",
+      [self.Loop] = "Loop"
+    }
+    rawset(self, "AnimationNames", AnimationNames)
+  end
+  return self.AnimationNames[Ainmation]
+end
+function WBP_InteractiveItem_C:InitWidgetInfoInGamePad(IsGamePad)
+  if not IsGamePad or self.GamePadKeyInited then
+    return
+  end
   local GamepadKeys = UIUtils.GetIconListByActionName("Interactive")
   local ImgShortPath = GamepadKeys[1]
   self.Key_Interactive_GamePad:CreateCommonKey({
@@ -64,8 +94,8 @@ function WBP_InteractiveItem_C:InitWidgetInfoInGamePad()
       }
     }
   })
+  rawset(self, "GamePadKeyInited", true)
 end
-
 function WBP_InteractiveItem_C:Destruct()
   if rawget(self, "bSkipDestruct") then
     return
@@ -83,7 +113,6 @@ function WBP_InteractiveItem_C:Destruct()
     self.Key:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_InteractiveItem_C:InitPickAllInfoInGamePad()
   local GamepadKeys = UIUtils.GetIconListByActionName("Interactive")
   local ImgShortPath = GamepadKeys[1]
@@ -93,7 +122,6 @@ function WBP_InteractiveItem_C:InitPickAllInfoInGamePad()
     }
   })
 end
-
 function WBP_InteractiveItem_C:InitInteractiveInfo(InteractiveInfo)
   if self.InteractiveInfo == InteractiveInfo then
     return
@@ -113,11 +141,29 @@ function WBP_InteractiveItem_C:InitInteractiveInfo(InteractiveInfo)
   self:UpdateStars()
   self:PlayAnimation(self["in"], 0, 1, UE4.EUMGSequencePlayMode.Forward, 1, true)
   self:PlayAnimation(self:GetAnimation("Normal"))
+  self:InitLongPressState()
   self:InitOwnerUuId()
   self.ListPriority = InteractiveInfo.ListPriority or 1
-  self:InitWidgetInfoInGamePad()
 end
-
+function WBP_InteractiveItem_C:InitLongPressState()
+  if not self.InteractiveInfo then
+    return
+  end
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+  if not Player then
+    return
+  end
+  if self.InteractiveInfo:IsForbidden(Player) then
+    return
+  end
+  if self.InteractiveInfo:IsLastingInteract() and 0 ~= self.InteractiveInfo:GetNeedLongPressTime() then
+    local PressedPercent = self.InteractiveInfo:GetLongPressedPercent()
+    local ReduceTime = self.InteractiveInfo:GetReduceTime()
+    local AnimationSpeed = ReduceTime <= 0 and 0 or LongPressAnimationTime / ReduceTime
+    self:PlayAnimation(self:GetAnimation("LongPress"), 1 - PressedPercent, 1, UE4.EUMGSequencePlayMode.Reverse, AnimationSpeed)
+    self.Text_RemainTime:SetRenderOpacity(0)
+  end
+end
 function WBP_InteractiveItem_C:InitPickAllInfo()
   self.InteractiveInfo = nil
   rawset(self, "IsPickUpAllItem", true)
@@ -135,21 +181,19 @@ function WBP_InteractiveItem_C:InitPickAllInfo()
   end
   self:InitPickAllInfoInGamePad()
 end
-
 function WBP_InteractiveItem_C:InitOwnerUuId()
   if not IsValid(self.InteractiveInfo) then
     return
   end
   self.OwnerUuId = self.InteractiveInfo:GetOwner():GetName()
 end
-
 function WBP_InteractiveItem_C:UseGamePadStyle(UseGamePadStyle)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+    self:InitWidgetInfoInGamePad(UseGamePadStyle)
     local ActiveWidgetIndex = UseGamePadStyle and 1 or 0
     self.WidgetSwitcher_Key:SetActiveWidgetIndex(ActiveWidgetIndex)
   end
 end
-
 function WBP_InteractiveItem_C:GetTextColor()
   if not IsValid(self.InteractiveInfo) then
     return self.NormalColor
@@ -160,7 +204,6 @@ function WBP_InteractiveItem_C:GetTextColor()
     return self.InteractiveInfo:IsImportant() and self.ImportantColor or self.NormalColor
   end
 end
-
 function WBP_InteractiveItem_C:SelectEntryItem(bSelected, IsGamePad)
   self.bSelected = bSelected
   self:UseGamePadStyle(IsGamePad)
@@ -196,14 +239,12 @@ function WBP_InteractiveItem_C:SelectEntryItem(bSelected, IsGamePad)
     self.State = WBP_InteractiveItem_C.State.Normal
   end
 end
-
 function WBP_InteractiveItem_C:IsPickUpItemWithOneClick()
   if not IsValid(self.InteractiveInfo) then
     return false
   end
   return self.InteractiveInfo:CanPickUpWithOneClick()
 end
-
 function WBP_InteractiveItem_C:OnInteractiveItemPressed()
   local InteractiveUI = self:GetInteractiveUI()
   if not InteractiveUI then
@@ -216,19 +257,39 @@ function WBP_InteractiveItem_C:OnInteractiveItemPressed()
   self.bPressed = true
   InteractiveUI:PressedSelectAction(true)
 end
-
 function WBP_InteractiveItem_C:PlayPressAnim()
   local InteractiveUI = self:GetInteractiveUI()
   if not InteractiveUI then
     return
   end
+  local PlayerActor = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+  if not PlayerActor then
+    return
+  end
   self.State = WBP_InteractiveItem_C.State.Press
-  self:PlayInteractiveItemAnim("Press", false)
+  if IsValid(self.InteractiveInfo) and self.InteractiveInfo:IsLastingInteract() and not self.InteractiveInfo:IsForbidden(PlayerActor) then
+    if 0 == self.InteractiveInfo:GetNeedLongPressTime() then
+      self:PlayInteractiveItemAnim("Loop", false)
+    else
+      local NeedPressTime = self.InteractiveInfo:GetNeedLongPressTime()
+      local PressedPercent = self.InteractiveInfo:GetLongPressedPercent()
+      local AnimationSpeed = LongPressAnimationTime / NeedPressTime
+      self:PlayAnimation(self.LongPress, PressedPercent, 1, UE4.EUMGSequencePlayMode.Forward, AnimationSpeed)
+      if self.InteractiveInfo:NeedShowRemaindTime() then
+        self:AddTimer(0.05, self.UpdateLongPressRemaindTime, true, 0, "UpdateLongPressRemaindTime", true)
+        self.Text_RemainTime:SetRenderOpacity(1)
+      else
+        self.Text_RemainTime:SetRenderOpacity(0)
+      end
+    end
+    self:UpdateText()
+  else
+    self:PlayInteractiveItemAnim("Press", false)
+  end
   if InteractiveUI.CurInputDeviceType == ECommonInputType.Gamepad and IsValid(self.InteractiveInfo) and self.InteractiveInfo:IsLastingInteract() then
     self.Key_Interactive_GamePad:OnButtonPressed()
   end
 end
-
 function WBP_InteractiveItem_C:OnInteractiveItemReleased()
   local InteractiveUI = self:GetInteractiveUI()
   if not InteractiveUI then
@@ -237,11 +298,33 @@ function WBP_InteractiveItem_C:OnInteractiveItemReleased()
   InteractiveUI:ReleasedSelectAction(true)
   self.bPressed = false
 end
-
 function WBP_InteractiveItem_C:PlayReleaseAnim()
   if self.bSelected and CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
-    self:PlayInteractiveItemAnim("Hover", false)
+    local PlayerActor = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+    if not PlayerActor then
+      return
+    end
     self.State = WBP_InteractiveItem_C.State.Hover
+    if IsValid(self.InteractiveInfo) and self.InteractiveInfo:IsLastingInteract() and not self.InteractiveInfo:IsForbidden(PlayerActor) then
+      if 0 == self.InteractiveInfo:GetNeedLongPressTime() then
+        self:PlayInteractiveItemAnim("Hover", false)
+      else
+        local PressedTime = self:GetAnimationCurrentTime(self.LongPress)
+        local ReduceTime = self.InteractiveInfo:GetReduceTime()
+        if ReduceTime <= 0 then
+          self:PlayAnimation(self:GetAnimation("LongPress"), PressedTime, 1, UE4.EUMGSequencePlayMode.Forward, 0)
+          self:PauseAnimation(self.LongPress)
+        else
+          local AnimationSpeed = LongPressAnimationTime / ReduceTime
+          self:PlayAnimation(self:GetAnimation("LongPress"), 1 - PressedTime, 1, UE4.EUMGSequencePlayMode.Reverse, AnimationSpeed)
+        end
+        self:RemoveTimer("UpdateLongPressRemaindTime", true)
+        self.Text_RemainTime:SetRenderOpacity(0)
+      end
+      self:UpdateText()
+    else
+      self:PlayInteractiveItemAnim("Hover", false)
+    end
     local InteractiveUI = self:GetInteractiveUI()
     if not InteractiveUI then
       return
@@ -254,7 +337,6 @@ function WBP_InteractiveItem_C:PlayReleaseAnim()
     self.State = WBP_InteractiveItem_C.State.Normal
   end
 end
-
 function WBP_InteractiveItem_C:OnInteractiveItemClicked()
   local InteractiveUI = self:GetInteractiveUI()
   if not InteractiveUI then
@@ -267,7 +349,6 @@ function WBP_InteractiveItem_C:OnInteractiveItemClicked()
     InteractiveUI:ClickSelectAction()
   end
 end
-
 function WBP_InteractiveItem_C:OnInteractiveItemHovered()
   if not self:CanDoAction() then
     return
@@ -278,7 +359,6 @@ function WBP_InteractiveItem_C:OnInteractiveItemHovered()
   end
   InteractiveUI:HoveredSelectAction(self)
 end
-
 function WBP_InteractiveItem_C:OnInteractiveItemUnhovered()
   if not self:CanDoAction() then
     return
@@ -287,13 +367,11 @@ function WBP_InteractiveItem_C:OnInteractiveItemUnhovered()
     self:OnInteractiveItemReleased()
   end
 end
-
 function WBP_InteractiveItem_C:GetInteractiveUI()
   local UIManager = UIManager(self)
   assert(UIManager, "Can't get UIManager")
   return UIManager:GetUIObj(UIConst.InteractiveUIName)
 end
-
 function WBP_InteractiveItem_C:TryPlayClickAnim()
   if IsValid(self.InteractiveInfo) and self.InteractiveInfo:IsLastingInteract() then
     return false
@@ -301,7 +379,6 @@ function WBP_InteractiveItem_C:TryPlayClickAnim()
   self:PlayInteractiveItemAnim("Click")
   return true
 end
-
 function WBP_InteractiveItem_C:OnAnimationStarted(InAnimation)
   if self.UnLock == InAnimation then
     self.Tag_New:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -312,7 +389,6 @@ function WBP_InteractiveItem_C:OnAnimationStarted(InAnimation)
   end
   self.PlayingAnimations[InAnimation] = true
 end
-
 function WBP_InteractiveItem_C:OnAnimationFinished(InAnimation)
   self.PlayingAnimations[InAnimation] = nil
   if rawget(self, "bOnRemoved") then
@@ -358,10 +434,17 @@ function WBP_InteractiveItem_C:OnAnimationFinished(InAnimation)
     end
     rawset(self, "bOnRemoved", true)
     InteractiveUI:OnInteractiveItemRemoveAnimFinish(self)
+  elseif self.LongPress == InAnimation then
+    self:UpdateStateAnim()
+  elseif self.UnLock == InAnimation then
+    if self.bSelected then
+      self:PlayAnimation(self:GetAnimation("Hover"))
+    else
+      self:PlayAnimation(self:GetAnimation("Normal"))
+    end
   end
   self.bForceStop = false
 end
-
 function WBP_InteractiveItem_C:ReAdd()
   if not self:IsAnimationPlaying(self.Out) and not self:IsAnimationPlaying(self.Click) then
     return
@@ -375,13 +458,12 @@ function WBP_InteractiveItem_C:ReAdd()
     self:StopAnimation(self.Click)
   end
   self:PlayAnimation(self["in"], 0, 1, UE4.EUMGSequencePlayMode.Forward, 1, true)
+  self:InitLongPressState()
   rawset(self, "bOnRemoved", false)
 end
-
 function WBP_InteractiveItem_C:CanDoAction()
   return not self:IsAnimationPlaying(self.Out) and not self:IsAnimationPlaying(self.Click) and not rawget(self, "bPickAll")
 end
-
 function WBP_InteractiveItem_C:GetKeyName(ActionName)
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionKeys = UE4.TArray(UE4.FInputActionKeyMapping)
@@ -401,7 +483,6 @@ function WBP_InteractiveItem_C:GetKeyName(ActionName)
   end
   return nil, nil
 end
-
 function WBP_InteractiveItem_C:PlayInteractiveItemAnim(AnimName, bRestoreState)
   if self:IsAnimationPlaying(self.Out) or self:IsAnimationPlaying(self.Click) then
     return
@@ -413,7 +494,6 @@ function WBP_InteractiveItem_C:PlayInteractiveItemAnim(AnimName, bRestoreState)
   self:StopAllInteractiveAnim(AnimName)
   self:PlayAnimation(self:GetAnimation(AnimName), 0, 1, UE4.EUMGSequencePlayMode.Forward, 1, bRestoreState)
 end
-
 function WBP_InteractiveItem_C:StopAllInteractiveAnim(AnimName)
   self.bRemoveing = true
   local IgnoreAnimation
@@ -427,7 +507,6 @@ function WBP_InteractiveItem_C:StopAllInteractiveAnim(AnimName)
   end
   self.bRemoveing = false
 end
-
 function WBP_InteractiveItem_C:GetAnimation(AnimName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not Player then
@@ -446,7 +525,6 @@ function WBP_InteractiveItem_C:GetAnimation(AnimName)
   end
   return self[AnimName]
 end
-
 function WBP_InteractiveItem_C:UpdateStars()
   if not IsValid(self.InteractiveInfo) then
     return
@@ -489,14 +567,13 @@ function WBP_InteractiveItem_C:UpdateStars()
     end
   end
 end
-
 function WBP_InteractiveItem_C:UpdateInteractiveItemState()
   self:UpdateIcon()
   self:UpdateText()
   self:UpdateCondition()
   self:UpdateStateAnim()
+  self:InitLongPressState()
 end
-
 function WBP_InteractiveItem_C:UpdateIcon()
   if not IsValid(self.InteractiveInfo) then
     return
@@ -525,7 +602,6 @@ function WBP_InteractiveItem_C:UpdateIcon()
     self.Img_Item:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_InteractiveItem_C:OnIconLoadFinish(Object, ResourceID)
   if not IsValid(self) or nil ~= ResourceID and rawget(self, "LoadResourceID") ~= ResourceID then
     return
@@ -555,25 +631,51 @@ function WBP_InteractiveItem_C:OnIconLoadFinish(Object, ResourceID)
     self.Img_Item:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_InteractiveItem_C:UpdateStateAnim()
   self:StopAllInteractiveAnim()
   if self.State == WBP_InteractiveItem_C.State.Normal then
     self:PlayAnimation(self:GetAnimation("Normal"), 0, 1, UE4.EUMGSequencePlayMode.Forward, 10000)
   elseif self.State == WBP_InteractiveItem_C.State.Press then
-    self:PlayAnimation(self:GetAnimation("Press"), 0, 1, UE4.EUMGSequencePlayMode.Forward, 10000)
+    self:UpdatePressStateAnim()
   elseif self.State == WBP_InteractiveItem_C.State.Hover then
     self:PlayAnimation(self:GetAnimation("Hover"), 0, 1, UE4.EUMGSequencePlayMode.Forward, 10000)
   end
 end
-
+function WBP_InteractiveItem_C:UpdatePressStateAnim()
+  if not IsValid(self.InteractiveInfo) then
+    self:PlayAnimation(self:GetAnimation("Press"), 0, 1, UE4.EUMGSequencePlayMode.Forward, 10000)
+    return
+  end
+  if self.InteractiveInfo:IsLastingInteract() then
+    if 0 ~= self.InteractiveInfo:GetNeedLongPressTime() then
+      local PressedPercent = self.InteractiveInfo:GetLongPressedPercent()
+      local ReduceTime = self.InteractiveInfo:GetReduceTime()
+      local AnimationSpeed = ReduceTime <= 0 and 0 or LongPressAnimationTime / ReduceTime
+      self:PlayAnimation(self:GetAnimation("LongPress"), 1 - PressedPercent, 1, UE4.EUMGSequencePlayMode.Reverse, AnimationSpeed)
+      self.Text_RemainTime:SetRenderOpacity(0)
+    end
+  else
+    self:PlayAnimation(self:GetAnimation("Press"), 0, 1, UE4.EUMGSequencePlayMode.Forward, 10000)
+  end
+end
+function WBP_InteractiveItem_C:UpdateLongPressRemaindTime()
+  if not IsValid(self.InteractiveInfo) then
+    return
+  end
+  local TotalLonPressTime = self.InteractiveInfo:GetNeedLongPressTime()
+  local CurPercent = self:GetAnimationCurrentTime(self.LongPress)
+  self.Text_RemainTime:SetText(string.format("%ss", string.format("%.1f", math.max(0.0, TotalLonPressTime * (1 - CurPercent)))))
+end
 function WBP_InteractiveItem_C:UpdateText()
   if not IsValid(self.InteractiveInfo) then
     return
   end
-  self:SetInteractiveText(self.InteractiveInfo:GetInteractiveName(), self:GetTextColor())
+  local InteractiveName = self.InteractiveInfo:GetInteractiveName()
+  if self.InteractiveInfo:IsLastingInteract() and self.State == WBP_InteractiveItem_C.State.Press then
+    InteractiveName = self.InteractiveInfo:GetLongPressingText()
+  end
+  self:SetInteractiveText(InteractiveName, self:GetTextColor())
 end
-
 function WBP_InteractiveItem_C:SetInteractiveText(Text, Color)
   if self.ShouldHighlight then
     self.Text_Interactive_Special:SetText(Text)
@@ -584,7 +686,6 @@ function WBP_InteractiveItem_C:SetInteractiveText(Text, Color)
     self.WidgetSwitcher_1:SetActiveWidgetIndex(0)
   end
 end
-
 function WBP_InteractiveItem_C:UpdateCondition()
   if not IsValid(self.InteractiveInfo) then
     return
@@ -597,7 +698,6 @@ function WBP_InteractiveItem_C:UpdateCondition()
     self.Text_ExploreKeyNum:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_InteractiveItem_C:GetInteractivePriority()
   if rawget(self, "InteractivePriority") then
     return self.InteractivePriority
@@ -615,7 +715,6 @@ function WBP_InteractiveItem_C:GetInteractivePriority()
   end
   return nil
 end
-
 function WBP_InteractiveItem_C:GetQuestInteractiveIconPath(InQuestChainId, InSpecialQuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -637,5 +736,4 @@ function WBP_InteractiveItem_C:GetQuestInteractiveIconPath(InQuestChainId, InSpe
   end
   return nil
 end
-
 return WBP_InteractiveItem_C

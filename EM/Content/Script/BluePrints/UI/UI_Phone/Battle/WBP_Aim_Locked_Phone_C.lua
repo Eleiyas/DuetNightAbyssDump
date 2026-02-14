@@ -1,6 +1,8 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
+M._components = {
+  "BluePrints.UI.UI_Phone.Battle.Component.DraggableWidgetComponent"
+}
 function M:Construct()
   self.IsShowButton = false
   self.LastShowButton = false
@@ -9,7 +11,6 @@ function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnPressed)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnPressed()
   self.OwnerPlayer:FlipCameraLockOnMonster()
   if self.OwnerPlayer.CameraRotationComponent.IsCameraLookingToTarget then
@@ -20,7 +21,6 @@ function M:OnPressed()
     self:PlayAnimation(self.Unlock)
   end
 end
-
 function M:UpdateButtonInTimer()
   if IsValid(self.OwnerPlayer.CameraRotationComponent.PreLockOnInfo) or self.OwnerPlayer.IsLockOn then
     self.IsShowButton = true
@@ -47,5 +47,5 @@ function M:UpdateButtonInTimer()
     self:PlayAnimation(self.Unlock)
   end
 end
-
+AssembleComponents(M)
 return M

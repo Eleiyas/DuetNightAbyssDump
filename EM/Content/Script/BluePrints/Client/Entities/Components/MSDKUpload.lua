@@ -1,13 +1,10 @@
 local Component = {}
-
 function Component:EnterWorld()
   EventManager:AddEvent(EventID.ConditionComplete, self, self.OnConditionComplete)
 end
-
 function Component:LeaveWorld()
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
 end
-
 function Component:OnConditionComplete(ConditionId)
   local EventNames = DataMgr.MSDKUploadConvert.ConditionUnlockInfo[ConditionId]
   if EventNames then
@@ -17,5 +14,4 @@ function Component:OnConditionComplete(ConditionId)
     end
   end
 end
-
 return Component

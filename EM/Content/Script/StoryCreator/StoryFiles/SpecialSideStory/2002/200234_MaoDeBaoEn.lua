@@ -52,11 +52,11 @@ return {
       isStoryNode = true,
       key = "1751455504453318888",
       type = "StoryNode",
-      name = "\228\184\142\233\135\142\231\140\171\229\175\185\232\175\157",
+      name = "与野猫对话",
       pos = {x = 1278.820197044335, y = 276.2857142857143},
       propsData = {
         QuestId = 20023401,
-        QuestDescriptionComment = "\228\184\142\233\135\142\231\140\171\229\175\185\232\175\157",
+        QuestDescriptionComment = "与野猫对话",
         QuestDescription = "Description_200234_1",
         QuestDeatil = "Content_200234_1",
         TaskRegionReName = "",
@@ -76,8 +76,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_gududeyemao1_1191718"
+        StoryGuidePointName = "Npc_gududeyemao1_1191718",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -131,7 +133,7 @@ return {
           ["17514566109601907119"] = {
             key = "17514566109601907119",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1484, y = 495.5},
             propsData = {
               IsNpcNode = true,
@@ -156,6 +158,7 @@ return {
               HideNpcs = false,
               HideMonsters = false,
               HideAllBattleEntity = false,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -163,13 +166,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -182,7 +185,7 @@ return {
           ["1752838482204498"] = {
             key = "1752838482204498",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1319.0714285714287, y = 623},
             propsData = {
               ActiveEnable = true,
@@ -201,11 +204,11 @@ return {
       isStoryNode = true,
       key = "1751456252406954148",
       type = "StoryNode",
-      name = "\232\191\148\229\155\158\228\188\145\230\134\169\228\185\139\230\137\128\229\175\187\230\137\190\233\135\142\231\140\171",
+      name = "返回休憩之所寻找野猫",
       pos = {x = 1718.571428571429, y = 270.85714285714295},
       propsData = {
         QuestId = 20023402,
-        QuestDescriptionComment = "\232\191\148\229\155\158\228\188\145\230\134\169\228\185\139\230\137\128\229\175\187\230\137\190\233\135\142\231\140\171",
+        QuestDescriptionComment = "返回休憩之所寻找野猫",
         QuestDescription = "Description_200234_2",
         QuestDeatil = "Content_200234_2",
         TaskRegionReName = "",
@@ -225,8 +228,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101101,
+        SubRegionIdList = {},
         StoryGuideType = "Npc",
-        StoryGuidePointName = "Npc_gududeyemao2_1191717"
+        StoryGuidePointName = "Npc_gududeyemao2_1191717",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -286,7 +291,7 @@ return {
           ["1751538335109319772"] = {
             key = "1751538335109319772",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 2469.8565593981875, y = 708.9274475516295},
             propsData = {
               IsNpcNode = true,
@@ -311,6 +316,7 @@ return {
               HideNpcs = false,
               HideMonsters = false,
               HideAllBattleEntity = false,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -318,13 +324,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -337,42 +343,42 @@ return {
           ["1751538335109319775"] = {
             key = "1751538335109319775",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 2214.775898549735, y = 735.1932241154134},
             propsData = {
               ActiveEnable = true,
               EnableBlackScreenSync = false,
               EnableFadeIn = false,
               EnableFadeOut = false,
-              NewTargetPointName = "\228\188\145\230\134\169\228\185\139\230\137\128\233\135\142\231\140\171",
+              NewTargetPointName = "休憩之所野猫",
               StaticCreatorIdList = {1191717}
             }
           },
           ["1751538335109319776"] = {
             key = "1751538335109319776",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 2436.1626680832574, y = 1024.6110139868322},
             propsData = {
               ActiveEnable = false,
               EnableBlackScreenSync = false,
               EnableFadeIn = false,
               EnableFadeOut = false,
-              NewTargetPointName = "\228\188\145\230\134\169\228\185\139\230\137\128\233\135\142\231\140\171",
+              NewTargetPointName = "休憩之所野猫",
               StaticCreatorIdList = {1191717}
             }
           },
           ["1751538431768320807"] = {
             key = "1751538431768320807",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1865.2307692307693, y = 922.6923076923078},
             propsData = {
               ActiveEnable = false,
               EnableBlackScreenSync = false,
               EnableFadeIn = false,
               EnableFadeOut = false,
-              NewTargetPointName = "\233\135\142\231\140\1711",
+              NewTargetPointName = "野猫1",
               StaticCreatorIdList = {1191718}
             }
           }

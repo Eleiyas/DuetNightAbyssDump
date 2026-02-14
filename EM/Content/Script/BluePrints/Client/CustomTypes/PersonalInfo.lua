@@ -11,13 +11,11 @@ PersonalInfoUnit.__Props__ = {
   ModPlan = prop.prop("Int", "client save", 1)
 }
 FormatProperties(PersonalInfoUnit)
-
 function PersonalInfoUnit:Init(Id, AppearancePlan, ModPlan)
   self.Id = Id
   self.AppearancePlan = AppearancePlan
   self.ModPlan = ModPlan
 end
-
 local PersonalInfoUnitList = Class("PersonalInfoUnitList", CustomTypes.CustomList)
 PersonalInfoUnitList.ValueType = PersonalInfoUnit
 local PersonalInfo = Class("PersonalInfo", CustomTypes.CustomAttr)
@@ -27,7 +25,6 @@ PersonalInfo.__Props__ = {
   Visible = prop.prop("Int", "client save", 1)
 }
 FormatProperties(PersonalInfo)
-
 function PersonalInfo:AddCharDisplay(Id, AppearancePlan, ModPlan)
   if self.CharDisplay:Length() >= PERSONAL_INFO_UNIT_COUNT then
     return false
@@ -35,7 +32,6 @@ function PersonalInfo:AddCharDisplay(Id, AppearancePlan, ModPlan)
   self.CharDisplay:Append(PersonalInfoUnit(Id, AppearancePlan, ModPlan))
   return true
 end
-
 function PersonalInfo:HasCharDisplay(Id)
   for i = 1, self.CharDisplay:Length() do
     local Unit = self.CharDisplay:Get(i)
@@ -45,7 +41,6 @@ function PersonalInfo:HasCharDisplay(Id)
   end
   return false
 end
-
 function PersonalInfo:AddWeaponDisplay(Id, ModPlan)
   if self.WeaponDisplay:Length() >= PERSONAL_INFO_UNIT_COUNT then
     return false
@@ -53,7 +48,6 @@ function PersonalInfo:AddWeaponDisplay(Id, ModPlan)
   self.WeaponDisplay:Append(PersonalInfoUnit(Id, -1, ModPlan))
   return true
 end
-
 function PersonalInfo:HasWeaponDisplay(Id)
   for i = 1, self.WeaponDisplay:Length() do
     local Unit = self.WeaponDisplay:Get(i)
@@ -63,7 +57,6 @@ function PersonalInfo:HasWeaponDisplay(Id)
   end
   return false
 end
-
 return {
   PersonalInfo = PersonalInfo,
   PersonalInfoUnit = PersonalInfoUnit,

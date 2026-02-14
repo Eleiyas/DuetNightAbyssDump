@@ -1,10 +1,10 @@
+local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = {}
-
 function M:Init(Params)
   EventManager:AddEvent(EventID.OnCharGradeLevelUp, self, self.OnCharGradeLevelUp)
   EventManager:AddEvent(EventID.OnWeaponBreakLevelUp, self, self.OnWeaponBreakLevelUp)
+  EventManager:AddEvent(EventID.OnMVPSequenceFinish, self, self.OnMVPSequenceFinish)
 end
-
 function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
   if self.CurrentCharInfo and self.CurrentCharInfo.Uuid == CharUuid then
     local Avatar = self:GetAvatar()
@@ -17,29 +17,14 @@ function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
     end
   end
 end
-
 function M:ChangeCharAppearance(AppearanceInfo)
   if not self.ArmoryPlayer or not self.ArmoryPlayer.CharacterFashion then
     return
   end
   self.CurrentAppearanceInfo = AppearanceInfo
-  local SkinId = AppearanceInfo.SkinId
   self.ArmoryPlayer.CharacterFashion:InitAppearanceSuit(AppearanceInfo)
-  local PartMeshAccessoryId, PartMeshAccessoryType = self:GetSkinPartMeshInfo(SkinId)
-  local Skin = self.CurrentCharInfo:GetSkin(AppearanceInfo.SkinId, self:GetAvatar())
-  local IsShowPartMesh = Skin and Skin.IsShowPartMesh
-  local AppearanceSuit = self.CurrentCharInfo:GetAppearance()
-  local CurSkinId = AppearanceSuit and AppearanceSuit.SkinId
-  if CurSkinId == SkinId and PartMeshAccessoryType then
-    local AccessoryId = AppearanceSuit.Accessory[CommonConst.NewCharAccessoryTypes[PartMeshAccessoryType]]
-    IsShowPartMesh = AccessoryId <= 0
-  end
-  if PartMeshAccessoryId then
-    self:ShowPartMesh(IsShowPartMesh)
-  end
-  self:ChangeCharSkinColor(self.CurrentCharInfo:DumpColors(self:GetAvatar(), SkinId))
+  self.bPlaySameMontage = true
 end
-
 function M:GetSkinPartMeshInfo(SkinId)
   if not SkinId then
     return
@@ -55,7 +40,6 @@ function M:GetSkinPartMeshInfo(SkinId)
     end
   end
 end
-
 function M:ChangeCharSkin(SkinId)
   if not self.ArmoryPlayer then
     return
@@ -66,25 +50,35 @@ function M:ChangeCharSkin(SkinId)
     self.ArmoryPlayer.PlayerAnimInstance:SetKawiiLayerState(EKawaiiLayerState.EKLS_Armory)
   end
 end
-
-function M:ShowPartMesh(IsShowPartMesh)
+function M:ChangeCharHair(HariId)
   if not self.ArmoryPlayer then
     return
   end
-  if self.ArmoryPlayer.PartsMesh then
-    self.CurrentAppearanceInfo.IsShowPartMesh = IsShowPartMesh
-    self.ArmoryPlayer.PartsMesh:SetVisibility(IsShowPartMesh, IsShowPartMesh)
-  end
+  self.CurrentAppearanceInfo.HariId = HariId
+  self.ArmoryPlayer.CharacterFashion:ChangeCharHair(HariId)
 end
-
+function M:ChangeCharHairColor(Colors)
+  local CharacterFashion = self.ArmoryPlayer and self.ArmoryPlayer.CharacterFashion
+  if not CharacterFashion then
+    return
+  end
+  CharacterFashion:InitHairColors(Colors)
+end
+function M:ChangeCharHairPartColor(PartIdx, Color, Fresnel)
+  local CharacterFashion = self.ArmoryPlayer and self.ArmoryPlayer.CharacterFashion
+  if not CharacterFashion then
+    return
+  end
+  CharacterFashion:ChangeHairPartColor(PartIdx, Color, Fresnel)
+end
 function M:ChangeCharSkinColor(Colors)
-  if not self.ArmoryPlayer or not self.ArmoryPlayer.CharacterFashion then
+  local CharacterFashion = self.ArmoryPlayer and self.ArmoryPlayer.CharacterFashion
+  if not CharacterFashion then
     return
   end
   self.CurrentAppearanceInfo.Colors = Colors
   self.ArmoryPlayer.CharacterFashion:InitSkinColors(Colors)
 end
-
 function M:ChangeCharPartColor(PartIdx, Color, Fresnel)
   local CharacterFashion = self.ArmoryPlayer and self.ArmoryPlayer.CharacterFashion
   if not CharacterFashion then
@@ -92,53 +86,46 @@ function M:ChangeCharPartColor(PartIdx, Color, Fresnel)
   end
   CharacterFashion:ChangePartColor(PartIdx, Color, Fresnel)
 end
-
-function M:ChangeCharAccessory(AccessoryId, AccessoryType)
+function M:ChangeCharAccessory(AccessoryId, AccessoryType, CustomParams)
   if not self.ArmoryPlayer then
     return
   end
-  self.ArmoryPlayer.CharacterFashion:ChangeAccessory(AccessoryId, AccessoryType)
+  self.CurrentAppearanceInfo.AccessorySuit[CommonConst.NewCharAccessoryTypes[AccessoryType]] = AccessoryId
+  self.ArmoryPlayer.CharacterFashion:ChangeAccessory(AccessoryId, AccessoryType, CustomParams)
 end
-
-function M:ShowPlayerFXAccessory(AccessoryId, AccessoryType)
-  local Player = self:GetPlayerActor()
-  if not Player then
+local ShowFXAccessoryPrefix = "ShowFXAccessory_"
+M[ShowFXAccessoryPrefix .. CommonConst.CharAccessoryTypes.FX_Dead] = function(self, Player, AccessoryId, AccessoryType)
+  local Data = DataMgr.CharAccessory[AccessoryId]
+  local CreatureKey = AccessoryType
+  self:DestoryCreature(CreatureKey)
+  local CreatureId = Data and Data.CreatureId or 14001
+  Player:AsyncCreateEffectCreatureWithCallBack(CreatureId, FTransform(FRotator(0, 0, 180), FVector(0, 0, 0), FVector(1)), true, "Root", {
+    Execute = function(_, Creature)
+      self:DestoryCreature(CreatureKey)
+      Creature:SetActorHiddenInGame(false)
+      self.Creatures[CreatureKey] = Creature
+    end
+  })
+end
+M[ShowFXAccessoryPrefix .. CommonConst.CharAccessoryTypes.FX_Footprint] = function(self, Player, AccessoryId, AccessoryType)
+  local Data = DataMgr.CharAccessory[AccessoryId]
+  local FXId = Data and Data.VisualEffectId
+  if not FXId then
     return
   end
-  local Data = DataMgr.CharAccessory[AccessoryId]
-  if AccessoryType == CommonConst.CharAccessoryTypes.FX_Dead then
-    local CreatureKey = AccessoryType
-    self:DestoryCreature(CreatureKey)
-    local CreatureId = Data and Data.CreatureId or 14001
-    Player:AsyncCreateEffectCreatureWithCallBack(CreatureId, FTransform(FRotator(0, 0, 180), FVector(0, 0, 0), FVector(1)), true, "Root", {
-      Execute = function(_, Creature)
-        self:DestoryCreature(CreatureKey)
-        Creature:SetActorHiddenInGame(false)
-        self.Creatures[CreatureKey] = Creature
-      end
-    })
-  elseif AccessoryType == CommonConst.CharAccessoryTypes.FX_Body then
-    local CreatureKey = AccessoryType
-    self:DestoryCreature(CreatureKey)
-    local CreatureId = Data and Data.CreatureId
-    if not CreatureId then
-      return
-    end
-    Player:AsyncCreateEffectCreatureWithCallBack(CreatureId, nil, true, nil, {
-      Execute = function(_, Creature)
-        self:DestoryCreature(CreatureKey)
-        Creature:SetActorHiddenInGame(false)
-        self.Creatures[CreatureKey] = Creature
-      end
-    })
-  elseif AccessoryType == CommonConst.CharAccessoryTypes.FX_Footprint then
-    local FXId = Data and Data.VisualEffectId
-    if not FXId then
-      return
-    end
-    local Loc = Player:K2_GetActorLocation()
-    Loc.Z = Loc.Z - Player.CapsuleComponent:GetScaledCapsuleHalfHeight() - 2.4
-    self.PlayerFXTimerKeys.PlayFootprintFXLoop = true
+  local Loc = Player:K2_GetActorLocation()
+  Loc.Z = Loc.Z - Player.CapsuleComponent:GetScaledCapsuleHalfHeight() - 2.4
+  self.PlayerFXTimerKeys.PlayFootprintFXLoop = true
+  Player.FXComponent:PlayEffectByIDParams(FXId, {
+    bTickEvenWhenPaused = true,
+    UseAbsoluteLocation = true,
+    Location = {
+      Loc.X,
+      Loc.Y,
+      Loc.Z
+    }
+  })
+  self.ViewUI:AddTimer(1, function()
     Player.FXComponent:PlayEffectByIDParams(FXId, {
       bTickEvenWhenPaused = true,
       UseAbsoluteLocation = true,
@@ -148,76 +135,238 @@ function M:ShowPlayerFXAccessory(AccessoryId, AccessoryType)
         Loc.Z
       }
     })
-    self.ViewUI:AddTimer(1, function()
-      Player.FXComponent:PlayEffectByIDParams(FXId, {
-        bTickEvenWhenPaused = true,
-        UseAbsoluteLocation = true,
-        Location = {
-          Loc.X,
-          Loc.Y,
-          Loc.Z
-        }
-      })
-    end, true, 0, "PlayFootprintFXLoop", true)
-  elseif AccessoryType == CommonConst.CharAccessoryTypes.FX_Teleport then
-    local MontagePath = Data and Data.Montage or "Teleport_01_Montage"
-    Player:PlayActionMontage("Interactive/MechInteractive", MontagePath, {
-      OnNotifyBegin = function()
-        Player.PlayerAnimInstance:Montage_Pause()
-        self.PlayerMontageTimerKeys.PlayTeleportMontage = true
-        self.ViewUI:AddTimer(1, function()
-          Player:PlayActionMontage("Interactive/MechInteractive", MontagePath, {}, false, true, false)
-          Player.PlayerAnimInstance:Montage_JumpToSection("End")
-        end, false, 0.0, "PlayTeleportMontage", true)
-      end
-    }, false, true, true)
+  end, true, 0, "PlayFootprintFXLoop", true)
+end
+M[ShowFXAccessoryPrefix .. CommonConst.CharAccessoryTypes.FX_Teleport] = function(self, Player, AccessoryId, AccessoryType)
+  local Data = DataMgr.CharAccessory[AccessoryId]
+  local MontagePath = Data and Data.Montage or "Teleport_01_Montage"
+  Player:PlayActionMontage("Interactive/MechInteractive", MontagePath, {
+    OnNotifyBegin = function()
+      Player.PlayerAnimInstance:Montage_Pause()
+      self:HidePlayerActor(self.UIName, true)
+      self.PlayerMontageTimerKeys.PlayTeleportMontage = true
+      self.ViewUI:AddTimer(1, function()
+        Player:PlayActionMontage("Interactive/MechInteractive", MontagePath, {}, false, true, false)
+        Player.PlayerAnimInstance:Montage_JumpToSection("End")
+        self:HidePlayerActor(self.UIName, false)
+      end, false, 0.0, "PlayTeleportMontage", true)
+    end,
+    OnInterrupted = function()
+      self:HidePlayerActor(self.UIName, false)
+    end
+  }, false, true, true)
+end
+M[ShowFXAccessoryPrefix .. CommonConst.CharAccessoryTypes.FX_PlungingATK] = function(self, Player, AccessoryId, AccessoryType)
+  self:ChangeCharAccessory(AccessoryId, AccessoryType)
+  local Avatar = GWorld:GetAvatar()
+  local WeaponData = Avatar.Weapons[Avatar.MeleeWeapon]
+  self:ChangePlayerWeapon(WeaponData, Player)
+  Player:SetArmoryTag(Const.ArmoryWeaponIdleTags.Armory_FallAttack)
+end
+M[ShowFXAccessoryPrefix .. CommonConst.CharAccessoryTypes.FX_HelixLeap] = function(self, Player, AccessoryId, AccessoryType)
+  self:ChangeCharAccessory(AccessoryId, AccessoryType)
+  Player:SetArmoryTag(Const.ArmoryIdleTags.Armory_BullutJump)
+end
+local function PlayMVPSequenceInternal(self, Player, AccessoryId)
+  self.PlayMVPInfo = {
+    self,
+    Player,
+    AccessoryId
+  }
+  local Data = DataMgr.CharAccessory[AccessoryId]
+  if not Data then
+    return
+  end
+  local MVPPath = Data.MVPKey
+  local MontagePath = Data.Montage
+  self.ViewUI:UISetGamePaused(self.ViewUI.WidgetName or self.ViewUI.ConfigName, false)
+  Player:PlayDungeonSettlementMVPMontage(MontagePath)
+  Player:PlayDungeonSettlementMVPSequence(MVPPath)
+  self:HidePlayerActor("ActorController_ChangeViewTarget", false)
+  self.IsPlayingSequence = true
+  if Player.MVPSequenceActor then
+    CommonUtils:SetActorTickableWhenPaused(Player.MVPSequenceActor, true)
   end
 end
-
+function M:PlayMVPSequence(AccessoryId)
+  if self.MVPActorController then
+    local PlayerActor = self.MVPActorController:GetPlayerActor()
+    if PlayerActor then
+      PlayMVPSequenceInternal(self.MVPActorController, PlayerActor, AccessoryId)
+    end
+  else
+    local PlayerActor = self:GetPlayerActor()
+    if PlayerActor then
+      PlayMVPSequenceInternal(self, PlayerActor, AccessoryId)
+    end
+  end
+end
+function M:ReplayMVPSequence()
+  if self.MVPActorController and self.MVPActorController.PlayMVPInfo then
+    local MVPActorController, Player, AccessoryId = table.unpack(self.MVPActorController.PlayMVPInfo)
+    PlayMVPSequenceInternal(MVPActorController, Player, AccessoryId)
+  elseif self.PlayMVPInfo then
+    local MVPActorController, Player, AccessoryId = table.unpack(self.PlayMVPInfo)
+    PlayMVPSequenceInternal(MVPActorController, Player, AccessoryId)
+  end
+end
+function M:StopMVPSequence()
+  if self.MVPActorController and self.MVPActorController.PlayMVPInfo then
+    local _self, Player, AccessoryId = table.unpack(self.MVPActorController.PlayMVPInfo)
+    self.MVPActorController.PlayMVPInfo = nil
+    self.MVPActorController.IsPlayingSequence = false
+    Player:StopMontage()
+    Player:StopMVPSequence()
+    self.ViewUI:UISetGamePaused(self.ViewUI.WidgetName or self.ViewUI.ConfigName, true)
+  elseif self.PlayMVPInfo then
+    local _self, Player, AccessoryId = table.unpack(self.PlayMVPInfo)
+    self.PlayMVPInfo = nil
+    self.IsPlayingSequence = false
+    Player:StopMontage()
+    Player:StopMVPSequence()
+    self.ViewUI:UISetGamePaused(self.ViewUI.WidgetName or self.ViewUI.ConfigName, true)
+  end
+end
+function M:ShouldPlayMVPSequence()
+  return not self.PlayMVPInfo and self.MVPActorController and self.MVPActorController.PlayMVPInfo
+end
+function M:OnMVPSequenceFinish()
+  if not self.IsControled then
+    return
+  end
+  if self.PlayMVPInfo then
+    local MVPActorController, Player, AccessoryId = table.unpack(self.PlayMVPInfo)
+    PlayMVPSequenceInternal(MVPActorController, Player, AccessoryId)
+  end
+end
+function M:TryCreateMVPActorController()
+  if not self.MVPActorController then
+    local ActorController = require("BluePrints.UI.WBP.Armory.ActorController.Armory_ActorController")
+    self.MVPActorController = ActorController:New({
+      ViewUI = self.ViewUI,
+      IsPreviewMode = true,
+      EPreviewSceneType = self.EPreviewSceneType or CommonConst.EPreviewSceneType.PreviewCommon,
+      SkyBoxColor = self.SkyBoxColor,
+      Char = self.CurrentCharInfo,
+      AfterEndViewTarget = {
+        Func = self.AfterMVPActorControllerEndViewTarget,
+        Obj = self
+      }
+    })
+    self.MVPActorController:OnOpened()
+  end
+end
+function M:AfterMVPActorControllerEndViewTarget()
+  local TopStackUI = UIManager(self.ViewUI):GetWidgetObjInTopStack()
+  if TopStackUI ~= self.ViewUI and self.MVPActorController and self.MVPActorController.PlayMVPInfo then
+    local _self, Player, AccessoryId = table.unpack(self.MVPActorController.PlayMVPInfo)
+    self.MVPActorController.IsPlayingSequence = false
+    Player:StopMontage()
+    Player:StopMVPSequence()
+  end
+end
+function M:TryDestroyMVPActorController()
+  if self.MVPActorController then
+    self:StopMVPSequence()
+    self.MVPActorController:OnDestruct()
+    self.MVPActorController = nil
+    self:ViewTarget()
+  end
+end
+M[ShowFXAccessoryPrefix .. CommonConst.CharAccessoryTypes.MVP] = function(self, Player, AccessoryId, AccessoryType)
+  self:StopMVPSequence()
+  self:PlayMVPSequence(AccessoryId)
+end
+function M:ShowPlayerFXAccessory(AccessoryId, AccessoryType)
+  if not AccessoryType then
+    return
+  end
+  local Player = self:GetPlayerActor()
+  if not Player then
+    return
+  end
+  local FuncName = ShowFXAccessoryPrefix .. AccessoryType
+  if self[FuncName] then
+    self[FuncName](self, Player, AccessoryId, AccessoryType)
+  end
+end
+function M:SetCharAccessoryOffset(AccessoryId, AccessoryType, Scale, Location, Rotation)
+  if not self.ArmoryPlayer then
+    return
+  end
+  local Trans
+  if Rotation then
+    Trans = FTransform(Rotation:ToQuat(), Const.ZeroVector, Const.ZeroVector)
+  else
+    Trans = FTransform(Const.ZeroRotator:ToQuat(), Const.ZeroVector, Const.ZeroVector)
+  end
+  if Location then
+    Trans.Translation = Location
+  end
+  if Scale then
+    Trans.Scale3D = Scale
+  end
+  self.ArmoryPlayer.CharacterFashion:ChangeAccessory(AccessoryId, AccessoryType, Trans)
+end
+function M:StartPlayerPartHighLight(LastColor, PartIdx, HighLightColor, Curve)
+  local CharacterFashion = self.ArmoryPlayer and self.ArmoryPlayer.CharacterFashion
+  local FunctionName = "SetCharTintColor" .. PartIdx
+  local Func = CharacterFashion[FunctionName]
+  local _TickFrequency = 0.033
+  local _, MaxTime = Curve:GetTimeRange()
+  local PassedTime = 0
+  local Alpha
+  if Func then
+    self.ViewUI:AddTimer(_TickFrequency, function()
+      PassedTime = PassedTime + _TickFrequency
+      if PassedTime >= MaxTime then
+        self:StopPlayerPartHighLight(PartIdx)
+        self:ChangeCharPartColor(PartIdx, LastColor)
+        return
+      end
+      Alpha = Curve:GetFloatValue(PassedTime)
+      self:ChangeCharPartColor(PartIdx, UKismetMathLibrary.LinearColorLerp(HighLightColor, LastColor, Alpha))
+    end, true, 0.0, FunctionName, true)
+  end
+end
+function M:StopPlayerPartHighLight(PartIdx)
+  local FunctionName = "SetCharTintColor" .. PartIdx
+  self.ViewUI:RemoveTimer(FunctionName)
+end
 function M:ChangeWeaponAccessory(AccessoryId)
   local function _ChangeWeaponAccessory(...)
     local WeaponActor = self:GetWeaponActor()
-    
     if WeaponActor then
       self.CurrentWeaponAppearanceInfo.AccessoryId = AccessoryId
       WeaponActor:ChangeAccessory(AccessoryId)
     end
   end
-  
   self:DoSomethingWithWeapon("ChangeWeaponAccessory", _ChangeWeaponAccessory)
 end
-
 function M:ChangePlayerWeaponAccessory(AccessoryId)
   local function _ChangePlayerWeaponAccessory(...)
     local WeaponActor = self:GetPlayerWeaponActor()
-    
     if WeaponActor then
       self.CurrentWeaponAppearanceInfo.AccessoryId = AccessoryId
       WeaponActor:ChangeAccessory(AccessoryId)
     end
   end
-  
   self:DoSomethingWithWeapon("ChangePlayerWeaponAccessory", _ChangePlayerWeaponAccessory)
 end
-
 function M:ChangeWeaponColor(ColorInfo)
   local function _ChangeWeaponColor(...)
     local WeaponActor = self:GetWeaponActor()
-    
     if WeaponActor then
       self.CurrentWeaponAppearanceInfo.Colors = ColorInfo
       WeaponActor:InitWeaponBreakMI()
       WeaponActor:InitWeaponColor(ColorInfo)
     end
   end
-  
   self:DoSomethingWithWeapon("ChangeWeaponColor", _ChangeWeaponColor)
 end
-
 function M:ChangeWeaponPartColor(PartIdx, Color)
   local function _ChangeWeaponPartColor()
     local UsingWeapon = self:GetWeaponActor()
-    
     if not UsingWeapon then
       return
     end
@@ -234,14 +383,11 @@ function M:ChangeWeaponPartColor(PartIdx, Color)
       end
     end
   end
-  
   self:DoSomethingWithWeapon("ChangeWeaponPartColor", _ChangeWeaponPartColor)
 end
-
 function M:ChangeWeaponSkin(SkinId)
   local function _ChangeWeaponSkin()
     local WeaponActor = self:GetWeaponActor()
-    
     if WeaponActor then
       self.CurrentWeaponAppearanceInfo.SkinId = SkinId
       if SkinId == self.CurrentWeaponInfo.WeaponId then
@@ -252,14 +398,11 @@ function M:ChangeWeaponSkin(SkinId)
       WeaponActor:OnWeaponReady()
     end
   end
-  
   self:DoSomethingWithWeapon("ChangeWeaponSkin", _ChangeWeaponSkin)
 end
-
 function M:ChangePlayerWeaponSkin(SkinId)
   local function _ChangePlayerWeaponSkin()
     local WeaponActor = self:GetPlayerWeaponActor()
-    
     if WeaponActor then
       self.CurrentWeaponAppearanceInfo.SkinId = SkinId
       if SkinId == self.CurrentWeaponInfo.WeaponId then
@@ -270,28 +413,22 @@ function M:ChangePlayerWeaponSkin(SkinId)
       WeaponActor:OnWeaponReady()
     end
   end
-  
   self:DoSomethingWithWeapon("ChangePlayerWeaponSkin", _ChangePlayerWeaponSkin)
 end
-
 function M:ChangeWeaponAppearance(AppearanceInfo)
   local function _ChangeWeaponAppearance()
     local WeaponActor = self:GetWeaponActor()
-    
     if WeaponActor then
       self.CurrentWeaponAppearanceInfo = AppearanceInfo
       WeaponActor:InitWeaponAppearance(AppearanceInfo)
       WeaponActor:OnWeaponReady()
     end
   end
-  
   self:DoSomethingWithWeapon("ChangeWeaponAppearance", _ChangeWeaponAppearance)
 end
-
 function M:StartWeaponPartHighLight(LastColor, PartIdx, HighLightColor, Curve)
   local function _StartWeaponPartHighLight()
     local UsingWeapon = not self.ArmoryWeapon and self.ArmoryPlayer and self.ArmoryPlayer.UsingWeapon
-    
     local FunctionName = "SetWPTintColor" .. PartIdx
     local Func = UsingWeapon[FunctionName]
     local _TickFrequency = 0.033
@@ -311,15 +448,12 @@ function M:StartWeaponPartHighLight(LastColor, PartIdx, HighLightColor, Curve)
       end, true, 0.0, FunctionName, true)
     end
   end
-  
   self:DoSomethingWithWeapon("StartWeaponPartHighLight", _StartWeaponPartHighLight)
 end
-
 function M:StopWeaponPartHighLight(PartIdx)
   local FunctionName = "SetWPTintColor" .. PartIdx
   self.ViewUI:RemoveTimer(FunctionName)
 end
-
 function M:OnWeaponBreakLevelUp(Ret, WeaponUuid, EnhanceLevel)
   if Ret ~= ErrorCode.RET_SUCCESS then
     return
@@ -329,7 +463,6 @@ function M:OnWeaponBreakLevelUp(Ret, WeaponUuid, EnhanceLevel)
   end
   self:SetWeaponActorEnhanceLevel(EnhanceLevel)
 end
-
 function M:SetWeaponActorEnhanceLevel(EnhanceLevel)
   local WeaponActor = self:GetWeaponActor()
   if not WeaponActor then
@@ -340,14 +473,12 @@ function M:SetWeaponActorEnhanceLevel(EnhanceLevel)
   local ColorInfo = self.CurrentWeaponInfo:DumpColors()
   WeaponActor:InitWeaponColor(ColorInfo)
 end
-
 function M:SkinWeaponVFX(ColorData)
   local ArmoryPlayer = self.ArmoryPlayer
   self.SkinWeaponVFXHandle = ArmoryPlayer.FXComponent:PlayEffectByIDParams(306, {bTickEvenWhenPaused = true, NotAttached = true})
   local Color = FLinearColor(ColorData.R, ColorData.G, ColorData.B)
   self.SkinWeaponVFXHandle:SetVariableLinearColor("Color", Color)
 end
-
 function M:StopSkinWeaponVFX()
   if self.SkinWeaponVFXHandle and self.SkinWeaponVFXHandle:IsValid() then
     local name = self.SkinWeaponVFXHandle:GetName()
@@ -355,17 +486,18 @@ function M:StopSkinWeaponVFX()
     self.SkinWeaponVFXHandle = nil
   end
 end
-
 function M:ChangeSkinWeaponVFXColor(ColorData)
   if self.SkinWeaponVFXHandle and self.SkinWeaponVFXHandle:IsValid() then
     local Color = FLinearColor(ColorData.R, ColorData.G, ColorData.B)
     self.SkinWeaponVFXHandle:SetVariableLinearColor("Color", Color)
   end
 end
-
 function M:Component_OnDestruct()
   EventManager:RemoveEvent(EventID.OnCharGradeLevelUp, self)
   EventManager:RemoveEvent(EventID.OnWeaponBreakLevelUp, self)
+  EventManager:RemoveEvent(EventID.OnMVPSequenceFinish, self)
 end
-
+function M:Component_DestroyActors()
+  self:TryDestroyMVPActorController()
+end
 return M

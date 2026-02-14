@@ -7,7 +7,6 @@ local ECheckMode = {
   Normal = "Normal",
   ImpressionShop = "ImpressionShop"
 }
-
 function WBP_ImpressionResult_Common:Init(ImpressionUI, PlayerValue, CheckType, CheckValue, CheckParams)
   DebugPrint("WBP_ImpressionResult_C Init", PlayerValue, CheckType, CheckValue, CheckParams)
   self.ImpressionUI = ImpressionUI
@@ -22,7 +21,6 @@ function WBP_ImpressionResult_Common:Init(ImpressionUI, PlayerValue, CheckType, 
   self.bListenReleaseInput = true
   self:CommonInit()
 end
-
 function WBP_ImpressionResult_Common:CommonInit()
   self.CheckTypeString = GText("Impression_Name_" .. self.CheckType)
   self:AdaptPlatform()
@@ -32,7 +30,6 @@ function WBP_ImpressionResult_Common:CommonInit()
   self:SetDiceNumVisibility(UE4.ESlateVisibility.Collapsed)
   self:OverrideButtonSound()
   self:BindAnimations()
-  self:SwitchShowFailButtons(false)
   self:SetGTexts()
   self:InitVisibility()
   self:SetOnReceiveRetryServerHandled()
@@ -40,21 +37,18 @@ function WBP_ImpressionResult_Common:CommonInit()
   self:SetFocus()
   self:AddInputMethodChangedListen()
 end
-
 function WBP_ImpressionResult_Common:Destruct(...)
   self:RemoveInputMethodChangedListen()
+  self:SwitchBindFailButtonEvents(false)
 end
-
 function WBP_ImpressionResult_Common:InitVisibility()
   self.BackgroundBlur_364:SetVisibility(ESlateVisibility.Visible)
   self:SwitchShowSpaceShortCut(false)
 end
-
 function WBP_ImpressionResult_Common:SetGTexts()
   self.Text_Tip:SetText(GText("UI_Impression_Click"))
   self.Text_FailTips:SetText(GText("UI_Impression_Fail"))
 end
-
 function WBP_ImpressionResult_Common:RefreshCheckResult(bIsSucceed)
   DebugPrint("WBP_ImpressionResult_Common RefreshCheckResult ", bIsSucceed)
   if bIsSucceed then
@@ -65,7 +59,6 @@ function WBP_ImpressionResult_Common:RefreshCheckResult(bIsSucceed)
     self.Text_Fail:SetText(FailText)
   end
 end
-
 function WBP_ImpressionResult_Common:SwitchShowFailButtons(bShow)
   DebugPrint("WBP_ImpressionResult_Common SwitchShowFailButtons", bShow)
   if bShow then
@@ -76,30 +69,27 @@ function WBP_ImpressionResult_Common:SwitchShowFailButtons(bShow)
     self.Button_End:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ImpressionResult_Common:SwitchBindFailButtonEvents(bBind)
   DebugPrint("WBP_ImpressionResult_Common SwitchBindFailButtonEvents", bBind)
   if bBind then
     self.Button_Retry:BindEventOnClicked(self, self.OnBtn_RetryClicked)
+    self.Button_Retry:BindForbidStateExecuteEvent(self, self.OnBtn_RetryForbidClicked)
     self.Button_End:BindEventOnClicked(self, self.OnBtn_EndClicked)
   else
-    self.Button_Retry:UnBindEventOnClicked(self, self.OnBtn_RetryClicked)
-    self.Button_End:UnBindEventOnClicked(self, self.OnBtn_EndClicked)
+    self.Button_Retry:UnBindEventOnClickedByObj(self)
+    self.Button_End:UnBindEventOnClickedByObj(self)
   end
 end
-
 function WBP_ImpressionResult_Common:SetBonusText()
   self.Text_AddNum:SetText("+" .. self.PlayerValue)
   self.VX_AddPoint:SetText("+" .. self.PlayerValue)
   self.Text_AddNumTitle:SetText(self.CheckTypeString)
 end
-
 function WBP_ImpressionResult_Common:SetCheckTarget()
   local GoalTitle = GText("Impression_UI_CheckTarget")
   self.Text_GoalTitle:SetText(GoalTitle)
   self.Text_DiceGoalNum:SetText(tostring(self.CheckValue))
 end
-
 function WBP_ImpressionResult_Common:SetDiceNum(a, b, c)
   a = tonumber(a)
   b = tonumber(b)
@@ -111,7 +101,6 @@ function WBP_ImpressionResult_Common:SetDiceNum(a, b, c)
   end
   self:SwitchHideHD(0 == tonumber(a))
 end
-
 function WBP_ImpressionResult_Common:SetDiceNum2D(Rand1, Rand2, bChangeAlpha)
   if nil == bChangeAlpha then
     bChangeAlpha = true
@@ -130,12 +119,10 @@ function WBP_ImpressionResult_Common:SetDiceNum2D(Rand1, Rand2, bChangeAlpha)
     self:SetRand1TextAlpha(1)
   end
 end
-
 function WBP_ImpressionResult_Common:SetDiceNum3D(a, b, c)
   self:SetDiceNum2D(b, c, false)
   self.Text_DiceNum_1:SetText(tostring(a))
 end
-
 function WBP_ImpressionResult_Common:SwitchHideHD(bHide)
   if bHide then
     self.Text_DiceNum_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -143,17 +130,14 @@ function WBP_ImpressionResult_Common:SwitchHideHD(bHide)
     self.Text_DiceNum_1:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function WBP_ImpressionResult_Common:SetDiceNumVisibility(Visibility)
   self.Text_DiceNum_2:SetVisibility(Visibility)
   self.Text_DiceNum_3:SetVisibility(Visibility)
 end
-
 function WBP_ImpressionResult_Common:OverrideButtonSound()
   self.Button_Retry:TryOverrideSoundFunc(self.PlayRetrySound)
   self.Button_End:TryOverrideSoundFunc(self.PlayContinueSound)
 end
-
 function WBP_ImpressionResult_Common:BindAnimations()
   DebugPrint("WBP_ImpressionResult_Common BindAnimations")
   self:BindToAnimationStarted(self.In, {
@@ -217,8 +201,10 @@ function WBP_ImpressionResult_Common:BindAnimations()
     self.OnAgainAnimationFinished
   })
 end
-
 function WBP_ImpressionResult_Common:InitButtons()
+  self.bForbidFailBtns = true
+  self:SwitchShowFailButtons(false)
+  self:SwitchBindFailButtonEvents(true)
   self.Button_Retry.Text_Button:SetText(GText("UI_Impression_Again"))
   self.Button_End.Text_Button:SetText(GText("UI_Impression_Continue"))
   local ImpressionResourceInfo = DataMgr.ImpressionResource[self.CheckParams.ImpressionAreaId]
@@ -227,12 +213,12 @@ function WBP_ImpressionResult_Common:InitButtons()
     bShowDenominator = true,
     Numerator = 0,
     Denominator = ImpressionResourceInfo.Count,
-    CostText = GText("UI_Armory_Trace_Cost")
+    CostText = GText("UI_Armory_Trace_Cost"),
+    UIName = "ImpressionMainUI"
   }
   self.Com_Cost:InitContent(Params)
   self:RefreshResouces()
 end
-
 function WBP_ImpressionResult_Common:RefreshResouces()
   DebugPrint("WBP_ImpressionResult_Common RefreshResouces")
   local Avatar = GWorld:GetAvatar()
@@ -242,31 +228,23 @@ function WBP_ImpressionResult_Common:RefreshResouces()
   local Ret = Avatar:CanImpressionCheck(self.CheckParams.ImpressionAreaId)
   self.bCanRetry = Ret.bCanCheck
   self.Com_Cost:SetPossess(Ret.ResourceCount)
-  if not self.bCanRetry then
-    self.Button_Retry.Main:SetRenderOpacity(0.3)
-  else
-    self.Button_Retry.Main:SetRenderOpacity(1)
-  end
+  self.Button_Retry:ForbidBtn(not self.bCanRetry)
 end
-
 function WBP_ImpressionResult_Common:OnPressAnimationFinished()
   AudioManager(self):StopSound(self, "ImpressionResultPressing")
   AudioManager(self):PlayUISound(self, "event:/ui/common/image_choose_dice_rotate_end", "", nil)
 end
-
 function WBP_ImpressionResult_Common:OnClickAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnClickAnimationFinished")
   self:SwitchBindSkipInput(false)
   self:StopAllAnimations()
   self:TryPlayAddAnimation()
 end
-
 function WBP_ImpressionResult_Common:OnAddPointAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnAddPointAnimationFinished")
   self:StopAllAnimations()
   self:PlayResultAnimation()
 end
-
 function WBP_ImpressionResult_Common:PlayResultAnimation()
   DebugPrint("WBP_ImpressionResult_Common PlayResultAnimation")
   if self.bIsSucceed then
@@ -275,7 +253,6 @@ function WBP_ImpressionResult_Common:PlayResultAnimation()
     self:PlayAnimation(self.Fail)
   end
 end
-
 function WBP_ImpressionResult_Common:TryPlayAddAnimation()
   DebugPrint("WBP_ImpressionResult_Common TryPlayAddAnimation")
   if self.bInSkipping then
@@ -287,58 +264,60 @@ function WBP_ImpressionResult_Common:TryPlayAddAnimation()
     self:OnAddPointAnimationFinished()
   end
 end
-
 function WBP_ImpressionResult_Common:OnFailAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnFailAnimationFinished")
   self.bInSkipping = false
-  self:SwitchBindFailButtonEvents(true)
+  self.bForbidFailBtns = false
   self:RefreshResouces()
 end
-
 function WBP_ImpressionResult_Common:OnSuccessAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnSuccessAnimationFinished")
   self.bInSkipping = false
   self:Close()
 end
-
 function WBP_ImpressionResult_Common:OnOutAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnOutAnimationFinished")
   self:Close()
 end
-
 function WBP_ImpressionResult_Common:OnAgainAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnAgainAnimationFinished")
   self:OnAgainAnimationFinished_Platform()
   self:SwitchBindDicePressInput(true)
   self:PlayAnimation(self.Remind, 0, 0)
 end
-
 function WBP_ImpressionResult_Common:OnBtn_RetryClicked()
-  DebugPrint("WBP_ImpressionResult_Common OnBtn_RetryClicked", self.bCanRetry)
+  DebugPrint("WBP_ImpressionResult_Common OnBtn_RetryClicked", self.bCanRetry, self.bForbidFailBtns)
+  if self.bForbidFailBtns then
+    return
+  end
+  self.bForbidFailBtns = true
+  self:PlayAnimation(self.Again)
+end
+function WBP_ImpressionResult_Common:OnBtn_RetryForbidClicked()
+  DebugPrint("WBP_ImpressionResult_Common OnBtn_RetryForbidClicked", self.bCanRetry, self.bForbidFailBtns)
+  if self.bForbidFailBtns then
+    return
+  end
   if not self.bCanRetry then
     local TalkContext = GWorld.GameInstance:GetTalkContext()
     TalkContext:TalkShowUITip("CommonToastMain", "Impression_UI_Recheck_03")
     return
   end
-  self:SwitchBindFailButtonEvents(false)
-  self:PlayAnimation(self.Again)
 end
-
 function WBP_ImpressionResult_Common:OnRetryCheck(Error, Ret, Rand1, Rand2, CheckParams, ...)
   DebugPrint("WBP_ImpressionResult_Common OnRetryCheck", Error, Ret, Rand1, Rand2, CheckParams)
   self:OnReceivedRetryResult(Error, Ret, Rand1, Rand2, CheckParams, ...)
 end
-
 function WBP_ImpressionResult_Common:OnReceivedRetryResult(Error, bCheckSucceed, Rand1, Rand2, CheckParams, ...)
   DebugPrint("WBP_ImpressionResult_Common OnReceivedRetryResult", Error, bCheckSucceed, Rand1, Rand2)
   if self.OnServerHandledCallback then
     self.OnServerHandledCallback(Error, bCheckSucceed, Rand1, Rand2, CheckParams)
   end
   if not ErrorCode:Check(Error) then
-    local ErrorCodeMessage = "\233\148\153\232\175\175\231\160\129\228\184\141\229\173\152\229\156\168"
+    local ErrorCodeMessage = "错误码不存在"
     local ErrorCodeData = DataMgr.ErrorCode[Error]
     if ErrorCodeData then
-      ErrorCodeMessage = ErrorCodeData.ErrorCodeContent or "\233\148\153\232\175\175\231\160\129\228\184\141\229\173\152\229\156\168\232\175\180\230\152\142\229\134\133\229\174\185"
+      ErrorCodeMessage = ErrorCodeData.ErrorCodeContent or "错误码不存在说明内容"
     end
     local DialogueChainStr = ""
     local DialogueChain = (...)
@@ -349,9 +328,9 @@ function WBP_ImpressionResult_Common:OnReceivedRetryResult(Error, bCheckSucceed,
       end
       DialogueChainStr = DialogueChainStr .. tostring(DialogueId)
     end
-    local Title = "\229\141\176\232\177\161\231\179\187\231\187\159\233\148\153\232\175\175"
-    local Message = string.format("ErrorCode: %d\n%s, \229\175\185\232\175\157\233\147\190:\n%s", Error, ErrorCodeMessage, DialogueChainStr)
-    UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+    local Title = "印象系统错误"
+    local Message = string.format("ErrorCode: %d\n%s, 对话链:\n%s", Error, ErrorCodeMessage, DialogueChainStr)
+    UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
     self:Close()
     if self.ImpressionUI then
       self.ImpressionUI:StopStoryLine()
@@ -367,12 +346,11 @@ function WBP_ImpressionResult_Common:OnReceivedRetryResult(Error, bCheckSucceed,
   self:SetDiceNum(0, self.Rand1, self.Rand2)
   self:TryFireEventsOnResultReceived()
 end
-
 function WBP_ImpressionResult_Common:OnImpressionTimeout(DialogueChain)
   if self.OnServerHandledCallback then
     self.OnServerHandledCallback(0, false, 0, 0, {})
   end
-  local Title = "\229\141\176\232\177\161\230\163\128\229\174\154\232\182\133\230\151\182"
+  local Title = "印象检定超时"
   local DialogueChainStr = ""
   local DialogueId
   DialogueChain = DialogueChain or {}
@@ -383,14 +361,13 @@ function WBP_ImpressionResult_Common:OnImpressionTimeout(DialogueChain)
     DialogueId = dialogueId
     DialogueChainStr = DialogueChainStr .. tostring(DialogueId)
   end
-  local Message = string.format("\229\141\176\232\177\161\230\163\128\229\174\154\230\156\170\230\148\182\229\136\176\230\156\141\229\138\161\229\153\168\229\155\158\232\176\131\239\188\140\229\189\147\229\137\141\233\128\137\233\161\185Id: %s\239\188\140\229\175\185\232\175\157\233\147\190:\n%s", DialogueId and tostring(DialogueId) or "\230\151\160", DialogueChainStr)
-  UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+  local Message = string.format("印象检定未收到服务器回调，当前选项Id: %s，对话链:\n%s", DialogueId and tostring(DialogueId) or "无", DialogueChainStr)
+  UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:DisconnectServer()
   end
 end
-
 function WBP_ImpressionResult_Common:TryFireEventsOnResultReceived()
   DebugPrint("WBP_ImpressionResult_Common TryFireEventsOnResultReceived", self.bRefreshDiceOnResultReceived, self.bFireOnBtnDiceReleased)
   if self.bRefreshDiceOnResultReceived then
@@ -406,38 +383,35 @@ function WBP_ImpressionResult_Common:TryFireEventsOnResultReceived()
     self:PlayAnimation(self.Click)
   end
 end
-
 function WBP_ImpressionResult_Common:OnBtn_EndClicked()
-  DebugPrint("WBP_ImpressionResult_Common OnBtn_EndClicked")
+  DebugPrint("WBP_ImpressionResult_Common OnBtn_EndClicked", self.bForbidFailBtns)
+  if self.bForbidFailBtns then
+    return
+  end
   self:PlayAnimation(self.Out)
 end
-
 function WBP_ImpressionResult_Common:SetOnCloseDelegate(Delegate)
   DebugPrint("WBP_ImpressionResult_Common SetOnCloseDelegate")
   if Delegate and Delegate[1] and Delegate[2] then
     self.OnCloseDelegate = Delegate
   end
 end
-
 function WBP_ImpressionResult_Common:SetOnInterruptedExitDelegate(Delegate)
   DebugPrint("WBP_ImpressionResult_Common SetOnInterruptedExitDelegate")
   if Delegate and Delegate[1] and Delegate[2] then
     self.OnInterruptedExitDelegate = Delegate
   end
 end
-
 function WBP_ImpressionResult_Common:FadeIn()
   DebugPrint("WBP_ImpressionResult_Common FadeIn")
   self:PlayAnimation(self.In)
 end
-
 function WBP_ImpressionResult_Common:OnInAnimationFinished()
   DebugPrint("WBP_ImpressionResult_Common OnInAnimationFinished")
   self:SwitchBindDicePressInput(true)
   self:PlayAnimation(self.Remind, 0, 0)
   self:SetFocus()
 end
-
 function WBP_ImpressionResult_Common:TryRequestCheck()
   DebugPrint("WBP_ImpressionResult_Common TryRequestCheck")
   if self.CheckMode == ECheckMode.ImpressionShop then
@@ -469,17 +443,14 @@ function WBP_ImpressionResult_Common:TryRequestCheck()
     end
   end
 end
-
 function WBP_ImpressionResult_Common:TryRequestImpressionShopCheck()
   DebugPrint("WBP_ImpressionResult_Common TryRequestImpressionShopCheck")
   self.OnCheckCallback()
 end
-
 function WBP_ImpressionResult_Common:OnReceiveImpressionShopRequestResult(Error, bIsSucceed, Rand1, Rand2)
   DebugPrint("WBP_ImpressionResult_Common OnReceiveImpressionShopRequestResult", bIsSucceed, Rand1, Rand2)
   self:OnReceivedRetryResult(Error, bIsSucceed, Rand1, Rand2)
 end
-
 function WBP_ImpressionResult_Common:OnBtn_EscPressed()
   DebugPrint("WBP_ImpressionResult_Common OnBtn_EscPressed")
   if not self.bListenPressInput then
@@ -490,7 +461,6 @@ function WBP_ImpressionResult_Common:OnBtn_EscPressed()
   self:SwitchBindDiceReleaseInput(false)
   self:InterruptExit()
 end
-
 function WBP_ImpressionResult_Common:OnBtn_DicePressed()
   DebugPrint("WBP_ImpressionResult_Common OnBtn_DicePressed")
   if not self.bListenPressInput then
@@ -504,7 +474,6 @@ function WBP_ImpressionResult_Common:OnBtn_DicePressed()
   self:TryRequestCheck()
   self:PlayAnimation(self.Press, 0, 0)
 end
-
 function WBP_ImpressionResult_Common:OnBtn_DiceReleased()
   DebugPrint("WBP_ImpressionResult_Common OnBtn_DiceReleased")
   if not self.bListenReleaseInput then
@@ -521,7 +490,6 @@ function WBP_ImpressionResult_Common:OnBtn_DiceReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function WBP_ImpressionResult_Common:OnSkipButtonClicked()
   DebugPrint("WBP_ImpressionResult_Common:OnSkipButtonClicked", self.bReceivedData)
   self:SwitchBindSkipInput(false)
@@ -540,7 +508,6 @@ function WBP_ImpressionResult_Common:OnSkipButtonClicked()
     self:PlayResultAnimation()
   end, 2)
 end
-
 function WBP_ImpressionResult_Common:Close()
   DebugPrint("WBP_ImpressionResult_Common Close")
   AudioManager(self):StopSound(self, "ImpressionResultPressing")
@@ -550,7 +517,6 @@ function WBP_ImpressionResult_Common:Close()
   self:DisablePlayerInput(false)
   self:RemoveFromParent()
 end
-
 function WBP_ImpressionResult_Common:InterruptExit()
   DebugPrint("WBP_ImpressionResult_Common InterruptExit")
   AudioManager(self):StopSound(self, "ImpressionResultPressing")
@@ -559,32 +525,26 @@ function WBP_ImpressionResult_Common:InterruptExit()
     self.OnInterruptedExitDelegate[2](self.OnInterruptedExitDelegate[1])
   end
 end
-
 function WBP_ImpressionResult_Common:SetRand1TextAlpha(Alpha)
   DebugPrint("WBP_ImpressionResult_Common SetRand1TextAlpha", Alpha)
   self.Text_DiceNum_2.ColorAndOpacity.SpecifiedColor.A = Alpha
   self.Text_DiceNum_2:SetColorAndOpacity(self.Text_DiceNum_2.ColorAndOpacity)
 end
-
 function WBP_ImpressionResult_Common:OnInAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnInAnimationStarted")
   AudioManager(self):PlayUISound(self, "event:/ui/common/image_choose_hud_show", "", nil)
   self:SwitchShowSpaceShortCut(true)
 end
-
 function WBP_ImpressionResult_Common:OnOutAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnOutAnimationStarted")
 end
-
 function WBP_ImpressionResult_Common:OnSuccessAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnSuccessAnimationStarted")
 end
-
 function WBP_ImpressionResult_Common:OnFailAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnFailAnimationStarted")
   self:SwitchShowFailButtons(true)
 end
-
 function WBP_ImpressionResult_Common:TryChangeDiceTextures(Rand1, Rand2)
   DebugPrint("WBP_ImpressionResult_Common TryChangeDiceTextures", Rand1, Rand2, self.bReceivedData)
   if not self.bReceivedData then
@@ -599,50 +559,41 @@ function WBP_ImpressionResult_Common:TryChangeDiceTextures(Rand1, Rand2)
   self.VX_DiceResult_L:SetBrushFromTexture(LDice)
   self.VX_DiceResult_R:SetBrushFromTexture(RDice)
 end
-
 function WBP_ImpressionResult_Common:OnPressAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnPressAnimationStarted")
   AudioManager(self):PlayUISound(self, "event:/ui/common/image_choose_dice_rotate_loop", "ImpressionResultPressing", nil)
   self:TryChangeDiceTextures(self.Rand1, self.Rand2)
 end
-
 function WBP_ImpressionResult_Common:OnClickAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnClickAnimationStarted")
   self:SetDiceNumVisibility(UE4.ESlateVisibility.Visible)
   self:TryChangeDiceTextures(self.Rand1, self.Rand2)
 end
-
 function WBP_ImpressionResult_Common:OnAgainAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnAgainAnimationStarted")
   AudioManager(self):PlayUISound(self, "event:/ui/common/image_choose_hud_show", "", nil)
   self:SwitchShowFailButtons(false)
   self:TryChangeDiceTextures(0, 0)
 end
-
 function WBP_ImpressionResult_Common:OnRemindAnimationStarted()
   DebugPrint("WBP_ImpressionResult_Common OnRemindAnimationStarted")
 end
-
 function WBP_ImpressionResult_Common:OnSuccessRollAppeared()
   DebugPrint("WBP_ImpressionResult_Common OnSuccessRollAppeared")
   AudioManager(self):PlayUISound(self, "event:/ui/common/image_choose_dice_success", "", nil)
 end
-
 function WBP_ImpressionResult_Common:OnFailRollAppeared()
   DebugPrint("WBP_ImpressionResult_Common OnFailRollAppeared")
   AudioManager(self):PlayUISound(self, "event:/ui/common/image_choose_dice_fail", "", nil)
 end
-
 function WBP_ImpressionResult_Common:PlayRetrySound()
   DebugPrint("WBP_ImpressionResult_Common PlayRetrySound")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", "", nil)
 end
-
 function WBP_ImpressionResult_Common:PlayContinueSound()
   DebugPrint("WBP_ImpressionResult_Common PlayContinueSound")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click", "", nil)
 end
-
 function WBP_ImpressionResult_Common:ChangeDiceImage()
   local SrcNum = tonumber(self.Rand1) * 10 + tonumber(self.Rand2)
   local AddNum = tonumber(self.PlayerValue)
@@ -654,11 +605,9 @@ function WBP_ImpressionResult_Common:ChangeDiceImage()
   local c = math.floor(Num)
   self:SetDiceNum(a, b, c)
 end
-
 function WBP_ImpressionResult_Common:SetOnReceiveRetryServerHandled(Callback)
   self.OnServerHandledCallback = Callback
 end
-
 function WBP_ImpressionResult_Common:ChangeToImpressionShopMode(OnCheckCallback, CheckParams)
   DebugPrint("WBP_ImpressionResult_Common ChangeToImpressionShopMode")
   self.CheckParams = CheckParams
@@ -675,7 +624,6 @@ function WBP_ImpressionResult_Common:ChangeToImpressionShopMode(OnCheckCallback,
   self:FadeIn()
   self:DisablePlayerInput(true)
 end
-
 function WBP_ImpressionResult_Common:DisablePlayerInput(bDisable)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) then
@@ -693,41 +641,30 @@ function WBP_ImpressionResult_Common:DisablePlayerInput(bDisable)
     Player:RemoveDisableInputTag("ImpressioShopResult")
   end
 end
-
 function WBP_ImpressionResult_Common:SwitchBindDicePressInput(bBind)
   DebugPrint("WBP_ImpressionResult_Common SwitchBindDicePressInput", bBind)
 end
-
 function WBP_ImpressionResult_Common:InitPlayKey()
   DebugPrint("WBP_ImpressionResult_Common:InitPlayKey")
 end
-
 function WBP_ImpressionResult_Common:AdaptPlatform()
   DebugPrint("WBP_ImpressionResult_Common:AdaptPlatform")
 end
-
 function WBP_ImpressionResult_Common:SwitchBindDiceReleaseInput(bBind)
   DebugPrint("WBP_ImpressionResult_Common SwitchBindDiceReleaseInput", bBind)
 end
-
 function WBP_ImpressionResult_Common:SwitchShowSpaceShortCut(bShow)
   DebugPrint("WBP_ImpressionResult_Common:SwitchShowSpaceShortCut", bShow)
 end
-
 function WBP_ImpressionResult_Common:SwitchBindSkipInput(bBind)
   DebugPrint("WBP_ImpressionResult_Common:SwitchBindSkipInput", bBind)
 end
-
 function WBP_ImpressionResult_Common:AddInputMethodChangedListen()
 end
-
 function WBP_ImpressionResult_Common:RemoveInputMethodChangedListen()
 end
-
 function WBP_ImpressionResult_Common:OnBtn_DiceReleased_Platform()
 end
-
 function WBP_ImpressionResult_Common:OnAgainAnimationFinished_Platform()
 end
-
 return WBP_ImpressionResult_Common

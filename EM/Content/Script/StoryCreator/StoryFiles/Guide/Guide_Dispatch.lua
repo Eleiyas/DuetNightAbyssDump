@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17450574890042006",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1668, y = 334},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -85,18 +87,6 @@ return {
             startQuest = "17450575011202542",
             startPort = "Out",
             endQuest = "1745057586836546692",
-            endPort = "In"
-          },
-          {
-            startQuest = "1745057586836546692",
-            startPort = "Out",
-            endQuest = "1745057805015547323",
-            endPort = "In"
-          },
-          {
-            startQuest = "1745057805015547323",
-            startPort = "Out",
-            endQuest = "1745057807238547393",
             endPort = "In"
           },
           {
@@ -152,6 +142,24 @@ return {
             startPort = "Out",
             endQuest = "17450574890042010",
             endPort = "Success"
+          },
+          {
+            startQuest = "1745057586836546692",
+            startPort = "Out",
+            endQuest = "17651745869761062",
+            endPort = "In"
+          },
+          {
+            startQuest = "17651745869761062",
+            startPort = "Out",
+            endQuest = "1745057805015547323",
+            endPort = "In"
+          },
+          {
+            startQuest = "1745057805015547323",
+            startPort = "Out",
+            endQuest = "1745057807238547393",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -179,7 +187,7 @@ return {
           ["17450575011202542"] = {
             key = "17450575011202542",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 1139, y = 116.75000000000003},
             propsData = {
               MessageId = 320001,
@@ -195,7 +203,7 @@ return {
           ["1745057586836546692"] = {
             key = "1745057586836546692",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1129.848484848485, y = 292.5000000000001},
             propsData = {
               ShowEnable = true,
@@ -218,15 +226,15 @@ return {
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},
               MessageParentLoc = "HighLightUI",
-              MessageLoc = "UpRight",
+              MessageLoc = "Up",
               MessageLocOffset = {X = 0, Y = 0}
             }
           },
           ["1745057805015547323"] = {
             key = "1745057805015547323",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
-            pos = {x = 1466.098484848485, y = 290.0000000000001},
+            name = "Button显示/隐藏信息",
+            pos = {x = 1547.527054797888, y = 288.571428597379},
             propsData = {
               ShowEnable = true,
               MessageId = 320003,
@@ -234,7 +242,7 @@ return {
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,
-              IsTimePause = true,
+              IsTimePause = false,
               IsShowCursor = true,
               HighLightUIPath = "LevelMapMain",
               UICompName = "Dispatch_List:1",
@@ -255,7 +263,7 @@ return {
           ["1745057805668547373"] = {
             key = "1745057805668547373",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2098.7373737373737, y = 452.77777777777777},
             propsData = {
               ShowEnable = true,
@@ -285,7 +293,7 @@ return {
           ["1745057806102547377"] = {
             key = "1745057806102547377",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1797.598484848485, y = 455},
             propsData = {
               ShowEnable = true,
@@ -308,14 +316,14 @@ return {
               UICompSizeOffset = {X = 0, Y = 0},
               UICompLocOffset = {X = 0, Y = 0},
               MessageParentLoc = "HighLightUI",
-              MessageLoc = "UpRight",
+              MessageLoc = "Up",
               MessageLocOffset = {X = 0, Y = 0}
             }
           },
           ["1745057806460547381"] = {
             key = "1745057806460547381",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1464.848484848485, y = 453.75},
             propsData = {
               ShowEnable = true,
@@ -345,7 +353,7 @@ return {
           ["1745057806803547385"] = {
             key = "1745057806803547385",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1129.8484848484852, y = 453.8888888888889},
             propsData = {
               ShowEnable = true,
@@ -375,7 +383,7 @@ return {
           ["1745057807053547389"] = {
             key = "1745057807053547389",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2106.098484848485, y = 291.2500000000001},
             propsData = {
               ShowEnable = true,
@@ -386,8 +394,8 @@ return {
               IsControlPlayer = false,
               IsTimePause = true,
               IsShowCursor = true,
-              HighLightUIPath = "LevelMapMain.Dispatch_Detail:1",
-              UICompName = "List_ExReward",
+              HighLightUIPath = "LevelMapMain",
+              UICompName = "Dispatch_Detail:1",
               GamePadWidgetName = "",
               IsAutoClick = false,
               IsAutoClickByGamepad = false,
@@ -405,7 +413,7 @@ return {
           ["1745057807238547393"] = {
             key = "1745057807238547393",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1793.598484848485, y = 292.5000000000001},
             propsData = {
               ShowEnable = true,
@@ -435,7 +443,7 @@ return {
           ["1745057807449547397"] = {
             key = "1745057807449547397",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2416.098484848485, y = 292.5000000000001},
             propsData = {
               ShowEnable = true,
@@ -465,7 +473,7 @@ return {
           ["1745057853014548798"] = {
             key = "1745057853014548798",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2411.098484848485, y = 453.75},
             propsData = {
               ShowEnable = true,
@@ -495,7 +503,7 @@ return {
           ["1745057859586549104"] = {
             key = "1745057859586549104",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 2417.348484848485, y = 631.25},
             propsData = {
               MessageId = 320012,
@@ -506,6 +514,36 @@ return {
               IsForbidOutAnim = true,
               GuideManPosEnum = "DownLeft",
               GuidemanHead = "Bai_Idle"
+            }
+          },
+          ["17651745869761062"] = {
+            key = "17651745869761062",
+            type = "ShowGuideButtonNode",
+            name = "Button显示/隐藏信息",
+            pos = {x = 1344.9694931576475, y = 184.05099250129723},
+            propsData = {
+              ShowEnable = true,
+              MessageId = 320003,
+              MessageNote = "",
+              DelayTime = 0,
+              IsForceClick = true,
+              IsControlPlayer = false,
+              IsTimePause = true,
+              IsShowCursor = true,
+              HighLightUIPath = "LevelMapMain.Dispatch_List:1.List_Dispatch:1",
+              UICompName = "Btn_Click",
+              GamePadWidgetName = "",
+              IsAutoClick = true,
+              IsAutoClickByGamepad = false,
+              UIShape = "Square",
+              IsResetPlayer = false,
+              IsForbidInAnim = true,
+              IsForbidOutAnim = true,
+              UICompSizeOffset = {X = 0, Y = 0},
+              UICompLocOffset = {X = 0, Y = 0},
+              MessageParentLoc = "HighLightUI",
+              MessageLoc = "Right",
+              MessageLocOffset = {X = 0, Y = 0}
             }
           }
         },

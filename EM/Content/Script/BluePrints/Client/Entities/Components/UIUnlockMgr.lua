@@ -1,11 +1,9 @@
 local Component = {}
-
 function Component:EnterWorld()
   if not self.bUIUnlockMgrInitialized then
     self:Init()
   end
 end
-
 function Component:Init()
   self.bUIUnlockMgrInitialized = true
   self.bEndNormalUnlockUITask = true
@@ -27,7 +25,6 @@ function Component:Init()
   self:BindUIUnlockDelegates()
   self:AddListenEvents()
 end
-
 function Component:LeaveWorld()
   self.logger.info("UIUnlockMgr LeaveWorld")
   EventManager:RemoveEvent(EventID.EnterRegion, self)
@@ -40,7 +37,6 @@ function Component:LeaveWorld()
   EventManager:RemoveEvent(EventID.LeaveImmersiveTalk, self)
   self:UnBindAllOnUIFirstUnlockAnimation()
 end
-
 function Component:BindOnUIFirstTimeUnlock(UIUnlockRuleId, Callback)
   local UnlockInfo = DataMgr.UIUnlockRule[UIUnlockRuleId]
   local ConditionId = UnlockInfo.ConditionId
@@ -50,7 +46,6 @@ function Component:BindOnUIFirstTimeUnlock(UIUnlockRuleId, Callback)
   Events[self.DelegateKey_UIUnlock] = Callback
   return self.DelegateKey_UIUnlock
 end
-
 function Component:UnBindOnUIFirstTimeUnlock(UIUnlockRuleId, Key)
   local UnlockInfo = DataMgr.UIUnlockRule[UIUnlockRuleId]
   local ConditionId = UnlockInfo.ConditionId
@@ -58,7 +53,6 @@ function Component:UnBindOnUIFirstTimeUnlock(UIUnlockRuleId, Key)
   local Events = self.ConditionFirstMetEvents[ConditionId]
   Events[Key] = nil
 end
-
 function Component:CheckUIUnlocked(UIUnlockRuleId, bShowFailed)
   if not UIUnlockRuleId then
     return true
@@ -70,7 +64,6 @@ function Component:CheckUIUnlocked(UIUnlockRuleId, bShowFailed)
   end
   return self:CheckUIUnlocked_Internal(UIUnlockRuleId, bShowFailed)
 end
-
 function Component:CheckSystemUICanOpen(UIUnlockRuleId)
   local UIUnlockInfo = DataMgr.UIUnlockRule[UIUnlockRuleId]
   local FailedIdIndex = {}
@@ -85,11 +78,10 @@ function Component:CheckSystemUICanOpen(UIUnlockRuleId)
   end
   return 0 == #FailedIdIndex, FailedIdIndex
 end
-
 function Component:CheckUIUnlocked_Internal(UIUnlockRuleId, bShowFailed)
   local UIUnlockInfo = DataMgr.UIUnlockRule[UIUnlockRuleId]
   if not UIUnlockInfo then
-    GWorld.logger.error("@@@ \230\137\128\230\159\165\232\175\162\232\167\163\233\148\129\231\154\132UIUnlockRuleId\228\184\141\229\156\168\232\161\168\229\134\133:" .. tostring(UIUnlockRuleId))
+    GWorld.logger.error("@@@ 所查询解锁的UIUnlockRuleId不在表内:" .. tostring(UIUnlockRuleId))
     return false
   end
   bShowFailed = bShowFailed or false
@@ -99,7 +91,6 @@ function Component:CheckUIUnlocked_Internal(UIUnlockRuleId, bShowFailed)
   end
   return Res
 end
-
 function Component:OnSystemFirstTimeUnlock(UIUnlockRuleId)
   local SystemInfo = DataMgr.UIUnlockRule[UIUnlockRuleId]
   if SystemInfo.UnlockPopupType == "Light" then
@@ -115,7 +106,6 @@ function Component:OnSystemFirstTimeUnlock(UIUnlockRuleId)
     BattleMainUI:InitBtnList()
   end
 end
-
 function Component:AddListenEvents()
   EventManager:AddEvent(EventID.EnterRegion, self, self.OnEnterRegion_UIUnlockMgr)
   EventManager:AddEvent(EventID.ExitRegion, self, self.OnExitRegion_UIUnlockMgr)
@@ -125,23 +115,19 @@ function Component:AddListenEvents()
   EventManager:AddEvent(EventID.EnterImmersiveTalk, self, self.OnEnterImmersiveTalk)
   EventManager:AddEvent(EventID.LeaveImmersiveTalk, self, self.OnLeaveImmersiveTalk)
 end
-
 function Component:OnEnterRegion_UIUnlockMgr()
   DebugPrint("@@@UIUnlockMgrEnterRegion")
   self.bInRegion_UIUnlock = true
   self:TryStartUIUnlockTask()
 end
-
 function Component:OnExitRegion_UIUnlockMgr()
   DebugPrint("@@@UIUnlockMgr ExitRegion")
   self.bInRegion_UIUnlock = false
 end
-
 function Component:InLoading_UIUnlockMgr()
   DebugPrint("@@@UIUnlockMgr InLoading")
   self.bInLoading_UIUnlock = true
 end
-
 function Component:HandleCloseLoadingEvent_WhileSystemUnlock()
   DebugPrint("@@@UIUnlockMgr CloseLoading")
   self.bInLoading_UIUnlock = false
@@ -150,29 +136,24 @@ function Component:HandleCloseLoadingEvent_WhileSystemUnlock()
     GWorld.GameInstance:GetAvatar():AutoExecuteGM()
   end
 end
-
 function Component:OnLevelDeliverBlackCurtainStart()
   DebugPrint("@@@UIUnlockMgr Begin LevelDeliverBlack ")
   self.bInDeliverBlack_UIUnlock = true
 end
-
 function Component:OnLevelDeliverBlackCurtainEnd()
   DebugPrint("@@@UIUnlockMgr End LevelDeliverBlack ")
   self.bInDeliverBlack_UIUnlock = false
   self:TryStartUIUnlockTask()
 end
-
 function Component:OnEnterImmersiveTalk()
   DebugPrint("@@@UIUnlockMgr OnEnterImmersiveTalk")
   self.bInImmersiveTalk_UIUnlock = true
 end
-
 function Component:OnLeaveImmersiveTalk()
   DebugPrint("@@@UIUnlockMgr OnLeaveImmersiveTalk")
   self.bInImmersiveTalk_UIUnlock = false
   self:TryStartUIUnlockTask()
 end
-
 function Component:CheckCanStartUnlockTask()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -182,13 +163,11 @@ function Component:CheckCanStartUnlockTask()
   DebugPrint("@@@UIUnlockMgr CheckCanStartUnlockTask", self.bInRegion_UIUnlock, not self.bInLoading_UIUnlock, not self.bInDeliverBlack_UIUnlock, not self.bInImmersiveTalk_UIUnlock)
   return self.bInRegion_UIUnlock and not self.bInLoading_UIUnlock and not self.bInDeliverBlack_UIUnlock and not self.bInImmersiveTalk_UIUnlock
 end
-
 function Component:HasUIUnlockTask()
   local bRes = not IsEmptyTable(self.FirstTimeUnlockUIQueue)
   DebugPrint("@@@UIUnlockMgr Check HasUIUnlockTask", bRes)
   return bRes
 end
-
 function Component:TryStartUIUnlockTask()
   DebugPrint("@@@UIUnlockMgr TryStartUIUnlockTask", self:CheckCanStartUnlockTask())
   if not self:CheckCanStartUnlockTask() then
@@ -249,7 +228,6 @@ function Component:TryStartUIUnlockTask()
     end)
   end
 end
-
 function Component:RemoveSubsystemUIFromParent()
   local BattleMainUI = UIManager(GWorld.GameInstance):GetUIObj("BattleMain")
   if nil ~= BattleMainUI and nil ~= BattleMainUI.Pos_SubSystemUnlock then
@@ -257,7 +235,6 @@ function Component:RemoveSubsystemUIFromParent()
     BattleMainUI.Pos_SubSystemUnlock:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function Component:EndUIUnlockTask()
   DebugPrint("@@@UIUnlockMgr EndUIUnlockTask")
   self.bUnlockTaskWorking = false
@@ -280,7 +257,6 @@ function Component:EndUIUnlockTask()
   if self.OnEndUIUnlockTaskOnceDelegate then
   end
 end
-
 function Component:OnSystemFirstTimeUnlock_Internal(UIUnlockRuleId, OnFinishedCallback)
   DebugPrint("@@@UIUnlockMgr OnSystemFirstTimeUnlock_Internal ", UIUnlockRuleId)
   OnFinishedCallback = OnFinishedCallback or function()
@@ -292,7 +268,7 @@ function Component:OnSystemFirstTimeUnlock_Internal(UIUnlockRuleId, OnFinishedCa
     return
   end
   if 1 == SystemInfo.IsHideUnlockPopup or self.bGMHideUnlockPopup then
-    DebugPrint("@@@UIUnlockMgr \233\154\144\232\151\143UI\232\167\163\233\148\129\232\161\168\231\142\176", UIUnlockRuleId)
+    DebugPrint("@@@UIUnlockMgr 隐藏UI解锁表现", UIUnlockRuleId)
     OnFinishedCallback()
     return
   end
@@ -304,7 +280,6 @@ function Component:OnSystemFirstTimeUnlock_Internal(UIUnlockRuleId, OnFinishedCa
     self:ShowSystemUnlockUI(SystemInfo, OnFinishedCallback)
   end
 end
-
 function Component:ShowSystemUnlockUI(SystemInfo, OnFinishedCallback)
   local UIName = "SystemUnlockGuide"
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -318,7 +293,6 @@ function Component:ShowSystemUnlockUI(SystemInfo, OnFinishedCallback)
   SystemUnlockGuideUI:BindOnOutAnimationFinished(OnFinishedCallback)
   SystemUnlockGuideUI:OnWorking(SystemInfo)
 end
-
 function Component:ShowSubSystemUnlockUI(SystemInfo, OnFinishedCallback)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMainUI = UIManager:GetUIObj("BattleMain")
@@ -340,6 +314,8 @@ function Component:ShowSubSystemUnlockUI(SystemInfo, OnFinishedCallback)
       BattleMainUI.Pos_SubSystemUnlock:AddChildToOverlay(UnlockUI)
       BattleMainUI.Pos_SubSystemUnlock:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     else
+      local SystemUIConfig = DataMgr.SystemUI.SubSystemUnlock
+      UIManager:AddUIToStateTagsCluster(SystemUIConfig.StateTag, "SubSystemUnlock", true)
       local NormalStateSubTag, SpecialUINameList = UIManager:GetSubTagInNormalState("SubSystemUnlock")
       UIManager:HandleUIWidgetsVisibilityByUIShow("SubSystemUnlock", UnlockUI, NormalStateSubTag, SpecialUINameList)
     end
@@ -352,14 +328,12 @@ function Component:ShowSubSystemUnlockUI(SystemInfo, OnFinishedCallback)
     OnFinishedCallback()
   end
 end
-
 function Component:ShowEnd()
   local SystemUIConfig = DataMgr.SystemUI.SubSystemUnlock
   if SystemUIConfig then
     UIManager(self):HandleUIWidgetsVisibilityByUIHide("SubSystemUnlock", "SubSystemUnlock", SystemUIConfig.StateTag)
   end
 end
-
 function Component:BindUIUnlockDelegates()
   DebugPrint("@@@UIUnlockMgr UIUnlockMgr BindUIUnlockDelegates")
   if self.bHasBindUIUnlockDelegates then
@@ -368,11 +342,9 @@ function Component:BindUIUnlockDelegates()
   self.bHasBindUIUnlockDelegates = true
   EventManager:AddEvent(EventID.OnLoginSuccess, self, self.UIUnlockMgrOnLoginSuccess)
 end
-
 function Component:UIUnlockMgrOnLoginSuccess()
   self:BindAllOnUIFirstUnlockAnimation()
 end
-
 function Component:BindAllOnUIFirstUnlockAnimation()
   if DataMgr.UIUnlockRule then
     for _, Info in pairs(DataMgr.UIUnlockRule) do
@@ -388,17 +360,15 @@ function Component:BindAllOnUIFirstUnlockAnimation()
     end
   end
 end
-
 function Component:UnBindAllOnUIFirstUnlockAnimation()
   for _, Info in pairs(self.BindUIUnlockKeys or {}) do
     self:UnBindOnUIFirstTimeUnlock(Info.UIUnlockRuleId, Info.Key)
   end
 end
-
 function Component:UIUnlockMgrOnConditionComplete(ConditionId)
   DebugPrint("@@@ UIUnlockMgr Received Condition Completed ", ConditionId)
   if self.ConditionMetCache[ConditionId] then
-    DebugPrint("UIUnlockMgrOnConditionComplete: \231\179\187\231\187\159\232\167\163\233\148\129\230\148\182\229\136\176\228\186\134\229\144\140\228\184\128Condition\231\154\132\229\164\154\230\172\161\229\174\140\230\136\144\233\128\154\231\159\165: " .. ConditionId)
+    DebugPrint("UIUnlockMgrOnConditionComplete: 系统解锁收到了同一Condition的多次完成通知: " .. ConditionId)
     return
   end
   if self.ConditionFirstMetEvents[ConditionId] then
@@ -412,7 +382,6 @@ function Component:UIUnlockMgrOnConditionComplete(ConditionId)
   self.ConditionFirstMetEvents[ConditionId] = nil
   self.ConditionMetCache[ConditionId] = true
 end
-
 function Component:_OnPropChangeSystemStates(keys)
   local System = keys[1]
   if System then
@@ -425,10 +394,8 @@ function Component:_OnPropChangeSystemStates(keys)
     end
   end
 end
-
 function Component:CheckSystemUnlocked(System)
   local State = self.SystemStates[System]
   return 1 == State
 end
-
 return Component

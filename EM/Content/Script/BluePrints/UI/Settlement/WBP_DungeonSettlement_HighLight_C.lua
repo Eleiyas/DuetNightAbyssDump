@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Settlement_DataDisplay_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Settlement_DataDisplay_C:Construct()
   local LevelEnterData = DataMgr.LevelEnterData
   self.SwitchBattleDataTypeToText = {
@@ -21,7 +20,6 @@ function WBP_Settlement_DataDisplay_C:Construct()
     [4] = self.Color_Yellow
   }
 end
-
 function WBP_Settlement_DataDisplay_C:Init(Parmas)
   self.Parmas = Parmas
   if not self.Parmas then
@@ -33,7 +31,6 @@ function WBP_Settlement_DataDisplay_C:Init(Parmas)
   self:SetColor()
   self:InitData()
 end
-
 function WBP_Settlement_DataDisplay_C:SetColor()
   local DataType = DataMgr.LevelEnterData[self.Parmas.DataName].Type
   if not DataType then
@@ -42,7 +39,6 @@ function WBP_Settlement_DataDisplay_C:SetColor()
   local Color = self.IconColorByType[DataType]
   self.Icon_Type:SetColorAndOpacity(Color.SpecifiedColor)
 end
-
 function WBP_Settlement_DataDisplay_C:InitUIByType()
   local IconPath = DataMgr.LevelEnterData[self.Parmas.DataName].Icon
   if not IconPath then
@@ -51,28 +47,22 @@ function WBP_Settlement_DataDisplay_C:InitUIByType()
   IconPath = string.format("Texture2D'/%s'", IconPath)
   local Img = LoadObject(IconPath)
   if not Img then
-    DebugPrint("\231\188\186\229\176\145\229\155\190\231\137\135\232\181\132\230\186\144: ImgPath = " .. IconPath)
+    DebugPrint("缺少图片资源: ImgPath = " .. IconPath)
     return
   end
   self.Icon_Type:SetBrushResourceObject(Img)
 end
-
 function WBP_Settlement_DataDisplay_C:InitData()
-  local NumText = 0
-  if self.Parmas.Value < 10000 then
-    self.Text_Unit:SetVisibility(ESlateVisibility.Collapsed)
-    NumText = self.Parmas.Value
-    self.Text_Data:SetVisibility(ESlateVisibility.Visible)
+  local NumText = self.Parmas.Value
+  if NumText < 1000000000 then
+    NumText = Utils.FormatNumber(NumText, false)
     if self.Parmas.DataName == "Damage" or self.Parmas.DataName == "Damaged" then
       NumText = string.format("%s", NumText) .. "%"
     end
-    self.Text_Data:SetText(NumText)
   else
-    self.Text_Unit:SetVisibility(ESlateVisibility.Visible)
-    NumText = math.floor(self.Parmas.Value / 10000)
-    self.Text_Data:SetVisibility(ESlateVisibility.Visible)
-    self.Text_Data:SetText(NumText)
+    NumText = Utils.FormatNumber(NumText, true)
   end
+  self.Text_Data:SetVisibility(ESlateVisibility.Visible)
+  self.Text_Data:SetText(NumText)
 end
-
 return WBP_Settlement_DataDisplay_C

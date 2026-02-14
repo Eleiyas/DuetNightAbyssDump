@@ -3,7 +3,6 @@ local WBP_BattleAim_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_BattleAim_C:Construct()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.WaitingFlag = false
@@ -12,18 +11,20 @@ function WBP_BattleAim_C:Construct()
     self:TryShowSelf()
   end, false, 0, "WaitingFlagTimer", true)
 end
-
 function WBP_BattleAim_C:Destruct()
   self:RemoveTimer("WaitingFlagTimer")
 end
-
 function WBP_BattleAim_C:Init(Root)
   self.Root = Root
   self.CurSightUI = Root.SightUI
-  local AllChildren = self["Panel_Aim_" .. self.Root.CurWeaponStyleNode]:GetAllChildren()
-  self.AimStarTable = AllChildren:ToTable()
+  local AllChildren
+  if self["Panel_Aim_" .. self.Root.CurWeaponStyleNode] and self["Panel_Aim_" .. self.Root.CurWeaponStyleNode].GetAllChildren then
+    AllChildren = self["Panel_Aim_" .. self.Root.CurWeaponStyleNode]:GetAllChildren()
+  end
+  if AllChildren then
+    self.AimStarTable = AllChildren:ToTable()
+  end
 end
-
 function WBP_BattleAim_C:TryToPlayAimDiffusionStartAnim()
   if EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Aim_Shoot) then
     local EndTime = self.Aim_Shoot:GetEndTime()
@@ -35,7 +36,6 @@ function WBP_BattleAim_C:TryToPlayAimDiffusionStartAnim()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Aim_Shoot)
   end
 end
-
 function WBP_BattleAim_C:RefreshHitEffectEnhanceVisibility()
   if self.Panel_Aim_Glow then
     if self.CurActorRelation == "Enemy" then
@@ -45,32 +45,29 @@ function WBP_BattleAim_C:RefreshHitEffectEnhanceVisibility()
     end
   end
 end
-
 function WBP_BattleAim_C:RealRefreshAimColor(ColorIntensty)
+  if not self.AimStarTable or not next(self.AimStarTable) then
+    return
+  end
   for _, AimNode in ipairs(self.AimStarTable) do
     AimNode:SetColorAndOpacity(ColorIntensty)
   end
 end
-
 function WBP_BattleAim_C:UpdateAimStarOpacity(Opacity)
   self:SetRenderOpacity(Opacity)
 end
-
 function WBP_BattleAim_C:SwitchIn()
   self.Root:RefreshAimColorByState(self.Root.NextActorRelation)
   if self.WaitingFlag then
     self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_BattleAim_C:SwitchOut()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_BattleAim_C:TryShowSelf()
   if self.Root.CurPanel == self then
     self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return WBP_BattleAim_C

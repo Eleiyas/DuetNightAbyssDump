@@ -1,17 +1,14 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
 end
-
 function M:ExInit(...)
   self.bDisplayOnly, self.bAsChild = ...
   self:OnLoaded()
 end
-
-function M:OnLoaded()
+function M:OnLoaded(...)
+  self.bDisplayOnly = (...)
   if not self.bDisplayOnly then
-    DebugPrint("gmy@WBP_Loading_ReConnect M:OnLoaded", debug.traceback())
     local NetworkMgr = GWorld.NetworkMgr
     if NetworkMgr then
       NetworkMgr.bUIReConnecting = true
@@ -21,10 +18,8 @@ function M:OnLoaded()
   self.Common_Loading_PC:PlayAnimationForward(self.Common_Loading_PC.In)
   self.Common_Loading_PC:PlayAnimation(self.Common_Loading_PC.Loop, 0, 0)
 end
-
 function M:Close()
   if not self.bDisplayOnly then
-    DebugPrint("gmy@WBP_Loading_ReConnect M:Close", debug.traceback())
     local NetworkMgr = GWorld.NetworkMgr
     if NetworkMgr then
       NetworkMgr.bUIReConnecting = false
@@ -35,7 +30,7 @@ function M:Close()
   else
     self.Common_Loading_PC:StopAllAnimations()
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    M.Super.Close()
   end
 end
-
 return M

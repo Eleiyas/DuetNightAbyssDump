@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:InitAbyss()
   self:InitAbyssRoomInfo()
   self:InitAbyssUi()
@@ -11,7 +10,6 @@ function Component:InitAbyss()
     self:HandleAbyssRoomSelection(2)
   end)
 end
-
 function Component:InitAbyssUi()
   self.Abyss_Team.Text_Title:SetText(GText("Abyss_PartySetup"))
   table.remove(self.BtnName, 3)
@@ -53,7 +51,6 @@ function Component:InitAbyssUi()
     self.Text_Title_Single:SetText(GText("Abyss_DungeonA"))
   end
 end
-
 function Component:InitAbyssRoomInfo()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local AbyssLogicServerInfo = GameMode:GetDungeonComponent().AbyssLogicServerInfo
@@ -93,7 +90,6 @@ function Component:InitAbyssRoomInfo()
   self.BRoomNum = self.AbyssLevelInfo.DungeonReward2
   self.AbyssTeamInfo = self.AbyssLevelInfo.AbyssLockedTeamList
 end
-
 function Component:RefreshAbyssRoomInfo(index)
   local totalRooms = 5
   for i = 1, totalRooms do
@@ -211,7 +207,6 @@ function Component:RefreshAbyssRoomInfo(index)
     end
   end
 end
-
 function Component:RefreshAbyssTeamInfo(index)
   local TeamInfo = self.AbyssTeamInfo[index]
   local Avatar = GWorld:GetAvatar()
@@ -298,8 +293,12 @@ function Component:RefreshAbyssTeamInfo(index)
     end
   end
 end
-
 function Component:AbyssRestart()
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if GameMode and GameMode.IsAbyssTeleporting then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Abyss_Battle_Again_Fail"), 2)
+    return
+  end
   if self.IsEditOpen then
     self.IsEditOpen = false
     self:PlayAnimation(self.Edit_List_Out)
@@ -309,17 +308,15 @@ function Component:AbyssRestart()
   Params.RightCallbackFunction = self.ClickConfirmAbyssRestart
   UIManager(self):ShowCommonPopupUI(100216, Params, self)
 end
-
 function Component:ClickConfirmAbyssRestart()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("thy     \229\133\179\229\141\161\232\175\166\230\131\133\231\149\140\233\157\162\232\191\155\229\133\165\229\133\179\229\141\161\229\164\177\232\180\165\239\188\140Avatar\232\142\183\229\143\150\229\164\177\232\180\165")
+    DebugPrint("thy     关卡详情界面进入关卡失败，Avatar获取失败")
     return
   end
   Avatar:TriggerReEnterAbyss()
   self:CloseSelf()
 end
-
 function Component:RefreshAbyssUiWhenInputChange(CurInputDevice)
   if ModController:IsMobile() then
     return
@@ -358,7 +355,6 @@ function Component:RefreshAbyssUiWhenInputChange(CurInputDevice)
     self.Btn_1:SetFocus()
   end
 end
-
 function Component:HandleAbyssRoomSelection(index)
   if index == self.AbyssUiRoomIndex then
     return
@@ -380,7 +376,6 @@ function Component:HandleAbyssRoomSelection(index)
   BtnList[index].IsSelect = true
   BtnList[index]:PlayAnimation(BtnList[index].Click)
 end
-
 function Component:OnKeyDownAbyss(InKeyName)
   if not self.BRoomNum then
     return
@@ -394,5 +389,4 @@ function Component:OnKeyDownAbyss(InKeyName)
   end
   return false
 end
-
 return Component

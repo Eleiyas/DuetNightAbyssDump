@@ -1,26 +1,22 @@
-local M = Class("BluePrints.UI.BP_UIState_C")
-
+local M = Class("BluePrints.UI.BP_EMUserWidget_C")
 function M:Construct()
   self.Btn_Click.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnBtnUnhovered)
   self.Btn_Click.OnPressed:Add(self, self.OnBtnPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnBtnReleased)
 end
-
 function M:OnBtnHovered()
   if self.IsText then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsText then
     return
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnBtnPressed()
   self.StartPressTime = os.clock()
   if self.IsText then
@@ -28,7 +24,6 @@ function M:OnBtnPressed()
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self.IsText then
     if self.JumpFunc then
@@ -44,7 +39,6 @@ function M:OnBtnReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Click then
     if self.JumpFunc then
@@ -57,5 +51,4 @@ function M:OnAnimationFinished(InAnimation)
     self:PlayAnimation(self.Normal)
   end
 end
-
 return M

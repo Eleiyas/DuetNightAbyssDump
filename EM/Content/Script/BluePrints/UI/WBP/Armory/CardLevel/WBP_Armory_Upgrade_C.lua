@@ -11,7 +11,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Armory.CardLevel.IntensifySubWidgetCommon"
 }
-
 function M:UpdateWidgetData(Params)
   self.Parent = Params.Parent
   self.Target = Params.Target
@@ -40,7 +39,6 @@ function M:UpdateWidgetData(Params)
   end
   self:CallBtnClickCallback(self.PreviewLevel)
 end
-
 function M:ForbidIncBtn(bValue)
   self.Btn_Max:ForbidBtn(bValue)
   self.Btn_Add:ForbidBtn(bValue)
@@ -52,7 +50,6 @@ function M:ForbidIncBtn(bValue)
     self.Key_Add:SetRenderOpacity(1)
   end
 end
-
 function M:ForbidDecBtn(bValue)
   self.Btn_Min:ForbidBtn(bValue)
   self.Btn_Minus:ForbidBtn(bValue)
@@ -64,7 +61,6 @@ function M:ForbidDecBtn(bValue)
     self.Key_Minus:SetRenderOpacity(1)
   end
 end
-
 function M:OverrideSound()
   self.Btn_Add:TryOverrideSoundFunc(function()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_add", nil, nil)
@@ -79,7 +75,6 @@ function M:OverrideSound()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_minusMulti", nil, nil)
   end)
 end
-
 function M:Init(Params)
   self:UpdateWidgetData(Params)
   self:OverrideSound()
@@ -148,7 +143,6 @@ function M:Init(Params)
     Desc = GText("UI_SHOP_MAX")
   })
 end
-
 function M:SetCallbacks(Callbacks)
   self.OnBtnClickCallback = Callbacks.OnBtnClickCallback
   self.OnLevelUpSuccessCallback = Callbacks.OnLevelUpSuccessCallback
@@ -156,7 +150,6 @@ function M:SetCallbacks(Callbacks)
   self.OnLevelUpFinalCallback = Callbacks.OnLevelUpFinalCallback
   self.OnLevelUpCloseCallback = Callbacks.OnLevelUpCloseCallback
 end
-
 function M:CallBtnClickCallback(InPreviewLevel)
   if not self.OnBtnClickCallback then
     return
@@ -175,7 +168,6 @@ function M:CallBtnClickCallback(InPreviewLevel)
   self:SetLevelPreviewText(self.PreviewLevel, bMax)
   self:UpdateDesc(Desc)
 end
-
 function M:Construct()
   self:BindToAnimationFinished(self.LevelUp_In, {
     self,
@@ -184,7 +176,6 @@ function M:Construct()
   self.SuccessToast:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Text_Detail:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.LevelUp_In)
   if self.PreviewLevel then
@@ -199,7 +190,6 @@ function M:Destruct()
   end
   self:StopLevelUpSuccessTimer()
 end
-
 function M:OnLevelUpSuccess()
   if self.Parent.Key_Consume then
     self.Parent.Key_Consume:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -222,13 +212,11 @@ function M:OnLevelUpSuccess()
   end
   self.bFinal = bMax
 end
-
 function M:SetLevelPreviewText(PreviewLevel, bMax)
   self.Switcher_Level:SetActiveWidgetIndex(bMax and 1 or 0)
   self.Level_Preview:SetText(PreviewLevel)
   self.Level_Preview_Max:SetText(PreviewLevel)
 end
-
 function M:OnLevelUpAnimFinished()
   self:StopLevelUpSuccessTimer()
   local _, TimerKey = self:AddTimer(1.5, function()
@@ -246,13 +234,11 @@ function M:OnLevelUpAnimFinished()
   end, false, 0, nil, true)
   self.LevelUpSuccessTimer = TimerKey
 end
-
 function M:StopLevelUpSuccessTimer()
   if self:IsExistTimer(self.LevelUpSuccessTimer) then
     self:RemoveTimer(self.LevelUpSuccessTimer)
     self.LevelUpSuccessTimer = nil
   end
 end
-
 AssembleComponents(M)
 return M

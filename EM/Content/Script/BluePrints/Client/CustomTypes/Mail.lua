@@ -10,21 +10,17 @@ Item.__Props__ = {
   ItemID = prop.prop("Int", "client save"),
   ItemNum = prop.prop("Int", "client save")
 }
-
 function Item:Init(ItemType, ItemID, ItemNum)
   self.ItemType = ItemType
   self.ItemID = ItemID
   self.ItemNum = ItemNum
 end
-
 FormatProperties(Item)
 local ItemList = Class("ItemList", CustomTypes.CustomList)
 ItemList.ValueType = Item
-
 function ItemList:Add(item)
   self:Append(item)
 end
-
 local Mail = Class("Mail", CustomTypes.CustomAttr)
 Mail.__Props__ = {
   UniqueId = prop.prop("Int", "client save"),
@@ -38,9 +34,10 @@ Mail.__Props__ = {
   MailContent = prop.prop("Str2StrDict", "client save"),
   MailSender = prop.prop("Int", "client save"),
   CtxId = prop.prop("Str", "client save"),
-  FormatText = prop.prop("Str2StrDict", "client save")
+  FormatText = prop.prop("Str2StrDict", "client save"),
+  Nickname = prop.prop("Str", "client save"),
+  HeadIconId = prop.prop("Int", "client save")
 }
-
 function Mail:Init(MailDate, MailId, MailTitle, MailContent, Items, MailSender)
   self.MailDate = MailDate
   self.MailId = MailId
@@ -57,16 +54,13 @@ function Mail:Init(MailDate, MailId, MailTitle, MailContent, Items, MailSender)
     self.RewardGot = 0
   end
 end
-
 function Mail:Data()
   return DataMgr.Mail[self.MailId]
 end
-
 FormatProperties(Mail)
 local MailDict = Class("MailDict", CustomTypes.CustomDict)
 MailDict.KeyType = BaseTypes.Int
 MailDict.ValueType = Mail
-
 function MailDict:NewMail(MailId, MailDate)
   local excel = DataMgr.Mail[MailId]
   local Items = {}
@@ -89,7 +83,6 @@ function MailDict:NewMail(MailId, MailDate)
   end
   return Mail(MailDate, MailId, Title, Content, Items, MailSender)
 end
-
 function MailDict:NewCustomRewardMail(MailId, MailDate, Items)
   local excel = DataMgr.Mail[MailId]
   local Title = {}
@@ -97,24 +90,15 @@ function MailDict:NewCustomRewardMail(MailId, MailDate, Items)
   local MailSender = excel.MailSenderId
   return Mail(MailDate, MailId, Title, Content, Items, MailSender)
 end
-
 function MailDict:NewTextMail(MailDate, Title, Content)
-  local Language = {
-    "CN",
-    "TC",
-    "JP",
-    "KR",
-    "EN"
-  }
   local RealContent = {}
   local RealTitle = {}
-  for _, lang in ipairs(Language) do
+  for lang, v in pairs(CommonConst.SystemLanguages) do
     RealContent[lang] = Content or ""
     RealTitle[lang] = Title or ""
   end
   return Mail(MailDate, -1, RealTitle, RealContent, nil, 99999)
 end
-
 function MailDict:NewGMMail(MailDate, GmConf)
   local Items = {}
   local Title = {}
@@ -149,11 +133,9 @@ function MailDict:NewGMMail(MailDate, GmConf)
   end
   return Mail(MailDate, -1, Title, Content, Items, GmConf.From.code)
 end
-
 function MailDict:FindMail(UniqueId)
   return self[UniqueId]
 end
-
 return {
   Mail = Mail,
   MailDict = MailDict,

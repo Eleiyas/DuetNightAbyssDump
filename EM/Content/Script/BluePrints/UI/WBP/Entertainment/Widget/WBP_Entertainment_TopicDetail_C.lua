@@ -2,33 +2,32 @@ require("UnLua")
 local FEntertainmentUtils = require("BluePrints.UI.WBP.Entertainment.EntertainmentUtils")
 local FSimpleRewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local EPartyTopicState = FEntertainmentUtils.EPartyTopicState
-
+local InviteLogType = UE.EStoryLogType.Invite
 local function GetQuestTabName(QuestTabId)
   if not QuestTabId then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150\228\187\187\229\138\161\230\160\135\231\173\190\229\144\141\231\167\176\229\164\177\232\180\165\239\188\140QuestTabId \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "获取任务标签名称失败", "获取任务标签名称失败，QuestTabId 为空。")
     return
   end
   local NativeQuestTabData = DataMgr.QuestTab[QuestTabId]
   if not NativeQuestTabData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 QuestTab \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174\227\128\130", QuestTabId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "获取任务标签名称失败", string.format("未在 QuestTab 表找到Id：%d 的数据。", QuestTabId))
     return
   end
   return GText(NativeQuestTabData.TabName)
 end
-
 local function CreateQuestChainConditionData(QuestChainId)
   if not QuestChainId then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\228\187\187\229\138\161\233\147\190\230\157\161\228\187\182\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\228\187\187\229\138\161\233\147\190Id\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据失败", "创建任务链条件数据失败，任务链Id为空。")
     return
   end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\228\187\187\229\138\161\233\147\190\230\157\161\228\187\182\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140Avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据失败", "创建任务链条件数据失败，Avatar 为空。")
     return
   end
   local NativeQuestChainData = DataMgr.QuestChain[QuestChainId]
   if not NativeQuestChainData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 QuestChain \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174\227\128\130", QuestChainId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据失败", string.format("未在 QuestChain 表找到Id：%d 的数据。", QuestChainId))
     return
   end
   return {
@@ -38,10 +37,31 @@ local function CreateQuestChainConditionData(QuestChainId)
     QuestChainId = QuestChainId
   }
 end
-
+local function CreateNotRealQuestChainConditionData(QuestChainId)
+  if not QuestChainId then
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据失败", "创建任务链条件数据失败，任务链Id为空。")
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据失败", "创建任务链条件数据失败，Avatar 为空。")
+    return
+  end
+  local NativeQuestChainData = DataMgr.QuestChain[QuestChainId]
+  if not NativeQuestChainData then
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据失败", string.format("未在 QuestChain 表找到Id：%d 的数据。", QuestChainId))
+    return
+  end
+  return {
+    QuestTypeName = GetQuestTabName(NativeQuestChainData.QuestChainType),
+    QuestChainName = GText(NativeQuestChainData.QuestChainName),
+    bIsFinished = Avatar:IsQuestChainFinished(QuestChainId) or Avatar:IsQuestChainAssumeFinished(QuestChainId),
+    QuestChainId = QuestChainId
+  }
+end
 local function CreateQuestChainConditionDataArray(QuestChainIdArray)
   if not QuestChainIdArray then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\228\187\187\229\138\161\233\147\190\230\157\161\228\187\182\230\149\176\230\141\174\230\149\176\231\187\132\229\164\177\232\180\165\239\188\140\228\187\187\229\138\161\233\147\190Id\230\149\176\231\187\132\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据数组失败", "创建任务链条件数据数组失败，任务链Id数组为空。")
     return
   end
   local QuestChainConditionDataArray = {}
@@ -53,33 +73,56 @@ local function CreateQuestChainConditionDataArray(QuestChainIdArray)
   end
   return QuestChainConditionDataArray
 end
-
-local function CreateConditionDataMap(ConditionMap)
-  if not ConditionMap then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\230\157\161\228\187\182\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\230\157\161\228\187\182\230\149\176\230\141\174\228\184\186\231\169\186\227\128\130")
+local function CreateNotRealQuestChainConditionDataArray(QuestChainIdArray)
+  if not QuestChainIdArray then
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建任务链条件数据数组失败", "创建任务链条件数据数组失败，任务链Id数组为空。")
     return
   end
-  return {
-    QuestChainConditionDataArray = CreateQuestChainConditionDataArray(ConditionMap.QuestChain)
-  }
+  local QuestChainConditionDataArray = {}
+  for _, QuestChainId in pairs(QuestChainIdArray) do
+    local QuestChainConditionData = CreateNotRealQuestChainConditionData(QuestChainId)
+    if QuestChainConditionData then
+      table.insert(QuestChainConditionDataArray, QuestChainConditionData)
+    end
+  end
+  return QuestChainConditionDataArray
 end
-
+local function CreateConditionDataMap(ConditionMap)
+  if not ConditionMap then
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建条件数据失败", "创建条件数据失败，条件数据为空。")
+    return
+  end
+  local QuestChainConditionDataArray = {}
+  if ConditionMap.QuestChain then
+    local Array = CreateNotRealQuestChainConditionDataArray(ConditionMap.QuestChain)
+    for _, Data in ipairs(Array) do
+      table.insert(QuestChainConditionDataArray, Data)
+    end
+  end
+  if ConditionMap.TrueQuestChain then
+    local Array = CreateQuestChainConditionDataArray(ConditionMap.TrueQuestChain)
+    for _, Data in ipairs(Array) do
+      table.insert(QuestChainConditionDataArray, Data)
+    end
+  end
+  return {QuestChainConditionDataArray = QuestChainConditionDataArray}
+end
 local function CreateConditionData(ConditionId)
   if not ConditionId then
     return
   end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\230\157\161\228\187\182\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140Avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建条件数据失败", "创建条件数据失败，Avatar 为空。")
     return
   end
   local NativeConditionData = DataMgr.Condition[ConditionId]
   if not NativeConditionData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 Condition \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174\227\128\130", ConditionId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建条件数据失败", string.format("未在 Condition 表找到Id：%d 的数据。", ConditionId))
     return
   end
   if NativeConditionData.ConditionLogic ~= "AND" then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\157\161\228\187\182Id\239\188\154%d \231\154\132\230\157\161\228\187\182\233\128\187\232\190\145\228\184\141\230\152\175 AND\227\128\130", ConditionId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建条件数据失败", string.format("条件Id：%d 的条件逻辑不是 AND。", ConditionId))
     return
   end
   return {
@@ -87,15 +130,14 @@ local function CreateConditionData(ConditionId)
     bIsFinished = ConditionUtils.CheckCondition(Avatar, ConditionId)
   }
 end
-
 local function CreateResourceData(ResourceId)
   if not ResourceId then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\232\181\132\230\186\144\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\232\181\132\230\186\144Id\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建资源数据失败", "创建资源数据失败，资源Id为空。")
     return
   end
   local NativeResourceData = DataMgr.Resource[ResourceId]
   if not NativeResourceData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\230\156\170\229\156\168 Resource \232\161\168\230\137\190\229\136\176Id\239\188\154%d \231\154\132\230\149\176\230\141\174\227\128\130", ResourceId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建资源数据失败", string.format("未在 Resource 表找到Id：%d 的数据。", ResourceId))
     return
   end
   return {
@@ -104,11 +146,10 @@ local function CreateResourceData(ResourceId)
     IconPath = NativeResourceData.Icon
   }
 end
-
 local function CreateResourceConsumeData(ResourceId, NeedCount)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\232\181\132\230\186\144\230\182\136\232\128\151\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140Avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建资源消耗数据失败", "创建资源消耗数据失败，Avatar 为空。")
     return
   end
   return {
@@ -117,7 +158,6 @@ local function CreateResourceConsumeData(ResourceId, NeedCount)
     NeedCount = NeedCount
   }
 end
-
 local function CreateResourceConsumeDataArray(ConsumeCountMap)
   if not ConsumeCountMap then
     return
@@ -131,11 +171,10 @@ local function CreateResourceConsumeDataArray(ConsumeCountMap)
   end
   return ConsumeItemDataArray
 end
-
 local function CreateConsumeData(ConsumeCountMap)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\230\182\136\232\128\151\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140Avatar \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建消耗数据失败", "创建消耗数据失败，Avatar 为空。")
     return
   end
   local IsEnough = Avatar:CheckEnough(ConsumeCountMap)
@@ -153,17 +192,15 @@ local function CreateConsumeData(ConsumeCountMap)
     HighLevelNeedCount = HighLevelNeedCount
   }
 end
-
 local function CreateResourceRewardData(ResourceId, RewardCount)
   return {
     ResourceData = CreateResourceData(ResourceId),
     Count = FSimpleRewardBox:GetCount(RewardCount)
   }
 end
-
 local function CreateResourceRewardDataArray(ResourceRewardCountMap)
   if not ResourceRewardCountMap then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\232\181\132\230\186\144\229\165\150\229\138\177\230\149\176\230\141\174\230\149\176\231\187\132\229\164\177\232\180\165\239\188\140\232\181\132\230\186\144\229\165\150\229\138\177\230\149\176\230\141\174\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建资源奖励数据数组失败", "创建资源奖励数据数组失败，资源奖励数据为空。")
   end
   local ResourceRewardDataArray = {}
   for ResourceId, RewardCount in pairs(ResourceRewardCountMap) do
@@ -174,15 +211,14 @@ local function CreateResourceRewardDataArray(ResourceRewardCountMap)
   end
   return ResourceRewardDataArray
 end
-
 local function CreateRewardData(RewardId)
   if not RewardId then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\229\165\150\229\138\177\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\229\165\150\229\138\177Id\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建奖励数据失败", "创建奖励数据失败，奖励Id为空。")
     return
   end
   local Rewards = RewardUtils:GetRewards({RewardId}, nil)
   if not Rewards then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\229\136\155\229\187\186\229\165\150\229\138\177\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\229\165\150\229\138\177Id\239\188\154%d \231\154\132\229\165\150\229\138\177\230\149\176\230\141\174\228\184\186\231\169\186\227\128\130", RewardId))
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建奖励数据失败", string.format("创建奖励数据失败，奖励Id：%d 的奖励数据为空。", RewardId))
     return
   end
   return {
@@ -190,7 +226,6 @@ local function CreateRewardData(RewardId)
     ResourceRewardDataArray = CreateResourceRewardDataArray(Rewards.Resources)
   }
 end
-
 local function GetPartyTopicState(PartyTopic, LastPartyTopic, ConditionData, ConsumeData)
   if PartyTopic:IsLocked() then
     if LastPartyTopic and LastPartyTopic:IsCompleted() == false then
@@ -218,13 +253,12 @@ local function GetPartyTopicState(PartyTopic, LastPartyTopic, ConditionData, Con
   end
   return EPartyTopicState.None
 end
-
 local function CreatePartyTopicData(CharacterId, PartyTopicLevel, PartyTopicId)
   local Avatar = GWorld:GetAvatar()
   local PartyTopic = Avatar:GetPartyTopic(CharacterId, PartyTopicLevel)
-  assert(PartyTopic, string.format("Character: %d PartyTopicLevel: %d \231\154\132 PartyTopic \228\184\141\229\173\152\229\156\168\227\128\130", CharacterId, PartyTopicLevel))
+  assert(PartyTopic, string.format("Character: %d PartyTopicLevel: %d 的 PartyTopic 不存在。", CharacterId, PartyTopicLevel))
   local NativePartyTopicData = DataMgr.PartyTopic[PartyTopicId]
-  assert(NativePartyTopicData, string.format("PartyTopic: %d \228\184\141\229\173\152\229\156\168\227\128\130", PartyTopicId))
+  assert(NativePartyTopicData, string.format("PartyTopic: %d 不存在。", PartyTopicId))
   local LastPartyTopic = Avatar:GetPartyTopic(CharacterId, PartyTopicLevel - 1)
   local ConditionData = CreateConditionData(NativePartyTopicData.ConditionId)
   local ConsumeData = CreateConsumeData(NativePartyTopicData.PartyTopicConsume)
@@ -247,10 +281,9 @@ local function CreatePartyTopicData(CharacterId, PartyTopicLevel, PartyTopicId)
     StorylinePath = NativePartyTopicData.PartyTopicTalkId
   }
 end
-
 local function CreatePartyTopicDataArray(CharacterId, TopicIdArray)
   if not TopicIdArray then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\229\136\155\229\187\186\233\130\128\231\186\166\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\233\130\128\231\186\166Id\230\149\176\231\187\132\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "创建邀约数据失败", "创建邀约数据失败，邀约Id数组为空。")
     return
   end
   local PartyTopicDataArray = {}
@@ -262,16 +295,13 @@ local function CreatePartyTopicDataArray(CharacterId, TopicIdArray)
   end
   return PartyTopicDataArray
 end
-
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:SetEntertainmentUI(EntertainmentUI)
   self.EntertainmentUI = EntertainmentUI
 end
-
 function M:OpenPanel(DisplayTabIndex, AudioObj)
   DisplayTabIndex = DisplayTabIndex or 1
   if self:IsPanelOpened() then
@@ -283,7 +313,6 @@ function M:OpenPanel(DisplayTabIndex, AudioObj)
   self:PlayAnimation(self.In)
   AudioManager(AudioObj):PlayUISound(AudioObj, "event:/ui/common/invite_section_select_show", "EntertainmentTopicDetail", nil)
 end
-
 function M:ClosePanel(OnPanelClosed, AudioObj)
   if not self:IsPanelOpened() then
     return
@@ -294,14 +323,12 @@ function M:ClosePanel(OnPanelClosed, AudioObj)
   if OnPanelClosed then
     function self.OnPanelClosed()
       OnPanelClosed()
-      
       self:UnbindFromAnimationFinished(self.Out, {
         self,
         self.OnPanelClosed
       })
       self.OnPanelClosed = nil
     end
-    
     self:BindToAnimationFinished(self.Out, {
       self,
       self.OnPanelClosed
@@ -311,14 +338,12 @@ function M:ClosePanel(OnPanelClosed, AudioObj)
   self.Badge:ClosePanel()
   AudioManager(AudioObj):SetEventSoundParam(AudioObj, "EntertainmentTopicDetail", {ToEnd = 1})
 end
-
 function M:IsPanelOpened()
   return self.bIsOpened
 end
-
 function M:SetPartyTopic(CharacterData)
   if not CharacterData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\174\190\231\189\174\233\130\128\231\186\166\229\164\177\232\180\165\239\188\140\232\167\146\232\137\178\230\149\176\230\141\174\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "设置邀约失败", "设置邀约失败，角色数据为空。")
     return
   end
   self.CharacterData = CharacterData
@@ -327,13 +352,12 @@ function M:SetPartyTopic(CharacterData)
     local PartyTopicData = self.PartyTopicDataArray[i]
     if PartyTopicData then
       TopicTab:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-      TopicTab:EnableReddot(PartyTopicData.State == EPartyTopicState.CanUnlockPartyTopic or PartyTopicData.State == EPartyTopicState.CanStartPartyTopic)
+      TopicTab:EnableReddot(PartyTopicData.State == EPartyTopicState.CanUnlockPartyTopic or PartyTopicData.State == EPartyTopicState.CanStartPartyTopic or PartyTopicData.State == EPartyTopicState.RedeemResource)
     else
       TopicTab:SetVisibility(ESlateVisibility.Collapsed)
     end
   end
 end
-
 function M:RefreshPartyTopic()
   if self.CharacterData == nil then
     return
@@ -343,7 +367,6 @@ function M:RefreshPartyTopic()
   self:SetTab(nil)
   self:SetTab(CurrentTabIndex)
 end
-
 function M:SwitchUpTab()
   local NewTabIndex = math.max(1, self.CurrentTabIndex - 1)
   if NewTabIndex == self.CurrentTabIndex then
@@ -351,7 +374,6 @@ function M:SwitchUpTab()
   end
   self:SetTab(NewTabIndex)
 end
-
 function M:SwitchDownTab()
   local NewTabIndex = math.min(#self.PartyTopicDataArray, self.CurrentTabIndex + 1)
   if NewTabIndex == self.CurrentTabIndex then
@@ -359,7 +381,6 @@ function M:SwitchDownTab()
   end
   self:SetTab(NewTabIndex)
 end
-
 function M:SetTab(NewTabIndex)
   if self.CurrentTabIndex == NewTabIndex then
     return
@@ -384,7 +405,6 @@ function M:SetTab(NewTabIndex)
     self.EnableButton = nil
   end
 end
-
 function M:GetState()
   local CurrentTabIndex = self.CurrentTabIndex
   local PartyTopicData = self.PartyTopicDataArray[CurrentTabIndex]
@@ -394,53 +414,43 @@ function M:GetState()
     return nil
   end
 end
-
 function M:BindOnPanelClosed(OnPanelClosed)
   self.OnPanelClosed = OnPanelClosed
 end
-
 function M:ExecuteOnPanelClosed()
   if self.OnPanelClosed then
     self.OnPanelClosed()
   end
 end
-
 function M:BindOnGotReward(OnGotReward)
   self.OnGotReward = OnGotReward
 end
-
 function M:ExecuteOnGotReward()
   if self.OnGotReward then
     self.OnGotReward()
   end
 end
-
 function M:ExecuteOnUnlockMemory(MemoryName, MemoryDescription, MemoryIconPath)
   if self.OnUnlockMemory then
     self.OnUnlockMemory(MemoryName, MemoryDescription, MemoryIconPath)
   end
 end
-
 function M:BindOnDisplayMemory(OnDisplayMemory)
   self.OnDisplayMemory = OnDisplayMemory
 end
-
 function M:ExecuteOnDisplayMemory(MemoryName, MemoryDescription, MemoryIconPath)
   if self.OnDisplayMemory then
     self.OnDisplayMemory(MemoryName, MemoryDescription, MemoryIconPath)
   end
 end
-
 function M:BindOnEnterInvitation(OnEnterInvitation)
   self.OnEnterInvitation = OnEnterInvitation
 end
-
 function M:ExecuteOnEnterInvitation(CharacterId, TopicLevel, bIsReview)
   if self.OnEnterInvitation then
     self.OnEnterInvitation(CharacterId, TopicLevel, bIsReview)
   end
 end
-
 function M:Initialize(Initializer)
   self.UnlockCostText = GText("UI_Cost_For_Unlock")
   self.UnlockConditionText = GText("UI_Unlock_Condition")
@@ -457,7 +467,6 @@ function M:Initialize(Initializer)
   self.CurrentTabIndex = nil
   self.TopicButtonClickedSound = "event:/ui/common/click_btn_confirm"
 end
-
 function M:Construct()
   DebugPrint("PartyTopicPanel Construct")
   self.Text_Cost:SetText(self.UnlockCostText)
@@ -494,7 +503,6 @@ function M:Construct()
     self.HandleOnOutAnimationFinished
   })
 end
-
 function M:Destruct()
   self:UnbindFromAnimationStarted(self.In, {
     self,
@@ -505,11 +513,10 @@ function M:Destruct()
     self.HandleOnOutAnimationFinished
   })
 end
-
 function M:HandlePartyTopicStateTransition()
   local PartyTopicData = self.PartyTopicDataArray[self.CurrentTabIndex]
   if not PartyTopicData or PartyTopicData.State == EPartyTopicState.None then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\175\157\233\162\152\231\138\182\230\128\129\230\151\160\230\149\136\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "设置话题状态失败", "话题状态无效。")
   elseif PartyTopicData.State == EPartyTopicState.RedeemResource then
     self:HandleOnExchangeLowLevelPartyTopic(PartyTopicData)
   elseif PartyTopicData.State == EPartyTopicState.CanUnlockPartyTopic then
@@ -520,7 +527,6 @@ function M:HandlePartyTopicStateTransition()
     self:HandleOnReviewPartyTopic(PartyTopicData)
   end
 end
-
 function M:HandleOnExchangeLowLevelPartyTopic(PartyTopicData)
   local ItemData = PartyTopicData.ConsumeData.ResourceConsumeDataArray
   local Avatar = GWorld:GetAvatar()
@@ -554,12 +560,10 @@ function M:HandleOnExchangeLowLevelPartyTopic(PartyTopicData)
   end
   UIManager(self):ShowCommonPopupUI(100122, ItemExchangeTable)
 end
-
 function M:HandleOnUnlockMemory(MemoryName, MemoryDescription, MemoryIconPath)
   self.Badge:SetMemory(MemoryName, MemoryDescription, MemoryIconPath)
   self.Badge:OpenPanel(true)
 end
-
 function M:HandleOnSetMemory(bDisplayMemory, MemoryName, MemoryDescription, MemoryIconPath)
   self.Badge:ClosePanel()
   if bDisplayMemory then
@@ -570,7 +574,6 @@ function M:HandleOnSetMemory(bDisplayMemory, MemoryName, MemoryDescription, Memo
     self.Badge:OpenPanel(false)
   end
 end
-
 function M:HandleOnUnlockPartyTopic(PartyTopicData)
   if self.EntertainmentUI then
     self.EntertainmentUI:SetInteractionEnabled(false)
@@ -583,13 +586,12 @@ function M:HandleOnUnlockPartyTopic(PartyTopicData)
     self:HandleOnPartyTopicUnlocked(Ret, PartyTopicData)
   end)
 end
-
 function M:HandleOnPartyTopicUnlocked(Ret, PartyTopicData)
   if ErrorCode:Check(Ret) == false then
     return
   end
   local TopicTab = self.TopicTabArray[self.CurrentTabIndex]
-  TopicTab:EnableReddot(PartyTopicData.State == EPartyTopicState.CanUnlockPartyTopic or PartyTopicData.State == EPartyTopicState.CanStartPartyTopic)
+  TopicTab:EnableReddot(PartyTopicData.State == EPartyTopicState.CanUnlockPartyTopic or PartyTopicData.State == EPartyTopicState.CanStartPartyTopic or PartyTopicData.State == EPartyTopicState.RedeemResource)
   self:RefreshPartyTopic()
   EventManager:FireEvent(EventID.OnGotTopicReward)
   self:ExecuteOnGotReward()
@@ -597,26 +599,22 @@ function M:HandleOnPartyTopicUnlocked(Ret, PartyTopicData)
     self:UnlockMemory(PartyTopicData)
   end, self, false)
 end
-
 function M:HandleOnStartPartyTopic(PartyTopicData)
   self:ExecuteInvitation(PartyTopicData, false)
 end
-
 function M:HandleOnReviewPartyTopic(PartyTopicData)
   self:ExecuteInvitation(PartyTopicData, true)
 end
-
 function M:HandleOnInAnimationStarted()
   self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:HandleOnOutAnimationFinished()
   self:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:SetState(State)
+  self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if State == EPartyTopicState.None then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\174\190\231\189\174\231\138\182\230\128\129\229\164\177\232\180\165\239\188\140\231\138\182\230\128\129\230\151\160\230\149\136\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "设置状态失败", "设置状态失败，状态无效。")
   elseif State == EPartyTopicState.NotMeetLastPartyTopic then
     self.Switch_Type:SetActiveWidgetIndex(0)
     self.Text_Lack:SetText(self.NotMeetLastPartyTopic)
@@ -630,21 +628,23 @@ function M:SetState(State)
     self.Switch_Type:SetActiveWidgetIndex(1)
     self.Text_Continue:SetText(self.RedeemResourceText)
     self.EnableButton = self.Btn_Continue
+    self.Reddot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   elseif State == EPartyTopicState.CanUnlockPartyTopic then
     self.Switch_Type:SetActiveWidgetIndex(2)
     self.Text_Unlock:SetText(self.UnlockPartyTopicText)
     self.EnableButton = self.Btn_Unlock
+    self.Reddot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   elseif State == EPartyTopicState.CanStartPartyTopic then
     self.Switch_Type:SetActiveWidgetIndex(2)
     self.Text_Unlock:SetText(self.StartPartyTopicText)
     self.EnableButton = self.Btn_Unlock
+    self.Reddot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   elseif State == EPartyTopicState.CanReviewPartyTopic then
     self.Switch_Type:SetActiveWidgetIndex(1)
     self.Text_Continue:SetText(self.ReviewPartyTopicText)
     self.EnableButton = self.Btn_Continue
   end
 end
-
 function M:SetCondition(ConditionData, bIsRewardGot)
   if not ConditionData or bIsRewardGot then
     self.Condition:SetVisibility(ESlateVisibility.Collapsed)
@@ -654,15 +654,13 @@ function M:SetCondition(ConditionData, bIsRewardGot)
   self.List_Condition:ClearListItems()
   self:SetConditionDataMap(ConditionData.ConditionDataMap)
 end
-
 function M:SetConditionDataMap(ConditionDataMap)
   if not ConditionDataMap then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\174\190\231\189\174\230\157\161\228\187\182\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\230\157\161\228\187\182\230\149\176\230\141\174\228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, InviteLogType, "设置条件数据失败", "设置条件数据失败，条件数据为空。")
     return
   end
   self:AddQuestChainConditionList(ConditionDataMap.QuestChainConditionDataArray)
 end
-
 function M:AddQuestChainConditionList(QuestChainConditionDataArray)
   if not QuestChainConditionDataArray then
     return
@@ -672,7 +670,6 @@ function M:AddQuestChainConditionList(QuestChainConditionDataArray)
     self.List_Condition:AddItem(QuestChainConditionItem)
   end
 end
-
 function M:SetConsume(ConsumeData, bIsRewardGot)
   if not ConsumeData or bIsRewardGot then
     self.Cost:SetVisibility(ESlateVisibility.Collapsed)
@@ -681,7 +678,6 @@ function M:SetConsume(ConsumeData, bIsRewardGot)
   self.Cost:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:SetConsumeList(ConsumeData.ResourceConsumeDataArray)
 end
-
 function M:SetConsumeList(ResourceConsumeDataArray)
   local ResourceConsumeItemArray = {}
   for _, ResourceConsumeData in pairs(ResourceConsumeDataArray) do
@@ -693,7 +689,6 @@ function M:SetConsumeList(ResourceConsumeDataArray)
     self.List_Material:AddItem(ResourceConsumeItem)
   end
 end
-
 function M:SetReward(RewardData, bIsRewardGot)
   if not RewardData then
     self.Reward:SetVisibility(ESlateVisibility.Collapsed)
@@ -702,7 +697,6 @@ function M:SetReward(RewardData, bIsRewardGot)
   self.Reward:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:SetRewardList(RewardData.ResourceRewardDataArray, bIsRewardGot)
 end
-
 function M:SetRewardList(ResourceRewardDataArray, bIsRewardGot)
   local ResourceRewardItemArray = {}
   for _, ResourceRewardData in pairs(ResourceRewardDataArray) do
@@ -715,7 +709,6 @@ function M:SetRewardList(ResourceRewardDataArray, bIsRewardGot)
     self.List_Reward:AddItem(Item)
   end
 end
-
 function M:SetMemory(PartyTopicData)
   local bDisplayMemory = false
   if PartyTopicData.State == EPartyTopicState.CanStartPartyTopic then
@@ -725,14 +718,12 @@ function M:SetMemory(PartyTopicData)
   end
   self:HandleOnSetMemory(bDisplayMemory, PartyTopicData.MemoryName, PartyTopicData.MemoryDescription, PartyTopicData.MemoryIconPath)
 end
-
 function M:UnlockMemory(PartyTopicData)
   if PartyTopicData.State ~= EPartyTopicState.CanStartPartyTopic then
     return
   end
   self:HandleOnUnlockMemory(PartyTopicData.MemoryName, PartyTopicData.MemoryDescription, PartyTopicData.MemoryIconPath)
 end
-
 function M:CreateQuestChainConditionItem(QuestChainData)
   local ConditionItemClass = LoadClass("/Game/UI/WBP/Entertainment/Widget/BP_Entertainment_ConditionItem.BP_Entertainment_ConditionItem_C")
   local ConditionItem = NewObject(ConditionItemClass)
@@ -743,21 +734,18 @@ function M:CreateQuestChainConditionItem(QuestChainData)
   ConditionItem.QuestChainId = QuestChainData.QuestChainId
   return ConditionItem
 end
-
 function M:CreateConsumeItem(ResourceConsumeData)
   local ConsumeItem = self:CreateResourceItem(ResourceConsumeData.ResourceData)
   ConsumeItem.NeedCount = ResourceConsumeData.NeedCount
   ConsumeItem.Count = ResourceConsumeData.Count
   return ConsumeItem
 end
-
 function M:CreateRewardItem(ResourceRewardData, bIsRewardGot)
   local RewardItem = self:CreateResourceItem(ResourceRewardData.ResourceData)
   RewardItem.Count = ResourceRewardData.Count
   RewardItem.bHasGot = bIsRewardGot
   return RewardItem
 end
-
 function M:CreateResourceItem(ResourceData)
   local ResourceItem = NewObject(UIUtils.GetCommonItemContentClass())
   ResourceItem.Id = ResourceData.Id
@@ -772,18 +760,15 @@ function M:CreateResourceItem(ResourceData)
   }
   return ResourceItem
 end
-
 function M:BindOnTipStateChange(Obj, Func)
   self.OnTipStateChange = Func
   self.OnTipStateChangeObj = Obj
 end
-
 function M:OnResourceItemTipChange(bIsOpen)
   if self.OnTipStateChange then
     self.OnTipStateChange(self.OnTipStateChangeObj, bIsOpen)
   end
 end
-
 function M:SortResourceItem(ResourceItemArray)
   table.sort(ResourceItemArray, function(a, b)
     if a.Rarity == b.Rarity then
@@ -793,9 +778,7 @@ function M:SortResourceItem(ResourceItemArray)
     end
   end)
 end
-
 function M:ExecuteInvitation(PartyTopicData, bIsReview)
   self:ExecuteOnEnterInvitation(PartyTopicData.CharacterId, PartyTopicData.Level, bIsReview)
 end
-
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Text_Close:SetText(GText("UI_Armory_ClickEmpty"))
   self.Key_Close:CreateCommonKey({
@@ -24,7 +23,6 @@ function M:Construct()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/strength_success", nil, nil)
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   M.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
@@ -33,7 +31,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:SetFocus()
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if self.IsGamepadInput then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
@@ -41,7 +38,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   if UKismetInputLibrary.InputEvent_IsRepeat(InputEvent) then
@@ -55,7 +51,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -66,7 +61,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnLoaded(Params)
   M.Super.OnLoaded(self, Params)
   Params = Params or {}
@@ -76,7 +70,6 @@ function M:OnLoaded(Params)
   self:UpdataAttrListView(Params.Attrs, Params.ComparedAttrs)
   self:PlayInAnim()
 end
-
 function M:UpdateUpgradeInfo(Params)
   local Icon = UIUtils.LoadSkillIconById(Params.SkillId)
   local IconDynaMaterial = self.Icon_CharSkill:GetDynamicMaterial()
@@ -96,7 +89,6 @@ function M:UpdateUpgradeInfo(Params)
     self.Text_Intensify_Level:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdataAttrListView(Attrs, ComparedAttrs)
   self.Attrs = Attrs
   self.ComparedAttrs = ComparedAttrs
@@ -117,7 +109,6 @@ function M:UpdataAttrListView(Attrs, ComparedAttrs)
     end
   end
 end
-
 function M:PlayInAnim()
   self.CannotClose = true
   self.Btn_Close:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -125,33 +116,27 @@ function M:PlayInAnim()
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/strength_success_next_page", nil, nil)
 end
-
 function M:SequenceEvent_PlayAttrAnim()
   self.List_Atrr:RequestPlayEntriesAnim()
 end
-
 function M:OnInAnimationFinished()
   self.CannotClose = false
   self.Btn_Close:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnCloseBtnClicked()
   if self.CannotClose then
     return
   end
   self:PlayOutAnim()
 end
-
 function M:PlayOutAnim()
   self.CannotClose = true
   self:PlayAnimation(self.Out)
 end
-
 function M:OnOutAnimationFinished()
   self:Close()
   if self.OnClosedCallbackFunc then
     self.OnClosedCallbackFunc(self.OnClosedCallbackObj)
   end
 end
-
 return M

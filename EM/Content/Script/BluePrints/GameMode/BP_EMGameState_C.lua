@@ -10,13 +10,12 @@ BP_EMGameState_C._components = {
   "BluePrints.Combat.BattleLogic.MechanismFirstSeenComp",
   "BluePrints.Combat.BattleLogic.NavLinkGroupMgr",
   "BluePrints.GameMode.Components.ConditionTriggerComponent",
-  "BluePrints.UI.WBP.Chat.EMGameStateChatComp"
+  "BluePrints.UI.WBP.Chat.EMGameStateChatComp",
+  "BluePrints.GameMode.GameStateComponents.HardBossDgComponent"
 }
-
 function BP_EMGameState_C:Initialize()
   self.LastDungeonEvent = {}
 end
-
 function BP_EMGameState_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self.DebugMonster = nil
@@ -40,25 +39,22 @@ function BP_EMGameState_C:ReceiveBeginPlay()
   self:AddSceneMgrEvent()
   self:InitPickupNiagaraPath()
   self.AudioCompCacheNum = 0
+  self:SpawnClientEventManager()
 end
-
 function BP_EMGameState_C:OnLoadingPanelClosed()
   self.LoadingClosed = true
 end
-
 function BP_EMGameState_C:InitGameStateInfo()
   self.HardBossInfo = {}
   self:InitGameStateInterface()
   self:InitDungeonUIInfo()
 end
-
 function BP_EMGameState_C:InitDungeonUIInfo()
   if IsDedicatedServer(self) then
     return
   end
   self:OnRep_DungeonUIInfo()
 end
-
 function BP_EMGameState_C:OnGameModeReady_Lua()
   if not IsAuthority(self) then
     return
@@ -70,21 +66,18 @@ function BP_EMGameState_C:OnGameModeReady_Lua()
     DSEntity:HookGameModeReady(GameMode)
   end
 end
-
 function BP_EMGameState_C:SetEndPointActor(Actor)
   if not IsValid(Actor) then
     return
   end
   self.EndPointActor = Actor
 end
-
 function BP_EMGameState_C:AddCoverInfo(CoverInfo)
   if not IsValid(CoverInfo) then
     return
   end
   self.CoverMap:Add(CoverInfo.Eid, CoverInfo)
 end
-
 function BP_EMGameState_C:AddDefBaseInfo(DefBase)
   if nil == DefBase then
     return
@@ -95,7 +88,6 @@ function BP_EMGameState_C:AddDefBaseInfo(DefBase)
   if Length <= 0 then
   end
 end
-
 function BP_EMGameState_C:AddHijackPointInfo(HijackPointInfo)
   if not IsValid(HijackPointInfo) then
     return
@@ -104,7 +96,7 @@ function BP_EMGameState_C:AddHijackPointInfo(HijackPointInfo)
     self.HijackPathInfo = {}
   end
   if HijackPointInfo.DisplayName == "" or 0 == HijackPointInfo.PathId or 0 == HijackPointInfo.PathPointIndex then
-    GWorld.logger.error("HijackPathInfo\230\149\176\230\141\174\233\148\153\232\175\175, \232\175\183\230\163\128\230\159\165\227\128\130DisplayName: " .. HijackPointInfo.DisplayName .. "   PathId: " .. HijackPointInfo.PathId .. " PathPointIndex: " .. HijackPointInfo.PathPointIndex)
+    GWorld.logger.error("HijackPathInfo数据错误, 请检查。DisplayName: " .. HijackPointInfo.DisplayName .. "   PathId: " .. HijackPointInfo.PathId .. " PathPointIndex: " .. HijackPointInfo.PathPointIndex)
     return
   end
   if self.HijackPathInfo[HijackPointInfo.PathId] then
@@ -114,7 +106,6 @@ function BP_EMGameState_C:AddHijackPointInfo(HijackPointInfo)
     self.HijackPathInfo[HijackPointInfo.PathId][HijackPointInfo.PathPointIndex] = HijackPointInfo
   end
 end
-
 function BP_EMGameState_C:AddTargetPointInfo(TargetPointInfo)
   if not IsValid(TargetPointInfo) then
     return
@@ -133,7 +124,6 @@ function BP_EMGameState_C:AddTargetPointInfo(TargetPointInfo)
     FallAttackObject.FallAttackPoint = TargetPointInfo:K2_GetActorLocation()
   end
 end
-
 function BP_EMGameState_C:AddQuestArea(TargetArea)
   if not IsValid(TargetArea) then
     return
@@ -146,30 +136,26 @@ function BP_EMGameState_C:AddQuestArea(TargetArea)
   end
   self.QuestArea[TargetArea.DisplayName] = TargetArea
 end
-
 function BP_EMGameState_C:AddMonsterSpawnPointInfo(MonsterSpawnPoint)
   if not IsValid(MonsterSpawnPoint) then
     return
   end
   self.MonsterSpawnPointArray:AddUnique(MonsterSpawnPoint)
 end
-
 function BP_EMGameState_C:AddFallTriggerInfo(FallTrigger)
   if not IsValid(FallTrigger) then
-    DebugPrint("FallTrigger \228\184\141\229\173\152\229\156\168")
+    DebugPrint("FallTrigger 不存在")
     return
   end
   self.FallTriggersArray:Add(FallTrigger)
 end
-
 function BP_EMGameState_C:RemoveFallTriggerInfo(FallTrigger)
   if not IsValid(FallTrigger) then
-    DebugPrint("FallTrigger \228\184\141\229\173\152\229\156\168")
+    DebugPrint("FallTrigger 不存在")
     return
   end
   self.FallTriggersArray:RemoveItem(FallTrigger)
 end
-
 function BP_EMGameState_C:CheckActorNeedCache()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if GameInstance.IsTakeRecorderCapturing then
@@ -177,22 +163,18 @@ function BP_EMGameState_C:CheckActorNeedCache()
   end
   return true
 end
-
 function BP_EMGameState_C:CheckMonsterNeedCache(MonsterId)
   return self:CheckActorNeedCache()
 end
-
 function BP_EMGameState_C:CheckBodyAccessotyNeedCache(AccessoryId)
   return self:CheckActorNeedCache()
 end
-
 function BP_EMGameState_C:GetTargetPoint(DisplayName)
   if "" == DisplayName or nil == DisplayName then
     return
   end
   return self.TargetPointMap:FindRef(DisplayName)
 end
-
 function BP_EMGameState_C:GetTargetPointLoc(DisplayName)
   if "" == DisplayName or nil == DisplayName then
     return
@@ -201,7 +183,6 @@ function BP_EMGameState_C:GetTargetPointLoc(DisplayName)
     return self.TargetPointMap:FindRef(DisplayName):K2_GetActorLocation()
   end
 end
-
 function BP_EMGameState_C:OnNpcLoaded_Lua(NpcId, NpcCharacter)
   local T = self:GetNpcInfoAsyncCallbackTable(NpcId)
   for _, cb in pairs(T) do
@@ -211,7 +192,6 @@ function BP_EMGameState_C:OnNpcLoaded_Lua(NpcId, NpcCharacter)
   end
   self:EmptyNpcInfoAsyncCallbackTable(NpcId)
 end
-
 function BP_EMGameState_C:AddNpcInfo_Lua(NpcCharacter)
   local NpcData = DataMgr.Npc[NpcCharacter.UnitId]
   DebugPrint("AddNpcInfo_Lua:", NpcCharacter.UnitId)
@@ -223,7 +203,6 @@ function BP_EMGameState_C:AddNpcInfo_Lua(NpcCharacter)
     NpcCharacter:SetSitPoseWithInteractiveAndNoDown()
   end
 end
-
 function BP_EMGameState_C:RemoveGetNpcInfoAsyncDelegate(InNpcId, CallBack)
   if CallBack then
     local T = self:GetNpcInfoAsyncCallbackTable(InNpcId)
@@ -231,46 +210,20 @@ function BP_EMGameState_C:RemoveGetNpcInfoAsyncDelegate(InNpcId, CallBack)
     T[CallBack] = nil
   end
 end
-
 function BP_EMGameState_C:GetNpcInfoAsyncCallbackTable(InNpcId)
   local FuncName = NpcLoadedCallbackFuncName .. InNpcId
   self[FuncName] = self[FuncName] or {}
   return self[FuncName]
 end
-
 function BP_EMGameState_C:EmptyNpcInfoAsyncCallbackTable(InNpcId)
   local FuncName = NpcLoadedCallbackFuncName .. InNpcId
   self[FuncName] = {}
 end
-
-function BP_EMGameState_C:ChangeNpcInfoByGender(NpcId)
-  local NpcData = DataMgr.Npc[NpcId]
-  if not NpcData then
-    return nil
-  end
-  local Avatar = GWorld:GetAvatar()
-  if not Avatar then
-    return nil
-  end
-  if NpcData.SwitchPlayer == "Player" then
-    if NpcData.Gender == Avatar.Sex then
-      return NpcId
-    else
-      return NpcData.RelateNpcId
-    end
-  elseif NpcData.SwitchPlayer == "EXPlayer" then
-    if NpcData.Gender == Avatar.WeitaSex then
-      return NpcId
-    else
-      return NpcData.RelateNpcId
-    end
-  else
-    return NpcId
-  end
-end
-
 function BP_EMGameState_C:GetNpcInfoAsync(InNpcId, CallBack)
-  local NewInNpcId = self:ChangeNpcInfoByGender(InNpcId) or InNpcId
+  if not InNpcId and CallBack then
+    CallBack(nil)
+  end
+  local NewInNpcId = URuntimeCommonFunctionLibrary.GetNPCIdByGender(self, InNpcId)
   if NewInNpcId ~= InNpcId then
     DebugPrint("ChangeNpcId", NewInNpcId, " : ", InNpcId)
     InNpcId = NewInNpcId
@@ -289,15 +242,13 @@ function BP_EMGameState_C:GetNpcInfoAsync(InNpcId, CallBack)
     CallBack(nil)
   end
 end
-
 function BP_EMGameState_C:CanUnloadNavMeshLevel()
   return Const.CanUnloadNavMeshLevel
 end
-
 function BP_EMGameState_C:OnRep_GameModeState_Lua()
 end
-
 function BP_EMGameState_C:OnRep_GuideEids()
+  DebugPrint("DebugGuideEid OnRep_GuideEids")
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local SceneMgrComponent = GameInstance:GetSceneManager()
   if IsValid(SceneMgrComponent) then
@@ -308,32 +259,29 @@ function BP_EMGameState_C:OnRep_GuideEids()
     self.OnRepEidsDelegate:Broadcast(self)
   end
 end
-
 function BP_EMGameState_C:OnRep_DungeonUIState()
   EventManager:FireEvent(EventID.OnDungeonUIStateUpdated)
 end
-
 function BP_EMGameState_C:RealShowLargeCountDownUI(Count, bShowZeroText)
   EventManager:FireEvent(EventID.OnNotifyShowLargeCountDown, Count, bShowZeroText)
 end
-
+function BP_EMGameState_C:RealCommonCountDownUI(Count, bShowZeroText, CountDownSound, LastCountDownSound)
+  EventManager:FireEvent(EventID.OnNotifyCommonCountDown, Count, bShowZeroText, CountDownSound, LastCountDownSound)
+end
 function BP_EMGameState_C:GetSurvivalValue()
   if self.GameModeType == "SurvivalMini" or self.GameModeType == "SurvivalMiniPro" then
     return self.SurvivalMiniValue
   end
   return self.SurvivalValue
 end
-
 function BP_EMGameState_C:AddEnergySupplyCount(ChangeValue)
   self:SetEnergySupplyCount(self.EnergySupplyCount + ChangeValue)
   if GWorld:IsStandAlone() then
     self:OnRep_EnergySupplyCount()
   end
 end
-
 function BP_EMGameState_C:MulticastAddSurvivalValue_Lua(ChangeValue)
 end
-
 function BP_EMGameState_C:ShowInteractedToast_Lua(PlayerEid)
   if not IsClient(self) then
     return
@@ -349,41 +297,32 @@ function BP_EMGameState_C:ShowInteractedToast_Lua(PlayerEid)
     UIManager:ShowUITip(UIConst.Tip_CommonTop, string.format(GText("DUNGEON_SURVIVALPRO_126"), PlayerState.PlayerName))
   end
 end
-
 function BP_EMGameState_C:GetSurvialTime()
   return self.CumulativeSurvivalTime
 end
-
 function BP_EMGameState_C:OnRep_CumulativeSurvivalTime()
   EventManager:FireEvent(EventID.OnRepSurvivalTime, self.CumulativeSurvivalTime)
 end
-
 function BP_EMGameState_C:OnRep_SabotageCountDownTime()
   EventManager:FireEvent(EventID.OnRepSabotageCountDownTime)
 end
-
 function BP_EMGameState_C:OnRep_EnergySupplyCount()
   EventManager:FireEvent(EventID.OnRepEnergySupplyCount)
 end
-
 function BP_EMGameState_C:OnRep_SurvivalMiniValue()
   EventManager:FireEvent(EventID.OnRepSurvivalMiniValue, self.SurvivalMiniValue)
 end
-
 function BP_EMGameState_C:OnRep_ExterminateKilledNum()
   DebugPrint("BP_EMGameState_C:OnRep_ExterminateKilledNum", self.ExterminateKilledNum)
   EventManager:FireEvent(EventID.OnRepExterminateKilledNum)
 end
-
 function BP_EMGameState_C:OnRep_TrialKilledNum()
   DebugPrint("BP_EMGameState_C:OnRep_TrialKilledNum", self.TrialKilledNum)
   EventManager:FireEvent(EventID.OnRepTrialKilledNum)
 end
-
 function BP_EMGameState_C:OnRep_CaptureRecoveryTime()
   EventManager:FireEvent(EventID.OnRepCaptureRecoveryTime)
 end
-
 function BP_EMGameState_C:AddRougeBattleCount(Value)
   if not self.RougeBattleCount then
     self.RougeBattleCount = 0
@@ -391,13 +330,11 @@ function BP_EMGameState_C:AddRougeBattleCount(Value)
   self.RougeBattleCount = self.RougeBattleCount + Value
   EventManager:FireEvent(EventID.OnRepRougeBattleCount)
 end
-
 function BP_EMGameState_C:SetRougeBattleNums(Count, MaxNum)
   self.RougeBattleCount = Count or 0
   self.RougeBattleMaxNum = MaxNum or self.RougeBattleMaxNum
   EventManager:FireEvent(EventID.OnRepRougeBattleCount)
 end
-
 function BP_EMGameState_C:SetRougeBattleMaxNum(Value, DisplayText)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:RefreshRougeBattleUI(true, false)
@@ -407,10 +344,9 @@ function BP_EMGameState_C:SetRougeBattleMaxNum(Value, DisplayText)
     RougeBattleUI:InitRougeBattleDisplayText(DisplayText)
     RougeBattleUI:OnRepRougeBattleCount()
   else
-    ScreenPrint("BP_EMGameState_C:SetRougeBattleMaxNum \230\137\190\228\184\141\229\136\176\232\130\137\233\184\189ui")
+    ScreenPrint("BP_EMGameState_C:SetRougeBattleMaxNum 找不到肉鸽ui")
   end
 end
-
 function BP_EMGameState_C:TryGetNpc(NpcId, Callback)
   local NPC = self:GetNpcInfo()
   if NPC then
@@ -431,29 +367,49 @@ function BP_EMGameState_C:TryGetNpc(NpcId, Callback)
   end
   return nil, bHasCreatingNpc
 end
-
-function BP_EMGameState_C:RegisterMechanism(Mechanism, UnitRealType)
-  if nil == Mechanism then
+function BP_EMGameState_C:RemoveMechanismRegionOnline(UniqueId, Reason)
+  print(_G.LogTag, "LXZ RequestDeadRegionOnlineItem4444")
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
     return
   end
-  if nil == UnitRealType then
-    UnitRealType = "CombatItemBase"
-  end
-  local MechanismArrayStruct = self.MechanismMap:FindRef(UnitRealType)
-  if nil == MechanismArrayStruct then
-    local _MechanismArrayStruct = FArray()
-    _MechanismArrayStruct:AddItem(Mechanism)
-    self.MechanismMap:Add(UnitRealType, _MechanismArrayStruct)
+  local Mechanism = self.RegionOnlineMechanismMap:FindRef(UniqueId)
+  print(_G.LogTag, "LXZ RequestDeadRegionOnlineItem5555", UniqueId, Mechanism)
+  if Mechanism then
+    print(_G.LogTag, "LXZ RequestDeadRegionOnlineItem6666")
+    Mechanism:EMActorDestroy(Reason)
+    self.RegionOnlineMechanismMap:Remove(UniqueId)
   else
-    MechanismArrayStruct:AddItem(Mechanism)
-  end
-  if Mechanism.ManualItemId and Mechanism.ManualItemId > 0 then
-    self.ManualActiveCombat:Add(Mechanism.ManualItemId, Mechanism)
+    self:AddDeleteRegionMechanism(UniqueId)
   end
 end
-
+function BP_EMGameState_C:FireRegionOnlineMechanismUser(UniqueId, CombatItemBase)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar or not Avatar.IsInRegionOnline then
+    return
+  end
+  print(_G.LogTag, "LXZ HandleMechanism FireRegionOnlineMechanismUser", CombatItemBase:GetName())
+  if not Avatar.Mechanism2User or not Avatar.Mechanism2User[UniqueId] then
+    return
+  end
+  print(_G.LogTag, "LXZ HandleMechanism444", CombatItemBase:GetName())
+  for PointIdx, AvatarEid in pairs(Avatar.Mechanism2User[UniqueId]) do
+    local Eid = CommonUtils.Str2ObjId(AvatarEid)
+    local Player = Avatar:GetBornedChar(Eid)
+    print(_G.LogTag, "LXZ HandleMechanism555", PointIdx, AvatarEid, Player)
+    if Player then
+      local InteractiveComp = CombatItemBase.ChestInteractiveComponent
+      Player:InteractiveMechanism(CombatItemBase.Eid, Player.Eid, InteractiveComp.NextStateId, InteractiveComp.CommonUIConfirmID, true, PointIdx)
+    end
+  end
+end
 function BP_EMGameState_C:DealDungeonVoteResult()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if not GameMode.IsInDungeonVote then
+    self:ShowDungeonError("Vote::: 非投票阶段触发结算投票，丢弃此次结果", Const.DungeonErrorType.DungeonVote, Const.DungeonErrorTitle.Process)
+    return
+  end
+  GameMode.IsInDungeonVote = false
   GameMode:RemoveDungeonEvent("OnDungeonVoteBegin")
   DebugPrint("Vote::: Dungeon Begin Deal Vote Result")
   local BattleNum = 0
@@ -478,19 +434,17 @@ function BP_EMGameState_C:DealDungeonVoteResult()
     GameMode:TriggerPlayerWin(AvatarEids, PlayerEids)
   end
   if 0 == BattleNum then
-    DebugPrint("Vote::: BattleNum = 0 ,\232\167\166\229\143\145\229\137\175\230\156\172\231\187\147\231\174\151")
+    DebugPrint("Vote::: BattleNum = 0 ,触发副本结算")
     GameMode:TriggerDungeonOnEnd(true)
   else
     GameMode:ExecuteNextStepOfDungeonVote()
   end
 end
-
 function BP_EMGameState_C:DealDungeonTicketResult()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:RemoveDungeonEvent("SelectTicket")
   GameMode:ExecuteNextStepOfTicket()
 end
-
 function BP_EMGameState_C:RealShowContinuedPCGuide(IsHide)
   local Visibility = UE4.ESlateVisibility.Visible
   if IsHide then
@@ -501,7 +455,6 @@ function BP_EMGameState_C:RealShowContinuedPCGuide(IsHide)
     GuideInfoPanel:SetVisibility(Visibility)
   end
 end
-
 function BP_EMGameState_C:RealSetContinuedPCGuideVisibility(ActionName, IsHide)
   local GuideInfoPanel = UIManager(self):GetUIObj("BattleMain").Guide_KeyTip
   local Visibility = UE4.ESlateVisibility.Visible
@@ -519,12 +472,11 @@ function BP_EMGameState_C:RealSetContinuedPCGuideVisibility(ActionName, IsHide)
       GuideInfoPanel.Hint04:SetVisibility(Visibility)
     end
   end
-  if "SpiralLeap" == ActionName or "Dodge" == ActionName or "Skill1" == ActionName or "Skill2" == ActionName or "Skill2Attack" == ActionName then
+  if ("SpiralLeap" == ActionName or "Dodge" == ActionName or "Skill1" == ActionName or "Skill2" == ActionName or "Skill2Attack" == ActionName) and CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     local BattleMain = UIManager(self):GetUIObj("BattleMain")
     BattleMain:ShowInstructionInfo(ActionName, IsHide)
   end
 end
-
 function BP_EMGameState_C:RealHideGuideMessage(MessageId, IsExecuteFinish)
   if not MessageId then
     return
@@ -544,7 +496,6 @@ function BP_EMGameState_C:RealHideGuideMessage(MessageId, IsExecuteFinish)
     Guide_Touch:Close()
   end
 end
-
 function BP_EMGameState_C:RealHideHighlightButton()
   if not UIManager(self) then
     return
@@ -556,7 +507,6 @@ function BP_EMGameState_C:RealHideHighlightButton()
     Instruction.Key:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function BP_EMGameState_C:RealShowHighlightButton(SkillType)
   if not UIManager(self) then
     return
@@ -577,7 +527,6 @@ function BP_EMGameState_C:RealShowHighlightButton(SkillType)
     end
   end
 end
-
 function BP_EMGameState_C:RealPlayGuideTextFloatAnimation(MessageId)
   if not UIManager(self) then
     return
@@ -591,14 +540,13 @@ function BP_EMGameState_C:RealPlayGuideTextFloatAnimation(MessageId)
     end
   end
 end
-
 function BP_EMGameState_C:HideUIInScreen(UIPath, IsHide, ShowOrHideNode)
   if IsDedicatedServer(self) and IsAuthority(self) then
-    print(_G.LogTag, "WARNING: \230\152\175\230\156\141\229\138\161\229\153\168,\228\184\141\230\137\167\232\161\140 HideUIInScreen \229\135\189\230\149\176")
+    print(_G.LogTag, "WARNING: 是服务器,不执行 HideUIInScreen 函数")
     return
   end
   if not UIPath then
-    print(_G.LogTag, "ERROR: \232\190\147\229\133\165\231\154\132UI\232\183\175\229\190\132\233\148\153\232\175\175", UIPath)
+    print(_G.LogTag, "ERROR: 输入的UI路径错误", UIPath)
     return
   end
   local Visible = UE4.ESlateVisibility.SelfHitTestInvisible
@@ -645,7 +593,7 @@ function BP_EMGameState_C:HideUIInScreen(UIPath, IsHide, ShowOrHideNode)
     if UIPathes then
       local root_ui = UIManager(self):GetUIObj(UIPathes[1])
       if not root_ui then
-        print(_G.LogTag, "ERROR: \232\190\147\229\133\165\231\154\132UI\232\183\175\229\190\132\233\148\153\232\175\175,\230\178\161\230\156\137\230\137\190\229\136\176\232\175\165UI", UIPath)
+        print(_G.LogTag, "ERROR: 输入的UI路径错误,没有找到该UI", UIPath)
         return
       end
       local len = #UIPathes
@@ -653,7 +601,7 @@ function BP_EMGameState_C:HideUIInScreen(UIPath, IsHide, ShowOrHideNode)
         root_ui = root_ui[UIPathes[i]]
       end
       if not root_ui then
-        print(_G.LogTag, "ERROR: \232\190\147\229\133\165\231\154\132UI\232\183\175\229\190\132\233\148\153\232\175\175,\230\178\161\230\156\137\230\137\190\229\136\176\232\175\165UI", UIPath)
+        print(_G.LogTag, "ERROR: 输入的UI路径错误,没有找到该UI", UIPath)
         return
       end
       DebugPrint("ShowOrHideUINode: GetVisibility", root_ui:GetName(), root_ui:GetVisibility())
@@ -674,14 +622,13 @@ function BP_EMGameState_C:HideUIInScreen(UIPath, IsHide, ShowOrHideNode)
     end
   end
 end
-
 function BP_EMGameState_C:ShowUIAndCloseItAfterCertainTime(UIPath, UIName, Duration, ZOrder)
   if IsDedicatedServer(self) and IsAuthority(self) then
-    print(_G.LogTag, "WARNING: \230\152\175\230\156\141\229\138\161\229\153\168,\228\184\141\230\137\167\232\161\140 ShowUIAndCloseItAfterCertainTime \229\135\189\230\149\176")
+    print(_G.LogTag, "WARNING: 是服务器,不执行 ShowUIAndCloseItAfterCertainTime 函数")
     return nil
   end
   if Duration <= 0 then
-    print(_G.LogTag, "WARNING: Duration \228\184\141\232\131\189\229\176\143\228\186\142\231\173\137\228\186\1420")
+    print(_G.LogTag, "WARNING: Duration 不能小于等于0")
     return nil
   end
   local UI = UIManager(self):LoadUI(UIPath, UIName, ZOrder)
@@ -690,7 +637,6 @@ function BP_EMGameState_C:ShowUIAndCloseItAfterCertainTime(UIPath, UIName, Durat
   end)
   return UI
 end
-
 function BP_EMGameState_C:ReceiveEndPlay(Resaon)
   GWorld.Battle = nil
   GWorld:RemoveGameState(self.GameStateIndex)
@@ -706,22 +652,18 @@ function BP_EMGameState_C:ReceiveEndPlay(Resaon)
   self.OnDelPhantomState:Clear()
   self.Overridden.ReceiveEndPlay(self, Resaon)
 end
-
 function BP_EMGameState_C:AddSceneMgrEvent()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local SceneMgrComponent = GameInstance:GetSceneManager()
   SceneMgrComponent:AddRegionEvent(self:IsInRegion())
 end
-
 function BP_EMGameState_C:RemoveSceneMgrEvent()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local SceneMgrComponent = GameInstance:GetSceneManager()
   SceneMgrComponent:RemoveRegionEvent()
 end
-
 function BP_EMGameState_C:MulticastRealUnknownPickup_Lua(UnknownRewardCount)
 end
-
 function BP_EMGameState_C:OnExploreGroupActive(ExploreId)
   local ExploreGroup = self.ExploreGroupMap:FindRef(ExploreId)
   if not ExploreGroup then
@@ -729,7 +671,6 @@ function BP_EMGameState_C:OnExploreGroupActive(ExploreId)
   end
   ExploreGroup:RealSetExploreGroupStatus(EExploreGroupStatus.EGS_Active)
 end
-
 function BP_EMGameState_C:OnExploreGroupSpecialActive(ExploreId)
   local ExploreGroup = self.ExploreGroupMap:FindRef(ExploreId)
   if not ExploreGroup then
@@ -737,7 +678,6 @@ function BP_EMGameState_C:OnExploreGroupSpecialActive(ExploreId)
   end
   ExploreGroup:RealSetExploreGroupStatus(EExploreGroupStatus.EGS_SpecialActive)
 end
-
 function BP_EMGameState_C:OnExploreGroupDeactive(ExploreId)
   local ExploreGroup = self.ExploreGroupMap:FindRef(ExploreId)
   if not ExploreGroup then
@@ -745,7 +685,6 @@ function BP_EMGameState_C:OnExploreGroupDeactive(ExploreId)
   end
   ExploreGroup:RealSetExploreGroupStatus(EExploreGroupStatus.EGS_Deactive)
 end
-
 function BP_EMGameState_C:OnExploreGroupLimitComplete(ExploreId)
   local ExploreGroup = self.ExploreGroupMap:FindRef(ExploreId)
   if not ExploreGroup then
@@ -753,7 +692,6 @@ function BP_EMGameState_C:OnExploreGroupLimitComplete(ExploreId)
   end
   ExploreGroup:RealSetExploreGroupStatus(EExploreGroupStatus.EGS_LimitComplete)
 end
-
 function BP_EMGameState_C:OnExploreGroupComplete(ExploreId, TotalReward)
   local ExploreGroup = self.ExploreGroupMap:FindRef(ExploreId)
   if not ExploreGroup then
@@ -762,7 +700,6 @@ function BP_EMGameState_C:OnExploreGroupComplete(ExploreId, TotalReward)
   ExploreGroup:RealSetExploreGroupStatus(EExploreGroupStatus.EGS_Complete)
   ExploreGroup:ShowRewardUI(TotalReward)
 end
-
 function BP_EMGameState_C:OnExploreGroupReset(ExploreId)
   local ExploreGroup = self.ExploreGroupMap:FindRef(ExploreId)
   if not ExploreGroup then
@@ -770,7 +707,6 @@ function BP_EMGameState_C:OnExploreGroupReset(ExploreId)
   end
   ExploreGroup:ReceiveOnExploreGroupReset()
 end
-
 function BP_EMGameState_C:GetMaxArchiveID()
   local MaxArchiveID = -1
   for k, v in pairs(self.ManualActiveCombat) do
@@ -780,7 +716,6 @@ function BP_EMGameState_C:GetMaxArchiveID()
   end
   return MaxArchiveID
 end
-
 function BP_EMGameState_C:ArchiveShowFX()
   local MaxArchiveID = self:GetMaxArchiveID()
   for k, v in pairs(self.ManualActiveCombat) do
@@ -795,7 +730,6 @@ function BP_EMGameState_C:ArchiveShowFX()
     end
   end
 end
-
 function BP_EMGameState_C:BackToTempleArchivePoint()
   local MaxActiveArchivePoint
   local MaxArchiveID = -1
@@ -823,7 +757,6 @@ function BP_EMGameState_C:BackToTempleArchivePoint()
   end
   return nil, nil
 end
-
 function BP_EMGameState_C:GetMutiMaxArchiveID(ArchivePointId, PlayerEid)
   local MaxArchiveID = ArchivePointId
   for k, v in pairs(self.ManualActiveCombat) do
@@ -833,7 +766,6 @@ function BP_EMGameState_C:GetMutiMaxArchiveID(ArchivePointId, PlayerEid)
   end
   return MaxArchiveID
 end
-
 function BP_EMGameState_C:ArchiveMutiShowFX(ArchivePoint, PlayerEid)
   local MaxArchiveID = self:GetMutiMaxArchiveID(ArchivePoint.ArchiveID, PlayerEid)
   DebugPrint("==============================================LXZ ArchiveMutiShowFX=====MaxArchiveID", MaxArchiveID)
@@ -849,7 +781,6 @@ function BP_EMGameState_C:ArchiveMutiShowFX(ArchivePoint, PlayerEid)
     end
   end
 end
-
 function BP_EMGameState_C:BackToPartyArchivePoint(Player)
   local ActiveArchivePoint
   local IDType = DataMgr.Party[self.DungeonId].RespawnRule or 0
@@ -889,7 +820,6 @@ function BP_EMGameState_C:BackToPartyArchivePoint(Player)
   end
   return nil, nil
 end
-
 function BP_EMGameState_C:ResetAllArchivePointAndManualActiveCombat()
   for key, val in pairs(self.ManualActiveCombat) do
     if val.LinkArchiveID ~= nil then
@@ -903,7 +833,6 @@ function BP_EMGameState_C:ResetAllArchivePointAndManualActiveCombat()
   end
   DebugPrint("==============Reset All ArchivePoint And ManualActiveCombat================")
 end
-
 function BP_EMGameState_C:ResetAllArchivePoint()
   for key, val in pairs(self.ManualActiveCombat) do
     if val.IsArchivePointActive == true then
@@ -912,7 +841,6 @@ function BP_EMGameState_C:ResetAllArchivePoint()
   end
   DebugPrint("==============Reset All ArchivePoint================")
 end
-
 function BP_EMGameState_C:ResetAllManualActiveCombat()
   for key, val in pairs(self.ManualActiveCombat) do
     if val.LinkArchiveID ~= nil then
@@ -921,7 +849,6 @@ function BP_EMGameState_C:ResetAllManualActiveCombat()
   end
   DebugPrint("==============Reset All ManualActiveCombat================")
 end
-
 function BP_EMGameState_C:AddDrone(GroupId, ManualItemId)
   if not self.DroneGroup then
     self.DroneGroup = {}
@@ -931,7 +858,6 @@ function BP_EMGameState_C:AddDrone(GroupId, ManualItemId)
   end
   table.insert(self.DroneGroup[GroupId], ManualItemId)
 end
-
 function BP_EMGameState_C:OnDroneFoundPlayer(GroupId, ManualItemId)
   if not self.DroneGroup or not self.DroneGroup[GroupId] then
     return
@@ -944,7 +870,6 @@ function BP_EMGameState_C:OnDroneFoundPlayer(GroupId, ManualItemId)
     end
   end
 end
-
 function BP_EMGameState_C:OnDroneChangeToInit(GroupId, ManualItemId)
   if not self.DroneGroup or not self.DroneGroup[GroupId] then
     return
@@ -959,7 +884,6 @@ function BP_EMGameState_C:OnDroneChangeToInit(GroupId, ManualItemId)
   end
   return GroupDroneAllFinish
 end
-
 function BP_EMGameState_C:OnDroneAlertValueReset(GroupId, ManualItemId)
   if not self.DroneGroup or not self.DroneGroup[GroupId] then
     return
@@ -984,7 +908,6 @@ function BP_EMGameState_C:OnDroneAlertValueReset(GroupId, ManualItemId)
     end
   end
 end
-
 function BP_EMGameState_C:ChangeMechanismInteractiveInSpecialQuest(bClose, Type, MechanismIds)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if "Part" == Type then
@@ -994,7 +917,7 @@ function BP_EMGameState_C:ChangeMechanismInteractiveInSpecialQuest(bClose, Type,
     for i, v in pairs(MechanismIds) do
       local Mechanism = GameMode.BPBornRegionActor:Find(v)
       if not Mechanism then
-        GWorld.logger.error("\231\137\185\230\174\138\228\187\187\229\138\161\233\128\154\231\148\168\233\133\141\231\189\174,\230\156\186\229\133\179ID" .. v .. "\233\148\153\232\175\175")
+        GWorld.logger.error("特殊任务通用配置,机关ID" .. v .. "错误")
         return
       end
       self:ChangeMechanismInteractive(Mechanism, false, false)
@@ -1003,7 +926,6 @@ function BP_EMGameState_C:ChangeMechanismInteractiveInSpecialQuest(bClose, Type,
     self:ChangeMechanismInteractive(nil, bClose, true)
   end
 end
-
 function BP_EMGameState_C:ChangeMechanismInteractive(Mechanism, bClose, bOff)
   if bOff then
     if self.MechanismInteractiveClose == nil then
@@ -1024,7 +946,6 @@ function BP_EMGameState_C:ChangeMechanismInteractive(Mechanism, bClose, bOff)
   end
   self.MechanismInteractiveClose[Mechanism.Eid] = bClose
 end
-
 function BP_EMGameState_C:GetMechanismInteractiveInSpecialQuest(Mechanism)
   if Mechanism.BpBorn and self.MechanismInteractiveClose ~= nil and self.MechanismInteractiveClose[0] == true then
     return false
@@ -1032,13 +953,11 @@ function BP_EMGameState_C:GetMechanismInteractiveInSpecialQuest(Mechanism)
   local Res = self.MechanismInteractiveClose == nil or not self.MechanismInteractiveClose[Mechanism.Eid]
   return Res
 end
-
 function BP_EMGameState_C:OnRep_PartyPlayerDisPercentValues()
   self:UpdatePatryPlayerOrdinal()
   EventManager:FireEvent(EventID.OnPartyProgressUpdate)
 end
-
-function BP_EMGameState_C:ShowDungeonError(ErrorMsg)
+function BP_EMGameState_C:ShowDungeonError(ErrorMsg, Type, Title, IsFromCpp)
   local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
   local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
   if bDistribution and not bEnableShippingLog then
@@ -1062,7 +981,7 @@ function BP_EMGameState_C:ShowDungeonError(ErrorMsg)
   local Space = "=========================================================\n"
   local ct = {
     Space,
-    "\230\138\165\233\148\153\230\150\135\230\156\172:\n\t",
+    "报错文本:\n\t",
     tostring(ErrorMsg),
     "\n"
   }
@@ -1075,40 +994,51 @@ function BP_EMGameState_C:ShowDungeonError(ErrorMsg)
   table.insert(ct, Space)
   self:FillTraceBack(ct)
   table.insert(ct, Space)
+  if IsFromCpp then
+    Type = Const.DungeonErrorType[Type]
+    Title = Const.DungeonErrorTitle[Title]
+  end
   local FinalMsg = table.concat(ct)
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self) then
-    ScreenPrint("\229\137\175\230\156\172\230\138\165\233\148\153:\n" .. FinalMsg)
+    ScreenPrint("副本报错:\n" .. FinalMsg)
   end
-  Avatar:SendToFeiShuForRegionMgr(FinalMsg, "\229\137\175\230\156\172\230\138\165\233\148\153 | " .. NetMode)
+  Avatar:SendToFeiShuForRegionMgr(FinalMsg, "关卡报错 | " .. tostring(Type) .. " | " .. tostring(Type) .. " | " .. NetMode)
+  local TraceType = {
+    first = GText("关卡报错"),
+    second = Type,
+    third = Title
+  }
+  local DescribeInfo = {
+    title = GText("详细信息"),
+    trace_content = FinalMsg
+  }
+  Avatar:SendTraceToQaWeb(TraceType, DescribeInfo)
 end
-
 function BP_EMGameState_C:FillNetMode(ct, NetMode)
-  table.insert(ct, "\231\142\175\229\162\131: ")
+  table.insert(ct, "环境: ")
   if "DedicatedServer" == NetMode then
-    table.insert(ct, "\232\129\148\230\156\186DS")
+    table.insert(ct, "联机DS")
   elseif "Client" == NetMode then
-    table.insert(ct, "\232\129\148\230\156\186\229\174\162\230\136\183\231\171\175")
+    table.insert(ct, "联机客户端")
   elseif "StandAlone" == NetMode then
-    table.insert(ct, "\229\141\149\230\156\186")
+    table.insert(ct, "单机")
   else
-    table.insert(ct, "\230\156\170\231\159\165")
+    table.insert(ct, "未知")
   end
   table.insert(ct, "\n")
 end
-
 function BP_EMGameState_C:FillGameStateLog(ct)
-  table.insert(ct, "\229\137\175\230\156\172Id: " .. self.DungeonId .. "\n")
-  table.insert(ct, "\231\142\169\230\179\149\231\177\187\229\158\139: " .. self.GameModeType .. "\n")
-  table.insert(ct, "\229\137\175\230\156\172\231\138\182\230\128\129: " .. EGameModeState:GetNameByValue(self.GameModeState) .. "\n")
-  table.insert(ct, "\229\137\175\230\156\172\232\191\155\229\186\166: " .. self.DungeonProgress .. "\n")
+  table.insert(ct, "副本Id: " .. self.DungeonId .. "\n")
+  table.insert(ct, "玩法类型: " .. self.GameModeType .. "\n")
+  table.insert(ct, "副本状态: " .. EGameModeState:GetNameByValue(self.GameModeState) .. "\n")
+  table.insert(ct, "副本进度: " .. self.DungeonProgress .. "\n")
   return
 end
-
 function BP_EMGameState_C:FillLevelLog(ct)
   pcall(function()
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
     local Level_shortname = UE4.URuntimeCommonFunctionLibrary.GetLevelLoadJsonName(Player)
-    table.insert(ct, string.format("\229\189\147\229\137\141\231\142\169\229\174\182\232\191\155\231\154\132\230\139\188\230\142\165\229\133\179\229\141\161: %s", Level_shortname) .. "\n")
+    table.insert(ct, string.format("当前玩家进的拼接关卡: %s", Level_shortname) .. "\n")
     local pro_path = UE4.UKismetSystemLibrary.GetProjectContentDirectory()
     local path = pro_path .. "Script/Datas/Houdini_data/" .. Level_shortname .. ".json"
     local info = UE4.URuntimeCommonFunctionLibrary.LoadFile(path)
@@ -1123,13 +1053,12 @@ function BP_EMGameState_C:FillLevelLog(ct)
           if "" == cur_artLevel then
             cur_artLevel = string.gsub(point.struct, "Data_Design", "Data_Art", 1)
           end
-          table.insert(ct, string.format("\230\137\128\229\156\168\231\190\142\230\156\175\229\133\179\229\141\161: %s, \229\133\179\229\141\161id: %s", cur_artLevel, cur_id) .. "\n")
+          table.insert(ct, string.format("所在美术关卡: %s, 关卡id: %s", cur_artLevel, cur_id) .. "\n")
         end
       end
     end
   end)
 end
-
 function BP_EMGameState_C:FillTraceBack(ct)
   table.insert(ct, [[
 Traceback:
@@ -1137,32 +1066,72 @@ Traceback:
   table.insert(ct, debug.traceback())
   table.insert(ct, "\n")
 end
-
 function BP_EMGameState_C:InitPickupNiagaraPath()
   for _, Path in pairs(Const.PickupNiagaraPaths) do
     self.PickupNiagaraPaths:Add(Path)
   end
 end
-
 function BP_EMGameState_C:AddEvent_UpdateCNPCFlexible()
   EventManager:AddEvent(EventID.SetCustomNpcFlexibShowOrHideDynamic, self, self.UpdateCNPCFlexible)
 end
-
 function BP_EMGameState_C:RemoveEvent_UpdateCNPCFlexible()
   EventManager:RemoveEvent(EventID.SetCustomNpcFlexibShowOrHideDynamic, self)
 end
-
 function BP_EMGameState_C:DungeonSafePlayTalk_Lua(TalkId)
   local LoadingUI = GWorld.GameInstance:GetLoadingUI()
   if LoadingUI then
-    EventManager:AddEvent(EventID.OnCloseLoadingEnableStory, self, function()
-      EventManager:RemoveEvent(EventID.OnCloseLoadingEnableStory, self)
+    EventManager:AddEvent(EventID.OnEnableStory, self, function()
+      EventManager:RemoveEvent(EventID.OnEnableStory, self)
       UE4.UPlayTalkAsyncAction.PlayTalk(self, TalkId, nil)
     end)
   else
     UE4.UPlayTalkAsyncAction.PlayTalk(self, TalkId, nil)
   end
 end
-
+function BP_EMGameState_C:ClientSafeRunStory(StorylinePath, QuestId, STLCallback)
+  local LoadingUI = GWorld.GameInstance:GetLoadingUI()
+  if LoadingUI then
+    EventManager:AddEvent(EventID.OnEnableStory, self, function()
+      EventManager:RemoveEvent(EventID.OnEnableStory, self)
+      GWorld.StoryMgr:RunStory(StorylinePath, QuestId, nil, STLCallback, STLCallback)
+    end)
+  else
+    GWorld.StoryMgr:RunStory(StorylinePath, QuestId, nil, STLCallback, STLCallback)
+  end
+end
+function BP_EMGameState_C:SpawnClientEventManager()
+  if IsDedicatedServer(self) then
+    return
+  end
+  local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
+  local DungeonInfo = DataMgr.Dungeon[DungeonId]
+  if not DungeonInfo then
+    return
+  end
+  local GameModeType = DungeonInfo.DungeonType
+  local RealPath = string.format(Const.ClientEventManagerClassPath, GameModeType, GameModeType)
+  if not UResourceLibrary.CheckResourceExistOnDisk(RealPath) then
+    return
+  end
+  local ClientEventManagerClass = UE4.UClass.Load(RealPath)
+  if not ClientEventManagerClass then
+    return
+  end
+  self.ClientEventManager = self:GetWorld():SpawnActor(ClientEventManagerClass, FTransform(), UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
+end
+function BP_EMGameState_C:TriggerClientEvent(FuncName)
+  if not self.ClientEventManager then
+    return
+  end
+  try({
+    exec = function()
+      self.ClientEventManager[FuncName](self.ClientEventManager)
+    end,
+    catch = function(err)
+      DebugPrint(ErrorTag, "TriggerClientEvent Error! FuncName: " .. FuncName .. " traceback: ")
+      Traceback(ErrorTag, err, false)
+    end
+  })
+end
 AssembleComponents(BP_EMGameState_C)
 return BP_EMGameState_C

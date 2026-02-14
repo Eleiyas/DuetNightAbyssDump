@@ -1,8 +1,8 @@
 require("UnLua")
 local TeamCommon = require("BluePrints.UI.WBP.Team.TeamCommon")
+local ChatCommon = require("BluePrints.UI.WBP.Chat.ChatCommon")
 local PlayerHeadWidgetUtils = require("Utils.PlayerHeadWidgetUtils")
-local M = Class()
-
+local M = Class("BluePrints.Common.TimerMgr")
 function M:OnInitialize()
   EventManager:AddEvent(EventID.OnlineAddOtherPlayer, self, self.OnAddRegionOtherPlayer)
   EventManager:AddEvent(EventID.OnlineRemoveOtherPlayer, self, self.OnRemoveRegionOtherPlayer)
@@ -11,8 +11,10 @@ function M:OnInitialize()
   self.bRegisterTeamEvent = false
   self.EIdUIdMap = {}
   self.EIdObjIdMap = {}
+  self.UIdEIdMap = {}
+  self.EmojiTimer = {}
+  self.EmojiDuration = 5
 end
-
 function M:OnDeinitialize()
   EventManager:RemoveEvent(EventID.OnlineAddOtherPlayer, self)
   EventManager:RemoveEvent(EventID.OnlineRemoveOtherPlayer, self)
@@ -20,7 +22,6 @@ function M:OnDeinitialize()
   EventManager:RemoveEvent(EventID.OnlineRegionTitleChange, self)
   self:UnRegisterTeamEvent()
 end
-
 function M:RegisterTeamEvent()
   if self.bRegisterTeamEvent then
     return
@@ -43,10 +44,16 @@ function M:RegisterTeamEvent()
       self:RefreshTeamIndex()
     end
   end)
+  ChatController:RegisterEvent(self, function(self, EventId, ...)
+    if EventId == ChatCommon.EventID.RecvStickerInPubChannels then
+      local Uid, EmojiPath = ...
+      self:OnShowPlayerEmoji(Uid, EmojiPath)
+    end
+  end)
 end
-
 function M:RefreshTeamIndex(Team)
   local GameInstance = GWorld.GameInstance
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
   if not GameInstance then
     return
   end
@@ -68,8 +75,8 @@ function M:RefreshTeamIndex(Team)
     local Eid = RegionOnlineCharacterInfo[Uid]
     local ObjId = self.EIdObjIdMap[Eid]
     local Player = Eid and Battle:GetEntity(Eid)
-    if GameInstance.bRegionClientOnlyShowUI then
-      local WidgetComp = GameInstance:GetPlayerHeadWidgetComp(Eid)
+    if RegionSyncSubsys then
+      local WidgetComp = RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId))
       PlayerHeadWidgetUtils:RefreshRegionNameInfo(WidgetComp, Uid, ObjId)
       PlayerHeadWidgetUtils:RefreshTitleInfo(WidgetComp, ObjId)
     elseif Player then
@@ -78,12 +85,12 @@ function M:RefreshTeamIndex(Team)
     end
   end
 end
-
 function M:RefreshMember(Uid)
   if not Uid then
     return
   end
   local GameInstance = GWorld.GameInstance
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
   if not GameInstance then
     return
   end
@@ -99,8 +106,8 @@ function M:RefreshMember(Uid)
   local ObjId = self.EIdObjIdMap[Eid]
   local Battle = Battle(self)
   local Player = Eid and Battle:GetEntity(Eid)
-  if GameInstance.bRegionClientOnlyShowUI then
-    local WidgetComp = GameInstance:GetPlayerHeadWidgetComp(Eid)
+  if RegionSyncSubsys then
+    local WidgetComp = RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId))
     PlayerHeadWidgetUtils:RefreshRegionNameInfo(WidgetComp, Uid, ObjId)
     PlayerHeadWidgetUtils:RefreshTitleInfo(WidgetComp, ObjId)
   elseif Player then
@@ -108,15 +115,14 @@ function M:RefreshMember(Uid)
     Player:RefreshTitleInfo(ObjId)
   end
 end
-
 function M:UnRegisterTeamEvent()
   if not self.bRegisterTeamEvent then
     return
   end
   self.bRegisterTeamEvent = false
   TeamController:UnRegisterEvent(self)
+  ChatController:UnRegisterEvent(self)
 end
-
 function M:HideCharacterHideUI(PlayerCharacter, bHide)
   local HeadWidgetComponent = PlayerCharacter:GetHeadWidgetComponent()
   if not HeadWidgetComponent then
@@ -131,12 +137,14 @@ function M:HideCharacterHideUI(PlayerCharacter, bHide)
     PlayerCharacter:RefreshTitleInfo(ObjId)
   end
 end
-
 function M:OnAddRegionOtherPlayer(Eid, Uid, Player, ObjId)
   self:RegisterTeamEvent()
   local GameInstance = GWorld.GameInstance
-  if GameInstance and GameInstance.bRegionClientOnlyShowUI then
-    local WidgetComp = GameInstance:GetPlayerHeadWidgetComp(Eid)
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  self.EIdUIdMap[Eid] = Uid
+  self.EIdObjIdMap[Eid] = ObjId
+  if RegionSyncSubsys then
+    local WidgetComp = RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId))
     if WidgetComp then
       PlayerHeadWidgetUtils:RefreshRegionNameInfo(WidgetComp, Uid, ObjId)
       PlayerHeadWidgetUtils:RefreshTitleInfo(WidgetComp, ObjId)
@@ -147,8 +155,6 @@ function M:OnAddRegionOtherPlayer(Eid, Uid, Player, ObjId)
     end
     return
   end
-  self.EIdUIdMap[Eid] = Uid
-  self.EIdObjIdMap[Eid] = ObjId
   if not Player then
     return
   end
@@ -156,8 +162,8 @@ function M:OnAddRegionOtherPlayer(Eid, Uid, Player, ObjId)
   Player:RefreshRegionNameInfo(Uid, ObjId)
   Player:RefreshTitleInfo(ObjId)
   self:AddRegionPlayer(Player)
+  self:HideCharacterHideUI(Player, true)
 end
-
 function M:OnRegionPlayerInfoChange(ObjId, Uid)
   if not Uid then
     return
@@ -175,15 +181,17 @@ function M:OnRegionPlayerInfoChange(ObjId, Uid)
     return
   end
   local Eid = RegionOnlineCharacterInfo[Uid]
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  if RegionSyncSubsys then
+    PlayerHeadWidgetUtils:RefreshRegionNameInfo(RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId)), Uid, ObjId)
+    return
+  end
   local Battle = Battle(self)
   local Player = Eid and Battle:GetEntity(Eid)
-  if GameInstance.bRegionClientOnlyShowUI then
-    PlayerHeadWidgetUtils:RefreshRegionNameInfo(GameInstance:GetPlayerHeadWidgetComp(Eid), Uid, ObjId)
-  elseif Player then
+  if Player then
     Player:RefreshRegionNameInfo(Uid, ObjId)
   end
 end
-
 function M:OnRegionPlayerTitleChange(ObjId, Uid, PrefixId, SuffixId, TitleFrameId)
   local GameInstance = GWorld.GameInstance
   if not GameInstance then
@@ -198,15 +206,17 @@ function M:OnRegionPlayerTitleChange(ObjId, Uid, PrefixId, SuffixId, TitleFrameI
     return
   end
   local Eid = RegionOnlineCharacterInfo[Uid]
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  if RegionSyncSubsys then
+    PlayerHeadWidgetUtils:RefreshTitle(RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId)), PrefixId, SuffixId, TitleFrameId)
+    return
+  end
   local Battle = Battle(self)
   local Player = Eid and Battle:GetEntity(Eid)
-  if GameInstance.bRegionClientOnlyShowUI then
-    PlayerHeadWidgetUtils:RefreshTitle(GameInstance:GetPlayerHeadWidgetComp(Eid), PrefixId, SuffixId, TitleFrameId)
-  elseif Player then
+  if Player then
     Player:RefreshTitle(PrefixId, SuffixId, TitleFrameId)
   end
 end
-
 function M:OnRemoveRegionOtherPlayer(Eid, Uid)
   local Player = Battle(self):GetEntity(Eid)
   self.EIdUIdMap[Eid] = nil
@@ -216,5 +226,58 @@ function M:OnRemoveRegionOtherPlayer(Eid, Uid)
   end
   self:RemoveRegionPlayer(Player)
 end
-
+function M:PlayEmoji(ObjId, Eid, EmojiPath)
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  if RegionSyncSubsys then
+    PlayerHeadWidgetUtils:PlayEmoji(RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId)), EmojiPath)
+    return
+  end
+  local Battle = Battle(self)
+  local Player = Eid and Battle:GetEntity(Eid)
+  if Player then
+    Player:PlayEmoji(EmojiPath)
+  end
+end
+function M:StopEmoji(ObjId, Eid)
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  if RegionSyncSubsys then
+    PlayerHeadWidgetUtils:StopEmoji(RegionSyncSubsys:GetPlayerHeadWidgetComp(CommonUtils.ObjId2Str(ObjId)))
+    return
+  end
+  local Battle = Battle(self)
+  local Player = Eid and Battle:GetEntity(Eid)
+  if Player then
+    Player:StopEmoji()
+  end
+end
+function M:OnShowPlayerEmoji(Uid, EmojiPath)
+  local GameInstance = GWorld.GameInstance
+  if not GameInstance then
+    return
+  end
+  local ScenceManager = GameInstance:GetSceneManager()
+  if not ScenceManager then
+    return
+  end
+  local RegionOnlineCharacterInfo = ScenceManager.RegionOnlineCharacterInfo
+  if not RegionOnlineCharacterInfo then
+    return
+  end
+  local Eid = RegionOnlineCharacterInfo[Uid]
+  local ObjId = self.EIdObjIdMap[Eid]
+  if not ObjId then
+    return
+  end
+  local Timer = self.EmojiTimer[ObjId]
+  if Timer then
+    self:RemoveTimer(Timer)
+  end
+  self:StopEmoji(ObjId, Eid, EmojiPath)
+  self:PlayEmoji(ObjId, Eid, EmojiPath)
+  Timer = self:AddTimer(self.EmojiDuration, function()
+    self.EmojiTimer[ObjId] = nil
+    self:StopEmoji(ObjId, Eid)
+  end)
+  self.EmojiTimer[ObjId] = Timer
+end
 return M

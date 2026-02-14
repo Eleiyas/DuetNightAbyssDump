@@ -3,7 +3,6 @@ require("UnLua")
 local UIUtils = require("Utils.UIUtils")
 local Component = {}
 local TimeUtils = require("Utils.TimeUtils")
-
 function Component:Initialize()
   self.BtnName = {
     "UI_PersonInfo_Name",
@@ -32,12 +31,12 @@ function Component:Initialize()
     "OnExchangeCodeClicked"
   }
   local Avatar = GWorld:GetAvatar()
-  if Avatar then
+  if Avatar and self.IsPersonInfoPage then
     local AvatarBirth = {}
     AvatarBirth[1], AvatarBirth[2], AvatarBirth[3] = Avatar:GetAvatarBirthday()
     if AvatarBirth[3] <= 0 then
-      table.remove(self.BtnName, 5)
-      table.remove(self.ClickFunction, 5)
+      table.remove(self.BtnName, 6)
+      table.remove(self.ClickFunction, 6)
       self.BirthDayRemoved = true
     end
   end
@@ -47,11 +46,9 @@ function Component:Initialize()
   end
   self.BtnIdx = 0
 end
-
 function Component:OnLoaded()
   self:InitBaseView()
 end
-
 function Component:InitBaseView()
   self.Edit_List.BP_OnItemClicked:Add(self, self.OnListBtnClicked)
   if self.List_Community then
@@ -67,7 +64,6 @@ function Component:InitBaseView()
   local Avatar = GWorld:GetAvatar()
   local Month, Day = Avatar:GetAvatarBirthday()
 end
-
 function Component:InitBtnList()
   self.Edit_List:ClearListItems()
   local ClassPath = UIUtils.GetCommonItemContentClass()
@@ -118,7 +114,6 @@ function Component:InitBtnList()
     end
   end
 end
-
 function Component:InitCommmunity()
   if not self.List_Community then
     return
@@ -136,7 +131,6 @@ function Component:InitCommmunity()
     self.List_Community:AddItem(MenuContent)
   end
 end
-
 function Component:OnListBtnClicked(Content)
   self:StopPress()
   UIUtils.PlayCommonBtnSe(self)
@@ -144,7 +138,6 @@ function Component:OnListBtnClicked(Content)
   if Content.Id then
     self.BtnIdx = Content.Id - 1
   end
-  
   local function PlayAnimFinished()
     if Content.Id then
       self.BtnIdx = Content.Id - 1
@@ -157,7 +150,6 @@ function Component:OnListBtnClicked(Content)
       ListUI:UnbindAllFromAnimationFinished(ListUI.Click)
     end
   end
-  
   if self.IsEditOpen then
     self.IsEditOpen = false
     self:PlayAnimation(self.Edit_List_Out)
@@ -172,7 +164,6 @@ function Component:OnListBtnClicked(Content)
     PlayAnimFinished()
   end
 end
-
 function Component:OnClickEdit()
   self:StopPress()
   if self:IsPlayingAnimation(self.Edit_List_In) then
@@ -181,20 +172,22 @@ function Component:OnClickEdit()
   if not self.IsEditOpen then
     if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.Btn_PersonalInfo then
       self.Btn_PersonalInfo.Button_Area:SetFocus()
-      self.Com_KeyTips:UpdateKeyInfo({
-        {
-          KeyInfoList = {
-            {Type = "Img", ImgShortPath = "A"}
+      if self.Com_KeyTips then
+        self.Com_KeyTips:UpdateKeyInfo({
+          {
+            KeyInfoList = {
+              {Type = "Img", ImgShortPath = "A"}
+            },
+            Desc = GText("UI_Tips_Ensure")
           },
-          Desc = GText("UI_Tips_Ensure")
-        },
-        {
-          KeyInfoList = {
-            {Type = "Img", ImgShortPath = "B"}
-          },
-          Desc = GText("UI_Tips_Close")
-        }
-      })
+          {
+            KeyInfoList = {
+              {Type = "Img", ImgShortPath = "B"}
+            },
+            Desc = GText("UI_Tips_Close")
+          }
+        })
+      end
     end
     self.IsEditOpen = true
     self:PlayAnimation(self.Edit_List_In)
@@ -206,7 +199,7 @@ function Component:OnClickEdit()
     end
   else
     if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
-      if self.GameInputModeSubsystem then
+      if self.GameInputModeSubsystem and self.Head_Player then
         self.GameInputModeSubsystem:SetTargetUIFocusWidget(self.Head_Player.Button_Area)
         self.GameInputModeSubsystem:UpdateCurrentFocusWidgetPos()
       end
@@ -244,7 +237,6 @@ function Component:OnClickEdit()
     end
   end
 end
-
 function Component:CloseEdit()
   self.Button_Edit.New:SetRenderOpacity(1)
   self:StopPress()
@@ -258,7 +250,6 @@ function Component:CloseEdit()
     self:Close()
   end
 end
-
 function Component:SetCurIndexContent()
   self:ClearAllIndexContent()
   local CurContent = self.Edit_List:GetItemAt(self.BtnIdx)
@@ -266,7 +257,6 @@ function Component:SetCurIndexContent()
     CurContent.SelfWidget:SetStyle(true)
   end
 end
-
 function Component:ClearAllIndexContent()
   for i = 0, self.Edit_List:GetNumItems() do
     local CurContent = self.Edit_List:GetItemAt(i)
@@ -275,14 +265,12 @@ function Component:ClearAllIndexContent()
     end
   end
 end
-
 function Component:StopPress()
   if self.IsPersonInfoPage == true and not CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self:StopAnimation(self.Press)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function Component:OnClickChangePortrait()
   self:StopPress()
   local Params = {}
@@ -317,7 +305,6 @@ function Component:OnClickChangePortrait()
   end
   UIUtils.TrySubReddotCacheDetail("EscPortrait", "EscPortrait")
 end
-
 function Component:OnClickChangeName()
   if self.CheckChangeNameCd() then
     local Params = {}
@@ -337,7 +324,6 @@ function Component:OnClickChangeName()
     self:SetFocus_Lua()
   end
 end
-
 function Component:CheckChangeNameCd()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -349,14 +335,12 @@ function Component:CheckChangeNameCd()
   end
   return true
 end
-
 function Component:OnClickChangeSignature()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_input_bar", nil, nil)
   local Params = {}
   Params.ChangeName = false
   Params.FirstInit = true
   Params.UseReName = true
-  
   function Params.OnNotSensitiveCallbackFunction(self2, Data)
     if self.IsPersonInfoPage then
       if 1 ~= self.Switcher_Input:GetActiveWidgetIndex() then
@@ -365,24 +349,20 @@ function Component:OnClickChangeSignature()
       self.Text_Input:SetText(Data)
     end
   end
-  
   function Params.RightCallbackFunction(self2, Data)
   end
-  
   if 1 == self.Switcher_Input:GetActiveWidgetIndex() then
     Params.Signature = self.Text_Input:GetText()
   end
   Params.Title = GText("UI_COMMONPOP_TITLE_100055")
   UIManager(self):ShowCommonPopupUI(100133, Params, self)
 end
-
 function Component:OnClickChangeBirthday()
   local Params = {}
   Params.RightCallbackFunction = self.OnBirthdaySubmitted
   Params.RightCallbackObj = self
   UIManager(self):ShowCommonPopupUI(100056, Params, self)
 end
-
 function Component:OnBirthdaySubmitted(Result)
   Result = Result.Birthday
   if Result then
@@ -392,29 +372,24 @@ function Component:OnBirthdaySubmitted(Result)
       Month = Result.Month,
       Day = Result.Day
     }))
-    
     function Params.RightCallbackFunction()
       self:ChangeBirthday(Result.Month, Result.Day)
     end
-    
     function Params.LeftCallbackFunction()
       local Params = {}
       Params.RightCallbackFunction = self.OnBirthdaySubmitted
       Params.RightCallbackObj = self
       UIManager(self):ShowCommonPopupUI(100056, Params, self)
     end
-    
     UIManager(self):ShowCommonPopupUI(100057, Params, self)
   end
 end
-
 function Component:ChangeBirthday(Month, Day)
   local Avatar = GWorld:GetAvatar()
   Avatar:SetAvatarBirthday(math.floor(Month), math.floor(Day), function(Res)
     self:OnAvatarBirthdayChanged(Res)
   end)
 end
-
 function Component:OnAvatarBirthdayChanged(Res)
   DebugPrint("Tianyi@ OnAvatarBirthdaySet")
   if Res then
@@ -425,13 +400,12 @@ function Component:OnAvatarBirthdayChanged(Res)
       self.Text_Birth:SetText(GDate("Date_MD", {Month = Month, Day = Day}))
     end
     if not self.BirthDayRemoved then
-      table.remove(self.BtnName, 4)
-      table.remove(self.ClickFunction, 4)
+      table.remove(self.BtnName, 5)
+      table.remove(self.ClickFunction, 5)
       self:InitBtnList()
     end
   end
 end
-
 function Component:OnCopyUID()
   if self.IsPersonInfoPage == true then
     local CopyStr = self.Text_UID:GetText()
@@ -442,12 +416,10 @@ function Component:OnCopyUID()
     UIManager(self):ShowUITip("CommonToastMain", GText("UI_Tosat_Menu_CopyUID"))
   end
 end
-
 function Component:OnClickPersonalInfo()
   local PersonInfoController = require("BluePrints.UI.WBP.PersonInfo.PersonInfoController")
   PersonInfoController:OpenView()
 end
-
 function Component:GetFisrtEditItem()
   if self.Edit_List then
     local items = self.Edit_List:GetListItems()
@@ -457,16 +429,15 @@ function Component:GetFisrtEditItem()
       if firstItem.SelfWidget or ReturnWidget then
         return ReturnWidget
       else
-        DebugPrint("item\230\178\161\230\156\137\229\175\185\229\186\148ui")
+        DebugPrint("item没有对应ui")
       end
     else
-      DebugPrint("ListView \228\184\173\230\178\161\230\156\137 Item\227\128\130")
+      DebugPrint("ListView 中没有 Item。")
     end
   else
-    DebugPrint("ListView \229\188\149\231\148\168\230\151\160\230\149\136\227\128\130")
+    DebugPrint("ListView 引用无效。")
   end
 end
-
 function Component:OnExchangeCodeClicked()
   local Params = {}
   Params.IsExchangeCode = true
@@ -475,14 +446,11 @@ function Component:OnExchangeCodeClicked()
   Params.Title = GText("UI_COMMONPOP_TITLE_100127")
   UIManager(self):ShowCommonPopupUI(100133, Params, self)
 end
-
 function Component:OnCustomerServiceClicked()
   HeroUSDKSubsystem(self):OpenService()
 end
-
 function Component:OnClickChangeTitle()
   ReddotManager.ClearLeafNodeCount("TitleBtn", true)
   UIManager(self):ShowCommonPopupUI(100239, {}, self)
 end
-
 return Component

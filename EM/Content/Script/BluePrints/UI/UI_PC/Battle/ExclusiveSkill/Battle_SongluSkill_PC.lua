@@ -5,15 +5,12 @@ local M = Class({
 local SUMMONER_ID = 510101
 local CHANGE_DELTA = 0.01
 local LERP_SPEED = 0.2
-
 function M:Construct()
   EventManager:AddEvent(EventID.OnUpdateSummonHp, self, self.OnUpdateSummonHp)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnUpdateSummonHp, self)
 end
-
 function M:OnLoaded(PlayerCharacter, SpecialUIInfo)
   self.Super.OnLoaded(self, PlayerCharacter, SpecialUIInfo)
   self.Owner = PlayerCharacter
@@ -37,7 +34,6 @@ function M:OnLoaded(PlayerCharacter, SpecialUIInfo)
     self:TrySetSummon(SUMMONER_ID, true)
   end
 end
-
 function M:SetNormalStyle()
   self:SetProgressFillImageColor(self.BackProcessBar, self.Process_NormalColor)
   self:SetProgressFillImageColor(self.BackProcessBarFrame, self.Process_Frame_NormalColor)
@@ -48,7 +44,6 @@ function M:SetNormalStyle()
   self:SetMaterialParams(self.VX_01Line_1, self.VX_01_Skill01_NormalSpeed)
   self:SetMaterialParams(self.VX_01LGlow, self.VX_01_Skill02_NormalSpeed)
 end
-
 function M:SetRecoverStyle()
   self:SetProgressFillImageColor(self.BackProcessBar, self.Process_RecoverColor)
   self:SetProgressFillImageColor(self.BackProcessBarFrame, self.Process_Frame_RecoverColor)
@@ -60,24 +55,19 @@ function M:SetRecoverStyle()
   self:SetMaterialParams(self.VX_01LGlow, self.VX_01_Skill02_HitSpeed)
   self:PlayAnimation(self.Return)
 end
-
 function M:SetProgressFillImageColor(ProgressBar, TineColor)
   ProgressBar.WidgetStyle.FillImage.TintColor = TineColor
 end
-
 function M:SetMaterialParams(ImageWidget, Speed2D)
   ImageWidget:GetDynamicMaterial():SetScalarParameterValue("Distortion_U_Speed", Speed2D.X)
   ImageWidget:GetDynamicMaterial():SetScalarParameterValue("Distortion_V_Speed", Speed2D.Y)
 end
-
 function M:OnBackProcessBarValueChanged(Value)
   self.BackProcessBarFrame:SetPercent(Value)
 end
-
 function M:OnFrontProcessBarValueChanged(Value)
   self.FrontProcessBarFrame:SetPercent(Value)
 end
-
 function M:OnSummonerAdd(Summoner)
   if self:IsMainPlayerSummon(Summoner, self.Owner, SUMMONER_ID) then
     self.Summoner = Summoner
@@ -87,7 +77,6 @@ function M:OnSummonerAdd(Summoner)
     self.CanvasPanel:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function M:OnSummonerRemove(Summoner)
   DebugPrint("gmy@Battle_SongluSkill_PC M:OnSummonerRemove", Summoner)
   if self:IsMainPlayerSummon(Summoner, self.Owner, SUMMONER_ID) then
@@ -96,7 +85,6 @@ function M:OnSummonerRemove(Summoner)
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:ForceRefreshSummonerProgress()
   local Summoner = self.Summoner
   if IsValid(Summoner) then
@@ -107,11 +95,9 @@ function M:ForceRefreshSummonerProgress()
     self:SetProgressPercent(HpPercent)
   end
 end
-
 function M:Show(ShowTag)
   self.Super.Show(self, ShowTag)
 end
-
 function M:OnUpdateSummonHp()
   local Summoner = self.Summoner
   if IsValid(Summoner) then
@@ -127,7 +113,6 @@ function M:OnUpdateSummonHp()
     end
   end
 end
-
 function M:StartSetPercent(OriginPercent, TargetPercent, LerpSpeed, CompleteFunc)
   local Duration = (TargetPercent - OriginPercent) / LerpSpeed
   Duration = math.abs(Duration)
@@ -157,17 +142,14 @@ function M:StartSetPercent(OriginPercent, TargetPercent, LerpSpeed, CompleteFunc
     end
   end
 end
-
 function M:SetProgressPercent(Percent)
   self.BackProcessBar:SetPercent(Percent)
   self.FrontProcessBar:SetPercent(Percent)
   self.BackProcessBarFrame:SetPercent(Percent)
   self.FrontProcessBarFrame:SetPercent(Percent)
 end
-
 function M:EndSetPercent()
   self.bBlending = false
   self:OnUpdateSummonHp()
 end
-
 return M

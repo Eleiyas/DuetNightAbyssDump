@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Bg_List:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Text_PosName:SetText(Content.Name)
   self.Text_PosDesc:SetText(Content.Des)
@@ -20,5 +18,4 @@ function M:OnListItemObjectSet(Content)
     self.Icon_Avatar:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

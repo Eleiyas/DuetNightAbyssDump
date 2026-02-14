@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Rouge_TalentTree_P_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_TalentTree_P_C:Construct()
   self.SelectedId = nil
   self.IsActivating = false
@@ -23,7 +22,6 @@ function WBP_Rouge_TalentTree_P_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Rouge_TalentTree_P_C:NewPoint(TalentId, TalentType)
   local Point, Select
   if 1 == TalentType then
@@ -35,13 +33,11 @@ function WBP_Rouge_TalentTree_P_C:NewPoint(TalentId, TalentType)
   Select:SetRenderScale(UKismetMathLibrary.Vector2D_One())
   return Point, Select
 end
-
 function WBP_Rouge_TalentTree_P_C:NewLine()
   local Line = self.Overridden.NewLine(self)
   Line:SetRenderScale(UKismetMathLibrary.Vector2D_One())
   return Line
 end
-
 function WBP_Rouge_TalentTree_P_C:OnTeleportPointClick(Id, DoNotPlayAnimation)
   if self.SelectedId and self.SelectedId == Id then
     return
@@ -54,7 +50,6 @@ function WBP_Rouge_TalentTree_P_C:OnTeleportPointClick(Id, DoNotPlayAnimation)
   self.SelectedId = Id
   self.Parent:OpenTips(self.SelectedId, DoNotPlayAnimation)
 end
-
 function WBP_Rouge_TalentTree_P_C:ChangeBranch(Branch)
   self:Clear()
   local AllActiveTalent = {}
@@ -165,7 +160,6 @@ function WBP_Rouge_TalentTree_P_C:ChangeBranch(Branch)
   end
   return self.ActivedBranchTalent, self.BranchSumTalent
 end
-
 function WBP_Rouge_TalentTree_P_C:SelectDefaultTalentPoint(Point)
   Point.Priority = self:GetTalentPointPriority(Point)
   if not self.DefaultTalentPoint then
@@ -182,7 +176,6 @@ function WBP_Rouge_TalentTree_P_C:SelectDefaultTalentPoint(Point)
     end
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:GetTalentPointPriority(Point)
   if Point.CurState == "CanActive" then
     if self.Parent.RemainingTalentPoint >= Point.Data.LevelUpPoint then
@@ -196,7 +189,6 @@ function WBP_Rouge_TalentTree_P_C:GetTalentPointPriority(Point)
     return 1
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:InitPointAndLineState(RemainingTalentPoint)
   for TalentId, Point in pairs(self.Points) do
     local State = self:CheckState(TalentId)
@@ -210,7 +202,6 @@ function WBP_Rouge_TalentTree_P_C:InitPointAndLineState(RemainingTalentPoint)
     end
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:ChangePointAndLineState(RemainingTalentPoint)
   for TalentId, Point in pairs(self.Points) do
     local State = self:CheckState(TalentId)
@@ -223,7 +214,6 @@ function WBP_Rouge_TalentTree_P_C:ChangePointAndLineState(RemainingTalentPoint)
     end
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:CheckLineState(PostTalentId, TalentId)
   if self.BranchActiveTalent[TalentId] then
     if self.BranchActiveTalent[PostTalentId] then
@@ -237,7 +227,6 @@ function WBP_Rouge_TalentTree_P_C:CheckLineState(PostTalentId, TalentId)
     return "CantActive"
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:CheckState(Id)
   if self.BranchActiveTalent[Id] then
     return "Active"
@@ -247,7 +236,6 @@ function WBP_Rouge_TalentTree_P_C:CheckState(Id)
     return "CantActive"
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:CheckIsActive(Id)
   if self.BranchActiveTalent[Id] then
     return true
@@ -255,7 +243,6 @@ function WBP_Rouge_TalentTree_P_C:CheckIsActive(Id)
     return false
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:CheckCanActive(Id)
   if not self.Lines[Id] then
     return true
@@ -267,13 +254,11 @@ function WBP_Rouge_TalentTree_P_C:CheckCanActive(Id)
   end
   return true
 end
-
 function WBP_Rouge_TalentTree_P_C:ActiveTalent(Id, Level)
   if self.IsActivating then
     return
   end
   local Avatar = GWorld:GetAvatar()
-  
   local function Callback(ret)
     self.IsActivating = false
     if not ErrorCode:Check(ret) then
@@ -286,19 +271,16 @@ function WBP_Rouge_TalentTree_P_C:ActiveTalent(Id, Level)
     self.Parent:RefreshActivedTalentNumAndIcon(self.ActivedBranchTalent, self.BranchSumTalent, self.Branch)
     self:ChangePointAndLineState(self.Parent.RemainingTalentPoint)
   end
-  
   if Avatar then
     self.IsActivating = true
     Avatar:SaveOneTalent(Id, Callback)
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:GetPoint(TalentId)
   if TalentId then
     return self.Points[TalentId]
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:GetFullSizeX()
   if self.FarthestTalentId then
     local FarthestPoint = self.Points[self.FarthestTalentId]
@@ -310,7 +292,6 @@ function WBP_Rouge_TalentTree_P_C:GetFullSizeX()
     return 0
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:Clear()
   if self.Points then
     for _, widget in pairs(self.Points) do
@@ -341,19 +322,16 @@ function WBP_Rouge_TalentTree_P_C:Clear()
   self.PostTalent2Talents = {}
   self.CustomTargetTalentId = {}
 end
-
 function WBP_Rouge_TalentTree_P_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -361,7 +339,6 @@ function WBP_Rouge_TalentTree_P_C:RefreshOpInfoByInputDevice(CurInputDevice, Cur
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Rouge_TalentTree_P_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self.IsInSelectState = false
   if IsUseKeyAndMouse then
@@ -370,7 +347,6 @@ function WBP_Rouge_TalentTree_P_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:InitGamepadView()
   if self.Parent then
     local Point = self.Parent:GetCurPoint()
@@ -379,13 +355,10 @@ function WBP_Rouge_TalentTree_P_C:InitGamepadView()
     end
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:InitKeyboardView()
 end
-
 function WBP_Rouge_TalentTree_P_C:InitWidgetInfoInGamePad()
 end
-
 function WBP_Rouge_TalentTree_P_C:InitNavigationForPoint()
   for FirstTalentId, FirstPoint in pairs(self.Points) do
     local FirstLocation = self.PointLocation[FirstTalentId]
@@ -434,7 +407,6 @@ function WBP_Rouge_TalentTree_P_C:InitNavigationForPoint()
     end
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:TrySetNavigation(TalentId, Direction)
   local Point = self.Points[TalentId]
   local NextTalents = self.PostTalent2Talents[TalentId] or {}
@@ -455,7 +427,6 @@ function WBP_Rouge_TalentTree_P_C:TrySetNavigation(TalentId, Direction)
     })
   end
 end
-
 function WBP_Rouge_TalentTree_P_C:TryGetBestTalentId(TalentId, Direction, TargetTalentIds)
   local FirstLocation = self.PointLocation[TalentId]
   local FinalTalentId, FinalPowLength
@@ -511,7 +482,6 @@ function WBP_Rouge_TalentTree_P_C:TryGetBestTalentId(TalentId, Direction, Target
   end
   return FinalTalentId
 end
-
 function WBP_Rouge_TalentTree_P_C:OnUINavigation_Slot(NavigationDirection, TalentId)
   if self.CustomTargetTalentId[TalentId] and self.CustomTargetTalentId[TalentId][NavigationDirection] then
     return self.Points[self.CustomTargetTalentId[TalentId][NavigationDirection]]
@@ -519,5 +489,4 @@ function WBP_Rouge_TalentTree_P_C:OnUINavigation_Slot(NavigationDirection, Talen
     return nil
   end
 end
-
 return WBP_Rouge_TalentTree_P_C

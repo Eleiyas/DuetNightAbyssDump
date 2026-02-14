@@ -3,25 +3,20 @@ local BP_SupplyBase_C = Class({
   "BluePrints.Item.Chest.BP_MechanismBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_SupplyBase_C:OnActorReady(Info)
   BP_SupplyBase_C.Super.OnActorReady(self, Info)
 end
-
 function BP_SupplyBase_C:AuthorityInitInfo(Info)
   BP_SupplyBase_C.Super.AuthorityInitInfo(self, Info)
 end
-
 function BP_SupplyBase_C:CommonInitInfo(Info)
   BP_SupplyBase_C.Super.CommonInitInfo(self, Info)
   self.InteractiveType = Const.EndByTargetInteractive
   self.ChestInteractiveComponent.DisPlayInteractiveName = GText(self.ChestInteractiveComponent.InteractiveName)
 end
-
 function BP_SupplyBase_C:ClientInitInfo(Info)
   BP_SupplyBase_C.Super.ClientInitInfo(self, Info)
 end
-
 function BP_SupplyBase_C:ActiveMaterialNotify()
   if self.CanOpen and self.OpenState == false then
     self:SetTargetMaterialParam(self.SetCountParamName, self.SetCountParamValueMax)
@@ -30,19 +25,16 @@ function BP_SupplyBase_C:ActiveMaterialNotify()
     self:SetTargetMaterialParam(self.SetCurrentTimeParamName, CurrentTime)
   end
 end
-
 function BP_SupplyBase_C:DelayDestory()
   if nil == self then
     return
   end
   self:AddTimer(5, self.DestorySupply)
 end
-
 function BP_SupplyBase_C:DestorySupply()
   print(_G.LogTag, "Eid ::: " .. self.Eid)
   self:EMActorDestroy(EDestroyReason.MechanismDead)
 end
-
 function BP_SupplyBase_C:OpenMechanism(PlayerActorEid)
   if nil == PlayerActorEid or nil == self or not self.CanOpen then
     return
@@ -52,27 +44,28 @@ function BP_SupplyBase_C:OpenMechanism(PlayerActorEid)
     self:TriggerGameModeEvent("OnSupplyInteractive")
     self.NowPlayerEid = PlayerActorEid
     self:ClientPlayAnim(PlayerActorEid, 0, self.Eid)
-    self:AddTimer(self.SetInteractiveTime, self.InteractiveHandle)
+    self:AddTimer(self.SetInteractiveTime, self.InteractiveHandle, false, 0, "SupplayInteractive", false, PlayerActorEid)
   end
 end
-
-function BP_SupplyBase_C:InteractiveHandle()
+function BP_SupplyBase_C:InteractiveHandle(PlayerEid)
   if self.OpenState then
     if not self.OpenState then
       self.CanOpen = true
     end
     return
   end
-  local PlayerActor = Battle(self):GetEntity(self.NowPlayerEid)
   self.OpenState = true
   self:AddSurvivalValue()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
-    GameMode:TriggerDungeonAchieve("OnInteractiveSupplyBase", PlayerActor.Eid)
+    GameMode:TriggerDungeonAchieve("OnInteractiveSupplyBase", PlayerEid)
   end
-  PlayerActor:DeInteractiveMechanism(self.Eid, self.NowPlayerEid, 0, true)
+  local PlayerActor = Battle(self):GetEntity(PlayerEid)
+  if not PlayerActor then
+    return
+  end
+  PlayerActor:DeInteractiveMechanism(self.Eid, PlayerEid, 0, true)
 end
-
 function BP_SupplyBase_C:CloseMechanism(PlayerId, IsSuccess)
   if IsAuthority(self) then
     self:DeactiveGuide()
@@ -81,7 +74,6 @@ function BP_SupplyBase_C:CloseMechanism(PlayerId, IsSuccess)
     self.NowPlayerEid = 0
   end
 end
-
 function BP_SupplyBase_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
   if 0 == InteractiveState then
     self.ChestInteractiveComponent:OnStartInteractive(Battle(self):GetEntity(PlayerId), self.ChestInteractiveComponent.MontageName, MechanismEid)
@@ -94,7 +86,6 @@ function BP_SupplyBase_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
     self.ChestInteractiveComponent:OnEndInteractive(Battle(self):GetEntity(PlayerId), self.ChestInteractiveComponent.MontageName, MechanismEid)
   end
 end
-
 function BP_SupplyBase_C:AddSurvivalValue()
   local SurvivalValue = DataMgr.GlobalConstant.BigSurvivalMechanism.ConstantValue
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -102,16 +93,10 @@ function BP_SupplyBase_C:AddSurvivalValue()
     GameMode:TriggerDungeonComponentFun("AddSurvivalValue", SurvivalValue)
   end
 end
-
 function BP_SupplyBase_C:OnRep_NowPlayerEid()
   if 0 == self.NowPlayerEid then
     return
   end
 end
-
-function BP_SupplyBase_C:CanDungeonSave()
-  return not self.OpenState
-end
-
 AssembleComponents(BP_SupplyBase_C)
 return BP_SupplyBase_C

@@ -3,18 +3,15 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
 local ChallengeRewardReddotName = "JJGameTask_Challenge_Reddot"
-
 function M:Construct()
   self.CacheKey = "ChallengeScoreItem" .. self.Count
   self.Btn_Click.OnClicked:Add(self, self.OnClick)
   ReddotManager.AddListenerEx(ChallengeRewardReddotName, self, self.UpdateChallengeReddot)
 end
-
 function M:Destruct()
   self.Btn_Click.OnClicked:Clear()
   ReddotManager.RemoveListener(ChallengeRewardReddotName, self)
 end
-
 function M:Init(Params)
   self.Owner = Params.Owner
   self.Count = Params.Count
@@ -27,7 +24,6 @@ function M:Init(Params)
   self.MidTermConst = DataMgr.MidTermGoalConstant
   self.MidTermGoalEventId = self.MidTermConst.MidTermGoalEventId.ConstantValue
 end
-
 function M:UpdateChallengeReddot(Count)
   self.Avatar = GWorld:GetAvatar()
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
@@ -40,7 +36,6 @@ function M:UpdateChallengeReddot(Count)
     self.Reddot:SetVisibility(UIConst.VisibilityOp.Hidden)
   end
 end
-
 function M:OnClick()
   if not self.CanGet then
     AudioManager(self):PlayUISound(self, "event:/ui/activity/wenmingboyi_gift_btn_click_disable", nil, nil)
@@ -56,5 +51,4 @@ function M:OnClick()
     self.Owner:OnChallengeRewardGet(self)
   end
 end
-
 return M

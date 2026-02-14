@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   M.Super:OnLoaded(...)
   self.ClueWidgets = {
@@ -65,21 +64,21 @@ function M:OnLoaded(...)
   end
   self.Text_Gain:SetText(GText("Minigame_Textmap_100303"))
 end
-
 function M:OnBtnCloseClick()
   if 1 == self.Type or 3 == self.Type then
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
     local UIManager = GWorld.GameInstance:GetGameUIManager()
     local ReasoningUI = UIManager:GetUIObj("DetectiveMinigame")
     ReasoningUI:OnAssociteUIClose()
+    self:StopAllAnimations()
     self:Close()
   end
   DebugPrint("thy   self.CanClose JLy", self.CanClose)
-  if self.CanClose or ModController:IsMobile() then
+  if self.CanClose then
+    self.CanClose = false
     self:PlayAnimation(self.Succeed_Out)
   end
 end
-
 function M:StartPlayInAnimation()
   self.WS_Type:SetRenderOpacity(0)
   AudioManager(self):PlayUISound(self, "event:/ui/common/tuili_clue_think_progress", nil, nil)
@@ -99,7 +98,6 @@ function M:StartPlayInAnimation()
     self.Text_Fail:SetText(GText("Minigame_Textmap_100317"))
   end
 end
-
 function M:OnInAnimationFinished()
   self:SetFocus()
   self:UnbindAllFromAnimationFinished(self.In)
@@ -110,9 +108,6 @@ function M:OnInAnimationFinished()
   elseif 1 == self.Type then
     self:PlayAnimation(self.Ratiocinate_Failure)
     AudioManager(self):PlayUISound(self, "event:/ui/common/tuili_clue_think_fail", nil, nil)
-    for _, clueWidget in ipairs(self.ClueWidgets) do
-      clueWidget:PlayAnimation(clueWidget.Failure)
-    end
   elseif 2 == self.Type then
     self:PlayAnimation(self.Succeed)
     DebugPrint("thy   self.CanClose succeedStart JLy", self.CanClose)
@@ -120,12 +115,13 @@ function M:OnInAnimationFinished()
   elseif 3 == self.Type then
     self:PlayAnimation(self.Failure)
     AudioManager(self):PlayUISound(self, "event:/ui/common/tuili_clue_think_fail", nil, nil)
-    for _, clueWidget in ipairs(self.ClueWidgets) do
-      clueWidget:PlayAnimation(clueWidget.Failure)
-    end
   end
 end
-
+function M:Failure_In()
+  for _, clueWidget in ipairs(self.ClueWidgets) do
+    clueWidget:PlayAnimation(clueWidget.Failure)
+  end
+end
 function M:OnResultAnimationFinished()
   self:UnbindAllFromAnimationFinished(self.Failure)
   self:UnbindAllFromAnimationFinished(self.Ratiocinate_Succeed)
@@ -143,14 +139,12 @@ function M:OnResultAnimationFinished()
   ReasoningUI:OnAssociteUIClose()
   self:Close()
 end
-
 function M:OnSucceedAnimationFinished()
   self:SetFocus()
   self:UnbindAllFromAnimationFinished(self.Succeed)
   self.CanClose = true
   DebugPrint("thy   self.CanClose succeedFinished JLy", self.CanClose)
 end
-
 function M:InitUI()
   self.WS_Type:SetActiveWidgetIndex(self.Type)
   for i = 1, #self.ClueWidgets do
@@ -178,10 +172,9 @@ function M:InitUI()
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
@@ -200,7 +193,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:SetFocus()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -209,9 +201,7 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   self:OnBtnCloseClick()
 end
-
 return M

@@ -2,16 +2,13 @@ require("UnLua")
 local ETalkType = require("BluePrints.Story.Talk.Base.ETalkType")
 local ETalkInterruptType = require("BluePrints.Story.Talk.Base.ETalkInterruptType")
 local TalkInterruptComponent = {}
-
 function TalkInterruptComponent.New()
   local TalkInterruptComponent_C = setmetatable({}, {__index = TalkInterruptComponent})
   TalkInterruptComponent_C.CachedInterrupteTyps = {}
   return TalkInterruptComponent_C
 end
-
 function TalkInterruptComponent:Clear()
 end
-
 function TalkInterruptComponent:GetSpecificInterruptTypes(TalkType, InterruptType)
   local Res = {}
   if self.CachedInterrupteTyps[TalkType .. InterruptType] then
@@ -28,5 +25,4 @@ function TalkInterruptComponent:GetSpecificInterruptTypes(TalkType, InterruptTyp
   self.CachedInterrupteTyps[TalkType .. InterruptType] = Res
   return Res
 end
-
 return TalkInterruptComponent

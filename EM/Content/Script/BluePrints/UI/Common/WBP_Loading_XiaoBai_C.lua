@@ -5,7 +5,6 @@ local WBP_Com_Loading_XiaoBai_C = Class({
 WBP_Com_Loading_XiaoBai_C._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function WBP_Com_Loading_XiaoBai_C:Construct()
   self:AddInputMethodChangedListen()
   self:Init()
@@ -26,12 +25,10 @@ function WBP_Com_Loading_XiaoBai_C:Construct()
   end
   self:UpdateUIStyleInPlatform(UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad)
 end
-
 function WBP_Com_Loading_XiaoBai_C:Destruct()
   self:CleanTimer()
   AudioManager(self):ReplayBGMAfterLoading()
 end
-
 function WBP_Com_Loading_XiaoBai_C:Tick(MyGeometry, InDeltaTime)
   if not self.IsWaiting then
     return
@@ -55,13 +52,11 @@ function WBP_Com_Loading_XiaoBai_C:Tick(MyGeometry, InDeltaTime)
   end
   self:UpdateProgress()
 end
-
 function WBP_Com_Loading_XiaoBai_C:UpdateProgress()
   self.ProgressBar:SetPercent(self.Progress / 100)
   self.Text_Progress:SetText(string.format("%.0f", self.Progress))
   self.Text_Progress_Back:SetText(string.format("%.0f", self.Progress))
 end
-
 function WBP_Com_Loading_XiaoBai_C:Init()
   self.CurrentInputDevice = {
     "KeyboardKey",
@@ -78,47 +73,38 @@ function WBP_Com_Loading_XiaoBai_C:Init()
   self.IsProgressing = true
   self:PlayAnimation(self.In)
   self:SetXiaoBaiRandomTips()
-  self:PlayXiaoBaiChangeAnimationForward()
   self:UpdateProgress()
 end
-
 function WBP_Com_Loading_XiaoBai_C:PlayXiaoBaiChangeAnimationForward()
   if not self.IsPlaying then
     return
   end
   self:PlayAnimation(self.Change, 0, 1, EUMGSequencePlayMode.Forward, 1.0)
   self.CurrentAnimationMode = "Forward"
-  DebugPrint("\230\173\163\229\144\145\230\146\173\230\148\190\229\138\168\231\148\187")
+  DebugPrint("正向播放动画")
 end
-
 function WBP_Com_Loading_XiaoBai_C:PlayXiaoBaiChangeAnimationReverse()
   if not self.IsPlaying then
     return
   end
   self:PlayAnimation(self.Change, 0, 1, EUMGSequencePlayMode.Reverse, 1.0)
   self.CurrentAnimationMode = "Reverse"
-  DebugPrint("\229\128\146\230\148\190\229\138\168\231\148\187")
+  DebugPrint("倒放动画")
 end
-
 function WBP_Com_Loading_XiaoBai_C:OnAnimationFinished(InAnimation)
-  if InAnimation ~= self.Change then
-    return
-  end
   if not self.IsPlaying then
     return
   end
-  DebugPrint("\229\138\168\231\148\187\229\174\140\230\136\144: " .. self.CurrentAnimationMode)
+  DebugPrint("动画完成: " .. self.CurrentAnimationMode)
   self.IsWaiting = true
   self.ElapsedWaitTime = 0.0
 end
-
 function WBP_Com_Loading_XiaoBai_C:SetXiaoBaiRandomTips()
   local RandomTips = self:GetRandomLoadingTips()
   self.Text_Title:SetText(RandomTips.Title)
   local Messages = self:GetFinalContentText(RandomTips.Message, self.CurrentInputDevice)
   self.Text_Message:SetText(Messages)
 end
-
 function WBP_Com_Loading_XiaoBai_C:GetRandomLoadingTips()
   if not self.TipsPoolByPlatform then
     self.TipsPoolByPlatform = {
@@ -165,7 +151,6 @@ function WBP_Com_Loading_XiaoBai_C:GetRandomLoadingTips()
   local RandomIndex = math.random(1, #TipsList)
   return TipsList[RandomIndex]
 end
-
 function WBP_Com_Loading_XiaoBai_C:CloseUI()
   self.Progress = 100.0
   self:UpdateProgress()
@@ -173,7 +158,6 @@ function WBP_Com_Loading_XiaoBai_C:CloseUI()
     UIManager(self):UnLoadUINew("BlackScreenXiaobai")
   end, false, 0, nil, true)
 end
-
 function WBP_Com_Loading_XiaoBai_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -182,7 +166,6 @@ function WBP_Com_Loading_XiaoBai_C:RefreshOpInfoByInputDevice(CurInputDevice, Cu
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self:SetXiaoBaiRandomTips()
 end
-
 function WBP_Com_Loading_XiaoBai_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self.Com_KeyTitle:SetVisibility(ESlateVisibility.Collapsed)
@@ -202,6 +185,5 @@ function WBP_Com_Loading_XiaoBai_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     })
   end
 end
-
 AssembleComponents(WBP_Com_Loading_XiaoBai_C)
 return WBP_Com_Loading_XiaoBai_C

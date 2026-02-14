@@ -1,15 +1,20 @@
 local WalnutBagController = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBagController")
 local Component = {}
-
 function Component:EnterWorld()
   WalnutBagController:Init()
 end
-
 function Component:LeaveWorld()
   WalnutBagController:Destory()
 end
-
+function Component:_OnPropChangeWalnut(keys)
+  DebugPrint(keys)
+end
+function Component:_OnPropChangeWalnutBag(keys)
+  DebugPrint(keys)
+end
 function Component:SelectWalnut(Callback, DungeonId, WalnutId)
+  assert(DungeonId)
+  assert(WalnutId)
   local function cb(ret)
     if not ErrorCode:Check(ret) then
       return
@@ -18,10 +23,8 @@ function Component:SelectWalnut(Callback, DungeonId, WalnutId)
       Callback(ret)
     end
   end
-  
   self:CallServer("SelectWalnut", cb, DungeonId, WalnutId)
 end
-
 function Component:OnRepWalnutBag(WalnutBag, ConsumeRecord)
   self.logger.info("OnRepWalnutBag")
   self.Walnuts.WalnutBag = WalnutBag
@@ -37,8 +40,8 @@ function Component:OnRepWalnutBag(WalnutBag, ConsumeRecord)
       end
     end
   end
+  EventManager:FireEvent(EventID.OnUpdateWalnutItem, "WalnutBagItemChange")
 end
-
 function Component:CheckWalnutEnough(Walnuts)
   for Id, Count in pairs(Walnuts) do
     if Count > self.Walnuts:GetCount(Id) then
@@ -47,7 +50,6 @@ function Component:CheckWalnutEnough(Walnuts)
   end
   return true
 end
-
 function Component:UpdateWalnutData(Data, bTriggerEvent)
   print(_G.LogTag, "UpdateWalnutData")
   for k, v in pairs(Data) do
@@ -57,5 +59,4 @@ function Component:UpdateWalnutData(Data, bTriggerEvent)
     EventManager:FireEvent(EventID.OnDungeonsUpdate)
   end
 end
-
 return Component

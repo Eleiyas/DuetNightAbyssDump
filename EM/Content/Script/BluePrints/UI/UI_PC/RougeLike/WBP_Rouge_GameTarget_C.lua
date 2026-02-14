@@ -2,17 +2,14 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.StarLight = false
   self.Star:PlayOffAnim()
   self:PlayAnimationForward(self.Complete)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(self.EventID, self)
 end
-
 function M:Init(EventID, Index, Score)
   self.TargetScore = Score
   self.EventID = EventID
@@ -20,7 +17,6 @@ function M:Init(EventID, Index, Score)
   self.Text_Target:SetText(GText("RougeMiniGamePointsLv" .. Index) .. self.TargetScore)
   self:RefreshStar()
 end
-
 function M:RefreshStar(Score)
   Score = Score or 0
   if not self.StarLight and Score >= self.TargetScore then
@@ -32,5 +28,4 @@ function M:RefreshStar(Score)
     self:PlayAnimationReverse(self.Complete)
   end
 end
-
 return M

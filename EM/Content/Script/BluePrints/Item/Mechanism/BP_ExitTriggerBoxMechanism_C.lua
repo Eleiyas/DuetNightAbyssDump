@@ -8,13 +8,11 @@ local PlayerState = {
   WaitExit = 3,
   Leave = 4
 }
-
 function BP_ExitTriggerBoxMechanism_C:Initialize(Initializer)
   BP_ExitTriggerBoxMechanism_C.Super.Initialize(BP_ExitTriggerBoxMechanism_C, Initializer)
   self.bShowingCountdownToast = false
   self.PrepareExitPlayers = {}
 end
-
 function BP_ExitTriggerBoxMechanism_C:ReceiveBeginPlay()
   print(_G.LogTag, "ReceiveBeginPlay", self:GetName(), self.BpBorn)
   self.Overridden.ReceiveBeginPlay(self)
@@ -27,7 +25,9 @@ function BP_ExitTriggerBoxMechanism_C:ReceiveBeginPlay()
   self.GameMode.EMGameState:RegisterGameModeEvent("OnEnter", self, self.OnAvatarEnter)
   EventManager:AddEvent(EventID.CharDie, self, self.OnCharDie)
 end
-
+function BP_ExitTriggerBoxMechanism_C:OnRep_Size()
+  self:SetBoxExtent(self.Size)
+end
 function BP_ExitTriggerBoxMechanism_C:AuthorityInitInfo(Info)
   BP_ExitTriggerBoxMechanism_C.Super.AuthorityInitInfo(self, Info)
   if not IsDedicatedServer(self) then
@@ -45,7 +45,6 @@ function BP_ExitTriggerBoxMechanism_C:AuthorityInitInfo(Info)
     self.PrepareExitPlayers[Avatar] = PlayerState.Play
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnAvatarExit(AvatarArr)
   print(_G.LogTag, "OnAvatarExit")
   local bCheck = false
@@ -63,7 +62,6 @@ function BP_ExitTriggerBoxMechanism_C:OnAvatarExit(AvatarArr)
     self:CheckTimerAndExit()
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnAvatarEnter(PlayerEid)
   print(_G.LogTag, "OnAvatarEnter")
   local PlayerCharacter = Battle(self):GetEntity(PlayerEid)
@@ -78,7 +76,6 @@ function BP_ExitTriggerBoxMechanism_C:OnAvatarEnter(PlayerEid)
   end
   self.PrepareExitPlayers[AvatarEid] = PlayerState.Play
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnCharDie(CharacterEid)
   print(_G.LogTag, "OnCharDie")
   local Character = Battle(self):GetEntity(CharacterEid)
@@ -97,7 +94,6 @@ function BP_ExitTriggerBoxMechanism_C:OnCharDie(CharacterEid)
   end
   self:CheckTimerAndExit()
 end
-
 function BP_ExitTriggerBoxMechanism_C:ExitInGameWin()
   print(_G.LogTag, "ExitInGameWin")
   if self:IsExistTimer("ExitTimeDownTick") then
@@ -109,7 +105,6 @@ function BP_ExitTriggerBoxMechanism_C:ExitInGameWin()
     self.GameMode:TriggerDungeonWin()
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnBeginOverlapLua(TargetActor)
   if IsAuthority(self) then
     local PlayerCharacter = TargetActor:Cast(UE4.APlayerCharacter)
@@ -124,7 +119,6 @@ function BP_ExitTriggerBoxMechanism_C:OnBeginOverlapLua(TargetActor)
     OverlapActor[TargetActor] = true
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:AddPlayer(PlayerCharacter)
   if IsStandAlone(self) then
     self:ExitInGameWin()
@@ -139,7 +133,6 @@ function BP_ExitTriggerBoxMechanism_C:AddPlayer(PlayerCharacter)
   self:CheckTimerAndExit()
   self:RefreshPlayerNumInfo()
 end
-
 function BP_ExitTriggerBoxMechanism_C:CheckTimerAndExit()
   if not self.GameMode.EMGameState:CheckGameModeStateEnable() then
     return
@@ -168,7 +161,6 @@ function BP_ExitTriggerBoxMechanism_C:CheckTimerAndExit()
     self:RemoveExitTimer()
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnEndOverlapLua(TargetActor)
   if IsClient(self) then
     OverlapActor[TargetActor] = nil
@@ -201,7 +193,6 @@ function BP_ExitTriggerBoxMechanism_C:OnEndOverlapLua(TargetActor)
   end
   self:RemoveExitTimer()
 end
-
 function BP_ExitTriggerBoxMechanism_C:RemoveExitTimer()
   DebugPrint("BP_ExitTriggerBoxMechanism_C:RemoveExitTimer")
   self:RemoveTimer("ExitTimeDownTick")
@@ -210,14 +201,12 @@ function BP_ExitTriggerBoxMechanism_C:RemoveExitTimer()
     self:ShowOrHideCountdownToast(false)
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:ResetExitTimer()
   self:RemoveExitTimer()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   self.ExitCountDown = GameState.ExitCountDown
   self:AddTimer(1.0, self.UpdatePage, true, 0, "ExitTimeDownTick")
 end
-
 function BP_ExitTriggerBoxMechanism_C:UpdatePage()
   DebugPrint("BP_ExitTriggerBoxMechanism_C:UpdatePage")
   if self.ExitCountDown - 1 < 0 then
@@ -235,26 +224,8 @@ function BP_ExitTriggerBoxMechanism_C:UpdatePage()
     self:ExitInGameWin()
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:HandleExitCountDownValueChange()
-  local UIManager = GWorld.GameInstance:GetGameUIManager()
-  if not UIManager then
-    return
-  end
-  local ExitTimeDownUI = UIManager:GetUIObj("ExitTimeDown")
-  if self.ExitCountDown < 0 and ExitTimeDownUI then
-    UIManager:UnLoadUI("ExitTimeDown")
-    return
-  end
-  if not ExitTimeDownUI then
-    local ScreenPos = FVector2D(0, 0)
-    ExitTimeDownUI = UIManager:LoadUI(UIConst.ExitTimeDown, "ExitTimeDown", UIConst.ZORDER_ABOVE_ALL, 10, ScreenPos)
-  end
-  if ExitTimeDownUI then
-    ExitTimeDownUI.TimeDown:SetText(self.ExitCountDown)
-  end
 end
-
 function BP_ExitTriggerBoxMechanism_C:IsSomeoneWaiting()
   local Res = false
   local WaitingNum, TotalNum = self:GetPlayerNum()
@@ -264,7 +235,6 @@ function BP_ExitTriggerBoxMechanism_C:IsSomeoneWaiting()
   DebugPrint("IsSomeoneWaiting Res = " .. (true == Res and "true" or "false"), WaitingNum)
   return Res
 end
-
 function BP_ExitTriggerBoxMechanism_C:GetPlayerNum()
   local WaitingNum, TotalNum = 0, 0
   for AvatarEid, State in pairs(self.PrepareExitPlayers or {}) do
@@ -275,10 +245,8 @@ function BP_ExitTriggerBoxMechanism_C:GetPlayerNum()
   end
   return WaitingNum, TotalNum
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnRep_ExitInfo()
 end
-
 function BP_ExitTriggerBoxMechanism_C:ShowOrHideCountdownToast(bIsShow)
   if nil == bIsShow then
     return
@@ -293,30 +261,25 @@ function BP_ExitTriggerBoxMechanism_C:ShowOrHideCountdownToast(bIsShow)
     end
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:EMActorDestroy(DestroyReason)
   self:OnEMActorDestroy(DestroyReason)
 end
-
 function BP_ExitTriggerBoxMechanism_C:OnEMActorDestroy(DestroyReason)
   self:RemoveExitTimer()
   self:K2_DestroyActor()
   EventManager:RemoveEvent(EventID.CharDie)
 end
-
 function BP_ExitTriggerBoxMechanism_C:ReceiveActorBeginOverlap(OtherActor)
   self.Overridden.ReceiveActorBeginOverlap(self, OtherActor)
 end
-
 function BP_ExitTriggerBoxMechanism_C:ReceiveActorEndOverlap(OtherActor)
   self.Overridden.ReceiveActorEndOverlap(self, OtherActor)
 end
-
 function BP_ExitTriggerBoxMechanism_C:IsPlayerWaiting(PlayerCharacter)
   local bIsWaiting = false
   DebugPrint("BP_ExitTriggerBoxMechanism_C:IsPlayerWaiting ", PlayerCharacter)
   if PlayerCharacter then
-    if UE4.UKismetMathLibrary.IsPointInBox(PlayerCharacter:K2_GetActorLocation(), self:K2_GetActorLocation(), self.CollisionComponent.BoxExtent * 2) then
+    if UE4.URuntimeCommonFunctionLibrary.CheckBoxAndCapsuleOverlap(PlayerCharacter.CapsuleComponent, self.CollisionComponent) then
       return true
     end
     for Actor, _ in pairs(OverlapActor or {}) do
@@ -328,18 +291,58 @@ function BP_ExitTriggerBoxMechanism_C:IsPlayerWaiting(PlayerCharacter)
   end
   return bIsWaiting
 end
-
+function BP_ExitTriggerBoxMechanism_C:GetAllPlayerControllers()
+  local World = self.GetWorld and self:GetWorld() or UE4.UGameplayStatics.GetWorld(self)
+  if not World then
+    return {}
+  end
+  local PCs = {}
+  local GameState = UE4.UGameplayStatics.GetGameState(self)
+  local maxCount = 64
+  if GameState and GameState.PlayerArray then
+    local n = GameState.PlayerArray:Num()
+    if n and n > 0 then
+      maxCount = n
+    end
+  end
+  for idx = 0, maxCount - 1 do
+    local PC = UE4.UGameplayStatics.GetPlayerController(self, idx)
+    if not PC then
+      break
+    end
+    table.insert(PCs, PC.Character)
+  end
+  return PCs
+end
+function BP_ExitTriggerBoxMechanism_C:GetComponentDistance(CompA, CompB)
+  if not CompA or not CompB then
+    return math.huge
+  end
+  local LocA = CompA:K2_GetComponentLocation()
+  local LocB = CompB:K2_GetComponentLocation()
+  if not LocA or not LocB then
+    return math.huge
+  end
+  local Delta = LocA - LocB
+  return Delta:Size()
+end
+function BP_ExitTriggerBoxMechanism_C:GetDistanceToPlayerComponent(PlayerCharacter)
+  if not (PlayerCharacter and PlayerCharacter.CapsuleComponent) or not self.CollisionComponent then
+    return nil
+  end
+  local dist = self:GetComponentDistance(PlayerCharacter.CapsuleComponent, self.CollisionComponent)
+  DebugPrint("BP_ExitTriggerBoxMechanism_C:GetDistanceToPlayerComponent", dist)
+  return dist
+end
 function BP_ExitTriggerBoxMechanism_C:GetUnitRealType()
   if self.UnitId and DataMgr.Mechanism[self.UnitId] then
     return DataMgr.Mechanism[self.UnitId].UnitRealType
   end
 end
-
 function BP_ExitTriggerBoxMechanism_C:RefreshPlayerNumInfo()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState and self.bShowingCountdownToast then
     GameState.ExitInfo.WaitingPlayerNum, GameState.ExitInfo.TotalPlayerNum = self:GetPlayerNum()
   end
 end
-
 return BP_ExitTriggerBoxMechanism_C

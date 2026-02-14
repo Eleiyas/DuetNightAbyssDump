@@ -1,22 +1,18 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Overridden.Construct(self)
   self.bGameOver = false
   self.Time = 5
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.bMapIndexIsLocked = false
   self:InitListenEvent()
   self:SetInputUIOnly(true)
 end
-
 function M:InitListenEvent()
 end
-
 function M:InitAfterBeginPlay()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self:InitWidghtPC()
@@ -44,7 +40,6 @@ function M:InitAfterBeginPlay()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/shuifa_start", nil, nil)
   AudioManager(self.ShuiFaDial):PlayUISound(self.ShuiFaDial, "event:/ui/minigame/shuifa_push_amb", "ShuifaPlaying", nil)
 end
-
 function M:InitWidghtPC()
   self.Key_Hint:CreateCommonKey({
     KeyInfoList = {
@@ -72,7 +67,6 @@ function M:InitWidghtPC()
   self.Text_Float_L:SetText(GText("UI_MiniGame_SF_Hint1"))
   self.Text_Float_R:SetText(GText("UI_MiniGame_SF_Hint2"))
 end
-
 function M:InitWidghtMobile()
   self.Btn_Close:Init("Close", self, self.GameOver, false)
   if self.ShuifaDial.Key_Space then
@@ -82,7 +76,6 @@ function M:InitWidghtMobile()
   self.Btn_ClickArea.OnClicked:Add(self, self.OnClickSpaceBar)
   self.Text_Float:SetText(GText("UI_MiniGame_SF_Hint_Phone"))
 end
-
 function M:InitCrack()
   if not self.bCanCrack then
     return
@@ -95,7 +88,6 @@ function M:InitCrack()
     NeedReset = false
   })
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -109,7 +101,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -137,7 +128,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -146,15 +136,12 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnClickSpaceBar()
   self.ShuifaDial:OnClickSpaceBar()
 end
-
 function M:GameFail()
   self:GameOver(false)
 end
-
 function M:GameOver(bSuccess)
   if self.bGameOver then
     return
@@ -166,7 +153,6 @@ function M:GameOver(bSuccess)
     self:GameFailed()
   end
 end
-
 function M:GameFailed()
   self:PlayAnimation(self.Fail_Out)
   self.ShuiFaDial.MiniGame_Text.Text_Success:SetText(GText("UI_MiniGame_Success"))
@@ -174,14 +160,12 @@ function M:GameFailed()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/shuifa_fail", nil, nil)
   self:RemoveTimer("CountDown", true)
 end
-
 function M:GameSuccess()
   self:PlayAnimation(self.Success_Out)
   self.ShuiFaDial.MiniGame_Text.Text_Fail:SetText(GText("UI_MiniGame_Fail"))
   self.ShuiFaDial.MiniGame_Text.Switcher_Tip:SetActiveWidgetIndex(0)
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/shuifa_success", nil, nil)
 end
-
 function M:Close(Value)
   self:SetInputUIOnly(false)
   self.bGameStart = false
@@ -193,15 +177,12 @@ function M:Close(Value)
   AudioManager(self.ShuiFaDial):StopSound(self.ShuiFaDial, "ShuifaPlaying")
   self.Super.Close(self)
 end
-
 function M:Destruct()
   if self.bGameStart then
-    self:SetInputUIOnly(false)
     self.UseActor:ChangeState("InteractBreak", self.UseActor.PlayerEid)
   end
   self.Super.Destruct(self)
 end
-
 function M:CountDown()
   local time_str = string.format("%02d:%02d", math.floor(self.Time / 60), self.Time % 60)
   self.ShuiFaDial.MiniGame_Time.Text_Time:SetText(time_str)
@@ -215,7 +196,6 @@ function M:CountDown()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_maze_countdown", nil, nil)
   self.Time = self.Time - 1
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -229,7 +209,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDeviceType = CurInputDevice
 end
-
 function M:GamepadToPC()
   if self.WidgetSwitcher_MP then
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
@@ -245,7 +224,6 @@ function M:GamepadToPC()
   end
   self.ShuifaDial:ShowTips()
 end
-
 function M:PCToGamepad()
   if self.WidgetSwitcher_MP then
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(1)
@@ -261,5 +239,4 @@ function M:PCToGamepad()
   end
   self.ShuifaDial:ShowTips()
 end
-
 return M

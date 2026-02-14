@@ -1,13 +1,11 @@
 require("UnLua")
 local ChatModel = ChatController:GetModel()
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.OriginHeight = self.List_Item:GetEntryHeight()
   self.OriginWidth = self.List_Item:GetEntryWidth()
   self.bEmoji = false
 end
-
 function M:Destruct()
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
     local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
@@ -16,7 +14,6 @@ function M:Destruct()
     end
   end
 end
-
 function M:Open(Owner, ViewName)
   self:PlayAnimation(self.In)
   self.Owner = Owner
@@ -63,11 +60,9 @@ function M:Open(Owner, ViewName)
     end
   end
 end
-
 function M:UpdateWidth()
   self.Root:SetWidthOverride(self.Owner:GetWidthOverrideForInput())
 end
-
 function M:OnListTabSelected(TabContent)
   if self.CurrSelectContent and IsValid(self.CurrSelectContent.UI) then
     self.CurrSelectContent.UI:SetSelected(false)
@@ -91,17 +86,14 @@ function M:OnListTabSelected(TabContent)
   end
   self.List_Item:NavigateToIndex(0)
 end
-
 function M:OnListItemClicked(Content)
   self.Owner:ApplyEmoji(Content.Data)
   self:SetFocus()
 end
-
 function M:Close()
   self:PlayAnimation(self.Close)
   self.Owner:OnExtraPanelClose()
 end
-
 function M:SwitchNextTabGroup(AddIndex)
   if not self.CurrSelectContent then
     return
@@ -118,7 +110,6 @@ function M:SwitchNextTabGroup(AddIndex)
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -126,14 +117,12 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self:UpdateUIStyleInPlatform()
 end
-
 function M:UpdateUIStyleInPlatform()
   local IsGamepad = self.CurInputDeviceType == ECommonInputType.Gamepad
   local Visibility = IsGamepad and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed
   self.Key_FaceTabLeft:SetVisibility(Visibility)
   self.Key_FaceTabRight:SetVisibility(Visibility)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -146,7 +135,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadLeftTrigger then
@@ -161,5 +149,4 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

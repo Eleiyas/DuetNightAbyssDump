@@ -3,7 +3,6 @@ local Component = {}
 Component.EnhanceWidgetMap = {
   [CommonConst.ArmoryType.Weapon] = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Intensify/WBP_Armory_Enhance.WBP_Armory_Enhance'"
 }
-
 function Component:InitEnhanceComp(...)
   local User, Target, SubWidget = ...
   if not SubWidget then
@@ -49,7 +48,6 @@ function Component:InitEnhanceComp(...)
     self:RefreshBaseInfo()
   end)
 end
-
 function Component:InitEnhanceUI()
   self.WidgetSwitcher_Mode:SetActiveWidgetIndex(1)
   self.Btn_Auto:SetText(GText("UI_WeaponStrength_Auto"))
@@ -57,12 +55,10 @@ function Component:InitEnhanceUI()
   self.Btn_Enhance:SetDefaultGamePadImg("Y")
   self.Btn_Auto:SetDefaultGamePadImg("X")
 end
-
 function Component:InitIntensify(WidgetPath, Params)
   self.VB_Node:ClearChildren()
   self:CreateIntensifyWidget(WidgetPath, Params)
 end
-
 function Component:CreateIntensifyWidget(WidgetPath, Params)
   self.IntensifyWidget = UIManager(self):CreateWidget(WidgetPath, true)
   self.VB_Node:AddChild(self.IntensifyWidget)
@@ -77,7 +73,6 @@ function Component:CreateIntensifyWidget(WidgetPath, Params)
     self.CurrentSubUI = self.IntensifyWidget
   end
 end
-
 function Component:UpdateAutoButtonText()
   if self.ConsumedContentsArray and #self.ConsumedContentsArray > 0 and self.IsAutoFilled then
     self.Btn_Auto:SetText(GText("UI_WeaponStrength_Clear"))
@@ -86,7 +81,6 @@ function Component:UpdateAutoButtonText()
     self.IsAutoFilled = false
   end
 end
-
 function Component:UpdateWeaponTagIcon()
   local TargetWeapon = self.Target
   local MeleeTags, MeleeTagNames, RangedTags, RangedTagNames = UIUtils.GetAllWeaponTags()
@@ -121,7 +115,6 @@ function Component:UpdateWeaponTagIcon()
     self.Stats_ListView:AddItem(self:NewWeaponTagIconContent(Data and Data.Icon, WeaponTagNames[idx], Tag == WeaponTag))
   end
 end
-
 function Component:NewWeaponTagIconContent(IconPath, TagName, IsSelected)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Icon = IconPath or ""
@@ -129,7 +122,6 @@ function Component:NewWeaponTagIconContent(IconPath, TagName, IsSelected)
   Obj.IsSelected = IsSelected
   return Obj
 end
-
 function Component:InitPanelInfo()
   self.Panel_Info:SetVisibility(UIConst.VisibilityOp.Visible)
   local TargetWeaponData = self.Target.Props
@@ -139,19 +131,42 @@ function Component:InitPanelInfo()
   self:UpdateWeaponTagIcon()
   self:SetStars(WeaponRarity)
 end
-
 function Component:DestructComp()
   if self.IntensifyWidget then
     self.IntensifyWidget:BindEvents(nil, nil)
   end
 end
-
 function Component:RefreshListComp()
   local Weapons = self.IntensifyWidget:GetAllWeapons()
   local CurrentWeapon = self.IntensifyWidget:GetCurrentWeapon()
   self.ContentsMap = {}
   self.ContentsArray = {}
   self.ChosenContents = {}
+  local Avatar = GWorld:GetAvatar()
+  local ConsumeResourceId = 1006
+  local ResourceData = Avatar.Resources[ConsumeResourceId]
+  if Avatar.Resources ~= nil and nil ~= ResourceData then
+    local ResourceInfo = DataMgr.Resource[ConsumeResourceId]
+    if ResourceInfo then
+      local Obj = NewObject(UIUtils.GetCommonItemContentClass())
+      Obj.Type = ResourceInfo.Type
+      Obj.ItemType = CommonConst.DataType.Resource
+      Obj.UnitId = ConsumeResourceId
+      Obj.Rarity = ResourceInfo.Rarity or 0
+      Obj.GradeLevel = 1
+      Obj.Icon = ResourceInfo.Icon
+      Obj.Uuid = -ConsumeResourceId
+      Obj.Parent = self
+      Obj.Count = ResourceData.Count or 0
+      if ResourceData.Count > 0 then
+        Obj.bShadow = false
+      else
+        Obj.bShadow = true
+      end
+      table.insert(self.ContentsArray, Obj)
+      self.ContentsMap[Obj.Uuid] = Obj
+    end
+  end
   for _, Weapon in pairs(Weapons) do
     local Content = ArmoryUtils:NewCharOrWeaponItemContent(Weapon, CommonConst.ArmoryType.Weapon, self.IntensifyWidget:GetWeaponTag(), true)
     Content.IsEquipped = CurrentWeapon and Weapon.Uuid == CurrentWeapon.Uuid
@@ -171,13 +186,13 @@ function Component:RefreshListComp()
     }
   })
 end
-
 function Component:OnChosenItemChanged(CardLevelWidgetContents)
   if self.ChosenContents then
     for key, value in pairs(self.ChosenContents) do
       value.IsSelected = false
       if value.SelfWidget then
         value.SelfWidget:SetItemSelect(false)
+        value.SelfWidget:SetSelectNum()
       end
     end
   end
@@ -186,14 +201,19 @@ function Component:OnChosenItemChanged(CardLevelWidgetContents)
     local Content = self.ContentsMap[value.Uuid]
     if Content then
       Content.IsSelected = true
+      Content.ConsumedCount = value.ConsumedCount
       self.ChosenContents[value.Uuid] = Content
       if Content.SelfWidget then
-        Content.SelfWidget:SetItemSelect(true)
+        if Content.ItemType == "Resource" then
+          Content.SelfWidget:SetItemSelect(false)
+          Content.SelfWidget:SetSelectNum(value.ConsumedCount)
+        else
+          Content.SelfWidget:SetItemSelect(true)
+        end
       end
     end
   end
 end
-
 function Component:CloseComp()
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
   if ArmoryMain and ArmoryMain.WeaponItemContentsMap then
@@ -209,55 +229,85 @@ function Component:CloseComp()
     self.InitTimer = nil
   end
 end
-
 function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
   table.sort(InOutContentArray, function(a, b)
-    if SortType == CommonConst.ASC then
+    local aIsResource = a.ItemType == "Resource"
+    local bIsResource = b.ItemType == "Resource"
+    if aIsResource and not bIsResource then
+      return true
+    elseif not aIsResource and bIsResource then
+      return false
+    elseif aIsResource and bIsResource then
+      return false
+    elseif SortType == CommonConst.ASC then
       return a.Level < b.Level
     else
       return a.Level > b.Level
     end
   end)
 end
-
 function Component:OnListItemClicked(Content)
   if not Content.Uuid then
     return
   end
   ArmoryUtils:SetReddotRead(Content, true)
-  if self.ChosenContents[Content.Uuid] then
+  if Content.ItemType == "Resource" then
+    if self.ChosenContents[Content.Uuid] then
+      self.IntensifyWidget:AddResourceCount(Content)
+    else
+      self.IntensifyWidget:AddItemToLast(Content)
+    end
+  elseif self.ChosenContents[Content.Uuid] then
     self.IntensifyWidget:RemoveItem(Content)
   else
     self.IntensifyWidget:AddItemToLast(Content)
   end
   self:OnSelectedItemChanged(Content)
 end
-
 function Component:OnSelectedItemChanged(Content)
-  if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
-    if not self.bItemDetailsShowed or self.ItemDetailsContent ~= Content then
-      self:ShowItemDetails(true, Content)
-    else
-      self:ShowItemDetails(false)
-    end
+  if self.CurInputDeviceType ~= ECommonInputType.Gamepad and (not self.bItemDetailsShowed or self.ItemDetailsContent ~= Content) then
+    self:ShowItemDetails(true, Content)
   end
 end
-
+function Component:OnItemTypeChanged(Type)
+  if self.ItemTypeChangeTimer then
+    self:RemoveTimer(self.ItemTypeChangeTimer)
+  end
+  self.PendingItemType = Type
+  self.ItemTypeChangeTimer = self:AddTimer(0.1, self.OnItemTypeChangedDelayed)
+end
+function Component:OnItemTypeChangedDelayed()
+  local Type = self.PendingItemType
+  if Type == CommonConst.DataType.Resource then
+    self:ShowRemoveBtn(true)
+    self:ShowChooseBtn(true)
+    self:ShowAddAndRemoveBtn(false)
+  else
+    self:ShowRemoveBtn(false)
+    self:ShowChooseBtn(false)
+    self:ShowAddAndRemoveBtn(true)
+  end
+  self.ItemTypeChangeTimer = nil
+  self.PendingItemType = nil
+end
 function Component:OnEntryInitialized(Content, Widget)
   Widget:UpdateGrey(Content.IsEquipped)
 end
-
 function Component:OnListItemInited()
   if self.ChosenContents then
     for key, value in pairs(self.ChosenContents) do
       value.IsSelected = true
       if value.SelfWidget then
-        value.SelfWidget:SetItemSelect(true)
+        if value.ItemType == "Resource" then
+          value.SelfWidget:SetItemSelect(false)
+          value.SelfWidget:SetSelectNum(value.ConsumedCount)
+        else
+          value.SelfWidget:SetItemSelect(true)
+        end
       end
     end
   end
 end
-
 function Component:OnBackgroundClickedComp()
   if self.bItemDetailsShowed then
     self:ShowItemDetails(false)
@@ -265,11 +315,9 @@ function Component:OnBackgroundClickedComp()
     self:OnExpandList(false, true)
   end
 end
-
 function Component:OnDetailLockBtnClickComp()
   self:LockOrUnlockWeapon()
 end
-
 function Component:LockOrUnlockWeapon()
   if not self.ItemDetailsContent then
     return
@@ -278,14 +326,12 @@ function Component:LockOrUnlockWeapon()
     local function CancelFunc()
       self:SetFocus()
     end
-    
     local function ConfirmFunc()
       self:SetFocus()
       local Avatar = GWorld:GetAvatar()
       self:BlockAllUIInput(true)
       Avatar:UnLockResourceInBag(CommonConst.AllType.Weapon, self.ItemDetailsContent.Uuid)
     end
-    
     UIManager(self):ShowCommonPopupUI(100019, {
       LeftCallbackFunction = CancelFunc,
       RightCallbackFunction = ConfirmFunc,
@@ -297,7 +343,6 @@ function Component:LockOrUnlockWeapon()
     Avatar:LockResourceInBag(CommonConst.AllType.Weapon, self.ItemDetailsContent.Uuid)
   end
 end
-
 function Component:OnBagItemLockedOrUnlocked(OpAction, ErrCode, ...)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(ErrCode) then
@@ -323,7 +368,6 @@ function Component:OnBagItemLockedOrUnlocked(OpAction, ErrCode, ...)
     end
   end
 end
-
 function Component:OnAutoFillBtnClicked()
   if self.IsAutoFilled then
     self.ConsumedContentsMap = {}
@@ -396,7 +440,6 @@ function Component:OnAutoFillBtnClicked()
   self:OnChosenItemChanged(self.ConsumedContentsArray)
   self:UpdateAutoButtonText()
 end
-
 function Component:DfsCalcConsumedItems(InArr, InArrIdx, TempArr, StartLevel)
   if StartLevel > self.MaxGradeLevel then
     return false
@@ -427,7 +470,6 @@ function Component:DfsCalcConsumedItems(InArr, InArrIdx, TempArr, StartLevel)
     return self:DfsCalcConsumedItems(InArr, InArrIdx + 1, TempArr, StartLevel)
   end
 end
-
 function Component:OnEnhanceBtnClicked()
   if not self.ConsumedContentsMap or not next(self.ConsumedContentsMap) then
     return
@@ -436,14 +478,29 @@ function Component:OnEnhanceBtnClicked()
   self.TargetWeapon = Avatar.Weapons[self.TargetWeapon.Uuid]
   local bChosenWeaponHasAssisterId = false
   local bChosenWeaponHasLvup = false
+  local HasConsumeResources = false
+  local ConsumeResourcesCount = 0
+  local HasEnhenancedWeapon = false
   local PreviewLevel = self.TargetWeapon.GradeLevel
   local ConsumeWeaponUuids = {}
   for _, value in pairs(self.ConsumedContentsMap) do
-    table.insert(ConsumeWeaponUuids, value.Uuid)
-    local Weapon = Avatar.Weapons[value.Uuid]
-    bChosenWeaponHasAssisterId = bChosenWeaponHasAssisterId or Weapon.AssisterId and 0 ~= Weapon.AssisterId
-    bChosenWeaponHasLvup = bChosenWeaponHasLvup or Weapon.Level > 1
-    PreviewLevel = PreviewLevel + Weapon.GradeLevel + 1
+    if value.ItemType == "Resource" then
+      ConsumeResourcesCount = value.ConsumedCount
+      HasConsumeResources = true
+      local ConsumedCount = value.ConsumedCount or 1
+      PreviewLevel = PreviewLevel + ConsumedCount
+    else
+      table.insert(ConsumeWeaponUuids, value.Uuid)
+      local Weapon = Avatar.Weapons[value.Uuid]
+      if Weapon then
+        bChosenWeaponHasAssisterId = bChosenWeaponHasAssisterId or Weapon.AssisterId and 0 ~= Weapon.AssisterId
+        bChosenWeaponHasLvup = bChosenWeaponHasLvup or Weapon.Level > 1
+        PreviewLevel = PreviewLevel + Weapon.GradeLevel + 1
+        if Weapon.GradeLevel > 1 then
+          HasEnhenancedWeapon = true
+        end
+      end
+    end
   end
   local Params = {
     RightCallbackFunction = function()
@@ -453,9 +510,8 @@ function Component:OnEnhanceBtnClicked()
           self:BlockAllUIInput(false)
         end
       end
-      
       self:BlockAllUIInput(true)
-      Avatar:UpWeaponGradeLevel(self.TargetWeapon.Uuid, self.TargetWeapon.GradeLevel, ConsumeWeaponUuids, Callback)
+      Avatar:UpWeaponGradeLevel(self.TargetWeapon.Uuid, self.TargetWeapon.GradeLevel, ConsumeWeaponUuids, ConsumeResourcesCount, Callback)
     end
   }
   local OverflowLevel = PreviewLevel - self.MaxGradeLevel
@@ -463,23 +519,23 @@ function Component:OnEnhanceBtnClicked()
     Params.ShortText = string.format(GText("UI_WeaponCardLevel_Popup_Overflow"), OverflowLevel)
   elseif bChosenWeaponHasAssisterId then
     Params.ShortText = GText("UI_WeaponCardLevel_Popup_Equiped")
-  elseif PreviewLevel > self.TargetWeapon.GradeLevel + #ConsumeWeaponUuids then
+  elseif HasEnhenancedWeapon then
     Params.ShortText = string.format(GText("UI_WeaponCardLevel_Popup_HaveMax"), PreviewLevel)
   elseif bChosenWeaponHasLvup then
     Params.ShortText = GText("UI_WeaponCardLevel_Popup_HaveUpgraded")
+  elseif HasConsumeResources then
+    Params.ShortText = string.format(GText("UI_WeaponCardLevel_Popup_UseGeneral"), ConsumeResourcesCount)
   else
     Params.ShortText = GText("UI_WeaponCardLevel_Popup_Normal")
   end
   UIManager(self):ShowCommonPopupUI(100089, Params, self)
 end
-
 function Component:OnAutoClaimWeaponBreakCollectReward()
   local Params = {
     ShortText = string.format(GText("UI_Weapon_BreakRewardAutoCollect"), self.Target:GetName())
   }
   UIManager(self):ShowCommonPopupUI(100260, Params, self)
 end
-
 function Component:UpdateConsumedContents()
   if self.IsAutoFilled then
     self.IsAutoFilled = false
@@ -489,23 +545,18 @@ function Component:UpdateConsumedContents()
   self.ConsumedContentsArray = {}
   self.IntensifyWidget:UpdateConsumedItems({})
 end
-
 function Component:GetAllWeapons()
   return self.SubWidget.AllWeapons
 end
-
 function Component:GetWeaponTag()
   return self.SubWidget.Tag
 end
-
 function Component:GetChosenContents()
   return self.SubWidget.ConsumedContentsArray
 end
-
 function Component:GetCurrentWeapon()
   return self.SubWidget.CurrentPlayerWeapon
 end
-
 function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -523,13 +574,11 @@ function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName
     self:ShowChooseBtn(true)
   end
 end
-
 function Component:OnFocusReceivedComp(MyGeometry, InFocusEvent)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ReNavigateToListItem()
   end
 end
-
 function Component:ReNavigateToListItem()
   if self.bListExpand then
     if self.Selective_Listing.TileView_Select_Role:GetNumItems() > 0 then
@@ -546,7 +595,6 @@ function Component:ReNavigateToListItem()
     self.CurrentSubUI.Item_1:SetFocus()
   end
 end
-
 function Component:OnKeyDownComp(MyGeometry, InKeyName)
   if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
     self.Btn_Auto:OnBtnClicked()
@@ -554,7 +602,12 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
     self.Btn_Enhance:OnBtnClicked()
   elseif InKeyName == UIConst.GamePadKey.LeftThumb then
     self.Selective_Listing.Common_Sort_List.Btn_Filter_List:SetFocus()
+  elseif InKeyName == UIConst.GamePadKey.RightThumb then
+    if not self.bListExpand then
+      return false
+    end
+    local SelectedContent = self.ItemDetailsContent and self.CurrentSubUI:FindSelectedContent(self.ItemDetailsContent.Uuid)
+    self.CurrentSubUI:OnListItemClicked(SelectedContent)
   end
 end
-
 return Component

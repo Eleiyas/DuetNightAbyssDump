@@ -2,17 +2,14 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Text_Ability:SetText(GText("UI_Ability"))
 end
-
 function M:OnListItemObjectSet(Content)
   if Content.Style == "ShowValue" then
     self:InitShowValue(Content)
   end
 end
-
 function M:InitShowValue(Content)
   if Content.IsDispatchTag then
     self.WidgetSwitcher_Content:SetActiveWidgetIndex(1)
@@ -46,7 +43,6 @@ function M:InitShowValue(Content)
     end
   end
 end
-
 function M:InitDispatchTag(Content)
   self.Name_Ability:SetText(Content.Name)
   self.Icon_Ability.Icon_Ability:SetBrushResourceObject(LoadObject(Content.Icon))
@@ -57,7 +53,6 @@ function M:InitDispatchTag(Content)
   self:SetIsBreak(false)
   self.Icon_Ability:PlayAnimation(self.Icon_Ability.Active)
 end
-
 function M:SetIsBreak(IsBreak)
   if IsBreak then
     self.Icon_UnLock:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -65,5 +60,4 @@ function M:SetIsBreak(IsBreak)
     self.Icon_UnLock:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 return M

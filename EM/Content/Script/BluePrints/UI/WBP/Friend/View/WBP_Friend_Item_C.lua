@@ -7,8 +7,8 @@ local ChatController = require("BluePrints.UI.WBP.Chat.ChatController")
 local TeamController = require("BluePrints.UI.WBP.Team.TeamController")
 local TeamModel = TeamController:GetModel()
 local UIUtils = require("Utils.UIUtils")
+local GMVariable = require("BluePrints.UI.GMInterface.GMVariable")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnTeamMainFocusChanged(bFocused, bAddFocusRecv)
   if not bAddFocusRecv and not bFocused then
     return
@@ -25,13 +25,11 @@ function M:OnTeamMainFocusChanged(bFocused, bAddFocusRecv)
     KeyWidget:SetVisibility(UIConst.VisibilityOp[Visibility])
   end
 end
-
 function M:OnAnimationStarted(InAnim)
   if InAnim == self.In then
     self:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if FriendController:IsGamepad() then
     self:OnTeamMainFocusChanged(false, true)
@@ -49,7 +47,6 @@ function M:OnAddedToFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if FriendController:IsGamepad() then
     self:OnItemSelectionChanged(false)
@@ -65,7 +62,6 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.Button_Invite:BindEventOnReleased(self, self.OnBtnInviteReleased)
@@ -78,6 +74,8 @@ function M:Construct()
   self.Head_Friend:BindOnClickEvent(function()
     self.Head_Anchor:Open(true)
   end)
+  self.Button_Gift:BindEventOnClicked(self, self.OnBtnGiftClick)
+  self.Button_Gift:BindForbidStateExecuteEvent(self, self.OnGiftForbidClick)
   self.Head_Anchor.OnGetUserMenuContentEvent:Bind(self, self.OnAnchorGetUserMenuContent)
   self.Head_Anchor.OnMenuOpenChanged:Add(self, self.HeadMenuOpenChanged)
   self.Button_Invite:SetGamePadImg("A")
@@ -98,8 +96,16 @@ function M:Construct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
+  self.Button_Gift:OverriddenSoundFunc()
+  self:SetNavigationRuleCustomBoundary(UE4.EUINavigation.Right, {
+    self,
+    self.OnNavagationRight
+  })
+  self:SetNavigationRuleCustomBoundary(UE4.EUINavigation.Left, {
+    self,
+    self.OnNavagationLeft
+  })
 end
-
 function M:HeadMenuOpenChanged(bOpen)
   self.bMenuOpen = bOpen
   local GameInstance = GWorld.GameInstance
@@ -128,7 +134,6 @@ function M:HeadMenuOpenChanged(bOpen)
   end
   self.Head_Friend:PlayNormal()
 end
-
 function M:ResetUI()
   self.HB_Loca:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.HB_Button_Request:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -141,27 +146,23 @@ function M:ResetUI()
   self.Split:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Split_1:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Head_Friend:SetHoldUp(false)
+  self.HB_Gift:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.Title then
     self.Title:ClearChildren()
     self.Title:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnAnchorGetUserMenuContent()
   local FriendMainView = FriendController:GetView(self)
-  
   local function InviteTeam(Content, AvatarInfo)
     Content.Text = GText("UI_Chat_InviteTeam")
-    
     function Content.Callback()
       TeamController:SendTeamInvite(AvatarInfo.Uid)
       self.Head_Anchor:Close()
     end
   end
-  
   local function InitShowRecordBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Chat_ShowRecord")
-    
     function Content.Callback()
       if TeamModel:IsYourself(AvatarInfo.Uid) then
         PersonInfoController:OpenView()
@@ -174,18 +175,15 @@ function M:OnAnchorGetUserMenuContent()
       end
     end
   end
-  
   local function AddBlackList(Content, AvatarInfo)
     if FriendModel:GetBlackListDict()[AvatarInfo.Uid] then
       Content.Text = GText("UI_Friend_DelBlackList")
-      
       function Content.Callback()
         FriendController:SendCancelBlackList(AvatarInfo.Uid)
         self.Head_Anchor:Close()
       end
     else
       Content.Text = GText("UI_Friend_AddBlackList")
-      
       function Content.Callback()
         self.Head_Anchor:Close()
         local Dialog = FriendController:GetDialog(self)
@@ -200,10 +198,8 @@ function M:OnAnchorGetUserMenuContent()
       end
     end
   end
-  
   local function RemarkFriend(Content, AvatarInfo)
     Content.Text = GText("UI_Friend_Remark")
-    
     function Content.Callback()
       local Params = {
         UseGenaral = true,
@@ -221,23 +217,19 @@ function M:OnAnchorGetUserMenuContent()
       self.Head_Anchor:Close()
     end
   end
-  
   local function StarFriend(Content, AvatarInfo)
     if not self.FriendData.Star then
       Content.Text = GText("UI_Friend_AddStar")
     else
       Content.Text = GText("UI_Friend_RemoveStar")
     end
-    
     function Content.Callback()
       FriendController:SendRequest(FriendCommon.EventId.SetStar, AvatarInfo.Uid, not self.FriendData.Star)
       self.Head_Anchor:Close()
     end
   end
-  
   local function RemoveFriend(Content, AvatarInfo)
     Content.Text = GText("UI_Friend_Remove")
-    
     function Content.Callback()
       local Params = {
         RightCallbackFunction = function()
@@ -248,7 +240,47 @@ function M:OnAnchorGetUserMenuContent()
       self.Head_Anchor:Close()
     end
   end
-  
+  local function AccusePlayer(Content, AvatarInfo)
+    Content.Text = GText("UI_Chat_Accuse")
+    function Content.Callback()
+      local Params = {
+        PlayerName = AvatarInfo.Nickname,
+        UID = AvatarInfo.Uid,
+        TextLenMax = 50,
+        ForbidRightBtn = true,
+        DontCloseWhenRightBtnClicked = true
+      }
+      function Params.HideItemTips()
+        self:BroadcastDialogEvent(DialogEvent.HideDialogItem, {
+          bHideDialogItem = true,
+          DialogItemIndex = 1,
+          bShouldPlayAnim = false
+        })
+        self:BroadcastDialogEvent(DialogEvent.HideDialogItem, {
+          bHideDialogItem = true,
+          DialogItemIndex = 2,
+          bShouldPlayAnim = false
+        })
+      end
+      Params.EditTextConfig = {
+        Owner = self,
+        TextLimit = 50,
+        Events = {
+          OnTextChanged = self.OnTextChange,
+          OnTextComposing = self.OnTextComposing,
+          OnEditTextFocusReceived = function()
+            if self.bTipsShowed then
+              self.Owner:HideDialogTip(2, false)
+              self.bTipsShowed = false
+            end
+          end
+        }
+      }
+      Params.IsNegativeAttitude = true
+      ChatController:OpenChatReportDialog(Params)
+      self.Head_Anchor:Close()
+    end
+  end
   local Switch = {}
   if self.Type == FriendCommon.FriendDialogType.BlackList then
     Switch = {AddBlackList}
@@ -260,6 +292,13 @@ function M:OnAnchorGetUserMenuContent()
       AddBlackList,
       RemoveFriend
     }
+  elseif self.Type == FriendCommon.FriendTabType.RecentMatch then
+    Switch = {
+      InviteTeam,
+      InitShowRecordBtn,
+      AddBlackList,
+      AccusePlayer
+    }
   else
     Switch = {
       InviteTeam,
@@ -269,7 +308,6 @@ function M:OnAnchorGetUserMenuContent()
   end
   return ChatController:OpenPlayerBtnList(self, self.PersonData, Switch)
 end
-
 function M:OnBtnYesOrNoRelease(bYes)
   if bYes then
     FriendController:SendRequest(FriendCommon.EventId.AgreeAdd, self.RequestData.Uid)
@@ -277,21 +315,19 @@ function M:OnBtnYesOrNoRelease(bYes)
     FriendController:SendRequest(FriendCommon.EventId.RefuseAdd, self.RequestData.Uid)
   end
 end
-
 function M:OnBtnFunctionReleased()
   local Switch = {
     [FriendCommon.FriendTabType.MyFriend] = self.OnBtnFunctionReleased_MyFriend,
     [FriendCommon.FriendTabType.AddFriend] = self.OnBtnFunctionReleased_AddFriend,
+    [FriendCommon.FriendTabType.RecentMatch] = self.OnBtnFunctionReleased_AddFriend,
     [FriendCommon.FriendTabType.RegionFriend] = self.OnBtnFunctionReleased_AddFriend
   }
   Switch[self.Type](self)
 end
-
 function M:OnBtnFunctionReleased_MyFriend()
   ChatController:OpenView(self)
   ChatController:SelectPlayerToChat(self.FriendData.Uid)
 end
-
 function M:OnBtnFunctionReleased_AddFriend()
   if self.Button_Funtion.IsForbidden then
     FriendController:ShowToast(GText("UI_Toast_Friend_AlreadyRequest"))
@@ -303,7 +339,6 @@ function M:OnBtnFunctionReleased_AddFriend()
   end
   FriendController:OpenAddFriendDialog(self, self.PersonData)
 end
-
 function M:OnBtnInviteReleased()
   local Switch = {
     [FriendCommon.FriendTabType.MyFriend] = self.OnBtnInviteReleased_MyFriend,
@@ -312,15 +347,12 @@ function M:OnBtnInviteReleased()
   }
   Switch[self.Type](self)
 end
-
 function M:OnBtnInviteReleased_RecentMatch()
   self:_InviteCommon(self.PersonData)
 end
-
 function M:OnBtnInviteReleased_MyFriend()
   self:_InviteCommon(self.FriendData.Info)
 end
-
 function M:_InviteCommon(AvatarInfo)
   if self.Button_Invite.IsForbidden then
     if TeamModel:GetInviteSendBox()[AvatarInfo.Uid] then
@@ -347,14 +379,12 @@ function M:_InviteCommon(AvatarInfo)
   end
   TeamController:SendTeamInvite(AvatarInfo.Uid)
 end
-
 function M:OnBtnInviteReleased_BlackList()
   if self.Button_Invite.IsForbidden then
     return
   end
   FriendController:SendRequest(FriendCommon.EventId.CancelBlackList, self.PersonData.Uid)
 end
-
 function M:OnListItemObjectSet(Content)
   self:ResetUI()
   Content.UI = self
@@ -371,13 +401,11 @@ function M:OnListItemObjectSet(Content)
   }
   Switch[self.Type](self, Content)
 end
-
 function M:OnAnimationFinished(Anim)
   if Anim == self.In then
     self:SetRenderOpacity(1)
   end
 end
-
 function M:_SetupBtnInvite()
   DebugPrint(DebugTag, LXYTag, "_SetupBtnInvite")
   self.Button_Invite:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -408,7 +436,6 @@ function M:_SetupBtnInvite()
   self.Button_Invite:SetText(Text)
   self.Button_Invite:ForbidBtn(bForbid)
 end
-
 function M:_SetupBtnFunction()
   if self.Type == FriendCommon.FriendTabType.MyFriend then
     self.Switcher_State:SetActiveWidgetIndex(0)
@@ -426,7 +453,6 @@ function M:_SetupBtnFunction()
   end
   self.Button_Funtion:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:_SetRemarkName(Remark)
   self.Text_Remark:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Split:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -439,18 +465,15 @@ function M:_SetRemarkName(Remark)
   end
   self.Text_Remark:SetText(Remark)
 end
-
 function M:_SetStar(bStar)
   local StarVisibilityTab = bStar and "Visible" or "Collapsed"
   self.Icon_Star:SetVisibility(UIConst.VisibilityOp[StarVisibilityTab])
 end
-
 function M:_SetHeadIcon(AvatarInfo)
   self.Head_Friend:SetHeadIconById(AvatarInfo.HeadIconId)
   self.Head_Friend:SetHeadFrame(AvatarInfo.HeadFrameId)
   self.Head_Friend:SetHoldUp(true)
 end
-
 function M:_SetOnlineState(IsOnline)
   self.HB_Loca:SetVisibility(UIConst.VisibilityOp.Visible)
   if not IsOnline then
@@ -472,7 +495,6 @@ function M:_SetOnlineState(IsOnline)
     self:PlayAnimation(self.OnMission)
   end
 end
-
 function M:_SetSign(SignText)
   if self.Type == FriendCommon.FriendDialogType.FriendRequest then
     self.Icon_Message:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -489,7 +511,6 @@ function M:_SetSign(SignText)
   end
   self.Text_Intro:SetText(SignText)
 end
-
 function M:OnListItemObjectSet_MyFriend(Content)
   self.FriendData = Content.Data
   self.PersonData = self.FriendData.Info
@@ -504,13 +525,23 @@ function M:OnListItemObjectSet_MyFriend(Content)
   self:_SetupBtnFunction()
   self:_SetOnlineState(self.FriendData.Info.IsOnline)
   self:_SetSign(self.FriendData.Info.Signature)
-  self.Key_Function:CreateCommonKey({
-    KeyInfoList = {
-      {Type = "Img", ImgShortPath = "X"}
-    }
-  })
+  if Content.bShowGift then
+    self.HB_Gift:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    self:_UpdateGiftButtonState()
+  end
 end
-
+function M:_UpdateGiftButtonState()
+  local uid = self.FriendData and self.FriendData.Info and self.FriendData.Info.Uid
+  if not uid then
+    return
+  end
+  if GMVariable and GMVariable.IgnoreGiftShopFriendLimit then
+    self.Button_Gift:ForbidBtn(false)
+    return
+  end
+  local canSend = GiftController:CheckCanSendGift(uid)
+  self.Button_Gift:ForbidBtn(not canSend)
+end
 function M:OnListItemObjectSet_AddFriend(Content)
   self.PersonData = Content.Data
   self.HB_Button:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -526,7 +557,6 @@ function M:OnListItemObjectSet_AddFriend(Content)
     }
   })
 end
-
 function M:OnListItemObjectSet_RecentMatch(Content)
   self.PersonData = Content.Data
   self.HB_Button:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -538,7 +568,6 @@ function M:OnListItemObjectSet_RecentMatch(Content)
   self:_SetupBtnFunction()
   self:_SetSign(self.PersonData.Signature)
 end
-
 function M:OnListItemObjectSet_BlackList(Content)
   self.PersonData = Content.Data
   self.Text_Name:SetText(self.PersonData.Nickname)
@@ -549,7 +578,6 @@ function M:OnListItemObjectSet_BlackList(Content)
   self.HB_Button:SetVisibility(UIConst.VisibilityOp.Visible)
   self:_SetupBtnInvite()
 end
-
 function M:OnListItemObjectSet_FriendRequest(Content)
   self.RequestData = Content.Data
   self.PersonData = self.RequestData.Info
@@ -560,14 +588,39 @@ function M:OnListItemObjectSet_FriendRequest(Content)
   self:_SetSign(self.RequestData.Remark)
   self.HB_Button_Request:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnListItemObjectSet_Empty()
   self.Panel_Portrait:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.HB_Name:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.HB_Button_Request:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.HB_Intro:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
+function M:OnBtnGiftClick()
+  local uid = self.FriendData and self.FriendData.Info and self.FriendData.Info.Uid
+  if not uid then
+    return
+  end
+  local FriendData = FriendController:GetModel():GetFriendDict()[self.FriendData.Info.Uid]
+  if not FriendData then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_SendGift_NoLongerFriend"))
+    return
+  end
+  if GMVariable and GMVariable.IgnoreGiftShopFriendLimit then
+    GiftController:OpenGiftShopMain(uid)
+    return
+  end
+  if GiftController:CheckCanSendGift(uid) then
+    GiftController:OpenGiftShopMain(uid)
+  else
+    GiftController:OpenCanNotSendPopup(uid)
+  end
+end
+function M:OnGiftForbidClick()
+  local uid = self.FriendData and self.FriendData.Info and self.FriendData.Info.Uid
+  if not uid then
+    return
+  end
+  GiftController:OpenCanNotSendPopup(uid)
+end
 function M:Destruct()
   self.Button_Invite:UnBindEventOnReleased(self, self.OnBtnInviteReleased)
   self.Button_Funtion:UnBindEventOnReleased(self, self.OnBtnFunctionReleased)
@@ -579,22 +632,41 @@ function M:Destruct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   M.Super.Destruct(self)
 end
-
+function M:UpdateHitTestForDisabled(bEnable)
+  if bEnable then
+    self.Button_Gift:SetVisibility(UIConst.VisibilityOp.Visible)
+    self.Head_Friend:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+  elseif self.Head_Friend:GetVisibility() == UIConst.VisibilityOp.HitTestInvisible then
+    self.Head_Friend:SetVisibility(UIConst.VisibilityOp.Visible)
+  end
+end
 function M:SetGamepadIconVisibility(bShow)
   if bShow then
-    self.No_GamePad:SetVisibility(UIConst.VisibilityOp.Visbile)
+    self.No_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
     self.Key_No:SetVisibility(UIConst.VisibilityOp.Visible)
-    self.Yes_GamePad:SetVisibility(UIConst.VisibilityOp.Visbile)
+    self.Yes_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
     self.Key_Yes:SetVisibility(UIConst.VisibilityOp.Visible)
-    if self.Type ~= FriendCommon.FriendDialogType.BlackList then
+    if self.Type ~= FriendCommon.FriendDialogType.BlackList and self.Type ~= FriendCommon.FriendTabType.MyFriend then
       self.Key_Function:SetVisibility(UIConst.VisibilityOp.Visible)
       self.Function_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
     else
       self.Key_Function:SetVisibility(UIConst.VisibilityOp.Collapsed)
       self.Function_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
+    if self.Type == FriendCommon.FriendTabType.MyFriend then
+      self.Function_InviteGamePad:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+      self.Key_Invite:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+      self.Button_Invite.bAutoButtonChange = false
+      self.Button_Invite:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
+    else
+      self.Function_InviteGamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.Key_Invite:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.Button_Invite.bAutoButtonChange = true
+      self.Button_Invite:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
+    end
     self.Button_Invite:SetGamepadIconVisibility(true)
     self.Button_Talk:SetGamepadIconVisibility(true)
+    self:UpdateHitTestForDisabled(true)
   else
     self.No_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Key_No:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -604,9 +676,11 @@ function M:SetGamepadIconVisibility(bShow)
     self.Key_Function:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Button_Invite:SetGamepadIconVisibility(false)
     self.Button_Talk:SetGamepadIconVisibility(false)
+    self:UpdateHitTestForDisabled(false)
+    self.Function_InviteGamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Key_Invite:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnItemSelectionChanged(IsSelected)
   self.bIsSelected = IsSelected
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -627,7 +701,6 @@ function M:OnItemSelectionChanged(IsSelected)
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
     self:PlayAnimation(self.GamePad_Normal)
@@ -638,7 +711,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:PlayAnimation(self.GamePad_Hover)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   M.Super.OnPreviewKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -655,11 +727,15 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if "Gamepad_FaceButton_Left" == InKeyName and self.Type == FriendCommon.FriendTabType.MyFriend then
     self:OnBtnFunctionReleased()
     IsHandled = true
+  elseif "Gamepad_FaceButton_Right" == InKeyName and self.Type == FriendCommon.FriendTabType.MyFriend then
+    if self:OnGamePadBDown() then
+      IsHandled = true
+    end
   elseif "Gamepad_FaceButton_Bottom" == InKeyName and self.Type == FriendCommon.FriendTabType.AddFriend then
     self:OnBtnFunctionReleased()
     IsHandled = true
   elseif "Gamepad_FaceButton_Bottom" == InKeyName and self.Type == FriendCommon.FriendTabType.MyFriend then
-    self:OnBtnInviteReleased()
+    self:OnGamePadADown_MyFriend()
     IsHandled = true
   elseif "Gamepad_FaceButton_Bottom" == InKeyName and self.Type == FriendCommon.FriendTabType.RegionFriend then
     self:OnBtnFunctionReleased()
@@ -679,7 +755,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -689,5 +764,31 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
+function M:OnGamePadADown_MyFriend()
+  self.Button_Invite:SetFocus()
+  self.Function_InviteGamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Key_Invite:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local UIManager = GameInstance and GameInstance:GetGameUIManager()
+  local FriendMain = UIManager and UIManager:GetUIObj("FriendMain")
+  if FriendMain then
+    FriendMain:ShowCheckBtn(true)
+  end
+end
+function M:OnGamePadBDown()
+  if self.HB_Button:HasFocusedDescendants() then
+    self:SetFocus()
+    local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+    local UIManager = GameInstance and GameInstance:GetGameUIManager()
+    local FriendMain = UIManager and UIManager:GetUIObj("FriendMain")
+    if FriendMain then
+      FriendMain:ShowCheckBtn(false)
+    end
+    self.Function_InviteGamePad:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    self.Key_Invite:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    return true
+  else
+    return false
+  end
+end
 return M

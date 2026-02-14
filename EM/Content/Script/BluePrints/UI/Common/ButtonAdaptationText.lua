@@ -1,6 +1,5 @@
 require("UnLua")
 local M = {}
-
 function M:GetKeyName(ActionName, CurrentInputDevice)
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionKeys = UE4.TArray(UE4.FInputActionKeyMapping)
@@ -17,7 +16,6 @@ function M:GetKeyName(ActionName, CurrentInputDevice)
   end
   return nil, nil
 end
-
 function M:GetFinalContentText(ContentText, CurrentInputDevice)
   local strs = M:AnalyzeText(ContentText, "&")
   local final_str = ""
@@ -39,7 +37,6 @@ function M:GetFinalContentText(ContentText, CurrentInputDevice)
   end
   return final_str
 end
-
 function M:AnalyzeText(MessageContent, MatchSymbol)
   if not MatchSymbol then
     return {}
@@ -55,5 +52,4 @@ function M:AnalyzeText(MessageContent, MatchSymbol)
   table.insert(match_res, MessageContent)
   return match_res
 end
-
 return M

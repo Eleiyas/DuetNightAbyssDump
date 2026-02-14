@@ -1,5 +1,4 @@
 local M = {}
-
 function M:RougeLikeTryRecover(Character, Handler)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -12,5 +11,4 @@ function M:RougeLikeTryRecover(Character, Handler)
   end
   return false
 end
-
 return M

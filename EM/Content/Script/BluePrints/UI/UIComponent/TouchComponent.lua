@@ -1,6 +1,5 @@
 require("UnLua")
 local TouchComponent = {}
-
 function TouchComponent:Initialize(Initializer)
   self.WidgetStartPos = nil
   self.WidgetCurPos = nil
@@ -36,15 +35,12 @@ function TouchComponent:Initialize(Initializer)
   self.bNotUseOptimizationMove = false
   self.BackgroundPlateOffset = 100
 end
-
 function TouchComponent:SetClickMaxLen(MaxLen)
   self.ClickMaxLen = MaxLen
 end
-
 function TouchComponent:SetLongTouchInterval(Interval)
   self.LpressInterval = Interval
 end
-
 function TouchComponent:InitTouchLayer(OwnerPlayer, UpdatetimeX, UpdatetimeY, bNotUseOptimization)
   self.Owner_Player = OwnerPlayer
   self.m_SavePrePos = FVector2D(0, 0)
@@ -54,7 +50,6 @@ function TouchComponent:InitTouchLayer(OwnerPlayer, UpdatetimeX, UpdatetimeY, bN
   self.m_LastHandleMoveTimeStamp = {}
   self.bNotUseOptimizationMove = bNotUseOptimization
 end
-
 function TouchComponent:InitTouchListenEvent()
   EventManager:AddEvent(EventID.CharDie, self, self.HandleOnCharDie)
   EventManager:AddEvent(EventID.StartTalk, self, self.HandleEventByInterrupt)
@@ -63,20 +58,17 @@ function TouchComponent:InitTouchListenEvent()
     self.HandleEventByInterrupt
   })
 end
-
 function TouchComponent:RemoveTouchListenEvent()
   EventManager:RemoveEvent(EventID.CharDie, self)
   EventManager:RemoveEvent(EventID.StartTalk, self)
   self:StopListeningForInputAction("OpenMenu", EInputEvent.IE_Pressed)
 end
-
 function TouchComponent:HandleOnCharDie(Eid)
   local Entity = GWorld.Battle:GetEntity(Eid)
   if Entity and Entity.IsMainPlayer and Entity:IsMainPlayer() then
     self:HandleEventByInterrupt()
   end
 end
-
 function TouchComponent:HandleEventByInterrupt()
   for k, CurrentGeometry in pairs(self.CurrentTouchingGeometry) do
     if self.Touching_Flag[k] then
@@ -84,8 +76,7 @@ function TouchComponent:HandleEventByInterrupt()
     end
   end
 end
-
-function TouchComponent:AddStaticSubTouchItem(SubTouchName, SubTouchItem, AllCallBack)
+function TouchComponent:AddStaticSubTouchItem(SubTouchName, SubTouchItem, AllCallBack, ParentWidget)
   self.UpdatePosFlag[SubTouchName] = false
   for k, v in pairs(AllCallBack) do
     if self.AllTouchCallBack[k] == nil then
@@ -97,8 +88,10 @@ function TouchComponent:AddStaticSubTouchItem(SubTouchName, SubTouchItem, AllCal
     end
   end
   self.AllTouchItems[SubTouchName] = SubTouchItem
+  if ParentWidget then
+    self.AllParentWidget[SubTouchName] = ParentWidget
+  end
 end
-
 function TouchComponent:AddMovedSubTouchItem(SubTouchName, SubTouchItem, ParentWidget, AllCallBack, LimitParams)
   self.UpdatePosFlag[SubTouchName] = true
   for k, v in pairs(AllCallBack) do
@@ -110,27 +103,24 @@ function TouchComponent:AddMovedSubTouchItem(SubTouchName, SubTouchItem, ParentW
       table.insert(self.AllTouchCallBack[k], {Name = SubTouchName, Value = v})
     end
   end
-  self.AllParentWidget[SubTouchName] = ParentWidget
+  if ParentWidget then
+    self.AllParentWidget[SubTouchName] = ParentWidget
+  end
   self.LimitRangeParam[SubTouchItem] = LimitParams
   self.AllTouchItems[SubTouchName] = SubTouchItem
 end
-
 function TouchComponent:OnTouchStarted(InGeometry, InGestureEvent)
   return self:MouseOrTouchButtonDown(InGeometry, InGestureEvent)
 end
-
 function TouchComponent:OnTouchMoved(InGeometry, InGestureEvent)
   return self:MouseOrTouchButtonMove(InGeometry, InGestureEvent)
 end
-
 function TouchComponent:OnTouchEnded(InGeometry, InGestureEvent)
   return self:MouseOrTouchButtonUp(InGeometry, InGestureEvent)
 end
-
 function TouchComponent:GetOwningPlayer()
   return self.Owner_Player
 end
-
 function TouchComponent:GetWorldPos(Widget)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -139,7 +129,6 @@ function TouchComponent:GetWorldPos(Widget)
   end
   return UIManager:GetWorldPosition(Widget), UIManager:GetWidgetRenderSize(Widget)
 end
-
 function TouchComponent:GetLastPosTableLength()
   local NowCount = 0
   for k, v in pairs(self.m_LastPosTable) do
@@ -147,7 +136,6 @@ function TouchComponent:GetLastPosTableLength()
   end
   return NowCount
 end
-
 function TouchComponent:GetNowTouchPosTableLength()
   local NowCount = 0
   for k, v in pairs(self.NowTouchPos) do
@@ -155,7 +143,6 @@ function TouchComponent:GetNowTouchPosTableLength()
   end
   return NowCount
 end
-
 function TouchComponent:MouseOrTouchButtonDown(InGeometry, InGestureEvent)
   local Scale = UE4.UWidgetLayoutLibrary.GetViewportScale(self)
   local ScreenSpacePosition = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InGestureEvent)
@@ -164,11 +151,13 @@ function TouchComponent:MouseOrTouchButtonDown(InGeometry, InGestureEvent)
   for k, v in pairs(self.AllTouchItems) do
     local WidgetWorldPos, WidgetWorldSize = self:GetWorldPos(v)
     local WidgetWorldPos = UE4.USlateBlueprintLibrary.AbsoluteToLocal(InGeometry, WidgetWorldPos) * Scale
-    if thisPos.X > WidgetWorldPos.X and thisPos.X < WidgetWorldPos.X + WidgetWorldSize.X * Scale and thisPos.Y > WidgetWorldPos.Y and thisPos.Y < WidgetWorldPos.Y + WidgetWorldSize.Y * Scale then
+    local ParentWidgetNode = self.AllParentWidget[k]
+    local WidgetLocalScale = ParentWidgetNode and ParentWidgetNode.RenderTransform.Scale.X or 1.0
+    if thisPos.X > WidgetWorldPos.X and thisPos.X < WidgetWorldPos.X + WidgetWorldSize.X * WidgetLocalScale * Scale and thisPos.Y > WidgetWorldPos.Y and thisPos.Y < WidgetWorldPos.Y + WidgetWorldSize.Y * WidgetLocalScale * Scale then
       if nil == SubTouchItem then
         SubTouchItem = v
         SubTouchItemName = k
-        SubTouchItemStartPos = FVector2D(WidgetWorldPos.X + WidgetWorldSize.X * 0.5 * Scale, WidgetWorldPos.Y + WidgetWorldSize.Y * 0.5 * Scale)
+        SubTouchItemStartPos = FVector2D(WidgetWorldPos.X + WidgetWorldSize.X * 0.5 * Scale * WidgetLocalScale, WidgetWorldPos.Y + WidgetWorldSize.Y * 0.5 * Scale * WidgetLocalScale)
         SubTouchParentWidget = self.AllParentWidget[k]
       else
         local ChooseCanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(SubTouchItem)
@@ -176,7 +165,7 @@ function TouchComponent:MouseOrTouchButtonDown(InGeometry, InGestureEvent)
         if TouchCanvasSlot.ZOrder > ChooseCanvasSlot.ZOrder then
           SubTouchItem = v
           SubTouchItemName = k
-          SubTouchItemStartPos = FVector2D(WidgetWorldPos.X + WidgetWorldSize.X * 0.5 * Scale, WidgetWorldPos.Y + WidgetWorldSize.Y * 0.5 * Scale)
+          SubTouchItemStartPos = FVector2D(WidgetWorldPos.X + WidgetWorldSize.X * 0.5 * Scale * WidgetLocalScale, WidgetWorldPos.Y + WidgetWorldSize.Y * 0.5 * Scale * WidgetLocalScale)
           SubTouchParentWidget = self.AllParentWidget[k]
         end
       end
@@ -248,7 +237,6 @@ function TouchComponent:MouseOrTouchButtonDown(InGeometry, InGestureEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function TouchComponent:MouseOrTouchButtonMove(InGeometry, InGestureEvent)
   local PointerIndex = UE4.UKismetInputLibrary.PointerEvent_GetPointerIndex(InGestureEvent)
   if self.Touching_Flag[PointerIndex + 1] then
@@ -335,7 +323,6 @@ function TouchComponent:MouseOrTouchButtonMove(InGeometry, InGestureEvent)
   end
   return UIUtils.Unhandled
 end
-
 function TouchComponent:MouseOrTouchButtonUp(InGeometry, InGestureEvent, TargetPointerIndex)
   local PointerIndex = TargetPointerIndex or UE4.UKismetInputLibrary.PointerEvent_GetPointerIndex(InGestureEvent)
   local SubTouchItem = self.SubTouchItems[PointerIndex + 1]
@@ -391,7 +378,6 @@ function TouchComponent:MouseOrTouchButtonUp(InGeometry, InGestureEvent, TargetP
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function TouchComponent:CalcZoomRatio(PointerIndex)
   self.m_OriginPoint = self.m_OriginPoint + FVector2D(math.abs(self.WidgetCurPos.X), math.abs(self.WidgetCurPos.Y))
   self.m_LeftPointPoint = FVector2D(self.BackgroundPlateOffset, self.BackgroundPlateOffset)
@@ -401,7 +387,6 @@ function TouchComponent:CalcZoomRatio(PointerIndex)
   local H = CanvasSlot:GetSize().Y
   self.m_RelativePosRatio = FVector2D(self.m_RelativePos.X / W, self.m_RelativePos.Y / H)
 end
-
 function TouchComponent:SetZoomPos(PointerIndex)
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SubTouchItems[PointerIndex + 1])
   local newW = CanvasSlot:GetSize().X
@@ -410,7 +395,6 @@ function TouchComponent:SetZoomPos(PointerIndex)
   local newPos = self.WidgetCurPos - self.m_newRelativePos + self.m_RelativePos
   CanvasSlot:SetPosition(newPos)
 end
-
 function TouchComponent:GetNextMovePos(ChangePos, PointerIndex)
   local FinalPos = self.WidgetStartPos + ChangePos
   local LimitRangeInfo = self.LimitRangeParam[self.SubTouchItems[PointerIndex + 1]]
@@ -432,7 +416,6 @@ function TouchComponent:GetNextMovePos(ChangePos, PointerIndex)
   end
   return FinalPos
 end
-
 function TouchComponent:LimitRange(PointerIndex)
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.SubTouchItems[PointerIndex + 1])
   if nil == CanvasSlot then
@@ -507,7 +490,6 @@ function TouchComponent:LimitRange(PointerIndex)
     end
   end
 end
-
 function TouchComponent:OnUpdateEdgeLerpTimer_X()
   self.Updatetime_X = self.Updatetime_X + 0.1
   self.WidgetCurPos.X = UE4.UKismetMathLibrary.Lerp(self.m_SavePrePos.X, self.m_SaveTarPos.X, self.Updatetime_X)
@@ -517,7 +499,6 @@ function TouchComponent:OnUpdateEdgeLerpTimer_X()
     UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.TimerHandle_X)
   end
 end
-
 function TouchComponent:OnUpdateEdgeLerpTimer_Y()
   self.Updatetime_Y = self.Updatetime_Y + 0.1
   self.WidgetCurPos.Y = UE4.UKismetMathLibrary.Lerp(self.m_SavePrePos.Y, self.m_SaveTarPos.Y, self.Updatetime_Y)
@@ -527,7 +508,6 @@ function TouchComponent:OnUpdateEdgeLerpTimer_Y()
     UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.TimerHandle_Y)
   end
 end
-
 function TouchComponent:OnUpdatePosFlag(PointerIndex)
   local SubTouchItem = self.SubTouchItems[PointerIndex + 1]
   local LimitRangeInfo = self.LimitRangeParam[SubTouchItem]
@@ -543,7 +523,6 @@ function TouchComponent:OnUpdatePosFlag(PointerIndex)
   self:AfterTouchItemMove(PointerIndex)
   UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.UpdatePosTimerHandle)
 end
-
 function TouchComponent:AfterTouchItemMove(PointerIndex)
   self.SubTouchItems[PointerIndex + 1] = nil
   self.SubTouchParentWidget[PointerIndex + 1] = nil
@@ -553,5 +532,4 @@ function TouchComponent:AfterTouchItemMove(PointerIndex)
   self.CurrentTouchingGeometry[PointerIndex + 1] = nil
   self.CurrentTouchingGestureEvent[PointerIndex + 1] = nil
 end
-
 return TouchComponent

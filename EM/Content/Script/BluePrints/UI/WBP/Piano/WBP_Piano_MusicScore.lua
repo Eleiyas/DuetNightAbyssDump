@@ -1,7 +1,6 @@
 require("UnLua")
 require("DataMgr")
 local WBP_Piano_MusicScore = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Piano_MusicScore:Destruct()
   self.Btn_Album.OnClicked:Remove(self, self.OnBtnClicked)
   self.Btn_Album.OnHovered:Remove(self, self.OnBtnHovered)
@@ -9,7 +8,6 @@ function WBP_Piano_MusicScore:Destruct()
   self:UnBindInputMethodChangedDelegate()
   WBP_Piano_MusicScore.Super.Destruct(self)
 end
-
 function WBP_Piano_MusicScore:OnListItemObjectSet(ListItemObject)
   self:PlayAnimation(self.Normal)
   self.DataObject = ListItemObject
@@ -22,6 +20,7 @@ function WBP_Piano_MusicScore:OnListItemObjectSet(ListItemObject)
   self.IsStoredCustomBGMMusicScore = false
   self.bCanPlayAnimation = true
   self.IsEmptyMusicScore = ListItemObject.bIsEmptyMusicScore
+  self.CurIsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
   if self.IsEmptyMusicScore then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
     return
@@ -34,6 +33,7 @@ function WBP_Piano_MusicScore:OnListItemObjectSet(ListItemObject)
   self.bIsOnListItemSet = true
   if self.MusicScoreId == DataMgr.Music[self.ParentUI.CurrentHomeBaseBGM].MusicScoreId then
     if self.ParentUI.IsFirstOpen then
+      self:OnBtnHovered()
       self:OnBtnClicked()
       self.ParentUI.IsFirstOpen = false
     end
@@ -44,7 +44,6 @@ function WBP_Piano_MusicScore:OnListItemObjectSet(ListItemObject)
   end
   self.bIsOnListItemSet = false
 end
-
 function WBP_Piano_MusicScore:OnMusicItemNewStateChange(MusicId)
   if DataMgr.Music[MusicId].MusicScoreId == self.MusicScoreId then
     self.ReddotNum = self.ReddotNum - 1
@@ -53,7 +52,6 @@ function WBP_Piano_MusicScore:OnMusicItemNewStateChange(MusicId)
     end
   end
 end
-
 function WBP_Piano_MusicScore:InitUI()
   self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   local MusicScoreInfo = DataMgr.MusicScore[self.MusicScoreId]
@@ -75,7 +73,6 @@ function WBP_Piano_MusicScore:InitUI()
   self.Btn_Album.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn_Album.OnUnHovered:Add(self, self.OnBtnUnHovered)
 end
-
 function WBP_Piano_MusicScore:OnBtnClicked()
   if self.IsLocked then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("HomePiano_NoMusicBeenIncluded"), 5)
@@ -85,26 +82,27 @@ function WBP_Piano_MusicScore:OnBtnClicked()
     return
   end
   self:SetFocus()
-  self.ParentUI:ChangeCurrentSelectMusicScore(self.ListViewIndex)
+  self.ParentUI:OnSelectMusicScoreChanged(self.ListViewIndex)
   if not self.bIsOnListItemSet then
     AudioManager(self):PlayUISound(self, "event:/ui/armory/click_crystal_btn_tab", nil, nil)
   end
 end
-
 function WBP_Piano_MusicScore:OnBtnHovered()
+  self.ParentUI:UpdateMusicScoreTextShow(self.ListViewIndex)
   if self.IsLocked or not self.bCanPlayAnimation then
     return
   end
   self:PlayAnimation(self.Hover)
+  if self.CurIsGamepad then
+    self:OnBtnClicked()
+  end
 end
-
 function WBP_Piano_MusicScore:OnBtnUnHovered()
   if self.IsLocked or not self.bCanPlayAnimation then
     return
   end
   self:PlayAnimation(self.Unhover)
 end
-
 function WBP_Piano_MusicScore:OnSelectMusicScoreChanged(NewMusicScoreId)
   if NewMusicScoreId == self.MusicScoreId then
     self:Selected()
@@ -112,7 +110,6 @@ function WBP_Piano_MusicScore:OnSelectMusicScoreChanged(NewMusicScoreId)
     self:Deselected()
   end
 end
-
 function WBP_Piano_MusicScore:Selected()
   if self.IsSelected then
     return
@@ -122,7 +119,6 @@ function WBP_Piano_MusicScore:Selected()
   self:PlayAnimation(self.Click)
   self.bCanPlayAnimation = false
 end
-
 function WBP_Piano_MusicScore:Deselected()
   if not self.IsSelected then
     return
@@ -132,7 +128,6 @@ function WBP_Piano_MusicScore:Deselected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Piano_MusicScore:OnStoredCustomBGMChanged(NewMusicId)
   local NewMusicScoreId = DataMgr.Music[NewMusicId].MusicScoreId
   if NewMusicScoreId == self.MusicScoreId then
@@ -141,7 +136,6 @@ function WBP_Piano_MusicScore:OnStoredCustomBGMChanged(NewMusicId)
     self:IsNotStoredBGMMusicScore()
   end
 end
-
 function WBP_Piano_MusicScore:IsStoredBGMMusicScore()
   if self.IsStoredCustomBGMMusicScore then
     return
@@ -149,7 +143,6 @@ function WBP_Piano_MusicScore:IsStoredBGMMusicScore()
   self.IsStoredCustomBGMMusicScore = true
   self.Icon_Music:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function WBP_Piano_MusicScore:IsNotStoredBGMMusicScore()
   if not self.IsStoredCustomBGMMusicScore then
     return
@@ -157,7 +150,6 @@ function WBP_Piano_MusicScore:IsNotStoredBGMMusicScore()
   self.IsStoredCustomBGMMusicScore = false
   self.Icon_Music:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_Piano_MusicScore:BindInputMethodChangedDelegate()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -165,7 +157,6 @@ function WBP_Piano_MusicScore:BindInputMethodChangedDelegate()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.OnInputMethodChanged)
   end
 end
-
 function WBP_Piano_MusicScore:UnBindInputMethodChangedDelegate()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -173,11 +164,16 @@ function WBP_Piano_MusicScore:UnBindInputMethodChangedDelegate()
     GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnInputMethodChanged)
   end
 end
-
 function WBP_Piano_MusicScore:OnInputMethodChanged(NewGameInputType, NewGamepadName)
-  if NewGameInputType == ECommonInputType.Gamepad and self.IsSelected then
-    self:SetFocus()
+  if NewGameInputType == ECommonInputType.Gamepad then
+    if self.IsSelected then
+      self:SetFocus()
+    end
+    self.CurIsGamepad = true
+    self.Btn_Album.OnClicked:Remove(self, self.OnBtnClicked)
+  else
+    self.CurIsGamepad = false
+    self.Btn_Album.OnClicked:Add(self, self.OnBtnClicked)
   end
 end
-
 return WBP_Piano_MusicScore

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:InitItem(bShowOnly, LoadImgName, Level, ChargeFund, NumHave)
   local Img = LoadObject(DataMgr.FeeRefundUIParam[LoadImgName].ParamValue)
   self.Image_Icon:SetBrushFromTexture(Img)
@@ -19,7 +18,6 @@ function M:InitItem(bShowOnly, LoadImgName, Level, ChargeFund, NumHave)
     self["InitNumInfo" .. Level](self, NumHave)
   end
 end
-
 function M:InitNumInfo1(NumHave)
   local MaxPhoxeneNum = self:GetStageMaxPhoxeneByLevel(self.Level)
   local num, _ = math.modf(MaxPhoxeneNum)
@@ -30,7 +28,6 @@ function M:InitNumInfo1(NumHave)
     self.Text_NumHave:SetText(NumHave)
   end
 end
-
 function M:InitNumInfo2(NumHave)
   local MaxPhoxeneNum = self:GetStageMaxPhoxeneByLevel(self.Level)
   local num, _ = math.modf(MaxPhoxeneNum)
@@ -45,7 +42,6 @@ function M:InitNumInfo2(NumHave)
     self.Text_NumHave:SetText(Num)
   end
 end
-
 function M:InitNumInfo3(NumHave)
   self.Group_Have:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.ChargeFund >= DataMgr.FeeRefund[1].ProgressMax then
@@ -55,19 +51,16 @@ function M:InitNumInfo3(NumHave)
     self.Text_NumMax:SetText(0)
   end
 end
-
 function M:InitRechargeDetail()
   local Num, _ = math.modf(self:GetStageRefundRatioByLevel(self.Level) * 100)
   local RechargeStr = string.format(GText("UI_RefundLevel"), tostring(Num) .. "%")
   self.Text_RechargeDetail:SetText(RechargeStr)
 end
-
 function M:GetProgress()
   local StageFund = self:GetStageFundByLevel(self.Level)
   local ChargeFundInStage = self:GetChargeFundInStagenyLevel(self.Level)
   return ChargeFundInStage * 1.0 / (StageFund * 3.0)
 end
-
 function M:GetStageFundByLevel(Level)
   if 1 == Level then
     return DataMgr.FeeRefund[1].PayLevel2 - DataMgr.FeeRefund[1].PayLevel1
@@ -78,7 +71,6 @@ function M:GetStageFundByLevel(Level)
   end
   return 0
 end
-
 function M:GetChargeFundInStagenyLevel(Level)
   local Num = 0
   if 1 == Level then
@@ -105,7 +97,6 @@ function M:GetChargeFundInStagenyLevel(Level)
   end
   return Num
 end
-
 function M:GetStageRefundRatioByLevel(Level)
   local StageRefundRatio = 0
   if 1 == Level then
@@ -117,7 +108,6 @@ function M:GetStageRefundRatioByLevel(Level)
   end
   return StageRefundRatio
 end
-
 function M:GetStageMaxPhoxeneByLevel(Level)
   local Fund = 0
   if 1 == Level then
@@ -131,5 +121,4 @@ function M:GetStageMaxPhoxeneByLevel(Level)
   local num, _ = math.modf(Fund)
   return num
 end
-
 return M

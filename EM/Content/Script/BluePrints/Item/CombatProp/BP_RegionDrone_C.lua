@@ -2,12 +2,10 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/Temple/BP_Drone_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.ChestInteractiveComponent:InitInteractiveComponent(self.Data.InteractiveId)
 end
-
 function M:CheckAllGroupDroneReset()
   local GroupDroneAllFinish = false
   if self.BpBorn then
@@ -25,10 +23,8 @@ function M:CheckAllGroupDroneReset()
     self.OtherFound = false
   end
 end
-
 function M:OnBreakCountDown(SourceEid)
 end
-
 function M:AddDrone()
   if self.BpBorn then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -37,7 +33,6 @@ function M:AddDrone()
     end
   end
 end
-
 function M:GetCanOpen()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local CapsuleHalfHeight = Player.CapsuleComponent:GetScaledCapsuleHalfHeight()
@@ -54,7 +49,6 @@ function M:GetCanOpen()
     self.CanOpen = false
   end
 end
-
 function M:OnFound()
   self:OnDroneStateChange(1)
   if self.BpBorn then
@@ -71,11 +65,9 @@ function M:OnFound()
   end
   self:ChangeState("Manual", 0, self.FoundPlayerStateId)
 end
-
 function M:OnAlarm()
   self:ChangeState("Manual", 0, self.MaxAlertStateId)
 end
-
 function M:OnAlertValueReset()
   if self.BpBorn then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -94,9 +86,7 @@ function M:OnAlertValueReset()
   end
   self:ChangeState("Manual", 0, self.NormalStateId)
 end
-
 function M:ReceiveEndPlay()
   M.Super.ReceiveEndPlay(self)
 end
-
 return M

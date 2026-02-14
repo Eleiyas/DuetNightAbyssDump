@@ -5,7 +5,6 @@ local EDialogueNodeType = TalkUtils.EDialogueNodeType
 local FRougeLikeTalkTask = Class({
   "BluePrints.Story.Talk.Controller.TalkTaskBase"
 })
-
 function FRougeLikeTalkTask:Start(TalkTaskData, TaskFinished_Callback)
   self.TalkTaskData = TalkTaskData
   self.TaskFinished_Callback = TaskFinished_Callback
@@ -16,7 +15,6 @@ function FRougeLikeTalkTask:Start(TalkTaskData, TaskFinished_Callback)
   EventManager:AddEvent(EventID.CloseFromRougeArchive, self, self.CloseFromRougeArchive)
   self.DialogueIterationComponent:Start()
 end
-
 function FRougeLikeTalkTask:Finish(TalkNodeFinishType, OptionIndex)
   EventManager:RemoveEvent(EventID.OnRougeIteratorDialogue, self)
   EventManager:RemoveEvent(EventID.OnRougeChooseOption, self)
@@ -27,14 +25,12 @@ function FRougeLikeTalkTask:Finish(TalkNodeFinishType, OptionIndex)
     NodeFinished_Func(NodeFinished_Obj, self, TalkNodeFinishType, OptionIndex)
   end
 end
-
 function FRougeLikeTalkTask:Clear()
   FRougeLikeTalkTask.Super.Clear(self)
   EventManager:RemoveEvent(EventID.OnRougeIteratorDialogue, self)
   EventManager:RemoveEvent(EventID.OnRougeChooseOption, self)
   EventManager:RemoveEvent(EventID.CloseFromRougeArchive, self)
 end
-
 function FRougeLikeTalkTask:PlayDialogue()
   local NodeType = self.DialogueIterationComponent:GetCurrentNodeType()
   if NodeType == EDialogueNodeType.Dialogue then
@@ -44,11 +40,10 @@ function FRougeLikeTalkTask:PlayDialogue()
       return
     end
   else
-    DebugPrint("lhr@Dialogue Iteration Error: NodeType", NodeType, "\228\184\141\229\144\136\230\179\149")
+    DebugPrint("lhr@Dialogue Iteration Error: NodeType", NodeType, "不合法")
     return
   end
 end
-
 function FRougeLikeTalkTask:ChooseOption(Index)
   if nil == Index then
     self:Error("Index is nil.")
@@ -61,18 +56,15 @@ function FRougeLikeTalkTask:ChooseOption(Index)
     self:Finish(ETalkNodeFinishType.Option, Index)
   end
 end
-
 function FRougeLikeTalkTask:DisplayCurrentDialogue()
   local Dialogue = self.DialogueIterationComponent:GetDialogue()
   self:DisplayDialogue(Dialogue)
 end
-
 function FRougeLikeTalkTask:DisplayDialogue(Dialogue)
   local DialogueData = self:GetDialogueDataWithCheck(Dialogue)
   DialogueData.IsLastText = self.DialogueIterationComponent:IsLastText()
   EventManager:FireEvent(EventID.OnRougeDisplayDialogue, DialogueData)
 end
-
 function FRougeLikeTalkTask:ShowDialogueOptions(OptionIds)
   DebugPrint("FRougeLikeTalkTask@ShowDialogueOptions")
   local OptionTexts = {}
@@ -87,7 +79,6 @@ function FRougeLikeTalkTask:ShowDialogueOptions(OptionIds)
   end
   EventManager:FireEvent(EventID.OnRougeDisplayOptions, OptionTexts)
 end
-
 function FRougeLikeTalkTask:ShowTalkOptions(OptionData)
   DebugPrint("FRougeLikeTalkTask@ShowTalkOptions")
   local OptionTexts = {}
@@ -102,7 +93,6 @@ function FRougeLikeTalkTask:ShowTalkOptions(OptionData)
   end
   EventManager:FireEvent(EventID.OnRougeDisplayOptions, OptionTexts)
 end
-
 function FRougeLikeTalkTask:FinishDialogue()
   local OptionData = self.TalkTaskData.OptionData
   if OptionData and OptionData.Options and #OptionData.Options > 0 then
@@ -111,26 +101,16 @@ function FRougeLikeTalkTask:FinishDialogue()
   end
   self:Finish(ETalkNodeFinishType.Out)
 end
-
-function FRougeLikeTalkTask:GetDependencies()
-  return {}
-end
-
 function FRougeLikeTalkTask:OnInterrupted()
 end
-
 function FRougeLikeTalkTask:OnPaused()
 end
-
 function FRougeLikeTalkTask:OnPauseResumed()
 end
-
 function FRougeLikeTalkTask:Error(Text)
   DebugPrint("Error:", Text)
 end
-
 function FRougeLikeTalkTask:CloseFromRougeArchive()
   self:Finish(ETalkNodeFinishType.Out)
 end
-
 return FRougeLikeTalkTask

@@ -1,10 +1,8 @@
 require("UnLua")
 local M = Class()
-
 function M:GetSceneNo_Lua()
   return WorldTravelSubsystem():GetCurrentSceneId()
 end
-
 function M:RecordDamageTrack(DamageEvent)
   local Source = Battle(self):GetEntity(DamageEvent.SourceEid)
   local AttackerID, AttackerName
@@ -23,7 +21,6 @@ function M:RecordDamageTrack(DamageEvent)
   end
   self:RecordDamageTrack_Cpp(DamageEvent, AttackerID, AttackerName)
 end
-
 function M:RecordDoDamageTrack(DamageEvent)
   local Target = Battle(self):GetEntity(DamageEvent.TargetEid)
   local MonsterId = "null"
@@ -32,7 +29,6 @@ function M:RecordDoDamageTrack(DamageEvent)
   end
   self:RecordDoDamageTrack_Cpp(DamageEvent, MonsterId)
 end
-
 function M:GetUploadBDCTrackStructCommonInfo_Lua(BonesId, MapId, Position)
   local PlayerCharacter = UGameplayStatics.GetPlayerCharacter(self, 0)
   if not PlayerCharacter then
@@ -46,5 +42,4 @@ function M:GetUploadBDCTrackStructCommonInfo_Lua(BonesId, MapId, Position)
   Position = PlayerCharacter:K2_GetActorLocation()
   return true
 end
-
 return M

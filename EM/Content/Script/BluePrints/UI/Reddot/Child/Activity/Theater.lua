@@ -1,7 +1,6 @@
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ReddotTreeNode_Theater = Class("BluePrints.UI.Reddot.Child.Activity.ActivityBase")
 local TheaterEventId = {103011}
-
 function ReddotTreeNode_Theater:_Judge(EventId)
   local Avatar = GWorld:GetAvatar()
   local TabInfo = {false, false}
@@ -11,8 +10,10 @@ function ReddotTreeNode_Theater:_Judge(EventId)
   if not TheaterData then
     return false
   end
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("TheaterEventReward")
+  CacheDetail = CacheDetail or {}
   for TaskId, TaskInfo in pairs(TheaterData.Tasks) do
-    if TaskInfo.Progress >= TaskInfo.Target then
+    if TaskInfo.Progress >= TaskInfo.Target and not TaskInfo.RewardsGot then
       IsEmpty = false
       local Node = ReddotManager.GetTreeNode("TheaterEventReward")
       if not Node then
@@ -22,27 +23,28 @@ function ReddotTreeNode_Theater:_Judge(EventId)
       local index = isDaily and 1 or 2
       local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("TheaterEventReward")
       if not CacheDetail[index] then
-        CacheDetail[index] = {}
+        CacheDetail[index] = false
       end
       if not CacheDetail[index] and not TabInfo[index] then
-        CacheDetail[index] = 1
+        CacheDetail[index] = true
         ReddotManager.IncreaseLeafNodeCount("TheaterEventReward")
-        TabInfo[index] = true
       end
+      TabInfo[index] = true
     end
   end
+  for index, value in pairs(TabInfo) do
+    CacheDetail[index] = value
+  end
+  ReddotManager.IncreaseLeafNodeCount("TheaterEventReward")
   return not IsEmpty
 end
-
 function ReddotTreeNode_Theater:OnInitNodeCache(NodeCache)
   ReddotTreeNode_Theater.Super.OnInitNodeCache(self, NodeCache)
   ReddotManager.AddListenerEx("TheaterEventReward", self, self.OnTheaterEventRewardChange)
 end
-
 function ReddotTreeNode_Theater:OnDisposeNode()
   ReddotManager.RemoveListener("TheaterEventReward", self)
 end
-
 function ReddotTreeNode_Theater:OnTheaterEventRewardChange(Count, RdType, RdName)
   if 0 ~= Count then
     return
@@ -51,5 +53,4 @@ function ReddotTreeNode_Theater:OnTheaterEventRewardChange(Count, RdType, RdName
     ActivityUtils.TrySubActivityReddotCommon("Red", EventId, self.Name)
   end
 end
-
 return ReddotTreeNode_Theater

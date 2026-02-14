@@ -1,27 +1,22 @@
 local M = Class("BluePrints.Common.MVC.Controller")
 local Model = require("BluePrints.UI.WBP.StoryInteractive.StoryInteractiveModel")
-
 function M:Init()
   self.Super.Init(self)
   self.AIControllerForPlayer = nil
   self.TalkPawn = nil
   self.Mode = "Player"
 end
-
 function M:Destory()
   self.Super.Destory(self)
   self.AIControllerForPlayer = nil
   self.TalkPawn = nil
 end
-
 function M:GetEventName()
   return "StoryInterActive"
 end
-
 function M:GetModel()
   return Model
 end
-
 function M:AdaptCameraComponent(CameraComponent)
   if not IsValid(CameraComponent) then
     return
@@ -42,7 +37,6 @@ function M:AdaptCameraComponent(CameraComponent)
     CameraComponent:SetAspectRatio(AspectRatio)
   end
 end
-
 function M:TryStartInteractive(NpcId, NpcCharacter, PlayerActor, EndCallback)
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(NpcCharacter) and self:GetAvatar() == nil and self.bInited ~= true then
     self:Init()
@@ -56,7 +50,6 @@ function M:TryStartInteractive(NpcId, NpcCharacter, PlayerActor, EndCallback)
     self:DirectStartInteractive(TalkInteractiveInfos[1], NpcCharacter, PlayerActor, EndCallback)
   end
 end
-
 function M:DirectStartInteractive(TalkInfo, NpcCharacter, PlayerActor, EndCallback)
   if not TalkInfo then
     if EndCallback and EndCallback.Func then
@@ -78,18 +71,15 @@ function M:DirectStartInteractive(TalkInfo, NpcCharacter, PlayerActor, EndCallba
     EndCallback.Func(EndCallback.Obj)
   end
 end
-
 function M:DirectStartTalkTrigger(TalkTriggerId, NpcId, NpcCharacter, PlayerActor, EndCallback)
   local TS = TalkSubsystem()
   local GameInstance = GWorld.GameInstance
   local TalkContext = GameInstance:GetTalkContext()
   TalkContext:StartTalk(TalkTriggerId, nil, nil, PlayerActor, NpcCharacter, EndCallback, TS and TS:GetNpcPlayDialogueCallback(NpcId) or nil)
 end
-
 function M:DirectStartTalkNode(Index, NpcId, NpcCharacter, EndCallback)
   GWorld.StoryMgr:TryExecNPCInteractiveTalk(NpcId, NpcCharacter, Index, EndCallback)
 end
-
 function M:CalculateTalkPawnTrans(InteractiveActor, Player, PivotOffset)
   local InteractiveActor = InteractiveActor or Player
   local StoryPlayable = InteractiveActor:Cast(UStoryPlayableInterface)
@@ -108,7 +98,6 @@ function M:CalculateTalkPawnTrans(InteractiveActor, Player, PivotOffset)
   end
   return CameraLocation, CameraRotation
 end
-
 function M:CreateTalkPawn(bCalculateTrans, bUseProceduralCamera, ProceduralCameraId, InteractiveActor)
   local ProceduralParams
   if bUseProceduralCamera and ProceduralCameraId then
@@ -151,7 +140,6 @@ function M:CreateTalkPawn(bCalculateTrans, bUseProceduralCamera, ProceduralCamer
   self:AdaptCameraComponent(self.TalkPawn.Camera)
   return self.TalkPawn
 end
-
 function M:SwitchToTalkPawn()
   self.Mode = "TalkPawn"
   if IsValid(self.AIControllerForPlayer) then
@@ -173,7 +161,6 @@ function M:SwitchToTalkPawn()
   end
   self.TalkPawn:EnableInput(PlayerController)
 end
-
 function M:SwitchToPlayer()
   self.Mode = "Player"
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
@@ -191,7 +178,6 @@ function M:SwitchToPlayer()
   end
   self.AIControllerForPlayer:SetControlRotation(Rot)
 end
-
 function M:BlendCamera(TargetCamera, BlendTime, Callback)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
   USequenceFunctionLibrary.SetViewTargetWithBlend(PlayerController, TargetCamera, BlendTime, UE4.EViewTargetBlendFunction.VTBlend_EaseInOut, 2)
@@ -201,46 +187,37 @@ function M:BlendCamera(TargetCamera, BlendTime, Callback)
     Callback()
   end
 end
-
 function M:BlendInCamera(BlendTime, Callback)
   local GameInstance = GWorld.GameInstance
   local TalkContext = GameInstance:GetTalkContext()
   local Camera = self:CreateTalkPawn(true, true, 1, TalkContext.InteractiveActor)
-  
   local function OverrideCallback()
     self:SwitchToTalkPawn()
     Callback()
   end
-  
   self:BlendCamera(Camera, BlendTime, OverrideCallback)
 end
-
 function M:BlendOutToTalk(BlendTime, Callback)
   self:SwitchToPlayer()
   self:BlendCamera(self.TalkPawn, BlendTime, Callback)
 end
-
 function M:BlendOutCamera(BlendTime, Callback)
   local TargetCamera = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
   local Rot = PlayerController:GetControlRotation()
   self.AIControllerForPlayer.bSetControlRotationFromPawnOrientation = false
   self.AIControllerForPlayer:SetControlRotation(Rot)
-  
   local function OverideCallback()
     local Rot = self.AIControllerForPlayer:GetControlRotation()
     self:SwitchToPlayer()
     PlayerController:SetControlRotation(Rot)
     Callback()
   end
-  
   self:BlendCamera(TargetCamera, BlendTime, OverideCallback)
 end
-
 function M:ClearController()
   if self.Mode ~= "Player" then
     self:SwitchToPlayer()
   end
 end
-
 return M

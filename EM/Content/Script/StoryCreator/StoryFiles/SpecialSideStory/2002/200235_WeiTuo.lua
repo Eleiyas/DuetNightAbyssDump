@@ -52,11 +52,11 @@ return {
       isStoryNode = true,
       key = "17521176846792117",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1543.6190477103544, y = -42},
       propsData = {
         QuestId = 20023503,
-        QuestDescriptionComment = "\230\175\143\230\151\165\228\187\187\229\138\161",
+        QuestDescriptionComment = "每日任务",
         QuestDescription = "Description_200235_2",
         QuestDeatil = "Content_200235_2",
         TaskRegionReName = "",
@@ -76,8 +76,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,7 +121,7 @@ return {
           ["17521348014304429292"] = {
             key = "17521348014304429292",
             type = "WaitingCompleteSysGuideNode",
-            name = "\231\173\137\229\190\133\229\174\140\230\136\144\230\140\135\229\188\149",
+            name = "等待完成指引",
             pos = {x = 1286, y = 294},
             propsData = {SystemGuideId = 2060}
           }
@@ -131,11 +133,11 @@ return {
       isStoryNode = true,
       key = "17521181709543131",
       type = "GameModeCompleteNode",
-      name = "\229\174\140\230\136\144\231\155\174\230\160\135",
+      name = "完成目标",
       pos = {x = 1138.1904763077332, y = 300.4286823001968},
       propsData = {
         QuestId = 20023501,
-        QuestDescriptionComment = "\229\174\140\230\136\144\229\137\175\230\156\172",
+        QuestDescriptionComment = "完成副本",
         QuestDescription = "Description_200235_1",
         QuestDeatil = "Content_200235_1",
         TaskRegionReName = "UI_REGION_NAME_2101",
@@ -164,11 +166,11 @@ return {
       isStoryNode = true,
       key = "17524943673701790",
       type = "GameModeCompleteNode",
-      name = "\229\174\140\230\136\144\231\155\174\230\160\135",
+      name = "完成目标",
       pos = {x = 1536, y = 282},
       propsData = {
         QuestId = 20023502,
-        QuestDescriptionComment = "\229\164\156\232\136\170\230\137\139\229\134\140",
+        QuestDescriptionComment = "夜航手册",
         QuestDescription = "Description_200235_2",
         QuestDeatil = "Content_200235_2",
         TaskRegionReName = "UI_REGION_NAME_2101",

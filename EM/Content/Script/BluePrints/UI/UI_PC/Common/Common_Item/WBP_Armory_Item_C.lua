@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Item.WBP_Com_item_Universal_L_C"
 })
-
 function M:InitData(Content)
   M.Super.InitData(self, Content)
   self.bHovered = false
@@ -20,7 +19,6 @@ function M:InitData(Content)
   self._OnMouseButtonDownEarly = Content.OnMouseButtonDownEarly
   self.bAllUseAsyncLoadWidget = false
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self:BindToAnimationFinished(self.Item.UnHover, {
@@ -34,7 +32,6 @@ function M:Construct()
   end)
   self.CurAnim = self.Item.Normal
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
   self:UnbindFromAnimationFinished(self.Item.UnHover, {
@@ -43,11 +40,9 @@ function M:Destruct()
   })
   EventManager:RemoveEvent(EventID.UnLoadUI, self)
 end
-
 function M:InitCompView()
   M.Super.InitCompView(self)
 end
-
 function M:TryPlayAnimation(Animation, ...)
   if self.CurAnim == Animation then
     return
@@ -62,11 +57,9 @@ function M:TryPlayAnimation(Animation, ...)
     self.Item:PlayAnimation(Animation, ...)
   end
 end
-
 function M:SetInteractivity(bInteractive)
   self.NotInteractive = not bInteractive
 end
-
 function M:OnHoveredChanged(bHovered)
   self.bHovered = bHovered
   if self.Content.IsSelect then
@@ -81,7 +74,6 @@ function M:OnHoveredChanged(bHovered)
     self:TryPlayAnimation(self.Item.UnHover)
   end
 end
-
 function M:OnPressedChanged(bPressed)
   self.bPressed = bPressed
   if self.Content.IsSelect then
@@ -95,11 +87,9 @@ function M:OnPressedChanged(bPressed)
     self:TryPlayAnimation(self.Item.Normal)
   end
 end
-
 function M:OnUnHoverAnimFinished()
   self:CheckAndPlayCurrentAnim()
 end
-
 function M:CheckAndPlayCurrentAnim()
   if self.bPressed then
     self:TryPlayAnimation(self.Press)
@@ -109,21 +99,18 @@ function M:CheckAndPlayCurrentAnim()
     self:TryPlayAnimation(self.Normal)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if not self.bEnableDrag then
     return
   end
   M.Super.OnMouseEnter(self, MyGeometry, MouseEvent)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if not self.bEnableDrag then
     return
   end
   M.Super.OnMouseLeave(self, MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self._OnMouseButtonDownEarly then
     local Reply = self._OnMouseButtonDownEarly(self, self.Content, MouseEvent)
@@ -138,19 +125,16 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self:OnPressedChanged(true)
   return M.Super.OnMouseButtonDown(self, MyGeometry, MouseEvent)
 end
-
 function M:OnMouseCaptureLost()
   self:OnPressedChanged(false)
   self:OnHoveredChanged(false)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   CommonUtils:CloseGuideTouchIfExist(self)
   self.MouseDownPos = nil
   self:OnPressedChanged(false)
   return M.Super.OnMouseButtonUp(self, MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   if self.bEnableDrag and self:HasMouseCapture() and self.MouseDownPos and UUIFunctionLibrary.HasTraveledFarEnoughToTriggerDrag(MouseEvent, self.MouseDownPos) then
     self.Item.ItemDetails_MenuAnchor:SetAllowRetain(false)
@@ -160,7 +144,6 @@ function M:OnMouseMove(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   if self.bEnableDrag then
     self.Item.ItemDetails_MenuAnchor:SetAllowRetain(false)
@@ -168,7 +151,6 @@ function M:OnTouchMoved(MyGeometry, InTouchEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnDragDetected(MyGeometry, PointerEvent)
   DebugPrint("WYX ", "WBP_Com_Item_Universal_L_C::OnDragDetected")
   self:OnPressedChanged(false)
@@ -191,7 +173,6 @@ function M:OnDragDetected(MyGeometry, PointerEvent)
   end
   return DragDropOperation
 end
-
 function M:OnDragEnter(MyGeometry, PointerEvent, Operation)
   DebugPrint("WYX ", "WBP_Com_Item_Universal_L_C::OnDragEnter")
   if Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
@@ -204,11 +185,9 @@ function M:OnDragEnter(MyGeometry, PointerEvent, Operation)
     self:OnDragEnter_Lua(Operation.DefaultDragVisual)
   end
 end
-
 function M:OnDragEnter_Lua(CreateDragUI)
   CreateDragUI.IsDraging = true
 end
-
 function M:OnDragLeave(PointerEvent, Operation)
   DebugPrint("WYX ", "WBP_Armory_Item_C::OnDragLeave")
   if Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
@@ -218,7 +197,6 @@ function M:OnDragLeave(PointerEvent, Operation)
     self._OnDragLeave(self.ParentWidget, self.Content, PointerEvent, Operation.DefaultDragVisual)
   end
 end
-
 function M:OnDragCancelled(PointerEvent, Operation)
   DebugPrint("WYX ", "WBP_Armory_Item_C::OnDragCancelled")
   if Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
@@ -233,28 +211,23 @@ function M:OnDragCancelled(PointerEvent, Operation)
     self:OnDragCancel_Lua(Operation.DefaultDragVisual)
   end
 end
-
 function M:OnMenuOpenChanged(IsOpened)
   UIManager(self):SetIsMenuAnchorOpen(IsOpened)
   self:SetSelected(IsOpened)
   M.Super.OnMenuOpenChanged(self, IsOpened)
 end
-
 function M:OnDragCancel_Lua(CreateDragUI)
   if not CreateDragUI.Content or CreateDragUI.IsCancel then
     return
   end
   CreateDragUI.IsDraging = false
 end
-
 function M:SetEnableDrag(IsEnableDrag)
   self.bEnableDrag = IsEnableDrag
 end
-
 function M:IsMenuOpen()
   return self.IsShowDetails and self.Item.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen()
 end
-
 function M:OnCloseMenuAnchor(IsNeedMenuChangedCallback)
   if self:IsMenuOpen() then
     self.Item.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
@@ -264,11 +237,9 @@ function M:OnCloseMenuAnchor(IsNeedMenuChangedCallback)
     self.Item.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
   end
 end
-
 function M:PlayPhantomJitterAnim()
   if self.WidgetMap[self.PhantomWidget] then
     self.PhantomWidget:PlayAnimation(self.PhantomWidget.Jitter)
   end
 end
-
 return M

@@ -1,15 +1,13 @@
 require("UnLua")
 local WBP_NPC_ImpressionShop_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_NPC_ImpressionShop_C:Initialize(Initializer)
   self.bIsEnabled_Impression = false
 end
-
 function WBP_NPC_ImpressionShop_C:Init(ParentHeadWidget)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.IconPath = nil
+  self.bIsEnabled_Impression = false
 end
-
 function WBP_NPC_ImpressionShop_C:OnEnabled(Npc)
   if self.bIsEnabled_Impression then
     return
@@ -28,7 +26,6 @@ function WBP_NPC_ImpressionShop_C:OnEnabled(Npc)
   end
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_NPC_ImpressionShop_C:TryChangeIconPath()
   if not self.IconPath then
     return
@@ -41,14 +38,12 @@ function WBP_NPC_ImpressionShop_C:TryChangeIconPath()
     self.CurrentIconPath = self.IconPath
   end
 end
-
 function WBP_NPC_ImpressionShop_C:OnHeadIconLoaded(HeadIcon)
   DebugPrint("WBP_NPC_ImpressionShop_C:OnHeadIconLoaded", HeadIcon)
   if HeadIcon then
     self.Image_Icon:SetBrushFromTexture(HeadIcon)
   end
 end
-
 function WBP_NPC_ImpressionShop_C:OnDisabled()
   if not self.bIsEnabled_Impression then
     return
@@ -59,15 +54,12 @@ function WBP_NPC_ImpressionShop_C:OnDisabled()
     self:PlayAnimation(self.Out)
   end
 end
-
 function WBP_NPC_ImpressionShop_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:OnOutAnimationFinished()
   end
 end
-
 function WBP_NPC_ImpressionShop_C:OnOutAnimationFinished()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 return WBP_NPC_ImpressionShop_C

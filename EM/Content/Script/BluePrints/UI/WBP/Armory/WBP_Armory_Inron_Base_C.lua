@@ -8,7 +8,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:Construct()
   self:AddDispatcher(EventID.OnCharGradeLevelUp, self, self.OnCharGradeLevelUp)
   self:AddDispatcher(EventID.OnMenuClose, self, self.OnClickBtnFullClose)
@@ -22,7 +21,6 @@ function M:Construct()
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
   self:AddDispatcher(EventID.OnPurchaseShopItem, self, self.OnPurchaseShopItem)
 end
-
 function M:Init(Params)
   self.Params = Params
   self.Parent = Params.Parent
@@ -35,7 +33,6 @@ function M:Init(Params)
   self.NewChar = false
   self:InitTraceMain()
 end
-
 function M:InitTraceMain()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -94,7 +91,6 @@ function M:InitTraceMain()
     self.ShouldFocusLast = false
   end
 end
-
 function M:LoadSkillDetailsUI()
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
   if ArmoryMain and ArmoryMain.ActorController then
@@ -111,7 +107,6 @@ function M:LoadSkillDetailsUI()
     end
   end, 2, "PlayItemNormalAnim")
 end
-
 function M:OnTraceDetailsDestruct(SelectTraceId)
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
   if ArmoryMain then
@@ -127,7 +122,6 @@ function M:OnTraceDetailsDestruct(SelectTraceId)
     self.LastFocusItem = self["InronItem_" .. self.SelectTraceId]
   end
 end
-
 function M:OnClickTraceItem(TraceId)
   if self.IsOutAnimPlayed then
     return
@@ -168,7 +162,6 @@ function M:OnClickTraceItem(TraceId)
     self:LoadSkillDetailsUI()
   end
 end
-
 function M:InitResourceNeeded()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -194,11 +187,10 @@ function M:InitResourceNeeded()
       ItemType = CommonConst.ItemType.Resource,
       Rarity = ResourceConf.Rarity,
       IsShowDetails = true,
-      ShopItemId = ShopItemId
+      NeedCount = Value,
+      ShopItemId = ShopItemId,
+      CountTextWhite = true
     }
-    if Value <= FakeContent.Count then
-      FakeContent.Count = Value
-    end
     local Item = UIManager(self):_CreateWidgetNew("ComItemUniversalM")
     Item:BindEvents(self, {
       OnMenuOpenChanged = self.OnTipsOpenChanged
@@ -230,14 +222,6 @@ function M:InitResourceNeeded()
           Price = ShopItemData2.Price,
           IsShowDetails = true
         }
-        local AddKey = UIManager(self):_CreateWidgetNew("ArmoryAddKey")
-        self.Details.HB_Item:AddChild(AddKey)
-        local Slot = UE4.UWidgetLayoutLibrary.SlotAsWrapBoxSlot(AddKey)
-        if Slot then
-          Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Center)
-        end
-        local ItemNeed = UIManager(self):_CreateWidgetNew("ComItemUniversalM")
-        self.Details.HB_Item:AddChild(ItemNeed)
         if NeedCount <= Resource2.Count then
           Res = {
             2,
@@ -245,16 +229,13 @@ function M:InitResourceNeeded()
             NeedContent
           }
         else
-          NeedContent.CountTextRed = true
           Res = {
             3,
             FakeContent,
             NeedContent
           }
         end
-        ItemNeed:Init(NeedContent)
       else
-        FakeContent.CountTextRed = true
         Res = {
           4,
           nil,
@@ -267,30 +248,33 @@ function M:InitResourceNeeded()
     return Res
   end
 end
-
 function M:OnTipsOpenChanged(bIsOpen)
   if self.Details then
     self.Details:OnTipsOpenChanged(bIsOpen)
   end
 end
-
 function M:GetTraceDesc()
   if DataMgr.BattleChar[self.CharId].CharGradeDescription and DataMgr.BattleChar[self.CharId].CharGradeDescription[self.SelectTraceId] then
     local CharGradeDescription = GText(DataMgr.BattleChar[self.CharId].CharGradeDescription[self.SelectTraceId])
-    for Index, value in pairs(DataMgr.BattleChar[self.CharId].CharGradeParameter) do
-      local CharGradeParameter = value
-      local Parameter = SkillUtils.CalcSkillDesc(CharGradeParameter, self.SelectTraceId)
+    local ReversedParameters = {}
+    for index, value in pairs(DataMgr.BattleChar[self.CharId].CharGradeParameter) do
+      table.insert(ReversedParameters, {Index = index, Value = value})
+    end
+    table.sort(ReversedParameters, function(a, b)
+      return tonumber(a.Index) > tonumber(b.Index)
+    end)
+    for _, param in ipairs(ReversedParameters) do
+      local Parameter = SkillUtils.CalcSkillDesc(param.Value, 1)
       local SignIndex = string.find(Parameter, "%%", 1)
       if SignIndex then
         Parameter = Parameter .. "%"
       end
-      CharGradeDescription = string.gsub(CharGradeDescription, "#" .. Index, Parameter)
+      CharGradeDescription = string.gsub(CharGradeDescription, "#" .. param.Index, Parameter)
     end
     return CharGradeDescription
   end
   return ""
 end
-
 function M:OnClickBtnFullClose()
   if -1 == self.SelectTraceId then
     return
@@ -305,7 +289,6 @@ function M:OnClickBtnFullClose()
     self.SelectTraceId = -1
   end
 end
-
 function M:OnClickBTN(Type, Resource1, Resource2)
   if self.CharGradeLevel == self.MaxGradeLevel or self.SelectTraceId ~= self.CharGradeLevel + 1 then
     return
@@ -325,7 +308,7 @@ function M:OnClickBTN(Type, Resource1, Resource2)
       local CallServerFunc = Avatar.UpCharGradeLevel
       CallServerFunc(Avatar, Char.Uuid, tonumber(Char.GradeLevel))
     end
-  elseif 2 == Type then
+  elseif 2 == Type or 3 == Type then
     local Avatar = GWorld:GetAvatar()
     local Resource1Data = {}
     Resource1Data.Count = Avatar.Resources[Resource1.Id] and Avatar.Resources[Resource1.Id].Count or 0
@@ -357,16 +340,18 @@ function M:OnClickBTN(Type, Resource1, Resource2)
         Avatar:PurchaseShopItem(Resource1.ShopItemId, BuyCount, true)
       end
     }
-    UIManager(self):ShowCommonPopupUI(100247, Params, self)
-  elseif 3 == Type then
-    UIManager(self):ShowCommonPopupUI(100248, {
-      RightCallbackFunction = function()
-        PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
+    if 3 == Type then
+      function Params.RightCallbackFunction()
+        UIManager(self):ShowCommonPopupUI(100248, {
+          RightCallbackFunction = function()
+            PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
+          end
+        }, self)
       end
-    }, self)
+    end
+    UIManager(self):ShowCommonPopupUI(100247, Params, self)
   end
 end
-
 function M:OnPurchaseShopItem(Ret)
   if not self.IsWatingForBuyResource then
     return
@@ -389,7 +374,6 @@ function M:OnPurchaseShopItem(Ret)
     end
   end
 end
-
 function M:CheckCharCanUpGradeLevel()
   if self.IsPreviewMode then
     return
@@ -401,7 +385,6 @@ function M:CheckCharCanUpGradeLevel()
   local Char = self.Char
   return UpgradeUtils.CheckCharCanUpgradeCardLevel(Char)
 end
-
 function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
   self.Parent:BlockAllUIInput(false)
   if ErrorCode:Check(Ret) then
@@ -420,11 +403,9 @@ function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
     end
   end
 end
-
 function M:ClickToNextTraceItem()
   self.Parent:BlockAllUIInput(false)
 end
-
 function M:PlayInAnim()
   self.IsOutAnimPlayed = false
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -439,7 +420,6 @@ function M:PlayInAnim()
   end
   self.DetailsClose = false
 end
-
 function M:PlayOutAnim()
   self.IsOutAnimPlayed = true
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -453,18 +433,15 @@ function M:PlayOutAnim()
   end
   return self.Out:GetEndTime()
 end
-
 function M:SetDetailsUnlockPlaying(IsPlaying)
   if self.Details then
     self.Details.UnlockPlaying = IsPlaying
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   self.CurInputDeviceType = CurInputDevice
 end
-
 function M:OnTraceItemFocused(TraceId)
   if (self.IsGamepadInput and self.IsOpenDetails or self.IsOpenDetails and self.CurInputDeviceType == ECommonInputType.GamePad) and self["InronItem_" .. TraceId] then
     self["InronItem_" .. TraceId].IsClick = false
@@ -472,23 +449,19 @@ function M:OnTraceItemFocused(TraceId)
     self.LastFocusItem = self["InronItem_" .. TraceId]
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.InronItem_1)
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Parent, self)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Parent, self)
   end
 end
-
 function M:OnPopUIKeyDown(InKeyName)
   if not self.PopupUI then
     return
@@ -507,7 +480,6 @@ function M:OnPopUIKeyDown(InKeyName)
     end
   end
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   if not self.PopupUI then
     return
@@ -524,9 +496,7 @@ function M:ItemMenuAnchorChanged(bIsOpen)
     self.PopupUI:ShowGamepadShortcut(self.OpenTipsButtonIndex)
   end
 end
-
 function M:InitKeySetting()
 end
-
 AssembleComponents(M)
 return M

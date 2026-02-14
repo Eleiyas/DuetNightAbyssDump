@@ -1,15 +1,12 @@
 require("UnLua")
 local WBP_Rouge_SlotLine_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_SlotLine_C:Construct()
   self.CurState = nil
 end
-
 function WBP_Rouge_SlotLine_C:Init(State)
   self:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   self:ChangeState(State)
 end
-
 function WBP_Rouge_SlotLine_C:ChangeState(NewState)
   if NewState == self.CurState then
     return
@@ -35,5 +32,4 @@ function WBP_Rouge_SlotLine_C:ChangeState(NewState)
     self:PlayAnimation(self.Normal)
   end
 end
-
 return WBP_Rouge_SlotLine_C

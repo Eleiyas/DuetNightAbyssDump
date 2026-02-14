@@ -1,5 +1,4 @@
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function M:Init()
   self.StaticCreatorId = 0
   self.ObservationPointName = ""
@@ -8,7 +7,6 @@ function M:Init()
   self.ListenTimer = nil
   self.ObservationPoint = nil
 end
-
 function M:Execute(Callback)
   if self.ObservationPointName ~= "" then
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
@@ -19,14 +17,13 @@ function M:Execute(Callback)
       if not IsValid(self.ObservationPoint) then
         return
       end
-      self.ObservationPoint.GuideIconComponent:SetAccessibility(false)
+      self.ObservationPoint:SetAccessibility(false)
     end
-    if self.ObservationPoint.GuideIconComponent:IsAccessed() then
+    if self.ObservationPoint:IsAccessed() then
       Callback()
     end
   end, true)
 end
-
 function M:Clear()
   if self.ObservationPointName ~= "" then
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
@@ -35,7 +32,6 @@ function M:Clear()
   self.ListenTimer = nil
   self.ObservationPoint = nil
 end
-
 function M:GetObservationPoint()
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   local CreatorInfo = GameState:GetStaticCreatorInfo(self.StaticCreatorId)
@@ -47,5 +43,4 @@ function M:GetObservationPoint()
   end
   return TalkSubsystem():GetTalkInteractiveItem(self.ObservationPointName)
 end
-
 return M

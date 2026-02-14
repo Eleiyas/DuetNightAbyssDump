@@ -1,6 +1,5 @@
 require("UnLua")
 local M = {}
-
 function M:GetQuestPhaseIdByTabId(EventId, TabId)
   for _, phaseConfig in pairs(DataMgr.CommonQuestPhase) do
     if phaseConfig.Index == TabId and phaseConfig.EventId == EventId then
@@ -9,13 +8,15 @@ function M:GetQuestPhaseIdByTabId(EventId, TabId)
   end
   return nil
 end
-
 function M:GetQuestPhaseInfo(EventId, QuestPhaseId)
   local Avatar = GWorld:GetAvatar()
   local TotalQuestCount = 0
   local CompletedQuestCount = 0
   if Avatar then
     local CommonQuestActivity = Avatar.CommonQuestActivity[EventId]
+    if nil == CommonQuestActivity then
+      return 0, 0
+    end
     local QuestIds = DataMgr.QuestPhaseId2QuestId[QuestPhaseId]
     for _, QuestId in pairs(QuestIds) do
       if CommonQuestActivity[QuestId] then
@@ -28,7 +29,6 @@ function M:GetQuestPhaseInfo(EventId, QuestPhaseId)
     return CompletedQuestCount, TotalQuestCount
   end
 end
-
 function M:IsQuestPhaseCanGetReward(EventId, QuestPhaseId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -45,13 +45,15 @@ function M:IsQuestPhaseCanGetReward(EventId, QuestPhaseId)
     return false
   end
 end
-
 function M:GetQuestPhaseGetDiamond(EventId, QuestPhaseId)
   local Avatar = GWorld:GetAvatar()
   local GetDiamond = 0
   if Avatar then
     local CommonQuestActivity = Avatar.CommonQuestActivity[EventId]
     local QuestIds = DataMgr.QuestPhaseId2QuestId[QuestPhaseId]
+    if nil == CommonQuestActivity or nil == QuestIds then
+      return 0
+    end
     for _, QuestId in pairs(QuestIds) do
       if CommonQuestActivity[QuestId] and CommonQuestActivity[QuestId].RewardsGot then
         local RewardId = DataMgr.CommonQuestDetail[QuestId].QuestReward
@@ -71,13 +73,15 @@ function M:GetQuestPhaseGetDiamond(EventId, QuestPhaseId)
   end
   return GetDiamond
 end
-
 function M:GetQuestPhaseCanGetDiamond(EventId, QuestPhaseId)
   local Avatar = GWorld:GetAvatar()
   local GetDiamond = 0
   if Avatar then
     local CommonQuestActivity = Avatar.CommonQuestActivity[EventId]
     local QuestIds = DataMgr.QuestPhaseId2QuestId[QuestPhaseId]
+    if nil == CommonQuestActivity or nil == QuestIds then
+      return 0
+    end
     for _, QuestId in pairs(QuestIds) do
       if CommonQuestActivity[QuestId] then
         local RewardId = DataMgr.CommonQuestDetail[QuestId].QuestReward
@@ -97,11 +101,9 @@ function M:GetQuestPhaseCanGetDiamond(EventId, QuestPhaseId)
   end
   return GetDiamond
 end
-
 function M:IsQuestPhaseAllGetReward(EventId, QuestPhaseId)
   local allcount = self:GetQuestPhaseCanGetDiamond(EventId, QuestPhaseId)
   local getcount = self:GetQuestPhaseGetDiamond(EventId, QuestPhaseId)
   return allcount == getcount
 end
-
 return M

@@ -1,21 +1,16 @@
 local Component = {}
-
 function Component:HasHandlePenalize()
   return self.Data and self.Data.BossPenalize and self.Data.BossPenalize.HandlePenalize and 1 == self.Data.BossPenalize.HandlePenalize
 end
-
 function Component:HasCannotCondemn()
   return self.Data and self.Data.BossPenalize and self.Data.BossPenalize.CannotCondemn and 1 == self.Data.BossPenalize.CannotCondemn
 end
-
 function Component:IsEnterPenalizeAfterDeath()
   return self.Data and self.Data.BossPenalize and self.Data.BossPenalize.EnterPenalizeAfterDeath and 1 == self.Data.BossPenalize.EnterPenalizeAfterDeath
 end
-
 function Component:IsEnterDeathStory()
   return self.Data and self.Data.BossPenalize and self.Data.BossPenalize.PlayStoryAfterDeath and self.Data.BossPenalize.PlayStoryAfterDeath >= 0
 end
-
 function Component:IsHpEnterDeathStory()
   if not self:IsEnterDeathStory() then
     return
@@ -24,7 +19,6 @@ function Component:IsHpEnterDeathStory()
   local MaxHp = self:GetAttr("MaxHp")
   return self.Data.BossPenalize.PlayStoryAfterDeath >= CurrentHp / MaxHp
 end
-
 function Component:IsHpEnterTrueDamage()
   if not self:HasHandlePenalize() or not self:IsInDefeat() then
     return
@@ -36,39 +30,29 @@ function Component:IsHpEnterTrueDamage()
   local MaxHp = self:GetAttr("MaxHp")
   return self.Data.BossPenalize.MaxHpPercent >= CurrentHp / MaxHp
 end
-
 function Component:MultiCastSetCharacterTagAfterMaxTN_Implementation(CharacterTag)
   if "Idle" == CharacterTag then
+    self.IsBossDefeated = false
     local CondemnPath = self:GetCondemnMontagePath("CondemnEnd_Montage")
     local AnimTime = self:PlayMontageByPath(CondemnPath) or 0
-    self:SetEnableBeCondemned(ECondemnState.DefeatedEndToIdle)
+    AnimTime = math.max(0, AnimTime - 0.25)
     if IsAuthority(self) then
-      self:AddTimer(AnimTime, function()
-        self:ServerSetCharacterTag(CharacterTag)
-      end, false, 0, "DefeatedToIdle")
+      self:SetEnableBeCondemned(ECondemnState.DefeatedEndToIdle)
     end
+    self:AddTimer(AnimTime, function()
+      self:SetCharacterTag(CharacterTag)
+    end, false, 0, "DefeatedToIdle")
     if IsClient(self) or IsStandAlone(self) then
       local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
       local UIManager = GameInstance:GetGameUIManager()
       local DefeatedUI = UIManager:GetUIObj("DefeatedInteract")
       if DefeatedUI then
-        DefeatedUI:StopAllAnimations()
-        DefeatedUI:ChangeUIDefeatedState(false)
-        DefeatedUI:Close()
+        DefeatedUI:CloseExecuteItem(self)
         self:SetHeightLightTip(false)
       end
     end
-  else
-    if IsAuthority(self) then
-      self:RemoveTimer("DefeatedToIdle")
-    end
-    if self.EnableBeCondemned == ECondemnState.DefeatedEndToIdle then
-      self:LeaveDefeatedTag()
-      self:EnterDefeatedTag()
-    end
   end
 end
-
 function Component:DefeatedRecoverToIdle(RecoverMaxTN)
   if not self:CharacterInTag("Defeated") then
     return
@@ -80,7 +64,7 @@ function Component:DefeatedRecoverToIdle(RecoverMaxTN)
       Battle(self):TriggerBattleEvent(BattleEventName.RecoverMaxTNEvent, self)
       self:MultiCastSetCharacterTagAfterMaxTN("Idle")
     else
-      self:ServerSetCharacterTag("Idle")
+      self:MulticastSetCharacterTagOnHitLogic("Idle", false)
     end
     self:RecoverToMaxTN()
   elseif self:IsEnterDeathStory() then
@@ -92,7 +76,6 @@ function Component:DefeatedRecoverToIdle(RecoverMaxTN)
   self:UseDefeatedCallBack()
   self:EnableToughnessRecover()
 end
-
 function Component:GetCondemnMontagePath(CondemnPathSuffix)
   local MontageFolder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
   if MontageFolder then
@@ -100,24 +83,19 @@ function Component:GetCondemnMontagePath(CondemnPathSuffix)
     return Path
   end
 end
-
 function Component:SetCharacterDefeatedTag()
   if not self:HasHandlePenalize() then
     return
   end
   if not self:CharacterInTag("Defeated") then
     self.EnterDefeatedCount = self.EnterDefeatedCount and self.EnterDefeatedCount + 1 or 1
-    self:ServerSetCharacterTag("Defeated")
-    self.IsBossDefeated = true
+    self:MulticastSetCharacterTagOnHitLogic("Defeated", true)
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
     if GameMode and 1 == self.EnterDefeatedCount then
       GameMode:TriggerFirstCondemn()
     end
-  else
-    self:MultiCastSetCharacterTagAfterMaxTN("Defeated")
   end
 end
-
 function Component:CharQuitHitTag(CombatConditionId, EnterCharacterTag)
   local ChangeInfo = self:GetStateLimitInfo(self.AutoSyncProp.CharacterTag)
   if not ChangeInfo then
@@ -135,11 +113,10 @@ function Component:CharQuitHitTag(CombatConditionId, EnterCharacterTag)
     if "Defeated" == EnterCharacterTag then
       self:SetCharacterDefeatedTag()
     else
-      self:ServerSetCharacterTag(EnterCharacterTag)
+      self:MulticastSetCharacterTagOnHitLogic(EnterCharacterTag, false)
     end
   end
 end
-
 function Component:QuitDefeatedTag()
   if self:CharacterInTag("Defeated") then
     self:TriggerExecuteCondemnedEvent()
@@ -147,7 +124,6 @@ function Component:QuitDefeatedTag()
     self:DefeatedRecoverToIdle()
   end
 end
-
 function Component:MultiCastPlayCondemnMontage_Implementation()
   if self:IsMonster() then
     self:TriggerBeCondemned()
@@ -160,7 +136,7 @@ function Component:MultiCastPlayCondemnMontage_Implementation()
     local AnimTime, AnimationAsset = self:PlayMontageByPath(CondemnPath)
     if not AnimationAsset then
       self:QuitDefeatedTag()
-      DebugPrint("\229\164\132\229\136\145\229\138\168\231\148\187\232\183\175\229\190\132\230\150\135\228\187\182\228\184\141\229\173\152\229\156\168", CondemnPath)
+      DebugPrint("处刑动画路径文件不存在", CondemnPath)
     else
       local FrameNum = math.floor(AnimationAsset.SequenceLength / 0.03333333333333333 + 1.0E-4) + 1
       if FrameNum > 61 then
@@ -171,18 +147,17 @@ function Component:MultiCastPlayCondemnMontage_Implementation()
           end
         end)
       end
-      self:AddTimer(AnimTime - AnimationAsset:GetDefaultBlendOutTime(), self.QuitDefeatedTag, false, 0, "QuitDefeatedTag")
+      local BlendOutTime = 0 ~= AnimationAsset:GetDefaultBlendOutTime() and AnimationAsset:GetDefaultBlendOutTime() or 0.3
+      self:AddTimer(AnimTime - BlendOutTime, self.QuitDefeatedTag, false, 0, "QuitDefeatedTag")
     end
   end
 end
-
 function Component:PlayEnterCondemnMontage()
   local CondemnPath = self:GetCondemnMontagePath("CondemnStart_Montage")
   local MontageSecond = self:PlayMontageByPath(CondemnPath)
   MontageSecond = self.BattleCharInfo.TNRecoverTimeZ or MontageSecond
   return MontageSecond
 end
-
 function Component:EnterDefeatedTag()
   local Movement = self:GetMovementComponent()
   Movement:SetMovementMode(Movement.DefaultLandMovementMode)
@@ -211,7 +186,6 @@ function Component:EnterDefeatedTag()
     self.BossBloodUI:ShowToughnessBar(false)
   end
 end
-
 function Component:LeaveDefeatedTag()
   if IsAuthority(self) then
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -229,9 +203,7 @@ function Component:LeaveDefeatedTag()
   if not self:HasCannotCondemn() then
     local DefeatedUI = UIManager(self):GetUIObj("DefeatedInteract")
     if DefeatedUI then
-      DefeatedUI:StopAllAnimations()
-      DefeatedUI:PlayAnimation(DefeatedUI.out)
-      DefeatedUI:TryShowPhoneUI(false)
+      DefeatedUI:RemoveExecuteItem(self, "out")
     end
     self:SetHeightLightTip(false)
   end
@@ -239,7 +211,6 @@ function Component:LeaveDefeatedTag()
     self.BossBloodUI:ShowToughnessBar(true)
   end
 end
-
 function Component:SendPenalizeStoryEvent()
   self:SetEnableBeCondemned(ECondemnState.CantEnterDefeated)
   self:PostCustomEvent(self.Data.BossPenalize.StoryEvent)
@@ -248,15 +219,15 @@ function Component:SendPenalizeStoryEvent()
   end)
   self.CondemnerEid = nil
 end
-
 function Component:SetEnableBeCondemned(EnableBeCondemned)
   self.EnableBeCondemned = EnableBeCondemned
 end
-
 function Component:GetEnableBeCondemned()
   return self:CharacterInTag("Defeated") and self.EnableBeCondemned == ECondemnState.AccessEnterDefeated
 end
-
+function Component:IsCantLeaveDefeated()
+  return self:CharacterInTag("Defeated") and not self:IsExistTimer("QuitDefeatedTag") and (self.EnableBeCondemned == ECondemnState.AccessEnterDefeated or self.EnableBeCondemned == ECondemnState.DefeatedStopNotify or self.EnableBeCondemned == ECondemnState.WaitEnterDefeated)
+end
 function Component:ApplyEffectAddtiveHit(DamageEvent)
   if DamageEvent.DamageTag then
     for _, tag in pairs(DamageEvent.DamageTag) do
@@ -286,5 +257,4 @@ function Component:ApplyEffectAddtiveHit(DamageEvent)
     return false
   end
 end
-
 return Component

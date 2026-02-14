@@ -1,7 +1,6 @@
 require("UnLua")
 local GMVariable = require("BluePrints.UI.GMInterface.GMVariable")
 local GMObjectUtils = {}
-
 function GMObjectUtils.NewCommandObject(content, class)
   if nil == content then
     return
@@ -37,13 +36,11 @@ function GMObjectUtils.NewCommandObject(content, class)
   obj.DataFunc = content.data_func
   return obj
 end
-
 function GMObjectUtils.FindCommandObjByName(Name)
   if IsValid(GMVariable.AllCommands) then
     return GMObjectUtils.FindCommandObjByNameDfs(GMVariable.AllCommands, Name)
   end
 end
-
 function GMObjectUtils.FindCommandObjByNameDfs(Command, Name)
   if IsValid(Command) then
     if Command.Text == Name then
@@ -59,7 +56,6 @@ function GMObjectUtils.FindCommandObjByNameDfs(Command, Name)
     end
   end
 end
-
 function GMObjectUtils.GetCharCmdObjs()
   local Array = {}
   local Data = DataMgr.BattleChar
@@ -81,7 +77,6 @@ function GMObjectUtils.GetCharCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetDynCmdObjs()
   local Array = {}
   local Data = DataMgr.DynQuest
@@ -103,7 +98,6 @@ function GMObjectUtils.GetDynCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetWeaponCmdObjs()
   local Array = {}
   local Data = DataMgr.Weapon
@@ -126,7 +120,6 @@ function GMObjectUtils.GetWeaponCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetResourceCmdObjs()
   local Array = {}
   local Data = DataMgr.Resource
@@ -147,7 +140,6 @@ function GMObjectUtils.GetResourceCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetDropCmdObjs()
   local Array = {}
   local Data = DataMgr.Drop
@@ -165,7 +157,6 @@ function GMObjectUtils.GetDropCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetHotKeyCmdObjs()
   local KeyboardConfig = DataMgr.KeyboardMap
   local Result = {}
@@ -182,7 +173,6 @@ function GMObjectUtils.GetHotKeyCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetMonsterCmdObjs()
   local Array = {}
   local Data = DataMgr.Monster
@@ -206,7 +196,6 @@ function GMObjectUtils.GetMonsterCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetCMSCmdObjs()
   local Array = {}
   local Data = DataMgr.MechanismSummon
@@ -228,7 +217,6 @@ function GMObjectUtils.GetCMSCmdObjs()
   end
   return Result
 end
-
 function GMObjectUtils.GetCPCmdObjs()
   local Array = {}
   local Data = DataMgr.Phantom
@@ -250,5 +238,30 @@ function GMObjectUtils.GetCPCmdObjs()
   end
   return Result
 end
-
+function GMObjectUtils.GetFriendCmdObjs()
+  local Result = {}
+  local Avatar = GWorld and GWorld:GetAvatar()
+  if not Avatar or not Avatar.Friends then
+    return Result
+  end
+  local Uids = {}
+  for Uid, _ in pairs(Avatar.Friends) do
+    table.insert(Uids, Uid)
+  end
+  table.sort(Uids)
+  local content = {
+    mode = "button",
+    callback = "CanSendFriendGift",
+    close_gm = false
+  }
+  for _, Uid in ipairs(Uids) do
+    local FriendInfo = Avatar.Friends[Uid]
+    local Name = FriendInfo and FriendInfo.Info and FriendInfo.Info.Nickname or ""
+    local obj = GMObjectUtils.NewCommandObject(content)
+    obj.Text = tostring(Uid) .. " " .. Name
+    obj.Parameters:Add(Uid)
+    table.insert(Result, obj)
+  end
+  return Result
+end
 return GMObjectUtils

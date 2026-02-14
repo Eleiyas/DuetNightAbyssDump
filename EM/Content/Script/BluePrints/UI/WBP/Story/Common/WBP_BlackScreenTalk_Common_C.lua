@@ -3,7 +3,6 @@ require("DataMgr")
 local DialogueDataBase_C = require("BluePrints.Story.Talk.Model.DialogueData").DialogueDataBase_C
 local WikiController = require("BluePrints.UI.WBP.Wiki.WikiController")
 local M = Class("BluePrints.Story.Talk.UI.BP_TalkBaseUINew_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.bBlackScreenSameScreen = false
@@ -21,13 +20,11 @@ function M:Construct()
   self.BlackScreenText:SetText("")
   self:SetStoryInputModeEnabled(true)
 end
-
 function M:Destruct()
   AudioManager(self):SetEventSoundParam(self, "BlackScreenSound", {ToEnd = 1})
   AudioManager(self):ResumePlayBGMCauseIsLoadingOrBlackScreen()
   M.Super.Destruct(self)
 end
-
 function M:OnLoaded(...)
   local IsWhite = (...)
   if IsWhite then
@@ -36,11 +33,9 @@ function M:OnLoaded(...)
   end
   M.Super:OnLoaded(...)
 end
-
 function M:PreEnterTalkTask(TalkTask, TaskData, OnPreEnterTalkTaskFinished)
   M.Super.PreEnterTalkTask(self, TalkTask, TaskData, OnPreEnterTalkTaskFinished)
 end
-
 function M:PostEnterTalkTask(TalkTask, TaskData, OnPostEnterTalkTaskFinished)
   self.bBlackScreenSameScreen = TaskData.ExtraParams.bBlackScreenSameScreen
   if self.bBlackScreenSameScreen then
@@ -71,11 +66,13 @@ function M:PostEnterTalkTask(TalkTask, TaskData, OnPostEnterTalkTaskFinished)
   self:SwitchEnableReviewButton(TaskData.bShowReviewButton)
   M.Super.PostEnterTalkTask(self, TalkTask, TaskData, OnPostEnterTalkTaskFinished)
 end
-
 function M:PreExitTalkTask(TalkTask, TaskData, OnPreExitTalkTaskFinished)
+  self:SwitchEnableWikiButton(false)
+  self:SwitchEnableSkipButton(false)
+  self:SwitchEnableReviewButton(false)
+  self:SwitchEnableAutoPlayButton(false)
   M.Super.PreExitTalkTask(self, TalkTask, TaskData, OnPreExitTalkTaskFinished)
 end
-
 function M:PostExitTalkTask(TalkTask, TalkData, OnPostExitTalkTaskFinished)
   if self.TextChild == nil then
     M.Super.PostExitTalkTask(self, TalkTask, TalkData, OnPostExitTalkTaskFinished)
@@ -88,7 +85,6 @@ function M:PostExitTalkTask(TalkTask, TalkData, OnPostExitTalkTaskFinished)
   self.TextChild = nil
   M.Super.PostExitTalkTask(self, TalkTask, TalkData, OnPostExitTalkTaskFinished)
 end
-
 function M:PlayDialogue(TalkTask, DialogueData, TaskData)
   DebugPrint("BP_BlackScreenSubtitleUINew_C:PlayDialogue", TalkTask, DialogueData, TaskData, DialogueData.Duration)
   self:SetTextBorderHidden(false)
@@ -124,16 +120,13 @@ function M:PlayDialogue(TalkTask, DialogueData, TaskData)
     self:TryShowWikiButton(TalkTask)
   end
 end
-
 function M:SkipDialogueTyping()
   if IsValid(self.CurrentTextWidget) then
     self.CurrentTextWidget:SetAnimationCurrentTime(self.CurrentTextWidget.TextOpacityChange, self.CurrentTextWidget.TextOpacityChange:GetEndTime() - 0.01)
   end
 end
-
 function M:InitializedToolbar()
 end
-
 function M:SetTextBorderHidden(bHidden)
   self:StopListeningForInputAction("TalkClick", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("TalkClick", EInputEvent.IE_Released)
@@ -159,7 +152,6 @@ function M:SetTextBorderHidden(bHidden)
     })
   end
 end
-
 function M:SetTipImageHidden(bHidden)
   if bHidden then
     self.Img_Arrow:SetVisibility(ESlateVisibility.Collapsed)
@@ -167,32 +159,26 @@ function M:SetTipImageHidden(bHidden)
     self.Img_Arrow:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:HasPageTypingFinished()
   return true
 end
-
 function M:HasWholeDialogueTypingFinished()
   return true
 end
-
 function M:Clear()
   DebugPrint("BP_BlackScreenSubtitleUINew_C:Clear")
   self:CleanTimer()
 end
-
 function M:OnTalkClickPressed()
   if not self.bForceAutoPlay then
     M.Super.OnTalkClickPressed(self)
   end
 end
-
 function M:OnTalkClickReleased()
   if not self.bForceAutoPlay then
     M.Super.OnTalkClickReleased(self)
   end
 end
-
 function M:IsAutoPlay()
   if not self.bForceAutoPlay then
     return M.Super.IsAutoPlay(self)
@@ -200,11 +186,9 @@ function M:IsAutoPlay()
     return true
   end
 end
-
 function M:Close()
   M.Super.Close(self)
 end
-
 function M:OnPaused()
   DebugPrint("BlackScreenTalk:OnPaused")
   self:SetPlayKeyEnabled(false, "Pause")
@@ -213,7 +197,6 @@ function M:OnPaused()
   end
   self:PauseCurrentText()
 end
-
 function M:OnPauseResumed()
   DebugPrint("BlackScreenTalk:OnPauseResumed")
   self:SetPlayKeyEnabled(true, "Pause")
@@ -222,7 +205,6 @@ function M:OnPauseResumed()
   end
   self:ResumeCurrentText()
 end
-
 function M:PauseCurrentText()
   if not IsValid(self.CurrentTextWidget) then
     return
@@ -231,7 +213,6 @@ function M:PauseCurrentText()
     self.TextPausePosition = self.CurrentTextWidget:PauseAnimation(self.CurrentTextWidget.TextOpacityChange)
   end
 end
-
 function M:ResumeCurrentText()
   if not IsValid(self.CurrentTextWidget) then
     return
@@ -241,19 +222,16 @@ function M:ResumeCurrentText()
     self.TextPausePosition = nil
   end
 end
-
 function M:Hide(HideTag)
   if "Review" == HideTag or "Wiki" == HideTag then
     return
   end
   M.Super.Hide(self, HideTag)
 end
-
 function M:Show(ShowTag)
-  if HideTag == "Review" or HideTag == "Wiki" then
+  if "Review" == ShowTag or "Wiki" == ShowTag then
     return
   end
   M.Super.Show(self, ShowTag)
 end
-
 return M

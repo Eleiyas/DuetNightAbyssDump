@@ -1,7 +1,6 @@
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local RandomRequireResult, Random = pcall(require, "src.utils.RandomNew")
 local RewardUtils = {}
-
 function RewardUtils:GetRewards(RewardIds, Avatar)
   local Rewards = RewardBox:New()
   if not RewardIds then
@@ -22,7 +21,6 @@ function RewardUtils:GetRewards(RewardIds, Avatar)
   end
   return Rewards
 end
-
 function RewardUtils:RewardsModify(RewardIds, Avatar)
   local ModifyRewards = RewardIds
   if type(RewardIds) == "number" then
@@ -32,7 +30,6 @@ function RewardUtils:RewardsModify(RewardIds, Avatar)
   if not Avatar then
     return ModifyRewards, OriginCount
   end
-  
   local function RandomResult()
     if not RandomRequireResult then
       return math.random(0, 9999)
@@ -40,7 +37,6 @@ function RewardUtils:RewardsModify(RewardIds, Avatar)
       return Random.randInt(0, 9999)
     end
   end
-  
   local Length = #ModifyRewards
   for i = 1, Length do
     local RewardId = ModifyRewards[i]
@@ -59,7 +55,6 @@ function RewardUtils:RewardsModify(RewardIds, Avatar)
   end
   return ModifyRewards, OriginCount
 end
-
 function RewardUtils:GetRewardsById(Rewards, RewardId, Avatar)
   local RewardData = DataMgr.Reward[RewardId]
   if not RewardData then
@@ -75,7 +70,6 @@ function RewardUtils:GetRewardsById(Rewards, RewardId, Avatar)
   Rewards:AppendOriginRewardId(RewardId)
   Handle(self, Rewards, RewardId, RewardData, Avatar)
 end
-
 function RewardUtils:GetCount(Counts)
   if not Counts then
     return 0
@@ -87,7 +81,6 @@ function RewardUtils:GetCount(Counts)
   end
   return 0
 end
-
 function RewardUtils:HandleType(Reward, Type, Id, Count, Avatar)
   if "Reward" == Type then
     for i = 1, Count do
@@ -100,38 +93,27 @@ function RewardUtils:HandleType(Reward, Type, Id, Count, Avatar)
     end
   end
 end
-
 function RewardUtils:ChoiceOneFromWeight(Nums)
   local SumWeight = 0
   for index, value in ipairs(Nums) do
     SumWeight = SumWeight + value
   end
-  local _Weights = {}
+  local RandomNum = math.random(0, SumWeight - 1)
   for index, value in ipairs(Nums) do
-    table.insert(_Weights, value / SumWeight)
-  end
-  local weight = 0
-  local Weights = {}
-  for index, value in ipairs(_Weights) do
-    weight = weight + value
-    table.insert(Weights, weight)
-  end
-  local RandomNum = math.random()
-  for index, value in ipairs(Weights) do
     if value > RandomNum then
       return index
+    else
+      RandomNum = RandomNum - value
     end
   end
-  return #Weights
+  return #Nums
 end
-
 function RewardUtils:HandleTypeByChooseIndex(Reward, RewardData, ChooseIndex, Avatar)
   local Type = RewardData.Type[ChooseIndex]
   local Id = RewardData.Id[ChooseIndex]
   local Count = self:GetCount(RewardData.Count[ChooseIndex])
   self:HandleType(Reward, Type, Id, Count, Avatar)
 end
-
 function RewardUtils:HandleRewardFixed(Reward, RewardId, RewardData, Avatar)
   for Index, Type in ipairs(RewardData.Type) do
     local Id = RewardData.Id[Index]
@@ -139,19 +121,17 @@ function RewardUtils:HandleRewardFixed(Reward, RewardId, RewardData, Avatar)
     self:HandleType(Reward, Type, Id, Count, Avatar)
   end
 end
-
 function RewardUtils:HandleRewardIndependent(Reward, RewardId, RewardData, Avatar)
   for Index, Type in ipairs(RewardData.Type) do
     local Id = RewardData.Id[Index]
     local Count = self:GetCount(RewardData.Count[Index])
     local Param = RewardData.Param[Index]
     local w = math.random(10000)
-    if Param > w then
+    if Param >= w then
       self:HandleType(Reward, Type, Id, Count, Avatar)
     end
   end
 end
-
 function RewardUtils:HandleRewardWeight(Reward, RewardId, RewardData, Avatar)
   if not RewardData.Param or 0 == #RewardData.Param then
     return Reward
@@ -163,17 +143,13 @@ function RewardUtils:HandleRewardWeight(Reward, RewardId, RewardData, Avatar)
   local ChoiceIndex = self:ChoiceOneFromWeight(Weights)
   self:HandleTypeByChooseIndex(Reward, RewardData, ChoiceIndex, Avatar)
 end
-
 local RewardSequenceFunc = require("Utils.RewardSequenceFunc")
-
 function RewardUtils:HandleRewardSequence(Reward, RewardId, RewardData, Avatar)
   self:InnerHandleRewardSequence(Reward, RewardId, RewardData, Avatar, false)
 end
-
 function RewardUtils:HandleRewardSequenceCeiling(Reward, RewardId, RewardData, Avatar)
   self:InnerHandleRewardSequence(Reward, RewardId, RewardData, Avatar, true)
 end
-
 function RewardUtils:InnerHandleRewardSequence(Reward, RewardId, RewardData, Avatar, bCeiling)
   if not Avatar then
     return
@@ -183,7 +159,6 @@ function RewardUtils:InnerHandleRewardSequence(Reward, RewardId, RewardData, Ava
   local ChoiceIndex = RewardSequenceFunc.GetReward(Sequence)
   self:HandleTypeByChooseIndex(Reward, RewardData, ChoiceIndex, Avatar)
 end
-
 function RewardUtils:HandleRewardLevel(Reward, RewardId, RewardData, Avatar)
   if not Avatar then
     return
@@ -200,7 +175,6 @@ function RewardUtils:HandleRewardLevel(Reward, RewardId, RewardData, Avatar)
   end
   self:HandleTypeByChooseIndex(Reward, RewardData, ChoiceIndex, Avatar)
 end
-
 function RewardUtils:HandleRewardOnce(Reward, RewardId, RewardData, Avatar)
   if not Avatar then
     return
@@ -216,7 +190,6 @@ function RewardUtils:HandleRewardOnce(Reward, RewardId, RewardData, Avatar)
     self:HandleType(Reward, Type, Id, Count, Avatar)
   end
 end
-
 function RewardUtils:HandleRewardGender(Reward, RewardId, RewardData, Avatar)
   if not Avatar then
     return
@@ -227,7 +200,6 @@ function RewardUtils:HandleRewardGender(Reward, RewardId, RewardData, Avatar)
     end
   end
 end
-
 function RewardUtils:GetMod(ModId)
   local Mods = {}
   local ModData = DataMgr.Mod[ModId]
@@ -236,7 +208,6 @@ function RewardUtils:GetMod(ModId)
   end
   return Mods
 end
-
 function RewardUtils:GetWeapons(WeaponId)
   local Weapons = {}
   local WeaponData = DataMgr.Weapon[WeaponId]
@@ -245,7 +216,6 @@ function RewardUtils:GetWeapons(WeaponId)
   end
   return Weapons
 end
-
 function RewardUtils:CheckResourceSources(DropId, ResourceId)
   local DropInfo = DataMgr.Drop[DropId]
   if DropInfo and DropInfo.UseParam == ResourceId then
@@ -253,7 +223,6 @@ function RewardUtils:CheckResourceSources(DropId, ResourceId)
   end
   return false
 end
-
 function RewardUtils:GetResources(Resources, DropId, ResourceId)
   local DropInfo = DataMgr.Drop[DropId]
   local Count = 1
@@ -266,7 +235,6 @@ function RewardUtils:GetResources(Resources, DropId, ResourceId)
   end
   return Resources
 end
-
 function RewardUtils:GetAllRewardByRewardId(RewardId)
   local RewardData = DataMgr.Reward[RewardId]
   local Reward = RewardBox:New()
@@ -300,7 +268,6 @@ function RewardUtils:GetAllRewardByRewardId(RewardId)
   end
   return Reward
 end
-
 function RewardUtils:GetAllRewardFromRewardIds(RewardIds)
   if not RewardIds then
     return
@@ -318,18 +285,17 @@ function RewardUtils:GetAllRewardFromRewardIds(RewardIds)
   end
   return Rewards
 end
-
 function RewardUtils:GetRewardViewInfoById(RewardViewId)
   local RewardInfo = {}
-  local RewardData = DataMgr.RewardView[RewardViewId]
+  local RewardData = DataMgr.RewardView[RewardViewId] or DataMgr.Reward[RewardViewId]
   if not RewardData then
     return RewardInfo
   end
   local RewardTypes = RewardData.Type
   local RewardIds = RewardData.Id
   local RewardQuantitys
-  if RewardData.Quantity then
-    RewardQuantitys = RewardData.Quantity
+  if RewardData.Quantity or RewardData.Count then
+    RewardQuantitys = RewardData.Quantity or RewardData.Count
   end
   local RewardDropTypes
   if RewardData.DropType then
@@ -359,7 +325,6 @@ function RewardUtils:GetRewardViewInfoById(RewardViewId)
   end
   return RewardInfo
 end
-
 function RewardUtils:SplitBattleRewards(Rewards)
   local RewardIds = {}
   local BattleRewardIds = {}
@@ -376,5 +341,4 @@ function RewardUtils:SplitBattleRewards(Rewards)
   end
   return RewardIds, BattleRewardIds
 end
-
 return RewardUtils

@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Rouge_GameSettlement_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Rouge_GameSettlement_C:OnLoaded(...)
   WBP_Rouge_GameSettlement_C.Super.OnLoaded(self, ...)
   local LogicServerInfo = (...)
@@ -15,19 +14,16 @@ function WBP_Rouge_GameSettlement_C:OnLoaded(...)
   self:InitInputDeviceInfo()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_Rouge_GameSettlement_C:InitTextInfo()
   self.Text_Tips:SetText(GText("UI_RougeLike_End__ClickEmpty"))
   self.Text_Total:SetText(GText("RougeMiniGameTotalPoints"))
 end
-
 function WBP_Rouge_GameSettlement_C:InitStarInfo()
   for i = 1, 3 do
     self["Star0" .. i]:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self["Star0" .. i]:PlayAnimation(self["Star0" .. i]["Type0" .. i])
   end
 end
-
 function WBP_Rouge_GameSettlement_C:InitScoreInfo(EventId, CurScore)
   self.Text_Score:SetText(CurScore)
   self.CurIndex = nil
@@ -46,7 +42,6 @@ function WBP_Rouge_GameSettlement_C:InitScoreInfo(EventId, CurScore)
     end
   end
 end
-
 function WBP_Rouge_GameSettlement_C:InitRewardAndShow(Rewards)
   local AllChildren = self.VB_Reward:GetAllChildren()
   for i = 1, AllChildren:Length() do
@@ -64,36 +59,31 @@ function WBP_Rouge_GameSettlement_C:InitRewardAndShow(Rewards)
   end
   self:PlayInAnimation()
 end
-
 function WBP_Rouge_GameSettlement_C:InitExitButton()
   self.Btn_Click.OnClicked:Add(self, self.OnExitButtonClicked)
   self.Text_Tips:SetText(GText("UI_RougeLike_End__ClickEmpty"))
 end
-
 function WBP_Rouge_GameSettlement_C:OnExitButtonClicked()
   if self.IsShowTips then
     self.IsShowTips = false
     return
   end
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:BindToAnimationFinished(self.Out, {
     self,
     self.OnOutAnimFinished
   })
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Rouge_GameSettlement_C:OnOutAnimFinished()
   table.remove(GWorld.RougeLikeManager.AwardList, 1)
   GWorld.RougeLikeManager:ShowNextAward(GWorld.RougeLikeManager.AwardList)
   self:OnCloseSettlementUI()
 end
-
 function WBP_Rouge_GameSettlement_C:OnCloseSettlementUI()
   self:BlockAllUIInput(false)
   self:Close()
 end
-
 function WBP_Rouge_GameSettlement_C:InitTipsInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -114,7 +104,6 @@ function WBP_Rouge_GameSettlement_C:InitTipsInfo()
   }
   self.Key_Tips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function WBP_Rouge_GameSettlement_C:InitInputDeviceInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -126,11 +115,9 @@ function WBP_Rouge_GameSettlement_C:InitInputDeviceInfo()
     self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   end
 end
-
 function WBP_Rouge_GameSettlement_C:OnRougeSettlementBoxItemMenuChanged(bIsOpen)
   self:SetTipsVisibilityByTag(not bIsOpen, "ItemMenuChange")
 end
-
 function WBP_Rouge_GameSettlement_C:OnRougeSettlementBoxItemFocused(Widget, Suffix)
   local ScrollBox = Widget:GetParent():GetParent()
   if ScrollBox then
@@ -138,7 +125,6 @@ function WBP_Rouge_GameSettlement_C:OnRougeSettlementBoxItemFocused(Widget, Suff
     ScrollBox:ScrollWidgetIntoView(Widget)
   end
 end
-
 function WBP_Rouge_GameSettlement_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -150,12 +136,10 @@ function WBP_Rouge_GameSettlement_C:RefreshOpInfoByInputDevice(CurInputDevice, C
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function WBP_Rouge_GameSettlement_C:ShowMouseAndKeyboardView()
   self:SetTipsVisibilityByTag(false, "InputDevice")
   self.Text_Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Rouge_GameSettlement_C:ShowGamepadView()
   local Item = self:TryGetFirstValidItem()
   if IsValid(Item) then
@@ -166,7 +150,6 @@ function WBP_Rouge_GameSettlement_C:ShowGamepadView()
   self:SetTipsVisibilityByTag(true, "InputDevice")
   self.Text_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Rouge_GameSettlement_C:TryGetFirstValidItem()
   local Item = self.Reward02.WrapBox_Reward:GetChildAt(0)
   if IsValid(Item) then
@@ -178,7 +161,6 @@ function WBP_Rouge_GameSettlement_C:TryGetFirstValidItem()
   end
   return
 end
-
 function WBP_Rouge_GameSettlement_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -188,13 +170,11 @@ function WBP_Rouge_GameSettlement_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Rouge_GameSettlement_C:PlayInAnimation()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   self:PlayAnimation(self.In)
 end
-
 function WBP_Rouge_GameSettlement_C:Star_In()
   local Index = 1
   local CurIndex = self.CurIndex
@@ -213,7 +193,6 @@ function WBP_Rouge_GameSettlement_C:Star_In()
     Index = Index + 1
   end, true, 0, "StarInTimer", true)
 end
-
 function WBP_Rouge_GameSettlement_C:Reward_In()
   local Index = 1
   self:AddTimer(self.RewardInStep, function()
@@ -231,13 +210,11 @@ function WBP_Rouge_GameSettlement_C:Reward_In()
     end
   end, true, 0, "RewardInTimer", true)
 end
-
 function WBP_Rouge_GameSettlement_C:Close()
   self.Super.Close(self)
   self:RemoveTimer("StarInTimer")
   self:RemoveTimer("RewardInTimer")
 end
-
 function WBP_Rouge_GameSettlement_C:SetTipsVisibilityByTag(IsShow, HideTag)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -255,5 +232,4 @@ function WBP_Rouge_GameSettlement_C:SetTipsVisibilityByTag(IsShow, HideTag)
     self.Key_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Rouge_GameSettlement_C

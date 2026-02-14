@@ -1,5 +1,4 @@
 local Guide_Text_Warning_PC = Class("BluePrints.UI.UI_PC.Guide.Guide_TipsAsyncActionUIBase")
-
 function Guide_Text_Warning_PC:InitializeData(Duration, ForbidTips)
   if not self:OnTipBegin(Duration, nil, self.In, self.Out) then
     self:OnClose()
@@ -8,22 +7,18 @@ function Guide_Text_Warning_PC:InitializeData(Duration, ForbidTips)
   self.ForbidTips = ForbidTips or false
   AudioManager(self):PlayUISound(self, "event:/ui/common/battle_warning_loop", "BattleWarning", nil)
 end
-
 function Guide_Text_Warning_PC:OnClose()
   self:OnTipRealEnd()
 end
-
 function Guide_Text_Warning_PC:Destruct()
   self:OnTipRealEnd()
   self.Super.Destruct(self)
 end
-
 function Guide_Text_Warning_PC:OnTipRealEnd()
   AudioManager(self):StopSound(self, "BattleWarning")
   self:StopAnimation(self.Loop)
   self.Super.OnTipRealEnd(self)
 end
-
 function Guide_Text_Warning_PC:OnAnimationFinished(InAnimation)
   if InAnimation == self.In then
     self:PlayAnimation(self.Loop, 1, 0)
@@ -35,5 +30,4 @@ function Guide_Text_Warning_PC:OnAnimationFinished(InAnimation)
     end
   end
 end
-
 return Guide_Text_Warning_PC

@@ -1,11 +1,9 @@
 local TimeUtils = require("Utils.TimeUtils")
 local EMCache = require("EMCache.EMCache")
 local WBP_Rouge_Contract_ViewBase = Class("BluePrints.UI.BP_UIState_C", "BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_Contract_ViewBase:Construct()
   self:InitView()
 end
-
 function WBP_Rouge_Contract_ViewBase:InitView()
   self.ContractModel = require("BluePrints.UI.UI_PC.RougeLike.PC.Contract.WBP_Rouge_Contract_Model")
   self.ContractModel:InitModel(GWorld:GetAvatar())
@@ -14,7 +12,6 @@ function WBP_Rouge_Contract_ViewBase:InitView()
   self:UpdateContractHeat()
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Rouge_Contract_ViewBase:UpdateView()
   local ItemObjs = self.List_Heat:GetListItems()
   for _, ItemObj in pairs(ItemObjs) do
@@ -26,7 +23,6 @@ function WBP_Rouge_Contract_ViewBase:UpdateView()
   end
   self:UpdateContractHeat()
 end
-
 function WBP_Rouge_Contract_ViewBase:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -38,7 +34,6 @@ function WBP_Rouge_Contract_ViewBase:RefreshOpInfoByInputDevice(CurInputDevice, 
     self:InitKeyboardView()
   end
 end
-
 function WBP_Rouge_Contract_ViewBase:InitGamepadView()
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
     self.Controller_illustrate:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -78,7 +73,7 @@ function WBP_Rouge_Contract_ViewBase:InitGamepadView()
       KeyInfoList = {
         {Type = "Img", ImgShortPath = "B"}
       },
-      Desc = "\232\191\148\229\155\158"
+      Desc = "返回"
     }
   })
   local ItemViews = self.List_Heat:GetDisplayedEntryWidgets()
@@ -89,11 +84,9 @@ function WBP_Rouge_Contract_ViewBase:InitGamepadView()
     self:NavigateToContractIndex(0)
   end)
 end
-
 function WBP_Rouge_Contract_ViewBase:NavigateToContractIndex(Index)
   self.List_Heat:NavigateToIndex(Index)
 end
-
 function WBP_Rouge_Contract_ViewBase:InitKeyboardView()
   self.Key_Tip:SetVisibility(UE4.ESlateVisibility.Collapsed)
   local ItemViews = self.List_Heat:GetDisplayedEntryWidgets()
@@ -101,10 +94,8 @@ function WBP_Rouge_Contract_ViewBase:InitKeyboardView()
     ItemView:InitKeyboardView()
   end
 end
-
 function WBP_Rouge_Contract_ViewBase:InitMobileView()
 end
-
 function WBP_Rouge_Contract_ViewBase:OnContractItemNavigateUp(ItemObj, Widget)
   local CurIndex = self.List_Heat:GetIndexForItem(ItemObj)
   if -1 == CurIndex then
@@ -113,7 +104,6 @@ function WBP_Rouge_Contract_ViewBase:OnContractItemNavigateUp(ItemObj, Widget)
   end
   self:NavigateToContractIndex(CurIndex - 1)
 end
-
 function WBP_Rouge_Contract_ViewBase:OnContractItemNavigateDown(ItemObj, Widget)
   local CurIndex = self.List_Heat:GetIndexForItem(ItemObj)
   if -1 == CurIndex then
@@ -122,7 +112,6 @@ function WBP_Rouge_Contract_ViewBase:OnContractItemNavigateDown(ItemObj, Widget)
   end
   self:NavigateToContractIndex(CurIndex + 1)
 end
-
 function WBP_Rouge_Contract_ViewBase:OnContractItemNavigated(ItemObj, Widget)
   self.List_Heat:BP_ScrollItemIntoView(ItemObj)
   if DataMgr.RougeLikeContract[ItemObj.ContractId].ExplanationId then
@@ -137,7 +126,7 @@ function WBP_Rouge_Contract_ViewBase:OnContractItemNavigated(ItemObj, Widget)
         KeyInfoList = {
           {Type = "Img", ImgShortPath = "B"}
         },
-        Desc = "\232\191\148\229\155\158"
+        Desc = "返回"
       }
     })
   else
@@ -151,19 +140,16 @@ function WBP_Rouge_Contract_ViewBase:OnContractItemNavigated(ItemObj, Widget)
     })
   end
 end
-
 function WBP_Rouge_Contract_ViewBase:UpdateContractHeat()
   local TotalHeatValue = self.ContractModel:GetCurrentHeatValue()
   local ContractPointRate = self.ContractModel:GetCurrentContractPointRate()
-  ContractPointRate = math.floor(ContractPointRate * 100)
+  ContractPointRate = math.floor(ContractPointRate * 100 + 0.001)
   self.Text_Bonus:SetText(ContractPointRate)
 end
-
 function WBP_Rouge_Contract_ViewBase:OnContractLevelChanged(ContractId, PrevLevel, NewLevel)
   self.ContractModel:SetContractLevel(ContractId, NewLevel)
   self:UpdateContractHeat()
 end
-
 function WBP_Rouge_Contract_ViewBase:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -179,18 +165,14 @@ function WBP_Rouge_Contract_ViewBase:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Rouge_Contract_ViewBase:OnLoaded(RougeMainUI)
   self.RougeMainUI = RougeMainUI
 end
-
 function WBP_Rouge_Contract_ViewBase:OnBtnCloseClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   self:OnClose()
 end
-
 function WBP_Rouge_Contract_ViewBase:OnClose()
   self:Close()
 end
-
 return WBP_Rouge_Contract_ViewBase

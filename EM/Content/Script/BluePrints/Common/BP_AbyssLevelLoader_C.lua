@@ -1,7 +1,6 @@
 local MiscUtils = require("Utils.MiscUtils")
 local M = Class("BluePrints.Common.BP_NewLevelLoader_C")
 local BP_NewLevelLoader_C = require("BluePrints.Common.BP_NewLevelLoader_C")
-
 function M:ReceiveBeginPlay()
   M.Super.ReceiveBeginPlay(self)
   self.RenderTexture = UKismetRenderingLibrary.CreateRenderTarget2D(self)
@@ -19,7 +18,6 @@ function M:ReceiveBeginPlay()
   self.SceneCaptureComponent.bCaptureEveryFrame = false
   self.SceneCaptureComponent.bCaptureOnMovement = false
 end
-
 function M:ReceiveEndPlay(Reason)
   M.Super.ReceiveEndPlay(self, Reason)
   if self.SceneCaptureComponent then
@@ -29,7 +27,6 @@ function M:ReceiveEndPlay(Reason)
   UKismetRenderingLibrary.ReleaseRenderTarget2D(self.RenderTexture)
   self.RenderTexture = nil
 end
-
 function M:OnPreloadComplete()
   M.Super.OnPreloadComplete(self)
   self.AbyssLevels = {}
@@ -43,7 +40,6 @@ function M:OnPreloadComplete()
     end
   end
 end
-
 function M:LoadAbyssLevel(BPArrow, CurrentLevelId)
   local targetLevelId = CurrentLevelId
   local otherLevelId = CurrentLevelId
@@ -65,10 +61,8 @@ function M:LoadAbyssLevel(BPArrow, CurrentLevelId)
     end
   end
 end
-
 function M:LoadLevelByBPArrow(PlayerCharacter, BPArrow)
 end
-
 function M:UnloadLevelByBPArrow(PlayerCharacter, BPArrow)
   if MiscUtils.IsSimulatedProxy(PlayerCharacter) then
     return
@@ -90,10 +84,8 @@ function M:UnloadLevelByBPArrow(PlayerCharacter, BPArrow)
     table.remove(self.AbyssLevels, 1)
   end
 end
-
 function M:OnHomeLevelLoadedCallback(LevelName)
 end
-
 function M:OnAbyssTeleport(IsBoss)
   if IsStandAlone(self) or IsClient(self) then
     if IsBoss then
@@ -103,5 +95,4 @@ function M:OnAbyssTeleport(IsBoss)
     end
   end
 end
-
 return M

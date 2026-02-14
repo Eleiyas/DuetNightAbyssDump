@@ -10,7 +10,6 @@ WBP_Battle_C._components = {
   "BluePrints.UI.WBP.Chat.View.WBP_Battle_C_ChatComp",
   "BluePrints.UI.WBP.Team.View.WBP_Battle_C_TeamComp"
 }
-
 function WBP_Battle_C:Construct()
   WBP_Battle_C.Super.Construct(self)
   if self.Platform == nil then
@@ -36,8 +35,8 @@ function WBP_Battle_C:Construct()
       self:_RefreshEscReddot()
     end
   end)
+  self.PlayInOutSystems = {}
 end
-
 function WBP_Battle_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:TryRecoverUI()
@@ -84,6 +83,10 @@ function WBP_Battle_C:OnLoaded(...)
     self,
     self.OpenBattlePass
   })
+  self:ListenForInputAction("OpenCamera", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenCamera
+  })
   self:ListenForInputAction("GamepadOpenSystem", EInputEvent.IE_Pressed, false, {
     self,
     self.ShowSystemEntrance
@@ -108,22 +111,31 @@ function WBP_Battle_C:OnLoaded(...)
   self:AddDispatcher(EventID.OnSwitchRole, self, self.OnSwitchRole)
   self:AddDispatcher(EventID.OnHomeBaseBtnPlayAnim, self, self.OnHomeBaseBtnPlayAnim)
   self:AddDispatcher(EventID.ShowOrHideMainPlayerBloodUI, self, self.ShowOrHideMainPlayerBloodUI)
-  self:AddDispatcher(EventID.EndRougeCanonMiniGame, self, self.OnEndRougeCanonMiniGame)
   self:AddDispatcher(EventID.OnTempleRightUI, self, self.OnTempleRightUI)
+  self:AddDispatcher(EventID.OnSoloTreasureScoreAndBagUI, self, self.OnSoloTreasureScoreAndBagUI)
   self:AddDispatcher(EventID.OnPartyProgressStart, self, self.OnPartyProgressStart)
   self:AddDispatcher(EventID.OnModBookQuestFinished, self, self.OnModBookQuestFinished)
   self:AddDispatcher(EventID.OnNotifyShowLargeCountDown, self, self.OnNotifyShowLargeCountDown)
+  self:AddDispatcher(EventID.OnNotifyCommonCountDown, self, self.OnNotifyCommonCountDown)
   self:AddDispatcher(EventID.OnNewDetectiveQuestion, self, self.OnNewDetectiveQuestion)
   self:AddDispatcher(EventID.OnHomeBaseeBtnShowNewClue, self, self.OnHomeBaseeBtnShowNewClue)
   self:AddDispatcher(EventID.OnEnableGuideBookKey, self, self.EnableGuideBookKey)
+  self:AddDispatcher(EventID.OnTheaterJoinPerformGame, self, self.TheaterJoinPerformGame)
+  self:AddDispatcher(EventID.OnTheaterJoinPerformGameFail, self, self.TheaterJoinPerformGameFail)
+  self:AddDispatcher(EventID.OnTheaterPerformGameStart, self, self.TheaterPerformGameStart)
+  self:AddDispatcher(EventID.OnTheaterPerformGameNotice, self, self.OnTheaterPerformGameNotice)
+  self:AddDispatcher(EventID.OnTeleportReady, self, self.TeleportReady)
   local NodeName = DataMgr.ReddotNode.Quest.Name
-  ReddotManager.AddListenerEx(NodeName, self, function(self, Count, RdType, RdName)
-    if Count > 0 then
-      self.Btn_Task.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
-    else
-      self.Btn_Task.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    end
-  end)
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    ReddotManager.AddListenerEx(NodeName, self, function(self, Count, RdType, RdName)
+      if Count > 0 then
+        self.Btn_Task.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+      else
+        self.Btn_Task.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      end
+    end)
+  end
   if not self:InitWithMainCharacter() then
     self:AddDispatcher(EventID.CloseLoading, self, self.InitWithMainCharacter)
   end
@@ -137,7 +149,11 @@ function WBP_Battle_C:OnLoaded(...)
   if self.Battle_Char_PC_0 then
     self.Battle_Char_PC_0:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  self.Char_Skill:InitSkillAfterCharInitReady()
+  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+    self.Char_Skill:InitSkillAfterCharInitReady()
+  else
+    self.Char_Skill:InitSkillAfterCharInitReady()
+  end
   self.PlayerBloodBar = self.HUD_MainBar
   self.Battle_Map.Battle = self
   self.Map_Img:SetVisibility(ESlateVisibility.Collapsed)
@@ -147,8 +163,7 @@ function WBP_Battle_C:OnLoaded(...)
     self.Btn_Close.OnClicked:Clear()
     self.Btn_Close.OnClicked:Add(self, self.OnBattleMapClose)
   end
-  self:SetOverrideInfo(self.SizeMap_Original, self.Task_Normal)
-  self.RetainerBox_0:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.SizeBox_Map:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Task:ClearChildren()
   self.Pos_Weekly:ClearChildren()
   self.Pos_Abyss_CountDown:ClearChildren()
@@ -156,6 +171,11 @@ function WBP_Battle_C:OnLoaded(...)
   self.Pos_ModAchive:ClearChildren()
   self.Pos_TempleProgress:ClearChildren()
   self.Pos_Weekly_Buff:ClearChildren()
+  self.Pos_GuildWarScore:ClearChildren()
+  self.Pos_LowHealth:ClearChildren()
+  self.Pos_Rouge_CountDown:ClearChildren()
+  self.Pos_TempleRight:ClearChildren()
+  self.Pos_SoloTreasure_Score:ClearChildren()
   self.TeammateEidSet = {}
   self:HidePlayerDeadUI()
   self:InitKeyTip()
@@ -163,8 +183,8 @@ function WBP_Battle_C:OnLoaded(...)
   self:CreatTakeAimIndicator()
   self.Btn_Task.IsBtnTask = true
   self:InitGameJumpWord()
+  self:CheckTheaterEventState()
 end
-
 function WBP_Battle_C:GetOrAddWidget(WidgetName, NodeToAdd)
   local Widget = NodeToAdd:GetChildAt(0)
   if Widget then
@@ -179,18 +199,15 @@ function WBP_Battle_C:GetOrAddWidget(WidgetName, NodeToAdd)
   end
   return Widget
 end
-
 function WBP_Battle_C:GetWidget(WidgetName, NodeToAdd)
   local Widget = NodeToAdd:GetChildAt(0)
   return Widget
 end
-
 function WBP_Battle_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
   self:InitKeyTip()
 end
-
 function WBP_Battle_C:InitWithMainCharacter()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not Player then
@@ -206,16 +223,13 @@ function WBP_Battle_C:InitWithMainCharacter()
   self:InitDataPhone()
   return true
 end
-
 function WBP_Battle_C:GetOrAddDynamicEventWidget()
   self.Pos_DynamicEvent:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   return self:GetOrAddWidget("DynamicEvent", self.Pos_DynamicEvent)
 end
-
 function WBP_Battle_C:GetDynamicEventWidget()
   return self:GetWidget("DynamicEvent", self.Pos_DynamicEvent)
 end
-
 function WBP_Battle_C:AddTempleRightKeyTextDesc()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local TempleData = DataMgr.Temple[GameState.DungeonId]
@@ -231,106 +245,24 @@ function WBP_Battle_C:AddTempleRightKeyTextDesc()
     self.List_TrainingSetting:AddItem(RightKeyTextDescData)
   end
 end
-
 function WBP_Battle_C:InitTrainingKeyTip()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if Player.UIModePlatform == "PC" then
-    local CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
-    if CurInputDeviceType == UE4.ECommonInputType.Gamepad then
-      local KeyDescWidget = self:GetOrAddWidget("BattleKeyDescList", self.Pos_KeyTip)
-      if GameState.GameModeType == "Training" then
-        if KeyDescWidget then
-          local CommonKeyDatas = {
-            {
-              Type = "Img",
-              DescText = GText("UI_DUNGEON_DES_TRAINING_1"),
-              ImgShortPath = UIUtils.GetIconListByActionName("TrainingOpenSetup")
-            },
-            {
-              Type = "Img",
-              DescText = GText("UI_Keyboard_Map_OpenArmory"),
-              ImgShortPath = UIUtils.GetIconListByActionName("OpenArmory")
-            },
-            {
-              Type = "Img",
-              DescText = GText("UI_DUNGEON_DES_TRAINING_2"),
-              ImgShortPath = UIUtils.GetIconListByActionName("TrainingCharacterSkills")
-            },
-            {
-              Type = "Img",
-              DescText = GText("UI_DUNGEON_DES_TRAINING_3"),
-              ImgShortPath = UIUtils.GetIconListByActionName("TrainingKillMonsters")
-            }
-          }
-          KeyDescWidget:InitKey(CommonKeyDatas)
-          self:AddTrainingRightKeyListeners()
-        end
-      else
-        local CommonKeyDatas = {
-          {
-            Type = "Img",
-            DescText = GText("UI_DUNGEON_DES_TRAINING_2"),
-            ImgShortPath = UIUtils.GetIconListByActionName("TrainingCharacterSkills")
-          }
-        }
-        KeyDescWidget:InitKey(CommonKeyDatas)
-        self:AddTrialRightKeyListeners()
-      end
-    else
-      local KeyDescWidget = self:GetOrAddWidget("BattleKeyDescList", self.Pos_KeyTip)
-      if KeyDescWidget then
-        KeyDescWidget:SetVisibility(UE4.ESlateVisibility.Visible)
-        local CommonKeyDatas = {}
-        if GameState.GameModeType == "Training" then
-          self:AddTrainingRightKeyListeners()
-          table.insert(CommonKeyDatas, {
-            Type = "Text",
-            Text = "F1",
-            DescText = GText("UI_DUNGEON_DES_TRAINING_2"),
-            CallbackObj = self,
-            CallbackFunc = self.TrainingCharacterSkills
-          })
-          table.insert(CommonKeyDatas, {
-            Type = "Text",
-            Text = "F4",
-            DescText = GText("UI_DUNGEON_DES_TRAINING_1"),
-            CallbackObj = self,
-            CallbackFunc = self.TrainingOpenSetup
-          })
-          table.insert(CommonKeyDatas, {
-            Type = "Text",
-            Text = "F5",
-            DescText = GText("UI_DUNGEON_DES_TRAINING_3"),
-            CallbackObj = self,
-            CallbackFunc = self.TrainingKillMonsters
-          })
-        else
-          self:AddTrialRightKeyListeners()
-          table.insert(CommonKeyDatas, {
-            Type = "Text",
-            Text = "F1",
-            DescText = GText("UI_DUNGEON_DES_TRAINING_2"),
-            CallbackObj = self,
-            CallbackFunc = self.TrialCharacterSkills
-          })
-        end
-        KeyDescWidget:InitKey(CommonKeyDatas)
-      end
-    end
+    local KeyDescWidget = self:GetOrAddWidget("TrainingSetting_P", self.Task)
+    KeyDescWidget:InitView()
+    self:AddTrainingRightKeyListeners()
   else
-    local TrainingSetting = self:GetOrAddWidget("TrainingSetting_M", self.Pos_Training)
+    local TrainingSetting = self:GetOrAddWidget("TrainingSetting_M", self.Task)
     TrainingSetting.Parent = self
+    TrainingSetting:InitView()
   end
-  if GameState.GameModeType == "Training" then
-    local TaskBar = TaskUtils:GetTaskBarWidget()
-    if TaskBar then
-      TaskBar:SetUIVisibilityTag("Training", true)
-    end
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    TaskBar:SetUIVisibilityTag("Training", true)
   end
 end
-
 function WBP_Battle_C:InitTrailKeyTip()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -359,9 +291,14 @@ function WBP_Battle_C:InitTrailKeyTip()
         KeyDescWidget:SetVisibility(UE4.ESlateVisibility.Visible)
         local CommonKeyDatas = {}
         self:AddTrialRightKeyListeners()
+        local Data = DataMgr.KeyboardMap.TrainingCharacterSkills
+        local KeyText = "F2"
+        if Data then
+          local KeyText = Data.Key
+        end
         table.insert(CommonKeyDatas, {
           Type = "Text",
-          Text = "F1",
+          Text = KeyText,
           DescText = GText("UI_DUNGEON_DES_TRAINING_2"),
           CallbackObj = self,
           CallbackFunc = self.TrialCharacterSkills
@@ -370,11 +307,8 @@ function WBP_Battle_C:InitTrailKeyTip()
       end
     end
   else
-    local TrainingSetting = self:GetOrAddWidget("TrainingSetting_M", self.Pos_Training)
-    TrainingSetting.Parent = self
   end
 end
-
 function WBP_Battle_C:UnInitTrainingKeyTip()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.Pos_KeyTip:ClearChildren()
@@ -386,7 +320,6 @@ function WBP_Battle_C:UnInitTrainingKeyTip()
     TaskBar:SetUIVisibilityTag("Training", false)
   end
 end
-
 function WBP_Battle_C:UnInitTrialKeyTip()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.Pos_KeyTip:ClearChildren()
@@ -394,7 +327,13 @@ function WBP_Battle_C:UnInitTrialKeyTip()
     self.Pos_Training:ClearChildren()
   end
 end
-
+function WBP_Battle_C:UnInitTemple()
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    TaskBar:SetUIVisibilityTag("Temple", false)
+    TaskBar:SetUIVisibilityTag("Party", false)
+  end
+end
 function WBP_Battle_C:InitKeyTip()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -405,6 +344,8 @@ function WBP_Battle_C:InitKeyTip()
     self:AddDispatcher(EventID.OnTempleEnter, self, self.OnTempleEnter)
     self:AddDispatcher(EventID.OnTempleDelayStart, self, self.OnTempleDelayStart)
     self:AddDispatcher(EventID.OnTempleDelayEnd, self, self.OnTempleDelayEnd)
+  elseif nil ~= GameState and GameState.GameModeType == "Party" then
+    self:OnPartyEnter()
   elseif nil ~= GameMode and nil ~= GameState and GameState.GameModeType == "Rouge" then
     self:AddRougeKeyListeners()
   elseif GameState.GameModeType == "Trial" then
@@ -413,10 +354,10 @@ function WBP_Battle_C:InitKeyTip()
   else
     self:UnInitTrainingKeyTip()
     self:UnInitTrialKeyTip()
+    self:UnInitTemple()
   end
   self:InitChatKeyTip()
 end
-
 function WBP_Battle_C:InitCommonKey(CommonKey, Index)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -460,7 +401,6 @@ function WBP_Battle_C:InitCommonKey(CommonKey, Index)
     end
   end
 end
-
 function WBP_Battle_C:SetOverrideInfo(MapWidth, PaddingTop)
   if self.SizeBox_Map then
     self.SizeBox_Map:SetWidthOverride(MapWidth)
@@ -476,7 +416,6 @@ function WBP_Battle_C:SetOverrideInfo(MapWidth, PaddingTop)
     Slot:SetPadding(Padding)
   end
 end
-
 function WBP_Battle_C:TempleForbidSkills(FbdRule)
   if not FbdRule then
     return
@@ -523,29 +462,69 @@ function WBP_Battle_C:TempleForbidSkills(FbdRule)
   end
   return ForbidInfo
 end
-
 function WBP_Battle_C:AddTrainingRightKeyListeners()
-  self:RemoveTrainingRightKeyListeners()
-  self:ListenForInputAction("TrainingOpenSetup", EInputEvent.IE_Pressed, false, {
+  if self.IsInTraining then
+    return
+  end
+  self:ListenForInputAction("TrainingOpenSetup", EInputEvent.IE_Pressed, true, {
     self,
     self.TrainingOpenSetup
   })
-  self:ListenForInputAction("TrainingCharacterSkills", EInputEvent.IE_Pressed, false, {
+  self:ListenForInputAction("TrainingCharacterSkills", EInputEvent.IE_Pressed, true, {
     self,
     self.TrainingCharacterSkills
   })
-  self:ListenForInputAction("TrainingKillMonsters", EInputEvent.IE_Pressed, false, {
+  self:ListenForInputAction("TrainingKillMonsters", EInputEvent.IE_Pressed, true, {
     self,
     self.TrainingKillMonsters
   })
+  self:ListenForInputAction("TrainingInvincible", EInputEvent.IE_Pressed, true, {
+    self,
+    self.TrainingSetPlayerInvincible
+  })
+  self:ListenForInputAction("TrainingMonstersActive", EInputEvent.IE_Pressed, true, {
+    self,
+    self.TrainingDisableMonsterAI
+  })
+  self:StopListeningForInputAction("OpenEvent", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("OpenCamera", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("OpenBattlePass", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("OpenGacha", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("OpenBag", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("OpenPlay", EInputEvent.IE_Pressed)
+  self.IsInTraining = true
 end
-
 function WBP_Battle_C:RemoveTrainingRightKeyListeners()
   self:StopListeningForInputAction("TrainingOpenSetup", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("TrainingCharacterSkills", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("TrainingKillMonsters", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("TrainingInvincible", EInputEvent.IE_Pressed)
+  self:StopListeningForInputAction("TrainingMonstersActive", EInputEvent.IE_Pressed)
+  self:ListenForInputAction("OpenCamera", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenCamera
+  })
+  self:ListenForInputAction("OpenBattlePass", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenBattlePass
+  })
+  self:ListenForInputAction("OpenGacha", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenGacha
+  })
+  self:ListenForInputAction("OpenEvent", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenEvent
+  })
+  self:ListenForInputAction("OpenBag", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenBag
+  })
+  self:ListenForInputAction("OpenPlay", EInputEvent.IE_Pressed, false, {
+    self,
+    self.OpenPlay
+  })
 end
-
 function WBP_Battle_C:AddRougeKeyListeners()
   self:RemoveRougeKeyListeners()
   self:ListenForInputAction("RougeOpenBag", EInputEvent.IE_Pressed, false, {
@@ -553,11 +532,9 @@ function WBP_Battle_C:AddRougeKeyListeners()
     self.OpenRogueShop
   })
 end
-
 function WBP_Battle_C:RemoveRougeKeyListeners()
   self:StopListeningForInputAction("RougeOpenBag", EInputEvent.IE_Pressed)
 end
-
 function WBP_Battle_C:OnTrainingRightKeyClicked(Index)
   if 1 == Index then
     self:TrainingOpenSetup()
@@ -567,7 +544,6 @@ function WBP_Battle_C:OnTrainingRightKeyClicked(Index)
     self:TrainingKillMonsters()
   end
 end
-
 function WBP_Battle_C:AddTrialRightKeyListeners()
   self:RemoveTrialRightKeyListeners()
   self:ListenForInputAction("TrainingCharacterSkills", EInputEvent.IE_Pressed, false, {
@@ -579,18 +555,15 @@ function WBP_Battle_C:AddTrialRightKeyListeners()
     self.TrialCharacterSkills
   })
 end
-
 function WBP_Battle_C:RemoveTrialRightKeyListeners()
   self:StopListeningForInputAction("TrainingCharacterSkills", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("OpenTask", EInputEvent.IE_Pressed)
 end
-
 function WBP_Battle_C:OnTrialRightKeyClicked(Index)
   if 2 == Index then
     self:TrialCharacterSkills()
   end
 end
-
 function WBP_Battle_C:TrialCharacterSkills()
   UIUtils.LoadPreviewSkillDetails(self, {
     OnClosedCallback = function()
@@ -598,7 +571,6 @@ function WBP_Battle_C:TrialCharacterSkills()
     end
   })
 end
-
 function WBP_Battle_C:OnTempleEnter()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -617,50 +589,51 @@ function WBP_Battle_C:OnTempleEnter()
   self.Pos_TaskBar:SetVisibility(ESlateVisibility.Collapsed)
   self.Pos_DynamicEvent:SetVisibility(ESlateVisibility.Collapsed)
 end
-
+function WBP_Battle_C:ShowCommonCountDown(Widget, Count, bShowZeroText, CountDownSound, LastCountDownSound)
+  Widget:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  Widget:InitCommonCountDown(Count, bShowZeroText, CountDownSound, LastCountDownSound)
+end
 function WBP_Battle_C:ShowCountDown(Widget, Count, bShowZeroText)
   Widget:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   Widget:InitTempleCountDown(Count, bShowZeroText)
 end
-
-function WBP_Battle_C:OnTempleDelayStart(Duration, Title)
-  DebugPrint("zwk OnTempleDelayStart", Duration, Title)
+function WBP_Battle_C:OnTempleDelayStart(Duration, Title, RedCountdownTime)
+  DebugPrint("zwk OnTempleDelayStart", Duration, Title, RedCountdownTime)
   self.Pos_TempleTime:ClearChildren()
   self.CurDelayUI = self:CreateWidgetNew("DungeonTempleTime")
   self.Pos_TempleTime:AddChild(self.CurDelayUI)
   self.Pos_TempleTime:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-  self.CurDelayUI:InitTempleDelayTimeUI(Title, Duration)
+  self.CurDelayUI:InitTempleDelayTimeUI(Title, Duration, RedCountdownTime)
 end
-
 function WBP_Battle_C:OnTempleDelayEnd()
   DebugPrint("zwk OnTempleDelayEnd")
   if self.CurDelayUI then
     self.CurDelayUI:CloseDungeonUI()
   end
 end
-
-function WBP_Battle_C:TrainingOpenSetup()
-  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-  local UIManager = GameInstance:GetGameUIManager()
-  UIManager:LoadUINew("TrainingGroundSetup")
-end
-
-function WBP_Battle_C:TrainingCharacterSkills()
-  UIUtils.LoadPreviewSkillDetails(self, {
-    OnClosedCallback = function()
-      self:PlayInAnim()
-    end
-  })
-end
-
-function WBP_Battle_C:TrainingKillMonsters()
+function WBP_Battle_C:GetTrainingComp()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if nil ~= GameMode then
-    GameMode:TriggerDungeonComponentFun("RemoveMonster")
-    UIManager(self):ShowUITip(UIConst.Tip_CommonTop, string.format(GText("UI_DUNGEON_DES_TRAINING_4"), self.MonsterCheckedTotalNum))
+  if GameMode then
+    return GameMode:GetDungeonComponent()
   end
+  return nil
 end
-
+function WBP_Battle_C:TrainingOpenSetup()
+  self:GetTrainingComp():TrainingOpenSetup()
+end
+function WBP_Battle_C:TrainingCharacterSkills()
+  self:GetTrainingComp():TrainingCharacterSkills()
+end
+function WBP_Battle_C:TrainingKillMonsters()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/btn_killer_all", nil, nil)
+  self:GetTrainingComp():TrainingKillMonsters()
+end
+function WBP_Battle_C:TrainingSetPlayerInvincible()
+  self:GetTrainingComp():TrainingSetPlayerInvincible()
+end
+function WBP_Battle_C:TrainingDisableMonsterAI()
+  self:GetTrainingComp():TrainingDisableMonsterAI()
+end
 function WBP_Battle_C:InitUID()
   self.Text_BottomTips:SetText(GText("UI_Loading_Testing"))
   local Avatar = GWorld:GetAvatar()
@@ -671,14 +644,12 @@ function WBP_Battle_C:InitUID()
     self.UID:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_C:InitEsc()
   self.Btn_Esc.bForceInvisible = nil
   self.Btn_Esc.Btn_top.OnClicked:Add(self, self.OpenCommonSetup)
   self.Btn_Esc:LoadImage(11)
   self:_RefreshEscReddot()
 end
-
 function WBP_Battle_C:Destruct()
   for Eid, TeammateUI in pairs(self.TeammateEidSet or {}) do
     self:RemoveTeammateUI(Eid, TeammateUI)
@@ -694,7 +665,6 @@ function WBP_Battle_C:Destruct()
   ReddotManager.RemoveListener(NodeName, self)
   WBP_Battle_C.Super.Destruct(self)
 end
-
 function WBP_Battle_C:InitDataPhone()
   if self.Battery then
     self.Battery.HB_Battery:SetVisibility(not UUCloudGameInstanceSubsystem.IsCloudGame() and UIConst.VisibilityOp.SelfHitTestInvisible or UIConst.VisibilityOp.Collapsed)
@@ -723,12 +693,10 @@ function WBP_Battle_C:InitDataPhone()
   self:UpdateSignalStrength()
   self:AddTimer(5, self.UpdateDataPhone, true)
 end
-
 function WBP_Battle_C:UpdateDataPhone()
   self:SetBattery(UE4.UUIFunctionLibrary.GetBatteryLevel(), self.BatteryLevel)
   self:UpdateSignalStrength(self.SignalStrength)
 end
-
 function WBP_Battle_C:SetBattery(BatteryLevel, LastBatteryLevel)
   if BatteryLevel and not LastBatteryLevel then
     if BatteryLevel <= 20 then
@@ -747,14 +715,21 @@ function WBP_Battle_C:SetBattery(BatteryLevel, LastBatteryLevel)
     self.BatteryLevel = BatteryLevel
   end
 end
-
 function WBP_Battle_C:UpdateSignalStrength(LastSignalStrength)
   local IsConnectWifi = UE4.UMobilePatchingLibrary.HasActiveWiFiConnection()
   self.Battery.Switcher_Net:SetActiveWidgetIndex(IsConnectWifi and 1 or 0)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if not Player then
+    DebugPrint(ErrorTag, "拿不到Player")
+    return
+  end
+  if not Player:GetController() then
+    DebugPrint(ErrorTag, "拿不到PlayerController")
+    return
+  end
   local PlayerState = Player:GetController().PlayerState
   if not PlayerState then
-    DebugPrint(ErrorTag, "xuxiangnan::PlayerState\232\142\183\229\143\150\229\164\177\232\180\165\239\188\140\230\139\191\228\184\141\229\136\176\230\173\163\231\161\174ping\229\128\188")
+    DebugPrint(ErrorTag, "xuxiangnan::PlayerState获取失败，拿不到正确ping值")
     return
   end
   local Ping = PlayerState:GetPlayerPing()
@@ -785,7 +760,6 @@ function WBP_Battle_C:UpdateSignalStrength(LastSignalStrength)
   end
   self.SignalStrength = Strength
 end
-
 function WBP_Battle_C:ExitHardBossBattle()
   local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
   if CommonDialog then
@@ -802,7 +776,6 @@ function WBP_Battle_C:ExitHardBossBattle()
     Avatar:ExitBattle(false, true)
   end
 end
-
 function WBP_Battle_C:ExitHardBattle()
   local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
   if CommonDialog then
@@ -817,7 +790,6 @@ function WBP_Battle_C:ExitHardBattle()
   DebugPrint("gyy@SpecialQuestFail,ExitSpecialQuest")
   EventManager:FireEvent(EventID.OnSpecialQuestFail, "Exit")
 end
-
 function WBP_Battle_C:ContinueBattle()
   self:SetInputUIOnly(false)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -826,22 +798,52 @@ function WBP_Battle_C:ContinueBattle()
     GameMode:SetGamePaused(UIConst.CommonSetUP, false)
   end
 end
-
 function WBP_Battle_C:OpenCommonSetup()
   if TeamController:IsTeamPopupBarOpenInGamepad() then
     return
   end
+  if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self:GetOnlineActionBtn() then
+    self:OnPressGamePadRightSpecial()
+    return
+  end
   self:OpenSystemByAction("OpenCommonSetup")
 end
-
+function WBP_Battle_C:OnPressGamePadRightSpecial()
+  DebugPrint("正在打开多人动作界面")
+  local OnlineActionBtn = self:GetOnlineActionBtn()
+  if OnlineActionBtn then
+    UIUtils:LongPressKey(OnlineActionBtn.Key_OnlineAction_GamePad, function()
+      local OnlineActionController = require("BluePrints.UI.WBP.BattleOnlineAction.OnlineActionController")
+      OnlineActionController:OpenView()
+    end, 1)
+    return
+  end
+end
+function WBP_Battle_C:OnReleaseGmaePadRightSpecial()
+  local OnlineActionController = require("BluePrints.UI.WBP.BattleOnlineAction.OnlineActionController")
+  if OnlineActionController.MainPage and OnlineActionController.MainPage:IsVisible() then
+  else
+    local OnlineActionBtn = self:GetOnlineActionBtn()
+    if OnlineActionBtn then
+      UIUtils:StopLongPressKey(OnlineActionBtn.Key_OnlineAction_GamePad)
+    end
+    self:OpenSystemByAction("OpenCommonSetup")
+  end
+end
+function WBP_Battle_C:GetOnlineActionBtn()
+  local OnlineActionController = require("BluePrints.UI.WBP.BattleOnlineAction.OnlineActionController")
+  local OnlineActionBtn = OnlineActionController.OnlineActionBtn or self.OnlineActionBtn
+  if IsValid(OnlineActionBtn) and OnlineActionBtn:IsVisible() then
+    return OnlineActionBtn
+  end
+  return false
+end
 function WBP_Battle_C:OpenSystemEntrance()
   self:OpenSystemByAction("OpenSystemEntrance")
 end
-
 function WBP_Battle_C:CloseSystemEntrance()
   self:OpenSystemByAction("CloseSystemEntrance")
 end
-
 function WBP_Battle_C:ShowSystemEntrance()
   self.IsShowSystemEntrance = true
   for i = 0, self.ListView:GetNumItems() - 1 do
@@ -852,7 +854,6 @@ function WBP_Battle_C:ShowSystemEntrance()
   end
   self.Btn_Task:ShowSystemEntranceOnGamePadInput(self.IsShowSystemEntrance)
 end
-
 function WBP_Battle_C:CloseSystemEntrance()
   self.IsShowSystemEntrance = false
   for i = 0, self.ListView:GetNumItems() - 1 do
@@ -863,7 +864,6 @@ function WBP_Battle_C:CloseSystemEntrance()
   end
   self.Btn_Task:ShowSystemEntranceOnGamePadInput(self.IsShowSystemEntrance)
 end
-
 function WBP_Battle_C:OpenArmory()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState and GameState.GameModeType == "Trial" then
@@ -875,44 +875,37 @@ function WBP_Battle_C:OpenArmory()
     self:OpenSystemByAction("OpenArmory")
   end
 end
-
 function WBP_Battle_C:OpenBag()
   self:OpenSystemByAction("OpenBag")
 end
-
 function WBP_Battle_C:OpenPlay()
   self:OpenSystemByAction("OpenPlay")
 end
-
 function WBP_Battle_C:OpenTaskPanel()
   self:OpenSystemByAction("OpenTask")
 end
-
 function WBP_Battle_C:OpenGuideBook()
   self:OpenSystemByAction("OpenGuideBook")
 end
-
 function WBP_Battle_C:OpenBattlePass()
   self:OpenSystemByAction("OpenBattlePass")
 end
-
+function WBP_Battle_C:OpenCamera()
+  self:OpenSystemByAction("OpenCamera")
+end
 function WBP_Battle_C:OpenEvent()
   self:OpenSystemByAction("OpenEvent")
 end
-
 function WBP_Battle_C:OpenForge()
   self:OpenSystemByAction("OpenForge")
 end
-
 function WBP_Battle_C:OpenGacha()
   self:OpenSystemByAction("OpenGacha")
 end
-
 function WBP_Battle_C:OpenRogueShop()
   local UIManager = self:GetGameInstance():GetGameUIManager()
   UIManager:LoadUINew("RougeBag")
 end
-
 function WBP_Battle_C:OpenSystemByAction(ActionName, bEscMenu, ...)
   if not UIManager(self):TryOpenSystem("BattleHUD") then
     return
@@ -933,7 +926,7 @@ function WBP_Battle_C:OpenSystemByAction(ActionName, bEscMenu, ...)
     return
   end
   local Avatar = GWorld:GetAvatar()
-  if Avatar and Avatar:IsInHardBoss() then
+  if Avatar and Avatar:IsInHardBoss() and "OpenChat" ~= ActionName then
     return
   end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -955,11 +948,14 @@ function WBP_Battle_C:OpenSystemByAction(ActionName, bEscMenu, ...)
     UIUtils.OpenSystem(SystemId, bEscMenu, ...)
   end
 end
-
 function WBP_Battle_C:AddTeammateUI(Eid, bIsPlayer, Entity)
-  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug \230\156\137\232\167\146\232\137\178\228\186\167\231\148\159\239\188\140\233\173\133\229\189\177\230\136\150\231\142\169\229\174\182", bIsPlayer, Eid)
+  if GameState(self).GameModeType == "Party" then
+    DebugPrint("TeamSyncDebug  Party模式不创建队友血条UI", Eid)
+    return
+  end
+  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug 有角色产生，魅影或玩家", bIsPlayer, Eid)
   if GameState(self):GetPhantomState(Eid) then
-    DebugPrint("TeamSyncDebug  PhantomArray\229\173\152\229\156\168\232\175\165\233\173\133\229\189\177\239\188\140\231\156\139\228\184\128\228\184\139OwnerEid,", GameState(self):GetPhantomState(Eid).OwnerEid)
+    DebugPrint("TeamSyncDebug  PhantomArray存在该魅影，看一下OwnerEid,", GameState(self):GetPhantomState(Eid).OwnerEid)
   end
   Entity = Entity or Battle(self):GetEntity(Eid)
   if self.TeammateEidSet[Eid] then
@@ -969,33 +965,34 @@ function WBP_Battle_C:AddTeammateUI(Eid, bIsPlayer, Entity)
     end
     return
   end
-  if not IsValid(Entity) or Entity.IsSimplePlayer or Entity.IsHostage or Entity.FromOtherWorld then
-    return
-  end
-  local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-  if Entity.Eid == Player.Eid then
-    return
-  end
   if self:AddBattleTeamBloodBar(Eid, bIsPlayer, Entity) then
     if bIsPlayer then
       return
     end
     if not bIsPlayer then
       local MainPlayer = GWorld:GetMainPlayer()
-      local OwnerEid
-      if Entity.PhantomOwner then
-        OwnerEid = Entity.PhantomOwner.Eid
-      elseif Entity.PhantomState then
-        OwnerEid = Entity.PhantomState.OwnerEid
+      local PhantomState = Entity and Entity.PhantomState or GameState(self):GetPhantomState(Eid)
+      if not PhantomState then
+        Utils.Traceback(WarningTag, LXYTag .. "TeamSyncDebug  AddTeammateUI  拿不到PhantomState直接返回")
+        return
       end
+      local OwnerEid = PhantomState.OwnerEid
       if not OwnerEid then
-        Utils.Traceback(WarningTag, LXYTag .. "TeamSyncDebug\233\157\158\229\184\184\230\128\128\231\150\145\233\173\133\229\189\177\231\154\132\229\136\157\229\167\139\229\140\150\230\181\129\231\168\139\230\156\137\230\151\182\229\186\143\233\151\174\233\162\152..")
+        Utils.Traceback(WarningTag, LXYTag .. "TeamSyncDebug非常怀疑魅影的初始化流程有时序问题..")
         return
       end
       if OwnerEid ~= MainPlayer.Eid then
         return
       end
     end
+  end
+  if not IsValid(Entity) or Entity.IsSimplePlayer or Entity.IsHostage or Entity.FromOtherWorld then
+    return
+  end
+  local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if Entity.Eid == Player.Eid then
+    DebugPrint(DebugTag, LXYTag, "TeamSyncDebug 自身不应该产生血条", Player.Eid)
+    return
   end
   local TeammateUI = self:CreateWidgetNew("TeammateBloodBar")
   TeammateUI:InitConfig(Entity)
@@ -1017,7 +1014,6 @@ function WBP_Battle_C:AddTeammateUI(Eid, bIsPlayer, Entity)
   end
   self.TeammateEidSet[Eid] = TeammateUI
 end
-
 function WBP_Battle_C:RemoveTeammateUI(Eid, TeammateBloodBarUI)
   if self:RemoveBattleTeamBloodBar(Eid) then
     return
@@ -1039,7 +1035,6 @@ function WBP_Battle_C:RemoveTeammateUI(Eid, TeammateBloodBarUI)
     self.VB_Teammate_Phantom:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Battle_C:UpdateRedDotStates()
   DebugPrint("Tianyi@ UpdateRedDotStates")
   local EntryList = self.ListView:GetDisplayedEntryWidgets():ToTable()
@@ -1048,7 +1043,6 @@ function WBP_Battle_C:UpdateRedDotStates()
   end
   self.Btn_Task:RefreshNewClueUI()
 end
-
 function WBP_Battle_C:InitConditionMapSystem()
   self.BattleEntry = self:CreateWidgetNew("BattleEntry")
   self.Pos_Entry:ClearChildren()
@@ -1066,7 +1060,6 @@ function WBP_Battle_C:InitConditionMapSystem()
   self:AddDispatcher(EventID.ConditionComplete, self, self.OnConditionComplete)
   self:AddDispatcher(EventID.OnAvatarStatusUpdate, self, self.OnAvatarStatusUpdate)
 end
-
 function WBP_Battle_C:OnConditionComplete(ConditionId)
   if 0 == #self.ConditionMapping then
     return
@@ -1075,11 +1068,9 @@ function WBP_Battle_C:OnConditionComplete(ConditionId)
     self:InitMainUIInBigWorld()
   end
 end
-
 function WBP_Battle_C:OnAvatarStatusUpdate(OldStatus, NewStatus)
   self:InitMainUIInBigWorld()
 end
-
 function WBP_Battle_C:InitMainUIInBigWorld()
   self.IsInHomebase = false
   local Avatar = GWorld:GetAvatar()
@@ -1090,7 +1081,6 @@ function WBP_Battle_C:InitMainUIInBigWorld()
     self:InitBtnList()
   end
 end
-
 function WBP_Battle_C:InitHomeBaseMain()
   self:InitBtnList()
   if not self.SignBoardNpcLoadComplete then
@@ -1101,13 +1091,16 @@ function WBP_Battle_C:InitHomeBaseMain()
     self:AddDispatcher(EventID.OnCharShowPartMesh, self, self.OnCharAccessoryChange)
     self:AddDispatcher(EventID.OnCharCornerVisibilityChanged, self, self.OnCharAccessoryChange)
     self:AddDispatcher(EventID.OnCharSkinChanged, self, self.OnCharSkinChange)
+    self:AddDispatcher(EventID.OnCharSkinColorPlanChanged, self, self.OnCharSkinChange)
     self:AddDispatcher(EventID.OnCharColorsChanged, self, self.OnCharColorsChanged)
+    self:AddDispatcher(EventID.OnCharHairChanged, self, self.OnCharAccessoryChange)
+    self:AddDispatcher(EventID.OnCharHairColorPlanChanged, self, self.OnCharHairChanged)
+    self:AddDispatcher(EventID.OnCharHairColorsChanged, self, self.RefreshAllSignBoardNpcSkin)
     self:AddDispatcher(EventID.OnWindowResized, self, function(self)
       self.bRebuildChatSimple = true
     end)
   end
 end
-
 function WBP_Battle_C:InitBtnList()
   local SystemData = DataMgr.MainUI
   local Avatar = GWorld:GetAvatar()
@@ -1144,7 +1137,6 @@ function WBP_Battle_C:InitBtnList()
   end
   self:InitEsc()
 end
-
 function WBP_Battle_C:InitGuideBookBtn()
   local SystemData = DataMgr.MainUI[13]
   if self:CheckUIUnlock(SystemData.UIUnlockRuleName) then
@@ -1157,7 +1149,6 @@ function WBP_Battle_C:InitGuideBookBtn()
     self.Btn_GuideBook:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_C:InitTaskPanelBtn()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1171,7 +1162,8 @@ function WBP_Battle_C:InitTaskPanelBtn()
     IsInDG = GameState:IsInDungeon()
   end
   local IsInHB = Avatar:IsInHardBoss()
-  IsHide = IsInRouge or IsInDG or IsInHB
+  local IsInSQ = Avatar:IsInSpecialQuest()
+  IsHide = IsInRouge or IsInDG or IsInHB or IsInSQ
   local SystemData = DataMgr.MainUI[9]
   if not IsHide then
     if SystemData.ShowCondition then
@@ -1192,7 +1184,6 @@ function WBP_Battle_C:InitTaskPanelBtn()
     self.Btn_Task:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_C:CheckUIUnlock(RuleName)
   local UIUnlockRule = DataMgr.UIUnlockRule
   local UIUnlockRuleId = UIUnlockRule[RuleName].UIUnlockRuleId
@@ -1203,7 +1194,6 @@ function WBP_Battle_C:CheckUIUnlock(RuleName)
     return true
   end
 end
-
 function WBP_Battle_C:InitSystemEntrance()
   local ClassPath = UE4.LoadClass("/Game/UI/WBP/Battle/Widget/WBP_Main_Btnlist_Content.WBP_Main_Btnlist_Content_C")
   self.ListView:ClearListItems()
@@ -1221,7 +1211,7 @@ function WBP_Battle_C:InitSystemEntrance()
       local GameState = UE4.UGameplayStatics.GetGameState(self)
       if self.bInTrial then
         Content.bForbidReddot = true
-        DebugPrint("yeke::trial\230\168\161\229\188\143\228\184\141\230\152\190\231\164\186\231\186\162\231\130\185")
+        DebugPrint("yeke::trial模式不显示红点")
       end
       self.ListView:AddItem(Content)
     end
@@ -1234,7 +1224,6 @@ function WBP_Battle_C:InitSystemEntrance()
     end
   end
 end
-
 function WBP_Battle_C:TriggerSignBoardNpc()
   local Avatar = GWorld:GetAvatar()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -1262,7 +1251,7 @@ function WBP_Battle_C:TriggerSignBoardNpc()
   end
   self:SetSignBoardNpcIdle()
 end
-
+local NpcLogType = UE.EStoryLogType.NPC
 function WBP_Battle_C:SetSignBoardNpcIdle()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -1276,6 +1265,10 @@ function WBP_Battle_C:SetSignBoardNpcIdle()
         local ShowAnimation = NpcInfo.ShowAnimationId
         local ShowAnimationId = ShowAnimation[key]
         GameState:GetNpcInfoAsync(value, function(Npc)
+          if not IsValid(Npc) then
+            UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, NpcLogType, "看板娘Npc加载失败", string.format("NpcId: %d 加载失败，确认下是该看板娘被删除或者其他原因", value or -1))
+            return
+          end
           Npc:InitNpcAccessories(NpcInfo.CharId)
           if "Sit" == ShowAnimationId and key ~= CommonConst.SignBoardThird then
             Npc:SetSitPoseInteractive()
@@ -1296,7 +1289,6 @@ function WBP_Battle_C:SetSignBoardNpcIdle()
   end
   self.SignBoardNpcLoadComplete = true
 end
-
 function WBP_Battle_C:OnCharAccessoryChange(Ret, CharUuid)
   if Ret == ErrorCode.RET_SUCCESS then
     local Avatar = GWorld:GetAvatar()
@@ -1314,8 +1306,17 @@ function WBP_Battle_C:OnCharAccessoryChange(Ret, CharUuid)
         if NpcInfo and NpcInfo.CharId and NpcInfo.CharId == CharId then
           local GameInstance = GWorld.GameInstance
           local GameState = UE4.UGameplayStatics.GetGameState(GameInstance)
+          local ShowAnimation = NpcInfo.ShowAnimationId
+          local ShowAnimationId = ShowAnimation and ShowAnimation[key]
           GameState:GetNpcInfoAsync(NpcId, function(Npc)
+            if not IsValid(Npc) then
+              return
+            end
+            Npc:SetIdlePose(false)
             Npc:RefreshNpcAccessories(Char)
+            if "Sit" == ShowAnimationId and key ~= CommonConst.SignBoardThird then
+              Npc:SetSitPoseInteractive()
+            end
           end)
           break
         end
@@ -1323,7 +1324,6 @@ function WBP_Battle_C:OnCharAccessoryChange(Ret, CharUuid)
     end
   end
 end
-
 function WBP_Battle_C:OnCharColorsChanged(Ret, SkinId)
   if Ret == ErrorCode.RET_SUCCESS then
     local SkinInfo = DataMgr.Skin[SkinId]
@@ -1334,7 +1334,31 @@ function WBP_Battle_C:OnCharColorsChanged(Ret, SkinId)
     self:UpdateSignBoardNpcSkin(CharId)
   end
 end
-
+function WBP_Battle_C:RefreshAllSignBoardNpcSkin()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  for key, NpcId in pairs(Avatar.SignBoardNpc) do
+    if NpcId ~= CommonConst.SignBoardUnset then
+      local NpcInfo = DataMgr.Npc[NpcId]
+      if NpcInfo and NpcInfo.CharId then
+        self:UpdateSignBoardNpcSkin(NpcInfo.CharId)
+      end
+    end
+  end
+end
+function WBP_Battle_C:OnCharHairChanged(Ret, HairId)
+  if not Ret == ErrorCode.RET_SUCCESS then
+    return
+  end
+  local HairInfo = DataMgr.Hair[HairId]
+  if not HairInfo then
+    return
+  end
+  local CharId = HairInfo.CharId
+  self:UpdateSignBoardNpcSkin(CharId)
+end
 function WBP_Battle_C:OnCharSkinChange(Ret, CharUuid)
   if Ret == ErrorCode.RET_SUCCESS then
     local Avatar = GWorld:GetAvatar()
@@ -1349,7 +1373,6 @@ function WBP_Battle_C:OnCharSkinChange(Ret, CharUuid)
     self:UpdateSignBoardNpcSkin(CharId)
   end
 end
-
 function WBP_Battle_C:UpdateSignBoardNpcSkin(CharId)
   local Avatar = GWorld:GetAvatar()
   local CharAvatar
@@ -1369,6 +1392,9 @@ function WBP_Battle_C:UpdateSignBoardNpcSkin(CharId)
           local ShowAnimation = NpcInfo.ShowAnimationId
           local ShowAnimationId = ShowAnimation[key]
           GameState:GetNpcInfoAsync(NpcId, function(Npc)
+            if not IsValid(Npc) then
+              return
+            end
             Npc:SetIdlePose(false)
             Npc:RefreshNpcAccessories(CharAvatar)
             if "Sit" == ShowAnimationId and key ~= CommonConst.SignBoardThird then
@@ -1381,7 +1407,6 @@ function WBP_Battle_C:UpdateSignBoardNpcSkin(CharId)
     end
   end
 end
-
 function WBP_Battle_C:OnHomeBaseBtnPlayAnim(UIName, AnimationName)
   self:AddTimer(0.01, function()
     local EntryList = self.ListView:GetDisplayedEntryWidgets():ToTable()
@@ -1390,7 +1415,6 @@ function WBP_Battle_C:OnHomeBaseBtnPlayAnim(UIName, AnimationName)
     end
   end, nil, nil, nil, false)
 end
-
 function WBP_Battle_C:OnSwitchRole()
   for i = 0, self.ListView:GetNumItems() - 1 do
     local Item = self.ListView:GetItemAt(i)
@@ -1399,8 +1423,8 @@ function WBP_Battle_C:OnSwitchRole()
     end
   end
 end
-
 function WBP_Battle_C:OnSystemUIUnLoad(UIName)
+  self:RemovePlayInOutSystems(UIName)
   local SystemUIConfig = DataMgr.SystemUI[UIName]
   if SystemUIConfig and SystemUIConfig.IsHideBattleUnit and SystemUIConfig.IsHideBattleUnit ~= UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAll and SystemUIConfig.IsHideBattleUnit ~= UIConst.EnumHideBattleUnitStyle.NormalShowAndHideAllExceptSelf then
     return
@@ -1410,26 +1434,29 @@ function WBP_Battle_C:OnSystemUIUnLoad(UIName)
   end
   self:UnLoadSystem(UIName)
 end
-
 function WBP_Battle_C:UnLoadSystem(UIName)
   local SystemInfo, IsPlayInAnim = DataMgr.MainUI, false
-  for SystemId, Info in pairs(SystemInfo) do
-    if self:CheckNeedPlayInOutAnim(SystemId) then
-      local SystemName = Info.SystemUIName
-      if SystemName and SystemName == UIName then
-        local MenuWorld = UIManager(self):GetUIObj(UIConst.MenuWorld)
-        if MenuWorld then
-          return false
+  self:RemovePlayInOutSystems(UIName)
+  if UIName == UIConst.MenuLevel then
+    IsPlayInAnim = self:TryRecoverUI()
+  else
+    for SystemId, Info in pairs(SystemInfo) do
+      if self:CheckNeedPlayInOutAnim(SystemId) then
+        local SystemName = Info.SystemUIName
+        if SystemName and SystemName == UIName then
+          local MenuWorld = UIManager(self):GetUIObj(UIConst.MenuWorld)
+          if MenuWorld then
+            return false
+          end
+          IsPlayInAnim = self:TryRecoverUI()
+          break
         end
-        IsPlayInAnim = self:TryRecoverUI()
-        break
       end
     end
   end
   self:InitChatSimple()
   return IsPlayInAnim
 end
-
 function WBP_Battle_C:CheckNeedPlayInOutAnim(SystemId)
   if SystemId == CommonConst.ArmoryEnterId then
     return false
@@ -1438,28 +1465,29 @@ function WBP_Battle_C:CheckNeedPlayInOutAnim(SystemId)
   end
   return true
 end
-
 function WBP_Battle_C:TryRecoverUI()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if IsValid(Player) and Player.IsImmersionModel then
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
     return false
   end
-  DebugPrint("-----yk---\228\184\187\231\149\140\233\157\162 in-------")
+  if self:CheckPlayInOutSystems() then
+    return false
+  end
   self:PlayInAnim()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   return true
 end
-
 function WBP_Battle_C:PlayInAnim()
-  DebugPrint("-----Jzn---\228\184\187\231\149\140\233\157\162 in-------")
+  if self:CheckPlayInOutSystems() then
+    return
+  end
+  DebugPrint("-----Jzn---主界面 in-------")
   self:SetUIVisibilityTag("PlayBattleAni", false)
   self:UnbindAllFromAnimationFinished(self.In)
-  
   local function ShowSelf()
     self:UnbindAllFromAnimationFinished(self.In)
   end
-  
   self:BindToAnimationFinished(self.In, {self, ShowSelf})
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
@@ -1469,7 +1497,6 @@ function WBP_Battle_C:PlayInAnim()
     Widget:TryGetReward()
   end
 end
-
 function WBP_Battle_C:_RefreshEscReddot()
   local Node = ReddotManager.GetTreeNode("BattleMainMenu")
   if Node then
@@ -1481,26 +1508,51 @@ function WBP_Battle_C:_RefreshEscReddot()
     ActivityUtils.RefreshActivityReddotNode()
   end
 end
-
-function WBP_Battle_C:PlayOutAnim(Obj, Func)
-  DebugPrint("-----Jzn---\228\184\187\231\149\140\233\157\162 out-------")
+function WBP_Battle_C:AddPlayInOutSystems(UIName)
+  if nil == UIName then
+    return
+  end
+  if nil == self.PlayInOutSystems then
+    self.PlayInOutSystems = {}
+  end
+  self.PlayInOutSystems[UIName] = true
+end
+function WBP_Battle_C:RemovePlayInOutSystems(UIName)
+  if nil == UIName then
+    return
+  end
+  if self.PlayInOutSystems[UIName] then
+    self.PlayInOutSystems[UIName] = false
+  end
+  return true
+end
+function WBP_Battle_C:CheckPlayInOutSystems()
+  for SystemUI, bDontPlayIn in pairs(self.PlayInOutSystems) do
+    if bDontPlayIn then
+      DebugPrint("--jzn---系统" .. SystemUI .. "还未关闭,无需播放主界面的In")
+      return true
+    end
+  end
+  self.PlayInOutSystems = {}
+  return false
+end
+function WBP_Battle_C:PlayOutAnim(Obj, Func, SystemUIName)
+  DebugPrint("-----Jzn---主界面 out-------")
   self:SetUIVisibilityTag("PlayBattleAni", true)
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
   self.IsPlayOutAnim = true
   self:UnbindAllFromAnimationFinished(self.Out)
+  self:AddPlayInOutSystems(SystemUIName)
   if Obj and Func then
     Func(Obj)
   end
-  
   local function HideSelf()
     self.IsPlayOutAnim = false
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  
   self:BindToAnimationFinished(self.Out, {self, HideSelf})
 end
-
 function WBP_Battle_C:PlayDeathMaskIn()
   local Mask_Death = self:GetOrAddWidget("DeathMask", self.Pos_Death)
   if Mask_Death then
@@ -1508,7 +1560,6 @@ function WBP_Battle_C:PlayDeathMaskIn()
     Mask_Death:PlayAnimation(Mask_Death.Mask_Death_In)
   end
 end
-
 function WBP_Battle_C:PlayDeathMaskOut()
   local Mask_Death = self:GetOrAddWidget("DeathMask", self.Pos_Death)
   if Mask_Death then
@@ -1521,7 +1572,6 @@ function WBP_Battle_C:PlayDeathMaskOut()
     end
   end
 end
-
 function WBP_Battle_C:ShowPlayerDeadUI()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local ResurgenceUIName = Player:GetCurRecoveryUIName()
@@ -1537,8 +1587,10 @@ function WBP_Battle_C:ShowPlayerDeadUI()
   if self.HBox then
     self.HBox:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
+  if self.IsShowingTeleportUI == true then
+    self:StopTeleportInDungeon(true)
+  end
 end
-
 function WBP_Battle_C:HidePlayerDeadUI()
   self:ShowOrHideMainPlayerBloodUI(true, "Dead")
   self:HideSubSystem("Char_Skill", "Dead", false)
@@ -1569,8 +1621,10 @@ function WBP_Battle_C:HidePlayerDeadUI()
   if BattleResurgenceUI then
     BattleResurgenceUI:Close()
   end
+  if self.IsShowingTeleportUI == true then
+    self:TeleportReady()
+  end
 end
-
 function WBP_Battle_C:ShowBattleFortUI()
   local BattleFortUI = UIManager(self):GetUI("BattleFort")
   if BattleFortUI then
@@ -1593,7 +1647,6 @@ function WBP_Battle_C:ShowBattleFortUI()
     end
   end
 end
-
 function WBP_Battle_C:HideBattleFortUI()
   local BattleFortUI = UIManager(self):GetUI("BattleFort")
   if BattleFortUI then
@@ -1618,7 +1671,6 @@ function WBP_Battle_C:HideBattleFortUI()
     self:InitBtnList()
   end
 end
-
 function WBP_Battle_C:ShowFeinaEventHUD()
   local FeinaEventHUD = UIManager(self):LoadUINew("FeinaEventHUD")
   if FeinaEventHUD then
@@ -1639,7 +1691,6 @@ function WBP_Battle_C:ShowFeinaEventHUD()
     end
   end
 end
-
 function WBP_Battle_C:HideFeinaEventHUD()
   local FeinaEventHUD = UIManager(self):GetUI("FeinaEventHUD")
   if FeinaEventHUD then
@@ -1661,14 +1712,12 @@ function WBP_Battle_C:HideFeinaEventHUD()
     self:InitBtnList()
   end
 end
-
 function WBP_Battle_C:ShowOrHideMainPlayerBloodUI(bIsShow, Tag)
   DebugPrint("WBP_Battle_C:ShowOrHideMainPlayerBloodUI", bIsShow, Tag)
   if self.HUD_MainBar then
     self.HUD_MainBar:SetUIVisibilityTag(Tag, not bIsShow)
   end
 end
-
 function WBP_Battle_C:ShowOrHideTeamDataTag(bIsShowTag)
   local TargetWidgetNode
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -1687,7 +1736,6 @@ function WBP_Battle_C:ShowOrHideTeamDataTag(bIsShowTag)
     TargetWidgetNode:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_C:SetUIVisibilityTag(HideTag, Invisible)
   if not IsValid(self) then
     return
@@ -1727,20 +1775,17 @@ function WBP_Battle_C:SetUIVisibilityTag(HideTag, Invisible)
     end
   end
 end
-
 function WBP_Battle_C:OnBattleMapClose()
   self.Battle_Map:OnClickClose()
 end
-
 function WBP_Battle_C:SetVisibility(InVisibility)
   self.Overridden.SetVisibility(self, InVisibility)
   if IsValid(self.Joystick) then
     self.Joystick:SetTouchVisibilityFromBattle(InVisibility)
-  else
-    DebugPrint("Hy@== WBP_Battle_C:SetVisibility Error, Joystick is not valid")
+  elseif CommonUtils:GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
+    UIManager(self):ShowUIError(UIConst.ErrorCategory.HUD, "Hy@== 主界面虚拟摇杆无效了Joystick 不存在, 摇杆表现可能受影响")
   end
 end
-
 function WBP_Battle_C:ShowInstructionInfo(ActionName, IsHide)
   local Platform = CommonUtils:GetDeviceTypeByPlatformName(self)
   self.Pos_Instruction:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -1767,14 +1812,12 @@ function WBP_Battle_C:ShowInstructionInfo(ActionName, IsHide)
     end
   end
 end
-
 function WBP_Battle_C:HideDynamicEventUI()
   local DynWidget = self:GetOrAddDynamicEventWidget()
   if DynWidget then
     DynWidget:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_C:OnTeammateDie(TargetEid)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local Teammate = Battle(self):GetEntity(TargetEid)
@@ -1782,7 +1825,6 @@ function WBP_Battle_C:OnTeammateDie(TargetEid)
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, string.format(GText("BATTLE_RECOVERY_TEAMMATEDEAD"), UIUtils.GetCharName(Teammate)))
   end
 end
-
 function WBP_Battle_C:OnTeammateRecovery(TargetEid)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local Teammate = Battle(self):GetEntity(TargetEid)
@@ -1799,7 +1841,6 @@ function WBP_Battle_C:OnTeammateRecovery(TargetEid)
     end
   end
 end
-
 function WBP_Battle_C:CreatTakeAimIndicator()
   self.TakeAimIndicator = self:CreateWidgetNew("TakeAimIndicator")
   if self.TakeAimIndicator then
@@ -1811,19 +1852,15 @@ function WBP_Battle_C:CreatTakeAimIndicator()
     self.Pos_Aim:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   end
 end
-
 function WBP_Battle_C:EndAim()
   self.Pos_Aim:ClearChildren()
 end
-
 function WBP_Battle_C:GetTakeAimIndicator()
   return self.TakeAimIndicator
 end
-
 function WBP_Battle_C:OnKeyDown(MyGeometry, InKeyEvent)
   return UIUtils.Unhandled
 end
-
 function WBP_Battle_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1832,26 +1869,6 @@ function WBP_Battle_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
-function WBP_Battle_C:StartRougeCanonCountDown()
-  self.Pos_Rouge_CountDown:ClearChildren()
-  self.RougeGameCountDown = self:CreateWidgetNew("RougeGameCountDown")
-  self.Pos_Rouge_CountDown:AddChild(self.RougeGameCountDown)
-  self.RougeGameCountDown:InitRougeGameCountDown()
-  self.Pos_Rouge_CountDown:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-end
-
-function WBP_Battle_C:RefreshRougeGameCountDown(Time)
-  if self.RougeGameCountDown then
-    self.RougeGameCountDown:RefreshTime(Time)
-  end
-end
-
-function WBP_Battle_C:OnEndRougeCanonMiniGame()
-  self.Pos_Rouge_CountDown:ClearChildren()
-  self.Pos_Rouge_CountDown:SetVisibility(UIConst.VisibilityOp.Collapsed)
-end
-
 function WBP_Battle_C:HideSubSystem(Name, HideTag, IsHide)
   if not HideTag or not Name then
     return
@@ -1873,13 +1890,11 @@ function WBP_Battle_C:HideSubSystem(Name, HideTag, IsHide)
     end
   end
 end
-
 function WBP_Battle_C:SetSubSystemVisibility(Name, Visibility)
   if self[Name] and not self:IsSubSystemHide(Name) then
     self[Name]:SetVisibility(Visibility)
   end
 end
-
 function WBP_Battle_C:IsSubSystemHide(Name)
   if not Name or not self[Name] then
     DebugPrint("System Does Not Exist. Name: ", Name)
@@ -1892,7 +1907,6 @@ function WBP_Battle_C:IsSubSystemHide(Name)
     return true
   end
 end
-
 function WBP_Battle_C:OnTempleRightUI()
   self.Group_Temple:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Pos_TempleRight:ClearChildren()
@@ -1902,16 +1916,27 @@ function WBP_Battle_C:OnTempleRightUI()
   self.Pos_TempleRight:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local TaskBar = TaskUtils:GetTaskBarWidget()
   if TaskBar then
-    TaskBar:SetUIVisibilityTag("Training", true)
+    TaskBar:SetUIVisibilityTag("Temple", true)
   end
 end
-
+function WBP_Battle_C:OnSoloTreasureScoreAndBagUI()
+  self.Pos_SoloTreasure_Score:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.Pos_SoloTreasure_Score:ClearChildren()
+  self.SoloTreasureScoreAndBagUI = self:CreateWidgetNew("SoloTreasureScoreAndBag")
+  self.SoloTreasureScoreAndBagUI:InitWidgetUI()
+  self.Pos_SoloTreasure_Score:AddChild(self.SoloTreasureScoreAndBagUI)
+end
+function WBP_Battle_C:OnPartyEnter()
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    TaskBar:SetUIVisibilityTag("Party", true)
+  end
+end
 function WBP_Battle_C:OnPartyProgressStart()
   self.PartyProgress = self:CreateWidgetNew("PartyProgress")
   self.PartyProgress:ConstructInfo()
   self.Pos_TempleProgress:AddChild(self.PartyProgress)
 end
-
 function WBP_Battle_C:OnModBookQuestFinished(QuestId)
   DebugPrint("zwk OnModBookQuestFinished", QuestId)
   if not self.ModArchives then
@@ -1922,11 +1947,9 @@ function WBP_Battle_C:OnModBookQuestFinished(QuestId)
     self:ShowModBookTips(QuestId)
   end
 end
-
 function WBP_Battle_C:ShowModBookTips(QuestId)
   UIManager(self):LoadUINew("ModArchiveTaskTips", self, QuestId)
 end
-
 function WBP_Battle_C:OnPreModArchiveFinished(QuestId)
   if self.ModArchives then
     self.ModArchives:RemoveItem(QuestId)
@@ -1936,7 +1959,22 @@ function WBP_Battle_C:OnPreModArchiveFinished(QuestId)
     self:ShowModBookTips(QuestId)
   end
 end
-
+function WBP_Battle_C:OnNotifyCommonCountDown(Count, bShowZeroText, CountDownSound, LastCountDownSound)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local UIManager = GameInstance:GetGameUIManager()
+  if nil == UIManager then
+    return
+  end
+  local UIManager = GameInstance:GetGameUIManager()
+  local GuideCountDownFloat = UIManager:GetUIObj("GuideCountDown")
+  if GuideCountDownFloat then
+    GuideCountDownFloat:OnCountDownEnd()
+    GuideCountDownFloat:Close()
+  end
+  GuideCountDownFloat = UIManager:LoadUINew("GuideCountDown")
+  GuideCountDownFloat:SetVisibility(ESlateVisibility.Collapsed)
+  self:ShowCommonCountDown(GuideCountDownFloat, Count + 1, bShowZeroText, CountDownSound, LastCountDownSound)
+end
 function WBP_Battle_C:OnNotifyShowLargeCountDown(Count, bShowZeroText)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -1953,21 +1991,20 @@ function WBP_Battle_C:OnNotifyShowLargeCountDown(Count, bShowZeroText)
   GuideCountDownFloat:SetVisibility(ESlateVisibility.Collapsed)
   self:ShowCountDown(GuideCountDownFloat, Count + 1, bShowZeroText)
 end
-
 function WBP_Battle_C:EMAfterInitialize()
   WBP_Battle_C.Super.EMAfterInitialize(self)
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance)
   if self.Platform == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     if UIConst.OptimizeSwitch[CommonConst.CLIENT_DEVICE_TYPE.MOBILE].UI_WRAPPING_WITH_INVALIDBOX then
-      self.InvalidationBox_AllEntry = self:ArrangeSingleWidgetWithInvalidBox(self.Pos_Entry, "InvalidationBox_AllEntry")
     end
     if UIConst.OptimizeSwitch[CommonConst.CLIENT_DEVICE_TYPE.MOBILE].UI_WRAPPING_WITH_RETAINERBOX then
       local IsShippingPackage = UE4.UKismetSystemLibrary.IsPackagedForDistribution()
       if IsShippingPackage then
         self:ArrangeSingleWidgetWithRetainerBox(self.Pos_TaskBar, "CustomRetainerBox_TaskBar", 1, 10)
       end
-      self:ArrangeSingleWidgetWithRetainerBox(self.Pos_Drops, "CustomRetainerBox_CommonDrops", 5, 15)
-      self:ArrangeSingleWidgetWithRetainerBox(self.Char_Skill, "CustomRetainerBox_Skill", 3, 5)
+      self:ArrangeSingleWidgetWithRetainerBox(self.Pos_Drops, "CustomRetainerBox_CommonDrops", 2, 10)
+      self:ArrangeSingleWidgetWithRetainerBox(self.Char_Skill, "CustomRetainerBox_Skill", 1, 3)
+      self:ArrangeSingleWidgetWithRetainerBox(self.Pos_Entry, "CustomRetainerBox_Entry", 3, 15)
     end
   elseif self.Platform == CommonConst.CLIENT_DEVICE_TYPE.PC and UIConst.OptimizeSwitch[CommonConst.CLIENT_DEVICE_TYPE.PC].UI_WRAPPING_WITH_RETAINERBOX then
     self:ArrangeSingleWidgetWithRetainerBox(self.Pos_Drops, "CustomRetainerBox_CommonDrops", 1, 10)
@@ -1975,13 +2012,11 @@ function WBP_Battle_C:EMAfterInitialize()
     self:ArrangeSingleWidgetWithRetainerBox(self.Char_Skill, "CustomRetainerBox_Skill", 2, 10)
   end
 end
-
 function WBP_Battle_C:OnHomeBaseeBtnShowNewClue(UIName)
   self:AddTimer(5, function()
     self.Btn_Task:OnHomeBaseeBtnShowNewClue(UIName)
   end, nil, nil, nil, false)
 end
-
 function WBP_Battle_C:OnNewDetectiveQuestion(Question, IsFinished)
   local QuestionData = DataMgr.DetectiveQuestion[Question]
   if not QuestionData then
@@ -2005,19 +2040,16 @@ function WBP_Battle_C:OnNewDetectiveQuestion(Question, IsFinished)
     ReasoningToast:PlayAnimation(ReasoningToast.Out)
   end, nil, nil, nil, false)
 end
-
 function WBP_Battle_C:CreateFortBack()
   self.Pos_FortBack:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Pos_FortBack:ClearChildren()
-  local FortBackKey = self:GetOrAddWidget("FortBackKey", self.Pos_FortBack)
-  return FortBackKey
+  local FortBackEntry = self:GetOrAddWidget("BattleEntryItem", self.Pos_FortBack)
+  return FortBackEntry
 end
-
 function WBP_Battle_C:DestoryFortBack()
   self.Pos_FortBack:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Pos_FortBack:ClearChildren()
 end
-
 function WBP_Battle_C:EnableGuideBookKey(bEnable)
   if bEnable then
     self:ListenForInputAction("OpenGuideBook", EInputEvent.IE_Pressed, false, {
@@ -2028,7 +2060,6 @@ function WBP_Battle_C:EnableGuideBookKey(bEnable)
     self:StopListeningForInputAction("OpenGuideBook", EInputEvent.IE_Pressed)
   end
 end
-
 function WBP_Battle_C:InitGameJumpWord()
   local JumpWordManager = USubsystemBlueprintLibrary.GetWorldSubsystem(self, UJumpWordManager)
   if JumpWordManager then
@@ -2058,6 +2089,198 @@ function WBP_Battle_C:InitGameJumpWord()
     JumpWordManager:SetJumpWordSize(tonumber(GameDamageTextScale))
   end
 end
-
+function WBP_Battle_C:CheckTheaterEventState()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar or Avatar.CurrentRegionId ~= 101901 then
+    return
+  end
+  local function Cb(ErrCode, Ret)
+    if Ret and Ret.IsJoin == true and 0 == ErrCode then
+      if 0 == Ret.State or 1 == Ret.State then
+        self:TheaterJoinPerformGame()
+      elseif 2 == Ret.State then
+        self:TheaterPerformGameStart(CommonConst.TheaterEventId, Ret.PerformList, true)
+      end
+    end
+  end
+  Avatar:TheaterPerformStateGet(Cb)
+end
+function WBP_Battle_C:TheaterJoinPerformGame()
+  if self.TheaterCheckTimer then
+    self:RemoveTimer(self.TheaterCheckTimer)
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local function Cb(ErrCode, Ret)
+    if 1 == Ret.State then
+      self:TheaterPerformGameStart(CommonConst.TheaterEventId, Ret.PerformList)
+      return
+    end
+  end
+  Avatar:TheaterPerformStateGet(Cb)
+  self.TheaterTaskTime = UIManager(self):LoadUINew("TheaterTaskTime")
+  self.Task:AddChild(self.TheaterTaskTime)
+  self.TheaterTaskTime.IsInit = true
+  self.TheaterTaskTime:InitUI()
+  self.JoinTheaterGame = true
+end
+function WBP_Battle_C:TheaterJoinPerformGameFail()
+  if self.TheaterTaskTime then
+    return
+  end
+  DebugPrint("ayff test 加入剧院表演失败，显示失败UI time")
+  self.TheaterTaskTime = UIManager(self):LoadUINew("TheaterTaskTime")
+  self.Task:AddChild(self.TheaterTaskTime)
+  self.TheaterTaskTime.IsInit = true
+  self.TheaterTaskTime:InitFailUI()
+end
+function WBP_Battle_C:OnTheaterPerformGameNotice(EventId)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
+  if not Avatar:IsInHardBoss() and GameState:IsInRegion() and Avatar.CurrentRegionId ~= 101901 then
+    for i = 0, self.ListView:GetNumItems() - 1 do
+      local Item = self.ListView:GetItemAt(i)
+      if Item and 19 == Item.BtnId and Item.SelfWidget then
+        Item.SelfWidget:RefreshNewTheaterUI()
+      end
+    end
+  end
+end
+function WBP_Battle_C:TheaterPerformGameStart(EventId, PerformList, ReStart)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if self.TheaterTaskTime then
+    self.Task:RemoveChild(self.TheaterTaskTime)
+    self.TheaterTaskTime:Close()
+  end
+  self.TheaterToast = nil
+  self.Pos_Rouge_CountDown:ClearChildren()
+  local function Cb(ErrCode, Ret)
+    if 0 == ErrCode and Ret.IsJoin == true then
+      local Avatar = GWorld:GetAvatar()
+      if not Avatar then
+        return
+      end
+      local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
+      local RegionId = Avatar.CurrentRegionId
+      if not GameState:IsInRegion() or 101901 ~= RegionId or Avatar:IsInHardBoss() then
+        DebugPrint("ayff test 当前不在剧院区域 RegionId:", RegionId)
+        return
+      end
+      self.TheaterToast = UIManager(self):LoadUINew("TheaterToast")
+      self.TheaterToast.ParentWidget = self
+      self.Pos_Rouge_CountDown:AddChild(self.TheaterToast)
+      self.Pos_Rouge_CountDown:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      self.TheaterToast.IsInit = true
+      self.TheaterToast:UpdatePerformList(PerformList)
+      if ReStart then
+        self.TheaterToast.ReStartPerform = true
+      end
+    end
+  end
+  Avatar:TheaterPerformStateGet(Cb)
+end
+function WBP_Battle_C:TeleportReady(IsEnd)
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    if IsEnd and true == IsEnd then
+      self:StopTeleportInDungeon(true)
+      return
+    end
+    TaskBar:SetTeleportBubble(true)
+    self.IsShowingTeleportUI = true
+    if TaskBar.Platform == "Mobile" then
+      TaskBar.WBP_Btn_Tips3:SetVisibility(UE4.ESlateVisibility.Visable)
+      TaskBar.WBP_Btn_Tips3.Text_Button:SetText(GText("DUNGEON_TELEPORT"))
+      TaskBar.WBP_Btn_Tips3.Button_Area.OnClicked:Clear()
+      local function OnTaskBarClicked()
+        local CommonDialogParams = {
+          RightCallbackFunction = function()
+            TaskBar:PlayAnimation(TaskBar.Transmit_Out)
+            local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+            if Player then
+              Player.RPCComponent:NotifyServerStartDelivery()
+            end
+          end,
+          LeftCallbackFunction = nil,
+          CloseBtnCallbackFunction = nil,
+          AutoFocus = true
+        }
+        TaskBar:RefreshTeleportBubble(true)
+        UIManager(self):ShowCommonPopupUI(100267, CommonDialogParams, self)
+      end
+      TaskBar.WBP_Btn_Tips3.Button_Area.OnClicked:Add(self, OnTaskBarClicked)
+    elseif TaskBar.Platform == "PC" then
+      TaskBar.Text_Tips04:SetText(GText("DUNGEON_TELEPORT_LONGPRESS"))
+      self:ListenForInputAction("Recovery", EInputEvent.IE_Pressed, false, {
+        self,
+        self.StartTeleportInDungeon
+      })
+      self:ListenForInputAction("Recovery", EInputEvent.IE_Released, false, {
+        self,
+        self.TeleportRelease
+      })
+    end
+  end
+end
+function WBP_Battle_C:StartTeleportInDungeon()
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    TaskBar.Key_Tips03:AddExecuteLogic(self, self.StopTeleportInDungeon)
+    local PressTime = DataMgr.GlobalConstant.TeleportPressTime.ConstantValue or 1
+    TaskBar.Key_Tips03:OnButtonPressed(nil, true, 0, PressTime)
+    TaskBar.Key_Controller_Tips03:OnButtonPressed(nil, true, 0, PressTime)
+    TaskBar:RefreshTeleportBubble(true)
+    local GameState = UE4.UGameplayStatics.GetGameState(self)
+    GameState.ShouldStopHookInDungeonDelivery = true
+  end
+  DebugPrint("ayff test press teleport button")
+end
+function WBP_Battle_C:StopTeleportInDungeon(ForceHide)
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    self.IsShowingTeleportUI = false
+    if true == ForceHide then
+      TaskBar:PlayAnimation(TaskBar.Transmit_Out)
+      self:StopListeningForInputAction("Recovery", EInputEvent.IE_Pressed)
+      self:StopListeningForInputAction("Recovery", EInputEvent.IE_Released)
+      return
+    end
+    TaskBar:PlayAnimation(TaskBar.Transmit_Out)
+    self:StopListeningForInputAction("Recovery", EInputEvent.IE_Pressed)
+    self:StopListeningForInputAction("Recovery", EInputEvent.IE_Released)
+    local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+    local Tag = Player:GetCharacterTag()
+    if "Hook" == Tag or "HitFly" == Tag then
+      DebugPrint("ayff test 传送中断，角色处于钩锁或被击飞状态，无法传送")
+    else
+      Player.RPCComponent:NotifyServerStartDelivery()
+    end
+  end
+  self:AddTimer(1, function()
+    local GameState = UE4.UGameplayStatics.GetGameState(self)
+    if GameState then
+      GameState.ShouldStopHookInDungeonDelivery = false
+      DebugPrint("ayff test 传送中断，恢复钩锁状态")
+    else
+      DebugPrint("ayff test 传送中断，恢复钩锁状态失败，GameState无效")
+    end
+  end)
+  DebugPrint("ayff test release teleport button")
+end
+function WBP_Battle_C:TeleportRelease()
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if TaskBar then
+    TaskBar.Key_Tips03:OnButtonReleased()
+    TaskBar.Key_Controller_Tips03:OnButtonReleased()
+  end
+end
 AssembleComponents(WBP_Battle_C)
 return WBP_Battle_C

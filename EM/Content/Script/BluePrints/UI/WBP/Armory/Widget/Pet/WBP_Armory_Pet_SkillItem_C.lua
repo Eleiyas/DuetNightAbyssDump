@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.MenuAnchor.OnMenuOpenChanged:Clear()
   self.MenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuRealOpenChanged)
@@ -17,7 +16,6 @@ function M:Construct()
   self.Btn.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn.OnUnhovered:Add(self, self.OnBtnUnhovered)
 end
-
 function M:OnListItemObjectSet(Content)
   if not Content then
     return
@@ -56,7 +54,6 @@ function M:OnListItemObjectSet(Content)
   end
   self.Text_Skill_Name:SetText(Content.SkillName)
 end
-
 function M:OnBtnPressed()
   if self.IsMenuOpened then
     self.bNotOpenMenu = true
@@ -65,11 +62,9 @@ function M:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnClicked()
   self:OpenMenu()
 end
-
 function M:OnBtnReleased()
   if self.IsMenuOpened then
     return
@@ -79,7 +74,6 @@ function M:OnBtnReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnBtnHovered()
   if self.IsMenuOpened or CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -87,7 +81,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsMenuOpened or CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -95,19 +88,16 @@ function M:OnBtnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self)
   end
 end
-
 function M:OnMenuRealOpenChanged(IsOpen)
   self.IsMenuRealOpened = IsOpen
   if IsOpen then
@@ -118,11 +108,9 @@ function M:OnMenuRealOpenChanged(IsOpen)
     self:OnBtnReleased()
   end
 end
-
 function M:OnMenuRealClosed()
   self:RealCloseMenu()
 end
-
 function M:RealCloseMenu()
   self.IsMenuRealOpened = false
   self.IsMenuOpened = false
@@ -130,7 +118,6 @@ function M:RealCloseMenu()
     self.MenuAnchor:Close()
   end
 end
-
 function M:OnMenuClosed()
   if self.Btn:IsHovered() and CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
     self:OnBtnHovered()
@@ -142,7 +129,6 @@ function M:OnMenuClosed()
     self._OnMenuOpenChanged(self.Owner, false, self)
   end
 end
-
 function M:OpenMenu()
   if self.bNotOpenMenu then
     self.bNotOpenMenu = false
@@ -165,9 +151,7 @@ function M:OpenMenu()
     self._OnMenuOpenChanged(self.Owner, true, self)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Btn)
 end
-
 return M

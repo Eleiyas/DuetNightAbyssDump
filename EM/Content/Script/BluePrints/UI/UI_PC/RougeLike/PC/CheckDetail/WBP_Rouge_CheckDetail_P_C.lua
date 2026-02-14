@@ -3,17 +3,14 @@ local MiscUtils = require("Utils.MiscUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local ReddotManager = require("BluePrints.UI.Reddot.ReddotManager")
 local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
-
 function M:Construct()
   M.Super.Construct(self)
   self.CurInputDeviceType = nil
 end
-
 function M:Destruct()
   self:ClearListenEvent()
   M.Super.Destruct(self)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.RougeGuideName, self.DataModel = ...
@@ -28,15 +25,12 @@ function M:OnLoaded(...)
   end
   self:InitOffsetSize()
 end
-
 function M:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
 end
-
 function M:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
 end
-
 function M:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -47,13 +41,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -73,14 +65,13 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
   if IsGamePad then
-    if self.RougeGuideName == nil and self.CurItemType == "Blessing" then
+    if self.CurItemType == "Blessing" or self.RougeGuideName == "Blessing" then
       self:SetButtomGamePadTipVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
   else
     self:SetButtomGamePadTipVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:InitBagTabInfo()
   self.HB_TotalText:SetVisibility(ESlateVisibility.Collapsed)
   self.MainTabData = DataMgr.RougeBagTab
@@ -148,7 +139,6 @@ function M:InitBagTabInfo()
   self.Common_Tab:SelectTab(1)
   self:InitTipsInfo()
 end
-
 function M:InitTipsInfo()
   if self.CurInputDeviceType == ECommonInputType.Touch then
     return
@@ -161,7 +151,6 @@ function M:InitTipsInfo()
     })
   end
 end
-
 function M:InitOffsetSize()
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Touch then
     local CanvasSlot = self.VB_Item.Slot
@@ -170,18 +159,17 @@ function M:InitOffsetSize()
     CanvasSlot:SetOffsets(Offset)
   end
 end
-
-function M:UpdateGroupInfo()
+function M:UpdateGroupInfo(IsGuide)
   self.List_BottomTab:ClearListItems()
   for _, v in pairs(DataMgr.BlessingGroup) do
     local Content = NewObject(self.GroupInfoContentClass)
     Content.GroupId = v.GroupId
     Content.Parent = self
     Content.SuitFocusChanged = self.SuitFocusChanged
+    Content.IsGuide = IsGuide
     self.List_BottomTab:AddItem(Content)
   end
 end
-
 function M:OnMainTabChanged(TabWidget)
   local MainTabId = self.MainTabMap[TabWidget.Idx]
   if not MainTabId then
@@ -190,7 +178,7 @@ function M:OnMainTabChanged(TabWidget)
   self:CleanTimer()
   self.CurItemType = DataMgr.RougeBagTab[MainTabId].Type
   if self.CurItemType == "Blessing" then
-    self:UpdateGroupInfo(self.List_BottomTab, self.GroupInfoContentClass)
+    self:UpdateGroupInfo()
     if self.CurInputDeviceType == ECommonInputType.Gamepad then
       self:SetButtomGamePadTipVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
@@ -246,7 +234,6 @@ function M:OnMainTabChanged(TabWidget)
     })
   end
 end
-
 function M:OnSubTabChanged(TabWidget)
   local SubTabData = self.SubTabMap[TabWidget.Idx]
   if not SubTabData then
@@ -260,7 +247,6 @@ function M:OnSubTabChanged(TabWidget)
     self:UpdateRougeBagDetail(self.CurGroupId, true)
   end
 end
-
 function M:UpdateRougeBagDetail(CurGroupId)
   local RougeLikeManager = GWorld.RougeLikeManager
   if not RougeLikeManager then
@@ -317,7 +303,6 @@ function M:UpdateRougeBagDetail(CurGroupId)
     self:InitBlessingList(ItemDataList)
   end
 end
-
 function M:InitTreasureSuitList(ItemDataList)
   self.CatalogueScroll:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.List_SuitItem:DisableScroll(true)
@@ -361,7 +346,6 @@ function M:InitTreasureSuitList(ItemDataList)
     self:PlayTreasureSuitListFramingIn()
   end)
 end
-
 function M:InitBlessingList(ItemDataList)
   self.List_Item:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.List_Item:ClearListItems()
@@ -379,23 +363,19 @@ function M:InitBlessingList(ItemDataList)
     self:PlayBlessingListFramingIn()
   end)
 end
-
 function M:PlayBlessingListFramingIn()
   self.List_Item:SetVisibility(UIConst.VisibilityOp.Visible)
   self.List_Item:RequestPlayEntriesAnim()
   self:FocusOnPanel()
 end
-
 function M:PlayTreasureSuitListFramingIn()
   self.CatalogueScroll:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.List_SuitItem:RequestPlayEntriesAnim()
   self:FocusOnPanel()
 end
-
 function M:PlayTabSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -403,13 +383,11 @@ function M:CloseSelf()
   self:PlayAnimation(self.Out)
   AudioManager(self):SetEventSoundParam(self, "RougeBagOpenSound", {ToEnd = 1})
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
   end
 end
-
 function M:Close()
   self.Super.Close(self)
   if self.GuideParent then
@@ -421,14 +399,12 @@ function M:Close()
     end
   end
 end
-
 function M:InitGuideView()
   self:InitGuideTabInfo()
   self:InitRougeGuide()
   self:InitReward()
   self:InitReddot()
 end
-
 function M:InitGuideTabInfo()
   self.HB_TotalText:SetVisibility(ESlateVisibility.Collapsed)
   self.Common_Tab:Init({
@@ -461,16 +437,18 @@ function M:InitGuideTabInfo()
   })
   local TitleText = "RLArchive_" .. self.RougeGuideName .. "Title"
   self.Common_Tab:UpdateTopTitle(GText(TitleText))
+  self:InitTipsInfo()
 end
-
 function M:InitRougeGuide()
   local RougeGuideId
   self:CleanTimer()
-  self.List_BottomTab:SetVisibility(ESlateVisibility.Collapsed)
   if self.RougeGuideName == "Blessing" then
     RougeGuideId = 1
+    self:UpdateGroupInfo(true)
+    self.List_BottomTab:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   elseif self.RougeGuideName == "Treasure" then
     RougeGuideId = 0
+    self.List_BottomTab:SetVisibility(ESlateVisibility.Collapsed)
   end
   if not RougeGuideId then
     return
@@ -520,14 +498,12 @@ function M:InitRougeGuide()
     })
   end
 end
-
 function M:InitReward()
   self.ArchiveRewardBtn:InitView(self.DataModel)
   self.ArchiveRewardBtn:SetItemNum(RougeConst.ArchiveType[self.RougeGuideName])
   self.ArchiveRewardBtn:SetVisibility(ESlateVisibility.Visible)
   self.ArchiveRewardBtn.Btn_Collect.OnClicked:Add(self, self.OpenReward)
 end
-
 function M:OpenReward()
   local Type = RougeConst.ArchiveType.Treasure
   if self.RougeGuideName == "Blessing" then
@@ -537,21 +513,21 @@ function M:OpenReward()
   Params.ConfigData.Type = Type
   UIManager(self):ShowCommonPopupUI(100173, Params, self)
 end
-
 function M:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local HaveReWardToGet = false
-      
+      DebugPrint("@@@RougeArchive GetAllRewards CallBack")
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Item = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
-        local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.Type)
+        local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.ConfigData.Type)
         local CanReceive = CurrentNum >= Item.ConfigData.Num
         local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
         if CanReceive and not IsGot then
           HaveReWardToGet = true
         end
+        DebugPrint("@@@RougeArchive GetAllRewards ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
         Item.ConfigData.CanReceive = CanReceive
         Item.ConfigData.RewardsGot = IsGot
         if Item.SelfWidget then
@@ -563,23 +539,21 @@ function M:GetAllRewards(ReceiveAllParm)
       end, ReceiveAllParm.SelfWidget)
       ReceiveAllParm.SelfWidget:RefreshReddotInfo()
       ReceiveAllParm.SelfWidget:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetAllRewards HaveReWardToGet", HaveReWardToGet)
     end
-    
     Avatar:GetRougeLikeManualReward(CallBack, ReceiveAllParm.SelfWidget.Type, -1)
   end
 end
-
 function M:GetReward(Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Errorcode, Rewards)
       local HaveReWardToGet = false
-      
       for i = 0, Content.Owner.List_Item:GetNumItems() - 1 do
         local Item = Content.Owner.List_Item:GetItemAt(i)
         if Item then
-          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.Type)
-          local CanReceive = CurrentNum >= Content.ConfigData.Num
+          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.ConfigData.Type)
+          local CanReceive = CurrentNum >= Item.ConfigData.Num
           local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
           if CanReceive and not IsGot then
             HaveReWardToGet = true
@@ -597,11 +571,9 @@ function M:GetReward(Content)
         Content.SelfWidget:SetFocus()
       end, Content.SelfWidget)
     end
-    
     Avatar:GetRougeLikeManualReward(Callback, Content.SelfWidget.Type, Content.SelfWidget.ItemId)
   end
 end
-
 function M:MakeRewardData()
   local Avatar = GWorld:GetAvatar()
   local Params = {}
@@ -687,11 +659,9 @@ function M:MakeRewardData()
   Params.ConfigData.ReddotName = "RougeArchiveReward"
   return Params
 end
-
 function M:InitReddot()
   ReddotManager.AddListener("RougeArchiveReward", self, self.OnArchiveRewardReddotChange)
 end
-
 function M:OnArchiveRewardReddotChange(Count)
   DebugPrint("Tianyi@ OnArchiveRewardReddotChange", Count)
   local Type = RougeConst.ArchiveType.Treasure
@@ -704,7 +674,6 @@ function M:OnArchiveRewardReddotChange(Count)
   end
   self.ArchiveRewardBtn:SetReddot(Count > 0)
 end
-
 function M:UpdateRougeGuideDetail(CurGroupId)
   local IdName = self.RougeGuideName .. "Id"
   local DataName = "RougeLike" .. self.RougeGuideName
@@ -750,7 +719,6 @@ function M:UpdateRougeGuideDetail(CurGroupId)
     self:InitBlessingList(ItemDataList)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -766,7 +734,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:Handle_KeyDownEventOnPC(InKeyName)
   local IsEventHandled = false
   if "Escape" == InKeyName then
@@ -785,7 +752,6 @@ function M:Handle_KeyDownEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyDownEventOnGamePad(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Right" == InKeyName then
@@ -817,7 +783,6 @@ function M:Handle_KeyDownEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:FocusOnPanel()
   if self.RougeGuideName == nil and not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
@@ -838,14 +803,12 @@ function M:FocusOnPanel()
     self.SubTabList[self.Tab.CurrentTab].UI:SetFocus()
   end
 end
-
 function M:FocusOnSuitInfo()
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
   end
   self.List_BottomTab:NavigateToIndex(0)
 end
-
 function M:SuitFocusChanged(bFocusOnSuit)
   self.bFocusOnSuit = bFocusOnSuit
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -856,7 +819,6 @@ function M:SuitFocusChanged(bFocusOnSuit)
     end
   end
 end
-
 function M:RougeItemFocusChanged(bFocusOnItem)
   self:AddTimer(0.01, function()
     if false == bFocusOnItem then
@@ -928,7 +890,6 @@ function M:RougeItemFocusChanged(bFocusOnItem)
     end
   end)
 end
-
 function M:SetButtomGamePadTipVisibility(Visibility)
   if self.CurInputDeviceType == ECommonInputType.Touch then
     return
@@ -937,5 +898,4 @@ function M:SetButtomGamePadTipVisibility(Visibility)
     self.Key_GamePad_Bottom:SetVisibility(Visibility)
   end
 end
-
 return M

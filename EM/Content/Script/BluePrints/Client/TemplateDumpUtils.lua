@@ -3,7 +3,6 @@ local WeaponCom = require("BluePrints.Client.CustomTypes.Weapon")
 local ModCom = require("BluePrints.Client.CustomTypes.Mod")
 local CharacterCommon = require("BluePrints.Client.CustomTypes.CharacterCommon")
 local TemplateDumpUtils = {}
-
 function TemplateDumpUtils:AddTemplateChar(TemplateRuleId, ReplaceCharId)
   local CharInfo = DataMgr.CharTemplate[TemplateRuleId]
   if not CharInfo then
@@ -47,7 +46,6 @@ function TemplateDumpUtils:AddTemplateChar(TemplateRuleId, ReplaceCharId)
   end
   return Char, ModData, CharacterCommon
 end
-
 function TemplateDumpUtils:AddTemplateChar_CreateCommonChar(Char, CharCostumeInfo)
   local CharacterCommon = CharacterCommon.CommonCharDict:NewCommonChar(Char.CharId)
   local AppearanceSuit = Char.AppearanceSuits[Char.CurrentAppearanceIndex]
@@ -66,7 +64,6 @@ function TemplateDumpUtils:AddTemplateChar_CreateCommonChar(Char, CharCostumeInf
   end
   return CharacterCommon
 end
-
 function TemplateDumpUtils:AddTemplateWeapon(TemplateRuleId)
   local WeaponInfo = DataMgr.WeaponTemplate[TemplateRuleId]
   if not WeaponInfo then
@@ -104,7 +101,6 @@ function TemplateDumpUtils:AddTemplateWeapon(TemplateRuleId)
   end
   return Weapon, ModData
 end
-
 function TemplateDumpUtils:AddTemplateUltraWeapon(Char, UltraWeaponId, TemplateRuleId, Index)
   local CharInfo = DataMgr.CharTemplate[TemplateRuleId]
   if not CharInfo then
@@ -134,7 +130,6 @@ function TemplateDumpUtils:AddTemplateUltraWeapon(Char, UltraWeaponId, TemplateR
   end
   return Weapon, ModData
 end
-
 function TemplateDumpUtils:CreateTemplate_ModSuit(Target, TemplateModInfo, Avatar)
   local mod_suit_1 = Target.ModSuit_1
   if not TemplateModInfo.ModId then
@@ -150,7 +145,6 @@ function TemplateDumpUtils:CreateTemplate_ModSuit(Target, TemplateModInfo, Avata
     end
   end
 end
-
 function TemplateDumpUtils:TemplateHandleCharSkill(Char, TemplateInfo)
   Char:GMSetSkillLevel(TemplateInfo.SkillLevel or 1, TemplateInfo.NeedEnhance)
   if TemplateInfo.SkillTreeUnlock then
@@ -186,7 +180,6 @@ function TemplateDumpUtils:TemplateHandleCharSkill(Char, TemplateInfo)
     end
   end
 end
-
 function TemplateDumpUtils:CreateTemplate_UWeaponModSuit(UWeapon, ModIndex, CharTemplateInfo, Avatar)
   local UltraWeaponModId = CharTemplateInfo.UltraWeaponModId[ModIndex]
   local w_mod_suit = AvatarUtils:GetTargetModSuit(UWeapon, UWeapon.ModSuitIndex)
@@ -201,7 +194,6 @@ function TemplateDumpUtils:CreateTemplate_UWeaponModSuit(UWeapon, ModIndex, Char
   end
   return UWeapon
 end
-
 function TemplateDumpUtils:CreateTemplate_Char(Avatar, CharTemplateId, ReplaceCharId, IsSetCurrentChar)
   local CharTemInfo = DataMgr.CharTemplate[CharTemplateId]
   if not CharTemInfo then
@@ -209,15 +201,16 @@ function TemplateDumpUtils:CreateTemplate_Char(Avatar, CharTemplateId, ReplaceCh
   end
   return self:CreateTemplate_InternalChar(Avatar, CharTemInfo, ReplaceCharId or CharTemInfo.CharId, IsSetCurrentChar)
 end
-
 function TemplateDumpUtils:CreateTemplate_InternalChar(Avatar, CharTemInfo, CharId, IsSetCurrentChar)
   local IsCurrentChar = false
-  if 1101 == CharId then
+  if 1101 == CharId and Avatar.CurrentChar then
     local CurrentChar = Avatar.Chars[Avatar.CurrentChar]
-    if CurrentChar.CharId == CharId then
-      IsCurrentChar = true
+    if CurrentChar then
+      if CurrentChar.CharId == CharId then
+        IsCurrentChar = true
+      end
+      Avatar:DelChar(1101, DataMgr.ReasonTypeConsume.GM_CONSUME)
     end
-    Avatar:DelChar(1101, DataMgr.ReasonTypeConsume.GM_CONSUME)
   end
   local need_enhance = CharTemInfo.NeedEnhance or 0
   local char_eid = Avatar:GMAddChar(CharId, CharTemInfo.CharLevel, DataMgr.ReasonTypeGet.GM, nil, need_enhance)
@@ -244,10 +237,14 @@ function TemplateDumpUtils:CreateTemplate_InternalChar(Avatar, CharTemInfo, Char
     self:HandleWeaponSkillLevelInheritCharSkillLevel(char, Avatar, skill)
   end
   self:CreateTemplate_CharCostumeId(CharTemInfo, char, Avatar)
+  if CharTemInfo.Grade then
+    local grade = pcall(tonumber, CharTemInfo.Grade) and tonumber(CharTemInfo.Grade) or 0
+    grade = math.max(math.min(grade, 6), 0)
+    Avatar:RealSetCharGradeLevel(char_eid, grade)
+  end
   Avatar.Chars[char_eid] = char
   return true, char_eid
 end
-
 function TemplateDumpUtils:HandleWeaponSkillLevelInheritCharSkillLevel(Char, Avatar, Skill)
   for i, v in ipairs(Char.UWeaponEids) do
     local UWeapon = Avatar.UWeapons[v]
@@ -256,7 +253,6 @@ function TemplateDumpUtils:HandleWeaponSkillLevelInheritCharSkillLevel(Char, Ava
     end
   end
 end
-
 function TemplateDumpUtils:CreateTemplate_Pet(Avatar, PetId)
   local PetConf = DataMgr.Pet[PetId]
   if not PetConf then
@@ -264,7 +260,6 @@ function TemplateDumpUtils:CreateTemplate_Pet(Avatar, PetId)
   end
   return Avatar:GMAddPet(PetId)
 end
-
 function TemplateDumpUtils:CreateTemplate_Weapon(Avatar, WeaponTemplateId)
   local weapon_tem_info = DataMgr.WeaponTemplate[WeaponTemplateId]
   if not weapon_tem_info then
@@ -281,7 +276,6 @@ function TemplateDumpUtils:CreateTemplate_Weapon(Avatar, WeaponTemplateId)
   Avatar.Weapons[weapon_eid] = weapon
   return weapon_eid
 end
-
 function TemplateDumpUtils:CreateTemplate_SetCharSkin(Target, TargetCostumeInfo)
   local AppearanceSuit = Target.AppearanceSuits[Target.CurrentAppearanceIndex]
   local SkinInfo = DataMgr.Skin[TargetCostumeInfo.SkinId]
@@ -290,7 +284,6 @@ function TemplateDumpUtils:CreateTemplate_SetCharSkin(Target, TargetCostumeInfo)
   end
   return AppearanceSuit
 end
-
 function TemplateDumpUtils:CreateTemplate_SetAccessory(AppearanceSuit, CharCostumeInfo)
   local CharAccessoryIds = {}
   for Name, Index in pairs(CommonConst.NewCharAccessoryTypes) do
@@ -302,7 +295,6 @@ function TemplateDumpUtils:CreateTemplate_SetAccessory(AppearanceSuit, CharCostu
   end
   return CharAccessoryIds
 end
-
 function TemplateDumpUtils:CreateTemplate_CharCostumeId(CharInfo, Char, Avatar)
   if not CharInfo.CharCostumeId then
     return
@@ -331,7 +323,6 @@ function TemplateDumpUtils:CreateTemplate_CharCostumeId(CharInfo, Char, Avatar)
   end
   Avatar.CommonChars[Char.CharId] = CommonChar
 end
-
 function TemplateDumpUtils:CreateTemplate_WeaponCostumeId(WeaponInfo, Weapon, Avatar)
   local WeaponCostumeInfo = DataMgr.WeaponCostumeTemplate[WeaponInfo.WeaponCostumeId]
   if not WeaponCostumeInfo then
@@ -365,5 +356,4 @@ function TemplateDumpUtils:CreateTemplate_WeaponCostumeId(WeaponInfo, Weapon, Av
     end
   end
 end
-
 return TemplateDumpUtils

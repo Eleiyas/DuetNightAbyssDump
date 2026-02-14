@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Update(Idx, Info)
   Info.UI = self
   self.Info = Info
@@ -20,7 +19,6 @@ function M:Update(Idx, Info)
     self:SetReddot(Info.IsNew, Info.ShowRedDot)
   end
 end
-
 function M:SetSwitchOn(IsOn)
   self.IsOn = IsOn
   if IsOn then
@@ -39,32 +37,26 @@ function M:SetSwitchOn(IsOn)
     self.Group_Select:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:Btn_Click()
   if not self.IsOn then
     self:SetSwitchOn(true)
@@ -73,18 +65,15 @@ function M:Btn_Click()
     self.SoundFunc(self.SoundFuncReceiver)
   end
 end
-
 function M:Btn_Press()
   if self:IsAnimationPlaying(self.Pressed) then
     return
   end
   self:PlayAnimation(self.Pressed)
 end
-
 function M:Btn_Hover()
   self:PlayAnimation(self.Hover)
 end
-
 function M:Btn_UnHover()
   if self:IsAnimationPlaying(self.Hover) then
     self:StopAnimation(self.Hover)
@@ -94,7 +83,6 @@ function M:Btn_UnHover()
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SetReddot(IsNew, Upgradeable, OhterReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -115,5 +103,4 @@ function M:SetReddot(IsNew, Upgradeable, OhterReddot)
     end
   end
 end
-
 return M

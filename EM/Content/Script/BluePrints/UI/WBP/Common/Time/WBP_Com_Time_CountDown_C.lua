@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:SetTimeText(TextDesc, TimeDict, TimeIconPath)
   self.Text_TimeTitle:SetText(TextDesc)
   local FinalResult = ""
@@ -23,7 +22,6 @@ function M:SetTimeText(TextDesc, TimeDict, TimeIconPath)
     })
   end
 end
-
 function M:SetEmptyTimeText(TextDesc, TimeStrList, TimeIconPath)
   self.Text_TimeTitle:SetText(TextDesc)
   local FinalResult = ""
@@ -42,7 +40,6 @@ function M:SetEmptyTimeText(TextDesc, TimeStrList, TimeIconPath)
     })
   end
 end
-
 function M:SetForeverTimeText(TextDesc, TimeIconPath)
   self.Text_TimeTitle:SetText(TextDesc)
   self.Text_TimeDesc:SetText(GText("UI_EventTime_Permanent"))
@@ -53,11 +50,9 @@ function M:SetForeverTimeText(TextDesc, TimeIconPath)
     })
   end
 end
-
 function M:OnIconLoadFinished(Object)
   if IsValid(self) then
     self.Image_ClockIcon:SetBrushResourceObject(Object)
   end
 end
-
 return M

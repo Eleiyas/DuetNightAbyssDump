@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class()
-
 function M:Tick(Geo, DeltaTime)
   if self.Player:IsHovered() then
     self.Bg_Me:SetVisibility(ESlateVisibility.Visible)
@@ -18,5 +17,4 @@ function M:Tick(Geo, DeltaTime)
     self.Info:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return M

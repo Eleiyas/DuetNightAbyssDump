@@ -10,7 +10,6 @@ local TypeSort = {
   Reward = 5,
   Resource = 6
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddInputMethodChangedListen()
@@ -25,15 +24,14 @@ function M:Construct()
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.ChapterId = Content.ChapterId
   self.Parent = Content.Parent
   self.IsEmpty = Content.IsEmpty
+  self.DeputeWeekly = Content.DeputeWeekly
   self:InitItemContent()
 end
-
 function M:InitItemContent()
   if self.IsEmpty then
     self.WS_Item:SetActiveWidgetIndex(1)
@@ -42,7 +40,7 @@ function M:InitItemContent()
   self.WS_Item:SetActiveWidgetIndex(0)
   local ChapterData = DataMgr.WeeklySelectDungeon[self.ChapterId]
   if not ChapterData then
-    DebugPrint("SL_\230\137\190\228\184\141\229\136\176\229\133\179\229\141\161\230\149\176\230\141\174:", self.ChapterId)
+    DebugPrint("SL_找不到关卡数据:", self.ChapterId)
     return
   end
   local ChapterIcon = LoadObject(ChapterData.Path)
@@ -68,7 +66,6 @@ function M:InitItemContent()
   self.Text_RewardItem:SetText(GText("UI_DUNGEON_ObtainType"))
   self.Text_GetTask:SetText(GText("UI_DUNGEON_Enter"))
 end
-
 function M:InitWidgetInfoInGamePad()
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -88,7 +85,6 @@ function M:InitWidgetInfoInGamePad()
     bLongPress = false
   })
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -105,7 +101,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:RefreshRewardInfoList(DungeonReward)
   if not DungeonReward then
     DebugPrint("SL DungeonReward is nil")
@@ -163,13 +158,11 @@ function M:RefreshRewardInfoList(DungeonReward)
     end
   end, false, 0, "DeputeWeeklyListView")
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Id = 0
   self.List_Reward:AddItem(Content)
 end
-
 function M:OnClicked()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -192,7 +185,6 @@ function M:OnClicked()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_select_lock", nil, nil)
   end
 end
-
 function M:OnPressed()
   if self.IsUnLocked or self:IsAnimationPlaying(self.In) then
     return
@@ -200,14 +192,12 @@ function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
   if self.IsUnLocked or self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnHovered()
   if self.IsEmpty then
     return
@@ -219,7 +209,6 @@ function M:OnHovered()
   self:StopAnimation(self.Unhover)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsUnLocked or not self.IsPC then
     return
@@ -227,14 +216,12 @@ function M:OnBtnUnhovered()
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.IsUnLocked or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
   end
   self:OnClicked()
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.IsEmpty then
     return
@@ -248,7 +235,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
     self:InitWidgetInfoInGamePad()
   end
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if self.IsEmpty then
     return
@@ -260,7 +246,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.Key_Title:SetVisibility(ESlateVisibility.Collapsed)
   self:PlayAnimationReverse(self.GamePadSelected)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if self.IsUnLocked or self:IsAnimationPlaying(self.In) or not self.IsPC then
@@ -270,7 +255,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Click then
     local Item = UIManager(self):GetUIObj("StyleOfPlay")
@@ -330,7 +314,6 @@ function M:OnAnimationFinished(InAnimation)
     }, nil, true)
   end
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -377,6 +360,7 @@ function M:UpdatKeyDisplay(FocusTypeName)
     self.Key_RewardTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.Key_Title:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.Parent.DeputeTab:UpdateUIStyleInPlatform(false)
+    self.DeputeWeekly:SetBtn_ShopExChangeState(false)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   elseif "SelfWidget" == FocusTypeName or "FocusSelfWidget" == FocusTypeName then
     local BottomKeyInfo = {
@@ -402,6 +386,7 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay.ComTab.Right_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     StyleOfPlay.ComTab.WBP_Com_Tab_ResourceBar.KeyImg_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     StyleOfPlay.ComTab.WBP_Com_Tab_ResourceBar.Tip_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.DeputeWeekly:SetBtn_ShopExChangeState(true)
     self:InitWidgetInfoInGamePad()
     if self.Parent and self.Parent.DeputeTab then
       local bIsOther = "SelfWidget" ~= FocusTypeName
@@ -420,7 +405,6 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -434,7 +418,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftThumbstick" == InKeyName then
@@ -442,10 +425,12 @@ function M:OnGamePadDown(InKeyName)
     if not RewardItemUIs[1]:HasAnyUserFocus() then
       self.List_Reward:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
       self.List_Reward:NavigateToIndex(0)
+      self.FocusName = "List_Reward"
       self:UpdatKeyDisplay("RewardWidget")
       IsEventHandled = true
     else
       self:SetFocus()
+      self.FocusName = "self"
       self:UpdatKeyDisplay("SelfWidget")
       self.List_Reward:SetVisibility(ESlateVisibility.HitTestInvisible)
       IsEventHandled = true
@@ -455,12 +440,15 @@ function M:OnGamePadDown(InKeyName)
     for i = 1, RewardItemUIs:Length() do
       if RewardItemUIs[i]:HasFocusedDescendants() or RewardItemUIs[i]:HasAnyUserFocus() then
         self:SetFocus()
+        self.FocusName = "self"
         self:UpdatKeyDisplay("SelfWidget")
         self.List_Reward:SetVisibility(ESlateVisibility.HitTestInvisible)
         IsEventHandled = true
         break
       end
     end
+  elseif "Gamepad_FaceButton_Top" == InKeyName and "List_Reward" ~= self.FocusName then
+    self.DeputeWeekly:OnGoToSystem()
   else
     local RewardItemUIs = self.List_Reward:GetDisplayedEntryWidgets()
     for i = 1, RewardItemUIs:Length() do
@@ -472,7 +460,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -484,5 +471,4 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self:UpdatKeyDisplay("RewardWidget")
   end
 end
-
 return M

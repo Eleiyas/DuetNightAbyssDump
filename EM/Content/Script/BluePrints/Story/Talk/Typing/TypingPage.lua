@@ -1,6 +1,5 @@
 local FTypingLine = require("Blueprints.Story.Talk.Typing.TypingLine")
 local M = {}
-
 function M:New(Book)
   local TypingPage = {}
   for k, v in pairs(self) do
@@ -11,19 +10,15 @@ function M:New(Book)
   TypingPage.Lines = {}
   return TypingPage
 end
-
 function M:GetMaxSize()
   return self.Book:GetSize()
 end
-
 function M:GetRemainHeight()
   return self:GetMaxSize().Y - self.Size.Y
 end
-
 function M:GetSize()
   return self.Size
 end
-
 function M:AddBlock(Block, TypingUserWidget)
   if Block:GetType() == "br" then
     local br = FTypingLine:New(self)
@@ -50,7 +45,6 @@ function M:AddBlock(Block, TypingUserWidget)
   end
   return Block
 end
-
 function M:RemoveEmptyLinesAtLast()
   local Lenth = #self.Lines
   for i = Lenth, 1, -1 do
@@ -60,15 +54,12 @@ function M:RemoveEmptyLinesAtLast()
     end
   end
 end
-
 function M:GetLineCount()
   return #self.Lines
 end
-
 function M:GetLine(Num)
   return self.Lines[Num]
 end
-
 function M:GetRichText()
   local Str = ""
   for _, Line in ipairs(self.Lines) do
@@ -76,7 +67,6 @@ function M:GetRichText()
   end
   return Str
 end
-
 function M:GetFullText()
   local Str = ""
   for _, Line in ipairs(self.Lines) do
@@ -84,5 +74,4 @@ function M:GetFullText()
   end
   return Str
 end
-
 return M

@@ -3,7 +3,6 @@ local WBP_Common_Dialog_Text01_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_D
 local Rule = FSlateChildSize()
 Rule.SizeRule = UE.ESlateSizeRule.Fill
 Rule.Value = 1.0
-
 function WBP_Common_Dialog_Text01_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local Text
@@ -24,5 +23,4 @@ function WBP_Common_Dialog_Text01_PC_C:InitContent(Params, PopupData, Owner)
   local ListSlot = UE4.UWidgetLayoutLibrary.SlotAsVerticalBoxSlot(self)
   ListSlot:SetSize(Rule)
 end
-
 return WBP_Common_Dialog_Text01_PC_C

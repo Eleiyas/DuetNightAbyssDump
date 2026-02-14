@@ -8,7 +8,6 @@ Menu_World_PC_C._components = {
   "BluePrints.UI.UI_PC.Menu.Reddot.MainUIItem_ReddotTree_Component",
   "BluePrints.UI.WBP.PersonInfo.PersonInfoEditListCompoment"
 }
-
 function Menu_World_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.BtnIdx = 0
@@ -17,17 +16,16 @@ function Menu_World_PC_C:Initialize(Initializer)
   self.FunctionButtonNum = 30
   self.ActivityEntranceId = 19
   self.ShopEntranceId = 4
+  self.RelatedProductEntranceId = 27
+  self.CloudGameEntranceId = 30
 end
-
 function Menu_World_PC_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local ConfigData = {}
   ConfigData.OwnerWidget = self
-  
   function ConfigData.SoundFunc()
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   ConfigData.TextContent = GText("UI_Toast_Experience_Content")
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self:SetPlayerInfo(Player)
@@ -51,7 +49,7 @@ function Menu_World_PC_C:OnLoaded(...)
   self:AddDispatcher(EventID.OnGotTopicReward, self, self.UpdateRedDotStates)
   local BattleMainUI = UIManager(self):GetUI("BattleMain")
   if nil ~= BattleMainUI then
-    BattleMainUI:PlayOutAnim()
+    BattleMainUI:PlayOutAnim(nil, nil, self.WidgetName)
   end
   self:SetFocus()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
@@ -80,7 +78,6 @@ function Menu_World_PC_C:OnLoaded(...)
     self.OnActivityNavigateDown
   })
 end
-
 function Menu_World_PC_C:InitTitle()
   local Avatar = GWorld:GetAvatar()
   local TitleBefore = Avatar.TitleBefore or -1
@@ -88,7 +85,6 @@ function Menu_World_PC_C:InitTitle()
   local TitleFrame = Avatar.TitleFrame or -1
   self:Freshtitle(TitleBefore, TitleAfter, TitleFrame)
 end
-
 function Menu_World_PC_C:Freshtitle(TitleBefore, TitleAfter, TitleFrame)
   if -1 == TitleBefore and -1 == TitleAfter then
     self.WBP_PersonalInfo_TitleSetting.WS_Title:SetActiveWidgetIndex(1)
@@ -103,7 +99,6 @@ function Menu_World_PC_C:Freshtitle(TitleBefore, TitleAfter, TitleFrame)
     self.WBP_PersonalInfo_TitleSetting.Group_Title:AddChildToOverlay(TileFrameWidget)
   end
 end
-
 function Menu_World_PC_C:OnActivityNavigateDown()
   local Item = self.Panel_Function:GetChildAt(2)
   if Item then
@@ -111,7 +106,6 @@ function Menu_World_PC_C:OnActivityNavigateDown()
   end
   return self.Panel_Function:GetChildAt(0)
 end
-
 function Menu_World_PC_C:IsFoucsLeftPanelFunctionBtn()
   local Item1 = self.Panel_Function:GetChildAt(0)
   local Item2 = self.Panel_Function:GetChildAt(1)
@@ -123,11 +117,9 @@ function Menu_World_PC_C:IsFoucsLeftPanelFunctionBtn()
   end
   return false
 end
-
 function Menu_World_PC_C:OnScrollBox_FunctionScrolled()
   local function ReddotAndNewCalFunc(...)
     local Widget = (...)
-    
     if not Widget then
       return false, false
     end
@@ -135,7 +127,6 @@ function Menu_World_PC_C:OnScrollBox_FunctionScrolled()
     local bHasNew = Widget.New and (0 == Widget.New:GetVisibility() or 3 == Widget.New:GetVisibility() or 4 == Widget.New:GetVisibility())
     return bHasReddot, bHasNew
   end
-  
   self:AddTimer(0.2, function()
     if not self then
       return
@@ -143,7 +134,6 @@ function Menu_World_PC_C:OnScrollBox_FunctionScrolled()
     UIUtils.UpdateScrollBoxReddot(self.ScrollBox_Function, self.Com_RedDot_Up, self.Com_RedDot_Down, nil, nil, ReddotAndNewCalFunc)
   end)
 end
-
 function Menu_World_PC_C:ReceiveEnterState(EnteredState)
   self.Super.ReceiveEnterState(self, EnteredState)
   if 1 == EnteredState then
@@ -156,7 +146,6 @@ function Menu_World_PC_C:ReceiveEnterState(EnteredState)
     end
   end
 end
-
 function Menu_World_PC_C:InitCommonBtn()
   if UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
     self.Button_Logout:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -206,7 +195,6 @@ function Menu_World_PC_C:InitCommonBtn()
     self.LogOutKey:AddExecuteLogic(self, self.OnClickExitGame)
   end
 end
-
 function Menu_World_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   local DungenonBattleCount = UIManager(self):GetUI("DungenonBattleCount")
   local CommonConfirmPanel = UIManager(self):GetUI("CommonConfirmPanel")
@@ -215,7 +203,6 @@ function Menu_World_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   if nil ~= DungenonBattleCount or nil ~= CommonConfirmPanel or CommonDialogTip or SettingSkill then
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
-  local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey) then
@@ -224,7 +211,6 @@ function Menu_World_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
     elseif InKeyName == UIConst.GamePadKey.FaceButtonLeft then
       self.LogOutKey:OnButtonPressed()
     elseif InKeyName == UIConst.GamePadKey.FaceButtonTop and not self.IsEditOpen and self.OnClickEdit then
-      IsEventHandled = true
       self:OnClickEdit()
     end
   elseif "Escape" == InKeyName and self.CanCloseByHotKey then
@@ -232,7 +218,6 @@ function Menu_World_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function Menu_World_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
   self.CanCloseByHotKey = true
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -248,7 +233,6 @@ function Menu_World_PC_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function Menu_World_PC_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -263,51 +247,27 @@ function Menu_World_PC_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UIUtils.Unhandled
   end
 end
-
 function Menu_World_PC_C:InitExperienceBtn()
   local Params = {}
   Params.Name = GText("PlayerLevel_ExpSource")
-  
   function Params.OpenDialog()
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_level_03", nil, nil)
     UIManager(self):ShowCommonPopupUI(100249, {Parent = self}, self.ExperienceBtn_EX)
   end
-  
   self.ExperienceBtn_EX:Init(Params)
   Params.Name = GText("PlayerLevel_Buff")
-  
   function Params.OpenDialog()
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_level_03", nil, nil)
     UIManager(self):ShowCommonPopupUI(100245, {Parent = self}, self.ExperienceBtn_Buff)
   end
-  
   self.ExperienceBtn_Buff:Init(Params)
   self.Btn_Experience.AudioEventPath = "event:/ui/common/click_btn_small"
 end
-
-function Menu_World_PC_C:OnExperienceBtnHovered()
-  self.Btn_Experience:PlayAnimation(self.Btn_Experience.Hover)
-end
-
-function Menu_World_PC_C:OnExperienceBtnUnhovered()
-  self.Btn_Experience:PlayAnimation(self.Btn_Experience.Unhover)
-end
-
-function Menu_World_PC_C:OnExperienceBtnPressed()
-  self.Btn_Experience:PlayAnimation(self.Btn_Experience.Press)
-end
-
-function Menu_World_PC_C:OnExperienceBtnReleased()
-  self.Btn_Experience:PlayAnimation(self.Btn_Experience.Normal)
-end
-
 function Menu_World_PC_C:OnClickContinueGame()
   self:Close()
 end
-
 function Menu_World_PC_C:CheckName()
 end
-
 function Menu_World_PC_C:OnClickCommonSet()
   self:StopPress()
   local Setting = UIManager(self):LoadUINew("Setting")
@@ -315,7 +275,6 @@ function Menu_World_PC_C:OnClickCommonSet()
     self:PlayOutAnim()
   end
 end
-
 function Menu_World_PC_C:OnClickExitGame()
   self:StopPress()
   if self.IsEditOpen then
@@ -327,12 +286,10 @@ function Menu_World_PC_C:OnClickExitGame()
   Params.RightCallbackFunction = self.ClickConfirmExitOutBattle
   UIManager(self):ShowCommonPopupUI(100008, Params, self)
 end
-
 function Menu_World_PC_C:ClickConfirmExitOutBattle()
   GWorld.NetworkMgr:OnDisconnectAndLoginAgain()
   self:Close()
 end
-
 function Menu_World_PC_C:Close()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -344,6 +301,8 @@ function Menu_World_PC_C:Close()
   end
   self.CloseBySelf = true
   local BattleMainUI = UIManager(self):GetUI("BattleMain")
+  self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+  self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   if nil ~= BattleMainUI then
     if self.bRecoverImmersionMode then
       local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -354,15 +313,15 @@ function Menu_World_PC_C:Close()
         Player:ImmersionModel()
       end
     end
-    if BattleMainUI:TryRecoverUI() then
+    if BattleMainUI:RemovePlayInOutSystems(self.WidgetName) and BattleMainUI:TryRecoverUI() then
       BattleMainUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
+    BattleMainUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
   if self.IsEditOpen then
     self.IsEditOpen = false
     self:PlayAnimation(self.Edit_List_Out)
   end
-  
   local function PlayAnimFinished()
     self:ReddotTreePlugOut()
     if self.HudRewardList then
@@ -371,7 +330,6 @@ function Menu_World_PC_C:Close()
     self:UnbindAllFromAnimationFinished(self.Out)
     self.Super.Close(self)
   end
-  
   if self.CloseByChild then
     PlayAnimFinished()
   else
@@ -383,7 +341,6 @@ function Menu_World_PC_C:Close()
     Player:SetCanInteractiveTrigger(true)
   end
 end
-
 function Menu_World_PC_C:UpdateRedDotStates()
   for id = 1, self.FunctionButtonNum do
     local Item = self.Panel_Function:GetChildAt(id - 1)
@@ -394,7 +351,6 @@ function Menu_World_PC_C:UpdateRedDotStates()
   self.Entrance_Shop:UpdateRedDot()
   self.Entrance_Activity:UpdateRedDot()
 end
-
 function Menu_World_PC_C:SetPlayerInfo()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -459,7 +415,6 @@ function Menu_World_PC_C:SetPlayerInfo()
     end
   end
 end
-
 function Menu_World_PC_C:InitBg()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -473,18 +428,15 @@ function Menu_World_PC_C:InitBg()
     DynamicMaterial:SetTextureParameterValue("MainTex", Image)
   end
 end
-
 function Menu_World_PC_C:PlayInAnim()
   self:UnbindAllFromAnimationFinished(self.Out)
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function Menu_World_PC_C:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 function Menu_World_PC_C:HideOrShowReddot(Content, id)
   local BtnInfo = DataMgr.MainUI[id]
   local UIUnlockRuleName = BtnInfo.UIUnlockRuleName
@@ -504,7 +456,6 @@ function Menu_World_PC_C:HideOrShowReddot(Content, id)
     end
   end
 end
-
 function Menu_World_PC_C:InitSystemItem()
   self.Panel_Function:ClearChildren()
   self.WB_Entrance:ClearChildren()
@@ -558,6 +509,28 @@ function Menu_World_PC_C:InitSystemItem()
         else
           Item = self.Entrance_Activity
         end
+      elseif id == self.RelatedProductEntranceId then
+        if not UE.AHotUpdateGameMode.IsGlobalPak() then
+          goto lbl_144
+        end
+        goto lbl_270
+        ::lbl_144::
+      elseif id == self.CloudGameEntranceId then
+        local ChannelId = HeroUSDKSubsystem(self):GetChannelId()
+        local IgnoreCNChannelIds = {
+          [46] = true,
+          [303] = true,
+          [269] = true,
+          [286] = true,
+          [297] = true,
+          [301] = true,
+          [300] = true
+        }
+        if not (UE.AHotUpdateGameMode.IsGlobalPak() or IgnoreCNChannelIds[ChannelId]) then
+          goto lbl_178
+        end
+        goto lbl_270
+        ::lbl_178::
       else
         local TaskName = "MenuEntranceBtn_" .. id
         Item = UIManager(GWorld.GameInstance):_CreateWidgetNew(WidgetName)
@@ -582,7 +555,8 @@ function Menu_World_PC_C:InitSystemItem()
             end
             Item.WidgetSwitcher_State:SetActiveWidgetIndex(0)
           end
-          Item:InitButton(self)
+          local IsForbid, ForbidToast = self:CheckSystemForbid(MainUIConfig.SystemUIName)
+          Item:InitButton(self, IsForbid, ForbidToast)
         end
       end
     else
@@ -594,6 +568,7 @@ function Menu_World_PC_C:InitSystemItem()
         self.Entrance_Activity:SetVisibility(UIConst.VisibilityOp.Collapsed)
       end
     end
+    ::lbl_270::
   end
   ItemNum = ItemNum + 4 - ItemNum % 4
   local EmptyNum = ItemNum - InitSuccNum
@@ -606,7 +581,6 @@ function Menu_World_PC_C:InitSystemItem()
     end
   end
 end
-
 function Menu_World_PC_C:LoadExpTip()
   self:StopPress()
   local TipTitle = GText("UI_Toast_Experience_Title")
@@ -614,23 +588,19 @@ function Menu_World_PC_C:LoadExpTip()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_small", nil, nil)
   UIManager(self):LoadUINew(UIConst.CommonDialogTip, TipTitle, TipContent)
 end
-
 function Menu_World_PC_C:OnCopyUID()
   local CopyStr = self.Text_UID:GetText()
   UE.UUIFunctionLibrary.ClipboardCopy(CopyStr)
   UIManager(self):ShowUITip("CommonToastMain", GText("UI_Tosat_Menu_CopyUID"))
 end
-
 function Menu_World_PC_C:OnClickArmory()
   UIUtils.PlayCommonBtnSe(self)
   UIUtils.OpenSystem(1, true)
 end
-
 function Menu_World_PC_C:ShowHudRewardAfterClose(HudRewardTitle, HudRewardList)
   self.HudRewardTitle = HudRewardTitle
   self.HudRewardList = HudRewardList
 end
-
 function Menu_World_PC_C:Show(ShowTag)
   self.Super.Show(self, ShowTag)
   if self.ArmoryItem then
@@ -638,19 +608,16 @@ function Menu_World_PC_C:Show(ShowTag)
   end
   self:SetPlayerInfo()
 end
-
 function Menu_World_PC_C:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function Menu_World_PC_C:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function Menu_World_PC_C:InitArmoryButton()
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
   self.Button_Area.OnPressed:Add(self, self.OnBtnPressed)
@@ -660,7 +627,6 @@ function Menu_World_PC_C:InitArmoryButton()
   end
   self.Button_Area.OnReleased:Add(self, self.OnBtnReleased)
 end
-
 function Menu_World_PC_C:AddReddotListener(ReddotNodeName, func)
   self:RemoveReddotListener(ReddotNodeName)
   ReddotManager.AddListener(ReddotNodeName, self, func)
@@ -669,18 +635,15 @@ function Menu_World_PC_C:AddReddotListener(ReddotNodeName, func)
   end
   self.ListenedReddot[ReddotNodeName] = true
 end
-
 function Menu_World_PC_C:RemoveReddotListener(ReddotNodeName)
   if self.ListenedReddot and self.ListenedReddot[ReddotNodeName] then
     ReddotManager.RemoveListener(ReddotNodeName, self)
     self.ListenedReddot[ReddotNodeName] = false
   end
 end
-
 function Menu_World_PC_C:OnEditBtnReddotChange(Count)
   self.Button_Edit.New:SetEnable(Count > 0)
 end
-
 function Menu_World_PC_C:OnExperienceReddotChange()
   if not ReddotManager.GetTreeNode("ExperienceMain") then
     ReddotManager.AddNode("ExperienceMain")
@@ -692,22 +655,18 @@ function Menu_World_PC_C:OnExperienceReddotChange()
     self.Btn_Experience:SetReddotVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Menu_World_PC_C:Destruct()
   self:RemoveReddotListener("EditBtn", self.OnEditBtnReddotChange)
   self:RemoveReddotListener("ExperienceMain")
   self:RemoveInputMethodChangedListen()
   self.Super.Destruct(self)
 end
-
 function Menu_World_PC_C:PlayButtonClickSound()
   UIUtils.PlayCommonBtnSe(self)
 end
-
 function Menu_World_PC_C:PlayButtonClickAnimation()
   self:PlayAnimation(self.Click)
 end
-
 function Menu_World_PC_C:OnBtnClicked()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self:PlayButtonClickAnimation()
@@ -717,37 +676,30 @@ function Menu_World_PC_C:OnBtnClicked()
   end
   if self.IsEditOpen then
     self.IsEditOpen = false
-    
     local function PlayAnimFinished()
       self:OnClickArmory()
       self:UnbindAllFromAnimationFinished(self.Edit_List_Out)
     end
-    
     self:BindToAnimationFinished(self.Edit_List_Out, {self, PlayAnimFinished})
     self:PlayAnimation(self.Edit_List_Out)
   else
     self:OnClickArmory()
   end
 end
-
 function Menu_World_PC_C:PlayButtonPressAnim()
   self:PlayAnimation(self.Press)
 end
-
 function Menu_World_PC_C:OnBtnPressed()
   self.IsPressing = true
   self:PlayButtonPressAnim()
 end
-
 function Menu_World_PC_C:PlayButtonHoverAnim()
   self:PlayAnimation(self.Hover)
 end
-
 function Menu_World_PC_C:OnBtnHovered()
   self.IsHovering = true
   self:PlayButtonHoverAnim()
 end
-
 function Menu_World_PC_C:SetBtnHovered(IsHovered)
   if IsHovered then
     self:OnBtnHovered()
@@ -755,16 +707,13 @@ function Menu_World_PC_C:SetBtnHovered(IsHovered)
     self:OnBtnUnhovered()
   end
 end
-
 function Menu_World_PC_C:PlayButtonReleaseButHoverAnim()
   self:StopAnimation(self.Click)
   self:PlayButtonHoverAnim()
 end
-
 function Menu_World_PC_C:PlayButtonReleaseAndUnHoverAnim()
   self:SwitchNormalAnimation()
 end
-
 function Menu_World_PC_C:OnBtnReleased()
   self.IsPressing = false
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -777,29 +726,24 @@ function Menu_World_PC_C:OnBtnReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function Menu_World_PC_C:PlayButtonUnHoverAnim()
   self:SwitchNormalAnimation()
 end
-
 function Menu_World_PC_C:OnBtnUnhovered()
   self.IsHovering = false
   if not self.IsPressing then
     self:PlayButtonUnHoverAnim()
   end
 end
-
 function Menu_World_PC_C:SwitchNormalAnimation()
   self:PlayAnimation(self.UnHover)
 end
-
 function Menu_World_PC_C:StopPress()
   if not CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self:StopAnimation(self.Press)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function Menu_World_PC_C:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
@@ -807,7 +751,6 @@ function Menu_World_PC_C:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName
     self:InitKeyboardView()
   end
 end
-
 function Menu_World_PC_C:OnPanelNavigationToBoundary(NavigationDirection)
   if NavigationDirection == EUINavigation.Up then
     local IsFocusLeft = self:IsFoucsLeftPanelFunctionBtn()
@@ -828,7 +771,6 @@ function Menu_World_PC_C:OnPanelNavigationToBoundary(NavigationDirection)
     end
   end
 end
-
 function Menu_World_PC_C:OnBtnTextDown(NavigationDirection)
   if NavigationDirection == EUINavigation.Down then
     if 0 == self.Entrance_Shop.WidgetSwitcher_State:GetActiveWidgetIndex() then
@@ -843,7 +785,6 @@ function Menu_World_PC_C:OnBtnTextDown(NavigationDirection)
     end
   end
 end
-
 function Menu_World_PC_C:OnWBEntranceNavigateRight(NavigationDirection)
   if NavigationDirection == EUINavigation.Right then
     if 0 == self.Entrance_Shop.WidgetSwitcher_State:GetActiveWidgetIndex() then
@@ -858,21 +799,18 @@ function Menu_World_PC_C:OnWBEntranceNavigateRight(NavigationDirection)
     end
   end
 end
-
 function Menu_World_PC_C:ForbidNavigate()
   self.Button_Edit:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Btn_Experience:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Button_Copy:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Close_Area:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Menu_World_PC_C:RecoverNavigate()
   self.Button_Edit:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Experience:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Button_Copy:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Close_Area:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function Menu_World_PC_C:SwitchToPC()
   if not UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
     self.Button_Logout:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -884,7 +822,6 @@ function Menu_World_PC_C:SwitchToPC()
   end
   self.Key_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function Menu_World_PC_C:SwitchToGamePad()
   if not UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
     self.Button_Logout:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -896,7 +833,6 @@ function Menu_World_PC_C:SwitchToGamePad()
   end
   self.Key_Edit:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function Menu_World_PC_C:InitGamepadView()
   self:ForbidNavigate()
   self:SwitchToGamePad()
@@ -914,12 +850,10 @@ function Menu_World_PC_C:InitGamepadView()
     self.GameInputModeSubsystem:UpdateCurrentFocusWidgetPos()
   end
 end
-
 function Menu_World_PC_C:InitKeyboardView()
   self:RecoverNavigate()
   self:SwitchToPC()
 end
-
 function Menu_World_PC_C:SetFocus_Lua()
   if not self.GameInputModeSubsystem then
     return
@@ -937,6 +871,37 @@ function Menu_World_PC_C:SetFocus_Lua()
     end, false, 0, nil, true)
   end
 end
-
+local function DayAndNightForbidFunc(self)
+  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
+  if not GameMode then
+    return true
+  end
+  local SubSystem = GameMode:GetRegionDataMgrSubSystem()
+  if not SubSystem then
+    return true
+  end
+  local CurSubRegionId = SubSystem:GetCurSubRegionId()
+  if not CurSubRegionId or CurSubRegionId <= 0 then
+    return true
+  end
+  local SubRegionData = DataMgr.SubRegion[CurSubRegionId]
+  if not SubRegionData then
+    return true
+  end
+  return SubRegionData.TODSetting ~= true
+end
+local ForbidFunc = {DayAndNight = DayAndNightForbidFunc}
+local ForbidToasts = {
+  DayAndNight = "UI_Disabled_Des_SetTime"
+}
+function Menu_World_PC_C:CheckSystemForbid(SystemUIName)
+  local ForbidFunc = ForbidFunc[SystemUIName]
+  local ForbidToast = ForbidToasts[SystemUIName]
+  if ForbidFunc then
+    return ForbidFunc(self), ForbidToast
+  else
+    return false
+  end
+end
 AssembleComponents(Menu_World_PC_C)
 return Menu_World_PC_C

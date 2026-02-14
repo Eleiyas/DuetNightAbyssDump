@@ -3,7 +3,6 @@ local WBP_MiniGame_Mima_P_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_MiniGame_Mima_P_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Panel_L:SetRenderOpacity(1)
@@ -13,7 +12,6 @@ function WBP_MiniGame_Mima_P_C:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self:InitDeviceInfo()
   self:InitListenEvent()
 end
-
 function WBP_MiniGame_Mima_P_C:OnLoaded(...)
   DebugPrint("thy      WBP_MiniGame_Mima_P_C:InitUIInfo")
   self.GameDifficulty, self.GameTotalTime, self.RougueLikeComponent, self.RougueLikeCallback = ...
@@ -98,7 +96,6 @@ function WBP_MiniGame_Mima_P_C:OnLoaded(...)
     self:InitAfterBeginPlay()
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitAfterBeginPlay()
   if not self.GameDifficulty then
     self.GameDifficulty = self.Difficulty
@@ -128,7 +125,6 @@ function WBP_MiniGame_Mima_P_C:InitAfterBeginPlay()
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/morse_start", "MorseGameStart", nil)
 end
-
 function WBP_MiniGame_Mima_P_C:InitCrack()
   if not self.bCanCrack then
     self.MiniGame_Crack:SetVisibility(ESlateVisibility.Collapsed)
@@ -144,12 +140,10 @@ function WBP_MiniGame_Mima_P_C:InitCrack()
   self.MiniGame_Crack:SetVisibility(ESlateVisibility.Visibility)
   self.MiniGame_Crack:Init(Param)
 end
-
 function WBP_MiniGame_Mima_P_C:InitTime()
   self.MiniGame_Time.Text_Time:SetText("00:" .. tostring(self.GameTotalTime))
   self:AddTimer(1, self.CountDown, true, 0.1, "MorseGameTimer", true)
 end
-
 function WBP_MiniGame_Mima_P_C:CountDown()
   self.GameTotalTime = self.GameTotalTime - 1
   if self.GameTotalTime < 0 then
@@ -169,7 +163,6 @@ function WBP_MiniGame_Mima_P_C:CountDown()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_countdown", "CountDownNormal", nil)
   self.MiniGame_Time.Text_Time:SetText("00:" .. tostring(self.GameTotalTime))
 end
-
 function WBP_MiniGame_Mima_P_C:InitUIContent()
   self:HideSomeWidgetAboutPasswordLen()
   self:InitText()
@@ -181,13 +174,11 @@ function WBP_MiniGame_Mima_P_C:InitUIContent()
   self:UpdateCurTipAndInputPos()
   self:InitButtonInMainUI()
 end
-
 function WBP_MiniGame_Mima_P_C:InitButtonInMainUI()
   if self.Button_Close then
     self.Button_Close:Init("Close", self, self.NormalExit)
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitBtnTipsUI()
   if not self.CurInputDeviceType or self.CurInputDeviceType == ECommonInputType.Touch then
     DebugPrint("thy    InitBtnTipsUI", self.CurInputDeviceType)
@@ -233,7 +224,6 @@ function WBP_MiniGame_Mima_P_C:InitBtnTipsUI()
     end
   end
 end
-
 function WBP_MiniGame_Mima_P_C:UpdateTurnInfo()
   if self.CurTurn + 1 > self.TotalTurn then
     self:CompleteGame()
@@ -247,7 +237,6 @@ function WBP_MiniGame_Mima_P_C:UpdateTurnInfo()
     self:PlayAnimation(self.CompletePrompt)
   end
 end
-
 function WBP_MiniGame_Mima_P_C:UpdatePasswordInfo()
   self:PlayAnimation(self.BoutRefresh)
   self:InitText()
@@ -258,14 +247,12 @@ function WBP_MiniGame_Mima_P_C:UpdatePasswordInfo()
   self:UpdateCurTipAndInputPos()
   self.IsLock = false
 end
-
 function WBP_MiniGame_Mima_P_C:HideSomeWidgetAboutPasswordLen()
   for i = 1, 4 do
     self["Tips0" .. i]:SetVisibility(ESlateVisibility.Collapsed)
     self["Num_Enter0" .. i]:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitPasswordInfo()
   local _, Password = self:GetCurPassword()
   for i = 1, self.PasswordLen[self.CurTurn] do
@@ -273,7 +260,6 @@ function WBP_MiniGame_Mima_P_C:InitPasswordInfo()
     self["Tips0" .. i]:InitIcon(Password[i])
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitPasswordIcon()
   for i = 1, 10 do
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
@@ -282,7 +268,6 @@ function WBP_MiniGame_Mima_P_C:InitPasswordIcon()
     self.TileView_Clue:AddItem(Content)
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitInputPassword()
   for i = 1, self.PasswordLen[self.CurTurn] do
     self["Num_Enter0" .. i]:SetVisibility(ESlateVisibility.Visibility)
@@ -291,7 +276,6 @@ function WBP_MiniGame_Mima_P_C:InitInputPassword()
   end
   self.CurInputPasswordIndex = 1
 end
-
 function WBP_MiniGame_Mima_P_C:UpdateCurTipAndInputPos()
   for i = 1, self.PasswordLen[self.CurTurn] do
     self["Tips0" .. i]:PlayAnimation(self["Tips0" .. i].Normal)
@@ -303,7 +287,6 @@ function WBP_MiniGame_Mima_P_C:UpdateCurTipAndInputPos()
   self["Num_Enter0" .. math.max(1, self.CurInputPasswordIndex - 1)]:PlayAnimation(self["Num_Enter0" .. math.max(1, self.CurInputPasswordIndex - 1)].Normal)
   self["Num_Enter0" .. self.CurInputPasswordIndex]:PlayAnimation(self["Num_Enter0" .. self.CurInputPasswordIndex].Click)
 end
-
 function WBP_MiniGame_Mima_P_C:InputPassword(Password)
   if self.IsLock then
     return
@@ -325,11 +308,9 @@ function WBP_MiniGame_Mima_P_C:InputPassword(Password)
     InputPasswordItem:PlayErrorInputAnimation()
   end
 end
-
 function WBP_MiniGame_Mima_P_C:UnLock()
   self.IsLock = false
 end
-
 function WBP_MiniGame_Mima_P_C:CheckPasswordCorrect(Password)
   local _, PasswordArr = self:GetCurPassword()
   for key, value in pairs(PasswordArr) do
@@ -341,7 +322,6 @@ function WBP_MiniGame_Mima_P_C:CheckPasswordCorrect(Password)
   DebugPrint("thy    Password", Password)
   return CorrectPassword == Password
 end
-
 function WBP_MiniGame_Mima_P_C:InitPasswordBtn()
   for i = 1, 10 do
     if 10 == i then
@@ -351,7 +331,6 @@ function WBP_MiniGame_Mima_P_C:InitPasswordBtn()
     end
   end
 end
-
 function WBP_MiniGame_Mima_P_C:PasswordBtnNormal(Index)
   Index = 0 == Index and 10 or Index
   for i = 1, 10 do
@@ -363,14 +342,12 @@ function WBP_MiniGame_Mima_P_C:PasswordBtnNormal(Index)
     end
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitText()
   self.Text_Float:SetText(GText("UI_MiniGame_Morse_Intro"))
   self.Text_Tips:SetText(string.format(GText("UI_MiniGame_Morse_Turn"), self.CurTurn, self.TotalTurn))
   self.Text_Top:SetText(GText("UI_MiniGame_Morse_Password"))
   self.Text_Down:SetText(GText("UI_MiniGame_Morse_Password_Clue"))
 end
-
 function WBP_MiniGame_Mima_P_C:InitDataInfo()
   self.GameDataList = DataMgr["MiniGameMorse" .. self.GameDifficulty]
   if self.GameDataList and #self.GameDataList > 0 then
@@ -387,7 +364,6 @@ function WBP_MiniGame_Mima_P_C:InitDataInfo()
     self.PasswordList[i] = self:InitPassword(i)
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitPassword(CurTurn)
   local CurPasswordArr = {}
   local CurPasswordList = {}
@@ -417,7 +393,6 @@ function WBP_MiniGame_Mima_P_C:InitPassword(CurTurn)
   end
   return CurPasswordList
 end
-
 function WBP_MiniGame_Mima_P_C:CheckIsRepeat(CurPassword)
   for _, Password in pairs(self.PasswordList) do
     if CurPassword == Password[1] then
@@ -426,7 +401,6 @@ function WBP_MiniGame_Mima_P_C:CheckIsRepeat(CurPassword)
   end
   return false
 end
-
 function WBP_MiniGame_Mima_P_C:GetCurPassword()
   local PasswordArr = {}
   DebugPrint("thy    CurTurn", self.CurTurn)
@@ -434,7 +408,6 @@ function WBP_MiniGame_Mima_P_C:GetCurPassword()
   table.move(PasswordList, 2, #PasswordList, 1, PasswordArr)
   return self.PasswordList[self.CurTurn][1], PasswordArr
 end
-
 function WBP_MiniGame_Mima_P_C:CompleteGame()
   self.IsWin = true
   self.MiniGame_Text:SetVisibility(ESlateVisibility.Visible)
@@ -444,7 +417,6 @@ function WBP_MiniGame_Mima_P_C:CompleteGame()
   self.MiniGame_Text.Switcher_Tip:SetActiveWidgetIndex(0)
   self:RemoveTimer("MorseGameTimer")
 end
-
 function WBP_MiniGame_Mima_P_C:CrackGame()
   self.IsWin = true
   self.MiniGame_Text:SetVisibility(ESlateVisibility.Visible)
@@ -453,12 +425,10 @@ function WBP_MiniGame_Mima_P_C:CrackGame()
   self.MiniGame_Text.Switcher_Tip:SetActiveWidgetIndex(0)
   self:RemoveTimer("MorseGameTimer")
 end
-
 function WBP_MiniGame_Mima_P_C:Reset()
   self:InitInputPassword()
   self:UpdateCurTipAndInputPos()
 end
-
 function WBP_MiniGame_Mima_P_C:TimeOut()
   self.MiniGame_Text:SetVisibility(ESlateVisibility.Visible)
   self.MiniGame_Text.Text_Fail:SetText(GText("UI_MiniGame_Fail"))
@@ -467,7 +437,6 @@ function WBP_MiniGame_Mima_P_C:TimeOut()
   self:PlayAnimation(self.Fail_Out)
   self:RemoveTimer("MorseGameTimer")
 end
-
 function WBP_MiniGame_Mima_P_C:NormalExit()
   self.MiniGame_Text:SetVisibility(ESlateVisibility.Visible)
   self.MiniGame_Text.Text_Fail:SetText(GText("UI_MiniGame_Fail"))
@@ -476,7 +445,6 @@ function WBP_MiniGame_Mima_P_C:NormalExit()
   self:PlayAnimation(self.Fail_Out)
   self:RemoveTimer("MorseGameTimer")
 end
-
 function WBP_MiniGame_Mima_P_C:Close()
   DebugPrint("thy     CloseGame")
   if self.RougueLikeCallback then
@@ -489,7 +457,6 @@ function WBP_MiniGame_Mima_P_C:Close()
   end
   self.Super.Close(self)
 end
-
 function WBP_MiniGame_Mima_P_C:InitDeviceInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -497,30 +464,26 @@ function WBP_MiniGame_Mima_P_C:InitDeviceInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_MiniGame_Mima_P_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_MiniGame_Mima_P_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("thy     CurGamepadName", CurGamepadName)
   DebugPrint("thy     CurInputDevice", CurInputDevice)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
   self.CurGamepadName = CurGamepadName
   self:InitMainUI()
 end
-
 function WBP_MiniGame_Mima_P_C:InitMainUI()
   self:InitBtnTipsUI()
   self.Btn_List.Btn5:SetFocus()
 end
-
 function WBP_MiniGame_Mima_P_C:Handle_OnPCDown(InKeyName)
   DebugPrint("thy   Handle_OnPCDown", InKeyName)
   if "Escape" == InKeyName then
@@ -573,7 +536,6 @@ function WBP_MiniGame_Mima_P_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function WBP_MiniGame_Mima_P_C:Handle_OnGamePadDown(InKeyName)
   DebugPrint("thy    Handle_OnGamePadDown", InKeyName)
   if "Gamepad_FaceButton_Top" == InKeyName then
@@ -587,7 +549,6 @@ function WBP_MiniGame_Mima_P_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_MiniGame_Mima_P_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -605,5 +566,4 @@ function WBP_MiniGame_Mima_P_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 return WBP_MiniGame_Mima_P_C

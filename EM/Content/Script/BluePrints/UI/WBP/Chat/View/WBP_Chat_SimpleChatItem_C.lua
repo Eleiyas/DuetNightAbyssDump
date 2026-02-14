@@ -5,7 +5,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   if not GWorld.NetworkMgr:CheckIsConnected(true) then
     return
@@ -15,18 +14,22 @@ function M:OnListItemObjectSet(Content)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:Open(Content.MsgWrap, Content.bSound)
 end
-
 function M:BP_OnEntryReleased()
   self:ResetTranslation()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Content.UI = nil
 end
-
 function M:Open(MsgWrap, bSound)
   local Spacker, RawSpacker = ChatController:ParseSpeakerHeader(MsgWrap)
   local Content = ChatController:ParseEmojiToText(MsgWrap)
-  Content = ChatController:ParseModSuitText(MsgWrap)
-  Content = ChatController:ParseDyePlanText(MsgWrap)
+  local ModSuitContent = ChatController:ParseModSuitText(MsgWrap)
+  if ModSuitContent then
+    Content = ModSuitContent
+  end
+  local DyePlanContent = ChatController:ParseDyePlanText(MsgWrap)
+  if DyePlanContent then
+    Content = DyePlanContent
+  end
   local RawContent = RawSpacker .. Content
   local RawContentTable = StringUtils.Utf8ToTable(RawContent)
   local HalfLength = #RawContentTable
@@ -44,7 +47,7 @@ function M:Open(MsgWrap, bSound)
     if 0 == HalfLength then
       local Splited = StringUtils.Utf8ToTable(table.concat(RawContent:split(ChatCommon.Spliter), "", 2))
       if NowLineWidth > TargetLineWidth then
-        Splited = table.slice(Splited, 1, #Splited - 1)
+        Splited = table.slice(Splited, 1, #Splited - 2)
       end
       local InsertPos = string.len(table.concat(Splited))
       Content = Content:insert(InsertPos, "\n")
@@ -94,13 +97,11 @@ function M:Open(MsgWrap, bSound)
   end
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.In)
 end
-
 function M:ResetTranslation()
   self.RenderSizeCache = nil
   self.TranslateCache.Y = 0
   self:SetRenderTranslation(self.TranslateCache)
 end
-
 function M:DoMove(ProgressTime)
   local Curve = ChatController:GetModel().SimpleChatOutAnimCurve
   if not Curve then
@@ -113,7 +114,6 @@ function M:DoMove(ProgressTime)
   self.TranslateCache.Y = -MovePos
   self:SetRenderTranslation(self.TranslateCache)
 end
-
 function M:Close()
   self:RemoveTicker()
   self:RemoveCloseTimer()
@@ -123,7 +123,6 @@ function M:Close()
     BattleUI:OnSimpleChatClose(self)
   end
 end
-
 function M:RemoveTicker()
   if not self:IsExistTimer(self._TickForTextSize) then
     return
@@ -132,7 +131,6 @@ function M:RemoveTicker()
   self:SetRenderOpacity(1)
   self._TickForTextSize = nil
 end
-
 function M:RemoveCloseTimer()
   if not self:IsExistTimer(self._TimerForAutoClose) then
     return
@@ -140,18 +138,15 @@ function M:RemoveCloseTimer()
   self:RemoveTimer(self._TimerForAutoClose, true)
   self._TimerForAutoClose = nil
 end
-
 function M:Construct()
   self._TickForTextSize = nil
   self._TimerForAutoClose = nil
   self.TranslateCache = FVector2D(0, 0)
 end
-
 function M:Destruct()
   self:StopAllAnimations()
   self:RemoveTicker()
   self:RemoveCloseTimer()
   self:ResetTranslation()
 end
-
 return M

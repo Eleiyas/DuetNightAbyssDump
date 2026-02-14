@@ -1,5 +1,4 @@
 local M = {}
-
 function M:CreateNode(Flow, TalkTask, Params)
   local LookAtDescription = Params.LookAtDescription
   local bIsRoot = Params.Root
@@ -22,7 +21,6 @@ function M:CreateNode(Flow, TalkTask, Params)
         Node.FinishPin
       })
     end
-    
     LookActor = TalkContext.TalkActionManager:LookAtReady(TalkTaskData, TalkTask, LookAtDescription, bIsRoot, FinishCallback)
     TalkContext.TalkTimerManager:AddTimer(Node, 4, false, nil, nil, FinishCallback)
   end)
@@ -47,5 +45,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return LookAtNode
 end
-
 return M

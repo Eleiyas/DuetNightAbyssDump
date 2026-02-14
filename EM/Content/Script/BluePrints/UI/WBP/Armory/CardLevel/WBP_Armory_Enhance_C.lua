@@ -6,7 +6,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:Construct()
   local Platfrom = CommonUtils.GetDeviceTypeByPlatformName(self)
   self.SuccessToast:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -35,7 +34,6 @@ function M:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnWeaponGradeLevelUp, self)
   EventManager:RemoveEvent(EventID.OnUpdateBagItem, self)
@@ -43,7 +41,6 @@ function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.Out)
   self:UnbindAllFromAnimationFinished(self.LevelUp_In)
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.TargetWeapon = Params.Target
@@ -66,7 +63,6 @@ function M:Init(Params)
   self:UpdateWeaponGradeLevelInfo()
   self:InitUI()
 end
-
 function M:InitUI()
   if self.IsPreviewMode then
     self.Preview:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -74,23 +70,18 @@ function M:InitUI()
     self.Preview:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetAllWeapons()
   return self.AllWeapons
 end
-
 function M:GetWeaponTag()
   return self.Tag
 end
-
 function M:GetChosenContents()
   return self.Parent.ConsumedContentsArray
 end
-
 function M:GetCurrentWeapon()
   return self.CurrentPlayerWeapon
 end
-
 function M:FillEmptyItems(ItemCount, bShowAddIcon)
   for i = self.MaxItemCount - ItemCount + 1, self.MaxItemCount do
     local Obj = {}
@@ -117,7 +108,6 @@ function M:FillEmptyItems(ItemCount, bShowAddIcon)
     end
   end
 end
-
 function M:OnListEntryInitialized(Content, Widget)
   if not Widget then
     return
@@ -133,11 +123,15 @@ function M:OnListEntryInitialized(Content, Widget)
     Widget:SetItemMinus(false)
   end
 end
-
 function M:UpdateWeaponGradeLevelInfo()
   local AddLevel = 0
   for _, value in pairs(self.Parent.ConsumedContentsMap) do
-    AddLevel = AddLevel + value.GradeLevel + 1
+    if value.ItemType == "Resource" then
+      local ConsumedCount = value.ConsumedCount or 1
+      AddLevel = AddLevel + ConsumedCount
+    else
+      AddLevel = AddLevel + value.GradeLevel + 1
+    end
   end
   local CurrentGradeLevel = self.TargetWeapon.GradeLevel
   self.CurrentGradeLevel = CurrentGradeLevel
@@ -171,12 +165,12 @@ function M:UpdateWeaponGradeLevelInfo()
     if CurrentSkillDesc then
       self.Text_Detail:SetText(CurrentSkillDesc)
     else
-      DebugPrint(ErrorTag, "::PassiveEffectsDesc is nil,\232\175\183\230\163\128\230\159\165WeaponId", self.TargetWeapon.WeaponId)
+      DebugPrint(ErrorTag, "::PassiveEffectsDesc is nil,请检查WeaponId", self.TargetWeapon.WeaponId)
     end
   elseif SkillDesc then
     self.Text_Detail:SetText(GText("UI_Armory_NextStage") .. ": " .. SkillDesc)
   else
-    DebugPrint(ErrorTag, "::PassiveEffectsDesc is nil,\232\175\183\230\163\128\230\159\165WeaponId", self.TargetWeapon.WeaponId)
+    DebugPrint(ErrorTag, "::PassiveEffectsDesc is nil,请检查WeaponId", self.TargetWeapon.WeaponId)
   end
   if self.IsPreviewMode then
     self.Preview:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -191,7 +185,6 @@ function M:UpdateWeaponGradeLevelInfo()
   self:UpdateWeaponGradeLevelButtonState()
   self:UpdateWeaponGradeHintText(ComparedGradeLevel)
 end
-
 function M:UpdateWeaponGradeLevelButtonState()
   if self.CurrentGradeLevel == self.ComparedGradeLevel then
     self.Parent.Btn_Enhance:ForbidBtn(true)
@@ -226,7 +219,6 @@ function M:UpdateWeaponGradeLevelButtonState()
   self.Parent.SubWidget.Num_EnhanceLevel:SetText(self.CurrentGradeLevel)
   self.Parent.SubWidget:EnhanceItem(self.CurrentGradeLevel)
 end
-
 function M:UpdateWeaponGradeHintText(ComparedGradeLevel)
   local Avatar = GWorld:GetAvatar()
   local ArchiveType = self.Tag == "Melee" and 1002 or 1003
@@ -244,17 +236,19 @@ function M:UpdateWeaponGradeHintText(ComparedGradeLevel)
     self.Parent.WidgetSwitcher_Hint:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   Events = Events or {}
   self.Event_OnConsumedItemChanged = Events.OnConsumedItemChanged
   self.Event_OnWeaponGradeLevelUp = Events.OnWeaponGradeLevelUp
 end
-
 function M:OnListItemClicked(Content)
   if Content.Uuid then
-    self:RemoveItem(Content)
+    if Content.ItemType == "Resource" then
+      self:ReduceResourceCount(Content)
+    else
+      self:RemoveItem(Content)
+    end
   elseif self.ComparedGradeLevel >= self.MaxGradeLevel then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("Max_Level_Achieved"))
   else
@@ -263,6 +257,17 @@ function M:OnListItemClicked(Content)
       if not Weapon:IsLock() and not self.Parent.ConsumedContentsMap[Uuid] then
         CanAddItem = true
         break
+      end
+    end
+    if not CanAddItem then
+      for Uuid, Content in pairs(self.Parent.ContentsMap) do
+        if Content.ItemType == "Resource" and Content.Count > 0 then
+          local ExistingObj = self.Parent.ConsumedContentsMap[Uuid]
+          if not ExistingObj or ExistingObj.ConsumedCount < Content.Count then
+            CanAddItem = true
+            break
+          end
+        end
       end
     end
     if not CanAddItem then
@@ -278,22 +283,30 @@ function M:OnListItemClicked(Content)
   end
   self.Parent:UpdateAutoButtonText()
 end
-
 function M:ClearItems()
   self.Parent.ConsumedContentsMap = {}
   self.Parent.ConsumedContentsArray = {}
   self:UpdateConsumedItems({})
 end
-
 function M:RemoveItem(Content)
-  local RemoveIdx
+  local RemoveIdx, RemovedItem
   for index, value in ipairs(self.Parent.ConsumedContentsArray) do
     if value.Uuid == Content.Uuid then
       RemoveIdx = index
+      RemovedItem = value
       break
     end
   end
-  if RemoveIdx then
+  if RemoveIdx and RemovedItem then
+    if self.Parent.OnChosenItemChanged then
+      local TempArray = {}
+      for i, item in ipairs(self.Parent.ConsumedContentsArray) do
+        if i ~= RemoveIdx then
+          table.insert(TempArray, item)
+        end
+      end
+      self.Parent:OnChosenItemChanged(TempArray)
+    end
     self.Parent.ConsumedContentsMap[self.Parent.ConsumedContentsArray[RemoveIdx].Uuid] = nil
     table.remove(self.Parent.ConsumedContentsArray, RemoveIdx)
     if self.Parent.ConsumedContentsArray and 0 == #self.Parent.ConsumedContentsArray then
@@ -303,57 +316,118 @@ function M:RemoveItem(Content)
     self:UpdateConsumedItems(self.Parent.ConsumedContentsArray)
   end
 end
-
 function M:AddItemToLast(Content)
   self.IsPreviewMode = true
-  local Weapon = self.AllWeapons[Content.Uuid]
-  if self.ComparedGradeLevel >= self.MaxGradeLevel then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_CantAdd"))
-  elseif Weapon:IsLock() then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_Locked"))
-  elseif self.CurrentPlayerWeapon.Uuid == Content.Uuid then
-    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponCardLevel_Popup_PlayerEquiped"))
+  if Content.ItemType == "Resource" then
+    if self.ComparedGradeLevel >= self.MaxGradeLevel then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_CantAdd"))
+    elseif Content.Count <= 0 then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_NoResource"))
+    else
+      local Obj = ArmoryUtils:CopyCharOrWeaponItemContent(Content)
+      Obj.Parent = self
+      Obj.IsNew = false
+      Obj.bAdd = false
+      Obj.bMinus = true
+      Obj.ConsumedCount = 1
+      Obj.Count = 1
+      Obj.OnMouseButtonDownEvent = {
+        Obj = self,
+        Callback = function()
+          self:OnListItemMouseDown(Obj)
+        end,
+        Params = Obj
+      }
+      Obj.OnMouseButtonUpEvents = {
+        Obj = self,
+        Callback = function()
+          self:OnListItemMouseUp(Obj)
+        end,
+        Params = Obj
+      }
+      Obj.bSyncLoadIcon = true
+      self.Parent.ConsumedContentsMap[Obj.Uuid] = Obj
+      table.insert(self.Parent.ConsumedContentsArray, Obj)
+      self:UpdateConsumedItems(self.Parent.ConsumedContentsArray)
+    end
   else
-    local Obj = ArmoryUtils:CopyCharOrWeaponItemContent(Content)
-    Obj.Parent = self
-    Obj.IsNew = false
-    Obj.bAdd = false
-    Obj.bMinus = true
-    Obj.OnMouseButtonDownEvent = {
-      Obj = self,
-      Callback = function()
-        self:OnListItemMouseDown(Obj)
-      end,
-      Params = Obj
-    }
-    Obj.OnMouseButtonUpEvents = {
-      Obj = self,
-      Callback = function()
-        self:OnListItemMouseUp(Obj)
-      end,
-      Params = Obj
-    }
-    Obj.bSyncLoadIcon = true
-    self.Parent.ConsumedContentsMap[Obj.Uuid] = Obj
-    table.insert(self.Parent.ConsumedContentsArray, Obj)
-    self:UpdateConsumedItems(self.Parent.ConsumedContentsArray)
+    local Weapon = self.AllWeapons[Content.Uuid]
+    if self.ComparedGradeLevel >= self.MaxGradeLevel then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_CantAdd"))
+    elseif Weapon:IsLock() then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_Locked"))
+    elseif self.CurrentPlayerWeapon.Uuid == Content.Uuid then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponCardLevel_Popup_PlayerEquiped"))
+    else
+      local Obj = ArmoryUtils:CopyCharOrWeaponItemContent(Content)
+      Obj.Parent = self
+      Obj.IsNew = false
+      Obj.bAdd = false
+      Obj.bMinus = true
+      Obj.OnMouseButtonDownEvent = {
+        Obj = self,
+        Callback = function()
+          self:OnListItemMouseDown(Obj)
+        end,
+        Params = Obj
+      }
+      Obj.OnMouseButtonUpEvents = {
+        Obj = self,
+        Callback = function()
+          self:OnListItemMouseUp(Obj)
+        end,
+        Params = Obj
+      }
+      Obj.bSyncLoadIcon = true
+      self.Parent.ConsumedContentsMap[Obj.Uuid] = Obj
+      table.insert(self.Parent.ConsumedContentsArray, Obj)
+      self:UpdateConsumedItems(self.Parent.ConsumedContentsArray)
+    end
   end
   if self.IsFirstAddItem then
     self.IsFirstAddItem = false
     self.Parent:ReNavigateToListItem()
   end
 end
-
+function M:AddResourceCount(Content)
+  local ExistingObj = self.Parent.ConsumedContentsMap[Content.Uuid]
+  if not ExistingObj then
+    self:AddItemToLast(Content)
+    return
+  end
+  if self.ComparedGradeLevel >= self.MaxGradeLevel then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_CantAdd"))
+    return
+  end
+  if ExistingObj.ConsumedCount >= Content.Count then
+    UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_WeaponStrength_NoResource"))
+    return
+  end
+  ExistingObj.ConsumedCount = ExistingObj.ConsumedCount + 1
+  ExistingObj.Count = ExistingObj.Count + 1
+  self:UpdateConsumedItems(self.Parent.ConsumedContentsArray)
+end
+function M:ReduceResourceCount(Content)
+  local ExistingObj = self.Parent.ConsumedContentsMap[Content.Uuid]
+  if not ExistingObj then
+    return
+  end
+  if ExistingObj.ConsumedCount > 1 then
+    ExistingObj.ConsumedCount = ExistingObj.ConsumedCount - 1
+    ExistingObj.Count = ExistingObj.Count - 1
+    self:UpdateConsumedItems(self.Parent.ConsumedContentsArray)
+  else
+    self:RemoveItem(Content)
+  end
+end
 function M:OnListItemMouseDown(Content)
   Content.bIsMouseButtonDown = true
 end
-
 function M:OnListItemMouseUp(Content)
   if Content.bIsMouseButtonDown then
     self:OnListItemClicked(Content)
   end
 end
-
 function M:UpdateConsumedItems(Contents)
   for i, Content in ipairs(Contents) do
     local ItemWidgetName = "Item_" .. i
@@ -369,47 +443,8 @@ function M:UpdateConsumedItems(Contents)
   end
   self.Text_Num:SetText(#self.Parent.ConsumedContentsArray)
 end
-
 function M:OnForbiddenAutoFillBtnClicked()
 end
-
-function M:OnConfirmBtnClicked()
-  if not self.Parent.ConsumedContentsMap or not next(self.Parent.ConsumedContentsMap) then
-    return
-  end
-  local Avatar = GWorld:GetAvatar()
-  local bChosenWeaponHasAssisterId = false
-  local bChosenWeaponHasLvup = false
-  local PreviewLevel = self.TargetWeapon.GradeLevel
-  local ConsumeWeaponUuids = {}
-  for _, value in pairs(self.Parent.ConsumedContentsMap) do
-    table.insert(ConsumeWeaponUuids, value.Uuid)
-    local Weapon = Avatar.Weapons[value.Uuid]
-    bChosenWeaponHasAssisterId = bChosenWeaponHasAssisterId or Weapon.AssisterId and 0 ~= Weapon.AssisterId
-    bChosenWeaponHasLvup = bChosenWeaponHasLvup or Weapon.Level > 1
-    PreviewLevel = PreviewLevel + Weapon.GradeLevel + 1
-  end
-  local Params = {
-    RightCallbackFunction = function()
-      self.Parent:BlockAllUIInput(true)
-      Avatar:UpWeaponGradeLevel(self.TargetWeapon.Uuid, self.TargetWeapon.GradeLevel, ConsumeWeaponUuids)
-    end
-  }
-  local OverflowLevel = PreviewLevel - self.MaxGradeLevel
-  if OverflowLevel > 0 then
-    Params.ShortText = string.format(GText("UI_WeaponCardLevel_Popup_Overflow"), OverflowLevel)
-  elseif bChosenWeaponHasAssisterId then
-    Params.ShortText = GText("UI_WeaponCardLevel_Popup_Equiped")
-  elseif PreviewLevel > self.TargetWeapon.GradeLevel + #ConsumeWeaponUuids then
-    Params.ShortText = string.format(GText("UI_WeaponCardLevel_Popup_HaveMax"), PreviewLevel)
-  elseif bChosenWeaponHasLvup then
-    Params.ShortText = GText("UI_WeaponCardLevel_Popup_HaveUpgraded")
-  else
-    Params.ShortText = GText("UI_WeaponCardLevel_Popup_Normal")
-  end
-  UIManager(self):ShowCommonPopupUI(100089, Params, self)
-end
-
 function M:OnWeaponGradeLevelUp(Ret)
   self.Parent:OnExpandList(false, true)
   self.Parent:RefreshListComp()
@@ -433,10 +468,8 @@ function M:OnWeaponGradeLevelUp(Ret)
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   self:PlayLevelUpAnim()
 end
-
 function M:OnForbiddenConfirmBtnClicked()
 end
-
 function M:OnBagItemLockedOrUnlocked(OpAction, Ret, Uuid)
   if self.AllWeapons[Uuid] then
     local Avatar = GWorld:GetAvatar()
@@ -446,7 +479,6 @@ function M:OnBagItemLockedOrUnlocked(OpAction, Ret, Uuid)
     end
   end
 end
-
 function M:PlayLevelUpAnim()
   self.IsPlayLevelUpAnim = true
   AudioManager(self):PlayUISound(self, "event:/ui/common/same_card_strengthen_success", nil, nil)
@@ -459,7 +491,6 @@ function M:PlayLevelUpAnim()
   self.Parent.Btn_Auto:ForbidBtn(true)
   self.Parent.Btn_Enhance:ForbidBtn(true)
 end
-
 function M:OnLevelUpAnimFinished()
   self:AddTimer(1.5, function()
     self:FillEmptyItems(self.MaxItemCount, true)
@@ -476,32 +507,35 @@ function M:OnLevelUpAnimFinished()
     self.Parent:BlockAllUIInput(false)
   end, false, 0, nil, true)
 end
-
 function M:ShowEmptyItems(bShow)
   for i = 1, self.MaxItemCount do
     local ItemWidgetName = "Item_" .. i
     self[ItemWidgetName]:ShowAddIcon(bShow)
   end
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnInAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnOutAnimFinished()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
+function M:FindSelectedContent(Uuid)
+  local PreConsumeArray = self.Parent.ConsumedContentsArray
+  for i, Content in pairs(PreConsumeArray) do
+    if Content.Uuid and Content.Uuid == Uuid then
+      return Content
+    end
+  end
+  return nil
+end
 return M

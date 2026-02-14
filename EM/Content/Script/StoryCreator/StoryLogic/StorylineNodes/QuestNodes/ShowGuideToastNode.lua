@@ -2,14 +2,12 @@ local ShowGuideToastNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questli
 ShowGuideToastNode._components = {
   "StoryCreator.StoryLogic.StorylineNodes.QuestNodes.GuideNodeComp"
 }
-
 function ShowGuideToastNode:Init()
   self.ShowEnable = false
   self.MessageId = 0
   self.LastTime = -1
   self.Style = "Normal"
 end
-
 function ShowGuideToastNode:Start(Context)
   if self.Context.IsFail and UE4.UKismetSystemLibrary.GetFrameCount() == self.Context.FrameCount then
     self:FinishAction()
@@ -18,7 +16,6 @@ function ShowGuideToastNode:Start(Context)
   self.Context = Context
   self:ShowMessage(self.Context)
 end
-
 function ShowGuideToastNode:ShowMessage(Context)
   DebugPrint("------------ ShowGuideToastNode ------------------")
   local GameInstance = GWorld.GameInstance
@@ -55,19 +52,16 @@ function ShowGuideToastNode:ShowMessage(Context)
     self:FinishAction()
   end
 end
-
 function ShowGuideToastNode:FinishAction()
   self:Finish()
 end
-
 function ShowGuideToastNode:Clear()
   if self.UIStateAsyncActionBase and self.UIStateAsyncActionBase.OnGuideEnd:IsBound() then
     self.UIStateAsyncActionBase.OnGuideEnd:Clear()
   end
-  if self.GuideTextPanel and self.GuideTextPanel.OnGuideEnd:IsBound() then
+  if IsValid(self.GuideTextPanel) and self.GuideTextPanel and self.GuideTextPanel.OnGuideEnd:IsBound() then
     self.GuideTextPanel.OnGuideEnd:Clear()
   end
 end
-
 AssembleComponents(ShowGuideToastNode)
 return ShowGuideToastNode

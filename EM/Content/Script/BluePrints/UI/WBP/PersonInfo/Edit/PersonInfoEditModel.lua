@@ -1,13 +1,11 @@
 local UnLua = require("UnLua")
 local M = Class("BluePrints.Common.MVC.Model")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
-
 function M:Init()
   M.Super.Init(self)
   self._Avatar = nil
   self:GetAvatar()
 end
-
 function M:GetWeaponItemsData(WeaponTag)
   local Avatar = self._Avatar
   self[WeaponTag .. "ItemContentsMap"] = {}
@@ -24,7 +22,6 @@ function M:GetWeaponItemsData(WeaponTag)
   end
   return ItemContentsArray
 end
-
 function M:GetCharItemsData()
   local Avatar = self._Avatar
   self.CharItemContentsMap = {}
@@ -38,15 +35,12 @@ function M:GetCharItemsData()
   end
   return self.CharItemContentsArray
 end
-
 function M:GetMeleeItemsData()
   return self:GetWeaponItemsData("Melee")
 end
-
 function M:GetRangedItemsData()
   return self:GetWeaponItemsData("Ranged")
 end
-
 function M:InitEditData(EditPage)
   if not self._Avatar then
     self._Avatar = GWorld:GetAvatar()
@@ -88,9 +82,7 @@ function M:InitEditData(EditPage)
     end
   end
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 return M

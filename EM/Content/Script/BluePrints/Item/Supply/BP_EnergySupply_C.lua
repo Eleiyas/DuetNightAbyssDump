@@ -12,7 +12,6 @@ local AlreadyDeleteToast = false
 BP_EnergySupply_C._components = {
   "BluePrints.Item.Components.RecoverEnergy"
 }
-
 function BP_EnergySupply_C:AuthorityInitInfo(Info)
   BP_EnergySupply_C.Super.AuthorityInitInfo(self, Info)
   if 0 == self.NowEnergy then
@@ -35,7 +34,6 @@ function BP_EnergySupply_C:AuthorityInitInfo(Info)
   self:SetCamp(Info.Camp or self.Data.Camp)
   self:AddBuffManager()
 end
-
 function BP_EnergySupply_C:CommonInitInfo(Info)
   BP_EnergySupply_C.Super.CommonInitInfo(self, Info)
   self.InteractiveType = Const.PressInteractive
@@ -64,7 +62,6 @@ function BP_EnergySupply_C:CommonInitInfo(Info)
   self.NowPlayerEid = 0
   self.HasEnergyGuideCloseLua = {}
 end
-
 function BP_EnergySupply_C:ClientInitInfo(Info)
   BP_EnergySupply_C.Super.ClientInitInfo(self, Info)
   EventManager:FireEvent(EventID.OnCreatedEnergySupplyWidget, self.EnergySupplyBarComponent:GetWidget())
@@ -74,7 +71,6 @@ function BP_EnergySupply_C:ClientInitInfo(Info)
   DebugPrint("ADD TIMER FindTarget_Client", self:GetName())
   self:StartFindTarget_Client()
 end
-
 function BP_EnergySupply_C:OnActorReady(Info)
   BP_EnergySupply_C.Super.OnActorReady(self, Info)
   self:DeactiveGuide()
@@ -84,14 +80,12 @@ function BP_EnergySupply_C:OnActorReady(Info)
   end
   self:OnFxObjectFinished()
 end
-
 function BP_EnergySupply_C:ReceiveEndPlay(Reason)
   self.Overridden.ReceiveEndPlay(self, Reason)
   EventManager:RemoveEvent(EventID.OnStartSkillFeature, self)
   EventManager:RemoveEvent(EventID.OnEndSkillFeature, self)
   self:ResetToastInfo()
 end
-
 function BP_EnergySupply_C:OnEMActorDestroy(...)
   BP_EnergySupply_C.Super.OnEMActorDestroy(self, ...)
   print(_G.LogTag, "LXZ OnEMActorDestroy", self:GetName(), self._RegisterOnCharacterDead)
@@ -99,16 +93,6 @@ function BP_EnergySupply_C:OnEMActorDestroy(...)
     Battle(self):UnregisterBattleEvent(BattleEventName.OnAfterDead, self, "_OnCharacterDead")
   end
 end
-
-function BP_EnergySupply_C:RegisterToGameState()
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  if nil == GameState then
-    print(_G.LogTag, "GameState is nil")
-    return
-  end
-  GameState:RegisterMechanism(self, self:GetUnitRealType())
-end
-
 function BP_EnergySupply_C:OpenMechanism(PlayerActorEid)
   if IsClient(self) then
     return
@@ -134,7 +118,6 @@ function BP_EnergySupply_C:OpenMechanism(PlayerActorEid)
   self:AddTimer(0.5, self.ShowInteractedToast, false, 0, "EnergySupplyInteractedToast", false, PlayerActorEid)
   self:OnOpenMechanism()
 end
-
 function BP_EnergySupply_C:CloseMechanism(Eid, IsSuccess)
   print(_G.LogTag, "LXZ Energy CloseMechanism", Eid, self.NowPlayerEid)
   if IsAuthority(self) and Eid == self.NowPlayerEid then
@@ -155,7 +138,6 @@ function BP_EnergySupply_C:CloseMechanism(Eid, IsSuccess)
   end
   AudioManager(self):SetEventSoundParam(self, "EnergySupplyOpen", {ToEnd = 1})
 end
-
 function BP_EnergySupply_C:ForceCloseMechanism(Eid, IsSuccess)
   print(_G.LogTag, "LXZ Energy ForceCloseMechanism", Eid, self.NowPlayerEid)
   if IsAuthority(self) and Eid == self.NowPlayerEid then
@@ -175,7 +157,6 @@ function BP_EnergySupply_C:ForceCloseMechanism(Eid, IsSuccess)
   end
   AudioManager(self):SetEventSoundParam(self, "EnergySupplyOpen", {ToEnd = 1})
 end
-
 function BP_EnergySupply_C:ChangeToNormalState(Player)
   print(_G.LogTag, "LXZ Energy ChangeToNormalState", Player:GetName())
   if IsAuthority(self) then
@@ -184,10 +165,8 @@ function BP_EnergySupply_C:ChangeToNormalState(Player)
     Player.OnInteractiveDelegate:Remove(self, self.ChangeToNormalState)
   end
 end
-
 function BP_EnergySupply_C:SetInteractiveCanUsed(value)
 end
-
 function BP_EnergySupply_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
   local PlayerCharacter = Battle(self):GetEntity(PlayerId)
   if 0 == InteractiveState then
@@ -218,7 +197,6 @@ function BP_EnergySupply_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
     end
   end
 end
-
 function BP_EnergySupply_C:OnBuffNumChange()
   if not self.BuffId then
     return
@@ -226,15 +204,14 @@ function BP_EnergySupply_C:OnBuffNumChange()
   local NewBuffNum = self.NowEnergy // self.BuffBase
   local Sub = math.floor(NewBuffNum - self.BuffNum)
   if Sub < 0 then
-    DebugPrint("\232\191\153\233\135\140\230\152\175BuffNumChangelxh1: " .. Sub)
+    DebugPrint("这里是BuffNumChangelxh1: " .. Sub)
     Battle(self):ReduceBuffLayerFromTarget(self, self, self.BuffId, -Sub, false)
   elseif Sub > 0 then
-    DebugPrint("\232\191\153\233\135\140\230\152\175BuffNumChangelxh2: " .. Sub)
+    DebugPrint("这里是BuffNumChangelxh2: " .. Sub)
     Battle(self):AddBuffToTarget(self, self, self.BuffId, -1, nil, nil, Sub)
   end
   self.BuffNum = NewBuffNum
 end
-
 function BP_EnergySupply_C:FindTarget()
   print(_G.LogTag, "LXZ FindTarget")
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -278,7 +255,6 @@ function BP_EnergySupply_C:FindTarget()
     self.HasFindPlayer = FindPlayer
   end
 end
-
 function BP_EnergySupply_C:StartRecover()
   self.RecoverHandle = self:AddTimer(1, BP_EnergySupply_C.AutoRecover, true)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -292,15 +268,12 @@ function BP_EnergySupply_C:StartRecover()
   end
   self:StartFindTarget()
 end
-
 function BP_EnergySupply_C:StartFindTarget()
   self:AddTimer(0.1, self.FindTarget, true, 0.1, "FindTarget")
 end
-
 function BP_EnergySupply_C:EndFindTarget()
   self:RemoveTimer("FindTarget")
 end
-
 function BP_EnergySupply_C:AutoRecover()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local bFindPlayer = false
@@ -318,10 +291,10 @@ function BP_EnergySupply_C:AutoRecover()
         self.HasPlayTalk = true
         local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
         if GameMode:GetDungeonComponent().HasInEnergySurvival then
-          UE4.UPlayTalkAsyncAction.PlayTalk(GameInstance, 600308, nil)
+          self:PlaySurvivalTalk(600308)
           break
         end
-        UE4.UPlayTalkAsyncAction.PlayTalk(GameInstance, 600303, nil)
+        self:PlaySurvivalTalk(600303)
         GameMode:PostCustomEvent("SurvivalProStart")
         GameMode:GetDungeonComponent().HasInEnergySurvival = true
       end
@@ -334,7 +307,6 @@ function BP_EnergySupply_C:AutoRecover()
   end
   self:OnBuffNumChange()
 end
-
 function BP_EnergySupply_C:OutRecover_Lua(Monster)
   if not IsValid(Monster) or not Monster:IsMonster() then
     return
@@ -387,7 +359,6 @@ function BP_EnergySupply_C:OutRecover_Lua(Monster)
     GameMode:TriggerDungeonComponentFun("OnMonsterDeadOut")
   end
 end
-
 function BP_EnergySupply_C:EnergyToSurvival()
   if not self.IsEnergyInteractive then
     return
@@ -411,7 +382,6 @@ function BP_EnergySupply_C:EnergyToSurvival()
   end
   self.FXNum = self.FXNum + 1
 end
-
 function BP_EnergySupply_C:OnForceEndInteractive_Lua(SurvivalValue, MaxSurvivalValue)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -425,7 +395,6 @@ function BP_EnergySupply_C:OnForceEndInteractive_Lua(SurvivalValue, MaxSurvivalV
     end
   end
 end
-
 function BP_EnergySupply_C:ChangeEnergy_Lua(ChangeValue, bFromMonster)
   self.NowEnergy = self.NowEnergy + ChangeValue
   self.NowEnergy = math.min(self.NowEnergy, self.MaxEnergy)
@@ -444,7 +413,6 @@ function BP_EnergySupply_C:ChangeEnergy_Lua(ChangeValue, bFromMonster)
     end
   end
 end
-
 function BP_EnergySupply_C:CalDistance(Player)
   local PlayerX = Player:K2_GetActorLocation().X
   local PlayerY = Player:K2_GetActorLocation().Y
@@ -454,7 +422,6 @@ function BP_EnergySupply_C:CalDistance(Player)
   local y = PlayerY - SelfY
   return math.sqrt(x * x + y * y)
 end
-
 function BP_EnergySupply_C:OnRep_NowEnergy()
   if self.InitSuccess then
     self:OnFxObjectFinished()
@@ -462,21 +429,17 @@ function BP_EnergySupply_C:OnRep_NowEnergy()
     local function Callback()
       if self.InitSuccess then
         self:OnFxObjectFinished()
-        
         self:RemoveTimer("OnRep_NowEnergy")
       end
     end
-    
     self:AddTimer(0.1, Callback, true, 0, "OnRep_NowEnergy", false)
   end
 end
-
 function BP_EnergySupply_C:CheckInSameLevel(Actor)
   local ActorLevelId = self:CheckActorLevel(Actor)
   local SupplyLevelId = self:CheckActorLevel(self)
   return -1 ~= ActorLevelId and ActorLevelId == SupplyLevelId
 end
-
 function BP_EnergySupply_C:CheckActorLevel(Actor)
   local LevelLoader = UE4.UGameplayStatics.GetGameInstance(self):GetSceneManager():GetLevelLoader()
   if not LevelLoader then
@@ -484,28 +447,26 @@ function BP_EnergySupply_C:CheckActorLevel(Actor)
   end
   return LevelLoader:GetLevelId(Actor)
 end
-
+function BP_EnergySupply_C:PlaySurvivalTalk(TalkId)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  UE4.UPlayTalkAsyncAction.PlayTalk(GameInstance, TalkId, nil)
+end
 function BP_EnergySupply_C:OnEnergyChanged(NewEnergy, bFromMonster)
   self.EnergySupplyBarComponent:OnEnergyChanged(NewEnergy, bFromMonster)
 end
-
 function BP_EnergySupply_C:OnBuffAdded(PlayerEid, BuffID, OldLayer, NewLayer)
   self.EnergySupplyBarComponent:OnBuffAdded(PlayerEid, BuffID, OldLayer, NewLayer)
 end
-
 function BP_EnergySupply_C:OnPlayerIn(PlayerEid, BuffID)
   return self.EnergySupplyBarComponent:OnPlayerIn(PlayerEid, BuffID)
 end
-
 function BP_EnergySupply_C:OnPlayerLeft(PlayerEid)
   return self.EnergySupplyBarComponent:OnPlayerLeft(PlayerEid)
 end
-
 function BP_EnergySupply_C:OnFxObjectCreated(FxObject)
   self.EnergySupplyBarComponent:OnFxObjectCreated(FxObject)
   FxObject.OnSystemFinished:Add(self, self.OnFxObjectFinished)
 end
-
 function BP_EnergySupply_C:OnLiquidChange(Liquid)
   if IsAuthority(self) and not IsStandAlone(self) then
     return
@@ -530,7 +491,6 @@ function BP_EnergySupply_C:OnLiquidChange(Liquid)
   end
   self.LiquidFXNum = NewNum
 end
-
 function BP_EnergySupply_C:OnStartSkillFeature(IsHideAllUI)
   if IsHideAllUI then
     local Widget = self.EnergySupplyBarComponent:GetWidget()
@@ -539,7 +499,6 @@ function BP_EnergySupply_C:OnStartSkillFeature(IsHideAllUI)
     end
   end
 end
-
 function BP_EnergySupply_C:OnEndSkillFeature(IsHideAllUI)
   if IsHideAllUI then
     local Widget = self.EnergySupplyBarComponent:GetWidget()
@@ -548,7 +507,6 @@ function BP_EnergySupply_C:OnEndSkillFeature(IsHideAllUI)
     end
   end
 end
-
 function BP_EnergySupply_C:CheckPlayerInShowToastDis(Dis, PlayerEid)
   if bIsToastShowed then
     return
@@ -563,7 +521,6 @@ function BP_EnergySupply_C:CheckPlayerInShowToastDis(Dis, PlayerEid)
     self.InToastDisPlayer[PlayerEid] = nil
   end
 end
-
 function BP_EnergySupply_C:RealShowToast()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -577,7 +534,6 @@ function BP_EnergySupply_C:RealShowToast()
     bIsToastShowed = true
   end
 end
-
 function BP_EnergySupply_C:OnInteracrive(PlayerId)
   if AlreadyDeleteToast then
     return
@@ -596,13 +552,11 @@ function BP_EnergySupply_C:OnInteracrive(PlayerId)
     end
   end
 end
-
 function BP_EnergySupply_C:ResetToastInfo()
   bIsToastShowed = false
   AlreadyDeleteToast = false
   self.InToastDisPlayer = {}
 end
-
 function BP_EnergySupply_C:GetDungeonSaveData()
   return {
     StateId = self.StateId,
@@ -610,15 +564,12 @@ function BP_EnergySupply_C:GetDungeonSaveData()
     BuffNum = self.BuffNum
   }
 end
-
 function BP_EnergySupply_C:ActiveMaterialNotify()
 end
-
 function BP_EnergySupply_C:ShowInteractedToast(PlayerEid)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState:ShowInteractedToast(PlayerEid)
 end
-
 function BP_EnergySupply_C:PhantomInteractive(PhantomEid)
   local Phantom = Battle(self):GetEntity(PhantomEid)
   if not Phantom:IsPhantom() or 0 ~= self.NowPlayerEid then
@@ -629,7 +580,6 @@ function BP_EnergySupply_C:PhantomInteractive(PhantomEid)
   local CommonUIConfirmID = self.ChestInteractiveComponent.CommonUIConfirmID
   Player:InteractiveMechanism(self.Eid, PhantomEid, NextStateId, CommonUIConfirmID, false)
 end
-
 function BP_EnergySupply_C:PhantomDeInteractive(PhantomEid)
   local Phantom = Battle(self):GetEntity(PhantomEid)
   if not Phantom:IsPhantom() or PhantomEid ~= self.NowPlayerEid then
@@ -639,6 +589,5 @@ function BP_EnergySupply_C:PhantomDeInteractive(PhantomEid)
   self:SetInteractiveCanUsed(false)
   Player:DeInteractiveMechanism(self.Eid, PhantomEid, nil, true, 0, false)
 end
-
 AssembleComponents(BP_EnergySupply_C)
 return BP_EnergySupply_C

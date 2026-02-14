@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn.OnClicked:Add(self, self.OnBtnClicked)
   self.Btn.OnPressed:Add(self, self.OnBtnPressed)
@@ -10,7 +9,6 @@ function M:Construct()
   self.Btn.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn.OnUnhovered:Add(self, self.OnBtnUnhovered)
 end
-
 function M:Init(Content)
   self.Content = Content
   self.Owner = Content.Owner
@@ -21,7 +19,6 @@ function M:Init(Content)
   self:SetIcon(Content.Icon)
   self:SetIsSelected(Content.IsSelected)
 end
-
 function M:SetIcon(Icon)
   local IconDynaMaterial = self.Img_TabIcon:GetDynamicMaterial()
   if IconDynaMaterial then
@@ -32,14 +29,12 @@ function M:SetIcon(Icon)
     end
   end
 end
-
 function M:OnBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_sort_tab", nil, nil)
   if self._OnBtnClicked then
     self._OnBtnClicked(self.Owner, self.Content)
   end
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -52,7 +47,6 @@ function M:SetIsSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnBtnPressed()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Touch then
     return
@@ -60,7 +54,6 @@ function M:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self.IsSelected then
     return
@@ -71,7 +64,6 @@ function M:OnBtnReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnBtnHovered()
   if self.IsSelected then
     return
@@ -82,7 +74,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsSelected then
     return
@@ -93,21 +84,17 @@ function M:OnBtnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Btn)
 end
-
 return M

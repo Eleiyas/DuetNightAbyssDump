@@ -8,7 +8,6 @@ WBP_TakeAimIndicator_C._components = {
   "BluePrints.UI.WBP_TakeAimIndicatorAimStarComponent_C",
   "BluePrints.UI.WBP_TakeAimIndicatorAmmoBarComponent_C"
 }
-
 function WBP_TakeAimIndicator_C:Initialize(Initializer)
   self.BordSize = FVector2D(30, 30)
   self.AllShootingTargets = nil
@@ -67,7 +66,6 @@ function WBP_TakeAimIndicator_C:Initialize(Initializer)
   self.AllColorIntensty = {}
   self.NextActorRelation = nil
 end
-
 function WBP_TakeAimIndicator_C:InitListenEvent()
   EventManager:AddEvent(EventID.ReloadStart, self, self.TryToEnterReloadState)
   EventManager:AddEvent(EventID.ReloadEnd, self, self.TryToLeaveReloadState_End)
@@ -76,7 +74,6 @@ function WBP_TakeAimIndicator_C:InitListenEvent()
   EventManager:AddEvent(EventID.FullOfMagazine, self, self.ShowFullOfMagazineTip)
   EventManager:AddEvent(EventID.OnCharForbidWeapon, self, self.HideOrShowTargetAim)
 end
-
 function WBP_TakeAimIndicator_C:Init(Player)
   self.OwnerPlayer = Player
   if not IsValid(self.OwnerPlayer) then
@@ -93,14 +90,12 @@ function WBP_TakeAimIndicator_C:Init(Player)
   self.ChangeAimStarColorAndShowBillboardTimer = self:AddTimer(0.1, self.ChangeAimStarColorAndShowBillboard, true, 0.5, "ChangeAimStarColorAndShowBillboardTimer")
   UIManager(self).TakeAimIndicator = self
 end
-
 function WBP_TakeAimIndicator_C:InitAllColorIntensty()
   self.AllColorIntensty.Default = UE4.UUIFunctionLibrary.StringToLinearColor(self.AimColorDefault)
   self.AllColorIntensty.ForceDefault = UE4.UUIFunctionLibrary.StringToLinearColor(self.AimColorForceDefault)
   self.AllColorIntensty.Enemy = UE4.UUIFunctionLibrary.StringToLinearColor(self.AimColorEnemy)
   self.AllColorIntensty.Friend = UE.UUIFunctionLibrary.StringToLinearColor(self.AimColorFriend)
 end
-
 function WBP_TakeAimIndicator_C:RefreshUIShowPage()
   if not IsValid(self.OwnerPlayer) then
     self.OwnerPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -117,10 +112,27 @@ function WBP_TakeAimIndicator_C:RefreshUIShowPage()
   self.AmmoBarStyle = "NeedUpdate"
   self:UpdateWeaponInfo(self.OwnerPlayer)
 end
-
 function WBP_TakeAimIndicator_C:UpdateWeaponInfo(Owner, LastWeapon, NewWeapon)
+  if self.ForceLockMelee then
+    return
+  end
   if self.OwnerPlayer ~= Owner then
     return
+  end
+  if not NewWeapon then
+    local IgnoreWeaponChangeSkillIds = {"150401", "150411"}
+    local CurSkill
+    if IsValid(self.OwnerPlayer) then
+      CurSkill = self.OwnerPlayer:GetCurrentSkill()
+    end
+    if CurSkill and CurSkill.SkillId then
+      local Sid = tostring(CurSkill.SkillId)
+      for i = 1, #IgnoreWeaponChangeSkillIds do
+        if Sid == IgnoreWeaponChangeSkillIds[i] then
+          return
+        end
+      end
+    end
   end
   if not IsValid(NewWeapon) and IsValid(self.OwnerPlayer) then
     NewWeapon = self.OwnerPlayer:GetCurrentWeapon()
@@ -129,6 +141,9 @@ function WBP_TakeAimIndicator_C:UpdateWeaponInfo(Owner, LastWeapon, NewWeapon)
   if IsValid(NewWeapon) then
     NewMagazineCapacity = NewWeapon:GetAttr("MagazineCapacity")
   end
+  self:RealUpdateWeaponInfo(NewWeapon, NewMagazineCapacity)
+end
+function WBP_TakeAimIndicator_C:RealUpdateWeaponInfo(NewWeapon, NewMagazineCapacity)
   if self.CurrentWeapon ~= NewWeapon or self.CurMagazineCapacity ~= NewMagazineCapacity then
     self.CurrentWeapon = NewWeapon
     self.CurMagazineCapacity = NewMagazineCapacity
@@ -136,7 +151,7 @@ function WBP_TakeAimIndicator_C:UpdateWeaponInfo(Owner, LastWeapon, NewWeapon)
     if self.SightUI ~= NewSightUI then
       self.SightUI = NewSightUI
       local NewWeaponStyleNode = self:GetWeaponStyleNode(NewSightUI)
-      if self.CurWeaponStyleNode ~= NewWeaponStyleNode then
+      if NewWeaponStyleNode and self.CurWeaponStyleNode ~= NewWeaponStyleNode then
         self.CurWeaponStyleNode = NewWeaponStyleNode
         self.CurWeaponStyle = self:GetWeaponStyle(self.CurWeaponStyleNode)
         self:SwitchAimStar()
@@ -157,7 +172,6 @@ function WBP_TakeAimIndicator_C:UpdateWeaponInfo(Owner, LastWeapon, NewWeapon)
     end
   end
 end
-
 function WBP_TakeAimIndicator_C:GetWeaponSightUI(Weapon)
   if not IsValid(Weapon) then
     return nil
@@ -169,7 +183,6 @@ function WBP_TakeAimIndicator_C:GetWeaponSightUI(Weapon)
   end
   return SightUI
 end
-
 function WBP_TakeAimIndicator_C:GetIsHideMagazineBar(Weapon)
   if not IsValid(Weapon) then
     return nil
@@ -181,7 +194,6 @@ function WBP_TakeAimIndicator_C:GetIsHideMagazineBar(Weapon)
   end
   return HideMagazineBar
 end
-
 function WBP_TakeAimIndicator_C:GetWeaponStyleNode(SightUI)
   if not SightUI then
     return "Melee"
@@ -192,7 +204,6 @@ function WBP_TakeAimIndicator_C:GetWeaponStyleNode(SightUI)
   end
   return WeaponStyleNode
 end
-
 function WBP_TakeAimIndicator_C:GetWeaponStyle(WeaponStyleNode)
   if nil == WeaponStyleNode then
     return "NoWeapon"
@@ -202,11 +213,18 @@ function WBP_TakeAimIndicator_C:GetWeaponStyle(WeaponStyleNode)
     return "Ranged"
   end
 end
-
+function WBP_TakeAimIndicator_C:ForceLockMeleeAimIndicator(IsLock)
+  if IsLock then
+    self.ForceLockMelee = true
+    self:RealUpdateWeaponInfo(nil, nil)
+  else
+    self.ForceLockMelee = false
+    self:RefreshUIShowPage()
+  end
+end
 function WBP_TakeAimIndicator_C:SetInPressShootingBtn(IsPress)
   self.IsInPressMouseRight = IsPress
 end
-
 function WBP_TakeAimIndicator_C:HideOrShowTargetAim(WeaponTag, IsHide)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -241,7 +259,6 @@ function WBP_TakeAimIndicator_C:HideOrShowTargetAim(WeaponTag, IsHide)
     end
   end
 end
-
 function WBP_TakeAimIndicator_C:GetMeshLocationByShootTarget(ShootTarget)
   local Skill
   if self.OwnerPlayer then
@@ -276,7 +293,6 @@ function WBP_TakeAimIndicator_C:GetMeshLocationByShootTarget(ShootTarget)
   end
   return TargetLocation
 end
-
 function WBP_TakeAimIndicator_C:AddAndUpdateFilterShootingTarget(Index, MiniAimWidget, ShootingTarget)
   local TargetLocation = self:GetMeshLocationByShootTarget(ShootingTarget)
   local TargetScreenLocation = FVector2D(0, 0)
@@ -299,7 +315,6 @@ function WBP_TakeAimIndicator_C:AddAndUpdateFilterShootingTarget(Index, MiniAimW
   end
   self.LastShootTargetEid[Index] = ShootingTarget.Eid
 end
-
 function WBP_TakeAimIndicator_C:UpdateFunnelWeapon()
   self.AllShootingTargets = self.OwnerPlayer:GetShootingTargets()
   if self.AllShootingTargets == nil or nil == self.FunnelAimItem then
@@ -342,7 +357,6 @@ function WBP_TakeAimIndicator_C:UpdateFunnelWeapon()
     NotUseMiniWidget.Aim_Node:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_TakeAimIndicator_C:ChangeFunnelWeaponNoTargetState()
   local AllMiniAimChildren = self.Mini_Aim_Parent:GetAllChildren()
   local MiniAimCount = AllMiniAimChildren:Length()
@@ -351,29 +365,24 @@ function WBP_TakeAimIndicator_C:ChangeFunnelWeaponNoTargetState()
     MiniWidget:HideAim()
   end
 end
-
 function WBP_TakeAimIndicator_C:ChangeFunnelWeaponFireState()
   if not self:IsAnimationPlaying(self.Funnel_Change) and not self.Mini_Aim_Parent:IsVisible() then
     local function PlayAnimFinished()
       self.Mini_Aim_Parent:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     end
-    
     self:BindToAnimationFinished(self.Funnel_Change, {self, PlayAnimFinished})
     self:PlayAnimationForward(self.Funnel_Change)
   end
 end
-
 function WBP_TakeAimIndicator_C:ResetFunnelWeaponState()
   if self.Mini_Aim_Parent:IsVisible() and not self:IsAnimationPlaying(self.Funnel_Change) then
     local function PlayAnimFinished()
       self.Mini_Aim_Parent:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
-    
     self:BindToAnimationFinished(self.Funnel_Change, {self, PlayAnimFinished})
     self:PlayAnimationReverse(self.Funnel_Change)
   end
 end
-
 function WBP_TakeAimIndicator_C:Destruct()
   EventManager:RemoveEvent(EventID.ReloadStart, self)
   EventManager:RemoveEvent(EventID.ReloadEnd, self)
@@ -392,6 +401,5 @@ function WBP_TakeAimIndicator_C:Destruct()
   self.PlayReloadAnimTimer = nil
   self.LerpSetAmmoBarPercentTimer = nil
 end
-
 AssembleComponents(WBP_TakeAimIndicator_C)
 return WBP_TakeAimIndicator_C

@@ -17,7 +17,6 @@ TaskUtils.IsCanMakeTaskPathActor = true
 TaskUtils.TaskPathActor = nil
 TaskUtils.TaskRegionMap = "Now"
 TaskUtils.bShowLevelMap = false
-
 function TaskUtils:CreateSubItemContent(Content)
   local ClassPath = "/Game/UI/WBP/Task/Widget/SubItemContent.SubItemContent"
   local Object = NewObject(UE4.LoadClass(ClassPath))
@@ -30,7 +29,6 @@ function TaskUtils:CreateSubItemContent(Content)
   Object.IsNew = Content.IsNew
   return Object
 end
-
 function TaskUtils:CreateListItemContent(Content)
   local ClassPath = "/Game/UI/WBP/Task/Widget/ListItemContent.ListItemContent"
   local Object = NewObject(UE4.LoadClass(ClassPath))
@@ -45,7 +43,6 @@ function TaskUtils:CreateListItemContent(Content)
   Object.UI = Content.UI
   return Object
 end
-
 function TaskUtils:CreateRewardContent(Content)
   local Object = NewObject(UIUtils.GetCommonItemContentClass())
   Object.ParentWidget = Content.OwnerWidget
@@ -58,7 +55,6 @@ function TaskUtils:CreateRewardContent(Content)
   Object.UIName = "TaskPanel"
   return Object
 end
-
 function TaskUtils:GetQuestDetail(QuestChainId, QuestId)
   QuestDataInStoryLine[QuestChainId] = QuestDataInStoryLine[QuestChainId] or {}
   if QuestDataInStoryLine[QuestChainId] and QuestDataInStoryLine[QuestChainId][QuestId] then
@@ -74,7 +70,6 @@ function TaskUtils:GetQuestDetail(QuestChainId, QuestId)
   end
   return QuestDataInStoryLine[QuestChainId][QuestId]
 end
-
 function TaskUtils:GetTrackingQuestDetailInfo()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -88,7 +83,6 @@ function TaskUtils:GetTrackingQuestDetailInfo()
   local DoingQuestId = Avatar.QuestChains[TrackingId].DoingQuestId
   return self:GetQuestDetail(TrackingId, DoingQuestId)
 end
-
 function TaskUtils:GetTrackingQuestMapInfo()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -100,10 +94,8 @@ function TaskUtils:GetTrackingQuestMapInfo()
   end
   return self:GetQuestMapInfo(TrackingId)
 end
-
 function TaskUtils:GetQuestMapInfo(InChainId)
   local Info = self:GetTrackingQuestDetailInfo()
-  
   local function ContainWorldMapRegionId(Target, Datas)
     for _, Data in pairs(Datas) do
       if Target == Data then
@@ -112,7 +104,6 @@ function TaskUtils:GetQuestMapInfo(InChainId)
     end
     return false
   end
-  
   if Info and Info.SubRegionId and Info.SubRegionId > 0 then
     local QuestSubRegionId = Info.SubRegionId
     local ParentRegionId = DataMgr.SubRegion[QuestSubRegionId].RegionId
@@ -140,7 +131,7 @@ function TaskUtils:GetQuestMapInfo(InChainId)
           if Avatar.QuestChains[InChainId] then
             TargetDoingQuestId = Avatar.QuestChains[InChainId].DoingQuestId
           end
-          local Message = "\232\175\183\230\163\128\230\159\165STL\228\187\187\229\138\161\232\138\130\231\130\185\230\152\175\229\144\166\233\133\141\231\189\174\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185" .. "\n\229\175\185\229\186\148\228\187\187\229\138\161\233\147\190:" .. InChainId .. "\n\229\175\185\229\186\148\228\187\187\229\138\161:" .. TargetDoingQuestId .. "\n\231\142\169\229\174\182\229\173\144\229\140\186\229\159\159:" .. Avatar.CurrentRegionId
+          local Message = "请检查STL任务节点是否配置指引点节点" .. "\n对应任务链:" .. InChainId .. "\n对应任务:" .. TargetDoingQuestId .. "\n玩家子区域:" .. Avatar.CurrentRegionId
           if Const.EnableTaskPrintError then
             ScreenPrint(string.format("%s", Message))
           end
@@ -160,7 +151,7 @@ function TaskUtils:GetQuestMapInfo(InChainId)
               if Avatar.QuestChains[InChainId] then
                 TargetDoingQuestId = Avatar.QuestChains[InChainId].DoingQuestId
               end
-              local Message = "\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168\239\188\140\229\175\188\232\135\180\232\142\183\229\143\150\228\187\187\229\138\161\229\140\186\229\159\159\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\232\175\183\231\173\150\229\136\146\229\144\140\229\173\166\230\163\128\230\159\165" .. "\n\229\175\185\229\186\148\228\187\187\229\138\161\233\147\190:" .. InChainId .. "\n\229\175\185\229\186\148\228\187\187\229\138\161:" .. TargetDoingQuestId .. "\n\231\142\169\229\174\182\229\173\144\229\140\186\229\159\159:" .. Avatar.CurrentRegionId .. "\n\230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\136\228\184\139\229\136\146\231\186\191\229\144\142\231\188\128\228\184\186\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185Key\239\188\137:" .. v:GetName()
+              local Message = "任务指引点区域数据不存在，导致获取任务区域数据失败，请策划同学检查" .. "\n对应任务链:" .. InChainId .. "\n对应任务:" .. TargetDoingQuestId .. "\n玩家子区域:" .. Avatar.CurrentRegionId .. "\n指引点名称（下划线后缀为指引点节点Key）:" .. v:GetName()
               if Const.EnableTaskPrintError then
                 ScreenPrint(string.format("%s", Message))
               end
@@ -190,7 +181,7 @@ function TaskUtils:GetQuestMapInfo(InChainId)
           if Avatar.QuestChains[InChainId] then
             TargetDoingQuestId = Avatar.QuestChains[InChainId].DoingQuestId
           end
-          local Message = "\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168\239\188\140\229\175\188\232\135\180\232\142\183\229\143\150\228\187\187\229\138\161\229\140\186\229\159\159\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\232\175\183\231\173\150\229\136\146\229\144\140\229\173\166\230\163\128\230\159\165" .. "\n\229\175\185\229\186\148\228\187\187\229\138\161\233\147\190:" .. InChainId .. "\n\229\175\185\229\186\148\228\187\187\229\138\161:" .. TargetDoingQuestId .. "\n\231\142\169\229\174\182\229\173\144\229\140\186\229\159\159:" .. Avatar.CurrentRegionId .. "\n\230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\136\228\184\139\229\136\146\231\186\191\229\144\142\231\188\128\228\184\186\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185Key\239\188\137:" .. v:GetName()
+          local Message = "任务指引点区域数据不存在，导致获取任务区域数据失败，请策划同学检查" .. "\n对应任务链:" .. InChainId .. "\n对应任务:" .. TargetDoingQuestId .. "\n玩家子区域:" .. Avatar.CurrentRegionId .. "\n指引点名称（下划线后缀为指引点节点Key）:" .. v:GetName()
           if Const.EnableTaskPrintError then
             ScreenPrint(string.format("%s", Message))
           end
@@ -200,13 +191,11 @@ function TaskUtils:GetQuestMapInfo(InChainId)
     end
   end
 end
-
 function TaskUtils:CheckTypeAndCollectExtraInfo(QuestNodeData, QuestChainId, QuestId)
   if NodeHaveExtraInfo[QuestNodeData.Type] and QuestExtraInfo[QuestChainId] and QuestExtraInfo[QuestChainId][QuestId] then
     return
   end
 end
-
 function TaskUtils:SetQuestExtraInfo(QuestChainId, QuestId, Data)
   if not Data then
     return
@@ -228,7 +217,6 @@ function TaskUtils:SetQuestExtraInfo(QuestChainId, QuestId, Data)
     QuestExtraInfo[ChainId][DoingQuestId][Data.NodeKey] = Data
   end
 end
-
 function TaskUtils:ClearQuestExtraInfo(QuestChainId, QuestId, InKey)
   if QuestExtraInfo and QuestExtraInfo[QuestChainId] and QuestExtraInfo[QuestChainId][QuestId] and QuestExtraInfo[QuestChainId][QuestId][InKey] then
     if QuestExtraInfo[QuestChainId][QuestId][InKey].Node then
@@ -237,7 +225,6 @@ function TaskUtils:ClearQuestExtraInfo(QuestChainId, QuestId, InKey)
     QuestExtraInfo[QuestChainId][QuestId][InKey] = nil
   end
 end
-
 function TaskUtils:GetQuestCountExtraInfoString(QuestChainId, QuestId, NodeKey)
   if not QuestExtraInfo[QuestChainId] or not QuestExtraInfo[QuestChainId][QuestId] then
     return ""
@@ -278,7 +265,6 @@ function TaskUtils:GetQuestCountExtraInfoString(QuestChainId, QuestId, NodeKey)
   end
   return ""
 end
-
 function TaskUtils:GetQuestExtraInfo(QuestChainId, QuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -295,7 +281,6 @@ function TaskUtils:GetQuestExtraInfo(QuestChainId, QuestId)
   end
   return nil
 end
-
 function TaskUtils:CheckTaskIsInEXRegion()
   local Info = self:GetTrackingQuestDetailInfo()
   local QuestRegionMapId
@@ -325,7 +310,7 @@ function TaskUtils:CheckTaskIsInEXRegion()
         if Avatar.QuestChains[CurTrackingQuestChainId] then
           CurTrackingQuestId = Avatar.QuestChains[CurTrackingQuestChainId].DoingQuestId
         end
-        local Message = "\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168\239\188\140\229\175\188\232\135\180\232\142\183\229\143\150\228\187\187\229\138\161\229\140\186\229\159\159\230\149\176\230\141\174\229\164\177\232\180\165\239\188\140\232\175\183\231\173\150\229\136\146\229\144\140\229\173\166\230\163\128\230\159\165" .. "\n\229\189\147\229\137\141\232\191\189\232\184\170\228\187\187\229\138\161\233\147\190:" .. CurTrackingQuestChainId .. "\n\229\189\147\229\137\141\232\191\189\232\184\170\228\187\187\229\138\161:" .. CurTrackingQuestId .. "\n\231\142\169\229\174\182\229\173\144\229\140\186\229\159\159:" .. Avatar.CurrentRegionId .. "\n\230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\136\228\184\139\229\136\146\231\186\191\229\144\142\231\188\128\228\184\186\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185Key\239\188\137:" .. v:GetName()
+        local Message = "任务指引点区域数据不存在，导致获取任务区域数据失败，请策划同学检查" .. "\n当前追踪任务链:" .. CurTrackingQuestChainId .. "\n当前追踪任务:" .. CurTrackingQuestId .. "\n玩家子区域:" .. Avatar.CurrentRegionId .. "\n指引点名称（下划线后缀为指引点节点Key）:" .. v:GetName()
         if Const.EnableTaskPrintError then
           ScreenPrint(string.format("%s", Message))
         end
@@ -350,7 +335,6 @@ function TaskUtils:CheckTaskIsInEXRegion()
   end
   return IsInEXRegion
 end
-
 function TaskUtils:ResumQuestTaskBarOnTrack(ServerQuestChainId, ClientQuestChainId, QuestId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -384,8 +368,15 @@ function TaskUtils:ResumQuestTaskBarOnTrack(ServerQuestChainId, ClientQuestChain
     end
   end
 end
-
 function TaskUtils:ShowQuestChainFinishCommonHudReward(QuestChainId, RewardBox)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local QuestInfo = Avatar.QuestChains[QuestChainId]
+  if QuestInfo and QuestInfo:GetAssumeFinish() then
+    return
+  end
   if DataMgr.QuestChain[QuestChainId] == nil or nil == DataMgr.QuestChain[QuestChainId].QuestChainReward then
     DebugPrint("TaskUtils:ShowQuestChainFinishCommonHudReward QuestChainId is error or QuestChainReward is nil")
     return
@@ -413,15 +404,12 @@ function TaskUtils:ShowQuestChainFinishCommonHudReward(QuestChainId, RewardBox)
       end
     end
   end
-  
   local function SortByRarity(a, b)
     return a.Rarity > b.Rarity
   end
-  
   table.sort(TempRewardList, SortByRarity)
   UIUtils.ShowHudReward("UI_QUEST_REWARDS", TempRewardList)
 end
-
 function TaskUtils:RemoveAllQuestExtraInfo()
   if nil ~= QuestExtraInfo then
     for ChainId, Data in pairs(QuestExtraInfo) do
@@ -431,7 +419,6 @@ function TaskUtils:RemoveAllQuestExtraInfo()
     end
   end
 end
-
 function TaskUtils:UpdateAllMissionNpcGuideMaps(IsAdd, Name, NpcUnitId)
   if IsAdd then
     if self.MissionNpcGuideMaps[Name] == nil and nil ~= NpcUnitId then
@@ -441,7 +428,6 @@ function TaskUtils:UpdateAllMissionNpcGuideMaps(IsAdd, Name, NpcUnitId)
     self.MissionNpcGuideMaps[Name] = nil
   end
 end
-
 function TaskUtils:CreateAndMoveFollowingPath(Class)
   local GameInstance = GWorld.GameInstance
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -451,7 +437,6 @@ function TaskUtils:CreateAndMoveFollowingPath(Class)
     self.TaskPathActor:K2_SetActorLocation(PlayerCharacter:K2_GetActorLocation(), false, nil, false)
   end
 end
-
 function TaskUtils:UpdatePlayerSubRegionIdInfo(NewPlayerSubRegionId)
   DebugPrint("LHQ_UpdatePlayerSubRegionIdInfo, NewPlayerSubRegionId:", NewPlayerSubRegionId, "start===")
   local Avatar = GWorld:GetAvatar()
@@ -461,7 +446,6 @@ function TaskUtils:UpdatePlayerSubRegionIdInfo(NewPlayerSubRegionId)
   EventManager:FireEvent(EventID.OnChangeTaskSubRegion)
   DebugPrint("LHQ_UpdatePlayerSubRegionIdInfo, NewPlayerSubRegionId:", NewPlayerSubRegionId, "end===")
 end
-
 function TaskUtils:GetSpcialPreQuestChainIdByConfig(StoryPath)
   local SpcialQuestCfgDatas = DataMgr.SpecialQuestConfig
   for _, Data in pairs(SpcialQuestCfgDatas) do
@@ -471,7 +455,6 @@ function TaskUtils:GetSpcialPreQuestChainIdByConfig(StoryPath)
   end
   return 0
 end
-
 function TaskUtils:GetTaskBarWidget()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -485,14 +468,12 @@ function TaskUtils:GetTaskBarWidget()
   end
   return nil
 end
-
 function TaskUtils:UpdateSpecialTaskInfo(OpType, TaskInfo)
   local TaskBar = self:GetTaskBarWidget()
   if TaskBar then
     TaskBar:UpdateSpecialTaskInfo(OpType, TaskInfo)
   end
 end
-
 function TaskUtils:CheckSpecialTaskDoing()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -512,11 +493,19 @@ function TaskUtils:CheckSpecialTaskDoing()
   end
   return false
 end
-
 function TaskUtils:QuestOpenMainMapByQuestTrack()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
+  end
+  local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
+  if "Mobile" == Platform then
+    local Objs = MissionIndicatorManager:GetAllIndicatorUIObjs()
+    if not IsEmptyTable(Objs) then
+      for Name, UIObj in pairs(Objs) do
+        UIObj:RePlayAppearAnim()
+      end
+    end
   end
   local TrackingQuestData = TaskUtils:GetTrackingQuestDetailInfo()
   local IsFairyLand = false
@@ -533,7 +522,7 @@ function TaskUtils:QuestOpenMainMapByQuestTrack()
     if Avatar.QuestChains[CurTrackingQuestChainId] then
       CurTrackingQuestId = Avatar.QuestChains[CurTrackingQuestChainId].DoingQuestId
     end
-    local Message = "\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168\239\188\140\232\175\183\231\173\150\229\136\146\229\144\140\229\173\166\233\133\141" .. "\n\229\189\147\229\137\141\232\191\189\232\184\170\228\187\187\229\138\161\233\147\190:" .. CurTrackingQuestChainId .. "\n\229\189\147\229\137\141\232\191\189\232\184\170\228\187\187\229\138\161:" .. CurTrackingQuestId .. "\n\231\142\169\229\174\182\229\173\144\229\140\186\229\159\159:" .. Avatar.CurrentRegionId .. "\n\228\187\187\229\138\161\229\173\144\229\140\186\229\159\159Id:" .. TargetSubRegionId
+    local Message = "任务指引点区域数据不存在，请策划同学配" .. "\n当前追踪任务链:" .. CurTrackingQuestChainId .. "\n当前追踪任务:" .. CurTrackingQuestId .. "\n玩家子区域:" .. Avatar.CurrentRegionId .. "\n任务子区域Id:" .. TargetSubRegionId
     if Const.EnableTaskPrintError then
       ScreenPrint(string.format("%s", Message))
     end
@@ -541,18 +530,6 @@ function TaskUtils:QuestOpenMainMapByQuestTrack()
   end
   local CurrentRegionId = DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId
   local TaskRegionId = DataMgr.SubRegion[TargetSubRegionId].RegionId
-  if Avatar.CurrentRegionId == TargetSubRegionId then
-    local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
-    if "Mobile" == Platform then
-      local Objs = MissionIndicatorManager:GetAllIndicatorUIObjs()
-      if not IsEmptyTable(Objs) then
-        for Name, UIObj in pairs(Objs) do
-          UIObj:RePlayAppearAnim()
-        end
-      end
-    end
-    return
-  end
   if CurrentRegionId ~= TaskRegionId and false == IsFairyLand then
     local MainMap = UIManager(GWorld.GameInstance):GetUIObj("LevelMapMain")
     if nil == MainMap then
@@ -566,14 +543,12 @@ function TaskUtils:QuestOpenMainMapByQuestTrack()
   elseif CurrentRegionId ~= TaskRegionId or true == IsFairyLand then
     local function CancelDeliverTo()
     end
-    
     local function DoDeliverTo()
       local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
       if IsValid(GameMode) then
-        GameMode:HandleLevelDeliver(UE4.EModeType.ModeRegion, TargetSubRegionId, 1, true)
+        GameMode:HandleLevelDeliver(UE4.EModeType.ModeRegion, TargetSubRegionId, TrackingQuestData.FairyLandDeliverIndex, true)
       end
     end
-    
     local UIManager = GWorld.GameInstance:GetGameUIManager()
     if not DataMgr.QuestChain[Avatar.TrackingQuestChainId] then
       return
@@ -591,7 +566,6 @@ function TaskUtils:QuestOpenMainMapByQuestTrack()
     UIManager:ShowCommonPopupUI(100160, Params)
   end
 end
-
 function TaskUtils:CheckIsNeedLoadLevelMap(InTaskSubRegionId, InCurrentSubRegionid)
   local bAnyTeleporPointUnlock = self:CheckIsAnyTeleporPointUnlock(InTaskSubRegionId, true)
   local TaskRegionId = 0
@@ -610,7 +584,6 @@ function TaskUtils:CheckIsNeedLoadLevelMap(InTaskSubRegionId, InCurrentSubRegion
     return true
   end
 end
-
 function TaskUtils:GetIconTextureByTrackQuestChainType(QuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -637,7 +610,6 @@ function TaskUtils:GetIconTextureByTrackQuestChainType(QuestChainId)
   end
   return nil
 end
-
 function TaskUtils:GetIconTextureByQuestChainType(InChainId)
   local ConstQuestChainTypeTable = {
     [Const.MainQuestChainType] = "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_MainMission.T_Gp_MainMission",
@@ -654,7 +626,6 @@ function TaskUtils:GetIconTextureByQuestChainType(InChainId)
   end
   return nil
 end
-
 function TaskUtils:GetGrayIconTextureByQuestChainType(InChainId)
   local ConstQuestChainTypeTable = {
     [Const.MainQuestChainType] = "/Game/UI/Texture/Dynamic/Atlas/Tab/T_Tab_TaskMainLine.T_Tab_TaskMainLine",
@@ -671,7 +642,6 @@ function TaskUtils:GetGrayIconTextureByQuestChainType(InChainId)
   end
   return nil
 end
-
 function TaskUtils:GetOptinalIconTextureByQuestChainType(InChainId)
   local ConstQuestChainTypeTable = {
     [Const.MainQuestChainType] = "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_MainMission_Optional.T_Gp_MainMission_Optional",
@@ -688,7 +658,36 @@ function TaskUtils:GetOptinalIconTextureByQuestChainType(InChainId)
   end
   return nil
 end
-
+function TaskUtils:GetDiffIconByQuestChainType(InChainId, InContent)
+  if DataMgr.QuestChain[InChainId] and DataMgr.QuestChain[InChainId].QuestChainType then
+    local InType = DataMgr.QuestChain[InChainId].QuestChainType
+    if InType == Const.MainQuestChainType or InType == Const.MainActivityQuestChainType then
+      return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_SubTask_" .. InContent .. ".T_Gp_SubTask_" .. InContent
+    elseif InType == Const.SpecialSideQuestChainType or InType == Const.LimTimeQuestChainType then
+      return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_SubTask_" .. InContent .. "_SpSide" .. ".T_Gp_SubTask_" .. InContent .. "_SpSide"
+    elseif InType == Const.SideQuestChainType then
+      return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_SubTask_" .. InContent .. "_Side" .. ".T_Gp_SubTask_" .. InContent .. "_Side"
+    end
+  end
+end
+function TaskUtils:GetDiffIconOptionalByQuestChainType(InChainId, InContent)
+  if DataMgr.QuestChain[InChainId] and DataMgr.QuestChain[InChainId].QuestChainType then
+    local InType = DataMgr.QuestChain[InChainId].QuestChainType
+    if InType == Const.MainQuestChainType or InType == Const.MainActivityQuestChainType then
+      return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Digging_" .. InContent .. ".T_Gp_Digging_" .. InContent
+    elseif InType == Const.SpecialSideQuestChainType or InType == Const.LimTimeQuestChainType then
+      return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_SubTask_" .. InContent .. "_SpSide_Optional" .. ".T_Gp_SubTask_" .. InContent .. "_SpSide_Optional"
+    elseif InType == Const.SideQuestChainType then
+      return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_SubTask_" .. InContent .. "_Side_Optional" .. ".T_Gp_SubTask_" .. InContent .. "_Side_Optional"
+    end
+  end
+end
+function TaskUtils:GetOptionalDiffIconByQuestChainType(InType, InContent)
+  if InType == Const.MainQuestChainType or InType == Const.MainActivityQuestChainType then
+  elseif InType == Const.SpecialSideQuestChainType or InType == Const.LimTimeQuestChainType then
+  elseif InType == Const.SideQuestChainType then
+  end
+end
 function TaskUtils:GetUnlockMainStory()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -705,7 +704,6 @@ function TaskUtils:GetUnlockMainStory()
   end
   return nil
 end
-
 function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubRegionId)
   local function ContainsElement(table, element)
     for _, value in pairs(table) do
@@ -715,7 +713,6 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
     end
     return nil
   end
-  
   local function ContainsSubRegion(table, element)
     for _, value in pairs(table) do
       if value == element then
@@ -724,7 +721,6 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
     end
     return nil
   end
-  
   local function CreateQueue()
     local queue = {}
     queue.first = 0
@@ -733,14 +729,12 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
     queue.Path = {}
     return queue
   end
-  
   local function Enqueue(queue, value)
     local last = queue.last + 1
     queue.last = last
     queue.QueueValue[last] = value
     table.insert(queue.Path, value[1])
   end
-  
   local function ContainsPath(table, element)
     for _, value in pairs(table) do
       if value == element then
@@ -749,7 +743,6 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
     end
     return false
   end
-  
   local function Dequeue(queue)
     local first = queue.first
     if first > queue.last then
@@ -760,11 +753,9 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
     queue.first = first + 1
     return value
   end
-  
   local function IsEmptyQueue(queue)
     return queue.first > queue.last
   end
-  
   if not DataMgr.RegionGraph[TargetSubRegionId] or not DataMgr.SubRegion[TargetSubRegionId].RegionId then
     return nil
   end
@@ -773,7 +764,6 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
     return nil
   end
   local RegionTargetDatas = DataMgr.RegionGraph[CurSubRegionId].SubRegionTarget.RegionTarget
-  
   local function TryFindTargetPointByBFS(RootTargetData)
     local RootSubRegionId = RootTargetData[1]
     if not (DataMgr.RegionGraph[RootSubRegionId] and DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget) or not DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget.RegionTarget then
@@ -819,7 +809,6 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
       return -1
     end
   end
-  
   local RetWeight = math.maxinteger
   local RetData
   local MinDistance = math.maxinteger
@@ -888,7 +877,6 @@ function TaskUtils:TryGetSmartPointDataForRegionMap(CurSubRegionId, TargetSubReg
   end
   return nil, RetData
 end
-
 function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegionId)
   local function TryGetAnyRegionDataUnlock(table)
     if table then
@@ -900,7 +888,6 @@ function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegion
     end
     return nil
   end
-  
   local function CreateQueue()
     local queue = {}
     queue.first = 0
@@ -909,14 +896,12 @@ function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegion
     queue.Path = {}
     return queue
   end
-  
   local function Enqueue(queue, value)
     local last = queue.last + 1
     queue.last = last
     queue.QueueValue[last] = value
     table.insert(queue.Path, value[1])
   end
-  
   local function ContainsPath(table, element)
     for _, value in pairs(table) do
       if value == element then
@@ -925,7 +910,6 @@ function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegion
     end
     return false
   end
-  
   local function Dequeue(queue)
     local first = queue.first
     if first > queue.last then
@@ -936,11 +920,9 @@ function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegion
     queue.first = first + 1
     return value
   end
-  
   local function IsEmptyQueue(queue)
     return queue.first > queue.last
   end
-  
   local function CheckTargetSubRegionIdFromStart(StartTable, TargetSubRegionId)
     if StartTable then
       for _, value in pairs(StartTable) do
@@ -951,13 +933,11 @@ function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegion
     end
     return false
   end
-  
   if not DataMgr.RegionGraph[InSubRegionId] or not DataMgr.SubRegion[InSubRegionId].RegionId then
     return nil, nil
   end
   local RegionStartDatas = DataMgr.RegionGraph[InSubRegionId].RegionStart
   local TargetRegionStartDatas = DataMgr.RegionGraph[TargetSubRegionId].RegionStart
-  
   local function TryFindTargetPointByBFS(RootSubRegionId)
     local RootRegionQueue = CreateQueue()
     local RootRegionDatas = DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget.RegionTarget
@@ -1003,10 +983,8 @@ function TaskUtils:TryFindUnlockTeleporPointByBFS(InSubRegionId, TargetSubRegion
       return nil, nil
     end
   end
-  
   return TryFindTargetPointByBFS(InSubRegionId)
 end
-
 function TaskUtils:CheckIsAnyTeleporPointUnlock(InSubRegionId, IsInAllSubRegion)
   if DataMgr.SubRegion[InSubRegionId] == nil then
     return false
@@ -1044,15 +1022,13 @@ function TaskUtils:CheckIsAnyTeleporPointUnlock(InSubRegionId, IsInAllSubRegion)
   end
   return false
 end
-
-function TaskUtils:SetQuestInterfaceJump(QuestId, IsJump, IsShowGuide, JumpId)
+function TaskUtils:SetQuestInterfaceJump(QuestId, IsJump, JumpId, IsShowGuide)
   QuestInterfaceJump = QuestInterfaceJump or {}
   QuestInterfaceJump[QuestId] = QuestInterfaceJump[QuestId] or {}
   QuestInterfaceJump[QuestId] = {IsJump, IsShowGuide}
   QuestInterfaceJumpId = QuestInterfaceJumpId or {}
   QuestInterfaceJumpId[QuestId] = JumpId
 end
-
 function TaskUtils:GetQuestInterfaceJump(QuestId)
   if not QuestId then
     return nil
@@ -1061,7 +1037,6 @@ function TaskUtils:GetQuestInterfaceJump(QuestId)
     return QuestInterfaceJump[QuestId][1]
   end
 end
-
 function TaskUtils:GetQuestIsShowGuide(QuestId)
   if not QuestId then
     return nil
@@ -1070,19 +1045,16 @@ function TaskUtils:GetQuestIsShowGuide(QuestId)
     return QuestInterfaceJump[QuestId][2]
   end
 end
-
 function TaskUtils:GetQuestInterfaceJumpId(QuestId)
   if not QuestId then
     return nil
   end
   return QuestInterfaceJumpId[QuestId]
 end
-
 function TaskUtils:RemoveQuestInterfaceJump(QuestId)
   QuestInterfaceJump[QuestId] = nil
   QuestInterfaceJumpId[QuestId] = nil
 end
-
 function TaskUtils:JudgeCanTrack()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1094,5 +1066,4 @@ function TaskUtils:JudgeCanTrack()
   end
   return false
 end
-
 return TaskUtils

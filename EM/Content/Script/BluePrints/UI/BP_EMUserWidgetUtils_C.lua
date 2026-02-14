@@ -1,17 +1,9 @@
 local M = Class({
   "BluePrints.Common.StageTimerMgr"
 })
-
 function M:Initialize(Initializer)
   rawset(self, "ListenEvent", {})
 end
-
-function M:EMPreConstruct()
-  if not self.GameInputModeSubsystem then
-    self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
-  end
-end
-
 function M:AddDispatcher(EventName, Obj, Func)
   if type(Func) ~= "function" then
     return
@@ -25,7 +17,6 @@ function M:AddDispatcher(EventName, Obj, Func)
   EventManager:AddEvent(EventName, Obj, Func)
   self.ListenEvent[EventName] = Obj
 end
-
 function M:RemoveDispatcher(EventName)
   if not self.ListenEvent or self.ListenEvent[EventName] == nil then
     return
@@ -33,7 +24,6 @@ function M:RemoveDispatcher(EventName)
   EventManager:RemoveEvent(EventName, self.ListenEvent[EventName])
   self.ListenEvent[EventName] = nil
 end
-
 function M:RemoveAllDispatcher()
   if rawget(self, "ListenEvent") then
     for k, v in pairs(self.ListenEvent) do
@@ -45,7 +35,6 @@ function M:RemoveAllDispatcher()
   end
   self.ListenEvent = {}
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     if self.CheckNeedAutoFocusWithInputType and self:CheckNeedAutoFocusWithInputType() then
@@ -60,22 +49,18 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
 end
-
 function M:AddInputMethodChangedListen()
-  if IsValid(self.GameInputModeSubsystem) then
+  if IsValid(self) and self.GameInputModeSubsystem ~= nil then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
-  if IsValid(self.GameInputModeSubsystem) then
+  if IsValid(self) and self.GameInputModeSubsystem ~= nil then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:CheckNeedAutoFocusWithInputType()
   local TopUIWidget = UIManager(self):GetWidgetObjInTopStack()
   local LastestCreateWidget = UIManager(self):GetLastestAndFocusableUIWidgetObj()
@@ -85,28 +70,28 @@ function M:CheckNeedAutoFocusWithInputType()
     return false
   end
 end
-
 function M:AddTimer(Interval, Func, IsLoop, Delay, Key, IsRealTime, ...)
+  if type(Func) ~= "function" then
+    DebugPrint(ErrorTag, "::Error::  EMUserWidget=AddTimer 异常，回调函数传入非法, UIName is", self.WidgetName or self:GetName())
+    return
+  end
   if nil == IsRealTime then
     IsRealTime = true
   end
   return M.Super.AddTimer(self, Interval, Func, IsLoop, Delay, Key, IsRealTime, UE4.ETickingGroup.TG_EndPhysics, ...)
 end
-
 function M:GetPosition(Widget)
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(Widget)
   if nil ~= CanvasSlot then
     return CanvasSlot:GetPosition()
   end
 end
-
 function M:SetPosition(Widget, Pos)
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(Widget)
   if nil ~= CanvasSlot then
     return CanvasSlot:SetPosition(Pos)
   end
 end
-
 function M:GetPreciseDecimal(nNum, n)
   if type(nNum) ~= "number" then
     return nNum
@@ -121,7 +106,6 @@ function M:GetPreciseDecimal(nNum, n)
   local nRet = nTemp / nDecimal
   return nRet
 end
-
 function M:GetTimeStr(DeltaTime)
   local TimeStr = ""
   local h = math.modf(DeltaTime / 3600)
@@ -147,17 +131,29 @@ function M:GetTimeStr(DeltaTime)
   end
   return TimeStr
 end
-
 function M:UpdateListViewScrollMultiplier(ListViewObj, NewWheelScrollMultiplier)
   if nil == ListViewObj then
     return
   end
   ListViewObj:SetWheelScrollMultiplier(NewWheelScrollMultiplier)
 end
-
-function M:Destruct()
+function M:ClearScriptRegister()
   self:CleanTimer()
   self:RemoveAllDispatcher()
+  if self.ReddotNodeIns and ReddotManager then
+    ReddotManager.RemoveListener(self.ReddotNodeIns.Name, self)
+  end
 end
-
+function M:Destruct()
+  DebugPrint("BP_EMUserWidgetUtils_C Destruct, 父类Destruct逻辑已经迁移, 子类可以不需要再调用Super方法 UIName is", self.WidgetName or self:GetName())
+end
+function M:CreateWidgetNew(UIName, ...)
+  return UIManager(self):_CreateWidgetNew(UIName)
+end
+function M:CreateWidgetAsync(UIName, CoroutineOrCBFunc, ...)
+  return UIManager(self):CreateWidgetAsync(UIName, CoroutineOrCBFunc, ...)
+end
+function M:LoadUINew(UIName, ...)
+  return UIManager(self):LoadUINew(UIName, ...)
+end
 return M

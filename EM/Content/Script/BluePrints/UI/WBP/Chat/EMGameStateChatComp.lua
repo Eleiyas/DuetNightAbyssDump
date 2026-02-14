@@ -1,5 +1,5 @@
+local ChatController = require("BluePrints.UI.WBP.Chat.ChatController")
 local Component = {}
-
 function Component:MulticastChatMessage_Lua(Messages)
   local MyPlayer = GWorld:GetMainPlayer()
   for _, DsMessage in pairs(Messages) do
@@ -12,6 +12,7 @@ function Component:MulticastChatMessage_Lua(Messages)
         Content = DsMessage.Content,
         Time = DsMessage.TimeStamp,
         Sender = {
+          Uid = OtherDs.Uid,
           Nickname = OtherDs.PlayerName,
           Level = OtherDs.PlayerLevel,
           HeadIconId = OtherDs.HeadIconId,
@@ -26,5 +27,4 @@ function Component:MulticastChatMessage_Lua(Messages)
     end
   end
 end
-
 return Component

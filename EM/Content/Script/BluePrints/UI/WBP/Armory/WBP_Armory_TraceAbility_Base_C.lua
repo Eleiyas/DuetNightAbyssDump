@@ -2,7 +2,6 @@ require("UnLua")
 local SkillUtils = require("Utils.SkillUtils")
 local UpgradeUtils = require("Utils.UpgradeUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddDispatcher(EventID.OnCharGradeLevelUp, self, self.OnCharGradeLevelUp)
@@ -25,7 +24,6 @@ function M:Construct()
   self:AddInputMethodChangedListen()
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.Char = Params.Target
@@ -37,7 +35,6 @@ function M:Init(Params)
   self:InitTraceMain()
   self:InitNavigationRules()
 end
-
 function M:InitTraceMain()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -66,7 +63,6 @@ function M:InitTraceMain()
     self["Armory_TraceAbilityItem_" .. self.CharGradeLevel + 1]:SetReddotState(self:CheckCharCanUpGradeLevel())
   end
 end
-
 function M:OnClickTraceItem(TraceId)
   if self.IsOutAnimPlayed then
     return
@@ -137,7 +133,6 @@ function M:OnClickTraceItem(TraceId)
     self.Group_Btn:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:InitResourceNeeded()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -182,7 +177,6 @@ function M:InitResourceNeeded()
   end
   self.CurrencyTitle:SetText(GText("UI_Armory_Trace_Cost"))
 end
-
 function M:SetTraceDesc()
   if DataMgr.BattleChar[self.CharId].CharGradeDescription and DataMgr.BattleChar[self.CharId].CharGradeDescription[self.SelectTraceId] then
     local CharGradeDescription = GText(DataMgr.BattleChar[self.CharId].CharGradeDescription[self.SelectTraceId])
@@ -198,7 +192,6 @@ function M:SetTraceDesc()
     self.Text_Desc:SetText(CharGradeDescription)
   end
 end
-
 function M:OnClickBtnFullClose()
   if -1 == self.SelectTraceId then
     return
@@ -215,7 +208,6 @@ function M:OnClickBtnFullClose()
     self.SelectTraceId = -1
   end
 end
-
 function M:OnClickBTN()
   if self.CharGradeLevel == self.MaxGradeLevel or self.SelectTraceId ~= self.CharGradeLevel + 1 then
     return
@@ -232,7 +224,6 @@ function M:OnClickBTN()
     CallServerFunc(Avatar, Char.Uuid, tonumber(Char.GradeLevel))
   end
 end
-
 function M:CheckCharCanUpGradeLevel()
   if self.IsPreviewMode then
     return
@@ -244,7 +235,6 @@ function M:CheckCharCanUpGradeLevel()
   local Char = self.Char
   return UpgradeUtils.CheckCharCanUpgradeCardLevel(Char)
 end
-
 function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
   self.Parent:BlockAllUIInput(false)
   if ErrorCode:Check(Ret) then
@@ -264,7 +254,6 @@ function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
     end
   end
 end
-
 function M:ClickToNextTraceItem()
   self.Parent:BlockAllUIInput(false)
   if self["Armory_TraceAbilityItem_" .. self.CharGradeLevel + 1] then
@@ -272,7 +261,6 @@ function M:ClickToNextTraceItem()
     self["Armory_TraceAbilityItem_" .. self.CharGradeLevel + 1]:SetFocus()
   end
 end
-
 function M:PlayInAnim()
   self.IsOutAnimPlayed = false
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -280,7 +268,6 @@ function M:PlayInAnim()
   self:FlushAnimations()
   self:PlayAnimation(self.Auto_In)
 end
-
 function M:PlayOutAnim()
   self.IsOutAnimPlayed = true
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -289,12 +276,10 @@ function M:PlayOutAnim()
   self:PlayAnimation(self.Auto_Out)
   return self.Auto_Out:GetEndTime()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   self:UpdateGamepadKeyState()
 end
-
 function M:UpdateGamepadKeyState()
   if self.IsGamepadInput then
     if self.IsResourceFocused then
@@ -306,7 +291,6 @@ function M:UpdateGamepadKeyState()
     self.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.LastFocusItem then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.LastFocusItem)
@@ -314,20 +298,17 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Armory_TraceAbilityItem_1)
   end
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Parent)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   self:OnClickBtnFullClose()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Parent)
   end
 end
-
 function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -339,7 +320,6 @@ function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:InitNavigationRules()
   local i = 1
   while self["Armory_TraceAbilityItem_" .. i] do
@@ -357,8 +337,6 @@ function M:InitNavigationRules()
     i = i + 1
   end
 end
-
 function M:InitKeySetting()
 end
-
 return M

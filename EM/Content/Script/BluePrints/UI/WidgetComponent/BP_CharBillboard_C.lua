@@ -4,67 +4,38 @@ local EMCache = require("EMCache.EMCache")
 local BP_CharBillboard_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_CharBillboard_C:Initialize(Initializer)
   self.Owner = nil
 end
-
-function BP_CharBillboard_C:ShowBillboard(TalkGameInput)
-  if TalkGameInput then
+function BP_CharBillboard_C:ShowBillboard(Message)
+  if not Message.bDisableGameInput then
     return
   end
   self:SetVisibility(true)
 end
-
-function BP_CharBillboard_C:HideBillboard(TalkGameInput)
-  if TalkGameInput then
+function BP_CharBillboard_C:HideBillboard(Message)
+  if not Message.bDisableGameInput then
     return
   end
   self:SetVisibility(false)
 end
-
 function BP_CharBillboard_C:GetCurrentWidget()
   if not self.CurrentWidget then
     self.CurrentWidget = self:GetUserWidgetObject()
   end
   return self.CurrentWidget
 end
-
-function BP_CharBillboard_C:RefreshDiffInfoByAction_Lua()
-  if not self.Owner then
-    self.Owner = self:GetOwner()
-  end
-  if self.TypeStr == "BossPlace" then
-    self:RefreshBossPlaceBlood()
-  elseif self.Owner and (self.bNeedUpdateBossUI or self.Owner:IsBossMonster()) then
-    local BossBillboard = self.Owner.BossBloodUI
-    if BossBillboard and BossBillboard.UpdateBossBlood then
-      BossBillboard:UpdateBossBlood("Attack")
-    end
-  end
-end
-
-function BP_CharBillboard_C:RefreshBossPlaceBlood(ActionName)
-  local CurrentWidget = self:GetUserWidgetObject()
-  if nil == CurrentWidget then
-    return
-  end
-  CurrentWidget:UpdateBossPlaceBlood()
-end
-
 function BP_CharBillboard_C:RefreshPlayerBillBoard(PlayerActor)
   local CurrentWidget = self:GetUserWidgetObject()
   if nil == CurrentWidget then
     return
   end
 end
-
 function BP_CharBillboard_C:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.StartTalk, self, self.HideBillboard)
   EventManager:AddEvent(EventID.EndTalk, self, self.ShowBillboard)
   self.IsDestroied = nil
 end
-
 function BP_CharBillboard_C:ReceiveEndPlay()
   EventManager:RemoveEvent(EventID.StartTalk, self)
   EventManager:RemoveEvent(EventID.EndTalk, self)
@@ -73,11 +44,9 @@ function BP_CharBillboard_C:ReceiveEndPlay()
     UIManager(self):RemoveWidgetComponentToList(self.Owner.Eid, "Billboard")
   end
 end
-
 function BP_CharBillboard_C:InitMonsterBillBoard_Lua(Owner)
   self.Owner = Owner
 end
-
 function BP_CharBillboard_C:AICharacter_AfterWidgetLoad_Lua()
   if self.Owner == nil then
     self.Owner = self:GetOwner()
@@ -87,29 +56,28 @@ function BP_CharBillboard_C:AICharacter_AfterWidgetLoad_Lua()
   end
   self:SetBuffPanelVisibilityByConfig()
 end
-
 function BP_CharBillboard_C:RefreshMonsterInfoByAction_Lua()
   if self.Owner:IsPhantom() and self.Owner.TeammateUI then
     self.Owner.TeammateUI:UpdateBar()
   end
 end
-
 function BP_CharBillboard_C:InitPlayerBillBoard(Owner, TypeStr)
   self.Owner = Owner
   self.TypeStr = TypeStr
   EventManager:RemoveEvent(EventID.StartTalk, self)
   EventManager:RemoveEvent(EventID.EndTalk, self)
 end
-
 function BP_CharBillboard_C:InitItemsBillBoard(Owner, TypeStr, StyleNodeName, IsSync)
   self:UnregisterListenerOnBuffsChanged()
   self.Owner = Owner
+  if self.Owner.Data == nil then
+    return
+  end
   self:K2_SetBuffsOwner(Owner)
   self:RegisterListenerOnBuffsChanged()
   self.TypeStr = TypeStr
   self.StyleNodeName = self:GetOwnerStyleNodeName() or "Blood_Shield"
   local Path = self:GetPathByStyleNodeName(self.StyleNodeName)
-  
   local function AfterLoad()
     if not IsSync then
       if self:GetUserWidgetObject() ~= nil then
@@ -145,7 +113,6 @@ function BP_CharBillboard_C:InitItemsBillBoard(Owner, TypeStr, StyleNodeName, Is
       UIManager(self):AddWidgetComponentToList(self.Owner.Eid, "Billboard", self)
     end
   end
-  
   if IsSync then
     self:SetWidgetClassByBpPath(Path)
     AfterLoad()
@@ -154,7 +121,6 @@ function BP_CharBillboard_C:InitItemsBillBoard(Owner, TypeStr, StyleNodeName, Is
     self:SetWidgetClassByPathAsync(WorldContext, Path, {self, AfterLoad})
   end
 end
-
 function BP_CharBillboard_C:RefreshItemsInfoByAction(ActionName)
   if not IsValid(self.Owner) then
     return
@@ -170,12 +136,10 @@ function BP_CharBillboard_C:RefreshItemsInfoByAction(ActionName)
     self:AddTimer(1.0, self.UpdateCharBillboardInfo, true, 0, "UpdateCharBillboardInfo")
   end
 end
-
 function BP_CharBillboard_C:InitBossPlaceBillBoard(Owner, TypeStr, IsSync)
   self.Owner = Owner
   self.TypeStr = TypeStr
   local Path = "WidgetBlueprint'/Game/UI/WBP/Battle/Widget/HUD_Bar/WBP_Battle_BossPlaceBar.WBP_Battle_BossPlaceBar_C'"
-  
   local function AfterLoad()
     if not IsSync then
       if self:GetUserWidgetObject() ~= nil then
@@ -196,7 +160,6 @@ function BP_CharBillboard_C:InitBossPlaceBillBoard(Owner, TypeStr, IsSync)
       UIManager(self):AddWidgetComponentToList(self.Owner.Eid, "Billboard", self)
     end
   end
-  
   if IsSync then
     self:SetWidgetClassByBpPath(Path)
     AfterLoad()
@@ -205,12 +168,10 @@ function BP_CharBillboard_C:InitBossPlaceBillBoard(Owner, TypeStr, IsSync)
     self:SetWidgetClassByPathAsync(WorldContext, Path, {self, AfterLoad})
   end
 end
-
 function BP_CharBillboard_C:CharOnRecovery()
   if self:IsPhantom() then
   end
 end
-
 function BP_CharBillboard_C:PhantomOnDead()
   if self.Owner and self.Owner:IsPhantom() then
     if self.Owner.TeammateUI then
@@ -219,11 +180,9 @@ function BP_CharBillboard_C:PhantomOnDead()
     self:RealCharOnDead()
   end
 end
-
 function BP_CharBillboard_C:GetCharOwner()
   return self.Owner
 end
-
 function BP_CharBillboard_C:IsBillboardShow()
   local CurrentWidget = self:GetUserWidgetObject()
   if nil == CurrentWidget or nil == self.StyleNodeName then
@@ -231,7 +190,6 @@ function BP_CharBillboard_C:IsBillboardShow()
   end
   return CurrentWidget:CheckIsShowByType(self.StyleNodeName)
 end
-
 function BP_CharBillboard_C:TryToShowOrHideBillBoardByShoot_Lua(IsShow)
   local CurrentWidget = self:GetUserWidgetObject()
   if not (nil ~= CurrentWidget and IsValid(self.Owner)) or nil == self.StyleNodeName or self.TypeStr == "BossPlace" then
@@ -261,11 +219,9 @@ function BP_CharBillboard_C:TryToShowOrHideBillBoardByShoot_Lua(IsShow)
     end
   end
 end
-
 function BP_CharBillboard_C:GetOwnerType()
   return self.TypeStr
 end
-
 function BP_CharBillboard_C:RefreshInvincibleState(Invincible)
   if not IsValid(self.Owner) then
     return
@@ -275,7 +231,6 @@ function BP_CharBillboard_C:RefreshInvincibleState(Invincible)
     CurrentWidget:RefreshInvincibleState()
   end
 end
-
 function BP_CharBillboard_C:SetBuffPanelVisibilityByConfig()
   local CurrentWidget = self:GetUserWidgetObject()
   if not CurrentWidget then
@@ -301,7 +256,6 @@ function BP_CharBillboard_C:SetBuffPanelVisibilityByConfig()
     CurrentWidget:SetCharBuffUIVisibility(true)
   end
 end
-
 function BP_CharBillboard_C:BuffChange_SpecialEffect(HotUI, Invisible, InvincibleUI)
   if not IsValid(self.Owner) then
     return
@@ -333,7 +287,6 @@ function BP_CharBillboard_C:BuffChange_SpecialEffect(HotUI, Invisible, Invincibl
     self.Owner.TeammateUI:UpdateCharHotUIState(HotUI)
   end
 end
-
 function BP_CharBillboard_C:BuffSpecialEffect_InvincibleUI(IsShow)
   if not IsValid(self.Owner) then
     return
@@ -359,14 +312,12 @@ function BP_CharBillboard_C:BuffSpecialEffect_InvincibleUI(IsShow)
     self.Owner.TeammateUI:BuffSpecialEffect_InvincibleUI(IsShow)
   end
 end
-
 function BP_CharBillboard_C:OnBuffChange_Weakness()
   local CurrentWidget = self:GetCurrentWidget()
   if CurrentWidget and CurrentWidget.RefreshWeaknessIcons then
     CurrentWidget:RefreshWeaknessIcons()
   end
 end
-
 function BP_CharBillboard_C:OnBuffChange_LockHp(bIsLock, Value, Percent)
   if not self.Owner then
     return
@@ -396,7 +347,6 @@ function BP_CharBillboard_C:OnBuffChange_LockHp(bIsLock, Value, Percent)
     self.Owner.TeammateUI:SetInvincible(CurrentWidget.bIsInvincibleNow)
   end
 end
-
 function BP_CharBillboard_C:GetOwnerStyleNodeName()
   if not IsValid(self.Owner) then
     return
@@ -405,5 +355,4 @@ function BP_CharBillboard_C:GetOwnerStyleNodeName()
     return self.Owner.Data.BloodUIParmas.UIStyleNodeName
   end
 end
-
 return BP_CharBillboard_C

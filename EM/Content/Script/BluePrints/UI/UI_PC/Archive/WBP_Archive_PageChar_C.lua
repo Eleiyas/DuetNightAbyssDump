@@ -5,7 +5,7 @@ local WBP_Archive_PageChar_C = Class({
 WBP_Archive_PageChar_C._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
+local ActorController = require("BluePrints.UI.WBP.Armory.ActorController.Armory_ActorController")
 function WBP_Archive_PageChar_C:Construct()
   self.Super.Construct(self)
   self.FirstFocus = false
@@ -16,7 +16,13 @@ function WBP_Archive_PageChar_C:Construct()
   self.List_Item.BP_OnEntryInitialized:Clear()
   self.List_Item.OnCreateEmptyContent:Bind(self, function(self)
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
-    Content.Icon = nil
+    if self.Name == "Character" then
+      Content.Type = "Character"
+    elseif self.Name == "Melee" or self.Name == "Ranged" then
+      Content.Type = "Weapon"
+    end
+    Content.NotInteractive = true
+    Content.IsEmpty = nil
     Content.Parent = self
     return Content
   end)
@@ -28,17 +34,18 @@ function WBP_Archive_PageChar_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Archive_PageChar_C:Destruct()
-  self.Super.Destruct(self)
+  if self.ActorController then
+    self.ActorController:OnDestruct()
+  end
   self.List_Item.BP_OnEntryInitialized:Remove(self, self.OnObjectSetFinished)
   self:HorizontalListViewResize_TearDown()
   self:ClearListenEvent()
   if self.NodeName then
     ReddotManager.RemoveListener(self.NodeName, self)
   end
+  self.Super.Destruct(self)
 end
-
 function WBP_Archive_PageChar_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Name, self.Type = ...
@@ -58,8 +65,15 @@ function WBP_Archive_PageChar_C:OnLoaded(...)
     end
     ReddotManager.AddListener(self.NodeName, self, self.RefreshReddot)
   end
+  self.ActorController = ActorController:New({
+    ViewUI = self,
+    IsPreviewMode = true,
+    IsCharacterTrialMode = false,
+    EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewArmory,
+    bNeedEndCamera = false
+  })
+  self.ActorController:OnOpened()
 end
-
 function WBP_Archive_PageChar_C:InitFilter()
   self.List_Item:SetFocus()
   self.List_Item.BP_OnEntryInitialized:Clear()
@@ -90,7 +104,6 @@ function WBP_Archive_PageChar_C:InitFilter()
   table.insert(self.FilterNames, 1, "UI_ALL")
   table.insert(self.FilterIcons, 1, "/Game/UI/Texture/Static/Atlas/Armory/T_Armory_Select.T_Armory_Select")
 end
-
 function WBP_Archive_PageChar_C:InitCommonTab()
   self.AllTabInfo = {}
   for i, Tag in ipairs(self.FilterTags) do
@@ -149,7 +162,6 @@ function WBP_Archive_PageChar_C:InitCommonTab()
   self.Com_Tab:BindEventOnTabSelected(self, self.TabItemClick)
   self.Com_Tab:SelectTabById(self.FilterTags[1])
 end
-
 function WBP_Archive_PageChar_C:TabItemClick(TabWidget)
   self.SelectFirstTime = false
   self.List_Item:SetFocus()
@@ -159,7 +171,6 @@ function WBP_Archive_PageChar_C:TabItemClick(TabWidget)
   self:HorizontalListViewResize_SetUp(self.Panel_ListCut, self.List_Item, 0)
   self.Collect:Init(self.Name, self.Type, TabWidget.Idx, TabWidget.Info.Text, self.Num_Now, self.Num_Total, self)
 end
-
 function WBP_Archive_PageChar_C:RefreshList(bAnimation)
   if nil == bAnimation then
     bAnimation = true
@@ -176,14 +187,10 @@ function WBP_Archive_PageChar_C:RefreshList(bAnimation)
   self.ItemId2Index = {}
   self:OnListFillWith()
   self:AddTimer(0.01, function()
-    self:OnRefreshListLater(bAnimation)
-    self:OnRefreshListEnd()
-    if bAnimation then
-      self.List_Item:ScrollToTop()
-    end
+    self.List_Item:RequestFillEmptyContent()
+    self.List_Item:RequestPlayEntriesAnim()
   end, false, 0, "OnRefreshListLater", true)
 end
-
 function WBP_Archive_PageChar_C:_StopListFramingInAnim()
   local Params = {UIState = self}
   if self._ListAnimTimerKeys then
@@ -191,19 +198,18 @@ function WBP_Archive_PageChar_C:_StopListFramingInAnim()
   end
   UIUtils.StopListViewFramingInAnimation(self.List_Item, Params)
 end
-
 function WBP_Archive_PageChar_C:GetListData()
   self["Get" .. self.Name .. "Data"](self, self.CurTabId)
 end
-
 function WBP_Archive_PageChar_C:GetCharacterData(TabId)
   local Avatar = GWorld:GetAvatar()
   local Sex = Avatar.Sex or 0
   local PlayerCharacterIds = {}
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   if not self.AllCharacterIds then
     self.AllCharacterIds = {}
     for Id, Data in pairs(DataMgr.Char) do
-      if not Data.IsNotOpen then
+      if not Data.IsNotOpen and (not Data.ReleaseVersion or CurrentVersion >= Data.ReleaseVersion) then
         table.insert(self.AllCharacterIds, Data.CharId)
         if Data.GenderTag and Data.GenderTag == Sex then
           PlayerCharacterIds[Data.CharId] = 0
@@ -247,12 +253,12 @@ function WBP_Archive_PageChar_C:GetCharacterData(TabId)
   end
   self:SortListDatas()
 end
-
 function WBP_Archive_PageChar_C:GetMeleeData(TabId)
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   if not self.AllMeleeIds then
     self.AllMeleeIds = {}
     for _, Info in pairs(DataMgr.Weapon) do
-      if not Info.IsNotOpen and self:DoesWeaponHaveTag(Info.WeaponId, "Melee") then
+      if not Info.IsNotOpen and (not Info.ReleaseVersion or CurrentVersion >= Info.ReleaseVersion) and self:DoesWeaponHaveTag(Info.WeaponId, "Melee") then
         table.insert(self.AllMeleeIds, Info.WeaponId)
       end
     end
@@ -282,12 +288,12 @@ function WBP_Archive_PageChar_C:GetMeleeData(TabId)
   end
   self:SortListDatas()
 end
-
 function WBP_Archive_PageChar_C:GetRangedData(TabId)
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
   if not self.AllRangedIds then
     self.AllRangedIds = {}
     for _, Info in pairs(DataMgr.Weapon) do
-      if not Info.IsNotOpen and self:DoesWeaponHaveTag(Info.WeaponId, "Ranged") then
+      if not Info.IsNotOpen and (not Info.ReleaseVersion or CurrentVersion >= Info.ReleaseVersion) and self:DoesWeaponHaveTag(Info.WeaponId, "Ranged") then
         table.insert(self.AllRangedIds, Info.WeaponId)
       end
     end
@@ -317,7 +323,6 @@ function WBP_Archive_PageChar_C:GetRangedData(TabId)
   end
   self:SortListDatas()
 end
-
 function WBP_Archive_PageChar_C:DoesWeaponHaveTag(WeaponId, TargetTag)
   local WeaponTags = DataMgr.BattleWeapon[WeaponId].WeaponTag
   if WeaponTags then
@@ -329,7 +334,6 @@ function WBP_Archive_PageChar_C:DoesWeaponHaveTag(WeaponId, TargetTag)
   end
   return false
 end
-
 function WBP_Archive_PageChar_C:GetWeaponTag(WeaponId)
   local WeaponTags = DataMgr.BattleWeapon[WeaponId].WeaponTag
   if WeaponTags then
@@ -343,7 +347,6 @@ function WBP_Archive_PageChar_C:GetWeaponTag(WeaponId)
   end
   return nil
 end
-
 function WBP_Archive_PageChar_C:SetupListContent(ItemIndex, ItemInfo, Content)
   Content.Index = ItemIndex
   Content.Id = ItemInfo.Id
@@ -362,7 +365,6 @@ function WBP_Archive_PageChar_C:SetupListContent(ItemIndex, ItemInfo, Content)
     Params = {Content}
   }
 end
-
 function WBP_Archive_PageChar_C:OnListFillWith()
   self.Num_Now = 0
   self.Num_Total = 0
@@ -377,7 +379,6 @@ function WBP_Archive_PageChar_C:OnListFillWith()
     self.List_Item:AddItem(Content)
   end
 end
-
 function WBP_Archive_PageChar_C:OnRefreshListLater(bAnimation)
   if bAnimation then
     self._ListAnimTimerKeys = UIUtils.PlayListViewFramingInAnimation(self, self.List_Item, {
@@ -387,13 +388,10 @@ function WBP_Archive_PageChar_C:OnRefreshListLater(bAnimation)
     })
   end
 end
-
 function WBP_Archive_PageChar_C:OnRefreshListBegin()
 end
-
 function WBP_Archive_PageChar_C:OnRefreshListEnd()
 end
-
 function WBP_Archive_PageChar_C:FillListDatasWithCharacterInfo(Data, Info, Unlock)
   local Attribute = DataMgr.BattleChar[Data.CharId].Attribute
   local AttributeIcon
@@ -415,7 +413,6 @@ function WBP_Archive_PageChar_C:FillListDatasWithCharacterInfo(Data, Info, Unloc
     GradeLevel = Info.GradeLevel
   })
 end
-
 function WBP_Archive_PageChar_C:FillListDatasWithWeaponInfo(Data, Info, Unlock, Tag)
   local TagIcon
   if Tag then
@@ -438,7 +435,6 @@ function WBP_Archive_PageChar_C:FillListDatasWithWeaponInfo(Data, Info, Unlock, 
     GradeLevel = Info[2]
   })
 end
-
 function WBP_Archive_PageChar_C:SortListDatas()
   table.sort(self.ListDatas, function(A, B)
     if A.Unlock ~= B.Unlock then
@@ -456,7 +452,6 @@ function WBP_Archive_PageChar_C:SortListDatas()
     end
   end)
 end
-
 function WBP_Archive_PageChar_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -487,25 +482,21 @@ function WBP_Archive_PageChar_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Archive_PageChar_C:OnReturnKeyDown()
   UIUtils.PlayCommonBtnSe(self)
   self:OnClickBack()
 end
-
 function WBP_Archive_PageChar_C:OnClickBack()
   if self:CheckIsCanCloseSelf() then
     self:PlayOutAnim()
   end
 end
-
 function WBP_Archive_PageChar_C:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
   return true
 end
-
 function WBP_Archive_PageChar_C:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -514,24 +505,25 @@ function WBP_Archive_PageChar_C:PlayInAnim()
   self:PlayAnimationForward(self.In)
   self.Main:SetRenderOpacity(1)
 end
-
 function WBP_Archive_PageChar_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   AudioManager(self):SetEventSoundParam(self, "ArchivePageCharOpenSound", {ToEnd = 1})
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:BindToAnimationFinished(self.Out, {
     self,
     self.Close
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_Archive_PageChar_C:Close()
+  self.List_Item:ClearListItems()
+  if self.ActorController then
+    self.ActorController:OnClosed()
+  end
   self.Super.Close(self)
 end
-
 function WBP_Archive_PageChar_C:ClickListItem(Content)
   if self.Name == "Character" then
     self:ClickListChar(Content)
@@ -539,7 +531,6 @@ function WBP_Archive_PageChar_C:ClickListItem(Content)
     self:ClickListWeapon(Content)
   end
 end
-
 function WBP_Archive_PageChar_C:ClickListChar(Content)
   local CharIds = {}
   for _, value in ipairs(self.ListDatas) do
@@ -557,7 +548,6 @@ function WBP_Archive_PageChar_C:ClickListChar(Content)
     OnCloseDelegate = nil
   })
 end
-
 function WBP_Archive_PageChar_C:ClickListWeapon(Content)
   local WeaponIds = {}
   for _, value in ipairs(self.ListDatas) do
@@ -569,23 +559,21 @@ function WBP_Archive_PageChar_C:ClickListWeapon(Content)
     EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewArmory,
     bNoEndCamera = true,
     bFromArchive = true,
+    bHideWeaponAppearance = true,
     DoNotSort = true,
     OnCloseDelegate = nil
   })
 end
-
 function WBP_Archive_PageChar_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_PageChar_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_PageChar_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -593,7 +581,6 @@ function WBP_Archive_PageChar_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Archive_PageChar_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -601,16 +588,13 @@ function WBP_Archive_PageChar_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Archive_PageChar_C:InitGamepadView()
   if UIUtils.HasAnyFocus(self) then
     self.List_Item:SetFocus()
   end
 end
-
 function WBP_Archive_PageChar_C:InitKeyboardView()
 end
-
 function WBP_Archive_PageChar_C:InitWidgetInfoInGamePad()
   self.Collect:CreateCommonKey({
     KeyInfoList = {
@@ -618,18 +602,15 @@ function WBP_Archive_PageChar_C:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function WBP_Archive_PageChar_C:BP_GetDesiredFocusTarget()
   return self.List_Item
 end
-
 function WBP_Archive_PageChar_C:TrySetFocusFirstTime(Entry)
   if not self.SelectFirstTime then
     self.SelectFirstTime = true
     self.List_Item:BP_NavigateToItem(Entry.Content)
   end
 end
-
 function WBP_Archive_PageChar_C:CheckIsNew(NodeName, Id)
   if not NodeName or not Id then
     return false
@@ -644,7 +625,6 @@ function WBP_Archive_PageChar_C:CheckIsNew(NodeName, Id)
     return false
   end
 end
-
 function WBP_Archive_PageChar_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.NodeName)
   self.Index2ReddotNum = {}
@@ -697,14 +677,12 @@ function WBP_Archive_PageChar_C:RefreshReddot()
     Widget:SetNew(Widget.Content.IsNew)
   end
 end
-
 function WBP_Archive_PageChar_C:OnObjectSetFinished(Content, Widget)
   if 1 == Content.Index and not self.FirstFocus then
     self.FirstFocus = true
     self.List_Item:BP_NavigateToItem(Content)
   end
 end
-
 function WBP_Archive_PageChar_C:RefreshTabReddot()
   if self.AllTabInfo then
     for Index, _ in pairs(self.AllTabInfo) do
@@ -716,6 +694,5 @@ function WBP_Archive_PageChar_C:RefreshTabReddot()
     end
   end
 end
-
 AssembleComponents(WBP_Archive_PageChar_C)
 return WBP_Archive_PageChar_C

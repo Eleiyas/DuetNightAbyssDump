@@ -1,9 +1,7 @@
 local MiscUtils = require("Utils.MiscUtils")
 local Component = {}
-
 function Component:InitComponent()
 end
-
 function Component:PlayMontage(Mesh, MontagePath, SectionName, Callback, ExcuteFnishOnlyWhenCompelete)
   self.MontToPlay = LoadObject(MontagePath)
   if not self.MontToPlay then
@@ -28,7 +26,6 @@ function Component:PlayMontage(Mesh, MontagePath, SectionName, Callback, ExcuteF
     MiscUtils.PlayMontageBySkeletaMesh(self, Mesh, self.MontToPlay, MontParam)
   end
 end
-
 function Component:UpdateMontageProxy(PlayParam)
   self:CleanMontPorxy()
   local MontCallbackProxy = self.MontageProxyInst
@@ -56,5 +53,4 @@ function Component:UpdateMontageProxy(PlayParam)
   end
   MontCallbackProxy.OnNotifyEnd:Add(self, EndFunc)
 end
-
 return Component

@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Item.CombatProp.BP_CombatPropBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.HpThreshold = self.UnitParams.HpThreshold
@@ -13,7 +12,6 @@ function M:CommonInitInfo(Info)
   self.OverlappingPlayer = nil
   self.ActiveState = false
 end
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   self.Sphere.OnComponentBeginOverlap:Add(self, self.OnPlayerIn)
@@ -29,7 +27,6 @@ function M:OnActorReady(Info)
     GameState:RegisterGameModeEvent("OnDead", self, self.OnMonsterKilled)
   end
 end
-
 function M:OnKongmingLanternBreak(CreatorId)
   if not self.OverlappingPlayer then
     return
@@ -43,29 +40,24 @@ function M:OnKongmingLanternBreak(CreatorId)
     end
   end
 end
-
 function M:OnPlayerIn(Component, OtherActor, OtherComp)
   self.OverlappingPlayer = OtherActor
 end
-
 function M:OnPlayerOut(Component, OtherActor, OtherComp)
   self.OverlappingPlayer = nil
 end
-
 function M:ActiveCombat()
   M.Super.ActiveCombat(self)
   if not self:IsExistTimer("CheckState") then
     self:AddTimer(1, self.CheckState, true, -1, "CheckState", false)
   end
 end
-
 function M:DeActiveCombat()
   M.Super.DeActiveCombat(self)
   self:RemoveTimer("CheckState")
   self:RemoveTimer("LongCheckState")
   self:RemoveTimer("SpawnMonstersTimer")
 end
-
 function M:CheckState()
   if self.ActiveState then
     return
@@ -79,7 +71,6 @@ function M:CheckState()
     end
   end
 end
-
 function M:LongCheckState()
   if self.OverlappingPlayer and self.IsActive then
     local CurHp = self.OverlappingPlayer:GetAttr("Hp")
@@ -93,7 +84,6 @@ function M:LongCheckState()
     end
   end
 end
-
 function M:OnDetection()
   if not self:IsExistTimer("SpawnMonstersTimer") then
     self:AddTimer(self.MonsterSpawnInterval, self.SpawnMonsters, true, 0, "SpawnMonstersTimer")
@@ -101,11 +91,9 @@ function M:OnDetection()
     self.ActiveState = true
   end
 end
-
 function M:GetMonsterSpawnPointTrans()
   return self.MonsterSpawnPoint:K2_GetComponentToWorld()
 end
-
 function M:SpawnMonsters()
   if not self.IsActive then
     return
@@ -129,7 +117,6 @@ function M:SpawnMonsters()
   end
   local RandomIndex = math.random(self.MonsterUnitId:Num())
   local RandomUnitId = self.MonsterUnitId:Get(RandomIndex)
-  
   local function LoadFinishCallback(_, Unit)
     self.RemainNum = self.RemainNum - 1
     self.SpawnedMonsters[Unit.Eid] = Unit.Eid
@@ -148,7 +135,6 @@ function M:SpawnMonsters()
     end
     EventManager:FireEvent(EventID.OnMonsterAlive)
   end
-  
   local Context = AEventMgr.CreateUnitContext()
   Context.UnitType = self.MonsterUnitType
   Context.UnitId = RandomUnitId
@@ -160,7 +146,6 @@ function M:SpawnMonsters()
   Context.OnUnitInitCreateReadyDynamic:Add(self, LoadFinishCallback)
   GameMode.EMGameState.EventMgr:CreateUnitNew(Context, false)
 end
-
 function M:OnMonsterKilled(Monster)
   if self.SpawnedMonsters[Monster.Eid] then
     if self.SkillEffect and self.SkillEffect > 0 then
@@ -170,7 +155,7 @@ function M:OnMonsterKilled(Monster)
     self.SpawnedMonsters[Monster.Eid] = nil
     if self:getTableLength(self.SpawnedMonsters) <= 0 then
       self:ChangeState("Manual", 0, self.ClearMonsterStateId)
-      DebugPrint("zwkk \230\128\170\232\162\171\230\184\133\229\133\137")
+      DebugPrint("zwkk 怪被清光")
       local GameState = UE4.UGameplayStatics.GetGameState(self)
       if GameState and nil ~= GameState.MonsterSmokes[self.Eid] then
         GameState.MonsterSmokes[self.Eid] = false
@@ -188,7 +173,6 @@ function M:OnMonsterKilled(Monster)
     end
   end
 end
-
 function M:ReceiveEndPlay()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState and GameState.MonsterSmokes and GameState.MonsterSmokes[self.Eid] ~= nil then
@@ -196,7 +180,6 @@ function M:ReceiveEndPlay()
   end
   EventManager:RemoveEvent(EventID.OnKongmingLanternBreak, self)
 end
-
 function M:DestroyAllMonster()
   for i, v in pairs(self.SpawnedMonsters) do
     local Monster = Battle(self):GetEntity(v)
@@ -208,7 +191,6 @@ function M:DestroyAllMonster()
   self.SpawnedMonsters = {}
   DebugPrint("zwkk DestroyAllMonster End")
 end
-
 function M:getTableLength(tbl)
   local count = 0
   for _ in pairs(tbl) do
@@ -216,5 +198,4 @@ function M:getTableLength(tbl)
   end
   return count
 end
-
 return M

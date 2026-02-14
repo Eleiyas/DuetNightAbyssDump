@@ -3,7 +3,6 @@ local ModModel = ModController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Plan.OnClicked:Add(self, self.OnExpandSwitcherList)
   self.Btn_Plan.OnPressed:Add(self, self.OnBtnPlanPressed)
@@ -17,7 +16,6 @@ function M:Construct()
   self:PlayAnimation(self.Btn_Normal)
   EventManager:AddEvent(EventID.OnWindowResized, self, self.OnUnfoldSwitcherList)
 end
-
 function M:ResetWidget()
   self:OnUnfoldSwitcherList()
   self.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -35,13 +33,11 @@ function M:ResetWidget()
   end
   self:OnModSuitChanged(CurrSuitIndex)
 end
-
 function M:OnListItemClicked(Content)
   self:OnUnfoldSwitcherList()
   self.Btn_Plan:SetFocus()
   ModController:SendChangeSuit(ModModel:GetTarget(), Content.Index)
 end
-
 function M:OnModSuitChanged(ModSuitIndex)
   local SuitName = ModModel:GetSuitName()
   self.Text_Plan:SetText(SuitName)
@@ -56,7 +52,6 @@ function M:OnModSuitChanged(ModSuitIndex)
   end
   self.CurrContent = Content
 end
-
 function M:OnExpandSwitcherList()
   if not self.bExpandList then
     self.Panel_List:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -69,7 +64,6 @@ function M:OnExpandSwitcherList()
   end
   self:PlayAnimation(self.Btn_Click)
 end
-
 function M:OnUnfoldSwitcherList()
   self.Panel_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
@@ -78,25 +72,21 @@ function M:OnUnfoldSwitcherList()
   end
   self.bExpandList = false
 end
-
 function M:OnBtnPlanPressed()
   self:StopAnimation(self.Btn_UnHover)
   self:StopAnimation(self.Btn_Hover)
   self:PlayAnimation(self.Btn_Press)
 end
-
 function M:OnBtnPlanHovered()
   self:StopAnimation(self.Btn_UnHover)
   self:StopAnimation(self.Btn_Press)
   self:PlayAnimation(self.Btn_Hover)
 end
-
 function M:OnBtnPlanUnhovered()
   self:StopAnimation(self.Btn_Hover)
   self:StopAnimation(self.Btn_Press)
   self:PlayAnimation(self.Btn_UnHover)
 end
-
 function M:OnEditSuitNameClick()
   local Params = {
     UseGenaral = true,
@@ -104,16 +94,15 @@ function M:OnEditSuitNameClick()
     TextLenMax = DataMgr.GlobalConstant.ModPlanNameMaxLen.ConstantValue,
     DefaultText = self.CurrContent.Text,
     HintText = GText("UI_Mod_SuitNameHint"),
-    OnSDKChecked = function(bRes, InputWidget, NewName)
+    OnSDKChecked = function(bRes, InputWidget, Text)
       if not bRes then
         return
       end
-      ModController:SendEditSuitName(ModModel:GetTarget(), NewName)
+      ModController:SendEditSuitName(ModModel:GetTarget(), Text)
     end
   }
   UIManager():ShowCommonPopupUI(ModCommon.EditSuitNameDialog, Params, ModController:GetView(self))
 end
-
 function M:OnEditSuitNameDone(ModSuitIndex, NewName)
   local Content = self.List_Plan:GetItemAt(ModSuitIndex - 1)
   Content.Text = NewName
@@ -125,20 +114,17 @@ function M:OnEditSuitNameDone(ModSuitIndex, NewName)
   end
   self.List_Plan:RequestRefresh()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self:OnUnfoldSwitcherList()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:Destruct()
   self.Btn_Plan.OnClicked:Remove(self, self.OnExpandSwitcherList)
   self.Btn_Plan.OnPressed:Remove(self, self.OnBtnPlanPressed)
@@ -148,5 +134,4 @@ function M:Destruct()
   self.Btn_Edit.OnClicked:Remove(self, self.OnEditSuitNameClick)
   EventManager:RemoveEvent(EventID.OnWindowResized, self)
 end
-
 return M

@@ -1,5 +1,4 @@
 local Battle_Combat_Mission_C = Class("BluePrints.UI.BP_UIState_C")
-
 function Battle_Combat_Mission_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Panel_Mission01:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -11,32 +10,27 @@ function Battle_Combat_Mission_C:OnLoaded(...)
   self:PlayAnimation(self.Get_in)
   self.SubTaskWidgetsTable = {}
 end
-
 function Battle_Combat_Mission_C:Construct()
   self.Super.Construct(self)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     self.Button_Area.OnClicked:Add(self, self.OnClickedBtnArea)
   end
 end
-
 function Battle_Combat_Mission_C:Destruct()
   self.Super.Destruct(self)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     self.Button_Area.OnClicked:Clear()
   end
 end
-
 function Battle_Combat_Mission_C:InitListenEvent()
   self:AddDispatcher(EventID.OnReceiveTask, self, self.SetTaskIconAndName)
 end
-
 function Battle_Combat_Mission_C:RefreshGuideInfo()
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
   if GameState then
     GameState:TryShowDungeonFirstGuide(GameState.GameModeType)
   end
 end
-
 function Battle_Combat_Mission_C:SetTaskIconAndName(WidgetType, TaskIconPath, TextTitle, TaskContent, bNeedAnimation)
   local function AfterAnim()
     if not TaskIconPath then
@@ -63,13 +57,11 @@ function Battle_Combat_Mission_C:SetTaskIconAndName(WidgetType, TaskIconPath, Te
     if not Avatar then
       return
     end
-    
     local function SetVisibilitySafe(Target, Type)
       if Target and Type then
         Target:SetVisibility(Type)
       end
     end
-    
     self.TextBlock_TaskName:SetText(Title)
     local Animation
     if self.Status then
@@ -127,14 +119,12 @@ function Battle_Combat_Mission_C:SetTaskIconAndName(WidgetType, TaskIconPath, Te
     end
     self.Status = true
   end
-  
   self.TextBlock_TaskContent:SetText("")
   self.TextBlock_TaskContent_3:SetText("")
   self.TextBlock_TaskContent:SetVisibility(ESlateVisibility.Collapsed)
   self.TextBlock_TaskContent_3:SetVisibility(ESlateVisibility.Collapsed)
   AfterAnim()
 end
-
 function Battle_Combat_Mission_C:RefreshTaskInfo(TaskContentData, ContentStatus)
   self:SetTaskContentText(ContentStatus, TaskContentData.TaskDescribe)
   if self.Guide_Icon:GetChildrenCount() then
@@ -161,15 +151,12 @@ function Battle_Combat_Mission_C:RefreshTaskInfo(TaskContentData, ContentStatus)
     self:PlayAnimation(self[TaskContentData.AnimAction])
   end
 end
-
 function Battle_Combat_Mission_C:PlayMissionStateChange()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_state_change", nil, nil)
 end
-
 function Battle_Combat_Mission_C:PlayGetInAudio()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_update", nil, nil)
 end
-
 function Battle_Combat_Mission_C:SetTaskContentText(Status, Text)
   if nil == Status then
     Status = true
@@ -182,7 +169,6 @@ function Battle_Combat_Mission_C:SetTaskContentText(Status, Text)
     self.Panel_Mission01_2:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function Battle_Combat_Mission_C:GetTypeImagePath(Status)
   if nil == Status then
     Status = true
@@ -193,7 +179,6 @@ function Battle_Combat_Mission_C:GetTypeImagePath(Status)
     return "Common_GuidePoint_PC_1"
   end
 end
-
 function Battle_Combat_Mission_C:CheckOpacity(Status)
   if nil == Status then
     Status = true
@@ -210,7 +195,6 @@ function Battle_Combat_Mission_C:CheckOpacity(Status)
     self.TextBlock_TaskContent_3:SetRenderOpacity(1.0)
   end
 end
-
 function Battle_Combat_Mission_C:OnClickedBtnArea()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local UI = UIManager:LoadUINew("TaskIndicator")
@@ -218,17 +202,14 @@ function Battle_Combat_Mission_C:OnClickedBtnArea()
     UI.Guide_Icon_Guide_Point:PlayAnimation(UI.Guide_Icon_Guide_Point.Loop)
   end
 end
-
 function Battle_Combat_Mission_C:ResetTaskContent()
   local Text = self.TextBlock_TaskContent_3:GetText()
   self.TextBlock_TaskContent:SetText(Text)
 end
-
 function Battle_Combat_Mission_C:ResetPosition()
   self.Panel_Mission01:SetRenderTranslation(FVector2D(0, 0))
   self.Panel_Mission01_2:SetRenderTranslation(FVector2D(-50, 0))
 end
-
 function Battle_Combat_Mission_C:PlayFinishAnimWithComplete(IsComplete)
   self:ShowOrHideCompltetPanel(false)
   if IsComplete then
@@ -241,7 +222,6 @@ function Battle_Combat_Mission_C:PlayFinishAnimWithComplete(IsComplete)
   DebugPrint("LHQ_Battle_Combat_Mission_C:PlayFinishAnimWithComplete:Complete")
   AudioManager(self):PlayUISound(self, "event:/ui/common/mission_complete", nil, nil)
 end
-
 function Battle_Combat_Mission_C:ShowOrHideCompltetPanel(IsShow)
   if IsShow then
     self.Panel_Complete:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -251,7 +231,6 @@ function Battle_Combat_Mission_C:ShowOrHideCompltetPanel(IsShow)
     self.Panel_CompleteText:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Battle_Combat_Mission_C:ShowOrHideNewTaskPanel(IsShow)
   if IsShow then
     self.Panel_NewTask:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -259,5 +238,4 @@ function Battle_Combat_Mission_C:ShowOrHideNewTaskPanel(IsShow)
     self.Panel_NewTask:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return Battle_Combat_Mission_C

@@ -5,7 +5,6 @@ local WBP_Abyss_Lineup_List_C = Class({
 WBP_Abyss_Lineup_List_C._components = {
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function WBP_Abyss_Lineup_List_C:Construct()
   self.bAllowRefreshList = true
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance)
@@ -26,7 +25,6 @@ function WBP_Abyss_Lineup_List_C:Construct()
   self:InitKeyInfo()
   self:RefreshBaseInfo()
 end
-
 function WBP_Abyss_Lineup_List_C:Destruct()
   self.List_Select.BP_OnItemClicked:Clear()
   self.List_Select.BP_OnEntryInitialized:Clear()
@@ -36,23 +34,21 @@ function WBP_Abyss_Lineup_List_C:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Abyss_Lineup_List_C:IsMobile()
   return self.Platform == CommonConst.CLIENT_DEVICE_TYPE.MOBILE
 end
-
 function WBP_Abyss_Lineup_List_C:InitKeyInfo()
   if self:IsMobile() then
     return
   end
   self.Key_L:CreateCommonKey({
     KeyInfoList = {
-      {Type = "Text", Text = "Q"}
+      {Type = "Text", Text = "A"}
     }
   })
   self.Key_R:CreateCommonKey({
     KeyInfoList = {
-      {Type = "Text", Text = "E"}
+      {Type = "Text", Text = "D"}
     }
   })
   self.Key_Controller_L:CreateCommonKey({
@@ -66,18 +62,15 @@ function WBP_Abyss_Lineup_List_C:InitKeyInfo()
     }
   })
 end
-
 function WBP_Abyss_Lineup_List_C:OnListItemInited(Content, EntryUI)
   if self.Event_OnEntryInitialized then
     self.Event_OnEntryInitialized(self.EventReceiver, Content, EntryUI)
   end
 end
-
 function WBP_Abyss_Lineup_List_C:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function WBP_Abyss_Lineup_List_C:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     self.Switch_Mode_L:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -101,12 +94,10 @@ function WBP_Abyss_Lineup_List_C:OnUpdateUIStyleByInputTypeChange(CurInputDevice
     end
   end
 end
-
 function WBP_Abyss_Lineup_List_C:OnListKeyUp(MyGeometry, InKeyEvent)
   local IsHandled = self:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   return IsHandled
 end
-
 function WBP_Abyss_Lineup_List_C:Init(Parent, Params)
   self.Parent = Parent
   self.Params = Params
@@ -161,12 +152,10 @@ function WBP_Abyss_Lineup_List_C:Init(Parent, Params)
   self:OnSortTypeChanged()
   self:SetEmptyText(self.Type)
 end
-
 local WeaponTags = {
   CommonConst.ArmoryTag.Melee,
   CommonConst.ArmoryTag.Ranged
 }
-
 function WBP_Abyss_Lineup_List_C:SetEmptyText(Type)
   for _, Tag in pairs(WeaponTags) do
     if Type == Tag then
@@ -178,7 +167,6 @@ function WBP_Abyss_Lineup_List_C:SetEmptyText(Type)
     self.Text_Empty:SetText(GText("UI_Armory_" .. Type .. "_Empty"))
   end
 end
-
 function WBP_Abyss_Lineup_List_C:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   self.Event_SortFuncion = Events.SortFuncion
@@ -187,17 +175,14 @@ function WBP_Abyss_Lineup_List_C:BindEvents(EventReceiver, Events)
   self.Event_OnEntryInitialized = Events.OnEntryInitialized
   self.Event_OnItemIsHoverChanged = Events.OnItemIsHoverChanged
 end
-
 function WBP_Abyss_Lineup_List_C:SetSortWidgetFocus()
   self.Sort:SetFocus()
 end
-
 function WBP_Abyss_Lineup_List_C:OnItemIsHoverChanged(Content, bHovered)
   if self.Event_OnItemIsHoverChanged then
     self.Event_OnItemIsHoverChanged(self.EventReceiver, Content, bHovered)
   end
 end
-
 function WBP_Abyss_Lineup_List_C:OnFilterListItemClicked(Content)
   if self.FilterMod == "Single" then
     if Content.IsSelected then
@@ -233,7 +218,6 @@ function WBP_Abyss_Lineup_List_C:OnFilterListItemClicked(Content)
   end
   self.CurrentTabIdx = Content.Index
 end
-
 function WBP_Abyss_Lineup_List_C:OnFilterListItemHovered(Content, bHovered)
   if self.GameInputModeSubsystem:GetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -246,17 +230,14 @@ function WBP_Abyss_Lineup_List_C:OnFilterListItemHovered(Content, bHovered)
   end
   self:OnFilterListItemClicked(Content)
 end
-
 function WBP_Abyss_Lineup_List_C:OnFilterListItemInited(Content, EntryUI)
   if EntryUI then
     Content.UI = EntryUI
   end
 end
-
 function WBP_Abyss_Lineup_List_C:SetCurrentTabItemFocus()
   self.EMListView_Filter:NavigateToIndex(self.CurrentTabIdx)
 end
-
 function WBP_Abyss_Lineup_List_C:SetFilterContentIsSelected(Content, IsSelected)
   Content.IsSelected = IsSelected
   if Content.UI then
@@ -266,7 +247,6 @@ function WBP_Abyss_Lineup_List_C:SetFilterContentIsSelected(Content, IsSelected)
     self.SelectedFilterContents[Content.Tag] = Content
   end
 end
-
 function WBP_Abyss_Lineup_List_C:UpdateFilterInfos()
   local Indexes = {}
   local bHasItem = next(self.SelectedFilterContents) ~= nil
@@ -286,7 +266,6 @@ function WBP_Abyss_Lineup_List_C:UpdateFilterInfos()
   self.FilterIdxes = Indexes
   return self.FilterIdxes
 end
-
 function WBP_Abyss_Lineup_List_C:OnSortListSelectionsChanged()
   local SortByIdx, SortType = self.Sort:GetSortInfos()
   if self.Event_SortFuncion then
@@ -294,7 +273,6 @@ function WBP_Abyss_Lineup_List_C:OnSortListSelectionsChanged()
     self:FillListView()
   end
 end
-
 function WBP_Abyss_Lineup_List_C:OnSortTypeChanged()
   local SortByIdx, SortType = self.Sort:GetSortInfos()
   if self.Event_SortFuncion then
@@ -302,7 +280,6 @@ function WBP_Abyss_Lineup_List_C:OnSortTypeChanged()
     self:FillListView()
   end
 end
-
 function WBP_Abyss_Lineup_List_C:FillListView()
   self:PlayAnimation(self.List_Change)
   self:SetLastItemNavigationRule(true)
@@ -339,7 +316,6 @@ function WBP_Abyss_Lineup_List_C:FillListView()
   end
   self.Parent:OnListInited(bListEmpty)
 end
-
 function WBP_Abyss_Lineup_List_C:SetLastItemNavigationRule(bClear, Index)
   if self:IsMobile() then
     return
@@ -360,33 +336,28 @@ function WBP_Abyss_Lineup_List_C:SetLastItemNavigationRule(bClear, Index)
     self.LastWidget = LastWidget
   end
 end
-
 function WBP_Abyss_Lineup_List_C:FillEmptyItems(Count)
   for i = 1, Count do
     self.List_Select:AddItem(NewObject(UIUtils.GetCommonItemContentClass()))
   end
 end
-
 function WBP_Abyss_Lineup_List_C:ScrollItemIntoView(Content)
   if Content then
     self.List_Select:BP_ScrollItemIntoView(Content)
   end
 end
-
 function WBP_Abyss_Lineup_List_C:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "Selective_Listing_In", nil)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function WBP_Abyss_Lineup_List_C:PlayOutAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "Selective_Listing_In", {ToEnd = 1})
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Abyss_Lineup_List_C:Destruct()
   if AudioManager(self):IsSoundPlaying(self, "Selective_Listing_In") then
     AudioManager(self):SetEventSoundParam(self, "Selective_Listing_In", {ToEnd = 1})
@@ -394,6 +365,5 @@ function WBP_Abyss_Lineup_List_C:Destruct()
   self:RemoveTimer("DelayAddEmptyItem")
   self:RemoveTimer("DelaySetNavigation")
 end
-
 AssembleComponents(WBP_Abyss_Lineup_List_C)
 return WBP_Abyss_Lineup_List_C

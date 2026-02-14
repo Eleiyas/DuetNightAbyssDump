@@ -2,12 +2,10 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.Temple.BP_BucketBomb_C"
 })
-
 function M:ActiveCombat()
   self.ChestInteractiveComponent.bCanUsed = false
   self:OnAttach()
 end
-
 function M:OnPadLanuch(Dir)
   self.Dir = Dir
   self.Dir:Normalize()
@@ -22,5 +20,4 @@ function M:OnPadLanuch(Dir)
     end
   end
 end
-
 return M

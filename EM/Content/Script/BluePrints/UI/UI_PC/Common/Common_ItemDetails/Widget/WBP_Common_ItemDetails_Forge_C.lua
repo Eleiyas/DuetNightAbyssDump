@@ -3,7 +3,6 @@ local WBP_Common_ItemDetails_Forge_C = Class("BluePrints.UI.BP_UIState_C")
 local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
 local TimeUtils = require("Utils.TimeUtils")
 local ForgeUtils = require("Blueprints.UI.Forge.ForgeUtils")
-
 function WBP_Common_ItemDetails_Forge_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -13,18 +12,19 @@ function WBP_Common_ItemDetails_Forge_C:RefreshOpInfoByInputDevice(CurInputDevic
     self:InitKeyboardView()
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:InitGamepadView()
   self.BtnReward:SetDefaultGamePadImg("A")
   self.BtnReward:SetGamePadIconVisible(true)
-  self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  if self.WidgetCurrentState == ForgeConst.DraftState.InProgress then
+    self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
 end
-
 function WBP_Common_ItemDetails_Forge_C:InitKeyboardView()
   self.BtnReward:SetGamePadIconVisible(false)
   self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Common_ItemDetails_Forge_C:InitView(DraftInfo, Controller, OnDetailsViewBtnStartClickedCallback, OnDetailsViewBtnCancelClickedCallback)
   self.WidgetCurrentState = DraftInfo.State
   self.Controller = Controller
@@ -44,6 +44,7 @@ function WBP_Common_ItemDetails_Forge_C:InitView(DraftInfo, Controller, OnDetail
     Denominator = 0,
     bShowDenominator = true
   })
+  self.Cost_Ticket:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   if DraftInfo.State == ForgeConst.DraftState.NotStarted then
     self:InitNotStartedView(DraftInfo)
   elseif DraftInfo.State == ForgeConst.DraftState.InProgress then
@@ -68,7 +69,6 @@ function WBP_Common_ItemDetails_Forge_C:InitView(DraftInfo, Controller, OnDetail
   end
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Common_ItemDetails_Forge_C:RefreshView(DraftInfo)
   self.CurrentDraftInfo = DraftInfo
   if DraftInfo.State == ForgeConst.DraftState.NotStarted then
@@ -88,13 +88,11 @@ function WBP_Common_ItemDetails_Forge_C:RefreshView(DraftInfo)
     self:InitCompleteView(DraftInfo, true)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:SetCantForge()
   self:PlayAnimation(self.DisCast)
   self.Switch_Type:SetActiveWidgetIndex(2)
   self.Text_NoPath:SetText(GText("UI_FORGING_CANTFORGE"))
 end
-
 function WBP_Common_ItemDetails_Forge_C:SetDraftNotEnough()
   self.Text_LackOfMaterial:SetText(GText("UI_FORGING_NODRAFT"))
   if 1 == self.Switch_Type:GetActiveWidgetIndex() then
@@ -103,23 +101,19 @@ function WBP_Common_ItemDetails_Forge_C:SetDraftNotEnough()
   self:PlayAnimation(self.LimitedCast)
   self.Switch_Type:SetActiveWidgetIndex(1)
 end
-
 function WBP_Common_ItemDetails_Forge_C:ShowForgingPage()
   self.Switch_Type:SetActiveWidgetIndex(0)
 end
-
 function WBP_Common_ItemDetails_Forge_C:OnBtnStartClicked()
   if self.OnDetailsViewBtnStartClickedCallback then
     self.OnDetailsViewBtnStartClickedCallback(self.Controller)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:OnBtnCancelClicked()
   if self.OnDetailsViewBtnCancelClickedCallback then
     self.OnDetailsViewBtnCancelClickedCallback(self.Controller)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:InitNotStartedView(DraftInfo)
   self.WidgetCurrentState = ForgeConst.DraftState.NotStarted
   self:UpdateFoundry(DraftInfo.Id)
@@ -144,7 +138,6 @@ function WBP_Common_ItemDetails_Forge_C:InitNotStartedView(DraftInfo)
   end
   self.VX_glowfire:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Common_ItemDetails_Forge_C:InitInProgressView(DraftInfo)
   self.WidgetCurrentState = ForgeConst.DraftState.InProgress
   self.Switch_Btn:SetActiveWidgetIndex(0)
@@ -156,7 +149,6 @@ function WBP_Common_ItemDetails_Forge_C:InitInProgressView(DraftInfo)
   self:UpdateFoundry(DraftInfo.Id)
   self:UpdatePercent()
 end
-
 function WBP_Common_ItemDetails_Forge_C:InitCompleteView(DraftInfo, bShouldPlayCompleteAnim)
   self.WidgetCurrentState = ForgeConst.DraftState.Complete
   self.Bar_Progress:SetPercent(1.0)
@@ -168,7 +160,6 @@ function WBP_Common_ItemDetails_Forge_C:InitCompleteView(DraftInfo, bShouldPlayC
     AudioManager(self):PlayUISound(self, "event:/ui/common/produce_complete", nil, nil)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:UpdateFoundry(DraftId)
   if self.WidgetCurrentState == ForgeConst.DraftState.NotStarted then
     local DraftInfo = DataMgr.Draft[DraftId]
@@ -195,7 +186,6 @@ function WBP_Common_ItemDetails_Forge_C:UpdateFoundry(DraftId)
     self.CostTimePanel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:UpdateAccerateTickets()
   local AccelerateCostType = DataMgr.GlobalConstant.AccelerateCostType.ConstantValue
   local FoundryData = DataMgr.Resource[AccelerateCostType]
@@ -212,7 +202,6 @@ function WBP_Common_ItemDetails_Forge_C:UpdateAccerateTickets()
     end
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:SwitchToMaterialView(IsImmediately)
   if IsImmediately then
     self:PlayAnimation(self.CastNormal, self.CastNormal:GetEndTime())
@@ -224,7 +213,6 @@ function WBP_Common_ItemDetails_Forge_C:SwitchToMaterialView(IsImmediately)
     self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:SwitchToProgressView(IsImmediately)
   if IsImmediately then
     self:PlayAnimation(self.CastProgress, self.CastProgress:GetEndTime() - 0.05)
@@ -236,7 +224,6 @@ function WBP_Common_ItemDetails_Forge_C:SwitchToProgressView(IsImmediately)
     self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:SwitchToCompleteView(IsImmediately)
   if IsImmediately then
     self:PlayAnimation(self.CastComplete, self.CastComplete:GetEndTime() - 0.05)
@@ -248,7 +235,6 @@ function WBP_Common_ItemDetails_Forge_C:SwitchToCompleteView(IsImmediately)
     self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_ItemDetails_Forge_C:UpdatePercent()
   if self.WidgetCurrentState ~= ForgeConst.DraftState.InProgress then
     return
@@ -276,13 +262,11 @@ function WBP_Common_ItemDetails_Forge_C:UpdatePercent()
   end
   self:UpdateAccerateTickets()
 end
-
 function WBP_Common_ItemDetails_Forge_C:UpdateProgressVXPosition()
   local GlowfireCanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.VX_glowfire)
   local ScrollBarSize = USlateBlueprintLibrary.GetLocalSize(self.Bar_Progress:GetCachedGeometry())
   GlowfireCanvasSlot:SetPosition(FVector2D(ScrollBarSize.X * self.Bar_Progress.Percent, 0))
 end
-
 function WBP_Common_ItemDetails_Forge_C:SetGamepadButtonKeyVisible(bVisible)
   if bVisible then
     self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -290,5 +274,4 @@ function WBP_Common_ItemDetails_Forge_C:SetGamepadButtonKeyVisible(bVisible)
     self.Key_Controller_Cancel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Common_ItemDetails_Forge_C

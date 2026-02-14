@@ -1,7 +1,6 @@
 local Component = Class("BluePrints.Combat.BattleEvents.BaseEvent")
 Component = setmetatable(Component, getmetatable(Component.Super))
 Component:Decorator(BattleEventName.Heal)
-
 function Component:CountHealData(Character, Heal, Source, Target)
   if not self:IsInAutoTest() then
     return
@@ -43,9 +42,7 @@ function Component:CountHealData(Character, Heal, Source, Target)
     print(_G.LogTag, "Save AutoTestData Heal" .. HealData)
   end
 end
-
 Component:Decorator(BattleEventName.Damage)
-
 function Component:CountDamageData(Character, Damage, Source, Target)
   print(_G.LogTag, "CountDamageData Event")
   local RootSource = Source:GetRootSource()
@@ -84,9 +81,7 @@ function Component:CountDamageData(Character, Damage, Source, Target)
     print(_G.LogTag, "Save AutoTestData Damage" .. DamageData)
   end
 end
-
 Component:Decorator(BattleEventName.AddEnergyShield)
-
 function Component:CountAddEnergyShieldData(Source, Target, Change)
   if not self:IsInAutoTest() then
     return
@@ -128,7 +123,6 @@ function Component:CountAddEnergyShieldData(Source, Target, Change)
     print(_G.LogTag, "Save AutoTestData AddEnergyShield" .. AddEnergyData)
   end
 end
-
 function Component:IsInAutoTest()
   local GameMode = GWorld.GameInstance:GetCurrentGameMode()
   if GameMode then
@@ -136,7 +130,6 @@ function Component:IsInAutoTest()
   end
   return false
 end
-
 function Component:ClearData()
   self.CharacterData = {}
   self.RobotData = {}
@@ -146,5 +139,4 @@ function Component:ClearData()
   self.Damaged = nil
   self.AddEnergyShieldData = nil
 end
-
 return Component

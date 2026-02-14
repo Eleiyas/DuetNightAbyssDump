@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   if CommonUtils.GetDeviceTypeByPlatformName() == "Mobile" then
@@ -11,7 +10,6 @@ function M:Construct()
     self.List_Drop:SetControlScrollbarInside(true)
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local DungeonId = Params.DungeonId
@@ -42,18 +40,15 @@ function M:InitContent(Params, PopupData, Owner)
     self:ShowGamepadLSBtn(true)
   end, false, 0, "___DeputeEliteDropDialog_List_Drop2")
 end
-
 function M:GetRestCount()
   local ItemUIs = self.List_Drop:GetDisplayedEntryWidgets()
   return UIUtils.GetListViewContentMaxCount(self.List_Drop, ItemUIs, false) - self.List_Drop:GetNumItems()
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.MonId = 0
   self.List_Drop:AddItem(Content)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -64,7 +59,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:ShowGamepadLSBtn(bIsShow)
   if bIsShow then
     self.GamepadCheckItemKeyInfo = self.GamepadCheckItemKeyInfo or self:ShowGamepadShortcutBtn({
@@ -81,12 +75,10 @@ function M:ShowGamepadLSBtn(bIsShow)
     self.GamepadCheckItemKeyInfo = nil
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.List_Drop:SetFocus()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

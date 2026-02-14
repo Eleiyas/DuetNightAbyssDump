@@ -3,28 +3,23 @@ local UIUtils = require("Utils.UIUtils")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Text_Title:SetText(GText("UI_Team_Invitation"))
   local RejectTime = DataMgr.GlobalConstant.InviteRejectTime.ConstantValue
   self.Text_Tip:SetText(string.format(GText("UI_Team_Ignore"), RejectTime))
   self.BtnYes_Mobile:BindEventOnClicked(self, self.OnBtnClick, true)
-  
   function self.BtnYes_Mobile.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/team_btn_small_check", nil, nil)
   end
-  
   self.BtnYes_PC:SetBtnNormalCallback(function()
     self:OnBtnClick(true)
   end)
   self.BtnYes_PC:SetText(GText("UI_BTN_AGREE"))
   self.BtnNo_Mobile:BindEventOnClicked(self, self.OnBtnClick, false)
-  
   function self.BtnNo_Mobile.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_cancel", nil, nil)
   end
-  
   self.BtnNo_PC:SetBtnNormalCallback(function()
     self:OnBtnClick(false)
   end)
@@ -92,14 +87,13 @@ function M:Construct()
     end)
   end
   self:AddDispatcher(EventID.CloseLoading, self, function()
-    DebugPrint(LXYTag, "\231\187\132\233\152\159\233\130\128\232\175\183\232\182\133\230\151\182\239\188\140\233\156\128\232\166\129\232\135\170\229\138\168\229\133\179\233\151\173\231\149\140\233\157\162")
+    DebugPrint(LXYTag, "组队邀请超时，需要自动关闭界面")
     if TeamController:GetModel().InviteRecvQueue:IsEmpty() then
       self:Close()
     end
   end)
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_invite_bar_show", nil, nil)
 end
-
 function M:OnInputDeviceChange()
   if TeamController:IsGamepad() then
     self.Key_No:CreateSubKeyDesc({
@@ -144,15 +138,12 @@ function M:OnInputDeviceChange()
     self.CheckBox_Tip.Com_KeyImg:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnFocusLost(InFocusEvent)
   self:SetFocus()
 end
-
 function M:OnCheckBoxChange(bChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList)
   self.InviteInfo = (...)
@@ -168,7 +159,6 @@ function M:InitUIInfo(Name, bInUIMode, EventList, ...)
     UIUtils.SetTitle(self.Title, self.InviteInfo)
   end
 end
-
 function M:OnBtnClick(bYes)
   if bYes then
     TeamController:SendTeamAgreeInvite(self.InviteInfo.Uid)
@@ -177,7 +167,6 @@ function M:OnBtnClick(bYes)
     TeamController:SendTeamRefuseInvite(bAutoRefuse)
   end
 end
-
 function M:Destruct()
   self.BtnNo_Mobile:UnBindEventOnClicked(self, self.OnBtnClick)
   self.BtnYes_Mobile:UnBindEventOnClicked(self, self.OnBtnClick)
@@ -192,10 +181,8 @@ function M:Destruct()
   EventManager:FireEvent(EventID.OnEnableGuideBookKey, true)
   M.Super.Destruct(self)
 end
-
 function M:OnKeyDown(MyGeo, InKeyEvent)
   DebugPrint(LXYTag, "TeamInvite:::OnKeyDown")
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

@@ -3,7 +3,6 @@ local ChatMessage = require("BluePrints.UI.WBP.Chat.ChatMessage")
 local MessageList = ChatMessage.MessageList
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   M.Super.Init(self)
   self._CurrentChannel = ChatCommon.ChannelDef.Public
@@ -22,11 +21,9 @@ function M:Init()
   self.EnteredChannels = {}
   self:UpdateCurrentChannel()
 end
-
 function M:IsChannelExclude(ChannelType)
   return self:GetAvatar().ChatChannelClose[ChannelType]
 end
-
 function M:Destory()
   for ChannelName, ChannelType in pairs(ChatCommon.ChannelDef) do
     self._MessageDict[ChannelType]:ClearMessage()
@@ -43,19 +40,15 @@ function M:Destory()
   self.SimpleChatOutAnimCurve = nil
   M.Super.Destory(self)
 end
-
 function M:GetFriendChatDatas()
   return self:GetAvatar().Chats
 end
-
 function M:GetEmojiDatas()
   return self:GetAvatar().Emoticons
 end
-
 function M:GetQuickMsgDatas()
   return self:GetAvatar().QuickMessages
 end
-
 function M:HasEmojiGroup(GruopId)
   for _, Id in ipairs(self:GetEmojiDatas()) do
     if Id == GruopId then
@@ -64,26 +57,21 @@ function M:HasEmojiGroup(GruopId)
   end
   return false
 end
-
 function M:IsForbidChat()
   if self:GetAvatar().ForbidChatTime > TimeUtils.NowTime() then
     return true
   end
   return false
 end
-
 function M:SetCurrentChannel(ChannelType)
   self._CurrentChannel = ChannelType
 end
-
 function M:SetCurrentFriendUid(Uid)
   self._CurrentFriendUid = Uid
 end
-
 function M:GetCurrentFriendUid()
   return self._CurrentFriendUid
 end
-
 function M:UpdateCurrentChannel()
   local CurrChannel = self._CurrentChannel
   while self:IsChannelExclude(CurrChannel) do
@@ -100,25 +88,21 @@ function M:UpdateCurrentChannel()
     self._CurrentChannel = ChatCommon.ChannelDef.Public
   end
 end
-
 function M:GetCurrentChannel()
   return self._CurrentChannel
 end
-
 function M:GetMainUISize()
   if not self._CachedMainUISize then
     self._CachedMainUISize = FVector2D(0, 0)
   end
   return self._CachedMainUISize
 end
-
 function M:GetMainUIPos()
   if not self._CachedMainUIPos then
     self._CachedMainUIPos = FVector2D(0, 0)
   end
   return self._CachedMainUIPos
 end
-
 function M:InitOriginMainUITransform(Slot)
   if not self._OriginMainUISize then
     self._OriginMainUISize = Slot:GetSize()
@@ -133,7 +117,6 @@ function M:InitOriginMainUITransform(Slot)
     self._CachedMainUIPos.Y = self._OriginMainUIPos.Y
   end
 end
-
 function M:ResetCachedMainUITransform()
   if not self._OriginMainUISize then
     return
@@ -148,21 +131,19 @@ function M:ResetCachedMainUITransform()
   self._CachedMainUIPos.X = self._OriginMainUIPos.X
   self._CachedMainUIPos.Y = self._OriginMainUIPos.Y
 end
-
 function M:HasMainUIChanged()
   return self._CachedMainUISize.X ~= self._OriginMainUISize.X or self._CachedMainUISize.Y ~= self._OriginMainUISize.Y or self._CachedMainUIPos.X ~= self._OriginMainUIPos.X or self._CachedMainUIPos.Y ~= self._OriginMainUIPos.Y
 end
-
 function M:AddReddotCount(ChannelType, FriendUid)
   DebugPrint("ChatModel::AddReddotCount")
   if 1 == self:GetAvatar().ChatChannelMute[ChannelType] then
-    DebugPrint("ChatModel::AddReddotCount, \232\129\138\229\164\169\233\162\145\233\129\147\232\162\171\229\177\143\232\148\189\239\188\140\228\184\141\230\183\187\229\138\160\231\186\162\231\130\185\228\186\134")
+    DebugPrint("ChatModel::AddReddotCount, 聊天频道被屏蔽，不添加红点了")
     return
   end
   if ChannelType ~= ChatCommon.ChannelDef.Friend then
     local NodeName = ChatCommon.ReddotNamePre .. ChatCommon.ChannelNames[ChannelType]
     local Node = ReddotManager.GetTreeNode(NodeName)
-    if Node:GetNodeCount() < ChatCommon.ReddotMaxCount then
+    if Node:GetNodeCount() <= ChatCommon.ReddotMaxCount then
       ReddotManager.IncreaseLeafNodeCount(NodeName)
       ReddotManager.GetTreeNode(NodeName):UpdateParentsCount()
     end
@@ -174,13 +155,12 @@ function M:AddReddotCount(ChannelType, FriendUid)
     local NodeName = ChatCommon.ReddotNamePre .. FriendUid
     local Node = ReddotManager.GetTreeNode(NodeName)
     local AddValue = Chat:GetUnreadCount() - Node.Count
-    if AddValue > 0 and Node:GetNodeCount() < ChatCommon.ReddotMaxCount then
+    if AddValue > 0 and Node:GetNodeCount() <= ChatCommon.ReddotMaxCount then
       ReddotManager.IncreaseLeafNodeCount(NodeName, AddValue)
       ReddotManager.GetTreeNode(NodeName):UpdateParentsCount()
     end
   end
 end
-
 function M:ClearReddotCount(ChannelType, FriendUid)
   ChannelType = ChannelType or self._CurrentChannel
   if ChannelType ~= ChatCommon.ChannelDef.Friend then
@@ -191,9 +171,8 @@ function M:ClearReddotCount(ChannelType, FriendUid)
     ReddotManager.ClearLeafNodeCount(NodeName, true)
   end
 end
-
 function M:AddFriendReddotNode(Uid, bAppendParent)
-  DebugPrint(LXYTag, "Chat  \230\150\176\231\154\132\229\165\189\229\143\139\231\186\162\231\130\185\230\183\187\229\138\160\239\188\140Uid:", Uid)
+  DebugPrint(LXYTag, "Chat  新的好友红点添加，Uid:", Uid)
   if nil == bAppendParent then
     bAppendParent = true
   end
@@ -215,7 +194,6 @@ function M:AddFriendReddotNode(Uid, bAppendParent)
   end
   return Node
 end
-
 function M:InitReddotCount()
   local ChildNodes = {}
   for ChannelName, ChannelType in pairs(ChatCommon.ChannelDef) do
@@ -240,7 +218,6 @@ function M:InitReddotCount()
     ReddotManager.AddNodeEx(ChatCommon.ReddotName, ChildNodes)
   end
 end
-
 function M:AddMessage(Message, bCalcUnread)
   DebugPrint("ChatModel::AddMessage", self._CurrentChannel, self._CurrentFriendUid)
   local ChannelType = Message.ChannelType
@@ -267,7 +244,6 @@ function M:AddMessage(Message, bCalcUnread)
   DebugPrint("ChatMessage::AddMessage bUnread, " .. tostring(bCalcUnread))
   return self._MessageDict[ChannelType]:AddMessage(Message, bCalcUnread)
 end
-
 function M:GetCurrentMsgViewList()
   if self._CurrentChannel == ChatCommon.ChannelDef.Friend then
     local TargetChat = {
@@ -310,35 +286,30 @@ function M:GetCurrentMsgViewList()
   end
   return self._MessageDict[self._CurrentChannel].ViewList
 end
-
 function M:GetChannelCDTimerKey(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   return self._MessageDict[ChannelType].TimerKey
 end
-
 function M:GetChannelCDReaminTime(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   return self._MessageDict[ChannelType].CDRemainTime
 end
-
 function M:GetChannelRemovedMsgs(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   return self._MessageDict[ChannelType]:GetOnceRemovedMsgs()
 end
-
 function M:SetChannelCDRemainTime(RemainTime, ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   self._MessageDict[ChannelType].CDRemainTime = RemainTime
 end
-
 function M:SetChannelMsgCache(MsgCache, ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
@@ -351,7 +322,6 @@ function M:SetChannelMsgCache(MsgCache, ChannelType)
   end
   self._MessageDict[ChannelType].MsgCache = MsgCache
 end
-
 function M:GetChannelMsgCache(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
@@ -364,21 +334,18 @@ function M:GetChannelMsgCache(ChannelType)
   end
   return self._MessageDict[ChannelType].MsgCache
 end
-
 function M:GetChannelUnreadCount(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   return self._MessageDict[ChannelType].UnreadCount
 end
-
 function M:GetChannelNewTipWrap(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   return self._MessageDict[ChannelType].NewTipWrap
 end
-
 function M:ReadChannelMessage(ChannelType, Uid)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
@@ -386,14 +353,12 @@ function M:ReadChannelMessage(ChannelType, Uid)
   self._MessageDict[ChannelType]:ReadMessage()
   self:ClearReddotCount(ChannelType, Uid)
 end
-
 function M:ClearMessage(ChannelType)
   if nil == ChannelType then
     ChannelType = self._CurrentChannel
   end
   return self._MessageDict[ChannelType]:ClearMessage()
 end
-
 function M:GetTeamForChat()
   local TeamData = TeamController:GetModel():GetTeam()
   if not GWorld:IsStandAlone() and TeamData then
@@ -414,9 +379,7 @@ function M:GetTeamForChat()
   end
   return TeamData
 end
-
 function M:IsInRegionOnline()
   return self:GetAvatar().IsInRegionOnline
 end
-
 return M

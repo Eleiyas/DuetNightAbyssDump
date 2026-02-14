@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.MoveDelta = FVector2D(0, 0)
@@ -9,16 +8,13 @@ function M:Construct()
   self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:SetFocus()
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.OnMouseMove_Event then
     if self.CapturedAndRealMouseMoved and self.IsPC then
@@ -46,7 +42,6 @@ function M:Tick(MyGeometry, InDeltaTime)
   self.MoveDelta.X = 0
   self.MoveDelta.Y = 0
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -59,21 +54,17 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return self.Unhandle
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   return UIUtils.Handled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.bIgnoreNextMouseMove = true
   self:SetCursor(EMouseCursor.None)
   return self.CaptureMouse
 end
-
 function M:OnFocusLost(InFocusEvent)
   self:ResetCursor()
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:SetFocus()
   self.CapturedAndRealMouseMoved = true
@@ -81,13 +72,11 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:SetCursor(EMouseCursor.None)
   return self.CaptureMouse
 end
-
 function M:OnMouseLeave(MouseEvent)
   self.CapturedAndRealMouseMoved = false
   self:ResetCursor()
   return UWidgetBlueprintLibrary.ReleaseMouseCapture(self.Unhandle)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   if UKismetInputLibrary.InputEvent_IsAltDown(MouseEvent) then
     self.CapturedAndRealMouseMoved = false
@@ -99,12 +88,10 @@ function M:OnMouseMove(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.ReleaseMouseCapture(self.Unhandle)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.bIgnoreNextMouseMove = true
   return UIUtils.Handled
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   self.CapturedAndRealMouseMoved = false
   local CursorDelta = UE4.UKismetInputLibrary.PointerEvent_GetCursorDelta(InTouchEvent)
@@ -112,9 +99,7 @@ function M:OnTouchMoved(MyGeometry, InTouchEvent)
   self.MoveDelta.Y = CursorDelta.Y
   return self.Unhandle
 end
-
 function M:BindEventOnMouseMove(Event)
   self.OnMouseMove_Event = Event
 end
-
 return M

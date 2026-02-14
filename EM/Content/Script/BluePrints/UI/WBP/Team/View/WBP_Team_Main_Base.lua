@@ -8,7 +8,6 @@ Rule.Value = 1.0
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Teammate2UI = {}
@@ -23,9 +22,8 @@ function M:Construct()
   if not self.IsAddingToParent then
     self:RegisterEvent()
   end
-  DebugPrint(LXYTag, "\231\187\132\233\152\159\229\164\180\229\131\143\231\149\140\233\157\162Construct , IsAddingToParent", self.IsAddingToParent)
+  DebugPrint(LXYTag, "组队头像界面Construct , IsAddingToParent", self.IsAddingToParent)
 end
-
 function M:_UpdateMemberTag(Uid)
   if Uid == TeamModel:GetAvatar().Uid then
     self.Head_My:UpdateTag()
@@ -33,7 +31,6 @@ function M:_UpdateMemberTag(Uid)
     self.Teammate2UI[Uid]:UpdateTag()
   end
 end
-
 function M:ProcessAddQueue()
   if not next(self.Teammate2UI) then
     self.WB_Player:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -49,12 +46,10 @@ function M:ProcessAddQueue()
   end
   self.bAddQueueProcessing = true
   local Member = self.AddQueue:PopBack()
-  Utils.Traceback(LXYTag, "\231\187\132\233\152\159\229\164\180\229\131\143\229\138\160\228\186\186Uid " .. Member.Uid .. " Name " .. Member.Nickname)
   self:AddTimer(self.Normal:GetEndTime(), function()
     self:AddTeammateUI(Member, true, nil, Member.Index)
   end)
 end
-
 function M:ProcessDelQueue()
   for _, HeadUI in pairs(self.Teammate2UI) do
     HeadUI:PlayAnimation(HeadUI.Normal)
@@ -75,19 +70,17 @@ function M:ProcessDelQueue()
   end
   self.bDelQueueProcessing = true
   local Uid = self.DelQueue:PopBack()
-  Utils.Traceback(LXYTag, "\231\187\132\233\152\159\229\164\180\229\131\143\229\135\143\228\186\186Uid " .. Uid)
   self:AddTimer(self.Normal:GetEndTime(), function()
     self:DelTeammateUI(Uid)
   end)
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
+  self.IsInit = true
   self.ParentWidget, self.bBattle = ...
   self:AppendToParent(self.ParentWidget)
   self:InitHeadItem(false)
 end
-
 function M:RegisterEvent()
   TeamController:RegisterEvent(self, function(self, EventId, ...)
     if EventId == TeamCommon.EventId.TeamOnAddPlayer then
@@ -143,28 +136,24 @@ function M:RegisterEvent()
     end
   end)
 end
-
 function M:_UpdateOneHeadState(Uid)
   local HeadUI = self:GetHeadUIByUid(Uid)
   if HeadUI then
     HeadUI:SetHeadState()
   end
 end
-
 function M:UpdateAllHeadState()
   for _, HeadUI in pairs(self.Teammate2UI) do
     HeadUI:SetHeadState()
   end
   self.Head_My:SetHeadState()
 end
-
 function M:GetHeadUIByUid(Uid)
   if Uid == TeamModel:GetAvatar().Uid then
     return self.Head_My:IsVisible() and self.Head_My or nil
   end
   return self.Teammate2UI[Uid]
 end
-
 function M:InitHeadItem(bAnim)
   DebugPrint(WarningTag, LXYTag, "teamMainView:InnitHaditem, bBattle", self.bBattle)
   if nil == bAnim then
@@ -202,7 +191,6 @@ function M:InitHeadItem(bAnim)
     end
   end
 end
-
 function M:PlayMove(bReverse, Speed)
   Speed = Speed or 1.0
   if bReverse then
@@ -211,22 +199,25 @@ function M:PlayMove(bReverse, Speed)
     self:PlayAnimationForward(self.Slide_Left, Speed)
   end
 end
-
 function M:Close()
   self.IsAddingToParent = false
   M.Super.Close(self)
 end
-
 function M:Destruct()
-  DebugPrint(LXYTag, "\231\187\132\233\152\159\229\164\180\229\131\143\231\149\140\233\157\162Destruct , IsAddingToParent", self.IsAddingToParent)
+  DebugPrint(LXYTag, "组队头像界面Destruct , IsAddingToParent", self.IsAddingToParent)
   if not self.IsAddingToParent then
     TeamController:ClearHeadUI(self.ParentWidget)
     TeamController:UnRegisterEvent(self)
     self:RemoveFromParent()
-    DebugPrint(LXYTag, "\231\187\132\233\152\159\231\149\140\233\157\162\230\158\144\230\158\132\228\184\173....")
-    PrintTable(self.ListenEvent, LXYTag, "\228\186\139\228\187\182\229\136\151\232\161\168")
+    DebugPrint(LXYTag, "组队界面析构中....")
+    PrintTable(self.ListenEvent, LXYTag, "事件列表")
     M.Super.Destruct(self)
   end
 end
-
+function M:EMDestruct()
+  DebugPrint(LXYTag, "组队头像界面EMDestruct , IsAddingToParent", self.IsAddingToParent)
+  if not self.IsAddingToParent then
+    M.Super.EMDestruct(self)
+  end
+end
 return M

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "171851536831211576354",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1133.140730225936, y = 297.6286915119693},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,12 +121,12 @@ return {
           ["171851536831211576358"] = {
             key = "171851536831211576358",
             type = "ShowGuideToastNode",
-            name = "Toast\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Toast显示/隐藏信息",
             pos = {x = 838.8276029918235, y = 321.5227403595789},
             propsData = {
               ShowEnable = false,
               MessageId = 301401,
-              MessageNote = "\230\137\147\229\188\128\232\174\173\231\187\131\232\143\156\229\141\149",
+              MessageNote = "打开训练菜单",
               LastTime = -1,
               Style = "Normal"
             }
@@ -132,7 +134,7 @@ return {
           ["1720939786547389"] = {
             key = "1720939786547389",
             type = "ShowGuideMainNode",
-            name = "\230\152\190\231\164\186\229\155\190\230\150\135\229\188\149\229\175\188",
+            name = "显示图文引导",
             pos = {x = 1196.9166666666667, y = 311.3813209494324},
             propsData = {GuideId = 34}
           }

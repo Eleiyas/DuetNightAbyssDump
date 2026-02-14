@@ -1,14 +1,11 @@
 local WaitingSpecialQuestStartNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function WaitingSpecialQuestStartNode:Init()
   self.SpecialConfigId = nil
 end
-
 function WaitingSpecialQuestStartNode:Execute(Callback)
   self:SetUniversalConfig()
   self:SendInfosAndWaiting(Callback)
 end
-
 function WaitingSpecialQuestStartNode:SendInfosAndWaiting(Callback)
   local Avatar = GWorld:GetAvatar()
   local SpecialQuestInfo = DataMgr.SpecialQuestConfig[self.SpecialConfigId]
@@ -22,7 +19,6 @@ function WaitingSpecialQuestStartNode:SendInfosAndWaiting(Callback)
     Avatar:StartSpecialQuest(self.SpecialConfigId, Infos, Callback)
   end
 end
-
 function WaitingSpecialQuestStartNode:SetUniversalConfig()
   local SpecialQuestInfo = DataMgr.SpecialQuestConfig[self.SpecialConfigId]
   if SpecialQuestInfo and SpecialQuestInfo.UniversalConfigId then
@@ -38,5 +34,4 @@ function WaitingSpecialQuestStartNode:SetUniversalConfig()
     end
   end
 end
-
 return WaitingSpecialQuestStartNode

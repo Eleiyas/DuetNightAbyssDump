@@ -1,6 +1,5 @@
 require("DataMgr")
 local Component = {}
-
 function Component:JudgeAndOrNot(Condition, CheckResult, Source, Targets, TraceInfo)
   if Condition.Not ~= nil then
     CheckResult = not CheckResult
@@ -23,18 +22,16 @@ function Component:JudgeAndOrNot(Condition, CheckResult, Source, Targets, TraceI
   end
   return CheckResult
 end
-
 function Component:CheckCondition_Lua(ConditionId, Source, Targets, ExtraVars)
   local ret = self.Overridden.CheckCondition(self, ConditionId, Source, Targets)
   if not ret then
     return false
   end
   local _Data = DataMgr.CombatCondition[ConditionId]
-  assert(_Data, "CombatCondition\227\128\144" .. tostring(ConditionId) .. "\227\128\145\228\184\141\229\173\152\229\156\168!")
+  assert(_Data, "CombatCondition【" .. tostring(ConditionId) .. "】不存在!")
   if _Data.FuncName then
     ret = self.ConditionComponent:CheckCondition_Lua(ConditionId, Source, Targets, ExtraVars)
   end
   return self:JudgeAndOrNot(_Data, ret, Source, Targets)
 end
-
 return Component

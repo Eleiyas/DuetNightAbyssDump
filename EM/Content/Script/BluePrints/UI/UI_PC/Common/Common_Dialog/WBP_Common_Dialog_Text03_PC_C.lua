@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Common_Dialog_Text03_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_Text03_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   if not Params then
@@ -18,7 +17,6 @@ function WBP_Common_Dialog_Text03_PC_C:InitContent(Params, PopupData, Owner)
   self.List.bIsFocusable = false
   self.bIsDealWithVirtualAccept = true
 end
-
 function WBP_Common_Dialog_Text03_PC_C:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -29,5 +27,4 @@ function WBP_Common_Dialog_Text03_PC_C:OnContentAnalogValueChanged(MyGeometry, I
   end
   return UIUtils.Unhandled
 end
-
 return WBP_Common_Dialog_Text03_PC_C

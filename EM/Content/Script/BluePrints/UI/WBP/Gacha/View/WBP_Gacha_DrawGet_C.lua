@@ -5,33 +5,26 @@ local GachaModel = require("BluePrints.UI.WBP.Gacha.GachaModel")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self:AddInputMethodChangedListen()
   self.Btn_Back:SetText(GText("UI_BACK"))
   self.Btn_Back:SetDefaultGamePadImg(DataMgr.KeyboardText[UIConst.GamePadKey.FaceButtonRight].KeyText)
   self.Btn_Back:BindEventOnClicked(self, self.PlayOutAnim)
-  
   function self.Btn_Back.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
   end
-  
   self.Btn_Back:SetDefaultGamePadImg(UIConst.GamePadImgKey.FaceButtonRight)
   self.Btn_Again:SetDefaultGamePadImg(UIConst.GamePadImgKey.FaceButtonTop)
   self.Btn_Again:SetGamePadIconVisible(true)
   self.Btn_Again:BindEventOnClicked(self, self.OnClickGachaAgain)
-  
   function self.Btn_Again.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_btn_click_normal", nil, nil)
   end
-  
   self.Btn_Again:SetGamePadImg(UIConst.GamePadImgKey.FaceButtonTop)
   self.Btn_Share:BindEventOnClicked(self, self.OnBtnShareClicked)
-  
   function self.Btn_Share.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   self.Text_ExtrasTitle:SetText(GText("GACHA_BONUS"))
   self.Key_GamePad03:CreateGamepadKey(DataMgr.KeyboardText[UIConst.GamePadKey.SpecialRight].KeyText)
   self.KeyImg_GamePad:CreateGamepadKey(DataMgr.KeyboardText[UIConst.GamePadKey.RightThumb].KeyText)
@@ -45,7 +38,6 @@ function M:Construct()
     Desc = GText("UI_Controller_Check")
   })
 end
-
 function M:Init(...)
   self.RewardLst, self.RebateData, self.GachaId, self.ShowSkinType, self.ShowSkinId, self.Parent, self.OnClosedFun = ...
   self.Parent.CantClick = false
@@ -78,7 +70,7 @@ function M:Init(...)
   self.bSingle = #self.RewardLst == GachaCommon.GachaOneResult
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:SetIsDealWithVirtualAccept(false)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_result_show", nil, nil)
   self:PlayAnimation(self.In)
   local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
@@ -90,7 +82,6 @@ function M:Init(...)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
   self:OnUpdateUIStyleByInputTypeChange(GameInputModeSubsystem:GetCurrentInputType(), GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:InitRewardList()
   self:CleanTimer()
   self.HasExtraReward = false
@@ -114,7 +105,7 @@ function M:InitRewardList()
         IsShowDetails = true,
         MenuPlacement = EMenuPlacement.MenuPlacement_MenuRight
       })
-      self["Text_ItemNum" .. index]:SetText("\195\151" .. Num)
+      self["Text_ItemNum" .. index]:SetText("×" .. Num)
       self["HB_Item" .. index]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
       index = index + 1
     end
@@ -127,7 +118,7 @@ function M:InitRewardList()
       local ItemType = GachaCommon.GachaItemTypeMap[Data.Sign]
       local ItemData = DataMgr[ItemType][Data.ResultId]
       local bNew, bConvert = self:IsNewOrConvertItem(ItemType, Data.ResultId, Data.Count)
-      assert(ItemData, "\230\156\170\230\137\190\229\136\176\232\175\165\230\172\161\230\138\189\229\141\161\229\165\150\229\138\177\231\154\132\228\191\161\230\129\175:Id:" .. Data.ResultId .. " Type:" .. ItemType)
+      assert(ItemData, "未找到该次抽卡奖励的信息:Id:" .. Data.ResultId .. " Type:" .. ItemType)
       local Content = NewObject(UIUtils.GetCommonItemContentClass())
       Content.Id = Data.ResultId
       Content.Icon = ItemUtils.GetItemIconPath(Data.ResultId, ItemType)
@@ -155,7 +146,7 @@ function M:InitRewardList()
           local ItemType = GachaCommon.GachaItemTypeMap[Data.Sign]
           local ItemData = DataMgr[ItemType][Data.ResultId]
           local bNew, bConvert = self:IsNewOrConvertItem(ItemType, Data.ResultId, Data.Count)
-          assert(ItemData, "\230\156\170\230\137\190\229\136\176\232\175\165\230\172\161\230\138\189\229\141\161\229\165\150\229\138\177\231\154\132\228\191\161\230\129\175:Id:" .. Data.ResultId .. " Type:" .. ItemType)
+          assert(ItemData, "未找到该次抽卡奖励的信息:Id:" .. Data.ResultId .. " Type:" .. ItemType)
           local Content = NewObject(UIUtils.GetCommonItemContentClass())
           Content.Id = Data.ResultId
           Content.Icon = ItemUtils.GetItemIconPath(Data.ResultId, ItemType)
@@ -211,13 +202,13 @@ function M:InitRewardList()
     local UpItemId, UpItemType = GachaModel:GetSkinGachaUpInfo(self.GachaId)
     local ShowSkinData = DataMgr[self.ShowSkinType][self.ShowSkinId]
     if UpItemId and self.ShowSkinType == UpItemType and self.ShowSkinId == UpItemId then
-      assert(GachaInfo.RewardUpDisplay, "\230\156\170\230\137\190\229\136\176\232\175\165\230\172\161\230\138\189\229\141\161\231\137\185\230\174\138\229\177\149\231\164\186\229\165\150\229\138\177\231\154\132\228\191\161\230\129\175:Id:" .. self.ShowSkinId .. " Type:" .. self.ShowSkinType)
+      assert(GachaInfo.RewardUpDisplay, "未找到该次抽卡特殊展示奖励的信息:Id:" .. self.ShowSkinId .. " Type:" .. self.ShowSkinType)
       IconObj = LoadObject(GachaInfo.RewardUpDisplay)
     else
-      assert(ShowSkinData, "\230\156\170\230\137\190\229\136\176\232\175\165\230\172\161\230\138\189\229\141\161\231\137\185\230\174\138\229\177\149\231\164\186\229\165\150\229\138\177\231\154\132\228\191\161\230\129\175:Id:" .. self.ShowSkinId .. " Type:" .. self.ShowSkinType)
+      assert(ShowSkinData, "未找到该次抽卡特殊展示奖励的信息:Id:" .. self.ShowSkinId .. " Type:" .. self.ShowSkinType)
       IconObj = LoadObject(ShowSkinData.BigIcon)
     end
-    assert(IconObj, "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\174\232\130\164\231\154\132BigIcon\228\191\161\230\129\175:Id:" .. self.ShowSkinId .. " Type:" .. self.ShowSkinType)
+    assert(IconObj, "未找到对应皮肤的BigIcon信息:Id:" .. self.ShowSkinId .. " Type:" .. self.ShowSkinType)
     self.TypeTag:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     if self.ShowSkinType == "Skin" then
       self.WS_Icon:SetActiveWidgetIndex(0)
@@ -234,7 +225,6 @@ function M:InitRewardList()
     self.Com_QualityTag:Init(ShowSkinData.Rarity)
   end
 end
-
 function M:IsNewOrConvertItem(Type, Id)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -242,7 +232,7 @@ function M:IsNewOrConvertItem(Type, Id)
   end
   local Count = AvatarUtils:GetTargetDataStatistics(Avatar, Type, Id)
   local ItemData = DataMgr[Type][Id]
-  assert(ItemData, "\230\138\189\229\141\161\231\187\147\230\158\156\233\129\147\229\133\183\228\184\141\229\173\152\229\156\168\239\188\154Type:" .. Type .. " Id:" .. Id)
+  assert(ItemData, "抽卡结果道具不存在：Type:" .. Type .. " Id:" .. Id)
   if self.RewardMap[Type][Id] == Count then
     self.RewardMap[Type][Id] = -1
     return true, false
@@ -251,16 +241,13 @@ function M:IsNewOrConvertItem(Type, Id)
   end
   return false, false
 end
-
 function M:RefreshResourceBar()
+  local GachaData = DataMgr.SkinGacha[self.GachaId]
   local ItemIdLst = {}
-  if DataMgr.SystemUI.GachaMain.TabCoin then
-    for key, value in ipairs(DataMgr.SystemUI.GachaMain.TabCoin) do
-      table.insert(ItemIdLst, value)
+  if GachaData.DisplayCostRes then
+    for _, ResourceId in ipairs(GachaData.DisplayCostRes) do
+      table.insert(ItemIdLst, ResourceId)
     end
-  end
-  for _, ResourceId in ipairs(DataMgr.SkinGacha[self.GachaId].GachaCostRes) do
-    table.insert(ItemIdLst, ResourceId)
   end
   self.HB_ResourceBar:ClearChildren()
   local ItemList = {}
@@ -278,7 +265,7 @@ function M:RefreshResourceBar()
       HandleMouseDown = true
     })
     ItemList[i] = ResourceBarWidget
-    ResourceBarWidget:SetResourceId(CoinId)
+    ResourceBarWidget:SetItemId(CoinId)
     self.HB_ResourceBar:AddChild(ResourceBarWidget)
     ResourceBarWidget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
     ResourceBarWidget:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
@@ -292,7 +279,6 @@ function M:RefreshResourceBar()
     end
   end
 end
-
 function M:RefreshGachaResInfo()
   local GachaData = DataMgr.SkinGacha[self.GachaId]
   local GachaTimes = 0
@@ -372,7 +358,6 @@ function M:RefreshGachaResInfo()
     end
   end
 end
-
 function M:OnClickGachaAgain()
   if self.Parent.bGachaing or self.Parent.CantClick or self.CantClick then
     return
@@ -388,7 +373,6 @@ function M:OnClickGachaAgain()
   self.Parent.bGachaing = true
   self:PlayOutAnim()
 end
-
 function M:OnBtnShareClicked()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Out) or self.Parent.bGachaing or self.CantClick then
     return
@@ -403,19 +387,17 @@ function M:OnBtnShareClicked()
     self.Parent:TakeGachaScreenShot(self, self.OnShareCallback)
   end)
 end
-
 function M:OnShareCallback()
+  self.bSharePage = false
   self:SetPageFocus()
   self.CantClick = false
   self.Group_Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Down_Info:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self.CanFocusChangeItem then
   end
-  self.bSharePage = false
   local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
   GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if not self:Isvisible() then
     return
@@ -431,7 +413,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self.Key_GamePad02:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetPageFocus()
   if self.Parent.bNeedUpdate then
     return
@@ -446,7 +427,6 @@ function M:SetPageFocus()
     self.Item_1:SetFocus()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self.Parent.bNeedUpdate then
     return
@@ -466,7 +446,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonTop then
@@ -495,11 +474,11 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   if self.OnClosedFun then
     self.OnClosedFun(self.Parent)
   end
@@ -510,7 +489,6 @@ function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self.Parent, "GachaAmb", {ToEnd = 1})
   self:PlayAnimation(self.Out)
 end
-
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.Out then
     self:CloseSelf()
@@ -520,10 +498,8 @@ function M:OnAnimationFinished(InAnim)
     self:BlockAllUIInput(false)
   end
 end
-
 function M:CloseSelf()
   self:BlockAllUIInput(false)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 return M

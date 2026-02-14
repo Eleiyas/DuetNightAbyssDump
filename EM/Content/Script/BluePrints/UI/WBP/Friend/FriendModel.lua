@@ -1,7 +1,6 @@
 local FriendCommon = require("BluePrints.UI.WBP.Friend.FriendCommon")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   self._SortType = nil
   self._OnlineFriendList = nil
@@ -15,7 +14,6 @@ function M:Init()
   self:GetFriendRequestList(true)
   self:AddReddotCount()
 end
-
 function M:GetFriendList(bUpdate)
   if not (self._FriendList or self._OnlineFriendList) or bUpdate then
     self._FriendList = {}
@@ -29,7 +27,6 @@ function M:GetFriendList(bUpdate)
   end
   return self._FriendList, self._OnlineFriendList
 end
-
 function M:GetFriendRequestList(bUpdate)
   if not self._FriendRequestList or bUpdate then
     self._FriendRequestList = {}
@@ -42,7 +39,6 @@ function M:GetFriendRequestList(bUpdate)
   end
   return self._FriendRequestList
 end
-
 function M:CacheSearchRes(AvatarInfo)
   if not AvatarInfo then
     self._SearchRes = {}
@@ -52,43 +48,33 @@ function M:CacheSearchRes(AvatarInfo)
     [AvatarInfo.Uid] = AvatarInfo
   }
 end
-
 function M:ClearSearchRes()
   self._SearchRes = {}
 end
-
 function M:GetSearchRes()
   return self._SearchRes
 end
-
 function M:GetFriendDict()
   return self:GetAvatar().Friends
 end
-
 function M:GetSelfUid()
   return self:GetAvatar().Uid
 end
-
 function M:GetBlackListDict()
   return self:GetAvatar().Blacklist
 end
-
 function M:GetRecentMatchDict()
   return self:GetAvatar().RecentMatchList
 end
-
 function M:GetRequestSendBox()
   return self:GetAvatar().FriendRequestSendBox
 end
-
 function M:GetRequestRecvBox()
   return self:GetAvatar().FriendRequestReceiveBox
 end
-
 function M:GetRecommendDict()
   return self:GetAvatar().RecommendFriendList
 end
-
 function M:GetRegionFriendDict()
   local RegionFriendDict = {}
   local FriendDict = self:GetFriendDict()
@@ -100,7 +86,6 @@ function M:GetRegionFriendDict()
   end
   return RegionFriendDict
 end
-
 function M:GetRegionDict()
   local RegionFriendDict = {}
   local RegionAvatars = self:GetAvatar().RegionAvatars or {}
@@ -111,7 +96,6 @@ function M:GetRegionDict()
   end
   return RegionFriendDict
 end
-
 function M:GetNicknameByUid(Uid)
   local Nickname = ""
   if "" == Nickname then
@@ -128,7 +112,6 @@ function M:GetNicknameByUid(Uid)
   end
   return ""
 end
-
 function M:AddReddotCount()
   local ReddotNode = ReddotManager.GetTreeNode(FriendCommon.ReddotName)
   if ReddotNode.Count > 0 then
@@ -158,13 +141,11 @@ function M:AddReddotCount()
     ReddotManager.IncreaseLeafNodeCount(FriendCommon.ReddotName)
   end
 end
-
 function M:RemoveLastRequests(Uid)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(FriendCommon.ReddotName) or {}
   local LastRequests = CacheDetail.LastRequests or {}
   LastRequests[Uid] = nil
 end
-
 function M:CleanReddotCount()
   local ReddotNode = ReddotManager.GetTreeNode(FriendCommon.ReddotName)
   if 0 == ReddotNode.Count then
@@ -177,7 +158,6 @@ function M:CleanReddotCount()
   CacheDetail.IsRead = true
   ReddotManager.DecreaseLeafNodeCount(FriendCommon.ReddotName)
 end
-
 function M:InitReddotCount()
   ReddotManager.AddNode(FriendCommon.ReddotName)
   local DateObj = TimeUtils.TimestampToDataObj(TimeUtils.NowTime())
@@ -193,7 +173,6 @@ function M:InitReddotCount()
   CacheDetail.Date = Date
   CacheDetail.IsRead = false
 end
-
 function M:_InitSortFunc()
   local function Compare(X, Y)
     if X == Y then
@@ -204,7 +183,6 @@ function M:_InitSortFunc()
     end
     return X < Y
   end
-  
   self._FriendListSortFunc = {
     [1] = function(Uid1, Uid2)
       local F1 = self:GetFriendDict()[Uid1]
@@ -259,7 +237,6 @@ function M:_InitSortFunc()
     end
   }
 end
-
 function M:SortFriends(FuncIdx, SortType)
   if not self._FriendListSortFunc then
     return
@@ -269,7 +246,6 @@ function M:SortFriends(FuncIdx, SortType)
   table.sort(self._OnlineFriendList, self._FriendListSortFunc[FuncIdx])
   self._SortType = nil
 end
-
 function M:SortFriendRequests(FuncIdx, SortType)
   if not self._FriendRequestSortFunc then
     return
@@ -278,7 +254,6 @@ function M:SortFriendRequests(FuncIdx, SortType)
   table.sort(self._FriendRequestList, self._FriendRequestSortFunc[FuncIdx])
   self._SortType = nil
 end
-
 function M:_CalculateStatusWeight(FriendInfo)
   if FriendInfo.IsOnline and not FriendInfo.IsInDungeon then
     return 1
@@ -288,5 +263,8 @@ function M:_CalculateStatusWeight(FriendInfo)
     return 3
   end
 end
-
+function M:IsFriend(Uid)
+  local dict = self:GetFriendDict() or {}
+  return nil ~= dict[Uid]
+end
 return M

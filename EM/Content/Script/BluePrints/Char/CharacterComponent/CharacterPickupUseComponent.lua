@@ -1,20 +1,16 @@
 local Component = {}
-
 function Component:PickupToRecoverSurvival(PickUpCount, UseFunctionParam)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:TriggerDungeonComponentFun("AddSurvivalValue", UseFunctionParam * PickUpCount)
 end
-
 function Component:PickupToGetResource(PickUpCount, ResourceId, DropId, Transform, PickUpEid, bExtra)
   if not DataMgr.Resource[ResourceId] then
     return
   end
   self:PickupTriggerRewardEvent(DropId, Transform, PickUpEid, bExtra, true)
 end
-
 function Component:PickupToRecoverHp(PickUpCount, UseFunctionParam, UnitId)
   local DeltaHp = self:_PickupToRecoverHp(PickUpCount, UseFunctionParam, UnitId)
-  Battle(self):TriggerBattleEvent(BattleEventName.OnGetHpBall, self, DeltaHp)
   local PhantomTeammate = self:GetPhantomTeammates()
   for _, Target in pairs(PhantomTeammate) do
     if Target ~= self then
@@ -22,7 +18,6 @@ function Component:PickupToRecoverHp(PickUpCount, UseFunctionParam, UnitId)
     end
   end
 end
-
 function Component:_PickupToRecoverHp(PickUpCount, UseFunctionParam, UnitId)
   if 1 == DataMgr.Drop[UnitId].IsPercentage then
     UseFunctionParam = self:GetAttr("MaxHp") * UseFunctionParam / 100
@@ -31,11 +26,9 @@ function Component:_PickupToRecoverHp(PickUpCount, UseFunctionParam, UnitId)
   self:AddHp(DeltaHp)
   return DeltaHp
 end
-
 function Component:PickupToRecoverSp(PickUpCount, UseFunctionParam)
   local DeltaSp = PickUpCount * UseFunctionParam
   self:_PickupToRecoverSp(DeltaSp)
-  Battle(self):TriggerBattleEvent(BattleEventName.OnGetSpBall, self, DeltaSp)
   local PhantomTeammate = self:GetPhantomTeammates()
   for _, Target in pairs(PhantomTeammate) do
     if Target ~= self then
@@ -43,13 +36,9 @@ function Component:PickupToRecoverSp(PickUpCount, UseFunctionParam)
     end
   end
 end
-
 function Component:_PickupToRecoverSp(DeltaSp)
-  local DeltaSp = PickUpCount * UseFunctionParam
   Battle(self):AddSpToTarget(self, self, DeltaSp, EChangedSpReason.PickUpSp)
-  Battle(self):TriggerBattleEvent(BattleEventName.OnGetSpBall, self, DeltaSp)
 end
-
 function Component:PickupToPickUpBattery(PickUpCount, UseFunctionParam)
   if self.BatteryNum >= Const.MaxBatteryOneChar then
     return
@@ -63,7 +52,6 @@ function Component:PickupToPickUpBattery(PickUpCount, UseFunctionParam)
     Battle(self):AddBuffToTarget(self, self, Const.BarriyBuffId, -1)
   end
 end
-
 function Component:PickupToPickUpCrackKey(PickUpCount, UseFunctionParam)
   if self.CrackKeyNum >= Const.MaxCrackKeyOneChar then
     return
@@ -75,7 +63,6 @@ function Component:PickupToPickUpCrackKey(PickUpCount, UseFunctionParam)
     Battle(self):AddBuffToTarget(self, self, Const.CrackKeyBuffId, -1)
   end
 end
-
 function Component:PickupToRecoverAmmo(PickUpCount, UseFunctionParam)
   local Num = PickUpCount * UseFunctionParam
   local BulletNum = self:GetBulletNum()
@@ -90,25 +77,28 @@ function Component:PickupToRecoverAmmo(PickUpCount, UseFunctionParam)
     end
   end
 end
-
 function Component:PickupToGetMod(PickUpCount, ModId, UnitId, Transform, PickUpEid, bExtra)
   self:PickupTriggerRewardEvent(UnitId, Transform, PickUpEid, bExtra, true)
 end
-
 function Component:PickupTriggerRewardEvent(UnitId, Transform, PickUpEid, bExtra, bNeedCallback)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  local Pickup = GameMode.EMGameState.CombatItemMap:Find(PickUpEid)
+  if not Pickup then
+    return
+  end
   local ExtraInfo = {
     UniqueSign = PickUpEid,
     DropId = UnitId,
     bExtra = bExtra,
-    SourceEid = self.Eid
+    SourceEid = self.Eid,
+    WorldRegionEid = Pickup.WorldRegionEid,
+    RegionDataType = Pickup.RegionDataType
   }
   local Callback = bNeedCallback and function()
     self:TriggerPickupSuccessCallback(UnitId)
   end
   GameMode:TriggerRewardEvent(UnitId, CommonConst.RewardReason.PickUp, Transform, ExtraInfo, Callback)
 end
-
 function Component:PickupToUseSkillEffect(PickUpCount, SkillId)
   self:_PickupToUseSkillEffect(SkillId)
   local PhantomTeammate = self:GetPhantomTeammates()
@@ -118,11 +108,9 @@ function Component:PickupToUseSkillEffect(PickUpCount, SkillId)
     end
   end
 end
-
 function Component:_PickupToUseSkillEffect(SkillId)
   Battle(self):ExecuteSkillEffect(self, SkillId, self)
 end
-
 function Component:TriggerPickupSuccessCallback(DropId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -135,5 +123,4 @@ function Component:TriggerPickupSuccessCallback(DropId)
     end
   end
 end
-
 return Component

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Super.Construct(self)
   self.Btn_2:SetText(GText("DUNGEONSINGLE"))
@@ -23,14 +22,12 @@ function M:Construct()
   self.Btn_Search.OnClicked:Add(self, self.OnBtnSearchClicked)
   self:AddDispatcher(EventID.OnMatchStateChanged, self, self.OnMatchStateChanged)
 end
-
 function M:Destruct()
   self.Btn_1:UnBindEventOnClickedByObj(self)
   self.Btn_2:UnBindEventOnClickedByObj(self)
   self.Btn_Search.OnClicked:Clear()
   self.Super.Destruct(self)
 end
-
 function M:ShowAreaLevelItemDetail(DungeonId)
   if not DungeonId then
     return
@@ -76,7 +73,6 @@ function M:ShowAreaLevelItemDetail(DungeonId)
           self.RewardList[ItemId] = TableName
         end
       end
-      
       AddReward(Reward.Resources, "Resource")
       AddReward(Reward.Chars, "Char")
       AddReward(Reward.Weapons, "Weapon")
@@ -99,7 +95,6 @@ function M:ShowAreaLevelItemDetail(DungeonId)
     self.List_Prop:AddItem(Content)
   end
 end
-
 function M:CheckMonstersInfoButton()
   local DungeonData = DataMgr.Dungeon[self.CurSelectedDungeonId]
   if DungeonData.DungeonMonsters then
@@ -108,7 +103,6 @@ function M:CheckMonstersInfoButton()
     self.Btn_Search:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnClickSingle()
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_enter_level", nil, nil)
   if not self.CurSelectedDungeonId then
@@ -121,7 +115,6 @@ function M:OnClickSingle()
     WorldTravelSubsystem(self):ChangeDungeonByDungeonId(self.CurSelectedDungeonId)
   end
 end
-
 function M:OnClickMatch()
   if not self.CurSelectedDungeonId then
     return
@@ -138,19 +131,16 @@ function M:OnClickMatch()
     UIManger:LoadUI(UIConst.DUNGEONMATCHINGFLOAT, "DungeonMatchingFloat", UIConst.ZORDER_FOR_CHANGE_SCENE, self.CurSelectedDungeonId)
   end
 end
-
 function M:OnClickDetailBack()
   self.Parent:RefreshAreaLevelItem(-1)
   self.Parent:SetFocus()
   self:Close()
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if UKismetInputLibrary.PointerEvent_IsMouseButtonDown(MouseEvent, EKeys.RightMouseButton) then
     self:OnClickDetailBack()
   end
 end
-
 function M:OnBtnSearchClicked()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -160,7 +150,6 @@ function M:OnBtnSearchClicked()
     MonsterInfoPanel.Parent = self
   end
 end
-
 function M:OnMatchStateChanged()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -172,5 +161,4 @@ function M:OnMatchStateChanged()
     self.Btn_2:SetIsEnabled(true)
   end
 end
-
 return M

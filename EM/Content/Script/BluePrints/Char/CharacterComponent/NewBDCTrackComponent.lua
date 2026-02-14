@@ -1,7 +1,6 @@
 local CommonUtils = require("Utils.CommonUtils")
 local TimeUtils = require("Utils.TimeUtils")
 local Component = {}
-
 function Component:BuildCommonTrackInfo(PlayerAvatar)
   local TrackInfo = {}
   TrackInfo.bones_id = self.InfoForInit.RoleId
@@ -9,7 +8,6 @@ function Component:BuildCommonTrackInfo(PlayerAvatar)
   TrackInfo.Position = tostring(self:K2_GetActorLocation())
   return TrackInfo
 end
-
 function Component:TickBigWorldPathInfo()
   if not self.bIsInBigWorld then
     return
@@ -26,7 +24,6 @@ function Component:TickBigWorldPathInfo()
     })
   end
 end
-
 function Component:TrackJumpCountInfo()
   if not self.UploadBDCTrackInfo then
     return
@@ -39,7 +36,6 @@ function Component:TrackJumpCountInfo()
   end
   self.UploadBDCTrackInfo.JumpCount = self.UploadBDCTrackInfo.JumpCount + 1
 end
-
 function Component:TrackJumpSecondCountInfo()
   if not self.UploadBDCTrackInfo then
     return
@@ -52,7 +48,6 @@ function Component:TrackJumpSecondCountInfo()
   end
   self.UploadBDCTrackInfo.JumpSecondCount = self.UploadBDCTrackInfo.JumpSecondCount + 1
 end
-
 function Component:TrackJumpWallCountInfo()
   if not self.UploadBDCTrackInfo then
     return
@@ -65,7 +60,6 @@ function Component:TrackJumpWallCountInfo()
   end
   self.UploadBDCTrackInfo.JumpWallCount = self.UploadBDCTrackInfo.JumpWallCount + 1
 end
-
 function Component:TrackDefeatedCountInfo()
   if not self.UploadBDCTrackInfo then
     return
@@ -83,7 +77,6 @@ function Component:TrackDefeatedCountInfo()
   end
   self.UploadBDCTrackInfo.DefeatedCountInfo.defeated_count = self.UploadBDCTrackInfo.DefeatedCountInfo.defeated_count + 1
 end
-
 function Component:TrackDeadInfo()
   if not self.UploadBDCTrackInfo then
     return
@@ -96,7 +89,6 @@ function Component:TrackDeadInfo()
   end
   self.UploadBDCTrackInfo.DeadCount = self.UploadBDCTrackInfo.DeadCount + 1
 end
-
 function Component:TrackRecoverInfo()
   if not self.UploadBDCTrackInfo then
     return
@@ -109,7 +101,6 @@ function Component:TrackRecoverInfo()
   end
   self.UploadBDCTrackInfo.RecoveryCount = self.UploadBDCTrackInfo.RecoveryCount + 1
 end
-
 function Component:TrackSkipTalkInfo(TalkTaskData)
   if not self.UploadBDCTrackInfo then
     return
@@ -128,7 +119,6 @@ function Component:TrackSkipTalkInfo(TalkTaskData)
   NewTrack.dialogue_id = TalkTaskData.FirstDialogueId
   HeroUSDKSubsystem(self):UploadTrackLog_Lua("skip_talk", NewTrack)
 end
-
 function Component:TraceBDCUploadInfo(EventName, Properties)
   if not self.NewUploadBDCTrackInfo then
     self.NewUploadBDCTrackInfo = {}
@@ -138,5 +128,4 @@ function Component:TraceBDCUploadInfo(EventName, Properties)
   end
   table.insert(self.NewUploadBDCTrackInfo[EventName], Properties)
 end
-
 return Component

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1748329908050403",
       type = "StoryNode",
-      name = "\228\184\142\229\163\171\229\133\181\230\136\152\230\150\151",
+      name = "与士兵战斗",
       pos = {x = 1207.2258064119178, y = 271.6129032059589},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -131,7 +133,7 @@ return {
           ["1748330576549591818"] = {
             key = "1748330576549591818",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\169",
+            name = "生成怪物",
             pos = {x = 1177.696969393382, y = 128.18182098416693},
             propsData = {
               ActiveEnable = true,
@@ -145,7 +147,7 @@ return {
           ["1748330617414591977"] = {
             key = "1748330617414591977",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1493.405405293946, y = 288},
             propsData = {
               KillMonsterType = "Id",
@@ -160,21 +162,21 @@ return {
           ["1748330644445592187"] = {
             key = "1748330644445592187",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1332, y = 542},
             propsData = {}
           },
           ["1748330708806592644"] = {
             key = "1748330708806592644",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 2044.7878768028818, y = 304.54545447539584},
             propsData = {}
           },
           ["17483439527072955785"] = {
             key = "17483439527072955785",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129\229\189\149\233\159\179\230\156\186",
+            name = "销毁录音机",
             pos = {x = 1768.9698171750192, y = 161.10060743370778},
             propsData = {
               ActiveEnable = false,

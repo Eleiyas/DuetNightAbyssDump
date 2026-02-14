@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.Item_Left.Panel_Main:SetRenderOpacity(0)
@@ -26,7 +25,6 @@ function M:Construct()
     self.Item_Right.Text_PlayDesc:SetWrapTextAt(WrapAtTextPlayDesc)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.ChapterId_L = Content.ChapterId_L
@@ -44,5 +42,4 @@ function M:OnListItemObjectSet(Content)
     self.Item_Right:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return M

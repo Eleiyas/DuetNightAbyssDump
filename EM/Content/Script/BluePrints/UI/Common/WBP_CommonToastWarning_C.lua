@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local ShowMessage, LastTime = ...
@@ -9,7 +8,6 @@ function M:OnLoaded(...)
     self:AddTimer(LastTime, self.Close, false, 0, "TipSecond", true)
   end
 end
-
 function M:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -21,10 +19,8 @@ function M:PlayOutAnim()
   })
   self:PlayAnimation(self.Out)
 end
-
 function M:Close()
   self.Super.Close(self)
   self.IsClose = true
 end
-
 return M

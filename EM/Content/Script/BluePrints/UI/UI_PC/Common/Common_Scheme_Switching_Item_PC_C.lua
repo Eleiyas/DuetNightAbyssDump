@@ -4,19 +4,16 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
 local Unhandled = UE4.UWidgetBlueprintLibrary.Unhandled()
-
 function M:BindEventOnMouseButtonDown(Obj, Event, Param)
   self.Obj = Obj
   self.Event = Event
   self.Param = Param
   self.Selected = false
 end
-
 function M:On(IsOn)
   self.Overridden.On(self, IsOn)
   self.Selected = IsOn
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   if self.Selected then
@@ -32,12 +29,10 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.PressTimerKey = TimerKey
   return Unhandled
 end
-
 function M:DeSelect()
   self.Obj.IsSelected = false
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   if self.PressTimerKey then
@@ -52,7 +47,6 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return Unhandled
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.Selected then
     return
@@ -60,7 +54,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MouseEvent)
   if self.Selected then
     return
@@ -68,5 +61,4 @@ function M:OnMouseLeave(MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 return M

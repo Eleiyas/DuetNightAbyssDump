@@ -1,12 +1,10 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local WBP_TrueHardBoss_ListItem_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_TrueHardBoss_ListItem_C:Initialize(Initializer)
   self.IsSelected = false
   self.Parent = nil
 end
-
 function WBP_TrueHardBoss_ListItem_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -45,5 +43,4 @@ function WBP_TrueHardBoss_ListItem_C:OnListItemObjectSet(Content)
     self.Content.Parent:FillWrapBox(self.Content.Index)
   end
 end
-
 return WBP_TrueHardBoss_ListItem_C

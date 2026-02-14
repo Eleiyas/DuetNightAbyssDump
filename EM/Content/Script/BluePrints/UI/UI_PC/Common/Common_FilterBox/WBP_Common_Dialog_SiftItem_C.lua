@@ -3,12 +3,10 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.isSelectedAll = false
   self.disableInteraction = false
 end
-
 function M:Init(Owner, InItem)
   self.Owner = Owner
   self.ItemData = InItem
@@ -27,7 +25,6 @@ function M:Init(Owner, InItem)
   self:InitListenEvent()
   self:SetGamepadKey("LS")
 end
-
 function M:InitSelectionItems(SelectionDatas, SelectionText, IconPaths)
   self.WBox_Selection:ClearChildren()
   local indices = {}
@@ -47,14 +44,12 @@ function M:InitSelectionItems(SelectionDatas, SelectionText, IconPaths)
     self:AddSelectionItem(index, name, iconPath)
   end
 end
-
 function M:AddSelectionItem(index, name, iconPath)
   local UIManager = UIManager(GWorld.GameInstance)
   local SelectionUI = UIManager:CreateWidget("/Game/UI/WBP/Common/FilterSort/WBP_Com_SiftSelection.WBP_Com_SiftSelection")
   self.WBox_Selection:AddChild(SelectionUI)
   SelectionUI:Init(self, index, name, iconPath)
 end
-
 function M:UpdateSelectionState()
   if self.isSelectedAll then
     self:PlayAnimation(self.Click)
@@ -64,7 +59,6 @@ function M:UpdateSelectionState()
     self.disableInteraction = false
   end
 end
-
 function M:OnBtnSelectAllClicked()
   local isChecked = true
   if self.isSelectedAll then
@@ -83,7 +77,6 @@ function M:OnBtnSelectAllClicked()
   self:PlayCheckSound(isChecked)
   self:UpdateSelectionState()
 end
-
 function M:OnSelectionItemChanged(CheckState, selectionUI)
   if CheckState then
     self.Owner:AddSelection(self, selectionUI.Index, selectionUI.Name)
@@ -105,28 +98,24 @@ function M:OnSelectionItemChanged(CheckState, selectionUI)
     self:UpdateSelectionState()
   end
 end
-
 function M:OnBtnSelectAllHovered()
   if self.disableInteraction then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnSelectAllUnhovered()
   if self.disableInteraction then
     return
   end
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnBtnSelectAllPressed()
   if self.disableInteraction then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:PlayCheckSound(IsChecked)
   if IsChecked then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_checkbox_check", nil, nil)
@@ -134,31 +123,26 @@ function M:PlayCheckSound(IsChecked)
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_checkbox_uncheck", nil, nil)
   end
 end
-
 function M:Destruct()
   self.Btn_SelectAll.OnClicked:Remove(self, self.OnBtnSelectAllClicked)
   self.Btn_SelectAll.OnHovered:Remove(self, self.OnBtnSelectAllHovered)
   self.Btn_SelectAll.OnUnhovered:Remove(self, self.OnBtnSelectAllUnhovered)
   self.Btn_SelectAll.OnPressed:Remove(self, self.OnBtnSelectAllPressed)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:InitNavigationRules()
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Key_Controller:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   local ActiveWidgetIndex = IsUseKeyAndMouse and 0 or 1
@@ -168,7 +152,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -176,34 +159,29 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:SetFirstCheckBoxFocusTarget()
   local firstCheckBox = self.WBox_Selection:GetChildAt(0)
   if firstCheckBox then
     return firstCheckBox
   end
 end
-
 function M:SetLastCheckBoxFocusTarget()
   local lastCheckBox = self.WBox_Selection:GetChildAt(self.WBox_Selection:GetChildrenCount() - 1)
   if lastCheckBox then
     return lastCheckBox
   end
 end
-
 function M:InitNavigationRules()
   self.Btn_SelectAll:SetNavigationRuleCustom(EUINavigation.Down, {
     self,
     self.SetFirstCheckBoxFocusTarget
   })
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -218,7 +196,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:SetGamepadKey(FocusKeyName)
   self.Key_Controller:CreateCommonKey({
     KeyInfoList = {
@@ -226,7 +203,6 @@ function M:SetGamepadKey(FocusKeyName)
     }
   })
 end
-
 function M:GetNextWrapBox()
   local nextSiftItemIdx = self.Owner.List_Selection:GetChildIndex(self) + 1
   if nextSiftItemIdx < self.Owner.List_Selection:GetChildrenCount() then
@@ -235,7 +211,6 @@ function M:GetNextWrapBox()
   end
   return nil
 end
-
 function M:GetPrevWrapBox()
   local prevSiftItemIdx = self.Owner.List_Selection:GetChildIndex(self) - 1
   if prevSiftItemIdx >= 0 then
@@ -244,5 +219,4 @@ function M:GetPrevWrapBox()
   end
   return nil
 end
-
 return M

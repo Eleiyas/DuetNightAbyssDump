@@ -1,10 +1,10 @@
 require("UnLua")
-local BP_MiniGame_Training_C = Class("BluePrints/Item/MiniGame/BP_MiniGame_C")
-
+local BP_MiniGame_Training_C = Class("BluePrints/Item/MiniGame/BP_OpenUIMechanism_C")
 function BP_MiniGame_Training_C:OpenMechanism(Id)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:LoadUINew("TrainingGroundSetup")
 end
-
+function BP_MiniGame_Training_C:CloseMechanism(PlayerId)
+end
 return BP_MiniGame_Training_C

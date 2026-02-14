@@ -5,7 +5,6 @@ local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotH
 local M = Class({
   "Blueprints.UI.BP_UIState_C"
 })
-
 function M:Init()
   self:SetText(GText("PermanenEventReward"))
   self:BindEventOnClicked(self, self.OpenReward)
@@ -28,7 +27,6 @@ function M:Init()
   end
   self:RefreshReddot()
 end
-
 function M:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("FeinaEventReward")
   if not CacheDetail then
@@ -47,7 +45,6 @@ function M:RefreshReddot()
     end
   end
 end
-
 function M:Construct()
   self.Btn_Click.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnBtnUnhovered)
@@ -55,28 +52,24 @@ function M:Construct()
   self.Btn_Click.OnReleased:Add(self, self.OnBtnReleased)
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClicked)
 end
-
 function M:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   self:RemoveInputMethodChangedListen()
+  ReddotManager.RemoveListener("FeinaEventReward", self)
   self.Super.Destruct(self)
 end
-
 function M:SetText(Text)
   self.Text_Reward:SetText(Text)
 end
-
 function M:BindEventOnClicked(Obj, Func, Params)
   if not Obj or not Func then
     return
@@ -85,7 +78,6 @@ function M:BindEventOnClicked(Obj, Func, Params)
   self.Func = Func
   self.Params = Params
 end
-
 function M:OnBtnHovered()
   self.IsHovering = true
   if self.IsPressing then
@@ -94,7 +86,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   self.IsHovering = false
   if not self.IsPressing then
@@ -102,13 +93,11 @@ function M:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function M:OnBtnPressed()
   self.IsPressing = true
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   self.IsPressing = false
   if not self.IsHovering then
@@ -119,7 +108,6 @@ function M:OnBtnReleased()
     self:PlayAnimationReverse(self.Hover)
   end
 end
-
 function M:OnBtnClicked()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
@@ -132,11 +120,9 @@ function M:OnBtnClicked()
     end
   end
 end
-
 function M:OpenReward()
   RewardModel:OpenReward(self)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -146,15 +132,12 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDeviceType = CurInputDevice
 end
-
 function M:InitKeyBoardView()
   self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:InitGamepadView()
   self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:HandleKeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonTop then
@@ -163,7 +146,6 @@ function M:HandleKeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnUpdateSubUIViewStyle(IsEnter)
   if IsEnter then
     self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -171,5 +153,4 @@ function M:OnUpdateSubUIViewStyle(IsEnter)
     self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

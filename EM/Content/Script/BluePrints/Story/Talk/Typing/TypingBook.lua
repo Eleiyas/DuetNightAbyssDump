@@ -1,6 +1,5 @@
 local FTypingPage = require("Blueprints.Story.Talk.Typing.TypingPage")
 local M = {}
-
 function M:New(Size)
   local TypingBook = {}
   for k, v in pairs(self) do
@@ -10,11 +9,9 @@ function M:New(Size)
   TypingBook.Pages = {}
   return TypingBook
 end
-
 function M:GetSize()
   return self.Size
 end
-
 function M:AddBlock(Block, TypingUserWidget)
   local Page = self.Pages[#self.Pages]
   if Page then
@@ -28,13 +25,12 @@ function M:AddBlock(Block, TypingUserWidget)
     local OldBlock = Block
     Block = Page:AddBlock(Block, TypingUserWidget)
     if OldBlock == Block then
-      print(_G.LogTag, "Block \229\134\133\229\174\185\232\182\133\229\135\186\233\161\181\229\164\167\229\176\143\239\188\140\232\162\171\228\184\162\229\188\131\227\128\130", "Block \229\164\167\229\176\143\239\188\154", Block:GetSize(), "Block \229\134\133\229\174\185\239\188\154", Block:GetRichText())
+      print(_G.LogTag, "Block 内容超出页大小，被丢弃。", "Block 大小：", Block:GetSize(), "Block 内容：", Block:GetRichText())
       break
     end
     table.insert(self.Pages, Page)
   end
 end
-
 function M:GetLine(Num)
   for _, Page in ipairs(self.Pages) do
     local LineCount = Page:GetLineCount()
@@ -44,15 +40,12 @@ function M:GetLine(Num)
     Num = Num - LineCount
   end
 end
-
 function M:GetPage(Num)
   return self.Pages[Num]
 end
-
 function M:GetPageCount()
   return #self.Pages
 end
-
 function M:GetRichText()
   local Text = ""
   for Index, Page in ipairs(self.Pages) do
@@ -60,7 +53,6 @@ function M:GetRichText()
   end
   return Text
 end
-
 function M:GetFullText()
   local Text = ""
   for Index, Page in ipairs(self.Pages) do
@@ -68,5 +60,4 @@ function M:GetFullText()
   end
   return Text
 end
-
 return M

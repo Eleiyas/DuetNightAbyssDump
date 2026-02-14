@@ -1,6 +1,5 @@
 local BattleUtils = require("Utils.BattleUtils")
 local Component = {}
-
 function Component:UseNewCreatePhantom(RoleId, BTIndex, IsHostage, Info, ExtraInfo, Level)
   local Context = AEventMgr.CreateUnitContext()
   Context.UnitType = "Phantom"
@@ -23,14 +22,19 @@ function Component:UseNewCreatePhantom(RoleId, BTIndex, IsHostage, Info, ExtraIn
   end
   Context.BoolParams:Add("FixLocation", true)
   Context:AddLuaTable("AvatarInfo", Info)
+  if ExtraInfo.MeleeWeapon and next(ExtraInfo.MeleeWeapon) or ExtraInfo.RangedWeapon and next(ExtraInfo.RangedWeapon) then
+    Context:AddLuaTable("MeleeWeapon", ExtraInfo.MeleeWeapon)
+    Context:AddLuaTable("RangedWeapon", ExtraInfo.RangedWeapon)
+  end
   self:CreatePhantomNew(Context, RoleId, ExtraInfo.IsSpawnByGM ~= nil, nil ~= ExtraInfo.IsSpawnByResource, nil ~= ExtraInfo.IsSpawnBySquad, ExtraInfo.TeamIndex or 1)
 end
-
 function Component:ShowPhantomSummonMax()
   self:ClientShowToast(UIConst.Tip_CommonToast, GText("UI_Tosat_PhantomSummon_Num"))
 end
-
 function Component:CreatePhantom(RoleId, BTIndex, Info, ExtraInfo, Level)
+  if not RoleId then
+    return
+  end
   local IsHostage = false
   local ExtraCreateInfo = BattleUtils.GetExtraCreateInfo("Phantom", RoleId, RoleId)
   if ExtraCreateInfo then
@@ -43,7 +47,6 @@ function Component:CreatePhantom(RoleId, BTIndex, Info, ExtraInfo, Level)
   end
   self:UseNewCreatePhantom(RoleId, BTIndex, IsHostage, Info, ExtraInfo, Level)
 end
-
 function Component:ReCreatePhantom(RoleId, BTIndex, Info, ExtraInfo, Level)
   local IsHostage = false
   local ExtraCreateInfo = BattleUtils.GetExtraCreateInfo("Phantom", RoleId, RoleId)
@@ -53,7 +56,6 @@ function Component:ReCreatePhantom(RoleId, BTIndex, Info, ExtraInfo, Level)
   end
   self:UseNewCreatePhantom(RoleId, BTIndex, IsHostage, Info, ExtraInfo, Level)
 end
-
 function Component:CreatePhantomOnLevelTransition()
   local Avatar = GWorld:GetAvatar()
   if not Avatar or not Avatar.PhantomCreateInfo then
@@ -64,5 +66,4 @@ function Component:CreatePhantomOnLevelTransition()
     self:ReCreatePhantom(PhantomRoleId, CreateInfo.BTIndex, CreateInfo.Info, CreateInfo.ExtraInfo, CreateInfo.Level)
   end
 end
-
 return Component

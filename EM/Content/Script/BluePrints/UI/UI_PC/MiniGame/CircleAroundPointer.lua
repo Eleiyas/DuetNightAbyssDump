@@ -2,7 +2,6 @@ require("UnLua")
 local CircleAroundPointer = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function CircleAroundPointer:Construct()
   self.IsDestroied = false
   self.BeginTick = false
@@ -12,15 +11,12 @@ function CircleAroundPointer:Construct()
   self:AddDispatcher(EventID.CircleAroundTryToTriggerPointer, self, self.TriggerPointer)
   self:AddDispatcher(EventID.CircleAroundGameFailed, self, self.GameFailed)
 end
-
 function CircleAroundPointer:GameStart()
   self:PlayAnimation(self.In)
 end
-
 function CircleAroundPointer:GameFailed()
   self:PlayAnimation(self.Fail)
 end
-
 function CircleAroundPointer:InitPointer(Owner, PointerStartAngle, FaultAngle, Speed)
   self:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Owner = Owner
@@ -32,7 +28,6 @@ function CircleAroundPointer:InitPointer(Owner, PointerStartAngle, FaultAngle, S
   self.CanTriggerSwitchIndex = nil
   self.BeginTick = true
 end
-
 function CircleAroundPointer:Tick(MyGeometry, InDeltaTime)
   if not self.BeginTick or self.IsPlayingTriggerAnim then
     return
@@ -58,7 +53,6 @@ function CircleAroundPointer:Tick(MyGeometry, InDeltaTime)
   local DetalAngle = self.AngleSpeed * InDeltaTime
   self:SetRenderTransformAngle((Angle + DetalAngle) % 360)
 end
-
 function CircleAroundPointer:TriggerPointer()
   self:PlayAnimation(self.Press)
   if self.State == "CanTrigger" and not self.IsPlayingTriggerAnim and self.BeginTick then
@@ -67,5 +61,4 @@ function CircleAroundPointer:TriggerPointer()
     self.IsPlayingTriggerAnim = false
   end
 end
-
 return CircleAroundPointer

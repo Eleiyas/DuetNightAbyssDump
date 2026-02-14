@@ -2,17 +2,14 @@ require("UnLua")
 local BP_RandomCreateActor_C = Class({
   "BluePrints/Char/BP_StaticCreateActor_C"
 })
-
 function BP_RandomCreateActor_C:Initialize(Initializer)
   local m = FRandomActorTemplate()
   local t = FRandomCreateActorParam()
 end
-
 function BP_RandomCreateActor_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self:AddRandomCreatorInfo()
 end
-
 function BP_RandomCreateActor_C:InitRandomSpawnInfo(ParamsNum, Manager, Idx)
   self.UnitType = DataMgr.RandomCreator[self.RandomRuleId].UnitType
   self.NotOverLap = DataMgr.RandomCreator[self.RandomRuleId].NotOverLap
@@ -43,7 +40,6 @@ function BP_RandomCreateActor_C:InitRandomSpawnInfo(ParamsNum, Manager, Idx)
       self.CurrentTableId = Res.CurrentTableId
       Manager:EmplaceRandomCreator(self.RandomRuleId, Idx)
     end
-    
     Avatar:ActiveRandomCreator(self.RandomRuleId, ParamsNum, Callback)
   elseif IsDedicatedServer(self) and IsAuthority(self) then
     local bSuccess, Res = AvatarUtils:HandleActiveRandomCreator(self.RandomRuleId, ParamsNum, self.ProportionList)
@@ -58,7 +54,6 @@ function BP_RandomCreateActor_C:InitRandomSpawnInfo(ParamsNum, Manager, Idx)
     self:SetInfoProportion(ParamsNum)
   end
 end
-
 function BP_RandomCreateActor_C:SetInfoRandom()
   local MaxTableId = 0
   for _, Info in ipairs(DataMgr.RandomCreator[self.RandomRuleId].RandomInfos) do
@@ -81,7 +76,6 @@ function BP_RandomCreateActor_C:SetInfoRandom()
     end
   end
 end
-
 function BP_RandomCreateActor_C:SetInfoProportion()
   local MaxTableId = 0
   for _, Info in ipairs(DataMgr.RandomCreator[self.RandomRuleId].RandomInfos) do
@@ -113,7 +107,6 @@ function BP_RandomCreateActor_C:SetInfoProportion()
     end
   end
 end
-
 function BP_RandomCreateActor_C:AddRandomCreatorInfo()
   if not IsAuthority(self) then
     return
@@ -128,18 +121,14 @@ function BP_RandomCreateActor_C:AddRandomCreatorInfo()
   GameState.StaticCreatorMap:Add(self.StaticCreatorId, self)
   GameState.StaticCreatorStringNameMap:Add(self.DisplayName, self)
 end
-
 function BP_RandomCreateActor_C:AddSerializedEid_Lua(Eid)
   self.RandomActorArray:Add(Eid)
 end
-
 function BP_RandomCreateActor_C:RemoveActorToChildEids(Eid)
   self.RandomActorArray:RemoveItem(Eid)
 end
-
 function BP_RandomCreateActor_C:SetCreatorQuestId(QuestId)
 end
-
 function BP_RandomCreateActor_C:GetOutBattleBehaviorInfo(LevelName, RandomCreatorId)
   if not RandomCreatorId then
     return
@@ -159,7 +148,6 @@ function BP_RandomCreateActor_C:GetOutBattleBehaviorInfo(LevelName, RandomCreato
   end
   return res
 end
-
 function BP_RandomCreateActor_C:ActiveRandomCreator(Param)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) then
@@ -181,7 +169,6 @@ function BP_RandomCreateActor_C:ActiveRandomCreator(Param)
   self:FillRandomCreateUnitContext(Context, Param)
   GameMode.EMGameState.EventMgr:CreateUnitNew(Context, false)
 end
-
 function BP_RandomCreateActor_C:FillRandomCreateUnitContext(Context, Param)
   if not Param then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -208,7 +195,6 @@ function BP_RandomCreateActor_C:FillRandomCreateUnitContext(Context, Param)
     end
   end
 end
-
 function BP_RandomCreateActor_C:OnRandomCreatorRegionDataAllocated_Lua(LuaTableIndex, RandomCreatorId, RandomRuleId, RandomTableId, RandomIdxInRule)
   local GameMode = UGameplayStatics.GetGameMode(self)
   local RegionDataSubsys = GameMode:GetRegionDataMgrSubSystem()
@@ -219,15 +205,12 @@ function BP_RandomCreateActor_C:OnRandomCreatorRegionDataAllocated_Lua(LuaTableI
   Context.IntParams:Add("RandomTableId", RandomTableId)
   RegionDataSubsys:InitRegionDataTable(LuaTableIndex, Context)
 end
-
 function BP_RandomCreateActor_C:AddSnapShotSpawnInfo(Eid, RuleId, ParamId, TableId)
   self:AddSpawnInfo(Eid, RuleId, ParamId, TableId)
 end
-
 function BP_RandomCreateActor_C:RecoverSpawnInfo_Lua(Actor, RuleId, ParamId, TableId)
   Actor.RandomRuleId = RuleId
   Actor.RandomCreatorId = ParamId
   Actor.RandomTableId = TableId
 end
-
 return BP_RandomCreateActor_C

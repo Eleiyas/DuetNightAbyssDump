@@ -6,7 +6,6 @@ local TeamModel = TeamController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Teammate2UI = {}
@@ -52,7 +51,6 @@ function M:Construct()
     self.Button_Close.OnClicked:Add(self, self.Close)
   end
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
   if not GWorld:IsStandAlone() then
@@ -82,12 +80,10 @@ function M:InitUIInfo(Name, bInUIMode, EventList, ...)
     end
   end)
 end
-
 function M:NotifyOnChangeLeader(Uid, OldLeaderId)
   self:_UpdateMemberTag(Uid)
   self:_UpdateMemberTag(OldLeaderId)
 end
-
 function M:NotifyOnTeamDelPlayer(MemberInfo)
   if TeamModel:IsYourself(MemberInfo.Uid) then
     self:Close()
@@ -101,7 +97,6 @@ function M:NotifyOnTeamDelPlayer(MemberInfo)
     end
   end
 end
-
 function M:NotifyOnTeamAddPlayer(MemberInfo)
   if TeamModel:IsYourself(MemberInfo.Uid) then
     return
@@ -114,7 +109,6 @@ function M:NotifyOnTeamAddPlayer(MemberInfo)
     end
   end
 end
-
 function M:ProcessAddQueue()
   if not next(self.Teammate2UI) then
     self.WB_Player:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -134,7 +128,6 @@ function M:ProcessAddQueue()
     self:AddTeammateUI(Member, nil, self.TeammateCount, true)
   end)
 end
-
 function M:ProcessDelQueue()
   for _, ItemUI in ipairs(self.Teammate2UI) do
     ItemUI:PlayAnimation(ItemUI.Normal)
@@ -158,7 +151,6 @@ function M:ProcessDelQueue()
     self:DelTeammateUI(Uid)
   end)
 end
-
 function M:OnLeaveTeamClicked()
   local Params = {
     RightCallbackFunction = function()
@@ -168,12 +160,10 @@ function M:OnLeaveTeamClicked()
   UIManager(self):ShowCommonPopupUI(TeamCommon.LeaveConfirmDialog, Params)
   self:Close()
 end
-
 function M:OnInviteClicked()
   FriendController:OpenView(self, FriendCommon.FriendTabType.MyFriend)
   self:Close()
 end
-
 function M:AddTeammateUI(Member, ItemUI, Index, bAnim)
   for _, Widget in pairs(self.WB_Player:GetAllChildren()) do
     Widget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Escape)
@@ -195,7 +185,6 @@ function M:AddTeammateUI(Member, ItemUI, Index, bAnim)
     self.SizeBox_Invite:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:DelTeammateUI(Uid)
   for _, Widget in pairs(self.WB_Player:GetAllChildren()) do
     Widget:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Escape)
@@ -214,12 +203,10 @@ function M:DelTeammateUI(Uid)
     ItemUI:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   end
 end
-
 function M:Close()
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_panel_shrink", nil, nil)
   M.Super.Close(self)
 end
-
 function M:Destruct()
   self.Btn_Leave:UnBindEventOnClicked(self, self.OnLeaveTeamClickeds)
   self.Btn_Invite:UnBindEventOnClicked(self, self.OnInviteClicked)
@@ -230,5 +217,4 @@ function M:Destruct()
   end
   M.Super.Destruct(self)
 end
-
 return M

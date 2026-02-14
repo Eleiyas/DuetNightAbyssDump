@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_NpcSwitch_TabItem_PC_C = Class()
-
 function WBP_NpcSwitch_TabItem_PC_C:UpdateTabItem(TabContent)
   self.TabName = {
     GText("UI_SHOWNPC_NAME_SCENE1"),
@@ -64,5 +63,4 @@ function WBP_NpcSwitch_TabItem_PC_C:UpdateTabItem(TabContent)
     end
   end
 end
-
 return WBP_NpcSwitch_TabItem_PC_C

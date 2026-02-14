@@ -1,5 +1,4 @@
 local M = {}
-
 function M:CreateNode(Flow, TalkTask, Params)
   local Tag = Params.Tag
   local UnSetTagNode = Flow:CreateNode(UEFNode_Delegate)
@@ -19,5 +18,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return UnSetTagNode
 end
-
 return M

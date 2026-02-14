@@ -2,7 +2,6 @@ local ShowGuideNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.Qu
 ShowGuideNode._components = {
   "StoryCreator.StoryLogic.StorylineNodes.QuestNodes.GuideNodeComp"
 }
-
 function ShowGuideNode:Init()
   self.MessageId = 0
   self.SkillNameList = {}
@@ -22,7 +21,6 @@ function ShowGuideNode:Init()
   self.IsForbidOutAnim = false
   self.ForbidSuccessAnim = false
 end
-
 function ShowGuideNode:Start(Context)
   if self.Context.IsFail and UE4.UKismetSystemLibrary.GetFrameCount() == self.Context.FrameCount then
     self:FinishAction()
@@ -32,7 +30,6 @@ function ShowGuideNode:Start(Context)
   self:InitEnumSkillNameList()
   self:Touch(self.Context)
 end
-
 function ShowGuideNode:InitEnumSkillNameList()
   self.EnumSkillNameList = {}
   local EnumSkill = UE4.ESkillName
@@ -43,7 +40,6 @@ function ShowGuideNode:InitEnumSkillNameList()
     end
   end
 end
-
 function ShowGuideNode:Touch(Context)
   DebugPrint("------------ ShowGuideNode Start------------------")
   local GameInstance = GWorld.GameInstance
@@ -60,7 +56,6 @@ function ShowGuideNode:Touch(Context)
     self:FinishAction()
   end)
 end
-
 function ShowGuideNode:FinishAction()
   DebugPrint("------------ ShowGuideNode End------------------")
   local StorylineUtils = require("StoryCreator.StoryLogic.StorylineUtils")
@@ -70,12 +65,10 @@ function ShowGuideNode:FinishAction()
   end
   self:Finish()
 end
-
 function ShowGuideNode:Clear()
   if self.UIStateAsyncActionBase and self.UIStateAsyncActionBase.OnGuideEnd:IsBound() then
     self.UIStateAsyncActionBase.OnGuideEnd:Clear()
   end
 end
-
 AssembleComponents(ShowGuideNode)
 return ShowGuideNode

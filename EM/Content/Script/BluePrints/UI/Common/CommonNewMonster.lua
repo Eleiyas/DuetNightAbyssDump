@@ -1,19 +1,15 @@
 local Common_NewMonster_PC_C = Class("BluePrints.UI.BP_UIState_C")
 local MonsterUtils = require("Utils.MonsterUtils")
-
 function Common_NewMonster_PC_C:Initialize(Initializer)
   Common_NewMonster_PC_C.Super.Initialize(self)
 end
-
 function Common_NewMonster_PC_C:Construct()
   Common_NewMonster_PC_C.Super.Construct(self)
 end
-
 function Common_NewMonster_PC_C:Destruct()
   Common_NewMonster_PC_C.Super.Destruct(self)
   self:RemoveFromParent()
 end
-
 function Common_NewMonster_PC_C:OnLoaded(...)
   Common_NewMonster_PC_C.Super:OnLoaded(...)
   local BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -34,12 +30,17 @@ function Common_NewMonster_PC_C:OnLoaded(...)
   if not Monster then
     return
   end
+  local GallaryId = Monster.GalleryRuleId
+  local PreId = DataMgr.GalleryRule[GallaryId].PreferredMonsterId
+  if PreId then
+    Monster = DataMgr.Monster[PreId]
+  end
   local MonsterName = GText(Monster.UnitName)
-  self.Text_NewMonster:SetText(GText("Mon_FirstSeen_Label"))
   if MonsterName then
     self.Text_Name:SetText(MonsterName)
   end
-  local MonsterIcon = Monster.Icon
+  self.Text_NewMonster:SetText(GText("Mon_FirstSeen_Label"))
+  local MonsterIcon = DataMgr.GalleryRule[GallaryId].MonsterIcon
   if MonsterIcon then
     UE.UResourceLibrary.LoadObjectAsync(self, MonsterIcon, {
       self,
@@ -52,18 +53,15 @@ function Common_NewMonster_PC_C:OnLoaded(...)
     self.Close
   })
 end
-
 function Common_NewMonster_PC_C:OnIconLoadFinished(Object)
   if IsValid(self) and self.Img_Monster then
     self.Img_Monster:GetDynamicMaterial():SetTextureParameterValue("MainTex", Object)
   end
 end
-
 function Common_NewMonster_PC_C:Hide(HideTag)
   Common_NewMonster_PC_C.Super.Hide(self, HideTag)
   self:PauseTimer("TryToCloseMonster")
 end
-
 function Common_NewMonster_PC_C:Show(ShowTag)
   Common_NewMonster_PC_C.Super.Show(self, ShowTag)
   local IsHide = not IsEmptyTable(self.HideTags)
@@ -71,11 +69,9 @@ function Common_NewMonster_PC_C:Show(ShowTag)
     self:UnPauseTimer("TryToCloseMonster")
   end
 end
-
 function Common_NewMonster_PC_C:TryToClose()
   self:PlayAnimation(self.Out)
 end
-
 function Common_NewMonster_PC_C:Close()
   Common_NewMonster_PC_C.Super.Close(self)
   UIManager(self):RemoveUserWidgetFromParent(self.WidgetName)
@@ -84,12 +80,10 @@ function Common_NewMonster_PC_C:Close()
     GameState:ShowNextMonsterPanel()
   end
 end
-
 function Common_NewMonster_PC_C:Refresh()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
     GameState:ShowNextMonsterPanel()
   end
 end
-
 return Common_NewMonster_PC_C

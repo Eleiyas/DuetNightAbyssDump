@@ -1,5 +1,4 @@
 local M = Class("BluePrints.Story.FlowGraph.FlowNode.TalkFlowNode.FlowNode_TalkNodeBase")
-
 function M:OnTriggerFinish(PinName)
   DebugPrint("FlowNode:OnTriggerFinish")
   local TalkTask = self:TryGetTalkTask()
@@ -12,5 +11,4 @@ function M:OnTriggerFinish(PinName)
     self:Finish()
   end)
 end
-
 return M

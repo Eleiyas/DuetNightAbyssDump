@@ -2,16 +2,13 @@ require("UnLua")
 local BP_MonFieldCollision_C = Class({
   "BluePrints/Item/AirWall/BP_MonField_C"
 })
-
 function BP_MonFieldCollision_C:AuthorityInitInfo(Info)
   BP_MonFieldCollision_C.Super.AuthorityInitInfo(self, Info)
   self.ShapeType = self.UnitParams.ShapeType or "Box"
   self:SetFieldRange()
 end
-
 function BP_MonFieldCollision_C:ClientInitInfo(Info)
 end
-
 function BP_MonFieldCollision_C:SetFieldRange()
   local SphereProfileName = self.Sphere:GetCollisionProfileName()
   local BoxProfileName = self.Box:GetCollisionProfileName()
@@ -30,7 +27,6 @@ function BP_MonFieldCollision_C:SetFieldRange()
   self.Box:SetCollisionProfileName(BoxProfileName)
   self.Sphere:SetCollisionProfileName(SphereProfileName)
 end
-
 function BP_MonFieldCollision_C:GetTrapOverlapActors()
   local ObjectTypes = TArray(EObjectTypeQuery)
   ObjectTypes:Add(EObjectTypeQuery.Pawn)
@@ -38,7 +34,6 @@ function BP_MonFieldCollision_C:GetTrapOverlapActors()
   OutActors = UE4.UKismetSystemLibrary.ComponentOverlapActors(self.Collision, self:GetTransform(), ObjectTypes)
   return OutActors
 end
-
 function BP_MonFieldCollision_C:InitBoxCollisition()
   local X = self.UnitParams.X or self.Box.BoxExtent.X
   local Y = self.UnitParams.Y or self.Box.BoxExtent.Y
@@ -48,14 +43,12 @@ function BP_MonFieldCollision_C:InitBoxCollisition()
   self.Box:SetCollisionEnabled(3)
   self.Collision = self.Box
 end
-
 function BP_MonFieldCollision_C:InitSphereCollisition()
   local R = self.UnitParams.Radius or self.Sphere.SphereRadius
   self.Sphere:SetSphereRadius(R, true)
   self.Sphere:SetCollisionEnabled(3)
   self.Collision = self.Sphere
 end
-
 function BP_MonFieldCollision_C:InitCylinderCollisition()
   local Scale = self.Cylinder:K2_GetComponentScale()
   local R = self.UnitParams.Radius or Scale.X * 100
@@ -65,10 +58,8 @@ function BP_MonFieldCollision_C:InitCylinderCollisition()
   self.Cylinder:SetCollisionEnabled(3)
   self.Collision = self.Cylinder
 end
-
 function BP_MonFieldCollision_C:ShowDeath()
   BP_MonFieldCollision_C.Super.ShowDeath(self)
   self:EMActorDestroy(EDestroyReason.MechanismDead)
 end
-
 return BP_MonFieldCollision_C

@@ -1,10 +1,8 @@
 require("UnLua")
 local G = Class("BluePrints.UI.BP_UIState_C")
-
 function G:Construct()
   self.Text_Converted:SetText(GText("UI_GACHA_TRANSFORMED"))
 end
-
 function G:Init(Parent, TargetType, TargetId, IsNew, IsOdd)
   self.Parent = Parent
   local Rarity, TargetName, IconPath
@@ -47,7 +45,6 @@ function G:Init(Parent, TargetType, TargetId, IsNew, IsOdd)
     self:PlayAnimation(self.In2)
   end
 end
-
 function G:SetImageType(IsChar, TargetId)
   self.Group_Type:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if IsChar then
@@ -79,7 +76,6 @@ function G:SetImageType(IsChar, TargetId)
     end
   end
 end
-
 function G:SetTargetRarity(Rarity)
   for i = 1, CommonConst.GachaRarityMax do
     if self["Gacha_Star_" .. i] then
@@ -157,7 +153,6 @@ function G:SetTargetRarity(Rarity)
   end
   self.Img_Quality:SetBrushResourceObject(Quality)
 end
-
 function G:CheckCharGradeCanMax(CharId)
   if not CharId then
     return false
@@ -170,9 +165,7 @@ function G:CheckCharGradeCanMax(CharId)
   end
   return false
 end
-
 function G:BP_GetDesiredFocusTarget()
   return self.Item
 end
-
 return G

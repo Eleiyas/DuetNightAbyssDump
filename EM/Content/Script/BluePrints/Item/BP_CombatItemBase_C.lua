@@ -7,21 +7,19 @@ BP_CombatItemBase_C._components = {
   "BluePrints.Item.Components.DistanceCheck"
 }
 local MechanismStateCpp = true
-
 function BP_CombatItemBase_C:OnEMActorDestroy(DestroyReason)
   BP_CombatItemBase_C.Super.OnEMActorDestroy(self, DestroyReason)
   if IsStandAlone(self) or IsDedicatedServer(self) then
     local GameState = UE4.UGameplayStatics.GetGameState(self)
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
     if CommonUtils.CheckDestroyReason(DestroyReason, "IsTriggerDestroyEvent") then
-      GameMode:TriggerEMActorDestoryEvent(nil, self)
+      GameMode:TriggerEMActorDestoryEvent(nil, self, DestroyReason)
     end
     if self.Data and self.Data.GuideInactive then
       GameState:RemoveGuideEid(self.Eid)
     end
   end
 end
-
 function BP_CombatItemBase_C:PreInitInfo(Info)
   BP_CombatItemBase_C.Super.PreInitInfo(self, Info)
   if not self.Data then
@@ -33,7 +31,6 @@ function BP_CombatItemBase_C:PreInitInfo(Info)
   self.ModelId = self.Data.ModelId
   self:UpdateBluePrintParams()
 end
-
 function BP_CombatItemBase_C:CommonInitInfo(Info)
   BP_CombatItemBase_C.Super.CommonInitInfo(self, Info)
   self.ActorLocation = self:K2_GetActorLocation()
@@ -43,15 +40,13 @@ function BP_CombatItemBase_C:CommonInitInfo(Info)
   self:CheckNeedHide()
   self:SetLightingChannels()
 end
-
 function BP_CombatItemBase_C:AuthorityInitInfo(Info)
   BP_CombatItemBase_C.Super.AuthorityInitInfo(self, Info)
   self:AdjustLocation(Info)
   if 0 ~= self.SourceEid and self.RegionDataType ~= ERegionDataType.RDT_None then
-    GWorld.logger.errorlog("Eid = " .. tostring(self.Eid) .. "\231\154\132\230\156\186\229\133\179 RegionDataType\228\184\141\228\184\186None, \229\143\175\232\131\189\229\175\188\232\135\180\230\156\186\229\133\179\230\129\162\229\164\141\228\184\164\228\187\189")
+    GWorld.logger.errorlog("Eid = " .. tostring(self.Eid) .. "的机关 RegionDataType不为None, 可能导致机关恢复两份")
   end
 end
-
 function BP_CombatItemBase_C:ClientInitInfo(Info)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
@@ -59,7 +54,6 @@ function BP_CombatItemBase_C:ClientInitInfo(Info)
   end
   EventManager:AddEvent(EventID.OnArtLevelLoaded, self, self.OnArtLevelLoaded)
 end
-
 function BP_CombatItemBase_C:InitComponent(Info)
   self.CombatClientEffectComponent:InitComponent()
   if self.DefaultInteractiveComponent then
@@ -78,7 +72,6 @@ function BP_CombatItemBase_C:InitComponent(Info)
     self:AddNavModifier()
   end
 end
-
 function BP_CombatItemBase_C:CheckNeedHide()
   local ShowConditionId = self.Data.ShowConditionId
   local Avatar = GWorld:GetAvatar()
@@ -87,20 +80,17 @@ function BP_CombatItemBase_C:CheckNeedHide()
   end
   self:HideMechanism(true, "Condition")
 end
-
 function BP_CombatItemBase_C:CreateRegionData()
   self.RegionData = {
     StateId = self.StateId
   }
 end
-
 function BP_CombatItemBase_C:CheckUnitNeedStorage()
   if self.RegionDataType and self.RegionDataType > 0 and self.RegionDataType ~= ERegionDataType.RDT_HardBossData and self.RegionDataType ~= ERegionDataType.RDT_QuestData then
     return true
   end
   return false
 end
-
 function BP_CombatItemBase_C:SetActorHideTag(HideTag, Invisible)
   if self.HideTags == nil then
     self.HideTags = {}
@@ -118,7 +108,6 @@ function BP_CombatItemBase_C:SetActorHideTag(HideTag, Invisible)
     self:SetActorHiddenInGame(Hide)
   end
 end
-
 function BP_CombatItemBase_C:HideMechanism(NeedCallBack, Reason, AlwaysShow)
   local CompArray = self:K2_GetComponentsByClass(UShapeComponent:StaticClass())
   for i, v in pairs(CompArray) do
@@ -135,7 +124,6 @@ function BP_CombatItemBase_C:HideMechanism(NeedCallBack, Reason, AlwaysShow)
     EventManager:AddEvent(EventID.ConditionComplete, self, self.ShowMechanismWithCondition)
   end
 end
-
 function BP_CombatItemBase_C:ShowMechanismWithCondition(ShowConditionId)
   if ShowConditionId ~= self.Data.ShowConditionId then
     return
@@ -151,7 +139,6 @@ function BP_CombatItemBase_C:ShowMechanismWithCondition(ShowConditionId)
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
   self:SetActorHideTag("Condition", false)
 end
-
 function BP_CombatItemBase_C:ShowMechanism(Reason)
   local CompArray = self:K2_GetComponentsByClass(UShapeComponent:StaticClass())
   for i, v in pairs(CompArray) do
@@ -163,38 +150,31 @@ function BP_CombatItemBase_C:ShowMechanism(Reason)
   end
   self:SetActorHideTag(Reason, false)
 end
-
 function BP_CombatItemBase_C:SetLifeTime(LifeTime, Reason)
-  DebugPrint("ZJT_ \229\189\147\229\137\141\230\173\187\228\186\161\231\154\132\230\156\186\229\133\179\229\144\141\231\167\176\228\184\186\239\188\154 ", self:GetName(), self.UnitType, LifeTime, Reason, self.IsCache)
+  DebugPrint("ZJT_ 当前死亡的机关名称为： ", self:GetName(), self.UnitType, LifeTime, Reason, self.IsCache)
   if self.IsCache then
     return
   end
-  
   local function TryDestroy()
     self:EMActorDestroy(EDestroyReason.MechanismLifeTime)
   end
-  
   self:AddTimer(LifeTime, TryDestroy, false)
 end
-
 function BP_CombatItemBase_C:SetCollisionType_Lua(ComponentName, ChannelIndex, Response, Reset)
   if Reset then
     self[ComponentName]:SetCollisionResponseToAllChannels(ECollisionResponse.ECR_Ignore)
   end
   self[ComponentName]:SetCollisionResponseToChannel(ChannelIndex, Response)
 end
-
 function BP_CombatItemBase_C:GetCurrentModelInfo()
   if self.ModelId == nil then
     return nil
   end
   return DataMgr.Model[self.ModelId]
 end
-
 function BP_CombatItemBase_C:GetFXMesh()
   return self.Mesh or self.RootComponent
 end
-
 function BP_CombatItemBase_C:GetUnitRealType()
   local Res
   if DataMgr.Mechanism[self.UnitId] then
@@ -202,7 +182,6 @@ function BP_CombatItemBase_C:GetUnitRealType()
   end
   return Res or ""
 end
-
 function BP_CombatItemBase_C:TriggerSource(GamePlayType)
   if 0 ~= self.SourceEid then
     local Source = Battle(self):GetEntity(self.SourceEid)
@@ -211,16 +190,13 @@ function BP_CombatItemBase_C:TriggerSource(GamePlayType)
     end
   end
 end
-
 function BP_CombatItemBase_C:TriggerFallingCallable()
   DebugPrint("OtherActor is Falling Dead. ActorName: ", self:GetName(), ", UnitId: ", self.UnitId, ", Eid: ", self.Eid, ", CreatorId: ", self.CreatorId, " CreatorType: ", self.CreatorType, ", BornPos: ", self.BornPos)
   self:SetLifeTime(1.0, EDeathReason.TriggerFalling)
 end
-
 function BP_CombatItemBase_C:TriggerByChild()
   print(_G.LogTag, "Error: Use CombatItemBase TriggerByChild, Check definition in code")
 end
-
 function BP_CombatItemBase_C:SetVariableBool(VariableName, Variable, PlayerEid)
   local Player = Battle(self):GetEntity(PlayerEid)
   if not IsValid(Player) then
@@ -228,7 +204,6 @@ function BP_CombatItemBase_C:SetVariableBool(VariableName, Variable, PlayerEid)
   end
   Player.RPCComponent:SetVariableBool(VariableName, Variable, self.Eid)
 end
-
 function BP_CombatItemBase_C:PlaySound(EventName, key, SoundParam)
   if EventName then
     AudioManager(self):PlayFMODSound(self, nil, EventName, key)
@@ -237,7 +212,6 @@ function BP_CombatItemBase_C:PlaySound(EventName, key, SoundParam)
     AudioManager(self):SetEventSoundParam(self, key, SoundParam)
   end
 end
-
 function BP_CombatItemBase_C:UpdateBluePrintParams()
   if not self.Data.BluePrintParams then
     return
@@ -248,7 +222,6 @@ function BP_CombatItemBase_C:UpdateBluePrintParams()
     end
   end
 end
-
 function BP_CombatItemBase_C:AdjustLocation(Info)
   if not self.Mesh or self.BpBorn then
     return
@@ -257,7 +230,6 @@ function BP_CombatItemBase_C:AdjustLocation(Info)
   local GameMode = UGameplayStatics.GetGameMode(self)
   self:AdjustLocationCPP(Info.Creator, Info.IntParams:Find("RandomRuleId"), Info.IntParams:Find("RandomCreatorId"), self.Mesh.RelativeLocation.Z)
 end
-
 function BP_CombatItemBase_C:RegisterToGameState()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if nil == GameState then
@@ -265,31 +237,29 @@ function BP_CombatItemBase_C:RegisterToGameState()
     return
   end
   GameState:RegisterMechanism(self, self:GetUnitRealType())
+  GameState:RegisterMechanismCanBeFind(self)
+  if self.UniqueId ~= "" then
+    GameState:RegisterMechanismRegionOnline(self.UniqueId, self)
+  end
 end
-
 function BP_CombatItemBase_C:TriggerGameModeEvent(Reason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:TriggerGameModeEvent(Reason)
 end
-
 function BP_CombatItemBase_C:ActiveCombat()
   self.IsActive = true
   self:ActiveOnServer()
   self:OnActiveStateChange()
 end
-
 function BP_CombatItemBase_C:DeActiveCombat()
   self.IsActive = false
   self:DeActive()
   self:OnActiveStateChange()
 end
-
 function BP_CombatItemBase_C:DeActive()
 end
-
 function BP_CombatItemBase_C:ActiveOnServer()
 end
-
 function BP_CombatItemBase_C:OnActiveStateChange()
   if self.IsActive then
     self.CombatClientEffectComponent:OnActiveEffect()
@@ -297,7 +267,6 @@ function BP_CombatItemBase_C:OnActiveStateChange()
     self.CombatClientEffectComponent:OnDeactiveEffect()
   end
 end
-
 function BP_CombatItemBase_C:UpdateRegionStateId(NewStateId)
   if self.BpBorn and not self:CheckManuItemRegionStorage() then
     return
@@ -311,11 +280,9 @@ function BP_CombatItemBase_C:UpdateRegionStateId(NewStateId)
     GameMode:GetRegionDataMgrSubSystem():UpdateRegionActorData(self, self.RegionData)
   end
 end
-
 function BP_CombatItemBase_C:RecoverBpBornData()
   self:ChangeState("Recover", 0, 0)
 end
-
 function BP_CombatItemBase_C:ChangeState(Type, PlayerId, NextState)
   if not (IsAuthority(self) or IsStandAlone(self)) or not self.InitSuccess then
     return
@@ -326,7 +293,6 @@ function BP_CombatItemBase_C:ChangeState(Type, PlayerId, NextState)
     self.CombatStateChangeComponent["ChangeState_" .. Type](self.CombatStateChangeComponent, PlayerId, NextState)
   end
 end
-
 function BP_CombatItemBase_C:OnRep_StateId()
   if self.InitSuccess then
     if not MechanismStateCpp then
@@ -345,28 +311,23 @@ function BP_CombatItemBase_C:OnRep_StateId()
         self:RemoveTimer("OnRep_StateId")
       end
     end
-    
     self:AddTimer(0.1, Callback, true, 0, "OnRep_StateId", false, self, self.StateId)
   end
 end
-
 function BP_CombatItemBase_C:TriggerBluePrintEvent_Lua(EventName)
   if not IsAuthority(self) or IsStandAlone(self) then
     self[EventName](self)
   end
 end
-
 function BP_CombatItemBase_C:GetDungeonSaveData()
   return {
     StateId = self.StateId
   }
 end
-
 function BP_CombatItemBase_C:AddTN(ChangeTN)
   local TN = math.max(0, math.min(self:GetAttr("MaxTN"), self:GetAttr("TN") + ChangeTN))
   self:SetAttr("TN", TN)
 end
-
 function BP_CombatItemBase_C:CreateSpecialMonster(RuleId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) or GameMode:IsInDungeon() then
@@ -377,10 +338,9 @@ function BP_CombatItemBase_C:CreateSpecialMonster(RuleId)
     return
   end
   local CombatItemBaseLoc = FVector(self:K2_GetActorLocation().X, self:K2_GetActorLocation().Y, self:K2_GetActorLocation().Z)
-  
   local function Cb(ErrCode)
     if ErrCode ~= ErrorCode.RET_SUCCESS then
-      DebugPrint("ERROR! \230\156\186\229\133\179\229\136\155\229\187\186\231\137\185\230\174\138\230\128\170\229\164\177\232\180\165:   ", ErrorCode:Name(ErrCode))
+      DebugPrint("ERROR! 机关创建特殊怪失败:   ", ErrorCode:Name(ErrCode))
       return
     end
     local SpawnLocationType = DataMgr.SpecialMonsterSpawn[RuleId].SpawnLocation
@@ -417,21 +377,24 @@ function BP_CombatItemBase_C:CreateSpecialMonster(RuleId)
       end
     end
   end
-  
   Avatar:TrySpawnSpecialMonster(RuleId, Cb)
 end
-
 function BP_CombatItemBase_C:SetLightingChannels()
+  if not self.NeedLightingChannel then
+    return
+  end
   local Comps = self:K2_GetComponentsByClass(USkeletalMeshComponent:StaticClass())
   for i, v in pairs(Comps) do
     v:SetLightingChannels(true, false, false)
   end
 end
-
 function BP_CombatItemBase_C:CheckCanInteractive(Player)
+  local MainPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if MainPlayer.Eid ~= Player.Eid then
+    return true
+  end
   return not self.ChestInteractiveComponent:IsForbidden(Player)
 end
-
 function BP_CombatItemBase_C:CheckMontageInteractive()
   if not self.ChestInteractiveComponent then
     return false
@@ -441,18 +404,42 @@ function BP_CombatItemBase_C:CheckMontageInteractive()
   end
   return true
 end
-
-function BP_CombatItemBase_C:CanDungeonSave()
-  return true
+function BP_CombatItemBase_C:GetCanOpenAndOpenState()
+  return self.CanOpen and not self.OpenState
 end
-
 function BP_CombatItemBase_C:OnArtLevelLoaded(LevelId)
 end
-
 function BP_CombatItemBase_C:ReceiveEndPlay(Reason)
   EventManager:RemoveEvent(EventID.OnArtLevelLoaded, self)
   BP_CombatItemBase_C.Super.ReceiveEndPlay(self, Reason)
 end
-
+function BP_CombatItemBase_C:IsInRegionOnline()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  return Avatar.IsInRegionOnline
+end
+function BP_CombatItemBase_C:CheckAutoCreateReward()
+  local StateList = self.Data.StateIdList
+  if not StateList then
+    return true
+  end
+  for i, v in pairs(StateList) do
+    local StateData = DataMgr.MechanismState[v]
+    if StateData and StateData.StateEvent then
+      for j, StateEvent in pairs(StateData.StateEvent) do
+        if StateEvent.EventsNextState then
+          for k, Event in pairs(StateEvent.EventsNextState) do
+            if Event.Function == "GiveReward" then
+              return false
+            end
+          end
+        end
+      end
+    end
+  end
+  return true
+end
 AssembleComponents(BP_CombatItemBase_C)
 return BP_CombatItemBase_C

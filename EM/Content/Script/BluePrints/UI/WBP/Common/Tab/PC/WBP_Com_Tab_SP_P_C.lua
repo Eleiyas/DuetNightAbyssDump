@@ -1,7 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local TabSelectStateEnum = {SelectTab = 1, SelectResource = 2}
-
 function M:Construct()
   self.ClickSoundFunc = nil
   self.HoverSoundFunc = nil
@@ -11,7 +10,6 @@ function M:Construct()
     OnRemovedFromFocusPath = self.OnResourceBarRemovedFromFocusPath
   })
 end
-
 function M:BP_GetDesiredFocusTarget()
   local ChildWidget = self.ScrollBox_Tab:GetChildAt(self.CurrentTab)
   if IsValid(ChildWidget) then
@@ -19,11 +17,9 @@ function M:BP_GetDesiredFocusTarget()
   end
   return nil
 end
-
 function M:Destruct()
   self:ClearListenEvent()
 end
-
 function M:Init(ConfigData, NotPlayInAnim)
   self.ConfigData = ConfigData
   self.BackCallback = ConfigData.BackCallback
@@ -54,7 +50,6 @@ function M:Init(ConfigData, NotPlayInAnim)
   end
   self:InitListenEvent()
 end
-
 function M:InitListenEvent()
   EventManager:AddEvent(EventID.OnPropSetResources, self, self.OnPropSetResources)
   EventManager:AddEvent(EventID.OnChangeActionPoint, self, self.OnPropSetResources)
@@ -62,7 +57,6 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ClearListenEvent()
   EventManager:RemoveEvent(EventID.OnPropSetResources, self)
   EventManager:RemoveEvent(EventID.OnChangeActionPoint, self)
@@ -70,7 +64,6 @@ function M:ClearListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -80,7 +73,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateUIStyleInPlatform(self.CurInputDeviceType == ECommonInputType.Gamepad)
   self:UpdateHotKeyInfo(CurGamepadName)
 end
-
 function M:RefreshBaseInfo()
   self:FillWithBaseInfo()
   self:UpdateTopTitle()
@@ -96,7 +88,6 @@ function M:RefreshBaseInfo()
     end
   end
 end
-
 function M:FillWithBaseInfo()
   local ResourceBarIcon = UIUtils.UtilsGetKeyIconPathInGamepad("RS", "Generic")
   self.ResourceBar:SetGamePadKeyImgByPath(ResourceBarIcon)
@@ -115,7 +106,6 @@ function M:FillWithBaseInfo()
     ClickFunc = self.OnInfoClick
   })
 end
-
 function M:OverrideTopResource(OverridenTopResouces, bIsRequestRefresh)
   self.OverridenTopResouces = OverridenTopResouces
   if bIsRequestRefresh then
@@ -125,7 +115,6 @@ function M:OverrideTopResource(OverridenTopResouces, bIsRequestRefresh)
     self.ResourceBar:InitResourceBar(TopResource)
   end
 end
-
 function M:ResetDynamicNode()
   local DynamicNodeName = {
     Panel_Back = {NeedRemoveChild = true},
@@ -151,14 +140,12 @@ function M:ResetDynamicNode()
     end
   end
   self.ResourceBar:ClearChildren()
-  
   local function CorrectTabLocation()
     local HBSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.HB)
     local HBPos = HBSlot:GetPosition()
     HBPos.X = 0
     HBSlot:SetPosition(HBPos)
   end
-  
   if nil == self.ConfigData.DynamicNode then
     CorrectTabLocation()
     return
@@ -201,27 +188,22 @@ function M:ResetDynamicNode()
     CorrectTabLocation()
   end
 end
-
 function M:SetBgRenderOpacity(Value)
   self.Bg_Bottom:SetRenderOpacity(Value)
   self.Bg_Top:SetRenderOpacity(Value)
 end
-
 function M:SetPopupInfoId(PopupInfoId, IsNeedRefresh)
   self.PopupInfoId = PopupInfoId
   if IsNeedRefresh then
     self:UpdateTopRightTips()
   end
 end
-
 function M:UpdateInfoBySelectTabItem(TabWidget)
   self:UpdateTopRightTips()
 end
-
 function M:UpdateResource()
   self.ResourceBar:UpdateResource()
 end
-
 function M:UpdateTopTitle(TitleName)
   self.TitleName = TitleName or self.TitleName
   if self.TitleName ~= nil then
@@ -231,7 +213,6 @@ function M:UpdateTopTitle(TitleName)
     self.Text_Title:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateTopRightTips()
   local function RealUpdateTopRightTips()
     if self.PopupInfoId ~= nil or type(self.InfoCallback) == "function" then
@@ -245,7 +226,6 @@ function M:UpdateTopRightTips()
       self.ResourceBar:HideTip(true)
     end
   end
-  
   if self.PopupInfoId == nil and nil ~= self.OwnerPanel and type(self.OwnerPanel.GetUIConfigName) == "function" then
     local UIConfigName = self.OwnerPanel:GetUIConfigName()
     local SystemUIConfig = DataMgr.SystemUI[UIConfigName] or {}
@@ -253,7 +233,6 @@ function M:UpdateTopRightTips()
   end
   RealUpdateTopRightTips()
 end
-
 function M:UpdateHotKeyInfo(CurGamepadName)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:FillWithBottomKeyInfoList(true)
@@ -267,12 +246,10 @@ function M:UpdateHotKeyInfo(CurGamepadName)
     self:ExitResourceSelectMode()
   end
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad)
   local ActiveWidgetIndex = IsUseGamePad and 1 or 0
   self.ResourceBar:HideGamePadKey(not IsUseGamePad)
 end
-
 function M:CheckNeedHideChangeKey()
   local TabCount = self.Tabs and #self.Tabs or 0
   local IsNotShow = false
@@ -286,7 +263,6 @@ function M:CheckNeedHideChangeKey()
   end
   return false
 end
-
 function M:FillWithBottomKeyInfoList(bIsGamePadKey)
   if bIsGamePadKey then
     for i, v in ipairs(self.BottomKeyWidget) do
@@ -355,12 +331,10 @@ function M:FillWithBottomKeyInfoList(bIsGamePadKey)
     end
   end
 end
-
 function M:UpdateTabs(Tabs)
   local function SortFunc(ComPareA, ComPareB)
-    local IsALocked = ComPareA.IsLocked
-    
-    local IsBLocked = ComPareB.IsLocked
+    local IsALocked = ComPareA.IsLocked or false
+    local IsBLocked = ComPareB.IsLocked or false
     if IsALocked == IsBLocked then
       local SortA = ComPareA.SortId
       local SortB = ComPareB.SortId
@@ -375,7 +349,6 @@ function M:UpdateTabs(Tabs)
       return not IsALocked
     end
   end
-  
   table.sort(Tabs, SortFunc)
   self.Tabs = Tabs
   self.ScrollBox_Tab:ClearChildren()
@@ -415,14 +388,12 @@ function M:UpdateTabs(Tabs)
     end
   end
 end
-
 function M:OnReturnClick()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   if type(self.BackCallback) == "function" then
     self.BackCallback(self.OwnerPanel)
   end
 end
-
 function M:OnInfoClick()
   if TeamController:IsTeamPopupBarOpenInGamepad() then
     return
@@ -440,7 +411,6 @@ function M:OnInfoClick()
     self.InfoCallback(self.OwnerPanel)
   end
 end
-
 function M:OnTabSwitchOn(TabWidget, CalledFromInputType)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
@@ -458,12 +428,10 @@ function M:OnTabSwitchOn(TabWidget, CalledFromInputType)
     self.EventTabSelected(self.ObjTabSelected, TabWidget, self.Tabs[TabWidget.Idx])
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:ClickTab(Idx)
   if self.Tabs[Idx] then
     local ChildWidget = self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0))
@@ -471,7 +439,6 @@ function M:ClickTab(Idx)
     self.ScrollBox_Tab:ScrollWidgetIntoView(ChildWidget)
   end
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     local ChildWidget = self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0))
@@ -479,7 +446,6 @@ function M:SelectTab(Idx)
     self.ScrollBox_Tab:ScrollWidgetIntoView(ChildWidget)
   end
 end
-
 function M:SelectTabById(TabId)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -491,7 +457,6 @@ function M:SelectTabById(TabId)
     end
   end
 end
-
 function M:TabToUp()
   if not self.bEnableSelectTab then
     return
@@ -512,7 +477,6 @@ function M:TabToUp()
     end
   end
 end
-
 function M:TabToDown()
   if not self.bEnableSelectTab then
     return
@@ -533,7 +497,6 @@ function M:TabToDown()
     end
   end
 end
-
 function M:EnableTabByIndex(bEnable, TabIndex)
   self.bEnableSelectTab = bEnable
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
@@ -552,7 +515,6 @@ function M:EnableTabByIndex(bEnable, TabIndex)
     end
   end
 end
-
 function M:UnLockTabByIndex(bUnLock, TabIndex)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   if nil ~= TabIndex then
@@ -570,7 +532,6 @@ function M:UnLockTabByIndex(bUnLock, TabIndex)
     end
   end
 end
-
 function M:PlayInAnim()
   if self.In == nil then
     return -1
@@ -579,7 +540,6 @@ function M:PlayInAnim()
   self:PlayAnimation(self.In)
   return self.In:GetEndTime()
 end
-
 function M:PlayOutAnim()
   if self.Out == nil then
     return -1
@@ -588,17 +548,14 @@ function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
   return self.Out:GetEndTime()
 end
-
 function M:PlayTabInAnim()
   self:StopAnimation(self.Panel_Tab_Out)
   self:PlayAnimation(self.Panel_Tab_In)
 end
-
 function M:PlayTabOutAnim()
   self:StopAnimation(self.Panel_Tab_In)
   self:PlayAnimation(self.Panel_Tab_Out)
 end
-
 function M:SetBackBtnAttrColor(AttrName)
   AttrName = AttrName or "Fire"
   if self.BackWidget then
@@ -606,15 +563,12 @@ function M:SetBackBtnAttrColor(AttrName)
     self.BackWidget.VX_BackWave:SetBrushFromMaterial(img)
   end
 end
-
 function M:OnPropSetResources(ResourceId, OldValue)
   self.ResourceBar:OnPropSetResources(ResourceId, OldValue)
 end
-
 function M:PlayClickSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -622,14 +576,12 @@ function M:UpdateReddots()
     end
   end
 end
-
 function M:ShowTabRedDot(Idx, IsNew, Upgradeable, OhterReddot)
   if self.Tabs[Idx] then
     local TabWidget = self.ScrollBox_Tab:GetChildAt(math.max(Idx - 1, 0))
     TabWidget:SetReddot(IsNew, Upgradeable, OhterReddot)
   end
 end
-
 function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
   local AllItemCount = self.ScrollBox_Tab:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -640,7 +592,6 @@ function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
     end
   end
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   local IsEventHandled = true
   if InKeyName == UE4.EKeys.Escape.KeyName then
@@ -650,7 +601,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = true
   if InKeyName == UIConst.GamePadKey.FaceButtonRight then
@@ -664,23 +614,18 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:ClickToLeftOnGamePad(OpType)
   self:TabToLeft()
 end
-
 function M:ClickToRightOnGamePad(OpType)
   self:TabToRight()
 end
-
 function M:OnResourceBarAddedToFocusPath()
   self:EnterResourceSelectMode()
 end
-
 function M:OnResourceBarRemovedFromFocusPath()
   self:ExitResourceSelectMode()
 end
-
 function M:EnterViewSingleMode(TitleName)
   local TabInfo = self.Tabs[self.CurrentTab]
   if not TabInfo then
@@ -694,19 +639,15 @@ function M:EnterViewSingleMode(TitleName)
   end
   self.ResourceBar:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:LeaveViewSingleMode()
   self.IsInViewSingleMode = false
   self.Text_Title:SetText(self.TitleName)
   self.ResourceBar:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:EnterResourceSelectMode()
 end
-
 function M:ExitResourceSelectMode()
 end
-
 function M:SetSingleBottomKeyInfo(BottomKeyWidget, SingleKeyInfo)
   if SingleKeyInfo.KeyInfoList == nil and nil == SingleKeyInfo.GamePadInfoList then
     BottomKeyWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -760,7 +701,6 @@ function M:SetSingleBottomKeyInfo(BottomKeyWidget, SingleKeyInfo)
     BottomKeyWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateSingleBottomKeyInfo(SubKeyIndex, SingleKeyInfo)
   self.ConfigData.BottomKeyInfo[SubKeyIndex] = SingleKeyInfo
   local BottomKeyWidget = self.BottomKeyWidget[SubKeyIndex]
@@ -777,14 +717,12 @@ function M:UpdateSingleBottomKeyInfo(SubKeyIndex, SingleKeyInfo)
     self:SetSingleBottomKeyInfo(BottomKeyWidget, SingleKeyInfo)
   end
 end
-
 function M:SetSingleBottomKeyInfoVisibility(SubKeyIndex, VisibilityOp)
   local BottomKeyWidget = self.BottomKeyWidget[SubKeyIndex]
   if BottomKeyWidget then
     BottomKeyWidget:SetVisibility(VisibilityOp)
   end
 end
-
 function M:UpdateBottomKeyInfo(BottomKeyInfo)
   self.ConfigData.BottomKeyInfo = BottomKeyInfo
   for i, KeyInfo in ipairs(BottomKeyInfo) do
@@ -807,7 +745,6 @@ function M:UpdateBottomKeyInfo(BottomKeyInfo)
   self.Com_KeyTips.Panel_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:UpdateHotKeyInfo(self.CurInputDeviceType)
 end
-
 function M:UpdateBottomKeyInfo_Quick(Infos)
   local BottomKeyInfos = {}
   for Index, Info in ipairs(Infos) do
@@ -824,7 +761,6 @@ function M:UpdateBottomKeyInfo_Quick(Infos)
   end
   self:UpdateBottomKeyInfo(BottomKeyInfos)
 end
-
 function M:SetBottomKeyInfoVisible(bVisible)
   if bVisible then
     self.Com_KeyTips.Panel_Key:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -832,13 +768,10 @@ function M:SetBottomKeyInfoVisible(bVisible)
     self.Com_KeyTips.Panel_Key:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetResourceAddVisibleByResocurceId(ResourceId, bVisible)
   self.ResourceBar:SetResourceBarVisibility(ResourceId, bVisible)
 end
-
 function M:SetResourceAddVisibleByIndex(Index, bVisible)
   self.ResourceBar:SetResourceBarVisibilityByIndex(Index, bVisible)
 end
-
 return M

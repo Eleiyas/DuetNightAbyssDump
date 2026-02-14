@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17426411468721349801",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1209.4010695187167, y = 319.22459893048125},
       propsData = {
         QuestId = 4001021,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 101103,
+        SubRegionIdList = {},
         StoryGuideType = "Mechanism",
         StoryGuidePointName = "Mechanism_EastAc2_1240717",
+        JumpId = 0,
         QuestUIId = 0
       },
       questNodeData = {
@@ -126,7 +128,7 @@ return {
           ["17426411468721349806"] = {
             key = "17426411468721349806",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1274.6926567422015, y = 426.179787912346},
             propsData = {
               KillMonsterType = "Id",
@@ -148,7 +150,7 @@ return {
           ["17426411468721349807"] = {
             key = "17426411468721349807",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = 1130.451855171814, y = 186.41868280093897},
             propsData = {
               GuideUIEnable = true,
@@ -160,7 +162,7 @@ return {
           ["17426411468721349808"] = {
             key = "17426411468721349808",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129 \230\128\170\231\137\169",
+            name = "生成/销毁 怪物",
             pos = {x = 873.0099947066979, y = 444.07195975654156},
             propsData = {
               ActiveEnable = true,

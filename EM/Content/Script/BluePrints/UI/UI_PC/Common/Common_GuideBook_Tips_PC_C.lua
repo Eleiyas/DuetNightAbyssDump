@@ -1,7 +1,6 @@
 require("UnLua")
 local WikiCommon = require("BluePrints.UI.WBP.Wiki.WikiCommon")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.IconMap = {
     [0] = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Tab/T_Tab_System.T_Tab_System'",
@@ -20,7 +19,6 @@ function M:Construct()
     [6] = GText("UI_Dungeon_Tutorial")
   }
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/common/tutorial_info_show", nil, nil)
   self.GuideNoteId = (...)
@@ -30,7 +28,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   else
     self.GuideNoteTab = DataMgr.GuideBook[self.GuideNoteId].GuideNoteTab
   end
-  assert(self.IconMap[self.GuideNoteTab], "\228\184\141\229\173\152\229\156\168" .. self.GuideNoteTab .. "\229\143\183GuideNoteTab")
+  assert(self.IconMap[self.GuideNoteTab], "不存在" .. self.GuideNoteTab .. "号GuideNoteTab")
   local Icon = LoadObject(self.IconMap[self.GuideNoteTab])
   local Material = self.Image_BookType:GetDynamicMaterial()
   Material:SetTextureParameterValue("Mask", Icon)
@@ -56,7 +54,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
       },
       Type = "Add"
     })
-    self.KeyText = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("OpenGuideBook"))
+    self.KeyText = CommonUtils:GetActionMappingKeyName("OpenGuideBook")
     self.Common_Key_Show_Text_PC:CreateCommonKey({
       KeyInfoList = {
         {
@@ -80,11 +78,9 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:OnLoaded(...)
   self.CloseTimer = self:AddTimer(2.5, self.Close, false, nil, nil, false)
 end
-
 function M:OpenGuideBook()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not UIManager then
@@ -94,7 +90,6 @@ function M:OpenGuideBook()
   self:Close()
   UIManager:LoadUINew("GuideBook", self.GuideNoteTab, self.GuideNoteId)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
@@ -103,5 +98,4 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self.WS_Key:SetActiveWidgetIndex(0)
   end
 end
-
 return M

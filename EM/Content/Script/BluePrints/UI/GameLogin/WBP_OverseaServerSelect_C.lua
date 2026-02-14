@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   self:SetFocus(true)
   self.Owner = Owner
@@ -8,6 +7,7 @@ function M:InitContent(Params, PopupData, Owner)
   self.Avatars = Params.Avatars or {}
   local RecommandSelectHostnum = Params.RecommandSelectHostnum or nil
   local DefaultSelectHostnum = Params.DefaultSelectHostnum or nil
+  local RecommandSelectArea, DefaultSelectArea
   local Avatars = {}
   local MaxLevel = 0
   local MaxLevelHostnum
@@ -25,6 +25,7 @@ function M:InitContent(Params, PopupData, Owner)
     if ServerInfo then
       ServerAreas[ServerInfo.area] = true
       NewServerInfos[tonumber(RecommandSelectHostnum)] = ServerInfo
+      RecommandSelectArea = ServerInfo.area
     end
   end
   if DefaultSelectHostnum then
@@ -32,10 +33,30 @@ function M:InitContent(Params, PopupData, Owner)
     if ServerInfo and not ServerAreas[ServerInfo.area] then
       ServerAreas[ServerInfo.area] = true
       NewServerInfos[tonumber(DefaultSelectHostnum)] = ServerInfo
+      DefaultSelectArea = ServerInfo.area
+    end
+  end
+  DefaultSelectArea = DefaultSelectArea or RecommandSelectArea
+  for k, v in pairs(self.ServerInfos) do
+    if Avatars[tonumber(k)] then
+      local RemoveServers = {}
+      if ServerAreas[v.area] then
+        for kk, vv in pairs(NewServerInfos) do
+          if vv.area == v.area then
+            DebugPrint("Replace server in area " .. v.area .. " from hostnum " .. tostring(vv.hostnum) .. " to hostnum " .. tostring(v.hostnum))
+            table.insert(RemoveServers, kk)
+          end
+        end
+      end
+      for _, Hostnum in ipairs(RemoveServers) do
+        NewServerInfos[Hostnum] = nil
+      end
+      ServerAreas[v.area] = true
+      NewServerInfos[tonumber(k)] = v
     end
   end
   for k, v in pairs(self.ServerInfos) do
-    if Avatars[tonumber(k)] or not ServerAreas[v.area] then
+    if not ServerAreas[v.area] then
       ServerAreas[v.area] = true
       NewServerInfos[tonumber(k)] = v
     end
@@ -53,10 +74,10 @@ function M:InitContent(Params, PopupData, Owner)
         if v.hostnum == MaxLevelHostnum then
           Content.bRecommand = true
         end
-      elseif RecommandSelectHostnum and v.hostnum == RecommandSelectHostnum then
+      elseif RecommandSelectArea and v.area == RecommandSelectArea then
         Content.bRecommand = true
       end
-      if DefaultSelectHostnum and v.hostnum == DefaultSelectHostnum then
+      if DefaultSelectArea and v.area == DefaultSelectArea then
         Content.bSelected = true
       end
       table.insert(Contents, Content)
@@ -73,7 +94,6 @@ function M:InitContent(Params, PopupData, Owner)
     end
   end
 end
-
 function M:OnSelected(Content)
   if self.CurrentSelectedContent and self.CurrentSelectedContent ~= Content then
     if self.CurrentSelectedContent.CurrentEntry then
@@ -83,12 +103,10 @@ function M:OnSelected(Content)
   end
   self.CurrentSelectedContent = Content
 end
-
 function M:PackageData()
   if self.CurrentSelectedContent then
     return self.CurrentSelectedContent.ServerInfo
   end
   return nil
 end
-
 return M

@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.ReddotName = "DetectiveAnswer"
   self:BindEvents()
   self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:BindEvents()
   self.Btn_Click.OnClicked:Add(self, self.OnClickButton)
   self.Btn_Click.OnPressed:Add(self, self.OnPressButton)
@@ -16,11 +14,9 @@ function M:BindEvents()
   self.Btn_Click.OnHovered:Add(self, self.OnHoverButton)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhoverButton)
 end
-
 function M:Destruct()
   self:UnbindEvents()
 end
-
 function M:UnbindEvents()
   self.Btn_Click.OnClicked:Remove(self, self.OnClickButton)
   self.Btn_Click.OnPressed:Remove(self, self.OnPressButton)
@@ -28,7 +24,6 @@ function M:UnbindEvents()
   self.Btn_Click.OnHovered:Remove(self, self.OnHoverButton)
   self.Btn_Click.OnUnhovered:Remove(self, self.OnUnhoverButton)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.UI = self
@@ -45,13 +40,11 @@ function M:OnListItemObjectSet(Content)
   self:SetIsMultiSelected(Content.IsMultiSelected)
   self:SetCanMultiSelected(Content.CanMultiSelected)
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:InitEmptyObject()
   self.Text_ItemName:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Image_ItemIcon:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -59,7 +52,6 @@ function M:InitEmptyObject()
   self.Group_Select:SetRenderOpacity(0)
   self.VX_WarningGlow:SetRenderOpacity(0)
 end
-
 function M:StopReasonItemAllAnimations()
   self:StopAnimation(self.Normal)
   self:StopAnimation(self.Hover)
@@ -67,7 +59,6 @@ function M:StopReasonItemAllAnimations()
   self:StopAnimation(self.Press)
   self:StopAnimation(self.Click)
 end
-
 function M:OnClickButton()
   if self.Content.IsEmpty then
     return
@@ -85,7 +76,6 @@ function M:OnClickButton()
   self:SetIsSingleSelected(true)
   self.Content.Parent:OnListItemClicked(self.Content)
 end
-
 function M:OnPressButton()
   if self.Content.IsEmpty then
     return
@@ -96,7 +86,6 @@ function M:OnPressButton()
   self:StopReasonItemAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleaseButton()
   if self.Content.IsEmpty then
     return
@@ -107,7 +96,6 @@ function M:OnReleaseButton()
   self:StopReasonItemAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnHoverButton()
   if self.Content.IsEmpty then
     return
@@ -133,7 +121,6 @@ function M:OnHoverButton()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnUnhoverButton()
   if self.Content.IsEmpty then
     return
@@ -144,7 +131,6 @@ function M:OnUnhoverButton()
   self:StopReasonItemAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SetIsSingleSelected(bIsSingleSelected)
   DebugPrint("Reasoning SetIsSingleSelected: ", self.Content.AnswerId, bIsSingleSelected)
   self.Content.IsSingleSelected = bIsSingleSelected
@@ -155,7 +141,6 @@ function M:SetIsSingleSelected(bIsSingleSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:SetIsMultiSelected(bIsMultiSelected)
   DebugPrint("Reasoning SetIsMultiSelected: ", self.Content.AnswerId, bIsMultiSelected)
   self.Content.IsMultiSelected = bIsMultiSelected
@@ -165,7 +150,6 @@ function M:SetIsMultiSelected(bIsMultiSelected)
     self:PlayAnimationReverse(self.Select)
   end
 end
-
 function M:SetCanMultiSelected(bCanMultiSelected)
   self.Content.CanMultiSelected = bCanMultiSelected
   if bCanMultiSelected then
@@ -174,7 +158,6 @@ function M:SetCanMultiSelected(bCanMultiSelected)
     self:PlayAnimationReverse(self.Remind)
   end
 end
-
 function M:UpdateReddotDetail(AnswerId)
   local CacheKey = AnswerId
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.ReddotName)
@@ -190,7 +173,6 @@ function M:UpdateReddotDetail(AnswerId)
     end
   end
 end
-
 function M:DecreaseReddotDetail()
   local AnswerId = self.Content.AnswerId
   local CacheKey = AnswerId
@@ -201,9 +183,7 @@ function M:DecreaseReddotDetail()
     self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:PlayerWarningAnimation()
   self:PlayAnimation(self.Warning)
 end
-
 return M

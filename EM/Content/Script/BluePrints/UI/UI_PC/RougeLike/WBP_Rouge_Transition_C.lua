@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self:UnbindAllFromAnimationFinished(self.Change)
   self:BindToAnimationFinished(self.Change, {
@@ -11,7 +10,6 @@ function M:Construct()
   local player = UGameplayStatics.GetPlayerCharacter(self, 0)
   player:AddDisableInputTag("RougeTransition")
 end
-
 function M:OnLoaded(SceneCaptureComponent, RenderTexture, IsBossRoom)
   if IsBossRoom then
     local material = self.BG01:GetDynamicMaterial()
@@ -33,19 +31,16 @@ function M:OnLoaded(SceneCaptureComponent, RenderTexture, IsBossRoom)
   self.SceneCaptureComponent.bCaptureEveryFrame = false
   self.SceneCaptureComponent:CaptureScene()
 end
-
 function M:OnChange()
   self.SceneCaptureComponent:SetComponentTickEnabled(true)
   self.SceneCaptureComponent.bCaptureEveryFrame = true
 end
-
 function M:Destruct()
   self.SceneCaptureComponent:SetComponentTickEnabled(false)
   self.SceneCaptureComponent.bCaptureEveryFrame = false
   local player = UGameplayStatics.GetPlayerCharacter(self, 0)
   player:RemoveDisableInputTag("RougeTransition")
 end
-
 function M:Close()
   local RougeLikeManager = GWorld.RougeLikeManager
   if RougeLikeManager then
@@ -53,5 +48,4 @@ function M:Close()
   end
   M.Super.Close(self)
 end
-
 return M

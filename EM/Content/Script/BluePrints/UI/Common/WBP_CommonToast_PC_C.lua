@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local ShowMessage, LastTime = ...
@@ -10,7 +9,6 @@ function M:OnLoaded(...)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/toast_normal", nil, nil)
 end
-
 function M:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -22,7 +20,6 @@ function M:PlayOutAnim()
   })
   self:PlayAnimation(self.Out)
 end
-
 function M:PlayFadeInAnimByIndex(StrengthNum)
   local NeedPlayAnim = 1 == StrengthNum and self.Toast1_2 or self.Toast2_3
   if self:IsAnimationPlaying(NeedPlayAnim) then
@@ -30,7 +27,6 @@ function M:PlayFadeInAnimByIndex(StrengthNum)
   end
   self:PlayAnimation(NeedPlayAnim)
 end
-
 function M:ChangeFlashColor(ColorEnum)
   DebugPrint("yklua666 ChangeFlashColor:", ColorEnum)
   if not ColorEnum or 0 == ColorEnum then
@@ -43,7 +39,6 @@ function M:ChangeFlashColor(ColorEnum)
   self:StopAnimation(self.In)
   self:PlayAnimation(self[Enum2AniName[ColorEnum]])
 end
-
 function M:Close()
   local UITipList = UIManager(self):GetUI("CommonTopToastList")
   if nil ~= UITipList then
@@ -51,5 +46,4 @@ function M:Close()
   end
   self.IsClose = true
 end
-
 return M

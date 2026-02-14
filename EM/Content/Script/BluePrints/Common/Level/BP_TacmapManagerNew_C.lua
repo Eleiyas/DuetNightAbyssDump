@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class()
-
 function M:Init(level_loader)
   local json_short_name = level_loader.shortname
   self:Init_CPP(json_short_name, level_loader)
 end
-
 function M:GetSpawnPoints(info)
   local preset_targets, mode, unit_spawn_radius_min, unit_spawn_radius_max, b_enable_random, cull_unreachable = info.PresetTargets, info.Mode, info.UnitSpawnRadiusMin, info.UnitSpawnRadiusMax, info.RandomSpawn, info.FilterReachable
   local PresetTargets = TMap(AActor, 0)
@@ -34,14 +32,12 @@ function M:GetSpawnPoints(info)
   end
   return spawn_points
 end
-
 function M:GenerateCapturePath(distance)
   DebugPrint("GenerateCapturePath Request:", distance)
   local monster_loc, capture_level_id = self:GenerateCapturePath_CPP(distance or -1)
   DebugPrint("GenerateCapturePathResult:", monster_loc, capture_level_id)
   return UE4.FVector(monster_loc.X, monster_loc.Y, monster_loc.Z), capture_level_id
 end
-
 function M:GenerateSabotagePoints()
   DebugPrint("GenerateSabotagePoints Request:")
   local sabotage_datas = self:GenerateSabotagePoints_CPP()
@@ -58,8 +54,6 @@ function M:GenerateSabotagePoints()
   DebugPrintTable(sabotage_points, 3)
   return sabotage_points
 end
-
 function M:RegisterPlayer(player, idx)
 end
-
 return M

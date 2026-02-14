@@ -3,11 +3,9 @@ local UIUtils = require("Utils.UIUtils")
 local WikiController = require("BluePrints.UI.WBP.Wiki.WikiController")
 local WikiCommon = require("BluePrints.UI.WBP.Wiki.WikiCommon")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Super.Construct(self)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   local TabInfo = {
@@ -54,12 +52,10 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "WikiEntrance", nil)
   self.WBP_Encyclopedia_Entrance:SetFocus()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.WBP_Encyclopedia_Entrance:Initialize(self)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -76,12 +72,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
 function M:Destruct()
   self.IsCloseSelf = false
   self.Super.Destruct(self)
 end
-
 function M:CloseSelf()
   self.IsCloseSelf = true
   if self:IsAnimationPlaying(self.Auto_In) or self.WBP_Encyclopedia_Entrance.IsHide then
@@ -90,11 +84,9 @@ function M:CloseSelf()
   AudioManager(self):SetEventSoundParam(self, "WikiEntrance", {ToEnd = 1})
   self:Close()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:InitListenEvent()
   local PlayerController = self:GetOwningPlayer()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -102,13 +94,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
@@ -120,5 +110,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 return M

@@ -1,7 +1,6 @@
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class()
 local _WeaponMap, _WeaponSkinMap, _WeaponAccessoryMap, _WeaponCount, _WeaponReward, _WeaponUuid2Id, _WeaponId2Uuid, _ConsumeWeaponRedCount
-
 local function UpdateRedCountForWeaponId(WeaponTag, WeaponId)
   local allUuids = {}
   local consumableUuids = {}
@@ -28,7 +27,6 @@ local function UpdateRedCountForWeaponId(WeaponTag, WeaponId)
     _ConsumeWeaponRedCount[WeaponTag][uuid] = countExcludingSelf
   end
 end
-
 local function AddWeaponToMap(Weapon)
   _WeaponUuid2Id[Weapon.Uuid] = Weapon.WeaponId
   if not _WeaponId2Uuid[Weapon.WeaponId] then
@@ -53,7 +51,6 @@ local function AddWeaponToMap(Weapon)
     UpdateRedCountForWeaponId(CommonConst.WeaponType.RangedWeapon, Weapon.WeaponId)
   end
 end
-
 local function RemoveWeaponFromMap(Uuid)
   local Value = _WeaponMap[Uuid]
   if Value then
@@ -76,9 +73,7 @@ local function RemoveWeaponFromMap(Uuid)
   _WeaponMap[Uuid] = nil
   _WeaponUuid2Id[Uuid] = nil
 end
-
 local WeaponRewardStates = {Owned = 1, Unowned = 2}
-
 local function MappingReward(self, Avatar)
   local Strings, WeaponId
   for Keys, _ in pairs(Avatar.StoredCollectReward or {}) do
@@ -96,7 +91,6 @@ local function MappingReward(self, Avatar)
     end
   end
 end
-
 function M:Init(Avatar)
   _WeaponMap = {}
   _WeaponSkinMap = {}
@@ -128,30 +122,32 @@ function M:Init(Avatar)
     end
   end
   MappingReward(self, Avatar)
-  EventManager:AddEvent(EventID.OnNewWeaponAccessoryObtained, self, self.OnNewWeaponAccessoryObtained)
-  EventManager:AddEvent(EventID.OnNewWeaponSkinObtained, self, self.OnNewWeaponSkinObtained)
-  ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Weapon)
-  ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Weapon .. ArmoryUtils.ArmorySubTabNames.Appearance)
+  try({
+    exec = function()
+      ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Weapon)
+      ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Weapon .. ArmoryUtils.ArmorySubTabNames.Appearance)
+    end,
+    catch = function(err)
+      local trace = debug.traceback()
+      err = err or ""
+      DebugPrint("Error: 武器红点数据创建失败！" .. "\n" .. trace)
+    end
+  })
 end
-
 function M:HasWeapon(Uuid)
   return not not _WeaponMap[Uuid]
 end
-
 function M:GetWeaponCount(WeaponId)
   return _WeaponCount[CommonConst.WeaponType.MeleeWeapon][WeaponId] or _WeaponCount[CommonConst.WeaponType.RangedWeapon][WeaponId] or 0
 end
-
 function M:GetConsumeWeaponCount(Uuid)
   local count = _ConsumeWeaponRedCount[CommonConst.WeaponType.MeleeWeapon][Uuid] or _ConsumeWeaponRedCount[CommonConst.WeaponType.RangedWeapon][Uuid]
   return type(count) == "number" and count or 0
 end
-
 function M:IsWeaponConsumable(Uuid)
   local count = _ConsumeWeaponRedCount[CommonConst.WeaponType.MeleeWeapon][Uuid] or _ConsumeWeaponRedCount[CommonConst.WeaponType.RangedWeapon][Uuid]
   return type(count) == "number" and count > 0
 end
-
 function M:UpdateStoredWeapon(Avatar, Uuid)
   if Avatar and Avatar.Weapons and Avatar.Weapons[Uuid] then
     local weapon = Avatar.Weapons[Uuid]
@@ -161,7 +157,6 @@ function M:UpdateStoredWeapon(Avatar, Uuid)
     _WeaponId2Uuid[weapon.WeaponId][Uuid] = weapon
   end
 end
-
 function M:UpdateWeaponConsumeStatus(Avatar, Uuid)
   local weaponData = _WeaponMap[Uuid]
   if not weaponData then
@@ -170,11 +165,9 @@ function M:UpdateWeaponConsumeStatus(Avatar, Uuid)
   self:UpdateStoredWeapon(Avatar, Uuid)
   UpdateRedCountForWeaponId(weaponData.WeaponTag, weaponData.WeaponId)
 end
-
 function M:OnWeaponStatusChanged(Avatar, Uuid)
   self:UpdateWeaponConsumeStatus(Avatar, Uuid)
 end
-
 function M:IsWeaponHasReward(WeaponId)
   local WeaponBreak = _WeaponReward.WeaponBreak[WeaponId]
   if WeaponBreak then
@@ -186,19 +179,15 @@ function M:IsWeaponHasReward(WeaponId)
   end
   return false
 end
-
 function M:GetWeaponRewardInfo()
   return _WeaponReward
 end
-
 function M:IsWeaponAccessoryExist(AccessoryId)
   return _WeaponAccessoryMap[AccessoryId]
 end
-
 function M:IsWeaponSkinExist(SkinId)
   return _WeaponSkinMap[SkinId]
 end
-
 function M:OnPropChangeStoredCollectReward(Strings)
   if _WeaponReward[Strings[1]] and Strings[2] and Strings[3] then
     local WeaponId = tonumber(Strings[2])
@@ -225,7 +214,6 @@ function M:OnPropChangeStoredCollectReward(Strings)
     EventManager:FireEvent(EventID.OnWeaponRewardStateChanged, WeaponId)
   end
 end
-
 function M:OnNewWeaponObtained(Uuid)
   local Avatar = GWorld:GetAvatar()
   local Weapon = Avatar.Weapons[Uuid]
@@ -244,7 +232,6 @@ function M:OnNewWeaponObtained(Uuid)
   end
   EventManager:FireEvent(EventID.OnNewWeaponObtained, Uuid)
 end
-
 function M:OnWeaponDeleted(Uuid)
   local WeaponTag = _WeaponMap[Uuid] and _WeaponMap[Uuid].WeaponTag
   local WeaponId = _WeaponUuid2Id[Uuid]
@@ -271,30 +258,30 @@ function M:OnWeaponDeleted(Uuid)
   end
   EventManager:FireEvent(EventID.OnWeaponDeleted, Uuid)
 end
-
 function M:OnNewWeaponAccessoryObtained(AccessoryId)
   if not AccessoryId then
     return
   end
   _WeaponAccessoryMap[AccessoryId] = true
+  if not CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.WeaponAccessory, AccessoryId) then
+    return
+  end
   ArmoryUtils:TryAddNewWeaponAccessoryReddot(AccessoryId)
 end
-
 function M:OnNewWeaponSkinObtained(SkinId)
   if not SkinId then
     return
   end
   _WeaponSkinMap[SkinId] = true
+  if not CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.WeaponSkin, SkinId) then
+    return
+  end
   ArmoryUtils:TryAddNewWeaponSkinReddot(SkinId)
 end
-
 function M:Destory()
   _WeaponMap = {}
   _WeaponSkinMap = {}
   _WeaponAccessoryMap = {}
   _WeaponId2Uuid = {}
-  EventManager:RemoveEvent(EventID.OnNewWeaponSkinObtained, self)
-  EventManager:RemoveEvent(EventID.OnNewWeaponAccessoryObtained, self)
 end
-
 return M

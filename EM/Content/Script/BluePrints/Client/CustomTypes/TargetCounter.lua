@@ -15,13 +15,12 @@ TargetCounter.__Props__ = {
   NoRepeatField = prop.prop("Str", "save"),
   TargetRecords = prop.prop("Str2IntDict", "client save")
 }
-
 function TargetCounter:Reset()
   self.Progress = 0
   self.RewardsGot = false
   self.TargetRecords = {}
+  self:FixByAvatarData()
 end
-
 function TargetCounter:Init(UniqueID, ExcelConf)
   self.UniqueID = UniqueID
   for _, TargetId in pairs(ExcelConf.TargetId) do
@@ -30,16 +29,14 @@ function TargetCounter:Init(UniqueID, ExcelConf)
   self.Target = ExcelConf.Target
   self.CompletionValue = ExcelConf.CompletionValue
   self.NoRepeatField = ExcelConf.NoRepeatField
+  self:FixByAvatarData()
 end
-
 function TargetCounter:GetUniqueID()
   return self.UniqueID
 end
-
 function TargetCounter:IsComplete()
   return self.Progress >= self.Target
 end
-
 function TargetCounter:IndividualRule(TargetId, Count)
   local Target = DataMgr.Target[TargetId]
   if not Target then
@@ -54,7 +51,6 @@ function TargetCounter:IndividualRule(TargetId, Count)
   end
   return false
 end
-
 function TargetCounter:TargetRefreshProgress(TargetId, UniqueAttr, Count)
   if self:IsComplete() then
     return
@@ -77,23 +73,41 @@ function TargetCounter:TargetRefreshProgress(TargetId, UniqueAttr, Count)
   end
   self.Progress = math.min(self.Progress + Count, self.Target)
 end
-
 function TargetCounter:CanRecvReward()
   return not self.RewardsGot
 end
-
 function TargetCounter:GetCurrentCount(ConditionId)
   return self.Progress
 end
-
+function TargetCounter:FixByAvatarData()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    DebugPrint("TargetCounter:FixByAvatarData Avatar not exist")
+    return
+  end
+  for TargetId, _ in pairs(self.TargetIds) do
+    local TargetExcel = DataMgr.Target[TargetId]
+    if TargetExcel and TargetExcel.TargetType == CommonConst.TargetTypeAvatarLevel and Avatar.Level >= tonumber(TargetExcel.TargetParam[1][1]) then
+      DebugPrint("TargetTypeAvatarLevel Auto Complete Success <TargetId>", TargetId)
+      self:TargetRefreshProgress(TargetId, nil, 1)
+      break
+    end
+    if TargetExcel and TargetExcel.TargetType == CommonConst.TargetTypeLoginDay then
+      local obj = TimeUtils.TimestampToDataObj(TimeUtils.TimestampLastClock(5))
+      local Date = string.format("%d%d%d", obj.year, obj.month, obj.day)
+      self.NoRepeatField = "Date"
+      DebugPrint("TargetTypeLoginDay Auto Complete Success <TargetId>", TargetId, Date)
+      self:TargetRefreshProgress(TargetId, Date, 1)
+      break
+    end
+  end
+end
 FormatProperties(TargetCounter)
 local TargetCounterDict = Class("TargetCounterDict", CustomTypes.CustomDict)
 TargetCounterDict.KeyType = BaseTypes.Int
 TargetCounterDict.ValueType = TargetCounter
-
 function TargetCounterDict:NewTargetCounter(UniqueID, ExcelConf)
   self[UniqueID] = TargetCounter(UniqueID, ExcelConf)
   return self[UniqueID]
 end
-
 return {TargetCounter = TargetCounter, TargetCounterDict = TargetCounterDict}

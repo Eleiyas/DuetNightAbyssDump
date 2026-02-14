@@ -1,9 +1,7 @@
 local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
 local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
-
 local function EmptyFunction()
 end
-
 _G.DebugPrint = bDistribution and not bEnableShippingLog and EmptyFunction or function(...)
   for _, Param in ipairs(table.pack(...)) do
     if Param == ErrorTag then
@@ -22,7 +20,6 @@ _G.DebugNetPrint = bDistribution and not bEnableShippingLog and EmptyFunction or
 end
 _G.LXYTag = "lxy#"
 _G.TXTTag = "txt#"
-
 local function NStr(n, str)
   local sumStr = ""
   for i = 1, n do
@@ -30,7 +27,6 @@ local function NStr(n, str)
   end
   return sumStr
 end
-
 local function PrintTable_internal(tableMemory, deep, table, maxDepth)
   if maxDepth and maxDepth < deep then
     return
@@ -47,7 +43,6 @@ local function PrintTable_internal(tableMemory, deep, table, maxDepth)
     end
   end
 end
-
 _G.DebugPrintTable = bDistribution and not bEnableShippingLog and EmptyFunction or function(table, maxDepth)
   local tableMemory = {}
   tableMemory[table] = true

@@ -1,10 +1,8 @@
 local AtmosphereNpcHideNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function AtmosphereNpcHideNode:Init()
   self.IsHide = false
   self.AtmosphereTagList = {}
 end
-
 function AtmosphereNpcHideNode:Start(Context)
   self.Context = Context
   local GameInstance = GWorld.GameInstance
@@ -16,9 +14,8 @@ function AtmosphereNpcHideNode:Start(Context)
   end
   self:Finish()
 end
-
 function AtmosphereNpcHideNode:OnQuestlineSuccess()
+  DebugPrint("AtmosphereNpcHideNode:OnQuestlineSuccess():", self.Key)
   self.Context:SaveSuitUpdateData("UpdateSuitTable2Value", CommonConst.SuitType.PlayerCharacterSuit, CommonConst.PlayerCharacterSuit.NpcHideShowTag, self.AtmosphereTagList, self.IsHide)
 end
-
 return AtmosphereNpcHideNode

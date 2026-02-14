@@ -8,9 +8,7 @@ local SQUAD_PANEL_MAP = {}
 local WAITING_CONFIRM_TIME = CommonConst.ONLINE_TEAM_VOTE_TIME
 local WAITING_MATCHING_TIME = CommonConst.ONLINE_MATCH_TIME
 local PROGRESS_PERCENT_SIZE_X = 578
-local PROGRESS_PERCENT_SIZE_Y = 72
-local FORCE_CLOSE_TIME = 5
-
+local FORCE_CLOSE_TIME = 30
 function M:Construct()
   M.Super.Construct(self)
   STATE_SET_FUNCTOR = {
@@ -29,26 +27,76 @@ function M:Construct()
   self:InitKeyMap()
   self:InitInputSettings()
 end
-
 function M:Destruct()
   self:ResetMatchPanel()
   self:ClearLoopSound()
+  TeamController:SetTeamPopupBarOpen(false)
   M.Super.Destruct(self)
 end
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
-function M:OnLoaded(DungeonId, EnterState, bIsMatch)
-  DebugPrint("gmy@WBP_DungeonMatchTimingBar_C:OnLoaded ", DungeonId, EnterState, debug.traceback())
+function M:OnLoaded(...)
+  local DungeonId, EnterState, bIsMatch = ...
   self.DungeonId = DungeonId
   local DungeonData = DataMgr.Dungeon[self.DungeonId]
-  assert(DungeonData, "\229\137\175\230\156\172ID\233\148\153\232\175\175" .. tostring(self.DungeonId))
-  local MatchTitle = GText(DungeonData.DungeonName)
-  local LevelIndex = self:GetDungeonIndex(DungeonId)
-  local LevelText = GText(Const.RomanNum[LevelIndex])
-  MatchTitle = string.format("%s%s", MatchTitle, LevelText)
+  assert(DungeonData, "副本ID错误" .. tostring(self.DungeonId))
+  local TeleportId = self:GetTeleportIdByMultiplayerChallenge(DungeonId)
+  local MatchTitle
+  if DungeonData.DungeonType == "HardBossDg" then
+    MatchTitle = GText("UI_HardBoss_TabName_1")
+    local DifficultyId = DataMgr.HardBossDg[DungeonId].DifficultyId
+    local HardBossName
+    for _, HardbossMainData in pairs(DataMgr.HardBossMain) do
+      if HardBossName then
+        break
+      end
+      for _, Id in pairs(HardbossMainData.DifficultyId) do
+        if DifficultyId == Id then
+          HardBossName = HardbossMainData.HardBossName
+          break
+        end
+      end
+    end
+    if HardBossName then
+      MatchTitle = string.format("%s %s", MatchTitle, GText(HardBossName))
+    end
+    if DataMgr.HardBossDifficulty[DifficultyId] then
+      local LevelText = GText("BATTLE_UI_BLOOD_LV") .. DataMgr.HardBossDifficulty[DifficultyId].DifficultyLevel
+      MatchTitle = string.format("%s %s", MatchTitle, LevelText)
+    end
+  elseif DungeonData.IsModDungeon then
+    MatchTitle = GText("UI_DUNGEONMOD")
+    if DungeonData.DungeonName then
+      MatchTitle = string.format("%s %s", MatchTitle, GText(DungeonData.DungeonName))
+    end
+    if DungeonData.DungeonLevel then
+      local LevelText = GText("BATTLE_UI_BLOOD_LV") .. tostring(DungeonData.DungeonLevel)
+      MatchTitle = string.format("%s %s", MatchTitle, LevelText)
+    end
+  elseif DungeonData.IsWalnutDungeon then
+    MatchTitle = GText("UI_DUNGEONWALNUT")
+    if DungeonData.DungeonName then
+      MatchTitle = string.format("%s %s", MatchTitle, GText(DungeonData.DungeonName))
+    end
+    if DungeonData.DungeonLevel then
+      local LevelText = GText("BATTLE_UI_BLOOD_LV") .. tostring(DungeonData.DungeonLevel)
+      MatchTitle = string.format("%s %s", MatchTitle, LevelText)
+    end
+  elseif TeleportId and -1 ~= TeleportId then
+    if DataMgr.TeleportPoint[TeleportId] and DataMgr.TeleportPoint[TeleportId].TeleportPointName then
+      MatchTitle = GText(DataMgr.TeleportPoint[TeleportId].TeleportPointName)
+    end
+    if DungeonData.DungeonLevel then
+      local LevelText = GText("BATTLE_UI_BLOOD_LV") .. tostring(DungeonData.DungeonLevel)
+      MatchTitle = string.format("%s %s", MatchTitle, LevelText)
+    end
+  else
+    MatchTitle = GText(DungeonData.DungeonName)
+    local LevelIndex = self:GetDungeonIndex(DungeonId)
+    local LevelText = GText(Const.RomanNum[LevelIndex])
+    MatchTitle = string.format("%s%s", MatchTitle, LevelText)
+  end
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:OnLoaded", DungeonId, LevelIndex)
   if bIsMatch then
     MatchTitle = string.format("%s%s", MatchTitle, GText("UI_DUNGEON_TITLE_MATCHING"))
@@ -61,25 +109,35 @@ function M:OnLoaded(DungeonId, EnterState, bIsMatch)
   self:SwitchState(nil, EnterState)
   self:PlayInitSound()
   self:InitSquadPanel()
+  self:InitWeekTip(DungeonId)
   TeamController:SetTeamPopupBarOpen(true)
 end
-
+function M:GetTeleportIdByMultiplayerChallenge(DungeonId)
+  for _, MultiplayerChallengeData in pairs(DataMgr.MultiplayerChallenge) do
+    if MultiplayerChallengeData.DungeonId and next(MultiplayerChallengeData.DungeonId) then
+      for _, Id in pairs(MultiplayerChallengeData.DungeonId) do
+        if Id == DungeonId then
+          return MultiplayerChallengeData.TeleportId
+        end
+      end
+    end
+  end
+  return -1
+end
 function M:PlayInitSound()
 end
-
 function M:PlayCancelSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_cancel", "", nil)
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   self.Overridden.Tick(self, MyGeometry, InDeltaTime)
   self:UpdateTimeProgress()
 end
-
 function M:SwitchState(OldState, NewState)
   DebugPrint("gmy@M:SwitchState OldState, NewState", OldState, NewState)
   if OldState then
   else
+    self:StopAllAnimations()
     self:PlayAnimation(self.In)
   end
   if OldState == NewState then
@@ -94,14 +152,12 @@ function M:SwitchState(OldState, NewState)
     self:SetState(NewState)
   end
 end
-
 function M:SetState(State)
   local Functor = STATE_SET_FUNCTOR[State]
   if Functor then
     Functor(self)
   end
 end
-
 function M:SetState_SponsorWaitingConfirm()
   DebugPrint("gmy@M:SetState_WaitingConfirm")
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_in_line_hud_show", "dungeon_match_loop", nil)
@@ -129,7 +185,6 @@ function M:SetState_SponsorWaitingConfirm()
     self:PlayCancelSound()
   end)
 end
-
 function M:SetState_TeammateConfirming()
   DebugPrint("gmy@M:SetState_TeammateConfirming")
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_in_line_hud_show", "dungeon_match_loop", nil)
@@ -157,7 +212,6 @@ function M:SetState_TeammateConfirming()
     self:Close()
   end)
 end
-
 function M:SetState_TeammateWaitingConfirming()
   DebugPrint("gmy@M:SetState_TeammateWaitingConfirming")
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_in_line_hud_show", "dungeon_match_loop", nil)
@@ -167,7 +221,6 @@ function M:SetState_TeammateWaitingConfirming()
   self:SetBtnYes(false)
   self:SetBtnNo(false)
 end
-
 function M:TextChange()
   if self.bWaitingTextChange then
     if self.NowState == DUNGEON_MATCH_BAR_STATE.TEAMMATE_WAITING_CONFIRMING then
@@ -179,7 +232,6 @@ function M:TextChange()
     end
   end
 end
-
 function M:SetState_WaitingMatching()
   DebugPrint("gmy@M:SetState_WaitingMatching")
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_in_line_state_search", "dungeon_match_loop", nil)
@@ -199,8 +251,14 @@ function M:SetState_WaitingMatching()
   self.bWaitingTextChange = true
   self:SetBtnYes(false)
   self:SetBtnNo(false)
+  self:AddTimer(FORCE_CLOSE_TIME, function()
+    if not self or self.bClosing then
+      return
+    end
+    self:Close()
+    UIManager(self):ShowUITip("CommonToastMain", GText("UI_Rematch_Fail_TimeOut"), 1.5)
+  end, false)
 end
-
 function M:SetState_WaitingMatchingWithCancel()
   DebugPrint("gmy@M:SetState_WaitingMatchingWithCancel")
   AudioManager(self):PlayUISound(self, "event:/ui/common/team_in_line_state_search", "dungeon_match_loop", nil)
@@ -229,8 +287,14 @@ function M:SetState_WaitingMatchingWithCancel()
     EventManager:FireEvent(EventID.OnMatchStateChanged)
     UIManager(self):ShowUITip("CommonToastMain", GText("DUNGEONMATCH_CANCEL"), 1.5)
   end)
+  self:AddTimer(FORCE_CLOSE_TIME, function()
+    if not self or self.bClosing then
+      return
+    end
+    self:Close()
+    UIManager(self):ShowUITip("CommonToastMain", GText("UI_Rematch_Fail_TimeOut"), 1.5)
+  end, false)
 end
-
 function M:SetState_WaitingEnterDungeon()
   DebugPrint("gmy@M:SetState_WaitingEnterDungeon")
   self.Panel_Enter:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -242,7 +306,6 @@ function M:SetState_WaitingEnterDungeon()
   self:SetBtnYes(false)
   self:SetBtnNo(false)
 end
-
 function M:UpdateTimeProgress()
   if self.StartTimeStamp and self.EndTimeStamp and self.StartTimeStamp < self.EndTimeStamp then
     local NowTime = os.clock()
@@ -252,15 +315,15 @@ function M:UpdateTimeProgress()
     RemainTime = RemainTime > 0 and RemainTime or 0
     local Percent = ElapsedTime / TotalTime
     local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Panel_Progress)
-    CanvasSlot:SetSize(FVector2D((1 - Percent) * PROGRESS_PERCENT_SIZE_X, PROGRESS_PERCENT_SIZE_Y))
+    local CurrentSize = CanvasSlot:GetSize()
+    CanvasSlot:SetSize(FVector2D((1 - Percent) * PROGRESS_PERCENT_SIZE_X, CurrentSize.Y))
     self.Text_Timing:SetText(string.format(GText("DUNGEON_TIME_REMAIN_FMT"), RemainTime))
-    if not self:HasFocusedDescendants() and TeamController:IsGamepad() then
-      DebugPrint(LXYTag, WarningTag, "\231\187\132\233\152\159\232\191\155\230\156\172\229\128\146\232\174\161\230\151\182UI\233\156\128\232\166\129\230\138\162\229\164\186\232\129\154\231\132\166\239\188\129\239\188\129\239\188\129\239\188\129\239\188\129\239\188\129")
+    if not self:HasFocusedDescendants() and TeamController:IsTeamPopupBarOpenInGamepad() then
+      DebugPrint(LXYTag, WarningTag, "组队进本倒计时UI需要抢夺聚焦！！！！！！")
       self:SetFocus()
     end
   end
 end
-
 function M:OverTimeEnd()
   DebugPrint("gmy@M:OverTimeEnd")
   if self.OvertimeTimer then
@@ -287,7 +350,6 @@ function M:OverTimeEnd()
     self:Close()
   end
 end
-
 function M:InitEvents()
   self:AddDispatcher(EventID.TeamMatchStartMatching, self, self.OnTeamMatchStartMatching)
   self:AddDispatcher(EventID.TeamMatchStartEntering, self, self.OnTeamMatchStartEntering)
@@ -314,8 +376,8 @@ function M:InitEvents()
       self:RefuseKeyDown()
     end
   end)
+  self:AddDispatcher(EventID.OnRequestToMatch, self, self.OnTeamMatchCancel)
 end
-
 function M:OnTeamMatchStartMatching()
   DebugPrint("gmy@M:OnTeamMatchStartMatching")
   local Avatar = GWorld:GetAvatar()
@@ -330,53 +392,61 @@ function M:OnTeamMatchStartMatching()
     self:SwitchState(self.NowState, DUNGEON_MATCH_BAR_STATE.WAITING_MATCHING)
   end
 end
-
 function M:OnTeamMatchStartEntering()
   DebugPrint("gmy@M:OnTeamMatchStartEntering")
   self:SwitchState(self.NowState, DUNGEON_MATCH_BAR_STATE.WAITING_ENTER_DUNGEON)
 end
-
-function M:OnTeamMatchCancel()
-  DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:OnTeamMatchCancel")
-  self:Close()
+function M:OnTeamMatchCancel(Ret)
+  if not Ret then
+    self:Close()
+  elseif Ret == ErrorCode.RET_FAIL then
+    self:Close()
+    local ShowTipStr = GText("UI_Rematch_Fail_Client")
+    UIManager(self):ShowUITip("CommonToastMain", ShowTipStr, 1.5)
+  elseif Ret == ErrorCode.RET_SUCCESS then
+    return
+  elseif "Match Destroyed" == Ret then
+    self:Close()
+    local ShowTipStr = GText("UI_Rematch_Fail_Server")
+    UIManager(self):ShowUITip("CommonToastMain", ShowTipStr, 1.5)
+  else
+    self:Close()
+    ErrorCode:Check(Ret, true)
+  end
 end
-
 function M:SetMatchPanel()
   EventManager:FireEvent(EventID.TeamMatchTimingStart, true)
 end
-
 function M:ResetMatchPanel()
   TeamController:GetModel().bPressedSolo = false
   TeamController:GetModel().bPressedMulti = false
   EventManager:FireEvent(EventID.TeamMatchTimingEnd, false)
 end
-
 function M:Close()
+  if not self then
+    return
+  end
+  if not self.bClosing then
+    self.bClosing = true
+  else
+    return
+  end
+  self:StopAllAnimations()
   self.Super.Close(self)
   self:ClearLoopSound()
-  self.bClosing = true
-  self:BindToAnimationFinished(self.Out, {
+  self:BindToAnimationFinished(self.Auto_Out, {
     self,
     self.RealClose
   })
-  self:PlayAnimationForward(self.Out)
+  self:PlayAnimationForward(self.Auto_Out)
   self:RemoveAllDispatcher()
-  if self:IsExistTimer(self.BarCloseTimer) then
-    self:RemoveTimer(self.BarCloseTimer)
-  end
-  local _, Key = self:AddTimer(0.5, function()
-    TeamController:SetTeamPopupBarOpen(false)
-  end)
-  self.BarCloseTimer = Key
   if not self.SquadFolding then
     self:SetInputUIOnly(false)
   end
 end
-
 function M:ClearLoopSound()
   AudioManager(self):StopSound(self, "dungeon_match_loop")
 end
-
 function M:GetDungeonIndex(DungeonId)
   local ChapterId = DataMgr.DungeonId2ChapterId[DungeonId]
   local ChapterData = DataMgr.SelectDungeon[ChapterId]
@@ -397,7 +467,6 @@ function M:GetDungeonIndex(DungeonId)
   end
   return 1
 end
-
 function M:SetBtnYes(bVisible, Text, Callback)
   Text = Text or ""
   Callback = Callback or function()
@@ -415,7 +484,6 @@ function M:SetBtnYes(bVisible, Text, Callback)
     self.BtnYes_PC:SetImg(self.YES_GAMEPAD_IMG, self.YES_KEY_TEXT)
   end
 end
-
 function M:SetBtnNo(bVisible, Text, Callback)
   Text = Text or ""
   Callback = Callback or function()
@@ -433,33 +501,34 @@ function M:SetBtnNo(bVisible, Text, Callback)
     self.BtnNo_PC:SetImg(self.NO_GAMEPAD_IMG, self.NO_KEY_TEXT)
   end
 end
-
 function M:InitKeyMap()
   self.YES_KEY_TEXT = "Y"
   self.NO_KEY_TEXT = "N"
   self.YES_GAMEPAD_IMG = "Menu"
   self.NO_GAMEPAD_IMG = "View"
 end
-
 function M:ConfirmKeyDown()
   DebugPrint("gmy@M:ConfirmKeyDown")
   if self.YesCallback then
     self.YesCallback()
   end
 end
-
 function M:RefuseKeyDown()
   DebugPrint("gmy@M:RefuseKeyDown")
   if self.NoCallback then
     self.NoCallback()
   end
 end
-
 function M:OnMatchPrepareToBattle()
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:OnMatchPrepareToBattle")
-  self:AddTimer(FORCE_CLOSE_TIME, self.Close, false)
+  self:AddTimer(FORCE_CLOSE_TIME, function()
+    if not self or self.bClosing then
+      return
+    end
+    self:Close()
+    UIManager(self):ShowUITip("CommonToastMain", GText("UI_Rematch_Fail_TimeOut"), 1.5)
+  end, false)
 end
-
 function M:GetSquadInfo(DungeonId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -477,7 +546,6 @@ function M:GetSquadInfo(DungeonId)
   end
   return {}, 0
 end
-
 function M:GetSquadId()
   if self.DefaultList and self.DefaultList.CurrentSquad then
     DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:GetSquadId", self.DefaultList.CurrentSquad)
@@ -486,7 +554,6 @@ function M:GetSquadId()
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:GetSquadId000")
   return 0
 end
-
 function M:InSameDungeonType()
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:InSameDungeonType", DeputeDetail.SelectedDungeonId)
   local Avatar = GWorld:GetAvatar()
@@ -505,7 +572,6 @@ function M:InSameDungeonType()
   local NowDungeonType = NowDungeonInfo.DungeonType
   return SelectedDungeonType == NowDungeonType
 end
-
 function M:InitSquadPanel()
   self.DefaultList:SetVisibility(ESlateVisibility.Visible)
   if self.NowState and self.DungeonId then
@@ -517,8 +583,11 @@ function M:InitSquadPanel()
     local bInSameDungeonType = self:InSameDungeonType()
     local SquadInfo, SquadId = self:GetSquadInfo(self.DungeonId)
     local bIsNowEquipSquad = 0 == SquadId
+    local SettlementUI = UIManager(self):GetUIObj("DungeonSettlement")
+    local bIsSettlement = SettlementUI and SettlementUI:GetVisibility() ~= ESlateVisibility.Collapsed
+    local DungeonData = DataMgr.Dungeon[self.DungeonId]
     DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:InitSquadPanel", self.NowState, bShowSquadPanel, SquadId, SquadInfo.Props, bIsNowEquipSquad, bInSameDungeonType)
-    local bHidden = not bShowSquadPanel or nil == SquadInfo or not bIsNowEquipSquad and SquadInfo.Props == nil or bInSameDungeonType
+    local bHidden = not bShowSquadPanel or nil == SquadInfo or not bIsNowEquipSquad and SquadInfo.Props == nil or bInSameDungeonType or DungeonData and not DungeonData.Squad and DungeonData.DungeonType == "HardBossDg" or bIsSettlement
     self.DefaultList:SetVisibility(bHidden and ESlateVisibility.Collapsed or ESlateVisibility.SelfHitTestInvisible)
     if bHidden then
       return
@@ -528,12 +597,10 @@ function M:InitSquadPanel()
     self.DefaultList:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_BattlePurchase_C M:OnUpdateUIStyleByInputTypeChange", CurInputDevice, CurGamepadName)
   self.DefaultList:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
@@ -551,12 +618,10 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.UsingGamepad = true
   end
 end
-
 function M:RefreshSquadPanel(SquadId)
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:RefreshSquadPanel", SquadId)
   self.DefaultList:Init(self, SquadId, self.DungeonId)
 end
-
 function M:SetSquadSelectBtnState(bActive)
   if bActive then
     self.DefaultList.WS_Controller:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -566,21 +631,31 @@ function M:SetSquadSelectBtnState(bActive)
     self.DefaultList.Btn_Show:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnTeamMatchSquadFold()
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:OnTeamMatchSquadFold")
   self:SetInputUIOnly(false)
   self.SquadFolding = true
 end
-
 function M:OnTeamMatchSquadUnfold()
   DebugPrint("gmy@WBP_DungeonMatchTimingBar_C M:OnTeamMatchSquadUnfold")
   self:SetInputUIOnly(true)
   self.SquadFolding = false
 end
-
 function M:IsInSettlement()
   return UIManager(self):GetUI("DungeonSettlement") ~= nil
 end
-
+function M:InitWeekTip(DungeonId)
+  local Avatar = GWorld:GetAvatar()
+  if Avatar and DungeonId and DataMgr.Dungeon[DungeonId] and DataMgr.Dungeon[DungeonId].DungeonType == "HardBossDg" then
+    local RemainTimes = Avatar.HardBoss.HardBossRewardTimesLeft
+    local DifficultyId = DataMgr.HardBossDg[DungeonId].DifficultyId
+    if RemainTimes and RemainTimes <= 0 and Avatar.HardBoss:GetPassCount(DifficultyId) > 0 then
+      self.GroupWeekly:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+      self.Text_WeeklyDesc:SetText(GText("UI_HardBoss_Match_Noreward"))
+      self:PlayAnimation(self.Warning)
+      return
+    end
+  end
+  self.GroupWeekly:SetVisibility(ESlateVisibility.Collapsed)
+end
 return M

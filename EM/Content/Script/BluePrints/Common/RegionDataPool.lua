@@ -1,5 +1,4 @@
 local M = Class()
-
 function M:Initialize(RegionDataMgr)
   self.QuestChainId2Data = {}
   self.DynamicQuestId2Data = {}
@@ -12,14 +11,12 @@ function M:Initialize(RegionDataMgr)
   self.RandomCreatorDatas = {}
   self.LuaIndex2Type:Clear()
 end
-
 function M:CheckUnitDataNeedStorage(RegionDataType)
   if RegionDataType and RegionDataType > 0 and RegionDataType ~= ERegionDataType.RDT_HardBossData and RegionDataType ~= ERegionDataType.RDT_QuestData then
     return true
   end
   return false
 end
-
 function M:InitRegionDataTable(LuaTableIndex, WorldRegionEid)
   local DataTable = self.RegionData[LuaTableIndex]
   if not DataTable then
@@ -28,7 +25,6 @@ function M:InitRegionDataTable(LuaTableIndex, WorldRegionEid)
   end
   DataTable.WorldRegionEid = WorldRegionEid
 end
-
 function M:GetRegionEntityData(Index)
   local Info = self.RegionData[Index]
   local DeepCopiedInfo = CommonUtils.DeepCopy(Info)
@@ -48,7 +44,6 @@ function M:GetRegionEntityData(Index)
   end
   return DeepCopiedInfo
 end
-
 function M:GetRegionEntityDataNoCopy(Index)
   local Info = self.RegionData[Index]
   if Info.Completed then
@@ -67,7 +62,6 @@ function M:GetRegionEntityDataNoCopy(Index)
   end
   return Info
 end
-
 function M:FillRegionData(Index, Info, RegionDataMgrSubsystem)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not GameMode:GetWCSubSystem() then
@@ -125,7 +119,6 @@ function M:FillRegionData(Index, Info, RegionDataMgrSubsystem)
     end
   end
 end
-
 function M:AvatarAddRegionActorData(Index, Info)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -136,7 +129,6 @@ function M:AvatarAddRegionActorData(Index, Info)
   DataTable.UnitId = not DataTable.UnitId and Info.Creator and Info.Creator.UnitId
   Avatar:AvatarC2SAddRegionActorData(DataTable)
 end
-
 function M:AddRandomCreatorData(Index, Info)
   local DataTable = self.RegionData[Index]
   if not self.RandomCreatorDatas[DataTable.RandomRuleId] then
@@ -147,7 +139,6 @@ function M:AddRandomCreatorData(Index, Info)
   end
   table.insert(self.RandomCreatorDatas[DataTable.RandomRuleId].RegionDatas, DataTable)
 end
-
 function M:UploadRandomCreatorData(RandomRuleId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -173,7 +164,6 @@ function M:UploadRandomCreatorData(RandomRuleId)
   Avatar:AvatarC2SAddRandomRegionActorData(CopyData)
   self.RandomCreatorDatas[RandomRuleId] = nil
 end
-
 function M:RemoveData(Index)
   local Info = self.RegionData[Index]
   local QuestChainId = Info.QuestChainId
@@ -188,7 +178,6 @@ function M:RemoveData(Index)
   end
   Info = {}
 end
-
 function M:RemoveQuestChainData(QuestChainId, DestroyReason)
   if not (QuestChainId and self.QuestChainId2Data[QuestChainId]) or not self.RegionDataMgr then
     return
@@ -203,7 +192,6 @@ function M:RemoveQuestChainData(QuestChainId, DestroyReason)
   end
   self.QuestChainId2Data[QuestChainId] = {}
 end
-
 function M:AddQuestChainData(DataTable)
   local QuestChainId = DataTable.QuestChainId
   if not self.QuestChainId2Data[QuestChainId] then
@@ -212,14 +200,12 @@ function M:AddQuestChainData(DataTable)
   table.insert(self.QuestChainId2Data[QuestChainId], DataTable)
   DataTable.QuestChainIndex = #self.QuestChainId2Data[QuestChainId]
 end
-
 function M:AddDynamicQuestData(DataTable, DynamicQuestId)
   if not self.DynamicQuestId2Data[DynamicQuestId] then
     self.DynamicQuestId2Data[DynamicQuestId] = {}
   end
   table.insert(self.DynamicQuestId2Data[DynamicQuestId], DataTable)
 end
-
 function M:RemoveDynamicQuestData(DynamicQuestId, DestroyReason)
   if not (DynamicQuestId and self.DynamicQuestId2Data[DynamicQuestId]) or not self.RegionDataMgr then
     return
@@ -238,14 +224,12 @@ function M:RemoveDynamicQuestData(DynamicQuestId, DestroyReason)
   end
   self.DynamicQuestId2Data[DynamicQuestId] = {}
 end
-
 function M:AddSpecialQuestData(DataTable, SpecialQuestId)
   if not self.SpecialQuestId2Data[SpecialQuestId] then
     self.SpecialQuestId2Data[SpecialQuestId] = {}
   end
   table.insert(self.SpecialQuestId2Data[SpecialQuestId], DataTable)
 end
-
 function M:RemoveSpecialQuestData(SpecialQuestId, DestroyReason)
   if not (SpecialQuestId and self.SpecialQuestId2Data[SpecialQuestId]) or not self.RegionDataMgr then
     return
@@ -264,7 +248,6 @@ function M:RemoveSpecialQuestData(SpecialQuestId, DestroyReason)
   end
   self.SpecialQuestId2Data[SpecialQuestId] = {}
 end
-
 function M:CheckQuestDataExist(QuestChainId, NewData)
   if self.QuestChainId2Data[QuestChainId] then
     for _, Data in pairs(self.QuestChainId2Data[QuestChainId]) do
@@ -275,15 +258,16 @@ function M:CheckQuestDataExist(QuestChainId, NewData)
   end
   return false
 end
-
 function M:UpdateState(DataTableIndex, DataName, DataValue)
   local Info = self.RegionData[DataTableIndex]
+  local SomethingDiff = false
   if Info then
     Info.State = Info.State or {}
+    SomethingDiff = Info.State[DataName] ~= DataValue
     Info.State[DataName] = DataValue
   end
+  return SomethingDiff, Info
 end
-
 function M:UpdateStateByTable(DataTableIndex, NewState)
   local Info = self.RegionData[DataTableIndex]
   local SomethingDiff = false
@@ -300,7 +284,6 @@ function M:UpdateStateByTable(DataTableIndex, NewState)
   end
   return SomethingDiff
 end
-
 function M:UpdateLevelNameAndSubRegionId(DataTableIndex, Actor)
   local Data = self.RegionData[DataTableIndex]
   if Data then
@@ -308,14 +291,12 @@ function M:UpdateLevelNameAndSubRegionId(DataTableIndex, Actor)
     Data.SubRegionId = Actor.SubRegionId
   end
 end
-
 function M:ClearState(DataTableIndex)
   local Info = self.RegionData[DataTableIndex]
   if Info then
     Info.State = {}
   end
 end
-
 function M:GetStateIdByWorldRegionEid(LuaTableIndex)
   local Info = self.RegionData[LuaTableIndex]
   if not Info then
@@ -329,18 +310,14 @@ function M:GetStateIdByWorldRegionEid(LuaTableIndex)
   end
   return Info.State.StateId
 end
-
 function M:MarkRegionDataDead(LuaTableIndex)
   local Info = self.RegionData[LuaTableIndex]
-  if not self:CheckUnitDataNeedStorage(Info.RegionDataType) then
+  local Avatar = GWorld:GetAvatar()
+  if not (self:CheckUnitDataNeedStorage(Info.RegionDataType) and Avatar) or not Avatar:IsInBigWorld() then
     return
   end
-  local Avatar = GWorld:GetAvatar()
-  if Avatar then
-    Avatar:RegionDataDead(Info)
-  end
+  Avatar:RegionDataDead(Info)
 end
-
 function M:FillStaticCreatorData(DataTable, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local WorldLoader = GameMode:GetLevelLoader()
@@ -357,7 +334,6 @@ function M:FillStaticCreatorData(DataTable, Info)
   DataTable.Level = Info.Creator:GetUnitLevel()
   DataTable.Type = 1
 end
-
 function M:FillStaticCreatorDataNew(Index, Info)
   local DataTable = self.RegionData[Index]
   self:FillStaticCreatorData(DataTable, Info)
@@ -371,7 +347,6 @@ function M:FillStaticCreatorDataNew(Index, Info)
   self.RegionDataMgr:OnRegionDataFill_Log(DataTable.WorldRegionEid, DataTable.Eid, DataTable.LevelName)
   return DataTable.SubRegionId, DataTable.WorldRegionEid
 end
-
 function M:FillRandomCreatorData(DataTable, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local WorldLoader = GameMode:GetLevelLoader()
@@ -401,7 +376,6 @@ function M:FillRandomCreatorData(DataTable, Info)
   local RandomInfo = DataMgr.RandomCreator[DataTable.RandomRuleId].RandomInfos[DataTable.RandomTableId]
   DataTable.Type = 2
 end
-
 function M:FillRandomCreatorDataNew(Index, Info)
   local DataTable = self.RegionData[Index]
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -434,7 +408,6 @@ function M:FillRandomCreatorDataNew(Index, Info)
   self.RegionDataMgr:OnRegionDataFill_Log(DataTable.WorldRegionEid, DataTable.Eid, DataTable.LevelName)
   return DataTable.SubRegionId, DataTable.WorldRegionEid
 end
-
 function M:FillCommonData(DataTable, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local WorldLoader = GameMode:GetLevelLoader()
@@ -461,7 +434,6 @@ function M:FillCommonData(DataTable, Info)
   DataTable.QuestChainId = Info.QuestChainId
   DataTable.IsUnlimited = Info.IsFullRegionStore
 end
-
 function M:FillCommonDataNew(Index, Info)
   local DataTable = self.RegionData[Index]
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -492,7 +464,6 @@ function M:FillCommonDataNew(Index, Info)
   self.RegionDataMgr:OnRegionDataFill_Log(DataTable.WorldRegionEid, DataTable.Eid, DataTable.LevelName)
   return DataTable.SubRegionId, DataTable.WorldRegionEid
 end
-
 function M:CompleteStaticCreatorData(DataTable)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   local Creator = GameState.StaticCreatorMap:FindRef(DataTable.CreatorId)
@@ -509,7 +480,6 @@ function M:CompleteStaticCreatorData(DataTable)
   }
   DataTable.Completed = true
 end
-
 function M:CompleteRandomCreatorData(DataTable)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local RandomInfo = DataMgr.RandomCreator[DataTable.RandomRuleId].RandomInfos[DataTable.RandomTableId]
@@ -524,7 +494,7 @@ function M:CompleteRandomCreatorData(DataTable)
   DataTable.Loc = FVector(DataTable.BornLocation.X, DataTable.BornLocation.Y, DataTable.BornLocation.Z)
   DataTable.Creator = GameMode.RandomActorManager:GetCreator(DataTable.RandomRuleId, "", DataTable.IdxInRule)
   if not DataTable.Creator or DataTable.Creator == {} then
-    DebugPrint("RandomCreator\228\184\173\228\184\141\229\173\152\229\156\168\229\166\130\228\184\139\230\149\176\230\141\174\239\188\154 Location = ", DataTable.Loc)
+    DebugPrint("RandomCreator中不存在如下数据： Location = ", DataTable.Loc)
   elseif DataTable.Creator.ExtraRegionInfo then
     DataTable.ExtraRegionInfo = {
       SpecialQuestId = DataTable.Creator.ExtraRegionInfo.SpecialQuestId,
@@ -534,7 +504,6 @@ function M:CompleteRandomCreatorData(DataTable)
   DataTable.Rotation = GameMode.RandomActorManager:GetCreatorRegionDataRot(DataTable.RandomRuleId, DataTable.RandomCreatorId)
   DataTable.Completed = true
 end
-
 function M:CompleteRawData(Info)
   if not Info.BornLocation then
     return
@@ -542,9 +511,7 @@ function M:CompleteRawData(Info)
   Info.Loc = FVector(Info.BornLocation.X, Info.BornLocation.Y, Info.BornLocation.Z)
   Info.BornPos = Info.Loc
 end
-
 function M:AddUnitRegionCacheData(Index)
   self.RegionDataMgr.DataLibrary:AddUnitRegionCacheData(self.RegionData[Index])
 end
-
 return M

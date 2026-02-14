@@ -1,12 +1,15 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local WBP_Play_HardBoss_Item_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
+function WBP_Play_HardBoss_Item_C:BP_OnEntryReleased()
+  if self.Content then
+    self.Content.Entry = nil
+  end
+end
 function WBP_Play_HardBoss_Item_C:Initialize(Initializer)
   self.IsSelected = false
   self.Parent = nil
 end
-
 function WBP_Play_HardBoss_Item_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -29,16 +32,16 @@ function WBP_Play_HardBoss_Item_C:OnListItemObjectSet(Content)
   if 0 == self.Content.Index - 1 then
     self.Content.Parent:TrySelectFirstTime(self)
   end
+  if self.Content.Parent.TargetHardBossId and self.Content.Parent.TargetHardBossId == self.Content.Id then
+    self.Content.Parent:TrySelectTargetHardBossId(self)
+  end
 end
-
 function WBP_Play_HardBoss_Item_C:OnCellClicked()
   self:SelectCell()
 end
-
-function WBP_Play_HardBoss_Item_C:OnCellClickedWithoutSound()
-  self:SelectCell(true, true)
+function WBP_Play_HardBoss_Item_C:OnCellClickedWithoutSound(IsFirstTime, DoNotPlaySound)
+  self:SelectCell(IsFirstTime, DoNotPlaySound)
 end
-
 function WBP_Play_HardBoss_Item_C:SelectCell(IsFirstTime, DoNotPlaySound)
   if self.IsSelect then
     return
@@ -61,7 +64,6 @@ function WBP_Play_HardBoss_Item_C:SelectCell(IsFirstTime, DoNotPlaySound)
     self:PlayAnimation(self.Click)
   end
 end
-
 function WBP_Play_HardBoss_Item_C:OnCellHovered()
   if self.IsSelect then
     return
@@ -71,7 +73,6 @@ function WBP_Play_HardBoss_Item_C:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Play_HardBoss_Item_C:OnCellUnhovered()
   if self.IsSelect then
     return
@@ -82,14 +83,12 @@ function WBP_Play_HardBoss_Item_C:OnCellUnhovered()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Play_HardBoss_Item_C:OnCellPressed()
   if self.IsSelect then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Play_HardBoss_Item_C:OnCellReleased()
   if self.IsSelect then
     return
@@ -97,7 +96,6 @@ function WBP_Play_HardBoss_Item_C:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Play_HardBoss_Item_C:UpdateReddot()
   if not ReddotManager.GetTreeNode("HardBossItem") then
     ReddotManager.AddNode("HardBossItem")
@@ -109,5 +107,11 @@ function WBP_Play_HardBoss_Item_C:UpdateReddot()
     self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
+function WBP_Play_HardBoss_Item_C:StopAllAnimationsExceptIn()
+  self:StopAnimation(self.Normal)
+  self:StopAnimation(self.Hover)
+  self:StopAnimation(self.Unhover)
+  self:StopAnimation(self.Press)
+  self:StopAnimation(self.Click)
+end
 return WBP_Play_HardBoss_Item_C

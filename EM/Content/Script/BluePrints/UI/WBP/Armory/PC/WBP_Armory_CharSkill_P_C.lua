@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.WBP.Armory.WBP_Armory_CharSkill_Base_C")
-
 function M:Init(Params)
   M.Super.Init(self, Params)
   self._OnAddedToFocusPath = Params.OnAddedToFocusPath
@@ -9,7 +8,6 @@ function M:Init(Params)
   self._OnTreeNodeWidgetRemovedFromFocusPath = Params.OnTreeNodeWidgetRemovedFromFocusPath
   self:InitNavigationRules()
 end
-
 function M:InitNavigationRules()
   for BranchIdx, BranchWidget in ipairs(self.BranchWidgets) do
     BranchWidget.bIsFocusable = true
@@ -54,39 +52,33 @@ function M:InitNavigationRules()
     end
   end
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Parent, self)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Parent, self)
   end
 end
-
 function M:OnTreeNodeWidgetAddedToFocusPath(TreeNodeInfo)
   self.SelectedNodeInfo = TreeNodeInfo
   if self._OnTreeNodeWidgetAddedToFocusPath then
     self._OnTreeNodeWidgetAddedToFocusPath(self.Parent, TreeNodeInfo)
   end
 end
-
 function M:OnTreeNodeWidgetRemovedFromFocusPath(TreeNodeInfo)
   if self._OnTreeNodeWidgetRemovedFromFocusPath then
     self._OnTreeNodeWidgetRemovedFromFocusPath(self.Parent, TreeNodeInfo)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.SelectedNodeInfo then
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.SelectedNodeInfo.UI)
   end
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.BranchWidgets[1])
 end
-
 function M:OnSkillDetailsDestruct(_NodeInfo)
   M.Super.OnSkillDetailsDestruct(self, _NodeInfo)
   local TreeInfo = self:GetSkillTreeInfo()
@@ -99,5 +91,4 @@ function M:OnSkillDetailsDestruct(_NodeInfo)
     end
   end
 end
-
 return M

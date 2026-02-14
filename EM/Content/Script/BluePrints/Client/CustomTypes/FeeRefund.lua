@@ -10,17 +10,13 @@ FeeRefund.__Props__ = {
   MonthlyCard = prop.prop("Int", "client save", 0)
 }
 FormatProperties(FeeRefund)
-
 function FeeRefund:Init(Id)
   self.Id = Id
 end
-
 local FeeRefundDict = Class("FeeRefundDict", CustomTypes.CustomDict)
 FeeRefundDict.KeyType = BaseTypes.Int
 FeeRefundDict.ValueType = FeeRefund
-
 function FeeRefundDict:New(Id)
   return FeeRefund(Id)
 end
-
 return {FeeRefundDict = FeeRefundDict, FeeRefund = FeeRefund}

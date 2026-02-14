@@ -9,7 +9,6 @@ local FSMState = {
 }
 require("UnLua")
 local WBP_Forging_DialogBatch_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Forging_DialogBatch_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.ControllerFSM = ControllerFSM.New(self, {
@@ -27,7 +26,6 @@ function WBP_Forging_DialogBatch_PC_C:InitContent(Params, PopupData, Owner)
   self.DraftInfo = Params.DraftInfo
   self:InitView()
 end
-
 function WBP_Forging_DialogBatch_PC_C:InitGamepadView()
   local CurrentState = self.ControllerFSM:Current()
   if not CurrentState then
@@ -38,7 +36,6 @@ function WBP_Forging_DialogBatch_PC_C:InitGamepadView()
     self.Item:SetFocus()
   end
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnEnterState_Normal()
   self:HideGamepadShortcut(self.GamepadBackKeyInfo)
   self:HideGamepadShortcut(self.GamepadCheckDetailsKeyInfo)
@@ -55,7 +52,6 @@ function WBP_Forging_DialogBatch_PC_C:OnEnterState_Normal()
   self.Slider:UpdateUIStyleInPlatform(true)
   self:SetGamepadBtnKeyVisibility(true)
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnEnterState_CheckItem()
   self.Slider:UpdateUIStyleInPlatform(false)
   self:HideGamepadShortcut(self.GamepadCheckItemKeyInfo)
@@ -79,11 +75,9 @@ function WBP_Forging_DialogBatch_PC_C:OnEnterState_CheckItem()
   })
   self:SetGamepadBtnKeyVisibility(false)
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnEnterState_ShowTip()
   self:HideAllGamepadShortcut()
 end
-
 function WBP_Forging_DialogBatch_PC_C:InitView()
   self.CurrentCount = 1
   local Content = ForgeUtils:ConstructItemContentFromDraftId(self.ForgeItemContent.Id)
@@ -125,7 +119,6 @@ function WBP_Forging_DialogBatch_PC_C:InitView()
     self.ControllerFSM:Enter(FSMState.Normal)
   end
 end
-
 function WBP_Forging_DialogBatch_PC_C:UpdateMaterials()
   for Index = 1, 4 do
     local Widget = self.Material:GetChildAt(Index - 1)
@@ -170,11 +163,9 @@ function WBP_Forging_DialogBatch_PC_C:UpdateMaterials()
     end
   end
 end
-
 function WBP_Forging_DialogBatch_PC_C:BindOnProduceValueChange(Obj, Callback)
   self.OnProduceValueChangeCallback = {Obj, Callback}
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnProduceValueChange(NewValue)
   self.CurrentCount = NewValue
   self.Text_Num:SetText(tostring(FormatNumber(NewValue, true)))
@@ -186,7 +177,6 @@ function WBP_Forging_DialogBatch_PC_C:OnProduceValueChange(NewValue)
     Callback(Obj, NewValue)
   end
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnMenuOpenChange(IsOpen)
   if IsOpen then
     self.ControllerFSM:Enter(FSMState.ShowTip)
@@ -194,7 +184,6 @@ function WBP_Forging_DialogBatch_PC_C:OnMenuOpenChange(IsOpen)
     self.ControllerFSM:Enter(FSMState.CheckItem)
   end
 end
-
 function WBP_Forging_DialogBatch_PC_C:UpdateNeedCount(NewCount)
   for Index = 1, 4 do
     local Widget = self.Material:GetChildAt(Index - 1)
@@ -205,14 +194,12 @@ function WBP_Forging_DialogBatch_PC_C:UpdateNeedCount(NewCount)
     Widget:SetCount(Widget.Count, Widget.NeedCount)
   end
 end
-
 function WBP_Forging_DialogBatch_PC_C:PackageData()
   DebugPrint("Tianyi@ Produce count is : " .. tostring(self.CurrentCount))
   local Result = {}
   Result.Count = self.CurrentCount
   return Result
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnContentKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -222,7 +209,6 @@ function WBP_Forging_DialogBatch_PC_C:OnContentKeyUp(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Forging_DialogBatch_PC_C:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -246,5 +232,4 @@ function WBP_Forging_DialogBatch_PC_C:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 return WBP_Forging_DialogBatch_PC_C

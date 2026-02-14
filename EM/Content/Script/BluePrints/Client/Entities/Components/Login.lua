@@ -1,6 +1,5 @@
 local TimeUtils = require("Utils.TimeUtils")
 local Component = {}
-
 function Component:OnKickAvatar(ret, info)
   PrintTable(info, 2, "OnKickAvatar" .. tostring(ret))
   info.RetCode = ret
@@ -8,16 +7,13 @@ function Component:OnKickAvatar(ret, info)
     GWorld.NetworkMgr:DisconnectAndShowUI(info)
   end
 end
-
 function Component:DisconnectServer()
   self.logger.info("DisconnectServer")
   self:CallServerMethod("DisconnectServer")
 end
-
 function Component:GetServerTime()
   self:CallServerMethod("QueryServerTime")
 end
-
 function Component:SyncServerTime(TimeOffset, TimeZone, TimeStr)
   DebugPrint("ServerTime", TimeStr)
   self.logger.debug("SyncServerTime", TimeOffset, TimeZone)
@@ -26,5 +22,4 @@ function Component:SyncServerTime(TimeOffset, TimeZone, TimeStr)
   self.logger.debug("Current Time is", TimeUtils.TimeToStr())
   self.logger.debug("Server TimeZone is", TimeZone)
 end
-
 return Component

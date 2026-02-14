@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   rawset(self, "ColorLumps", {
     self.ColorLump_1,
@@ -12,7 +11,6 @@ function M:Construct()
   self.Icon_Dye.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
   EventManager:AddEvent(EventID.OnResourcesChanged, self, self.OnResourcesChanged)
 end
-
 function M:OnResourcesChanged(ResourceId)
   if self.ResourceId == ResourceId then
     local Avatar = GWorld:GetAvatar()
@@ -24,17 +22,14 @@ function M:OnResourcesChanged(ResourceId)
     end
   end
 end
-
 function M:OnMenuOpenChanged(IsOpen)
   if self._OnMenuOpenChanged then
     self._OnMenuOpenChanged(self.Owner, IsOpen, self.Content)
   end
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnResourcesChanged, self)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   Content.Widget = self
@@ -54,9 +49,8 @@ function M:OnListItemObjectSet(Content)
       Widget:SetVisibility(UIConst.VisibilityOp.Hidden)
     end
   end
-  local Data = DataMgr.Swatch[ColorContents[1].ColorId]
-  local ResourceData = Data and DataMgr.Resource[Data.ResourceID]
-  self.ResourceId = Data and Data.ResourceID
+  self.ResourceId = ColorContents[1].ResourceId
+  local ResourceData = DataMgr.Resource[self.ResourceId]
   self.Icon_Dye:Init({
     ParentWidget = self,
     ItemType = CommonConst.ItemType.Resource,
@@ -68,7 +62,7 @@ function M:OnListItemObjectSet(Content)
     OnRemovedFromFocusPath = self.OnResourceRemovedFromFocusPath
   })
   local Avatar = GWorld:GetAvatar()
-  local Resource = Avatar.Resources[Data.ResourceID]
+  local Resource = Avatar.Resources[self.ResourceId]
   if Resource then
     self.Num_Hold:SetText(Resource.Count)
   else
@@ -79,13 +73,11 @@ function M:OnListItemObjectSet(Content)
   end
   self:InitNavigationRules()
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Widget = nil
   end
 end
-
 function M:InitNavigationRules()
   for index, value in ipairs(self.ColorLumps) do
     value:SetNavigationRuleCustom(EUINavigation.Up, self.Content.ColorContents[index].OnNavigateUp)
@@ -100,11 +92,9 @@ function M:InitNavigationRules()
   self.Icon_Dye:SetNavigationRuleCustom(EUINavigation.Up, self.Content.OnResourceNavigateUp)
   self.Icon_Dye:SetNavigationRuleCustom(EUINavigation.Down, self.Content.OnResourceNavigateDown)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:GetDesiredFocusTarget())
 end
-
 function M:GetDesiredFocusTarget()
   if not self.Content or not self.Content.CurrentFocusWidgetIdx then
     return self.ColorLumps[1]
@@ -115,18 +105,15 @@ function M:GetDesiredFocusTarget()
   end
   return self.Icon_Dye
 end
-
 function M:OnResourceAddedToFocusPath()
   self.Content.CurrentFocusWidgetIdx = 0
   if self._OnResourceAddedToFocusPath then
     self._OnResourceAddedToFocusPath(self.Owner, self.Icon_Dye)
   end
 end
-
 function M:OnResourceRemovedFromFocusPath()
   if self._OnResourceRemovedFromFocusPath then
     self._OnResourceRemovedFromFocusPath(self.Owner, self.Icon_Dye)
   end
 end
-
 return M

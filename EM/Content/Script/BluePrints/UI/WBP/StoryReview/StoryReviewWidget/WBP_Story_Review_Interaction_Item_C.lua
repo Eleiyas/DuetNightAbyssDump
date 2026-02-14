@@ -3,7 +3,6 @@ local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   local HighDialogueId = Content.HighDialogueId
   local DialogueContent = TalkUtils:DialogueIdToContent(Content.DialogueId)
@@ -16,5 +15,4 @@ function M:OnListItemObjectSet(Content)
     self.Img_Item_2:SetVisibility(Content.IsSelected and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return M

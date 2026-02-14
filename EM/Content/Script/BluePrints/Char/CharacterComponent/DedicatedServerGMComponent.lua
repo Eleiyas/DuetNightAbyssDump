@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:GMDedicatedServerCommand_Lua(Func, ArgsMessage)
   print(_G.LogTag, "GMDedicatedServerCommand", Func)
   local func = "GM_" .. Func
@@ -10,7 +9,6 @@ function Component:GMDedicatedServerCommand_Lua(Func, ArgsMessage)
     self[func](self, Args)
   end
 end
-
 function Component:GM_DungeonWin(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -18,7 +16,6 @@ function Component:GM_DungeonWin(Args)
   end
   GameMode:TriggerDungeonWin()
 end
-
 function Component:GM_DungeonFailed(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -26,7 +23,6 @@ function Component:GM_DungeonFailed(Args)
   end
   GameMode:TriggerDungeonFailed()
 end
-
 function Component:GM_PlayerWin(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -38,7 +34,6 @@ function Component:GM_PlayerWin(Args)
     self.AvatarEidStr
   }, {Eid})
 end
-
 function Component:GM_PlayerFailed(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -48,7 +43,6 @@ function Component:GM_PlayerFailed(Args)
     self.AvatarEidStr
   })
 end
-
 function Component:GM_TriggerMechanism(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   GameMode:TriggerMechanism(Args[1], Args[3])
@@ -56,7 +50,6 @@ function Component:GM_TriggerMechanism(Args)
   Arr:Add(Args[2])
   GameMode:TriggerMechanismManualItem(Arr, Args[3], 0)
 end
-
 function Component:GM_KickSelf(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -64,7 +57,6 @@ function Component:GM_KickSelf(Args)
   end
   GameMode:KickAllPlayers(Args[1])
 end
-
 function Component:GM_StartVote(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -72,7 +64,6 @@ function Component:GM_StartVote(Args)
   end
   GameMode:TriggerActiveGameModeState(5)
 end
-
 function Component:GM_SpawnPet(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -80,7 +71,6 @@ function Component:GM_SpawnPet(Args)
   end
   GameMode:TriggerSpawnPet()
 end
-
 function Component:GM_PostCustomEvent(Args)
   local EventName = table.unpack(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -90,7 +80,6 @@ function Component:GM_PostCustomEvent(Args)
   DebugPrint("GM PostCustomEvent", EventName)
   GameMode:PostCustomEvent(EventName)
 end
-
 function Component:GM_SwitchSurvivalValueChange()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local GameState = UE4.UGameplayStatics.GetGameState(Player)
@@ -105,26 +94,22 @@ function Component:GM_SwitchSurvivalValueChange()
     GameState:SetSurvivalValue(GameState.SurvivalValue + 100)
   end, true)
 end
-
 function Component:GM_t1(Args)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.VoteValues:Add(1, true)
   GameState.VoteValues:Add(2, false)
   UE.UMapSyncHelper.SyncMap(GameState, "VoteValues")
 end
-
 function Component:GM_t2(Args)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.VoteValues:Add(1, false)
   UE.UMapSyncHelper.SyncMap(GameState, "VoteValues")
 end
-
 function Component:GM_t3(Args)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.VoteValues:Remove(1)
   UE.UMapSyncHelper.SyncMap(GameState, "VoteValues")
 end
-
 function Component:GM_t4(Args)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.VoteValues:Add(1, true)
@@ -134,23 +119,19 @@ function Component:GM_t4(Args)
   GameState.VoteValues:Add(3, true)
   UE.UMapSyncHelper.SyncMap(GameState, "VoteValues")
 end
-
 function Component:GM_t5(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:KickNotEnteredPlayers("VoteStart")
 end
-
 function Component:GM_t6(Args)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState:TestSyncMap()
 end
-
 function Component:GM_t7(Args)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState.VoteValues:Clear()
   UE.UMapSyncHelper.SyncMap(GameState, "VoteValues")
 end
-
 function Component:GM_CMD(Args)
   local ArgStr = ""
   for i = 1, #Args - 1 do
@@ -160,7 +141,6 @@ function Component:GM_CMD(Args)
   print(_G.LogTag, ArgStr)
   GWorld.GameInstance:ExecuteCmd(ArgStr)
 end
-
 function Component:GM_RPC()
   local a = 1
   self:GetMyPawn():AddTimer(1, function()
@@ -168,20 +148,16 @@ function Component:GM_RPC()
     a = a + 1
   end, true)
 end
-
 function Component:GM_TestCrash()
   self:TestCrash()
 end
-
 function Component:GM_TestTrace()
   error("GM_TestTrace")
 end
-
 function Component:GM_BlockEntrance()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:BlockEntrance()
 end
-
 function Component:GM_Stat(Args)
   local ArgStr = ""
   for i = 1, #Args - 1 do
@@ -191,7 +167,6 @@ function Component:GM_Stat(Args)
   print(_G.LogTag, "GM Stat", ArgStr)
   GWorld.GameInstance:ExecuteCmd(ArgStr)
 end
-
 function Component:GM_PrintLevelDebugInfo()
   DebugPrint("================= PrintLevelDebugInfo Server ==================")
   DebugPrint("")
@@ -204,7 +179,6 @@ function Component:GM_PrintLevelDebugInfo()
   DebugPrint("")
   DebugPrint("==============================================================")
 end
-
 function Component:PrintGameStateInfo()
   local GameState = UE.UGameplayStatics.GetGameState(self)
   DebugPrint("DungeonId", GameState.DungeonId)
@@ -236,7 +210,6 @@ function Component:PrintGameStateInfo()
   end
   DebugPrint("PlayerGuideEids", PlayerEidString)
 end
-
 function Component:PrintGameModeInfo()
   local GameMode = UE.UGameplayStatics.GetGameMode(self)
   local MonsterSpawnString = ""
@@ -253,7 +226,6 @@ function Component:PrintGameModeInfo()
   local LevelName = GameMode:GetActorLevelName(Player)
   DebugPrint("Player_LevelName", LevelName)
 end
-
 function Component:GM_RanPlayerEndDungeon(Args)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local Num = Args[1]
@@ -269,7 +241,6 @@ function Component:GM_RanPlayerEndDungeon(Args)
   end
   GameMode:TriggerPlayerWin(AvatarEids, Eids)
 end
-
 function Component:GM_DungeonEventTest(info)
   local oper, str = table.unpack(info)
   DebugPrint("DS DungeonEventTest", oper, str)
@@ -283,18 +254,15 @@ function Component:GM_DungeonEventTest(info)
     return
   end
 end
-
 function Component:GM_ljltest()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self.Player)
   GameMode:OnPlayerSelectWalnutReward()
 end
-
 function Component:GM_SwitchLogDevice()
   local DedicatedServerErrorHandleSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UDedicatedServerErrorHandleSubsystem)
   assert(DedicatedServerErrorHandleSubsystem)
   DedicatedServerErrorHandleSubsystem:TestSwitchLogDevice()
 end
-
 function Component:GM_AddWhiteCategoryLog(Args)
   if not Args or #Args < 1 then
     return
@@ -302,7 +270,6 @@ function Component:GM_AddWhiteCategoryLog(Args)
   local Category = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.AddWhiteCategory(Category)
 end
-
 function Component:GM_RemoveWhiteCategoryLog(Args)
   if not Args or #Args < 1 then
     return
@@ -310,7 +277,6 @@ function Component:GM_RemoveWhiteCategoryLog(Args)
   local Category = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.RemoveWhiteCategory(Category)
 end
-
 function Component:GM_AddBlackCategoryLog(Args)
   if not Args or #Args < 1 then
     return
@@ -318,7 +284,6 @@ function Component:GM_AddBlackCategoryLog(Args)
   local Category = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.AddBlackCategory(Category)
 end
-
 function Component:GM_RemoveBlackCategoryLog(Args)
   if not Args or #Args < 1 then
     return
@@ -326,7 +291,6 @@ function Component:GM_RemoveBlackCategoryLog(Args)
   local Category = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.RemoveBlackCategory(Category)
 end
-
 function Component:GM_AddWhiteLogContent(Args)
   if not Args or #Args < 1 then
     return
@@ -334,7 +298,6 @@ function Component:GM_AddWhiteLogContent(Args)
   local Content = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.AddWhiteLogContent(Content)
 end
-
 function Component:GM_RemoveWhiteLogContent(Args)
   if not Args or #Args < 1 then
     return
@@ -342,7 +305,6 @@ function Component:GM_RemoveWhiteLogContent(Args)
   local Content = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.RemoveWhiteLogContent(Content)
 end
-
 function Component:GM_AddBlackLogContent(Args)
   if not Args or #Args < 1 then
     return
@@ -350,7 +312,6 @@ function Component:GM_AddBlackLogContent(Args)
   local Content = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.AddBlackLogContent(Content)
 end
-
 function Component:GM_RemoveBlackLogContent(Args)
   if not Args or #Args < 1 then
     return
@@ -358,18 +319,31 @@ function Component:GM_RemoveBlackLogContent(Args)
   local Content = Args[1]
   UE.UDedicatedServerOutputDeviceHelper.RemoveBlackLogContent(Content)
 end
-
 function Component:GM_ResetLogFilters()
   UE.UDedicatedServerOutputDeviceHelper.ResetLogFilters()
 end
-
 function Component:GM_SetOpenAllLog(Args)
   local bOpen = Args and #Args >= 1
   UE.UDedicatedServerOutputDeviceHelper.SetOpenAllLog(bOpen)
 end
-
 function Component:GM_NetworkError()
   self:TestNetworkError()
 end
-
+function Component:GM_PrintActorSCLoc(Args)
+  if not Args or #Args < 1 then
+    return
+  end
+  local Eid = Args[1]
+  local GameMode = UE.UGameplayStatics.GetGameMode(self)
+  local Actor = Battle(GameMode):GetEntity(Eid)
+  if not Actor then
+    return
+  end
+  local ActorName = Actor:GetName()
+  GameMode:AddTimer(0.1, function()
+    local Loc = Actor:K2_GetActorLocation()
+    local Rot = Actor:K2_GetActorRotation()
+    DebugPrint("PrintActorSCLoc Actor Eid:", Eid, "Name:", ActorName, " Loc:", Loc, "Rot:", Rot)
+  end, true)
+end
 return Component

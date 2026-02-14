@@ -4,20 +4,17 @@ local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
 local ControllerFSM = require("Blueprints.UI.ControllerFSM")
 local WBP_Forging_Compendium_Path_C = Class("BluePrints.UI.BP_UIState_C")
 local CompemdiumPathStates = {Normal = 1, FocusRight = 2}
-
 function WBP_Forging_Compendium_Path_C:OnEnterState_Normal()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_Forging_Compendium_Path_C:OnEnterState_FocusRight()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Confirm,
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_Forging_Compendium_Path_C:OnLoaded(DraftId)
   self.Super.OnLoaded(self)
   self.GamepadKeyCofig = {
@@ -56,7 +53,6 @@ function WBP_Forging_Compendium_Path_C:OnLoaded(DraftId)
   })
   self:Init(DraftId)
 end
-
 function WBP_Forging_Compendium_Path_C:UpdateGamepadBottomKeyInfo(KeyInfoTypeList)
   if not UIUtils.IsGamepadInput() then
     return
@@ -67,7 +63,6 @@ function WBP_Forging_Compendium_Path_C:UpdateGamepadBottomKeyInfo(KeyInfoTypeLis
   end
   self.Key_Tips:UpdateKeyInfo(KeyInfo)
 end
-
 function WBP_Forging_Compendium_Path_C:Init(DraftId)
   self.ControllerFSM:Enter(CompemdiumPathStates.Normal)
   self.PathTree:SetCompendiumMode(true)
@@ -89,15 +84,12 @@ function WBP_Forging_Compendium_Path_C:Init(DraftId)
   })
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Forging_Compendium_Path_C:OnFocusToDetailsView()
   self.ControllerFSM:Enter(CompemdiumPathStates.FocusRight)
 end
-
 function WBP_Forging_Compendium_Path_C:RefocusToPathView()
   self.ControllerFSM:Enter(CompemdiumPathStates.Normal)
 end
-
 function WBP_Forging_Compendium_Path_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -114,18 +106,15 @@ function WBP_Forging_Compendium_Path_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.Unhandled()
   end
 end
-
 function WBP_Forging_Compendium_Path_C:Handle_KeyDownOnGamePad(InKeyName)
   local CurrentState = self.ControllerFSM:Current()
   local IsEventHandled = false
   return IsEventHandled
 end
-
 function WBP_Forging_Compendium_Path_C:HandleCloseDraftPathView()
   self.PathTree.HasPreInit = false
   self:Close()
 end
-
 function WBP_Forging_Compendium_Path_C:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if UIUtils.IsGamepadInput() then
     self.ControllerFSM:Enter(CompemdiumPathStates.Normal)
@@ -134,5 +123,4 @@ function WBP_Forging_Compendium_Path_C:RefreshOpInfoByInputDevice(CurInputType, 
     self.Key_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Forging_Compendium_Path_C

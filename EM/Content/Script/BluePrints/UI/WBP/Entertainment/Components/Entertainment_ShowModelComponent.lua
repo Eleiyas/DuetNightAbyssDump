@@ -2,12 +2,10 @@ local FEntertainmentUtils = require("BluePrints.UI.WBP.Entertainment.Entertainme
 local EEntertainmentState = FEntertainmentUtils.EEntertainmentState
 local EntertainmentModel = require("BluePrints.UI.WBP.Entertainment.EntertainmentModel")
 local Component = Class()
-
 function Component:OnInitialize()
   self.CharacterStaticCreatorId = 777
   self.CharacterStaticCreator = nil
 end
-
 function Component:OnConstruct()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   assert(GameState)
@@ -15,7 +13,6 @@ function Component:OnConstruct()
   self.WaitProcess = EntertainmentModel:TryGetWaitQueue()
   self.BlackScreenList = {}
 end
-
 function Component:OnDestruct()
   local BlackScreenList = self.BlackScreenList
   self.BlackScreenList = nil
@@ -27,7 +24,6 @@ function Component:OnDestruct()
     UIManager:HideCommonBlackScreen(BlackScreen)
   end
 end
-
 function Component:ActiveStaticCreator(StaticCreator)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if IsValid(GameMode) == false then
@@ -37,7 +33,6 @@ function Component:ActiveStaticCreator(StaticCreator)
   StaticIds:Add(StaticCreator.StaticCreatorId)
   GameMode:TriggerActiveStaticCreator(StaticIds)
 end
-
 function Component:DactiveStaticCreator(StaticCreator)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if IsValid(GameMode) == false then
@@ -47,11 +42,9 @@ function Component:DactiveStaticCreator(StaticCreator)
   StaticIds:Add(StaticCreator.StaticCreatorId)
   GameMode:TriggerInactiveStaticCreator(StaticIds)
 end
-
 function Component:LoadNpcAsync(NpcId, Callback)
   self.WaitProcess:AddProcess(function(OnFinished)
     self:SetInteractionEnabled(false)
-    
     local function OnFinal(Character)
       self:SetInteractionEnabled(true)
       if IsValid(self) then
@@ -59,15 +52,14 @@ function Component:LoadNpcAsync(NpcId, Callback)
       end
       OnFinished()
     end
-    
     local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
     if not GameState then
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\142\183\229\143\150 NPC \229\164\177\232\180\165\239\188\140game state \228\184\186\231\169\186\227\128\130")
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Invite, "GameState无效", "获取 NPC 失败，game state 为空。")
       OnFinal(nil)
       return
     end
     if not GameState.GetNpcInfoAsync then
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", string.format("\232\142\183\229\143\150 NPC \229\164\177\232\180\165\239\188\140game state\239\188\154%s\230\156\170\229\174\158\231\142\176 GetNpcInfoAsync \230\150\185\230\179\149\227\128\130", GameState:GetClass().Name))
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Invite, "未找到GetNpcInfoAsync方法", string.format("获取 NPC 失败，game state：%s未实现 GetNpcInfoAsync 方法。", GameState:GetClass().Name))
       OnFinal(nil)
       return
     end
@@ -83,7 +75,6 @@ function Component:LoadNpcAsync(NpcId, Callback)
   end)
   self.WaitProcess:ApplyTask()
 end
-
 function Component:DestoryNpc(NpcId, Callback)
   self.WaitProcess:AddProcess(function(OnFinished)
     self:DactiveStaticCreator(self.CharacterStaticCreator)
@@ -94,7 +85,6 @@ function Component:DestoryNpc(NpcId, Callback)
   end)
   self.WaitProcess:ApplyTask()
 end
-
 function Component:StartFadeIn(FadeInTime, FadeOutTime, Callback)
   local UIManager = UIManager(self)
   if not IsValid(UIManager) then
@@ -124,7 +114,6 @@ function Component:StartFadeIn(FadeInTime, FadeOutTime, Callback)
   self.WaitProcess:ApplyTask()
   return Key
 end
-
 function Component:WaitTime(Duration, Callback)
   self.WaitProcess:AddProcess(function(OnFinished)
     self:AddTimer(Duration + 0.001, function()
@@ -136,7 +125,6 @@ function Component:WaitTime(Duration, Callback)
   end)
   self.WaitProcess:ApplyTask()
 end
-
 function Component:StartFadeOut(Key, Callback)
   local UIManager = UIManager(self)
   if not IsValid(UIManager) then
@@ -157,7 +145,6 @@ function Component:StartFadeOut(Key, Callback)
   end)
   self.WaitProcess:ApplyTask()
 end
-
 function Component:EnterInvitation(CharacterId, TopicLevel, bIsReview, CallBack)
   self.WaitProcess:AddProcess(function(OnFinished)
     self:SetInteractionEnabled(false)
@@ -189,7 +176,6 @@ function Component:EnterInvitation(CharacterId, TopicLevel, bIsReview, CallBack)
   end)
   self.WaitProcess:ApplyTask()
 end
-
 function Component:RealEnterInvitation()
   self.WaitProcess:AddProcess(function(OnFinished)
     local SojournsGameInstanceSubsystem = UE4.USojournsGameInstanceSubsystem.GetSubsystem(self)
@@ -201,5 +187,4 @@ function Component:RealEnterInvitation()
   end)
   self.WaitProcess:ApplyTask()
 end
-
 return Component

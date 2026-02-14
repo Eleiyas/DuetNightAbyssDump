@@ -3,23 +3,22 @@ local BP_CaptureInteractiveComponent_C = Class({
   "BluePrints.Item.Chest.BP_ChestInteractiveComponent_C",
   "BluePrints.Common.TimerMgr"
 })
-
+local LuaConst = require("EMLuaConst")
 function BP_CaptureInteractiveComponent_C:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.Capturing = false
   self.InteractStartTimer = 0
   self.Priority = "Battle"
 end
-
 function BP_CaptureInteractiveComponent_C:IsCanInteractive(PlayerActor)
   local Owner = self:GetOwner()
   local CanOpen = Owner:GetCanCapture(PlayerActor.Eid)
-  if self:DistanceCheckComponent(PlayerActor, self.InteractiveDistance, false) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle) and self:CheckPlayerTag(PlayerActor) and CanOpen and not Owner.OpenState then
-    return true
+  if LuaConst.OpenComputeInteractive then
+    return self:GetDistanceCheckResult() and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle) and self:CheckPlayerTag(PlayerActor) and CanOpen and not Owner.OpenState
+  else
+    return self:DistanceCheckComponent(PlayerActor, self.InteractiveDistance, false) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle) and self:CheckPlayerTag(PlayerActor) and CanOpen and not Owner.OpenState
   end
-  return false
 end
-
 function BP_CaptureInteractiveComponent_C:DisplayInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:LoadUINew(UIConst.InteractiveUIName)
@@ -29,7 +28,6 @@ function BP_CaptureInteractiveComponent_C:DisplayInteractiveBtn(PlayerActor)
   InteractiveUI:AddInteractiveItem(self)
   self:SetBtnDisplayed(PlayerActor, true)
 end
-
 function BP_CaptureInteractiveComponent_C:RefreshInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local LoadedUI = UIManager:GetUI(UIConst.InteractiveUIName)
@@ -41,7 +39,6 @@ function BP_CaptureInteractiveComponent_C:RefreshInteractiveBtn(PlayerActor)
   end
   LoadedUI:TryDoCapture(self.InteractiveTime)
 end
-
 function BP_CaptureInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
@@ -55,7 +52,6 @@ function BP_CaptureInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerActor)
     self:EndPressInteractive(PlayerActor, false)
   end
 end
-
 function BP_CaptureInteractiveComponent_C:StartInteractive(PlayerActor)
   self.CanEnd = true
   if self:IsCanInteractive(PlayerActor) and not PlayerActor.WaitCallBack then
@@ -81,7 +77,6 @@ function BP_CaptureInteractiveComponent_C:StartInteractive(PlayerActor)
   end
   self.InteractStartTimer = UE4.UGameplayStatics.GetTimeSeconds(self)
 end
-
 function BP_CaptureInteractiveComponent_C:EndPressInteractive(PlayerActor, IsSuccess, ReasonId)
   self.Capturing = false
   self.Super.EndPressInteractive(self, PlayerActor, IsSuccess, ReasonId)
@@ -104,7 +99,6 @@ function BP_CaptureInteractiveComponent_C:EndPressInteractive(PlayerActor, IsSuc
     LoadedUI:StopCapture()
   end
 end
-
 function BP_CaptureInteractiveComponent_C:GetOwnerCenter(Owner)
   local OwnerLoc = Owner:K2_GetActorLocation()
   if Owner.Box then
@@ -114,5 +108,4 @@ function BP_CaptureInteractiveComponent_C:GetOwnerCenter(Owner)
   end
   return OwnerLoc
 end
-
 return BP_CaptureInteractiveComponent_C

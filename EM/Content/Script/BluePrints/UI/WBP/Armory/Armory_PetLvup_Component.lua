@@ -8,7 +8,6 @@ local PreciousPopupId = 100174
 local NormalPopupId = 100114
 local Component = {}
 Component.LevelUpWidget = "WidgetBlueprint'/Game/UI/WBP/Armory/Widget/Pet/WBP_Armory_PetUpgrade.WBP_Armory_PetUpgrade'"
-
 function Component:InitLevelUpComp(...)
   local User, Target, SubWidget, Params = ...
   self.Target = Target
@@ -17,7 +16,7 @@ function Component:InitLevelUpComp(...)
   self.Tag = Params.Tag
   self.CurrentMode = Params.BehaviourType
   self.FilterTagNames = {
-    "Pet_Rarity_3",
+    "Pet_Rarity_3_Below",
     "Pet_Rarity_4_Below",
     "Pet_Rarity_5_Below"
   }
@@ -55,12 +54,10 @@ function Component:InitLevelUpComp(...)
   self.AutoPressed = false
   self.EnhancePressed = false
 end
-
 function Component:OnExpandListComp(bListExpand, bRefreshList)
   if self.CurrentMode == "LevelUp" then
   end
 end
-
 function Component:OnUpgradeBtnClicked()
   if self.CurrentMode == "LevelUp" then
     if self.IntensifyWidget then
@@ -70,13 +67,11 @@ function Component:OnUpgradeBtnClicked()
     self:TryToLevelUp()
   end
 end
-
 function Component:OnUpgradeBtnForbiddenClicked()
   if self.CurrentMode == "LevelUp" then
     UIManager(self):ShowUITip("CommonToastMain", GText("UI_Armory_SelectedConsumeIsEmpty"), 1.5)
   end
 end
-
 function Component:SwitchAutoBtnState(bClear)
   if self.CurrentMode == "LevelUp" then
     if self.bBtnClear == bClear then
@@ -90,7 +85,6 @@ function Component:SwitchAutoBtnState(bClear)
     end
   end
 end
-
 function Component:OnAutoBtnClicked()
   if self.CurrentMode == "LevelUp" then
     if self.Target:IsFinalMaxLevel() then
@@ -110,10 +104,12 @@ function Component:OnAutoBtnClicked()
         local aIsPet = a.ItemType == "Pet"
         local bIsPet = b.ItemType == "Pet"
         if aIsPet ~= bIsPet then
-          return aIsPet
+          return not aIsPet
         end
         local aRarity = a.Rarity or 0
         local bRarity = b.Rarity or 0
+        aRarity = a.IsResourcePet and DataMgr.PetEntry[a.PetEntry[1]].Rarity or aRarity
+        bRarity = b.IsResourcePet and DataMgr.PetEntry[b.PetEntry[1]].Rarity or bRarity
         if aIsPet and bIsPet then
           if aRarity ~= bRarity then
             return aRarity < bRarity
@@ -128,10 +124,20 @@ function Component:OnAutoBtnClicked()
           if aLevel ~= bLevel then
             return aLevel < bLevel
           end
+          local aEntryID = a.PetEntry and a.PetEntry[1] or 0
+          local bEntryID = b.PetEntry and b.PetEntry[1] or 0
+          if aEntryID ~= bEntryID then
+            return aEntryID < bEntryID
+          end
           local aPriority = a.SortPriority or 0
           local bPriority = b.SortPriority or 0
           if aPriority ~= bPriority then
             return aPriority < bPriority
+          end
+          local aUnitId = a.UnitId or 0
+          local bUnitId = b.UnitId or 0
+          if aUnitId ~= bUnitId then
+            return aUnitId < bUnitId
           end
           return (a.Uuid or 0) < (b.Uuid or 0)
         end
@@ -167,7 +173,6 @@ function Component:OnAutoBtnClicked()
     end
   end
 end
-
 function Component:InitLvUpIntensify(WidgetPath, Params)
   if self.IntensifyWidget then
     return
@@ -175,7 +180,6 @@ function Component:InitLvUpIntensify(WidgetPath, Params)
   self.VB_Node:ClearChildren()
   self:CreateLvUpWidget(WidgetPath, Params)
 end
-
 function Component:CreateLvUpWidget(WidgetPath, Params)
   self.IntensifyWidget = UIManager(self):CreateWidget(WidgetPath, true)
   self.VB_Node:AddChild(self.IntensifyWidget)
@@ -189,7 +193,6 @@ function Component:CreateLvUpWidget(WidgetPath, Params)
     self.CurrentSubUI = self.IntensifyWidget
   end
 end
-
 function Component:InitLvUpPanelInfo()
   self.Panel_Info:SetVisibility(UIConst.VisibilityOp.Visible)
   local TargetData = self.Target.Props
@@ -209,7 +212,6 @@ function Component:InitLvUpPanelInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function Component:RefreshListComp()
   if self.CurrentMode == "LevelUp" then
     local PetContents = {}
@@ -288,7 +290,7 @@ function Component:RefreshListComp()
           end
         end
       else
-        print("Lgc@ Avatar.Resources \228\184\141\229\173\152\229\156\168")
+        print("Lgc@ Avatar.Resources 不存在")
       end
       if self._Avatar.Pets then
         for UniqueId, Pet in pairs(self._Avatar.Pets) do
@@ -308,10 +310,10 @@ function Component:RefreshListComp()
           end
         end
       else
-        print("Lgc@ Avatar.Pets \228\184\141\229\173\152\229\156\168")
+        print("Lgc@ Avatar.Pets 不存在")
       end
     else
-      print("Lgc@ Avatar \228\184\141\229\173\152\229\156\168")
+      print("Lgc@ Avatar 不存在")
     end
     self:SortSelectiveList(PetContents, 1, CommonConst.ASC)
     self.Selective_Listing:Init(self, {
@@ -329,11 +331,9 @@ function Component:RefreshListComp()
     self:SetListEmptyState(0 == #PetContents)
   end
 end
-
 function Component:IsLvupCommonResource(Uuid)
   return type(Uuid) == "number" and Uuid < 0
 end
-
 function Component:FilterLvupTarget(Target)
   if not Target then
     return false
@@ -357,14 +357,12 @@ function Component:FilterLvupTarget(Target)
   end
   return false
 end
-
 function Component:OnFilterTagChanged(Idx)
   if self.FilterTagIdx == Idx then
     return
   end
   self.FilterTagIdx = Idx
 end
-
 function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
   if self.CurrentMode == "LevelUp" then
     self.SortType = SortType
@@ -381,6 +379,25 @@ function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
           if P1.Level ~= P2.Level then
             return self:ComparePetLevel(P1, P2, self.SortType)
           end
+          if P1.IsResourcePet and P2.IsResourcePet then
+            if not (P1.PetEntry and P2.PetEntry and P1.PetEntry[1]) or not P2.PetEntry[1] then
+              return false
+            end
+            local Pet1EntryInfo = DataMgr.PetEntry[P1.PetEntry[1]]
+            local Pet2EntryInfo = DataMgr.PetEntry[P2.PetEntry[1]]
+            if not Pet1EntryInfo or not Pet2EntryInfo then
+              return false
+            end
+            if Pet1EntryInfo.Rarity ~= Pet2EntryInfo.Rarity then
+              return CommonUtils:Compare(Pet1EntryInfo.Rarity, Pet2EntryInfo.Rarity, self.SortType)
+            end
+            if Pet1EntryInfo.PetEntryID ~= Pet2EntryInfo.PetEntryID then
+              return CommonUtils:Compare(Pet1EntryInfo.PetEntryID, Pet2EntryInfo.PetEntryID, self.SortType)
+            end
+          end
+          if P1.SortPriority ~= P2.SortPriority then
+            return CommonUtils:Compare(P1.SortPriority, P2.SortPriority, self.SortType)
+          end
         else
           if P1.Type == CommonConst.DataType.Resource then
             return true
@@ -389,7 +406,10 @@ function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
             return false
           end
         end
-        return CommonUtils:Compare(P1.UnitId, P2.UnitId, self.SortType)
+        if P1.UnitId ~= P2.UnitId then
+          return CommonUtils:Compare(P1.UnitId, P2.UnitId, self.SortType)
+        end
+        return CommonUtils:Compare(P1.Uuid, P2.Uuid, self.SortType)
       end
       self.LvupSortFunc[2] = function(P1, P2)
         if nil == P1 then
@@ -411,6 +431,25 @@ function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
           if P1.BreakNum and P2.BreakNum and P1.BreakNum ~= P2.BreakNum then
             return CommonUtils:Compare(P1.BreakNum, P2.BreakNum, self.SortType)
           end
+          if P1.IsResourcePet and P2.IsResourcePet then
+            if not (P1.PetEntry and P2.PetEntry and P1.PetEntry[1]) or not P2.PetEntry[1] then
+              return false
+            end
+            local Pet1EntryInfo = DataMgr.PetEntry[P1.PetEntry[1]]
+            local Pet2EntryInfo = DataMgr.PetEntry[P2.PetEntry[1]]
+            if not Pet1EntryInfo or not Pet2EntryInfo then
+              return false
+            end
+            if Pet1EntryInfo.PetEntryID ~= Pet2EntryInfo.PetEntryID then
+              return CommonUtils:Compare(Pet1EntryInfo.PetEntryID, Pet2EntryInfo.PetEntryID, self.SortType)
+            end
+            if Pet1EntryInfo.Rarity ~= Pet2EntryInfo.Rarity then
+              return CommonUtils:Compare(Pet1EntryInfo.Rarity, Pet2EntryInfo.Rarity, self.SortType)
+            end
+          end
+          if P1.SortPriority ~= P2.SortPriority then
+            return CommonUtils:Compare(P1.SortPriority, P2.SortPriority, self.SortType)
+          end
         else
           if P1.Type and P1.Type == CommonConst.DataType.Resource then
             return true
@@ -419,14 +458,16 @@ function Component:SortSelectiveList(InOutContentArray, SortBy, SortType)
             return false
           end
         end
-        return CommonUtils:Compare(P1.UnitId, P2.UnitId, self.SortType)
+        if P1.UnitId ~= P2.UnitId then
+          return CommonUtils:Compare(P1.UnitId, P2.UnitId, self.SortType)
+        end
+        return CommonUtils:Compare(P1.Uuid, P2.Uuid, self.SortType)
       end
     end
     table.sort(InOutContentArray, self.LvupSortFunc[SortBy])
     self.SortType = nil
   end
 end
-
 function Component:OnLvupListItemClicked(Content)
   if self.CurrentSelected and self.CurrentSelected ~= Content and IsValid(self.CurrentSelected.SelfWidget) then
     self.CurrentSelected.SelfWidget:SetSelected(false)
@@ -470,7 +511,6 @@ function Component:OnLvupListItemClicked(Content)
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("Max_Level_Achieved"), 1.5)
   end
 end
-
 function Component:OnItemTypeChanged(Type)
   if self.ItemTypeChangeTimer then
     self:RemoveTimer(self.ItemTypeChangeTimer)
@@ -478,7 +518,6 @@ function Component:OnItemTypeChanged(Type)
   self.PendingItemType = Type
   self.ItemTypeChangeTimer = self:AddTimer(0.1, self.OnItemTypeChangedDelayed)
 end
-
 function Component:OnItemTypeChangedDelayed()
   local Type = self.PendingItemType
   if self.CurrentMode == "LevelUp" then
@@ -495,11 +534,9 @@ function Component:OnItemTypeChangedDelayed()
   self.ItemTypeChangeTimer = nil
   self.PendingItemType = nil
 end
-
 function Component:SetListEmptyState(bListEmpty)
   self.bListEmpty = bListEmpty
 end
-
 function Component:SetContentSelected(Content, bSelect)
   if self.CurrentMode == "LevelUp" then
     local MyContent = self.ContentMap[Content.Uuid]
@@ -512,10 +549,8 @@ function Component:SetContentSelected(Content, bSelect)
     end
   end
 end
-
 function Component:OnChosenItemChanged(CardLevelWidgetContents)
 end
-
 function Component:CloseComp()
   if self.CurrentMode == "LevelUp" then
     if not self.bItemDetailsShowed then
@@ -532,7 +567,6 @@ function Component:CloseComp()
     self:RemoveDispatcher(EventID.OnPetLocked)
   end
 end
-
 function Component:RealCloseComp()
   if self.CurrentMode == "LevelUp" then
     self.Btn_Enhance:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -541,7 +575,6 @@ function Component:RealCloseComp()
     self:ShowRefundResource(true)
   end
 end
-
 function Component:OnBackgroundClickedComp()
   if self.CurrentMode == "LevelUp" then
     if self.CurrentSelected and self.CurrentSelected.SelfWidget then
@@ -556,13 +589,11 @@ function Component:OnBackgroundClickedComp()
     end
   end
 end
-
 function Component:OnDetailLockBtnClickComp()
   if self.CurrentMode == "LevelUp" then
     self:LockOrUnlockPet()
   end
 end
-
 function Component:LockOrUnlockPet()
   if self.CurrentMode == "LevelUp" then
     if self.LvupLockTimer then
@@ -575,23 +606,20 @@ function Component:LockOrUnlockPet()
     if self:IsContentLocked(self.ItemDetailsContent) then
       local function CancelFunc()
         self:SetFocus()
-        
         if self.ItemDetailsWidget then
           self.ItemDetailsWidget.Btn_Locked.Switcher_Lock:SetActiveWidgetIndex(0)
         end
       end
-      
       local function ConfirmFunc()
         self:SetFocus()
         local Avatar = GWorld:GetAvatar()
         self:BlockAllUIInput(true)
         Avatar:UnLockPet(self.ItemDetailsContent.UniqueId)
         self.LvupLockTimer = self:AddTimer(5, function()
-          UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "\232\167\163\233\148\129\232\175\183\230\177\130\232\182\133\230\151\182", 1.5)
+          UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "解锁请求超时", 1.5)
           self:BlockAllUIInput(false)
         end)
       end
-      
       UIManager(self):ShowCommonPopupUI(100019, {
         LeftCallbackFunction = CancelFunc,
         RightCallbackFunction = ConfirmFunc,
@@ -599,7 +627,7 @@ function Component:LockOrUnlockPet()
       }, self)
     else
       self.LvupLockTimer = self:AddTimer(5, function()
-        UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "\233\148\129\229\174\154\232\175\183\230\177\130\232\182\133\230\151\182", 1.5)
+        UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "锁定请求超时", 1.5)
         self:BlockAllUIInput(false)
       end)
       self:BlockAllUIInput(true)
@@ -608,7 +636,6 @@ function Component:LockOrUnlockPet()
     end
   end
 end
-
 function Component:OnPetLocked(ErrCode, UniqueId, IsLocked)
   if self.CurrentMode == "LevelUp" then
     local CurrentContent = self.ItemDetailsContent
@@ -637,15 +664,15 @@ function Component:OnPetLocked(ErrCode, UniqueId, IsLocked)
         self.CurrentSubUI:OnItemMinusBtnClick(DelContent)
       end
     end
+    if self.SetTipLockAfterRPCBackFunc then
+      self.SetTipLockAfterRPCBackFunc(IsLocked)
+    end
   end
 end
-
 function Component:DestructComp()
 end
-
 function Component:Construct()
 end
-
 function Component:InitLvUpView()
   self.CurrentSelected = nil
   self.ItemDetailsContent = nil
@@ -663,24 +690,20 @@ function Component:InitLvUpView()
   end
   self:SwitchAutoBtnState()
 end
-
 function Component:TryToLevelUp()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
-    GWorld.logger.error("Armory_PetLvup_Component:TryToLevelUp@Avatar\228\184\141\229\173\152\229\156\168")
+    GWorld.logger.error("Armory_PetLvup_Component:TryToLevelUp@Avatar不存在")
     return
   end
   local PopupId = PreciousPopupId
-  
   local function CancelFunc()
     self:SetFocus()
   end
-  
   local bShowCommonPopupUI = false
   if self.CurrentSubUI:IsPrecious() then
     bShowCommonPopupUI = true
   end
-  
   local function ConfirmFunc()
     local ConsumeIds = self.CurrentSubUI:GetConsumeIds()
     local ConsumeResources = self.CurrentSubUI:GetConsumeResources()
@@ -693,17 +716,15 @@ function Component:TryToLevelUp()
       self:BlockAllUIInput(false)
     end)
     local Avatar = GWorld:GetAvatar()
-    
     local function CallBack(RefundResources)
       Avatar = GWorld:GetAvatar()
       if not Avatar then
-        GWorld.logger.error("Armory_PetLvup_Component:TryToLevelUp@Avatar\228\184\141\229\173\152\229\156\168")
+        GWorld.logger.error("Armory_PetLvup_Component:TryToLevelUp@Avatar不存在")
         return
       end
       self._Avatar = Avatar
       self.RefundResources = RefundResources
     end
-    
     Avatar:PetAddExpMulti(CallBack, self.Target.UniqueId, ConsumeIds, ConsumeResources)
     local ArmoryMain = UIManager(self):GetArmoryUIObj()
     ArmoryMain.ActorController:PetLvUpOrBreakUp()
@@ -711,7 +732,6 @@ function Component:TryToLevelUp()
     self.Btn_Auto:ForbidBtn(true)
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   end
-  
   if bShowCommonPopupUI then
     UIManager():ShowCommonPopupUI(PopupId, {
       LeftCallbackFunction = CancelFunc,
@@ -722,7 +742,6 @@ function Component:TryToLevelUp()
     ConfirmFunc()
   end
 end
-
 function Component:OnPetIntensifyDone(ErrCode, UniqueId, bLevelUp)
   if self.CurrentMode == "LevelUp" then
     DebugPrint("lhr@OnPetIntensifyDone", bLevelUp)
@@ -771,7 +790,6 @@ function Component:OnPetIntensifyDone(ErrCode, UniqueId, bLevelUp)
     })
   end
 end
-
 function Component:OnLevelUpAnimFinishedCallback()
   self:BlockAllUIInput(false)
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
@@ -804,7 +822,6 @@ function Component:OnLevelUpAnimFinishedCallback()
     self.CurrentSubUI:ReInitAfterIntensify()
   end
 end
-
 function Component:ShowRefundResource(bExit)
   local RefundResources = self.RefundResources
   if not RefundResources or next(RefundResources) == nil then
@@ -833,7 +850,6 @@ function Component:ShowRefundResource(bExit)
   end, nil, nil, nil, true)
   self.RefundResources = nil
 end
-
 function Component:UpdateBtnState(bIsMaxLevel)
   if self.CurrentMode == "LevelUp" then
     if bIsMaxLevel then
@@ -851,7 +867,6 @@ function Component:UpdateBtnState(bIsMaxLevel)
     end
   end
 end
-
 function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName)
   if self.CurrentMode == "LevelUp" then
     self.CurInputDeviceType = CurInputDevice
@@ -860,13 +875,11 @@ function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName
     end
   end
 end
-
 function Component:OnFocusReceivedComp(MyGeometry, InFocusEvent)
   if self.CurrentMode == "LevelUp" and self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ReNavigateToListItem()
   end
 end
-
 function Component:ReNavigateToListItem(bToList, bExpandingList)
   if self.CurrentMode == "LevelUp" then
     if not bToList and self.bListExpand then
@@ -883,7 +896,6 @@ function Component:ReNavigateToListItem(bToList, bExpandingList)
     end
   end
 end
-
 function Component:OnKeyDownComp(MyGeometry, InKeyName)
   if self.CurrentMode == "LevelUp" then
     if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
@@ -905,7 +917,6 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
     end
   end
 end
-
 function Component:OnKeyUpComp(MyGeometry, InKeyName)
   if self.CurrentMode == "LevelUp" then
     if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
@@ -926,5 +937,4 @@ function Component:OnKeyUpComp(MyGeometry, InKeyName)
     end
   end
 end
-
 return Component

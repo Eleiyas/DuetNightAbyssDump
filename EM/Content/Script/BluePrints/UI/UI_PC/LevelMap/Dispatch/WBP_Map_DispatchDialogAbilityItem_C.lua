@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   local Icon = LoadObject(Content.Info.Icon)
   self.Icon_Ability.Icon_Ability:SetBrushResourceObject(Icon)
@@ -10,7 +9,6 @@ function M:OnListItemObjectSet(Content)
   self.Text_Name:SetText(GText(Content.Info.Name))
   self.Text_Describe:SetText(GText(Content.Info.Description))
 end
-
 function M:SetColor(Type)
   local Data = DataMgr.CharDispatchTag[Type].IsBuff
   if Data then
@@ -23,5 +21,4 @@ function M:SetColor(Type)
     end
   end
 end
-
 return M

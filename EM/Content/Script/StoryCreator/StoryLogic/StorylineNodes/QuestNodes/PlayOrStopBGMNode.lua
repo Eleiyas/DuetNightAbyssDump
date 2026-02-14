@@ -1,5 +1,4 @@
 local PlayOrStopBGMNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function PlayOrStopBGMNode:Init()
   self.SoundStateType = 0
   self.SoundPriority = 0
@@ -12,7 +11,6 @@ function PlayOrStopBGMNode:Init()
   self.ClientRelatedRegionId = {}
   self.bStoreToServer = true
 end
-
 function PlayOrStopBGMNode:Start(Context)
   DebugPrint("-----------------------------------PlayOrStopBGMNode-----------------------------------")
   DebugPrint(self.SoundStateType, self.SoundPriority, self.SoundType, self.SoundUnitKey, self.SoundPath, self.ParamKey, self.ParamValue, self.RelatedRegionId, self.bStoreToServer)
@@ -74,9 +72,7 @@ function PlayOrStopBGMNode:Start(Context)
   end
   self:FinishAction()
 end
-
 function PlayOrStopBGMNode:FinishAction()
   self:Finish()
 end
-
 return PlayOrStopBGMNode

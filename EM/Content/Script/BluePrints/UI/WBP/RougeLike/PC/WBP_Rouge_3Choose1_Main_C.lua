@@ -1,7 +1,6 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.BtnCD = 0.5
   self.BlessingWidgets = {}
@@ -37,7 +36,6 @@ function M:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.AwardList, self.IsEventAward = ...
@@ -56,8 +54,17 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   elseif UIUtils.UtilsGetCurrentInputType() == ECommonInputType.MouseAndKeyboard then
     self:InitKeyboardView()
   end
+  self:AddTimer(0.05, function()
+    if not self then
+      return
+    end
+    if not self.Auto_In then
+      return
+    end
+    self:StopAllAnimations()
+    self:PlayAnimation(self.Auto_In)
+  end)
 end
-
 function M:InitSuitVariables()
   self.SuitIdToCount = {}
   self.SuitIdToIndex = {}
@@ -86,7 +93,6 @@ function M:InitSuitVariables()
   self.SelectedSuit = MaxSuitId
   self.CurrentListIndex = self.SuitIdToIndex[self.SelectedSuit]
 end
-
 function M:InitRougeBtn()
   if self.Btn_Bag then
     self.Btn_Bag.Text_Btn:SetText(GText("UI_RougeLike_Bag"))
@@ -171,7 +177,6 @@ function M:InitRougeBtn()
     self.UsedSuitDetail = self.Key_Tip
   end
 end
-
 function M:ShowTreasureSuitGamePadKey()
   if self.Key_Tip then
     local BottomKeyInfo = {
@@ -191,7 +196,6 @@ function M:ShowTreasureSuitGamePadKey()
     self.Key_Tip:UpdateKeyInfo(BottomKeyInfo)
   end
 end
-
 function M:HideTreasureSuitGamePadKey()
   if self.Key_Tip then
     local BottomKeyInfo = {
@@ -205,7 +209,6 @@ function M:HideTreasureSuitGamePadKey()
     self.Key_Tip:UpdateKeyInfo(BottomKeyInfo)
   end
 end
-
 function M:InitResourceBar()
   self.Panel_ResourceBar:ClearChildren()
   self.ResourceBarWidget = self:CreateWidgetNew("ResourceBarNode")
@@ -216,7 +219,6 @@ function M:InitResourceBar()
   local ResourceBarIcon = UIUtils.UtilsGetKeyIconPathInGamepad("RS", "Generic")
   self.ResourceBarWidget:SetGamePadKeyImgByPath(ResourceBarIcon)
 end
-
 function M:InitRefreshButton(AwardType)
   if "Treasure" == AwardType then
     self.Btn_Refresh:SetVisibility(ESlateVisibility.Collapsed)
@@ -258,7 +260,6 @@ function M:InitRefreshButton(AwardType)
     }
   })
 end
-
 function M:UpdateSuitInfo(SuitId, Index)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_affix_refresh", nil, nil)
   self:PlayAnimation(self.Switch)
@@ -290,7 +291,6 @@ function M:UpdateSuitInfo(SuitId, Index)
   self:SelectSuitItem(self.CurrentSelectSuitItem)
   self.ScrollBox_Suit:SetScrollOffset(0)
 end
-
 function M:SetSuitImage(SuitId, CurrentCount, PreAddSuit)
   local Icon = LoadObject(self.BlessingGroupData[SuitId].BigIcon)
   self.Image_SuitIcon.Image_SuitIcon:SetBrushFromTexture(Icon)
@@ -313,7 +313,6 @@ function M:SetSuitImage(SuitId, CurrentCount, PreAddSuit)
     end
   end
 end
-
 function M:UpdateAllCompadKeyDefinition()
   self:AddTimer(0.01, function()
     if not self then
@@ -330,7 +329,6 @@ function M:UpdateAllCompadKeyDefinition()
     end
   end)
 end
-
 function M:SetListView()
   self.List_BottomTab:ClearListItems()
   local Index = 0
@@ -353,7 +351,6 @@ function M:SetListView()
     Index = Index + 1
   end
 end
-
 function M:TabToRight()
   if self.AwardType == "Blessing" and self.CurrentListIndex < self.MaxSuitNum - 1 then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
@@ -369,7 +366,6 @@ function M:TabToRight()
     end
   end
 end
-
 function M:TabToLeft()
   if self.AwardType == "Blessing" and self.CurrentListIndex > 0 then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
@@ -385,7 +381,6 @@ function M:TabToLeft()
     end
   end
 end
-
 function M:ShowNextAward()
   self.ItemSelectInfo = self.AwardList[1]
   self.AwardType = self.ItemSelectInfo.Type
@@ -401,7 +396,7 @@ function M:ShowNextAward()
     end
   end
   for i = 1, 3 do
-    assert(self[self.AwardType .. "Widgets"][i], "\230\178\161\230\137\190\229\136\176AwardWidgets")
+    assert(self[self.AwardType .. "Widgets"][i], "没找到AwardWidgets")
     if InfoList[i] then
       self[self.AwardType .. "Widgets"][i]:OnLoaded({
         AwardType = self.AwardType,
@@ -414,12 +409,11 @@ function M:ShowNextAward()
   self:SwitchDesc(self.Btn_SortDesc:GetChecked())
   table.remove(self.AwardList, 1)
 end
-
 function M:ChooseItem(AwardId)
   local Avatar = GWorld:GetAvatar()
-  assert(Avatar, "Avatar\228\184\141\229\173\152\229\156\168")
+  assert(Avatar, "Avatar不存在")
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-  assert(GameMode, "GameMode\228\184\141\229\173\152\229\156\168")
+  assert(GameMode, "GameMode不存在")
   self.AwardId = AwardId
   GWorld.RougeLikeManager.Last3Choose1AwardId = AwardId
   if self.AwardType == "Blessing" then
@@ -442,7 +436,6 @@ function M:ChooseItem(AwardId)
     end)
   end
 end
-
 function M:SelectItem(AwardId, SelectWidget)
   if self.AwardType == "Blessing" then
     local SuitId = DataMgr.RougeLikeBlessing[AwardId].BlessingGroup
@@ -492,11 +485,10 @@ function M:SelectItem(AwardId, SelectWidget)
   self.CurrentSelectItem = SelectWidget
   self:PlayItemsUnSelectAnimations(AwardId)
 end
-
 function M:OnConfirmBtnClicked()
-  DebugPrint("\230\163\128\230\181\139\229\136\176\231\161\174\232\174\164\230\140\137\233\148\174\230\140\137\228\184\139")
+  DebugPrint("检测到确认按键按下")
   if not self.IsInit then
-    DebugPrint("\232\191\152\230\156\170\229\136\157\229\167\139\229\140\150\229\174\140\230\136\144\239\188\140\228\184\141\229\133\129\232\174\184\233\128\137\230\139\169\229\165\150\229\138\177")
+    DebugPrint("还未初始化完成，不允许选择奖励")
     return
   end
   if not self.CurrentSelectId then
@@ -511,7 +503,6 @@ function M:OnConfirmBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_mid_click", nil, nil)
   self:ChooseItem(self.CurrentSelectId)
 end
-
 function M:OnRefreshAward()
   if not self.Btn_Refresh then
     return
@@ -547,7 +538,6 @@ function M:OnRefreshAward()
     end)
   end
 end
-
 function M:FillNewAward()
   if not GWorld.RougeLikeManager then
     return
@@ -574,7 +564,6 @@ function M:FillNewAward()
   }
   table.insert(self.AwardList, 1, Award)
 end
-
 function M:PlayItemsFadeAnimations(AwardId)
   for i = 1, 3 do
     if self[self.AwardType .. "Widgets"][i].AwardId == AwardId then
@@ -584,7 +573,6 @@ function M:PlayItemsFadeAnimations(AwardId)
     end
   end
 end
-
 function M:PlayItemsUnSelectAnimations(AwardId)
   for i = 1, 3 do
     if self[self.AwardType .. "Widgets"][i].AwardId ~= AwardId and self[self.AwardType .. "Widgets"][i].IsSelected then
@@ -596,7 +584,6 @@ function M:PlayItemsUnSelectAnimations(AwardId)
     end
   end
 end
-
 function M:PlayItemsRefreshAnimations()
   for i = 1, 3 do
     self[self.AwardType .. "Widgets"][i]:PlayAnimationForward(self[self.AwardType .. "Widgets"][i].Refresh_Out)
@@ -606,7 +593,6 @@ function M:PlayItemsRefreshAnimations()
   self.Btn_Confirm:PlayAnimation(self.Btn_Confirm.Forbidden)
   self.Btn_Confirm.Btn_Click:SetIsEnabled(false)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
@@ -614,8 +600,12 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   else
     self:InitKeyboardView()
   end
+  for i = 1, 4 do
+    if self["DetailItem_" .. i] and self["DetailItem_" .. i].OnUpdateUIStyleByInputTypeChange then
+      self["DetailItem_" .. i]:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
+    end
+  end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -646,8 +636,9 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
       end
       self:ShowOtherGamepadKey(false)
     else
-      if self.CurrentSelectItem then
+      if self.CurrentSelectItem and self.CurrentSelectItem.Rouge_SuitSign and self.CurrentSelectItem.Rouge_SuitSign.Com_BtnQa and self.CurrentSelectItem.Rouge_SuitSign:IsVisible() then
         self.CurrentSelectItem.Rouge_SuitSign.Com_BtnQa:OnViewInfoClick()
+        self.CurrentDesiredFocusTarget = self.CurrentSelectItem.Button_Select
       end
       self:HideTreasureSuitGamePadKey()
     end
@@ -676,7 +667,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
+function M:BP_GetDesiredFocusTarget()
+  if self.CurrentDesiredFocusTarget and IsValid(self.CurrentDesiredFocusTarget) then
+    return self.CurrentDesiredFocusTarget
+  end
+end
 function M:ShowOtherGamepadKey(bShow)
   local Visibility = bShow and UIConst.VisibilityOp.SelfHitTestInvisible or UIConst.VisibilityOp.Collapsed
   self.Btn_Confirm.Key_GamePad:SetVisibility(Visibility)
@@ -691,7 +686,6 @@ function M:ShowOtherGamepadKey(bShow)
   self.Key_SuitDetail:SetVisibility(Visibility)
   self.ResourceBarWidget.KeyImg_GamePad:SetVisibility(Visibility)
 end
-
 function M:SelectSuitItem(SelectSuitItem)
   if self.Key_Tip and self.bInSuitScroll then
     local BottomKeyInfo
@@ -723,7 +717,6 @@ function M:SelectSuitItem(SelectSuitItem)
     self.Key_Tip:UpdateKeyInfo(BottomKeyInfo)
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -732,7 +725,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -750,7 +742,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:InitGamepadView()
   if self.Key_L then
     self.Key_L:SetActiveWidgetIndex(1)
@@ -778,7 +769,6 @@ function M:InitGamepadView()
     self[self.AwardType .. "Widgets"][1].Button_Select:SetFocus()
   end
 end
-
 function M:InitKeyboardView()
   if self.Key_L then
     self.Key_L:SetActiveWidgetIndex(0)
@@ -803,12 +793,10 @@ function M:InitKeyboardView()
   end
   self:UpdateAllCompadKeyDefinition()
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "Switch3Choose1", {ToEnd = 1})
   self.Super.Close(self)
 end
-
 function M:RealClose()
   self.Super.RealClose(self)
   GWorld.RougeLikeManager:OnChooseAwardFinished()
@@ -822,7 +810,6 @@ function M:RealClose()
   end
   GWorld.RougeLikeManager:ShowNextAward(self.AwardList)
 end
-
 function M:SwitchDesc(IsChecked)
   if self.AwardType == "Blessing" then
     for _, Widget in ipairs(self.BlessingWidgets) do
@@ -835,11 +822,9 @@ function M:SwitchDesc(IsChecked)
   end
   EMCache:Set("RougeSimpleDesc", IsChecked)
 end
-
 function M:CheckIfSupportAward()
   return 1 == GWorld.RougeLikeManager.RoomIndex and 0 == GWorld.RougeLikeManager.PassRooms:Num()
 end
-
 function M:ShowRefundPopupUI()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_small_click", nil, nil)
   local RefundNum
@@ -856,15 +841,12 @@ function M:ShowRefundPopupUI()
   }
   UIManager(self):ShowCommonPopupUI(100143, Params)
 end
-
 function M:OnGiveUpBtnHover()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_hover", nil, nil)
 end
-
 function M:OnRougeBtnHover()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/btn_black_hover", nil, nil)
 end
-
 function M:RefundAward()
   local Avatar = GWorld:GetAvatar()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -874,5 +856,4 @@ function M:RefundAward()
     self:Close()
   end)
 end
-
 return M

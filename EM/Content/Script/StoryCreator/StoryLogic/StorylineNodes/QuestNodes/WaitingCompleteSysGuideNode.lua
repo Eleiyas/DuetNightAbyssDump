@@ -1,11 +1,9 @@
 local WaitingCompleteSysGuideNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function WaitingCompleteSysGuideNode:Init()
   self.SystemGuideId = 0
   self.ListenInterval = 0.5
   self.CallBackFunc = nil
 end
-
 function WaitingCompleteSysGuideNode:Execute(Callback)
   self.NodeKey = "WaitingCompleteSysGuideNode_" .. tostring(self.Key)
   self.ListenHandleName = "ListenSystemGuideComplete_" .. tostring(self.Key)
@@ -15,7 +13,6 @@ function WaitingCompleteSysGuideNode:Execute(Callback)
     self:IsCompeleteSystemGuide()
   end, true)
 end
-
 function WaitingCompleteSysGuideNode:IsCompeleteSystemGuide()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -35,12 +32,10 @@ function WaitingCompleteSysGuideNode:IsCompeleteSystemGuide()
     end
   end
 end
-
 function WaitingCompleteSysGuideNode:Clear()
   if self.ListenTimer then
     GWorld.GameInstance:RemoveTimer(self.ListenTimer)
     self.ListenTimer = nil
   end
 end
-
 return WaitingCompleteSysGuideNode

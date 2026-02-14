@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct(ChildBtn)
   rawset(self, "Btn", ChildBtn)
   rawset(self, "ClickLogics", {})
@@ -25,27 +24,22 @@ function M:Construct(ChildBtn)
   self:BindButtonPerformances()
   self:PlayAnimation(self.Normal)
 end
-
 function M:TryOverrideSoundFunc(NewSoundFunc)
   if NewSoundFunc then
     self.SoundFunc = NewSoundFunc
   end
 end
-
 function M:ResetSoundFunc()
   self.SoundFunc = self.PlayButtonClickSound
 end
-
 function M:TryOverrideLongPressClickFunc(NewLongPressClickFunc)
   if NewLongPressClickFunc then
     self.LongPressClickFunc = NewLongPressClickFunc
   end
 end
-
 function M:ResetLongPressClickFunc()
   self.LongPressClickFunc = nil
 end
-
 function M:Destruct()
   self:UnBindButtonPerformances()
   self.ClickLogics = {}
@@ -54,7 +48,6 @@ function M:Destruct()
   self.ReleaseLogics = {}
   self.IsDestroied = true
 end
-
 function M:BindEventOnClicked(Obj, Event, ...)
   if not Obj or not Event then
     return
@@ -69,7 +62,6 @@ function M:BindEventOnClicked(Obj, Event, ...)
     }
   })
 end
-
 function M:BindSingleEventOnClicked(Obj, Event, ...)
   if not Obj or not Event then
     return
@@ -83,7 +75,6 @@ function M:BindSingleEventOnClicked(Obj, Event, ...)
     }
   }
 end
-
 function M:BindForbidStateExecuteEvent(Obj, Event, ...)
   if not Obj or not Event then
     return
@@ -98,7 +89,6 @@ function M:BindForbidStateExecuteEvent(Obj, Event, ...)
     }
   })
 end
-
 function M:BindEventOnPressed(Obj, Event, ...)
   if not Obj or not Event then
     return
@@ -113,7 +103,6 @@ function M:BindEventOnPressed(Obj, Event, ...)
     }
   })
 end
-
 function M:BindEventOnReleased(Obj, Event, ...)
   if not Obj or not Event then
     return
@@ -128,7 +117,6 @@ function M:BindEventOnReleased(Obj, Event, ...)
     }
   })
 end
-
 function M:UnBindEventOnClicked(Obj, Event)
   if not Obj or not Event then
     return
@@ -152,7 +140,6 @@ function M:UnBindEventOnClicked(Obj, Event)
     self.ForbidLogics[Obj] = temp_table
   end
 end
-
 function M:UnBindEventOnPressed(Obj, Event)
   if not Obj or not Event then
     return
@@ -167,7 +154,6 @@ function M:UnBindEventOnPressed(Obj, Event)
     self.PressLogics[Obj] = temp_table
   end
 end
-
 function M:UnBindEventOnReleased(Obj, Event)
   if not Obj or not Event then
     return
@@ -182,7 +168,6 @@ function M:UnBindEventOnReleased(Obj, Event)
     self.ReleaseLogics[Obj] = temp_table
   end
 end
-
 function M:UnBindEventOnClickedByObj(Obj)
   if not Obj then
     return
@@ -194,7 +179,6 @@ function M:UnBindEventOnClickedByObj(Obj)
     self.ForbidLogics[Obj] = nil
   end
 end
-
 function M:BindButtonPerformances()
   local Btn = self.Btn
   Btn.OnClicked:Add(self, self.OnBtnClicked)
@@ -205,7 +189,6 @@ function M:BindButtonPerformances()
     Btn.OnUnhovered:Add(self, self.OnBtnUnhovered)
   end
 end
-
 function M:UnBindButtonPerformances()
   local Btn = self.Btn
   if not Btn then
@@ -219,15 +202,12 @@ function M:UnBindButtonPerformances()
     Btn.OnUnhovered:Clear()
   end
 end
-
 function M:PlayButtonClickSound()
   UIUtils.PlayCommonBtnSe(self)
 end
-
 function M:PlayButtonClickAnimation()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnBtnClicked()
   local ExecuteLogics
   if self.CurrentClickIsForbid ~= self.IsForbidden then
@@ -251,11 +231,9 @@ function M:OnBtnClicked()
     end
   end
 end
-
 function M:PlayForbiddenButtonPressSound()
   UIUtils.PlayCommonForbiddenBtnSe(self)
 end
-
 function M:PlayButtonPressAnim()
   if self.IsLongPressButton then
     self:PlayLongPressAnimation()
@@ -263,7 +241,6 @@ function M:PlayButtonPressAnim()
     self:PlayAnimation(self.Press)
   end
 end
-
 function M:OnBtnPressed()
   if self.IsForbidden == true then
     self.CurrentClickIsForbid = true
@@ -285,11 +262,9 @@ function M:OnBtnPressed()
     end
   end
 end
-
 function M:PlayButtonHoverAnim()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnHovered()
   if self.IsForbidden == true then
     return
@@ -297,7 +272,6 @@ function M:OnBtnHovered()
   self.IsHovering = true
   self:PlayButtonHoverAnim()
 end
-
 function M:SetBtnHovered(IsHovered)
   if IsHovered then
     self:OnBtnHovered()
@@ -305,21 +279,18 @@ function M:SetBtnHovered(IsHovered)
     self:OnBtnUnhovered()
   end
 end
-
 function M:PlayButtonReleaseButHoverAnim()
   if self.IsLongPressButton then
     self:StopLongPressAnimation()
   end
   self:PlayButtonHoverAnim()
 end
-
 function M:PlayButtonReleaseAndUnHoverAnim()
   if self.IsLongPressButton then
     self:StopLongPressAnimation()
   end
   self:PlayButtonUnHoverAnim()
 end
-
 function M:OnBtnReleased()
   self.IsPressing = false
   if self.IsForbidden ~= true and not self.IsHovering then
@@ -336,7 +307,6 @@ function M:OnBtnReleased()
     end
   end
 end
-
 function M:PlayButtonUnHoverAnim()
   if self.UnHover then
     self:BindToAnimationFinished(self.UnHover, {
@@ -352,20 +322,17 @@ function M:PlayButtonUnHoverAnim()
     self:SwitchNormalAnimation()
   end
 end
-
 function M:OnBtnUnhovered()
   self.IsHovering = false
   if self.IsForbidden ~= true and not self.IsPressing then
     self:PlayButtonUnHoverAnim()
   end
 end
-
 function M:PlayButtonForbidAnim()
   self:StopAllAnimations()
   self:DestroyAllAnmations()
   self:PlayAnimation(self.Forbidden)
 end
-
 function M:PlayButtonUnForbidAnim()
   if self.IsHovering then
     self:PlayButtonHoverAnim()
@@ -373,11 +340,9 @@ function M:PlayButtonUnForbidAnim()
     self:SwitchNormalAnimation()
   end
 end
-
 function M:IsBtnForbidden()
   return self.IsForbidden
 end
-
 function M:ForbidBtn(IsForbid)
   if IsForbid == self.IsForbidden then
     return
@@ -391,23 +356,18 @@ function M:ForbidBtn(IsForbid)
     self:PlayButtonUnForbidAnim()
   end
 end
-
 function M:SetButtonIsLongPress(NewLongPress)
   self.IsLongPressButton = NewLongPress
 end
-
 function M:SetLongPressDuration(NewDuration)
   if NewDuration > 0 then
     self.LongPressDuration = NewDuration
   end
 end
-
 function M:PlayLongPressAnimation()
 end
-
 function M:StopLongPressAnimation()
 end
-
 function M:CouldExecuteClickLogic()
   if self.IsForbidden then
     return true
@@ -427,13 +387,10 @@ function M:CouldExecuteClickLogic()
   end
   return false
 end
-
 function M:GetIsLongPressButton()
   return self.IsLongPressButton
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Btn)
 end
-
 return M

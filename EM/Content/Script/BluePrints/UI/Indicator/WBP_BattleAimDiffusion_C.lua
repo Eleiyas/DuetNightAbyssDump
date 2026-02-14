@@ -2,14 +2,11 @@ require("UnLua")
 local WBP_BattleAimDiffusion_C = Class({
   "BluePrints.UI.Indicator.WBP_BattleAim_C"
 })
-
 function WBP_BattleAimDiffusion_C:Init(Root)
   WBP_BattleAimDiffusion_C.Super.Init(self, Root)
 end
-
 function WBP_BattleAimDiffusion_C:UpdateDiffusionVector(DiffuseDis)
 end
-
 function WBP_BattleAimDiffusion_C:Refresh()
   self.Root.IsDiffuseState = false
   self.Root:RemoveTimer(self.Root.UpdateDiffusionStateTimer)
@@ -19,7 +16,6 @@ function WBP_BattleAimDiffusion_C:Refresh()
   self.AimDiffusionPercent = 0
   self:SetAimDiffusion(0)
 end
-
 function WBP_BattleAimDiffusion_C:SetAimDiffusion(Percent)
   if self.MaxXY then
     for i = 1, #self.Diffusion do
@@ -34,7 +30,6 @@ function WBP_BattleAimDiffusion_C:SetAimDiffusion(Percent)
     self.Root.UpdateDiffusionStateTimer = nil
   end
 end
-
 function WBP_BattleAimDiffusion_C:UpdateFrontSightinfo()
   local BattleWeaponConfigData = DataMgr.BattleWeapon[self.Root.CurrentWeapon.WeaponId]
   if BattleWeaponConfigData.FrontSight then
@@ -50,7 +45,6 @@ function WBP_BattleAimDiffusion_C:UpdateFrontSightinfo()
     end
   end
 end
-
 function WBP_BattleAimDiffusion_C:SetAimDiffusionInTick(DeltaTime)
   if self.DiffusionState == "ToMax" then
     self.DiffusionPassedTime = self.DiffusionPassedTime + DeltaTime * UE4.UGameplayStatics.GetGlobalTimeDilation(self)
@@ -70,7 +64,6 @@ function WBP_BattleAimDiffusion_C:SetAimDiffusionInTick(DeltaTime)
   end
   self:SetAimDiffusion(self.AimDiffusionPercent)
 end
-
 function WBP_BattleAimDiffusion_C:UpdateDiffusionStateInTick(InDeltaTime)
   if (self.DiffusionState == "ToMax" or self.DiffusionState == "StopMax") and self.Root:CheckNotShootHold() then
     self.DiffusionPassedTime = self.AimDiffusionPercent * self.FullDiffusionBackTime
@@ -80,7 +73,6 @@ function WBP_BattleAimDiffusion_C:UpdateDiffusionStateInTick(InDeltaTime)
     self:SetAimDiffusionInTick(InDeltaTime)
   end
 end
-
 function WBP_BattleAimDiffusion_C:TryToPlayAimDiffusionStartAnim()
   if self.DiffusionState ~= "StopMax" then
     if self.DiffusionState ~= "ToMax" then
@@ -93,14 +85,12 @@ function WBP_BattleAimDiffusion_C:TryToPlayAimDiffusionStartAnim()
     end
   end
 end
-
 function WBP_BattleAimDiffusion_C:UpadteDiffusionState(NewDiffusionState)
   if self.DiffusionState ~= NewDiffusionState then
     self.DiffusionState = NewDiffusionState
     self:RefreshHitEffectEnhanceVisibility()
   end
 end
-
 function WBP_BattleAimDiffusion_C:RefreshHitEffectEnhanceVisibility()
   if self.Panel_Aim_Glow then
     if self.CurActorRelation == "Enemy" and (self.DiffusionState == "ToMax" or self.DiffusionState == "StopMax") then
@@ -110,16 +100,13 @@ function WBP_BattleAimDiffusion_C:RefreshHitEffectEnhanceVisibility()
     end
   end
 end
-
 function WBP_BattleAimDiffusion_C:SwitchIn()
   WBP_BattleAimDiffusion_C.Super.SwitchIn(self)
 end
-
 function WBP_BattleAimDiffusion_C:SwitchOut()
   WBP_BattleAimDiffusion_C.Super.SwitchOut(self)
   self.Root.IsDiffuseState = false
   self.Root:RemoveTimer(self.Root.UpdateDiffusionStateTimer)
   self.Root.UpdateDiffusionStateTimer = nil
 end
-
 return WBP_BattleAimDiffusion_C

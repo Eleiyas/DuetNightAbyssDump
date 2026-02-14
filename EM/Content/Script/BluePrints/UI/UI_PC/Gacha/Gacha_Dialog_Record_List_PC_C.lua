@@ -4,7 +4,6 @@ local GachaCommon = require("BluePrints.UI.WBP.Gacha.GachaCommon")
 local G = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function G:OnListItemObjectSet(Content)
   local RecordData = DataMgr[GachaCommon.GachaItemTypeMap[Content.ItemType]][Content.ItemId]
   local NameText = GachaCommon.GachaItemTypeMap[Content.ItemType] .. "Name"
@@ -17,7 +16,7 @@ function G:OnListItemObjectSet(Content)
     RarityText = GachaCommon.ItemRarityName[TargetRarity]
   end
   if Content.Count > 1 then
-    TargetName = GText(TargetName) .. "\195\151" .. Content.Count
+    TargetName = GText(TargetName) .. "×" .. Content.Count
   end
   self.Text_Designation:SetText(GText(TargetName))
   self.Text_Quality:SetText(GText(RarityText))
@@ -27,7 +26,6 @@ function G:OnListItemObjectSet(Content)
   self.Text_Type:SetText(GText(GachaInfo.GachaName))
   self.Text_Time:SetText(TimeUtils.TimeToYMDStr(Content.GachaTime, nil, "/") .. " " .. TimeUtils.TimeToHMSStr(Content.GachaTime, nil, ":"))
 end
-
 function G:SetRarityColor(Rarity)
   if 5 == Rarity then
     self.Text_Designation:SetDefaultColorAndOpacity(UE4.UUIFunctionLibrary.StringToSlateColor("DDB058FF"))
@@ -46,7 +44,6 @@ function G:SetRarityColor(Rarity)
     self.Text_Time:SetDefaultColorAndOpacity(UE4.UUIFunctionLibrary.StringToSlateColor("FFFFFFCC"))
   end
 end
-
 function G:SetBg(Index)
   local num1, num2 = math.modf(Index / 2)
   if 0 == num2 then
@@ -55,5 +52,4 @@ function G:SetBg(Index)
     self.Image_ItemBG:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return G

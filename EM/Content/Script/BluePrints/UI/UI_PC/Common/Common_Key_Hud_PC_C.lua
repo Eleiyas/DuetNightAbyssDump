@@ -1,17 +1,14 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local Common_Key_Hud_PC = Class()
-
 function Common_Key_Hud_PC:Construct()
   self.bBattleShortCutKey = true
 end
-
 function Common_Key_Hud_PC:Destruct()
   if self.bBattleShortCutKey then
     UIManager(self):UnRegisterBattleShortCutHudKey(self)
   end
 end
-
 function Common_Key_Hud_PC:SetTextInfo(Key, KeyText, bBattleShortCutKey)
   bBattleShortCutKey = bBattleShortCutKey or false
   self.bBattleShortCutKey = bBattleShortCutKey
@@ -32,7 +29,6 @@ function Common_Key_Hud_PC:SetTextInfo(Key, KeyText, bBattleShortCutKey)
   self:SetUpVisible(Style)
   self:SetKeyText(KeyText)
 end
-
 function Common_Key_Hud_PC:SetImgInfo(ShortPath, KeyText, bBattleShortCutKey)
   bBattleShortCutKey = bBattleShortCutKey or false
   self.bBattleShortCutKey = bBattleShortCutKey
@@ -50,7 +46,6 @@ function Common_Key_Hud_PC:SetImgInfo(ShortPath, KeyText, bBattleShortCutKey)
   self:SetKeyText(KeyText)
   return true
 end
-
 function Common_Key_Hud_PC:SetImgByFullPath(FullPath, KeyText, bBattleShortCutKey)
   bBattleShortCutKey = bBattleShortCutKey or false
   self.bBattleShortCutKey = bBattleShortCutKey
@@ -65,14 +60,12 @@ function Common_Key_Hud_PC:SetImgByFullPath(FullPath, KeyText, bBattleShortCutKe
   self:SetKeyText(KeyText)
   return true
 end
-
 function Common_Key_Hud_PC:SetBattleShortCutKeyHidden()
   local CurrentHidden = EMCache:Get("BattleShortcutHudKeysHidden", true)
   if CurrentHidden then
     self:SetVisibility(ESlateVisibility.Hidden)
   end
 end
-
 function Common_Key_Hud_PC:SetKeyText(KeyText)
   if KeyText then
     self.Split:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -83,20 +76,17 @@ function Common_Key_Hud_PC:SetKeyText(KeyText)
     self.Key_Text:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Common_Key_Hud_PC:SetUpInfo(Style)
   self.bEnable = true
   self.Style = nil
 end
-
 function Common_Key_Hud_PC:SetUpImage(Path)
   local Img
   Img = LoadObject(Path)
-  assert(Img, "\231\188\186\229\176\145\229\155\190\231\137\135\232\181\132\230\186\144")
+  assert(Img, "缺少图片资源")
   self.Img_Key:SetBrushFromTexture(Img)
   self.Img_Key:SetVisibility(UE4.ESlateVisibility.Visible)
 end
-
 function Common_Key_Hud_PC:SetUpVisible(Style)
   self.Style = Style
   if "Img" == Style then
@@ -113,7 +103,6 @@ function Common_Key_Hud_PC:SetUpVisible(Style)
     self.Panel_Key_Single:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Common_Key_Hud_PC:UseSinglePanel(str)
   if 1 == #str then
     return true
@@ -123,26 +112,21 @@ function Common_Key_Hud_PC:UseSinglePanel(str)
   end
   return false
 end
-
 function Common_Key_Hud_PC:AddExecuteLogic(Object, ObjectFunc)
   self.ExecuteLogicObject = Object
   self.ExecuteLogicObjectFunc = ObjectFunc
 end
-
 function Common_Key_Hud_PC:RemoveExecuteLogic()
   self.ExecuteLogicObject = nil
   self.ExecuteLogicObjectFunc = nil
 end
-
 function Common_Key_Hud_PC:ExecuteLogic()
   if self.ExecuteLogicObject and self.ExecuteLogicObjectFunc then
     self.ExecuteLogicObjectFunc(self.ExecuteLogicObject)
   end
 end
-
 function Common_Key_Hud_PC:OnMouseButtonDown(MyGeometry, InKeyEvent)
   self:ExecuteLogic()
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return Common_Key_Hud_PC

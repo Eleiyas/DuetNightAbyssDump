@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   self.PanelHeight = 340
   self.ListView_Value:SetScrollBarVisibility(ESlateVisibility.Hidden)
@@ -35,7 +34,6 @@ function M:Construct()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -43,17 +41,14 @@ function M:Destruct()
     GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Owner = Owner
   self.Parent = Params.Parent
   self:Init()
 end
-
 function M:Init()
   self:InitList()
 end
-
 function M:InitList()
   self.ListView_Value:ClearListItems()
   local PlayerExpSource = {}
@@ -71,11 +66,30 @@ function M:InitList()
     return a.Sequence > b.Sequence
   end)
   local CollectRewardExpRecord = self:CollectRewardExp()
-  for Index, SourceInfo in pairs(PlayerExpSource) do
+  self.AllContentInfo = {}
+  local SumCollectRewardExp_ExcpetQuestFake = 0
+  for Index, SourceInfo in ipairs(PlayerExpSource) do
+    self:SetContentInfo(SourceInfo, CollectRewardExpRecord)
+    if 5 ~= SourceInfo.ID then
+      SumCollectRewardExp_ExcpetQuestFake = SumCollectRewardExp_ExcpetQuestFake + (self.AllContentInfo[SourceInfo.ID].SumCollectRewardExp or 0)
+    end
+  end
+  for Index, SourceInfo in ipairs(PlayerExpSource) do
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
-    Content.ID = SourceInfo.ID
-    Content.SourceName = SourceInfo.SourceName
-    Content.CollectRewardExpRecord = CollectRewardExpRecord
+    local TargetContentInfo = self.AllContentInfo[SourceInfo.ID]
+    Content.ID = TargetContentInfo.ID
+    Content.SourceName = TargetContentInfo.SourceName
+    Content.AllSubContentInfo = TargetContentInfo.AllSubContentInfo
+    Content.SumCanGetRewardExp = TargetContentInfo.SumCanGetRewardExp
+    Content.SumCollectRewardExp = TargetContentInfo.SumCollectRewardExp
+    if 5 == SourceInfo.ID then
+      Content.SumCollectRewardExp = Content.SumCollectRewardExp - SumCollectRewardExp_ExcpetQuestFake
+      for _, SubContentInfo in pairs(Content.AllSubContentInfo) do
+        if SubContentInfo.Key == "Quest" then
+          SubContentInfo.CollectRewardExp = SubContentInfo.CollectRewardExp - SumCollectRewardExp_ExcpetQuestFake
+        end
+      end
+    end
     self.ListView_Value:AddItem(Content)
   end
   self:AddTimer(0.1, function()
@@ -95,7 +109,6 @@ function M:InitList()
     self:ShowGamepadScrollBtn(self.NeedShowTip)
   end)
 end
-
 function M:CollectRewardExp()
   local result = {}
   local record = self.Avatar.CollectRewardExpRecord
@@ -150,7 +163,6 @@ function M:CollectRewardExp()
   end
   return result
 end
-
 function M:ShowGamepadScrollBtn(bShow)
   if bShow then
     if self.GamepadScrollBtnIndex then
@@ -167,7 +179,6 @@ function M:ShowGamepadScrollBtn(bShow)
     self.GamepadScrollBtnIndex = nil
   end
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -180,7 +191,6 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -189,13 +199,167 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:InitGamepadView()
   end
 end
-
 function M:InitGamepadView()
   self:SetFocus()
 end
-
 function M:InitKeyBoardView()
   self:SetFocus()
 end
-
+function M:SetContentInfo(SourceInfo, CollectRewardExpRecord)
+  if self.AllContentInfo and self.AllContentInfo[SourceInfo.Id] then
+    return
+  end
+  local CurrentVersion = DataMgr.GlobalConstant.CurrentVersion.ConstantValue
+  local Id = SourceInfo.ID
+  self.AllContentInfo[SourceInfo.ID] = {
+    ID = SourceInfo.ID,
+    SourceName = SourceInfo.SourceName,
+    AllSubContentInfo = {}
+  }
+  self.MainPlayerChar = 0
+  local IdTable = {}
+  if 1 == Id then
+    for _, CharInfo in pairs(DataMgr.Char) do
+      if not CharInfo.IsNotOpen and CharInfo.CollectRewardExp and (not CharInfo.ReleaseVersion or CurrentVersion >= CharInfo.ReleaseVersion) then
+        if CharInfo.GenderTag then
+          if CharInfo.GenderTag == self.Avatar.Sex then
+            table.insert(IdTable, CharInfo.CharId)
+            self.MainPlayerChar = self.MainPlayerChar + 1
+          end
+        else
+          table.insert(IdTable, CharInfo.CharId)
+        end
+      end
+    end
+  elseif 2 == Id then
+    for _, WeaponInfo in pairs(DataMgr.Weapon) do
+      if not WeaponInfo.IsNotOpen and WeaponInfo.CollectRewardExp and (not WeaponInfo.ReleaseVersion or CurrentVersion >= WeaponInfo.ReleaseVersion) then
+        table.insert(IdTable, WeaponInfo.WeaponId)
+      end
+    end
+  elseif 3 == Id then
+    local GUIDTable = {}
+    for _, PetInfo in pairs(DataMgr.Pet) do
+      if PetInfo.GUID and PetInfo.CollectRewardExp then
+        GUIDTable[PetInfo.GUID] = 1
+      end
+    end
+    for GUID, _ in pairs(GUIDTable) do
+      table.insert(IdTable, GUID)
+    end
+  elseif 4 == Id then
+    for _, ModInfo in pairs(DataMgr.Mod) do
+      if not ModInfo.IsNotOpen and ModInfo.CollectRewardExp and (not ModInfo.ReleaseVersion or CurrentVersion >= ModInfo.ReleaseVersion) then
+        table.insert(IdTable, ModInfo.Id)
+      end
+    end
+  elseif 5 == Id then
+  end
+  local PlayerExpSubSource = {}
+  for _, SubSourceInfo in pairs(DataMgr.PlayerExpSubSource) do
+    if SubSourceInfo.Source == Id then
+      table.insert(PlayerExpSubSource, SubSourceInfo)
+    end
+  end
+  table.sort(PlayerExpSubSource, function(a, b)
+    return a.Sequence > b.Sequence
+  end)
+  local SumCollectRewardExp = 0
+  local SumCanGetRewardExp = 0
+  for Index, SubSourceInfo in pairs(PlayerExpSubSource) do
+    local SubContent = {}
+    if 5 ~= SubSourceInfo.Source then
+      local CanGetRewardExp = 0
+      if SubSourceInfo.Key ~= "ModGuideBookTask" then
+        local Data = DataMgr[SubSourceInfo.Key]
+        for _, Id in pairs(IdTable) do
+          local Info = Data[Id]
+          if Info then
+            CanGetRewardExp = CanGetRewardExp + self:GetCanGetRewardExp(Info, SubSourceInfo.Key)
+          end
+        end
+      else
+        local Data = DataMgr[SubSourceInfo.Key]
+        for _, Info in pairs(Data) do
+          CanGetRewardExp = CanGetRewardExp + self:GetRewardExp_ModGuideBookTask(Info)
+        end
+      end
+      SumCanGetRewardExp = SumCanGetRewardExp + CanGetRewardExp
+      SubContent.CanGetRewardExp = CanGetRewardExp
+    else
+      SubContent.CanGetRewardExp = nil
+      SumCanGetRewardExp = nil
+    end
+    local CollectRewardExp = 0
+    if SubSourceInfo.Key ~= "ModGuideBookTask" then
+      if CollectRewardExpRecord[SubSourceInfo.Key] then
+        CollectRewardExp = CollectRewardExpRecord[SubSourceInfo.Key].Exp
+      end
+    else
+      local Data = DataMgr[SubSourceInfo.Key]
+      for TaskId, ModBookQuestInfo in pairs(self.Avatar.ModBookQuests) do
+        if ModBookQuestInfo.RewardsGot then
+          local ModGuideBookTaskInfo = Data[TaskId]
+          CollectRewardExp = CollectRewardExp + self:GetRewardExp_ModGuideBookTask(ModGuideBookTaskInfo)
+        end
+      end
+    end
+    SumCollectRewardExp = SumCollectRewardExp + CollectRewardExp
+    SubContent.CollectRewardExp = CollectRewardExp
+    SubContent.ID = SubSourceInfo.ID
+    SubContent.Key = SubSourceInfo.Key
+    SubContent.SubSourceName = SubSourceInfo.SubSourceName
+    if "Char" == SubSourceInfo.Key or "Weapon" == SubSourceInfo.Key or "Pet" == SubSourceInfo.Key or "Mod" == SubSourceInfo.Key then
+      SubContent.TotalNum = #IdTable
+      SubContent.CurNum = 0
+      if CollectRewardExpRecord[SubSourceInfo.Key] then
+        SubContent.CurNum = CollectRewardExpRecord[SubSourceInfo.Key].Count
+      end
+      if "Char" == SubSourceInfo.Key then
+        SubContent.TotalNum = SubContent.TotalNum - (self.MainPlayerChar or 0)
+      end
+    else
+      SubContent.TotalNum = nil
+      SubContent.CurNum = nil
+    end
+    self.AllContentInfo[Id].AllSubContentInfo[SubContent.ID] = SubContent
+  end
+  self.AllContentInfo[Id].SumCanGetRewardExp = SumCanGetRewardExp
+  self.AllContentInfo[Id].SumCollectRewardExp = SumCollectRewardExp
+end
+function M:GetCanGetRewardExp(Info, Key)
+  local CollectRewardExp = 0
+  if type(Info) == "table" then
+    if Info.CollectRewardExp then
+      if "WeaponCardLevel" == Key then
+        if Info.CardLevelMax then
+          return Info.CollectRewardExp * Info.CardLevelMax
+        else
+          return Info.CollectRewardExp
+        end
+      else
+        return Info.CollectRewardExp
+      end
+    else
+      for _, SubInfo in pairs(Info) do
+        CollectRewardExp = CollectRewardExp + self:GetCanGetRewardExp(SubInfo, Key)
+      end
+    end
+  end
+  return CollectRewardExp
+end
+function M:GetRewardExp_ModGuideBookTask(ModGuideBookTaskInfo)
+  local RewardExp = 0
+  if ModGuideBookTaskInfo.TaskReward then
+    for i = 1, #ModGuideBookTaskInfo.TaskReward do
+      local Reward = DataMgr.Reward[ModGuideBookTaskInfo.TaskReward[i]]
+      for j, ResourceId in ipairs(Reward.Id) do
+        if 2001 == ResourceId then
+          RewardExp = RewardExp + Reward.Count[j][1]
+        end
+      end
+    end
+  end
+  return RewardExp
+end
 return M

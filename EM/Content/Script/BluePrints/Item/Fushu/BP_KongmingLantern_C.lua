@@ -2,7 +2,6 @@ require("UnLua")
 local BP_KongmingLantern_C = Class({
   "BluePrints.Item.Fushu.BP_FushuItemBase_C"
 })
-
 function BP_KongmingLantern_C:CommonInitInfo(Info)
   BP_KongmingLantern_C.Super.CommonInitInfo(self, Info)
   self.RestoreCD = self.UnitParams.RestoreCD
@@ -29,18 +28,15 @@ function BP_KongmingLantern_C:CommonInitInfo(Info)
   self.CurTimes = self.MaxTimes
   self.CanRestorePlayer = true
 end
-
 function BP_KongmingLantern_C:ReceiveBeginPlay()
   BP_KongmingLantern_C.Super.ReceiveBeginPlay(self)
   self.InitScale = self.Platform:K2_GetComponentScale()
   self.Platform:SetVisibility(false, false)
   self.Platform:SetCollisionEnabled(0)
 end
-
 function BP_KongmingLantern_C:OnActorReady(Info)
   BP_KongmingLantern_C.Super.OnActorReady(self, Info)
 end
-
 function BP_KongmingLantern_C:OnPlayerIn()
   self:OnPlayerEnterCheckBuff(self.OverlappingPlayer)
   if self.IsActive and self.CanRestorePlayer then
@@ -53,17 +49,14 @@ function BP_KongmingLantern_C:OnPlayerIn()
     end
   end
 end
-
 function BP_KongmingLantern_C:OnPlayerOut()
   self:OnPlayerLeaveCheckBuff(self.OverlappingPlayer)
 end
-
 function BP_KongmingLantern_C:OnWindBellActive()
   self.Lantern:SetVisibility(true, false)
   self.Lantern:SetCollisionEnabled(3)
   self.HitedCollision:SetCollisionEnabled(1)
 end
-
 function BP_KongmingLantern_C:OnBreakCountDown(SourceEid)
   if not self.IsActive then
     self:ChangeState("Hit", SourceEid)
@@ -72,7 +65,6 @@ function BP_KongmingLantern_C:OnBreakCountDown(SourceEid)
     EventManager:FireEvent(EventID.OnKongmingLanternBreak, self.CreatorId)
   end
 end
-
 function BP_KongmingLantern_C:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   if NowStateId == self.NormalStateId then
@@ -83,7 +75,6 @@ function BP_KongmingLantern_C:OnEnterState(NowStateId)
     self:OnLanternActive()
   end
 end
-
 function BP_KongmingLantern_C:OnGeneratePlatform()
   self.Platform:SetVisibility(true, false)
   self.Platform:SetCollisionEnabled(1)
@@ -105,10 +96,8 @@ function BP_KongmingLantern_C:OnGeneratePlatform()
     self:AddTimer(self.RestoreSpCD, self.RestorePlayer, true, -self.RestoreSpCD, "RestorePlayer")
   end
 end
-
 function BP_KongmingLantern_C:OnGenerateLantern()
 end
-
 function BP_KongmingLantern_C:OnLanternActive()
   self.HitedCollision:SetCollisionEnabled(0)
   self.Lantern:SetVisibility(false, false)
@@ -122,7 +111,6 @@ function BP_KongmingLantern_C:OnLanternActive()
   self:OnPlayerEnterCheckBuff(self.OverlappingPlayer)
   self.CanRestorePlayer = true
 end
-
 function BP_KongmingLantern_C:OnLanternDeActive()
   self.Platform:SetWorldScale3D(FVector(self.InitScale.X, self.InitScale.Y, self.InitScale.Z))
   self.Sphere:SetWorldScale3D(FVector(1, 1, 1))
@@ -138,15 +126,12 @@ function BP_KongmingLantern_C:OnLanternDeActive()
   end
   self:OnPlayerLeaveCheckBuff(self.OverlappingPlayer)
 end
-
 function BP_KongmingLantern_C:OnFlowerLanternIn(Lantern)
   Lantern:OnFlowerLanternActive(self.IsRedLight)
 end
-
 function BP_KongmingLantern_C:OnFlowerLanternOut(Lantern)
   Lantern:OnFlowerLanternDeActive()
 end
-
 function BP_KongmingLantern_C:ChangeScale()
   self.CurTimes = self.CurTimes - 1
   if self.CurTimes <= 0 then
@@ -160,7 +145,6 @@ function BP_KongmingLantern_C:ChangeScale()
   self.Platform:SetWorldScale3D(FVector(self.InitScale.X * NewScale, self.InitScale.Y * NewScale, self.InitScale.Z))
   self.Sphere:SetWorldScale3D(FVector(NewScale, NewScale, NewScale))
 end
-
 function BP_KongmingLantern_C:RestorePlayer()
   if not self.IsActive or self.RestoreRemain <= 0 then
     self:RemoveTimer("RestorePlayer")
@@ -173,7 +157,6 @@ function BP_KongmingLantern_C:RestorePlayer()
   self:UseEffect()
   self.CanRestorePlayer = false
 end
-
 function BP_KongmingLantern_C:UseEffect()
   if self.SkillEffectHp and self.SkillEffectHp > 0 and self.IsRedLight then
     local PreRestore = self.OverlappingPlayer:GetAttr("Hp")
@@ -187,5 +170,4 @@ function BP_KongmingLantern_C:UseEffect()
     self.RestoreRemain = self.RestoreRemain - (EndRestore - PreRestore)
   end
 end
-
 return BP_KongmingLantern_C

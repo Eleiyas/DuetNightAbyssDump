@@ -3,7 +3,6 @@ local WBP_CoDefencePoint_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_CoDefencePoint_C:Construct()
   self.State = {
     {
@@ -32,7 +31,6 @@ function WBP_CoDefencePoint_C:Construct()
     }
   }
 end
-
 function WBP_CoDefencePoint_C:InitWidget(Owner, PointIdnex)
   self.Owner = Owner
   self.CurState = ""
@@ -41,7 +39,6 @@ function WBP_CoDefencePoint_C:InitWidget(Owner, PointIdnex)
   self.MyCountDown = 60
   self.IsDestroy = false
 end
-
 function WBP_CoDefencePoint_C:StateIndex2StateStr(StateIndex)
   for key, value in pairs(self.State) do
     if key == StateIndex then
@@ -49,10 +46,9 @@ function WBP_CoDefencePoint_C:StateIndex2StateStr(StateIndex)
     end
   end
 end
-
 function WBP_CoDefencePoint_C:SetPointState(StateStr, TimerHandleName, CountDownTextmap)
   if not StateStr then
-    DebugPrint("thy    StateStr \230\152\175 nil\239\188\140\230\163\128\230\159\165\232\147\157\229\155\190\228\188\160\229\133\165\231\154\132\231\138\182\230\128\129\231\180\162\229\188\149")
+    DebugPrint("thy    StateStr 是 nil，检查蓝图传入的状态索引")
     return
   end
   if self.CurState == StateStr then
@@ -80,7 +76,6 @@ function WBP_CoDefencePoint_C:SetPointState(StateStr, TimerHandleName, CountDown
   end
   self.CurState = StateStr
 end
-
 function WBP_CoDefencePoint_C:UpdateCountDownUI(CountDownTextmap)
   local DisplayRemainTime = CommonUtils.GetClientTimerStructRemainTime(self.CurTimerHandle)
   if DisplayRemainTime < 0 then
@@ -89,7 +84,6 @@ function WBP_CoDefencePoint_C:UpdateCountDownUI(CountDownTextmap)
   self:UpdateColoBarProgress(DisplayRemainTime)
   self.Text_CountDown:SetText(string.format(GText(CountDownTextmap), self.Owner:GetTimeStr_Cpp(DisplayRemainTime)))
 end
-
 function WBP_CoDefencePoint_C:UpdateColoBarProgress(DisplayRemainTime)
   if not self.ColorBarProgress then
     self.ColorBarProgress = self.BG_Bar_Color:GetDynamicMaterial()
@@ -97,7 +91,6 @@ function WBP_CoDefencePoint_C:UpdateColoBarProgress(DisplayRemainTime)
   local Percent = DisplayRemainTime / self.MyCountDown
   self.ColorBarProgress:SetScalarParameterValue("Percent", 1 - Percent)
 end
-
 function WBP_CoDefencePoint_C:SetCountDownImagePercet(Percent)
   if self.CurPointState ~= "CountDown" then
     return
@@ -107,5 +100,4 @@ function WBP_CoDefencePoint_C:SetCountDownImagePercet(Percent)
   end
   self.CountDownDynamicMaterial:SetScalarParameterValue("Percent", Percent)
 end
-
 return WBP_CoDefencePoint_C

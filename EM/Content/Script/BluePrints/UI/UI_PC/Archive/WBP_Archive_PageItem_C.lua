@@ -6,7 +6,7 @@ local WBP_Archive_PageItem_C = Class({
 WBP_Archive_PageItem_C._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
+local ActorController = require("BluePrints.UI.WBP.Armory.ActorController.Armory_ActorController")
 function WBP_Archive_PageItem_C:Construct()
   self.Super.Construct(self)
   self.CurTabId = 1
@@ -36,17 +36,18 @@ function WBP_Archive_PageItem_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Archive_PageItem_C:Destruct()
-  self.Super.Destruct(self)
+  if self.ActorController then
+    self.ActorController:OnDestruct()
+  end
   self.List_Item.BP_OnEntryInitialized:Remove(self, self.OnObjectSetFinished)
   self:HorizontalListViewResize_TearDown()
   self:ClearListenEvent()
   if self.NodeName then
     ReddotManager.RemoveListener(self.NodeName, self)
   end
+  self.Super.Destruct(self)
 end
-
 function WBP_Archive_PageItem_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Name, self.Type = ...
@@ -75,8 +76,15 @@ function WBP_Archive_PageItem_C:OnLoaded(...)
     end
     ReddotManager.AddListener(self.NodeName, self, self.RefreshReddot)
   end
+  self.ActorController = ActorController:New({
+    ViewUI = self,
+    IsPreviewMode = true,
+    IsCharacterTrialMode = false,
+    EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewArmory,
+    bNeedEndCamera = false
+  })
+  self.ActorController:OnOpened()
 end
-
 function WBP_Archive_PageItem_C:InitBtn()
   if self.Name == "Read" then
     self.Button_Read:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -84,7 +92,6 @@ function WBP_Archive_PageItem_C:InitBtn()
     self.Button_Read:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Archive_PageItem_C:InitCommonTab()
   self.AllTabInfo = {}
   for _, Data in pairs(DataMgr.ArchiveTab) do
@@ -157,7 +164,6 @@ function WBP_Archive_PageItem_C:InitCommonTab()
     self.Com_Tab:SelectTabById(self.CurTabId)
   end
 end
-
 function WBP_Archive_PageItem_C:TabItemClick(TabWidget)
   self.CurSelectContent = nil
   if not self.SortFunction or self.SortFunction ~= self.DefaultSortFunction then
@@ -178,7 +184,6 @@ function WBP_Archive_PageItem_C:TabItemClick(TabWidget)
     self.Collect:Init(self.Name, self.Type, nil, nil, self.Num_Now, self.Num_Total, self)
   end
 end
-
 function WBP_Archive_PageItem_C:RefreshList(bAnimation)
   self.Panel_ItemInfo:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if nil == bAnimation then
@@ -194,16 +199,15 @@ function WBP_Archive_PageItem_C:RefreshList(bAnimation)
   self:OnListFillWith()
   self:AddTimer(0.01, function()
     self.List_Item:RequestFillEmptyContent()
+    self.List_Item:RequestPlayEntriesAnim()
   end, false, 0, nil, true)
 end
-
 function WBP_Archive_PageItem_C:MarkDirty()
   local Contents = self.List_Item:GetListItems() or {}
   for _, Content in pairs(Contents) do
     Content.IsDirty = true
   end
 end
-
 function WBP_Archive_PageItem_C:GetListData()
   local TabType
   if self.CurTabId then
@@ -218,7 +222,6 @@ function WBP_Archive_PageItem_C:GetListData()
   end
   self:FillReddotInfo()
 end
-
 function WBP_Archive_PageItem_C:FillReddotInfo()
   if self.NodeName then
     if not ReddotManager.GetTreeNode(self.NodeName) then
@@ -245,7 +248,6 @@ function WBP_Archive_PageItem_C:FillReddotInfo()
     end
   end
 end
-
 function WBP_Archive_PageItem_C:GetAllResourceData()
   self.Num_Now = 0
   self.Num_Total = 0
@@ -266,7 +268,6 @@ function WBP_Archive_PageItem_C:GetAllResourceData()
   end
   self.SortFunction(self)
 end
-
 function WBP_Archive_PageItem_C:GetNormalResourceData()
   self.Num_Now = 0
   self.Num_Total = 0
@@ -287,7 +288,6 @@ function WBP_Archive_PageItem_C:GetNormalResourceData()
   end
   self.SortFunction(self)
 end
-
 function WBP_Archive_PageItem_C:GetTaskResourceData()
   self.Num_Now = 0
   self.Num_Total = 0
@@ -308,7 +308,6 @@ function WBP_Archive_PageItem_C:GetTaskResourceData()
   end
   self.SortFunction(self)
 end
-
 function WBP_Archive_PageItem_C:GetReadData()
   self.Num_Now = nil
   self.Num_Total = nil
@@ -331,7 +330,6 @@ function WBP_Archive_PageItem_C:GetReadData()
   end
   self:SortListDatasByBookSeriesId()
 end
-
 function WBP_Archive_PageItem_C:GetMonsterData(TabType)
   self.Num_Now = 0
   self.Num_Total = 0
@@ -362,7 +360,6 @@ function WBP_Archive_PageItem_C:GetMonsterData(TabType)
   end
   self:SortListDatasByGalleryRuleId()
 end
-
 function WBP_Archive_PageItem_C:CheckMonsterInCamp(MonsterId, CampOption)
   local MonsterData = DataMgr.Monster[MonsterId]
   if not MonsterData then
@@ -389,7 +386,6 @@ function WBP_Archive_PageItem_C:CheckMonsterInCamp(MonsterId, CampOption)
     return false
   end
 end
-
 function WBP_Archive_PageItem_C:GetMonsterCamp(MonsterId)
   local MonsterData = DataMgr.Monster[MonsterId]
   if not MonsterData then
@@ -403,7 +399,6 @@ function WBP_Archive_PageItem_C:GetMonsterCamp(MonsterId)
   end
   return "OtherMonster"
 end
-
 function WBP_Archive_PageItem_C:FillListDatasWithResourceInfo(Data)
   table.insert(self.ListDatas, {
     Type = "Resource",
@@ -417,7 +412,6 @@ function WBP_Archive_PageItem_C:FillListDatasWithResourceInfo(Data)
     SoundItemType = "Resource"
   })
 end
-
 function WBP_Archive_PageItem_C:FillListDatasWithBookSeriesInfo(Data)
   local ResourceInfo = self:FindResourceInfoByBookSeriesId(Data.BookSeriesId)
   if not ResourceInfo then
@@ -446,26 +440,23 @@ function WBP_Archive_PageItem_C:FillListDatasWithBookSeriesInfo(Data)
     SoundItemType = "Resource"
   })
 end
-
 function WBP_Archive_PageItem_C:FindResourceInfoByBookSeriesId(BookSeriesId)
   if self.BookSeriesId2ResourceIdTable[BookSeriesId] then
     return DataMgr.Resource[self.BookSeriesId2ResourceIdTable[BookSeriesId][1]]
   end
 end
-
 function WBP_Archive_PageItem_C:FillListDatasWithMonsterInfo(GalleryData, MonsterData, FunctionDes)
   table.insert(self.ListDatas, {
     Type = "Monster",
     Id = MonsterData.UnitId,
     Name = MonsterData.UnitName,
-    Icon = MonsterData.Icon,
+    Icon = GalleryData.MonsterIcon,
     IpDes = GalleryData.DescriptionDetail,
     GalleryRuleId = GalleryData.GalleryRuleId,
     FunctionDes = FunctionDes,
     SoundItemType = "Monster"
   })
 end
-
 function WBP_Archive_PageItem_C:SortListDatasByRarityUp()
   table.sort(self.ListDatas, function(A, B)
     if A.Rarity == B.Rarity then
@@ -474,7 +465,6 @@ function WBP_Archive_PageItem_C:SortListDatasByRarityUp()
     return A.Rarity > B.Rarity
   end)
 end
-
 function WBP_Archive_PageItem_C:SortListDatasByRarityDown()
   table.sort(self.ListDatas, function(A, B)
     if A.Rarity == B.Rarity then
@@ -483,25 +473,21 @@ function WBP_Archive_PageItem_C:SortListDatasByRarityDown()
     return A.Rarity < B.Rarity
   end)
 end
-
 function WBP_Archive_PageItem_C:SortListDatasById()
   table.sort(self.ListDatas, function(A, B)
     return A.Id < B.Id
   end)
 end
-
 function WBP_Archive_PageItem_C:SortListDatasByBookSeriesId()
   table.sort(self.ListDatas, function(A, B)
     return A.BookSeriesId < B.BookSeriesId
   end)
 end
-
 function WBP_Archive_PageItem_C:SortListDatasByGalleryRuleId()
   table.sort(self.ListDatas, function(A, B)
     return A.GalleryRuleId < B.GalleryRuleId
   end)
 end
-
 function WBP_Archive_PageItem_C:SetupListContent(ItemIndex, ItemInfo, Content, Type)
   Content.Id = ItemInfo.Id
   Content.Rarity = ItemInfo.Rarity
@@ -530,7 +516,6 @@ function WBP_Archive_PageItem_C:SetupListContent(ItemIndex, ItemInfo, Content, T
   }
   Content.Parent = self
 end
-
 function WBP_Archive_PageItem_C:OnListFillWith()
   if next(self.ListDatas) == nil then
     self.WS_Empty:SetActiveWidgetIndex(1)
@@ -556,7 +541,6 @@ function WBP_Archive_PageItem_C:OnListFillWith()
     end
   end
 end
-
 function WBP_Archive_PageItem_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -593,7 +577,6 @@ function WBP_Archive_PageItem_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Archive_PageItem_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -605,32 +588,27 @@ function WBP_Archive_PageItem_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEv
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Archive_PageItem_C:TryOpenCollect()
   if 1 == self.WS_Empty:GetActiveWidgetIndex() then
     return
   end
   self.Collect:OnCellClicked()
 end
-
 function WBP_Archive_PageItem_C:OnReturnKeyDown()
   UIUtils.PlayCommonBtnSe(self)
   self:OnClickBack()
 end
-
 function WBP_Archive_PageItem_C:OnClickBack()
   if self:CheckIsCanCloseSelf() then
     self:PlayOutAnim()
   end
 end
-
 function WBP_Archive_PageItem_C:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
   return true
 end
-
 function WBP_Archive_PageItem_C:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -638,24 +616,25 @@ function WBP_Archive_PageItem_C:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "ArchivePageItemOpenSound", nil)
   self:PlayAnimationForward(self.In)
 end
-
 function WBP_Archive_PageItem_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   AudioManager(self):SetEventSoundParam(self, "ArchivePageItemOpenSound", {ToEnd = 1})
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:BindToAnimationFinished(self.Out, {
     self,
     self.Close
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_Archive_PageItem_C:Close()
+  self.List_Item:ClearListItems()
+  if self.ActorController then
+    self.ActorController:OnClosed()
+  end
   self.Super.Close(self)
 end
-
 function WBP_Archive_PageItem_C:OnSelectItemChanged(SelectItem)
   if not SelectItem then
     return
@@ -667,7 +646,6 @@ function WBP_Archive_PageItem_C:OnSelectItemChanged(SelectItem)
     self:ClickListItemWhenSelectItemChanged(SelectItem)
   end
 end
-
 function WBP_Archive_PageItem_C:ClickListItem(Content)
   if Content and not Content.IsEmpty then
     self.Panel_ItemInfo:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -696,23 +674,20 @@ function WBP_Archive_PageItem_C:ClickListItem(Content)
     self:SetArchiveReddotRead(Content)
   end
 end
-
 function WBP_Archive_PageItem_C:ClickListItemWhenSelectItemChanged(Content)
   if Content and Content.Entry and (not self.CurSelectContent or self.CurSelectContent.ItemIndex ~= Content.ItemIndex) then
     Content.Entry:OnMouseButtonDown()
     Content.Entry:OnMouseButtonUp()
   end
 end
-
 function WBP_Archive_PageItem_C:RefreshDetail()
   local Icon = LoadObject(self.CurSelectContent.IconPath)
   self.Icon_Item:SetBrushFromTexture(Icon)
-  if self.CurSelectContent.Rarity and self["Img_Quality_" .. self.CurSelectContent.Rarity] then
-    self.Quality_Item:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    self.Quality_Item:SetBrushFromTexture(self["Img_Quality_" .. self.CurSelectContent.Rarity])
+  local FontMaterial = self.Text_Name:GetDynamicFontMaterial()
+  if self.CurSelectContent.Rarity and self["Quality_" .. self.CurSelectContent.Rarity] then
+    FontMaterial:SetTextureParameterValue("IconTex", self["Quality_" .. self.CurSelectContent.Rarity])
   else
-    self.Quality_Item:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    self.Quality_Item:SetBrushFromTexture(self.Img_Quality_1)
+    FontMaterial:SetTextureParameterValue("IconTex", self.Quality_0)
   end
   self.Text_Type:SetText(GText(self.CurSelectContent.FunctionDes))
   self.Text_Name:SetText(GText(self.CurSelectContent.Name))
@@ -736,6 +711,7 @@ function WBP_Archive_PageItem_C:RefreshDetail()
     end
   else
     self.Switch_Type:SetActiveWidgetIndex(0)
+    self.Text_Describe01:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
   self:AddDelayFrameFunc(function()
     if UIUtils.CheckScrollBoxCanScroll(self.EMScrollBox_359) then
@@ -785,9 +761,8 @@ function WBP_Archive_PageItem_C:RefreshDetail()
       self:UpdatePageTab(BottomKeyInfo)
     end
     self.EMScrollBox_359:SetScrollOffset(0)
-  end, 2)
+  end, 3)
 end
-
 function WBP_Archive_PageItem_C:RefreshBtn()
   if self.Name == "Read" then
     if self.CurSelectContent.IsBookSeriesUnlock then
@@ -802,7 +777,6 @@ function WBP_Archive_PageItem_C:RefreshBtn()
     end
   end
 end
-
 function WBP_Archive_PageItem_C:IsBookSeriesUnlock(BookSeriesId)
   local ArchiveList = {}
   local Avatar = GWorld:GetAvatar()
@@ -816,7 +790,6 @@ function WBP_Archive_PageItem_C:IsBookSeriesUnlock(BookSeriesId)
   end
   return false
 end
-
 function WBP_Archive_PageItem_C:GetBookSeriesCurNumAndSumNum(BookSeriesId)
   local CurNum = 0
   local SumNum = 0
@@ -833,11 +806,9 @@ function WBP_Archive_PageItem_C:GetBookSeriesCurNumAndSumNum(BookSeriesId)
   end
   return CurNum, SumNum
 end
-
 function WBP_Archive_PageItem_C:InitSortFunction()
   self.SortFunction = self.DefaultSortFunction
 end
-
 function WBP_Archive_PageItem_C:OnSortTypeChanged()
   if self.SortFunction == self.SortListDatasByRarityUp then
     self.SortFunction = self.SortListDatasByRarityDown
@@ -847,14 +818,11 @@ function WBP_Archive_PageItem_C:OnSortTypeChanged()
   self:RefreshList(true)
   self:HorizontalListViewResize_SetUp(self.Panel_ItemList, self.List_Item, 0)
 end
-
 function WBP_Archive_PageItem_C:OpenBookDetail()
   UIManager(self):LoadUINew("ArchiveBookDetail", self.Type, self.CurSelectContent.Id, self.BookSeriesId2ResourceIdTable[self.CurSelectContent.BookSeriesId])
 end
-
 function WBP_Archive_PageItem_C:ShowBookLockedTip()
 end
-
 function WBP_Archive_PageItem_C:OnObjectSetFinished(Content, Widget)
   if 1 == Content.ItemIndex and not self.CurSelectContent and Content.Entry then
     Content.Entry:SetDoNotPlaySound(true)
@@ -863,23 +831,19 @@ function WBP_Archive_PageItem_C:OnObjectSetFinished(Content, Widget)
     Content.Entry:SetDoNotPlaySound(false)
   end
 end
-
 function WBP_Archive_PageItem_C:SetFocus_Lua()
   self.List_Item:SetFocus()
 end
-
 function WBP_Archive_PageItem_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_PageItem_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_PageItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -887,7 +851,6 @@ function WBP_Archive_PageItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Archive_PageItem_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -895,16 +858,13 @@ function WBP_Archive_PageItem_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Archive_PageItem_C:InitGamepadView()
   if UIUtils.HasAnyFocus(self) then
     self.List_Item:SetFocus()
   end
 end
-
 function WBP_Archive_PageItem_C:InitKeyboardView()
 end
-
 function WBP_Archive_PageItem_C:InitWidgetInfoInGamePad()
   self.Collect:CreateCommonKey({
     KeyInfoList = {
@@ -912,7 +872,6 @@ function WBP_Archive_PageItem_C:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function WBP_Archive_PageItem_C:ReadByGamepadKey()
   local CurInputDevice = self.GameInputModeSubsystem:GetCurrentInputType()
   local IsGamepad = CurInputDevice == ECommonInputType.Gamepad
@@ -924,7 +883,6 @@ function WBP_Archive_PageItem_C:ReadByGamepadKey()
     end
   end
 end
-
 function WBP_Archive_PageItem_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.NodeName)
   self.Index2ReddotNum = {}
@@ -994,7 +952,6 @@ function WBP_Archive_PageItem_C:RefreshReddot()
     end
   end
 end
-
 function WBP_Archive_PageItem_C:SetArchiveReddotRead(Content)
   if self.NodeName and not Content.BookSeriesId then
     if not ReddotManager.GetTreeNode(self.NodeName) then
@@ -1007,13 +964,11 @@ function WBP_Archive_PageItem_C:SetArchiveReddotRead(Content)
     end
   end
 end
-
 function WBP_Archive_PageItem_C:UpdatePageTab(BottomKeyInfo)
   if CommonUtils.GetDeviceTypeByPlatformName() ~= "Mobile" then
     self.Com_Tab:UpdateBottomKeyInfo(BottomKeyInfo)
   end
 end
-
 function WBP_Archive_PageItem_C:CheckResourceIsBelong(ResourceId, TabId)
   local TabType = self.TabId2TabType[TabId]
   if TabType and self["CheckResourceIsBelong" .. TabType] then
@@ -1021,11 +976,9 @@ function WBP_Archive_PageItem_C:CheckResourceIsBelong(ResourceId, TabId)
   end
   return false
 end
-
 function WBP_Archive_PageItem_C:CheckResourceIsBelongAllResource(ResourceId)
   return true
 end
-
 function WBP_Archive_PageItem_C:CheckResourceIsBelongNormalResource(ResourceId)
   local ResourceData = DataMgr.Resource[ResourceId]
   if ResourceData and 1 == ResourceData.ItemArchiveType then
@@ -1034,7 +987,6 @@ function WBP_Archive_PageItem_C:CheckResourceIsBelongNormalResource(ResourceId)
     return false
   end
 end
-
 function WBP_Archive_PageItem_C:CheckResourceIsBelongTaskResource(ResourceId)
   local ResourceData = DataMgr.Resource[ResourceId]
   if ResourceData and 2 == ResourceData.ItemArchiveType then
@@ -1043,7 +995,6 @@ function WBP_Archive_PageItem_C:CheckResourceIsBelongTaskResource(ResourceId)
     return false
   end
 end
-
 function WBP_Archive_PageItem_C:RefreshTabReddot()
   if self.AllTabInfo then
     for Index, _ in pairs(self.AllTabInfo) do
@@ -1055,7 +1006,6 @@ function WBP_Archive_PageItem_C:RefreshTabReddot()
     end
   end
 end
-
 function WBP_Archive_PageItem_C:BP_GetDesiredFocusTarget()
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     if self.CurSelectContent then
@@ -1066,6 +1016,5 @@ function WBP_Archive_PageItem_C:BP_GetDesiredFocusTarget()
   end
   return nil
 end
-
 AssembleComponents(WBP_Archive_PageItem_C)
 return WBP_Archive_PageItem_C

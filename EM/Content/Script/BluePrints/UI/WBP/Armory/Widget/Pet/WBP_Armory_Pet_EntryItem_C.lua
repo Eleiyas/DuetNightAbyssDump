@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
@@ -28,7 +27,6 @@ function M:Construct()
     self.OnInFinished
   })
 end
-
 function M:SetForbidden(bDisable)
   self.Button_Area.OnClicked:Clear()
   self.Button_Area.OnHovered:Clear()
@@ -37,7 +35,6 @@ function M:SetForbidden(bDisable)
   self.Button_Area.OnReleased:Clear()
   self.Button_Area:SetForbidden(bDisable)
 end
-
 function M:Init(Content, bNot)
   self.Content = Content
   Content.Widget = self
@@ -46,6 +43,7 @@ function M:Init(Content, bNot)
   self._OnRemovedFromFocusPath = Content.OnRemovedFromFocusPath
   self._OnClicked = Content.OnClicked
   self.IsLocked = Content.IsLocked
+  self.bPendingUnLock = Content.bPendingUnLock
   if Content.IsLocked then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(2)
   elseif Content.IsEmpty then
@@ -65,15 +63,25 @@ function M:Init(Content, bNot)
   end
   self:SetIsSelected(Content.IsSelected)
   self:SetRarity(Content.Rarity)
+  if self.bPendingUnLock then
+    self:PlayAnimation(self.UnLock_Loop, 0, 0)
+    if self.VX_GlowBG_Loop then
+      self.VX_GlowBG_Loop:SetVisibility(UIConst.VisibilityOp.Visible)
+    end
+  else
+    self:StopAnimation(self.UnLock_Loop)
+    self:PlayAnimation(self.Normal)
+    if self.VX_GlowBG_Loop then
+      self.VX_GlowBG_Loop:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+  end
   self:PlayInAnim()
 end
-
 function M:SetIcon(IconPath)
   if IconPath then
     self.Icon_Entry:SetBrushResourceObject(LoadObject(IconPath))
   end
 end
-
 function M:SetRarity(Rarity)
   Rarity = Rarity or 0
   self.VX_GlowBG:SetColorAndOpacity(self.BGRarityColor[Rarity])
@@ -81,25 +89,21 @@ function M:SetRarity(Rarity)
   self.VX_Glow01:SetColorAndOpacity(self.BGRarityColor[Rarity])
   self.VX_GlowSelect:SetColorAndOpacity(self.SelectRarityColor[Rarity])
 end
-
 function M:PlayInAnim()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function M:OnInFinished()
   if self.IsSelected then
     return
   end
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 function M:OnBtnClicked()
   if self._OnClicked then
     self._OnClicked(self.Owner, self.Content, self)
@@ -108,7 +112,6 @@ function M:OnBtnClicked()
     self:OnBtnHovered()
   end
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -122,15 +125,12 @@ function M:SetIsSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:SetSelected()
 end
-
 function M:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -142,7 +142,6 @@ function M:OnBtnReleased()
     self:SetIsSelected(self.IsSelected)
   end
 end
-
 function M:OnBtnHovered()
   if self.IsSelected or self:IsAnimationPlaying(self.In) then
     return
@@ -150,7 +149,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsSelected or self:IsAnimationPlaying(self.In) then
     return
@@ -158,21 +156,17 @@ function M:OnBtnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Button_Area)
 end
-
 return M

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1735123688244393",
       type = "StoryNode",
-      name = "\229\184\174\229\138\169\233\146\147\233\177\188\228\186\186",
+      name = "帮助钓鱼人",
       pos = {x = 1208.2932692307693, y = 297.09134615384613},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -218,6 +220,18 @@ return {
             startPort = "Out",
             endQuest = "17351258170722791895",
             endPort = "In"
+          },
+          {
+            startQuest = "1735124035970697658",
+            startPort = "Out",
+            endQuest = "176189378237721101472",
+            endPort = "In"
+          },
+          {
+            startQuest = "17368351534122385",
+            startPort = "Out",
+            endQuest = "176189386472221102086",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -245,7 +259,7 @@ return {
           ["1735124024436697447"] = {
             key = "1735124024436697447",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144npc",
+            name = "生成npc",
             pos = {x = 1254.8000000000002, y = 298.40000000000003},
             propsData = {
               ActiveEnable = true,
@@ -259,7 +273,7 @@ return {
           ["1735124035970697658"] = {
             key = "1735124035970697658",
             type = "TalkNode",
-            name = "\233\146\147\233\177\188\228\186\186\228\186\164\228\186\146\229\175\185\232\175\157",
+            name = "钓鱼人交互对话",
             pos = {x = 1697.001534526854, y = 282.94117647058823},
             propsData = {
               IsNpcNode = true,
@@ -284,6 +298,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -291,13 +306,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -312,7 +327,7 @@ return {
           ["17351241012741393921"] = {
             key = "17351241012741393921",
             type = "TalkNode",
-            name = "\233\146\147\233\177\188\228\186\186\229\188\128\232\189\166\229\175\185\232\175\157",
+            name = "钓鱼人开车对话",
             pos = {x = 1504.4, y = 34.399999999999956},
             propsData = {
               IsNpcNode = false,
@@ -329,7 +344,7 @@ return {
           ["17351244506101395576"] = {
             key = "17351244506101395576",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 2232.744444444444, y = 435.87777777777774},
             propsData = {
               bActiveEnable = true,
@@ -350,14 +365,14 @@ return {
           ["17351244724171396069"] = {
             key = "17351244724171396069",
             type = "DynamicQuestFailNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "动态任务主动失败",
             pos = {x = 2055.6235294117646, y = 612.6588235294116},
             propsData = {UseTalkFadeOut = false, TalkFadeOutTime = 0}
           },
           ["17351245747371396790"] = {
             key = "17351245747371396790",
             type = "TalkNode",
-            name = "\231\187\147\230\157\159\229\175\185\232\175\157",
+            name = "结束对话",
             pos = {x = 3060.7999999999997, y = 223.9999999999998},
             propsData = {
               IsNpcNode = true,
@@ -383,6 +398,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -390,13 +406,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -409,7 +425,7 @@ return {
           ["17351246102031397243"] = {
             key = "17351246102031397243",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3337.9999999999995, y = 222.79999999999995},
             propsData = {
               DialogueId = 0,
@@ -420,7 +436,7 @@ return {
           ["17351258170722791895"] = {
             key = "17351258170722791895",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\231\167\189\229\133\189",
+            name = "生成秽兽",
             pos = {x = 2227.7368421052624, y = -64.3315789473686},
             propsData = {
               ActiveEnable = true,
@@ -439,7 +455,7 @@ return {
           ["17351258353172792285"] = {
             key = "17351258353172792285",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 2801.4868421052624, y = -235.5815789473686},
             propsData = {
               KillMonsterType = "Id",
@@ -459,7 +475,7 @@ return {
           ["17351258594422792735"] = {
             key = "17351258594422792735",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 3107.8757309941507, y = -660.5815789473686},
             propsData = {
               bActiveEnable = false,
@@ -480,7 +496,7 @@ return {
           ["17351274028034886722"] = {
             key = "17351274028034886722",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = 2511.4868421052624, y = -258.0815789473686},
             propsData = {
               GuideUIEnable = true,
@@ -492,7 +508,7 @@ return {
           ["17351274086864886883"] = {
             key = "17351274086864886883",
             type = "TalkNode",
-            name = "\233\129\135\232\167\129\231\167\189\229\133\189\229\188\128\232\189\166",
+            name = "遇见秽兽开车",
             pos = {x = 2786.4868421052624, y = -416.83157894736866},
             propsData = {
               IsNpcNode = false,
@@ -509,7 +525,7 @@ return {
           ["17351964542182805135"] = {
             key = "17351964542182805135",
             type = "TalkNode",
-            name = "\230\139\190\229\143\150\229\174\140\230\136\144\229\188\128\232\189\166",
+            name = "拾取完成开车",
             pos = {x = 3047.9513888888887, y = -31.097222222222285},
             propsData = {
               IsNpcNode = false,
@@ -526,14 +542,14 @@ return {
           ["17368351534122385"] = {
             key = "17368351534122385",
             type = "WaitQuestFinishedNode",
-            name = "\231\173\137\229\190\133\228\187\187\229\138\161\229\174\140\230\136\144",
+            name = "等待任务完成",
             pos = {x = 2783.7188355227145, y = 145.34752326217819},
             propsData = {ListenCount = 4, NeedFinishCount = 4}
           },
           ["1744352402105548508"] = {
             key = "1744352402105548508",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\232\142\178\232\141\137",
+            name = "生成莲草",
             pos = {x = 2222.261300309597, y = 216.61664086687315},
             propsData = {
               ActiveEnable = true,
@@ -551,7 +567,7 @@ return {
           ["1744352425181548770"] = {
             key = "1744352425181548770",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2536.661300309597, y = 22.216640866873103},
             propsData = {
               CreateType = "StaticCreator",
@@ -564,7 +580,7 @@ return {
           ["1744352427981548847"] = {
             key = "1744352427981548847",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2524.261300309597, y = 163.81664086687317},
             propsData = {
               CreateType = "StaticCreator",
@@ -577,7 +593,7 @@ return {
           ["1744352428904548871"] = {
             key = "1744352428904548871",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2536.261300309597, y = 318.6166408668731},
             propsData = {
               CreateType = "StaticCreator",
@@ -590,7 +606,7 @@ return {
           ["1744352558782550594"] = {
             key = "1744352558782550594",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 3154.4613003095974, y = -502.7833591331269},
             propsData = {
               CreateType = "StaticCreator",
@@ -603,7 +619,7 @@ return {
           ["1744352558782550595"] = {
             key = "1744352558782550595",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 3142.0613003095973, y = -361.1833591331269},
             propsData = {
               CreateType = "StaticCreator",
@@ -616,7 +632,7 @@ return {
           ["1744352558782550596"] = {
             key = "1744352558782550596",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 3154.0613003095973, y = -206.38335913312693},
             propsData = {
               CreateType = "StaticCreator",
@@ -624,6 +640,28 @@ return {
               StateId = 610011,
               IsGuideEnable = true,
               GuidePointName = "Drop_Dyn_1240419"
+            }
+          },
+          ["176189378237721101472"] = {
+            key = "176189378237721101472",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 2222, y = -276},
+            propsData = {
+              NewDescription = "DynQuest_Helpfisher_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
+            }
+          },
+          ["176189386472221102086"] = {
+            key = "176189386472221102086",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 3317, y = -15},
+            propsData = {
+              NewDescription = "DynQuest_Helpfisher_Target2",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
             }
           }
         },

@@ -3,14 +3,13 @@ local BP_DefenceComponent_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.GameMode.DungeonComponents.BP_DungeonVoteComponent_C"
 })
-
 function BP_DefenceComponent_C:InitDefenceComponent()
   self.GameMode = self:GetOwner()
   self:InitVoteComponent()
   self.GameMode.EMGameState:SetDefenceWaveInterval(DataMgr.GlobalConstant.DefenceWaveInterval.ConstantValue or 5)
   self.DefenceInfo = self:GetDataMgrInfo()
   if not self.DefenceInfo then
-    GameState(self):ShowDungeonError("DefenceComponent:\229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.GameMode.DungeonId)
+    GameState(self):ShowDungeonError("DefenceComponent:当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.GameMode.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.MonsterTotalBaseNum = self.DefenceInfo.MonsterTotalBaseNum or 15
@@ -21,12 +20,11 @@ function BP_DefenceComponent_C:InitDefenceComponent()
   self.GameMode:InitCreateEmergencyMonsterProb("Butcher", self, self.DefenceInfo)
   local WavesPerStage = self.DefenceInfo.WavesPerStage or 3
   self.GameMode.EMGameState:SetDefenceWavesPerStage(WavesPerStage)
+  self.EnsureGuideTime = self.DefenceInfo.EnsureGuideTime or -1
 end
-
 function BP_DefenceComponent_C:GetDataMgrInfo()
   return DataMgr.Defence[self.GameMode.DungeonId]
 end
-
 function BP_DefenceComponent_C:RecordDungeonRoundData()
   local RoundData = {
     DungeonProgress = self.GameMode.EMGameState.DungeonProgress,
@@ -36,21 +34,23 @@ function BP_DefenceComponent_C:RecordDungeonRoundData()
   PrintTable(RoundData, 2)
   return RoundData
 end
-
 function BP_DefenceComponent_C:RecoverDungeonRoundData(Data)
   PrintTable(Data, 2)
   self.GameMode.EMGameState:SetDungeonProgress(Data.DungeonProgress)
   self.GameMode.EMGameState:SetGameModeLevel(Data.GameModeLevel)
   self.GameMode.EMGameState:SetDefenceWave(Data.DefenceWave)
 end
-
 function BP_DefenceComponent_C:WaveStart()
+  if self.IsInWave then
+    return
+  end
+  self.IsInWave = true
   self.GameMode:CreateEmergencyMonsterEachWave("Butcher", self, self.DefenceInfo)
-  self.MonsterTotalNum = self.MonsterTotalBaseNum + math.random(0, 2)
+  self.MonsterTotalNum = self.MonsterTotalBaseNum
   self.GameMode:TriggerCreateMonsterSpawn(self:GetMonsterSpawnId())
   self.bMonRuleReseted = false
+  self:InitEnsureGuideTimerEachWave()
 end
-
 function BP_DefenceComponent_C:GetMonsterSpawnId()
   local RealIndex = self:GetWaveIndex() % #self.MonsterSpawnIds
   if 0 == RealIndex then
@@ -58,7 +58,6 @@ function BP_DefenceComponent_C:GetMonsterSpawnId()
   end
   return self:TableToTArray(self.MonsterSpawnIds[RealIndex])
 end
-
 function BP_DefenceComponent_C:TriggerMonsterDead(Monster)
   if Monster.CreatorType and Monster.CreatorId and Monster:GetCamp() == ECampName.Monster then
     self.MonsterTotalNum = self.MonsterTotalNum - 1
@@ -81,40 +80,65 @@ function BP_DefenceComponent_C:TriggerMonsterDead(Monster)
         self.GameMode:DestroyAllMonsterSpawn()
         self:AddTimer(3.5, function()
           self:AddTimer(2, self.MonsterNumCheck, true, 0, "MonsterNumCheck")
+          self:AddTimer(5, self.FallbackNumCheck, true, 0, "FallbackNumCheck")
         end, false, 0, "MonRuleReset")
       end
     end
   end
 end
-
 function BP_DefenceComponent_C:MonsterNumCheck()
+  DebugPrint("DefenceComponent MonsterNumCheck, GetMonsterNum:", self:GetMonsterNum(), "MonsterTotalNum:", self.MonsterTotalNum)
   if 0 == self:GetMonsterNum() and self.MonsterTotalNum <= 0 then
-    self.GameMode:PostCustomEvent("DefenceWaveEnd")
-    self:RemoveTimer("MonsterNumCheck")
-    self.GameMode:TriggerGameModeEvent("OnShowDefenceTarget")
+    self:DoWaveEnd()
   end
 end
-
+function BP_DefenceComponent_C:FallbackNumCheck()
+  DebugPrint("DefenceComponent FallbackNumCheck, GetMonsterNum:", self:GetMonsterNum())
+  local ActivatedMonsterSpawnNum = self.GameMode.MonsterSpawnMap:Num()
+  if ActivatedMonsterSpawnNum > 0 then
+    DebugPrint("DefenceComponent FallbackNumCheck 仍存在MonsterSpawn")
+    return
+  end
+  local IsMonsterExists = self:CheckMonsterExists()
+  if IsMonsterExists then
+    DebugPrint("DefenceComponent FallbackNumCheck 场上仍存在怪物ActorActor")
+    return
+  end
+  DebugPrint("DefenceComponent FallbackNumCheck Fallback Triggered! MonsterNum:", self:GetMonsterNum())
+  self.GameMode.EMGameState.MonsterNum = 0
+  self:DoWaveEnd()
+end
+function BP_DefenceComponent_C:CheckMonsterExists()
+  for _, Monster in pairs(self.GameMode.EMGameState.MonsterMap) do
+    if IsValid(Monster) and Monster.IsRealMonster and Monster:IsRealMonster() then
+      return true
+    end
+  end
+  return false
+end
+function BP_DefenceComponent_C:DoWaveEnd()
+  self.IsInWave = false
+  self:ClearEnsureGuideTimer()
+  self.GameMode:PostCustomEvent("DefenceWaveEnd")
+  self:RemoveTimer("MonsterNumCheck")
+  self:RemoveTimer("FallbackNumCheck")
+  self.GameMode:TriggerGameModeEvent("OnShowDefenceTarget")
+end
 function BP_DefenceComponent_C:OnDefenceCoreActive()
   self.GameMode.EMGameState:SetDungeonUIState(Const.EDungeonUIState.OnTarget)
 end
-
 function BP_DefenceComponent_C:GetMonsterNum()
   return self.GameMode.EMGameState.MonsterNum
 end
-
 function BP_DefenceComponent_C:GetWaveIndex()
   return self.GameMode.EMGameState.DefenceWave
 end
-
 function BP_DefenceComponent_C:AddWaveIndex(Value)
   self.GameMode.EMGameState:SetDefenceWave(self.GameMode.EMGameState.DefenceWave + Value)
 end
-
 function BP_DefenceComponent_C:SetWaveIndex(Value)
   self.GameMode.EMGameState:SetDefenceWave(Value)
 end
-
 function BP_DefenceComponent_C:TableToTArray(table)
   local ResTArray = TArray(0)
   if table then
@@ -124,5 +148,28 @@ function BP_DefenceComponent_C:TableToTArray(table)
   end
   return ResTArray
 end
-
+function BP_DefenceComponent_C:InitEnsureGuideTimerEachWave()
+  if self.EnsureGuideTime < 0 then
+    return
+  end
+  self:AddTimer(self.EnsureGuideTime, function()
+    self:DoEnsureGuide()
+    self:AddTimer(5, self.DoEnsureGuide, true, 0, "DoEnsureGuide")
+  end, false, 0, "EnsureGuideDelayTimer")
+end
+function BP_DefenceComponent_C:DoEnsureGuide()
+  for _, Monster in pairs(self.GameMode.EMGameState.MonsterMap) do
+    if not IsValid(Monster) then
+    elseif Monster:IsDead() then
+    elseif Monster.UnitType ~= "Monster" then
+    elseif not self.GameMode:CheckCanGuide(Monster.UnitId, Monster.UnitType) then
+    else
+      self.GameMode.EMGameState:AddGuideEid(Monster.Eid)
+    end
+  end
+end
+function BP_DefenceComponent_C:ClearEnsureGuideTimer()
+  self:RemoveTimer("EnsureGuideDelayTimer")
+  self:RemoveTimer("DoEnsureGuide")
+end
 return BP_DefenceComponent_C

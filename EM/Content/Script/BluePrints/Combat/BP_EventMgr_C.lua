@@ -5,7 +5,6 @@ local MiscUtils = require("Utils.MiscUtils")
 local Utils = require("Utils")
 local EventTrigger = require("BluePrints.Combat.EventTrigger")
 local BP_EventMgr_C = Class()
-
 function BP_EventMgr_C:Initialize(Initializer)
   self.EventTriggers = {}
   self.FramingCreateUintQueue = {}
@@ -22,23 +21,19 @@ function BP_EventMgr_C:Initialize(Initializer)
     end
   end
 end
-
 function BP_EventMgr_C:InitializeSummonCacheParams()
   local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName()
   self.bCustomNpcOpenCreateOpt = Const.CustomNpcCreateOpt
 end
-
 function BP_EventMgr_C:InitAIUnitCacheParams()
   self.bStandAloneMonsterCanCache = Const.StandAloneMonsterCanCache
   self.bOnlineMonsterCanCache = Const.OnlineMonsterCanCache
   self.bMonsterCanSpawnFromCache = Const.MonsterCanSpawnFromCache
 end
-
 function BP_EventMgr_C:AddTrigger(TriggerId)
   local NewTrigger = EventTrigger:New({}, TriggerId)
   table.insert(self.EventTriggers, NewTrigger)
 end
-
 function BP_EventMgr_C:ReceiveBeginPlay()
   local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName()
   if "Android" == PlatformName then
@@ -47,7 +42,6 @@ function BP_EventMgr_C:ReceiveBeginPlay()
     self.bEnableCreateUnitCtrlOpt = false
   end
 end
-
 function BP_EventMgr_C:TryEndLoading()
   for UnitType, FramingQueue in pairs(self.FramingCreateUintQueue) do
     if #FramingQueue > 0 then
@@ -67,7 +61,6 @@ function BP_EventMgr_C:TryEndLoading()
   end
   return true
 end
-
 function BP_EventMgr_C:CheckTriggers()
   local i = 1
   while i <= #self.EventTriggers do
@@ -79,16 +72,13 @@ function BP_EventMgr_C:CheckTriggers()
     end
   end
 end
-
 function BP_EventMgr_C:TriggerATrigger(Trigger)
   for Index, EventId in Trigger.Events, nil, nil, nil do
     self:TriggerEvent(EventId)
   end
 end
-
 function BP_EventMgr_C:TriggerEvent(EventId)
 end
-
 function BP_EventMgr_C:GMCreateNpc(UnitId, Num, Level, CreatorType)
   DebugPrint(UE4.UKismetSystemLibrary.GetFrameCount(), "==========GMCreateNpc============================")
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -114,7 +104,6 @@ function BP_EventMgr_C:GMCreateNpc(UnitId, Num, Level, CreatorType)
     self:CreateUnitNew(Context, false)
   end
 end
-
 function BP_EventMgr_C:GMCreatePet(UnitId, Num)
   DebugPrint(UE4.UKismetSystemLibrary.GetFrameCount(), "==========GMCreatePet============================")
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -133,8 +122,7 @@ function BP_EventMgr_C:GMCreatePet(UnitId, Num)
     self:CreateUnitNew(Context, false)
   end
 end
-
-function BP_EventMgr_C:GMCreateMonster(Eid, UnitId, Num, Level, CreatorType)
+function BP_EventMgr_C:GMCreateMonster(Eid, UnitId, Num, Level, CreatorType, ForceLOD)
   local Player = Battle(self):GetEntity(Eid)
   local Location = FVector(0, 0, 0)
   if IsValid(Player) then
@@ -147,6 +135,11 @@ function BP_EventMgr_C:GMCreateMonster(Eid, UnitId, Num, Level, CreatorType)
     MonsterSpawn = UE4.UGameplayStatics.GetGameMode(self).FixedMonsterSpawn
   end
   for i = 1, Num do
+    local function LoadFinishCallbackNew(_, Unit)
+      if nil ~= ForceLOD then
+        Unit.Mesh:SetForcedLOD(tonumber(ForceLOD))
+      end
+    end
     local Context = AEventMgr.CreateUnitContext()
     Context.UnitId = tonumber(UnitId)
     Context.UnitType = "Monster"
@@ -155,10 +148,12 @@ function BP_EventMgr_C:GMCreateMonster(Eid, UnitId, Num, Level, CreatorType)
     Context.Creator = Creator
     Context.MonsterSpawn = MonsterSpawn
     Context.BoolParams:Add("FixLocation", true)
+    if nil ~= ForceLOD then
+      Context.OnUnitInitCreateReadyDynamic:Add(self, LoadFinishCallbackNew)
+    end
     self:CreateUnitNew(Context, false)
   end
 end
-
 function BP_EventMgr_C:GMCreateTestMonster(Eid, Id, Num, Loc, Callback, Args)
   local ActorType = "Monster"
   local UnitId = tonumber(Id)
@@ -173,9 +168,7 @@ function BP_EventMgr_C:GMCreateTestMonster(Eid, Id, Num, Loc, Callback, Args)
   for i = 1, Num do
     local function LoadClassFinished(self, UnitBlueprint)
       local BTObject = LoadObject("/Game/AssetDesign/AI/Z_Misc_Test/BT/TestNew.TestNew") or nil
-      
       Unit = URuntimeCommonFunctionLibrary.SpawnAIFromClass(self, UnitBlueprint, BTObject, Location, FRotator(0, 0, 0), UE4.ESpawnActorCollisionHandlingMethod.AdjustIfPossibleButAlwaysSpawn, nil)
-      
       local function LoadFinishCallback(Unit)
         Unit:SetAttr("MaxHp", 999999999)
         Unit:SetAttr("MaxES", 5000)
@@ -184,7 +177,6 @@ function BP_EventMgr_C:GMCreateTestMonster(Eid, Id, Num, Loc, Callback, Args)
           Callback(Unit)
         end
       end
-      
       local function LoadFinishCallbackNew(_, Unit)
         Unit:SetAttr("MaxHp", 999999999)
         Unit:SetAttr("MaxES", 5000)
@@ -193,7 +185,6 @@ function BP_EventMgr_C:GMCreateTestMonster(Eid, Id, Num, Loc, Callback, Args)
           Callback(Unit)
         end
       end
-      
       local Eid = UE4.UGameplayStatics.GetGameMode(self):GetBattleEid()
       local Context = AEventMgr.CreateUnitContext()
       Context.UnitId = UnitId
@@ -208,7 +199,6 @@ function BP_EventMgr_C:GMCreateTestMonster(Eid, Id, Num, Loc, Callback, Args)
       self:RegisterCreateData(Eid, Context)
       Unit:RegisterInfoNew(Context)
     end
-    
     local UnitClass = MiscUtils.GetCacheClass(ActorPath)
     if UnitClass then
       LoadClassFinished(self, UnitClass)
@@ -217,7 +207,6 @@ function BP_EventMgr_C:GMCreateTestMonster(Eid, Id, Num, Loc, Callback, Args)
     end
   end
 end
-
 function BP_EventMgr_C:GMCreateMechanismSummon(Eid, UnitId, Num, Level)
   local Player = Battle(self):GetEntity(Eid)
   local Location = FVector(0, 0, 0)
@@ -235,7 +224,6 @@ function BP_EventMgr_C:GMCreateMechanismSummon(Eid, UnitId, Num, Level)
     self:CreateUnitNew(Context, false)
   end
 end
-
 function BP_EventMgr_C:CreateAIUnitFromCache(Info)
   if not Const.StandAloneMonsterCanCache and IsStandAlone(self) then
     return false
@@ -324,7 +312,6 @@ function BP_EventMgr_C:CreateAIUnitFromCache(Info)
   end
   return false
 end
-
 function BP_EventMgr_C:SnapShotCreateUnit(SpawnData, Creator)
   local Location = FVector(SpawnData.Trans.Translation.X, SpawnData.Trans.Translation.Y, SpawnData.Trans.Translation.Z)
   local BornPos = FVector(SpawnData.BornPos.X, SpawnData.BornPos.Y, SpawnData.BornPos.Z)
@@ -343,14 +330,12 @@ function BP_EventMgr_C:SnapShotCreateUnit(SpawnData, Creator)
   Context.IntParams:Add("RandomTableId", SpawnData.RandomTableId)
   Context.VectorParams:Add("BornPos", BornPos)
   self:CreateUnitNew(Context, false)
-  DebugPrint("SnapShot: \229\137\175\230\156\172\229\186\143\229\136\151\229\140\150\230\129\162\229\164\141, LevelName:", SpawnData.LevelName, "UnitId:", SpawnData.UnitId, "UnitType:", SpawnData.UnitType, "Eid:", SpawnData.SnapShotId, "Location:", Location, "CreatorId:", SpawnData.CreatorId, "BornPos:", SpawnData.BornPos, "PrivateEnable:", SpawnData.PrivateEnable, "RandomCreatorId:", SpawnData.RandomCreatorId, "RandomRuleId:", SpawnData.RuleId, "RandomTableId", SpawnData.RandomTableId)
+  DebugPrint("SnapShot: 副本序列化恢复, LevelName:", SpawnData.LevelName, "UnitId:", SpawnData.UnitId, "UnitType:", SpawnData.UnitType, "Eid:", SpawnData.SnapShotId, "Location:", Location, "CreatorId:", SpawnData.CreatorId, "BornPos:", SpawnData.BornPos, "PrivateEnable:", SpawnData.PrivateEnable, "RandomCreatorId:", SpawnData.RandomCreatorId, "RandomRuleId:", SpawnData.RuleId, "RandomTableId", SpawnData.RandomTableId)
 end
-
 function BP_EventMgr_C:PostProcessInfo(Info)
   local function CheckRarity(Info)
     return DataMgr.Drop[Info.UnitId].Rarity >= 3
   end
-  
   if Info.UnitType == "Drop" and Info.UnitId then
     local Avatar = GWorld:GetAvatar()
     if Avatar and Avatar:IsInHardBoss() then
@@ -362,7 +347,6 @@ function BP_EventMgr_C:PostProcessInfo(Info)
     end
   end
 end
-
 function BP_EventMgr_C:OnRegionDataClaimed_Lua(WorldRegionEid)
   for UnitType, AsyncTable in pairs(self.FramingCreateUintQueue) do
     for i, AsyncInfo in ipairs(AsyncTable) do
@@ -376,7 +360,6 @@ function BP_EventMgr_C:OnRegionDataClaimed_Lua(WorldRegionEid)
     self.LoadingClassMonsterQueue[WorldRegionEid] = nil
   end
 end
-
 function BP_EventMgr_C:OnSpecialQuestBegin()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode or not GameMode:GetRegionDataMgrSubSystem() then
@@ -415,7 +398,6 @@ function BP_EventMgr_C:OnSpecialQuestBegin()
     end
   end
 end
-
 function BP_EventMgr_C:PreCreateRegionInfo(Info, bForceSync)
   if type(Info) ~= "table" then
     DebugPrint("NOINFO")
@@ -437,7 +419,6 @@ function BP_EventMgr_C:PreCreateRegionInfo(Info, bForceSync)
   end
   self:PostProcessInfo(Info)
 end
-
 function BP_EventMgr_C:CanRegionSerialize(Info)
   if Const.RegionSerializeUnitType[Info.UnitType] == nil then
     return false
@@ -447,7 +428,6 @@ function BP_EventMgr_C:CanRegionSerialize(Info)
   end
   return true
 end
-
 function BP_EventMgr_C:PostCreateRegionInfo(Info, bForceSync)
   if not bForceSync then
     if not self.FramingCreateUintQueue[Info.UnitType] then
@@ -462,7 +442,6 @@ function BP_EventMgr_C:PostCreateRegionInfo(Info, bForceSync)
     self:RealCreateUnit(Info, bForceSync)
   end
 end
-
 function BP_EventMgr_C:ChangeNpcInfoByGender(Info)
   if DataMgr.NPC[Info.UnitId] == nil or 1 ~= DataMgr.NPC[Info.UnitId].PlayerInfo then
     return
@@ -517,25 +496,6 @@ function BP_EventMgr_C:ChangeNpcInfoByGender(Info)
   DebugPrint("FakeNpcId:", Info.UnitId, "RealNpcId:", RealNpcInfo.NpcId, "Gender:", RealNpcInfo.SwitchPlayer, AvatarGender)
   Info.UnitId = RealNpcInfo.NpcId
 end
-
-function BP_EventMgr_C:ServerCreateDrop(Info)
-  self:PreCreateRegionInfo(Info)
-  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if GameMode and GameMode:GetWCSubSystem() then
-    self:PreServerCreateDrop(Info.WorldRegionEid, GameMode:GetWCSubSystem():GetLocationLevelName(Info.Loc))
-  end
-  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if GameMode and URuntimeCommonFunctionLibrary.UseCppRegionData(self) and (GameMode:IsInRegion() or not GWorld:GetAvatar()) then
-    if Info.WorldRegionEid then
-      self:PreActorCreated(Info.WorldRegionEid)
-    else
-      Info.WorldRegionEid = self:PreActorCreated_Raw(Info.Loc)
-    end
-    GameMode:GetRegionDataMgrSubSystem():FillRegionData(Info)
-  end
-  self:PostCreateRegionInfo(Info)
-end
-
 function BP_EventMgr_C:RealCreateUnit(Info, bForceSync)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not Info.UnitType or not Info.UnitId then
@@ -544,15 +504,15 @@ function BP_EventMgr_C:RealCreateUnit(Info, bForceSync)
   local ActorData = DataMgr[Info.UnitType][Info.UnitId]
   if nil == ActorData then
     if not Info.Creator then
-      GWorld.logger.error("\229\136\183\230\128\170\230\149\176\230\141\174\232\142\183\229\143\150\229\164\177\232\180\165    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
+      GWorld.logger.error("刷怪数据获取失败    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
       return
     end
     local ExploreActor = GameMode.EMGameState.ExploreGroupMap:FindRef(Info.Creator.RarelyId)
     local LevelName = GameMode:GetActorLevelName(Info.Creator)
     if ExploreActor then
-      GWorld.logger.error("\229\136\183\230\128\170\230\149\176\230\141\174\232\142\183\229\143\150\229\164\177\232\180\165    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType .. "  CreatorId: " .. Info.Creator.StaticCreatorId .. "  LevelName: " .. tostring(Info.LevelName) .. "  ExploreActorName: " .. ExploreActor:GetName() .. " StaticCreatorActor: " .. Info.Creator:GetName())
+      GWorld.logger.error("刷怪数据获取失败    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType .. "  CreatorId: " .. Info.Creator.StaticCreatorId .. "  LevelName: " .. tostring(Info.LevelName) .. "  ExploreActorName: " .. ExploreActor:GetName() .. " StaticCreatorActor: " .. Info.Creator:GetName())
     else
-      GWorld.logger.error("\229\136\183\230\128\170\230\149\176\230\141\174\232\142\183\229\143\150\229\164\177\232\180\165    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType .. "  CreatorId: " .. Info.Creator.StaticCreatorId .. "  LevelName: " .. tostring(LevelName) .. " StaticCreatorActor: " .. Info.Creator:GetName())
+      GWorld.logger.error("刷怪数据获取失败    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType .. "  CreatorId: " .. Info.Creator.StaticCreatorId .. "  LevelName: " .. tostring(LevelName) .. " StaticCreatorActor: " .. Info.Creator:GetName())
     end
     return
   end
@@ -569,7 +529,6 @@ function BP_EventMgr_C:RealCreateUnit(Info, bForceSync)
     self:CreateActorUnit(Info, bForceSync)
   end
 end
-
 function BP_EventMgr_C:NeedApplySubsidenceAdjust(Unit)
   if Unit:IsAIControlled() == false then
     return false
@@ -580,7 +539,6 @@ function BP_EventMgr_C:NeedApplySubsidenceAdjust(Unit)
   end
   return true
 end
-
 function BP_EventMgr_C:CreateAIUnit(Info, bForceSync, bFromMonsterLimitQueue)
   if Const.EnableCreateUnitLog then
     print(_G.LogTag, "CreateAIUnit", Info.UnitId)
@@ -602,14 +560,13 @@ function BP_EventMgr_C:CreateAIUnit(Info, bForceSync, bFromMonsterLimitQueue)
   if Info.WorldRegionEid then
     self.LoadingClassMonsterQueue[Info.WorldRegionEid] = Info
   end
-  
   local function LoadClassFinished(self, UnitBlueprint)
     if Info.UnitType == "Monster" and Info.DirectSource and Info.CreateUnitId and not self:PreCheckDirectSourceHadUnit(Info.DirectSource, Info.CreateUnitId) then
       DebugPrint("BP_EventMgr_C CreateAIUnit LoadClassFinished DirectSource", Info.DirectSource:GetName(), "don't have CreateUnitId", Info.CreateUnitId, "return")
       return
     end
     if Info.WorldRegionEid and not self.LoadingClassMonsterQueue[Info.WorldRegionEid] then
-      DebugPrint("BP_EventMgr_C LoadClassFinished but", Info.WorldRegionEid, "\229\183\178\231\187\143\232\162\171\233\148\128\230\175\129\228\186\134")
+      DebugPrint("BP_EventMgr_C LoadClassFinished but", Info.WorldRegionEid, "已经被销毁了")
       return
     end
     if Info.WorldRegionEid then
@@ -619,7 +576,7 @@ function BP_EventMgr_C:CreateAIUnit(Info, bForceSync, bFromMonsterLimitQueue)
     local Unit = URuntimeCommonFunctionLibrary.SpawnAIFromClass(self, UnitBlueprint, nil, Info.Loc, Info.Rotation, UE4.ESpawnActorCollisionHandlingMethod.AdjustIfPossibleButAlwaysSpawn, nil)
     if IsValid(Unit) == false then
       DebugPrint("BP_EventMgr_C CreateAIUnit Failed Please Check BPPath", Info.UnitId, Info.ActorPath)
-      GWorld.logger.error("\229\136\183\230\128\170\229\164\177\232\180\165!\232\175\183\230\163\128\230\159\165\232\147\157\229\155\190\232\183\175\229\190\132    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
+      GWorld.logger.error("刷怪失败!请检查蓝图路径    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
       return
     end
     if Info.UnitType == "Npc" then
@@ -639,7 +596,6 @@ function BP_EventMgr_C:CreateAIUnit(Info, bForceSync, bFromMonsterLimitQueue)
       self:FixPawnLocation(Unit, Info, self:NeedApplySubsidenceAdjust(Unit))
     end
   end
-  
   local UnitClass = MiscUtils.GetCacheClass(Info.ActorPath)
   if UnitClass then
     LoadClassFinished(self, UnitClass)
@@ -650,7 +606,6 @@ function BP_EventMgr_C:CreateAIUnit(Info, bForceSync, bFromMonsterLimitQueue)
     UE4.UResourceLibrary.LoadClassAsync(self, Info.ActorPath, {self, LoadClassFinished})
   end
 end
-
 function BP_EventMgr_C:RemoveUnitInQueue(WorldRegionEid, DestroyReason)
   self.LoadingClassMonsterQueue[WorldRegionEid] = nil
   if self.InitializeMonsterQueue[WorldRegionEid] then
@@ -659,18 +614,20 @@ function BP_EventMgr_C:RemoveUnitInQueue(WorldRegionEid, DestroyReason)
     self.InitializeMonsterQueue[WorldRegionEid].DestroySelfReason = DestroyReason
   end
 end
-
 function BP_EventMgr_C:CheckCreateAIUnit(Info)
   if Info.UnitType == "Monster" and not Info.SourceSkillId then
     return self:CheckCreateMonster(Info.UnitId)
   end
   return true
 end
-
 function BP_EventMgr_C:GetMaxDungeonMonNum()
-  return Const.MaxDungeonMonNum
+  local DeviceType = CommonUtils.GetDeviceTypeByPlatformName(self)
+  if "PC" == DeviceType then
+    return Const.MaxDungeonMonNum_PC
+  else
+    return Const.MaxDungeonMonNum_Mobile
+  end
 end
-
 function BP_EventMgr_C:UseAsyncCreate(UnitType, UnitId)
   if "Monster" ~= UnitType then
     return true
@@ -680,7 +637,6 @@ function BP_EventMgr_C:UseAsyncCreate(UnitType, UnitId)
   end
   return true
 end
-
 function BP_EventMgr_C:CreateActorUnit(Info, bForceSync)
   local TraceType = Info.FixTraceChannel or "TraceCreatureHit"
   Info.Loc = self:FixLocation(Info.Loc, Info.FixLocation, Info.FixLocationZ or 50, Info.FixLocationStartZ or 200, Info.FixLocationEndZ or -1500, Const.FixTraceChannel[TraceType])
@@ -706,7 +662,6 @@ function BP_EventMgr_C:CreateActorUnit(Info, bForceSync)
     DebugPrint("BP_EventMgr_C CreateActorUnit DirectSource", Info.DirectSource:GetName(), "don't have CreateUnitId", Info.CreateUnitId, "return")
     return
   end
-  
   local function LoadClassFinished(self, UnitBlueprint)
     if "MechanismSummon" == UnitType and DirectSource and CreateUnitId and not self:PreCheckDirectSourceHadUnit(DirectSource, CreateUnitId) then
       DebugPrint("BP_EventMgr_C CreateActorUnit DirectSource", DirectSource:GetName(), "don't have CreateUnitId", CreateUnitId, "return")
@@ -714,7 +669,7 @@ function BP_EventMgr_C:CreateActorUnit(Info, bForceSync)
     end
     print(_G.LogTag, "LXZ LoadClassFinished00000")
     if IsValid(UnitBlueprint) == false then
-      GWorld.logger.error("\229\136\183\230\156\186\229\133\179\229\164\177\232\180\165!UnitBlueprint\233\148\153\232\175\175 \232\175\183\230\163\128\230\159\165\232\147\157\229\155\190\232\183\175\229\190\132    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType .. "   ActorPath   " .. Info.ActorPath)
+      GWorld.logger.error("刷机关失败!UnitBlueprint错误 请检查蓝图路径    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType .. "   ActorPath   " .. Info.ActorPath)
       return
     end
     local GameMode = UE.UGameplayStatics.GetGameMode(self)
@@ -726,7 +681,7 @@ function BP_EventMgr_C:CreateActorUnit(Info, bForceSync)
     GameMode.RegionDataIniting = true
     local Unit = self:GetWorld():SpawnActor(UnitBlueprint, Transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
     if IsValid(Unit) == false then
-      GWorld.logger.error("\229\136\183\230\156\186\229\133\179\229\164\177\232\180\165!\232\175\183\230\163\128\230\159\165\232\147\157\229\155\190\232\183\175\229\190\132    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
+      GWorld.logger.error("刷机关失败!请检查蓝图路径    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
       return
     end
     if Info.SkillLevelSource and Unit.SetSkillLevelInfo then
@@ -739,10 +694,9 @@ function BP_EventMgr_C:CreateActorUnit(Info, bForceSync)
     if Unit.RegisterInfo then
       Unit:RegisterInfo(Info)
     else
-      DebugPrint("CreateUnit: \229\136\155\229\187\186\228\186\134\228\184\128\228\184\170\230\178\161\230\156\137RegisterInfo\230\150\185\230\179\149\231\154\132Actor Name:", Unit:GetName())
+      DebugPrint("CreateUnit: 创建了一个没有RegisterInfo方法的Actor Name:", Unit:GetName())
     end
   end
-  
   if not bForceSync then
     UE4.UResourceLibrary.LoadClassAsync(self, Info.ActorPath, {self, LoadClassFinished})
   else
@@ -750,7 +704,6 @@ function BP_EventMgr_C:CreateActorUnit(Info, bForceSync)
     LoadClassFinished(self, BPClass)
   end
 end
-
 function BP_EventMgr_C:FixPawnLocation(Pawn, Info, IsNeedReset)
   DebugPrint("BP_EventMgr_C:FixPawnLocation   ", Pawn:GetName(), Info.UnitId, Pawn.Eid, Info.Loc, Info.FixLocation, Info.FormationId, Info.FixNavLocation, IsNeedReset)
   local TraceType = Info.FixTraceChannel or "TraceCreatureHit"
@@ -763,12 +716,10 @@ function BP_EventMgr_C:FixPawnLocation(Pawn, Info, IsNeedReset)
   end
   URuntimeCommonFunctionLibrary.ResetCharacterBaseLocation(Pawn, Info.Loc)
 end
-
 function BP_EventMgr_C:GetDropRegionDataType(UnitId, TargetRegionDataType)
   local function CheckRarity()
     return DataMgr.Drop[UnitId].Rarity >= 3
   end
-  
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar:IsInHardBoss() then
     return ERegionDataType.RDT_HardBossData
@@ -787,7 +738,6 @@ function BP_EventMgr_C:GetDropRegionDataType(UnitId, TargetRegionDataType)
   end
   return ERegionDataType.RDT_None
 end
-
 function BP_EventMgr_C:BuildDropInfo_Region(ItemId, Transform, Reason, ExtraInfo, bExtra, CreateIndex, DropRegionDatas)
   local Info = self:BuildDropInfo_Normal(ItemId, Transform, Reason, ExtraInfo, bExtra)
   if not DropRegionDatas or next(DropRegionDatas) == nil then
@@ -814,7 +764,6 @@ function BP_EventMgr_C:BuildDropInfo_Region(ItemId, Transform, Reason, ExtraInfo
   end
   return Info
 end
-
 function BP_EventMgr_C:BuildDropInfo_Normal(ItemId, Transform, Reason, ExtraInfo, bExtra, ActorPath)
   local Context = AEventMgr.CreateUnitContext()
   Context.UnitType = "Drop"
@@ -827,7 +776,6 @@ function BP_EventMgr_C:BuildDropInfo_Normal(ItemId, Transform, Reason, ExtraInfo
   Context.BoolParams:Add("ActorPath", ActorPath)
   return Context
 end
-
 function BP_EventMgr_C:CheckSpawnDrop(ItemId, Count)
   local ActorPath
   local ItemInfo = DataMgr.Drop[ItemId]
@@ -841,51 +789,43 @@ function BP_EventMgr_C:CheckSpawnDrop(ItemId, Count)
   end
   return true, ActorPath, Count
 end
-
 function BP_EventMgr_C:CreateTalkObject(Info)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
     return
   end
   GameState:AddLoadingNpcId(Info.UnitId)
-  
   local function LoadClassFinished(self, UnitBlueprint)
     local Rotation = Info.Rotation or FRotator(0, 0, 0)
     local Transform = UE4.FTransform(Rotation:ToQuat(), Info.Loc)
     local Unit = self:GetWorld():SpawnActor(UnitBlueprint, Transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
     if IsValid(Unit) == false then
-      GWorld.logger.error("\229\136\155\229\187\186TalkObject\229\164\177\232\180\165!\232\175\183\230\163\128\230\159\165\232\147\157\229\155\190\232\183\175\229\190\132    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
+      GWorld.logger.error("创建TalkObject失败!请检查蓝图路径    UnitId:   " .. Info.UnitId .. "   UnitType:  " .. Info.UnitType)
       return
     end
     Unit:Init(Info)
     GameState:AddNpcInfo_Lua(Unit)
     GameState.NpcLoadingArray:Remove(Info.UnitId)
   end
-  
   local Path = DataMgr.NPC[Info.UnitId].UnitBPPath
   UE4.UResourceLibrary.LoadClassAsync(self, Path, {self, LoadClassFinished})
 end
-
 function BP_EventMgr_C:RealSpawnDrop_Normal(ActorPath, Count, ItemId, Transform, Reason, ExtraInfo, bExtra)
   for j = 1, Count do
     local Info = self:BuildDropInfo_Normal(ItemId, Transform, Reason, ExtraInfo, bExtra, ActorPath)
     self:CreateUnitNew(Info, false)
   end
 end
-
 function BP_EventMgr_C:RealSpawnDrop_Region(ActorPath, Count, CreateIndex, ItemId, Transform, Reason, ExtraInfo, bExtra, DropRegionDatas)
   local function LoadClassFinished(self, UnitBlueprint)
     for j = 1, Count do
       CreateIndex = CreateIndex + 1
-      
       local Info = self:BuildDropInfo_Region(ItemId, Transform, Reason, ExtraInfo, bExtra, CreateIndex, DropRegionDatas)
       self:ServerCreateDropNew(Info)
     end
   end
-  
   UE4.UResourceLibrary.LoadClassAsync(self, ActorPath, {self, LoadClassFinished})
 end
-
 function BP_EventMgr_C:RealSpawnRewards_Normal(ItemId, Count, Transform, Reason, ExtraInfo, bExtra)
   local Res, ActorPath, UpdateCount = self:CheckSpawnDrop(ItemId, Count)
   if not Res then
@@ -893,7 +833,6 @@ function BP_EventMgr_C:RealSpawnRewards_Normal(ItemId, Count, Transform, Reason,
   end
   self:RealSpawnDrop_Normal(ActorPath, UpdateCount, ItemId, Transform, Reason, ExtraInfo, bExtra)
 end
-
 function BP_EventMgr_C:RealSpawnRewards_Region(ItemId, Count, Transform, Reason, ExtraInfo, bExtra, CreateIndex, DropRegionDatas)
   local Res, ActorPath, UpdateCount = self:CheckSpawnDrop(ItemId, Count)
   DebugPrint("ZJT_ CreateRes ", Res, ActorPath, UpdateCount)
@@ -902,7 +841,6 @@ function BP_EventMgr_C:RealSpawnRewards_Region(ItemId, Count, Transform, Reason,
   end
   self:RealSpawnDrop_Region(ActorPath, UpdateCount, CreateIndex, ItemId, Transform, Reason, ExtraInfo, bExtra, DropRegionDatas)
 end
-
 function BP_EventMgr_C:RandomPointInCircle(Source, MinRadius, MaxRadius, MinAngle, MaxAngle)
   local RandAngle = math.rad(math.random() * MaxAngle + MinAngle)
   local RandRadius = math.sqrt(math.rad(math.random() * (MaxRadius * MaxRadius - MinRadius * MinRadius) + MinRadius * MinRadius))
@@ -911,7 +849,6 @@ function BP_EventMgr_C:RandomPointInCircle(Source, MinRadius, MaxRadius, MinAngl
   local RandomLocationInRadius = Source + FVector(x, y, 0)
   return RandomLocationInRadius
 end
-
 function BP_EventMgr_C:AddInitializeMonsterQueue(Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode or not GameMode:IsInRegion() then
@@ -919,11 +856,10 @@ function BP_EventMgr_C:AddInitializeMonsterQueue(Info)
   end
   if not Info or not Info.WorldRegionEid then
     if Info.UnitType == "Monster" then
-      GWorld.logger.error("\229\156\168\229\140\186\229\159\159\229\134\133\231\154\132\230\128\170\231\137\169\230\178\161\230\156\137\229\136\157\229\167\139\229\140\150\230\149\176\230\141\174\230\136\150WorldRegionEid!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      GWorld.logger.error("在区域内的怪物没有初始化数据或WorldRegionEid!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     end
     return
   end
-  
   function Info.AfterInitializeCallback_EventMgr(Monster, WorldRegionEid)
     local MonInfo = self.InitializeMonsterQueue[WorldRegionEid]
     if MonInfo and MonInfo.DestroySelf and MonInfo.DestroySelfReason and Monster then
@@ -933,18 +869,14 @@ function BP_EventMgr_C:AddInitializeMonsterQueue(Info)
     MonInfo.IsDestroied = true
     self.InitializeMonsterQueue[WorldRegionEid] = nil
   end
-  
   self.InitializeMonsterQueue[Info.WorldRegionEid] = Info
 end
-
 function BP_EventMgr_C:GetConstParamCheckDungeonMonId()
   return Const.CheckDungeonMonId
 end
-
 function BP_EventMgr_C:GetConstPreFrameRealInitNum()
   return Const.PreFrameRealInitNum
 end
-
 function BP_EventMgr_C:GetAvatarGender(SwitchPlayer)
   local AvatarGender = -1
   local Avatar = GWorld:GetAvatar()
@@ -958,19 +890,15 @@ function BP_EventMgr_C:GetAvatarGender(SwitchPlayer)
   end
   return AvatarGender
 end
-
 function BP_EventMgr_C:GetRegionSerializeUnitType()
   return Const.RegionSerializeUnitType
 end
-
 function BP_EventMgr_C:GetCreateType()
   return Const.CreateType
 end
-
 function BP_EventMgr_C:GetFixTraceChannel()
   return Const.FixTraceChannel
 end
-
 function BP_EventMgr_C:FindPhantomAysncLoadingAndConsiderDestroy(RoleId, bWantToDestroy, DestroyReason)
   if not RoleId then
     return false
@@ -1005,7 +933,6 @@ function BP_EventMgr_C:FindPhantomAysncLoadingAndConsiderDestroy(RoleId, bWantTo
   end
   return false
 end
-
 function BP_EventMgr_C:CleanAllAsyncLoadingPhantom(DestroyReason)
   self.FramingCreateUintQueue.Phantom = {}
   for Key, Info in pairs(self.LoadingClassMonsterQueue) do
@@ -1020,10 +947,8 @@ function BP_EventMgr_C:CleanAllAsyncLoadingPhantom(DestroyReason)
     end
   end
 end
-
 function BP_EventMgr_C:GetConstMonDeathTaskNumPreFrame()
   return Const.MonDeathTaskNumPreFrame or 0
 end
-
 AssembleComponents(BP_EventMgr_C)
 return BP_EventMgr_C

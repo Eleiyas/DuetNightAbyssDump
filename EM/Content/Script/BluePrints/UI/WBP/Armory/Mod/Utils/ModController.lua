@@ -5,20 +5,16 @@ local M = Class("BluePrints.Common.MVC.Controller")
 M._components = {
   "BluePrints.UI.WBP.Armory.Mod.Utils.ModController_CopyModeComp"
 }
-
 function M:Init()
   M.Super.Init(self)
   self.CurrUIName = nil
 end
-
 function M:GetModel()
   return ModModel
 end
-
 function M:GetEventName()
   return EventID.ModControllerEvent
 end
-
 function M:Destory()
   self:StopPolarityEditTimer()
   self:TryAbortAutoEquip()
@@ -26,7 +22,6 @@ function M:Destory()
   self.CurrUIName = nil
   M.Super.Destory(self)
 end
-
 function M:TryOpenOverCostWarningDialog(Mod, PreviewLevel, Callback, DialogOwner)
   local Res = ModModel:GetOtherModUserOverCostMsg(Mod, PreviewLevel)
   if not table.isempty(Res) then
@@ -50,21 +45,19 @@ function M:TryOpenOverCostWarningDialog(Mod, PreviewLevel, Callback, DialogOwner
     Callback()
   end
 end
-
 function M:OpenView(UIName, ...)
   self.CurrUIName = UIName
   return M.Super.OpenView(self, self:GetUIMgr(), UIName, ...)
 end
-
 function M:OpenModIntensify()
   local SelectedMod = ModModel:GetCurrSelectMod()
   local SelectStuff = ModModel:GetSelectStuff()
   if not SelectedMod or not SelectStuff then
-    DebugPrint(ErrorTag, LXYTag, "\230\178\161\230\156\137Mod\232\162\171\233\128\137\228\184\173\239\188\140\230\151\160\230\179\149\230\137\147\229\188\128\229\141\135\231\186\167\231\149\140\233\157\162")
+    DebugPrint(ErrorTag, LXYTag, "没有Mod被选中，无法打开升级界面")
     return
   end
   if SelectedMod:IsFinalMaxLevel() then
-    DebugPrint(ErrorTag, LXYTag, "Mod\230\187\161\231\186\167\228\186\134\239\188\140\230\151\160\230\179\149\230\137\147\229\188\128\229\141\135\231\186\167\231\149\140\233\157\162")
+    DebugPrint(ErrorTag, LXYTag, "Mod满级了，无法打开升级界面")
     return
   end
   local Params = {
@@ -75,25 +68,21 @@ function M:OpenModIntensify()
   end
   return M.Super.OpenView(self, nil, ModCommon.ModIntensifyMain, SelectedMod:GetTypeName(), SelectedMod, nil, Params)
 end
-
 function M:GetView(WorldContext, UIName)
   UIName = UIName or self.CurrUIName
   return M.Super.GetView(self, WorldContext, UIName)
 end
-
 function M:OnCloseView()
   self:NotifyEvent(ModCommon.EventId.OnModMainUIClose, self.CurrUIName)
   self:SetSelectedStuff(nil, nil)
   ModModel:ResetUIData()
   self.CurrUIName = nil
 end
-
 function M:CreateDragUI(ModUuid)
   local DragUI = self:GetUIMgr():_CreateWidgetNew(ModCommon.DragUIName)
   DragUI:InitAsDragUI(ModUuid)
   return DragUI
 end
-
 function M:WarningTipsWhileSlotLock(SlotUIData)
   if not ModModel:IsModUINormal() then
     return
@@ -110,7 +99,6 @@ function M:WarningTipsWhileSlotLock(SlotUIData)
   end
   self:ShowToast(Tips)
 end
-
 function M:SetUICamera(Offset)
   local ArmoryUI = self:GetUIMgr():GetArmoryUIObj()
   if not IsValid(ArmoryUI) then
@@ -133,7 +121,6 @@ function M:SetUICamera(Offset)
   end
   ArmoryUI.ActorController:SetMontageAndCamera(Type, Tag, CommonConst.ArmoryType.Mod)
 end
-
 function M:GetModAttachBoneVPos()
   local ArmoryPlayer = self:GetUIMgr():CreateOrGetArmoryPlayerActor()
   if not IsValid(ArmoryPlayer) then
@@ -155,7 +142,6 @@ function M:GetModAttachBoneVPos()
   self.BoneVPos.Y = self.BoneVPos.Y - 5 * VPScale
   return self.BoneVPos
 end
-
 function M:_ParseFuncName(FuncNameFormat, Target)
   local TargetClsName = Target:GetTypeName()
   if "UWeapon" == TargetClsName then
@@ -163,7 +149,6 @@ function M:_ParseFuncName(FuncNameFormat, Target)
   end
   return string.format(FuncNameFormat, TargetClsName)
 end
-
 function M:_RecvCommon(Ret, TargetUuid, SuitIndex)
   if Ret == ErrorCode.RET_MOD_APPLY_SLOT_ERROR then
     self:ShowToast(GText("UI_Toast_ModType_Wrong"))
@@ -174,17 +159,16 @@ function M:_RecvCommon(Ret, TargetUuid, SuitIndex)
   end
   local Target = ModModel:GetTarget()
   if not Target then
-    Utils.Traceback(ErrorTag, "\232\191\153\228\184\170\230\151\182\229\128\153\231\154\132Target\228\184\141\229\143\175\232\131\189\228\184\186\231\169\186")
+    Utils.Traceback(ErrorTag, "这个时候的Target不可能为空")
     return false
   end
   if Target.Uuid ~= TargetUuid then
-    Utils.Traceback(ErrorTag, "\229\155\158\232\176\131\231\154\132Uuid\229\146\140\229\189\147\229\137\141Target\228\184\141\228\184\128\232\135\180")
+    Utils.Traceback(ErrorTag, "回调的Uuid和当前Target不一致")
     return false
   end
   self:SyncTarget(TargetUuid, SuitIndex)
   return true
 end
-
 function M:SendChangeSuit(Target, ModSuitIndex)
   if ModModel:GetTarget().ModSuitIndex == ModSuitIndex then
     return
@@ -199,7 +183,6 @@ function M:SendChangeSuit(Target, ModSuitIndex)
   }
   self:GetAvatar()[FuncName](self:GetAvatar(), CallbackInfo, Target.Uuid, ModSuitIndex)
 end
-
 function M:RecvChangeSuit(Ret, TargetUuid, ModSuitIndex)
   if not self:_RecvCommon(Ret, TargetUuid, ModSuitIndex) then
     return
@@ -211,7 +194,6 @@ function M:RecvChangeSuit(Ret, TargetUuid, ModSuitIndex)
     ModModel.ImportData:ResumeImport()
   end
 end
-
 function M:SendExchangeMod(Target, OldSlotId, NowSlotId)
   local FuncName = self:_ParseFuncName("Exchange%sMod", Target)
   local CallbackInfo = {
@@ -220,7 +202,6 @@ function M:SendExchangeMod(Target, OldSlotId, NowSlotId)
   }
   self:GetAvatar()[FuncName](self:GetAvatar(), CallbackInfo, Target.Uuid, Target.ModSuitIndex, OldSlotId, NowSlotId)
 end
-
 function M:RecvExchangeMod(Ret, TargetUuid, SuitIndex, OldSlotId, NowSlotId)
   if not self:_RecvCommon(Ret, TargetUuid, SuitIndex) then
     return
@@ -235,7 +216,6 @@ function M:RecvExchangeMod(Ret, TargetUuid, SuitIndex, OldSlotId, NowSlotId)
   end
   self:NotifyEvent(ModCommon.EventId.OnExchangeMod, TargetUuid, SuitIndex, OldSlotId, NowSlotId)
 end
-
 function M:SendChangeMod(Target, SlotId, ModUuid)
   if not ModModel:IsInImport() and not self:CheckSpecificSlot(ModUuid, SlotId, true) then
     self:TryAbortAutoEquip()
@@ -252,7 +232,6 @@ function M:SendChangeMod(Target, SlotId, ModUuid)
   }
   Avatar[FuncName](Avatar, CallbackInfo, Target.Uuid, Target.ModSuitIndex, SlotId, ModUuid)
 end
-
 function M:RecvChangeMod(Ret, TargetUuid, SuitIndex, ModSlotId, ModUuid, TakeOffModUuid)
   if Ret == ErrorCode.RET_MOD_IS_REPEAT then
     self:CheckModRepeat(ModUuid)
@@ -271,6 +250,7 @@ function M:RecvChangeMod(Ret, TargetUuid, SuitIndex, ModSlotId, ModUuid, TakeOff
     end
     self:TryForceCalcSlotsCost(ModUuid, false)
     self:TryForceCalcSlotsCost(TakeOffModUuid, true)
+    ModModel:GenerateModRepeatData(TakeOffModUuid)
     local SelectedStuff = ModModel:GetSelectStuff()
     if SelectedStuff and SelectedStuff.SlotId == ModSlotId then
       SelectedStuff.ModUuid = ModUuid
@@ -283,7 +263,6 @@ function M:RecvChangeMod(Ret, TargetUuid, SuitIndex, ModSlotId, ModUuid, TakeOff
     ModModel.ImportData:ResumeImport()
   end
 end
-
 function M:SendTakeOffMod(Target, SlotId)
   local SlotUIData = ModModel:GetSlotUIData(SlotId)
   if SlotUIData:IsPendingTakeOff() then
@@ -300,7 +279,6 @@ function M:SendTakeOffMod(Target, SlotId)
   }
   self:GetAvatar()[FuncName](self:GetAvatar(), CallbackInfo, Target.Uuid, Target.ModSuitIndex, SlotId)
 end
-
 function M:RecvTakeOffMod(Ret, TargetUuid, SuitIndex, SlotId, TakeOffModUuid)
   local SlotUIData = ModModel:GetSlotUIData(SlotId)
   SlotUIData:MarkPendingTakeOff(false)
@@ -317,7 +295,6 @@ function M:RecvTakeOffMod(Ret, TargetUuid, SuitIndex, SlotId, TakeOffModUuid)
   end
   self:NotifyEvent(ModCommon.EventId.OnTakeOffMod, TargetUuid, SuitIndex, SlotId, TakeOffModUuid)
 end
-
 function M:SendTakeOffAllMod(Target)
   local FuncName = self:_ParseFuncName("TakeOffAll%sMod", Target)
   local CallbackInfo = {
@@ -327,7 +304,6 @@ function M:SendTakeOffAllMod(Target)
   local Avatar = self:GetAvatar()
   Avatar[FuncName](Avatar, CallbackInfo, Target.Uuid, Target.ModSuitIndex)
 end
-
 function M:RecvTakeOffAllMod(Ret, TargetUuid, SuitIndex)
   if not self:_RecvCommon(Ret, TargetUuid, SuitIndex) then
     self:TryAbortAutoEquip()
@@ -345,10 +321,9 @@ function M:RecvTakeOffAllMod(Ret, TargetUuid, SuitIndex)
     ModModel.ImportData:ResumeImport()
   end
 end
-
 function M:SendPolarityEdit(Target)
   if not ModModel:IsInPolarityEditMode() then
-    DebugPrint(ErrorTag, "SendPolarityEdit \230\178\161\230\156\137\230\158\129\230\128\167\231\188\150\232\190\145\230\149\176\230\141\174\230\151\182\228\184\141\230\137\167\232\161\140\232\175\165\230\147\141\228\189\156")
+    DebugPrint(ErrorTag, "SendPolarityEdit 没有极性编辑数据时不执行该操作")
     return
   end
   local ModSlotList, PolarityList = {}, {}
@@ -369,7 +344,6 @@ function M:SendPolarityEdit(Target)
     self:NotifyEvent(ModCommon.EventId.OnPolarityEditFailed)
   end)
 end
-
 function M:RecvPolarityEdit(Ret, TargetUuid, ModSlotList, PolarityList)
   if not self:IsExistTimer(self.PolarityEditTimer) then
     return
@@ -388,7 +362,6 @@ function M:RecvPolarityEdit(Ret, TargetUuid, ModSlotList, PolarityList)
   self:StopPolarityEditTimer()
   self:NotifyEvent(ModCommon.EventId.OnPolarityEditDone, TargetUuid, nil)
 end
-
 function M:SendEditSuitName(Target, NewName)
   local FuncName = self:_ParseFuncName("Update%sModSuitName", Target)
   local CallbackInfo = {
@@ -397,14 +370,12 @@ function M:SendEditSuitName(Target, NewName)
   }
   self:GetAvatar()[FuncName](self:GetAvatar(), CallbackInfo, Target.Uuid, Target.ModSuitIndex, NewName)
 end
-
 function M:RecvEditSuitName(Ret, TargetUuid, ModSuitIndex, NewName)
   if not self:_RecvCommon(Ret, TargetUuid, ModSuitIndex) then
     return
   end
   self:NotifyEvent(ModCommon.EventId.OnSuitNameEdited, TargetUuid, ModSuitIndex, NewName)
 end
-
 function M:SendModLevelUp(Mod, ExpectLevel, bTakeOff)
   local CallbackInfo = {
     Func = self.RecvModLevelUp,
@@ -413,7 +384,6 @@ function M:SendModLevelUp(Mod, ExpectLevel, bTakeOff)
   }
   self:GetAvatar():ModLevelUp(CallbackInfo, Mod.Uuid, Mod.Level, ExpectLevel)
 end
-
 function M:RecvModLevelUp(Ret, OldModUuid, NewModUuid, bTakeOff)
   if not self:_RecvCommon(Ret, ModModel:GetTarget().Uuid) then
     return
@@ -444,6 +414,9 @@ function M:RecvModLevelUp(Ret, OldModUuid, NewModUuid, bTakeOff)
       if NewSelectedStuff then
         NewSelectedStuff.SlotId = OldSelectedStuff.SlotId
         OldSelectedStuff.SlotId = nil
+        if NewSelectedStuff:IsSlot() and OldModUuid then
+          ModModel:GenerateModRepeatData(OldModUuid)
+        end
       end
     end
   end
@@ -452,7 +425,6 @@ function M:RecvModLevelUp(Ret, OldModUuid, NewModUuid, bTakeOff)
   end
   self:NotifyEvent(ModCommon.EventId.OnModLevelUp, OldModUuid, NewModUuid, bTakeOff, NewSelectedStuff, OldSelectedStuff)
 end
-
 function M:SendModCardLevelUp(Mod, Comsumers, bTakeOff)
   local CallbackInfo = {
     Func = self.RecvModCardLevelUp,
@@ -461,7 +433,6 @@ function M:SendModCardLevelUp(Mod, Comsumers, bTakeOff)
   }
   self:GetAvatar():ModCardLevelUp(CallbackInfo, Mod.Uuid, Comsumers)
 end
-
 function M:RecvModCardLevelUp(Ret, ModUuid, Consumers, bTakeOff)
   if not self:_RecvCommon(Ret, ModModel:GetTarget().Uuid) then
     return
@@ -485,7 +456,6 @@ function M:RecvModCardLevelUp(Ret, ModUuid, Consumers, bTakeOff)
   self:NotifyEvent(ModCommon.EventId.OnModCardLevelUp, ModUuid, Consumers, TakeOffSlotIds, RemoveUuids)
   self:RecvModLevelUp(Ret, ModUuid, ModUuid, bTakeOff)
 end
-
 function M:EditSlotPolarity(Polarity)
   local SelectedStuff = ModModel:GetSelectStuff()
   if not SelectedStuff:IsSlot() then
@@ -494,36 +464,30 @@ function M:EditSlotPolarity(Polarity)
   ModModel.PolarityEditModeData:EditSlotPolarity(Polarity)
   self:NotifyEvent(ModCommon.EventId.OnPendingEditSlotPolarity, SelectedStuff.SlotId)
 end
-
 function M:StopPolarityEditTimer()
   if self:IsExistTimer(self.PolarityEditTimer) then
     self:StopTimer(self.PolarityEditTimer)
     self.PolarityEditTimer = nil
   end
 end
-
 function M:RevertAllSlotPolarity()
   ModModel.PolarityEditModeData:RevertAllSlotPolarity()
   self:NotifyEvent(ModCommon.EventId.OnRevertEditSlotPolarity)
 end
-
 function M:StartPolarityEditMode()
   ModModel:StartPolarityEditMode()
   self:NotifyEvent(ModCommon.EventId.OnStartPolarityMode)
 end
-
 function M:StopPolarityEditMode()
   ModModel:StopPolarityEditMode()
   self:NotifyEvent(ModCommon.EventId.OnStopPolarityMode)
 end
-
 function M:StopAutoEquipTimer()
   if self:IsExistTimer(self.AutoEquipTimeOutKey) then
     self:StopTimer(self.AutoEquipTimeOutKey)
     self.AutoEquipTimeOutKey = nil
   end
 end
-
 function M:LaunchAutoEquipMod(ModSuitCopyInfo)
   self:StopAutoEquipTimer()
   if ModSuitCopyInfo then
@@ -541,7 +505,7 @@ function M:LaunchAutoEquipMod(ModSuitCopyInfo)
     end
     self.ModSuitCopyInfo = ModSuitCopyInfo
   end
-  self.AutoEquipTimeOutKey = self:AddTimer(5, function()
+  self.AutoEquipTimeOutKey = self:AddTimer(500000, function()
     ModModel:StopAutoEquip()
     self.AutoEquipTimeOutKey = nil
     ForceStopAsyncTask(self, "AutoEquipModTask")
@@ -550,7 +514,6 @@ function M:LaunchAutoEquipMod(ModSuitCopyInfo)
   end)
   RunAsyncTask(self, "AutoEquipModTask", self.AutoEquipModTaskFunc)
 end
-
 function M.AutoEquipModTaskFunc(CoroutineObj, self)
   ModModel:StartAutoEquip(CoroutineObj, self.ModSuitCopyInfo)
   self:TakeOffSuitMod()
@@ -605,7 +568,6 @@ function M.AutoEquipModTaskFunc(CoroutineObj, self)
   self.ModSuitCopyInfo = nil
   self:NotifyEvent(ModCommon.EventId.OnAutoEquipFinished)
 end
-
 function M:TryAbortAutoEquip()
   if ModModel:IsInAutoEquip() then
     ModModel:StopAutoEquip()
@@ -614,7 +576,6 @@ function M:TryAbortAutoEquip()
     self:NotifyEvent(ModCommon.EventId.OnAutoEquipAbort)
   end
 end
-
 function M:TryForceCalcSlotsCost(ExcludeModUuid, bTakeOff)
   if not ModModel:IsModUuidValid(ExcludeModUuid) then
     return
@@ -631,7 +592,6 @@ function M:TryForceCalcSlotsCost(ExcludeModUuid, bTakeOff)
     self:NotifyEvent(ModCommon.EventId.OnForceCalcSlotsCost, DirtySlotIds)
   end
 end
-
 function M:SetSelectedStuff(ModUuid, SlotId)
   local LastSelectedStuff = ModModel:GetSelectStuff()
   if LastSelectedStuff and (ModModel:IsInPolarityEditMode() or ModUuid == LastSelectedStuff.ModUuid) and SlotId == LastSelectedStuff.SlotId then
@@ -647,7 +607,6 @@ function M:SetSelectedStuff(ModUuid, SlotId)
     end
   end
 end
-
 function M:CheckSpecificSlot(ModUuid, SlotId, bShowError)
   if nil == bShowError then
     bShowError = true
@@ -660,7 +619,6 @@ function M:CheckSpecificSlot(ModUuid, SlotId, bShowError)
   end
   return true
 end
-
 function M:CheckModRepeat(ModUuid, bWarning)
   if nil == bWarning then
     bWarning = true
@@ -671,7 +629,7 @@ function M:CheckModRepeat(ModUuid, bWarning)
     local ConflictSlotIds = {}
     for _, ConflictUuid in ipairs(Mod.ConflictUuids) do
       local ConflictMod = ModModel:GetMod(ConflictUuid)
-      assert(ConflictMod, "ModController:CheckModRepeat \229\143\145\231\142\176\228\186\134\228\184\128\228\184\170\232\135\180\229\145\189\233\148\153\232\175\175", ConflictUuid)
+      assert(ConflictMod, "ModController:CheckModRepeat 发现了一个致命错误", ConflictUuid)
       local Name = string.format("<H>%s</>", GText(ConflictMod:Data().Name))
       ModNames[Name] = 1
       local SlotIds = ModModel:GetSlotIdsWhichEquiped(ConflictUuid) or {}
@@ -691,7 +649,6 @@ function M:CheckModRepeat(ModUuid, bWarning)
   end
   return true
 end
-
 function M:QuickEquipMod(ModUuid)
   if ModModel:IsBugMod(ModUuid) then
     return
@@ -716,7 +673,6 @@ function M:QuickEquipMod(ModUuid)
   end
   self:CheckError(ErrorCode.RET_MOD_OVER_CHAR_MODVOLUME)
 end
-
 function M:TakeOffSuitMod(Target)
   self:SetSelectedStuff(nil, nil)
   local bAnyModEquiped = ModModel:IsAnyModEquiped()
@@ -736,11 +692,10 @@ function M:TakeOffSuitMod(Target)
     self:SendTakeOffAllMod(Target or ModModel:GetTarget())
   end
 end
-
 function M:_SyncTargetImpl(OldTarget, NewTarget, SuitIndex)
   if OldTarget and OldTarget.Uuid == NewTarget.Uuid then
     if SuitIndex and NewTarget.ModSuitIndex ~= SuitIndex then
-      DebugPrint(ErrorTag, LXYTag, "ModTarget\231\154\132ModSuitIndex\228\184\141\228\184\128\232\135\180\239\188\140\230\136\145\232\174\164\228\184\186\232\191\153\230\152\175\230\156\141\229\138\161\231\171\175bug\239\188\140\230\137\147\229\141\176\228\184\128\228\184\170\230\138\165\233\148\153\230\151\165\229\191\151\228\191\157\231\149\153\231\142\176\229\156\186")
+      DebugPrint(ErrorTag, LXYTag, "ModTarget的ModSuitIndex不一致，我认为这是服务端bug，打印一个报错日志保留现场")
     end
     NewTarget.ModSuitsCostMap = OldTarget.ModSuitsCostMap
     NewTarget.ModSuitIndex = SuitIndex or OldTarget.ModSuitIndex
@@ -748,7 +703,6 @@ function M:_SyncTargetImpl(OldTarget, NewTarget, SuitIndex)
   ModModel:SetTarget(NewTarget)
   return
 end
-
 function M:SyncTarget(TargetUuid, SuitIndex)
   local OldTarget = ModModel:GetTarget()
   local Char = self:GetAvatar().Chars[TargetUuid]
@@ -762,7 +716,6 @@ function M:SyncTarget(TargetUuid, SuitIndex)
     return
   end
 end
-
 _G.ModController = M
 AssembleComponents(M)
 return M

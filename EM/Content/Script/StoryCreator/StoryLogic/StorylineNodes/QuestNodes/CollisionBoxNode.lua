@@ -1,11 +1,9 @@
 local EActorEventType = require("StoryCreator.StoryLogic.StorylineUtils").EActorEventType
 local QuestNodeUtils = require("StoryCreator.StoryLogic.QuestNodeUtils")
 local CollisionBoxNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function CollisionBoxNode:Init()
   self.StaticCreatorId = 0
 end
-
 function CollisionBoxNode:Execute(Callback)
   self.Callback = Callback
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -13,17 +11,14 @@ function CollisionBoxNode:Execute(Callback)
     self.Callback()
     return
   end
-  
   local function FinishWithBeginOverlap()
     DebugPrint("CollisionBoxNode BeginOverlap")
     self.Callback("BeginOverlap")
   end
-  
   local function FinishWithEndOverlap()
     DebugPrint("CollisionBoxNode EndOverlap")
     self.Callback("EndOverlap")
   end
-  
   local function LoadFinishCallback(_, Info)
     local TriggerBase = Info.TriggerBase
     local ActorEid = Info.ActorEid
@@ -34,7 +29,6 @@ function CollisionBoxNode:Execute(Callback)
       FinishWithEndOverlap()
     end
   end
-  
   local StaticCreator = GameMode.EMGameState.StaticCreatorMap:Find(self.StaticCreatorId)
   if not IsValid(StaticCreator) then
     self.Callback()
@@ -47,7 +41,6 @@ function CollisionBoxNode:Execute(Callback)
     GWorld.StoryMgr:BindStaticCreatorActorEvent(self.StaticCreatorId, EActorEventType.OnTriggerAOIBase, self, LoadFinishCallback)
   end
 end
-
 function CollisionBoxNode:Clear()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not IsValid(GameMode) then
@@ -58,5 +51,4 @@ function CollisionBoxNode:Clear()
   GWorld.StoryMgr:UnbindStaticCreatorActorEvent(self.StaticCreatorId)
   self.Callback = nil
 end
-
 return CollisionBoxNode

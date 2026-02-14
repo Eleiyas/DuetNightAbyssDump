@@ -1,5 +1,4 @@
 local M = {}
-
 function M:BattleWheelMain_ReceiveEnterState()
   self.CurrentSubUI = self.CurrentSubUI
   if IsValid(self.CurrentSubUI) and self.CurrentSubUI:IsPhantomWeaponMenuOpened() then
@@ -9,7 +8,6 @@ function M:BattleWheelMain_ReceiveEnterState()
     self.ActorController:HidePlayerActor("ArmoryBattleWheel", true)
   end
 end
-
 function M:BattleWheelMain_Init()
   self.Tab_L:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.EMListView_SubTab:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -23,12 +21,12 @@ function M:BattleWheelMain_Init()
   if not self.CurrentSubUI then
     return
   end
+  self:OnFocusChanged()
   AudioManager(self):PlayUISound(self, "event:/ui/common/combat_bag_show", "BattleMenuShowSound", nil)
   if self.ActorController then
     self.ActorController:HidePlayerActor("ArmoryBattleWheel", true)
   end
 end
-
 function M:BattleWheelMain_PreMainTabChange()
   UWidgetBlueprintLibrary.CancelDragDrop()
   AudioManager(self):SetEventSoundParam(self, "BattleMenuShowSound", {ToEnd = 1})
@@ -36,7 +34,6 @@ function M:BattleWheelMain_PreMainTabChange()
     self.ActorController:HidePlayerActor("ArmoryBattleWheel", false)
   end
 end
-
 function M:BattleWheelMain_Close()
   UWidgetBlueprintLibrary.CancelDragDrop()
   AudioManager(self):SetEventSoundParam(self, "BattleMenuShowSound", {ToEnd = 1})
@@ -44,7 +41,6 @@ function M:BattleWheelMain_Close()
     self.ActorController:HidePlayerActor("ArmoryBattleWheel", false)
   end
 end
-
 function M:BattleWheelMain_OnFocusReceived(ReplyInfo)
   if IsValid(self.CurrentSubUI) and self.CurrentSubUI:IsPhantomWeaponMenuOpened() then
     self.CurrentSubUI:SetPhantomWeaponMenuFocus()
@@ -56,11 +52,13 @@ function M:BattleWheelMain_OnFocusReceived(ReplyInfo)
     ReplyInfo.IsHandled = true
   end
 end
-
 function M:BattleWheelMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
   end
+  local ConstCurSubTab = self:GetConstTab(self.CurMainTab.Name, self.CurSubTab.Name)
+  self.EnableMouseWheel = ConstCurSubTab and ConstCurSubTab.EnableMouseWheel
+  self.EnableDrag = ConstCurSubTab and ConstCurSubTab.EnableDrag
   self:AddKeyEvents(KeyDownEvents, self.MainTabKeyDownEvents, self.CommonKeyDownEvents)
   if self.CurrentSubUI and self.CurrentSubUI.BottomKeyInfo then
     for key, value in pairs(BottomKeyInfo) do
@@ -71,16 +69,12 @@ function M:BattleWheelMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyI
     end
   end
 end
-
 function M:BattleWheelMain_InitNavigationRules()
 end
-
 function M:BattleWheelMain_OnSubTabLeftKeyDown()
   self.CurrentSubUI:WheelScrollToRight()
 end
-
 function M:BattleWheelMain_OnSubTabRightKeyDown()
   self.CurrentSubUI:WheelScrollToLeft()
 end
-
 return M

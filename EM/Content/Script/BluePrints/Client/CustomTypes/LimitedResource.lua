@@ -17,56 +17,44 @@ LimitedResource.__Props__ = {
   TransType = prop.getter("LimitedResourceData", "TransType"),
   TransCount = prop.getter("LimitedResourceData", "TransCount")
 }
-
 function LimitedResource:Init(LimitedResourceId, LimitedTimeId)
   self.LimitedResourceId = LimitedResourceId
   self.LimitedTimeId = LimitedTimeId
   self.CreateTime = TimeUtils.NowTime()
 end
-
 function LimitedResource:GetSendTwoMail()
   return self.IsSendTwoMail
 end
-
 function LimitedResource:GetSendOneMail()
   return self.IsSendOneMail
 end
-
 function LimitedResource:SetSendOneMail()
   self.IsSendOneMail = true
 end
-
 function LimitedResource:SetSendTwoMail()
   self.IsSendTwoMail = true
 end
-
 function LimitedResource:Data()
   return DataMgr.LimitedTimeResource[self.LimitedResourceId]
 end
-
 function LimitedResource:LimitedResourceData()
   local LimitedResourceData = self:Data()
   return LimitedResourceData[self.LimitedTimeId]
 end
-
 FormatProperties(LimitedResource)
 local LimitedResourceDict = Class("LimitedResourceDict", CustomTypes.CustomDict)
 LimitedResourceDict.KeyType = BaseTypes.Int
 LimitedResourceDict.ValueType = LimitedResource
-
 function LimitedResourceDict:GetNewLimitedResource(LimitedResourceId, EndTimeIndex)
   if not self[LimitedResourceId] then
     self[LimitedResourceId] = self:NewLimitedResource(LimitedResourceId, EndTimeIndex)
   end
   return self[LimitedResourceId]
 end
-
 function LimitedResourceDict:GetLimitedResource(LimitedResourceId)
   return self[LimitedResourceId]
 end
-
 function LimitedResourceDict:NewLimitedResource(LimitedResourceId, EndTimeIndex)
   return LimitedResource(LimitedResourceId, EndTimeIndex)
 end
-
 return {LimitedResource = LimitedResource, LimitedResourceDict = LimitedResourceDict}

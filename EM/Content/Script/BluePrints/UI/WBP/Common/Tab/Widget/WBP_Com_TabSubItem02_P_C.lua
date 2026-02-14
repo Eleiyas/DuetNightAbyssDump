@@ -1,12 +1,13 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Update(Idx, Info, PlatformDeviceName)
   self.Info = Info
   Info.UI = self
   self.Idx = Idx
   self.IsLocked = Info.IsLocked
   self.PlatformDeviceName = PlatformDeviceName
+  rawset(self, "_OnAddedToFocusPath", Info.OnAddedToFocusPath)
+  rawset(self, "_OnRemovedFromFocusPathEvent", Info.OnRemovedFromFocusPathEvent)
   if self.IsLocked then
     self:PlayAnimation(self.Lock)
   end
@@ -29,15 +30,12 @@ function M:Update(Idx, Info, PlatformDeviceName)
     end
   end
 end
-
 function M:GetTabId()
   return self.Info.TabId
 end
-
 function M:GetTabIndex()
   return self.Idx
 end
-
 function M:Btn_Clicked()
   if self.SoundFunc then
     self.SoundFunc(self.SoundFuncReceiver)
@@ -46,7 +44,6 @@ function M:Btn_Clicked()
     self:SetSwitchOn(true)
   end
 end
-
 function M:Btn_Press()
   if self.PlatformDeviceName == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -60,7 +57,6 @@ function M:Btn_Press()
   self:UnbindAllFromAnimationFinished(self.Press)
   self:PlayAnimation(self.Press)
 end
-
 function M:Btn_Hover()
   if self.PlatformDeviceName == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -81,7 +77,6 @@ function M:Btn_Hover()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:Btn_UnHover()
   if self.PlatformDeviceName == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -94,7 +89,6 @@ function M:Btn_UnHover()
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   self.IsOn = IsOn
   if IsOn then
@@ -105,7 +99,6 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
       local function PlayPressAnimFinished()
         self:PlayAnimation(self.Click)
       end
-      
       self:UnbindAllFromAnimationFinished(self.Press)
       self:BindToAnimationFinished(self.Press, {self, PlayPressAnimFinished})
       self:PlayAnimation(self.Press)
@@ -123,46 +116,38 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
     end
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:BindHoverSoundFunc(func, Receiver)
   self.HoverSoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:SetLockInfo(bUnLock)
-  self.IsLocked = bUnLock
+  self.IsLocked = not bUnLock
   if bUnLock then
     self:PlayAnimation(self.Normal)
   else
     self:PlayAnimation(self.Lock)
   end
 end
-
 function M:SetReddot(IsNew, Upgradeable, OtherReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -184,7 +169,6 @@ function M:SetReddot(IsNew, Upgradeable, OtherReddot)
     end
   end
 end
-
 function M:SetReddotNum(RedNum)
   if nil ~= RedNum and RedNum > 0 then
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -193,15 +177,22 @@ function M:SetReddotNum(RedNum)
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:Destruct()
   if self.Info then
     self.Info.UI = nil
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Btn_Click)
 end
-
+function M:OnAddedToFocusPath()
+  if rawget(self, "_OnAddedToFocusPath") then
+    self._OnAddedToFocusPath(self.Info, self)
+  end
+end
+function M:OnRemovedFromFocusPath()
+  if rawget(self, "_OnRemovedFromFocusPath") then
+    self._OnRemovedFromFocusPath(self.Info, self)
+  end
+end
 return M

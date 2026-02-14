@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:GetAttr(AttrName)
   local IntValue = 0
   local IsInt = false
@@ -18,7 +17,6 @@ function Component:GetAttr(AttrName)
     return nil
   end
 end
-
 function Component:SetAttr(AttrName, Value)
   if type(Value) == "string" then
     self:SetAttrStringFromLua(AttrName, Value)
@@ -26,5 +24,4 @@ function Component:SetAttr(AttrName, Value)
     self:SetAttrNumberFromLua(AttrName, Value)
   end
 end
-
 return Component

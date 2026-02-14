@@ -1,5 +1,4 @@
 local QuestNodeUtils = {}
-
 function QuestNodeUtils.STLTriggerActiveStaticCreator(QuestNode, StaticCreatorIds)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   GWorld.Node = QuestNode
@@ -19,5 +18,4 @@ function QuestNodeUtils.STLTriggerActiveStaticCreator(QuestNode, StaticCreatorId
     GameMode:TriggerActiveStaticCreator_NormalSTL(StaticCreatorIds)
   end
 end
-
 return QuestNodeUtils

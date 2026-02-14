@@ -1,7 +1,6 @@
 local CheckBranchQuestFinishedNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function CheckBranchQuestFinishedNode:Init()
   self.BranchQuestFinishOptions = nil
   self.BranchQuestOptionTable = nil
@@ -12,7 +11,6 @@ function CheckBranchQuestFinishedNode:Init()
   self.CurQuestChainId = 0
   self.CurDoingQuestId = 0
 end
-
 function CheckBranchQuestFinishedNode:Start(Context, InportInfo)
   self.Context = Context
   if self.BranchQuestOptionTable == nil then
@@ -61,7 +59,6 @@ function CheckBranchQuestFinishedNode:Start(Context, InportInfo)
   end
   self:UpdateWorldTaskPanel(InportInfo)
 end
-
 function CheckBranchQuestFinishedNode:CheckBranchStartSetCountInfo()
   local QuestExtraInfo = TaskUtils:GetQuestExtraInfo(self.QuestChainId, self.QuestData.QuestId)
   if not QuestExtraInfo or nil == QuestExtraInfo or IsEmptyTable(QuestExtraInfo) then
@@ -73,14 +70,12 @@ function CheckBranchQuestFinishedNode:CheckBranchStartSetCountInfo()
     end
   end
 end
-
 function CheckBranchQuestFinishedNode:OnCancelTrack()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if not TaskUIObj then
     return
   end
 end
-
 function CheckBranchQuestFinishedNode:OnChooseTrack()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if not TaskUIObj then
@@ -95,13 +90,31 @@ function CheckBranchQuestFinishedNode:OnChooseTrack()
       if self.IsBranchSetCountInfo and self.BranchQuestOptionTable[InportInfo] ~= nil then
         TaskUIObj:ChangeMainTaskBarCountInfoByBranchQuestNode(self.QuestChainId, self.QuestData.QuestId)
       end
+      local NeedFinishCount = 0
+      for _, IsFinished in pairs(self.BranchQuestOptionTable) do
+        if not IsFinished then
+          NeedFinishCount = NeedFinishCount + 1
+        end
+      end
+      local Avatar = GWorld:GetAvatar()
+      if Avatar and 0 == NeedFinishCount and Avatar.TrackingQuestChainId == self.CurQuestChainId then
+        if not IsEmptyTable(TaskUIObj.SubTaskWidgetsTable) then
+          for Name, Widget in pairs(TaskUIObj.SubTaskWidgetsTable) do
+            if IsValid(Widget) and TaskUIObj.VBox_SubTasks:HasChild(Widget) then
+              TaskUIObj.VBox_SubTasks:RemoveChild(Widget)
+              TaskUIObj.SubTaskWidgetsTable[Name] = nil
+            end
+          end
+          TaskUIObj.SubTaskWidgetsTable = {}
+        end
+        return
+      end
       if TaskUIObj.SubTaskWidgetsTable and not IsEmptyTable(TaskUIObj.SubTaskWidgetsTable) and IsValid(TaskUIObj.SubTaskWidgetsTable[InportInfo]) and IsValid(TaskUIObj.SubTaskWidgetsTable[InportInfo]) then
         TaskUIObj.SubTaskWidgetsTable[InportInfo]:PlayAnimation(TaskUIObj.SubTaskWidgetsTable[InportInfo].CompletionTask)
       end
     end
   end
 end
-
 function CheckBranchQuestFinishedNode:UpdateWorldTaskPanel(InportInfo)
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if not TaskUIObj then
@@ -123,6 +136,13 @@ function CheckBranchQuestFinishedNode:UpdateWorldTaskPanel(InportInfo)
     self.BlackScreenUIDurationTimer = GWorld.GameInstance:AddTimer(0.5, function()
       if IsValid(TaskUIObj.SubTaskWidgetsTable[InportInfo]) then
         TaskUIObj.SubTaskWidgetsTable[InportInfo]:PlayAnimation(TaskUIObj.SubTaskWidgetsTable[InportInfo].CompletionTask)
+        if TaskUIObj.SubTaskWidgetsTable[InportInfo].bPlayArrive then
+          TaskUIObj.SubTaskWidgetsTable[InportInfo]:StopArrive()
+          local BattleMain = UIManager(GWorld.GameInstance):GetUIObj("BattleMain")
+          if BattleMain.Battle_Map then
+            BattleMain.Battle_Map.WildMap:EnterOrExitTaskRegion(nil, false)
+          end
+        end
         TaskUIObj.SubTaskWidgetsTable[InportInfo]:BindToAnimationFinished(TaskUIObj.SubTaskWidgetsTable[InportInfo].CompletionTask, {
           TaskUIObj.SubTaskWidgetsTable[InportInfo],
           function()
@@ -134,7 +154,6 @@ function CheckBranchQuestFinishedNode:UpdateWorldTaskPanel(InportInfo)
     end, false, 0, nil, false)
   end
 end
-
 function CheckBranchQuestFinishedNode:TryFinishCurrentNode()
   local NeedFinishCount = 0
   for _, IsFinished in pairs(self.BranchQuestOptionTable) do
@@ -174,7 +193,6 @@ function CheckBranchQuestFinishedNode:TryFinishCurrentNode()
   end
   self.HasStarted = false
 end
-
 function CheckBranchQuestFinishedNode:FinishAction()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if TaskUIObj then
@@ -182,15 +200,12 @@ function CheckBranchQuestFinishedNode:FinishAction()
   end
   self:Finish()
 end
-
 function CheckBranchQuestFinishedNode:Clear()
 end
-
 function CheckBranchQuestFinishedNode:ClearWhenQuestSuccess()
   self.FinishedCount = 0
   TaskUtils:ClearQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId, self.Key)
 end
-
 function CheckBranchQuestFinishedNode:ClearWhenQuestFail()
   self.FinishedCount = 0
   TaskUtils:ClearQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId, self.Key)
@@ -205,5 +220,4 @@ function CheckBranchQuestFinishedNode:ClearWhenQuestFail()
     TaskUIObj.SubTaskWidgetsTable = {}
   end
 end
-
 return CheckBranchQuestFinishedNode

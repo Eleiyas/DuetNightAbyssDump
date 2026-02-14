@@ -2,11 +2,10 @@ require("UnLua")
 require("DataMgr")
 local ExpressionComp_C = require("BluePrints.Story.Talk.Controller.ExpressionComp")
 local WBP_GuideTextBox_C = Class("BluePrints.UI.BP_UIState_C")
-
+local EMCache = require("EMCache.EMCache")
 function WBP_GuideTextBox_C:Initialize(Initializer)
   WBP_GuideTextBox_C.Super.Initialize(self, Initializer)
 end
-
 function WBP_GuideTextBox_C:Construct()
   self.GuideManIdx = 0
   self.GuideManInfos = {}
@@ -17,12 +16,12 @@ function WBP_GuideTextBox_C:Construct()
   for i = 0, 10 do
     self:AddTimer(0.05 * i, self.SetKeyboardFocus)
   end
+  self:InitGamePadKeyButton()
   WBP_GuideTextBox_C.Super.Construct(self)
   self.IsDestroied = false
   self:InitListenEvent()
   self:SetFocus()
 end
-
 function WBP_GuideTextBox_C:Destruct()
   WBP_GuideTextBox_C.Super.Destruct(self)
   if self.IsTimePause then
@@ -38,11 +37,35 @@ function WBP_GuideTextBox_C:Destruct()
     PlayerCharacter:RemoveDisableInputTag("ResetPlayerState")
   end
 end
-
+function WBP_GuideTextBox_C:OpenWindow()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/special_content_01_click", nil, nil)
+  if self.Controller_Skip then
+    self.Controller_Skip:PlayAnimation(self.Controller_Skip.Normal)
+  end
+  local GuideSkip = EMCache:Get("GuideSkip", true)
+  if GuideSkip then
+    self:SkipGuide()
+    return
+  end
+  self.bOpenWindow = true
+  local Params = {}
+  Params.RightCallbackObj = self
+  function Params.RightCallbackFunction(_, Data, PopupUI)
+    self:SkipGuide()
+    self:UpdateSelectedInfo(Data)
+  end
+  function Params.OnCloseCallbackFunction(_, Data, PopupUI)
+    self.bOpenWindow = false
+  end
+  UIManager(self):ShowCommonPopupUI(100291, Params, self, nil, 105)
+end
+function WBP_GuideTextBox_C:UpdateSelectedInfo(Data)
+  local IsSelected = Data.SelectHint.IsSelected
+  EMCache:Set("GuideSkip", IsSelected, true)
+end
 function WBP_GuideTextBox_C:GuideUIInit_TextGuide(UIKey, MessageId, GuidemanHead, GuideManPosEnum, Time, ExecuteLogic, IsTimeDilation, IsForceClick, IsResetPlayer, IsForbidInAnim, IsForbidOutAnim)
   self:AddGuideMessage(UIKey, MessageId, IsTimeDilation, GuidemanHead, GuideManPosEnum, IsResetPlayer, IsForbidInAnim, IsForbidOutAnim)
 end
-
 function WBP_GuideTextBox_C:Hide(HideTag)
   AudioManager(self):PauseObjectAllEvent(self, true)
   if self.IgnoreHideTags and CommonUtils.HasValue(self.IgnoreHideTags, HideTag) then
@@ -62,7 +85,6 @@ function WBP_GuideTextBox_C:Hide(HideTag)
     self.IsBanningAction = nil
   end
 end
-
 function WBP_GuideTextBox_C:Show(ShowTag)
   AudioManager(self):PauseObjectAllEvent(self, false)
   ShowTag = ShowTag or "DefaultTag"
@@ -79,7 +101,6 @@ function WBP_GuideTextBox_C:Show(ShowTag)
     self.IsBanningAction = true
   end
 end
-
 function WBP_GuideTextBox_C:AddGuideMessage(UIKey, MessageId, IsTimePause, GuidemanHead, GuideManPosEnum, IsResetPlayer, IsForbidInAnim, IsForbidOutAnim)
   self.IsForbidInAnim = IsForbidInAnim
   self.IsForbidOutAnim = IsForbidOutAnim
@@ -94,7 +115,6 @@ function WBP_GuideTextBox_C:AddGuideMessage(UIKey, MessageId, IsTimePause, Guide
   self.TitleContent = TitleContent
   self.Text_Guide_Name:SetText(TitleContent)
   self.Btn_Confirm:SetGamePadIconVisible(true)
-  
   local function ParseActionMapContent(SourceContent)
     local FirstIndex = string.find(SourceContent, "&")
     if not FirstIndex then
@@ -107,7 +127,6 @@ function WBP_GuideTextBox_C:AddGuideMessage(UIKey, MessageId, IsTimePause, Guide
     local sub2 = string.sub(SourceContent, SecondIndex + 1)
     return sub1 .. ActionMapContent .. sub2
   end
-  
   MessageContent = ParseActionMapContent(MessageContent)
   self.Text_Content:SetText(MessageContent)
   self:PlayInAnimation()
@@ -119,6 +138,7 @@ function WBP_GuideTextBox_C:AddGuideMessage(UIKey, MessageId, IsTimePause, Guide
   end
   self.Btn_Confirm:SetText(GText("UI_LOGIN_ENSURE"))
   self.Btn_Confirm:BindEventOnClicked(self, self.PlayOutAnimation)
+  self.Btn_Skip.OnClicked:Add(self, self.OpenWindow)
   DebugPrint("WBP_GuideTextBox_C:GuideUIInit_TextGuide: GuideManPosEnum", GuideManPosEnum)
   self:SetGuideCanvasRelativePosition(GuideManPosEnum)
   self:PlayTextGuide(GuidemanHead)
@@ -131,8 +151,22 @@ function WBP_GuideTextBox_C:AddGuideMessage(UIKey, MessageId, IsTimePause, Guide
       self:BlackScreenUIFadeIn()
     end
   end
+  self:InitGamePadKeyButton()
+  self.bSkip = 0
+  if -1 ~= SystemGuideManager.RunningId then
+    self.bSkip = DataMgr.SystemGuide[SystemGuideManager.RunningId].GuideSkip
+  end
+  if 1 == self.bSkip then
+    self.Text_Skip:SetText(GText("UI_SkipGuide"))
+    self.Panel_Skip:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Panel_Skip:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+  local bIsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
+  if bIsGamepad and 1 == self.bSkip then
+    self.Controller_Skip:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+  end
 end
-
 function WBP_GuideTextBox_C:BlackScreenUIFadeIn()
   self.OriginalVisibility = self:GetVisibility()
   self:SetVisibility(UE4.ESlateVisibility.Hidden)
@@ -151,15 +185,8 @@ function WBP_GuideTextBox_C:BlackScreenUIFadeIn()
     UIManger:HideCommonBlackScreen("GuideTextBox")
   end)
 end
-
 function WBP_GuideTextBox_C:BlackScreenUIFadeOut()
-  self:SetVisibility(self.OriginalVisibility)
-  Params.InAnimationObj = self
-  Params.InAnimationCallback = self.ResetPlayerStateStart
-  Params.InAnimationPlayTime = 0.5
-  UIManger:ShowCommonBlackScreen(Params)
 end
-
 function WBP_GuideTextBox_C:ResetPlayerStateStart()
   DebugPrint("==========================================================ResetPlayerStateStart")
   local GameInstance = GWorld.GameInstance
@@ -176,7 +203,6 @@ function WBP_GuideTextBox_C:ResetPlayerStateStart()
   end
   PlayerCharacter:AddDisableInputTag("ResetPlayerState")
 end
-
 function WBP_GuideTextBox_C:ResetPlayerStateEnd()
   DebugPrint("==========================================================ResetPlayerStateEnd")
   local GameInstance = GWorld.GameInstance
@@ -191,7 +217,6 @@ function WBP_GuideTextBox_C:ResetPlayerStateEnd()
     self.BlackScreenUI = nil
   end
 end
-
 function WBP_GuideTextBox_C:SetGuideCanvasRelativePosition(GuideManPosEnum)
   local CanvasSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Panel_Guide)
   local ViewportSize = UIManager(self):GetViewportSize()
@@ -210,17 +235,14 @@ function WBP_GuideTextBox_C:SetGuideCanvasRelativePosition(GuideManPosEnum)
   DebugPrint("WBP_GuideTextBox_C:SetGuideCanvasRelativePosition:", ViewportSize, ViewportSize.X * RelativePositionScaleTable[GuideManPosEnum].x, ViewportSize.Y * RelativePositionScaleTable[GuideManPosEnum].y)
   CanvasSlot:SetPosition(FVector2D(ViewportSize.X / ViewPortScale * RelativePositionScaleTable[GuideManPosEnum].x, ViewportSize.Y / ViewPortScale * RelativePositionScaleTable[GuideManPosEnum].y))
 end
-
 function WBP_GuideTextBox_C:PlayTextGuide(GuidemanHead)
   self:MakeGuideManInfo(GuidemanHead)
 end
-
 function WBP_GuideTextBox_C:GetOrCreateNewGuideManInfo(GuidemanConfigId, GuidemanConfigData)
   if self.GuideManInfos[GuidemanConfigId] then
     local Info = self.GuideManInfos[GuidemanConfigId]
     return Info.GuideMan, Info.Idx, Info.DriveCameraConfig
   end
-  
   local function JointFinalAnimPath(ModelId, Path, SubPath)
     local ModelData = DataMgr.Model[ModelId]
     local MontageFolder = ModelData.MontageFolder
@@ -228,7 +250,6 @@ function WBP_GuideTextBox_C:GetOrCreateNewGuideManInfo(GuidemanConfigId, Guidema
     local SequenceFolder = string.gsub(MontageFolder, "Montage", "Sequence")
     return SequenceFolder .. SubPath .. "/" .. Prefix .. Path
   end
-  
   local GuideManIdx = self.GuideManIdx
   self.GuideManIdx = self.GuideManIdx + 1
   local Transform = FTransform(FRotator(0, 0, 0):ToQuat(), FVector(0, 0 + GuideManIdx * 10000, -50000))
@@ -237,11 +258,9 @@ function WBP_GuideTextBox_C:GetOrCreateNewGuideManInfo(GuidemanConfigId, Guidema
   if not GameMode then
     return
   end
-  
   local function LoadFinishCallback(Unit)
     GuideMan = Unit
   end
-  
   GameMode.EMGameState.EventMgr:CreateAIUnit({
     UnitId = GuidemanConfigData.NpcId,
     RoleId = GuidemanConfigData.NpcId,
@@ -285,7 +304,6 @@ function WBP_GuideTextBox_C:GetOrCreateNewGuideManInfo(GuidemanConfigId, Guidema
   }
   return GuideMan, GuideManIdx, DriveCameraConfig
 end
-
 function WBP_GuideTextBox_C:CameraFocusActor(Idx, TalkActor, CameraParams)
   local SocketName = CameraParams.SocketName or "head"
   local SocketLoc = TalkActor.Mesh:GetSocketLocation(SocketName)
@@ -304,11 +322,9 @@ function WBP_GuideTextBox_C:CameraFocusActor(Idx, TalkActor, CameraParams)
   TalkActor.CaptureCam.FOVAngle = CameraParams.CameraFOV or 20
   self.LastGuideManActor = TalkActor
 end
-
 function WBP_GuideTextBox_C:GetImageWidget()
   return self.Img_Animation01
 end
-
 function WBP_GuideTextBox_C:MakeGuideManInfo(GuidemanHead)
   if nil == GuidemanHead or "" == GuidemanHead then
     self:GetImageWidget():SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -327,7 +343,6 @@ function WBP_GuideTextBox_C:MakeGuideManInfo(GuidemanHead)
     end
   end
 end
-
 function WBP_GuideTextBox_C:PlayInAnimation()
   local InAnimation = self.Auto_In
   self:PlayAnimation(InAnimation)
@@ -338,7 +353,6 @@ function WBP_GuideTextBox_C:PlayInAnimation()
     self.Bg_Black:SetRenderOpacity(1)
   end
 end
-
 function WBP_GuideTextBox_C:PlayOutAnimation()
   if self.IsPlayingOutAnimation then
     return
@@ -354,7 +368,6 @@ function WBP_GuideTextBox_C:PlayOutAnimation()
     self:PlayAnimation(self.Bg_Out)
   end
 end
-
 function WBP_GuideTextBox_C:Close()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -386,28 +399,52 @@ function WBP_GuideTextBox_C:Close()
   end
   self.IsDestroied = true
 end
-
-function WBP_GuideTextBox_C:OnKeyDown(MyGeometry, InKeyEvent)
-  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
-  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
-  return UE4.UWidgetBlueprintLibrary.Handled()
+function WBP_GuideTextBox_C:SkipGuide()
+  local Path = DataMgr.SystemGuide[SystemGuideManager.RunningId].GuideStoryline
+  GWorld.StoryMgr:StopStoryline(Path, false)
+  self:Close()
 end
-
-function WBP_GuideTextBox_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
+function WBP_GuideTextBox_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if "Gamepad_FaceButton_Bottom" == InKeyName then
     self:PlayOutAnimation()
+  elseif "Gamepad_Special_Right" == InKeyName and 1 == self.bSkip then
+    self.Controller_Skip:OnButtonPressed()
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
+function WBP_GuideTextBox_C:OnKeyUp(MyGeometry, InKeyEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "Gamepad_Special_Right" == InKeyName then
+    self.Controller_Skip:OnButtonReleased()
+  end
+  return UE4.UWidgetBlueprintLibrary.Handled()
+end
+function WBP_GuideTextBox_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
+end
+function WBP_GuideTextBox_C:InitKeyButton()
+  self.Key_Skip:CreateCommonKey({
+    KeyInfoList = {
+      {Type = "Text", Text = "Esc"}
+    }
+  })
+end
+function WBP_GuideTextBox_C:InitGamePadKeyButton()
+  self.Controller_Skip:CreateCommonKey({
+    KeyInfoList = {
+      {ImgShortPath = "Menu", Type = "Img"}
+    },
+    bLongPress = true
+  })
+  self.Controller_Skip:AddExecuteLogic(self, self.OpenWindow)
+end
 function WBP_GuideTextBox_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_GuideTextBox_C:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -415,18 +452,24 @@ function WBP_GuideTextBox_C:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_GuideTextBox_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
   end
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
+    if 1 == self.bSkip then
+      self.Controller_Skip:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
   else
+    if 1 == self.bSkip then
+      self.Controller_Skip:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+    end
     self:AddTimer(0.01, function()
-      self.GameInputModeSubsystem:SetTargetUIFocusWidget(self)
+      if not self.bOpenWindow then
+        self.GameInputModeSubsystem:SetTargetUIFocusWidget(self)
+      end
     end)
   end
 end
-
 return WBP_GuideTextBox_C

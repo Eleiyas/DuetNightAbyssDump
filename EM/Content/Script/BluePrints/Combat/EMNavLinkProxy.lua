@@ -1,5 +1,4 @@
 local M = Class()
-
 function M:DescribeSelfToManager(NavLinkLeader)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -10,7 +9,6 @@ function M:DescribeSelfToManager(NavLinkLeader)
   end
   GameState:RegisterLink(self, NavLinkLeader)
 end
-
 function M:UnregisterSelfToManager(NavLinkLeader)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -21,7 +19,6 @@ function M:UnregisterSelfToManager(NavLinkLeader)
   end
   GameState:UnregisterLink(NavLinkLeader)
 end
-
 function M:FindAndOccupyLink(LinkLeader)
   LinkLeader = LinkLeader or self
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -30,5 +27,4 @@ function M:FindAndOccupyLink(LinkLeader)
   end
   return GameState:FindAndOccupyLink(LinkLeader)
 end
-
 return M

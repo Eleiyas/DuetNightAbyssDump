@@ -16,14 +16,12 @@ ImpressionAttr.__Props__ = {
   Options = prop.prop("Str", "client save"),
   NodeId = prop.prop("Str", "client save")
 }
-
 function ImpressionAttr:Init(Param)
   if not Param or type(Param) ~= table then
     return
   end
   self:CopyParams(Param)
 end
-
 function ImpressionAttr:CopyParams(Param)
   self.ImprCheckOptionEnum = Param.ImprCheckOptionEnum
   self.IsCheckSuccess = Param.IsCheckSuccess
@@ -34,16 +32,13 @@ function ImpressionAttr:CopyParams(Param)
   self.ImprPlusOptionEnum = Param.ImprPlusOptionEnum
   self.NodeId = Param.NodeId
 end
-
 FormatProperties(ImpressionAttr)
 local ImpressionAttrDict = Class("ImpressionAttrDict", CustomTypes.CustomDict)
 ImpressionAttrDict.KeyType = BaseTypes.Str
 ImpressionAttrDict.ValueType = ImpressionAttr
-
 function ImpressionAttrDict:GetImpressionAttr(StoryNodeId)
   return self[StoryNodeId]
 end
-
 function ImpressionAttrDict:GetNewImpressionAttr(StoryNodeId, Param)
   if not self[StoryNodeId] then
     self[StoryNodeId] = self:NewImpressionAttr(Param)
@@ -51,11 +46,9 @@ function ImpressionAttrDict:GetNewImpressionAttr(StoryNodeId, Param)
   self[StoryNodeId]:CopyParams(Param)
   return self[StoryNodeId]
 end
-
 function ImpressionAttrDict:NewImpressionAttr(Param)
   return ImpressionAttr(Param)
 end
-
 local Impression = Class("Impression", CustomTypes.CustomAttr)
 Impression.__Props__ = {
   RegionId = prop.prop("Int", "client save", 0),
@@ -68,7 +61,6 @@ Impression.__Props__ = {
   StoryLineComplete = prop.prop("Str2IntDict", "client save"),
   CurrentStoryNode = prop.prop("ImpressionAttrDict", "client save")
 }
-
 function Impression:InitImpression(RegionId)
   RegionId = tonumber(RegionId)
   if not RegionId or RegionId <= 0 then
@@ -81,7 +73,6 @@ function Impression:InitImpression(RegionId)
   self.Empathy = 1
   self.Chaos = 1
 end
-
 function Impression:AddImpressionValueByType(ImpressionType, Value)
   local CurrentValue = self[ImpressionType] + Value
   local MaxValue = DataMgr.GlobalConstant.ImressionMax.ConstantValue
@@ -93,29 +84,24 @@ function Impression:AddImpressionValueByType(ImpressionType, Value)
     self[ImpressionType] = CurrentValue
   end
 end
-
 function Impression:GetImpressionValueByType(ImpressionType)
   return self[ImpressionType]
 end
-
 FormatProperties(Impression)
 local ImpressionDict = Class("ImpressionDict", CustomTypes.CustomDict)
 ImpressionDict.KeyType = BaseTypes.Int
 ImpressionDict.ValueType = Impression
-
 function ImpressionDict:NewImpression(RegionId)
   local NImpression = Impression(RegionId)
   NImpression:InitImpression(RegionId)
   return NImpression
 end
-
 function ImpressionDict:GetImpression(RegionId)
   if not self[RegionId] then
     self[RegionId] = self:NewImpression(RegionId)
   end
   return self[RegionId]
 end
-
 return {
   Impression = Impression,
   ImpressionDict = ImpressionDict,

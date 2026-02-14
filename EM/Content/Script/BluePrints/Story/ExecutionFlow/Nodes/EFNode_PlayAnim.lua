@@ -1,5 +1,5 @@
 local M = {}
-
+local ScriptLogType = UE.EStoryLogType.Script
 function M:CreateNode(Flow, TalkTask, Params)
   local ActorId = Params.ActorId
   local AnimationId = Params.AnimationId
@@ -8,25 +8,25 @@ function M:CreateNode(Flow, TalkTask, Params)
   local TalkContext = GWorld.GameInstance:GetTalkContext()
   if not IsValid(TalkContext) then
     local Message = string.format("PlayAnim create failed: TalkContext not found, DialogueId: %s", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "PlayAnim脚本执行出错: TalkContext无效", Message)
     return
   end
   local TalkActorData = TalkContext:GetTalkActorData(TalkTask, ActorId)
   if not TalkActorData then
     local Message = string.format("PlayAnim create failed: TalkActorData not found, ActorId: %s, DialogueId: %s", ActorId, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "PlayAnim脚本执行出错: TalkActorData无效", Message)
     return
   end
   local TalkActor = TalkActorData.TalkActor
   if not IsValid(TalkActor) then
-    local Message = string.format("PlayAnim create failed: TalkActor \230\151\160\230\149\136\239\188\140\233\156\128\232\166\129\231\168\139\229\186\143\230\142\146\230\159\165\229\164\177\230\149\136\229\142\159\229\155\160, ActorId: %s, DialogueId: %s", ActorId, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    local Message = string.format("PlayAnim create failed: TalkActor 无效，需要程序排查失效原因, ActorId: %s, DialogueId: %s", ActorId, Flow.DialogueId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "PlayAnim脚本执行出错: TalkActor无效", Message)
     return
   end
   local TalkActionData = TalkContext:GetTalkActionData(ActorId, AnimationId)
   if not TalkActionData then
     local Message = string.format("PlayAnim create failed: TalkActionData not found, ActorId: %s, AnimationId: %s, DialogueId: %s", ActorId, AnimationId, Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "PlayAnim脚本执行出错: TalkActionData无效", Message)
     return
   end
   local DurationHandle
@@ -66,5 +66,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return PlayAnimationNode
 end
-
 return M

@@ -3,7 +3,6 @@ local MiscUtils = require("Utils.MiscUtils")
 local BP_FieldCreature_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_FieldCreature_C:AuthorityInitInfo(Info)
   self:ReadDataMgr()
   BP_FieldCreature_C.Super.AuthorityInitInfo(self, Info)
@@ -14,7 +13,6 @@ function BP_FieldCreature_C:AuthorityInitInfo(Info)
     GameState.FeildCreatureMap:Add(self.ManualItemId, self)
   end
 end
-
 function BP_FieldCreature_C:CommonInitInfo(Info)
   self:ReadDataMgr()
   if self.Z then
@@ -23,7 +21,6 @@ function BP_FieldCreature_C:CommonInitInfo(Info)
   self.bSkillUseful = false
   BP_FieldCreature_C.Super.CommonInitInfo(self, Info)
 end
-
 function BP_FieldCreature_C:TargetEnter(OverlappedComponent, Target, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
   if self.IsCastFieldCover and self:IsCastFieldCover(Target) then
     Target:FieldCoverIsHitEnter(self)
@@ -44,7 +41,6 @@ function BP_FieldCreature_C:TargetEnter(OverlappedComponent, Target, OtherComp, 
     local function UseFieldEffect(_, TargetEid)
       if not IsValid(Target) then
         Target = Battle(self):GetEntity(TargetEid)
-        
         if not IsValid(Target) then
           self:RemoveTimer("UseFieldEffect" .. TargetEid)
           return
@@ -59,14 +55,12 @@ function BP_FieldCreature_C:TargetEnter(OverlappedComponent, Target, OtherComp, 
         self:RemoveTimer("UseFieldEffect" .. TargetEid)
       end
     end
-    
     self:AddTimer(self.AttackCD, UseFieldEffect, true, 0, "UseFieldEffect" .. Target.Eid, nil, Target.Eid)
   end
   if self.MonEffect and self.MonEffect > 0 and self.MonAttackCD and self.MonAttackCD > 0 then
     local function UseFieldMonEffect(_, TargetEid)
       if not IsValid(Target) then
         Target = Battle(self):GetEntity(TargetEid)
-        
         if not IsValid(Target) then
           self:RemoveTimer("UseFieldMonEffect" .. TargetEid)
           return
@@ -81,7 +75,6 @@ function BP_FieldCreature_C:TargetEnter(OverlappedComponent, Target, OtherComp, 
         self:RemoveTimer("UseFieldMonEffect" .. TargetEid)
       end
     end
-    
     self:AddTimer(self.MonAttackCD, UseFieldMonEffect, true, 0, "UseFieldMonEffect" .. Target.Eid, nil, Target.Eid)
   end
   if self.SkillEnter and self.SkillEnter > 0 then
@@ -91,7 +84,6 @@ function BP_FieldCreature_C:TargetEnter(OverlappedComponent, Target, OtherComp, 
     self.Super.PropUseSkill(self, self.MonSkillEnter, Target)
   end
 end
-
 function BP_FieldCreature_C:TargetLeave(OverlappedComponent, Target, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
   if self.IsCastFieldCover and self:IsCastFieldCover(Target) then
     Target:FieldCoverIsHitLeave(self)
@@ -118,14 +110,12 @@ function BP_FieldCreature_C:TargetLeave(OverlappedComponent, Target, OtherComp, 
     self.Super.PropUseSkill(self, self.MonSkillLeave, Target)
   end
 end
-
 function BP_FieldCreature_C:AddBuffOnBegin()
   local OutActors = self:GetTrapOverlapActors()
   for i = 1, OutActors:Length() do
     self:TargetEnter(nil, OutActors:GetRef(i))
   end
 end
-
 function BP_FieldCreature_C:GetUnitParams()
   local _Data = self:GetBattleDataInfo()
   if _Data then
@@ -141,7 +131,6 @@ function BP_FieldCreature_C:GetUnitParams()
   end
   return UnitParams
 end
-
 function BP_FieldCreature_C:ReadDataMgr()
   local UnitParams = self:GetUnitParams()
   if not UnitParams then
@@ -173,7 +162,6 @@ function BP_FieldCreature_C:ReadDataMgr()
     end
   end
 end
-
 function BP_FieldCreature_C:NotifyFieldCover()
   if IsStandAlone(self) or IsClient(self) or MiscUtils.IsSimulatedProxy(self) then
     local ObjectTypes = TArray(EObjectTypeQuery)
@@ -189,11 +177,9 @@ function BP_FieldCreature_C:NotifyFieldCover()
     end
   end
 end
-
 function BP_FieldCreature_C:SwitchBefore()
   self.Overridden.SwitchBefore(self)
 end
-
 function BP_FieldCreature_C:SetFieldCreateMechanismInfo(TargetTrapState, TargetTrapType, TriggerBoxScale, Grade)
   local CurrentType = self.TrapType
   self.TrapType = TargetTrapType
@@ -216,7 +202,6 @@ function BP_FieldCreature_C:SetFieldCreateMechanismInfo(TargetTrapState, TargetT
     self:UpdateRegionDataByTable(Data)
   end
 end
-
 function BP_FieldCreature_C:CleanCurrentBuff()
   if not self.AllowPlayer then
     return
@@ -227,18 +212,15 @@ function BP_FieldCreature_C:CleanCurrentBuff()
     end
   end
 end
-
 function BP_FieldCreature_C:OnRep_TrapType()
   self:ReadDataMgr()
 end
-
 function BP_FieldCreature_C:GetBattleDataInfo()
   local CombatProp = DataMgr.Mechanism[self.UnitId]
   self.RoleId = CombatProp.BattleRoleId
   self.RewardId = CombatProp.RewardId
   return DataMgr.BattleMonster[self.RoleId]
 end
-
 function BP_FieldCreature_C:GetTrapOverlapActors()
   local ObjectTypes = TArray(EObjectTypeQuery)
   ObjectTypes:Add(EObjectTypeQuery.Pawn)
@@ -246,7 +228,6 @@ function BP_FieldCreature_C:GetTrapOverlapActors()
   OutActors = UE4.UKismetSystemLibrary.ComponentOverlapActors(self.TrapArea, self:GetTransform(), ObjectTypes)
   return OutActors
 end
-
 function BP_FieldCreature_C:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   for _, TargetSign in pairs(self.AllowPlayer) do
@@ -256,7 +237,7 @@ function BP_FieldCreature_C:ReceiveTick(DeltaSeconds)
     else
       local Hit, Res = self:LineTraceCheck(TargetSign.Target)
       if Res and UKismetMathLibrary.EqualEqual_ObjectObject(TargetSign.Target, Hit.Actor) and self.SkillEnter > 0 then
-        if not self:EndEnterEffect(Target) then
+        if not self:EndEnterEffect(TargetSign) then
           self.Super.PropUseSkill(self, self.SkillEnter, TargetSign.Target)
         end
         self.AllowPlayer[TargetSign.Target.Eid].IsCover = false
@@ -274,7 +255,6 @@ function BP_FieldCreature_C:ReceiveTick(DeltaSeconds)
     self.SignTable[Key] = nil
   end
 end
-
 function BP_FieldCreature_C:EndEnterEffect(Target)
   local Player = Target.Target
   if Player:Cast(UE4.APlayerCharacter) and Player:GetAttr("ES") <= 0 and self.Grade > 0 then
@@ -289,25 +269,21 @@ function BP_FieldCreature_C:EndEnterEffect(Target)
       Target.IsHitBack = true
       self.Super.PropUseSkill(self, self.SkillLeave, Player)
       self.Super.PropUseSkill(self, SkillEnter, Player)
-      
       local function func()
         if Target then
           Target.IsHitBack = false
         end
       end
-      
       self:AddTimer(5, func)
       return true
     end
   end
   return false
 end
-
 function BP_FieldCreature_C:ShowDeath()
   BP_FieldCreature_C.Super.ShowDeath(self)
   self:EMActorDestroy(EDestroyReason.MechanismDead)
 end
-
 function BP_FieldCreature_C:ReceiveBeginPlay()
   BP_FieldCreature_C.Super.ReceiveBeginPlay(self)
   self.PrimaryActorTick.bCanEverTick = true
@@ -317,28 +293,22 @@ function BP_FieldCreature_C:ReceiveBeginPlay()
   self.AllowPlayer = {}
   self.SignTable = {}
 end
-
 function BP_FieldCreature_C:CreateRegionData()
   BP_FieldCreature_C.Super.CreateRegionData(self)
 end
-
 function BP_FieldCreature_C:RecoverSavedData(DataTable)
   BP_FieldCreature_C.Super.RecoverSavedData(self, DataTable)
   self:ReadDataMgr()
 end
-
 function BP_FieldCreature_C:CheckUnitNeedStorage()
   self.LastState = self.LastState or self.TrapType
-  return self.TrapType ~= ETrapType.TrapNone and CurrentState ~= self.TrapType
+  return self.TrapType ~= ETrapType.TrapNone
 end
-
 function BP_FieldCreature_C:SetActiveType()
   self.ActiveType = "Manual"
 end
-
 function BP_FieldCreature_C:SetSkillUseful(bUseful)
   print(_G.LogTag, "LXZ SetSkillUseful", bUseful)
   self.bSkillUseful = bUseful
 end
-
 return BP_FieldCreature_C

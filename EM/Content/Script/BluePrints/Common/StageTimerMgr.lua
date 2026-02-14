@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:AddTimer(interval, func, isloop, delay, Key, IsRealTime, TickGroup, ...)
   if nil == self then
     return
@@ -21,7 +20,6 @@ function M:AddTimer(interval, func, isloop, delay, Key, IsRealTime, TickGroup, .
     Key = "AutoMade_" .. self.TimerKeyIdx
   end
   self:RemoveTimer(Key)
-  
   local function f(self)
     if not self then
       return
@@ -31,7 +29,6 @@ function M:AddTimer(interval, func, isloop, delay, Key, IsRealTime, TickGroup, .
     end
     func(self, table.unpack(Params))
   end
-  
   local Timer = ULastDemotableTimerSubsystem.K2_SetTimerDelegate({self, f}, interval, isloop, IsRealTime, delay, 0, TickGroup)
   self.TimerHandles[Key] = Timer
   self.TimerHandleDatas[Timer] = {
@@ -43,7 +40,6 @@ function M:AddTimer(interval, func, isloop, delay, Key, IsRealTime, TickGroup, .
   }
   return Timer, Key
 end
-
 function M:RemoveTimer(KeyOrTimer, bNotCallRemoveHandler)
   if nil == KeyOrTimer or not rawget(self, "TimerHandles") then
     return
@@ -60,7 +56,6 @@ function M:RemoveTimer(KeyOrTimer, bNotCallRemoveHandler)
   self.TimerHandles[Key] = nil
   self.TimerHandleDatas[Timer] = nil
 end
-
 function M:PauseTimer(KeyOrTimer)
   if nil == KeyOrTimer then
     return
@@ -73,7 +68,6 @@ function M:PauseTimer(KeyOrTimer)
   local IsRealTime = TimerInfo.IsRealTime
   ULastDemotableTimerSubsystem.K2_PauseTimerHandle(self, Timer, TimerInfo.TickGroup, IsRealTime)
 end
-
 function M:GetTimerRemainingTime(KeyOrTimer)
   if not KeyOrTimer then
     return -1
@@ -86,7 +80,6 @@ function M:GetTimerRemainingTime(KeyOrTimer)
   local IsRealTime = TimerInfo.IsRealTime
   return ULastDemotableTimerSubsystem.K2_GetTimerRemainingTimeHandle(self, Timer, TimerInfo.TickGroup, IsRealTime)
 end
-
 function M:UnPauseTimer(KeyOrTimer)
   if nil == KeyOrTimer then
     return
@@ -99,5 +92,4 @@ function M:UnPauseTimer(KeyOrTimer)
   local IsRealTime = TimerInfo.IsRealTime
   ULastDemotableTimerSubsystem.K2_UnPauseTimerHandle(self, Timer, TimerInfo.TickGroup, IsRealTime)
 end
-
 return M

@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.ResourceBarWidget = {}
   self.bIsFocusable = true
@@ -15,7 +14,6 @@ function M:Construct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.OnUpdateUIStyleByInputTypeChange)
   end
 end
-
 function M:Destruct()
   if self.BubbleTimers then
     for TimerId, _ in pairs(self.BubbleTimers) do
@@ -29,37 +27,72 @@ function M:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnUpdateUIStyleByInputTypeChange)
   end
 end
-
 function M:InitResourceBar(Info, bShowBubble)
   self.Info = Info
   if nil ~= Info then
     self:ClearChildren()
-    for i, CoinId in ipairs(Info) do
-      local ResourceBarWidget = self.ResourceBarWidget[CoinId]
-      if not IsValid(ResourceBarWidget) then
-        ResourceBarWidget = UIManager(self):_CreateWidgetNew("ResourceBar")
-        ResourceBarWidget:BindNavigationEvents(self, {
-          OnNavigationToBoundary = self.OnResourceNavigationToBoundary,
-          OnAddedToFocusPath = self.OnResourceAddedToFocusPath
+    for i, v in ipairs(Info) do
+      if type(v) == "table" and v.Type == "Walnut" then
+        local WalnutId = v.WalnutId
+        local ResourceBarWidget = self.ResourceBarWidget[WalnutId]
+        if not IsValid(ResourceBarWidget) then
+          ResourceBarWidget = UIManager(self):_CreateWidgetNew("ResourceBar")
+          ResourceBarWidget:BindNavigationEvents(self, {
+            OnNavigationToBoundary = self.OnResourceNavigationToBoundary,
+            OnAddedToFocusPath = self.OnResourceAddedToFocusPath
+          })
+          ResourceBarWidget:BindEventOnMenuOpenChanged(self, self.OnMenuOpenChanged)
+          self.ResourceBarWidget[WalnutId] = ResourceBarWidget
+        end
+        local WalnutIcon = LoadObject(DataMgr.Walnut[WalnutId].Icon)
+        ResourceBarWidget.Common_Item_Icon:Init({
+          UIName = "BagMain",
+          IsShowDetails = true,
+          IsCantItemSelection = true,
+          MenuPlacement = EMenuPlacement.MenuPlacement_MenuRight,
+          Id = WalnutId,
+          Icon = WalnutIcon,
+          ItemType = "Walnut",
+          HandleMouseDown = true
         })
-        ResourceBarWidget:BindEventOnMenuOpenChanged(self, self.OnMenuOpenChanged)
-        self.ResourceBarWidget[CoinId] = ResourceBarWidget
-      end
-      local CoinIcon = LoadObject(DataMgr.Resource[CoinId].Icon)
-      ResourceBarWidget.Common_Item_Icon:Init({
-        UIName = "BagMain",
-        IsShowDetails = true,
-        IsCantItemSelection = true,
-        MenuPlacement = EMenuPlacement.MenuPlacement_MenuRight,
-        Id = CoinId,
-        Icon = CoinIcon,
-        ItemType = "Resource",
-        HandleMouseDown = true
-      })
-      ResourceBarWidget:SetResourceId(CoinId)
-      self.Panel_ResourceBar:AddChild(ResourceBarWidget)
-      if bShowBubble then
-        self:CheckAndShowLimitedResourceBubble(CoinId, ResourceBarWidget)
+        ResourceBarWidget:SetItemId(WalnutId, "Walnut")
+        self.Panel_ResourceBar:AddChild(ResourceBarWidget)
+        if bShowBubble then
+          self:CheckAndShowLimitedResourceBubble(WalnutId, ResourceBarWidget)
+        end
+      else
+        local CoinId
+        if type(v) == "table" and v.Type == "Resource" then
+          CoinId = v.CoinId
+        else
+          CoinId = v
+        end
+        local ResourceBarWidget = self.ResourceBarWidget[CoinId]
+        if not IsValid(ResourceBarWidget) then
+          ResourceBarWidget = UIManager(self):_CreateWidgetNew("ResourceBar")
+          ResourceBarWidget:BindNavigationEvents(self, {
+            OnNavigationToBoundary = self.OnResourceNavigationToBoundary,
+            OnAddedToFocusPath = self.OnResourceAddedToFocusPath
+          })
+          ResourceBarWidget:BindEventOnMenuOpenChanged(self, self.OnMenuOpenChanged)
+          self.ResourceBarWidget[CoinId] = ResourceBarWidget
+        end
+        local CoinIcon = LoadObject(DataMgr.Resource[CoinId].Icon)
+        ResourceBarWidget.Common_Item_Icon:Init({
+          UIName = "BagMain",
+          IsShowDetails = true,
+          IsCantItemSelection = true,
+          MenuPlacement = EMenuPlacement.MenuPlacement_MenuRight,
+          Id = CoinId,
+          Icon = CoinIcon,
+          ItemType = "Resource",
+          HandleMouseDown = true
+        })
+        ResourceBarWidget:SetItemId(CoinId, "Resource")
+        self.Panel_ResourceBar:AddChild(ResourceBarWidget)
+        if bShowBubble then
+          self:CheckAndShowLimitedResourceBubble(CoinId, ResourceBarWidget)
+        end
       end
     end
     self.Panel_ResourceBar:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -68,7 +101,6 @@ function M:InitResourceBar(Info, bShowBubble)
   end
   self:RefreshGamePadKey()
 end
-
 function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBarWidget)
   local ResourceInfo = DataMgr.Resource[ResourceId]
   local LimitedInfo = ItemUtils.GetItemLimitedInfo(ResourceId)
@@ -83,14 +115,16 @@ function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBarWidget)
           if TimeDiff > 0 and TimeDiff < CommonConst.SECOND_IN_DAY then
             local ConfigData = {
               Text = GText("UI_GachaTicket_Bubble"),
-              TextColor = 1
+              ColorType = 2,
+              Arrow = 1
             }
             ResourceBarWidget:ShowBubble(ConfigData)
             self:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, 3.0)
           elseif TimeDiff >= CommonConst.SECOND_IN_DAY and TimeDiff < CommonConst.SECOND_IN_WEEKDAY then
             local ConfigData = {
               Text = GText("UI_GachaTicket_Bubble"),
-              TextColor = 0
+              ColorType = 1,
+              Arrow = 1
             }
             ResourceBarWidget:ShowBubble(ConfigData)
             self:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, 3.0)
@@ -100,16 +134,14 @@ function M:CheckAndShowLimitedResourceBubble(ResourceId, ResourceBarWidget)
     end
   end
 end
-
 function M:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, DelayTime)
   if not self.BubbleTimers then
     self.BubbleTimers = {}
   end
-  local TimerId = "LimitedResourceBubble_" .. tostring(ResourceBarWidget.RId)
+  local TimerId = "LimitedResourceBubble_" .. tostring(ResourceBarWidget.Id)
   if self:IsExistTimer(TimerId) then
     self:RemoveTimer(TimerId)
   end
-  
   local function HideBubbleFunc()
     if IsValid(ResourceBarWidget) then
       ResourceBarWidget:HideBubble()
@@ -121,34 +153,29 @@ function M:HideLimitedResourceBubbleAfterDelay(ResourceBarWidget, DelayTime)
       self.BubbleTimers[TimerId] = nil
     end
   end
-  
   self:AddTimer(DelayTime, HideBubbleFunc, false, 0.1, TimerId, true)
   self.BubbleTimers[TimerId] = true
 end
-
 function M:SetResourceBarVisibility(ResourceId, bIsVisible)
   if self.ResourceBarWidget[ResourceId] then
     self.ResourceBarWidget[ResourceId]:SetAddVisibilty(bIsVisible)
   else
-    ScreenPrint("\230\151\160\230\149\136\232\181\132\230\186\144Id:" .. ResourceId or "nil")
+    ScreenPrint("无效资源Id:" .. ResourceId or "nil")
   end
 end
-
 function M:SetResourceBarVisibilityByIndex(Index, bIsVisible)
   local widget = self.Panel_ResourceBar:GetChildAt(Index - 1)
   if IsValid(widget) then
     widget:SetAddVisibilty(bIsVisible)
   else
-    ScreenPrint("\230\151\160\230\149\136\232\181\132\230\186\144\231\180\162\229\188\149:" .. Index or nil .. "\231\180\162\229\188\149\228\187\142\229\183\166\229\136\176\229\143\1791\229\188\128\229\167\139\239\188\140\229\166\130\230\158\156\230\156\137\233\154\144\232\151\143\231\154\132tab\228\185\159\231\174\151\228\184\138")
+    ScreenPrint("无效资源索引:" .. Index or nil .. "索引从左到右1开始，如果有隐藏的tab也算上")
   end
 end
-
 function M:FocusToResource()
   if self.Panel_ResourceBar:HasAnyChildren() then
     self:SetFocus()
   end
 end
-
 function M:HideGamePadKey(bHide)
   if not bHide and next(self.ResourceBarWidget) then
     self.KeyImg_GamePad:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -156,18 +183,24 @@ function M:HideGamePadKey(bHide)
     self.KeyImg_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
+function M:CreateCommonKey(...)
+  self.KeyImg_GamePad:CreateCommonKey(...)
+end
 function M:SetGamePadKeyImgByPath(Path)
   local Img = LoadObject(Path)
   self.KeyImg_GamePad.Img:SetBrushFromTexture(Img)
 end
-
 function M:InitGamePadTip(Params)
-  self.Tip_GamePad:CreateCommonKey(Params.KeyInfo)
+  if Params.bNeedLongPressInfo then
+    Params.KeyInfo.bLongPress = true
+    self.Tip_GamePad:CreateCommonKey(Params.KeyInfo)
+    self.Tip_GamePad:AddExecuteLogic(Params.ClickFuncObj, Params.ClickFunc)
+  else
+    self.Tip_GamePad:CreateCommonKey(Params.KeyInfo)
+  end
   self.Tip_PC.Button_Area.OnClicked:Clear()
   self.Tip_PC.Button_Area.OnClicked:Add(Params.ClickFuncObj, Params.ClickFunc)
 end
-
 function M:HideTip(bHide)
   if bHide then
     self.Panel_Tip:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -175,37 +208,37 @@ function M:HideTip(bHide)
     self.Panel_Tip:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
+function M:OnGamePadTipPressed()
+  self.Tip_GamePad:OnButtonPressed()
+end
+function M:OnGamePadTipReleased()
+  self.Tip_GamePad:OnButtonReleased()
+end
 function M:SwitchTipStyle(Index)
   self.Panel_Tip:SetActiveWidgetIndex(Index)
 end
-
 function M:GetCurrentResourceIndex()
   if self.CurrentResourceWidget then
     return self.Panel_ResourceBar:GetChildIndex(self.CurrentResourceWidget)
   end
   return -1
 end
-
 function M:ClearChildren()
   self.Panel_ResourceBar:ClearChildren()
   self.ResourceBarWidget = {}
 end
-
 function M:UpdateResource()
   for k, v in pairs(self.ResourceBarWidget) do
     if IsValid(v) then
-      v:RefreshResourceInfo()
+      v:RefreshItemInfo()
     end
   end
 end
-
 function M:OnPropSetResources(ResourceId, OldValue)
   if self.ResourceBarWidget and self.ResourceBarWidget[ResourceId] then
-    self.ResourceBarWidget[ResourceId]:RefreshResourceInfo()
+    self.ResourceBarWidget[ResourceId]:RefreshItemInfo()
   end
 end
-
 function M:BindEvents(Obj, Events)
   Events = Events or {}
   self.Obj = Obj
@@ -213,18 +246,15 @@ function M:BindEvents(Obj, Events)
   self.Event_OnRemovedFromFocusPath = Events.OnRemovedFromFocusPath
   self.Event_OnMenuOpenChanged = Events.OnMenuOpenChanged
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   if self.Event_OnMenuOpenChanged then
     self.Event_OnMenuOpenChanged(self.Obj, bIsOpen)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.CurInputDeviceType = CurInputType
   self:RefreshGamePadKey()
 end
-
 function M:RefreshGamePadKey()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     if self.bHasFocusedDescendants and self.Panel_ResourceBar:IsVisible() then
@@ -236,7 +266,6 @@ function M:RefreshGamePadKey()
     self:HideGamePadKey(true)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -259,7 +288,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local ResourceWidget = self.Panel_ResourceBar:GetChildAt(0)
   if ResourceWidget then
@@ -267,7 +295,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnResourceNavigationToBoundary(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     return self:ClickToLeftOnGamePad()
@@ -276,7 +303,6 @@ function M:OnResourceNavigationToBoundary(NavigationDirection)
   end
   return nil
 end
-
 function M:OnResourceAddedToFocusPath(ResourceWidget)
   if self.NeedOpenMenuWhenResoureFocused and ResourceWidget then
     ResourceWidget.Common_Item_Icon:OnMouseButtonDown()
@@ -285,7 +311,6 @@ function M:OnResourceAddedToFocusPath(ResourceWidget)
   self.CurrentResourceWidget = ResourceWidget
   self.NeedOpenMenuWhenResoureFocused = false
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.bHasFocusedDescendants = true
   self:RefreshGamePadKey()
@@ -293,7 +318,6 @@ function M:OnAddedToFocusPath(InFocusEvent)
     self.Event_OnAddedToFocusPath(self.Obj, self)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.bHasFocusedDescendants = false
   self:RefreshGamePadKey()
@@ -301,11 +325,9 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     self.Event_OnRemovedFromFocusPath(self.Obj, self)
   end
 end
-
 function M:IsHasFocusedDescendants()
   return self.bHasFocusedDescendants
 end
-
 function M:ClickToLeftOnGamePad()
   local FocusWidget
   local CurrentResourceIdx = self:GetCurrentResourceIndex()
@@ -324,7 +346,6 @@ function M:ClickToLeftOnGamePad()
   end
   return FocusWidget
 end
-
 function M:ClickToRightOnGamePad()
   self.NeedOpenMenuWhenResoureFocused = false
   local FocusWidget
@@ -344,13 +365,10 @@ function M:ClickToRightOnGamePad()
   end
   return FocusWidget
 end
-
 function M:SetLastFocusWidget(Widget)
   self.LastFocusWidget = Widget
 end
-
 function M:SetGetReplyOnBack(GetReplyOnBack)
   self.GetReplyOnBack = GetReplyOnBack
 end
-
 return M

@@ -11,11 +11,9 @@ local badtype = {
   cdata = true
 }
 local getmetatable = debug and debug.getmetatable or _ENV.getmetatable
-
 local function pairs(t)
   return next, t
 end
-
 local keyword, globals, G = {}, {}, _G or _ENV
 for _, k in ipairs({
   "and",
@@ -59,7 +57,6 @@ for _, g in ipairs({
     globals[v] = g .. "." .. k
   end
 end
-
 local function s(t, opts)
   local name, indent, fatal, maxnum = opts.name, opts.indent, opts.fatal, opts.maxnum
   local sparse, custom, huge = opts.sparse, opts.custom, not opts.nohuge
@@ -70,7 +67,6 @@ local function s(t, opts)
   local seen, sref, syms, symn = {}, {
     "local " .. iname .. "={}"
   }, {}, 0
-  
   local function gensym(val)
     return "_" .. tostring(tostring(val)):gsub("[^%w]", ""):gsub("(%d%w+)", function(s)
       if not syms[s] then
@@ -80,38 +76,30 @@ local function s(t, opts)
       return tostring(syms[s])
     end)
   end
-  
   local function safestr(s)
-    return type(s) == "number" and tostring(huge and snum[tostring(s)] or numformat:format(s)) or type(s) ~= "string" and tostring(s) or ("%q"):format(s):gsub("\n", "n"):gsub("\026", "\\026")
+    return type(s) == "number" and tostring(huge and snum[tostring(s)] or numformat:format(s)) or type(s) ~= "string" and tostring(s) or ("%q"):format(s):gsub("\n", "n"):gsub("", "\")
   end
-  
   local function comment(s, l)
     return comm and (l or 0) < comm and " --[[" .. select(2, pcall(tostring, s)) .. "]]" or ""
   end
-  
   local function globerr(s, l)
     return globals[s] and globals[s] .. comment(s, l) or not fatal and safestr(select(2, pcall(tostring, s))) or error("Can't serialize " .. tostring(s))
   end
-  
   local function safename(path, name)
     local n = nil == name and "" or name
     local plain = type(n) == "string" and n:match("^[%l%u_][%w_]*$") and not keyword[n]
     local safe = plain and n or "[" .. safestr(n) .. "]"
     return (path or "") .. (plain and path and "." or "") .. safe, safe
   end
-  
   local alphanumsort = type(opts.sortkeys) == "function" and opts.sortkeys or function(k, o, n)
     local maxn, to = tonumber(n) or 12, {number = "a", string = "b"}
-    
     local function padnum(d)
       return ("%0" .. tostring(maxn) .. "d"):format(tonumber(d))
     end
-    
     table.sort(k, function(a, b)
       return (nil ~= k[a] and 0 or to[type(a)] or "z") .. tostring(a):gsub("%d+", padnum) < (nil ~= k[b] and 0 or to[type(b)] or "z") .. tostring(b):gsub("%d+", padnum)
     end)
   end
-  
   local function val2str(t, name, indent, insref, path, plainindex, level)
     local ttype, level, mt = type(t), level or 0, getmetatable(t)
     local spath, sname = safename(path, name)
@@ -206,14 +194,12 @@ local function s(t, opts)
       return tag .. safestr(t)
     end
   end
-  
   local sepr = indent and "\n" or ";" .. space
   local body = val2str(t, name, indent)
   local tail = #sref > 1 and table.concat(sref, sepr) .. sepr or ""
   local warn = opts.comment and #sref > 1 and space .. "--[[incomplete output with shared/self-references skipped]]" or ""
   return not name and body .. warn or "do local " .. body .. sepr .. tail .. "return " .. name .. sepr .. "end"
 end
-
 local function deserialize(data, opts)
   local env = opts and opts.safe == false and G or setmetatable({}, {
     __index = function(t, k)
@@ -235,7 +221,6 @@ local function deserialize(data, opts)
   end
   return pcall(f)
 end
-
 local function merge(a, b)
   if b then
     for k, v in pairs(b) do
@@ -244,7 +229,6 @@ local function merge(a, b)
   end
   return a
 end
-
 return {
   _NAME = n,
   _COPYRIGHT = c,

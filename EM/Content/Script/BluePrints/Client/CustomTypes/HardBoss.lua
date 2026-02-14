@@ -8,7 +8,6 @@ HardBoss.__Props__ = {
   HardBossRewardTimesLeft = prop.prop("Int", "client save", 0),
   PassCount = prop.prop("Int2IntDict", "client save")
 }
-
 function HardBoss:SetPass(DifficultyId)
   local bFirst = false
   local PreCount = self.PassCount[DifficultyId]
@@ -19,10 +18,8 @@ function HardBoss:SetPass(DifficultyId)
   self.PassCount[DifficultyId] = PreCount + 1
   return bFirst
 end
-
 function HardBoss:GetPassCount(DifficultyId)
   return self.PassCount[DifficultyId] or 0
 end
-
 FormatProperties(HardBoss)
 return {HardBoss = HardBoss}

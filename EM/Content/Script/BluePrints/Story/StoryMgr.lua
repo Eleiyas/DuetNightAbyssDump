@@ -2,7 +2,7 @@ local StorylineUtils = require("StoryCreator.StoryLogic.StorylineUtils")
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local StoryMgr = Class("StoryCreator.StoryLogic.StorylineNodes.NodeObject")
-
+local STLogType = UE.EStoryLogType.STL
 function StoryMgr:Init()
   self.Storylines = {}
   self.StorylinesNeedRestart = {}
@@ -12,22 +12,21 @@ function StoryMgr:Init()
   self.WaitTalkTriggerCompleted = {}
   self.bEnableStory = true
 end
-
 function StoryMgr:IsCanRunStoryMgr()
   if IsStandAlone(GWorld.GameInstance) or IsClient(GWorld.GameInstance) then
     return true
   end
   return false
 end
-
 function StoryMgr:EnableStory()
   self.bEnableStory = true
+  EventManager:FireEvent(EventID.OnEnableStory)
+  EventManager:AddEvent(EventID.InLoading, self, self.HandleInLoading)
 end
-
 function StoryMgr:DisableStory()
   self.bEnableStory = false
+  EventManager:RemoveEvent(EventID.InLoading, self)
 end
-
 function StoryMgr:HandleInLoading()
   self:DisableStory()
   if self:IsCanRunStoryMgr() == false then
@@ -38,7 +37,6 @@ function StoryMgr:HandleInLoading()
   end
   self:Clear()
 end
-
 function StoryMgr:Clear()
   DebugPrint("StoryMgr:Clear")
   self:StopAllStoryline()
@@ -46,50 +44,35 @@ function StoryMgr:Clear()
   self:UnbindAllNPCInteractiveTalk()
   self:ClearAllWaitCompleteTalkTrigger()
 end
-
 function StoryMgr:RunStory(StoryPath, QuestId, NodeId, EndCallback, StopCallback, Payload)
   if self.Storylines[StoryPath] then
     DebugPrint("StoryMgr:RunStory:Already Exit", StoryPath, QuestId, NodeId, EndCallback, StopCallback, Payload)
     return
   end
-  return self:RunStoryInternal(StorylineUtils.BuildStoryline(StoryPath, EndCallback, StopCallback, Payload), StoryPath, QuestId, NodeId, EndCallback, StopCallback, Payload)
-end
-
-function StoryMgr:RunStoryByLongFileName(LongFileName, QuestId, NodeId, EndCallback, StopCallback, Payload)
-  if self.Storylines[LongFileName] then
-    DebugPrint("StoryMgr:RunStoryByLongFileName:Already Exit", LongFileName, QuestId, NodeId, EndCallback, StopCallback, Payload)
-    return
-  end
-  return self:RunStoryInternal(StorylineUtils.BuildStorylineByLongFileName(LongFileName, EndCallback, StopCallback, Payload), LongFileName, QuestId, NodeId, EndCallback, StopCallback, Payload)
-end
-
-function StoryMgr:RunStoryInternal(Storyline, FileName, QuestId, NodeId, EndCallback, StopCallback, Payload)
+  local Storyline = StorylineUtils.BuildStoryline(StoryPath, EndCallback, StopCallback, Payload)
   if self.bEnableStory == false then
-    local Title = "STL \229\183\178\231\166\129\231\148\168"
-    local Message = string.format("\232\175\149\229\155\190\229\156\168\231\166\129\231\148\168\230\151\182\232\191\144\232\161\140\230\150\176\231\154\132 STL %s", FileName)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, Title, Message)
+    local Title = "STL 已禁用"
+    local Message = string.format("试图在禁用时运行新的 STL %s", StoryPath)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, Title, Message)
   end
   if not Storyline then
-    local Message = "Story\228\184\141\229\173\152\229\156\168" .. [[
-
-FileName:]] .. FileName
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "Story\228\184\141\229\173\152\229\156\168", Message)
+    local Message = "Story不存在" .. [[
+FileName:]] .. StoryPath
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "Story不存在", Message)
+    return
   end
-  DebugPrint("StoryMgr:RunStory", FileName, QuestId, NodeId, EndCallback, StopCallback, Payload)
-  self.Storylines[FileName] = Storyline
+  DebugPrint("StoryMgr:RunStory", StoryPath, QuestId, NodeId, EndCallback, StopCallback, Payload)
+  self.Storylines[StoryPath] = Storyline
   Storyline:StartStory(tonumber(QuestId), NodeId)
   return Storyline.FilePath
 end
-
 function StoryMgr:GetStory(StoryPath)
   local Storyline = self.Storylines[StoryPath]
   return Storyline
 end
-
 function StoryMgr:IsRunningStoryline(StoryPath)
   return self.Storylines[StoryPath] ~= nil
 end
-
 function StoryMgr:StopStoryline(StoryPath, IgnoreFinishClear)
   local Storyline = self.Storylines[StoryPath]
   if Storyline then
@@ -98,12 +81,10 @@ function StoryMgr:StopStoryline(StoryPath, IgnoreFinishClear)
     self.StorylinesNeedRestart[StoryPath] = nil
   end
 end
-
 function StoryMgr:FinishStory(StoryPath)
   self.Storylines[StoryPath] = nil
   self.StorylinesNeedRestart[StoryPath] = nil
 end
-
 function StoryMgr:StopAllStoryline()
   local Storylines = {}
   for _, Storyline in pairs(self.Storylines) do
@@ -115,13 +96,11 @@ function StoryMgr:StopAllStoryline()
   self.Storylines = {}
   self.StorylinesNeedRestart = {}
 end
-
 function StoryMgr:SuccessAllQuest()
   for _, Storyline in pairs(self.Storylines) do
     Storyline:Success()
   end
 end
-
 function StoryMgr:BindStaticCreatorActorEvent(StaticCreatorId, ActorEventType, Obj, Func)
   local ActorEvents = self.StaticCreatorActorEvents[StaticCreatorId]
   if nil == ActorEvents then
@@ -130,19 +109,16 @@ function StoryMgr:BindStaticCreatorActorEvent(StaticCreatorId, ActorEventType, O
   end
   ActorEvents[ActorEventType] = {Obj, Func}
 end
-
 function StoryMgr:UnbindStaticCreatorActorEvent(StaticCreatorId)
   if self.StaticCreatorActorEvents[StaticCreatorId] then
     self.StaticCreatorActorEvents[StaticCreatorId] = nil
   end
 end
-
 function StoryMgr:UnbindStaticCreatorActorEventByType(StaticCreatorId, ActorEventType)
   if self.StaticCreatorActorEvents[StaticCreatorId] and self.StaticCreatorActorEvents[StaticCreatorId][ActorEventType] then
     self.StaticCreatorActorEvents[StaticCreatorId][ActorEventType] = nil
   end
 end
-
 function StoryMgr:TryExecStorylineActorEvent(StaticCreatorId, ActorEventType, Info)
   local ActorEvents = self.StaticCreatorActorEvents[StaticCreatorId]
   if ActorEvents then
@@ -152,11 +128,9 @@ function StoryMgr:TryExecStorylineActorEvent(StaticCreatorId, ActorEventType, In
     end
   end
 end
-
 function StoryMgr:ClearStaticCreatorActorEvent()
   self.StaticCreatorActorEvents = {}
 end
-
 function StoryMgr:BindNPCInteractiveTalk(NPCId, Detail)
   self.NpcInteractiveTalkId = self.NpcInteractiveTalkId + 1
   local BindId = self.NpcInteractiveTalkId
@@ -166,7 +140,6 @@ function StoryMgr:BindNPCInteractiveTalk(NPCId, Detail)
   self.NpcInteractiveTalkDetail[NPCId][BindId] = Detail
   return BindId
 end
-
 function StoryMgr:UnbindNPCInteractiveTalk(NPCId, BindId)
   if not BindId then
     return
@@ -177,20 +150,16 @@ function StoryMgr:UnbindNPCInteractiveTalk(NPCId, BindId)
   end
   BindInfos[BindId] = nil
 end
-
 function StoryMgr:GetNPCInteractiveTalkDetails(NPCId)
   return self.NpcInteractiveTalkDetail[NPCId]
 end
-
 function StoryMgr:ExistedNPCInteractiveTalk(NPCId)
   local BindInfos = self.NpcInteractiveTalkDetail[NPCId]
   return BindInfos and next(BindInfos) ~= nil
 end
-
 function StoryMgr:TryGetWaitTalkCompletedQuest(TalkTriggerId)
   return self.WaitTalkTriggerCompleted[TalkTriggerId]
 end
-
 function StoryMgr:RegisterWaitTalkCompleted(TalkTriggerId, QuestChainId, SpecialQuestId, DynQuestId, ShowGuide)
   self.WaitTalkTriggerCompleted[TalkTriggerId] = {
     QuestChainId = QuestChainId,
@@ -199,15 +168,12 @@ function StoryMgr:RegisterWaitTalkCompleted(TalkTriggerId, QuestChainId, Special
     DynQuestId = DynQuestId
   }
 end
-
 function StoryMgr:UnRegisterWaitTalkCompleted(TalkTriggerId)
   self.WaitTalkTriggerCompleted[TalkTriggerId] = nil
 end
-
 function StoryMgr:ClearAllWaitCompleteTalkTrigger()
   self.WaitTalkTriggerCompleted = {}
 end
-
 function StoryMgr:TryExecNPCInteractiveTalk(NPCId, NPC, BindId, TalkEndCallback)
   local BindInfos = self.NpcInteractiveTalkDetail[NPCId]
   if not BindInfos then
@@ -224,31 +190,26 @@ function StoryMgr:TryExecNPCInteractiveTalk(NPCId, NPC, BindId, TalkEndCallback)
     TalkEndCallback.Func(TalkEndCallback.Obj)
   end
 end
-
 function StoryMgr:UnbindAllNPCInteractiveTalk()
   self.NpcInteractiveTalkDetail = {}
   self.NpcInteractiveTalkId = 0
 end
-
 function StoryMgr:PrintStorylineInfo()
   for _, Storyline in pairs(self.Storylines) do
     Storyline:PrintInfo()
   end
 end
-
 function StoryMgr:CreateQuestPickupId2Callback(QuestPickupId, Callback)
   if not self.QuestPickupId2Callback then
     self.QuestPickupId2Callback = {}
   end
   self.QuestPickupId2Callback[QuestPickupId] = Callback
 end
-
 function StoryMgr:GetRunningNodeTableByType(NodeType, OutRunningNodeTable)
   for _, Storyline in pairs(self.Storylines) do
     Storyline:GetRunningNodeTableByType(NodeType, OutRunningNodeTable)
   end
 end
-
 function StoryMgr:GetResurgencePointInfo()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -268,29 +229,21 @@ function StoryMgr:GetResurgencePointInfo()
   if StoryNode.ResurgencePoint ~= "" then
     local PointInfo = GuidePointLocData[StoryNode.ResurgencePoint]
     if not PointInfo then
-      local Message = "StoryNode\228\184\173\233\133\141\231\189\174\231\154\132\229\164\141\230\180\187\231\130\185\229\156\168QuestGuidePointLoc\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168" .. [[
-
+      local Message = "StoryNode中配置的复活点在QuestGuidePointLoc表中不存在" .. [[
 FileName:]] .. QuestChain.StoryPath .. [[
-
 QuestChainId:]] .. Storyline.QuestChainId .. [[
-
 QuestId:]] .. DoingQuestId .. [[
-
 ResurgencePoint:]] .. StoryNode.ResurgencePoint
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "StoryNode\228\184\173\233\133\141\231\189\174\231\154\132\229\164\141\230\180\187\231\130\185\229\156\168QuestGuidePointLoc\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "StoryNode中配置的复活点在QuestGuidePointLoc表中不存在", Message)
       return
     end
     if not PointInfo.SubRegionId or PointInfo.SubRegionId <= 0 then
-      local Message = "StoryNode\228\184\173\233\133\141\231\189\174\231\154\132\229\164\141\230\180\187\231\130\185\229\156\168QuestGuidePointLoc\232\161\168\228\184\173\230\151\160SubRegionId" .. [[
-
+      local Message = "StoryNode中配置的复活点在QuestGuidePointLoc表中无SubRegionId" .. [[
 FileName:]] .. QuestChain.StoryPath .. [[
-
 QuestChainId:]] .. Storyline.QuestChainId .. [[
-
 QuestId:]] .. DoingQuestId .. [[
-
 ResurgencePoint:]] .. StoryNode.ResurgencePoint
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "StoryNode\228\184\173\233\133\141\231\189\174\231\154\132\229\164\141\230\180\187\231\130\185\229\156\168QuestGuidePointLoc\232\161\168\228\184\173\230\151\160SubRegionId", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "StoryNode中配置的复活点在QuestGuidePointLoc表中无SubRegionId", Message)
       return
     end
     if DataMgr.SubRegion[CurrentRegionId].RegionId == DataMgr.SubRegion[PointInfo.SubRegionId].RegionId then
@@ -324,14 +277,11 @@ ResurgencePoint:]] .. StoryNode.ResurgencePoint
     if not TargetRegionId or TargetRegionId < 0 then
       return
     elseif 0 == TargetRegionId then
-      local Message = "\228\187\187\229\138\161\233\147\190\228\184\173\231\154\132\231\172\172\228\184\128\228\184\170\228\187\187\229\138\161\239\188\140\230\131\179\232\166\129\228\189\191\231\148\168\229\164\141\230\180\187\229\138\159\232\131\189\233\156\128\232\166\129\233\133\141\231\189\174\229\164\141\230\180\187\231\130\185\228\189\141" .. [[
-
+      local Message = "任务链中的第一个任务，想要使用复活功能需要配置复活点位" .. [[
 FileName:]] .. QuestChain.StoryPath .. [[
-
 QuestChainId:]] .. Storyline.QuestChainId .. [[
-
 QuestId:]] .. DoingQuestId
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\228\187\187\229\138\161\233\147\190\228\184\173\231\154\132\231\172\172\228\184\128\228\184\170\228\187\187\229\138\161\239\188\140\230\131\179\232\166\129\228\189\191\231\148\168\229\164\141\230\180\187\229\138\159\232\131\189\233\156\128\232\166\129\233\133\141\231\189\174\229\164\141\230\180\187\231\130\185\228\189\141", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "任务链中的第一个任务，想要使用复活功能需要配置复活点位", Message)
       return
     end
     if DataMgr.SubRegion[CurrentRegionId].RegionId ~= DataMgr.SubRegion[TargetRegionId].RegionId then
@@ -367,7 +317,6 @@ QuestId:]] .. DoingQuestId
     end
   end
 end
-
 function StoryMgr:FailCurrentQuestWhenDead()
   local StoryNode = self:GetCurrentStoryNode()
   if not StoryNode then
@@ -378,7 +327,6 @@ function StoryMgr:FailCurrentQuestWhenDead()
   end
   StoryNode.Questline:FailQuest()
 end
-
 function StoryMgr:GetCurrentStoryNode()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -407,11 +355,9 @@ function StoryMgr:GetCurrentStoryNode()
   end
   return Storyline.QuestIdNodeList[DoingQuestId]
 end
-
 function StoryMgr:AddToWaitingRestartList(Storyline)
   self.StorylinesNeedRestart[Storyline.FilePath] = Storyline
 end
-
 function StoryMgr:TryRestartStoryline()
   DebugPrint("StoryMgr TryRestartStoryline")
   local Flag = false
@@ -429,13 +375,11 @@ function StoryMgr:TryRestartStoryline()
   end
   self.StorylinesNeedRestart = {}
 end
-
 function StoryMgr:PrintStorylineNeedRestartInfo()
   for _, Storyline in pairs(self.StorylinesNeedRestart) do
     Storyline:PrintInfo()
   end
 end
-
 function StoryMgr:AddStoryBlackScreen(ExtralInfo)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not UIManager:IsCommonBlackScreenExist(ExtralInfo.HandleName) then
@@ -450,7 +394,6 @@ function StoryMgr:AddStoryBlackScreen(ExtralInfo)
     UIManager:SetBannedActionCallback("BlackScreen", true, ExtralInfo.HandleName)
     UIManager:ShowCommonBlackScreen(Params)
   end
-  
   local function BlackUIFadeOut()
     if ExtralInfo.TimeOverCallback then
       local Obj = ExtralInfo.TimeOverCallback.Obj
@@ -460,10 +403,8 @@ function StoryMgr:AddStoryBlackScreen(ExtralInfo)
     end
     self:RemoveStoryBlackScreen(ExtralInfo.HandleName)
   end
-  
   GWorld.GameInstance:AddTimer(ExtralInfo.ContinueTime or 10, BlackUIFadeOut, false, nil, ExtralInfo.HandleName, true)
 end
-
 function StoryMgr:RemoveStoryBlackScreen(HandleName)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if UIManager:IsCommonBlackScreenExist(HandleName) then
@@ -476,19 +417,16 @@ function StoryMgr:RemoveStoryBlackScreen(HandleName)
     UIManager:HideCommonBlackScreen(HandleName)
   end
 end
-
 function StoryMgr:AddStoryBlackScreenOnFail()
   local ExtralInfo = {
     HandleName = "StoryBlackScreenOnFail"
   }
   self:AddStoryBlackScreen(ExtralInfo)
 end
-
 function StoryMgr:RemoveStoryBlackScreenOnFail()
   local HandleName = "StoryBlackScreenOnFail"
   self:RemoveStoryBlackScreen(HandleName)
 end
-
 function StoryMgr:AddStoryBlackScreenOnSucc(WaitingQuest)
   if not self.WaitingQuest then
     self.WaitingQuest = {}
@@ -511,11 +449,9 @@ function StoryMgr:AddStoryBlackScreenOnSucc(WaitingQuest)
     self:AddStoryBlackScreen(ExtralInfo)
   end
 end
-
 function StoryMgr:RemoveWaitingQuest()
   self.WaitingQuest = nil
 end
-
 function StoryMgr:TryRemoveStoryBlackScreenOnSucc(QuestChainId, QuestId)
   if not self.WaitingQuest or not self.WaitingQuest[QuestChainId] and not self.WaitingQuest[QuestId] then
     return
@@ -526,11 +462,19 @@ function StoryMgr:TryRemoveStoryBlackScreenOnSucc(QuestChainId, QuestId)
     self:RemoveStoryBlackScreenOnSucc()
   end
 end
-
 function StoryMgr:RemoveStoryBlackScreenOnSucc()
   local HandleName = "StoryBlackScreenOnSucc"
   self:RemoveWaitingQuest()
   self:RemoveStoryBlackScreen(HandleName)
 end
-
+function StoryMgr:AddStoryBlackScreenOnDelivery()
+  local ExtralInfo = {
+    HandleName = "StoryBlackScreenOnDelivery"
+  }
+  self:AddStoryBlackScreen(ExtralInfo)
+end
+function StoryMgr:RemoveStoryBlackScreenOnDelivery()
+  local HandleName = "StoryBlackScreenOnDelivery"
+  self:RemoveStoryBlackScreen(HandleName)
+end
 return StoryMgr

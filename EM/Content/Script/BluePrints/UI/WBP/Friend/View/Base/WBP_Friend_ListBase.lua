@@ -1,7 +1,6 @@
 require("UnLua")
 local UIUtils = require("Utils.UIUtils")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:OnTeamMainFocusChanged(bFocused)
   for _, Entry in pairs(self.MyListView:GetDisplayedEntryWidgets()) do
     Entry:OnTeamMainFocusChanged(bFocused)
@@ -12,16 +11,13 @@ function M:OnTeamMainFocusChanged(bFocused)
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   end
 end
-
 function M:GetListData()
   self.ListDatas = nil
   assert(false, "WBP_Friend_ListBase:GetListData is not yet implemented")
 end
-
 function M:SetupListContent(Uid, Content)
   assert(false, "WBP_Friend_ListBase:NewListItem is not yet implemented")
 end
-
 function M:RefreshList(bAnimation)
   if nil == bAnimation then
     bAnimation = true
@@ -61,7 +57,6 @@ function M:RefreshList(bAnimation)
   end, false, 0, nil, true)
   self.NextFrameForListPadding = Key
 end
-
 function M:OnRefreshListLater(bAnimation)
   local ItemUIs = self.MyListView:GetDisplayedEntryWidgets()
   if 0 == ItemUIs:Length() then
@@ -75,22 +70,17 @@ function M:OnRefreshListLater(bAnimation)
     self.MyListView:SetControlScrollbarInside(false)
   end
 end
-
 function M:OnRefreshListBegin()
 end
-
 function M:OnRefreshListEnd()
 end
-
 function M:OnListEmpty()
 end
-
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.Auto_In then
     self:OnLoaded()
   end
 end
-
 function M:RefreshListItem(Data, bForceAll)
   if nil == bForceAll then
     bForceAll = true
@@ -113,14 +103,12 @@ function M:RefreshListItem(Data, bForceAll)
     self:OnRefreshListLater(false)
   end
 end
-
 function M:ClearListItems()
   self:RemoveTimer(self.NextFrameForListPadding)
   if self.MyListView then
     self.MyListView:ClearListItems()
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.IsMyListEmpty or self.IsMyListEmpty == nil then
     return self
@@ -129,7 +117,6 @@ function M:BP_GetDesiredFocusTarget()
     return self.MyListView
   end
 end
-
 function M:RefreshNavigationRule()
   if not FriendController:IsGamepad() then
     return
@@ -167,5 +154,4 @@ function M:RefreshNavigationRule()
     end
   end
 end
-
 return M

@@ -9,7 +9,6 @@ M._components = {
   "BluePrints.UI.WBP.Armory.PetEntry_Component",
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:Construct()
   self.Btn_Intensify:BindEventOnClicked(self, self.OnIntensifyBtnClicked)
   self.Btn_Intensify:BindForbidStateExecuteEvent(self, self.OnForbiddenIntensifyBtnClicked)
@@ -24,7 +23,6 @@ function M:Construct()
   self.List_Skill.bIsFocusable = false
   self:AddDispatcher(EventID.OnSwitchPet, self, self.OnSwitchPet)
 end
-
 function M:OnIntensifyBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   if not self.Pet:IsFinalMaxLevel() then
@@ -56,7 +54,6 @@ function M:OnIntensifyBtnClicked()
     UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
   end
 end
-
 function M:OnReplaceBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   local Avatar = ArmoryUtils:GetAvatar()
@@ -65,18 +62,14 @@ function M:OnReplaceBtnClicked()
     Avatar:EquipPet(self.Pet.UniqueId)
   end
 end
-
 function M:OnSwitchPet()
   self.Parent:BlockAllUIInput(false)
 end
-
 function M:OnForbiddenIntensifyBtnClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
 end
-
 function M:OnForbiddenReplaceBtnClicked()
 end
-
 function M:UpdateButtonStyle(CurPet, Pet)
   self.ButtonStyleInfo = {
     {},
@@ -112,11 +105,9 @@ function M:UpdateButtonStyle(CurPet, Pet)
     self.ConfirmBtns[i]:ForbidBtn(Param.ForbidBtn)
   end
 end
-
 function M:GetButtonStyleInfo()
   return self.ButtonStyleInfo
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.Pet = Params.Target
@@ -144,7 +135,6 @@ function M:Init(Params)
   self:UpdateEntryInfos(self.Pet)
   self:UpdateButtonStyle(Params.CurPet, self.Pet)
 end
-
 function M:UpdatePetInfos(Pet)
   if not Pet then
     return
@@ -163,7 +153,6 @@ function M:UpdatePetInfos(Pet)
     self.Text_Describe:SetText(GText(Data.IpDes))
   end
 end
-
 function M:UpdateSkillInfos(Pet)
   local Avatar = GWorld:GetAvatar()
   if not Avatar or not Pet then
@@ -201,34 +190,9 @@ function M:UpdateSkillInfos(Pet)
     self.List_Skill:AddItem(Obj)
   end
 end
-
 function M:UpdateLevelUpBtn(Target)
   if not self.bHideReddot then
-    local CanBreak = false
-    if Target:IsMaxLevelBeforeBreak() and not Target:IsMaxBreak() then
-      local Avatar = GWorld:GetAvatar()
-      local BreakData = DataMgr.PetBreak[Target.PetId][Target.BreakNum]
-      local ConsumeIds = BreakData.ConsumePetId
-      for _, Pet in pairs(Avatar.Pets) do
-        if CanBreak then
-          break
-        end
-        for _, Id in pairs(ConsumeIds) do
-          if Pet.UniqueId ~= Target.UniqueId and Id == Pet.PetId then
-            CanBreak = true
-            break
-          end
-        end
-      end
-      local ConsumeResources = BreakData.ConsumeResource or {}
-      for ResourceId, _ in pairs(ConsumeResources) do
-        local Resource = Avatar.Resources[ResourceId]
-        if Resource and Resource.Count > 0 then
-          CanBreak = true
-          break
-        end
-      end
-    end
+    local CanBreak = UpgradeUtils.CheckPetCanBreakLevelUp(Target)
     if CanBreak then
       self.Btn_Intensify:SetReddotVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     else
@@ -238,7 +202,6 @@ function M:UpdateLevelUpBtn(Target)
     self.Btn_Intensify:SetReddotVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:PlayInAnim()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Switch_Tab) then
     self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -256,21 +219,17 @@ function M:PlayInAnim()
     self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end, false, 0, "PetInfoInAnim", true)
 end
-
 function M:PlayOutAnim()
   self:RemoveTimer("PetInfoInAnim")
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnCharModelChanged()
   rawset(self, "ShouldPlayNormalIn", nil)
 end
-
 function M:OnPlayPetFresnel()
   rawset(self, "ShouldPlayNormalIn", true)
   self.WB_EntryItem:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:PlayEntriesInAnim()
 end
-
 AssembleComponents(M)
 return M

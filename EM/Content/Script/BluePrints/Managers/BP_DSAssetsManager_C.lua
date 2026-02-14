@@ -1,9 +1,7 @@
 require("UnLua")
 local BP_DSAssetsManager_C = Class()
-
 function BP_DSAssetsManager_C:Initialize(Initializer)
 end
-
 function BP_DSAssetsManager_C:PreLoadAssets_Lua()
   self:PreLoadData()
   self:PreLoadMapAssets()
@@ -16,12 +14,10 @@ function BP_DSAssetsManager_C:PreLoadAssets_Lua()
   self:PreLoadBP()
   self:PreLoadBehaviorMontage()
 end
-
 function BP_DSAssetsManager_C:PreLoadData()
   print("BP_DSAssetsManager_C", "PreLoadData")
   DataMgr.PreLoad()
 end
-
 function BP_DSAssetsManager_C:PreLoadMapAssets()
   print("BP_DSAssetsManager_C", "PreLoadMapAssets")
   for DungeonId, Info in pairs(DataMgr.Dungeon) do
@@ -30,7 +26,6 @@ function BP_DSAssetsManager_C:PreLoadMapAssets()
     end
   end
 end
-
 function BP_DSAssetsManager_C:AddDungeonMapAssets(DungeonId)
   local Info = DataMgr.Dungeon[DungeonId]
   if not Info.DungeonJsonFile then
@@ -61,7 +56,6 @@ function BP_DSAssetsManager_C:AddDungeonMapAssets(DungeonId)
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadCharacterAssets()
   for _, Info in pairs(DataMgr.BattleChar) do
     local UnitBPPath = Info.UnitBPPath
@@ -81,7 +75,6 @@ function BP_DSAssetsManager_C:PreLoadCharacterAssets()
     self:PreLoadBodyAccessoryAssets(Info)
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadModelAssets(Info)
   if Info.CloakMeshPath then
     local CloakPath = "/Game/" .. Info.CloakMeshPath
@@ -98,29 +91,24 @@ function BP_DSAssetsManager_C:PreLoadModelAssets(Info)
     self:PreLoadMontageAssets(Info.MontageFolder)
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadDistructableBodyAssets(Info)
   for _, PartMesh in pairs(Info.PartMesh) do
     self:AddUniqueAssets(PartMesh)
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadWeaponAssets(Info)
   if Info.WeaponBlueprint then
     self:AddUniqueAssets(Info.WeaponBlueprint, true)
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadBodyAccessoryAssets(Info)
   if Info.ModelPath then
     self:AddUniqueAssets(Info.ModelPath)
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadMontageAssets(MontageFolder)
   self:AddAllMontagesFromDic(self:GetAllMontageDic(MontageFolder))
 end
-
 function BP_DSAssetsManager_C:AddAllMontagesFromDic(Dic)
   for _, d in ipairs(Dic) do
     local Files = UE4.URuntimeCommonFunctionLibrary.GetAllFileNamesInDic(d)
@@ -135,7 +123,6 @@ function BP_DSAssetsManager_C:AddAllMontagesFromDic(Dic)
     end
   end
 end
-
 function BP_DSAssetsManager_C:GetAllMontageDic(MontageFolder)
   local Result = {}
   for Weapon, _ in pairs(CommonConst.WeaponTypes) do
@@ -148,7 +135,6 @@ function BP_DSAssetsManager_C:GetAllMontageDic(MontageFolder)
   table.insert(Result, MontageFolder .. "Interactive/")
   return Result
 end
-
 function BP_DSAssetsManager_C:PreLoadMonsterAssets()
   for _, Info in pairs(DataMgr.Monster) do
     local UnitBPPath = Info.UnitBPPath
@@ -161,7 +147,6 @@ function BP_DSAssetsManager_C:PreLoadMonsterAssets()
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadPhantomAssets()
   for _, Info in pairs(DataMgr.Phantom) do
     local UnitBPPath = Info.UnitBPPath
@@ -176,7 +161,6 @@ function BP_DSAssetsManager_C:PreLoadPhantomAssets()
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadPassiveEffectsAssets()
   for _, Info in pairs(DataMgr.PassiveEffect) do
     local BPPath = Info.BPPath
@@ -185,7 +169,6 @@ function BP_DSAssetsManager_C:PreLoadPassiveEffectsAssets()
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadSkillCreature()
   for _, Info in pairs(DataMgr.SkillCreature) do
     local BPPath = Info.BPPath
@@ -194,7 +177,6 @@ function BP_DSAssetsManager_C:PreLoadSkillCreature()
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadBuff()
   for _, Info in pairs(DataMgr.Buff) do
     local BPPath = Info.BPPath
@@ -203,7 +185,6 @@ function BP_DSAssetsManager_C:PreLoadBuff()
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadBP()
   self:PreLoadBPByFolder("AI")
   self:PreLoadBPByFolder("AnimNotifiers")
@@ -214,7 +195,6 @@ function BP_DSAssetsManager_C:PreLoadBP()
   self:PreLoadBPByFolder("Item")
   self:PreLoadBPByFolder("Map")
 end
-
 function BP_DSAssetsManager_C:PreLoadBPByFolder(Folder)
   local Files = UE4.URuntimeCommonFunctionLibrary.GetAllFilePathsInDic(string.format("/Game/BluePrints/%s/", Folder), "BP_*")
   if Files then
@@ -227,11 +207,9 @@ function BP_DSAssetsManager_C:PreLoadBPByFolder(Folder)
     end
   end
 end
-
 function BP_DSAssetsManager_C:PreLoadBehaviorMontage()
   for _, Info in pairs(DataMgr.BehaviorMontage) do
     self:AddUniqueAssets(Info.MontagePath)
   end
 end
-
 return BP_DSAssetsManager_C

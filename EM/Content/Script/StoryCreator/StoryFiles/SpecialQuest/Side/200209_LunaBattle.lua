@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17524838654391165",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1435.4285714285713, y = 273.42857142857144},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -143,7 +145,7 @@ return {
           ["17524838697991365"] = {
             key = "17524838697991365",
             type = "TalkNode",
-            name = "\232\167\166\229\143\145\233\156\178\229\168\156",
+            name = "触发露娜",
             pos = {x = 1085.2710987538126, y = 427.75753876866247},
             propsData = {
               IsNpcNode = false,
@@ -162,6 +164,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -169,6 +172,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -196,16 +200,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 700225},
-                {TalkActorType = "Npc", TalkActorId = 700226},
-                {TalkActorType = "Npc", TalkActorId = 700227}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "Player",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -213,7 +213,7 @@ return {
           ["17524838697991366"] = {
             key = "17524838697991366",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\228\184\128\233\152\159\233\157\162\229\140\133\228\186\186",
+            name = "生成一队面包人",
             pos = {x = 1355.288232333141, y = 453.8373000876073},
             propsData = {
               ActiveEnable = true,
@@ -227,7 +227,7 @@ return {
           ["17524838698001367"] = {
             key = "17524838698001367",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1893.7289012461874, y = 472.03172880006684},
             propsData = {
               KillMonsterType = "Id",
@@ -242,7 +242,7 @@ return {
           ["17524838698001368"] = {
             key = "17524838698001368",
             type = "UpdateTaskBarAndTaskMainNode",
-            name = "\230\155\180\230\150\176\228\187\187\229\138\161\231\155\174\230\160\135\232\138\130\231\130\185",
+            name = "更新任务目标节点",
             pos = {x = 1661.6593239089902, y = 260.3521997713618},
             propsData = {
               NewDescription = "Description_200209_7",
@@ -253,14 +253,14 @@ return {
           ["17524941306802058"] = {
             key = "17524941306802058",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 2241.9361118745096, y = 501.3873121131607},
             propsData = {}
           },
           ["17524941416082356"] = {
             key = "17524941416082356",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1762.9351610931528, y = 745.6897429743159},
             propsData = {}
           }

@@ -46,8 +46,8 @@ return {
       isStoryNode = true,
       key = "1733137204053211535",
       type = "StoryNode",
-      name = "\232\182\129\231\129\171\230\137\147\229\138\171",
-      pos = {x = 1196, y = 300.2857142857143},
+      name = "趁火打劫",
+      pos = {x = 1198, y = 300.2857142857143},
       propsData = {
         QuestId = 0,
         QuestDescriptionComment = "",
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -152,6 +154,12 @@ return {
             startPort = "Out",
             endQuest = "17331391356532740157",
             endPort = "In"
+          },
+          {
+            startQuest = "1733137364941213516",
+            startPort = "Out",
+            endQuest = "176189368216819739747",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -179,7 +187,7 @@ return {
           ["1733137261166212656"] = {
             key = "1733137261166212656",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166\229\175\185\232\175\157",
+            name = "开车对话",
             pos = {x = 1182.2946868158538, y = 84.1248154972412},
             propsData = {
               IsNpcNode = false,
@@ -196,7 +204,7 @@ return {
           ["1733137277993212998"] = {
             key = "1733137277993212998",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1139.9577302941148, y = 287.9166215173082},
             propsData = {
               bActiveEnable = true,
@@ -213,7 +221,7 @@ return {
           ["1733137364941213516"] = {
             key = "1733137364941213516",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\229\176\143\230\183\183\230\183\183",
+            name = "生成小混混",
             pos = {x = 1706.9142520332452, y = 289.6682937581108},
             propsData = {
               ActiveEnable = true,
@@ -233,7 +241,7 @@ return {
           ["1733137426480214138"] = {
             key = "1733137426480214138",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 2039.5772955115062, y = 299.8856850624587},
             propsData = {
               KillMonsterType = "Id",
@@ -254,7 +262,7 @@ return {
           ["1733137457523214503"] = {
             key = "1733137457523214503",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144NPC",
+            name = "生成NPC",
             pos = {x = 2342.1859911636807, y = 312.92916332332817},
             propsData = {
               ActiveEnable = true,
@@ -273,7 +281,7 @@ return {
           ["1733137502490215111"] = {
             key = "1733137502490215111",
             type = "TalkNode",
-            name = "\228\184\142\230\183\183\230\183\183\229\175\185\232\175\157",
+            name = "与混混对话",
             pos = {x = 2635.6642520332457, y = 265.9726415841979},
             propsData = {
               IsNpcNode = true,
@@ -299,6 +307,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -306,13 +315,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -338,7 +347,7 @@ return {
           ["1733137524857215575"] = {
             key = "1733137524857215575",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3147.776053275482, y = 160.3748154972413},
             propsData = {
               DialogueId = 710035041,
@@ -349,7 +358,7 @@ return {
           ["1733137532592215812"] = {
             key = "1733137532592215812",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3145.1984135239286, y = 448.6667409630798},
             propsData = {
               DialogueId = 710035042,
@@ -360,7 +369,7 @@ return {
           ["17331391356532740157"] = {
             key = "17331391356532740157",
             type = "TalkNode",
-            name = "\230\183\183\230\183\183\229\135\186\231\142\176\229\188\128\232\189\166",
+            name = "混混出现开车",
             pos = {x = 2193.653382468028, y = 93.20090245376312},
             propsData = {
               IsNpcNode = false,
@@ -377,16 +386,27 @@ return {
           ["17333081322503774258"] = {
             key = "17333081322503774258",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1397.5, y = 305.5},
             propsData = {WaitTime = 1}
           },
           ["1740382667651522885"] = {
             key = "1740382667651522885",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1919.9970355731225, y = 118.69318181818187},
             propsData = {WaitTime = 1}
+          },
+          ["176189368216819739747"] = {
+            key = "176189368216819739747",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 1957, y = 550.6363636363636},
+            propsData = {
+              NewDescription = "DynQuest_IcelakeCityChenhuodajie_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
+            }
           }
         },
         commentData = {}

@@ -2,10 +2,8 @@ require("UnLua")
 local WBP_Pet_Capture_Detail_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_Pet_Capture_Detail_C:Initialize(Initializer)
 end
-
 function WBP_Pet_Capture_Detail_C:Construct()
   self.Text_Color:SetText(GText("UI_Pet_CaptureSucRateColor"))
   self.Text_Probability:SetText(GText("UI_Pet_CaptureSucRate"))
@@ -49,13 +47,11 @@ function WBP_Pet_Capture_Detail_C:Construct()
   }
   self:InitCaptureDetailItem()
 end
-
 function WBP_Pet_Capture_Detail_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:PlayAnimation(self.In)
   self:SetFocus()
 end
-
 function WBP_Pet_Capture_Detail_C:InitCaptureDetailItem()
   local ClassPath = "/Game/UI/WBP/Pet_Capture/Widget/Pet_Capture_DetailItemContent.Pet_Capture_DetailItemContent_C"
   local CaptureItemClass = UE4.LoadClass(ClassPath)
@@ -71,7 +67,6 @@ function WBP_Pet_Capture_Detail_C:InitCaptureDetailItem()
     self.List_Item:AddItem(Obj)
   end
 end
-
 function WBP_Pet_Capture_Detail_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -82,7 +77,6 @@ function WBP_Pet_Capture_Detail_C:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_Pet_Capture_Detail_C:Close()
   self.List_Item:ClearListItems()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -92,7 +86,6 @@ function WBP_Pet_Capture_Detail_C:Close()
   end
   self.Super.Close(self)
 end
-
 function WBP_Pet_Capture_Detail_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -101,5 +94,4 @@ function WBP_Pet_Capture_Detail_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return WBP_Pet_Capture_Detail_C

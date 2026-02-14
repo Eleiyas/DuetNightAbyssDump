@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   if CommonUtils.GetDeviceTypeByPlatformName() == "Mobile" then
@@ -11,24 +10,33 @@ function M:Construct()
     self.Scroll_Drop:SetControlScrollbarInside(true)
   end
 end
-
 local DropTypeOrder = {
-  "FirstReward",
-  "DropType_Fixed",
-  "DropTag_Prob"
+  "FirstReward"
 }
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   if not Params.RewardList then
     return
   end
   self.Scroll_Drop:ClearChildren()
+  self.DropTypeOrder = {
+    "FirstReward"
+  }
+  local dropList = {}
+  for _, Data in pairs(DataMgr.DropProbType) do
+    table.insert(dropList, Data)
+  end
+  table.sort(dropList, function(a, b)
+    return (a.DropTypeSequence or 0) > (b.DropTypeSequence or 0)
+  end)
+  for _, Data in ipairs(dropList) do
+    table.insert(self.DropTypeOrder, Data.DropTypeKey)
+  end
   local RewardList = Params.RewardList
   local DropTypeMap = {}
   for _, ItemData in ipairs(RewardList) do
     if not ItemData.DropType then
-      ItemData.DropType = DropTypeOrder[1]
+      ItemData.DropType = self.DropTypeOrder[1]
     end
     if not DropTypeMap[ItemData.DropType] then
       DropTypeMap[ItemData.DropType] = {}
@@ -47,7 +55,7 @@ function M:InitContent(Params, PopupData, Owner)
     Data.FirstRewardFlag = ItemData.bFirst
     table.insert(DropTypeMap[ItemData.DropType], Data)
   end
-  for Index, DropType in ipairs(DropTypeOrder) do
+  for Index, DropType in ipairs(self.DropTypeOrder) do
     local Rewards = DropTypeMap[DropType]
     if Rewards then
       local Content = {}
@@ -68,7 +76,6 @@ function M:InitContent(Params, PopupData, Owner)
     self:ShowGamepadABtn(true)
   end, false, 0, "__DeputeDetailDialog_List_Drop")
 end
-
 function M:ShowGamepadABtn(bIsShow)
   if bIsShow then
     self.GamepadCheckItemKeyInfo = self.GamepadCheckItemKeyInfo or self:ShowGamepadShortcutBtn({
@@ -85,21 +92,18 @@ function M:ShowGamepadABtn(bIsShow)
     self.GamepadCheckItemKeyInfo = nil
   end
 end
-
 function M:OnContentFocusReceived(MyGeometry, InFocusEvent)
   if self.Scroll_Drop:GetChildAt(0) then
     self.Scroll_Drop:GetChildAt(0):SetFocus()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.Scroll_Drop:GetChildAt(0) then
     self.Scroll_Drop:GetChildAt(0):SetFocus()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -110,5 +114,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

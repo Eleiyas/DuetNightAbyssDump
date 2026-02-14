@@ -2,7 +2,6 @@ require("UnLua")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(Info, ParentWidget)
   self.CurIndex = Info.Index
   self.ActivityId = Info.ActivityId
@@ -43,14 +42,12 @@ function M:Init(Info, ParentWidget)
   self.Btn_Click.OnUnHovered:Add(self, self.OnBtnUnHover)
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClick)
 end
-
 function M:OnBtnClick()
   if self.bIsSelected then
     return
   end
   AudioManager(self):PlayUISound(self, "event:/ui/activity/sub_btn_click", nil, nil)
 end
-
 function M:SetReddotNew(bShow)
   if not bShow then
     self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -58,7 +55,6 @@ function M:SetReddotNew(bShow)
     self.New:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:SetIsSelected(bIsSelected)
   self.bIsSelected = bIsSelected
   self.Btn_Click:SetChecked(bIsSelected)
@@ -70,7 +66,6 @@ function M:SetIsSelected(bIsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:SetIsPlayed(bIsHavePlayed)
   if bIsHavePlayed then
     self.Image_Check:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToLinearColor("34bc8dFF"))
@@ -78,7 +73,6 @@ function M:SetIsPlayed(bIsHavePlayed)
     self.Image_Check:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToLinearColor("676767FF"))
   end
 end
-
 function M:SetReddot(bShowRed)
   if bShowRed then
     self.Reddot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -86,31 +80,26 @@ function M:SetReddot(bShowRed)
     self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnBtnStateChange(IsChecked)
   if IsChecked and self.ClickCallback then
     self.ClickCallback(self.ParentWidget, self.ActivityId, self.CurIndex, self.CharId)
   end
 end
-
 function M:OnBtnHover()
   if self.bIsSelected then
     return
   end
   self:PlayAnimationForward(self.Hover)
 end
-
 function M:OnBtnUnHover()
   if self.bIsSelected then
     return
   end
   self:PlayAnimationForward(self.UnHover)
 end
-
 function M:Destruct()
   if self.ActivityId then
     ActivityReddotHelper.RemoveReddotListenByEventId(self.ActivityId, self)
   end
 end
-
 return M

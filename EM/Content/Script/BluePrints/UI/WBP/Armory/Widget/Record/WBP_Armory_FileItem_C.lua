@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
-
 function M:Construct()
   self.Button_Area.OnClicked:Add(self, self.OnCellClicked)
   self.Button_Area.OnHovered:Add(self, self.OnCellHovered)
@@ -11,7 +10,6 @@ function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnCellPressed)
   self:RefreshBaseInfo()
 end
-
 function M:OnListItemObjectSet(Content)
   self.Parent = Content.Parent
   self.Content = Content
@@ -63,17 +61,15 @@ function M:OnListItemObjectSet(Content)
     end
   end)
   if self.ReddotName then
-    ScreenPrint("\228\188\188\228\185\142Item\230\148\185\230\136\144\229\164\141\231\148\168\228\186\134\239\188\140\232\174\176\229\190\151\229\156\168BP_OnEntryReleased\229\162\158\229\138\160\231\167\187\233\153\164\231\155\145\229\144\172\229\135\189\230\149\176")
+    ScreenPrint("似乎Item改成复用了，记得在BP_OnEntryReleased增加移除监听函数")
   end
   self.ReddotName = ReddotName
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:SetIsPlaying(IsPlaying)
   if self.Content then
     self.Content.IsPlaying = IsPlaying
@@ -84,7 +80,6 @@ function M:SetIsPlaying(IsPlaying)
     self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   end
 end
-
 function M:OnCellClicked()
   self:SetIsSelected(not self.Content.IsSelected)
   if self.Content.OnClicked then
@@ -101,7 +96,6 @@ function M:OnCellClicked()
     end
   end
 end
-
 function M:SetIsSelected(IsSelected)
   self.Content.IsSelected = IsSelected
   if IsSelected then
@@ -114,7 +108,6 @@ function M:SetIsSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:SetReddot(IsNew, Upgradeable, OtherReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -136,38 +129,40 @@ function M:SetReddot(IsNew, Upgradeable, OtherReddot)
     end
   end
 end
-
 function M:OnCellHovered()
+  if self.Content == nil then
+    return
+  end
   if not self.Content.IsLocked and not self.Content.IsSelected then
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnCellUnhovered()
+  if self.Content == nil then
+    return
+  end
   if not self.Content.IsLocked and not self.Content.IsSelected then
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:OnCellPressed()
+  if self.Content == nil then
+    return
+  end
   if not self.Content.IsLocked and not self.Content.IsSelected then
     self:PlayAnimation(self.Press)
   end
 end
-
 function M:GetSize()
   local Slot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Common_List_Subcell_PC)
   return Slot:GetSize()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.Parent.ScrollBox_File:ScrollWidgetIntoView(self, true, UE4.EDescendantScrollDestination.IntoView)
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -175,7 +170,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -189,11 +183,9 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:Destruct()
   if self.ReddotName then
     ReddotManager.RemoveListener(self.ReddotName, self)
   end
 end
-
 return M

@@ -1,9 +1,7 @@
 local SetNpcPoseNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function SetNpcPoseNode:Init()
   self.NpcInfos = {}
 end
-
 function SetNpcPoseNode:Start(Context)
   self.Context = Context
   local GameInstance = GWorld.GameInstance
@@ -31,7 +29,6 @@ function SetNpcPoseNode:Start(Context)
     end
   end
 end
-
 function SetNpcPoseNode:FinishActionEvent()
   if self.FinishActionEvent ~= true then
     self:FinishAction()
@@ -39,12 +36,10 @@ function SetNpcPoseNode:FinishActionEvent()
   end
   self.FinishActionEvent = true
 end
-
 function SetNpcPoseNode:FinishAction()
   EventManager:RemoveEvent(EventID.OnNpcPoseChange, self)
   self:Finish()
 end
-
 function SetNpcPoseNode:OnQuestlineFail()
   local GameInstance = GWorld.GameInstance
   local GameState = UE4.UGameplayStatics.GetGameState(GameInstance)
@@ -71,5 +66,4 @@ function SetNpcPoseNode:OnQuestlineFail()
     end
   end
 end
-
 return SetNpcPoseNode

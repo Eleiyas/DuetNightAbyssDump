@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1716886477404117245",
       type = "StoryNode",
-      name = "\230\181\183\230\187\169\230\156\168\230\161\182",
+      name = "海滩木桶",
       pos = {x = 1502, y = 308},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -155,7 +157,7 @@ return {
           ["1716888064673118078"] = {
             key = "1716888064673118078",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166\230\181\183\230\187\169\230\156\168\230\161\182",
+            name = "开车海滩木桶",
             pos = {x = 1206, y = 146},
             propsData = {
               IsNpcNode = false,
@@ -172,7 +174,7 @@ return {
           ["17169626862871645"] = {
             key = "17169626862871645",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 2578.0975969335104, y = 819.2843874391864},
             propsData = {
               DialogueId = 0,
@@ -183,7 +185,7 @@ return {
           ["17212054148203146"] = {
             key = "17212054148203146",
             type = "PickUpNode",
-            name = "\232\167\130\229\175\159\230\156\168\230\161\1822",
+            name = "观察木桶2",
             pos = {x = 1584.2458736354956, y = 388.6736822875604},
             propsData = {
               bActiveEnable = false,
@@ -200,7 +202,7 @@ return {
           ["17212054148203147"] = {
             key = "17212054148203147",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1915.8604247190867, y = 381.73560179220453},
             propsData = {
               IsNpcNode = false,
@@ -218,6 +220,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -225,17 +228,19 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -243,7 +248,7 @@ return {
           ["17212055560456185"] = {
             key = "17212055560456185",
             type = "PickUpNode",
-            name = "\232\167\130\229\175\159\230\156\168\230\161\1821",
+            name = "观察木桶1",
             pos = {x = 1571.6551795088744, y = 604.2525697235413},
             propsData = {
               bActiveEnable = false,
@@ -260,7 +265,7 @@ return {
           ["17212055560456186"] = {
             key = "17212055560456186",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1930.9276253293078, y = 591.5776471229224},
             propsData = {
               IsNpcNode = false,
@@ -278,6 +283,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -285,17 +291,19 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -303,7 +311,7 @@ return {
           ["17212055621486389"] = {
             key = "17212055621486389",
             type = "PickUpNode",
-            name = "\232\167\130\229\175\159\230\156\168\230\161\1821",
+            name = "观察木桶1",
             pos = {x = 1562.6025479299271, y = 835.9367802498574},
             propsData = {
               bActiveEnable = true,
@@ -324,7 +332,7 @@ return {
           ["17212055621486390"] = {
             key = "17212055621486390",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1926.1907832240447, y = 822.8408050176594},
             propsData = {
               IsNpcNode = false,
@@ -342,6 +350,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -349,17 +358,19 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }

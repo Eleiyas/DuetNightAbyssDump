@@ -6,7 +6,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:Destruct()
   ReddotManager.RemoveAllListener(self.LimitNodeName)
   ReddotManager.RemoveAllListener(self.NormalNodeName)
@@ -17,7 +16,6 @@ function M:Destruct()
   self.Info = nil
   self.ParentWidget = nil
 end
-
 function M:Init(Info)
   self.Info = Info
   self.ParentWidget = Info.OwnerPanel
@@ -29,27 +27,24 @@ function M:Init(Info)
   self.Text_TabNormal:SetText(GText("MAIN_UI_PermanentGameEvent"))
   self.LimitNodeName = "LeftEventTypeTab"
   self.NormalNodeName = "RightEventTypeTab"
+  self.bSwitchCooldown = false
 end
-
 function M:BindButtonPerformances()
   self.Btn_Click.OnClicked:Add(self, self.OnClicked)
   self.Btn_Click.OnPressed:Add(self, self.OnPressed)
   self.Btn_Click.OnHovered:Add(self, self.OnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function M:UnBindButtonPerformances()
   self.Btn_Click.OnClicked:Clear()
   self.Btn_Click.OnPressed:Clear()
   self.Btn_Click.OnHovered:Clear()
   self.Btn_Click.OnUnhovered:Clear()
 end
-
 function M:OnClicked()
   self:PlayAnimation(self.Click)
   self:SwitchTab()
 end
-
 function M:OnPressed()
   AudioManager(self):PlayUISound(self, "event:/ui/activity/type_btn_click", nil, nil)
   if self:IsAnimationPlaying(self.Switch) then
@@ -57,21 +52,20 @@ function M:OnPressed()
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnHovered()
   if self.bBtnClickHovered then
     return
   end
   self.bBtnClickHovered = true
+  self:StopAnimation(self.UnHover)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   if not self.bBtnClickHovered then
     return
   end
   self.bBtnClickHovered = false
-  self:StopAllAnimations()
+  self:StopAnimation(self.Hover)
   self:BindToAnimationFinished(self.UnHover, {
     self,
     function()
@@ -81,19 +75,27 @@ function M:OnUnhovered()
   })
   self:PlayAnimation(self.UnHover)
 end
-
 function M:SwitchTab(TargetTabName)
   if self:IsForbidden() then
     return
   end
   if self:IsAnimationPlaying(self.Switch) then
-    print("lgc@ \229\138\168\231\148\187Switch\230\173\163\229\156\168\230\146\173\230\148\190,\229\136\135\230\141\162\229\164\177\232\180\165")
+    DebugPrint("lgc@ 动画Switch正在播放,切换失败")
     return
   end
-  if "LimitTime" == TargetTabName then
-    self.bLimitTime = false
-  elseif "Normal" == TargetTabName then
-    self.bLimitTime = true
+  if not self.bSwitchCooldown then
+    self.bSwitchCooldown = true
+    self:AddTimer(0.3, function()
+      self.bSwitchCooldown = false
+    end, false, 0, nil, true)
+  else
+    DebugPrint("lgc@ 切换冷却中,切换失败")
+    return
+  end
+  if "LimitTime" == TargetTabName and self.bLimitTime then
+    return
+  elseif "Normal" == TargetTabName and not self.bLimitTime then
+    return
   end
   if self.bLimitTime then
     self.bLimitTime = false
@@ -109,28 +111,32 @@ function M:SwitchTab(TargetTabName)
   self:BindToAnimationFinished(self.Switch, {
     self,
     function()
+      self:UnbindAllFromAnimationFinished(self.Switch)
       if self.bBtnClickHovered then
         self:PlayAnimation(self.Hover)
       end
     end
   })
 end
-
 function M:ResetPos()
-  self:PlayAnimation(self.Switch, 0.99, 1, EUMGSequencePlayMode.Reverse, 1.0)
+  self:StopAllAnimations()
+  if self:IsLimitTime() then
+    self:PlayAnimation(self.Switch, 0.8, 1, EUMGSequencePlayMode.Reverse, 1.0)
+  else
+    self:PlayAnimation(self.Switch, 0, 1, EUMGSequencePlayMode.Forward, 1.0)
+  end
 end
-
 function M:InitReddotTreeInfo()
-  if self:IsForbidden() then
+  if not (not self:IsForbidden() and self.ParentWidget) or not self.ParentWidget.SubTabItems then
     return
   end
   local NormalChildNodes = {}
   local LimitTimeChildNodes = {}
   for _, value in pairs(self.ParentWidget.SubTabItems) do
     local ChildNodeName = ActivityReddotHelper.GetEventTabNodeName(value.TabId)
-    if value.bLimit and value.bLimit == true then
+    if value.bLimit and value.bLimit == true and ChildNodeName then
       LimitTimeChildNodes[ChildNodeName] = 1
-    elseif value.bLimit and value.bLimit == false then
+    elseif value.bLimit and value.bLimit == false and ChildNodeName then
       NormalChildNodes[ChildNodeName] = 1
     end
   end
@@ -145,23 +151,18 @@ function M:InitReddotTreeInfo()
     end, 2)
   end, LimitTimeChildNodes, true)
 end
-
 function M:IsLimitTime()
   return self.bLimitTime
 end
-
 function M:SetIsLimitTime(InIsLimitTime)
   self.bLimitTime = InIsLimitTime
 end
-
 function M:IsForbidden()
   return self.bForbidden or false
 end
-
 function M:SetForbidden(IsForbidden)
   self.bForbidden = IsForbidden
 end
-
 function M:GetIsShowReddotAndNew(Content)
   local bShowReddot, bShowNew = false, false
   if not Content then
@@ -178,22 +179,15 @@ function M:GetIsShowReddotAndNew(Content)
   end
   local NodeName = ActivityReddotHelper.GetEventTabNodeName(Content.TabId)
   local ReddotNode = ReddotManager.GetTreeNode(NodeName)
-  for _, Node in pairs(ReddotNode.Children) do
-    local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(Node.Name)
-    if CacheDetail.Red and CacheDetail.Red > 0 then
+  if ReddotNode and ReddotNode.Count and ReddotNode.Count > 0 then
+    if ReddotNode.ReddotType == UIConst.RedDotType.CommonRedDot then
       bShowReddot = true
-    else
-      bShowReddot = false
-    end
-    if CacheDetail.New and CacheDetail.New > 0 then
+    elseif ReddotNode.ReddotType == UIConst.RedDotType.NewRedDot then
       bShowNew = true
-    else
-      bShowNew = false
     end
   end
   return bShowReddot, bShowNew
 end
-
 function M:UpdateEventTypeTabReddot(bForceExec)
   if self:IsForbidden() then
     return
@@ -229,7 +223,6 @@ function M:UpdateEventTypeTabReddot(bForceExec)
       NormalItems[Item.TabId] = Item
     end
   end
-  
   local function UpdateReddotAndNew(TargetItems, TargetReddot, TargetNew)
     local bShowReddot = false
     local bShowNew = false
@@ -255,7 +248,6 @@ function M:UpdateEventTypeTabReddot(bForceExec)
       TargetNew:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
-  
   local TargetReddot = self.Reddot01
   local TargetNew = self.New01
   if self.bLimitTime or bForceExec then
@@ -267,7 +259,6 @@ function M:UpdateEventTypeTabReddot(bForceExec)
     UpdateReddotAndNew(NormalItems, TargetReddot, TargetNew)
   end
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad)
   if not self.Key_Left or not self.Key_Right then
     return
@@ -281,7 +272,6 @@ function M:UpdateUIStyleInPlatform(IsUseGamePad)
   end
   self:PlayAnimation(self.Normal)
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftShoulder" == InKeyName then
@@ -299,5 +289,4 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

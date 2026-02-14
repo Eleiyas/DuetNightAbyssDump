@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
 local AgentEnum = {Dispatching = 2, NotDispatched = 3}
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.AgentList = {}
@@ -12,14 +11,12 @@ function M:Initialize(Initializer)
   self.ChooseAgentList = {}
   self.CurClick = nil
 end
-
 function M:Construct()
   self.Btn_Close.Btn_Close.OnClicked:Add(self, self.OnClickClose)
   self.Btn_Desc.Btn_Click.OnClicked:Add(self, self.OnClickDialogAbility)
   self.Btn_Auto.Button_Area.OnClicked:Add(self, self.AutoChoose)
   self.Btn_Close.Btn_Close.AudioEventPath = "event:/ui/common/click_btn_return"
 end
-
 function M:Destruct()
   self.Btn_Close.Btn_Close.OnClicked:Remove(self, self.OnClickClose)
   self.Btn_Auto.Button_Area.OnClicked:Remove(self, self.AutoChoose)
@@ -28,7 +25,6 @@ function M:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:InitAgentList(Owner)
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "AgentOpen", nil)
@@ -37,10 +33,8 @@ function M:InitAgentList(Owner)
   self:InitListenEvent()
   self:RefreshBaseInfo()
 end
-
 function M:InitKeyInfo()
 end
-
 function M:Refresh()
   for _, value in pairs(self.AgentList) do
     if value.UI then
@@ -48,7 +42,6 @@ function M:Refresh()
     end
   end
 end
-
 function M:InitPCKeyInfo()
   if self.Owner.Key_Tip == nil then
     return
@@ -57,7 +50,7 @@ function M:InitPCKeyInfo()
   self.Key_Controller_Desc:SetVisibility(ESlateVisibility.Collapsed)
   self.Owner.Key_Tip.Panel_Key:ClearChildren()
   local Key_Esc = UIManager(self):_CreateWidgetNew("ComKeyTextDesc")
-  self.Owner.Key_Tip.Panel_Key:AddChild(Key_GetReward)
+  self.Owner.Key_Tip.Panel_Key:AddChild(Key_Esc)
   Key_Esc:CreateCommonKey({
     KeyInfoList = {
       {Type = "Text", Text = "Esc"}
@@ -65,7 +58,6 @@ function M:InitPCKeyInfo()
     Desc = GText("UI_BACK")
   })
 end
-
 function M:InitPadKeyInfo()
   if self.Owner.Key_Tip == nil then
     return
@@ -100,7 +92,6 @@ function M:InitPadKeyInfo()
   self.Key_Controller_Desc:SetVisibility(ESlateVisibility.Visibie)
   self.Key_Controller_Desc:CreateGamepadKey("LS")
 end
-
 function M:Init(Owner)
   self.Owner = Owner
   self.Text_Title:SetText(GText("UI_Disptach_AgentList"))
@@ -151,7 +142,6 @@ function M:Init(Owner)
     end
   end)
 end
-
 function M:GetAgentState(Uuid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -163,13 +153,11 @@ function M:GetAgentState(Uuid)
     return AgentEnum.NotDispatched
   end
 end
-
 function M:OnClose()
   self.Owner.DispatchAgentList = nil
   AudioManager(self):SetEventSoundParam(self, "AgentOpen", {ToEnd = 1})
   self:RemoveFromParent()
 end
-
 function M:OnClickClose()
   self:BindToAnimationFinished(self.Out, function()
     self:OnClose()
@@ -189,7 +177,6 @@ function M:OnClickClose()
   end)
   self:PlayAnimation(self.Out)
 end
-
 function M:StartDispatch(IsFirst)
   self:BindToAnimationFinished(self.Out, {
     self,
@@ -206,7 +193,6 @@ function M:StartDispatch(IsFirst)
   })
   self:PlayAnimation(self.Out)
 end
-
 function M:SortAgentList()
   table.sort(self.UuidList, function(A, B)
     local StateA = self:GetAgentState(A)
@@ -229,8 +215,7 @@ function M:SortAgentList()
     return IdA > IdB
   end)
 end
-
-function M:OnListItemClicked(Content)
+function M:OnListItemClicked(Content, IsByAuto)
   if nil == Content then
     return
   end
@@ -246,14 +231,18 @@ function M:OnListItemClicked(Content)
       return
     end
     if self:GetAgentState(Content.Uuid) == AgentEnum.Dispatching then
-      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disptach_Toast_AgentDoing"))
+      if not IsByAuto then
+        UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disptach_Toast_AgentDoing"))
+      end
       Content.IsChoose = not Content.IsChoose
       return
     end
     if Content.UI then
       Content.UI.Btn_Minus:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       Content.UI:StopAllAnimations()
+      Content.UI.BG:PlayAnimation(Content.UI.BG.Click)
       Content.UI:PlayAnimation(Content.UI.Select)
+      Content.UI.Text_Selected:SetText(GText("UI_Disptach_Chosen"))
     end
     self.ChooseAgentList[Content.Uuid] = true
     self.Owner.DispatchDetail:AddAgentData(Content.Uuid, true)
@@ -261,13 +250,13 @@ function M:OnListItemClicked(Content)
     if Content.UI then
       Content.UI.Btn_Minus:SetVisibility(ESlateVisibility.Collapsed)
       Content.UI:StopAllAnimations()
+      Content.UI.BG:PlayAnimation(Content.UI.BG.Normal)
       Content.UI:PlayAnimation(Content.UI.Normal)
     end
     self.ChooseAgentList[Content.Uuid] = nil
     self.Owner.DispatchDetail:RemoveAgentData(nil, Content.Uuid, true)
   end
 end
-
 function M:UpdateAgentItem(Id)
   local Agent = self.AgentList[Id]
   if nil == Agent then
@@ -275,7 +264,6 @@ function M:UpdateAgentItem(Id)
   end
   self:CancelChoose(Agent.UI)
 end
-
 function M:InitDispatchingAgentList()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -289,11 +277,9 @@ function M:InitDispatchingAgentList()
     end
   end
 end
-
 function M:OnClickMinus()
   self:CancelChoose()
 end
-
 function M:CancelChoose(Agent)
   if Agent.State == AgentEnum.Dispatching then
     return
@@ -301,7 +287,6 @@ function M:CancelChoose(Agent)
   Agent.IsChoose = false
   Agent:PlayAnimation(Agent.Normal)
 end
-
 function M:GetSuccessRateById(UuId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -327,7 +312,6 @@ function M:GetSuccessRateById(UuId)
   end
   return MatchCount / AblilityCount + Effect * SpecialCount
 end
-
 function M:GetAbilityCount(UuId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -341,14 +325,12 @@ function M:GetAbilityCount(UuId)
   end
   return TotalCount
 end
-
 function M:OnClickDialogAbility()
   self.Btn_Desc:PlayAnimation(self.Btn_Desc.Click)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local Params = {}
   UIManager(self):ShowCommonPopupUI(100139, Params, self.List_Agent)
 end
-
 function M:AutoChoose()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", "", nil)
   local CanAuto = self:CheckAutoChoose(true)
@@ -356,7 +338,7 @@ function M:AutoChoose()
     local Item = self.List_Agent:GetListItems()
     for _, Content in pairs(self.List_Agent:GetListItems()) do
       if Content and Content.IsChoose == false then
-        self:OnListItemClicked(Content)
+        self:OnListItemClicked(Content, true)
       end
       local CanContinue = self:CheckAutoChoose(false)
       if false == CanContinue then
@@ -365,7 +347,6 @@ function M:AutoChoose()
     end
   end
 end
-
 function M:CheckAutoChoose(IsShowTip)
   local CurSuccessRate = self.Owner.DispatchDetail:CalSuccessRate()
   local CurPerson = self.Owner.DispatchDetail.AgentCount
@@ -375,14 +356,14 @@ function M:CheckAutoChoose(IsShowTip)
     if IsShowTip then
       UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Dispatch_Toast_MustWin"))
     end
-    DebugPrint("\229\189\147\229\137\141\230\136\144\229\138\159\231\142\135\229\164\167\228\186\142\231\173\137\228\186\142100")
+    DebugPrint("当前成功率大于等于100")
     return false
   end
   if CurPerson == MaxPerson then
     if IsShowTip then
       UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Dispatch_Toast_FullMan"))
     end
-    DebugPrint("\230\180\190\233\129\163\228\186\186\230\149\176\228\184\138\233\153\144")
+    DebugPrint("派遣人数上限")
     return false
   end
   if true == Flag then
@@ -393,24 +374,21 @@ function M:CheckAutoChoose(IsShowTip)
   end
   return true
 end
-
 function M:CheckAgentListIsEmpty()
   local Flag = true
   for _, Content in pairs(self.List_Agent:GetListItems()) do
-    if Content.UI and Content.UI.IsChoose == false then
+    if Content.IsChoose == false and Content.State == AgentEnum.NotDispatched then
       Flag = false
       return Flag
     end
   end
   return Flag
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -418,7 +396,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -442,7 +419,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -466,7 +442,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -484,6 +459,7 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
       self.Owner.DispatchDetail:InitPadKeyInfo()
       self.Owner.DispatchDetail:ShowPadUI(false)
     end
+    self.Key_Controller_Desc:SetVisibility(ESlateVisibility.Collapsed)
   elseif "Gamepad_FaceButton_Top" == InKeyName then
     self:AutoChoose()
   elseif "Gamepad_FaceButton_Left" == InKeyName then
@@ -496,12 +472,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.UsingGamepad then
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
     self:InitPadKeyInfo()
   end
 end
-
 return M

@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnCellClicked)
   self.Btn_Click.OnHovered:Add(self, self.OnCellHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnCellUnhovered)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.UI = self
   self.StoryId = Content.StoryId
@@ -22,7 +20,6 @@ function M:OnListItemObjectSet(Content)
   self.GreatParent = Content.GreatParent
   self:InitSubStoryItem()
 end
-
 function M:InitSubStoryItem()
   if self.IsNew then
     self.New:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -46,7 +43,6 @@ function M:InitSubStoryItem()
   end
   self.Text_Title:SetText(GText(self.Name))
 end
-
 function M:OnCellClicked()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if self.GreatParent.CurSelectSubItem == self and self.IsUnlocked then
@@ -70,7 +66,6 @@ function M:OnCellClicked()
     self.New:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnCellHovered()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if self.IsNew then
@@ -93,14 +88,12 @@ function M:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnCellUnhovered()
   if not self.IsSelected then
     self:StopAnimation(self.Hover)
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -108,7 +101,6 @@ function M:BP_OnItemSelectionChanged(IsSelected)
     self:OnSubItemLoseSelection()
   end
 end
-
 function M:OnSubItemLoseSelection()
   self:StopAnimation(self.Click)
   if self.IsUnlocked then
@@ -118,5 +110,4 @@ function M:OnSubItemLoseSelection()
     self:PlayAnimation(self.Forbidden)
   end
 end
-
 return M

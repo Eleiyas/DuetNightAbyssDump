@@ -8,99 +8,101 @@ local TaskType = {
   Cycle = 3,
   Achievement = 4
 }
-
 function Component:MidTermGetScoresRewards(InCallBack)
   self.logger.info("MidTermGetScoresRewards")
-  
   local function Cb(ErrCode, Ret)
     DebugPrint("MidTermGetScoresRewards", ErrorCode:Name(ErrCode))
     if InCallBack then
       InCallBack(ErrCode, Ret)
     end
   end
-  
   self:CallServer("MidTermGetScoresRewards", Cb)
 end
-
 function Component:MidTermGetAllAchvScores(InCallBack)
   self.logger.info("MidTermGetAllAchvScores")
-  
   local function Cb(ErrCode, Ret)
     DebugPrint("MidTermGetAllAchvScores", ErrorCode:Name(ErrCode))
     if InCallBack then
       InCallBack(ErrCode, Ret)
     end
   end
-  
   self:CallServer("MidTermGetAllAchvScores", Cb)
 end
-
 function Component:MidTermGetAllNormalScores(InCallBack)
   self.logger.info("MidTermGetAllNormalScores")
-  
   local function Cb(ErrCode, Ret)
     DebugPrint("MidTermGetAllNormalScores", ErrorCode:Name(ErrCode))
     if InCallBack then
       InCallBack(ErrCode, Ret)
     end
   end
-  
   self:CallServer("MidTermGetAllNormalScores", Cb)
 end
-
 function Component:MidTermGetProgressReward(InCallBack)
   self.logger.info("MidTermGetProgressReward")
-  
   local function Cb(ErrCode, Ret)
     DebugPrint("MidTermGetProgressReward", ErrorCode:Name(ErrCode))
     if InCallBack then
       InCallBack(ErrCode, Ret)
     end
   end
-  
   self:CallServer("MidTermGetProgressReward", Cb)
 end
-
 function Component:MidTermGetTaskReward(TaskId, InCallBack)
   self.logger.info("MidTermGetTaskReward", TaskId)
-  
   local function Cb(ErrCode)
     DebugPrint("MidTermGetTaskReward", ErrorCode:Name(ErrCode))
     if InCallBack then
       InCallBack(ErrCode)
     end
   end
-  
   self:CallServer("MidTermGetTaskReward", Cb, TaskId)
 end
-
 function Component:NotifyMidTermTaskComplete(TaskId)
   self.logger.info("NotifyMidTermTaskComplete", TaskId)
   EventManager:FireEvent(EventID.OnMidTermTaskComplete, TaskId)
   self:UpdateJJGameReddot(TaskId)
 end
-
 function Component:NotifyMidTermTaskProgressChange(TaskId, Progress)
   self.logger.info("NotifyMidTermTaskProgressChange", TaskId, Progress)
   EventManager:FireEvent(EventID.OnMidTermTaskProgressChange, TaskId, Progress)
 end
-
 function Component:UpdateJJGameReddot(TaskId)
   if not ActivityUtils.CheckEventIsOpen(MidTermGoalEventId, nil, true) then
     return
   end
-  local Task = self.MidTermTasks[TaskId]
+  local Task = self.MidTermGoals[MidTermGoalEventId].Tasks[TaskId]
   if Task then
     local TaskData = DataMgr.MidTermTask[Task.UniqueID]
     if TaskData and TaskData.TaskType == TaskType.Achievement then
-      self:TryIncreaceChallengeTaskRewardReddot(TaskId)
+      local MidTermGoalEventId = DataMgr.MidTermGoalConstant.MidTermGoalEventId.ConstantValue
+      local EventStartTime = DataMgr.EventMain[MidTermGoalEventId].EventStartTime
+      local currentTime = TimeUtils.NowTime()
+      local intervalDays = TimeUtils.GetIntervalDay(EventStartTime, currentTime)
+      local calculatedEventDay = intervalDays + 1
+      if calculatedEventDay >= TaskData.EnableDay then
+        self:TryIncreaceChallengeTaskRewardReddot(TaskId)
+      end
     else
-      self:TryIncreaceNormalRewardReddot(TaskId)
+      local EventEndTime = DataMgr.EventMain[MidTermGoalEventId].EventEndTime
+      if EventEndTime > TimeUtils.NowTime() then
+        self:TryIncreaceNormalRewardReddot(TaskId)
+      end
     end
   end
 end
-
 function Component:TryIncreaceChallengeTaskRewardReddot(TaskId)
+  local allRewardsClaimed = true
+  local MidTermAchvProgressRewarded = self.MidTermGoals[MidTermGoalEventId].AchvProgressRewarded or {}
+  for _, v in pairs(MidTermAchvProgressRewarded) do
+    if 0 == v then
+      allRewardsClaimed = false
+      break
+    end
+  end
+  if allRewardsClaimed then
+    return
+  end
   local CacheKey = ChallengeRewardReddotName .. TaskId
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(ChallengeRewardReddotName)
   if CacheData and nil == CacheData[CacheKey] then
@@ -108,7 +110,6 @@ function Component:TryIncreaceChallengeTaskRewardReddot(TaskId)
     ReddotManager.IncreaseLeafNodeCount(ChallengeRewardReddotName)
   end
 end
-
 function Component:TryIncreaceNormalRewardReddot(TaskId)
   local CacheKey = NormalRewardReddotName .. TaskId
   local CacheData = ReddotManager.GetLeafNodeCacheDetail(NormalRewardReddotName)
@@ -117,5 +118,4 @@ function Component:TryIncreaceNormalRewardReddot(TaskId)
     ReddotManager.IncreaseLeafNodeCount(NormalRewardReddotName)
   end
 end
-
 return Component

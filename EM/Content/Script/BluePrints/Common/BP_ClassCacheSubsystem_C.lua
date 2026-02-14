@@ -7,9 +7,7 @@ BP_ClassCacheSubsystem_C.MaxNumInfo = {
   Weapon = 15,
   ClientSkill = 5
 }
-
 function BP_ClassCacheSubsystem_C:GetMaxNum(Tag)
   return BP_ClassCacheSubsystem_C.MaxNumInfo[Tag] or 0
 end
-
 return BP_ClassCacheSubsystem_C

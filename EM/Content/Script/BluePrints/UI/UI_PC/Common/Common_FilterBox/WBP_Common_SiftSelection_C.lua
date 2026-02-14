@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(OwnerItemUI, index, name, iconPath)
   self.OwnerItemUI = OwnerItemUI
   self.Index = index
@@ -12,16 +11,13 @@ function M:Init(OwnerItemUI, index, name, iconPath)
   self:RefreshBaseInfo()
   self:InitListenEvent()
 end
-
 function M:Construct()
   self.ITEMS_PER_ROW = 3
   self.CheckBox_Selection.Btn_Click.OnClicked:Add(self, self.OnItemSelectionChanged)
 end
-
 function M:Destruct()
   self.CheckBox_Selection.Btn_Click.OnClicked:Remove(self, self.OnItemSelectionChanged)
 end
-
 function M:OnItemSelectionChanged()
   local CheckState = self.CheckBox_Selection:IsChecked()
   self.OwnerItemUI:OnSelectionItemChanged(CheckState, self)
@@ -32,7 +28,6 @@ function M:OnItemSelectionChanged()
   end
   return CheckState
 end
-
 function M:SetImage(iconPath)
   if not iconPath then
     return
@@ -41,25 +36,21 @@ function M:SetImage(iconPath)
   local IconObject = LoadObject(iconPath)
   self.Icon:SetBrushResourceObject(IconObject)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.CheckBox_Selection.Btn_Click:SetFocus()
   self.CheckBox_Selection:PlayAnimation(self.CheckBox_Selection.Normal)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.CurrentInputDevice == ECommonInputType.Gamepad then
     self.OwnerItemUI.Owner.List_Selection:ScrollWidgetIntoView(self, true, UE4.EDescendantScrollDestination.IntoView)
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -67,7 +58,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -80,7 +70,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurrentInputDevice = CurInputDevice
 end
-
 function M:InitNavigationRules()
   self:SetNavigationRuleCustom(EUINavigation.Down, {
     self,
@@ -91,7 +80,6 @@ function M:InitNavigationRules()
     self.SetWBoxUpTarget
   })
 end
-
 function M:SetWBoxDownTarget()
   local parentWBox = self:GetParent()
   if not parentWBox then
@@ -133,7 +121,6 @@ function M:SetWBoxDownTarget()
   end
   return nil
 end
-
 function M:SetWBoxUpTarget()
   local parentWBox = self:GetParent()
   if not parentWBox then
@@ -166,5 +153,4 @@ function M:SetWBoxUpTarget()
   end
   return nil
 end
-
 return M

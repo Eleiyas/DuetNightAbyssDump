@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   HotUpdateSubsystem.PatchPostSuccessDelegate:Add(self, self.RefreshDownloadedVoiceState)
@@ -61,7 +60,6 @@ function M:InitContent(Params, PopupData, Owner)
     end
   end
 end
-
 function M:OnSelected(Content)
   if self.CurrentSelectedContent and self.CurrentSelectedContent ~= Content then
     if self.CurrentSelectedContent.CurrentEntry then
@@ -78,7 +76,6 @@ function M:OnSelected(Content)
   self.CurrentSelectedContent = Content
   self:UpdateDialogBtnState()
 end
-
 function M:PackageData()
   if self.CurrentSelectedContent then
     return {
@@ -91,11 +88,9 @@ function M:PackageData()
   end
   return nil
 end
-
 function M:OnAssetStartDownload(TotalBytes, DownloadedBytes)
   self:RefreshDownloadedVoiceState(false)
 end
-
 function M:RefreshDownloadedVoiceState(bFirst)
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   self.DownloadedVoiceState = HotUpdateSubsystem:GetOptionalPatchAssetStates(self.PatchSigns)
@@ -109,7 +104,6 @@ function M:RefreshDownloadedVoiceState(bFirst)
   end
   self:UpdateDialogBtnState()
 end
-
 function M:UpdateDialogBtnState()
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   if self.CurrentSelectedContent.DownloadedVoiceState == EOptionalPatchAssetState.None then
@@ -128,7 +122,6 @@ function M:UpdateDialogBtnState()
     self.Owner:GetButtonBar().Btn_Yes:SetText(GText("UI_OPTION_Language_Unload"))
   end
 end
-
 function M:OnAssetDownloadProgressChanged(Url, BytesSoFar, TotalBytes, PatchSign)
   if not rawget(self, "DownloadProcess") then
     rawset(self, "DownloadProcess", {})
@@ -144,7 +137,6 @@ function M:OnAssetDownloadProgressChanged(Url, BytesSoFar, TotalBytes, PatchSign
     end
   end
 end
-
 function M:Destruct()
   local HotUpdateSubsystem = USubsystemBlueprintLibrary.GetGameInstanceSubsystem(self, UHotUpdateSubsystem)
   HotUpdateSubsystem.PatchPostSuccessDelegate:Remove(self, self.RefreshDownloadedVoiceState)
@@ -154,5 +146,4 @@ function M:Destruct()
   HotUpdateSubsystem.UpdatePatchOptionalSignsDelegate:Remove(self, self.RefreshDownloadedVoiceState)
   self.Super.Destruct(self)
 end
-
 return M

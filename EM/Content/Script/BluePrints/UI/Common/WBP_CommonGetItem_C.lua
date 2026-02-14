@@ -1,7 +1,15 @@
 require("UnLua")
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
+function M:Construct()
+  self.List_Item.BP_OnEntryGenerated:Add(self, self.OnItemListEntryGenerated)
+  self.List_Item_Single.BP_OnEntryGenerated:Add(self, self.OnItemListEntryGenerated)
+end
+function M:OnItemListEntryGenerated(Widget)
+  if Widget._MostRarityFX and self:IsAnimationPlaying(self.In) then
+    Widget:_SetMostRarityFX(0)
+  end
+end
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   if not self.bSpecial then
@@ -10,9 +18,19 @@ function M:OnLoaded(...)
     AudioManager(self):PlayUISound(self, "event:/ui/common/get_award_items_high_level", nil, nil)
   end
   self:PlayAnimation(self.In)
+  self:BindToAnimationFinished(self.In, {
+    self,
+    function()
+      if self.NowList then
+        for _, Entry in pairs(self.NowList:GetDisplayedEntryWidgets()) do
+          Entry:_SetMostRarityFX(Entry.Rarity)
+        end
+      end
+    end
+  })
   self.Text_GetItem:SetText(GText("UI_COMMONPOP_TITLE_100017"))
   self.Text_Tip:SetText(GText("UI_TRAIN_CLOSE"))
-  local ShopItemType, ShopItemId, Count, PurchaseRewards, func, ParentWidget, IsReAttachFocusToPage = ...
+  local ShopItemType, ShopItemId, Count, PurchaseRewards, func, ParentWidget, IsReAttachFocusToPage, ToastText = ...
   if -1 == func then
     func = nil
   end
@@ -30,8 +48,13 @@ function M:OnLoaded(...)
     self:InitGetItemInfo(ShopItemType, ShopItemId, Count, PurchaseRewards)
   end, false, 0, nil, true)
   self.IsShowDetails = false
+  if ToastText then
+    self.Toast_GetItem.Text_Toast:SetText(ToastText)
+    self.Toast_GetItem:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Toast_GetItem:SetVisibility(ESlateVisibility.Collapsed)
+  end
 end
-
 function M:InitGetItemInfo(ShopItemType, ShopItemId, Count, PurchaseRewards)
   self.List_Item:ClearListItems()
   self.List_Item_Single:ClearListItems()
@@ -79,6 +102,7 @@ function M:InitGetItemInfo(ShopItemType, ShopItemId, Count, PurchaseRewards)
         local Content = self:NewItemContent(ItemInfo.TableName, ItemId, ItemInfo.ItemCount)
         self.List_Item:AddItem(Content)
       end
+      self.NowList = self.List_Item
     else
       self.WS_List:SetActiveWidgetIndex(1)
       for _, Value in pairs(self.RewardInfoList) do
@@ -86,18 +110,21 @@ function M:InitGetItemInfo(ShopItemType, ShopItemId, Count, PurchaseRewards)
         local Content = self:NewItemContent(ItemInfo.TableName, ItemId, ItemInfo.ItemCount)
         self.List_Item_Single:AddItem(Content)
       end
+      self.NowList = self.List_Item_Single
     end
-  elseif nil ~= ShopItemType and -1 ~= ShopItemType then
-    self.WS_List:SetActiveWidgetIndex(1)
-    local Content = self:NewItemContent(ShopItemType, ShopItemId, Count)
-    self.List_Item_Single:AddItem(Content)
+  else
+    if nil ~= ShopItemType and -1 ~= ShopItemType then
+      self.WS_List:SetActiveWidgetIndex(1)
+      local Content = self:NewItemContent(ShopItemType, ShopItemId, Count)
+      self.List_Item_Single:AddItem(Content)
+    end
+    self.NowList = self.List_Item_Single
   end
   self:InitHandleKeyInfo()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
   self:OnUpdateUIStyleByInputTypeChange(self.CurInputDeviceType, self.CurGamepadName)
 end
-
 function M:SetDefaultFocus()
   if self.RewardInfoList and #self.RewardInfoList > 7 then
     self.List_Item:SetFocus()
@@ -105,13 +132,11 @@ function M:SetDefaultFocus()
     self.List_Item_Single:SetFocus()
   end
 end
-
 function M:DelayToCheckIsFocusOnReward()
   if not self:HasAnyFocus() then
     self:SetDefaultFocus()
   end
 end
-
 function M:InitListItem(ContainerWidget, Item, Content, bNewItem)
   if bNewItem then
     ContainerWidget:AddChild(Item)
@@ -121,7 +146,6 @@ function M:InitListItem(ContainerWidget, Item, Content, bNewItem)
   Events.OnMenuOpenChanged = self.ItemMenuAnchorChanged
   Item:BindEvents(self, Events)
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   self.IsShowDetails = bIsOpen
   self.bCantClose = bIsOpen
@@ -129,7 +153,6 @@ function M:ItemMenuAnchorChanged(bIsOpen)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self:OnUpdateUIStyleByInputTypeChange(GameInputModeSubsystem:GetCurrentInputType(), GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.RewardInfoList and #self.RewardInfoList > 7 then
     return self.List_Item
@@ -137,7 +160,6 @@ function M:BP_GetDesiredFocusTarget()
     return self.List_Item_Single
   end
 end
-
 function M:InitHandleKeyInfo()
   self.Panel_Key:ClearChildren()
   local Item1 = self:CreateWidgetNew("ComKeyTextDesc")
@@ -167,7 +189,6 @@ function M:InitHandleKeyInfo()
   self.Panel_Key:AddChild(Item2)
   self.Panel_Key:AddChild(Item3)
 end
-
 function M:NewItemContent(ItemType, ItemId, Count)
   local ItemData = DataMgr[ItemType][ItemId]
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -191,12 +212,10 @@ function M:NewItemContent(ItemType, ItemId, Count)
   Obj.UIName = "GetItemPage"
   return Obj
 end
-
 function M:BindActionOnClosed(func, ParentWidget)
   self.OnClosed = func
   self.ParentWidget = ParentWidget
 end
-
 function M:CloseSelf()
   self:RemoveTimer("InitGetItemInfo")
   if not self.bAnimClose then
@@ -211,7 +230,6 @@ function M:CloseSelf()
   end
   self:PlayAnimation(self.Out)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Out then
     self:Close()
@@ -224,7 +242,6 @@ function M:OnAnimationFinished(Animation)
     end
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     self.Panel_Key:SetVisibility(ESlateVisibility.Collapsed)
@@ -246,7 +263,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Text_Tip:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -263,7 +279,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Right" == InKeyName then
@@ -272,5 +287,4 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

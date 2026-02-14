@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17260248559866628",
       type = "StoryNode",
-      name = "\232\165\191\229\165\165\231\154\132\231\160\148\231\169\182",
+      name = "西奥的研究",
       pos = {x = 1110.7667107631348, y = 278.70288887518876},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -134,6 +136,18 @@ return {
             startPort = "Option_2",
             endQuest = "17268133369501800",
             endPort = "In"
+          },
+          {
+            startQuest = "17260251272839457",
+            startPort = "Option_1",
+            endQuest = "176189265598012250236",
+            endPort = "In"
+          },
+          {
+            startQuest = "172602534410711876",
+            startPort = "Out",
+            endQuest = "176189268495612250822",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -161,7 +175,7 @@ return {
           ["17260249605948134"] = {
             key = "17260249605948134",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\232\165\191\229\165\165",
+            name = "生成西奥",
             pos = {x = 1089.5052418280288, y = 299.5042627395619},
             propsData = {
               ActiveEnable = true,
@@ -175,7 +189,7 @@ return {
           ["17260250030748785"] = {
             key = "17260250030748785",
             type = "TalkNode",
-            name = "\232\165\191\229\165\165\229\188\128\232\189\166",
+            name = "西奥开车",
             pos = {x = 1106.5052418280288, y = 75.50426273956191},
             propsData = {
               IsNpcNode = false,
@@ -192,7 +206,7 @@ return {
           ["17260251272839457"] = {
             key = "17260251272839457",
             type = "TalkNode",
-            name = "\228\184\142\232\165\191\229\165\165\229\175\185\232\175\157",
+            name = "与西奥对话",
             pos = {x = 1416.5052418280288, y = 267.5042627395619},
             propsData = {
               IsNpcNode = true,
@@ -217,6 +231,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -224,13 +239,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "branch",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -243,7 +258,7 @@ return {
           ["172602534410711876"] = {
             key = "172602534410711876",
             type = "TalkNode",
-            name = "\230\139\190\229\143\150\229\174\140\230\136\144\229\188\128\232\189\166\229\175\185\232\175\157",
+            name = "拾取完成开车对话",
             pos = {x = 2133.505241828029, y = 287.5042627395619},
             propsData = {
               IsNpcNode = false,
@@ -260,7 +275,7 @@ return {
           ["172602537196412349"] = {
             key = "172602537196412349",
             type = "TalkNode",
-            name = "\228\184\142\232\165\191\229\165\165\228\186\164\230\181\129\229\174\140\230\136\144\228\187\187\229\138\161",
+            name = "与西奥交流完成任务",
             pos = {x = 2460.200894001942, y = 266.5042627395619},
             propsData = {
               IsNpcNode = true,
@@ -286,6 +301,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -293,13 +309,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -312,7 +328,7 @@ return {
           ["172602553072513493"] = {
             key = "172602553072513493",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\233\135\135\233\155\134\231\137\169",
+            name = "生成采集物",
             pos = {x = 1647.8129341357212, y = 89.1965704318696},
             propsData = {
               ActiveEnable = true,
@@ -326,7 +342,7 @@ return {
           ["172603579510518611"] = {
             key = "172603579510518611",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1763.5052418280288, y = 274.73503197033114},
             propsData = {
               bActiveEnable = true,
@@ -343,7 +359,7 @@ return {
           ["172603658450822505"] = {
             key = "172603658450822505",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 1889.5109666878768, y = 77.19973668091293},
             propsData = {
               CreateType = "StaticCreator",
@@ -356,7 +372,7 @@ return {
           ["172603732465624312"] = {
             key = "172603732465624312",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 2786.0494282263385, y = 249.12281360398975},
             propsData = {
               DialogueId = 0,
@@ -367,15 +383,37 @@ return {
           ["17268133369501800"] = {
             key = "17268133369501800",
             type = "DynamicQuestFailNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "动态任务主动失败",
             pos = {x = 2137.5944055944055, y = 551.3086619263089},
             propsData = {UseTalkFadeOut = false, TalkFadeOutTime = 0}
+          },
+          ["176189265598012250236"] = {
+            key = "176189265598012250236",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 1663.7299356989759, y = -71.64824958323413},
+            propsData = {
+              NewDescription = "DynQuest_IcelakeXiaoresearch_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
+            }
+          },
+          ["176189268495612250822"] = {
+            key = "176189268495612250822",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 2471.507713476753, y = 458.35175041676587},
+            propsData = {
+              NewDescription = "DynQuest_IcelakeXiaoresearch_Target2",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
+            }
           }
         },
         commentData = {
           ["172603664418023583"] = {
             key = "172603664418023583",
-            name = "\230\154\130\230\151\182\231\148\168\228\186\134\233\135\135\233\155\134\231\137\169\231\154\132\239\188\140\231\173\137\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129\231\154\132\230\140\135\229\188\149\231\130\185\229\165\189\229\134\141\230\141\162\230\136\144\230\156\186\229\133\179\232\138\130\231\130\185",
+            name = "暂时用了采集物的，等等待机关进入状态的指引点好再换成机关节点",
             position = {x = 2273.576900753811, y = -191.3167468355707},
             size = {width = 600, height = 400}
           }

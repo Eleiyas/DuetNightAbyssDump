@@ -1,27 +1,23 @@
 require("UnLua")
+local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnCellClicked)
   self.Btn_Click.OnHovered:Add(self, self.OnCellHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnCellUnhovered)
   self:SetNavRule()
 end
-
 function M:SetNavRule()
   self:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   self.Btn_Click:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self.Btn_Click:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:OnListItemObjectSet(Content)
   self:SetNavRule()
-  if self.IsNew == nil then
-    self.IsNew = Content.IsNew
-  end
+  self.IsNew = false
   self.IsUnlocked = Content.IsUnlocked
   self.Index = Content.Index
   self.Data = Content.Data
@@ -29,11 +25,15 @@ function M:OnListItemObjectSet(Content)
   self.TotalNum = Content.TotalNum
   self.SubItems = Content.SubItems
   self.Parent = Content.Parent
+  for _, Data in ipairs(self.SubItems) do
+    if self.Parent.DataModel:CheckArchiveItemIsNew(RougeConst.ArchiveType.Event, Data.ArchiveId) then
+      self.IsNew = true
+    end
+  end
   self.IsSelected = self.Parent.CurSelectIndex == self.Index
   self.Btn_Click:SetChecked(self.IsSelected)
   self:InitEventItem()
 end
-
 function M:InitEventItem()
   local EventBg = self.Data.Data.SeriesMainIcon
   if EventBg then
@@ -74,35 +74,37 @@ function M:InitEventItem()
     self:PlayAnimation(self.Forbidden)
   end
 end
-
 function M:OnCellClicked()
   self.Parent:ChooseItem(self.Index, self)
   self:PlayAnimation(self.Select)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_btn_affix_click", nil, nil)
 end
-
 function M:OnCellHovered()
   if not self.IsSelected then
     self:PlayAnimation(self.Hover)
     AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_hover", nil, nil)
   end
 end
-
 function M:OnCellUnhovered()
   if not self.IsSelected then
     self:StopAnimation(self.Hover)
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
     self:PlayAnimation(self.Select)
+    for _, Data in ipairs(self.SubItems) do
+      if Data.IsUnlocked and Data.IsNew then
+        self.Parent.DataModel:MarkArchiveItemSeened(RougeConst.ArchiveType.Event, Data.ArchiveId)
+      end
+    end
     if self.IsNew then
       self.IsNew = false
       self.New:SetVisibility(ESlateVisibility.Collapsed)
     end
+    self.Parent.DataModel:UpdateArchiveReddot(RougeConst.ArchiveType.Event)
     if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
       self.Btn_Click:SetFocus()
     elseif self.Parent.CurSelectIndex ~= self.Index then
@@ -113,7 +115,6 @@ function M:BP_OnItemSelectionChanged(IsSelected)
     self.Btn_Click:SetChecked(false)
   end
 end
-
 function M:OnEventBGIconLoadFinish(Object)
   if IsValid(self) and Object then
     local EventItemMat = self.EventItem.Img_Icon:GetDynamicMaterial()
@@ -122,5 +123,4 @@ function M:OnEventBGIconLoadFinish(Object)
     EventIconColorMat:SetTextureParameterValue("DissolveTex", Object)
   end
 end
-
 return M

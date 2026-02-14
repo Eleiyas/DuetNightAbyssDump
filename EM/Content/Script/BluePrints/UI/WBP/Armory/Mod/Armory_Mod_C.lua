@@ -1,7 +1,6 @@
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local ModModel = ModController:GetModel()
 local SlotToDrag = FVector2D()
-
 local function OnItemDragCancelled(ArmoryMod, Content, Operation, PointerEvent)
   ArmoryMod:ShowQuickEquipBtn(true)
   ArmoryMod:CloseLinkLine(Content.Uuid, Operation.DefaultDragVisual)
@@ -14,7 +13,6 @@ local function OnItemDragCancelled(ArmoryMod, Content, Operation, PointerEvent)
     end
   end
 end
-
 local function OnItemMouseButtonDownEarlyEvent(Entry, Content, MouseEvent)
   local Key = UKismetInputLibrary.PointerEvent_GetEffectingButton(MouseEvent)
   if Key == EKeys.LeftMouseButton and not Content.Uuid then
@@ -23,7 +21,6 @@ local function OnItemMouseButtonDownEarlyEvent(Entry, Content, MouseEvent)
     ModController:QuickEquipMod(Content.Uuid)
   end
 end
-
 local function OnItemMouseButtonUpEvent(ArmoryMod, Content, MouseEvent)
   ArmoryMod:HandleGamepadModSelection(Content)
   local Key = MouseEvent and UKismetInputLibrary.PointerEvent_GetEffectingButton(MouseEvent) or EKeys.LeftMouseButton
@@ -35,7 +32,6 @@ local function OnItemMouseButtonUpEvent(ArmoryMod, Content, MouseEvent)
     ModController:SetSelectedStuff(Content.Uuid, nil)
   end
 end
-
 local function OnItemMouseEnterEvent(ArmoryMod, Entry, Content)
   if Entry.IsDraging then
     return
@@ -84,7 +80,6 @@ local function OnItemMouseEnterEvent(ArmoryMod, Entry, Content)
     end
   end
 end
-
 local function OnItemMouseLeaveEvent(ArmoryMod, Entry, Content)
   if ModController:IsGamepad() then
     ArmoryMod:SetKeySelectModGamePad(nil)
@@ -93,7 +88,6 @@ local function OnItemMouseLeaveEvent(ArmoryMod, Entry, Content)
     ArmoryMod:UpdateCostUI(ArmoryMod.CachedCost)
   end
 end
-
 local function OnItemCreateDragWidget(ArmoryMod, Content)
   if not Content or not Content.bEnableDrag then
     return
@@ -109,7 +103,6 @@ local function OnItemCreateDragWidget(ArmoryMod, Content)
   ArmoryMod:ShowLinkLine(Content.Uuid, DragUI)
   return DragUI
 end
-
 local function OnItemDragLeave(ArmoryMod, Content, PointerEvent, DragWidget)
   local ListViewGeo = ArmoryMod.List_Select_Mod:GetCachedGeometry()
   local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(PointerEvent)
@@ -117,13 +110,21 @@ local function OnItemDragLeave(ArmoryMod, Content, PointerEvent, DragWidget)
     ModController:SetSelectedStuff(nil, nil)
     DragWidget:SetVisibility(UIConst.VisibilityOp.Visible)
     ArmoryMod:ShowQuickEquipBtn(false)
-    for _, SlotLineWidget in ipairs(ArmoryMod.SlotLineWidgets) do
-      SlotLineWidget:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-      SlotLineWidget:SetRenderOpacity(0)
+    if ArmoryMod:IsExistTimer(ArmoryMod.LinkDelayTimer) then
+      ArmoryMod:RemoveTimer(ArmoryMod.LinkDelayTimer)
+      ArmoryMod.LinkDelayTimer = nil
     end
+    local _, TimerKey = ArmoryMod:AddTimer(0.05, function()
+      for i = 1, #ArmoryMod.SlotLineWidgets do
+        local SlotLine = ArmoryMod.SlotLineWidgets[i]
+        local DragLine = ArmoryMod.DragLineWidgets[i]
+        SlotLine.Main:SetRenderOpacity(1)
+        DragLine.Main:SetRenderOpacity(1)
+      end
+    end)
+    ArmoryMod.LinkDelayTimer = TimerKey
   end
 end
-
 local function OnItemRemovedFromFocusPathEvent(ArmoryMod, Entry)
   if ArmoryMod.CurInputDeviceType == ECommonInputType.Gamepad then
     return
@@ -133,7 +134,7 @@ local function OnItemRemovedFromFocusPathEvent(ArmoryMod, Entry)
     Entry:SetFocus()
     return
   end
-  if UIManager(self):IsHaveMenuAnchorOpen() then
+  if UIManager():IsHaveMenuAnchorOpen() then
     return
   end
   if ModModel:IsInPolarityEditMode() then
@@ -144,7 +145,25 @@ local function OnItemRemovedFromFocusPathEvent(ArmoryMod, Entry)
   end
   ModController:SetSelectedStuff(nil, nil)
 end
-
+local function OnDetailLockBtnClick()
+  local ArmoryMod = ModController:GetView(nil)
+  local Avatar = ModModel:GetAvatar()
+  ArmoryMod.ItemDetailsWidget.Btn_Locked:ForbidBtn(true)
+  local Content = ArmoryMod:GetContentBySelectStuff()
+  if Content.IsLocked then
+    UIManager(nil):ShowCommonPopupUI(100019, {
+      RightCallbackFunction = function()
+        Avatar:UnLockResourceInBag(CommonConst.AllType.Mod, Content.Uuid)
+      end,
+      CloseBtnCallbackFunction = function()
+        ArmoryMod.ItemDetailsWidget.Btn_Locked:ForbidBtn(false)
+        ArmoryMod.ItemDetailsWidget.Switcher_Lock:SetActiveWidgetIndex(0)
+      end
+    }, ArmoryMod)
+  else
+    Avatar:LockResourceInBag(CommonConst.AllType.Mod, Content.Uuid)
+  end
+end
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
@@ -153,14 +172,34 @@ M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_ReddotTree_Component",
   "BluePrints.UI.WBP.Armory.Mod.Armory_Mod_C_GamepadComp"
 }
-
-function M:PreConstruct()
-  M.Super.PreConstruct(self)
+function M:GetContentBySelectStuff(SelectStuff)
+  SelectStuff = SelectStuff or ModModel:GetSelectStuff()
+  local Content
+  if not SelectStuff:IsSlot() then
+    Content = self.ModContents[SelectStuff.ModUuid]
+  else
+    Content = self.ModSlotUIs[SelectStuff.SlotId].ModContent
+  end
+  return Content
+end
+function M:GetContentByUuid(Uuid)
+  local Content = self.ModContents[Uuid]
+  if not Content then
+    for _, SlotUI in pairs(self.ModSlotUIs) do
+      if SlotUI.ModContent and Uuid == SlotUI.ModContent.Uuid then
+        Content = SlotUI.ModContent
+        break
+      end
+    end
+  end
+  return Content
+end
+function M:PreConstruct(InDesignTime)
+  self.Overridden.PreConstruct(self, InDesignTime)
   if self.IsAbyss then
     self.List_Role.EntryWidgetClass = LoadClass("/Game/UI/WBP/Abyss/Widget/Unit/WBP_Abyss_TabItem.WBP_Abyss_TabItem")
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.Text_ModVolume:SetText(GText("UI_COST_NAME"))
@@ -185,6 +224,7 @@ function M:Construct()
   self.Mod_Skill:DisableScroll(true)
   self.Mod_Plan:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Btn_Share:SetVisibility(UIConst.VisibilityOp.Visible)
+  self:CheckEnableBtnWhenAnyEquip()
   if self.Key_Gamepad then
     self.Key_Gamepad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
@@ -203,7 +243,6 @@ function M:Construct()
     return
   end
 end
-
 function M:InitKeyFunc()
   self.KeyFuncMap = {
     [EKeys.A.KeyName] = function()
@@ -222,7 +261,6 @@ function M:InitKeyFunc()
     end
   }
 end
-
 function M:InitButtons()
   self.Btn_EditPolarity:SetText(GText("UI_Mod_Polarity_Btn"))
   self.Btn_EditPolarity:BindEventOnClicked(self, function()
@@ -231,11 +269,9 @@ function M:InitButtons()
   self.Btn_EditPolarity:BindForbidStateExecuteEvent(self, function()
     ModController:ShowToast(GText("UI_Mod_Polarity_Hint"))
   end)
-  
   function self.Btn_EditPolarity.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   end
-  
   self.Btn_Auto:SetText(GText("UI_Mod_AutoPutOn"))
   self.Btn_Auto:BindEventOnClicked(self, self.OnClickBtnAutoEquip)
   self.Btn_Auto:BindForbidStateExecuteEvent(self, function()
@@ -250,11 +286,9 @@ function M:InitButtons()
     }
     Params.OnCloseCallbackObj = self
     Params.AutoFocus = true
-    
     function Params.OnCloseCallbackFunction()
       self:SetDefaultGamepadFocus()
     end
-    
     UIManager():ShowCommonPopupUI(ModCommon.TakeOffSuitModDialog, Params, self)
   end)
   self.Btn_Discharge:BindForbidStateExecuteEvent(self, function()
@@ -264,14 +298,13 @@ function M:InitButtons()
   self.CheckBox_Mod_Delegate = {
     Inst = self,
     Func = function()
-      self:SetUpModList(false)
+      self:SetUpModList(true)
     end
   }
   self.CheckBox_Mod:BindEventOnClicked(self.CheckBox_Mod_Delegate)
   self:RegisterListAttrBtn(self.List_Attribute)
   self.Btn_Share:BindEventOnClicked(self, self.OnSharedBtnClick)
 end
-
 function M:InitBtnPolarity()
   local Avatar = ModController:GetAvatar()
   if Avatar:CheckUIUnlocked("Polarity") then
@@ -283,7 +316,6 @@ function M:InitBtnPolarity()
     self.Btn_EditPolarity:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:InitBtnImport()
   if ModModel:IsModUICopyMode() then
     local Target = ModModel:GetTarget()
@@ -311,35 +343,22 @@ function M:InitBtnImport()
     end
   end
 end
-
 function M:InitCommonUI()
-  local function SortCallback()
-    local SortBy, SortType = self.Common_SortList_PC:GetSortInfos()
-    
-    ModModel:SetSortConf(SortBy, SortType)
-    self:SetUpModList(false)
-  end
-  
-  self.Common_SortList_PC:BindEventOnSelectionsChanged(self, SortCallback)
-  self.Common_SortList_PC:BindEventOnSortTypeChanged(self, SortCallback)
   self.Sift:SetSiftModelId(ModCommon.ModSiftId)
   self.Sift:BindEventOnSelectionsChanged(self, function(_, SelectedItems, ItemDatas)
     ModModel:SetSiftConf(SelectedItems, ItemDatas)
     ModModel:FilterModsOfTarget()
-    self:SetUpModList(false)
+    self:SetUpModList(true)
   end)
   self.Common_PolarityList_PC:BindEventOnSelectionsChanged(self, function()
-    self:SetUpModList(false)
+    self:SetUpModList(true)
   end)
-  
   local function CloseCb()
     self:Close()
   end
-  
   local function LevelUpCb()
     ModController:OpenModIntensify()
   end
-  
   self.BottomKeyInfo = {
     {
       KeyInfoList = {
@@ -363,7 +382,7 @@ function M:InitCommonUI()
     },
     {
       GamePadInfoList = {
-        {Type = "Text", ImgShortPath = "A"}
+        {Type = "Img", ImgShortPath = "A"}
       },
       Desc = GText("UI_Tips_Ensure")
     },
@@ -425,8 +444,11 @@ function M:InitCommonUI()
     self.CurrAttrTabIdx = TabWidget.Idx
     self:UpdateAttrListImpl()
   end)
+  self.Com_Search:BindEventOnContentChanged(self, function()
+    self:SetUpModList(true)
+  end)
+  self.Com_Search:SetHintText(GText("UI_Mod_SearchHint"))
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   if ModModel:IsInPolarityEditMode() then
@@ -440,11 +462,13 @@ function M:ReceiveEnterState(StackAction)
   local SelectStuff = ModModel:GetSelectStuff()
   if SelectStuff and not ModController:IsGamepad() then
     if SelectStuff:IsSlot() then
-      self:UpdateSlotUIBySlotId(SelectStuff.SlotId)
       local SlotUI = self.ModSlotUIs[SelectStuff.SlotId]
-      SlotUI:SetFocus()
+      if SlotUI then
+        self:UpdateSlotUIBySlotId(SelectStuff.SlotId)
+        SlotUI:SetFocus()
+      end
     elseif SelectStuff:IsModExist() then
-      local Content = self.ModContents[SelectStuff.ModUuid]
+      local Content = self:GetContentBySelectStuff(SelectStuff)
       if Content then
         if IsValid(Content.UI) then
           Content.UI:SetFocus()
@@ -455,7 +479,6 @@ function M:ReceiveEnterState(StackAction)
     end
   end
 end
-
 function M:InitVisibilityWithCase()
   if not ModModel:IsModUINormal() then
     self.Panel_FilterSort:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -475,20 +498,20 @@ function M:InitVisibilityWithCase()
     self.Btn_Share:SetVisibility(UIConst.VisibilityOp.Visible)
     self:CheckEnableBtnWhenAnyEquip()
     self.Panel_Btn:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    self.Btn_Discharge:SetVisibility(UIConst.VisibilityOp.Visible)
+    self.Btn_Auto:SetVisibility(UIConst.VisibilityOp.Visible)
     self.Btn_Import:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self:ShowQuickEquipBtn(true)
   end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
-  if Name == ModCommon.AbyssMod then
+  if Name ~= ModCommon.ArmoryMod then
     self:SetComponent("BluePrints.UI.WBP.Abyss.Mod.Abyss_Mod_PC_Comp")
   end
   local MainUICase
   self.Type, self.Tag, self.TabUuids, self.TabExInfos, self.CloseCallbackInfo, MainUICase, self.ReplaceChar = ...
   ModModel:SetMainUICase(MainUICase)
-  self.IsPreviewMode = not ModModel:IsModUINormal()
   self:InitVisibilityWithCase()
   self:InitTargetTab()
   self:InitBtnImport()
@@ -502,9 +525,29 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   if ModModel:IsInPolarityEditMode() then
     ModController:StopPolarityEditMode()
   end
+  self:AddDispatcher(EventID.OnUpdateBagItem, self, self.OnModLockChanged)
   self:SetFocus()
 end
-
+function M:OnModLockChanged(OpAction, ErrCode, Uuid)
+  if ErrCode ~= ErrorCode.RET_SUCCESS then
+    return
+  end
+  if "StateChange" == OpAction then
+    local Content = self:GetContentByUuid(Uuid)
+    local Mod = ModModel:GetMod(Uuid)
+    if Content then
+      Content.IsLocked = not Content.IsLocked
+      if IsValid(Content.UI) and Mod then
+        Content.UI:SetLock(Mod:IsLock() and 1 or 0)
+      end
+    end
+    if self.ItemDetailsWidget.Btn_Locked:IsBtnForbidden() then
+      local TipsId = Content.IsLocked and 7006 or 7007
+      UIManager(self):ShowError(TipsId, nil, UIConst.Tip_CommonToast)
+      self.ItemDetailsWidget.Btn_Locked:ForbidBtn(false)
+    end
+  end
+end
 function M:Close()
   if ModModel:IsInPolarityEditMode() then
     if self.PolarityEditWidget then
@@ -526,7 +569,6 @@ function M:Close()
   ModController:OnCloseView()
   M.Super.Close(self)
 end
-
 function M:Destruct()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:UnRegisterListAttrBtn()
@@ -551,7 +593,6 @@ function M:Destruct()
   self.BGAnchor:ClearChildren()
   M.Super.Destruct(self)
 end
-
 function M:ProcessCharTabExInfo(Info, CharContent, ...)
   if Info then
     return
@@ -561,7 +602,6 @@ function M:ProcessCharTabExInfo(Info, CharContent, ...)
     self.CurTargetTabContent = CharContent
   end
 end
-
 function M:ProcessWeaponTabExInfo(Info, WeaponContent, ...)
   if Info then
     return
@@ -571,7 +611,6 @@ function M:ProcessWeaponTabExInfo(Info, WeaponContent, ...)
     self.CurTargetTabContent = WeaponContent
   end
 end
-
 function M:InitTargetTab()
   local Avatar = ModController:GetAvatar()
   local TabContents = {}
@@ -633,7 +672,6 @@ function M:InitTargetTab()
   end
   self:ForceSelectNowTargetTab()
 end
-
 function M:OnRoleListContentPreviewKeyDown(KeyName)
   if "Gamepad_FaceButton_Bottom" == KeyName then
     self.Mod_1:SetFocus()
@@ -641,13 +679,11 @@ function M:OnRoleListContentPreviewKeyDown(KeyName)
   end
   return UIUtils.Unhandled
 end
-
 function M:ForceSelectNowTargetTab()
   local TargetTabContent = self.CurTargetTabContent
   self.CurTargetTabContent = nil
   self:OnTargetTabSelected(TargetTabContent)
 end
-
 function M:OnTargetTabSelected(TabContent)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
   if TabContent == self.CurTargetTabContent then
@@ -662,16 +698,17 @@ function M:OnTargetTabSelected(TabContent)
     self:OnTargetTabSpawned(TabContent, TabContent.Widget)
   end
 end
-
 function M:OnTargetTabSpawned(TabContent, UI)
+  if not ModModel:IsModUINormal() then
+    return
+  end
   local function Callback(_, Count)
     if Count > 0 then
-      UI:EMShowReddot(true, EReddotType.New, 0)
+      UI:EMShowReddot(true, EReddotType.New)
     else
-      UI:EMShowReddot(false, EReddotType.New, 0)
+      UI:EMShowReddot(false, EReddotType.New)
     end
   end
-  
   if TabContent.IsSelect then
     self:AddModReddotListen(Callback, TabContent.Target)
   else
@@ -681,14 +718,12 @@ function M:OnTargetTabSpawned(TabContent, UI)
     Callback(nil, Node and Node.Count or 0)
   end
 end
-
 function M:SyncTarget(TargetContent)
   ModController:SyncTarget(TargetContent.Uuid)
   ModModel:FilterModsOfTarget()
   self.Type = TargetContent.Type
   self.Tag = TargetContent.Tag
 end
-
 function M:DirtyWorkForArmoryUI(TabContent)
   ModController:SetUICamera()
   self.CurrentMontageTags = {
@@ -699,21 +734,18 @@ function M:DirtyWorkForArmoryUI(TabContent)
   ArmoryUtils:SetItemIsSelected(self.CurTargetTabContent, false)
   ArmoryUtils:SetItemIsSelected(TabContent, true)
 end
-
 function M:PlayTabInAnim()
   if self.IsInit then
     self:StopAnimation(self.TabSwitch)
   end
   self:PlayAnimation(self.TabSwitch)
 end
-
 function M:SequenceEvent_1()
   if self.IsInit then
     return
   end
   self.Overridden.SequenceEvent_1(self)
 end
-
 function M:StopDragDropping()
   if UWidgetBlueprintLibrary.IsDragDropping() then
     UWidgetBlueprintLibrary.CancelDragDrop()
@@ -721,7 +753,6 @@ function M:StopDragDropping()
     self:ClearLinkLine()
   end
 end
-
 function M:SetUpMainBody()
   self:StopModCostVX()
   self:StopDragDropping()
@@ -734,7 +765,6 @@ function M:SetUpMainBody()
   self:SetUpCharSkillInfos()
   self:SetUpSuitSwitcher()
 end
-
 function M:SetUpModTab()
   if ModController:IsMobile() then
     self.Tab_Mod:LeaveViewSingleMode()
@@ -744,7 +774,6 @@ function M:SetUpModTab()
   self:PlayTabInAnim()
   self.Btn_Auto:ForbidBtn(not next(ModModel.TargetMods))
 end
-
 function M:SetUpModList(bAnim)
   if nil == bAnim then
     bAnim = true
@@ -760,6 +789,7 @@ function M:SetUpModList(bAnim)
     for _, ModUuid in ipairs(ModModel.CurModList) do
       local Mod = ModModel:GetMod(ModUuid)
       if self:IsHideConflictMod() and Mod.ConflictUuids:Length() > 0 then
+      elseif not ModModel:DoModSearch(Mod, self:GetSearchText()) then
       elseif ModModel:FilterSingleModOfTarget(FilterPolarity, false, Mod) then
         self:AddModContentToList(Mod)
         self.needNavigation = true
@@ -771,14 +801,12 @@ function M:SetUpModList(bAnim)
     self.List_Select_Mod:RequestPlayEntriesAnim()
   end
 end
-
 function M:SetUpSuitSwitcher()
   if not self.Mod_Plan:IsVisible() then
     return
   end
   self.Mod_Plan:ResetWidget()
 end
-
 function M:SetUpCharSkillInfos()
   self.Panel_Skill:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if not ModModel:IsModUINormal() then
@@ -813,18 +841,15 @@ function M:SetUpCharSkillInfos()
   end
   self.Mod_Skill:RequestRefresh()
 end
-
 function M:SetUpAttrList()
   local AttrTabIdx = 1
   self.CurrAttrTabIdx = nil
   self.Tab_Atrr:SelectTab(AttrTabIdx)
 end
-
 function M:SetUpModCost()
   self.CachedCost = ModModel:GetCurrentSuitCost()
   self:UpdateCostUI(self.CachedCost)
 end
-
 function M:SetUpFilterUI()
   if not self.PolarityFilterConf then
     self.PolarityFilterConf = {}
@@ -843,7 +868,6 @@ function M:SetUpFilterUI()
     "UI_COST_NAME"
   }, ModModel.SortType)
 end
-
 function M:SetUpModSlots()
   ModModel:GenerateSlotUIDatas(ModModel:GetTarget().ModSuitIndex)
   local ModSuit = ModModel:GetTarget():GetModSuit()
@@ -853,13 +877,11 @@ function M:SetUpModSlots()
     self.ModSlotUIs[SlotId] = SlotUI
     SlotUI.Parent = self
     SlotUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-    
     local function Cb(SlotUI, PointerEvent, Operation)
       self:UpdateCostUI(self.CachedCost)
       self:ShowQuickEquipBtn(true)
       self:CloseLinkLine(Operation.Payload.Uuid, Operation.DefaultDragVisual)
     end
-    
     SlotUI:SetCallbacks({
       OnDropCallback = Cb,
       OnDragCancelCallback = Cb,
@@ -900,20 +922,16 @@ function M:SetUpModSlots()
   end
   self:CheckEnableBtnWhenAnyEquip()
 end
-
 function M:NotifyOnSuitNameEdited(TargetUuid, ModSuitIndex, NewName)
   self.Mod_Plan:OnEditSuitNameDone(ModSuitIndex, NewName)
 end
-
 function M:NotifyOnChangeModSuit(TargetUuid, ModSuitIndex)
   self:ForceSelectNowTargetTab()
 end
-
 function M:NotifyOnRevertEditSlotPolarity()
   self:UpdateAllSlotsUI()
   self:SetUpModCost()
 end
-
 function M:NotifyOnFoundModRepeat(ConflictSlotIds)
   AudioManager(self):PlayUISound(self, "event:/ui/common/mod_conflict", nil, nil)
   for _, ConflictSlotId in ipairs(ConflictSlotIds) do
@@ -923,7 +941,6 @@ function M:NotifyOnFoundModRepeat(ConflictSlotIds)
     end
   end
 end
-
 function M:NotifyOnPolarityModSelectedChanged(SelectedStuff, LastSelectedStuff)
   if LastSelectedStuff and LastSelectedStuff:IsSlot() then
     local ModSlotUI = self.ModSlotUIs[LastSelectedStuff.SlotId]
@@ -932,12 +949,10 @@ function M:NotifyOnPolarityModSelectedChanged(SelectedStuff, LastSelectedStuff)
     end
   end
 end
-
 function M:NotifyOnPendingEditSlotPolarity(SlotId)
   self:UpdateSlotUIBySlotId(SlotId)
   self:SetModCostPreview(ModModel.PolarityEditModeData.SuitCost)
 end
-
 function M:NotifyOnSelectStuffChanged(SelectedStuff, LastSelectedStuff)
   if LastSelectedStuff then
     if LastSelectedStuff:IsSlot() then
@@ -962,7 +977,6 @@ function M:NotifyOnSelectStuffChanged(SelectedStuff, LastSelectedStuff)
     self:DoModItemSelected(CurrMod.Uuid, true)
   end
 end
-
 function M:NotifyOnAutoEquipFinished()
   self.Btn_Auto:ForbidBtn(false)
   self:BlockAllUIInput(false)
@@ -973,15 +987,12 @@ function M:NotifyOnAutoEquipFinished()
   self:CheckEnableBtnWhenAnyEquip()
   self:SetDefaultGamepadFocus()
 end
-
 function M:NotifyOnAutoEquipTimeOut()
   self:NotifyOnAutoEquipFinished()
 end
-
 function M:NotifyOnAutoEquipAbort()
   self:NotifyOnAutoEquipFinished()
 end
-
 function M:NotifyOnTakeOffMod(TargetUuid, SuitIndex, SlotId, TakeOffModUuid)
   self:UpdateSlotUIBySlotId(SlotId)
   self:UpdateAttrListImpl()
@@ -993,7 +1004,6 @@ function M:NotifyOnTakeOffMod(TargetUuid, SuitIndex, SlotId, TakeOffModUuid)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_select_mod_unequip", nil, nil)
   self:CheckEnableBtnWhenAnyEquip()
 end
-
 function M:NotifyOnTakeOffSuitMod(TargetUuid, SuitIndex)
   if ModModel:IsInImport() then
     return
@@ -1010,7 +1020,6 @@ function M:NotifyOnTakeOffSuitMod(TargetUuid, SuitIndex)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_select_mod_unequip", nil, nil)
 end
-
 function M:NotifyOnChangeMod(TargetUuid, SuitIndex, SlotId, ModUuid, TakeOffModUuid)
   if ModModel:IsInImport() then
     return
@@ -1028,7 +1037,6 @@ function M:NotifyOnChangeMod(TargetUuid, SuitIndex, SlotId, ModUuid, TakeOffModU
     self:CheckEnableBtnWhenAnyEquip()
   end
 end
-
 function M:NotifyOnModLevelUp(OldModUuid, NewModUuid, bTakeOff, NewSelectedStuff, OldSelectedStuff)
   self:UpdateAttrListImpl()
   local NewMod = ModModel:GetMod(NewModUuid)
@@ -1062,7 +1070,6 @@ function M:NotifyOnModLevelUp(OldModUuid, NewModUuid, bTakeOff, NewSelectedStuff
     self:ShowModDetailPanel(NewMod, SlotId)
   end
 end
-
 function M:NotifyOnForceCalcSlotsCost(DirtySlotIds)
   local bListDirty = false
   for SlotId, TakeOffModUuid in pairs(DirtySlotIds) do
@@ -1078,14 +1085,12 @@ function M:NotifyOnForceCalcSlotsCost(DirtySlotIds)
     self:SortModListContent()
   end
 end
-
 function M:NotifyOnExchangeMod(TargetUuid, SuitIndex, OldSlotId, NowSlotId)
   self:UpdateSlotUIBySlotId(OldSlotId)
   self:UpdateSlotUIBySlotId(NowSlotId)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_select_mod_equip", nil, nil)
   self:RefreshModCostVX()
 end
-
 function M:NotifyOnModCardLevelUp(ModUuid, Consumers, TakeOffSlotIds, RemoveUuids)
   if not table.isempty(TakeOffSlotIds) then
     for _, SlotId in ipairs(TakeOffSlotIds) do
@@ -1100,7 +1105,6 @@ function M:NotifyOnModCardLevelUp(ModUuid, Consumers, TakeOffSlotIds, RemoveUuid
     self:SortModListContent()
   end
 end
-
 function M:NotifyOnStartPolarityMode()
   self:CloseModDetailPanel()
   self:ShowQuickEquipBtn(false)
@@ -1132,10 +1136,10 @@ function M:NotifyOnStartPolarityMode()
   }
   self:BindToAnimationFinished(self.LoadingPolarity_In, Delegate)
   self:PlayAnimationForward(self.LoadingPolarity_In)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   if not self.PolarityEditWidget then
     self.PolarityEditWidget = self:CreateWidgetNew(ModCommon.PolarityEditUI)
-    local RootWidget = self:GetUWidget()
+    local RootWidget = UIUtils.GetRootUWidget(self)
     RootWidget:AddChild(self.PolarityEditWidget)
     local WidgetSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.PolarityEditWidget)
     local Anchors = FAnchors()
@@ -1144,12 +1148,11 @@ function M:NotifyOnStartPolarityMode()
     WidgetSlot:SetAnchors(Anchors)
     WidgetSlot:SetOffsets(FMargin(0, 0, 0, 0))
   end
-  self.PolarityEditWidget:InitUIInfo(ModCommon.PolarityEditUI, self.IsInUIMode)
+  self.PolarityEditWidget:InitUIInfo(ModCommon.PolarityEditUI)
   self.PolarityEditWidget.Parent = self
   self:UpdateAllSlotsUI()
   ModController:SetUICamera(self.PolarityCamOffset)
 end
-
 function M:NotifyOnStopPolarityMode()
   self.List_Select_Mod:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Btn_EditPolarity:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -1181,17 +1184,15 @@ function M:NotifyOnStopPolarityMode()
   }
   self:BindToAnimationFinished(self.LoadingPolarity_In, Delegate)
   self:PlayAnimationReverse(self.LoadingPolarity_In)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:RefreshModCostVX()
   self:UpdateAllSlotsUI()
   ModController:SetUICamera(FVector(0, 0, 0))
 end
-
 function M:NotifyOnPolarityEditDone(TargetUuid)
   self:SetUpModList(false)
   self:UpdateAttrListImpl()
 end
-
 function M:CheckEnableBtnWhenAnyEquip()
   if not ModModel:IsAnyModEquiped() then
     self.Btn_Discharge:ForbidBtn(true)
@@ -1201,7 +1202,6 @@ function M:CheckEnableBtnWhenAnyEquip()
     self.ModShare:ForbidCopy(false)
   end
 end
-
 function M:AddTabItem(idx)
   if not self.Tab_Mod then
     return
@@ -1209,7 +1209,6 @@ function M:AddTabItem(idx)
   local BottomKeyInfo = self.Tab_Mod.ConfigData.BottomKeyInfo
   BottomKeyInfo[idx] = self.BottomKeyInfo[idx]
 end
-
 function M:RemoveTabItem(idx)
   if not self.Tab_Mod then
     return
@@ -1217,7 +1216,6 @@ function M:RemoveTabItem(idx)
   local BottomKeyInfo = self.Tab_Mod.ConfigData.BottomKeyInfo
   BottomKeyInfo[idx] = {}
 end
-
 function M:ShowQuickEquipBtn(bShow)
   if ModController:IsMobile() then
     return
@@ -1238,7 +1236,6 @@ function M:ShowQuickEquipBtn(bShow)
   end
   self.Tab_Mod:UpdateHotKeyInfo()
 end
-
 function M:ShowLevelUpBtn(bShow)
   if ModController:IsMobile() then
     return
@@ -1266,7 +1263,6 @@ function M:ShowLevelUpBtn(bShow)
   end
   self.Tab_Mod:UpdateHotKeyInfo()
 end
-
 function M:ShowTabResourceBar(bShow)
   local ResourceBar = self.Tab_Mod.WBP_Com_Tab_ResourceBar or self.Tab_Mod.Panel_ResourceBar
   if bShow then
@@ -1281,7 +1277,6 @@ function M:ShowTabResourceBar(bShow)
   end
   self.Tab_Mod:UpdateResource()
 end
-
 function M:ShowLinkLine(ModUuid, DragUI)
   self.SlotLineWidgets = {}
   self.DragLineWidgets = {}
@@ -1292,13 +1287,16 @@ function M:ShowLinkLine(ModUuid, DragUI)
   for _, SlotUIData in ipairs(SlotUIDatas) do
     local SlotUI = self.ModSlotUIs[SlotUIData.SlotId]
     local bGolden = ModModel:IsRecommendedMod(SlotUIData, ModUuid)
-    table.insert(self.SlotLineWidgets, SlotUI:ShowLinkLine(bGolden))
-    table.insert(self.DragLineWidgets, DragUI:ShowLinkLine(bGolden))
-    local _, TickerKey = self:AddTimer(0.01, self.TickLinkLine, true)
-    self.LinkLineTicker = TickerKey
+    local SlotLine = SlotUI:ShowLinkLine(bGolden)
+    local DragLine = DragUI:ShowLinkLine(bGolden)
+    table.insert(self.SlotLineWidgets, SlotLine)
+    table.insert(self.DragLineWidgets, DragLine)
+    SlotLine.Main:SetRenderOpacity(0)
+    DragLine.Main:SetRenderOpacity(0)
   end
+  local _, TickerKey = self:AddTimer(0.01, self.TickLinkLine, true)
+  self.LinkLineTicker = TickerKey
 end
-
 function M:TickLinkLine()
   if table.isempty(self.SlotLineWidgets) and table.isempty(self.DragLineWidgets) then
     return
@@ -1323,7 +1321,6 @@ function M:TickLinkLine()
     DragLineWidget:SetPosture(Dist, Angle)
   end
 end
-
 function M:CloseLinkLine(ModUuid, DragUI)
   self:ClearLinkLine()
   local SlotUIDatas = ModModel:GetSlotUIDatasWhichConflict(ModUuid)
@@ -1338,29 +1335,38 @@ function M:CloseLinkLine(ModUuid, DragUI)
     DragUI:CloseLinkLine()
   end
 end
-
 function M:ClearLinkLine()
+  for _, Widget in pairs(self.SlotLineWidgets) do
+    Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
+  for _, Widget in pairs(self.DragLineWidgets) do
+    Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
   self.SlotLineWidgets = {}
   self.DragLineWidgets = {}
   if self:IsExistTimer(self.LinkLineTicker) then
     self:RemoveTimer(self.LinkLineTicker)
     self.LinkLineTicker = nil
   end
+  if self:IsExistTimer(self.LinkDelayTimer) then
+    self:RemoveTimer(self.LinkDelayTimer)
+    self.LinkDelayTimer = nil
+  end
 end
-
 function M:ScrollToMod(ModUuid)
-  local ModContent = self.ModContents[ModUuid]
+  local ModContent = self:GetContentByUuid(ModUuid)
   if ModContent then
     self.List_Select_Mod:BP_ScrollItemIntoView(ModContent)
   end
 end
-
 function M:IsHideConflictMod()
   return self.CheckBox_Mod:IsChecked()
 end
-
+function M:GetSearchText()
+  return self.Com_Search:GetText()
+end
 function M:DoModItemSelected(ModUuid, bSelected)
-  local SelectedContent = self.ModContents[ModUuid]
+  local SelectedContent = self:GetContentByUuid(ModUuid)
   if SelectedContent then
     SelectedContent.IsSelected = bSelected
     if IsValid(SelectedContent.UI) then
@@ -1368,15 +1374,13 @@ function M:DoModItemSelected(ModUuid, bSelected)
     end
   end
 end
-
 function M:RemoveModToListByUuid(ModUuid)
-  local ModContent = self.ModContents[ModUuid]
+  local ModContent = self:GetContentByUuid(ModUuid)
   if ModContent then
     self.List_Select_Mod:RemoveItem(ModContent)
     self.ModContents[ModUuid] = nil
   end
 end
-
 function M:AppendModToListByUuid(ModUuid)
   if not ModUuid then
     return
@@ -1392,7 +1396,6 @@ function M:AppendModToListByUuid(ModUuid)
     self:AddModContentToList(TakeOffMod)
   end
 end
-
 function M:CorrectModListWhenConflict()
   local ListItems = self.List_Select_Mod:GetListItems()
   local ConflictModContents = {}
@@ -1427,7 +1430,6 @@ function M:CorrectModListWhenConflict()
     end
   end
 end
-
 function M:SortModListContent()
   local ListItems = self.List_Select_Mod:GetListItems()
   local SortBy, _ = self.Common_SortList_PC:GetSortInfos()
@@ -1454,18 +1456,16 @@ function M:SortModListContent()
   self.List_Select_Mod:BP_SetListItems(ListItems)
   self.List_Select_Mod:RequestFillEmptyContent()
 end
-
 function M:AddModContentToList(Mod)
-  local ModContent = self:CreateModContent(Mod)
+  local ModContent = self:CreateModContent(Mod, true, true)
   if not ModContent then
     return
   end
   self.ModContents[Mod.Uuid] = ModContent
   self.List_Select_Mod:AddItem(ModContent)
 end
-
 function M:UpdateModContent(Mod)
-  local ModContent = self.ModContents[Mod.Uuid]
+  local ModContent = self:GetContentByUuid(Mod.Uuid)
   if not ModContent then
     return
   end
@@ -1477,12 +1477,12 @@ function M:UpdateModContent(Mod)
     ModContent.UI:UpdateModItem(ModContent)
   end
 end
-
 function M:CreateModContent(Mod)
   if ModModel:IsEquipedInCurrSuit(Mod.Uuid) then
     return nil
   end
-  local ModContent = ModModel:CreateModContent(Mod)
+  local ModContent = ModModel:CreateModContent(Mod, true, true)
+  ModContent.IsNew = ArmoryUtils:TryAddNewModReddot(Mod)
   ModContent.Parent = self
   ModContent.IsShowDetails = ModController:IsPC()
   ModContent.MenuPlacement = EMenuPlacement.MenuPlacement_CenteredAboveAnchor
@@ -1493,11 +1493,9 @@ function M:CreateModContent(Mod)
   ModContent.OnDragLeave = OnItemDragLeave
   ModContent.CreateDragWidget = OnItemCreateDragWidget
   ModContent.OnDragCancelled = OnItemDragCancelled
-  ModContent.AdjustBackGroundHeightDelay = 0.5
   ModContent.OnRemovedFromFocusPathEvent = OnItemRemovedFromFocusPathEvent
   return ModContent
 end
-
 function M:CreateEmptyContent()
   local EmptyContent = NewObject(UIUtils.GetCommonItemContentClass())
   EmptyContent.Parent = self
@@ -1506,19 +1504,16 @@ function M:CreateEmptyContent()
   EmptyContent.OnMouseButtonDownEarly = OnItemMouseButtonDownEarlyEvent
   return EmptyContent
 end
-
 function M:UpdateSlotUIBySlotId(SlotId)
   local SlotUI = self.ModSlotUIs[SlotId]
   local SlotUIData = ModModel:GetSlotUIData(SlotId)
   SlotUI:UpdateSlotUI(SlotUIData)
 end
-
 function M:UpdateAllSlotsUI()
   for SlotId, SlotUIData in pairs(ModModel.CurSlots) do
     self:UpdateSlotUIBySlotId(SlotId)
   end
 end
-
 function M:CloseModDetailPanel()
   if not IsValid(self.ItemDetailsWidget) then
     return
@@ -1533,8 +1528,8 @@ function M:CloseModDetailPanel()
     self.Key_FocusList_GamePad:SetVisibility(UIConst.VisibilityOp.Visible)
   end
   self.IsOpenModDetailPanel = false
+  self.bItemDetailsClicked = false
 end
-
 function M:_SetPanelAttrVisibility(bVisible)
   if self:IsExistTimer(self.PanelAttrTimer) then
     self:RemoveTimer(self.PanelAttrTimer)
@@ -1551,7 +1546,6 @@ function M:_SetPanelAttrVisibility(bVisible)
     self.Panel_Btn:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:ShowModDetailPanel(Mod, SlotId)
   if ModModel:IsBugMod(Mod.Uuid) then
     return
@@ -1560,7 +1554,7 @@ function M:ShowModDetailPanel(Mod, SlotId)
   if not IsValid(self.ItemDetailsWidget) then
     self.ItemDetailsWidget = self.Tip_Mod
   end
-  local SelectedContent = self.ModContents[Mod.Uuid]
+  local SelectedContent = self:GetContentByUuid(Mod.Uuid)
   if SlotId then
     SelectedContent = self.ModSlotUIs[SlotId].ModContent
   end
@@ -1570,7 +1564,8 @@ function M:ShowModDetailPanel(Mod, SlotId)
     CallObj = self,
     OnMouseButtonDownCallback = self.PreventItemDeselect
   })
-  self.ItemDetailsWidget:RefreshItemInfo(SelectedContent)
+  SelectedContent.LockedButtonClickCallBack = OnDetailLockBtnClick
+  self.ItemDetailsWidget:RefreshItemInfo(SelectedContent, nil, true)
   self.ItemDetailsWidget:StopAllAnimations()
   if ModController:IsMobile() then
     self.ItemDetailsWidget:OverrideSizeX(self.PhoneItemTipsWidth)
@@ -1585,10 +1580,9 @@ function M:ShowModDetailPanel(Mod, SlotId)
   self.ItemDetailsWidget.Panel_Controller:SetVisibility(ESlateVisibility.Collapsed)
   self.IsOpenModDetailPanel = true
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
-    return Handled
+    return UIUtils.Handled
   end
   local InKey = UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1610,10 +1604,9 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   return UIUtils.Handled
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
-    return Handled
+    return UIUtils.Handled
   end
   local InKey = UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1635,29 +1628,24 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   if ModCommon.DebugMode and "Enter" == InKeyName then
     local SelectMod = ModModel:GetCurrSelectMod()
     if SelectMod then
-      PrintTable(SelectMod, 3, "\231\156\139\231\156\139\233\128\137\228\184\173\231\154\132Mod\230\149\176\230\141\174")
+      PrintTable(SelectMod, 3, "看看选中的Mod数据")
     end
   end
   M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   return UIUtils.Handled
 end
-
 function M:PreventItemDeselect()
   self.bItemDetailsClicked = true
 end
-
 function M:OnSharedBtnClick()
   self.ModShare:Show()
 end
-
 function M:OnClickBtnAutoEquip()
   local function Callback()
     self.Btn_Auto:ForbidBtn(true)
-    
     self:BlockAllUIInput(true)
     ModController:LaunchAutoEquipMod()
   end
-  
   if ModModel:IsAnyModEquiped() then
     local Params = {RightCallbackFunction = Callback}
     Params.OnCloseCallbackObj = self
@@ -1667,7 +1655,6 @@ function M:OnClickBtnAutoEquip()
     Callback()
   end
 end
-
 function M:OnClickBtnImport()
   self.Btn_Import:ForbidBtn(true)
   self.ImportPanel = ModController:OpenView(ModCommon.ModImport, ModModel:GetTarget(), function()
@@ -1675,7 +1662,6 @@ function M:OnClickBtnImport()
     self.Btn_Import:ForbidBtn(false)
   end)
 end
-
 function M:OnListModScrollingByDrag(MyGeometry, PointerEvent)
   local DragOperation = UWidgetBlueprintLibrary.GetDragDroppingContent()
   if not DragOperation then
@@ -1689,12 +1675,14 @@ function M:OnListModScrollingByDrag(MyGeometry, PointerEvent)
     return true
   end
   DragUI:SetVisibility(UIConst.VisibilityOp.Collapsed)
-  for _, SlotLineWidget in ipairs(self.SlotLineWidgets) do
-    SlotLineWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  for i = 1, #self.SlotLineWidgets do
+    local SlotLine = self.SlotLineWidgets[i]
+    local DragLine = self.DragLineWidgets[i]
+    SlotLine.Main:SetRenderOpacity(0)
+    DragLine.Main:SetRenderOpacity(0)
   end
   return true
 end
-
 function M:UpdateCostUI(NowCost)
   local MaxCost = ModModel:GetTargetMaxCost()
   self.Text_Volume_Now:SetText(NowCost)
@@ -1710,7 +1698,6 @@ function M:UpdateCostUI(NowCost)
     self.Panel_Hint:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetModCostPreview(PreviewCost, bWarning, ModUuid)
   if nil == bWarning then
     bWarning = true
@@ -1755,7 +1742,6 @@ function M:SetModCostPreview(PreviewCost, bWarning, ModUuid)
   self.Text_Volume_Now:SetText(PreviewCost)
   self.Bar_CostPreview:SetBrushFromMaterial(PreviewMat)
 end
-
 function M:StopModCostVX()
   if self:IsExistTimer(self.ModCostVXTimerKey) then
     self:RemoveTimer(self.ModCostVXTimerKey)
@@ -1763,7 +1749,6 @@ function M:StopModCostVX()
   end
   ForceStopAsyncTask(self, "RefreshModCostVXTask")
 end
-
 function M:RefreshModCostVX()
   self:StopModCostVX()
   RunAsyncTask(self, "RefreshModCostVXTask", function(CoroutineObj)
@@ -1799,16 +1784,13 @@ function M:RefreshModCostVX()
     end
   end)
 end
-
 function M:IsModAdditionOnly()
   return 2 == self.CurrAttrTabIdx
 end
-
 function M:GetCurrWeaponOwnerChar()
   local Avatar = ModModel:GetAvatar()
   return self.ReplaceChar or Avatar.Chars[self.TargetCharUuid]
 end
-
 function M:GetCurrentAttrs(Mod)
   local Avatar = ModModel:GetAvatar()
   local MeleeWeapon, RangedWeapon
@@ -1845,7 +1827,6 @@ function M:GetCurrentAttrs(Mod)
   end
   return Attrs
 end
-
 function M:GetPreviousAttrs(PureTargetAttrs)
   local PreAttrs = CommonUtils.CopyTable(self.Attrs)
   for k, v in pairs(PureTargetAttrs) do
@@ -1855,18 +1836,15 @@ function M:GetPreviousAttrs(PureTargetAttrs)
   end
   return PreAttrs
 end
-
 function M:IsRecommendAttr(AttrKey)
   return ModModel:IsRecommendAttr(AttrKey)
 end
-
 function M:InitAttrListField()
   self.Attrs = {}
   self.ComparedAttrs = nil
   self.Index2AttrKey = {}
   self.ComparedTarget = false
 end
-
 function M:GetPureAttrsOfTarget()
   local WeaponOwnerChar
   if self.Type == "Weapon" or self.Type == "UWeapon" then
@@ -1875,7 +1853,6 @@ function M:GetPureAttrsOfTarget()
   local PureTargetAttrs = ModModel:GetPureAttrsOfTarget(WeaponOwnerChar)
   return PureTargetAttrs
 end
-
 function M:UpdateAttrListImpl()
   local PureTargetAttrs = self:GetPureAttrsOfTarget()
   local bModAdditionOnly = self:IsModAdditionOnly()
@@ -1892,6 +1869,5 @@ function M:UpdateAttrListImpl()
   end
   self:UpdateAttrListView(true, self.List_Attribute, bModAdditionOnly)
 end
-
 AssembleComponents(M)
 return M

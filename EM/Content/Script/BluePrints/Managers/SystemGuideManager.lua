@@ -1,3 +1,4 @@
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local SystemGuideManager = {}
 SystemGuideManager.GuideDic = {}
 SystemGuideManager.GuideUnfinishedDic = {}
@@ -6,14 +7,12 @@ SystemGuideManager.IsGuideStoryRunning = false
 SystemGuideManager.RunningId = -1
 SystemGuideManager.bOpenDebug = false
 SystemGuideManager.GuideEventList = {}
-
 function SystemGuideManager:AddListenerSystemGuide()
   self:ClearSystemGuideData()
   self:InitSystemGuideData()
   self:RemoveSystemGuideEvents()
   self:AddSystemGuideEvents()
 end
-
 function SystemGuideManager:AddSystemGuideEvents()
   self:AddSystemGuideEvent(EventID.SystemGuideEnterRegion, self.EnterRegionEvent)
   self:AddSystemGuideEvent(EventID.SystemGuideExitRegion, self.ExitRegionEvent)
@@ -33,10 +32,9 @@ function SystemGuideManager:AddSystemGuideEvents()
   self:AddSystemGuideEvent(EventID.OnSystemUnlockWorkingEnd, self.SystemUnlockWorkingEndEvent)
   self:AddSystemGuideEvent(EventID.FirstSeenTag, self.FirstSeenTagEvent)
   self:AddSystemGuideEvent(EventID.FirstDynQuest, self.FirstDynQuest)
-  self:AddSystemGuideEvent(EventID.FirstPanFixTalk, self.FirstPanFixTalk)
+  self:AddSystemGuideEvent(EventID.EndTalk, self.FirstPanFixTalk)
   self:AddSystemGuideEvent(EventID.ConditionComplete, self.ConditionCompleteEvent)
 end
-
 function SystemGuideManager:IsNeedAddListener(EventId)
   for key, value in pairs(self.GuideUnfinishedDic) do
     if (EventId == EventID.SystemGuideEnterRegion or EventId == EventID.SystemGuideExitRegion) and value.Data.IsInRegion ~= nil then
@@ -63,7 +61,7 @@ function SystemGuideManager:IsNeedAddListener(EventId)
       return true
     elseif EventId == EventID.FirstDynQuest and value.Data.SpecialCondition == "FirstDynQuest" then
       return true
-    elseif EventId == EventID.FirstPanFixTalk and value.Data.SpecialCondition == "FirstPanFixTalk" then
+    elseif EventId == EventID.EndTalk and value.Data.SpecialCondition == "FirstPanFixTalk" then
       return true
     elseif EventId == EventID.ConditionComplete and nil ~= value.Data.ConditionCheck then
       return true
@@ -75,7 +73,6 @@ function SystemGuideManager:IsNeedAddListener(EventId)
   end
   return false
 end
-
 function SystemGuideManager:TryRemoveUnusedListener()
   if #self.GuideEventList > 0 then
     for i = #self.GuideEventList, 1, -1 do
@@ -88,7 +85,6 @@ function SystemGuideManager:TryRemoveUnusedListener()
     end
   end
 end
-
 function SystemGuideManager:AddSystemGuideEvent(EventID, EventFunc)
   if self:IsNeedAddListener(EventID) then
     table.insert(self.GuideEventList, EventID)
@@ -96,7 +92,6 @@ function SystemGuideManager:AddSystemGuideEvent(EventID, EventFunc)
     DebugPrint("SystemGuide EventManager:AddEvent:", EventID)
   end
 end
-
 function SystemGuideManager:RemoveSystemGuideEvents()
   if #self.GuideEventList > 0 then
     for i = 1, #self.GuideEventList do
@@ -106,7 +101,6 @@ function SystemGuideManager:RemoveSystemGuideEvents()
   self.GuideEventList = {}
   DebugPrint("SystemGuide EventManager:RemoveAllEvents")
 end
-
 function SystemGuideManager:ClearSystemGuideData()
   DebugPrint("SystemGuide ClearSystemGuideData")
   self.GuideDic = {}
@@ -114,8 +108,9 @@ function SystemGuideManager:ClearSystemGuideData()
   self.GuideQueue = {}
   self.IsGuideStoryRunning = false
   self.RunningId = -1
+  local EMCache = require("EMCache.EMCache")
+  EMCache:Remove("GuideSkip", true)
 end
-
 function SystemGuideManager:InitSystemGuideData()
   DebugPrint("SystemGuide InitSystemGuideData")
   self.Avatar = GWorld:GetAvatar()
@@ -190,7 +185,6 @@ function SystemGuideManager:InitSystemGuideData()
     end
   end
 end
-
 function SystemGuideManager:InitSystemGuideState()
   for key, value in pairs(DataMgr.SystemGuide) do
     local Item = self.GuideDic[value.SysGuideId]
@@ -227,7 +221,6 @@ function SystemGuideManager:InitSystemGuideState()
     end
   end
 end
-
 function SystemGuideManager:InitCondition()
   for key, value in pairs(DataMgr.SystemGuide) do
     local Item = self.GuideDic[value.SysGuideId]
@@ -244,7 +237,6 @@ function SystemGuideManager:InitCondition()
     end
   end
 end
-
 function SystemGuideManager:SendDataToServer(GuideId)
   self:TryRemoveUnusedListener()
   local Avatar = GWorld:GetAvatar()
@@ -255,7 +247,6 @@ function SystemGuideManager:SendDataToServer(GuideId)
   Avatar:FinishSystemGuide(GuideId)
   print(_G.LogTag, GuideId, "SystemGuideFinished")
 end
-
 function SystemGuideManager:FinishSystemGuideCallback(Ret, RewardReturn)
   DebugPrint("SystemGuideFinished callback", Ret, RewardReturn)
   if nil == RewardReturn then
@@ -263,7 +254,6 @@ function SystemGuideManager:FinishSystemGuideCallback(Ret, RewardReturn)
   end
   UIManager(GWorld.GameInstance):LoadUI(UIConst.LoadInConfig, "GetItemPage", UIConst.ZORDER_ABOVE_SystemGuide, nil, nil, nil, RewardReturn)
 end
-
 function SystemGuideManager:GetItemByUIKey(UIKey)
   local GuideIds = {}
   if nil == UIKey then
@@ -277,7 +267,6 @@ function SystemGuideManager:GetItemByUIKey(UIKey)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByDungeonId(DungeonId)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -287,7 +276,6 @@ function SystemGuideManager:GetItemByDungeonId(DungeonId)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByRegion()
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -297,7 +285,6 @@ function SystemGuideManager:GetItemByRegion()
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByPlayerInControl()
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -307,7 +294,6 @@ function SystemGuideManager:GetItemByPlayerInControl()
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByOutTalkComp()
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -317,7 +303,6 @@ function SystemGuideManager:GetItemByOutTalkComp()
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemBySystemUnlockWorking()
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -325,7 +310,6 @@ function SystemGuideManager:GetItemBySystemUnlockWorking()
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemBySpecialCondition(Condition)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -335,7 +319,6 @@ function SystemGuideManager:GetItemBySpecialCondition(Condition)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByQuestId(QuestId)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -345,7 +328,6 @@ function SystemGuideManager:GetItemByQuestId(QuestId)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByQuestChainId(QuestChainId)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -355,7 +337,6 @@ function SystemGuideManager:GetItemByQuestChainId(QuestChainId)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByUIUnlockRuleId(UIUnlockRuleId)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -365,7 +346,6 @@ function SystemGuideManager:GetItemByUIUnlockRuleId(UIUnlockRuleId)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByPreSysGuideId(GuideId)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -375,7 +355,6 @@ function SystemGuideManager:GetItemByPreSysGuideId(GuideId)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByFirstSeenTag(FirstSeenTag)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -385,7 +364,6 @@ function SystemGuideManager:GetItemByFirstSeenTag(FirstSeenTag)
   end
   return GuideIds
 end
-
 function SystemGuideManager:GetItemByConditionCheck(ConditionId)
   local GuideIds = {}
   for key, value in pairs(self.GuideUnfinishedDic) do
@@ -395,7 +373,6 @@ function SystemGuideManager:GetItemByConditionCheck(ConditionId)
   end
   return GuideIds
 end
-
 function SystemGuideManager:TryRunStoryByGuideId(Source, GuideId, IsDelay)
   if GuideId == self.RunningId then
     return
@@ -416,10 +393,8 @@ function SystemGuideManager:TryRunStoryByGuideId(Source, GuideId, IsDelay)
     PrintTable(self.GuideDic[GuideId], 3, "SystemGuide TryRunSourceFail")
   end
 end
-
 function SystemGuideManager:PrintDataInfo(Data, Guide)
 end
-
 function SystemGuideManager:GuideQueueRemove(GuideId, Source)
   if #self.GuideQueue > 0 then
     for j = 1, #self.GuideQueue do
@@ -435,12 +410,10 @@ function SystemGuideManager:GuideQueueRemove(GuideId, Source)
     end
   end
 end
-
 function SystemGuideManager:LoadUIEvent(UIKey)
   DebugPrint("SystemGuide LoadUIEvent UIKey:", UIKey)
   self:ShowUIEvent(UIKey)
 end
-
 function SystemGuideManager:ShowUIEvent(UIKey)
   if self.Invalid then
     return
@@ -460,12 +433,10 @@ function SystemGuideManager:ShowUIEvent(UIKey)
     end
   end
 end
-
 function SystemGuideManager:UnLoadUIEvent(UIKey)
   DebugPrint("SystemGuide UnLoadUIEvent UIKey:", UIKey)
   self:HideUIEvent(UIKey)
 end
-
 function SystemGuideManager:HideUIEvent(UIKey)
   if self.Invalid then
     return
@@ -486,7 +457,6 @@ function SystemGuideManager:HideUIEvent(UIKey)
     end
   end
 end
-
 function SystemGuideManager:EnterRegionEvent()
   if self.Invalid then
     return
@@ -500,7 +470,6 @@ function SystemGuideManager:EnterRegionEvent()
     end
   end
 end
-
 function SystemGuideManager:ExitRegionEvent()
   if self.Invalid then
     return
@@ -521,7 +490,6 @@ function SystemGuideManager:ExitRegionEvent()
     end
   end
 end
-
 function SystemGuideManager:EnterDungeonEvent(DungeonId)
   if self.Invalid then
     return
@@ -536,7 +504,6 @@ function SystemGuideManager:EnterDungeonEvent(DungeonId)
     end
   end
 end
-
 function SystemGuideManager:ExitDungeonEvent(DungeonId)
   if self.Invalid then
     return
@@ -557,7 +524,6 @@ function SystemGuideManager:ExitDungeonEvent(DungeonId)
     end
   end
 end
-
 function SystemGuideManager:SystemUnlockWorkingStartEvent()
   if self.Invalid then
     return
@@ -578,7 +544,6 @@ function SystemGuideManager:SystemUnlockWorkingStartEvent()
     end
   end
 end
-
 function SystemGuideManager:SystemUnlockWorkingEndEvent()
   if self.Invalid then
     return
@@ -587,12 +552,13 @@ function SystemGuideManager:SystemUnlockWorkingEndEvent()
   local GuideIds = self:GetItemBySystemUnlockWorking()
   if #GuideIds > 0 then
     for i = 1, #GuideIds do
-      self.GuideDic[GuideIds[i]].FinishedSystemUnlockWorking = true
-      self:TryRunStoryByGuideId("SystemUnlockWorkingEndEvent:", GuideIds[i])
+      if self.GuideDic[GuideIds[i]].FinishedSystemUnlockWorking == false then
+        self.GuideDic[GuideIds[i]].FinishedSystemUnlockWorking = true
+        self:TryRunStoryByGuideId("SystemUnlockWorkingEndEvent:", GuideIds[i])
+      end
     end
   end
 end
-
 function SystemGuideManager:FirstSeenTagEvent(FirstSeenTag)
   if self.Invalid then
     return
@@ -606,7 +572,6 @@ function SystemGuideManager:FirstSeenTagEvent(FirstSeenTag)
     end
   end
 end
-
 function SystemGuideManager:FirstDynQuest()
   if self.Invalid then
     return
@@ -620,9 +585,11 @@ function SystemGuideManager:FirstDynQuest()
     end
   end
 end
-
-function SystemGuideManager:FirstPanFixTalk()
+function SystemGuideManager:FirstPanFixTalk(Message)
   if self.Invalid then
+    return
+  end
+  if Message.TalkType ~= "PanFixSimple" then
     return
   end
   DebugPrint("Systemguide FirstPanFixTalk")
@@ -634,7 +601,6 @@ function SystemGuideManager:FirstPanFixTalk()
     end
   end
 end
-
 function SystemGuideManager:ConditionCompleteEvent(ConditionId)
   if self.Invalid then
     return
@@ -653,7 +619,6 @@ function SystemGuideManager:ConditionCompleteEvent(ConditionId)
     end
   end
 end
-
 function SystemGuideManager:FinishSystemGuideEvent(GuideId)
   DebugPrint("SystemGuide FinishSystemGuideEvent GuideId:", GuideId)
   self.GuideDic[GuideId].Finished = true
@@ -667,7 +632,6 @@ function SystemGuideManager:FinishSystemGuideEvent(GuideId)
     end
   end
 end
-
 function SystemGuideManager:FinishQuestEvent(QuestId)
   if self.Invalid then
     return
@@ -681,7 +645,6 @@ function SystemGuideManager:FinishQuestEvent(QuestId)
     end
   end
 end
-
 function SystemGuideManager:FinishQuestChainEvent(QuestChainId)
   if self.Invalid then
     return
@@ -695,13 +658,11 @@ function SystemGuideManager:FinishQuestChainEvent(QuestChainId)
     end
   end
 end
-
 function SystemGuideManager:UIUnlockRuleIdsFinishedEvent(Ids)
   for _, Id in pairs(Ids:ToTable()) do
     self:UIUnlockRuleIdFinishedEvent(Id)
   end
 end
-
 function SystemGuideManager:UIUnlockRuleIdFinishedEvent(Id)
   if self.Invalid then
     return
@@ -715,7 +676,6 @@ function SystemGuideManager:UIUnlockRuleIdFinishedEvent(Id)
     end
   end
 end
-
 function SystemGuideManager:UIUnlockRuleIdUnFinishedEvent(Id)
   if self.Invalid then
     return
@@ -736,17 +696,14 @@ function SystemGuideManager:UIUnlockRuleIdUnFinishedEvent(Id)
     end
   end
 end
-
 function SystemGuideManager:OnBecomeViewTarget()
   self.OnBecomeView = true
   self:SetInputModeEvent(self.IsUIOnly)
 end
-
 function SystemGuideManager:OnEndViewTarget()
   self.OnBecomeView = false
   self:SetInputModeEvent(self.IsUIOnly)
 end
-
 function SystemGuideManager:SetInputModeEvent(IsUIOnly)
   if self.Invalid then
     return
@@ -773,7 +730,6 @@ function SystemGuideManager:SetInputModeEvent(IsUIOnly)
     end
   end
 end
-
 function SystemGuideManager:TalkCompEvent(IsInTalkComp)
   DebugPrint("Systemguide TalkCompEvent IsInTalkComp:", IsInTalkComp)
   if self.Invalid then
@@ -799,7 +755,6 @@ function SystemGuideManager:TalkCompEvent(IsInTalkComp)
     end
   end
 end
-
 function SystemGuideManager:ImpressionTalkEvent()
   if self.Invalid then
     return
@@ -813,7 +768,6 @@ function SystemGuideManager:ImpressionTalkEvent()
     end
   end
 end
-
 function SystemGuideManager:RunStory(Data)
   local StoryLinePath = Data.GuideStoryline
   local FinishGuideType = Data.GuideEnd
@@ -842,84 +796,83 @@ function SystemGuideManager:RunStory(Data)
   DebugPrint("RunStory,SystemGuideId:" .. GuideId)
   local GuideChannel = DataMgr.SystemGuide[GuideId].GuideChannel
   if not GuideChannel then
-    DebugPrint("\229\188\149\229\175\188\231\188\186\229\176\145\233\128\154\233\129\147\233\133\141\231\189\174", GuideId)
+    DebugPrint("引导缺少通道配置", GuideId)
     return
   end
-  self.RunningId = GuideId
-  self.IsGuideStoryRunning = true
-  local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-  self.Flow = FlowManager:CreateFlow(GuideChannel)
-  self.Flow.OnBegin:Add(self.Flow, function()
-    EventManager:FireEvent(EventID.OnGuideStart, GuideId)
-    if 0 == FinishGuideType then
-      self:FinishSystemGuideEvent(GuideId)
-      
-      local function Callback()
-        self:RemoveFlow()
-        self.RunningId = -1
-        self.IsGuideStoryRunning = false
-        self:GuideQueueRemove(GuideId, "FinishSystemGuideEvent,FinishGuideType == 0")
-        EventManager:FireEvent(EventID.OnGuideEnd, GuideId)
-        self:SetFocusOnGamepad()
+  if GuideId == self.RunningId then
+    DebugPrint("lkkk引导重复触发", GuideId)
+    return
+  end
+  local GameFlow = GameFlowUtils:AddFlow(GuideChannel, {
+    GWorld.GameInstance,
+    function(_, Flow)
+      local Avatar = GWorld:GetAvatar()
+      if not Avatar then
+        return
       end
-      
-      GWorld.StoryMgr:RunStory(StoryLinePath, nil, nil, Callback, Callback)
-      DebugPrint("SystemGuideManagerRunStory", StoryLinePath, GuideId, FinishGuideType)
-    elseif 1 == FinishGuideType then
-      local function EndCallback()
-        self:RemoveFlow()
-        
-        self.RunningId = -1
-        self.IsGuideStoryRunning = false
-        self:GuideQueueRemove(GuideId, "FinishSystemGuideEvent,FinishGuideType == 1")
+      if Avatar.SystemGuides:GetSystemGuide(GuideId):IsFinished() then
+        self:RemoveFlow(Flow)
+        return
+      end
+      EventManager:FireEvent(EventID.OnGuideStart, GuideId)
+      self.RunningId = GuideId
+      self.IsGuideStoryRunning = true
+      if 0 == FinishGuideType then
         self:FinishSystemGuideEvent(GuideId)
-        EventManager:FireEvent(EventID.OnGuideEnd, GuideId)
-        self:SetFocusOnGamepad()
+        local function Callback()
+          self:RemoveFlow(Flow)
+          self.RunningId = -1
+          self.IsGuideStoryRunning = false
+          self:GuideQueueRemove(GuideId, "FinishSystemGuideEvent,FinishGuideType == 0")
+          EventManager:FireEvent(EventID.OnGuideEnd, GuideId)
+          self:SetFocusOnGamepad()
+        end
+        GWorld.StoryMgr:RunStory(StoryLinePath, nil, nil, Callback, Callback)
+        DebugPrint("SystemGuideManagerRunStory", StoryLinePath, GuideId, FinishGuideType)
+      elseif 1 == FinishGuideType then
+        local function EndCallback()
+          self:RemoveFlow(Flow)
+          self.RunningId = -1
+          self.IsGuideStoryRunning = false
+          self:GuideQueueRemove(GuideId, "FinishSystemGuideEvent,FinishGuideType == 1")
+          self:FinishSystemGuideEvent(GuideId)
+          EventManager:FireEvent(EventID.OnGuideEnd, GuideId)
+          self:SetFocusOnGamepad()
+        end
+        local function StopCallback()
+          self:RemoveFlow(Flow)
+          self.RunningId = -1
+          self.IsGuideStoryRunning = false
+          self:FinishSystemGuideEvent(GuideId)
+          self:GuideQueueRemove(GuideId, "FinishSystemGuideEvent,FinishGuideType == 1")
+          EventManager:FireEvent(EventID.OnGuideEnd, GuideId)
+          self:SetFocusOnGamepad()
+        end
+        GWorld.StoryMgr:RunStory(StoryLinePath, nil, nil, EndCallback, StopCallback)
+        DebugPrint("SystemGuideManagerRunStory", StoryLinePath, GuideId, FinishGuideType)
       end
-      
-      local function StopCallback()
-        self:RemoveFlow()
-        self.RunningId = -1
-        self.IsGuideStoryRunning = false
-        self:GuideQueueRemove(GuideId, "FinishSystemGuideEvent,FinishGuideType == 1")
-        EventManager:FireEvent(EventID.OnGuideEnd, GuideId)
-        self:SetFocusOnGamepad()
-      end
-      
-      GWorld.StoryMgr:RunStory(StoryLinePath, nil, nil, EndCallback, StopCallback)
-      DebugPrint("SystemGuideManagerRunStory", StoryLinePath, GuideId, FinishGuideType)
     end
-  end)
-  FlowManager:AddFlow(self.Flow)
+  })
 end
-
 function SystemGuideManager:SetFocusOnGamepad()
   local bIsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
   if not bIsGamepad then
     return
   end
-  local TopUI = UIManager(GWorld.GameInstance):GetWidgetObjInTopStack()
-  if TopUI and TopUI:GetUIConfigName() == "ForgeMain" then
-    TopUI = UIManager(GWorld.GameInstance):GetLastestAndFocusableUIWidgetObj()
-  end
+  local TopUI = UIManager(GWorld.GameInstance):GetLastestAndFocusableUIWidgetObj()
   if nil ~= TopUI then
     TopUI:SetFocus()
   end
 end
-
-function SystemGuideManager:RemoveFlow()
-  local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-  FlowManager:RemoveFlow(self.Flow)
-  self.Flow = nil
+function SystemGuideManager:RemoveFlow(Flow)
+  GameFlowUtils:RemoveFlow(Flow)
 end
-
 function SystemGuideManager:RemoveCurStl()
   local GuideId = self.RunningId
   if -1 ~= GuideId then
     self.GuideDic[GuideId].IsBroken = true
   end
 end
-
 function SystemGuideManager:GMEnforceFinishAllSysGuide()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -939,7 +892,6 @@ function SystemGuideManager:GMEnforceFinishAllSysGuide()
     end
   end
 end
-
 function SystemGuideManager:RemoveFinishedItemById(Id)
   for key, value in pairs(self.GuideUnfinishedDic) do
     if value.Data.SysGuideId == Id then
@@ -948,7 +900,6 @@ function SystemGuideManager:RemoveFinishedItemById(Id)
     end
   end
 end
-
 function SystemGuideManager:RunGuideById(GuideId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -970,5 +921,4 @@ function SystemGuideManager:RunGuideById(GuideId)
     end
   end
 end
-
 return SystemGuideManager

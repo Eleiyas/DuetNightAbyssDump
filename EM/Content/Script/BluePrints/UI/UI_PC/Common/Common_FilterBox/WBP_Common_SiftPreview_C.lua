@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.Btn_Clear.OnClicked:Add(self, self.OnBtnClearClicked)
   self.Btn_Clear.OnHovered:Add(self, self.OnBtnClearHovered)
@@ -13,7 +12,6 @@ function M:Construct()
   self.Btn_Focus.OnHovered:Add(self, self.OnBtnFocusHovered)
   self.Btn_Focus.OnUnhovered:Add(self, self.OnBtnFocusUnhovered)
 end
-
 function M:Init(Owner, ItemUI, SelectedItems, ItemDatas)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Owner = Owner
@@ -28,11 +26,11 @@ function M:Init(Owner, ItemUI, SelectedItems, ItemDatas)
           table.insert(processedItems, GText(text))
         end
       end
-      local groupText = table.concat(processedItems, GText("\227\128\129"))
+      local groupText = table.concat(processedItems, GText("、"))
       table.insert(previewTexts, groupText)
     end
   end
-  local previewText = table.concat(previewTexts, GText("\227\128\129"))
+  local previewText = table.concat(previewTexts, GText("、"))
   self.Text_Preview:SetText(GText(previewText))
   self.FocusKeyName = "RH"
   self:SetGamepadKey(self.FocusKeyName)
@@ -41,12 +39,10 @@ function M:Init(Owner, ItemUI, SelectedItems, ItemDatas)
   self.EMScrollBox_1:SetControlScrollbarInside(false)
   self.EMScrollBox_1:SetScrollBarVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnBtnClearClicked()
   self:ClearItemSelection()
   self:PlayAnimation(self.Click)
 end
-
 function M:ClearItemSelection()
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.ItemUI then
@@ -56,26 +52,21 @@ function M:ClearItemSelection()
     self.Owner:PreViewDelete(true)
   end
 end
-
 function M:OnBtnClearHovered()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnClearUnhovered()
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnBtnClearPressed()
   self:PlayAnimation(self.Press)
 end
-
 function M:Destruct()
   self.Btn_Clear.OnClicked:Remove(self, self.OnBtnClearClicked)
   self.Btn_Clear.OnHovered:Remove(self, self.OnBtnClearHovered)
   self.Btn_Clear.OnUnhovered:Remove(self, self.OnBtnClearUnhovered)
   self.Btn_Clear.OnPressed:Remove(self, self.OnBtnClearPressed)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.Btn_Focus:SetFocus()
   if self.CurrentInputDevice == ECommonInputType.Gamepad then
@@ -88,17 +79,14 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:SetNavigationRuleExplicit(EUINavigation.Left, self.Btn_Focus)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnFocusLost()
   self:PlayAnimation(self.Text_Normal)
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -106,7 +94,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurrentInputDevice = CurInputDevice
   if CurInputDevice == ECommonInputType.Touch then
@@ -120,7 +107,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Btn_Focus:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -132,7 +118,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -145,25 +130,20 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnBtnFocusClicked()
   DebugPrint(TXTTag, "OnBtnFocus_Click")
   self:PlayAnimation(self.Text_Click)
 end
-
 function M:OnBtnFocusHovered()
   DebugPrint(TXTTag, "OnBtnFocusHovered")
   self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnBtnFocusUnhovered()
   self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnBtnFocusPressed()
   self:PlayAnimation(self.Text_Press)
 end
-
 function M:SetGamepadKey(FocusKeyName)
   local ImgLongPath = UIUtils.UtilsGetKeyIconPathInGamepad("RH", self.CurGamepadName)
   self.Key_Controller:CreateCommonKey({
@@ -172,5 +152,4 @@ function M:SetGamepadKey(FocusKeyName)
     }
   })
 end
-
 return M

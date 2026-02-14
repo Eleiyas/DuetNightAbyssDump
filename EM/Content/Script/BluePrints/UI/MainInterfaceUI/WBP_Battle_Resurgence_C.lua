@@ -3,7 +3,6 @@ local WBP_Battle_Resurgence_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_Battle_Resurgence_C:Construct()
   self.Super.Construct(self)
   self.Owner = nil
@@ -12,11 +11,9 @@ function WBP_Battle_Resurgence_C:Construct()
   self.CanRecovery = false
   self.HideUITag = "Resurgence"
   self:InitEvent()
-  
   local function CloseUi()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Out)
   end
-  
   self:BindToAnimationFinished(self.success, {self, CloseUi})
   self:BindToAnimationFinished(self.Out, {
     self,
@@ -24,13 +21,11 @@ function WBP_Battle_Resurgence_C:Construct()
   })
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Battle_Resurgence_C:InitEvent()
   self:AddDispatcher(EventID.CharRecover, self, self.ResurgenceAccomplish)
   self:AddDispatcher(EventID.OnExitDungeon, self, self.OnExitDungeon)
   self:AddDispatcher(EventID.OnMainCharacterInitReady, self, self.OnMainCharacterInitReady)
 end
-
 function WBP_Battle_Resurgence_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -40,7 +35,6 @@ function WBP_Battle_Resurgence_C:RefreshOpInfoByInputDevice(CurInputDevice, CurG
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
   end
 end
-
 function WBP_Battle_Resurgence_C:OnMainCharacterInitReady()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) then
@@ -48,7 +42,6 @@ function WBP_Battle_Resurgence_C:OnMainCharacterInitReady()
   end
   self.Owner = Player
 end
-
 function WBP_Battle_Resurgence_C:InitResurgenceUI(TargetEid)
   self.IsStart = false
   self.Teammate = Battle(self):GetEntity(TargetEid)
@@ -88,7 +81,7 @@ function WBP_Battle_Resurgence_C:InitResurgenceUI(TargetEid)
     KeyInfoList = {
       {
         Type = "Text",
-        Text = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("Recovery"))
+        Text = CommonUtils:GetActionMappingKeyName("Recovery")
       }
     }
   })
@@ -114,13 +107,10 @@ function WBP_Battle_Resurgence_C:InitResurgenceUI(TargetEid)
     self:InitPC()
   end
 end
-
 function WBP_Battle_Resurgence_C:InitPC()
 end
-
 function WBP_Battle_Resurgence_C:InitMobile()
 end
-
 function WBP_Battle_Resurgence_C:ShowLongPressHint(IsShow)
   local bIsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   if IsShow then
@@ -136,7 +126,6 @@ function WBP_Battle_Resurgence_C:ShowLongPressHint(IsShow)
     self.LongpressHint:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_Resurgence_C:ListenRecoverValue()
   local DyingLeftTime = self.Owner:GetDyingLeftTime()
   if DyingLeftTime then
@@ -152,11 +141,9 @@ function WBP_Battle_Resurgence_C:ListenRecoverValue()
   if self.Owner:IsRecoveringByOther() then
     if not self:IsExistTimer("PlayLoopAnimation") then
       local AnimTime = self.Loop:GetEndTime()
-      
       local function PlayLoopAnimation()
         self:PlayAnimation(self.Loop)
       end
-      
       self:AddTimer(AnimTime, PlayLoopAnimation, true, 0, "PlayLoopAnimation")
     end
     self.Text_RescueByOther:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -168,11 +155,9 @@ function WBP_Battle_Resurgence_C:ListenRecoverValue()
     self.Text_RescueByOther:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_Resurgence_C:OnExitDungeon()
   AudioManager(self):SetEventSoundParam(self, "Recovery", {ToEnd = 1})
 end
-
 function WBP_Battle_Resurgence_C:ResurgenceAccomplish(Eid)
   if not IsValid(self.Owner) or self.Owner.Eid ~= Eid then
     return
@@ -192,7 +177,6 @@ function WBP_Battle_Resurgence_C:ResurgenceAccomplish(Eid)
   end
   self:PlayAnimation(self.success)
 end
-
 function WBP_Battle_Resurgence_C:SetBarPercentByX(Character)
   if not (Character:IsDead() and Character:CheckCanRecovery()) or Character:IsInRecovering() or Character.IsTeleportRecovery then
     return
@@ -214,10 +198,8 @@ function WBP_Battle_Resurgence_C:SetBarPercentByX(Character)
   self.Owner:ServerBeginRecoverOther(self.Owner.Eid, UE4.ERecoverReason.RecoverReason_SelfRecover)
   AudioManager(self):PlayUISound(self, "event:/ui/common/revive", "Recovery", nil)
 end
-
 function WBP_Battle_Resurgence_C:ResetBar()
 end
-
 function WBP_Battle_Resurgence_C:HideBattleMainUI()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
@@ -231,7 +213,6 @@ function WBP_Battle_Resurgence_C:HideBattleMainUI()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/revive_filter", "DeadResurgence", nil)
 end
-
 function WBP_Battle_Resurgence_C:ShowBattleMainUI()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
@@ -245,5 +226,4 @@ function WBP_Battle_Resurgence_C:ShowBattleMainUI()
   end
   AudioManager(self):SetEventSoundParam(self, "DeadResurgence", {ToEnd = 1})
 end
-
 return WBP_Battle_Resurgence_C

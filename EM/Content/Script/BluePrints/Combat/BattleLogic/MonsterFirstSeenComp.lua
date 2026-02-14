@@ -1,11 +1,10 @@
 local MonsterUtils = require("Utils.MonsterUtils")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local Component = {}
-
 function Component:Initialize()
   self.FirstSeen = {}
   self.NextMonsterPanel = {}
 end
-
 function Component:ShowMonsterFirstSeenPanel(UnitId, RealUnitId)
   local UnitGuideId = DataMgr.Monster[RealUnitId].GuideId
   if UnitGuideId then
@@ -14,10 +13,39 @@ function Component:ShowMonsterFirstSeenPanel(UnitId, RealUnitId)
   end
   self:ShowCommonPanel(UnitId)
 end
-
+function Component:CheckMonsterGalleryRuleId(UnitId)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  local MonsterInfo = DataMgr.Monster[UnitId]
+  if not MonsterInfo then
+    return false
+  end
+  local GalleryRuleId = MonsterInfo.GalleryRuleId
+  if not GalleryRuleId then
+    return false
+  end
+  for key, value in ipairs(Avatar.FirstMonsters) do
+    local Info = DataMgr.Monster[value]
+    if Info then
+      local Id = Info.GalleryRuleId
+      if GalleryRuleId == Id then
+        return true
+      end
+    end
+  end
+  return false
+end
 function Component:ShowCommonPanel(UnitId)
   local Monster = DataMgr.Monster[UnitId]
   if not Monster then
+    return
+  end
+  if not Monster.GalleryRuleId then
+    return
+  end
+  if DataMgr.GalleryRule[Monster.GalleryRuleId].DisableArchive then
     return
   end
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -32,7 +60,7 @@ function Component:ShowCommonPanel(UnitId)
   if not Avatar then
     return
   end
-  if not Avatar:CheckFirstMonster(UnitId, true) then
+  if not Avatar:CheckFirstMonster(Monster.GalleryRuleId, true) then
     return
   end
   local IsInEditor = false
@@ -55,7 +83,6 @@ function Component:ShowCommonPanel(UnitId)
     self.NextMonsterPanel[#self.NextMonsterPanel + 1] = UnitId
   end
 end
-
 function Component:ShowNextMonsterPanel()
   if 0 == #self.NextMonsterPanel then
     return true
@@ -83,7 +110,6 @@ function Component:ShowNextMonsterPanel()
   end
   return false
 end
-
 function Component:ShowMonsterStrongPanel(UnitGuideId, UnitId)
   local ChildGuideUIInfo = DataMgr.UIGuide[UnitGuideId]
   if not ChildGuideUIInfo then
@@ -91,16 +117,15 @@ function Component:ShowMonsterStrongPanel(UnitGuideId, UnitId)
   end
   local Avatar = GWorld:GetAvatar()
   Avatar:CheckStrongGuideFirstMonster(UnitGuideId, true)
-  local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-  local Flow = FlowManager:CreateFlow("GuideMain")
-  Flow.OnBegin:Add(Flow, function()
-    local UIStateAsyncActionBase = UE4.UUIStateAsyncActionBase.ShowGuideUI(self, UnitGuideId)
-    UIStateAsyncActionBase.OnGuideEnd:Add(self, function()
-      self:ShowCommonPanel(UnitId)
-      FlowManager:RemoveFlow(Flow)
-    end)
-  end)
-  FlowManager:AddFlow(Flow)
+  GameFlowUtils:AddFlow("GuideMain", {
+    GWorld.GameInstance,
+    function(_, Flow)
+      local UIStateAsyncActionBase = UE4.UUIStateAsyncActionBase.ShowGuideUI(self, UnitGuideId)
+      UIStateAsyncActionBase.OnGuideEnd:Add(self, function()
+        self:ShowCommonPanel(UnitId)
+        GameFlowUtils:RemoveFlow(Flow)
+      end)
+    end
+  })
 end
-
 return Component

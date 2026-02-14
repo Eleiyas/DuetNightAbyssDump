@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -31,7 +30,6 @@ function M:Construct()
   end
   self.Btn_Get:SetDefaultGamePadImg("A")
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -42,7 +40,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Hover)
   self.IsHovering = true
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -53,7 +50,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:PlayAnimation(self.UnHover)
   self.IsHovering = false
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.InFocus = true
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -68,7 +64,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     end
   end
 end
-
 function M:OnFocusLost(InFocusEvent)
   self.InFocus = false
   self.Key_TaskRewardTitle:SetVisibility(ESlateVisibility.Collapsed)
@@ -81,11 +76,9 @@ function M:OnFocusLost(InFocusEvent)
     self.Owner.Owner:SwitchComKeyTipsState(3)
   end
 end
-
 function M:OnGamePadSelected()
   self.ListView_Rewards:SetFocus()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -94,9 +87,40 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function M:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
+    if self.InFocus then
+      self.Key_TaskRewardTitle:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    end
+    if self.Key_TitleLeft and self.Key_TitleRight and self.InFocus then
+      self.Key_TitleLeft:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+      self.Key_TitleRight:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    end
+    if self.Owner and self.Owner.CurPhaseId and self.Owner.MaxPhase then
+      local CurPhaseId = self.Owner.CurPhaseId
+      if 1 == CurPhaseId and self.Key_TitleLeft then
+        self.Key_TitleLeft:SetForbidKey(false)
+        self.Key_TitleLeft:SetForbidKey(true)
+      end
+      if CurPhaseId == self.Owner.MaxPhase then
+        if self.Key_TitleRight then
+          self.Key_TitleRight:SetForbidKey(false)
+          self.Key_TitleRight:SetForbidKey(true)
+        end
+      else
+        local NextPhase = CurPhaseId + 1
+        local Avatar = GWorld:GetAvatar()
+        if DataMgr.ModTaskPhase and DataMgr.ModTaskPhase[NextPhase] and DataMgr.ModTaskPhase[NextPhase].Condition and not ConditionUtils.CheckCondition(Avatar, DataMgr.ModTaskPhase[NextPhase].Condition) then
+          if self.Key_TitleRight then
+            self.Key_TitleRight:SetForbidKey(false)
+            self.Key_TitleRight:SetForbidKey(true)
+          end
+        elseif self.Key_TitleRight then
+          self.Key_TitleRight:SetForbidKey(true)
+          self.Key_TitleRight:SetForbidKey(false)
+        end
+      end
+    end
   else
     self.Key_TaskRewardTitle:SetVisibility(ESlateVisibility.Collapsed)
     if self.Key_TitleLeft and self.Key_TitleRight then
@@ -105,5 +129,4 @@ function M:UpdateOnInputDeviceTypeChange()
     end
   end
 end
-
 return M

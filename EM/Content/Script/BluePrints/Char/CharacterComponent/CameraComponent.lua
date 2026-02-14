@@ -1,6 +1,5 @@
 local EMCache = require("EMCache.EMCache")
 local CameraComponent = {}
-
 function CameraComponent:OnCharacterReady()
   if self.FromOtherWorld then
     return
@@ -11,22 +10,27 @@ function CameraComponent:OnCharacterReady()
   self.CharSpringArmComponent:InitComponent()
   self.CameraRotationComponent:InitComponent()
   self:EnableAutoResetCameraPitch(EMCache:Get("CameraBack") or "Enable")
-  local DefaultSpringArmRate = EMCache:Get("SpringArmRate") or DataMgr.Option.SpringArmRate.DefaultValue / DataMgr.Option.SpringArmRate.ScrollMappingScale
+  local DefaultSpringArmRate = EMCache:Get("SpringArmRate")
+  if not DefaultSpringArmRate then
+    if self.UIModePlatform == "PC" then
+      DefaultSpringArmRate = DataMgr.Option.SpringArmRate.DefaultValue / DataMgr.Option.SpringArmRate.ScrollMappingScale
+    else
+      DefaultSpringArmRate = DataMgr.Option.SpringArmRate.DefaultValueM / DataMgr.Option.SpringArmRate.ScrollMappingScale
+    end
+  end
   self:SetDefaultSpringArmRate(DefaultSpringArmRate)
   self:SetCameraYawFollow()
   rawset(self, "MaxDistance_LockOn", 4000)
   rawset(self, "MaxTime_LockOnObscured", 2)
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+  if "PC" == CommonUtils.GetDeviceTypeByPlatformName(self) then
     rawset(self, "IsPlayerCameraUnlock", false)
   else
     rawset(self, "IsPlayerCameraUnlock", true)
   end
 end
-
 function CameraComponent:EnableAutoResetCameraPitch(Method)
   self.CameraRotationComponent:EnableAutoResetCameraPitch(UE4.EResetPitchMethod[Method] or 0)
 end
-
 function CameraComponent:SetDefaultSpringArmRate(Value)
   self.DefaultSpringArmRate = Value
   self.SpringArmRate = Value
@@ -36,15 +40,14 @@ function CameraComponent:SetDefaultSpringArmRate(Value)
   self:ResetSpringArm()
   self:ResetSocketOffset()
 end
-
 function CameraComponent:SetBaseTargetArmLengthForReset(ArmLength)
   self.CharSpringArmComponent.BaseSpringArmForReset = ArmLength
+  self.CharSpringArmComponent.MouseWheelTargetArmLength = ArmLength
 end
-
 function CameraComponent:SetBaseSocketOffsetForReset(SocketOffset)
   self.CharSpringArmComponent.BaseSocketOffsetForReset = SocketOffset
+  self.CharSpringArmComponent.MouseWheelSocketOffset = SocketOffset
 end
-
 function CameraComponent:ApplyCameraShake(CameraShake, ShakeScale)
   local PlayerCameraManager = self.Controller and self.Controller.PlayerCameraManager
   if nil == PlayerCameraManager or 0 ~= UGameplayStatics.GetPlayerControllerID(self.Controller) then
@@ -53,27 +56,24 @@ function CameraComponent:ApplyCameraShake(CameraShake, ShakeScale)
   if self.CharSpringArmComponent:IsCameraOverlapped() then
     return
   end
+  DebugPrint("TTT:Debug:ApplyCameraShake:定位Seq内相机抖动问题日志", CameraShake, ShakeScale)
   PlayerCameraManager:StartCameraShake(CameraShake, ShakeScale)
 end
-
 function CameraComponent:ResetCameraPitch()
   if IsValid(self.CameraRotationComponent) then
     return self.CameraRotationComponent:ResetCameraPitch()
   end
 end
-
 function CameraComponent:ResetSpringArm()
   if IsValid(self.CharSpringArmComponent) then
     return self.CharSpringArmComponent:ResetSpringArm()
   end
 end
-
 function CameraComponent:ResetSocketOffset()
   if IsValid(self.CharSpringArmComponent) then
     return self.CharSpringArmComponent:ResetSocketOffset()
   end
 end
-
 function CameraComponent:SetCameraYawFollow()
   self.CameraRotationComponent.bSwitchOnCameraFollow = EMCache:Get("CameraYawFollow")
   if self.CameraRotationComponent.bSwitchOnCameraFollow == nil then
@@ -84,11 +84,9 @@ function CameraComponent:SetCameraYawFollow()
     end
   end
 end
-
 function CameraComponent:SwitchCameraYawFollow(bSwitchOn)
   self.CameraRotationComponent.bSwitchOnCameraFollow = bSwitchOn
 end
-
 function CameraComponent:CalcTargetCtrlRotation(TargetPoint, bImmediately)
   local ControlRotation = self.Controller:GetControlRotation()
   local TargetCtrlRotation
@@ -107,7 +105,6 @@ function CameraComponent:CalcTargetCtrlRotation(TargetPoint, bImmediately)
   TargetCtrlRotation.Roll = 0
   return TargetCtrlRotation
 end
-
 function CameraComponent:CheckCanRotateToTarget(TargetPoint)
   local V = self.CharSpringArmComponent:K2_GetComponentLocation() - TargetPoint
   local OutsideLen = math.abs(V.Z) * UE4.UKismetMathLibrary.DegTan(0.5)
@@ -115,7 +112,6 @@ function CameraComponent:CheckCanRotateToTarget(TargetPoint)
   local R = UE4.UKismetMathLibrary.VSize(V)
   return R > self.CharSpringArmComponent.SocketOffset.Y * OutsideLen
 end
-
 function CameraComponent:CalcTargetPointLookFrom(TargetPoint)
   local PA = TargetPoint
   local PO = self.CharSpringArmComponent:K2_GetComponentLocation()
@@ -134,11 +130,9 @@ function CameraComponent:CalcTargetPointLookFrom(TargetPoint)
   PB.Z = CurrentPointLookFrom.Z
   return PB
 end
-
 function CameraComponent:CalcDiffAngleInYaw(Forward, Target)
   return self:CalcVectorAngle(FVector(Forward.X, Forward.Y, 0), FVector(Target.X, Target.Y, 0))
 end
-
 function CameraComponent:CalcCurrentPitchAngle(Forward, Right)
   local HorizonVector = FVector(Forward.X, Forward.Y, 0)
   local AngleValue = self:CalcVectorAngle(Forward, HorizonVector)
@@ -150,7 +144,6 @@ function CameraComponent:CalcCurrentPitchAngle(Forward, Right)
     return -AngleValue
   end
 end
-
 function CameraComponent:StopCameraLookOrLockOnTarget()
   local rest = false
   if self.CameraRotationComponent.IsCameraLookingToTarget then
@@ -159,7 +152,6 @@ function CameraComponent:StopCameraLookOrLockOnTarget()
   end
   return rest
 end
-
 function CameraComponent:StopAllAutoControlRotation()
   local rest = false
   if self.CameraRotationComponent:GetIsControllerAutoRotating() then
@@ -171,7 +163,6 @@ function CameraComponent:StopAllAutoControlRotation()
   end
   return rest
 end
-
 function CameraComponent:CalcCameraRotation()
   local ControlRotation = self.Controller:GetControlRotation()
   local CameraRotation = self.CharCameraComponent:K2_GetComponentRotation()
@@ -181,7 +172,6 @@ function CameraComponent:CalcCameraRotation()
   result.Pitch = ControlRotation.Pitch + PitchOffset
   return result
 end
-
 function CameraComponent:FlipCameraLockOnMonster()
   if self:CharacterInTag("Shooting") then
     return
@@ -192,44 +182,43 @@ function CameraComponent:FlipCameraLockOnMonster()
   local PreLockOnInfo = self.CameraRotationComponent.PreLockOnInfo
   if IsValid(PreLockOnInfo) then
     self.CameraRotationComponent.CurLockOnInfo = PreLockOnInfo
-    
     local function OnEnd()
       self.CameraRotationComponent.PreLockOnInfo = nil
       self.CameraRotationComponent.CurLockOnInfo = nil
     end
-    
     self.CameraRotationComponent:CameraLookToTarget(PreLockOnInfo.Actor, PreLockOnInfo.Bone, self.CameraRotationComponent.Duration_LockOn, nil, false, self.CameraRotationComponent.MaxAngle_ReLockOn, self.MaxDistance_LockOn, self.MaxTime_LockOnObscured, true, true, OnEnd, OnEnd, OnEnd)
   else
     self:ResetCameraAndSpringArm()
   end
 end
-
-function CameraComponent:CameraUnlockOnBySkill(Source, ParamentsTable)
-  if not Source then
+function CameraComponent:CameraUnlockOnBySkill_Implementation(SourceEid, CantLockTime)
+  if not IsClient(self) and not IsStandAlone(self) then
+    return
+  end
+  if 0 == SourceEid or not IsValid(self.CameraRotationComponent) then
     return
   end
   if self.IsPlayerCameraUnlock then
-    self:BanCameraLockOnBySkill(ParamentsTable)
+    self:BanCameraLockOnBySkill_Implementation(CantLockTime)
   else
     local CurLockOnInfo = self.CameraRotationComponent.CurLockOnInfo
-    if self.CameraRotationComponent.IsCameraLookingToTarget and CurLockOnInfo and CurLockOnInfo.Actor == Source then
+    if self.CameraRotationComponent.IsCameraLookingToTarget and CurLockOnInfo and CurLockOnInfo.Actor.Eid == SourceEid then
       self.CameraRotationComponent:StopCameraLookToTarget()
     end
-    if ParamentsTable and ParamentsTable.CantLockTime then
-      self:SetTargetCantBeLockOn(Source.Eid, true)
-      if ParamentsTable.CantLockTime > 0 then
-        local function SetCanBeLockOn()
-          self:SetTargetCantBeLockOn(Source.Eid, false)
-        end
-        
-        self:AddTimer(ParamentsTable.CantLockTime, SetCanBeLockOn, false, 0, Source.Eid .. "SetCanBeLockOn", false)
+    self:SetTargetCantBeLockOn(SourceEid, true)
+    if CantLockTime > 0 then
+      local function SetCanBeLockOn()
+        self:SetTargetCantBeLockOn(SourceEid, false)
       end
+      self:AddTimer(CantLockTime, SetCanBeLockOn, false, 0, SourceEid .. "SetCanBeLockOn", false)
     end
   end
 end
-
-function CameraComponent:CameraRelockOnBySkill(Source)
-  if not Source then
+function CameraComponent:CameraRelockOnBySkill_Implementation(SourceEid)
+  if not IsClient(self) and not IsStandAlone(self) then
+    return
+  end
+  if 0 == SourceEid then
     return
   end
   if self.IsPlayerCameraUnlock then
@@ -238,41 +227,36 @@ function CameraComponent:CameraRelockOnBySkill(Source)
       self:RemoveTimer("BanCameraLockOn")
     end
   else
-    self:SetTargetCantBeLockOn(Source.Eid, false)
-    if self:IsExistTimer(Source.Eid .. "SetCanBeLockOn") then
-      self:RemoveTimer(Source.Eid .. "SetCanBeLockOn")
+    self:SetTargetCantBeLockOn(SourceEid, false)
+    if self:IsExistTimer(SourceEid .. "SetCanBeLockOn") then
+      self:RemoveTimer(SourceEid .. "SetCanBeLockOn")
     end
   end
 end
-
-function CameraComponent:BanCameraLockOnBySkill(ParamentsTable)
-  if ParamentsTable and ParamentsTable.CantLockTime then
-    local function SetCanLockOn()
-      self.CameraRotationComponent.SetCanLockOn = true
-    end
-    
-    self.CameraRotationComponent.SetCanLockOn = false
-    if self:IsExistTimer("BanCameraLockOn") then
-      self:RemoveTimer("BanCameraLockOn")
-    end
-    if ParamentsTable.CantLockTime > 0 then
-      self:AddTimer(ParamentsTable.CantLockTime, SetCanLockOn, false, 0, "BanCameraLockOn", false)
-    end
+function CameraComponent:BanCameraLockOnBySkill_Implementation(CantLockTime)
+  if not IsClient(self) and not IsStandAlone(self) then
+    return
+  end
+  local function SetCanLockOn()
+    self.CameraRotationComponent.SetCanLockOn = true
+  end
+  self.CameraRotationComponent.SetCanLockOn = false
+  if self:IsExistTimer("BanCameraLockOn") then
+    self:RemoveTimer("BanCameraLockOn")
+  end
+  if CantLockTime > 0 then
+    self:AddTimer(CantLockTime, SetCanLockOn, false, 0, "BanCameraLockOn", false)
   end
 end
-
 function CameraComponent:SetTargetCantBeLockOn(Eid, CantBeLockOn)
   self.CameraRotationComponent:SetTargetCantBeLockOn(Eid, CantBeLockOn)
 end
-
 function CameraComponent:StartCameraKeepSightOnActor(Actor, KeepSightTime, CameraAxisLockType, Speed, OnFinish)
   self.CameraRotationComponent:StartCameraKeepSightOnActor(Actor, KeepSightTime, CameraAxisLockType, Speed, OnFinish)
 end
-
 function CameraComponent:FinishKeepSight()
   self.CameraRotationComponent:FinishKeepSight()
 end
-
 function CameraComponent:SetControlPitchLimit(MinPitch, MaxPitch, TimeToInterpSpeed, InterpSpeed)
   if not self.Controller then
     return
@@ -298,5 +282,4 @@ function CameraComponent:SetControlPitchLimit(MinPitch, MaxPitch, TimeToInterpSp
     self.CameraControlComponent:ModifyViewPitch(MinPitch, MaxPitch)
   end
 end
-
 return CameraComponent

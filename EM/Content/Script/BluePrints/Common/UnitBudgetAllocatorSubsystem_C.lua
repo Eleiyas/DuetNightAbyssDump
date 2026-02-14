@@ -1,7 +1,6 @@
 require("Unlua")
 require("Const")
 local M = Class()
-
 function M:Initialize_Lua()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local IsTakeRecorder = GameInstance.IsTakeRecorderCapturing or GameInstance.IsTakeRecorderRendering
@@ -11,56 +10,50 @@ function M:Initialize_Lua()
     self:InitOptParams()
   end
 end
-
 function M:DisableOptParams_TR()
   self.bEnableBalanceTickOpt = false
   self.bEnableMeshLODBiasOpt = false
   self.bEnableNoneDynamicShadowNumOpt = false
-  if PlatformName == "Android" then
-    self.bEnableAnimBudget = true
-  else
-    self.bEnableAnimBudget = true
-  end
+  self.bEnableAnimBudget = true
   self.bIgnoreCompletionTimeMs = true
 end
-
 function M:InitOptParams()
-  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+  if CommonUtils.GetRuntimePlatform(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     self.UnitBudgetTickFrameCounter = 15
   else
     self.UnitBudgetTickFrameCounter = 12
   end
   self.bEnableBalanceTickOpt = true
   self.bDynamicShadowDebug = false
-  local PlatformName = UE4.UUIFunctionLibrary.GetDevicePlatformName(self)
-  if "Android" == PlatformName then
+  local PlatformName = string.lower(UE4.UUIFunctionLibrary.GetDevicePlatformName(self))
+  if PlatformName == CommonConst.CHANNEL_OS.ANDROID then
     self.bEnableAnimBudget = true
   else
     self.bEnableAnimBudget = true
   end
   self.bIgnoreCompletionTimeMs = true
-  if "Android" == PlatformName or "IOS" == PlatformName then
+  if PlatformName == CommonConst.CHANNEL_OS.ANDROID or PlatformName == CommonConst.CHANNEL_OS.IOS then
     self.bEnableMeshLODBiasOpt = true
   else
     self.bEnableMeshLODBiasOpt = false
   end
-  if "Android" == PlatformName or "IOS" == PlatformName then
+  if PlatformName == CommonConst.CHANNEL_OS.ANDROID or PlatformName == CommonConst.CHANNEL_OS.IOS then
     self.bEnableNoneDynamicShadowNumOpt = true
   else
     self.bEnableNoneDynamicShadowNumOpt = false
   end
-  if "Android" == PlatformName then
+  if PlatformName == CommonConst.CHANNEL_OS.ANDROID then
     self.bUnitBudgetTickFrameLimit = false
     self.RefreshUnitBudgetTickCount = 3
   else
     self.bUnitBudgetTickFrameLimit = false
   end
-  if "Android" == PlatformName then
+  if PlatformName == CommonConst.CHANNEL_OS.ANDROID then
     self.bEnableAnimCache = true
   else
     self.bEnableAnimCache = true
   end
-  if "Android" == PlatformName then
+  if PlatformName == CommonConst.CHANNEL_OS.ANDROID then
     self.bEnableRegionUseUnitBudgetOptmization = true
   else
     self.bEnableRegionUseUnitBudgetOptmization = true
@@ -70,7 +63,9 @@ function M:InitOptParams()
   self.bEnableUnitHiddenOptimization = true
   self.bAutoCheckPlayerHighMeshLOD = true
 end
-
+function M:SetEnableAnimBudget(bEnable)
+  self.bEnableAnimBudget = bEnable
+end
 function M:GetPlayerHighMeshLODIDConfig()
   return {
     1502,
@@ -88,5 +83,4 @@ function M:GetPlayerHighMeshLODIDConfig()
     5301
   }
 end
-
 return M

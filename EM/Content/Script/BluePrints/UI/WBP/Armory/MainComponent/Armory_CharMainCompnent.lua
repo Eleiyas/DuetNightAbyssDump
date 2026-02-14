@@ -2,22 +2,18 @@ local UpgradeUtils = require("Utils.UpgradeUtils")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local SkillUtils = require("Utils.SkillUtils")
 local M = {}
-
 function M:ComponentInitDispatcher()
   self:AddDispatcher(EventID.OnCharLevelUp, self, self.OnCharUpgraded)
   self:AddDispatcher(EventID.OnCharBreakLevelUp, self, self.OnCharUpgraded)
   self:AddDispatcher(EventID.OnCharGradeLevelUp, self, self.OnCharGradeLevelUp)
   self:AddDispatcher(EventID.OnCharSkillLevelUp, self, self.OnCharSkillLevelUp)
-  self:AddDispatcher(EventID.OnSwitchRole, self, self.OnSwitchRole)
+  self:AddDispatcher(EventID.OnSwitchCurrentChar, self, self.OnSwitchCurrentChar)
   self:AddDispatcher(EventID.OnNewCharObtained, self, self.OnNewCharObtained)
   self:AddDispatcher(EventID.OnCharCardLevelResourcesChanged, self, self.OnCharCardLevelResourcesChanged)
   self:AddDispatcher(EventID.OnCharRewardStateChanged, self, self.OnCharRewardStateChanged)
 end
-
 function M:CharMain_Close()
-  self:RemoveDispatcher(EventID.OnSwitchRole)
 end
-
 function M:CharMain_OnArmoryTargetStateChanged(NewAvatar)
   local _, Char = next(NewAvatar.Chars)
   if self.IsPreviewMode or Char.CharId ~= self.ComparedChar.CharId then
@@ -36,7 +32,6 @@ function M:CharMain_OnArmoryTargetStateChanged(NewAvatar)
       Char = self.ComparedChar,
       Avatar = CmpContent.Avatar
     })
-    self:AddMainTabReddotListen()
     local CurMainTabIdx = self.MainTabName2Idx[self.CurMainTab.Name]
     if self.MainTabs[CurMainTabIdx] and self.MainTabs[CurMainTabIdx].Name == self.CurMainTab.Name then
       self.CurMainTab = self.MainTabs[CurMainTabIdx]
@@ -45,21 +40,20 @@ function M:CharMain_OnArmoryTargetStateChanged(NewAvatar)
       self.CurMainTab.IsOn = false
     end
     self.CharMain_CmpContent = CmpContent
+    self:AddMainTabReddotListen()
   end
 end
-
 function M:CharMain_Init()
   self.Panel_SubTab:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if not self.CharItemContentsMap then
     self:CharMain_PreprocessContents()
   end
-  self:InitRoleList()
+  self:CharMain_SortAndInitRoleList()
   self:CharMain_SelectRoleListItem(self.CharMain_CmpContent)
   self:PlayAnimation(self.RoleList_In)
   self:UpdateBoxReddot()
 end
-
 function M:CharMain_JumpToSubPage(SubPageName)
   if not SubPageName or not IsValid(self.CurrentSubUI) then
     return
@@ -68,7 +62,6 @@ function M:CharMain_JumpToSubPage(SubPageName)
     self.CurrentSubUI:OnModBtnClicked()
   end
 end
-
 function M:CharMain_PreprocessContents(Type, PreprocessParams)
   PreprocessParams = PreprocessParams or {}
   local Uuid = PreprocessParams.SelectedTargetUuid
@@ -105,7 +98,6 @@ function M:CharMain_PreprocessContents(Type, PreprocessParams)
   self:CharMain_InitContentState()
   self:CharMain_SortItemContents()
 end
-
 function M:CharMain_InitSubUI()
   local Target = self.ComparedChar
   local IsTargetUnowned = ArmoryUtils:GetCharByUuid(Target.Uuid) == nil
@@ -132,27 +124,15 @@ function M:CharMain_InitSubUI()
     self:CharMain_InitSubUI_Attribute()
   end
 end
-
 function M:CharMain_ReceiveEnterState()
   self:ResetCharData()
   self:_UpdateSkillUpgradeReddot(ArmoryUtils:GetAvatar(), self.ComparedChar.Uuid)
   if self.CurSubTab.Name ~= ArmoryUtils.ArmorySubTabNames.Skill then
     self:InitSubUI()
   end
-  self:UpdateSkillTabReddot()
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Attribute)
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Skill)
 end
-
-function M:UpdateSkillTabReddot()
-  for index, value in ipairs(self.SubTabs) do
-    if value.Name == ArmoryUtils.ArmorySubTabNames.Skill then
-      if value.Widget and value.CheckReddot then
-        value.Widget:SetReddot(value.CheckReddot({}))
-      end
-      break
-    end
-  end
-end
-
 function M:CharMain_InitSubUI_Attribute()
   if self.CurrentSubUI then
     self.CurrentSubUI:BindEvents(self, {
@@ -164,7 +144,6 @@ function M:CharMain_InitSubUI_Attribute()
   end
   self:CharMain_UpdatAttributeButton()
 end
-
 function M:CharMain_UpdatAttributeButton()
   if self.CurSubTab.Name ~= ArmoryUtils.ArmorySubTabNames.Attribute then
     return
@@ -206,7 +185,6 @@ function M:CharMain_UpdatAttributeButton()
     })
   end
 end
-
 function M:UpdateCharInfos()
   self.Panel_Element:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Tab_L:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -222,7 +200,6 @@ function M:UpdateCharInfos()
   local ElmtType = DataMgr.BattleChar[self.ComparedChar.CharId].Attribute
   self:CharMain_SetElementIcon(ElmtType)
 end
-
 function M:CharMain_SetElementIcon(ElementType)
   if ElementType then
     self.Panel_Element:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -239,7 +216,6 @@ function M:CharMain_SetElementIcon(ElementType)
     self.Stats_ListView:AddItem(self:NewElmtIconContent(Type, ElmtNames[idx], Type == ElementType))
   end
 end
-
 function M:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   local IconName = "Armory_" .. ElmtType
@@ -248,13 +224,23 @@ function M:NewElmtIconContent(ElmtType, ElmtName, IsSelected)
   Obj.IsSelected = IsSelected
   return Obj
 end
-
 function M:CharMain_UpdateBoxReddot()
   local PromoteNode = ReddotManager.GetTreeNode(DataMgr.ReddotNode.PromoteChar.Name)
   local NewCharNode = ReddotManager.GetTreeNode(DataMgr.ReddotNode.NewChar.Name)
-  self.Btn_Selective:SetReddot(NewCharNode and NewCharNode.Count > 0, PromoteNode and PromoteNode.Count > 0)
+  local IsNew = NewCharNode and NewCharNode.Count > 0
+  local IsRed = PromoteNode and PromoteNode.Count > 0
+  self:UpdateBoxReddotView(IsNew, IsRed)
 end
-
+function M:OnRoleListEntryGenerated(Widget)
+  if not Widget then
+    return
+  end
+end
+function M:OnRoleListEntryReleased(Widget)
+  if not Widget then
+    return
+  end
+end
 function M:CharMain_OnRoleListItemClicked(Content)
   if self.CharMain_CmpContent == Content then
     return
@@ -265,7 +251,6 @@ function M:CharMain_OnRoleListItemClicked(Content)
     Char = self.ComparedChar,
     Avatar = Content.Avatar
   })
-  self:AddMainTabReddotListen()
   local CurMainTabIdx = self.MainTabName2Idx[self.CurMainTab.Name]
   if self.MainTabs[CurMainTabIdx] and self.MainTabs[CurMainTabIdx].Name == self.CurMainTab.Name then
     self.CurMainTab = self.MainTabs[CurMainTabIdx]
@@ -277,8 +262,8 @@ function M:CharMain_OnRoleListItemClicked(Content)
     self:UpdateMainTabs(self.MainTabs)
     self.Tab_Arm:SelectTab(1)
   end
+  self:AddMainTabReddotListen()
 end
-
 function M:CharMain_SelectRoleListItem(Content)
   if self.bFromArchive then
     ArmoryUtils:SetArchiveReddotRead(Content)
@@ -294,13 +279,12 @@ function M:CharMain_SelectRoleListItem(Content)
   self.ActorController:SetAvatar(ArmoryUtils:GetAvatar())
   self:CreateAndSelectSubTab()
   self:UpdateCharCardLevel()
+  ArmoryUtils:SetItemReddotRead(Content, true)
   if Content.IsOwned then
-    ArmoryUtils:SetItemReddotRead(Content, true)
     self:_UpdateSkillUpgradeReddot(ArmoryUtils:GetAvatar(), Content.Uuid)
     self:AddSubTabReddotListen()
   end
 end
-
 function M:UpdateCharCardLevel()
   for _, value in ipairs(self.SubTabs) do
     if value.Name == ArmoryUtils.ArmorySubTabNames.Grade then
@@ -316,7 +300,6 @@ function M:UpdateCharCardLevel()
     end
   end
 end
-
 local function AddContent(self, Char)
   local Obj = ArmoryUtils:NewCharOrWeaponItemContent(Char, CommonConst.ArmoryType.Char, CommonConst.ArmoryTag.Char, nil, self.ReddotFrom)
   Obj.bHideItemLevel = self.bFromArchive
@@ -328,7 +311,6 @@ local function AddContent(self, Char)
   self:OnRoleListContentCreated(Obj)
   return Obj
 end
-
 local function AddUnownedContent(self, Char)
   local Obj = ArmoryUtils:NewCharOrWeaponItemContent(Char, CommonConst.ArmoryType.Char, CommonConst.ArmoryTag.Char, true, self.ReddotFrom)
   Obj.bHideItemLevel = true
@@ -336,8 +318,11 @@ local function AddUnownedContent(self, Char)
   Obj.LockType = 2
   Obj.Level = nil
   Obj.Unlockable = not not ArmoryUtils:TryAddUnlockableCharReddot(Char.CharId)
+  Obj.IsNew = ArmoryUtils:TryAddNewReleasedCharReddot(Char.CharId)
   if Obj.Unlockable then
     Obj.RedDotType = UIConst.RedDotType.CommonRedDot
+  elseif Obj.IsNew then
+    Obj.RedDotType = UIConst.RedDotType.NewRedDot
   end
   self.BP_CharItemContents:Add(Obj)
   self.CharItemContentsMap[Char.Uuid] = Obj
@@ -346,7 +331,6 @@ local function AddUnownedContent(self, Char)
   self:OnRoleListContentCreated(Obj)
   return Obj
 end
-
 local function UnownedContent2Content(self, UnownedContent, Char)
   self.CharItemContentsMap[UnownedContent.Uuid] = nil
   if self.UnownedCharContentMap[UnownedContent.UnitId] then
@@ -368,7 +352,6 @@ local function UnownedContent2Content(self, UnownedContent, Char)
   UnownedContent.AvatarMax = nil
   UnownedContent.Avatar = nil
 end
-
 function M:CharMain_CreateItemContents()
   local Avatar = ArmoryUtils:GetAvatar()
   rawset(self, "CharItemContentsMap", {})
@@ -383,7 +366,6 @@ function M:CharMain_CreateItemContents()
       OwnedChars[value.CharId] = value
     end
   end
-  
   local function InsertLogic(Char)
     if OwnedChars[Char.CharId] or self.IsPreviewMode then
       return AddContent(self, Char)
@@ -391,7 +373,6 @@ function M:CharMain_CreateItemContents()
       return AddUnownedContent(self, Char)
     end
   end
-  
   local Chars = Avatar.Chars
   if self.Params.CharUuids then
     Chars = {}
@@ -426,7 +407,7 @@ function M:CharMain_CreateItemContents()
         local Gender2RoleIds = Const.DefaultAttributeMaster
         local ExcludeCharId = Gender2RoleIds[1 - RealAvatar.Sex]
         for CharId, value in pairs(DataMgr.Char) do
-          if not value.IsNotOpen and ExcludeCharId ~= CharId and not OwnedChars[CharId] then
+          if not value.IsNotOpen and ExcludeCharId ~= CharId and not OwnedChars[CharId] and CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.Char, CharId) then
             local DummyAvatar = ArmoryUtils:CreateNewDummyAvatar(ArmoryUtils.PreviewTargetStates.Prime, {
               CharIds = {CharId}
             })
@@ -446,12 +427,11 @@ function M:CharMain_CreateItemContents()
       catch = function(err)
         local trace = debug.traceback()
         err = err or ""
-        DebugPrint("Error: CY@ \230\156\170\232\167\163\233\148\129\232\167\146\232\137\178\228\191\161\230\129\175\229\136\155\229\187\186\229\164\177\232\180\165!\n" .. err .. "\n" .. trace)
+        DebugPrint("Error: CY@ 未解锁角色信息创建失败!\n" .. err .. "\n" .. trace)
       end
     })
   end
 end
-
 function M:CharMain_SortItemContents()
   if self.DoNotSort then
     return
@@ -474,10 +454,12 @@ function M:CharMain_SortItemContents()
     end
   end)
 end
-
-function M:CharMain_InitRoleList()
+function M:CharMain_SortAndInitRoleList()
   self:CharMain_InitContentState()
   self:CharMain_SortItemContents()
+  self:InitRoleList()
+end
+function M:CharMain_InitRoleList()
   self.EMListView_Role:ClearListItems()
   for _, Content in ipairs(self.CharItemContentsArray) do
     self.EMListView_Role:AddItem(Content)
@@ -487,7 +469,6 @@ function M:CharMain_InitRoleList()
   end
   self.EMListView_Role:RegenerateAllEntries()
 end
-
 function M:CharMain_InitContentState()
   if self.CharMain_CurContent then
     self.CharMain_CurContent.bInGear = false
@@ -506,11 +487,9 @@ function M:CharMain_InitContentState()
   end
   self.CharMain_CmpContent.IsSelect = true
 end
-
 function M:CharMain_UpdateResourceInfos()
   self.Tab_Arm:UpdateResource()
 end
-
 function M:CharMain_OnBtnIntensifyClicked()
   local Type = self.CurSubTab.Type
   local Tag = self.CurSubTab.Tag
@@ -543,14 +522,12 @@ function M:CharMain_OnBtnIntensifyClicked()
     UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
   end
 end
-
 function M:CharMain_OnBtnReplaceClicked()
   if not (self.ComparedChar and self.ComparedChar.Uuid) or self.ComparedChar == self.CurrentChar then
     return
   end
   self:ServerSwitchRole()
 end
-
 function M:ServerSwitchRole()
   local Avatar = ArmoryUtils:GetAvatar()
   if not Avatar then
@@ -559,18 +536,14 @@ function M:ServerSwitchRole()
   self:BlockAllUIInput(true)
   Avatar:SwitchCurrentChar(self.ComparedChar.Uuid)
 end
-
 function M:CharMain_OnForbiddenBtnIntensifyClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
 end
-
 function M:CharMain_OnForbiddenBtnReplaceClicked()
 end
-
 function M:PlayRoleSelectedSound()
   AudioManager(self):PlayItemSound(self, self.ComparedChar.CharId, "Click", "Char")
 end
-
 function M:_UpdateSkillUpgradeReddot(Avatar, CharUuid)
   if self.IsPreviewMode or ArmoryUtils:GetCharByUuid(CharUuid) == nil then
     return
@@ -593,16 +566,13 @@ function M:_UpdateSkillUpgradeReddot(Avatar, CharUuid)
     end
   end
 end
-
 function M:CharMain_PreMainTabChange()
   self:ShowElementTips(false)
   self:RemoveSubTabReddotListen()
 end
-
 function M:CharMain_PreSubTabChange()
   self:ResetCharData()
 end
-
 function M:ResetCharData()
   local Avatar = ArmoryUtils:GetAvatar()
   if self.CharMain_CmpContent and self.CharMain_CmpContent.Avatar then
@@ -613,7 +583,6 @@ function M:ResetCharData()
     self.CurrentChar = Avatar.Chars[self.CurrentChar.Uuid]
   end
 end
-
 function M:OnNewCharObtained(CharUuid)
   local Avatar = ArmoryUtils:GetAvatar()
   local Char = Avatar.Chars[CharUuid]
@@ -627,16 +596,18 @@ function M:OnNewCharObtained(CharUuid)
     if IsCmpContent then
       self.ComparedChar = Char
     end
-    self:InitRoleList()
+    self:CharMain_SortAndInitRoleList()
     if IsCmpContent then
       self:SelectRoleListItem(UnownedContent)
     end
     self:UpdateBoxReddot()
   end
 end
-
-function M:OnSwitchRole(...)
+function M:OnSwitchCurrentChar(Ret)
   self:BlockAllUIInput(false)
+  if not ErrorCode:Check(Ret) then
+    return
+  end
   local Avatar = ArmoryUtils:GetAvatar()
   self.CurrentChar = Avatar.Chars[Avatar.CurrentChar]
   self.ComparedChar = self.CurrentChar
@@ -649,7 +620,6 @@ function M:OnSwitchRole(...)
   self.CharMain_CurContent = self.CharMain_CmpContent
   self:CharMain_UpdatAttributeButton()
 end
-
 function M:OnCharUpgraded(Ret, Uuid, CurLevel, TargetLevel)
   local Avatar = ArmoryUtils:GetAvatar()
   local Char = Avatar.Chars[Uuid]
@@ -665,9 +635,8 @@ function M:OnCharUpgraded(Ret, Uuid, CurLevel, TargetLevel)
   if self.CharMain_CmpContent == Content then
     self:InitSubUI()
   end
-  self:InitRoleList()
+  self:CharMain_SortAndInitRoleList()
 end
-
 function M:OnCharSkillLevelUp(Ret, SkillId, CurrentLevel)
   self:ResetCharData()
   local Avatar = ArmoryUtils:GetAvatar()
@@ -678,7 +647,6 @@ function M:OnCharSkillLevelUp(Ret, SkillId, CurrentLevel)
   }, false, true)
   self:_UpdateSkillUpgradeReddot(Avatar)
 end
-
 function M:OnCharGradeLevelUp(Ret, Uuid, CurrentGradeLevel)
   local Avatar = ArmoryUtils:GetAvatar()
   local Char = Avatar.Chars[Uuid]
@@ -688,7 +656,6 @@ function M:OnCharGradeLevelUp(Ret, Uuid, CurrentGradeLevel)
   self:ResetCharData()
   self:UpdateCharCardLevel()
 end
-
 function M:OnCharCardLevelResourcesChanged(Rid, CharId, Uuid)
   if self.IsPreviewMode then
     return
@@ -717,6 +684,9 @@ function M:OnCharCardLevelResourcesChanged(Rid, CharId, Uuid)
       if Content.Widget then
         Content.Widget:SetReddot(Content.RedDotType)
       end
+      if Char == self.ComparedChar and self.CurSubTab and self.CurSubTab.Type == CommonConst.ArmoryType.Char then
+        self:SubTabReddotFunc(ArmoryUtils.ArmorySubTabNames.Grade, nil, Content.Upgradeable)
+      end
     end
   else
     if not self.UnownedCharContentMap then
@@ -727,7 +697,9 @@ function M:OnCharCardLevelResourcesChanged(Rid, CharId, Uuid)
       Content.Unlockable = not not ArmoryUtils:TryAddUnlockableCharReddot(CharId)
       if Content.Unlockable then
         Content.RedDotType = UIConst.RedDotType.CommonRedDot
-        self:InitRoleList()
+        self:CharMain_SortAndInitRoleList()
+      elseif Content.IsNew then
+        Content.RedDotType = UIConst.RedDotType.NewRedDot
       else
         Content.RedDotType = nil
       end
@@ -742,8 +714,10 @@ function M:OnCharCardLevelResourcesChanged(Rid, CharId, Uuid)
   if Content.Widget then
     Content.Widget:SetReddot(Content.RedDotType)
   end
+  if Content == self.CharMain_CmpContent then
+    self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Attribute)
+  end
 end
-
 function M:OnCharRewardStateChanged(CharId)
   if self.IsPreviewMode then
     return
@@ -755,11 +729,12 @@ function M:OnCharRewardStateChanged(CharId)
   local Avatar = GWorld:GetAvatar()
   Content.HasReward = Avatar:IsCharHasReward(CharId)
   ArmoryUtils:UpdateContentRetDotType(Content)
+  if Content == self.CharMain_CmpContent then
+    self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Attribute)
+  end
 end
-
 function M:CharMain_OnFocusReceived(ReplyInfo)
 end
-
 function M:CharMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
@@ -777,35 +752,27 @@ function M:CharMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   end
   table.insert(BottomKeyInfo, self.ESCKeyInfoList)
 end
-
 function M:CharMain_InitNavigationRules()
   self:InitNavigationRulesCommon()
 end
-
 function M:CharMain_OnSubTabLeftKeyDown()
   if self.CurrentSubUI and self.CurrentSubUI.OnTabLeftKeyDown then
     self.CurrentSubUI:OnTabLeftKeyDown()
   end
 end
-
 function M:CharMain_OnSubTabRightKeyDown()
   if self.CurrentSubUI and self.CurrentSubUI.OnTabRightKeyDown then
     self.CurrentSubUI:OnTabRightKeyDown()
   end
 end
-
 function M:CharMain_OnLeftThumbstickKeyDown()
   self:ShowElementTips(true)
 end
-
 function M:CharMain_OnLeftThumbstickKeyUp()
   self:ShowElementTips(false)
 end
-
 function M:CharMain_OnViewKeyDown()
 end
-
 function M:CharMain_OnRightThumbstickKeyDown()
 end
-
 return M

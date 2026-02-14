@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   if self.Btn_Click then
     self.Btn_Click.OnClicked:Add(self, self.OnBtnClick)
   end
 end
-
 function M:InitUI(ChatInfo)
   self:PlayAnimation(self.In)
   if ChatInfo.IsAnswer then
@@ -27,9 +25,7 @@ function M:InitUI(ChatInfo)
   end
   self.Parent = ChatInfo.Parent
 end
-
 function M:OnBtnClick()
   self.Parent:OnIteratorDialogue()
 end
-
 return M

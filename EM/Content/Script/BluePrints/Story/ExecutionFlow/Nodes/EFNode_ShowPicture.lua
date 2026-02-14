@@ -1,5 +1,4 @@
 local M = {}
-
 function M:CreateNode(Flow, TalkTask, Params)
   local PictureId = Params.PictureId
   local FadeInTime = Params.FadeInTime or 0
@@ -40,5 +39,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return ShowPictureNode
 end
-
 return M

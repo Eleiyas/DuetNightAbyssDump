@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1754536555434432008",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1133.140730225936, y = 297.6286915119693},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -104,12 +106,12 @@ return {
           ["1717656653600263568"] = {
             key = "1717656653600263568",
             type = "ShowGuideToastNode",
-            name = "Toast\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Toast显示/隐藏信息",
             pos = {x = 1142.1563604196385, y = 189.7236075083378},
             propsData = {
               ShowEnable = true,
               MessageId = 301401,
-              MessageNote = "\230\137\147\229\188\128\232\174\173\231\187\131\232\143\156\229\141\149",
+              MessageNote = "打开训练菜单",
               LastTime = 10,
               Style = "Normal"
             }
@@ -117,7 +119,7 @@ return {
           ["17177557558351669267"] = {
             key = "17177557558351669267",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1157.3652706326875, y = 358.9626559355197},
             propsData = {WaitTime = 0.5}
           },
@@ -145,7 +147,7 @@ return {
           ["1754536555434432012"] = {
             key = "1754536555434432012",
             type = "ShowGuideMainNode",
-            name = "\230\152\190\231\164\186\229\155\190\230\150\135\229\188\149\229\175\188",
+            name = "显示图文引导",
             pos = {x = 821.9942392922145, y = 301.9213400709162},
             propsData = {GuideId = 33}
           }

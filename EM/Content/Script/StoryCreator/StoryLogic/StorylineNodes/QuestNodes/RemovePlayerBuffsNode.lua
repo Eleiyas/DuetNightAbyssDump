@@ -1,9 +1,7 @@
 local RemovePlayerBuffsNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function RemovePlayerBuffsNode:Init()
   self.RemoveBuffs = {}
 end
-
 function RemovePlayerBuffsNode:Start(Context)
   self.Context = Context
   local GameInstance = GWorld.GameInstance
@@ -13,9 +11,7 @@ function RemovePlayerBuffsNode:Start(Context)
   end
   self:FinishAction()
 end
-
 function RemovePlayerBuffsNode:FinishAction()
   self:Finish()
 end
-
 return RemovePlayerBuffsNode

@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self, Initializer)
   self.BoardSize = FVector2D(30, 30)
   self.ScreenLocation = FVector2D(0, 0)
   self.TargetWorldLoc = FVector(0, 0, 0)
 end
-
 function M:Construct()
   self.Super.Construct(self)
   self:StopAllAnimations()
@@ -17,7 +15,6 @@ function M:Construct()
   self.DesignedSize = FVector2D(0.846 * ViewportSize.X / 2, 0.864 * ViewportSize.Y / 2)
   self.CenterPos = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2)
 end
-
 function M:InitDefeatedCharacter(InCharacter)
   self.DefeatedCharacter = InCharacter
   self.MainPlayer = UGameplayStatics.GetPlayerCameraManager(self, 0)
@@ -27,7 +24,6 @@ function M:InitDefeatedCharacter(InCharacter)
   self:ChangeUIDefeatedState(self.InteractiveComponent.bEnter)
   self.PlayerController = UGameplayStatics.GetPlayerController(self, 0)
 end
-
 function M:ChangeUIDefeatedState(bCanExecute)
   self.bCanExecute = bCanExecute
   if bCanExecute then
@@ -35,7 +31,6 @@ function M:ChangeUIDefeatedState(bCanExecute)
     self.Icon_GuideExecute:SetVisibility(ESlateVisibility.HitTestInvisible)
   end
 end
-
 function M:UpdateGuidePos(IsOutElliptic, IndicatorAngle, ScreenLocation)
   if IsOutElliptic then
     self.Common_Arrows:SetVisibility(ESlateVisibility.HitTestInvisible)
@@ -47,5 +42,4 @@ function M:UpdateGuidePos(IsOutElliptic, IndicatorAngle, ScreenLocation)
   end
   self.Panel_Execute.Slot:SetPosition(ScreenLocation)
 end
-
 return M

@@ -11,7 +11,6 @@ local Common_Dialog_LuaModel_Base = setmetatable({}, {
       if ContentWidget then
         Result = ContentWidget
       end
-      rawset(t, k, Result)
       return Result
     end
   end,
@@ -24,18 +23,14 @@ local Common_Dialog_LuaModel_Base = setmetatable({}, {
     end
   end
 })
-
 function Common_Dialog_LuaModel_Base:PackageData()
   return nil
 end
-
 function Common_Dialog_LuaModel_Base:BindDialogWidget(PopupId, DialogWidget)
   self.DialogWidget = DialogWidget
   self.PopupId = PopupId
 end
-
 function Common_Dialog_LuaModel_Base:Initialize()
-  DebugPrint("Tianyi@ \229\188\185\231\170\151 " .. tostring(self.PopupId) .. " \230\156\170\229\174\154\228\185\137\229\136\157\229\167\139\229\140\150\230\150\185\230\179\149!")
+  DebugPrint("Tianyi@ 弹窗 " .. tostring(self.PopupId) .. " 未定义初始化方法!")
 end
-
 return Common_Dialog_LuaModel_Base

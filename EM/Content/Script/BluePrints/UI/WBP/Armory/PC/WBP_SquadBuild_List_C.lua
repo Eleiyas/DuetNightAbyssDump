@@ -1,14 +1,14 @@
 require("UnLua")
 local WBP_Build_List_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
-  "BluePrints.Common.TimerMgr"
+  "BluePrints.Common.TimerMgr",
+  "BluePrints.UI.BP_UIState_C"
 })
 WBP_Build_List_C._components = {
   "BluePrints.UI.UI_PC.Common.LSFocusComp",
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
 WBP_Build_List_C.GamepadIcons = {}
-
 function WBP_Build_List_C:Construct()
   self.List_Select.BP_OnItemClicked:Clear()
   self.List_Select.BP_OnItemClicked:Add(self, self.OnListItemClicked)
@@ -25,13 +25,11 @@ function WBP_Build_List_C:Construct()
   self:RefreshBaseInfo()
   self:InitListenEvent()
 end
-
 function WBP_Build_List_C:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Build_List_C:BtnEventClear(Btn)
   Btn.OnPressed:Clear()
   Btn.OnReleased:Clear()
@@ -39,7 +37,6 @@ function WBP_Build_List_C:BtnEventClear(Btn)
   Btn.OnHovered:Clear()
   Btn.OnUnhovered:Clear()
 end
-
 function WBP_Build_List_C:InitKeyInfo()
   self.Key_L:CreateCommonKey({
     KeyInfoList = {
@@ -64,15 +61,12 @@ function WBP_Build_List_C:InitKeyInfo()
     }
   })
 end
-
 function WBP_Build_List_C:SetEmptyText(Text)
   self.Text_Empty:SetText(Text)
 end
-
 function WBP_Build_List_C:GetSquadMainUI()
   return UIManager(self):GetUIObj("SquadMainUINew")
 end
-
 function WBP_Build_List_C:IsSubstringContained(parentStr, subStr)
   local startPos, endPos = string.find(parentStr, subStr)
   if nil ~= startPos then
@@ -80,7 +74,6 @@ function WBP_Build_List_C:IsSubstringContained(parentStr, subStr)
   end
   return nil, nil
 end
-
 function WBP_Build_List_C:OnListItemInited(Content, EntryUI)
   local SquadMainUI = self:GetSquadMainUI()
   local Avatar = GWorld:GetAvatar()
@@ -111,13 +104,11 @@ function WBP_Build_List_C:OnListItemInited(Content, EntryUI)
     self.Event_OnEntryInitialized(self.EventReceiver, Content, EntryUI)
   end
 end
-
 function WBP_Build_List_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Build_List_C:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -125,7 +116,6 @@ function WBP_Build_List_C:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_Build_List_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     self.Switch_Mode_L:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -154,7 +144,6 @@ function WBP_Build_List_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadN
     self.Switch_Mode_R:SetActiveWidgetIndex(1)
   end
 end
-
 function WBP_Build_List_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsHandled = self:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -172,7 +161,6 @@ function WBP_Build_List_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
 end
-
 function WBP_Build_List_C:Init(Parent, Params)
   self.Parent = Parent
   self.Params = Params
@@ -227,7 +215,6 @@ function WBP_Build_List_C:Init(Parent, Params)
   self.Sort:BindEventOnSortTypeChanged(self, self.OnSortTypeChanged)
   self:FillListView()
 end
-
 function WBP_Build_List_C:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   self.Event_OnListItemClicked = Events.OnListItemClicked
@@ -236,21 +223,17 @@ function WBP_Build_List_C:BindEvents(EventReceiver, Events)
   self.Event_OnListItemInited = Events.OnListItemInited
   self.Event_OnEntryInitialized = Events.OnEntryInitialized
 end
-
 function WBP_Build_List_C:OnFocusReceivedEvent()
   self.IsFromListContent = true
 end
-
 function WBP_Build_List_C:SetSortWidgetFocus()
   self.Sort:SetFocus()
 end
-
 function WBP_Build_List_C:OnListItemClicked(Content)
   if self.Event_OnListItemClicked then
     self.Event_OnListItemClicked(self.EventReceiver, Content)
   end
 end
-
 function WBP_Build_List_C:OnFilterListItemClicked(Content)
   if self.FilterMod == "Single" then
     if Content.IsSelected then
@@ -281,7 +264,6 @@ function WBP_Build_List_C:OnFilterListItemClicked(Content)
     self:FillListView()
   end
 end
-
 function WBP_Build_List_C:SetFilterContentIsSelected(Content, IsSelected)
   Content.IsSelected = IsSelected
   if Content.UI then
@@ -291,7 +273,6 @@ function WBP_Build_List_C:SetFilterContentIsSelected(Content, IsSelected)
     self.SelectedFilterContents[Content.Tag] = Content
   end
 end
-
 function WBP_Build_List_C:UpdateFilterInfos()
   local Indexes = {}
   local bHasItem = next(self.SelectedFilterContents) ~= nil
@@ -311,7 +292,6 @@ function WBP_Build_List_C:UpdateFilterInfos()
   self.FilterIdxes = Indexes
   return self.FilterIdxes
 end
-
 function WBP_Build_List_C:OnSortListSelectionsChanged()
   local SortByIdx, SortType = self.Sort:GetSortInfos()
   if self.Event_SortFuncion then
@@ -319,7 +299,6 @@ function WBP_Build_List_C:OnSortListSelectionsChanged()
     self:FillListView()
   end
 end
-
 function WBP_Build_List_C:OnSortTypeChanged()
   local SortByIdx, SortType = self.Sort:GetSortInfos()
   if self.Event_SortFuncion then
@@ -327,10 +306,26 @@ function WBP_Build_List_C:OnSortTypeChanged()
     self:FillListView()
   end
 end
-
 function WBP_Build_List_C:FillListView()
   self.List_Select:ClearListItems()
   for _, value in ipairs(self.FilteredContents) do
+    if 1 == _ % 3 then
+      value.NavigationRule = {
+        FocusWidget = self.EMListView_Filter,
+        UINavigation = EUINavigation.Left,
+        UINavigationRuleFunc = function(Item, UINavigation, FocusWidget)
+          Item:SetNavigationRuleExplicit(UINavigation, FocusWidget)
+        end
+      }
+    else
+      value.NavigationRule = {
+        FocusWidget = EUINavigationRule.Escape,
+        UINavigation = EUINavigation.Left,
+        UINavigationRuleFunc = function(Item, UINavigation, FocusWidget)
+          Item:SetNavigationRuleBase(UINavigation, FocusWidget)
+        end
+      }
+    end
     self.List_Select:AddItem(value)
   end
   if #self.FilteredContents <= 0 then
@@ -358,39 +353,33 @@ function WBP_Build_List_C:FillListView()
     end, false, 0, "DelayAddEmptyItem", true)
   end
 end
-
 function WBP_Build_List_C:FillEmptyItems(Count)
   for i = 1, Count do
     self.List_Select:AddItem(NewObject(UIUtils.GetCommonItemContentClass()))
   end
 end
-
 function WBP_Build_List_C:ScrollItemIntoView(Content)
   if Content then
     self.List_Select:BP_ScrollItemIntoView(Content)
   end
 end
-
 function WBP_Build_List_C:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "Selective_Listing_In", nil)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function WBP_Build_List_C:PlayOutAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "Selective_Listing_In", {ToEnd = 1})
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Build_List_C:Destruct()
   if AudioManager(self):IsSoundPlaying(self, "Selective_Listing_In") then
     AudioManager(self):SetEventSoundParam(self, "Selective_Listing_In", {ToEnd = 1})
   end
   self:RemoveTimer("DelayAddEmptyItem")
 end
-
 AssembleComponents(WBP_Build_List_C)
 return WBP_Build_List_C

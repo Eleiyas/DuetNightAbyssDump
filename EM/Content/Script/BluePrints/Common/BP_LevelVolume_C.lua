@@ -1,14 +1,11 @@
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
 local BP_LevelVolume_C = Class()
-
 function BP_LevelVolume_C:Initialize(Initializer)
   self.UnLoadBoxRate = 1.3
 end
-
 function BP_LevelVolume_C:ReceiveBeginPlay()
 end
-
 function BP_LevelVolume_C:LoadLevel(PlayerCharacter)
   if IsAuthority(PlayerCharacter) or MiscUtils.IsAutonomousProxy(PlayerCharacter) then
     self:CheckLevelLoader()
@@ -25,7 +22,6 @@ function BP_LevelVolume_C:LoadLevel(PlayerCharacter)
     end
   end
 end
-
 function BP_LevelVolume_C:UnloadLevel(PlayerCharacter)
   if MiscUtils.IsAutonomousProxy(PlayerCharacter) then
     if not self:CheckIsCharacterIn(PlayerCharacter) then
@@ -56,22 +52,18 @@ function BP_LevelVolume_C:UnloadLevel(PlayerCharacter)
     self:Unload()
   end
 end
-
 function BP_LevelVolume_C:Unload()
   self:CheckLevelLoader()
   if self.levelLoader then
     self.levelLoader:UnloadArtLevel(self.loadName)
   end
 end
-
 function BP_LevelVolume_C:CheckLevelLoader()
   if not IsValid(self.levelLoader) then
     self.levelLoader = UE4.UGameplayStatics.GetActorOfClass(self, UE4.AEMLevelLoader)
   end
 end
-
 function BP_LevelVolume_C:CheckIsCharacterIn(PlayerCharacter)
   return UE4.UKismetMathLibrary.IsPointInBoxWithTransform(PlayerCharacter:K2_GetActorLocation(), self.UnloadBox:K2_GetComponentToWorld(), self.UnloadBox:GetUnscaledBoxExtent())
 end
-
 return BP_LevelVolume_C

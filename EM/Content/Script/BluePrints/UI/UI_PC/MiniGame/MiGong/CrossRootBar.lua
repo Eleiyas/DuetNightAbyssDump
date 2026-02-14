@@ -2,7 +2,6 @@ require("UnLua")
 local CrossRootBar = Class({
   "BluePrints.UI.UI_PC.MiniGame.MiGong.RootBar"
 })
-
 function CrossRootBar:SetCrossPercent()
   local Center = FVector2D((self.Left + self.Right) / 2, (self.Top + self.Down) / 2)
   local ArrowRelativePos = self.ArrowPosition - Center
@@ -28,7 +27,6 @@ function CrossRootBar:SetCrossPercent()
   end
   self:SetPercent(PercentLeft, PercentRight, PercentUp, PercentDown)
 end
-
 function CrossRootBar:SetCrossFillType()
   local SourceDiection = "Left"
   for i, v in pairs(self.RootWidget.GameMap[self.LastBarIndex]) do
@@ -74,7 +72,6 @@ function CrossRootBar:SetCrossFillType()
     self.ProgressBar_Down:SetFillType(3)
   end
 end
-
 function CrossRootBar:ChangeNowBarSetPercent(NextBarIndex)
   local DirectionType = {
     "Left",
@@ -106,12 +103,10 @@ function CrossRootBar:ChangeNowBarSetPercent(NextBarIndex)
     end
   end
 end
-
 function CrossRootBar:InitPositionAndSize(Discrete)
   UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Line_Left):SetSize(FVector2D(Discrete / 2, self.Thick))
   UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Line_Right):SetSize(FVector2D(Discrete / 2, self.Thick))
   UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Line_Up):SetSize(FVector2D(self.Thick, Discrete / 2))
   UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Line_Down):SetSize(FVector2D(self.Thick, Discrete / 2))
 end
-
 return CrossRootBar

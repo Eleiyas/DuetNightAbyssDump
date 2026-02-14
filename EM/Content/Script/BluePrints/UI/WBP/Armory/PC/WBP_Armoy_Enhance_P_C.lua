@@ -4,15 +4,12 @@ local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_GoEnhance.Button_Area.OnClicked:Add(self, self.OnClickGoEnhance)
 end
-
 function M:Destruct()
   self.Btn_GoEnhance.Button_Area.OnClicked:Remove(self, self.OnClickGoEnhance)
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.TargetWeapon = Params.Target
@@ -33,7 +30,6 @@ function M:Init(Params)
   self:UpdateAllWeaponData()
   self:InitUIInfo()
 end
-
 function M:UpdateAllWeaponData()
   local Avatar = GWorld:GetAvatar()
   self.CurrentPlayerWeapon = Avatar.Weapons[Avatar[self.Tag .. self.Type]]
@@ -43,7 +39,6 @@ function M:UpdateAllWeaponData()
     end
   end
 end
-
 function M:InitUIInfo()
   self.Text_EnhanceLevel:SetText(GText("UI_WeaponStrength_Level"))
   self.Num_EnhanceLevel:SetText(self.TargetWeaponData.GradeLevel)
@@ -54,7 +49,7 @@ function M:InitUIInfo()
   self.CardLevelData = DataMgr.WeaponCardLevel[self.TargetWeaponData.WeaponId]
   self.CardLevelMax = nil
   if not self.CardLevelData then
-    print(_G.ErrorTag, "WeaponCardLevel\232\161\168\230\178\161\230\156\137\232\175\165\230\173\166\229\153\168")
+    print(_G.ErrorTag, "WeaponCardLevel表没有该武器")
     self.CardLevelMax = 5
   else
     self.CardLevelMax = self.CardLevelData.CardLevelMax
@@ -73,7 +68,6 @@ function M:InitUIInfo()
     self.Btn_GoEnhance:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:EnhanceItem(Level)
   local WeaponRarityMap = {
     [1] = "Gray",
@@ -113,33 +107,28 @@ function M:EnhanceItem(Level)
     end
   end
 end
-
 function M:OnClickGoEnhance()
   DebugPrint("OnClickGoEnhance")
   local UIConfig = DataMgr.SystemUI.ArmoryCardLevelWeapon
   local Params = {BehaviourType = "Enhance"}
   UIManager(self):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, self.Parent:GetZOrder(), CommonConst.ArmoryType.Weapon, self.TargetWeapon, self, Params)
 end
-
 function M:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   Events = Events or {}
   self.Event_OnConsumedItemChanged = Events.OnConsumedItemChanged
   self.Event_OnWeaponGradeLevelUp = Events.OnWeaponGradeLevelUp
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Auto_Out)
   self:PlayAnimation(self.Auto_In)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.Auto_In)
   self:PlayAnimation(self.Auto_Out)
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -149,10 +138,8 @@ function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled(), false
 end
-
 function M:OnParentFaceButtonBottomKeyDown()
   self:OnClickGoEnhance()
   return UE4.UWidgetBlueprintLibrary.Handled(), true
 end
-
 return M

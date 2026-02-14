@@ -5,7 +5,6 @@ local M = Class({
 local ActivityReddotHelper = require("BluePrints.UI.WBP.Activity.ActivityReddotHelper")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local EastSeasonQuestUtils = require("BluePrints.UI.WBP.Activity.Widget.EastSeason.EastSeasonQuestUtils")
-
 function M:InitUI(ActivityConfigData, PageConfigData)
   self.FocusWidgetName = "SelectView"
   self.IsLock = false
@@ -30,8 +29,15 @@ function M:InitUI(ActivityConfigData, PageConfigData)
       end
     end
   end
+  if self.Btn_Shop then
+    self.Btn_Shop.Key_Controller:CreateCommonKey({
+      KeyInfoList = {
+        {Type = "Img", ImgShortPath = "View"}
+      }
+    })
+  end
+  self.Entrance04:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:PlaySplineAnimation()
   for i = 1, 4 do
     local Entrance = self["Entrance0" .. i]
@@ -40,7 +46,6 @@ function M:PlaySplineAnimation()
     end
   end
 end
-
 function M:RefreshUI()
   self:PlayAnimation(self.In)
   for i = 1, 4 do
@@ -62,7 +67,6 @@ function M:RefreshUI()
     ActivityReddotHelper.TrySubReddotCount(ActivityUtils, self.EventId, "Red")
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -75,16 +79,25 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:FocusUI()
   self.Entrance01:SetFocus()
 end
-
 function M:SetActivityMainFocus()
   local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
   if ActivityMain then
-    ActivityMain:SetFocus()
+    ActivityMain.List_Tab:SetFocus()
   end
 end
-
+function M:UpdateUIStyleInPlatform(IsUseGamePad)
+  if self.Btn_Shop then
+    self.Btn_Shop.Key_Controller:SetVisibility(IsUseGamePad and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed)
+  end
+end
+function M:HandleKeyDownOnGamePad(InKeyName)
+  if InKeyName == UIConst.GamePadKey.SpecialLeft and self.Btn_Shop then
+    self.Btn_Shop:OnClickShop()
+    return true
+  end
+  return false
+end
 return M

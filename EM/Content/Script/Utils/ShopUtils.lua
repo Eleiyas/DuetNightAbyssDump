@@ -3,52 +3,66 @@ local TimeUtils = require("Utils.TimeUtils")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local MonthCardModel = require("BluePrints.UI.WBP.Perk.MonthCard.MonthCardModel")
 local M = {}
-
 function M:IsCanOpenPay(bOpen)
   return true
 end
-
 function M:GetSDKRegisterRegionCode()
+  local DefaultRegion = "CN"
+  if UE.AHotUpdateGameMode.IsGlobalPak() then
+    DefaultRegion = "US"
+  end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    return "CN"
+    return DefaultRegion
   end
   local RegionCode = Avatar.SdkRegisterRegionCode
-  if not RegionCode or "" == RegionCode then
-    RegionCode = "CN"
+  if not RegionCode or "" == RegionCode or not DataMgr.CountryRegionCode[RegionCode] then
+    RegionCode = DefaultRegion
   end
   return RegionCode
 end
-
 function M:GetRegionCode()
+  local DefaultRegion = "CN"
+  if UE.AHotUpdateGameMode.IsGlobalPak() then
+    DefaultRegion = "US"
+  end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    return "CN"
+    return DefaultRegion
   end
   local RegionCode = Avatar.SdkLoginRegionCode
-  if not RegionCode or "" == RegionCode then
-    RegionCode = "CN"
+  if not RegionCode or "" == RegionCode or not DataMgr.CountryRegionCode[RegionCode] then
+    RegionCode = DefaultRegion
   end
   return RegionCode
 end
-
 function M:GetCurrencyType()
+  local DefaultRegion = "CN"
+  if UE.AHotUpdateGameMode.IsGlobalPak() then
+    DefaultRegion = "US"
+  end
   local RegionCode = self:GetRegionCode()
-  assert(DataMgr.CountryRegionCode[RegionCode], "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\229\156\176\229\140\186:" .. RegionCode)
+  if not DataMgr.CountryRegionCode[RegionCode] then
+    return DataMgr.CountryRegionCode[DefaultRegion].MoneySymbol
+  end
   return DataMgr.CountryRegionCode[RegionCode].MoneySymbol
 end
-
 function M:GetCurrencyPrice()
+  local DefaultRegion = "CN"
+  if UE.AHotUpdateGameMode.IsGlobalPak() then
+    DefaultRegion = "US"
+  end
   local RegionCode = self:GetRegionCode()
-  assert(DataMgr.CountryRegionCode[RegionCode], "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\229\156\176\229\140\186:" .. RegionCode)
+  if not DataMgr.CountryRegionCode[RegionCode] then
+    return DataMgr.CountryRegionCode[DefaultRegion].MoneyCode
+  end
   return "Price" .. DataMgr.CountryRegionCode[RegionCode].MoneyCode
 end
-
 function M:HasFreeShop(ShopType)
   local ItemIds = {}
   for _, MainTabId in pairs(DataMgr.Shop[ShopType].MainTabId) do
     local Data = DataMgr.ShopItem2ShopTab[MainTabId]
-    assert(Data, "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\229\149\134\229\159\142\228\184\187\233\161\181\231\173\190:" .. MainTabId)
+    assert(Data, "未找到对应商城主页签:" .. MainTabId)
     for _, ShopItemData in pairs(Data) do
       for _, ItemId in pairs(ShopItemData) do
         if self:IsFree(ItemId) then
@@ -59,7 +73,6 @@ function M:HasFreeShop(ShopType)
   end
   return #ItemIds > 0, ItemIds
 end
-
 function M:HasNewShop(ShopType)
   local ItemIds = {}
   local Avatar = GWorld:GetAvatar()
@@ -68,7 +81,7 @@ function M:HasNewShop(ShopType)
   end
   for _, MainTabId in pairs(DataMgr.Shop[ShopType].MainTabId) do
     local Data = DataMgr.ShopItem2ShopTab[MainTabId]
-    assert(Data, "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\229\149\134\229\159\142\228\184\187\233\161\181\231\173\190:" .. MainTabId)
+    assert(Data, "未找到对应商城主页签:" .. MainTabId)
     for _, ShopItemData in pairs(Data) do
       for _, ItemId in pairs(ShopItemData) do
         if Avatar:CheckShopItemEnhanceRedDot(ItemId) then
@@ -79,7 +92,6 @@ function M:HasNewShop(ShopType)
   end
   return #ItemIds > 0, ItemIds
 end
-
 function M:IsFree(ShopItemId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -90,7 +102,6 @@ function M:IsFree(ShopItemId)
   end
   return false
 end
-
 function M:GetShopItemCutoffData(ShopItemId)
   if not DataMgr.ShopItem2Cutoff[ShopItemId] then
     return
@@ -98,18 +109,17 @@ function M:GetShopItemCutoffData(ShopItemId)
   for _, CutoffId in pairs(DataMgr.ShopItem2Cutoff[ShopItemId]) do
     local CutoffData = DataMgr.Cutoff[CutoffId]
     local NowTime = TimeUtils.NowTime()
-    if not (not (NowTime > CutoffData.CutoffStartTime) or CutoffData.CutoffEndTime) or NowTime < CutoffData.CutoffEndTime then
+    if NowTime > CutoffData.CutoffStartTime and (not CutoffData.CutoffEndTime or NowTime < CutoffData.CutoffEndTime) then
       return CutoffData
     end
   end
 end
-
 function M:GetShopItemPrice(ShopItemId)
   local ShopItemData = DataMgr.ShopItem[ShopItemId]
-  assert(ShopItemData, "\229\149\134\229\147\129\228\184\141\229\173\152\229\156\168\239\188\154" .. ShopItemId)
+  assert(ShopItemData, "商品不存在：" .. ShopItemId)
   if DataMgr.ShopItem2PayGoods[ShopItemId] then
     local PayGoodData = DataMgr.PayGoods[DataMgr.ShopItem2PayGoods[ShopItemId]]
-    assert(PayGoodData, "\229\133\133\229\128\188\229\149\134\229\147\129\229\175\185\229\186\148\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. DataMgr.ShopItem2PayGoods[ShopItemId])
+    assert(PayGoodData, "充值商品对应信息不存在:" .. DataMgr.ShopItem2PayGoods[ShopItemId])
     local PriceType = self:GetCurrencyPrice()
     local Price = PayGoodData[PriceType]
     return Price
@@ -121,7 +131,6 @@ function M:GetShopItemPrice(ShopItemId)
     return ShopItemData.Price
   end
 end
-
 function M:GetShopItemPurchaseLimit(ShopItemId)
   if not ShopItemId then
     return 0
@@ -139,9 +148,123 @@ function M:GetShopItemPurchaseLimit(ShopItemId)
   end
   return PurchaseLimit or -1
 end
-
+function M:GetGiftItemPurchaseLimit(ShopItemId, Uid)
+  if not ShopItemId then
+    ScreenPrint("没有传入商品:" .. ShopItemId)
+    return -1
+  end
+  local ShopData = DataMgr.ShopItem[ShopItemId]
+  if not ShopData then
+    ScreenPrint("商品不存在 SendGiftLimit:" .. ShopItemId)
+    return -1
+  end
+  local MaxTimes = ShopData.SendGiftLimit
+  if not MaxTimes then
+    return -1
+  end
+  local SentTimes = GiftModel:GetGiftHadSendCount(ShopItemId, Uid)
+  local remain = MaxTimes - (SentTimes or 0)
+  if remain < 0 then
+    remain = 0
+  end
+  return remain
+end
+function M:GetGiftItemPurchaseTotalLimit(ShopItemId)
+  if not ShopItemId then
+    ScreenPrint("没有传入商品:" .. ShopItemId)
+    return -1
+  end
+  local MaxTimes = DataMgr.ShopItem[ShopItemId].SendGiftLimit
+  if not MaxTimes then
+    return -1
+  end
+  return MaxTimes
+end
+function M:GetContextRemainAndTotal(ShopItemId)
+  local InGift = GiftController and GiftController:IsInGiftShop()
+  if InGift then
+    local GiftMain = GiftController and GiftController:GetGiftMainPage() or nil
+    local Uid = GiftMain and GiftMain.FriendUid or nil
+    local Remain = self:GetGiftItemPurchaseLimit(ShopItemId, Uid)
+    local Total = self:GetGiftItemPurchaseTotalLimit(ShopItemId)
+    return Remain, Total
+  else
+    local Remain = self:GetShopItemPurchaseLimit(ShopItemId)
+    local ShopData = DataMgr.ShopItem[ShopItemId]
+    local Total = ShopData and ShopData.PurchaseLimit or -1
+    return Remain, Total
+  end
+end
+function M:GetUnifiedLimitText(ShopItemId, InCludeText)
+  local Remain, Total = self:GetContextRemainAndTotal(ShopItemId)
+  if -1 == Remain or -1 == Total or Remain < 0 or Total < 0 then
+    return ""
+  end
+  if InCludeText then
+    local InGift = GiftController and GiftController:IsInGiftShop()
+    local Key = InGift and "UI_SendGift_GiftItemMax" or "UI_SHOP_SHOPITEMLIMIT"
+    return GText(Key) .. Remain .. "/" .. Total
+  end
+  return Remain .. "/" .. Total
+end
+function M:ShouldShowDiscount(ShopItemId, ShopItemData)
+  if not ShopItemData or not ShopItemData.ShowBonus then
+    return false
+  end
+  local InGift = GiftController and GiftController:IsInGiftShop()
+  if InGift then
+    local Remain, Total = self:GetContextRemainAndTotal(ShopItemId)
+    return -1 == Remain or -1 == Total or Remain > 0
+  else
+    local Avatar = GWorld:GetAvatar()
+    if not Avatar then
+      return false
+    end
+    return not Avatar:CheckShopItemSoldOutDisplay(ShopItemId)
+  end
+end
+function M:ShouldPlaySoldOutAnimation(ShopItemId)
+  local Remain, Total = self:GetContextRemainAndTotal(ShopItemId)
+  local Unlimited = -1 == Remain or -1 == Total
+  return not Unlimited and not (Remain > 0)
+end
+function M:GetGiftItemCanShow(ShopItemId, Uid)
+  assert(DataMgr.ShopItem[ShopItemId], "商品不存在:" .. ShopItemId)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if not Avatar:CheckIsEffective(ShopItemId) then
+    return false
+  end
+  if 0 == self:GetGiftItemPurchaseLimit(ShopItemId, Uid) and not DataMgr.ShopItem[ShopItemId].RefreshTime and not DataMgr.ShopItem[ShopItemId].SoldOutDisplay then
+    return false
+  end
+  if Avatar:CheckShopItemHasRequire(ShopItemId) then
+    return false
+  end
+  if Avatar:CheckShopItemHasRexclusionGroup(ShopItemId) then
+    return false
+  end
+  return true
+end
+function M:GetImprShopItemPurchaseLimit(ShopItemId)
+  local AvailableTime = 0
+  local ShopItemData = DataMgr.ImpressionShop[ShopItemId]
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    local Info = Avatar.ImpressionShops[ShopItemData.ImpressionShopId]
+    if ShopItemData.PurchaseLimit and Info then
+      local LimitTime = ShopItemData.PurchaseLimit
+      AvailableTime = LimitTime - Info.AlreadyPurchaseTimes
+    else
+      AvailableTime = -1
+    end
+  end
+  return AvailableTime
+end
 function M:GetShopItemCanShow(ShopItemId)
-  assert(DataMgr.ShopItem[ShopItemId], "\229\149\134\229\147\129\228\184\141\229\173\152\229\156\168\239\188\154" .. ShopItemId)
+  assert(DataMgr.ShopItem[ShopItemId], "商品不存在：" .. ShopItemId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
@@ -163,8 +286,59 @@ function M:GetShopItemCanShow(ShopItemId)
   end
   return true
 end
-
-function M:RefreshShopRefreshTime(RefreshTime, Widget)
+function M:GetRefreshTime(ItemId)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local ShopNetData = Avatar.ShopItems[ItemId]
+  if ShopNetData and ShopNetData.LastRefreshTime then
+    return ShopNetData.LastRefreshTime
+  end
+  local ShopItemRefreshTimeType = {
+    NOREFRESH = 0,
+    HOUR = 1,
+    DAY = 2,
+    WEEK = 3,
+    MONTH = 4
+  }
+  local ShopItemInfo = DataMgr.ShopItem[ItemId]
+  local RefreshTime = ShopItemInfo.RefreshTime
+  local RefreshTimeType = ShopItemRefreshTimeType.NOREFRESH
+  if RefreshTime then
+    for key, value in pairs(RefreshTime) do
+      if ShopItemRefreshTimeType[key] then
+        RefreshTimeType = ShopItemRefreshTimeType[key]
+      end
+    end
+  end
+  local StartTime, LastRefreshTime
+  if ShopItemInfo.NewRefreshBeginTime then
+    StartTime = ShopItemInfo.NewRefreshBeginTime
+  else
+    StartTime = TimeUtils.DataToTimestamp(CommonConst.ShopRefreshBeginTime[1], CommonConst.ShopRefreshBeginTime[2], CommonConst.ShopRefreshBeginTime[3], CommonConst.ShopRefreshBeginTime[4], CommonConst.ShopRefreshBeginTime[5], CommonConst.ShopRefreshBeginTime[6])
+  end
+  if RefreshTimeType == ShopItemRefreshTimeType.HOUR then
+    local year, month, day, hour, min, sec = TimeUtils.TimestampToData(StartTime)
+    LastRefreshTime = TimeUtils.DataToTimestamp(year, month, day, hour, 0, 0)
+  elseif RefreshTimeType == ShopItemRefreshTimeType.DAY then
+    local year, month, day, hour, min, sec = TimeUtils.TimestampToData(StartTime)
+    local refresh_hms = CommonConst.GAME_REFRESH_HMS
+    LastRefreshTime = TimeUtils.DataToTimestamp(year, month, day, table.unpack(refresh_hms))
+  elseif RefreshTimeType == ShopItemRefreshTimeType.WEEK then
+    StartTime = StartTime - CommonConst.SECOND_IN_WEEKDAY
+    local refresh_hms = CommonConst.GAME_REFRESH_HMS
+    LastRefreshTime = TimeUtils.NextWeeklyRefreshTime(StartTime, refresh_hms)
+  elseif RefreshTimeType == ShopItemRefreshTimeType.MONTH then
+    local year, month, day, hour, min, sec = TimeUtils.TimestampToData(StartTime)
+    local refresh_hms = CommonConst.GAME_REFRESH_HMS
+    LastRefreshTime = TimeUtils.DataToTimestamp(year, month, 1, table.unpack(refresh_hms))
+  else
+    LastRefreshTime = StartTime
+  end
+  return LastRefreshTime
+end
+function M:RefreshShopRefreshTime(RefreshTime, Widget, ShopItemId)
   local ShopRefreshBeginTime = CommonConst.ShopRefreshBeginTime
   local StartTime = os.time({
     year = ShopRefreshBeginTime[1],
@@ -174,6 +348,16 @@ function M:RefreshShopRefreshTime(RefreshTime, Widget)
     min = ShopRefreshBeginTime[5],
     sec = ShopRefreshBeginTime[6]
   })
+  if ShopItemId then
+    local LastRefreshTime = M:GetRefreshTime(ShopItemId)
+    if not LastRefreshTime then
+      if self and self.RemoveTimer then
+        self:RemoveTimer("RefreshTimeTimer")
+      end
+      return
+    end
+    StartTime = LastRefreshTime
+  end
   local NextRefreshTimeTable = os.date("*t", StartTime)
   local CurrentTime = TimeUtils.NowTime()
   local Interval = 0
@@ -195,7 +379,8 @@ function M:RefreshShopRefreshTime(RefreshTime, Widget)
     timeDifference = CurrentTime - LastRefreshTime
     RemainRefreshTime = Interval - timeDifference % Interval
   elseif RefreshTime.MONTH then
-    while M:IsLaterThanNow(NextRefreshTimeTable) == false do
+    local NowRealTime = os.date("*t", TimeUtils.NowTime())
+    while M:IsLaterThanNow(NextRefreshTimeTable, NowRealTime) == false do
       if NextRefreshTimeTable.month + RefreshTime.MONTH > 12 then
         NextRefreshTimeTable.year = NextRefreshTimeTable.year + 1
         NextRefreshTimeTable.month = NextRefreshTimeTable.month + RefreshTime.MONTH - 12
@@ -209,7 +394,6 @@ function M:RefreshShopRefreshTime(RefreshTime, Widget)
   local RemainTimeStr = M:GetRefreshTimeStr(RemainRefreshTime)
   Widget:SetText(RemainTimeStr)
 end
-
 function M:GetRefreshTimeStr(RefreshTime)
   local RemainTimeStr = ""
   local TimeCount = 0
@@ -230,14 +414,13 @@ function M:GetRefreshTimeStr(RefreshTime)
   end
   if RefreshTime > 0 and TimeCount < 2 or 1 == TimeCount then
     TimeCount = TimeCount + 1
-    RemainTimeStr = RemainTimeStr .. string.format(GText("UI_SHOP_REMAINTIME_SECOND"), RefreshTime)
+    RemainTimeStr = RemainTimeStr .. string.format(GText("UI_SHOP_REMAINTIME_SECOND"), math.floor(RefreshTime))
   end
   return RemainTimeStr
 end
-
 function M:UpdateLimitTime(ShopItemEndTime)
   local StartTiem = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(TimeUtils.NowTime())
-  local EndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(ShopItemEndTime)
+  local EndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(ShopItemEndTime and ShopItemEndTime.GetTime())
   local RemainTime = UKismetMathLibrary.Subtract_DateTimeDateTime(EndTime, StartTiem)
   local RemainTimeStr = ""
   local TimeCount = 0
@@ -259,12 +442,11 @@ function M:UpdateLimitTime(ShopItemEndTime)
   end
   return string.format(GText("UI_SHOP_REMAINTIME"), RemainTimeStr)
 end
-
-function M:IsLaterThanNow(Time)
-  local CurrentYear = os.date("*t", TimeUtils.NowTime()).year
-  local CurrentMonth = os.date("*t", TimeUtils.NowTime()).month
-  local CurrentDay = os.date("*t", TimeUtils.NowTime()).day
-  local CurrentHour = os.date("*t", TimeUtils.NowTime()).hour
+function M:IsLaterThanNow(Time, NowRealTime)
+  local CurrentYear = NowRealTime.year
+  local CurrentMonth = NowRealTime.month
+  local CurrentDay = NowRealTime.day
+  local CurrentHour = NowRealTime.hour
   if CurrentYear > Time.year then
     return false
   elseif CurrentYear == Time.year then
@@ -280,7 +462,6 @@ function M:IsLaterThanNow(Time)
   end
   return true
 end
-
 function M:CanPurchase(ShopItemData, PriceType, Price)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -298,6 +479,10 @@ function M:CanPurchase(ShopItemData, PriceType, Price)
   end
   if ShopItemData.UnlockLevel and Avatar.Level < ShopItemData.UnlockLevel then
     ShopItemData.PurchaseFailRes = 3
+    return false
+  end
+  if not Avatar:CheckShopItemUnlockRaidPoint(ShopItemData.ItemId) then
+    ShopItemData.PurchaseFailRes = 7
     return false
   end
   if DataMgr.ShopItem2PayGoods[ShopItemData.ItemId] then
@@ -322,7 +507,6 @@ function M:CanPurchase(ShopItemData, PriceType, Price)
   end
   return true
 end
-
 function M:Purchase(ShopItemData, ParentWidget)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -348,7 +532,9 @@ function M:Purchase(ShopItemData, ParentWidget)
         PaymentParameters.cpOrder = OrderId
         PaymentParameters.callbackUrl = CallbackUrl
         local GameRoleInfo = HeroUSDKUtils.GenHeroHDCGameRoleInfo()
-        HeroUSDKSubsystem():HeroSDKPay(PaymentParameters, GameRoleInfo)
+        local ItemName = ""
+        ItemName = GText(ItemUtils:GetDropName(ShopItemData.TypeId, ShopItemData.ItemType))
+        HeroUSDKSubsystem():HeroSDKPay(PaymentParameters, GameRoleInfo, ItemName)
         local TrackInfo = {}
         TrackInfo.product_id = DataMgr.ShopItem2PayGoods[ShopItemData.ItemId]
         if ShopItemData.ItemId then
@@ -371,6 +557,8 @@ function M:Purchase(ShopItemData, ParentWidget)
       UIManager(self):ShowUITip("CommonToastMain", string.format(GText("UI_Shop_Toast_No_Coin"), GText(DataMgr.Resource[ShopItemData.PriceType].ResourceName)), 1.0)
     elseif 3 == ShopItemData.PurchaseFailRes then
       UIManager(self):ShowUITip("CommonToastMain", string.format(GText("UI_Shop_Toast_Locked"), ShopItemData.UnlockLevel), 1.0)
+    elseif 7 == ShopItemData.PurchaseFailRes then
+      UIManager(self):ShowUITip("CommonToastMain", string.format(GText("RaidDungeon_Shop_Locked"), ShopItemData.UnlockRaidPoint), 1.0)
     elseif 6 == ShopItemData.PurchaseFailRes then
       UIManager(GWorld.GameInstance):ShowError(ErrorCode.RET_SHOPITEM_UNIQUE_ALREDAY_OWNED, 1.0, "CommonToastMain")
     elseif 4 == ShopItemData.PurchaseFailRes then
@@ -397,7 +585,6 @@ function M:Purchase(ShopItemData, ParentWidget)
       if string.find(PopoverText, "&Num2&") then
         PopoverText = string.gsub(PopoverText, "&Num2&", ParentWidget.CurrentCount)
       end
-      
       local function Confirm()
         local Coin4Count = 0
         if Avatar.Resources[CommonConst.Coins.Coin4] then
@@ -407,7 +594,6 @@ function M:Purchase(ShopItemData, ParentWidget)
           local function JumpToShop()
             PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
           end
-          
           local Params = {}
           Params.Title = GText("UI_COMMONPOP_TITLE_100137")
           Params.ShortText = GText("UI_COMMONPOP_TEXT_100137")
@@ -419,7 +605,6 @@ function M:Purchase(ShopItemData, ParentWidget)
           self:SendExchangeRequest(ShopItemData.ItemId, ParentWidget.CurrentCount)
         end
       end
-      
       local ItemList = {}
       local Coin4Count = Avatar.Resources[CommonConst.Coins.Coin4] and Avatar.Resources[CommonConst.Coins.Coin4].Count or 0
       table.insert(ItemList, {
@@ -438,7 +623,6 @@ function M:Purchase(ShopItemData, ParentWidget)
       local function JumpToShop()
         PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
       end
-      
       local Params = {}
       Params.Title = GText("UI_COMMONPOP_TITLE_100138")
       Params.ShortText = GText("UI_COMMONPOP_TEXT_100198")
@@ -453,7 +637,6 @@ function M:Purchase(ShopItemData, ParentWidget)
   ShopMain:BlockAllUIInput(true)
   Avatar:PurchaseShopItem(ShopItemData.ItemId, 1)
 end
-
 function M:SendPurchaseRequest(ShopItemId, CurrentCount)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -473,18 +656,20 @@ function M:SendPurchaseRequest(ShopItemId, CurrentCount)
     CommonShopActivity:BlockAllUIInput(true)
   end
 end
-
 function M:SendExchangeRequest(ShopItemId, CurrentCount, NotShow)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
-  
   local function Callback(Ret, ShopItemId, Count, PackRewards)
     EventManager:FireEvent(EventID.OnPurchaseShopItem, Ret, ShopItemId, CurrentCount)
     local ShopMain = UIManager(GWorld.GameInstance):GetUIObj("ShopMain")
     if ShopMain then
       ShopMain:BlockAllUIInput(false)
+    end
+    local SkinPreview = UIManager(GWorld.GameInstance):GetUIObj("SkinPreview")
+    if SkinPreview then
+      SkinPreview:BlockAllUIInput(false)
     end
     if Ret == ErrorCode.RET_SUCCESS then
       local ShopItemData = DataMgr.ShopItem[ShopItemId]
@@ -506,24 +691,220 @@ function M:SendExchangeRequest(ShopItemId, CurrentCount, NotShow)
     if ShopMain then
       ShopMain:RefreshSubTabData(ShopMain.CurSubTabMap, true, true)
     end
+    if SkinPreview then
+      SkinPreview:RefreshPurchaseState()
+    end
   end
-  
   Avatar:PurchaseShopItemUseCoin1(ShopItemId, CurrentCount, Callback)
 end
-
+function M:ShowPurchaseDialog(ItemType, ItemId, ShopType, UIName)
+  if not ItemType or not ItemId then
+    return
+  end
+  ShopType = ShopType or "Shop"
+  if (not (DataMgr.ShopItem2ShopSubId[ItemType] and DataMgr.ShopItem2ShopSubId[ItemType][ShopType]) or not DataMgr.ShopItem2ShopSubId[ItemType][ShopType][ItemId]) and DataMgr.ShopItem2ShopSubId[ItemType][ShopType][ItemId].ShopItemId then
+    return false
+  end
+  local SelectShopItemId
+  for _, ShopItemData in ipairs(DataMgr.ShopItem2ShopSubId[ItemType][ShopType][ItemId]) do
+    if ShopUtils:GetShopItemCanShow(ShopItemData.ShopItemId) and 0 ~= ShopUtils:GetShopItemPurchaseLimit(ShopItemData.ShopItemId) then
+      SelectShopItemId = ShopItemData.ShopItemId
+      break
+    end
+  end
+  if not SelectShopItemId then
+    return false
+  end
+  local ShopItemData = setmetatable({}, {
+    __index = DataMgr.ShopItem[SelectShopItemId]
+  })
+  local FundId = ShopItemData.PriceType
+  local FundNeed = ShopUtils:GetShopItemPrice(ShopItemData.ItemId)
+  ShopUtils:CanPurchase(ShopItemData, FundId, FundNeed)
+  if DataMgr.ShopItem2PayGoods[ShopItemData.ItemId] then
+    local Avatar = GWorld:GetAvatar()
+    if not Avatar then
+      return false
+    end
+    if not HeroUSDKSubsystem():IsHeroSDKEnable() then
+      local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
+      GMFunctionLibrary.ExecConsoleCommand(self:GetGameInstance(), "sgm pgi " .. DataMgr.ShopItem2PayGoods[ShopItemData.ItemId])
+      return
+    end
+    Avatar:RequestPay(DataMgr.ShopItem2PayGoods[ShopItemData.ItemId], function(ret, OrderId, CallbackUrl)
+      if not ErrorCode:Check(ret) then
+        return
+      end
+      local PaymentParameters = FHeroUPaymentParameters()
+      PaymentParameters.goodsId = DataMgr.ShopItem2PayGoods[ShopItemData.ItemId]
+      PaymentParameters.cpOrder = OrderId
+      PaymentParameters.callbackUrl = CallbackUrl
+      local GameRoleInfo = HeroUSDKUtils.GenHeroHDCGameRoleInfo()
+      HeroUSDKSubsystem():HeroSDKPay(PaymentParameters, GameRoleInfo)
+    end)
+  else
+    AudioManager(self):PlayItemSound(self, ShopItemData.TypeId, "Click", ShopItemData.ItemType)
+    local RemainTimes = ShopUtils:GetShopItemPurchaseLimit(ShopItemData.ItemId)
+    local ItemData = DataMgr[ShopItemData.ItemType][ShopItemData.TypeId]
+    local bForbidden = not ShopUtils:CanPurchase(ShopItemData, ShopItemData.PriceType, ShopUtils:GetShopItemPrice(ShopItemData.ItemId))
+    local CommonPopupUIID
+    if UIUtils.CanOpenSkinPreview(ShopItemData.ItemType, ShopItemData.TypeId) then
+      UIManager(self):LoadUINew("SkinPreview", ShopItemData, self)
+    elseif ShopItemData.ItemType == "Reward" and (DataMgr.Reward[ItemData.RewardId].Mode == "Fixed" or DataMgr.Reward[ItemData.RewardId].Mode == "Once") then
+      if 1 == ShopItemData.Bg then
+        UIManager(self):LoadUINew("PayGiftPopup_Yellow", ShopItemData, self)
+      elseif 2 == ShopItemData.Bg then
+        UIManager(self):LoadUINew("PayGiftPopup_Purple", ShopItemData, self)
+      else
+        UIManager(self):LoadUINew("PayGiftPopup_Purple", ShopItemData, self)
+      end
+    elseif 0 == RemainTimes or 6 == ShopItemData.PurchaseFailRes then
+      CommonPopupUIID = 100042
+    else
+      CommonPopupUIID = 100041
+    end
+    if not CommonPopupUIID then
+      return
+    end
+    local Funds = {}
+    Funds[1] = {}
+    Funds[1].FundId = ShopItemData.PriceType
+    Funds[1].FundNeed = ShopUtils:GetShopItemPrice(ShopItemData.ItemId)
+    local ShopUIName = DataMgr.Shop[ShopType].ShopUIName
+    local CommonDialog = UIManager(self):ShowCommonPopupUI(CommonPopupUIID, {
+      ShopItemData = ShopItemData,
+      ShopType = 0,
+      Funds = Funds,
+      ShowParentTabCoin = true,
+      UIName = UIName,
+      LeftCallbackObj = self,
+      LeftCallbackFunction = function(Obj, PackageData)
+        local Shop = UIManager(self):GetUIObj(ShopUIName)
+        if Shop then
+          Shop:SetFocus()
+        end
+      end,
+      RightCallbackObj = self,
+      RightCallbackFunction = function(Obj, PackageData)
+        PackageData.Content_1.CallFunc(PackageData.Content_1.CallObj)
+      end,
+      ForbiddenRightCallbackObj = self,
+      ForbiddenRightCallbackFunction = function(Obj, PackageData)
+        PackageData.Content_1.CallFunc(PackageData.Content_1.CallObj)
+      end,
+      DontFocusParentWidget = true,
+      CloseBtnCallbackObj = self,
+      CloseBtnCallbackFunction = function(Obj, PackageData)
+        local Shop = UIManager(self):GetUIObj(ShopUIName)
+        if Shop then
+          Shop:SetFocus()
+        end
+      end,
+      ForbidRightBtn = not ShopUtils:CanPurchase(ShopItemData, Funds[1].FundId, Funds[1].FundNeed)
+    }, UIManager(self):GetUIObj(ShopUIName))
+  end
+end
+function M:GetNeedRechargeCount(ShopItemId, PriceType, CostNum)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local OwnedResource = Avatar.Resources[PriceType]
+  local OwnedCurrencyAmount = OwnedResource and OwnedResource.Count or 0
+  local Cost = 0
+  if CostNum and 0 ~= CostNum then
+    Cost = CostNum
+  end
+  if ShopItemId then
+    Cost = ShopUtils:GetShopItemPrice(ShopItemId) or 0
+  end
+  if CommonConst.Coins.Coin1 == PriceType then
+    local Coin4Data = Avatar.Resources[CommonConst.Coins.Coin4]
+    local Coin4Count = Coin4Data and Coin4Data.Count or 0
+    OwnedCurrencyAmount = OwnedCurrencyAmount + Coin4Count
+  end
+  local NeedCount = Cost - OwnedCurrencyAmount
+  if NeedCount <= 0 then
+    return 0
+  end
+  return NeedCount
+end
+function M:GetRechargeItem(ShopItemId, PriceType, CostNum)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local OwnedResource = Avatar.Resources[PriceType]
+  local OwnedCurrencyAmount = OwnedResource and OwnedResource.Count or 0
+  if CommonConst.Coins.Coin1 == PriceType then
+    local Coin4Data = Avatar.Resources[CommonConst.Coins.Coin4]
+    local Coin4Count = Coin4Data and Coin4Data.Count or 0
+    OwnedCurrencyAmount = OwnedCurrencyAmount + Coin4Count
+  end
+  local Cost = 0
+  if CostNum and 0 ~= CostNum then
+    Cost = CostNum
+  end
+  if ShopItemId then
+    Cost = ShopUtils:GetShopItemPrice(ShopItemId) or 0
+  end
+  local NeedCount = Cost - OwnedCurrencyAmount
+  if NeedCount <= 0 then
+    return
+  end
+  local NeedShopItemData
+  for i, Id in ipairs(Const.ReChargeLst) do
+    if DataMgr.ShopItem[Id] then
+      local Count = DataMgr.ShopItem[Id].TypeNum
+      if Avatar:CheckIsFirstBonus(Id) then
+        Count = Count + DataMgr.FirstBonusNum[Id].FirstBonusNum
+      else
+        Count = Count + DataMgr.FirstBonusNum[Id].BonusNum
+      end
+      NeedShopItemData = DataMgr.ShopItem[Id]
+      if NeedCount <= Count then
+        break
+      end
+    end
+  end
+  return NeedShopItemData
+end
+function M:SetCloseGetItemPageCallback(Params)
+  self.CloseGetItemPageCallback = Params.CloseGetItemPageCallback
+end
+function M:GetCloseGetItemPageCallback()
+  local Callback = self.CloseGetItemPageCallback
+  self.CloseGetItemPageCallback = nil
+  return Callback
+end
 local ForbiddenBannerBp = {WBP_Shop_Banner_MonthCard = true}
-
-function M:GetBannerInfo()
+function M:GetBannerInfo(bSwitchTab)
+  local BannerIdDict = {}
   local BannerData = {}
   local SoldOutBannerData = {}
   local Time = TimeUtils.NowTime()
   local bForbiddenPurchase = not self:IsCanOpenPay(true)
   for _, v in pairs(DataMgr.ShopBannerTab) do
-    if (not bForbiddenPurchase or not ForbiddenBannerBp[v.Bp]) and Time >= v.StartTime and (not v.EndTime or Time <= v.EndTime) then
-      if v.SoldOutSinkBanner and v.ItemId and 0 == self:GetShopItemPurchaseLimit(v.ItemId) or v.IsMonthlyCardBanner and MonthCardModel:IsMonthCardPurchased() then
+    if v.IsSwitchTab == bSwitchTab and (not bForbiddenPurchase or not ForbiddenBannerBp[v.Bp]) and Time >= v.StartTime then
+      local isExpired = v.EndTime and Time > v.EndTime
+      if not isExpired then
+        if v.BannerType == UIConst.ShopBannerType.DailyPack then
+          local DisplayableItems = self:GetDailyPackShopItemInfo(v.Id)
+          if 0 == #DisplayableItems then
+        end
+        else
+          local DailyPackSoldOut = v.BannerType == UIConst.ShopBannerType.DailyPack and self:ShouldSinkDailyPackTab(v)
+          local MonthCardSoldOut = v.BannerType == UIConst.ShopBannerType.MonthCard and MonthCardModel:IsMonthCardPurchased()
+          if v.SoldOutSinkBanner and v.ItemId and 0 == self:GetShopItemPurchaseLimit(v.ItemId) or MonthCardSoldOut or DailyPackSoldOut then
+            table.insert(SoldOutBannerData, v)
+          else
+            table.insert(BannerData, v)
+          end
+          BannerIdDict[v.Id] = true
+        end
+      elseif v.BannerType == UIConst.ShopBannerType.DailyPack and not self:ShouldHideDailyPackTab(v) then
         table.insert(SoldOutBannerData, v)
-      else
-        table.insert(BannerData, v)
+        BannerIdDict[v.Id] = true
       end
     end
   end
@@ -540,20 +921,20 @@ function M:GetBannerInfo()
   for _, ShopData in ipairs(SoldOutBannerData) do
     table.insert(Res, ShopData)
   end
-  return Res
+  return Res, BannerIdDict
 end
-
-function M:GetComplexInfo()
+function M:GetComplexInfo(SubTabId)
   local ComplexData = {}
   for _, v in pairs(DataMgr.ComplexTab) do
-    table.insert(ComplexData, v)
+    if v.SubTabId == SubTabId then
+      table.insert(ComplexData, v)
+    end
   end
   table.sort(ComplexData, function(a, b)
     return a.EntrySort > b.EntrySort
   end)
   return ComplexData
 end
-
 function M:GetShopSkinList()
   local Shop = UIManager(self):GetLastJumpPage()
   if Shop then
@@ -573,7 +954,6 @@ function M:GetShopSkinList()
   end
   return nil
 end
-
 function M:GetShopItemDataById(Id, ShopItemType, bCheck)
   local TypeId2ShopItems = DataMgr.TypeId2ShopItem[ShopItemType]
   TypeId2ShopItems = TypeId2ShopItems and TypeId2ShopItems[Id]
@@ -600,5 +980,232 @@ function M:GetShopItemDataById(Id, ShopItemType, bCheck)
   end
   return ShopItemId, ShopItemData
 end
-
+function M:GetDailyPackShopItemInfo(BannerId)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return {}
+  end
+  local DailyPackShopItemInfo = {}
+  for _, DailyPackData in pairs(DataMgr.DailyPack) do
+    if DailyPackData.BannerId == BannerId then
+      local ShopItemId = DataMgr.PayGoods[DailyPackData.GoodsId].ItemId
+      if not ShopItemId then
+        DebugPrint("请检查一下分日礼包对应的PayGoods:[" .. tostring(DailyPackData.GoodsId) .. "] 是否填写了商店商品ID")
+      else
+        local ShopData = DataMgr.ShopItem[ShopItemId]
+        if not ShopData then
+          DebugPrint("请检查一下分日礼包对应的商店商品ID:[" .. tostring(ShopItemId) .. "] 是否存在")
+        else
+          local ShouldShow = false
+          if Avatar:CheckIsEffective(ShopItemId) then
+            ShouldShow = true
+          elseif self:ShouldShowCompletionTime(ShopData.TypeId) then
+            ShouldShow = true
+          else
+            DebugPrint("请检查一下分日礼包对应的商店商品ID:[" .. tostring(ShopItemId) .. "] 是否在上架时间内")
+          end
+          if ShouldShow then
+            local PlayerDailyPack = Avatar.DailyPacks[ShopData.TypeId]
+            local AugmentedData = setmetatable({}, {__index = ShopData})
+            AugmentedData.Reward = DailyPackData.Reward
+            if PlayerDailyPack then
+              AugmentedData.ExpiredTime = PlayerDailyPack.ExpiredTime
+              AugmentedData.State = PlayerDailyPack.State
+              AugmentedData.Count = PlayerDailyPack.Count
+              AugmentedData.RewardGot = PlayerDailyPack.RewardGot
+            end
+            table.insert(DailyPackShopItemInfo, AugmentedData)
+          end
+        end
+      end
+    end
+  end
+  table.sort(DailyPackShopItemInfo, function(A, B)
+    local SequenceA = A.Sequence
+    local SequenceB = B.Sequence
+    return SequenceA < SequenceB
+  end)
+  return DailyPackShopItemInfo
+end
+function M:ShouldShowRemainingTime(ShopItemId)
+  if not ShopItemId then
+    return false
+  end
+  local ShopItemData = DataMgr.ShopItem[ShopItemId]
+  if not ShopItemData then
+    return false
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  if not Avatar:CheckIsEffective(ShopItemId) then
+    return false
+  end
+  if not ShopItemData.PurchaseLimit or ShopItemData.PurchaseLimit <= 0 then
+    return true
+  end
+  local PlayerShopItem = Avatar.ShopItems[ShopItemId]
+  if not PlayerShopItem then
+    return true
+  end
+  return PlayerShopItem.RemainPurchaseTimes > 0
+end
+function M:ShouldShowCompletionTime(DailyPackId)
+  if not DailyPackId then
+    return false
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  local PlayerDailyPack = Avatar.DailyPacks[DailyPackId]
+  if not PlayerDailyPack then
+    return false
+  end
+  local StartTiem = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(TimeUtils.NowTime())
+  local EndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(PlayerDailyPack.ExpiredTime)
+  local RemainTime = UKismetMathLibrary.Subtract_DateTimeDateTime(EndTime, StartTiem)
+  return 1 == PlayerDailyPack.State and UKismetMathLibrary.GetDays(RemainTime) > 0
+end
+function M:GetDailyPackItemsForBanner(BannerId)
+  local DailyPackItems = {}
+  for _, DailyPackData in pairs(DataMgr.DailyPack) do
+    if DailyPackData.BannerId == BannerId and DataMgr.PayGoods[DailyPackData.GoodsId] then
+      local ShopItemId = DataMgr.PayGoods[DailyPackData.GoodsId].ItemId
+      if DataMgr.ShopItem[ShopItemId] then
+        table.insert(DailyPackItems, DataMgr.ShopItem[ShopItemId])
+      end
+    end
+  end
+  return DailyPackItems
+end
+function M:ShouldSinkDailyPackTab(BannerData)
+  if not BannerData then
+    return false
+  end
+  local DailyPackItems = self:GetDailyPackItemsForBanner(BannerData.Id)
+  if 0 == #DailyPackItems then
+    return false
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  for _, itemData in ipairs(DailyPackItems) do
+    local PlayerShopItem = Avatar.ShopItems[itemData.ItemId]
+    if not PlayerShopItem or PlayerShopItem.RemainPurchaseTimes > 0 then
+      return false
+    end
+  end
+  return true
+end
+function M:ShouldHideDailyPackTab(BannerData)
+  if not BannerData then
+    return false
+  end
+  local DailyPackItems = self:GetDailyPackItemsForBanner(BannerData.Id)
+  if 0 == #DailyPackItems then
+    return true
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  local NowTime = TimeUtils.NowTime()
+  for _, itemData in ipairs(DailyPackItems) do
+    local DailyPackId = itemData.TypeId
+    local isStillActive = self:ShouldShowCompletionTime(DailyPackId)
+    if isStillActive then
+      return false
+    end
+  end
+  return true
+end
+function M:UpdateRewardEndTime(ShopItemExpiredTime)
+  local StartTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(TimeUtils.NowTime())
+  local EndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(ShopItemExpiredTime)
+  local RemainTime = UKismetMathLibrary.Subtract_DateTimeDateTime(EndTime, StartTime)
+  local RemainTimeStr = ""
+  if UKismetMathLibrary.GetDays(RemainTime) > 0 then
+    RemainTimeStr = RemainTimeStr .. string.format(GText("UI_SHOP_REMAINTIME_DAY"), UKismetMathLibrary.GetDays(RemainTime))
+  end
+  return string.format(GText("UI_SHOP_REMAINTIME"), RemainTimeStr)
+end
+function M:CanSendGift()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  local PlayerLevel = Avatar.Level or 0
+  if DataMgr.GiftConstant.GiftLimitLevel and PlayerLevel < DataMgr.GiftConstant.GiftLimitLevel.ConstantValue1 then
+    return false
+  end
+  local SendGiftCount = Avatar.CurrentMonthSendGiftCount or 0
+  if DataMgr.GiftConstant.GiftCountPerMonth_S and SendGiftCount >= DataMgr.GiftConstant.GiftCountPerMonth_S.ConstantValue1 then
+    return false
+  end
+  local ConsumeGiftQuota, TotalGiftQuota = Avatar.ConsumeGiftQuota, Avatar.TotalGiftQuota
+  if ConsumeGiftQuota >= TotalGiftQuota then
+    return false
+  end
+  return true
+end
+function M:ShowSendGiftButton(ShopItemData)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return false
+  end
+  if Avatar.BanGiftSend then
+    return false
+  end
+  if not ShopItemData then
+    return false
+  end
+  if 0 == ShopItemData.PurchaseFailRes then
+    return true
+  elseif 1 == ShopItemData.PurchaseFailRes then
+    return true
+  elseif 2 == ShopItemData.PurchaseFailRes then
+    return true
+  elseif 3 == ShopItemData.PurchaseFailRes then
+    return false
+  elseif 4 == ShopItemData.PurchaseFailRes then
+    return true
+  elseif 5 == ShopItemData.PurchaseFailRes then
+    return true
+  elseif 6 == ShopItemData.PurchaseFailRes then
+    return false
+  elseif 7 == ShopItemData.PurchaseFailRes then
+    return true
+  end
+  return false
+end
+function M:OpenChooseGiftTarget(ShopItemId, ParentWidget)
+  if not ShopItemId then
+    return
+  end
+  GiftController:OpenSelectFriendPopup(ShopItemId, ParentWidget)
+end
+function M:OpenForbidGiftChooseTip()
+  GiftController:OpenCanNotSendPopup()
+end
+function M:CheckShopItemCondition(ShopItemData)
+  if not ShopItemData then
+    return true
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return true
+  end
+  return ShopItemData.ItemCondition and not Avatar:CheckCondition(ShopItemData.ItemCondition)
+end
+function M:OpenLockConditionPopup(ShopItemData)
+  if not ShopItemData then
+    return
+  end
+  local Params = {}
+  Params.ItemConditions = ShopItemData.ItemCondition
+  UIManager(self):ShowCommonPopupUI(100292, Params)
+end
 return M

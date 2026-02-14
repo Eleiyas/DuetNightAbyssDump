@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:Construct()
   self.Btn_Switch.OnClicked:Remove(self, self.OnBtnClicked)
   self.Btn_Switch.OnHovered:Remove(self, self.OnBtnHovered)
@@ -20,20 +19,19 @@ function M:Construct()
       {Type = "Img", ImgShortPath = "LS"}
     }
   })
+  self.Text_Alive:SetText(GText("Pet_BattlePet"))
+  self.Text_Dying:SetText(GText("Pet_ResourcePet"))
   self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:AddInputMethodChangedListen()
   self:OnUpdateUIStyleByInputTypeChange(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
   self:UpdateGamePadKey()
 end
-
 function M:ForceHideGamePadKey(bHide)
   self.bForceHideGamePadKey = bHide
 end
-
 function M:UpdateGamePadKey()
   if self.IsGamepadInput then
     if self.bForceHideGamePadKey then
@@ -45,7 +43,6 @@ function M:UpdateGamePadKey()
     self.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.TabIdx = Params.TabIdx
@@ -60,7 +57,6 @@ function M:Init(Params)
     self:PlayAnimationForward(self.Switchover)
   end
 end
-
 function M:SetReddotRight(bShowReddot)
   if bShowReddot then
     self.New:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -68,7 +64,6 @@ function M:SetReddotRight(bShowReddot)
     self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetReddotLeft(bShowReddot)
   if bShowReddot then
     self.New_1:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -76,7 +71,6 @@ function M:SetReddotLeft(bShowReddot)
     self.New_1:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:Forbid(IsForbidden)
   if IsForbidden then
     if not self.bIsForbidden then
@@ -87,7 +81,6 @@ function M:Forbid(IsForbidden)
   end
   self.bIsForbidden = IsForbidden
 end
-
 function M:OnBtnClicked()
   if self.bIsForbidden then
     UIManager(self):ShowUITip("CommonToastMain", GText("Pet_ResourcePet_LockToast"))
@@ -105,7 +98,6 @@ function M:OnBtnClicked()
     self._OnClicked(self.Parent, self.TabIdx)
   end
 end
-
 function M:OnBtnHovered()
   if self.bIsForbidden then
     return
@@ -114,7 +106,6 @@ function M:OnBtnHovered()
   self:StopAnimation(self.UnHover)
   self:PlayAnimationForward(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.bIsForbidden then
     return
@@ -123,7 +114,6 @@ function M:OnBtnUnhovered()
   self:StopAnimation(self.Click)
   self:PlayAnimationForward(self.UnHover)
 end
-
 function M:OnBtnPressed()
   if self.bIsForbidden then
     return
@@ -131,6 +121,5 @@ function M:OnBtnPressed()
   self:StopAnimation(self.Normal)
   self:PlayAnimationForward(self.Press)
 end
-
 AssembleComponents(M)
 return M

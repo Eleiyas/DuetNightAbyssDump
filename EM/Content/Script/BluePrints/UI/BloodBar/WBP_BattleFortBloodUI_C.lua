@@ -1,7 +1,6 @@
 require("UnLua")
 local TimeUtils = require("Utils.TimeUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Destruct()
   self:ClearAllTimer()
   local EffectUIWidget = UIManager(self):GetUIObj(UIConst.BattleNearDeathPCName)
@@ -24,7 +23,6 @@ function M:Destruct()
   end
   M.Super.Destruct(self)
 end
-
 function M:UpdateBloodScreenEffect()
   local CurrentBlood = self.CurHp
   local MaxBlood = self.MaxHp
@@ -77,7 +75,6 @@ function M:UpdateBloodScreenEffect()
     end
   end
 end
-
 function M:UpdateShieldScreenEffect()
   local SystemUIConfig = DataMgr.SystemUI[UIConst.BattleBrokenShieldPCName]
   if SystemUIConfig then
@@ -94,5 +91,4 @@ function M:UpdateShieldScreenEffect()
     end
   end
 end
-
 return M

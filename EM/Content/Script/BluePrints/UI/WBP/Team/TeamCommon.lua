@@ -1,5 +1,6 @@
 local TeamCommon = {
   HeadUIName = "TeamInSystem",
+  HeadUIName2 = "TeamInSystemSame",
   TipUIName = "TeamInviteTip",
   InfoUIName = "TeamBattleInfo",
   CommonHead = "CommonHead",

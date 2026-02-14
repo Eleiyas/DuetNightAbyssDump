@@ -2,12 +2,10 @@ require("UnLua")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local StringUtils = require("Utils.StringUtils")
 local Component = {}
-
 function Component:OnClickButtonContinue()
   local Text = self.Common_EditText:GetText()
   HeroUSDKUtils.CheckStringSensitive(self, Text, self.OnTextSensitive, self.OnTextQualified)
 end
-
 function Component:OnTextSensitive(ReplaceName, Text, Words)
   self.bLegal = false
   self.Common_EditText:ShowTips(GText("UI_REGISTER_BANNEDINPUT"), 1)
@@ -16,7 +14,6 @@ function Component:OnTextSensitive(ReplaceName, Text, Words)
     self.Params.OnSDKChecked(false, self, ReplaceName, Text, Words)
   end
 end
-
 function Component:OnTextQualified(InText)
   self.bLegal = true
   local NewText = InText
@@ -25,7 +22,6 @@ function Component:OnTextQualified(InText)
   end
   self.Owner:OnClose()
 end
-
 function Component:StartNormalTimer()
   self:StopNormalTimer()
   local _, NormalTimerKey = self:AddTimer(1.5, function()
@@ -33,14 +29,12 @@ function Component:StartNormalTimer()
   end)
   self.NormalTimerKey = NormalTimerKey
 end
-
 function Component:StopNormalTimer()
   if self.NormalTimerKey and self:IsExistTimer(self.NormalTimerKey) then
     self:RemoveTimer(self.NormalTimerKey)
     self.NormalTimerKey = nil
   end
 end
-
 function Component:ShowBeyondHintWithCD()
   if self.BeyondTimerKey and self:IsExistTimer(self.BeyondTimerKey) then
     return
@@ -50,7 +44,6 @@ function Component:ShowBeyondHintWithCD()
   end)
   self.BeyondTimerKey = BeyondTimerKey
 end
-
 function Component:OnTextChange(InText, bComposing)
   if "" == InText then
     self.Owner:GetButtonBar().Btn_Yes:ForbidBtn(true)
@@ -76,7 +69,6 @@ function Component:OnTextChange(InText, bComposing)
   end
   return NewText
 end
-
 function Component:InitContentComp(Params, PopupData, Owner)
   self.Params = Params
   local Index = Params.MultilineType
@@ -111,5 +103,4 @@ function Component:InitContentComp(Params, PopupData, Owner)
   end)
   self.Owner.DontCloseWhenRightBtnClicked = true
 end
-
 return Component

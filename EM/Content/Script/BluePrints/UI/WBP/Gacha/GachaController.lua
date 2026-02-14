@@ -1,31 +1,24 @@
 local GachaModel = require("BluePrints.UI.WBP.Gacha.GachaModel")
 local GachaCommon = require("BluePrints.UI.WBP.Gacha.GachaCommon")
 local M = Class("BluePrints.Common.MVC.Controller")
-
 function M:Init()
   M.Super.Init(self)
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 function M:GetModel()
   return GachaModel
 end
-
 function M:GetEventName()
   return EventID.GachaControllerEvent
 end
-
 function M:OpenView(WorldContex, Param)
   return M.Super.OpenView(self, WorldContex, GachaCommon.UIName, Param)
 end
-
 function M:GetView(WorldContex)
   return M.Super.GetView(self, WorldContex, GachaCommon.UIName)
 end
-
 function M:TryGacha(GachaId, IsSingle)
   local GachaTimes = GachaCommon.GachaTenResults
   if IsSingle then
@@ -43,6 +36,5 @@ function M:TryGacha(GachaId, IsSingle)
   end
   return Res
 end
-
 _G.GachaController = M
 return M

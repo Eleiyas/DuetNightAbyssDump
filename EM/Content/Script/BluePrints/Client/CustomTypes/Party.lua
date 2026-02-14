@@ -11,13 +11,11 @@ Party.__Props__ = {
   PartyTopics = prop.prop("PartyTopic.PartyTopicList", "client save"),
   PartyTopicList = prop.getter("Data", "PartyTopicList")
 }
-
 function Party:Init(PartyId, Level)
   self.PartyId = PartyId
   self.Level = Level or 1
   self:InitPartyTopics()
 end
-
 function Party:InitPartyTopics()
   self.MaxLevel = #self.PartyTopicList or 1
   for index, PartyTopicId in pairs(self.PartyTopicList) do
@@ -25,39 +23,32 @@ function Party:InitPartyTopics()
     self.PartyTopics:Append(PartyTopic)
   end
 end
-
 function Party:Data()
   return DataMgr.PartyNpc[self.PartyId]
 end
-
 function Party:IsMaxLevel()
   if self.Level == self.MaxLevel then
     return true
   end
   return false
 end
-
 function Party:UpLevel()
   if self:IsMaxLevel() then
     return
   end
   self.Level = self.Level + 1
 end
-
 FormatProperties(Party)
 local PartyDict = Class("PartyDict", CustomTypes.CustomDict)
 PartyDict.KeyType = BaseTypes.Int
 PartyDict.ValueType = Party
-
 function PartyDict:NewParty(PartyId, Level)
   return Party(PartyId, Level)
 end
-
 function PartyDict:GetParty(PartyId)
   if not self[PartyId] then
     return self:NewParty(PartyId, 1)
   end
   return self[PartyId]
 end
-
 return {Party = Party, PartyDict = PartyDict}

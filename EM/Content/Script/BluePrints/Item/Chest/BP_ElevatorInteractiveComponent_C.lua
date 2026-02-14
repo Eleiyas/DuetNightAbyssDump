@@ -1,6 +1,6 @@
 require("UnLua")
+local LuaConst = require("EMLuaConst")
 local BP_ElevatorInteractiveComponent_C = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C")
-
 function BP_ElevatorInteractiveComponent_C:IsCanInteractive(PlayerActor)
   local Owner = self:GetOwner()
   if not Owner then
@@ -33,18 +33,19 @@ function BP_ElevatorInteractiveComponent_C:IsCanInteractive(PlayerActor)
   if -1 == Eid then
     return false
   end
-  return self.DistanceCheckComponent(self, PlayerActor, self.InteractiveDistance) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle) and not OpenState and not self:InteractiveStateCheck()
+  if LuaConst.OpenComputeInteractive then
+    return self:GetDistanceCheckResult() and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle) and not OpenState and not self:InteractiveStateCheck()
+  else
+    return self.DistanceCheckComponent(self, PlayerActor, self.InteractiveDistance) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle) and not OpenState and not self:InteractiveStateCheck()
+  end
 end
-
 function BP_ElevatorInteractiveComponent_C:StartInteractive(PlayerActor)
   if self:IsCanInteractive(PlayerActor) then
     self:InteractiveImplement(PlayerActor.Eid)
   end
 end
-
 function BP_ElevatorInteractiveComponent_C:EndInteractive(PlayerActor)
 end
-
 function BP_ElevatorInteractiveComponent_C:InteractiveStateCheck()
   local Owner = self:GetOwner()
   local ElevatorMechanism = Battle(Owner):GetEntity(Owner.Eid)
@@ -64,7 +65,6 @@ function BP_ElevatorInteractiveComponent_C:InteractiveStateCheck()
   end
   return ElevatorMechanism.CurrentElevatorState == ElevatorMechanismState.ElevatorIn or TypeCheck
 end
-
 function BP_ElevatorInteractiveComponent_C:GetElevatorInnerState()
   local SelfActor = self:GetOwner()
   local SelfParentActor = Battle(self):GetEntity(SelfActor.Eid)
@@ -74,7 +74,6 @@ function BP_ElevatorInteractiveComponent_C:GetElevatorInnerState()
   end
   return nil
 end
-
 function BP_ElevatorInteractiveComponent_C:OpenDoor()
   local SelfActor = self:GetOwner()
   local SelfParentActor = Battle(self):GetEntity(SelfActor.Eid)
@@ -84,7 +83,6 @@ function BP_ElevatorInteractiveComponent_C:OpenDoor()
     SelfParentActor:OpenBottomDoor()
   end
 end
-
 function BP_ElevatorInteractiveComponent_C:ElevatorMove()
   local SelfActor = self:GetOwner()
   local SelfParentActor = Battle(self):GetEntity(SelfActor.Eid)
@@ -102,7 +100,6 @@ function BP_ElevatorInteractiveComponent_C:ElevatorMove()
     SelfParentActor.ElevatorInCharacter:MoveEnd()
   end
 end
-
 function BP_ElevatorInteractiveComponent_C:InteractiveImplement(PlayerId)
   local SelfActor = self:GetOwner()
   local SelfParentActor = Battle(self):GetEntity(SelfActor.Eid)
@@ -110,7 +107,6 @@ function BP_ElevatorInteractiveComponent_C:InteractiveImplement(PlayerId)
   self:PlayInteractiveEffects()
   SelfParentActor:MoveElevator(PlayerId, SelfParentActor.Eid, SelfActor.SelfElevatorState)
 end
-
 function BP_ElevatorInteractiveComponent_C:InteractiveSuccess()
   local SelfActor = self:GetOwner()
   local SelfParentActor = Battle(self):GetEntity(SelfActor.Eid)
@@ -132,7 +128,6 @@ function BP_ElevatorInteractiveComponent_C:InteractiveSuccess()
     self:ElevatorMove()
   end
 end
-
 function BP_ElevatorInteractiveComponent_C:PlayInteractiveEffects()
   local SelfActor = self:GetOwner()
   local SelfParentActor = Battle(self):GetEntity(SelfActor.Eid)
@@ -141,15 +136,11 @@ function BP_ElevatorInteractiveComponent_C:PlayInteractiveEffects()
     return
   end
 end
-
 function BP_ElevatorInteractiveComponent_C:BtnClicked(PlayerActor, InPressTimeSeconds)
   self:StartInteractive(PlayerActor)
 end
-
 function BP_ElevatorInteractiveComponent_C:BtnPressed(PlayerActor)
 end
-
 function BP_ElevatorInteractiveComponent_C:BtnReleased(PlayerActor, InPressTimeSeconds)
 end
-
 return BP_ElevatorInteractiveComponent_C

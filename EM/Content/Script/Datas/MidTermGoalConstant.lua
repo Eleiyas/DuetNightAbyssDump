@@ -1,3 +1,6 @@
+local LocalTimeProxy = (DataMgr or {}).LocalTimeProxy or function(x)
+  return x
+end
 local ReadOnly = (DataMgr or {}).ReadOnly or function(n, x)
   return x
 end
@@ -28,7 +31,7 @@ return ReadOnly("MidTermGoalConstant", {
   },
   BaseRewardCount = {
     ConstantName = "BaseRewardCount",
-    ConstantValue = 1
+    ConstantValue = 10
   },
   BaseRewardId = {
     ConstantName = "BaseRewardId",
@@ -52,11 +55,11 @@ return ReadOnly("MidTermGoalConstant", {
   },
   MidTermGoalEventId = {
     ConstantName = "MidTermGoalEventId",
-    ConstantValue = 103006
+    ConstantValue = 10300601
   },
   OFRewardCount = {
     ConstantName = "OFRewardCount",
-    ConstantValue = 1
+    ConstantValue = 10
   },
   OFRewardId = {ConstantName = "OFRewardId", ConstantValue = 110202},
   TabIcon_1 = {

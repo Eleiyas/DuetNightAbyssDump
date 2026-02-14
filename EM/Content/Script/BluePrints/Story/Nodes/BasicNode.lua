@@ -1,9 +1,7 @@
 local function DebugPrint(...)
   print("Talk", ...)
 end
-
 local BasicNode = {}
-
 function BasicNode:Deserialize(editor_config)
   self.in_execs = {}
   self.out_execs = {}
@@ -130,7 +128,6 @@ function BasicNode:Deserialize(editor_config)
     end
   end
 end
-
 local function ActivateNode(node, exec_name)
   node.is_active = true
   if nil ~= exec_name then
@@ -144,7 +141,6 @@ local function ActivateNode(node, exec_name)
   DebugPrint("Activate node: " .. node.type)
   node:OnActivate(exec_name)
 end
-
 function BasicNode:Finish(exec_name)
   self.is_active = false
   if self.context.wait_for_destroy then
@@ -156,28 +152,22 @@ function BasicNode:Finish(exec_name)
     ActivateNode(next_node, next_link.name)
   end
 end
-
 local function LinkPin(out_pin, in_pin)
   in_pin.link = out_pin
 end
-
 local function LinkExec(out_exec, in_exec)
   out_exec.links[in_exec] = true
 end
-
 function BasicNode:GetVarOfInPin(pin_name)
   assert(self.in_pins[pin_name] ~= nil, "pin name: " .. pin_name .. " not exist!")
   return self.in_pins[pin_name].value
 end
-
 local function IsID(id)
   return type(id) == "number"
 end
-
 local function IsName(id)
   return type(id) == "string"
 end
-
 function BasicNode:GetVarsOfInPins()
   local ret = {}
   for i, pin in pairs(self.in_pins) do
@@ -187,7 +177,6 @@ function BasicNode:GetVarsOfInPins()
   end
   return ret
 end
-
 function BasicNode:GetVarsOfVariantPin(pin_name)
   local ret = {}
   local idx = 1
@@ -201,11 +190,9 @@ function BasicNode:GetVarsOfVariantPin(pin_name)
     end
   end
 end
-
 function BasicNode:GetStateOfInExec(exec_name)
   return self.in_execs[exec_name].active
 end
-
 function BasicNode:GetStatesOfInExecs()
   local ret = {}
   for i, exec in pairs(self.in_execs) do
@@ -215,7 +202,6 @@ function BasicNode:GetStatesOfInExecs()
   end
   return ret
 end
-
 function BasicNode:GetAllNamesOfOutExecs()
   local ret = {}
   for name, _ in pairs(self.out_execs) do
@@ -225,7 +211,6 @@ function BasicNode:GetAllNamesOfOutExecs()
   end
   return ret
 end
-
 function BasicNode:GetNamesOfVariantOutExec(exec_name)
   local ret = {}
   local idx = 1
@@ -239,7 +224,6 @@ function BasicNode:GetNamesOfVariantOutExec(exec_name)
     end
   end
 end
-
 function BasicNode:IsAllExecsActivate()
   for _, exec in pairs(self.in_execs) do
     if exec.active == false then
@@ -248,13 +232,10 @@ function BasicNode:IsAllExecsActivate()
   end
   return true
 end
-
 function BasicNode:SetVarOfOutPin(pin_name, value)
   self.out_pins[pin_name].value = value
 end
-
 function BasicNode:GetActor(npc_id)
   return self.context.actor_table[npc_id]
 end
-
 return BasicNode

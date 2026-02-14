@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function M:Construct()
   self.GuideType = "None"
   self.CurrentInputDevice = {
@@ -14,20 +13,17 @@ function M:Construct()
   }
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
 end
-
 function M:Destruct()
   if self.MediaPlayer and self.MediaPlayer:IsPlaying() then
     self.MediaPlayer:SetLooping(false)
     self.MediaPlayer:Close()
   end
 end
-
 function M:SetNumStep(i)
   self.num_index = i
   self.Text_Index:SetText(i)
   self.MediaPlayer = LoadObject("MediaPlayer'/Game/UI/UI_PC/Guide/Guide_Image/MediaPlayer/MediaPlayer_Video" .. i .. ".MediaPlayer_Video" .. i .. "'")
 end
-
 function M:SetGuideType(GuideType)
   self.GuideType = GuideType
   if self.GuideType == "ImageText" then
@@ -37,17 +33,14 @@ function M:SetGuideType(GuideType)
   elseif self.GuideType == "Text" then
   end
 end
-
 function M:UpdateContent(ChildGuideId, i, isPC)
   self.ChildInfo = DataMgr.UIChildGuide[ChildGuideId]["GuideInfo" .. i]
   self:UpdateCellImgs(ChildGuideId, i, isPC)
   self:PlayAnimation(self.SwitchCell)
 end
-
 function M:UpdateCellImgs(ChildGuideId, i, isPC)
   self:GetChildeGuideUIInfoById(ChildGuideId, i, isPC)
 end
-
 function M:GetChildeGuideUIInfoById(ChildGuideId, i, isPC)
   local PictureList = self.ChildInfo.GuidePicture
   if not PictureList then
@@ -68,7 +61,6 @@ function M:GetChildeGuideUIInfoById(ChildGuideId, i, isPC)
     self:ShowImg(self.GuidePicture)
   end
 end
-
 function M:ShowImg(ImgPath)
   local img = LoadObject(ImgPath)
   if self.ShowType ~= "Img" then
@@ -80,7 +72,6 @@ function M:ShowImg(ImgPath)
   end
   self.Image_Guide:SetBrushFromTexture(img, true)
 end
-
 function M:ShowVideo(VideoPath)
   self:ScaleImageSize()
   local video = LoadObject(VideoPath)
@@ -95,7 +86,6 @@ function M:ShowVideo(VideoPath)
   end
   self.VideoPath = VideoPath
 end
-
 function M:ScaleImageSize(img)
   local Size = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Image_Guide):GetSize()
   local CellX = Size.X
@@ -119,7 +109,6 @@ function M:ScaleImageSize(img)
   end
   self.Image_Guide:SetRenderScale(UE4.FVector2D(scalex, scaley))
 end
-
 function M:UpdateTextOnInputDeviceChanged(NewInputDevice)
   self.CurInputDeviceType = NewInputDevice
   if not self.ChildInfo then
@@ -127,6 +116,5 @@ function M:UpdateTextOnInputDeviceChanged(NewInputDevice)
   end
   self:UpdateCellImgs(nil, nil, true)
 end
-
 AssembleComponents(M)
 return M

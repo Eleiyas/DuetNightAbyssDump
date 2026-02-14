@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
-
 function M:Construct()
   self.Text_Title:SetText(GText("UI_RegionMap_SelectRegion"))
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
@@ -15,54 +14,57 @@ function M:Construct()
   self.LastWorldWidgetId = nil
   self.LastRegionWidgetId = nil
   self.CurrentRegionId = nil
+  local MapData = {}
   local avatar = GWorld:GetAvatar()
   for id, worldData in pairs(DataMgr.WorldMap) do
     if worldData.WorldMapUnlockCondition and not ConditionUtils.CheckCondition(avatar, worldData.WorldMapUnlockCondition) and not Const.UnlockRegionTeleport then
     else
-      local worldWidget = NewObject(self.RegionClass, self)
-      self.WrapBox:AddChild(worldWidget)
-      self.WorldList[id] = worldWidget
-      worldWidget.Tip_SpMission.Text_Content:SetText(GText("UI_QUEST_SpecialSlide"))
-      worldWidget.WS_Type:SetActiveWidgetIndex(0)
-      local IconTexture = TaskUtils:GetIconTextureByTrackQuestChainType()
-      if IconTexture then
-        worldWidget.GuidePoint.Img_GuidePoint_Icon:SetBrushResourceObject(IconTexture)
+      table.insert(MapData, id)
+    end
+  end
+  table.sort(MapData)
+  for _, id in pairs(MapData) do
+    worldData = DataMgr.WorldMap[id]
+    local worldWidget = NewObject(self.RegionClass, self)
+    self.WrapBox:AddChild(worldWidget)
+    self.WorldList[id] = worldWidget
+    worldWidget.Tip_SpMission.Text_Content:SetText(GText("UI_QUEST_SpecialSlide"))
+    worldWidget.WS_Type:SetActiveWidgetIndex(0)
+    local IconTexture = TaskUtils:GetIconTextureByTrackQuestChainType()
+    if IconTexture then
+      worldWidget.GuidePoint.Img_GuidePoint_Icon:SetBrushResourceObject(IconTexture)
+    end
+    if self:CheckIsNeedShowGuideInWorldWidgtItem(id) then
+      worldWidget.GuidePoint:PlayAnimation(worldWidget.GuidePoint.Loop, 0, 0)
+      worldWidget.GuidePoint:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    else
+      worldWidget.GuidePoint:StopAllAnimations()
+      worldWidget.GuidePoint:SetVisibility(ESlateVisibility.Collapsed)
+    end
+    worldWidget.Text_AreaName:SetText(GText(worldData.WorldMapName))
+    worldWidget.Btn_Show.OnClicked:Add(self, function()
+      AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
+      self:OnWorldClick(id)
+    end)
+    if self:CheckIsNeedShowSpecialTaskGuideInWorldWidgtItem(id) then
+      self.WorldList[id].Tip_SpMission:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    else
+      self.WorldList[id].Tip_SpMission:SetVisibility(ESlateVisibility.Collapsed)
+    end
+    worldWidget.WrapBox:SetVisibility(ESlateVisibility.Collapsed)
+    if worldData.RegionIcon then
+      local Icon = LoadObject(worldData.RegionIcon)
+      if Icon then
+        worldWidget.Icon_Camp:SetBrushResourceObject(Icon)
       end
-      if self:CheckIsNeedShowGuideInWorldWidgtItem(id) then
-        worldWidget.GuidePoint:PlayAnimation(worldWidget.GuidePoint.Loop, 0, 0)
-        worldWidget.GuidePoint:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-      else
-        worldWidget.GuidePoint:StopAllAnimations()
-        worldWidget.GuidePoint:SetVisibility(ESlateVisibility.Collapsed)
-      end
-      worldWidget.Text_AreaName:SetText(GText(worldData.WorldMapName))
-      worldWidget.Btn_Show.OnClicked:Add(self, function()
-        AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
-        self:OnWorldClick(id)
-      end)
-      if self:CheckIsNeedShowSpecialTaskGuideInWorldWidgtItem(id) then
-        self.WorldList[id].Tip_SpMission:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-      else
-        self.WorldList[id].Tip_SpMission:SetVisibility(ESlateVisibility.Collapsed)
-      end
-      worldWidget.WrapBox:SetVisibility(ESlateVisibility.Collapsed)
-      if worldData.RegionIcon then
-        do
-          local Icon = LoadObject(worldData.RegionIcon)
-          if Icon then
-            worldWidget.Icon_Camp:SetBrushResourceObject(Icon)
-          end
-        end
-      end
-      for _, regionMapId in pairs(worldData.WorldMapRegion) do
-        for _, subRegionId in pairs(DataMgr.Region[DataMgr.RegionMap[regionMapId].RegionId].IsRandom) do
-          self.Region2World[subRegionId] = id
-        end
+    end
+    for _, regionMapId in pairs(worldData.WorldMapRegion) do
+      for _, subRegionId in pairs(DataMgr.Region[DataMgr.RegionMap[regionMapId].RegionId].IsRandom) do
+        self.Region2World[subRegionId] = id
       end
     end
   end
 end
-
 function M:Init(Parent)
   self.Parent = Parent
   self.LastWorldWidget = nil
@@ -90,12 +92,10 @@ function M:Init(Parent)
     self.WrapBox:GetChildAt(self.WrapBox:GetChildrenCount() - 1):SetFocus()
   end
 end
-
 function M:Destruct()
   self:ClearData()
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
 end
-
 function M:OnWorldClick(id)
   if self.LastWorldWidget and self.LastWorldWidget ~= self.WorldList[id] and self.LastWorldWidget.IsOpen then
     self.LastWorldWidget:PlayAnimation(self.LastWorldWidget.Normal)
@@ -221,7 +221,6 @@ function M:OnWorldClick(id)
   self.LastWorldWidget = self.WorldList[id]
   self.LastWorldWidgetId = id
 end
-
 function M:ShowOrHideRegionMapWidgtItemByTimeLine()
   if not self.WorldList then
     return
@@ -240,7 +239,6 @@ function M:ShowOrHideRegionMapWidgtItemByTimeLine()
     end
   end
 end
-
 function M:CheckIsNeedShowGuideInWorldWidgtItem(MapId)
   local Info = TaskUtils:GetTrackingQuestDetailInfo()
   if Info and Info.IsFairyLand then
@@ -263,7 +261,6 @@ function M:CheckIsNeedShowGuideInWorldWidgtItem(MapId)
   end
   return false
 end
-
 function M:CheckIsNeedShowSpecialTaskGuideInWorldWidgtItem(MapId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -286,7 +283,6 @@ function M:CheckIsNeedShowSpecialTaskGuideInWorldWidgtItem(MapId)
   end
   return false
 end
-
 function M:CheckIsNeedShowGuideInDoorWidgtItem(RegionId)
   local _, QuestRegionMapId = TaskUtils:GetTrackingQuestMapInfo()
   if not QuestRegionMapId then
@@ -297,7 +293,6 @@ function M:CheckIsNeedShowGuideInDoorWidgtItem(RegionId)
   end
   return RegionId == QuestRegionMapId
 end
-
 function M:CheckIsNeedShowSpecialTaskGuideInDoorWidgtItem(RegionId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -316,7 +311,6 @@ function M:CheckIsNeedShowSpecialTaskGuideInDoorWidgtItem(RegionId)
   end
   return false
 end
-
 function M:ClearData()
   for _, region in pairs(self.RegionList) do
     region.Btn_ShowUp.OnClicked:Clear()
@@ -327,7 +321,6 @@ function M:ClearData()
     world:RemoveFromParent()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -337,11 +330,9 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnKeyBackClick()
   self.Parent:ClosePanel()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.Key_Back then
     if CurInputDevice == ECommonInputType.Gamepad then
@@ -372,7 +363,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Auto_Out then
     self:SetVisibility(ESlateVisibility.Collapsed)
@@ -385,7 +375,6 @@ function M:OnAnimationFinished(Animation)
   end
   self.Overridden.OnAnimationFinished(self, Animation)
 end
-
 function M:OnAnimationStarted(Animation)
   if Animation == self.Auto_In then
     for _, World in pairs(self.WorldList) do
@@ -396,5 +385,4 @@ function M:OnAnimationStarted(Animation)
     end
   end
 end
-
 return M

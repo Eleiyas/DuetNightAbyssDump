@@ -14,7 +14,6 @@ local QuestRealStateEnum = {
   InProgress = -1
 }
 local ConstQuestTabData = {}
-
 function WBP_Task_Main:Initialize(Initializer)
   self.Super.Initialize(self)
   self.AllTabInfo = {}
@@ -31,14 +30,12 @@ function WBP_Task_Main:Initialize(Initializer)
   self.CurFocusWidget = nil
   self.IsCanCloseByHotKey = false
 end
-
 function WBP_Task_Main:Construct()
   self:InitListenEvent()
   ReddotManager.AddListener("DetectiveQuestion", self, self.UpdateReasoningRedDot)
   ReddotManager.AddListener("DetectiveAnswer", self, self.UpdateReasoningRedDot)
   EventManager:AddEvent(EventID.CheckShowMap, self, self.CheckNeedShowLevelMap)
 end
-
 function WBP_Task_Main:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local JumpQuestId = (...)
@@ -77,7 +74,6 @@ function WBP_Task_Main:OnLoaded(...)
     end
   })
 end
-
 function WBP_Task_Main:InitTabInfo()
   local function TryGetTabData(InQuestType)
     for _, Data in pairs(DataMgr.QuestTab) do
@@ -87,7 +83,6 @@ function WBP_Task_Main:InitTabInfo()
     end
     return nil
   end
-  
   self.TempQuestTabData = {
     [1] = TryGetTabData(Const.AllQuestChainType),
     [2] = TryGetTabData(Const.MainQuestChainType),
@@ -171,6 +166,7 @@ function WBP_Task_Main:InitTabInfo()
       self.CommonTabWidget.Pos_Reasoning:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       self.CommonTabWidget.ReasoningEntrance = UIManager(self):CreateWidget("WidgetBlueprint'/Game/UI/WBP/Reasoning/Widget/WBP_Reasoning_Entrance.WBP_Reasoning_Entrance'", true)
       self.CommonTabWidget.ReasoningEntrance.Text:SetText(GText("Minigame_Textmap_100304"))
+      self.CommonTabWidget.Pos_Reasoning:ClearChildren()
       self.CommonTabWidget.Pos_Reasoning:AddChildToOverlay(self.CommonTabWidget.ReasoningEntrance)
       self.CommonTabWidget.ReasoningEntrance.Btn_Click.OnClicked:Add(self, self.OnClickReasoningEntrance)
       self.CommonTabWidget.ReasoningEntrance.Key_GamePad:CreateCommonKey({
@@ -185,10 +181,8 @@ function WBP_Task_Main:InitTabInfo()
   end
   self:UpdateReasoningRedDot()
 end
-
 function WBP_Task_Main:UpdateTabWidgetReddot()
 end
-
 function WBP_Task_Main:TriggerLevelHardWarningUIShow(QuestChainId, QuestId)
   local TaskInfo = TaskUtils:GetQuestDetail(QuestChainId, QuestId)
   local ConfigRecommandLevel
@@ -202,7 +196,6 @@ function WBP_Task_Main:TriggerLevelHardWarningUIShow(QuestChainId, QuestId)
     self.RootWidget.HB_HardWarning:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Task_Main:OnTabChange(TabWidget)
   EventManager:FireEvent(EventID.OnSelectQuestSubItem, nil)
   local TabId = TabWidget.Idx
@@ -318,7 +311,6 @@ function WBP_Task_Main:OnTabChange(TabWidget)
   self.CurTrackWidget = nil
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function WBP_Task_Main:GetQuestData(TabId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -360,8 +352,8 @@ function WBP_Task_Main:GetQuestData(TabId)
           table.insert(Result[QuestChainType], Data)
         end
       else
-        local Message = string.format("\228\187\187\229\138\161\233\157\162\230\157\191\228\184\141\230\152\190\231\164\186\228\187\187\229\138\161\239\188\154 %s", QuestChainId)
-        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\180\166\229\143\183\229\183\178\230\156\137\228\187\187\229\138\161\230\156\141\229\138\161\229\153\168\230\149\176\230\141\174\239\188\140\228\189\134\228\187\187\229\138\161\232\161\168\229\134\133\230\149\176\230\141\174\229\183\178\228\184\141\229\173\152\229\156\168", Message)
+        local Message = string.format("任务面板不显示任务： %s", QuestChainId)
+        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Quest, "账号已有任务服务器数据，但任务表内数据已不存在", Message)
       end
     end
   else
@@ -374,8 +366,8 @@ function WBP_Task_Main:GetQuestData(TabId)
           table.insert(Result[QuestChainType], Data)
         end
       else
-        local Message = string.format("\228\187\187\229\138\161\233\157\162\230\157\191\228\184\141\230\152\190\231\164\186\228\187\187\229\138\161: %s", QuestChainId)
-        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\180\166\229\143\183\229\183\178\230\156\137\228\187\187\229\138\161\230\156\141\229\138\161\229\153\168\230\149\176\230\141\174\239\188\140\228\189\134\228\187\187\229\138\161\232\161\168\229\134\133\230\149\176\230\141\174\229\183\178\228\184\141\229\173\152\229\156\168", Message)
+        local Message = string.format("任务面板不显示任务: %s", QuestChainId)
+        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Quest, "账号已有任务服务器数据，但任务表内数据已不存在", Message)
       end
     end
   end
@@ -395,7 +387,6 @@ function WBP_Task_Main:GetQuestData(TabId)
   end
   return RetTable
 end
-
 function WBP_Task_Main:CheckQuestIsShowByCheckState(QuestChainId, QuestChainData)
   local QuestChainType = 0
   if DataMgr.QuestChain[QuestChainId] and DataMgr.QuestChain[QuestChainId].QuestChainType then
@@ -409,9 +400,22 @@ function WBP_Task_Main:CheckQuestIsShowByCheckState(QuestChainId, QuestChainData
     return false
   end
   local CurrentTime = TimeUtils.NowTime()
-  local QuestStartTime = DataMgr.QuestChain[QuestChainId].StartTime
-  local QuestEndTime = DataMgr.QuestChain[QuestChainId].EndTime
+  local StartTime = DataMgr.QuestChain[QuestChainId].StartTime
+  local EndTime = DataMgr.QuestChain[QuestChainId].EndTime
+  local QuestStartTime, QuestEndTime
+  if StartTime then
+    QuestStartTime = StartTime:GetTime()
+  end
+  if EndTime then
+    QuestEndTime = EndTime:GetTime()
+  end
   if QuestStartTime and QuestEndTime and (CurrentTime < QuestStartTime or CurrentTime > QuestEndTime) and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
+    return false
+  end
+  if QuestStartTime and CurrentTime < QuestStartTime and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
+    return false
+  end
+  if not QuestStartTime and QuestEndTime and CurrentTime > QuestEndTime and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
     return false
   end
   if QuestChainData.CanShow == false and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
@@ -435,14 +439,12 @@ function WBP_Task_Main:CheckQuestIsShowByCheckState(QuestChainId, QuestChainData
     return true
   end
 end
-
 function WBP_Task_Main:InitDetailInfo()
   self.RootWidget.VB_TaskDetails:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.RootWidget.Group_TaskTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.RootWidget.HB_Reward:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.RootWidget.Common_Button_Text_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
   if not QuestWidget then
     return
@@ -456,7 +458,6 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
     self.RootWidget.Text_TaskTitle:SetRenderOpacity(0)
     self:AddTimer(0.01, function()
       local TextBlockWidth = UIManager(self):GetWidgetRenderSize(self.RootWidget.Text_TaskTitle)
-      self.RootWidget.Text_TaskTitle:SetTextByPixelWidth(GText("Quest_ToBeContinued"), TextBlockWidth.X)
       self.RootWidget.Text_TaskTitle:SetRenderOpacity(1)
     end, false, 0, "DelayToShowText")
     self.RootWidget.HB_Position:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -467,9 +468,14 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
     self.RootWidget.Text_TaskRewards:SetText(GText("UI_QUEST_REWARDS"))
     self.RootWidget.ListView_Rewards:ClearListItems()
     self.RootWidget.ListView_Rewards:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.RootWidget.VB_TaskReward:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.RootWidget.WS_Bottom:SetActiveWidgetIndex(1)
     self:SetTrackButtonText(false)
+    self.RootWidget.Group_TimeRemaining:SetVisibility(UE4.ESlateVisibility.Collapsed)
     return
   end
+  self.RootWidget.VB_TaskReward:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.RootWidget.WS_Bottom:SetActiveWidgetIndex(0)
   self.RootWidget.HB_Position:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.CurSelectQuest = QuestWidget
   local QuestId = QuestWidget.QuestID
@@ -481,6 +487,19 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
   local UnlockCondition
   if UnlockConditionId then
     UnlockCondition = DataMgr.Condition[UnlockConditionId].ConditionMap
+  end
+  if QuestWidget.OwnerWidget.bAdvance then
+    local DefaultConfigData = {
+      OwnerWidget = self,
+      MenuPlacement = EMenuPlacement.MenuPlacement_AboveAnchor,
+      TextContent = GText("UI_FAKEQUEST_TIPS")
+    }
+    self.RootWidget.Btn_Qa:Init(DefaultConfigData)
+    self.RootWidget.Group_IsDoneSign:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.RootWidget.Text_IsDone:SetText(GText("UI_FAKEQUEST_TEXT"))
+    self.RootWidget.Btn_QaClick.OnClicked:Add(self, self.OpenTips)
+  else
+    self.RootWidget.Group_IsDoneSign:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
   self.RootWidget.VB_TaskDetails:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.RootWidget.Group_TaskTitle:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -501,7 +520,6 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
     self.RootWidget.Text_TaskTitle:SetRenderOpacity(0)
     self:AddTimer(0.01, function()
       local TextBlockWidth = UIManager(self):GetWidgetRenderSize(self.RootWidget.Text_TaskTitle)
-      self.RootWidget.Text_TaskTitle:SetTextByPixelWidth(QuestWidget.QuestName, TextBlockWidth.X)
       self.RootWidget.Text_TaskTitle:SetRenderOpacity(1)
     end, false, 0, "DelayToShowText")
     self.RootWidget.Text_TaskDetail:SetText(QuestWidget.QuestDeatil)
@@ -512,10 +530,11 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
   else
     self.RootWidget.Group_TimeRemaining:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  if QuestWidget.QuestPosition then
+  if QuestWidget.QuestPosition ~= "" then
+    self.RootWidget.HB_Position:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.RootWidget.Text_Position:SetText(QuestWidget.QuestPosition)
   else
-    self.RootWidget.Group_TaskPosition:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.RootWidget.HB_Position:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
   if not RewardList then
     self.RootWidget.Group_Title_Rewards:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -526,7 +545,7 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
     self.RootWidget.Text_TaskRewards:SetText(GText("UI_QUEST_REWARDS"))
     self.RootWidget.ListView_Rewards:ClearListItems()
     self.RootWidget.ListView_Rewards:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    self:SortReward(RewardList)
+    self:SortReward(RewardList, QuestWidget.OwnerWidget.bAdvance)
   end
   local IsUnLocking = Avatar and Avatar:CheckCondition(UnlockConditionId)
   if not UnlockConditionId then
@@ -546,9 +565,12 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
         ConditionWidget.bIsFocusable = true
         ConditionWidget:Init(IsUnLock, self)
         ConditionWidget:SetConditionText(Type, IsUnLock, p)
-        if self["ConditionJump" .. Type] and not IsUnLock then
-          ConditionWidget.CanClick = true
-          ConditionWidget:BindEventOnClicked(self, self["ConditionJump" .. Type], p)
+        if "TrueQuestChain" == Type or "QuestChain" == Type then
+          local NewType = "QuestChain"
+          if self["ConditionJump" .. NewType] and not IsUnLock then
+            ConditionWidget.CanClick = true
+            ConditionWidget:BindEventOnClicked(self, self["ConditionJump" .. NewType], p)
+          end
         end
         ConditionWidget:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       end
@@ -564,9 +586,12 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
         local ConditionWidget = self:CreateWidgetNew("TaskUnlockCondition")
         ConditionWidget:Init(IsUnLock, self)
         ConditionWidget:SetConditionText(Type, IsUnLock, p)
-        if self["ConditionJump" .. Type] and not IsUnLock then
-          ConditionWidget.CanClick = true
-          ConditionWidget:BindEventOnClicked(self, self["ConditionJump" .. Type], p)
+        if "TrueQuestChain" == Type or "QuestChain" == Type then
+          local NewType = "QuestChain"
+          if self["ConditionJump" .. NewType] and not IsUnLock then
+            ConditionWidget.CanClick = true
+            ConditionWidget:BindEventOnClicked(self, self["ConditionJump" .. NewType], p)
+          end
         end
         self.RootWidget.VB_UnlockCondition:AddChildToVerticalBox(ConditionWidget)
         ConditionWidget:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -643,7 +668,16 @@ function WBP_Task_Main:ShowQuestDetailInfo(QuestWidget)
     self.RootWidget.Group_TimeRemaining:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
+function WBP_Task_Main:OpenTips()
+  self.RootWidget.Btn_Qa:PlayAnimation(self.RootWidget.Btn_Qa.Click)
+  self.RootWidget.Btn_Qa.Btn_Click:SetChecked(true)
+  self.RootWidget.Btn_Qa.TipsDetail:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
+  self.RootWidget.Btn_Qa.TipsDetail:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
+  self.RootWidget.Btn_Qa.TipsDetail:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
+  self.RootWidget.Btn_Qa.TipsDetail:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
+  self.RootWidget.Btn_Qa.TipsDetail:SetNavigationRuleBase(EUINavigation.Next, EUINavigationRule.Stop)
+  self.RootWidget.Btn_Qa.TipsDetail:SetNavigationRuleBase(EUINavigation.Previous, EUINavigationRule.Stop)
+end
 function WBP_Task_Main:UpdateComTime(InQuestChainId)
   if DataMgr.QuestChain[InQuestChainId] and DataMgr.QuestChain[InQuestChainId].StartTime and DataMgr.QuestChain[InQuestChainId].EndTime then
     local EndTime = DataMgr.QuestChain[InQuestChainId].EndTime - TimeUtils.NowTime()
@@ -653,7 +687,6 @@ function WBP_Task_Main:UpdateComTime(InQuestChainId)
     end
   end
 end
-
 function WBP_Task_Main:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -668,7 +701,6 @@ function WBP_Task_Main:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Task_Main:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -691,12 +723,26 @@ function WBP_Task_Main:OnKeyDown(MyGeometry, InKeyEvent)
     self.RootWidget.ListView_Rewards:NavigateToIndex(0)
     self:IsShowGamePad(false)
     self:InitTabPadKeyInfoForReward()
+  elseif "Gamepad_RightThumbstick" == KeyName then
+    if self.RootWidget.Group_IsDoneSign:GetVisibility() == ESlateVisibility.Collapsed then
+      return
+    end
+    self:OpenTips()
+    self:IsShowGamePad(false)
+    self:InitTabPadKeyInfoForTips()
   elseif "Gamepad_Special_Right" == KeyName then
     if self.CommonTabWidget.ReasoningEntrance then
       self:OnClickReasoningEntrance()
     end
   elseif "Gamepad_FaceButton_Top" == KeyName then
     if self.IsTaskEmpty == true then
+      return
+    end
+    if self.RootWidget.ListView_Rewards:HasFocusedDescendants() then
+      return
+    elseif self.RootWidget.VB_UnlockCondition:HasFocusedDescendants() then
+      return
+    elseif self.RootWidget.Btn_Qa:HasFocusedDescendants() then
       return
     end
     if self.RootWidget.Group_Jump:GetVisibility() == ESlateVisibility.SelfHitTestInvisible then
@@ -707,6 +753,10 @@ function WBP_Task_Main:OnKeyDown(MyGeometry, InKeyEvent)
       return
     end
     if self.RootWidget.ListView_Rewards:HasFocusedDescendants() then
+      return
+    elseif self.RootWidget.VB_UnlockCondition:HasFocusedDescendants() then
+      return
+    elseif self.RootWidget.Btn_Qa:HasFocusedDescendants() then
       return
     end
     if self.RootWidget.Common_Button_Text_PC.IsForbidden then
@@ -723,10 +773,19 @@ function WBP_Task_Main:OnKeyDown(MyGeometry, InKeyEvent)
       self.CurFocusWidget.Task_SubItem:SetFocus()
     elseif self.RootWidget.VB_UnlockCondition:HasFocusedDescendants() then
       self.CurFocusWidget.Task_SubItem:SetFocus()
+    elseif self.RootWidget.Btn_Qa:HasFocusedDescendants() then
+      self.CurFocusWidget.Task_SubItem:SetFocus()
     elseif self.RootWidget:HasAnyUserFocus() then
       self:OnReturnKeyDown()
     end
   elseif "Gamepad_LeftShoulder" == KeyName or "Gamepad_RightShoulder" == KeyName then
+    if self.RootWidget.ListView_Rewards:HasFocusedDescendants() or self.RootWidget.ListView_Rewards:HasAnyUserFocus() then
+      return
+    elseif self.RootWidget.VB_UnlockCondition:HasFocusedDescendants() then
+      return
+    elseif self.RootWidget.Btn_Qa:HasFocusedDescendants() then
+      return
+    end
     IsEventHandled = self.CommonTabWidget:Handle_KeyEventOnGamePad(KeyName)
   end
   if IsEventHandled then
@@ -735,13 +794,11 @@ function WBP_Task_Main:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Task_Main:OnReturnKeyDown(bClose)
   if not self:IsAnimationPlaying(self.In) then
     self:PlayOutAnim(bClose)
   end
 end
-
 function WBP_Task_Main:PlayOutAnim(bClose)
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -763,7 +820,6 @@ function WBP_Task_Main:PlayOutAnim(bClose)
   end
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Task_Main:Close()
   EMCache:Set("QuestPantlTab", self.SaveTabId or self.CurTabId, true)
   self.Super.Close(self)
@@ -794,15 +850,16 @@ function WBP_Task_Main:Close()
     self:SetTrackingQuestInfoToServer()
   end
 end
-
 function WBP_Task_Main:CheckNeedShowLevelMap()
+  if TaskUtils:GetQuestInterfaceJump(self.CurSelectQuest.QuestID) then
+    return
+  end
   local bShowLevelMap = false
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
   local HomeBaseRegionId = Const.HomeBaseSubRegionId
-  
   local function CheckIsNeedShowLevelMap(AvatarRegionId, TaskSubRegionId)
     if 0 == TaskSubRegionId then
       return false
@@ -815,7 +872,6 @@ function WBP_Task_Main:CheckNeedShowLevelMap()
     end
     return true
   end
-  
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   local TrackingQuestData = TaskUtils:GetTrackingQuestDetailInfo()
@@ -854,7 +910,6 @@ function WBP_Task_Main:CheckNeedShowLevelMap()
     self:Close()
   end
 end
-
 function WBP_Task_Main:CheckIsInSameRegion(AvatarRegionId, TaskSubRegionId)
   local HomeBaseRegionId = Const.HomeBaseSubRegionId
   if 0 == TaskSubRegionId then
@@ -868,7 +923,6 @@ function WBP_Task_Main:CheckIsInSameRegion(AvatarRegionId, TaskSubRegionId)
   end
   return true
 end
-
 function WBP_Task_Main:ShowDeliverPopupUI(InFairyLandRegionId, InQuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -893,20 +947,17 @@ function WBP_Task_Main:ShowDeliverPopupUI(InFairyLandRegionId, InQuestChainId)
     UIManager:ShowCommonPopupUI(100160, Params)
   end
 end
-
 function WBP_Task_Main:CancelDeliverTo()
 end
-
 function WBP_Task_Main:DoDeliverTo()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if self.CurTrackingQuest and self.CurTrackingQuest.QuestChainId and self.CurTrackingQuest.QuestID then
     local TrackingQuestData = TaskUtils:GetQuestDetail(self.CurTrackingQuest.QuestChainId, self.CurTrackingQuest.QuestID)
     if IsValid(GameMode) and TrackingQuestData and TrackingQuestData.SubRegionId > 0 then
-      GameMode:HandleLevelDeliver(UE4.EModeType.ModeRegion, TrackingQuestData.SubRegionId, 1, true)
+      GameMode:HandleLevelDeliver(UE4.EModeType.ModeRegion, TrackingQuestData.SubRegionId, TrackingQuestData.FairyLandDeliverIndex, true)
     end
   end
 end
-
 function WBP_Task_Main:CheckAvatarIsInQuestSubRegion()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -924,7 +975,6 @@ function WBP_Task_Main:CheckAvatarIsInQuestSubRegion()
   local IsInRegion = Avatar.CurrentRegionId and RegionId == DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId
   return IsInRegion
 end
-
 function WBP_Task_Main:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
@@ -942,7 +992,6 @@ function WBP_Task_Main:Destruct()
   ReddotManager.RemoveListener("DetectiveAnswer", self)
   WBP_Task_Main.Super.Destruct(self)
 end
-
 function WBP_Task_Main:GetListItemById(QuestChainId)
   local AllListItems = self.RootWidget.List_Task:GetListItems() or {}
   local TargetItem, Index
@@ -957,7 +1006,6 @@ function WBP_Task_Main:GetListItemById(QuestChainId)
     return Index, TargetItem
   end
 end
-
 function WBP_Task_Main:InitTrackingButton()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -974,7 +1022,6 @@ function WBP_Task_Main:InitTrackingButton()
   end)
   self.RootWidget.Common_Button_Text_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Task_Main:ReSwitchTaskBarTrackingQuest(InNewTrackingQuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -996,7 +1043,6 @@ function WBP_Task_Main:ReSwitchTaskBarTrackingQuest(InNewTrackingQuestChainId)
     TaskBar:SwitchTaskBarContentByTracking(true, false)
   end
 end
-
 function WBP_Task_Main:OnTrackButtonClicked()
   if not TaskUtils:JudgeCanTrack() then
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Quest_Tips_QuestTrackLock"))
@@ -1022,11 +1068,11 @@ function WBP_Task_Main:OnTrackButtonClicked()
       self:ShowDeliverPopupUI(TrackingQuestData.SubRegionId, self.CurSelectQuest.QuestChainId)
       return
     end
-    if self.CurTrackingQuest.SubRegionId > 0 then
-      self:SetTrackingQuestInfoToServer()
-    elseif TaskUtils:GetQuestInterfaceJump(self.CurSelectQuest.QuestID) then
+    if TaskUtils:GetQuestInterfaceJump(self.CurSelectQuest.QuestID) then
       self:SetTrackingQuestInfoToServer()
       PageJumpUtils:JumpToTargetPageByJumpId(TaskUtils:GetQuestInterfaceJumpId(self.CurSelectQuest.QuestID))
+    elseif self.CurTrackingQuest.SubRegionId > 0 then
+      self:SetTrackingQuestInfoToServer()
     end
   elseif self.TrackingQuestId == self.CurSelectId then
     self.CurSelectQuest:CancelTracking()
@@ -1041,7 +1087,6 @@ function WBP_Task_Main:OnTrackButtonClicked()
   end
   self:SetTrackButtonText(self.TrackingQuestId ~= nil)
 end
-
 function WBP_Task_Main:OnClickJumpBtn()
   if not TaskUtils:JudgeCanTrack() then
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Quest_Tips_QuestTrackLock"))
@@ -1058,15 +1103,14 @@ function WBP_Task_Main:OnClickJumpBtn()
       self:ShowDeliverPopupUI(TrackingQuestData.SubRegionId, self.CurSelectQuest.QuestChainId)
       return
     end
-    if self.CurTrackingQuest.SubRegionId > 0 then
-      self:SetTrackingQuestInfoToServer()
-    elseif TaskUtils:GetQuestInterfaceJump(self.CurSelectQuest.QuestID) then
+    if TaskUtils:GetQuestInterfaceJump(self.CurSelectQuest.QuestID) then
       self:SetTrackingQuestInfoToServer()
       PageJumpUtils:JumpToTargetPageByJumpId(TaskUtils:GetQuestInterfaceJumpId(self.CurSelectQuest.QuestID))
+    elseif self.CurTrackingQuest.SubRegionId > 0 then
+      self:SetTrackingQuestInfoToServer()
     end
   end
 end
-
 function WBP_Task_Main:SetTrackButtonText(IsTracking)
   if IsTracking then
     self.RootWidget.Common_Button_Text_PC:SetText(GText("UI_QUEST_STOPTRACK"))
@@ -1082,7 +1126,6 @@ function WBP_Task_Main:SetTrackButtonText(IsTracking)
     end
   end
 end
-
 function WBP_Task_Main:ScrollToSelectedWidget(CurSelectId)
   local TaskItemUIs = self.RootWidget.List_Task:GetDisplayedEntryWidgets()
   if nil == TaskItemUIs or 0 == TaskItemUIs:Num() then
@@ -1103,7 +1146,6 @@ function WBP_Task_Main:ScrollToSelectedWidget(CurSelectId)
     end
   end
 end
-
 function WBP_Task_Main:RenameWidget()
   self.PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self)
   if self.PlatformName == "PC" then
@@ -1113,7 +1155,6 @@ function WBP_Task_Main:RenameWidget()
   end
   self.RootWidget = self.WBP_Task_Root
 end
-
 function WBP_Task_Main:ConditionJumpQuestChain(QuestChainId)
   local Data = DataMgr.QuestChain[QuestChainId]
   if not QuestChainId or not Data then
@@ -1150,11 +1191,10 @@ function WBP_Task_Main:ConditionJumpQuestChain(QuestChainId)
     end
   end
   if not IsExisted and not IsExistedInMap then
-    DebugPrint("ERROR::", "\228\187\187\229\138\161:" .. QuestChainId .. "\229\156\168\228\187\187\229\138\161\233\157\162\230\157\191\229\146\140\229\156\176\229\155\190\228\184\173\233\131\189\228\184\141\229\173\152\229\156\168")
+    DebugPrint("ERROR::", "任务:" .. QuestChainId .. "在任务面板和地图中都不存在")
   elseif IsExisted then
     local function AfterDisplayQuestWidget()
       local AllDisplayWidget = self.RootWidget.List_Task:GetDisplayedEntryWidgets():ToTable() or {}
-      
       for _, Widget in pairs(AllDisplayWidget) do
         if Widget.QuestChainId == QuestChainId then
           Widget.Task_SubItem:SelectQuestProactively()
@@ -1162,7 +1202,6 @@ function WBP_Task_Main:ConditionJumpQuestChain(QuestChainId)
         end
       end
     end
-    
     local TabId = 1
     for k, v in pairs(ConstQuestTabData) do
       if v.QuestType == QuestChainType then
@@ -1186,7 +1225,6 @@ function WBP_Task_Main:ConditionJumpQuestChain(QuestChainId)
     end
   end
 end
-
 function WBP_Task_Main:IsInTab(QuestChainId, TabId)
   local Data = DataMgr.QuestChain[QuestChainId]
   if not Data then
@@ -1201,7 +1239,6 @@ function WBP_Task_Main:IsInTab(QuestChainId, TabId)
   end
   return Data.QuestChainType == TabQuestType or 1 == TabId
 end
-
 function WBP_Task_Main:GetCurTabFirstQuestId(QuestData, TabId)
   local CurTabQuestType = -1
   if ConstQuestTabData[TabId] and ConstQuestTabData[TabId].QuestType then
@@ -1224,11 +1261,9 @@ function WBP_Task_Main:GetCurTabFirstQuestId(QuestData, TabId)
   end
   return 0
 end
-
 function WBP_Task_Main:GetQuestInfoString(StringInfo)
   return GText(StringInfo)
 end
-
 function WBP_Task_Main:SetTrackingQuestInfoToServer()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1251,8 +1286,7 @@ function WBP_Task_Main:SetTrackingQuestInfoToServer()
     Avatar:SetQuestTracking(ClientTrackId, self.CurTrackingQuest.SubRegionId)
   end
 end
-
-function WBP_Task_Main:SortReward(RewardList)
+function WBP_Task_Main:SortReward(RewardList, bAdvance)
   local Res = {}
   local Rewards = {}
   for _, RewardId in pairs(RewardList) do
@@ -1324,17 +1358,16 @@ function WBP_Task_Main:SortReward(RewardList)
       IsShowDetails = true,
       ItemType = ItemType
     })
-    
+    RewardContent.bHasGot = bAdvance
     function RewardContent.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnRewardMenuOpenChanged
       })
     end
-    
     self.RootWidget.ListView_Rewards:AddItem(RewardContent)
   end
+  self.RootWidget.ListView_Rewards:RequestPlayEntriesAnim()
 end
-
 function WBP_Task_Main:OnRewardMenuOpenChanged(bIsOpen)
   if bIsOpen and self.UsingGamepad then
     self.CommonTabWidget:UpdateBottomKeyInfo({})
@@ -1342,13 +1375,11 @@ function WBP_Task_Main:OnRewardMenuOpenChanged(bIsOpen)
     self:InitTabPadKeyInfoForReward()
   end
 end
-
 function WBP_Task_Main:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Task_Main:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -1356,9 +1387,7 @@ function WBP_Task_Main:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_Task_Main:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
-  self.RootWidget.Reasoning_Entrance:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if CurInputDevice == ECommonInputType.Touch then
     return
   end
@@ -1379,14 +1408,12 @@ function WBP_Task_Main:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName
     self:SetFocusOnTrackWidget(self.CurSelectId)
   end
 end
-
 function WBP_Task_Main:InitPadKeyInfo()
   self.RootWidget.Key_Map:CreateCommonKey({
     KeyInfoList = {
       {Type = "Img", ImgShortPath = "Y"}
     }
   })
-  self.RootWidget.Reasoning_Entrance:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.RootWidget.Key_Title_Rewards:CreateCommonKey({
     KeyInfoList = {
       {Type = "Img", ImgShortPath = "LS"}
@@ -1400,11 +1427,16 @@ function WBP_Task_Main:InitPadKeyInfo()
     })
     self.CommonTabWidget.ReasoningEntrance.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Visible)
   end
+  self.RootWidget.Key_Qa:CreateCommonKey({
+    KeyInfoList = {
+      {Type = "Img", ImgShortPath = "RS"}
+    }
+  })
+  self.RootWidget.GroupKey:SetVisibility(UE4.ESlateVisibility.Visible)
   self.RootWidget.Key_Title_Rewards:SetVisibility(UE4.ESlateVisibility.Visible)
   self.RootWidget.Key_Map:SetVisibility(UE4.ESlateVisibility.Visible)
   self.RootWidget.Common_Button_Text_PC:SetGamePadImg("X")
 end
-
 function WBP_Task_Main:InitTabPadKeyInfo()
   if self.PlatformName == "Mobile" then
     return
@@ -1425,7 +1457,6 @@ function WBP_Task_Main:InitTabPadKeyInfo()
     }
   })
 end
-
 function WBP_Task_Main:InitTabPadKeyInfoForReward()
   if self.PlatformName == "Mobile" then
     return
@@ -1446,7 +1477,6 @@ function WBP_Task_Main:InitTabPadKeyInfoForReward()
     }
   })
 end
-
 function WBP_Task_Main:InitTabPadKeyInfoForBack()
   if self.PlatformName == "Mobile" then
     return
@@ -1460,7 +1490,19 @@ function WBP_Task_Main:InitTabPadKeyInfoForBack()
     }
   })
 end
-
+function WBP_Task_Main:InitTabPadKeyInfoForTips()
+  if self.PlatformName == "Mobile" then
+    return
+  end
+  self.CommonTabWidget:UpdateBottomKeyInfo({
+    {
+      GamePadInfoList = {
+        {Type = "Img", ImgShortPath = "B"}
+      },
+      Desc = GText("UI_FAKEQUEST_TIPS_CLOSE")
+    }
+  })
+end
 function WBP_Task_Main:InitTabPadKeyInfoForCondition()
   if self.PlatformName == "Mobile" then
     return
@@ -1481,7 +1523,6 @@ function WBP_Task_Main:InitTabPadKeyInfoForCondition()
     }
   })
 end
-
 function WBP_Task_Main:GetCurTrackWidget(TrackingQuestId)
   if nil == TrackingQuestId then
     return
@@ -1494,7 +1535,6 @@ function WBP_Task_Main:GetCurTrackWidget(TrackingQuestId)
   end
   return nil
 end
-
 function WBP_Task_Main:SetFocusOnTrackWidget(TrackingQuestId)
   local CurTrackWidget = self:GetCurTrackWidget(TrackingQuestId)
   if nil == CurTrackWidget then
@@ -1510,10 +1550,8 @@ function WBP_Task_Main:SetFocusOnTrackWidget(TrackingQuestId)
     self.RootWidget.List_Task:NavigateToIndex(Index)
   end
 end
-
 function WBP_Task_Main:OnLeftStickUp()
 end
-
 function WBP_Task_Main:OnNavigationRight()
   if self.RootWidget.VB_UnlockCondition:GetChildrenCount() <= 0 then
     return
@@ -1525,7 +1563,6 @@ function WBP_Task_Main:OnNavigationRight()
     end
   end
 end
-
 function WBP_Task_Main:IsShowGamePad(IsShow)
   if self.PlatformName == "Mobile" then
     return
@@ -1536,6 +1573,7 @@ function WBP_Task_Main:IsShowGamePad(IsShow)
     self.RootWidget.Key_Title_Rewards:SetVisibility(UE4.ESlateVisibility.Visible)
     self.RootWidget.Key_Map:SetVisibility(UE4.ESlateVisibility.Visible)
     self.RootWidget.Common_Button_Text_PC:SetGamePadVisibility(UE4.ESlateVisibility.Visible)
+    self.RootWidget.GroupKey:SetVisibility(UE4.ESlateVisibility.Visible)
     if self.CommonTabWidget.ReasoningEntrance then
       self.CommonTabWidget.ReasoningEntrance.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Visible)
     end
@@ -1545,19 +1583,19 @@ function WBP_Task_Main:IsShowGamePad(IsShow)
     self.RootWidget.Key_Title_Rewards:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.RootWidget.Common_Button_Text_PC:SetGamePadVisibility(UE4.ESlateVisibility.Collapsed)
     self.RootWidget.Key_Map:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.RootWidget.GroupKey:SetVisibility(UE4.ESlateVisibility.Collapsed)
     if self.CommonTabWidget.ReasoningEntrance then
       self.CommonTabWidget.ReasoningEntrance.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
   end
 end
-
 function WBP_Task_Main:ReceiveEnterState(StackAction)
   WBP_Task_Main.Super.ReceiveEnterState(self, StackAction)
   if self.IsCanReceive == true then
     if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
       self:InitPadKeyInfo()
     end
-    if self.CurFocusWidget then
+    if self.CurFocusWidget and self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
       self.CurFocusWidget.Task_SubItem:SetFocus()
     end
   end
@@ -1566,21 +1604,20 @@ function WBP_Task_Main:ReceiveEnterState(StackAction)
     self:Close()
   end
 end
-
 function WBP_Task_Main:OnClickReasoningEntrance()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   local UIManager = self:GetGameInstance():GetGameUIManager()
   UIManager:LoadUINew("DetectiveMinigame")
 end
-
 function WBP_Task_Main:UpdateReasoningRedDot()
-  local HasNewQuestionOrClue = ReasoningUtils:IsHasNewQuestionOrClue()
+  local IsNewClue = ReasoningUtils:IsAllClueHasNewClue()
+  local IsNewQuestion = ReasoningUtils:IsAllQuestionHasNewQuestion()
   if self.CommonTabWidget and self.CommonTabWidget.ReasoningEntrance then
-    if 2 == HasNewQuestionOrClue then
-      self.CommonTabWidget.ReasoningEntrance.Text_Clue:SetText(GText("Minigame_Textmap_100303"))
+    if IsNewClue then
+      self.CommonTabWidget.ReasoningEntrance.Bubble:ShowInfo()
       self.CommonTabWidget.ReasoningEntrance.Panel_Clue:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       self.CommonTabWidget.ReasoningEntrance.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    elseif 1 == HasNewQuestionOrClue then
+    elseif IsNewQuestion then
       self.CommonTabWidget.ReasoningEntrance.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
       self.CommonTabWidget.ReasoningEntrance.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     else
@@ -1589,7 +1626,6 @@ function WBP_Task_Main:UpdateReasoningRedDot()
     end
   end
 end
-
 function WBP_Task_Main:ShouldShowReasoningEntrance()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1599,5 +1635,4 @@ function WBP_Task_Main:ShouldShowReasoningEntrance()
   local UnlockedResults = Avatar.DetectiveGameUnlockedResult or {}
   return false
 end
-
 return WBP_Task_Main

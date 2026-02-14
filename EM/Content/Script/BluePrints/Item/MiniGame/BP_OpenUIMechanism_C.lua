@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints/Item/Chest/BP_MechanismBase_C")
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   self.CanOpen = true
 end
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.InteractiveType = Const.EndByTargetInteractive
@@ -19,15 +17,12 @@ function M:CommonInitInfo(Info)
     end
   end
 end
-
 function M:OpenMechanism(PlayerId)
 end
-
 function M:OpenUI(PlayerEid, NextStateId)
   self.UINextStateId = NextStateId
   self:BroadcastOpenMechanism(PlayerEid)
 end
-
 function M:CloseMechanism(PlayerId)
   if IsAuthority(self) then
     self.CombatStateChangeComponent:TriggerOnEventEnd(self.UINextStateId)
@@ -39,7 +34,6 @@ function M:CloseMechanism(PlayerId)
   end
   self:BroadcastCloseMechanism(PlayerId)
 end
-
 function M:BroadcastOpenMechanism_Lua(PlayerId)
   if IsAuthority(self) and not IsStandAlone(self) then
     return
@@ -49,7 +43,6 @@ function M:BroadcastOpenMechanism_Lua(PlayerId)
   end
   self:LoadGameUI(PlayerId)
 end
-
 function M:BroadcastCloseMechanism_Lua(PlayerId)
   if IsAuthority(self) and not IsStandAlone(self) then
     return
@@ -59,7 +52,6 @@ function M:BroadcastCloseMechanism_Lua(PlayerId)
   end
   self:UnLoadGameUI(PlayerId)
 end
-
 function M:LoadGameUI(PlayerId)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -69,11 +61,9 @@ function M:LoadGameUI(PlayerId)
   self.CurrentUI = self:RealLoadGameUI()
   self.CanOpen = false
 end
-
 function M:RealLoadGameUI()
   return UIManager(self):LoadUINew(self.UIName, self.ExtraInfo)
 end
-
 function M:UnLoadGameUI(PlayerId)
   if UE4.UGameplayStatics.GetPlayerPawn(self, 0).Eid ~= PlayerId then
     return
@@ -88,10 +78,27 @@ function M:UnLoadGameUI(PlayerId)
   end
   self.CanOpen = true
 end
-
 function M:EndInteractive(Player, bIsSuccess)
   self:SetVariableBool("bIsSuccess", bIsSuccess, Player.Eid)
   self.ChestInteractiveComponent:EndInteractive(Player)
 end
-
+function M:ForceCloseMechanism(PlayerEid)
+  self:SetVariableBool("bIsSuccess", true, PlayerEid)
+  if self.CurrentUI then
+    self.CurrentUI:Close()
+  end
+  self:CloseMechanism(PlayerEid)
+end
+function M:GetCanOpen(PlayerEid)
+  local Battle = Battle(self)
+  if not Battle then
+    return
+  end
+  local Player = Battle:GetEntity(PlayerEid)
+  if Player and not Player:CanEnterInteractive() then
+    self.CanOpen = false
+  else
+    self.CanOpen = true
+  end
+end
 return M

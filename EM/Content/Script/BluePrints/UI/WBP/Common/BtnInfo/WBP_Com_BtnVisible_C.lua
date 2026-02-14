@@ -1,16 +1,13 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.IsActive = false
   self.SoundFunc = self.PlayClickSound
   self.SoundFuncReceiver = self
 end
-
 function M:Destruct()
   self:ClearListenEvent()
 end
-
 function M:Init(ConfigData)
   self.ConfigData = ConfigData
   self.ClickCallback = ConfigData.ClickCallback
@@ -22,7 +19,6 @@ function M:Init(ConfigData)
   self:InitListenEvent()
   self:UpdateView()
 end
-
 function M:UpdateView()
   if self.IsActive then
     self:PlayAnimationForward(self.ON)
@@ -32,7 +28,6 @@ function M:UpdateView()
     self.TargetWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnBtnClick(IsChecked)
   if type(self.SoundFunc) == "function" then
     self.SoundFunc(self.SoundFuncReceiver)
@@ -45,17 +40,13 @@ function M:OnBtnClick(IsChecked)
     self.ClickCallback(self.OwnerWidget, IsChecked)
   end
 end
-
 function M:InitListenEvent()
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClick)
 end
-
 function M:ClearListenEvent()
   self.Btn_Click.OnClicked:Clear()
 end
-
 function M:PlayClickSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 return M

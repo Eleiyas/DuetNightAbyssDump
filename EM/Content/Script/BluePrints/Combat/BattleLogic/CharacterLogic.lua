@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:FilterTargetIgnoreSeekEnemy(Targets)
   local NewTargets = TArray(AActor)
   for _, Target in pairs(Targets) do
@@ -9,5 +8,4 @@ function Component:FilterTargetIgnoreSeekEnemy(Targets)
   end
   return NewTargets
 end
-
 return Component

@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.Settlement.DungeonSettlementComponent"
 }
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self.BattleInfo, self.Callback = ...
@@ -20,13 +19,11 @@ function M:OnLoaded(...)
   elseif Avatar:IsInHardBoss() then
     Describe = GText(DataMgr.HardBossMain[self.BattleInfo.HardBossId].HardBossName)
   end
-  self.Text_Describe:SetText(DungeonName)
+  self.Text_Describe:SetText(Describe)
 end
-
 function M:PlayInAnim()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   self:BindToAnimationFinished(self.Out, {
     self,
@@ -34,13 +31,11 @@ function M:PlayOutAnim()
   })
   self:PlayAnimation(self.Out)
 end
-
 function M:EndReminder()
   if self.Callback then
     self.Callback()
   end
   self:Close()
 end
-
 AssembleComponents(M)
 return M

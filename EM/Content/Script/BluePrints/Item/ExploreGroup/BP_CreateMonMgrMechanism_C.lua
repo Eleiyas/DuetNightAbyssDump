@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
 function M:ActiveCombat()
   M.Super.ActiveCombat(self)
   self.Waves = self.MonsterCreateInfo:Length()
@@ -18,7 +17,6 @@ function M:ActiveCombat()
   self:AddTimer(self.ActiveTime, self.OnActiveTimeEnd, false, 0, "OnActiveTimeEnd")
   self:StartWave()
 end
-
 function M:StartWave()
   if self.CurWave <= self.Waves then
     self.CreateInfo = self.MonsterCreateInfo:FindRef(self.CurWave)
@@ -35,14 +33,12 @@ function M:StartWave()
     end
   end
 end
-
 function M:CreateMonster(CreateInfo)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
     GameMode:TriggerActiveStaticCreator(CreateInfo.CreatorIds, "StartTriggerMonster")
   end
 end
-
 function M:OnMonsterDead(Monster)
   if Monster and self.CreatorIds and self.CreatorIds[Monster.CreatorId] ~= nil then
     self.CurMonsterDeadNum = self.CurMonsterDeadNum + 1
@@ -55,7 +51,6 @@ function M:OnMonsterDead(Monster)
     end
   end
 end
-
 function M:OnActiveTimeEnd()
   self:ChangeState("Manual", 0, self.DeActiveStateId)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -78,12 +73,10 @@ function M:OnActiveTimeEnd()
     end
   end
 end
-
 function M:OnCurWaveTimeEnd()
   self.CurWave = self.CurWave + 1
   self:StartWave()
 end
-
 function M:OnComplete()
   self:RemoveTimer("OnActiveTimeEnd")
   self:ChangeState("Manual", 0, self.CompleteStateId)
@@ -92,7 +85,6 @@ function M:OnComplete()
     GameState:RemoveGameModeEvent("OnDeadStaticUnit", self, self.OnMonsterDead)
   end
 end
-
 function M:ReceiveEndPlay(EndReason)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
@@ -100,5 +92,4 @@ function M:ReceiveEndPlay(EndReason)
   end
   self.Super.ReceiveEndPlay(self, EndReason)
 end
-
 return M

@@ -1,7 +1,6 @@
 require("UnLua")
 local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
 local M = Class("BluePrints.UI.Shop.WBP_Shop_Item_Base_C")
-
 function M:Construct()
   self.bHover = false
   self.Text_SoldOut:SetText(GText("UI_SHOP_SOLDOUT"))
@@ -10,11 +9,9 @@ function M:Construct()
   self.Button_Item.OnPressed:Add(self, self.OnBtnPressed)
   self.Button_Item.OnClicked:Add(self, self.OnBtnClicked)
 end
-
 function M:Destruct()
   self:ClearListenEvent()
 end
-
 function M:OnListItemObjectSet(Content)
   self:StopAllAnimations()
   self:ResetItem()
@@ -71,7 +68,6 @@ function M:OnListItemObjectSet(Content)
     self.Group_ArchiveSign:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -82,13 +78,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -98,7 +92,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDeviceType = CurInputDevice
 end
-
 function M:SetIsCanLevelUp()
   self.Group_CanUpgrade:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if self.ItemType == "Blessing" then
@@ -113,7 +106,6 @@ function M:SetIsCanLevelUp()
     end
   end
 end
-
 function M:SetBuffType(IconPath)
   if not IconPath then
     return
@@ -121,7 +113,6 @@ function M:SetBuffType(IconPath)
   self.Image_BuffType:SetVisibility(ESlateVisibility.Visible)
   self.Image_BuffType:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetPrice(Prices)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -137,25 +128,21 @@ function M:SetPrice(Prices)
   end
   self.Text_Undiscounted_Price:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:ResetItem()
   self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.Normal)
   self.Group_Item:SetVisibility(ESlateVisibility.Visible)
   self.Panel_SoldOut:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SetSelect()
   self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.Click)
   EventManager:FireEvent(EventID.OnRougeShopItemSelect, self.Content, self.ItemType, self.ItemId, self.ShopId, self.RealPrices, self.IsSoldOut, self.IsCanLevelUp)
   self.Content.IsSelect = true
 end
-
 function M:SetUnSelect()
   self.Com_Item_Shop:StopAllAnimations()
   self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.Normal)
   self.Content.IsSelect = false
 end
-
 function M:OnBtnHovered()
   if self.Content.IsSelect then
     return
@@ -167,7 +154,6 @@ function M:OnBtnHovered()
     self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.Hover)
   end
 end
-
 function M:OnBtnUnhovered()
   if self.Content.IsSelect then
     return
@@ -175,14 +161,12 @@ function M:OnBtnUnhovered()
   self.Com_Item_Shop:StopAllAnimations()
   self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.UnHover)
 end
-
 function M:OnBtnPressed()
   if self.Content.IsSelect then
     return
   end
   self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.Press)
 end
-
 function M:OnBtnClicked()
   if self.Content.IsSelect then
     return
@@ -191,10 +175,8 @@ function M:OnBtnClicked()
   EventManager:FireEvent(EventID.OnRougeShopItemSelect, self.Content, self.ItemType, self.ItemId, self.ShopId, self.RealPrices, self.IsSoldOut, self.IsCanLevelUp)
   self.Com_Item_Shop:PlayAnimation(self.Com_Item_Shop.Click)
 end
-
 function M:OnAnimationFinished(Anim)
   if Anim == self.UnHover then
   end
 end
-
 return M

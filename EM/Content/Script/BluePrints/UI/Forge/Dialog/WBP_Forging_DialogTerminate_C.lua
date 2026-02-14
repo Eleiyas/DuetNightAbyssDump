@@ -9,13 +9,22 @@ local FSMState = {
   CheckItem = 2,
   ShowTip = 3
 }
-
 function WBP_Forging_DialogTerminate_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.CancelParams = Params.CancelParams
   self:InitView()
 end
-
+function WBP_Forging_DialogTerminate_C:InitGamepadView()
+  if self.IsShowingTip then
+    self.ControllerFSM:Enter(FSMState.ShowTip)
+  else
+    self.ControllerFSM:Enter(FSMState.Normal)
+  end
+end
+function WBP_Forging_DialogTerminate_C:InitKeyboardView()
+  self.ControllerFSM:Reset()
+  self:HideAllGamepadShortcut()
+end
 function WBP_Forging_DialogTerminate_C:InitView()
   self.Text_TitleDone:SetText(GText("UI_FORGING_COMPLETED"))
   self.Text_TitleRefund:SetText(GText("UI_Return_Forge_Unfinished"))
@@ -95,11 +104,9 @@ function WBP_Forging_DialogTerminate_C:InitView()
     self.ControllerFSM:Enter(FSMState.Normal)
   end
 end
-
 function WBP_Forging_DialogTerminate_C:OnEnterState_ShowTip()
   self:HideAllGamepadShortcut()
 end
-
 function WBP_Forging_DialogTerminate_C:OnEnterState_CheckItem()
   self:HideGamepadShortcut(self.GamepadCheckItemKeyInfo)
   self.GamepadBackKeyInfo = self:ShowGamepadShortcutBtn({
@@ -122,7 +129,6 @@ function WBP_Forging_DialogTerminate_C:OnEnterState_CheckItem()
   })
   self:SetGamepadBtnKeyVisibility(false)
 end
-
 function WBP_Forging_DialogTerminate_C:OnEnterState_Normal()
   self:HideGamepadShortcut(self.GamepadBackKeyInfo)
   self:HideGamepadShortcut(self.GamepadCheckDetailsKeyInfo)
@@ -138,15 +144,14 @@ function WBP_Forging_DialogTerminate_C:OnEnterState_Normal()
   self:SetFocus()
   self:SetGamepadBtnKeyVisibility(true)
 end
-
 function WBP_Forging_DialogTerminate_C:OnMenuOpenChange(IsOpen)
   if IsOpen then
     self.ControllerFSM:Enter(FSMState.ShowTip)
   else
     self.ControllerFSM:Enter(FSMState.CheckItem)
   end
+  self.IsShowingTip = IsOpen
 end
-
 function WBP_Forging_DialogTerminate_C:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -174,5 +179,4 @@ function WBP_Forging_DialogTerminate_C:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 return WBP_Forging_DialogTerminate_C

@@ -2,7 +2,6 @@ require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local SkillUtils = require("Utils.SkillUtils")
 local M = {}
-
 function M:Construct()
   if self.WB_Entry then
     self.EntryInfoWidgets = self.WB_Entry:GetAllChildren():ToTable()
@@ -14,7 +13,6 @@ function M:Construct()
     self.EntryItem_4
   }
 end
-
 function M:OnFuseBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   local UIConfig = DataMgr.SystemUI.PetMix
@@ -27,7 +25,6 @@ function M:OnFuseBtnClicked()
   }
   UIManager(self):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, self.Parent:GetZOrder(), Params)
 end
-
 function M:UpdateEntryInfos(Pet)
   if not Pet or not Pet.Entry then
     return
@@ -118,25 +115,20 @@ function M:UpdateEntryInfos(Pet)
     end
   end
 end
-
 function M:OnEntryContentCreated(Content)
   Content.OnAddedToFocusPath = self.OnEntryWidgetAddedToFocusPath
   Content.OnRemovedFromFocusPath = self.OnEntryWidgetRemovedFromFocusPath
 end
-
 function M:OnEntryWidgetAddedToFocusPath(Widget)
   self.IsEntryWidgetInFocusPath = true
   self.CurFocusEntryWidget = Widget
   self:OnFocusChanged()
 end
-
 function M:OnFocusChanged()
 end
-
 function M:OnEntryWidgetRemovedFromFocusPath(Widget)
   self.IsEntryWidgetInFocusPath = false
 end
-
 function M:OnEntrySelectd(Content)
   AudioManager(self):PlayUISound(self, "event:/ui/common/pet_potential_click", nil, nil)
   ArmoryUtils:SetContentIsSelected(self.CurEntryContent, false)
@@ -144,7 +136,6 @@ function M:OnEntrySelectd(Content)
   ArmoryUtils:SetContentIsSelected(self.CurEntryContent, true)
   Content.Widget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnEntryClicked(Content, Widget)
   if self.IsPreviewMode then
     return
@@ -158,7 +149,6 @@ function M:OnEntryClicked(Content, Widget)
     end
   end
 end
-
 function M:OpenPetMix()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   local UIConfig = DataMgr.SystemUI.PetMix
@@ -171,7 +161,6 @@ function M:OpenPetMix()
   }
   UIManager(self):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, self.Parent:GetZOrder(), Params)
 end
-
 function M:InitNavigationRules()
   self.LastTopFocusedEntryWidget = nil
   if 1 == #self.DisplayEntryItemWidgets then
@@ -246,11 +235,9 @@ function M:InitNavigationRules()
     Widget4:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   end
 end
-
 function M:PlayEntriesInAnim()
   for index, value in ipairs(self.DisplayEntryItemWidgets) do
     value:PlayInAnim()
   end
 end
-
 return M

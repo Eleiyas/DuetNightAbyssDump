@@ -1,6 +1,5 @@
 require("UnLua")
 local G = Class("BluePrints.UI.BP_UIState_C")
-
 function G:Construct()
   self.Text_ChooseTipsTitle:SetText(GText("UI_Gacha_Start_Select"))
   self.Text_Choose_TipsDesc:SetText(GText("UI_Gacha_Start_Warning"))
@@ -30,7 +29,6 @@ function G:Construct()
   end
   self.List_ChooseAvatar.BP_OnItemSelectionChanged:Add(self, self.OnSelectItemChanged)
 end
-
 function G:Init(Parent)
   self.Parent = Parent
   self.NowSelectGachaId = Parent.NowGachaId
@@ -56,7 +54,6 @@ function G:Init(Parent)
   end
   self.Parent.CantClick = true
 end
-
 function G:InitChooseTipTitle()
   local ChooseTipTitleSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.ChooseTipTitle)
   if ChooseTipTitleSlot then
@@ -69,7 +66,6 @@ function G:InitChooseTipTitle()
     ChooseTipTitleSlot:SetPosition(Position)
   end
 end
-
 function G:InitListSelect()
   local GachaInfo = DataMgr.GachaSelect[self.NowSelectGachaId]
   if not GachaInfo or not GachaInfo.ItemType then
@@ -158,7 +154,6 @@ function G:InitListSelect()
     end
   end)
 end
-
 function G:OnSelectItemChanged(SelectItem)
   if not SelectItem then
     return
@@ -168,7 +163,6 @@ function G:OnSelectItemChanged(SelectItem)
     SelectItem.Entry:OnMouseButtonUp()
   end
 end
-
 function G:OnGachaSelectListItemClicked(Content)
   if self.CurContent and self.CurContent ~= Content then
     self.CurContent.Entry:SetSelected(false)
@@ -184,7 +178,6 @@ function G:OnGachaSelectListItemClicked(Content)
     self.Btn_Yes:ForbidBtn(false)
   end
 end
-
 function G:OpenShowCharDetail(CharId)
   UIManager(self):LoadUINew("ArmoryDetail", {
     PreviewCharIds = {CharId},
@@ -195,7 +188,6 @@ function G:OpenShowCharDetail(CharId)
     bHideWeaponAppearance = true
   })
 end
-
 function G:OpenShowWeaponDetail(WeaponId)
   UIManager(self):LoadUINew("ArmoryDetail", {
     PreviewWeaponIds = {WeaponId},
@@ -206,7 +198,6 @@ function G:OpenShowWeaponDetail(WeaponId)
     bHideWeaponAppearance = true
   })
 end
-
 function G:OnParentUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if UIUtils.IsMobileInput() then
     return
@@ -217,7 +208,6 @@ function G:OnParentUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function G:InitGamepadView()
   self.List_ChooseAvatar:SetFocus()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -239,7 +229,6 @@ function G:InitGamepadView()
   })
   self.Btn_Close:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function G:InitKeyboardView()
   if UIUtils.IsMobileInput() then
     self.Com_MidKeyTips:SetVisibility(ESlateVisibility.Collapsed)
@@ -261,7 +250,6 @@ function G:InitKeyboardView()
   end
   self.Btn_Close:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function G:OnParentKeyDown(MyGeometry, InKeyEvent)
   if self.CantClick == true then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -277,10 +265,9 @@ function G:OnParentKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function G:OnBtnTryOutClicked()
   if not self.CurContent then
-    DebugPrint("----jzn---\229\189\147\229\137\141\230\156\170\233\128\137\230\139\169\228\187\187\228\189\149\232\167\146\232\137\178---OnBtnTryOutClicked--")
+    DebugPrint("----jzn---当前未选择任何角色---OnBtnTryOutClicked--")
     return
   end
   local Index = self.CurContent.Index
@@ -292,13 +279,11 @@ function G:OnBtnTryOutClicked()
     Avatar:EnterCharTrial(nil, TrialDungeonId, TrialId)
   end
 end
-
 function G:OnBtnConfirmClicked()
   if self.NowSelectTargetId then
     local Avatar = GWorld:GetAvatar()
     if Avatar then
       self.CantClick = true
-      
       local function SelectGachaCallback(Ret)
         if Ret == ErrorCode.RET_SUCCESS then
           self.CantClick = false
@@ -317,14 +302,12 @@ function G:OnBtnConfirmClicked()
           UIManager(self):ShowUITip("CommonToastMain", GText(ErrorText), 1.5)
         end
       end
-      
       Avatar:SetGachaSelfSelect(SelectGachaCallback, self.NowSelectGachaId, self.NowSelectTargetId)
     end
   else
-    DebugPrint("----jzn---\229\189\147\229\137\141\230\156\170\233\128\137\230\139\169\228\187\187\228\189\149\232\167\146\232\137\178---OnBtnConfirmClicked--")
+    DebugPrint("----jzn---当前未选择任何角色---OnBtnConfirmClicked--")
   end
 end
-
 function G:OnBtnCloseClicked()
   if self.CantClick then
     return
@@ -332,7 +315,6 @@ function G:OnBtnCloseClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
   self:PlayOutAnim()
 end
-
 function G:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -345,11 +327,9 @@ function G:PlayOutAnim()
     self.OnClickBtnClose
   })
 end
-
 function G:OnClickBtnClose()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Parent:SetFocus()
   self.Parent.CantClick = false
 end
-
 return G

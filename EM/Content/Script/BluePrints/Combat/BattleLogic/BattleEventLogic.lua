@@ -1,7 +1,6 @@
 local MiscUtils = require("Utils.MiscUtils")
 local BattleEvents = {}
 local BattleEventLogic = {}
-
 function BattleEventLogic:ReceiveBeginPlay()
   if not IsAuthority(self) then
     self.RegisterBattleEvent = MiscUtils.EmptyFunction
@@ -16,7 +15,6 @@ function BattleEventLogic:ReceiveBeginPlay()
   self.AllMulticastBattleEvent = {}
   self:InitBattleEvent()
 end
-
 function BattleEventLogic:InitBattleEvent()
   for _, EventPath in pairs(BattleEvents) do
     local Module = require("BluePrints.Combat.BattleEvents." .. EventPath)
@@ -27,7 +25,6 @@ function BattleEventLogic:InitBattleEvent()
     Module:Init(self)
   end
 end
-
 function BattleEventLogic:InitBattleEventWithPath(EventPath)
   local Module = require("BluePrints.Combat.BattleEvents." .. EventPath)
   table.insert(self.Components, Module)
@@ -37,7 +34,6 @@ function BattleEventLogic:InitBattleEventWithPath(EventPath)
   Module:Init(self)
   Module.EventPath = "BluePrints.Combat.BattleEvents." .. EventPath
 end
-
 function BattleEventLogic:DestoryBattleEvent(EventPath)
   local Path = "BluePrints.Combat.BattleEvents." .. EventPath
   if self.Components then
@@ -49,5 +45,4 @@ function BattleEventLogic:DestoryBattleEvent(EventPath)
     end
   end
 end
-
 return BattleEventLogic

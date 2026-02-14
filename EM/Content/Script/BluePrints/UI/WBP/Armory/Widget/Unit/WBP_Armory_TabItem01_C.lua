@@ -3,12 +3,10 @@ local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Text_Lv:SetText(GText("UI_LEVEL_NAME"))
   self:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Owner = Content.Owner
@@ -44,7 +42,6 @@ function M:OnListItemObjectSet(Content)
     self.OwningList.BP_OnItemClicked:Add(self, self.OnOwningListItemClicked)
   end
 end
-
 function M:SetIsLocked(LockType)
   if 2 == LockType then
     self:StopAnimation(self.Lock_Normal)
@@ -54,14 +51,12 @@ function M:SetIsLocked(LockType)
     self:PlayAnimation(self.Lock_Normal)
   end
 end
-
 function M:SetCharSkinPreViewItemIsLocked(CharSkinPreViewLockType)
   if not CharSkinPreViewLockType then
     return
   end
   self:SetIsLocked(CharSkinPreViewLockType)
 end
-
 function M:SetIsGot(bGotType)
   DebugPrint("gmy@WBP_Armory_TabItem01_C M:SetIsGot", bGotType)
   if bGotType then
@@ -72,7 +67,6 @@ function M:SetIsGot(bGotType)
     self.Icon_Got:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetHideLevelPanel(bHide)
   if bHide then
     self.Panel_Level:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -80,7 +74,6 @@ function M:SetHideLevelPanel(bHide)
     self.Panel_Level:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:ShowShadow(bShow)
   if bShow then
     self.Img_Shadow:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -88,7 +81,6 @@ function M:ShowShadow(bShow)
     self.Img_Shadow:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetIcon(Icon, SwitcherIdx)
   SwitcherIdx = SwitcherIdx or 0
   self.WidgetSwitcher_Head:SetActiveWidgetIndex(SwitcherIdx)
@@ -102,17 +94,14 @@ function M:SetIcon(Icon, SwitcherIdx)
     end
   end
 end
-
 function M:SetRarity(Rarity)
   local RariryName = UIConst.RarityColorName[Rarity]
   local Path = "/Game/UI/Texture/Dynamic/Atlas/Armory/T_Armory_Corner_" .. RariryName .. ".T_Armory_Corner_" .. RariryName
   self.Quality_Bar:SetBrushResourceObject(LoadObject(Path))
 end
-
 function M:HideRarity(bHideRarity)
   self.Quality_Bar:SetVisibility(bHideRarity and UIConst.VisibilityOp.Collapsed or UIConst.VisibilityOp.Visible)
 end
-
 function M:SetInGear(IsEquipped)
   if IsEquipped then
     self.Image_Equipped:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -120,7 +109,6 @@ function M:SetInGear(IsEquipped)
     self.Image_Equipped:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetLevel(Level)
   if not Level then
     self.Text_Lv:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -130,7 +118,6 @@ function M:SetLevel(Level)
     self.Text_Level:SetText(Level)
   end
 end
-
 function M:SetReddot(RedDotType)
   if RedDotType == UIConst.RedDotType.CommonRedDot then
     self.Reddot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -144,7 +131,6 @@ function M:SetReddot(RedDotType)
     end
   end
 end
-
 function M:SetWeaponPhantomIcon(_Uuid)
   local Avatar = ArmoryUtils:GetAvatar()
   local Uuid = _Uuid
@@ -169,7 +155,6 @@ function M:SetWeaponPhantomIcon(_Uuid)
     self.Image_Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetIsPremium(IsPremium)
   if IsPremium then
     self.PetEffect:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -179,25 +164,21 @@ function M:SetIsPremium(IsPremium)
     self:PlayAnimationReverse(self.PetLight)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Widget = nil
   end
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:SetSelected(IsSelect)
   self.IsSelect = IsSelect
   if IsSelect then
@@ -208,14 +189,12 @@ function M:SetSelected(IsSelect)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.IsSelect then
     return
   end
   self:PlayAnimationForward(self.Hover)
 end
-
 function M:OnMouseLeave(MouseEvent)
   if self.IsSelect then
     return
@@ -223,7 +202,6 @@ function M:OnMouseLeave(MouseEvent)
   self:StopAnimation(self.Press)
   self:PlayAnimationReverse(self.Hover)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self._OnPreviewKeyDown == nil then
     return UIUtils.Unhandled
@@ -232,7 +210,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   return self._OnPreviewKeyDown(self.Owner, InKeyName)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.IsSelect then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -240,7 +217,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Press)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.IsSelect then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -252,22 +228,18 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnOwningListItemClicked(Content)
   if not self.Content or Content ~= self.Content then
     return
   end
   AudioManager(self):PlayItemSound(self, self.Content.UnitId, "Click", self.Content.Type)
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:SetPetStar(Content)
   if Content.ItemType ~= "Pet" then
     self.Panel_PetStar:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -291,5 +263,4 @@ function M:SetPetStar(Content)
     end
   end
 end
-
 return M

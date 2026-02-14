@@ -1,14 +1,11 @@
 local PetModel = require("BluePrints.Common.MVC.Model.PetModel")
 local Component = {}
-
 function Component:EnterWorld()
   PetModel:Init(self.Pets)
 end
-
 function Component:LeaveWorld()
   PetModel:Destory()
 end
-
 function Component:_OnPropChangePets(Keys)
   local PetUniqueID = Keys and Keys[1]
   if PetUniqueID then
@@ -23,14 +20,12 @@ function Component:_OnPropChangePets(Keys)
   end
   EventManager:FireEvent(EventID.OnPropChangePets, Keys)
 end
-
 function Component:EquipCurPet()
   for UniqueId, v in pairs(self.Pets) do
     self:EquipPet(UniqueId)
     break
   end
 end
-
 function Component:GetPetByUniqueId(UniqueId)
   for Id, Pet in pairs(self.Pets) do
     if Id == UniqueId then
@@ -38,7 +33,6 @@ function Component:GetPetByUniqueId(UniqueId)
     end
   end
 end
-
 function Component:CheckPetEnough(Pets)
   local PetCount = {}
   for _, Pet in pairs(self.Pets) do
@@ -51,7 +45,6 @@ function Component:CheckPetEnough(Pets)
   end
   return true
 end
-
 function Component:GetCurEquipPet()
   if not self.CurrentPet or 0 == self.CurrentPet then
     return
@@ -59,7 +52,6 @@ function Component:GetCurEquipPet()
   local PetInfo = self.Pets[self.CurrentPet]
   return PetInfo
 end
-
 function Component:_OnPropChangeCurrentPet()
   local CurPlayer = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not CurPlayer then
@@ -87,18 +79,14 @@ function Component:_OnPropChangeCurrentPet()
     CurPlayer:ServerSetBattlePetAndAffixList(PetInfo.PetId, PetInfo:GetSkillLevel(), AffixList, false)
   end
 end
-
 function Component:EquipPet(UniqueID)
   self.logger.info("ClientReqEquipPet", UniqueID)
-  
   local function Cb(ErrCode)
     self.logger.info("ClientReqEquipPet", ErrorCode:Name(ErrCode))
     EventManager:FireEvent(EventID.OnSwitchPet)
   end
-  
   self:CallServer("ClientReqEquipPet", Cb, UniqueID)
 end
-
 function Component:GMPetAutoAddExp(AddExpPetUniqueID, CostPetId)
   self.logger.info("GMPetAutoAddExp")
   local CostPetUniqueIDs = {}
@@ -109,11 +97,9 @@ function Component:GMPetAutoAddExp(AddExpPetUniqueID, CostPetId)
   end
   self:PetAddExpMulti(AddExpPetUniqueID, CostPetUniqueIDs)
 end
-
 function Component:PetAddExpMulti(Callback, UniqueID, CostPetUniqueIDs, CostResourceTable)
   self.logger.info("PetAddExpMulti", UniqueID, CostPetUniqueIDs)
   local OldLevel = self.Pets[UniqueID].Level
-  
   local function Cb(ErrCode, RefundResources)
     self.logger.info("PetAddExpMulti", ErrorCode:Name(ErrCode), CommonUtils.TableToString(RefundResources))
     local bLevelUp = self.Pets[UniqueID].Level > OldLevel
@@ -122,11 +108,9 @@ function Component:PetAddExpMulti(Callback, UniqueID, CostPetUniqueIDs, CostReso
       Callback(RefundResources)
     end
   end
-  
   CostResourceTable = CostResourceTable or {}
-  self:CallServer("PetAddExpMulti", Cb, UniqueID, CostPetUniqueIDs, CostResourceTable)
+  self:CallServer("PetAddExpMulti", Cb, UniqueID, CostPetUniqueIDs, CostResourceTable, "")
 end
-
 function Component:UpdatePlayerEquipPetLevel(PetLevel, UniqueID)
   local CurPlayer = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not CurPlayer then
@@ -141,11 +125,9 @@ function Component:UpdatePlayerEquipPetLevel(PetLevel, UniqueID)
   end
   CurPet:UpdatePetLevel(PetLevel)
 end
-
 function Component:PetBreak(UniqueID, CostPetUniqueID)
   self.logger.info("PetBreak", UniqueID, CostPetUniqueID)
   local OldBreakNum = self.Pets[UniqueID].BreakNum
-  
   local function Cb(ErrCode)
     self.logger.info("PetBreak", ErrorCode:Name(ErrCode))
     local bBreakUp = self.Pets[UniqueID].BreakNum > OldBreakNum
@@ -154,59 +136,49 @@ function Component:PetBreak(UniqueID, CostPetUniqueID)
     end
     EventManager:FireEvent(EventID.OnPetBreakLevelUp, ErrCode, UniqueID, CostPetUniqueID, true, EventID.OnPetBreakLevelUp)
   end
-  
-  self:CallServer("PetBreak", Cb, UniqueID, CostPetUniqueID)
+  self:CallServer("PetBreak", Cb, UniqueID, CostPetUniqueID, "")
 end
-
 function Component:TryCapturePetDungeon(ResourceId, xValue, PetId, CaptureCallBack)
   self.logger.info("TryCapturePetDungeon", ResourceId, PetId, xValue)
-  
   local function Cb(ErrCode, UniqueId)
     self.logger.info("TryCapturePetDungeon", ErrorCode:Name(ErrCode))
     if CaptureCallBack then
       CaptureCallBack(ErrCode, UniqueId)
     end
   end
-  
   self:CallServer("TryCapturePetDungeon", Cb, ResourceId, xValue, PetId)
 end
-
 function Component:LockPet(UniqueID)
   self.logger.info("LockPet", UniqueID)
-  
   local function Cb(ErrCode)
     self.logger.info("LockPet", ErrorCode:Name(ErrCode))
     EventManager:FireEvent(EventID.OnPetLocked, ErrCode, UniqueID, true)
   end
-  
   self:CallServer("LockPet", Cb, UniqueID)
 end
-
 function Component:UnLockPet(UniqueID)
   self.logger.info("UnLockPet", UniqueID)
-  
   local function Cb(ErrCode)
     self.logger.info("UnLockPet", ErrorCode:Name(ErrCode))
     EventManager:FireEvent(EventID.OnPetLocked, ErrCode, UniqueID, false)
   end
-  
-  self:CallServer("UnLockPet", Cb, UniqueID)
+  if not UniqueID then
+    self.logger.error("UnLockPet UniqueID is nil")
+    Cb(ErrorCode.RET_PET_NOT_EXIST)
+    return
+  end
+  self:CallServer("UnLockPet", Cb, UniqueID, "")
 end
-
 function Component:PetSetName(UniqueID, Name)
   self.logger.info("PetSetName", UniqueID, Name)
-  
   local function Cb(ErrCode)
     self.logger.info("PetSetName", ErrorCode:Name(ErrCode))
     EventManager:FireEvent(EventID.OnPetNameChanged, ErrCode, UniqueID, Name)
   end
-  
   self:CallServer("PetSetName", Cb, UniqueID, Name)
 end
-
 function Component:PetEntryReplace(InCallBack, EntryReplacePetUniqueId, EntryReplacePetEntryIndex, ConsumePetUniqueId, ConsumePetEntryIndex)
   self.logger.info("PetEntryReplace", EntryReplacePetUniqueId, EntryReplacePetEntryIndex, ConsumePetUniqueId, ConsumePetEntryIndex)
-  
   local function Cb(ErrCode)
     self.logger.info("PetEntryReplace", ErrorCode:Name(ErrCode))
     if InCallBack then
@@ -214,10 +186,8 @@ function Component:PetEntryReplace(InCallBack, EntryReplacePetUniqueId, EntryRep
     end
     EventManager:FireEvent(EventID.OnPetEntryReplace, ErrCode, EntryReplacePetUniqueId, EntryReplacePetEntryIndex, ConsumePetUniqueId, ConsumePetEntryIndex)
   end
-  
-  self:CallServer("PetEntryReplace", Cb, EntryReplacePetUniqueId, EntryReplacePetEntryIndex, ConsumePetUniqueId, ConsumePetEntryIndex)
+  self:CallServer("PetEntryReplace", Cb, EntryReplacePetUniqueId, EntryReplacePetEntryIndex, ConsumePetUniqueId, ConsumePetEntryIndex, "")
 end
-
 function Component:TestPetEntryUp(EntryUpPetUniqueId, EntryIndex)
   local ConsumePetUniqueIds = {}
   local EntryId = self.Pets[EntryUpPetUniqueId].Entry[EntryIndex]
@@ -231,10 +201,8 @@ function Component:TestPetEntryUp(EntryUpPetUniqueId, EntryIndex)
   end
   self:PetEntryUp(EntryUpPetUniqueId, EntryIndex, ConsumePetUniqueIds)
 end
-
 function Component:PetEntryUp(EntryUpPetUniqueId, EntryIndex, ConsumePetUniqueIds, Callback)
   self.logger.info("PetEntryUp", EntryUpPetUniqueId, EntryIndex, CommonUtils.TableToString(ConsumePetUniqueIds))
-  
   local function Cb(ErrCode)
     self.logger.info("PetEntryUp", ErrorCode:Name(ErrCode))
     EventManager:FireEvent(EventID.OnPetEntryUp, ErrCode, EntryUpPetUniqueId, EntryIndex, ConsumePetUniqueIds)
@@ -242,26 +210,21 @@ function Component:PetEntryUp(EntryUpPetUniqueId, EntryIndex, ConsumePetUniqueId
       Callback(ErrCode)
     end
   end
-  
-  self:CallServer("PetEntryUp", Cb, EntryUpPetUniqueId, EntryIndex, ConsumePetUniqueIds)
+  self:CallServer("PetEntryUp", Cb, EntryUpPetUniqueId, EntryIndex, ConsumePetUniqueIds, "")
 end
-
 function Component:PetEntryLock(EntryId, IsLock, LockBagPet, InCallBack)
   self.logger.info("PetEntryLock", EntryId, IsLock)
-  
   local function Cb(ErrCode)
     self.logger.info("PetEntryLock", ErrorCode:Name(ErrCode))
     if InCallBack then
       InCallBack(ErrCode)
     end
   end
-  
   if LockBagPet then
     self:CallServerMethod("LockPetByEntry", EntryId)
   end
   self:CallServer("SetPetEntryLock", Cb, EntryId, IsLock)
 end
-
 function Component:DynamicQuestCreatePetNotify(PetUnitId, PetStaticPointId, UniqueId)
   DebugPrint("LHQ@@@DynamicQuestCreatePetNotify:", PetUnitId, PetStaticPointId, UniqueId)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
@@ -275,9 +238,10 @@ function Component:DynamicQuestCreatePetNotify(PetUnitId, PetStaticPointId, Uniq
     GameMode:TriggerActiveStaticCreator(CpatureArray, "DynamicEventPet")
   end
 end
-
 function Component:TryCapturePetDynamicQuest(ResourceId, xValue, UniqueId, Cb)
   self:CallServer("TryCapturePetDynamicQuest", Cb, ResourceId, xValue, UniqueId)
 end
-
+function Component:ConditionCapturePet(ConditionId)
+  self.logger.info("ZJT_ ConditionCapturePet Success ", ConditionId)
+end
 return Component

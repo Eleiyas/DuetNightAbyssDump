@@ -1,7 +1,6 @@
 require("UnLua")
 local BagCommon = require("BluePrints.UI.WBP.Bag.BagCommon")
 local M = {}
-
 function M:PlayInAnim()
   if self.OwnerPlayer == nil or not UE4.UKismetSystemLibrary.IsValid(self.OwnerPlayer) then
     self.OwnerPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -11,12 +10,12 @@ function M:PlayInAnim()
   self:InitListenEvent()
   self:PlayAnimationForward(self.In)
 end
-
 function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, BagCommon.MainUIName, {ToEnd = 1})
   if self.Panel_Detail.IsSkillTipsOpened then
     self.Common_Skill_Effect_Tips_PC:PlayOutAnim()
   end
+  self:MarkToRemove()
   self:BindToAnimationFinished(self.Out, {
     self,
     self.Close
@@ -24,18 +23,15 @@ function M:PlayOutAnim()
   self:PlayAnimationForward(self.Out)
   self:DoRecoverCamera()
 end
-
 function M:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
   return true
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdateBagItem, self, self.OnUpdateBagItemByAction)
 end
-
 function M:RefreshAllGridIndex()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -45,7 +41,6 @@ function M:RefreshAllGridIndex()
     end
   end
 end
-
 function M:RefreshAllStuffCount()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -60,7 +55,6 @@ function M:RefreshAllStuffCount()
     end
   end
 end
-
 function M:RefreshOtherInfo()
   self.Text_Empty:SetText(GText("UI_BAG_EMPTY"))
   self.Text_Empty_World:SetText(EnText("UI_BAG_EMPTY"))
@@ -83,7 +77,6 @@ function M:RefreshOtherInfo()
   self.Panel_Detail:InitCommonInfo()
   self.List_Item.BP_OnItemSelectionChanged:Add(self, self.OnSelectStuffItemChanged)
 end
-
 function M:EnterToSpecialState()
   if self.CurTabId == BagCommon.ItemTypeToTabId.MeleeWeapon or self.CurTabId == BagCommon.ItemTypeToTabId.RangedWeapon then
     self:EnterWeaponResolveState()
@@ -91,16 +84,28 @@ function M:EnterToSpecialState()
     self:EnterStuffSellState()
   end
 end
-
 function M:RefreshDetailView(StuffConfigData)
   if self.BagCurState == BagCommon.AllBagState.NormalState then
     if self.CurTabId == BagCommon.ItemTypeToTabId.MeleeWeapon or self.CurTabId == BagCommon.ItemTypeToTabId.RangedWeapon or self.CurTabId == BagCommon.ItemTypeToTabId.Mod then
       self.Panel_Detail:UpdateBottomSingleBtnInfo("WeaponAndMod", self.OnClickGoToAmory, self)
+    elseif self.CurTabId == BagCommon.ItemTypeToTabId.Resource then
+      if StuffConfigData.ResourceSType == BagCommon.MountTypeInResource then
+        local function WrapMountFunc()
+          local MountItemVarData = StuffConfigData.FunctionVars
+          if MountItemVarData then
+            PageJumpUtils:JumpToTargetPageByJumpId(BagCommon.MountJumpId, MountItemVarData.Id)
+          else
+            DebugPrint("BagMainPageView== RefreshDetailView DataMgr Resource of Mount FunctionVars is nil!!!")
+          end
+        end
+        self.Panel_Detail:UpdateBottomSingleBtnInfo("Mount", WrapMountFunc, self)
+      else
+        self.Panel_Detail:UpdateBottomSingleBtnInfo("Other", nil, self)
+      end
     elseif self.CurTabId == BagCommon.ItemTypeToTabId.ReadItem then
       local function WrapReadFunc()
         UIManager(self):LoadUINew("ItemInformation", StuffConfigData.ResourceId, "Read", self, true)
       end
-      
       self.Panel_Detail:UpdateBottomSingleBtnInfo("Read", WrapReadFunc, self)
     elseif self.CurTabId == BagCommon.ItemTypeToTabId.FishItem then
       local function WrapFishFunc()
@@ -109,13 +114,11 @@ function M:RefreshDetailView(StuffConfigData)
         }
         PageJumpUtils:JumpToAnglingMap(Params)
       end
-      
       self.Panel_Detail:UpdateBottomSingleBtnInfo("Fish", WrapFishFunc, self, "AnglingMap")
     elseif self.CurTabId == BagCommon.ItemTypeToTabId.ConsumableItem then
       local function WrapConsumeFunc()
         self:OnClickGoToUseConsume(StuffConfigData)
       end
-      
       self.Panel_Detail:UpdateBottomSingleBtnInfo("ConsumableItem", WrapConsumeFunc, self)
     else
       self.Panel_Detail:UpdateBottomSingleBtnInfo("Other", nil, self)
@@ -125,7 +128,6 @@ function M:RefreshDetailView(StuffConfigData)
   end
   self.Panel_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:RefreshItemViewByItemCount(AllItemCount, SiftItemCount)
   self:RefreshButtonInfoInDiffTab()
   if AllItemCount <= 0 then
@@ -146,7 +148,6 @@ function M:RefreshItemViewByItemCount(AllItemCount, SiftItemCount)
     self.Panel_Empty:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:RecoverAllItemsStyle()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -162,7 +163,6 @@ function M:RecoverAllItemsStyle()
     end
   end
 end
-
 function M:AfterFillDataInfo()
   local AllItemCount = self.List_Item:GetNumItems()
   if AllItemCount > 0 and self.BagCurState ~= BagCommon.AllBagState.NormalState then
@@ -195,7 +195,6 @@ function M:AfterFillDataInfo()
   end
   self.NeedSelectStuffId = nil
 end
-
 function M:UpdateAllItemsStyle(IsNeedDalay)
   if IsNeedDalay then
     if self:IsExistTimer("DelayToSetItemStyle") then
@@ -206,7 +205,6 @@ function M:UpdateAllItemsStyle(IsNeedDalay)
     self:DelayToSetItemStyle()
   end
 end
-
 function M:DelayToSetItemStyle()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -235,11 +233,9 @@ function M:DelayToSetItemStyle()
       local IsInChooseList = self.DesireSaleStuffObjList[ItemObj.Uuid] ~= nil or nil ~= self.DesireResolveWeaponList[ItemObj.Uuid]
       if IsInChooseList then
         local SellPageMainUI = UIManager(self):GetUI(BagCommon.BagStuffSelectUIName)
-        
         local function RemoveStuffCallback()
           EventManager:FireEvent(EventID.OnRemoveBagItemInList, ItemObj.Uuid)
         end
-        
         ItemObj.StateTagInfo = {
           Name = "IsToChoose",
           ExtraData = {
@@ -264,7 +260,6 @@ function M:DelayToSetItemStyle()
     end
   end
 end
-
 function M:OnRefreshSaleSelectNum(StuffUuid, CurNum)
   local TargetItem = self.DesireSaleStuffObjList[StuffUuid]
   if IsValid(TargetItem) then
@@ -276,14 +271,12 @@ function M:OnRefreshSaleSelectNum(StuffUuid, CurNum)
     end
   end
 end
-
 function M:OnHorizontalListViewResizeDone(NewViewportSizeX, SizeX)
   local EmptySlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.HB_Empty)
   local Offsets = EmptySlot:GetOffsets()
   Offsets.Right = NewViewportSizeX - SizeX - Offsets.Left
   EmptySlot:SetOffsets(Offsets)
 end
-
 function M:RefreshListViewEmptyGrid(ListViewObj, CurItemCount, ListViewSize)
   if nil == ListViewSize then
     ListViewSize = UIManager(self):GetWidgetRenderSize(ListViewObj)
@@ -311,12 +304,10 @@ function M:RefreshListViewEmptyGrid(ListViewObj, CurItemCount, ListViewSize)
   end
   return EmptyItemNum, XCount, YCount
 end
-
 function M:GetEmptyItemCountInLastLine(ListViewObj, CurItemCount)
   local CurMaxItemCount = ListViewObj:GetScrollOffsetOfEnd()
   local EmptyItemNum = math.floor(CurMaxItemCount - CurItemCount)
   ListViewObj:SetEmptyGridItemCount(EmptyItemNum)
   return EmptyItemNum
 end
-
 return M

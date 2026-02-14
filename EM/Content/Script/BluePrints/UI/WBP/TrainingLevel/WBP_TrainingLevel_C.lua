@@ -5,7 +5,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr"
 })
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
-
 function M:InitUI()
   self.FocusWidgetName = "GetAllReward"
   self.FocusWidgetWidget = nil
@@ -17,9 +16,13 @@ function M:InitUI()
   if IsValid(self.GameInputModeSubsystem) then
     self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
   end
+  self.TrainingLevel_RewardBtn.Key_GetAll:CreateCommonKey({
+    KeyInfoList = {
+      {Type = "Img", ImgShortPath = "A"}
+    }
+  })
   self.IsGettingRewards = false
 end
-
 function M:InitData()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -33,7 +36,6 @@ function M:InitData()
   end
   table.sort(self.levels)
 end
-
 function M:InitRewardList()
   self.IsBtnForbidden = true
   if not ModController:IsMobile() then
@@ -120,7 +122,6 @@ function M:InitRewardList()
     self.TrainingLevel_RewardBtn.Btn_TrainingLevelGetAll:SetForbidden(true)
   end
 end
-
 function M:OnGetAllReward()
   if self.IsBtnForbidden then
     return
@@ -132,6 +133,7 @@ function M:OnGetAllReward()
   if not Avatar then
     return
   end
+  AudioManager(self):PlayUISound(self, "event:/ui/activity/confirm_click", nil, nil)
   local maxItems = math.min(#self.levels, 5)
   local allRewards = {
     Resources = {}
@@ -157,8 +159,11 @@ function M:OnGetAllReward()
     local isSatisLevel = levelValue <= self.CurrentLevel
     if isSatisLevel and not isGot then
       local function Callback(Ret, Rewards)
+        if 0 ~= Ret then
+          self.IsGettingRewards = false
+          return
+        end
         self:InitRewardList()
-        
         if Rewards then
           for categoryName, categoryItems in pairs(Rewards) do
             if not allRewards[categoryName] then
@@ -178,7 +183,7 @@ function M:OnGetAllReward()
                 end
               elseif allRewards[categoryName][itemId] then
                 if type(allRewards[categoryName][itemId]) == "table" then
-                  DebugPrint("\232\173\166\229\145\138\239\188\154\229\176\157\232\175\149\229\176\134\230\149\176\229\128\188\228\184\142\232\161\168\229\144\136\229\185\182\239\188\154" .. categoryName .. "[" .. itemId .. "]")
+                  DebugPrint("警告：尝试将数值与表合并：" .. categoryName .. "[" .. itemId .. "]")
                 else
                   allRewards[categoryName][itemId] = allRewards[categoryName][itemId] + itemInfo
                 end
@@ -196,12 +201,10 @@ function M:OnGetAllReward()
           EventManager:FireEvent(EventID.OnUpdateActivityEvent, "TrainingLevelReward", self.CurActivityId)
         end
       end
-      
       Avatar:CallServer("RpcActivityPlayerLvGetReward", Callback, self.CurActivityId, levelValue)
     end
   end
 end
-
 function M:HandlePreviewKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -222,20 +225,17 @@ function M:HandlePreviewKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:CleanSelf(bIsRemoveSelf)
   if bIsRemoveSelf then
     self:RemoveFromParent()
   end
 end
-
 function M:HidePage(IsNeedPlayOutAnim)
   if IsNeedPlayOutAnim then
     self:PlayFadeOut()
   end
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:PlayFadeOut(IsRemoveFromParent)
   self:PlayAnimation(self.Out)
   if IsRemoveFromParent then
@@ -245,7 +245,6 @@ function M:PlayFadeOut(IsRemoveFromParent)
     })
   end
 end
-
 function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
   self.IsSelectItem = false
   self.IsOpenTip = false
@@ -311,7 +310,6 @@ function M:InitPage(ActivityId, ParentTabId, AllActivityId, ParentWidget)
     self.Activity_Time:SetForeverTimeText(GText("UI_GameEvent_EventTimeRemain"))
   end
 end
-
 function M:OnUINavigationItem(index, iconIndex, direction)
   local newIndex = index + (direction == EUINavigation.Up and 1 or -1)
   if newIndex >= 1 and newIndex <= 5 then
@@ -319,18 +317,14 @@ function M:OnUINavigationItem(index, iconIndex, direction)
   end
   return nil
 end
-
 function M:GetPageConfigData()
   return DataMgr.PlayerLvEvent[self.CurActivityId]
 end
-
 function M:PlayFadeIn()
   self:PlayAnimation(self.In)
 end
-
 function M:UpdatePage(OperateSrc)
 end
-
 function M:ShowPage(IsNeedPlayInAnim)
   if IsNeedPlayInAnim then
     self:PlayFadeIn()
@@ -338,7 +332,6 @@ function M:ShowPage(IsNeedPlayInAnim)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:InitUI()
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -349,12 +342,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.LeftThumb then
@@ -366,7 +357,6 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:MenuOpenChangedEvent(IsOpened, Content)
   if ModController:IsMobile() then
     return
@@ -386,13 +376,12 @@ function M:MenuOpenChangedEvent(IsOpened, Content)
     self.LastFocusWidget:SetFocus()
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
   end
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
@@ -400,7 +389,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.IsSwitchDevice = true
   self:UpdateUIByInputDevice(self.CurInputDeviceType)
 end
-
 function M:UpdateUIByInputDevice(CurInputDeviceType)
   if CurInputDeviceType == ECommonInputType.Gamepad then
     self.TrainingLevel_RewardBtn.Key_GetAll:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -412,12 +400,10 @@ function M:UpdateUIByInputDevice(CurInputDeviceType)
     self.TrainingLevel_RewardBtn.Key_GetAll:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:GetCurFocusWidgetInfo()
   self:UpdateUIByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType())
   return self.FocusWidgetName, self.FocusWidgetWidget
 end
-
 function M:GetDefaultBottomTips()
   local ResultKeyInfo = {
     {
@@ -440,11 +426,9 @@ function M:GetDefaultBottomTips()
   }
   return ResultKeyInfo
 end
-
 function M:OnSubTabNavigationRight()
   self:SetFocusToFirstAvailableReward()
 end
-
 function M:SetFocusToFirstAvailableReward()
   local ActivityMain = UIManager(self):GetUIObj("ActivityMain")
   if ActivityMain then
@@ -474,9 +458,7 @@ function M:SetFocusToFirstAvailableReward()
     self.TrainingLevel_IconItems_5.TrainingLevel_IconItem_1:SetFocus()
   end
 end
-
 function M:OnSpaceBarKeyDown()
   self:OnGetAllReward()
 end
-
 return M

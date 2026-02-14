@@ -1,12 +1,8 @@
 local Decorator = require("BluePrints.Client.Wrapper.Decorator")
 local ModController = require("BluePrints.UI.WBP.Armory.Mod.Utils.ModController")
 local Component = {}
+Decorator:ApplyDecorator(Component)
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
-for key, value in pairs(Decorator) do
-  Component[key] = value
-end
-setmetatable(Component, getmetatable(Decorator))
-
 function Component:EnterWorld()
   ModController:Init()
   ArmoryUtils:CreateReddotInfos(CommonConst.DataType.Mod)
@@ -21,11 +17,9 @@ function Component:EnterWorld()
     }
   end
 end
-
 function Component:LeaveWorld()
   ModController:Destory()
 end
-
 function Component:CheckModEnough(CheckData)
   local ModStatistics = {}
   for key, Mod in pairs(self.Mods) do
@@ -41,7 +35,23 @@ function Component:CheckModEnough(CheckData)
   end
   return true
 end
-
+function Component:CheckOriginalModEnough(CheckData)
+  local ModStatistics = {}
+  for key, Mod in pairs(self.Mods) do
+    if Mod.IsOriginal and not Mod:IsEquipped() then
+      if not ModStatistics[Mod.ModId] then
+        ModStatistics[Mod.ModId] = 0
+      end
+      ModStatistics[Mod.ModId] = ModStatistics[Mod.ModId] + Mod.Count
+    end
+  end
+  for ModId, Count in pairs(CheckData) do
+    if not ModStatistics[ModId] or Count > ModStatistics[ModId] then
+      return false
+    end
+  end
+  return true
+end
 function Component:_OnPropChangeMods(keys)
   PrintTable(keys, 2, LXYTag .. " +_OnPropChangeMods")
   if #keys > 1 then
@@ -61,6 +71,15 @@ function Component:_OnPropChangeMods(keys)
     local Mod = self.Mods[ModUuid]
     if Mod and Mod.Count > 0 and 0 == Mod.Level then
       ArmoryUtils:TryAddNewModReddot(Mod, Mod.ModId)
+    elseif not Mod then
+      local Info = self.ModUuid2ModIdMap[ModUuid]
+      if Info then
+        local FakeContent = {
+          UnitId = Info.Id,
+          Type = CommonConst.DataType.Mod
+        }
+        ArmoryUtils:SetReddotRead(FakeContent, true, false, true)
+      end
     end
   end
   local ModUuid = keys and keys[1]
@@ -99,11 +118,9 @@ function Component:_OnPropChangeMods(keys)
     end
   end
 end
-
 function Component:GetModCountById(ModId)
   return self.ModCountMap[ModId] or 0
 end
-
 function Component:ModCardLevelUp(InCallbackInfo, ModUuid, SelectParams)
   SelectParams = SelectParams or {}
   local PendingDeleteMods = {}
@@ -112,7 +129,6 @@ function Component:ModCardLevelUp(InCallbackInfo, ModUuid, SelectParams)
       table.insert(PendingDeleteMods, self.Mods[Uuid])
     end
   end
-  
   local function Callback(Ret)
     self.logger.info("ZJT_ ServerCallClient ModCardLevelUp ", Ret)
     if not InCallbackInfo then
@@ -131,16 +147,12 @@ function Component:ModCardLevelUp(InCallbackInfo, ModUuid, SelectParams)
     local bTakeOff = table.unpack(InCallbackInfo.ExParams)
     InCallbackInfo.Func(InCallbackInfo.Obj, Ret, ModUuid, SelectParams, bTakeOff)
   end
-  
   self:CallServer("ModCardLevelUp", Callback, ModUuid, SelectParams)
 end
-
 Component:LimitCall(1)
-
 function Component:ModLevelUp(InCallbackInfo, ModUuid, CurrentLevel, TargetLevel)
   self.logger.debug("ModLevelUp", CommonUtils.ObjId2Str(ModUuid), CurrentLevel, TargetLevel)
   local Mod = self.Mods[ModUuid]
-  
   local function callback(Ret, NewModUuid)
     self.logger.debug("ModLevelUp callback", Ret, CommonUtils.ObjId2Str(ModUuid), CurrentLevel, TargetLevel)
     if not InCallbackInfo then
@@ -157,10 +169,8 @@ function Component:ModLevelUp(InCallbackInfo, ModUuid, CurrentLevel, TargetLevel
     local bTakeOff = table.unpack(InCallbackInfo.ExParams)
     InCallbackInfo.Func(InCallbackInfo.Obj, Ret, ModUuid, NewModUuid, bTakeOff)
   end
-  
   self:CallServer("ModLevelUp", callback, ModUuid, Mod.Count, CurrentLevel, TargetLevel)
 end
-
 function Component:ModBulkDecompose(TargetModDecompose)
   if not TargetModDecompose or type(TargetModDecompose) ~= "table" then
     return
@@ -169,7 +179,6 @@ function Component:ModBulkDecompose(TargetModDecompose)
   for K, _ in pairs(TargetModDecompose) do
     table.insert(PendingDeleteMods, self.Mods[K])
   end
-  
   local function Callback(Ret, DecomposeSuccStuff, DecomposeSuccMod)
     EventManager:FireEvent(EventID.OnUpdateBagItem, "ModBulkSale", Ret, DecomposeSuccStuff, DecomposeSuccMod)
     for _, Mod in ipairs(PendingDeleteMods) do
@@ -183,36 +192,28 @@ function Component:ModBulkDecompose(TargetModDecompose)
       end
     end
   end
-  
   self:CallServer("ModBulkDecompose", Callback, TargetModDecompose)
 end
-
 function Component:ChangeCharModSlotListPolarity(InCallbackInfo, CharUuid, ModSlotList, PolarityList)
   local function callback(Ret)
     self.logger.debug("ChangeCharModSlotListPolarity callback", Ret, CharUuid, ModSlotList, PolarityList)
-    
     if not InCallbackInfo then
       return
     end
     InCallbackInfo.Func(InCallbackInfo.Obj, Ret, CharUuid, ModSlotList, PolarityList)
   end
-  
   self:CallServer("ChangeCharModSlotListPolarity", callback, CharUuid, ModSlotList, PolarityList)
 end
-
 function Component:ChangeWeaponModSlotListPolarity(InCallbackInfo, WeaponUuid, ModSlotList, PolarityList)
   local function callback(Ret)
     self.logger.debug("ChangeWeaponModSlotListPolarity callback", Ret, WeaponUuid, ModSlotList, PolarityList)
-    
     if not InCallbackInfo then
       return
     end
     InCallbackInfo.Func(InCallbackInfo.Obj, Ret, WeaponUuid, ModSlotList, PolarityList)
   end
-  
   self:CallServer("ChangeWeaponModSlotListPolarity", callback, WeaponUuid, ModSlotList, PolarityList)
 end
-
 function Component:GetModCount2ModId(ModId)
   local Count = 0
   if not ModId or type(ModId) ~= "number" then
@@ -225,7 +226,6 @@ function Component:GetModCount2ModId(ModId)
   end
   return Count
 end
-
 function Component:GetModsByModId(ModId)
   local ResultMods = {}
   for _, Mod in pairs(self.Mods) do
@@ -235,5 +235,4 @@ function Component:GetModsByModId(ModId)
   end
   return ResultMods
 end
-
 return Component

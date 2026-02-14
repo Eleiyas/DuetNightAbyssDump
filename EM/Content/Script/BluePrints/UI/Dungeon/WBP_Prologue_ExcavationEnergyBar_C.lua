@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Prologue_ExcavationEnergyBar_C = Class("BluePrints.UI.BP_EMDungeonWidget_C")
-
 function WBP_Prologue_ExcavationEnergyBar_C:Construct()
   self.Overridden.Construct(self)
   self.Eid = nil
@@ -9,12 +8,10 @@ function WBP_Prologue_ExcavationEnergyBar_C:Construct()
   self.FixTime = 0.5
   self.UsingEnergy = false
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:UpdateInfo()
   local Ent = Battle(self):GetEntity(self.Eid)
   self:SetDataFromEntity(Ent)
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:SetDataFromEntity(Ent)
   if nil == Ent or nil == Ent.NowEnergy or nil == Ent.Progress then
     return
@@ -82,7 +79,6 @@ function WBP_Prologue_ExcavationEnergyBar_C:SetDataFromEntity(Ent)
   self.Text_Progress_Digging:SetText(Ent.Progress .. "%")
   self:SetProgressBar((Ent.Progress + Energy) / 100, Ent.Progress / 100)
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:OnFinish()
   self.Text_Progress_Digging:SetText("100%")
   UIManager(self):ShowUITip(UIConst.Tip_ExcavationToast, GText("DUNGEON_EXCAVATION_101"), 5, false, {
@@ -90,7 +86,6 @@ function WBP_Prologue_ExcavationEnergyBar_C:OnFinish()
     Level = self.Level_str
   })
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:RealPlayFinishAnim()
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Warning)
   self:PlayAnimation(self.Complete)
@@ -99,7 +94,6 @@ function WBP_Prologue_ExcavationEnergyBar_C:RealPlayFinishAnim()
     self.DataObject.Owner:RemoveItemFromListViewCallback(self.DataObject)
   end)
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:RealPlayOutAnim()
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Warning)
   self:PlayAnimation(self.Widget_Out)
@@ -107,12 +101,10 @@ function WBP_Prologue_ExcavationEnergyBar_C:RealPlayOutAnim()
     self.DataObject.Owner:RemoveItemFromListViewCallback(self.DataObject)
   end)
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:OnBarsHide()
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Warning)
   self:RemoveTimer("EnergyBarTick")
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:OnBarsShow()
   if self.CurrentState == "Lack" then
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Warning)
@@ -121,7 +113,6 @@ function WBP_Prologue_ExcavationEnergyBar_C:OnBarsShow()
   end
   self:AddTimer(self.TickTime, self.UpdateInfo, true, 0, "EnergyBarTick")
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:OnAttractBattery(BatteryEnergy)
   AudioManager(self):PlayUISound(self, "event:/ui/common/excavation_acquire_module", nil, nil)
   UIManager(self):ShowUITip(UIConst.Tip_ExcavationToast, GText("DUNGEON_EXCAVATION_104") .. " +" .. BatteryEnergy, 5, false, {
@@ -130,7 +121,6 @@ function WBP_Prologue_ExcavationEnergyBar_C:OnAttractBattery(BatteryEnergy)
   })
   self.AttractBatteryToastNum = self.AttractBatteryToastNum + 1
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:OnListItemObjectSet(ListItemObject)
   self.DataObject = ListItemObject
   self.Eid = ListItemObject.TargetMachineEid
@@ -149,12 +139,12 @@ function WBP_Prologue_ExcavationEnergyBar_C:OnListItemObjectSet(ListItemObject)
   self.AttractBatteryToastNum = 0
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if nil == GameInstance then
-    DebugPrint("OnExcavationItemChange: GameInstance \228\184\141\229\173\152\229\156\168")
+    DebugPrint("OnExcavationItemChange: GameInstance 不存在")
     return
   end
   local SceneManager = GameInstance:GetSceneManager()
   if nil == SceneManager then
-    DebugPrint("OnExcavationItemChange: SceneManager \228\184\141\229\173\152\229\156\168")
+    DebugPrint("OnExcavationItemChange: SceneManager 不存在")
     return
   end
   local Order = (Ent.GuideOrderIndex - 1) % 6
@@ -185,7 +175,6 @@ function WBP_Prologue_ExcavationEnergyBar_C:OnListItemObjectSet(ListItemObject)
   self:PlayAnimation(self.Widget_In)
   self:AddTimer(self.TickTime, self.UpdateInfo, true, 0, "EnergyBarTick")
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:SetProgressBar(CanChargeValue, MainValue)
   local Material = self.Img_Charge:GetDynamicMaterial()
   if Material then
@@ -193,11 +182,9 @@ function WBP_Prologue_ExcavationEnergyBar_C:SetProgressBar(CanChargeValue, MainV
     Material:SetScalarParameterValue("HPValue3", MainValue)
   end
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:LoadHpBar()
   self.HpBar = self:LoadSubWidget(self.SizeBox_HP, "HPBar", false, self.SizeBox_HP.WidthOverride)
 end
-
 function WBP_Prologue_ExcavationEnergyBar_C:LoadSubWidget(Container, WidgetName, ...)
   if not Container then
     return
@@ -207,5 +194,4 @@ function WBP_Prologue_ExcavationEnergyBar_C:LoadSubWidget(Container, WidgetName,
   SubWidget:Init(...)
   return Container:GetChildAt(0)
 end
-
 return WBP_Prologue_ExcavationEnergyBar_C

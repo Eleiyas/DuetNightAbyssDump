@@ -2,7 +2,6 @@ local ListenBuffComponent = require("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.C
 local FListenBuffComponent = ListenBuffComponent.FListenBuffComponent
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
 local MAX_BULLET_NUM = 6
-
 function M:OnLoaded(PlayerCharacter, Params)
   self.Super.OnLoaded(self)
   self.Owner = PlayerCharacter
@@ -25,7 +24,6 @@ function M:OnLoaded(PlayerCharacter, Params)
   self.Skill02BuffId = Params.Skill02BuffId or 0
   self:InitBulletMagazine()
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   M.Super.Tick(self, MyGeometry, InDeltaTime)
   self.ListenBuffComponent:Tick(InDeltaTime)
@@ -47,12 +45,10 @@ function M:Tick(MyGeometry, InDeltaTime)
     self:EndListenSkill02(self.LinenSkill02Range)
   end
 end
-
 function M:ReceiveOnBuffsChanged()
   local Buffs = self.Owner.BuffManager.Buffs
   self.ListenBuffComponent:OnBuffsChanged(Buffs)
 end
-
 function M:StartHas_EnhancedReloadBuff(ListenBuffInfo)
   local LerpDirection = 1
   local Buff = ListenBuffInfo.Buff
@@ -73,7 +69,6 @@ function M:StartHas_EnhancedReloadBuff(ListenBuffInfo)
   self:SetImageBrushColor(self.Bg1, self.Magazine_Bg1_Filling)
   self:SetImageBrushColor(self.Bg2, self.Magazine_Bg2_Filling)
 end
-
 function M:TickHas_EnhancedReloadBuff(ListenBuffInfo, InDeltaTime)
   local Buff = ListenBuffInfo.Buff
   local BuffLayer = Buff.Layer
@@ -130,7 +125,6 @@ function M:TickHas_EnhancedReloadBuff(ListenBuffInfo, InDeltaTime)
   self.OldBuffLayer = BuffLayer
   self.bIsBulletSilence = false
 end
-
 function M:EndHas_EnhancedReloadBuff(ListenBuffInfo)
   local BulletNum = ListenBuffInfo.BulletNum
   local BulletShowDirection = ListenBuffInfo.BulletShowDirection
@@ -144,7 +138,6 @@ function M:EndHas_EnhancedReloadBuff(ListenBuffInfo)
   EMUIAnimationSubsystem:EMStopAnimation(self, self.FillBattle_Loop)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.EmptyBattle)
 end
-
 function M:GetBulletWidgetById(Id, BulletMaxNum)
   if Id < 0 then
     Id = (Id + 2 + BulletMaxNum) % BulletMaxNum
@@ -156,13 +149,11 @@ function M:GetBulletWidgetById(Id, BulletMaxNum)
   local BulletWidget = self[BulletWidgetName]
   return BulletWidget
 end
-
 function M:StartHas_FirepowerSuppressionBuff(ListenBuffInfo)
   self.StateRemainTime:SetVisibility(ESlateVisibility.HitTestInvisible)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.OpenFire_Loop, 0, true)
   EMUIAnimationSubsystem:EMStopAnimation(self, self.EmptyBattle)
 end
-
 function M:TickHas_FirepowerSuppressionBuff(ListenBuffInfo, InDeltaTime)
   local Buff = ListenBuffInfo.Buff
   local BuffRemainTime = Buff.LeftTime
@@ -173,13 +164,11 @@ function M:TickHas_FirepowerSuppressionBuff(ListenBuffInfo, InDeltaTime)
   local SecondText = self:TimeFormatToString(Second)
   self.StateRemainTime:SetText(MinuteText .. ": " .. SecondText)
 end
-
 function M:EndHas_FirepowerSuppressionBuff(ListenBuffInfo)
   self.StateRemainTime:SetVisibility(ESlateVisibility.Hidden)
   EMUIAnimationSubsystem:EMStopAnimation(self, self.OpenFire_Loop)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.OpenFireToNormal)
 end
-
 function M:TimeFormatToString(Time)
   if Time < 10 then
     return "0" .. Time
@@ -187,7 +176,6 @@ function M:TimeFormatToString(Time)
     return tostring(Time)
   end
 end
-
 function M:StartListenSkill02(LinenSkill02Range)
   do return end
   local Camera = self.Owner:GetCameraComponent()
@@ -201,34 +189,28 @@ function M:StartListenSkill02(LinenSkill02Range)
   self:PlayAnimation(self.SightingCircle_in)
   self:PlayAnimation(self.SightingCircle_Loop, 0, 0)
 end
-
 function M:TickListenSkill02(LinenSkill02Range)
   local VerticalFOVHalfTan = self.VerticalFOVHalfTan
   local SightingCircleScale = math.tan(math.rad(LinenSkill02Range)) / VerticalFOVHalfTan
   self.SightingCircle:SetRenderScale(FVector2D(SightingCircleScale, SightingCircleScale))
 end
-
 function M:EndListenSkill02(LinenSkill02Range)
   self.SightingCircle:SetVisibility(ESlateVisibility.Hidden)
   self:StopAnimation(self.SightingCircle_in)
   self:StopAnimation(self.SightingCircle_Loop)
 end
-
 function M:SetImageBrushColor(Image, TineColor)
   Image.Brush.TintColor = TineColor
 end
-
 function M:Destruct()
   self:StopAllAnimations()
   self:FlushAnimations()
   self.Super.Destruct(self)
 end
-
 function M:InitBulletMagazine()
   for Id = MAX_BULLET_NUM, 1, -1 do
     local BulletWidget = self["Battle_LinenSkil_bulletl_PC_" .. Id]
     BulletWidget:SetVisibility(ESlateVisibility.Hidden)
   end
 end
-
 return M

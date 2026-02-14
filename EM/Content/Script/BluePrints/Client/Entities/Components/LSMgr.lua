@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:RegisterMemberBattleInfo(Avatars)
   self.logger.info("RegisterMemberBattleInfo")
   local GameMode = GWorld.GameInstance:GetCurrentGameMode()
@@ -8,17 +7,14 @@ function Component:RegisterMemberBattleInfo(Avatars)
   end
   self:CallServerMethod("OnRegisterMemberBattleInfo")
 end
-
 function Component:UpdateNetDriverInfo(ip, port)
   self.logger.info("UpdateNetDriverInfo", ip, port)
   self:CallServerMethod("UpdateNetDriverInfo", ip, port)
 end
-
 function Component:UnregisterLS()
   self.logger.info("UnregisterLS")
   self:CallServerMethod("UnregisterLS")
 end
-
 function Component:LSBattleFinish(IsWin, bInterrupt)
   self.logger.info("LSBattleFinish", IsWin, bInterrupt)
   local GameMode = GWorld.GameInstance:GetCurrentGameMode()
@@ -31,14 +27,11 @@ function Component:LSBattleFinish(IsWin, bInterrupt)
   end
   self:CallServerMethod("LSBattleFinish", IsWin, DamageMap)
 end
-
 function Component:ConnectLS(Ip, Port)
   self.logger.info("Connect Listen Server")
   GWorld.GameInstance:ConnectListenServer_Lua(Ip, Port, self.Account, CommonUtils.ObjId2Str(self.Eid))
 end
-
 function Component:TestConnectLS()
   self:CallServerMethod("RequireEnterLS", 1)
 end
-
 return Component

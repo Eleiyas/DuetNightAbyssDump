@@ -2,7 +2,6 @@ local M = Class({
   "BluePrints/Common/EMLevelLoader",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self:BeginPlay()
@@ -19,7 +18,7 @@ function M:ReceiveBeginPlay()
   self.LoadingFlag = false
   self.NextRoomReady = false
   self.LevelSpacing = 100000
-  self.IsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
+  self.IsMobile = CommonUtils.GetRuntimePlatform(self) == "Mobile"
   if not IsDedicatedServer(self) then
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
     self.LoadingUI = GameInstance:ShowLoadingUI(UIConst.COMMONCHANGESCENE)
@@ -44,7 +43,6 @@ function M:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.OnRougeLikeEnterRoom, self, self.OnRougeLikeEnterRoom)
   GWorld.RougelikeLevelLoader = self
 end
-
 function M:TestTimer()
   local random = math.random(1, 3)
   local table = {
@@ -54,7 +52,6 @@ function M:TestTimer()
   }
   self:EnterRoom(table[random], table)
 end
-
 function M:ReceiveEndPlay(reason)
   EventManager:RemoveEvent(EventID.OnRougeLikeEnterRoom, self)
   if self.SceneCaptureComponent then
@@ -64,13 +61,11 @@ function M:ReceiveEndPlay(reason)
   UKismetRenderingLibrary.ReleaseRenderTarget2D(self.RenderTexture)
   self.RenderTexture = nil
 end
-
 function M:InitSettings()
   DebugPrint("LevelLoaderInitSettings RougeLike")
   local WorldContext = GWorld.GameInstance
-  URuntimeCommonFunctionLibrary.SetConsoleVariableIntValue("r.Mobile.EnableReadSurface", 0, true)
+  URuntimeCommonFunctionLibrary.SetConsoleVariableIntValue("r.Mobile.EnableReadSurface", 0, 1)
 end
-
 function M:EnterRoom(RoomId, NextRoomId)
   self.LastRoomId = self.CurrentRoomId
   self.CurrentRoomId = RoomId
@@ -95,12 +90,10 @@ function M:EnterRoom(RoomId, NextRoomId)
   self.StepId = self.StepId + 1
   coroutine.resume(coroutine.create(self.LoadNextLevel), self, NextRoomId)
 end
-
 function M:LoadNavMeshLevel(RoomId)
   UKismetSystemLibrary.Delay(self, 1.5)
   UGameplayStatics.LoadStreamLevel(self, self.StepId - 1 .. "-" .. RoomId .. "_NavMesh", false, false)
 end
-
 function M:LoadNextLevel(NextRoomId)
   self.NextRoomReady = false
   while not self.LoadingComplete do
@@ -138,14 +131,12 @@ function M:LoadNextLevel(NextRoomId)
   self:ReleaseInitialBuildingLock()
   self:PrintRougeLikeLevelLoader("ReleaseBuildingLock")
 end
-
 function M:OnArtLevelLoaded(RoomId)
   if self.LoadingComplete then
     self:DisableLevelRVTVolume(self.RoomId2StreamLevel[RoomId][3])
   end
   coroutine.resume(coroutine.create(self.CheckLevelLoaded), self, RoomId)
 end
-
 function M:CheckLevelLoaded(RoomId)
   self:PrintRougeLikeLevelLoader("CheckLevelLoaded:" .. RoomId)
   if not self.LoadingComplete then
@@ -184,11 +175,9 @@ function M:CheckLevelLoaded(RoomId)
   end
   self.LoadingFlag = false
 end
-
 function M:OnPostAttachNavMeshDataChunk_Lua(InStreamLevel)
   self.StreamLevelNavMeshCheck[InStreamLevel] = true
 end
-
 function M:SetPlayerTrans()
   self:CreateBattleMap()
   if self.RoomId2StreamLevel[self.CurrentRoomId] and self.RoomId2StreamLevel[self.CurrentRoomId][3] then
@@ -205,7 +194,6 @@ function M:SetPlayerTrans()
     end
   end
 end
-
 function M:CreateBattleMap()
   local battleMain = UIManager(self):GetUI("BattleMain")
   if not battleMain then
@@ -228,7 +216,6 @@ function M:CreateBattleMap()
     MiniMap:CreateRougelikeBattleMap(self.CurrentRoomId, data)
   end
 end
-
 function M:UnloadStreamLevelByRoomId(RoomId, StepId)
   self.LevelID2GridFrame:Remove(tostring(RoomId))
   UAsyncFunctionLibrary.UnloadStreamLevelWithID(self, StepId .. "-" .. RoomId .. "_Art", RoomId, false)
@@ -243,7 +230,6 @@ function M:UnloadStreamLevelByRoomId(RoomId, StepId)
     UAsyncFunctionLibrary.UnloadStreamLevelWithID(self, StepId .. "-" .. RoomId .. "_Effect", RoomId * 1000 + 3, false)
   end
 end
-
 function M:LoadStreamLevelByRoomId(RoomId, Index)
   self.LoadingFlag = true
   local artPath = self.RoomData[RoomId].ArtDataPath
@@ -284,12 +270,10 @@ function M:LoadStreamLevelByRoomId(RoomId, Index)
   success, streamLevel = ULevelStreamingDynamic.LoadLevelInstance(self, effectPath, location, FRotator(), success, self.StepId .. "-" .. RoomId .. "_Effect")
   table.insert(self.RoomId2StreamLevel[RoomId], {streamLevel})
 end
-
 function M:GetRoomLocation(Index)
   local row = self.StepId % 10
   return FVector(self.LevelSpacing * (row - 5), self.LevelSpacing * Index, 0)
 end
-
 function M:OnRougeLikeEnterRoom(RoomId, RandomRooms)
   self:PrintRougeLikeLevelLoader("Enter Room:" .. RoomId)
   for i = 1, RandomRooms:Length() do
@@ -298,7 +282,6 @@ function M:OnRougeLikeEnterRoom(RoomId, RandomRooms)
   end
   self:EnterRoom(RoomId, RandomRooms)
 end
-
 function M:K2_GetArtPathByLevelId(LevelId)
   if not self.ID2DesignStreamingLevel[LevelId] then
     return
@@ -306,15 +289,12 @@ function M:K2_GetArtPathByLevelId(LevelId)
   local transform = self.ID2DesignStreamingLevel[LevelId].LevelTransform
   return self.RoomData[tonumber(LevelId)].ArtDataPath, transform.Translation, transform.Rotation
 end
-
 function M:PrintRougeLikeLevelLoader(Str)
   print(_G.LogTag, "RougeLike_LevelLoader", Str)
 end
-
 function M:CheckIsRougeLike()
   return true
 end
-
 function M:GetLevelIdByLevel(InLevel)
   for RoomId, Table in pairs(self.RoomId2StreamLevel) do
     if Table[2] and Table[2]:GetLoadedLevel() and Table[2]:GetLoadedLevel() == InLevel then
@@ -323,5 +303,17 @@ function M:GetLevelIdByLevel(InLevel)
   end
   return ""
 end
-
+function M:GetActorInLevelTransform(InActor)
+  print("RougeLike EnvirSystemActor GetActorInLevelTransform")
+  if not self.RoomId2StreamLevel then
+    return FTransform()
+  end
+  local Level = UE4.URuntimeCommonFunctionLibrary.GetLevel(InActor)
+  for Id, StreamLevelTable in pairs(self.RoomId2StreamLevel) do
+    if StreamLevelTable and StreamLevelTable[3] and StreamLevelTable[3]:GetLoadedLevel() == Level then
+      return StreamLevelTable[3].LevelTransform
+    end
+  end
+  return FTransform()
+end
 return M

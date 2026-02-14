@@ -46,8 +46,8 @@ return {
       isStoryNode = true,
       key = "17439932284851928",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 1278, y = 272},
+      name = "任务节点",
+      pos = {x = 1280, y = 274},
       propsData = {
         QuestId = 0,
         QuestDescriptionComment = "",
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -143,7 +145,7 @@ return {
           ["17439932300602022"] = {
             key = "17439932300602022",
             type = "TalkNode",
-            name = "\230\181\183\229\176\148\230\179\149\229\174\161\229\136\164",
+            name = "海尔法审判",
             pos = {x = 1316, y = 264},
             propsData = {
               IsNpcNode = false,
@@ -162,6 +164,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -169,6 +172,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -196,16 +200,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 110039},
-                {TalkActorType = "Npc", TalkActorId = 110022},
-                {TalkActorType = "Npc", TalkActorId = 110021}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -213,7 +213,7 @@ return {
           ["17439932996902433"] = {
             key = "17439932996902433",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1596, y = 272.6666666666667},
             propsData = {
               ActiveEnable = false,
@@ -227,7 +227,7 @@ return {
           ["17439933030682535"] = {
             key = "17439933030682535",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1061.0476190476195, y = 286.00000000000006},
             propsData = {
               ActiveEnable = true,
@@ -241,21 +241,21 @@ return {
           ["17446224443803695"] = {
             key = "17446224443803695",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 1960.3450923431571, y = 311.1286605551311},
             propsData = {}
           },
           ["17446224536513936"] = {
             key = "17446224536513936",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1102.6178196158844, y = 676.5832060096766},
             propsData = {}
           },
           ["17485244536888708005"] = {
             key = "17485244536888708005",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = 796.2424242424244, y = 279.6969696969697},
             propsData = {
               UnitId = 0,

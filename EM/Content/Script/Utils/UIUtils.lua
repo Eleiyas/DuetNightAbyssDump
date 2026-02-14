@@ -8,6 +8,7 @@ local SkillUtils = require("Utils.SkillUtils")
 local Utils = require("Utils")
 local MiscUtils = require("Utils.MiscUtils")
 local BagCommon = require("BluePrints.UI.WBP.Bag.BagCommon")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local Deque = StrLib.Deque
 local UIUtils = Class()
 UIUtils._components = {
@@ -16,7 +17,6 @@ UIUtils._components = {
 UIUtils.Handled = UE4.UWidgetBlueprintLibrary.Handled()
 UIUtils.Handle = UIUtils.Handled
 UIUtils.Unhandled = UE4.UWidgetBlueprintLibrary.Unhandled()
-
 function UIUtils.ShowGotItemTipsUI(TableTypeName, ItemId, ItemCount, AdditionalParam)
   local ItemData = DataMgr[TableTypeName][ItemId]
   if not ItemData or not ItemData.Icon then
@@ -100,15 +100,22 @@ function UIUtils.ShowGotItemTipsUI(TableTypeName, ItemId, ItemCount, AdditionalP
     end
   end
 end
-
 function UIUtils.ShowHudReward(TitleText, RewardInfoList)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
-  local RewardUI = UIManager:LoadUINew("CommonHudReward", TitleText, RewardInfoList)
-  RewardUI:InitRewardInfo(TitleText, RewardInfoList)
+  local RewardUI
+  GameFlowUtils:AddFlow("ShowHudReward", {
+    GWorld.GameInstance,
+    function(_, Flow)
+      RewardUI = UIManager:LoadUINew("CommonHudReward", TitleText, RewardInfoList)
+      if RewardUI then
+        RewardUI:InitRewardInfo(TitleText, RewardInfoList)
+        UIManager:AddFlow("CommonHudReward", Flow)
+      end
+    end
+  })
   return RewardUI
 end
-
 function UIUtils.ShowHudRewardConvert(TitleText, Rewards)
   local List = {}
   for Types, Table in pairs(Rewards) do
@@ -129,20 +136,18 @@ function UIUtils.ShowHudRewardConvert(TitleText, Rewards)
   end
   return UIUtils.ShowHudReward(TitleText, List)
 end
-
-function UIUtils.ShowGetItemPage(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage)
-  local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-  local Flow = FlowManager:CreateFlow("GetItemPage")
-  local UIManager = GWorld.GameInstance:GetGameUIManager()
-  Flow.OnBegin:Add(Flow, function()
-    local UIName = bSpecial and "GetItemPageSP" or "GetItemPage"
-    UIUtils.ShowGetItemPageInternal(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage)
-    UIManager:AddFlow(UIName, Flow)
-  end)
-  FlowManager:AddFlow(Flow)
+function UIUtils.ShowGetItemPage(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage, bIsNew, ToastText)
+  GameFlowUtils:AddFlow("GetItemPage", {
+    GWorld.GameInstance,
+    function(_, Flow)
+      local UIName = bSpecial and "GetItemPageSP" or "GetItemPage"
+      UIUtils.ShowGetItemPageInternal(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage, bIsNew, ToastText)
+      local UIManager = GWorld.GameInstance:GetGameUIManager()
+      UIManager:AddFlow(UIName, Flow)
+    end
+  })
 end
-
-function UIUtils.ShowGetItemPageInternal(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage)
+function UIUtils.ShowGetItemPageInternal(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage, bIsNew, ToastText)
   ItemType = ItemType or -1
   ItemId = ItemId or -1
   Count = Count or -1
@@ -155,11 +160,16 @@ function UIUtils.ShowGetItemPageInternal(ItemType, ItemId, Count, PurchaseReward
   end
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
-  
   local function ShowFinish()
-    UIManager:LoadUINew(SystemUIName, ItemType, ItemId, Count, PurchaseRewards, func, ParentWidget, IsReAttachFocusToPage)
+    if "Char" == ItemType and not bIsNew then
+      local CharData = DataMgr.Char[ItemId]
+      local RegainItemId = CharData and CharData.RegainCharItemId or nil
+      local RegainItemCount = CharData and CharData.RegainCharItemNum or nil
+      UIManager:LoadUINew(SystemUIName, "Resource", RegainItemId, RegainItemCount, PurchaseRewards, func, ParentWidget, IsReAttachFocusToPage, ToastText)
+    else
+      UIManager:LoadUINew(SystemUIName, ItemType, ItemId, Count, PurchaseRewards, func, ParentWidget, IsReAttachFocusToPage, ToastText)
+    end
   end
-  
   if PurchaseRewards then
     UIUtils.ShowGetCharWeaponPage(PurchaseRewards, ShowFinish, nil, nil, bOnlyItemPage)
   else
@@ -170,7 +180,6 @@ function UIUtils.ShowGetItemPageInternal(ItemType, ItemId, Count, PurchaseReward
     UIUtils.ShowGetCharWeaponPage(TargetTable, ShowFinish, nil, nil, bOnlyItemPage)
   end
 end
-
 function UIUtils.ShowGetCharWeaponPage(TargetTable, CallbackFunc, ParentWidget, bGacha, bOnlyItemPage)
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -231,7 +240,6 @@ function UIUtils.ShowGetCharWeaponPage(TargetTable, CallbackFunc, ParentWidget, 
           local ShowTargetParams = {
             TargetIdList = ShowTargetList,
             TargetType = ShowType,
-            CallbackObj = self,
             CallbackFunc = function()
               coroutine.resume(co)
             end,
@@ -248,16 +256,20 @@ function UIUtils.ShowGetCharWeaponPage(TargetTable, CallbackFunc, ParentWidget, 
   end)
   coroutine.resume(AsyncFunc)
 end
-
-function UIUtils.ShowGetItemPageAndOpenBagIfNeeded(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage)
+function UIUtils.ShowGetItemPageAndOpenBagIfNeeded(ItemType, ItemId, Count, PurchaseRewards, bSpecial, func, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage, bIsNew, ToastText)
   local needOpenBag = false
   local OpenBagId
+  local ToastText = ToastText or nil
+  local bHasGestureItem = false
   if PurchaseRewards and PurchaseRewards.Resources then
     for Id, resource in pairs(PurchaseRewards.Resources) do
       local RewardData = DataMgr.Resource[Id]
       if RewardData and RewardData.MaterialClassify == BagCommon.ItemTypeToTabId.ConsumableItem then
         needOpenBag = true
         OpenBagId = tostring(Id)
+      end
+      if RewardData and RewardData.ResourceSType == "GestureItem" then
+        bHasGestureItem = true
       end
     end
   elseif ItemId then
@@ -266,41 +278,40 @@ function UIUtils.ShowGetItemPageAndOpenBagIfNeeded(ItemType, ItemId, Count, Purc
       needOpenBag = true
       OpenBagId = tostring(ItemId)
     end
+    if RewardData and RewardData.ResourceSType == "GestureItem" then
+      bHasGestureItem = true
+    end
   end
-  
+  if bHasGestureItem and nil == ToastText then
+    ToastText = GText("UI_GestureItem_Goto_Bag")
+  end
   local function callback()
     if needOpenBag then
       local Params = {}
       Params.LeftCallbackFunction = func
-      
       function Params.RightCallbackFunction(Obj, Result, PopUI)
         UIUtils.OpenSystem(2, false, BagCommon.ItemTypeToTabId.ConsumableItem, OpenBagId)
       end
-      
       local UIManager = GWorld.GameInstance:GetGameUIManager()
       UIManager:ShowCommonPopupUI(100250, Params)
     elseif func then
       func()
     end
   end
-  
-  UIUtils.ShowGetItemPage(ItemType, ItemId, Count, PurchaseRewards, bSpecial, callback, ParentWidget, IsReAttachFocusToPage)
+  UIUtils.ShowGetItemPage(ItemType, ItemId, Count, PurchaseRewards, bSpecial, callback, ParentWidget, IsReAttachFocusToPage, bOnlyItemPage, bIsNew, ToastText)
 end
-
 function UIUtils.GetCommonDragDropOperationClass()
   if not UIUtils._DragDropOperationClass then
     UIUtils._DragDropOperationClass = MiscUtils.LazyLoadClass("/Game/UI/Blueprint/CommonDragDropOperation.CommonDragDropOperation_C", true)
   end
   return UIUtils._DragDropOperationClass:get()
 end
-
 function UIUtils.GetCommonItemContentClass()
   if not UIUtils._ItemObjectClass then
     UIUtils._ItemObjectClass = MiscUtils.LazyLoadClass("/Game/UI/Blueprint/CommonItemContent.CommonItemContent_C", true)
   end
   return UIUtils._ItemObjectClass:get()
 end
-
 function UIUtils.GetMaxScrollOffsetOfListView(ListView)
   local ItemUIs = ListView:GetDisplayedEntryWidgets()
   if 0 == ItemUIs:Length() then
@@ -321,17 +332,15 @@ function UIUtils.GetMaxScrollOffsetOfListView(ListView)
   end
   return MaxScrollOffset
 end
-
 local CountPad = 0.05
-
 function UIUtils.GetListViewContentMaxCount(ListView, ItemUIs, bDontChangeScrollbar, bDontSetEmptyGridItemCount)
   if not ListView:IsVisible() then
-    Utils.Traceback(WarningTag, LXYTag .. "UIUtils.GetListViewContentMaxCount\239\188\154ListView\229\191\133\233\161\187\230\152\175\229\143\175\232\167\129\231\154\132")
+    Utils.Traceback(WarningTag, LXYTag .. "UIUtils.GetListViewContentMaxCount：ListView必须是可见的")
     return 0
   end
   ItemUIs = ItemUIs or ListView:GetDisplayedEntryWidgets()
   if 0 == ItemUIs:Length() then
-    Utils.Traceback(WarningTag, LXYTag .. "UIUtils.GetListViewContentMaxCount\239\188\154ListView\229\191\133\233\161\187\229\133\136\231\148\159\230\136\144\228\184\128\228\184\170ItemUI\230\137\141\232\131\189\229\135\134\231\161\174\232\174\161\231\174\151\228\184\170\230\149\176")
+    Utils.Traceback(WarningTag, LXYTag .. "UIUtils.GetListViewContentMaxCount：ListView必须先生成一个ItemUI才能准确计算个数")
     return 0
   end
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -370,12 +379,11 @@ function UIUtils.GetListViewContentMaxCount(ListView, ItemUIs, bDontChangeScroll
     local EmptyItemNum = not bDontSetEmptyGridItemCount and math.max(0, Count - CurItemCount) or 0
     ListView:SetEmptyGridItemCount(EmptyItemNum)
   else
-    DebugPrint(ErrorTag, "GetListViewContentMaxCount: \229\189\147\229\137\141\229\136\151\232\161\168\230\178\161\230\156\137\229\161\171\229\133\133\232\191\135Item, \232\175\183\230\137\139\229\138\168\232\176\131\231\148\168\229\136\151\232\161\168\231\154\132SetEmptyGridItemCount\230\157\165\232\174\190\231\189\174\231\169\186\230\128\129\230\160\188\229\173\144\230\149\176")
+    DebugPrint(ErrorTag, "GetListViewContentMaxCount: 当前列表没有填充过Item, 请手动调用列表的SetEmptyGridItemCount来设置空态格子数")
   end
   DebugPrint("ListViewCount", RawCount, Count)
   return Count
 end
-
 function UIUtils.GetTileViewContentMaxCount(TileView, Option, bDontChangeScrollbar, bDontSetEmptyGridItemCount)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local ListSize = UIManager:GetWidgetRenderSize(TileView)
@@ -432,7 +440,7 @@ function UIUtils.GetTileViewContentMaxCount(TileView, Option, bDontChangeScrollb
     end
     TileView:SetEmptyGridItemCount(EmptyItemNum)
   else
-    DebugPrint(ErrorTag, "GetTileViewContentMaxCount: \229\189\147\229\137\141\229\136\151\232\161\168\230\178\161\230\156\137\229\161\171\229\133\133\232\191\135Item, \232\175\183\230\137\139\229\138\168\232\176\131\231\148\168\229\136\151\232\161\168\231\154\132SetEmptyGridItemCount\230\157\165\232\174\190\231\189\174\231\169\186\230\128\129\230\160\188\229\173\144\230\149\176")
+    DebugPrint(ErrorTag, "GetTileViewContentMaxCount: 当前列表没有填充过Item, 请手动调用列表的SetEmptyGridItemCount来设置空态格子数")
   end
   if not Option then
     return XCount * YCount
@@ -443,9 +451,8 @@ function UIUtils.GetTileViewContentMaxCount(TileView, Option, bDontChangeScrollb
   elseif "XY" == Option then
     return XCount, YCount
   end
-  assert(false, "UIUtils.GetTileViewContentMaxCount: Option\229\143\130\230\149\176\233\148\153\232\175\175")
+  assert(false, "UIUtils.GetTileViewContentMaxCount: Option参数错误")
 end
-
 function UIUtils.PlayListViewFramingInAnimation(UIState, ListView, Params)
   Params = Params or {
     Interval = nil,
@@ -504,7 +511,6 @@ function UIUtils.PlayListViewFramingInAnimation(UIState, ListView, Params)
   TimerKeys:PushBack(TimerKey)
   return TimerKeys
 end
-
 function UIUtils.StopListViewFramingInAnimation(ListView, Params)
   Params = Params or {
     UIState = nil,
@@ -529,7 +535,6 @@ function UIUtils.StopListViewFramingInAnimation(ListView, Params)
     end
   end
 end
-
 function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, List_FrontNew, List_BackNew, ReddotAndNewCalFunc)
   if not ListView then
     return
@@ -545,7 +550,6 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
   if 0 == #AllItems then
     return
   end
-  
   local function GetWidgetContentArray(widgets)
     local result = {}
     for _, w in ipairs(widgets) do
@@ -555,11 +559,9 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
     end
     return result
   end
-  
   local PartiallyOutOfStartItems = GetWidgetContentArray(PartialStart)
   local FullyVisibleItems = GetWidgetContentArray(FullyVisible)
   local PartiallyOutOfEndItems = GetWidgetContentArray(PartialEnd)
-  
   local function GetItemIndex(Item)
     for i, v in ipairs(AllItems) do
       if v == Item then
@@ -568,13 +570,11 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
     end
     return nil
   end
-  
   local TopIndex = 1
   local BottomIndex = #AllItems
   if #FullyVisibleItems > 0 or #PartiallyOutOfStartItems > 0 or #PartiallyOutOfEndItems > 0 then
     local TopItem = PartiallyOutOfStartItems[1] or FullyVisibleItems[1] or PartiallyOutOfEndItems[1]
     local BottomItem = PartiallyOutOfEndItems[#PartiallyOutOfEndItems] or FullyVisibleItems[#FullyVisibleItems] or PartiallyOutOfStartItems[#PartiallyOutOfStartItems]
-    
     local function GetIndexByItem(Item)
       for i, v in ipairs(AllItems) do
         if v == Item then
@@ -583,7 +583,6 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
       end
       return nil
     end
-    
     TopIndex = TopItem and GetIndexByItem(TopItem) or 1
     BottomIndex = BottomItem and GetIndexByItem(BottomItem) or #AllItems
   end
@@ -609,7 +608,6 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
   end
   local bHasFrontReddot, bHasBackReddot = false, false
   local bHasFrontNew, bHasBackNew = false, false
-  
   local function CheckIndicators(ItemList)
     for _, item in ipairs(ItemList) do
       local hasRed, hasNew = false, false
@@ -636,7 +634,6 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
       end
     end
   end
-  
   CheckIndicators(FrontIndicatorItems)
   CheckIndicators(BackIndicatorItems)
   local FrontAnim = "Loop_T"
@@ -645,7 +642,6 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
     FrontAnim = "Loop_L"
     BackAnim = "Loop_R"
   end
-  
   local function SetListIndicator(Widget, bVisible, AnimName)
     if not Widget then
       return
@@ -660,13 +656,11 @@ function UIUtils.UpdateListReddot(ListView, List_FrontRedDot, List_BackRedDot, L
       Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
-  
   SetListIndicator(List_FrontRedDot, bHasFrontReddot, FrontAnim)
   SetListIndicator(List_FrontNew, not bHasFrontReddot and bHasFrontNew, FrontAnim)
   SetListIndicator(List_BackRedDot, bHasBackReddot, BackAnim)
   SetListIndicator(List_BackNew, not bHasBackReddot and bHasBackNew, BackAnim)
 end
-
 function UIUtils.UpdateScrollBoxReddot(TargetScrollBox, ScrollBox_FrontRedDot, ScrollBox_BackRedDot, ScrollBox_FrontNew, ScrollBox_BackNew, ReddotAndNewCalFunc)
   if not TargetScrollBox then
     return
@@ -681,7 +675,6 @@ function UIUtils.UpdateScrollBoxReddot(TargetScrollBox, ScrollBox_FrontRedDot, S
   local bHasBackReddot = false
   local bHasFrontNew = false
   local bHasBackNew = false
-  
   local function CalbHas(TargetTable)
     local HasReddot = false
     local HasNew = false
@@ -701,7 +694,6 @@ function UIUtils.UpdateScrollBoxReddot(TargetScrollBox, ScrollBox_FrontRedDot, S
     end
     return HasReddot, HasNew
   end
-  
   local TableHasReddot = false
   local TableHasNew = false
   TableHasReddot, TableHasNew = CalbHas(OutFullyOutOfStartArray:ToTable())
@@ -731,7 +723,6 @@ function UIUtils.UpdateScrollBoxReddot(TargetScrollBox, ScrollBox_FrontRedDot, S
     FrontAnim = "Loop_L"
     BackAnim = "Loop_R"
   end
-  
   local function SetListIndicator(Widget, bVisible, AnimName)
     if not Widget then
       return
@@ -746,7 +737,6 @@ function UIUtils.UpdateScrollBoxReddot(TargetScrollBox, ScrollBox_FrontRedDot, S
       Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
-  
   print("lgc@ :", "bHasFrontReddot", tostring(bHasFrontReddot), "bHasBackReddot", tostring(bHasBackReddot), "bHasFrontNew", tostring(bHasFrontNew), "bHasBackNew", tostring(bHasBackNew))
   if ScrollBox_FrontRedDot then
     SetListIndicator(ScrollBox_FrontRedDot, bHasFrontReddot, FrontAnim)
@@ -763,29 +753,29 @@ function UIUtils.UpdateScrollBoxReddot(TargetScrollBox, ScrollBox_FrontRedDot, S
     SetListIndicator(ScrollBox_BackNew, showBottomNew, BackAnim)
   end
 end
-
-function UIUtils.UpdateScrollBoxArrow(ScrollBox, List_ArrowTop, List_ArrowBottom)
+function UIUtils.UpdateScrollBoxArrow(ScrollBox, List_ArrowTop, List_ArrowBottom, MaxOffset)
   if not ScrollBox then
     return
   end
   local Offset = ScrollBox:GetScrollOffset()
   local EndOffset = ScrollBox:GetScrollOffsetOfEnd()
+  MaxOffset = MaxOffset or 0
   if List_ArrowTop then
-    if Offset > 0 then
+    if Offset > 0 and Offset > MaxOffset then
       List_ArrowTop:SetVisibility(ESlateVisibility.Visible)
     else
       List_ArrowTop:SetVisibility(ESlateVisibility.Collapsed)
     end
   end
   if List_ArrowBottom then
-    if Offset == EndOffset then
-      List_ArrowBottom:SetVisibility(ESlateVisibility.Collapsed)
-    else
+    local DistanceToEnd = EndOffset - Offset
+    if Offset < EndOffset and MaxOffset < DistanceToEnd then
       List_ArrowBottom:SetVisibility(ESlateVisibility.Visible)
+    else
+      List_ArrowBottom:SetVisibility(ESlateVisibility.Collapsed)
     end
   end
 end
-
 function UIUtils.UpdateListArrow(ListView, List_ArrowTop, List_ArrowBottom)
   if not ListView then
     return
@@ -820,7 +810,6 @@ function UIUtils.UpdateListArrow(ListView, List_ArrowTop, List_ArrowBottom)
     List_ArrowBottom:SetVisibility(bShowBottomArrow and ESlateVisibility.Visible or ESlateVisibility.Collapsed)
   end
 end
-
 function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackRedDot, List_ArrowTop, List_ArrowBottom, ReddotCalFunc)
   if not ListView then
     return
@@ -837,7 +826,6 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
   if 0 == #ListItems then
     return
   end
-  
   local function GetWidgetContentArray(widgets)
     local result = {}
     for _, w in ipairs(widgets) do
@@ -847,11 +835,9 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
     end
     return result
   end
-  
   local PartiallyOutOfStartItems = GetWidgetContentArray(PartialStart)
   local FullyVisibleItems = GetWidgetContentArray(FullyVisible)
   local PartiallyOutOfEndItems = GetWidgetContentArray(PartialEnd)
-  
   local function GetItemIndex(Item)
     for i, v in ipairs(ListItems) do
       if v == Item then
@@ -860,18 +846,19 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
     end
     return nil
   end
-  
   table.sort(PartiallyOutOfStartItems, function(a, b)
     return GetItemIndex(a) < GetItemIndex(b)
   end)
   table.sort(PartiallyOutOfEndItems, function(a, b)
     return GetItemIndex(a) > GetItemIndex(b)
   end)
+  local TopItem
   local TopIndex = 1
+  local BottomItem
   local BottomIndex = #ListItems
   if #FullyVisibleItems > 0 or #PartiallyOutOfStartItems > 0 or #PartiallyOutOfEndItems > 0 then
-    local TopItem = PartiallyOutOfStartItems[1] or FullyVisibleItems[1] or PartiallyOutOfEndItems[1]
-    local BottomItem = PartiallyOutOfEndItems[1] or FullyVisibleItems[#FullyVisibleItems] or PartiallyOutOfStartItems[1]
+    TopItem = PartiallyOutOfStartItems[1] or FullyVisibleItems[1] or PartiallyOutOfEndItems[1]
+    BottomItem = PartiallyOutOfEndItems[1] or FullyVisibleItems[#FullyVisibleItems] or PartiallyOutOfStartItems[1]
     TopIndex = TopItem and GetItemIndex(TopItem) or 1
     BottomIndex = BottomItem and GetItemIndex(BottomItem) or #ListItems
   end
@@ -896,7 +883,6 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
     table.insert(BackIndicatorItems, v)
   end
   local bHasFrontReddot, bHasBackReddot = false, false
-  
   local function CheckIndicators(ItemList)
     for _, item in ipairs(ItemList) do
       local hasRed = false, false
@@ -915,7 +901,6 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
       end
     end
   end
-  
   CheckIndicators(FrontIndicatorItems)
   CheckIndicators(BackIndicatorItems)
   if not FullyVisible or #FullyVisible <= 3 then
@@ -969,7 +954,6 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
     FrontAnim = "Loop_L"
     BackAnim = "Loop_R"
   end
-  
   local function SetListIndicator(Widget, bVisible, AnimName)
     if not Widget then
       return
@@ -984,9 +968,11 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
       Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
   end
-  
   local bShowTopArrow = TopIndex > 1
-  local bShowBottomArrow = BottomIndex < #ListItems - 1
+  local bShowBottomArrow = BottomIndex < #ListItems
+  if not BottomItem or BottomItem.IsEmpty then
+    bShowBottomArrow = false
+  end
   if List_FrontRedDot then
     SetListIndicator(List_FrontRedDot, bHasFrontReddot, FrontAnim)
   end
@@ -1002,12 +988,10 @@ function UIUtils.UpdateListArrowAndReddot(ListView, List_FrontRedDot, List_BackR
     List_ArrowBottom:SetVisibility(bShowArrow and ESlateVisibility.Visible or ESlateVisibility.Collapsed)
   end
 end
-
 function UIUtils.BindScrollBoxReddotAndNewClickEvent(TargetScrollBox, ScrollBox_FrontRedDot, ScrollBox_BackRedDot, ScrollBox_FrontNew, ScrollBox_BackNew, ReddotAndNewCalFunc)
   if not TargetScrollBox then
     return
   end
-  
   local function BindClickEvent(indicator, isFront, isReddot)
     if not indicator or not indicator.Btn_Click then
       return
@@ -1058,24 +1042,20 @@ function UIUtils.BindScrollBoxReddotAndNewClickEvent(TargetScrollBox, ScrollBox_
       end
     end)
   end
-  
   BindClickEvent(ScrollBox_FrontRedDot, true, true)
   BindClickEvent(ScrollBox_BackRedDot, false, true)
   BindClickEvent(ScrollBox_FrontNew, true, false)
   BindClickEvent(ScrollBox_BackNew, false, false)
-  
   local function PlayNormalAnim(Target)
     if Target and Target.Normal and Target.PlayAnimation then
       Target:PlayAnimation(Target.Normal)
     end
   end
-  
   PlayNormalAnim(ScrollBox_FrontRedDot)
   PlayNormalAnim(ScrollBox_BackRedDot)
   PlayNormalAnim(ScrollBox_FrontNew)
   PlayNormalAnim(ScrollBox_BackNew)
 end
-
 function UIUtils.GetListViewEntryItemsVisibilityState(ListView, OutFullyOutOfStartArray, OutPartiallyOutOfStartArray, OutFullyVisibleArray, OutPartiallyOutOfEndArray, OutFullyOutOfEndArray)
   if not ListView then
     return
@@ -1103,7 +1083,6 @@ function UIUtils.GetListViewEntryItemsVisibilityState(ListView, OutFullyOutOfSta
   local FullyVisible = TArray(UObject)
   local PartialEnd = TArray(UObject)
   ListView:GetEntryWidgetsVisibilityState(PartialStart, FullyVisible, PartialEnd)
-  
   local function GetWidgetContentArray(widgets)
     local result = {}
     for _, w in ipairs(widgets) do
@@ -1113,11 +1092,9 @@ function UIUtils.GetListViewEntryItemsVisibilityState(ListView, OutFullyOutOfSta
     end
     return result
   end
-  
   local PartiallyOutOfStartItems = GetWidgetContentArray(PartialStart:ToTable())
   local FullyVisibleItems = GetWidgetContentArray(FullyVisible:ToTable())
   local PartiallyOutOfEndItems = GetWidgetContentArray(PartialEnd:ToTable())
-  
   local function GetItemIndex(Item)
     for i, v in ipairs(AllItems) do
       if v == Item then
@@ -1126,7 +1103,6 @@ function UIUtils.GetListViewEntryItemsVisibilityState(ListView, OutFullyOutOfSta
     end
     return nil
   end
-  
   local TopIndex = 1
   local BottomIndex = #AllItems
   if #FullyVisibleItems > 0 or #PartiallyOutOfStartItems > 0 or #PartiallyOutOfEndItems > 0 then
@@ -1170,12 +1146,10 @@ function UIUtils.GetListViewEntryItemsVisibilityState(ListView, OutFullyOutOfSta
     end
   end
 end
-
 function UIUtils.BindListViewReddotAndNewClickEvent(TargetListView, ListView_FrontRedDot, ListView_BackRedDot, ListView_FrontNew, ListView_BackNew, ReddotAndNewCalFunc)
   if not TargetListView then
     return
   end
-  
   local function BindClickEvent(indicator, isFront, isReddot)
     if not indicator or not indicator.Btn_Click then
       return
@@ -1226,24 +1200,20 @@ function UIUtils.BindListViewReddotAndNewClickEvent(TargetListView, ListView_Fro
       end
     end)
   end
-  
   BindClickEvent(ListView_FrontRedDot, true, true)
   BindClickEvent(ListView_BackRedDot, false, true)
   BindClickEvent(ListView_FrontNew, true, false)
   BindClickEvent(ListView_BackNew, false, false)
-  
   local function PlayNormalAnim(Target)
     if Target and Target.Normal and Target.PlayAnimation then
       Target:PlayAnimation(Target.Normal)
     end
   end
-  
   PlayNormalAnim(ListView_FrontRedDot)
   PlayNormalAnim(ListView_BackRedDot)
   PlayNormalAnim(ListView_FrontNew)
   PlayNormalAnim(ListView_BackNew)
 end
-
 function UIUtils.OpenSystem(SystemId, Option, ...)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not Player or not IsValid(Player) then
@@ -1257,7 +1227,7 @@ function UIUtils.OpenSystem(SystemId, Option, ...)
     return
   end
   local NeedAnimation = false
-  if SystemData.ShowCondition then
+  if SystemData.ShowCondition or SystemData.EscShowCondition then
     NeedAnimation = true
   end
   if SystemData and UIUtils.CheckCdnHide(SystemUIName, true) then
@@ -1291,7 +1261,7 @@ function UIUtils.OpenSystem(SystemId, Option, ...)
     if Player:IsSeating() then
       UIManager:ShowUITip(UIConst.Tip_CommonTop, GText("UI_Toast_NpcSwitch_Forbid"))
     else
-      UIUtils.CheckSystemIsUnlock(SystemUIName, UIUnlockRuleName, IsEscMenu, ...)
+      UIUtils.CheckSystemIsUnlock(SystemUIName, UIUnlockRuleName, IsEscMenu, NeedAnimation, ...)
     end
   elseif "ShopMain" == SystemUIName then
     UIUtils.CheckSystemIsUnlock(SystemUIName, UIUnlockRuleName, IsEscMenu, NeedAnimation, nil, nil, nil, "Shop")
@@ -1299,7 +1269,6 @@ function UIUtils.OpenSystem(SystemId, Option, ...)
     UIUtils.CheckSystemIsUnlock(SystemUIName, UIUnlockRuleName, IsEscMenu, NeedAnimation, ...)
   end
 end
-
 function UIUtils.CheckSystemCanOpen(SystemUI)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -1323,7 +1292,6 @@ function UIUtils.CheckSystemCanOpen(SystemUI)
   end
   return true
 end
-
 function UIUtils.CheckSystemIsUnlock(SystemUIName, UIUnlockRuleName, IsEscMenu, NeedAnimation, ...)
   local Param1, Param2, Param3, Param4, Param5 = ...
   local UIManager = GWorld.GameInstance:GetGameUIManager()
@@ -1357,7 +1325,6 @@ function UIUtils.CheckSystemIsUnlock(SystemUIName, UIUnlockRuleName, IsEscMenu, 
   end
   return false
 end
-
 function UIUtils.FinalOpenSystem(SystemUIName, IsEscMenu, NeedAnimation, ...)
   local Params = {
     ...
@@ -1365,23 +1332,22 @@ function UIUtils.FinalOpenSystem(SystemUIName, IsEscMenu, NeedAnimation, ...)
   if "AnnouncementMain" == SystemUIName then
     UIUtils.FinalOpenSystemInternal(SystemUIName, IsEscMenu, NeedAnimation, table.unpack(Params))
   else
-    local FlowManager = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UGameFlowManager)
-    local Flow = FlowManager:CreateFlow("OpenSystemUI")
-    local UIManager = GWorld.GameInstance:GetGameUIManager()
-    Flow.OnBegin:Add(Flow, function()
-      local ExistUIObj = UIManager:GetUI(SystemUIName)
-      if IsValid(ExistUIObj) then
-        DebugPrint("JLY \231\179\187\231\187\159ui\233\135\141\229\164\141\230\137\147\229\188\128\239\188\140\232\175\183\230\163\128\230\159\165\233\128\187\232\190\145, Name is ", SystemUIName)
-        FlowManager:RemoveFlow(Flow)
-      else
-        UIUtils.FinalOpenSystemInternal(SystemUIName, IsEscMenu, NeedAnimation, table.unpack(Params))
-        UIManager:AddFlow(SystemUIName, Flow)
+    GameFlowUtils:AddFlow("OpenSystemUI", {
+      GWorld.GameInstance,
+      function(_, Flow)
+        local UIManager = GWorld.GameInstance:GetGameUIManager()
+        local ExistUIObj = UIManager:GetUI(SystemUIName)
+        if IsValid(ExistUIObj) then
+          DebugPrint("JLY 系统ui重复打开，请检查逻辑, Name is ", SystemUIName)
+          GameFlowUtils:RemoveFlow(Flow)
+        else
+          UIUtils.FinalOpenSystemInternal(SystemUIName, IsEscMenu, NeedAnimation, table.unpack(Params))
+          UIManager:AddFlow(SystemUIName, Flow)
+        end
       end
-    end)
-    FlowManager:AddFlow(Flow)
+    })
   end
 end
-
 function UIUtils.FinalOpenSystemInternal(SystemUIName, IsEscMenu, NeedAnimation, ...)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if IsEscMenu then
@@ -1399,9 +1365,10 @@ function UIUtils.FinalOpenSystemInternal(SystemUIName, IsEscMenu, NeedAnimation,
       BattleMainUI.Char_Skill:HandleEventByInterrupt()
     end
     if nil ~= BattleMainUI and not IsEscMenu and NeedAnimation then
-      BattleMainUI:PlayOutAnim()
+      BattleMainUI:PlayOutAnim(nil, nil, SystemUIName)
       local UI = UIManager:LoadUINew(SystemUIName, ...)
       if nil == UI then
+        BattleMainUI:RemovePlayInOutSystems(SystemUIName)
         BattleMainUI:TryRecoverUI()
       else
       end
@@ -1410,7 +1377,6 @@ function UIUtils.FinalOpenSystemInternal(SystemUIName, IsEscMenu, NeedAnimation,
     end
   end
 end
-
 function UIUtils.OpenEsc()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if Player and Player.SkillFeature then
@@ -1436,18 +1402,19 @@ function UIUtils.OpenEsc()
     UIManager:LoadUINew(UIConst.MenuLevel)
   end
 end
-
 function UIUtils.IsMenuWorld()
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
   local Avatar = GWorld:GetAvatar()
   if Avatar and DungeonId and DungeonId <= 0 then
     local InHardBoss = Avatar:IsInHardBoss()
     local SpecialQuestChange = false
-    local SpecialQuestConfig = DataMgr.SpecialQuestConfig[Avatar.SpecialQuestId]
-    if SpecialQuestConfig and SpecialQuestConfig.UniversalConfigId then
-      local UniversalConfig = DataMgr.UniversalConfig[SpecialQuestConfig.UniversalConfigId]
-      if UniversalConfig and UniversalConfig.IfChangeESC then
-        SpecialQuestChange = true
+    if Avatar:IsInSpecialQuest() then
+      local SpecialQuestConfig = DataMgr.SpecialQuestConfig[Avatar.SpecialQuestId]
+      if SpecialQuestConfig and SpecialQuestConfig.UniversalConfigId then
+        local UniversalConfig = DataMgr.UniversalConfig[SpecialQuestConfig.UniversalConfigId]
+        if UniversalConfig and UniversalConfig.IfChangeESC then
+          SpecialQuestChange = true
+        end
       end
     end
     if InHardBoss or Avatar.SpecialQuestId and SpecialQuestChange then
@@ -1459,7 +1426,6 @@ function UIUtils.IsMenuWorld()
     return false
   end
 end
-
 function UIUtils.PlayBattleMainInAnim()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMainUI = UIManager:GetUI("BattleMain")
@@ -1468,26 +1434,19 @@ function UIUtils.PlayBattleMainInAnim()
     BattleMainUI:TryRecoverUI()
   end
 end
-
 function UIUtils.CheckAndPlayBattleMainInAnim(UIName)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattleMainUI = UIManager:GetUI("BattleMain")
   if nil ~= BattleMainUI then
-    local IsPlayInAnimSucc = BattleMainUI:UnLoadSystem(UIName)
-    if IsPlayInAnimSucc then
-      BattleMainUI:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    end
+    BattleMainUI:UnLoadSystem(UIName)
   end
 end
-
 function UIUtils.PlayCommonBtnSe(context)
   UE4.UFMODBlueprintStatics.PlayEvent2D(nil, UE4.UFMODBlueprintStatics.FindEventbyName("event:/ui/common/click"))
 end
-
 function UIUtils.PlayCommonForbiddenBtnSe(context)
   UE4.UFMODBlueprintStatics.PlayEvent2D(nil, UE4.UFMODBlueprintStatics.FindEventbyName("event:/ui/common/click_btn_disable"))
 end
-
 function UIUtils.GetAllElementTypes()
   if not UIUtils.ElementTypes then
     UIUtils.ElementTypes = {}
@@ -1508,7 +1467,6 @@ function UIUtils.GetAllElementTypes()
   end
   return UIUtils.ElementTypes, UIUtils.ElementTypeNames
 end
-
 function UIUtils.GetAllWeaponTags()
   if not UIUtils.MeleeTags or not UIUtils.RangedTags then
     UIUtils.MeleeTags = {}
@@ -1534,7 +1492,6 @@ function UIUtils.GetAllWeaponTags()
   end
   return UIUtils.MeleeTags, UIUtils.MeleeTagNames, UIUtils.RangedTags, UIUtils.RangedTagNames
 end
-
 function UIUtils.CanApplyWeaponSkin(WeaponId, SkinApplicationType)
   local Data = DataMgr.Weapon[WeaponId]
   if Data and Data.SkinApplicationType then
@@ -1546,7 +1503,6 @@ function UIUtils.CanApplyWeaponSkin(WeaponId, SkinApplicationType)
   end
   return false
 end
-
 function UIUtils.ShowDungeonRewardUI(Rewards, Reason, TableTypeName)
   if not Rewards then
     return
@@ -1570,13 +1526,11 @@ function UIUtils.ShowDungeonRewardUI(Rewards, Reason, TableTypeName)
     UIUtils.ShowGotItemTipsUI(TableTypeName, ItemId, Count)
   end
 end
-
 function UIUtils.OnGetRewardShowUI(Rewards, Reason)
   UIUtils.ShowDungeonRewardUI(Rewards.Resources, Reason, "Resource")
   UIUtils.ShowDungeonRewardUI(Rewards.Weapons, Reason, "Weapon")
   UIUtils.ShowDungeonRewardUI(Rewards.Mods, Reason, "Mod")
 end
-
 function UIUtils.GenRougeBlessingDesc(BlessingId, ModLevel, ComparedGradeLevel)
   local ItemData = DataMgr.RougeLikeBlessing[BlessingId]
   local ModData = DataMgr.Mod[ItemData.BlessingMod]
@@ -1607,13 +1561,11 @@ function UIUtils.GenRougeBlessingDesc(BlessingId, ModLevel, ComparedGradeLevel)
   end
   return DescStr
 end
-
 function UIUtils.GenRougeBlessingSimpleDesc(BlessingId)
   local ItemData = DataMgr.RougeLikeBlessing[BlessingId]
   local DescStr = GText(ItemData.SimpleDesc)
   return DescStr
 end
-
 function UIUtils.GenRougeModPassiveEffectDesc(Desc, ModConf, BaseLevel, ExpectLevel, CastTo, ForbidFormat)
   if not ArmoryUtils then
     ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
@@ -1634,7 +1586,6 @@ function UIUtils.GenRougeModPassiveEffectDesc(Desc, ModConf, BaseLevel, ExpectLe
   end
   return Desc
 end
-
 function UIUtils.GenRougeTreasureDesc(TreasureId)
   if not ArmoryUtils then
     ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
@@ -1644,7 +1595,7 @@ function UIUtils.GenRougeTreasureDesc(TreasureId)
     local DescStr = GText(ItemData.Desc)
     local ModData = DataMgr.Mod[ItemData.TreasureMod]
     if not ItemData.ServerBuild and not ItemData.ClientBuild and not ModData then
-      local String = tostring(TreasureId) .. "\229\143\183\229\174\157\231\137\169\228\184\141\230\152\175ServerBuild\228\184\142ClientBuild\239\188\140\228\189\134Mod\230\149\176\230\141\174\228\184\186\231\169\186\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165"
+      local String = tostring(TreasureId) .. "号宝物不是ServerBuild与ClientBuild，但Mod数据为空请策划检查"
       UE.ARougeLikeManager.ShowRougeLikeError(String)
     end
     if ModData then
@@ -1662,11 +1613,10 @@ function UIUtils.GenRougeTreasureDesc(TreasureId)
     DescStr = UIUtils.GenRougeServerDesc(DescStr, ItemData, 0)
     return DescStr
   else
-    local String = tostring(TreasureId) .. "\229\143\183\229\174\157\231\137\169\230\149\176\230\141\174\228\184\186\231\169\186\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165"
+    local String = tostring(TreasureId) .. "号宝物数据为空请策划检查"
     UE.ARougeLikeManager.ShowRougeLikeError(String)
   end
 end
-
 function UIUtils.GenRougeServerDesc(Desc, TreasureConf, BaseLevel)
   for i, DescValue in pairs(TreasureConf.ServerBuildValue or {}) do
     local Percent = string.match(DescValue, "%%") or ""
@@ -1676,7 +1626,6 @@ function UIUtils.GenRougeServerDesc(Desc, TreasureConf, BaseLevel)
   end
   return Desc
 end
-
 function UIUtils.GetRealCurrentTreasureGroupNum(TreasureId)
   local Num = 0
   if UE.ARougeLikeManager then
@@ -1698,7 +1647,6 @@ function UIUtils.GetRealCurrentTreasureGroupNum(TreasureId)
   end
   return Num
 end
-
 function UIUtils.GetCurrentTreasureGroupNum(TreasureId)
   local Num = 0
   if UE.ARougeLikeManager then
@@ -1720,7 +1668,6 @@ function UIUtils.GetCurrentTreasureGroupNum(TreasureId)
   end
   return Num
 end
-
 function UIUtils.GetTreasureGroupNum(TreasureId)
   local Num = 0
   if UE.ARougeLikeManager then
@@ -1738,13 +1685,11 @@ function UIUtils.GetTreasureGroupNum(TreasureId)
   end
   return Num
 end
-
 function UIUtils.GenRougeTreasureSimpleDesc(TreasureId)
   local ItemData = DataMgr.RougeLikeTreasure[TreasureId]
   local DescStr = GText(ItemData.SimpleDesc)
   return DescStr
 end
-
 function UIUtils.GenRougeTalentDesc(TalentId)
   local ItemData = DataMgr.RougeLikeTalent[TalentId]
   local ModData = DataMgr.Mod[ItemData.TalentMod]
@@ -1766,8 +1711,13 @@ function UIUtils.GenRougeTalentDesc(TalentId)
   end
   return DescStr
 end
-
 function UIUtils.GetLeftTimeStrStyle1(EndTime, StartTime)
+  if EndTime and type(EndTime) == "table" then
+    EndTime = EndTime.GetTime()
+  end
+  if StartTime and type(StartTime) == "table" then
+    StartTime = StartTime.GetTime()
+  end
   if EndTime <= TimeUtils.NowTime() then
     return "TimeOut"
   end
@@ -1794,16 +1744,21 @@ function UIUtils.GetLeftTimeStrStyle1(EndTime, StartTime)
   end
   return RemainTimeStr
 end
-
 function UIUtils.GetLeftTimeStrStyle2(EndTime, StartTime)
+  if EndTime and type(EndTime) == "table" then
+    EndTime = EndTime.GetTime()
+  end
+  if StartTime and type(StartTime) == "table" then
+    StartTime = StartTime.GetTime()
+  end
   if nil == EndTime or EndTime <= TimeUtils.NowTime() then
     return {
       {TimeType = "Min", TimeValue = 0},
       {TimeType = "Sec", TimeValue = 0}
     }, 0
   end
-  local FixEndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(EndTime)
-  local FixStartTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(StartTime or TimeUtils.NowTime())
+  local FixEndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(EndTime + 0)
+  local FixStartTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(StartTime and StartTime + 0 or TimeUtils.NowTime())
   local RemainTime = UKismetMathLibrary.Subtract_DateTimeDateTime(FixEndTime, FixStartTime)
   local RemainTimeDict = {}
   local TimeCount = 0
@@ -1829,7 +1784,6 @@ function UIUtils.GetLeftTimeStrStyle2(EndTime, StartTime)
   end
   return RemainTimeDict, TimeCount
 end
-
 function UIUtils.GenRougeModAttrData(ModAttrConf, ModLevel, AttrConf, ModId)
   if not ArmoryUtils then
     ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
@@ -1839,31 +1793,60 @@ function UIUtils.GenRougeModAttrData(ModAttrConf, ModLevel, AttrConf, ModId)
   local ValueStr = CommonUtils.AttrValueToString(AttrConf, Value, IsRate, true)
   return Value, ValueStr
 end
-
 function UIUtils.SwitchGuideHead(RawName, MID)
   local Path = "/Game/UI/Blueprint/EMUIFunctionLibrary"
   local UIFunctionLibClass = LoadClass(Path)
   if UIFunctionLibClass then
     return UIFunctionLibClass.SwitchGuideHead(RawName, MID)
   else
-    DebugPrint("Error: UIFunctionLibClass\228\184\141\229\173\152\229\156\168\239\188\140\232\183\175\229\190\132", Path)
+    DebugPrint("Error: UIFunctionLibClass不存在，路径", Path)
     return false
   end
 end
-
 function UIUtils.ShowActionRecover(Obj)
 end
-
 function UIUtils.GetCharName(Character)
   if Character:IsPlayer() then
     return Character:GetNickName()
   elseif Character:IsPhantom() then
-    local CurRoleId = Character.CurrentRoleId
-    return GText(DataMgr.BattleChar[CurRoleId].CharName)
+    return UIUtils.GetPhantomName(Character)
   end
   return "nil"
 end
-
+function UIUtils.GetPhantomName(Character)
+  if not Character or not Character:IsPhantom() then
+    return "nil"
+  end
+  local ShowName = ""
+  local NameKey = DataMgr.BattleChar[Character.CurrentRoleId].CharName
+  if string.find(DataMgr.TextMap_ContentEN[NameKey].ContentEN, "{nickname") and not IsStandAlone(Character) then
+    local PhantomState = GameState(Character):GetPhantomState(Character.Eid)
+    if not PhantomState then
+      local PhantomOwner = Character.PhantomOwner
+      if PhantomOwner then
+        local OwnerState = GameState(Character):GetPlayerState(PhantomOwner.Eid)
+        if OwnerState and OwnerState.PlayerName then
+          ShowName = OwnerState.PlayerName
+        end
+      end
+    else
+      local PhantomOwnerEid = PhantomState.OwnerEid
+      if PhantomOwnerEid then
+        local OwnerState = GameState(Character):GetPlayerState(PhantomOwnerEid)
+        if OwnerState and OwnerState.PlayerName then
+          ShowName = OwnerState.PlayerName
+        else
+          ShowName = GText(NameKey)
+        end
+      else
+        ShowName = "<ERROR>"
+      end
+    end
+  else
+    ShowName = GText(NameKey)
+  end
+  return ShowName
+end
 function UIUtils.UtilsGetCurrentInputType()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
   if IsValid(GameInputModeSubsystem) then
@@ -1871,21 +1854,20 @@ function UIUtils.UtilsGetCurrentInputType()
   end
   return ECommonInputType.MouseAndKeyboard
 end
-
 function UIUtils.IsKeyboardInput()
   local InputType = UIUtils.UtilsGetCurrentInputType()
-  return InputType == UE4.ECommonInputType.MouseAndKeyboard and CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
+  return InputType == UE4.ECommonInputType.MouseAndKeyboard and CommonUtils.GetDeviceTypeByPlatformName() == "PC"
 end
-
 function UIUtils.IsGamepadInput()
   local InputType = UIUtils.UtilsGetCurrentInputType()
   return InputType == UE4.ECommonInputType.Gamepad
 end
-
 function UIUtils.IsMobileInput()
-  return CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
+  return CommonUtils.GetDeviceTypeByPlatformName() == "Mobile"
 end
-
+function UIUtils.IsPCInput()
+  return CommonUtils.GetDeviceTypeByPlatformName() == "PC"
+end
 function UIUtils.UtilsGetCurrentGamepadName()
   if CommonUtils.GetDeviceTypeByPlatformName() == "Mobile" then
     return "Generic"
@@ -1896,7 +1878,6 @@ function UIUtils.UtilsGetCurrentGamepadName()
   end
   return "Generic"
 end
-
 function UIUtils.UtilsGetKeyIconPathInGamepad(KeyIconName, GamepadName)
   if nil == GamepadName then
     GamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -1911,7 +1892,6 @@ function UIUtils.UtilsGetKeyIconPathInGamepad(KeyIconName, GamepadName)
   ImgPath = string.format(FixPath, ReplaceKey, ReplaceKey)
   return ImgPath
 end
-
 function UIUtils.UtilsGetKeyIconPathInGamepadByInstruction(KeyIconName, GamepadName)
   if nil == GamepadName then
     GamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -1926,11 +1906,9 @@ function UIUtils.UtilsGetKeyIconPathInGamepadByInstruction(KeyIconName, GamepadN
   ImgPath = string.format(FixPath, ReplaceKey, ReplaceKey)
   return ImgPath
 end
-
 function UIUtils.GetNoneAccessoryIconPath()
   return "/Game/UI/Texture/Dynamic/Atlas/Armory/T_Armory_Forbid.T_Armory_Forbid"
 end
-
 function UIUtils.TrySubReddotCacheDetail(Id, ReddotName)
   local CacheKey = tostring(Id)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotName)
@@ -1939,7 +1917,6 @@ function UIUtils.TrySubReddotCacheDetail(Id, ReddotName)
     ReddotManager.DecreaseLeafNodeCount(ReddotName)
   end
 end
-
 function UIUtils.TryAddReddotCacheDetail(Id, ReddotName)
   local CacheKey = tostring(Id)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotName)
@@ -1948,7 +1925,6 @@ function UIUtils.TryAddReddotCacheDetail(Id, ReddotName)
     ReddotManager.IncreaseLeafNodeCount(ReddotName)
   end
 end
-
 function UIUtils.TrySubReddotCacheDetailNumber(Id, ReddotName)
   local CacheKey = Id
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotName)
@@ -1957,7 +1933,6 @@ function UIUtils.TrySubReddotCacheDetailNumber(Id, ReddotName)
     ReddotManager.DecreaseLeafNodeCount(ReddotName)
   end
 end
-
 function UIUtils.TryAddReddotCacheDetailNumber(Id, ReddotName)
   local CacheKey = Id
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotName)
@@ -1966,7 +1941,6 @@ function UIUtils.TryAddReddotCacheDetailNumber(Id, ReddotName)
     ReddotManager.IncreaseLeafNodeCount(ReddotName)
   end
 end
-
 function UIUtils.SetReddotTreeLeafNodeCount(ReddotName, Count)
   local Node = ReddotManager.GetTreeNode(ReddotName)
   assert(Node, "[jiangtianyi]ReddotManager.SetReddotTreeLeafNodeCount: Failed to find leaf node " .. ReddotName)
@@ -1977,7 +1951,6 @@ function UIUtils.SetReddotTreeLeafNodeCount(ReddotName, Count)
     ReddotManager.IncreaseLeafNodeCount(ReddotName, Count - CurrentCount)
   end
 end
-
 function UIUtils.GetExcelWeaponTagString(CharId)
   local Data = DataMgr.BattleChar[CharId]
   local ExcelWeaponTags = Data and Data.ExcelWeaponTags
@@ -1994,7 +1967,6 @@ function UIUtils.GetExcelWeaponTagString(CharId)
     return TagString
   end
 end
-
 function UIUtils.GetExcelWeaponTags(CharId)
   local Data = DataMgr.BattleChar[CharId]
   local ExcelWeaponTags = Data and Data.ExcelWeaponTags
@@ -2011,7 +1983,6 @@ function UIUtils.GetExcelWeaponTags(CharId)
     return Tags
   end
 end
-
 function UIUtils.GetDispathchColorNameByType(Type)
   if "Battle" == Type then
     return "Red"
@@ -2023,23 +1994,21 @@ function UIUtils.GetDispathchColorNameByType(Type)
     return "Special"
   end
 end
-
 function UIUtils.NumberToChinese(Num)
   local ChineseNums = {
-    "\233\155\182",
-    "\228\184\128",
-    "\228\186\140",
-    "\228\184\137",
-    "\229\155\155",
-    "\228\186\148",
-    "\229\133\173",
-    "\228\184\131",
-    "\229\133\171",
-    "\228\185\157"
+    "零",
+    "一",
+    "二",
+    "三",
+    "四",
+    "五",
+    "六",
+    "七",
+    "八",
+    "九"
   }
   return ChineseNums[Num + 1]
 end
-
 function UIUtils.GenAbyssEntryDesc(Desc, EntryConf, BaseLevel, ExpectLevel)
   if not ArmoryUtils then
     ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
@@ -2047,10 +2016,10 @@ function UIUtils.GenAbyssEntryDesc(Desc, EntryConf, BaseLevel, ExpectLevel)
   ExpectLevel = nil == ExpectLevel and BaseLevel or ExpectLevel
   for i, DescValue in pairs(EntryConf or {}) do
     local Percent = string.match(DescValue, "%%") or ""
-    local ValStr = IsModAttr2 and ArmoryUtils:_ModAttrGrowDesc2(DescValue, BaseLevel, BaseLevel, Percent) or ""
+    local ValStr = ArmoryUtils:_ModAttrGrowDesc2(DescValue, BaseLevel, BaseLevel, Percent) or ""
     ValStr = "" == ValStr and SkillUtils.CalcSkillDesc(DescValue, BaseLevel) .. Percent or ValStr
     if ExpectLevel then
-      local ComparedValStr = IsModAttr2 and ArmoryUtils:_ModAttrGrowDesc2(DescValue, ExpectLevel, ExpectLevel, Percent) or ""
+      local ComparedValStr = ArmoryUtils:_ModAttrGrowDesc2(DescValue, ExpectLevel, ExpectLevel, Percent) or ""
       ComparedValStr = "" == ComparedValStr and SkillUtils.CalcSkillDesc(DescValue, BaseLevel) .. Percent or ComparedValStr
       if ValStr ~= ComparedValStr then
         ValStr = ValStr .. "->" .. ComparedValStr
@@ -2060,10 +2029,8 @@ function UIUtils.GenAbyssEntryDesc(Desc, EntryConf, BaseLevel, ExpectLevel)
   end
   return Desc
 end
-
 function UIUtils.GenerateArmoryPreviewParamsBySquadInfo(InOutParams, SquadInfo)
   local ModUuid = 1
-  
   local function InitTargetModInfo(TargetInfo, Target)
     if not TargetInfo.ModData then
       return
@@ -2081,7 +2048,6 @@ function UIUtils.GenerateArmoryPreviewParamsBySquadInfo(InOutParams, SquadInfo)
       ModUuid = ModUuid + 1
     end
   end
-  
   local Avatar = InOutParams.Avatar or GWorld:GetAvatar()
   local AvatarBattleInfo = AvatarUtils:GetDefaultBattleInfo(Avatar, SquadInfo) or {}
   InitTargetModInfo(AvatarBattleInfo.RoleInfo, SquadInfo.Char)
@@ -2103,7 +2069,6 @@ function UIUtils.GenerateArmoryPreviewParamsBySquadInfo(InOutParams, SquadInfo)
   end
   return InOutParams
 end
-
 function UIUtils.LoadSkillIconById(SkillId)
   local SkillData = DataMgr.Skill[SkillId]
   local Data = SkillData and SkillData[1] and SkillData[1][0]
@@ -2117,18 +2082,15 @@ function UIUtils.LoadSkillIconById(SkillId)
   Icon = Icon or LoadObject("/Game/UI/Texture/Dynamic/Atlas/Skill/T_Skill_Heitao_Skill01.T_Skill_Heitao_Skill01")
   return Icon
 end
-
 function UIUtils.CalcWidgetCenter(Widget)
   local Geometry = Widget:GetTickSpaceGeometry()
   local LocalCenter = USlateBlueprintLibrary.GetLocalSize(Geometry) / 2
   return USlateBlueprintLibrary.LocalToAbsolute(Geometry, LocalCenter)
 end
-
 function UIUtils.CheckScrollBoxCanScroll(Widget)
   local Offset = Widget:GetScrollOffsetOfEnd()
   return Offset > 5
 end
-
 function UIUtils.ScrollBoxByGamepad(ScrollBox, InAnalogInputEvent, Velocity, DeadZone)
   Velocity = Velocity or 20
   DeadZone = DeadZone or 5
@@ -2141,11 +2103,9 @@ function UIUtils.ScrollBoxByGamepad(ScrollBox, InAnalogInputEvent, Velocity, Dea
   local NextOffset = math.clamp(CurrentOffset + DeltaOffset, 0, OffsetToEnd)
   ScrollBox:SetScrollOffset(NextOffset)
 end
-
 function UIUtils.HasAnyFocus(Widget)
   return Widget:HasAnyUserFocus() or Widget:HasFocusedDescendants()
 end
-
 function UIUtils.GetIconListByActionName(ActionName)
   local GamepadLayout = EMCache:Get("GamepadLayout") or tonumber(DataMgr.Option.GamepadPreset.DefaultValue)
   local IconList
@@ -2153,24 +2113,22 @@ function UIUtils.GetIconListByActionName(ActionName)
   if ActionData then
     IconList = ActionData.GamepadIcon[GamepadLayout]
   else
-    print(_G.ErrorTag, ActionName, "\239\188\154\230\173\164Action\230\178\161\230\156\137\229\175\185\229\186\148\231\154\132\233\148\174\228\189\141\239\188\140\232\175\183\230\163\128\230\159\165\230\139\188\229\134\153\230\136\150\230\163\128\230\159\165GamepadSet\232\161\168\233\135\140\230\152\175\229\144\166\230\156\137\229\161\171\229\134\153")
+    print(_G.ErrorTag, ActionName, "：此Action没有对应的键位，请检查拼写或检查GamepadSet表里是否有填写")
   end
   if not IconList then
-    print(_G.ErrorTag, ActionName, "\239\188\154\231\155\174\229\137\141\231\154\132\233\162\132\232\174\190\230\150\185\230\161\136\230\178\161\230\156\137\229\175\185\229\186\148\231\154\132\233\148\174\228\189\141\239\188\140\232\175\183\230\163\128\230\159\165GamepadSet\232\161\168\233\135\140\230\152\175\229\144\166\230\156\137\229\161\171\229\134\153")
+    print(_G.ErrorTag, ActionName, "：目前的预设方案没有对应的键位，请检查GamepadSet表里是否有填写")
   else
     return IconList
   end
 end
-
 function UIUtils.GetIconListByActionNameAndSetNum(ActionName, Num)
   local ActionData = DataMgr.GamepadMap[ActionName]
   if ActionData then
     return ActionData.GamepadIcon[Num]
   end
 end
-
 function UIUtils.GetTextFont(TextWidget)
-  assert(TextWidget:IsA(UTextLayoutWidget), "UIUtils.GetTextFont, \233\148\153\232\175\175\239\188\140\229\143\130\230\149\176TextWidget\229\191\133\233\161\187\230\152\175\230\150\135\230\156\172\230\142\167\228\187\182")
+  assert(TextWidget:IsA(UTextLayoutWidget), "UIUtils.GetTextFont, 错误，参数TextWidget必须是文本控件")
   local Font
   if TextWidget:IsA(URichTextBlock) then
     if TextWidget.bOverrideDefaultStyle then
@@ -2186,11 +2144,10 @@ function UIUtils.GetTextFont(TextWidget)
     Font = TextWidget.WidgetStyle.Font
   end
   if not Font then
-    GWorld.logger.error("UIUtils.GetTextFont \229\143\130\230\149\176TextWidget\230\152\175\228\184\141\230\148\175\230\140\129\231\154\132\230\150\135\230\156\172\230\150\135\230\156\172\230\142\167\228\187\182\239\188\140\229\133\182\228\187\150\230\150\135\230\156\172\230\142\167\228\187\182\231\177\187\229\158\139\230\156\137\233\156\128\232\166\129\231\154\132\229\134\141\232\128\131\232\153\145\230\137\169\229\177\149")
+    GWorld.logger.error("UIUtils.GetTextFont 参数TextWidget是不支持的文本文本控件，其他文本控件类型有需要的再考虑扩展")
   end
   return Font
 end
-
 function UIUtils.CheckCdnHide(UIName, ShowToast)
   local Avatar = GWorld:GetAvatar()
   local UIData = {}
@@ -2215,12 +2172,11 @@ function UIUtils.CheckCdnHide(UIName, ShowToast)
   end
   return false
 end
-
 function UIUtils.ShowMainUIFobidToast(MainUIConfig)
   if MainUIConfig.UIUnlockRuleName then
     local UIUnlockRule = DataMgr.UIUnlockRule
     local OpenDescs = UIUnlockRule[MainUIConfig.UIUnlockRuleName].OpenSystemDesc
-    if OpenDescs and ShowToast then
+    if OpenDescs then
       local UIManager = GWorld.GameInstance:GetGameUIManager()
       if UIManager then
         UIManager:ShowUITip(UIConst.Tip_CommonToast, OpenDescs[1])
@@ -2228,9 +2184,8 @@ function UIUtils.ShowMainUIFobidToast(MainUIConfig)
     end
   end
 end
-
 function UIUtils.CalcOnelineTextDesireHeight(TextWidget)
-  assert(TextWidget:IsA(UTextLayoutWidget), "UIUtils.CalcOnelineTextDesireHeight, \233\148\153\232\175\175\239\188\140\229\143\130\230\149\176TextWidget\229\191\133\233\161\187\230\152\175\230\150\135\230\156\172\230\142\167\228\187\182")
+  assert(TextWidget:IsA(UTextLayoutWidget), "UIUtils.CalcOnelineTextDesireHeight, 错误，参数TextWidget必须是文本控件")
   local Font = UIUtils.GetTextFont(TextWidget)
   if not Font then
     return
@@ -2239,16 +2194,15 @@ function UIUtils.CalcOnelineTextDesireHeight(TextWidget)
   local OnelineDesireHeight = TextWidget.Margin.Top + TextWidget.Margin.Bottom + FontHeight
   return OnelineDesireHeight
 end
-
 function UIUtils.SetTextJustificationByLineCount(TextWidget, bForceCenter, ExpectLine, Justifications)
-  assert(TextWidget:IsA(UTextLayoutWidget), "UIUtils.LayoutTextByLineRule, \233\148\153\232\175\175\239\188\140\229\143\130\230\149\176TextWidget\229\191\133\233\161\187\230\152\175\230\150\135\230\156\172\230\142\167\228\187\182")
+  assert(TextWidget:IsA(UTextLayoutWidget), "UIUtils.LayoutTextByLineRule, 错误，参数TextWidget必须是文本控件")
   local DesireHeight = TextWidget:GetDesiredSize().Y
   if 0 == DesireHeight then
     TextWidget:ForceLayoutPrepass()
     DesireHeight = TextWidget:GetDesiredSize().Y
   end
   if 0 == DesireHeight then
-    GWorld.logger.error("UIUtils.LayoutTextByLineRule \229\143\130\230\149\176TextWidget\230\178\161\230\156\137\231\187\152\229\136\182\229\174\140\230\136\150\232\128\133\232\135\170\232\186\171\233\171\152\229\186\166\229\176\177\230\152\1750\239\188\140\230\151\160\230\179\149\229\136\164\230\150\173\228\187\128\228\185\136\230\151\182\229\128\153\232\175\165\230\141\162\232\161\140")
+    GWorld.logger.error("UIUtils.LayoutTextByLineRule 参数TextWidget没有绘制完或者自身高度就是0，无法判断什么时候该换行")
     return
   end
   ExpectLine = ExpectLine or 1
@@ -2278,7 +2232,6 @@ function UIUtils.SetTextJustificationByLineCount(TextWidget, bForceCenter, Expec
     TextWidget:SetJustification(Justifications[2])
   end
 end
-
 function UIUtils.LoadPreviewSkillDetails(Parent, Params)
   if not Parent then
     return
@@ -2288,6 +2241,8 @@ function UIUtils.LoadPreviewSkillDetails(Parent, Params)
   local GameInstance = GWorld.GameInstance
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   local CharInfo = {}
+  local WeaponInfos = {}
+  local MeleeWeaponInfo, RangedWeaponInfo, InitInfo
   if not IsStandAlone(Player) then
     local Avatar = GWorld:GetAvatar()
     for _, Value in pairs(Avatar.Chars) do
@@ -2297,7 +2252,22 @@ function UIUtils.LoadPreviewSkillDetails(Parent, Params)
       end
     end
   else
+    InitInfo = Player.InfoForInit
     CharInfo = CommonUtils.CopyTable(Player.InfoForInit)
+  end
+  if InitInfo then
+    if InitInfo.MeleeWeapon then
+      MeleeWeaponInfo = CommonUtils.CopyTable(InitInfo.MeleeWeapon)
+      if MeleeWeaponInfo then
+        table.insert(WeaponInfos, MeleeWeaponInfo)
+      end
+    end
+    if InitInfo.RangedWeapon then
+      RangedWeaponInfo = CommonUtils.CopyTable(InitInfo.RangedWeapon)
+      if RangedWeaponInfo then
+        table.insert(WeaponInfos, RangedWeaponInfo)
+      end
+    end
   end
   CharInfo.ModSuitIndex = CharInfo.ModSuitIndex or 1
   CharInfo.SlotData = CharInfo.SlotData or {}
@@ -2316,11 +2286,13 @@ function UIUtils.LoadPreviewSkillDetails(Parent, Params)
   UIManager(Parent):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, Parent:GetZOrder(), {
     OnClosedObj = Parent,
     OnClosedCallback = Params.OnClosedCallback,
-    PreviewCharInfo = CharInfo,
+    PreviewCharInfos = {CharInfo},
+    PreviewWeaponInfos = WeaponInfos,
+    MeleeWeapon = MeleeWeaponInfo,
+    RangedWeapon = RangedWeaponInfo,
     IsPreviewMode = true
   })
 end
-
 function UIUtils.GenRougeCombatTermDesc(SkillDesc, Terms)
   local results = {SkillDesc}
   UIUtils.AddHyperLink(results, Terms, 1)
@@ -2330,7 +2302,6 @@ function UIUtils.GenRougeCombatTermDesc(SkillDesc, Terms)
   end
   return DescText
 end
-
 function UIUtils.AddHyperLink(StrArray, Terms, TermIdx)
   if TermIdx > #Terms then
     return
@@ -2347,7 +2318,93 @@ function UIUtils.AddHyperLink(StrArray, Terms, TermIdx)
     UIUtils.AddHyperLink(StrArray, Terms, TermIdx)
   end
 end
-
+function UIUtils.OnDefinitionLinkClicked(TargetWidget, Terms, ClickTerm)
+  if not (TargetWidget and Terms) or not next(Terms) then
+    return
+  end
+  local Params = {
+    DefinitionItems = {}
+  }
+  for i, ExplanationId in ipairs(Terms) do
+    local TermData = DataMgr.CombatTerm[ExplanationId]
+    if not TermData then
+    else
+      if ClickTerm == ExplanationId then
+        Params.CurrentItemIndex = i - 1
+      end
+      local TermName = GText(TermData.CombatTerm)
+      table.insert(Params.DefinitionItems, {
+        Index = i - 1,
+        Name = TermName,
+        Des = GText(TermData.CombatTermExplaination)
+      })
+    end
+  end
+  TargetWidget.DefinitionWidget = UIManager(TargetWidget):ShowCommonPopupUI(100266, Params)
+end
+function UIUtils.AddDefinitionHyperLink(StrArray, Terms, TermIdx)
+  if TermIdx > #Terms then
+    return
+  end
+  local ExplanationId = Terms[TermIdx]
+  if not DataMgr.CombatTerm[ExplanationId] then
+    return
+  end
+  local Term = GText(DataMgr.CombatTerm[Terms[TermIdx]].CombatTerm)
+  local LStr, RStr, bSuccess = UKismetStringLibrary.Split(StrArray[#StrArray], Term)
+  if not bSuccess then
+    UIUtils.AddDefinitionHyperLink(StrArray, Terms, TermIdx + 1)
+  else
+    StrArray[#StrArray] = LStr
+    UIUtils.AddDefinitionHyperLink(StrArray, Terms, TermIdx + 1)
+    table.insert(StrArray, table.concat({
+      "<a href=\"",
+      Terms[TermIdx],
+      "\"",
+      " color=\"#E0A24A\">",
+      Term,
+      "</>"
+    }))
+    table.insert(StrArray, RStr)
+    UIUtils.AddDefinitionHyperLink(StrArray, Terms, TermIdx)
+  end
+end
+function UIUtils.SetDefinitionText(TargetTextWidget, Terms)
+  if not (TargetTextWidget and Terms) or not Terms then
+    return
+  end
+  local TargetText = tostring(TargetTextWidget:GetText())
+  local Results = {TargetText}
+  UIUtils.AddDefinitionHyperLink(Results, Terms, 1)
+  local DescText = table.concat(Results)
+  TargetTextWidget:SetText(GText(DescText))
+end
+function UIUtils.InitDefinitionTextWidget(TargetWidget, TargetTextWidget, TermsStr, CustomClickCallback)
+  if not TargetWidget or not TargetTextWidget then
+    return
+  end
+  local DecoratorClass = UE.UClass.Load("/Game/UI/Blueprint/BP_HyperLinkDecorator.BP_HyperLinkDecorator_C")
+  local Decorator = TargetTextWidget:GetDecoratorByClass(DecoratorClass)
+  if Decorator then
+    Decorator.BP_OnClicked:Clear()
+    Decorator.BP_OnClicked:Add(TargetWidget, function(InTargetWidget, InClickTerm)
+      if not InTargetWidget then
+        return
+      end
+      if CustomClickCallback and type(CustomClickCallback) == "function" then
+        CustomClickCallback(InTargetWidget, TargetWidget[TermsStr], InClickTerm)
+      else
+        UIUtils.OnDefinitionLinkClicked(TargetWidget, TargetWidget[TermsStr], InClickTerm)
+      end
+    end)
+  end
+  TargetWidget:AddDelayFrameFunc(function()
+    if TargetWidget and TargetWidget.bSkipDefinitionAutoInit then
+      return
+    end
+    UIUtils.SetDefinitionText(TargetTextWidget, TargetWidget[TermsStr])
+  end, 2, "UpdateTargetTextFunc")
+end
 function UIUtils.AddPositioningTagToPanel(Panel, CharId)
   if not Panel or not CharId then
     return
@@ -2386,17 +2443,14 @@ function UIUtils.AddPositioningTagToPanel(Panel, CharId)
     Panel:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function UIUtils.GetCharMiniIconPath(CharId)
   local PhantomGuideIconImg = "T_Normal_" .. DataMgr.BattleChar[CharId].GuideIconImg
   return "Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Mini/" .. PhantomGuideIconImg .. "." .. PhantomGuideIconImg .. "'"
 end
-
-function UIUtils.OpenPopupToArmory(OtherPopupParms)
+function UIUtils:OpenPopupToArmory(OtherPopupParms)
   local function OpenArmoryFromPopup(Obj, Data, DialogWidget)
     DialogWidget.ClickResult = true
   end
-  
   local function OnDialogClosedCallback(Obj, Data, DialogWidget)
     if DialogWidget.ClickResult == true then
       DebugPrint("OpenArmoryFromPopup")
@@ -2411,11 +2465,10 @@ function UIUtils.OpenPopupToArmory(OtherPopupParms)
           self
         }
       else
-        ScreenPrint("\230\178\161\230\156\137\230\137\190\229\136\176\229\134\155\230\162\176\229\186\147\231\149\140\233\157\162\239\188\140\229\133\179\233\151\173\231\149\140\233\157\162\229\144\142\228\184\141\228\188\154\230\137\147\229\188\128\229\188\185\231\170\151\227\128\130")
+        ScreenPrint("没有找到军械库界面，关闭界面后不会打开弹窗。")
       end
     end
   end
-  
   local Parms = {
     RightCallbackFunction = OpenArmoryFromPopup,
     RightCallbackObj = self,
@@ -2423,7 +2476,6 @@ function UIUtils.OpenPopupToArmory(OtherPopupParms)
   }
   UIManager(self):ShowCommonPopupUI(100217, Parms, self)
 end
-
 function UIUtils.CalculateHoleTitle(TitleBefore, TitleAfter)
   local TitleBeforeText, TitleAfterText
   if -1 ~= TitleBefore and DataMgr.Title[TitleBefore] then
@@ -2437,7 +2489,6 @@ function UIUtils.CalculateHoleTitle(TitleBefore, TitleAfter)
   local WholeTitle = (TitleBeforeText or "") .. (TitleAfterText or "")
   return WholeTitle
 end
-
 function UIUtils.GetSortedTitleTable()
   local Avatar = GWorld:GetAvatar()
   local PrefixTitles = {}
@@ -2459,7 +2510,6 @@ function UIUtils.GetSortedTitleTable()
   end
   return PrefixTitles, SuffixTitles
 end
-
 function UIUtils:SetTextColorInMaterialByRarity(UI, Text, Rarity)
   local FontMaterial = Text:GetDynamicFontMaterial()
   if 5 == Rarity then
@@ -2476,8 +2526,7 @@ function UIUtils:SetTextColorInMaterialByRarity(UI, Text, Rarity)
     FontMaterial:SetTextureParameterValue("IconTex", UI.Img_Text_0)
   end
 end
-
-function UIUtils.SetTitle(TitleWidget, TitleInfo)
+function UIUtils.SetTitle(TitleWidget, TitleInfo, bPlayInAnimation)
   if TitleWidget then
     TitleWidget:ClearChildren()
     TitleWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -2509,9 +2558,285 @@ function UIUtils.SetTitle(TitleWidget, TitleInfo)
           TitleFrameWidget:SetEmpty()
         end
       end
+      if bPlayInAnimation and TitleFrameWidget.In then
+        TitleFrameWidget:PlayAnimation(TitleFrameWidget.In)
+      end
     end
   end
 end
-
+function UIUtils.SetUpScrollBox(ScrollBox)
+  if not ScrollBox then
+    DebugPrint("Invalid scroll box parameter")
+    return
+  end
+  if UIUtils.IsMobileInput() then
+    ScrollBox:SetControlScrollbarInside(false)
+  else
+    ScrollBox:SetScrollBarVisibility(UIConst.VisibilityOp.Hidden)
+    ScrollBox:SetControlScrollbarInside(true)
+  end
+end
+function UIUtils.GetRootUWidget(Widget)
+  if not Widget then
+    return nil
+  end
+  if Widget.GetUWidgetSoul then
+    return Widget:GetUWidgetSoul()
+  elseif Widget.WidgetTree and Widget.WidgetTree.RootWidget then
+    return Widget.WidgetTree.RootWidget
+  end
+  return nil
+end
+function UIUtils:GatFastKeyInfo(Key, Des)
+  Key = Key or "A"
+  local KeyInfo = {
+    KeyInfoList = {
+      {Type = "Img", ImgShortPath = Key}
+    },
+    Desc = Des
+  }
+  return KeyInfo
+end
+function UIUtils.GetDynamicRewardInfo(DynamicRewardId, Timestamp)
+  Timestamp = Timestamp or TimeUtils.NowTime()
+  local DynamicRewardData = DataMgr.DynamicReward[DynamicRewardId]
+  if not DynamicRewardData then
+    return
+  end
+  for Index, RewardInfo in pairs(DynamicRewardData) do
+    if Timestamp >= RewardInfo.StartTime and Timestamp <= RewardInfo.EndTime then
+      return RewardInfo
+    end
+  end
+end
+function UIUtils.GetRemainingTimeByTimestamp(EndTimestamp, bUseCharFormat)
+  local NextRefreshTime = EndTimestamp
+  local CurrentTime = TimeUtils.NowTime()
+  local RemainRefreshTime = NextRefreshTime - CurrentTime
+  if RemainRefreshTime < 0 then
+    RemainRefreshTime = 0
+  end
+  local RemainTimeStr = ""
+  local CharFormat = "%02d:"
+  local TimeCount = 0
+  if RemainRefreshTime > 86400 then
+    TimeCount = TimeCount + 1
+    local Str = bUseCharFormat and CharFormat or "UI_Time_Day_NotHighlight"
+    RemainTimeStr = RemainTimeStr .. string.format(GText(Str), math.floor(RemainRefreshTime / 86400))
+    RemainRefreshTime = RemainRefreshTime % 86400
+  end
+  if RemainRefreshTime > 3600 or 1 == TimeCount then
+    TimeCount = TimeCount + 1
+    local Str = bUseCharFormat and CharFormat or "UI_Time_Hour_NotHighlight"
+    RemainTimeStr = RemainTimeStr .. string.format(GText(Str), math.floor(RemainRefreshTime / 3600))
+    RemainRefreshTime = RemainRefreshTime % 3600
+  end
+  if RemainRefreshTime > 60 and TimeCount < 2 or 0 == TimeCount then
+    TimeCount = TimeCount + 1
+    local Str = bUseCharFormat and CharFormat or "UI_Time_Minute_NotHighlight"
+    RemainTimeStr = RemainTimeStr .. string.format(GText(Str), math.floor(RemainRefreshTime / 60))
+    RemainRefreshTime = RemainRefreshTime % 60
+  end
+  if RemainRefreshTime > 0 and TimeCount < 2 or 1 == TimeCount then
+    TimeCount = TimeCount + 1
+    local Str = bUseCharFormat and CharFormat or "UI_Time_Second_NotHighlight"
+    RemainTimeStr = RemainTimeStr .. string.format(GText(Str), RemainRefreshTime)
+  end
+  if bUseCharFormat then
+    RemainTimeStr = string.sub(RemainTimeStr, 1, -2)
+  end
+  return RemainTimeStr
+end
+function UIUtils:LongPressKey(KeyWidget, func, Speed)
+  if KeyWidget:IsAnimationPlaying(KeyWidget.LongPress) then
+    return
+  end
+  AudioManager(KeyWidget):PlayUISound(KeyWidget, "event:/ui/common/btn_press", "LongPress", nil)
+  KeyWidget:UnbindAllFromAnimationFinished(KeyWidget.LongPress)
+  KeyWidget:BindToAnimationFinished(KeyWidget.LongPress, function()
+    if not KeyWidget.IsLongPressing then
+      return
+    end
+    AudioManager(KeyWidget):StopSound(KeyWidget, "LongPress")
+    if func then
+      func()
+    end
+    KeyWidget:PlayAnimation(KeyWidget.Normal)
+    KeyWidget.IsLongPressing = false
+  end)
+  if not KeyWidget then
+    return
+  end
+  KeyWidget.IsLongPressing = true
+  KeyWidget:PlayAnimation(KeyWidget.LongPress)
+end
+function UIUtils:StopLongPressKey(KeyWidget)
+  if not KeyWidget.IsLongPressing then
+    return
+  end
+  AudioManager(KeyWidget):StopSound(KeyWidget, "LongPress")
+  KeyWidget:UnbindAllFromAnimationFinished(KeyWidget.LongPress)
+  KeyWidget:StopAllAnimations()
+  KeyWidget:PlayAnimation(KeyWidget.Normal)
+  KeyWidget.IsLongPressing = false
+end
+function UIUtils.GetMinAndMaxDisplayedItemIndex(ListWidget)
+  local Entries = ListWidget:GetDisplayedEntryWidgets():ToTable()
+  local MinEntryIdx = #Entries
+  local MaxEntryIdx = 0
+  for _, Entry in ipairs(Entries) do
+    local index = ListWidget:GetIndexForItem(UUserObjectListEntryLibrary.GetListItemObject(Entry)) + 1
+    if MinEntryIdx > index then
+      MinEntryIdx = index
+    end
+    if MaxEntryIdx < index then
+      MaxEntryIdx = index
+    end
+  end
+  return MinEntryIdx, MaxEntryIdx
+end
+function UIUtils.OpenMultiplayerChallengeLevelChoose(ChallengeId)
+  local GameInstance = GWorld.GameInstance
+  local UIManager = GameInstance:GetGameUIManager()
+  UIManager:LoadUINew("MultiplayerChallenge", ChallengeId)
+end
+function UIUtils.SetFocusSecretly(Widget)
+  local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(Widget)
+  GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
+  Widget:SetFocus()
+  local StageTimerMgr = require("BluePrints.Common.StageTimerMgr")
+  StageTimerMgr.AddTimer(Widget, 0.25, function()
+    GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
+  end, nil, nil, nil, true, UE4.ETickingGroup.TG_EndPhysics)
+end
+function UIUtils.HideNavigateWidgetTemporarily(HideTime)
+  if not HideTime or HideTime <= 0 then
+    return
+  end
+  local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
+  if not GameInputModeSubsystem then
+    return
+  end
+  GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
+  local StageTimerMgr = require("BluePrints.Common.StageTimerMgr")
+  StageTimerMgr.AddTimer(GWorld.GameInstance, HideTime, function()
+    GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
+  end, false, HideTime, "UIUtils_HideNavigateWidgetTemporarily", true, UE4.ETickingGroup.TG_EndPhysics)
+end
+function UIUtils.GetRelativePositionInParent(SubWidget, ScreenPosition, TouchPointLocalOffset)
+  local RootLayoutWidget = SubWidget:GetParent() or SubWidget
+  local WidgetGeometry = RootLayoutWidget:GetCachedGeometry()
+  local LocalPosInWidget = UE4.USlateBlueprintLibrary.AbsoluteToLocal(WidgetGeometry, ScreenPosition)
+  local LocalWidgetSize = UE4.USlateBlueprintLibrary.GetLocalSize(WidgetGeometry)
+  local Slot = RootLayoutWidget.Slot
+  if Slot then
+    local WidgetPositionInParent = FVector2D(Slot:GetPosition().X, Slot:GetPosition().Y)
+    local LocalOffsetValue
+    local SubWidgetGeometry = SubWidget:GetCachedGeometry()
+    local RenderLocalScale = SubWidget and SubWidget.RenderTransform.Scale.X or 1.0
+    local LocalSubWidgetSize = UE4.USlateBlueprintLibrary.GetLocalSize(SubWidgetGeometry)
+    local SubWidgetAnchors = SubWidget.Slot:GetAnchors()
+    local SubWidgetAligment = SubWidget.Slot:GetAlignment()
+    if nil == TouchPointLocalOffset then
+      TouchPointLocalOffset = FVector2D(LocalSubWidgetSize.X / 2, LocalSubWidgetSize.Y / 2)
+    end
+    local DeltaWidthX = LocalSubWidgetSize.X * (1 - RenderLocalScale) * (TouchPointLocalOffset.X / LocalSubWidgetSize.X - 0.5)
+    local DeltaWidthY = LocalSubWidgetSize.Y * (1 - RenderLocalScale) * (TouchPointLocalOffset.Y / LocalSubWidgetSize.Y - 0.5)
+    LocalOffsetValue = FVector2D(LocalSubWidgetSize.X * (SubWidgetAligment.X - TouchPointLocalOffset.X / LocalSubWidgetSize.X), LocalSubWidgetSize.Y * (SubWidgetAligment.Y - TouchPointLocalOffset.Y / LocalSubWidgetSize.Y))
+    local CacluAnchors_X = math.max(SubWidgetAnchors.Maximum.X, SubWidgetAnchors.Minimum.X)
+    local CacluAnchors_Y = math.max(SubWidgetAnchors.Maximum.Y, SubWidgetAnchors.Minimum.Y)
+    local RelativePosInParent = FVector2D(WidgetPositionInParent.X + LocalPosInWidget.X - LocalWidgetSize.X * CacluAnchors_X + LocalOffsetValue.X + DeltaWidthX, WidgetPositionInParent.Y + LocalPosInWidget.Y - LocalWidgetSize.Y * CacluAnchors_Y + LocalOffsetValue.Y + DeltaWidthY)
+    return RelativePosInParent
+  end
+  return LocalPosInWidget
+end
+function UIUtils.ConvertScreenToChildLocalPosition(WorldContextObject, SubWidget, ScreenPosition, TouchPointLocalOffset)
+  local RootLayoutWidget = SubWidget:GetParent() or SubWidget
+  local LayoutWidgetGeometry = RootLayoutWidget:GetCachedGeometry()
+  local ScreenLocalPosInWidget = UE4.USlateBlueprintLibrary.AbsoluteToLocal(LayoutWidgetGeometry, ScreenPosition)
+  local Slot = SubWidget.Slot
+  if Slot then
+    local LocalWidgetPositionInParent = FVector2D(Slot:GetPosition().X, Slot:GetPosition().Y)
+    local SubWidgetAbsolutePosition = UIManager(WorldContextObject):GetWorldPosition(SubWidget)
+    local SubWidgetGeometry = SubWidget:GetCachedGeometry()
+    local SubWidgetAbsoluteSize = UE4.USlateBlueprintLibrary.GetAbsoluteSize(SubWidgetGeometry)
+    local SubWidgetLocalSize = UE4.USlateBlueprintLibrary.GetLocalSize(SubWidgetGeometry)
+    local TouchPointAbsolutePos = FVector2D(SubWidgetAbsolutePosition.X + SubWidgetAbsoluteSize.X * (TouchPointLocalOffset.X / SubWidgetLocalSize.X), SubWidgetAbsolutePosition.Y + SubWidgetAbsoluteSize.Y * (TouchPointLocalOffset.Y / SubWidgetLocalSize.Y))
+    local TouchPointLocalPosInWidget = UE4.USlateBlueprintLibrary.AbsoluteToLocal(LayoutWidgetGeometry, TouchPointAbsolutePos)
+    local DeltaValueX = ScreenLocalPosInWidget.X - TouchPointLocalPosInWidget.X
+    local DeltaValueY = ScreenLocalPosInWidget.Y - TouchPointLocalPosInWidget.Y
+    local RelativePosInParent = FVector2D(LocalWidgetPositionInParent.X + DeltaValueX, LocalWidgetPositionInParent.Y + DeltaValueY)
+    return RelativePosInParent
+  end
+  return ScreenLocalPosInWidget
+end
+function UIUtils.RefreshFeinaRewardReddot()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local Node = ReddotManager.GetTreeNode("FeinaEventReward")
+  if not Node then
+    ReddotManager.AddNodeEx("FeinaEventReward")
+  end
+  ReddotManager.ClearLeafNodeCount("FeinaEventReward", true)
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("FeinaEventReward")
+  for Id, Info in pairs(DataMgr.FeinaEvent) do
+    local AllDungeonHasReward = false
+    for _, DungeonId in pairs(Info.DungeonId) do
+      local RewardsGot = Avatar:GetFeinaRewardInfo(DungeonId)
+      if RewardsGot then
+        local HasRewardToGet = false
+        for RewardIndex, State in pairs(RewardsGot) do
+          if 1 == State then
+            if not CacheDetail[Id] then
+              CacheDetail[Id] = {}
+            end
+            if not CacheDetail[Id][DungeonId] then
+              CacheDetail[Id][DungeonId] = {}
+            end
+            if not CacheDetail[Id][DungeonId][RewardIndex] then
+              CacheDetail[Id][DungeonId][RewardIndex] = 1
+            end
+            ReddotManager.IncreaseLeafNodeCount("FeinaEventReward")
+            HasRewardToGet = true
+            AllDungeonHasReward = true
+          elseif 2 == State and CacheDetail[Id] and CacheDetail[Id][DungeonId] and CacheDetail[Id][DungeonId][RewardIndex] then
+            CacheDetail[Id][DungeonId][RewardIndex] = nil
+          end
+        end
+        if not HasRewardToGet and CacheDetail[Id] and CacheDetail[Id][DungeonId] then
+          CacheDetail[Id][DungeonId] = nil
+        end
+      end
+    end
+    if not AllDungeonHasReward and CacheDetail[Id] then
+      CacheDetail[Id] = nil
+    end
+  end
+end
+function UIUtils.TryWarpTextInJap(TextBlock1, TextBlock2)
+  if CommonConst.SystemLanguage == CommonConst.SystemLanguages.JP then
+    if TextBlock1 then
+      TextBlock1:SetJustification(ETextJustify.Left)
+    end
+    if TextBlock2 then
+      TextBlock2:SetJustification(ETextJustify.Left)
+    end
+  end
+end
+function UIUtils.ShouldDisplayItem(DataType, Id)
+  return CommonUtils.IsCurrentTimeRealease(DataType, Id) and CommonUtils.IsCurrentVersionRealease(DataType, Id)
+end
+function UIUtils.CanOpenSkinPreview(ItemType, TypeId)
+  if UIConst.SkinPreviewItemTypes[ItemType] then
+    return true
+  end
+  if "Resource" == ItemType then
+    local ResData = DataMgr.Resource[TypeId]
+    return ResData and ResData.ResourceSType == "GestureItem"
+  end
+  return false
+end
 AssembleComponents(UIUtils)
 return UIUtils

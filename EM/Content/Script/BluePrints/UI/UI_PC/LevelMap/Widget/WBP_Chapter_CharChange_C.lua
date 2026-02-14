@@ -8,10 +8,8 @@ local Side = {Main = "Main", EX = "EX"}
 M._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function M:Initialize(Initializer)
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddInputMethodChangedListen()
@@ -33,11 +31,9 @@ function M:Construct()
   end
   self:UpdateUIStyleInPlatform(UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad)
 end
-
 function M:Destruct()
   self:CleanTimer()
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   self.Spine_Male:Tick(InDeltaTime, true)
   self.Spine_Female:Tick(InDeltaTime, true)
@@ -55,13 +51,11 @@ function M:Tick(MyGeometry, InDeltaTime)
   end
   self:UpdateProgress()
 end
-
 function M:UpdateProgress()
   self.ProgressBar:SetPercent(self.Progress / 100)
   self.Text_Progress:SetText(string.format("%.0f", self.Progress))
   self.Text_Progress_Back:SetText(string.format("%.0f", self.Progress))
 end
-
 function M:Init()
   self.CurrentInputDevice = {
     "KeyboardKey",
@@ -77,17 +71,14 @@ function M:Init()
   self:UpdateProgress()
   self:Play_In_Loading()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
-    UIManager(self):UnLoadUINew("BlackScreeCharChange")
+    self:RemoveFromParent()
   end
 end
-
 function M:IsValidSex(s)
   return s == SexType.Female or s == SexType.Male
 end
-
 function M:SetActiveBySex(Switcher, SexVal)
   if not Switcher then
     return
@@ -95,7 +86,6 @@ function M:SetActiveBySex(Switcher, SexVal)
   local idx = SexVal == SexType.Male and 0 or 1
   Switcher:SetActiveWidgetIndex(idx)
 end
-
 function M:GetSpineBySideSex(side, sex)
   if side == Side.Main then
     return sex == SexType.Male and self.Spine_Male or self.Spine_Female
@@ -103,7 +93,6 @@ function M:GetSpineBySideSex(side, sex)
     return sex == SexType.Male and self.Spine_MaleEX or self.Spine_FemaleEX
   end
 end
-
 function M:SafeSetAnim(side, sex, anim, loop)
   if not anim or "" == anim then
     return true
@@ -119,7 +108,6 @@ function M:SafeSetAnim(side, sex, anim, loop)
   end
   return true
 end
-
 function M:ComputeFlowAndSexSnapshot()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -157,14 +145,12 @@ function M:ComputeFlowAndSexSnapshot()
   }
   return self.SpSnapshot
 end
-
 function M:ApplyFacingFromFlow()
   local S = self.SpSnapshot
   if not S then
     return
   end
   local FaceLeft = S.Flow == FlowType.ToMain
-  
   local function SetFace(Comp, Left)
     if not Comp then
       return
@@ -178,13 +164,11 @@ function M:ApplyFacingFromFlow()
       return
     end
   end
-  
   SetFace(self.Spine_Female, FaceLeft)
   SetFace(self.Spine_Male, FaceLeft)
   SetFace(self.Spine_FemaleEX, FaceLeft)
   SetFace(self.Spine_MaleEX, FaceLeft)
 end
-
 function M:ApplySwitchersFromSnapshot()
   local S = self.SpSnapshot
   if not S then
@@ -198,7 +182,6 @@ function M:ApplySwitchersFromSnapshot()
     self:SetActiveBySex(self.WS_EXChar, S.CurrSex)
   end
 end
-
 function M:PrepareSpineForTransition()
   if not self:ComputeFlowAndSexSnapshot() then
     DebugPrint("[Spine] ComputeFlowAndSexSnapshot failed")
@@ -207,7 +190,6 @@ function M:PrepareSpineForTransition()
   self:ApplySwitchersFromSnapshot()
   self:ApplyFacingFromFlow()
 end
-
 function M:Play_In_Loading()
   local S = self.SpSnapshot
   if not S then
@@ -216,7 +198,6 @@ function M:Play_In_Loading()
   self:SafeSetAnim(S.PrevSide, S.PrevSex, "Open_Loading", false)
   self:SafeSetAnim(S.CurrSide, S.CurrSex, "Close_Loading", false)
 end
-
 function M:OnUiAnimNotify_Open()
   local S = self.SpSnapshot
   if not S then
@@ -224,7 +205,6 @@ function M:OnUiAnimNotify_Open()
   end
   self:SafeSetAnim(S.CurrSide, S.CurrSex, "Open", false)
 end
-
 function M:OnUiAnimNotify_Close()
   local S = self.SpSnapshot
   if not S then
@@ -232,14 +212,12 @@ function M:OnUiAnimNotify_Close()
   end
   self:SafeSetAnim(S.PrevSide, S.PrevSex, "Close", false)
 end
-
 function M:SetXiaoBaiRandomTips()
   local RandomTips = self:GetRandomLoadingTips()
   self.Text_Title:SetText(RandomTips.Title)
   local Messages = self:GetFinalContentText(RandomTips.Message, self.CurrentInputDevice)
   self.Text_Message:SetText(Messages)
 end
-
 function M:GetRandomLoadingTips()
   if not self.TipsPoolByPlatform then
     self.TipsPoolByPlatform = {
@@ -286,7 +264,6 @@ function M:GetRandomLoadingTips()
   local RandomIndex = math.random(1, #TipsList)
   return TipsList[RandomIndex]
 end
-
 function M:CloseUI()
   self.Progress = 100.0
   self:UpdateProgress()
@@ -296,7 +273,6 @@ function M:CloseUI()
     self.Spine_Bg:SetAnimation(0, "Loop", true)
   end, false, 0, nil, true)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -305,7 +281,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self:SetXiaoBaiRandomTips()
 end
-
 function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self.Com_KeyTitle:SetVisibility(ESlateVisibility.Collapsed)
@@ -325,6 +300,5 @@ function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     })
   end
 end
-
 AssembleComponents(M)
 return M

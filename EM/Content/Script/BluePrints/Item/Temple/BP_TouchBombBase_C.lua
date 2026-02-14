@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Item.CombatProp.BP_CombatPropBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.ShouldShowDirection = false
@@ -12,14 +11,12 @@ function M:CommonInitInfo(Info)
   self.SpecialEffect = self.UnitParams.SpecialEffect
   self.OnHitMonsterEffect = self.UnitParams.OnHitMonsterEffect
 end
-
 function M:ReceiveBeginPlay()
   M.Super.ReceiveBeginPlay(self)
   self.DefaultInteractiveComponent.OnInteractiveTriggerEnter:Add(self, self.TriggerEnter)
   self.DefaultInteractiveComponent.OnInteractiveTriggerExit:Add(self, self.TriggerExit)
   self.IsTouchBomb = true
 end
-
 function M:TriggerEnter(PlayerActor)
   if not self.ShouldDirection then
     return
@@ -27,12 +24,10 @@ function M:TriggerEnter(PlayerActor)
   self:AddTimer(0.2, self.CheckDistance, true, 0, "CheckDistance", false, PlayerActor)
   self.Player = PlayerActor
 end
-
 function M:TriggerExit(PlayerActor)
   self:RemoveTimer("CheckDistance")
   self.Player = nil
 end
-
 function M:CheckDistance(PlayerActor)
   if self.IsActive then
     self:OnHideEffect()
@@ -49,7 +44,6 @@ function M:CheckDistance(PlayerActor)
     end
   end
 end
-
 function M:ShowArrowDirection()
   if not self.Player then
     self.Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -58,7 +52,6 @@ function M:ShowArrowDirection()
     self.Scene:K2_SetWorldRotation(self.Player:K2_GetActorRotation(), false, nil, false)
   end
 end
-
 function M:GetDirection()
   if not self.Player then
     self.Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -68,7 +61,6 @@ function M:GetDirection()
   Direction:Normalize()
   return Direction
 end
-
 function M:CalcRotation()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local ComponentLocation = self.Scene:K2_GetComponentLocation()
@@ -78,16 +70,13 @@ function M:CalcRotation()
   local LookAtRotation = UKismetMathLibrary.MakeRotFromX(Direction)
   return LookAtRotation
 end
-
 function M:ReceiveEndPlay()
   M.Super.ReceiveEndPlay(self)
   self:RemoveTimer("CheckDistance")
 end
-
 function M:OnInteractived()
   if self.Owner and self.Owner.OnBombInteractived then
     self.Owner:OnBombInteractived()
   end
 end
-
 return M

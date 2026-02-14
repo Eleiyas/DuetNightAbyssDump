@@ -1,5 +1,4 @@
 local WBP_DungeonUIBase_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_DungeonUIBase_C:OnLoaded(...)
   self:OnDungeonUIStateUpdated()
   local BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -16,7 +15,6 @@ function WBP_DungeonUIBase_C:OnLoaded(...)
     self:AfterAddToParent()
   end
 end
-
 function WBP_DungeonUIBase_C:AddToBattleMain()
   DebugPrint("DungeonUI: TryAddedToBattleMainByTimer", self:GetName())
   local BattleMainUI = UIManager(self):GetUIObj("BattleMain")
@@ -33,20 +31,16 @@ function WBP_DungeonUIBase_C:AddToBattleMain()
   self:InitListenEvent()
   self:RemoveTimer("AddSelfToBattleMain")
 end
-
 function WBP_DungeonUIBase_C:OnButtonBackClicked()
   DebugPrint("WBP_DungeonUIBase_C:OnButtonBackClicked")
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState:TryShowDungeonFirstGuide(GameState.GameModeType)
 end
-
 function WBP_DungeonUIBase_C:OnImageGuideBecameRelative(Index)
 end
-
 function WBP_DungeonUIBase_C:InitListenEvent()
   self:AddDispatcher(EventID.OnDungeonUIStateUpdated, self, self.OnDungeonUIStateUpdated)
 end
-
 function WBP_DungeonUIBase_C:OnDungeonUIStateUpdated()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -64,28 +58,20 @@ function WBP_DungeonUIBase_C:OnDungeonUIStateUpdated()
     self:UIStateChange_AfterTarget()
   end
 end
-
 function WBP_DungeonUIBase_C:UIStateChange_None()
 end
-
 function WBP_DungeonUIBase_C:UIStateChange_BeforeTarget()
 end
-
 function WBP_DungeonUIBase_C:UIStateChange_OnTarget()
 end
-
 function WBP_DungeonUIBase_C:UIStateChange_AfterTarget()
 end
-
 function WBP_DungeonUIBase_C:OnDungeonVoteBegin()
 end
-
 function WBP_DungeonUIBase_C:AfterAddToParent()
 end
-
 function WBP_DungeonUIBase_C:AddTaskToOverlay(BattleMainUI)
   BattleMainUI.Task:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   BattleMainUI.Task:AddChildToOverlay(self)
 end
-
 return WBP_DungeonUIBase_C

@@ -2,7 +2,6 @@ require("UnLua")
 local BP_CrackChest_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
 function BP_CrackChest_C:AuthorityInitInfo(Info)
   BP_CrackChest_C.Super.AuthorityInitInfo(self, Info)
   self.MainId = self.UnitParams.Chest or 6
@@ -20,21 +19,17 @@ function BP_CrackChest_C:AuthorityInitInfo(Info)
   self.CanOpen = false
   self.BreakableItemNum = 3
 end
-
 function BP_CrackChest_C:ClientInitInfo()
   self.MechMusicPath = self.UnitParams.MechMusicPath
   self.AchievedMusicPath = self.UnitParams.AchievedMusicPath
   self.OpenBoxExtraMusicPath = self.UnitParams.OpenBoxExtraMusicPath
 end
-
 function BP_CrackChest_C:CreateMain(Point, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  
   local function LoadFinishCallback(Unit)
     self.Main = Unit
     self.Main.CanOpen = false
   end
-  
   GameMode.EMGameState.EventMgr:CreateUnit({
     UnitType = Info.UnitType,
     UnitId = Info.UnitId,
@@ -45,7 +40,6 @@ function BP_CrackChest_C:CreateMain(Point, Info)
     LoadFinishCallback = LoadFinishCallback
   })
 end
-
 function BP_CrackChest_C:CreateCrack(Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   self.CrackMap = TMap(0, AActor)
@@ -54,17 +48,14 @@ function BP_CrackChest_C:CreateCrack(Info)
     self:RealCreateCrack(Info, self.CrackPointArray[i])
   end
 end
-
 function BP_CrackChest_C:RealCreateCrack(Info, StaticMeshComponent)
   if UE4.UGameplayStatics.GetObjectClass(StaticMeshComponent) ~= UStaticMeshComponent:StaticClass() then
     return
   end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  
   local function LoadFinishCallback(Unit)
     self.CrackMap:Add(Unit.Eid, Unit)
   end
-  
   GameMode.EMGameState.EventMgr:CreateUnit({
     UnitType = Info.UnitType,
     UnitId = Info.UnitId,
@@ -75,7 +66,6 @@ function BP_CrackChest_C:RealCreateCrack(Info, StaticMeshComponent)
     LoadFinishCallback = LoadFinishCallback
   })
 end
-
 function BP_CrackChest_C:TriggerByChild(ChildEid)
   if ChildEid == self.Main.Eid then
     if IsStandAlone(self) or not IsAuthority(self) then
@@ -89,5 +79,4 @@ function BP_CrackChest_C:TriggerByChild(ChildEid)
     end
   end
 end
-
 return BP_CrackChest_C

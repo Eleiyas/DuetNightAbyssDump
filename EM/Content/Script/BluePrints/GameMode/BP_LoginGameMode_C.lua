@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class()
-
 function M:ReceiveBeginPlay()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -11,5 +10,4 @@ function M:ReceiveBeginPlay()
     PlayerController.bShowMouseCursor = true
   end
 end
-
 return M

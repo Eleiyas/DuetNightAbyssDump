@@ -1,5 +1,4 @@
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
-
 function M:Construct()
   self.WidgetSwitcher_Mix:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Text_Time:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -7,13 +6,11 @@ function M:Construct()
   self.Img_Line:SetRenderOpacity(0)
   self.Text_Time:SetRenderOpacity(0)
 end
-
 function M:Destruct()
   if self:IsExistTimer("RefreshSkillCreatureLifeTimeProgress") then
     self:RemoveTimer("RefreshSkillCreatureLifeTimeProgress")
   end
 end
-
 function M:OnLoaded(OwnerPlayer, Params)
   self.Super.OnLoaded(self)
   self.Owner = OwnerPlayer
@@ -27,7 +24,6 @@ function M:OnLoaded(OwnerPlayer, Params)
   self.PassiveEffectObj = self.Owner:GetPassiveEffectById(self.PassiveEffectId)
   self:AddDispatcher(EventID.CharDie, self, self.OnCharDie)
 end
-
 function M:RemoveMark(bIndex0, bIndex1)
   if bIndex0 and bIndex1 then
     self.ZhiliuSKill_Item_1:PlayOutAnimation()
@@ -63,7 +59,6 @@ function M:RemoveMark(bIndex0, bIndex1)
     self.ZhiliuSKill_Item_2:PlayOutAnimation()
   end
 end
-
 function M:AddMark(Index, BuffId)
   local MarkType = self.BuffId2MarkType[BuffId]
   if 0 == Index then
@@ -72,7 +67,6 @@ function M:AddMark(Index, BuffId)
     self.ZhiliuSKill_Item_2:PlayInAnimation(MarkType)
   end
 end
-
 function M:FusionMark(BuffId0, BuffId1)
   self.WidgetSwitcher_Mix:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   if BuffId0 == self.WindBuffId and BuffId1 == self.WindBuffId then
@@ -83,16 +77,13 @@ function M:FusionMark(BuffId0, BuffId1)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Tips_Wind_Thunder)
   end
 end
-
 function M:InitSkillItem()
   self.ZhiliuSKill_Item_1:InitSkillItem()
   self.ZhiliuSKill_Item_2:InitSkillItem()
 end
-
 function M:OnCharDie()
   self:InitSkillItem()
 end
-
 function M:ShowSkillCreatureLifeTime(SkillCreature)
   if IsValid(SkillCreature) then
     self.SkillCreature = SkillCreature
@@ -123,7 +114,6 @@ function M:ShowSkillCreatureLifeTime(SkillCreature)
     end
   end
 end
-
 function M:HideSkillCreatureLifeTime()
   if self:IsExistTimer("RefreshSkillCreatureLifeTimeProgress") then
     self:RemoveTimer("RefreshSkillCreatureLifeTimeProgress")
@@ -136,7 +126,6 @@ function M:HideSkillCreatureLifeTime()
     self.SkillCreature = nil
   end
 end
-
 function M:RefreshSkillCreatureLifeTimeProgress()
   if IsValid(self.SkillCreature) then
     local LeftLifeTime = self.SkillCreature:GetLeftLifeTime()
@@ -150,5 +139,4 @@ function M:RefreshSkillCreatureLifeTimeProgress()
     end
   end
 end
-
 return M

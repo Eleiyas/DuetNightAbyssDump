@@ -1,15 +1,12 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self:UpdateLanguageBasedUI()
 end
-
 function M:SetEnable(IsOn)
   local Visibility = IsOn and ESlateVisibility.HitTestInvisible or ESlateVisibility.Collapsed
   self:SetVisibility(Visibility)
 end
-
 function M:UpdateLanguageBasedUI()
   local Language = self:GetCurrentLanguage()
   local IconPath
@@ -24,9 +21,7 @@ function M:UpdateLanguageBasedUI()
     self.Bg:SetBrushResourceObject(Icon)
   end
 end
-
 function M:GetCurrentLanguage()
   return CommonConst.SystemLanguage
 end
-
 return M

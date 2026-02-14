@@ -5,7 +5,6 @@ local M = Class({})
 M._components = {
   "BluePrints.UI.WBP.Armory.Armory_PetEnhance_Selective_Listing_Compoment"
 }
-
 function M:Initialize()
   self.EntryContents = nil
   self.CurEntryContent = nil
@@ -18,7 +17,6 @@ function M:Initialize()
     {}
   }
 end
-
 function M:Construct()
   for i = 1, 4 do
     self["EntryItem_" .. i].Button_Area.OnClicked:Add(self, function()
@@ -34,8 +32,8 @@ function M:Construct()
   self.Btn_Enhance:SetDefaultGamePadImg("X")
   self.Selective_Listing.bIsShowNavigateGuide = false
   self.SuccessToast.Text_Success:SetText(GText("Pet_Affix_Break_Success"))
+  self.Hint_Pet.Text_Hint_Positive:SetText(GText("Pet_LevelUp_LevelMax"))
 end
-
 function M:OnLoaded(Pet, CurEntryContent)
   self.Pet = Pet
   self.CurEntryContentIdx = CurEntryContent and CurEntryContent.Index
@@ -54,7 +52,6 @@ function M:OnLoaded(Pet, CurEntryContent)
   end
   self.ActorController:SetArmoryCameraTag(CameraTag1, "Entry", "LevelUp", CommonConst.ArmoryType.Pet)
 end
-
 function M:FindFirstNoMaxEntryIdx()
   for i, v in ipairs(self.Pet.Entry) do
     if 0 ~= v then
@@ -66,16 +63,14 @@ function M:FindFirstNoMaxEntryIdx()
   end
   return 1
 end
-
 function M:RefreshBaseInfo()
   self:UpdateEntryInfos(self.Pet)
   self.ConsumeCount = 3
   self:ChanegeSelectEntry(self.EntryItemWidgets[self.CurEntryContentIdx].WidgetIndex)
 end
-
 function M:UpdateEntryInfos(Pet, beNotChangeView)
   if not Pet or not Pet.Entry then
-    error("\230\178\161\230\156\137\228\188\160\229\133\165\229\174\160\231\137\169")
+    error("没有传入宠物")
     return
   end
   local Data, EntryId
@@ -151,14 +146,12 @@ function M:UpdateEntryInfos(Pet, beNotChangeView)
     self.EntryItemWidgets[self.CurEntryContent.index]:SetSelected(true)
   end
 end
-
 function M:OnEntryClicked(WidgetIndex)
   ArmoryUtils:SetContentIsSelected(self.CurEntryContent, false)
   self.CurEntryContent = self.EntryContents[self["EntryItem_" .. WidgetIndex].ContentIdx]
   ArmoryUtils:SetContentIsSelected(self.CurEntryContent, true)
   self:ChanegeSelectEntry()
 end
-
 function M:OnPetItemClicked(WidgetInex)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   if self.IsListExpanded == false then
@@ -173,7 +166,6 @@ function M:OnPetItemClicked(WidgetInex)
     end
   end
 end
-
 function M:ChanegeSelectEntry(bNotPlayAni)
   for i = 1, 3 do
     if next(self.ConsumeContents[i]) then
@@ -196,7 +188,6 @@ function M:ChanegeSelectEntry(bNotPlayAni)
     end
   end
 end
-
 function M:InitEnhaceEntry()
   self.HB_Entry:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Preview:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -229,7 +220,6 @@ function M:InitEnhaceEntry()
   self:RebuildSlots()
   self:OnPetNumChange()
 end
-
 function M:InitMaxEntry()
   self.HB_Entry:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Preview:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -246,7 +236,6 @@ function M:InitMaxEntry()
   }
   self.EntryTag_Now:Init(OriginContent)
 end
-
 function M:InitLockedEntry()
   self.WB_Item:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.WidgetSwitcher_Btn:SetActiveWidgetIndex(0)
@@ -258,7 +247,6 @@ function M:InitLockedEntry()
   self.Text_Detail:SetText(GText("Pet_AffixSlot_LockToast"))
   self:ClearConsumeContent()
 end
-
 function M:InitLNullEntry()
   self.WB_Item:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.WidgetSwitcher_Btn:SetActiveWidgetIndex(0)
@@ -270,7 +258,6 @@ function M:InitLNullEntry()
   self.Text_Detail:SetText(GText("UI_Pet_Affix_Without"))
   self:ClearConsumeContent()
 end
-
 function M:InitTransition()
   local EntryId = self.CurEntryContent.EntryId
   local NewEntryId = DataMgr.PetEntry[EntryId].PetEntryUPID
@@ -284,7 +271,6 @@ function M:InitTransition()
   self.Btn_Enhance:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Preview:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:IsPetFull()
   local emptyIndex
   for i = 1, self.ConsumeCount do
@@ -299,7 +285,6 @@ function M:IsPetFull()
   end
   return false
 end
-
 function M:TryAddConsumeContent(Content, bForceChose)
   Content.IsSelected = false
   local emptyIndex
@@ -319,7 +304,6 @@ function M:TryAddConsumeContent(Content, bForceChose)
     return false
   end
 end
-
 function M:DeleteConsumeContent(index)
   self:CancelChosenContent(self.ConsumeContents[index].Father)
   self.ConsumeContents[index] = {}
@@ -332,7 +316,6 @@ function M:DeleteConsumeContent(index)
   self:OnPetNumChange()
   self:RebuildSlots()
 end
-
 function M:ClearConsumeContent()
   for i = 1, 3 do
     if next(self.ConsumeContents[i]) and self.ConsumeContents[i].Father then
@@ -346,7 +329,6 @@ function M:ClearConsumeContent()
   }
   self:RebuildSlots(true)
 end
-
 function M:RebuildSlots(bForceNoAdd)
   for i = 1, 3 do
     local Content = self.ConsumeContents[i]
@@ -366,7 +348,6 @@ function M:RebuildSlots(bForceNoAdd)
     end
   end
 end
-
 function M:SetSlotContent(Index, Content)
   Content.IsChosen = false
   Content.Index = Index
@@ -377,11 +358,9 @@ function M:SetSlotContent(Index, Content)
     end,
     Params = {Index}
   }
-  
   function Content.OnBtnAddClicked()
     self:DeleteConsumeContent(Index)
   end
-  
   Content.bAllUseAsyncLoadWidget = false
   self["Item_" .. Index]:OnListItemObjectSet(Content)
   self["Item_" .. Index]:SetItemSelect(false)
@@ -395,7 +374,6 @@ function M:SetSlotContent(Index, Content)
   MinusBtn.ClickLogics = {}
   MinusBtn:BindEventOnClicked(self, self.DeleteConsumeContent, Index)
 end
-
 function M:SetEmptySlot(Index, bCanAdd)
   if nil == bCanAdd then
     bCanAdd = false
@@ -416,7 +394,6 @@ function M:SetEmptySlot(Index, bCanAdd)
   self["Item_" .. Index]:OnListItemObjectSet(EmptyContent)
   self["Item_" .. Index]:SetAdd(bCanAdd)
 end
-
 function M:OnPetNumChange()
   local num = 0
   for i = 1, 3 do
@@ -433,7 +410,6 @@ function M:OnPetNumChange()
     self.Btn_Enhance:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:OnEnhanceClicked()
   self:ExpandList(false)
   local Avatar = GWorld:GetAvatar()
@@ -452,17 +428,16 @@ function M:OnEnhanceClicked()
     OutAniStr = "LevelUp_Max_Out"
     bIsMax = true
   end
-  
   local function Callback(ErrCode)
+    self:BlockAllUIInput(false)
     if ErrCode ~= ErrorCode.RET_SUCCESS then
       local ErrorCodeData = DataMgr.ErrorCode[ErrCode]
       UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText(ErrorCodeData.ErrorCodeContent))
-      self:BlockAllUIInput(false)
       return
     end
     self:BindToAnimationFinished(self[InAniStr], function()
       self:UnbindAllFromAnimationFinished(self[InAniStr])
-      ScreenPrint("\230\146\173\230\148\190out\229\138\168\231\148\187")
+      ScreenPrint("播放out动画")
       self:PlayAnimation(self[OutAniStr])
     end)
     self:UnbindAllFromAnimationFinished(self[OutAniStr])
@@ -470,7 +445,6 @@ function M:OnEnhanceClicked()
       self:ChanegeSelectEntry(true)
       if bIsMax then
         self:AddTimer(0.01, function()
-          ScreenPrint("\230\146\173\230\148\190out\229\138\168\231\148\187\229\174\140\230\175\149")
           local slot = UE4.UWidgetLayoutLibrary.SlotAsVerticalBoxSlot(self.WB_Item)
           if slot then
             slot:SetPadding(FMargin(0, 0, 0, 0))
@@ -502,15 +476,13 @@ function M:OnEnhanceClicked()
       self.ActorController:PlayPetVoice("vo_happy")
     end
   end
-  
-  self:BlockAllUIInput(true)
-  self:AddTimer(1, function()
-    ScreenPrint("\232\167\163\233\153\164\232\190\147\229\133\165\233\153\144\229\136\182")
+  self:AddTimer(5, function()
+    ScreenPrint("解除输入限制")
     self:BlockAllUIInput(false)
   end)
+  self:BlockAllUIInput(true)
   Avatar:PetEntryUp(self.Pet.UniqueId, self.CurEntryContent.index, ConsumePetUniqueIds, Callback)
 end
-
 function M:UpgradeEntry(EntryContent)
   local NewEntryId = DataMgr.PetEntry[EntryContent.EntryId].PetEntryUPID
   local Data = DataMgr.PetEntry[NewEntryId]
@@ -526,17 +498,14 @@ function M:UpgradeEntry(EntryContent)
   }
   self:UpdateEntryPets(Entry)
 end
-
 function M:FreshEntryUi()
   self.EntryItemWidgets[self.CurEntryContent.index]:PlayAnimation(self.EntryItemWidgets[self.CurEntryContent.index].RefreshColor)
   self.EntryItemWidgets[self.CurEntryContent.index]:Init(self.CurEntryContent)
   self.EntryItemWidgets[self.CurEntryContent.index]:SetIsSelected(true)
 end
-
 function M:PlayInAnim()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   if self.ActorController then
     self.ActorController:SetMontageAndCamera(CommonConst.ArmoryType.Pet, "Pet", nil, nil)
@@ -547,18 +516,18 @@ function M:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function M:Close()
   EventManager:FireEvent(EventID.OnPetEntryUpReturn)
 end
-
 function M:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
+  if self:IsAnimationPlaying(self.LevelUp_Max_Out) or self:IsAnimationPlaying(self.LevelUp_Out) or self:IsAnimationPlaying(self.LevelUp_In) or self:IsAnimationPlaying(self.LevelUp_Max_In) then
+    return false
+  end
   return true
 end
-
 function M:OnListExpand(bExpand)
   if bExpand then
     self.Image_ClickNotPass:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -566,7 +535,6 @@ function M:OnListExpand(bExpand)
     self.Image_ClickNotPass:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:FocusListItem()
   local TileView = self.Selective_Listing.TileView_Select_Role
   if TileView:GetNumItems() > 0 then
@@ -577,6 +545,5 @@ function M:FocusListItem()
     self:SetSingleBottomKeyInfo(1)
   end
 end
-
 AssembleComponents(M)
 return M

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1733902486715652138",
       type = "StoryNode",
-      name = "\233\163\158\232\136\185\230\139\190\229\174\157",
+      name = "飞船拾宝",
       pos = {x = 1168, y = 282},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -122,6 +124,12 @@ return {
             startPort = "Out",
             endQuest = "1733902486715652142",
             endPort = "Success"
+          },
+          {
+            startQuest = "1733902630476653385",
+            startPort = "Out",
+            endQuest = "176189348864117697795",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -149,7 +157,7 @@ return {
           ["1733902560601652875"] = {
             key = "1733902560601652875",
             type = "PickUpNode",
-            name = "\230\139\190\229\143\150\231\137\169\229\147\129",
+            name = "拾取物品",
             pos = {x = 1159.448275862069, y = 308.6896551724138},
             propsData = {
               bActiveEnable = true,
@@ -170,7 +178,7 @@ return {
           ["1733902595665653160"] = {
             key = "1733902595665653160",
             type = "TalkNode",
-            name = "\230\139\190\229\143\150\229\188\128\232\189\166",
+            name = "拾取开车",
             pos = {x = 1162.4750957854408, y = 100.75862068965517},
             propsData = {
               IsNpcNode = false,
@@ -187,7 +195,7 @@ return {
           ["1733902630476653385"] = {
             key = "1733902630476653385",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\229\163\171\229\133\181",
+            name = "生成士兵",
             pos = {x = 1453.2413793103449, y = 318.00000000000006},
             propsData = {
               ActiveEnable = true,
@@ -207,7 +215,7 @@ return {
           ["1733902647216653670"] = {
             key = "1733902647216653670",
             type = "TalkNode",
-            name = "\229\163\171\229\133\181\229\135\186\231\142\176\229\188\128\232\189\166",
+            name = "士兵出现开车",
             pos = {x = 1732.5517241379316, y = 301.44827586206895},
             propsData = {
               IsNpcNode = false,
@@ -224,7 +232,7 @@ return {
           ["1733902806029654657"] = {
             key = "1733902806029654657",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\229\163\171\229\133\181",
+            name = "击杀士兵",
             pos = {x = 2044.9655172413798, y = 303.5172413793104},
             propsData = {
               KillMonsterType = "Id",
@@ -245,7 +253,7 @@ return {
           ["1733902832608655249"] = {
             key = "1733902832608655249",
             type = "TalkNode",
-            name = "\229\135\187\230\157\128\229\174\140\230\136\144\229\188\128\232\189\166",
+            name = "击杀完成开车",
             pos = {x = 2357.3793103448284, y = 300.4137931034483},
             propsData = {
               IsNpcNode = false,
@@ -262,12 +270,23 @@ return {
           ["1733907085011224341"] = {
             key = "1733907085011224341",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 2707.5, y = 321},
             propsData = {
               DialogueId = 0,
               UseTalkFadeOut = false,
               TalkFadeOutTime = 0
+            }
+          },
+          ["176189348864117697795"] = {
+            key = "176189348864117697795",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 1726.7229040981902, y = 114.04576659038905},
+            propsData = {
+              NewDescription = "DynQuest_CloudFeichuan_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
             }
           }
         },

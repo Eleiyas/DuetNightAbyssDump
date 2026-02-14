@@ -4,7 +4,6 @@ local ChatCommon = require("BluePrints.UI.WBP.Chat.ChatCommon")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.bOpen = true
   self:PlayAnimation(self.Normal)
@@ -36,23 +35,19 @@ function M:Construct()
   self.Text_DialogSingle.DefaultTextStyleOverride.OverflowPolicy = ETextOverflowPolicy.Ellipsis
   self.Text_DialogSingle:SetDefaultTextStyle(self.Text_DialogSingle.DefaultTextStyleOverride)
 end
-
 function M:Destruct()
   ChatController:UnRegisterEvent(self)
-  ReddotManager.RemoveListener(ChatCommon.UIName, self)
+  ReddotManager.RemoveListener(ChatCommon.ReddotName, self)
 end
-
 function M:InitChannel()
   local Channel = ChatModel:GetCurrentChannel()
   self:SwitchChannelImage(Channel)
 end
-
 function M:SwitchChannelImage(Channel)
   local TypeIcon = DataMgr.Channel[Channel].SIcon
   local Icon = LoadObject(TypeIcon)
   self.Image_ChatChannelIcon:SetBrushResourceObject(Icon)
 end
-
 function M:OnClick()
   if not self.bOpen then
     return
@@ -67,16 +62,21 @@ function M:OnClick()
     ChatMainUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:ShowChatText(MsgWrap)
   local SenderName = ChatController:ParseSpeakerHeader(MsgWrap)
   local Content = ChatController:ParseEmojiToText(MsgWrap)
-  Content = ChatController:ParseModSuitText(MsgWrap)
+  local ModSuitContent = ChatController:ParseModSuitText(MsgWrap)
+  if ModSuitContent then
+    Content = ModSuitContent
+  end
+  local DyePlanContent = ChatController:ParseDyePlanText(MsgWrap)
+  if DyePlanContent then
+    Content = DyePlanContent
+  end
   local Message = SenderName .. Content
   self:PlayAnimation(self.Change)
   self.Text_DialogSingle:SetText(Message)
 end
-
 function M:InitKeyInfo()
   self.ControllerKeyImg:CreateCommonKey({
     KeyInfoList = {
@@ -91,7 +91,6 @@ function M:InitKeyInfo()
     }
   })
 end
-
 function M:RefreshKey(IsGamePad)
   if IsGamePad then
     self.WS_Key:SetActiveWidgetIndex(1)
@@ -99,7 +98,6 @@ function M:RefreshKey(IsGamePad)
     self.WS_Key:SetActiveWidgetIndex(0)
   end
 end
-
 function M:IsShowGamePad(IsShow)
   if IsShow then
     self.WS_Key:SetActiveWidgetIndex(1)
@@ -109,7 +107,6 @@ function M:IsShowGamePad(IsShow)
     self.ControllerKeyImg:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:HideWSKey(IsShow)
   if IsShow then
     self.WS_Key:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -117,5 +114,4 @@ function M:HideWSKey(IsShow)
     self.WS_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

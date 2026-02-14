@@ -1,5 +1,4 @@
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.OriginalIsOpen = self.IsOpen
@@ -11,24 +10,20 @@ function M:CommonInitInfo(Info)
     self:ActiveCombat()
   end
 end
-
 function M:ActiveCombat(bFromGameMode)
   DebugPrint("ActiveCombat Dici ==========================")
   self.IsOpen = true
 end
-
 function M:InactiveCombat(bFromGameMode)
   DebugPrint("InactiveCombat Dici =============================")
   self.IsOpen = false
 end
-
 function M:ResetInfo()
   self.IsOpen = self.OriginalIsOpen
   self.CurTime = 0
   local CurPos = FVector(self.originalPosX, self.originalPosY, self.originalPosZ)
   self.SM_Dici:K2_SetRelativeLocation(CurPos, false, nil, false)
 end
-
 function M:OnPlayerEnter(Player)
   DebugPrint(Player:GetName(), "Player Enter Dici =============================")
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -37,7 +32,6 @@ function M:OnPlayerEnter(Player)
   end
   GameMode:TriggerFallingCallable(Player, self.SM_Dici:K2_GetComponentToWorld(), 10000, false)
 end
-
 function M:ReceiveTick(DeltaSeconds)
   if self.IsOpen == false then
     return
@@ -79,5 +73,4 @@ function M:ReceiveTick(DeltaSeconds)
     self.IsMovingUp = false
   end
 end
-
 return M

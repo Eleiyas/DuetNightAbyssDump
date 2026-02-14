@@ -3,16 +3,13 @@ local CommonConst = require("CommonConst")
 local BP_MechanismBase_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
 function BP_MechanismBase_C:AuthorityInitInfo(Info)
   BP_MechanismBase_C.Super.AuthorityInitInfo(self, Info)
   self:SetRewardID()
 end
-
 function BP_MechanismBase_C:CustomAddGuideCondition()
   return not self.OpenState
 end
-
 function BP_MechanismBase_C:BuildRewardInfo(PlayerId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -35,11 +32,14 @@ function BP_MechanismBase_C:BuildRewardInfo(PlayerId)
   end
   return RewardIds, ExtraInfo
 end
-
 function BP_MechanismBase_C:SetRewardID()
 end
-
 function BP_MechanismBase_C:CreateReward(PlayerId)
+  print(_G.LogTag, "LXZ CheckAutoCreateReward CreateReward FALSE", self:CheckAutoCreateReward())
+  if not self:CheckAutoCreateReward() then
+    print(_G.LogTag, "LXZ CheckAutoCreateReward FALSE")
+    return
+  end
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
     local RewardPosition = self:GetTransform()
@@ -50,11 +50,24 @@ function BP_MechanismBase_C:CreateReward(PlayerId)
     GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.Chest, RewardPosition, ExtraInfo)
   end
 end
-
+function BP_MechanismBase_C:StateCreateReward(PlayerId, NextStateId)
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if GameMode then
+    local RewardPosition = self:GetTransform()
+    if self.RewardPosition then
+      RewardPosition = self.RewardPosition:K2_GetComponentToWorld()
+    end
+    local RewardIds, ExtraInfo = self:BuildRewardInfo(PlayerId)
+    local function CallBack()
+      self.CombatStateChangeComponent:TriggerOnEventEnd(NextStateId)
+    end
+    return GameMode:TriggerRewardEvent(self.UnitId, CommonConst.RewardReason.Chest, RewardPosition, ExtraInfo, CallBack)
+  end
+  return false
+end
 function BP_MechanismBase_C:OpenMechanism(PlayerId)
   print(_G.LogTag, "Error: LXZ OpenMechanism not Define in ", self:GetName())
 end
-
 function BP_MechanismBase_C:CreateRegionData()
   self.RegionData = {
     CanOpen = self.CanOpen,
@@ -71,29 +84,21 @@ function BP_MechanismBase_C:CreateRegionData()
   }
   self:UpdateRegionDataByTable(Data)
 end
-
 function BP_MechanismBase_C:ForceCloseMechanism(PlayerId, IsSuccess)
   self:CloseMechanism(PlayerId, IsSuccess)
 end
-
 function BP_MechanismBase_C:CloseMechanism(PlayerId, IsSuccess)
   self:BroadcastCloseMechanism(PlayerId)
 end
-
 function BP_MechanismBase_C:BroadcastCloseMechanism_Lua(PlayerId)
 end
-
 function BP_MechanismBase_C:BPRecoverSnapShot()
 end
-
 function BP_MechanismBase_C:GetCanOpen(PlayerEid)
 end
-
 function BP_MechanismBase_C:OpenUI(PlayerEid)
 end
-
 function BP_MechanismBase_C:EndInteractive(Player)
   self.ChestInteractiveComponent:EndInteractive(Player)
 end
-
 return BP_MechanismBase_C

@@ -17,10 +17,10 @@ local RarityAnim = {
   "Purple",
   "Yellow"
 }
-
 function M:OnListItemObjectSet(Content)
   self.New:SetVisibility(ESlateVisibility.Collapsed)
   self.FishId = Content.FishId
+  self.ContentIdx = Content.ContentIdx
   self:InitWidget()
   self.IsNotLocked = self:SetIsNotLocked()
   if self.IsNotLocked then
@@ -28,9 +28,9 @@ function M:OnListItemObjectSet(Content)
   else
     self:InitLockWidget()
   end
+  self.Root:SetRenderOpacity(0)
   self:PlayAnimation(self.In)
 end
-
 function M:SetIsNotLocked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -40,11 +40,9 @@ function M:SetIsNotLocked()
   local Res = Avatar:GetFishCountByFishId(self.FishId) >= 1
   return Res
 end
-
 function M:InitWidget()
   self.Text_Title02:SetText(GText("UI_Fishing_FishType_2"))
 end
-
 function M:InitUnLockWidget()
   print(_G.LogTag, "LXZ InitUnLockWidget", self.FishId)
   self.Switcher:SetActiveWidgetIndex(0)
@@ -56,12 +54,12 @@ function M:InitUnLockWidget()
   end
   local Data = DataMgr.Fish[self.FishId]
   if not Data or not Data.ResourceId then
-    GWorld.logger.error("\233\177\188" .. self.FishId .. "\230\178\161\230\156\137\230\149\176\230\141\174\230\136\150\232\181\132\230\186\144id")
+    GWorld.logger.error("鱼" .. self.FishId .. "没有数据或资源id")
     return
   end
   local ResourceData = DataMgr.Resource[Data.ResourceId]
   if not ResourceData then
-    GWorld.logger.error("\233\177\188\232\181\132\230\186\144" .. Data.ResourceId .. "\230\178\161\230\156\137\232\181\132\230\186\144\230\149\176\230\141\174")
+    GWorld.logger.error("鱼资源" .. Data.ResourceId .. "没有资源数据")
     return
   end
   if 3 == Data.FishType then
@@ -81,11 +79,15 @@ function M:InitUnLockWidget()
   self.Text_Lv:SetText(Data.FishLevel)
   self.List_Text:ClearListItems()
   local Weight = self:GetWeight()
-  local WeightContent = self:NewTextContent("/Game/UI/Texture/Static/Atlas/Angling/T_Angling_Icon06.T_Angling_Icon06", Weight)
+  local WeightContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Size.T_Angling_Size", Weight)
   self.List_Text:AddItem(WeightContent)
   local Place = self:GetPlace()
-  local PlaceContent = self:NewTextContent("/Game/UI/Texture/Static/Atlas/Angling/T_Angling_Icon08.T_Angling_Icon08", Place)
+  local PlaceContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Location.T_Angling_Location", Place)
   self.List_Text:AddItem(PlaceContent)
+  local Text, FishAppearPeriod = self:GetDayNight()
+  print(_G.LogTag, "LXZ GetDayNight222", FishAppearPeriod)
+  local DayNightContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Time.T_Angling_Time", Text, FishAppearPeriod)
+  self.List_Text:AddItem(DayNightContent)
   local IsFishNew = self:CheckIsFishNew(self.FishId)
   if IsFishNew then
     self.New:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -94,11 +96,10 @@ function M:InitUnLockWidget()
   end
   self:InitVariationFish(Data.VariationFishId)
 end
-
 function M:InitLockWidget()
   local Data = DataMgr.Fish[self.FishId]
   if not Data or not Data.ResourceId then
-    GWorld.logger.error("\233\177\188" .. self.FishId .. "\230\178\161\230\156\137\230\149\176\230\141\174\230\136\150\232\181\132\230\186\144id")
+    GWorld.logger.error("鱼" .. self.FishId .. "没有数据或资源id")
     return
   end
   print(_G.LogTag, "LXZ InitLockWidget", self.FishId)
@@ -120,12 +121,12 @@ function M:InitLockWidget()
     self.Switcher:SetActiveWidgetIndex(0)
     local Data = DataMgr.Fish[self.FishId]
     if not Data or not Data.ResourceId then
-      GWorld.logger.error("\233\177\188" .. self.FishId .. "\230\178\161\230\156\137\230\149\176\230\141\174\230\136\150\232\181\132\230\186\144id")
+      GWorld.logger.error("鱼" .. self.FishId .. "没有数据或资源id")
       return
     end
     local ResourceData = DataMgr.Resource[Data.ResourceId]
     if not ResourceData then
-      GWorld.logger.error("\233\177\188\232\181\132\230\186\144" .. Data.ResourceId .. "\230\178\161\230\156\137\232\181\132\230\186\144\230\149\176\230\141\174")
+      GWorld.logger.error("鱼资源" .. Data.ResourceId .. "没有资源数据")
       return
     end
     if 3 == Data.FishType then
@@ -144,14 +145,16 @@ function M:InitLockWidget()
     self.Text_Lv:SetText(Data.FishLevel)
     self.List_Text:ClearListItems()
     local Weight = self:GetWeight()
-    local WeightContent = self:NewTextContent("/Game/UI/Texture/Static/Atlas/Angling/T_Angling_Icon06.T_Angling_Icon06", Weight)
+    local WeightContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Size.T_Angling_Size", Weight)
     self.List_Text:AddItem(WeightContent)
     local Place = self:GetPlace()
-    local PlaceContent = self:NewTextContent("/Game/UI/Texture/Static/Atlas/Angling/T_Angling_Icon08.T_Angling_Icon08", Place)
+    local PlaceContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Location.T_Angling_Location", Place)
     self.List_Text:AddItem(PlaceContent)
+    local Text, FishAppearPeriod = self:GetDayNight()
+    local DayNightContent = self:NewTextContent("/Game/UI/Texture/Dynamic/Atlas/Angling/T_Angling_Time.T_Angling_Time", Text, FishAppearPeriod)
+    self.List_Text:AddItem(DayNightContent)
   end
 end
-
 function M:InitVariationFish(VariationFishId)
   local Res = false
   if VariationFishId then
@@ -193,16 +196,14 @@ function M:InitVariationFish(VariationFishId)
   end
   return Res
 end
-
 function M:GetWeight()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    return 10
+    return "10" .. "cm"
   end
   print(_G.LogTag, "LXZ GetWeight", self.FishId, Avatar:GetFishMaxSize(self.FishId))
-  return Avatar:GetFishMaxSize(self.FishId)
+  return Avatar:GetFishMaxSize(self.FishId) .. "cm"
 end
-
 function M:CheckIsFishNew(FishId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -230,34 +231,56 @@ function M:CheckIsFishNew(FishId)
     return true
   end
 end
-
 function M:GetPlace()
-  local Data = DataMgr.Fish2FishingSpot[self.FishId]
+  local Data = DataMgr.FishingBook[self.FishId]
+  if not Data or not Data.FishingSpot then
+    return "没有在钓鱼手册内指定钓鱼点"
+  end
+  local SpotData = DataMgr.FishingSpot[Data.FishingSpot]
+  if SpotData and SpotData.FishingSpotName then
+    local Name = SpotData.FishingSpotName
+    return Name
+  end
+  return "钓鱼点没有名字"
+end
+function M:GetDayNight()
+  print(_G.LogTag, "LXZ GetDayNight")
+  local Data = DataMgr.Fish[self.FishId]
   if not Data then
-    return "\230\137\190\228\184\141\229\136\176\233\146\147\233\177\188\231\130\185"
+    return "找不到鱼数据", nil
   end
-  PrintTable(Data, 3)
-  for SpotId, Weight in pairs(Data) do
-    local SpotData = DataMgr.FishingSpot[SpotId]
-    if SpotData and SpotData.FishingSpotName then
-      print(_G.LogTag, "LXZ GetPlace", SpotId)
-      local Name = SpotData.FishingSpotName
-      return Name
-    end
+  local FishAppearPeriod = Data.FishAppearPeriod
+  if not FishAppearPeriod then
+    return "找不到鱼活跃时段", nil
   end
-  return "\230\137\128\230\156\137\233\146\147\233\177\188\231\130\185\233\131\189\230\178\161\230\156\137\229\144\141\229\173\151"
+  print(_G.LogTag, "LXZ GetDayNight111", FishAppearPeriod)
+  return nil, FishAppearPeriod
 end
-
-function M:GetWeather()
-  return "bbbb"
-end
-
-function M:NewTextContent(IconPath, Text)
+function M:NewTextContent(IconPath, Text, FishAppearPeriod)
   local Class = LoadClass("/Game/UI/WBP/Angling/Widget/Angling_TextItem_Content.Angling_TextItem_Content")
   local Obj = NewObject(Class)
   Obj.IconPath = IconPath
   Obj.Text = Text
+  if FishAppearPeriod then
+    Obj.IsTime = true
+    for i, v in pairs(FishAppearPeriod) do
+      if 1 == v then
+        Obj.IsMorn = true
+      elseif 2 == v then
+        Obj.IsNoon = true
+      elseif 3 == v then
+        Obj.IsNight = true
+      end
+    end
+  end
+  print(_G.LogTag, "LXZ GetDayNight333", FishAppearPeriod)
   return Obj
 end
-
+function M:BP_OnItemSelectionChanged(IsSelected)
+  if not IsSelected then
+  else
+    local FishMapUI = UIManager(self):GetUIObj("AnglingMap")
+    FishMapUI:OnItemSelectionChanged(self)
+  end
+end
 return M

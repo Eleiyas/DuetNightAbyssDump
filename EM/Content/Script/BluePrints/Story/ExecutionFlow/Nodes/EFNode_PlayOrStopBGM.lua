@@ -15,7 +15,6 @@ local SoundTypeMap = {
   SOUND_NOISE = 1,
   SOUND_SNAPSHOT = 2
 }
-
 function M:CreateNode(Flow, TalkTask, Params)
   local SoundPriority = Params.SoundPriority or SoundPrioritys.Level
   local SoundUnitKey = Params.SoundUnitKey or ""
@@ -72,7 +71,6 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return AudioNode
 end
-
 function M:PlayBGM(SoundPriority, SoundType, EventPath, Key, Value, RelatedRegionId, ClientRelatedRegionId, bStoreToServer, SoundUnitKey)
   local Event
   if string.find(EventPath, "/Game/Asset/") then
@@ -90,16 +88,13 @@ function M:PlayBGM(SoundPriority, SoundType, EventPath, Key, Value, RelatedRegio
     DebugPrint("Error: TalkDSL PlayOrStopBGM Func Play. SoundPriority is Wrong!", SoundPriority)
   end
 end
-
 function M:PlayLevelBGM(SoundType, Event, Key, Value, RelatedRegionId, ClientRelatedRegionId, bStoreToServer)
   self.AudioManager:StoreLastSTLBGM(SoundType)
   self.AudioManager:PlayLevelSound(SoundType, Event, RelatedRegionId, ClientRelatedRegionId, Key, Value, false, bStoreToServer)
 end
-
 function M:PlayInviteBGM(SoundType, Event, Key, Value, RelatedRegionId, ClientRelatedRegionId, bStoreToServer)
   self.AudioManager:PlayInviteBGM(SoundType, Event, Key, Value, RelatedRegionId, ClientRelatedRegionId)
 end
-
 function M:PlayStoryCustomBGM(SoundType, Event, Key, Value, RelatedRegionId, ClientRelatedRegionId, bStoreToServer, SoundUnitKey)
   if "" == SoundUnitKey then
     DebugPrint("Error: TalkDSL PlayOrStopBGM Func Stop. SoundPriority is StoryCustom but SoundUnitKey is Empty!")
@@ -107,11 +102,9 @@ function M:PlayStoryCustomBGM(SoundType, Event, Key, Value, RelatedRegionId, Cli
   end
   self.AudioManager:PlayStoryCustomBGM(SoundType, Event, SoundUnitKey, Key, Value, RelatedRegionId, ClientRelatedRegionId)
 end
-
 function M:PauseBGM(SoundType)
   self.AudioManager:SetSceneSoundPause(SoundType, true)
 end
-
 function M:StopBGM(SoundPriority, SoundType, SoundUnitKey)
   if SoundPriority == SoundPrioritys.Level then
     self:StopLevelBGM(SoundType)
@@ -123,16 +116,13 @@ function M:StopBGM(SoundPriority, SoundType, SoundUnitKey)
     DebugPrint("Error: TalkDSL PlayOrStopBGM Func Play. SoundPriority is Wrong!", SoundPriority)
   end
 end
-
 function M:StopLevelBGM(SoundType)
   self.AudioManager:StoreLastSTLBGM(SoundType)
   self.AudioManager:StopLevelSound(SoundType)
 end
-
 function M:StopInviteBGM(SoundType)
   self.AudioManager:StopInviteBGM(SoundType)
 end
-
 function M:StopStoryCustomBGM(SoundType, SoundUnitKey)
   if "" == SoundUnitKey then
     DebugPrint("Error: TalkDSL PlayOrStopBGM Func Stop. SoundPriority is StoryCustom but SoundUnitKey is Empty!")
@@ -140,9 +130,7 @@ function M:StopStoryCustomBGM(SoundType, SoundUnitKey)
   end
   self.AudioManager:StopStoryCustomBGM(SoundType, SoundUnitKey)
 end
-
 function M:ResumeBGM(SoundType)
   self.AudioManager:SetSceneSoundPause(SoundType, false)
 end
-
 return M

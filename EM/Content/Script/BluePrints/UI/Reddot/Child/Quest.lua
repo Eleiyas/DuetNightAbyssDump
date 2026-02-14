@@ -1,6 +1,5 @@
 local M = Class("BluePrints.UI.Reddot.ReddotTreeNode")
 local TimeUtils = require("Utils.TimeUtils")
-
 function M:OnIncreaseJudge(AddValue, CacheDetailChangedParams)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -18,7 +17,6 @@ function M:OnIncreaseJudge(AddValue, CacheDetailChangedParams)
     return false
   end
 end
-
 function M:OnDecreaseCount(SubValue, CacheDetailChangedParams, OldCount)
   if not CacheDetailChangedParams then
     return
@@ -27,7 +25,6 @@ function M:OnDecreaseCount(SubValue, CacheDetailChangedParams, OldCount)
   local QuestChainId = CacheDetailChangedParams.QuestId
   CacheDetail[QuestChainId] = 0
 end
-
 function M:OnIncreaseCount(AddValue, CacheDetailChangedParams, OldCount)
   if not CacheDetailChangedParams then
     return
@@ -36,7 +33,6 @@ function M:OnIncreaseCount(AddValue, CacheDetailChangedParams, OldCount)
   local QuestChainId = CacheDetailChangedParams.QuestId
   CacheDetail[QuestChainId] = 1
 end
-
 function M:OnInitNodeCache(NodeCache)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -55,7 +51,6 @@ function M:OnInitNodeCache(NodeCache)
     end
   end
 end
-
 function M:CheckQuestIsShowByCheckState(QuestChainId, QuestChainData)
   local QuestChainType = 0
   if DataMgr.QuestChain[QuestChainId] and DataMgr.QuestChain[QuestChainId].QuestChainType then
@@ -69,9 +64,22 @@ function M:CheckQuestIsShowByCheckState(QuestChainId, QuestChainData)
     return false
   end
   local CurrentTime = TimeUtils.NowTime()
-  local QuestStartTime = DataMgr.QuestChain[QuestChainId].StartTime
-  local QuestEndTime = DataMgr.QuestChain[QuestChainId].EndTime
+  local StartTime = DataMgr.QuestChain[QuestChainId].StartTime
+  local EndTime = DataMgr.QuestChain[QuestChainId].EndTime
+  local QuestStartTime, QuestEndTime
+  if StartTime then
+    QuestStartTime = StartTime:GetTime()
+  end
+  if EndTime then
+    QuestEndTime = EndTime:GetTime()
+  end
   if QuestStartTime and QuestEndTime and (CurrentTime < QuestStartTime or CurrentTime > QuestEndTime) and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
+    return false
+  end
+  if QuestStartTime and CurrentTime < QuestStartTime and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
+    return false
+  end
+  if not QuestStartTime and QuestEndTime and CurrentTime > QuestEndTime and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
     return false
   end
   if QuestChainData.CanShow == false and (QuestChainType == Const.LimTimeQuestChainType or QuestChainType == Const.MainActivityQuestChainType) then
@@ -95,5 +103,4 @@ function M:CheckQuestIsShowByCheckState(QuestChainId, QuestChainData)
     return true
   end
 end
-
 return M

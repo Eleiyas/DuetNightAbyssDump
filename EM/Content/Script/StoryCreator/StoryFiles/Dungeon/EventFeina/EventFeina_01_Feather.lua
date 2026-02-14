@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17569771064631593002",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1294.4431112365896, y = 303.5000000000001},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -100,7 +102,7 @@ return {
             key = "17569771064631593008",
             type = "QuestSuccessNode",
             name = "QuestSuccess",
-            pos = {x = 1614.9473684210527, y = 312.5263157894737},
+            pos = {x = 1616.7692307692307, y = 265.46153846153845},
             propsData = {ModeType = 0}
           },
           ["17569771064631593009"] = {
@@ -113,8 +115,8 @@ return {
           ["17569771064631593010"] = {
             key = "17569771064631593010",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
-            pos = {x = 1218.2105263157894, y = 309.36842105263156},
+            name = "对话节点",
+            pos = {x = 1217.902834008097, y = 277.44534412955466},
             propsData = {
               IsNpcNode = false,
               FirstDialogueId = 80001024,
@@ -132,6 +134,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -139,6 +142,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -156,14 +160,12 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 211001}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }

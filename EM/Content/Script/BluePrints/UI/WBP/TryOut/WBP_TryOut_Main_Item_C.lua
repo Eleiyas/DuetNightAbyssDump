@@ -4,10 +4,8 @@ local M = Class("Blueprints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.UIComponent.StarsUIComponent"
 }
-
 function M:Construct()
 end
-
 function M:Init(Content)
   Content.SelfWidget = self
   self.Content = Content
@@ -31,7 +29,7 @@ function M:Init(Content)
     else
       self.Text_Type:SetText(GText(Data.SkillBtnDesc))
     end
-    self.Text_Describe:SetText((GText(Data.SkillDesc) or "") .. GText("\n"))
+    self.Text_Describe:SetText(GText(Data.SkillDesc) or "")
   end
   self:SetNavigationRuleCustom(UE4.EUINavigation.Up, {
     self,
@@ -42,11 +40,9 @@ function M:Init(Content)
     self.OnNavigateDown
   })
 end
-
 function M:OnListItemObjectSet(Content)
   self:Init(Content)
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -54,7 +50,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -62,7 +57,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self:UpdateHotKeyInfo(CurGamepadName)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -70,13 +64,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     self.Owner:CloseSelf()
   end
 end
-
 function M:OnNavigateUp()
   self.Owner:OnNavigateUp(self.Content)
 end
-
 function M:OnNavigateDown()
   self.Owner:OnNavigateDown(self.Content)
 end
-
 return M

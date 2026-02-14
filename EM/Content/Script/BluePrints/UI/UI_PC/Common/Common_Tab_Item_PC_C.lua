@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Update(Idx, Info)
   self.Info = Info
   self.Idx = Idx
@@ -31,7 +30,6 @@ function M:Update(Idx, Info)
   end
   self:CheckAndShowHintIcon()
 end
-
 function M:CheckAndShowHintIcon()
   if not self.IsOn and self.Info and (self.Info.IsNew or self.Info.Upgradeable) then
     local Icon
@@ -48,14 +46,12 @@ function M:CheckAndShowHintIcon()
     self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:Btn_Click()
   UIUtils.PlayCommonBtnSe(self)
   if not self.IsOn then
     self:SetSwitchOn(true)
   end
 end
-
 function M:SetSwitchOn(IsOn)
   self.IsOn = IsOn
   if IsOn then
@@ -72,25 +68,20 @@ function M:SetSwitchOn(IsOn)
   end
   self:CheckAndShowHintIcon()
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 return M

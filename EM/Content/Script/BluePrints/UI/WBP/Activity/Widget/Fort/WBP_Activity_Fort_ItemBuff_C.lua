@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Button_Area.OnHovered:Add(self, self.OnBtnHovered)
   self.Button_Area.OnUnhovered:Add(self, self.OnBtnUnhovered)
@@ -10,8 +9,10 @@ function M:Construct()
   self.Button_Area.OnReleased:Add(self, self.OnBtnReleased)
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
 end
-
-function M:Init(ClickEvent, CantClick, Type, NeedJudgeLockIcon, Index)
+function M:Destruct()
+  ReddotManager.RemoveListener("PaotaiEventNewBuff", self)
+end
+function M:Init(ClickEvent, CantClick, Type, NeedJudgeLockIcon, Index, IsUnlockFromContent, NeedAddListener)
   if ClickEvent then
     self:BindEventOnClicked(ClickEvent.Obj, ClickEvent.Func, ClickEvent.Params)
   end
@@ -27,7 +28,14 @@ function M:Init(ClickEvent, CantClick, Type, NeedJudgeLockIcon, Index)
     if "Weapon" == Type then
       self.IsUnlock = self:CheckWeaponBuffIsUnlock()
     elseif "Normal" == Type then
-      self.IsUnlock = self:CheckNormalBuffIsUnlock()
+      self.IsUnlock = self:CheckNormalBuffIsUnlock(Index)
+    end
+  else
+    self.IsUnlock = IsUnlockFromContent
+    if self.IsUnlock then
+      self:PlayAnimation(self.Normal)
+    else
+      self:PlayAnimation(self.Forbidden)
     end
   end
   if self.IsUnlock then
@@ -35,8 +43,13 @@ function M:Init(ClickEvent, CantClick, Type, NeedJudgeLockIcon, Index)
   else
     self.Icon_Lock:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
+  if NeedAddListener then
+    if not ReddotManager.GetTreeNode("PaotaiEventNewBuff") then
+      ReddotManager.AddNodeEx("PaotaiEventNewBuff")
+    end
+    ReddotManager.AddListenerEx("PaotaiEventNewBuff", self, self.UpdateReddot)
+  end
 end
-
 function M:InitBuffInfo(BuffId)
   self.BuffId = BuffId
   if self.BuffId then
@@ -45,16 +58,39 @@ function M:InitBuffInfo(BuffId)
     self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
     return
   end
-  for _, Info in pairs(DataMgr.PaotaiGameProp) do
-    if Info.BuffId == self.BuffId then
-      local IconPath = Info.PropIcon or Info.WeaponIcon
-      local Icon = LoadObject(IconPath)
-      self.Img_Buff:SetBrushFromTexture(Icon)
-      return
+  local PaotaiBuff = {
+    DataMgr.PaotaiGameProp,
+    DataMgr.PaotaiGameWeapon
+  }
+  for _, Buffs in pairs(PaotaiBuff) do
+    for _, Info in pairs(Buffs) do
+      if Info.BuffId == self.BuffId then
+        local IconPath = Info.PropIcon or Info.WeaponIcon
+        local Icon = LoadObject(IconPath)
+        self.Img_Buff:SetBrushFromTexture(Icon)
+        return
+      end
     end
   end
 end
-
+function M:InitBuffReddotAndNew(BuffId)
+  if BuffId then
+    self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    local ShowNew = self:CheckShowNew()
+    if ShowNew then
+      self.New:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    else
+      self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+  else
+    self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    if self.IsUnlock then
+      self.Reddot:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    else
+      self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+  end
+end
 function M:BindEventOnClicked(Obj, Func, Params)
   if not Obj or not Func then
     return
@@ -63,7 +99,6 @@ function M:BindEventOnClicked(Obj, Func, Params)
   self.Func = Func
   self.Params = Params
 end
-
 function M:OnBtnHovered()
   self.IsHovering = true
   if self.IsSelect then
@@ -75,7 +110,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   self.IsHovering = false
   if self.IsSelect then
@@ -86,7 +120,6 @@ function M:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function M:OnBtnPressed()
   self.IsPressing = true
   if self.IsSelect then
@@ -95,7 +128,6 @@ function M:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   self.IsPressing = false
   if self.IsSelect then
@@ -109,7 +141,6 @@ function M:OnBtnReleased()
     self:PlayAnimationReverse(self.Hover)
   end
 end
-
 function M:OnBtnClicked()
   if self.IsSelect then
     return
@@ -120,7 +151,6 @@ function M:OnBtnClicked()
     self.Func(self.Obj, table.unpack(self.Params))
   end
 end
-
 function M:SetSelected(IsSelect)
   self.IsSelect = IsSelect
   self:StopAllAnimations()
@@ -130,24 +160,29 @@ function M:SetSelected(IsSelect)
     self:PlayAnimation(self.Normal)
   end
 end
-
-function M:CheckNormalBuffIsUnlock()
+function M:CheckNormalBuffIsUnlock(Index)
+  Index = Index or 0
   local NormalBuffInfo = DataMgr.PaotaiGameProp
   local Avatar = GWorld:GetAvatar()
+  local BuffNum = 0
   if Avatar then
     for Id, Info in pairs(NormalBuffInfo) do
       if not Info.DungeonId then
-        return true
-      end
-      local DungeonsInfo = Avatar.Dungeons[Info.DungeonId]
-      if DungeonsInfo and DungeonsInfo.IsPass then
-        return true
+        BuffNum = BuffNum + 1
+      else
+        local DungeonsInfo = Avatar.Dungeons[Info.DungeonId]
+        if DungeonsInfo and DungeonsInfo.IsPass then
+          BuffNum = BuffNum + 1
+        end
       end
     end
   end
-  return false
+  if Index <= BuffNum then
+    return true
+  else
+    return false
+  end
 end
-
 function M:CheckWeaponBuffIsUnlock()
   local WeaponBuffInfo = DataMgr.PaotaiGameWeapon
   local Avatar = GWorld:GetAvatar()
@@ -164,5 +199,37 @@ function M:CheckWeaponBuffIsUnlock()
   end
   return false
 end
-
+function M:UpdateReddot()
+  if self.BuffId then
+    local ShowNew = self:CheckShowNew()
+    if ShowNew then
+      self.New:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+    else
+      self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+  end
+end
+function M:CheckShowNew()
+  local BuffInfos
+  if self.Type == "Normal" then
+    BuffInfos = DataMgr.PaotaiGameProp
+  elseif self.Type == "Weapon" then
+    BuffInfos = DataMgr.PaotaiGameWeapon
+  end
+  if not BuffInfos then
+    return false
+  end
+  if not ReddotManager.GetTreeNode("PaotaiEventNewBuff") then
+    ReddotManager.AddNodeEx("PaotaiEventNewBuff")
+  end
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("PaotaiEventNewBuff")
+  local ShowNew = false
+  for _, Info in pairs(BuffInfos) do
+    if 1 == CacheDetail[Info.BuffId] then
+      ShowNew = true
+      break
+    end
+  end
+  return ShowNew
+end
 return M

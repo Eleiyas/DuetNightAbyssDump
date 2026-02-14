@@ -1,5 +1,4 @@
 local ServerInfo = {}
-
 function ServerInfo:New(info)
   local server = {}
   self.__index = self
@@ -7,7 +6,6 @@ function ServerInfo:New(info)
   server:Init(info)
   return server
 end
-
 function ServerInfo:Init(info)
   self.ServerId = info.hostnum or 0
   self.Area = info.area or "China"
@@ -21,14 +19,11 @@ function ServerInfo:Init(info)
   self.IsDev = info.is_dev or false
   self.IsDocker = info.is_docker or false
 end
-
 function ServerInfo:AddToGateList(gate_host)
   self.ServerGateList[#self.ServerGateList + 1] = gate_host
 end
-
 local ServerListMgr = {}
 ServerListMgr.Servers = {}
-
 function ServerListMgr:QueryServerListCb(data)
   DebugPrint("QueryServerListCb", data)
   if not data or "" == data then
@@ -55,7 +50,6 @@ function ServerListMgr:QueryServerListCb(data)
     self:HandleServerList()
   end
 end
-
 function ServerListMgr:GenerateServerList(data)
   DebugPrint("GenerateServerList")
   for server_id, info in pairs(data) do
@@ -70,7 +64,6 @@ function ServerListMgr:GenerateServerList(data)
     self.Servers[server_id] = server
   end
 end
-
 function ServerListMgr:AddDevServerList()
   DebugPrint("AddDevServerList")
   local DevServerList = require("BluePrints/UI/GameLogin/DevServerList")
@@ -86,7 +79,6 @@ function ServerListMgr:AddDevServerList()
   end
   self:HandleServerList()
 end
-
 function ServerListMgr:HandleServerList()
   DebugPrint("HandleServerList begin")
   self.ServerAreaDict = {
@@ -106,7 +98,6 @@ function ServerListMgr:HandleServerList()
     local ServerArea = self.ServerAreaDict[server.Area]
     ServerArea[#ServerArea + 1] = server
   end
-  
   local function cmp(s1, s2)
     if s1.IsRecommend and s2.IsRecommend then
       if s1.RecommendWeight == s2.RecommendWeight then
@@ -122,7 +113,6 @@ function ServerListMgr:HandleServerList()
       return s2.ServerId > s1.ServerId
     end
   end
-  
   local all_server = self.ServerAreaDict[self:GetServerArea()]
   table.sort(all_server, cmp)
   DebugPrint("HandleServerList end")
@@ -130,25 +120,34 @@ function ServerListMgr:HandleServerList()
     self.GetServerListCb(all_server)
   end
 end
-
 function ServerListMgr:GetServerArea()
   return GWorld.ChooseServerArea
 end
-
 function ServerListMgr:GetServers()
   if self.ServerAreaDict then
     return self.ServerAreaDict[self:GetServerArea()]
   end
 end
-
-function ServerListMgr:GetChanelProvider()
+function ServerListMgr:GetExamineKey()
   local ChannelId = HeroUSDKSubsystem(GWorld.GameInstance):GetChannelId()
-  if DataMgr.ChannelInfo[ChannelId] then
-    local ChannelProvider = DataMgr.ChannelInfo[ChannelId].Provider
-    return ChannelProvider
+  local MirrorChannelId = HeroUSDKSubsystem(GWorld.GameInstance):GetMirrorChannelId()
+  local ExamineKey
+  for _, v in pairs(DataMgr.ExamineInfo) do
+    if v.ChannelID and v.ChannelID == ChannelId then
+      if v.MirrorChannelID then
+        if v.MirrorChannelID == MirrorChannelId then
+          ExamineKey = v.ExamineKey
+          break
+        end
+      else
+        ExamineKey = v.ExamineKey
+      end
+    end
+  end
+  if ExamineKey then
+    return ExamineKey
   else
-    print("\230\137\167\232\161\140GetCdnHideData\229\135\186\233\148\153\239\188\140\229\189\147\229\137\141ChannelId:" .. tostring(ChannelId) .. "\228\184\173\230\178\161\230\156\137\229\175\185\229\186\148\231\154\132Provider")
+    print("执行GetCdnHideData出错，当前ChannelId:" .. tostring(ChannelId) .. "当前MirrorChannelId:" .. tostring(MirrorChannelId) .. "ExamineInfo中没有对应的ChannelId")
   end
 end
-
 return ServerListMgr

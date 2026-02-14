@@ -9,7 +9,6 @@ M._components = {
   "BluePrints.UI.WBP.Armory.Armory_List_Attr_Compoment",
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:Construct()
   self.Btn_Voice:SetText(GText("UI_CharVoice_Tab"))
   self.Btn_Record:SetText(GText("UI_Chardata_Data"))
@@ -27,7 +26,6 @@ function M:Construct()
   self.List_Ability:DisableScroll(true)
   self:RefreshBaseInfo()
 end
-
 function M:Init(Params)
   self._OnAddedToFocusPath = Params.OnAddedToFocusPath
   self._OnRemovedFromFocusPath = Params.OnRemovedFromFocusPath
@@ -66,10 +64,8 @@ function M:Init(Params)
   end
   self:InitNavigationRules()
 end
-
 function M:UpdataReddotInfo(CharId)
   local NodeName = table.concat({"Record", CharId}, "_")
-  
   local function Callback(self, Count)
     if Count > 0 then
       self.Btn_Record:SetReddot(true)
@@ -77,7 +73,6 @@ function M:UpdataReddotInfo(CharId)
       self.Btn_Record:SetReddot(false)
     end
   end
-  
   if self.ListenReddotName then
     ReddotManager.RemoveListener(self.ListenReddotName, self)
   end
@@ -89,7 +84,6 @@ function M:UpdataReddotInfo(CharId)
     ReddotManager.AddListener(NodeName, self, Callback)
   end
 end
-
 function M:UpdateTargetInfo(Target)
   local MaxLevel = UpgradeUtils.GetMaxLevel(Target, "Char")
   local TargetId = Target.CharId
@@ -99,7 +93,6 @@ function M:UpdateTargetInfo(Target)
   local Percent = math.clamp(Target.Exp / LevelUpData.CharLevelMaxExp, 0, 1)
   self.LevelInfo:Init(Target.Level, MaxLevel, Percent, Target.EnhanceLevel or 0, BreakLevelUpData)
 end
-
 function M:UpdateRecordListView(Target)
   local CharData = DataMgr.CharacterData[Target.CharId]
   if not CharData then
@@ -143,7 +136,6 @@ function M:UpdateRecordListView(Target)
     self:PlayAttrListFramingIn(self.List_Record)
   end)
 end
-
 function M:UpdateDispatchList(Target)
   self.List_Ability:ClearListItems()
   local CharData = Target:Data()
@@ -174,35 +166,29 @@ function M:UpdateDispatchList(Target)
     end
   end
 end
-
 function M:OnBtnVoiceClicked()
   local UIConfig = DataMgr.SystemUI.ArmoryFile
   UIManager(self):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, self.Parent:GetZOrder(), CommonConst.ArmoryType.Char, self.Target, ArmoryUtils.FilesTabType[1], false)
 end
-
 function M:OnBtnRecordClicked()
   local UIConfig = DataMgr.SystemUI.ArmoryFile
   UIManager(self):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, self.Parent:GetZOrder(), CommonConst.ArmoryType.Char, self.Target, ArmoryUtils.FilesTabType[2], true)
 end
-
 function M:OnBtnShowPicClicked()
   if not self.Target then
     return
   end
   UIManager(self):LoadUI(UIConst.CHARPIECTURE, "CharPicture", self.Parent:GetZOrder(), self.Target.CharId)
 end
-
 function M:PlayInAnim()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.LevelInfo:PlayStarsInAnim()
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:OnAnimationFinished(Animation)
   if self.In == Animation then
     self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -210,14 +196,12 @@ function M:OnAnimationFinished(Animation)
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if not self.List_Ability:HasAnyUserFocus() then
     self.List_Ability:NavigateToIndex(0)
   end
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.List_Ability)
 end
-
 function M:InitNavigationRules()
   self.List_Ability:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   if self.Btn_ShowPic:IsVisible() then
@@ -237,14 +221,12 @@ function M:InitNavigationRules()
     self.List_Ability:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   end
 end
-
 function M:SetTipsMode(bTipsMode)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Btn_Voice:SetPCVisibility(bTipsMode)
     self.Btn_Record:SetPCVisibility(bTipsMode)
   end
 end
-
 function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -257,19 +239,16 @@ function M:OnParentKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled(), false
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Parent, self)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Parent, self)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -277,7 +256,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -287,12 +265,10 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:Destruct()
   if self.ListenReddotName then
     ReddotManager.RemoveListener(self.ListenReddotName, self)
   end
 end
-
 AssembleComponents(M)
 return M

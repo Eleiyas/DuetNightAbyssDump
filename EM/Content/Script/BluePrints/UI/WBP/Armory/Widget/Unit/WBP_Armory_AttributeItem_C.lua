@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.In then
     self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:OnListItemObjectSet(Obj)
   if Obj.ShowType == "Mod" then
     self.Content = Obj
@@ -71,7 +69,6 @@ function M:OnListItemObjectSet(Obj)
   end
   self:UpdateHighlight(Obj.bHightlight, Obj.bNoBg)
 end
-
 function M:UpdateHighlight(bHightlight, bNoBg)
   if self.Overridden.UpdateHighlight_OverrideLua then
     self.Overridden.UpdateHighlight_OverrideLua(self, bHightlight, bNoBg)
@@ -85,5 +82,4 @@ function M:UpdateHighlight(bHightlight, bNoBg)
     self.Arrow:SetBrushTintColor(self.Orange)
   end
 end
-
 return M

@@ -1,7 +1,6 @@
 require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local Component = Class()
-
 function Component:Construct()
   self.EntryPets = {}
   self.ToCancelQueue = {}
@@ -24,7 +23,6 @@ function Component:Construct()
   self.Selective_Listing.bIsShowNavigateGuide = false
   self:SetFocus()
 end
-
 function Component:CollectValidEntries(Pet, Entrys)
   if not Pet or not Pet.Entry then
     return {}
@@ -41,7 +39,6 @@ function Component:CollectValidEntries(Pet, Entrys)
   end
   return validEntries
 end
-
 function Component:CreatePetItemContents(Entrys)
   if nil == Entrys then
     return
@@ -61,9 +58,6 @@ function Component:CreatePetItemContents(Entrys)
           local obj = ArmoryUtils:NewPetItemContentWithEntry(petObj)
           obj.bAllUseAsyncLoadWidget = false
           obj.IsChosen = false
-          if obj.LockType and 0 ~= obj.LockType then
-            obj.IsLocked = true
-          end
           self.BP_PetItemContents:Add(obj)
           for _, entryId in ipairs(validEntries) do
             if not self.EntryPets[entryId] then
@@ -83,7 +77,6 @@ function Component:CreatePetItemContents(Entrys)
     end
   end
 end
-
 function Component:UpdateEntryPets(NewEntrys)
   if not NewEntrys then
     return
@@ -97,13 +90,21 @@ function Component:UpdateEntryPets(NewEntrys)
           self.EntryPets[entryId] = {}
         end
         local obj = ArmoryUtils:NewPetItemContentWithEntry(petObj)
+        obj.bAllUseAsyncLoadWidget = false
+        obj.IsChosen = false
         self.BP_PetItemContents:Add(obj)
         table.insert(self.EntryPets[entryId], obj)
+        if obj.IsResourcePet then
+          self.ResourcePetItemContentsMap[obj.UniqueId] = obj
+          table.insert(self.ResourcePetItemContentsArray, obj)
+        else
+          self.UseablePetItemContentsMap[obj.UniqueId] = obj
+          table.insert(self.UseablePetItemContentsArray, obj)
+        end
       end
     end
   end
 end
-
 function Component:IsPetHaveAnyUsefulEntry(Pet, Entrys)
   if not Pet or not Pet.Entry then
     return false
@@ -115,11 +116,9 @@ function Component:IsPetHaveAnyUsefulEntry(Pet, Entrys)
   end
   return false
 end
-
 function Component:GetFilteredPet(EntryId)
   return self.EntryPets[EntryId] or {}
 end
-
 function Component:IfPetHaveEntry(Pet, EntryId)
   if Pet.Entry ~= nil then
     for _, entry in ipairs(Pet.Entry) do
@@ -131,7 +130,6 @@ function Component:IfPetHaveEntry(Pet, EntryId)
     return false
   end
 end
-
 function Component:InitUIInfo()
   if self.bFromArchive then
     self.Arr_OrderBy = {
@@ -157,14 +155,12 @@ function Component:InitUIInfo()
   self.PetOrderByDisplayNames = self.Arr_OrderBy
   self.PetOrderByAttrNames = self.CommonOrderByAttrNames
 end
-
 function Component:OnBackKeyDown()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(false)
 end
-
 function Component:SetChangeCamera(IsListExpanded)
   self.ActorController = UIManager(self):GetArmoryUIObj().ActorController
   local Avatar = GWorld:GetAvatar()
@@ -180,7 +176,6 @@ function Component:SetChangeCamera(IsListExpanded)
     self.ActorController:SetArmoryCameraTag(CameraTag1, "Entry", "LevelUp", CommonConst.ArmoryType.Pet)
   end
 end
-
 function Component:ExpandList(IsListExpanded)
   self.Selective_Listing:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   if IsListExpanded then
@@ -234,14 +229,13 @@ function Component:ExpandList(IsListExpanded)
   end
   self:OnListExpand(IsListExpanded)
 end
-
 function Component:ShowItemDetails(bShow, Content, bNotSelect)
   self.bItemDetailsShowed = bShow
   if bShow then
     self.ItemDetailsWidget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     if self.ItemDetailsContent ~= Content then
       self.ItemDetailsWidget:RefreshItemInfo(Content, true)
-      if Content.IsLocked then
+      if 0 ~= Content.LockType then
         self.ItemDetailsWidget.Switcher_Lock:SetActiveWidgetIndex(0)
       else
         self.ItemDetailsWidget.Switcher_Lock:SetActiveWidgetIndex(1)
@@ -275,7 +269,6 @@ function Component:ShowItemDetails(bShow, Content, bNotSelect)
     self.ItemDetailsWidget.Panel_Controller:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function Component:OnListItemInited(Content, EntryUI)
   Content.UI = EntryUI
   if Content.IsChosen == nil then
@@ -286,7 +279,6 @@ function Component:OnListItemInited(Content, EntryUI)
   end
   Content.UI:SetSelected(Content.IsChosen)
 end
-
 function Component:PetMain_OnListItemClicked(Content)
   print("yklua,PetItemClick")
   if not self.IsListExpanded then
@@ -306,21 +298,19 @@ function Component:PetMain_OnListItemClicked(Content)
   if self:IsPetFull() then
     return
   end
-  if Content.IsLocked then
+  if Content.LockType and 0 ~= Content.LockType then
     self:ShowItemDetails(true, Content, false)
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_Pet_Locked"))
     return
   end
-  if Content.IsPremium or Content.Rarity >= 5 or self.Pet.BreakNum > 0 then
+  if Content.IsPremium or Content.Rarity >= 5 or Content.BreakNum > 0 or #Content.PetEntry > 1 then
     local function CancelFunc()
       self:SetFocus()
     end
-    
     local function ConfirmFunc()
       ArmoryUtils:SetItemReddotRead(Content, true)
       self:SetContentChosen(Content)
     end
-    
     UIManager():ShowCommonPopupUI(100174, {
       LeftCallbackFunction = CancelFunc,
       RightCallbackFunction = ConfirmFunc,
@@ -336,7 +326,6 @@ function Component:PetMain_OnListItemClicked(Content)
     self:SetContentChosen(Content)
   end
 end
-
 function Component:SetContentChosen(Content, bForceChose)
   if self:TryAddConsumeContent(self:CopyItem(Content), bForceChose) == false then
     return
@@ -351,15 +340,14 @@ function Component:SetContentChosen(Content, bForceChose)
   end
   self.CurrentSelected = Content
 end
-
 function Component:CopyItem(Content)
   local Target = ArmoryUtils:GetPet(Content.Uuid)
   local Copyitem = ArmoryUtils:NewPetItemContentWithEntry(Target)
   Copyitem.Father = Content
+  Copyitem.LockType = Content.LockType
   assert(Copyitem)
   return Copyitem
 end
-
 function Component:DeleteContent(content)
   content.IsChosen = false
   if content.UI then
@@ -367,7 +355,6 @@ function Component:DeleteContent(content)
     content.UI:SetSelected(false)
   end
 end
-
 function Component:FindSelectedContentIndex(Content)
   for i = 1, self.ConsumeCount do
     if self.ConsumeContents[i].Uuid == Content.Uuid then
@@ -375,7 +362,6 @@ function Component:FindSelectedContentIndex(Content)
     end
   end
 end
-
 function Component:CancelChosenContent(Content)
   if self.IsListExpanded == false then
     table.insert(self.ToCancelQueue, Content)
@@ -387,7 +373,6 @@ function Component:CancelChosenContent(Content)
   end
   Content.IsChosen = false
 end
-
 function Component:SortItemContents(InOutContentArray, SortByIdx, SortType)
   local FirtContent = self["Pet" .. "Main_CurContent"] or self["Pet" .. "Main_CmpContent"]
   local OrderByAttrNames = self["Pet" .. "OrderByAttrNames"]
@@ -401,50 +386,49 @@ function Component:SortItemContents(InOutContentArray, SortByIdx, SortType)
   end
   ArmoryUtils:SortItemContents(InOutContentArray, SortByAttrNames, SortType, FirtContent)
 end
-
 function Component:OnBackgroundClicked()
   if self.IsListExpanded then
     self:ExpandList(false)
   end
   return UIUtils.Handled
 end
-
 function Component:LockOrUnlockPet()
   if not self.ItemDetailsContent then
     return
   end
   local Avatar = GWorld:GetAvatar()
-  if self.ItemDetailsContent.IsLocked then
+  if self.ItemDetailsContent.LockType and 0 ~= self.ItemDetailsContent.LockType then
     Avatar:UnLockPet(self.ItemDetailsContent.UniqueId)
   else
     Avatar:LockPet(self.ItemDetailsContent.UniqueId)
   end
 end
-
 function Component:OnPetLocked(ErrCode, UniqueId, IsLocked)
   local CurrentContent = self.ItemDetailsContent
+  if not CurrentContent then
+    return
+  end
   if not ErrorCode:Check(ErrCode) then
     return
   end
-  CurrentContent.IsLocked = not CurrentContent.IsLocked
+  CurrentContent.LockType = IsLocked and 1 or 0
   if CurrentContent.UI then
-    CurrentContent.UI:SetLock(CurrentContent.IsLocked and 1 or 0)
+    CurrentContent.UI:SetLock(CurrentContent.LockType or 0)
   end
   if self.ItemDetailsWidget then
-    if CurrentContent.IsLocked then
+    if 0 ~= CurrentContent.LockType then
       self.ItemDetailsWidget.Switcher_Lock:SetActiveWidgetIndex(0)
     else
       self.ItemDetailsWidget.Switcher_Lock:SetActiveWidgetIndex(1)
     end
   end
-  if CurrentContent.IsChosen and CurrentContent.IsLocked then
+  if CurrentContent.IsChosen and 0 ~= CurrentContent.LockType then
     local DelIdx = self:FindSelectedContentIndex(CurrentContent)
     if DelIdx then
       self:DeleteConsumeContent(DelIdx)
     end
   end
 end
-
 function Component:RemoveConsumePet(Content)
   for _, pets in pairs(self.EntryPets) do
     for i = #pets, 1, -1 do
@@ -455,10 +439,8 @@ function Component:RemoveConsumePet(Content)
   end
   self:ExpandList(false)
 end
-
 function Component:OnDetailLockBtnClickComp()
   self:LockOrUnlockPet()
   self:SetFocus()
 end
-
 return Component

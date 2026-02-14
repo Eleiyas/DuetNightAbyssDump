@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.WBP.Camera.WBP_CameraBase_C")
 local Handle = UE4.UWidgetBlueprintLibrary.Handled()
 local Unhandle = UE4.UWidgetBlueprintLibrary.Unhandled()
-
 function M:InitKeySetting()
   self.TabLeftKey = EKeys.Q.KeyName
   self.TabLeftKeyGamepad = Const.GamepadLeftShoulder
@@ -34,6 +33,7 @@ function M:InitKeySetting()
   self.GlobalGamePauseGamepad = Const.GamepadRightThumbstick
   self.MoveCloseGamepad = Const.GamepadLeftTrigger
   self.MoveFarGamepad = Const.GamepadRightTrigger
+  self.FastCloseCamera = CommonUtils:GetActionMappingKeyName("OpenCamera")
   self.KeyDownEvent = {}
   self.KeyDownEvent[self.TabLeftKey] = self.OnTabLeftKeyDown
   self.KeyDownEvent[self.TabRightKey] = self.OnTabRightKeyDown
@@ -64,6 +64,7 @@ function M:InitKeySetting()
   self.KeyDownEvent[self.GlobalGamePauseGamepad] = self.OnGlobalGamePause
   self.KeyDownEvent[self.MoveCloseGamepad] = self.OnMoveCloseKeyDown
   self.KeyDownEvent[self.MoveFarGamepad] = self.OnMoveFarKeyDown
+  self.KeyDownEvent[self.FastCloseCamera] = self.OnFastCloseCameraKeyDown
   self.KeyUpEvent = {}
   self.KeyUpEvent[self.CameraMoveLeftKey] = self.OnCameraMoveLeftKeyUp
   self.KeyUpEvent[self.CameraMoveRightKey] = self.OnCameraMoveRightKeyUp
@@ -78,7 +79,6 @@ function M:InitKeySetting()
   self.KeyUpEvent[self.MoveCloseGamepad] = self.OnMoveCloseKeyUp
   self.KeyUpEvent[self.MoveFarGamepad] = self.OnMoveFarKeyUp
 end
-
 function M:Construct()
   self:InitKeySetting()
   self.Btn_Close.OnClicked:Clear()
@@ -400,7 +400,6 @@ function M:Construct()
   self.OperationStack = {}
   M.Super.Construct(self)
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   if self.bScreenshotWidgetShow then
     return Unhandle
@@ -409,23 +408,24 @@ function M:OnMouseWheel(MyGeometry, MouseEvent)
   self:MoveCamera(WheelDelta, 0, 0)
   return Unhandle
 end
-
 function M:OnMoveCloseKeyDown()
   self.bCameraMoveCloseKeyDown = true
 end
-
 function M:OnMoveCloseKeyUp()
   self.bCameraMoveCloseKeyDown = false
 end
-
 function M:OnMoveFarKeyDown()
   self.bCameraMoveFarKeyDown = true
 end
-
 function M:OnMoveFarKeyUp()
   self.bCameraMoveFarKeyDown = false
 end
-
+function M:OnFastCloseCameraKeyDown()
+  if self.bShowHideCharacterWidget then
+    self:ToggleShowHideCharacterWidget()
+  end
+  self:CheckHasAnyOperationOrClose()
+end
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.bScreenshotWidgetShow then
     return Unhandle
@@ -437,13 +437,11 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.CaptureMouse(Handle, self)
 end
-
 function M:OnMouseButtonUp(MyGeometry, InKeyEvent)
   self.IsDragging = false
   self.RotateCameraByPointer = false
   return UWidgetBlueprintLibrary.ReleaseMouseCapture(Handle)
 end
-
 function M:OnMouseMove(MyGeometry, InKeyEvent)
   if self.bScreenshotWidgetShow then
     self.IsDragging = false
@@ -456,14 +454,12 @@ function M:OnMouseMove(MyGeometry, InKeyEvent)
   end
   return Unhandle
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self.bScreenshotWidgetShow then
     return self.ScreenshotWidget:OnPreviewKeyDown(MyGeometry, InKeyEvent) and UIUtils.Handled or UIUtils.Unhandled
   end
   return UIUtils.Unhandled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self.bScreenshotWidgetShow then
     self.ScreenshotWidget:OnKeyDown(MyGeometry, InKeyEvent)
@@ -476,7 +472,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -486,19 +481,31 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return Unhandle
 end
-
+function M:OnRepeatKeyDown(MyGeometry, InKeyEvent)
+  local GamepadName = UIUtils.UtilsGetCurrentGamepadName()
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "PS" ~= GamepadName or Const.GamepadDPadUp ~= InKeyName and Const.GamepadDPadDown ~= InKeyName and Const.GamepadDPadLeft ~= InKeyName and Const.GamepadDPadRight ~= InKeyName then
+    return UIUtils.Unhandled
+  end
+  if self.bScreenshotWidgetShow then
+    self.ScreenshotWidget:OnKeyDown(MyGeometry, InKeyEvent)
+    return UIUtils.Handled
+  end
+  if self.KeyDownEvent[InKeyName] then
+    self.KeyDownEvent[InKeyName](self)
+  end
+  return UIUtils.Handled
+end
 function M:OnTabLeftKeyDown()
   self.WBP_Camera_Tab_P:TabToLeft()
 end
-
 function M:OnTabRightKeyDown()
   self.WBP_Camera_Tab_P:TabToRight()
 end
-
 function M:OnTabSelected(TabWidget, Tab)
   self:ChangeCamera(Tab.CameraIndex)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local HandleResult = UIUtils.Unhandled
   if self.bScreenshotWidgetShow then
@@ -540,7 +547,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return HandleResult
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if self.bCameraMoveLeftKeyDown then
     self:MoveCamera(0, -InDeltaTime, 0)
@@ -594,112 +600,90 @@ function M:Tick(MyGeometry, InDeltaTime)
   self.RotYaw = 0
   self.bNeedFreshGamepadAnalogValue = true
 end
-
 function M:OnJoyStickMove(Dir, Percent)
   self.bCameraMovedByJoyStick = not self.bLockCameraPos
   self:MoveCamera(0, Dir.X * Percent, Dir.Y * Percent)
 end
-
 function M:OnJoyStickPointerDown()
   if self.bLockCameraPos then
     self.WBP_Camera_Roll_P:PlayAnimation(self.WBP_Camera_Roll_P.Warning)
   end
 end
-
 function M:OnJoyStickPointerUp()
   self.bCameraMovedByJoyStick = false
 end
-
 function M:OnCameraMoveLeftKeyDown()
   self.bCameraMoveLeftKeyDown = not self.bLockCameraPos
   self.WBP_Camera_Roll_P:SetPressed("Left", true)
   self:OnJoyStickPointerDown()
 end
-
 function M:OnCameraMoveLeftKeyUp()
   self.bCameraMoveLeftKeyDown = false
   self.WBP_Camera_Roll_P:SetPressed("Left", false)
 end
-
 function M:OnCameraMoveRightKeyDown()
   self.bCameraMoveRightKeyDown = not self.bLockCameraPos
   self.WBP_Camera_Roll_P:SetPressed("Right", true)
   self:OnJoyStickPointerDown()
 end
-
 function M:OnCameraMoveRightKeyUp()
   self.bCameraMoveRightKeyDown = false
   self.WBP_Camera_Roll_P:SetPressed("Right", false)
 end
-
 function M:OnCameraMoveUpKeyDown()
   self.bCameraMoveUpKeyDown = not self.bLockCameraPos
   self.WBP_Camera_Roll_P:SetPressed("Up", true)
   self:OnJoyStickPointerDown()
 end
-
 function M:OnCameraMoveUpKeyUp()
   self.bCameraMoveUpKeyDown = false
   self.WBP_Camera_Roll_P:SetPressed("Up", false)
 end
-
 function M:OnCameraMoveDownKeyDown()
   self.bCameraMoveDownKeyDown = not self.bLockCameraPos
   self.WBP_Camera_Roll_P:SetPressed("Down", true)
   self:OnJoyStickPointerDown()
 end
-
 function M:OnCameraMoveDownKeyUp()
   self.bCameraMoveDownKeyDown = false
   self.WBP_Camera_Roll_P:SetPressed("Down", false)
 end
-
 function M:OnCheeseKeyDown()
   self:Screenshot()
 end
-
 function M:OnCameraRollLeftKeyDown()
   self.bCameraLeftRollKeyDown = true
   self.CameraRollKeyPressedTime = 0
   self:RotateCameraRoll(-1)
 end
-
 function M:OnCameraRollLeftKeyUp()
   self.bCameraLeftRollKeyDown = false
 end
-
 function M:OnCameraRollLeftClicked()
   self:RotateCameraRoll(-1)
 end
-
 function M:OnCameraRollRightKeyDown()
   self.bCameraRightRollKeyDown = true
   self.CameraRollKeyPressedTime = 0
   self:RotateCameraRoll(1)
 end
-
 function M:OnCameraRollRightKeyUp()
   self.bCameraRightRollKeyDown = false
 end
-
 function M:OnCameraRollRightClicked()
   self:RotateCameraRoll(1)
 end
-
 function M:OnRollScrollBarPercentChanged(Percent)
   self.bRollScrollBarPointerDown = true
   self:SetRollPercent(Percent)
 end
-
 function M:OnRollScrollBarInertialScrollingEnd()
   M.Super.OnRollScrollBarInertialScrollingEnd(self)
   self.bRollScrollBarPointerDown = false
 end
-
 function M:PushOperationStack(Operation)
   table.insert(self.OperationStack, Operation)
 end
-
 function M:PopOperationStack(Operation)
   local NewOperatoinStack = {}
   for _, value in ipairs(self.OperationStack) do
@@ -709,11 +693,9 @@ function M:PopOperationStack(Operation)
   end
   self.OperationStack = NewOperatoinStack
 end
-
 function M:OnHideUIKeyDown()
   self:ToggleHideSelf()
 end
-
 function M:ToggleHideSelf()
   self.bSelfHidden = not self.bSelfHidden
   if self.bSelfHidden then
@@ -728,12 +710,10 @@ function M:ToggleHideSelf()
     self:RemoveWidgetHideTag("Bottom")
   end
 end
-
 function M:OnHideCharacterKeyDown()
   UIUtils.PlayCommonBtnSe(self)
   self:ToggleShowHideCharacterWidget()
 end
-
 function M:ToggleShowHideCharacterWidget()
   self.bShowHideCharacterWidget = not self.bShowHideCharacterWidget
   if self.bShowHideCharacterWidget then
@@ -754,11 +734,9 @@ function M:ToggleShowHideCharacterWidget()
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   end
 end
-
 function M:OnCloseHideModel()
   self:ToggleShowHideCharacterWidget()
 end
-
 function M:OnMenu_OutFinished()
   self.HorizontalBox:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.HorizontalBox_39:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -766,15 +744,12 @@ function M:OnMenu_OutFinished()
   self.WBP_Camera_Scale_P:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Close:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnMenuPart_OutFinished()
   self.IsMenuPart_OutFinished = true
 end
-
 function M:SetWidgetsVisibilityByTag(Tag, bHitTestable)
   self["Set" .. Tag .. "WidgetVisibility"](self, bHitTestable)
 end
-
 function M:SetTopWidgetVisibility(bHitTestable)
   if bHitTestable then
     self.WBP_Camera_Bar_P:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -786,7 +761,6 @@ function M:SetTopWidgetVisibility(bHitTestable)
     self.WBP_Camera_Shoot_P:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:SetBottomWidgetVisibility(bHitTestable)
   if bHitTestable then
     self.MidMouseBtn_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -808,7 +782,6 @@ function M:SetBottomWidgetVisibility(bHitTestable)
     self.Btn_Close:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:SetMenuWidgetVisibility(bHitTestable)
   self:SetBottomWidgetVisibility(not bHitTestable)
   if bHitTestable then
@@ -817,7 +790,6 @@ function M:SetMenuWidgetVisibility(bHitTestable)
     self.CanvasPanel_1:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:SetESCWidgetVisibility(bHitTestable)
   if bHitTestable then
     self.Close_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -825,7 +797,6 @@ function M:SetESCWidgetVisibility(bHitTestable)
     self.Close_Key:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:SetMenuHideExcludeBottom()
   self:AddTimer(0.02, function()
     if self.WidgetHideTags.Bottom > 0 then
@@ -838,7 +809,6 @@ function M:SetMenuHideExcludeBottom()
     self.SetMenuHideExcludeBottom
   })
 end
-
 function M:AddWidgetHideTag(Tag)
   if 0 == self.WidgetHideTags[Tag] then
     self:StopAnimation(self.WidgetHideAnims[Tag].In)
@@ -853,7 +823,6 @@ function M:AddWidgetHideTag(Tag)
     })
   end
 end
-
 function M:RemoveWidgetHideTag(Tag)
   self.WidgetHideTags[Tag] = self.WidgetHideTags[Tag] - 1
   if 0 == self.WidgetHideTags[Tag] then
@@ -862,9 +831,12 @@ function M:RemoveWidgetHideTag(Tag)
     self:SetWidgetsVisibilityByTag(Tag, true)
   end
 end
-
 function M:TickFindTargets()
   M.Super.TickFindTargets(self)
+  if self.InitParams and self.InitParams.IsAprilFoolsDayActivity then
+    self.WBP_Camera_Shoot_P:StopLoopRemind()
+    return
+  end
   if self.bScreenshotWidgetShow or self.IsShotTargetSucceeded then
     self.WBP_Camera_Shoot_P:StopLoopRemind()
     return
@@ -875,7 +847,6 @@ function M:TickFindTargets()
     self.WBP_Camera_Shoot_P:StopLoopRemind()
   end
 end
-
 function M:UpdateCheckBox()
   local Checked = self.CharType.All == self.CurCharHiddenState
   local CheckedBefore = not not self.Btn_AISetting:GetChecked()
@@ -883,7 +854,6 @@ function M:UpdateCheckBox()
     self.Btn_AISetting:SetChecked(Checked, false)
   end
 end
-
 function M:OnCheckBoxClicked()
   if self.CurCharHiddenState ~= self.CharType.All then
     self:SetCharHiddengState(self.CharType.All)
@@ -896,39 +866,31 @@ function M:OnCheckBoxClicked()
   self.Hide_Monster:SetHiddenState(0 ~= self.CharType.Monster & self.CurCharHiddenState)
   self.Hide_Pet:SetHiddenState(0 ~= self.CharType.Pet & self.CurCharHiddenState)
 end
-
 function M:OnResetCameraKeyDown()
   self:ResetCamera()
 end
-
 function M:HiddenAllKeyDown()
   self.Btn_AISetting:OnBtnClicked(self.Btn_AISetting)
 end
-
 function M:OnAddFocalLengthKeyDown()
   self.FocalLengthAdd = true
   self.FocalLengthKeyPressedTime = 0
   self.FocalLengthSlider:AddValue()
 end
-
 function M:OnAddFocalLengthKeyUp()
   self.FocalLengthAdd = false
 end
-
 function M:OnSubFocalLengthKeyDown()
   self.FocalLengthSub = true
   self.FocalLengthKeyPressedTime = 0
   self.FocalLengthSlider:SubValue()
 end
-
 function M:OnSubFocalLengthKeyUp()
   self.FocalLengthSub = false
 end
-
 function M:OnFocalLengthSliderValueChanged(Value)
   self:SetFocalLength(Value)
 end
-
 function M:OnBackKeyDown()
   if #self.OperationStack > 0 then
     if self.OperationStack[#self.OperationStack] == "HideCharcater" then
@@ -940,7 +902,6 @@ function M:OnBackKeyDown()
     self:CheckHasAnyOperationOrClose()
   end
 end
-
 function M:OnGlobalGamePause()
   if 0 == self.WS_Pause:GetActiveWidgetIndex() then
     self.Btn_Pause:OnBtnClicked()
@@ -948,15 +909,12 @@ function M:OnGlobalGamePause()
     self:OnGamePauseBtnLockedClick()
   end
 end
-
 function M:OnFocusLost(InFocusEvent)
 end
-
 function M:OnMouseCaptureLost()
   self.IsDragging = false
   self.RotateCameraByPointer = false
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.WBP_Camera_Tab_P:Init(self.TabConfig)
@@ -964,7 +922,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.WBP_Camera_Tab_P:SelectTab(2)
   self.WBP_Camera_Tab_P:BindEventOnTabSelected(self, self.OnTabSelected)
 end
-
 function M:SetLockGamePause(bNewLock)
   M.Super.SetLockGamePause(self, bNewLock)
   self.WS_Pause:SetActiveWidgetIndex(bNewLock and 1 or 0)
@@ -974,7 +931,6 @@ function M:SetLockGamePause(bNewLock)
     self.WS_Pause:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetLockCameraPos(bNewLock)
   M.Super.SetLockCameraPos(self, bNewLock)
   if bNewLock then
@@ -985,7 +941,6 @@ function M:SetLockCameraPos(bNewLock)
   self.WBP_Camera_Roll_P:SetJoyStickLocked(bNewLock)
   self.WBP_Camera_Roll_P.WS_Type:SetActiveWidgetIndex(bNewLock and 1 or 0)
 end
-
 function M:SetLockHiddenButton(HiddenButton, bNewLock)
   M.Super.SetLockHiddenButton(self, HiddenButton, bNewLock)
   if bNewLock then
@@ -993,13 +948,11 @@ function M:SetLockHiddenButton(HiddenButton, bNewLock)
     self:SetLockHiddenAllButton(bNewLock)
   end
 end
-
 function M:SetLockAllHiddenButton(bNewLock)
   M.Super.SetLockAllHiddenButton(self, bNewLock)
   self.WS_Type_Hide:SetActiveWidgetIndex(bNewLock and 1 or 0)
   self:SetLockHiddenAllButton(bNewLock)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   self.WBP_Camera_Roll_P:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
@@ -1019,22 +972,20 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     if self.bShowHideCharacterWidget then
       self.GameInputModeSubsystem:SetTargetUIFocusWidget(self.Hide_Role.Btn_Click)
     elseif self.ScreenshotWidget then
+      self.ScreenshotWidget:SetFocus()
     end
   end
   if self.bScreenshotWidgetShow and self.ScreenshotWidget then
     self.ScreenshotWidget:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   end
 end
-
 function M:ShowScreenshotWidget(Image)
   M.Super.ShowScreenshotWidget(self, Image)
   if IsValid(self.ScreenshotWidget) then
     self.ScreenshotWidget:OnUpdateUIStyleByInputTypeChange(UIUtils.UtilsGetCurrentInputType())
   end
 end
-
 function M:OnScreenshotWidgetHidden(bSaved)
   M.Super.OnScreenshotWidgetHidden(self, bSaved)
 end
-
 return M

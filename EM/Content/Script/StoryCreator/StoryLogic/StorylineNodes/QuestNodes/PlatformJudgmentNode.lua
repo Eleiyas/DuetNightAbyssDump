@@ -1,10 +1,8 @@
 local PlatformJudgmentNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function PlatformJudgmentNode:Init()
   self.MobileName = "Mobile"
   self.PCName = "PC"
 end
-
 function PlatformJudgmentNode:Execute()
   local OutName
   local PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self)
@@ -17,5 +15,4 @@ function PlatformJudgmentNode:Execute()
   end
   return OutName
 end
-
 return PlatformJudgmentNode

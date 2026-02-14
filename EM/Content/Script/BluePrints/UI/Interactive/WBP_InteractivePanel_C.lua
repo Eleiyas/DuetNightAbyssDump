@@ -1,7 +1,6 @@
 require("UnLua")
 require("DataMgr")
 local WBP_InteractivePanel_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_InteractivePanel_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.PickUpOwner = nil
@@ -10,7 +9,6 @@ function WBP_InteractivePanel_C:Initialize(Initializer)
   self.BattleInteractiveComp = {}
   self.PickAllInteractiveItem = nil
 end
-
 function WBP_InteractivePanel_C:Construct()
   self.Super.Construct(self)
   if self.bConstructed then
@@ -27,12 +25,10 @@ function WBP_InteractivePanel_C:Construct()
   self.CurInputDeviceType = nil
   self:InitListenEvent()
 end
-
 function WBP_InteractivePanel_C:Destruct()
   self:ClearListenEvent()
   WBP_InteractivePanel_C.Super.Destruct(self)
 end
-
 function WBP_InteractivePanel_C:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -43,13 +39,11 @@ function WBP_InteractivePanel_C:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_InteractivePanel_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_InteractivePanel_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -80,7 +74,6 @@ function WBP_InteractivePanel_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGa
   end
   self.CurInputDeviceType = CurInputDevice
 end
-
 function WBP_InteractivePanel_C:Tick(MyGeometry, InDeltaTime)
   if self.MouseWheelTime > 0 then
     self.MouseWheelTime = self.MouseWheelTime - InDeltaTime
@@ -89,17 +82,15 @@ function WBP_InteractivePanel_C:Tick(MyGeometry, InDeltaTime)
     self:ReleasedSelectAction()
   end
 end
-
 function WBP_InteractivePanel_C:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
 end
-
 function WBP_InteractivePanel_C:AddNormalInteractiveItem(InItem)
   local ExistedItem, bMerge = self:CheckItemDataExist(InItem)
   if ExistedItem then
     ExistedItem:ReAdd()
     if bMerge then
-      assert(self.MergeActors[InItem.MergeName], "\230\137\190\228\184\141\229\136\176\229\183\178\231\187\143\229\173\152\229\156\168\231\154\132\229\144\136\229\185\182\228\186\164\228\186\146" .. InItem.MergeName)
+      assert(self.MergeActors[InItem.MergeName], "找不到已经存在的合并交互" .. InItem.MergeName)
       self.MergeActors[InItem.MergeName]:AddMergeList(InItem:GetOwner():GetName(), InItem)
     end
     return
@@ -124,7 +115,6 @@ function WBP_InteractivePanel_C:AddNormalInteractiveItem(InItem)
     return Ret
   end
 end
-
 function WBP_InteractivePanel_C:AddBattleInteractiveItem(InItem)
   local HasDuplicateKey = false
   for _, Comp in ipairs(self.BattleInteractiveComp) do
@@ -137,7 +127,6 @@ function WBP_InteractivePanel_C:AddBattleInteractiveItem(InItem)
     return InItem
   end
 end
-
 function WBP_InteractivePanel_C:RemoveBattleInteractiveItem(InItem)
   local IndexToRemove = -1
   for i, Item in ipairs(self.BattleInteractiveComp) do
@@ -156,6 +145,9 @@ function WBP_InteractivePanel_C:RemoveBattleInteractiveItem(InItem)
           self,
           function()
             self.WidgetSwitcher:SetActiveWidget(self.Panel_Interactive)
+            self.bPressed = false
+            self.Panel_Capture:ClearChildren()
+            self:Close()
           end
         })
         CapturePanel:PlayAnimation(CapturePanel.Out)
@@ -163,7 +155,6 @@ function WBP_InteractivePanel_C:RemoveBattleInteractiveItem(InItem)
     end
   end
 end
-
 function WBP_InteractivePanel_C:AddInteractiveItem(InItem)
   if not InItem then
     return
@@ -179,7 +170,6 @@ function WBP_InteractivePanel_C:AddInteractiveItem(InItem)
     self:PostChangeInteractiveBtn(NewItem, Priority)
   end
 end
-
 function WBP_InteractivePanel_C:AddUIItem(InItem)
   local UIManager = UIManager(self)
   assert(UIManager, "Can't get UIManager")
@@ -211,7 +201,6 @@ function WBP_InteractivePanel_C:AddUIItem(InItem)
     end
   end
 end
-
 function WBP_InteractivePanel_C:GetIndexByPriority(InItem)
   local ItemPriorityLevel = InItem:GetInteractivePriority()
   local ListIndex = -1
@@ -235,7 +224,6 @@ function WBP_InteractivePanel_C:GetIndexByPriority(InItem)
   end
   return ListIndex
 end
-
 function WBP_InteractivePanel_C:InteractiveItemPlayAnim(InItem, AnimName)
   if not InItem then
     return
@@ -260,11 +248,10 @@ function WBP_InteractivePanel_C:InteractiveItemPlayAnim(InItem, AnimName)
     end
   end
 end
-
 function WBP_InteractivePanel_C:PlayItemAnimation(InItem, AnimName, bNormalPlay)
   for i = 0, self.ScrollBox_Interactive:GetChildrenCount() - 1 do
     local InteractiveItem = self.ScrollBox_Interactive:GetChildAt(i)
-    if InteractiveItem.InteractiveInfo == InItem then
+    if InteractiveItem.InteractiveInfo == InItem or self:IsInteractiveContentEqual(InteractiveItem.InteractiveInfo, InItem) then
       if not bNormalPlay then
         InteractiveItem:PlayInteractiveItemAnim(AnimName)
         break
@@ -274,11 +261,9 @@ function WBP_InteractivePanel_C:PlayItemAnimation(InItem, AnimName, bNormalPlay)
     end
   end
 end
-
 function WBP_InteractivePanel_C:RemoveInteractiveItem(InItem)
   self:InteractiveItemPlayAnim(InItem, "Out")
 end
-
 function WBP_InteractivePanel_C:AddPickAllInteractiveItem()
   if self.PickAllInteractiveItem then
     self.PickAllInteractiveItem:ReAdd()
@@ -308,7 +293,6 @@ function WBP_InteractivePanel_C:AddPickAllInteractiveItem()
   end
   self.PickAllInteractiveItem = InteractiveItem
 end
-
 function WBP_InteractivePanel_C:RemovePickAllInteractiveItem()
   if not self.PickAllInteractiveItem then
     return
@@ -318,7 +302,6 @@ function WBP_InteractivePanel_C:RemovePickAllInteractiveItem()
     rawset(self, "bRemoveingPickUpAllItem", true)
   end
 end
-
 function WBP_InteractivePanel_C:CanDoAction()
   if not self.CurSelectedItem and 0 == #self.BattleInteractiveComp then
     return false
@@ -327,14 +310,12 @@ function WBP_InteractivePanel_C:CanDoAction()
   end
   return true
 end
-
 function WBP_InteractivePanel_C:GetCurrentInteractiveItem()
   if #self.BattleInteractiveComp > 0 then
     return self.BattleInteractiveComp[1]
   end
   return self.CurSelectedItem.InteractiveInfo
 end
-
 function WBP_InteractivePanel_C:PressedSelectAction(bFromItem)
   if not self:CanDoAction() then
     return
@@ -360,7 +341,6 @@ function WBP_InteractivePanel_C:PressedSelectAction(bFromItem)
     end
   end
 end
-
 function WBP_InteractivePanel_C:ReleasedSelectAction(bFromItem)
   if not self.CurSelectedItem and 0 == #self.BattleInteractiveComp then
     self.bCurrentForbid = false
@@ -400,7 +380,6 @@ function WBP_InteractivePanel_C:ReleasedSelectAction(bFromItem)
     end
   end
 end
-
 function WBP_InteractivePanel_C:ClickSelectAction()
   if not self:CanDoAction() then
     return
@@ -411,14 +390,12 @@ function WBP_InteractivePanel_C:ClickSelectAction()
     self.CurSelectedItem.Tag_New:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_InteractivePanel_C:HoveredSelectAction(InUIItem)
   if not InUIItem then
     return
   end
   self:SelectSpecifiedItem(InUIItem)
 end
-
 function WBP_InteractivePanel_C:TryClickItem(CurTime)
   if not UIManager(self):TryOpenSystem("InteractiveItem") then
     return
@@ -432,7 +409,6 @@ function WBP_InteractivePanel_C:TryClickItem(CurTime)
   end
   self:OnItemClicked()
 end
-
 function WBP_InteractivePanel_C:OnItemClicked()
   if not self.bUploadCD then
     self.bUploadCD = true
@@ -481,7 +457,6 @@ function WBP_InteractivePanel_C:OnItemClicked()
     end
   end
 end
-
 function WBP_InteractivePanel_C:GetCanPickUpItems()
   local TmpItemList = {}
   for i = 0, self.ScrollBox_Interactive:GetChildrenCount() - 1 do
@@ -496,7 +471,6 @@ function WBP_InteractivePanel_C:GetCanPickUpItems()
   end
   return TmpItemList
 end
-
 function WBP_InteractivePanel_C:DoPickUpAllPickUpItems()
   self.TouchStartTime = -1
   self.bPressed = false
@@ -516,11 +490,13 @@ function WBP_InteractivePanel_C:DoPickUpAllPickUpItems()
     if #CanPickUpItems > 1 and not self.IsPickingAllInteractiveItem then
       self:AddPickAllInteractiveItem()
     else
+      if self.Img_Mouse then
+        self.Img_Mouse:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      end
       self:SelectFirstItem()
     end
   end)
 end
-
 function WBP_InteractivePanel_C:SelectFirstItem()
   self:AddDelayFrameFunc(function()
     if self.ScrollBox_Interactive:GetChildrenCount() <= 0 then
@@ -535,7 +511,6 @@ function WBP_InteractivePanel_C:SelectFirstItem()
     self:SelectSpecifiedItem(self.ScrollBox_Interactive:GetChildAt(0))
   end, 2)
 end
-
 function WBP_InteractivePanel_C:SelectSpecifiedItem(InUIItem, bSelectBattleItem)
   if not bSelectBattleItem and #self.BattleInteractiveComp > 0 then
     return
@@ -547,6 +522,7 @@ function WBP_InteractivePanel_C:SelectSpecifiedItem(InUIItem, bSelectBattleItem)
     return
   end
   if InUIItem == self.CurSelectedItem then
+    InUIItem:SelectEntryItem(true, self.CurInputDeviceType == ECommonInputType.Gamepad)
     return
   end
   if IsValid(self.CurSelectedItem) then
@@ -556,7 +532,6 @@ function WBP_InteractivePanel_C:SelectSpecifiedItem(InUIItem, bSelectBattleItem)
   InUIItem:SelectEntryItem(true, self.CurInputDeviceType == ECommonInputType.Gamepad)
   self.CurSelectedItem = InUIItem
 end
-
 function WBP_InteractivePanel_C:UpSelectAction()
   if self.bPressed then
     return
@@ -580,7 +555,6 @@ function WBP_InteractivePanel_C:UpSelectAction()
   self:SelectSpecifiedItem(self.ScrollBox_Interactive:GetChildAt(CurSelectIndex))
   self.ScrollBox_Interactive:ScrollWidgetIntoView(self.ScrollBox_Interactive:GetChildAt(CurSelectIndex), true)
 end
-
 function WBP_InteractivePanel_C:DownSelectAction()
   if self.bPressed then
     return
@@ -604,17 +578,19 @@ function WBP_InteractivePanel_C:DownSelectAction()
   self:SelectSpecifiedItem(self.ScrollBox_Interactive:GetChildAt(CurSelectIndex))
   self.ScrollBox_Interactive:ScrollWidgetIntoView(self.ScrollBox_Interactive:GetChildAt(CurSelectIndex), true)
 end
-
 function WBP_InteractivePanel_C:CheckItemDataExist(InItem)
   local function CheckFunction(InInteractiveItem)
     for i = 0, self.ScrollBox_Interactive:GetChildrenCount() - 1 do
       if self.ScrollBox_Interactive:GetChildAt(i).InteractiveInfo == InInteractiveItem then
         return self.ScrollBox_Interactive:GetChildAt(i)
       end
+      local ItemInfo = self.ScrollBox_Interactive:GetChildAt(i).InteractiveInfo
+      if self:IsInteractiveContentEqual(ItemInfo, InItem) then
+        return self.ScrollBox_Interactive:GetChildAt(i)
+      end
     end
     return false
   end
-  
   if InItem.MergeName then
     local MergeActor = self.MergeActors[InItem.MergeName]
     if MergeActor then
@@ -624,9 +600,21 @@ function WBP_InteractivePanel_C:CheckItemDataExist(InItem)
   end
   return CheckFunction(InItem)
 end
-
+function WBP_InteractivePanel_C:IsInteractiveContentEqual(InItem1, InItem2)
+  if nil == InItem1 or nil == InItem2 then
+    return false
+  end
+  if nil ~= InItem1.Content and nil ~= InItem2.Content and CommonUtils.IsEqual(InItem1.Content, InItem2.Content) then
+    return true
+  end
+  return false
+end
 function WBP_InteractivePanel_C:PostChangeInteractiveBtn(InteractiveInfo, Priority)
+  local CapturePanel = self.Panel_Capture:GetChildAt(0)
   if 0 == #self.BattleInteractiveComp then
+    if self.IsPickingAllInteractiveItem then
+      return
+    end
     self.WidgetSwitcher:SetActiveWidget(self.Panel_Interactive)
     if not self.PickAllInteractiveItem then
       local PickItemCount = 0
@@ -659,7 +647,10 @@ function WBP_InteractivePanel_C:PostChangeInteractiveBtn(InteractiveInfo, Priori
     elseif self.ScrollBox_Interactive:GetChildrenCount() <= 0 then
       self.CurSelectedItem = nil
     end
-  elseif self.WidgetSwitcher:GetActiveWidget() ~= self.Panel_Capture then
+  elseif self.WidgetSwitcher:GetActiveWidget() ~= self.Panel_Capture or CapturePanel and CapturePanel:IsAnimationPlaying(CapturePanel.Out) then
+    if CapturePanel then
+      CapturePanel:StopAnimation(CapturePanel.Out)
+    end
     self.WidgetSwitcher:SetActiveWidget(self.Panel_Capture)
     self:InitCapturePanel()
   end
@@ -672,7 +663,6 @@ function WBP_InteractivePanel_C:PostChangeInteractiveBtn(InteractiveInfo, Priori
     end
   end
 end
-
 function WBP_InteractivePanel_C:SetKeyMap(IsSet)
   if IsSet == self.IsSetedKeyMap then
     return
@@ -699,18 +689,15 @@ function WBP_InteractivePanel_C:SetKeyMap(IsSet)
     self:StopListeningForAllInputActions()
   end
 end
-
 function WBP_InteractivePanel_C:TryClose()
   if not self:CheckNeedUnload() then
     return
   end
   self:Close()
 end
-
 function WBP_InteractivePanel_C:CheckNeedUnload()
   return 0 == self.ScrollBox_Interactive:GetChildrenCount() and 0 == #self.BattleInteractiveComp
 end
-
 function WBP_InteractivePanel_C:Close()
   local UIManager = UIManager(self)
   assert(UIManager, "Can't get UIManager")
@@ -721,7 +708,6 @@ function WBP_InteractivePanel_C:Close()
   self.ScrollBox_Interactive:ClearChildren()
   self.Super.Close(self)
 end
-
 function WBP_InteractivePanel_C:OnInteractiveItemRemoveAnimFinish(InInteractiveItem)
   if self.PickAllItemList then
     self.PickAllItemList[InInteractiveItem] = nil
@@ -747,14 +733,12 @@ function WBP_InteractivePanel_C:OnInteractiveItemRemoveAnimFinish(InInteractiveI
   end
   InInteractiveItem.InteractiveInfo = nil
 end
-
 function WBP_InteractivePanel_C:SetInteractiveItemBtnDisplayed(InInteractiveItem, bDisplay)
   if not IsValid(InInteractiveItem.InteractiveInfo) then
     return
   end
   InInteractiveItem.InteractiveInfo:SetBtnDisplayed(UE4.UGameplayStatics.GetPlayerCharacter(self, 0), bDisplay)
 end
-
 function WBP_InteractivePanel_C:OnInteractiveChildRemoved(InInteractiveItem)
   if not IsValid(InInteractiveItem) then
     return
@@ -782,7 +766,6 @@ function WBP_InteractivePanel_C:OnInteractiveChildRemoved(InInteractiveItem)
     table.remove(self.PriorityItemList[ItemPriorityLevel], Index)
   end
 end
-
 function WBP_InteractivePanel_C:InitCapturePanel()
   local CapturePanel = self.Panel_Capture:GetChildAt(0)
   local IsPC = CommonUtils.GetDeviceTypeByPlatformName(CapturePanel) == "PC"
@@ -802,6 +785,7 @@ function WBP_InteractivePanel_C:InitCapturePanel()
       CapturePanel.Text_Progress:SetText(GText("CAPTURE_LONGPRESS"))
       CapturePanel.Text_Percent:SetVisibility(ESlateVisibility.Collapsed)
     end
+    self.bPressed = false
     self.Panel_Capture:AddChild(CapturePanel)
   end
   if not CapturePanel then
@@ -837,7 +821,6 @@ function WBP_InteractivePanel_C:InitCapturePanel()
   CapturePanel:PauseAnimation(CapturePanel.Loop, 0, 0)
   AudioManager(self):PlayUISound(self, "event:/ui/common/catch_hud_show", nil, nil)
 end
-
 function WBP_InteractivePanel_C:TryDoCapture(InteractiveTime)
   local CapturePanel = self.Panel_Capture:GetChildAt(0)
   if not CapturePanel then
@@ -867,7 +850,6 @@ function WBP_InteractivePanel_C:TryDoCapture(InteractiveTime)
   local Speed = CapturePanel.ProgressTest:GetEndTime() / InteractiveTime
   CapturePanel:PlayAnimation(CapturePanel.ProgressTest, 0, 0, EUMGSequencePlayMode.Forward, Speed, false)
 end
-
 function WBP_InteractivePanel_C:OnCaptureSuccess()
   local CapturePanel = self.Panel_Capture:GetChildAt(0)
   if not CapturePanel then
@@ -888,8 +870,8 @@ function WBP_InteractivePanel_C:OnCaptureSuccess()
   if not CapturePanel.IsPC then
     self:RemoveTimer("MobileCaptureUpdateText")
   end
+  self:StopCapture()
 end
-
 function WBP_InteractivePanel_C:StopCapture()
   local CapturePanel = self.Panel_Capture:GetChildAt(0)
   if not CapturePanel then
@@ -905,7 +887,6 @@ function WBP_InteractivePanel_C:StopCapture()
     self:RemoveTimer("MobileCaptureUpdateText")
   end
 end
-
 function WBP_InteractivePanel_C:UpdateInteractiveItemState(InteractiveComponent)
   for i = 0, self.ScrollBox_Interactive:GetChildrenCount() - 1 do
     local InteractiveItem = self.ScrollBox_Interactive:GetChildAt(i)
@@ -915,7 +896,6 @@ function WBP_InteractivePanel_C:UpdateInteractiveItemState(InteractiveComponent)
     end
   end
 end
-
 function WBP_InteractivePanel_C:UpdateMouseGamePadImage(CurGamepadName)
   local ResourceIconPath = UIUtils.UtilsGetKeyIconPathInGamepad("Vertical", CurGamepadName)
   rawset(self, "LoadResourceID", nil)
@@ -931,12 +911,10 @@ function WBP_InteractivePanel_C:UpdateMouseGamePadImage(CurGamepadName)
     CapturePanel.WS_Type:SetActiveWidgetIndex(1)
   end
 end
-
 function WBP_InteractivePanel_C:OnInteractiveTipIconLoadFinished(Object, ResourceID)
   if not Object or rawget(self, "LoadResourceID") ~= ResourceID then
     return
   end
   self.Img_Mouse:SetBrushFromTexture(Object)
 end
-
 return WBP_InteractivePanel_C

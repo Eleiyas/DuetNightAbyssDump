@@ -1,20 +1,16 @@
 require("UnLua")
 local Component = {}
-
 function Component:InitComponentCoroutine()
   local Coroutine = CreateCoroutine(self.InitDoorIcons)
   table.insert(self.InitCoroutines, Coroutine)
   coroutine.resume(Coroutine, self, #self.InitCoroutines)
 end
-
 function Component:AddComponentEvent()
   EventManager:AddEvent(EventID.OnDoorStateChange, self, self.OnDoorStateChange)
 end
-
 function Component:RemoveComponentEvent()
   EventManager:RemoveEvent(EventID.OnDoorStateChange, self)
 end
-
 function Component:ClearData()
   if self.DoorIcons then
     for _, Widget in pairs(self.DoorIcons) do
@@ -23,7 +19,6 @@ function Component:ClearData()
     self.DoorIcons = {}
   end
 end
-
 function Component:InitDoorIcons(CoroutineIndex)
   self.DoorIcons = {}
   self.DoorIconLocation = {}
@@ -64,6 +59,8 @@ function Component:InitDoorIcons(CoroutineIndex)
           end
           if DoorBaseData.State then
             State = DoorBaseData.State.StateId
+          else
+            State = 104010
           end
           Point:InitDoor(self, Data, State, Scale)
           local Position = self:TransformWorldLocToUILoc(Data.DoorPos[1], Data.DoorPos[2])
@@ -75,10 +72,6 @@ function Component:InitDoorIcons(CoroutineIndex)
           self.ManualItemId2DoorIcon[DoorBaseData.ManualItemId] = Point
           self.DoorIconLocation[Data.Id] = FVector2D(Data.DoorPos[1], Data.DoorPos[2])
           self.DoorTeleportPointId[Data.Id] = Data.DoorTelepointId
-          if Data.Id == GWorld.GameInstance.TrackingID then
-            Point:PlayAnimation(Point.Loop, 0, 0)
-            self:CreateTrackIndicator(Point)
-          end
           if not self.TeleportState[Data.DoorTelepointId] then
             Point:SetDoorVisibility("Lock", false, true)
           end
@@ -107,7 +100,6 @@ function Component:InitDoorIcons(CoroutineIndex)
   end
   self:InitCoroutineCheck(CoroutineIndex)
 end
-
 function Component:ShowFloor_Component(FloorId)
   if self.DoorIcons then
     for Id, DoorIcon in pairs(self.DoorIcons) do
@@ -122,19 +114,17 @@ function Component:ShowFloor_Component(FloorId)
     end
   end
 end
-
 function Component:OnScaleChange_Component(Percent)
-  local TrackingID = GWorld.GameInstance.TrackingID
   local Visible = self:GetMapIconVisible("UI_DOORICONS", Percent)
   for Id, Point in pairs(self.DoorIcons) do
     local ThisVisible = DataMgr.RegionDoor[Id] and Visible
-    if ThisVisible or Id == self.CurrentConveyId or Id == TrackingID then
+    if ThisVisible then
       if Point:GetVisibility() ~= ESlateVisibility.HitTestInvisible and Point:SetDoorVisibility("Scale", true) then
         Point:StopAnimation(Point.In)
         Point:PlayAnimation(Point.In)
         Point.PlayForward = true
       end
-    elseif Point:GetVisibility() ~= ESlateVisibility.Collapsed then
+    elseif Point:GetVisibility() ~= ESlateVisibility.Collapsed and not self.IsMinimap then
       if not Point:IsAnimationPlaying(Point.In) or Point.PlayForward then
         Point:StopAnimation(Point.In)
         Point:PlayAnimationReverse(Point.In)
@@ -142,17 +132,15 @@ function Component:OnScaleChange_Component(Percent)
       end
       Point:SetDoorVisibility("Scale", false)
     end
-    if Point:GetVisibility() ~= ESlateVisibility.Collapsed then
+    if Point:GetVisibility() ~= ESlateVisibility.Collapsed or self.IsMinimap then
       local Position = self:TransformWorldLocToUILoc(self.DoorIconLocation[Id].X, self.DoorIconLocation[Id].Y)
       Point:SetRenderTranslation(Position)
     end
   end
 end
-
 function Component:OnDoorStateChange(DoorType, ManualItemId)
   if self.ManualItemId2DoorIcon[ManualItemId] then
     self.ManualItemId2DoorIcon[ManualItemId]:UpdateDoor(DoorType)
   end
 end
-
 return Component

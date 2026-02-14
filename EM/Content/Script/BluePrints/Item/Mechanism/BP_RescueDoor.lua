@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.Item.Mechanism.BP_PrologueDoor")
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -14,7 +13,6 @@ function M:AuthorityInitInfo(Info)
     GameMode:TriggerDungeonComponentFun("SetRescueHostageDoor", self)
   end
 end
-
 function M:OpenMechanism(CharacterEid)
   M.Super.OpenMechanism(self, CharacterEid)
   if not IsAuthority(self) and not IsStandAlone(self) then
@@ -33,7 +31,6 @@ function M:OpenMechanism(CharacterEid)
   GameMode:TriggerDungeonComponentFun("TriggerSpawnHostage", Character)
   GameMode:AddDungeonEvent("ShowRescuePanel")
 end
-
 function M:TriggerByChild(SourceEid)
   M.Super.TriggerByChild(self, SourceEid)
   if self.bIsHostageDoor then
@@ -42,7 +39,6 @@ function M:TriggerByChild(SourceEid)
     self:DeactiveGuide()
   end
 end
-
 function M:OnDoorHasOpened(SourceEid)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -50,5 +46,4 @@ function M:OnDoorHasOpened(SourceEid)
   end
   GameMode:TriggerDungeonComponentFun("TriggerStartHostageBT")
 end
-
 return M

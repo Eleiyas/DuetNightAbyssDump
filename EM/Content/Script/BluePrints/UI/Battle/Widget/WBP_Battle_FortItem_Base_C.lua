@@ -1,5 +1,4 @@
 local WBP_Battle_FortItem_Base_C = {}
-
 function WBP_Battle_FortItem_Base_C:InitItem_PaoTai(SkillName, Skill, OwnerPlayer, Index, Root)
   self.SkillName_PaoTai = SkillName
   self.Skill_PaoTai = Skill
@@ -7,15 +6,12 @@ function WBP_Battle_FortItem_Base_C:InitItem_PaoTai(SkillName, Skill, OwnerPlaye
   self.Index = Index
   self.Root = Root
   self.PaoTaiItem = true
-  
   function self.BuffsAddedDelegate()
     self:OnBuffAdded()
   end
-  
   function self.BuffsRemovedDelegate()
     self:OnBuffRemoved()
   end
-  
   if 1 == self.Index then
     self.BuffId = 40101001
     self.OwnerPlayer.BuffManager:BP_BindOnBuffAdded(self.BuffId, self.BuffsAddedDelegate)
@@ -26,7 +22,6 @@ function WBP_Battle_FortItem_Base_C:InitItem_PaoTai(SkillName, Skill, OwnerPlaye
     self.OwnerPlayer.BuffManager:BP_BindOnBuffRemoved(self.BuffId, self.BuffsRemovedDelegate)
   end
 end
-
 function WBP_Battle_FortItem_Base_C:RefreshSkillStyleInTimer_PaoTai()
   if not IsValid(self.OwnerPlayer) then
     return
@@ -41,7 +36,6 @@ function WBP_Battle_FortItem_Base_C:RefreshSkillStyleInTimer_PaoTai()
   end
   self:HandleButtonStateChange_PaoTai()
 end
-
 function WBP_Battle_FortItem_Base_C:HandleButtonStateChange_PaoTai()
   if self.LastButtonState ~= self.CurButtonState then
     if self.CurButtonState == "InCDTime" then
@@ -64,7 +58,6 @@ function WBP_Battle_FortItem_Base_C:HandleButtonStateChange_PaoTai()
   end
   self.LastButtonState = self.CurButtonState
 end
-
 function WBP_Battle_FortItem_Base_C:RefreshSkillItem_HotValue(DeltaTime, Percent)
   if self.Root then
     if self.Root.OwnerMechanism.Hot then
@@ -94,7 +87,6 @@ function WBP_Battle_FortItem_Base_C:RefreshSkillItem_HotValue(DeltaTime, Percent
     self:ChangeState_HotValue()
   end
 end
-
 function WBP_Battle_FortItem_Base_C:ChangeState_HotValue()
   if self.LastButtonState ~= self.CurButtonState then
     if self.CurButtonState == "InCDTime" then
@@ -112,7 +104,6 @@ function WBP_Battle_FortItem_Base_C:ChangeState_HotValue()
   end
   self.LastButtonState = self.CurButtonState
 end
-
 function WBP_Battle_FortItem_Base_C:OnBuffAdded()
   self:UnbindAllFromAnimationFinished(self.Cutdown)
   self:BindToAnimationFinished(self.Cutdown, {
@@ -132,7 +123,6 @@ function WBP_Battle_FortItem_Base_C:OnBuffAdded()
   end
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Sustain_Loop, EUMGSequencePlayMode.Forward)
 end
-
 function WBP_Battle_FortItem_Base_C:OnBuffRemoved()
   self:UnbindAllFromAnimationFinished(self.Cutdown)
   if self:IsAnimationPlaying(self.Cutdown) then
@@ -140,11 +130,9 @@ function WBP_Battle_FortItem_Base_C:OnBuffRemoved()
   end
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Sustain_Loop, EUMGSequencePlayMode.Reverse)
 end
-
 function WBP_Battle_FortItem_Base_C:PlayCutdownAnimation()
   self:PlayAnimation(self.Cutdown)
 end
-
 function WBP_Battle_FortItem_Base_C:Destruct()
   if self.BuffId then
     self:RemoveTimer("RougeBuffTimeCutdownTipTimer")
@@ -153,5 +141,4 @@ function WBP_Battle_FortItem_Base_C:Destruct()
     self.OwnerPlayer.BuffManager:BP_UnBindOnBuffRemoved(self.BuffId, self.BuffsRemovedDelegate)
   end
 end
-
 return WBP_Battle_FortItem_Base_C

@@ -1,6 +1,5 @@
 local FTalkTriggerComponent = require("BluePrints.Story.Talk.Component.TalkTriggerComponent")
 local M = Class("BluePrints.Story.FlowGraph.FlowNode.TalkFlowNode.FlowNode_TalkNodeBase")
-
 function M:Start()
   if 0 == self.ConditionList:Num() then
     self:FinishToDefault()
@@ -18,19 +17,14 @@ function M:Start()
     self:FinishToDefault()
   end
 end
-
 function M:Skip()
 end
-
 function M:CanSkip()
   return true
 end
-
 function M:K2_Cleanup()
 end
-
 function M:SelectCondition(Index)
   self:FinishCondition(Index)
 end
-
 return M

@@ -4,20 +4,17 @@ local MONSTER_BOSS_ICON = "/Game/UI/Texture/Static/Atlas/Play/T_Play_BossMonster
 local MONSTER_ELITE_ICON = "/Game/UI/Texture/Static/Atlas/Play/T_Play_EliteMonster.T_Play_EliteMonster"
 local MONSTER_INFO_WEAKNESS_ITEM = "/Game/UI/WBP/Play/Widget/Depute/MonsterInfo_Tab_Item_Content.MonsterInfo_Tab_Item_Content"
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Button_Area.OnClicked:Add(self, self.onButtonAreaClicked)
   self.Button_Area.OnHovered:Add(self, self.OnButtonAreaHovered)
   self.Button_Area.OnUnhovered:Add(self, self.OnBtnUnhovered)
   self.Button_Area.OnPressed:Add(self, self.OnBtnPressed)
 end
-
 function M:Destruct()
   self.Button_Area.OnClicked:Clear()
   self.Button_Area.OnHovered:Clear()
   self.Button_Area.OnUnhovered:Clear()
 end
-
 function M:OnListItemObjectSet(Obj)
   DebugPrint("gmy@TabOnListItemObjectSet", Obj.MonsterId, Obj.bIsDefaultSelected)
   local MonsterId = Obj.MonsterId
@@ -25,20 +22,30 @@ function M:OnListItemObjectSet(Obj)
   if self.ParentWidget and self.MonsterId and self.ParentWidget.MonsterIdToItem and self.ParentWidget.MonsterIdToItem[self.MonsterId] == self then
     self.ParentWidget.MonsterIdToItem[self.MonsterId] = nil
   end
+  local GallaryId = MonsterInfo.GalleryRuleId
+  local ImagePath
+  if GallaryId then
+    ImagePath = DataMgr.GalleryRule[GallaryId].MonsterIcon
+  end
   self.MonsterId = MonsterId
   self.ParentWidget = Obj.ParentWidget
   self.ParentWidget.MonsterIdToItem[MonsterId] = self
+  Obj.SelfWidget = self
+  self.OnAddedToFocusPathEvent = Obj.OnAddedToFocusPathEvent
+  self.OnRemovedFromFocusPathEvent = Obj.OnRemovedFromFocusPathEvent
   self.DisableSelect = Obj.DisableSelect
   self.SoundEvent = Obj.SoundEvent
   assert(MonsterInfo, string.format("MonsterInfo is nil, MonsterId = %s", MonsterId))
   local bIsBoss = MonsterUtils.IsBoss(MonsterId)
   local bIsElite = MonsterUtils.IsElite(MonsterId)
   local bIsNormal = not bIsElite and not bIsBoss
-  local MonsterIcon = LoadObject(string.format("Texture2D'%s'", MonsterInfo.Icon))
+  local MonsterIcon = LoadObject(string.format("Texture2D'%s'", ImagePath))
   if bIsNormal then
     self.Icon_Monster_Type:SetVisibility(UE4.ESlateVisibility.Collapsed)
   else
-    self.Icon_Monster_Type:SetVisibility(UE4.ESlateVisibility.Visible)
+    if self.Icon_Monster_Type then
+      self.Icon_Monster_Type:SetVisibility(UE4.ESlateVisibility.Visible)
+    end
     local MonsterTypeIcon
     if bIsBoss then
       MonsterTypeIcon = LoadObject(string.format("%s", MONSTER_BOSS_ICON))
@@ -79,14 +86,18 @@ function M:OnListItemObjectSet(Obj)
     end
     self:CancelTabSelect()
   end
+  if Obj.NeedFocusable then
+    self:SetVisibility(ESlateVisibility.Visible)
+    self.bIsFocusable = true
+  end
 end
-
 function M:SetBasicData(MonsterId, Obj)
   local MonsterInfo = DataMgr.Monster[MonsterId]
   local bIsBoss = MonsterUtils.IsBoss(MonsterId)
   local bIsElite = MonsterUtils.IsElite(MonsterId)
   local bIsNormal = not bIsElite and not bIsBoss
-  local MonsterIcon = LoadObject(string.format("Texture2D'%s'", MonsterInfo.Icon))
+  local GallaryId = MonsterInfo.GalleryRuleId
+  local MonsterIcon = LoadObject(string.format("Texture2D'%s'", DataMgr.GalleryRule[GallaryId].MonsterIcon))
   if bIsNormal then
     self.Icon_Monster_Type:SetVisibility(UE4.ESlateVisibility.Collapsed)
   else
@@ -103,7 +114,6 @@ function M:SetBasicData(MonsterId, Obj)
   local ImgMat = self.Monster_Head:GetDynamicMaterial()
   ImgMat:SetTextureParameterValue("IconMap", MonsterIcon)
 end
-
 function M:RefreshWeaknessIcon(Obj)
   if Obj.WeaknessIcon then
     self.Group_Weak:SetVisibility(ESlateVisibility.Visible)
@@ -124,7 +134,6 @@ function M:RefreshWeaknessIcon(Obj)
     self.Group_Weak:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:ForceToSelection()
   if not self.DisableSelect then
     self.IsSelect = true
@@ -132,7 +141,6 @@ function M:ForceToSelection()
   end
   self.ParentWidget:SetTabItemSelection(self)
 end
-
 function M:onButtonAreaClicked()
   if not self.ParentWidget:IsAnimationPlaying(self.ParentWidget.Out) then
     AudioManager(self):PlayUISound(self, self.SoundEvent, nil, nil)
@@ -142,28 +150,43 @@ function M:onButtonAreaClicked()
     end
   end
 end
-
 function M:OnButtonAreaHovered()
   if not self.IsSelect then
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnBtnPressed()
   if not self.IsSelect then
     self:PlayAnimation(self.Press)
   end
 end
-
 function M:OnBtnUnhovered()
   if not self.IsSelect then
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:CancelTabSelect()
   self.IsSelect = false
   self:PlayAnimation(self.Normal)
 end
-
+function M:OnAddedToFocusPath(InFocusEvent)
+  if self.OnAddedToFocusPathEvent then
+    local Obj = self.OnAddedToFocusPathEvent.Obj
+    local Callback = self.OnAddedToFocusPathEvent.Callback
+    local Params = self.OnAddedToFocusPathEvent.Params
+    if Callback then
+      Callback(Obj, Params)
+    end
+  end
+end
+function M:OnRemovedFromFocusPath(InFocusEvent)
+  if self.OnRemovedFromFocusPathEvent then
+    local Obj = self.OnRemovedFromFocusPathEvent.Obj
+    local Callback = self.OnRemovedFromFocusPathEvent.Callback
+    local Params = self.OnRemovedFromFocusPathEvent.Params
+    if Callback then
+      Callback(Obj, Params)
+    end
+  end
+end
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Common_Dialog_FlipPage_PC_C = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function WBP_Common_Dialog_FlipPage_PC_C:InitContent(Params, PopupData, Owner)
   self.Owner = Owner
   self.Btn_Flip_Page_Left:BindEventOnClicked(self, self.OnLeftBtnClicked)
@@ -20,7 +19,6 @@ function WBP_Common_Dialog_FlipPage_PC_C:InitContent(Params, PopupData, Owner)
       function self.Btn_Flip_Page_Left.SoundFunc()
         AudioManager(self):PlayUISound(self, PageInfo.ClickSound, nil, nil)
       end
-      
       function self.Btn_Flip_Page_Right.SoundFunc()
         AudioManager(self):PlayUISound(self, PageInfo.ClickSound, nil, nil)
       end
@@ -33,7 +31,6 @@ function WBP_Common_Dialog_FlipPage_PC_C:InitContent(Params, PopupData, Owner)
   end
   self:OnPageSelected(self.CurrentPage, self.CurrentPage)
 end
-
 function WBP_Common_Dialog_FlipPage_PC_C:ChangeFlipVisible(Params, IsVisible)
   if Params and Params.NoRecord then
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -45,21 +42,18 @@ function WBP_Common_Dialog_FlipPage_PC_C:ChangeFlipVisible(Params, IsVisible)
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_FlipPage_PC_C:OnLeftBtnClicked()
   if self.CurrentPage <= 1 then
     return
   end
   self:OnPageSelected(self.CurrentPage, self.CurrentPage - 1)
 end
-
 function WBP_Common_Dialog_FlipPage_PC_C:OnRightBtnClicked()
   if self.CurrentPage >= self.PageNumber then
     return
   end
   self:OnPageSelected(self.CurrentPage, self.CurrentPage + 1)
 end
-
 function WBP_Common_Dialog_FlipPage_PC_C:OnPageSelected(CurrentPage, NewPage)
   self.CurrentPage = NewPage
   self.Btn_Flip_Page_Left:ForbidBtn(self.CurrentPage <= 1)
@@ -71,5 +65,4 @@ function WBP_Common_Dialog_FlipPage_PC_C:OnPageSelected(CurrentPage, NewPage)
   end
   self:BroadcastDialogEvent("FlipPageChanged", NewPage)
 end
-
 return WBP_Common_Dialog_FlipPage_PC_C

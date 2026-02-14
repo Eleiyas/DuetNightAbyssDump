@@ -4,11 +4,9 @@ local M = Class({
   "BluePrints.UI.WBP.Entertainment.WBP_Entertainment"
 })
 local EEntertainmentState = FEntertainmentUtils.EEntertainmentState
-
 function M:Initialize(Initializer)
   M.Super.Initialize(self, Initializer)
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.Key_Controller01:CreateCommonKey({
@@ -37,12 +35,10 @@ function M:Construct()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end)
 end
-
 function M:HideGamePadBottomInfo(bHide)
   self.bHideGamePadBottom = bHide
   self:UpdateGamePadBottomInfo()
 end
-
 function M:UpdateGamePadBottomInfo()
   if not IsValid(self.GameInputModeSubsystem) then
     return
@@ -60,11 +56,9 @@ function M:UpdateGamePadBottomInfo()
     self.Tab:UpdateBottomKeyInfo(BottomInfo)
   end
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
 end
-
 function M:CreateBottomTab(State)
   local State = State or self.State
   if State == EEntertainmentState.Main or State == EEntertainmentState.SwitchCharacter then
@@ -133,7 +127,6 @@ function M:CreateBottomTab(State)
     }
   end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Tab:Init({
@@ -155,13 +148,11 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   })
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   M.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
   self.TopicDetail:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.GetBadge:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputDevice, CurGamepadName)
   self.TopicDetail:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
@@ -174,7 +165,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Key_Controller02:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self:IsInteractionEnabled() == false then
     return
@@ -194,7 +184,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return M.Super.OnPreviewKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self:IsInteractionEnabled() == false then
     return
@@ -246,7 +235,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -282,7 +270,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.GetBadge:IsPanelOpened() then
     return self.GetBadge
@@ -293,10 +280,8 @@ function M:BP_GetDesiredFocusTarget()
   end
   return self.EMListView_Role
 end
-
 function M:SetState(State)
   M.Super.SetState(self, State)
   self:UpdateGamePadBottomInfo()
 end
-
 return M

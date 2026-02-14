@@ -1,12 +1,11 @@
 require("UnLua")
 local GachaCommon = require("BluePrints.UI.WBP.Gacha.GachaCommon")
 local M = Class({
-  "BluePrints.UI.BP_EMUserWidget_C"
+  "BluePrints.UI.BP_EMUserWidget_C",
+  "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:Construct()
 end
-
 function M:OnListItemObjectSet(Content)
   local ProbabilityText = "Probability"
   local Probability
@@ -89,10 +88,106 @@ function M:OnListItemObjectSet(Content)
     self.List_Probability:AddChild(Widget)
     Widget:Init(Content)
   end
+  self:AddDelayFrameFunc(function()
+    self:SetupLazyNavigation()
+  end, 1)
 end
-
+function M:GetWrapBoxItemsPerRow(WrapBox)
+  if not WrapBox then
+    return 0
+  end
+  local ChildCount = WrapBox:GetChildrenCount()
+  if 0 == ChildCount then
+    return 0
+  end
+  local FirstChild = WrapBox:GetChildAt(0)
+  local FirstGeo = FirstChild:GetCachedGeometry()
+  local FirstPos = UE4.USlateBlueprintLibrary.GetLocalTopLeft(FirstGeo)
+  local FirstY = FirstPos.Y
+  local Count = 1
+  for i = 1, ChildCount - 1 do
+    local Child = WrapBox:GetChildAt(i)
+    local ChildGeo = Child:GetCachedGeometry()
+    local CurrentPos = UE4.USlateBlueprintLibrary.GetLocalTopLeft(ChildGeo)
+    local CurrentY = CurrentPos.Y
+    if math.abs(CurrentY - FirstY) > 5.0 then
+      break
+    end
+    Count = Count + 1
+  end
+  return Count
+end
+function M:HandleNavigation(ChildIndex, Direction)
+  local WrapBox = self.List_Probability
+  if not WrapBox or not UE4.UKismetSystemLibrary.IsValid(WrapBox) then
+    return nil
+  end
+  local ItemsPerRow = self:GetWrapBoxItemsPerRow(WrapBox)
+  if ItemsPerRow <= 0 then
+    return nil
+  end
+  local ChildCount = WrapBox:GetChildrenCount()
+  if "Down" == Direction then
+    local TargetIndex = ChildIndex + ItemsPerRow
+    if ChildCount > TargetIndex then
+      return WrapBox:GetChildAt(TargetIndex)
+    end
+  elseif "Up" == Direction then
+    local TargetIndex = ChildIndex - ItemsPerRow
+    if TargetIndex >= 0 then
+      return WrapBox:GetChildAt(TargetIndex)
+    end
+  elseif "Left" == Direction then
+    local bIsRowStart = 0 == ChildIndex % ItemsPerRow
+    local TargetIndex = ChildIndex - 1
+    if not bIsRowStart and TargetIndex >= 0 then
+      return WrapBox:GetChildAt(TargetIndex)
+    end
+  elseif "Right" == Direction then
+    local bIsRowEnd = 0 == (ChildIndex + 1) % ItemsPerRow
+    local TargetIndex = ChildIndex + 1
+    if not bIsRowEnd and ChildCount > TargetIndex then
+      return WrapBox:GetChildAt(TargetIndex)
+    end
+  end
+  return nil
+end
+function M:SetupLazyNavigation()
+  local WrapBox = self.List_Probability
+  if not WrapBox or not UE4.UKismetSystemLibrary.IsValid(WrapBox) then
+    return
+  end
+  local ChildCount = WrapBox:GetChildrenCount()
+  if 0 == ChildCount then
+    return
+  end
+  local ItemsPerRow = self:GetWrapBoxItemsPerRow(WrapBox)
+  if ItemsPerRow <= 0 then
+    return
+  end
+  for i = 0, ChildCount - 1 do
+    local Child = WrapBox:GetChildAt(i)
+    local DownIndex = i + ItemsPerRow
+    if ChildCount > DownIndex then
+      Child:SetNavigationRuleCustom(UE4.EUINavigation.Down, function()
+        return self:HandleNavigation(i, "Down")
+      end)
+    end
+    local UpIndex = i - ItemsPerRow
+    if UpIndex >= 0 then
+      Child:SetNavigationRuleCustom(UE4.EUINavigation.Up, function()
+        return self:HandleNavigation(i, "Up")
+      end)
+    end
+    Child:SetNavigationRuleCustom(UE4.EUINavigation.Left, function()
+      return self:HandleNavigation(i, "Left")
+    end)
+    Child:SetNavigationRuleCustom(UE4.EUINavigation.Right, function()
+      return self:HandleNavigation(i, "Right")
+    end)
+  end
+end
 function M:BP_GetDesiredFocusTarget()
   return self.List_Probability:GetChildAt(0)
 end
-
 return M

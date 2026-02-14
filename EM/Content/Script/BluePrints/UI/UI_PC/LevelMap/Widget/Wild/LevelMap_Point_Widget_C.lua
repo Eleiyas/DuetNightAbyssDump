@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn_Level.OnClicked:Add(self, self.OnClicked)
   self.Btn_Level.OnHovered:Add(self, self.OnHovered)
@@ -15,11 +14,9 @@ function M:Construct()
     self,
     self.OnFadeIn
   })
-  self.VisibilityTag = {}
   self.IsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   self.IsOpen = nil
 end
-
 function M:Destruct()
   self.Btn_Level.OnClicked:Clear()
   self.Btn_Level.OnHovered:Clear()
@@ -27,17 +24,15 @@ function M:Destruct()
   EventManager:RemoveEvent(EventID.OnDeliveryMeshanismOpen, self)
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
 end
-
 function M:OnFadeIn()
   if not self.PlayForward then
     self:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetPointVisibility(Reason, Visible, NeedHide)
-  self.VisibilityTag[Reason] = Visible
+  self.VisibilityTag:Add(Reason, Visible)
   local Result = true
-  for _, Tag in pairs(self.VisibilityTag) do
+  for _, Tag in pairs(self.VisibilityTag:ToTable()) do
     Result = Result and Tag
   end
   if Result then
@@ -47,11 +42,10 @@ function M:SetPointVisibility(Reason, Visible, NeedHide)
   end
   return Result
 end
-
 function M:SetDoorVisibility(Reason, Visible, NeedHide)
-  self.VisibilityTag[Reason] = Visible
+  self.VisibilityTag:Add(Reason, Visible)
   local Result = true
-  for _, Tag in pairs(self.VisibilityTag) do
+  for _, Tag in pairs(self.VisibilityTag:ToTable()) do
     Result = Result and Tag
   end
   if self.IsOpen then
@@ -63,19 +57,17 @@ function M:SetDoorVisibility(Reason, Visible, NeedHide)
   end
   return Result
 end
-
 function M:GetPointVisibility(Reason)
   if Reason then
-    return self.VisibilityTag[Reason]
+    return self.VisibilityTag:Find(Reason)
   else
     local Result = true
-    for _, Tag in pairs(self.VisibilityTag) do
+    for _, Tag in pairs(self.VisibilityTag:ToTable()) do
       Result = Result and Tag
     end
     return Result
   end
 end
-
 function M:Init(Parent, Data, IsUnlock, ClickFunction, HoverFunction, UnoverFunction)
   self.Parent = Parent
   self.Data = Data
@@ -133,7 +125,6 @@ function M:Init(Parent, Data, IsUnlock, ClickFunction, HoverFunction, UnoverFunc
   self.UnoverFunction = UnoverFunction
   EventManager:AddEvent(EventID.OnDeliveryMeshanismOpen, self, self.OnDeliveryMeshanismOpen)
 end
-
 function M:InitGuidePoint(Parent, Name, ClickFunction, HoverFunction, UnoverFunction)
   self.Parent = Parent
   self.PointWidgetName = Name
@@ -142,19 +133,16 @@ function M:InitGuidePoint(Parent, Name, ClickFunction, HoverFunction, UnoverFunc
   self.UnoverFunction = UnoverFunction
   self:PlayAnimation(self.Loop, 0, 0)
 end
-
 function M:ClearAllFunc()
   self.Btn_Level.OnClicked:Clear()
   self.Btn_Level.OnHovered:Clear()
   self.Btn_Level.OnUnhovered:Clear()
   self.IsSelected = false
 end
-
 function M:ReInitTeleportPoint(Data)
   self.Data = Data
   EventManager:AddEvent(EventID.OnDeliveryMeshanismOpen, self, self.OnDeliveryMeshanismOpen)
 end
-
 function M:OnDeliveryMeshanismOpen(CreatorId)
   if self.Data.StaticId == CreatorId then
     self:StopAllAnimations()
@@ -163,7 +151,7 @@ function M:OnDeliveryMeshanismOpen(CreatorId)
     if image then
       self.Img_Point:SetBrushFromTexture(image, true)
     end
-    self.Parent:OnCommonTrack(self.Data.Id, false)
+    self.Parent:OnCommonTrack(CommonConst.RegionMapTrackingType.TeleportPoint, self.Data.Id, false)
     self.Parent:UpdateSingleMapFogByTeleport(self.Data.Block, true, self.Data.Id)
     if not GWorld.GameInstance.ShowFogAnimId then
       GWorld.GameInstance.ShowFogAnimId = {}
@@ -181,13 +169,11 @@ function M:OnDeliveryMeshanismOpen(CreatorId)
     end
   end
 end
-
 function M:OnConditionComplete(ConditionId)
   if self.Data.UnlockConditionId == ConditionId then
     self:SetPointVisibility("Lock", true)
   end
 end
-
 function M:SetFloor(FloorType)
   if 0 == FloorType then
     self.Top:SetVisibility(ESlateVisibility.Collapsed)
@@ -200,7 +186,6 @@ function M:SetFloor(FloorType)
     self.Bottom:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:InitAsMark(Parent, Data, ClickFunction, HoverFunction, UnoverFunction)
   self.Parent = Parent
   self.Data = Data
@@ -219,7 +204,6 @@ function M:InitAsMark(Parent, Data, ClickFunction, HoverFunction, UnoverFunction
     self.NewMarkTag = true
   end
 end
-
 function M:InitAsRegionPoint(Parent, Data, ClickFunction, HoverFunction, UnoverFunction)
   self.Parent = Parent
   self.Data = Data
@@ -235,7 +219,6 @@ function M:InitAsRegionPoint(Parent, Data, ClickFunction, HoverFunction, UnoverF
   EventManager:AddEvent(EventID.OnDeliveryMeshanismOpen, self, self.OnDeliveryMeshanismOpen)
   EventManager:AddEvent(EventID.ConditionComplete, self, self.OnConditionComplete)
 end
-
 function M:OnClicked()
   self:PlayAnimation(self.Click)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_level", "", nil)
@@ -248,7 +231,6 @@ function M:OnClicked()
   end
   self.IsSelected = true
 end
-
 function M:OnHovered()
   if self.IsMobile then
     return
@@ -264,7 +246,6 @@ function M:OnHovered()
     end
   end
 end
-
 function M:OnUnhovered()
   if self.IsMobile then
     return
@@ -279,7 +260,6 @@ function M:OnUnhovered()
     end
   end
 end
-
 function M:InitDoor(Parent, Data, State, Scale)
   self.Parent = Parent
   self.Data = Data
@@ -304,7 +284,6 @@ function M:InitDoor(Parent, Data, State, Scale)
   end
   EventManager:AddEvent(EventID.OnDeliveryMeshanismOpen, self, self.OnDeliveryMeshanismOpen)
 end
-
 function M:UpdateDoor(DoorType)
   local Path
   if 0 == DoorType then
@@ -323,7 +302,6 @@ function M:UpdateDoor(DoorType)
   local NewIcon = LoadObject(Path)
   self.Img_Point:SetBrushFromTexture(NewIcon, true)
 end
-
 function M:PlayLoopUISound()
   if not self.Parent.IsMiniMap then
     AudioManager(self):PlayUISound(self, "event:/ui/common/map_track_warning", "", {
@@ -331,7 +309,6 @@ function M:PlayLoopUISound()
     })
   end
 end
-
 function M:GetCurrentSoundPosValue()
   local ScreenSize = UIManager(self):GetDesignedScreenSize(self)
   local _, ViewportPos = USlateBlueprintLibrary.AbsoluteToViewport(self, UUIFunctionLibrary.GetGeometryAbsolutePosition(self:GetCachedGeometry()))
@@ -339,5 +316,4 @@ function M:GetCurrentSoundPosValue()
   Value = (math.clamp(Value, 0, 1) - 0.5) * 2 * -1
   return Value
 end
-
 return M

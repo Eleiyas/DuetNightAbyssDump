@@ -5,7 +5,6 @@ local PersonInfoModel = require("BluePrints.UI.WBP.PersonInfo.PersonInfoModel")
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Base.PersonInfoEntryBaseView"
 }
-
 function M:InitTabInfo()
   if not PersonInfoModel:IsOwener() then
     if self.bHideCharTab then
@@ -19,7 +18,6 @@ function M:InitTabInfo()
     self:InitTabWithChar()
   end
 end
-
 function M:InitTabOthers()
   local TabWithoutChar = {
     Tabs = self.AllTabInfo,
@@ -165,7 +163,6 @@ function M:InitTabOthers()
   self.Com_Tab:SetSingleBottomKeyInfoVisibility(3, UIConst.VisibilityOp.HitTestInvisible)
   self.KeyAindex = 1
 end
-
 function M:InitTabOthersWithChar()
   local TabWithChar = {
     LeftKey = "NotShow",
@@ -276,7 +273,6 @@ function M:InitTabOthersWithChar()
   self.Com_Tab:SetSingleBottomKeyInfoVisibility(3, UIConst.VisibilityOp.HitTestInvisible)
   self.KeyAindex = 4
 end
-
 function M:InitTabWithChar()
   self.bIsHide = false
   local TabWithChar = {
@@ -388,7 +384,6 @@ function M:InitTabWithChar()
   self.KeyAindex = 4
   self.Com_Tab:SetSingleBottomKeyInfoVisibility(3, UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:InitTabWithOutChar()
   local TabWithoutChar = {
     Tabs = self.AllTabInfo,
@@ -436,7 +431,6 @@ function M:InitTabWithOutChar()
   self.Com_Tab:Init(TabWithoutChar)
   self.KeyAindex = 1
 end
-
 function M:Hideui()
   self.bIsHide = true
   self.HideUI_Key:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -448,7 +442,6 @@ function M:Hideui()
     GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
   end
 end
-
 function M:Recoverui()
   self.bIsHide = false
   self.HideUI_Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -460,20 +453,16 @@ function M:Recoverui()
     GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   end
 end
-
 function M:Close()
   M.Super.Close(self)
 end
-
 function M:InitListenEvent()
 end
-
 function M:OnLoaded()
   M.Super.OnLoaded(self)
   self:InitTabInfo()
   self:InitListenEvent()
 end
-
 function M:RefreshBaseInfo()
   self.HideUI_Key:CreateCommonKey({
     KeyInfoList = {
@@ -509,7 +498,6 @@ function M:RefreshBaseInfo()
   end
   self:OnMainPageLoaded()
 end
-
 function M:CreatHideUiKey(IsGamePad)
   local MyKeyInfoList = {}
   if IsGamePad then
@@ -537,7 +525,6 @@ function M:CreatHideUiKey(IsGamePad)
     bLongPress = false
   })
 end
-
 function M:OnMainPageLoaded()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:FreshViewByInputDevice(true)
@@ -548,14 +535,12 @@ function M:OnMainPageLoaded()
     end
   end)
 end
-
 function M:OnReturnKeyDown()
   if not self:CheckIsCanCloseSelf() then
     return
   end
   self:PlayOutAnim()
 end
-
 function M:OnUKeyDown()
   self.bIsHide = not self.bIsHide
   if self.bIsHide == true then
@@ -564,7 +549,6 @@ function M:OnUKeyDown()
     self:Recoverui()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -599,7 +583,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
@@ -630,7 +613,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   local s = self.GameInputModeSubsystem:GetCurrentLocalPlayerFocusWidgetType()
@@ -654,12 +636,12 @@ function M:OnGamePadDown(InKeyName)
     if not self.PersonInfoMainPage.IsEditOpen then
       self.PersonInfoMainPage:OnClickOpenEditPage()
       if self.PersonInfoMainPage.IsEditOpen == false then
-        DebugPrint("\232\129\154\231\132\166\231\154\132\228\191\157\229\173\152\231\154\132widget")
+        DebugPrint("聚焦的保存的widget")
         self:FocusToSavedWidget()
         self.PersonInfoMainPage:FreshFocusLeaveEditListView()
       end
       if self.PersonInfoMainPage.Panel_Edit:HasFocusedDescendants() then
-        DebugPrint("Panel_Edit\232\191\152\230\156\137\232\129\154\231\132\166\239\188\140\232\129\154\231\132\166\229\155\158\229\142\187")
+        DebugPrint("Panel_Edit还有聚焦，聚焦回去")
         self:SetFocus()
       end
     end
@@ -674,7 +656,7 @@ function M:OnGamePadDown(InKeyName)
       self:AddTimer(0.1, function()
         local firstUi = self.PersonInfoMainPage:GetFisrtEditItem()
         if firstUi then
-          DebugPrint("\232\129\154\231\132\166\229\136\176\231\172\172\228\184\128\228\184\170ui")
+          DebugPrint("聚焦到第一个ui")
           firstUi:SetFocus()
           self.PersonInfoMainPage.Edit_List:SetSelectedIndex(0)
           if self.PersonInfoMainPage.Panel_Edit:HasFocusedDescendants() then
@@ -685,10 +667,10 @@ function M:OnGamePadDown(InKeyName)
     else
       self.PersonInfoMainPage:OnClickEdit()
       if false == self.PersonInfoMainPage.IsEditOpen then
-        DebugPrint("\232\129\154\231\132\166\229\136\176\228\191\157\229\173\152\231\154\132widget")
+        DebugPrint("聚焦到保存的widget")
         self:FocusToSavedWidget()
         if self.PersonInfoMainPage.Panel_Edit:HasFocusedDescendants() then
-          DebugPrint("\229\176\157\232\175\149\229\133\179\233\151\173\231\149\140\233\157\162\239\188\140\232\129\154\231\132\166\229\155\158\230\157\165")
+          DebugPrint("尝试关闭界面，聚焦回来")
           self:SetFocus()
         end
         self.PersonInfoMainPage:FreshFocusLeaveEditListView()
@@ -697,7 +679,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.CurInputDeviceType = CurInputType
   if PersonInfoController.CurPage == PersonInfoController.PageEnum.EditPage and IsValid(PersonInfoController.EditPage) then
@@ -722,7 +703,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     end
   end
 end
-
 function M:FreshViewByInputDevice(bIsGamePad)
   if not self.PersonInfoMainPage then
     return
@@ -740,11 +720,9 @@ function M:FreshViewByInputDevice(bIsGamePad)
     self.PersonInfoMainPage.WS_Copy:SetActiveWidgetIndex(0)
   end
 end
-
 function M:Handle_KeyDownOnGamePad()
   return true
 end
-
 function M:UpdataGamePadBottomAInfo(KindNum)
   local keytable = {}
   if KindNum then
@@ -769,27 +747,22 @@ function M:UpdataGamePadBottomAInfo(KindNum)
   self.Com_Tab:SetSingleBottomKeyInfo(self.Com_Tab.BottomKeyWidget[self.KeyAindex], keytable)
   return
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
   if PersonInfoController.CurPage == PersonInfoController.PageEnum.EditPage and IsValid(PersonInfoController.EditPage) then
     PersonInfoController.EditPage:SetFocus()
   elseif PersonInfoController.CurPage == PersonInfoController.PageEnum.DataPage then
-    ScreenPrint("\231\187\159\232\174\161\231\149\140\233\157\162\230\137\147\229\188\128\228\184\173\239\188\140\232\129\154\231\132\166\229\136\176\231\187\159\232\174\161\231\149\140\233\157\162")
+    DebugPrint("统计界面打开中，聚焦到统计界面")
     PersonInfoController.DataPage:SetFocus()
   else
-    ScreenPrint("\228\184\187\231\149\140\233\157\162\230\137\147\229\188\128\228\184\173\239\188\140\232\129\154\231\132\166\229\136\176\228\184\187\231\149\140\233\157\162")
+    DebugPrint("主界面打开中，聚焦到主界面")
     if self.PersonInfoMainPage then
       self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
-      self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
-      self.PersonInfoMainPage:SetOriginFocus()
-      local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
-      GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
+      self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
     end
   end
   return UIUtils.Handled
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self:AddTimer(0.1, function()
     if self.PersonInfoMainPage and self.CurInputDeviceType == ECommonInputType.Gamepad and not self:HasFocusedDescendants() then
@@ -802,21 +775,17 @@ function M:OnAddedToFocusPath(InFocusEvent)
     end
   end)
 end
-
 function M:OnItemFocus()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:UpdataGamePadBottomAInfo(1)
   end
 end
-
 function M:OnCheckBoxFocus()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:UpdataGamePadBottomAInfo(3)
   end
 end
-
 function M:GamePadOpenEditList()
 end
-
 AssembleComponents(M)
 return M

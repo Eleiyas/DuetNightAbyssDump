@@ -1,12 +1,11 @@
 require("UnLua")
 local S = Class("BluePrints.UI.BP_UIState_C")
-
 function S:Construct()
   self.Super.Construct(self)
   self.GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem()
   self.ChangeKeyDialog = 100206
+  self:AddDispatcher(EventID.OnVoiceResourceClicked, self, self.ShowVoiceResourcePopup)
 end
-
 function S:BindEvents()
   self.Button_Area.OnClicked:Add(self, self.OnBtnAreaClicked)
   self.Button_Area.OnPressed:Add(self, self.OnBtnAreaPressed)
@@ -21,7 +20,6 @@ function S:BindEvents()
   self.List_Options.BP_OnItemIsHoveredChanged:Clear()
   self.List_Options.BP_OnItemIsHoveredChanged:Add(self, self.OnItemIsHoverChanged)
 end
-
 function S:Init(Parent, TabName, RegionIndex, RegionName, IsInit)
   rawset(self, "Parent", Parent)
   rawset(self, "TabType", TabName)
@@ -73,7 +71,6 @@ function S:Init(Parent, TabName, RegionIndex, RegionName, IsInit)
   })
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType(), UIUtils.UtilsGetCurrentGamepadName(), IsInit)
 end
-
 function S:OnItemIsHoverChanged(Item, bIsHovered)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     local Entry = Item.SelfWidget
@@ -82,14 +79,13 @@ function S:OnItemIsHoverChanged(Item, bIsHovered)
     end
   end
 end
-
 function S:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName, IsInit)
   if self.CurInputDeviceType == CurInputDevice then
     return
   end
   self.CurInputDeviceType = CurInputDevice
   self:UpdateUIStyleInPlatform(self.CurInputDeviceType == ECommonInputType.Gamepad)
-  if self.TabType ~= "Key" and self.OptionData and not IsInit then
+  if self.TabType ~= "Key" and self.OptionData and not IsInit and not UIUtils.IsMobileInput() then
     local IsReInit
     for i = 0, #self.OptionData do
       local Entry = self.OptionData[i]
@@ -112,7 +108,6 @@ function S:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName, IsInit)
     end
   end
 end
-
 function S:UpdateUIStyleInPlatform(IsGamepad)
   if IsGamepad then
     self.Button_Gamepad:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -122,17 +117,14 @@ function S:UpdateUIStyleInPlatform(IsGamepad)
     self.Button_Unfold:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function S:OnNavigateUp()
   local NextWidget = self.Parent:OnSettingUINavigateUp(self, self.RegionIndex)
   return NextWidget
 end
-
 function S:OnNavigateDown()
   local NextWidget = self.Parent:OnSettingUINavigateDown(self, self.RegionIndex)
   return NextWidget
 end
-
 function S:GetFirstWidgetToNavigate()
   if self.Panel_Title:GetVisibility() == UE4.ESlateVisibility.Collapsed then
     local Entry = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Options, 0)
@@ -141,7 +133,6 @@ function S:GetFirstWidgetToNavigate()
     return self.Button_Gamepad
   end
 end
-
 function S:GetLastWidgetToNavigate()
   if self.IsListFolded then
     return self.Button_Gamepad
@@ -157,11 +148,9 @@ function S:GetLastWidgetToNavigate()
     return self.Button_Gamepad
   end
 end
-
 function S:OnBtnGamepadClicked()
   self:OnBtnAreaClicked()
 end
-
 function S:OnBtnGamepadHovered()
   self:AddTimer(0.02, function()
     DebugPrint("Tianyi@ OnBtnGamepadHovered")
@@ -170,12 +159,10 @@ function S:OnBtnGamepadHovered()
     self.Parent:OnGamepadFocusPanelTitle()
   end)
 end
-
 function S:OnBtnGamepadUnhovered()
   self:StopAnimation(self.Title_Gamepad_Select)
   self:PlayAnimationReverse(self.Title_Gamepad_Select)
 end
-
 function S:OnBtnAreaClicked()
   self.Parent:ClearSettingListUnfoldState()
   self.Parent:SetSettingUnfoldListPC(false)
@@ -193,39 +180,33 @@ function S:OnBtnAreaClicked()
   end
   self.Parent:UpdateEmptyGridCount()
 end
-
 function S:OnBtnAreaPressed()
   if self.BanHover then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function S:OnBtnAreaHovered()
   if self.BanHover then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function S:OnBtnAreaUnhovered()
   if self.BanHover then
     return
   end
   self:PlayAnimation(self.Unhover)
 end
-
 function S:OnMouseButtonDown(MyGeometry, InKeyEvent)
   if UE4.UKismetInputLibrary.PointerEvent_IsMouseButtonDown(InKeyEvent, UE4.EKeys.LeftMouseButton) then
     self.Parent:OnClickAllLeftMouseButton()
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function S:OnKeyDown(MyGeometry, InKeyEvent)
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function S:IsVisibleOfHideConfig(Cache)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   local CurrentInputType = GameInputModeSubsystem:GetCurrentInputType()
@@ -241,7 +222,6 @@ function S:IsVisibleOfHideConfig(Cache)
   end
   return 0 == Visible
 end
-
 function S:InitListOptions()
   self.List_Options:ClearListItems()
   if self.TabType == "Key" then
@@ -278,19 +258,15 @@ function S:InitListOptions()
         local OptionContent = NewObject(UIUtils.GetCommonItemContentClass())
         OptionContent.Cache = value.Cache
         OptionContent.ParentWidget = self
-        
         function OptionContent.UpdateBottomKeyFunc(Params)
           self.Parent:UpdateBottomKey(Params)
         end
-        
         function OptionContent.OnItemNavigateUp(Item, Widget)
           return self:OnItemNavigateUp(Item, Widget)
         end
-        
         function OptionContent.OnItemNavigateDown(Item, Widget)
           return self:OnItemNavigateDown(Item, Widget)
         end
-        
         self.List_Options:AddItem(OptionContent)
       end
     end
@@ -298,7 +274,6 @@ function S:InitListOptions()
     self.List_Options:SetScrollbarVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function S:OnItemNavigateDown(Item, Widget)
   local TotalNum = self.List_Options:GetNumItems()
   local CurrentItemIndex = self.List_Options:GetIndexForItem(Item)
@@ -312,7 +287,6 @@ function S:OnItemNavigateDown(Item, Widget)
     return nil
   end
 end
-
 function S:OnItemNavigateUp(Item, Widget)
   local CurrentItemIndex = self.List_Options:GetIndexForItem(Item)
   if CurrentItemIndex <= 0 then
@@ -329,7 +303,6 @@ function S:OnItemNavigateUp(Item, Widget)
     return nil
   end
 end
-
 function S:InitFoldState()
   if self.RegionDefaultFold then
     self:PlayAnimation(self.Fold_Normal)
@@ -339,7 +312,6 @@ function S:InitFoldState()
     self.IsListFolded = false
   end
 end
-
 function S:GetCurrentStateGrideCount()
   if self.IsListFolded then
     return 1
@@ -370,7 +342,6 @@ function S:GetCurrentStateGrideCount()
     end
   end
 end
-
 function S:SetEmptyGrid(Parent, Nums)
   self.Parent = Parent
   self.Panel_Title:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -384,7 +355,6 @@ function S:SetEmptyGrid(Parent, Nums)
   self.List_Options:DisableScroll(true)
   self.List_Options:SetScrollbarVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function S:RestoreDefaultListSet()
   for i = 0, self.List_Options:GetNumItems() - 1 do
     local Item = self.List_Options:GetItemAt(i)
@@ -393,7 +363,6 @@ function S:RestoreDefaultListSet()
     end
   end
 end
-
 function S:SaveListSetting()
   for i = 0, self.List_Options:GetNumItems() - 1 do
     local Item = self.List_Options:GetItemAt(i)
@@ -402,7 +371,6 @@ function S:SaveListSetting()
     end
   end
 end
-
 function S:RestoreListOldValueSet()
   for i = 0, self.List_Options:GetNumItems() - 1 do
     local Item = self.List_Options:GetItemAt(i)
@@ -411,7 +379,6 @@ function S:RestoreListOldValueSet()
     end
   end
 end
-
 function S:InitKeySettingParameter()
   self.IsCanChanged = false
   self.HasBeenChanged = false
@@ -425,7 +392,6 @@ function S:InitKeySettingParameter()
   self.InputSetting = nil
   self.ContentIndexWithAction = {}
 end
-
 function S:InitKeyListOptions(RegionIndex)
   self:InitKeySettingParameter()
   self.List_Options:ClearListItems()
@@ -456,7 +422,6 @@ function S:InitKeyListOptions(RegionIndex)
     self:AddKeyOptionContentItem(self.KeyRemain)
   end
 end
-
 function S:AddKeyOptionContentItem(KeyTable)
   table.sort(KeyTable, function(a, b)
     if a.SortId and b.SortId then
@@ -485,33 +450,28 @@ function S:AddKeyOptionContentItem(KeyTable)
       KeyOptionContent.IsCanChanged = false
     end
     KeyOptionContent.ParentWidget = self
-    
     function KeyOptionContent.UpdateBottomKeyFunc(Params)
       self.Parent:UpdateBottomKey(Params)
     end
-    
     function KeyOptionContent.OnItemNavigateUp(Item, Widget)
       return self:OnItemNavigateUp(Item, Widget)
     end
-    
     function KeyOptionContent.OnItemNavigateDown(Item, Widget)
       return self:OnItemNavigateDown(Item, Widget)
     end
-    
     self.List_Options:AddItem(KeyOptionContent)
   end
   self.List_Options:DisableScroll(true)
   self.List_Options:SetScrollbarVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function S:GetEngineActionMapping()
   self.InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionMappings = self.InputSetting.ActionMappings:ToTable()
   self.OldActionMappings = {}
   for k, v in ipairs(ActionMappings) do
     local Res = string.find(v.Key.KeyName, "Gamepad")
-    local Res2 = string.find(v.ActionName, "Talk")
-    if nil == Res2 and nil == Res and DataMgr.KeyboardMap[v.ActionName] then
+    local KeyData = DataMgr.KeyboardMap[v.ActionName]
+    if nil == Res and KeyData and KeyData.IsShowInSetting then
       self.OldActionMappings[v.ActionName] = v
       self.AllActionMappingKey[v.ActionName] = v.Key.KeyName
       if self.ActionMappingKey[v.ActionName] then
@@ -538,7 +498,6 @@ function S:GetEngineActionMapping()
   self:CheckAvatar()
   self:InitKeyMappingAction()
 end
-
 function S:OnUpdateKeyMappingTable(NewKeyName, IsNeedSwitch)
   if 2 == self.RegionIndex then
     return
@@ -579,7 +538,6 @@ function S:OnUpdateKeyMappingTable(NewKeyName, IsNeedSwitch)
   end
   self.IsCanChanged = false
 end
-
 function S:CheckNewActionMappingKeyName()
   if 2 == self.RegionIndex then
     return
@@ -604,7 +562,6 @@ function S:CheckNewActionMappingKeyName()
     self.Parent:UpdateKeyboardBottonKey()
   end
 end
-
 function S:CheckAvatar()
   if self.ActionMappingKey.Jump == nil then
     return
@@ -615,7 +572,6 @@ function S:CheckAvatar()
     Avatar:UpdateActionMapping(self.ActionMappingKey)
   end
 end
-
 function S:InitKeyMappingAction()
   if 2 == self.RegionIndex then
     return
@@ -629,7 +585,6 @@ function S:InitKeyMappingAction()
     self.KeyMappingAction[KeyName] = ActionName
   end
 end
-
 function S:OnClickListOption(Content)
   UIUtils.PlayCommonBtnSe(self)
   self.SelectKeyContent = Content
@@ -664,7 +619,6 @@ function S:OnClickListOption(Content)
     UIManager(self):ShowUITip("CommonToastMain", GText("UI_OPTION_ChangeForbidden"))
   end
 end
-
 function S:OnMouseDownCallbackFunction(MyGeometry, InKeyEvent)
   local NewKeyName
   if UE4.UKismetInputLibrary.PointerEvent_IsMouseButtonDown(InKeyEvent, UE4.EKeys.LeftMouseButton) then
@@ -675,7 +629,6 @@ function S:OnMouseDownCallbackFunction(MyGeometry, InKeyEvent)
     self:OnKeyDownCallbackFunction(NewKeyName)
   end
 end
-
 function S:OnKeyDownCallbackFunction(NewKeyName)
   if UE4.UKismetStringLibrary.StartsWith(NewKeyName, "GamePad") then
     return
@@ -758,7 +711,6 @@ function S:OnKeyDownCallbackFunction(NewKeyName)
     self:UpdateDialog(Params, 1)
   end
 end
-
 function S:UpdateDialog(Params)
   if not self.PopupUI then
     return
@@ -775,12 +727,10 @@ function S:UpdateDialog(Params)
   self.PopupUI:ShowDialogTip(Params.DialogItemIndex, true)
   self.PopupUI.CloseMask:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function S:CancelChangeKey()
   self.KeyIsChanged = false
   self.IsConfirm = nil
 end
-
 function S:ConfirmChangeKey()
   if self.KeyIsChanged then
     self:OnUpdateKeyMappingTable(self.NewKeyName, self.IsConflict)
@@ -788,7 +738,6 @@ function S:ConfirmChangeKey()
     self.IsConfirm = nil
   end
 end
-
 function S:OnUpdateEngineActionMapping(Ret, ActionMapping)
   self.Parent:BlockAllUIInput(false)
   if 2 == self.RegionIndex then
@@ -843,7 +792,6 @@ function S:OnUpdateEngineActionMapping(Ret, ActionMapping)
     self.Parent:CloseSelf()
   end
 end
-
 function S:SaveKeySetting()
   if 2 == self.RegionIndex then
     return
@@ -857,7 +805,6 @@ function S:SaveKeySetting()
     Avatar:UpdateActionMapping(self.ActionMappingKey)
   end
 end
-
 function S:RestoreDefaultKeySet()
   if 2 == self.RegionIndex then
     return
@@ -906,13 +853,11 @@ function S:RestoreDefaultKeySet()
   self:SaveKeySetting()
   self:InitKeyListOptions(self.RegionIndex)
 end
-
 function S:SaveSetting()
   if self.TabType == "Key" then
     self:SaveKeySetting()
   end
 end
-
 function S:RestoreDefaultSet()
   if self.TabType == "Key" then
     self:RestoreDefaultKeySet()
@@ -920,14 +865,12 @@ function S:RestoreDefaultSet()
     self:RestoreDefaultListSet()
   end
 end
-
 function S:RestoreOldValueSet()
   if self.TabType == "Key" then
   else
     self:RestoreListOldValueSet()
   end
 end
-
 function S:ClearSettingOptionUnfoldState()
   for i = 0, self.List_Options:GetNumItems() - 1 do
     local Item = self.List_Options:GetItemAt(i)
@@ -936,7 +879,6 @@ function S:ClearSettingOptionUnfoldState()
     end
   end
 end
-
 function S:OnClickLeftMouseButton()
   if self.TabType ~= "Key" then
     for i = 0, self.List_Options:GetNumItems() - 1 do
@@ -947,14 +889,12 @@ function S:OnClickLeftMouseButton()
     end
   end
 end
-
 function S:PlayInAnim()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:PlayAnimation(self.In)
 end
-
 function S:OnParentTabSwitch()
   if self.TabType ~= "Key" then
     for i = 0, self.List_Options:GetNumItems() - 1 do
@@ -965,15 +905,12 @@ function S:OnParentTabSwitch()
     end
   end
 end
-
 function S:OnParentClosed()
   EventManager:RemoveEvent(EventID.OnUpdateActionMapping, self)
 end
-
 function S:CloseAllParent()
   self.Parent:CloseSelfAndEsc()
 end
-
 function S:ShowVoiceResourcePopup()
   for i = 0, self.List_Options:GetNumItems() - 1 do
     local Item = self.List_Options:GetItemAt(i)
@@ -982,5 +919,8 @@ function S:ShowVoiceResourcePopup()
     end
   end
 end
-
+function S:Destruct()
+  self:RemoveDispatcher(EventID.OnVoiceResourceClicked)
+  S.Super.Destruct(self)
+end
 return S

@@ -10,7 +10,6 @@ local NiagaraPaths
 local NiagaraCount = 10
 local CurrentNiagaraPath
 M.BeginStat = false
-
 function M:Stat(GM, InNiagaraCount)
   NiagaraCount = InNiagaraCount or 10
   self.BeginStat = not self.BeginStat
@@ -20,9 +19,8 @@ function M:Stat(GM, InNiagaraCount)
     self:StatEnd(GM)
   end
 end
-
 function M:StatStart(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   local RecordInterval = 0.5
   local PlayFXInterval = 5
   CurrentIndex = 0
@@ -31,7 +29,6 @@ function M:StatStart(GM)
   GM.Player:AddTimer(PlayFXInterval, self.RepeatFXTimer, true, 0, "Test_RepeatFXTimer")
   TmpPlayer = GM.Player
 end
-
 function M:StatRecordTimer()
   if not CurrentNiagaraPath then
     return
@@ -52,7 +49,6 @@ function M:StatRecordTimer()
   table.insert(AllStat[4], EMData.RenderThreadTime)
   table.insert(AllStat[5], EMData.GPUFrameTime)
 end
-
 function M:RepeatFXTimer()
   CurrentIndex = CurrentIndex + 1 > NiagaraPaths:Num() and 1 or CurrentIndex + 1
   CurrentNiagaraPath = NiagaraPaths:GetRef(CurrentIndex)
@@ -68,9 +64,8 @@ function M:RepeatFXTimer()
   end
   UKismetSystemLibrary.ExecuteConsoleCommand(TmpPlayer, "fx.ParticlePerfStats.RunTest 60", nil)
 end
-
 function M:StatEnd(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   GM.Player:RemoveTimer("Test_RepeatSkillTimer")
   GM.Player:RemoveTimer("Test_RepeatFXTimer")
   StrOutput = StrOutput .. "Average" .. StrLine .. ","
@@ -94,5 +89,4 @@ function M:StatEnd(GM)
   io.write(StrOutput)
   io.close(File)
 end
-
 return M

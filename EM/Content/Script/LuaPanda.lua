@@ -4,7 +4,6 @@ local connectTimeoutSec = 0.005
 local listeningTimeoutSec = 0.5
 local userDotInRequire = true
 local traversalUserData = false
-
 local function customGetSocketInstance()
   local t = {}
   string.gsub(debug.getinfo(1, "S").source, "[^/]+", function(w)
@@ -14,7 +13,6 @@ local function customGetSocketInstance()
   package.cpath = package.cpath .. ";" .. LuaSocketDllPath
   return require("socket.core").tcp()
 end
-
 local consoleLogLevel = 2
 local debuggerVer = "3.2.0"
 LuaPanda = {}
@@ -67,7 +65,7 @@ local recvMsgQueue = {}
 local coroutinePool = setmetatable({}, {__mode = "v"})
 local winDiskSymbolUpper = false
 local isNeedB64EncodeStr = false
-local loadclibErrReason = "launch.json\230\150\135\228\187\182\231\154\132\233\133\141\231\189\174\233\161\185useCHook\232\162\171\232\174\190\231\189\174\228\184\186false."
+local loadclibErrReason = "launch.json文件的配置项useCHook被设置为false."
 local OSTypeErrTip = ""
 local pathErrTip = ""
 local winDiskSymbolTip = ""
@@ -87,17 +85,13 @@ local receiveMsgTimer = 0
 local isUserSetClibPath = false
 local hitBpTwiceCheck
 local formatPathCache = {}
-
 function this.formatPathCache()
   return formatPathCache
 end
-
 local fakeBreakPointCache = {}
-
 function this.fakeBreakPointCache()
   return fakeBreakPointCache
 end
-
 if _VERSION == "Lua 5.1" then
   debugger_loadString = loadstring
 else
@@ -112,7 +106,6 @@ local env = setmetatable({}, {
     this.setVariableValue(varName, _G.LuaPanda.curStackId, newValue)
   end
 })
-
 function this.bindServer(host, port)
   server = sock
   server:settimeout(listeningTimeoutSec)
@@ -120,14 +113,13 @@ function this.bindServer(host, port)
   server:setoption("reuseaddr", true)
   assert(server:listen(0))
 end
-
 function this.startServer(host, port)
   host = tostring(host or "0.0.0.0")
   port = tonumber(port) or 8818
   luaProcessAsServer = true
   this.printToConsole("Debugger start as SERVER. bind host:" .. host .. " port:" .. tostring(port), 1)
   if nil ~= sock then
-    this.printToConsole("[Warning] \232\176\131\232\175\149\229\153\168\229\183\178\231\187\143\229\144\175\229\138\168\239\188\140\232\175\183\228\184\141\232\166\129\229\134\141\230\172\161\232\176\131\231\148\168start()", 1)
+    this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()", 1)
     return
   end
   this.changeRunState(runState.DISCONNECT)
@@ -148,14 +140,13 @@ function this.startServer(host, port)
     this.changeHookState(hookState.DISCONNECT_HOOK)
   end
 end
-
 function this.start(host, port)
   openAttachMode = true
   host = tostring(host or "127.0.0.1")
   port = tonumber(port) or 8818
   this.printToConsole("Debugger start as CLIENT. connect host:" .. host .. " port:" .. tostring(port), 1)
   if nil ~= sock then
-    this.printToConsole("[Warning] \232\176\131\232\175\149\229\153\168\229\183\178\231\187\143\229\144\175\229\138\168\239\188\140\232\175\183\228\184\141\232\166\129\229\134\141\230\172\161\232\176\131\231\148\168start()", 1)
+    this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()", 1)
     return
   end
   this.changeRunState(runState.DISCONNECT)
@@ -175,7 +166,6 @@ function this.start(host, port)
     this.changeHookState(hookState.DISCONNECT_HOOK)
   end
 end
-
 function this.sockConnect(sock)
   if sock then
     local connectSuccess, status = sock:connect(recordHost, recordPort)
@@ -186,7 +176,6 @@ function this.sockConnect(sock)
   end
   return nil
 end
-
 function this.connectSuccess()
   if server then
     server:close()
@@ -213,7 +202,7 @@ function this.connectSuccess()
     end
   end
   if false == ret then
-    this.printToVSCode("[debugger error]\229\136\157\229\167\139\229\140\150\230\156\170\229\174\140\230\136\144, \229\187\186\231\171\139\232\191\158\230\142\165\228\189\134\230\142\165\230\148\182\229\136\157\229\167\139\229\140\150\230\182\136\230\129\175\229\164\177\232\180\165\227\128\130\232\175\183\230\155\180\230\141\162\231\171\175\229\143\163\233\135\141\232\175\149", 2)
+    this.printToVSCode("[debugger error]初始化未完成, 建立连接但接收初始化消息失败。请更换端口重试", 2)
     return
   end
   this.printToVSCode("debugger init success", 1)
@@ -222,7 +211,6 @@ function this.connectSuccess()
     this.changeCoroutinesHookState()
   end
 end
-
 function this.clearData()
   OSType = nil
   clibPath = nil
@@ -235,7 +223,6 @@ function this.clearData()
     hookLib.clear_pathcache()
   end
 end
-
 function this.stopAttach()
   openAttachMode = false
   this.printToConsole("Debugger stopAttach", 1)
@@ -250,7 +237,6 @@ function this.stopAttach()
     end
   end
 end
-
 function this.disconnect()
   this.printToConsole("Debugger disconnect", 1)
   this.clearData()
@@ -268,12 +254,10 @@ function this.disconnect()
   end
   this.reGetSock()
 end
-
 function this.replaceCoroutineFuncs()
   if nil == hookLib and nil == coroutineCreate and type(coroutine.create) == "function" then
     this.printToConsole("change coroutine.create")
     coroutineCreate = coroutine.create
-    
     function coroutine.create(...)
       local co = coroutineCreate(...)
       table.insert(coroutinePool, co)
@@ -282,25 +266,22 @@ function this.replaceCoroutineFuncs()
     end
   end
 end
-
 function this.getBreaks()
   return breaks
 end
-
 function this.testBreakpoint()
   if recordBreakPointPath and "" ~= recordBreakPointPath then
     return this.breakpointTestInfo()
   else
     local strTable = {}
-    strTable[#strTable + 1] = "\230\173\163\229\156\168\229\135\134\229\164\135\232\191\155\232\161\140\230\150\173\231\130\185\230\181\139\232\175\149\239\188\140\232\175\183\230\140\137\231\133\167\229\166\130\228\184\139\230\173\165\233\170\164\230\147\141\228\189\156\n"
-    strTable[#strTable + 1] = "1. \232\175\183[\229\136\160\233\153\164]\229\189\147\229\137\141\233\161\185\231\155\174\228\184\173\230\137\128\230\156\137\230\150\173\231\130\185;\n"
-    strTable[#strTable + 1] = "2. \229\156\168\229\189\147\229\137\141\229\129\156\230\173\162\232\161\140\230\137\147\228\184\128\228\184\170\230\150\173\231\130\185;\n"
-    strTable[#strTable + 1] = "3. \229\134\141\230\172\161\232\191\144\232\161\140 'LuaPanda.testBreakpoint()'"
+    strTable[#strTable + 1] = "正在准备进行断点测试，请按照如下步骤操作\n"
+    strTable[#strTable + 1] = "1. 请[删除]当前项目中所有断点;\n"
+    strTable[#strTable + 1] = "2. 在当前停止行打一个断点;\n"
+    strTable[#strTable + 1] = "3. 再次运行 'LuaPanda.testBreakpoint()'"
     testBreakpointFlag = true
     return table.concat(strTable)
   end
 end
-
 function this.breakpointTestInfo()
   local ly = this.getSpecificFunctionStackLevel(lastRunFunction.func)
   if type(ly) ~= "number" then
@@ -316,64 +297,55 @@ function this.breakpointTestInfo()
   local strTable = {}
   local FormatedPath = tostring(runSource)
   strTable[#strTable + 1] = [[
-
 - BreakPoint Test:]]
   strTable[#strTable + 1] = [[
-
 User set lua extension:   .]] .. tostring(luaFileExtension)
   strTable[#strTable + 1] = [[
-
 Auto get lua extension:   ]] .. tostring(autoExt)
   if truncatedOPath and "" ~= truncatedOPath then
     strTable[#strTable + 1] = [[
-
 User set truncatedOPath:  ]] .. truncatedOPath
   end
   strTable[#strTable + 1] = [[
-
 GetInfo:    ]] .. info.source
   strTable[#strTable + 1] = [[
-
 Normalized: ]] .. NormalizedPath
   strTable[#strTable + 1] = [[
-
 Formated:   ]] .. FormatedPath
   if recordBreakPointPath and "" ~= recordBreakPointPath then
     strTable[#strTable + 1] = [[
-
 Breakpoint: ]] .. recordBreakPointPath
   end
   if not autoPathMode then
     if isAbsolutePath then
-      strTable[#strTable + 1] = "\n\232\175\180\230\152\142:\228\187\142lua\232\153\154\230\139\159\230\156\186\232\142\183\229\143\150\229\136\176\231\154\132\230\152\175\231\187\157\229\175\185\232\183\175\229\190\132\239\188\140Formated\228\189\191\231\148\168GetInfo\232\183\175\229\190\132\227\128\130" .. winDiskSymbolTip
+      strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，Formated使用GetInfo路径。" .. winDiskSymbolTip
     else
-      strTable[#strTable + 1] = "\n\232\175\180\230\152\142:\228\187\142lua\232\153\154\230\139\159\230\156\186\232\142\183\229\143\150\229\136\176\231\154\132\232\183\175\229\190\132(GetInfo)\230\152\175\231\155\184\229\175\185\232\183\175\229\190\132\239\188\140\232\176\131\232\175\149\229\153\168\232\191\144\232\161\140\228\190\157\232\181\150\231\154\132\231\187\157\229\175\185\232\183\175\229\190\132(Formated)\230\152\175\230\157\165\230\186\144\228\186\142cwd+GetInfo\230\139\188\230\142\165\227\128\130\229\166\130Formated\232\183\175\229\190\132\233\148\153\232\175\175\232\175\183\229\176\157\232\175\149\232\176\131\230\149\180cwd\230\136\150\230\148\185\229\143\152VSCode\230\137\147\229\188\128\230\150\135\228\187\182\229\164\185\231\154\132\228\189\141\231\189\174\227\128\130\228\185\159\229\143\175\228\187\165\229\156\168Formated\229\175\185\229\186\148\231\154\132\230\150\135\228\187\182\228\184\139\230\137\147\228\184\128\228\184\170\230\150\173\231\130\185\239\188\140\232\176\131\230\149\180\231\155\180\229\136\176Formated\229\146\140Breaks Info\228\184\173\230\150\173\231\130\185\232\183\175\229\190\132\229\174\140\229\133\168\228\184\128\232\135\180\227\128\130" .. winDiskSymbolTip
+      strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的路径(GetInfo)是相对路径，调试器运行依赖的绝对路径(Formated)是来源于cwd+GetInfo拼接。如Formated路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在Formated对应的文件下打一个断点，调整直到Formated和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip
     end
   else
-    strTable[#strTable + 1] = "\n\232\175\180\230\152\142:\232\135\170\229\138\168\232\183\175\229\190\132(autoPathMode)\230\168\161\229\188\143\229\183\178\229\188\128\229\144\175\227\128\130"
+    strTable[#strTable + 1] = "\n说明:自动路径(autoPathMode)模式已开启。"
     if recordBreakPointPath and "" ~= recordBreakPointPath then
       if string.find(recordBreakPointPath, FormatedPath, -1 * string.len(FormatedPath), true) then
         if false == distinguishSameNameFile then
-          strTable[#strTable + 1] = "\230\156\172\230\150\135\228\187\182\228\184\173\230\150\173\231\130\185\229\143\175\230\173\163\229\184\184\229\145\189\228\184\173\227\128\130"
-          strTable[#strTable + 1] = "\229\144\140\229\144\141\230\150\135\228\187\182\228\184\173\231\154\132\230\150\173\231\130\185\232\175\134\229\136\171(distinguishSameNameFile) \230\156\170\229\188\128\229\144\175\239\188\140\232\175\183\231\161\174\228\191\157 VSCode \230\150\173\231\130\185\228\184\141\232\166\129\229\173\152\229\156\168\228\186\142\229\144\140\229\144\141 lua \230\150\135\228\187\182\228\184\173\227\128\130"
+          strTable[#strTable + 1] = "本文件中断点可正常命中。"
+          strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名 lua 文件中。"
         else
-          strTable[#strTable + 1] = "\229\144\140\229\144\141\230\150\135\228\187\182\228\184\173\231\154\132\230\150\173\231\130\185\232\175\134\229\136\171(distinguishSameNameFile) \229\183\178\229\188\128\229\144\175\227\128\130"
+          strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 已开启。"
           if string.find(recordBreakPointPath, NormalizedPath, 1, true) then
-            strTable[#strTable + 1] = "\230\156\172\230\150\135\228\187\182\228\184\173\230\150\173\231\130\185\229\143\175\232\162\171\230\173\163\229\184\184\229\145\189\228\184\173"
+            strTable[#strTable + 1] = "本文件中断点可被正常命中"
           else
-            strTable[#strTable + 1] = "\230\150\173\231\130\185\229\143\175\232\131\189\230\151\160\230\179\149\232\162\171\229\145\189\228\184\173\239\188\140\229\155\160\228\184\186 lua \232\153\154\230\139\159\230\156\186\228\184\173\232\142\183\229\190\151\231\154\132\232\183\175\229\190\132 Normalized \228\184\141\230\152\175\230\150\173\231\130\185\232\183\175\229\190\132 Breakpoint \231\154\132\229\173\144\228\184\178\227\128\130 \229\166\130\230\156\137\233\156\128\232\166\129\239\188\140\229\143\175\228\187\165\229\156\168 launch.json \228\184\173\232\174\190\231\189\174 truncatedOPath \230\157\165\229\142\187\233\153\164 Normalized \233\131\168\229\136\134\232\183\175\229\190\132\227\128\130"
+            strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 truncatedOPath 来去除 Normalized 部分路径。"
           end
         end
       else
-        strTable[#strTable + 1] = "\230\150\173\231\130\185\230\156\170\232\162\171\229\145\189\228\184\173\239\188\140\229\142\159\229\155\160\230\152\175 Formated \228\184\141\230\152\175 Breakpoint \232\183\175\229\190\132\231\154\132\229\173\144\228\184\178\239\188\140\230\136\150\232\128\133 Formated \229\146\140 Breakpoint \230\150\135\228\187\182\229\144\142\231\188\128\228\184\141\228\184\128\232\135\180"
+        strTable[#strTable + 1] = "断点未被命中，原因是 Formated 不是 Breakpoint 路径的子串，或者 Formated 和 Breakpoint 文件后缀不一致"
       end
     else
-      strTable[#strTable + 1] = "\229\166\130\230\158\156\232\166\129\232\191\155\232\161\140\230\150\173\231\130\185\230\181\139\232\175\149\239\188\140\232\175\183\228\189\191\231\148\168 LuaPanda.testBreakpoint()\227\128\130"
+      strTable[#strTable + 1] = "如果要进行断点测试，请使用 LuaPanda.testBreakpoint()。"
     end
   end
   return table.concat(strTable)
 end
-
 function this.getBaseInfo()
   local strTable = {}
   local jitVer = ""
@@ -386,9 +358,9 @@ function this.getBaseInfo()
     local clibVer, forluaVer = hookLib.sync_getLibVersion()
     local clibStr = nil ~= forluaVer and tostring(clibVer) .. " for " .. tostring(math.ceil(forluaVer)) or tostring(clibVer)
     strTable[#strTable + 1] = " | hookLib Ver:" .. clibStr
-    moreInfoStr = moreInfoStr .. "\232\175\180\230\152\142: \229\183\178\229\138\160\232\189\189 libpdebug \229\186\147."
+    moreInfoStr = moreInfoStr .. "说明: 已加载 libpdebug 库."
   else
-    moreInfoStr = moreInfoStr .. "\232\175\180\230\152\142: \230\156\170\232\131\189\229\138\160\232\189\189 libpdebug \229\186\147\227\128\130\229\142\159\229\155\160\232\175\183\228\189\191\231\148\168 LuaPanda.doctor() \230\159\165\231\156\139"
+    moreInfoStr = moreInfoStr .. "说明: 未能加载 libpdebug 库。原因请使用 LuaPanda.doctor() 查看"
   end
   local outputIsUseLoadstring = false
   if type(isUseLoadstring) == "number" and 1 == isUseLoadstring then
@@ -404,23 +376,22 @@ function this.getBaseInfo()
   end
   return table.concat(strTable)
 end
-
 function this.doctor()
   local strTable = {}
   if debuggerVer ~= adapterVer then
-    strTable[#strTable + 1] = "\n- \229\187\186\232\174\174\230\155\180\230\150\176\231\137\136\230\156\172\nLuaPanda VSCode\230\143\146\228\187\182\231\137\136\230\156\172\230\152\175" .. adapterVer .. ", LuaPanda.lua\230\150\135\228\187\182\231\137\136\230\156\172\230\152\175" .. debuggerVer .. "\227\128\130\229\187\186\232\174\174\230\163\128\230\159\165\229\185\182\230\155\180\230\150\176\229\136\176\230\156\128\230\150\176\231\137\136\230\156\172\227\128\130"
-    strTable[#strTable + 1] = "\n\230\155\180\230\150\176\230\150\185\229\188\143   : https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md"
-    strTable[#strTable + 1] = "\nRelease\231\137\136\230\156\172: https://github.com/Tencent/LuaPanda/releases"
+    strTable[#strTable + 1] = "\n- 建议更新版本\nLuaPanda VSCode插件版本是" .. adapterVer .. ", LuaPanda.lua文件版本是" .. debuggerVer .. "。建议检查并更新到最新版本。"
+    strTable[#strTable + 1] = "\n更新方式   : https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md"
+    strTable[#strTable + 1] = "\nRelease版本: https://github.com/Tencent/LuaPanda/releases"
   end
   if nil == hookLib then
-    strTable[#strTable + 1] = "\n\n- libpdebug \229\186\147\230\178\161\230\156\137\229\138\160\232\189\189\n"
+    strTable[#strTable + 1] = "\n\n- libpdebug 库没有加载\n"
     if userSetUseClib then
       if true == isUserSetClibPath then
-        strTable[#strTable + 1] = "\231\148\168\230\136\183\228\189\191\231\148\168 LuaPanda.lua \228\184\173 clibPath \229\143\152\233\135\143\230\140\135\229\174\154\228\186\134 plibdebug \231\154\132\228\189\141\231\189\174: " .. clibPath
+        strTable[#strTable + 1] = "用户使用 LuaPanda.lua 中 clibPath 变量指定了 plibdebug 的位置: " .. clibPath
         if this.tryRequireClib("libpdebug", clibPath) then
-          strTable[#strTable + 1] = "\n\229\188\149\231\148\168\230\136\144\229\138\159"
+          strTable[#strTable + 1] = "\n引用成功"
         else
-          strTable[#strTable + 1] = "\n\229\188\149\231\148\168\233\148\153\232\175\175:" .. loadclibErrReason
+          strTable[#strTable + 1] = "\n引用错误:" .. loadclibErrReason
         end
       else
         local clibExt, platform
@@ -442,21 +413,21 @@ function this.doctor()
         end
         local x86Path = clibPath .. platform .. "/x86/" .. lua_ver .. clibExt
         local x64Path = clibPath .. platform .. "/x86_64/" .. lua_ver .. clibExt
-        strTable[#strTable + 1] = "\229\176\157\232\175\149\229\188\149\231\148\168x64\229\186\147: " .. x64Path
+        strTable[#strTable + 1] = "尝试引用x64库: " .. x64Path
         if this.tryRequireClib("libpdebug", x64Path) then
-          strTable[#strTable + 1] = "\n\229\188\149\231\148\168\230\136\144\229\138\159"
+          strTable[#strTable + 1] = "\n引用成功"
         else
-          strTable[#strTable + 1] = "\n\229\188\149\231\148\168\233\148\153\232\175\175:" .. loadclibErrReason
-          strTable[#strTable + 1] = "\n\229\176\157\232\175\149\229\188\149\231\148\168x86\229\186\147: " .. x86Path
+          strTable[#strTable + 1] = "\n引用错误:" .. loadclibErrReason
+          strTable[#strTable + 1] = "\n尝试引用x86库: " .. x86Path
           if this.tryRequireClib("libpdebug", x86Path) then
-            strTable[#strTable + 1] = "\n\229\188\149\231\148\168\230\136\144\229\138\159"
+            strTable[#strTable + 1] = "\n引用成功"
           else
-            strTable[#strTable + 1] = "\n\229\188\149\231\148\168\233\148\153\232\175\175:" .. loadclibErrReason
+            strTable[#strTable + 1] = "\n引用错误:" .. loadclibErrReason
           end
         end
       end
     else
-      strTable[#strTable + 1] = "\229\142\159\229\155\160\230\152\175" .. loadclibErrReason
+      strTable[#strTable + 1] = "原因是" .. loadclibErrReason
     end
   end
   local runSource = lastRunFilePath
@@ -466,7 +437,7 @@ function this.doctor()
   if not autoPathMode and runSource and "" ~= runSource then
     local isFileExist = this.fileExists(runSource)
     if not isFileExist then
-      strTable[#strTable + 1] = "\n\n- \232\183\175\229\190\132\229\173\152\229\156\168\233\151\174\233\162\152\n"
+      strTable[#strTable + 1] = "\n\n- 路径存在问题\n"
       local pathArray = this.stringSplit(runSource, "/")
       local fileMatch = false
       for key, _ in pairs(this.getBreaks()) do
@@ -474,36 +445,34 @@ function this.doctor()
           fileMatch = true
           strTable[#strTable + 1] = this.breakpointTestInfo()
           strTable[#strTable + 1] = [[
-
 filepath: ]] .. key
           if isAbsolutePath then
-            strTable[#strTable + 1] = "\n\232\175\180\230\152\142:\228\187\142lua\232\153\154\230\139\159\230\156\186\232\142\183\229\143\150\229\136\176\231\154\132\230\152\175\231\187\157\229\175\185\232\183\175\229\190\132\239\188\140format\228\189\191\231\148\168getinfo\232\183\175\229\190\132\227\128\130"
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。"
           else
-            strTable[#strTable + 1] = "\n\232\175\180\230\152\142:\228\187\142lua\232\153\154\230\139\159\230\156\186\232\142\183\229\143\150\229\136\176\231\154\132\230\152\175\231\155\184\229\175\185\232\183\175\229\190\132\239\188\140\232\176\131\232\175\149\229\153\168\232\191\144\232\161\140\228\190\157\232\181\150\231\154\132\231\187\157\229\175\185\232\183\175\229\190\132(format)\230\152\175\230\157\165\230\186\144\228\186\142cwd+getinfo\230\139\188\230\142\165\227\128\130"
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，调试器运行依赖的绝对路径(format)是来源于cwd+getinfo拼接。"
           end
-          strTable[#strTable + 1] = "\nfilepath\230\152\175VSCode\233\128\154\232\191\135\232\142\183\229\143\150\229\136\176\231\154\132\230\150\135\228\187\182\230\173\163\231\161\174\232\183\175\229\190\132 , \229\175\185\230\175\148format\229\146\140filepath\239\188\140\232\176\131\230\149\180launch.json\228\184\173CWD\239\188\140\230\136\150\230\148\185\229\143\152VSCode\230\137\147\229\188\128\230\150\135\228\187\182\229\164\185\231\154\132\228\189\141\231\189\174\227\128\130\228\189\191format\229\146\140filepath\228\184\128\232\135\180\229\141\179\229\143\175\227\128\130\n\229\166\130\230\158\156format\229\146\140filepath\232\183\175\229\190\132\228\187\133\229\164\167\229\176\143\229\134\153\228\184\141\228\184\128\232\135\180\239\188\140\232\174\190\231\189\174launch.json\228\184\173 pathCaseSensitivity:false \229\143\175\229\191\189\231\149\165\232\183\175\229\190\132\229\164\167\229\176\143\229\134\153"
+          strTable[#strTable + 1] = "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。\n如果format和filepath路径仅大小写不一致，设置launch.json中 pathCaseSensitivity:false 可忽略路径大小写"
         end
       end
       if false == fileMatch then
-        strTable[#strTable + 1] = "\n\230\137\190\228\184\141\229\136\176\230\150\135\228\187\182:" .. runSource .. ", \232\175\183\230\163\128\230\159\165\232\183\175\229\190\132\230\152\175\229\144\166\230\173\163\231\161\174\227\128\130\n\230\136\150\232\128\133\229\156\168VSCode\230\150\135\228\187\182" .. pathArray[#pathArray] .. "\228\184\173\230\137\147\228\184\128\228\184\170\230\150\173\231\130\185\229\144\142\239\188\140\229\134\141\230\137\167\232\161\140\228\184\128\230\172\161doctor\229\145\189\228\187\164\239\188\140\230\159\165\231\156\139\232\183\175\229\190\132\229\136\134\230\158\144\231\187\147\230\158\156\227\128\130"
+        strTable[#strTable + 1] = "\n找不到文件:" .. runSource .. ", 请检查路径是否正确。\n或者在VSCode文件" .. pathArray[#pathArray] .. "中打一个断点后，再执行一次doctor命令，查看路径分析结果。"
       end
     end
   end
   if logLevel < 1 or consoleLogLevel < 1 then
-    strTable[#strTable + 1] = "\n\n- \230\151\165\229\191\151\231\173\137\231\186\167\n"
+    strTable[#strTable + 1] = "\n\n- 日志等级\n"
     if logLevel < 1 then
-      strTable[#strTable + 1] = "\229\189\147\229\137\141\230\151\165\229\191\151\231\173\137\231\186\167\230\152\175" .. logLevel .. ", \228\188\154\228\186\167\231\148\159\229\164\167\233\135\143\230\151\165\229\191\151\239\188\140\233\153\141\228\189\142\232\176\131\232\175\149\233\128\159\229\186\166\227\128\130\229\187\186\232\174\174\232\176\131\230\149\180launch.json\228\184\173logLevel:1"
+      strTable[#strTable + 1] = "当前日志等级是" .. logLevel .. ", 会产生大量日志，降低调试速度。建议调整launch.json中logLevel:1"
     end
     if consoleLogLevel < 1 then
-      strTable[#strTable + 1] = "\229\189\147\229\137\141console\230\151\165\229\191\151\231\173\137\231\186\167\230\152\175" .. consoleLogLevel .. ", \232\191\135\228\189\142\231\154\132\230\151\165\229\191\151\231\173\137\231\186\167\228\188\154\233\153\141\228\189\142\232\176\131\232\175\149\233\128\159\229\186\166\239\188\140\229\187\186\232\174\174\232\176\131\230\149\180LuaPanda.lua\230\150\135\228\187\182\229\164\180\233\131\168consoleLogLevel=2"
+      strTable[#strTable + 1] = "当前console日志等级是" .. consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua文件头部consoleLogLevel=2"
     end
   end
   if 0 == #strTable then
-    strTable[#strTable + 1] = "\230\156\170\230\163\128\230\181\139\229\135\186\233\151\174\233\162\152"
+    strTable[#strTable + 1] = "未检测出问题"
   end
   return table.concat(strTable)
 end
-
 function this.fileExists(path)
   local f = io.open(path, "r")
   if nil ~= f then
@@ -513,17 +482,13 @@ function this.fileExists(path)
     return false
   end
 end
-
 function this.getInfo()
   local strTable = {}
   strTable[#strTable + 1] = [[
-
 - Base Info: 
 ]]
   strTable[#strTable + 1] = this.getBaseInfo()
   strTable[#strTable + 1] = [[
-
-
 - User Setting: 
 ]]
   strTable[#strTable + 1] = "stopOnEntry:" .. tostring(stopOnEntry) .. " | "
@@ -538,11 +503,9 @@ function this.getInfo()
     strTable[#strTable + 1] = "useCHook:false"
   end
   if 0 == logLevel or 0 == consoleLogLevel then
-    strTable[#strTable + 1] = "\n\232\175\180\230\152\142:\230\151\165\229\191\151\231\173\137\231\186\167\232\191\135\228\189\142\239\188\140\228\188\154\229\189\177\229\147\141\230\137\167\232\161\140\230\149\136\231\142\135\227\128\130\232\175\183\232\176\131\230\149\180logLevel\229\146\140consoleLogLevel\229\128\188 >= 1"
+    strTable[#strTable + 1] = "\n说明:日志等级过低，会影响执行效率。请调整logLevel和consoleLogLevel值 >= 1"
   end
   strTable[#strTable + 1] = [[
-
-
 - Path Info: 
 ]]
   strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. "\n"
@@ -553,17 +516,13 @@ function this.getInfo()
     strTable[#strTable + 1] = "\n" .. pathErrTip
   end
   strTable[#strTable + 1] = [[
-
-
 - Breaks Info: 
 Use 'LuaPanda.getBreaks()' to watch.]]
   return table.concat(strTable)
 end
-
 function this.isInMain()
   return isInMainThread
 end
-
 function this.tryRequireClib(libName, libPath)
   this.printToVSCode("tryRequireClib search : [" .. libName .. "] in " .. libPath)
   local savedCpath = package.cpath
@@ -591,7 +550,6 @@ function this.tryRequireClib(libName, libPath)
   package.cpath = savedCpath
   return false
 end
-
 function this.revFindString(str, subPattern, plain)
   local revStr = string.reverse(str)
   local _, idx = string.find(revStr, subPattern, 1, plain)
@@ -600,7 +558,6 @@ function this.revFindString(str, subPattern, plain)
   end
   return string.len(revStr) - idx + 1
 end
-
 function this.revSubString(str, subStr, plain)
   local idx = this.revFindString(str, subStr, plain)
   if nil == idx then
@@ -608,7 +565,6 @@ function this.revSubString(str, subStr, plain)
   end
   return string.sub(str, idx + 1, str.length)
 end
-
 function this.stringSplit(str, separator)
   local retStrTable = {}
   string.gsub(str, "[^" .. separator .. "]+", function(word)
@@ -616,13 +572,11 @@ function this.stringSplit(str, separator)
   end)
   return retStrTable
 end
-
 function this.setCallbackId(id)
   if nil ~= id and "0" ~= id then
     recCallbackId = tostring(id)
   end
 end
-
 function this.getCallbackId()
   if nil == recCallbackId then
     recCallbackId = "0"
@@ -631,11 +585,9 @@ function this.getCallbackId()
   recCallbackId = "0"
   return id
 end
-
 function this.trim(s)
   return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
 end
-
 function this.getTableMemberNum(t)
   local retNum = 0
   if type(t) ~= "table" then
@@ -647,7 +599,6 @@ function this.getTableMemberNum(t)
   end
   return retNum
 end
-
 function this.getMsgTable(cmd, callbackId)
   callbackId = callbackId or 0
   local msgTable = {}
@@ -656,12 +607,10 @@ function this.getMsgTable(cmd, callbackId)
   msgTable.info = {}
   return msgTable
 end
-
 function this.serializeTable(tab, name)
   local sTable = tools.serializeTable(tab, name)
   return sTable
 end
-
 function this.printToVSCode(str, printLevel, type)
   type = type or 0
   printLevel = printLevel or 0
@@ -681,7 +630,6 @@ function this.printToVSCode(str, printLevel, type)
   sendTab.info.logInfo = tostring(str)
   this.sendMsg(sendTab)
 end
-
 function this.printToConsole(str, printLevel)
   printLevel = printLevel or 0
   if printLevel < consoleLogLevel then
@@ -689,7 +637,6 @@ function this.printToConsole(str, printLevel)
   end
   print("[LuaPanda] " .. tostring(str))
 end
-
 function this.genUnifiedPath(path)
   if "" == path or nil == path then
     return ""
@@ -715,26 +662,23 @@ function this.genUnifiedPath(path)
   if "Windows_NT" == OSType then
     if winDiskSymbolUpper then
       newpath = newpath:gsub("^%a:", string.upper)
-      winDiskSymbolTip = "\232\183\175\229\190\132\228\184\173Windows\231\155\152\231\172\166\229\183\178\232\189\172\228\184\186\229\164\167\229\134\153\227\128\130"
+      winDiskSymbolTip = "路径中Windows盘符已转为大写。"
     else
       newpath = newpath:gsub("^%a:", string.lower)
-      winDiskSymbolTip = "\232\183\175\229\190\132\228\184\173Windows\231\155\152\231\172\166\229\183\178\232\189\172\228\184\186\229\176\143\229\134\153\227\128\130"
+      winDiskSymbolTip = "路径中Windows盘符已转为小写。"
     end
   end
   return newpath
 end
-
 function this.getCacheFormatPath(source)
   if nil == source then
     return formatPathCache
   end
   return formatPathCache[source]
 end
-
 function this.setCacheFormatPath(source, dest)
   formatPathCache[source] = dest
 end
-
 function this.formatOpath(opath)
   if opath:sub(1, 1) == "@" then
     opath = opath:sub(2)
@@ -757,7 +701,6 @@ function this.formatOpath(opath)
   end
   return opath
 end
-
 function this.sendLuaMemory()
   local luaMem = collectgarbage("count")
   local sendTab = {}
@@ -767,7 +710,6 @@ function this.sendLuaMemory()
   sendTab.info.memInfo = tostring(luaMem)
   this.sendMsg(sendTab)
 end
-
 function this.reGetSock()
   if server then
     return true
@@ -796,7 +738,6 @@ function this.reGetSock()
   end
   return true
 end
-
 function this.reConnect()
   if currentHookState == hookState.DISCONNECT_HOOK then
     if os.time() - stopConnectTime < attachInterval then
@@ -829,7 +770,6 @@ function this.reConnect()
   end
   return 1
 end
-
 function this.sendMsg(sendTab)
   if isNeedB64EncodeStr and sendTab.info ~= nil then
     for _, v in ipairs(sendTab.info) do
@@ -851,7 +791,6 @@ function this.sendMsg(sendTab)
     this.disconnect()
   end
 end
-
 function this.dataProcess(dataStr)
   this.printToVSCode("debugger get:" .. dataStr)
   local dataTable = json.decode(dataStr)
@@ -982,7 +921,7 @@ function this.dataProcess(dataStr)
       if nil ~= dataTable.info.stackId and nil ~= tonumber(dataTable.info.stackId) and tonumber(dataTable.info.stackId) > 1 then
         this.curStackId = tonumber(dataTable.info.stackId)
       else
-        this.printToVSCode("\230\156\170\232\131\189\232\142\183\229\143\150\229\136\176\229\160\134\230\160\136\229\177\130\231\186\167\239\188\140\233\187\152\232\174\164\228\189\191\231\148\168 this.curStackId;")
+        this.printToVSCode("未能获取到堆栈层级，默认使用 this.curStackId;")
       end
       if varRefNum < 10000 then
         msgTab.info = this.createSetValueRetTable(varName, newValue, needFindVariable, this.curStackId, variableRefTab[varRefNum])
@@ -1073,7 +1012,7 @@ function this.dataProcess(dataStr)
         OSType = dataTable.info.OSType
       else
         OSType = "Windows_NT"
-        OSTypeErrTip = "\230\156\170\232\131\189\230\163\128\230\181\139\229\135\186OSType, \229\143\175\232\131\189\230\152\175node os\229\186\147\230\156\170\232\131\189\229\138\160\232\189\189\239\188\140\231\179\187\231\187\159\228\189\191\231\148\168\233\187\152\232\174\164\232\174\190\231\189\174Windows_NT"
+        OSTypeErrTip = "未能检测出OSType, 可能是node os库未能加载，系统使用默认设置Windows_NT"
       end
     else
     end
@@ -1083,7 +1022,7 @@ function this.dataProcess(dataStr)
         clibPath = dataTable.info.clibPath
       else
         clibPath = ""
-        pathErrTip = "\230\156\170\232\131\189\230\173\163\231\161\174\232\142\183\229\143\150libpdebug\229\186\147\230\137\128\229\156\168\228\189\141\231\189\174, \229\143\175\232\131\189\230\151\160\230\179\149\229\138\160\232\189\189libpdebug\229\186\147\227\128\130"
+        pathErrTip = "未能正确获取libpdebug库所在位置, 可能无法加载libpdebug库。"
       end
     else
       isUserSetClibPath = true
@@ -1200,7 +1139,6 @@ function this.dataProcess(dataStr)
     end
   end
 end
-
 function this.createSetValueRetTable(varName, newValue, needFindVariable, curStackId, assigndVar, setLimit)
   local info, getVarRet
   if false == needFindVariable then
@@ -1258,7 +1196,7 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
       displayVarValue = "\"" .. displayVarValue .. "\""
     end
     if false ~= setVarRet and nil ~= setVarRet then
-      local retTip = "\229\143\152\233\135\143 " .. varName .. " \232\181\139\229\128\188\230\136\144\229\138\159"
+      local retTip = "变量 " .. varName .. " 赋值成功"
       info = {
         success = "true",
         name = getVarRet[1].name,
@@ -1272,7 +1210,7 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
         success = "false",
         type = type(realVarValue),
         value = displayVarValue,
-        tip = "\230\137\190\228\184\141\229\136\176\232\166\129\232\174\190\231\189\174\231\154\132\229\143\152\233\135\143"
+        tip = "找不到要设置的变量"
       }
     end
   else
@@ -1280,12 +1218,11 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
       success = "false",
       type = nil,
       value = nil,
-      tip = "\232\190\147\229\133\165\231\154\132\229\128\188\230\151\160\230\132\143\228\185\137"
+      tip = "输入的值无意义"
     }
   end
   return info
 end
-
 function this.receiveMessage(timeoutSec)
   timeoutSec = timeoutSec or MAX_TIMEOUT_SEC
   sock:settimeout(timeoutSec)
@@ -1300,13 +1237,13 @@ function this.receiveMessage(timeoutSec)
     return false
   end
   if nil == sock then
-    this.printToConsole("[debugger error]\230\142\165\230\148\182\228\191\161\230\129\175\229\164\177\232\180\165  |  reason: socket == nil", 2)
+    this.printToConsole("[debugger error]接收信息失败  |  reason: socket == nil", 2)
     return
   end
   local response, err = sock:receive("*l")
   if nil == response then
     if "closed" == err then
-      this.printToConsole("[debugger error]\230\142\165\230\148\182\228\191\161\230\129\175\229\164\177\232\180\165  |  reason:" .. err, 2)
+      this.printToConsole("[debugger error]接收信息失败  |  reason:" .. err, 2)
       this.disconnect()
     end
     return false
@@ -1327,7 +1264,6 @@ function this.receiveMessage(timeoutSec)
     return true
   end
 end
-
 function this.debugger_wait_msg(timeoutSec)
   timeoutSec = timeoutSec or MAX_TIMEOUT_SEC
   if currentRunState == runState.WAIT_CMD then
@@ -1344,7 +1280,6 @@ function this.debugger_wait_msg(timeoutSec)
     return
   end
 end
-
 function this.getStackTable(level)
   local functionLevel = 0
   if nil ~= hookLib then
@@ -1365,7 +1300,7 @@ function this.getStackTable(level)
       ss.file = this.getPath(info)
       local oPathFormated = this.formatOpath(info.source)
       ss.oPath = this.truncatedPath(oPathFormated, truncatedOPath)
-      ss.name = "\230\150\135\228\187\182\229\144\141"
+      ss.name = "文件名"
       ss.line = tostring(info.currentline)
       local ssindex = functionLevel - 3
       if nil ~= hookLib then
@@ -1395,7 +1330,6 @@ function this.getStackTable(level)
   until nil == info
   return stackTab, userFuncSteakLevel
 end
-
 function this.changePotToSep(filePath, ext)
   local idx = filePath:find(ext, -1 * ext:len(), true)
   if idx then
@@ -1404,7 +1338,6 @@ function this.changePotToSep(filePath, ext)
   end
   return filePath
 end
-
 function this.truncatedPath(beTruncatedPath, rep)
   if beTruncatedPath and "" ~= beTruncatedPath and rep and "" ~= rep then
     local _, lastIdx = string.find(beTruncatedPath, rep)
@@ -1414,7 +1347,6 @@ function this.truncatedPath(beTruncatedPath, rep)
   end
   return beTruncatedPath
 end
-
 function this.getPath(info)
   local filePath = info
   if type(info) == "table" then
@@ -1470,14 +1402,12 @@ function this.getPath(info)
   this.setCacheFormatPath(originalPath, filePath)
   return filePath
 end
-
 function this.getFilenameFromPath(path)
   if nil == path then
     return ""
   end
   return string.match(path, "([^/]*)$")
 end
-
 function this.getCurrentFunctionStackLevel()
   local funclayer = 2
   repeat
@@ -1492,7 +1422,6 @@ function this.getCurrentFunctionStackLevel()
   until not info
   return 0
 end
-
 function this.getSpecificFunctionStackLevel(func)
   local funclayer = 2
   repeat
@@ -1504,7 +1433,6 @@ function this.getSpecificFunctionStackLevel(func)
   until not info
   return 0
 end
-
 function this.checkCurrentLayerisLua(checkLayer)
   local info = debug.getinfo(checkLayer, "S")
   if nil == info then
@@ -1524,7 +1452,6 @@ function this.checkCurrentLayerisLua(checkLayer)
   end
   return nil
 end
-
 function this.checkRealHitBreakpoint(oPath, line)
   if oPath and fakeBreakPointCache[oPath] then
     for _, value in ipairs(fakeBreakPointCache[oPath]) do
@@ -1536,7 +1463,6 @@ function this.checkRealHitBreakpoint(oPath, line)
   end
   return true
 end
-
 function this.isHitBreakpoint(breakpointPath, opath, curLine)
   if breaks[breakpointPath] then
     local oPathFormated
@@ -1575,7 +1501,6 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
   end
   return false
 end
-
 function this.IsMeetCondition(conditionExp)
   currentCallStack = {}
   variableRefTab = {}
@@ -1589,7 +1514,6 @@ function this.IsMeetCondition(conditionExp)
   local conditionExpTable = {varName = conditionExp}
   local retTable = this.processWatchedExp(conditionExpTable)
   local isMeetCondition = false
-  
   local function HandleResult()
     if retTable[1].isSuccess == "true" then
       if retTable[1].value == "nil" or retTable[1].value == "false" and retTable[1].type == "boolean" then
@@ -1601,13 +1525,11 @@ function this.IsMeetCondition(conditionExp)
       isMeetCondition = false
     end
   end
-  
   xpcall(HandleResult, function()
     isMeetCondition = false
   end)
   return isMeetCondition
 end
-
 function this.BP()
   this.printToConsole("BP()")
   if nil == hookLib then
@@ -1640,7 +1562,6 @@ function this.BP()
   this.changeHookState(hookState.ALL_HOOK)
   return true
 end
-
 function this.checkHasBreakpoint(fileName)
   local hasBk = false
   if next(breaks) == nil then
@@ -1654,7 +1575,6 @@ function this.checkHasBreakpoint(fileName)
     return hasBk
   end
 end
-
 function this.checkfuncHasBreakpoint(sLine, eLine, fileName)
   if nil == breaks[fileName] then
     return false
@@ -1677,7 +1597,6 @@ function this.checkfuncHasBreakpoint(sLine, eLine, fileName)
   end
   return false
 end
-
 function this.debug_hook(event, line)
   if 0 == this.reConnect() then
     return
@@ -1723,7 +1642,6 @@ function this.debug_hook(event, line)
   info.event = event
   this.real_hook_process(info)
 end
-
 function this.real_hook_process(info)
   local jumpFlag = false
   local event = info.event
@@ -1871,7 +1789,6 @@ function this.real_hook_process(info)
     end
   end
 end
-
 function this.SendMsgWithStack(cmdStr)
   local msgTab = this.getMsgTable(cmdStr)
   local userFuncLevel = 0
@@ -1882,7 +1799,6 @@ function this.SendMsgWithStack(cmdStr)
   this.sendMsg(msgTab)
   this.debugger_wait_msg()
 end
-
 function this.changeHookState(s)
   if nil == hookLib and currentHookState == s then
     return
@@ -1927,7 +1843,6 @@ function this.changeHookState(s)
     this.changeCoroutinesHookState()
   end
 end
-
 function this.changeRunState(s, isFromHooklib)
   local msgFrom
   if 1 == isFromHooklib then
@@ -1947,7 +1862,6 @@ function this.changeRunState(s, isFromHooklib)
   variableRefTab = {}
   variableRefIdx = 1
 end
-
 function this.changeCoroutinesHookState(s)
   s = s or currentHookState
   this.printToConsole("change [Coroutine] HookState: " .. tostring(s))
@@ -1959,7 +1873,6 @@ function this.changeCoroutinesHookState(s)
     end
   end
 end
-
 function this.changeCoroutineHookState(co, s)
   if s == hookState.DISCONNECT_HOOK then
     if true == openAttachMode then
@@ -1975,17 +1888,14 @@ function this.changeCoroutineHookState(co, s)
     debug.sethook(co, this.debug_hook, "lrc")
   end
 end
-
 function this.clearEnv()
   if this.getTableMemberNum(env) > 0 then
     env = setmetatable({}, getmetatable(env))
   end
 end
-
 function this.showEnv()
   return env
 end
-
 function this.findTableVar(tableVarName, realVar)
   if type(tableVarName) ~= "table" or type(realVar) ~= "table" then
     return nil
@@ -2020,7 +1930,6 @@ function this.findTableVar(tableVarName, realVar)
   until true == jumpOutFlag
   return curVar
 end
-
 function this.createWatchedVariableInfo(variableName, variableIns)
   local var = {}
   var.name = variableName
@@ -2044,13 +1953,11 @@ function this.createWatchedVariableInfo(variableName, variableIns)
   end
   return var
 end
-
 function this.setGlobal(varName, newValue)
   _G[varName] = newValue
-  this.printToVSCode("[setVariable success] \229\183\178\232\174\190\231\189\174  _G." .. varName .. " = " .. tostring(newValue))
+  this.printToVSCode("[setVariable success] 已设置  _G." .. varName .. " = " .. tostring(newValue))
   return true
 end
-
 function this.setUpvalue(varName, newValue, stackId, tableVarName)
   local ret = false
   local upTable = this.getUpValueVariable(currentCallStack[stackId - 1].func, true)
@@ -2061,20 +1968,20 @@ function this.setUpvalue(varName, newValue, stackId, tableVarName)
         if nil ~= findRes then
           local setVarRet = debug.setupvalue(currentCallStack[stackId - 1].func, i, newValue)
           if setVarRet == varName then
-            this.printToConsole("[setVariable success1] \229\183\178\232\174\190\231\189\174 upvalue " .. varName .. " = " .. tostring(newValue))
+            this.printToConsole("[setVariable success1] 已设置 upvalue " .. varName .. " = " .. tostring(newValue))
             ret = true
           else
-            this.printToConsole("[setVariable error1] \230\156\170\232\131\189\232\174\190\231\189\174 upvalue " .. varName .. " = " .. tostring(newValue) .. " , \232\191\148\229\155\158\231\187\147\230\158\156: " .. tostring(setVarRet))
+            this.printToConsole("[setVariable error1] 未能设置 upvalue " .. varName .. " = " .. tostring(newValue) .. " , 返回结果: " .. tostring(setVarRet))
           end
           return ret
         end
       else
         local setVarRet = debug.setupvalue(currentCallStack[stackId - 1].func, i, newValue)
         if setVarRet == varName then
-          this.printToConsole("[setVariable success] \229\183\178\232\174\190\231\189\174 upvalue " .. varName .. " = " .. tostring(newValue))
+          this.printToConsole("[setVariable success] 已设置 upvalue " .. varName .. " = " .. tostring(newValue))
           ret = true
         else
-          this.printToConsole("[setVariable error] \230\156\170\232\131\189\232\174\190\231\189\174 upvalue " .. varName .. " = " .. tostring(newValue) .. " , \232\191\148\229\155\158\231\187\147\230\158\156: " .. tostring(setVarRet))
+          this.printToConsole("[setVariable error] 未能设置 upvalue " .. varName .. " = " .. tostring(newValue) .. " , 返回结果: " .. tostring(setVarRet))
         end
         return ret
       end
@@ -2082,7 +1989,6 @@ function this.setUpvalue(varName, newValue, stackId, tableVarName)
   end
   return ret
 end
-
 function this.setLocal(varName, newValue, tableVarName, stackId)
   local istackId = tonumber(stackId)
   local offset = istackId and istackId - 2 or 0
@@ -2095,20 +2001,20 @@ function this.setLocal(varName, newValue, tableVarName, stackId)
         if nil ~= findRes then
           local setVarRet = debug.setlocal(ly, layerVarTab[i].index, newValue)
           if setVarRet == varName then
-            this.printToConsole("[setVariable success1] \229\183\178\232\174\190\231\189\174 local " .. varName .. " = " .. tostring(newValue))
+            this.printToConsole("[setVariable success1] 已设置 local " .. varName .. " = " .. tostring(newValue))
             ret = true
           else
-            this.printToConsole("[setVariable error1] \230\156\170\232\131\189\232\174\190\231\189\174 local " .. varName .. " = " .. tostring(newValue) .. " , \232\191\148\229\155\158\231\187\147\230\158\156: " .. tostring(setVarRet))
+            this.printToConsole("[setVariable error1] 未能设置 local " .. varName .. " = " .. tostring(newValue) .. " , 返回结果: " .. tostring(setVarRet))
           end
           return ret
         end
       else
         local setVarRet = debug.setlocal(ly, layerVarTab[i].index, newValue)
         if setVarRet == varName then
-          this.printToConsole("[setVariable success] \229\183\178\232\174\190\231\189\174 local " .. varName .. " = " .. tostring(newValue))
+          this.printToConsole("[setVariable success] 已设置 local " .. varName .. " = " .. tostring(newValue))
           ret = true
         else
-          this.printToConsole("[setVariable error] \230\156\170\232\131\189\232\174\190\231\189\174 local " .. varName .. " = " .. tostring(newValue) .. " , \232\191\148\229\155\158\231\187\147\230\158\156: " .. tostring(setVarRet))
+          this.printToConsole("[setVariable error] 未能设置 local " .. varName .. " = " .. tostring(newValue) .. " , 返回结果: " .. tostring(setVarRet))
         end
         return ret
       end
@@ -2116,12 +2022,11 @@ function this.setLocal(varName, newValue, tableVarName, stackId)
   end
   return ret
 end
-
 function this.setVariableValue(varName, stackId, newValue, limit)
   this.printToConsole("setVariableValue | varName:" .. tostring(varName) .. " stackId:" .. tostring(stackId) .. " newValue:" .. tostring(newValue) .. " limit:" .. tostring(limit))
   if tostring(varName) == nil or tostring(varName) == "" then
-    this.printToConsole("[setVariable Error] \232\162\171\232\181\139\229\128\188\231\154\132\229\143\152\233\135\143\229\144\141\228\184\186\231\169\186", 2)
-    this.printToVSCode("[setVariable Error] \232\162\171\232\181\139\229\128\188\231\154\132\229\143\152\233\135\143\229\144\141\228\184\186\231\169\186", 2)
+    this.printToConsole("[setVariable Error] 被赋值的变量名为空", 2)
+    this.printToVSCode("[setVariable Error] 被赋值的变量名为空", 2)
     return false
   end
   local tableVarName = {}
@@ -2147,7 +2052,6 @@ function this.setVariableValue(varName, stackId, newValue, limit)
     return ret
   end
 end
-
 function this.getWatchedVariable(varName, stackId, isFormatVariable)
   this.printToConsole("getWatchedVariable | varName:" .. tostring(varName) .. " stackId:" .. tostring(stackId) .. " isFormatVariable:" .. tostring(isFormatVariable))
   if tostring(varName) == nil or tostring(varName) == "" then
@@ -2220,7 +2124,6 @@ function this.getWatchedVariable(varName, stackId, isFormatVariable)
   this.printToConsole("getWatchedVariable not find variable")
   return nil
 end
-
 function this.getVariableRef(refStr)
   local varRef = tonumber(refStr)
   local varTab = {}
@@ -2258,9 +2161,9 @@ function this.getVariableRef(refStr)
       var.name = "_Metatable_"
       var.type = tostring(type(mtTab))
       xpcall(function()
-        var.value = "\229\133\131\232\161\168 " .. tostring(mtTab)
+        var.value = "元表 " .. tostring(mtTab)
       end, function()
-        var.value = "\229\133\131\232\161\168 [value can't trans to string]"
+        var.value = "元表 [value can't trans to string]"
       end)
       var.variablesReference = variableRefIdx
       variableRefTab[variableRefIdx] = mtTab
@@ -2276,9 +2179,9 @@ function this.getVariableRef(refStr)
       var.name = "_Metatable_"
       var.type = tostring(type(udMtTable))
       xpcall(function()
-        var.value = "\229\133\131\232\161\168 " .. tostring(udMtTable)
+        var.value = "元表 " .. tostring(udMtTable)
       end, function()
-        var.value = "\229\133\131\232\161\168 [value can't trans to string]"
+        var.value = "元表 [value can't trans to string]"
       end)
       var.variablesReference = variableRefIdx
       variableRefTab[variableRefIdx] = udMtTable
@@ -2313,7 +2216,6 @@ function this.getVariableRef(refStr)
   end
   return varTab
 end
-
 function this.getGlobalVariable(...)
   local varTab = {}
   for k, v in pairs(_G) do
@@ -2341,7 +2243,6 @@ function this.getGlobalVariable(...)
   end
   return varTab
 end
-
 function this.getUpValueVariable(checkFunc, isFormatVariable)
   local isGetValue = true
   if true == isFormatVariable then
@@ -2386,7 +2287,6 @@ function this.getUpValueVariable(checkFunc, isFormatVariable)
   until not n
   return varTab
 end
-
 function this.getVariable(checkLayer, isFormatVariable, offset)
   local isGetValue = true
   if true == isFormatVariable then
@@ -2399,7 +2299,7 @@ function this.getVariable(checkLayer, isFormatVariable, offset)
     ly = this.getSpecificFunctionStackLevel(lastRunFunction.func)
   end
   if 0 == ly then
-    this.printToVSCode("[error]\232\142\183\229\143\150\229\177\130\230\172\161\229\164\177\232\180\165\239\188\129", 2)
+    this.printToVSCode("[error]获取层次失败！", 2)
     return
   end
   local varTab = {}
@@ -2450,7 +2350,6 @@ function this.getVariable(checkLayer, isFormatVariable, offset)
   until nil == n
   return varTab, stacklayer - 1
 end
-
 function this.checkSameNameVar(varTab, var)
   for k, v in pairs(varTab) do
     if v.name == var.name then
@@ -2459,7 +2358,6 @@ function this.checkSameNameVar(varTab, var)
   end
   return 0
 end
-
 function this.processExp(msgTable)
   local retString
   local var = {}
@@ -2482,11 +2380,11 @@ function this.processExp(msgTable)
         xpcall(function()
           retString = f()
         end, function()
-          retString = "\232\190\147\229\133\165\233\148\153\232\175\175\230\140\135\228\187\164\227\128\130\n + \232\175\183\230\163\128\230\159\165\230\140\135\228\187\164\230\152\175\229\144\166\230\173\163\231\161\174\n + \230\140\135\228\187\164\228\187\133\232\131\189\229\156\168[\230\154\130\229\129\156\229\156\168\230\150\173\231\130\185\230\151\182]\232\190\147\229\133\165, \232\175\183\228\184\141\232\166\129\229\156\168\231\168\139\229\186\143\230\140\129\231\187\173\232\191\144\232\161\140\230\151\182\232\190\147\229\133\165"
+          retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入"
           var.isSuccess = false
         end)
       else
-        retString = "\230\140\135\228\187\164\230\137\167\232\161\140\233\148\153\232\175\175\227\128\130\n + \232\175\183\230\163\128\230\159\165\230\140\135\228\187\164\230\152\175\229\144\166\230\173\163\231\161\174\n + \229\143\175\228\187\165\231\155\180\230\142\165\232\190\147\229\133\165\232\161\168\232\190\190\229\188\143\239\188\140\230\137\167\232\161\140\229\135\189\230\149\176\230\136\150\229\143\152\233\135\143\229\144\141\239\188\140\229\185\182\232\167\130\229\175\159\230\137\167\232\161\140\231\187\147\230\158\156"
+        retString = "指令执行错误。\n + 请检查指令是否正确\n + 可以直接输入表达式，执行函数或变量名，并观察执行结果"
         var.isSuccess = false
       end
     end
@@ -2516,7 +2414,6 @@ function this.processExp(msgTable)
   table.insert(retTab, var)
   return retTab
 end
-
 function this.processWatchedExp(msgTable)
   local retString
   local expression = "return " .. tostring(msgTable.varName)
@@ -2533,11 +2430,11 @@ function this.processWatchedExp(msgTable)
     xpcall(function()
       retString = f()
     end, function()
-      retString = "\232\190\147\229\133\165\228\186\134\233\148\153\232\175\175\231\154\132\229\143\152\233\135\143\228\191\161\230\129\175"
+      retString = "输入了错误的变量信息"
       var.isSuccess = "false"
     end)
   else
-    retString = "\230\156\170\232\131\189\230\137\190\229\136\176\229\143\152\233\135\143\231\154\132\229\128\188"
+    retString = "未能找到变量的值"
     var.isSuccess = "false"
   end
   var.name = msgTable.varName
@@ -2564,7 +2461,6 @@ function this.processWatchedExp(msgTable)
   table.insert(retTab, var)
   return retTab
 end
-
 function tools.getFileSource()
   local info = debug.getinfo(1, "S")
   for k, v in pairs(info) do
@@ -2573,24 +2469,19 @@ function tools.getFileSource()
     end
   end
 end
-
 function tools.printTable(t, name, indent)
   local str = tools.show(t, name, indent)
   print(str)
 end
-
 function tools.serializeTable(t, name, indent)
   local str = tools.show(t, name, indent)
   return str
 end
-
 function tools.show(t, name, indent)
   local cart, autoref
-  
   local function isemptytable(t)
     return next(t) == nil
   end
-  
   local function basicSerialize(o)
     local so = tostring(o)
     if type(o) == "function" then
@@ -2606,7 +2497,6 @@ function tools.show(t, name, indent)
       return string.format("%q", so)
     end
   end
-  
   local function addtocart(value, name, indent, saved, field)
     indent = indent or ""
     saved = saved or {}
@@ -2633,7 +2523,6 @@ function tools.show(t, name, indent)
       end
     end
   end
-  
   name = name or "PRINT_Table"
   if type(t) ~= "table" then
     return name .. " = " .. basicSerialize(t)
@@ -2642,7 +2531,6 @@ function tools.show(t, name, indent)
   addtocart(t, name, indent)
   return cart .. autoref
 end
-
 function tools.createJson()
   local math = require("math")
   local string = require("string")
@@ -2652,7 +2540,6 @@ function tools.createJson()
   json.EMPTY_ARRAY = {}
   json.EMPTY_OBJECT = {}
   local decode_scanArray, decode_scanComment, decode_scanConstant, decode_scanNumber, decode_scanObject, decode_scanString, decode_scanWhitespace, encodeString, isArray, isEncodable
-  
   function json.encode(v)
     if nil == v then
       return "null"
@@ -2689,7 +2576,6 @@ function tools.createJson()
     end
     assert(false, "encode attempt to encode unsupported type " .. vtype .. ":" .. tostring(v))
   end
-  
   function json.decode(s, startPos)
     startPos = startPos and startPos or 1
     startPos = decode_scanWhitespace(s, startPos)
@@ -2712,11 +2598,9 @@ function tools.createJson()
     end
     return decode_scanConstant(s, startPos)
   end
-  
   function json.null()
     return json.null
   end
-  
   function decode_scanArray(s, startPos)
     local array = {}
     local stringLen = string.len(s)
@@ -2740,14 +2624,12 @@ function tools.createJson()
       index = index + 1
     until false
   end
-  
   function decode_scanComment(s, startPos)
     assert(string.sub(s, startPos, startPos + 1) == "/*", "decode_scanComment called but comment does not start at position " .. startPos)
     local endPos = string.find(s, "*/", startPos + 2)
     assert(nil ~= endPos, "Unterminated comment in string at " .. startPos)
     return endPos + 2
   end
-  
   function decode_scanConstant(s, startPos)
     local consts = {
       ["true"] = true,
@@ -2766,7 +2648,6 @@ function tools.createJson()
     end
     assert(nil, "Failed to scan constant from string " .. s .. " at starting position " .. startPos)
   end
-  
   function decode_scanNumber(s, startPos)
     local endPos = startPos + 1
     local stringLen = string.len(s)
@@ -2777,7 +2658,6 @@ function tools.createJson()
     local numberValue = string.sub(s, startPos, endPos - 1)
     return numberValue, endPos
   end
-  
   function decode_scanObject(s, startPos)
     local object = {}
     local stringLen = string.len(s)
@@ -2806,7 +2686,6 @@ function tools.createJson()
       object[key] = value
     until false
   end
-  
   local escapeSequences = {
     ["\\t"] = "\t",
     ["\\f"] = "\f",
@@ -2819,7 +2698,6 @@ function tools.createJson()
       return string.sub(k, 2)
     end
   })
-  
   function decode_scanString(s, startPos)
     assert(startPos, "decode_scanString(..) called without start position")
     local startChar = string.sub(s, startPos, startPos)
@@ -2856,7 +2734,6 @@ function tools.createJson()
     assert(string.find(s, startChar, j + 1), "String decoding failed: missing closing " .. startChar .. " at position " .. j .. "(for string at position " .. startPos .. ")")
     return table.concat(t, ""), j + 2
   end
-  
   function decode_scanWhitespace(s, startPos)
     local whitespace = " \n\r\t"
     local stringLen = string.len(s)
@@ -2865,7 +2742,6 @@ function tools.createJson()
     end
     return startPos
   end
-  
   local escapeList = {
     ["\""] = "\\\"",
     ["\\"] = "\\\\",
@@ -2876,14 +2752,12 @@ function tools.createJson()
     ["\r"] = "\\r",
     ["\t"] = "\\t"
   }
-  
   function json_private.encodeString(s)
     local s = tostring(s)
     return s:gsub(".", function(c)
       return escapeList[c]
     end)
   end
-  
   function isArray(t)
     if t == json.EMPTY_ARRAY then
       return true, 0
@@ -2908,17 +2782,13 @@ function tools.createJson()
     end
     return true, maxIndex
   end
-  
   function isEncodable(o)
     local t = type(o)
     return "string" == t or "boolean" == t or "number" == t or "nil" == t or "table" == t or "function" == t and o == json.null
   end
-  
   return json
 end
-
 local base64CharTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-
 function tools.base64encode(data)
   return (data:gsub(".", function(x)
     local r, b = "", x:byte()
@@ -2941,7 +2811,6 @@ function tools.base64encode(data)
     "="
   })[#data % 3 + 1]
 end
-
 function tools.base64decode(data)
   data = string.gsub(data, "[^" .. base64CharTable .. "=]", "")
   return (data:gsub(".", function(x)
@@ -2964,7 +2833,6 @@ function tools.base64decode(data)
     return string.char(c)
   end))
 end
-
 json = tools.createJson()
 this.printToConsole("load LuaPanda success", 1)
 this.replaceCoroutineFuncs()

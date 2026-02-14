@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_Forging_MaterialReturn_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Forging_MaterialReturn_PC_C:UpdateView(ResInfos)
   for _, ResInfo in ipairs(ResInfos) do
     local ResWidget = self:CreateWidgetNew("ComItemUniversalM")
@@ -25,5 +24,4 @@ function WBP_Forging_MaterialReturn_PC_C:UpdateView(ResInfos)
     end
   end
 end
-
 return WBP_Forging_MaterialReturn_PC_C

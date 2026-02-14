@@ -11,11 +11,9 @@ local DamageTypes = CommonUtils.Keys(DataMgr.DamageType)
 table.sort(DamageTypes)
 for Index, DamageType in ipairs(DamageTypes) do
   DamageProtoStr = DamageProtoStr .. [[
-
 		]] .. DamageType .. " " .. tostring(Index - 1) .. " : RateStruct"
 end
 DamageProtoStr = DamageProtoStr .. [[
-
 	]] .. [[
 }
 	.Vector {

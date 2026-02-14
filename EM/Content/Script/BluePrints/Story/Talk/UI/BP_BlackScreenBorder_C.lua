@@ -3,81 +3,86 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
-  self.FadeTimer = 0
   self.bPaused = false
-  self.bStartFadeIn = false
-  DebugPrint("Construct")
-  self.bStartFadeOut = false
-  self.FadeInTime = 1
-  self.FadeOutTime = 1
   self.FadeInCallback = nil
   self.FadeOutCallback = nil
-  self:SetBlackScreenAlpha(0)
+  self.bFadeIn = false
+  self.bFadeOut = false
+  self.FadeTime = 0
+  self.PausePosition = nil
+  self:SetToTransparent()
 end
-
 function M:FadeIn(FadeTime, Callback)
-  DebugPrint("BP_BlackScreenBorder_C:StartFadeIn", "BlendInTime:", FadeTime, "FrameCount:", UKismetSystemLibrary.GetFrameCount())
-  self.FadeTimer = 0
-  self.FadeInTime = FadeTime
-  self.FadeInCallback = Callback
+  DebugPrint("BP_BlackScreenBorder_C:StartFadeIn", "BlendInTime:", FadeTime, "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
   self.bPaused = false
-  self.bStartFadeOut = false
+  self.FadeTime = FadeTime
+  self.FadeInCallback = Callback
   if FadeTime <= 0 then
-    self.bStartFadeIn = false
     self:SetToBlack()
     self:OnFadeInFinished()
   else
-    self.bStartFadeIn = true
+    self.bFadeIn = true
+    local AnimationTime = self.AlphaChange:GetEndTime()
+    self:BindToAnimationFinished(self.AlphaChange, {
+      self,
+      function()
+        self.bFadeIn = false
+        self:UnbindAllFromAnimationFinished(self.AlphaChange)
+        self:OnFadeInFinished()
+      end
+    })
+    self:StopAllAnimations()
+    self:PlayAnimation(self.AlphaChange, 0, 1, EUMGSequencePlayMode.Forward, AnimationTime / FadeTime)
   end
   AudioManager(self):PlayUISound(self, "event:/snapshot/ui/filter_fade_ui", "BlackScreenBorder", nil)
 end
-
 function M:FadeOut(FadeTime, Callback)
-  DebugPrint("BP_BlackScreenBorder_C:StartFadeOut, BlendOutTime:", FadeTime, "FrameCount:", UKismetSystemLibrary.GetFrameCount())
-  self.FadeTimer = 0
-  self.FadeOutTime = FadeTime
+  DebugPrint("BP_BlackScreenBorder_C:StartFadeOut, BlendOutTime:", FadeTime, "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
   self.bPaused = false
-  self.bStartFadeIn = false
+  self.FadeTime = FadeTime
   self.FadeOutCallback = Callback
   if FadeTime <= 0 then
-    self.bStartFadeOut = false
     self:SetToTransparent()
     self:OnFadeOutFinished()
   else
-    self.bStartFadeOut = true
+    self.bFadeOut = true
+    local AnimationTime = self.AlphaChange:GetEndTime()
+    self:BindToAnimationFinished(self.AlphaChange, {
+      self,
+      function()
+        self:UnbindAllFromAnimationFinished(self.AlphaChange)
+        self:OnFadeOutFinished()
+        self.bFadeOut = false
+      end
+    })
+    self:StopAllAnimations()
+    self:PlayAnimation(self.AlphaChange, 0, 1, EUMGSequencePlayMode.Reverse, AnimationTime / FadeTime)
   end
   AudioManager(self):StopSound(self, "BlackScreenBorder")
 end
-
 function M:SetToBlack()
-  self:SetBlackScreenAlpha(1)
+  DebugPrint("BP_BlackScreenBorder_C:SetToBlack", "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
+  self:StopAllAnimations()
+  self:PlayAnimation(self.Black)
 end
-
 function M:SetToTransparent()
-  self:SetBlackScreenAlpha(0)
+  DebugPrint("BP_BlackScreenBorder_C:SetToTransparent", "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
+  self:StopAllAnimations()
+  self:PlayAnimation(self.Transparent)
 end
-
 function M:OnFadeInFinished()
-  DebugPrint("BP_BlackScreenBorder_C:FadeInFinished", "FrameCount:", UKismetSystemLibrary.GetFrameCount())
+  DebugPrint("BP_BlackScreenBorder_C:FadeInFinished", "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
   if self.FadeInCallback then
     local Func = self.FadeInCallback.Func
     local Obj = self.FadeInCallback.Obj
     local Params = self.FadeInCallback.Params
     self.FadeInCallback = nil
-    if 0 ~= self.FadeInTime then
-      self:AddTimer(0.01, function()
-        Func(Obj, table.unpack(Params))
-      end)
-    else
-      Func(Obj, table.unpack(Params))
-    end
+    Func(Obj, table.unpack(Params))
   end
 end
-
 function M:OnFadeOutFinished()
-  DebugPrint("BP_BlackScreenBorder_C:FadeOutFinished", "FrameCount:", UKismetSystemLibrary.GetFrameCount())
+  DebugPrint("BP_BlackScreenBorder_C:FadeOutFinished", "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
   if self.FadeOutCallback then
     local Func = self.FadeOutCallback.Func
     local Obj = self.FadeOutCallback.Obj
@@ -86,9 +91,26 @@ function M:OnFadeOutFinished()
     Func(Obj, table.unpack(Params))
   end
 end
-
-function M:Pause(bPause)
-  self.bPaused = bPause
+function M:Pause(bPaused)
+  DebugPrint("BP_BlackScreenBorder_C:Pause, bPause:", bPaused, "self.bPaused:", self.bPaused, "FrameCount:", UKismetSystemLibrary.GetFrameCount(), self)
+  if true == bPaused and self.bPaused == false then
+    if self:IsAnimationPlaying(self.AlphaChange) then
+      self.PausePosition = self:PauseAnimation(self.AlphaChange)
+    end
+  elseif false == bPaused and self.bPaused == true and self.PausePosition then
+    local PlayMode
+    local PausePosition = self.PausePosition
+    local AnimationTime = self.AlphaChange:GetEndTime()
+    if true == self.bFadeIn then
+      PlayMode = EUMGSequencePlayMode.Forward
+    elseif true == self.bFadeOut then
+      PlayMode = EUMGSequencePlayMode.Reverse
+      PausePosition = AnimationTime - PausePosition
+    end
+    if nil ~= PlayMode then
+      self:PlayAnimation(self.AlphaChange, PausePosition, 1, PlayMode, AnimationTime / self.FadeTime)
+    end
+  end
+  self.bPaused = bPaused
 end
-
 return M

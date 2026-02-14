@@ -1,7 +1,6 @@
 local FTypingTextBlock = require("Blueprints.Story.Talk.Typing.TypingTextBlock")
 local MiscUtils = require("Utils.MiscUtils")
 local M = {}
-
 function M:New(Page)
   local TypingLine = {}
   for k, v in pairs(self) do
@@ -15,35 +14,27 @@ function M:New(Page)
   TypingLine.SuperscriptBlocks = {}
   return TypingLine
 end
-
 function M:GetMaxSize()
   return self.Page:GetMaxSize()
 end
-
 function M:GetRemainSize()
   return FVector2D(self:GetMaxSize().X - self.Size.X, self.Page:GetRemainHeight())
 end
-
 function M:GetSize()
   return self.Size
 end
-
 function M:GetTextSize()
   return self.TextSize
 end
-
 function M:GetSuperscriptSize()
   return self.SuperscriptSize
 end
-
 function M:GetSuperscriptCount()
   return #self.SuperscriptBlocks
 end
-
 function M:GetSuperscript(Num)
   return self.SuperscriptBlocks[Num]
 end
-
 function M:CanInsertBlock(Block)
   local RemainSize = self:GetRemainSize()
   local SBlock = Block:GetAttr("superscript_block")
@@ -55,7 +46,6 @@ function M:CanInsertBlock(Block)
   end
   return RemainSize.Y > MaxTY + MaxSY
 end
-
 function M:AddBlock(Block, TypingUserWidget)
   if not self:CanInsertBlock(Block) then
     return Block
@@ -74,7 +64,7 @@ function M:AddBlock(Block, TypingUserWidget)
     if "img" == BlockType then
     elseif "text" == BlockType then
       if 0 == #Block.Text or BlockSize.X <= 0 then
-        print(_G.LogTag, "Block \229\134\133\229\174\185\228\184\186\231\169\186\230\136\150\229\164\167\229\176\143\228\184\1860\239\188\140\232\162\171\228\184\162\229\188\131\227\128\130", "Block \229\164\167\229\176\143\239\188\154", BlockSize, "Block \229\134\133\229\174\185\239\188\154", Block:GetRichText())
+        print(_G.LogTag, "Block 内容为空或大小为0，被丢弃。", "Block 大小：", BlockSize, "Block 内容：", Block:GetRichText())
         return
       end
       local LText, RText = self:SplitText(Block, RemainSize, TypingUserWidget)
@@ -109,7 +99,6 @@ function M:AddBlock(Block, TypingUserWidget)
   end
   return RBlock
 end
-
 function M:SplitText(Block, RemainSize, TypingUserWidget)
   local Words = Utils.Split(Block.Text, " ")
   local RemainWidth = RemainSize.X
@@ -122,7 +111,7 @@ function M:SplitText(Block, RemainSize, TypingUserWidget)
       RemainWidth = RemainWidth - WordWidth - SpaceWidth
       LText = LText .. Word .. " "
     else
-      if not MiscUtils.IsSingleByteWord(Word) then
+      if not MiscUtils.IsSingleByteWord(Word) and (CommonConst.SystemLanguage == CommonConst.SystemLanguages.CN or CommonConst.SystemLanguage == CommonConst.SystemLanguages.JP or CommonConst.SystemLanguage == CommonConst.SystemLanguages.TC) then
         do
           local WordLen = UE4.UKismetStringLibrary.Len(Word)
           local Left = 0
@@ -159,7 +148,6 @@ function M:SplitText(Block, RemainSize, TypingUserWidget)
   end
   return LText, RText
 end
-
 function M:AssignPunctuation(LText, RText)
   local RLen = UE4.UKismetStringLibrary.Len(RText)
   if RLen <= 0 then
@@ -167,14 +155,14 @@ function M:AssignPunctuation(LText, RText)
   end
   local LLen = UE4.UKismetStringLibrary.Len(LText)
   local LLastChar = UE4.UKismetStringLibrary.GetSubstring(LText, LLen - 1, 1)
-  if string.find("([{\227\128\136\227\128\138\227\128\140\227\128\142\227\128\144\227\128\148\227\128\150\239\188\136\226\128\156\226\128\152", LLastChar, 1, true) then
+  if string.find("([{〈《「『【〔〖（“‘", LLastChar, 1, true) then
     LText = UE4.UKismetStringLibrary.GetSubstring(LText, 0, LLen - 1)
     RText = LLastChar .. RText
     return LText, RText
   end
   local RFirtChar = UE4.UKismetStringLibrary.GetSubstring(RText, 0, 1)
-  local NoBreakLinePunctuations = ",.?;~!%\239\188\140\227\128\129\227\128\130\239\188\155\239\188\154\239\188\159\239\188\129\194\183)]}\227\128\137\227\128\139\227\128\141\227\128\143\227\128\145\227\128\149\227\128\151\239\188\137\226\128\157\226\128\153"
-  local EllipsisAndDash = "\226\128\148\226\128\166"
+  local NoBreakLinePunctuations = ",.?;~!%，、。；：？！·)]}〉》」』】〕〗）”’"
+  local EllipsisAndDash = "—…"
   if string.find(EllipsisAndDash, RFirtChar, 1, true) then
     for i = LLen - 1, 1, -1 do
       local LChar = UE4.UKismetStringLibrary.GetSubstring(LText, i, 1)
@@ -216,7 +204,6 @@ function M:AssignPunctuation(LText, RText)
   end
   return LText, RText
 end
-
 function M:GetRichText()
   local Text = ""
   for _, Block in ipairs(self.Blocks) do
@@ -224,5 +211,4 @@ function M:GetRichText()
   end
   return Text
 end
-
 return M

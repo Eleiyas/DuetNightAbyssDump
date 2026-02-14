@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:SetInfo(Info)
   self.Text_Title:SetText(GText(Info.MainTitle))
   if Info.SubTitle then
@@ -12,5 +11,4 @@ function M:SetInfo(Info)
     self.Panel_SubTitle:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return M

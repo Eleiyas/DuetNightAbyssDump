@@ -6,12 +6,10 @@ M._components = {
   "BluePrints.UI.BP_EMUserWidgetUtils_C",
   "BluePrints.UI.UIComponent.StarsUIComponent"
 }
-
 function M:Construct()
   self.Text_Lv:SetText(GText("UI_LEVEL_NAME"))
   self.Btn_ExpReward.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Init(Level, MaxLevel, ExpPercent, StarNumber, BreakLevelUpData, Type, Tag, IsPreviewMode)
   self.IsPreviewMode = IsPreviewMode
   self.Text_Level:SetText(Level)
@@ -46,14 +44,12 @@ function M:Init(Level, MaxLevel, ExpPercent, StarNumber, BreakLevelUpData, Type,
     self.Btn_ExpReward:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnExpRewardBtnClicked()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_small", nil, nil)
   local Params = self:MakeBreakRewardData()
   Params.AutoFocus = true
   UIManager(self):ShowCommonPopupUI(100251, Params, self)
 end
-
 function M:MakeBreakRewardData()
   if not self.BreakLevelUpData or nil == self.Type then
     return {}
@@ -61,11 +57,9 @@ function M:MakeBreakRewardData()
   local Avatar = GWorld:GetAvatar()
   local Params = {}
   local ConfigData = {}
-  
   function ConfigData.ReceiveAllCallBack(_, ReceiveAllParm)
     self:GetAllRewards(ReceiveAllParm)
   end
-  
   ConfigData.ReceiveAllParam = {}
   ConfigData.ReceiveButtonText = GText("UI_Archive_CollectionClaimAll")
   ConfigData.ShowTotalProgress = false
@@ -90,15 +84,14 @@ function M:MakeBreakRewardData()
       Item.BreakLevel = BreakLevel
       Item.CanReceive = nil ~= StoredReward
       Item.RewardsGot = not Item.CanReceive and CollectedReward
-      
       function Item.ReceiveCallBack(_, ReceiveAllParm)
         self:GetReward(ReceiveAllParm)
       end
-      
       Item.ReceiveParm = {ReceiveParm}
       Item.BreakStarCount = BreakNum
       Item.ReceiveButtonText = GText("UI_Archive_CollectionClaim")
       Item.NotreachText = GText("UI_Archive_CollectionInProgress")
+      Item.Hint = GText("UI_Armory_BreakProgress")
       local Rewards = {}
       local RewardsInfo = DataMgr.Reward[BreakData.CollectReward]
       for Index, ItemId in ipairs(RewardsInfo.Id) do
@@ -121,22 +114,20 @@ function M:MakeBreakRewardData()
   Params.ConfigData = ConfigData
   return Params
 end
-
 function M:GetReward(Content)
   local Avatar = GWorld:GetAvatar()
   local ReceiveParm = Content.ConfigData.ReceiveParm
   if Avatar and #ReceiveParm > 0 then
     local DialogWidget = Content.Owner
-    
     local function CallBack(Ret, Rewards)
       self:RefreshRewardDialog(DialogWidget, Rewards)
     end
-    
-    DialogWidget:BlockAllUIInput(true)
+    if DialogWidget then
+      DialogWidget:BlockAllUIInput(true)
+    end
     Avatar:GetStoredCollectReward(CallBack, ReceiveParm)
   end
 end
-
 function M:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   local RewardPathTable = {}
@@ -145,16 +136,15 @@ function M:GetAllRewards(ReceiveAllParm)
   end
   if Avatar and #RewardPathTable > 0 then
     local DialogWidget = ReceiveAllParm.SelfWidget
-    
     local function CallBack(Ret, Rewards)
       self:RefreshRewardDialog(DialogWidget, Rewards)
     end
-    
-    DialogWidget:BlockAllUIInput(true)
+    if DialogWidget then
+      DialogWidget:BlockAllUIInput(true)
+    end
     Avatar:GetStoredCollectReward(CallBack, RewardPathTable)
   end
 end
-
 function M:RefreshRewardDialog(DialogWidget, Rewards)
   if not DialogWidget then
     return
@@ -183,7 +173,6 @@ function M:RefreshRewardDialog(DialogWidget, Rewards)
   DialogWidget:RefreshButton(HaveReWardToGet)
   UIManager(GWorld.GameInstance):LoadUINew("GetItemPage", nil, nil, nil, Rewards)
 end
-
 function M:ShowRewardReddot(bShow)
   if bShow and not self.IsPreviewMode then
     self.Btn_ExpReward.Reddot:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -191,13 +180,11 @@ function M:ShowRewardReddot(bShow)
     self.Btn_ExpReward.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetBtnExpRewardVisible()
   if not self.Btn_ExpReward then
     return false
   end
   return self.Btn_ExpReward:GetVisibility() ~= ESlateVisibility.Collapsed
 end
-
 AssembleComponents(M)
 return M

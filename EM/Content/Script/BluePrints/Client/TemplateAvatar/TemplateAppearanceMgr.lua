@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:InitCharSetCharAppearanceAccessory(Char, Reason)
   if not Char then
     return
@@ -18,7 +17,6 @@ function Component:InitCharSetCharAppearanceAccessory(Char, Reason)
     end
   end
 end
-
 function Component:GMAddWeaponSkin(SkinId, Reason)
   local SkinInfo = DataMgr.WeaponSkin[SkinId]
   if not SkinInfo or 1 == SkinInfo.GMNot then
@@ -26,7 +24,6 @@ function Component:GMAddWeaponSkin(SkinId, Reason)
   end
   self:AddWeaponSkin(SkinId, Reason, true)
 end
-
 function Component:AddWeaponSkin(SkinId, Reason, GiveNotOpen)
   local SkinInfo = DataMgr.WeaponSkin[SkinId]
   if not SkinInfo then
@@ -41,7 +38,6 @@ function Component:AddWeaponSkin(SkinId, Reason, GiveNotOpen)
   end
   self.OwnedWeaponSkins[SkinId] = os.time()
 end
-
 function Component:GMAddWeaponAccessory(AccessoryId, Reason)
   local Info = DataMgr.WeaponAccessory[AccessoryId]
   if not Info or 1 == Info.GMNot then
@@ -49,7 +45,6 @@ function Component:GMAddWeaponAccessory(AccessoryId, Reason)
   end
   self:AddWeaponAccessory(AccessoryId, Reason, true)
 end
-
 function Component:AddWeaponAccessory(AccessoryId, Reason, GiveNotOpen)
   if not AccessoryId then
     return
@@ -64,5 +59,4 @@ function Component:AddWeaponAccessory(AccessoryId, Reason, GiveNotOpen)
   end
   self.WeaponAccessorys:Append(AccessoryId)
 end
-
 return Component

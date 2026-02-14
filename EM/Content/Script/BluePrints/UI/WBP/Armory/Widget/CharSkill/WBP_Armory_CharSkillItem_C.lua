@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
   self.Button_Area.OnHovered:Add(self, self.OnBtnHovered)
@@ -11,14 +10,12 @@ function M:Construct()
   self.Button_Area.OnReleased:Add(self, self.OnBtnReleased)
   self:FlushAnimations()
 end
-
 function M:OnBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_skill_icon", nil, nil)
   if self.OnClickedFunc then
     self.OnClickedFunc(self.OnClickedObj, self.Content)
   end
 end
-
 function M:Init(Content)
   self.Content = Content
   Content.UI = self
@@ -44,7 +41,6 @@ function M:Init(Content)
   end
   self:SetIsSelected(Content.IsSelected)
 end
-
 function M:SetIsLocked(IsLocked)
   if IsLocked then
     self:PlayAnimation(self.Forbidden)
@@ -52,14 +48,12 @@ function M:SetIsLocked(IsLocked)
     self:PlayAnimation(self.Unlock_In, 0, 1, 0, 100)
   end
 end
-
 function M:SetIcon(IconPath)
   local IconDynaMaterial = self.Icon_CharSkill:GetDynamicMaterial()
   if IconDynaMaterial then
     IconDynaMaterial:SetTextureParameterValue("IconTex", LoadObject(IconPath))
   end
 end
-
 function M:SetLevel(Level, MaxLevel)
   self.Level = Level
   self.MaxLevel = MaxLevel
@@ -71,7 +65,6 @@ function M:SetLevel(Level, MaxLevel)
     self:PlayAnimation(self.Level_Normal)
   end
 end
-
 function M:SetCanUpgrade(bCanUpgrad)
   if bCanUpgrad then
     self:PlayAnimation(self.Remind)
@@ -80,7 +73,6 @@ function M:SetCanUpgrade(bCanUpgrad)
     self.LevelUp_Remind:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Unlock_In then
     self:SetIsSelected(self.IsSelected)
@@ -92,12 +84,10 @@ function M:OnAnimationFinished(Animation)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:UnLock()
   self:StopAnimation(self.Forbidden)
   self:PlayAnimation(self.Unlock_In)
 end
-
 function M:OnActice(NewLevel)
   self.NewLevel = NewLevel
   if self.NewLevel and self.MaxLevel and self.NewLevel >= self.MaxLevel then
@@ -106,11 +96,9 @@ function M:OnActice(NewLevel)
     self:PlayAnimation(self.Actice)
   end
 end
-
 function M:ChangeAni()
   self.Num_Level:SetText(self.NewLevel)
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -129,17 +117,14 @@ function M:SetIsSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnBtnHovered()
   self:StopAnimation(self.UnHover)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnBtnPressed()
   if self:IsAnimationPlaying(self.Unlock_In) then
     return
@@ -147,7 +132,6 @@ function M:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   if self:IsAnimationPlaying(self.Unlock_In) then
     return
@@ -155,24 +139,20 @@ function M:OnBtnReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:BindEvents(Obj, Events)
   Events = Events or {}
   self._Obj = Obj
   self._OnAddedToFocusPath = Events.OnAddedToFocusPath
   self._OnRemovedFromFocusPath = Events.OnRemovedFromFocusPath
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self._Obj, self.Content)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self._Obj, self.Content)
   end
 end
-
 return M

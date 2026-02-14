@@ -4,13 +4,11 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Destruct()
   AudioManager(self):StopSound(self, "BuffItemUnlockInSound")
   AudioManager(self):StopSound(self, "BuffItemInSound")
   self:RemoveTimer("BuffItemInAnimationTimer")
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -53,5 +51,4 @@ function M:OnListItemObjectSet(Content)
     end
   end, false, 0, "BuffItemInAnimationTimer", true)
 end
-
 return M

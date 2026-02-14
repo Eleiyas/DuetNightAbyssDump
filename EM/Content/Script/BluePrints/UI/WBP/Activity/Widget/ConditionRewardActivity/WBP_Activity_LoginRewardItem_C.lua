@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:FillWithData(Content)
   self.Content = Content
   self.ParentWidget = Content.ParentWidget
@@ -15,7 +14,6 @@ function M:FillWithData(Content)
   self:UnBindButtonPerformances()
   self:BindButtonPerformances()
 end
-
 function M:UpdateView(Content)
   local ResourceData = DataMgr[Content.ItemType][Content.Id]
   local Icon = LoadObject(ResourceData.Icon)
@@ -30,23 +28,19 @@ function M:UpdateView(Content)
     self.Btn_Click:SetForbidden(false)
   end
 end
-
 function M:BindButtonPerformances()
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClicked)
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnStuffDetailViewOpenChanged)
 end
-
 function M:UnBindButtonPerformances()
   self.Btn_Click.OnClicked:Clear()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnStuffDetailViewOpenChanged)
 end
-
 function M:OnStuffDetailViewOpenChanged(IsOpened)
   if type(self.StuffClickCallback) == "function" then
     self.StuffClickCallback(self.ParentWidget, IsOpened, self)
   end
 end
-
 function M:OnBtnClicked()
   if not self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
     local Content = {
@@ -60,7 +54,6 @@ function M:OnBtnClicked()
     AudioManager(self):PlayItemSound(self, self.Id, "Click", self.ItemType)
   end
 end
-
 function M:HideBtn(bHide)
   if bHide then
     self.Btn_Click:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -68,7 +61,6 @@ function M:HideBtn(bHide)
     self.Btn_Click:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:PlayAnimationByType(IsCanGetReward, IsFinished)
   self:StopAllAnimations()
   if IsFinished then
@@ -79,5 +71,4 @@ function M:PlayAnimationByType(IsCanGetReward, IsFinished)
     self:PlayAnimation(self.Normal)
   end
 end
-
 return M

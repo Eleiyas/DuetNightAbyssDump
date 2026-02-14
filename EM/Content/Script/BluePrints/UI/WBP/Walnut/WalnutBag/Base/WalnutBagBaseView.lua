@@ -3,30 +3,27 @@ local WalnutBagController = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBa
 local WalnutBagModel = WalnutBagController:GetModel()
 local WalnutBagCommon = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBagCommon")
 local M = {}
-
 function M:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "WalnutBagMain", nil)
   self:InitTabInfo()
   self:InitListenEvent()
   self:PlayAnimationForward(self.In)
 end
-
 function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "WalnutBagMain", {ToEnd = 1})
-  self:SwitchToNpcCamera()
   self:BindToAnimationFinished(self.Out, {
     self,
     self.Close
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function M:RefreshBaseInfo()
   self.Text_Empty:SetText(GText("UI_BAG_EMPTY"))
   self.Text_Empty_World:SetText(EnText("UI_BAG_EMPTY"))
   self.Text_Empty_Search:SetText(GText("UI_Walnut_Not_Find"))
   self.Text_Empty_World_1:SetText(EnText("UI_Walnut_Not_Find"))
   self.Btn_Sell.Text_Button:SetText(GText("UI_BAG_Sell"))
+  self.Text_Empty_Detail:SetText(GText("UI_NoWalnut"))
   self.InputBox:Init({
     Owner = self,
     HintText = GText(GText("UI_Search")),
@@ -49,7 +46,6 @@ function M:RefreshBaseInfo()
   })
   self.List_Item.BP_OnItemClicked:Add(self, self.OnListItemSelected)
   self.List_Item.BP_OnItemSelectionChanged:Add(self, self.OnSelectStuffItemChanged)
-  self.Button_DetailClose.OnClicked:Add(self, self.OnClickBlank)
   self.Text_None:SetText(GText("UI_SHOP_NOTOWNED"))
   self.CheckBox_Own:SetIsChecked(false)
   self.CheckBox_Own:BindEventOnClicked({
@@ -61,13 +57,11 @@ function M:RefreshBaseInfo()
   self.Walnut_Detail:SetOwner(self)
   self.Btn_Goto:Init(GText("MAIN_UI_WALNUTBAG"), self, WalnutBagModel:GetDungeonNextRefreshTime(), self.GoToStyleOfPlay)
 end
-
 function M:InitJumpParams(TabId, ItemId)
   self.NeedSelectTabId = TabId
   self.NeedSelectItemId = ItemId
   self.Tab_WalnutBag:SelectTabById(self.NeedSelectTabId or WalnutBagCommon.DefaultSelectTabId)
 end
-
 function M:GoToStyleOfPlay()
   if self.CurSelectContent == nil then
     PageJumpUtils:JumpToStyleOfPlaySubUI("NewDeputeRoot", "Walnut")
@@ -75,7 +69,6 @@ function M:GoToStyleOfPlay()
     PageJumpUtils:JumpToWalnutDungeonPage(self.CurSelectContent.WalnutType, self.CurSelectContent.Id)
   end
 end
-
 function M:SwitchToNpcCamera(bNpcCamera)
   if bNpcCamera then
     UIManager(self):SwitchUINpcCamera(bNpcCamera, "WalnutBagMain", self.NpcId, {IsHaveInOutAnim = true})
@@ -83,28 +76,12 @@ function M:SwitchToNpcCamera(bNpcCamera)
     UIManager(self):SwitchUINpcCamera(bNpcCamera, "WalnutBagMain", self.NpcId, {bDestroyNpc = true, IsHaveInOutAnim = false})
   end
 end
-
 function M:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
   return true
 end
-
-function M:OnClickBlank()
-  if not self.Walnut_Detail:IsVisible() then
-    return
-  end
-  if IsValid(self.CurSelectContent) then
-    if self.CurSelectContent.SelfWidget then
-      self.CurSelectContent.SelfWidget:SetSelected(false)
-    else
-      self.CurSelectContent.IsSelect = false
-    end
-  end
-  self:CancelStuffClickAndHideDetail()
-end
-
 function M:CancelStuffClickAndHideDetail()
   if self.CurSelectContent then
     self.CurSelectContent.IsSelect = false
@@ -115,37 +92,29 @@ function M:CancelStuffClickAndHideDetail()
   self.CurSelectContent = nil
   self:RefreshDetailPanelView(true)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self:UpdateUIStyleInPlatform(CurInputType == ECommonInputType.Gamepad, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:UpdateFocusInGamepad()
   end
 end
-
 function M:BtnSearchOnClicked()
   self:CancelStuffClickAndHideDetail()
   self:RefreshList(true, WalnutBagCommon.AllOptionName.SearchClick)
 end
-
 function M:ClickToShowNotHaveWalnutItem(bIsShowNotHave)
   self:CancelStuffClickAndHideDetail()
   self.bShowNotHaveState = bIsShowNotHave
   self:RefreshList(true, WalnutBagCommon.AllOptionName.ShowNotHaveClick)
 end
-
 function M:OnSellButtonClicked()
   self:EnterWalnutSellState()
 end
-
-function M:OnListItemSelected(Content, NotAddToSellList)
-  NotAddToSellList = NotAddToSellList or false
-  if not (Content and Content.Id) or self.CurSelectContent == Content then
-    if self.CurSelectContent == Content and self.BagSellState and not NotAddToSellList then
-      self:AddItemToSaleList(Content.Id, 1)
-    end
+function M:OnListItemSelected(Content, NotAddToSellList, bDefaultSelect)
+  if not Content or not Content.Id then
     return
   end
+  NotAddToSellList = NotAddToSellList or false
   if self.BagSellState then
     if self.DesireSaleWalnutObjList[Content.Id] then
       self:RefreshBottomKeyInfo("WalnutSell")
@@ -155,8 +124,10 @@ function M:OnListItemSelected(Content, NotAddToSellList)
   else
     self:RefreshBottomKeyInfo()
   end
-  AudioManager(self):PlayItemSound(self, Content.Id, "Click", WalnutBagCommon.WalnutTypeName)
-  if self.CurSelectContent then
+  if not bDefaultSelect then
+    AudioManager(self):PlayItemSound(self, Content.Id, "Click", WalnutBagCommon.WalnutTypeName)
+  end
+  if self.CurSelectContent and self.CurSelectContent.Id ~= Content.Id then
     self.CurSelectContent.IsSelect = false
     if self.CurSelectContent.SelfWidget then
       self.CurSelectContent.SelfWidget:SetSelected(false)
@@ -166,6 +137,12 @@ function M:OnListItemSelected(Content, NotAddToSellList)
   Content.IsSelect = true
   if Content.SelfWidget then
     Content.SelfWidget:SetSelected(true)
+  else
+    local EntryWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Item, self.ItemId2Index[Content.Id] - 1)
+    if EntryWidget and EntryWidget.SetSelected then
+      EntryWidget:SetSelected(true)
+      Content.SelfWidget = EntryWidget
+    end
   end
   self:RefreshDetailPanelView()
   self:UpdateReddotView(Content)
@@ -174,22 +151,27 @@ function M:OnListItemSelected(Content, NotAddToSellList)
     self:AddItemToSaleList(WalnutId, AddNum)
   end
 end
-
 function M:AddItemToSaleList(WalnutId, AddNum)
   if self.BagSellState then
     local SellPageMainUI = UIManager(self):GetUI("WalnutSelectToList")
     if self.DesireSaleWalnutObjList[WalnutId] ~= nil then
       local Num
-      if SellPageMainUI and self.DesireSaleWalnutObjList[WalnutId].Num + AddNum <= self.DesireSaleWalnutObjList[WalnutId].StuffCount then
-        self.DesireSaleWalnutObjList[WalnutId].Num = self.DesireSaleWalnutObjList[WalnutId].Num + AddNum
-        Num = self.DesireSaleWalnutObjList[WalnutId].Num
-        SellPageMainUI.CurSelectStuffContentInList = self.List_Item:GetItemAt(self.ItemId2Index[WalnutId] - 1)
+      if SellPageMainUI then
+        if self.DesireSaleWalnutObjList[WalnutId].Num + AddNum <= self.DesireSaleWalnutObjList[WalnutId].StuffCount then
+          self.DesireSaleWalnutObjList[WalnutId].Num = self.DesireSaleWalnutObjList[WalnutId].Num + AddNum
+          Num = self.DesireSaleWalnutObjList[WalnutId].Num
+          SellPageMainUI.CurSelectStuffContentInList = self.List_Item:GetItemAt(self.ItemId2Index[WalnutId] - 1)
+        else
+          return
+        end
       end
     else
       local StuffServerData = self:GetWalnutServerData(WalnutId)
       if StuffServerData then
         local StuffData = WalnutBagModel:GetWalnutStuffData(StuffServerData, self, self.OnListItemSelected)
-        if not StuffData then
+        if not StuffData or StuffData.StuffCount <= 0 then
+          self.WS_Detail:SetActiveWidgetIndex(1)
+          self:RefreshDetailPanelView(true)
           return
         end
         StuffData.SelfWidget = self.List_Item:GetItemAt(self.ItemId2Index[WalnutId] - 1).SelfWidget
@@ -198,11 +180,9 @@ function M:AddItemToSaleList(WalnutId, AddNum)
         StuffData.IsSelect = true
         self.DesireSaleWalnutObjList[WalnutId] = StuffData
         self.DesireSaleWalnutObjList[WalnutId].Num = AddNum
-        
         local function RemoveStuffCallback()
           EventManager:FireEvent(EventID.OnRemoveWalnutItemInList, tostring(WalnutId))
         end
-        
         local StuffStateTagInfo = {
           Name = "IsToChoose",
           ExtraData = {
@@ -216,17 +196,22 @@ function M:AddItemToSaleList(WalnutId, AddNum)
         self.CurSelectContent.StateTagInfo = StuffStateTagInfo
         if self.CurSelectContent.SelfWidget then
           self.CurSelectContent.SelfWidget:SetStuffStyleByStateTag(self.CurSelectContent)
+        else
+          local Item = self.List_Item:GetItemAt(self.ItemId2Index[WalnutId] - 1)
+          Item.StateTagInfo = StuffStateTagInfo
+          if Item.SelfWidget then
+            Item.SelfWidget:SetStuffStyleByStateTag(self.CurSelectContent)
+          end
         end
         self:RefreshBottomKeyInfo("WalnutSell")
       end
     end
-    self:RefreshWalnutSaleItemSelect(self.DesireSaleWalnutObjList[WalnutId], Num or AddNum)
+    self:RefreshWalnutSaleItemSelect(self.DesireSaleWalnutObjList[WalnutId])
     self:RefreshDetail(self.DesireSaleWalnutObjList[WalnutId].Num, WalnutId)
     self:RefreshItemInfo(self.DesireSaleWalnutObjList[WalnutId].Num, WalnutId)
     SellPageMainUI:OnUpdateCurSelectItemSaleInfo(self.DesireSaleWalnutObjList[WalnutId].Num, true)
   end
 end
-
 function M:RemoveItemSaleState(StuffId)
   local IStuffId = math.tointeger(StuffId)
   local StuffContent = self.DesireSaleWalnutObjList[IStuffId]
@@ -240,9 +225,12 @@ function M:RemoveItemSaleState(StuffId)
   }
   StuffContent.StateTagInfo = StuffStateTagInfo
   StuffContent.IsSelect = false
-  if StuffContent.SelfWidget and StuffContent.Uuid == StuffId then
-    StuffContent.SelfWidget:SetSelected(false)
-    StuffContent.SelfWidget:SetStuffStyleByStateTag(StuffContent)
+  local Item = self.List_Item:GetItemAt(self.ItemId2Index[IStuffId] - 1)
+  Item.StateTagInfo = StuffStateTagInfo
+  local EntryWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Item, self.ItemId2Index[IStuffId] - 1)
+  if EntryWidget and StuffContent.Uuid == StuffId then
+    EntryWidget:SetSelected(false)
+    EntryWidget:SetStuffStyleByStateTag(StuffContent)
   end
   local IsNeedCancelSelect = false
   local StuffConfigData = DataMgr.Resource[StuffContent.UnitId]
@@ -251,8 +239,10 @@ function M:RemoveItemSaleState(StuffId)
   if IsNeedCancelSelect then
     self.List_Item:BP_ClearSelection()
   end
+  if tonumber(StuffId) == self.CurSelectContent.Id then
+    self.WS_Detail:SetActiveWidgetIndex(1)
+  end
 end
-
 function M:RefreshItemInfo(Num, WalnutId)
   local Item = self.List_Item:GetItemAt(self.ItemId2Index[WalnutId] - 1)
   if not Item or not Item.SelfWidget then
@@ -261,13 +251,10 @@ function M:RefreshItemInfo(Num, WalnutId)
   Item.SelfWidget:SetSelectNum(Num, Item.Count)
   self.DesireSaleWalnutObjList[WalnutId].Num = Num
 end
-
 function M:RefreshDetail(WalnutId, Index)
 end
-
 function M:UpdateSelectInfo(Content)
 end
-
 function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     self:OnListItemSelected(SelectItem, true)
@@ -276,7 +263,6 @@ function M:OnSelectStuffItemChanged(SelectItem, bIsSelect)
     self.HoverItem = SelectItem
   end
 end
-
 function M:UpdateReddotView(Content)
   if Content.RedDotType then
     Content.RedDotType = nil
@@ -307,7 +293,6 @@ function M:UpdateReddotView(Content)
     end
   end
 end
-
 function M:RefreshAllGridIndex()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -317,24 +302,23 @@ function M:RefreshAllGridIndex()
     end
   end
 end
-
 function M:RefreshDetailPanelView(bIsHide)
   if bIsHide then
     self.Walnut_Detail:SetIsNeedPlayResolveAnim(true)
     self.Walnut_Detail:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.WS_Detail:SetActiveWidgetIndex(1)
     return
   end
   self.Walnut_Detail:RefreshItemDetails(self.CurSelectContent)
   self.Walnut_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.WS_Detail:SetActiveWidgetIndex(0)
 end
-
 function M:OnHorizontalListViewResizeDone(NewViewportSizeX, SizeX)
   local EmptySlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.HB_Empty)
   local Offsets = EmptySlot:GetOffsets()
   Offsets.Right = NewViewportSizeX - SizeX - Offsets.Left
   EmptySlot:SetOffsets(Offsets)
 end
-
 function M:SetFocus_Lua()
   self:RefreshBottomKeyInfo()
   local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
@@ -348,7 +332,6 @@ function M:SetFocus_Lua()
     self:SetFocus()
   end
 end
-
 function M:CheckIsCanAddToSaleList(CurStuffContent, bIsShowToast)
   local PlayerAvatar = GWorld:GetAvatar()
   if nil == PlayerAvatar then
@@ -357,27 +340,24 @@ function M:CheckIsCanAddToSaleList(CurStuffContent, bIsShowToast)
   if nil == CurStuffContent then
     CurStuffContent = self.CurSelectStuffContent
   end
+  if CurStuffContent and CurStuffContent.Count <= 0 then
+    return false
+  end
   local ShowTextId
-  if nil ~= CurStuffContent then
-    if -1 == CurStuffContent.Price then
-      ShowTextId = 7014
-    elseif 0 ~= CurStuffContent.LockType then
-      ShowTextId = 7010
-    end
+  if nil ~= CurStuffContent and -1 == CurStuffContent.Price then
+    ShowTextId = 7014
   end
   if ShowTextId and bIsShowToast then
     UIManager(self):ShowError(ShowTextId, nil, UIConst.Tip_CommonToast)
   end
   return nil == ShowTextId
 end
-
 function M:ReGenerateBagList()
   self:CancelStuffClickAndHideDetail()
   self.List_Item:BP_ClearSelection()
   self.List_Item:ClearListItems()
   self:RefreshList(true, WalnutBagCommon.AllOptionName.TabClick)
 end
-
 function M:UpdateAllItemsStyle(IsNeedDalay)
   if IsNeedDalay then
     if self:IsExistTimer("DelayToSetItemStyle") then
@@ -388,7 +368,6 @@ function M:UpdateAllItemsStyle(IsNeedDalay)
     self:DelayToSetItemStyle()
   end
 end
-
 function M:DelayToSetItemStyle()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -408,10 +387,8 @@ function M:DelayToSetItemStyle()
       local IsInChooseList = self.DesireSaleStuffObjList[ItemObj.Uuid] ~= nil
       if IsInChooseList then
         local SellPageMainUI = UIManager(self):GetUI(WalnutBagCommon.WalnutSelectUINames)
-        
         local function RemoveStuffCallback()
         end
-        
         ItemObj.StateTagInfo = {
           Name = "IsToChoose",
           ExtraData = {
@@ -436,5 +413,4 @@ function M:DelayToSetItemStyle()
     end
   end
 end
-
 return M

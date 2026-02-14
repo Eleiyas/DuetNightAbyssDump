@@ -3,7 +3,6 @@ local ChatModel = ChatController:GetModel()
 local M = Class({
   "BluePrints.UI.WBP.Chat.View.WBP_Chat_MainBase_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Btn_CloseFull.OnClicked:Add(self, self.Close)
@@ -18,6 +17,7 @@ function M:Construct()
     HintText = GText(GText("UI_Chat_InputHint")),
     TextLimit = DataMgr.GlobalConstant.ChatMsgMaxLen.ConstantValue,
     bLimitSpaces = true,
+    bNeedPasteBtn = true,
     Events = {
       OnTextChanged = function(self, Text)
         if "" == Text then
@@ -88,20 +88,17 @@ function M:Construct()
   self.Btn_DontDisturb.OnClicked:Add(self, self.OpenDisturbWindows)
   self.Text_DontDisturbDesc:SetText(GText("UI_Chat_Ignore"))
 end
-
 function M:Destruct()
   self.Panel_Chat_TeamInfo:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Button_Tab.OnClicked:Remove(self, self.BtnTeamInfoOnClicked)
   M.Super.Destruct(self)
 end
-
 function M:Close()
   self.List_SubTab:ClearListItems()
   self.List_Player:ClearListItems()
   ChatModel:SetCurrentChannel(ChatCommon.ChannelDef.TeamUp)
   M.Super.Close(self)
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
   self.Com_Input:SetText("")
@@ -180,7 +177,6 @@ function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   self:AddReddotListen()
   self:FreshTabDisturbIcon()
 end
-
 function M:GetWidthOverrideForInput()
   local ChatEmoji = DataMgr.WidgetUI.ChatEmoji.UIName
   local ChatQuickMsg = DataMgr.WidgetUI.ChatQuickMsg.UIName
@@ -191,12 +187,10 @@ function M:GetWidthOverrideForInput()
     return self.Anchor.MinDesiredWidth
   end
 end
-
 function M:UpdateTabStyleByTabChange(bInOpenChannel)
   self.TabIcon_1:SetSwitchOn(bInOpenChannel)
   self.TabIcon_2:SetSwitchOn(not bInOpenChannel)
 end
-
 function M:FreshTabDisturbIcon()
   local Avatar = GWorld:GetAvatar()
   for _, TabContent in pairs(self.List_SubTab:GetListItems()) do
@@ -206,7 +200,6 @@ function M:FreshTabDisturbIcon()
   end
   self.TabIcon_2:SetDisturbIcon(1 == Avatar.ChatChannelMute[ChatCommon.ChannelDef.Friend])
 end
-
 function M:_AddReddotListenInner(ChannelName, ChannelType)
   local NodeName = ChatCommon.ReddotNamePre .. ChannelName
   local Node = ReddotManager.GetTreeNode(NodeName)
@@ -215,7 +208,6 @@ function M:_AddReddotListenInner(ChannelName, ChannelType)
       local function ComputeTabNodeRedCount()
         if NodeName ~= ChatCommon.ReddotNamePre .. ChatCommon.ChannelNames[ChatCommon.ChannelDef.Friend] then
           local TotalNormalChatCount = 0
-          
           for _ChannelName, _ChannelType in pairs(ChatCommon.ChannelDef) do
             if _ChannelType ~= ChatCommon.ChannelDef.Friend then
               local _NodeName = ChatCommon.ReddotNamePre .. _ChannelName
@@ -228,7 +220,6 @@ function M:_AddReddotListenInner(ChannelName, ChannelType)
           self.TabIcon_1:SetReddotNum(TotalNormalChatCount)
         end
       end
-      
       local TabItem
       if ChannelType == ChatCommon.ChannelDef.Friend then
         TabItem = self.TabIcon_2
@@ -270,7 +261,6 @@ function M:_AddReddotListenInner(ChannelName, ChannelType)
     end)
   end
 end
-
 function M:ResetUI()
   self.CurrSelectPlayer = nil
   self.Group_NewMessage:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -285,7 +275,6 @@ function M:ResetUI()
   end
   self.Btn_Sent:SetText(GText("UI_Chat_Send"))
 end
-
 function M:_SetUpChatMsgListTimerCallback(MsgList)
   if self._SetUpChatMsgListIndex == #MsgList then
     self:_Stop_SetUpChatMsgListTimer()
@@ -308,7 +297,6 @@ function M:_SetUpChatMsgListTimerCallback(MsgList)
   self:_AddNewMsgToListView(MsgList[self._SetUpChatMsgListIndex])
   self.bDialogListRefreshed = false
 end
-
 function M:CalcWrapTextAt()
   local PlayerListWidth = 0
   if self.Group_PlayerList:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
@@ -318,14 +306,12 @@ function M:CalcWrapTextAt()
   end
   return self.Anchor.MinDesiredWidth - self.DialogPadding - PlayerListWidth
 end
-
 function M:SelectItemByChannelType(ChannelType)
   local ItemIdx = self.ChannelTypeToIdx[ChannelType] or 0
   local ItemObj = self.List_SubTab:GetItemAt(ItemIdx)
   self.List_SubTab:BP_SetSelectedItem(ItemObj)
   self:OnListSelectChannelClicked(ItemObj)
 end
-
 function M:BtnTeamInfoOnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if self.bOpenTeamList then
@@ -339,7 +325,6 @@ function M:BtnTeamInfoOnClicked()
   self.Panel_Chat_TeamInfo:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.bOpenTeamList = true
 end
-
 function M:OnListSelectChannelClicked(Content)
   if self.LastSelectChannelItem and self.LastSelectChannelItem.UI then
     self.LastSelectChannelItem.UI:SetIsSelected(false)
@@ -351,7 +336,6 @@ function M:OnListSelectChannelClicked(Content)
   self:OnHandleChangeChannel(self.TabIcon_1, Content)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
 end
-
 function M:OnTabSelected(TabWidget)
   ChatModel:GetChannelRemovedMsgs()
   local TabIdx = TabWidget.Idx
@@ -378,7 +362,6 @@ function M:OnTabSelected(TabWidget)
   end
   self:OnHandleChangeChannel(TabWidget, ItemInfo)
 end
-
 function M:OnHandleChangeChannel(TabWidget, ItemInfo)
   self:ResetUI()
   if ChatModel:GetCurrentChannel() ~= ItemInfo.ChannelType then
@@ -402,7 +385,6 @@ function M:OnHandleChangeChannel(TabWidget, ItemInfo)
   Switch[self.CurrChannel](self, TabWidget, ItemInfo)
   self:OnHandleChangeChannelWithOperate(TabWidget, ItemInfo)
 end
-
 function M:OnHandleChangeChannelWithOperate(TabWidget, ItemInfo)
   if self.CurrChannel == ChatCommon.ChannelDef.Friend then
     local AllFriendItems = FriendController:GetModel():GetFriendList()
@@ -430,7 +412,6 @@ function M:OnHandleChangeChannelWithOperate(TabWidget, ItemInfo)
     self.Image_TitleArrow:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnRefreshTeamChannelInfo(bIsOverallRefresh)
   if bIsOverallRefresh then
     self:OnTabSelected_InTeam()
@@ -440,7 +421,6 @@ function M:OnRefreshTeamChannelInfo(bIsOverallRefresh)
     self.Panel_Chat_TeamInfo:InitTeamInfo(self)
   end
 end
-
 function M:RefreshTeamMemberListInMobile()
   local TeamData = ChatModel:GetTeamForChat()
   local TeamNumber = nil == TeamData and 0 or #TeamData.Members
@@ -459,28 +439,22 @@ function M:RefreshTeamMemberListInMobile()
   end
   return TeamNumber
 end
-
 function M:HandleGoToTeamType()
   if self.CurrChannel == ChatCommon.ChannelDef.Friend then
     self:UpdateTabStyleByTabChange(false)
   end
   self:SelectItemByChannelType(ChatCommon.ChannelDef.TeamUp)
 end
-
 function M:HandleAddBlackList()
   self:UpdateTabStyleByTabChange(self._bIsChatInOpenChannel)
 end
-
 function M:HandleSelectPlayerToChat(Uid)
   self._bSelectedPlayerToChat = true
   self:UpdateTabStyleByTabChange(false)
   self._bSelectedPlayerToChat = false
 end
-
 function M:TryToDefaultFocusWidget()
 end
-
 function M:UpdateUIStyleInPlatform()
 end
-
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   if self.UnitParams.RotateAxis == "X" then
@@ -13,9 +12,8 @@ function M:CommonInitInfo(Info)
     self.RotateAxis = 2
   end
 end
-
 function M:OnBreakCountDown(SourceEid)
-  if self.bInRotate then
+  if self.bInRotate or not self.IsActive then
     return
   end
   local RotateSucc = self:TryRotate()
@@ -24,5 +22,4 @@ function M:OnBreakCountDown(SourceEid)
     self:ChangeState("Hit", SourceEid)
   end
 end
-
 return M

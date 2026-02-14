@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1754637109257299010",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1130.8041958041958, y = 287.5827505827507},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -82,10 +84,10 @@ return {
             endPort = "In"
           },
           {
-            startQuest = "175729891414533598586",
+            startQuest = "175729891414533598585",
             startPort = "Out",
-            endQuest = "175729891414533598585",
-            endPort = "In"
+            endQuest = "1754637109257299014",
+            endPort = "Success"
           },
           {
             startQuest = "1754637134437299565",
@@ -100,10 +102,16 @@ return {
             endPort = "In"
           },
           {
-            startQuest = "175729891414533598585",
+            startQuest = "175729891414533598586",
             startPort = "Out",
-            endQuest = "1754637109257299014",
-            endPort = "Success"
+            endQuest = "176061703180721472",
+            endPort = "In"
+          },
+          {
+            startQuest = "176061703180721472",
+            startPort = "Out",
+            endQuest = "175729891414533598585",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -131,7 +139,7 @@ return {
           ["1754637134437299565"] = {
             key = "1754637134437299565",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1192.3684210526317, y = 291.13157894736844},
             propsData = {
               IsNpcNode = false,
@@ -154,8 +162,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -167,9 +177,6 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -179,8 +186,8 @@ return {
           ["175729891414533598585"] = {
             key = "175729891414533598585",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
-            pos = {x = 2440, y = 273},
+            name = "对话节点",
+            pos = {x = 2441.5789473684213, y = 273},
             propsData = {
               IsNpcNode = false,
               FirstDialogueId = 80001005,
@@ -196,16 +203,33 @@ return {
           ["175729891414533598586"] = {
             key = "175729891414533598586",
             type = "ShowGuideMainNode",
-            name = "\230\152\190\231\164\186\229\155\190\230\150\135\229\188\149\229\175\188",
-            pos = {x = 1880, y = 295},
+            name = "显示图文引导",
+            pos = {x = 1780.5263157894738, y = 290.2631578947368},
             propsData = {GuideId = 2001}
           },
           ["175729892419333598783"] = {
             key = "175729892419333598783",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
-            pos = {x = 1568, y = 316},
-            propsData = {WaitTime = 1}
+            name = "延迟等待",
+            pos = {x = 1508.0000000000002, y = 284.421052631579},
+            propsData = {WaitTime = 5}
+          },
+          ["176061703180721472"] = {
+            key = "176061703180721472",
+            type = "TalkNode",
+            name = "对话节点",
+            pos = {x = 2106.3157894736846, y = 274.42105263157885},
+            propsData = {
+              IsNpcNode = false,
+              FirstDialogueId = 80001003,
+              FlowAssetPath = "",
+              TalkType = "Guide",
+              bIsStandalone = false,
+              GuideMeshIndexList = {},
+              IsPlayStartSound = false,
+              GuideTalkStyle = "Normal",
+              OverrideFailBlend = false
+            }
           }
         },
         commentData = {}

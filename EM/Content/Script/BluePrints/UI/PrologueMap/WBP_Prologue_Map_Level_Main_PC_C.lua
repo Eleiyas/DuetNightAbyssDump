@@ -3,19 +3,16 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Panel_Level:ClearListItems()
   self:InitMap()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "SystemOpenSound", nil)
 end
-
 function M:Destruct()
   self:CleanTimer()
   self:StopAllAnimations()
   self:PlayAnimation(self.Out)
 end
-
 function M:InitMap()
   local DungeonData = CommonUtils.DeepCopy(DataMgr.SelectDungeon)
   table.sort(DungeonData, function(A, B)
@@ -35,11 +32,9 @@ function M:InitMap()
     end, false, 0, nil, true)
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     AudioManager(self):SetEventSoundParam(self, "SystemOpenSound", {ToEnd = 1})
   end
 end
-
 return M

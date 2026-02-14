@@ -1,16 +1,14 @@
 require("UnLua")
 local M = Class({
-  "BluePrints.UI.BP_UIState_C"
+  "BluePrints.UI.BP_EMUserWidgetUtils_C",
+  "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self:AddInputMethodChangedListen()
 end
-
 function M:Init(Content)
   self:OnListItemObjectSet(Content)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.Entry = self
   self.Content = Content
@@ -18,7 +16,6 @@ function M:OnListItemObjectSet(Content)
   self.Item:Init(self)
   self:InitCompView()
 end
-
 function M:InitData(Content)
   self.Id = Content.Id
   self.Name = Content.Name
@@ -40,18 +37,15 @@ function M:InitData(Content)
   self.OnAddedToFocusPathEvent = Content.OnAddedToFocusPathEvent
   self.OnRemovedFromFocusPathEvent = Content.OnRemovedFromFocusPathEvent
 end
-
 function M:InitCompView()
   self:InitCommonView()
 end
-
 function M:InitCommonView()
   self.Item:InitCommonView()
   if self.bPlayInAnim then
     self:PlayInAnimation()
   end
 end
-
 function M:SetSelected(IsSelect)
   if self.NotInteractive then
     return
@@ -66,18 +60,15 @@ function M:SetSelected(IsSelect)
     self.Item:PlayAttributeWidgetNormal()
   end
 end
-
 function M:SetNew(IsNew)
   self.Content.IsNew = IsNew
   self.Item:SetNew(IsNew)
 end
-
 function M:SetCheckBtnKeyTipVisible(IsVisible)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Item:SetCheckBtnKeyTipVisible(IsVisible)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -96,7 +87,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.Item.Item:StopAllAnimations()
   self.Item.Item:PlayAnimation(self.Item.Item.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -115,7 +105,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.Item.Item:StopAllAnimations()
   self.Item.Item:PlayAnimation(self.Item.Item.UnHover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.HandleMouseDown then
     return UWidgetBlueprintLibrary.Handled()
@@ -136,7 +125,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.bMouseButtonDown = true
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.NotInteractive or self:IsInAnimationPlaying() or not self.bMouseButtonDown then
     return UWidgetBlueprintLibrary.Unhandled()
@@ -157,15 +145,12 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnTouchEnded(MyGeometry, TouchEvent)
   return self:OnMouseButtonUp(MyGeometry, TouchEvent)
 end
-
 function M:OnTouchStarted(MyGeometry, TouchEvent)
   return self:OnMouseButtonDown(MyGeometry, TouchEvent)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.OnFocusReceivedEvent then
     local Obj = self.OnFocusReceivedEvent.Obj
@@ -177,9 +162,8 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
       Callback(Obj)
     end
   end
-  return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
+  return UIUtils.Handled
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.OnAddedToFocusPathEvent then
     local Obj = self.OnAddedToFocusPathEvent.Obj
@@ -192,7 +176,6 @@ function M:OnAddedToFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.OnRemovedFromFocusPathEvent then
     local Obj = self.OnRemovedFromFocusPathEvent.Obj
@@ -205,13 +188,10 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     end
   end
 end
-
 function M:PlayInAnimation()
 end
-
 function M:IsInAnimationPlaying()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -230,10 +210,8 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   M.Super.RefreshOpInfoByInputDevice(self, CurInputType, CurGamepadName)
   self.Item:OnParentRefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
 end
-
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self:AddDispatcher(EventID.OnMenuClose, self, self.CloseList)
   self:AddDispatcher(EventID.OnWindowResized, self, self.OnWindowResized)
@@ -42,7 +41,6 @@ function M:Construct()
   end
   M.Super.Construct(self)
 end
-
 function M:Init(Parent, SortBy_List, SortType)
   self.Parent = Parent
   self.CurSortType = SortType or CommonConst.DESC
@@ -79,7 +77,6 @@ function M:Init(Parent, SortBy_List, SortType)
     self.Btn_Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:CalcSizeAndPos()
   local ParentGeo = self.Parent:GetTickSpaceGeometry()
   local ParentSize = USlateBlueprintLibrary.GetAbsoluteSize(ParentGeo)
@@ -93,15 +90,12 @@ function M:CalcSizeAndPos()
   Size.Y = self.OriginalPanelSize.Y
   self.Panel_Main.Slot:SetSize(Size)
 end
-
 function M:OnWindowResized()
   self:CloseList()
 end
-
 function M:SetSortType(SortType)
   self.CurSortType = SortType
 end
-
 function M:UpdateSortInfos()
   self.CurSortBy = self.Parent.CurSortBy
   self.CurSortType = self.Parent.CurSortType
@@ -114,27 +108,22 @@ function M:UpdateSortInfos()
     self:PlayAnimationForward(self.Btn_Switch)
   end
 end
-
 function M:UpdateParentSortInfos()
   self.CurSortBy = self.SelectedItem.Index
   self.Parent:SetSortInfos(self.CurSortBy, self.CurSortType)
 end
-
 function M:OnBtn_Filter_List_Pressed()
   self:StopAnimation(self.SortList_Hover)
   self:StopAnimation(self.SortList_Click)
   self:PlayAnimation(self.SortList_Press)
 end
-
 function M:OnBtn_Filter_List_Released()
 end
-
 function M:OnBtn_Filter_List_Hovered()
   self.IsFilterListBtnHovered = true
   self:StopAnimation(self.SortList_UnHover)
   self:PlayAnimation(self.SortList_Hover)
 end
-
 function M:OnBtn_Filter_List_Unhovered()
   self.IsFilterListBtnHovered = false
   self:StopAnimation(self.SortList_Hover)
@@ -142,7 +131,6 @@ function M:OnBtn_Filter_List_Unhovered()
   self:StopAnimation(self.SortList_Press)
   self:PlayAnimation(self.SortList_UnHover)
 end
-
 function M:ListOpenBtnClicked()
   if not self.Btn_Filter_List:IsHovered() then
     return
@@ -157,7 +145,6 @@ function M:ListOpenBtnClicked()
     self:OpenList()
   end
 end
-
 function M:DelayToCalcSizeAndPos()
   self:AddTimer(0.033, function()
     local PanelGeo = self.Panel_Main:GetTickSpaceGeometry()
@@ -170,14 +157,12 @@ function M:DelayToCalcSizeAndPos()
     end
   end, true, 0, "DelayToCalcSizeAndPos")
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self:Init(...)
   self:OpenList()
   self:RefreshOpInfoByInputDevice(self.CurInputDeviceType)
 end
-
 function M:OpenList()
   if self.SortBy_List then
     self:SetRenderOpacity(0)
@@ -195,7 +180,6 @@ function M:OpenList()
     self.Parent:OnListOpened()
   end
 end
-
 function M:CloseList()
   if self.SortBy_List then
     if self.IsListViewOpened then
@@ -210,11 +194,9 @@ function M:CloseList()
     self.Filter_List:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnListInAnimFinished()
   self.IsListInAnimPlaying = false
 end
-
 function M:OnListOutAnimFinished()
   self.IsListOutAnimPlaying = false
   if not self.IsListInAnimPlaying then
@@ -227,48 +209,42 @@ function M:OnListOutAnimFinished()
     self:Close()
   end
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
   self.Parent:SetRenderOpacity(1)
-  self.Parent:SetFocus()
+  if self.ForbiddenParentFocus then
+  else
+    self.Parent:SetFocus()
+  end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.IsInFocusPath = true
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.IsInFocusPath = false
   if self.IsListViewOpened then
     self:CloseList()
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.List)
 end
-
 function M:OnBackgroundClicked()
   self:CloseList()
 end
-
 function M:OnBtn_SortType_Pressed()
   self:StopAnimation(self.Btn_Hover)
   self:StopAnimation(self.Btn_Click)
   self:PlayAnimation(self.Btn_Press)
 end
-
 function M:OnBtn_SortType_Released()
 end
-
 function M:OnBtn_SortType_Hovered()
   self.IsSortTypeBtnHovered = true
   self:StopAnimation(self.Btn_UnHover)
   self:PlayAnimation(self.Btn_Hover)
 end
-
 function M:OnBtn_SortType_Unhovered()
   self.IsSortTypeBtnHovered = false
   self:StopAnimation(self.Btn_Hover)
@@ -276,7 +252,6 @@ function M:OnBtn_SortType_Unhovered()
   self:StopAnimation(self.Btn_Press)
   self:PlayAnimation(self.Btn_UnHover)
 end
-
 function M:OnSortTypeButtonClicked()
   if not self.Btn_SortType:IsHovered() then
     return
@@ -292,7 +267,6 @@ function M:OnSortTypeButtonClicked()
   end
   self.Parent:OnSortTypeChanged()
 end
-
 function M:OnListItemClicked(Content)
   if self:IsAnimationPlaying(self.List_Out) or Content.IsSelected then
     self:CloseList()
@@ -303,7 +277,6 @@ function M:OnListItemClicked(Content)
   self.Parent:OnSelectionsChanged()
   self:CloseList()
 end
-
 function M:SelectContent(Content)
   Content.IsSelected = true
   if Content.Entry then
@@ -318,13 +291,11 @@ function M:SelectContent(Content)
   end
   self.Text_Filterlist:SetText(self.SelectedItem.Text)
 end
-
 function M:OnListEntryInitialized(Content, Entry)
   if Content.IsSelected then
     self.List:BP_NavigateToItem(Content)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -347,13 +318,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   M.Super.OnPreviewKeyDown(self, MyGeometry, InKeyEvent)
   return Reply
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self:UpdateGamepadKeyState()
   M.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:UpdateGamepadKeyState()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     if self.IsInFocusPath or self.IsListViewOpened then
@@ -365,5 +334,4 @@ function M:UpdateGamepadKeyState()
     self.Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

@@ -1,6 +1,5 @@
 local net = {}
 local msgpack = require("msgpack_core")
-
 function net:LuaInit()
   self:log("net:LuaInit")
   self.device_id = math.random(100000)
@@ -11,7 +10,6 @@ function net:LuaInit()
   self.CallbackId = 1
   self.CallbackFuncs = {}
 end
-
 function net:HandleMessage(Message)
   local Pak = msgpack.unpack(Message:GetBytes())
   if nil == Pak or nil == Pak.Cmd then
@@ -35,7 +33,6 @@ function net:HandleMessage(Message)
   end
   self:TryResume(Pak.Cmd .. EntityFunc)
 end
-
 function net:EntityMessage(entity_id, func_name, ...)
   local method = self[func_name]
   if nil == method then
@@ -47,7 +44,6 @@ function net:EntityMessage(entity_id, func_name, ...)
   Args = RpcUtils.ConvertArgs(Args)
   method(self, table.unpack(Args))
 end
-
 function net:EntityRpc(func_name, ...)
   if self.entity_id == nil then
     return
@@ -58,21 +54,18 @@ function net:EntityRpc(func_name, ...)
   Args = RpcUtils.RevertArgs(Args)
   self:RawRpc("EntityMessage", func_name, table.unpack(Args))
 end
-
 function net:LatentEntityRpc(func_name, callback, ...)
   local CallbackId = self.CallbackId
   self.CallbackId = self.CallbackId + 1
   self.CallbackFuncs[CallbackId] = callback
   self:EntityRpc(func_name, CallbackId, ...)
 end
-
 function net:EntityRpcWithCb(func_name, callback, ...)
   local CallbackId = self.CallbackId
   self.CallbackId = self.CallbackId + 1
   self.CallbackFuncs[CallbackId] = callback
   self:EntityRpc(func_name, CallbackId, ...)
 end
-
 function net:CallClientCallback(CallbackId, ...)
   local callback = self.CallbackFuncs[CallbackId]
   if callback then
@@ -80,7 +73,6 @@ function net:CallClientCallback(CallbackId, ...)
   end
   self.CallbackFuncs[CallbackId] = nil
 end
-
 function net:RawRpc(Cmd, ...)
   local PackStr = msgpack.pack({
     Cmd = Cmd,
@@ -108,5 +100,4 @@ function net:RawRpc(Cmd, ...)
   self:SendMessage(Message)
   self:TryResume(Cmd .. EntityFunc)
 end
-
 return net

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "175386121404790",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1262, y = 292},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,12 +121,12 @@ return {
           ["17542074641582946033"] = {
             key = "17542074641582946033",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1270.1481481568694, y = 326},
             propsData = {
               ShowEnable = true,
               MessageId = 302913,
-              MessageNote = "\231\130\185\229\135\187\233\128\137\230\139\169\230\157\190\233\156\178\231\154\132\230\128\157\231\187\170\231\137\135\230\174\181\227\128\130",
+              MessageNote = "点击选择松露的思绪片段。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -149,12 +151,12 @@ return {
           ["17542083617699487160"] = {
             key = "17542083617699487160",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1654.2479883676167, y = 326.93075393245186},
             propsData = {
               ShowEnable = true,
               MessageId = 302914,
-              MessageNote = "\231\130\185\229\135\187\231\161\174\232\174\164\233\128\137\230\139\169\239\188\140\233\162\134\229\143\150\229\165\150\229\138\177",
+              MessageNote = "点击确认选择，领取奖励",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,

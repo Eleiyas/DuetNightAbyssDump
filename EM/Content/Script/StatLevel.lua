@@ -9,7 +9,6 @@ local StrSpace = ","
 local GridFrameClass = LoadClass("/Game/BluePrints/Scene/BP_GridFrame.BP_GridFrame")
 local CurrentNiagaraPath
 M.BeginStat = false
-
 function M:Stat(GM)
   self.BeginStat = not self.BeginStat
   if self.BeginStat then
@@ -18,7 +17,6 @@ function M:Stat(GM)
     self:StatEnd(GM)
   end
 end
-
 function ToString(tab, cnt)
   cnt = cnt or 1
   local tp = type(tab)
@@ -28,7 +26,6 @@ function ToString(tab, cnt)
   if cnt >= 10 then
     return tostring(tab)
   end
-  
   local function getSpace(count)
     local temp = {}
     for i = 1, count * 4 do
@@ -36,7 +33,6 @@ function ToString(tab, cnt)
     end
     return table.concat(temp)
   end
-  
   local tabStr = {}
   table.insert(tabStr, "{\n")
   local spaceStr = getSpace(cnt)
@@ -58,9 +54,8 @@ function ToString(tab, cnt)
   table.insert(tabStr, "}")
   return table.concat(tabStr)
 end
-
 function M:StatStart(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   self.Player = GM.Player
   self.GM = GM
   self:GetPositionMap()
@@ -68,7 +63,6 @@ function M:StatStart(GM)
   self.PointCount = 0
   self.TravelNext(self)
 end
-
 function M:TraceNext(ActorSize, ActorLocation, XBias)
   local YBias = 1
   local StartPoint = ActorLocation - ActorSize + FVector(0, 0, 1) * ActorSize.Z * 2 + FVector(1, 0, 0) * 1000 * XBias + FVector(0, 1, 0) * 1000 * YBias
@@ -108,11 +102,10 @@ function M:TraceNext(ActorSize, ActorLocation, XBias)
   end
   self:TraceNext(ActorSize, ActorLocation, XBias + 1)
 end
-
 function M:GetPositionMap()
   local GridFrame = UE4.UGameplayStatics.GetActorOfClass(self.Player, GridFrameClass)
   if not GridFrame then
-    DebugPrint("\229\189\147\229\137\141\229\133\179\229\141\161\229\185\182\229\143\175\233\157\158\230\139\188\230\142\165\229\173\144\229\133\179\229\141\161   ", UE4.UGameplayStatics.GetCurrentLevelName(self.Player))
+    DebugPrint("当前关卡并可非拼接子关卡   ", UE4.UGameplayStatics.GetCurrentLevelName(self.Player))
     return
   end
   local ActorSize = GridFrame:GetActorScale3D() * 100 / 2
@@ -121,7 +114,6 @@ function M:GetPositionMap()
   print(_G.LogTag, "111111111111111111111111111111", #HitPosTable)
   print(_G.LogTag, "111111111", ToString(HitPosTable))
 end
-
 function M:TravelNext()
   self.PointCount = self.PointCount + 1
   if self.PointCount > #HitPosTable then
@@ -141,7 +133,6 @@ function M:TravelNext()
   self.InitialForward = FVector(1, 0, 0)
   M.RotateCamera(nil, self)
 end
-
 function M.RotateCamera(Player, StatTable)
   local Controller = StatTable.Player:GetController()
   local RotAngle = FRotator(0, 90 * StatTable.RotCount, 0)
@@ -158,7 +149,6 @@ function M.RotateCamera(Player, StatTable)
   StatTable.Player:AddTimer(1, M.RecordInfo, false, 0, "Test_StatLevelRecorder", false, StatTable)
   StatTable.Player:AddTimer(2, M.RotateCamera, false, 0, "Test_StatLevelTimer", false, StatTable)
 end
-
 function M.RecordInfo(Player, StatTable)
   local EMData = UE4.URuntimeCommonFunctionLibrary.GetStatUnitData(StatTable.Player)
   local ActorLocation = StatTable.Player:K2_GetActorLocation()
@@ -182,9 +172,8 @@ function M.RecordInfo(Player, StatTable)
   table.insert(AllStat, NewRecord)
   print(_G.LogTag, "hhhhhhhhhhhhhhhhhhhhhhhhhh one imformation recorded")
 end
-
 function M:StatEnd(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   print("Scan Done")
   GM.Player:RemoveTimer("Test_StatLevelTimer")
   GM.Player:RemoveTimer("Test_StatLevelRecorder")
@@ -211,5 +200,4 @@ function M:StatEnd(GM)
   io.close(File)
   UE4.UKismetSystemLibrary.ExecuteConsoleCommand(self.Player, "stat unit", self.Player:GetController())
 end
-
 return M

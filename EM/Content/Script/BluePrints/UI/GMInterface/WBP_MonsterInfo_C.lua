@@ -3,7 +3,6 @@ local WBP_MonsterInfo_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_MonsterInfo_C:OnLoaded(...)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -25,7 +24,6 @@ function WBP_MonsterInfo_C:OnLoaded(...)
   self.ButtonText:SetText("ShowAll")
   self.RepeatTimer = self:AddTimer(0.05, self.RefreshOneMonsterInfo, true, 0, "RefreshMonsterInfo")
 end
-
 function WBP_MonsterInfo_C:Destruct()
   self.Super.Destruct(self)
   self:CloseAllHeadPanel()
@@ -41,7 +39,6 @@ function WBP_MonsterInfo_C:Destruct()
     end
   end
 end
-
 function WBP_MonsterInfo_C:CloseAllHeadPanel()
   local ents = Battle(self):GetAllEntities()
   for _, ent in pairs(ents) do
@@ -54,7 +51,6 @@ function WBP_MonsterInfo_C:CloseAllHeadPanel()
     end
   end
 end
-
 function WBP_MonsterInfo_C:SwitchButtonClick()
   self.ShowAll = not self.ShowAll
   self:RemoveTimer("RefreshMonsterInfo")
@@ -67,7 +63,6 @@ function WBP_MonsterInfo_C:SwitchButtonClick()
     self.RepeatTimer = self:AddTimer(0.05, self.RefreshOneMonsterInfo, true, 0, "RefreshMonsterInfo")
   end
 end
-
 function WBP_MonsterInfo_C:RefreshAllMonsterInfo()
   local ents = Battle(self):GetAllEntities()
   local str = ""
@@ -80,7 +75,6 @@ function WBP_MonsterInfo_C:RefreshAllMonsterInfo()
   end
   self.TextInfo:SetText(str)
 end
-
 function WBP_MonsterInfo_C:RefreshOneMonsterInfo()
   self:CloseAllHeadPanel()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -90,10 +84,9 @@ function WBP_MonsterInfo_C:RefreshOneMonsterInfo()
     self.TextInfo:SetText(str)
   else
     GameState.DebugMonster = nil
-    self.TextInfo:SetText("\231\148\168\229\135\134\229\191\131\231\158\132\229\135\134\228\184\128\229\143\170\230\128\170\229\134\141\230\140\1379\239\188\140\230\136\150\231\148\168GM GetMonster\232\142\183\229\143\150\228\184\128\229\143\170\230\156\128\232\191\145\231\154\132\230\128\170")
+    self.TextInfo:SetText("用准心瞄准一只怪再按9，或用GM GetMonster获取一只最近的怪")
   end
 end
-
 function WBP_MonsterInfo_C:RefreshOneMonsterHeadInfo(ent)
   local Comp = ent:GetComponentByClass(UCharDebugWidgetComponent:StaticClass())
   if Comp then
@@ -106,7 +99,6 @@ function WBP_MonsterInfo_C:RefreshOneMonsterHeadInfo(ent)
     Comp:AddDebugTEXT("CharacterTag", "CT:" .. ent.AutoSyncProp.CharacterTag)
   end
 end
-
 function WBP_MonsterInfo_C:RefreshOneMonsterPanelInfo(ent)
   if self.ent ~= ent then
     self.ent = ent
@@ -152,5 +144,4 @@ function WBP_MonsterInfo_C:RefreshOneMonsterPanelInfo(ent)
   end
   return str
 end
-
 return WBP_MonsterInfo_C

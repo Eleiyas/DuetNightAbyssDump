@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_BattleAimThunder_C = Class({
   "BluePrints.UI.Indicator.WBP_BattleAimDiffusion_C"
 })
-
 function WBP_BattleAimThunder_C:Init(Root)
   WBP_BattleAimThunder_C.Super.Init(self, Root)
   self.Diffusion = {
@@ -15,7 +14,6 @@ function WBP_BattleAimThunder_C:Init(Root)
   }
   self:UpdateFrontSightinfo()
 end
-
 function WBP_BattleAimThunder_C:UpdateDiffusionVector(DiffuseDis)
   self.MaxXY = {
     {0, DiffuseDis},
@@ -25,5 +23,4 @@ function WBP_BattleAimThunder_C:UpdateDiffusionVector(DiffuseDis)
     }
   }
 end
-
 return WBP_BattleAimThunder_C

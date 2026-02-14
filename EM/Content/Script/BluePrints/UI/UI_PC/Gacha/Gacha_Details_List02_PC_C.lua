@@ -1,6 +1,5 @@
 require("UnLua")
 local G = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function G:OnListItemObjectSet(Obj)
   self.Obj = Obj
   Obj.SelfWidget = self
@@ -27,7 +26,6 @@ function G:OnListItemObjectSet(Obj)
   end
   self.List_Probability:DisableScroll(true)
 end
-
 function G:SetGachaProbability(IsUp)
   if IsUp then
     local Probability = 0
@@ -49,7 +47,6 @@ function G:SetGachaProbability(IsUp)
     self.Text_Title:SetText(string.format(GText("UI_GACHA_PROB"), self.StarLevel, Rate))
   end
 end
-
 function G:InitUpListItem()
   local CurListNums = self.List_Probability:GetNumItems()
   local Count = 0
@@ -98,7 +95,6 @@ function G:InitUpListItem()
     end
   end
 end
-
 function G:InitGachaListItem()
   local CurListNums = self.List_Probability:GetNumItems()
   local Count = 0
@@ -161,7 +157,6 @@ function G:InitGachaListItem()
   end
   self.List_Probability:RequestRefresh()
 end
-
 function G:OpenShowCharDetail(CharId)
   local GachaMain = UIManager(self):GetUIObj("GachaMain")
   if GachaMain and GachaMain.DetailPopupUI then
@@ -180,7 +175,6 @@ function G:OpenShowCharDetail(CharId)
     }
   })
 end
-
 function G:OpenShowWeaponDetail(WeaponId)
   local GachaMain = UIManager(self):GetUIObj("GachaMain")
   if GachaMain and GachaMain.DetailPopupUI then
@@ -199,5 +193,4 @@ function G:OpenShowWeaponDetail(WeaponId)
     }
   })
 end
-
 return G

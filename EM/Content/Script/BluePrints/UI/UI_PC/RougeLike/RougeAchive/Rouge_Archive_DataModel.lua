@@ -3,7 +3,6 @@ local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst
 local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
 local EMCache = require("EMCache.EMCache")
 local DataModel = {}
-
 function DataModel:InitData(InAvatar)
   self.Avatar = InAvatar
   self.LocalUnlockedManuals = EMCache:Get("UnlockedManuals", true) or {}
@@ -15,16 +14,19 @@ function DataModel:InitData(InAvatar)
     Data = {}
   }
   for _, TreasureData in pairs(DataMgr.RougeLikeTreasure) do
-    local bIsUnlocked = self.Avatar.RougeLike:IsManualUnlocked(RougeConst.ArchiveType.Treasure, TreasureData.TreasureId)
-    local bIsNew = bIsUnlocked and self:CheckArchiveItemIsNew(RougeConst.ArchiveType.Treasure, TreasureData.TreasureId)
-    self.Manuals[RougeConst.ArchiveType.Treasure].Data[TreasureData.TreasureId] = {
-      Data = TreasureData,
-      IsUnlocked = bIsUnlocked,
-      IsNew = bIsNew
-    }
-    TotalNum = TotalNum + 1
-    UnlockedNum = UnlockedNum + (self.Manuals[RougeConst.ArchiveType.Treasure].Data[TreasureData.TreasureId].IsUnlocked and 1 or 0)
-    HasNew = HasNew or bIsNew
+    if not TreasureData.RLArchiveId then
+    else
+      local bIsUnlocked = self.Avatar.RougeLike:IsManualUnlocked(RougeConst.ArchiveType.Treasure, TreasureData.TreasureId)
+      local bIsNew = bIsUnlocked and self:CheckArchiveItemIsNew(RougeConst.ArchiveType.Treasure, TreasureData.TreasureId)
+      self.Manuals[RougeConst.ArchiveType.Treasure].Data[TreasureData.TreasureId] = {
+        Data = TreasureData,
+        IsUnlocked = bIsUnlocked,
+        IsNew = bIsNew
+      }
+      TotalNum = TotalNum + 1
+      UnlockedNum = UnlockedNum + (self.Manuals[RougeConst.ArchiveType.Treasure].Data[TreasureData.TreasureId].IsUnlocked and 1 or 0)
+      HasNew = HasNew or bIsNew
+    end
   end
   self.Manuals[RougeConst.ArchiveType.Treasure].Type = RougeConst.ArchiveType.Treasure
   self.Manuals[RougeConst.ArchiveType.Treasure].Name = GText("UI_RLArchiveTitle_Treasure")
@@ -41,16 +43,19 @@ function DataModel:InitData(InAvatar)
     Data = {}
   }
   for _, BlessingData in pairs(DataMgr.RougeLikeBlessing) do
-    local bIsUnlocked = self.Avatar.RougeLike:IsManualUnlocked(RougeConst.ArchiveType.Blessing, BlessingData.BlessingId)
-    local bIsNew = bIsUnlocked and self:CheckArchiveItemIsNew(RougeConst.ArchiveType.Blessing, BlessingData.BlessingId)
-    self.Manuals[RougeConst.ArchiveType.Blessing].Data[BlessingData.BlessingId] = {
-      Data = BlessingData,
-      IsUnlocked = bIsUnlocked,
-      IsNew = bIsNew
-    }
-    TotalNum = TotalNum + 1
-    UnlockedNum = UnlockedNum + (self.Manuals[RougeConst.ArchiveType.Blessing].Data[BlessingData.BlessingId].IsUnlocked and 1 or 0)
-    HasNew = HasNew or bIsNew
+    if not BlessingData.RLArchiveId then
+    else
+      local bIsUnlocked = self.Avatar.RougeLike:IsManualUnlocked(RougeConst.ArchiveType.Blessing, BlessingData.BlessingId)
+      local bIsNew = bIsUnlocked and self:CheckArchiveItemIsNew(RougeConst.ArchiveType.Blessing, BlessingData.BlessingId)
+      self.Manuals[RougeConst.ArchiveType.Blessing].Data[BlessingData.BlessingId] = {
+        Data = BlessingData,
+        IsUnlocked = bIsUnlocked,
+        IsNew = bIsNew
+      }
+      TotalNum = TotalNum + 1
+      UnlockedNum = UnlockedNum + (self.Manuals[RougeConst.ArchiveType.Blessing].Data[BlessingData.BlessingId].IsUnlocked and 1 or 0)
+      HasNew = HasNew or bIsNew
+    end
   end
   self.Manuals[RougeConst.ArchiveType.Blessing].Type = RougeConst.ArchiveType.Blessing
   self.Manuals[RougeConst.ArchiveType.Blessing].Name = GText("UI_RLArchiveTitle_Blessing")
@@ -117,11 +122,9 @@ function DataModel:InitData(InAvatar)
     self:IncreaseArchiveTypeReddot(RougeConst.ArchiveType.Story)
   end
 end
-
 function DataModel:GetArchiveDataByArchiveType(ArchiveType)
   return self.Manuals[ArchiveType]
 end
-
 function DataModel:GetUnlockedItemNum(Type)
   local Avatar = GWorld:GetAvatar()
   local AvatarManuals = Avatar.RougeLike.Manual
@@ -141,7 +144,6 @@ function DataModel:GetUnlockedItemNum(Type)
   end
   return UnlockedNum
 end
-
 function DataModel:GetTotalItemNum(Type)
   local TotalNum = 0
   if not Type then
@@ -153,12 +155,10 @@ function DataModel:GetTotalItemNum(Type)
   end
   return TotalNum
 end
-
 function DataModel:CheckArchiveItemIsNew(ArchiveType, ArchiveId)
   local LocalUnlockedManuals = EMCache:Get("UnlockedManuals", true) or {}
   return not LocalUnlockedManuals[ArchiveType] or not LocalUnlockedManuals[ArchiveType][ArchiveId]
 end
-
 function DataModel:MarkArchiveItemSeened(ArchiveType, ArchiveId)
   self.LocalUnlockedManuals[ArchiveType] = self.LocalUnlockedManuals[ArchiveType] or {}
   if ArchiveId then
@@ -173,7 +173,6 @@ function DataModel:MarkArchiveItemSeened(ArchiveType, ArchiveId)
   self.Manuals[ArchiveType].Data[ArchiveId].IsNew = false
   EMCache:Set("UnlockedManuals", self.LocalUnlockedManuals, true)
 end
-
 function DataModel:IncreaseArchiveTypeReddot(ArchiveType)
   local TreeNodeName = RougeConst.RougeReddotTreeNode[ArchiveType]
   local TreeNode = ReddotManager.GetTreeNode(TreeNodeName)
@@ -185,13 +184,11 @@ function DataModel:IncreaseArchiveTypeReddot(ArchiveType)
   end
   ReddotManager.IncreaseLeafNodeCount(TreeNodeName, 1)
 end
-
 function DataModel:GetArchiveRewardNumByArchiveType(ArchiveType)
   local ArchiveStep = DataMgr.RLArchiveInfo[ArchiveType].RLArchiveStep
   local TotalNum = self:GetUnlockedItemNum(ArchiveType)
   return TotalNum // ArchiveStep
 end
-
 function DataModel:GetCanReceiveArchiveRewardNumByArchiveType(ArchiveType)
   local Num = 0
   local Avatar = GWorld:GetAvatar()
@@ -208,7 +205,6 @@ function DataModel:GetCanReceiveArchiveRewardNumByArchiveType(ArchiveType)
   end
   return Num
 end
-
 function DataModel:GetArchiveRewardByArchiveType(ArchiveType)
   local Avatar = GWorld:GetAvatar()
   local ManualRewardGot = Avatar.RougeLike.ManualRewardGot:Get(ArchiveType)
@@ -225,34 +221,40 @@ function DataModel:GetArchiveRewardByArchiveType(ArchiveType)
   end
   return RewardList
 end
-
 function DataModel:UpdateArchiveRewardReddot()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
+  local Node = ReddotManager.GetTreeNode("RougeArchiveReward")
+  if not Node then
+    ReddotManager.AddNode("RougeArchiveReward")
+  end
+  ReddotManager.ClearLeafNodeCount("RougeArchiveReward")
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("RougeArchiveReward")
   for _, Info in pairs(DataMgr.RLArchiveInfo) do
     local Count = self:GetUnlockedItemNum(Info.RLArchiveType)
+    local HasRewardToGet = false
     for i = Info.RLArchiveStep, Count, Info.RLArchiveStep do
       local RewardIdx = i // Info.RLArchiveStep
       if not Avatar.RougeLike:IsManualRewardGot(Info.RLArchiveType, RewardIdx) then
-        local Node = ReddotManager.GetTreeNode("RougeArchiveReward")
-        if not Node then
-          ReddotManager.AddNode("RougeArchiveReward")
-        end
-        local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("RougeArchiveReward")
         if not CacheDetail[Info.RLArchiveType] then
           CacheDetail[Info.RLArchiveType] = {}
         end
         if not CacheDetail[Info.RLArchiveType][RewardIdx] then
           CacheDetail[Info.RLArchiveType][RewardIdx] = 1
-          ReddotManager.IncreaseLeafNodeCount("RougeArchiveReward")
         end
+        ReddotManager.IncreaseLeafNodeCount("RougeArchiveReward")
+        HasRewardToGet = true
+      elseif CacheDetail and CacheDetail[Info.RLArchiveType] and CacheDetail[Info.RLArchiveType][RewardIdx] then
+        CacheDetail[Info.RLArchiveType][RewardIdx] = nil
       end
+    end
+    if not HasRewardToGet and CacheDetail and CacheDetail[Info.RLArchiveType] then
+      CacheDetail[Info.RLArchiveType] = nil
     end
   end
 end
-
 function DataModel:UpdateArchiveReddot(ArchiveType)
   for Id, ManualData in pairs(self.Manuals[ArchiveType].Data) do
     local IsNew = self:CheckArchiveItemIsNew(ArchiveType, Id)
@@ -262,5 +264,4 @@ function DataModel:UpdateArchiveReddot(ArchiveType)
   end
   ReddotManager.ClearLeafNodeCount(RougeConst.RougeReddotTreeNode[ArchiveType])
 end
-
 return DataModel

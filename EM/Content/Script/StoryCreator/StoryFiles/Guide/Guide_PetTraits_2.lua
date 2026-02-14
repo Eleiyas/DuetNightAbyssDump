@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1756632491595381214",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1166, y = 282},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,12 +115,12 @@ return {
           ["1756632491595381218"] = {
             key = "1756632491595381218",
             type = "ShowGuideButtonNode",
-            name = "\229\140\186\229\159\159\229\143\179\228\184\138\232\167\146UI",
+            name = "区域右上角UI",
             pos = {x = 1712.2720588235295, y = -337.9264705882353},
             propsData = {
               ShowEnable = true,
               MessageId = 302601,
-              MessageNote = "\232\191\155\229\133\165\230\149\180\229\164\135",
+              MessageNote = "进入整备",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -143,7 +145,7 @@ return {
           ["1756632491595381219"] = {
             key = "1756632491595381219",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2720, y = -186.00000000000006},
             propsData = {
               ShowEnable = true,
@@ -173,7 +175,7 @@ return {
           ["1756632491595381220"] = {
             key = "1756632491595381220",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 2880, y = -2},
             propsData = {
               MessageId = 0,
@@ -189,12 +191,12 @@ return {
           ["1756632491595381221"] = {
             key = "1756632491595381221",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 888, y = 988},
             propsData = {
               ShowEnable = true,
               MessageId = 303206,
-              MessageNote = "\231\130\185\229\135\187\233\173\148\231\129\181\232\174\173\231\187\131",
+              MessageNote = "点击魔灵训练",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -219,12 +221,12 @@ return {
           ["1756632491595381222"] = {
             key = "1756632491595381222",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 738, y = 176},
             propsData = {
               ShowEnable = true,
               MessageId = 303207,
-              MessageNote = "\230\183\187\229\138\160\229\164\177\230\180\187\233\173\148\231\129\181",
+              MessageNote = "添加失活魔灵",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -249,12 +251,12 @@ return {
           ["1756632491595381223"] = {
             key = "1756632491595381223",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1339.5913382141675, y = -100.63310341272734},
             propsData = {
               ShowEnable = true,
               MessageId = 300002,
-              MessageNote = "\231\130\185\229\135\187<H>\226\128\156\230\149\180\229\164\135\226\128\157</>\232\191\155\229\133\165\230\149\180\229\164\135\231\179\187\231\187\159\227\128\130",
+              MessageNote = "点击<H>“整备”</>进入整备系统。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -279,12 +281,12 @@ return {
           ["1756632491595381224"] = {
             key = "1756632491595381224",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1899.6923086578952, y = 983.3333291491213},
             propsData = {
               ShowEnable = true,
               MessageId = 303207,
-              MessageNote = "\231\130\185\229\135\187\233\173\148\231\129\181\232\174\173\231\187\131",
+              MessageNote = "点击魔灵训练",
               DelayTime = 0,
               IsForceClick = false,
               IsControlPlayer = false,

@@ -4,7 +4,6 @@ local WBP_TrueHardBoss_Main_PC_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_TrueHardBoss_Main_PC_C:Construct()
   self.SelectedIndex = nil
   self.CurTeleportId = nil
@@ -12,21 +11,18 @@ function WBP_TrueHardBoss_Main_PC_C:Construct()
   self.AllTabInfo = {}
   self:PlayInAnim()
 end
-
 function WBP_TrueHardBoss_Main_PC_C:PlayInAnim()
   self:UpdateTabReddot()
   self:RefreshOtherInfo()
   self:InitRewardTimesInfo()
   self:InitListBossInfo()
 end
-
 function WBP_TrueHardBoss_Main_PC_C:UpdateTabReddot()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   Item:UpdateTabReddot("HardBossMain", false)
   EMCache:Set("HardBossTabReddot", false, true)
   EventManager:FireEvent(EventID.OnHardBossReddotUpdate)
 end
-
 function WBP_TrueHardBoss_Main_PC_C:RefreshOtherInfo()
   self.Common_Button_Text_PC:SetKeyPanelVisibility(UE4.ESlateVisibility.Collapsed)
   self.Common_Button_Text_PC:BindEventOnClicked(self, self.OnClickTrack)
@@ -34,7 +30,6 @@ function WBP_TrueHardBoss_Main_PC_C:RefreshOtherInfo()
   self.Text_BossRewards:SetText(GText("UI_HardBoss_Preview"))
   self.Text_UnlockLevelTitle:SetText(GText("UI_HardBoss_Maxlevel") .. ": ")
 end
-
 function WBP_TrueHardBoss_Main_PC_C:InitRewardTimesInfo()
   local Text = GText("UI_HardBoss_ChancesRemain")
   local RemainTimes = 0
@@ -50,7 +45,6 @@ function WBP_TrueHardBoss_Main_PC_C:InitRewardTimesInfo()
   end
   self.Text_RewardTimes:SetText(Text)
 end
-
 function WBP_TrueHardBoss_Main_PC_C:InitListBossInfo()
   local SortedHardBossMain = {}
   for _, HardBossData in pairs(DataMgr.HardBossMain) do
@@ -83,10 +77,8 @@ function WBP_TrueHardBoss_Main_PC_C:InitListBossInfo()
   end
   self.LastIndex = Index - 1
 end
-
 function WBP_TrueHardBoss_Main_PC_C:FillWrapBox(Index)
   local ClassPath = "/Game/UI/UI_PC/Common/Common_Item_subsize_PC_Content.Common_Item_subsize_PC_Content_C"
-  
   local function FillWrapBoxFunc()
     local HasEmptyCell = false
     local ScrollBoxSize = USlateBlueprintLibrary.GetLocalSize(self.ScrollBox_BossList:GetCachedGeometry())
@@ -112,7 +104,6 @@ function WBP_TrueHardBoss_Main_PC_C:FillWrapBox(Index)
     end
     return true
   end
-  
   local function TimerFunc()
     if FillWrapBoxFunc() then
       self:RemoveTimer("FillWrapBoxTimer", true)
@@ -120,10 +111,8 @@ function WBP_TrueHardBoss_Main_PC_C:FillWrapBox(Index)
     end
     return false
   end
-  
   self:AddTimer(0.05, TimerFunc, true, nil, "FillWrapBoxTimer", true)
 end
-
 function WBP_TrueHardBoss_Main_PC_C:RefreshListBossInfo(Index)
   if self.SelectedIndex ~= nil then
     local CurSelectBossContent = self.List_Boss:GetItemAt(math.max(self.SelectedIndex - 1, 0))
@@ -155,7 +144,6 @@ function WBP_TrueHardBoss_Main_PC_C:RefreshListBossInfo(Index)
   end
   self:RefreshRewardsList(BossInfo)
 end
-
 function WBP_TrueHardBoss_Main_PC_C:RefreshRewardsList(BossInfo)
   self.ListView_Rewards:ClearListItems()
   local HardBossDifficulty = DataMgr.HardBossDifficulty
@@ -193,7 +181,6 @@ function WBP_TrueHardBoss_Main_PC_C:RefreshRewardsList(BossInfo)
     end
   end
 end
-
 function WBP_TrueHardBoss_Main_PC_C:OnClickTrack()
   if not self.CurTeleportId then
     return
@@ -205,5 +192,4 @@ function WBP_TrueHardBoss_Main_PC_C:OnClickTrack()
     UIManager(self):LoadUINew("LevelMapMain", false, RegionId, "TeleportPoint", self.CurTeleportId)
   end
 end
-
 return WBP_TrueHardBoss_Main_PC_C

@@ -1,13 +1,14 @@
 require("UnLua")
 local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.DialogueList = {}
   self.Btn_Next.OnClicked:Add(self, self.OnIteratorDialogue)
   self.CanInteractChoices = true
-  
   function self.Callback()
+    if not IsValid(self) then
+      return
+    end
     if self.NextEventId then
       self.StoryPath = DataMgr.RougeLikeRoom[self.NextEventId].EventStoryline
       self.NextEventId = nil
@@ -18,7 +19,6 @@ function M:Construct()
       self:Close()
     end
   end
-  
   self:BindToAnimationFinished(self.Slow_In, {
     self,
     function()
@@ -37,7 +37,6 @@ function M:Construct()
   self.IsSkipping = false
   self.CanInteractDialogue = false
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   local Param = (...)
   if Param[1] then
@@ -60,7 +59,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   if Param[5] then
     self.HideResourceBar = Param[5]
   end
-  DebugPrint(self.RoomId, "\230\136\191\233\151\180ID")
+  DebugPrint(self.RoomId, "房间ID")
   self:SetFocus()
   self:InitListenEvent()
   if self.StoryId then
@@ -68,7 +67,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   else
     self.StoryPath = DataMgr.RougeLikeRoom[self.RoomId].EventStoryline
   end
-  DebugPrint("\232\175\187\229\143\150\231\154\132StoryPath", self.StoryPath)
+  DebugPrint("读取的StoryPath", self.StoryPath)
   self:InitBagBtn()
   self:InitSkipBtn()
   self:InitResourceBar()
@@ -109,7 +108,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:InitResourceBar()
   if self.HideResourceBar then
     self.Panel_ResourceBar:SetVisibility(ESlateVisibility.Collapsed)
@@ -124,7 +122,6 @@ function M:InitResourceBar()
   local ResourceBarIcon = UIUtils.UtilsGetKeyIconPathInGamepad("RS", "Generic")
   self.ResourceBarWidget:SetGamePadKeyImgByPath(ResourceBarIcon)
 end
-
 function M:InitBagBtn()
   if self.HideResourceBar then
     self.Btn_Bag:SetVisibility(ESlateVisibility.Collapsed)
@@ -146,14 +143,12 @@ function M:InitBagBtn()
     })
   end
 end
-
 function M:InitSkipBtn()
   if self.Btn_Skip then
     self.Btn_Skip:BindEventOnClicked(self, self.SkipEvent)
     self.Btn_Skip:SetCurrentTextBlock(GText("UI_TALK_SKIP_MOIILE"))
   end
 end
-
 function M:UpdateBottomKeyInfo()
   if self.Btn_Skip then
     if not self.ArchiveInfo then
@@ -219,7 +214,6 @@ function M:UpdateBottomKeyInfo()
     })
   end
 end
-
 function M:HideSkipKeyInfo()
   if self.Btn_Skip then
     self.Btn_Skip:SetVisibility(ESlateVisibility.Collapsed)
@@ -250,7 +244,6 @@ function M:HideSkipKeyInfo()
     self.Com_KeyTips:UpdateKeyInfoNew({})
   end
 end
-
 function M:InitArchiveGroup()
   self.Group_Archive:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self)
@@ -302,7 +295,6 @@ function M:InitArchiveGroup()
   self.Btn_Bag:SetVisibility(ESlateVisibility.Collapsed)
   self.Panel_ResourceBar:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:InitEventList()
   self.VB_List:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.List_EventTab:ClearListItems()
@@ -324,7 +316,6 @@ function M:InitEventList()
     self.List_EventTab:SetSelectedIndex(CurIndex)
   end, 2)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -336,7 +327,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   local IsRepeat = UKismetInputLibrary.InputEvent_IsRepeat(InputEvent)
@@ -359,7 +349,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UIUtils.UnHandled
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -376,7 +365,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -389,7 +377,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(...)
   if self.ArchiveInfo then
@@ -400,7 +387,6 @@ function M:OnLoaded(...)
   self:PlayAnimation(self.Loop, 0, 0)
   self.Event:PlayAnimation(self.Event.Loop, 0, 0)
 end
-
 function M:OnEventBGIconLoadFinish(Object)
   if IsValid(self) and Object then
     if self.StoryId then
@@ -424,7 +410,6 @@ function M:OnEventBGIconLoadFinish(Object)
     end
   end
 end
-
 function M:OnLastEventBGIconLoadFinish(Object)
   if not Object or not IsValid(self) then
     return
@@ -432,14 +417,12 @@ function M:OnLastEventBGIconLoadFinish(Object)
   local StoryEventMat = self.Img_StoryEvent_F:GetDynamicMaterial()
   StoryEventMat:SetTextureParameterValue("MainTex", Object)
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnHomeBaseBtnPlayAnim, self, self.SetFocusWhenCloseAward)
   self:AddDispatcher(EventID.OnRougeDisplayDialogue, self, self.OnRougeDisplayDialogue)
   self:AddDispatcher(EventID.OnRougeDisplayOptions, self, self.OnRougeDisplayOptions)
   self:AddDispatcher(EventID.OnRougeEventGetToken, self, self.OnRougeGetToken)
 end
-
 function M:OnRougeDisplayDialogue(DialogueData)
   self.CanInteractDialogue = true
   local DialogueId = DialogueData.DialogueId
@@ -449,7 +432,7 @@ function M:OnRougeDisplayDialogue(DialogueData)
     TalkActorName = self:GetDialogueSpeakerName(DialogueData)
   end
   local CurrentTalkType = DataMgr.Dialogue[DialogueId].RougeTalkActorType
-  DebugPrint("\229\155\158\232\176\131OnRougeDisplayDialogue", "\232\175\180\232\175\157\232\128\133\228\191\161\230\129\175\239\188\154", TalkActorName, TalkActorId, CurrentTalkType, "\232\175\180\232\175\157\229\134\133\229\174\185:", DialogueData.Content)
+  DebugPrint("回调OnRougeDisplayDialogue", "说话者信息：", TalkActorName, TalkActorId, CurrentTalkType, "说话内容:", DialogueData.Content)
   local RougeDialogueMainIcon = DataMgr.Dialogue[DialogueId].RougeDialogueMainIcon
   if RougeDialogueMainIcon then
     self.RougeDialogueMainIcon = RougeDialogueMainIcon
@@ -473,7 +456,6 @@ function M:OnRougeDisplayDialogue(DialogueData)
     self:StopSkipEvent()
   end
 end
-
 function M:AddDialogue(TalkActorName, CurrentTalkType, Content, IsAnswer)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/level_event_line_pop_up", nil, nil)
   local OneChatInfo = {
@@ -504,7 +486,6 @@ function M:AddDialogue(TalkActorName, CurrentTalkType, Content, IsAnswer)
     FocusItem:SetFocus()
   end
 end
-
 function M:OnRougeDisplayOptions(OptionTexts)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/level_event_select_btn_show", nil, nil)
   self.CanInteractDialogue = false
@@ -571,7 +552,6 @@ function M:OnRougeDisplayOptions(OptionTexts)
     end
   end
 end
-
 function M:OnIteratorDialogue()
   if not self.CanInteractDialogue then
     return
@@ -579,10 +559,9 @@ function M:OnIteratorDialogue()
   if self.LastChatItem then
     self.LastChatItem:SetRenderOpacity(0.5)
   end
-  DebugPrint("Iterator\232\162\171\231\130\185\229\135\187")
+  DebugPrint("Iterator被点击")
   EventManager:FireEvent(EventID.OnRougeIteratorDialogue)
 end
-
 function M:ChooseEvent(EventId, EventName, IsUnlocked, Index, Item)
   if EventId == self.RoomId then
     return
@@ -671,7 +650,6 @@ function M:ChooseEvent(EventId, EventName, IsUnlocked, Index, Item)
   self.NextEventId = EventId
   GWorld.StoryMgr:StopStoryline(self.CurStory)
 end
-
 function M:ReplayThisEvent()
   self.NextEventId = self.RoomId
   self.List_EventTab:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
@@ -689,12 +667,11 @@ function M:ReplayThisEvent()
     self.NextEventId = nil
   end)
 end
-
 function M:ChooseItem(SelectIndex, IsKeyOption, DialogueId, Content)
-  DebugPrint("\230\137\128\233\128\137\229\186\143\229\143\183:", SelectIndex)
-  assert(GWorld:GetAvatar(), "\230\151\160\230\179\149\229\143\150\229\190\151Avatar")
+  DebugPrint("所选序号:", SelectIndex)
+  assert(GWorld:GetAvatar(), "无法取得Avatar")
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-  assert(GameMode, "GameMode\228\184\141\229\173\152\229\156\168")
+  assert(GameMode, "GameMode不存在")
   self.CanInteractChoices = false
   local CurrentTalkType = DataMgr.Dialogue[DialogueId].RougeTalkActorType
   local TalkActorId = DataMgr.Dialogue[DialogueId].SpeakNpcId
@@ -731,7 +708,7 @@ function M:ChooseItem(SelectIndex, IsKeyOption, DialogueId, Content)
       self.CanInteractChoices = true
       self.IsDelayDialogue = true
       local CurrentEventId = GWorld.RougeLikeManager.EventId
-      DebugPrint("\229\189\147\229\137\141\228\186\139\228\187\182ID\228\184\186\239\188\154", CurrentEventId)
+      DebugPrint("当前事件ID为：", CurrentEventId)
       if CurrentEventId > 0 then
         local GameModeEvent = DataMgr.RougeLikeEventSelect[CurrentEventId].GameModeEvent
         if GameModeEvent then
@@ -747,7 +724,6 @@ function M:ChooseItem(SelectIndex, IsKeyOption, DialogueId, Content)
   end
   self.List_EventTab:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:SkipEvent()
   if self.IsSkipping then
     return
@@ -763,7 +739,6 @@ function M:SkipEvent()
     self:OnIteratorDialogue()
   end, true, nil, "SkippingEvent")
 end
-
 function M:StopSkipEvent()
   self.IsSkipping = false
   if self.SkippingTimer then
@@ -771,7 +746,6 @@ function M:StopSkipEvent()
     self.SkippingTimer = nil
   end
 end
-
 function M:CloseExcept(OptionIndex)
   local SelectionNum = self.WBox_Selection:GetChildrenCount()
   for Index = 1, SelectionNum do
@@ -781,9 +755,8 @@ function M:CloseExcept(OptionIndex)
     end
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
-  DebugPrint("@zyh \230\137\167\232\161\140OnUpdateUIStyleByInputTypeChange")
+  DebugPrint("@zyh 执行OnUpdateUIStyleByInputTypeChange")
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   self:UpdateBottomKeyInfo()
   if CurInputType == ECommonInputType.Gamepad then
@@ -792,7 +765,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   if self.FirstSelectItem then
     self.FirstSelectItem.Btn_Click:SetFocus()
@@ -803,24 +775,20 @@ function M:InitGamepadView()
   end
   self.Btn_Bag.Key_Bag:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:InitKeyboardView()
   self.Btn_Bag.Key_Bag:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SetFocusWhenCloseAward()
   self:SetFocus()
 end
-
 function M:OnRougeGetToken(TokenNum)
   DebugPrint("@zyh OnRougeGetToken", TokenNum)
 end
-
 function M:Close()
   self:StopAnimation(self.Loop)
   self.Event:StopAnimation(self.Event.Loop)
   if self.IsStoryEvent then
-    DebugPrint("@zyh \230\152\175\229\137\167\230\131\133\228\186\139\228\187\182 \229\143\145\233\128\129\228\186\139\228\187\182OnRougeLikeStoryEventEnd")
+    DebugPrint("@zyh 是剧情事件 发送事件OnRougeLikeStoryEventEnd")
     EventManager:FireEvent(EventID.OnRougeLikeStoryEventEnd)
   end
   if self.ArchiveInfo then
@@ -829,19 +797,17 @@ function M:Close()
   AudioManager(self):SetEventSoundParam(self, "SwitchRougeEvent", {ToEnd = 1})
   self.Super.Close(self)
 end
-
 function M:ArchiveClose()
   self.IsRealClose = true
   GWorld.StoryMgr:StopStoryline(self.CurStory)
 end
-
 function M:GetDialogueSpeakerName(DialogueData)
   local Name
   if DialogueData.TalkActorName then
     Name = DialogueData.TalkActorName
   else
     local TalkActorData = DialogueData.TalkActorData
-    DebugPrint("@zyh\231\177\187\229\158\139", DialogueData.TalkActorId)
+    DebugPrint("@zyh类型", DialogueData.TalkActorId)
     if not TalkActorData then
       Name = TalkUtils:GetTalkActorName("Npc", DialogueData.TalkActorId)
     else
@@ -850,7 +816,6 @@ function M:GetDialogueSpeakerName(DialogueData)
   end
   return GText(Name)
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   self.List_Chat:ClearChildren()
@@ -862,17 +827,14 @@ function M:Destruct()
   self.Group_Empty:SetVisibility(ESlateVisibility.Collapsed)
   self.SkippingTimer = nil
 end
-
 function M:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:SetCanInteractiveTrigger(false)
 end
-
 function M:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:SetCanInteractiveTrigger(true)
 end
-
 return M

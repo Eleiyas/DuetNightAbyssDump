@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:PosCheckSphereHit(Source, SourceLoc, ObjectTypes, ActorsToIgnore, Radius, Angle, FilterCamp)
   local ResTargets = TArray(AActor)
   local RealSourceLoc = SourceLoc or Source:K2_GetActorLocation()
@@ -19,7 +18,6 @@ function Component:PosCheckSphereHit(Source, SourceLoc, ObjectTypes, ActorsToIgn
   end
   return ResTargets
 end
-
 function Component:PosCheckTargetInSector(Source, Radius, Angle, Targets)
   local NewTargets = {}
   for _, Target in pairs(Targets) do
@@ -30,7 +28,6 @@ function Component:PosCheckTargetInSector(Source, Radius, Angle, Targets)
   end
   return NewTargets
 end
-
 function Component:PosCheckSourceInSector(Source, Radius, Angle, Targets)
   local NewTargets = TArray(AActor)
   for i = 1, Targets:Length() do
@@ -42,5 +39,4 @@ function Component:PosCheckSourceInSector(Source, Radius, Angle, Targets)
   end
   return NewTargets
 end
-
 return Component

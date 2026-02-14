@@ -14,7 +14,6 @@ BP_CharacterBase_C._components = {
   "BluePrints.Combat.Components.CharacterBattleEventComponent",
   "BluePrints.Combat.Components.EffectCreatureComponent",
   "BluePrints.Combat.Components.PassiveEffectComponent",
-  "BluePrints.Combat.Components.SkillComponent",
   "BluePrints.Combat.Components.WeaponComponent",
   "BluePrints.Combat.Components.DestructableComponent",
   "BluePrints.Char.CharacterComponent.CharacterTagLogic.CharacterTagComponent",
@@ -26,7 +25,6 @@ BP_CharacterBase_C._components = {
   "BluePrints.Common.DelayFrameComponent",
   "BluePrints.Char.CharacterComponent.CheckOverlapAndPushComponent"
 }
-
 function BP_CharacterBase_C:Initialize(Initializer)
   self.StartBulletJumpTime = -1
   self.PrepareIntoBulletJump = -1
@@ -40,46 +38,32 @@ function BP_CharacterBase_C:Initialize(Initializer)
   self.HitMontageRule = nil
   rawset(self, "AutoSyncProp", self.AutoSyncProp)
 end
-
 function BP_CharacterBase_C:GetShootingTargets()
   return self.ShootingTargets
 end
-
 function BP_CharacterBase_C:ClearShootingTargets()
   self.ShootingTargets:Clear()
 end
-
 function BP_CharacterBase_C:ReceiveBeginPlay()
   EventManager:AddEvent(EventID.OnBattleReady, self, self.OnBattleReady_TryInitCharacterInfo)
   self.LuaTimerHandles = {}
 end
-
 function BP_CharacterBase_C:OnBattleReady_TryInitCharacterInfo(_Battle)
   if Battle(self) == _Battle then
     self:TryInitCharacterInfo("Battle")
   end
 end
-
 function BP_CharacterBase_C:GetConstAimRotLerpSpeed_Lua()
   return Const.AimRotLerpSpeed
 end
-
-function BP_CharacterBase_C:AttackToFire()
-end
-
-function BP_CharacterBase_C:AttackToNormal()
-end
-
 function BP_CharacterBase_C:SetSkillCD(Skill, RetCode)
   if self:HandleCheckSkillNodeCondition(RetCode, Skill.SkillId, 0) and not Skill.StopSkillCalcCD then
     self:SetSkillTimestamp(Skill.SkillId, true)
   end
 end
-
 function BP_CharacterBase_C:IsSkillFinished()
   return self.SkillTimeLine.SkillFinish
 end
-
 function BP_CharacterBase_C:GetDataInfo(RoleId)
   if not RoleId or 0 == RoleId then
     return
@@ -90,7 +74,6 @@ function BP_CharacterBase_C:GetDataInfo(RoleId)
     return DataMgr.BattleMonster[RoleId]
   end
 end
-
 function BP_CharacterBase_C:GetSkillInitInfo(SkillInfos)
   local Res = TArray(FSkillInitInfo)
   if SkillInfos then
@@ -106,7 +89,6 @@ function BP_CharacterBase_C:GetSkillInitInfo(SkillInfos)
   end
   return Res
 end
-
 function BP_CharacterBase_C:GetHitMontageRule()
   if self.HitMontageRule then
     return self.HitMontageRule
@@ -128,28 +110,24 @@ function BP_CharacterBase_C:GetHitMontageRule()
   end
   return self.HitMontageRule
 end
-
 function BP_CharacterBase_C:CheckCanPart()
   return self:IsPlayer()
 end
-
 function BP_CharacterBase_C:StopMontage()
   if not self.EMAnimInstance then
     return
   end
   self.EMAnimInstance:Montage_Stop(Const.MontageBlendOutTime)
 end
-
-function BP_CharacterBase_C:PlayMontageByPath(MontagePath, StopCallback, NoStopMontages, SectionName)
+function BP_CharacterBase_C:PlayMontageByPath(MontagePath, StopCallback, NoStopMontages, SectionName, bHideUntilLoop)
   local AnimationAsset = LoadObject(MontagePath)
   if not AnimationAsset then
     DebugPrint("Error: Load Montage Failed!!!", MontagePath)
     return nil
   end
-  return self:PlayMontageByAsset(AnimationAsset, StopCallback, NoStopMontages, SectionName)
+  return self:PlayMontageByAsset(AnimationAsset, StopCallback, NoStopMontages, SectionName, bHideUntilLoop)
 end
-
-function BP_CharacterBase_C:PlayMontageByAsset(MontageAsset, StopCallback, NoStopMontages, SectionName)
+function BP_CharacterBase_C:PlayMontageByAsset(MontageAsset, StopCallback, NoStopMontages, SectionName, bHideUntilLoop)
   if not MontageAsset then
     return nil
   end
@@ -166,47 +144,41 @@ function BP_CharacterBase_C:PlayMontageByAsset(MontageAsset, StopCallback, NoSto
   if SectionName then
     self.EMAnimInstance:Montage_JumpToSection(SectionName, MontageAsset)
   end
+  if bHideUntilLoop then
+    self:HideActorBeforeLoop(MontageAsset)
+  end
   return RetVal, MontageAsset
 end
-
 function BP_CharacterBase_C:GetHitMontageFolderAndPrefix()
   local ModelId = self.ModelId
   local ModelData = DataMgr.Model[ModelId]
   if nil ~= ModelData and nil ~= ModelData.MontageFolder then
-    return ModelData.MontageFolder, ModelData.MontagePrefix
+    return self:FormatSubFileFolderWithMount(ModelData.MontageFolder), self:FormatPrefixWithMount(ModelData.MontagePrefix)
   else
     return nil, nil
   end
 end
-
 function BP_CharacterBase_C:PressSkill1(IsTickUse)
   print("use skill 1")
 end
-
 function BP_CharacterBase_C:PressSkill2()
   print("use skill 2")
 end
-
 function BP_CharacterBase_C:PressSkill3()
   print("use skill 3")
 end
-
 function BP_CharacterBase_C:PressOpenMenu()
   print("use OpenMenu")
 end
-
 function BP_CharacterBase_C:SupportSkill()
   print("use skill SupportSkill")
 end
-
 function BP_CharacterBase_C:StartHeavyAttack(IsTickUse)
   print("use heavy attack")
 end
-
 function BP_CharacterBase_C:CallLanded()
   self:Landed()
 end
-
 function BP_CharacterBase_C:Landed()
   if not self.EMAnimInstance then
     return
@@ -247,11 +219,9 @@ function BP_CharacterBase_C:Landed()
   else
   end
 end
-
 function BP_CharacterBase_C:HasMoveInput()
   return self.IsMoveInput
 end
-
 function BP_CharacterBase_C:SetDeathInfo(DeathInfo)
   if DeathInfo and DeathInfo.IsRealDead then
     self:SetDead(true)
@@ -262,7 +232,6 @@ function BP_CharacterBase_C:SetDeathInfo(DeathInfo)
     self:SetRecoveryCount(DeathInfo.RecoveryCount)
   end
 end
-
 function BP_CharacterBase_C:CheckCanRecovery()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -270,11 +239,9 @@ function BP_CharacterBase_C:CheckCanRecovery()
   end
   return GameMode:CheckEntityCanRecover(self)
 end
-
 function BP_CharacterBase_C:ServerRecoverOther_Impl(TargetEid, IsBegin, Speed, Reason)
   Battle(self):RecoverOther(self.Eid, TargetEid, IsBegin, {Speed = Speed}, Reason)
 end
-
 function BP_CharacterBase_C:GetRemainRecoveryTimes()
   local MaxRecoveryCount = self:GetRecoveryMaxCount()
   local RecoveryCount = self:GetRecoveryCount()
@@ -283,7 +250,6 @@ function BP_CharacterBase_C:GetRemainRecoveryTimes()
   end
   return 0
 end
-
 function BP_CharacterBase_C:CheckHaveDyingCountDown()
   if self:IsPlayer() then
     if not IsStandAlone(self) then
@@ -294,7 +260,6 @@ function BP_CharacterBase_C:CheckHaveDyingCountDown()
   end
   return false
 end
-
 function BP_CharacterBase_C:Recovery(NotRecoverAttr)
   if IsAuthority(self) then
     if self:IsDead() then
@@ -310,33 +275,42 @@ function BP_CharacterBase_C:Recovery(NotRecoverAttr)
   else
     self:SetDead(false, 0, 0, 0)
   end
-  if IsStandAlone(self) or IsClient(self) then
-    self:RefreshClientSkillLogicComponents()
-  end
-  self.AlreadyDead = false
-  if MiscUtils.IsAutonomousProxy(self) or IsStandAlone(self) then
-    self.DodgeCount = 0
-  end
+  self:CommonRecoveryImpl()
   EventManager:FireEvent(EventID.CharRecover, self.Eid)
   Battle(self):TriggerBattleEvent(BattleEventName.OnRecover, self)
   self.Overridden.Recovery(self)
 end
-
 function BP_CharacterBase_C:QuickRecovery(NotRecoverAttr)
   if not self:IsDead() then
     return
   end
   self.Super.Recovery(self, NotRecoverAttr)
-  self:TryLeaveDying()
   self.EMAnimInstance:Montage_Stop(0)
   self:SetCharacterTag("Recovery")
   self:SetCharacterTag("Idle")
-  if self:IsPlayer() then
-    self:ResetForbidTag("Battle")
-    self:OnRecoverDissolve()
+end
+function BP_CharacterBase_C:CommonRecoveryImpl()
+  self.AlreadyDead = false
+  if self:IsPlayer() or self:IsPhantom() then
+    self:TryLeaveDying()
+    local CharacterFashion = self.CharacterFashion
+    if CharacterFashion then
+      self:InitAppearanceSuit(CharacterFashion.AppearanceSuitInfo)
+      local AdditionalFXID = DataMgr.Model[self.ModelId].AdditionalFXID
+      if AdditionalFXID then
+        CharacterFashion.NiagaraGroup:Clear()
+        for _, v in pairs(AdditionalFXID) do
+          local FxObject = self.FXComponent:PlayEffectByID(v)
+          CharacterFashion.NiagaraGroup:Add(v, FxObject)
+        end
+        CharacterFashion:InitColorsWithInfo()
+      end
+    end
+    if MiscUtils.IsAutonomousProxy(self) or IsStandAlone(self) then
+      self.DodgeCount = 0
+    end
   end
 end
-
 function BP_CharacterBase_C:SetHitDurationTime(HitType, HitMontageTime)
   if not HitMontageTime then
     return
@@ -347,7 +321,6 @@ function BP_CharacterBase_C:SetHitDurationTime(HitType, HitMontageTime)
   end
   self.LuaTimerHandles[HitType] = self:AddTimer_Combat(HitMontageTime, self.SetCharacterTagIdle)
 end
-
 function BP_CharacterBase_C:PlayHitMontage(HitType, StopCallback, NoStopMontages, SectionName)
   local MontageFolder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
   if nil ~= MontageFolder then
@@ -355,7 +328,6 @@ function BP_CharacterBase_C:PlayHitMontage(HitType, StopCallback, NoStopMontages
     return self:PlayMontageByPath(HitMontage, StopCallback, NoStopMontages, SectionName)
   end
 end
-
 function BP_CharacterBase_C:CheckHitMontage(HitType)
   local MontageFolder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
   if nil ~= MontageFolder then
@@ -364,7 +336,6 @@ function BP_CharacterBase_C:CheckHitMontage(HitType)
   end
   return false
 end
-
 function BP_CharacterBase_C:GetHitFlyCD()
   if self:IsPlayer() then
     return DataMgr.PlayerRotationRates.HitFlyCD.ParamentValue[1]
@@ -372,7 +343,6 @@ function BP_CharacterBase_C:GetHitFlyCD()
     return Const.DefaultCD
   end
 end
-
 function BP_CharacterBase_C:GetHitRepelCD()
   if self:IsPlayer() then
     return DataMgr.PlayerRotationRates.HitRepelCD.ParamentValue[1]
@@ -380,7 +350,6 @@ function BP_CharacterBase_C:GetHitRepelCD()
     return Const.DefaultCD
   end
 end
-
 function BP_CharacterBase_C:GetHeavyHitCD()
   if self:IsPlayer() then
     return DataMgr.PlayerRotationRates.HeavyHitCD.ParamentValue[1]
@@ -388,7 +357,6 @@ function BP_CharacterBase_C:GetHeavyHitCD()
     return Const.DefaultCD
   end
 end
-
 function BP_CharacterBase_C:GetBoneHitCD()
   if self:IsPlayer() then
     return DataMgr.PlayerRotationRates.BoneHitCD.ParamentValue[1]
@@ -396,7 +364,6 @@ function BP_CharacterBase_C:GetBoneHitCD()
     return Const.DefaultCD
   end
 end
-
 function BP_CharacterBase_C:GetCauseHitData(CauseHitId, CauseHitType)
   local CauseHitParam = DataMgr.HitPerformanceData[CauseHitId]
   if not CauseHitParam then
@@ -411,13 +378,11 @@ function BP_CharacterBase_C:GetCauseHitData(CauseHitId, CauseHitType)
   end
   return
 end
-
 function BP_CharacterBase_C:ApplyGrabHitGetup()
   if self:CharacterInTag("GrabHit") then
     self:SetCharactertagIdle()
   end
 end
-
 function BP_CharacterBase_C:HitFlyDownRestore()
   if not self:IsPlayer() and self:CharacterInTag("HitFly") then
     self:SetCharacterTagIdle()
@@ -427,21 +392,18 @@ function BP_CharacterBase_C:HitFlyDownRestore()
     self.LuaTimerHandles.HitFlyDown = nil
   end
 end
-
 function BP_CharacterBase_C:CheckBuffCanEnterIdleTag(Tag)
   if not self.EMAnimInstance or not self.EMAnimInstance.CheckCanEnterIdleTag then
     return false
   end
   return self.EMAnimInstance:CheckCanEnterIdleTag(Tag)
 end
-
 function BP_CharacterBase_C:SetIdleTag(Tag)
   if not self.EMAnimInstance and not self.EMAnimInstance.SetIdleTag then
     return
   end
   self.EMAnimInstance:SetIdleTag(Tag)
 end
-
 function BP_CharacterBase_C:GetIdleTag()
   local AnimInst = self.EMAnimInstance
   if not AnimInst or not AnimInst.IdleTag then
@@ -449,8 +411,7 @@ function BP_CharacterBase_C:GetIdleTag()
   end
   return AnimInst.IdleTag
 end
-
-function BP_CharacterBase_C:SetArmoryTag(ArmoryTag, bKeepWeapon)
+function BP_CharacterBase_C:SetArmoryTag(ArmoryTag, bKeepWeapon, bHideUntilLoop)
   local NoWeaponIdleTag = Const.ArmoryIdleTags[ArmoryTag]
   self.LastArmoryTag = self.ArmoryTag
   self.ArmoryTag = ArmoryTag
@@ -459,7 +420,12 @@ function BP_CharacterBase_C:SetArmoryTag(ArmoryTag, bKeepWeapon)
   end
   if ArmoryTag and not NoWeaponIdleTag then
     local CurrentUsingWeapon = self.UsingWeapon
-    self:ChangeUsingWeaponByType(ArmoryTag)
+    local WeaponIdleTag = Const.ArmoryWeaponIdleTags[ArmoryTag]
+    if WeaponIdleTag then
+      self:ChangeUsingWeaponByType(Const.ArmoryWeaponIdleTag2WeaponType[WeaponIdleTag])
+    else
+      self:ChangeUsingWeaponByType(ArmoryTag)
+    end
     print(_G.LogTag, "SetArmoryTag", ArmoryTag, self.UsingWeapon)
     if CurrentUsingWeapon ~= self.UsingWeapon then
       self.UsingWeapon:SetWeaponTypeChanged(true)
@@ -477,35 +443,31 @@ function BP_CharacterBase_C:SetArmoryTag(ArmoryTag, bKeepWeapon)
     self.PlayerAnimInstance:EnterArmoryIdle()
   end
   if "None" ~= self.IsEnterArmory then
-    self:SetArmoryIdleTag()
+    self:SetArmoryIdleTag(bHideUntilLoop)
   else
     self:StopArmoryIdle()
   end
 end
-
-function BP_CharacterBase_C:PlayShowIdleMontage(IldeTag)
+function BP_CharacterBase_C:PlayShowIdleMontage(IldeTag, bHideUntilLoop)
   local MontageFolder = DataMgr.Model[self.ModelId].MontageFolder
   local MontagePrefix = DataMgr.Model[self.ModelId].MontagePrefix
+  MontagePrefix = self:FormatPrefixWithMount(MontagePrefix)
   local MontagePath = MontageFolder .. "Armory/" .. MontagePrefix .. IldeTag .. "_Show_Montage"
   print(_G.LogTag, "PlayShowIdleMontage", MontagePath)
-  self:PlayMontageByPath(MontagePath)
+  self:PlayMontageByPath(MontagePath, nil, nil, nil, bHideUntilLoop)
 end
-
 function BP_CharacterBase_C:StopArmoryIdle()
   self:ShouldEnableHandIk()
   if self.EMAnimInstance then
     self.EMAnimInstance:Montage_StopSlotByName(0, "ArmoryIdle")
   end
-  self:EmptyCurResourceId()
 end
-
 function BP_CharacterBase_C:GetUsingWeaponType(AmoryType)
   if not self[AmoryType .. "Weapon"] then
     return Const.ArmoryIdleTags.None
   end
   return self[AmoryType .. "Weapon"]:GetWeaponType()
 end
-
 function BP_CharacterBase_C:CharacterHasAnyTag(Tag)
   local SkillId = self:GetSkillByType(UE.ESkillType.Shooting)
   local Skill = self:GetSkill(SkillId)
@@ -518,35 +480,44 @@ function BP_CharacterBase_C:CharacterHasAnyTag(Tag)
   end
   return Weapon:CheckWeaponState(Tag)
 end
-
 function BP_CharacterBase_C:ShouldResetJump(Tag)
   return "HitFly" == Tag or "HeavyHit" == Tag
 end
-
 function BP_CharacterBase_C:ResetJumpState(KeepJumpCount)
   if not KeepJumpCount then
     self.JumpCount = 0
   end
   self:SetCurrentJumpState(Const.NormalState)
 end
-
+function BP_CharacterBase_C:CheckMountCanFly()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return true
+  end
+  if not self.CurrentMountId then
+    return false
+  end
+  if 0 == self.CurrentMountId then
+    if self.FlyMount then
+      self.FlyMount = false
+    end
+    return false
+  end
+  return Avatar:CheckMountCanFly(self.CurrentMountId)
+end
 function BP_CharacterBase_C:EnterStunFloatTag()
   self:SetRagdollFloating(true)
 end
-
 function BP_CharacterBase_C:LeaveStunFloatTag()
   self:SetRagdollFloating(false)
 end
-
 function BP_CharacterBase_C:MonsterCommonLeaveTag()
 end
-
 function BP_CharacterBase_C:UpdateBillboardComp_BuffSpecialEffect(ShowHotUI, CharInvisible, InvincibleUI)
   if self.BillBoardComponent then
     self.BillBoardComponent:BuffChange_SpecialEffect(ShowHotUI, CharInvisible, InvincibleUI)
   end
 end
-
 function BP_CharacterBase_C:OnRealEnterDying()
   if not Battle(self) then
     return
@@ -562,10 +533,8 @@ function BP_CharacterBase_C:OnRealEnterDying()
     end
   end
 end
-
 function BP_CharacterBase_C:OnRealDie()
 end
-
 function BP_CharacterBase_C:UpdateRecovererInfo(Eid, RecoverySpeed)
   self.RecoverTargets = self.RecoverTargets or {}
   if RecoverySpeed <= 0 then
@@ -574,36 +543,29 @@ function BP_CharacterBase_C:UpdateRecovererInfo(Eid, RecoverySpeed)
     self.RecoverTargets[Eid] = RecoverySpeed
   end
   if not next(self.RecoverTargets) then
-    DebugPrint("Tianyi@ \230\149\145\229\138\169\232\128\133: " .. self.Eid .. "\228\184\141\229\134\141\230\149\145\229\138\169\229\175\185\232\177\161")
+    DebugPrint("Tianyi@ 救助者: " .. self.Eid .. "不再救助对象")
     self.IsRecoveringOthers = false
   else
-    DebugPrint("Tianyi@ \230\149\145\229\138\169\232\128\133: " .. self.Eid .. "\230\173\163\229\156\168\230\149\145\229\138\169\229\175\185\232\177\161")
+    DebugPrint("Tianyi@ 救助者: " .. self.Eid .. "正在救助对象")
     self.IsRecoveringOthers = true
   end
 end
-
-function BP_CharacterBase_C:DestroyActorOnDead(bNormalDeath, DeathReason)
-  self:DestroyActorOnDead_CPP(bNormalDeath, DeathReason)
-end
-
 function BP_CharacterBase_C:ClearCharacterBattleInfo(NormalDeath, DeathReason)
   self.BornInfo = nil
   self:DestroyActorOnDead_CPP(NormalDeath, DeathReason)
   self:RemoveAllEffectCreature(NormalDeath)
+  self:CancelAFDTransform()
 end
-
 function BP_CharacterBase_C:StopFire(bStillHoldFire, OnlyReleaseFire)
 end
-
 function BP_CharacterBase_C:ResetIdle()
   if self:IsDead() then
     return
   end
-  self:StopSkill()
+  self:StopSkill(UE.ESkillStopReason.ActionCancel)
   self:StopFire(false, false)
-  self:ResetJumpState_Cpp()
-  self:RealStopSlide(false)
   if self:IsPlayer() then
+    self:StopAllCurrentMove()
     self:StopJump()
     self:SetHoldCrouch(false)
     if self:CharacterInTag("Avoid") then
@@ -617,13 +579,18 @@ function BP_CharacterBase_C:ResetIdle()
       self:GetMovementComponent():ConsumeInputVector()
     end
   end
+  self:ResetJumpState_Cpp()
+  self:RealStopSlide(false)
   self:ResetCapSize()
+  if self.PlayerAnimInstance then
+    self.PlayerAnimInstance:ForceToIdle()
+  end
   self:GetMovementComponent().bForceStop = true
   self:LaunchCharacter(FVector(0, 0, 0), true, true)
-  self:StopAllCurrentMove()
   if self.LuaTimerHandles then
     self:RemoveTimer(self.LuaTimerHandles.BulletJump)
   end
+  self:StopInteractive()
   self:SetCharacterTagIdle()
   if not self.EMAnimInstance then
     return
@@ -638,11 +605,10 @@ function BP_CharacterBase_C:ResetIdle()
     AnimInstance:SetRootMotionMode(ERootMotionMode.RootMotionFromMontagesOnly)
   end
 end
-
 function BP_CharacterBase_C:OnTriggerFallingCallable()
   self:ResetIdle()
   self:FinishGather()
-  self:HandleDestroyCreatureOnFalling()
+  self:DestroyAllCreatures(ECreatureDeathWithCreator.Failing, EDeathReason.CreatureNotDelay)
   self:HandleRemoveBuff(self.Eid, 1)
   self:GetGrabLogicComponent():ReleaseAllGrabTargets()
   if self.CurrentSkillId then
@@ -650,18 +616,15 @@ function BP_CharacterBase_C:OnTriggerFallingCallable()
       self.bSkill1LongPress = false
       self.bSkill2LongPress = false
     end
-    self:StopSkill()
     self:ClearInputCache()
   end
   self:LaunchCharacter(FVector(0, 0, -100), true, true)
 end
-
 function BP_CharacterBase_C:ResetBulletRotation()
   self.bBulletJumpRotation = false
   self.BulletJumpRotation = nil
   self.RecoverPitch = true
 end
-
 function BP_CharacterBase_C:CheckCeilingHit(Height)
   local Start = self:K2_GetActorLocation()
   local End = Start + FVector(0, 0, Height + self.CapsuleComponent:GetUnscaledCapsuleHalfHeight())
@@ -669,13 +632,11 @@ function BP_CharacterBase_C:CheckCeilingHit(Height)
   local bHit = UE4.UKismetSystemLibrary.LineTraceSingle(self, Start, End, ETraceTypeQuery.TraceSkillCreatureBlock, false, nil, 0, HitResult, true)
   return bHit
 end
-
 function BP_CharacterBase_C:GetFloorInfo()
   local FindFloorResult = FFindFloorResult()
   self:GetMovementComponent():K2_FindFloor(self.CapsuleComponent:K2_GetComponentLocation(), FindFloorResult)
   return FindFloorResult
 end
-
 function BP_CharacterBase_C:GetFloorDist(FindFloorResult)
   local FloorDist = FindFloorResult.FloorDist
   if FindFloorResult.bLineTrace then
@@ -683,15 +644,12 @@ function BP_CharacterBase_C:GetFloorDist(FindFloorResult)
   end
   return FloorDist
 end
-
 function BP_CharacterBase_C:IsCharacterWalking()
   return self:GetMovementComponent():IsWalking() and 0 ~= self:GetVelocity():Size2D() and (self:CharacterInTag("Idle") or self:CharacterInTag("Name_None"))
 end
-
 function BP_CharacterBase_C:IsCharacterIdling()
   return self:GetMovementComponent():IsWalking() and 0 == self:GetVelocity():Size2D()
 end
-
 function BP_CharacterBase_C:IsCharacterInAirAndFalling()
   local Falling = false
   if 0 == self.JumpCount and self:GetMovementComponent():IsFalling() and (self:GetVelocity().Z >= 0 and self:GetVelocity().Z <= Const.VectorSizeZero or self:GetVelocity().Z <= 0) then
@@ -706,15 +664,12 @@ function BP_CharacterBase_C:IsCharacterInAirAndFalling()
   end
   return false
 end
-
 function BP_CharacterBase_C:GetAimRotation()
   return self.AimingRotation
 end
-
 function BP_CharacterBase_C:GetLittleOffset()
   return Const.LittleOffset
 end
-
 function BP_CharacterBase_C:GetAllAttaches()
   local Attaches = {}
   if self.Weapons then
@@ -729,7 +684,6 @@ function BP_CharacterBase_C:GetAllAttaches()
   end
   return Attaches
 end
-
 function BP_CharacterBase_C:OnSpawnedByMovieCaptureSequence()
   self.Overridden.OnSpawnedByMovieCaptureSequence(self)
   if self.Weapons then
@@ -740,10 +694,8 @@ function BP_CharacterBase_C:OnSpawnedByMovieCaptureSequence()
     end
   end
 end
-
 function BP_CharacterBase_C:InitRoleInfo()
 end
-
 function BP_CharacterBase_C:CheckIfEffectHitTarget(NotifyName)
   if not self.SkillTimeLine.CurrentSkillNode then
     return false
@@ -758,7 +710,6 @@ function BP_CharacterBase_C:CheckIfEffectHitTarget(NotifyName)
   end
   return false
 end
-
 function BP_CharacterBase_C:IsEqualCurrentWeaponAttribute()
   if self:GetCurrentWeapon() == nil then
     return false
@@ -767,11 +718,9 @@ function BP_CharacterBase_C:IsEqualCurrentWeaponAttribute()
   local WeaponAttribute = self:GetCurrentWeapon():GetAttr("Attribute")
   return OwnerAttribute == WeaponAttribute
 end
-
 function BP_CharacterBase_C:DestroyPlayer()
   self:K2_DestroyActor()
 end
-
 function BP_CharacterBase_C:GetBattleCharBodyType()
   local DefaultBodyType = "Girl"
   if not self.CurrentRoleId then
@@ -802,20 +751,17 @@ function BP_CharacterBase_C:GetBattleCharBodyType()
   end
   return DefaultBodyType
 end
-
 function BP_CharacterBase_C:SetCollisionType_Lua(ComponentName, ChannelIndex, Response, Reset)
   if Reset then
     self[ComponentName]:SetCollisionResponseToAllChannels(ECollisionResponse.ECR_Ignore)
   end
   self[ComponentName]:SetCollisionResponseToChannel(ChannelIndex, Response)
 end
-
 function BP_CharacterBase_C:HandleStuck(Hit)
   local ActorLocation = self:K2_GetActorLocation()
   local FixedLocation = ActorLocation + FVector(Hit.Normal.X, Hit.Normal.Y, Hit.Normal.Z) * Hit.PenetrationDepth
   self:K2_SetActorLocation(FixedLocation, false, nil, false)
 end
-
 function BP_CharacterBase_C:AddInteractiveTrigger()
   if self.InteractiveTriggerComponent == nil then
     local BPClass = LoadClass("/Game/BluePrints/Story/Interactive/Base/BP_InteractiveTriggerComponent.BP_InteractiveTriggerComponent")
@@ -826,11 +772,9 @@ function BP_CharacterBase_C:AddInteractiveTrigger()
     end
   end
 end
-
 function BP_CharacterBase_C:GetHeadWidgetComponent()
   return self.HeadWidgetComponent
 end
-
 function BP_CharacterBase_C:InitHeadWidgetComponent()
   if self.HeadWidgetComponent then
     return
@@ -841,7 +785,6 @@ function BP_CharacterBase_C:InitHeadWidgetComponent()
   end
   self.HeadWidgetComponent = HeadUISubsystem:InitHeadWidgetComponent(self)
 end
-
 function BP_CharacterBase_C:EnableHeadWidget(WidgetName, bEnable, ...)
   if bEnable then
     self:InitHeadWidgetComponent()
@@ -857,7 +800,6 @@ function BP_CharacterBase_C:EnableHeadWidget(WidgetName, bEnable, ...)
     end
   end
 end
-
 function BP_CharacterBase_C:SetPlayerMaxMovingSpeed(Rate)
   if Rate < 0 then
     Rate = 0
@@ -867,47 +809,38 @@ function BP_CharacterBase_C:SetPlayerMaxMovingSpeed(Rate)
   end
   self:SetWalkSpeed()
 end
-
 function BP_CharacterBase_C:RecoverPlayerMovingSpeed()
   if IsAuthority(self) then
     self.SpeedRate = 1
   end
   self:SetWalkSpeed()
 end
-
 function BP_CharacterBase_C:GetMoveRate()
   return self.PlayerSlideAtttirbute.NormalWalkSpeed / DataMgr.PlayerRotationRates.NormalWalkSpeed.ParamentValue[1]
 end
-
 function BP_CharacterBase_C:GetMovingSpeed()
   return self.PlayerSlideAtttirbute.NormalWalkSpeed, self.PlayerSlideAtttirbute.CrouchWalkSpeed
 end
-
 function BP_CharacterBase_C:SetMaxMovingSpeedByInfo(Info)
   self.PlayerSlideAtttirbute.NormalWalkSpeed = Info.NormalWalk
   self.PlayerSlideAtttirbute.CrouchWalkSpeed = Info.CrouchWalk
   self:SetWalkSpeed()
 end
-
 function BP_CharacterBase_C:GetMaxMovingSpeedInfo()
   return {
     NormalWalk = self.PlayerSlideAtttirbute.NormalWalkSpeed,
     CrouchWalk = self.PlayerSlideAtttirbute.CrouchWalkSpeed
   }
 end
-
 function BP_CharacterBase_C:IsSeating()
   return self:GetCharacterTag() == "Seating"
 end
-
 function BP_CharacterBase_C:TestEnterTag(TagName)
   DebugPrint(self.Eid .. " Enter Tag " .. TagName)
 end
-
 function BP_CharacterBase_C:TestLeaveTag(TagName)
   DebugPrint(self.Eid .. " Enter Tag " .. TagName)
 end
-
 function BP_CharacterBase_C:HandleCheckSkillNodeCondition(RetCode, SkillId, NodeId)
   if RetCode == ESkillNodeCondRetCode.Success then
     return true
@@ -929,20 +862,35 @@ function BP_CharacterBase_C:HandleCheckSkillNodeCondition(RetCode, SkillId, Node
   end
   return false
 end
-
 function BP_CharacterBase_C:ApplyEnterTag_Lua(NewTag)
   return self:ApplyEnterCharacterTag(NewTag)
 end
-
 function BP_CharacterBase_C:ApplyLeaveTag_Lua(OldTag, NewTag)
   return self:ApplyLeaveCharacterTag(OldTag, NewTag)
 end
-
 function BP_CharacterBase_C:CanLeaveTag_Lua(TagName)
   return self:CanLeaveCharacterTag(TagName)
 end
-
-function BP_CharacterBase_C:RotateOffset(RotationAngle, OnFinished, MontageName)
+function BP_CharacterBase_C:EnableTeleport_Lua(State)
+  if self:IsMainPlayer() then
+    local PlayerState = self.PlayerState
+    if not PlayerState or -1 == PlayerState.ActivatedDungeonDeliveryPointId then
+      return false
+    end
+    local Tag = self:GetCharacterTag()
+    if "Hook" == Tag or "HitFly" == Tag then
+      if false == State then
+        EventManager:FireEvent(EventID.OnTeleportReady, true)
+        DebugPrint("ayff test  : stop teleport due to tag ", Tag)
+      elseif true == State then
+        EventManager:FireEvent(EventID.OnTeleportReady, false)
+        DebugPrint("ayff test  : enable teleport due to tag ", Tag)
+      end
+    end
+  end
+  return false
+end
+function BP_CharacterBase_C:RotateOffset(RotationAngle, OnFinished, MontageName, InAddTurnRate)
   if self.EMAnimInstance == nil and nil == self.NpcAnimInstance then
     StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
     return
@@ -957,14 +905,13 @@ function BP_CharacterBase_C:RotateOffset(RotationAngle, OnFinished, MontageName)
         end
         self.OnStoryActionFinished = nil
       end
-      
       self:TurnByMotionWarping(RotationAngle, function()
         StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
       end, MontageName)
     end
   end
   if self.NpcAnimInstance then
-    if MontageName then
+    if MontageName and "None" ~= MontageName then
       local ModelId = self:GetCharModelComponent():GetCurrentModelId()
       local ModelData = DataMgr.Model[ModelId]
       local RotateAnimPath = ModelData.MontageFolder or ""
@@ -978,28 +925,28 @@ function BP_CharacterBase_C:RotateOffset(RotationAngle, OnFinished, MontageName)
       if not self:GetMovementComponent():IsComponentTickEnabled() then
         self:SetNpcMovementTickEnable(true)
       end
-      
+      if self:GetMovementComponent() and self:GetMovementComponent().LockMovementMode then
+        self:GetMovementComponent():LockMovementMode(true, EMovementMode.MOVE_Walking)
+      end
       function self.OnStoryActionFinished()
         if self.OnStoryActionFinished then
           StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
         end
         self.OnStoryActionFinished = nil
       end
-      
       self:TurnByMotionWarping(RotationAngle, function()
         StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
-      end, nil, MontageName)
+      end, nil, MontageName, InAddTurnRate)
     end
   end
 end
-
 function BP_CharacterBase_C:PlayTalkAction(ActionId, OnFinished, CallbackObj, CallbackFuncName, IsSync, IgnoreBlendInTime)
   if type(OnFinished) == "userdata" then
     assert(OnFinished.Execute ~= nil)
   end
   local TalkActionData = DataMgr.TalkAction[ActionId]
   if nil == TalkActionData then
-    Utils.ScreenPrint("ActionId \228\184\141\229\173\152\229\156\168:" .. tostring(ActionId))
+    Utils.ScreenPrint("ActionId 不存在:" .. tostring(ActionId))
     StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
     return 0
   end
@@ -1101,7 +1048,6 @@ function BP_CharacterBase_C:PlayTalkAction(ActionId, OnFinished, CallbackObj, Ca
   end
   return 0
 end
-
 function BP_CharacterBase_C:AsyncLoadAndPlayTalkMontage(Paths, CurrentIndex, TalkActionData, OnFinished, CallbackObj, CallbackFuncName, IgnoreBlendInTime)
   local count = 0
   for _, v in pairs(Paths) do
@@ -1138,10 +1084,9 @@ function BP_CharacterBase_C:AsyncLoadAndPlayTalkMontage(Paths, CurrentIndex, Tal
     end
   })
 end
-
 function BP_CharacterBase_C:PlayTalkActionInternal(TalkActionData, OnFinished, CallbackObj, CallbackFuncName, IgnoreBlendInTime, MontageGroupName)
   if nil == TalkActionData then
-    Utils.ScreenPrint("TalkActionData \228\184\141\229\173\152\229\156\168")
+    Utils.ScreenPrint("TalkActionData 不存在")
     if IsValid(CallbackObj) and CallbackFuncName then
       CallbackObj[CallbackFuncName](CallbackObj)
     else
@@ -1158,20 +1103,14 @@ function BP_CharacterBase_C:PlayTalkActionInternal(TalkActionData, OnFinished, C
   end
   local BlendOutTime = TalkActionData.BlendOutTime or 0.5
   local PrePath = TalkActionData.MontagePrePath or ""
-  if self.UnitId == 110040 and TalkActionData.AnimationId == "Sit_Idle_End" and self.IsSpecialSit and self.SetNpcMovementTickEnable then
-    self.IsSpecialSit = false
-    self:SetNpcMovementTickEnable(true)
-  end
   if TalkActionData.EndLoopMontage then
     local function OnBlendOut()
-      self:PlayTalkMontage(TalkActionData.EndLoopMontage, 0, BlendOutTime, TalkActionData.EndLoopMontageSection, nil, nil, true, PrePath)
+      self:PlayTalkMontage(TalkActionData.EndLoopMontage, 0, BlendOutTime, TalkActionData.EndLoopMontageSection, nil, nil, TalkActionData.bUseIK, PrePath, MontageGroupName)
     end
-    
     local function OnCompleted()
       self.CurrentTalkGroupMontageName = nil
     end
-    
-    self:PlayTalkMontage(TalkActionData.ActionMontage, BlendInTime, BlendOutTime, TalkActionData.MontageSection, OnBlendOut, OnCompleted, TalkActionData.bUseIK, PrePath)
+    self:PlayTalkMontage(TalkActionData.ActionMontage, BlendInTime, BlendOutTime, TalkActionData.MontageSection, OnBlendOut, OnCompleted, TalkActionData.bUseIK, PrePath, MontageGroupName)
     if IsValid(CallbackObj) and CallbackFuncName then
       CallbackObj[CallbackFuncName](CallbackObj)
     else
@@ -1186,11 +1125,9 @@ function BP_CharacterBase_C:PlayTalkActionInternal(TalkActionData, OnFinished, C
           StoryPlayableUtils:ExecuteStoryDelegate(OnFinished)
         end
       end
-      self.CurrentTalkGroupMontageName = nil
     end
-    
-    self:PlayTalkMontage(TalkActionData.ActionMontage, BlendInTime, BlendOutTime, TalkActionData.MontageSection, nil, OnCompleted, TalkActionData.bUseIK, PrePath)
-    if false == TalkActionData.IsSpecialAnim then
+    self:PlayTalkMontage(TalkActionData.ActionMontage, BlendInTime, BlendOutTime, TalkActionData.MontageSection, nil, OnCompleted, TalkActionData.bUseIK, PrePath, MontageGroupName)
+    if TalkActionData.IsSpecialAnim == false then
       if IsValid(CallbackObj) and CallbackFuncName then
         CallbackObj[CallbackFuncName](CallbackObj)
       else
@@ -1199,7 +1136,6 @@ function BP_CharacterBase_C:PlayTalkActionInternal(TalkActionData, OnFinished, C
     end
   end
 end
-
 function BP_CharacterBase_C:StopTalkAction(ActionId)
   local TalkActionData = DataMgr.TalkAction[ActionId]
   if nil == TalkActionData then
@@ -1223,7 +1159,6 @@ function BP_CharacterBase_C:StopTalkAction(ActionId)
     end
   end
 end
-
 function BP_CharacterBase_C:StopAllTalkAction()
   self.ActionGroupProxy = nil
   if IsValid(self.Mesh:GetAnimInstance()) then
@@ -1232,19 +1167,21 @@ function BP_CharacterBase_C:StopAllTalkAction()
     self.Mesh:GetAnimInstance():Montage_StopGroupByName(0, "DefaultGroup")
   end
 end
-
-function BP_CharacterBase_C:PlayTalkMontage(MontageName, BlendInTime, BlendOutTime, StartSec, OnBlendOut, OnCompleted, bUseIK, PrePath)
+function BP_CharacterBase_C:PlayTalkMontage(MontageName, BlendInTime, BlendOutTime, StartSec, OnBlendOut, OnCompleted, bUseIK, PrePath, SlotGroupName)
   local MontagePath = self:GetTalkActionPath(PrePath, MontageName)
   local Montage = LoadObject(MontagePath)
   if nil == Montage then
-    Utils.ScreenPrint("\232\146\153\229\164\170\229\165\135\232\183\175\229\190\132\228\184\141\229\173\152\229\156\168" .. MontagePath)
+    Utils.ScreenPrint("蒙太奇路径不存在" .. MontagePath .. "NPC:", self:GetName() .. "UnitId:", self.UnitId)
     if OnCompleted then
       OnCompleted()
     end
     return
   end
   if self:IsNPC() then
-    DebugPrint("NPC PlayTalkMontageMontageName:", MontagePath, "FobiddenIk:", bUseIK)
+    if "TalkGroup" == SlotGroupName then
+      self:ResetDynamicsWithCurrentMontageSection(MontageName, StartSec)
+      self.CurrentAnimationMontageSectionName = MontageName
+    end
     self:SwitchEnableAnimInstanceIK(not bUseIK)
   else
     self:SwitchEnableAnimInstanceIK(bUseIK)
@@ -1255,30 +1192,39 @@ function BP_CharacterBase_C:PlayTalkMontage(MontageName, BlendInTime, BlendOutTi
     StartSec = StartSec,
     OnBlendOut = OnBlendOut,
     OnCompleted = OnCompleted,
-    ExcuteFnishOnlyWhenCompelete = true
+    ExcuteFnishOnlyWhenCompelete = true,
+    MontageName = MontageName,
+    MontageSlotGroupName = SlotGroupName
   }
   MiscUtils.PlayMontageBySkeletaMesh(self, self.Mesh, Montage, PlayParam)
 end
-
 function BP_CharacterBase_C:GetTalkActionPath(PrePath, ActionName)
   local MontagePath = ""
   if nil == ActionName then
     return MontagePath
   end
-  local ModelData = DataMgr.Model[self.ModelId]
+  local ModelId = self.ModelId
+  if self:IsNPC() and DataMgr.Npc[self.UnitId] then
+    ModelId = DataMgr.Npc[self.UnitId].ModelId
+  end
+  local ModelData = DataMgr.Model[ModelId]
+  if nil == ModelData then
+    ScreenPrint("Model数据为空, 获取动作路径失败, 请检查Model表, ModelId:" .. tostring(self.ModelId) .. " Obj:", self:GetName())
+    return ""
+  end
   if nil == PrePath or "" == PrePath then
     return string.format("%sInteractive/%s%s_Montage", ModelData.MontageFolder, ModelData.MontagePrefix, ActionName)
   else
     return string.format("%s%s/%s%s_Montage", ModelData.MontageFolder, PrePath, ModelData.MontagePrefix, ActionName)
   end
 end
-
 function BP_CharacterBase_C:PlayOrStopEmoIdleMontage(IsPlay)
   if IsPlay then
     local ModelId = self:GetCharModelComponent():GetCurrentModelId()
     local ModelData = DataMgr.Model[ModelId]
     local RotateAnimPath = ModelData.MontageFolder or ""
     local Prefix = ModelData.MontagePrefix or ""
+    Prefix = self:FormatPrefixWithMount(Prefix)
     local MontagePath = RotateAnimPath .. "Interactive/" .. Prefix .. "Emo_Idle" .. "_Montage." .. Prefix .. "Emo_Idle" .. "_Montage"
     if MontagePath then
       UResourceLibrary.LoadObjectAsync(self, MontagePath, {
@@ -1296,7 +1242,6 @@ function BP_CharacterBase_C:PlayOrStopEmoIdleMontage(IsPlay)
     end
   end
 end
-
 function BP_CharacterBase_C:SwitchEnableAnimInstanceIK(bEnable)
   local EMAnimInstance = self.EMAnimInstance
   if EMAnimInstance and EMAnimInstance.SwitchEnableAnimInstanceIK then
@@ -1307,11 +1252,9 @@ function BP_CharacterBase_C:SwitchEnableAnimInstanceIK(bEnable)
     DebugPrint("NPC Swich foot ik ", bEnable)
   end
 end
-
 function BP_CharacterBase_C:GetHoldInput(HoldType)
   return self[HoldType]
 end
-
 function BP_CharacterBase_C:CanEnterInteractive()
   if self.IsInAir then
     return false
@@ -1324,7 +1267,6 @@ function BP_CharacterBase_C:CanEnterInteractive()
   end
   return false
 end
-
 function BP_CharacterBase_C:StartDamageCounter()
   if self.IsCountingDamage then
     return
@@ -1336,7 +1278,6 @@ function BP_CharacterBase_C:StartDamageCounter()
   self.TotalVal = 0
   self.IsCountingDamage = true
 end
-
 function BP_CharacterBase_C:CountDamageValue(TargetEffectSource, DamageEvent, Source, Target)
   local Value = DamageEvent:GetTrueValue()
   local CurTime = os.time()
@@ -1355,7 +1296,6 @@ function BP_CharacterBase_C:CountDamageValue(TargetEffectSource, DamageEvent, So
   end
   self.LastDamageTime = CurTime
 end
-
 function BP_CharacterBase_C:UpdateDamageValue()
   local LeftIndex = 0
   local CurTime = os.time()
@@ -1374,26 +1314,21 @@ function BP_CharacterBase_C:UpdateDamageValue()
     self.DpsArr = table.slice(self.DpsArr, LeftIndex + 1, #self.DpsArr)
   end
 end
-
 function BP_CharacterBase_C:StopDamageCounter()
   Battle(self):UnregisterBattleEvent(BattleEventName.Damaged, self, "CountDamageValue")
   self.DpsArr = nil
   self.DpsVal = nil
   self.IsCountingDamage = false
 end
-
 function BP_CharacterBase_C:GetMaxGatherTime_Lua()
   return Const.GatherMaxTime
 end
-
 function BP_CharacterBase_C:GetConstStandAloneMonsterCanCache()
   return Const.StandAloneMonsterCanCache
 end
-
 function BP_CharacterBase_C:GetConstOnlineMonsterCanCache()
   return Const.OnlineMonsterCanCache
 end
-
 function BP_CharacterBase_C:IsPhantomDispatching(RoleId)
   DebugPrint("gmy@BP_PhantomCharacter_C BP_PhantomCharacter:IsPhantomDispatching", self.CurrentRoleId)
   local Avatar = GWorld:GetAvatar()
@@ -1413,7 +1348,6 @@ function BP_CharacterBase_C:IsPhantomDispatching(RoleId)
   end
   return false
 end
-
 function BP_CharacterBase_C:GetCharIdByCharUuid(Uuid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1425,6 +1359,43 @@ function BP_CharacterBase_C:GetCharIdByCharUuid(Uuid)
     end
   end
 end
-
+function BP_CharacterBase_C:OnLeaveGesture01_Idle()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  DebugPrint("gmy@BP_CharacterBase_C BP_CharacterBase_C:OnLeaveGesture01_Idle", Avatar.IsInRegionOnline)
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  if MainPlayer and MainPlayer.Eid ~= self.Eid then
+    return
+  end
+  if Avatar.IsInRegionOnline then
+    Avatar:RequestCancelGestureOnline(self)
+  end
+  EventManager:FireEvent(EventID.RequestDeadRegionOnlineItem)
+  local GameState = UGameplayStatics.GetGameState(self)
+  local AvatarEid = CommonUtils.ObjId2Str(Avatar.Eid)
+  local UniqueIdList = GameState.PlayerRegionOnlineMechanismMap:Find(AvatarEid)
+  if UniqueIdList then
+    for i, v in pairs(UniqueIdList.Array) do
+      Avatar:RequestDeadRegionOnlineItem(Avatar.CurrentOnlineType, Avatar.Eid, v)
+    end
+  end
+end
+function BP_CharacterBase_C:CheckCanMountInCurrentRegion()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return true
+  end
+  if DataMgr.SubRegion[Avatar.CurrentRegionId] == nil then
+    return false
+  end
+  local FlyLicense = DataMgr.SubRegion[Avatar.CurrentRegionId].FlyLicense
+  if not FlyLicense or -1 == FlyLicense then
+    return false
+  else
+    return true
+  end
+end
 AssembleComponents(BP_CharacterBase_C)
 return BP_CharacterBase_C

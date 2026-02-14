@@ -1,13 +1,11 @@
 require("UnLua")
 local WBP_UnlockCondition_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_UnlockCondition_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ConditionType = nil
   self.Func = nil
   self.Obj = nil
 end
-
 function WBP_UnlockCondition_C:Init(IsFinish, Owner)
   self.Owner = Owner
   self.Finish = IsFinish
@@ -21,7 +19,6 @@ function WBP_UnlockCondition_C:Init(IsFinish, Owner)
   self.Icon_Link:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Btn_UnlockConditionClick:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_UnlockCondition_C:SetConditionText(ConditionType, IsFinish, Param)
   local NeedCompleteText = GText(DataMgr.ConditionText[ConditionType].ConditionName)
   if not NeedCompleteText then
@@ -29,7 +26,7 @@ function WBP_UnlockCondition_C:SetConditionText(ConditionType, IsFinish, Param)
   end
   if "PlayerLevelMin" == ConditionType or "PlayerLevelMax" == ConditionType then
     self.Text_Condition:SetText(NeedCompleteText .. tostring(Param))
-  elseif "QuestChain" == ConditionType then
+  elseif "QuestChain" == ConditionType or "TrueQuestChain" == ConditionType then
     local QuestChainName = DataMgr.QuestChain[Param].QuestChainName
     if not IsFinish then
       self.Text_Condition:SetText(NeedCompleteText .. GText(QuestChainName))
@@ -44,7 +41,6 @@ function WBP_UnlockCondition_C:SetConditionText(ConditionType, IsFinish, Param)
     self.Text_CompleteDesc:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_UnlockCondition_C:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -57,24 +53,20 @@ function WBP_UnlockCondition_C:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function WBP_UnlockCondition_C:OnButtonClick()
   self:StopAllAnimations()
   self.Func(self.Obj, table.unpack(self.Param))
   self:PlayAnimation(self.Btn_Click)
 end
-
 function WBP_UnlockCondition_C:OnConditionHovered()
   self:StopAnimation(self.Btn_UnHover)
   self:StopAnimation(self.Btn_UnHover)
   self:PlayAnimation(self.Btn_Hover)
 end
-
 function WBP_UnlockCondition_C:OnConditionUnHovered()
   self:StopAnimation(self.Btn_Hover)
   self:PlayAnimation(self.Btn_UnHover)
 end
-
 function WBP_UnlockCondition_C:OnAddedToFocusPath(InFocusEvent)
   if self.Finish then
     self.Owner:InitTabPadKeyInfoForBack()
@@ -85,5 +77,4 @@ function WBP_UnlockCondition_C:OnAddedToFocusPath(InFocusEvent)
   end
   return UIUtils.Handle
 end
-
 return WBP_UnlockCondition_C

@@ -2,7 +2,6 @@ local TimeUtils = require("Utils.TimeUtils")
 local EMCache = require("EMCache.EMCache")
 local ContractModel = require("BluePrints.UI.UI_PC.RougeLike.PC.Contract.WBP_Rouge_Contract_Model")
 local WBP_Rouge_Menu_Contract_View = Class("BluePrints.UI.UI_PC.RougeLike.PC.Contract.WBP_Rouge_Contract_ViewBase")
-
 function WBP_Rouge_Menu_Contract_View:InitView()
   self.Super.InitView(self)
   self:PlayAnimation(self.In)
@@ -22,23 +21,19 @@ function WBP_Rouge_Menu_Contract_View:InitView()
     self:AddTimer(0.1, self.ShowGamepadKeyInfo)
   end
 end
-
 function WBP_Rouge_Menu_Contract_View:InitGamepadView()
   self.Key_Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.List_Heat:SetFocus()
 end
-
 function WBP_Rouge_Menu_Contract_View:InitKeyboardView()
   self.Key_Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Rouge_Menu_Contract_View:UpdateContractHeat()
   local TotalHeatValue = self.ContractModel:GetCurrentHeatValue()
   local ContractPointRate = self.ContractModel:GetCurrentContractPointRate()
   ContractPointRate = math.floor(ContractPointRate * 100)
   self.Text_Bonus:SetText(string.format(GText("UI_Rougelike_Contract_ScoreAdd"), ContractPointRate) .. "%")
 end
-
 function WBP_Rouge_Menu_Contract_View:ShowGamepadKeyInfo()
   local BottomKeyInfo_Back = {
     KeyInfoList = {
@@ -70,7 +65,6 @@ function WBP_Rouge_Menu_Contract_View:ShowGamepadKeyInfo()
   table.insert(GamepadKeyInfo, BottomKeyInfo_Back)
   self.Key_Tips:UpdateKeyInfo(GamepadKeyInfo)
 end
-
 function WBP_Rouge_Menu_Contract_View:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if not self.MaxListScrollOffset then
     self.MaxListScrollOffset = UIUtils.GetMaxScrollOffsetOfListView(self.List_Heat)
@@ -88,15 +82,12 @@ function WBP_Rouge_Menu_Contract_View:OnAnalogValueChanged(MyGeometry, InAnalogI
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Rouge_Menu_Contract_View:OnClose()
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Rouge_Menu_Contract_View:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
   end
 end
-
 return WBP_Rouge_Menu_Contract_View

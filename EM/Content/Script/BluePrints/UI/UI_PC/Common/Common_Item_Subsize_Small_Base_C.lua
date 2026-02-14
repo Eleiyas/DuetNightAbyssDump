@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Init(Content)
   self:OnListItemObjectSet(Content)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.SelfWidget = self
   self:InitData(Content)
@@ -19,13 +17,11 @@ function M:OnListItemObjectSet(Content)
     self.AfterInitCallback(self)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.SelfWidget = nil
   end
 end
-
 function M:InitData(Content)
   self.Content = Content
   self.ParentWidget = Content.ParentWidget
@@ -67,7 +63,6 @@ function M:InitData(Content)
   self._OnAddedToFocusPathEvent = Content.OnAddedToFocusPathEvent
   self._OnRemovedFromFocusPathEvent = Content.OnRemovedFromFocusPathEvent
 end
-
 function M:InitView(Content)
   self:StopAllAnimations()
   if self.Normal then
@@ -108,7 +103,6 @@ function M:InitView(Content)
     self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   end
 end
-
 function M:BindEventOnMouseButtonUp(Obj, Callback, Params)
   if not self.OnMouseButtonUpDel then
     self.OnMouseButtonUpDel = {}
@@ -117,7 +111,6 @@ function M:BindEventOnMouseButtonUp(Obj, Callback, Params)
   self.OnMouseButtonUpDel[Obj] = Callback
   self.OnMouseButtonUpDelParam[Obj] = Params
 end
-
 function M:ClearEventOnMouseButtonUp(Obj)
   if not self.OnMouseButtonUpDel then
     return
@@ -125,23 +118,20 @@ function M:ClearEventOnMouseButtonUp(Obj)
   self.OnMouseButtonUpDel[Obj] = nil
   self.OnMouseButtonUpDelParam[Obj] = nil
 end
-
 function M:RemoveAllEvent()
 end
-
 local function _RealSetIcon(self, Icon)
   local IconDynaMaterial = self.Img_Item:GetDynamicMaterial()
   if IsValid(IconDynaMaterial) then
     if not IsValid(Icon) then
-      DebugPrint("ZDX_\232\175\183\229\175\185\229\186\148\231\179\187\231\187\159\230\163\128\230\159\165Icon\230\152\175\229\144\166\230\173\163\231\161\174")
+      DebugPrint("ZDX_请对应系统检查Icon是否正确")
     else
       IconDynaMaterial:SetTextureParameterValue("IconMap", Icon)
     end
   else
-    DebugPrint("ZDX_IconDynaMaterial\228\184\141\229\144\136\230\179\149")
+    DebugPrint("ZDX_IconDynaMaterial不合法")
   end
 end
-
 function M:SetIcon(Icon)
   if self.IsShadowEnabled then
     self.Img_Item:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToLinearColor("000000FF"))
@@ -157,7 +147,7 @@ function M:SetIcon(Icon)
     return
   end
   if not Icon then
-    DebugPrint("ZDX_\233\129\147\229\133\183\230\161\134\231\188\186\229\176\145Icon")
+    DebugPrint("ZDX_道具框缺少Icon")
     return
   end
   if type(Icon) == "string" then
@@ -168,7 +158,6 @@ function M:SetIcon(Icon)
     _RealSetIcon(self, Icon)
   end
 end
-
 function M:LoadTextureAsync(TexturePath, cb, TaskName)
   rawset(self, "LoadResourceID", nil)
   local Handle = UE.UResourceLibrary.LoadObjectAsyncWithId(self, TexturePath, {
@@ -184,7 +173,6 @@ function M:LoadTextureAsync(TexturePath, cb, TaskName)
     rawset(self, "LoadResourceID", Handle.ResourceID)
   end
 end
-
 function M:SetCount(Count, NotCountFormat)
   self.Text_Switch:SetActiveWidgetIndex(0)
   if Count and Count >= 0 then
@@ -208,7 +196,6 @@ function M:SetCount(Count, NotCountFormat)
     self.Panel_Num:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetRarity(Rarity)
   if not Rarity or Rarity < 1 or Rarity > 5 then
     self.Switch_Style:SetActiveWidgetIndex(1)
@@ -223,7 +210,6 @@ function M:SetRarity(Rarity)
   self.Quality:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Quality.Img_Quality:SetBrushTintColor(self.Quality["Color_" .. Rarity])
 end
-
 function M:SetIsGotState(IsGot)
   if not self.Group_Got then
     return
@@ -237,7 +223,6 @@ function M:SetIsGotState(IsGot)
     self.Group_Got:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetRedDot(ShowRedDot)
   if ShowRedDot then
     self.Reddot:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -245,7 +230,6 @@ function M:SetRedDot(ShowRedDot)
     self.Reddot:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetNewDot(ShowNewDot)
   if not self.New then
     return
@@ -256,7 +240,6 @@ function M:SetNewDot(ShowNewDot)
     self.New:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetBonus(IsBonus)
   if IsBonus or self.FirstRewardFlag then
     self.Bonus:SetVisibility(ESlateVisibility.Visible)
@@ -269,7 +252,6 @@ function M:SetBonus(IsBonus)
     self.Bonus:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetWalnutBonus(IsWalnutBonus)
   if not self.Walnut then
     return
@@ -282,7 +264,6 @@ function M:SetWalnutBonus(IsWalnutBonus)
     self.Walnut:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:PlayInAnimation()
   if self.bCanGet then
     self:PlayAnimation(self.Receive_On)
@@ -304,14 +285,12 @@ function M:PlayInAnimation()
     self:PlayAnimation(self.Normal_In)
   end
 end
-
 function M:IsInAnimationPlaying()
   if self:IsAnimationPlaying(self.Orange_In) or self:IsAnimationPlaying(self.purple_In) or self:IsAnimationPlaying(self.Normal_In) or self:IsAnimationPlaying(self.VX_MOD_In) or self:IsAnimationPlaying(self.VX_COIN_In) or self:IsAnimationPlaying(self.VX_MAT_In) or self:IsAnimationPlaying(self.Gacha_In) then
     return true
   end
   return false
 end
-
 function M:SetSelected(IsSelected)
   if self.NotInteractive then
     return
@@ -328,7 +307,6 @@ function M:SetSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -339,7 +317,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimationForward(self.Hovered)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -350,7 +327,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.NotInteractive or self.IsShowDetails and self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() or self:IsInAnimationPlaying() then
     return UWidgetBlueprintLibrary.Handled()
@@ -364,15 +340,12 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnTouchEnded(MyGeometry, TouchEvent)
   return self:OnMouseButtonUp(MyGeometry, TouchEvent)
 end
-
 function M:OnTouchStarted(MyGeometry, TouchEvent)
   return self:OnMouseButtonDown(MyGeometry, TouchEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.NotInteractive or self:IsInAnimationPlaying() then
     return UWidgetBlueprintLibrary.Unhandled()
@@ -413,7 +386,6 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Click and not self.NotInteractive then
     self.VX_Loop:SetVisibility(ESlateVisibility.Visible)
@@ -422,7 +394,6 @@ function M:OnAnimationFinished(InAnimation)
     self.NotInteractive = false
   end
 end
-
 function M:SetWeaponPhantomIcon(_Uuid)
   local Avatar = GWorld:GetAvatar()
   local Uuid = _Uuid
@@ -452,9 +423,8 @@ function M:SetWeaponPhantomIcon(_Uuid)
     self.Phantom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetWalnutNum(ItemId)
-  assert(DataMgr.Walnut[ItemId], "\230\160\184\230\161\131\228\184\141\229\173\152\229\156\168\239\188\154", ItemId)
+  assert(DataMgr.Walnut[ItemId], "核桃不存在：", ItemId)
   local WalnutNum = DataMgr.Walnut[ItemId].WalnutNumber
   if self.Walnut_Num then
     local NumWidget = UIManager(self):_CreateWidgetNew("ItemWalnutNum")
@@ -466,7 +436,6 @@ function M:SetWalnutNum(ItemId)
     self.Walnut_Num:AddChild(NumWidget)
   end
 end
-
 function M:ShowFactionText(Hold, Need)
   self.Text_Switch:SetActiveWidgetIndex(1)
   self.Text_Hold:SetText(FormatNumber(Hold, true))
@@ -477,29 +446,24 @@ function M:ShowFactionText(Hold, Need)
     self.Text_Hold:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToSlateColor("D82E30FF"))
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function M:Destruct()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
   M.Super.Destruct(self)
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   if self.Event_OnMenuOpenChanged then
     self.Event_OnMenuOpenChanged(self.Obj, bIsOpen)
   end
 end
-
 function M:BindEvents(Obj, Events)
   Events = Events or {}
   self.Obj = Obj
   self.Event_OnMenuOpenChanged = Events.OnMenuOpenChanged
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.GameInputModeSubsystem:SetTargetUIFocusWidget(self)
@@ -507,17 +471,14 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self._OnAddedToFocusPathEvent then
     self._OnAddedToFocusPathEvent(self.ParentWidget, self)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self._OnRemovedFromFocusPathEvent then
     self._OnRemovedFromFocusPathEvent(self.ParentWidget, self)
   end
 end
-
 return M

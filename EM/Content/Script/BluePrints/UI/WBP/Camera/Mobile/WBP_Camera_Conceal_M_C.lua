@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.WBP.Camera.WBP_Camera_ComBtn_Base_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self:BindToAnimationFinished(self.Warning, {
@@ -8,14 +7,12 @@ function M:Construct()
     self.OnWarningAnimationFinished
   })
 end
-
 function M:Destruct()
   self:UnbindFromAnimationStarted(self.Warning, {
     self,
     self.OnWarningAnimationFinished
   })
 end
-
 function M:SetHiddenState(bHidden)
   self:StopAllAnimations()
   if self.bLocked then
@@ -28,7 +25,6 @@ function M:SetHiddenState(bHidden)
     self:PlayAnimation(self.Visual)
   end
 end
-
 function M:SetLockState(bLocked)
   self:StopAllAnimations()
   if bLocked then
@@ -45,17 +41,13 @@ function M:SetLockState(bLocked)
   end
   self.bLocked = bLocked
 end
-
 function M:SetText(Text)
   self.TextBlock_Name:SetText(Text)
 end
-
 function M:OnBtnClickedLocked()
   self:PlayAnimation(self.Warning)
 end
-
 function M:OnWarningAnimationFinished()
   self:PlayAnimation(self.Lock)
 end
-
 return M

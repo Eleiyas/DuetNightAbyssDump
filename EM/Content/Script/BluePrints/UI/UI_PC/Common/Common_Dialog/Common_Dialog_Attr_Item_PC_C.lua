@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:OnListItemObjectSet(Obj)
   self.Content = Obj
   self.Text_Attribute:SetText(Obj.AttrName)
@@ -24,7 +23,6 @@ function M:OnListItemObjectSet(Obj)
     self:PlayAnimation(self.Text_Num_New_Green)
   end
 end
-
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.Text_Num_New_Red then
     if self.Content.Nagative then
@@ -36,5 +34,4 @@ function M:OnAnimationFinished(InAnim)
     self.Image_3:SetColorAndOpacity(self.Red.SpecifiedColor)
   end
 end
-
 return M

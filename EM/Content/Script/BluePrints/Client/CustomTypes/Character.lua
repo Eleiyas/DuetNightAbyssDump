@@ -42,7 +42,6 @@ Char.__Props__ = {
   DefaultSkinId = prop.getter("Data", "DispatchUnlock"),
   DefaultAccessory = prop.getter("Data", "DefaultAccessory")
 }
-
 function Char:Init(Uuid, CharId, Level)
   if not Uuid or not CharId then
     return
@@ -58,7 +57,6 @@ function Char:Init(Uuid, CharId, Level)
   end
   self:InitAppearance()
 end
-
 function Char:HandleBattleCharInfo()
   local BattleCharInfo = DataMgr.BattleChar[self.RoleId]
   if BattleCharInfo and BattleCharInfo.SkillList then
@@ -68,7 +66,6 @@ function Char:HandleBattleCharInfo()
     end
   end
 end
-
 function Char:GetModInitCount()
   local InitCount = 3
   if DataMgr.GlobalConstant.ModPlanMaxSuitCount and DataMgr.GlobalConstant.ModPlanMaxSuitCount.ConstantValue ~= nil and DataMgr.GlobalConstant.ModPlanMaxSuitCount.ConstantValue > 0 then
@@ -76,7 +73,6 @@ function Char:GetModInitCount()
   end
   return InitCount
 end
-
 function Char:InitModConfig()
   local CharInfo = self:Data()
   if not CharInfo then
@@ -106,40 +102,33 @@ function Char:InitModConfig()
     end
   end
 end
-
 function Char:GetCurrentExtralModVolume()
   return self.ExtralModVolumes[self.ModSuitIndex] or 0
 end
-
 function Char:GetModVolume()
   return self.ModVolume + (self.ExtralModVolumes[self.ModSuitIndex] or 0)
 end
-
 function Char:GetOriginlModVolume()
   return self.ModVolume
 end
-
 function Char:AddExtralModVolume(TargetVolume)
   if TargetVolume <= 0 then
     return
   end
   self.ExtralModVolumes[self.ModSuitIndex] = (self.ExtralModVolumes[self.ModSuitIndex] or 0) + TargetVolume
 end
-
 function Char:SetExtralModVolume(TargetVolume, ModSuitIndex)
   if TargetVolume < 0 then
     return
   end
   self.ExtralModVolumes[ModSuitIndex] = TargetVolume
 end
-
 function Char:ReduceExtralModVolume(TargetVolume, ModSuitIndex)
   if TargetVolume < 0 then
     return
   end
   self.ExtralModVolumes[ModSuitIndex] = (self.ExtralModVolumes[ModSuitIndex] or 0) - math.min(TargetVolume, self.ExtralModVolumes[ModSuitIndex] or 0)
 end
-
 function Char:GetCurrentUnlockDispatchTag(CurrentUnlockDispatch)
   CurrentUnlockDispatch = CurrentUnlockDispatch or {}
   for i = 1, #self.DispatchUnlock do
@@ -152,7 +141,6 @@ function Char:GetCurrentUnlockDispatchTag(CurrentUnlockDispatch)
   end
   return CurrentUnlockDispatch
 end
-
 function Char:InitSkillTree()
   local TreeInfo = DataMgr.SkillTree[self.CharId]
   if not TreeInfo then
@@ -188,7 +176,6 @@ function Char:InitSkillTree()
     end
   end
 end
-
 function Char:CheckSkillTreeNodeIsActive(TreeIndex, NodeIndex)
   if not TreeIndex or not NodeIndex then
     return false
@@ -199,7 +186,6 @@ function Char:CheckSkillTreeNodeIsActive(TreeIndex, NodeIndex)
   end
   return false
 end
-
 function Char:ActivateSkillTreeNode(TreeIndex, NodeIndex)
   if not TreeIndex or not NodeIndex then
     return
@@ -209,7 +195,6 @@ function Char:ActivateSkillTreeNode(TreeIndex, NodeIndex)
     SkillTreeNode:UnLock()
   end
 end
-
 function Char:CheckSkillIsLocked(SkillId)
   for _, NodeList in ipairs(self.SkillTree) do
     for _, Node in ipairs(NodeList) do
@@ -220,54 +205,44 @@ function Char:CheckSkillIsLocked(SkillId)
   end
   return false
 end
-
 function Char:InitAppearance()
   for i = 1, 3 do
     self.AppearanceSuits:AddCharAppearance(self.CharId)
   end
 end
-
 function Char:_Init()
   AvatarUtils:RebuildModSuit(self)
   self:UpdateSkill()
 end
-
 function Char:GetName()
   return GText(self.CharName)
 end
-
 function Char:Data()
   local CData = DataMgr.Char[self.CharId]
   if not CData then
     CData = DataMgr.BattleChar[self.CharId]
     if not CData and not skynet then
-      DebugPrint("ERROR::", string.format("\232\167\146\232\137\178Id%s \230\151\160\230\149\136\239\188\140\229\133\136\230\155\180\230\150\176\239\188\140\228\184\141\232\166\129\231\148\168\232\128\129\229\143\183\239\188\140\231\148\168\230\150\176\229\143\183\233\135\141\232\175\149\239\188\140\232\191\152\230\156\137\233\151\174\233\162\152\229\176\177\230\137\190\231\173\150\229\136\146\230\163\128\230\159\165\228\184\139Char\232\161\168\228\191\174\230\148\185\230\152\175\229\144\166\229\144\140\230\173\165\229\136\176\229\143\140\231\171\175", self.CharId))
+      DebugPrint("ERROR::", string.format("角色Id%s 无效，先更新，不要用老号，用新号重试，还有问题就找策划检查下Char表修改是否同步到双端", self.CharId))
     end
   end
   return CData
 end
-
 function Char:BattleData()
   return DataMgr.BattleChar[self.RoleId]
 end
-
 function Char:BattleDefaultData()
   return DataMgr.BattleCharAttr
 end
-
 function Char:CharAddonAttrData()
   return DataMgr.CharAddonAttr
 end
-
 function Char:CharLevelData()
   return DataMgr.LevelUp[self.Level]
 end
-
 function Char:LevelUpData(level)
   level = level or self.Level
   return DataMgr.LevelUp[level]
 end
-
 function Char:GetModSuit(SuitIndex)
   SuitIndex = SuitIndex or self.ModSuitIndex
   if skynet then
@@ -276,17 +251,14 @@ function Char:GetModSuit(SuitIndex)
     return self.ModSuits[SuitIndex]
   end
 end
-
 function Char:GetModSuitCost(SuitIndex)
   SuitIndex = SuitIndex or self.ModSuitIndex
   return self.ModSuitsCostMap[SuitIndex] or 0
 end
-
 function Char:SetModSuitCost(Cost, SuitIndex)
   SuitIndex = SuitIndex or self.ModSuitIndex
   self.ModSuitsCostMap[SuitIndex] = Cost
 end
-
 function Char:AddExp(Count)
   if type(Count) ~= "number" or Count <= 0 then
     return
@@ -318,7 +290,6 @@ function Char:AddExp(Count)
   }
   return Result
 end
-
 function Char:SetLevel(Level)
   if Level <= self.Level then
     return false
@@ -330,7 +301,6 @@ function Char:SetLevel(Level)
   self.Level = Level
   return true
 end
-
 function Char:UnlockModSlotAfterCharBreakUp()
   local CharInfo = DataMgr.Char[self.CharId]
   if CharInfo and CharInfo.ModSlotUnlock then
@@ -341,7 +311,6 @@ function Char:UnlockModSlotAfterCharBreakUp()
     end
   end
 end
-
 function Char:HandleSetLevel(Level, NeedEnhance)
   if nil == NeedEnhance or 1 == NeedEnhance then
     NeedEnhance = true
@@ -369,11 +338,9 @@ function Char:HandleSetLevel(Level, NeedEnhance)
   end
   return false
 end
-
 function Char:GMSetLevel(Level, NeedEnhance)
   return self:HandleSetLevel(Level, NeedEnhance)
 end
-
 function Char:SetEnhanceLevel(EnhanceLevel)
   local BreakInfo = DataMgr.CharBreak[self.CharId][EnhanceLevel]
   if BreakInfo or 0 == EnhanceLevel then
@@ -391,20 +358,23 @@ function Char:SetEnhanceLevel(EnhanceLevel)
   end
   return false
 end
-
 function Char:GMSetSkillLevel(level)
   for _, skill in ipairs(self.Skills) do
     skill:GMSetLevel(level)
   end
 end
-
 function Char:GetSkin(SkinId, Avatar)
   local CommonChar = Avatar and Avatar.CommonChars[self.CharId] or {
     OwnedSkins = {}
   }
   return CommonChar.OwnedSkins[SkinId]
 end
-
+function Char:GetHair(HairId, Avatar)
+  local CommonChar = Avatar and Avatar.CommonChars[self.CharId] or {
+    OwnedHairs = {}
+  }
+  return CommonChar.OwnedHairs[HairId]
+end
 Char.CommunityAttrs = {
   "MaxHp",
   "MaxES",
@@ -417,7 +387,6 @@ Char.CommunityAttrs = {
   "StrongValue",
   "EnmityValue"
 }
-
 function Char:GetCommunityData(Avatar)
   local ExtraInfo = {}
   ExtraInfo.ModSuit = self.ModSuitIndex
@@ -435,7 +404,6 @@ function Char:GetCommunityData(Avatar)
   end
   return CommunityData
 end
-
 function Char:BattleDump(Avatar, ExtraInfo)
   local ExtraInfo = ExtraInfo or {}
   AvatarUtils:InitModInfo(Avatar, ExtraInfo, self)
@@ -456,7 +424,6 @@ function Char:BattleDump(Avatar, ExtraInfo)
   }
   return Result
 end
-
 function Char:DumpSkillInfos(Avatar, ExtraInfo)
   local ModData = ExtraInfo.ModData
   local IsPhantom = ExtraInfo.IsPhantom
@@ -506,7 +473,6 @@ function Char:DumpSkillInfos(Avatar, ExtraInfo)
   end
   return Skills
 end
-
 function Char:DumpSkillTreeInfos(Avatar, ExtraInfo)
   local SkillTreeInfos = {}
   for BranchIdx, SkillTreeNodes in ipairs(self.SkillTree) do
@@ -522,7 +488,6 @@ function Char:DumpSkillTreeInfos(Avatar, ExtraInfo)
   end
   return SkillTreeInfos
 end
-
 function Char:DumpPassiveEffects(Avatar, ExtraInfo)
   local ModData = ExtraInfo.ModData
   if not ModData then
@@ -558,7 +523,6 @@ function Char:DumpPassiveEffects(Avatar, ExtraInfo)
   end
   return PassiveEffects
 end
-
 function Char:DumpAccessorySuit(AppearanceSuit)
   local Accessories = AppearanceSuit and AppearanceSuit.Accessory
   if not Accessories then
@@ -574,20 +538,33 @@ function Char:DumpAccessorySuit(AppearanceSuit)
   end
   return AccessorySuit
 end
-
+function Char:DumpAccessoryCustomParams(AppearanceSuit)
+  local CustomParams = AppearanceSuit and AppearanceSuit.AccessoryCustomParams
+  if not CustomParams then
+    return
+  end
+  local AccessoryCustomParams = {}
+  for key, value in pairs(CustomParams) do
+    AccessoryCustomParams[key] = value
+  end
+  return AccessoryCustomParams
+end
 function Char:DumpAppearanceSuit(Avatar, AppearanceIndex)
   local AppearanceSuit = self.AppearanceSuits[AppearanceIndex or self.CurrentAppearanceIndex]
   local SkinId = AppearanceSuit and AppearanceSuit.SkinId
+  local HairId = AppearanceSuit and AppearanceSuit.HairId
   return {
     AccessorySuit = self:DumpAccessorySuit(AppearanceSuit),
+    AccessoryCustomParams = self:DumpAccessoryCustomParams(AppearanceSuit),
     IsShowPartMesh = self:DumpIsShowPartMesh(Avatar, SkinId),
     IsCornerVisible = self:DumpIsCornerVisible(AppearanceSuit),
     SkinId = SkinId,
+    HairId = HairId,
     Colors = self:DumpColors(Avatar, SkinId),
+    HairColors = self:DumpHairColors(Avatar, HairId),
     CharId = self.CharId
   }
 end
-
 function Char:DumpColors(Avatar, SkinId)
   if not Avatar or not Avatar.CommonChars then
     return
@@ -604,7 +581,22 @@ function Char:DumpColors(Avatar, SkinId)
   end
   return Colors
 end
-
+function Char:DumpHairColors(Avatar, HairId)
+  if not Avatar or not Avatar.CommonChars then
+    return
+  end
+  local CommonChar = Avatar.CommonChars[self.CharId]
+  local Hair = CommonChar and CommonChar.OwnedHairs[HairId]
+  if not Hair then
+    return
+  end
+  local Colors = {}
+  local CurrentColors = Hair:GetColors()
+  for i, value in pairs(CurrentColors) do
+    Colors[i] = value
+  end
+  return Colors
+end
 function Char:DumpIsShowPartMesh(Avatar, SkinId)
   if not Avatar or not Avatar.CommonChars then
     return
@@ -613,7 +605,6 @@ function Char:DumpIsShowPartMesh(Avatar, SkinId)
   local Skin = CommonChar and CommonChar.OwnedSkins[SkinId]
   return Skin and Skin.IsShowPartMesh
 end
-
 function Char:DumpIsCornerVisible(AppearanceSuit)
   if not AppearanceSuit or AppearanceSuit.IsCornerVisible == nil then
     return true
@@ -621,7 +612,6 @@ function Char:DumpIsCornerVisible(AppearanceSuit)
     return AppearanceSuit.IsCornerVisible
   end
 end
-
 function Char:SaLogDump(Avatar)
   local Mods = {}
   for ModSlotId, ModSlotEid in pairs(self:GetModSuit()) do
@@ -642,7 +632,6 @@ function Char:SaLogDump(Avatar)
   end
   return Mods, Skills
 end
-
 Char.Attrs = {
   "MaxHp",
   "DEF",
@@ -654,7 +643,6 @@ Char.Attrs = {
   "SkillIntensity",
   "SPD"
 }
-
 function Char:GetDefaultAttrValue(AttrName)
   local BattleInfo = self:BattleData()
   if BattleInfo[AttrName] then
@@ -669,7 +657,6 @@ function Char:GetDefaultAttrValue(AttrName)
   end
   return AttrData.DefaultValue or 0
 end
-
 function Char:CalcTotalValue(CardValues, BaseValues, ModRateValues, ModAddValues)
   local TotalValues = {}
   for AttrName, Value in pairs(BaseValues) do
@@ -706,7 +693,6 @@ function Char:CalcTotalValue(CardValues, BaseValues, ModRateValues, ModAddValues
   end
   return TotalValues
 end
-
 function Char:CalcBaseValue(CardValues, CardLevelValues)
   local BaseValues = {}
   for AttrName, Value in pairs(CardValues) do
@@ -714,7 +700,6 @@ function Char:CalcBaseValue(CardValues, CardLevelValues)
   end
   return BaseValues
 end
-
 function Char:DumpDefaultBattleAttr(Avatar, ExtraInfo)
   ExtraInfo = ExtraInfo or {}
   ExtraInfo.ModSuit = self.ModSuitIndex
@@ -722,7 +707,6 @@ function Char:DumpDefaultBattleAttr(Avatar, ExtraInfo)
   local BattleAttrs = self:DumpBattleAttr(Avatar, ExtraInfo)
   return BattleAttrs
 end
-
 function Char:DumpBattleAttr(Avatar, ExtraInfo)
   local CardValues, CardLevelValues = self:DumpCardValues()
   local BaseValues = self:CalcBaseValue(CardValues, CardLevelValues)
@@ -776,7 +760,6 @@ function Char:DumpBattleAttr(Avatar, ExtraInfo)
   }
   return BattleAttrs
 end
-
 function Char:FillCardValues(CardValues, CardLevelValues, AttrName, CardValue, LevelGrowAttrName)
   CardValue = CardValue or self:GetDefaultAttrValue(AttrName)
   if not CardValue then
@@ -785,7 +768,6 @@ function Char:FillCardValues(CardValues, CardLevelValues, AttrName, CardValue, L
   CardValues[AttrName] = CardValue
   CardLevelValues[AttrName] = self:GetAttrLevelGrow(LevelGrowAttrName)
 end
-
 function Char:DumpCardValues()
   local CardValues = {}
   local CardLevelValues = {}
@@ -806,7 +788,6 @@ function Char:DumpCardValues()
   self:FillCardValues(CardValues, CardLevelValues, "ATK_" .. BattleInfo.Attribute, BattleInfo.ATK, "ATK")
   return CardValues, CardLevelValues
 end
-
 function Char:CalcAddonAttr(BaseValues, ModRateValues, ModAddValues)
   local BattleInfo = self:BattleData()
   local AddonAttrData = self:CharAddonAttrData()
@@ -822,7 +803,7 @@ function Char:CalcAddonAttr(BaseValues, ModRateValues, ModAddValues)
           if "ATK" == AttrName then
             for _AttrName, _ in pairs(DataMgr.Attribute) do
               if AttrData.Value then
-                assert(nil, AddonData.AttrId .. "\229\143\183\233\162\157\229\164\150\229\177\158\230\128\167\228\184\141\229\133\129\232\174\184\228\189\191\231\148\168Value\229\162\158\229\138\160ATK")
+                assert(nil, AddonAttrId .. "号额外属性不允许使用Value增加ATK")
               end
               self:CalcOneAttrs("ATK_" .. _AttrName, BaseValues, ModRateValues, CommonConst.RateIndex.GlobalATK, ModAddValues, AttrData)
             end
@@ -834,7 +815,6 @@ function Char:CalcAddonAttr(BaseValues, ModRateValues, ModAddValues)
     end
   end
 end
-
 function Char:CalcOneAttrs(AttrName, BaseValues, ModRateValues, RateIndex, ModAddValues, AttrData)
   if AttrData.Rate then
     if not ModRateValues[AttrName] then
@@ -845,7 +825,7 @@ function Char:CalcOneAttrs(AttrName, BaseValues, ModRateValues, RateIndex, ModAd
     if type(AttrData.Rate) == "number" then
       IncreaseRateValue = AttrData.Rate
     else
-      assert(nil, "\233\162\157\229\164\150\229\177\158\230\128\167\228\184\141\229\133\129\232\174\184\229\161\171\229\134\153string")
+      assert(nil, "额外属性不允许填写string")
     end
     ModRateValues[RateIndex] = (ModRateValues[RateIndex] or 0) + IncreaseRateValue
   end
@@ -854,12 +834,11 @@ function Char:CalcOneAttrs(AttrName, BaseValues, ModRateValues, RateIndex, ModAd
     if "number" == type(AttrData.Value) then
       IncreaseValue = AttrData.Value
     else
-      assert(nil, "\233\162\157\229\164\150\229\177\158\230\128\167\228\184\141\229\133\129\232\174\184\229\161\171\229\134\153string")
+      assert(nil, "额外属性不允许填写string")
     end
     ModAddValues[AttrName] = (ModAddValues[AttrName] or 0) + IncreaseValue
   end
 end
-
 function Char:GetAttrLevelGrow(AttrName)
   local BattleInfo = self:BattleData()
   local LevelGrow = BattleInfo[AttrName .. "LevelGrow"]
@@ -870,7 +849,6 @@ function Char:GetAttrLevelGrow(AttrName)
   local GrowFactor = LevelUpInfo[LevelGrow]
   return GrowFactor
 end
-
 function Char:HasApplicationType(ApplicationType)
   for _, value in ipairs(self.ModApplicationType) do
     if ApplicationType == value then
@@ -879,13 +857,11 @@ function Char:HasApplicationType(ApplicationType)
   end
   return false
 end
-
 function Char:UpdateSkill()
   for index, skill in ipairs(self.Skills) do
     skill:Update(self.GradeLevel, self.EnhanceLevel)
   end
 end
-
 function Char:GetSkill(SkillId)
   for index, skill in ipairs(self.Skills) do
     if skill.SkillId == SkillId then
@@ -893,7 +869,6 @@ function Char:GetSkill(SkillId)
     end
   end
 end
-
 function Char:UpGradeLevel(TargetLevel)
   local MaxGradeLevel = DataMgr.GlobalConstant.CharCardLevelMax.ConstantValue
   TargetLevel = TargetLevel or 1
@@ -903,7 +878,6 @@ function Char:UpGradeLevel(TargetLevel)
   self.GradeLevel = self.GradeLevel + TargetLevel
   self:UpdateSkill()
 end
-
 function Char:SetGradeLevel(TargetLevel)
   local MaxGradeLevel = DataMgr.GlobalConstant.CharCardLevelMax.ConstantValue
   TargetLevel = TargetLevel or 1
@@ -913,14 +887,12 @@ function Char:SetGradeLevel(TargetLevel)
   self.GradeLevel = TargetLevel
   self:UpdateSkill()
 end
-
 function Char:CheckCurrentLevelOfBreakUpLevel()
   if self.Level == self:GetCurrentMaxLevel() then
     return true
   end
   return false
 end
-
 function Char:GetCurrentMaxLevel()
   local CharBreakInfo = DataMgr.CharBreak[self.CharId]
   if not CharBreakInfo then
@@ -932,7 +904,6 @@ function Char:GetCurrentMaxLevel()
   end
   return CharBreakLevelUpInfo.CharBreakLevel
 end
-
 function Char:CalculateCharLevelUpResources(ExpNeed, ExpResources)
   table.sort(ExpResources, function(a, b)
     return a.UseParam > b.UseParam
@@ -984,7 +955,6 @@ function Char:CalculateCharLevelUpResources(ExpNeed, ExpResources)
   end
   return Res
 end
-
 function Char:GetSimpleInfo(Avatar)
   local ModSlots = {}
   for ModSlotId, ModSlotEid in pairs(AvatarUtils:GetTargetModSuit(self, self.ModSuitIndex)) do
@@ -1009,7 +979,6 @@ function Char:GetSimpleInfo(Avatar)
     ModSlots = ModSlots
   }
 end
-
 function Char:CalculateCharGradeLevelUpResources(Data)
   local ResourceId = "ResourceId"
   local ResourceNum = "ResourceNum"
@@ -1027,15 +996,15 @@ function Char:CalculateCharGradeLevelUpResources(Data)
   end
   return Res
 end
-
 function Char:GetAppearance(AppearanceIndex)
   return self.AppearanceSuits[AppearanceIndex or self.CurrentAppearanceIndex]
 end
-
 function Char:GetDefaultSkinId()
-  return self:Data().DefaultSkinId
+  return self:Data().DefaultSkinId or self.CharId
 end
-
+function Char:GetDefaultHairId()
+  return self:Data().DefaultHairId or self.CharId
+end
 function Char:GetPartMeshAccessoryInfo(SkinId)
   local _SkinId = SkinId or self.CharId
   for AccessoryId, value in pairs(DataMgr.CharPartMesh) do
@@ -1050,15 +1019,12 @@ function Char:GetPartMeshAccessoryInfo(SkinId)
   end
   return -1
 end
-
 FormatProperties(Char)
 local CharDict = Class("CharDict", CustomTypes.CustomDict)
 CharDict.KeyType = BaseTypes.ObjId
 CharDict.ValueType = Char
-
 function CharDict:NewChar(Uuid, CharId, Level)
   local char = Char(Uuid, CharId, Level)
   return char
 end
-
 return {Char = Char, CharDict = CharDict}

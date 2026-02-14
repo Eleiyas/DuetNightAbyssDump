@@ -3,19 +3,18 @@ local M = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.FinishNum = 0
   self.CurRotate = 0
   self.HasWrongOne = false
+  self.RotateHalf = false
 end
-
 function M:OnActorReady(Info)
   M.Super.OnActorReady(self, Info)
   EventManager:AddEvent(EventID.OnRingRockFinish, self, self.OnRingRockFinish)
+  self:GetAllRocks()
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if self.IsActive then
@@ -30,8 +29,10 @@ function M:ReceiveTick(DeltaSeconds)
     end
   end
 end
-
-function M:OnRingRockFinish(IsRightOne)
+function M:OnRingRockFinish(IsRightOne, Eid)
+  if not self:CheckIsSelfRock(Eid) then
+    return
+  end
   if not IsRightOne then
     self.HasWrongOne = true
   end
@@ -42,6 +43,9 @@ function M:OnRingRockFinish(IsRightOne)
   if not self.HasWrongOne then
     self:ChangeState("Manual", 0, self.FinishStateId)
   else
+    if self.Rocks:Num() <= 0 then
+      self:GetAllRocks()
+    end
     for _, v in pairs(self.Rocks) do
       v.Finish = false
       v.Energy = 0
@@ -53,9 +57,9 @@ function M:OnRingRockFinish(IsRightOne)
     end
     self.FinishNum = 0
     self.HasWrongOne = false
+    self:OnWrong()
   end
 end
-
 function M:ActiveCombat()
   M.Super.ActiveCombat(self)
   for _, v in pairs(self.Rocks) do
@@ -72,18 +76,19 @@ function M:ActiveCombat()
   self.HasWrongOne = false
   self:AddTimer(self.ResetRockTime, self.OnActive, false, 0)
 end
-
 function M:DeActiveCombat()
   M.Super.DeActiveCombat(self)
 end
-
 function M:OnActive()
+  self.RotateHalf = not self.RotateHalf
   self.CurRotate = 0
+  if self.Rocks:Num() <= 0 or not self.Rocks[1] then
+    self:GetAllRocks()
+  end
   local CurRot = self.Rocks[1]:K2_GetActorRotation()
   self.TargetRotation = FRotator(CurRot.Pitch, CurRot.Yaw + tonumber(string.format("%.1f", self.RotateNum)) % 1 * 360.0, CurRot.Roll)
   self:SetActorTickEnabled(true)
 end
-
 function M:RotateEnd()
   self:SetActorTickEnabled(false)
   for _, v in pairs(self.Rocks) do
@@ -91,14 +96,17 @@ function M:RotateEnd()
   end
   self:OnDeActive()
 end
-
 function M:OnDeActive()
-  self:ChangeState("Manual", 0, self.InitStateId)
-  for _, v in pairs(self.Rocks) do
-    v.CanPull = true
+  if self.RotateHalf then
+    self:AddTimer(self.WaitTime, self.OnActive, false, 0)
+    self:OnRotateEnd()
+  else
+    self:ChangeState("Manual", 0, self.InitStateId)
+    for _, v in pairs(self.Rocks) do
+      v.CanPull = true
+    end
   end
 end
-
 function M:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   if NowStateId == self.FinishStateId then
@@ -114,5 +122,12 @@ function M:OnEnterState(NowStateId)
     end
   end
 end
-
+function M:CheckIsSelfRock(Eid)
+  for _, v in pairs(self.Rocks) do
+    if v.Eid == Eid then
+      return true
+    end
+  end
+  return false
+end
 return M

@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.IsSelect = false
   self.MaxRarity = 5
@@ -11,22 +10,13 @@ function M:Construct()
   self.Button_Area.OnHovered:Add(self, self.OnBtnHovered)
   self.Button_Area.OnUnhovered:Add(self, self.OnBtnUnhovered)
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
-  self.Btn_Check:BindEventOnClicked(self, self.OnBtnChecked)
-  self.Key_Detail:CreateCommonKey({
-    KeyInfoList = {
-      {Type = "Img", ImgShortPath = "X"}
-    },
-    Desc = GText("UI_Controller_CheckDetails")
-  })
   self:PlayAnimation(self.Normal)
 end
-
 function M:Destruct()
   self.Button_Area.OnHovered:Remove(self, self.OnBtnHovered)
   self.Button_Area.OnUnhovered:Remove(self, self.OnBtnUnhovered)
   self.Button_Area.OnClicked:Remove(self, self.OnBtnClicked)
 end
-
 function M:InitUI(PetInfo)
   self.PetId = PetInfo.PetId
   self.Parent = PetInfo.Parent
@@ -50,6 +40,7 @@ function M:InitUI(PetInfo)
   for i = 1, RarityDiff do
     self["Star_" .. i]:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
+  self.Text_NotGet:SetText(GText("UI_BattlePass_PetHasnotGot"))
   self.Text_Get:SetText(GText("UI_BattlePass_PetHasGot"))
   self.Num_Get:SetText(PetInfo.Num)
   self.Text_Ascend:SetText(GText("UI_BattlePass_PetHasCardUp"))
@@ -72,7 +63,6 @@ function M:InitUI(PetInfo)
   end
   self.ItemDetails_MenuAnchor:SetLastFocusWidget(self.Button_Area)
 end
-
 function M:OnBtnHovered()
   if self.IsSelect then
     return
@@ -88,13 +78,11 @@ function M:OnBtnHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnBtnUnhovered()
   if not self.IsSelect then
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:OnBtnClicked()
   if not self.IsSelect then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large_crystal", nil, nil)
@@ -103,7 +91,6 @@ function M:OnBtnClicked()
   self.IsSelect = true
   self.Parent:SelectItem(self.PetId, self.PetName, self)
 end
-
 function M:OnUnSelect()
   if self.IsSelect then
     self:StopAnimation(self.Click)
@@ -111,7 +98,6 @@ function M:OnUnSelect()
     self.IsSelect = false
   end
 end
-
 function M:OnBtnChecked()
   UIManager(self):LoadUINew("ArmoryDetail", {
     PreviewPetIds = {
@@ -120,5 +106,7 @@ function M:OnBtnChecked()
     EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon
   })
 end
-
+function M:OnFocusReceived(MyGeometry, InFocusEvent)
+  return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Button_Area)
+end
 return M

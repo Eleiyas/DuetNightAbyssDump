@@ -2,7 +2,6 @@ local Component = {}
 local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local TimerMgr = require("BluePrints.Common.TimerMgr")
 local LocalTimeOut = 10
-
 function Component:ImpressionCheckByEnumId_New(DialogueChain, CurrentDialogueId, TalkTriggerId, ImpressionAreaId, ClientDelegate, CheckInfo, UsingGM, bTalkOptions)
   local DialogueChain = DialogueChain or {}
   DialogueChain = CommonUtils.CopyTable(DialogueChain)
@@ -15,7 +14,6 @@ function Component:ImpressionCheckByEnumId_New(DialogueChain, CurrentDialogueId,
   }
   local ret = self:CanImpressionCheck(ImpressionAreaId)
   local DiceNum = ret.ResourceCount
-  
   local function Callback(Ret, IsCheckSuccess, rand1, rand2, Rewards)
     self.logger.info("ZJT_ 11111111111111111111 ImpressionCheckByEnumId_New ", Ret, IsCheckSuccess, rand1, rand2, Rewards, CurrentDialogueId)
     if ClientDelegate and ClientDelegate[1] then
@@ -29,7 +27,6 @@ function Component:ImpressionCheckByEnumId_New(DialogueChain, CurrentDialogueId,
     EventManager:FireEvent(EventID.SetCustomNpcFlexibShowOrHideDynamic, "Impression", TalkTriggerId)
     EventManager:FireEvent(EventID.TriggerFlexibleActive)
   end
-  
   if UsingGM then
     Callback(0, true, 9, 9)
     return
@@ -39,11 +36,9 @@ function Component:ImpressionCheckByEnumId_New(DialogueChain, CurrentDialogueId,
     TimerMgr.AddTimer(ClientDelegate[1], LocalTimeOut, ClientDelegate[3], false, 0, "ImpressionCheck", true, DialogueChain)
   end
 end
-
 function Component:ImpressionAddByEnumId_New(DialogueChain, CurrentDialogueId, ClientDelegate, UsingGM)
   local DialogueChain = DialogueChain and CommonUtils.CopyTable(DialogueChain) or {}
   table.insert(DialogueChain, CurrentDialogueId)
-  
   local function Callback(Ret)
     self.logger.info("ZJT_ 11111111111111111111 ImpressionAddByEnumId_New ", Ret, CurrentDialogueId)
     if ClientDelegate and ClientDelegate[1] then
@@ -53,7 +48,6 @@ function Component:ImpressionAddByEnumId_New(DialogueChain, CurrentDialogueId, C
       ClientDelegate[2](ClientDelegate[1], Ret, DialogueChain)
     end
   end
-  
   if UsingGM then
     Callback(0)
     return
@@ -63,12 +57,10 @@ function Component:ImpressionAddByEnumId_New(DialogueChain, CurrentDialogueId, C
     TimerMgr.AddTimer(ClientDelegate[1], LocalTimeOut, ClientDelegate[3], false, 0, "ImpressionPlus", true, DialogueChain)
   end
 end
-
 function Component:SetTalkTriggerComplete_New(TalkTriggerId, ClientDelegate)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   Player:SetCanInteractiveTrigger(false)
   Player:DisablePlayerInputInDeliver(true)
-  
   local function Callback(Ret, Rewards)
     self.logger.info("ZJT_ 11111111111111111111 SetTalkTriggerComplete_New ", Ret, TalkTriggerId)
     EventManager:FireEvent(EventID.SetNpcFlexibShowOrHideDynamic, "Impression", TalkTriggerId)
@@ -83,7 +75,6 @@ function Component:SetTalkTriggerComplete_New(TalkTriggerId, ClientDelegate)
       if rewardData then
         local function func()
           Player:SetCanInteractiveTrigger(true)
-          
           Player:DisablePlayerInputInDeliver(false)
           local GameInstance = GWorld.GameInstance
           local UIManager = GameInstance:GetGameUIManager()
@@ -92,7 +83,6 @@ function Component:SetTalkTriggerComplete_New(TalkTriggerId, ClientDelegate)
             UI:BindActionOnClosed()
           end
         end
-        
         UIUtils.ShowGetItemPageAndOpenBagIfNeeded(rewardData.Type[1], rewardData.Id[1], rewardData.Count[1][1], Rewards, false, func, self, false)
       else
         Player:SetCanInteractiveTrigger(true)
@@ -107,42 +97,32 @@ function Component:SetTalkTriggerComplete_New(TalkTriggerId, ClientDelegate)
       ClientDelegate[2](ClientDelegate[1])
     end
   end
-  
   self:CallServer("SetTalkTriggerComplete_New", Callback, TalkTriggerId)
 end
-
 function Component:GMAddImpressionPreNode(PreDialogueId)
   local function Callback(Ret)
     self.logger.info("ZJT_ 11111111111111111111 AddImpressionPreNode ", Ret, PreDialogueId)
   end
-  
   self:CallServer("GMAddImpressionPreNode", Callback, PreDialogueId)
 end
-
 function Component:IsStorylineComplete(TalkTriggerId)
   return self:IsStorylineSuccess(TalkTriggerId) or self:IsStorylineFailure(TalkTriggerId)
 end
-
 function Component:IsStorylineUnComplete(TalkTriggerId)
   return not self:IsStorylineComplete(TalkTriggerId)
 end
-
 function Component:IsStorylineSuccess(TalkTriggerId)
   return self.ImpressionTalkTriggers[TalkTriggerId] == CommonConst.ImpressionCheckType.Success
 end
-
 function Component:IsStorylineFailure(TalkTriggerId)
   return self.ImpressionTalkTriggers[TalkTriggerId] == CommonConst.ImpressionCheckType.Failed
 end
-
 function Component:IsImpressionCheckSuccess(DialogueId)
   return self.ImpressionDialogues[DialogueId] == CommonConst.ImpressionCheckType.Success
 end
-
 function Component:IsImpressionCheckFailure(DialogueId)
   return self.ImpressionDialogues[DialogueId] == CommonConst.ImpressionCheckType.Failed
 end
-
 function Component:CanImpressionCheck(ImpressionAreaId)
   local Ret = {
     ResourceCount = 0,
@@ -155,7 +135,6 @@ function Component:CanImpressionCheck(ImpressionAreaId)
   Ret.bCanCheck = Ret.ResourceCount >= Ret.Cost
   return Ret
 end
-
 function Component:GetSuccRate(PlayerValue, CheckValue)
   local SuccRate = 100 - CheckValue + PlayerValue
   if SuccRate > 100 then
@@ -165,7 +144,6 @@ function Component:GetSuccRate(PlayerValue, CheckValue)
   end
   return SuccRate
 end
-
 function Component:GetDifficultyInfo(SuccRate)
   SuccRate = SuccRate / 100
   local ImpressionDifficulty = DataMgr.ImpressionDifficulty
@@ -183,7 +161,6 @@ function Component:GetDifficultyInfo(SuccRate)
   end
   return DifficultyInfo
 end
-
 function Component:GetImpressionCheckInfo(CheckId)
   local CheckInfo = {}
   local ImpressionCheck = DataMgr.ImpressionCheck[CheckId]
@@ -195,7 +172,6 @@ function Component:GetImpressionCheckInfo(CheckId)
   end
   return CheckInfo
 end
-
 function Component:ShowCommonImpressionReward(Code, Res, CheckData, Rewards, Callback)
   if not (ErrorCode:Check(Code) and Res and Rewards and CheckData) or not CheckData.RewardId then
     Callback()
@@ -211,7 +187,6 @@ function Component:ShowCommonImpressionReward(Code, Res, CheckData, Rewards, Cal
     Callback()
   end
 end
-
 function Component:ShowImpressionPlusUI(ImprPlusId, Callback)
   DebugPrint("ShowImpressionPlusUI")
   Callback = Callback or function()
@@ -233,11 +208,10 @@ function Component:ShowImpressionPlusUI(ImprPlusId, Callback)
     })
     ImpressionDimensionResultUI:FadeIn()
   else
-    Utils.ScreenPrint("\230\152\190\231\164\186\229\141\176\232\177\161\229\138\160\229\128\188UI\230\151\182\239\188\140ID " .. ImprPlusId .. "\229\156\168ImpressionPlus\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168\239\188\140\232\175\183\230\163\128\230\159\165")
+    Utils.ScreenPrint("显示印象加值UI时，ID " .. ImprPlusId .. "在ImpressionPlus表中不存在，请检查")
     Callback()
   end
 end
-
 function Component:GetImpressionAreaIdFromRegionId(TargetRegionId)
   TargetRegionId = TargetRegionId or self:GetSubRegionId2RegionId()
   local ImpressionRegions = DataMgr.ImpressionRegion
@@ -249,12 +223,10 @@ function Component:GetImpressionAreaIdFromRegionId(TargetRegionId)
       end
     end
   end
-  Utils.ScreenPrint("\230\156\170\230\137\190\229\136\176\229\141\176\232\177\161\229\140\186\229\159\159ID\239\188\140\232\175\183\230\163\128\230\159\165RegionId\230\152\175\229\144\166\229\156\168ImpressionRegion\232\161\168\228\184\173,SubRegionId:" .. TargetRegionId)
+  Utils.ScreenPrint("未找到印象区域ID，请检查RegionId是否在ImpressionRegion表中,SubRegionId:" .. TargetRegionId)
   return TargetRegionId
 end
-
 function Component:GetRegionImpression(ImpressionAreaId)
   return self.Impressions:GetImpression(ImpressionAreaId)
 end
-
 return Component

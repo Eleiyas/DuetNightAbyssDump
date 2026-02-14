@@ -52,7 +52,7 @@ return {
       isStoryNode = true,
       key = "1721630102407394777",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1093.3277422252913, y = 353.4452683639224},
       propsData = {
         QuestId = 0,
@@ -76,8 +76,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -194,7 +196,7 @@ return {
           ["1718864280999136821"] = {
             key = "1718864280999136821",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166-\232\190\190\232\138\153\230\182\133\230\177\130\229\138\169",
+            name = "开车-达芙涅求助",
             pos = {x = 550.3359555477936, y = 197.72087666525005},
             propsData = {
               IsNpcNode = false,
@@ -211,7 +213,7 @@ return {
           ["1718864280999136822"] = {
             key = "1718864280999136822",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186-SC003-\231\167\189\229\133\189\229\140\133\229\155\180",
+            name = "过场-SC003-秽兽包围",
             pos = {x = -219.34832268462688, y = 537.4298992137968},
             propsData = {
               IsNpcNode = false,
@@ -231,8 +233,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "BP_TargetPoint110104",
               CameraLookAtTartgetPoint = "",
@@ -244,9 +248,6 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -256,7 +257,7 @@ return {
           ["1718960339466678519"] = {
             key = "1718960339466678519",
             type = "SendMessageNode",
-            name = "\231\172\172\228\184\128\230\179\162",
+            name = "第一波",
             pos = {x = 427.110256658657, y = 431.85190438104667},
             propsData = {
               MessageType = "GameMode",
@@ -267,7 +268,7 @@ return {
           ["1720083035551562832"] = {
             key = "1720083035551562832",
             type = "SendMessageNode",
-            name = "\229\164\177\232\180\165\230\184\133\231\144\134",
+            name = "失败清理",
             pos = {x = 1319.721616878283, y = 685.0801089199986},
             propsData = {
               MessageType = "GameMode",
@@ -299,21 +300,21 @@ return {
           ["1721630102407394782"] = {
             key = "1721630102407394782",
             type = "SpecialQuestFailNode",
-            name = "\231\137\185\230\174\138\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "特殊任务主动失败",
             pos = {x = 815.8437454580679, y = 1028.0898683295677},
             propsData = {}
           },
           ["1721630102407394783"] = {
             key = "1721630102407394783",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 649.4203312578513, y = 662.0651562567434},
             propsData = {}
           },
           ["1721630102407394784"] = {
             key = "1721630102407394784",
             type = "BossBattleFinishNode",
-            name = "\229\164\177\232\180\165\229\155\158\232\176\131",
+            name = "失败回调",
             pos = {x = 470.92193681111814, y = 1003.9205374050587},
             propsData = {
               SendMessage = "",
@@ -323,7 +324,7 @@ return {
           ["17270748529641849"] = {
             key = "17270748529641849",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = 672.2678318249253, y = 438.0278799004199},
             propsData = {
               SendMessage = "",
@@ -333,7 +334,7 @@ return {
           ["1728390768716196045"] = {
             key = "1728390768716196045",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 35.68415481389195, y = 756.7934133438742},
             propsData = {
               SoundStateType = 0,
@@ -350,7 +351,7 @@ return {
           ["17289936397901750215"] = {
             key = "17289936397901750215",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166-\233\152\191\231\147\166\229\176\148\231\153\187\229\156\186",
+            name = "开车-阿瓦尔登场",
             pos = {x = 1226.4318614375165, y = 70.76521303363187},
             propsData = {
               IsNpcNode = false,
@@ -367,7 +368,7 @@ return {
           ["17289936397901750216"] = {
             key = "17289936397901750216",
             type = "CreatePhantomNode",
-            name = "\229\143\172\229\148\164\233\152\191\231\147\166\229\176\148\233\173\133\229\189\177",
+            name = "召唤阿瓦尔魅影",
             pos = {x = 1247.3845563748312, y = 444.2922421962263},
             propsData = {
               IsCreate = true,
@@ -379,7 +380,7 @@ return {
           ["17289936397901750217"] = {
             key = "17289936397901750217",
             type = "TalkNode",
-            name = "\232\191\135\229\156\186\229\138\168\231\148\187 - SC004 - \233\152\191\231\147\166\229\176\148\231\153\187\229\156\186",
+            name = "过场动画 - SC004 - 阿瓦尔登场",
             pos = {x = 948.1050362577091, y = 425.64405983239647},
             propsData = {
               IsNpcNode = false,
@@ -399,8 +400,10 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -412,9 +415,6 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0}
-              },
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
@@ -424,7 +424,7 @@ return {
           ["17289936646361751071"] = {
             key = "17289936646361751071",
             type = "BossBattleFinishNode",
-            name = "\231\173\137\229\190\133\228\184\128\233\152\182\230\174\181\231\187\147\230\157\159",
+            name = "等待一阶段结束",
             pos = {x = 1542.2710292297747, y = 431.8331958312752},
             propsData = {
               SendMessage = "",
@@ -434,7 +434,7 @@ return {
           ["17339856504271800544"] = {
             key = "17339856504271800544",
             type = "CreatePhantomNode",
-            name = "\233\148\128\230\175\129\233\152\191\231\147\166\229\176\148\233\173\133\229\189\177",
+            name = "销毁阿瓦尔魅影",
             pos = {x = 947.25, y = 669.625},
             propsData = {
               IsCreate = false,
@@ -446,7 +446,7 @@ return {
           ["17357999326538837431"] = {
             key = "17357999326538837431",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 1234.4644287398241, y = 298.78349282296654},
             propsData = {
               SoundStateType = 0,
@@ -463,7 +463,7 @@ return {
           ["1735873604319688"] = {
             key = "1735873604319688",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 270.2734113712374, y = 212.2674461088782},
             propsData = {
               SoundStateType = 0,
@@ -480,7 +480,7 @@ return {
           ["1735873616911855"] = {
             key = "1735873616911855",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 832.3452685421994, y = 198.5306905370843},
             propsData = {
               SoundStateType = 3,
@@ -496,7 +496,7 @@ return {
       isStoryNode = true,
       key = "17289891804571739007",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1403.2642715086774, y = 394.51487847860915},
       propsData = {
         QuestId = 0,
@@ -520,8 +520,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -599,7 +601,7 @@ return {
           ["17289891817281739093"] = {
             key = "17289891817281739093",
             type = "BossBattleFinishNode",
-            name = "\228\186\140\233\152\182\230\174\181\230\136\144\229\138\159\229\155\158\232\176\131",
+            name = "二阶段成功回调",
             pos = {x = 690.9828594362218, y = 337.75776917040224},
             propsData = {
               SendMessage = "",
@@ -609,21 +611,21 @@ return {
           ["17289891817281739097"] = {
             key = "17289891817281739097",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 988.7651922176252, y = 348.15402306510623},
             propsData = {}
           },
           ["17289891958661739731"] = {
             key = "17289891958661739731",
             type = "SpecialQuestFailNode",
-            name = "\231\137\185\230\174\138\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "特殊任务主动失败",
             pos = {x = 990.1175797277799, y = 964.8138713034407},
             propsData = {}
           },
           ["17289891958661739732"] = {
             key = "17289891958661739732",
             type = "BossBattleFinishNode",
-            name = "\229\164\177\232\180\165\229\155\158\232\176\131",
+            name = "失败回调",
             pos = {x = 751.2516850593247, y = 980.6283217409389},
             propsData = {
               SendMessage = "",
@@ -633,14 +635,14 @@ return {
           ["17289891958661739733"] = {
             key = "17289891958661739733",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 681.218179864481, y = 560.4175642485375},
             propsData = {}
           },
           ["17289891958661739734"] = {
             key = "17289891958661739734",
             type = "SendMessageNode",
-            name = "\229\164\177\232\180\165\230\184\133\231\144\134",
+            name = "失败清理",
             pos = {x = 1277.2302629759522, y = 600.599721212868},
             propsData = {
               MessageType = "GameMode",
@@ -651,7 +653,7 @@ return {
           ["17339856816122473395"] = {
             key = "17339856816122473395",
             type = "CreatePhantomNode",
-            name = "\233\148\128\230\175\129\233\152\191\231\147\166\229\176\148\233\173\133\229\189\177",
+            name = "销毁阿瓦尔魅影",
             pos = {x = 991.2061699948798, y = 584.5321786111552},
             propsData = {
               IsCreate = false,
@@ -663,7 +665,7 @@ return {
           ["1741934289740776423"] = {
             key = "1741934289740776423",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 664.25, y = 112.17105263157899},
             propsData = {
               IsNpcNode = false,

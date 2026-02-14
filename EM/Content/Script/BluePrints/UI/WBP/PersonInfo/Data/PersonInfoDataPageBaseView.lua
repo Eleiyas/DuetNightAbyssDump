@@ -3,7 +3,6 @@ local M = {}
 local DataModel = require("BluePrints.UI.WBP.PersonInfo.Data.PersonInfoDataModel")
 local PersonInfoController = require("BluePrints.UI.WBP.PersonInfo.PersonInfoController")
 M._components = {}
-
 function M:InitBaseView()
   local DaVisibleTabs = {
     "UI_PersonalPage_Open",
@@ -15,12 +14,12 @@ function M:InitBaseView()
   self.Text_PlayTimeDataTitle:SetText(GText("UI_PersonalPage_Recount_TotalTime"))
   self.Text_DetailTitleAchievement:SetText(GText("MAIN_UI_ACHIEVEMENT"))
   self.Title:SetText(GText("UI_Achievement_Title"))
+  self.Text_DataTitle:SetText(GText("UI_PersonalPage_Recount_Name"))
   self:InitDetaildView()
   self:PlayAnimationForward(self.In)
   self.IsCloseing = false
   self:SetFocus()
 end
-
 function M:InitDetaildView()
   if not DataModel:GetIsSelf() then
     self.Com_SortDown:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -55,12 +54,11 @@ function M:InitDetaildView()
     self.List_Data:AddItem(SingleTabInfo)
   end
   if self.ScrollBox:GetScrollOffsetOfEnd() > 1 then
-    ScreenPrint("ScrollBox:GetScrollOffsetOfEnd() >1")
+    DebugPrint("ScrollBox:GetScrollOffsetOfEnd() >1")
   else
-    ScreenPrint("ScrollBox:GetScrollOffsetOfEnd() <1")
+    DebugPrint("ScrollBox:GetScrollOffsetOfEnd() <1")
   end
 end
-
 function M:InitMoreDetailedTabs()
   local TabInfos = DataModel:GetMoreDetailedTabs()
   for i = 1, #TabInfos do
@@ -69,26 +67,21 @@ function M:InitMoreDetailedTabs()
     Obj.Text_DataTitle:SetText(TabInfo.Title)
   end
 end
-
 function M:Construct()
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self
 end
-
 function M:OnSortListSelectionsChanged(Index)
-  ScreenPrint("sortingchange" .. Index)
+  DebugPrint("sortingchange" .. Index)
   DataModel:SetInfoVisibility(Index)
 end
-
 function M:IsCanReturn()
   if self.IsCloseing == true then
     return false
   end
   return true
 end
-
 function M:OnReturnKeyDown()
   if self:IsCanReturn() == false then
     return
@@ -101,5 +94,4 @@ function M:OnReturnKeyDown()
   self:PlayAnimationForward(self.Out)
   self.IsCloseing = true
 end
-
 return M

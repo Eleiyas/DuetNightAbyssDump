@@ -12,13 +12,12 @@ Walnut.__Props__ = {
   WalnutLastRefreshTime = prop.prop("Int", "", 0),
   WalnutId = prop.prop("Int", "cross", 0),
   WalnutRewardList = prop.prop("List", ""),
+  WalnutRarityList = prop.prop("List", ""),
   bCanSelectWalnut = prop.prop("Int", "")
 }
-
 function Walnut:GetCount(WalnutId)
   return self.WalnutBag[WalnutId] or 0
 end
-
 function Walnut:Add(WalnutId, Count)
   if not DataMgr.Walnut[WalnutId] then
     return false
@@ -27,7 +26,6 @@ function Walnut:Add(WalnutId, Count)
   self.WalnutBag[WalnutId] = PreCount + Count
   return true
 end
-
 function Walnut:Remove(WalnutId, Count, bConsume)
   Count = Count or 1
   local PreCount = self.WalnutBag[WalnutId]
@@ -45,23 +43,23 @@ function Walnut:Remove(WalnutId, Count, bConsume)
   end
   return true
 end
-
 function Walnut:SelectWalnut(WalnutId)
   self.WalnutId = WalnutId
   self:SetCanSelectWalnut(false)
 end
-
-function Walnut:UpdateWalnutRewardList(WalnutRewardList)
+function Walnut:UpdateWalnutRewardList(WalnutRewardList, RarityList)
   self.WalnutRewardList = WalnutRewardList
+  self.WalnutRarityList = RarityList
 end
-
+function Walnut:ResetReward()
+  self.WalnutRewardList = {}
+  self.WalnutRarityList = {}
+end
 function Walnut:SetCanSelectWalnut(bCanSelect)
   self.bCanSelectWalnut = bCanSelect and 1 or 0
 end
-
 function Walnut:CanSelectWalnut()
   return 1 == self.bCanSelectWalnut and self.WalnutId > 0
 end
-
 FormatProperties(Walnut)
 return {Walnut = Walnut}

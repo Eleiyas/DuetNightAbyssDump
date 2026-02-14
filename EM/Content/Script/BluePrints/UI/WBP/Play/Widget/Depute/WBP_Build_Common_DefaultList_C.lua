@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
 local GAMEPAD_KEY_EXPAND_SQUAD = Const.GamepadDPadDown
-
 function M:Construct()
   M.Super.Construct(self)
   self.Btn_Show.OnClicked:Add(self, self.OnClicked)
@@ -24,7 +23,6 @@ function M:Construct()
   self.Team_Armory:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self.Team_Armory:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:Init(Parent, Index, DungeonId)
   self.Avatar = GWorld:GetAvatar()
   if not self.Avatar then
@@ -54,13 +52,11 @@ function M:Init(Parent, Index, DungeonId)
   self.Text_Title_Default:SetText(GText("UI_CustomSquad_Title"))
   self.Text_Close:SetText(GText("UI_RougeLike_End__ClickEmpty"))
 end
-
 function M:RefreshData()
   self.SquadList = self.Avatar.Squad
   self:UpdateSquadListInfo()
   self:InitSquadList()
 end
-
 function M:UpdateSquadListInfo()
   self.SquadInfoList = {}
   local Index = 0
@@ -119,7 +115,6 @@ function M:UpdateSquadListInfo()
   end
   self.SquadNewInfo.Name = GText("UI_ArmourySquad_Title")
 end
-
 function M:InitSquadList()
   self.List_Default:ClearListItems()
   for _, value in pairs(self.SquadInfoList) do
@@ -136,17 +131,14 @@ function M:InitSquadList()
   })
   self.Team_Armory:InitItemContent(self.SquadNewInfo, self)
 end
-
 function M:OnCurrentSquadChange(SquadId, IsComMissing, CurSelectedDungeonId)
   if self.DungeonId == CurSelectedDungeonId then
     self.CurrentSquad = SquadId
   end
 end
-
 function M:UpdateCurrentDungeonSquad(Index)
   local function HandleEmptySquadView()
     self.CurrentSquad = 0
-    
     self:SetCurrentIcon(self.SquadNewInfo)
     self.CurrentCharId = self.SquadNewInfo.CharId
     if self.CurSelectContent then
@@ -159,7 +151,6 @@ function M:UpdateCurrentDungeonSquad(Index)
     self.Btn_Build:ForbidBtn(true)
     self.Btn_Build:BindForbidStateExecuteEvent(self, self.OnForbiddenBtnClicked)
   end
-  
   if 0 == Index then
     HandleEmptySquadView()
     return
@@ -176,10 +167,8 @@ function M:UpdateCurrentDungeonSquad(Index)
   end
   HandleEmptySquadView()
 end
-
 function M:SetCurrentIcon(SquadInfo)
   self.Text_Name:SetText(SquadInfo.Name)
-  
   local function SetIconComponent(Component, Category, Id, EmptyCategory)
     local Icon
     if Id and DataMgr[Category][Id] then
@@ -188,7 +177,6 @@ function M:SetCurrentIcon(SquadInfo)
     Component:InitIcon(Icon and Category or EmptyCategory, Icon)
     Component.Panel_Level:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  
   SetIconComponent(self.Character, "Char", SquadInfo.CharId, "Empty")
   SetIconComponent(self.Melee, "Weapon", SquadInfo.MeleeWeaponId, "Empty")
   SetIconComponent(self.Range, "Weapon", SquadInfo.RangedWeaponId, "Empty")
@@ -227,7 +215,6 @@ function M:SetCurrentIcon(SquadInfo)
   self.Roulette:SetWheelIcon(nil, SquadInfo.WheelIndex or 1)
   self.IsMissing = not SquadInfo.CharId or not SquadInfo.MeleeWeaponId or not SquadInfo.RangedWeaponId
 end
-
 function M:OnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   DebugPrint("gmy@WBP_Build_Common_DefaultList_C M:OnClicked", self.IsExpand)
@@ -237,16 +224,12 @@ function M:OnClicked()
     self:UnfoldPanel()
   end
 end
-
 function M:OnPressed()
 end
-
 function M:OnHovered()
 end
-
 function M:OnUnhovered()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Unfold then
     self.Btn_Close:SetVisibility(ESlateVisibility.Visible)
@@ -254,7 +237,6 @@ function M:OnAnimationFinished(InAnimation)
     self.Btn_Close:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnItemIsHoverChanged(Item, bIsHovered)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     local Entry = Item.UI
@@ -268,7 +250,6 @@ function M:OnItemIsHoverChanged(Item, bIsHovered)
     end
   end
 end
-
 function M:OnListItemSelected(Content)
   if not Content or self.CurSelectContent == Content then
     return
@@ -299,7 +280,6 @@ function M:OnListItemSelected(Content)
     Content.UI:SetIsSelected(true)
   end
 end
-
 function M:OnMenuOpenChangedCallBack(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -317,29 +297,24 @@ function M:OnMenuOpenChangedCallBack(bIsOpen)
     self.Btn_Close:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   local StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
   if not StyleOfPlay then
     return
   end
 end
-
 function M:OpenDefaultMenuAnchor()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
   self.Btn_Qa_Default:PlayAnimation(self.Btn_Qa_Default.Click)
   self.Btn_Qa_Default.Btn_Click:SetChecked(true)
   self.Btn_Qa_Default:OpenMenuAnchor()
 end
-
 function M:IsMenuAnchorOpen()
   return self.Btn_Qa_Default:IsMenuAnchorOpen()
 end
-
 function M:CloseMenuAnchor()
   self.Btn_Qa_Default:CloseMenuAnchor()
 end
-
 function M:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -392,7 +367,6 @@ function M:InitInputSettings()
     bLongPress = false
   })
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_Build_Common_DefaultList_C M:OnUpdateUIStyleByInputTypeChange", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -418,7 +392,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:InitGamepadPanel()
   if self.IsExpand then
     self.WS_Controller:SetActiveWidgetIndex(0)
@@ -428,13 +401,11 @@ function M:InitGamepadPanel()
   self.WS_Controller_Close:SetActiveWidgetIndex(1)
   self.Key_Default:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:InitKeyAndMousePanel()
   self.WS_Controller:SetActiveWidgetIndex(0)
   self.WS_Controller_Close:SetActiveWidgetIndex(0)
   self.Key_Default:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:FoldPanel()
   DebugPrint("gmy@WBP_Build_Common_DefaultList_C M:FoldPanel")
   if CommonUtils:IfExistSystemGuideUI(self) then
@@ -450,7 +421,6 @@ function M:FoldPanel()
   end
   EventManager:FireEvent(EventID.TeamMatchSquadFold)
 end
-
 function M:UnfoldPanel()
   DebugPrint("gmy@WBP_Build_Common_DefaultList_C M:UnfoldPanel", self.CurrentSquad)
   AudioManager(self):PlayUISound(self, "event:/ui/common/preset_team_panel_expand", "Play_Build_Select", nil)
@@ -468,8 +438,6 @@ function M:UnfoldPanel()
     self:UpdatKeyDisplay("")
   end
 end
-
 function M:InitNavigation()
 end
-
 return M

@@ -1,6 +1,5 @@
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local BP_Impression_DimensionResult_C = Class("BluePrints.UI.BP_UIState_C")
-
 function BP_Impression_DimensionResult_C:Init(bCheckSucceed, ImpressionAreaId, PlusType, PlusValue)
   self.OnCloseDelegate = nil
   self.bCheckSucceed = bCheckSucceed
@@ -25,7 +24,6 @@ function BP_Impression_DimensionResult_C:Init(bCheckSucceed, ImpressionAreaId, P
     self.Close
   })
 end
-
 function BP_Impression_DimensionResult_C:InitDimensionGraph(ImpressionAreaId)
   self.DimensionGraph = self.BP_DimensionDrawArea
   local RegionInfo = DataMgr.ImpressionRegion[ImpressionAreaId]
@@ -39,32 +37,26 @@ function BP_Impression_DimensionResult_C:InitDimensionGraph(ImpressionAreaId)
   end
   self.DimensionGraph:Init(ImpressionAreaId)
 end
-
 function BP_Impression_DimensionResult_C:SetOnCloseDelegate(Delegate)
   if Delegate and Delegate[1] and Delegate[2] then
     self.OnCloseDelegate = Delegate
   end
 end
-
 function BP_Impression_DimensionResult_C:FadeIn()
   self:PlayAnimation(self.In)
   self.DimensionGraph:SwitchActive(true)
 end
-
 function BP_Impression_DimensionResult_C:FadeOut()
   self:PlayAnimation(self.Out)
   self.DimensionGraph:SwitchActive(false)
 end
-
 function BP_Impression_DimensionResult_C:TimeFadeOut()
   self:AddTimer(1, self.FadeOut, false, 0, nil, true)
 end
-
 function BP_Impression_DimensionResult_C:Close()
   if self.OnCloseDelegate then
     self.OnCloseDelegate[2](self.OnCloseDelegate[1], self.bCheckSucceed)
   end
   self:RemoveFromParent()
 end
-
 return BP_Impression_DimensionResult_C

@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Btn_Area.OnClicked:Add(self, self.SetClickState)
   self.Btn_Area.OnPressed:Add(self, self.SetPressState)
   self.Btn_Area.OnHovered:Add(self, self.SetHoverState)
   self.Btn_Area.OnUnhovered:Add(self, self.SetUnHoverState)
 end
-
 function M:Init(Parent, TraceId, IsLock)
   self.Parent = Parent
   self.TraceId = TraceId
@@ -40,7 +38,6 @@ function M:Init(Parent, TraceId, IsLock)
     value:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:SetNormalState()
   if self.IsClick then
     return
@@ -51,7 +48,6 @@ function M:SetNormalState()
     self:PlayAnimation(self.UnLocked_Normal)
   end
 end
-
 function M:SetClickState()
   if self.IsClick then
     return
@@ -66,7 +62,6 @@ function M:SetClickState()
     self.Parent:OnClickTraceItem(self.TraceId)
   end
 end
-
 function M:SetHoverState()
   if self.IsClick then
     return
@@ -77,7 +72,6 @@ function M:SetHoverState()
     self:PlayAnimation(self.UnLocked_Hover)
   end
 end
-
 function M:SetUnHoverState()
   if self.IsClick then
     return
@@ -88,7 +82,6 @@ function M:SetUnHoverState()
     self:PlayAnimation(self.UnLocked_UnHover)
   end
 end
-
 function M:SetPressState()
   if self.IsClick then
     return
@@ -99,21 +92,18 @@ function M:SetPressState()
     self:PlayAnimation(self.UnLocked_Press)
   end
 end
-
 function M:SetActivatableState()
   if self.IsClick or self:IsAnimationPlaying(self.Activatable_Loop) then
     return
   end
   self:PlayAnimation(self.Activatable_Loop, 0, 0)
 end
-
 function M:PlayActivatableNormal()
   if not self.HasReddot then
     self:StopAnimation(self.Activatable_Loop)
     self:PlayAnimation(self.Activatable_Normal)
   end
 end
-
 function M:SetReddotState(IsShow)
   if IsShow then
     self.HasReddot = true
@@ -124,11 +114,9 @@ function M:SetReddotState(IsShow)
     self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:CollapseNiagara()
   self.NI_Par1:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:PlayUnLockAnim()
   self:PlayActivatableNormal()
   self:PlayAnimation(self.UnLock)
@@ -140,22 +128,18 @@ function M:PlayUnLockAnim()
     self.PlayUnLockAnimFinished
   })
 end
-
 function M:PlayUnLockAnimFinished()
   self.Parent:ClickToNextTraceItem()
   self.Parent:SetDetailsUnlockPlaying(false)
 end
-
 function M:CollapseVX()
   self.VX_WenLuHover27:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.VX_Hover19:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.Parent and self.Parent.OnTraceItemFocused then
     self.Parent:OnTraceItemFocused(self.TraceId)
   end
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 return M

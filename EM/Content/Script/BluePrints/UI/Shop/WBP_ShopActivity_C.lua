@@ -5,11 +5,9 @@ M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp",
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self)
   self.bIsFocusable = true
@@ -24,8 +22,10 @@ function M:OnLoaded(...)
   self.bFilterOwned = false
   self:PlayAnimationReverse(self.Filtrate_Normal)
   self.Text_CountdownTime:SetVisibility(ESlateVisibility.Collapsed)
-  local MainTabIdx, SubTabIdx, ShopItemId, ShopSystemName = ...
+  local MainTabIdx, SubTabIdx, ShopItemId, ShopSystemName, CloseCallBack, ClsoeCallBackObj = ...
   self.SelectShopItemId = ShopItemId
+  self.CloseCallBack = CloseCallBack
+  self.ClsoeCallBackObj = ClsoeCallBackObj
   self.List_Item:SetVisibility(ESlateVisibility.Visible)
   self.Group_Own:SetVisibility(ESlateVisibility.Collapsed)
   self.Common_Tab:BindEventOnTabSelected(self, self.OnMainTabChanged)
@@ -40,7 +40,6 @@ function M:OnLoaded(...)
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
   self:OnUpdateUIStyleByInputTypeChange(self.CurInputDeviceType, self.CurGamepadName)
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   if self.ShopType then
@@ -50,11 +49,9 @@ function M:ReceiveEnterState(StackAction)
     end
   end
 end
-
 function M:ReceiveExitState(StackAction)
   M.Super.ReceiveExitState(self, StackAction)
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.List_Item.OnCreateEmptyContent:Bind(self, function(self)
@@ -68,10 +65,9 @@ function M:Construct()
     self.Common_Tab.WBP_Com_Tab_ResourceBar:SetLastFocusWidget(self.List_Item)
   end
 end
-
 function M:InitShopTabInfo(MainTabIdx, SubTabIdx, ShopType)
   local MainShopTabData = DataMgr.Shop[ShopType]
-  assert(MainShopTabData, "\232\142\183\229\143\150\229\149\134\229\186\151\231\177\187\229\158\139\228\191\161\230\129\175\229\164\177\232\180\165:" .. ShopType)
+  assert(MainShopTabData, "获取商店类型信息失败:" .. ShopType)
   self:LoadShopTabInfo(MainShopTabData)
   self.Common_Tab:Init({
     LeftKey = "Q",
@@ -100,7 +96,6 @@ function M:InitShopTabInfo(MainTabIdx, SubTabIdx, ShopType)
     self.Common_SortList_PC
   })
 end
-
 function M:OnMainTabChanged(TabWidget)
   local MainTabId = self.MainTabMap[TabWidget.Idx]
   if not MainTabId then
@@ -122,7 +117,6 @@ function M:OnMainTabChanged(TabWidget)
     end
   end
 end
-
 function M:OnSubTabChanged(TabWidget)
   local SubTabData = self.SubTabMap[TabWidget.Idx]
   if not SubTabData then
@@ -131,12 +125,13 @@ function M:OnSubTabChanged(TabWidget)
   self.Group_Item:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:RefreshSubTabData(SubTabData)
 end
-
 function M:RefreshSubTabData(SubTabData)
   self:LoadSubTabInfo(SubTabData)
+  if self.Change then
+    self:PlayAnimation(self.Change)
+  end
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
 function M:UpdateShopDetail(SubTabData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -145,19 +140,20 @@ function M:UpdateShopDetail(SubTabData)
   self:SetTabReddot(self.ShopType)
   M.Super.UpdateShopDetail(self, SubTabData)
 end
-
 function M:Close()
   local MenuWorld = UIManager(self):GetUIObj("MenuWorld")
   if MenuWorld then
     MenuWorld:InitSystemItem()
   end
   AudioManager(self):StopSystemUIBGM(self.ShopType)
+  if IsValid(self.ClsoeCallBackObj) and self.CloseCallBack then
+    self.CloseCallBack(self.ClsoeCallBackObj)
+  end
   self.Super.Close(self)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
     self:Close()
   elseif InAnimation == self.In then
     self:BlockAllUIInput(false)
@@ -169,7 +165,6 @@ function M:OnAnimationFinished(InAnimation)
     end
   end
 end
-
 function M:Destruct()
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player then
@@ -180,7 +175,6 @@ function M:Destruct()
   self.List_Item.OnCreateEmptyContent:Unbind()
   self.Super.Destruct(self)
 end
-
 function M:SetTabReddot(ShopType)
   for _, MainTabId in pairs(DataMgr.Shop[ShopType].MainTabId) do
     local Data = DataMgr.ShopItem2ShopTab[MainTabId]
@@ -209,7 +203,6 @@ function M:SetTabReddot(ShopType)
     end
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftTrigger" == InKeyName or "Gamepad_RightTrigger" == InKeyName then
@@ -226,7 +219,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -237,7 +229,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   local BottomKeyInfo = {
     {
@@ -254,7 +245,6 @@ function M:InitGamepadView()
   }
   self.Com_KeyTips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function M:InitKeyboardView()
   local BottomKeyInfo = {
     {
@@ -271,7 +261,6 @@ function M:InitKeyboardView()
   }
   self.Com_KeyTips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -307,6 +296,5 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 AssembleComponents(M)
 return M

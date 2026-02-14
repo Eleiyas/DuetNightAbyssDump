@@ -12,7 +12,6 @@ local QuestChainTypeEnum = {
   Normal = 2,
   Side = 3
 }
-
 function WBP_TaskListItem_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.QuestChainType = nil
@@ -24,18 +23,16 @@ function WBP_TaskListItem_C:Initialize(Initializer)
   self.CompletedQuestInfo = {}
   self.State = nil
   self.ShowCompleteCount = 0
+  self.bAdvance = false
 end
-
 function WBP_TaskListItem_C:Construct()
   self.Super.Construct(self)
   self.IsDestroied = false
 end
-
 function WBP_TaskListItem_C:Destruct()
   self.Super.Destruct(self)
   self.IsDestroied = true
 end
-
 function WBP_TaskListItem_C:RefreshListItemInfo(Content)
   if not Content then
     print(_G.LogTag, "WBP_TaskListItem_C.RefreshListItemInfo: Content Is Nil!")
@@ -52,8 +49,6 @@ function WBP_TaskListItem_C:RefreshListItemInfo(Content)
   self.Group_Head:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Common_List_Cell_PC:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Common_List_Cell_PC.Button_Area.OnClicked:Add(self, self.OnClicked)
-  self.Common_List_Cell_PC.Image_Unfold:SetVisibility(UE4.ESlateVisibility.Collapsed)
-  self.Common_List_Cell_PC.VXImage_Unfold_1:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Common_List_Cell_PC:Init(self, self.UpdateTabInfo)
   self.Group_RecommendedLevel:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.OwnerWidget = Content.OwnerWidget
@@ -72,6 +67,14 @@ function WBP_TaskListItem_C:RefreshListItemInfo(Content)
     self.Group_Item.WidthOverride = self.Size_Group_Item_M
   end
   local QuestConfig = DataMgr.QuestChain[self.QuestChainId]
+  local QuestInfo = Avatar.QuestChains[self.QuestChainId]
+  if QuestInfo and QuestInfo:GetAssumeFinish() then
+    self.WS_Detail:SetActiveWidgetIndex(1)
+    self.bAdvance = true
+  else
+    self.WS_Detail:SetActiveWidgetIndex(0)
+    self.bAdvance = false
+  end
   if not QuestConfig and not self.IsEmpty and -1 ~= self.QuestChainId then
     print(_G.LogTag, "Quest Conifg Not Exist! Check QuestChain.xlsx Id:", self.QuestChainId)
     return
@@ -171,7 +174,6 @@ function WBP_TaskListItem_C:RefreshListItemInfo(Content)
     end
   end
 end
-
 function WBP_TaskListItem_C:TriggerRecommendedLevelUIShow(TaskInfo)
   local Level = self.OwnerWidget.CurPlayerCharacterLevel
   local ConfigRecommandLevel
@@ -192,10 +194,8 @@ function WBP_TaskListItem_C:TriggerRecommendedLevelUIShow(TaskInfo)
     self.Image_RedBG:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_TaskListItem_C:ShowCompletedQuestList(IsExpansion)
 end
-
 function WBP_TaskListItem_C:PreCreateSubItemContent(State, QuestChainId, QuestId)
   local Content = {}
   Content.QuestChainId = QuestChainId
@@ -213,7 +213,6 @@ function WBP_TaskListItem_C:PreCreateSubItemContent(State, QuestChainId, QuestId
   end
   return TaskUtils:CreateSubItemContent(Content)
 end
-
 function WBP_TaskListItem_C:OnClicked()
   if not self.IsExpansion then
     self.Task_SubItem:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -231,7 +230,6 @@ function WBP_TaskListItem_C:OnClicked()
     self.OwnerWidget.RootWidget:SetFocus()
   end
 end
-
 function WBP_TaskListItem_C:PlayImageTaskTypeAnimation()
   local QuestChainType
   if -1 == self.QuestChainId then
@@ -249,7 +247,6 @@ function WBP_TaskListItem_C:PlayImageTaskTypeAnimation()
     self:PlayAnimation(self.Task_SpecialColor)
   end
 end
-
 function WBP_TaskListItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self:UpdateTabInfo()
   local LastIndex = -1
@@ -273,7 +270,6 @@ function WBP_TaskListItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Task_SubItem)
   end
 end
-
 function WBP_TaskListItem_C:SetItemNavigation()
   self.Common_List_Cell_PC:SetNavigationRuleCustom(EUINavigation.Up, {
     self,
@@ -312,24 +308,20 @@ function WBP_TaskListItem_C:SetItemNavigation()
     end
   })
 end
-
 function WBP_TaskListItem_C:UpdateTabInfo()
   if self.OwnerWidget.UsingGamepad then
     self.OwnerWidget:InitTabPadKeyInfo()
   end
 end
-
 function WBP_TaskListItem_C:OnAddedToFocusPath(InFocusEvent)
   if self.OwnerWidget.UsingGamepad then
     self.OwnerWidget:IsShowGamePad(true)
   end
 end
-
 function WBP_TaskListItem_C:BP_OnEntryReleased()
   if self.Task_SubItem then
     self.Task_SubItem.SubRegionId = 0
     self.Task_SubItem.RegionId = 0
   end
 end
-
 return WBP_TaskListItem_C

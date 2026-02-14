@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1750921730819632",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1156, y = 288},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -131,7 +133,7 @@ return {
           ["1750924825824658231"] = {
             key = "1750924825824658231",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\233\152\187\230\140\160\231\154\132\230\128\170\231\137\169",
+            name = "生成阻挠的怪物",
             pos = {x = 1328, y = 304},
             propsData = {
               ActiveEnable = true,
@@ -156,7 +158,7 @@ return {
           ["1750925065479658384"] = {
             key = "1750925065479658384",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1850, y = 284},
             propsData = {
               KillMonsterType = "Id",
@@ -182,14 +184,14 @@ return {
           ["1750925099035658992"] = {
             key = "1750925099035658992",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 2252, y = 276},
             propsData = {}
           },
           ["1750925112875659312"] = {
             key = "1750925112875659312",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 1666, y = 626},
             propsData = {}
           }

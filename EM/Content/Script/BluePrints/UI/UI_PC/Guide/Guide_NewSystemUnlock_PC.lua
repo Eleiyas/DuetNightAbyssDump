@@ -1,10 +1,8 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
 end
-
 function M:OnWorking(SystemInfo)
   if self.CurrentUIUnlockName == SystemInfo.UIUnlockName then
     return
@@ -16,7 +14,10 @@ function M:OnWorking(SystemInfo)
     self.Btn_Click:SetFocus()
   end, false, 0, nil, true)
 end
-
+function M:Show(ShowTag)
+  self.Super.Show(self, ShowTag)
+  self.Btn_Click:SetFocus()
+end
 function M:InitSystemInfo(SystemInfo)
   if not SystemInfo then
     return
@@ -29,12 +30,12 @@ function M:InitSystemInfo(SystemInfo)
     Img_Icon_DM:SetTextureParameterValue("Mask", SystemIcon)
     VX_IconGlow_DM:SetTextureParameterValue("Mask", SystemIcon)
   end
-  local UIUnlockName = SystemInfo.UIUnlockName or "\230\156\170\233\133\141\231\189\174"
+  local UIUnlockName = SystemInfo.UIUnlockName or "未配置"
   if UIUnlockName then
     local SystemName = GText(UIUnlockName) or UIUnlockName
     self.Text_Name:SetText(SystemName)
   end
-  local AfterUIUnlockDesc = SystemInfo.AfterUIUnlockDesc or "\230\156\170\233\133\141\231\189\174"
+  local AfterUIUnlockDesc = SystemInfo.AfterUIUnlockDesc or "未配置"
   if AfterUIUnlockDesc then
     local SystemUnlockDescribe = GText(AfterUIUnlockDesc) or AfterUIUnlockDesc
     local Desc1, ActionName, Desc2 = self:GetDescInfo(SystemUnlockDescribe)
@@ -66,7 +67,6 @@ function M:InitSystemInfo(SystemInfo)
     }
   })
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
@@ -74,7 +74,6 @@ function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self:IsAnimationPlaying(self.In) then
     return
@@ -92,7 +91,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UIUtils.Unhandled
   end
 end
-
 function M:InitGamepadView()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.Btn_Click:SetFocus()
@@ -100,31 +98,26 @@ function M:InitGamepadView()
     self.Key_Tips:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:InitKeyboardView()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.WS_Type:SetActiveWidgetIndex(0)
     self.Key_Tips:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:ForbidNavigate()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.Btn_Click:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:RecoverNavigate()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.Btn_Click:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:OnBtnClicked_Lua()
   self.Btn_Click.OnClicked:Clear()
   self:PlayAnimation(self.Out)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     if self.OnOutAnimationFinishedCallback then
@@ -134,20 +127,16 @@ function M:OnAnimationFinished(InAnimation)
     self.Btn_Click.OnClicked:Add(self, self.OnBtnClicked_Lua)
   end
 end
-
 function M:OnAutoInPlay()
   AudioManager(self):PlayUISound(self, "event:/ui/common/system_unlock", "", nil)
 end
-
 function M:BindOnOutAnimationFinished(Delegate)
   self.OnOutAnimationFinishedCallback = Delegate
 end
-
 function M:GetDescInfo(SourceText)
   local Ret = CommonUtils.Split(SourceText, "&")
   return table.unpack(Ret)
 end
-
 function M:GetCommonKeyBlueprint(bText)
   if bText then
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyText.WBP_Com_KeyText_C'")
@@ -155,5 +144,4 @@ function M:GetCommonKeyBlueprint(bText)
     return UE4.UClass.Load("WidgetBlueprint'/Game/UI/WBP/Common/Key/WBP_Com_KeyImg.WBP_Com_KeyImg_C'")
   end
 end
-
 return M

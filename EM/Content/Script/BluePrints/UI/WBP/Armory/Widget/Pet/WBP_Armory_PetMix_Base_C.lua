@@ -7,7 +7,6 @@ local PetBehavior = {
   PetMixStart = "PetMixStart",
   PetMixSuccess = "PetMixSuccess"
 }
-
 function M:Construct()
   self.Btn_Confirm:SetText(GText("Pet_Affix_Activat"))
   self.Btn_Confirm:TryOverrideSoundFunc(function()
@@ -28,8 +27,8 @@ function M:Construct()
   self:AddDispatcher(EventID.OnResourcesChanged, self, self.OnResourcesChanged)
   self:RefreshBaseInfo()
   self:AddDispatcher(EventID.OnPetLocked, self, self.OnPetLocked)
+  self.Text_Warning:SetText(GText("Pet_Affix_Replace_ReConfirm_Tips"))
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   local ArmoryMain = UIManager(self):GetArmoryUIObj()
@@ -39,19 +38,16 @@ function M:ReceiveEnterState(StackAction)
     self.ArmoryPlayer:SetActorHideTag("PetMix", true)
   end
 end
-
 function M:Destruct()
   self.ArmoryPlayer:SetActorHideTag("PetMix", false)
   self.Btn_Confirm.Button_Area.OnClicked:Clear()
   self.Btn_Add.OnClicked:Clear()
   self.Super.Destruct(self)
 end
-
 function M:OnBackKeyDown()
   self:PlayAnimation(self.Out)
   self:Close()
 end
-
 function M:Close()
   if self.EffectCreature then
     self.EffectCreature:SetActorHiddenInGame(true)
@@ -60,7 +56,6 @@ function M:Close()
   end
   self.Super.Close(self)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.Params = (...)
@@ -87,7 +82,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
     end
   end
 end
-
 function M:InitUI()
   self.TabConfigData = {
     TitleName = GText("Pet_Affix_Fuse"),
@@ -160,13 +154,11 @@ function M:InitUI()
   self:PlayAnimation(self.In)
   self:SetFocus()
 end
-
 function M:OnResourcesChanged(ResourceId)
   if ResourceId == self.ResourceID then
     self:InitResourceItem()
   end
 end
-
 function M:InitResourceItem()
   local ResourceData = DataMgr.PetEntryP[3]
   local resourceConfig = DataMgr.Resource[ResourceData.ResourceID]
@@ -197,14 +189,12 @@ function M:InitResourceItem()
     self.Counsume_Cost:InitContent(Content)
   end
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Tab_PetMix:SetBottomKeyInfoVisible(not bIsOpen)
     self.Btn_Confirm:SetPCVisibility(bIsOpen)
   end
 end
-
 function M:InitEntryContent()
   local Pet = self.Target
   local BreakData = DataMgr.PetBreak[Pet.PetId]
@@ -302,7 +292,6 @@ function M:InitEntryContent()
     end
   end
 end
-
 function M:UpdateSelectedEntryItem()
   local Pet = self.Target
   local BreakData = DataMgr.PetBreak[Pet.PetId]
@@ -337,7 +326,6 @@ function M:UpdateSelectedEntryItem()
   end
   self:BlockAllUIInput(false)
 end
-
 function M:OnBtnConfirmClicked()
   if not self.SelectedEntryContent then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("Pet_Affix_Fuse_SelectAffix"))
@@ -352,19 +340,16 @@ function M:OnBtnConfirmClicked()
     self:ShowWarningPopup()
   end
 end
-
 function M:ShowWarningPopup()
   local Params = {}
   Params.RightCallbackFunction = self.ReallyMix
   Params.RightCallbackObj = self
   UIManager(self):ShowCommonPopupUI(100220, Params)
 end
-
 function M:ReallyMix()
   local function CallBack(ErrCode)
     if ErrCode == ErrorCode.RET_SUCCESS then
       self.Parent:UpdateEntryInfos(self.Params.Target)
-      
       self.Target = self.Parent.Pet
       if self.CurInputDevice == ECommonInputType.Gamepad then
         self:SetFocus()
@@ -377,20 +362,19 @@ function M:ReallyMix()
       self.IsFinishing = true
       self.Entry_Pet_Mix.VX_GlowLine:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
       self.Entry_Pet_Now.VX_GlowLine:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-    else
-      local ErrorCodeData = DataMgr.ErrorCode[ErrCode]
-      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText(ErrorCodeData.ErrorCodeContent))
+      self.Panel_Warning:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.SelectedPet = nil
+    elseif DataMgr.ErrorCode[ErrCode] then
+      UIManager(self):ShowError(ErrCode, nil, UIConst.Tip_CommonToast)
       self:BlockAllUIInput(false)
+    else
+      local ErrorText = "Unknown_Error"
+      UIManager(self):ShowUITip("CommonToastMain", GText(ErrorText), 1.5)
     end
   end
-  
   self._Avatar:PetEntryReplace(CallBack, self.Params.Target.UniqueId, self.CurEntryContent.Index, self.SelectedPet.UniqueId, self.SelectedEntryContent.Index)
   self:BlockAllUIInput(true)
-  self:AddTimer(5, function()
-    self:BlockAllUIInput(false)
-  end)
 end
-
 function M:OnFinish()
   self:PlayPetVoice(PetBehavior.PetMixSuccess)
   self.Entry_Pet_Mix.WidgetSwitcher_State:SetActiveWidgetIndex(3)
@@ -419,7 +403,6 @@ function M:OnFinish()
     self:UpdateSelectedEntryItem()
   end)
 end
-
 function M:PlayPetVoice(Behavior)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local PetData = self.Target:Data()
@@ -432,17 +415,14 @@ function M:PlayPetVoice(Behavior)
     AudioManager(self):PlayPetVoice(Player, PetNameTag, "vo_happy", "PetMixSuccess")
   end
 end
-
 function M:OnBigBtnAdd()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_mid", nil, nil)
   self:OnBtnAddClicked()
 end
-
 function M:OnSmallBtnAdd()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_small", nil, nil)
   self:OnBtnAddClicked()
 end
-
 function M:OnBtnAddClicked()
   self:PlayAnimation(self.Clicked)
   local UIConfig = DataMgr.SystemUI.PetMixEntry
@@ -454,7 +434,6 @@ function M:OnBtnAddClicked()
     Type = 1
   })
 end
-
 function M:OnPetMixEntryDestructed(SelectedPetEntryContent, Pet)
   if not SelectedPetEntryContent then
     return
@@ -477,9 +456,15 @@ function M:OnPetMixEntryDestructed(SelectedPetEntryContent, Pet)
   self.Btn_Switch:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Entry_Pet_Mix:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Entry_Pet_Mix.Button_Area:SetFocus()
+  if self.SelectedPet and self.CurEntryContent and not self.CurEntryContent.IsEmpty then
+    self.Btn_Confirm:SetText(GText("Pet_Affix_Replace"))
+    self.Panel_Warning:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+  else
+    self.Btn_Confirm:SetText(GText("Pet_Affix_Activat"))
+    self.Panel_Warning:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
   local PetData = DataMgr.Pet[Pet.UnitId]
   if self.EffectCreatureId and self.EffectCreatureId == PetData.EffectCreatureId then
-    ScreenPrint("\228\184\141\229\136\155\229\187\186\229\174\160\231\137\169")
     return
   elseif self.EffectCreatureId and self.EffectCreatureId ~= PetData.EffectCreatureId and self.EffectCreature then
     self.EffectCreature:SetActorHiddenInGame(true)
@@ -497,7 +482,6 @@ function M:OnPetMixEntryDestructed(SelectedPetEntryContent, Pet)
   self.EffectCreature:SetActorHiddenInGame(false)
   self.EffectCreature.SkeletalMesh:SetTickableWhenPaused(true)
 end
-
 function M:OnEntryClicked(Content)
   if not self.CurEntryContent or self.CurEntryContent.Index ~= Content.Index then
     AudioManager(self):PlayUISound(self, "event:/ui/common/pet_potential_click", nil, nil)
@@ -513,15 +497,17 @@ function M:OnEntryClicked(Content)
   else
     self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   end
-  if Content.IsEmpty then
-    self.Btn_Confirm:SetText(GText("Pet_Affix_Activat"))
-    self.Btn_Confirm:SetVisibility(UIConst.VisibilityOp.Visible)
-  else
+  local shouldShowWarning = self.SelectedPet ~= nil and not Content.IsEmpty
+  if shouldShowWarning then
+    self.Panel_Warning:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     self.Btn_Confirm:SetText(GText("Pet_Affix_Replace"))
     self.Btn_Confirm:SetVisibility(UIConst.VisibilityOp.Visible)
+  else
+    self.Btn_Confirm:SetText(GText("Pet_Affix_Activat"))
+    self.Btn_Confirm:SetVisibility(UIConst.VisibilityOp.Visible)
+    self.Panel_Warning:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -534,7 +520,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
       if self.CounsumeTipActivated or self.Counsume_Cost.Common_Item_Icon.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
         self.CounsumeTipActivated = false
         self.Counsume_Cost:InActivate()
-        self.Btn_Add:SetFocus()
+        if self.Panel_Add:IsVisible() then
+          self.Btn_Add:SetFocus()
+        else
+          self.Entry_Pet_Mix.Button_Area:SetFocus()
+        end
         return UIUtils.Handled
       end
       self:OnBackKeyDown()
@@ -555,25 +545,20 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:BindAllAnimation()
   self.Btn_Add.OnHovered:Add(self, self.OnBtnAddHovered)
   self.Btn_Add.OnUnhovered:Add(self, self.OnBtnAddUnhovered)
   self.Btn_Add.OnPressed:Add(self, self.OnBtnAddPressed)
 end
-
 function M:OnBtnAddHovered()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnAddUnhovered()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnBtnAddPressed()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.Panel_Add:IsVisible() then
     if not self.Btn_Add:HasAnyUserFocus() then
@@ -587,12 +572,10 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:InitNavigationRules()
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:InitNavigationRules()
   self.Btn_Add:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   self.Entry_Pet_Mix:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -600,7 +583,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
@@ -613,7 +595,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:OnPetLocked(ErrCode, UniqueId, IsLocked)
   if not ErrorCode:Check(ErrCode) then
     return
@@ -630,22 +611,10 @@ function M:OnPetLocked(ErrCode, UniqueId, IsLocked)
   else
   end
 end
-
 function M:GetDPIAdjustedMixPetOffset()
   local OriginalOffset = self.EffectCreature.MixPetOffset or FVector(0, 63, 25)
-  local IsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
-  if not IsMobile then
-    return OriginalOffset
-  end
-  local DPIScale = self:GetCurrentDPIScale()
-  local DeviceScale = self:GetMobileDeviceScale()
-  local AdjustedX = OriginalOffset.X * DPIScale * DeviceScale
-  local AdjustedY = OriginalOffset.Y * DPIScale * DeviceScale
-  local AdjustedZ = OriginalOffset.Z * DPIScale * DeviceScale
-  DebugPrint(string.format("PetMix DPI\232\176\131\230\149\180: \229\142\159\229\167\139\229\129\143\231\167\187(%.2f,%.2f,%.2f) -> \232\176\131\230\149\180\229\144\142(%.2f,%.2f,%.2f), DPI\231\188\169\230\148\190:%.2f, \232\174\190\229\164\135\231\188\169\230\148\190:%.2f", OriginalOffset.X, OriginalOffset.Y, OriginalOffset.Z, AdjustedX, AdjustedY, AdjustedZ, DPIScale, DeviceScale))
-  return FVector(AdjustedX, AdjustedY, AdjustedZ)
+  return OriginalOffset
 end
-
 function M:GetCurrentDPIScale()
   local HUDScale = EMCache:Get("HUDScale")
   if not HUDScale or 0 == HUDScale then
@@ -664,7 +633,6 @@ function M:GetCurrentDPIScale()
   end
   return HUDScale
 end
-
 function M:GetMobileDeviceScale()
   local ViewportSize = UWidgetLayoutLibrary.GetViewportSize(self)
   local ScreenWidth = ViewportSize.X
@@ -677,5 +645,4 @@ function M:GetMobileDeviceScale()
   DeviceScale = math.max(0.5, math.min(2.0, DeviceScale))
   return DeviceScale
 end
-
 return M

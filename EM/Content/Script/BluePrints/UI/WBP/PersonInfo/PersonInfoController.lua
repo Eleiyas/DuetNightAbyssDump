@@ -8,33 +8,26 @@ M.PageEnum = {
   EditPage = 2,
   DataPage = 3
 }
-
 function M:GetPageEnum()
   return M.PageEnum
 end
-
 function M:Init()
   M.Super.Init(self)
   PersonInfoEditModel:Init()
   self.CurPage = nil
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 function M:GetModel()
   return PersonInfoModel
 end
-
 function M:GetEdirModel()
   return PersonInfoEditModel
 end
-
 function M:GetEventName()
   return EventID.PersonInfoControllerEvent
 end
-
 function M:OpenView(PlayerInfo, ForceServerData)
   if PlayerInfo and PlayerInfo.Uuid == PersonInfoModel._Avatar.Uid and true ~= ForceServerData then
     PlayerInfo = nil
@@ -50,7 +43,6 @@ function M:OpenView(PlayerInfo, ForceServerData)
   self.CurPage = M.PageEnum.MainPage
   return self.MainPage
 end
-
 function M:OpenEditView(TabName, BoxIndex)
   if self.CurPage == M.PageEnum.EditPage then
     return
@@ -80,21 +72,24 @@ function M:OpenEditView(TabName, BoxIndex)
   self.EditPage:SetFocus()
   self.EditPage:PlayAnimation(self.EditPage.In)
 end
-
 function M:OpenDataView()
+  if self.DataPage and self.DataPage.IsClosing then
+    DebugPrint("数据统计界面正在关闭中")
+    return
+  end
   self.CurPage = M.PageEnum.DataPage
   self:ExitMainPageWithoutTab()
   PersonInfoDataModel:Init(PersonInfoModel.OtherPersonInfo)
   self:CreatDataPage()
   self.DataPage.Root = self.MainPage
   self.DataPage:InitBaseView()
-  self.MainPage.PersonInfoMainPage.ActorController:SetMontageAndCamera("Char", nil, "Personal", "Data")
+  local ActorController = self.MainPage.PersonInfoMainPage.ActorController
+  local t1, t2, t3, t4 = ActorController:CalcArmoryCameraTag("Char", nil, "Personal", "Data")
+  ActorController:SetArmoryCameraTag(t1, t2, t3, t4)
   if self.MainPage.Com_BtnVisible then
     self.MainPage.Com_BtnVisible:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
-  ScreenPrint("\230\137\147\229\188\128\230\149\176\230\141\174\231\187\159\232\174\161\231\149\140\233\157\162")
 end
-
 function M:CreatDataPage()
   local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
   local PCBluePrint
@@ -105,7 +100,7 @@ function M:CreatDataPage()
   end
   self.DataPage = UIManager(self):CreateWidget(PCBluePrint)
   if self.DataPage == nil then
-    ScreenPrint("--------------\230\149\176\230\141\174\231\187\159\232\174\161\231\149\140\233\157\162\229\138\160\232\189\189\229\164\177\232\180\165-----------------")
+    ScreenPrint("--------------数据统计界面加载失败-----------------")
     return
   end
   self.MainPage.Content:AddChildToOverlay(self.DataPage)
@@ -115,7 +110,6 @@ function M:CreatDataPage()
   self.DataPage:SetFocus()
   self.DataPage.IsClosing = false
 end
-
 function M:OnCloseDateView()
   self.CurPage = M.PageEnum.MainPage
   self.MainPage.PersonInfoMainPage:FreshCamera()
@@ -129,41 +123,37 @@ function M:OnCloseDateView()
     self.MainPage.PersonInfoMainPage:FreshHideButton()
   end
 end
-
 function M:ReallyCloseDateView(Page)
   if not self.DataPage or not self.DataPage.IsClosing then
-    DebugPrint("\230\178\161\230\156\137\230\149\176\230\141\174\231\187\159\232\174\161\231\149\140\233\157\162\239\188\140\229\186\148\232\175\165\230\152\175\230\137\147\229\188\128\230\151\182\229\164\177\232\180\165")
+    DebugPrint("没有数据统计界面，应该是打开时失败")
     return
   end
   if Page then
     Page:RemovefromParent()
   else
-    DebugPrint("\230\178\161\230\156\137\231\188\150\232\190\145\231\149\140\233\157\162\239\188\140\229\186\148\232\175\165\230\152\175\230\137\147\229\188\128\230\151\182\229\164\177\232\180\165")
+    DebugPrint("没有编辑界面，应该是打开时失败")
   end
+  self.DataPage = nil
 end
-
 function M:CloseEditView()
   PersonInfoEditModel.Handler = nil
   if self.EditPage then
     self.EditPage:RemovefromParent()
     self.EditPage:PlayAnimation(self.EditPage.Out)
   else
-    DebugPrint("\230\178\161\230\156\137\231\188\150\232\190\145\231\149\140\233\157\162\239\188\140\229\186\148\232\175\165\230\152\175\230\137\147\229\188\128\230\151\182\229\164\177\232\180\165")
+    DebugPrint("没有编辑界面，应该是打开时失败")
   end
   self.bReturnMain = true
   self:ReturnMainPage()
   self.CurPage = M.PageEnum.MainPage
 end
-
 function M:ExitMainPage()
   self.MainPage.MainPageItem:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.MainPage.PersonInfoMainPage:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ExitMainPageWithoutTab()
   self.MainPage.PersonInfoMainPage:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ReturnMainPage()
   self.CurPage = M.PageEnum.MainPage
   self.MainPage.MainPageItem:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -174,16 +164,13 @@ function M:ReturnMainPage()
   self.MainPage.PersonInfoMainPage:InitDisplayBoxView(true)
   self.MainPage.PersonInfoMainPage:SetOriginFocus()
 end
-
 function M:GetView(WorldContex)
   return M.Super.GetView(self, WorldContex, PersonInfoCommon.UIName)
 end
-
 function M:GetPersonInfo(PlayerInfo)
   UIManager(self):ShowUITip("CommonToastMain", GText("TOAST_DUNGEON_CANCEL_LEAVETEAM"), 1.5)
   self:OpenView(PlayerInfo.Uid)
 end
-
 function M:OnClose()
   local FocusWidget = UIManager(self):GetLastestAndFocusableUIWidgetObj()
   if FocusWidget and FocusWidget.SetFocus_Lua and type(FocusWidget.SetFocus_Lua) == "function" then
@@ -196,6 +183,5 @@ function M:OnClose()
   PersonInfoModel:ClearModel()
   PersonInfoDataModel:ClearModel()
 end
-
 _G.PersonInfoController = M
 return M

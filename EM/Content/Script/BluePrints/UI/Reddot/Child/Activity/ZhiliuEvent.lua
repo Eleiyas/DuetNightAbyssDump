@@ -1,6 +1,5 @@
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local ReddotTreeNode_ZhiliuEvent = Class("BluePrints.UI.Reddot.Child.Activity.ActivityBase")
-
 function ReddotTreeNode_ZhiliuEvent:_Judge(EventId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -19,5 +18,4 @@ function ReddotTreeNode_ZhiliuEvent:_Judge(EventId)
   local IsPlayerGotReward = Avatar.ZhiLiuEntrustGrandRewardGot or false
   return IsAllCompleted and not IsPlayerGotReward
 end
-
 return ReddotTreeNode_ZhiliuEvent

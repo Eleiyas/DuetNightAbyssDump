@@ -1,5 +1,4 @@
 local M = Class()
-
 function M:ReceiveBeginPlay()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   if not UIManager then
@@ -22,16 +21,13 @@ function M:ReceiveBeginPlay()
     GWorld.GameInstance:GetSceneManager():AddFoorBox(self)
   end
 end
-
 function M:CheckPlayerIn()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player and UKismetMathLibrary.IsPointInBoxWithTransform(Player:k2_GetActorLocation(), self:GetTransform(), self.RootComponent.BoxExtent) then
     EventManager:FireEvent(EventID.EnterOrExitFloor, true, self)
   end
 end
-
 function M:EnterOrExitFloor(IsEnter)
   EventManager:FireEvent(EventID.EnterOrExitFloor, IsEnter, self)
 end
-
 return M

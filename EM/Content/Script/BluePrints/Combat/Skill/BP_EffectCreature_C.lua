@@ -1,10 +1,8 @@
 local EMCache = require("EMCache.EMCache")
 local BP_EffectCreature_C = Class()
-
 function BP_EffectCreature_C:ReceiveBeginPlay()
   self.HideTags = {}
 end
-
 function BP_EffectCreature_C:Active()
   self.IsDestroy = false
   self:HideEffectCreatureByTag("Active", false)
@@ -13,7 +11,14 @@ function BP_EffectCreature_C:Active()
   self.SkeletalMesh:Play(IsLooping)
   self:RefreshEffectAnimation()
 end
-
+function BP_EffectCreature_C:PlaySe()
+  if not self.SoundId then
+    self.SoundId = DataMgr.EffectCreature[self.EffectCreatureId].SoundId
+  end
+  if self.SoundId then
+    AudioManager(self):PlaySeById(self, self.SoundId, self, false, true)
+  end
+end
 function BP_EffectCreature_C:DestroyEffectCreature()
   self:DeActive()
   local EffectCreatureData = DataMgr.EffectCreature[self.EffectCreatureId]
@@ -24,7 +29,6 @@ function BP_EffectCreature_C:DestroyEffectCreature()
     self:K2_DestroyActor()
   end
 end
-
 function BP_EffectCreature_C:DeActive()
   self.IsDestroy = true
   self:HideEffectCreatureByTag("Active", true)
@@ -33,8 +37,8 @@ function BP_EffectCreature_C:DeActive()
   local Owner = self:GetOwner()
   Owner:AddOrRemoveEffectCreature(self, false)
   self:OnDeActive()
+  self:TriggerDeactivateDelegate()
 end
-
 function BP_EffectCreature_C:ReceiveEndPlay(EndPlayReason)
   if not self.IsDestroy then
     self.IsDestroy = true
@@ -46,10 +50,15 @@ function BP_EffectCreature_C:ReceiveEndPlay(EndPlayReason)
   end
   self.Overridden.ReceiveEndPlay(self, EndPlayReason)
 end
-
 function BP_EffectCreature_C:ReplaceSkeletalMesh(EffectCreatureMesh, ModelId)
   if EffectCreatureMesh then
-    self.SkeletalMesh:SetSkeletalMesh(EffectCreatureMesh)
+    local RealEffectCreatureId = self.ReplaceSkinEffectCreatureId and self.ReplaceSkinEffectCreatureId or self.EffectCreatureId
+    local EffectCreatureConfig = DataMgr.EffectCreature[RealEffectCreatureId]
+    local IsResetAnim = true
+    if EffectCreatureConfig.DontResetAnim then
+      IsResetAnim = false
+    end
+    self.SkeletalMesh:SetSkeletalMesh(EffectCreatureMesh, IsResetAnim)
   end
   if ModelId then
     if DataMgr.Model[ModelId].ModelScale then
@@ -64,7 +73,6 @@ function BP_EffectCreature_C:ReplaceSkeletalMesh(EffectCreatureMesh, ModelId)
   end
   self.ModelId = ModelId
 end
-
 function BP_EffectCreature_C:InitEffectCreatureMeshInfo(EffectCreatureMesh, ModelId)
   local RealEffectCreatureId = self.ReplaceSkinEffectCreatureId and self.ReplaceSkinEffectCreatureId or self.EffectCreatureId
   local EffectCreatureConfig = DataMgr.EffectCreature[RealEffectCreatureId]
@@ -80,7 +88,6 @@ function BP_EffectCreature_C:InitEffectCreatureMeshInfo(EffectCreatureMesh, Mode
     self.LoadMeshCallBack()
   end
 end
-
 function BP_EffectCreature_C:InheritPreAnimation(AnimPosition)
   local RealEffectCreatureId = self.ReplaceSkinEffectCreatureId and self.ReplaceSkinEffectCreatureId or self.EffectCreatureId
   local EffectCreatureConfig = DataMgr.EffectCreature[RealEffectCreatureId]
@@ -114,7 +121,6 @@ function BP_EffectCreature_C:InheritPreAnimation(AnimPosition)
     end
   end
 end
-
 function BP_EffectCreature_C:UpdateEffectCreatureModel(ModelId)
   local ModelConfig = DataMgr.Model[ModelId]
   if not ModelConfig then
@@ -139,7 +145,6 @@ function BP_EffectCreature_C:UpdateEffectCreatureModel(ModelId)
     self:InheritPreAnimation(PlayingPosition)
   end
 end
-
 function BP_EffectCreature_C:LoadEffectCreatureResource()
   local RealEffectCreatureId = self.ReplaceSkinEffectCreatureId and self.ReplaceSkinEffectCreatureId or self.EffectCreatureId
   local EffectCreatureConfig = DataMgr.EffectCreature[RealEffectCreatureId]
@@ -176,7 +181,6 @@ function BP_EffectCreature_C:LoadEffectCreatureResource()
     self:InitEffectCreatureMeshInfo()
   end
 end
-
 function BP_EffectCreature_C:LoadEffectCreatureAnim()
   local RealEffectCreatureId = self.ReplaceSkinEffectCreatureId and self.ReplaceSkinEffectCreatureId or self.EffectCreatureId
   local EffectCreatureConfig = DataMgr.EffectCreature[RealEffectCreatureId]
@@ -208,7 +212,6 @@ function BP_EffectCreature_C:LoadEffectCreatureAnim()
     self:PlayEffectCreatureAnimation()
   end
 end
-
 function BP_EffectCreature_C:PlayEffectCreatureAnimation(EffectCreatureAnim)
   if EffectCreatureAnim then
     self.SkeletalMesh:PlayAnimation(EffectCreatureAnim, true)
@@ -217,12 +220,10 @@ function BP_EffectCreature_C:PlayEffectCreatureAnimation(EffectCreatureAnim)
   self.SkeletalMesh:SetVisibility(true)
   self:OnResourceReady()
 end
-
 function BP_EffectCreature_C:OnResourceReady()
   self.Overridden.OnResourceReady(self)
   self:SetPetEffectCreatureFX()
 end
-
 function BP_EffectCreature_C:RefreshEffectAnimation()
   if not self.LoadTime then
     return
@@ -233,7 +234,6 @@ function BP_EffectCreature_C:RefreshEffectAnimation()
   self.SkeletalMesh:SetPosition(Interval, false)
   self.SkeletalMesh:SetPlayRate(self.SkillSpeed)
 end
-
 function BP_EffectCreature_C:UpdateTickableWhenPaused()
   local Owner = self:GetOwner()
   if Owner:GetTickableWhenPaused() then
@@ -246,7 +246,6 @@ function BP_EffectCreature_C:UpdateTickableWhenPaused()
     end
   end
 end
-
 function BP_EffectCreature_C:HideEffectCreatureByTag(HideTag, IsHide)
   if IsHide then
     self.HideTags[HideTag] = true
@@ -260,5 +259,4 @@ function BP_EffectCreature_C:HideEffectCreatureByTag(HideTag, IsHide)
   self.IsHide = Num > 0
   self:SetActorHiddenInGame(self.IsHide)
 end
-
 return BP_EffectCreature_C

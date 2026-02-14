@@ -1,14 +1,12 @@
 require("UnLua")
 local WBP_NPC_Impression_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_NPC_Impression_C:Initialize(Initializer)
   self.bIsEnabled_Impression = false
 end
-
 function WBP_NPC_Impression_C:Init(ParentHeadWidget)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.bIsEnabled_Impression = false
 end
-
 function WBP_NPC_Impression_C:OnEnabled()
   if self.bIsEnabled_Impression then
     return
@@ -18,7 +16,6 @@ function WBP_NPC_Impression_C:OnEnabled()
   self:PlayAnimation(self.In)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_NPC_Impression_C:OnDisabled()
   if not self.bIsEnabled_Impression then
     return
@@ -29,15 +26,12 @@ function WBP_NPC_Impression_C:OnDisabled()
     self:PlayAnimation(self.Out)
   end
 end
-
 function WBP_NPC_Impression_C:OnOutAnimationFinished()
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_NPC_Impression_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:OnOutAnimationFinished()
   end
 end
-
 return WBP_NPC_Impression_C

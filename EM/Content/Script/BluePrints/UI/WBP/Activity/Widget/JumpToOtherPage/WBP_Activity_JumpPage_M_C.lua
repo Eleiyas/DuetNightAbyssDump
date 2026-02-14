@@ -9,13 +9,11 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Activity.Widget.View.ActivityJumpPageView"
 }
-
 function M:Initialize(Initializer)
   self.OwnerPlayer = nil
   self.CurActivityId = nil
   self.ParentTabId = nil
 end
-
 function M:UpdatePage(OperateSrc)
   local IsReBindClickFunction = false
   if IsReBindClickFunction then
@@ -23,14 +21,12 @@ function M:UpdatePage(OperateSrc)
   end
   self:ResetVariable()
   self:RefreshPageDynamicView()
+  self:UpdatePageDynamicView()
 end
-
 function M:OnUpdateSubUIViewStyle()
 end
-
 function M:OnStuffDetailOpenChanged(bIsOpen, Stuff)
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -42,21 +38,17 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad()
   return true
 end
-
 function M:Destruct()
   if self.CurActivityId then
     ActivityReddotHelper.RemoveReddotListenByEventId(self.CurActivityId, self)
   end
 end
-
 AssembleComponents(M)
 return M

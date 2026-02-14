@@ -33,7 +33,6 @@ local match_pattern = {
   "Avatar:CallServerMethod%(\"([^\"]+)",
   "Avatar:CallServer%(\"([^\"]+)"
 }
-
 local function traverse_folder(path)
   local files_path = {}
   for file in lfs.dir(path) do
@@ -54,11 +53,9 @@ local function traverse_folder(path)
   end
   return files_path
 end
-
 local function sleep(seconds)
   os.execute("sleep " .. tonumber(seconds))
 end
-
 local function GetAvatarRpcs()
   local avatar_component_paths = {}
   for _, value in ipairs(avatar_component_path) do
@@ -108,17 +105,13 @@ local function GetAvatarRpcs()
   table.sort(avatar_rpc_not_in_current_rpcs)
   table.sort(avatar_gm_rpc_not_in_exist_rpcs)
   print([[
-
 avatar_rpc_not_in_exist_rpcs:]], serpent.block(avatar_rpc_not_in_exist_rpcs))
   print([[
-
 avatar_rpc_not_in_current_rpcs:]], serpent.block(avatar_rpc_not_in_current_rpcs))
   print([[
-
 avatar_gm_rpc_not_in_exist_rpcs:]], serpent.block(avatar_gm_rpc_not_in_exist_rpcs))
   return avatar_rpcs, avatar_gm_rpcs
 end
-
 local function GetDsRpcs()
   local ds_component_paths = {}
   for _, value in ipairs(ds_component_path) do
@@ -159,11 +152,9 @@ local function GetDsRpcs()
   table.sort(ds_rpcs)
   table.sort(ds_rpc_not_in_exist_rpcs)
   print([[
-
 ds_rpc_not_in_exist_rpcs:]], serpent.block(ds_rpc_not_in_exist_rpcs))
   return ds_rpcs
 end
-
 local function GetRpcNames()
   local avatar_rpcs, avatar_gm_rpcs = GetAvatarRpcs()
   local ds_rpcs = GetDsRpcs()
@@ -198,5 +189,4 @@ local function GetRpcNames()
     file:close()
   end
 end
-
 GetRpcNames()

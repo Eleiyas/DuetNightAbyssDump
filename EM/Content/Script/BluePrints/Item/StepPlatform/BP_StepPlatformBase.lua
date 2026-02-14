@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   if 0 ~= self.GroupId then
@@ -8,7 +7,6 @@ function M:AuthorityInitInfo(Info)
     GameMode:GetDungeonComponent():AddStepPlatForm(self.GroupId, self.Eid)
   end
 end
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.CanMove = 0 ~= self.Speed
@@ -33,7 +31,6 @@ function M:CommonInitInfo(Info)
   self:SetColor(false, true)
   self:SetPattern(false, true)
 end
-
 function M:ResetInfo()
   self.Overridden.ResetInfo(self)
   self.CanMove = 0 ~= self.Speed
@@ -72,7 +69,6 @@ function M:ResetInfo()
   GameMode:GetDungeonComponent():SetIsStepPlatformMoveEnd(self.ManualItemId, false)
   self:BluePrintReset()
 end
-
 function M:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   if self.bShowPath then
@@ -97,7 +93,6 @@ function M:ReceiveBeginPlay()
     end
   end
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if self.bMoving then
@@ -105,7 +100,6 @@ function M:ReceiveTick(DeltaSeconds)
     self:CheckCurrentMoveEnd()
   end
 end
-
 function M:CalMoveParam(BackToInit, bPausedRecover)
   if bPausedRecover then
     return
@@ -124,8 +118,10 @@ function M:CalMoveParam(BackToInit, bPausedRecover)
   Direction:Normalize()
   local NextSpeed = Direction * self.Speed
   self:SetMovementParam(NextSpeed, FVector(0, 0, 0))
+  if self.OnBluePrintStartMove and NextSpeed:Size() > 0 then
+    self:OnBluePrintStartMove()
+  end
 end
-
 function M:TriggerSelfLogic(IsOverLap)
   if IsOverLap then
     self:TriggerEnterLogic()
@@ -133,14 +129,11 @@ function M:TriggerSelfLogic(IsOverLap)
     self:TriggerLeaveLogic()
   end
 end
-
 function M:TriggerEnterLogic()
   self:ActiveCombat(false)
 end
-
 function M:TriggerLeaveLogic()
 end
-
 function M:OnPlayerOverLap()
   if self.bPlayerActive and not self.IsActive then
     self:ActiveCombat(false)
@@ -152,11 +145,9 @@ function M:OnPlayerOverLap()
     GameMode:GetDungeonComponent():OnPlayerOverlap(self.ManualItemId)
   end
 end
-
 function M:OnPlayerEndOverLap()
   self:TriggerSelfLogic(false)
 end
-
 function M:ActiveCombat(bFromGameMode)
   self.IsActive = true
   if self.CanMove and not self.bMoving and self.bAutoMove then
@@ -170,7 +161,6 @@ function M:ActiveCombat(bFromGameMode)
     self:StartChangeColor()
   end
 end
-
 function M:InactiveCombat(bFromGameMode)
   self.IsActive = false
   self.bMoving = false
@@ -178,7 +168,6 @@ function M:InactiveCombat(bFromGameMode)
   self:RemoveTimer("ExecuteShow")
   self:RemoveTimer("ColorBackHandle")
 end
-
 function M:StartMove()
   if self.bMoving then
     return
@@ -194,11 +183,9 @@ function M:StartMove()
     self:CalMoveParam(false, self.bHasMoveActive)
   end
 end
-
 function M:EndMove()
   self.bMoving = false
 end
-
 function M:CheckCurrentMoveEnd()
   local CurrentLoc = self:K2_GetActorLocation()
   if (CurrentLoc - self.LastStartLoc):Size() >= (self.NextMoveEnd - self.LastStartLoc):Size() and self.NextMoveEnd then
@@ -232,17 +219,18 @@ function M:CheckCurrentMoveEnd()
       local GameMode = UE4.UGameplayStatics.GetGameMode(self)
       GameMode:GetDungeonComponent():SetIsStepPlatformMoveEnd(self.ManualItemId, true)
       GameMode:GetDungeonComponent():StepPlatformMoveEndEvent(self.ManualItemId)
+      if self.OnBluePrintEndMove then
+        self:OnBluePrintEndMove()
+      end
     end
   end
 end
-
 function M:OnType3End()
   self:SetActorHiddenInGame(true)
   self:SetActorEnableCollision(false)
   self.bMoving = false
   self:AddTimer(0.05, self.SetPlatformVisible, false, 0)
 end
-
 function M:SetPlatformVisible()
   self:K2_SetActorLocation(self.InitLoc, false, nil, false)
   self:SetActorHiddenInGame(false)
@@ -257,9 +245,11 @@ function M:SetPlatformVisible()
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
     GameMode:GetDungeonComponent():SetIsStepPlatformMoveEnd(self.ManualItemId, true)
     GameMode:GetDungeonComponent():StepPlatformMoveEndEvent(self.ManualItemId)
+    if self.OnBluePrintEndMove then
+      self:OnBluePrintEndMove()
+    end
   end
 end
-
 function M:StartHidePlatForm()
   if 0 == self.ShowTime then
     return
@@ -273,7 +263,6 @@ function M:StartHidePlatForm()
     self:AddTimer(0.8, self.ExecuteShow, true, 0, "ExecuteShow")
   end
 end
-
 function M:ExecuteHide()
   self.RemainShowTime = self.RemainShowTime - 0.8
   if self.RemainShowTime > 0 then
@@ -291,7 +280,6 @@ function M:ExecuteHide()
   end
   self:AddTimer(0.8, self.ExecuteShow, true, 0, "ExecuteShow")
 end
-
 function M:ExecuteShow()
   self.RemainHideTime = self.RemainHideTime - 0.8
   if self.RemainHideTime > 0 then
@@ -306,7 +294,6 @@ function M:ExecuteShow()
   end
   self:AddTimer(0.8, self.ExecuteHide, true, 0, "ExecuteHide")
 end
-
 function M:StartChangeColor()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode:GetDungeonComponent().CurrentStepPlayformEid == self.Eid then
@@ -329,7 +316,6 @@ function M:StartChangeColor()
     self:AddTimer(0.5, self.ColorBack, true, 0, "ColorBackHandle")
   end
 end
-
 function M:SetColor(IsFromReset, NotTriggerEvent)
   self:ChangeColor(self.NowColorType, IsFromReset)
   if NotTriggerEvent then
@@ -342,7 +328,6 @@ function M:SetColor(IsFromReset, NotTriggerEvent)
     GameMode:GetDungeonComponent():OnStepPlatformLeaveGreen(self.GroupId, self.Eid)
   end
 end
-
 function M:ColorBack()
   self.RemainColorBackTime = self.RemainColorBackTime - 0.5
   if self.RemainColorBackTime >= 0 then
@@ -352,9 +337,7 @@ function M:ColorBack()
   self.NowColorType = math.max(self.NowColorType - 1, 1)
   self:ChangeColor(self.NowColorType)
 end
-
 function M:SetPattern(IsFromReset)
   self:OnPatternChanged(self.NowPatternType, IsFromReset)
 end
-
 return M

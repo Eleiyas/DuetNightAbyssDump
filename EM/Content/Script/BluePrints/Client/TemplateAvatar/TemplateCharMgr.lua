@@ -1,6 +1,6 @@
 local CommonUtils = require("Utils.CommonUtils")
 local Component = {}
-
+local TemplateDumpUtils = require("BluePrints.Client.TemplateDumpUtils")
 function Component:GMAddChar(CharId, Level, Reason, NotLog, NeedEnhance)
   local info = DataMgr.Char[CharId] or DataMgr.BattleChar[CharId]
   if not info or 1 == info.GMNot then
@@ -8,11 +8,87 @@ function Component:GMAddChar(CharId, Level, Reason, NotLog, NeedEnhance)
   end
   return self:AddChar(CharId, Level, Reason, true, NotLog, NeedEnhance)
 end
-
 function Component:AddChar(CharId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
   return self:AddCharCommon(CharId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
 end
-
+function Component:DelChar(CharId, Reason)
+  self.logger.info("DelChar", CharId)
+  local DelChars = {}
+  for eid, char in pairs(self.Chars) do
+    if char.CharId == CharId then
+      table.insert(DelChars, eid)
+    end
+  end
+  for index, eid in ipairs(DelChars) do
+    self:DelCharByUuid(eid)
+  end
+end
+function Component:DelCharByUuid(CharUuid, Reason)
+  self.logger.debug("DelCharByUuid", CommonUtils.ObjId2Str(CharUuid))
+  local Char = self.Chars[CharUuid]
+  if not Char then
+    return
+  end
+  local CountReduce = Char.GradeLevel + 1
+  for i, v in ipairs(Char.UWeaponEids) do
+    local UWeapon = self.UWeapons[v]
+    if UWeapon then
+      self:UploadWeaponMod(UWeapon)
+      self.UWeapons[v] = nil
+    end
+  end
+  self:UploadCharMod(Char)
+  local CharId = Char.CharId
+  self.Chars[CharUuid] = nil
+  local common_char = self.CommonChars[CharId]
+  if common_char then
+    common_char.Count = 0
+    self.CommonChars[CharId] = common_char
+  end
+end
+function Component:UploadCharMod(Char)
+  if not Char then
+    return false
+  end
+  self:HandleUploadTargetMod("Char", Char.ModSuit_1, Char.Uuid)
+  self:HandleUploadTargetMod("Char", Char.ModSuit_2, Char.Uuid)
+  self:HandleUploadTargetMod("Char", Char.ModSuit_3, Char.Uuid)
+  return true
+end
+function Component:UploadWeaponMod(Weapon)
+  if not Weapon then
+    return false
+  end
+  self:HandleUploadTargetMod("Weapon", Weapon.ModSuit_1, Weapon.Uuid)
+  self:HandleUploadTargetMod("Weapon", Weapon.ModSuit_2, Weapon.Uuid)
+  self:HandleUploadTargetMod("Weapon", Weapon.ModSuit_3, Weapon.Uuid)
+  return true
+end
+function Component:HandleUploadTargetMod(Tag, ModSuit, CharUuid)
+  for ModSlotId = 1, ModSuit:Length() do
+    local ModSlotEid = ModSuit[ModSlotId]
+    local Mod = self.Mods[ModSlotEid]
+    self:RemoveTargetModUuid(Tag, Mod, ModSlotEid)
+    if not Mod and ModSlotEid ~= CommonConst.ModSlotUnequipped then
+      self.logger.error("ZJT_ HandleUploadCharMod 不存在的Mod被引用 请检测 ", Tag, ModSlotId, CharUuid)
+    end
+    ModSuit[ModSlotId] = CommonConst.ModSlotUnequipped
+  end
+end
+function Component:RemoveTargetModUuid(Tag, Mod, Uuid)
+  if not Mod then
+    return
+  end
+  if "Weapon" == Tag then
+    Mod:RemoveWeaponUuid(Uuid)
+  elseif "Char" == Tag then
+    Mod:RemoveCharUuid(Uuid)
+  else
+    self.logger.error("ZJT_ 未知目标 不能移除引用 ", Tag, Mod, Uuid)
+    return
+  end
+  self.Mods[Mod.Uuid] = Mod
+end
 function Component:AddCharCommon(CharId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
   self.logger.debug("AddCharCommon", CharId, Level, Reason)
   GiveNotOpen = GiveNotOpen or false
@@ -34,7 +110,6 @@ function Component:AddCharCommon(CharId, Level, Reason, GiveNotOpen, NotLog, Nee
   end
   return ResultEid
 end
-
 function Component:AddCommonChar(CharId)
   local CommonChar = self.CommonChars:GetNewCommonChar(CharId)
   if self.OtherCharSkins[CharId] then
@@ -45,7 +120,6 @@ function Component:AddCommonChar(CharId)
   end
   self.CommonChars[CharId] = CommonChar
 end
-
 function Component:AddCommonCharSkin(CommonChar, SkinId, Reason)
   if not CommonChar then
     return
@@ -58,7 +132,6 @@ function Component:AddCommonCharSkin(CommonChar, SkinId, Reason)
   end
   CommonChar.OwnedSkins:GetNewSkin(SkinId, CommonConst.SkinType.Char)
 end
-
 function Component:RealAddChar(CharId, Level, NeedEnhance, Reason)
   local uuid = bson.objectid()
   self.logger.debug("ZJT_ RealAddChar ", CommonUtils.ObjId2Str(uuid))
@@ -69,7 +142,6 @@ function Component:RealAddChar(CharId, Level, NeedEnhance, Reason)
   self.Chars[char.Uuid] = char
   return char.Uuid
 end
-
 function Component:GMAddSkin(SkinId, Reason)
   local SkinInfo = DataMgr.Skin[SkinId]
   if not SkinInfo or not SkinInfo.CharId then
@@ -80,7 +152,6 @@ function Component:GMAddSkin(SkinId, Reason)
   end
   self:AddSkin(SkinId, Reason, true)
 end
-
 function Component:AddSkin(SkinId, Reason, GiveNotOpen)
   GiveNotOpen = GiveNotOpen or false
   local SkinInfo = DataMgr.Skin[SkinId]
@@ -99,7 +170,6 @@ function Component:AddSkin(SkinId, Reason, GiveNotOpen)
     self.CommonChars[CharId] = CommonChar
   end
 end
-
 function Component:AddCommonCharSkin(CommonChar, SkinId, Reason)
   if not CommonChar then
     return
@@ -112,7 +182,6 @@ function Component:AddCommonCharSkin(CommonChar, SkinId, Reason)
   end
   CommonChar.OwnedSkins:GetNewSkin(SkinId, CommonConst.SkinType.Char)
 end
-
 function Component:AddOtherCharSkin(CharId, SkinId, Reason)
   local CharInfo = DataMgr.Char[CharId]
   if not CharInfo then
@@ -129,5 +198,37 @@ function Component:AddOtherCharSkin(CharId, SkinId, Reason)
   OtherCharSkin:Append(SkinId)
   self.OtherCharSkins[CharId] = OtherCharSkin
 end
-
+function Component:RealSetCharGradeLevel(CharUuid, TargetLevel)
+  local Char = self.Chars[CharUuid]
+  if not Char then
+    return
+  end
+  if type(TargetLevel) ~= "number" then
+    return
+  end
+  local CharOldGradeKLevel = Char.GradeLevel
+  Char:SetGradeLevel(TargetLevel)
+  local UpgradeSkillExtraLevel = DataMgr.BattleChar[Char.CharId].UpgradeSkillExtraLevel
+  local IsUpExtraLevel = false
+  if nil ~= UpgradeSkillExtraLevel then
+    for key, value in pairs(UpgradeSkillExtraLevel) do
+      local skill = Char:GetSkill(value.SkillId)
+      if CharOldGradeKLevel < value.Grade and TargetLevel >= value.Grade and skill then
+        IsUpExtraLevel = true
+        skill:AddExtraLevel(tonumber(value.ExtraLv))
+        self:ProminentWeaponSkillLevelInheritCharSkillLevel(Char, skill)
+      end
+    end
+  end
+  self.Chars[CharUuid] = Char
+  for i, v in ipairs(Char.UWeaponEids) do
+    local UWeapon = self.UWeapons[v]
+    if UWeapon then
+      UWeapon:SetGradeLevel(true, TargetLevel)
+    end
+  end
+end
+function Component:ProminentWeaponSkillLevelInheritCharSkillLevel(Char, Skill)
+  TemplateDumpUtils:HandleWeaponSkillLevelInheritCharSkillLevel(Char, self, Skill)
+end
 return Component

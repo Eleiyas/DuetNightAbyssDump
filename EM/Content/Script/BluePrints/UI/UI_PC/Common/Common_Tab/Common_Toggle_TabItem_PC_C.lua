@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Update(Idx, Info)
   self.Info = Info
   Info.UI = self
@@ -8,14 +7,12 @@ function M:Update(Idx, Info)
   self.Text_TabNormal:SetText(Info.Text)
   self.Text_TabSelect:SetText(Info.Text)
 end
-
 function M:Btn_Clicked()
   UIUtils.PlayCommonBtnSe(self)
   if not self.IsOn then
     self:SetSwitchOn(true)
   end
 end
-
 function M:Btn_Press()
   if self.IsOn then
     return
@@ -25,7 +22,6 @@ function M:Btn_Press()
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:Btn_Hover()
   if self.IsOn then
     return
@@ -35,7 +31,6 @@ function M:Btn_Hover()
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:Btn_UnHover()
   if self.IsOn then
     return
@@ -45,7 +40,6 @@ function M:Btn_UnHover()
   end
   self:PlayAnimationReverse(self.Hover)
 end
-
 function M:SetSwitchOn(IsOn)
   self.IsOn = IsOn
   if IsOn then
@@ -66,27 +60,22 @@ function M:SetSwitchOn(IsOn)
     self.Text_TabNormal:SetColorAndOpacity(Color)
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:SetReddot(IsNew, Upgradeable)
   self.Info = self.Info or {UI = self}
   self.Info.IsNew = IsNew
@@ -103,5 +92,4 @@ function M:SetReddot(IsNew, Upgradeable)
     self.Common_Item_Subsize_Reddot_PC:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

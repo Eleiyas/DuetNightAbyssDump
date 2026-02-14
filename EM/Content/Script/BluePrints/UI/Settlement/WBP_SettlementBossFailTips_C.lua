@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Btn_Go.OnClicked:Add(self, self.OnClicked)
   self.Btn_Go.OnPressed:Add(self, self.OnPressed)
@@ -10,7 +9,6 @@ function M:Construct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function M:OnListItemObjectSet(ListItemObject)
   ListItemObject.SelfWidget = self
   self.Info = ListItemObject
@@ -31,12 +29,10 @@ function M:OnListItemObjectSet(ListItemObject)
   end
   self:SetNormal()
 end
-
 function M:SetNormal()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnClicked()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
@@ -44,12 +40,10 @@ function M:OnClicked()
     PageJumpUtils:JumpToTargetPageByJumpId(self.Info.JumpId)
   end
 end
-
 function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -57,7 +51,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -65,7 +58,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -74,21 +66,17 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function M:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
     self.Controller:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self.Controller:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:OnFocusLost(InFocusEvent)
   self.Controller:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 return M

@@ -1,7 +1,6 @@
 local PersonInfoCommon = require("BluePrints.UI.WBP.PersonInfo.PersonInfoCommon")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   M.Super.Init(self)
   self._Avatar = nil
@@ -12,7 +11,6 @@ function M:Init()
   self.OtherPersonInfo = nil
   self.OtherBattleDumpInfo = nil
 end
-
 function M:InitData(PlayerInfo)
   if self._Avatar == nil then
     self._Avatar = GWorld:GetAvatar()
@@ -92,10 +90,8 @@ function M:InitData(PlayerInfo)
     end
   end
 end
-
 function M:IniOthersAvatar()
 end
-
 function M:fakaini()
   local i = 1
   for __, char in pairs(self._Avatar.Chars) do
@@ -121,11 +117,9 @@ function M:fakaini()
     i = i + 1
   end
 end
-
 function M:SetPersonID(PersonID)
   self._PersonID = PersonID
 end
-
 function M:GetDisplayContent()
   local DisplayContent = {
     CharContent = {},
@@ -202,20 +196,18 @@ function M:GetDisplayContent()
   end
   return DisplayContent
 end
-
 function M:GetCharSuitIndex(index)
   if -1 == index or nil == index then
-    DebugPrint("index \228\184\141\232\131\189\228\184\186-1\230\136\1500")
+    DebugPrint("index 不能为-1或0")
     return
   end
   local Uuid = self._DisplayPlan.CharDisplayPlans[index].CharId
   local suitindex = self._DisplayPlan.CharDisplayPlans[index].AppearancePlan
   if -1 == suitindex or 0 == suitindex then
-    DebugPrint("\229\164\150\232\167\130\230\150\185\230\161\136\228\184\186-1\230\136\1500")
+    DebugPrint("外观方案为-1或0")
   end
   return Uuid, suitindex
 end
-
 function M:GetShowCharBaseInfo(index)
   if -1 == index then
     return nil
@@ -243,7 +235,6 @@ function M:GetShowCharBaseInfo(index)
   }
   return CharData
 end
-
 function M:GetShowCharData(index)
   if self:IsOwener() then
     local CharData = self._Avatar.Chars[self._DisplayPlan.CharDisplayPlans[index].CharId]
@@ -254,11 +245,10 @@ function M:GetShowCharData(index)
         return Char
       end
     end
-    ScreenPrint("\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\230\173\166\229\153\168\230\149\176\230\141\174" .. debug.traceback())
+    ScreenPrint("未找到对应的武器数据" .. debug.traceback())
     return self._fakeAvatar.Chars[index]
   end
 end
-
 function M:GetShowWeaponData(index)
   if -1 == index then
     return nil
@@ -272,10 +262,9 @@ function M:GetShowWeaponData(index)
         return weapon
       end
     end
-    ScreenPrint("\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148\231\154\132\230\173\166\229\153\168\230\149\176\230\141\174" .. debug.traceback())
+    ScreenPrint("未找到对应的武器数据" .. debug.traceback())
   end
 end
-
 function M:IsOwener()
   if self._PersonID ~= nil then
     return false
@@ -283,7 +272,6 @@ function M:IsOwener()
     return true
   end
 end
-
 function M:GetPersonalBaseInfo()
   local _ModelInfo = {}
   if self:IsOwener() then
@@ -310,15 +298,12 @@ function M:GetPersonalBaseInfo()
   end
   return _ModelInfo
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 function M:GetWeaponUuid()
   return self._Avatar.WeaponUuid
 end
-
 function M:GetHeadIcon()
   local HeadFrameId = self._ModelInfo.HeadIconId
   if HeadFrameId then
@@ -331,7 +316,6 @@ function M:GetHeadIcon()
     end
   end
 end
-
 function M:GetDisplayItemsUuid(bisweapon, index)
   local str
   if true == bisweapon then
@@ -342,7 +326,6 @@ function M:GetDisplayItemsUuid(bisweapon, index)
   local uuid = self._DisplayPlan[str .. "DisplayPlans"][index][str .. "Id"]
   return uuid
 end
-
 function M:GetTemporModelPlan(bisweapon, index, Plans)
   local str, tempplans
   if true == bisweapon then
@@ -359,7 +342,6 @@ function M:GetTemporModelPlan(bisweapon, index, Plans)
     return self._DisplayPlan[str .. "DisplayPlans"][index]
   end
 end
-
 function M:GetTemporModelBoxItemData(bisweapon, index, Plans)
   local data = self:GetTempEditBoxItemData(bisweapon, index, Plans)
   if -1 == data then
@@ -370,7 +352,6 @@ function M:GetTemporModelBoxItemData(bisweapon, index, Plans)
   end
   return data
 end
-
 function M:GetEditBoxItemData(bisweapon, index)
   local str
   if true == bisweapon then
@@ -396,7 +377,6 @@ function M:GetEditBoxItemData(bisweapon, index)
   data.Uuid = uuid
   return data
 end
-
 function M:GetTempEditBoxItemData(bisweapon, index, Plans)
   local str, tempplan
   if true == bisweapon then
@@ -429,7 +409,6 @@ function M:GetTempEditBoxItemData(bisweapon, index, Plans)
   data.Uuid = uuid
   return data
 end
-
 function M:GetItemName(bisweapon, content)
   local str
   if bisweapon then
@@ -440,12 +419,10 @@ function M:GetItemName(bisweapon, content)
   local id = content.UnitId
   return DataMgr[str][id][str .. "Name"]
 end
-
 function M:GetItemUuid(content)
   local id = content.Uuid
   return id
 end
-
 function M:SaveShowPlan(TempCharShowPlan, TempWeaponShowPlan)
   local strs = {"Char", "Weaqpon"}
   if nil ~= TempCharShowPlan then
@@ -503,7 +480,6 @@ function M:SaveShowPlan(TempCharShowPlan, TempWeaponShowPlan)
     end
   end
 end
-
 function M:GetDisplayCharInfos()
   local CharInfos = {}
   if self:IsOwener() then
@@ -524,7 +500,6 @@ function M:GetDisplayCharInfos()
   end
   return CharInfos
 end
-
 function M:GetDisplayWeaponInfos()
   local WeaponInfos = {}
   if self:IsOwener() then
@@ -549,7 +524,6 @@ function M:GetDisplayWeaponInfos()
   end
   return WeaponInfos
 end
-
 function M:ChangeToCharBattleDumpInfo(CharInfos)
   local Chars = {}
   for i, CharInfo in ipairs(CharInfos) do
@@ -614,7 +588,6 @@ function M:ChangeToCharBattleDumpInfo(CharInfos)
   end
   return Chars
 end
-
 function M:ChangeToWeaponBattleDumpInfo(WeaponInfos)
   local Weapons = {}
   for i, WeaponInfo in ipairs(WeaponInfos) do
@@ -657,7 +630,6 @@ function M:ChangeToWeaponBattleDumpInfo(WeaponInfos)
   end
   return Weapons
 end
-
 function M:LocalUpdateCharDisplay(index, CharId, AppearancePlan, ModPlan)
   self._DisplayPlan.CharDisplayPlans[index] = {
     CharId = CharId or -1,
@@ -665,18 +637,15 @@ function M:LocalUpdateCharDisplay(index, CharId, AppearancePlan, ModPlan)
     ModPlan = ModPlan or 1
   }
 end
-
 function M:LocalUpdateWeaponDisplay(index, WeaponId, ModId)
   self._DisplayPlan.WeaponDisplayPlans[index] = {
     WeaponId = WeaponId or -1,
     ModPlan = ModId or 1
   }
 end
-
 function M:ReallyUpdate()
   DebugPrint("yklua66 SuccessCallback")
 end
-
 function M:SortCharDisplay()
   local j = 1
   for i = 1, #self._DisplayPlan.CharDisplayPlans do
@@ -693,7 +662,6 @@ function M:SortCharDisplay()
     self._DisplayPlan.CharDisplayPlans[k] = {CharId = -1}
   end
 end
-
 function M:SortWeaponDisplay()
   local j = 1
   for i = 1, #self._DisplayPlan.WeaponDisplayPlans do
@@ -710,7 +678,6 @@ function M:SortWeaponDisplay()
     self._DisplayPlan.WeaponDisplayPlans[k] = {WeaponId = -1}
   end
 end
-
 function M:GetAppearanceAndModPlan(bisweapon, index)
   local str, plan = "Char", self._DisplayPlan.CharDisplayPlans[index]
   if true == bisweapon then
@@ -727,7 +694,6 @@ function M:GetAppearanceAndModPlan(bisweapon, index)
     return 1, 1
   end
 end
-
 function M:GetFakeAvatar()
   if self._fakeAvatar == nil then
     ArmoryUtils:CreateDummyAvatar({
@@ -750,22 +716,19 @@ function M:GetFakeAvatar()
     return self._fakeAvatar
   end
 end
-
 function M:DeleteFakeAvatar()
   if self._fakeAvatar ~= nil then
     ArmoryUtils:DestroyDummyAvatar()
     self._fakeAvatar = nil
   end
 end
-
 function M:GetDataPageVisibility()
   if self:IsOwener() then
-    ScreenPrint("\228\184\141\229\186\148\232\175\165\232\142\183\229\143\150\232\135\170\229\183\177\231\149\140\233\157\162\231\154\132\229\143\175\232\167\129\230\128\167")
+    ScreenPrint("不应该获取自己界面的可见性")
   else
     return self.OtherPersonInfo.Visible
   end
 end
-
 function M:ClearModel()
   self._ModelInfo = {}
   self._PersonID = nil
@@ -773,5 +736,4 @@ function M:ClearModel()
   self.OtherPersonInfo = nil
   self.OtherBattleDumpInfo = nil
 end
-
 return M

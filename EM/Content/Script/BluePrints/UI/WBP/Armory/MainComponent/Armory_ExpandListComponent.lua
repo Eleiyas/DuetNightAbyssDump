@@ -2,7 +2,6 @@ require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local UIUtils = require("Utils.UIUtils")
 local M = {}
-
 function M:Construct()
   self.CharFilterTags, self.CharFilterNames = UIUtils.GetAllElementTypes()
   self.CharFilterIcons = {}
@@ -28,16 +27,13 @@ function M:Construct()
   self.Btn_Selective:BindEventOnClicked(self, self.OnExpandListButtonClicked)
   self.IsListExpanded = false
 end
-
 function M:CreateWeaponFilterTags()
   if not self.ComparedWeaponName or not self[self.ComparedWeaponName] then
     return
   end
-  
   local function _concat(FromTable, ToTable)
     table.move(FromTable, 1, #FromTable, #ToTable + 1, ToTable)
   end
-  
   self.WeaponFilterTags = {}
   self.WeaponFilterNames = {}
   self.WeaponFilterIcons = {}
@@ -60,7 +56,6 @@ function M:CreateWeaponFilterTags()
     _concat(self.RangedFilterIcons, self.WeaponFilterIcons)
   end
 end
-
 function M:InitUIInfo()
   if self.bFromArchive then
     self.Arr_OrderBy = {
@@ -104,13 +99,12 @@ function M:InitUIInfo()
     "UnitId"
   }
   self.ResourcePetOrderByAttrNames = {
-    "Rarity",
+    "_PetEntryRarity",
     "_PetEntryId",
     "SortPriority",
     "UnitId"
   }
 end
-
 function M:CreateFilters(InTags, InTexts, InIcons, ExcelWeaponTags)
   local Filters = {}
   for i, value in ipairs(InTags) do
@@ -123,29 +117,24 @@ function M:CreateFilters(InTags, InTexts, InIcons, ExcelWeaponTags)
   end
   return Filters
 end
-
 function M:OnBackKeyDown()
   if not self.IsListExpanded then
     return
   end
   return self:OnBackBtnClicked()
 end
-
 function M:OnBackBtnClicked()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(false)
 end
-
 function M:OnExpandListButtonClicked()
   self:OnExpandListKeyDown()
 end
-
 function M:OnExpandListKeyDown()
   self:ExpandList(not self.IsListExpanded)
 end
-
 function M:ResetMainTabStyle(IsListExpanded)
   if IsListExpanded then
     local MainTabName = self.CurMainTab.Name
@@ -183,7 +172,6 @@ function M:ResetMainTabStyle(IsListExpanded)
     end
   end
 end
-
 function M:SetReceivedEvent(IsReceive)
   self.ComponentReceivedEvent.Back = IsReceive
   self.ComponentReceivedEvent.WheelScroll = IsReceive
@@ -198,7 +186,6 @@ function M:SetReceivedEvent(IsReceive)
   self.ComponentReceivedEvent.OnGetSubUINavigationInfo = IsReceive
   self.ComponentReceivedEvent.SelectRoleListItem = IsReceive
 end
-
 function M:ExpandList(IsListExpanded)
   if IsListExpanded then
     self.IsListExpanded = true
@@ -218,9 +205,11 @@ function M:ExpandList(IsListExpanded)
       OnListItemClicked = self.OnExpandListItemClicked,
       OnListItemSelectionChanged = self.OnExpandListItemSelectionChanged,
       OnEntryInitialized = self.OnExpandListEntryInitialized,
-      SortFuncion = self.SortItemContents,
+      SortFuncion = self.ExpandList_SortItemContents,
       FilterFunction = self.FilterItemContents
     })
+    local SortFuncName = self.CurMainTab.Name .. "Main_SortItemContents"
+    rawset(self, SortFuncName, self["Replaced_" .. SortFuncName])
     local OrderByDisplayNames
     if self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Pet and self.PetItemContentsArray == self.ResourcePetItemContentsArray then
       OrderByDisplayNames = self.ResourcePetOrderByDisplayNames
@@ -230,7 +219,8 @@ function M:ExpandList(IsListExpanded)
     self.Selective_Listing:Init(self, {
       Filters = self.Filters,
       OrderByDisplayNames = OrderByDisplayNames,
-      SortType = CommonConst.DESC,
+      SortIdx = self:GetCurSortIdx() or 1,
+      SortType = self:GetCurSortType() or CommonConst.DESC,
       ItemContents = self[self.CurMainTab.Name .. "ItemContentsArray"]
     })
     local LastCameraTags = self.ActorController.LastCameraTags
@@ -275,6 +265,8 @@ function M:ExpandList(IsListExpanded)
       self.ActorController:SetArmoryCameraTag(table.unpack(CameraTags))
     end
     self:SetAllReddotRead()
+    self:SortItemContents()
+    self:InitRoleList()
     if self.GetDesiredFocusTargetInfo then
       local Info = {}
       self:GetDesiredFocusTargetInfo(Info)
@@ -286,16 +278,13 @@ function M:ExpandList(IsListExpanded)
     end
   end
 end
-
 function M:UpdataExpandList()
 end
-
 function M:OnWeaponGradeLevelUp()
   if not self.IsListExpanded then
     return
   end
 end
-
 function M:OnExpandListItemClicked(Content)
   if not self.IsListExpanded then
     return
@@ -305,7 +294,6 @@ function M:OnExpandListItemClicked(Content)
   end
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnRoleListItemClicked", Content)
 end
-
 function M:SelectRoleListItem(Content)
   if not self.IsListExpanded then
     return
@@ -314,41 +302,85 @@ function M:SelectRoleListItem(Content)
   self:ResetMainTabStyle(self.IsListExpanded)
   self:HideLeftPanels()
 end
-
 function M:OnExpandListItemSelectionChanged(Content, IsSelected)
   if not self.IsGamepadInput or not IsSelected then
     return
   end
   self:OnExpandListItemClicked(Content)
 end
-
 function M:OnExpandListEntryInitialized(Content, Widget)
   if self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Pet and not Content.IsResourcePet then
     Widget:SetLevel(Content.Level)
   end
 end
-
 function M:HideLeftPanels()
   self.Tab_L:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_SubTab:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:InitRoleList()
   if self.IsListExpanded then
     self.Selective_Listing:Resort()
   end
 end
-
-function M:SortItemContents(InOutContentArray, SortByIdx, SortType)
-  local FirtContent = self[self.CurMainTab.Name .. "Main_CurContent"] or self[self.CurMainTab.Name .. "Main_CmpContent"]
-  local SortByAttrNames
-  local Func = self[self.CurMainTab.Name .. "_GetSortByAttrNames"]
-  if Func then
-    SortByAttrNames = Func(self, SortByIdx)
-  else
-    SortByAttrNames = self:Common_GetSortByAttrNames(SortByIdx)
+function M:Replaced_SortItemContent(InOutContentArray)
+  if not self:GetCurSortIdx() then
+    return
   end
-  ArmoryUtils:SortItemContents(InOutContentArray, SortByAttrNames, SortType, FirtContent, function(a, b)
+  self:ExpandList_SortItemContents(InOutContentArray, self:GetCurSortIdx(), self:GetCurSortType())
+end
+function M:Replaced_CharMain_SortItemContents()
+  self:Replaced_SortItemContent(self.CharItemContentsArray)
+end
+function M:Replaced_MeleeMain_SortItemContents()
+  self:Replaced_SortItemContent(self.WeaponItemContentsArray)
+end
+function M:Replaced_RangedMain_SortItemContents()
+  self:Replaced_SortItemContent(self.WeaponItemContentsArray)
+end
+function M:Replaced_WeaponMain_SortItemContents()
+  self:Replaced_SortItemContent(self.WeaponItemContentsArray)
+end
+function M:Replaced_PetMain_SortItemContents()
+  self:Replaced_SortItemContent(self.PetItemContentsArray)
+end
+function M:SetCurSortType(SortType)
+  if self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Pet and self.PetItemContentsArray == self.ResourcePetItemContentsArray then
+    rawset(self, "Resource" .. self.CurMainTab.Name .. "SortType", SortType)
+    return
+  end
+  rawset(self, self.CurMainTab.Name .. "SortType", SortType)
+end
+function M:GetCurSortType()
+  if self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Pet and self.PetItemContentsArray == self.ResourcePetItemContentsArray then
+    return rawget(self, "Resource" .. self.CurMainTab.Name .. "SortType")
+  end
+  return rawget(self, self.CurMainTab.Name .. "SortType")
+end
+function M:SetCurSortIdx(SortIdx)
+  if self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Pet and self.PetItemContentsArray == self.ResourcePetItemContentsArray then
+    rawset(self, "Resource" .. self.CurMainTab.Name .. "SortIdx", SortIdx)
+    return
+  end
+  rawset(self, self.CurMainTab.Name .. "SortIdx", SortIdx)
+end
+function M:GetCurSortIdx()
+  if self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Pet and self.PetItemContentsArray == self.ResourcePetItemContentsArray then
+    return rawget(self, "Resource" .. self.CurMainTab.Name .. "SortIdx")
+  end
+  return rawget(self, self.CurMainTab.Name .. "SortIdx")
+end
+function M:ExpandList_SortItemContents(InOutContentArray, SortIdx, SortType)
+  self:SetCurSortIdx(SortIdx)
+  self:SetCurSortType(SortType)
+  local FirtContent = self[self.CurMainTab.Name .. "Main_CurContent"]
+  local SortAttrNames
+  local Func = self[self.CurMainTab.Name .. "_GetSortAttrNames"]
+  if Func then
+    SortAttrNames = Func(self, SortIdx)
+  else
+    SortAttrNames = self:Common_GetSortAttrNames(SortIdx)
+  end
+  ArmoryUtils:SortItemContents(InOutContentArray, SortAttrNames, SortType, FirtContent, function(a, b)
     if a.IsOwned or b.IsOwned then
       return ArmoryUtils.IsOwnedCmpFunc(a, b)
     end
@@ -361,49 +393,46 @@ function M:SortItemContents(InOutContentArray, SortByIdx, SortType)
     end
   end)
 end
-
-function M:Common_GetSortByAttrNames(SortByIdx)
-  local OrderByAttrNames = self[self.CurMainTab.Name .. "OrderByAttrNames"]
-  local SortByAttrNames = {
-    OrderByAttrNames[SortByIdx]
+function M:Common_GetSortAttrNames(SortIdx)
+  local OrderAttrNames = self[self.CurMainTab.Name .. "OrderByAttrNames"]
+  local SortAttrNames = {
+    OrderAttrNames[SortIdx]
   }
-  for index, value in ipairs(OrderByAttrNames) do
-    if index ~= SortByIdx then
-      table.insert(SortByAttrNames, value)
+  for index, value in ipairs(OrderAttrNames) do
+    if index ~= SortIdx then
+      table.insert(SortAttrNames, value)
     end
   end
-  return SortByAttrNames
+  return SortAttrNames
 end
-
-function M:Pet_GetSortByAttrNames(SortByIdx)
-  local SortByAttrNames
+function M:Pet_GetSortAttrNames(SortIdx)
+  local SortAttrNames
   if self.PetItemContentsArray == self.UseablePetItemContentsArray then
     local OrderByAttrNames = self.PetOrderByAttrNames
-    if 2 == SortByIdx then
-      SortByAttrNames = {"Rarity"}
+    if 2 == SortIdx then
+      SortAttrNames = {"Rarity"}
       for index, value in ipairs(OrderByAttrNames) do
-        if index ~= SortByIdx then
-          table.insert(SortByAttrNames, value)
+        if value ~= SortAttrNames[1] then
+          table.insert(SortAttrNames, value)
         end
       end
     else
-      SortByAttrNames = OrderByAttrNames
+      SortAttrNames = OrderByAttrNames
     end
-  elseif 1 == SortByIdx then
-    SortByAttrNames = self.ResourcePetOrderByAttrNames
+  elseif 1 == SortIdx then
+    SortAttrNames = self.ResourcePetOrderByAttrNames
   else
-    SortByAttrNames = {
+    SortAttrNames = {
       "_PetEntryId"
     }
     for index, value in ipairs(self.ResourcePetOrderByAttrNames) do
-      if index ~= SortByIdx then
-        table.insert(SortByAttrNames, value)
+      if value ~= SortAttrNames[1] then
+        table.insert(SortAttrNames, value)
       end
     end
   end
-  return SortByAttrNames
+  return SortAttrNames
 end
-
 function M:FilterItemContents(InContentArray, FilterIdxes)
   local TabName = self.CurMainTab.Name
   local FilteredItems = {}
@@ -411,16 +440,20 @@ function M:FilterItemContents(InContentArray, FilterIdxes)
   if TabName == ArmoryUtils.ArmoryMainTabNames.Char then
     function FilterFunc(FilterTag, Content)
       local Data = DataMgr.BattleChar[Content.UnitId]
-      
       return FilterTag == Data.Attribute
     end
   elseif TabName == ArmoryUtils.ArmoryMainTabNames.Melee or TabName == ArmoryUtils.ArmoryMainTabNames.Ranged or TabName == ArmoryUtils.ArmoryMainTabNames.Weapon then
-    local Avatar = ArmoryUtils:GetAvatar()
-    
     function FilterFunc(FilterTag, Content)
-      local Weapon = Avatar.Weapons[Content.Uuid]
-      Weapon = Content.Avatar and Content.Avatar.Weapons[Content.Uuid] or Weapon
-      return Weapon:HasTag(FilterTag)
+      local Data = DataMgr.BattleWeapon[Content.UnitId]
+      local Tags = Data and Data.WeaponTag
+      if not Tags then
+        return
+      end
+      for key, value in pairs(Tags) do
+        if value == FilterTag then
+          return true
+        end
+      end
     end
   elseif TabName == ArmoryUtils.ArmoryMainTabNames.Pet then
     function FilterFunc()
@@ -451,27 +484,23 @@ function M:FilterItemContents(InContentArray, FilterIdxes)
   end
   return FilteredItems
 end
-
 function M:OnArmoryModClosed(Type, Tag)
   if not self.IsListExpanded then
     return
   end
   self:UpdateMontageAndCamera()
 end
-
 function M:RealClose()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(false)
 end
-
 function M:ReceiveEnterState(StackAction)
   if not self.IsListExpanded then
     return
   end
 end
-
 function M:InitKeySetting()
   if not self.IsListExpanded then
     return
@@ -480,7 +509,6 @@ function M:InitKeySetting()
   self:CallFunctionByName("ExpandList_" .. self.CurMainTab.Name .. "Main_InitKeySetting", self.KeyDownEvents, self.KeyUpEvents, self.BottomKeyInfo)
   self:UpdateBottomKeyInfo(self.BottomKeyInfo)
 end
-
 function M:ExpandList_CharMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
@@ -491,15 +519,12 @@ function M:ExpandList_CharMain_InitKeySetting(KeyDownEvents, KeyUpEvents, Bottom
   end
   table.insert(BottomKeyInfo, self.ESCKeyInfoList)
 end
-
 function M:ExpandList_MeleeMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   self:ExpandList_WeaponMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
 end
-
 function M:ExpandList_RangedMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   self:ExpandList_WeaponMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
 end
-
 function M:ExpandList_WeaponMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
@@ -511,7 +536,6 @@ function M:ExpandList_WeaponMain_InitKeySetting(KeyDownEvents, KeyUpEvents, Bott
   end
   table.insert(self.BottomKeyInfo, self.ESCKeyInfoList)
 end
-
 function M:ExpandList_PetMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
@@ -522,7 +546,6 @@ function M:ExpandList_PetMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomK
   end
   table.insert(BottomKeyInfo, self.ESCKeyInfoList)
 end
-
 function M:InitKeySettingCommon()
   if self.IsListExpanded then
     self:AddKeyEvents(self.KeyDownEvents, self.ViewKeyDownEvents)
@@ -530,19 +553,15 @@ function M:InitKeySettingCommon()
     self:AddKeyEvents(self.KeyDownEvents, self.ViewKeyDownEvents)
   end
 end
-
 function M:CharMain_OnViewKeyDown()
   self:ExpandList_OnViewKeyDown()
 end
-
 function M:WeaponMain_OnViewKeyDown()
   self:ExpandList_OnViewKeyDown()
 end
-
 function M:PetMain_OnViewKeyDown()
   self:ExpandList_OnViewKeyDown()
 end
-
 function M:ExpandList_OnViewKeyDown()
   if self.IsListExpanded then
     self:ExpandList(false)
@@ -550,32 +569,26 @@ function M:ExpandList_OnViewKeyDown()
     self:ExpandList(true)
   end
 end
-
 function M:OnLeftThumbstickKeyDown()
   if not self.IsListExpanded then
     return
   end
   self.Selective_Listing:SetSortWidgetFocus()
 end
-
 function M:OnBackgroundClicked()
   if self.IsListExpanded then
     self:ExpandList(false)
   end
 end
-
 function M:CharMain_OnFocusReceived(ReplyInfo)
   self:ExpandList_OnFocusReceived(ReplyInfo)
 end
-
 function M:WeaponMain_OnFocusReceived(ReplyInfo)
   self:ExpandList_OnFocusReceived(ReplyInfo)
 end
-
 function M:PetMain_OnFocusReceived(ReplyInfo)
   self:ExpandList_OnFocusReceived(ReplyInfo)
 end
-
 function M:ExpandList_OnFocusReceived(ReplyInfo)
   if not self.IsListExpanded then
     return
@@ -583,13 +596,15 @@ function M:ExpandList_OnFocusReceived(ReplyInfo)
   ReplyInfo.Reply = UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Selective_Listing)
   ReplyInfo.IsHandled = true
 end
-
 function M:GetDesiredFocusTargetInfo(Info)
   if self.IsListExpanded then
+    if self.CurrentSubUI and self.CurrentSubUI.UnlockDialog then
+      Info.Widget = self.CurrentSubUI.UnlockDialog
+      return
+    end
     Info.Widget = self.Selective_Listing
   end
 end
-
 function M:OnGetSubUINavigationInfo(Info, NavigationDirection)
   if not self.IsListExpanded then
     return
@@ -598,28 +613,24 @@ function M:OnGetSubUINavigationInfo(Info, NavigationDirection)
     Info.Widget = self.Selective_Listing
   end
 end
-
 function M:PetMain_Init()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(true)
 end
-
 function M:WeaponMain_Init()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(true)
 end
-
 function M:CharMain_Init()
   if not self.IsListExpanded then
     return
   end
   self:ExpandList(true)
 end
-
 function M:ExpandList_OnItemContentsChanged()
   if not self.IsListExpanded then
     return
@@ -630,25 +641,19 @@ function M:ExpandList_OnItemContentsChanged()
     self.Selective_Listing:ScrollItemIntoView(Item)
   end
 end
-
 function M:OnNewCharObtained()
   self:ExpandList_OnItemContentsChanged()
 end
-
 function M:OnNewWeaponObtained()
   self:ExpandList_OnItemContentsChanged()
 end
-
 function M:OnWeaponDeleted()
   self:ExpandList_OnItemContentsChanged()
 end
-
 function M:OnNewPetObtained()
   self:ExpandList_OnItemContentsChanged()
 end
-
 function M:OnPetDeleted()
   self:ExpandList_OnItemContentsChanged()
 end
-
 return M

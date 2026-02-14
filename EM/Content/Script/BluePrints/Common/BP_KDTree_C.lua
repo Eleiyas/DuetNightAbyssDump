@@ -2,7 +2,6 @@ require("UnLua")
 local Str = require("BluePrints.Common.DataStructure")
 local Heap = Str.Heap
 local BP_KDTree_C = Class()
-
 local function GetVectorComponent(vec, index)
   if 1 == index then
     return vec.X
@@ -14,7 +13,6 @@ local function GetVectorComponent(vec, index)
     return vec.Z
   end
 end
-
 local function SetVectorComponent(vec, index, value)
   if 1 == index then
     vec.X = value
@@ -29,10 +27,8 @@ local function SetVectorComponent(vec, index, value)
     return
   end
 end
-
 function BP_KDTree_C:ReceiveBeginPlay()
 end
-
 function BP_KDTree_C:SetData(table, func)
   self.data = {}
   for i, v in ipairs(table) do
@@ -40,7 +36,6 @@ function BP_KDTree_C:SetData(table, func)
   end
   self.GetLocFunc = func
 end
-
 local function QuickSort(array, start, last, compareFunc)
   if start >= last - 1 then
     return
@@ -68,7 +63,6 @@ local function QuickSort(array, start, last, compareFunc)
   QuickSort(array, start, pivot, compareFunc)
   QuickSort(array, pivot + 1, last, compareFunc)
 end
-
 function BP_KDTree_C:CompareFunc(axisType)
   return function(t1, t2)
     local loc1 = self.GetLocFunc(t1)
@@ -87,7 +81,6 @@ function BP_KDTree_C:CompareFunc(axisType)
     end
   end
 end
-
 function BP_KDTree_C:BuildKDTree()
   assert(self.axisNum >= 2 and self.axisNum <= 3)
   if 0 == #self.data then
@@ -96,7 +89,6 @@ function BP_KDTree_C:BuildKDTree()
   end
   self.headNode = self:CreateNode(1, #self.data + 1, self:GetStartAxis(), nil)
 end
-
 function BP_KDTree_C:CreateNode(start, last, axisType, parent)
   if last - start > self.maxNodeNum then
     local node = {}
@@ -121,15 +113,12 @@ function BP_KDTree_C:CreateNode(start, last, axisType, parent)
     return node
   end
 end
-
 function BP_KDTree_C:GetStartAxis()
   return 1
 end
-
 local function SquaredDistance(v1, v2)
   return (v2.X - v1.X) ^ 2 + (v2.Y - v1.Y) ^ 2 + (v2.Z - v1.Z) ^ 2
 end
-
 local function PushHeap(heap, element, maxNum)
   if maxNum > #heap.data then
     heap:PushHeap(element)
@@ -141,7 +130,6 @@ local function PushHeap(heap, element, maxNum)
     heap:PushHeap(element)
   end
 end
-
 function BP_KDTree_C:GetClosestPoints(tacmapManager, searchPos, num)
   local closestPoints = Heap.New()
   closestPoints:SetData({}, function(t1, t2)
@@ -204,7 +192,6 @@ function BP_KDTree_C:GetClosestPoints(tacmapManager, searchPos, num)
   end
   return ret_nodes
 end
-
 function BP_KDTree_C:FindLeafNode(node, searchPos)
   if node.nodeNum <= self.maxNodeNum then
     return node
@@ -216,8 +203,6 @@ function BP_KDTree_C:FindLeafNode(node, searchPos)
     return self:FindLeafNode(node.right, searchPos)
   end
 end
-
 function BP_KDTree_C:DebugTreeNode(node, parent, start)
 end
-
 return BP_KDTree_C

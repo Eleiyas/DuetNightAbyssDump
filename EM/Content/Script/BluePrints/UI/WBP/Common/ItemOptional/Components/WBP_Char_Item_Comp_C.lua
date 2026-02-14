@@ -1,6 +1,5 @@
 require("UnLua")
 local Component = {}
-
 function Component:InitSpecialView(ItemData, ...)
   self.WB_Star:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.WidgetSwitcher_Level:SetActiveWidgetIndex(0)
@@ -33,5 +32,4 @@ function Component:InitSpecialView(ItemData, ...)
     self.WidgetSwitcher_Info:SetActiveWidgetIndex(1)
   end
 end
-
 return Component

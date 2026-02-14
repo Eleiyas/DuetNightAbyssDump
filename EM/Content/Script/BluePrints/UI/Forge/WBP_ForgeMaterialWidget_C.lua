@@ -1,7 +1,6 @@
 require("UnLua")
 local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
 local WBP_ForgeMaterialWidget_C = Class()
-
 function WBP_ForgeMaterialWidget_C:UpdateView(ResId, ResNum)
   self.ResHaveNum = ResNum.Have
   self.ResRequiredNum = ResNum.Required
@@ -22,7 +21,6 @@ function WBP_ForgeMaterialWidget_C:UpdateView(ResId, ResNum)
   end
   self:SetHovered(false)
 end
-
 function WBP_ForgeMaterialWidget_C:SetHovered(IsHovered)
   self.IsHovered = IsHovered
   if IsHovered then
@@ -44,12 +42,10 @@ function WBP_ForgeMaterialWidget_C:SetHovered(IsHovered)
     end
   end
 end
-
 function WBP_ForgeMaterialWidget_C:IsMaterialEnough()
   if not self.ResHaveNum or not self.ResRequiredNum then
     return false
   end
   return self.ResHaveNum >= self.ResRequiredNum
 end
-
 return WBP_ForgeMaterialWidget_C

@@ -1,16 +1,45 @@
 require("UnLua")
 local FStoryLog = require("BluePrints/Story/Log/StoryLog")
 local M = Class()
-
 function M:OnInitialize()
 end
-
 function M:OnDeinitialize()
 end
-
-function M:OnPrintToFeiShu(Title, Message)
+function M:OnPrintToFeiShu(Type, Title, Message)
+  if not (Type and Title) or not Message then
+    DebugPrint(ErrorTag, "BP_StoryLogSubsystem:OnPrintToFeiShu, 参数为空", Type, Title, Message)
+    return
+  end
+  local TypeString
+  local Success, Result = pcall(function()
+    return UE.EStoryLogType:GetDisplayNameTextByValue(Type)
+  end)
+  if not (Success and Result) or "" == Result then
+    DebugPrint(ErrorTag, "BP_StoryLogSubsystem:OnPrintToFeiShu, 参数Type不是有效的EStoryLogType枚举值", Type)
+    return
+  end
+  TypeString = Result
+  if not GWorld.StoryLogDict then
+    GWorld.StoryLogDict = {}
+  end
+  local ErrorDictContent = TypeString .. Title .. Message
+  if "" ~= ErrorDictContent and GWorld.StoryLogDict[ErrorDictContent] then
+    return
+  end
+  GWorld.StoryLogDict[ErrorDictContent] = true
   local StoryLog = FStoryLog:New()
-  StoryLog:AddTextLine(Message)
+  local Ct = {
+    "【错误大类】: ",
+    TypeString,
+    "\n",
+    "【标题】: ",
+    Title,
+    "\n",
+    "【具体内容】: ",
+    Message
+  }
+  local Ret = table.concat(Ct)
+  StoryLog:AddTextLine(Ret)
   self:AddTracebackLog(StoryLog)
   self:AddPlatformLog(StoryLog)
   self:AddSubregionLog(StoryLog)
@@ -23,7 +52,6 @@ function M:OnPrintToFeiShu(Title, Message)
     Avatar:SendToFeishuForJQ(StoryLog:ToRichString(), Title)
   end
 end
-
 function M:AddTracebackLog(StoryLog, Level, LineLimit)
   Level = Level or 4
   LineLimit = LineLimit or 10
@@ -47,27 +75,25 @@ function M:AddTracebackLog(StoryLog, Level, LineLimit)
     Traceback = NativeTraceback
   end
   StoryLog:AddSeparator()
-  StoryLog:AddTitleLine("\232\176\131\231\148\168\230\160\136")
+  StoryLog:AddTitleLine("调用栈")
   StoryLog:AddTextLine(Traceback)
 end
-
 function M:AddPlatformLog(StoryLog)
   local PlatformName = UE4.UGameplayStatics.GetPlatformName()
   if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(GWorld.GameInstance) then
-    PlatformName = "\231\188\150\232\190\145\229\153\168"
+    PlatformName = "编辑器"
   end
   StoryLog:AddSeparator()
-  StoryLog:AddTitleLine("\229\185\179\229\143\176\228\191\161\230\129\175")
-  StoryLog:AddKeyLine("\229\185\179\229\143\176", PlatformName)
+  StoryLog:AddTitleLine("平台信息")
+  StoryLog:AddKeyLine("平台", PlatformName)
 end
-
 function M:AddSubregionLog(StoryLog)
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
     return
   end
   local SubregionId = Avatar:GetCurrentRegionId()
-  local SubregionName = "\230\151\160\230\149\136\231\154\132\229\173\144\229\140\186\229\159\159\229\145\189\229\144\141"
+  local SubregionName = "无效的子区域命名"
   local SubregionData = DataMgr.SubRegion[SubregionId]
   if SubregionData then
     local TextData = DataMgr.TextMap[SubregionData.SubRegionName]
@@ -76,11 +102,10 @@ function M:AddSubregionLog(StoryLog)
     end
   end
   StoryLog:AddSeparator()
-  StoryLog:AddTitleLine("\229\140\186\229\159\159\228\191\161\230\129\175")
-  StoryLog:AddKeyLine("\229\173\144\229\140\186\229\159\159 ID", SubregionId)
-  StoryLog:AddKeyLine("\229\173\144\229\140\186\229\159\159\229\144\141\231\167\176", SubregionName)
+  StoryLog:AddTitleLine("区域信息")
+  StoryLog:AddKeyLine("子区域 ID", SubregionId)
+  StoryLog:AddKeyLine("子区域名称", SubregionName)
 end
-
 function M:AddWorkingTalkTaskLog(StoryLog)
   local TS = TalkSubsystem()
   if not TS then
@@ -91,10 +116,9 @@ function M:AddWorkingTalkTaskLog(StoryLog)
     return
   end
   StoryLog:AddSeparator()
-  StoryLog:AddTitleLine("\229\189\147\229\137\141\232\191\144\232\161\140\228\184\173\231\154\132\229\175\185\232\175\157\228\187\187\229\138\161\228\191\161\230\129\175")
+  StoryLog:AddTitleLine("当前运行中的对话任务信息")
   for _, Log in pairs(Logs) do
     StoryLog:AddMapLine(Log)
   end
 end
-
 return M

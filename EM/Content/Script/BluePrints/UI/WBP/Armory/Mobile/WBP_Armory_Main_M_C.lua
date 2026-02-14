@@ -10,19 +10,16 @@ M._components = {
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_ExpandListComponent",
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:Construct()
   self.IsPC = false
   self.MainTabStyleName = "Armory"
   self.BoxWidget = self.Btn_Selective
   M.Super.Construct(self)
 end
-
 function M:InitSubUI(...)
   M.Super.InitSubUI(self, ...)
   self:InitPointerSetting()
 end
-
 function M:InitPointerSetting()
   local ConstCurSubTab = self:GetConstTab(self.CurMainTab.Name, self.CurSubTab.Name)
   if self.bFromArchive and (self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Melee or self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Ranged or self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Weapon) then
@@ -35,7 +32,6 @@ function M:InitPointerSetting()
     self:ResetActorRotation()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -52,10 +48,14 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnReturnKeyDown()
   self:OnBackBtnClicked()
 end
-
+function M:OnFocusReceived(MyGeometry, InFocusEvent)
+  if self.CurrentSubUI and self.CurrentSubUI.UnlockDialog then
+    return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurrentSubUI.UnlockDialog)
+  end
+  return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
+end
 AssembleComponents(M)
 return M

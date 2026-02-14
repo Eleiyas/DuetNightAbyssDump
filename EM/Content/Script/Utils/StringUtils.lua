@@ -1,5 +1,4 @@
 local StringUtils = {}
-
 function StringUtils.Split(Str, Pat)
   local t = {}
   local fpat = "(.-)" .. Pat
@@ -18,7 +17,6 @@ function StringUtils.Split(Str, Pat)
   end
   return t
 end
-
 function StringUtils.Utf8ToTable(Str)
   local t = {}
   for ch, _ in string.gmatch(Str, utf8.charpattern) do
@@ -26,7 +24,6 @@ function StringUtils.Utf8ToTable(Str)
   end
   return t
 end
-
 local CJKUtf8Ranges = {
   {14844070, 14844070},
   {14844051, 14844061},
@@ -38,11 +35,9 @@ local CJKUtf8Ranges = {
 local DoubleByteRanges = {
   {49847, 49847}
 }
-
 function StringUtils.CheckUtf8StrCJKLegal(Str)
   local IllegalRange = {}
   local Index = 1
-  
   local function CheckCharInRange(Ch, ByteCount, CharsRange)
     local UtfCh = 0
     for i = 1, ByteCount do
@@ -56,7 +51,6 @@ function StringUtils.CheckUtf8StrCJKLegal(Str)
     end
     return false
   end
-  
   for Ch, _ in string.gmatch(Str, utf8.charpattern) do
     local ChBytes = {
       string.byte(Ch)
@@ -83,5 +77,4 @@ function StringUtils.CheckUtf8StrCJKLegal(Str)
   local LegalRes = 0 == #IllegalRange
   return LegalRes, IllegalRange
 end
-
 return StringUtils

@@ -6,7 +6,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.UI_PC.Common.LSFocusComp"
 }
-
 function M:OpenPanel()
   if self:IsPanelOpened() then
     return
@@ -28,7 +27,6 @@ function M:OpenPanel()
   self:AddLSFocusTarget(nil, self.FilterSort, nil, true)
   self.bNeedRefresh = false
 end
-
 function M:ClosePanel(OnPanelClosed)
   if not self:IsPanelOpened() then
     return
@@ -38,29 +36,25 @@ function M:ClosePanel(OnPanelClosed)
   self:PlayAnimation(self.Out)
   self.List_Character:RequestPlayEntriesAnim()
 end
-
 function M:IsPanelOpened()
   return self:GetVisibility() ~= ESlateVisibility.Collapsed
 end
-
 function M:SetDisplayCharacter(SettedCharacterData, OwnedCharacterDataMap)
   if not SettedCharacterData then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\174\190\231\189\174\229\177\149\231\164\186\232\167\146\232\137\178\229\164\177\232\180\165\239\188\140SettedCharacterData \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Invite, "设置展示角色失败", "设置展示角色失败，SettedCharacterData 为空。")
     return
   end
   if not OwnedCharacterDataMap then
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\233\130\128\231\186\166\231\179\187\231\187\159\233\148\153\232\175\175", "\232\174\190\231\189\174\229\177\149\231\164\186\232\167\146\232\137\178\229\164\177\232\180\165\239\188\140OwnedCharacterDataMap \228\184\186\231\169\186\227\128\130")
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Invite, "设置展示角色失败", "设置展示角色失败，OwnedCharacterDataMap 为空。")
     return
   end
   self:SetOwnedCharacterDataMap(OwnedCharacterDataMap)
   self:SetSettedCharacterData(SettedCharacterData, true)
 end
-
 function M:SetReverseSorting(bNewReverseSorting)
   self.bReverseSorting = bNewReverseSorting
   self:RefreshCharacterTileView(true)
 end
-
 function M:RefreshRedDot()
   local CharacterContentList = self.CharacterContentList
   if not CharacterContentList then
@@ -78,7 +72,6 @@ function M:RefreshRedDot()
     end
   end
 end
-
 function M:RefreshCharacterTileView(bRefreshSort)
   local SettedCharacterItem, CharacterItemArray
   if not self.CharacterContentList then
@@ -101,47 +94,38 @@ function M:RefreshCharacterTileView(bRefreshSort)
     self:EnsureCharacterTileViewFullPage()
   end)
 end
-
 function M:BindOnSettedCharacterDataChanged(OnSettedCharacterDataChanged)
   self.OnSettedCharacterDataChanged = OnSettedCharacterDataChanged
 end
-
 function M:ExecuteOnSettedCharacterDataChanged(CharacterData)
   if self.OnSettedCharacterDataChanged then
     self.OnSettedCharacterDataChanged(CharacterData)
   end
 end
-
 function M:BindOnSelectedCharacterDataChanged(OnSelectedCharacterDataChanged)
   self.OnSelectedCharacterDataChanged = OnSelectedCharacterDataChanged
 end
-
 function M:ExecuteOnSelectedCharacterDataChanged(CharacterData)
   if self.OnSelectedCharacterDataChanged then
     self.OnSelectedCharacterDataChanged(CharacterData)
   end
 end
-
 function M:SetOnPanelClosed(OnPanelClosed)
   self.OnPanelClosed = OnPanelClosed
 end
-
 function M:ExecuteOnPanelClosed()
   if self.OnPanelClosed then
     self.OnPanelClosed()
   end
 end
-
 function M:BindOnCloseButtonClicked(OnCloseButtonClicked)
   self.OnCloseButtonClicked = OnCloseButtonClicked
 end
-
 function M:ExecuteOnCloseButtonClicked()
   if self.OnCloseButtonClicked then
     self.OnCloseButtonClicked()
   end
 end
-
 function M:Initialize(Initializer)
   M.Super.Initialize(self, Initializer)
   self.ChangeCharacterButtonText = GText("UI_Character_Replacement")
@@ -159,7 +143,6 @@ function M:Initialize(Initializer)
   self.SelectCharacterSound = "event:/ui/armory/click_select_role"
   self.ChangeCharacterSound = "event:/ui/common/role_replace"
 end
-
 function M:Construct()
   self:BindToAnimationFinished(self.In, {
     self,
@@ -171,12 +154,10 @@ function M:Construct()
   })
   self.Btn_Close.OnClicked:Add(self, self.HandleOnCloseButtonClicked)
 end
-
 function M:Init(Parent)
   self.FilterSort:Init(Parent, self.SortRules, self.SortType)
   self.FilterSort:BindEventOnSortTypeChanged(self, self.HandleOnSortTypeChanged)
 end
-
 function M:Destruct()
   self:UnbindFromAnimationFinished(self.In, {
     self,
@@ -188,19 +169,15 @@ function M:Destruct()
   })
   self.CharacterContentList = nil
 end
-
 function M:HandleOnInAnimationFinished()
 end
-
 function M:HandleOnOutAnimationFinished()
   self:SetVisibility(ESlateVisibility.Collapsed)
   self:ExecuteOnPanelClosed()
 end
-
 function M:HandleOnCloseButtonClicked()
   self:ExecuteOnCloseButtonClicked()
 end
-
 function M:HandleOnCharacterItemClicked(CharacterItem)
   if CharacterItem.IsEmpty then
     return
@@ -211,15 +188,12 @@ function M:HandleOnCharacterItemClicked(CharacterItem)
   self:ExecuteOnSettedCharacterDataChanged(CharacterData)
   AudioManager(self):PlayUISound(self, self.ChangeCharacterSound, nil, nil)
 end
-
 function M:HandleOnSortTypeChanged()
   self:SetReverseSorting(not self.bReverseSorting)
 end
-
 function M:HandleOnChangeNPCButtonClicked(CharacterData)
   self:SetSettedCharacterData(CharacterData)
 end
-
 function M:CreateCharacterItemInfo()
   local SettedCharacterItem
   local CharacterItemArray = {}
@@ -235,7 +209,6 @@ function M:CreateCharacterItemInfo()
   end
   return SettedCharacterItem, CharacterItemArray
 end
-
 function M:RefreshCharacterItemInfo()
   local SettedCharacterItem
   local CharacterItemArray = self.CharacterContentList
@@ -253,7 +226,6 @@ function M:RefreshCharacterItemInfo()
   end
   return SettedCharacterItem, CharacterItemArray
 end
-
 function M:SortCharacterItemArray(CharacterItemArray)
   table.sort(CharacterItemArray, function(a, b)
     if a.bPriority and not b.bPriority then
@@ -274,13 +246,11 @@ function M:SortCharacterItemArray(CharacterItemArray)
     end
   end)
 end
-
 function M:FillCharacterTileView(CharacterItemArray)
   for _, CharacterItem in pairs(CharacterItemArray) do
     self.List_Character:AddItem(CharacterItem)
   end
 end
-
 function M:EnsureCharacterTileViewFullPage()
   local ItemNum = self.List_Character:GetNumItems()
   local FullPageCharacterCount = UIUtils.GetTileViewContentMaxCount(self.List_Character)
@@ -289,7 +259,6 @@ function M:EnsureCharacterTileViewFullPage()
     self.List_Character:AddItem(CharacterItem)
   end
 end
-
 function M:CreateCharacterItem(CharacterData, IsSelected, Item)
   local CharacterItem = Item
   if not Item then
@@ -322,16 +291,13 @@ function M:CreateCharacterItem(CharacterData, IsSelected, Item)
   }
   return CharacterItem
 end
-
 function M:SetSettedCharacterData(NewSettedCharacterData, bRefreshSort)
   self.CurrentSettedCharacterData = NewSettedCharacterData
   self:RefreshCharacterTileView(bRefreshSort)
 end
-
 function M:SetOwnedCharacterDataMap(NewOwnedCharacterDataMap)
   self.OwnedCharacterDataMap = NewOwnedCharacterDataMap
 end
-
 function M:SetSelectedCharacterItem(NewSelectedCharacterItem)
   if self.CurrentSelectedCharacterItem == NewSelectedCharacterItem then
     return
@@ -350,14 +316,11 @@ function M:SetSelectedCharacterItem(NewSelectedCharacterItem)
   end
   self.CurrentSelectedCharacterItem = NewSelectedCharacterItem
 end
-
 function M:OnGamePadKeyDown(MyGeometry, InKeyEvent)
   return self:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.List_Character
 end
-
 AssembleComponents(M)
 return M

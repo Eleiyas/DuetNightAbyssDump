@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_ArmoryInteractiveComponent_C = Class()
-
 function BP_ArmoryInteractiveComponent_C:LoadUI()
   self.Overridden.LoadUI(self)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -9,5 +8,4 @@ function BP_ArmoryInteractiveComponent_C:LoadUI()
     UIManger:CloseResidentUI()
   end
 end
-
 return BP_ArmoryInteractiveComponent_C

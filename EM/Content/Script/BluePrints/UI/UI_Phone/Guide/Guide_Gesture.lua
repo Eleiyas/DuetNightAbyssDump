@@ -1,11 +1,9 @@
 require("UnLua")
 require("DataMgr")
 local Guide_Gesture = Class("BluePrints.UI.BP_UIState_C")
-
 function Guide_Gesture:GuideUIInit_ContentBlock(UIKey, MessageId, MessageSustainTime, Gesture, MessageLoc, MessageLocOffset)
   self:Init(MessageId, MessageSustainTime, Gesture, MessageLoc, MessageLocOffset)
 end
-
 function Guide_Gesture:Init(MessageId, MessageSustainTime, Gesture, MessageLoc, MessageLocOffset)
   local Message = DataMgr.Message[MessageId]
   if not Message then
@@ -51,7 +49,6 @@ function Guide_Gesture:Init(MessageId, MessageSustainTime, Gesture, MessageLoc, 
   EventManager:AddEvent(EventID.LoadUI, self, self.LoadUIEvent)
   EventManager:AddEvent(EventID.UnLoadUI, self, self.UnLoadUIEvent)
 end
-
 function Guide_Gesture:SetSelfAppearance()
   local NowTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
   if self.MessageSustainTime > 0 and NowTime >= self.LastTime then
@@ -65,7 +62,6 @@ function Guide_Gesture:SetSelfAppearance()
     self:AddTimer(TimerTime, self.SetSelfAppearance, false, 0, "ShowGestureTimer")
   end
 end
-
 function Guide_Gesture:PlayInAnimation()
   if self.IsPlayInAnimation then
     return
@@ -83,7 +79,6 @@ function Guide_Gesture:PlayInAnimation()
     self:PlayAnimation(self.LoopAnimation, 0, 0)
   end)
 end
-
 function Guide_Gesture:PlayOutAnimation()
   self:PlayAnimationForward(self.OutAnimation)
   local TimerTime = self.OutAnimation:GetEndTime()
@@ -92,7 +87,6 @@ function Guide_Gesture:PlayOutAnimation()
     self:RemoveTimer("ShowGestureTimer")
   end
 end
-
 function Guide_Gesture:Close()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -106,7 +100,6 @@ function Guide_Gesture:Close()
   EventManager:RemoveEvent(EventID.LoadUI, self)
   EventManager:RemoveEvent(EventID.UnLoadUI, self)
 end
-
 function Guide_Gesture:CreateSelfGuideBubble()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -116,7 +109,6 @@ function Guide_Gesture:CreateSelfGuideBubble()
   end
   self:CalcBubblePosition()
 end
-
 function Guide_Gesture:CalcBubblePosition()
   local BubbleSize = self.Bubble:GetTextRealSize()
   local BubblePosition
@@ -124,7 +116,6 @@ function Guide_Gesture:CalcBubblePosition()
   BubblePosition = self.WidgetPos + TouchBublleDistance * self.MessageLoc + self.MessageLocOffset
   self:SetBubblePosition(BubblePosition)
 end
-
 function Guide_Gesture:SetBubblePosition(BubblePosition)
   if self.BubblePosition ~= BubblePosition then
     self.Bubble:SetWidgetOpacity(0)
@@ -137,7 +128,6 @@ function Guide_Gesture:SetBubblePosition(BubblePosition)
   local BubbleSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Bubble.Panel_Text)
   BubbleSlot:SetPosition(BubblePosition)
 end
-
 function Guide_Gesture:GetPositionScale(MessgaeLoc)
   self.BublleAddToViewport = true
   local PositionScale = FVector2D(0, 0)
@@ -159,12 +149,10 @@ function Guide_Gesture:GetPositionScale(MessgaeLoc)
   end
   return PositionScale
 end
-
 function Guide_Gesture:OnGestureRespond()
   self.LastTime = 0
   self:SetSelfAppearance()
 end
-
 function Guide_Gesture:LoadUIEvent(UIKey)
   if not self.UIKey and UIManager(self):StateCount() > 0 then
     self.UIKey = UIKey
@@ -178,7 +166,6 @@ function Guide_Gesture:LoadUIEvent(UIKey)
     end
   end
 end
-
 function Guide_Gesture:UnLoadUIEvent(UIKey)
   if self.UIKey == UIKey then
     self:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
@@ -190,5 +177,4 @@ function Guide_Gesture:UnLoadUIEvent(UIKey)
     self.UIKey = nil
   end
 end
-
 return Guide_Gesture

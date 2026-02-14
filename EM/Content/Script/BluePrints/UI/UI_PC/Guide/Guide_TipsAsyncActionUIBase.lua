@@ -2,7 +2,6 @@ require("UnLua")
 local Guide_TipsAsyncActionUIBase = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function Guide_TipsAsyncActionUIBase:OnTipBegin(Duration, Callback, InAnim, OutAnim)
   if nil ~= Duration and Duration <= 0 then
     return false
@@ -24,7 +23,6 @@ function Guide_TipsAsyncActionUIBase:OnTipBegin(Duration, Callback, InAnim, OutA
   end
   return true
 end
-
 function Guide_TipsAsyncActionUIBase:OnTipEnd()
   if self.IsTipEnd then
     return
@@ -40,7 +38,6 @@ function Guide_TipsAsyncActionUIBase:OnTipEnd()
     self:OnTipRealEnd()
   end
 end
-
 function Guide_TipsAsyncActionUIBase:OnTipRealEnd()
   self:UnbindAllFromAnimationFinished(self.OutAnim)
   self:Hide()
@@ -52,5 +49,4 @@ function Guide_TipsAsyncActionUIBase:OnTipRealEnd()
     self.OnGuideEnd:Broadcast()
   end
 end
-
 return Guide_TipsAsyncActionUIBase

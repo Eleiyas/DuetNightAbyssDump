@@ -4,7 +4,6 @@ local Deque = StrLib.Deque
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.UITopTipsList = Deque.New()
   self.ItemDataInfoDict = {}
@@ -20,7 +19,6 @@ function M:Construct()
   self.Text_Hint:SetText(GText("UI_Read_Click"))
   self:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:Destruct()
   self.bShowing = false
   self.ItemType = nil
@@ -28,13 +26,12 @@ function M:Destruct()
   self.ItemDataInfoDict = {}
   M.Super.Destruct(self)
 end
-
 function M:ShowPickupItem(PickUpItemInfo)
   if PickUpItemInfo then
     self.ItemType = PickUpItemInfo.ItemType
     self.ItemId = PickUpItemInfo.ItemId
     self.ItemCount = PickUpItemInfo.ItemCount
-    assert(DataMgr[self.ItemType][self.ItemId], "\228\188\160\229\133\165\230\142\137\232\144\189\231\137\169\231\154\132\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168\239\188\154Type:" .. self.ItemType .. " Id:" .. self.ItemId)
+    assert(DataMgr[self.ItemType][self.ItemId], "传入掉落物的信息不存在：Type:" .. self.ItemType .. " Id:" .. self.ItemId)
     self.bShowing = true
     self.bHover = false
     if PickUpItemInfo.IsNew then
@@ -71,7 +68,7 @@ function M:ShowPickupItem(PickUpItemInfo)
         for _, v in pairs(PickUpItemInfo.AdditionalParam.AffixList) do
           if DataMgr.PetEntry[v] then
             local Widget = UIManager(self):_CreateWidgetNew("PetEntryItemDetails")
-            assert(DataMgr.PetEntry[v].IconS, "\230\156\170\233\133\141\231\189\174\229\174\160\231\137\169\229\164\169\232\181\139Icons", v)
+            assert(DataMgr.PetEntry[v].IconS, "未配置宠物天赋Icons", v)
             Widget.Icon_Entry:SetBrushResourceObject(LoadObject(DataMgr.PetEntry[v].IconS))
             Widget.Text_Entry:SetText(GText(DataMgr.PetEntry[v].PetEntryName))
             if 3 == DataMgr.PetEntry[v].Rarity then
@@ -128,7 +125,6 @@ function M:ShowPickupItem(PickUpItemInfo)
     AudioManager(self):PlayUISound(self, "event:/ui/common/pick_up_item_add_important", nil, nil)
   end
 end
-
 function M:PlayInAnim(Rarity, bSpecialColor)
   local RarityWidget = self.VX_Bg_glowline
   self.VX_Bg_glowline:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -139,37 +135,37 @@ function M:PlayInAnim(Rarity, bSpecialColor)
   end
   local FontMaterial = self.Text_Name:GetDynamicFontMaterial()
   local QualityMaterial = self.Bg_Quality:GetDynamicMaterial()
+  FontMaterial:SetTextureParameterValue("IconTex", self.Img_Text_0)
   if FontMaterial then
     if 5 == Rarity then
       QualityMaterial:SetTextureParameterValue("MainTex", self.Yellow)
       RarityWidget:SetColorAndOpacity(self.Glow_Yellow)
       self.VX_Bg_glow:SetColorAndOpacity(self.Glow_Yellow)
-      FontMaterial:SetVectorParameterValue("MainColor", self.Font_Yellow)
+      FontMaterial:SetTextureParameterValue("IconTex", self.Img_Text_5)
     elseif 4 == Rarity then
       QualityMaterial:SetTextureParameterValue("MainTex", self.Purple)
       RarityWidget:SetColorAndOpacity(self.Glow_Purple)
       self.VX_Bg_glow:SetColorAndOpacity(self.Glow_Purple)
-      FontMaterial:SetVectorParameterValue("MainColor", self.Font_Purple)
+      FontMaterial:SetTextureParameterValue("IconTex", self.Img_Text_4)
     elseif 3 == Rarity then
       QualityMaterial:SetTextureParameterValue("MainTex", self.Blue)
       RarityWidget:SetColorAndOpacity(self.Glow_Blue)
       self.VX_Bg_glow:SetColorAndOpacity(self.Glow_Blue)
-      FontMaterial:SetVectorParameterValue("MainColor", self.Font_Blue)
+      FontMaterial:SetTextureParameterValue("IconTex", self.Img_Text_3)
     elseif 2 == Rarity then
       QualityMaterial:SetTextureParameterValue("MainTex", self.Green)
       RarityWidget:SetColorAndOpacity(self.Glow_Green)
       self.VX_Bg_glow:SetColorAndOpacity(self.Glow_Green)
-      FontMaterial:SetVectorParameterValue("MainColor", self.Font_Green)
+      FontMaterial:SetTextureParameterValue("IconTex", self.Img_Text_2)
     else
       QualityMaterial:SetTextureParameterValue("MainTex", self.White)
       RarityWidget:SetColorAndOpacity(self.Glow_White)
       self.VX_Bg_glow:SetColorAndOpacity(self.Glow_White)
-      FontMaterial:SetVectorParameterValue("MainColor", self.Font_White)
+      FontMaterial:SetTextureParameterValue("IconTex", self.Img_Text_1)
     end
   end
   self:PlayAnimation(self.In)
 end
-
 function M:SetPetStar(StarNum)
   if not StarNum then
     return
@@ -186,11 +182,10 @@ function M:SetPetStar(StarNum)
     end
   end
 end
-
 function M:PopSpecialDropQueue()
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
   if not BattleMain or not BattleMain.Pos_SpecialDrops then
-    DebugPrint("ZDX_\230\137\190\228\184\141\229\136\176BattleMain\230\136\150\231\137\185\230\174\138\230\142\137\232\144\189\231\137\169UI")
+    DebugPrint("ZDX_找不到BattleMain或特殊掉落物UI")
     return
   end
   if self.UITopTipsList:IsEmpty() then
@@ -207,14 +202,12 @@ function M:PopSpecialDropQueue()
   self.UITopTipsList:PopFront()
   self.ItemDataInfoDict[TopTipsInfo.ItemType][TopTipsInfo.ItemId] = nil
 end
-
 function M:TryToViewItemDetail()
   if not self.IsRead then
     return
   end
   UIManager(self):LoadUINew("ItemInformation", self.ItemId, "Read")
 end
-
 function M:OnBtnHovered()
   if not self.IsRead then
     return
@@ -222,7 +215,6 @@ function M:OnBtnHovered()
   self.bHover = true
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if not self.IsRead then
     return
@@ -230,14 +222,12 @@ function M:OnBtnUnhovered()
   self.bHover = false
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.UnHover)
 end
-
 function M:OnBtnPressed()
   if not self.IsRead then
     return
   end
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Press)
 end
-
 function M:OnBtnReleased()
   if not self.IsRead then
     return
@@ -248,18 +238,14 @@ function M:OnBtnReleased()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
   end
 end
-
 function M:PlayOutAnim()
   local function func()
     self.bShowing = false
-    
     self:StopListeningForAllInputActions()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Out)
   end
-  
   self:AddTimer(3, func, false, nil, "PlayOutAnim")
 end
-
 function M:OnAnimationFinished(Anim)
   if Anim == self.Click then
     self:TryToViewItemDetail()
@@ -270,7 +256,6 @@ function M:OnAnimationFinished(Anim)
     self:PopSpecialDropQueue()
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == UE4.ECommonInputType.Gamepad then
     self:InitGamepadView(CurGamepadName)
@@ -278,7 +263,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self:InitPCView(CurGamepadName)
   end
 end
-
 function M:InitGamepadView(CurGamepadName)
   if self.IsRead then
     local IconList = UIUtils.GetIconListByActionName("ItemDetail")
@@ -297,19 +281,17 @@ function M:InitGamepadView(CurGamepadName)
     })
   end
 end
-
 function M:InitPCView()
   if self.IsRead then
     self.Key_Check:CreateCommonKey({
       KeyInfoList = {
         {
           Type = "Text",
-          Text = GText(CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("ItemDetail")))
+          Text = CommonUtils:GetActionMappingKeyName("ItemDetail")
         }
       },
       Desc = GText("UI_CTL_Read")
     })
   end
 end
-
 return M

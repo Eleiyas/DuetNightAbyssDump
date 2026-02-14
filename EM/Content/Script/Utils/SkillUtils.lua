@@ -1,6 +1,5 @@
 local StringUtils = require("Utils.StringUtils")
 local SkillUtils = {}
-
 function SkillUtils.NeedSplitEval(Str, Rep)
   local GText = _ENV.GText
   local ReStr = "[" .. Rep .. "]" .. "([^" .. Rep .. "]*)" .. "[" .. Rep .. "]"
@@ -9,14 +8,13 @@ function SkillUtils.NeedSplitEval(Str, Rep)
       W = "''"
     end
     local LuaStr = "return " .. W
-    local load_fun = loadstring or load
+    local load_fun = _G.loadstring or load
     local f = load_fun(LuaStr)
     return ""
   end)
   local _NeedSplitEval = string.match(Str, ReStr)
   return _NeedSplitEval
 end
-
 function SkillUtils.SplitEval(Str, Rep, Args)
   local GText = _ENV.GText
   local ReStr = "[" .. Rep .. "]" .. "([^" .. Rep .. "]*)" .. "[" .. Rep .. "]"
@@ -36,7 +34,7 @@ function SkillUtils.SplitEval(Str, Rep, Args)
     setmetatable(Args, {
       __index = _G
     })
-    local load_fun = loadstring or load
+    local load_fun = _G.loadstring or load
     local f = load_fun(LuaStr, LuaStr, "t", Args)
     local Ret = f()
     local RetNum = tonumber(Ret)
@@ -55,30 +53,37 @@ function SkillUtils.SplitEval(Str, Rep, Args)
     end
     return tostring(Ret)
   end)
-  return Str, IsNum
+  return Str
 end
-
 function SkillUtils.CalcSkillDescValue(Desc, SkillLevel, Args)
-  local Str, IsNum = SkillUtils.CalcSkillDesc(Desc, SkillLevel, Args)
+  local Str = SkillUtils.CalcSkillDesc(Desc, SkillLevel, Args, true)
   local NewStr = tonumber(Str)
   if NewStr then
     return NewStr
   end
   return Str
 end
-
-function SkillUtils.CalcSkillDesc(Desc, SkillLevel, Args)
+function SkillUtils.CalcSkillDesc(Desc, SkillLevel, Args, ...)
   local NewDesc = string.gsub(Desc, "#", "SkillUtils.NewGrowDesc(" .. SkillLevel .. ").")
+  local IgnoreFranch = (...)
+  if not IgnoreFranch then
+    local index = string.find(NewDesc, "%%", 1)
+    if index and CommonConst.SystemLanguage == CommonConst.SystemLanguages.FR then
+      NewDesc = string.gsub(NewDesc, "%%", " %%")
+    end
+  end
   local ok, ret = pcall(SkillUtils.SplitEval, NewDesc, "$", Args)
   if not ok then
     if GWorld.GameInstance then
-      Battle(GWorld.GameInstance):ShowBattleError("\232\175\134\229\136\171\230\138\128\232\131\189\230\143\143\232\191\176\227\128\144" .. tostring(Desc) .. "\227\128\145\229\164\177\232\180\165!\229\174\158\233\153\133\230\143\143\232\191\176\228\184\186\227\128\144" .. tostring(NewDesc) .. "\227\128\145\232\175\183\231\173\150\229\136\146\230\163\128\230\159\165\232\161\168\230\160\188\229\161\171\229\134\153\nError:" .. tostring(ret))
+      Battle(GWorld.GameInstance):ShowBattleError("识别技能描述【" .. tostring(Desc) .. "】失败!实际描述为【" .. tostring(NewDesc) .. "】请策划检查表格填写\nError:" .. tostring(ret))
     end
     return NewDesc
   end
+  if not IgnoreFranch then
+    ret = CommonUtils.FormatNumInFrench(ret)
+  end
   return ret
 end
-
 function SkillUtils.GetSkillAllDesc(SkillId, SkillLevel, SkillGrade, Avatar, Target)
   SkillGrade = SkillGrade or 0
   local Result = {}
@@ -100,7 +105,7 @@ function SkillUtils.GetSkillAllDesc(SkillId, SkillLevel, SkillGrade, Avatar, Tar
         local AttrConfigIdList = SkillData.SkillDescHints and SkillData.SkillDescHints[Index] or {}
         local AttrDesc = GText(DescKey)
         local Args = {Attrs = Attrs, ImpactAttrs = AttrConfigIdList}
-        local ValueStr = SkillUtils.CalcSkillDesc(SkillData.SkillDescValues[Index], SkillLevel, Args)
+        local ValueStr = SkillUtils.CalcSkillDesc(SkillData.SkillDescValues[Index], SkillLevel, Args, true)
         ValueStr = SkillUtils.FormatDescValue2(ValueStr)
         local AttrHint = ""
         local Caesura = GText("Caesura")
@@ -125,7 +130,6 @@ function SkillUtils.GetSkillAllDesc(SkillId, SkillLevel, SkillGrade, Avatar, Tar
   end
   return Result
 end
-
 function SkillUtils.GetSkillDesc(SkillId, SkillLevel, ExpectLevel, SkillGrade)
   local Desc
   SkillGrade = SkillGrade or 0
@@ -143,20 +147,20 @@ function SkillUtils.GetSkillDesc(SkillId, SkillLevel, ExpectLevel, SkillGrade)
           Desc, CastTo = SkillUtils.ReplaceDescValueTypeCast(Desc, i)
           local Percent = string.match(DescValue, "%%") or ""
           local ValStr = ""
-          
           local function SkillGrowDesc(DescValue, BaseLevel, ExpectLevel, Percent)
-            local OldValStr = SkillUtils.CalcSkillDesc(DescValue, BaseLevel) .. Percent
-            local NewValStr = SkillUtils.CalcSkillDesc(DescValue, ExpectLevel) .. Percent
+            local Ret
+            local OldValStr = SkillUtils.CalcSkillDesc(DescValue, BaseLevel, nil, true) .. Percent
+            local NewValStr = SkillUtils.CalcSkillDesc(DescValue, ExpectLevel, nil, true) .. Percent
             if OldValStr ~= NewValStr then
               OldValStr = SkillUtils.FormatDescValue1(OldValStr, CastTo)
               NewValStr = SkillUtils.FormatDescValue1(NewValStr, CastTo)
-              return OldValStr .. " -> " .. string.format("<H>%s</>", NewValStr) or NewValStr
+              Ret = OldValStr .. " -> " .. string.format("<H>%s</>", NewValStr) or NewValStr
             else
               NewValStr = SkillUtils.FormatDescValue1(NewValStr, CastTo)
-              return NewValStr
+              Ret = NewValStr
             end
+            return Ret
           end
-          
           ValStr = "" == ValStr and SkillGrowDesc(DescValue, SkillLevel, ExpectLevel, Percent) or ValStr
           Desc = string.gsub(Desc, "#" .. i, ValStr)
         end
@@ -165,7 +169,6 @@ function SkillUtils.GetSkillDesc(SkillId, SkillLevel, ExpectLevel, SkillGrade)
   end
   return Desc
 end
-
 function SkillUtils.CalcSkillCanLvup(SkillId, CurLevel, TarLevel, CharUuid)
   local ResourceUse = {}
   local CharBreakLevelNeed = 0
@@ -229,7 +232,6 @@ function SkillUtils.CalcSkillCanLvup(SkillId, CurLevel, TarLevel, CharUuid)
     IsBreakLevelEnough = IsBreakLevelEnough
   }
 end
-
 function SkillUtils.GetMaxLevel(SkillId)
   local SkillLevelUpInfo = DataMgr.SkillLevelUp[SkillId]
   if SkillLevelUpInfo then
@@ -237,18 +239,17 @@ function SkillUtils.GetMaxLevel(SkillId)
   end
   return 1
 end
-
 function SkillUtils.GrowDescIndex(_FinalProxy, Key)
   local RawData = rawget(_FinalProxy, "RawData")
-  assert(RawData, "\230\137\190\228\184\141\229\136\176DataMgr." .. tostring(_FinalProxy.DataProxy._GrowType) .. "[" .. tostring(_FinalProxy.ID) .. "]\231\154\132\230\149\176\230\141\174")
+  assert(RawData, "找不到DataMgr." .. tostring(_FinalProxy.DataProxy._GrowType) .. "[" .. tostring(_FinalProxy.ID) .. "]的数据")
   local Value = RawData[Key]
-  assert(Value, "\230\137\190\228\184\141\229\136\176DataMgr." .. tostring(_FinalProxy.DataProxy._GrowType) .. "[" .. tostring(_FinalProxy.ID) .. "]\233\135\140\230\159\144\228\184\170Key[" .. tostring(Key) .. "]\231\154\132\230\149\176\230\141\174")
+  assert(Value, "找不到DataMgr." .. tostring(_FinalProxy.DataProxy._GrowType) .. "[" .. tostring(_FinalProxy.ID) .. "]里某个Key[" .. tostring(Key) .. "]的数据")
   local GrowData = rawget(_FinalProxy, "GrowData")
   if type(Value) == "string" and string.sub(Value, 1, 1) == "#" then
     assert(GrowData, tostring(rawget(_FinalProxy, "Error")))
     local Index = tonumber(string.sub(Value, 2, -1))
     local IndexData = GrowData[Index]
-    assert(IndexData, tostring(rawget(_FinalProxy, "Error")) .. "Index\228\184\186[" .. tostring(Index) .. "]")
+    assert(IndexData, tostring(rawget(_FinalProxy, "Error")) .. "Index为[" .. tostring(Index) .. "]")
     Value = IndexData.Value
   end
   if type(Value) ~= "table" then
@@ -256,7 +257,6 @@ function SkillUtils.GrowDescIndex(_FinalProxy, Key)
   end
   return SkillUtils.CreateFinalProxy(_FinalProxy.DataProxy, _FinalProxy.ID, GrowData, Value, rawget(_FinalProxy, "Error"))
 end
-
 function SkillUtils.CreateFinalProxy(_DataProxy, ID, GrowData, RawData, Error)
   local _FinalProxy = {
     DataProxy = _DataProxy,
@@ -270,7 +270,6 @@ function SkillUtils.CreateFinalProxy(_DataProxy, ID, GrowData, RawData, Error)
   })
   return _FinalProxy
 end
-
 function SkillUtils.NewGrowDesc(SkillLevel)
   local bDistribution = UE4 and UE4.URuntimeCommonFunctionLibrary.IsDistribution()
   local _Proxy = {_SkillLevel = SkillLevel}
@@ -299,23 +298,21 @@ function SkillUtils.NewGrowDesc(SkillLevel)
   })
   return _Proxy
 end
-
 function SkillUtils.GetGrowData(GrowType, ID, SkillLevel)
   local _Data = DataMgr.SkillGrow[GrowType]
   if not _Data then
-    return nil, "\231\188\186\229\176\145\231\177\187\229\158\139\228\184\186[" .. tostring(GrowType) .. "]\231\154\132\230\136\144\233\149\191\230\149\176\230\141\174"
+    return nil, "缺少类型为[" .. tostring(GrowType) .. "]的成长数据"
   end
   _Data = _Data[ID]
   if not _Data then
-    return nil, "\231\188\186\229\176\145\231\177\187\229\158\139\228\184\186[" .. tostring(GrowType) .. "]\231\188\150\229\143\183\228\184\186[" .. tostring(ID) .. "]\231\154\132\230\136\144\233\149\191\230\149\176\230\141\174"
+    return nil, "缺少类型为[" .. tostring(GrowType) .. "]编号为[" .. tostring(ID) .. "]的成长数据"
   end
   _Data = _Data[SkillLevel]
   if not _Data then
-    return nil, "\231\188\186\229\176\145\231\177\187\229\158\139\228\184\186[" .. tostring(GrowType) .. "]\231\188\150\229\143\183\228\184\186[" .. tostring(ID) .. "]\231\173\137\231\186\167\228\184\186[" .. tostring(SkillLevel) .. "]\231\154\132\230\136\144\233\149\191\230\149\176\230\141\174"
+    return nil, "缺少类型为[" .. tostring(GrowType) .. "]编号为[" .. tostring(ID) .. "]等级为[" .. tostring(SkillLevel) .. "]的成长数据"
   end
-  return _Data, "\231\188\186\229\176\145\231\177\187\229\158\139\228\184\186[" .. tostring(GrowType) .. "]\231\188\150\229\143\183\228\184\186[" .. tostring(ID) .. "]\231\173\137\231\186\167\228\184\186[" .. tostring(SkillLevel) .. "]\231\154\132\230\136\144\233\149\191\230\149\176\230\141\174"
+  return _Data, "缺少类型为[" .. tostring(GrowType) .. "]编号为[" .. tostring(ID) .. "]等级为[" .. tostring(SkillLevel) .. "]的成长数据"
 end
-
 function SkillUtils.GrowProxyBySkillLevel(GrowType, ID, SkillLevel, RawData, Args)
   local GrowProxy = {
     _GrowType = GrowType,
@@ -326,7 +323,6 @@ function SkillUtils.GrowProxyBySkillLevel(GrowType, ID, SkillLevel, RawData, Arg
   }
   return SkillUtils._GrowProxy(GrowProxy, GrowType, ID, RawData, Args)
 end
-
 function SkillUtils.GrowProxy(GrowType, ID, SkillLevelSource, RawData, Args)
   local GrowProxy = {
     _GrowType = GrowType,
@@ -340,7 +336,6 @@ function SkillUtils.GrowProxy(GrowType, ID, SkillLevelSource, RawData, Args)
   end
   return SkillUtils._GrowProxy(GrowProxy, GrowType, ID, RawData, Args)
 end
-
 function SkillUtils._GrowProxy(GrowProxy, GrowType, ID, RawData, Args)
   local NeedSplitEvalProxy = false
   if DataMgr.SkillSplitEval[GrowType] and DataMgr.SkillSplitEval[GrowType][ID] then
@@ -369,7 +364,6 @@ function SkillUtils._GrowProxy(GrowProxy, GrowType, ID, RawData, Args)
   })
   return SkillUtils.SplitEvalProxy(NeedSplitEvalProxy, GrowProxy._SkillLevel, GrowProxy, GrowProxy._Args)
 end
-
 function SkillUtils.SplitEvalProxy(NeedSplitEvalProxy, SkillLevel, RawData, Args)
   if not NeedSplitEvalProxy then
     return RawData
@@ -391,7 +385,6 @@ function SkillUtils.SplitEvalProxy(NeedSplitEvalProxy, SkillLevel, RawData, Args
   })
   return SplitEvalProxy
 end
-
 function SkillUtils.HasAnyUpgradeableSkill(Char)
   if not Char then
     return
@@ -408,7 +401,6 @@ function SkillUtils.HasAnyUpgradeableSkill(Char)
   end
   return false
 end
-
 function SkillUtils.CalcSpCostByData(Player, SkillData, Char)
   local Avatar = GWorld:GetAvatar()
   local Attrs = (Char or Avatar.Chars[Avatar.CurrentChar]):DumpDefaultBattleAttr(Avatar).TotalValues
@@ -433,7 +425,6 @@ function SkillUtils.CalcSpCostByData(Player, SkillData, Char)
   local SkillEfficiency = math.min(Attrs.SkillEfficiency, Const.MaxSkillEfficiency)
   return Player:ApplySkillEfficiencyByAttr(CostSpNum, SkillEfficiency) or 0
 end
-
 function SkillUtils.CalcWeaponPassiveEffectsDesc(WeaponData, GradeLevel, ComparedGradeLevel)
   local data = DataMgr.BattleWeapon[WeaponData.WeaponId]
   local SkillDesc
@@ -443,10 +434,10 @@ function SkillUtils.CalcWeaponPassiveEffectsDesc(WeaponData, GradeLevel, Compare
       local CastTo
       for i, value in ipairs(data.PassiveEffectsDescValues) do
         SkillDesc, CastTo = SkillUtils.ReplaceDescValueTypeCast(SkillDesc, i)
-        local valueStr = SkillUtils.CalcSkillDesc(value, math.min(DataMgr.DataConst.MaxSkillLevel, (GradeLevel or WeaponData.GradeLevel or 0) + 1))
+        local valueStr = SkillUtils.CalcSkillDesc(value, math.min(DataMgr.DataConst.MaxSkillLevel, (GradeLevel or WeaponData.GradeLevel or 0) + 1), nil, true)
         valueStr = SkillUtils.FormatDescValue1(valueStr, CastTo)
         if ComparedGradeLevel then
-          local ComparedValueStr = SkillUtils.CalcSkillDesc(value, math.min(DataMgr.DataConst.MaxSkillLevel, (ComparedGradeLevel or 0) + 1))
+          local ComparedValueStr = SkillUtils.CalcSkillDesc(value, math.min(DataMgr.DataConst.MaxSkillLevel, (ComparedGradeLevel or 0) + 1), nil, true)
           ComparedValueStr = SkillUtils.FormatDescValue1(ComparedValueStr, CastTo)
           if valueStr ~= ComparedValueStr then
             valueStr = valueStr .. "->" .. ComparedValueStr
@@ -458,7 +449,6 @@ function SkillUtils.CalcWeaponPassiveEffectsDesc(WeaponData, GradeLevel, Compare
   end
   return SkillDesc
 end
-
 function SkillUtils.CalcPetEntryDesc(EntryId)
   local Data = DataMgr.PetEntry[EntryId]
   if not Data then
@@ -480,12 +470,11 @@ function SkillUtils.CalcPetEntryDesc(EntryId)
     return Desc
   end
 end
-
 function SkillUtils.CalcPetEntryEnhanceDesc(EntryId, NewEntryId)
   local Data = DataMgr.PetEntry[EntryId]
   local NewData = DataMgr.PetEntry[NewEntryId]
   if not Data or not NewData then
-    error("\230\178\161\230\156\137\232\142\183\229\143\150\229\136\176\232\175\141\230\157\161")
+    error("没有获取到词条")
     return
   end
   local BattePetData = DataMgr.BattlePet[Data.BattlePetID]
@@ -504,14 +493,13 @@ function SkillUtils.CalcPetEntryEnhanceDesc(EntryId, NewEntryId)
         if nil ~= NewvalueStr then
           Desc = Desc .. " -> " .. string.format("<H>%s</>", NewvalueStr)
         else
-          Debugprint("\230\178\161\230\137\190\229\136\176\229\141\135\231\186\167\229\144\142\231\154\132\232\175\141\230\157\161\230\149\176\230\141\174")
+          DebugPrint("没找到升级后的词条数据")
         end
       end
     end
     return Desc
   end
 end
-
 function SkillUtils.ReplaceDescValueTypeCast(Desc, Idx)
   if string.find(Desc, "{[I|i][N|n][T|t]}#" .. Idx) then
     return string.gsub(Desc, "{[I|i][N|n][T|t]}#" .. Idx, "#" .. Idx), true
@@ -519,7 +507,6 @@ function SkillUtils.ReplaceDescValueTypeCast(Desc, Idx)
     return Desc, false
   end
 end
-
 function SkillUtils.FormatDescValue1(str, bToInt)
   local Res = str
   local value = string.match(str, "(%d+%.?%d*)")
@@ -539,11 +526,15 @@ function SkillUtils.FormatDescValue1(str, bToInt)
   end
   local index = string.find(Res, "%%", 1)
   if index then
-    Res = Res .. "%"
+    if CommonConst.SystemLanguage == CommonConst.SystemLanguages.FR then
+      Res = string.gsub(Res, "%%", " %%%%")
+    else
+      Res = Res .. "%"
+    end
   end
+  Res = CommonUtils.FormatNumInFrench(Res)
   return Res
 end
-
 function SkillUtils.FormatDescValue2(str)
   local _start, _end = string.find(str, "%d+%.?%d*")
   local num = tonumber(string.sub(str, _start, _end))
@@ -551,33 +542,28 @@ function SkillUtils.FormatDescValue2(str)
     num = math.floor(num * 100 + 0.5) / 100
     str = string.sub(str, 1, _start - 1) .. num .. string.sub(str, _end + 1, #str)
   end
+  str = CommonUtils.FormatNumInFrench(str)
   return str
 end
-
 function SkillUtils.ApplySkillEfficiencyWithLimit(CostSp, SkillEfficiency)
   local CostSp_F = SkillUtils.SafeCeil(CostSp * (2 - SkillEfficiency))
   local Cost_Limit = SkillUtils.SafeCeil(DataMgr.AttrLimit.SpChangeLimitPercent.LimitValue * CostSp)
   return math.max(CostSp_F, Cost_Limit)
 end
-
 function SkillUtils.ApplySkillIntensity(Value, SkillIntensity)
   return Value * SkillIntensity
 end
-
 function SkillUtils.ApplySkillRange(Value, SkillRange)
   return Value * SkillRange
 end
-
 function SkillUtils.ApplySkillSustain(Value, SkillSustain)
   return Value * SkillSustain
 end
-
 function SkillUtils.ApplySkillSustainAndEfficiency(Value, SkillSustain, SkillEfficiency)
   local CostSp_F = SkillUtils.SafeCeil(Value * (2 - SkillEfficiency) / SkillSustain)
   local CostSp_Limit = SkillUtils.SafeCeil(DataMgr.AttrLimit.SpChangeLimitPercent.LimitValue * Value)
   return math.max(CostSp_F, CostSp_Limit)
 end
-
 function SkillUtils.CanSkillTreeNodeUnlock(Char, TreeBranchIdx, NodeIdx)
   local Res = {}
   local SkillTreeUnlockData = DataMgr.SKillTreeUnlock[Char.CharId]
@@ -638,7 +624,6 @@ function SkillUtils.CanSkillTreeNodeUnlock(Char, TreeBranchIdx, NodeIdx)
   Res.CanUnlock = not Res.BreakLevelNeed and not Res.ConditionNeed and not Res.SkillNeed and not Res.LevelNeed and not Res.IsPreNodeNeed and not Res.IsResourceNeed
   return Res
 end
-
 function SkillUtils.GetSkillName(SkillId)
   local Data = DataMgr.Skill[SkillId]
   local SkillData = Data and Data[1] and Data[1][0]
@@ -646,7 +631,6 @@ function SkillUtils.GetSkillName(SkillId)
     return GText(SkillData.SkillName)
   end
 end
-
 function SkillUtils.SafeCeil(x)
   local integer_part = math.floor(x)
   if math.abs(x - integer_part) < 1.0E-10 then
@@ -655,5 +639,4 @@ function SkillUtils.SafeCeil(x)
     return math.ceil(x)
   end
 end
-
 return SkillUtils

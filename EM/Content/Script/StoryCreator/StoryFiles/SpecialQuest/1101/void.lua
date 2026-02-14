@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1721630102444395388",
       type = "StoryNode",
-      name = "\232\153\154\231\169\186\229\175\185\232\175\157",
+      name = "虚空对话",
       pos = {x = 1109.2019176200868, y = 345.2801544922869},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -236,8 +238,8 @@ return {
           ["1719385113633282937"] = {
             key = "1719385113633282937",
             type = "ChangeRoleNode",
-            name = "\229\136\135\230\141\162\232\167\146\232\137\178",
-            pos = {x = 392.5097074601815, y = -216.1181907369811},
+            name = "切换角色",
+            pos = {x = 126.50970746018146, y = -198.1181907369811},
             propsData = {QuestRoleId = 1040101, IsPlayFX = false}
           },
           ["1721630102444395389"] = {
@@ -264,21 +266,21 @@ return {
           ["1721630102444395392"] = {
             key = "1721630102444395392",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 2106.8268284875467, y = 251.86352225040358},
             propsData = {}
           },
           ["1721630102444395393"] = {
             key = "1721630102444395393",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = -655.4698477092008, y = 351.92363904181116},
             propsData = {}
           },
           ["17261236545262073835"] = {
             key = "17261236545262073835",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166",
+            name = "开车",
             pos = {x = -204.30260716514317, y = -18.969400653466664},
             propsData = {
               IsNpcNode = false,
@@ -295,7 +297,7 @@ return {
           ["17261277888584088042"] = {
             key = "17261277888584088042",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136 \229\173\144\229\188\185\232\183\179/\230\148\187\229\135\187",
+            name = "失效 子弹跳/攻击",
             pos = {x = 728.6237299216963, y = -42.73516832958747},
             propsData = {
               PlayerId = 0,
@@ -317,7 +319,7 @@ return {
           ["17261277888584088043"] = {
             key = "17261277888584088043",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1325.1773679123867, y = -42.778942602799624},
             propsData = {
               Function = "HideUIInScreen",
@@ -329,7 +331,7 @@ return {
           ["17261279464064088917"] = {
             key = "17261279464064088917",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1029.8355291626508, y = -45.68196848904153},
             propsData = {
               Function = "HideUIInScreen",
@@ -341,8 +343,8 @@ return {
           ["17297594968708111962"] = {
             key = "17297594968708111962",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
-            pos = {x = -192.33586850630965, y = -215.8631904745734},
+            name = "BGM节点",
+            pos = {x = -198.33586850630965, y = -200.8631904745734},
             propsData = {
               SoundStateType = 0,
               SoundPriority = 0,
@@ -358,7 +360,7 @@ return {
           ["17297594968708111963"] = {
             key = "17297594968708111963",
             type = "TalkNode",
-            name = "\231\171\153\230\161\169 - \232\153\154\231\169\186 - \230\136\145\229\143\136\229\155\158\229\136\176\232\191\153\229\132\191",
+            name = "站桩 - 虚空 - 我又回到这儿",
             pos = {x = -640.0630309185316, y = -31.05316418415894},
             propsData = {
               IsNpcNode = false,
@@ -367,7 +369,7 @@ return {
               TalkType = "FixSimple",
               TalkStageName = "FixSimple_EX01_01",
               BlendInTime = 0,
-              BlendOutTime = 1,
+              BlendOutTime = 0,
               InType = "FadeIn",
               OutType = "FadeOut",
               ShowFadeDetail = false,
@@ -377,6 +379,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -384,6 +387,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -401,14 +405,12 @@ return {
                   TalkActorVisible = false
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 110022}
-              },
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "None",
+              bNpcActionKeepIn = true,
+              bNpcActionKeepOut = false,
               NormalOptions = {},
               OverrideFailBlend = false
             }
@@ -416,14 +418,14 @@ return {
           ["17315821038442057258"] = {
             key = "17315821038442057258",
             type = "PlayerSwitchWalkRunNode",
-            name = "\231\142\169\229\174\182\232\181\176\232\183\145\229\136\135\230\141\162-\232\181\176",
+            name = "玩家走跑切换-走",
             pos = {x = 108.96195177750235, y = 202.59181519936106},
             propsData = {Rate = 1, Mode = "ToRun"}
           },
           ["17315821038442057259"] = {
             key = "17315821038442057259",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136 \229\173\144\229\188\185\232\183\179/\230\148\187\229\135\187",
+            name = "失效 子弹跳/攻击",
             pos = {x = 424.11904272364905, y = 205.7841505396355},
             propsData = {
               PlayerId = 0,
@@ -445,7 +447,7 @@ return {
           ["17315821038442057260"] = {
             key = "17315821038442057260",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1045.083806391481, y = 204.9569155975727},
             propsData = {
               Function = "HideUIInScreen",
@@ -457,7 +459,7 @@ return {
           ["17315821038442057261"] = {
             key = "17315821038442057261",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1323.9483724139445, y = 213.52199681978303},
             propsData = {
               Function = "HideUIInScreen",
@@ -469,14 +471,14 @@ return {
           ["17315821990242060673"] = {
             key = "17315821990242060673",
             type = "PlayerSwitchWalkRunNode",
-            name = "\231\142\169\229\174\182\232\181\176\232\183\145\229\136\135\230\141\162-\232\181\176",
+            name = "玩家走跑切换-走",
             pos = {x = 211.17644923656454, y = 405.12286175995047},
             propsData = {Rate = 1, Mode = "ToRun"}
           },
           ["17315821990242060674"] = {
             key = "17315821990242060674",
             type = "ActivePlayerSkillsNode",
-            name = "\229\164\177\230\149\136 \229\173\144\229\188\185\232\183\179/\230\148\187\229\135\187",
+            name = "失效 子弹跳/攻击",
             pos = {x = 518.9074155826736, y = 407.7354869552974},
             propsData = {
               PlayerId = 0,
@@ -498,7 +500,7 @@ return {
           ["17315821990242060675"] = {
             key = "17315821990242060675",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1006.8945771424685, y = 421.8357882451187},
             propsData = {
               Function = "HideUIInScreen",
@@ -510,7 +512,7 @@ return {
           ["17315821990242060676"] = {
             key = "17315821990242060676",
             type = "ShowOrHideUINode",
-            name = "\230\152\190\231\164\186\230\136\150\233\154\144\232\151\143UI",
+            name = "显示或隐藏UI",
             pos = {x = 1322.3994593704656, y = 422.45620543570845},
             propsData = {
               Function = "HideUIInScreen",
@@ -522,7 +524,7 @@ return {
           ["1734577920857696311"] = {
             key = "1734577920857696311",
             type = "ForbidWeaponByWeaponTagNode",
-            name = "\231\166\129\231\148\168/\229\144\175\231\148\168\230\173\166\229\153\168\232\138\130\231\130\185",
+            name = "禁用/启用武器节点",
             pos = {x = 1027.578947368421, y = -231},
             propsData = {
               WeaponTags = {"Melee"},
@@ -534,7 +536,7 @@ return {
           ["1734577933914696861"] = {
             key = "1734577933914696861",
             type = "ForbidWeaponByWeaponTagNode",
-            name = "\231\166\129\231\148\168/\229\144\175\231\148\168\230\173\166\229\153\168\232\138\130\231\130\185",
+            name = "禁用/启用武器节点",
             pos = {x = 765.7971450877433, y = 414.78094881130875},
             propsData = {
               WeaponTags = {"Melee"},
@@ -546,7 +548,7 @@ return {
           ["1734577950398697352"] = {
             key = "1734577950398697352",
             type = "ForbidWeaponByWeaponTagNode",
-            name = "\231\166\129\231\148\168/\229\144\175\231\148\168\230\173\166\229\153\168\232\138\130\231\130\185",
+            name = "禁用/启用武器节点",
             pos = {x = 725.1120330982836, y = 201.8560476255379},
             propsData = {
               WeaponTags = {"Melee"},
@@ -558,7 +560,7 @@ return {
           ["1736302533735704755"] = {
             key = "1736302533735704755",
             type = "AsyncSetActorLocationAndRotationNode",
-            name = "\229\188\130\230\173\165\232\174\190\231\189\174\231\142\169\229\174\182\228\189\141\231\189\174\230\151\139\232\189\172",
+            name = "异步设置玩家位置旋转",
             pos = {x = 1610.9129526909578, y = -49.229305477131675},
             propsData = {
               UnitId = 0,
@@ -573,7 +575,7 @@ return {
           ["17465284964092788269"] = {
             key = "17465284964092788269",
             type = "GoToNode",
-            name = "\229\137\141\229\190\128",
+            name = "前往",
             pos = {x = -288.5102033740479, y = 580.9090314719604},
             propsData = {
               GuideUIEnable = false,
@@ -585,7 +587,7 @@ return {
           ["17556806045491536413"] = {
             key = "17556806045491536413",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = -206.7047385620914, y = 181.27031827223612},
             propsData = {
               CreateType = "StaticCreator",
@@ -598,7 +600,7 @@ return {
           ["1755687447410956"] = {
             key = "1755687447410956",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = -262.4705882352941, y = -481.0191815856777},
             propsData = {
               ActiveEnable = true,
@@ -612,7 +614,7 @@ return {
           ["17556874597981352"] = {
             key = "17556874597981352",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144/\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "生成/销毁节点",
             pos = {x = 1602.0000000000002, y = 237.30434782608694},
             propsData = {
               ActiveEnable = false,
@@ -626,7 +628,7 @@ return {
           ["1756385717349958751"] = {
             key = "1756385717349958751",
             type = "PlayerSwitchWalkRunNode",
-            name = "\231\142\169\229\174\182\232\181\176\232\183\145\229\136\135\230\141\162-\232\181\176",
+            name = "玩家走跑切换-走",
             pos = {x = 379.63131868131825, y = -46.04960908656568},
             propsData = {Rate = 0.2, Mode = "EWT_Normal"}
           }

@@ -2,8 +2,11 @@ local msgpack = require("msgpack_core")
 local Component = {}
 local GM_Command = require("BluePrints.Client.GM_Command")
 local MiscUtils = require("Utils.MiscUtils")
-
 function Component:DoBattleCommand(EffectStruct, bPrintToClient, EidFrom)
+  local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
+  if bDistribution then
+    return
+  end
   if bPrintToClient and not IsDedicatedServer(self) then
     bPrintToClient = false
   end
@@ -12,7 +15,6 @@ function Component:DoBattleCommand(EffectStruct, bPrintToClient, EidFrom)
   if bPrintToClient then
     function print(logTag, ...)
       OldPrint(logTag, ...)
-      
       local FirstFlag = 1
       for k, v in pairs({
         ...
@@ -59,11 +61,9 @@ function Component:DoBattleCommand(EffectStruct, bPrintToClient, EidFrom)
     end
   end
 end
-
 function Component:ShowEidError(Eid)
-  return "\230\137\190\228\184\141\229\136\176Eid:[" .. tostring(Eid) .. "]\229\175\185\229\186\148\231\154\132\232\167\146\232\137\178"
+  return "找不到Eid:[" .. tostring(Eid) .. "]对应的角色"
 end
-
 function Component:GM_GetOrSetPlayerAttr(Eid, Name, Value)
   PrintTable({
     Eid = Eid,
@@ -75,10 +75,10 @@ function Component:GM_GetOrSetPlayerAttr(Eid, Name, Value)
   if nil == Value then
     Value = Target:GetAttr(Name)
     if type(Value) == "table" then
-      ScreenPrint(string.format("\229\189\147\229\137\141\231\142\169\229\174\182\231\154\132 %s \231\154\132\229\128\188\228\184\186:", Name))
+      ScreenPrint(string.format("当前玩家的 %s 的值为:", Name))
       PrintTable(Value, 10)
     else
-      ScreenPrint(string.format("\229\189\147\229\137\141\231\142\169\229\174\182\231\154\132 %s \231\154\132\229\128\188\228\184\186 %s", Name, Value))
+      ScreenPrint(string.format("当前玩家的 %s 的值为 %s", Name, Value))
     end
     return
   end
@@ -95,7 +95,6 @@ function Component:GM_GetOrSetPlayerAttr(Eid, Name, Value)
   end
   Target:CalcATK()
 end
-
 function Component:GM_GetOrSetPlayerWeaponAttr(Eid, WeaponId, Name, Value)
   PrintTable({
     Eid = Eid,
@@ -108,16 +107,16 @@ function Component:GM_GetOrSetPlayerWeaponAttr(Eid, WeaponId, Name, Value)
   WeaponId = tonumber(WeaponId)
   local Target = Player:GetWeapon(WeaponId)
   if not Target then
-    ScreenPrint(string.format("Id \228\184\186 %s \231\154\132\230\173\166\229\153\168\228\184\141\229\173\152\229\156\168\239\188\140\230\136\150\229\176\157\232\175\149\228\187\165\229\174\162\230\136\183\231\171\175\232\191\144\232\161\140\227\128\130", WeaponId))
+    ScreenPrint(string.format("Id 为 %s 的武器不存在，或尝试以客户端运行。", WeaponId))
     return
   end
   if nil == Value then
     Value = Target:GetAttr(Name)
     if type(Value) == "table" then
-      ScreenPrint(string.format("\229\189\147\229\137\141\230\173\166\229\153\168\231\154\132 %s \231\154\132\229\128\188\228\184\186:", Name))
+      ScreenPrint(string.format("当前武器的 %s 的值为:", Name))
       PrintTable(Value, 10)
     else
-      ScreenPrint(string.format("\229\189\147\229\137\141\230\173\166\229\153\168\231\154\132 %s \231\154\132\229\128\188\228\184\186 %s", Name, Value))
+      ScreenPrint(string.format("当前武器的 %s 的值为 %s", Name, Value))
     end
     return
   end
@@ -133,16 +132,17 @@ function Component:GM_GetOrSetPlayerWeaponAttr(Eid, WeaponId, Name, Value)
     Target:UpdateAttrByLevel(Value)
   end
 end
-
-function Component:GM_CreateMonster(Eid, UnitId, Num, Level, CreatorType)
+function Component:GM_CreateMonster(Eid, UnitId, Num, Level, CreatorType, ForceLOD)
   Num = Num or 1
   PrintTable({
     CreateMonster = {UnitId = UnitId, Num = Num}
   }, 2)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  GameMode.EMGameState.EventMgr:GMCreateMonster(Eid, UnitId, Num, Level, CreatorType)
+  GameMode.EMGameState.EventMgr:GMCreateMonster(Eid, UnitId, Num, Level, CreatorType, ForceLOD)
 end
-
+function Component:GM_CutToughnessValue(Eid, Value)
+  self:SetGMCuttoughnessValue(Value)
+end
 function Component:GM_CreateNpc(UnitId, Num, Level, CreatorType)
   Num = Num or 1
   PrintTable({
@@ -151,7 +151,6 @@ function Component:GM_CreateNpc(UnitId, Num, Level, CreatorType)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode.EMGameState.EventMgr:GMCreateNpc(UnitId, Num, Level, CreatorType)
 end
-
 function Component:GM_CreatePet(UnitId, Num, Level, CreatorType)
   Num = Num or 1
   PrintTable({
@@ -160,7 +159,6 @@ function Component:GM_CreatePet(UnitId, Num, Level, CreatorType)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode.EMGameState.EventMgr:GMCreatePet(UnitId, Num, Level, CreatorType)
 end
-
 function Component:GM_CreateTestMonster(Eid, UnitId, Num)
   Num = Num or 1
   PrintTable({
@@ -169,17 +167,42 @@ function Component:GM_CreateTestMonster(Eid, UnitId, Num)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode.EMGameState.EventMgr:GMCreateTestMonster(Eid, UnitId, Num)
 end
-
-function Component:GM_CreatePhantom(Eid, RoleId, Num, BTIndex, Level, SkipInitWaitCheck, ForceSync)
+function Component:GM_CreatePhantom(Eid, RoleId, Num, BTIndex, Level, SkipInitWaitCheck, ForceSync, WeaponId)
   Num = tonumber(Num or 1)
   BTIndex = tonumber(BTIndex or 1)
   RoleId = tonumber(RoleId)
+  WeaponId = tonumber(WeaponId)
+  local MeleeWeapon, RangedWeapon = {}, {}
+  local function GetWeaponType(WeaponId)
+    if not WeaponId or not DataMgr.BattleWeapon[WeaponId] then
+      return nil
+    end
+    local WeaponTags = DataMgr.BattleWeapon[WeaponId].WeaponTag
+    if not WeaponTags then
+      return nil
+    end
+    for _, tag in ipairs(WeaponTags) do
+      if "Melee" == tag then
+        return "Melee"
+      elseif "Ranged" == tag then
+        return "Ranged"
+      end
+    end
+    return nil
+  end
+  local WeaponType = GetWeaponType(WeaponId)
+  if "Melee" == WeaponType then
+    MeleeWeapon = {WeaponId = WeaponId}
+  elseif "Ranged" == WeaponType then
+    RangedWeapon = {WeaponId = WeaponId}
+  end
   PrintTable({
     CreatePhantom = {
       RoleId = RoleId,
       Num = Num,
       BTIndex = BTIndex,
-      Level = Level
+      Level = Level,
+      WeaponId = WeaponId
     }
   }, 2)
   local Player = self:GetEntity(Eid)
@@ -188,17 +211,17 @@ function Component:GM_CreatePhantom(Eid, RoleId, Num, BTIndex, Level, SkipInitWa
     Player:CreatePhantom(RoleId, BTIndex, nil, {
       IsSpawnByGM = true,
       SkipInitWaitCheck = SkipInitWaitCheck,
-      ForceSync = ForceSync
+      ForceSync = ForceSync,
+      MeleeWeapon = MeleeWeapon,
+      RangedWeapon = RangedWeapon
     }, Level)
   end
 end
-
 function Component:GM_ClearPhantoms(Eid)
   local Player = self:GetEntity(Eid)
   assert(Player, self:ShowEidError(Eid))
   UE4.UPhantomFunctionLibrary.CancelAllPhantom(Player, EDestroyReason.GM)
 end
-
 function Component:GM_CreateMechanismSummon(Eid, UnitId, Num)
   Num = Num or 1
   PrintTable({
@@ -207,7 +230,6 @@ function Component:GM_CreateMechanismSummon(Eid, UnitId, Num)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode.EMGameState.EventMgr:GMCreateMechanismSummon(Eid, UnitId, Num)
 end
-
 function Component:GM_KillMonster(UseCommandEid, Eid)
   if Eid then
     if tonumber(Eid) then
@@ -225,7 +247,6 @@ function Component:GM_KillMonster(UseCommandEid, Eid)
     end
   end
 end
-
 function Component:GM_KillAllPhantoms()
   local Entities = self:GetAllEntities()
   for EntityID, Entity in pairs(Entities) do
@@ -234,7 +255,6 @@ function Component:GM_KillAllPhantoms()
     end
   end
 end
-
 function Component:GM_SetMonsterCrouch(Eid, IsCrouching)
   local Entities = self:GetAllEntities()
   for EntityID, Entity in pairs(Entities) do
@@ -243,17 +263,14 @@ function Component:GM_SetMonsterCrouch(Eid, IsCrouching)
     end
   end
 end
-
 function Component:GM_RecoverySelf(UseCommandEid)
   self:Recovery(UseCommandEid)
 end
-
 function Component:GM_TeleportRecoverySelf(TargetEid, LocX, LocY, DelayTime)
   local Location = FVector(LocX, LocY, 0)
   local Rotation = FRotator(0, 0, 0)
   self:TeleportRecovery(TargetEid, Location, Rotation, DelayTime)
 end
-
 function Component:GM_MaxBullet(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -263,7 +280,6 @@ function Component:GM_MaxBullet(Eid)
     Target:AddBullet(Change, EGetBulletReason.GMBullet)
   end
 end
-
 function Component:GM_MaxMagazineBullet(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -271,7 +287,6 @@ function Component:GM_MaxMagazineBullet(Eid)
   Target.RangedWeapon:SetAttr("MagazineCapacity", Change)
   Target.RangedWeapon:AddMagazineBullet(Change)
 end
-
 function Component:GM_MaxAttack(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -281,7 +296,6 @@ function Component:GM_MaxAttack(Eid)
   Target:SetAddAttr(AttrName, "GM", Change)
   Target:CalcATK()
 end
-
 function Component:GM_MaxDefence(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -289,7 +303,6 @@ function Component:GM_MaxDefence(Eid)
   local Change = 1000000 - Target:GetAttr("DEF")
   Target:SetAddAttr("DEF", "GM", Change)
 end
-
 function Component:GM_MaxSp(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -297,28 +310,24 @@ function Component:GM_MaxSp(Eid)
   Target:SetAttr("MaxSp", Sp)
   Battle(Target):AddSpToTarget(Target, Target, Sp, EChangedSpReason.GMMaximumSp)
 end
-
 function Component:GM_AddSp(Eid, Value)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
   Battle(Target):AddSpToTarget(Target, Target, Value, EChangedSpReason.GMAddSp)
 end
-
 function Component:GM_MaxES(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
   Target:SetAddAttr("MaxES", "GM", nil)
   local Change = 10000000 - Target:GetAttr("MaxES")
   Target:SetAddAttr("MaxES", "GM", Change)
-  Battle(self):AddEnergyShield(Target, Target, Target:GetAttr("MaxES"))
+  Battle(self):AddEnergyShield(Target, Target, Target:GetAttr("MaxES"), false, false, nil)
 end
-
 function Component:GM_AddES(Eid, Value)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
-  Battle(Target):AddEnergyShield(Target, Target, Value)
+  Battle(Target):AddEnergyShield(Target, Target, Value, false, false, "")
 end
-
 function Component:GM_MaxHp(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -327,13 +336,11 @@ function Component:GM_MaxHp(Eid)
   Target:SetAddAttr("MaxHp", "GM", Change)
   Target:AddHp(Target:GetAttr("MaxHp"))
 end
-
 function Component:GM_AddHp(Eid, Value)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
   Target:AddHp(Value)
 end
-
 function Component:GM_NoCDForSkill(Eid)
   local Target = self:GetEntity(Eid)
   assert(Target, self:ShowEidError(Eid))
@@ -342,7 +349,6 @@ function Component:GM_NoCDForSkill(Eid)
     Skill.SkillCd = nil
   end
 end
-
 function Component:GM_UpdateMonSkillCd()
   local Entities = self:GetAllEntities()
   for Eid, Ent in pairs(Entities) do
@@ -358,7 +364,6 @@ function Component:GM_UpdateMonSkillCd()
     end
   end
 end
-
 function Component:GM_MonsterMaxHp()
   local Entities = self:GetAllEntities()
   for Eid, Entity in pairs(Entities) do
@@ -367,30 +372,27 @@ function Component:GM_MonsterMaxHp()
     end
   end
 end
-
 function Component:GM_AddBuff(Eid, BuffId, LastTime, Value)
   local Target = self:GetEntity(tonumber(Eid))
   assert(Target, self:ShowEidError(Eid))
   Value = Value or self:CalcUserProperty(Target, Target, "ATK", nil)
   self:AddBuffToTarget(Target, Target, BuffId, LastTime, Value, nil)
 end
-
 function Component:GM_RemoveBuff(Eid, BuffId)
   local Target = self:GetEntity(tonumber(Eid))
   assert(Target, self:ShowEidError(Eid))
   local Success = self:RemoveBuffFromTarget(Target, Target, BuffId, false, -1)
   if Success then
-    ScreenPrint("\231\167\187\233\153\164Buff:" .. tostring(BuffId) .. "\230\136\144\229\138\159!")
+    ScreenPrint("移除Buff:" .. tostring(BuffId) .. "成功!")
   else
-    ScreenPrint("\231\167\187\233\153\164Buff:" .. tostring(BuffId) .. "\229\164\177\232\180\165!")
+    ScreenPrint("移除Buff:" .. tostring(BuffId) .. "失败!")
   end
 end
-
 function Component:GM_AddMonsterBuff(BuffId, LastTime, Value)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode.GMMonsterBuff[BuffId] = BuffId
   local GameState = UE4.UGameplayStatics.GetGameState(self)
-  for _, Target in pairs(GameState.MonsterMap) do
+  for Eid, Target in pairs(GameState.MonsterMap) do
     assert(Target, self:ShowEidError(Eid))
     if Target:GetCamp() == ECampName.Monster then
       Value = Value or self:CalcUserProperty(Target, Target, "ATK", nil)
@@ -400,27 +402,24 @@ function Component:GM_AddMonsterBuff(BuffId, LastTime, Value)
     end
   end
 end
-
 function Component:GM_RemoveMonsterBuff(BuffId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode.GMMonsterBuff[BuffId] = nil
   local GameState = UE4.UGameplayStatics.GetGameState(self)
-  for _, Target in pairs(GameState.MonsterMap) do
+  for Eid, Target in pairs(GameState.MonsterMap) do
     assert(Target, self:ShowEidError(Eid))
     if Target:GetCamp() == ECampName.Monster then
       local Success = self:RemoveBuffFromTarget(Target, Target, BuffId, false, -1)
       if not Success then
-        ScreenPrint("Eid\228\184\186: " .. Target.eid .. "\231\167\187\233\153\164Buff:" .. tostring(BuffId) .. "\229\164\177\232\180\165!")
+        ScreenPrint("Eid为: " .. Target.eid .. "移除Buff:" .. tostring(BuffId) .. "失败!")
       end
     end
   end
 end
-
 function Component:GM_ChangeCreatureSpeed(Speed)
   Const.SkillCreatureSpeed = Speed
   require("EMLuaConst").SkillCreatureSpeed = Const.SkillCreatureSpeed
 end
-
 function Component:GM_ReuseSkill(UnitId, SkillIndex)
   local Entities = self:GetAllEntities()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -432,13 +431,11 @@ function Component:GM_ReuseSkill(UnitId, SkillIndex)
     end
   end
 end
-
 function Component:GM_FireDanmaku(Eid, DanmakuTemplateId, Duration)
   local Target = self:GetEntity(tonumber(Eid))
   assert(Target, self:ShowEidError(Eid))
   Target:FireDanmaku(DanmakuTemplateId, Duration, "", 0, false, FTransform())
 end
-
 function Component:GM_TestBattle(Eid)
   local Target = self:GetEntity(tonumber(Eid))
   assert(Target, self:ShowEidError(Eid))
@@ -449,7 +446,6 @@ function Component:GM_TestBattle(Eid)
   Target:SetAttr("Hp", 500)
   self:AddBuffToTarget(Target, Target, 903, -1, 0, nil)
 end
-
 function Component:GM_RecoverPlayer(PlayerEid, TargetEid, IsBegin, OverrideSpeed)
   PlayerEid = tonumber(PlayerEid)
   TargetEid = tonumber(TargetEid)
@@ -457,7 +453,6 @@ function Component:GM_RecoverPlayer(PlayerEid, TargetEid, IsBegin, OverrideSpeed
   OverrideSpeed = OverrideSpeed and tonumber(OverrideSpeed)
   self:RecoverOther(PlayerEid, TargetEid, IsBegin, {Speed = OverrideSpeed})
 end
-
 function Component:GM_AddMod(ModId, Eid, ModLevel, TargetType)
   local Player = self:GetEntity(tonumber(Eid))
   assert(Player, self:ShowEidError(Eid))
@@ -473,7 +468,7 @@ function Component:GM_AddMod(ModId, Eid, ModLevel, TargetType)
       Target = Player.UltraWeapon
     end
   end
-  assert(Target, "\230\151\160\230\179\149\232\142\183\229\143\150\229\136\176AddMod\231\154\132\229\175\185\232\177\161")
+  assert(Target, "无法获取到AddMod的对象")
   Target:SetAttrByMod(tonumber(ModId), ModLevel)
   local ModData = DataMgr.Mod[ModId]
   local PassiveEffects = ModData.PassiveEffects
@@ -491,14 +486,12 @@ function Component:GM_AddMod(ModId, Eid, ModLevel, TargetType)
     end
   end
 end
-
 function Component:GM_AddPet(PetId)
   PetId = PetId or Const.DefaultBattlePet
   PetId = tonumber(PetId)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:ServerSetBattlePetByBattlePetId(PetId, 1, false, true)
 end
-
 function Component:GM_AddPetAffix(AffixId)
   AffixId = tonumber(AffixId)
   if not DataMgr.PetEntry[AffixId] then
@@ -511,7 +504,6 @@ function Component:GM_AddPetAffix(AffixId)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:ServerAddBattlePetAffix(AffixId, false)
 end
-
 function Component:GM_RemovePetAffix(AffixId)
   AffixId = tonumber(AffixId)
   if not DataMgr.PetEntry[AffixId] then
@@ -525,7 +517,6 @@ function Component:GM_RemovePetAffix(AffixId)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   Player:ServerRemoveAddBattlePetAffix(AffixId)
 end
-
 function Component:GM_RemovePet()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local BattlePet = Player.BattlePet
@@ -534,15 +525,12 @@ function Component:GM_RemovePet()
   end
   Player:ServerRemoveBattlePet()
 end
-
 function Component:GM_ForbidDamage(_ForbidDamage)
   require("EMLuaConst").bForbidDamage = _ForbidDamage
 end
-
 function Component:GM_ForbidPlay(_ForbidPlay)
   require("EMLuaConst").bForbidPlay = _ForbidPlay
 end
-
 function Component:GM_DSShowDetails()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if GameInstance.DSShowDetails then
@@ -551,24 +539,49 @@ function Component:GM_DSShowDetails()
     GameInstance.DSShowDetails = true
   end
 end
-
 function Component:GM_EnableSkillPrediction(bEnableSkillPrediction)
   DebugPrint("gmy@BattleGMLogic Component:GM_EnableSkillPrediction", bEnableSkillPrediction)
   self.bEnableSkillPrediction = bEnableSkillPrediction
 end
-
 function Component:GM_ForceSimPredictionFailed(bSimPredictionFailed)
   DebugPrint("gmy@BattleGMLogic Component:GM_ForceSimPredictionFailed", bSimPredictionFailed)
   self.bSimPredictionFailed = bSimPredictionFailed
 end
-
 function Component:GM_Hotfix(...)
   local HotfixData = require("Datas.HotfixData")
-  assert(HotfixData.index, "\233\156\128\232\166\129\229\161\171\229\134\153HotfixData.index")
-  assert(HotfixData.script, "\233\156\128\232\166\129\229\161\171\229\134\153HotfixData.script")
+  assert(HotfixData.index, "需要填写HotfixData.index")
+  assert(HotfixData.script, "需要填写HotfixData.script")
   local UnLuaHotReload = require("UnLuaHotReload")
   require("HotFix").ExecHotFix(HotfixData.index, HotfixData.script)
   GWorld.HotfixDataIndex = HotfixData.index
 end
-
+function Component:GM_ReuseSkill(UnitId, SkillIndex, Eid)
+  local Entities = self:GetAllEntities()
+  for eid, ent in pairs(Entities) do
+    if ent and ent.IsMonster and ent:IsMonster() and ent.UnitId == tonumber(UnitId) then
+      ent:StopBT("GM")
+      ent:BBSetTarget(self:GetCharacter(Eid))
+      ent:ReuseSkill(tonumber(SkillIndex))
+    end
+  end
+end
+function Component:GM_ChangeDSMonsterFramingNodeConfig(PlatformType, PlatformQualityLevel, MonQualityLevel, Key, Value)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  if not GameInstance or not GameInstance.ClientActiveMonsterNumConfig then
+    return
+  end
+  local TMap1 = GameInstance.ClientActiveMonsterNumConfig:FindRef(PlatformType)
+  if not TMap1 then
+    return
+  end
+  local TMap2 = TMap1.ConfigMap:FindRef(PlatformQualityLevel)
+  if not TMap2 then
+    return
+  end
+  local RealConfig = TMap2.QualityLevelToConfig:FindRef(MonQualityLevel)
+  if not RealConfig or not RealConfig[Key] then
+    return
+  end
+  RealConfig[Key] = Value
+end
 return Component

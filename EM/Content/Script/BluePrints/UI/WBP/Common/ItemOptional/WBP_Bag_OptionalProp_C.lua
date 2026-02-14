@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:InitContent(Params, PopupData, Owner)
   self.OptionalItemsList = Params.OptionalItemsList
   self.ChooseCallbackFunction = Params.ChooseCallbackFunction
@@ -13,6 +12,7 @@ function M:InitContent(Params, PopupData, Owner)
   self.ResourceName = Params.Title
   self.GamePadMode = "Default"
   self.OptCount = Params.OptionalItemsList[1].OptCount
+  self.ResourceId = Params.ResourceId
   self.Id2ConsumeCount = {}
   self.GamePadKeyLS = self:ShowGamepadShortcutBtn({
     KeyInfoList = {
@@ -23,13 +23,14 @@ function M:InitContent(Params, PopupData, Owner)
   self:InitAllOptionalItemsInfo()
   self:InitListenEvent()
   self:InitUIInfo()
+  self:AddTimer(0.01, function()
+    self:RefreshDialogTip()
+  end)
 end
-
 function M:InitUIInfo()
-  self.List_Prop:SetScrollbarVisibility(UE4.ESlateVisibility.Collapsed)
+  self.List_Prop:SetScrollbarVisibility(UE4.ESlateVisibility.Hidden)
   self.List_Prop:SetControlScrollbarInside(true)
 end
-
 function M:InitAllOptionalItemsInfo()
   self.List_Prop:ClearListItems()
   for Index, ItemInfo in ipairs(self.OptionalItemsList) do
@@ -53,7 +54,6 @@ function M:InitAllOptionalItemsInfo()
     Content.StuffCount = ItemInfo.StuffCount
     self.Id2ConsumeCount[ItemInfo.StuffId] = 0
     self.List_Prop:AddItem(Content)
-    table.insert(self.AllItemsWidget, Item)
   end
   local CurInputDevice = self.GameInputModeSubsystem:GetCurrentInputType()
   self:RefreshOpInfoByInputDevice(CurInputDevice)
@@ -71,19 +71,16 @@ function M:InitAllOptionalItemsInfo()
     end
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ChangeChooseClickCallback(bSelectState, ChooseInfo)
   if self.CurrentChooseWidget then
   end
@@ -100,15 +97,12 @@ function M:ChangeChooseClickCallback(bSelectState, ChooseInfo)
     self.Owner:ForbidRightBtn(true)
   end
 end
-
 function M:ScrollToTargetItem(TargetItem)
   self.ScrollBox_Avatar:ScrollWidgetIntoView(TargetItem)
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.CurrentChooseWidget or self.ScrollBox_Avatar
 end
-
 function M:OnBtnYes()
   if self.Owner then
     if 0 == self.CurrentCount then
@@ -118,7 +112,6 @@ function M:OnBtnYes()
     end
   end
 end
-
 function M:HideSelf(bIsHide, IsNeedFocus)
   if self.Owner then
     if bIsHide then
@@ -135,28 +128,27 @@ function M:HideSelf(bIsHide, IsNeedFocus)
     end
   end
 end
-
 function M:CloseDialog()
   if self.Owner then
     self.Owner:Close()
   end
 end
-
 function M:RefreshDialogTip()
-  self:BroadcastDialogEvent("UpdateDialogTipText", {
-    Tips = {
-      string.format(GText("UI_Consumable_Effect_ResourcePack"), self.ResourceName, self.CurrentCount, self.OptCount, 2)
-    },
-    DialogItemIndex = 1,
-    bShowTip = true
-  })
+  local Funds = {}
+  Funds[1] = {}
+  Funds[1].FundId = self.ResourceId
+  Funds[1].FundNeed = self.CurrentCount
+  Funds[1].CostText = GText("UI_Armory_Trace_Cost")
+  Funds[1].bShowNumerator = true
+  self:BroadcastDialogEvent("UpdateFunds", {Funds = Funds})
   if self.CurrentCount <= 0 then
     self.Owner:ForbidRightBtn(true)
   else
     self.Owner:ForbidRightBtn(false)
   end
+  self.Owner:HideDialogTip(1)
+  self.Owner:ShowDialogTip(2)
 end
-
 function M:GetCurrentHoverItem()
   local TargetWidget
   local Displayed = self.List_Prop:GetDisplayedEntryWidgets()
@@ -173,7 +165,6 @@ function M:GetCurrentHoverItem()
   end
   return TargetWidget
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
     if self.LastFocusWidget and self.LastFocusWidget.Com_NumInput then
@@ -183,7 +174,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.List_Prop:SetFocus()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -197,7 +187,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -228,18 +217,18 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnMenuOpenChangedEvents(bIsOpen)
   if bIsOpen then
     self:ChangeGamePadMode("CheckDetails")
   else
     self:ChangeGamePadMode("Default")
     self:AddTimer(0.01, function()
-      self.LastFocusWidget:SetFocus()
+      if self.LastFocusWidget then
+        self.LastFocusWidget:SetFocus()
+      end
     end)
   end
 end
-
 function M:ChangeGamePadMode(Mode)
   if "CheckDetails" == Mode then
     self:HideGamepadShortcut(self.GamePadKeyLS)
@@ -254,5 +243,4 @@ function M:ChangeGamePadMode(Mode)
     self.GamePadMode = "Default"
   end
 end
-
 return M

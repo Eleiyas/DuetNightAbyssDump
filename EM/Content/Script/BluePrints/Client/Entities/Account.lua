@@ -8,11 +8,9 @@ Account.__Component__ = {
   "BluePrints.Client.Entities.Components.EntityBase",
   "BluePrints.Client.Entities.Components.Login"
 }
-
 function Account:Init(eid)
   Account.Super.Init(self, eid)
 end
-
 function Account:OnBecomePlayer()
   Account.Super.OnBecomePlayer(self)
   self.logger.info("Account OnBecomePlayer")
@@ -24,7 +22,6 @@ function Account:OnBecomePlayer()
   end
   self:EnterWorld()
 end
-
 function Account:SdkLogin()
   self.logger.debug("SdkLogin")
   local SdkUserInfo = HeroUSDKUtils.GetUserInfo()
@@ -40,7 +37,7 @@ function Account:SdkLogin()
     ConnectType = GWorld.NetworkMgr.ConnectType,
     HotfixIndex = GWorld.HotfixDataIndex or 0,
     ClientVersion = {
-      [PatchKey] = ClientVersion
+      ForceUpdateCheck = DataMgr.HotfixData.force_update_version
     },
     PatchVersion = {
       [PatchKey] = PatchVersion
@@ -66,6 +63,15 @@ function Account:SdkLogin()
     user_agent = HeroUSDKSubsystem:GetUserAgent(),
     device_key = HeroUSDKSubsystem:GetDeviceKey(),
     wegame_distribute_id = HeroUSDKSubsystem.WeGameDistributionID,
+    app_version = HeroUSDKSubsystem:GetBDCClientVersion(),
+    system_version = HeroUSDKSubsystem:GetBDCSystemVersion(),
+    manufacturer = HeroUSDKSubsystem:GetBDCManufacturer(),
+    bundle_id = HeroUSDKSubsystem:GetBDCBundleId(),
+    session_id = HeroUSDKSubsystem:GetBDCSessionId(),
+    device_model = HeroUSDKSubsystem:GetBDCDeviceModel(),
+    app_version_code = HeroUSDKSubsystem:GetBDCClientVersionCode(),
+    brand = HeroUSDKSubsystem:GetBDCBrand(),
+    cloud_app_msg = HeroUSDKSubsystem.CloudAppMsg,
     android_id = HeroUSDKSubsystem:GetAndroidID(),
     idfa = HeroUSDKSubsystem:GetIDFA(),
     idfv = HeroUSDKSubsystem:GetIDFV()
@@ -80,27 +86,21 @@ function Account:SdkLogin()
   PrintTable({SdkInfo = SdkInfo}, 2)
   self:CallServerMethod("SdkLogin", SdkInfo, ClientInfo, BDC_Info)
 end
-
 function Account:NotifyBindDevice()
   self.logger.debug("NotifyBindDevice")
   local Params = {}
-  
   function Params.CloseBtnCallbackFunction()
     self:CallServerMethod("ConfirmBindDevice", false)
   end
-  
   function Params.LeftCallbackFunction()
     self:CallServerMethod("ConfirmBindDevice", false)
   end
-  
   function Params.RightCallbackFunction()
     self:CallServerMethod("ConfirmBindDevice", true)
   end
-  
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(100071, Params, UIManager:GetUIObj("LoginMainPage"))
 end
-
 function Account:QuickLogin(account_name, password)
   self.logger.debug("QuickLogin")
   local HeroUSDKSubsystem = HeroUSDKSubsystem()
@@ -115,7 +115,7 @@ function Account:QuickLogin(account_name, password)
     ConnectType = GWorld.NetworkMgr.ConnectType,
     HotfixIndex = GWorld.HotfixDataIndex or 0,
     ClientVersion = {
-      [PatchKey] = ClientVersion
+      ForceUpdateCheck = DataMgr.HotfixData.force_update_version
     },
     PatchVersion = {
       [PatchKey] = PatchVersion
@@ -137,7 +137,6 @@ function Account:QuickLogin(account_name, password)
   PrintTable({BDC_Info = BDC_Info}, 2)
   self:CallServerMethod("QuickLogin", ClientInfo, BDC_Info, TestSdkInfo)
 end
-
 function Account:OnGetAllAvatars(avatars)
   self.logger.debug("OnGetAllAvatars")
   GWorld.NetworkMgr:Disconnect()
@@ -148,7 +147,6 @@ function Account:OnGetAllAvatars(avatars)
   PrintTable({avatars = avatars}, 5)
   EventManager:FireEvent(EventID.OnGetAllAvatars)
 end
-
 function Account:OnPatchForceUpdate()
   local LoginMainPage = GWorld.GameInstance:GetGameUIManager():GetUIObj("LoginMainPage")
   if LoginMainPage then
@@ -159,7 +157,6 @@ function Account:OnPatchForceUpdate()
     GameMode:StartUpdate()
   end
 end
-
 function Account:LoginResult(ret_code, info)
   self.LoginQueuePopUI = nil
   info = info or {}
@@ -207,7 +204,10 @@ function Account:LoginResult(ret_code, info)
         GWorld.NetworkMgr:Disconnect()
         GWorld.NetworkMgr:LogoutEvent()
       end
+    elseif ret_code == ErrorCode.RET_LOGIN_AUTH_FAILED then
+      HeroUSDKSubsystem():HeroSDKLogout()
     elseif not bSimpleDisconnect then
+      info.ErrorCode = ret_code
       GWorld.NetworkMgr:DisconnectAndShowUI(info)
     end
     HeroUSDKSubsystem():CloseLoadingReconnect()
@@ -219,7 +219,6 @@ function Account:LoginResult(ret_code, info)
     end
   end
 end
-
 function Account:OnHotfixWhenLogin(HotfixScript, HotfixIndex)
   self.logger.debug("OnHotfixWhenLogin", HotfixScript, HotfixIndex)
   if HotfixIndex then
@@ -227,7 +226,6 @@ function Account:OnHotfixWhenLogin(HotfixScript, HotfixIndex)
     GWorld.HotfixDataIndex = HotfixIndex
   end
 end
-
 function Account:OnNoticeLoginQueue(QueueSite, QueueLength)
   self.logger.debug(string.format("Account:OnNoticeLoginQueue QueueSite:%s QueueLength:%s", QueueSite, QueueLength))
   if self.LoginQueuePopUI then
@@ -251,6 +249,43 @@ function Account:OnNoticeLoginQueue(QueueSite, QueueLength)
   }
   self.LoginQueuePopUI = UIManager:ShowCommonPopupUI(100265, Params)
 end
-
+function Account:ShowCancelConfirmDialog()
+  local Params = {}
+  function Params.RightCallbackFunction()
+    print(_G.LogTag, "Account LoginWithoutPubAccountInfo")
+    self:LoginWithoutPubAccountInfo()
+  end
+  function Params.LeftCallbackFunction()
+    self:ShowCopyAccountDialog()
+  end
+  UIManager(self):ShowCommonPopupUI(100282, Params)
+end
+function Account:ShowCopyAccountDialog()
+  local Params = {}
+  function Params.RightCallbackFunction()
+    print(_G.LogTag, "Account LoginWithPubAccountInfo")
+    self:LoginWithPubAccountInfo()
+  end
+  function Params.LeftCallbackFunction()
+    self:ShowCancelConfirmDialog()
+  end
+  UIManager(self):ShowCommonPopupUI(100272, Params)
+end
+function Account:OnQueryPubAccountInfo(ret, docs)
+  self.logger.debug("OnQueryPubAccountInfo", ret, docs)
+  local bExperience = MiscUtils.GetGameCofingSettings("bExperience") or false
+  if not bExperience then
+    return
+  end
+  self:ShowCopyAccountDialog()
+end
+function Account:LoginWithPubAccountInfo()
+  self.logger.debug("LoginWithPubAccountInfo")
+  self:CallServerMethod("LoginWithPubAccountInfo")
+end
+function Account:LoginWithoutPubAccountInfo()
+  self.logger.debug("LoginWithoutPubAccountInfo")
+  self:CallServerMethod("LoginWithoutPubAccountInfo")
+end
 Assemble.AssembleComponents(Account)
 return Account

@@ -4,11 +4,9 @@ local WBP_Battle_Fort_M_C = Class("BluePrints.UI.Battle.Widget.WBP_Battle_Fort_B
 WBP_Battle_Fort_M_C._components = {
   "BluePrints.UI.UIComponent.TouchComponent"
 }
-
 function WBP_Battle_Fort_M_C:Initialize(Initializer)
   WBP_Battle_Fort_M_C.Super.Initialize(self)
 end
-
 function WBP_Battle_Fort_M_C:OnLoaded(...)
   WBP_Battle_Fort_M_C.Super.OnLoaded(self, ...)
   self:InitJoyStick()
@@ -22,7 +20,6 @@ function WBP_Battle_Fort_M_C:OnLoaded(...)
   self:InitTouchLayer(self.OwnerPlayer, 0, 0)
   self.DelayAddTouchLayerTimer = self:AddTimer(0.1, self.DelayAddTouchLayer, true)
 end
-
 function WBP_Battle_Fort_M_C:DelayAddTouchLayer()
   if self.Joystick and not self.IsInitTouch then
     self.IsInitTouch = true
@@ -44,11 +41,9 @@ function WBP_Battle_Fort_M_C:DelayAddTouchLayer()
     self:RemoveTimer(self.DelayAddTouchLayerTimer)
   end
 end
-
 function WBP_Battle_Fort_M_C:ButtonDown(Index, StartPos)
   self.Joystick:SetRenderOpacity(1.0)
 end
-
 function WBP_Battle_Fort_M_C:ButtonMove(TouchFingerCount, Index, LastPos, TotalDeltaDis, LastDeltaDis, TouchLocalPos)
   local WorldDeltaTime = UE4.UGameplayStatics.GetWorldDeltaSeconds(self)
   self.AddPitch = -self.LocalTurnSpeed_Vertical * LastDeltaDis.Y * WorldDeltaTime
@@ -100,7 +95,6 @@ function WBP_Battle_Fort_M_C:ButtonMove(TouchFingerCount, Index, LastPos, TotalD
     self.ControlMoveTimer = self:AddTimer(0.01, self.LerpSetCharacterPitchAndYawInput, true, 0, "LerpSetAmmoBarPercentTimer", false, 0.01667)
   end
 end
-
 function WBP_Battle_Fort_M_C:LerpSetCharacterPitchAndYawInput(DeltaTime)
   self.LerpAlpha = self.LerpAlpha + self.ChangeSpeed * DeltaTime
   if self.LerpAlpha >= 1 then
@@ -121,7 +115,6 @@ function WBP_Battle_Fort_M_C:LerpSetCharacterPitchAndYawInput(DeltaTime)
     self.OwnerPlayer:AddCharacterYawInput(self.AddYaw)
   end
 end
-
 function WBP_Battle_Fort_M_C:ButtonUp(Index, StartPos)
   self.Joystick:SetRenderOpacity(self.Noraml)
   self.Joystick_Border:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -132,7 +125,6 @@ function WBP_Battle_Fort_M_C:ButtonUp(Index, StartPos)
     self.ControlMoveTimer = nil
   end
 end
-
 function WBP_Battle_Fort_M_C:CalcFinalAngle(LastPos)
   local DirectionVec = FVector2D(LastPos.X, -LastPos.Y)
   DirectionVec:Normalize()
@@ -149,7 +141,6 @@ function WBP_Battle_Fort_M_C:CalcFinalAngle(LastPos)
   end
   return FinalAngle
 end
-
 function WBP_Battle_Fort_M_C:StopAnimationUpAndDown()
   if self.ArrowUpBlack then
     self.ArrowUpBlack = false
@@ -160,7 +151,6 @@ function WBP_Battle_Fort_M_C:StopAnimationUpAndDown()
     EMUIAnimationSubsystem:EMPlayAnimation(self.Arrow_Down, self.Arrow_Down.VX_Normal)
   end
 end
-
 function WBP_Battle_Fort_M_C:StopAnimationLeftAndRight()
   if self.ArrowRightLight then
     self.ArrowRightLight = false
@@ -175,17 +165,10 @@ function WBP_Battle_Fort_M_C:StopAnimationLeftAndRight()
     EMUIAnimationSubsystem:EMPlayAnimation(self.Arrow_Left, self.Arrow_Left.VX_Normal)
   end
 end
-
 function WBP_Battle_Fort_M_C:InitJoyStick()
   self.Joystick:SetRenderOpacity(self.Noraml)
   self.Joystick_Border:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
-function WBP_Battle_Fort_M_C:InitFortBackKey(FortBackKey)
-  FortBackKey.Btn_Exit:SetText(GText("UI_Mechanism_ExitPaotai"))
-  FortBackKey.Btn_Exit:BindEventOnClicked(self, self.OnPressQuit)
-end
-
 function WBP_Battle_Fort_M_C:HideSelf(IsHide)
   local AllChildrend = self.Main:GetAllChildren()
   local Length = AllChildrend:Length()
@@ -200,6 +183,5 @@ function WBP_Battle_Fort_M_C:HideSelf(IsHide)
     end
   end
 end
-
 AssembleComponents(WBP_Battle_Fort_M_C)
 return WBP_Battle_Fort_M_C

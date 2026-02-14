@@ -1,12 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.SoundFunc = nil
   self.HoverSoundFunc = nil
   self.SoundFuncReceiver = self
 end
-
 function M:Init(ConfigData)
   self.CurrentTab = nil
   self.ConfigData = ConfigData
@@ -29,7 +27,6 @@ function M:Init(ConfigData)
   self:UpdateTabs(self.ConfigData.Tabs or {})
   self:RefreshBaseInfo()
 end
-
 function M:UpdateTabs(Tabs)
   self.Tabs = Tabs
   self.List_Tab:ClearChildren()
@@ -43,6 +40,10 @@ function M:UpdateTabs(Tabs)
     self.List_Tab:AddChild(Child)
     if self.bUserTabItemSize and type(Child.SetFitSize) == "function" then
       Child:SetFitSize(self.TabItem_Size)
+    elseif self.bUserTabItemSizeAuto then
+      local SizeStruct = FSlateChildSize()
+      SizeStruct.SizeRule = UE.ESlateSizeRule.Automatic
+      Child.Slot:SetSize(SizeStruct)
     else
       local SizeStruct = FSlateChildSize()
       SizeStruct.Value = 1.0
@@ -53,17 +54,16 @@ function M:UpdateTabs(Tabs)
     Child:BindSoundFunc(self.SoundFunc, self.SoundFuncReceiver)
     Child:BindHoverSoundFunc(self.HoverSoundFunc, self.SoundFuncReceiver)
   end
-  if self.DeviceTypeByPlatformName == CommonConst.CLIENT_DEVICE_TYPE.PC then
-    if #Tabs <= 1 then
-      self.Key_Left:SetVisibility(UIConst.VisibilityOp.Collapsed)
-      self.Key_Right:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    else
+  if #Tabs <= 1 then
+    self:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  else
+    if self.DeviceTypeByPlatformName == CommonConst.CLIENT_DEVICE_TYPE.PC then
       self.Key_Left:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
       self.Key_Right:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
+    self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -71,7 +71,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -85,7 +84,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:UpdateHotKeyInfo(CurGamepadName)
   end
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad, bIsNotRegerate)
   if not bIsNotRegerate then
     if IsUseGamePad then
@@ -104,10 +102,8 @@ function M:UpdateUIStyleInPlatform(IsUseGamePad, bIsNotRegerate)
     self.Key_Right:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:UpdateHotKeyInfo(CurGamepadName)
 end
-
 function M:CreateHotKeyAndAddToParent(PanelWidget, KeyType, KeyContent)
   PanelWidget:ClearChildren()
   local HotKeyWidget
@@ -137,7 +133,6 @@ function M:CreateHotKeyAndAddToParent(PanelWidget, KeyType, KeyContent)
   end
   PanelWidget:AddChildToOverlay(HotKeyWidget)
 end
-
 function M:OnTabSwitchOn(TabWidget)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
@@ -152,29 +147,24 @@ function M:OnTabSwitchOn(TabWidget)
     self.EventTabSelected(self.ObjTabSelected, TabWidget, self.Tabs[self.CurrentTab])
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     self.List_Tab:GetChildAt(math.max(Idx - 1, 0)):SetSwitchOn(true)
   end
 end
-
 function M:ClickTab(Idx)
   if self.Tabs[Idx] then
     self:PlayClickSound()
     self:SelectTab(Idx)
   end
 end
-
 function M:GetCurrentTabIndex()
   return self.CurrentTab
 end
-
 function M:TabToLeft()
   if self.CurrentTab and self.CurrentTab - 1 >= 1 then
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab - 1)
@@ -185,7 +175,6 @@ function M:TabToLeft()
     end
   end
 end
-
 function M:TabToRight()
   if self.CurrentTab and self.CurrentTab + 1 <= #self.Tabs then
     self.SoundFunc(self.SoundFuncReceiver, self.CurrentTab + 1)
@@ -196,7 +185,6 @@ function M:TabToRight()
     end
   end
 end
-
 function M:UnLockTabByIndex(bUnLock, TabIndex)
   local AllItemCount = self.List_Tab:GetChildrenCount()
   if nil ~= TabIndex then
@@ -214,7 +202,6 @@ function M:UnLockTabByIndex(bUnLock, TabIndex)
     end
   end
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -222,14 +209,12 @@ function M:UpdateReddots()
     end
   end
 end
-
 function M:ShowTabRedDot(Idx, IsNew, Upgradeable, OhterReddot)
   if self.Tabs[Idx] then
     local TabWidget = self.List_Tab:GetChildAt(math.max(Idx - 1, 0))
     TabWidget:SetReddot(IsNew, Upgradeable, OhterReddot)
   end
 end
-
 function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
   local AllItemCount = self.List_Tab:GetChildrenCount()
   for i = 1, AllItemCount do
@@ -240,11 +225,9 @@ function M:ShowTabRedDotByTabId(TabId, IsNew, Upgradeable, OhterReddot)
     end
   end
 end
-
 function M:PlayClickSound()
   UIUtils.PlayCommonBtnSe(self)
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   local IsEventHandled = true
   if InKeyName == self.LeftKeyName then
@@ -256,7 +239,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = true
   if InKeyName == UIConst.GamePadKey[self.LeftGamePadKeyName] then
@@ -268,5 +250,4 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

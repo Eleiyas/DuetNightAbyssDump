@@ -2,7 +2,6 @@ local CustomTypes = require("BluePrints.Client.CustomTypes.CustomTypes")
 local ClassModule = require("NetworkEngine.Class")
 local ClassMgr = require("NetworkEngine.Common.ClassManager")
 local RpcUtils = {}
-
 function RpcUtils.RevertArgs(Args)
   if type(Args) ~= "table" then
     return Args
@@ -16,7 +15,6 @@ function RpcUtils.RevertArgs(Args)
   end
   return Result
 end
-
 function RpcUtils.DumpArg(Arg)
   if type(Arg) == "table" and Arg.IsCustomType then
     local ArgDump = {}
@@ -27,7 +25,6 @@ function RpcUtils.DumpArg(Arg)
     return Arg
   end
 end
-
 function RpcUtils.ConvertArgs(Args)
   if type(Args) ~= "table" then
     return Args
@@ -41,7 +38,6 @@ function RpcUtils.ConvertArgs(Args)
   end
   return Result
 end
-
 function RpcUtils.LoadArg(Arg)
   if type(Arg) == "table" and Arg.__type and Arg.value then
     local Type = ClassMgr:GetType(Arg.__type)
@@ -54,5 +50,4 @@ function RpcUtils.LoadArg(Arg)
     return Arg
   end
 end
-
 return RpcUtils

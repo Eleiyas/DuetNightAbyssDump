@@ -15,11 +15,9 @@ BP_MonsterCharacter_C._components = {
 }
 UE4.AMonsterCharacter.SetEQSOptimizationInfo(Const.bSkipEQSTestWhilePlatformWarning, Const.NumOfEQSItemWhilePlatformWarning)
 UE4.AMonsterCharacter.SetAndroidPlayDeathEffectDist(Const.AndroidPlayDeathEffectDist)
-
 function BP_MonsterCharacter_C:Initialize(Initializer)
   self.bIsBossInPart = false
 end
-
 function BP_MonsterCharacter_C:ReceiveBeginPlay()
   self.IsDestroied = false
   BP_MonsterCharacter_C.Super.ReceiveBeginPlay(self)
@@ -28,11 +26,49 @@ function BP_MonsterCharacter_C:ReceiveBeginPlay()
     self.CharFSMComp.OnAfterTagChanged:Add(self, self.OnTagChange)
   end
 end
-
+function BP_MonsterCharacter_C:TryStartOutAirWallCheck(Info)
+  local GameState = UGameplayStatics.GetGameState(self)
+  local IsInDungeon = GameState and GameState:IsInDungeon()
+  if GameState and IsInDungeon and URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) and GameState.CheckOutAirDoorBoxTransform ~= nil and nil ~= GameState.CheckOutAirBoxLocal then
+    self.CheckOutAirDoorBoxTransform = GameState.CheckOutAirDoorBoxTransform
+    self.CheckOutAirBoxLocal = GameState.CheckOutAirBoxLocal
+    local bCanStartTime = not self.bInPool and self.IsDead and not self:IsDead() and self.InitSuccess and self.IsRealMonster and self:IsRealMonster()
+    if bCanStartTime then
+      self.TimeCount = 0
+      self.CheckOutAirDoorHandle = self:AddTimer(1, function()
+        if self.CheckOutAirDoorHandle == nil then
+          DebugPrint(self:GetName() .. " @gulinan AirDoorBoxOutCheck Handle is invalid but timer still tick")
+          self.RemoveTimer("CheckOutAirDoorBoxTimer")
+          self.CheckOutAirDoorHandle = nil
+        end
+        local bFilterActor = not self.bInPool and self.IsDead and not self:IsDead() and self.InitSuccess and self.IsRealMonster and self:IsRealMonster()
+        if nil ~= self and not bFilterActor and self.CheckOutAirDoorHandle ~= nil then
+          self:RemoveTimer(self.CheckOutAirDoorHandle)
+          self.CheckOutAirDoorHandle = nil
+        end
+        self.CheckOutAirDoorBoxTransform.Scale3D = FVector(1, 1, 1)
+        local CurLocalLoc = UE4.UKismetMathLibrary.InverseTransformLocation(self.CheckOutAirDoorBoxTransform, self:K2_GetActorLocation())
+        if CurLocalLoc.X > self.CheckOutAirBoxLocal.X or CurLocalLoc.X < -self.CheckOutAirBoxLocal.X or CurLocalLoc.Y > self.CheckOutAirBoxLocal.Y or CurLocalLoc.Y < -self.CheckOutAirBoxLocal.Y or CurLocalLoc.Z > self.CheckOutAirBoxLocal.Z or CurLocalLoc.Z < -self.CheckOutAirBoxLocal.Z then
+          if self.TimeCount < 10 then
+            self.TimeCount = self.TimeCount + 1
+          else
+            self.TimeCount = 0
+            Battle(self):BattleOnDead(self.Eid, self.Eid, 0, EDeathReason.StuckInWall)
+            if self.CheckOutAirDoorHandle ~= nil then
+              self:RemoveTimer(self.CheckOutAirDoorHandle)
+              self.CheckOutAirDoorHandle = nil
+            end
+          end
+        else
+          self.TimeCount = 0
+        end
+      end, true, 0, "CheckOutAirDoorBoxTimer", false)
+    end
+  end
+end
 function BP_MonsterCharacter_C:CallFromCPPDelegete(Type)
   DebugPrint("BP_MonsterCharacter_C:CallFromCPPDelegete", Type)
 end
-
 function BP_MonsterCharacter_C:OnTagChange(Eid, OldTag, NewTag)
   if "HitFly" ~= NewTag then
     return
@@ -47,24 +83,20 @@ function BP_MonsterCharacter_C:OnTagChange(Eid, OldTag, NewTag)
     end
   end
 end
-
 function BP_MonsterCharacter_C:SetReplaceAttrsLua(Context)
   local ReplaceAttrs = Context:GetLuaTable("ReplaceAttrs")
   if ReplaceAttrs then
     self:SetReplaceAttrs(ReplaceAttrs)
   end
 end
-
 function BP_MonsterCharacter_C:TryResumeRootMotionFromPush()
   if not self.bBePushed and self:GetRootMotionTagState(ESourceTags.ApplyPush) then
     self:EnableRootMotion(ESourceTags.ApplyPush)
   end
 end
-
 function BP_MonsterCharacter_C:TickMonsterBattleComponent(DeltaSeconds)
   self:TickComponent(DeltaSeconds)
 end
-
 function BP_MonsterCharacter_C:CheckMonsterCanReachTest()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local Location = self:CheckMonsterCanReach(Player)
@@ -74,11 +106,9 @@ function BP_MonsterCharacter_C:CheckMonsterCanReachTest()
   self:K2_SetActorLocation(Location, false, nil, false)
   print("selfCheckMonsterCanReachTest", Location)
 end
-
 function BP_MonsterCharacter_C:GetBlueprintPath()
   return self.Data.UnitBPPath
 end
-
 function BP_MonsterCharacter_C:PlayOutBattleMontage(MontageIndex)
   local Model = DataMgr.Model[self.ModelId]
   local GroupId = Model.BehaviorMontageGroupId
@@ -100,11 +130,9 @@ function BP_MonsterCharacter_C:PlayOutBattleMontage(MontageIndex)
   self:Montage_RepPlay(Path)
   return self.EMAnimInstance.NowMontageDuration
 end
-
 function BP_MonsterCharacter_C:OnEMActorDestroy_Lua(DestroyReason)
   self:CommonOnEMActorDestroy(DestroyReason)
 end
-
 function BP_MonsterCharacter_C:GetKillSourceType(KillMineRoleEid)
   local KillMineRole = Battle(self):GetEntity(KillMineRoleEid)
   local KillSourceType
@@ -118,7 +146,6 @@ function BP_MonsterCharacter_C:GetKillSourceType(KillMineRoleEid)
   end
   return KillSourceType
 end
-
 function BP_MonsterCharacter_C:IsAllowedExp()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -137,12 +164,10 @@ function BP_MonsterCharacter_C:IsAllowedExp()
   end
   return not DungeonInfo.OnlyCombatReward
 end
-
 function BP_MonsterCharacter_C:Recovery(...)
   BP_MonsterCharacter_C.Super.Recovery(self, ...)
   self:SetCharacterTagIdle()
 end
-
 function BP_MonsterCharacter_C:OnDeadAnimationEnd()
   self.Mesh:SetCollisionProfileName("Ragdoll")
   if not self.IsSpawnedByMovieCaptureSequence then
@@ -154,13 +179,11 @@ function BP_MonsterCharacter_C:OnDeadAnimationEnd()
     self.DuringDyingHitFly = nil
   end
 end
-
 function BP_MonsterCharacter_C:SetActionModeForBlackBoard(ActionMode)
   if self:GetOwnBlackBoardComponent() then
     self:GetOwnBlackBoardComponent():SetValueAsEnum("ActionMode", ActionMode)
   end
 end
-
 function BP_MonsterCharacter_C:MonsterCommonLeaveTag()
   if not DataMgr.MonsterStateLimit[self.AutoSyncProp.CharacterTag] then
     return
@@ -169,7 +192,6 @@ function BP_MonsterCharacter_C:MonsterCommonLeaveTag()
     self:ClearStopBTFlag(self.AutoSyncProp.CharacterTag)
   end
 end
-
 function BP_MonsterCharacter_C:TriggerFallingCallable(GameMode)
   DebugPrint("OtherActor is Falling Dead. ActorName: ", self:GetName(), ", UnitId: ", self.UnitId, ", Eid: ", self.Eid, ", CreatorId: ", self.CreatorId, " CreatorType: ", self.CreatorType, ", BornPos: ", self.BornPos)
   if self.IsSummonMonster and self:IsSummonMonster() then
@@ -207,7 +229,6 @@ function BP_MonsterCharacter_C:TriggerFallingCallable(GameMode)
     Battle(GameMode):BattleOnDead(self.Eid, self.Eid, 0, EDeathReason.TriggerFalling)
   end
 end
-
 function BP_MonsterCharacter_C:TriggerWaterFallingCallable(GameMode)
   if self.IsCaptureMonster and self:IsCaptureMonster() then
     local NearestPlayer
@@ -229,7 +250,6 @@ function BP_MonsterCharacter_C:TriggerWaterFallingCallable(GameMode)
     Battle(self):BattleOnDead(self.Eid, self.Eid, 0, EDeathReason.TriggerFalling)
   end
 end
-
 function BP_MonsterCharacter_C:CheckMonsterCanReach(Creator, IgnoreActorPos)
   local TwoPosPathType = UE4.UNavigationFunctionLibrary.CheckTwoPosHasPath(self:K2_GetActorLocation(), Creator:K2_GetActorLocation(), self)
   if TwoPosPathType == Const.PathTypeHasPath then
@@ -254,14 +274,11 @@ function BP_MonsterCharacter_C:CheckMonsterCanReach(Creator, IgnoreActorPos)
   end
   return Creator:K2_GetActorLocation()
 end
-
 function BP_MonsterCharacter_C:SetIsFallTrigger()
   self.IsFallTrigger = true
 end
-
 function BP_MonsterCharacter_C:LeaveHitFlyTag()
 end
-
 function BP_MonsterCharacter_C:GetMonsterToTargetPitch()
   local Target = self.BBTarget
   if not Target then
@@ -273,14 +290,12 @@ function BP_MonsterCharacter_C:GetMonsterToTargetPitch()
   local DesiredRotPitch = SelfToTarget:ToRotator().Pitch
   return DesiredRotPitch
 end
-
 function BP_MonsterCharacter_C:TreasureMonsterInRougLikeOnDead()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if GameMode then
     GameMode:SpeciaMonsterOnDead(self.UnitId)
   end
 end
-
 function BP_MonsterCharacter_C:AddHatredTargetByWaitRecover(TargetEid)
   local Target = Battle(self):GetEntity(TargetEid)
   if not Target:IsPlayer() and not Target:IsAIControlled() then
@@ -295,22 +310,18 @@ function BP_MonsterCharacter_C:AddHatredTargetByWaitRecover(TargetEid)
     self:AddHatredTarget(TargetEid, PresetHatredValue, PresetHatredValue)
   end
 end
-
 function BP_MonsterCharacter_C:ListenRecoverHatredEvent()
   EventManager:AddEvent(EventID.CharDie, self, self.AddHatredTargetByWaitRecover)
 end
-
 function BP_MonsterCharacter_C:RemoveRecoverHatredEvent()
   EventManager:RemoveEvent(EventID.CharDie, self)
 end
-
 function BP_MonsterCharacter_C:GetSplingAnim()
   if not self.IsCoverMontage then
     return
   end
   local CoverType = self.CoverPointInfo.IsCrouch
 end
-
 function BP_MonsterCharacter_C:GetCoverMontageAnimAsset(AnimName)
   local MontageInfo = DataMgr.Model[self.ModelId]
   local MontageFolder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
@@ -322,12 +333,10 @@ function BP_MonsterCharacter_C:GetCoverMontageAnimAsset(AnimName)
   local MontageAnimBpPath = MontageFloderPath .. MontageName .. Const.MontageSuffix .. "." .. MontageName .. Const.MontageSuffix
   return nil, MontageAnimBpPath
 end
-
 function BP_MonsterCharacter_C:IsLimitMontage()
   local SourceTag = DataMgr.MonsterStateLimit[self.AutoSyncProp.CharacterTag].SourceTag
   return SourceTag == Const.StunTag
 end
-
 function BP_MonsterCharacter_C:PlayLimitMontage(StunName)
   if self:IsLimitMontage() == false then
     return
@@ -338,7 +347,6 @@ function BP_MonsterCharacter_C:PlayLimitMontage(StunName)
   end
   self:PlayMontageByPath(Path, nil, false)
 end
-
 function BP_MonsterCharacter_C:StopLimitMontage(StunName)
   if self:IsLimitMontage() == false then
     return
@@ -353,7 +361,6 @@ function BP_MonsterCharacter_C:StopLimitMontage(StunName)
   end
   self.EMAnimInstance:Montage_Stop(Const.MontageBlendOutTime, AnimationAsset)
 end
-
 function BP_MonsterCharacter_C:GetLimitMontagePath(StunName)
   local MontageFloder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
   if nil ~= MontageFloder then
@@ -364,18 +371,15 @@ function BP_MonsterCharacter_C:GetLimitMontagePath(StunName)
     return nil
   end
 end
-
 function BP_MonsterCharacter_C:GetSkillIdBySkillType(SkillId)
   return SkillId
 end
-
 function BP_MonsterCharacter_C:GetCurrentAnimationBlueprint(Id)
   if self.Data and self.Data.AnimCoverPath then
     return self.Data.AnimCoverPath
   end
   return BP_MonsterCharacter_C.Super.GetCurrentAnimationBlueprint(self, Id)
 end
-
 function BP_MonsterCharacter_C:IsContainCollapsedGraphTag(CollapsedGraph)
   if "None" == CollapsedGraph then
     return false
@@ -385,13 +389,12 @@ function BP_MonsterCharacter_C:IsContainCollapsedGraphTag(CollapsedGraph)
   end
   return false
 end
-
 function BP_MonsterCharacter_C:BlockTickLod(bEnable, Tag, TickObjectFlag)
   if self.Data and self.Data.DisableTicklod then
     return
   end
   if TickObjectFlag | ETickObjectFlag.FLAG_CHARMOVEMENTCOMPONENT then
-    GWorld.logger.errorlog("@wuzhijun\239\188\154BlockTickLod.\229\164\132\231\144\134\231\167\187\229\138\168\231\187\132\228\187\182\231\148\168 BlockTickLod_MoveComp")
+    GWorld.logger.errorlog("@wuzhijun：BlockTickLod.处理移动组件用 BlockTickLod_MoveComp")
     return
   end
   local SignificanceMgrSubsystem = USubsystemBlueprintLibrary.GetWorldSubsystem(self, UEMSignificanceMgrSubsystem)
@@ -400,7 +403,6 @@ function BP_MonsterCharacter_C:BlockTickLod(bEnable, Tag, TickObjectFlag)
   end
   SignificanceMgrSubsystem:BlockTickLod(ESignificanceTag.Monster, bEnable, self, Tag, TickObjectFlag)
 end
-
 function BP_MonsterCharacter_C:BlockTickLod_BT(bEnable, Tag)
   if self.Data and self.Data.DisableTicklod then
     return
@@ -411,17 +413,14 @@ function BP_MonsterCharacter_C:BlockTickLod_BT(bEnable, Tag)
   end
   SignificanceMgrSubsystem:BlockTickLod(ESignificanceTag.MonsterBT, bEnable, self:GetController(), Tag, ETickObjectFlag.FLAG_ACTOR | ETickObjectFlag.FLAG_BTCOMPONENT)
 end
-
 function BP_MonsterCharacter_C:CheckOverlapPushForChangeCollision(Channel, NewResponse)
   local function SetCollision()
     if self.CapsuleComponent then
       self.CapsuleComponent:SetCollisionResponseToChannel(Channel, NewResponse)
     end
   end
-  
   return self:EnableCheckOverlapPush({self, SetCollision})
 end
-
 function BP_MonsterCharacter_C:IsNeedHideInTalk()
   if IsStandAlone(self) then
     return GWorld.GameInstance:GetTalkContext():HasDisableMonsterSpawn()
@@ -429,12 +428,10 @@ function BP_MonsterCharacter_C:IsNeedHideInTalk()
     return false
   end
 end
-
 function BP_MonsterCharacter_C:OnTalkEnableMonsterSpawn()
   self:SetWaitInitTag(false, Const.CharWaitInitTag.HideInTalk)
   EventManager:RemoveEvent(EventID.TalkEnableMonsterSpawn, self)
 end
-
 function BP_MonsterCharacter_C:ReceiveEndPlay(EndPlayReason)
   EventManager:RemoveEvent(EventID.TalkEnableMonsterSpawn, self)
   EventManager:RemoveEvent(EventID.CharDie, self)
@@ -444,14 +441,22 @@ function BP_MonsterCharacter_C:ReceiveEndPlay(EndPlayReason)
     self.BossBloodUI = nil
   end
   self.IsDestroied = true
+  if nil ~= self.CheckOutAirDoorHandle then
+    DebugPrint(self:GetName() .. " @gulinan Clear AirDoorBoxOutCheck Timer On Destroy")
+    self.RemoveTimer(self.CheckOutAirDoorHandle)
+    self.CheckOutAirDoorHandle = nil
+  end
+  if nil ~= self.CheckBornPosHandle then
+    DebugPrint(self:GetName() .. " @gulinan Clear CheckBornPosTimer Timer On Destroy")
+    self:RemoveTimer(self.CheckBornPosHandle)
+    self.CheckBornPosHandle = nil
+  end
 end
-
 function BP_MonsterCharacter_C:UpdateCdAndUseSkill(SkillId)
   local Skill = self:GetSkill(SkillId)
   Skill:ResetSkillCd()
   return self:UseSkill(SkillId, 0)
 end
-
 function BP_MonsterCharacter_C:ReuseSkill(SkillIndex)
   local SkillId = self:GetSeqSkill(SkillIndex)
   if 0 == SkillId then
@@ -466,29 +471,77 @@ function BP_MonsterCharacter_C:ReuseSkill(SkillIndex)
   end
   self:AddTimer(0.05, self.UpdateCdAndUseSkill, true, 0, "ReuseSkillTimer", nil, SkillId)
 end
-
 function BP_MonsterCharacter_C:CallSuperFunction(FuncName, ...)
   BP_MonsterCharacter_C.Super[FuncName](self, ...)
 end
-
 function BP_MonsterCharacter_C:OnTimeDilationChanged(TimeDilation, CurrentTimeDilation)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player then
     Player:TimeDilationPostProcess(TimeDilation, CurrentTimeDilation)
   end
 end
-
 function BP_MonsterCharacter_C:SetTreasureMonsterTarget(TargetLocation)
   self:GetOwnBlackBoardComponent():SetValueAsVector("ExtractionLoc", TargetLocation)
 end
-
 function BP_MonsterCharacter_C:GetManualItemId()
   return -1
 end
-
 function BP_MonsterCharacter_C:CommonOnEMActorDestroy(DestroyReason)
 end
-
+function BP_MonsterCharacter_C:TryCheckBornPosTimer()
+  local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+  if not GameMode then
+    return
+  end
+  local LevelLoader = GameMode:GetLevelLoader()
+  if not LevelLoader or not LevelLoader:CheckIsRougeLike() then
+    return
+  end
+  local bCanStartCheckBornPos = not self.bInPool and self.IsDead and not self:IsDead() and self.InitSuccess and self.IsRealMonster and self:IsRealMonster()
+  if bCanStartCheckBornPos then
+    DebugPrint(self:GetName() .. " @gulinan Start CheckBornPos Timer")
+    self.CheckBornPosHandle = self:AddTimer(1, function()
+      if self.bInPool or self.IsDead and self:IsDead() or not self.InitSuccess then
+        if self.CheckBornPosHandle ~= nil then
+          DebugPrint(self:GetName() .. " @gulinan End CheckBornPosHandle Timer")
+          self:RemoveTimer(self.CheckBornPosHandle)
+          self.CheckBornPosHandle = nil
+        else
+          DebugPrint(self:GetName() .. " @gulinan CheckBornPos is nil but timer still tick")
+          self:RemoveTimer("CheckBornPos")
+        end
+      end
+      local LocalPlayer = UE4.UGameplayStatics.GetPlayerPawn(self, 0)
+      local CurrentLocation = self:K2_GetActorLocation()
+      local DistToBornPos = self.BornPos - CurrentLocation
+      local DistToPlayer = LocalPlayer and LocalPlayer:K2_GetActorLocation() - CurrentLocation or nil
+      if DistToBornPos:Size2D() > 20000 and math.abs(CurrentLocation.X) < 100 and math.abs(CurrentLocation.Y) < 100 and (nil == DistToPlayer or DistToPlayer:Size2D() > 20000) then
+        DebugPrint(self:GetName() .. " @gulinan CheckBornPos Teleport To BornPos")
+        self:K2_SetActorLocation(self.BornPos, false, nil, false)
+      end
+    end, true, 0, "CheckBornPos", false)
+  end
+end
+function BP_MonsterCharacter_C:AddPhantomBattleAchieve(Source)
+  if not IsStandAlone(self) then
+    return
+  end
+  local PlayerAchieveObj = UE4.URuntimeCommonFunctionLibrary.GetPlayerAchievementObject(Source)
+  if PlayerAchieveObj then
+    if self.UnitId == 8510001 then
+      PlayerAchieveObj:UploadTargetValue(2203, 1)
+    end
+    if self.UnitId == 8518001 then
+      PlayerAchieveObj:UploadTargetValue(2204, 1)
+    end
+    if self.UnitId == 8517001 then
+      PlayerAchieveObj:UploadTargetValue(2205, 1)
+    end
+  end
+end
+function BP_MonsterCharacter_C:PhysStateErrorReset_Lua()
+  self.Mesh:TermBodiesBelow("Root")
+end
 AssembleComponents(BP_MonsterCharacter_C)
 if BP_MonsterCharacter_C.TickComponent then
   AMonsterCharacter.SetHasLuaComponentTick(true)

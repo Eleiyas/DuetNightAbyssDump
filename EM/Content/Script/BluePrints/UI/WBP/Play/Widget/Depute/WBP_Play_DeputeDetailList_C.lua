@@ -1,7 +1,6 @@
 require("UnLua")
 local RomanNum = Const.RomanNum
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Text_LvName:SetText(GText("UI_LEVEL_NAME"))
   self.New_Tag:SetVisibility(ESlateVisibility.Collapsed)
@@ -13,12 +12,10 @@ function M:Construct()
   EventManager:AddEvent(EventID.TeamMatchTimingStart, self, self.RefreshBtnState)
   EventManager:AddEvent(EventID.TeamMatchTimingEnd, self, self.RefreshBtnState)
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.TeamMatchTimingStart, self)
   EventManager:RemoveEvent(EventID.TeamMatchTimingEnd, self)
 end
-
 function M:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -29,20 +26,18 @@ function M:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.Bg_List then
     self.Bg_List:OnCellClicked()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:InitDungeonInfo(DungeonId, Index, IsShowDungeonName, Parent)
   self.DungeonId = DungeonId
   self.Parent = Parent
   local Data = DataMgr.Dungeon[DungeonId]
   if not Data then
-    DebugPrint("ZDX_\230\137\190\228\184\141\229\136\176\229\133\179\229\141\161\230\149\176\230\141\174:", DungeonId)
+    DebugPrint("ZDX_找不到关卡数据:", DungeonId)
     return
   end
   if PageJumpUtils:CheckDungeonCondition(Data.Condition) then
@@ -66,7 +61,6 @@ function M:InitDungeonInfo(DungeonId, Index, IsShowDungeonName, Parent)
     self.Text_Lv:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnSubCellClicked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -82,12 +76,10 @@ function M:OnSubCellClicked()
     end
   end
 end
-
 function M:IsMatching()
   local MatchTimingBar = UIManager(self):GetUIObj("DungeonMatchTimingBar")
   return MatchTimingBar and true
 end
-
 function M:RefreshBtnState(bIsMatching)
   if nil == bIsMatching then
     bIsMatching = self:IsMatching()
@@ -117,5 +109,4 @@ function M:RefreshBtnState(bIsMatching)
     self:PlayAnimation(self.Forbidden)
   end
 end
-
 return M

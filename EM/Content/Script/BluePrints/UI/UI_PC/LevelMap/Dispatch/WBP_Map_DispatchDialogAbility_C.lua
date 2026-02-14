@@ -18,7 +18,6 @@ local AbilityTable = {
   "Skilled",
   "Lucky"
 }
-
 function M:Construct()
   M.Super.Construct(self)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -26,7 +25,6 @@ function M:Construct()
     self.List_Ability:SetControlScrollbarInside(true)
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   local DispatchInfo = DataMgr.CharDispatchTag
@@ -40,7 +38,6 @@ function M:InitContent(Params, PopupData, Owner)
   self:ShowGamepadScrollBtn(true)
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if not self.MaxListScrollOffset then
     self.MaxListScrollOffset = UIUtils.GetMaxScrollOffsetOfListView(self.List_Ability)
@@ -58,9 +55,7 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:InitGamepadView()
   self:SetFocus()
 end
-
 return M

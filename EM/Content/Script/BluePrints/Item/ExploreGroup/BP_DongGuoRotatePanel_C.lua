@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   local CorrectDirection = self.UnitParams.CorrectDirection
@@ -20,5 +19,4 @@ function M:CommonInitInfo(Info)
     self:SetPanelCorrectDirction(5)
   end
 end
-
 return M

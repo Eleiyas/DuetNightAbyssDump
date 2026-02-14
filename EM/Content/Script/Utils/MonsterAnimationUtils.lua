@@ -3,7 +3,6 @@ local MonAnimUtils = {}
 MonAnimUtils.PlayerChar = nil
 MonAnimUtils.MAUPawn = nil
 MonAnimUtils.AIControllerClass = nil
-
 function MonAnimUtils:LookAtMonster(Eid)
   local GameInstance = GWorld.GameInstance
   local MonsterMap = UE4.UGameplayStatics.GetGameState(GameInstance).MonsterMap
@@ -18,12 +17,10 @@ function MonAnimUtils:LookAtMonster(Eid)
     self.MAUPawn.Target = TargetMonster
   end
 end
-
 function MonAnimUtils:QuitMAUtil()
   self.MAUPawn:CancelPossessPawn(self.PlayerChar)
   self.MAUPawn.Target:StartBT()
 end
-
 function MonAnimUtils:UseSkill(Eid, SkillId)
   local GameInstance = GWorld.GameInstance
   local MonsterMap = UE4.UGameplayStatics.GetGameState(GameInstance).MonsterMap
@@ -33,7 +30,6 @@ function MonAnimUtils:UseSkill(Eid, SkillId)
     TargetMonster:UpdateCdAndUseSkill(tonumber(RealId))
   end
 end
-
 function MonAnimUtils:SetFocus()
   if self.IsFocus then
     self:Focus(false)
@@ -43,7 +39,6 @@ function MonAnimUtils:SetFocus()
     self.IsFocus = true
   end
 end
-
 function MonAnimUtils:Focus(IsFocusNumber)
   if self.MAUPawn.Target and 1 == IsFocusNumber then
     self.MAUPawn.Target:GetMovementComponent().bOrientRotationToMovement = false
@@ -57,16 +52,13 @@ function MonAnimUtils:Focus(IsFocusNumber)
     self:SetSpeed(400)
   end
 end
-
 function MonAnimUtils:SetSpeed(Value)
   if self.MAUPawn.Target then
     self.MAUPawn.GmMoveSpeed = Value
   end
 end
-
 function MonAnimUtils:TestFunc(Value)
   if Value then
   end
 end
-
 return MonAnimUtils

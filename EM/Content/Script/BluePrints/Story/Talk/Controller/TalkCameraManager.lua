@@ -12,18 +12,16 @@ local ECameraFocusMethod = {
   [3] = "Disable",
   [4] = "MAX"
 }
-local FeishuErrorTitle = "\229\175\185\232\175\157\231\155\184\230\156\186\233\148\153\232\175\175"
+local FeishuErrorTitle = "对话相机错误"
 local TalkCameraManager_C = {}
-
 function TalkCameraManager_C.New(TalkContext, Player, PlayerController)
   local Obj = setmetatable({}, {__index = TalkCameraManager_C})
   Obj.TalkContext = TalkContext
   Obj.Player = Player
   Obj.PlayerController = PlayerController
   Obj.AIControllerForPlayer = nil
-  Obj.CineCameras = {}
-  Obj.CurrentCineCameraIdx = 1
   Obj.TalkPawn = nil
+  Obj.CineCamera = nil
   Obj.CurrentCamera = nil
   Obj.InteractiveActor = nil
   Obj.BlendRunTime = 0
@@ -46,27 +44,20 @@ function TalkCameraManager_C.New(TalkContext, Player, PlayerController)
   Obj.bUseFinalCameraBlend = false
   Obj.StartCameraInfo = nil
   Obj.EndCameraInfo = nil
-  Obj.bNeedFixCamera = false
-  if URuntimeCommonFunctionLibrary.IsPlayInEditor(GWorld.GameInstance) then
-    Obj.bNeedFixCamera = true
-  end
   Obj.PlayerAspectRatio = 1.7777777777777777
   Obj.ConfiguredCameras = {}
   Obj.CameraConfigs = {}
   Obj.FinalCameraTranslationTimeInterval = 0.01666
   return Obj
 end
-
 local function InterpEaseIn(Alpha, Exp)
   local ModifiedAlpha = Alpha ^ Exp
   return ModifiedAlpha
 end
-
 local function InterpEaseOut(Alpha, Exp)
   local ModifiedAlpha = 1 - (1 - Alpha) ^ Exp
   return ModifiedAlpha
 end
-
 local function InterpEaseInOut(Alpha, Exp)
   if Alpha < 0.5 then
     Alpha = InterpEaseIn(Alpha * 2, Exp) * 0.5
@@ -75,7 +66,6 @@ local function InterpEaseInOut(Alpha, Exp)
   end
   return Alpha
 end
-
 function TalkCameraManager_C:CalculateBlendPct(CameraBlendFuncType)
   local Alpha = 0
   if 0 == self.TotalTranslationTime then
@@ -94,7 +84,6 @@ function TalkCameraManager_C:CalculateBlendPct(CameraBlendFuncType)
   end
   return Alpha
 end
-
 function TalkCameraManager_C:SwitchForceEnablePlayerFashionComponentDither(bEnable)
   if not IsValid(self.Player) then
     return
@@ -105,7 +94,6 @@ function TalkCameraManager_C:SwitchForceEnablePlayerFashionComponentDither(bEnab
     FC:ForceEnableDitherAlphaByTalk(bEnable)
   end
 end
-
 function TalkCameraManager_C:SwitchEnablePlayerDither(bEnable)
   DebugPrint("TalkCameraManager_C:SwitchEnablePlayerDither", bEnable)
   if not IsValid(self.Player) then
@@ -114,7 +102,6 @@ function TalkCameraManager_C:SwitchEnablePlayerDither(bEnable)
   local PCC = self.Player:GetComponentByClass(UPlayerCameraComponent)
   self:SwitchEnablePlayerCameraComponentDither(PCC, bEnable)
 end
-
 function TalkCameraManager_C:SwitchEnableTalkPawnDither(bEnable)
   DebugPrint("TalkCameraManager_C:SwitchEnableTalkPawnDither", bEnable)
   if not IsValid(self.TalkPawn) then
@@ -123,7 +110,6 @@ function TalkCameraManager_C:SwitchEnableTalkPawnDither(bEnable)
   local PCC = self.TalkPawn:GetComponentByClass(UPlayerCameraComponent)
   self:SwitchEnablePlayerCameraComponentDither(PCC, bEnable)
 end
-
 function TalkCameraManager_C:SwitchEnablePlayerCameraComponentDither(PCC, bEnable)
   if not IsValid(PCC) then
     return
@@ -134,7 +120,6 @@ function TalkCameraManager_C:SwitchEnablePlayerCameraComponentDither(PCC, bEnabl
     PCC:DisableCameraDither()
   end
 end
-
 function TalkCameraManager_C:ReceiveTick(DeltaTime)
   if self.AIControllerForPlayer and self.PlayerController and self.bUseTalkPawn and self.bEnablePlayerDither then
     local Rot = self.PlayerController:GetControlRotation()
@@ -150,7 +135,6 @@ function TalkCameraManager_C:ReceiveTick(DeltaTime)
   end
   self:_CameraBreathe(DeltaTime)
 end
-
 function TalkCameraManager_C:_CameraBreathe(DeltaTime)
   if self.IsCameraTransforming and self:GetCurrentCamera() and not self.bBreathePaused then
     if self.bUseFinalCameraBlend then
@@ -160,7 +144,6 @@ function TalkCameraManager_C:_CameraBreathe(DeltaTime)
     end
   end
 end
-
 function TalkCameraManager_C:_CameraBreathe_ByFinalCameraBlendConfig(DeltaTime)
   if not self.Stage then
     return
@@ -181,7 +164,6 @@ function TalkCameraManager_C:_CameraBreathe_ByFinalCameraBlendConfig(DeltaTime)
     return
   end
 end
-
 function TalkCameraManager_C:_CameraBreathe_ByCameraTransformConfig(DeltaTime)
   self.IsCameraTransforming = false
   if self.RotationTime < self.TotalRotationTime then
@@ -198,7 +180,6 @@ function TalkCameraManager_C:_CameraBreathe_ByCameraTransformConfig(DeltaTime)
   local FinalTrans = UE4.UKismetMathLibrary.ComposeTransforms(LocalTrans, self.Stage:GetTransform())
   self:GetCurrentCamera():K2_SetActorTransform(FinalTrans, false, nil, false)
 end
-
 function TalkCameraManager_C:GetActiveCameraComponent(Target, CameraClass)
   local RtnCameraComponent
   local CameraComponents = Target:K2_GetComponentsByClass(CameraClass)
@@ -210,25 +191,6 @@ function TalkCameraManager_C:GetActiveCameraComponent(Target, CameraClass)
   end
   return RtnCameraComponent
 end
-
-function TalkCameraManager_C:DialogueBlendCamera(CameraInfo, CameraBlendTime, CameraTransform, FinalCameraInfo, CameraBlendCurve, ToFinalCameraBlendTime, TalkStage, Instigator, Callback)
-  if not CameraInfo then
-    if Callback then
-      Callback()
-    end
-    return
-  end
-  local FixedCamera = self:GetFixedCamera(CameraInfo, TalkStage)
-  self:CameraBlendToNew(Instigator, FixedCamera, CameraBlendTime, nil, {
-    Func = function()
-      if Callback then
-        Callback()
-      end
-      self:StartCameraBreathe(FixedCamera, CameraTransform, CameraInfo, FinalCameraInfo, CameraBlendCurve, ToFinalCameraBlendTime, TalkStage)
-    end
-  })
-end
-
 function TalkCameraManager_C:_StartCameraBreathe_FinalCameraConfig(CameraInfo, FinalCameraInfo, BlendDuration, Stage, CameraBlendCurve, FinalCameraBlendCallback)
   self.TotalTranslationTime = BlendDuration
   self.TranslationTime = 0
@@ -250,7 +212,6 @@ function TalkCameraManager_C:_StartCameraBreathe_FinalCameraConfig(CameraInfo, F
     self:ReceiveTick(0)
   end
 end
-
 function TalkCameraManager_C:_StartCameraBreathe_CameraTransformConfig(CameraTransform, TargetCameraActor, Stage)
   if not CameraTransform or "" == CameraTransform then
     return
@@ -290,7 +251,6 @@ function TalkCameraManager_C:_StartCameraBreathe_CameraTransformConfig(CameraTra
   self.TotalRotationTime = TotalAngle / AngleSpeed
   DebugPrint("InitCameraTransformAnim", self.CurrentCameraLocation, self.TargetCameraLocation, self.DeltaLocation, self.CurrentCameraRotation, self.TargetCameraRotation, self.DeltaRotation, self.TotalRotationTime, self.TotalTranslationTime)
 end
-
 function TalkCameraManager_C:StartCameraBreathe(TargetCameraActor, CameraTransform, CameraInfo, FinalCameraInfo, CameraBlendCurve, BlendDuration, Stage)
   if nil == TargetCameraActor then
     return
@@ -302,11 +262,9 @@ function TalkCameraManager_C:StartCameraBreathe(TargetCameraActor, CameraTransfo
     self:_StartCameraBreathe_CameraTransformConfig(CameraTransform, TargetCameraActor, Stage)
   end
 end
-
 function TalkCameraManager_C:PauseCameraBreathe(bPause)
   self.bBreathePaused = bPause
 end
-
 function TalkCameraManager_C:StopCameraBreathe()
   self.RotationTime = self.TotalRotationTime + 1
   self.TranslationTime = self.TotalTranslationTime + 1
@@ -319,15 +277,12 @@ function TalkCameraManager_C:StopCameraBreathe()
     self.FinalCameraBlendCallback = nil
   end
 end
-
 function TalkCameraManager_C:SkipCameraBreathe()
   self:ReceiveTick(self.TotalTranslationTime)
 end
-
 function TalkCameraManager_C:ClearCameraBreatheCallback()
   self.FinalCameraBlendCallback = nil
 end
-
 function TalkCameraManager_C:SwitchCameraRole(Target)
   if "TalkPawn" == Target then
     self:SwitchToTalkPawn()
@@ -335,13 +290,11 @@ function TalkCameraManager_C:SwitchCameraRole(Target)
     self:SwitchToPlayer()
   end
 end
-
 function TalkCameraManager_C:CameraBlendToNew(Instigator, TargetCamera, BlendTime, TalkPawnSwitch, Callback, CurveInfo, EaseExp)
   self:StopCameraBreathe()
   local PlayerCameraManager = UE4.UGameplayStatics.GetPlayerCameraManager(GWorld.GameInstance, 0)
   local CurrentCameraLoc = PlayerCameraManager:GetCameraLocation()
   DebugPrint("TalkCameraManager_C:CameraBlendToNew", Instigator, TargetCamera, TargetCamera:GetName(), TargetCamera:K2_GetActorLocation(), CurrentCameraLoc, BlendTime, TalkPawnSwitch, Callback, CurveInfo, EaseExp)
-  
   local function OnBlendEndCallback()
     USequenceFunctionLibrary.SetViewTarget(self.PlayerController, TargetCamera)
     self:SetCurrentCamera(TargetCamera)
@@ -351,7 +304,6 @@ function TalkCameraManager_C:CameraBlendToNew(Instigator, TargetCamera, BlendTim
     UTalkSequenceFunctionLibrary.UpdatePlayerCameraManager(PlayerController)
     DebugPrint("TalkCameraManager_C:OnBlendEndCallback", UKismetSystemLibrary.GetFrameCount(), PlayerController:GetViewTarget():GetName(), PlayerController.PlayerCameraManager:GetCameraLocation())
   end
-  
   if -1 == BlendTime then
     OnBlendEndCallback()
   elseif 0 == BlendTime then
@@ -370,11 +322,9 @@ function TalkCameraManager_C:CameraBlendToNew(Instigator, TargetCamera, BlendTim
     end, false, 0, Instigator)
   end
 end
-
 function TalkCameraManager_C:FreeSimpleCameraBlendOutTo(Callback, TalkTaskData, TargetCamera, BlendTime, EaseExp)
   DebugPrint("TalkCameraManager_C:FreeSimpleCameraBlendOutTo", BlendTime, EaseExp)
   self:StopCameraBreathe()
-  
   local function OverrideCallback()
     local Rot = self.AIControllerForPlayer:GetControlRotation()
     self:SwitchToPlayer()
@@ -382,10 +332,7 @@ function TalkCameraManager_C:FreeSimpleCameraBlendOutTo(Callback, TalkTaskData, 
     self.AIControllerForPlayer.bSetControlRotationFromPawnOrientation = false
     self.TalkContext:TryFireCallback(Callback)
   end
-  
-  if -1 == BlendTime then
-    self.TalkContext:TryFireCallback(Callback)
-  elseif 0 == BlendTime then
+  if 0 == BlendTime then
     USequenceFunctionLibrary.SetViewTarget(self.PlayerController, TargetCamera)
     OverrideCallback()
   else
@@ -404,18 +351,15 @@ function TalkCameraManager_C:FreeSimpleCameraBlendOutTo(Callback, TalkTaskData, 
     end)
   end
 end
-
 function TalkCameraManager_C:KeepCurrentCamera()
   USequenceFunctionLibrary.SetViewTarget(self.PlayerController, self:GetCurrentCamera())
 end
-
 function TalkCameraManager_C:SetCurrentCamera(Camera)
   self.CurrentCamera = Camera
   if self.CachedPPInfo then
     self:SetPostProcess_Internal(self.CachedPPInfo)
   end
 end
-
 function TalkCameraManager_C:SwitchToTalkPawn()
   if self.AIControllerForPlayer == nil then
     self.AIControllerForPlayer = self.TalkContext:GetWorld():SpawnActor(ATalkAIController:StaticClass(), UE4.UKismetMathLibrary.MakeTransform(UE4.FVector(), UE4.FRotator(), UE4.FVector(1, 1, 1)))
@@ -430,7 +374,6 @@ function TalkCameraManager_C:SwitchToTalkPawn()
     FC:ForceEnableDitherAlphaByTalk(true)
   end
 end
-
 function TalkCameraManager_C:SwitchToPlayer()
   if not self.bUseTalkPawn then
     return
@@ -442,18 +385,13 @@ function TalkCameraManager_C:SwitchToPlayer()
   self.bUseTalkPawn = false
   self.PlayerController:Possess(self.Player)
 end
-
 function TalkCameraManager_C:SetTalkPawnEnableChangeView(bEnable)
   DebugPrint("TalkCameraManager_C:SetTalkPawnEnableChangeView", bEnable)
   if self.TalkPawn then
     self.TalkPawn:SetEnableChangeView(bEnable)
   end
 end
-
-function TalkCameraManager_C:GetTalkPawn(bCalculateTrans, bUseOldTalkPawn, ProceduralParams)
-  if bUseOldTalkPawn and self.TalkPawn then
-    return self.TalkPawn
-  end
+function TalkCameraManager_C:GetTalkPawn()
   local Loc = FVector(1)
   local Rot = FRotator(0, 0, 0)
   if IsValid(self.TalkPawn) then
@@ -461,14 +399,9 @@ function TalkCameraManager_C:GetTalkPawn(bCalculateTrans, bUseOldTalkPawn, Proce
   end
   local TalkPawnClass = LoadClass("/Game/BluePrints/Story/Talk/Base/BP_TalkPlayerPawn.BP_TalkPlayerPawn_C")
   self.TalkPawn = self.TalkContext:GetWorld():SpawnActor(TalkPawnClass, UE4.UKismetMathLibrary.MakeTransform(Loc, Rot, FVector(1)))
-  self:AdaptCameraComponent(self.TalkPawn.Camera)
   return self.TalkPawn
 end
-
-function TalkCameraManager_C:GetTalkPawnNew(bCalculateTrans, bUseOldTalkPawn, bUseProceduralCamera, ProceduralCameraId)
-  if bUseOldTalkPawn and self.TalkPawn then
-    return self.TalkPawn
-  end
+function TalkCameraManager_C:GetTalkPawnNew(bUseProceduralCamera, ProceduralCameraId)
   local ProceduralParams
   if bUseProceduralCamera and ProceduralCameraId then
     local ProceduralCameraData = DataMgr.FreeCamera[ProceduralCameraId]
@@ -479,33 +412,30 @@ function TalkCameraManager_C:GetTalkPawnNew(bCalculateTrans, bUseOldTalkPawn, bU
       AngleThreshold = ProceduralCameraData.BlockRange,
       AngleAfterBlock = ProceduralCameraData.IfBlockThenRot,
       CameraHeight = ProceduralCameraData.CameraHeight,
-      PivotOffset = ProceduralCameraData.PivotOffset
+      PivotOffset = ProceduralCameraData.PivotOffset,
+      MinCameraDis = ProceduralCameraData.MinCameraDistance
     }
   end
-  local Loc, Rot
-  if bCalculateTrans then
-    Loc, Rot = self:CalculateTalkPawnTrans((ProceduralParams or {}).PivotOffset)
-  else
-    Loc = FVector(1)
-    Rot = FRotator(0, 0, 0)
-  end
-  if not self.TalkPawn then
+  local Loc, Rot = self:CalculateTalkPawnTrans((ProceduralParams or {}).PivotOffset)
+  if not IsValid(self.TalkPawn) then
     local TalkPawnClass = LoadClass("/Game/BluePrints/Story/Talk/Base/BP_TalkPlayerPawn.BP_TalkPlayerPawn_C")
     self.TalkPawn = self.TalkContext:GetWorld():SpawnActor(TalkPawnClass, UE4.UKismetMathLibrary.MakeTransform(Loc, Rot, FVector(1)))
   end
   self.TalkPawn:K2_SetActorTransform(UE4.UKismetMathLibrary.MakeTransform(Loc, Rot, FVector(1)), false, nil, false)
-  local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
-  if bCalculateTrans and ProceduralParams then
+  if ProceduralParams then
     local CameraActor = self:GetCurrentCamera()
     self.TalkContext:FreeSimpleProceduralCamera(CameraActor, self.TalkPawn, self.Player, self.InteractiveActor, ProceduralParams.PushX, ProceduralParams.PullX, ProceduralParams.AngleThreshold, ProceduralParams.AngleAfterBlock, ProceduralParams.CameraHeight)
     if ProceduralParams.CameraControl == nil or ProceduralParams.CameraControl == false then
       self.TalkPawn:SetDisableRotation(true)
     end
+    local PlayerToOrigin = UE4.UKismetMathLibrary.VSize(self.Player:K2_GetActorLocation() - Loc)
+    local MinSpringArmLength = PlayerToOrigin + ProceduralParams.MinCameraDis
+    if MinSpringArmLength > self.TalkPawn.TalkSpringArm.BaseTargetArmLength then
+      self.TalkPawn.TalkSpringArm.BaseTargetArmLength = MinSpringArmLength
+    end
   end
-  self:AdaptCameraComponent(self.TalkPawn.Camera)
   return self.TalkPawn
 end
-
 function TalkCameraManager_C:CalculateTalkPawnTrans(PivotOffset)
   local InteractiveActor = self.InteractiveActor or self.Player
   local StoryPlayable = InteractiveActor:Cast(UStoryPlayableInterface)
@@ -514,21 +444,16 @@ function TalkCameraManager_C:CalculateTalkPawnTrans(PivotOffset)
     CameraLocationOffset = StoryPlayable:GetFreeCameraOffset() + FVector(0, 0, PivotOffset or 0)
   end
   local CameraLocation = (self.Player:K2_GetActorLocation() + InteractiveActor:K2_GetActorLocation()) / 2 + CameraLocationOffset
-  local CameraRotation
-  FRotator(0, 0, 0)
-  local CameraComp = self.Player:GetComponentByClass(UCameraComponent)
+  local CameraRotation = FRotator(0, 0, 0)
+  local CameraComp = self.Player:GetComponentByClass(UPlayerCameraComponent)
   if CameraComp then
     CameraRotation = UKismetMathLibrary.Conv_VectorToRotator(CameraLocation - CameraComp:K2_GetComponentLocation())
-  else
-    CameraComp = self.Player:GetComponentByClass(UCameraComponent)
   end
   return CameraLocation, CameraRotation
 end
-
 function TalkCameraManager_C:GetCurrentCamera()
   return self.CurrentCamera or self.Player
 end
-
 function TalkCameraManager_C:GetCurrentCameraInfo()
   local CurrentCamera = self:GetCurrentCamera()
   if not CurrentCamera then
@@ -547,26 +472,26 @@ function TalkCameraManager_C:GetCurrentCameraInfo()
   local CurrentAperture = CineCamera.CurrentAperture
   return Trans, FocalLength, FocusDis, ConstraintAspectRadio, FocusMethod, CurrentAperture
 end
-
 function TalkCameraManager_C:GetCineCamera()
-  local CameraIdx = self:GetCineCameraIdx()
-  local CineCamera = self.CineCameras[CameraIdx]
-  if not CineCamera then
-    self.CineCameras[CameraIdx] = self.TalkContext:GetWorld():SpawnActor(ACineCameraActor:StaticClass(), UE4.UKismetMathLibrary.MakeTransform(FVector(1), FRotator(0, 0, 0), FVector(1)), UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
-    local CameraComp = self:GetCameraComponent(self.CineCameras[CameraIdx])
-    self:MarkCameraIsConfigured(CameraComp, false)
-    self:RecordCameraConfig(CameraComp, nil)
-    self:AdaptCameraComponent(CameraComp)
-    CameraComp:SetConstraintAspectRatio(false)
-    return self.CineCameras[CameraIdx]
-  else
+  if not self.CineCamera then
+    local CineCamera = self.TalkContext:GetWorld():SpawnActor(ACineCameraActor:StaticClass(), UE4.UKismetMathLibrary.MakeTransform(FVector(1), FRotator(0, 0, 0), FVector(1)), UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
     local CameraComp = self:GetCameraComponent(CineCamera)
     self:MarkCameraIsConfigured(CameraComp, false)
     self:RecordCameraConfig(CameraComp, nil)
-    return CineCamera
+    CameraComp:SetConstraintAspectRatio(false)
+    self.CineCamera = CineCamera
   end
+  return self.CineCamera
 end
-
+function TalkCameraManager_C:ClearCineCamera()
+  if IsValid(self.CineCamera) then
+    local CameraComp = self:GetCameraComponent(self.CineCamera)
+    self:MarkCameraIsConfigured(CameraComp, false)
+    self:RecordCameraConfig(CameraComp, nil)
+    self.CineCamera:K2_DestroyActor()
+  end
+  self.CineCamera = nil
+end
 local function Split(str, p)
   local rt = {}
   string.gsub(str, "[^" .. p .. "]+", function(w)
@@ -574,7 +499,6 @@ local function Split(str, p)
   end)
   return rt
 end
-
 function TalkCameraManager_C:RetrieveCameraViewInfo(CameraInfo, AnchorTrans)
   local List = Split(CameraInfo, ",")
   local Loc = FVector(tonumber(List[1]), tonumber(List[2]), tonumber(List[3]))
@@ -588,7 +512,6 @@ function TalkCameraManager_C:RetrieveCameraViewInfo(CameraInfo, AnchorTrans)
   local CurrentAperture = tonumber(List[11])
   return Trans, FocalLength, FocusDis, ConstraintAspectRadio, FocusMethod, CurrentAperture
 end
-
 function TalkCameraManager_C:GetDefaultCameraViewInfo()
   local Trans = self.Player:GetCameraComponent():K2_GetComponentToWorld()
   local FocalLength = 0
@@ -598,7 +521,6 @@ function TalkCameraManager_C:GetDefaultCameraViewInfo()
   local CurrentAperture = 0
   return Trans, FocalLength, FocusDis, ConstraintAspectRadio, FocusMethod, CurrentAperture
 end
-
 function TalkCameraManager_C:MakeSequenceCamera()
   self.SequenceCamera = self:GetCineCamera()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -607,18 +529,16 @@ function TalkCameraManager_C:MakeSequenceCamera()
   self.SequenceCamera:K2_SetActorTransform(PCC:K2_GetComponentToWorld(), false, nil, false)
   self:PasteConfigToCamera(self.SequenceCamera, Config)
 end
-
 function TalkCameraManager_C:ClearSequenceCamera()
   self.SequenceCamera = nil
 end
-
 function TalkCameraManager_C:GetFixedCamera(CameraInfo, Stage, bUseDefaultIfCameraInfoIsNil, bUseDebugStage)
   bUseDefaultIfCameraInfoIsNil = bUseDefaultIfCameraInfoIsNil or false
   local CineCamera = self:GetCineCamera()
   local Trans, FocalLength, FocusDis, ConstraintAspectRadio, FocusMethod, CurrentAperture
   if nil == CameraInfo and bUseDefaultIfCameraInfoIsNil then
     if UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self.TalkContext) then
-      ScreenPrint("\233\149\156\229\164\180\230\156\170\233\133\141\231\189\174\239\188\140\228\189\191\231\148\168\233\187\152\232\174\164\233\149\156\229\164\180\233\133\141\231\189\174\239\188\129")
+      ScreenPrint("镜头未配置，使用默认镜头配置！")
     end
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
     local PCC = Player:GetComponentByClass(UPlayerCameraComponent)
@@ -628,8 +548,8 @@ function TalkCameraManager_C:GetFixedCamera(CameraInfo, Stage, bUseDefaultIfCame
     self:MarkCameraIsConfigured(self:GetCameraComponent(CineCamera), true)
     self:RecordCameraConfig(self:GetCameraComponent(CineCamera), Config)
   elseif nil == CameraInfo or "" == CameraInfo then
-    local Message = "\233\149\156\229\164\180\228\191\161\230\129\175\230\156\170\233\133\141\231\189\174(Debug\228\191\161\230\129\175\231\155\174\229\137\141\228\184\141\229\164\170\229\165\189\229\138\160\239\188\140\228\185\139\229\144\142\232\161\165\229\133\133)"
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, FeishuErrorTitle, Message)
+    local Message = "镜头信息未配置(Debug信息目前不太好加，之后补充)"
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Talk, FeishuErrorTitle, Message)
   else
     if Stage then
       Trans, FocalLength, FocusDis, ConstraintAspectRadio, FocusMethod, CurrentAperture = self:RetrieveCameraViewInfo(CameraInfo, Stage:GetTransform())
@@ -653,7 +573,6 @@ function TalkCameraManager_C:GetFixedCamera(CameraInfo, Stage, bUseDefaultIfCame
   end
   return CineCamera
 end
-
 function TalkCameraManager_C:MarkCameraIsConfigured(TargetCamera, bIsConfigured)
   if not TargetCamera then
     return
@@ -665,12 +584,10 @@ function TalkCameraManager_C:MarkCameraIsConfigured(TargetCamera, bIsConfigured)
     self.ConfiguredCameras[Camera] = nil
   end
 end
-
 function TalkCameraManager_C:IsConfiguredCamera(TargetCamera)
   local Camera = self:GetCameraComponent(TargetCamera)
   return self.ConfiguredCameras[Camera]
 end
-
 function TalkCameraManager_C:RecordCameraConfig(TargetCamera, Config)
   if not TargetCamera then
     return
@@ -678,12 +595,10 @@ function TalkCameraManager_C:RecordCameraConfig(TargetCamera, Config)
   local Camera = self:GetCameraComponent(TargetCamera)
   self.CameraConfigs[Camera] = Config
 end
-
 function TalkCameraManager_C:GetCameraConfig(TargetCamera)
   local Camera = self:GetCameraComponent(TargetCamera)
   return self.CameraConfigs[Camera]
 end
-
 function TalkCameraManager_C:GetFirstBoundObject(SequenceActor, Tag)
   local Binds = SequenceActor:FindNamedBindings(Tag)
   for i = 1, Binds:Num() do
@@ -693,7 +608,6 @@ function TalkCameraManager_C:GetFirstBoundObject(SequenceActor, Tag)
     end
   end
 end
-
 function TalkCameraManager_C:MakeConfigFromCamera(Camera)
   local CameraComp = self:GetCameraComponent(Camera)
   local Config = {}
@@ -715,7 +629,6 @@ function TalkCameraManager_C:MakeConfigFromCamera(Camera)
   end
   return Config
 end
-
 function TalkCameraManager_C:PasteConfigToCamera(Camera, Config)
   local CameraComp = self:GetCameraComponent(Camera)
   if URuntimeCommonFunctionLibrary.ObjIsChildOf(CameraComp, UCineCameraComponent) then
@@ -732,20 +645,6 @@ function TalkCameraManager_C:PasteConfigToCamera(Camera, Config)
     CameraComp:SetFieldOfView(Config.FOV)
   end
 end
-
-function TalkCameraManager_C:GetCineCameraIdx()
-  local CurrentCineCameraIdx = self.CurrentCineCameraIdx
-  self.CurrentCineCameraIdx = self.CurrentCineCameraIdx % 3 + 1
-  return CurrentCineCameraIdx
-end
-
-function TalkCameraManager_C:AdaptCameraActor(TargetActor)
-  if IsValid(TargetActor) then
-    local CameraComponent = self:GetCameraComponent(TargetActor)
-    self:AdaptCameraComponent(CameraComponent)
-  end
-end
-
 function TalkCameraManager_C:FixAndReturnFOV(CameraComponent, Config, NewAspectRatio)
   local InitFOV = Config.FOV
   if not InitFOV then
@@ -761,32 +660,6 @@ function TalkCameraManager_C:FixAndReturnFOV(CameraComponent, Config, NewAspectR
   local NewFOV = 2 * (math.atan(InitFOVHalfTan * NewAspectRatio / InitAspectRatio) * 180 / math.pi)
   return NewFOV
 end
-
-function TalkCameraManager_C:AdaptCameraComponent(CameraComponent)
-  if not IsValid(CameraComponent) or not self.bNeedFixCamera then
-    return
-  end
-  local AspectRatio, FOV, bConstrainAspectRatio = CommonUtils:GetCurrentAspectRatioAndFOV()
-  local NewFOV = FOV
-  if self:IsConfiguredCamera(CameraComponent) then
-    local Config = self:GetCameraConfig(CameraComponent)
-    NewFOV = self:FixAndReturnFOV(CameraComponent, Config, AspectRatio)
-  end
-  if URuntimeCommonFunctionLibrary.ObjIsChildOf(CameraComponent, UCineCameraComponent) then
-    local CineCameraComponent = CameraComponent
-    if IsValid(CineCameraComponent) then
-      local DesiredHeight = CineCameraComponent.Filmback.SensorWidth / AspectRatio
-      CineCameraComponent.bConstrainAspectRatio = false
-      CineCameraComponent:SetFieldOfView(NewFOV)
-      CineCameraComponent.Filmback.SensorHeight = DesiredHeight
-    end
-  elseif URuntimeCommonFunctionLibrary.ObjIsChildOf(CameraComponent, UCameraComponent) then
-    CameraComponent.bConstrainAspectRatio = false
-    CameraComponent:SetFieldOfView(NewFOV)
-    CameraComponent:SetAspectRatio(AspectRatio)
-  end
-end
-
 function TalkCameraManager_C:OnSequenceCameraSpawned(TargetActor)
   if not IsValid(TargetActor) then
     return
@@ -806,41 +679,6 @@ function TalkCameraManager_C:OnSequenceCameraSpawned(TargetActor)
     self:RecordCameraConfig(CameraComp, Config)
   end
 end
-
-function TalkCameraManager_C:OnPlayerWindowChanged(bConstrainAspectRatio, NewAspectRatio, NewFOV)
-  self.bNeedFixCamera = true
-  self.PlayerAspectRatio = NewAspectRatio
-  if self.CineCameras then
-    for Idx, Camera in pairs(self.CineCameras) do
-      if IsValid(Camera) then
-        self:AdaptCameraActor(Camera)
-      else
-        self.CineCameras[Idx] = nil
-      end
-    end
-  end
-  if self.TalkContext.CamerasInSequence then
-    for Idx, Camera in pairs(self.TalkContext.CamerasInSequence) do
-      if IsValid(Camera) then
-        self:AdaptCameraActor(Camera)
-      else
-        self.TalkContext.CamerasInSequence[Idx] = nil
-      end
-    end
-  end
-  if IsValid(self.TalkPawn) and IsValid(self.TalkPawn.Camera) then
-    self:AdaptCameraComponent(self.TalkPawn.Camera)
-  end
-end
-
-function TalkCameraManager_C:AdaptCineCameraConstraint(CameraActor)
-  local CameraComponent = self:GetCameraComponent(CameraActor)
-  if not IsValid(CameraComponent) then
-    return
-  end
-  CameraComponent:SetConstraintAspectRatio(false)
-end
-
 function TalkCameraManager_C:GetCameraComponent(CameraActor)
   local CameraComponent
   if IsValid(CameraActor) then
@@ -854,7 +692,6 @@ function TalkCameraManager_C:GetCameraComponent(CameraActor)
   end
   return CameraComponent
 end
-
 function TalkCameraManager_C:OnExceptionInterrupted()
   if self.bUseTalkPawn then
     self:SwitchToPlayer()
@@ -864,32 +701,35 @@ function TalkCameraManager_C:OnExceptionInterrupted()
     USequenceFunctionLibrary.SetViewTarget(PlayerController, self.Player)
   end
 end
-
 function TalkCameraManager_C:SetPostProcess(MaterialPath)
-  if self.CachedPPInfo and self.CachedPPInfo.MaterialPath ~= MaterialPath then
-    self:ClearPostProcess()
-  end
   if "None" == MaterialPath then
+    self:ClearPostProcess()
     return
   end
   local Material = LoadObject(MaterialPath)
   if not Material then
-    local Message = "\229\144\142\229\164\132\231\144\134\230\157\144\232\180\168\228\184\141\229\173\152\229\156\168\239\188\140\232\183\175\229\190\132\239\188\154" .. MaterialPath
-    local Title = "\229\175\185\232\175\157\232\132\154\230\156\172Error\239\188\154\229\144\142\229\164\132\231\144\134\230\157\144\232\180\168\228\184\141\229\173\152\229\156\168"
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, Title, Message)
+    local Message = "后处理材质不存在，路径：" .. MaterialPath
+    local Title = "对话脚本Error：后处理材质不存在"
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Script, Title, Message)
     return
   end
   local MaterialType = Material:GetBaseMaterial()
   local DynamicInstance = UE4.UKismetMaterialLibrary.CreateDynamicMaterialInstance(self, Material)
-  self.CachedPPInfo = {
+  local PostProcessInfo = {
     MaterialPath = MaterialPath,
     MaterialType = MaterialType,
     DynamicInstance = DynamicInstance
   }
-  self:SetPostProcess_Internal(self.CachedPPInfo)
+  self:SetPostProcess_Internal(PostProcessInfo)
 end
-
 function TalkCameraManager_C:SetPostProcess_Internal(PostProcessInfo)
+  if not PostProcessInfo then
+    return
+  end
+  if self.CachedPPInfo and self.CachedPPInfo.MaterialPath ~= PostProcessInfo.MaterialPath then
+    self:ClearPostProcess()
+  end
+  self.CachedPPInfo = PostProcessInfo
   local MaterialType = PostProcessInfo.MaterialType
   local DynamicInstance = PostProcessInfo.DynamicInstance
   local CameraComponent = self:GetCameraComponent(self:GetCurrentCamera()) or self:GetCurrentCamera():GetComponentByClass(UPlayerCameraComponent)
@@ -903,15 +743,13 @@ function TalkCameraManager_C:SetPostProcess_Internal(PostProcessInfo)
   end
   if CameraComponent.MaterialInstDynamicMaps then
     if CameraComponent.MaterialInstDynamicMaps:Find(MaterialType) then
-      DynamicInstance = CameraComponent.MaterialInstDynamicMaps:Find(MaterialType)
-    else
-      CameraComponent.MaterialInstDynamicMaps:Add(MaterialType, DynamicInstance)
+      CameraComponent.MaterialInstDynamicMaps:Remove(MaterialType)
     end
+    CameraComponent.MaterialInstDynamicMaps:Add(MaterialType, DynamicInstance)
   end
   CameraComponent:AddOrUpdateBlendable(DynamicInstance, 1)
   self.ProcessedCameras[CameraComponent] = true
 end
-
 function TalkCameraManager_C:ClearPostProcess()
   self.ProcessedCameras = self.ProcessedCameras or {}
   for CameraComp, _ in pairs(self.ProcessedCameras) do
@@ -920,7 +758,6 @@ function TalkCameraManager_C:ClearPostProcess()
   self.ProcessedCameras = {}
   self.CachedPPInfo = nil
 end
-
 function TalkCameraManager_C:ClearSingleCameraPP(CameraComponent)
   if not CameraComponent then
     return
@@ -934,5 +771,9 @@ function TalkCameraManager_C:ClearSingleCameraPP(CameraComponent)
     CameraComponent.MaterialInstDynamicMaps:Clear()
   end
 end
-
+function TalkCameraManager_C:ClearTalkCamera()
+  self.CurrentCamera = nil
+  self:ClearCineCamera()
+  self:ClearPostProcess()
+end
 return TalkCameraManager_C

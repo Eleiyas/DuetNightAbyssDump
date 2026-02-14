@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   local Param = {
@@ -26,6 +25,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
         {Type = "Img", ImgShortPath = "View"}
       }
     })
+    self.Key_Access:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
   self:BindEvents()
   self:InitListenEvents()
@@ -36,15 +36,12 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_before_choose_show", "CheckTeamWalnut", nil)
 end
-
 function M:BindEvents()
   self.BtnClose.Btn_Close.OnClicked:Add(self, self.Close)
 end
-
 function M:InitListenEvents()
   self:AddDispatcher(EventID.UnLoadUI, self, self.OnSystemUIUnLoad)
 end
-
 function M:InitWalnutPlate(WalnutId)
   self.WalnutPlate:SetWalnutContent(WalnutId, false)
   self.WalnutPlate.Ordinal_1st.MainUI = self
@@ -59,11 +56,10 @@ function M:InitWalnutPlate(WalnutId)
   self.WalnutPlate.Reward_3rd_3.MainUI = self
   self.WalnutChoice = nil
 end
-
 function M:InitDescription(WalnutId)
   local WalnutData = DataMgr.Walnut[WalnutId]
   local WalnutTypeData = DataMgr.WalnutType[WalnutData.WalnutType]
-  self.Text_Title:SetText(GText(WalnutData.Name))
+  self.Text_Title:SetText(GText("UI_Walnut_Detail"))
   self.Text_Hold:SetText(GText("UI_Bag_Sellconfirm_Hold"))
   local Avatar = GWorld:GetAvatar()
   local Count = 0
@@ -83,7 +79,6 @@ function M:InitDescription(WalnutId)
   end
   self:InitAccess(WalnutData.AccessKey, WalnutId)
 end
-
 function M:InitCommonKey()
   if ModController:IsMobile() then
     return
@@ -95,7 +90,6 @@ function M:InitCommonKey()
   end
   self.Panel_Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:InitAccess(AccessKey, ItemId)
   self.Method:ClearChildren()
   if AccessKey then
@@ -105,7 +99,6 @@ function M:InitAccess(AccessKey, ItemId)
     PageJumpUtils:SortAccessItem(self.Method)
   end
 end
-
 function M:UpdateCommonKeys(...)
   local Param = {
     ...
@@ -130,7 +123,6 @@ function M:UpdateCommonKeys(...)
     end
   end
 end
-
 function M:GamePadToPC()
   if ModController:IsMobile() then
     return
@@ -138,7 +130,6 @@ function M:GamePadToPC()
   self.Panel_Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Key_Access:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:PCToGamepad()
   if ModController:IsMobile() then
     return
@@ -149,7 +140,6 @@ function M:PCToGamepad()
   self:UpdateCommonKeys("LS", GText("UI_Controller_CheckReward"), "B", GText("UI_Controller_Close"))
   self.State = 0
 end
-
 function M:InitGameInputMode()
   DebugPrint("InitGameInputMode")
   if not self.Panel_Key_GamePad then
@@ -163,7 +153,6 @@ function M:InitGameInputMode()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -178,7 +167,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -236,17 +224,14 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "CheckTeamWalnut", {ToEnd = 1})
   self.WalnutChoice = nil
   self.Super.Close(self)
 end
-
 function M:OnSystemUIUnLoad(UIName)
   if UIName == self.UIName then
     self:Close()
   end
 end
-
 return M

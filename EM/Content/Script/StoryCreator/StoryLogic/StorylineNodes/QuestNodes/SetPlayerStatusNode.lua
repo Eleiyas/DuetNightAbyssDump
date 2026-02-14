@@ -1,6 +1,5 @@
 local SetPlayerStatusNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
 local MiscUtils = require("Utils.MiscUtils")
-
 function SetPlayerStatusNode:Init()
   self.HPPercent = -1.0
   self.ESPercent = -1.0
@@ -8,7 +7,6 @@ function SetPlayerStatusNode:Init()
   self.BuffList = {}
   self.RecoverPlayer = false
 end
-
 function SetPlayerStatusNode:Execute()
   local Avatar = GWorld:GetAvatar()
   local GameInstance = GWorld.GameInstance
@@ -24,10 +22,8 @@ function SetPlayerStatusNode:Execute()
     Battle(PlayerCharacter):AddBuffToTarget(PlayerCharacter, PlayerCharacter, Buff.Id, Buff.LastTime, Buff.Value, nil)
   end
 end
-
 function SetPlayerStatusNode:Clear()
 end
-
 function SetPlayerStatusNode:CalcModifyAttrPercentChangeValue(Target, AttrName, AttrPercent)
   if AttrPercent < 0.0 then
     return 0.0
@@ -38,5 +34,4 @@ function SetPlayerStatusNode:CalcModifyAttrPercentChangeValue(Target, AttrName, 
   local ChangeAttrValue = TargetAttrValue - SourceAttrValue
   return ChangeAttrValue
 end
-
 return SetPlayerStatusNode

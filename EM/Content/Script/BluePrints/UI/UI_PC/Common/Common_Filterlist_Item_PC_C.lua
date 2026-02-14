@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:OnListItemObjectSet(Obj)
   self.Obj = Obj
   self.Obj.Entry = self
@@ -15,7 +14,6 @@ function M:OnListItemObjectSet(Obj)
   end
   self.Panel_Hovered:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnEntryHoveredChanged(IsHovered)
   self.Switcher:SetActiveWidgetIndex(0)
   if IsHovered then
@@ -32,22 +30,18 @@ function M:OnEntryHoveredChanged(IsHovered)
     if not self.Obj.IsSelected then
       self.Image_Chose:SetVisibility(UIConst.VisibilityOp.Collapsed)
       local EndTime = self.Hover_Out:GetEndTime()
-      
       local function func()
         self.Switcher:SetActiveWidgetIndex(1)
         self.Panel_Hovered:SetVisibility(UIConst.VisibilityOp.Collapsed)
       end
-      
       self:AddTimer(EndTime, func, false, 0, "Hover_Out")
     end
   end
 end
-
 function M:OnEntryClicked()
   UIUtils.PlayCommonBtnSe(self)
   self:PlayAnimation(self.Press)
 end
-
 function M:OnEntrySelectionChanged()
   if self.Obj.IsSelected then
     self.Switcher:SetActiveWidgetIndex(0)
@@ -57,23 +51,18 @@ function M:OnEntrySelectionChanged()
     self.Image_Chose:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:GetInAnimTime()
   return self.Text_In:GetEndTime()
 end
-
 function M:GetOutAnimTime()
   return self.Text_Out:GetEndTime()
 end
-
 function M:PlayInAnim()
   self:StopAnimation(self.Text_Out)
   self:PlayAnimation(self.Text_In)
 end
-
 function M:PlayOutAnim()
   self:StopAnimation(self.Text_In)
   self:PlayAnimation(self.Text_Out)
 end
-
 return M

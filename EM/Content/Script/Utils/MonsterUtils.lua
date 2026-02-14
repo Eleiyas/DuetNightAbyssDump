@@ -2,11 +2,9 @@ require("UnLua")
 local MonsterUtils = {}
 local DEFAULT_MONSTER_PRIORITY = 999
 MonsterUtils.DANGER_GAP_LEVEL = 10
-
 function MonsterUtils._IsPrefix(str1, str2)
   return string.sub(str1, 1, string.len(str2)) == str2
 end
-
 function MonsterUtils.HasMonsterTag(GamePlayTags, Tag)
   for _, GamePlayTag in ipairs(GamePlayTags) do
     if MonsterUtils._IsPrefix(GamePlayTag, Tag) then
@@ -15,7 +13,6 @@ function MonsterUtils.HasMonsterTag(GamePlayTags, Tag)
   end
   return false
 end
-
 function MonsterUtils.IsBoss(MonsterId)
   local MonsterInfo = DataMgr.Monster[MonsterId]
   assert(MonsterInfo, string.format("wrong monster id: %d", MonsterId))
@@ -25,7 +22,6 @@ function MonsterUtils.IsBoss(MonsterId)
   end
   return MonsterUtils.HasMonsterTag(GamePlayTags, Const.BossMonster[1])
 end
-
 function MonsterUtils.IsElite(MonsterId)
   local MonsterInfo = DataMgr.Monster[MonsterId]
   assert(MonsterInfo, string.format("wrong monster id: %d", MonsterId))
@@ -36,7 +32,6 @@ function MonsterUtils.IsElite(MonsterId)
   local res = MonsterUtils.HasMonsterTag(GamePlayTags, Const.EliteMonster[1])
   return res
 end
-
 function MonsterUtils.GetPriority(MonsterId)
   local GalleryRule = MonsterUtils.GetGalleryRuleInfo(MonsterId)
   if not GalleryRule then
@@ -44,7 +39,6 @@ function MonsterUtils.GetPriority(MonsterId)
   end
   return GalleryRule.Priority or DEFAULT_MONSTER_PRIORITY
 end
-
 function MonsterUtils.CompareMonsters(LeftId, RightId)
   local Ta, Tb = MonsterUtils.Tier(LeftId), MonsterUtils.Tier(RightId)
   if Ta ~= Tb then
@@ -58,7 +52,6 @@ function MonsterUtils.CompareMonsters(LeftId, RightId)
     return LeftPriority < RightPriority
   end
 end
-
 function MonsterUtils.Tier(Id)
   if MonsterUtils.IsBoss(Id) then
     return 0
@@ -68,7 +61,6 @@ function MonsterUtils.Tier(Id)
   end
   return 2
 end
-
 function MonsterUtils.GetRealMonsterBuffs(DungeonId, MonsterId, DungeonInfo)
   local Ret = {}
   local DungeonInfo = DungeonInfo or DataMgr.Dungeon[DungeonId]
@@ -84,7 +76,6 @@ function MonsterUtils.GetRealMonsterBuffs(DungeonId, MonsterId, DungeonInfo)
   table.sort(Ret)
   return Ret
 end
-
 function MonsterUtils.GetDescriptionDetail(MonsterId)
   local GalleryRule = MonsterUtils.GetGalleryRuleInfo(MonsterId)
   if not GalleryRule then
@@ -92,7 +83,6 @@ function MonsterUtils.GetDescriptionDetail(MonsterId)
   end
   return GalleryRule.DescriptionDetail
 end
-
 function MonsterUtils.GetGalleryRuleInfo(MonsterId)
   local MonsterInfo = DataMgr.Monster[MonsterId]
   if not MonsterInfo or not MonsterInfo.GalleryRuleId then
@@ -100,18 +90,22 @@ function MonsterUtils.GetGalleryRuleInfo(MonsterId)
   end
   return DataMgr.GalleryRule[MonsterInfo.GalleryRuleId]
 end
-
 function MonsterUtils.CheckGallerRuleByMonsterRelease(RuleInfo)
   if not RuleInfo or not RuleInfo.PreferredMonsterId then
     return false
   end
   local MonsterData = DataMgr.Monster[RuleInfo.PreferredMonsterId]
-  if not MonsterData or MonsterData.IsNotRelease then
+  if not MonsterData then
     return false
   end
-  return true
+  local CombatVersionOpenList = DataMgr.CombatVersionControl[1].CombatVersionOpen
+  for _, v in pairs(CombatVersionOpenList) do
+    if v == MonsterData.CombatVersionOpen then
+      return true
+    end
+  end
+  return false
 end
-
 function MonsterUtils.SortWeaknessTypeIcon(a, b)
   local aCounterType = DataMgr.Attribute[a.WeaknessType] and DataMgr.Attribute[a.WeaknessType].CounterType or 0
   local bCounterType = DataMgr.Attribute[b.WeaknessType] and DataMgr.Attribute[b.WeaknessType].CounterType or 0
@@ -119,5 +113,4 @@ function MonsterUtils.SortWeaknessTypeIcon(a, b)
   local bPriority = DataMgr.Attribute[bCounterType] and DataMgr.Attribute[bCounterType].DisplayPriority or 0
   return aPriority < bPriority
 end
-
 return MonsterUtils

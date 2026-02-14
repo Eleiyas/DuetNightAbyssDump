@@ -3,7 +3,6 @@ local TeamModel = TeamController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Img_Up:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Img_Down:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -28,7 +27,6 @@ function M:Construct()
   EventManager:AddEvent(EventID.ShowTeammateBloodUI, self, self.AddPhantomUI)
   EventManager:AddEvent(EventID.CloseTeammateBloodUI, self, self.DelPhantomUI)
 end
-
 function M:Init(Owner, Member, Index, bAnim)
   for _, ItemUI in pairs(self.VB_Phantom:GetAllChildren()) do
     ItemUI:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -126,26 +124,24 @@ function M:Init(Owner, Member, Index, bAnim)
     self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnIconLoadFinish(Object)
   if IsValid(self) and self.Img_Head then
     self.Img_Head:SetBrushResourceObject(Object)
   end
 end
-
 function M:AddPhantomUI(PhantomEid)
   if not PhantomEid then
-    DebugPrint(LXYTag, WarningTag, "WBP_Team_PlayerItem_Base::AddPhantomUI\230\151\160\230\149\136\231\154\132PhantomEid", PhantomEid)
+    DebugPrint(LXYTag, WarningTag, "WBP_Team_PlayerItem_Base::AddPhantomUI无效的PhantomEid", PhantomEid)
     return
   end
   local PhantomState = GameState(self):GetPhantomState(PhantomEid)
   if not PhantomState then
-    DebugPrint(LXYTag, WarningTag, "WBP_Team_PlayerItem_Base::AddPhantomUI\230\151\160\230\149\136\231\154\132PhantomEid", PhantomEid)
+    DebugPrint(LXYTag, WarningTag, "WBP_Team_PlayerItem_Base::AddPhantomUI无效的PhantomEid", PhantomEid)
     return
   end
   local PhantomCharConf = DataMgr.Phantom[PhantomState.CharId]
   if PhantomCharConf and PhantomCharConf.IsHostage then
-    DebugPrint(LXYTag, WarningTag, "\228\186\186\232\180\168\231\137\185\230\174\138\229\164\132\231\144\134\239\188\140\228\184\141\229\186\148\232\175\165\232\162\171\229\189\147\228\189\156\233\173\133\229\189\177")
+    DebugPrint(LXYTag, WarningTag, "人质特殊处理，不应该被当作魅影")
     return
   end
   if PhantomState.OwnerEid ~= self.Eid then
@@ -165,13 +161,16 @@ function M:AddPhantomUI(PhantomEid)
     self.VB_Phantom:AddChild(PhantomUI)
   else
     PhantomUI = self.VB_Phantom:GetChildAt(self.PhantomUICount)
+    if not PhantomUI then
+      DebugPrint(LXYTag, "TeamSyncDebug  Wbp_Team_PlayerItem_Base::AddPhantomUI Error 魅影数量", self.PhantomUICount, "溢出，最大魅影数量：", self.MaxPhantomCount)
+      return
+    end
     PhantomUI:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
   self.PhantomUIs[PhantomEid] = PhantomUI
   self.PhantomUICount = self.PhantomUICount + 1
   PhantomUI:Init(PhantomState)
 end
-
 function M:DelPhantomUI(Eid)
   local PhantomUI = self.PhantomUIs[Eid]
   if not IsValid(PhantomUI) then
@@ -189,7 +188,6 @@ function M:DelPhantomUI(Eid)
     self.Img_Down:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnCheckStateChanged(IsChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large", nil, nil)
   if IsChecked then
@@ -198,41 +196,33 @@ function M:OnCheckStateChanged(IsChecked)
     self.bOpenMenu = false
   end
 end
-
 function M:PlayMove(bReverse)
   self:UpdateTag()
   if bReverse then
   else
   end
 end
-
 function M:OnGetMenuContent(Anchor)
   if not self.Button_Area:IsChecked() then
     return
   end
-  
   local function InitTeamKickBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Team_Kick")
-    
     function Content.Callback()
       TeamController:OpenKickMemberDialog(AvatarInfo, nil)
       self.Head_Anchor:Close()
       self.Owner:Close()
     end
   end
-  
   local function InitTeamLeaderTransBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Team_Transfer")
-    
     function Content.Callback()
       TeamController:SendTeamChangeLeader(AvatarInfo.Uid)
       self.Head_Anchor:Close()
     end
   end
-  
   local function InitShowRecordBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Chat_ShowRecord")
-    
     function Content.Callback()
       if TeamModel:IsYourself(AvatarInfo.Uid) then
         PersonInfoController:OpenView()
@@ -243,17 +233,14 @@ function M:OnGetMenuContent(Anchor)
       self.Owner:Close()
     end
   end
-  
   local function InitAddFriendBtn(Content, AvatarInfo)
     Content.Text = GText("UI_Friend_AddFriend")
-    
     function Content.Callback()
       FriendController:OpenAddFriendDialog(self, AvatarInfo)
       self.Head_Anchor:Close()
       self.Owner:Close()
     end
   end
-  
   local Switch = {}
   if TeamModel:IsYourself(self.Member.Uid) then
     Switch = {InitShowRecordBtn}
@@ -280,7 +267,6 @@ function M:OnGetMenuContent(Anchor)
   Widget:DontShowBottom()
   return Widget
 end
-
 function M:OnAnimationFinished(InAnim)
   if InAnim == self.Out then
     self:RemoveFromParent()
@@ -288,17 +274,14 @@ function M:OnAnimationFinished(InAnim)
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:Close()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:PlayAnimation(self.Out)
 end
-
 function M:UpdateTag()
   local Uid = self.Member.Uid
   self.Tag_Player:Init(TeamModel:IsTeamLeader(Uid), self.Member.Index, Uid)
 end
-
 function M:Destruct()
   self.Head_Anchor.OnGetMenuContentEvent:Unbind()
   self.Head_Anchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
@@ -306,5 +289,4 @@ function M:Destruct()
   EventManager:RemoveEvent(EventID.ShowTeammateBloodUI, self)
   EventManager:RemoveEvent(EventID.CloseTeammateBloodUI, self)
 end
-
 return M

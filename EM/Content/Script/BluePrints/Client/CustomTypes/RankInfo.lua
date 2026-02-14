@@ -12,18 +12,15 @@ RankListItem.__Props__ = {
   Damage = prop.prop("Int", "save"),
   Time = prop.prop("Int", "save")
 }
-
 function RankListItem:Init(Eid, CostTime, Round, Score)
   self.Eid = Eid
   self.CostTime = CostTime or 0
   self.Round = Round or 0
   self.Score = Score or 0
 end
-
 function RankListItem:SetTime(time)
   self.Time = time
 end
-
 FormatProperties(RankListItem)
 local RankListContainer = Class("RankListContainer", CustomTypes.CustomList)
 RankListContainer.ValueType = RankListItem
@@ -38,30 +35,25 @@ RankDetailInfo.__Props__ = {
   Time = prop.prop("Int", "save"),
   Damage = prop.prop("Int", "save")
 }
-
 function RankDetailInfo:Init(Eid)
   if not Eid then
     return
   end
   self.Eid = Eid
 end
-
 function RankDetailInfo:Update(info)
   for key, value in pairs(info) do
     GWorld.logger.debug("RankDetailInfo Update", key)
     self[key] = value
   end
 end
-
 FormatProperties(RankDetailInfo)
 local RankDetailInfos = Class("RankDetailInfos", CustomTypes.CustomDict)
 RankDetailInfos.KeyType = BaseTypes.ObjId
 RankDetailInfos.ValueType = RankDetailInfo
-
 function RankDetailInfos:NewRankDetailInfo(Eid)
   return RankDetailInfo(Eid)
 end
-
 return {
   RankListItem = RankListItem,
   RankListContainer = RankListContainer,

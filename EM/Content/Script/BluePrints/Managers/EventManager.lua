@@ -21,6 +21,7 @@ EventID.OnNewPetObtained = "OnNewPetObtained"
 EventID.OnPetDeleted = "OnPetDeleted"
 EventID.OnPropChangePets = "OnPropChangePets"
 EventID.OnNewCharSkinObtained = "OnNewCharSkinObtained"
+EventID.OnNewCharHairObtained = "OnNewCharHairObtained"
 EventID.OnNewCharAccessoryObtained = "OnNewCharAccessoryObtained"
 EventID.OnNewWeaponSkinObtained = "OnNewWeaponSkinObtained"
 EventID.OnNewWeaponAccessoryObtained = "OnNewWeaponAccessoryObtained"
@@ -39,6 +40,8 @@ EventID.OnChangePropMailUniqueID = "OnChangePropMailUniqueID"
 EventID.OnGetGuideBookReward = "OnGetGuideBookReward"
 EventID.OnEnableGuideBookKey = "OnEnableGuideBookKey"
 EventID.OnSwitchRole = "OnSwitchRole"
+EventID.OnSwitchCurrentChar = "OnSwitchCurrentChar"
+EventID.OnChangeWeapon = "OnChangeWeapon"
 EventID.OnSwitchWeapon = "OnSwitchWeapon"
 EventID.OnCloseSkillInfo = "OnCloseSkillInfo"
 EventID.OnSwitchSkin = "OnSwitchSkin"
@@ -51,15 +54,19 @@ EventID.OnPetEntryUpReturn = "OnPetEntryUpReturn"
 EventID.OnUnlockCharUsePiece = "OnUnlockCharUsePiece"
 EventID.OnAutoClaimWeaponBreakCollectReward = "OnAutoClaimWeaponBreakCollectReward"
 EventID.OnPetReddotRead = "OnPetReddotRead"
+EventID.OnMVPSequenceFinish = "OnMVPSequenceFinish"
 EventID.OnCharShowPartMesh = "OnCharShowPartMesh"
 EventID.OnCharCornerVisibilityChanged = "OnCharCornerVisibilityChanged"
 EventID.OnCharAppearanceChanged = "OnCharAppearanceChanged"
 EventID.OnCharAccessorySetted = "OnCharAccessorySetted"
 EventID.OnCharAccessoryRemoved = "OnCharAccessoryRemoved"
 EventID.OnCharSkinChanged = "OnCharSkinChanged"
+EventID.OnCharHairChanged = "OnCharHairChanged"
 EventID.OnCharColorsChanged = "OnCharColorsChanged"
+EventID.OnCharHairColorsChanged = "OnCharHairColorsChanged"
 EventID.OnCharAppearanSuitRenamed = "OnCharAppearanSuitRenamed"
 EventID.OnCharSkinColorPlanChanged = "OnCharSkinColorPlanChanged"
+EventID.OnCharHairColorPlanChanged = "OnCharHairColorPlanChanged"
 EventID.OnWeaponColorsChanged = "OnWeaponColorsChanged"
 EventID.OnWeaponSkinChanged = "OnWeaponSkinChanged"
 EventID.OnWeaponAccessoryChanged = "OnWeaponAccessoryChanged"
@@ -114,8 +121,10 @@ EventID.OnDungeonOtherPlayerJoin = "OnDungeonOtherPlayerJoin"
 EventID.OnDungeonOtherPlayerLeave = "OnDungeonOtherPlayerLeave"
 EventID.OnRepDungeonProgress = "OnRepDungeonProgress"
 EventID.OnNotifyClientToCloseLoading = "OnNotifyClientToCloseLoading"
-EventID.OnCloseLoadingEnableStory = "OnCloseLoadingEnableStory"
+EventID.OnEnableStory = "OnEnableStory"
 EventID.OnDisableEscOnDungeonLoading = "OnDisableEscOnDungeonLoading"
+EventID.OnRepBattleProgressNum = "OnRepBattleProgressNum"
+EventID.OnRepBattleProgressInfo = "OnRepBattleProgressInfo"
 EventID.TeamMatchStartEntering = "TeamMatchStartEntering"
 EventID.TeamMatchStartMatching = "TeamMatchStartMatching"
 EventID.TeamMatchOneRefused = "TeamMatchOneRefused"
@@ -126,6 +135,8 @@ EventID.OnMatchPrepareToBattle = "OnMatchPrepareToBattle"
 EventID.OnRefreshDeputeBtn = "OnRefreshDeputeBtn"
 EventID.TeamMatchSquadFold = "TeamMatchSquadFold"
 EventID.TeamMatchSquadUnfold = "TeamMatchSquadUnfold"
+EventID.OnRequestToMatch = "OnRequestToMatch"
+EventID.OnAvatarLogout = "OnAvatarLogout"
 EventID.OnReceiveSurvivalValue = "OnReceiveSurvivalValue"
 EventID.SetNpcShowHide = "SetNpcShowHide"
 EventID.SetNpcFlexibShowOrHideDynamic = "SetNpcFlexibShowOrHideDynamic"
@@ -161,6 +172,10 @@ EventID.OnSpawnTempleBomb = "OnSpawnTempleBomb"
 EventID.OnPlayerGetAttachBomb = "OnPlayerGetAttachBomb"
 EventID.OnPlayerEndAttachBomb = "OnPlayerEndAttachBomb"
 EventID.OnTempleRightUI = "OnTempleRightUI"
+EventID.OnTempleSmeltChangeBlue = "OnTempleSmeltChangeBlue"
+EventID.OnTempleCageEnterDown = "OnTempleCageEnterDown"
+EventID.OnNoticeCageUp = "OnNoticeCageUp"
+EventID.OnTempleTipButtonShow = "OnTempleTipButtonShow"
 EventID.OnUpdatePartyLeftUI = "OnUpdatePartyLeftUI"
 EventID.OnUpdatePartyRightUI = "OnUpdatePartyRightUI"
 EventID.OnPartyProgressStart = "OnPartyProgressStart"
@@ -184,7 +199,9 @@ EventID.OnRepSynthesisRageValue = "OnRepSynthesisRageValue"
 EventID.OnRepGuideSupervisorEids = "OnRepGuideSupervisorEids"
 EventID.OnRepDeadSupervisorEids = "OnRepDeadSupervisorEids"
 EventID.OnRepKeySubmitNum = "OnRepKeySubmitNum"
+EventID.OnTeleportReady = "OnTeleportReady"
 EventID.OnRepFeinaStar = "OnRepFeinaStar"
+EventID.UpdateRankStarScore = "UpdateRankStarScore"
 EventID.ShowBossBlood = "ShowBossBlood"
 EventID.RefreshMainPlayerBlood = "RefreshMainPlayerBlood"
 EventID.UpdateMainPlayerSp = "UpdateMainPlayerSp"
@@ -205,6 +222,9 @@ EventID.UpdateMainPlayerSecondSp = "UpdateMainPlayerSecondSp"
 EventID.UpdateMainPlayerMaxSecondSp = "UpdateMainPlayerMaxSecondSp"
 EventID.OnBuffSpModify = "OnBuffSpModify"
 EventID.OnBloodEnergyChanged = "OnBloodEnergyChanged"
+EventID.UpdateDamageRate = "UpdateDamageRate"
+EventID.DoubleBossChargeTextUpdate = "DoubleBossChargeTextUpdate"
+EventID.OnMultiHpBarLayerChange = "OnMultiHpBarLayerChange"
 EventID.ReloadStart = "ReloadStart"
 EventID.ReloadEnd = "ReloadEnd"
 EventID.ReloadStop = "ReloadStop"
@@ -224,6 +244,7 @@ EventID.OnMidTermTaskComplete = "OnMidTermTaskComplete"
 EventID.OnMidTermTaskProgressChange = "OnMidTermTaskProgressChange"
 EventID.OnActivityTimeOpen = "OnActivityTimeOpen"
 EventID.OnActivityTimeOpenClose = "OnActivityTimeOpenClose"
+EventID.OnActivityComplete = "OnActivityComplete"
 EventID.OnStartProduce = "OnStartProduce"
 EventID.OnCompleteProduce = "OnCompleteProduce"
 EventID.OnCompleteBatchProduce = "OnCompleteBatchProduce"
@@ -249,6 +270,7 @@ EventID.OnTalkTriggerComplete = "OnTalkTriggerComplete"
 EventID.EnterImmersiveTalk = "EnterImmersiveTalk"
 EventID.LeaveImmersiveTalk = "LeaveImmersiveTalk"
 EventID.TriggerFlexibleActive = "TriggerFlexibleActive"
+EventID.OnStoryVarUpdated = "OnStoryVarUpdated"
 EventID.OnRougeDisplayDialogue = "OnRougeDisplayDialogue"
 EventID.OnRougeDisplayOptions = "OnRougeDisplayOptions"
 EventID.OnRougeIteratorDialogue = "OnRougeIteratorDialogue"
@@ -264,7 +286,6 @@ EventID.OnRougeSettlementBoxItemMenuChanged = "OnRougeSettlementBoxItemMenuChang
 EventID.OnCameraSpringArmInput = "OnCameraSpringArmInput"
 EventID.OnCurveCameraStartMove = "OnCurveCameraStartMove"
 EventID.OnSelectWeapon = "OnSelectWeapon"
-EventID.OnChangeAspectAndFOV = "OnChangeAspectAndFOV"
 EventID.OnScreenshotToken = "OnScreenshotToken"
 EventID.OnInitScreenshotParams = "OnInitScreenshotParams"
 EventID.OnGameStateTimerAdded = "OnGameStateTimerAdded"
@@ -280,16 +301,18 @@ EventID.OnAchvRedPoint = "OnAchvRedPoint"
 EventID.OnAchvFinished = "OnAchvFinished"
 EventID.GetAchvRewardCallBack = "GetAchvRewardCallBack"
 EventID.OnModBookQuestFinished = "OnModBookQuestFinished"
-EventID.OnCharacterStartSkill = "OnCharacterStartSkill"
-EventID.OnCharacterStopSkill = "OnCharacterStopSkill"
 EventID.OnCharCallSummoner = "OnCharCallSummoner"
 EventID.OnCharRemoveSummoner = "OnCharRemoveSummoner"
 EventID.OnSkillInActive = "OnSkillInActive"
 EventID.OnSkillActive = "OnSkillActive"
+EventID.OnSkillInfosRep = "OnSkillInfosRep"
 EventID.OnItemPickedUp = "OnItemPickedUp"
 EventID.OnResourceDeductSuccess = "OnResourceDeductSuccess"
 EventID.OnMiniGameCreated = "OnMiniGameCreated"
 EventID.OnMechanismEnterState = "OnMechanismEnterState"
+EventID.OnOpenMechanism = "OnOpenMechanism"
+EventID.OnMobileHookShow = "OnMobileHookShow"
+EventID.OnPlayerGetResource = "OnPlayerGetResource"
 EventID.CircleAroundGameStart = "CircleAroundGameStart"
 EventID.CircleAroundTryToTriggerPointer = "CircleAroundTryToTriggerPointer"
 EventID.CircleAroundGameSuccess = "CircleAroundGameSuccess"
@@ -305,6 +328,7 @@ EventID.LoadUI = "LoadUI"
 EventID.UnLoadUI = "UnLoadUI"
 EventID.OnAddWidgetComponent = "OnAddWidgetComponent"
 EventID.OnNotifyShowLargeCountDown = "OnNotifyShowLargeCountDown"
+EventID.OnNotifyCommonCountDown = "OnNotifyCommonCountDown"
 EventID.OnCreatedEnergySupplyWidget = "OnCreatedEnergySupplyWidget"
 EventID.OnStartSkillFeature = "OnStartSkillFeature"
 EventID.OnEndSkillFeature = "OnEndSkillFeature"
@@ -334,6 +358,7 @@ EventID.OnLevelDeliverBlackCurtainEnd = "OnLevelDeliverBlackCurtainEnd"
 EventID.OnSkipRegion = "OnSkipRegion"
 EventID.OnRegionLoaded = "OnRegionLoaded"
 EventID.OnArtLevelLoaded = "OnArtLevelLoaded"
+EventID.ChangeRegionOnline = "ChangeRegionOnline"
 EventID.OnCharacterTagChanged = "OnCharacterTagChanged"
 EventID.OnSystemUnlockEnding = "OnSystemUnlockEnding"
 EventID.OnSystemUnlockWorkingStart = "OnSystemUnlockWorkingStart"
@@ -353,7 +378,6 @@ EventID.TalkComp = "TalkComp"
 EventID.FirstSeenTag = "FirstSeenTag"
 EventID.QuestStart = "QuestStart"
 EventID.FirstDynQuest = "FirstDynQuest"
-EventID.FirstPanFixTalk = "FirstPanFixTalk"
 EventID.OnGuideStart = "OnGuideStart"
 EventID.OnGuideEnd = "OnGuideEnd"
 EventID.OnBecomeViewTarget = "OnBecomeViewTarget"
@@ -370,6 +394,7 @@ EventID.ChangePhantomGuideState = "ChangePhantomGuideState"
 EventID.ChangePhantomRecoverCount = "ChangePhantomRecoverCount"
 EventID.RecycleClassToCachePool = "RecycleClassToCachePool"
 EventID.UpdateMiniMap = "UpdateMiniMap"
+EventID.ResetNpcMiniMap = "ResetNpcMiniMap"
 EventID.TriggerHostageVisibility = "TriggerHostageVisibility"
 EventID.TriggerHostageGuideLoop = "TriggerHostageGuideLoop"
 EventID.TriggerHostageBattleMapChangeStyle = "TriggerHostageBattleMapChangeStyle"
@@ -382,12 +407,14 @@ EventID.HideNpcSideIndicator = "HideNpcSideIndicator"
 EventID.AddRegionIndicatorInfo = "AddRegionIndicatorInfo"
 EventID.RemoveRegionIndicatorInfo = "RemoveRegionIndicatorInfo"
 EventID.EnableNpcSideBubble = "EnableNpcSideBubble"
+EventID.OnMissiongIndicatorFloorLevelChange = "OnMissiongIndicatorFloorLevelChange"
 EventID.OnSetQuestTracking = "OnSetQuestTracking"
 EventID.OnCancelQuestTracking = "OnCancelQuestTracking"
 EventID.OnSelectQuestSubItem = "OnSelectQuestSubItem"
 EventID.OnChangeTaskSubRegion = "OnChangeTaskSubRegion"
 EventID.OnUpdateQuestChain = "OnUpdateQuestChain"
 EventID.CheckShowMap = "CheckShowMap"
+EventID.OnCalcVarChange = "OnCalcVarChange"
 EventID.OnSpecialQuestFail = "OnSpecialQuestFail"
 EventID.OnNpcEnterOrQuitSpecialQuest = "OnNpcEnterOrQuitSpecialQuest"
 EventID.SpecialQuestOpenRegionOnline = "SpecialQuestOpenRegionOnline"
@@ -400,11 +427,11 @@ EventID.OnJumpBackToPage = "OnJumpBackToPage"
 EventID.OnUIPauseGame = "OnUIPauseGame"
 EventID.OnHudRewardClose = "OnHudRewardClose"
 EventID.OnHideAllComponentUI = "OnHideAllComponentUI"
+EventID.OnToggleDisconnectUI = "OnToggleDisconnectUI"
 EventID.OnRougeLikeEnterRoom = "OnRougeLikeEnterRoom"
 EventID.OnRougeLikeInfoUpdate = "OnRougeLikeInfoUpdate"
 EventID.StartRougeCanonMiniGame = "StartRougeCanonMiniGame"
 EventID.EndRougeCanonMiniGame = "EndRougeCanonMiniGame"
-EventID.OnRougeLikeCanonScoreAdd = "OnRougeLikeCanonScoreAdd"
 EventID.CanonBegionCountFinish = "CanonBegionCountFinish"
 EventID.StartCanonMiniGame = "StartCanonMiniGame"
 EventID.EndCanonMiniGame = "EndCanonMiniGame"
@@ -439,6 +466,12 @@ EventID.OnWindowResized = "OnWindowResized"
 EventID.OnWindowMoved = "OnWindowMoved"
 EventID.ChangeRole = "ChangeRole"
 EventID.OnBuffChange = "OnBuffChange"
+EventID.OnPropEffectReplaceSkill = "OnPropEffectReplaceSkill"
+EventID.OnPropEffectEndReplaceSkill = "OnPropEffectEndReplaceSkill"
+EventID.OnSwitchOnCannonProp = "OnSwitchOnCannonProp"
+EventID.OnSwitchOffCannonProp = "OnSwitchOffCannonProp"
+EventID.OnSWSCannonFired = "OnSWSCannonFired"
+EventID.OnSWSCannonInCD = "OnSWSCannonInCD"
 EventID.CharDie = "CharDie"
 EventID.CharRecover = "CharRecover"
 EventID.OnTeamRecoveryStateChange = "OnTeamRecoveryStateChange"
@@ -456,11 +489,16 @@ EventID.WikiControllerEvent = "WikiControllerEvent"
 EventID.ModControllerEvent = "ModControllerEvent"
 EventID.PersonInfoControllerEvent = "PersonInfoControllerEvent"
 EventID.MonthCardControllerEvent = "MonthCardControllerEvent"
+EventID.GiftControllerEvent = "GiftControllerEvent"
+EventID.DailyTalkControllerEvent = "DailyTalkControllerEvent"
+EventID.GachaControllerEvent = "GachaControllerEvent"
+EventID.RegionFameControllerEvent = "RegionFameControllerEvent"
+EventID.GetReputationExp = "GetReputationExp"
+EventID.RecurringQuestTimeOut = "RecurringQuestTimeOut"
+EventID.RegionReputationsChange = "RegionReputationsChange"
 EventID.OpenChatView = "OpenChatView"
 EventID.InterruptChatView = "InterruptChatView"
 EventID.ComfirmDisturbClick = "ComfirmDisturbClick"
-EventID.DailyTalkControllerEvent = "DailyTalkControllerEvent"
-EventID.GachaControllerEvent = "GachaControllerEvent"
 EventID.GameViewportInputKeyPressed = "GameViewportInputKeyPressed"
 EventID.GameViewportInputKeyReleased = "GameViewportInputKeyReleased"
 EventID.GameViewportInputKeyLongPressed = "GameViewportInputKeyLongPressed"
@@ -472,6 +510,7 @@ EventID.SelectedWalnut = "SelectedWalnut"
 EventID.TeamSelectWalnut = "TeamSelectWalnut"
 EventID.WalnutSelectComplete = "WalnutSelectComplete"
 EventID.InterruptWalnutSelect = "InterruptWalnutSelect"
+EventID.OnDungeonWalnutChoiceUIOpen = "OnDungeonWalnutChoiceUIOpen"
 EventID.SelectTicket = "SelectTicket"
 EventID.DungeonSelectTicketEnd = "DungeonSelectTicketEnd"
 EventID.OnSelectTicketTimeout = "OnSelectTicketTimeout"
@@ -501,8 +540,8 @@ EventID.OnDoorStateChange = "OnDoorStateChange"
 EventID.OnHoverVoice = "OnHoverVoice"
 EventID.OnHoverOption = "OnHoverOption"
 EventID.OnNetDisconnect = "OnNetDisconnect"
+EventID.OnConnectSuccess = "OnConnectSuccess"
 EventID.ChangeSelectMusicScore = "ChangeSelectMusicScore"
-EventID.ChangeSelectMusicItem = "ChangeSelectMusicItem"
 EventID.ChangeStoredCustomBGM = "ChangeStoredCustomBGM"
 EventID.ChangePlayedMusicItem = "ChangePlayedMusicItem"
 EventID.ChangeMusicItemNewState = "ChangeMusicItemNewState"
@@ -539,21 +578,86 @@ EventID.OnPayCallBack = "OnPayCallBack"
 EventID.OnHomeBaseeBtnShowNewClue = "OnHomeBaseeBtnShowNewClue"
 EventID.OnNewDetectiveQuestion = "OnNewDetectiveQuestion"
 EventID.OnDetectiveRefreshProgress = "OnDetectiveRefreshProgress"
+EventID.OnTheaterJoinPerformGame = "OnTheaterJoinPerformGame"
+EventID.OnTheaterJoinPerformGameFail = "OnTheaterJoinPerformGameFail"
+EventID.OnTheaterPerformGameStart = "OnTheaterPerformGameStart"
+EventID.OnTheaterPerformGameEnd = "OnTheaterPerformGameEnd"
+EventID.OnTheaterLevelStart = "OnTheaterLevelStart"
+EventID.OnTheaterNPCPerform = "OnTheaterNPCPerform"
+EventID.OnTheaterPerform = "OnTheaterPerform"
+EventID.OnTheaterPerformGameNotice = "OnTheaterPerformGameNotice"
+EventID.OnSoloTreasureScoreAndBagUI = "OnSoloTreasureScoreAndBagUI"
+EventID.OnUpdateGameScore = "OnUpdateGameScore"
 EventID.OnCommunityFollowActivityJJJFinish = "OnCommunityFollowActivityJJJFinish"
+EventID.OnComeBackNewPhaseUnlocked = "OnCommunityFollowActivityJJJFinish"
 EventID.OnEntryTextUnlocked = "OnEntryTextUnlocked"
 EventID.OnGetTitle = "OnGetTitle"
 EventID.OnGetTitleFrame = "OnGetTitleFrame"
 EventID.OnChangeTitle = "OnChangeTitle"
+EventID.OnChangeNickName = "OnClickChangeName"
 EventID.OnGetFeiNaReward = "OnGetFeiNaReward"
 EventID.RefreshVoiceName = "RefreshVoiceName"
 EventID.OnUpdateNumInputLimit = "OnUpdateNumInputLimit"
 EventID.OnReturnToActivityEntry = "OnReturnToActivityEntry"
 EventID.OnLeaveActivityEntry = "OnLeaveActivityEntry"
+EventID.OnActivityEntryShowVisible = "OnActivityEntryShowVisible"
 EventID.ForceUpdatePlayerCurrentLevelId = "ForceUpdatePlayerCurrentLevelId"
 EventID.OnGamepadUseSkillForceReleased = "OnGamepadUseSkillForceReleased"
+EventID.AgreeOthersOnlineActionApplication = "AgreeOthersOnlineActionApplication"
+EventID.RejectOthersOnlineActionApplication = "RejectOthersOnlineActionApplication"
+EventID.AgreeOthersOnlineActionInvitation = "AgreeJoinOnlineAction"
+EventID.RejectOthersOnlineActionInvitation = "RejectJoinOnlineAction"
+EventID.ReceivedOthersOnlineActionApplication = "ReceivedOthersOnlineActionApplication"
+EventID.ReceivedOthersOnlineActionInvitation = "ReceivedOthersOnlineActionInvitation"
+EventID.OnReceivedOnlineActionInvitationAgree = "OnReceivedOnlineActionInvitationAgree"
+EventID.OnReceivedOnlineActionInvitationReject = "OnReceivedOnlineActionInvitationReject"
+EventID.OnReceivedOnlineActionApplicationAgree = "OnReceivedOnlineActionApplicationAgree"
+EventID.OnReceivedOnlineActionApplicationReject = "OnReceivedOnlineActionApplicationReject"
+EventID.RequestDeadRegionOnlineItem = "RequestDeadRegionOnlineItem"
+EventID.OnHardBossOpeningSequencePause = "OnHardBossOpeningSequencePause"
+EventID.OnHardBossOpeningAllPlayerReady = "OnHardBossOpeningAllPlayerReady"
+EventID.OnPreRaidRankInfo = "OnPreRaidRankInfo"
+EventID.OnRaidRankInfo = "OnRaidRankInfo"
+EventID.OnRaidRankInfoTopN = "OnRaidRankInfoTopN"
+EventID.OnRepRaidScore = "OnRepRaidScore"
+EventID.OnRaidRankStart = "OnRaidRankStart"
+EventID.GuilfWarLevelSelectReceiveEnterState = "GuilfWarLevelSelectReceiveEnterState"
+EventID.OnVoiceResourceClicked = "OnVoiceResourceClicked"
+EventID.MountsItemOnClick = "MountsItemOnClick"
+EventID.OnEnableBattleMount = "OnEnableBattleMount"
+EventID.OnDisableBattleMount = "OnDisableBattleMount"
+EventID.OnStartMountFly = "OnStartMountFly"
+EventID.OnStopMountFly = "OnStopMountFly"
+EventID.OnGetLicense = "OnGetLicense"
+EventID.OnMobileHudPlanChanged = "OnMobileHudPlanChanged"
+EventID.OnSwitchMobileHUDLayout = "OnSwitchMobileHUDLayout"
+EventID.OnSwitchLeftShoot = "OnSwitchLeftShoot"
+EventID.OnSwitchLeftBulletJump = "OnSwitchLeftBulletJump"
+EventID.OnSwitchAntiAliasing = "OnSwitchAntiAliasing"
+EventID.OnSwitchUpscalingMethod = "OnSwitchUpscalingMethod"
+EventID.OnSwitchRendering = "OnSwitchRendering"
+EventID.OnAutoChessCreateMonster = "OnAutoChessCreateMonster"
+EventID.OnAutoChessRemoveMonster = "OnAutoChessRemoveMonster"
+EventID.OnCheckIsGameOver = "OnCheckIsGameOver"
+EventID.OnBattleChessFight = "OnBattleChessFight"
+EventID.OnBattleChessFightDamage = "OnBattleChessFightDamage"
+EventID.OnAutoChessBattleStart = "OnAutoChessBattleStart"
+EventID.OnAutoChessMotivateStart = "OnAutoChessMotivateStart"
+EventID.OnAutoChessCubeChangeState = "OnAutoChessCubeChangeState"
+EventID.OnInitRoleBattleInfo = "OnInitRoleBattleInfo"
+EventID.OnAutoChessEquipChange = "OnAutoChessEquipChange"
+EventID.OnDungeonEscClose = "OnDungeonEscClose"
+EventID.OnTreasureItemDragDetected = "OnTreasureItemDragDetected"
+EventID.OnTreasureItemDragCancelled = "OnTreasureItemDragCancelled"
+EventID.OnTreasureItemDrop = "OnTreasureItemDrop"
+EventID.OnWuyoushengLevelProgress = "OnWuyoushengLevelProgress"
+EventID.OnWuyoushengLevelUp = "OnWuyoushengLevelUp"
+EventID.OnRepWuyoushengTop = "OnRepWuyoushengTop"
+EventID.OnShowWuyoushengTop = "OnShowWuyoushengTop"
+EventID.RefreshWuyoushengLevelReddot = "RefreshWuyoushengLevelReddot"
 local Event = {}
+EventID.OnSendGiftFinished = "OnSendGiftFinished"
 Event.List = nil
-
 function Event:New()
   local o = {}
   setmetatable(o, self)
@@ -564,7 +668,6 @@ function Event:New()
   o.LastCount = 0
   return o
 end
-
 function Event:Add(obj, funcion)
   if not self.List[obj] then
     self.List[obj] = {}
@@ -576,7 +679,6 @@ function Event:Add(obj, funcion)
     self.NowCount = self.NowCount + 1
   end
 end
-
 function Event:Remove(obj)
   if self.List[obj] then
     self.NowCount = self.NowCount - #self.List[obj]
@@ -584,29 +686,37 @@ function Event:Remove(obj)
   self.List[obj] = nil
   self.FuncMap[obj] = nil
 end
-
 function Event:CheckIsLeak(eventName, bLog)
   local RealCount = 0
   if 0 ~= self.LastCount and self.LastCount < self.NowCount and bLog then
     local Visited = {}
-    ScreenPrint(ErrorTag .. string.format("EventManager\228\186\139\228\187\182 %s \229\143\145\231\142\176\229\134\133\229\173\152\230\179\132\230\188\143\239\188\140\232\175\183\230\163\128\230\159\165\232\175\165\228\186\139\228\187\182\230\179\168\229\134\140\229\144\142\230\152\175\229\144\166\230\173\163\231\161\174\230\184\133\231\144\134\239\188\140LastCount:%s\239\188\140NowCount:%s", eventName, self.LastCount, self.NowCount))
+    local Logger = {}
     for obj, List in pairs(self.List) do
       if obj.Overridden and not Visited[obj.Overridden] then
-        DebugPrint(ErrorTag, string.format("\232\175\165\230\179\132\230\188\143\231\154\132\228\186\139\228\187\182\231\187\145\229\174\154\231\154\132\229\135\189\230\149\176\230\149\176\233\135\143:%s, \231\177\187\229\144\141:", #List), obj.Overridden)
-        Visited[obj.Overridden] = 1
-      elseif obj.__Name__ then
-        DebugPrint(ErrorTag, string.format("\232\175\165\230\179\132\230\188\143\231\154\132\228\186\139\228\187\182\231\187\145\229\174\154\231\154\132\229\135\189\230\149\176\230\149\176\233\135\143:%s, \231\177\187\229\144\141:%s", #List, obj.__Name__))
-      elseif not Visited[obj] then
-        DebugPrintTable(obj, 1, ErrorTag, string.format("\232\175\165\230\179\132\230\188\143\231\154\132\228\186\139\228\187\182\231\187\145\229\174\154\231\154\132\229\135\189\230\149\176\230\149\176\233\135\143:%s, \229\175\185\232\177\161:", #List))
-        Visited[obj] = 1
+        if string.startswith(tostring(obj.Overridden), "UWorldTravelSubsystem") then
+          self.NowCount = self.NowCount - #List
+        else
+          Visited[obj.Overridden] = 1
+          Logger[obj.Overridden] = #List
+          elseif obj.__Name__ then
+            Logger[obj.__Name__] = #List
+          elseif not Visited[obj] then
+            Visited[obj] = 1
+            Logger[obj] = #List
+          end
+          RealCount = RealCount + #List
+        end
+    end
+    if self.LastCount < self.NowCount then
+      ScreenPrint(ErrorTag .. string.format("EventManager事件 %s 发现内存泄漏，请检查该事件注册后是否正确清理，LastCount:%s，NowCount:%s", eventName, self.LastCount, self.NowCount))
+      for Obj, Count in pairs(Logger) do
+        DebugPrint(ErrorTag, string.format("该泄漏的事件绑定的函数数量:%s, 类名or对象:", Count), Obj)
       end
-      RealCount = RealCount + #List
     end
     self.NowCount = RealCount
   end
   self.LastCount = self.NowCount
 end
-
 function Event:Invoke(...)
   local InvalidObjs = {}
   local TmpCalls = {}
@@ -641,22 +751,18 @@ function Event:Invoke(...)
     self.List[obj] = nil
   end
 end
-
 function Event:RemoveAll()
   self.List = {}
 end
-
 local EventManager = {}
-_G.EventManager = EventManager
 EventManager.EventDic = {}
-
 function EventManager:AddEvent(eventName, obj, func)
   if not obj then
-    Traceback(ErrorTag, "EventManager:AddEvent\239\188\140\228\186\139\228\187\182\231\154\132\229\175\185\232\177\161\228\184\141\232\131\189\228\184\186\231\169\186\239\188\129\239\188\129\239\188\129")
+    Traceback(ErrorTag, "EventManager:AddEvent，事件的对象不能为空！！！")
     return
   end
   if not func then
-    Traceback(ErrorTag, "EventManager:AddEvent\239\188\140\228\188\160\229\133\165\231\154\132\229\135\189\230\149\176\229\155\158\232\176\131\228\184\141\232\131\189\228\184\186\231\169\186\239\188\129\239\188\129")
+    Traceback(ErrorTag, "EventManager:AddEvent，传入的函数回调不能为空！！")
     return
   end
   if self.EventDic[eventName] == nil then
@@ -664,32 +770,30 @@ function EventManager:AddEvent(eventName, obj, func)
   end
   self.EventDic[eventName]:Add(obj, func)
 end
-
 function EventManager:RemoveEvent(eventName, obj)
   if not obj then
-    Traceback(ErrorTag, "EventManager:RemoveEvent\239\188\140\228\186\139\228\187\182\231\154\132\229\175\185\232\177\161\228\184\141\232\131\189\228\184\186\231\169\186\239\188\129\239\188\129\239\188\129")
+    Traceback(ErrorTag, "EventManager:RemoveEvent，事件的对象不能为空！！！")
     return
   end
   if self.EventDic[eventName] ~= nil then
     self.EventDic[eventName]:Remove(obj)
   end
 end
-
 function EventManager:FireEvent(eventName, ...)
   if self.EventDic[eventName] ~= nil then
     self.EventDic[eventName]:Invoke(...)
   end
 end
-
 function EventManager:CheckIsLeak()
   local bLog = true
   if not GWorld.IsDev then
     return
   end
-  DebugPrint(WarningTag, "\230\163\128\230\181\139EventMananger\228\186\139\228\187\182\230\179\132\230\188\143...")
+  DebugPrint(WarningTag, "检测EventMananger事件泄漏...")
   for eventName, Event in pairs(self.EventDic) do
     Event:CheckIsLeak(eventName, bLog)
   end
 end
-
+_G.EventID = EventID
+_G.EventManager = EventManager
 return {EventManager, EventID}

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(Param)
   self.RootPage = Param.RootPage
   self.SuccCallBack = Param.SuccCallBack
@@ -16,7 +15,6 @@ function M:Init(Param)
   self:InitResetButton()
   self:PlayAnim()
 end
-
 function M:InitCrackButton()
   if not self.NeedCrack then
     self.Panel_Crack:SetVisibility(ESlateVisibility.Collapsed)
@@ -34,25 +32,25 @@ function M:InitCrackButton()
       {Type = "Text", Text = "F"}
     }
   })
+  self.Btn_Crack:SetVisibility(ESlateVisibility.Visible)
   self.Btn_Crack.OnClicked:Add(self, self.OnClickCrackButton)
   self.Btn_Crack.OnHovered:Add(self, self.OnHoverCrackButton)
   self.Btn_Crack.OnUnhovered:Add(self, self.OnUnhovereCrackButton)
   self.Btn_Crack.OnPressed:Add(self, self.OnPressCrackButton)
   self.Btn_Crack.OnReleased:Add(self, self.OnReleaseCrackButton)
 end
-
 function M:OnClickCrackButton()
-  if not self.NeedCrack then
+  if not self.NeedCrack or self.bClicked then
     return
   end
+  self.bClicked = true
   self.SuccCallBack(self.RootPage)
+  self.Btn_Crack:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnHoverCrackButton()
   self.CrackHover = true
   self:PlayAnimation(self.Crack_Hover)
 end
-
 function M:OnUnhovereCrackButton()
   self.CrackHover = false
   if not self.CrackPress then
@@ -60,12 +58,10 @@ function M:OnUnhovereCrackButton()
     self:PlayAnimation(self.Crack_Normal)
   end
 end
-
 function M:OnPressCrackButton()
   self.CrackPress = true
   self:PlayAnimation(self.Crack_Press)
 end
-
 function M:OnReleaseCrackButton()
   self.CrackPress = false
   if self.CrackHover then
@@ -74,7 +70,6 @@ function M:OnReleaseCrackButton()
     self:PlayAnimation(self.Crack_Normal)
   end
 end
-
 function M:InitResetButton()
   if not self.NeedReset then
     self.Panel_Reset:SetVisibility(ESlateVisibility.Collapsed)
@@ -93,7 +88,6 @@ function M:InitResetButton()
   self.Btn_Reset.OnPressed:Add(self, self.OnPressResetButton)
   self.Btn_Reset.OnReleased:Add(self, self.OnReleaseResetButton)
 end
-
 function M:OnClickResetButton()
   if not self.NeedReset then
     return
@@ -103,12 +97,10 @@ function M:OnClickResetButton()
   end
   self.ResetCallBack(self.RootPage)
 end
-
 function M:OnHoverResetButton()
   self.ResetHover = true
   self:PlayAnimation(self.Reset_Hover)
 end
-
 function M:OnUnhovereResetButton()
   self.ResetHover = false
   if not self.ReserPress then
@@ -116,12 +108,10 @@ function M:OnUnhovereResetButton()
     self:PlayAnimation(self.Reset_Normal)
   end
 end
-
 function M:OnPressResetButton()
   self.ReserPress = true
   self:PlayAnimation(self.Reset_Press)
 end
-
 function M:OnReleaseResetButton()
   self.ReserPress = false
   if self.ResetHover then
@@ -130,7 +120,6 @@ function M:OnReleaseResetButton()
     self:PlayAnimation(self.Reset_Normal)
   end
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   self.CurMode = CurInputDevice
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
@@ -145,7 +134,6 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Key_Reset_GamePad:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:PlayAnim()
   if self.NeedCrack and self.NeedReset then
     self:PlayAnimation(self.Both)
@@ -155,11 +143,9 @@ function M:PlayAnim()
     self:PlayAnimation(self.Crack)
   end
 end
-
 function M:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshInfoByInputTypeChange)
   end
 end
-
 return M

@@ -1,5 +1,4 @@
 local M = Class("BluePrints/Item/CombatProp/BP_CombatPropBase_C")
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.DefaultCollisionType = self.SphereCollision:GetCollisionEnabled()
@@ -7,39 +6,50 @@ function M:CommonInitInfo(Info)
   if self.IsOpen then
     self.Sphere:SetHiddenInGame(false)
     self.SphereCollision:SetCollisionEnabled(self.DefaultCollisionType)
+    if self.CheckPlayerSphere then
+      self.CheckPlayerSphere:SetCollisionEnabled(self.DefaultCollisionType)
+    end
     self:ShowFX()
   else
     self.Sphere:SetHiddenInGame(true)
     self.SphereCollision:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+    if self.CheckPlayerSphere then
+      self.CheckPlayerSphere:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+    end
     self:HideFX()
   end
 end
-
 function M:ActiveCombat(bFromGameMode)
   self:SetAttr("BreakCount", 99)
   DebugPrint("ActiveCombat BP_HitBall_C ==========================")
   self.IsOpen = true
   self.Sphere:SetHiddenInGame(false)
   self.SphereCollision:SetCollisionEnabled(self.DefaultCollisionType)
+  if self.CheckPlayerSphere then
+    self.CheckPlayerSphere:SetCollisionEnabled(self.DefaultCollisionType)
+  end
   self:ShowFX()
 end
-
 function M:InactiveCombat(bFromGameMode)
   DebugPrint("InactiveCombat BP_HitBall_C =============================")
   self.IsOpen = false
   self.Sphere:SetHiddenInGame(true)
   self.SphereCollision:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+  if self.CheckPlayerSphere then
+    self.CheckPlayerSphere:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+  end
   self:HideFX()
 end
-
 function M:InactiveCombatDestroy(bFromGameMode)
   DebugPrint("InactiveCombatDestroy BP_HitBall_C =============================")
   self.IsOpen = false
   self.Sphere:SetHiddenInGame(true)
   self.SphereCollision:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+  if self.CheckPlayerSphere then
+    self.CheckPlayerSphere:SetCollisionEnabled(ECollisionEnabled.NoCollision)
+  end
   self:DestroyHideFX()
 end
-
 function M:ResetInfo()
   if self.OriginalIsOpen then
     self:ActiveCombat()
@@ -48,7 +58,6 @@ function M:ResetInfo()
   end
   self.CurTime = 0
 end
-
 function M:ReceiveTick(DeltaSeconds)
   if self.IsOpen == false then
     return
@@ -79,12 +88,14 @@ function M:ReceiveTick(DeltaSeconds)
   end
   self.Overridden.ReceiveTick(self, DeltaSeconds)
 end
-
 function M:SetBroken()
   if self.IsOpen == false then
     return
   end
   self:InactiveCombatDestroy()
+  if not self.EnableAddScore then
+    return
+  end
   local CurGameMode = UE4.UGameplayStatics.GetGameMode(self)
   local DamageType = ""
   if 1 == self.DamageType then
@@ -122,10 +133,12 @@ function M:SetBroken()
     end
   end
 end
-
 function M:OnBreakCountDown(SourceEid)
   self.Overridden.OnBreakCountDown(self, SourceEid)
   self:SetBroken()
 end
-
+function M:OnPlayerIn(Player)
+  Battle(self):AddBuffToTarget(self, Player, self.BuffId, self.BuffTime, nil, nil)
+  self:SetBroken()
+end
 return M

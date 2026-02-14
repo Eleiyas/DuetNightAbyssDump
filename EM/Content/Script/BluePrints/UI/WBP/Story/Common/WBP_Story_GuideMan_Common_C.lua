@@ -2,12 +2,12 @@ local EMCache = require("EMCache.EMCache")
 local ForgeModel = require("Blueprints.UI.Forge.ForgeDataModel")
 local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local PlayDialogueTag = {Dialogue = "Dialogue", Forge = "Forge"}
+local GuideLogType = UE.EStoryLogType.Guide
 local MaxTipUINum = 3
 local TipUIShowTime = 3
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.GuideManInfos = {}
   self.GuideManIdx = 0
@@ -20,11 +20,9 @@ function M:Construct()
   self.LastFacialIdx = nil
   self:SwitchShowImage(false)
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
 end
-
 function M:SwitchStyle(TaskData)
   self.GuideTalkStyle = TaskData.GuideTalkStyle
   if self.GuideTalkStyle == "Communicator" then
@@ -35,18 +33,15 @@ function M:SwitchStyle(TaskData)
     self.StyleOutAnimation = self.Out_Normal
   end
 end
-
 function M:BindAnimations()
   self:BindToAnimationFinished(self.In_Radio, {
     self,
     self.OnInRadioAnimationFinished
   })
 end
-
 function M:OnInRadioAnimationFinished()
   self:PlayAnimation(self.Loop_Radio, 0, 0)
 end
-
 function M:PlayDialogue(TalkTask, DialogueData, TaskData, LambdaCallback)
   self:SwitchStyle(TaskData)
   self:BindAnimations()
@@ -77,7 +72,6 @@ function M:PlayDialogue(TalkTask, DialogueData, TaskData, LambdaCallback)
     WaitQueue:CompleteWaitItem(PlayDialogueTag.Forge)
   end
 end
-
 function M:GetGuideFacialId(DialogueData)
   if DialogueData.GuideFacialId then
     if DialogueData.HeadIconType == "Special" then
@@ -86,112 +80,61 @@ function M:GetGuideFacialId(DialogueData)
       return self:GetNpcFacialId(DialogueData.DialogueId, DialogueData.TalkActorId, DialogueData.GuideFacialId)
     end
   end
-  local NpcId = self:ChangeNpcInfoByGender(DialogueData.TalkActorId) or DialogueData.TalkActorId
-  if NpcId then
-    return self:GetNpcHeadId(DialogueData.DialogueId, NpcId)
+  if not DialogueData.TalkActorId then
+    return nil
   end
-  return nil
+  local NpcId = URuntimeCommonFunctionLibrary.GetNPCIdByGender(self, DialogueData.TalkActorId)
+  return self:GetNpcHeadId(DialogueData.DialogueId, NpcId)
 end
-
 function M:GetNpcHeadId(DialogueId, NpcId)
   local NpcData = DataMgr.Npc[NpcId]
   if not NpcData then
-    local Message = string.format("\232\142\183\229\143\150\229\188\149\229\175\188\229\164\180\229\131\143\229\164\177\232\180\165\239\188\140Npc\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140Npc\231\188\150\229\143\183\239\188\154%s", DialogueId, NpcId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150\229\188\149\229\175\188\229\164\180\229\131\143Id\229\164\177\232\180\165", Message)
+    local Message = string.format("获取引导头像失败，Npc数据无效，台本编号：%s，Npc编号：%s", DialogueId, NpcId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取引导头像Id失败", Message)
     return
   end
   return NpcData.GuideHeadId
 end
-
 function M:GetNpcFacialId(DialogueId, NpcId, FacialId)
-  NpcId = self:ChangeNpcInfoByGender(NpcId) or NpcId
   if not NpcId then
-    local Message = string.format("\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165\239\188\140NpcId\230\151\160\230\149\136\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140NpcId\239\188\154%s", DialogueId, NpcId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165", Message)
+    return nil
+  end
+  NpcId = URuntimeCommonFunctionLibrary.GetNPCIdByGender(self, NpcId)
+  if not NpcId then
+    local Message = string.format("获取Npc表情Id失败，NpcId无效，反馈策划检查配置，台本编号：%s，NpcId：%s", DialogueId, NpcId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: NpcId无效", Message)
     return
   end
   if not FacialId then
-    local Message = string.format("\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165\239\188\140\232\161\168\230\131\133Id\230\151\160\230\149\136\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140\232\161\168\230\131\133Id\239\188\154%s", DialogueId, FacialId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165", Message)
+    local Message = string.format("获取Npc表情Id失败，表情Id无效，反馈策划检查配置，台本编号：%s，表情Id：%s", DialogueId, FacialId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: FacialId无效", Message)
     return
   end
   local NpcData = DataMgr.Npc[NpcId]
   if not NpcData then
-    local Message = string.format("\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165\239\188\140Npc\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140Npc\231\188\150\229\143\183\239\188\154%s", DialogueId, NpcId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165", Message)
+    local Message = string.format("获取Npc表情Id失败，Npc数据无效，反馈策划检查配置，台本编号：%s，Npc编号：%s", DialogueId, NpcId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: NpcData无效", Message)
     return
   end
   local ModelId = NpcData.ModelId
   if not ModelId then
-    local Message = string.format("\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165\239\188\140\230\168\161\229\158\139Id\230\151\160\230\149\136\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140Npc\231\188\150\229\143\183\239\188\154%s", DialogueId, NpcId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165", Message)
+    local Message = string.format("获取Npc表情Id失败，模型Id无效，反馈策划检查配置，台本编号：%s，Npc编号：%s", DialogueId, NpcId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: ModelId无效", Message)
     return
   end
   local ModelData = DataMgr.Model[ModelId]
   if not ModelData then
-    local Message = string.format("\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165\239\188\140\230\168\161\229\158\139\230\149\176\230\141\174\230\151\160\230\149\136\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140Npc\231\188\150\229\143\183\239\188\154%s\239\188\140\230\168\161\229\158\139Id\239\188\154%s", DialogueId, NpcId, ModelId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165", Message)
+    local Message = string.format("获取Npc表情Id失败，模型数据无效，反馈策划检查配置，台本编号：%s，Npc编号：%s，模型Id：%s", DialogueId, NpcId, ModelId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: ModelData无效", Message)
     return
   end
   if not ModelData.AvatarExpressionPrefix then
-    local Message = string.format("\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165\239\188\140\230\168\161\229\158\139\230\149\176\230\141\174\228\184\173\230\178\161\230\156\137AvatarExpressionPrefix\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140Npc\231\188\150\229\143\183\239\188\154%s\239\188\140\230\168\161\229\158\139Id\239\188\154%s", DialogueId, NpcId, ModelId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\142\183\229\143\150Npc\232\161\168\230\131\133Id\229\164\177\232\180\165", Message)
+    local Message = string.format("获取Npc表情Id失败，模型数据中没有AvatarExpressionPrefix，反馈策划检查配置，台本编号：%s，Npc编号：%s，模型Id：%s", DialogueId, NpcId, ModelId)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: 未找到AvatarExpressionPrefix", Message)
     return
   end
   return string.format("%s%s", ModelData.AvatarExpressionPrefix, FacialId)
 end
-
-local PlayerNames = {Nvzhu = true, Nanzhu = true}
-local EXPlayerNames = {WeitaF = true, Weita = true}
-local Sex2PlayerName = {
-  [0] = "Nanzhu",
-  [1] = "Nvzhu"
-}
-local Sex2EXPlayerNames = {
-  [0] = "Weita",
-  [1] = "WeitaF"
-}
-
-function M:MatchMasterStr(NpcName)
-  local Avatar = GWorld:GetAvatar()
-  if nil == Avatar then
-    return false
-  end
-  if PlayerNames[NpcName] then
-    return true, Sex2PlayerName[Avatar.Sex]
-  end
-  if EXPlayerNames[NpcName] then
-    return true, Sex2EXPlayerNames[Avatar.WeitaSex]
-  end
-  return false
-end
-
-function M:ChangeNpcInfoByGender(NpcId)
-  local NpcData = DataMgr.Npc[NpcId]
-  if not NpcData then
-    return nil
-  end
-  local Avatar = GWorld:GetAvatar()
-  if not Avatar then
-    return nil
-  end
-  if NpcData.SwitchPlayer == "Player" then
-    if NpcData.Gender == Avatar.Sex then
-      return NpcId
-    else
-      return NpcData.RelateNpcId
-    end
-  elseif NpcData.SwitchPlayer == "EXPlayer" then
-    if NpcData.Gender == Avatar.WeitaSex then
-      return NpcId
-    else
-      return NpcData.RelateNpcId
-    end
-  else
-    return NpcId
-  end
-end
-
 function M:OnFinished(LambdaCallback)
   AudioManager(self):PlayFMODSound(self, nil, "event:/ui/common/guider_hide", "GuideManTalk")
   self:BindToAnimationFinished(self.StyleOutAnimation, {
@@ -203,7 +146,6 @@ function M:OnFinished(LambdaCallback)
   self:StopAllAnimations()
   self:PlayAnimation(self.StyleOutAnimation)
 end
-
 function M:IsSameGuideMan(FacialA, FacialB)
   DebugPrint("WBP_GuideManTalkUI_C:IsSameGuideMan", FacialA, FacialB)
   if not FacialA or not FacialB then
@@ -224,7 +166,6 @@ function M:IsSameGuideMan(FacialA, FacialB)
   end
   return true
 end
-
 function M:TryPlayFadeInAnimationWithAudio(DialogueData, TaskData)
   local GuideFacialId = self:GetGuideFacialId(DialogueData)
   local bIsSameGuideMan = self:IsSameGuideMan(GuideFacialId, self.LastFacialIdx)
@@ -237,11 +178,9 @@ function M:TryPlayFadeInAnimationWithAudio(DialogueData, TaskData)
     DebugPrint("WBP_GuideManTalkUI_C Different GuideMan")
   end
 end
-
 function M:SetUIVisibilityWhenPlayDialogue()
   self:SetTextBorderHidden(false)
 end
-
 function M:SetTextBorderHidden(bHidden)
   if bHidden then
     self.DialogueText:SetVisibility(ESlateVisibility.Collapsed)
@@ -251,16 +190,13 @@ function M:SetTextBorderHidden(bHidden)
     self.NpcNameText:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 function M:SetNameText(DialogueData)
   local Name = self:GetDialogueSpeakerName(DialogueData)
   self.NpcNameText:SetText(Name)
 end
-
 function M:SetDialogueText(DialogueData)
   self.DialogueText:SetText(DialogueData.Content)
 end
-
 function M:SwitchShowImage(bShow)
   local ImageWidget = self.Image_GuideMan
   if bShow then
@@ -269,7 +205,6 @@ function M:SwitchShowImage(bShow)
     ImageWidget:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:GetDialogueSpeakerName(DialogueData)
   local Name
   if DialogueData.TalkActorName then
@@ -284,7 +219,6 @@ function M:GetDialogueSpeakerName(DialogueData)
   end
   return GText(Name)
 end
-
 function M:SwitchGuideHeadInternal(FacialIdx, DialogueData)
   if self.LastFacialIdx == FacialIdx then
     return
@@ -296,8 +230,8 @@ function M:SwitchGuideHeadInternal(FacialIdx, DialogueData)
   end
   local Path, X, Y = self:GetGuideHead(FacialIdx)
   if not UResourceLibrary.CheckResourceExistOnDisk(Path) then
-    local Message = string.format("\229\188\149\229\175\188\229\145\152\229\164\180\229\131\143\232\183\175\229\190\132\230\151\160\230\149\136\239\188\140\229\143\141\233\166\136\231\173\150\229\136\146\230\163\128\230\159\165\233\133\141\231\189\174\239\188\140\229\143\176\230\156\172\231\188\150\229\143\183\239\188\154%s\239\188\140\229\164\180\229\131\143Id\239\188\154%s", DialogueData.DialogueId, FacialIdx)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\188\149\229\175\188\229\145\152\229\164\180\229\131\143Id\230\151\160\230\149\136", Message)
+    local Message = string.format("引导员头像路径无效，反馈策划检查配置，台本编号：%s，头像Id：%s", DialogueData.DialogueId, FacialIdx)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, GuideLogType, "获取Npc表情Id失败: 头像路径无效", Message)
     self:SwitchShowImage(false)
     return
   end
@@ -318,37 +252,30 @@ function M:SwitchGuideHeadInternal(FacialIdx, DialogueData)
     end
   })
 end
-
 function M:OnInterrupted()
   self:Clear()
 end
-
 function M:OnPaused()
   self:ClearTimer()
   self:StopAllAnimations()
   self:ResetLastFacial()
   self:Hide("Paused")
 end
-
 function M:OnPauseResumed()
   self:StopAllAnimations()
   self:Show("Paused")
 end
-
 function M:ResetLastFacial()
   self.LastFacialIdx = nil
 end
-
 function M:Clear()
   self:RemoveTimer(self.DialogueDurationTimer)
   self:ClearTipUI()
 end
-
 function M:ClearTimer()
   self:RemoveTimer(self.DialogueDurationTimer)
   self:RemoveTimer(self.ShowForgeTimer)
 end
-
 function M:SetForgeVisibility(bForgeVisible)
   if self.bForgeVisible == bForgeVisible then
     return
@@ -361,7 +288,6 @@ function M:SetForgeVisibility(bForgeVisible)
     self.ForgingTips:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:GetCanProduceDraftIds()
   local CanProduceDraftIds = {}
   local TargetDraftIds = EMCache:Get("TargetDraftIds", true)
@@ -378,7 +304,6 @@ function M:GetCanProduceDraftIds()
   end)
   return CanProduceDraftIds
 end
-
 function M:ProcessPlayForgingWaitTag(CanProduceDraftIds, Idx, Callback)
   local Num = #CanProduceDraftIds
   if Idx > Num then
@@ -393,39 +318,31 @@ function M:ProcessPlayForgingWaitTag(CanProduceDraftIds, Idx, Callback)
     if not Id then
       break
     end
-    local TipUI = self:GetTipUI(i % MaxTipUINum)
-    self:InitTipUI(TipUI, Id)
+    self:GetOrAddTipUI(i % MaxTipUINum, Id)
   end
   self.ShowForgeTimer = self:AddTimer(TipUIShowTime, self.ProcessPlayForgingWaitTag, false, 0, nil, false, CanProduceDraftIds, Idx + MaxTipUINum, Callback)
 end
-
 function M:HideAllTipsUI()
-  self.TipUIs = self.TipUIs or {}
-  for _, UI in pairs(self.TipUIs) do
-    UI:HideDraftItem()
+  self.TipUIContents = self.TipUIContents or {}
+  for _, Content in pairs(self.TipUIContents) do
+    if Content and IsValid(Content.Widget) then
+      Content.Widget:HideDraftItem()
+    end
   end
 end
-
-function M:InitTipUI(TipUI, DraftId)
-  TipUI:ShowDraftItem(DraftId)
-end
-
-function M:GetTipUI(Idx)
-  self.TipUIs = self.TipUIs or {}
-  local TipUI = self.TipUIs[Idx]
-  if not TipUI then
-    local UIPath = "WidgetBlueprint'/Game/UI/WBP/Forging/Widget/WBP_Forging_WorkableTips.WBP_Forging_WorkableTips_C'"
-    local UIClass = UE.UClass.Load(UIPath)
-    TipUI = UE.UWidgetBlueprintLibrary.Create(self, UIClass)
-    self.VBox:AddChildToVerticalBox(TipUI)
+function M:GetOrAddTipUI(Idx, DraftId)
+  self.TipUIContents = self.TipUIContents or {}
+  local Content = self.TipUIContents[Idx]
+  if not Content then
+    Content = NewObject(UIUtils.GetCommonItemContentClass())
+    Content.DraftId = DraftId
+    self.List_Tips:AddItem(Content)
   end
-  self.TipUIs[Idx] = TipUI
-  return TipUI
+  self.TipUIContents[Idx] = Content
+  return Content.Widget
 end
-
 function M:ClearTipUI()
-  self.VBox:ClearChildren()
-  self.TipUIs = {}
+  self.List_Tips:ClearListItems()
+  self.TipUIContents = {}
 end
-
 return M

@@ -1,14 +1,11 @@
 local M = Class("BluePrints.Common.MVC.Model")
 local FTalkTriggerComponent = require("BluePrints.Story.Talk.Component.TalkTriggerComponent")
-
 function M:Init()
   self.Super.Init(self)
 end
-
 function M:Destory()
   self.Super.Destory(self)
 end
-
 local function GetPriority(QuestChainId, DynQuestId, Avatar)
   local QusetData = DataMgr.QuestChain[QuestChainId]
   local bQuestInTracking = Avatar and Avatar.TrackingQuestChainId == QuestChainId
@@ -24,7 +21,6 @@ local function GetPriority(QuestChainId, DynQuestId, Avatar)
   end
   return 0
 end
-
 local function GetQuestName(QuestChainId, SpecialQuestId, DynQuestId)
   local ShowName
   if 0 == QuestChainId then
@@ -47,7 +43,6 @@ local function GetQuestName(QuestChainId, SpecialQuestId, DynQuestId)
   end
   return ShowName
 end
-
 local function GetQuestInteractiveName(InteractiveInfo)
   local QuestChainId = InteractiveInfo.QuestChainId
   if 0 == QuestChainId then
@@ -59,7 +54,6 @@ local function GetQuestInteractiveName(InteractiveInfo)
   end
   return ShowName
 end
-
 local function MakeInteractiveItemFromTalkNode(Index, InteractiveInfo, Avatar)
   return {
     Type = "TalkNode",
@@ -72,7 +66,6 @@ local function MakeInteractiveItemFromTalkNode(Index, InteractiveInfo, Avatar)
     Priority = GetPriority(InteractiveInfo.QuestChainId, InteractiveInfo.DynQuestId, Avatar)
   }
 end
-
 local function MakeInteractiveItemFromTalkTrigger(TalkTriggerId, Avatar)
   local Name
   local NameData = DataMgr.TalkTriggerName[TalkTriggerId]
@@ -102,7 +95,6 @@ local function MakeInteractiveItemFromTalkTrigger(TalkTriggerId, Avatar)
     ForbiddenMsg = "QUEST_INSPECIALQUEST_MSG"
   }
 end
-
 function M:GetNpcTalkInteractives(NpcId)
   local Result = {}
   local InteractiveInfos = self:GetNpcStorylineInteractives(NpcId)
@@ -127,7 +119,6 @@ function M:GetNpcTalkInteractives(NpcId)
   end)
   return Result
 end
-
 function M:GetNpcTalkTriggers(NpcId)
   local NpcData = DataMgr.Npc[NpcId]
   if not NpcData then
@@ -146,12 +137,10 @@ function M:GetNpcTalkTriggers(NpcId)
   end
   return Result
 end
-
 function M:GetNpcStorylineInteractives(NpcId)
   local Details = GWorld.StoryMgr:GetNPCInteractiveTalkDetails(NpcId)
   return Details
 end
-
 local function SimpleTableCount(Table)
   local Count = 0
   if not Table then
@@ -168,7 +157,6 @@ local function SimpleTableCount(Table)
   Count = Count + 1
   return Count
 end
-
 function M:HasMultiInteractive(NpcId)
   local InteractiveInfos = self:GetNpcStorylineInteractives(NpcId)
   local Count = 0
@@ -183,7 +171,6 @@ function M:HasMultiInteractive(NpcId)
   end
   return false
 end
-
 function M:HasAnyInteractive(NpcId)
   local InteractiveInfos = self:GetNpcStorylineInteractives(NpcId)
   local Count = 0
@@ -198,7 +185,6 @@ function M:HasAnyInteractive(NpcId)
   end
   return false
 end
-
 function M:GetInteractiveName(NpcId)
   local NpcData = DataMgr.Npc[NpcId]
   if not NpcData then
@@ -231,7 +217,6 @@ function M:GetInteractiveName(NpcId)
   end
   return Name
 end
-
 function M:GetNowInteractiveQuestChainId(NpcId)
   local InteractiveItems = self:GetNpcTalkInteractives(NpcId)
   if #InteractiveItems > 0 then
@@ -242,7 +227,6 @@ function M:GetNowInteractiveQuestChainId(NpcId)
   end
   return nil
 end
-
 function M:GetNowInteractiveSpecialQuestId(NpcId)
   local InteractiveItems = self:GetNpcTalkInteractives(NpcId)
   if #InteractiveItems > 0 then
@@ -253,7 +237,6 @@ function M:GetNowInteractiveSpecialQuestId(NpcId)
   end
   return nil
 end
-
 function M:IsForbidBySpecialQuest(NpcId)
   if not self:HasAnyInteractive(NpcId) then
     return false
@@ -272,5 +255,4 @@ function M:IsForbidBySpecialQuest(NpcId)
   end
   return false
 end
-
 return M

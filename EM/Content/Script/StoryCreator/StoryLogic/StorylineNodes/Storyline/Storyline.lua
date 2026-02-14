@@ -1,6 +1,6 @@
 local StorylineUtils = require("StoryCreator.StoryLogic.StorylineUtils")
+local STLogType = UE.EStoryLogType.STL
 local Storyline = Class("StoryCreator.StoryLogic.StorylineNodes.Storyline.BaseStoryline")
-
 function Storyline:Init(StorylineData, FileName, EndCallback, StopCallback, Payload)
   Storyline.Super.Init(self, StorylineData, FileName, EndCallback, StopCallback, Payload)
   self.Data = StorylineData
@@ -9,33 +9,23 @@ function Storyline:Init(StorylineData, FileName, EndCallback, StopCallback, Payl
   self.EndCallback = EndCallback
   self.StopCallback = StopCallback
   self.Payload = Payload
-  self.UEWorldContext = GWorld.GameInstance
   self:TimerInit()
   self.WaitingRestartNodeList = {}
   self.RunningNodeList = {}
   self.bLockRunningNodeList = false
   self:BuildStoryline()
 end
-
 function Storyline:GetPayload(Key)
   return self.Payload and self.Payload[Key]
 end
-
 function Storyline:AddPayload(Key, Value)
   if not self.Payload then
     self.Payload = {}
   end
   self.Payload[Key] = Value
 end
-
 function Storyline:BuildStoryline()
-  local NodeData
-  if _G.bEnableNewSTLDataFeature then
-    NodeData = self.Data.nodeData
-  else
-    NodeData = self.Data.storyNodeData
-  end
-  for NodeId, NodeData in pairs(NodeData) do
+  for NodeId, NodeData in pairs(self.Data.storyNodeData) do
     local Node = StorylineUtils.CreateStoryNode(NodeData.type, self)
     if Node.IsStartNode then
       self:SetStartNode(Node)
@@ -50,10 +40,9 @@ function Storyline:BuildStoryline()
     self:AddNode(NodeId, Node)
   end
   if not self:GetStartNode() then
-    local Message = "\228\187\187\229\138\161\233\147\190\230\178\161\230\156\137StartStoryNode\232\191\158\231\186\191" .. [[
-
+    local Message = "任务链没有StartStoryNode连线" .. [[
 FileName:]] .. self.FileName
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\228\187\187\229\138\161\233\147\190\230\178\161\230\156\137StartStoryNode\232\191\158\231\186\191", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "任务链没有StartStoryNode连线", Message)
     return
   end
   self.QuestChainId = self._StartNode.QuestChainId or 0
@@ -66,7 +55,6 @@ FileName:]] .. self.FileName
     end
   end
 end
-
 function Storyline:StartStory(QuestId, NodeId)
   DebugPrint("Storyline StartStory QuestId:", QuestId, ",NodeId:", NodeId)
   if self.HasStarted then
@@ -77,14 +65,11 @@ function Storyline:StartStory(QuestId, NodeId)
   if QuestId and 0 ~= QuestId then
     self.StartedNode = self.QuestIdNodeList[QuestId]
     if not self.StartedNode then
-      local Message = "\228\187\187\229\138\161Id\228\184\141\229\173\152\229\156\168" .. [[
-
+      local Message = "任务Id不存在" .. [[
 FileName:]] .. self.FileName .. [[
-
 QuestChainId:]] .. self.QuestChainId .. [[
-
 QuestId:]] .. QuestId
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\228\187\187\229\138\161Id\228\184\141\229\173\152\229\156\168", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "任务Id不存在", Message)
       self:FinishStory()
       return
     end
@@ -104,27 +89,26 @@ QuestId:]] .. QuestId
   self.HasFinished = false
   self:StartNode(self.StartedNode, NodeId)
 end
-
 function Storyline:StartNode(Node, NodeId)
   if self.HasFinished then
     local Message = string.format([[
 FileName: %s
 NodeInfo: %s]], self.FileName, Node:ToString())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "Storyline \229\183\178\231\187\147\230\157\159\239\188\140\229\188\128\229\167\139\232\138\130\231\130\185\229\164\177\232\180\165", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "Storyline 已结束，开始节点失败", Message)
     return
   end
   if self.bLockRunningNodeList then
     local Message = string.format([[
 FileName: %s
 NodeInfo: %s]], self.FileName, Node:ToString())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\228\187\187\229\138\161\233\147\190\229\183\178\233\148\129\229\174\154\239\188\140\229\188\128\229\167\139\232\138\130\231\130\185\229\164\177\232\180\165", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "任务链已锁定，开始节点失败", Message)
     return
   end
   if Node.HasStarted then
     local Message = string.format([[
 FileName: %s
 NodeInfo: %s]], self.FileName, Node:ToString())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\138\130\231\130\185\229\183\178\229\188\128\229\167\139\239\188\140\229\188\128\229\167\139\232\138\130\231\130\185\229\164\177\232\180\165", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "节点已开始，开始节点失败", Message)
     return
   end
   if Node.QuestId then
@@ -136,27 +120,26 @@ NodeInfo: %s]], self.FileName, Node:ToString())
   DebugPrint("----------------------------------------------------------StartNode ", Node:ToString())
   Node:Start(self, NodeId)
 end
-
 function Storyline:FinishNode(Node, OutPortNames, Result)
   if self.HasFinished then
     local Message = string.format([[
 FileName: %s
 NodeInfo: %s]], self.FileName, Node:ToString())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "Storyline \229\183\178\231\187\147\230\157\159\239\188\140\229\174\140\230\136\144\232\138\130\231\130\185\229\164\177\232\180\165", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "Storyline 已结束，完成节点失败", Message)
     return
   end
   if self.bLockRunningNodeList then
     local Message = string.format([[
 FileName: %s
 NodeInfo: %s]], self.FileName, Node:ToString())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\228\187\187\229\138\161\233\147\190\229\183\178\233\148\129\229\174\154\239\188\140\229\174\140\230\136\144\232\138\130\231\130\185\229\164\177\232\180\165", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "任务链已锁定，完成节点失败", Message)
     return
   end
   if Node.HasFinished then
     local Message = string.format([[
 FileName: %s
 NodeInfo: %s]], self.FileName, Node:ToString())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\138\130\231\130\185\229\183\178\229\174\140\230\136\144\239\188\140\229\174\140\230\136\144\232\138\130\231\130\185\229\164\177\232\180\165", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "节点已完成，完成节点失败", Message)
     return
   end
   Node.HasFinished = true
@@ -211,15 +194,12 @@ NodeInfo: %s]], self.FileName, Node:ToString())
     GWorld.StoryMgr:AddStoryBlackScreenOnSucc(WaitingQuest)
   end
 end
-
 function Storyline:FinishStory()
   if self.HasFinished then
-    local Message = "\228\187\187\229\138\161\233\147\190\229\183\178\231\187\147\230\157\159" .. [[
-
+    local Message = "任务链已结束" .. [[
 FileName:]] .. self.FileName .. [[
-
 QuestChainId:]] .. self.QuestChainId
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\228\187\187\229\138\161\233\147\190\229\183\178\231\187\147\230\157\159", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, STLogType, "任务链已结束", Message)
     return
   end
   self:ClearStory()
@@ -231,7 +211,6 @@ QuestChainId:]] .. self.QuestChainId
   end
   GWorld.StoryMgr:FinishStory(self.FilePath)
 end
-
 function Storyline:ClearStory(IgnoreFinishClear)
   self.bLockRunningNodeList = true
   local RunningNodes = {}
@@ -247,7 +226,6 @@ function Storyline:ClearStory(IgnoreFinishClear)
   self.RunningNodeList = {}
   self.WaitingRestartNodeList = {}
 end
-
 function Storyline:Stop(IgnoreFinishClear)
   self:ClearStory(IgnoreFinishClear)
   self.HasFinished = true
@@ -256,7 +234,6 @@ function Storyline:Stop(IgnoreFinishClear)
     self:StopCallback()
   end
 end
-
 function Storyline:Success()
   for _, StoryNode in pairs(self.RunningNodeList) do
     if StoryNode.SuccessQuest then
@@ -264,7 +241,6 @@ function Storyline:Success()
     end
   end
 end
-
 function Storyline:PrintInfo()
   DebugPrint("---------------------------StorylineInfo---------------------------")
   DebugPrint("QuestchainId: ", self.QuestChainId)
@@ -275,71 +251,12 @@ function Storyline:PrintInfo()
   end
   DebugPrint("---------------------------StorylineInfo---------------------------")
 end
-
 function Storyline:TimerInit()
   if self.TimerHandles == nil then
     self.TimerHandles = {}
     self.TimerKeyIdx = 0
   end
 end
-
-function Storyline:AddCallback(Owner, Interval, func, IsLoop, NodeKey, HandleName, IsRealTime, ...)
-  if nil == self then
-    return
-  end
-  if nil == func then
-    return
-  end
-  local Params = {
-    ...
-  }
-  local CurNode = Owner
-  if nil == Interval or Interval <= 0 then
-    func(Owner, ...)
-    return
-  end
-  if nil == HandleName then
-    self.TimerKeyIdx = self.TimerKeyIdx + 1
-    HandleName = "AutoMade_" .. self.TimerKeyIdx
-  end
-  self:RemoveCallback(NodeKey, HandleName)
-  
-  local function f(WorldContext)
-    if not WorldContext then
-      return
-    end
-    if not IsLoop then
-      self:RemoveCallback(NodeKey, HandleName)
-    end
-    func(CurNode, table.unpack(Params))
-  end
-  
-  local Source = self:GetTimerSource(IsRealTime) or UE4.UKismetSystemLibrary
-  if not self.TimerHandles[NodeKey] then
-    self.TimerHandles[NodeKey] = {}
-  end
-  self.TimerHandles[NodeKey][HandleName] = Source.K2_SetTimerDelegate({
-    self.UEWorldContext,
-    f
-  }, Interval, IsLoop, 0)
-  return self.TimerHandles[NodeKey][HandleName]
-end
-
-function Storyline:RemoveCallback(NodeKey, HandleName, IsRealTime)
-  if nil == HandleName then
-    return
-  end
-  local Source = self:GetTimerSource(IsRealTime) or UE4.UKismetSystemLibrary
-  if nil ~= self.TimerHandles[NodeKey] and nil ~= self.TimerHandles[NodeKey][HandleName] then
-    Source.K2_ClearAndInvalidateTimerHandle(self.UEWorldContext, self.TimerHandles[NodeKey][HandleName])
-  elseif type(HandleName) == "userdata" then
-    Source.K2_ClearAndInvalidateTimerHandle(self.UEWorldContext, HandleName)
-  end
-  if nil ~= NodeKey and self.TimerHandles[NodeKey] then
-    self.TimerHandles[NodeKey][HandleName] = nil
-  end
-end
-
 function Storyline:GetTimerSource(IsRealTime)
   if IsRealTime then
     return URuntimeCommonFunctionLibrary
@@ -347,11 +264,9 @@ function Storyline:GetTimerSource(IsRealTime)
     return UE4.UKismetSystemLibrary
   end
 end
-
 function Storyline:StopStory()
   GWorld.StoryMgr:StopStoryline(self.FilePath)
 end
-
 function Storyline:CheckHaveNextNode(Node, OutPortNames)
   for _, OutPortName in pairs(OutPortNames) do
     local NodeInfoList = self:GetNextNodeInfoListByPortName(Node, OutPortName)
@@ -361,7 +276,6 @@ function Storyline:CheckHaveNextNode(Node, OutPortNames)
   end
   return false
 end
-
 function Storyline:CheckHaveOutPort(OutPortNames, TargetOutPortName)
   for _, OutPortName in pairs(OutPortNames) do
     if OutPortName == TargetOutPortName then
@@ -370,11 +284,9 @@ function Storyline:CheckHaveOutPort(OutPortNames, TargetOutPortName)
   end
   return false
 end
-
 function Storyline:AddToWaitingRestartNodeList(Node)
   self.WaitingRestartNodeList[Node.Key] = Node
 end
-
 function Storyline:RestartNodes()
   local WaitingRestartNodes = {}
   for _, Node in pairs(self.WaitingRestartNodeList) do
@@ -387,5 +299,4 @@ function Storyline:RestartNodes()
   end
   self.WaitingRestartNodeList = {}
 end
-
 return Storyline

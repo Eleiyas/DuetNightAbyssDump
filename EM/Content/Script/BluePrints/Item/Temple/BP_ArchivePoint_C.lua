@@ -1,6 +1,5 @@
 local M = Class("BluePrints.Item.BP_CombatItemBase_C")
 M.UseTimes = 0
-
 function M:OnPlayerEnter(Player)
   self.IsEntering = true
   if true == self.HasEntered then
@@ -33,18 +32,15 @@ function M:OnPlayerEnter(Player)
     end, true, 0, "OnStageStart", true)
   end
 end
-
 function M:OnPlayerLeave(Player)
   self.IsEntering = false
 end
-
 function M:OnFX()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
     GameState:ArchiveShowFX()
   end
 end
-
 function M:ResetInfo()
   if self.IsEntering == true then
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -59,5 +55,4 @@ function M:ResetInfo()
   self:OnFXClose()
   DebugPrint("==============================================OnFXClose=====MaxArchiveID,self.ArchiveID", "nil", self.ArchiveID)
 end
-
 return M

@@ -1,10 +1,8 @@
 local Component = {}
-
 function Component:InitComponent()
   self.MonShareSkillCdBattleGroup = {}
   self.MonShareSkillCdMap = {}
 end
-
 function Component:BuildMonShareSkillCdGroup(BattleGroupId)
   if not DataMgr.MonBattleMgrData[BattleGroupId] then
     return
@@ -19,7 +17,6 @@ function Component:BuildMonShareSkillCdGroup(BattleGroupId)
     self.MonShareSkillCdMap[SkillShareRule.SkillId] = SkillShareRule.SkillCd
   end
 end
-
 function Component:GetMonShareSkillCount(BattleGroupId, SkillId)
   if not self.MonShareSkillCdBattleGroup[BattleGroupId] then
     return 0
@@ -29,7 +26,6 @@ function Component:GetMonShareSkillCount(BattleGroupId, SkillId)
   end
   return self.MonShareSkillCdBattleGroup[BattleGroupId][SkillId]
 end
-
 function Component:CheckUseMonShareSkill(BattleGroupId, SkillId)
   if not BattleGroupId or 0 == BattleGroupId then
     return true
@@ -45,7 +41,6 @@ function Component:CheckUseMonShareSkill(BattleGroupId, SkillId)
   end
   return self:GetMonShareSkillCount(BattleGroupId, SkillId) > 0
 end
-
 function Component:HandleUseMonShareSkill(BattleGroupId, SkillId)
   if not (BattleGroupId and self.MonShareSkillCdBattleGroup[BattleGroupId]) or not self.MonShareSkillCdBattleGroup[BattleGroupId][SkillId] then
     return
@@ -57,5 +52,4 @@ function Component:HandleUseMonShareSkill(BattleGroupId, SkillId)
     self.MonShareSkillCdBattleGroup[BattleGroupId][SkillId] = self.MonShareSkillCdBattleGroup[BattleGroupId][SkillId] + 1
   end)
 end
-
 return Component

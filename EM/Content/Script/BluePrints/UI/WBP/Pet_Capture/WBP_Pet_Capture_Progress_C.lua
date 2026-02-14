@@ -7,10 +7,8 @@ local PetBehavior = {
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Success then
     self:CaptureSuccess()
@@ -18,10 +16,8 @@ function M:OnAnimationFinished(Animation)
     self:CaptureFail()
   end
 end
-
 function M:OnLoaded()
 end
-
 function M:StartProgressAnimation(PetOwner, Probability, IsSuccess, UniqueId)
   self.PetOwner = PetOwner
   self.PetUniqueId = UniqueId
@@ -51,7 +47,6 @@ function M:StartProgressAnimation(PetOwner, Probability, IsSuccess, UniqueId)
   self.VXProgressMaterial = self.VX_Progress_Glow:GetDynamicMaterial()
   self:StartFirstGrow()
 end
-
 function M:CaptureSuccess()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -84,7 +79,6 @@ function M:CaptureSuccess()
     self:HideProgress(true)
   end)
 end
-
 function M:CaptureFail()
   self.PetOwner:TriggerABPPetStateChange(4)
   self.PetOwner:OnPetStatesSwitch(4)
@@ -97,13 +91,11 @@ function M:CaptureFail()
     self:HideProgress(false)
   end)
 end
-
 function M:HideProgress(Result)
   self.Root:SetVisibility(ESlateVisibility.Collapsed)
   self.PetOwner:RegisterUpdateProgressFunc()
   self.PetOwner:OnInteractiveFinish(Result)
 end
-
 function M:StartFirstGrow()
   self.PetOwner:TriggerABPPetStateChange(2)
   self.PetOwner:OnPetStatesSwitch(2)
@@ -125,7 +117,6 @@ function M:StartFirstGrow()
   self.PetOwner.ProgressTimeline:PlayFromStart()
   self:PlayPetVoice(PetBehavior.Angry)
 end
-
 function M:StartSecondGrow()
   self:PlayAnimationForward(self.SecondRise)
   if 100 == self.Growth2 then
@@ -153,7 +144,6 @@ function M:StartSecondGrow()
   self.PetOwner.ProgressTimeline:PlayFromStart()
   self:PlayPetVoice(PetBehavior.Angry)
 end
-
 function M:StartThirdGrow()
   self:PlayAnimationForward(self.ThirdRise)
   AudioManager(self):PlayUISound(self, "event:/ui/common/pet_catch_progress_3", nil, nil)
@@ -175,7 +165,6 @@ function M:StartThirdGrow()
   self.PetOwner.ProgressTimeline:PlayFromStart()
   self:PlayPetVoice(PetBehavior.Angry)
 end
-
 function M:PlayEndAnimation(IsSuccess)
   if IsSuccess then
     AudioManager(self):PlayUISound(self, "event:/ui/common/pet_catch_progress_success", nil, nil)
@@ -187,7 +176,6 @@ function M:PlayEndAnimation(IsSuccess)
     self:PlayPetVoice(PetBehavior.Death)
   end
 end
-
 function M:PlayPetVoice(Behavior)
   local PetId = self.PetOwner.UnitId
   local PetData = DataMgr.Pet[PetId]
@@ -204,5 +192,4 @@ function M:PlayPetVoice(Behavior)
     AudioManager(self):PlayPetVoice(Player, PetNameTag, "vo_angry", "PetAngry")
   end
 end
-
 return M

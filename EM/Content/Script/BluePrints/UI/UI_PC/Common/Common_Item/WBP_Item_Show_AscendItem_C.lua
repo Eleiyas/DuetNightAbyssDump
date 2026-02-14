@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   Content.Entry = self
   self.Content = Content
@@ -12,5 +11,4 @@ function M:OnListItemObjectSet(Content)
     self.Switcher_Star:SetActiveWidgetIndex(1)
   end
 end
-
 return M

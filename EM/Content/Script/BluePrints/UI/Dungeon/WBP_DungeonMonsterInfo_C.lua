@@ -6,7 +6,7 @@ local MONSTER_BOSS_ICON = "/Game/UI/Texture/Static/Atlas/Play/T_Play_BossMonster
 local MONSTER_ELITE_ICON = "/Game/UI/Texture/Static/Atlas/Play/T_Play_EliteMonster.T_Play_EliteMonster"
 local MONSTER_INFO_WEAKNESS_ITEM = "/Game/UI/WBP/Play/Widget/Depute/MonsterInfo_Tab_Item_Content.MonsterInfo_Tab_Item_Content"
 local MONSTER_INFO_TAB_ITEM = "/Game/UI/WBP/Play/Widget/Depute/MonsterInfo_Tab_Item_Content.MonsterInfo_Tab_Item_Content"
-
+local CHANGE_ATTRIBUTE_BTN = "WidgetBlueprint'/Game/UI/WBP/Abyss/Widget/ChangeAttribute/WBP_Abyss_MonsterInfo_ChangeAttribute.WBP_Abyss_MonsterInfo_ChangeAttribute'"
 function M:Construct()
   self.Super.Construct(self)
   self.MonsterIdToIndex = {}
@@ -16,7 +16,6 @@ function M:Construct()
   self.Arrow_Left.OnClicked:Add(self, self.OnBtnArrowLeftClicked)
   self.Arrow_Right.OnClicked:Add(self, self.OnBtnArrowRightClicked)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local DungeonId, Parent, SelectMonster = ...
@@ -26,14 +25,12 @@ function M:OnLoaded(...)
     self:InitPanel(DungeonId)
   end
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   self.Button_Back.OnClicked:Clear()
   self.Arrow_Left.OnClicked:Clear()
   self.Arrow_Right.OnClicked:Clear()
 end
-
 function M:Tick(MyGeometry, DeltaTime)
   if self.SelectMonster then
     self:TryMoveMonsterInfo(self.MonsterIdToIndex[self.SelectMonster] - 1)
@@ -45,19 +42,37 @@ function M:Tick(MyGeometry, DeltaTime)
     self.NeedSelectMonsterId = nil
   end
 end
-
-function M:InitPanel(DungeonId, DungeonInfo)
+function M:InitPanel(DungeonId, DungeonInfo, AttrType, SubBtnCallback)
   self.NowDungeonId = DungeonId
   self.NowDungeonInfo = DungeonInfo
   self.NowSelectingIndex = 1
   self.Text_Tips:SetText(GText("UI_TRAIN_CLOSE"))
-  self:InitMonsterWeakness()
+  self:InitMonsterWeakness(AttrType)
   self:RefreshMonsterList()
+  if SubBtnCallback then
+    self:InitSubBtn(SubBtnCallback)
+  else
+    self.Pos_SwitchAttribute:ClearChildren()
+  end
   self:InitKeys()
   self:SetFocus()
   self:PlayOpenAnim()
 end
-
+function M:InitSubBtn(Callback)
+  self.Pos_SwitchAttribute:ClearChildren()
+  self.Pos_SwitchAttribute:SetVisibility(ESlateVisibility.Collapsed)
+  self.SubButton = UIManager(self):CreateWidget(CHANGE_ATTRIBUTE_BTN)
+  self.Pos_SwitchAttribute:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.Pos_SwitchAttribute:AddChild(self.SubButton)
+  local SubButtonParam = {
+    Parent = self,
+    ShowText = GText("UI_Switch_Attribute"),
+    BtnClickCallback = Callback,
+    GamepadKey = "X",
+    AttributeIcon = self.OverriddenWeaknessIcon
+  }
+  self.SubButton:Init(SubButtonParam)
+end
 function M:InitKeys()
   self.Key_Return:CreateCommonKey({
     KeyInfoList = {
@@ -105,7 +120,6 @@ function M:InitKeys()
     self.Key_Return:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshMonsterList()
   local DungeonId = self.NowDungeonId
   local DungeonInfo = {}
@@ -131,7 +145,13 @@ function M:RefreshMonsterList()
     if not self.SelectMonster then
       Content.bIsDefaultSelected = 1 == index
     end
-    Content.WeaknessIcon = self.MonsterWeaknessIcon[id]
+    if self.OverriddenWeaknessIcon then
+      Content.WeaknessIcon = {
+        [self.OverriddenWeaknessIcon] = 1
+      }
+    else
+      Content.WeaknessIcon = self.MonsterWeaknessIcon[id]
+    end
     Content.SoundEvent = "event:/ui/common/click_level_02"
     self.List_Tab:AddItem(Content)
   end
@@ -141,14 +161,12 @@ function M:RefreshMonsterList()
   self.DisplayMonsters = DisplayMonsters
   self:CheckDisplayMonsters(DisplayMonsters)
 end
-
 function M:OnButtonBackClicked()
   if self:IsAnimationPlaying(self.Out) or self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayCloseAnim()
 end
-
 function M:TryMoveMonsterInfo(OffsetIndex)
   if not self.SelectMonster then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
@@ -165,11 +183,17 @@ function M:TryMoveMonsterInfo(OffsetIndex)
     self:SelectMonsterInfoByIndex(WillIndex)
   end)
 end
-
 function M:CallMoveAnim(OffsetIndex)
 end
-
-function M:InitMonsterWeakness()
+function M:InitMonsterWeakness(OverrideWeaknessType)
+  self.Text_Weakness:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  if OverrideWeaknessType then
+    local DamageTypeInfo = DataMgr.DamageType[OverrideWeaknessType]
+    if DamageTypeInfo and DamageTypeInfo.WeaknessIcon then
+      self.OverriddenWeaknessIcon = DamageTypeInfo.WeaknessIcon
+      return
+    end
+  end
   local DungeonId = self.NowDungeonId
   local DungeonInfo = {}
   if self.NowDungeonInfo then
@@ -203,14 +227,12 @@ function M:InitMonsterWeakness()
   end
   self.Text_Weakness:SetText(GText("Mon_Guide_Weakness_Label"))
 end
-
 function M:SelectMonsterInfoByIndex(index)
   local MonsterId = self.DisplayMonsters[index]
   if MonsterId then
     self:SelectMonsterInfoItem(MonsterId)
   end
 end
-
 function M:SelectMonsterInfoItem(MonsterId)
   local MonsterInfo = DataMgr.Monster[MonsterId]
   self.NowSelectingIndex = self.MonsterIdToIndex[MonsterId]
@@ -218,7 +240,11 @@ function M:SelectMonsterInfoItem(MonsterId)
     local bIsBoss = MonsterUtils.IsBoss(MonsterId)
     local bIsElite = MonsterUtils.IsElite(MonsterId)
     local bIsNormal = not bIsElite and not bIsBoss
-    local ImagePath = MonsterInfo.Icon
+    local GallaryId = MonsterInfo.GalleryRuleId
+    local ImagePath
+    if GallaryId then
+      ImagePath = DataMgr.GalleryRule[GallaryId].MonsterIcon
+    end
     local MonsterName = GText(MonsterInfo.UnitName)
     local MonsterDescription = GText(MonsterUtils.GetDescriptionDetail(MonsterId))
     self.Monster_Name:SetText(MonsterName or "")
@@ -239,7 +265,14 @@ function M:SelectMonsterInfoItem(MonsterId)
       self.Icon_Monster_Type:SetBrushResourceObject(MonsterTypeIcon)
     end
     local Class = LoadClass(MONSTER_INFO_WEAKNESS_ITEM)
-    local MonsterWeaknessIcons = self:GetMonsterWeaknessIcons(MonsterId)
+    local MonsterWeaknessIcons
+    if self.OverriddenWeaknessIcon then
+      MonsterWeaknessIcons = {
+        self.OverriddenWeaknessIcon
+      }
+    else
+      MonsterWeaknessIcons = self:GetMonsterWeaknessIcons(MonsterId)
+    end
     if next(MonsterWeaknessIcons) then
       self.Panel_Weakness:SetVisibility(UE4.ESlateVisibility.Visible)
       self.List_Weak:ClearListItems()
@@ -261,7 +294,6 @@ function M:SelectMonsterInfoItem(MonsterId)
     self:RefreshScrollGamepadVisibility()
   end
 end
-
 function M:RefreshArrows()
   local TotalCount = #self.DisplayMonsters
   if TotalCount <= 2 then
@@ -278,7 +310,6 @@ function M:RefreshArrows()
     self.Arrow_Right:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function M:GetMonsterWeaknessIcons(MonsterId)
   local IconSet = self.MonsterWeaknessIcon[MonsterId]
   local IconList = {}
@@ -294,12 +325,13 @@ function M:GetMonsterWeaknessIcons(MonsterId)
   end
   return SortedIconList
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if "Escape" == InKeyName then
-    self:PlayCloseAnim()
+    if not self:IsAnimationPlaying(self.Out) then
+      self:PlayCloseAnim()
+    end
   elseif "Q" == InKeyName then
     self:TryMoveMonsterInfo(-1)
   elseif "E" == InKeyName then
@@ -307,14 +339,12 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:SetTabItemSelection(Item)
   if self.SelectingItem and self.SelectingItem ~= Item then
     self.SelectingItem:CancelTabSelect()
   end
   self.SelectingItem = Item
 end
-
 function M:CheckDisplayMonsters(DisplayMonsters)
   if DisplayMonsters then
     local MonsterCount = #DisplayMonsters
@@ -327,7 +357,6 @@ function M:CheckDisplayMonsters(DisplayMonsters)
     end
   end
 end
-
 function M.CompareMonsters(LeftId, RightId)
   if MonsterUtils.IsBoss(LeftId) and not MonsterUtils.IsBoss(RightId) then
     return true
@@ -347,53 +376,47 @@ function M.CompareMonsters(LeftId, RightId)
     end
   end
 end
-
 function M:Close()
   assert(self.Parent, "Parent or GrandParent is nil")
   self.Parent.bIsFocusable = true
   self.Parent:SetFocus()
   self.Super.Close(self)
 end
-
 function M:OnBtnArrowLeftClicked()
   self:TryMoveMonsterInfo(-1)
 end
-
 function M:OnBtnArrowRightClicked()
   self:TryMoveMonsterInfo(1)
 end
-
 function M:PlayOpenAnim()
   self.CanvasPanelRoot:SetRenderOpacity(1.0)
   self:PlayAnimation(self.In)
+  AudioManager(self):PlayUISound(self, "event:/ui/common/npc_info_panel", "MonsterInfo", nil)
 end
-
 function M:PlayCloseAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
+  AudioManager(self):SetEventSoundParam(self, "MonsterInfo", {ToEnd = 1})
   self:PlayAnimation(self.Out)
 end
-
 function M:PlaySwitchAnim()
   self:PlayAnimation(self.Switch)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
   end
 end
-
 function M:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_DungeonMonsterInfo_C M:OnUpdateUIStyleByInputTypeChange", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
   end
   self.CurInputDeviceType = CurInputDevice
+  self:SetFocus()
   if CurInputDevice == ECommonInputType.Touch then
     return
   end
@@ -401,27 +424,33 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if IsUseKeyAndMouse then
     self.UsingGamepad = false
     self:RefreshKeyView()
+    self.EMScrollBox_1:SetVisibility(UE4.ESlateVisibility.Visible)
+    self.Arrow_Right:SetVisibility(UE4.ESlateVisibility.Visible)
+    self.Arrow_Left:SetVisibility(UE4.ESlateVisibility.Visible)
   else
     self.UsingGamepad = true
     self.GameInputModeSubsystem:SetNavigateWidgetVisibility(false)
     self:RefreshGamepadView()
+    self.EMScrollBox_1:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+    self.Arrow_Right:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+    self.Arrow_Left:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+  end
+  if self.SubButton and self.SubButton.OnUpdateUIStyleByInputTypeChange then
+    self.SubButton:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   end
 end
-
 function M:RefreshGamepadView()
   self.WidgetSwitcher_L:SetActiveWidgetIndex(1)
   self.WidgetSwitcher_R:SetActiveWidgetIndex(1)
   self.WidgetSwitcher_MP:SetActiveWidgetIndex(1)
   self.Key_Return:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:RefreshKeyView()
   self.WidgetSwitcher_L:SetActiveWidgetIndex(0)
   self.WidgetSwitcher_R:SetActiveWidgetIndex(0)
   self.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
   self.Key_Return:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -435,7 +464,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadUp(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonRight then
@@ -448,9 +476,9 @@ function M:OnGamePadUp(InKeyName)
     self:TryMoveMonsterInfo(1)
     IsEventHandled = true
   end
+  IsEventHandled = not IsEventHandled and self.SubButton and self.SubButton.OnGamePadUp and self.SubButton:OnGamePadUp(InKeyName) or IsEventHandled
   return IsEventHandled
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -462,7 +490,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:RefreshScrollGamepadVisibility()
   self:AddTimer(0.1, function()
     local bCanScroll = UIUtils.CheckScrollBoxCanScroll(self.EMScrollBox_1)
@@ -473,5 +500,4 @@ function M:RefreshScrollGamepadVisibility()
     end
   end)
 end
-
 return M

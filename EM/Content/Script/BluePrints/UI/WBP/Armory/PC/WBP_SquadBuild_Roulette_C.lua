@@ -3,13 +3,17 @@ local WBP_Build_Roulette_P_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_Build_Roulette_P_C:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnClickCallback)
+  self:BindToAnimationFinished(self.Click, {
+    self,
+    function()
+      self:PlayAnimation(self.Select)
+    end
+  })
   self.IsEmpty = false
   self:InitBtn()
 end
-
 function WBP_Build_Roulette_P_C:InitSlot(Params)
   self.Owner = Params.Owner
   self.Id = Params.Id
@@ -18,17 +22,14 @@ function WBP_Build_Roulette_P_C:InitSlot(Params)
   self:SetTitleName()
   self:UpdateCurSquadInfo()
 end
-
 function WBP_Build_Roulette_P_C:PlayRefreshAnimation()
   if not self.IsEmpty then
     self:PlayAnimation(self.Refresh)
   end
 end
-
 function WBP_Build_Roulette_P_C:UpdateCurSquadInfo()
   self.Owner:UpdateCurSquadInfo("WheelIndex", self.Id or 1)
 end
-
 function WBP_Build_Roulette_P_C:OnClickCallback()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_confirm", nil, nil)
   if self.Owner.IsInClickCD then
@@ -62,10 +63,10 @@ function WBP_Build_Roulette_P_C:OnClickCallback()
   self.Owner.CurSlot = self
   self.Owner.CurSlotType = self.Type
   self.Owner:SwitchToRouletteList()
+  self.Owner.DontNeedPlayAnimation = false
   self:PlayAnimation(self.Click)
   self.IsClicking = true
 end
-
 function WBP_Build_Roulette_P_C:ClearSlot()
   local Params = {
     Owner = self.Owner,
@@ -74,11 +75,9 @@ function WBP_Build_Roulette_P_C:ClearSlot()
   }
   self:InitSlot(Params)
 end
-
 function WBP_Build_Roulette_P_C:GetItemId()
   return self.Id
 end
-
 function WBP_Build_Roulette_P_C:SetTitleName()
   local RomanNum = Const.RomanNum
   local RouletteIndex = GText(RomanNum[self.Id])
@@ -89,7 +88,6 @@ function WBP_Build_Roulette_P_C:SetTitleName()
   end
   self.Text_Name:SetText(Text)
 end
-
 function WBP_Build_Roulette_P_C:ChangeWheelIndex(Index)
   self.Id = Index
   local Text = self.Avatar.WheelsName[self.Id]
@@ -100,13 +98,11 @@ function WBP_Build_Roulette_P_C:ChangeWheelIndex(Index)
   self.Text_Num:SetText(self:GetRomanNum(self.Id))
   self.Owner:UpdateCurSquadInfo("WheelIndex", self.Id or 1)
 end
-
 function WBP_Build_Roulette_P_C:GetRomanNum(Index)
   local RomanNum = Const.RomanNum
   local RouletteIndex = GText(RomanNum[Index])
   return RouletteIndex
 end
-
 function WBP_Build_Roulette_P_C:InitBtn()
   self.Btn_Click.OnPressed:Add(self, function()
     self:OnBtnClickPressed()
@@ -119,26 +115,22 @@ function WBP_Build_Roulette_P_C:InitBtn()
   end)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Build_Roulette_P_C:OnBtnClickPressed()
   if self.IsClicking then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Build_Roulette_P_C:OnBtnClickHovered()
   if self.IsClicking then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Build_Roulette_P_C:OnBtnClickUnhovered()
   if self.IsClicking then
     return
   end
   self:PlayAnimation(self.UnHover)
 end
-
 return WBP_Build_Roulette_P_C

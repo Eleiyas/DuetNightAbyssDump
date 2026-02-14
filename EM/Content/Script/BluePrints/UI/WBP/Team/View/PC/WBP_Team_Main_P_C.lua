@@ -6,7 +6,6 @@ Rule.Value = 1.0
 local M = Class({
   "BluePrints.UI.WBP.Team.View.WBP_Team_Main_Base"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Key_GamePad:CreateCommonKey({
@@ -22,14 +21,12 @@ function M:Construct()
   UIManager(self):GetGameInputModeSubsystem().OnInputMethodChanged:Add(self, self.OnInputDeviceChange)
   self:OnInputDeviceChange()
 end
-
 function M:InitUIInfo(Name, bInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, bInUIMode, EventList, ...)
   if self.bBattle then
     self.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnInputDeviceChange()
   if TeamController:IsGamepad() then
     if not self.bBattle then
@@ -45,13 +42,11 @@ function M:OnInputDeviceChange()
     end
   end
 end
-
 function M:Destruct()
   self.Key_GamePad:RemoveExecuteLogic()
   UIManager(self):GetGameInputModeSubsystem().OnInputMethodChanged:Remove(self, self.OnInputDeviceChange)
   M.Super.Destruct(self)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -64,20 +59,21 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
       return UIUtils.Unhandled
     end
   end
-  return UIUtils.Handled
+  local IsGamepad = UE4.UKismetInputLibrary.Key_IsGamepadKey(InKey)
+  if true == IsGamepad then
+    return UIUtils.Handled
+  end
+  return UIUtils.Unhandled
 end
-
 function M:DoGamepadBtnPress()
   self.Key_Gamepad:OnShortCutPressed()
 end
-
 function M:DoGamepadBtnRelease()
   self.Key_Gamepad:OnShortCutReleased()
 end
-
 function M:AppendToParent(ParentWidget)
   self.IsAddingToParent = true
-  local ParentNode = ParentWidget.UWidget
+  local ParentNode = UIUtils.GetRootUWidget(ParentWidget)
   if ParentNode then
     ParentNode:AddChild(self)
     local SelfSlot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self)
@@ -92,7 +88,6 @@ function M:AppendToParent(ParentWidget)
   end
   self.IsAddingToParent = false
 end
-
 function M:AddTeammateUI(Member, bAnim, HeadUI, Index)
   if not HeadUI then
     if self.WB_Player:GetChildrenCount() < MaxTeammate then
@@ -123,7 +118,6 @@ function M:AddTeammateUI(Member, bAnim, HeadUI, Index)
   end
   return
 end
-
 function M:DelTeammateUI(Uid)
   if not self.Teammate2UI then
     return
@@ -152,7 +146,6 @@ function M:DelTeammateUI(Uid)
   self:ShowAddBtn(self.TeammateCount)
   self.TeammateCount = self.TeammateCount - 1
 end
-
 function M:OnInitAddBtn()
   if self.bBattle then
     return
@@ -184,7 +177,6 @@ function M:OnInitAddBtn()
     TeamHeadSlot:SetSize(Rule)
   end
 end
-
 function M:HideAddBtn(i)
   if self.bBattle then
     return
@@ -199,7 +191,6 @@ function M:HideAddBtn(i)
   AddBtn:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Panel_Add:SetWidthOverride(self.Panel_Add.WidthOverride - BtnSizeX - PaddingX)
 end
-
 function M:ShowAddBtn(i)
   if self.bBattle then
     return
@@ -214,35 +205,29 @@ function M:ShowAddBtn(i)
   AddBtn:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Panel_Add:SetWidthOverride(self.Panel_Add.WidthOverride + BtnSizeX + PaddingX)
 end
-
 function M:Close()
-  M.Super.Close(self)
   self.bIsFocusable = false
   self.EmptyHeadeAnchor:ClearChildren()
+  M.Super.Close(self)
 end
-
 function M:FocusToMyHead()
   self:FocusUIByUid(TeamController:GetAvatar().Uid)
 end
-
 function M:OnFocusLost(InFocusEvent)
   self.bIsFocusable = false
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.bIsFocusable = false
   if self.OnTeamMainFocusChanged and TeamController:IsGamepad() then
     self.OnTeamMainFocusChanged(false)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   DebugPrint("TeamMain  OnAddedToFocusPath")
   if self.OnTeamMainFocusChanged and TeamController:IsGamepad() then
     self.OnTeamMainFocusChanged(true)
   end
 end
-
 function M:FocusUIByUid(Uid)
   if not (not self.bIsFocusable or self.bOpenBtnList) or not self:IsVisible() then
     return
@@ -260,5 +245,4 @@ function M:FocusUIByUid(Uid)
   self.bOpenBtnList = false
   self.OpenedUid = nil
 end
-
 return M

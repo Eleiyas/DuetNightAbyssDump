@@ -1,4 +1,5 @@
 require("UnLua")
+local SettingUtils = require("Utils.SettingUtils")
 local EMCache = require("EMCache.EMCache")
 local WBP_Setting_PC_C = Class({
   "Blueprints.UI.BP_UIState_C"
@@ -6,17 +7,14 @@ local WBP_Setting_PC_C = Class({
 local Rule = FSlateChildSize()
 Rule.SizeRule = UE.ESlateSizeRule.Fill
 Rule.Value = 1.0
-
 function WBP_Setting_PC_C:Initialize(Initializer)
   self.NpcId = 900003
   self.IsNeedPlayNpcAnim = true
 end
-
 function WBP_Setting_PC_C:Construct()
   WBP_Setting_PC_C.Super.Construct(self)
   self.GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem()
 end
-
 function WBP_Setting_PC_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.IsInLoginMainPage, self.LastSystem = ...
@@ -37,12 +35,12 @@ function WBP_Setting_PC_C:OnLoaded(...)
       IsHaveInOutAnim = self.IsNeedPlayNpcAnim
     })
   end
+  self.RegionOnline = EMCache:Get("AutoJoin")
   self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType(), UIUtils.UtilsGetCurrentGamepadName())
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:FocusToOptionFirstWidget()
   end
 end
-
 function WBP_Setting_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self:RefreshAllGamePadOperator(self.OptionUnfold_Prefrence.NowOptionId)
@@ -53,7 +51,6 @@ function WBP_Setting_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadN
   self.CurInputDeviceType = CurInputDevice
   self:UpdateUIStyleInPlatform(self.CurInputDeviceType == ECommonInputType.Gamepad)
 end
-
 function WBP_Setting_PC_C:UpdateUIStyleInPlatform(IsUseGamePad)
   if self.Com_KeyImg_L then
     self.Com_KeyImg_L:SetVisibility(IsUseGamePad and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
@@ -68,14 +65,12 @@ function WBP_Setting_PC_C:UpdateUIStyleInPlatform(IsUseGamePad)
     self:InitKeyboardView()
   end
 end
-
 function WBP_Setting_PC_C:InitGamepadView()
   self.ScrollBox_Option:SetScrollWhenFocusChanges(UE4.EScrollWhenFocusChanges.AnimatedScroll)
   if self:HasAnyFocus() then
     self:FocusToOptionFirstWidget()
   end
 end
-
 function WBP_Setting_PC_C:UpdateKeyboardBottonKey()
   local Params = {
     {
@@ -142,15 +137,12 @@ function WBP_Setting_PC_C:UpdateKeyboardBottonKey()
     self.Tab_Set:UpdateBottomKeyInfo(Params)
   end
 end
-
 function WBP_Setting_PC_C:InitMobileView()
 end
-
 function WBP_Setting_PC_C:InitKeyboardView()
   self.ScrollBox_Option:SetScrollWhenFocusChanges(UE4.EScrollWhenFocusChanges.NoScroll)
   self:UpdateKeyboardBottonKey()
 end
-
 function WBP_Setting_PC_C:OnSettingUINavigateUp(Widget, Index)
   local NextWidget = self.SettingUIs[self.CurrentTab][Index - 1]
   if NextWidget then
@@ -158,7 +150,6 @@ function WBP_Setting_PC_C:OnSettingUINavigateUp(Widget, Index)
   end
   return nil
 end
-
 function WBP_Setting_PC_C:OnSettingUINavigateDown(Widget, Index)
   local NextWidget = self.SettingUIs[self.CurrentTab][Index + 1]
   if NextWidget then
@@ -166,7 +157,6 @@ function WBP_Setting_PC_C:OnSettingUINavigateDown(Widget, Index)
   end
   return nil
 end
-
 function WBP_Setting_PC_C:FocusToOptionFirstWidget()
   if not self.CurrentTab then
     return
@@ -187,7 +177,24 @@ function WBP_Setting_PC_C:FocusToOptionFirstWidget()
     self:SetFocus()
   end
 end
-
+function WBP_Setting_PC_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if InKeyName == UIConst.GamePadKey.RightAnalogX and 2 == self.MultiPlateIndex and self.Tab_MultiPlate and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
+    local DeltaOffset = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 20
+    local CurrentOffset = self.SC_Combination:GetScrollOffset()
+    local NextOffset = math.clamp(CurrentOffset + DeltaOffset, 0, self.SC_Combination:GetScrollOffsetOfEnd())
+    if NextOffset < self.SC_Combination:GetScrollOffsetOfEnd() and self.SC_Combination:GetScrollOffsetOfEnd() - NextOffset < 1 then
+      NextOffset = self.SC_Combination:GetScrollOffsetOfEnd()
+    elseif NextOffset < 1 then
+      NextOffset = 0
+    end
+    self.SC_Combination:SetScrollOffset(NextOffset)
+    self:OnScrollBoxTaskScrolled()
+    return UIUtils.Handled
+  end
+  return UIUtils.Unhandled
+end
 function WBP_Setting_PC_C:OnGamepadFocusPanelTitle()
   self:UpdateBottomKey({
     {
@@ -200,10 +207,15 @@ function WBP_Setting_PC_C:OnGamepadFocusPanelTitle()
     }
   })
 end
-
 function WBP_Setting_PC_C:UpdateBottomKey(Params)
   if UIUtils.IsGamepadInput() then
     local FinalParams = {}
+    if UIUtils.IsGamepadInput() and 2 == self.MultiPlateIndex and self.Tab_MultiPlate and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
+      table.insert(FinalParams, {
+        "RH",
+        GText("UI_Controller_Slide")
+      })
+    end
     if self.HasBeenChanged then
       table.insert(FinalParams, {
         UIConst.GamePadImgKey.FaceButtonTop,
@@ -220,7 +232,6 @@ function WBP_Setting_PC_C:UpdateBottomKey(Params)
     self.Tab_Set:UpdateBottomKeyInfo_Quick(FinalParams)
   end
 end
-
 function WBP_Setting_PC_C:SetFocus_Lua()
   if self.CurInputDeviceType and self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:AddDelayFrameFunc(function()
@@ -229,7 +240,6 @@ function WBP_Setting_PC_C:SetFocus_Lua()
     return
   end
 end
-
 function WBP_Setting_PC_C:ListenScreenResolution()
   local ScreenSize = FVector2D(0, 0)
   UE4.UWidgetLayoutLibrary.GetViewportSize(self, ScreenSize)
@@ -241,11 +251,9 @@ function WBP_Setting_PC_C:ListenScreenResolution()
     self:OnClickAllLeftMouseButton()
   end
 end
-
 function WBP_Setting_PC_C:InitSettingParameter()
   self.HasBeenChanged = false
 end
-
 function WBP_Setting_PC_C:InitCommonTab(TabId, DontPlayInAnim)
   self:InitCommonTabInfo()
   if self.Platform == "PC" then
@@ -336,9 +344,155 @@ function WBP_Setting_PC_C:InitCommonTab(TabId, DontPlayInAnim)
       })
     end
     self:RefreshAllGamePadOperator(self.OptionUnfold_Prefrence.NowOptionId)
+    self.SC_Combination.OnUserScrolled:Remove(self, self.OnScrollBoxTaskScrolled)
+    self.SC_Combination.OnUserScrolled:Add(self, self.OnScrollBoxTaskScrolled)
+    self:OnScrollBoxTaskScrolled()
+  end
+  self:InitLayoutPlantUI()
+end
+function WBP_Setting_PC_C:OnScrollBoxTaskScrolled()
+  if not self.SC_Combination then
+    return
+  end
+  self:AddDelayFrameFunc(function()
+    UIUtils.UpdateScrollBoxArrow(self.SC_Combination, self.Btn_L, self.Btn_R)
+  end, 2)
+end
+function WBP_Setting_PC_C:InitLayoutPlantUI()
+  self.IsInitLayoutPlan = false
+  if self.Platform ~= "Mobile" then
+    return
+  end
+  if self.CommonTabInfo[self.CurrentTab].TabName ~= "Control" then
+    self.Tab_State:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.Panel_Tab:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.WS_State:SetActiveWidgetIndex(0)
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local Count = Avatar:GetMobileHudPlanCount()
+  for i = Count + 1, 2 do
+    Avatar:AddMobileHudPlan({})
+  end
+  self.IsInitLayoutPlan = true
+  self.CurPlanIndex = Avatar:GetCurrentMobileHudPlanIndex()
+  self.Tab_State:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.Panel_Tab:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  self.Tab_State:Init({
+    Tabs = {
+      {
+        Text = GText("UI_OPTION_Layout"),
+        TabId = 1
+      },
+      {
+        Text = GText("UI_OPTION_Operation"),
+        TabId = 2
+      }
+    }
+  })
+  self.LayoutPlantIndex = nil
+  self.Layout_01.Index = 1
+  self.Layout_02.Index = 2
+  self.Tab_State:BindEventOnTabSelected(self, self.OnOperateTabSelected)
+  self.Tab_State:SelectTab(1)
+  self.Layout_01.Text_Plan:SetText(GText("UI_Setting_Layout01"))
+  self.Layout_02.Text_Plan:SetText(GText("UI_Setting_Layout02"))
+  self.Layout_01.Btn_CustomLayout.Text_Button:SetText(GText("UI_Setting_CustomLayout"))
+  self.Layout_02.Btn_CustomLayout.Text_Button:SetText(GText("UI_Setting_CustomLayout"))
+  self.Layout_01.Btn_Area.OnClicked:Add(self, self.OnClickLayout1)
+  self.Layout_02.Btn_Area.OnClicked:Add(self, self.OnClickLayout2)
+  self:InitLayoutPlanList()
+  local RedDot = ReddotManager.GetTreeNode("Setting_Layout")
+  if RedDot and RedDot.Count > 0 then
+    self.Tab_Set:ShowTabRedDotByTabId(self.CurrentTab, true)
+    self.Tab_State:ShowTabRedDotByTabId(1, true)
+  else
+    self.Tab_Set:ShowTabRedDotByTabId(self.CurrentTab)
+    self.Tab_State:ShowTabRedDotByTabId(1)
   end
 end
-
+function WBP_Setting_PC_C:InitLayoutPlanList()
+  self.List_CustomOption:ClearListItems()
+  local LayoutPlanTab = {
+    "LeftBulletJumpShow",
+    "LeftShootShow"
+  }
+  table.sort(LayoutPlanTab, function(a, b)
+    local OptionConfig1 = DataMgr.Option[a]
+    local OptionConfig2 = DataMgr.Option[b]
+    if OptionConfig1.SortId and OptionConfig2.SortId then
+      return OptionConfig1.SortId < OptionConfig2.SortId
+    else
+      return a < b
+    end
+  end)
+  for i = 1, #LayoutPlanTab do
+    local OptionContent = NewObject(UIUtils.GetCommonItemContentClass())
+    local OptionConfig = DataMgr.Option[LayoutPlanTab[i]]
+    OptionContent.Cache = OptionConfig.Cache
+    OptionContent.ParentWidget = self
+    function OptionContent.UpdateBottomKeyFunc(Params)
+    end
+    function OptionContent.OnItemNavigateUp(Item, Widget)
+      return nil
+    end
+    function OptionContent.OnItemNavigateDown(Item, Widget)
+      return nil
+    end
+    self.List_CustomOption:AddItem(OptionContent)
+  end
+end
+function WBP_Setting_PC_C:OnClickLayout1()
+  if self.Layout_02.LayoutState == UIConst.ButtonState.Click then
+    self.Layout_02:PlayAnimation(self.Layout_02.Normal)
+    self.Layout_02.LayoutState = UIConst.ButtonState.None
+  end
+  self.CurPlanIndex = 1
+  EventManager:FireEvent(EventID.OnSwitchMobileHUDLayout, 1)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  Avatar:SwitchMobileHudPlan(self.CurPlanIndex)
+end
+function WBP_Setting_PC_C:OnClickLayout2()
+  if self.Layout_01.LayoutState == UIConst.ButtonState.Click then
+    self.Layout_01:PlayAnimation(self.Layout_01.Normal)
+    self.Layout_01.LayoutState = UIConst.ButtonState.None
+  end
+  self.CurPlanIndex = 2
+  EMCache:Set("FirstOpenLayoutPlan", true, true)
+  self.Layout_02.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  EventManager:FireEvent(EventID.OnSwitchMobileHUDLayout, 2)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  Avatar:SwitchMobileHudPlan(self.CurPlanIndex)
+  local RedDot = ReddotManager.GetTreeNode("Setting_Layout")
+  if RedDot and RedDot.Count > 0 then
+    self.Tab_Set:ShowTabRedDotByTabId(self.CurrentTab)
+    self.Tab_State:ShowTabRedDotByTabId(1)
+    ReddotManager.ClearLeafNodeCount("Setting_Layout")
+  end
+end
+function WBP_Setting_PC_C:OnOperateTabSelected(TabWidget)
+  if self.LayoutPlantIndex == TabWidget.Idx then
+    return
+  end
+  self.LayoutPlantIndex = TabWidget.Idx
+  if 1 == self.LayoutPlantIndex then
+    self.WS_State:SetActiveWidgetIndex(1)
+    self.Layout_01:InitLayoutPlan(self.CurPlanIndex)
+    self.Layout_02:InitLayoutPlan(self.CurPlanIndex)
+  else
+    self.WS_State:SetActiveWidgetIndex(0)
+    self:UpdateEmptyGridCount()
+  end
+end
 function WBP_Setting_PC_C:ShowFightGamepadBottomContent()
   if self.GamepadBottomContent == "Combo1" then
     return
@@ -348,8 +502,9 @@ function WBP_Setting_PC_C:ShowFightGamepadBottomContent()
   self.IsTabLClick = true
   self.GamepadBottomContent = "Combo1"
   self:RefreshGamepadOperationSystemBottom(self.OptionUnfold_Prefrence.NowOptionId)
+  self.SC_Combination:SetScrollOffset(0)
+  self:OnScrollBoxTaskScrolled()
 end
-
 function WBP_Setting_PC_C:ShowSystemGamepadBottomContent()
   if self.GamepadBottomContent == "Combo2" then
     return
@@ -359,8 +514,9 @@ function WBP_Setting_PC_C:ShowSystemGamepadBottomContent()
   self.IsTabLClick = false
   self.GamepadBottomContent = "Combo2"
   self:RefreshGamepadOperationSystemBottom(self.OptionUnfold_Prefrence.NowOptionId)
+  self.SC_Combination:SetScrollOffset(0)
+  self:OnScrollBoxTaskScrolled()
 end
-
 function WBP_Setting_PC_C:OnMultiPlateTabSelected(TabWidget)
   if self.MultiPlateIndex == TabWidget.Idx then
     return
@@ -374,7 +530,6 @@ function WBP_Setting_PC_C:OnMultiPlateTabSelected(TabWidget)
       local PopConfig = DataMgr.CommonPopupUIContext[100190]
       local ContentStr = PopConfig.PopoverText
       Params.LeftCallbackObj = self
-      
       function Params.LeftCallbackFunction()
         self.MultiPlateTabUpdate = true
         self:RestoreOldValueSet()
@@ -383,51 +538,58 @@ function WBP_Setting_PC_C:OnMultiPlateTabSelected(TabWidget)
         self.OptionUnfold_Prefrence:RestoreOldGamepadPresetInLocal()
         self.MultiPlateIndex = TabWidget.Idx
         self.WidgetSwitcher_MP:SetActiveWidgetIndex(self.MultiPlateIndex - 1)
+        if 1 == self.MultiPlateIndex - 1 then
+          self:UpdateEmptyGridCount()
+        end
       end
-      
       Params.RightCallbackObj = self
-      
       function Params.RightCallbackFunction()
         self.MultiPlateTabUpdate = true
         self:SaveAllSetting()
         self.MultiPlateIndex = TabWidget.Idx
         self.WidgetSwitcher_MP:SetActiveWidgetIndex(self.MultiPlateIndex - 1)
+        if 1 == self.MultiPlateIndex - 1 then
+          self:UpdateEmptyGridCount()
+        end
       end
-      
       Params.ShortText = string.format(GText(ContentStr), self.OptionUnfold_Prefrence:GetGamepadPresetOptionContentText())
       UIManager(self):ShowCommonPopupUI(100190, Params, self)
     elseif 1 == self.MultiPlateIndex and 2 == TabWidget.Idx then
       local Params = {}
       Params.LeftCallbackObj = self
-      
       function Params.LeftCallbackFunction()
         self:OnCancelClickOtherSet()
         self.MultiPlateIndex = TabWidget.Idx
         self.WidgetSwitcher_MP:SetActiveWidgetIndex(self.MultiPlateIndex - 1)
+        if 1 == self.MultiPlateIndex - 1 then
+          self:UpdateEmptyGridCount()
+        end
       end
-      
       Params.RightCallbackObj = self
-      
       function Params.RightCallbackFunction()
         self:SaveAllSetting()
         self.MultiPlateIndex = TabWidget.Idx
         self.WidgetSwitcher_MP:SetActiveWidgetIndex(self.MultiPlateIndex - 1)
+        if 1 == self.MultiPlateIndex - 1 then
+          self:UpdateEmptyGridCount()
+        end
       end
-      
       UIManager(self):ShowCommonPopupUI(100010, Params, self)
     end
   else
     self.MultiPlateIndex = TabWidget.Idx
     self.WidgetSwitcher_MP:SetActiveWidgetIndex(self.MultiPlateIndex - 1)
+    if 1 == self.MultiPlateIndex - 1 then
+      self:UpdateEmptyGridCount()
+    end
     self:FocusToOptionFirstWidget()
   end
+  self:OnScrollBoxTaskScrolled()
 end
-
 function WBP_Setting_PC_C:RefreshAllGamePadOperator(PreferenceId)
   self:RefreshGamepadOperationSystemByIndex(PreferenceId, self.WBP_Set_GamePadXBOX_C_1)
   self:RefreshGamepadOperationSystemByIndex(PreferenceId, self.WBP_Set_GamePadPS5)
 end
-
 function WBP_Setting_PC_C:RefreshGamepadOperationSystemByIndex(PreferenceId, GamePadOperator)
   self.Node_GamePad:SetActiveWidgetIndex(UIUtils.UtilsGetCurrentGamepadName() == "PS" and 1 or 0)
   GamePadOperator.WB_Key_XYBA:ClearChildren()
@@ -473,7 +635,6 @@ function WBP_Setting_PC_C:RefreshGamepadOperationSystemByIndex(PreferenceId, Gam
   self:PlayAnimation(self.GamePadChange)
   self:RefreshGamepadOperationSystemBottom(PreferenceId)
 end
-
 function WBP_Setting_PC_C:RefreshGamepadOperationSystemBottom(PreferenceId)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not Player then
@@ -524,6 +685,7 @@ function WBP_Setting_PC_C:RefreshGamepadOperationSystemBottom(PreferenceId)
       Type = "Add"
     }
     Widget.Key_Combination_1:CreateSubKeyDesc(KeyData)
+    Widget.Key_Combination_1:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     if ComboList[Index + 1] then
       KeyInfoList = {}
       for j = 1, #ComboList[Index + 1] do
@@ -538,13 +700,13 @@ function WBP_Setting_PC_C:RefreshGamepadOperationSystemBottom(PreferenceId)
         Type = "Add"
       }
       Widget.Key_Combination_2:CreateSubKeyDesc(KeyData)
+      Widget.Key_Combination_2:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     else
       Widget.Key_Combination_2:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
   end
   self:PlayAnimation(self.Combination_Change)
 end
-
 function WBP_Setting_PC_C:InitCommonTabInfo()
   self.CommonTabInfo = {}
   self.TabNums = 0
@@ -590,11 +752,13 @@ function WBP_Setting_PC_C:InitCommonTabInfo()
           Regions = RegionNums,
           RegionNames = RegionNames
         }
+        if "Other" == Tag then
+          self.CommonTabInfo[self.TabNums].BindReddotNode = "Setting_Tab_Other"
+        end
       end
     end
   end
 end
-
 function WBP_Setting_PC_C:CheckSpecialHide(OptionTags)
   for index, Cache in pairs(OptionTags) do
     local OptionInfo = DataMgr.Option[Cache]
@@ -604,21 +768,29 @@ function WBP_Setting_PC_C:CheckSpecialHide(OptionTags)
   end
   return false
 end
-
 function WBP_Setting_PC_C:CheckOptionSpecialHide(OptionId, SpecialHide)
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar.CdnHideData then
     local OptionData = Avatar.CdnHideData.option
     if OptionData then
       for _, Data in pairs(OptionData) do
-        for __, CtrlOptionId in pairs(Data.gameCtrlOption) do
-          if CtrlOptionId == OptionId then
-            SpecialHide = Data.config
-            return SpecialHide
+        if Data.gameCtrlOption and type(Data.gameCtrlOption) == "table" then
+          for __, CtrlOptionId in pairs(Data.gameCtrlOption) do
+            if CtrlOptionId == OptionId then
+              SpecialHide = Data.config
+              return SpecialHide
+            end
           end
         end
       end
     end
+  end
+  local OptionInfo = DataMgr.Option[OptionId]
+  if OptionInfo.HideOnPhone and UIUtils.IsMobileInput() then
+    return false
+  end
+  if OptionInfo.HideOnPC and UIUtils.IsPCInput() then
+    return false
   end
   if UE4.UUCloudGameInstanceSubsystem.IsCloudGame() and self:CheckIsUCloudHide(OptionId) then
     return false
@@ -636,7 +808,15 @@ function WBP_Setting_PC_C:CheckOptionSpecialHide(OptionId, SpecialHide)
     if "FSR" == OptionId then
       return false
     end
-  elseif "DLSS" == OptionId then
+  else
+    if "DLSS" == OptionId then
+      return false
+    end
+    if "DLSSOption" == OptionId then
+      return false
+    end
+  end
+  if "RayTracing" == OptionId and not SettingUtils.IsOpenRayTracing() then
     return false
   end
   local IsGlobalPak = HeroUSDKSubsystem(self):IsGlobalSDK()
@@ -649,7 +829,6 @@ function WBP_Setting_PC_C:CheckOptionSpecialHide(OptionId, SpecialHide)
   end
   return false
 end
-
 function WBP_Setting_PC_C:CheckIsUCloudHide(OptionId)
   local OptionInfo = DataMgr.Option[OptionId]
   if OptionInfo.UCloudHide then
@@ -657,7 +836,6 @@ function WBP_Setting_PC_C:CheckIsUCloudHide(OptionId)
   end
   return false
 end
-
 function WBP_Setting_PC_C:CheckIsExamineDistribution(OptionId)
   local OptionList = {
     CustomerService = true,
@@ -670,16 +848,11 @@ function WBP_Setting_PC_C:CheckIsExamineDistribution(OptionId)
     if HeroUSDKSubsystem(self):IsBilibili() then
       return true
     end
-  elseif "LogOffAccount" == OptionId then
-    if HeroUSDKSubsystem(self):IsBilibili() then
-      return true
-    end
   else
     return false
   end
   return false
 end
-
 function WBP_Setting_PC_C:CheckIsInLogin(OptionId)
   local OptionInfo = DataMgr.Option[OptionId]
   if OptionInfo.GameHide == nil or OptionInfo.GameHide == CommonConst.SpecialHideNoWhere then
@@ -693,22 +866,18 @@ function WBP_Setting_PC_C:CheckIsInLogin(OptionId)
   end
   return false
 end
-
 function WBP_Setting_PC_C:ReceiveEnterState(EnteredState)
   self.Super.ReceiveEnterState(self, EnteredState)
   if EnteredState == UE4.EStackAction.Push then
     self:SetFocus()
   end
 end
-
 function WBP_Setting_PC_C:ScrollToOffset(Offset)
   self.ScrollBox_Option:SetScrollOffset(Offset)
 end
-
 function WBP_Setting_PC_C:GetScrollOffset()
   return self.ScrollBox_Option:GetScrollOffset()
 end
-
 function WBP_Setting_PC_C:OnTabSelected(TabWidget, NeedInit)
   self.WBP_Set_UnfoldList:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.NewTabId = TabWidget.Idx
@@ -718,12 +887,10 @@ function WBP_Setting_PC_C:OnTabSelected(TabWidget, NeedInit)
       local PopConfig = DataMgr.CommonPopupUIContext[100190]
       local ContentStr = PopConfig.PopoverText
       Params.LeftCallbackObj = self
-      
       function Params.LeftCallbackFunction()
         self.OptionUnfold_Prefrence:RestoreOldGamepadPresetInLocal()
         self:OnCancelClickOtherSet()
       end
-      
       Params.RightCallbackObj = self
       Params.RightCallbackFunction = self.OnConfirmClickOtherSet
       Params.ShortText = string.format(GText(ContentStr), self.OptionUnfold_Prefrence:GetGamepadPresetOptionContentText())
@@ -803,11 +970,21 @@ function WBP_Setting_PC_C:OnTabSelected(TabWidget, NeedInit)
     self.Tab_MultiPlate:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.Panel_SubTab:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
+  if self.Tab_State and self.IsInitLayoutPlan then
+    if self.CommonTabInfo[self.CurrentTab].TabName ~= "Control" then
+      self.Tab_State:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      self.Panel_Tab:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      self.Tab_State:SelectTab(2)
+    else
+      self.Tab_State:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      self.Panel_Tab:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      self.Tab_State:SelectTab(1)
+    end
+  end
   self:AddTimer(0.1, function()
     self:FocusToOptionFirstWidget()
   end)
 end
-
 function WBP_Setting_PC_C:UpdateEmptyGridCount()
   if not IsValid(self.EmptySettingUI) then
     return
@@ -816,7 +993,6 @@ function WBP_Setting_PC_C:UpdateEmptyGridCount()
   if self:IsExistTimer("GetEmptyGridCount") then
     self:RemoveTimer("GetEmptyGridCount")
   end
-  
   local function GetEmptyGridCount()
     local GridCountSum = 0
     for i, SettingUI in pairs(self.SettingUIs[self.CurrentTab]) do
@@ -825,6 +1001,7 @@ function WBP_Setting_PC_C:UpdateEmptyGridCount()
     local ListView = self.SettingUIs[self.CurrentTab][1].List_Options
     local ItemUIs = ListView:GetDisplayedEntryWidgets()
     if 0 == ItemUIs:Length() then
+      self.EmptySettingUI:SetVisibility(ESlateVisibility.Collapsed)
       return
     end
     local ItemSize = UIManager(self):GetWidgetRenderSize(ItemUIs:GetRef(1).WidgetTree.RootWidget)
@@ -846,10 +1023,8 @@ function WBP_Setting_PC_C:UpdateEmptyGridCount()
       self.EmptySettingUI:SetEmptyGrid(self, RowInt - GridCountSum)
     end
   end
-  
   self:AddTimer(0.033, GetEmptyGridCount, false, 0, "GetEmptyGridCount", true)
 end
-
 function WBP_Setting_PC_C:OnPreviewMouseButtonDown(MyGeometry, InMouseEvent)
   if UE4.UKismetInputLibrary.PointerEvent_IsMouseButtonDown(InMouseEvent, UE4.EKeys.LeftMouseButton) then
     local ScreenSpacePosition = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(InMouseEvent)
@@ -864,7 +1039,6 @@ function WBP_Setting_PC_C:OnPreviewMouseButtonDown(MyGeometry, InMouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_Setting_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -893,11 +1067,11 @@ function WBP_Setting_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
     self.NextTabIsLeft = false
     self.Tab_Set:TabToRight()
   elseif "A" == InKeyName and 1 == self.CurrentTab then
-    if 1 ~= self.MultiPlateIndex and self.Tab_MultiPlate then
+    if 1 ~= self.MultiPlateIndex and self.Tab_MultiPlate and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
       self.Tab_MultiPlate:Handle_KeyEventOnPC(InKeyName)
       self.MultiPlateIndex = 1
     end
-  elseif "D" == InKeyName and 1 == self.CurrentTab and 2 ~= self.MultiPlateIndex and self.Tab_MultiPlate then
+  elseif "D" == InKeyName and 1 == self.CurrentTab and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed and 2 ~= self.MultiPlateIndex and self.Tab_MultiPlate and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
     self.Tab_MultiPlate:Handle_KeyEventOnPC(InKeyName)
     self.MultiPlateIndex = 2
   end
@@ -907,7 +1081,6 @@ function WBP_Setting_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Setting_PC_C:RefreshGamepadOperationSystemBottomContent(InKeyName)
   if InKeyName == UIConst.GamePadKey.DPadLeft and 1 == self.CurrentTab and 2 == self.MultiPlateIndex then
     self:ShowFightGamepadBottomContent()
@@ -915,7 +1088,6 @@ function WBP_Setting_PC_C:RefreshGamepadOperationSystemBottomContent(InKeyName)
     self:ShowSystemGamepadBottomContent()
   end
 end
-
 function WBP_Setting_PC_C:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonRight and self.IsUnfoldListOpen and self.OnUnfoldListClosed then
@@ -931,12 +1103,12 @@ function WBP_Setting_PC_C:OnGamePadDown(InKeyName)
   end
   IsEventHandled = IsEventHandled or self.Tab_Set:Handle_KeyEventOnGamePad(InKeyName)
   if InKeyName == Const.GamepadLeftTrigger and 1 == self.CurrentTab then
-    if 1 ~= self.MultiPlateIndex then
+    if 1 ~= self.MultiPlateIndex and self.Tab_MultiPlate and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
       self.Tab_MultiPlate:Handle_KeyEventOnGamePad(InKeyName)
       self.MultiPlateIndex = 1
     end
   elseif InKeyName == Const.GamepadRightTrigger and 1 == self.CurrentTab then
-    if 2 ~= self.MultiPlateIndex then
+    if 2 ~= self.MultiPlateIndex and self.Tab_MultiPlate and self.Tab_MultiPlate:GetVisibility() ~= UE4.ESlateVisibility.Collapsed then
       self.Tab_MultiPlate:Handle_KeyEventOnGamePad(InKeyName)
       self.MultiPlateIndex = 2
     end
@@ -947,7 +1119,6 @@ function WBP_Setting_PC_C:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function WBP_Setting_PC_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -958,7 +1129,6 @@ function WBP_Setting_PC_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Setting_PC_C:AddHoverContent(Content)
   self.HoverContentList[Content] = true
   for key, value in pairs(self.HoverContentList) do
@@ -968,13 +1138,11 @@ function WBP_Setting_PC_C:AddHoverContent(Content)
     end
   end
 end
-
 function WBP_Setting_PC_C:RemoveHoverContent(Content)
   if self.HoverContentList[Content] then
     self.HoverContentList[Content] = nil
   end
 end
-
 function WBP_Setting_PC_C:OnPressESC()
   if self.HasBeenChanged then
     if self.HasBeenChanged == "GamepadPresetSave" then
@@ -982,19 +1150,15 @@ function WBP_Setting_PC_C:OnPressESC()
       local PopConfig = DataMgr.CommonPopupUIContext[100190]
       local ContentStr = PopConfig.PopoverText
       Params.LeftCallbackObj = self
-      
       function Params.LeftCallbackFunction()
         self.OptionUnfold_Prefrence:RestoreOldGamepadPresetInLocal()
         self:OnESCClickCancel()
       end
-      
       Params.RightCallbackObj = self
-      
       function Params.RightCallbackFunction()
         self:SaveAllSetting(true)
         self:CloseSelf()
       end
-      
       Params.ShortText = string.format(GText(ContentStr), self.OptionUnfold_Prefrence:GetGamepadPresetOptionContentText())
       UIManager(self):ShowCommonPopupUI(100190, Params, self)
     else
@@ -1014,7 +1178,6 @@ function WBP_Setting_PC_C:OnPressESC()
     self:CloseSelf()
   end
 end
-
 function WBP_Setting_PC_C:OnPressY()
   if self.HasBeenChanged then
     UIUtils.PlayCommonBtnSe(self)
@@ -1023,7 +1186,6 @@ function WBP_Setting_PC_C:OnPressY()
     return
   end
 end
-
 function WBP_Setting_PC_C:OnPressR()
   UIUtils.PlayCommonBtnSe(self)
   local Params = {}
@@ -1031,51 +1193,41 @@ function WBP_Setting_PC_C:OnPressR()
   Params.RightCallbackFunction = self.OnConfirmPressR
   UIManager(self):ShowCommonPopupUI(100011, Params, self)
 end
-
 function WBP_Setting_PC_C:CommonTabToLast()
   self.Tab_Set:SelectTab(self.CurrentTab)
 end
-
 function WBP_Setting_PC_C:CommonTabToNext()
   self.Tab_Set:SelectTab(self.NewTabId)
 end
-
 function WBP_Setting_PC_C:OnConfirmPressESC()
   self:SaveAllSetting(true)
   self.AutoClose = true
 end
-
 function WBP_Setting_PC_C:OnESCClickCancel()
   self:RestoreOldValueSet()
   self:CloseSelf()
 end
-
 function WBP_Setting_PC_C:OnConfirmPressR()
   self:RestoreAllDefaultSet()
 end
-
 function WBP_Setting_PC_C:OnConfirmClickOtherSet()
   self:SaveAllSetting()
   self:CommonTabToNext()
 end
-
 function WBP_Setting_PC_C:OnCancelClickOtherSet()
   self:RestoreOldValueSet()
   self:InitSettingParameter()
   self:UpdateKeyboardBottonKey()
   self:CommonTabToNext()
 end
-
 function WBP_Setting_PC_C:OnClickBlankArea()
   self:CommonTabToLast()
 end
-
 function WBP_Setting_PC_C:ClearSettingListUnfoldState()
   for key, value in pairs(self.SettingUIs[self.CurrentTab]) do
     value:ClearSettingOptionUnfoldState()
   end
 end
-
 function WBP_Setting_PC_C:SaveAllSetting()
   self.HasBeenChanged = false
   self:UpdateKeyboardBottonKey()
@@ -1089,12 +1241,18 @@ function WBP_Setting_PC_C:SaveAllSetting()
     end
   end
 end
-
 function WBP_Setting_PC_C:RestoreAllDefaultSet()
   self.HasBeenChanged = false
   self:UpdateKeyboardBottonKey()
   if 1 == self.CurrentTab and 2 == self.MultiPlateIndex then
     self.OptionUnfold_Prefrence:RestoreDefaultGamepadPresetInLocal()
+  elseif self.CommonTabInfo[self.CurrentTab].TabName == "Control" and 1 == self.LayoutPlantIndex then
+    for i = 0, self.List_CustomOption:GetNumItems() - 1 do
+      local Item = self.List_CustomOption:GetItemAt(i)
+      if Item and Item.SelfWidget and Item.SelfWidget.RestoreDefaultOptionSet then
+        Item.SelfWidget:RestoreDefaultOptionSet()
+      end
+    end
   else
     for key, value in pairs(self.SettingUIs[self.CurrentTab]) do
       if value and value.RestoreDefaultSet then
@@ -1103,7 +1261,6 @@ function WBP_Setting_PC_C:RestoreAllDefaultSet()
     end
   end
 end
-
 function WBP_Setting_PC_C:RestoreOldValueSet()
   for key, value in pairs(self.SettingUIs[self.CurrentTab]) do
     if value and value.RestoreOldValueSet then
@@ -1111,7 +1268,6 @@ function WBP_Setting_PC_C:RestoreOldValueSet()
     end
   end
 end
-
 function WBP_Setting_PC_C:OnClickAllLeftMouseButton()
   for key, value in pairs(self.SettingUIs[self.CurrentTab]) do
     if value and value.OnClickLeftMouseButton then
@@ -1119,7 +1275,6 @@ function WBP_Setting_PC_C:OnClickAllLeftMouseButton()
     end
   end
 end
-
 function WBP_Setting_PC_C:UpdateUnfoldListPosition(Position, IsUpper)
   local CanvasSlotTarget = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.WBP_Set_UnfoldList)
   if IsUpper then
@@ -1129,11 +1284,9 @@ function WBP_Setting_PC_C:UpdateUnfoldListPosition(Position, IsUpper)
   end
   CanvasSlotTarget:SetPosition(Position)
 end
-
 function WBP_Setting_PC_C:BindUnfoldListClosedCallback(Callback)
   self.OnUnfoldListClosed = Callback
 end
-
 function WBP_Setting_PC_C:ChangeUnfoldListSelection(SelectOptionId)
   local ListItems = self.WBP_Set_UnfoldList.SubOption_List:GetListItems()
   for _, ListItem in pairs(ListItems) do
@@ -1144,7 +1297,6 @@ function WBP_Setting_PC_C:ChangeUnfoldListSelection(SelectOptionId)
     Entry:UpdateEntrySelection()
   end
 end
-
 function WBP_Setting_PC_C:FocusToSelectedUnfoldListOption()
   local ListItems = self.WBP_Set_UnfoldList.SubOption_List:GetListItems()
   local ListNums = self.WBP_Set_UnfoldList.SubOption_List:GetNumItems()
@@ -1166,7 +1318,6 @@ function WBP_Setting_PC_C:FocusToSelectedUnfoldListOption()
     }
   })
 end
-
 function WBP_Setting_PC_C:SetSettingUnfoldListPC(IsShow)
   if IsShow then
     self.WBP_Set_UnfoldList:StopAllAnimations()
@@ -1189,18 +1340,15 @@ function WBP_Setting_PC_C:SetSettingUnfoldListPC(IsShow)
       self.WBP_Set_UnfoldList:StopAllAnimations()
       self.WBP_Set_UnfoldList:PlayAnimation(self.WBP_Set_UnfoldList.Out)
       self.ScrollBox_Option:SetConsumeMouseWheel(EConsumeMouseWheel.WhenScrollingPossible)
-      
       local function SetList()
         self.WBP_Set_UnfoldList:SetVisibility(UE4.ESlateVisibility.Collapsed)
       end
-      
       local EndTime = self.WBP_Set_UnfoldList.Out:GetEndTime()
       self:AddTimer(EndTime, SetList, false, 0, "SetList", true)
     end
     self.WBP_Set_UnfoldList:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Setting_PC_C:PlayInAnim()
   if self.IsInLoginMainPage then
     self:PlayAnimation(self.logIn)
@@ -1209,12 +1357,11 @@ function WBP_Setting_PC_C:PlayInAnim()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "OpenShopSetting", nil)
 end
-
 function WBP_Setting_PC_C:CloseSelf()
   if self.OptionUnfold_Prefrence and self.OptionUnfold_Prefrence.IsListOpen then
     self.OptionUnfold_Prefrence:OnClickSubOptionList()
   end
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
   AudioManager(self):SetEventSoundParam(self, "OpenShopSetting", {ToEnd = 1})
@@ -1223,7 +1370,6 @@ function WBP_Setting_PC_C:CloseSelf()
     self.Close
   })
 end
-
 function WBP_Setting_PC_C:Close()
   self:UnbindAllFromAnimationFinished(self.Out)
   for i, j in pairs(self.SettingUIs) do
@@ -1249,12 +1395,13 @@ function WBP_Setting_PC_C:Close()
   if self.LastSystem and self.LastSystem.SetFocus then
     self.LastSystem:SetFocus()
   end
+  if self.RegionOnline ~= EMCache:Get("AutoJoin") then
+    EventManager:FireEvent(EventID.ChangeRegionOnline, EMCache:Get("AutoJoin"))
+  end
   self.Super.Close(self)
 end
-
 function WBP_Setting_PC_C:CloseSelfAndEsc()
   self.CloseEsc = true
   self:Close()
 end
-
 return WBP_Setting_PC_C

@@ -5,21 +5,16 @@ local Conf = {
   DungeonID = 1001,
   Version = 1
 }
-
 function Bot:Initialize(Initializer)
 end
-
 local BotID = 0
-
 function Bot:Unlua_Start()
   BotID = BotID + 1
   self.BotID = BotID
   coroutine.resume(coroutine.create(self.Co_Main), self)
 end
-
 function Bot:Unlua_Tick(DeltaTimes)
 end
-
 function Bot:Co_Main()
   self:log_info("Co_Main Start")
   if not self:Login(308) then
@@ -44,7 +39,6 @@ function Bot:Co_Main()
     self:BulletJump()
   end
 end
-
 function Bot:Co_TestScene()
   UE.UKismetSystemLibrary.Delay(self, 10 * self.BotID)
   self:OpenLevel("127.0.0.1:17777", "")
@@ -58,7 +52,6 @@ function Bot:Co_TestScene()
     self:BulletJump()
   end
 end
-
 function Bot:Login(HostNum)
   self:log_info("Start Login" .. tostring(self.BotID))
   self:OpenLevel("Login", "")
@@ -78,7 +71,6 @@ function Bot:Login(HostNum)
   self:log_info("Login Complete" .. tostring(self.BotID))
   return true
 end
-
 function Bot:EnterDS(DungeonID, Version)
   self:log_info("Start EnterDS" .. tostring(self.BotID))
   self.Avatar:GMEnterDsVersion(DungeonID, Version)
@@ -89,32 +81,27 @@ function Bot:EnterDS(DungeonID, Version)
   end
   return true
 end
-
 function Bot:BulletJump()
   self:PressKey("LeftControl")
   self:PressKey("SpaceBar")
   self:ReleaseKey("SpaceBar")
   self:ReleaseKey("LeftControl")
 end
-
 function Bot:DoubleJump()
   self:PressKey("SpaceBar")
   self:ReleaseKey("SpaceBar")
   self:PressKey("SpaceBar")
   self:ReleaseKey("SpaceBar")
 end
-
 function Bot:LightAttack()
   self:PressKey("LeftMouseButton")
   self:ReleaseKey("LeftMouseButton")
 end
-
 function Bot:HeavyAttack()
   self:PressKey("LeftMouseButton")
   UE.UKismetSystemLibrary.Delay(self, 0.5)
   self:ReleaseKey("LeftMouseButton")
 end
-
 function Bot:MoveRandom()
   local KeyMap = {}
   KeyMap[1] = "W"
@@ -127,5 +114,4 @@ function Bot:MoveRandom()
   UE.UKismetSystemLibrary.Delay(self, 4)
   self:ReleaseKey(KeyMap[n])
 end
-
 return Bot

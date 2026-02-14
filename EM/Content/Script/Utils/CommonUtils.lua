@@ -1,13 +1,11 @@
 local CommonUtils = {}
 local this = CommonUtils
-
 function CommonUtils.IsObjId(str)
   if 14 == #str and 0 == string.byte(string.sub(str, 1, 1)) then
     return true
   end
   return false
 end
-
 function CommonUtils.IsObjIdStr(ObjIdStr)
   if 36 ~= string.len(ObjIdStr) then
     return false
@@ -17,7 +15,6 @@ function CommonUtils.IsObjIdStr(ObjIdStr)
   end
   return true
 end
-
 function CommonUtils.ObjId2Str(ObjId)
   local ret = this.ObjId2Str2(ObjId)
   return table.concat({
@@ -26,7 +23,6 @@ function CommonUtils.ObjId2Str(ObjId)
     "')"
   }, "")
 end
-
 function CommonUtils.ToHex(s, limit)
   local n = math.min(#s, limit or #s)
   local t = {}
@@ -35,7 +31,6 @@ function CommonUtils.ToHex(s, limit)
   end
   return table.concat(t, " ")
 end
-
 function CommonUtils.BinaryDump(Prop)
   if nil == Prop then
     return "nil"
@@ -45,7 +40,6 @@ function CommonUtils.BinaryDump(Prop)
   end
   return Prop
 end
-
 function CommonUtils.ObjId2Str2(ObjId)
   local ret = ""
   if nil == ObjId then
@@ -57,7 +51,6 @@ function CommonUtils.ObjId2Str2(ObjId)
   end
   return table.concat(ret, "")
 end
-
 function CommonUtils.Str2ObjId(ObjIdStr)
   if not ObjIdStr then
     return ""
@@ -70,7 +63,6 @@ function CommonUtils.Str2ObjId(ObjIdStr)
   end
   return bson.str2objectid(string.sub(ObjIdStr, 11, 34))
 end
-
 function CommonUtils.Split(str, reps)
   local Results = {}
   if not str then
@@ -81,7 +73,6 @@ function CommonUtils.Split(str, reps)
   end)
   return Results
 end
-
 function CommonUtils.DeepCopy(Object)
   local function _copy(object)
     if type(object) ~= "table" then
@@ -93,10 +84,8 @@ function CommonUtils.DeepCopy(Object)
     end
     return setmetatable(new_table, getmetatable(object))
   end
-  
   return _copy(Object)
 end
-
 function CommonUtils.GenDeclareUpvaluesCode(entity, FuncName, fun_owner_name)
   if not entity then
     return
@@ -120,7 +109,15 @@ function CommonUtils.GenDeclareUpvaluesCode(entity, FuncName, fun_owner_name)
   end
   return ret
 end
-
+function CommonUtils.ReloadPakFromDisk(path)
+  local path, err = package.searchpath(path, package.path)
+  DebugPrint("CommonUtils.ReloadPakFromDisk searchpath", path, err)
+  if not path then
+    return package.loaded[path]
+  end
+  package.loaded[path] = CommonUtils.DoFile(path)
+  return package.loaded[path]
+end
 function CommonUtils.DoFile(filePath)
   local file = io.open(filePath, "r")
   local content = file:read("*a")
@@ -128,7 +125,6 @@ function CommonUtils.DoFile(filePath)
   local func, err = load(content)
   return func()
 end
-
 function CommonUtils.LoadNewFuncStr(entity, func_name)
   local prop_class = entity.__Class__
   if not prop_class[func_name] then
@@ -162,7 +158,6 @@ function CommonUtils.LoadNewFuncStr(entity, func_name)
   local upvalues_code = CommonUtils.GenDeclareUpvaluesCode(prop_class, func_name, "_class_")
   return "\n" .. get_class_code .. "\n" .. upvalues_code .. "\n" .. new_func_str, old_func_info.source
 end
-
 function CommonUtils.LoadNewFuncStrProp(class_name, func_name)
   local prop_name = string.match(class_name, "([^.]+)$")
   local ClassMgr = require("NetworkEngine.Common.ClassManager")
@@ -198,18 +193,15 @@ function CommonUtils.LoadNewFuncStrProp(class_name, func_name)
   local upvalues_code = CommonUtils.GenDeclareUpvaluesCode(prop_class, func_name, "prop_class_")
   return "\n" .. get_prop_class_code .. "\n" .. upvalues_code .. "\n" .. new_func_str, old_func_info.source
 end
-
 function CommonUtils.ConvertFuncString(funcstr, funcname, fun_owner_name)
   local function hasParameters(funcHeader)
     local paramPart = funcHeader:match("%b()")
-    
     if not paramPart then
       return false
     end
     local cleanedParams = paramPart:gsub("%s+", "")
     return "()" ~= cleanedParams
   end
-  
   fun_owner_name = fun_owner_name or "self"
   local firstLine = funcstr:match("^(.-)\n") or funcstr
   local head = ""
@@ -228,7 +220,6 @@ function CommonUtils.ConvertFuncString(funcstr, funcname, fun_owner_name)
   end
   return head .. funcstr
 end
-
 function CommonUtils.GetUpvalues(func, target)
   if not func then
     return
@@ -236,13 +227,15 @@ function CommonUtils.GetUpvalues(func, target)
   local i = 1
   while true do
     local name, value = debug.getupvalue(func, i)
+    if not name then
+      break
+    end
     if name == target then
       return value
     end
     i = i + 1
   end
 end
-
 function CommonUtils.OrderedNumberKeyPairs(t)
   local keys = {}
   for key in pairs(t) do
@@ -259,72 +252,67 @@ function CommonUtils.OrderedNumberKeyPairs(t)
     end
   end
 end
-
 function CommonUtils.TableToString(Targets, Deep)
   if type(Targets) ~= "table" then
     Targets = {Targets}
   end
   Deep = Deep or 10
-  local StrUtils = {}
-  
-  function StrUtils.IsObjId(str)
-    if type(str) ~= "string" then
-      return false
-    end
-    if 14 == #str and 0 == string.byte(string.sub(str, 1, 1)) then
-      return true
-    end
-    return false
+  local indents = {
+    ["0"] = ""
+  }
+  for i = 1, Deep + 2 do
+    indents[tostring(i)] = (indents[tostring(i - 1)] or "") .. "\t"
   end
-  
-  function StrUtils.ObjId2Str2(ObjId)
-    local ret = ""
+  local function IsObjId(str)
+    return type(str) == "string" and 14 == #str and 0 == string.byte(str, 1)
+  end
+  local function ObjId2Str(ObjId)
     if nil == ObjId then
       return ""
     end
-    for index = 3, #ObjId do
-      ret = ret .. string.format("%02X", string.byte(string.sub(ObjId, index, index)))
+    local bytes = {}
+    for i = 3, #ObjId do
+      bytes[#bytes + 1] = string.format("%02X", string.byte(ObjId, i))
     end
-    return ret
+    return "ObjectId('" .. table.concat(bytes) .. "')"
   end
-  
-  function StrUtils.ObjId2Str(ObjId)
-    local ret = StrUtils.ObjId2Str2(ObjId)
-    return "ObjectId('" .. ret .. "')"
+  local out = {}
+  local function push(...)
+    local n = select("#", ...)
+    for i = 1, n do
+      out[#out + 1] = select(i, ...)
+    end
   end
-  
+  local visited = {}
+  local function val_str(x)
+    if type(x) == "string" and IsObjId(x) then
+      return ObjId2Str(x)
+    end
+    return tostring(x)
+  end
   local function get_table_str(t, step)
-    local s = ""
+    if visited[t] then
+      push(indents[tostring(step)], "<cycle> (table)\n")
+      return
+    end
+    visited[t] = true
+    local indent = indents[tostring(step)] or ""
     for k, v in pairs(t) do
-      for i = 1, step do
-        s = s .. "\t"
-      end
-      local k_str, v_str
-      if type(k) == "string" and StrUtils.IsObjId(k) then
-        k_str = StrUtils.ObjId2Str(k)
-      else
-        k_str = tostring(k)
-      end
-      if type(v) == "string" and StrUtils.IsObjId(v) then
-        v_str = StrUtils.ObjId2Str(v)
-      else
-        v_str = tostring(v)
-      end
-      s = s .. k_str .. " (" .. tostring(type(k)) .. ")" .. ": " .. v_str .. " (" .. tostring(type(v)) .. ")" .. "\n"
+      local kstr = type(k) == "string" and IsObjId(k) and ObjId2Str(k) or tostring(k)
+      local vstr = val_str(v)
+      push(indent, kstr, " (", type(k), ")", ": ", vstr, " (", type(v), ")\n")
       if type(v) == "table" and step < Deep then
-        s = s .. get_table_str(v, step + 1)
+        get_table_str(v, step + 1)
       end
     end
-    return s
+    visited[t] = nil
   end
-  
-  local ret = "PrintTable: " .. tostring(Targets) .. "\n"
+  push("PrintTable: ", tostring(Targets), "\n")
   if Targets and type(Targets) == "table" then
-    ret = ret .. get_table_str(Targets, 1)
+    get_table_str(Targets, 1)
   end
-  return ret
+  return table.concat(out)
 end
-
 function CommonUtils.TraverseFromTheMiddleOfTheArrayToBothSides(arr, start_index, func)
   if start_index <= #arr // 2 then
     for i = start_index, #arr do
@@ -348,7 +336,6 @@ function CommonUtils.TraverseFromTheMiddleOfTheArrayToBothSides(arr, start_index
     end
   end
 end
-
 function CommonUtils.MathConcat(a, b)
   local function getDigitCount(n)
     if 0 == n then
@@ -356,11 +343,9 @@ function CommonUtils.MathConcat(a, b)
     end
     return math.floor(math.log(n) / math.log(10)) + 1
   end
-  
   local digitCount = getDigitCount(b)
   return a * 10 ^ digitCount + b
 end
-
 function CommonUtils.Copy(Object)
   local function _copy(object)
     if type(object) ~= "table" then
@@ -372,10 +357,8 @@ function CommonUtils.Copy(Object)
     end
     return new_table
   end
-  
   return _copy(Object)
 end
-
 function CommonUtils.GetTimeZone()
   local utcTime = os.time(os.date("!*t"))
   local localTimeTable = os.date("*t")
@@ -384,11 +367,9 @@ function CommonUtils.GetTimeZone()
   timeZoneOffset = math.floor(timeZoneOffset)
   return timeZoneOffset
 end
-
 function CommonUtils.Remap(Value, FromA, ToA, FromB, ToB)
   return (Value - FromA) / (ToA - FromA) * (ToB - FromB) + FromB
 end
-
 function CommonUtils.IsEqual(array1, array2)
   if #array1 ~= #array2 then
     return false
@@ -408,7 +389,6 @@ function CommonUtils.IsEqual(array1, array2)
   end
   return true
 end
-
 function CommonUtils.AttrValueToString(AttrConfig, Value, IsRate, NotFormat)
   if not AttrConfig then
     return Value
@@ -419,7 +399,11 @@ function CommonUtils.AttrValueToString(AttrConfig, Value, IsRate, NotFormat)
   local percent = ""
   if AttrConfig.IsPercent or IsRate then
     Value = Value * 100
-    percent = "%"
+    if CommonConst.SystemLanguage == CommonConst.SystemLanguages.FR then
+      percent = " %"
+    else
+      percent = "%"
+    end
   end
   if NotFormat then
     return tostring(Value) .. percent
@@ -441,9 +425,9 @@ function CommonUtils.AttrValueToString(AttrConfig, Value, IsRate, NotFormat)
       break
     end
   end
+  str = CommonUtils.FormatNumInFrench(str)
   return str .. percent
 end
-
 function CommonUtils.RandomNumList(M, N, Cnt)
   local Tmp = {}
   for i = M, N do
@@ -463,7 +447,6 @@ function CommonUtils.RandomNumList(M, N, Cnt)
   end
   return T
 end
-
 function CommonUtils.RemoveValue(Target, Value)
   if type(Target) ~= "table" then
     return
@@ -481,7 +464,6 @@ function CommonUtils.RemoveValue(Target, Value)
   end
   return false
 end
-
 function CommonUtils.HasValue(Target, Value)
   if not Target then
     return false
@@ -496,7 +478,6 @@ function CommonUtils.HasValue(Target, Value)
   end
   return false
 end
-
 function CommonUtils.Size(Target)
   if type(Target) ~= "table" then
     return 0
@@ -507,7 +488,6 @@ function CommonUtils.Size(Target)
   end
   return count
 end
-
 function CommonUtils.IsEmpty(Target)
   if type(Target) ~= "table" then
     return true
@@ -517,12 +497,10 @@ function CommonUtils.IsEmpty(Target)
   end
   return true
 end
-
 function CommonUtils.GetFixLocation(UObject, Loc, LocationExtraZ, StartZ, EndZ, TraceType)
   TraceType = TraceType or "TraceCreatureHit"
   return UE4.URuntimeCommonFunctionLibrary.GetFixLocation(UObject, Loc, LocationExtraZ or 50, StartZ or 200, EndZ or -1500, Const.FixTraceChannel[TraceType])
 end
-
 function CommonUtils.CopyTable(t)
   local copy = {}
   for k, v in pairs(t) do
@@ -534,7 +512,6 @@ function CommonUtils.CopyTable(t)
   end
   return copy
 end
-
 function CommonUtils.GetFixLocationOld(UObject, Loc, LocationExtraZ, StartZ, EndZ, TraceType)
   TraceType = TraceType or "TraceCreatureHit"
   local NewLoc = Loc
@@ -552,7 +529,6 @@ function CommonUtils.GetFixLocationOld(UObject, Loc, LocationExtraZ, StartZ, End
   NewLoc = FVector(NewLoc.X, NewLoc.Y, NewLoc.Z + (LocationExtraZ or 50))
   return NewLoc
 end
-
 function CommonUtils.GetCapFixLocation(Character, Loc, LocationExtraZ, StartZ, EndZ, TraceType)
   TraceType = TraceType or "TraceCreatureHit"
   local NewLoc = Loc
@@ -572,7 +548,6 @@ function CommonUtils.GetCapFixLocation(Character, Loc, LocationExtraZ, StartZ, E
   NewLoc = FVector(NewLoc.X, NewLoc.Y, NewLoc.Z + (LocationExtraZ or 50))
   return NewLoc
 end
-
 function CommonUtils.GetEliteLocation(FormationId, Source, Loc, CloseFloor)
   local TeamData = DataMgr.EliteTeamData[FormationId]
   if not TeamData or not TeamData.LocationCheckParam then
@@ -588,14 +563,12 @@ function CommonUtils.GetEliteLocation(FormationId, Source, Loc, CloseFloor)
   CloseFloor = nil ~= CloseFloor and CloseFloor or false
   return URuntimeCommonFunctionLibrary.GetValidLocationBySimulateMovement(Source:K2_GetActorLocation(), Loc, HalfHeight, Radius, StepHeight, WalkableFloorAngle, false, MaxLength, MaxWidth, CloseFloor)
 end
-
-CommonUtils.GetDeviceTypeByPlatformName = GetDeviceTypeByPlatformName
-
+CommonUtils.GetDeviceTypeByPlatformName = _G.GetDeviceTypeByPlatformName
+CommonUtils.GetRuntimePlatform = _G.GetRuntimePlatform
 function CommonUtils.GetCurrentInputType()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
   return GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function CommonUtils.ChooseOptionByPlatform(PCOption, MoblieOption)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     if nil == PCOption then
@@ -610,14 +583,12 @@ function CommonUtils.ChooseOptionByPlatform(PCOption, MoblieOption)
     return MoblieOption
   end
 end
-
 function CommonUtils.Shuffle(T)
   for i = #T, 2, -1 do
     local j = math.random(1, i)
     T[i], T[j] = T[j], T[i]
   end
 end
-
 function CommonUtils.Reverse(T)
   local Count = #T
   if Count <= 1 then
@@ -633,13 +604,11 @@ function CommonUtils.Reverse(T)
     T[i], T[Count + 1 - i] = T[Count + 1 - i], T[i]
   end
 end
-
 function CommonUtils.Bind(t, f)
   return function(...)
     return f(t, ...)
   end
 end
-
 function CommonUtils.Intersection_Table(T1, T2)
   local TempResult = {}
   for _, Target in pairs(T1) do
@@ -653,7 +622,6 @@ function CommonUtils.Intersection_Table(T1, T2)
   end
   return Results
 end
-
 function CommonUtils.VectorToTable(Vector)
   return {
     X = Vector.X,
@@ -661,11 +629,9 @@ function CommonUtils.VectorToTable(Vector)
     Z = Vector.Z
   }
 end
-
 function CommonUtils.TableToVector(VectorTable)
   return FVector(VectorTable.X, VectorTable.Y, VectorTable.Z)
 end
-
 function CommonUtils.AngleBetweenVectors(VectorA, VectorB)
   if this.VectorA then
     this.VectorA.X = VectorA.X
@@ -686,11 +652,9 @@ function CommonUtils.AngleBetweenVectors(VectorA, VectorB)
   local DotValue = UE4.UKismetMathLibrary.Dot_VectorVector(this.VectorA, this.VectorB)
   return UE4.UKismetMathLibrary.Acos(DotValue)
 end
-
 function CommonUtils.CheckIsTarget(OtherActor)
   return UCharacterFunctionLibrary.IsEffectSource(OtherActor)
 end
-
 function CommonUtils.NewEmptyProxy()
   local _EmptyProxy = {}
   setmetatable(_EmptyProxy, {
@@ -707,9 +671,7 @@ function CommonUtils.NewEmptyProxy()
   })
   return _EmptyProxy
 end
-
 CommonUtils.EmptyProxy = CommonUtils.NewEmptyProxy()
-
 function CommonUtils.Keys(Table)
   local keys = {}
   for k, v in pairs(Table) do
@@ -717,7 +679,6 @@ function CommonUtils.Keys(Table)
   end
   return keys
 end
-
 function CommonUtils.TableLength(InTable)
   if not InTable then
     return 0
@@ -728,7 +689,6 @@ function CommonUtils.TableLength(InTable)
   end
   return Length
 end
-
 function CommonUtils.GetCountStr(Number, Digit, Delimiter)
   Number = math.floor(Number or 0)
   Digit = Digit or 3
@@ -756,26 +716,21 @@ function CommonUtils.GetCountStr(Number, Digit, Delimiter)
   Str = Sign .. Str
   return Str
 end
-
 function CommonUtils:RandomSeed()
   math.randomseed(tostring(os.time()):reverse():sub(1, 7))
 end
-
 function CommonUtils:RandomFloat()
   self:RandomSeed()
   return math.random()
 end
-
 function CommonUtils:RandomReverseFloat()
   self:RandomSeed()
   return 1 - math.random()
 end
-
 function CommonUtils:RandomInt(m, n)
   self:RandomSeed()
   return math.random(m, n)
 end
-
 function CommonUtils:GetCharMaxLevel()
   local MaxLevel = 0
   for level, _ in pairs(DataMgr.LevelUp) do
@@ -783,7 +738,6 @@ function CommonUtils:GetCharMaxLevel()
   end
   return MaxLevel
 end
-
 function CommonUtils:ToStringEx(value)
   local ValueType = type(value)
   if "table" == ValueType then
@@ -796,7 +750,6 @@ function CommonUtils:ToStringEx(value)
     return "\"" .. tostring(value) .. "\""
   end
 end
-
 function CommonUtils:TableToStr(t)
   if nil == t then
     return ""
@@ -822,14 +775,12 @@ function CommonUtils:TableToStr(t)
   retstr = retstr .. "}"
   return retstr
 end
-
 function CommonUtils:StrToTable(str)
   if nil == str or type(str) ~= "string" or "" == str then
     return {}
   end
   return load("return " .. str)()
 end
-
 function CommonUtils.Round(FloatValue)
   if 0 == FloatValue then
     return 0
@@ -840,7 +791,6 @@ function CommonUtils.Round(FloatValue)
     return -CommonUtils.Round(-FloatValue)
   end
 end
-
 CommonUtils.AttrConvert = {
   Hp = CommonUtils.Round,
   MaxHp = CommonUtils.Round,
@@ -852,26 +802,6 @@ CommonUtils.AttrConvert = {
   MaxSp = CommonUtils.Round,
   BulletNum = CommonUtils.Round
 }
-
-function CommonUtils:GetMonsterExp(ExtraInfo)
-  local MonsterId = ExtraInfo.UnitId
-  local MonsterLevel = ExtraInfo.Level
-  local IsElite = ExtraInfo.IsEliteMonster
-  local MonsterInfo = DataMgr.Monster[MonsterId]
-  if not MonsterInfo then
-    return 0
-  end
-  local ExpBasic = MonsterInfo.ExpBasic
-  if not ExpBasic then
-    return 0
-  end
-  if IsElite then
-    return ExpBasic * (DataMgr.LevelUp[MonsterLevel].ExpElite or 0)
-  else
-    return ExpBasic * (DataMgr.LevelUp[MonsterLevel].ExpMon or 0)
-  end
-end
-
 function CommonUtils:ShouldDisplayAttr(AttrId, Value, OwnerType, OwnerTag, OwnerId)
   local Data = DataMgr.AttrConfig[AttrId]
   if Data and Data.ShowInInspector then
@@ -904,7 +834,6 @@ function CommonUtils:ShouldDisplayAttr(AttrId, Value, OwnerType, OwnerTag, Owner
     end
   end
 end
-
 function CommonUtils:CheckBirthday(Month, Day)
   if Month < 1 or Month > 12 or Day < 1 then
     return false
@@ -922,7 +851,6 @@ function CommonUtils:CheckBirthday(Month, Day)
   end
   return true
 end
-
 function CommonUtils:GetActionMappingKeyName(ActionName, IsGamepad)
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar.ActionMapping:Length() > 0 and Avatar.ActionMapping[ActionName] and not IsGamepad then
@@ -943,7 +871,6 @@ function CommonUtils:GetActionMappingKeyName(ActionName, IsGamepad)
   end
   return ""
 end
-
 function CommonUtils:GetKeyText(KeyName)
   local KeyInfo = DataMgr.KeyboardText[KeyName]
   if KeyInfo and KeyInfo.KeyText then
@@ -951,7 +878,17 @@ function CommonUtils:GetKeyText(KeyName)
   end
   return KeyName
 end
-
+function CommonUtils:GetWASDKeyName(ActionName)
+  local Ret = ActionName or ""
+  if not ActionName then
+    return Ret
+  end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar and Avatar.ActionMapping:Length() > 0 and Avatar.ActionMapping[ActionName] then
+    Ret = Avatar.ActionMapping[ActionName]
+  end
+  return Ret
+end
 function CommonUtils:StringReplaceActionName(Str)
   local StrArray = Split(Str, "&")
   for i = 2, #StrArray, 2 do
@@ -961,7 +898,6 @@ function CommonUtils:StringReplaceActionName(Str)
   end
   return Str
 end
-
 function CommonUtils:GetKeyName(ActionName)
   local InputSetting = UE4.UInputSettings.GetInputSettings()
   local ActionKeys = UE4.TArray(UE4.FInputActionKeyMapping)
@@ -986,11 +922,9 @@ function CommonUtils:GetKeyName(ActionName)
   end
   return nil, nil
 end
-
 function CommonUtils.MergeTables(baseTable, mergeTable)
   local function isSequentialTable(t)
     local i = 0
-    
     for _ in pairs(t) do
       i = i + 1
       if nil == t[i] then
@@ -999,7 +933,6 @@ function CommonUtils.MergeTables(baseTable, mergeTable)
     end
     return true
   end
-  
   for key, value in pairs(mergeTable) do
     if type(value) == "table" and type(baseTable[key]) == "table" then
       if isSequentialTable(value) and isSequentialTable(baseTable[key]) then
@@ -1013,7 +946,6 @@ function CommonUtils.MergeTables(baseTable, mergeTable)
   end
   return baseTable
 end
-
 function CommonUtils:GetCurrentAspectRatioAndFOV()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local AspectRatio, FOV, bConstrainAspectRatio
@@ -1024,7 +956,6 @@ function CommonUtils:GetCurrentAspectRatioAndFOV()
   end
   return AspectRatio, FOV, bConstrainAspectRatio
 end
-
 function CommonUtils:SetActorTickableWhenPaused(TargetActor, bTickable)
   if nil ~= TargetActor and IsValid(TargetActor) then
     TargetActor:SetTickableWhenPaused(bTickable)
@@ -1042,7 +973,6 @@ function CommonUtils:SetActorTickableWhenPaused(TargetActor, bTickable)
     end
   end
 end
-
 function CommonUtils:SetActorsTickableWhenPaused(TargetActors, bTickable)
   if not TargetActors then
     return
@@ -1051,21 +981,17 @@ function CommonUtils:SetActorsTickableWhenPaused(TargetActors, bTickable)
     self:SetActorTickableWhenPaused(TargetActor, bTickable)
   end
 end
-
 function CommonUtils:PerfectPolarityCost(Cost)
   return math.ceil(Cost * DataMgr.GlobalConstant.PerfectModPolarity.ConstantValue)
 end
-
 function CommonUtils:WrongPolarityCost(Cost)
   return math.ceil(Cost * DataMgr.GlobalConstant.WrongModPolarity.ConstantValue)
 end
-
 function CommonUtils:GetFrontNum(num, frontLength)
   local length = CommonUtils:GetIntNumLength(num)
   local frontNum = num // math.floor(10 ^ (length - frontLength))
   return frontNum
 end
-
 function CommonUtils:GetIntNumLength(num)
   local length = 0
   while num > 0 do
@@ -1074,14 +1000,12 @@ function CommonUtils:GetIntNumLength(num)
   end
   return length
 end
-
 function CommonUtils:DataToFTransform(Data)
   local Rotation = Data.Rotation and UE4.FRotator(Data.Rotation[2], Data.Rotation[3], Data.Rotation[1]) or FRotator(0, 0, 0)
   local Location = Data.Location and FVector(Data.Location[1], Data.Location[2], Data.Location[3]) or FVector(0, 0, 0)
   local Scale = Data.scale and FVector(Data.scale[1], Data.scale[2], Data.scale[3]) or FVector(1, 1, 1)
   return FTransform(Rotation:ToQuat(), Location, Scale)
 end
-
 function CommonUtils:CloseGuideTouchIfExist(widget)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(widget)
   local UIManger = GameInstance:GetGameUIManager()
@@ -1090,9 +1014,8 @@ function CommonUtils:CloseGuideTouchIfExist(widget)
     GuideTouch:PlayOutAnimation()
   end
 end
-
 function CommonUtils:IfExistSystemGuideUI(widget)
-  local GameInstance = UE4.UGameplayStatics.GetGameInstance(widget)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(widget) or GWorld.GameInstance
   local UIManger = GameInstance:GetGameUIManager()
   local GuideTouch = UIManger:GetUIObj(UIManger.CurGuideTouchName)
   if GuideTouch then
@@ -1108,11 +1031,9 @@ function CommonUtils:IfExistSystemGuideUI(widget)
   end
   return false
 end
-
 function CommonUtils:SerializeFTransform(Transform)
   return Transform.Translation.X .. "," .. Transform.Translation.Y .. "," .. Transform.Translation.Z .. "|" .. Transform.Rotation.X .. "," .. Transform.Rotation.Y .. "," .. Transform.Rotation.Z .. "," .. Transform.Rotation.W .. "|" .. Transform.Scale3D.X .. "," .. Transform.Scale3D.Y .. "," .. Transform.Scale3D.Z
 end
-
 function CommonUtils:UnSerializeFTransform(TransformString)
   local Translation, Rotation, Scale3D = table.unpack(self.Split(TransformString, "|"))
   local Result = FTransform()
@@ -1121,11 +1042,9 @@ function CommonUtils:UnSerializeFTransform(TransformString)
   Result.Scale3D.X, Result.Scale3D.Y, Result.Scale3D.Z = table.unpack(self.Split(Scale3D, ","))
   return Result
 end
-
 function CommonUtils:FocalLengthToFOV(FocalLength)
   return 2 * math.atan(36 / (2 * FocalLength)) * (180 / math.pi)
 end
-
 function CommonUtils.FuzzySearch(TargetList, Phase, NeedHighlightWord)
   local Result = {}
   if TargetList and Phase then
@@ -1143,7 +1062,6 @@ function CommonUtils.FuzzySearch(TargetList, Phase, NeedHighlightWord)
   end
   return Result
 end
-
 function CommonUtils.CheckFuzzySearchWithSinglePhase(CheckList, Phase, bIsAllMatch)
   local IsFinalSuccess = false
   if bIsAllMatch then
@@ -1166,7 +1084,6 @@ function CommonUtils.CheckFuzzySearchWithSinglePhase(CheckList, Phase, bIsAllMat
   end
   return IsFinalSuccess
 end
-
 function CommonUtils.IsInContent(Content, Word, NeedHighlightWord)
   local WordArray = {}
   local SpecialCharacters = {
@@ -1218,7 +1135,6 @@ function CommonUtils.IsInContent(Content, Word, NeedHighlightWord)
     return true
   end
 end
-
 function CommonUtils.HighLightWord(Type, Str, WordStart, WordEnd)
   local InsertStrStart = Type
   local InsertStrEnd = "</>"
@@ -1227,7 +1143,6 @@ function CommonUtils.HighLightWord(Type, Str, WordStart, WordEnd)
   local last = string.sub(Str, WordEnd + 1, -1)
   return string.format("%s%s%s%s%s", first, InsertStrStart, Middle, InsertStrEnd, last)
 end
-
 function CommonUtils.HighLightContent(Content, Type, Ranges)
   local InsertStrStart = Type
   local InsertStrEnd = "</>"
@@ -1239,12 +1154,11 @@ function CommonUtils.HighLightContent(Content, Type, Ranges)
   end
   return Res
 end
-
 function CommonUtils.CheckDestroyReason(DestroyReason, Operation)
   local Reason = EDestroyReason:GetNameByValue(DestroyReason)
   local OperationMap = DataMgr.DestroyReason[Reason]
   if not OperationMap then
-    ScreenPrint("\233\148\128\230\175\129\230\151\182\228\188\160\229\133\165\231\154\132DestroyReason\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168DestroyReason\232\161\168\228\184\173\227\128\130DestroyReason", Reason)
+    ScreenPrint("销毁时传入的DestroyReason没有填写在DestroyReason表中。DestroyReason:" .. Reason)
     return false
   end
   local Res = OperationMap[Operation]
@@ -1253,7 +1167,6 @@ function CommonUtils.CheckDestroyReason(DestroyReason, Operation)
   end
   return Res
 end
-
 function CommonUtils:IsWidgetHide(Widget)
   if Widget:GetVisibility() == UE4.ESlateVisibility.Collapsed or Widget:GetVisibility() == UE4.ESlateVisibility.Hidden or 0 == Widget:GetRenderOpacity() and Widget:Cast(UE4.UButton) == nil then
     return true
@@ -1263,7 +1176,6 @@ function CommonUtils:IsWidgetHide(Widget)
   end
   return CommonUtils:IsWidgetHide(Widget:GetParent())
 end
-
 function CommonUtils:Compare(Val1, Val2, SortType)
   SortType = SortType or CommonConst.DESC
   if SortType == CommonConst.DESC then
@@ -1271,7 +1183,6 @@ function CommonUtils:Compare(Val1, Val2, SortType)
   end
   return Val1 < Val2
 end
-
 function CommonUtils:DisableScroll(ScrollBox, IsDisable)
   ScrollBox:DisableDrag(IsDisable)
   if IsDisable then
@@ -1280,10 +1191,8 @@ function CommonUtils:DisableScroll(ScrollBox, IsDisable)
     ScrollBox:SetWheelScrollMultiplier(1)
   end
 end
-
 function CommonUtils:TeleportToCloestTeleportPoint(TriggerBoxID)
 end
-
 function CommonUtils.GetClientTimerStructRemainTime(TimerHandle)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if not GameState then
@@ -1296,7 +1205,6 @@ function CommonUtils.GetClientTimerStructRemainTime(TimerHandle)
     return Info.Time - (GameState.ReplicatedTimeSeconds - Info.TimeSeconds)
   end
 end
-
 function CommonUtils.GetClientTimerStructTotalTime(TimerHandle)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if not GameState then
@@ -1309,7 +1217,6 @@ function CommonUtils.GetClientTimerStructTotalTime(TimerHandle)
     return 0
   end
 end
-
 function CommonUtils.GetClientTimerStructPassedTime(TimerHandle)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if not GameState then
@@ -1322,7 +1229,6 @@ function CommonUtils.GetClientTimerStructPassedTime(TimerHandle)
     return GameState.ReplicatedTimeSeconds - Info.TimeSeconds
   end
 end
-
 function CommonUtils.HasClientTimerStruct(TimerHandle)
   if not TimerHandle then
     return false
@@ -1334,7 +1240,6 @@ function CommonUtils.HasClientTimerStruct(TimerHandle)
   local Info = GameState.ClientTimerStruct:GetTimerInfo(TimerHandle)
   return Info.Key ~= "None"
 end
-
 function CommonUtils.GetDungeonUIParams(UIName)
   local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
   if not GameState:IsInRegion() then
@@ -1363,7 +1268,6 @@ function CommonUtils.GetDungeonUIParams(UIName)
   end
   return true, UIParamData.UIParams[CurIndex]
 end
-
 function CommonUtils.HasGamePlayTag(SourceTags, TargetTag)
   if not SourceTags then
     return false
@@ -1379,12 +1283,10 @@ function CommonUtils.HasGamePlayTag(SourceTags, TargetTag)
   end
   return false
 end
-
 function CommonUtils.CalcNameLength(name)
   local function is_english_char(c)
     return c >= 65 and c <= 90 or c >= 97 and c <= 122
   end
-  
   local len = 0
   for _, c in utf8.codes(name) do
     if is_english_char(c) then
@@ -1395,7 +1297,6 @@ function CommonUtils.CalcNameLength(name)
   end
   return len
 end
-
 function CommonUtils.TableToString2(tbl, compressed)
   local ret = {}
   local indent = 1
@@ -1403,18 +1304,15 @@ function CommonUtils.TableToString2(tbl, compressed)
   local indentCache = {
     ["0"] = ""
   }
-  
   local function getIndent(level)
     if not indentCache[level] then
       indentCache[level] = indentStr:rep(level)
     end
     return indentCache[level]
   end
-  
   local function append(str)
     ret[#ret + 1] = str
   end
-  
   local function exportstring(s)
     s = string.format("%q", s)
     s = s:gsub("\\\n", "\\n")
@@ -1422,7 +1320,6 @@ function CommonUtils.TableToString2(tbl, compressed)
     s = s:gsub(string.char(26), "\"..string.char(26)..\"")
     return s
   end
-  
   local function serialize(o, level)
     if type(o) == "number" then
       append(tostring(o))
@@ -1447,7 +1344,6 @@ function CommonUtils.TableToString2(tbl, compressed)
       append("nil," .. (compressed and "" or " -- ***ERROR: unsupported data type: " .. type(o) .. "!***"))
     end
   end
-  
   append("return {" .. (compressed and "" or "\n"))
   for k, v in pairs(tbl) do
     append((compressed and "" or getIndent(indent)) .. "[")
@@ -1459,7 +1355,6 @@ function CommonUtils.TableToString2(tbl, compressed)
   append("}")
   return table.concat(ret)
 end
-
 function CommonUtils.ConvertServerList(Info)
   local Temp = {}
   Temp.hostnum = Info.hostnum
@@ -1484,7 +1379,6 @@ function CommonUtils.ConvertServerList(Info)
   Temp.recommend_weight = Info.recommend_weight or 0
   return Temp
 end
-
 function CommonUtils.UploadStrToCDN(signatureUrl, file_content, file_name)
   local http = require("socket.http")
   local ltn12 = require("ltn12")
@@ -1539,23 +1433,18 @@ function CommonUtils.UploadStrToCDN(signatureUrl, file_content, file_name)
   })
   print("response_body:", table.concat(response_body))
 end
-
 function CommonUtils.TableToString3(tbl)
   local ret = {}
-  
   local function append(str)
     ret[#ret + 1] = str
   end
-  
   local function exportstring(s)
     s = string.format("%q", s)
     return s:gsub("\\\n", "\\n"):gsub("\r", "")
   end
-  
   local function isValidLuaIdentifier(s)
     return type(s) == "string" and s:match("^[a-zA-Z_][a-zA-Z0-9_]*$") ~= nil
   end
-  
   local function getSortedKeys(t)
     local keys, isNumeric = {}, true
     for k in pairs(t) do
@@ -1573,7 +1462,6 @@ function CommonUtils.TableToString3(tbl)
     end
     return keys
   end
-  
   local function serialize(o, level)
     if type(o) == "number" then
       return tostring(o)
@@ -1602,7 +1490,6 @@ function CommonUtils.TableToString3(tbl)
       end
       if isDeepOne then
         return "{\n" .. table.concat(elements, "\n") .. [[
-
 }]]
       else
         return "{ " .. table.concat(elements, ", ") .. " }"
@@ -1611,11 +1498,16 @@ function CommonUtils.TableToString3(tbl)
       return "nil"
     end
   end
-  
   append("return " .. serialize(tbl, 1) .. "\n")
   return table.concat(ret)
 end
-
+function CommonUtils.RotationToTable(Rotation)
+  local NewRotation = {}
+  NewRotation.Pitch = Rotation.Pitch
+  NewRotation.Yaw = Rotation.Yaw
+  NewRotation.Roll = Rotation.Roll
+  return NewRotation
+end
 function CommonUtils.LocationToTable(TargetLocation)
   local NewLocation = {}
   NewLocation.X = TargetLocation.X
@@ -1623,7 +1515,6 @@ function CommonUtils.LocationToTable(TargetLocation)
   NewLocation.Z = TargetLocation.Z
   return NewLocation
 end
-
 function CommonUtils.GetWeaponTypeById(WeaponId)
   local Data = DataMgr.BattleWeapon[WeaponId]
   if not Data then
@@ -1635,5 +1526,175 @@ function CommonUtils.GetWeaponTypeById(WeaponId)
     return CommonConst.WeaponType.RangedWeapon
   end
 end
-
+function CommonUtils.IsOpenVersion(OpenVersionId)
+  if not OpenVersionId then
+    return false
+  end
+  if DataMgr.CombatVersionOpenList[OpenVersionId] then
+    return true
+  else
+    return false
+  end
+end
+function CommonUtils.IsCurrentVersionRealease(TableName, Id)
+  local Data = DataMgr[TableName] and DataMgr[TableName][Id]
+  if not Data then
+    return
+  end
+  if not DataMgr.GlobalConstant.CurrentVersion or not Data.ReleaseVersion then
+    return true
+  end
+  return DataMgr.GlobalConstant.CurrentVersion.ConstantValue >= Data.ReleaseVersion
+end
+function CommonUtils.IsCurrentVersionNewRealease(TableName, Id)
+  local Data = DataMgr[TableName] and DataMgr[TableName][Id]
+  if not Data then
+    return
+  end
+  if not DataMgr.GlobalConstant.CurrentVersion or not Data.ReleaseVersion then
+    return
+  end
+  return DataMgr.GlobalConstant.CurrentVersion.ConstantValue == Data.ReleaseVersion
+end
+function CommonUtils.IsCurrentTimeRealease(TableName, Id)
+  local Data = DataMgr[TableName] and DataMgr[TableName][Id]
+  if not Data then
+    return
+  end
+  if Data.BeginTime then
+    local Time = TimeUtils.NowTime()
+    if Time < Data.BeginTime:GetTime() then
+      return false
+    end
+  end
+  return true
+end
+function CommonUtils.UnSerializeAccessoryCustomParams(CustomParams, AccessoryType)
+  if not CustomParams then
+    return
+  end
+  local Params = SerializeUtils:UnSerialize(CustomParams)
+  local Position = FVector(0, 0, 0)
+  if Params.Position then
+    Position.X = Params.Position.X or 0
+    Position.Y = Params.Position.Y or 0
+    Position.Z = Params.Position.Z or 0
+  end
+  local Rotation = FRotator(0, 0, 0)
+  if Params.Rotation then
+    Rotation.Pitch = Params.Rotation.Pitch or 0
+    Rotation.Yaw = Params.Rotation.Yaw or 0
+    Rotation.Roll = Params.Rotation.Roll or 0
+  end
+  local Scale = FVector(1, 1, 1)
+  if Params.Scale then
+    Scale.X = Params.Scale
+    Scale.Y = Params.Scale
+    Scale.Z = Params.Scale
+  end
+  if AccessoryType then
+    local Data = DataMgr.CustomOffset[AccessoryType]
+    if Data then
+      if Data.LocationLimit then
+        math.clamp(Position.X, Data.LocationLimit[1], Data.LocationLimit[2])
+        math.clamp(Position.Y, Data.LocationLimit[1], Data.LocationLimit[2])
+        math.clamp(Position.Z, Data.LocationLimit[1], Data.LocationLimit[2])
+      end
+      if Data.RotationLimit then
+        math.clamp(Rotation.Pitch, Data.RotationLimit[1], Data.RotationLimit[2])
+        math.clamp(Rotation.Pitch, Data.RotationLimit[1], Data.RotationLimit[2])
+        math.clamp(Rotation.Roll, Data.RotationLimit[1], Data.RotationLimit[2])
+      end
+      if Data.ScaleLimit then
+        math.clamp(Scale.X, Data.ScaleLimit[1], Data.ScaleLimit[2])
+        math.clamp(Scale.Y, Data.ScaleLimit[1], Data.ScaleLimit[2])
+        math.clamp(Scale.Z, Data.ScaleLimit[1], Data.ScaleLimit[2])
+      end
+    end
+  end
+  return FTransform(Rotation:ToQuat(), Position, Scale)
+end
+function CommonUtils.DeepEqual(t1, t2, seen)
+  if t1 == t2 then
+    return true
+  end
+  seen = seen or {}
+  local key = tostring(t1) .. ":" .. tostring(t2)
+  if seen[key] then
+    return true
+  end
+  seen[key] = true
+  if type(t1) ~= type(t2) then
+    return false
+  end
+  if type(t1) ~= "table" then
+    return t1 == t2
+  end
+  local count1, count2 = 0, 0
+  for _ in pairs(t1) do
+    count1 = count1 + 1
+  end
+  for _ in pairs(t2) do
+    count2 = count2 + 1
+  end
+  if count1 ~= count2 then
+    return false
+  end
+  for k, v1 in pairs(t1) do
+    local v2 = t2[k]
+    if not CommonUtils.DeepEqual(v1, v2, seen) then
+      return false
+    end
+  end
+  for k, v2 in pairs(t2) do
+    local v1 = t1[k]
+    if nil == v1 then
+      return false
+    end
+  end
+  return true
+end
+local function AddThousandsSeparator(text)
+  local function formatNumber(numberStr)
+    local integerPart, decimalPart = numberStr:match("^(%-?%d*)(%.?%d*)$")
+    if not integerPart or "" == integerPart then
+      return numberStr
+    end
+    local sign = ""
+    if integerPart:sub(1, 1) == "-" then
+      sign = "-"
+      integerPart = integerPart:sub(2)
+    end
+    local result = ""
+    local len = #integerPart
+    for i = 1, len do
+      local digit = integerPart:sub(len - i + 1, len - i + 1)
+      if i > 1 and 1 == i % 3 then
+        result = digit .. " " .. result
+      else
+        result = digit .. result
+      end
+    end
+    return sign .. result .. decimalPart
+  end
+  return text:gsub("[-]?%d+%.?%d*", function(match)
+    return formatNumber(match)
+  end)
+end
+function CommonUtils.FormatNumInFrench(ret)
+  if CommonConst.SystemLanguage == CommonConst.SystemLanguages.FR then
+    local CommaIdx = string.find(ret, ",", 1)
+    if CommaIdx then
+      ret = string.gsub(ret, ",", " ")
+    end
+    local PeriodIdx = string.find(ret, "%.", 1)
+    if PeriodIdx then
+      ret = string.gsub(ret, "%.", ",")
+    end
+    DebugPrint("CommonUtils.FormatNumInFrench Before", ret)
+    ret = AddThousandsSeparator(ret)
+  end
+  DebugPrint("CommonUtils.FormatNumInFrench After", ret)
+  return ret
+end
 return CommonUtils

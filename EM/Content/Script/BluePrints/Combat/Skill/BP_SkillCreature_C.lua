@@ -4,7 +4,6 @@ local BP_SkillCreature_C = Class({
   "BluePrints.Combat.Components.ActorTypeComponent",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_SkillCreature_C:InitCreature_Lua()
   local ConfigData = DataMgr.SkillCreature[self.CreatureId]
   self.ConfigData = ConfigData
@@ -20,18 +19,11 @@ function BP_SkillCreature_C:InitCreature_Lua()
   if ConfigData.EffectCreatureID then
     self.DirectSource = self:GetDirectSource()
     if self.DirectSource then
-      self.DirectSource:AsyncCreateEffectCreature(ConfigData.EffectCreatureID, self:GetTransform(), false, nil, function(EffectCreature)
-        if self.StartDead then
-          self.DirectSource:RemoveEffectCreatureByRef(EffectCreature)
-          return
-        end
-        EffectCreature:K2_AttachToActor(self, "", UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld)
-        self.AttachEffectCreature = EffectCreature
-      end)
+      self.AttachEffectCreature = self.DirectSource:CreateEffectCreature(ConfigData.EffectCreatureID, self:GetTransform(), false)
+      self.AttachEffectCreature:K2_AttachToActor(self, "", UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld, UE4.EAttachmentRule.KeepWorld)
     end
   end
 end
-
 function BP_SkillCreature_C:ClearCreature_Lua()
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local ConfigData = DataMgr.SkillCreature[self.CreatureId]
@@ -44,11 +36,9 @@ function BP_SkillCreature_C:ClearCreature_Lua()
     end
   end
 end
-
 function BP_SkillCreature_C:GetControlRotation()
   return nil
 end
-
 function BP_SkillCreature_C:ClearPauseRemovableCreature()
   local ConfigData = DataMgr.SkillCreature[self.CreatureId]
   if not ConfigData or not ConfigData.Tags then
@@ -60,12 +50,11 @@ function BP_SkillCreature_C:ClearPauseRemovableCreature()
       return
     end
     if "PauseInvisible" == Tag then
-      self:SetActorHiddenInGame(true)
+      self:SetCreatureHideByTag(true, "PauseInvisible")
       return
     end
   end
 end
-
 function BP_SkillCreature_C:ResetPauseCreature()
   local ConfigData = DataMgr.SkillCreature[self.CreatureId]
   if not ConfigData or not ConfigData.Tags then
@@ -73,11 +62,10 @@ function BP_SkillCreature_C:ResetPauseCreature()
   end
   for _, Tag in pairs(ConfigData.Tags) do
     if "PauseInvisible" == Tag then
-      self:SetActorHiddenInGame(false)
+      self:SetCreatureHideByTag(false, "PauseInvisible")
       return
     end
   end
 end
-
 AssembleComponents(BP_SkillCreature_C)
 return BP_SkillCreature_C

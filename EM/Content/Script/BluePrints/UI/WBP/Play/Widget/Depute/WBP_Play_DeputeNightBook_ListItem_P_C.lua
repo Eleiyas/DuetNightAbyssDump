@@ -1,5 +1,6 @@
 require("UnLua")
 local MonsterUtils = require("Utils.MonsterUtils")
+local ActivityController = require("BluePrints.UI.WBP.Activity.ActivityController")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
@@ -12,7 +13,6 @@ local TypeSort = {
   Resource = 6,
   Drop = 7
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddInputMethodChangedListen()
@@ -22,11 +22,48 @@ function M:Construct()
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
+  self.List_Reward.BP_OnEntryInitialized:Add(self, function(self, Content, Widget)
+    if 0 ~= Content.Id then
+      Widget:BindEvents(self, {
+        OnMenuOpenChanged = self.OnStuffMenuOpenChanged
+      })
+    end
+  end)
   self.Btn_Goto.bAutoButtonChange = false
   self.Btn_DoubleMod.bAutoButtonChange = false
   self.List_Reward.OnCreateEmptyContent:Bind(self, self.CreateAndAddEmptyItem)
+  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+    self.List_Reward.OnMouseMove:Add(self, self.OnListRewardMouseMove)
+    self.List_Reward.OnMouseButtonUp:Add(self, self.OnListRewardMouseUp)
+    self.ListRewardMouseBeginPos = nil
+  end
 end
-
+function M:OnListRewardMouseMove(MyGeometry, PointerEvent)
+  if not self.List_Reward:HasMouseCapture() then
+    return
+  end
+  local MouseSpeed = 0.015
+  if not self.ListRewardMouseBeginPos then
+    self.ListRewardMouseBeginPos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(PointerEvent)
+  end
+  local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(PointerEvent)
+  local OffsetY = MousePos.Y - self.ListRewardMouseBeginPos.Y
+  if math.abs(OffsetY) > 10 then
+    local ListView = self.Parent.List_NightBookItem
+    local MouseDelta = UE4.UKismetInputLibrary.PointerEvent_GetCursorDelta(PointerEvent)
+    MouseDelta = math.clamp(-MouseDelta.Y * MouseSpeed, -1, 1)
+    local MaxScrollOffset = UIUtils.GetMaxScrollOffsetOfListView(ListView)
+    local ScrollOffset = math.clamp(ListView:GetScrollOffset() + MouseDelta * ListView.WheelScrollMultiplier, 0, MaxScrollOffset)
+    ListView:SetScrollOffset(ScrollOffset)
+  end
+end
+function M:OnListRewardMouseUp(MyGeometry, PointerEvent)
+  self.ListRewardMouseBeginPos = nil
+end
+function M:OnRemovedFromFocusPath(MyGeometry, MouseEvent)
+  self.ListRewardMouseBeginPos = nil
+  return UIUtils.Unhandled
+end
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.IsEmpty = Content.IsEmpty
@@ -40,14 +77,12 @@ function M:OnListItemObjectSet(Content)
   end
   self:InitItemContent()
 end
-
 function M:InitItemContent()
-  self.Group_NightBookItem:SetRenderOpacity(0)
+  self.List_Reward:SetWheelScrollMultiplier(0)
   self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(self)
   self.IsEnter = false
   if self.IsEmpty then
     self.WS_Item:SetActiveWidgetIndex(1)
-    self:PlayAnimation(self.In)
     self.bIsFocusable = false
     self:SetVisibility(ESlateVisibility.HitTestInvisible)
     return
@@ -60,7 +95,6 @@ function M:InitItemContent()
   local IsGamepad = InputType == ECommonInputType.Gamepad
   self.List_Reward:SetVisibility(IsGamepad and ESlateVisibility.HitTestInvisible or ESlateVisibility.SelfHitTestInvisible)
   if self.MonRewardData then
-    self:PlayAnimation(self.In)
     local IsLocked = not PageJumpUtils:CheckDungeonCondition(self.MonRewardData.Condition)
     self.IsUnLocked = IsLocked
     self:PlayAnimation(IsLocked and self.Locked or self.Normal)
@@ -78,7 +112,8 @@ function M:InitItemContent()
     self.Btn_DoubleMod.Text_Button:SetText(GText("UI_GameEvent_Goto"))
     if self.DoubleMod then
       local IsDoubleModDungeon = false
-      local DoubleModDrop = DataMgr.DoubleModDrop and DataMgr.DoubleModDrop[CommonConst.DoubleModDropEventID]
+      local EventId = GWorld.GameInstance.DoubleModDropEventID
+      local DoubleModDrop = DataMgr.DoubleModDrop and DataMgr.DoubleModDrop[EventId]
       local ModDungeonIds = DoubleModDrop and DoubleModDrop.ModDungeonId
       if ModDungeonIds and self.MonRewardData and self.MonRewardData.DungeonList then
         local DungeonId = self.MonRewardData.DungeonList[1]
@@ -97,7 +132,7 @@ function M:InitItemContent()
         self.WS_Btn:SetActiveWidgetIndex(1)
         self.VX_EffectBG:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
       elseif IsDoubleModDungeon then
-        self.Group_DoubleModSign:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+        self.Group_DoubleModSign:SetVisibility(self.Parent.DropRemaining <= 0 and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
         self.WS_Btn:SetActiveWidgetIndex(0)
         self.VX_EffectBG:SetVisibility(ESlateVisibility.Collapsed)
       else
@@ -117,7 +152,6 @@ function M:InitItemContent()
     end
   end
 end
-
 function M:GetMonsterWeaknessIcon(MonsterId)
   local MonsterWeaknessIcon = self.MonsterWeaknessIconCache or {}
   self.MonsterWeaknessIconCache = MonsterWeaknessIcon
@@ -137,7 +171,6 @@ function M:GetMonsterWeaknessIcon(MonsterId)
   end
   return MonsterWeaknessIcon[MonsterId]
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -158,7 +191,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnClicked()
   if self.IsUnLocked or self:IsAnimationPlaying(self.In) then
     PageJumpUtils:CheckDungeonCondition(self.MonRewardData.Condition, true)
@@ -221,7 +253,6 @@ function M:OnClicked()
     TitleName = GText("UI_Dungeon_Tab_ModDungeon")
   }, nil, true)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.IsEmpty then
     return
@@ -231,7 +262,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.IsEnter = true
   if self.IsUnLocked or self.Mobile or self.IsEmpty or self:IsAnimationPlaying(self.In) or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
@@ -239,10 +269,11 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   end
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
-  if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or not self.IsEmpty then
+  if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and not self.IsEmpty then
+    self.Btn_Goto:SetPCVisibility(false)
+    self.Btn_DoubleMod:SetPCVisibility(false)
   end
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsEnter = false
   if self.IsUnLocked or self.Mobile or self.IsEmpty or self:IsAnimationPlaying(self.In) or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
@@ -256,7 +287,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
     self.Btn_DoubleMod:SetPCVisibility(true)
   end
 end
-
 function M:RefreshRewardInfoList(DungeonReward)
   if not DungeonReward then
     DebugPrint("SL DungeonReward is nil")
@@ -267,6 +297,7 @@ function M:RefreshRewardInfoList(DungeonReward)
   if not Avatar then
     return
   end
+  self.List_Reward:ClearListItems()
   for _, ItemData in pairs(RewardList) do
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     Content.Id = ItemData.Id
@@ -277,6 +308,7 @@ function M:RefreshRewardInfoList(DungeonReward)
     Content.IsShowDetails = true
     Content.UIName = "StyleOfPlay"
     Content.bAsyncLoadIcon = true
+    Content.HandleMouseDown = false
     if ItemData.DropType then
       Content.bRare = DataMgr.DropProbType[ItemData.DropType].IsRareItem
     end
@@ -294,29 +326,13 @@ function M:RefreshRewardInfoList(DungeonReward)
     end
     self.List_Reward:AddItem(Content)
   end
-  if self:IsExistTimer(self.NextFrameListEmpty) then
-    self:RemoveTimer(self.NextFrameListEmpty)
-  end
-  self.NextFrameListEmpty = self:AddTimer(0.01, function()
-    local len = self.List_Reward:GetNumItems()
-    for i = 1, len do
-      local entryWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Reward, i - 1)
-      if entryWidget then
-        entryWidget:BindEvents(self, {
-          OnMenuOpenChanged = self.OnStuffMenuOpenChanged
-        })
-      end
-    end
-    self.List_Reward:RequestFillEmptyContent()
-  end, false, 0, "DeputeDetailListView")
+  self.List_Reward:RequestFillEmptyContent()
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Id = 0
   return Content
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -331,7 +347,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self:UpdatKeyDisplay("RewardWidget")
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -345,7 +360,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftThumbstick" == InKeyName then
@@ -390,7 +404,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:UpdatKeyDisplay("FocusSelfWidget")
@@ -401,7 +414,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -500,7 +512,6 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.In and self.IsEnter then
     if self.IsUnLocked or self.Mobile or self.IsEmpty or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
@@ -510,5 +521,4 @@ function M:OnAnimationFinished(InAnimation)
     self:PlayAnimation(self.Hover)
   end
 end
-
 return M

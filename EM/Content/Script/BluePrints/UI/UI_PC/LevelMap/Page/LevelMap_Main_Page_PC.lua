@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
-
 function M:Construct()
   self.Super.Construct(self)
   self.AreaTable = {}
@@ -28,18 +27,16 @@ function M:Construct()
   self.DispatchAgentList = nil
   ReddotManager.AddListener(DataMgr.ReddotNode.Dispatch.Name, self, self.OnReddotChange)
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
+  self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   ReddotManager.RemoveListener(DataMgr.ReddotNode.Dispatch.Name, self)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:UpdateConditionRes()
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_open", "MapOpen", nil)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   local IsOpenMap, OpenRegionId, InitCompleteFunc, InitCompleteParam = ...
@@ -59,7 +56,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self:InitCommonWidget()
 end
-
 function M:UpdateConditionRes()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -67,7 +63,6 @@ function M:UpdateConditionRes()
     self.MapRegionType = "Now"
   end
 end
-
 function M:InitWidgetVisibility()
   self.Panel_UI:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   local Avatar = GWorld:GetAvatar()
@@ -77,7 +72,6 @@ function M:InitWidgetVisibility()
     self.Btn_ReturnHome:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 function M:InitBackToWorldMapGuidePoint(InRegionId)
   local QuestRegionMapId
   local Info = TaskUtils:GetTrackingQuestDetailInfo()
@@ -102,7 +96,7 @@ function M:InitBackToWorldMapGuidePoint(InRegionId)
         QuestRegionMapId = GuidePointLocData[TargetKey].SubRegionId
         break
       end
-      ScreenPrint(string.format("CheckIsTrackingQuest: \230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \228\187\187\229\138\161\229\140\186\229\159\159\228\191\161\230\129\175\232\142\183\229\143\150\229\164\177\232\180\165\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\229\135\186\230\149\176\230\141\174, \230\140\135\229\188\149\231\130\185: %s", v:GetName()))
+      ScreenPrint(string.format("CheckIsTrackingQuest: 指引点区域数据不存在, 任务区域信息获取失败，请检查导出数据, 指引点: %s", v:GetName()))
       break
     end
   end
@@ -139,7 +133,6 @@ function M:InitBackToWorldMapGuidePoint(InRegionId)
     TaskUtils.TaskRegionMap = "Now"
   end
 end
-
 function M:InitCommonWidget()
   self.Tab:Init({
     PlatformName = CommonUtils.GetDeviceTypeByPlatformName(self),
@@ -321,8 +314,10 @@ function M:InitCommonWidget()
   self.Entrance_Dispatch.Btn_Click.OnClicked:Add(self, self.OnClickDispatch)
   self.Entrance_Dispatch.Text_Name:SetText(GText("UI_Disptach_Title"))
 end
-
 function M:InitBottomTab()
+  if self.GameInputModeSubsystem:GetCurrentInputType() ~= ECommonInputType.Gamepad then
+    return
+  end
   self.Key_Tip.Panel_Key:ClearChildren()
   self.Key_Esc = UIManager(self):_CreateWidgetNew("ComKeyTextDesc")
   self.Key_Tip.Panel_Key:AddChild(self.Key_Esc)
@@ -338,7 +333,6 @@ function M:InitBottomTab()
     Desc = GText("UI_BACK")
   })
 end
-
 function M:InitWildMap()
   self.LevelMap_World:HideWorldMap()
   local WildMap = self:LoadOrUnLoadWildMap(true, false)
@@ -357,7 +351,6 @@ function M:InitWildMap()
   WildMap:Init(false, RealRegionId, self)
   WildMap:OnScaleChange(self.SliderPecent)
 end
-
 function M:InitWildMapWithoutShow()
   local RegionMapPath = "/Game/UI/WBP/Map/Widget/RegionMap/WBP_Map_Region.WBP_Map_Region_C"
   self.Slider_Zoom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -373,14 +366,20 @@ function M:InitWildMapWithoutShow()
   WildMap:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.AreaInfo:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnTabItemClick(TabWidget)
   local TabId = TabWidget.Idx
   self.CurTabId = TabId
   if 1 == self.CurTabId then
     self:OnOpenWorldMap()
     self:UpdateWorldMapKeys()
-    self.LevelMap_World.Area03_Name:SetFocus()
+    self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
+    self.LevelMap_World.GamepadSelect:SetFocus()
+    self.LevelMap_World.HoverBtnIdx = 0
+    self.LevelMap_World.Select:StopAnimation(self.LevelMap_World.Select.Hover)
+    self.LevelMap_World.Select:PlayAnimation(self.LevelMap_World.Select.Normal)
+    if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
+      self.LevelMap_World.bCanDragMap = true
+    end
     self.FloorWidget:SetVisibility(ESlateVisibility.Collapsed)
     self.FloorWidget.Key_Controller_Up:SetVisibility(ESlateVisibility.Collapsed)
     self.FloorWidget.Key_Controller_Down:SetVisibility(ESlateVisibility.Collapsed)
@@ -388,6 +387,7 @@ function M:OnTabItemClick(TabWidget)
       self.Btn_Location:SetVisibility(ESlateVisibility.Collapsed)
     end
     self.Slider_Zoom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.LevelMap_World:ResetTranslation()
   else
     local Avatar = GWorld:GetAvatar()
     local RegionId = DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId
@@ -401,6 +401,9 @@ function M:OnTabItemClick(TabWidget)
       self.Slider_Zoom:SetVisibility(ESlateVisibility.Collapsed)
     end
     self.FloorWidget:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    if self.Btn_Location then
+      self.Btn_Location:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    end
     self.WildMapKeysShow = true
     local WildMap = self:LoadOrUnLoadWildMap(true)
     if not self.IsOpenMap then
@@ -422,12 +425,8 @@ function M:OnTabItemClick(TabWidget)
     self.IsOpenMap = false
     self:UpdateWildMapKeys()
     self.AreaInfo:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-    if self.Btn_Location then
-      self.Btn_Location:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    end
   end
 end
-
 function M:UpdateWildMapKeys()
   if not self.DeviceInPc or not self.RealWildMap then
     return
@@ -467,7 +466,6 @@ function M:UpdateWildMapKeys()
     self.Slider_Zoom:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:UpdateWorldMapKeys()
   if not self.DeviceInPc then
     return
@@ -488,12 +486,6 @@ function M:UpdateWorldMapKeys()
   local GamepadKeys = {
     {
       KeyInfoList = {
-        {Type = "Img", ImgShortPath = "A"}
-      },
-      Desc = GText("UI_Controller_Go")
-    },
-    {
-      KeyInfoList = {
         {Type = "Img", ImgShortPath = "B"}
       },
       Desc = GText("UI_BACK")
@@ -507,11 +499,9 @@ function M:UpdateWorldMapKeys()
     self.Key_Tip:UpdateKeyInfo(Keys)
   end
 end
-
 function M:OnReturnKeyDown()
   self:PlayOutAnim()
 end
-
 function M:OnUIReturnKeyDown()
   if self.DispatchAgentList ~= nil then
     self.DispatchAgentList:OnClickClose()
@@ -536,69 +526,56 @@ function M:OnUIReturnKeyDown()
   end
   self:OnReturnKeyDown()
 end
-
 function M:OnGotoPositionKeyDown()
   self.RealWildMap:OpenOptionSelect()
 end
-
 function M:OnReturnHomeKeyDown()
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Click)
   local Params = {}
-  
   function Params.LeftCallbackFunction(Data)
     self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
     self.ReturnHomePop = false
   end
-  
   function Params.RightCallbackFunction(Data)
     self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
     self:ReturnHome()
   end
-  
   function Params.CloseBtnCallbackFunction(Data)
     self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
     self.ReturnHomePop = false
   end
-  
   local GameInstance = self:GetGameInstance()
   local UIManager = GameInstance:GetGameUIManager()
   self.ReturnHomePop = UIManager:ShowCommonPopupUI(100037, Params, self)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large", nil, nil)
 end
-
 function M:ReturnHome()
   local GameMode = UE.UGameplayStatics.GetGameMode(self)
   GameMode:HandleLevelDeliver(1, 210101, 1)
   self:PlayOutAnim()
 end
-
 function M:OnReturnHomePress()
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Press)
 end
-
 function M:OnReturnHomeHover()
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Hover)
 end
-
 function M:OnReturnHomeUnhover()
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.Normal)
   self.Btn_ReturnHome:PlayAnimation(self.Btn_ReturnHome.UnHover)
 end
-
 function M:OnOpenWorldMap()
   self.RealWildMap:Close()
   self:LoadOrUnLoadWildMap(false, true)
   self.Entrance_Dispatch:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:OnClickTabSound()
   print(_G.LogTag, "LXZ OnClickTabSound")
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_01", nil, nil)
 end
-
 function M:PlayOutAnim()
   if self:IsAnimationPlaying(self.Auto_In) or self:IsAnimationPlaying(self.Auto_Out) then
     return
@@ -611,7 +588,6 @@ function M:PlayOutAnim()
   self.LevelMap_World:HideWorldMap()
   self:Close()
 end
-
 function M:RealClose()
   if self.DispatchList then
     self.DispatchList:RealClose()
@@ -628,7 +604,6 @@ function M:RealClose()
   self:LoadOrUnLoadWildMap(false, false)
   M.Super.RealClose(self)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -662,6 +637,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
       self.RealWildMap:SetFocus()
       return UWidgetBlueprintLibrary.Handled()
     end
+    if self.RealWildMap and self.RealWildMap.ChanllengeTips and self.RealWildMap.ChanllengeTips:IsVisible() then
+      self.RealWildMap:ClosePanel()
+      return UWidgetBlueprintLibrary.Handled()
+    end
     self:OnReturnKeyDown()
     return UWidgetBlueprintLibrary.Handled()
   elseif InKeyName == OpenMapKey and self.bIsCanCloseByHotKey then
@@ -681,7 +660,15 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.Unhandled()
   end
 end
-
+function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if InKeyName == UIConst.GamePadKey.FaceButtonBottom and 1 == self.CurTabId then
+    DebugPrint("jly OnPreviewKeyDown", InKeyName)
+    return self.LevelMap_World:Handle_KeyEventOnGamePad(InKeyName)
+  end
+  return UE4.UWidgetBlueprintLibrary.Unhandled()
+end
 function M:OnMouseWheelTurned(Percent)
   if self.RealWildMap then
     self.SliderPecent = Percent
@@ -689,7 +676,6 @@ function M:OnMouseWheelTurned(Percent)
   self.Slider_Zoom:OnSliderValueChanged(Percent)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_process_bar_drag", nil, nil)
 end
-
 function M:OnClickSliderAddorMinus(CurrentCount, OldNumberValue)
   self.SliderPecent = CurrentCount / 100
   if self.RealWildMap then
@@ -697,7 +683,6 @@ function M:OnClickSliderAddorMinus(CurrentCount, OldNumberValue)
     AudioManager(self):PlayUISound(self, "event:/ui/common/map_process_bar_drag", nil, nil)
   end
 end
-
 function M:OnPlayerChangeSlider(Value)
   self.SliderPecent = Value / 100
   if self.RealWildMap then
@@ -705,10 +690,8 @@ function M:OnPlayerChangeSlider(Value)
     AudioManager(self):PlayUISound(self, "event:/ui/common/map_process_bar_drag", nil, nil)
   end
 end
-
 function M:GetMainRegionId()
 end
-
 function M:LoadOrUnLoadWildMap(bLoad, bShowWorldMap)
   local RegionMapPath = "/Game/UI/WBP/Map/Widget/RegionMap/WBP_Map_Region.WBP_Map_Region_C"
   if bLoad then
@@ -729,7 +712,6 @@ function M:LoadOrUnLoadWildMap(bLoad, bShowWorldMap)
   end
   return self:RealLoadOrUnLoad("RealWildMap", RegionMapPath, self.WildMap, bLoad, self)
 end
-
 function M:RealLoadOrUnLoad(WidgetName, Path, Parent, bLoad, Root)
   self.HasOpenWildMap = bLoad
   if Root[WidgetName] and false == bLoad then
@@ -749,7 +731,6 @@ function M:RealLoadOrUnLoad(WidgetName, Path, Parent, bLoad, Root)
     return Root[WidgetName]
   end
 end
-
 function M:LoadTempWidget(Path, Parent, Root)
   local TempWidget = self:CreateWidgetToParent(Parent, Path, false)
   local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(TempWidget)
@@ -760,13 +741,11 @@ function M:LoadTempWidget(Path, Parent, Root)
   TempWidget:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   return TempWidget
 end
-
 function M:CreateWidgetToParent(Parent, Path, NeedShowInWindow, ZOrder)
   local Widget = UIManager(Parent):CreateWidget(Path, NeedShowInWindow, ZOrder)
   Parent:AddChild(Widget)
   return Widget
 end
-
 function M:HideWildMapByNotInRegion()
   self.Slider_Zoom:SetVisibility(UE4.ESlateVisibility.Collapsed)
   local RegionMapPath = "/Game/UI/WBP/Map/Widget/RegionMap/WBP_Map_Region.WBP_Map_Region_C"
@@ -783,7 +762,6 @@ function M:HideWildMapByNotInRegion()
   self.RealWildMap:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.AreaInfo:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OpenSelectList(SelectTable)
   if self.ScrollBox_Interactive:GetChildrenCount() > 0 then
     return
@@ -822,7 +800,6 @@ function M:OpenSelectList(SelectTable)
   end
   self:UpdateWildMapKeys()
 end
-
 function M:OpenOptionSelect()
   self.Panel_Interactive:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.ScrollBox_Interactive:SetVisibility(ESlateVisibility.Collapsed)
@@ -833,7 +810,6 @@ function M:OpenOptionSelect()
   end
   self:UpdateWildMapKeys()
 end
-
 function M:OnAreaClicked()
   if self:IsInteractiveOpen() and not self.AreaClicked then
     self.AreaClicked = true
@@ -852,11 +828,9 @@ function M:OnAreaClicked()
     end)
   end
 end
-
 function M:IsInteractiveOpen()
   return self.Panel_Interactive:GetVisibility() == ESlateVisibility.SelfHitTestInvisible
 end
-
 function M:OnClickDispatch()
   DebugPrint("OnClickDispatch")
   self.RealWildMap.IsOpenDispatch = true
@@ -872,7 +846,6 @@ function M:OnClickDispatch()
   self.Dispatch_List:AddChild(self.DispatchList)
   self.DispatchList:InitDispatch(self)
 end
-
 function M:OnCloseDispatch()
   DebugPrint("OnCloseDispatch")
   self.RealWildMap.IsOpenDispatch = false
@@ -889,7 +862,6 @@ function M:OnCloseDispatch()
   self.RealWildMap:BackToOriginalRegion()
   self:InitBottomTab()
 end
-
 function M:OpenAgentList()
   if self.DispatchList ~= nil then
     self.DispatchList:SetVisibility(ESlateVisibility.Collapsed)
@@ -904,7 +876,6 @@ function M:OpenAgentList()
     self.DispatchAgentList:Refresh()
   end
 end
-
 function M:CreateOrRefreshDispatchDetail(Dispatch)
   if self.DispatchDetail == nil then
     self.DispatchDetail = self:CreateWidgetNew("DispatchDetail")
@@ -915,7 +886,6 @@ function M:CreateOrRefreshDispatchDetail(Dispatch)
     self.DispatchDetail:RrefreshDispatchDetail(Dispatch)
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -925,7 +895,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnReddotChange()
   local RedNode = ReddotManager.GetTreeNode(DataMgr.ReddotNode.Dispatch.Name)
   if RedNode.Count > 0 then
@@ -934,10 +903,8 @@ function M:OnReddotChange()
     self.Entrance_Dispatch.Reddot:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:InitPadTab()
 end
-
 function M:ShoworHideTopTab(bShow)
   if bShow then
     self.Tab_Top:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -945,7 +912,6 @@ function M:ShoworHideTopTab(bShow)
     self.Tab_Top:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:ShoworHideBottomTab(bShow)
   if not self.DeviceInPc then
     return
@@ -956,7 +922,6 @@ function M:ShoworHideBottomTab(bShow)
     self.Tab_Bottom:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if self.LastInputDevice == CurInputDevice then
     return
@@ -964,7 +929,7 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   self.LastInputDevice = CurInputDevice
   if 1 == self.CurTabId then
     self:UpdateWorldMapKeys()
-    self.LevelMap_World.Area03_Name:SetFocus()
+    self.LevelMap_World.GamepadSelect:SetFocus()
     self.FloorWidget.Key_Controller_Up:SetVisibility(ESlateVisibility.Collapsed)
     self.FloorWidget.Key_Controller_Down:SetVisibility(ESlateVisibility.Collapsed)
   else
@@ -996,10 +961,8 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:SetFocus_Lua()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.DispatchAgentList == nil and nil == self.DispatchList and self.DispatchDetail then
     self.DispatchDetail:SetFocus()
@@ -1011,7 +974,17 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     self.DispatchList:SetFocus()
     return UWidgetBlueprintLibrary.Handle
   end
+  if 2 == self.CurTabId then
+    self.RealWildMap:SetFocus()
+    return UWidgetBlueprintLibrary.Handle
+  end
   return UWidgetBlueprintLibrary.Unhandle
 end
-
+function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  if 1 == self.CurTabId then
+    return self.LevelMap_World:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  else
+    return UE4.UWidgetBlueprintLibrary.UnHandled()
+  end
+end
 return M

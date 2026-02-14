@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
@@ -14,18 +13,15 @@ function M:Construct()
     }
   })
 end
-
 function M:Destruct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
 end
-
 function M:Init(MainMap)
   self.MainMap = MainMap
   self.Key_Tip = MainMap.Key_Tip
   self:InitCommonWidget()
   self.ScrollBox_TaskDetail:ScrollToStart()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local KeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -53,7 +49,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -74,7 +69,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     if self.TileView_Rewards:HasAnyUserFocus() then
@@ -94,34 +88,29 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:OnShow()
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     self:SetWatchTaskContentGamePadKeys()
     self:ShowGamepadRewardKey(true)
   end
 end
-
 function M:OnSpecialSideTaskGuidePointTrackClick()
   local LevelMap = UIManager(self):GetUI("LevelMapMain")
   if LevelMap and LevelMap.RealWildMap then
     LevelMap.RealWildMap:OnSpecialSideTaskGuidePointTrackClick()
   end
 end
-
 function M:OnSpecialSideTaskGuidePointUnTrackClick()
   local LevelMap = UIManager(self):GetUI("LevelMapMain")
   if LevelMap and LevelMap.RealWildMap then
     LevelMap.RealWildMap:OnSpecialSideTaskGuidePointUnTrackClick()
   end
 end
-
 function M:OnHide()
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_Tip:UpdateKeyInfo(self.MainMap.WildMapGamePadEnsureKeys)
   end
 end
-
 function M:OnRewardItemMenuAnchorChanged(bIsOpen)
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -131,7 +120,6 @@ function M:OnRewardItemMenuAnchorChanged(bIsOpen)
     end
   end
 end
-
 function M:SetWatchTaskContentGamePadKeys()
   if not self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     return
@@ -148,7 +136,6 @@ function M:SetWatchTaskContentGamePadKeys()
     self.Key_Tip:UpdateKeyInfo(self.BackGamePadKey)
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -160,7 +147,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:TileViewSelectFirst()
   local Items = self.TileView_Rewards:GetListItems()
   if Items and Items:Num() > 0 then
@@ -169,11 +155,9 @@ function M:TileViewSelectFirst()
     self.TileView_Rewards:NavigateToIndex(0)
   end
 end
-
 function M:TileViewQuit()
   self:SetFocus()
 end
-
 function M:ShowGamepadRewardKey(flag)
   if flag then
     self.Key_TitleRewards:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -183,7 +167,6 @@ function M:ShowGamepadRewardKey(flag)
     self.ScrollBox_TaskDetail:SetVisibility(UE4.ESlateVisibility.Visible)
   end
 end
-
 function M:InitCommonWidget()
   self.WatchTaskContentGamePadKeys = {
     {
@@ -235,5 +218,4 @@ function M:InitCommonWidget()
     }
   }
 end
-
 return M

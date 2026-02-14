@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Widget = self
@@ -16,13 +15,11 @@ function M:OnListItemObjectSet(Content)
     self:PlayAnimation(self.Normal, 0, 1, 0, 10)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Widget = nil
   end
 end
-
 function M:SetColor(Color, Speed, bInit)
   self:StopAnimation(self.Normal)
   self:FlushAnimations()
@@ -34,11 +31,9 @@ function M:SetColor(Color, Speed, bInit)
     self:PlayAnimation(self.UnChange, 0, 1, 0, Speed or 1)
   end
 end
-
 function M:SetText(Text)
   self.Text_Num:SetText(Text)
 end
-
 function M:Construct()
   self.Btn_Click.OnClicked:Clear()
   self.Btn_Click.OnPressed:Clear()
@@ -49,12 +44,10 @@ function M:Construct()
   self.Btn_Click.OnHovered:Add(self, self.OnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function M:BindEventOnClicked(Obj, Event, Params)
   self.Obj = Obj
   self.Event = Event
 end
-
 function M:OnClicked()
   if self.Content.IsSelected then
     return
@@ -66,14 +59,12 @@ function M:OnClicked()
     self.Event(self.Obj, self.Content)
   end
 end
-
 function M:OnPressed()
   if self.Content.IsSelected then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnHovered()
   if self.Content.IsSelected then
     return
@@ -82,7 +73,6 @@ function M:OnHovered()
   self:FlushAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   if self.Content.IsSelected then
     return
@@ -91,11 +81,9 @@ function M:OnUnhovered()
   self:FlushAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnUnclicked()
   self:StopAllAnimations()
   self:FlushAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 return M

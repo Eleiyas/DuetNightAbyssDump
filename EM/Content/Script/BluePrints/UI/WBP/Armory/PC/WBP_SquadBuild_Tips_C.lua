@@ -4,12 +4,10 @@ local WBP_Build_Tips_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_Build_Tips_C:Construct()
   self.Btn_Armory:SetDefaultGamePadImg("View")
   self.Edit_Tips.Btn_Confirm:SetDefaultGamePadImg("X")
 end
-
 function WBP_Build_Tips_C:InitWidget(Params)
   DebugPrint("thy      Widget is Initing!!!!!!!!!!!!!")
   self:PlayAnimation(self.In)
@@ -18,7 +16,6 @@ function WBP_Build_Tips_C:InitWidget(Params)
   self.Btn_Armory:SetText(GText("UI_BAG_Gotoarmory"))
   self.Btn_Armory:BindEventOnClicked(self.Owner, self.GoToArmoryCallback)
 end
-
 function WBP_Build_Tips_C:InitUI()
   if self.ItemInfo.Type ~= "Pet" then
     self.Switch_Tips:SetActiveWidgetIndex(0)
@@ -44,11 +41,9 @@ function WBP_Build_Tips_C:InitUI()
   end
   self.Owner:SetCurFocusArea("Tip")
 end
-
 function WBP_Build_Tips_C:ButtonEventCallback()
   UIManager(self):GetUIObj("SquadMainUINew"):MakeSureCallback()
 end
-
 function WBP_Build_Tips_C:InitData(Params)
   self.ItemInfo = Params.ItemInfo
   self.Owner = Params.Owner
@@ -65,18 +60,15 @@ function WBP_Build_Tips_C:InitData(Params)
   end
   self.Uuid = self.ItemInfo.Uuid
 end
-
 function WBP_Build_Tips_C:CloseWidget()
   self:Close()
 end
-
 function WBP_Build_Tips_C:Handle_OnGamePadDown(InKeyName)
   if "Gamepad_FaceButton_Bottom" == InKeyName then
     return true
   end
   return false
 end
-
 function WBP_Build_Tips_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -91,5 +83,4 @@ function WBP_Build_Tips_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 return WBP_Build_Tips_C

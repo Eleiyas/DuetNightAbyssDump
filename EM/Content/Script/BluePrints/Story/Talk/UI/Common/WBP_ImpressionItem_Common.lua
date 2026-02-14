@@ -6,7 +6,6 @@ local WBP_ImpressionItem_Common = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function WBP_ImpressionItem_Common:InitUIData_Lua(ImpressionUI, ItemIndex, TalkTriggerId, OptionType, Option, OptionState, OnItemHandleEndDelegate, bIsSelected)
   self.OnBeginShowCheckOrPlusUIEvent = nil
   self.OnEndShowCheckOrPlusUIEvent = nil
@@ -26,7 +25,6 @@ function WBP_ImpressionItem_Common:InitUIData_Lua(ImpressionUI, ItemIndex, TalkT
   self.bIsSelected = bIsSelected
   self:SetState(OptionState)
 end
-
 function WBP_ImpressionItem_Common:SwitchBindAnimationEvents(bBind)
   DebugPrint("WBP_ImpressionItem_Common:SwitchBindAnimationEvents", bBind)
   self:UnbindFromAnimationFinished(self.Click, {
@@ -40,25 +38,20 @@ function WBP_ImpressionItem_Common:SwitchBindAnimationEvents(bBind)
     })
   end
 end
-
 function WBP_ImpressionItem_Common:InitVisibility()
   self.HB_Normal:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_ImpressionItem_Common:InitImgIcon()
   local ImpressionConfigInfo = DataMgr.ImpressionConfig.Common
   local IconTexture = LoadObject(ImpressionConfigInfo.StatusCommonIcon)
   self.Img_Icon:SetBrushFromTexture(IconTexture)
 end
-
 function WBP_ImpressionItem_Common:InitTexts(Option)
   self.Text_Normal:SetText(Option.OptionText)
 end
-
 function WBP_ImpressionItem_Common:SwitchEnableClickEvents(bEnable)
   self:SwitchBindButtonEvents(bEnable)
 end
-
 function WBP_ImpressionItem_Common:SwitchBindButtonEvents(bBind)
   DebugPrint("WBP_ImpressionItem_Common:SwitchBindButtonEvents", bBind, self)
   self.Btn_ItemClick.OnClicked:Clear()
@@ -74,7 +67,6 @@ function WBP_ImpressionItem_Common:SwitchBindButtonEvents(bBind)
     self.Btn_ItemClick.OnReleased:Add(self, self.OnReleased)
   end
 end
-
 function WBP_ImpressionItem_Common:Init(ImpressionUI, ItemIndex, TalkTriggerId, OptionState, OptionType, Option, bInMobile, OnItemHandleEndDelegate, UsingGM, bIsSelected)
   DebugPrint("WBP_ImpressionItem_Common:Init", self)
   self:InitUIData_Lua(ImpressionUI, ItemIndex, TalkTriggerId, OptionType, Option, OptionState, OnItemHandleEndDelegate, bIsSelected)
@@ -88,14 +80,12 @@ function WBP_ImpressionItem_Common:Init(ImpressionUI, ItemIndex, TalkTriggerId, 
   self:DisplayOption()
   self:InitText_NormalVerifieNum()
 end
-
 function WBP_ImpressionItem_Common:InitText_NormalVerifieNum()
   if self.CheckValue then
     self.Text_NormalVerifieNum:SetText(string.format(GText("UI_ImpressionShop_HardLevel"), self.CheckValue))
     self.Text_NormalVerifieNum:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ImpressionItem_Common:Clear()
   DebugPrint("WBP_ImpressionItem_Common:Clear", self)
   self:ClearByPlatform()
@@ -103,11 +93,9 @@ function WBP_ImpressionItem_Common:Clear()
   self:SwitchBindButtonEvents(false)
   self:SwitchBindAnimationEvents(false)
 end
-
 function WBP_ImpressionItem_Common:ClearByPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_ImpressionItem_Common:ClearByPlatform")
+  DebugPrint("Error: 未实现的函数WBP_ImpressionItem_Common:ClearByPlatform")
 end
-
 function WBP_ImpressionItem_Common:TryFireOnItemHandleEndDelegate(FinishType)
   DebugPrint("WBP_ImpressionItem_Common:TryFireOnItemHandleEndDelegate", FinishType)
   self:Clear()
@@ -116,7 +104,6 @@ function WBP_ImpressionItem_Common:TryFireOnItemHandleEndDelegate(FinishType)
     self.OnItemHandleEndDelegate = nil
   end
 end
-
 function WBP_ImpressionItem_Common:InitImpressionData()
   local CheckInfo
   if self.OptionType == ETalkOptionType.Plus then
@@ -131,37 +118,29 @@ function WBP_ImpressionItem_Common:InitImpressionData()
     self.ImpressionAreaId = 1011
   end
 end
-
 function WBP_ImpressionItem_Common:AdaptPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_ImpressionItem_Common:AdaptPlatform")
+  DebugPrint("Error: 未实现的函数WBP_ImpressionItem_Common:AdaptPlatform")
 end
-
 function WBP_ImpressionItem_Common:SetOnBeginShowCheckOrPlusUI(Delegate)
   DebugPrint("WBP_ImpressionItem_Common:SetOnBeginShowCheckOrPlusUI")
   self.OnBeginShowCheckOrPlusUIEvent = Delegate
 end
-
 function WBP_ImpressionItem_Common:SetOnEndShowCheckOrPlusUI(Delegate)
   DebugPrint("WBP_ImpressionItem_Common:SetOnEndShowCheckOrPlusUI")
   self.OnEndShowCheckOrPlusUIEvent = Delegate
 end
-
 function WBP_ImpressionItem_Common:SetOnInterruptedExit(Delegate)
   DebugPrint("WBP_ImpressionItem_Common:SetOnInterruptedExit")
   self.OnInterruptedExitEvent = Delegate
 end
-
 function WBP_ImpressionItem_Common:SetOnClicked(Delegate)
   DebugPrint("WBP_ImpressionItem_Common:SetOnClicked")
   self.OnClickedEvent = Delegate
 end
-
 function WBP_ImpressionItem_Common:SetOnHovered(Delegate)
 end
-
 function WBP_ImpressionItem_Common:SetOnUnhovered(Delegate)
 end
-
 function WBP_ImpressionItem_Common:SetSelect(bIsSelect)
   DebugPrint("WBP_ImpressionItem_Common:SetSelect", bIsSelect, self.ItemIndex)
   if bIsSelect then
@@ -169,7 +148,6 @@ function WBP_ImpressionItem_Common:SetSelect(bIsSelect)
   end
   self:OnSelectedByPlatform(bIsSelect)
 end
-
 function WBP_ImpressionItem_Common:SetState(NewState)
   DebugPrint("WBP_ImpressionItem_Common:SetState", NewState)
   self.State = NewState
@@ -188,11 +166,9 @@ function WBP_ImpressionItem_Common:SetState(NewState)
     self:PlayAnimation(self.Forbidden_Normal)
   end
 end
-
 function WBP_ImpressionItem_Common:OnNotWorking()
   self:SetState(EImpressionButtonState.None)
 end
-
 function WBP_ImpressionItem_Common:DisplayOption()
   DebugPrint("WBP_ImpressionItem_Common:DisplayOption")
   if self.OptionType == ETalkOptionType.Plus then
@@ -202,7 +178,6 @@ function WBP_ImpressionItem_Common:DisplayOption()
     self:DisplayCheck()
   end
 end
-
 function WBP_ImpressionItem_Common:DisplayCheck()
   DebugPrint("WBP_ImpressionItem_Common:DisplayCheck")
   local CheckInfo = DataMgr.ImpressionCheck[self.Option.CheckId]
@@ -230,7 +205,6 @@ function WBP_ImpressionItem_Common:DisplayCheck()
     end
   end
 end
-
 function WBP_ImpressionItem_Common:DisplayPlus()
   DebugPrint("WBP_ImpressionItem_Common:DisplayPlus")
   local PlusInfo = DataMgr.ImpressionPlus[self.Option.PlusId]
@@ -245,7 +219,6 @@ function WBP_ImpressionItem_Common:DisplayPlus()
     end
   end
 end
-
 function WBP_ImpressionItem_Common:GetSuccRate()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -254,7 +227,6 @@ function WBP_ImpressionItem_Common:GetSuccRate()
   end
   return Avatar:GetSuccRate(self.PlayerValue, self.CheckValue)
 end
-
 function WBP_ImpressionItem_Common:GetDifficultyInfo(SuccRate)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -263,7 +235,6 @@ function WBP_ImpressionItem_Common:GetDifficultyInfo(SuccRate)
   end
   return Avatar:GetDifficultyInfo(SuccRate)
 end
-
 function WBP_ImpressionItem_Common:GetDifficultyCorlor(DifficultyInfo)
   if not DifficultyInfo then
     return
@@ -280,7 +251,6 @@ function WBP_ImpressionItem_Common:GetDifficultyCorlor(DifficultyInfo)
     return self.HardBG_Level04
   end
 end
-
 function WBP_ImpressionItem_Common:HandleImpression()
   DebugPrint("WBP_ImpressionItem_Common:HandleImpression", self.OptionType)
   if self.OptionType == ETalkOptionType.Plus then
@@ -291,7 +261,6 @@ function WBP_ImpressionItem_Common:HandleImpression()
     self:TryFireOnItemHandleEndDelegate()
   end
 end
-
 function WBP_ImpressionItem_Common:HandlePlus()
   DebugPrint("WBP_ImpressionItem_Common:HandlePlus", self.OptionType)
   local Avatar = GWorld:GetAvatar()
@@ -306,13 +275,11 @@ function WBP_ImpressionItem_Common:HandlePlus()
     self:OnImpressionHandled(0)
   end
 end
-
 function WBP_ImpressionItem_Common:HandleCheck()
   self:InitCheckUI("Check")
 end
-
 function WBP_ImpressionItem_Common:OnImpressionTimeout(DialogueChain)
-  local Title = "\229\141\176\232\177\161\229\138\160\229\128\188\232\182\133\230\151\182"
+  local Title = "印象加值超时"
   local DialogueChainStr = ""
   local DialogueId
   DialogueChain = DialogueChain or {}
@@ -323,14 +290,13 @@ function WBP_ImpressionItem_Common:OnImpressionTimeout(DialogueChain)
     DialogueId = dialogueId
     DialogueChainStr = DialogueChainStr .. tostring(DialogueId)
   end
-  local Message = string.format("\229\141\176\232\177\161\229\138\160\229\128\188\230\156\170\230\148\182\229\136\176\230\156\141\229\138\161\229\153\168\229\155\158\232\176\131\239\188\140\229\189\147\229\137\141\233\128\137\233\161\185Id: %s\239\188\140\229\175\185\232\175\157\233\147\190:\n%s", DialogueId and tostring(DialogueId) or "\230\151\160", DialogueChainStr)
-  UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+  local Message = string.format("印象加值未收到服务器回调，当前选项Id: %s，对话链:\n%s", DialogueId and tostring(DialogueId) or "无", DialogueChainStr)
+  UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     Avatar:DisconnectServer()
   end
 end
-
 function WBP_ImpressionItem_Common:InitCheckUI(Type)
   DebugPrint("WBP_ImpressionItem_Common:InitCheckUI")
   local CheckParams = {
@@ -358,7 +324,6 @@ function WBP_ImpressionItem_Common:InitCheckUI(Type)
   end)
   ImpressionResultUI:FadeIn()
 end
-
 function WBP_ImpressionItem_Common:OnImpressionHandled(...)
   DebugPrint("WBP_ImpressionItem_Common:OnImpressionHandled", self.bIsHandled)
   if self.bIsHandled then
@@ -367,10 +332,10 @@ function WBP_ImpressionItem_Common:OnImpressionHandled(...)
   self.bIsHandled = true
   local Error, DialogueChain = ...
   if not ErrorCode:Check(Error) then
-    local ErrorCodeMessage = "\233\148\153\232\175\175\231\160\129\228\184\141\229\173\152\229\156\168"
+    local ErrorCodeMessage = "错误码不存在"
     local ErrorCodeData = DataMgr.ErrorCode[Error]
     if ErrorCodeData then
-      ErrorCodeMessage = ErrorCodeData.ErrorCodeContent or "\233\148\153\232\175\175\231\160\129\228\184\141\229\173\152\229\156\168\232\175\180\230\152\142\229\134\133\229\174\185"
+      ErrorCodeMessage = ErrorCodeData.ErrorCodeContent or "错误码不存在说明内容"
     end
     local DialogueChainStr = ""
     DialogueChain = DialogueChain or {}
@@ -380,9 +345,9 @@ function WBP_ImpressionItem_Common:OnImpressionHandled(...)
       end
       DialogueChainStr = DialogueChainStr .. tostring(DialogueId)
     end
-    local Title = "\229\141\176\232\177\161\231\179\187\231\187\159\233\148\153\232\175\175"
-    local Message = string.format("ErrorCode: %d\n%s\239\188\140\229\175\185\232\175\157\233\147\190:\n%s", Error, ErrorCodeMessage, DialogueChainStr)
-    UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+    local Title = "印象系统错误"
+    local Message = string.format("ErrorCode: %d\n%s，对话链:\n%s", Error, ErrorCodeMessage, DialogueChainStr)
+    UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
     self.ImpressionUI:StopStoryLine()
     return
   end
@@ -392,7 +357,6 @@ function WBP_ImpressionItem_Common:OnImpressionHandled(...)
     self:OnImpressionCheck(...)
   end
 end
-
 function WBP_ImpressionItem_Common:OnImpressionPlus()
   DebugPrint("WBP_ImpressionItem_Common:OnImpressionPlus", self.PlusValue)
   if 0 == self.PlusValue then
@@ -405,7 +369,6 @@ function WBP_ImpressionItem_Common:OnImpressionPlus()
     self.EndShowCheckOrPlusUI
   })
 end
-
 function WBP_ImpressionItem_Common:OnImpressionCheck(ErrorCode, Ret, Rand1, Rand2, CheckParams)
   DebugPrint("WBP_ImpressionItem_Common:OnImpressionCheck", ErrorCode, Ret, Rand1, Rand2, CheckParams)
   self:RefreshServerHandledInfo(ErrorCode, Ret, Rand1, Rand2, CheckParams)
@@ -418,17 +381,14 @@ function WBP_ImpressionItem_Common:OnImpressionCheck(ErrorCode, Ret, Rand1, Rand
     self.InterruptExit
   })
 end
-
 function WBP_ImpressionItem_Common:BeginShowCheckOrPlusUI()
   DebugPrint("WBP_ImpressionItem_Common:BeginShowCheckOrPlusUI")
   if self.OnBeginShowCheckOrPlusUIEvent and self.OnBeginShowCheckOrPlusUIEvent[1] and self.OnBeginShowCheckOrPlusUIEvent[2] then
     self.OnBeginShowCheckOrPlusUIEvent[2](self.OnBeginShowCheckOrPlusUIEvent[1])
   end
 end
-
 function WBP_ImpressionItem_Common:EndShowCheckOrPlusUI(bCheckSucceed)
   DebugPrint("WBP_ImpressionItem_Common:EndShowCheckOrPlusUI", bCheckSucceed)
-  
   local function AfterShowRewardCallback()
     if self.OnEndShowCheckOrPlusUIEvent and self.OnEndShowCheckOrPlusUIEvent[1] and self.OnEndShowCheckOrPlusUIEvent[2] then
       self.OnEndShowCheckOrPlusUIEvent[2](self.OnEndShowCheckOrPlusUIEvent[1])
@@ -439,7 +399,6 @@ function WBP_ImpressionItem_Common:EndShowCheckOrPlusUI(bCheckSucceed)
       self:TryFireOnItemHandleEndDelegate(ETalkNodeFinishType.Fail)
     end
   end
-  
   if self.OptionType == ETalkOptionType.Check then
     local Avatar = GWorld:GetAvatar()
     local Data = self:GetServerHandledInfo()
@@ -452,16 +411,13 @@ function WBP_ImpressionItem_Common:EndShowCheckOrPlusUI(bCheckSucceed)
     AfterShowRewardCallback()
   end
 end
-
 function WBP_ImpressionItem_Common:InterruptExit()
   if self.OnInterruptedExitEvent and self.OnInterruptedExitEvent[1] and self.OnInterruptedExitEvent[2] then
     self.OnInterruptedExitEvent[2](self.OnInterruptedExitEvent[1])
   end
 end
-
 function WBP_ImpressionItem_Common:ShowCheckUI(bCheckSucceed, Rand1, Rand2, OnCloseDelegate, CheckParams, OnInterruptedExitDelegate)
 end
-
 function WBP_ImpressionItem_Common:ShowPlusUI(bCheckSucceed, OnCloseDelegate)
   DebugPrint("WBP_ImpressionItem_Common:ShowPlusUI", bCheckSucceed)
   local ImpressionDimensionResultUI = self.ImpressionUI:CreateWidgetNew("ImpressionDimensionResult")
@@ -470,7 +426,6 @@ function WBP_ImpressionItem_Common:ShowPlusUI(bCheckSucceed, OnCloseDelegate)
   ImpressionDimensionResultUI:SetOnCloseDelegate(OnCloseDelegate)
   ImpressionDimensionResultUI:FadeIn()
 end
-
 function WBP_ImpressionItem_Common:OnClickAnimFinished()
   DebugPrint("WBP_ImpressionItem_Common:OnClickAnimFinished", self)
   if self.bIsSelected then
@@ -478,7 +433,6 @@ function WBP_ImpressionItem_Common:OnClickAnimFinished()
   end
   self:HandleImpression()
 end
-
 function WBP_ImpressionItem_Common:PlayButtonClickAudioByOptionType()
   if self.OptionType == ETalkOptionType.Check then
     self:PlayButtonAudioByState()
@@ -486,7 +440,6 @@ function WBP_ImpressionItem_Common:PlayButtonClickAudioByOptionType()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", "", nil)
   end
 end
-
 function WBP_ImpressionItem_Common:PlayButtonAudioByState()
   if self:IsSelfEnabled() then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", "", nil)
@@ -494,7 +447,6 @@ function WBP_ImpressionItem_Common:PlayButtonAudioByState()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_disable", "", nil)
   end
 end
-
 function WBP_ImpressionItem_Common:OnClicked()
   DebugPrint("WBP_ImpressionItem_Common: OnClicked", self, self.OnClickedEvent, self.State)
   if self:IsSelfEnabled() then
@@ -517,44 +469,35 @@ function WBP_ImpressionItem_Common:OnClicked()
     self:PlayAnimation(self.Forbidden_Click)
   end
 end
-
 function WBP_ImpressionItem_Common:OnPressed()
   DebugPrint("WBP_ImpressionItem_Common: OnPressed", self)
   self:StopAllAnimations()
   self:PlayAnimationByEnabled(self.Press, self.Forbidden_Press)
 end
-
 function WBP_ImpressionItem_Common:OnReleased()
   DebugPrint("WBP_ImpressionItem_Common: OnReleased", self)
   self:OnReleasedByPlatform()
 end
-
 function WBP_ImpressionItem_Common:OnHoveredByPlatform()
   DebugPrint("WBP_ImpressionItem_Common: OnHovered", self, self.ItemIndex)
 end
-
 function WBP_ImpressionItem_Common:OnUnhoveredByPlatform()
   DebugPrint("WBP_ImpressionItem_Common: OnUnhovered", self, self.ItemIndex)
 end
-
 function WBP_ImpressionItem_Common:FireButtonDelegate(Delegate, ...)
   if Delegate and Delegate[1] and Delegate[2] then
     Delegate[2](Delegate[1], ...)
   end
 end
-
 function WBP_ImpressionItem_Common:IsSelfEnabled()
   return self.State == EImpressionButtonState.Enabled
 end
-
 function WBP_ImpressionItem_Common:IsSelfDisabled()
   return self.State == EImpressionButtonState.Disabled
 end
-
 function WBP_ImpressionItem_Common:IsSelfSelected()
   return self.ImpressionUI:GetCurrentSelectIndex() == self.ItemIndex
 end
-
 function WBP_ImpressionItem_Common:PlayAnimationByEnabled(EnableAnimation, DisableAnimation, ...)
   if self:IsSelfEnabled() then
     self:PlayAnimation(EnableAnimation, ...)
@@ -562,7 +505,6 @@ function WBP_ImpressionItem_Common:PlayAnimationByEnabled(EnableAnimation, Disab
     self:PlayAnimation(DisableAnimation, ...)
   end
 end
-
 function WBP_ImpressionItem_Common:RefreshServerHandledInfo(ErrorCode, Ret, Rand1, Rand2, CheckParams)
   self.ServerHandledInfo = {
     ErrorCode = ErrorCode,
@@ -575,17 +517,13 @@ function WBP_ImpressionItem_Common:RefreshServerHandledInfo(ErrorCode, Ret, Rand
     self.ImpressionUI.TalkTask.DialogueRecordComponent:RecordCheckResult(Ret, tonumber(Rand1) * 10 + tonumber(Rand2) + self.PlayerValue)
   end
 end
-
 function WBP_ImpressionItem_Common:GetServerHandledInfo()
   return self.ServerHandledInfo or {}
 end
-
 function WBP_ImpressionItem_Common:OnSelectedByPlatform(bIsSelect)
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_ImpressionItem_Common:OnSelectByPlatform", bIsSelect)
+  DebugPrint("Error: 未实现的函数WBP_ImpressionItem_Common:OnSelectByPlatform", bIsSelect)
 end
-
 function WBP_ImpressionItem_Common:OnReleasedByPlatform()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_ImpressionItem_Common:OnReleasedByPlatform")
+  DebugPrint("Error: 未实现的函数WBP_ImpressionItem_Common:OnReleasedByPlatform")
 end
-
 return WBP_ImpressionItem_Common

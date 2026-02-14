@@ -2,7 +2,6 @@ require("UnLua")
 local N = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function N:OnListItemObjectSet(Content)
   self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Content = Content
@@ -20,12 +19,10 @@ function N:OnListItemObjectSet(Content)
     self:SetPanelBg(0)
   end
 end
-
 function N:PlayInAnimation()
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:PlayAnimation(self.In)
 end
-
 function N:OnMouseButtonDown(MyGeometry, InKeyEvent)
   if UE4.UKismetInputLibrary.PointerEvent_IsMouseButtonDown(InKeyEvent, UE4.EKeys.LeftMouseButton) then
     if self:CheckNpcIsSet() then
@@ -42,7 +39,6 @@ function N:OnMouseButtonDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function N:CheckNpcIsSet()
   for i = 1, self.Content.ParentWidget.SignBoardNums do
     if i ~= self.Content.ParentWidget.NowTabId and self.Content.ParentWidget.SignBoardNpcState[i] == self.Content.UnitId then
@@ -55,25 +51,21 @@ function N:CheckNpcIsSet()
   end
   return false
 end
-
 function N:OnMouseEnter(MyGeometry, MouseEvent)
   if not self.Content.IsSelected then
     self:PlayAnimation(self.Hover)
     self.IsHoverState = true
   end
 end
-
 function N:OnMouseLeave(MyGeometry, MouseEvent)
   if not self.Content.IsSelected then
     self:RecoverUnhovered()
   end
 end
-
 function N:RecoverUnhovered()
   self:PlayAnimationReverse(self.Hover)
   self.IsHoverState = false
 end
-
 function N:SetPanelBg(Index)
   self.Panel_Bg:SetActiveWidgetIndex(Index)
   if 1 == Index then
@@ -84,7 +76,6 @@ function N:SetPanelBg(Index)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function N:SetImgAvatar()
   local ShowNpc = DataMgr.Npc[self.Content.UnitId]
   local Icon = DataMgr.Char[ShowNpc.CharId].Icon
@@ -95,5 +86,4 @@ function N:SetImgAvatar()
   local RarityIcon = LoadObject("/Game/UI/UI_PNG/Common/Deco/Deco_Quality_" .. UIConst.RarityColorName[Rarity] .. ".Deco_Quality_" .. UIConst.RarityColorName[Rarity])
   self.Img_Line:SetBrushResourceObject(RarityIcon)
 end
-
 return N

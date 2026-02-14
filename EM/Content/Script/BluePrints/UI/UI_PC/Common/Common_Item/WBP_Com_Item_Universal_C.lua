@@ -2,11 +2,13 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Item.WBP_Com_Item_Base_C"
 })
-
+M._components = {
+  "BluePrints.UI.UI_PC.Common.Common_Item.Comp.WBP_Com_Item_TimeTag_Comp",
+  "BluePrints.UI.UI_PC.Common.Common_Item.Comp.WBP_Com_Item_CustomTag_Comp"
+}
 function M:InitData(Content)
   self.Super.InitData(self, Content)
 end
-
 function M:InitCommonView()
   if self.bDontRemoveSubWidget then
     for _, Widget in pairs(self.Node_Widget:GetAllChildren()) do
@@ -18,7 +20,6 @@ function M:InitCommonView()
   end
   self.Super.InitCommonView(self)
 end
-
 function M:InitCompView()
   self.Super.InitCompView(self)
   self:SetCount(self.Count, self.NeedCount, self.MaxCount, self.NotCountFormat, self.bShowNotHaveStyle)
@@ -37,7 +38,9 @@ function M:InitCompView()
   self:SetIsGot(self.bHasGot)
   self:SetRareTag(self.bRare)
   self:SetTimeLimitData(self.TimeLimitData)
+  self:SetTimeTag(self.Content.TimeTagList)
+  self:SetCustomTag(self.Content.bAllowCustom)
   self:SetRedDot(self.RedDotType)
 end
-
+AssembleComponents(M)
 return M

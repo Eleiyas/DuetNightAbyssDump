@@ -1,6 +1,5 @@
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local M = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function M:Init()
   self.ResourceType = "Resource"
   self.ResourceId = -1
@@ -14,7 +13,6 @@ function M:Init()
   self.Timer = nil
   self.TimerInterval = 0.5
 end
-
 function M:Execute(Callback)
   self:SetGuideVisibility(true)
   self.InitResourceCount = self:CalcInitResourceCount()
@@ -24,13 +22,11 @@ function M:Execute(Callback)
     end
   end, true)
 end
-
 function M:Clear()
   self:SetGuideVisibility(false)
   GWorld.GameInstance:RemoveTimer(self.Timer)
   TaskUtils:ClearQuestExtraInfo(self.Context.QuestChainId, self.QuestId, self.Key)
 end
-
 function M:SetGuideVisibility(bVisibility)
   if not self.bGuideUIEnable then
     return
@@ -41,7 +37,6 @@ function M:SetGuideVisibility(bVisibility)
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
   end
 end
-
 function M:CalcInitResourceCount()
   if self.bUseBagCount then
     return 0
@@ -49,7 +44,6 @@ function M:CalcInitResourceCount()
     return self:CalcResourceCount()
   end
 end
-
 function M:CalcResourceCount()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -69,7 +63,6 @@ function M:CalcResourceCount()
   end
   return Count
 end
-
 function M:CheckCollectCompleted()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -85,10 +78,8 @@ function M:CheckCollectCompleted()
   })
   return CollectedCount >= self.NeedCount
 end
-
 function M:OnCancelTrack()
 end
-
 function M:OnChooseTrack()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -103,5 +94,4 @@ function M:OnChooseTrack()
     self
   })
 end
-
 return M

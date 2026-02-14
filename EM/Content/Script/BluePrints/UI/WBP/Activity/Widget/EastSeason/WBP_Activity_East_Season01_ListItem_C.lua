@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Goto.Button_Area.OnClicked:Add(self, self.OnBtnGotoClicked)
   self.Btn_Reward.Button_Area.OnClicked:Add(self, self.OnBtnRewardClicked)
@@ -12,17 +11,36 @@ function M:Construct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:OnListItemObjectSet(Content)
+  if Content.IsEmpty then
+    self.WS_Type:SetActiveWidgetIndex(1)
+  else
+    self.WS_Type:SetActiveWidgetIndex(0)
+  end
   self.Content = Content
   self.Content.Widget = self
   self:InitUI()
   self:SetGamepadIconVisibility(false)
 end
-
 function M:InitUI()
+  if self.Content.IsEmpty then
+    return
+  end
   self.Text_Desc:SetText(GText(self.Content.StarterQuestDes))
   self:UpdateListItemState()
+  self:RefreshRewardItem()
+  if self.Key_Reward then
+    self.Key_Reward:CreateCommonKey({
+      KeyInfoList = {
+        {Type = "Img", ImgShortPath = "LS"}
+      }
+    })
+  end
+  self.Btn_Goto.Text_Button:SetText(GText("UI_GameEvent_Goto"))
+  self.Btn_Reward:SetText(GText("UI_GameEvent_ClaimReward"))
+  self.Text_Progressing:SetText(GText("UI_GameEvent_ToBeFinished"))
+end
+function M:RefreshRewardItem()
   self.List_Item:ClearListItems()
   local RewardInfo = DataMgr.Reward[self.Content.QuestReward[1]]
   if RewardInfo then
@@ -49,19 +67,11 @@ function M:InitUI()
       self.List_Item:AddItem(Content)
     end
   end
-  if self.Key_Reward then
-    self.Key_Reward:CreateCommonKey({
-      KeyInfoList = {
-        {Type = "Img", ImgShortPath = "LS"}
-      }
-    })
-  end
-  self.Btn_Goto.Text_Button:SetText(GText("UI_GameEvent_Goto"))
-  self.Btn_Reward:SetText(GText("UI_GameEvent_ClaimReward"))
-  self.Text_Progressing:SetText(GText("UI_GameEvent_ToBeFinished"))
 end
-
 function M:UpdateQuestCompletionState()
+  if self.Content.IsEmpty then
+    return
+  end
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local CommonQuestActivity = Avatar.CommonQuestActivity
@@ -73,10 +83,10 @@ function M:UpdateQuestCompletionState()
     self.Text_Complete:SetText(Progress .. "/" .. Target)
   end
 end
-
 function M:UpdateQuestProgressAndRewardState()
   if self.IsGetReward then
     self.Switch_Btn:SetActiveWidgetIndex(2)
+    self:RefreshRewardItem()
   elseif self.IsCanGetReward then
     self.Switch_Btn:SetActiveWidgetIndex(1)
   else
@@ -88,29 +98,24 @@ function M:UpdateQuestProgressAndRewardState()
     end
   end
 end
-
 function M:OnBtnGotoClicked()
   PageJumpUtils:JumpToTargetPageByJumpId(self.Content.JumpUIId)
 end
-
 function M:OnBtnRewardClicked()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Ret, Rewards)
       if 0 == Ret then
         self.IsGetReward = true
-        
         self:UpdateQuestProgressAndRewardState()
         self.Content.ParentWidget:UpdateGetAllBtn()
         UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
         self.Content.ParentWidget:RefreshTabReddot()
       end
     end
-    
     Avatar:CallServer("CommonQuestActivityGetReward", Callback, self.Content.EventId, self.Content.QuestId)
   end
 end
-
 function M:MenuOpenChangedEvent(IsOpen)
   if IsOpen then
     self.IsOpenMenu = true
@@ -118,21 +123,18 @@ function M:MenuOpenChangedEvent(IsOpen)
     self.IsOpenMenu = false
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.bIsSelected = true
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:OnItemSelectionChanged(true)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.bIsSelected = false
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:OnItemSelectionChanged(false)
   end
 end
-
 function M:OnItemSelectionChanged(IsSelected)
   self.bIsSelected = IsSelected
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -145,7 +147,6 @@ function M:OnItemSelectionChanged(IsSelected)
     end
   end
 end
-
 function M:SetGamepadIconVisibility(bShow)
   if ModController:IsMobile() then
     return
@@ -160,7 +161,6 @@ function M:SetGamepadIconVisibility(bShow)
     self.Btn_Reward:SetGamePadIconVisible(false)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -196,7 +196,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.bIsSelected then
     if CurInputDevice == ECommonInputType.MouseAndKeyboard then
@@ -211,10 +210,8 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:UpdateListItemState()
   self:UpdateQuestCompletionState()
   self:UpdateQuestProgressAndRewardState()
 end
-
 return M

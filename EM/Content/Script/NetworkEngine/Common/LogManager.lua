@@ -1,10 +1,8 @@
 local LogManager = {}
 local bDistribution = UE4.URuntimeCommonFunctionLibrary.IsDistribution()
 local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
-
 local function EmptyFunction()
 end
-
 function LogManager:GenLogger(Id, ModuleName)
   local Logger = {}
   Logger.info = not (not bDistribution or bEnableShippingLog) and EmptyFunction or function(...)
@@ -30,7 +28,6 @@ function LogManager:GenLogger(Id, ModuleName)
   end
   return Logger
 end
-
 function LogManager:GenClientLogger(Id, ModuleName)
   local Logger = {}
   Logger.info = not (not bDistribution or bEnableShippingLog) and EmptyFunction or function(...)
@@ -49,21 +46,25 @@ function LogManager:GenClientLogger(Id, ModuleName)
   end
   Logger.error = not (not bDistribution or bEnableShippingLog) and EmptyFunction or function(...)
     local Function = UE.UFormulaFunctionLibrary.ShowError
+    local str
     if Id and ModuleName then
-      Function(GWorld.GameInstance, "[" .. CommonUtils.ObjId2Str(Id) .. " " .. ModuleName .. "]", ...)
+      str = "[" .. CommonUtils.ObjId2Str(Id) .. " " .. ModuleName .. "]" .. tostring(...)
     else
-      Function(GWorld.GameInstance, ...)
+      str = tostring(...)
     end
+    Function(GWorld.GameInstance, str)
+    Traceback()
   end
   Logger.errorlog = not (not bDistribution or bEnableShippingLog) and EmptyFunction or function(...)
     local Function = UE.UFormulaFunctionLibrary.ShowErrorOnlyLog
+    local str
     if Id and ModuleName then
-      Function("[" .. CommonUtils.ObjId2Str(Id) .. " " .. ModuleName .. "]", ...)
+      str = "[" .. CommonUtils.ObjId2Str(Id) .. " " .. ModuleName .. "]" .. tostring(...)
     else
-      Function(...)
+      str = tostring(...)
     end
+    Function(str)
   end
   return Logger
 end
-
 return LogManager

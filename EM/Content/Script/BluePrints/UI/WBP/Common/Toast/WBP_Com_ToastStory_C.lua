@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   local Content, LastTime = ...
   self:InitToastMainInfo(Content, LastTime)
 end
-
 function M:InitToastMainInfo(Content, LastTime)
   self:RemoveTimer("StoryToastLastTime")
   if LastTime then
@@ -23,18 +21,15 @@ function M:InitToastMainInfo(Content, LastTime)
     end, false, 0, "StoryToastLastTime", true)
   end
 end
-
 function M:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
   self:PlayAnimation(self.Out)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Out then
     self.Super.Close(self)
   end
 end
-
 return M

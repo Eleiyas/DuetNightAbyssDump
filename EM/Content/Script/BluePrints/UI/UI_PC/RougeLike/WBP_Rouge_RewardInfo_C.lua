@@ -4,7 +4,6 @@ local WBP_Rouge_RewardInfo_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Rouge_RewardInfo_C:Construct()
   self.IsHovering = false
   self.IsPressing = false
@@ -22,11 +21,9 @@ function WBP_Rouge_RewardInfo_C:Construct()
   end
   ReddotManager.AddListener("RougeLikeReward", self, self.SetState)
 end
-
 function WBP_Rouge_RewardInfo_C:RefreshInfo()
   self:SetInfo()
 end
-
 function WBP_Rouge_RewardInfo_C:SetInfo()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -43,7 +40,6 @@ function WBP_Rouge_RewardInfo_C:SetInfo()
     end
   end
 end
-
 function WBP_Rouge_RewardInfo_C:SetState()
   local CacheDetail = ReddotManager.GetTreeNode("RougeLikeReward")
   if not CacheDetail then
@@ -58,12 +54,10 @@ function WBP_Rouge_RewardInfo_C:SetState()
     self.Reddot:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Rouge_RewardInfo_C:SetTimer()
   self:Refresh()
   self:AddTimer(1, self.Refresh, true, 0, "RefreshRouge_RewardInfoTimer", true)
 end
-
 function WBP_Rouge_RewardInfo_C:Refresh()
   local refresh_hms = CommonConst.GAME_REFRESH_HMS
   local NextRefreshTime = TimeUtils.NextWeeklyRefreshTime(nil, refresh_hms)
@@ -96,14 +90,12 @@ function WBP_Rouge_RewardInfo_C:Refresh()
   end
   self.Text_RemainTime:SetText(RemainTimeStr)
 end
-
 function WBP_Rouge_RewardInfo_C:OnBtnHovered()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/gift_button_hover", nil, nil)
   self.IsHovering = true
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Rouge_RewardInfo_C:OnBtnUnhovered()
   self.IsHovering = false
   if not self.IsPressing then
@@ -111,13 +103,11 @@ function WBP_Rouge_RewardInfo_C:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Rouge_RewardInfo_C:OnBtnPressed()
   self.IsPressing = true
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Rouge_RewardInfo_C:OnBtnReleased()
   self.IsPressing = false
   if not self.IsHovering then
@@ -125,7 +115,6 @@ function WBP_Rouge_RewardInfo_C:OnBtnReleased()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Rouge_RewardInfo_C:OnBtnClicked()
   if self.Parent and self.Parent.IsClosing then
     return
@@ -137,10 +126,8 @@ function WBP_Rouge_RewardInfo_C:OnBtnClicked()
   local RougeReward = UIManager:LoadUINew("RougeReward")
   RougeReward.RougeRewardInfo = self
 end
-
 function WBP_Rouge_RewardInfo_C:Destruct()
   self:RemoveTimer("RefreshRewardTimer")
   ReddotManager.RemoveListener("RougeLikeReward", self)
 end
-
 return WBP_Rouge_RewardInfo_C

@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
 local TimeUtils = require("Utils.TimeUtils")
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.DispatchList = {}
@@ -15,7 +14,6 @@ function M:Initialize(Initializer)
   self.SortList = {}
   self.RegionId = 1
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.Btn_Close.Btn_Close.AudioEventPath = "event:/ui/common/click_btn_return"
@@ -28,7 +26,6 @@ function M:Construct()
   EventManager:AddEvent(EventID.OnDispatchComplete, self, self.OnDispatchComplete)
   EventManager:AddEvent(EventID.OnDispatchListCoolingComplete, self, self.OnDispatchListCoolingComplete)
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
   self.List_Dispatch.BP_OnItemSelectionChanged:Clear()
@@ -43,7 +40,6 @@ function M:Destruct()
   self.DispatchList = {}
   self:RemoveTimer("CoolingTimeTimer")
 end
-
 function M:InitDispatch(Owner)
   self.Owner = Owner
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -68,7 +64,6 @@ function M:InitDispatch(Owner)
   end)
   self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:InitSortList()
   self.SortList = {}
   table.insert(self.SortList, "UI_Disptach_AllRegion")
@@ -81,7 +76,6 @@ function M:InitSortList()
   self.List_Sort:Init(self.SortList, "LS", self)
   self.List_Sort:BindEventOnSelectionsChanged(self, self.OnSelectionsChanged)
 end
-
 function M:RefreshDispatchList(DispatchList, IsFirst)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -127,7 +121,6 @@ function M:RefreshDispatchList(DispatchList, IsFirst)
     end
   end)
 end
-
 function M:GetAllDispatchData()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -162,7 +155,6 @@ function M:GetAllDispatchData()
     end
   end
 end
-
 function M:OnRewardClick()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -170,11 +162,9 @@ function M:OnRewardClick()
   end
   Avatar:GetAllDispatchReward(self.SuccessDispatchList)
 end
-
 function M:RealClose()
   self:RemoveFromParent()
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "DispatchOpen", {ToEnd = 1})
   self:BindToAnimationFinished(self.Out, function()
@@ -186,7 +176,6 @@ function M:Close()
   end)
   self:PlayAnimation(self.Out)
 end
-
 function M:PlayOut()
   self:BindToAnimationFinished(self.Out, function()
     self:Close()
@@ -197,7 +186,6 @@ function M:PlayOut()
   end)
   self:PlayAnimation(self.Out)
 end
-
 function M:OnSelectionsChanged(Index)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -215,7 +203,6 @@ function M:OnSelectionsChanged(Index)
   end
   self:RefreshDispatchList(DispatchList, true)
 end
-
 function M:FillDispatchList(DispatchList)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -264,22 +251,18 @@ function M:FillDispatchList(DispatchList)
     self:SetCoolingTime(Time)
   end
 end
-
 function M:SetCoolingTime(Time)
   self.CoolingTime = Time
   DebugPrint("lkkCoolingTime" .. self.CoolingTime)
   self.Text_Refresh:SetText(GText("UI_Dispatch_Toast_CountDown_2"))
-  
   local function CoolingTime()
     local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.CoolingTime)
     self.Com_Time:SetTimeText(GText("UI_Dispatch_Toast_CountDown_1"), RemainTimeDict)
     self.Com_Time.Image_ClockIcon:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  
   CoolingTime()
   self:AddTimer(1, CoolingTime, true, 0, "CoolingTimeTimer")
 end
-
 function M:GetNextRefreshTime()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -314,7 +297,6 @@ function M:GetNextRefreshTime()
   end
   return Res
 end
-
 function M:SortDispatchList(DispatchList)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -384,7 +366,6 @@ function M:SortDispatchList(DispatchList)
   end
   return Result
 end
-
 function M:UpdateDispatch(IsFirst)
   self:RemoveTimer("CoolingTimeTimer")
   self:GetAllDispatchData()
@@ -402,15 +383,12 @@ function M:UpdateDispatch(IsFirst)
   end
   self:RefreshDispatchList(DispatchList, IsFirst)
 end
-
 function M:GetAllDispatchReward(TotalReward)
   local function Callback()
     self:UpdateDispatch(true)
   end
-  
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, TotalReward, false, Callback, self, false)
 end
-
 function M:ChangeDispatchItem(Id)
   for _, Content in pairs(self.List_Dispatch:GetListItems()) do
     if Content.DispatchId == Id then
@@ -423,7 +401,6 @@ function M:ChangeDispatchItem(Id)
     end
   end
 end
-
 function M:OnDispatchExistingComplete(Id)
   if self.Owner.DispatchAgentList then
     return
@@ -445,7 +422,6 @@ function M:OnDispatchExistingComplete(Id)
     end
   end
 end
-
 function M:CheckListEmpty()
   local IsEmpty = true
   for _, Content in pairs(self.List_Dispatch:GetListItems()) do
@@ -455,7 +431,6 @@ function M:CheckListEmpty()
   end
   return IsEmpty
 end
-
 function M:OnDispatchComplete(Id)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -474,7 +449,6 @@ function M:OnDispatchComplete(Id)
     end
   end
 end
-
 function M:OnDispatchListCoolingComplete(Id)
   if 0 == self.WS_Type:GetActiveWidgetIndex() then
     return
@@ -483,7 +457,6 @@ function M:OnDispatchListCoolingComplete(Id)
     self:UpdateDispatch(true)
   end)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Touch then
     return
@@ -500,7 +473,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     end
   end
 end
-
 function M:InitPCKeyInfo()
   if self.Owner.Key_Tip == nil then
     return
@@ -525,7 +497,6 @@ function M:InitPCKeyInfo()
     Desc = GText("Impression_UI_Back")
   })
 end
-
 function M:InitPadKeyInfo()
   if self.Owner.Key_Tip == nil then
     return
@@ -552,7 +523,6 @@ function M:InitPadKeyInfo()
   self.Btn_Reward:SetDefaultGamePadImg("Y")
   self.Btn_Reward:SetGamePadIconVisible(true)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -605,13 +575,11 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnClickSpace()
   if #self.SuccessDispatchList > 0 then
     self:OnRewardClick()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -646,7 +614,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:NavigateToItem()
   if self.UsingGamepad then
     local Flag = false
@@ -669,7 +636,6 @@ function M:NavigateToItem()
     end
   end
 end
-
 function M:OnListItemSelectionChanged(Content, IsSelected)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -686,21 +652,15 @@ function M:OnListItemSelectionChanged(Content, IsSelected)
     end
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.List_Dispatch
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.UsingGamepad then
     self:InitPadKeyInfo()
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
-  DebugPrint("levelmap==============================================")
-  Traceback()
   return UWidgetBlueprintLibrary.Unhandle
 end
-
 return M

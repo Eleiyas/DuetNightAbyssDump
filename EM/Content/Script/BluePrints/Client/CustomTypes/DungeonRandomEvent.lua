@@ -7,11 +7,9 @@ local DungeonEventPet = Class("DungeonEventPet", CustomTypes.CustomAttr)
 DungeonEventPet.__Props__ = {
   PetId = prop.prop("Int", "client save", 0)
 }
-
 function DungeonEventPet:Init(PetId)
   self.PetId = PetId
 end
-
 FormatProperties(DungeonEventPet)
 local DungeonEventTreasure = Class("DungeonEventTreasure", CustomTypes.CustomAttr)
 DungeonEventTreasure.__Props__ = {}
@@ -30,12 +28,10 @@ DungeonRandomEvent.__Props__ = {
   Butcher = prop.prop("DungeonEventButcher", "client save"),
   WeeklyHappenCount = prop.prop("Int2IntDict", "save", {})
 }
-
 function DungeonRandomEvent:NewPetEvent(PetId)
   self.Pet = DungeonEventPet(PetId)
   return
 end
-
 FormatProperties(DungeonRandomEvent)
 return {
   DungeonEventTreasure = DungeonEventTreasure,

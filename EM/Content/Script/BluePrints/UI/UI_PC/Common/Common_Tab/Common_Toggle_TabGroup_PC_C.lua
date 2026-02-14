@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(ConfigData)
   self.CurrentTab = nil
   self.ConfigData = ConfigData
@@ -38,7 +37,6 @@ function M:Init(ConfigData)
   end
   self:UpdateTabs(self.ConfigData.Tabs or {})
 end
-
 function M:UpdateTabs(Tabs)
   self.Tabs = Tabs
   self.List_Tab:ClearChildren()
@@ -53,7 +51,6 @@ function M:UpdateTabs(Tabs)
     self.Btn_Text_PC_Right:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnTabSwitchOn(TabWidget)
   if TabWidget and self.Tabs[TabWidget.Idx] then
     if self.CurrentTab and TabWidget.Idx ~= self.CurrentTab then
@@ -65,32 +62,27 @@ function M:OnTabSwitchOn(TabWidget)
     self.EventTabSelected(self.ObjTabSelected, TabWidget)
   end
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     self.List_Tab:GetChildAt(math.max(Idx - 1, 0)):SetSwitchOn(true)
   end
 end
-
 function M:TabToLeft()
   if self.CurrentTab and self.CurrentTab - 1 >= 1 then
     UIUtils.PlayCommonBtnSe(self)
     self.List_Tab:GetChildAt(self.CurrentTab - 2):SetSwitchOn(true, true)
   end
 end
-
 function M:TabToRight()
   if self.CurrentTab and self.CurrentTab + 1 <= #self.Tabs then
     UIUtils.PlayCommonBtnSe(self)
     self.List_Tab:GetChildAt(self.CurrentTab):SetSwitchOn(true, true)
   end
 end
-
 function M:UpdateReddots()
   for _, Tab in pairs(self.Tabs) do
     if IsValid(Tab.UI) and Tab.UI.SetReddot then
@@ -98,5 +90,4 @@ function M:UpdateReddots()
     end
   end
 end
-
 return M

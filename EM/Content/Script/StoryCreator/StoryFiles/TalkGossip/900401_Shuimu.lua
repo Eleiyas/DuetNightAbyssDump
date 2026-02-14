@@ -1,5 +1,5 @@
 return {
-  storyName = "\230\176\180\230\175\141\231\156\139\230\157\191\229\168\152\229\175\185\232\175\157",
+  storyName = "水母看板娘对话",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "story_16891288629734",
       type = "StoryNode",
-      name = "\230\176\180\230\175\141\231\156\139\230\157\191\229\168\152\229\175\185\232\175\157",
+      name = "水母看板娘对话",
       pos = {x = 377, y = 139},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -144,6 +146,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = false,
               ShowAutoPlayButton = false,
               ShowReviewButton = true,
@@ -151,6 +154,7 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
@@ -168,10 +172,6 @@ return {
                   TalkActorVisible = true
                 }
               },
-              RemoveTalkActors = {
-                {TalkActorType = "Player", TalkActorId = 0},
-                {TalkActorType = "Npc", TalkActorId = 82101}
-              },
               OptionType = "random",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -185,7 +185,7 @@ return {
           quest_16917508755141031 = {
             key = "quest_16917508755141031",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 228.84540401981587, y = 126.77854238624997},
             propsData = {
               NpcInfos = {
@@ -196,7 +196,7 @@ return {
           quest_16917531790561744 = {
             key = "quest_16917531790561744",
             type = "SetNpcPoseNode",
-            name = "\232\174\190\231\189\174Npc\229\167\191\230\128\129",
+            name = "设置Npc姿态",
             pos = {x = 800.1376152959313, y = 139.10270923725113},
             propsData = {
               NpcInfos = {

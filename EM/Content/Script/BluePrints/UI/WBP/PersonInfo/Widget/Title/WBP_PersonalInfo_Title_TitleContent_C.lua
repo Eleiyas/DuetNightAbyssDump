@@ -7,7 +7,6 @@ local Unhandled = UE4.UWidgetBlueprintLibrary.Unhandled()
 local Handled = UE4.UWidgetBlueprintLibrary.Handled()
 local EnableLog = false
 local ScreenPrint = DebugPrint
-
 function M:Initialize()
   self.OriginalPreItemCount = 0
   self.OriginalSuffixItemCount = 0
@@ -25,7 +24,6 @@ function M:Initialize()
   self.AnalogControlSpeed = self.AnalogControlSpeed or 10
   self.AnalogControlProgress = 0
 end
-
 function M:Construct()
   self:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
@@ -34,7 +32,6 @@ function M:Construct()
   self.AnalogControlCd = 0.2
   self:SetFocus()
 end
-
 function M:InitBaseView()
   local Avatar = GWorld:GetAvatar()
   local PrefixTitles = {}
@@ -142,21 +139,19 @@ function M:InitBaseView()
   if EnableLog then
     self:AddTimer(1, function()
       local currentOffset = self.List_Title01:GetScrollOffset()
-      ScreenPrint("\228\189\141\231\189\174\230\138\165\230\151\182:currentOffset:" .. currentOffset .. "\229\144\142\230\156\128  " .. self.List_Title02:GetScrollOffset())
+      ScreenPrint("位置报时:currentOffset:" .. currentOffset .. "后最  " .. self.List_Title02:GetScrollOffset())
     end, true, nil, nil, true)
   end
 end
-
-function M:InitSelect()
+function M:InitSelect(bSmoothScroll)
   local Item = self:GetAutoSelectTitle(true)
-  self:ScrollToItem(Item, true)
+  self:ScrollToItem(Item, true, bSmoothScroll)
   self:SelectTitle(Item, true)
   local Item2 = self:GetAutoSelectTitle(false)
-  self:ScrollToItem(Item2, false)
+  self:ScrollToItem(Item2, false, bSmoothScroll)
   self:SelectTitle(Item2, false)
   self.bHaveInit = true
 end
-
 function M:GetAutoSelectTitle(bIsPrefix)
   if bIsPrefix then
     if self.UsedPrefixTitleID and self.UsedPrefixTitle then
@@ -174,45 +169,51 @@ function M:GetAutoSelectTitle(bIsPrefix)
     return NewItem
   end
 end
-
 function M:BindListViewEvents()
   self.List_Title01.OnListViewScrolled:Add(self, self.OnPrefixTitleScrolled)
   self.List_Title01.OnMouseButtonUp:Add(self, self.OnPrefixTitleMouseUp)
+  self.List_Title01.OnMouseButtonDown:Add(self, self.OnPrefixTitleMouseDown)
   self.List_Title02.OnListViewScrolled:Add(self, self.OnSuffixTitleScrolled)
   self.List_Title02.OnMouseButtonUp:Add(self, self.OnSuffixTitleMouseUp)
+  self.List_Title02.OnMouseButtonDown:Add(self, self.OnSuffixTitleMouseDown)
 end
-
+function M:OnPrefixTitleMouseDown()
+  ScreenPrint("------------前缀标题鼠标按下")
+  self.bIsPrefixTitleDown = true
+end
+function M:OnSuffixTitleMouseDown()
+  ScreenPrint("------------后缀标题鼠标按下")
+  self.bIsSuffixTitleDown = true
+end
 function M:CalculateLayoutParams()
   self.FullFillCount = self.List_Title01:GetFullFillItemCount()
-  DebugPrint("\231\167\176\229\143\183\231\179\187\231\187\159\239\188\154FullFillCount:" .. self.FullFillCount)
+  DebugPrint("称号系统：FullFillCount:" .. self.FullFillCount)
   self.CenterOffset = (self.FullFillCount - 1) / 2
-  DebugPrint("\231\167\176\229\143\183\231\179\187\231\187\159\239\188\154CenterOffset:" .. self.CenterOffset)
+  DebugPrint("称号系统：CenterOffset:" .. self.CenterOffset)
   self.LoopStartIdx = self.FullFillCount
   self.LoopEndIdx = self.FullFillCount + self.OriginalPreItemCount
-  DebugPrint("\231\167\176\229\143\183\231\179\187\231\187\159\239\188\154LoopStartIdx:" .. self.LoopStartIdx .. " LoopEndIdx:" .. self.LoopEndIdx)
-  DebugPrint("   \231\167\176\229\143\183\231\179\187\231\187\159OriginalPreItemCount:" .. self.OriginalPreItemCount .. " OriginalSuffixItemCount:" .. self.OriginalSuffixItemCount)
+  DebugPrint("称号系统：LoopStartIdx:" .. self.LoopStartIdx .. " LoopEndIdx:" .. self.LoopEndIdx)
+  DebugPrint("   称号系统OriginalPreItemCount:" .. self.OriginalPreItemCount .. " OriginalSuffixItemCount:" .. self.OriginalSuffixItemCount)
 end
-
 function M:OnPrefixTitleScrolled(ItemOffset, DistanceRemaining)
   if not self.bHaveInit then
     return
   end
-  if self.LastPreListOffSet and math.abs(ItemOffset - self.LastPreListOffSet) < 0.01 then
+  if self.LastPreListOffSet and math.abs(ItemOffset - self.LastPreListOffSet) < 0.001 and not self.bIsPrefixTitleDown then
     self:EndScroll(true, function()
       self:SetToClosestItem(true)
     end)
   end
   self.LastPreListOffSet = ItemOffset
-  ScreenPrint("-------------\230\187\154\229\138\168\228\184\173:ItemOffset:" .. ItemOffset .. " DistanceRemaining:" .. DistanceRemaining)
+  ScreenPrint("-------------滚动中:ItemOffset:" .. ItemOffset .. " DistanceRemaining:" .. DistanceRemaining)
   self:ChangeSelectPrefixTitle()
 end
-
 function M:OnSuffixTitleScrolled(ItemOffset, DistanceRemaining)
-  ScreenPrint("-------------\230\187\154\229\138\168\228\184\173:ItemOffset:" .. ItemOffset .. " DistanceRemaining:" .. DistanceRemaining)
+  ScreenPrint("-------------滚动中:ItemOffset:" .. ItemOffset .. " DistanceRemaining:" .. DistanceRemaining)
   if not self.bHaveInit then
     return
   end
-  if self.LastSufListOffSet and math.abs(ItemOffset - self.LastSufListOffSet) < 0.01 then
+  if self.LastSufListOffSet and math.abs(ItemOffset - self.LastSufListOffSet) < 0.001 and not self.bIsSuffixTitleDown then
     self:EndScroll(false, function()
       self:SetToClosestItem(false)
     end)
@@ -220,16 +221,15 @@ function M:OnSuffixTitleScrolled(ItemOffset, DistanceRemaining)
   self.LastSufListOffSet = ItemOffset
   self:ChangeSelectSuffixTitle()
 end
-
 function M:ChangeSelectPrefixTitle(Aim)
   local currentOffset = Aim or self.List_Title01:GetScrollOffset()
   local NewItem = self:ItemOffset2SelectContent(currentOffset, true)
   if NewItem == self.SelectPrefixTitleItem then
     return
   end
+  ScreenPrint("------------切换了:ItemOffset:" .. currentOffset .. "旧的Item " .. (self.SelectPrefixTitleItem and self.SelectPrefixTitleItem.Name or " 空 ") .. " 新的Item" .. NewItem.Name)
   self:SelectTitle(NewItem, true)
 end
-
 function M:ChangeSelectSuffixTitle()
   local currentOffset = self.List_Title02:GetScrollOffset()
   local NewItem = self:ItemOffset2SelectContent(currentOffset, false)
@@ -239,19 +239,18 @@ function M:ChangeSelectSuffixTitle()
   if nil == NewItem then
     return
   end
+  ScreenPrint("------------切换了:ItemOffset:" .. currentOffset .. "旧的Item " .. (self.SelectSuffixTitleItem and self.SelectSuffixTitleItem.Name or " 空 ") .. " 新的Item" .. NewItem.Name)
   self:SelectTitle(NewItem, false)
 end
-
 function M:CancelSelectTitle(Item)
   if Item then
     Item.IsSelected = false
   end
   if Item and Item.UI then
-    ScreenPrint("------------\229\143\150\230\182\136\233\128\137\228\184\173\228\186\134 " .. (Item and Item.Name) .. Item.UI.Text_Title:GetText() or " \231\169\186 " .. (Item and Item.ReallyIdx) or " \231\169\186id ")
+    ScreenPrint("------------取消选中了 " .. (Item and Item.Name) .. Item.UI.Text_Title:GetText() or " 空 " .. (Item and Item.ReallyIdx) or " 空id ")
     Item.UI.Text_Title:SetRenderOpacity(0.4)
   end
 end
-
 function M:ScrollandSelectTitle(Item, bIsPrefix)
   local RealIdx = Item.RealIndex
   local list
@@ -265,13 +264,13 @@ function M:ScrollandSelectTitle(Item, bIsPrefix)
     self:SelectTitle(Item, bIsPrefix)
   end, nil, nil, nil, true)
 end
-
 function M:SelectTitle(Item, bIsPrefix)
-  self:AddTimer(0.01, function()
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("Title")
+  UIUtils.TrySubReddotCacheDetailNumber(Item.TitleID, "Title")
+  self:AddTimer(0.05, function()
     self:ReallySelectTitle(Item, bIsPrefix)
-  end, nil, nil, bIsPrefix and "\229\137\141\231\188\128" or "\229\144\142\231\188\128", true)
+  end, nil, nil, bIsPrefix and "前缀" or "后缀", true)
 end
-
 function M:ReallySelectTitle(Item, bIsPrefix)
   if bIsPrefix then
     if Item == self.SelectPrefixTitleItem then
@@ -281,7 +280,8 @@ function M:ReallySelectTitle(Item, bIsPrefix)
     return
   end
   if Item.UI then
-    ScreenPrint("------------\231\156\159\230\173\163\229\136\135\230\141\162\228\186\134 " .. (bIsPrefix and "\229\137\141\231\188\128  " or "\229\144\142\231\188\128  ") .. "\230\151\167\231\154\132Item " .. (self.SelectPrefixTitleItem and self.SelectPrefixTitleItem.Name or " \231\169\186 ") .. (self.SelectPrefixTitleItem and self.SelectPrefixTitleItem.UI and self.SelectPrefixTitleItem.UI.Text_Title:GetText() or " \231\169\186 ") .. " \230\150\176\231\154\132Item" .. Item.Name .. Item.UI.Text_Title:GetText())
+    local oldItem = bIsPrefix and self.SelectPrefixTitleItem or self.SelectSuffixTitleItem
+    ScreenPrint("------------真正切换了 " .. (bIsPrefix and "前缀  " or "后缀  ") .. "旧的Item " .. (oldItem and oldItem.Name or " 空 ") .. (oldItem and oldItem.UI and oldItem.UI.Text_Title:GetText() or " 空 ") .. " 新的Item" .. Item.Name .. Item.UI.Text_Title:GetText())
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/roll_list_change", nil, nil)
   if bIsPrefix then
@@ -315,39 +315,35 @@ function M:ReallySelectTitle(Item, bIsPrefix)
     end
   end
 end
-
 function M:OnSelectTitleChange()
   self.SelectSuffixID = self.SelectSuffixTitleItem.TitleID
   self.SelectPrefixID = self.SelectPrefixTitleItem.TitleID
 end
-
 function M:GetCurrentSelectTitle()
   self.UsedPrefixTitle = self.SelectPrefixTitleItem
   self.UsedSuffixTitle = self.SelectSuffixTitleItem
   return self.SelectPrefixID, self.SelectSuffixID
 end
-
 function M:ItemOffset2SelectContent(currentOffset, IsPrefix)
-  local SelectIdx = currentOffset + self.CenterOffset
-  SelectIdx = math.floor(SelectIdx + 0.5)
-  if IsPrefix then
-    SelectIdx = SelectIdx % self.OriginalPreItemCount
-    return self.List_Title01:GetItemAt(SelectIdx)
-  else
-    SelectIdx = SelectIdx % self.OriginalSuffixItemCount
-    return self.List_Title02:GetItemAt(SelectIdx)
-  end
+  local list = IsPrefix and self.List_Title01 or self.List_Title02
+  local originalCount = IsPrefix and self.OriginalPreItemCount or self.OriginalSuffixItemCount
+  local aimOffset = math.floor(currentOffset + 0.5)
+  local centerListIdx = math.floor(aimOffset + self.CenterOffset + 0.5)
+  local realIdx = centerListIdx - self.FullFillCount
+  realIdx = (realIdx - 1) % originalCount + 1
+  local listIdx = realIdx + self.FullFillCount
+  return list:GetItemAt(listIdx)
 end
-
 function M:OnPrefixTitleMouseUp()
+  self.bIsPrefixTitleDown = false
   self:SetToClosestItem(true)
 end
-
 function M:OnSuffixTitleMouseUp()
+  self.bIsSuffixTitleDown = false
   self:SetToClosestItem(false)
 end
-
-function M:ScrollToItem(Item, IsPrefix)
+function M:ScrollToItem(Item, IsPrefix, bSmoothScroll)
+  bSmoothScroll = nil == bSmoothScroll and true
   local List, OriginalItemCount
   if IsPrefix then
     List = self.List_Title01
@@ -358,11 +354,9 @@ function M:ScrollToItem(Item, IsPrefix)
   end
   local currentOffset = List:GetScrollOffset()
   if currentOffset < self.LoopStartIdx then
-    if IsPrefix then
-      currentOffset = self.OriginalPreItemCount + currentOffset
-    else
-      currentOffset = self.OriginalSuffixItemCount + currentOffset
-    end
+    currentOffset = currentOffset + OriginalItemCount
+  elseif currentOffset > self.LoopEndIdx then
+    currentOffset = currentOffset - OriginalItemCount
   end
   local CurrentIten
   if IsPrefix then
@@ -370,13 +364,47 @@ function M:ScrollToItem(Item, IsPrefix)
   else
     CurrentIten = self.SelectSuffixTitleItem
   end
-  local ScroolIndex
   ScreenPrint(CurrentIten and CurrentIten.RealIndex or self.LoopStartIdx .. "ssss" .. Item.RealIndex)
-  ScroolIndex = math.floor(Item.RealIndex + self.CenterOffset)
-  List:SetScrollOffset(ScroolIndex)
-  DebugPrint("ScrollToItem" .. ScroolIndex .. "\231\155\174\229\137\141\229\129\143\231\167\187" .. List:GetScrollOffset() .. "\233\128\137\228\184\173item\231\154\132realidx")
+  local function NormalizeOffset(offset)
+    if offset < self.LoopStartIdx then
+      offset = offset + OriginalItemCount
+    end
+    if offset > self.LoopEndIdx then
+      offset = offset - OriginalItemCount
+    end
+    return offset
+  end
+  local targetOffset = math.floor(Item.RealIndex + self.CenterOffset)
+  targetOffset = NormalizeOffset(targetOffset)
+  currentOffset = NormalizeOffset(currentOffset)
+  local delta = targetOffset - currentOffset
+  local threshold = self.FullFillCount * 2
+  if threshold < math.abs(delta) then
+    local safeMin, safeMax = self.LoopStartIdx + 1, self.LoopEndIdx - 1
+    local downCutRaw = targetOffset - self.FullFillCount
+    local upCutRaw = targetOffset + self.FullFillCount
+    local useUp = safeMin > downCutRaw or safeMax < downCutRaw
+    local cutOffset = NormalizeOffset(useUp and upCutRaw or downCutRaw)
+    if cutOffset <= self.LoopStartIdx then
+      cutOffset = self.LoopStartIdx + 1
+    elseif cutOffset >= self.LoopEndIdx then
+      cutOffset = self.LoopEndIdx - 1
+    end
+    if not bSmoothScroll then
+      List:SetCurrentScrollOffset(cutOffset - 0.01)
+    else
+      List:SetCurrentScrollOffset(cutOffset)
+    end
+    List:SetScrollOffset(targetOffset)
+  else
+    if not bSmoothScroll then
+      List:SetCurrentScrollOffset(targetOffset - 0.01)
+    end
+    List:SetScrollOffset(targetOffset)
+  end
+  self:SelectTitle(Item, IsPrefix)
+  DebugPrint("ScrollToItem" .. targetOffset .. "目前偏移" .. List:GetScrollOffset() .. "选中item的realidx" .. (CurrentIten and CurrentIten.RealIndex or self.LoopStartIdx))
 end
-
 function M:GetScrollIndexbyRealIdx(RealIdx, IsUp)
   if IsUp then
     return RealIdx - 3 + self.FullFillCount
@@ -384,7 +412,6 @@ function M:GetScrollIndexbyRealIdx(RealIdx, IsUp)
     return RealIdx + 3 + self.FullFillCount
   end
 end
-
 function M:SetToClosestItem(IsPrefix)
   local List, OriginalItemCount
   if IsPrefix then
@@ -398,13 +425,12 @@ function M:SetToClosestItem(IsPrefix)
   if OriginalItemCount < currentOffset then
     currentOffset = currentOffset - OriginalItemCount
   end
-  ScreenPrint("-------------\229\174\154\228\189\141\229\136\176\230\156\128\232\191\145\233\161\185:currentOffset:" .. currentOffset)
+  ScreenPrint("-------------定位到最近项:currentOffset:" .. currentOffset)
   List:SetCurrentScrollOffset(currentOffset)
   local aim = math.floor(currentOffset + 0.5)
   aim = math.floor(aim + 0.5)
   List:SetScrollOffset(aim)
 end
-
 function M:EndScroll(bIsPrefix, EndCallBack)
   local List
   if bIsPrefix then
@@ -418,11 +444,11 @@ function M:EndScroll(bIsPrefix, EndCallBack)
     List:BP_CancelScrollIntoView()
     List:SetScrollOffset(aim)
   end)
+  ScreenPrint("EndScroll:aim:" .. aim)
   if EndCallBack then
     EndCallBack(self)
   end
 end
-
 function M:SetItemToMiddle(item, bIsPrefix)
   local CurrentItem
   if bIsPrefix then
@@ -436,7 +462,6 @@ function M:SetItemToMiddle(item, bIsPrefix)
     self:ScrollUpToItem(CurrentItem, bIsPrefix)
   end
 end
-
 function M:RandomSelectTitle()
   local now = os.clock()
   local seed = os.time() * 1000 + math.floor(now * 1000)
@@ -446,10 +471,10 @@ function M:RandomSelectTitle()
   local randomItem1 = self.List_Title01:GetItemAt(randomIdx1 + self.FullFillCount)
   local randomIdx2 = math.random(1, #self.SuffixTitles)
   local randomItem2 = self.List_Title02:GetItemAt(randomIdx2 + self.FullFillCount)
+  ScreenPrint("随机选中了 " .. GText(randomItem1.Name) .. " " .. GText(randomItem2.Name) .. " time " .. os.time())
   self:ScrollToItem(randomItem1, true)
   self:ScrollToItem(randomItem2, false)
 end
-
 function M:ScrollUp(IsPrefix)
   local List, OriginalItemCount
   if IsPrefix then
@@ -470,7 +495,6 @@ function M:ScrollUp(IsPrefix)
   AimOffset = math.floor(AimOffset + 0.5)
   List:SetScrollOffset(AimOffset)
 end
-
 function M:ScrollDown(IsPrefix)
   local List, originalItemCount
   if IsPrefix then
@@ -489,10 +513,8 @@ function M:ScrollDown(IsPrefix)
   AimOffset = math.floor(AimOffset + 0.5)
   List:SetScrollOffset(AimOffset)
 end
-
 function M:OnGamePadUp()
 end
-
 function M:GamepadFocusLeft()
   if self.IsFocusPrefix == true then
     return
@@ -500,7 +522,6 @@ function M:GamepadFocusLeft()
   self.IsFocusPrefix = true
   self:PlayAnimation(self.GamePad_SelectL)
 end
-
 function M:GamepadFocusRight()
   if self.IsFocusPrefix == false then
     return
@@ -508,11 +529,9 @@ function M:GamepadFocusRight()
   self.IsFocusPrefix = false
   self:PlayAnimation(self.GamePad_SelectR)
 end
-
 function M:IsFocusBeforeTitle()
   return self.IsFocusPrefix
 end
-
 function M:OnPreViewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -523,7 +542,6 @@ function M:OnPreViewKeyDown(MyGeometry, InKeyEvent)
   end
   return Unhandled
 end
-
 function M:OnPreviewGamePadDown(InKeyName)
   if InKeyName == Const.GamepadDPadLeft or InKeyName == Const.LeftStickLeft then
     self:GamepadFocusLeft()
@@ -540,7 +558,6 @@ function M:OnPreviewGamePadDown(InKeyName)
   end
   return Handled
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -558,7 +575,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_DPad_Up" == InKeyName then
@@ -571,7 +587,6 @@ function M:OnGamePadDown(InKeyName)
     self.FatherPage:OnRandomBtnClick()
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -590,7 +605,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return Unhandled
 end
-
 function M:OnAnalogSensitiveChange(Delta)
   if not self.IsInCD then
     if Delta > 0.7 then
@@ -606,7 +620,6 @@ function M:OnAnalogSensitiveChange(Delta)
     self:OnAnalogAccumulate(Delta)
   end
 end
-
 function M:OnAnalogAccumulate(Delta)
   self.AnalogControlProgress = self.AnalogControlProgress + Delta
   if self.AnalogControlProgress < -100 then
@@ -617,11 +630,9 @@ function M:OnAnalogAccumulate(Delta)
     self:ScrollDown(self:IsFocusBeforeTitle())
   end
 end
-
 function M:ClearnAnalogAccumulate()
   self.AnalogControlProgress = 0
 end
-
 function M:InitGamepadView()
   if self.IsFocusPrefix then
     self:PlayAnimation(self.GamePad_SelectL)
@@ -630,13 +641,10 @@ function M:InitGamepadView()
   end
   self.Panel_GamepadVX:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
 function M:InitKeyboardView()
   self.Panel_GamepadVX:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Destruct()
   self:CleanTimer()
 end
-
 return M

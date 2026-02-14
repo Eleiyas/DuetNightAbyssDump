@@ -1,6 +1,5 @@
 require("UnLua")
 local UpgradeUtils = {}
-
 function UpgradeUtils.GetMaxLevel(Target, Type)
   if "Char" == Type then
     local EnhanceLevel = Target.EnhanceLevel or 0
@@ -25,7 +24,6 @@ function UpgradeUtils.GetMaxLevel(Target, Type)
     return BreakLevelInfo and BreakLevelInfo.PetBreakLevel, MaxLevel
   end
 end
-
 function UpgradeUtils.CalcCharOrWeaponLevelUp(Target, Type, Level, ComparedLevel)
   local Res = {
     CanUpgrade = false,
@@ -37,6 +35,10 @@ function UpgradeUtils.CalcCharOrWeaponLevelUp(Target, Type, Level, ComparedLevel
   }
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar or ComparedLevel - Level <= 0 then
+    return Res
+  end
+  local AllTargets = Avatar[(Type or "") .. "s"]
+  if nil == AllTargets or nil == AllTargets[Target.Uuid] then
     return Res
   end
   if ComparedLevel > UpgradeUtils.GetMaxLevel(Target, Type) then
@@ -94,7 +96,6 @@ function UpgradeUtils.CalcCharOrWeaponLevelUp(Target, Type, Level, ComparedLevel
   Res.CanUpgrade = true
   return Res
 end
-
 function UpgradeUtils.CalcCashConsume(Target, Type, ExpConsume, ExpNeed, Level, ComparedLevel)
   local CashConsume = -1
   if ComparedLevel <= Level or Target.Level ~= Level then
@@ -121,7 +122,6 @@ function UpgradeUtils.CalcCashConsume(Target, Type, ExpConsume, ExpNeed, Level, 
   end
   return CashConsume
 end
-
 function UpgradeUtils.CalcExpNeed(Target, Type, Level)
   local LevelUpData
   if "Char" == Type then
@@ -139,7 +139,6 @@ function UpgradeUtils.CalcExpNeed(Target, Type, Level)
   ExpNeed = ExpNeed - Target.Exp
   return ExpNeed
 end
-
 function UpgradeUtils.CalcBreakLevelUp(Target, Type, BreakLevel)
   local TargetId
   if "Char" == Type then
@@ -205,7 +204,6 @@ function UpgradeUtils.CalcBreakLevelUp(Target, Type, BreakLevel)
   end
   return Res
 end
-
 function UpgradeUtils.CheckCharCanUpgradeCardLevel(Char)
   local MaxGradeLevel = tonumber(DataMgr.GlobalConstant.CharCardLevelMax.ConstantValue)
   local Avatar = GWorld:GetAvatar()
@@ -228,5 +226,46 @@ function UpgradeUtils.CheckCharCanUpgradeCardLevel(Char)
   end
   return true
 end
-
+local ResourcesForUpgrade
+function UpgradeUtils.IsResourceForUpgrade(ResourceId)
+  if not ResourcesForUpgrade then
+    ResourcesForUpgrade = {}
+    for key, value in pairs(DataMgr.WeaponBreak) do
+      for k, v in pairs(value) do
+        for key, id in pairs(v.ItemId) do
+          ResourcesForUpgrade[id] = true
+        end
+      end
+    end
+    for key, value in pairs(DataMgr.CharBreak) do
+      for k, v in pairs(value) do
+        for key, id in pairs(v.ItemId) do
+          ResourcesForUpgrade[id] = true
+        end
+      end
+    end
+  end
+  return ResourcesForUpgrade[ResourceId]
+end
+function UpgradeUtils.CheckPetCanBreakLevelUp(Target)
+  if Target:IsMaxLevelBeforeBreak() and not Target:IsMaxBreak() then
+    local Avatar = GWorld:GetAvatar()
+    local BreakData = DataMgr.PetBreak[Target.PetId][Target.BreakNum]
+    local ConsumeIds = BreakData.ConsumePetId
+    for _, Pet in pairs(Avatar.Pets) do
+      for _, Id in pairs(ConsumeIds) do
+        if Pet.UniqueId ~= Target.UniqueId and Id == Pet.PetId and Avatar.CurrentPet ~= Pet.UniqueId then
+          return true
+        end
+      end
+    end
+    local ConsumeResources = BreakData.ConsumeResource or {}
+    for ResourceId, _ in pairs(ConsumeResources) do
+      local Resource = Avatar.Resources[ResourceId]
+      if Resource and Resource.Count > 0 then
+        return true
+      end
+    end
+  end
+end
 return UpgradeUtils

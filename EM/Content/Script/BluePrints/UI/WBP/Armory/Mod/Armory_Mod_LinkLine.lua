@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(bGolden)
   local VPScale = UWidgetLayoutLibrary.GetViewportScale(self)
   local MainSlot = self.Main.Slot
@@ -11,16 +10,14 @@ function M:Init(bGolden)
   self:SetGolden(bGolden)
   self:SetRenderOpacity(0)
 end
-
 function M:SetPosture(Dist, Angle)
   self:SetRenderTransformAngle(Angle - 3)
-  if Dist <= self.MinDis then
+  if Dist <= self.MinDis and 1 == self.RenderOpacity then
     self:SetRenderOpacity(0)
-  else
+  elseif Dist > self.MinDis and 0 == self.RenderOpacity then
     self:SetRenderOpacity(1)
   end
 end
-
 function M:SetGolden(bGolden)
   if bGolden then
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Golden)
@@ -28,5 +25,4 @@ function M:SetGolden(bGolden)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Gray)
   end
 end
-
 return M

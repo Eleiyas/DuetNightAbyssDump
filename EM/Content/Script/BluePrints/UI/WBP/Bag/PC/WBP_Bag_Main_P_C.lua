@@ -14,7 +14,6 @@ WBP_Bag_Main_P_C._components = {
   "BluePrints.UI.WBP.Bag.Widget.BagMainPageView",
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
 function WBP_Bag_Main_P_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.OwnerPlayer = nil
@@ -36,17 +35,14 @@ function WBP_Bag_Main_P_C:Initialize(Initializer)
   self.CurFocusWidget = nil
   self.IsCanCloseByHotKey = false
 end
-
 function WBP_Bag_Main_P_C:Construct()
   self.Super.Construct(self)
   self:InitMultiSelectWidget()
 end
-
 function WBP_Bag_Main_P_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self:RefreshBottomKeyInfo()
   return WBP_Bag_Main_P_C.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function WBP_Bag_Main_P_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", BagCommon.MainUIName, nil)
@@ -61,14 +57,12 @@ function WBP_Bag_Main_P_C:OnLoaded(...)
   self:SwitchToNpcCamera(true)
   self:PlayInAnim()
 end
-
 function WBP_Bag_Main_P_C:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
   if 1 == StackAction then
     self:UpdatePageInfoFromStackAction()
   end
 end
-
 function WBP_Bag_Main_P_C:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
   if 0 == StackAction then
@@ -78,7 +72,6 @@ function WBP_Bag_Main_P_C:ReceiveExitState(StackAction)
     end
   end
 end
-
 function WBP_Bag_Main_P_C:SwitchToNpcCamera(bNpcCamera)
   if bNpcCamera then
     UIManager(self):SwitchUINpcCamera(bNpcCamera, BagCommon.MainUIName, self.NpcId, {
@@ -91,7 +84,6 @@ function WBP_Bag_Main_P_C:SwitchToNpcCamera(bNpcCamera)
     })
   end
 end
-
 function WBP_Bag_Main_P_C:Close()
   EMCache:Set(BagCommon.BagCacheDataName, self.CurTabId, true)
   local SellPageMainUI = UIManager(self):GetUIObj(BagCommon.BagStuffSelectUIName)
@@ -103,7 +95,6 @@ function WBP_Bag_Main_P_C:Close()
   self:SwitchToNpcCamera()
   self.Super.Close(self)
 end
-
 function WBP_Bag_Main_P_C:Destruct()
   self:HorizontalListViewResize_TearDown()
   self.Super.Destruct(self)
@@ -114,7 +105,6 @@ function WBP_Bag_Main_P_C:Destruct()
     end
   end
 end
-
 function WBP_Bag_Main_P_C:Tick(MyGeometry, InDeltaTime)
   self.Overridden.Tick(self, MyGeometry, InDeltaTime)
   if self.LoadMode ~= "FrameBlocking" or self.IsLoadCompleted == true then
@@ -122,7 +112,6 @@ function WBP_Bag_Main_P_C:Tick(MyGeometry, InDeltaTime)
   end
   self.IsLoadCompleted = self:StartCoroutine()
 end
-
 function WBP_Bag_Main_P_C:GetStuffServerData(StuffUnitId, StuffType, FishInfo)
   local PlayerAvatar = GWorld:GetAvatar()
   local StuffServerData
@@ -145,21 +134,27 @@ function WBP_Bag_Main_P_C:GetStuffServerData(StuffUnitId, StuffType, FishInfo)
       end
     end
     StuffServerData = PlayerAvatar.Resources[StuffUnitId]
-    if FishInfo then
-      local PlayerBagFish = PlayerAvatar.FishSizes[StuffUnitId]
-      if PlayerBagFish and PlayerBagFish.FishSize2Count then
-        local FishCount = PlayerBagFish.FishSize2Count[FishInfo.Size]
-        StuffServerData.Count = FishCount
-        StuffServerData.FishInfo = {
-          Size = FishInfo.Size,
-          Count = FishCount
-        }
+    if StuffServerData and FishInfo then
+      local FishSize2Count = BagCommon:GetFishSize2Count(StuffUnitId)
+      if FishSize2Count and not Utils.IsEmptyTable(FishSize2Count) then
+        local FishCount = FishSize2Count[FishInfo.Size]
+        if FishCount and FishCount > 0 then
+          FishInfo = {
+            Size = FishInfo.Size,
+            Count = FishCount
+          }
+          StuffServerData.FishInfo = FishInfo
+        end
       end
     end
+  elseif StuffType == BagCommon.StuffType.Draft then
+    if type(StuffUnitId) == "string" then
+      StuffUnitId = math.tointeger(StuffUnitId)
+    end
+    StuffServerData = PlayerAvatar.Drafts[StuffUnitId]
   end
   return StuffServerData
 end
-
 function WBP_Bag_Main_P_C:InitTabInfo()
   for key, BagTabData in pairs(DataMgr.BagTab) do
     table.insert(self.AllTabInfo, {
@@ -224,13 +219,11 @@ function WBP_Bag_Main_P_C:InitTabInfo()
     end
   end, 2, "BagInitTabInfo")
 end
-
 function WBP_Bag_Main_P_C:OnSiftSelectionsChanged(SelectedItems, ItemDatas)
   self.SelectedSiftItems = SelectedItems
   self.SiftItemDatas = ItemDatas
   self:RefreshStuffListItem(true)
 end
-
 function WBP_Bag_Main_P_C:FillPlayerDataByTypeInFrame(TabId, NeedDelayJump)
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -238,11 +231,17 @@ function WBP_Bag_Main_P_C:FillPlayerDataByTypeInFrame(TabId, NeedDelayJump)
     return
   end
   local PlayerStuffs, AllWeaponCount = nil, 0
-  self.NeedSelectGridIndex = -1
+  if self.GameInputModeSubsystem and self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
+    self.NeedSelectGridIndex = 0
+  else
+    self.NeedSelectGridIndex = -1
+  end
   if TabId == BagCommon.ItemTypeToTabId.MeleeWeapon or TabId == BagCommon.ItemTypeToTabId.RangedWeapon then
     PlayerStuffs = Avatar.Weapons
   elseif TabId == BagCommon.ItemTypeToTabId.Mod then
     PlayerStuffs = Avatar.Mods
+  elseif TabId == BagCommon.ItemTypeToTabId.Draft then
+    PlayerStuffs = Avatar.Drafts
   else
     PlayerStuffs = Avatar.Resources
   end
@@ -263,22 +262,24 @@ function WBP_Bag_Main_P_C:FillPlayerDataByTypeInFrame(TabId, NeedDelayJump)
         if nil ~= StuffData then
           StuffData.IsEquipped = self:GetIsStuffIsEquiped(StuffData)
         end
+      elseif TabId == BagCommon.ItemTypeToTabId.Draft then
+        local DraftConfigData = StuffServerData:Data()
+        if DraftConfigData and DraftConfigData.ShowInBag and StuffServerData.Count > 0 then
+          StuffData = StuffIconObject:GetDraftsStuffData(StuffServerData, self, self.OnListSelectStuffClicked)
+        end
       else
         local StuffConfigData = StuffServerData:Data()
         if StuffConfigData and StuffConfigData.MaterialClassify == TabId then
-          if TabId == BagCommon.ItemTypeToTabId.FishItem then
-            local PlayerBagFish = Avatar.FishSizes[StuffConfigData.ResourceId]
-            if PlayerBagFish and PlayerBagFish.FishSize2Count then
+          if TabId == BagCommon.ItemTypeToTabId.FishItem and BagCommon:IsFishResource(StuffConfigData.ResourceId) then
+            local FishSize2Count = BagCommon:GetFishSize2Count(StuffConfigData.ResourceId)
+            if FishSize2Count and not Utils.IsEmptyTable(FishSize2Count) then
               StuffData = {}
               IsMultiData = true
-              for key, value in pairs(PlayerBagFish.FishSize2Count) do
-                StuffServerData.FishInfo = {Size = key, Count = value}
+              for Size, Count in pairs(FishSize2Count) do
+                StuffServerData.FishInfo = {Size = Size, Count = Count}
                 local TempStuffData = StuffIconObject:GetItemStuffData(StuffServerData, self, self.OnListSelectStuffClicked)
                 table.insert(StuffData, TempStuffData)
               end
-            else
-              IsMultiData = false
-              StuffData = StuffIconObject:GetItemStuffData(StuffServerData, self, self.OnListSelectStuffClicked)
             end
           else
             IsMultiData = false
@@ -332,7 +333,7 @@ function WBP_Bag_Main_P_C:FillPlayerDataByTypeInFrame(TabId, NeedDelayJump)
             self.NeedSelectGridIndex = math.max(i - 1, 0)
           end
           OrderStuffData.GridIndex = i
-          OrderStuffData.AnimNameWithCreate = i <= RowCount * ColCount and "In_OnlyOpacity" or nil
+          OrderStuffData.AnimNameWithCreate = i <= RowCount * ColCount and "In" or nil
           local StuffObj = StuffIconObject:CreateBagItemContent(OrderStuffData)
           self.List_Item:AddItem(StuffObj)
           if 0 == i % RowCount then
@@ -356,7 +357,7 @@ function WBP_Bag_Main_P_C:FillPlayerDataByTypeInFrame(TabId, NeedDelayJump)
           }
           EmptyStuffData.IsSelect = false
           EmptyStuffData.GridIndex = Index + #FinalStuffData
-          EmptyStuffData.AnimNameWithCreate = nil
+          EmptyStuffData.AnimNameWithCreate = Index <= RowCount * ColCount and "In" or nil
           local StuffObj = StuffIconObject:CreateBagItemContent(EmptyStuffData)
           self.List_Item:AddItem(StuffObj)
         end
@@ -366,7 +367,6 @@ function WBP_Bag_Main_P_C:FillPlayerDataByTypeInFrame(TabId, NeedDelayJump)
     end
   end
 end
-
 function WBP_Bag_Main_P_C:OnFrameLoadCompleted(NeedDelayJump, AnimGridCount, bNeedShowWarningDialog)
   local IsNeedSetFocus = self.NeedSelectStuffId ~= nil
   local AllItemCount = self.List_Item:GetNumItems()
@@ -382,7 +382,6 @@ function WBP_Bag_Main_P_C:OnFrameLoadCompleted(NeedDelayJump, AnimGridCount, bNe
   self.ListCanvas:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:JumpToSelectItem(NeedDelayJump)
   self.NeedSelectStuffId = nil
-  
   local function SetNavigateWidgetOpacityAndFocus()
     if self.GameInputModeSubsystem and self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
       self:AddTimer(0.1, function()
@@ -393,7 +392,6 @@ function WBP_Bag_Main_P_C:OnFrameLoadCompleted(NeedDelayJump, AnimGridCount, bNe
       end)
     end
   end
-  
   if bNeedShowWarningDialog then
     local LastWeaponTooMoreWarningTimeStamp = EMCache:Get(BagCommon.LastWeaponTooMoreWarningTimeStamp, true)
     if LastWeaponTooMoreWarningTimeStamp and LastWeaponTooMoreWarningTimeStamp > TimeUtils.TimestampLastClock(0) then
@@ -402,13 +400,11 @@ function WBP_Bag_Main_P_C:OnFrameLoadCompleted(NeedDelayJump, AnimGridCount, bNe
       local CommonDialog = UIManager(self):GetUIObj("CommonDialog")
       if nil == CommonDialog then
         local ConfirmParams = {}
-        
         function ConfirmParams.RightCallbackFunction(_, Data)
           local NowTime = TimeUtils.NowTime()
           EMCache:Set(BagCommon.LastWeaponTooMoreWarningTimeStamp, NowTime, true)
           SetNavigateWidgetOpacityAndFocus()
         end
-        
         self.List_Item:BP_CancelScrollIntoView()
         UIManager(self):ShowCommonPopupUI(100227, ConfirmParams, self)
       else
@@ -419,7 +415,6 @@ function WBP_Bag_Main_P_C:OnFrameLoadCompleted(NeedDelayJump, AnimGridCount, bNe
     SetNavigateWidgetOpacityAndFocus()
   end
 end
-
 function WBP_Bag_Main_P_C:RefreshDetail(GridIndex, StuffUuid)
   if -1 == GridIndex or self.CurSelectStuffContent == nil then
     self.List_Item:BP_ClearSelection()
@@ -432,6 +427,8 @@ function WBP_Bag_Main_P_C:RefreshDetail(GridIndex, StuffUuid)
     StuffServerData = self:GetStuffServerData(StuffUuid, BagCommon.StuffType.Weapon)
   elseif self.CurTabId == BagCommon.ItemTypeToTabId.Mod then
     StuffServerData = self:GetStuffServerData(StuffUuid, BagCommon.StuffType.Mod)
+  elseif self.CurTabId == BagCommon.ItemTypeToTabId.Draft then
+    StuffServerData = self:GetStuffServerData(StuffUuid, BagCommon.StuffType.Draft)
   else
     StuffServerData = self:GetStuffServerData(StuffUuid, BagCommon.StuffType.Resource, self.CurSelectStuffContent.FishInfo)
   end
@@ -448,7 +445,6 @@ function WBP_Bag_Main_P_C:RefreshDetail(GridIndex, StuffUuid)
   self:RefreshDetailView(StuffConfigData)
   self.Button_DetailClose:SetVisibility(UE4.ESlateVisibility.Visable)
 end
-
 function WBP_Bag_Main_P_C:EnterStuffSellState()
   if not self.Button_Sell:IsVisible() then
     DebugPrint("WBP_Bag_Main_P_C===EnterStuffSellState not Success, Because Button_Sell is not Visible!!")
@@ -474,20 +470,20 @@ function WBP_Bag_Main_P_C:EnterStuffSellState()
   local UIManager = GameInstance:GetGameUIManager()
   local SelectStuffDatas
   if nil ~= UIManager then
-    if self.CurSelectStuffContent then
+    if self.CurSelectStuffContent and self.CurSelectStuffContent.StuffType == BagCommon.TabIdToStuffType[self.CurTabId] then
       if self:CheckIsCanAddToSaleList(self.CurSelectStuffContent, false) then
         local StuffUuid = self.CurSelectStuffContent.Uuid
         local StuffServerData = self:GetStuffServerData(StuffUuid, self.CurSelectStuffContent.StuffType, self.CurSelectStuffContent.FishInfo)
         if self.CurTabId == BagCommon.ItemTypeToTabId.Mod then
           SelectStuffDatas = StuffIconObject:GetModStuffData(StuffServerData, nil, "ClickChooseStuff")
+        elseif self.CurTabId == BagCommon.ItemTypeToTabId.Draft then
+          SelectStuffDatas = StuffIconObject:GetDraftsStuffData(StuffServerData, nil, "ClickChooseStuff")
         else
           SelectStuffDatas = StuffIconObject:GetItemStuffData(StuffServerData, nil, "ClickChooseStuff")
         end
-        
         local function RemoveStuffCallback()
           EventManager:FireEvent(EventID.OnRemoveBagItemInList, StuffUuid)
         end
-        
         local StuffStateTagInfo = {
           Name = "IsToChoose",
           ExtraData = {
@@ -520,7 +516,6 @@ function WBP_Bag_Main_P_C:EnterStuffSellState()
   self:CancelStuffClickAndHideDetail(bHasSelectStuffData)
   self:UpdateAllItemsStyle(false)
 end
-
 function WBP_Bag_Main_P_C:LeaveStuffSellState()
   self.Tab_Bag:LeaveViewSingleMode()
   self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
@@ -534,19 +529,20 @@ function WBP_Bag_Main_P_C:LeaveStuffSellState()
   end
   self:PlayAnimation(self.Sell_Close)
 end
-
 function WBP_Bag_Main_P_C:RealToSaleItems(AllStuffContentList, AllStuffSellInfo)
   self:RecoverAllItemsStyle()
   local PlayerAvatar = GWorld:GetAvatar()
-  local ModList, ResourceList = {}, {}
+  local ModList, ResourceList, DraftsList = {}, {}, {}
   local IntegerUuid
   for k, v in pairs(AllStuffContentList) do
-    local StuffUuid = self:GetStuffObjId(v.Uuid)
     if v.StuffType == BagCommon.StuffType.Mod then
+      local StuffUuid = self:GetStuffObjId(v.Uuid)
       ModList[StuffUuid] = {
         Count = AllStuffSellInfo[k],
         CurrentModCount = v.Count
       }
+    elseif v.StuffType == BagCommon.StuffType.Draft then
+      DraftsList[v.UnitId] = AllStuffSellInfo[k]
     elseif v.StuffType == BagCommon.StuffType.Resource then
       IntegerUuid = v.UnitId
       if BagCommon:IsFishResource(IntegerUuid) then
@@ -573,8 +569,10 @@ function WBP_Bag_Main_P_C:RealToSaleItems(AllStuffContentList, AllStuffSellInfo)
       PlayerAvatar:ResourceBulkSale(ResourceList)
     end
   end
+  if not IsEmptyTable(DraftsList) then
+    PlayerAvatar:DraftSale(DraftsList)
+  end
 end
-
 function WBP_Bag_Main_P_C:EnterWeaponResolveState()
   if not self.Button_Sell:IsVisible() then
     DebugPrint("WBP_Bag_Main_P_C===EnterWeaponResolveState not Success, Because Button_Sell is not Visible!!")
@@ -587,16 +585,14 @@ function WBP_Bag_Main_P_C:EnterWeaponResolveState()
   self.BagCurState = BagCommon.AllBagState.WeaponResolveState
   self.DesireResolveWeaponList = {}
   local SelectStuffDatas
-  if self.CurSelectStuffContent then
+  if self.CurSelectStuffContent and self.CurSelectStuffContent.StuffType == BagCommon.TabIdToStuffType[self.CurTabId] then
     if self:CheckIsCanAddToSaleList(self.CurSelectStuffContent, false) then
       local StuffUuid = self.CurSelectStuffContent.Uuid
       local StuffServerData = self:GetStuffServerData(StuffUuid, self.CurSelectStuffContent.StuffType)
       SelectStuffDatas = StuffIconObject:GetWeaponStuffData(StuffServerData, nil, "ClickChooseStuff")
-      
       local function RemoveWeaponCallback()
         EventManager:FireEvent(EventID.OnRemoveBagItemInList, StuffUuid)
       end
-      
       local StuffStateTagInfo = {
         Name = "IsToChoose",
         ExtraData = {
@@ -626,7 +622,6 @@ function WBP_Bag_Main_P_C:EnterWeaponResolveState()
   UIManager(self):LoadUI(UIConst.BAGSTUFFSALESELECTPC, BagCommon.BagStuffSelectUIName, BagCommon.BagSellPageZOrder, self, self.LeaveWeaponResolveState, self.RemoveWeaponResolveState, self.RealToResolveWeapon, SelectStuffDatas, BagCommon.BagItemSelectOpMode.ResolveMode)
   self:UpdateAllItemsStyle(false)
 end
-
 function WBP_Bag_Main_P_C:LeaveWeaponResolveState()
   self.Tab_Bag:LeaveViewSingleMode()
   self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
@@ -641,7 +636,6 @@ function WBP_Bag_Main_P_C:LeaveWeaponResolveState()
   end
   self:PlayAnimation(self.Sell_Close)
 end
-
 function WBP_Bag_Main_P_C:RealToResolveWeapon(AllWeaponContentList)
   self:RecoverAllItemsStyle()
   local PlayerAvatar = GWorld:GetAvatar()
@@ -652,7 +646,6 @@ function WBP_Bag_Main_P_C:RealToResolveWeapon(AllWeaponContentList)
   end
   PlayerAvatar:WeaponBulkBreakDown(AllWeaponUuid)
 end
-
 function WBP_Bag_Main_P_C:UpdateNpcDialogue(DialogueId)
   if nil == DialogueId then
     self.Panel_Dialogue:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -666,7 +659,6 @@ function WBP_Bag_Main_P_C:UpdateNpcDialogue(DialogueId)
     end
   end
 end
-
 function WBP_Bag_Main_P_C:RefreshBottomKeyInfo(FocusTypeName)
   FocusTypeName = FocusTypeName or "DefaultWidget"
   DebugPrint("FocusTypeNameFocusTypeNameFocusTypeName  " .. FocusTypeName)
@@ -919,14 +911,12 @@ function WBP_Bag_Main_P_C:RefreshBottomKeyInfo(FocusTypeName)
   end
   self.CurFocusWidget = FocusTypeName
 end
-
 function WBP_Bag_Main_P_C:OnHoverItemKeyPressed()
   if self.HoverItem then
     EventManager:FireEvent(EventID.OnRemoveBagItemInList, self.HoverItem.Uuid)
     self:RefreshBottomKeyInfo("NoRemoveSelect")
   end
 end
-
 function WBP_Bag_Main_P_C:UpdateUIStyleInPlatform(IsUseGamePad)
   local ActiveWidgetIndex = IsUseGamePad and 1 or 0
   if IsUseGamePad then
@@ -936,7 +926,6 @@ function WBP_Bag_Main_P_C:UpdateUIStyleInPlatform(IsUseGamePad)
   end
   self.Tab_Bag:UpdateUIStyleInPlatform(IsUseGamePad)
 end
-
 function WBP_Bag_Main_P_C:TabBagItemClick(TabWidget)
   local TabId = TabWidget:GetTabId()
   self.CurTabId = TabId
@@ -961,7 +950,6 @@ function WBP_Bag_Main_P_C:TabBagItemClick(TabWidget)
   end
   self:FillWithListViewData(TabId, true)
 end
-
 function WBP_Bag_Main_P_C:OnListSelectStuffClicked(Content)
   if Content.Type == "EmptyGrid" then
     return
@@ -969,9 +957,9 @@ function WBP_Bag_Main_P_C:OnListSelectStuffClicked(Content)
   local GridIndex, StuffUuid, AddNum = Content.GridIndex, Content.Uuid, Content.AddNum
   self:ClickChooseStuff(GridIndex, StuffUuid, AddNum)
 end
-
 function WBP_Bag_Main_P_C:ClickChooseStuff(GridIndex, StuffUuid, AddNum)
   if self.BagCurState == BagCommon.AllBagState.NormalState and IsValid(self.CurSelectStuffContent) and self.CurSelectStuffContent.Uuid == StuffUuid then
+    DebugPrint("WBP_Bag_Main_P_C=== ClickChooseStuff, Click the same Item, no need to process!!")
     return
   end
   self.CurSelectGridIndex = GridIndex
@@ -990,7 +978,6 @@ function WBP_Bag_Main_P_C:ClickChooseStuff(GridIndex, StuffUuid, AddNum)
   self:RefreshSaleItemSelect(StuffUuid, GridIndex, AddNum)
   self:RefreshResolveWeaponSelect(StuffUuid, GridIndex)
 end
-
 function WBP_Bag_Main_P_C:CancelStuffClickAndHideDetail(bHasSelectStuffData)
   if not bHasSelectStuffData and self.CurSelectStuffContent then
     self.CurSelectStuffContent = nil
@@ -998,7 +985,6 @@ function WBP_Bag_Main_P_C:CancelStuffClickAndHideDetail(bHasSelectStuffData)
   self:RefreshDetail(-1, nil)
   self.Panel_Detail.Panel_Button:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Bag_Main_P_C:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -1030,7 +1016,6 @@ function WBP_Bag_Main_P_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Bag_Main_P_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1049,7 +1034,6 @@ function WBP_Bag_Main_P_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Bag_Main_P_C:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   if not IsEventHandled then
@@ -1063,7 +1047,6 @@ function WBP_Bag_Main_P_C:OnGamePadButtonDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function WBP_Bag_Main_P_C:Handle_KeyDownOnGamePad(InKeyName)
   if InKeyName == UIConst.GamePadKey.SpecialRight then
     if self.Panel_Detail:IsVisible() and self.Panel_Detail.Btn_Locked:IsVisible() then
@@ -1136,7 +1119,6 @@ function WBP_Bag_Main_P_C:Handle_KeyDownOnGamePad(InKeyName)
   end
   return false
 end
-
 function WBP_Bag_Main_P_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1149,7 +1131,6 @@ function WBP_Bag_Main_P_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function WBP_Bag_Main_P_C:OnReturnKeyDown()
   local SellPageMainUI = UIManager(self):GetUI(BagCommon.BagStuffSelectUIName)
   if nil ~= SellPageMainUI then
@@ -1165,7 +1146,6 @@ function WBP_Bag_Main_P_C:OnReturnKeyDown()
     self:PlayOutAnim()
   end
 end
-
 function WBP_Bag_Main_P_C:OnTryToCloseMainPage()
   local SellPageMainUI = UIManager(self):GetUI(BagCommon.BagStuffSelectUIName)
   if nil ~= SellPageMainUI then
@@ -1175,6 +1155,5 @@ function WBP_Bag_Main_P_C:OnTryToCloseMainPage()
     self:PlayOutAnim()
   end
 end
-
 AssembleComponents(WBP_Bag_Main_P_C)
 return WBP_Bag_Main_P_C

@@ -2,7 +2,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(Owner, PlayerState)
   self.Owner = Owner
   self.PlayerState = PlayerState
@@ -11,7 +10,6 @@ function M:Init(Owner, PlayerState)
   self:RefreshUIInfo()
   self:StartStateChange()
 end
-
 function M:Clear()
   if self.CurState == "Alive" then
     return
@@ -21,7 +19,6 @@ function M:Clear()
   self:UnbindAllFromAnimationFinished(self.Return)
   local RemainTimes = self:GetRemainRecoveryTimes()
   self.Num_Resurrection:SetText(RemainTimes)
-  
   local function EndRecovering()
     if RemainTimes <= 0 then
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Forbidden)
@@ -29,19 +26,16 @@ function M:Clear()
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
     end
   end
-  
   self:BindToAnimationFinished(self.Return, {self, EndRecovering})
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Return)
   self:EndStateChange()
 end
-
 function M:RefreshUIInfo()
   local RemainTimes = self:GetRemainRecoveryTimes()
   self.Num_Resurrection_Used:SetText(RemainTimes)
   self.Num_Resurrection:SetText(RemainTimes)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
 end
-
 function M:GetRemainRecoveryTimes()
   local RemainTimes = 0
   if IsValid(self.Owner) then
@@ -51,18 +45,15 @@ function M:GetRemainRecoveryTimes()
   end
   return math.max(0, RemainTimes)
 end
-
 function M:StartStateChange()
   self:Update()
   self:AddTimer(self.StateCheckUpdateTime, self.Update, true, 0, "CheckState", true)
 end
-
 function M:EndStateChange()
   if self:IsExistTimer("CheckState") then
     self:RemoveTimer("CheckState")
   end
 end
-
 function M:Update()
   local NowState = self.CurState
   if IsValid(self.Owner) then
@@ -91,11 +82,9 @@ function M:Update()
     local function StartRecoveringBySelf()
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Save_Self)
     end
-    
     self:BindToAnimationFinished(self.UseCoin, {self, StartRecoveringBySelf})
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.UseCoin)
   end
   self.CurState = NowState
 end
-
 return M

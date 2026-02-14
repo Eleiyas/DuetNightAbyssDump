@@ -1,7 +1,6 @@
 require("UnLua")
 require("Const")
 local WalnutComponent = {}
-
 function WalnutComponent:IsWalnutDungeon()
   if self.IsDungeonTypeWalnut == nil then
     local DungeonInfo = DataMgr.Dungeon[self.DungeonId]
@@ -11,14 +10,18 @@ function WalnutComponent:IsWalnutDungeon()
   end
   return self.IsDungeonTypeWalnut
 end
-
 function WalnutComponent:TriggerShowWalnutReward()
+  if self.IsInWalnutReward then
+    return
+  end
+  self.IsInWalnutReward = true
   DebugPrint("WalnutComponent:TriggerShowWalnutReward")
   if IsStandAlone(self) then
     self:AddDungeonEvent("ShowWalnutReward")
   elseif IsDedicatedServer(self) then
+    self:KickPlayerNotInGame()
     if self:IsAllPlayerNotChoosedNextWalnut() then
-      DebugPrint("WalnutComponent: \230\137\128\230\156\137\231\142\169\229\174\182\233\131\189\230\178\161\232\163\133\229\164\135\230\160\184\230\161\131")
+      DebugPrint("WalnutComponent: 所有玩家都没装备核桃")
       self:ExecuteNextStepOfWalnutReward()
       return
     end
@@ -31,7 +34,6 @@ function WalnutComponent:TriggerShowWalnutReward()
   self:NotifyLogicServerOpenWalnut()
   self:SetGamePaused("WalnutReward", true)
 end
-
 function WalnutComponent:OnClientSelectedWalnutReward(AvatarEidStr)
   DebugPrint("WalnutComponent:OnClientSelectedWalnutReward, AvatarEidStr", AvatarEidStr)
   if IsStandAlone(self) then
@@ -40,12 +42,10 @@ function WalnutComponent:OnClientSelectedWalnutReward(AvatarEidStr)
     self:OnClientSelectedWalnutReward_DedicatedServer(AvatarEidStr)
   end
 end
-
 function WalnutComponent:OnClientSelectedWalnutReward_StandAlone(AvatarEidStr)
   self:RemoveDungeonEvent("ShowWalnutReward")
   self:ExecuteNextStepOfWalnutReward()
 end
-
 function WalnutComponent:OnClientSelectedWalnutReward_DedicatedServer(AvatarEidStr)
   if self.EMGameState.WalnutRewardPlayer:Find(AvatarEidStr) ~= nil then
     self.EMGameState.WalnutRewardPlayer:Add(AvatarEidStr, true)
@@ -55,10 +55,9 @@ function WalnutComponent:OnClientSelectedWalnutReward_DedicatedServer(AvatarEidS
       self:OnPlayerSelectWalnutReward()
     end
   else
-    self.EMGameState:ShowDungeonError("WalnutComponent:\228\184\128\228\184\170\228\184\141\229\173\152\229\156\168\231\154\132AvatarEidStr\233\128\137\230\139\169\228\186\134\229\165\150\229\138\177 AvatarEidStr " .. (AvatarEidStr or "nil"))
+    self.EMGameState:ShowDungeonError("WalnutComponent:一个不存在的AvatarEidStr选择了奖励 AvatarEidStr " .. (AvatarEidStr or "nil"), Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.ServerData)
   end
 end
-
 function WalnutComponent:GetWalnutRewardNotSelectedPlayers()
   local Res = {}
   for AvatarEidStr, IsSelected in pairs(self.EMGameState.WalnutRewardPlayer) do
@@ -68,11 +67,10 @@ function WalnutComponent:GetWalnutRewardNotSelectedPlayers()
   end
   return Res
 end
-
 function WalnutComponent:InitWalnutRewardPlayerMap()
   self.EMGameState.WalnutRewardPlayer:Clear()
-  for _, Player in pairs(self:GetAllPlayer()) do
-    local AvatarEidStr = Player:GetOwner().AvatarEidStr
+  local InGameAvatarEids = self:GetInGamePlayerAvatarEids()
+  for _, AvatarEidStr in pairs(InGameAvatarEids) do
     local LastChooseWalnutId = self:GetLastChooseWalnutId(AvatarEidStr)
     local IsAlreadySelect = -1 == LastChooseWalnutId or 0 == LastChooseWalnutId or nil == LastChooseWalnutId
     self.EMGameState.WalnutRewardPlayer:Add(AvatarEidStr, IsAlreadySelect)
@@ -80,15 +78,26 @@ function WalnutComponent:InitWalnutRewardPlayerMap()
   end
   UE.UMapSyncHelper.SyncMap(self.EMGameState, "WalnutRewardPlayer")
 end
-
+function WalnutComponent:GetInGamePlayerAvatarEids()
+  local Res = {}
+  if not self.AvatarInfos then
+    return Res
+  end
+  for AvatarEidStr, _ in pairs(self.AvatarInfos) do
+    table.insert(Res, AvatarEidStr)
+  end
+  return Res
+end
 function WalnutComponent:GetLastChooseWalnutId(AvatarEidStr)
   if 0 == self.EMGameState.NextWalnutPlayer:Length() then
+    if not self.AvatarInfos[AvatarEidStr] then
+      return nil
+    end
     return self.AvatarInfos[AvatarEidStr].PlayerInfo.Walnuts.WalnutId
   else
     return self.EMGameState.NextWalnutPlayer:Find(AvatarEidStr)
   end
 end
-
 function WalnutComponent:IsAllPlayerNotChoosedNextWalnut()
   if 0 == self.EMGameState.NextWalnutPlayer:Length() then
     PrintTable(self.AvatarInfos, 10)
@@ -107,7 +116,6 @@ function WalnutComponent:IsAllPlayerNotChoosedNextWalnut()
     return true
   end
 end
-
 function WalnutComponent:NotifyLogicServerOpenWalnut()
   local Entity
   if IsStandAlone(self) then
@@ -117,7 +125,6 @@ function WalnutComponent:NotifyLogicServerOpenWalnut()
   end
   Entity:OpenWalnut()
 end
-
 function WalnutComponent:BpOnTimerEnd_ShowWalnutReward()
   DebugPrint("WalnutComponent:BpOnTimerEnd_ShowWalnutReward")
   local DSEntity = GWorld:GetDSEntity()
@@ -126,30 +133,45 @@ function WalnutComponent:BpOnTimerEnd_ShowWalnutReward()
   DSEntity:SelectWalnutReward(NotSelectedPlayers, 1)
   self:ExecuteNextStepOfWalnutReward()
 end
-
 function WalnutComponent:OnPlayerSelectWalnutReward()
   DebugPrint("WalnutComponent:OnPlayerSelectWalnutReward")
   self:BpDelTimer("ShowWalnutReward", true, Const.GameModeEventServerClient)
   self:ExecuteNextStepOfWalnutReward()
 end
-
 function WalnutComponent:ExecuteNextStepOfWalnutReward()
+  self.IsInWalnutReward = false
   self:RemoveTimer("ShowWalnutRewardDebug")
   EventManager:RemoveEvent(EventID.OnSelectWalnutReward, self)
   self:SetGamePaused("WalnutReward", false)
-  DebugPrint("WalnutComponent:ExecuteNextStepOfWalnutReward \230\152\175\230\151\160\229\176\189\229\137\175\230\156\172\229\144\151", self:IsEndlessDungeon())
+  DebugPrint("WalnutComponent:ExecuteNextStepOfWalnutReward 是无尽副本吗", self:IsEndlessDungeon())
   if not self:IsEndlessDungeon() then
     self:TriggerRealDungeFinish(true)
   else
     self:ExecuteLogicStartDungeonVote()
   end
 end
-
 function WalnutComponent:ExecuteWalutLogicOnEnd()
   self:TriggerShowWalnutReward()
 end
-
+function WalnutComponent:KickPlayerNotInGame()
+  local KickedAvatarEids = {}
+  for _, Player in pairs(self:GetAllPlayer()) do
+    local AvatarEidStr = Player:GetOwner().AvatarEidStr
+    local PlayerState = Player.PlayerState
+    if PlayerState and not PlayerState:IsInGame() then
+      table.insert(KickedAvatarEids, AvatarEidStr)
+      DebugPrint("WalnutComponent:KickPlayerNotInGame, 踢掉未连进来的玩家 AvatarEidStr", AvatarEidStr)
+    end
+  end
+  if #KickedAvatarEids > 0 then
+    self:ForceFinishPlayerByFailed(KickedAvatarEids)
+  end
+end
 function WalnutComponent:TriggerShowNextWalnut()
+  if self.IsInNextWalnut then
+    return
+  end
+  self.IsInNextWalnut = true
   DebugPrint("WalnutComponent:TriggerShowNextWalnut")
   EventManager:AddEvent(EventID.OnSelectWalnut, self, self.OnClinetChooseNextWalnut)
   if IsStandAlone(self) then
@@ -162,7 +184,6 @@ function WalnutComponent:TriggerShowNextWalnut()
     self:ShowWalnutDebugTimer(WalnutSelectTime, "ShowNextWalnutDebug")
   end
 end
-
 function WalnutComponent:InitNextWalnutPlayerMap()
   self.EMGameState.NextWalnutPlayer:Clear()
   for _, Player in pairs(self:GetAllPlayer()) do
@@ -172,7 +193,6 @@ function WalnutComponent:InitNextWalnutPlayerMap()
   end
   UE.UMapSyncHelper.SyncMap(self.EMGameState, "NextWalnutPlayer")
 end
-
 function WalnutComponent:OnClinetChooseNextWalnut(AvatarEidStr, WalnutId)
   DebugPrint("WalnutComponent:OnClinetChooseNextWalnut, AvatarEidStr", AvatarEidStr, "WalnutId", WalnutId)
   if IsStandAlone(self) then
@@ -181,20 +201,20 @@ function WalnutComponent:OnClinetChooseNextWalnut(AvatarEidStr, WalnutId)
     self:OnClinetChooseNextWalnut_DedicatedServer(AvatarEidStr, WalnutId)
   end
 end
-
 function WalnutComponent:OnClinetChooseNextWalnut_StandAlone(AvatarEidStr, WalnutId)
-  DebugPrint("WalnutComponent:ExecuteNextStepOfChooseWalnu_StandAlone")
+  self.IsInNextWalnut = false
+  self:SetGamePaused("NextWalnutRecover", false)
+  DebugPrint("WalnutComponent:ExecuteNextStepOfChooseWalnut_StandAlone")
   EventManager:RemoveEvent(EventID.OnSelectWalnut, self)
   self:RemoveDungeonEvent("NextWalnut")
   self:TriggerActiveGameModeState(Const.StateBattleProgress)
 end
-
 function WalnutComponent:OnClinetChooseNextWalnut_DedicatedServer(AvatarEidStr, WalnutId)
   if self.EMGameState.NextWalnutPlayer:Find(AvatarEidStr) ~= nil then
     self.EMGameState.NextWalnutPlayer:Add(AvatarEidStr, WalnutId)
     UE.UMapSyncHelper.SyncMap(self.EMGameState, "NextWalnutPlayer")
     if self.IsNextStepTriggered then
-      DebugPrint("WalnutComponent: \229\128\146\232\174\161\230\151\182\229\144\142\230\137\141\230\148\182\229\136\176\231\154\132skynet\228\186\139\228\187\182 AvatarEidStr", AvatarEidStr, "WalnutId", WalnutId)
+      DebugPrint("WalnutComponent: 倒计时后才收到的skynet事件 AvatarEidStr", AvatarEidStr, "WalnutId", WalnutId)
       return
     end
     local NotChoosedPlayers = self:GetNextWalnutNotChoosedPlayers()
@@ -203,18 +223,15 @@ function WalnutComponent:OnClinetChooseNextWalnut_DedicatedServer(AvatarEidStr, 
     end
   end
 end
-
 function WalnutComponent:OnPlayerChoosedNextWalnut()
   DebugPrint("WalnutComponent:OnPlayerChoosedNextWalnut")
   self:BpDelTimer("NextWalnut", true, Const.GameModeEventServerClient)
   self:ExecuteWalnutReadyCountDown()
 end
-
 function WalnutComponent:BpOnTimerEnd_NextWalnut()
   DebugPrint("WalnutComponent:BpOnTimerEnd_NextWalnut")
   self:ExecuteWalnutReadyCountDown()
 end
-
 function WalnutComponent:ExecuteWalnutReadyCountDown()
   self:RemoveTimer("ShowNextWalnutDebug")
   self.IsNextStepTriggered = true
@@ -223,15 +240,14 @@ function WalnutComponent:ExecuteWalnutReadyCountDown()
   self:BpAddTimer("WalnutReady", WalnutDungeonReadyTime, true, Const.GameModeEventServerClient)
   self:ShowWalnutDebugTimer(WalnutDungeonReadyTime, "ShowWalnutReadyDebug")
 end
-
 function WalnutComponent:BpOnTimerEnd_WalnutReady()
+  self.IsInNextWalnut = false
   DebugPrint("WalnutComponent:BpOnTimerEnd_WalnutReady")
   EventManager:RemoveEvent(EventID.OnSelectWalnut, self)
   PrintTable(self.EMGameState.NextWalnutPlayer:ToTable())
   self:RemoveTimer("ShowWalnutReadyDebug")
   self:TriggerActiveGameModeState(Const.StateBattleProgress)
 end
-
 function WalnutComponent:GetNextWalnutNotChoosedPlayers()
   local Res = {}
   for AvatarEidStr, WalnutId in pairs(self.EMGameState.NextWalnutPlayer) do
@@ -241,7 +257,6 @@ function WalnutComponent:GetNextWalnutNotChoosedPlayers()
   end
   return Res
 end
-
 function WalnutComponent:ShowWalnutDebugTimer(TotalTime, Handle)
   local count = TotalTime
   self:AddTimer(1, function()
@@ -252,5 +267,4 @@ function WalnutComponent:ShowWalnutDebugTimer(TotalTime, Handle)
     end
   end, true, 0, Handle, true)
 end
-
 return WalnutComponent

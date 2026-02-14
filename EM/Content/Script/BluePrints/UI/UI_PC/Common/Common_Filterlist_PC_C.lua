@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(Filters1, Filters2, Filters3, SortType)
   self.CurSortType = SortType or CommonConst.DESC
   self.Filters = {}
@@ -111,21 +110,17 @@ function M:Init(Filters1, Filters2, Filters3, SortType)
     self.CanvasPanel_SortType:SetRenderTransformAngle(180)
   end
 end
-
 function M:BindEventOnSelectionsChanged(Obj, Event)
   self.Obj_OnSelectionsChanged = Obj
   self.Event_OnSelectionsChanged = Event
 end
-
 function M:BindEventOnSortTypeChanged(Obj, Event)
   self.Obj_OnSortTypeChanged = Obj
   self.Event_OnSortTypeChanged = Event
 end
-
 function M:GetFilterInfos()
   return self.Filter1Res, self.Filter2Res, self.Filter3Res, self.CurSortType
 end
-
 function M:UpdateFilterInfos()
   local Filter2HintText = ""
   local Indexes2 = {}
@@ -157,11 +152,9 @@ function M:UpdateFilterInfos()
   self.Filter3Res = self.SelectedItems[3].Index
   return self.Filter1Res, self.Filter2Res, self.Filter3Res, self.CurSortType, Filter2HintText
 end
-
 function M:Construct()
   self:AddDispatcher(EventID.OnMenuClose, self, self.OnFilterListsClosed)
 end
-
 function M:ListOpenBtnClicked(Idx)
   UIUtils.PlayCommonBtnSe(self)
   if self.Filters[Idx] then
@@ -182,11 +175,9 @@ function M:ListOpenBtnClicked(Idx)
     self.FilterListBGs[Idx]:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:PlayListInAnim(Idx)
   self:StopListOutAnim(Idx)
   self.IsListInAnimPlaying[Idx] = true
-  
   local function WarpFunc()
     self.FilterListBGs[Idx]:SetRenderOpacity(1)
     self:StopAnimation(self.FilterOutAnims[Idx])
@@ -197,10 +188,8 @@ function M:PlayListInAnim(Idx)
     for i = Len, 1, -1 do
       local function func()
         Entrys[i]:SetRenderOpacity(1)
-        
         Entrys[i]:PlayInAnim()
       end
-      
       Entrys[i]:SetRenderOpacity(0)
       TotalTime = TotalTime + 0.02
       self:AddTimer(TotalTime, func, false, 0, "List" .. Idx .. "EntryInAnim" .. i)
@@ -209,22 +198,18 @@ function M:PlayListInAnim(Idx)
     TotalTime = math.max(EndTime, TotalTime)
     if TotalTime > 0 then
       TotalTime = TotalTime + Entrys[1]:GetInAnimTime()
-      
       local function EndListInAnimPlaying()
         self.IsListInAnimPlaying[Idx] = false
       end
-      
       self:AddTimer(TotalTime, EndListInAnimPlaying, false, 0, "List" .. Idx .. "InAnimPlaying")
     else
       self.IsListInAnimPlaying[Idx] = false
     end
   end
-  
   self:AddTimer(0.01, WarpFunc, false, 0, "List" .. Idx .. "_In")
   self.FilterListBGs[Idx]:SetRenderOpacity(0)
   self.FilterListBGs[Idx]:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:StopListInAnim(Idx)
   self:RemoveTimer("List" .. Idx .. "_In")
   self:RemoveTimer("List" .. Idx .. "InAnimPlaying")
@@ -234,7 +219,6 @@ function M:StopListInAnim(Idx)
     self:RemoveTimer("List" .. Idx .. "EntryInAnim" .. i)
   end
 end
-
 function M:PlayListOutnAnim(Idx)
   self:StopListInAnim(Idx)
   self.IsListOutAnimPlaying[Idx] = true
@@ -253,25 +237,20 @@ function M:PlayListOutnAnim(Idx)
     if TimeToPlayFilterOutAnim > 0 then
       local function func()
         self:StopAnimation(self.FilterInAnims[Idx])
-        
         self:PlayAnimation(self.FilterOutAnims[Idx])
       end
-      
       self:AddTimer(TimeToPlayFilterOutAnim, func, false, 0, "ListBG_OutAnim" .. Idx)
     else
       self:PlayAnimation(self.FilterOutAnims[Idx])
       TotalTime = EndTime
     end
   end
-  
   local function ListOutAnimPlayEnd()
     self.IsListOutAnimPlaying[Idx] = false
     self.FilterListBGs[Idx]:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
-  
   self:AddTimer(TotalTime, ListOutAnimPlayEnd, false, 0, "List" .. Idx .. "OutAnimPlaying")
 end
-
 function M:StopListOutAnim(Idx)
   self:RemoveTimer("List" .. Idx .. "OutAnimPlaying")
   self:RemoveTimer("ListBG_OutAnim" .. Idx)
@@ -281,7 +260,6 @@ function M:StopListOutAnim(Idx)
     self:AddTimer("List" .. Idx .. "EntryOutAnim" .. i)
   end
 end
-
 function M:OnListItemClicked(ListIndex, Content)
   if self.IsListOutAnimPlaying[ListIndex] then
     return
@@ -327,11 +305,9 @@ function M:OnListItemClicked(ListIndex, Content)
     self.Event_OnSelectionsChanged(self.Obj_OnSelectionsChanged, Filter1, Filter2, Filter3, SortType)
   end
 end
-
 function M:OnListItemHoveredChanged(ListIndex, Content, IsHover)
   Content.Entry:OnEntryHoveredChanged(IsHover)
 end
-
 function M:Btn_Filter_List02_Hovered()
   if self.IsListViewOpened[2] then
     return
@@ -342,7 +318,6 @@ function M:Btn_Filter_List02_Hovered()
     self.Border_Properties:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:Btn_Filter_List02_Unhovered()
   if self.IsListViewOpened[2] then
     return
@@ -352,7 +327,6 @@ function M:Btn_Filter_List02_Unhovered()
     self:PlayAnimation(self.Hower_Out)
   end
 end
-
 function M:OnSortTypeButtonClicked()
   if self.CurSortType == CommonConst.ASC then
     self.CurSortType = CommonConst.DESC
@@ -365,7 +339,6 @@ function M:OnSortTypeButtonClicked()
     self.Event_OnSortTypeChanged(self.Obj_OnSortTypeChanged, self.CurSortType)
   end
 end
-
 function M:OnFilterListsClosed()
   for Idx, value in pairs(self.IsListViewOpened) do
     if self.Filters[Idx] then
@@ -378,5 +351,4 @@ function M:OnFilterListsClosed()
     end
   end
 end
-
 return M

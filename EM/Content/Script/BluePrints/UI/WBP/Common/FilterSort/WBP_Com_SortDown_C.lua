@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(SortBy_List, FocusKeyName, Parent)
   self.SortBy_List = SortBy_List or {}
   self.IsListViewOpened = false
@@ -53,7 +52,6 @@ function M:Init(SortBy_List, FocusKeyName, Parent)
   end
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:HideGamePadIcon(bHide, Tag)
   Tag = Tag or "Default"
   if bHide then
@@ -63,21 +61,17 @@ function M:HideGamePadIcon(bHide, Tag)
   end
   self:UpdateGamePadIcon(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:BindEventOnSelectionsChanged(Obj, Event)
   self.Obj_OnSelectionsChanged = Obj
   self.Event_OnSelectionsChanged = Event
 end
-
 function M:BindOnRemovedFromFocusPathEvent(Obj, Event)
   self.Obj_RemovedFromFocusPath = Obj
   self.Event_RemovedFromFocusPath = Event
 end
-
 function M:GetSortInfos()
   return self.CurSortBy
 end
-
 function M:SelectItem(Idx)
   local ItemCount = self.List:GetNumItems()
   if Idx > ItemCount then
@@ -85,12 +79,10 @@ function M:SelectItem(Idx)
   end
   self:OnListItemClicked(self.List:GetItemAt(Idx - 1))
 end
-
 function M:UpdateSortInfos()
   self.CurSortBy = self.SelectedItem.Index
   return self.CurSortBy
 end
-
 function M:Construct()
   self:AddDispatcher(EventID.OnMenuClose, self, self.OnListClosed)
   self.Btn_Filter_List.OnClicked:Add(self, self.ListOpenBtnClicked)
@@ -102,28 +94,23 @@ function M:Construct()
   self.bIsFocusable = true
   self:AddInputMethodChangedListen()
 end
-
 function M:OnBtn_Filter_List_Pressed()
   self:StopAnimation(self.Hover)
   self:StopAnimation(self.Click)
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtn_Filter_List_Released()
 end
-
 function M:OnBtn_Filter_List_Hovered()
   self:StopAnimation(self.UnHover)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtn_Filter_List_Unhovered()
   self:StopAnimation(self.Hover)
   self:StopAnimation(self.Click)
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.UnHover)
 end
-
 function M:ListOpenBtnClicked(bForce)
   if not self.Btn_Filter_List:IsHovered() and not bForce then
     return
@@ -151,7 +138,6 @@ function M:ListOpenBtnClicked(bForce)
   end
   self:SetFocus()
 end
-
 function M:OnListItemClicked(Content)
   if self.IsListOutAnimPlaying or self:IsAnimationPlaying(self.List_Out) then
     self:OnListClosed()
@@ -176,7 +162,6 @@ function M:OnListItemClicked(Content)
   self:OnListClosed()
   self:TryReleaseFocus()
 end
-
 function M:OnListClosed()
   if self.SortBy_List then
     if self.IsListViewOpened then
@@ -190,19 +175,15 @@ function M:OnListClosed()
   end
   self:UpdateGamePadFocus()
 end
-
 function M:OnFocusLost(InFocusEvent)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.bAddedToFocusPath = true
   self:UpdateGamePadIcon(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.Event_RemovedFromFocusPath then
     self.Event_RemovedFromFocusPath(self.Obj_RemovedFromFocusPath)
@@ -211,7 +192,6 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
   self:OnListClosed()
   self:UpdateGamePadIcon(UIUtils.UtilsGetCurrentInputType())
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -226,7 +206,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
 end
-
 function M:ReceiveKeyDown_Lua(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -235,7 +214,6 @@ function M:ReceiveKeyDown_Lua(MyGeometry, InKeyEvent)
   end
   return false
 end
-
 function M:FocusToSelf()
   if not self.IsListViewOpened then
     self:ListOpenBtnClicked(true)
@@ -250,7 +228,6 @@ function M:FocusToSelf()
   end
   return false
 end
-
 function M:UpdateGamePadFocus()
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -265,7 +242,6 @@ function M:UpdateGamePadFocus()
   self.List:BP_CancelScrollIntoView()
   self.Btn_Filter_List:SetFocus()
 end
-
 function M:UpdateGamePadIcon(CurInputType)
   local bHide = self.HideControllerTags and next(self.HideControllerTags) ~= nil
   if CurInputType == ECommonInputType.Gamepad and not self.bAddedToFocusPath and not bHide then
@@ -274,19 +250,16 @@ function M:UpdateGamePadIcon(CurInputType)
     self.Controller:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   M.Super.RefreshOpInfoByInputDevice(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad and self.bAddedToFocusPath then
     self:UpdateGamePadFocus()
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   M.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   self:UpdateGamePadIcon(CurInputType)
 end
-
 function M:BP_GetDesiredFocusTarget()
   local SelectedItem = self.IsListViewOpened and self.SelectedItem
   local Entry = SelectedItem and SelectedItem.Entry
@@ -296,7 +269,6 @@ function M:BP_GetDesiredFocusTarget()
     return self.Btn_Filter_List
   end
 end
-
 function M:TryReleaseFocus()
   if not self.bAddedToFocusPath then
     return
@@ -310,9 +282,7 @@ function M:TryReleaseFocus()
     Widget:SetFocus()
   end
 end
-
 function M:Activate()
   self:ListOpenBtnClicked(true)
 end
-
 return M

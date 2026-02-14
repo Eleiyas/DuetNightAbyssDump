@@ -2,10 +2,9 @@ require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local ActorController = require("BluePrints.UI.WBP.Armory.ActorController.Armory_ActorController")
 local WeaponModel = require("BluePrints.Common.MVC.Model.WeaponModel")
+local UpgradeUtils = require("Utils.UpgradeUtils")
 local UIUtils = require("Utils.UIUtils")
-local Handled = UE4.UWidgetBlueprintLibrary.Handled()
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Loaded = false
   M.Super.Construct(self)
@@ -54,32 +53,24 @@ function M:Construct()
     self,
     self.OnRoleListInAnimStarted
   })
-  self.EMListView_SubTab.BP_OnItemClicked:Clear()
-  self.EMListView_SubTab.BP_OnItemClicked:Add(self, self.OnSubTabItemClicked)
-  self.EMListView_Role.BP_OnItemClicked:Clear()
-  self.EMListView_Role.BP_OnItemClicked:Add(self, function(self, Content)
-    self:OnRoleListItemClicked(Content)
+  self:AddTimer(0.1, function()
+    self.Btn_Edit:BindEventOnClicked(self, self.OnEditBtnClicked)
+    self.Btn_Locked:BindEventOnClicked(self, self.OnLockBtnClicked)
+    self.Btn_Locked:TryOverrideSoundFunc(function()
+      AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
+    end)
+    self.Image_Click.OnMouseButtonDownEvent:Unbind()
+    self.Image_Click.OnMouseButtonDownEvent:Bind(self, self.On_Image_Click_MouseButtonDown)
   end)
-  self.EMListView_Role.BP_OnEntryInitialized:Clear()
-  self.EMListView_Role.BP_OnEntryInitialized:Add(self, self.OnRoleListEntryInitialized)
-  self.Btn_Edit:BindEventOnClicked(self, self.OnEditBtnClicked)
-  self.Btn_Locked:BindEventOnClicked(self, self.OnLockBtnClicked)
-  self.Btn_Locked:TryOverrideSoundFunc(function()
-    AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
-  end)
-  self.Button_Element.OnHovered:Add(self, self.OnBtnElementHovered)
-  self.Button_Element.OnUnhovered:Add(self, self.OnBtnElementUnhovered)
-  self.Image_Click.OnMouseButtonDownEvent:Unbind()
-  self.Image_Click.OnMouseButtonDownEvent:Bind(self, self.On_Image_Click_MouseButtonDown)
   if GWorld.GameInstance then
     GWorld.GameInstance:SetHighFrequencyMemoryCheckGCEnabled(true, "ArmoryMain")
   end
 end
-
 function M:GetDesiredFocusTargetInfo(Info)
   Info.Widget = self
 end
-
+function M:OnFocusChanged()
+end
 function M:InitDispatcher()
   self:AddDispatcher(EventID.OnArmoryPreviewModeStateChanged, self, self.OnPreviewModeStateChanged)
   if self.IsPreviewMode then
@@ -87,74 +78,59 @@ function M:InitDispatcher()
   end
   self:AddDispatcher(EventID.OnArmoryTargetStateChanged, self, self.OnArmoryTargetStateChanged)
   self:AddDispatcher(EventID.OnUpdateBagItem, self, self.OnBagItemLockedOrUnlocked)
+  self:AddDispatcher(EventID.OnResourcesChanged, self, self.OnResourcesChanged)
   self:ComponentInitDispatcher()
 end
-
 function M:OnArmoryTargetStateChanged(...)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnArmoryTargetStateChanged", ...)
 end
-
 function M:ComponentInitDispatcher()
 end
-
 function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   if self.ComponentReceivedEvent.WheelScroll then
-    return Handled
+    return UIUtils.Handled
   end
   return self:OnMouseWheelScroll(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return self:OnPointerMove(MyGeometry, MouseEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnPointerMove(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function M:OnEditBtnClicked()
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnEditBtnClicked")
 end
-
 function M:OnLockBtnClicked()
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnLockBtnClicked")
 end
-
 function M:OnBtnElementHovered()
   self:ShowElementTips(true)
 end
-
 function M:OnBtnElementUnhovered()
   self:ShowElementTips(false)
 end
-
 function M:OnBackgroundClicked()
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnBackgroundClicked")
   EventManager:FireEvent(EventID.OnMenuClose)
 end
-
 function M:CallFunctionByName(FunctionName, ...)
   if self[FunctionName] then
     return self[FunctionName](self, ...)
   end
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, Params)
   self.Loaded = false
@@ -227,7 +203,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
         PreviewModeLoadFailed = true
         local trace = debug.traceback()
         err = err or ""
-        DebugPrint("Error: CY@ \233\162\132\232\167\136\230\168\161\229\188\143Avatar\229\136\155\229\187\186\229\164\177\232\180\165!\n" .. err .. "\n" .. trace)
+        DebugPrint("Error: CY@ 预览模式Avatar创建失败!\n" .. err .. "\n" .. trace)
       end
     })
   end
@@ -272,7 +248,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
     IsCharacterTrialMode = self.IsCharacterTrialMode,
     EPreviewSceneType = Params.EPreviewSceneType,
     Char = self.ComparedChar,
-    Weapon = self[self.ComparedWeaponName or ""],
+    Weapon = not self.ComparedChar and self[self.ComparedWeaponName or ""],
     Pet = self.ComparedPet,
     bNeedEndCamera = not Params.bNoEndCamera,
     OnRecorverCameraEnd = {
@@ -304,20 +280,16 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
     end
   end)
 end
-
 function M:JumpToSubPage(...)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_JumpToSubPage", ...)
 end
-
 function M:RecordInitialOrder()
   local Avatar = ArmoryUtils:GetAvatar()
-  
   local function InsertInitialOrderUuids(InitialOrderTable, InfoArray, CreateInfo2Uuids)
     for index, value in ipairs(InfoArray) do
       table.insert(InitialOrderTable, CreateInfo2Uuids[value])
     end
   end
-  
   local Params = self.Params
   if Params.PreviewCharIds and #Params.PreviewCharIds > 0 then
     self.InitialOrderCharUuids = {}
@@ -344,7 +316,6 @@ function M:RecordInitialOrder()
     InsertInitialOrderUuids(self.InitialOrderPetUniqueId, Params.PreviewPetInfos, Avatar.CreateInfo2Uuids.Pets)
   end
 end
-
 function M:ShouldShowSquadBuildBtn()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -353,26 +324,22 @@ function M:ShouldShowSquadBuildBtn()
   local ConditionInId = DataMgr.UIUnlockRule.Squad and DataMgr.UIUnlockRule.Squad.ConditionId or 4110
   return not self.bHideSquadBuildBtn and not self.IsPreviewMode and ConditionUtils.CheckCondition(Avatar, ConditionInId)
 end
-
 function M:CreateMainTabs(Params)
   self.MainTabs = self:CreateTabInfos(self:GetTabsConfigData(), Params)
   self:MappingMainTabIdx()
 end
-
 function M:MappingMainTabIdx()
   self.MainTabName2Idx = {}
   for index, Tab in ipairs(self.MainTabs) do
     self.MainTabName2Idx[Tab.Name] = index
   end
 end
-
 function M:MappingSubTabIdx()
   self.SubTabName2Idx = {}
   for index, Tab in ipairs(self.SubTabs) do
     self.SubTabName2Idx[Tab.Name] = index
   end
 end
-
 function M:JumpToTab(MainTabName, SubTabName)
   self.SubTabName_JumpTo = SubTabName
   if #self.MainTabs > 0 and MainTabName then
@@ -392,7 +359,6 @@ function M:JumpToTab(MainTabName, SubTabName)
     end
   end
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self:BlockAllUIInput(false)
@@ -402,7 +368,6 @@ function M:OnLoaded(...)
   end
   self.Loaded = true
 end
-
 function M:CreateTabInfos(TabsConfig, Params)
   Params = Params or {}
   local Char = Params.Char
@@ -433,7 +398,6 @@ function M:CreateTabInfos(TabsConfig, Params)
   end
   return ResultTabs
 end
-
 function M:CreateTabContent(Tab, TabId, Params)
   local Obj
   if Params.bCreatedWidthClass then
@@ -462,30 +426,25 @@ function M:CreateTabContent(Tab, TabId, Params)
   Obj.TabData = Tab
   return Obj
 end
-
 function M:InitMainTabsStyle(MainTabsStyle, NoInAnim)
   self.CurrentMainTabsStyle = MainTabsStyle
   self.Tab_Arm:Init(MainTabsStyle, NoInAnim)
 end
-
 function M:UpdateMainTabs(MainTabs)
   self.CurrentMainTabsStyle.ForceHideTabs = #MainTabs <= 1
   self.Tab_Arm:UpdateTabs(MainTabs)
 end
-
 function M:SelectMainTab(Content)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_PreMainTabChange")
   self.CurMainTab = Content
   self:CallFunctionByName(Content.Name .. "Main_Init")
 end
-
 function M:OnMainTabClicked(Widget, Content)
   if Content == self.CurMainTab then
     return
   end
   self:SelectMainTab(Content)
 end
-
 function M:UpdateSubTabs(SubTabs)
   self.EMListView_SubTab:ClearListItems()
   local TabNameToSelect = not self.SubTabName_JumpTo and self.CurSubTab and self.CurSubTab.Name
@@ -513,7 +472,6 @@ function M:UpdateSubTabs(SubTabs)
   end
   return TabToSelect
 end
-
 function M:CreateAndSelectSubTab(Params)
   local ConstMainTabConfig = self.MainTabs[self.MainTabName2Idx[self.CurMainTab.Name]].TabData
   local _Params = {
@@ -528,7 +486,6 @@ function M:CreateAndSelectSubTab(Params)
   local TabToSelect = self:UpdateSubTabs(self.SubTabs)
   self:SelectSubTab(TabToSelect)
 end
-
 function M:SelectSubTab(Content)
   if self.CurSubTab then
     self.CurSubTab.IsSelected = false
@@ -545,7 +502,6 @@ function M:SelectSubTab(Content)
   self:UpdateMontageAndCamera()
   self:InitSubUI()
 end
-
 function M:OnSubTabItemClicked(Content)
   if Content == self.CurSubTab then
     return
@@ -553,11 +509,9 @@ function M:OnSubTabItemClicked(Content)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
   self:SelectSubTab(Content)
 end
-
-function M:InitSubUI()
-  self:CallFunctionByName(self.CurMainTab.Name .. "Main_InitSubUI")
+function M:InitSubUI(...)
+  self:CallFunctionByName(self.CurMainTab.Name .. "Main_InitSubUI", ...)
 end
-
 function M:DefaultInitSubUI(Params)
   local SubUIName
   if self.CurMainTab.WidgetPath then
@@ -607,7 +561,6 @@ function M:DefaultInitSubUI(Params)
     self.CurrentSubUI = SubUI
   end
 end
-
 function M:ModifySubUIInitParams(Params)
   Params.Parent = self
   Params.IsPreviewMode = Params.IsPreviewMode or self.IsPreviewMode
@@ -616,14 +569,14 @@ function M:ModifySubUIInitParams(Params)
   Params.bFormPersonalPage = self.Params.bFormPersonalPage
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_ModifySubUIInitParams", Params)
 end
-
+function M:SortItemContents(...)
+  self:CallFunctionByName(self.CurMainTab.Name .. "Main_SortItemContents", ...)
+end
 function M:InitRoleList(...)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_InitRoleList", ...)
 end
-
 function M:OnRoleListContentCreated(Content)
 end
-
 function M:OnRoleListItemClicked(Content)
   if self.ComponentReceivedEvent.OnRoleListItemClicked then
     return
@@ -631,39 +584,59 @@ function M:OnRoleListItemClicked(Content)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnRoleListItemClicked", Content)
   self.EMListView_Role:BP_ScrollItemIntoView(Content)
 end
-
 function M:SelectRoleListItem(Content)
   if self.ComponentReceivedEvent.SelectRoleListItem then
     return
   end
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_SelectRoleListItem", Content)
 end
-
 function M:OnRoleListEntryInitialized(Content, Widget)
   if self.ComponentReceivedEvent.OnRoleListEntryInitialized then
     return
   end
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnRoleListEntryInitialized", Content, Widget)
 end
-
 function M:UpdateResourceInfos(...)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_UpdateResourceInfos", ...)
 end
-
 function M:UpdateBoxReddot(...)
   if self.IsPreviewMode then
     return
   end
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_UpdateBoxReddot", ...)
 end
-
+function M:UpdateBoxReddotView(IsNew, IsRed)
+  if IsRed then
+    IsNew = false
+  end
+  self.Btn_Selective:SetReddot(IsNew, IsRed)
+end
+function M:OnRoleListEntryReleased()
+end
+function M:UpdateRoleListReddot()
+end
+function M:SetAllReddotRead(...)
+  self:CallFunctionByName(self.CurMainTab.Name .. "Main_SetAllReddotRead", ...)
+end
+function M:UpdateUpgradeReddotByResourceChanged(ResourceId)
+  if (self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Char or self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Melee or self.CurMainTab.Name == ArmoryUtils.ArmoryMainTabNames.Ranged) and UpgradeUtils.IsResourceForUpgrade(ResourceId) then
+    local AttrSubTab = self.SubTabs[self.SubTabName2Idx[ArmoryUtils.ArmorySubTabNames.Attribute]]
+    if AttrSubTab then
+      if AttrSubTab.CheckReddot then
+        AttrSubTab.IsNew, AttrSubTab.Upgradeable = AttrSubTab.CheckReddot({})
+      end
+      if AttrSubTab.Widget then
+        AttrSubTab.Widget:SetReddot(AttrSubTab.IsNew, AttrSubTab.Upgradeable)
+      end
+    end
+  end
+end
 function M:SetStars(StarCount)
   self.ListView_Star:ClearListItems()
   for i = 1, StarCount do
     self.ListView_Star:AddItem(NewObject(UIUtils.GetCommonItemContentClass()))
   end
 end
-
 function M:ShowElementTips(IsShow)
   if IsShow then
     self.Stats:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -671,11 +644,6 @@ function M:ShowElementTips(IsShow)
     self.Stats:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
-function M:SetAllReddotRead(...)
-  self:CallFunctionByName(self.CurMainTab.Name .. "Main_SetAllReddotRead", ...)
-end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -688,16 +656,14 @@ function M:ReceiveEnterState(StackAction)
       self:PlayAnimation(self.BG_BackFirst)
     end
   else
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
   end
   self.ReceiveEnterStateNoAnim = false
 end
-
 function M:ReceiveExitState(StackAction)
   M.Super.ReceiveExitState(self, StackAction)
   self:BlockAllUIInput(false)
 end
-
 function M:OnArmoryModClosed(...)
   if self.CurrentChar then
     local Avatar = ArmoryUtils:GetAvatar()
@@ -709,34 +675,26 @@ function M:OnArmoryModClosed(...)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnArmoryModClosed", ...)
   self:UpdateMontageAndCamera()
 end
-
 function M:UpdateMontageAndCamera(Duration)
   self.ActorController:FixedCameraTransTimeOnce(Duration)
   self.ActorController:SetMontageAndCamera(self.CurSubTab.Type, self.CurMainTab.Name, self.CurSubTab.Tag)
 end
-
 function M:ResetActorRotation()
   self.ActorController:ResetActorRotation()
 end
-
 function M:PlayInAnim()
   self.Tab_Arm:PlayInAnim()
 end
-
 function M:OnOutAnimStarted()
   self:ModifyWaitForCloseEventCount(true)
 end
-
 function M:OnOutAnimFinished()
   self:ModifyWaitForCloseEventCount(false)
 end
-
 function M:OnRoleListInAnimStarted()
 end
-
 function M:OnRoleListInAnimFinished()
 end
-
 function M:ModifyWaitForCloseEventCount(bIncrease)
   if bIncrease then
     self.WaitForCloseEventCount = self.WaitForCloseEventCount + 1
@@ -747,7 +705,6 @@ function M:ModifyWaitForCloseEventCount(bIncrease)
     end
   end
 end
-
 function M:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "ArmoryOpenedSound", {ToEnd = 1})
   for _, value in pairs(self.SubUIs) do
@@ -760,16 +717,18 @@ function M:PlayOutAnim()
   end
   self:StopAnimation(self.RoleList_In)
 end
-
 function M:OnBagItemLockedOrUnlocked(...)
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnBagItemLockedOrUnlocked", ...)
 end
-
+function M:OnResourcesChanged(ResourceId)
+  self:CallFunctionByName(self.CurMainTab.Name .. "Main_OnResourcesChanged", ResourceId)
+  self:UpdateUpgradeReddotByResourceChanged(ResourceId)
+end
 function M:Close()
   self.bRealClosed = false
   self:ModifyWaitForCloseEventCount(true)
   M.Super.Close(self)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   if self.IsPreviewMode then
     self:ModifyWaitForCloseEventCount(true)
     self:BindToAnimationFinished(self.Auto_Out, {
@@ -781,6 +740,10 @@ function M:Close()
   elseif not self.IsSecondaryUI then
     local MenuWorld = UIManager(self):GetUIObj(UIConst.MenuWorld)
     if not MenuWorld then
+      local BattleMainUI = UIManager(self):GetUI("BattleMain")
+      if BattleMainUI then
+        BattleMainUI:RemovePlayInOutSystems(self.WidgetName)
+      end
       UIUtils.PlayBattleMainInAnim()
     end
     self:PlayOutAnim()
@@ -791,26 +754,28 @@ function M:Close()
     self.ActorController:OnClosed()
   end
   self:ModifyWaitForCloseEventCount(false)
+  if self.OnCloseEvents then
+    for Obj, Func in pairs(self.OnCloseEvents) do
+      if IsValid(Obj) then
+        Func(Obj)
+      end
+    end
+  end
 end
-
 function M:Component_BeforeClose()
 end
-
 function M:OnRecorverCameraStart()
   self:ModifyWaitForCloseEventCount(true)
 end
-
 function M:OnRecorverCameraEnd()
   self:ModifyWaitForCloseEventCount(false)
 end
-
 function M:OnBackBtnClicked()
   if self.ComponentReceivedEvent.Back then
     return
   end
   self:Close()
 end
-
 function M:RealClose()
   if self.WaitForCloseEventCount > 0 then
     return
@@ -825,7 +790,14 @@ function M:RealClose()
     self.OnCloseDelegate[2](self.OnCloseDelegate[1], self.OnCloseDelegate[3])
   end
 end
-
+function M:BindEventOnDestruct(Obj, Func)
+  self.OnDestructEvents = self.OnDestructEvents or {}
+  self.OnDestructEvents[Obj] = Func
+end
+function M:BindEventOnClose(Obj, Func)
+  self.OnCloseEvents = self.OnCloseEvents or {}
+  self.OnCloseEvents[Obj] = Func
+end
 function M:Destruct()
   M.Super.Destruct(self)
   if self.ActorController then
@@ -839,8 +811,14 @@ function M:Destruct()
   if GWorld.GameInstance then
     GWorld.GameInstance:SetHighFrequencyMemoryCheckGCEnabled(false, "ArmoryMain")
   end
+  if self.OnDestructEvents then
+    for Obj, Func in pairs(self.OnDestructEvents) do
+      if IsValid(Obj) then
+        Func(Obj)
+      end
+    end
+  end
 end
-
 function M:OnPreviewModeStateChanged()
   if not self.IsPreviewMode then
     return
@@ -853,7 +831,6 @@ function M:OnPreviewModeStateChanged()
   self.bRecreateContent = false
   self:CallFunctionByName(self.CurMainTab.Name .. "Main_Init")
 end
-
 function M:GetConstTab(MainTabName, SubTabName)
   local MainTabIdx = self.MainTabName2Idx[MainTabName]
   local MainTab = self.MainTabs[MainTabIdx]
@@ -865,7 +842,6 @@ function M:GetConstTab(MainTabName, SubTabName)
     end
   end
 end
-
 function M:PlayMainTabSound(TabIdx)
   local MainTab = self.MainTabs[TabIdx]
   local SoundPath = self.MainTabSoundPath[MainTab.Name]
@@ -884,7 +860,6 @@ function M:PlayMainTabSound(TabIdx)
     end
   end
 end
-
 function M:CreateConstInfos()
   self.MainTabsStyle = {
     TitleName = GText("MAIN_UI_ARMORY"),
@@ -908,11 +883,9 @@ function M:CreateConstInfos()
     [ArmoryUtils.ArmoryMainTabNames.Ranged] = "event:/ui/armory/click_select_gun",
     [ArmoryUtils.ArmoryMainTabNames.Pet] = "event:/ui/common/click_select_pet"
   }
-  
   function self.AlwaysReturnTrue()
     return true
   end
-  
   self.WeaponGradeSubTab = {
     PCWidgetPath = "WidgetBlueprint'/Game/UI/WBP/Armory/PC/WBP_Armoy_Enhance_P.WBP_Armoy_Enhance_P'",
     MobileWidgetPath = "WidgetBlueprint'/Game/UI/WBP/Armory/Mobile/WBP_Armoy_Enhance_M.WBP_Armoy_Enhance_M'",
@@ -993,7 +966,7 @@ function M:CreateConstInfos()
               if self.IsPreviewMode or not Char then
                 return false
               end
-              return false, ArmoryUtils:TryAddCharRewardReddot(Char.CharId) or ArmoryUtils:TryAddUnlockableCharReddot(Char.CharId)
+              return false, ArmoryUtils:TryAddCharRewardReddot(Char.CharId) or ArmoryUtils:TryAddUnlockableCharReddot(Char.CharId) or UpgradeUtils.CalcCharOrWeaponLevelUp(Char, CommonConst.DataType.Char, Char.Level, Char.Level + 1).CanUpgrade or UpgradeUtils.CalcBreakLevelUp(Char, CommonConst.DataType.Char, Char.EnhanceLevel + 1).CanUpgrade
             end
           },
           [ArmoryUtils.ArmorySubTabNames.Skill] = {
@@ -1122,7 +1095,7 @@ function M:CreateConstInfos()
               if self.IsPreviewMode or not Weapon then
                 return false
               end
-              return false, ArmoryUtils:TryAddWeaponRewardReddot(Weapon.WeaponId)
+              return false, ArmoryUtils:TryAddWeaponRewardReddot(Weapon.WeaponId) or UpgradeUtils.CalcCharOrWeaponLevelUp(Weapon, CommonConst.DataType.Weapon, Weapon.Level, Weapon.Level + 1).CanUpgrade or UpgradeUtils.CalcBreakLevelUp(Weapon, CommonConst.DataType.Char, Weapon.EnhanceLevel + 1).CanUpgrade
             end
           },
           [ArmoryUtils.ArmorySubTabNames.Grade] = self.WeaponGradeSubTab,
@@ -1175,7 +1148,7 @@ function M:CreateConstInfos()
               if self.IsPreviewMode or not Weapon then
                 return false
               end
-              return false, ArmoryUtils:TryAddWeaponRewardReddot(Weapon.WeaponId)
+              return false, ArmoryUtils:TryAddWeaponRewardReddot(Weapon.WeaponId) or UpgradeUtils.CalcCharOrWeaponLevelUp(Weapon, CommonConst.DataType.Weapon, Weapon.Level, Weapon.Level + 1).CanUpgrade or UpgradeUtils.CalcBreakLevelUp(Weapon, CommonConst.DataType.Char, Weapon.EnhanceLevel + 1).CanUpgrade
             end
           },
           [ArmoryUtils.ArmorySubTabNames.Grade] = self.WeaponGradeSubTab,
@@ -1230,7 +1203,6 @@ function M:CreateConstInfos()
               return not self.Params.bHideUltraTab
             end
           }
-          
           local function CopyTab(TabToBeCopy)
             local NewTab = {}
             for key, value in pairs(TabToBeCopy) do
@@ -1238,7 +1210,6 @@ function M:CreateConstInfos()
             end
             return NewTab
           end
-          
           local Tabs = {}
           local IsUWeaponUnlocked = false
           if self.IsPreviewMode then
@@ -1288,6 +1259,13 @@ function M:CreateConstInfos()
                 return false
               end
               return not Params.Pet:IsResourcePet()
+            end,
+            CheckReddot = function(Params)
+              local Pet = Params.Pet or self.ComparedPet
+              if self.IsPreviewMode or not Pet then
+                return false
+              end
+              return false, UpgradeUtils.CheckPetCanBreakLevelUp(Pet)
             end
           },
           [ArmoryUtils.ArmorySubTabNames.Entry] = {
@@ -1315,7 +1293,7 @@ function M:CreateConstInfos()
           if Avatar.Pets then
             local Data = DataMgr.Pet
             for k, v in pairs(Avatar.Pets) do
-              if Data[v.PetId] then
+              if Data[v.PetId] and not v:IsResourcePet() then
                 HasAnyPet = true
                 break
               end
@@ -1385,7 +1363,6 @@ function M:CreateConstInfos()
     }
   }
 end
-
 function M:GetTabsConfigData()
   if self.IsPreviewMode then
     return self.ConstTabsConfig
@@ -1393,5 +1370,4 @@ function M:GetTabsConfigData()
     return self.ConstTabsConfig
   end
 end
-
 return M

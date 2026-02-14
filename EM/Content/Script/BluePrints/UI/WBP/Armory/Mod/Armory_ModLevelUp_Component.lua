@@ -1,7 +1,6 @@
 local ModModel = ModController:GetModel()
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local Component = {}
-
 function Component:InitLevelUpComp(...)
   ModController:RegisterEvent(self)
   self.Panel_Max:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -28,7 +27,6 @@ function Component:InitLevelUpComp(...)
   self:AddTimer(0.2, self.RefreshBaseInfo)
   self:UpdateTopResourceBar()
 end
-
 function Component:OnBtnUpgradeClick()
   if self.CurrentMode ~= ModCommon.LevelUp then
     return
@@ -40,14 +38,11 @@ function Component:OnBtnUpgradeClick()
     ModController:ShowToast(GText("UI_Mod_Toast_ResourceLack"))
     return
   end
-  
   local function Callback()
     ModController:SendModLevelUp(self.Target, self.PreviewLevel, self.bTakeOff)
   end
-  
   ModController:TryOpenOverCostWarningDialog(self.Target, self.PreviewLevel, Callback, self)
 end
-
 function Component:InitLevelUpWidget()
   if not self.LevelUpWidget then
     self.LevelUpWidget = self:CreateWidgetNew(ModCommon.ModLevelUp)
@@ -71,11 +66,9 @@ function Component:InitLevelUpWidget()
   self:SetModDataUI()
   self:PlayModUICameraAnim()
 end
-
 function Component:ReceiveEnterStateComp()
   self:UpdateResourceUI()
 end
-
 function Component:UpdateResourceUI(bEmpty)
   local Count = 0
   local MaxCount = self.Item_1:GetParent():GetChildrenCount()
@@ -92,7 +85,7 @@ function Component:UpdateResourceUI(bEmpty)
     for ResourceId, ResCount in pairs(ResourceUse) do
       if Count >= MaxCount then
         self.LevelUpWidget:ForbidIncBtn(true)
-        DebugPrint(ErrorTag, LXYTag, "\230\137\128\233\156\128\229\141\135\231\186\167\233\129\147\229\133\183\231\154\132\231\167\141\231\177\187\229\183\178\231\187\143\232\182\133\232\191\135\228\184\138\233\153\144\228\186\134\239\188\129\239\188\129\239\188\129")
+        DebugPrint(ErrorTag, LXYTag, "所需升级道具的种类已经超过上限了！！！")
         break
       end
       Count = Count + 1
@@ -118,7 +111,6 @@ function Component:UpdateResourceUI(bEmpty)
     self["Item_" .. i]:Init({Id = 0, UnitId = 0})
   end
 end
-
 function Component:OnLevelChangeBtnClick(PreviewLevel)
   local Attrs, ComparedAttrs = {}, {}
   self.PreviewLevel = PreviewLevel
@@ -128,7 +120,6 @@ function Component:OnLevelChangeBtnClick(PreviewLevel)
   local Desc = ArmoryUtils:GenModPassiveEffectDesc(self.Target:Data(), self.Target.Level, self.PreviewLevel)
   return Attrs, ComparedAttrs, Desc
 end
-
 function Component:NotifyOnModLevelUp(OldModUuid, NewModUuid, bTakeOff)
   self.Target = ModModel:GetMod(NewModUuid)
   self.bDisableWarning = true
@@ -139,12 +130,10 @@ function Component:NotifyOnModLevelUp(OldModUuid, NewModUuid, bTakeOff)
   end
   self.LevelUpWidget:OnLevelUpSuccess()
 end
-
 function Component:RealCloseComp()
   self.Btn_Upgrade:UnBindEventOnClickedByObj(self)
   self:CloseForModCommon()
 end
-
 function Component:OnLevelUpSuccessCallback()
   local Attrs = {}
   self:UpdateModCostUI(Attrs, nil, self.Target.Level)
@@ -152,7 +141,6 @@ function Component:OnLevelUpSuccessCallback()
   local Desc = ArmoryUtils:GenModPassiveEffectDesc(self.Target:Data(), self.Target.Level)
   return Attrs, Desc
 end
-
 function Component:OnLevelUpAnimFinishedCallback()
   self.PreviewLevel = self.PreviewLevel + 1
   local Params = {
@@ -170,14 +158,12 @@ function Component:OnLevelUpAnimFinishedCallback()
     self:SetFocus()
   end
 end
-
 function Component:CheckCanUpgrade(TargetLevel)
   local ResourceUse = self.Target:GetLevelUpItems(self.Target.Level, TargetLevel)
   local Avatar = ModModel:GetAvatar()
   local CanUpgrade = Avatar:CheckEnough(ResourceUse)
   return CanUpgrade
 end
-
 function Component:GetMaxCanUpgradeLevel()
   local ComparedLevel = self.Target.Level + 1
   if ComparedLevel >= self.Target.MaxLevel then
@@ -193,7 +179,6 @@ function Component:GetMaxCanUpgradeLevel()
   until ComparedLevel > self.Target.MaxLevel or not Res
   return ToLevel
 end
-
 function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -231,14 +216,12 @@ function Component:RefreshOpInfoByInputDeviceComp(CurInputDevice, CurGamepadName
     end
   end
 end
-
 function Component:OnFocusReceivedComp(MyGeometry, InFocusEvent)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:ReNavigateToListItem()
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function Component:ReNavigateToListItem()
   if CommonUtils:IfExistSystemGuideUI(self) then
     return
@@ -251,7 +234,6 @@ function Component:ReNavigateToListItem()
     self:SetFocus()
   end
 end
-
 function Component:OnKeyDownComp(MyGeometry, InKeyName)
   if InKeyName == EKeys.Add.KeyName then
     self.LevelUpWidget.Btn_Add.Btn.OnClicked:Broadcast()
@@ -280,16 +262,18 @@ function Component:OnKeyDownComp(MyGeometry, InKeyName)
   elseif InKeyName == UIConst.GamePadKey.DPadRight then
     self.LevelUpWidget.Btn_Max.Btn.OnClicked:Broadcast()
     return true
-  elseif InKeyName == UIConst.GamePadKey.RightThumb then
+  elseif InKeyName == UIConst.GamePadKey.LeftThumb then
     self.IsFocusInItem = true
     self.Item_1:SetFocus()
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self:ShowCheckBtn(true)
     return true
+  elseif InKeyName == UIConst.GamePadKey.RightThumb then
+    self.Tab_Intensify:Handle_KeyEventOnGamePad(InKeyName, "KeyDown")
+    return true
   end
   return false
 end
-
 function Component:OnPreviewKeyDownComp(MyGeometry, InKeyName)
   if InKeyName == UIConst.GamePadKey.DPadLeft then
     self.LevelUpWidget.Btn_Min.Btn.OnClicked:Broadcast()
@@ -300,5 +284,4 @@ function Component:OnPreviewKeyDownComp(MyGeometry, InKeyName)
   end
   return false
 end
-
 return Component

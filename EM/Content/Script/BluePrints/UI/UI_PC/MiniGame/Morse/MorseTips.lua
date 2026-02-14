@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_MiniGame_Mima_Tips_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_MiniGame_Mima_Tips_C:InitIcon(PasswordNum)
   self.PasswordMap = {
     [1] = {
@@ -82,5 +81,4 @@ function WBP_MiniGame_Mima_Tips_C:InitIcon(PasswordNum)
     self["Item0" .. i].Switcher:SetActiveWidgetIndex(Password[i])
   end
 end
-
 return WBP_MiniGame_Mima_Tips_C

@@ -10,7 +10,6 @@ local TypeSort = {
   Reward = 5,
   Resource = 6
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self:AddInputMethodChangedListen()
@@ -29,7 +28,6 @@ function M:Construct()
   self.Item3:SetNavigationRuleExplicit(EUINavigation.Left, self.Item2)
   self:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -45,24 +43,24 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     if self.Com_Show then
       self.Com_Show:SetVisibility(ESlateVisibility.Collapsed)
     end
-    self:StopAnimation(self.Hover)
-    self:PlayAnimation(self.Unhover)
-    self.bIsHovered = false
+    if not self.IsUnLocked then
+      self:StopAnimation(self.Hover)
+      self:PlayAnimation(self.Unhover)
+      self.bIsHovered = false
+    end
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.ChapterId = Content.ChapterId
   self.Parent = Content.Parent
   self:InitItemContent()
 end
-
 function M:InitItemContent()
   local ChapterData = DataMgr.SelectDungeon[self.ChapterId]
   if not ChapterData then
-    DebugPrint("SL_\230\137\190\228\184\141\229\136\176\229\133\179\229\141\161\230\149\176\230\141\174:", self.ChapterId)
+    DebugPrint("SL_找不到关卡数据:", self.ChapterId)
     return
   end
   self.bIsHovered = false
@@ -85,7 +83,6 @@ function M:InitItemContent()
   end
   self:RefreshRewardInfoList(ChapterData.RewardViewId)
 end
-
 function M:RefreshRewardInfoList(DungeonReward)
   if not DungeonReward then
     DebugPrint("SL DungeonReward is nil")
@@ -139,7 +136,6 @@ function M:RefreshRewardInfoList(DungeonReward)
           function Cell.__OnMenuOpenChanged__(_, bIsOpen)
             self:OnStuffMenuOpenChanged(bIsOpen)
           end
-          
           Cell:BindEvents(self, {
             OnMenuOpenChanged = Cell.__OnMenuOpenChanged__
           })
@@ -165,7 +161,6 @@ function M:RefreshRewardInfoList(DungeonReward)
     end
   end
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -176,7 +171,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self:UpdatKeyDisplay("RewardWidget")
   end
 end
-
 function M:OnClicked()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -199,7 +193,6 @@ function M:OnClicked()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_select_lock", nil, nil)
   end
 end
-
 function M:OnPressed()
   if self.IsUnLocked or self:IsAnimationPlaying(self.In) then
     return
@@ -207,14 +200,12 @@ function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
   if self.IsUnLocked or self:IsAnimationPlaying(self.In) then
     return
   end
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.IsUnLocked or not self.IsPC then
     return
@@ -236,7 +227,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if self.IsUnLocked or not self.IsPC then
     self.bIsHovered = false
@@ -252,7 +242,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Click then
     local Item = UIManager(self):GetUIObj("StyleOfPlay")
@@ -314,12 +303,11 @@ function M:OnAnimationFinished(InAnimation)
       return
     end
     SelectLevel:UpdatKeyDisplay("SelfWidget")
-  elseif InAnimation == self.In and self.bIsHovered then
+  elseif InAnimation == self.In and self.bIsHovered and not self.IsUnLocked then
     self:StopAllAnimations()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -333,7 +321,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   DebugPrint("SL OnGamePadDown is InKeyName", InKeyName)
   local IsEventHandled = false
@@ -371,7 +358,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -493,5 +479,4 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 return M

@@ -46,8 +46,8 @@ return {
       isStoryNode = true,
       key = "17492108076601886001",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 1056.0830161896256, y = 318.11705968012336},
+      name = "任务节点",
+      pos = {x = 1054.5040688212046, y = 303.9065333643339},
       propsData = {
         QuestId = 0,
         QuestDescriptionComment = "",
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -92,7 +94,7 @@ return {
           ["17236262492862390042"] = {
             key = "17236262492862390042",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1007.8911814706037, y = 276.03495279029505},
             propsData = {
               IsNpcNode = false,
@@ -111,6 +113,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = false,
               ShowAutoPlayButton = false,
               ShowReviewButton = true,
@@ -118,13 +121,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -145,7 +148,7 @@ return {
             key = "17492108076601886003",
             type = "QuestSuccessNode",
             name = "QuestSuccess",
-            pos = {x = 1486.133540372671, y = 313.69565217391306},
+            pos = {x = 1236.8478260869567, y = 269.604743083004},
             propsData = {ModeType = 0}
           },
           ["17492108076601886004"] = {

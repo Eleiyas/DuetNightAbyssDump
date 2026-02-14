@@ -1,12 +1,10 @@
 local ForbidWeaponByWeaponTagNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function ForbidWeaponByWeaponTagNode:Init()
   self.WeaponTags = {}
   self.bForbid = true
   self.ForbidTag = "ForbidDefault"
   self.bHidewhenForbid = true
 end
-
 function ForbidWeaponByWeaponTagNode:Execute()
   self.RealWeaponTags = {}
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
@@ -24,14 +22,11 @@ function ForbidWeaponByWeaponTagNode:Execute()
     PlayerController:SetAndForbidWeaponByWeaponTag(self.RealWeaponTags, self.bForbid, self.ForbidTag, self.bHidewhenForbid)
   end
 end
-
 function ForbidWeaponByWeaponTagNode:OnQuestlineSuccess()
   DebugPrint("ZJT_ ForbidWeaponByWeaponTagNode ", self.bForbid, self.ForbidTag, self.bHidewhenForbid)
 end
-
 function ForbidWeaponByWeaponTagNode:OnQuestlineFail()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
   PlayerController:SetAndForbidWeaponByWeaponTag(self.RealWeaponTags, not self.bForbid, self.ForbidTag, self.bHidewhenForbid)
 end
-
 return ForbidWeaponByWeaponTagNode

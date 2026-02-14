@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_ChangeTitle.OnClicked:Add(self, self.OnClickChangeTitle)
   self.Btn_SetTitle.OnClicked:Add(self, self.OnClickChangeTitle)
@@ -10,14 +9,12 @@ function M:Construct()
   self.IsSelf = true
   self.Text_Set:SetText(GText("UI_PersonalPage_Title_Set"))
 end
-
 function M:Init(Isself)
   self.IsSelf = Isself
   if self.IsSelf == false then
     self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function M:OnTitleChange()
   local Avatar = GWorld:GetAvatar()
   local TitleBefore = Avatar.TitleBefore
@@ -25,7 +22,6 @@ function M:OnTitleChange()
   local TitleFrame = Avatar.TitleFrame
   self:Freshtitle(TitleBefore, TitleAfter, TitleFrame)
 end
-
 function M:Freshtitle(TitleBefore, TitleAfter, TitleFrame)
   if self.IsSelf then
     if -1 == TitleBefore and -1 == TitleAfter then
@@ -55,11 +51,9 @@ function M:Freshtitle(TitleBefore, TitleAfter, TitleFrame)
     self.Group_Title:AddChildToOverlay(TileFrameWidget)
   end
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.OnChangeTitle, self)
 end
-
 function M:OnClickChangeTitle()
   ReddotManager.ClearLeafNodeCount("TitleBtn", true)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click", nil, nil)
@@ -72,5 +66,4 @@ function M:OnClickChangeTitle()
     end
   }, self)
 end
-
 return M

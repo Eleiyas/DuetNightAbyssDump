@@ -3,12 +3,10 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Construct()
   self:InitListenEvent()
   EventManager:AddEvent(EventID.OnChangeKeyBoardSet, self, self.OnChangeKeyBoardSet)
 end
-
 function M:Destruct()
   self:RemoveTimer("InstructionKeyAnim")
   if IsValid(self.GameInputModeSubsystem) then
@@ -16,7 +14,6 @@ function M:Destruct()
   end
   EventManager:RemoveEvent(EventID.OnChangeKeyBoardSet, self)
 end
-
 function M:HideAllText()
   local Platform = CommonUtils:GetDeviceTypeByPlatformName(self)
   if "PC" == Platform then
@@ -25,7 +22,6 @@ function M:HideAllText()
     self:HideAllTextMobile()
   end
 end
-
 function M:Init(ActionName, IsByStl)
   self.SkillType = ActionName
   self.Key:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -36,7 +32,6 @@ function M:Init(ActionName, IsByStl)
   self:RefreshBaseInfo()
   self:SetActionText(ActionName)
 end
-
 function M:HideAllTextPC()
   self.Text01:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text02:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -46,7 +41,6 @@ function M:HideAllTextPC()
   self.Arrow:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Key.Main:SetRenderOpacity(0)
 end
-
 function M:HideAllTextMobile()
   self.One:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Two:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -55,7 +49,6 @@ function M:HideAllTextMobile()
   self.Four2:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Arrow:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:ShowActionText(ActionName)
   local Platform = CommonUtils:GetDeviceTypeByPlatformName(self)
   if "PC" == Platform then
@@ -64,7 +57,6 @@ function M:ShowActionText(ActionName)
     self:ShowActionTextMobile(ActionName)
   end
 end
-
 function M:ShowActionTextPC(ActionName)
   if "SpiralLeap" == ActionName then
     self.RealSetSpiralLeap = self.Text01:ShowTextPC("Guide_UI_SpiralLeap_PC", "Guide_UI_SpiralLeap_PC")
@@ -74,12 +66,12 @@ function M:ShowActionTextPC(ActionName)
     self.RealSetSkill1 = self.Text03:ShowTextPC("Guide_UI_Skill1_PC", "Guide_UI_Skill1_Gamepad")
   elseif "Skill2" == ActionName then
     self.RealSetSkill2 = self.Text04:ShowTextPC("Guide_UI_Skill2_PC", "Guide_UI_Skill2_Gamepad")
+  elseif "Skill3" == ActionName then
   elseif "Skill2Attack" == ActionName then
     self.Arrow:SetVisibility(UE4.ESlateVisibility.Visible)
     self.RealSetSkill2Attack = self.Text05:ShowTextPC("Guide_UI_Skill2Attack_PC", "Guide_UI_Skill2Attack_PC")
   end
 end
-
 function M:ShowActionTextMobile(ActionName)
   if "SpiralLeap" == ActionName then
     self.RealSetSpiralLeap = self.One:GetVisibility() ~= UE4.ESlateVisibility.Visible
@@ -97,6 +89,7 @@ function M:ShowActionTextMobile(ActionName)
     self.RealSetSkill2 = self.Four1:GetVisibility() ~= UE4.ESlateVisibility.Visible
     self.Four1:SetVisibility(UE4.ESlateVisibility.Visible)
     self.Text04:SetText(GText("Guide_UI_Skill2_Mobile"))
+  elseif "Skill3" == ActionName then
   elseif "Skill2Attack" == ActionName then
     self.RealSetSkill2Attack = self.Four2:GetVisibility() ~= UE4.ESlateVisibility.Visible
     self.Four2:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -104,7 +97,6 @@ function M:ShowActionTextMobile(ActionName)
     self.Text05:SetText(GText("Guide_UI_Skill2Attack_Mobile"))
   end
 end
-
 function M:HideActionText(ActionName)
   local Platform = CommonUtils:GetDeviceTypeByPlatformName(self)
   if "PC" == Platform then
@@ -113,7 +105,6 @@ function M:HideActionText(ActionName)
     self:HideActionTextMobile(ActionName)
   end
 end
-
 function M:HideActionTextPC(ActionName)
   if "SpiralLeap" == ActionName then
     self.RealSetSpiralLeap = self.Text01:HideTextPC()
@@ -128,7 +119,6 @@ function M:HideActionTextPC(ActionName)
     self.Arrow:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:HideActionTextMobile(ActionName)
   if "SpiralLeap" == ActionName then
     self.RealSetSpiralLeap = self.One:GetVisibility() ~= UE4.ESlateVisibility.Collapsed
@@ -148,7 +138,6 @@ function M:HideActionTextMobile(ActionName)
     self.Arrow:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:ShowActionKeyAndText(ActionName)
   if self.Key == nil then
     return
@@ -166,6 +155,9 @@ function M:ShowActionKeyAndText(ActionName)
     local KeyName = CommonUtils:GetActionMappingKeyName(ActionName)
     local FixPath = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Instruction/T_Key_%s_L.T_Key_%s_L'"
     local ReplaceKey = string.gsub(KeyName, " ", "_")
+    if DataMgr.KeyboardText[ReplaceKey] then
+      ReplaceKey = DataMgr.KeyboardText[ReplaceKey].KeyText
+    end
     ImgPath = string.format(FixPath, ReplaceKey, ReplaceKey)
     Img = LoadObject(ImgPath)
     if not IsValid(Img) then
@@ -184,7 +176,6 @@ function M:ShowActionKeyAndText(ActionName)
     self.key:PlayAnimation(self.Key.Loop, 0, 0)
   end
 end
-
 function M:ShowActionKeyAndTextByGamePad(ActionName)
   if self.Key == nil then
     return
@@ -215,7 +206,6 @@ function M:ShowActionKeyAndTextByGamePad(ActionName)
     end
   end
 end
-
 function M:SetActionText(ActionName)
   if "Attack" == ActionName then
     self.Key.Text_Describe:SetText(GText("Guide_HighlightButton_Attack"))
@@ -225,11 +215,14 @@ function M:SetActionText(ActionName)
     self.Key.Text_Describe:SetText(GText("Guide_HighlightButton_Skill1"))
   elseif "Skill2" == ActionName then
     self.Key.Text_Describe:SetText(GText("Guide_HighlightButton_Skill2"))
+  elseif "Skill3" == ActionName then
+    self.Key.Text_Describe:SetText(GText("Guide_HighlightButton_Skill3"))
   elseif self.SkillType == "Interactive" then
     self.Key.Text_Describe:SetText(GText("MESSAGE_TITLE_LOADING_21_PC"))
+  elseif self.SkillType == "Slide" then
+    self.Key.Text_Describe:SetText(GText("Guide_HighlightButton_Crouch"))
   end
 end
-
 function M:OnChangeKeyBoardSet()
   local bIsGamepad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
   if bIsGamepad then
@@ -240,13 +233,11 @@ function M:OnChangeKeyBoardSet()
     self:ShowActionKeyAndText(self.SkillType)
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -254,7 +245,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -268,5 +258,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:ShowActionKeyAndTextByGamePad(self.SkillType)
   end
 end
-
 return M

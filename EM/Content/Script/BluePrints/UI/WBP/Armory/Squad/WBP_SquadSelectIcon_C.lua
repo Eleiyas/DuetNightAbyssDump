@@ -1,10 +1,6 @@
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
-function M:EMPreConstruct()
-end
-
 local SQUAD_ICON_TYPE = {
   CHAR_ICON = "Char",
   WEAPON_ICON = "Weapon",
@@ -14,7 +10,6 @@ local SQUAD_ICON_TYPE = {
   EMPTY_ICON = "Empty"
 }
 local EMPTY_PET_ICON_PATH = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Tab/T_Tab_Pet.T_Tab_Pet'"
-
 function M:InitIcon(SquadIconType, IconPath, ...)
   if SquadIconType == SQUAD_ICON_TYPE.CHAR_ICON then
     self:SetCharIcon(IconPath, ...)
@@ -32,7 +27,6 @@ function M:InitIcon(SquadIconType, IconPath, ...)
     assert(false, "Invalid SquadIconType: " .. SquadIconType)
   end
 end
-
 function M:SetCharIcon(IconPath, ...)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_Level:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -44,7 +38,6 @@ function M:SetCharIcon(IconPath, ...)
   local Level = (...)
   self.Text_Level:SetText(tostring(Level))
 end
-
 function M:SetWeaponIcon(IconPath, ...)
   self:PlayAnimation(self.Normal)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -57,7 +50,6 @@ function M:SetWeaponIcon(IconPath, ...)
   local Level = (...)
   self.Text_Level:SetText(tostring(Level))
 end
-
 function M:SetWheelIcon(IconPath, ...)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_Level:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -67,7 +59,6 @@ function M:SetWheelIcon(IconPath, ...)
   local WheelIndexText = Const.RomanNum[WheelIndex]
   self.Text_Num:SetText(WheelIndexText)
 end
-
 function M:SetPetIcon(IconPath, ...)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_Level:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -79,7 +70,6 @@ function M:SetPetIcon(IconPath, ...)
   local Level = (...)
   self.Text_Level:SetText(tostring(Level))
 end
-
 function M:SetEmptyPetIcon(IconPath, ...)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Panel_Level:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -89,17 +79,14 @@ function M:SetEmptyPetIcon(IconPath, ...)
   local Level = (...)
   self.Text_Level:SetText(tostring(Level))
 end
-
 function M:SetEmptyIcon(IconPath, ...)
   self:PlayAnimation(self.EmptyRed)
   self.WidgetSwitcher_Head:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Panel_Level:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.FlashRed then
     self:SetEmptyIcon()
   end
 end
-
 return M

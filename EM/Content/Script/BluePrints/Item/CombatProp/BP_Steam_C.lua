@@ -2,7 +2,6 @@ local BP_Steam_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
 BP_Steam_C.HitedArray = {}
-
 function BP_Steam_C:CommonInitInfo(Info)
   self.SkillEffect = self.UnitParams.SkillEffect
   self.GasNum = self.UnitParams.GasNum
@@ -24,19 +23,15 @@ function BP_Steam_C:CommonInitInfo(Info)
   self.MeshRelativeRotation = self.Mesh.RelativeRotation
   self.CapsuleRadius = self.Capsule:GetUnscaledCapsuleRadius()
 end
-
 function BP_Steam_C:ActiveOnServer()
   self:ShowSteamEffect()
   self:StartWarning()
 end
-
 function BP_Steam_C:StartWarning()
   self.IsWarning = true
   self.CurWarningTime = 0
 end
-
 function BP_Steam_C:DeActive()
   self:HideSteamEffect()
 end
-
 return BP_Steam_C

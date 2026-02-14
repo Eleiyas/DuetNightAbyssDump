@@ -16,7 +16,8 @@ WBP_Abyss_Select_C.GamepadIcons = {
   "Controller_Reset",
   "Controller_Enter"
 }
-
+WBP_Abyss_Select_C.SwitchAttributeWidget_P = "WidgetBlueprint'/Game/UI/WBP/Abyss/PC/WBP_Abyss_ChangeAttribute_P.WBP_Abyss_ChangeAttribute_P'"
+WBP_Abyss_Select_C.SwitchAttributeWidget_M = "WidgetBlueprint'/Game/UI/WBP/Abyss/Mobile/WBP_Abyss_ChangeAttribute_M.WBP_Abyss_ChangeAttribute_M'"
 function WBP_Abyss_Select_C:InitGamepadKeys()
   if self:IsMobile() then
     return
@@ -43,22 +44,28 @@ function WBP_Abyss_Select_C:InitGamepadKeys()
       {Type = "Img", ImgShortPath = "X"}
     }
   })
+  self.Controller_AttributeDesc:CreateCommonKey({
+    KeyInfoList = {
+      {Type = "Img", ImgShortPath = "Down"}
+    }
+  })
 end
-
 function WBP_Abyss_Select_C:InitSoundFunc()
   self.Btn_Reset:TryOverrideSoundFunc(function()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end)
 end
-
 function WBP_Abyss_Select_C:Construct()
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance)
   self.IsEndLess = false
   self.Text_Reset:SetText(GText("Abyss_ResetFight"))
   self.Text_Lock:SetText(GText("Abyss_PartyLock"))
+  self.Text_AttributeDesc:SetText(GText("UI_ElementDes"))
   self.BtnStart:Init(self, self.OnStartButtonClicked, self.ShowTeamConditionNotMetToast)
   self.Btn_Reset:UnBindEventOnClickedByObj(self)
   self.Btn_Reset:BindEventOnClicked(self, self.ShowResetConfirmWindow)
+  self.Btn_AttributeDesc:UnBindEventOnClickedByObj(self)
+  self.Btn_AttributeDesc:BindEventOnClicked(self, self.ShowAttributeDesc)
   self:InitSoundFunc()
   self:InitGamepadKeys()
   self:RefreshBaseInfo()
@@ -66,28 +73,25 @@ function WBP_Abyss_Select_C:Construct()
   self.Item_L:BindSelectImg(self.Controller_Select_L)
   self.Item_R:BindSelectImg(self.Controller_Select_R)
 end
-
 function WBP_Abyss_Select_C:IsMobile()
   return self.Platform == CommonConst.CLIENT_DEVICE_TYPE.MOBILE
 end
-
 function WBP_Abyss_Select_C:RefreshWidget()
   self:Enter(self.AbyssId, self.LevelIndex, self.SelectedDungeon)
   self:HighlightEmptySlots()
 end
-
 function WBP_Abyss_Select_C:Destruct()
   self.Btn_Reset:UnBindEventOnClickedByObj(self)
+  self.Btn_AttributeDesc:UnBindEventOnClickedByObj(self)
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Abyss_Select_C:InitTable()
   self.IsClosing = false
   local AbyssTitle = self.AbyssInfo:Data().AbyssIdName
   self.TabConfigData = {
-    TitleName = string.format(GText(AbyssTitle) .. "\194\183" .. string.format(GText("Abyss_LevelName"), self.LevelIndex)),
+    TitleName = string.format(GText(AbyssTitle) .. "·" .. string.format(GText("Abyss_LevelName"), self.LevelIndex)),
     DynamicNode = {
       "Back",
       "BottomKey",
@@ -112,11 +116,11 @@ function WBP_Abyss_Select_C:InitTable()
         GamePadInfoList = {
           {
             Type = "Img",
-            ImgShortPath = "Down",
+            ImgShortPath = "Up",
             Owner = self
           }
         },
-        Desc = GText("UI_Armory_ShowAttribute"),
+        Desc = GText("UI_Switch_Attribute"),
         bLongPress = false
       },
       {
@@ -139,17 +143,6 @@ function WBP_Abyss_Select_C:InitTable()
           }
         },
         Desc = GText("UI_Mail_Recieve"),
-        bLongPress = false
-      },
-      {
-        GamePadInfoList = {
-          {
-            Type = "Img",
-            ImgShortPath = "A",
-            Owner = self
-          }
-        },
-        Desc = GText("Abyss_PartySetup"),
         bLongPress = false
       },
       {
@@ -182,7 +175,6 @@ function WBP_Abyss_Select_C:InitTable()
   self.Reward:Init(self, self.ShowRewardPanel, self:GetRewardProgress())
   self.Root.Com_Tab.Pos_Abyss_Star:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Abyss_Select_C:Enter(AbyssId, LevelIndex, SelectedDungeon)
   self:SetFocus()
   self:InitLevelInfo(AbyssId, LevelIndex)
@@ -197,14 +189,19 @@ function WBP_Abyss_Select_C:Enter(AbyssId, LevelIndex, SelectedDungeon)
   local CurrentProgressSum = 0
   for DungeonIndex, DungeonPanel in pairs(self.Dungeons) do
     if DungeonPanel then
-      DungeonPanel:Init(DungeonIndex, self, self.DungeonIds[DungeonIndex], AbyssId)
+      DungeonPanel:Init(DungeonIndex, self, self.DungeonIds[DungeonIndex])
+      if self.IsEndLess then
+        DungeonPanel:BindEventOnSwitchAttributeBtn(function(DungeonPanel, CurAttrIdx)
+          self:ShowSwitchAttributePanel(DungeonPanel, CurAttrIdx)
+        end)
+      end
       local Now = 0
       if self.IsTeamLocked and AbyssProgress then
         Now = AbyssProgress[DungeonIndex]
         CurrentProgressSum = CurrentProgressSum + Now
       end
     else
-      DebugPrint("lhr@WBP_Abyss_Select_C:Enter, \229\133\179\229\141\161\232\175\166\230\131\133\233\157\162\230\157\191\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165")
+      DebugPrint("lhr@WBP_Abyss_Select_C:Enter, 关卡详情面板初始化失败")
     end
   end
   if 0 == CurrentProgressSum then
@@ -218,18 +215,23 @@ function WBP_Abyss_Select_C:Enter(AbyssId, LevelIndex, SelectedDungeon)
   self.BtnStart:SetText(string.format(GText("Abyss_GoNextDungeon"), DungeonName[self.SelectedDungeon]))
   self:RefreshBaseInfo()
   self:InitDetailPanels()
+  if self.IsEndLess then
+    self:CheckAttributeSelected()
+  end
 end
-
 function WBP_Abyss_Select_C:Data()
   return DataMgr.AbyssLevel[self.LevelId]
 end
-
+function WBP_Abyss_Select_C:SetRecLevel()
+  local TextLv = GText("Abyss_RecLevel")
+  local RecLevel = self:Data().RecLevel or ""
+  self.Text_Level:SetText(TextLv .. "<H>" .. RecLevel .. "</>")
+end
 function WBP_Abyss_Select_C:GetRewardProgress()
   local NowReward = self.LevelInfo.MaxAbyssLevelProgress
   local MaxReward = (self.LevelInfo.DungeonReward1 or 0) + (self.LevelInfo.DungeonReward2 or 0)
   return NowReward, MaxReward
 end
-
 function WBP_Abyss_Select_C:InitLevelInfo(AbyssId, LevelIndex)
   self.LevelId = nil
   self.AbyssInfo = {}
@@ -241,24 +243,25 @@ function WBP_Abyss_Select_C:InitLevelInfo(AbyssId, LevelIndex)
   self.LevelIndex = LevelIndex
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("WBP_Abyss_Lineup_C:InitLevelInfo, \229\133\179\229\141\161\232\175\166\230\131\133\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165:Avatar\230\151\160\230\149\136")
+    DebugPrint("WBP_Abyss_Lineup_C:InitLevelInfo, 关卡详情初始化失败:Avatar无效")
     return
   end
   local AbyssInfo = Avatar.Abysses[AbyssId]
   if not AbyssInfo then
-    DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, AbyssId", AbyssId, "\229\175\185\229\186\148\231\154\132\232\181\155\229\173\163\228\184\141\229\173\152\229\156\168")
+    DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, AbyssId", AbyssId, "对应的赛季不存在")
     return
   end
   self.AbyssInfo = AbyssInfo
+  self.IsEndLess = AbyssInfo:IsLoopAbyss()
   local LevelInfo = AbyssInfo.AbyssLevelList[LevelIndex]
   if not LevelInfo then
-    DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, LevelIndex", LevelIndex, "\229\175\185\229\186\148\231\154\132\229\133\179\229\141\161\228\184\141\229\173\152\229\156\168")
+    DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, LevelIndex", LevelIndex, "对应的关卡不存在")
     return
   end
   self.LevelInfo = LevelInfo
   self.LevelId = LevelInfo.AbyssLevelId
   if not LevelInfo.AbyssDungeon1 then
-    DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, LevelIndex", LevelIndex, "\229\175\185\229\186\148\231\154\132\229\133\179\229\141\161\228\184\173\230\156\170\229\173\152\229\130\168\229\137\175\230\156\172")
+    DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, LevelIndex", LevelIndex, "对应的关卡中未存储副本")
     return
   end
   table.insert(self.DungeonIds, LevelInfo.AbyssDungeon1)
@@ -272,7 +275,6 @@ function WBP_Abyss_Select_C:InitLevelInfo(AbyssId, LevelIndex)
       self.Overlay_R:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
     self.Spacer_42:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    self.IsEndLess = true
     self.Dungeons = {
       [1] = self.Item_L
     }
@@ -310,22 +312,45 @@ function WBP_Abyss_Select_C:InitLevelInfo(AbyssId, LevelIndex)
     self.TeamMetConditon = true
   else
     if not LevelInfo.AbyssCacheTeamList then
-      DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, LevelIndex", LevelIndex, "\229\175\185\229\186\148\231\154\132\229\133\179\229\141\161\228\184\173\230\156\170\229\173\152\229\130\168\231\188\147\229\173\152\231\154\132\233\152\181\229\174\185")
+      DebugPrint("lhr@WBP_Abyss_Select_C:InitLevelInfo, LevelIndex", LevelIndex, "对应的关卡中未存储缓存的阵容")
       return
     end
-    for _, TeamInfo in ipairs(LevelInfo.AbyssCacheTeamList) do
+    for _, CachedTeamInfo in ipairs(LevelInfo.AbyssCacheTeamList) do
+      local TeamInfo = {}
+      if CachedTeamInfo then
+        for SlotName, EName in pairs(ESlotName) do
+          if "Null" ~= SlotName then
+            TeamInfo[SlotName] = CachedTeamInfo[SlotName]
+          end
+        end
+      end
       table.insert(self.TeamInfos, TeamInfo)
     end
     self.Panel_Lock:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.TeamMetConditon = self:CheckTeamCondition(self.TeamInfos)
   end
   self:AddTimer(1, self.TryShowEntryTip, false, 0, nil, true)
+  self:SetRecLevel()
 end
-
+function WBP_Abyss_Select_C:CheckAttributeSelected()
+  if not self.IsEndLess then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local ChosenAttr = Avatar:GetAbyssAttrType(self.AbyssId)
+  if not ChosenAttr then
+    self:ShowSwitchAttributePanel(self.CurDungeonPanel, nil, function(AttrType)
+      self.CurDungeonPanel:ShowMonsterInfo()
+    end)
+  end
+end
 function WBP_Abyss_Select_C:CheckTeamCondition(TeamInfos)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("WBP_Abyss_Lineup_C:CheckTeamCondition, \229\133\179\229\141\161\232\175\166\230\131\133\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165:Avatar\230\151\160\230\149\136")
+    DebugPrint("WBP_Abyss_Lineup_C:CheckTeamCondition, 关卡详情初始化失败:Avatar无效")
     return
   end
   for _, Team in pairs(TeamInfos) do
@@ -360,7 +385,6 @@ function WBP_Abyss_Select_C:CheckTeamCondition(TeamInfos)
   end
   return true
 end
-
 function WBP_Abyss_Select_C:InitDungeonAnims()
   if self.Dungeons then
     for _, DungeonPanel in pairs(self.Dungeons) do
@@ -372,14 +396,12 @@ function WBP_Abyss_Select_C:InitDungeonAnims()
     end
   end
 end
-
 function WBP_Abyss_Select_C:SelectDungeon(SelectedDungeon)
   local Dungeon = self.Dungeons[SelectedDungeon]
   if Dungeon then
     Dungeon:OnBtnClicked()
   end
 end
-
 function WBP_Abyss_Select_C:DungeonSelectionChanged(SelectedDungeon)
   for DungeonIndex, DungeonPanel in pairs(self.Dungeons) do
     if SelectedDungeon ~= DungeonIndex then
@@ -390,11 +412,10 @@ function WBP_Abyss_Select_C:DungeonSelectionChanged(SelectedDungeon)
   self.CurDungeonPanel = self.Dungeons[SelectedDungeon]
   self.BtnStart:SetText(string.format(GText("Abyss_GoNextDungeon"), DungeonName[self.SelectedDungeon]))
 end
-
 function WBP_Abyss_Select_C:InitDetailPanels()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("WBP_Abyss_Lineup_C:InitDetailPanels, \229\133\179\229\141\161\232\175\166\230\131\133\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165:Avatar\230\151\160\230\149\136")
+    DebugPrint("WBP_Abyss_Lineup_C:InitDetailPanels, 关卡详情初始化失败:Avatar无效")
     return
   end
   self.CurSlotName = ESlotName.Null
@@ -426,7 +447,7 @@ function WBP_Abyss_Select_C:InitDetailPanels()
           Rarity = UnitData.Rarity or UnitData[DataType .. "Rarity"],
           GachaIcon = UnitData.GachaIcon
         }
-        if "Weapon" == DataType then
+        if Content and "Weapon" == DataType then
           local Tags = {
             CommonConst.ArmoryTag.Melee,
             CommonConst.ArmoryTag.Ranged
@@ -446,7 +467,6 @@ function WBP_Abyss_Select_C:InitDetailPanels()
     self:ShowDisableItemPopUp()
   end)
 end
-
 function WBP_Abyss_Select_C:CheckUnit(UnitId)
   if type(UnitId) == "number" then
     return UnitId ~= NullUnitId
@@ -454,7 +474,6 @@ function WBP_Abyss_Select_C:CheckUnit(UnitId)
     return UnitId ~= NullUUid
   end
 end
-
 function WBP_Abyss_Select_C:SlotSelectionChanged(SlotName, DungeonIndex)
   local bSlotChanged = false
   local PreDungeonIndex = self.SelectedDungeon
@@ -484,13 +503,11 @@ function WBP_Abyss_Select_C:SlotSelectionChanged(SlotName, DungeonIndex)
     Idx = "AbyssLineup"
   }, LevelParams, DungeonIndex, SlotName)
 end
-
 function WBP_Abyss_Select_C:HighlightEmptySlots()
   for _, DungeonPanel in pairs(self.Dungeons) do
     DungeonPanel:HighlightEmptySlots()
   end
 end
-
 function WBP_Abyss_Select_C:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -498,27 +515,27 @@ function WBP_Abyss_Select_C:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Abyss_Select_C:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_Abyss_Select_C:BP_GetDesiredFocusTarget()
   self:SetFocusTarget()
   return nil
 end
-
 function WBP_Abyss_Select_C:SetFocusTarget()
   if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
     return
   end
-  if self.UsingGamepad and self.CurDungeonPanel ~= nil then
+  if self.SwitchAttrPanel then
+    self.SwitchAttrPanel:SetFocus()
+    return
+  end
+  if self.CurDungeonPanel ~= nil then
     self.CurDungeonPanel:SetFocus()
   end
 end
-
 function WBP_Abyss_Select_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self:IsMobile() then
     return
@@ -532,6 +549,7 @@ function WBP_Abyss_Select_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepa
         self[IconName]:SetVisibility(UE4.ESlateVisibility.Hidden)
       end
     end
+    self.WS_Controller:SetActiveWidgetIndex(0)
   else
     self.UsingGamepad = true
     self.Btn_Reset:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -540,23 +558,21 @@ function WBP_Abyss_Select_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepa
         self[IconName]:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       end
     end
+    self.WS_Controller:SetActiveWidgetIndex(1)
     self:SetFocusTarget()
   end
   if self.CurDungeonPanel then
     self.CurDungeonPanel:UpdateUIStyle()
   end
 end
-
 function WBP_Abyss_Select_C:OnItemHovered(DungeonIndex)
   if self.UsingGamepad then
     self:SelectDungeon(DungeonIndex)
   end
 end
-
 function WBP_Abyss_Select_C:PlayRemindAnim()
   self:PlayAnimation(self.Remind)
 end
-
 function WBP_Abyss_Select_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -565,8 +581,8 @@ function WBP_Abyss_Select_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     if "Gamepad_FaceButton_Bottom" == InKeyName then
       self:SlotSelectionChanged(nil, self.SelectedDungeon)
       IsHandled = true
-    elseif "Gamepad_DPad_Down" == InKeyName then
-      self.CurDungeonPanel.Recommend_Attribute:OnClicked()
+    elseif "Gamepad_DPad_Up" == InKeyName and not self.CurDungeonPanel.Btn_ChangeAttribute.IsPressing then
+      self.CurDungeonPanel.Btn_ChangeAttribute:OnBtnPressed()
     end
   end
   if IsHandled then
@@ -574,7 +590,6 @@ function WBP_Abyss_Select_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_Abyss_Select_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -614,7 +629,6 @@ function WBP_Abyss_Select_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Abyss_Select_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -634,6 +648,13 @@ function WBP_Abyss_Select_C:OnKeyUp(MyGeometry, InKeyEvent)
     elseif "Gamepad_FaceButton_Left" == InKeyName then
       self.BtnStart:OnBtnReleased()
       self.BtnStart:OnBtnClicked()
+    elseif "Gamepad_DPad_Up" == InKeyName then
+      if self.CurDungeonPanel.Btn_ChangeAttribute.IsPressing then
+        self.CurDungeonPanel.Btn_ChangeAttribute:OnBtnReleased()
+        self.CurDungeonPanel.Btn_ChangeAttribute:OnBtnClicked()
+      end
+    elseif "Gamepad_DPad_Down" == InKeyName then
+      self:ShowAttributeDesc()
     else
       IsHandled = false
     end
@@ -645,11 +666,17 @@ function WBP_Abyss_Select_C:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Abyss_Select_C:OnReturnKeyDown()
   self.Root:OpenSubUI(self.PreWidgetInfo, false, self.AbyssId, true)
 end
-
+local AttributePopupId = 100241
+function WBP_Abyss_Select_C:ShowAttributeDesc()
+  local Params = {
+    RightCallbackFunction = function()
+    end
+  }
+  UIManager(self):ShowCommonPopupUI(AttributePopupId, Params)
+end
 function WBP_Abyss_Select_C:ShowRewardPanel()
   local Params = {}
   local ConfigData = {
@@ -665,7 +692,8 @@ function WBP_Abyss_Select_C:ShowRewardPanel()
     Rewards = {},
     NowNum = 0,
     NumMax = 0,
-    ReceiveButtonText = "UI_Achievement_GetAllReward"
+    ReceiveButtonText = "UI_Achievement_GetAllReward",
+    OnlyShowNowProgress = true
   }
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -681,7 +709,7 @@ function WBP_Abyss_Select_C:ShowRewardPanel()
         if RewardItem then
           if Pre and Pre.RewardAddOn then
             local Level = Pre.Level
-            while Level <= RewardItem.Level do
+            while Level < RewardItem.Level do
               local NewItem = CommonUtils.DeepCopy(Item)
               NewItem.SourceNum = Level
               NewItem.ItemId = Level
@@ -757,6 +785,10 @@ function WBP_Abyss_Select_C:ShowRewardPanel()
           end
           ConfigData.NumMax = tostring(Level - Pre.RewardAddOn)
         end
+        local NewItem = {}
+        NewItem.NeedSwitchType = true
+        NewItem.EmptyHint = "Abyss_Infinite_ProgressReward_Lock"
+        table.insert(ConfigData.Items, NewItem)
       end
       Params.ConfigData = ConfigData
     end
@@ -770,12 +802,12 @@ function WBP_Abyss_Select_C:ShowRewardPanel()
     local AbyssEndTime = AbyssSeasonInfo.AbyssEndTime
     if AbyssEndTime then
       local RemainTime = AbyssEndTime - TimeUtils.NowTime()
+      Params.TitleWidget = "DiaglogTitle_Time"
       Params.CountDownParams = {Name = nil, RemainTime = RemainTime}
     end
   end
   UIManager(self):ShowCommonPopupUI(100158, Params, self)
 end
-
 local TeamErrorCodes = {
   [ErrorCode.RET_ABYSS_TEAM_NO_CHAR] = true,
   [ErrorCode.RET_ABYSS_TEAM_NO_MELEEWEAPON] = true,
@@ -783,17 +815,15 @@ local TeamErrorCodes = {
   [ErrorCode.RET_ABYSS_TEAM_PHANTOM_NO_WEAPON] = true,
   [ErrorCode.RET_ABYSS_TEAM_PET_NOT_OWNED] = true
 }
-
 function WBP_Abyss_Select_C:EnterDungeon()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("lhr@\229\133\179\229\141\161\232\175\166\230\131\133\231\149\140\233\157\162\232\191\155\229\133\165\229\133\179\229\141\161\229\164\177\232\180\165\239\188\140Avatar\232\142\183\229\143\150\229\164\177\232\180\165")
+    DebugPrint("lhr@关卡详情界面进入关卡失败，Avatar获取失败")
     return
   end
-  
   local function Callback(RetCode)
     if RetCode == ErrorCode.RET_SUCCESS then
-      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, "\230\136\144\229\138\159\232\191\155\229\133\165" .. DungeonName[self.SelectedDungeon])
+      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, "成功进入" .. DungeonName[self.SelectedDungeon])
       self.IsTeamLocked = self:GetTeamLockState()
       local ExitDungeonInfo = {
         Type = "Abyss",
@@ -809,28 +839,25 @@ function WBP_Abyss_Select_C:EnterDungeon()
         if TeamErrorCodes[RetCode] then
           UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Abyss_PartySetup_ConditionsAreNot"))
         else
-          UIManager(self):ShowUITip(UIConst.Tip_CommonTop, ErrorContent .. "(Debug\231\148\168)")
+          UIManager(self):ShowUITip(UIConst.Tip_CommonTop, ErrorContent .. "(Debug用)")
         end
       end
       self:HighlightEmptySlots()
     end
     self:InitDungeonAnims()
   end
-  
   GWorld.GameInstance.PreAbyssLevelProgress = self.LevelInfo.MaxAbyssLevelProgress
   Avatar:TriggerEnterAbyss(Callback, self.AbyssId, self.LevelIndex, self.SelectedDungeon)
 end
-
 function WBP_Abyss_Select_C:ResetLineup()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("lhr@\229\133\179\229\141\161\232\175\166\230\131\133\231\149\140\233\157\162\232\167\163\233\148\129\229\164\177\232\180\165\239\188\154Avatar\232\142\183\229\143\150\229\164\177\232\180\165")
+    DebugPrint("lhr@关卡详情界面解锁失败：Avatar获取失败")
     return
   end
-  
   local function Callback(RetCode)
     if RetCode == ErrorCode.RET_SUCCESS then
-      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, "\229\183\178\232\167\163\233\148\129\233\152\181\229\174\185")
+      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Abyss_PartyUnlock"))
       self.IsTeamLocked = self:GetTeamLockState()
       DebugPrint("lhr@Locked", self.IsTeamLocked)
       if self.Dungeons then
@@ -848,29 +875,23 @@ function WBP_Abyss_Select_C:ResetLineup()
       UIManager(self):ShowUITip(UIConst.Tip_CommonTop, ErrorContent)
     end
   end
-  
   Avatar:UnLockAbyssTeam(Callback, self.AbyssId, self.LevelIndex)
 end
-
 function WBP_Abyss_Select_C:GetTeamLockState()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("lhr@\233\152\181\229\174\185\233\133\141\231\189\174\231\149\140\233\157\162\232\142\183\229\143\150\233\148\129\229\174\154\231\138\182\230\128\129\229\164\177\232\180\165\239\188\154Avatar\232\142\183\229\143\150\229\164\177\232\180\165")
+    DebugPrint("lhr@阵容配置界面获取锁定状态失败：Avatar获取失败")
     return
   end
   return Avatar.Abysses[self.AbyssId].AbyssLevelList[self.LevelIndex].IsTeamLocked
 end
-
 function WBP_Abyss_Select_C:ShowResetConfirmWindow()
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
     self:ResetLineup()
   end
-  
   self:ShowConfirmWindow(100150, CommonDialogParams, self.Root)
 end
-
 function WBP_Abyss_Select_C:OnStartButtonClicked()
   if self.IsTeamLocked then
     self:EnterDungeon()
@@ -878,40 +899,61 @@ function WBP_Abyss_Select_C:OnStartButtonClicked()
     self:ShowLockConfirmWindow()
   end
 end
-
 function WBP_Abyss_Select_C:ShowLockConfirmWindow()
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
     self:EnterDungeon()
   end
-  
   local PopupData = DataMgr.CommonPopupUIContext[100147]
   CommonDialogParams.ShortText = string.format(GText(PopupData.PopoverText), DungeonName[self.SelectedDungeon])
   self:ShowConfirmWindow(100147, CommonDialogParams, self.Root)
 end
-
 function WBP_Abyss_Select_C:ShowUnLockConfirmWindow()
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
     self:ResetLineup()
   end
-  
   self:ShowConfirmWindow(100148, CommonDialogParams, self.Root)
 end
-
 function WBP_Abyss_Select_C:ShowConfirmWindow(PopupId, Params, ParentWidget)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(PopupId, Params, ParentWidget)
 end
-
 function WBP_Abyss_Select_C:ShowTeamConditionNotMetToast()
   UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("Abyss_PartySetup_ConditionsAreNot"))
   self:HighlightEmptySlots()
 end
-
+function WBP_Abyss_Select_C:ShowSwitchAttributePanel(DungeonPanel, CurAttrIdx, CloseCallback)
+  if not DungeonPanel then
+    return
+  end
+  local WidgetPath
+  if self:IsMobile() then
+    WidgetPath = self.SwitchAttributeWidget_M
+  else
+    WidgetPath = self.SwitchAttributeWidget_P
+  end
+  self.SwitchAttrPanel = UIManager(self):CreateWidget(WidgetPath, true, self.Root:GetZOrder())
+  if not IsValid(self.SwitchAttrPanel) then
+    return
+  end
+  local function ConfrimFunc(Attribute)
+    local Avatar = GWorld:GetAvatar()
+    if Avatar then
+      Avatar:ChooseAbyssAttrType(self.AbyssId, Attribute)
+    end
+    DungeonPanel:SwitchAttribute(Attribute)
+  end
+  local function CloseFunc(Attribute)
+    self.SwitchAttrPanel = nil
+    self:SetFocus()
+    if CloseCallback then
+      CloseCallback(Attribute)
+    end
+  end
+  self.SwitchAttrPanel:Init(DungeonPanel.BossInfo, DungeonPanel.Attributes, CurAttrIdx, ConfrimFunc, CloseFunc)
+end
 function WBP_Abyss_Select_C:SwitchIn(...)
   local IsBack, AbyssId, LevelIndex, DungeonId = ...
   if IsBack then
@@ -925,7 +967,6 @@ function WBP_Abyss_Select_C:SwitchIn(...)
   self:PlayAnimation(self.In)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Abyss_Select_C:SwitchOut()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Root.Com_Tab.Pos_Abyss_Star:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -938,31 +979,30 @@ function WBP_Abyss_Select_C:SwitchOut()
     })
     self.BindOutAnimation = true
   end
+  if self.SwitchAttrPanel then
+    self.SwitchAttrPanel:Close()
+    self.SwitchAttrPanel = nil
+  end
   self:PlayAnimation(self.Out)
 end
-
 function WBP_Abyss_Select_C:GetRewards(Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local Abyss = Avatar.Abysses[Content.ConfigData.ReceiveParm.SelectAbyssId]
-      
       Content.ConfigData.CanReceive = Abyss:CheckRewardCanGet(Content.ConfigData.SourceNum)
       Content.ConfigData.RewardsGot = Abyss:CheckRewardIsGot(Content.ConfigData.SourceNum)
       Content.SelfWidget:RefreshBtn(0 == Ret)
       Content.Owner:RefreshButton(Abyss:CheckHaveRewardToGet())
     end
-    
     Avatar:GetAbyssReward(Content.ConfigData.ReceiveParm.SelectAbyssId, Content.ConfigData.SourceNum, CallBack)
   end
 end
-
 function WBP_Abyss_Select_C:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local HaveReWardToGet = false
-      
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Item = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
         local Abyss = Avatar.Abysses[ReceiveAllParm.SelectAbyssId]
@@ -979,16 +1019,13 @@ function WBP_Abyss_Select_C:GetAllRewards(ReceiveAllParm)
       end
       ReceiveAllParm.SelfWidget:RefreshButton(HaveReWardToGet)
     end
-    
     Avatar:GetAbyssAllReward(ReceiveAllParm.SelectAbyssId, CallBack)
   end
 end
-
 function WBP_Abyss_Select_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self:SetFocusTarget()
   return UIUtils.Handle
 end
-
 function WBP_Abyss_Select_C:ShowDisableItemPopUp()
   local Avatar = GWorld:GetAvatar()
   local ItemInfo = {}
@@ -1035,7 +1072,6 @@ function WBP_Abyss_Select_C:ShowDisableItemPopUp()
     self.BtnStart:SetForbidden(true)
   end
 end
-
 function WBP_Abyss_Select_C:TryShowEntryTip()
   local CacheDetail1 = ReddotManager.GetLeafNodeCacheDetail("AbyssEntry1")
   local CacheDetail2 = ReddotManager.GetLeafNodeCacheDetail("AbyssEntry2")
@@ -1045,8 +1081,19 @@ function WBP_Abyss_Select_C:TryShowEntryTip()
       AbyssId = self.AbyssId,
       LevelId = self.LevelId
     }
-    local New = UIManager(self):LoadUINew("AbyssEntry", ConfigData)
+    if DataMgr.AbyssLevel[self.LevelId + 1] then
+      local New = UIManager(self):LoadUINew("AbyssEntry", ConfigData)
+    else
+      self:DecreaseReddotDetail("AbyssEntry2", self.LevelId + 1)
+      self:DecreaseReddotDetail("AbyssEntry1", self.LevelId + 1)
+    end
   end
 end
-
+function WBP_Abyss_Select_C:DecreaseReddotDetail(ReddotName, AbyssId)
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(ReddotName)
+  if CacheDetail and CacheDetail[AbyssId] then
+    CacheDetail[AbyssId] = nil
+    ReddotManager.DecreaseLeafNodeCount(ReddotName)
+  end
+end
 return WBP_Abyss_Select_C

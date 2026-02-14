@@ -21,7 +21,8 @@ local FEFNode_PlayFacial = require("BluePrints.Story.ExecutionFlow.Nodes.EFNode_
 local FEFNode_SetOutport = require("BluePrints.Story.ExecutionFlow.Nodes.EFNode_SetOutport")
 local FEFNode_ChangeStaticCreator = require("BluePrints.Story.ExecutionFlow.Nodes.EFNode_ChangeStaticCreator")
 local FEFNode_SetVar = require("BluePrints.Story.ExecutionFlow.Nodes.EFNode_SetVar")
-
+local FEFNode_SetVisibility = require("BluePrints.Story.ExecutionFlow.Nodes.EFNode_SetVisibility")
+local FEFNode_PostProcessGraph = require("BluePrints.Story.ExecutionFlow.Nodes.EFNode_PostProcessGraph")
 function M:CreateFlow(DialogueId, TalkTask, OnFinished)
   local DialogueScriptTable = DataMgr.DialogueConvert[DialogueId]
   if not DialogueScriptTable or not DialogueScriptTable.Operations then
@@ -61,7 +62,6 @@ function M:CreateFlow(DialogueId, TalkTask, OnFinished)
   end
   return Flow
 end
-
 function M:SEQ(Flow, TalkTask, Operations)
   local StartPin, FinishPin
   for _, Operation in ipairs(Operations) do
@@ -78,7 +78,6 @@ function M:SEQ(Flow, TalkTask, Operations)
   end
   return StartPin, FinishPin
 end
-
 function M:PARA(Flow, TalkTask, Operations)
   local StartPin, FinishPin
   local ParallelNode = Flow:CreateNode(UEFNode_Parallel)
@@ -98,7 +97,6 @@ function M:PARA(Flow, TalkTask, Operations)
   end
   return StartPin, FinishPin
 end
-
 function M:Delay(Flow, TalkTask, Params)
   local DelaySeconds = Params.DelaySeconds
   local DelayNode = Flow:CreateNode(UEFNode_Delay)
@@ -108,7 +106,6 @@ function M:Delay(Flow, TalkTask, Params)
   DelayNode.DelaySeconds = DelaySeconds
   return DelayNode.StartPin, DelayNode.FinishPin
 end
-
 function M:MoveTo(Flow, TalkTask, Params)
   local MoveToNode = FEFNode_MoveTo:CreateNode(Flow, TalkTask, Params)
   if nil == MoveToNode then
@@ -116,7 +113,6 @@ function M:MoveTo(Flow, TalkTask, Params)
   end
   return MoveToNode.StartPin, MoveToNode.FinishPin
 end
-
 function M:PlayAnimation(Flow, TalkTask, Params)
   local PlayAnimationNode = FEFNode_PlayAnim:CreateNode(Flow, TalkTask, Params)
   if nil == PlayAnimationNode then
@@ -124,7 +120,6 @@ function M:PlayAnimation(Flow, TalkTask, Params)
   end
   return PlayAnimationNode.StartPin, PlayAnimationNode.FinishPin
 end
-
 function M:SitOrStand(Flow, TalkTask, Params)
   local SitOrStandNode = FEFNode_SitOrStand:CreateNode(Flow, TalkTask, Params)
   if nil == SitOrStandNode then
@@ -132,7 +127,6 @@ function M:SitOrStand(Flow, TalkTask, Params)
   end
   return SitOrStandNode.StartPin, SitOrStandNode.FinishPin
 end
-
 function M:SetTag(Flow, TalkTask, Params)
   local SetTagNode = FEFNode_SetTag:CreateNode(Flow, TalkTask, Params)
   if nil == SetTagNode then
@@ -140,7 +134,6 @@ function M:SetTag(Flow, TalkTask, Params)
   end
   return SetTagNode.StartPin, SetTagNode.FinishPin
 end
-
 function M:UnsetTag(Flow, TalkTask, Params)
   local UnSetTagNode = FEFNode_UnsetTag:CreateNode(Flow, TalkTask, Params)
   if nil == UnSetTagNode then
@@ -148,7 +141,6 @@ function M:UnsetTag(Flow, TalkTask, Params)
   end
   return UnSetTagNode.StartPin, UnSetTagNode.FinishPin
 end
-
 function M:StopTalkGroup(Flow, TalkTask, Params)
   local StopTalkGroupNode = FEFNode_StopTalkGroup:CreateNode(Flow, TalkTask, Params)
   if nil == StopTalkGroupNode then
@@ -156,7 +148,6 @@ function M:StopTalkGroup(Flow, TalkTask, Params)
   end
   return StopTalkGroupNode.StartPin, StopTalkGroupNode.FinishPin
 end
-
 function M:PlayOrStopBGM(Flow, TalkTask, Params)
   local PlayOrStopBGMNode = FEFNode_PlayOrStopBGM:CreateNode(Flow, TalkTask, Params)
   if nil == PlayOrStopBGMNode then
@@ -164,7 +155,6 @@ function M:PlayOrStopBGM(Flow, TalkTask, Params)
   end
   return PlayOrStopBGMNode.StartPin, PlayOrStopBGMNode.FinishPin
 end
-
 function M:PlayNormalSound(Flow, TalkTask, Params)
   local PlayNormalSoundNode = FEFNode_PlayOrStopSound:CreatePlayNormalSoundNode(Flow, TalkTask, Params)
   if nil == PlayNormalSoundNode then
@@ -172,7 +162,6 @@ function M:PlayNormalSound(Flow, TalkTask, Params)
   end
   return PlayNormalSoundNode.StartPin, PlayNormalSoundNode.FinishPin
 end
-
 function M:StopNormalSound(Flow, TalkTask, Params)
   local StopNormalSoundNode = FEFNode_PlayOrStopSound:CreateStopNormalSoundNode(Flow, TalkTask, Params)
   if nil == StopNormalSoundNode then
@@ -180,7 +169,6 @@ function M:StopNormalSound(Flow, TalkTask, Params)
   end
   return StopNormalSoundNode.StartPin, StopNormalSoundNode.FinishPin
 end
-
 function M:LookAt(Flow, TalkTask, Params)
   local LookAtNode = FEFNode_LookAt:CreateNode(Flow, TalkTask, Params)
   if nil == LookAtNode then
@@ -188,7 +176,6 @@ function M:LookAt(Flow, TalkTask, Params)
   end
   return LookAtNode.StartPin, LookAtNode.FinishPin
 end
-
 function M:TurnTo(Flow, TalkTask, Params)
   local TurnToNode = FEFNode_TurnTo:CreateNode(Flow, TalkTask, Params)
   if nil == TurnToNode then
@@ -196,7 +183,6 @@ function M:TurnTo(Flow, TalkTask, Params)
   end
   return TurnToNode.StartPin, TurnToNode.FinishPin
 end
-
 function M:SetPlayerLoc(Flow, TalkTask, Params)
   local SetPlayerLocNode = FEFNode_SetPlayerLoc:CreateNode(Flow, TalkTask, Params)
   if nil == SetPlayerLocNode then
@@ -204,7 +190,6 @@ function M:SetPlayerLoc(Flow, TalkTask, Params)
   end
   return SetPlayerLocNode.StartPin, SetPlayerLocNode.FinishPin
 end
-
 function M:SetLocation(Flow, TalkTask, Params)
   local SetLocationNode = FEFNode_SetLocation:CreateNode(Flow, TalkTask, Params)
   if nil == SetLocationNode then
@@ -212,7 +197,6 @@ function M:SetLocation(Flow, TalkTask, Params)
   end
   return SetLocationNode.StartPin, SetLocationNode.FinishPin
 end
-
 function M:SetRotation(Flow, TalkTask, Params)
   local SetRotationNode = FEFNode_SetRotation:CreateNode(Flow, TalkTask, Params)
   if nil == SetRotationNode then
@@ -220,7 +204,6 @@ function M:SetRotation(Flow, TalkTask, Params)
   end
   return SetRotationNode.StartPin, SetRotationNode.FinishPin
 end
-
 function M:CameraMoveTo(Flow, TalkTask, Params)
   local CameraMoveToNode = FEFNode_CameraMoveTo:CreateNode(Flow, TalkTask, Params)
   if nil == CameraMoveToNode then
@@ -228,7 +211,6 @@ function M:CameraMoveTo(Flow, TalkTask, Params)
   end
   return CameraMoveToNode.StartPin, CameraMoveToNode.FinishPin
 end
-
 function M:ShowPicture(Flow, TalkTask, Params)
   local ShowPictureNode = FEFNode_ShowPicture:CreateNode(Flow, TalkTask, Params)
   if nil == ShowPictureNode then
@@ -236,7 +218,6 @@ function M:ShowPicture(Flow, TalkTask, Params)
   end
   return ShowPictureNode.StartPin, ShowPictureNode.FinishPin
 end
-
 function M:PostProcess(Flow, TalkTask, Params)
   local PostProcessNode = FEFNode_PostProcess:CreateNode(Flow, TalkTask, Params)
   if nil == PostProcessNode then
@@ -244,7 +225,6 @@ function M:PostProcess(Flow, TalkTask, Params)
   end
   return PostProcessNode.StartPin, PostProcessNode.FinishPin
 end
-
 function M:CameraShake(Flow, TalkTask, Params)
   local CameraShakeNode = FEFNode_CameraShake:CreateNode(Flow, TalkTask, Params)
   if nil == CameraShakeNode then
@@ -252,7 +232,6 @@ function M:CameraShake(Flow, TalkTask, Params)
   end
   return CameraShakeNode.StartPin, CameraShakeNode.FinishPin
 end
-
 function M:DefaultLookAt(Flow, TalkTask, Params)
   local DefaultLookAtNode = FEFNode_DefaultLookAt:CreateNode(Flow, TalkTask, Params)
   if nil == DefaultLookAtNode then
@@ -260,7 +239,6 @@ function M:DefaultLookAt(Flow, TalkTask, Params)
   end
   return DefaultLookAtNode.StartPin, DefaultLookAtNode.FinishPin
 end
-
 function M:PlayFacial(Flow, TalkTask, Params)
   local PlayFacialNode = FEFNode_PlayFacial:CreateNode(Flow, TalkTask, Params)
   if nil == PlayFacialNode then
@@ -268,7 +246,6 @@ function M:PlayFacial(Flow, TalkTask, Params)
   end
   return PlayFacialNode.StartPin, PlayFacialNode.FinishPin
 end
-
 function M:SetOutport(Flow, TalkTask, Params)
   local SetOutportNode = FEFNode_SetOutport:CreateNode(Flow, TalkTask, Params)
   if nil == SetOutportNode then
@@ -276,7 +253,6 @@ function M:SetOutport(Flow, TalkTask, Params)
   end
   return SetOutportNode.StartPin, SetOutportNode.FinishPin
 end
-
 function M:ChangeStaticCreator(Flow, TalkTask, Params)
   local ChangeStaticCreatorNode = FEFNode_ChangeStaticCreator:CreateNode(Flow, TalkTask, Params)
   if nil == ChangeStaticCreatorNode then
@@ -284,7 +260,6 @@ function M:ChangeStaticCreator(Flow, TalkTask, Params)
   end
   return ChangeStaticCreatorNode.StartPin, ChangeStaticCreatorNode.FinishPin
 end
-
 function M:SetVar(Flow, TalkTask, Params)
   local SetVarNode = FEFNode_SetVar:CreateNode(Flow, TalkTask, Params)
   if nil == SetVarNode then
@@ -292,5 +267,18 @@ function M:SetVar(Flow, TalkTask, Params)
   end
   return SetVarNode.StartPin, SetVarNode.FinishPin
 end
-
+function M:SetVisibility(Flow, TalkTask, Params)
+  local SetVisNode = FEFNode_SetVisibility:CreateNode(Flow, TalkTask, Params)
+  if nil == SetVisNode then
+    return
+  end
+  return SetVisNode.StartPin, SetVisNode.FinishPin
+end
+function M:PostProcessGraph(Flow, TalkTask, Params)
+  local PPGraphNode = FEFNode_PostProcessGraph:CreateNode(Flow, TalkTask, Params)
+  if nil == PPGraphNode then
+    return
+  end
+  return PPGraphNode.StartPin, PPGraphNode.FinishPin
+end
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Data = Content
   self.Parent = Content.Parent
@@ -10,7 +9,6 @@ function M:OnListItemObjectSet(Content)
   self:AddInputMethodChangedListen()
   self.Btn_Goto.bAutoButtonChange = false
 end
-
 function M:InitItemContent()
   self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(self)
   self.IsEnter = false
@@ -23,10 +21,8 @@ function M:InitItemContent()
     self:UpdateUIStyleInPlatform(true)
   end
 end
-
 function M:BP_OnEntryReleased()
 end
-
 function M:RefreshRewardInfoList(DungeonReward)
   if not DungeonReward then
     DebugPrint("SL DungeonReward is nil")
@@ -58,7 +54,6 @@ function M:RefreshRewardInfoList(DungeonReward)
     })
   end
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -71,7 +66,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
   end
   self:UpdateUIStyleInPlatform(true)
 end
-
 function M:RefreshView()
   local PlayerAvatar = GWorld:GetAvatar()
   if PlayerAvatar then
@@ -99,29 +93,25 @@ function M:RefreshView()
     self.Switch_Btn:SetActiveWidgetIndex(self.DailyTaskServerData.State - 1)
   end
 end
-
 function M:ReceiveReward()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
     return
   end
-  DebugPrint("GetDailyTaskReward \233\162\134\229\143\150  ", self.Data.DailyGoalTaskId)
+  DebugPrint("GetDailyTaskReward 领取  ", self.Data.DailyGoalTaskId)
   PlayerAvatar:GetDailyTaskReward(self.Data.DailyGoalTaskId)
 end
-
 function M:GoToSystem()
   local JumpSuccess = PageJumpUtils:JumpToTargetPageByJumpId(self.Data.JumpUIId)
   if JumpSuccess then
     UIManager(self):HideNpcById(910003, true, "StyleOfPlay")
   end
 end
-
 function M:OnDailyTaskRewardChange(DailyTaskId)
   if DailyTaskId == self.Data.DailyGoalTaskId then
     self:RefreshView()
   end
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.FocusTypeName == "SelfWidget" then
     local PlayerAvatar = GWorld:GetAvatar()
@@ -139,7 +129,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.IsEnter = true
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
@@ -152,7 +141,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   end
   self:UpdateUIStyleInPlatform(false)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsEnter = false
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
@@ -162,7 +150,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Unhover)
   self:UpdateUIStyleInPlatform(true)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -176,7 +163,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftThumbstick" == InKeyName then
@@ -203,7 +189,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:UpdatKeyDisplay("SelfWidget")
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
@@ -212,7 +197,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self.Mobile then
     return
@@ -309,7 +293,6 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -328,7 +311,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if self.Mobile then
     return
@@ -349,5 +331,4 @@ function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self.Btn_Reward:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 return M

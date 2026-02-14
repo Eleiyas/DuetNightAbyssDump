@@ -8,7 +8,6 @@ M._components = {
   "BluePrints.UI.WBP.Armory.PetEntry_Component",
   "BluePrints.UI.BP_EMUserWidgetUtils_C"
 }
-
 function M:Construct()
   self.Btn_Intensify:BindEventOnClicked(self, self.OnBtnEntryBreakClicked)
   self.Btn_Intensify:BindForbidStateExecuteEvent(self, self.OnForbiddenBtnEntryBreakClicked)
@@ -27,7 +26,6 @@ function M:Construct()
   end
   ReddotManager.AddListenerEx(self.ReddotNodeName, self, self.OnReddotChanged)
 end
-
 function M:OnReddotChanged()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -47,11 +45,9 @@ function M:OnReddotChanged()
     self.Btn_Index.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnPetEntryDestructed(OnDestructObj)
   OnDestructObj:OnReddotChanged()
 end
-
 function M:OnBtnEntryBreakClicked(bIsGamePad)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   local EntryContent = self.CurEntryContent
@@ -68,19 +64,15 @@ function M:OnBtnEntryBreakClicked(bIsGamePad)
   end
   UIManager(self):LoadUINew("PetEnhance", self.Pet, EntryContent)
 end
-
 function M:OnFuseBtnClicked()
   self:OpenPetMix()
 end
-
 function M:OnForbiddenBtnEntryBreakClicked()
   UIManager(self):ShowUITip("CommonToastMain", self.ButtonStyleInfo[1].ErrorText)
 end
-
 function M:OnForbiddenBtnFuseClicked()
   UIManager(self):ShowUITip("CommonToastMain", self.ButtonStyleInfo[2].ErrorText)
 end
-
 function M:OnIndexBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   local UIConfig = DataMgr.SystemUI.PetEntry
@@ -90,7 +82,6 @@ function M:OnIndexBtnClicked()
     Type = 2
   })
 end
-
 function M:UpdateButtonStyle(Content)
   self.ButtonStyleInfo = {
     {},
@@ -142,11 +133,9 @@ function M:UpdateButtonStyle(Content)
     self.ConfirmBtns[i]:ForbidBtn(Param.ForbidBtn)
   end
 end
-
 function M:GetButtonStyleInfo()
   return self.ButtonStyleInfo
 end
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.Pet = Params.Target
@@ -155,7 +144,6 @@ function M:Init(Params)
   self:UpdateEntryInfos(self.Pet)
   self:UpdateButtonStyle(self.CurEntryContent)
 end
-
 function M:UpdatePetInfos(Pet)
   if not Pet or not Pet:IsResourcePet() then
     self.LevelInfo:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -174,14 +162,11 @@ function M:UpdatePetInfos(Pet)
     self.Text_Describe:SetText(GText(Data.IpDes))
   end
 end
-
 function M:OnEntryContentCreated(Content)
 end
-
 function M:OnEntryClicked(Content)
   self:UpdateButtonStyle(Content)
 end
-
 function M:PlayInAnim()
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   if self:IsAnimationPlaying(self.In) then
@@ -191,12 +176,10 @@ function M:PlayInAnim()
   self:PlayAnimation(self.In)
   self:PlayEntriesInAnim()
 end
-
 function M:PlayOutAnim()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 AssembleComponents(M)
 return M

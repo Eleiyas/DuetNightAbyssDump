@@ -1,16 +1,16 @@
 local SupportSkill_Phone_C = Class("BluePrints.UI.BP_UIState_C")
-
+SupportSkill_Phone_C._components = {
+  "BluePrints.UI.UI_Phone.Battle.Component.DraggableWidgetComponent"
+}
 function SupportSkill_Phone_C:Initialize(Initializer)
   self.CurButtonState = nil
 end
-
 function SupportSkill_Phone_C:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnPressed)
   self.Button_Area.OnReleased:Add(self, self.OnReleased)
   self.OwnerPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
   self:RefreshSupportSkillIcon()
 end
-
 function SupportSkill_Phone_C:Destruct()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -24,25 +24,27 @@ function SupportSkill_Phone_C:Destruct()
   end
   self.Super.Destruct(self)
 end
-
 function SupportSkill_Phone_C:RefreshSupportSkillIcon()
   local BattlePet = self.OwnerPlayer:GetBattlePet()
   if not BattlePet then
-    DebugPrint("BattlePet\228\184\186\231\169\186!!!")
+    DebugPrint("BattlePet为空!!!")
     return
   end
   self.IsInit = true
   self.SkillId = DataMgr.BattlePet[BattlePet.BattlePetId].SupportSkillId
+  self:RefreshButtonStyle()
+  if not self.OwnerPlayer:CheckSkillInActive(ESkillName.Skill3) then
+    DebugPrint("RefreshSupportSkillIcon时Skill3被禁用!!!")
+    return
+  end
   if self.bSupportSkillUnlock then
     self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   else
     self:SetVisibility(ESlateVisibility.Collapsed)
   end
-  self:RefreshButtonStyle()
   self.CurButtonState = "Normal"
   self:PlayButtonStateAnimation()
 end
-
 function SupportSkill_Phone_C:OnPressed()
   if self.CurButtonState == "Empty" then
     return
@@ -54,18 +56,15 @@ function SupportSkill_Phone_C:OnPressed()
   self.OwnerPanel:TryToPlayTargetCommand("Skill3", false)
   self:OnPressed_Presentation()
 end
-
 function SupportSkill_Phone_C:OnReleased()
   if self.CurButtonState == "Empty" or self.CurButtonState == "Ban" then
     return
   end
   self.OwnerPanel:TryToStopTargetCommand("Skill3", false)
 end
-
 function SupportSkill_Phone_C:OnPressed_Presentation()
   self:PlayResponsiveAnimation()
 end
-
 function SupportSkill_Phone_C:PlayResponsiveAnimation()
   if self.CurButtonState == "InCDTime" or self.CurButtonState == "InCDTimeSustain" then
     if not EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Disable) then
@@ -75,7 +74,6 @@ function SupportSkill_Phone_C:PlayResponsiveAnimation()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Click)
   end
 end
-
 function SupportSkill_Phone_C:PlayWithTimerAnimation()
   if self.NeedCDCompleteAnim then
     self.ProgressBar_Support:SetPercent(0)
@@ -83,30 +81,31 @@ function SupportSkill_Phone_C:PlayWithTimerAnimation()
     self.NeedCDCompleteAnim = false
   end
 end
-
 function SupportSkill_Phone_C:PlayButtonStateAnimation()
   if self.CurButtonState == "InCDTime" then
-    DebugPrint("\232\191\155\229\133\165CD\230\128\129")
+    DebugPrint("进入CD态")
     if not EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.CD) then
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.CD)
     end
   elseif self.CurButtonState == "InCDTimeSustain" then
-    DebugPrint("\232\191\155\229\133\165CD\230\140\129\231\187\173\230\128\129")
+    DebugPrint("进入CD持续态")
     if not EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Sustain_CD) then
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Sustain_CD)
     end
   elseif self.CurButtonState == "SustainLoop" then
-    DebugPrint("\232\191\155\229\133\165\230\140\129\231\187\173\230\128\129")
+    DebugPrint("进入持续态")
     if not EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Sustain_Loop) then
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Sustain_Loop)
     end
   elseif self.CurButtonState == "Normal" then
-    DebugPrint("\232\191\155\229\133\165\229\184\184\232\167\132\230\128\129")
+    DebugPrint("进入常规态")
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
   end
 end
-
 function SupportSkill_Phone_C:HandleCurButtonState(SkillId, CurButtonState)
+  if -1 ~= self.OwnerPlayer.ActivePropEffectId then
+    return
+  end
   local Skill = self.OwnerPlayer:GetSkill(self.SkillId)
   if not Skill then
     return
@@ -155,7 +154,6 @@ function SupportSkill_Phone_C:HandleCurButtonState(SkillId, CurButtonState)
     self:PlayButtonStateAnimation()
   end
 end
-
 function SupportSkill_Phone_C:UpdateSkillInTimer()
   if not self.IsInit then
     return
@@ -169,7 +167,6 @@ function SupportSkill_Phone_C:UpdateSkillInTimer()
   self:HandleCurButtonState(self.SkillId, self.CurButtonState)
   self:PlayWithTimerAnimation()
 end
-
 function SupportSkill_Phone_C:RefreshButtonStyle()
   if not self.SkillId then
     return
@@ -177,19 +174,40 @@ function SupportSkill_Phone_C:RefreshButtonStyle()
   local SkillBaseConfig = DataMgr.Skill[self.SkillId][1][0]
   if SkillBaseConfig.SkillBtnIcon ~= nil then
     local IconPath = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Skill/T_" .. SkillBaseConfig.SkillBtnIcon
-    UE.UResourceLibrary.LoadObjectAsync(self, IconPath, {
+    self.SupportIconPath = IconPath
+    if -1 == self.OwnerPlayer.ActivePropEffectId then
+      UE.UResourceLibrary.LoadObjectAsync(self, IconPath, {
+        self,
+        SupportSkill_Phone_C.OnSkillImgIconLoadFinish
+      })
+    end
+  end
+end
+function SupportSkill_Phone_C:OnPropEffectReplaceSupport(PropEffectId)
+  local ReplaceIconPath = DataMgr.PropEffect[PropEffectId].ReplaceSupportIconPath
+  if not ReplaceIconPath then
+    return
+  end
+  UE.UResourceLibrary.LoadObjectAsync(self, ReplaceIconPath, {
+    self,
+    SupportSkill_Phone_C.OnSkillImgIconLoadFinish
+  })
+  self.CurButtonState = "Normal"
+  self:PlayButtonStateAnimation()
+end
+function SupportSkill_Phone_C:OnPropEffectEndReplaceSupport()
+  if self.SupportIconPath then
+    UE.UResourceLibrary.LoadObjectAsync(self, self.SupportIconPath, {
       self,
       SupportSkill_Phone_C.OnSkillImgIconLoadFinish
     })
   end
 end
-
 function SupportSkill_Phone_C:OnSkillImgIconLoadFinish(Object)
   if IsValid(self) and Object and self.Icon_Support then
     self.Icon_Support:GetDynamicMaterial():SetTextureParameterValue("Mask", Object)
   end
 end
-
 function SupportSkill_Phone_C:InitSupportSkill()
   self.bSupportSkillUnlock = false
   local Avatar = GWorld:GetAvatar()
@@ -209,5 +227,5 @@ function SupportSkill_Phone_C:InitSupportSkill()
     end
   end
 end
-
+AssembleComponents(SupportSkill_Phone_C)
 return SupportSkill_Phone_C

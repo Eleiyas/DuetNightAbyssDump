@@ -1,7 +1,6 @@
 require("UnLua")
 local EnumPlayerTaskState = require("Blueprints.UI.WBP.Activity.ActivityUtils").EnumPlayerTaskState
 local M = {}
-
 function M:InitItemView()
   self.RewardItemWidth = nil
   self.CurTaskItemState = nil
@@ -11,7 +10,6 @@ function M:InitItemView()
   self.Btn_Goto:BindEventOnClicked(self, self.GoToSystem)
   self.Btn_Goto:SetText(GText("UI_GameEvent_Goto"))
 end
-
 function M:RefreshContentView(IsEmpty, ItemContent, TaskConfigData, TaskServerData)
   self.WS:SetActiveWidgetIndex(IsEmpty and 1 or 0)
   if IsEmpty then
@@ -39,13 +37,11 @@ function M:RefreshContentView(IsEmpty, ItemContent, TaskConfigData, TaskServerDa
     self:PlayAnimation(self.In)
   end
 end
-
 function M:RefreshRewardItemView(TaskConfigData)
   local QuestRewards = TaskConfigData.QuestReward
   local Index = 0
   if QuestRewards then
     local RewardList = {}
-    
     local function FillWithRewardData(QuestReward)
       local RewardInfo = DataMgr.Reward[QuestReward]
       if RewardInfo then
@@ -69,7 +65,6 @@ function M:RefreshRewardItemView(TaskConfigData)
         end
       end
     end
-    
     if type(QuestRewards) == "table" then
       for i, v in ipairs(QuestRewards) do
         FillWithRewardData(v)
@@ -139,7 +134,6 @@ function M:RefreshRewardItemView(TaskConfigData)
   self.Item_Reward_2:SetVisibility(Index > 0 and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed)
   self.Item_Reward_2:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -150,23 +144,18 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self:UpdatKeyDisplay("RewardWidget")
   end
 end
-
 function M:IsTaskRewardNotReceive()
   return self.CurTaskItemState == EnumPlayerTaskState.NotGetReward
 end
-
 function M:IsPlayerTaskFinish()
   return self.CurTaskItemState == EnumPlayerTaskState.Completed
 end
-
 function M:IsGoToSystem()
   return 0 == self.WS_Text:GetActiveWidgetIndex() and 0 == self.Switch_Btn:GetActiveWidgetIndex()
 end
-
 function M:GetCurTaskItemState()
   return self.CurTaskItemState
 end
-
 function M:RefreshProcessView(TaskConfigData, TaskServerData)
   if nil == TaskServerData then
     self.CurTaskItemState = EnumPlayerTaskState.NotStart
@@ -185,5 +174,4 @@ function M:RefreshProcessView(TaskConfigData, TaskServerData)
     self.Switch_Btn:SetActiveWidgetIndex(2)
   end
 end
-
 return M

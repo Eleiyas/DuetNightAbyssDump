@@ -2,22 +2,18 @@ require("UnLua")
 require("DataMgr")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local WBP_Battle_Fort_Base_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Battle_Fort_Base_C:Initialize(Initializer)
   WBP_Battle_Fort_Base_C.Super.Initialize(self)
 end
-
 function WBP_Battle_Fort_Base_C:Construct()
   WBP_Battle_Fort_Base_C.Super.Construct(self)
   EventManager:AddEvent(EventID.StartCanonMiniGame, self, self.OnStartCanonMiniGame)
 end
-
 function WBP_Battle_Fort_Base_C:Destruct()
   WBP_Battle_Fort_Base_C.Super.Destruct(self)
   self:RemoveTimer("BattleFortTimer")
   EventManager:RemoveEvent(EventID.StartCanonMiniGame, self)
 end
-
 function WBP_Battle_Fort_Base_C:OnLoaded(...)
   WBP_Battle_Fort_Base_C.Super.OnLoaded(self, ...)
   self.HideUITable = {
@@ -31,11 +27,14 @@ function WBP_Battle_Fort_Base_C:OnLoaded(...)
     Group_ChatEntry = 1,
     Buff = 1,
     Char_Skill = 1,
-    Team = 1
+    Team = 1,
+    Chat_Entry = 1,
+    HBox = 1,
+    SizeBox_Map = 1
   }
   self.FortEid = (...)
   self:InitInfo()
-  self:CreateFortBackKey()
+  self:CreateFortBackEntry()
   self:InitAim()
   self:InitSkillItem()
   self:InitBloodBar()
@@ -46,19 +45,22 @@ function WBP_Battle_Fort_Base_C:OnLoaded(...)
   end, false, 0, nil, true)
   self:AddTimer(0.1, self.BattleFortTimer, true, 0, "BattleFortTimer", false, 0.1)
 end
-
-function WBP_Battle_Fort_Base_C:OnPressQuit()
+function WBP_Battle_Fort_Base_C:OnPressQuit_LeaveBtn()
+  self:OnPressQuit(true)
+end
+function WBP_Battle_Fort_Base_C:OnPressQuit_ESC()
+  self:OnPressQuit(false)
+end
+function WBP_Battle_Fort_Base_C:OnPressQuit(UseLeaveBtn)
   if self.CanExcute then
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
     if GameMode.EMGameState.RougeMiniGameProgressing then
       for LevelName, SubGameMode in pairs(GameMode.SubGameModeInfo) do
         if SubGameMode.EndRougeMiniGame then
           local CommonDialogParams = {}
-          
           function CommonDialogParams.RightCallbackFunction()
             SubGameMode:EndRougeMiniGame(false)
           end
-          
           UIManager(self):ShowCommonPopupUI(100188, CommonDialogParams, self)
           break
         end
@@ -68,7 +70,9 @@ function WBP_Battle_Fort_Base_C:OnPressQuit()
       if DungeonId and DataMgr.Dungeon[DungeonId] then
         local DungeonType = DataMgr.Dungeon[DungeonId].DungeonType
         if DungeonType and "Paotai" == DungeonType then
-          UIUtils.OpenEsc()
+          if not UseLeaveBtn then
+            UIUtils.OpenEsc()
+          end
           return
         end
       end
@@ -76,20 +80,17 @@ function WBP_Battle_Fort_Base_C:OnPressQuit()
     end
   end
 end
-
 function WBP_Battle_Fort_Base_C:BattleFortTimer(DeltaTime)
   self:ChangeAimStarColorAndShowBillboard()
   self:UpdatePercentAndChangeHeatingState(DeltaTime)
   self:UpdateAmmo()
   self:UpdateSkillPanel(DeltaTime)
 end
-
 function WBP_Battle_Fort_Base_C:ChangeAimStarColorAndShowBillboard()
   if self.Panel_Aim then
     self.Panel_Aim:ChangeAimStarColorAndShowBillboard()
   end
 end
-
 function WBP_Battle_Fort_Base_C:UpdatePercentAndChangeHeatingState(DeltaTime)
   local Percent = self.OwnerMechanism.HotValue / self.OwnerMechanism.MaxHotValue
   if Percent >= 1 then
@@ -111,35 +112,29 @@ function WBP_Battle_Fort_Base_C:UpdatePercentAndChangeHeatingState(DeltaTime)
   end
   self.Percent = UE4.UKismetMathLibrary.Lerp(self.StartPercent, self.TargetPercent, self.LerpAlpha)
 end
-
 function WBP_Battle_Fort_Base_C:UpdateAmmo()
   if self.Panel_Aim then
     self.Panel_Aim:UpdateAmmo()
   end
 end
-
 function WBP_Battle_Fort_Base_C:UpdateSkillPanel(DeltaTime)
   self:UpdateExclusiveSkill(DeltaTime)
 end
-
 function WBP_Battle_Fort_Base_C:GetCurrentPercent()
   if self.Panel_Aim then
     return self.Panel_Aim:GetCurrentPercent()
   end
   return 0
 end
-
 function WBP_Battle_Fort_Base_C:RefreshRoleSkillButton(Index)
   local SkillId = self.OwnerPlayer:GetSkillByType(self["FireUI_" .. Index].Type)
   local Skill = self.OwnerPlayer:GetSkill(SkillId)
   self["FireUI_" .. Index]:InitItem_PaoTai(self["FireUI_" .. Index].SkillName, Skill, self.OwnerPlayer, Index, self)
 end
-
 function WBP_Battle_Fort_Base_C:UpdateExclusiveSkill(DeltaTime)
   self.FireUI_1:RefreshSkillStyleInTimer_PaoTai()
   self.FireUI_2:RefreshSkillItem_HotValue(DeltaTime, self.Percent)
 end
-
 function WBP_Battle_Fort_Base_C:InitRoleSkillButton(Index)
   if 1 == Index then
     self["FireUI_" .. Index].Type = UE.ESkillType.Attack
@@ -164,7 +159,6 @@ function WBP_Battle_Fort_Base_C:InitRoleSkillButton(Index)
     self:RefreshRoleSkillButton(Index)
   end, false, 0, nil, true)
 end
-
 function WBP_Battle_Fort_Base_C:OnSkillActionInput()
   if self.OwnerMechanism.Hot then
     if self.FireUI_2:IsAnimationPlaying(self.FireUI_2.Click) then
@@ -176,7 +170,6 @@ function WBP_Battle_Fort_Base_C:OnSkillActionInput()
     UIManager(self):ShowUITip_BattleCommonTop(UIConst.Tip_CommonTop, "TOAST_OverHeating")
   end
 end
-
 function WBP_Battle_Fort_Base_C:InitInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
   local Player = PlayerController:GetMyPawn()
@@ -189,26 +182,23 @@ function WBP_Battle_Fort_Base_C:InitInfo()
   self.Percent = self.OwnerMechanism.HotValue / self.OwnerMechanism.MaxHotValue
   self:ListenForInputAction("LeaveCannon", EInputEvent.IE_Pressed, true, {
     self,
-    self.OnPressQuit
+    self.OnPressQuit_LeaveBtn
   })
   self:ListenForInputAction("OpenMenu", EInputEvent.IE_Pressed, true, {
     self,
-    self.OnPressQuit
+    self.OnPressQuit_ESC
   })
 end
-
 function WBP_Battle_Fort_Base_C:InitAim()
   if self.Panel_Aim then
     self.Panel_Aim:Init(self)
   end
 end
-
 function WBP_Battle_Fort_Base_C:InitBloodBar()
   if self.FortBloodBar then
     self.FortBloodBar:InitConfig(self.OwnerMechanism)
   end
 end
-
 function WBP_Battle_Fort_Base_C:InitSkillItem()
   self.FireUI_1 = self.Fire_Single
   self.FireUI_2 = self.Fire_Multi
@@ -216,7 +206,6 @@ function WBP_Battle_Fort_Base_C:InitSkillItem()
     self:InitRoleSkillButton(i)
   end
 end
-
 function WBP_Battle_Fort_Base_C:TryToPlayTargetCommand(KeyName, IsAddInputCache)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -233,7 +222,6 @@ function WBP_Battle_Fort_Base_C:TryToPlayTargetCommand(KeyName, IsAddInputCache)
     self.OwnerPlayer:PressFire()
   end
 end
-
 function WBP_Battle_Fort_Base_C:TryToStopTargetCommand(KeyName, IsClearInputCache)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -250,7 +238,6 @@ function WBP_Battle_Fort_Base_C:TryToStopTargetCommand(KeyName, IsClearInputCach
     self.OwnerPlayer:StopFire(false, true)
   end
 end
-
 function WBP_Battle_Fort_Base_C:HideBattleMainUI()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
@@ -262,7 +249,6 @@ function WBP_Battle_Fort_Base_C:HideBattleMainUI()
     TaskUIObj:TriggerQuestTrackPanelTips(false)
   end
 end
-
 function WBP_Battle_Fort_Base_C:ShowBattleMainUI()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
@@ -274,30 +260,26 @@ function WBP_Battle_Fort_Base_C:ShowBattleMainUI()
     TaskUIObj:TriggerQuestTrackPanelTips(true)
   end
 end
-
 function WBP_Battle_Fort_Base_C:TryToPlayAimDiffusionStartAnim()
   if self.Panel_Aim then
     self.Panel_Aim:TryToPlayAimDiffusionStartAnim()
   end
 end
-
-function WBP_Battle_Fort_Base_C:CreateFortBackKey()
+function WBP_Battle_Fort_Base_C:CreateFortBackEntry()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
-    local FortBackKey = UIBattleMain:CreateFortBack()
-    if FortBackKey then
-      self:InitFortBackKey(FortBackKey)
+    local FortBackEntry = UIBattleMain:CreateFortBack()
+    if FortBackEntry then
+      self:InitFortBackEntry(FortBackEntry)
     end
   end
 end
-
 function WBP_Battle_Fort_Base_C:DestoryFortBackKey()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
     UIBattleMain:DestoryFortBack()
   end
 end
-
 function WBP_Battle_Fort_Base_C:Close()
   self:ShowBattleMainUI()
   self:DestoryFortBackKey()
@@ -305,7 +287,6 @@ function WBP_Battle_Fort_Base_C:Close()
   self.OwnerPlayer:SetPlayerCameraSensitivityByType("Normal")
   WBP_Battle_Fort_Base_C.Super.Close(self)
 end
-
 function WBP_Battle_Fort_Base_C:OnStartCanonMiniGame()
   local ActivityFortBattle = self:CreateWidgetNew("ActivityFortBattle")
   ActivityFortBattle:Init(self)
@@ -313,7 +294,6 @@ function WBP_Battle_Fort_Base_C:OnStartCanonMiniGame()
   Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
   Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
 end
-
 function WBP_Battle_Fort_Base_C:HidePaotaiName(IsHide)
   if IsHide then
     self.FortBloodBar.Text_Name:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -321,5 +301,9 @@ function WBP_Battle_Fort_Base_C:HidePaotaiName(IsHide)
     self.FortBloodBar.Text_Name:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
+function WBP_Battle_Fort_Base_C:InitFortBackEntry(FortBackKey)
+  local IconPath = "/Game/UI/Texture/Dynamic/Atlas/Entrance/T_Entrance_Quit.T_Entrance_Quit"
+  FortBackKey:InitInterface(IconPath, "Esc", GText("UI_CTL_Quit"))
+  FortBackKey.Btn_top.OnClicked:Add(self, self.OnPressQuit_ESC)
+end
 return WBP_Battle_Fort_Base_C

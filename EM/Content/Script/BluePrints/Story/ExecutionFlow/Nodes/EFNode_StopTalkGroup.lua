@@ -1,6 +1,6 @@
 local Timeutils = require("Utils.TimeUtils")
 local M = {}
-
+local ScriptLogType = UE.EStoryLogType.Script
 function M:CreateNode(Flow, TalkTask, Params)
   local ActorId = Params.ActorId
   local Duration = Params.Duration or 0.5
@@ -13,8 +13,8 @@ function M:CreateNode(Flow, TalkTask, Params)
     if not IsValid(TalkActor) then
       local DialogueData = DataMgr.Dialogue[Flow.DialogueId]
       local Scripts = DialogueData and DialogueData.Scripts or ""
-      local Message = "StopTalkGroup\230\137\190\228\184\141\229\136\176\229\175\185\229\186\148Actor,Id\239\188\154" .. tostring(ActorId) .. "\n\229\143\176\232\175\141Id:" .. Flow.DialogueId .. "\n\232\132\154\230\156\172\239\188\154\n" .. Scripts
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\232\132\154\230\156\172\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+      local Message = "StopTalkGroup找不到对应Actor,Id：" .. tostring(ActorId) .. "\n台词Id:" .. Flow.DialogueId .. "\n脚本：\n" .. Scripts
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "StopTalkGroup脚本运行出错：TalkActor无效", Message)
       Node:Finish({
         Node.FinishPin
       })
@@ -44,5 +44,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return StopTalkGroupNode
 end
-
 return M

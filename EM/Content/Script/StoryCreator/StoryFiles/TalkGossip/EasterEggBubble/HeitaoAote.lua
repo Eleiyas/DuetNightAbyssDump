@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1752840006485338",
       type = "StoryNode",
-      name = "\233\187\145\230\161\131\229\165\165\231\137\185\228\186\146\229\138\1681",
+      name = "黑桃奥特互动1",
       pos = {x = 1126, y = 308},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -113,11 +115,11 @@ return {
           ["17528401221671853"] = {
             key = "17528401221671853",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1232, y = 292},
             propsData = {
               IsNpcNode = false,
-              FirstDialogueId = 90030901,
+              FirstDialogueId = 90031201,
               FlowAssetPath = "",
               TalkType = "Bubble",
               BubblePlayType = "Once",
@@ -132,7 +134,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           }

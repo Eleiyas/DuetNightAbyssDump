@@ -2,7 +2,6 @@ require("UnLua")
 local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
 local EMCache = require("EMCache.EMCache")
 local GM_BattleHistory_C = Class("BluePrints.UI.GMInterface.WBP_GM_Menu_Base_C")
-
 function GM_BattleHistory_C:OnLoaded()
   DebugPrint("Tianyi@ battle history menu onloaded")
   self.Tags = Const.BattleHistoryTags
@@ -25,7 +24,6 @@ function GM_BattleHistory_C:OnLoaded()
   self.BtnClearHistory.OnClicked:Clear()
   self.BtnClearHistory.OnClicked:Add(self, self.ClearHistory)
 end
-
 function GM_BattleHistory_C:SelectAllPrintTags()
   for _, TagObj in pairs(self.TagPrintFilter:GetListItems()) do
     TagObj.IsChecked = true
@@ -36,7 +34,6 @@ function GM_BattleHistory_C:SelectAllPrintTags()
   end
   self:UpdateData()
 end
-
 function GM_BattleHistory_C:UnSelectAllPrintTags()
   for _, TagObj in pairs(self.TagPrintFilter:GetListItems()) do
     TagObj.IsChecked = false
@@ -47,7 +44,6 @@ function GM_BattleHistory_C:UnSelectAllPrintTags()
   end
   self:UpdateData()
 end
-
 function GM_BattleHistory_C:SelectAllRecordTags()
   for _, TagObj in pairs(self.TagRecordFilter:GetListItems()) do
     TagObj.IsChecked = true
@@ -58,7 +54,6 @@ function GM_BattleHistory_C:SelectAllRecordTags()
   end
   self:UpdateData()
 end
-
 function GM_BattleHistory_C:UnSelectAllRecordTags()
   for _, TagObj in pairs(self.TagRecordFilter:GetListItems()) do
     TagObj.IsChecked = false
@@ -69,7 +64,6 @@ function GM_BattleHistory_C:UnSelectAllRecordTags()
   end
   self:UpdateData()
 end
-
 function GM_BattleHistory_C:InitRecordFilter()
   self.TagRecordFilter:ClearListItems()
   self.BannedRecordTags = EMCache:Get("BannedRecordTags") or {}
@@ -77,34 +71,28 @@ function GM_BattleHistory_C:InitRecordFilter()
     local TagObj = NewObject(UIUtils.GetCommonItemContentClass())
     TagObj.Name = Tag
     TagObj.UI = self
-    
     function TagObj.Callback(TagName, IsChecked)
       self:OnRecordItemClicked(TagName, IsChecked)
     end
-    
     if self.BannedRecordTags == nil or not self.BannedRecordTags[Tag] then
       TagObj.IsChecked = true
     end
     self.TagRecordFilter:AddItem(TagObj)
   end
 end
-
 function GM_BattleHistory_C:InitPrintFilter()
   self.TagPrintFilter:ClearListItems()
   for _, Tag in ipairs(self.Tags) do
     local TagObj = NewObject(UIUtils.GetCommonItemContentClass())
     TagObj.Name = Tag
     TagObj.UI = self
-    
     function TagObj.Callback(TagName, IsChecked)
       self:OnPrintItemClicked(TagName, IsChecked)
     end
-    
     TagObj.IsChecked = true
     self.TagPrintFilter:AddItem(TagObj)
   end
 end
-
 function GM_BattleHistory_C:UpdateData()
   for _, TagObj in pairs(self.TagRecordFilter:GetListItems()) do
     if TagObj.IsChecked then
@@ -123,23 +111,18 @@ function GM_BattleHistory_C:UpdateData()
   EMCache:Set("BannedRecordTags", self.BannedRecordTags)
   Battle(self):InitBannedRecordTags()
 end
-
 function GM_BattleHistory_C:OnRecordItemClicked(TagName, IsChecked)
   self:UpdateData()
 end
-
 function GM_BattleHistory_C:OnPrintItemClicked(TagName, IsChecked)
   self:UpdateData()
 end
-
 function GM_BattleHistory_C:PrintBattleHistory_Normal(Verbose)
   self:_PrintBattleHistory(UE4.EBattleRecordVerbosity.Normal)
 end
-
 function GM_BattleHistory_C:PrintBattleHistory_Verbose()
   self:_PrintBattleHistory(UE4.EBattleRecordVerbosity.Verbose)
 end
-
 function GM_BattleHistory_C:_PrintBattleHistory(Verbose)
   local Filter = UE4.FBattleHistoryFilter()
   local ShouldPrint = false
@@ -155,14 +138,12 @@ function GM_BattleHistory_C:_PrintBattleHistory(Verbose)
     ShouldPrint = true
   end
   if not ShouldPrint then
-    DebugPrint("Tianyi@ \230\178\161\230\156\137\229\139\190\233\128\137\228\187\187\228\189\149\230\160\135\231\173\190\239\188\140\228\184\141\232\191\155\232\161\140\230\136\152\230\150\151\232\174\176\229\189\149\230\137\147\229\141\176!")
+    DebugPrint("Tianyi@ 没有勾选任何标签，不进行战斗记录打印!")
     return
   end
   Battle(self):BP_PrintBattleHistory(Filter)
 end
-
 function GM_BattleHistory_C:ClearHistory()
   Battle(self):ClearBattleHistory()
 end
-
 return GM_BattleHistory_C

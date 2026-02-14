@@ -1,5 +1,4 @@
 local WBP_RougeLike_Item_Select_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_RougeLike_Item_Select_C:OnLoaded(AwardList)
   self:UISetGamePaused(self.WidgetName or self.ConfigName, true)
   self.AwardList = AwardList
@@ -7,11 +6,10 @@ function WBP_RougeLike_Item_Select_C:OnLoaded(AwardList)
   for i = 1, 3 do
     local ItemWidgetName = string.format("RogueLike_Select_Item_Widget_%s", i)
     local ItemWidget = self[ItemWidgetName]
-    assert(ItemWidget, string.format("RougeLike_Item_Select\228\184\173\230\137\190\228\184\141\229\136\176\230\142\167\228\187\182:\227\128\144%s\227\128\145", ItemWidgetName))
+    assert(ItemWidget, string.format("RougeLike_Item_Select中找不到控件:【%s】", ItemWidgetName))
     ItemWidget:OnLoaded()
   end
 end
-
 function WBP_RougeLike_Item_Select_C:ShowNextAward()
   if next(self.AwardList) == nil then
     self:Close()
@@ -20,13 +18,13 @@ function WBP_RougeLike_Item_Select_C:ShowNextAward()
   self.ItemSelectInfo = self.AwardList[1]
   self.AwardType = self.ItemSelectInfo.AwardType
   local RandomId = self.ItemSelectInfo.RandomId
-  assert(self.AwardType == "Blessing" or self.AwardType == "Treasure", string.format("RougeLike_Item_Select\228\188\160\229\133\165\231\154\132Type:\227\128\144%s\227\128\145\228\184\141\230\152\175\230\156\137\230\149\136\231\154\132Type", tostring(self.AwardType)))
+  assert(self.AwardType == "Blessing" or self.AwardType == "Treasure", string.format("RougeLike_Item_Select传入的Type:【%s】不是有效的Type", tostring(self.AwardType)))
   local InfoList = self.ItemSelectInfo.InfoList
   if self.ItemSelectInfo.RandomType == "Random_3" then
     for i = 1, 3 do
       local ItemWidgetName = string.format("RogueLike_Select_Item_Widget_%s", i)
       local ItemWidget = self[ItemWidgetName]
-      assert(ItemWidget, string.format("RougeLike_Item_Select\228\184\173\230\137\190\228\184\141\229\136\176\230\142\167\228\187\182:\227\128\144%s\227\128\145", ItemWidgetName))
+      assert(ItemWidget, string.format("RougeLike_Item_Select中找不到控件:【%s】", ItemWidgetName))
       local InfoId, InfoData = self:GetInfoDataFromItemInfo(self.AwardType, InfoList[i].ItemId)
       ItemWidget:SetInfo(self, InfoId, InfoData)
     end
@@ -34,7 +32,7 @@ function WBP_RougeLike_Item_Select_C:ShowNextAward()
     for i = 1, 2 do
       local ItemWidgetName = string.format("RogueLike_Select_Item_Widget_%s", i)
       local ItemWidget = self[ItemWidgetName]
-      assert(ItemWidget, string.format("RougeLike_Item_Select\228\184\173\230\137\190\228\184\141\229\136\176\230\142\167\228\187\182:\227\128\144%s\227\128\145", ItemWidgetName))
+      assert(ItemWidget, string.format("RougeLike_Item_Select中找不到控件:【%s】", ItemWidgetName))
       ItemWidget:SetVisibility(UE4.ESlateVisibility.Collapsed)
     end
     local InfoId, InfoData = self:GetInfoDataFromItemInfo(self.AwardType, InfoList[1].ItemId)
@@ -42,12 +40,11 @@ function WBP_RougeLike_Item_Select_C:ShowNextAward()
   end
   table.remove(self.AwardList, 1)
 end
-
 function WBP_RougeLike_Item_Select_C:ChooseItem(ItemId, ChooseWidget)
   PrintTable({WBP_RougeLike_Item_Select_C = 1, ChooseItem = ItemId})
   if self.ItemSelectInfo.RandomType == "Random_3" then
     local Avatar = GWorld:GetAvatar()
-    assert(Avatar, "Avatar\228\184\141\229\173\152\229\156\168")
+    assert(Avatar, "Avatar不存在")
     if self.AwardType == "Blessing" then
       Avatar:GetBlessing(ItemId, function()
         self:ShowNextAward()
@@ -68,25 +65,22 @@ function WBP_RougeLike_Item_Select_C:ChooseItem(ItemId, ChooseWidget)
     end
   end
 end
-
 function WBP_RougeLike_Item_Select_C:GetInfoDataFromItemInfo(AwardType, ItemId)
   if "Blessing" == AwardType then
     local InfoData = DataMgr.RougeLikeBlessing[ItemId]
-    assert(InfoData, string.format("\228\188\160\229\133\165\231\154\132\229\136\187\229\141\176\231\188\150\229\143\183\227\128\144%s\227\128\145\228\184\141\229\173\152\229\156\168", ItemId))
+    assert(InfoData, string.format("传入的刻印编号【%s】不存在", ItemId))
     return InfoData.BlessingId, InfoData
   end
   if "Treasure" == AwardType then
     local InfoData = DataMgr.RougeLikeTreasure[ItemId]
-    assert(InfoData, string.format("\228\188\160\229\133\165\231\154\132\229\174\157\231\137\169\231\188\150\229\143\183\227\128\144%s\227\128\145\228\184\141\229\173\152\229\156\168", ItemId))
+    assert(InfoData, string.format("传入的宝物编号【%s】不存在", ItemId))
     return InfoData.TreasureId, InfoData
   end
 end
-
 function WBP_RougeLike_Item_Select_C:Close()
   self:UISetGamePaused(self.WidgetName or self.ConfigName, false)
   local Avatar = GWorld:GetAvatar()
   EventManager:FireEvent(EventID.OnSwitchRole, Avatar.CurrentChar)
   self.Super.Close(self)
 end
-
 return WBP_RougeLike_Item_Select_C

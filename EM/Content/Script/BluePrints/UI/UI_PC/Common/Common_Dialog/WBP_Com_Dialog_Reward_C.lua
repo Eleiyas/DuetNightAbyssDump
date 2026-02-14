@@ -2,10 +2,8 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
 end
-
 function M:InitContent(Params, PopupData, Owner)
   local ConfigData = Params.ConfigData
   self.TabConfigDatas = Params.TabConfigDatas
@@ -26,6 +24,10 @@ function M:InitContent(Params, PopupData, Owner)
     self.Text_NumMax:SetText(tostring(ConfigData.NumMax))
   else
     self.HorizontalBox_TotalProgress:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
+  if ConfigData.OnlyShowNowProgress then
+    self.Text_Split:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Text_NumMax:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   if not ConfigData.ShowIcon then
     self.Icon:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -62,7 +64,6 @@ function M:InitContent(Params, PopupData, Owner)
     self:SetFocus()
   end
 end
-
 function M:ScrollToSelectTab()
   local SelectIndex
   if self.Type then
@@ -81,7 +82,6 @@ function M:ScrollToSelectTab()
     end
   end, false, 0, "SelectRewardTab", true)
 end
-
 function M:InitItem(ConfigData)
   self.List_Item:ClearListItems()
   if 1 == ConfigData.SortType then
@@ -124,7 +124,6 @@ function M:InitItem(ConfigData)
     self.Btn_GetAll:ForbidBtn(true)
   end
 end
-
 function M:SortItems()
   if not self.Items then
     return
@@ -138,11 +137,14 @@ function M:SortItems()
       return false
     elseif not a.RewardsGot and b.RewardsGot then
       return true
+    elseif not a.NeedSwitchType and b.NeedSwitchType then
+      return true
+    elseif a.NeedSwitchType and not b.NeedSwitchType then
+      return false
     end
     return a.SourceNum < b.SourceNum
   end)
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -150,7 +152,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -159,7 +160,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:InitGamepadView()
   end
 end
-
 function M:OnSelectItemChanged(SelectItem)
   if not SelectItem then
     return
@@ -168,13 +168,11 @@ function M:OnSelectItemChanged(SelectItem)
     self:ClickListItemWhenSelectItemChanged(SelectItem)
   end
 end
-
 function M:ClickListItemWhenSelectItemChanged(Content)
   if Content and Content.Entry then
     Content.Entry:OnCellClicked()
   end
 end
-
 function M:OnUINavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     if self.CurFocusedRewardItem then
@@ -188,7 +186,6 @@ function M:OnUINavigation(NavigationDirection)
     return self:NavigateToFirstDisplayedItem(self.List_Item)
   end
 end
-
 function M:InitListTabInfo()
   self.List_Tab.BP_OnItemSelectionChanged:Add(self, self.OnSelectItemChanged)
   self.List_Tab:SetNavigationRuleCustom(EUINavigation.Right, {
@@ -216,7 +213,6 @@ function M:InitListTabInfo()
     self.Type2Index[TabItem.Type] = Index
   end
 end
-
 function M:RefreshListRewardInfo(Item, NotPlaySound)
   if self.SelectedContent then
     self.SelectedContent.Entry:UnSelected()
@@ -225,14 +221,12 @@ function M:RefreshListRewardInfo(Item, NotPlaySound)
   self.SelectedContent.Entry:Selected(NotPlaySound)
   self:RealRefreshListRewardInfo(self.SelectedContent.Type)
 end
-
 function M:RealRefreshListRewardInfo(TabType)
   local ConfigData = self.Datas[TabType]
   self.Type = TabType
   self:Refresh(ConfigData)
   self:RefreshBtnGetAll(ConfigData)
 end
-
 function M:RefreshBtnGetAll(ConfigData)
   local HasRewardToGet = false
   for _, Item in pairs(ConfigData.Items) do
@@ -253,8 +247,8 @@ function M:RefreshBtnGetAll(ConfigData)
     self.Btn_GetAll:ForbidBtn(true)
   end
 end
-
 function M:RefreshReddotInfo()
+  DebugPrint("@@@ComDilaog Reward Try Clear Reddot ReddotName:", self.ReddotName, " Type:", self.SelectedContent.Type)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(self.ReddotName)
   if CacheDetail[self.SelectedContent.Type] then
     local Num = 0
@@ -262,10 +256,10 @@ function M:RefreshReddotInfo()
       Num = Num + 1
     end
     CacheDetail[self.SelectedContent.Type] = nil
+    DebugPrint("@@@ComDilaog Reward Clear Reddot ReddotName:", self.ReddotName, " Type:", self.SelectedContent.Type, " Num:", Num)
     ReddotManager.DecreaseLeafNodeCount(self.ReddotName, Num)
   end
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   ReddotManager.RemoveListener(self.ReddotName, self)
@@ -275,7 +269,6 @@ function M:Destruct()
   end
   self.List_Item:ClearListItems()
 end
-
 function M:NavigateToFirstDisplayedItem(List)
   local ItemUIs = List:GetDisplayedEntryWidgets()
   if ItemUIs:Length() > 0 then
@@ -294,7 +287,6 @@ function M:NavigateToFirstDisplayedItem(List)
   end
   return List
 end
-
 function M:InitGamepadView()
   if self:HasAnyFocus() then
     self:NavigateToFirstDisplayedItem(self.List_Item)
@@ -306,7 +298,6 @@ function M:InitGamepadView()
   self:ShowGamepadViewBtn(false)
   self:ShowGamepadViewSingleBtn(false)
 end
-
 function M:InitKeyBoardView()
   self.IsInViewMode = false
   self.Btn_GetAll:SetGamePadIconVisible(false)
@@ -316,7 +307,6 @@ function M:InitKeyBoardView()
   self:ShowGamepadViewBtn(false)
   self:ShowGamepadViewSingleBtn(false)
 end
-
 function M:ShowGamepadScrollBtn(bShow)
   if bShow then
     if self.GamepadScrollBtnIndex then
@@ -339,7 +329,6 @@ function M:ShowGamepadScrollBtn(bShow)
     self.GamepadScrollBtnIndex = nil
   end
 end
-
 function M:ShowGamepadViewBtn(bShow)
   if bShow then
     if self.GamepadViewBtnIndex then
@@ -359,7 +348,6 @@ function M:ShowGamepadViewBtn(bShow)
     self.GamepadViewBtnIndex = nil
   end
 end
-
 function M:ShowGamepadViewSingleBtn(bShow)
   if bShow then
     if self.GamepadViewSingleBtnIndex then
@@ -379,7 +367,6 @@ function M:ShowGamepadViewSingleBtn(bShow)
     self.GamepadViewSingleBtnIndex = nil
   end
 end
-
 function M:RefreshButton(CanReceiveAll)
   if not CanReceiveAll then
     self.Btn_GetAll:ForbidBtn(true)
@@ -387,13 +374,11 @@ function M:RefreshButton(CanReceiveAll)
     self.Btn_GetAll:ForbidBtn(false)
   end
 end
-
 function M:OnTabSelected(TabWidget)
   if self.TabConfigDatas and self.TabConfigDatas[TabWidget.Idx] then
     self:Refresh(self.TabConfigDatas[TabWidget.Idx])
   end
 end
-
 function M:Refresh(ConfigData)
   self.Items = ConfigData.Items
   self.Text_Total:SetText(GText(ConfigData.Text_Total))
@@ -402,17 +387,20 @@ function M:Refresh(ConfigData)
   if not ConfigData.ShowIcon then
     self.Icon:SetVisibility(UIConst.VisibilityOp.Collapsed)
   else
+    if ConfigData.IconPath then
+      local Icon = LoadObject(ConfigData.IconPath)
+      self.Icon:SetBrushResourceObject(Icon)
+    end
     self.Icon:SetVisibility(UIConst.VisibilityOp.Visible)
   end
   self.Btn_GetAll:SetText(GText(ConfigData.ReceiveButtonText))
-  self.Btn_GetAll.Button_Area.OnClicked:Clear()
-  self.Btn_GetAll.Button_Area.OnClicked:Add(self, function()
+  self.Btn_GetAll:UnBindEventOnClickedByObj(self)
+  self.Btn_GetAll:BindEventOnClicked(self, function()
     ConfigData.ReceiveAllParam.SelfWidget = self
     ConfigData.ReceiveAllCallBack(self, ConfigData.ReceiveAllParam)
   end)
   self:InitItem(ConfigData)
 end
-
 function M:OnNavigateUp(Content)
   local Id = Content.Id - 1
   if Id >= 0 then
@@ -422,7 +410,6 @@ function M:OnNavigateUp(Content)
   end
   return Content.SelfWidget:FocusToRewardItem()
 end
-
 function M:OnNavigateDown(Content)
   local Id = Content.Id + 1
   local AllItemCount = self.List_Item:GetNumItems() - 1
@@ -433,19 +420,16 @@ function M:OnNavigateDown(Content)
   end
   return Content.SelfWidget:FocusToRewardItem()
 end
-
 function M:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if bIsOpen then
@@ -455,7 +439,6 @@ function M:OnMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 function M:UpdateUIStyle(IsVisible)
   if IsVisible then
     if self.Owner then
@@ -466,7 +449,6 @@ function M:UpdateUIStyle(IsVisible)
     self.Owner:HideAllGamepadShortcut()
   end
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -482,5 +464,4 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 return M

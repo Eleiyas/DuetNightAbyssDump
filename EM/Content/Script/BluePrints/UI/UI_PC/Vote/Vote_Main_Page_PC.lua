@@ -7,7 +7,6 @@ local GamePadKeyList = {
   [4] = "Key_TeamInfo",
   [5] = "Key_Back"
 }
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.UpdateDungeonValues, self, self.UpdateDungeonValues)
   self:AddDispatcher(EventID.OnRepDungeonVoteInterval, self, self.OnRepDungeonVoteInterval)
@@ -17,16 +16,18 @@ function M:InitListenEvent()
       self:SetFocus()
       self.bIsFocusable = true
       self.bCanAutoFocus = true
+      self.AutoInEnd = true
       EventManager:FireEvent(EventID.OnVoteUIAutoInFinished)
     end
   })
 end
-
 function M:Construct()
   print(_G.LogTag, "LXZ  Construct")
+  self.AutoInEnd = false
   self:InitListenEvent()
   self.DefenceWave = 0
   self.bCanAutoFocus = false
+  self.SelectContinue = nil
   self.SelfPlayerEid = UGameplayStatics.GetPlayerCharacter(self, 0).Eid
   self:SetCurrentWave()
   self:StartCountDown()
@@ -78,12 +79,48 @@ function M:Construct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshInfoByInputTypeChange)
   self.CurMode = self.GameInputModeSubsystem:GetCurrentInputType()
   self:RefreshInfoByInputTypeChange(self.CurMode)
+  self:InitAutoVote()
 end
-
-function M:OnLoaded(...)
-  self.Super.OnLoaded(self, ...)
+function M:InitAutoVote()
+  local DungeonId = GWorld.GameInstance:GetCurrentDungeonId() or 90401
+  local GameState = UE4.UGameplayStatics.GetGameState(self)
+  if not IsStandAlone(GameState) then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  print(_G.LogTag, "LXZ OnLoaded Vote", DungeonId, GameState.DungeonProgress, Avatar.Dungeons[DungeonId].AutoProgress)
+  if Avatar.Dungeons[DungeonId].AutoProgress > 0 then
+    if GameState.DungeonProgress - 1 <= Avatar.Dungeons[DungeonId].AutoProgress then
+      self.TotalAutoSelectTime = DataMgr.GlobalConstant.AutoRoundsCheckTime.ConstantValue or 5
+      self.AutoSelectTime = self.TotalAutoSelectTime
+      self:AddTimer(0.1, self.OnAutoVoteCountDown, true, 0, "OnAutoVoteCountDown", true, true)
+      self.Switch_Show:SetActiveWidgetIndex(1)
+      self.Text_Tips:SetText(string.format(GText("UI_Auto_Round_DungeonTips_1"), GameState.DungeonProgress - 1, Avatar.Dungeons[DungeonId].AutoProgress))
+    else
+      self.TotalAutoSelectTime = DataMgr.GlobalConstant.AutoRoundsCheckTime.ConstantValue or 5
+      self.AutoSelectTime = self.TotalAutoSelectTime
+      self:AddTimer(0.1, self.OnAutoVoteCountDown, true, 0, "OnAutoVoteCountDown", true, false)
+      self.Switch_Show:SetActiveWidgetIndex(0)
+      self.Text_Tips_1:SetText(GText("UI_Auto_Round_DungeonTips_2"))
+      self.Text_Tips_1:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    end
+  else
+    self.Switch_Show:SetActiveWidgetIndex(0)
+    self.Text_Tips_1:SetVisibility(ESlateVisibility.Collapsed)
+  end
 end
-
+function M:OnAutoVoteCountDown(IsContinue)
+  self.AutoSelectTime = self.AutoSelectTime - 0.1
+  local IntCountDown = math.ceil(self.AutoSelectTime)
+  IntCountDown = math.max(IntCountDown, 0)
+  local CountDownPercent = IntCountDown / self.TotalAutoSelectTime
+  self.CountDown.Text_CountDown:SetText(string.format("%d", IntCountDown))
+  self.Bar01:SetPercent(CountDownPercent)
+  self.Bar02:SetPercent(CountDownPercent)
+  if self.AutoSelectTime <= 0 then
+    self:Vote(IsContinue)
+  end
+end
 function M:SetCurrentWavePanelToastInfo()
   local WaveCount = self.CurrentWave
   local UnitDigit = WaveCount % 10
@@ -99,7 +136,6 @@ function M:SetCurrentWavePanelToastInfo()
   self.Toast_WaveFinish.Text_Content:SetText(GText("UI_Vote_End"))
   self.Toast_WaveFinish.Text_WorldText:SetText(EnText("UI_Vote_End"))
 end
-
 function M:StartCountDown(Info)
   local GameState = UGameplayStatics.GetGameState(self)
   if not IsDedicatedServer(GameState) and IsAuthority(GameState) then
@@ -115,7 +151,6 @@ function M:StartCountDown(Info)
     self:AddTimer(0.1, self.VoteCountDown, true, 0, "VoteCountDown")
   end
 end
-
 function M:VoteCountDown()
   local CurrentCountDown, CountDownPercent = self:GetRemainVoteTime()
   local IntCountDown = math.ceil(CurrentCountDown)
@@ -134,7 +169,6 @@ function M:VoteCountDown()
     self:RemoveTimer("VoteCountDown")
   end
 end
-
 function M:GetRemainVoteTime()
   local GameState = UGameplayStatics.GetGameState(self)
   local Info = GameState.ClientTimerStruct:GetTimerInfo("OnDungeonVoteBegin")
@@ -142,7 +176,6 @@ function M:GetRemainVoteTime()
   local RemainPercent = (GameState.ReplicatedRealTimeSeconds - Info.RealTimeSeconds) / Info.Time
   return RemainVoteTime, RemainPercent
 end
-
 function M:SetCurrentWave()
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId() or 90401
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -155,7 +188,6 @@ function M:SetCurrentWave()
   end
   self:SetCurrentWavePanelToastInfo()
 end
-
 function M:SetPlayerInfo()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not IsDedicatedServer(GameState) and IsAuthority(GameState) then
@@ -163,18 +195,19 @@ function M:SetPlayerInfo()
   end
   self.MultiPlayer:Init(self)
 end
-
 function M:Vote(IsContinue)
-  print(_G.LogTag, "LXZ  Vote", IsContinue)
+  print(_G.LogTag, "LXZ  Vote", IsContinue, self.bInClose, self.SelectContinue)
   if self.bInClose then
     return
   end
   if IsContinue == self.SelectContinue then
     return
   end
+  self:RemoveTimer("OnAutoVoteCountDown")
   if IsContinue then
     local Avatar = GWorld:GetAvatar()
     if Avatar then
+      Traceback()
       Avatar:TryEnterNextProgress(function(Ret)
         if Ret == ErrorCode.RET_SUCCESS then
           self.SelectContinue = IsContinue
@@ -192,20 +225,17 @@ function M:Vote(IsContinue)
     self:SendVoteResult(EVoteState.Exit)
   end
 end
-
 function M:SendVoteResult(VoteState)
   print(_G.LogTag, "LXZ  SendVoteResult", VoteState)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   PlayerCharacter.RPCComponent:SendDungeonVote(VoteState)
 end
-
 function M:UpdateDungeonValues(VoteValues)
   for i, v in pairs(VoteValues) do
     self:UpdateDungeonSingleValue(i, v)
   end
 end
-
 function M:UpdateDungeonSingleValue(Eid, Value)
   if self.VoteInfo[Eid] == Value then
     return
@@ -222,8 +252,8 @@ function M:UpdateDungeonSingleValue(Eid, Value)
   end
   self.MultiPlayer:OnPlayerVote(Value, Eid, bMainPlayer, bFirstMainPlayer)
 end
-
 function M:OnRepDungeonVoteInterval()
+  print(_G.LogTag, "LXZ  OnRepDungeonVoteInterval")
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
   UIManager(self):HideAllUI_EX({
     self:GetName()
@@ -232,7 +262,6 @@ function M:OnRepDungeonVoteInterval()
   self:SetFocus()
   self:Close()
 end
-
 function M:ShowAndHideGamePadKey(ShowList)
   for i, v in pairs(GamePadKeyList) do
     self[v]:SetVisibility(ESlateVisibility.Collapsed)
@@ -241,7 +270,6 @@ function M:ShowAndHideGamePadKey(ShowList)
     self[GamePadKeyList[v]]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:OnGamePadSelectComfirmBox()
   self.FocusState = "ComfirmBox"
   if not self.IsDS then
@@ -250,7 +278,6 @@ function M:OnGamePadSelectComfirmBox()
     self:ShowAndHideGamePadKey({1, 4})
   end
 end
-
 function M:OnGamePadSelectTeamInfo()
   self.FocusState = "TeamInfo"
   if not self.IsDS then
@@ -259,7 +286,6 @@ function M:OnGamePadSelectTeamInfo()
     self:ShowAndHideGamePadKey({2, 5})
   end
 end
-
 function M:OnGamePadOpenTeamInfo()
   self.FocusState = "OpenTeamInfo"
   if not self.IsDS then
@@ -268,7 +294,6 @@ function M:OnGamePadOpenTeamInfo()
     self:ShowAndHideGamePadKey({3})
   end
 end
-
 function M:OnClickFaceButtonBottom()
   if self.FocusState == "ComfirmBox" then
   elseif self.FocusState == "TeamInfo" then
@@ -276,7 +301,6 @@ function M:OnClickFaceButtonBottom()
   elseif self.FocusState == "OpenTeamInfo" then
   end
 end
-
 function M:OnClickFaceButtonRight()
   if self.FocusState == "ComfirmBox" then
   elseif self.FocusState == "TeamInfo" then
@@ -288,7 +312,6 @@ function M:OnClickFaceButtonRight()
     self:OnGamePadSelectTeamInfo()
   end
 end
-
 function M:OnClickRS()
   if self.FocusState == "ComfirmBox" then
     if self.IsDS then
@@ -298,7 +321,6 @@ function M:OnClickRS()
   elseif self.FocusState == "TeamInfo" then
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -318,7 +340,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -332,7 +353,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.DeviceInPc then
     self.Controller:SetVisibility(ESlateVisibility.Collapsed)
@@ -347,7 +367,6 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   self.Box_Leave:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.Box_Continue:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
 end
-
 function M:OnItemMenuOpenChanged(bIsOpen)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   local CurMode = self.GameInputModeSubsystem:GetCurrentInputType()
@@ -375,17 +394,14 @@ function M:OnItemMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   if self.bInClose then
     return self
   end
   return self.Box_Leave.Box_Leave
 end
-
 function M:Close()
   self.Box_Leave:OnClose()
   M.Super.Close(self)
 end
-
 return M

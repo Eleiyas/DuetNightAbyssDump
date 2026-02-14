@@ -1,6 +1,5 @@
 local FTypingBlock = require("Blueprints.Story.Talk.Typing.TypingBlock")
 local M = {}
-
 function M:New(RichTag, Attrs)
   local TypingImgBlock = {}
   for k, v in pairs(self) do
@@ -12,7 +11,6 @@ function M:New(RichTag, Attrs)
   TypingImgBlock.Attrs = Attrs or {}
   return TypingImgBlock
 end
-
 function M:GetRichText()
   local text = "<" .. self.RichTag
   if self.Attrs then
@@ -23,11 +21,9 @@ function M:GetRichText()
   text = text .. "/>"
   return text
 end
-
 function M:GetType()
   return "img"
 end
-
 function M:GetFullText()
   local text = "<" .. self.RichTag
   if self.Attrs then
@@ -50,5 +46,4 @@ function M:GetFullText()
   text = text .. "/>"
   return text
 end
-
 return M

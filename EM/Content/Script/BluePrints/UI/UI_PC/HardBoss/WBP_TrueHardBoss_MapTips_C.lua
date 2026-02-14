@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_TrueHardBoss_MapTips_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_TrueHardBoss_MapTips_PC_C:Construct()
   self.Super.Construct(self)
   self.Common_Button_Text_PC:BindEventOnClicked(self, self.CloseStyleOfPlay)
@@ -12,19 +11,15 @@ function WBP_TrueHardBoss_MapTips_PC_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:Destruct()
   self.Super.Destruct(self)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:OnLoaded()
   self.Super.OnLoaded(self)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:RefreshMapTips(UIIndex, RegionID, BornID)
   if self:IsAnimationPlaying(self.Out) then
     self:UnbindAllFromAnimationFinished(self.Out)
@@ -36,19 +31,17 @@ function WBP_TrueHardBoss_MapTips_PC_C:RefreshMapTips(UIIndex, RegionID, BornID)
   self:RefreshRewardsList()
   self:PlayAnimationForward(self.In)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:RefreshOtherInfo()
   self.Common_Button_Text_PC:SetText(GText("UI_HardBoss_Toward"))
   self.Text_BossRewards:SetText(GText("UI_HardBoss_Preview"))
   self.Text_DetailTips:SetText(GText("UI_HardBoss_FirstTime"))
+  self.Text_Coop:SetText(GText("UI_AreaCoop_Challenge_Coop"))
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:RefreshText()
   local HardBossListData = DataMgr.HardBossMain
   self.Text_BossName:SetText(GText(HardBossListData[self.UIIndex].HardBossName))
   self.Text_BossDetail:SetText(GText(HardBossListData[self.UIIndex].HardBossDes))
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:RefreshRewardTimesInfo()
   local Text = GText("UI_HardBoss_ChancesRemain")
   local RemainTimes = 0
@@ -64,7 +57,6 @@ function WBP_TrueHardBoss_MapTips_PC_C:RefreshRewardTimesInfo()
   end
   self.Text_RewardTips:SetText(Text)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:RefreshRewardsList()
   self.ListView_Rewards:ClearListItems()
   local BossInfo = DataMgr.HardBossMain[self.UIIndex]
@@ -96,14 +88,21 @@ function WBP_TrueHardBoss_MapTips_PC_C:RefreshRewardsList()
     local ImgMat = self.Image_LinShiImage:GetDynamicMaterial()
     ImgMat:SetTextureParameterValue("IconMap", ImageObject)
   end
-  local AllRewardView = {}
+  local AllDynamicRewardIds = {}
   for DifficultyIndex = #BossInfo.DifficultyId, 1, -1 do
     local DifficultyId = BossInfo.DifficultyId[DifficultyIndex]
-    table.insert(AllRewardView, HardBossDifficulty[DifficultyId].DifficultyRewardView)
+    table.insert(AllDynamicRewardIds, HardBossDifficulty[DifficultyId].DifficultyReward)
+  end
+  local AllRewardViewIds = {}
+  for _, DynamicRewardId in ipairs(AllDynamicRewardIds) do
+    local DynamicRewardInfo = UIUtils.GetDynamicRewardInfo(DynamicRewardId)
+    if DynamicRewardInfo then
+      table.insert(AllRewardViewIds, DynamicRewardInfo.RewardView)
+    end
   end
   self.ListView_Rewards:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local AllRewardInfo = {}
-  for _, RewardViewId in pairs(AllRewardView) do
+  for _, RewardViewId in pairs(AllRewardViewIds) do
     local RewardInfo = DataMgr.RewardView[RewardViewId]
     if RewardInfo then
       local Ids = RewardInfo.Id or {}
@@ -112,7 +111,7 @@ function WBP_TrueHardBoss_MapTips_PC_C:RefreshRewardsList()
         local ItemId = Ids[i]
         if not AllRewardInfo[ItemId] then
           local Content = NewObject(UIUtils.GetCommonItemContentClass())
-          Content.UIName = "HardBossMain"
+          Content.UIName = "HardBossMapTips"
           Content.IsShowDetails = true
           Content.Id = ItemId
           Content.Icon = ItemUtils.GetItemIconPath(ItemId, TableName[i])
@@ -138,15 +137,20 @@ function WBP_TrueHardBoss_MapTips_PC_C:RefreshRewardsList()
       return a.Rarity > b.Rarity
     end
   end)
-  for _, RewardContent in ipairs(SortedAllRewardInfo) do
-    self.ListView_Rewards:AddItem(RewardContent)
+  if table.isempty(SortedAllRewardInfo) then
+    self.HB_Title_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.ListView_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  else
+    self.HB_Title_Rewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    self.ListView_Rewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    for _, RewardContent in ipairs(SortedAllRewardInfo) do
+      self.ListView_Rewards:AddItem(RewardContent)
+    end
   end
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:PlayOutAnimFinished()
   self:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -157,18 +161,15 @@ function WBP_TrueHardBoss_MapTips_PC_C:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:Close()
   self.Super.Close(self)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:CloseStyleOfPlay()
   local StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
   if StyleOfPlay then
     StyleOfPlay:PlayOutAnim()
   end
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -178,8 +179,10 @@ function WBP_TrueHardBoss_MapTips_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
       IsEventHandled = true
       self.Common_Button_Text_PC:OnBtnClicked()
     elseif InKeyName == UIConst.GamePadKey.LeftThumb then
-      IsEventHandled = true
-      self:EnterSelectMode()
+      if self.ListView_Rewards:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
+        IsEventHandled = true
+        self:EnterSelectMode()
+      end
     elseif InKeyName == UIConst.GamePadKey.FaceButtonRight then
       if self.IsInSelectState then
         IsEventHandled = true
@@ -199,19 +202,16 @@ function WBP_TrueHardBoss_MapTips_PC_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -219,7 +219,6 @@ function WBP_TrueHardBoss_MapTips_PC_C:RefreshOpInfoByInputDevice(CurInputDevice
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -227,19 +226,16 @@ function WBP_TrueHardBoss_MapTips_PC_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:InitGamepadView()
   self.Common_Button_Text_PC:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Key_TitleRewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:SetFocus()
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:InitKeyboardView()
   self:LeaveSelectMode()
   self.Common_Button_Text_PC:SetGamePadVisibility(UIConst.VisibilityOp.Collapsed)
   self.Key_TitleRewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:InitWidgetInfoInGamePad()
   self.Key_TitleRewards:CreateCommonKey({
     KeyInfoList = {
@@ -247,31 +243,6 @@ function WBP_TrueHardBoss_MapTips_PC_C:InitWidgetInfoInGamePad()
     }
   })
 end
-
-function WBP_TrueHardBoss_MapTips_PC_C:OnSelectItemChanged(SelectItem)
-  if not SelectItem then
-    return
-  end
-  if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
-    self:ClickListItemWhenSelectItemChanged(SelectItem)
-  end
-end
-
-function WBP_TrueHardBoss_MapTips_PC_C:ClickListItemWhenSelectItemChanged(Content)
-  if Content.Entry then
-    Content.Entry:OnCellClicked()
-  end
-end
-
-function WBP_TrueHardBoss_MapTips_PC_C:BP_GetDesiredFocusTarget()
-  if self.HardBossId and SelectedIndex[self.HardBossId] then
-    local CurSelectLevelContent = self.List_BossLevels:GetItemAt(math.max(SelectedIndex[self.HardBossId] - 1, 0))
-    return CurSelectLevelContent.Entry
-  else
-    return self.List_BossLevels
-  end
-end
-
 function WBP_TrueHardBoss_MapTips_PC_C:EnterSelectMode()
   if self.IsInSelectState then
     return
@@ -281,7 +252,6 @@ function WBP_TrueHardBoss_MapTips_PC_C:EnterSelectMode()
   self:SetectFirstItem(self.ListView_Rewards)
   self.IsInSelectState = true
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:LeaveSelectMode()
   if not self.IsInSelectState then
     return
@@ -291,7 +261,6 @@ function WBP_TrueHardBoss_MapTips_PC_C:LeaveSelectMode()
   self:SetFocus()
   self.IsInSelectState = false
 end
-
 function WBP_TrueHardBoss_MapTips_PC_C:SetectFirstItem(List)
   if List then
     if List:GetNumItems() > 0 then
@@ -301,5 +270,4 @@ function WBP_TrueHardBoss_MapTips_PC_C:SetectFirstItem(List)
     end
   end
 end
-
 return WBP_TrueHardBoss_MapTips_PC_C

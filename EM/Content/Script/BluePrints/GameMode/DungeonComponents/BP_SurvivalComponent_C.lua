@@ -3,7 +3,6 @@ local BP_SurvivalComponent_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.GameMode.DungeonComponents.BP_DungeonVoteComponent_C"
 })
-
 function BP_SurvivalComponent_C:InitSurvivalComponent()
   self.GameMode = self:GetOwner()
   self.GameState = self.GameMode.EMGameState
@@ -13,7 +12,7 @@ function BP_SurvivalComponent_C:InitSurvivalComponent()
   self.MaxSurvivalValue = DataMgr.GlobalConstant.SurvivalValue.ConstantValue
   self.SurvivalInfo = DataMgr.Survival[self.GameMode.DungeonId]
   if not self.SurvivalInfo then
-    GameState(self):ShowDungeonError("SurvivalComponent:\229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.GameMode.DungeonId)
+    GameState(self):ShowDungeonError("SurvivalComponent:当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.GameMode.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.WaveTime = self.SurvivalInfo.WaveTime
@@ -24,10 +23,8 @@ function BP_SurvivalComponent_C:InitSurvivalComponent()
   self.GameMode:InitCreateEmergencyMonsterProb("Treasure", self, self.SurvivalInfo)
   self.GameMode:InitCreateEmergencyMonsterProb("Butcher", self, self.SurvivalInfo)
 end
-
 function BP_SurvivalComponent_C:InitSurvivalBaseInfo()
 end
-
 function BP_SurvivalComponent_C:RecordDungeonRoundData()
   local RoundData = {
     DungeonProgress = self.GameMode.EMGameState.DungeonProgress,
@@ -39,7 +36,6 @@ function BP_SurvivalComponent_C:RecordDungeonRoundData()
   PrintTable(RoundData, 3)
   return RoundData
 end
-
 function BP_SurvivalComponent_C:RecoverDungeonRoundData(Data)
   PrintTable(Data, 3)
   self.GameMode.EMGameState:SetDungeonProgress(Data.DungeonProgress)
@@ -48,7 +44,6 @@ function BP_SurvivalComponent_C:RecoverDungeonRoundData(Data)
   self.TmpSurvivalTime = Data.SurvivalTime
   self.WaveIndex = Data.WaveIndex
 end
-
 function BP_SurvivalComponent_C:InitSurvival()
   self.GameMode.EMGameState:SetSurvivalValue(self.TmpSurvivalValue or DataMgr.GlobalConstant.SurvivalValue.ConstantValue)
   self.isStart = true
@@ -56,19 +51,15 @@ function BP_SurvivalComponent_C:InitSurvival()
     self.GameMode.EMGameState:OnRep_SurvivalValue()
   end
 end
-
 function BP_SurvivalComponent_C:StopSurvivalVitamin()
   self.SurvivalVitaminStop = true
 end
-
 function BP_SurvivalComponent_C:IsStopSurvivalVitamin()
   return self.SurvivalVitaminStop
 end
-
 function BP_SurvivalComponent_C:RecoverSurvivalVitamin()
   self.SurvivalVitaminStop = false
 end
-
 function BP_SurvivalComponent_C:TriggerActiveVitamin()
   if self:IsStopSurvivalVitamin() then
     self:RecoverSurvivalVitamin()
@@ -77,17 +68,14 @@ function BP_SurvivalComponent_C:TriggerActiveVitamin()
     self:StartCostSurvivalValue()
   end
 end
-
 function BP_SurvivalComponent_C:CheckSurvivalCriticalValue()
   if self:GetSurvivalValue_Component() <= self.MinExtraFixVitamin and not self.GameState.IsMinExtraFixVitamin then
     self.GameMode:TriggerGameModeEvent("OnSurvivalCriticalValue")
     self.GameState.IsMinExtraFixVitamin = true
   end
 end
-
 function BP_SurvivalComponent_C:StartCostSurvivalValue()
   local time = DataMgr.GlobalConstant.SurvivalCostRate.ConstantValue
-  
   local function AutoCostSurvivalValue(self)
     if not self.GameMode.EMGameState:CheckGameModeStateEnable() then
       self:RemoveTimer("AutoCostSurvivalValue")
@@ -95,10 +83,8 @@ function BP_SurvivalComponent_C:StartCostSurvivalValue()
     end
     self:AddSurvivalValue(-1)
   end
-  
   self:AddTimer(time, AutoCostSurvivalValue, true, 0, "AutoCostSurvivalValue")
 end
-
 function BP_SurvivalComponent_C:AddSurvivalValue(ChangeValue)
   if not self.isStart then
     return
@@ -114,26 +100,22 @@ function BP_SurvivalComponent_C:AddSurvivalValue(ChangeValue)
     self.bIsSVLowTalkPlayed = true
   end
 end
-
 function BP_SurvivalComponent_C:ChangeSurvivalValue(ChangeValue)
   local function SetIsMinExtraFixVitamin()
     if self.GameState.SurvivalValue > self.MinExtraFixVitamin then
       self.GameState.IsMinExtraFixVitamin = false
     end
   end
-  
   self.GameState:SetSurvivalValue(math.max(math.min(self.GameState.SurvivalValue + ChangeValue, self.MaxSurvivalValue), 0))
   SetIsMinExtraFixVitamin()
-  DebugPrint("SurvivalComponent: ChangeSurvivalValue", ChangeValue, "\229\189\147\229\137\141\231\148\159\229\173\152\229\128\188:", self.GameState.SurvivalValue)
+  DebugPrint("SurvivalComponent: ChangeSurvivalValue", ChangeValue, "当前生存值:", self.GameState.SurvivalValue)
   if GWorld:IsStandAlone() then
     self.GameState:OnRep_SurvivalValue()
   end
 end
-
 function BP_SurvivalComponent_C:GetSurvivalValue_Component()
   return self.GameState:GetSurvivalValue()
 end
-
 function BP_SurvivalComponent_C:CheckSurvivalFinish()
   if 0 == self:GetSurvivalValue_Component() then
     self:RemoveTimer("AutoCostSurvivalValue")
@@ -143,7 +125,6 @@ function BP_SurvivalComponent_C:CheckSurvivalFinish()
     local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
   end
 end
-
 function BP_SurvivalComponent_C:TriggerActiveSurvivalTime()
   self.GameState:SetCumulativeSurvivalTime(self.TmpSurvivalTime or 0)
   if not self:IsExistTimer("TimeTotalTick") then
@@ -151,33 +132,27 @@ function BP_SurvivalComponent_C:TriggerActiveSurvivalTime()
   end
   self.GameMode:SetClientDungeonUIState(Const.EDungeonUIState.OnTarget)
 end
-
 function BP_SurvivalComponent_C:SurvivalTiming()
   self.GameState:SetCumulativeSurvivalTime(self.GameState.CumulativeSurvivalTime + 1)
   if GWorld:IsStandAlone() then
     self.GameState:OnRep_CumulativeSurvivalTime()
   end
 end
-
 function BP_SurvivalComponent_C:TriggerStopVitamin()
   self:StopSurvivalVitamin()
 end
-
 function BP_SurvivalComponent_C:TriggerSurvivalWin()
   self:TriggerStopSurvivalTime()
 end
-
 function BP_SurvivalComponent_C:TriggerStopSurvivalTime()
   if self:IsExistTimer("TimeTotalTick") then
     self:RemoveTimer("TimeTotalTick")
   end
 end
-
 function BP_SurvivalComponent_C:TriggerActiveSurvivalTimeAndVitamin()
   self:TriggerActiveVitamin()
   self:TriggerActiveSurvivalTime()
 end
-
 function BP_SurvivalComponent_C:MonsterWaveStart()
   if self.WaveIndex > 0 then
     self.GameMode:TriggerDestoryMonsterSpawn(self:GetMonsterSpawnId())
@@ -192,7 +167,6 @@ function BP_SurvivalComponent_C:MonsterWaveStart()
   self.GameMode:CreateEmergencyMonsterEachWave("Treasure", self, self.SurvivalInfo)
   self.GameMode:CreateEmergencyMonsterEachWave("Butcher", self, self.SurvivalInfo)
 end
-
 function BP_SurvivalComponent_C:MonsterWaveEnd()
   if not self.GameMode.EMGameState:CheckGameModeStateEnable() then
     return
@@ -207,7 +181,6 @@ function BP_SurvivalComponent_C:MonsterWaveEnd()
     self:MonsterWaveStart()
   end
 end
-
 function BP_SurvivalComponent_C:GetMonsterSpawnId()
   local RealIndex = self.WaveIndex % #self.MonsterSpawnIds
   if 0 == RealIndex then
@@ -215,7 +188,6 @@ function BP_SurvivalComponent_C:GetMonsterSpawnId()
   end
   return self:TableToTArray(self.MonsterSpawnIds[RealIndex])
 end
-
 function BP_SurvivalComponent_C:TableToTArray(table)
   local ResTArray = TArray(0)
   if table then
@@ -225,7 +197,6 @@ function BP_SurvivalComponent_C:TableToTArray(table)
   end
   return ResTArray
 end
-
 function BP_SurvivalComponent_C:InitTreasureMonsterEecapeLoc(TreasureMonster)
   local mechanimArray = self.GameMode.EMGameState.MechanismMap:FindRef("Supply")
   local monLoc = TreasureMonster.CurrentLocation
@@ -244,11 +215,9 @@ function BP_SurvivalComponent_C:InitTreasureMonsterEecapeLoc(TreasureMonster)
     end
   end
 end
-
 function BP_SurvivalComponent_C:GetWaveIndex()
   return self.WaveIndex
 end
-
 function BP_SurvivalComponent_C:GetPickupUnitPreloadTable()
   local PreloadID = {2001}
   local BPPath = {}
@@ -260,5 +229,4 @@ function BP_SurvivalComponent_C:GetPickupUnitPreloadTable()
   end
   return BPPath
 end
-
 return BP_SurvivalComponent_C

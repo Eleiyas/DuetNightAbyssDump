@@ -2,14 +2,25 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.WBP.Common.Tab.Widget.WBP_Com_TabSubItem03_P_C"
 })
-
+function M:Update(Idx, Info, PlatformDeviceName)
+  if Info.HideText then
+    self.Text_SubTab:SetVisibility(UE.ESlateVisibility.Collapsed)
+  end
+  self.Super.Update(self, Idx, Info, PlatformDeviceName)
+end
+function M:ShowText(bIsShow)
+  if bIsShow then
+    self.Text_SubTab:SetVisibility(UE.ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Text_SubTab:SetVisibility(UE.ESlateVisibility.Collapsed)
+  end
+end
 function M:Destruct()
   if self.DisturbUI then
     self.DisturbUI:RemoveFromParent()
   end
   ForceStopAsyncTask(self, "SetDisturbIconTask")
 end
-
 function M:SetDisturbIcon(bNotDisturb)
   RunAsyncTask(self, "SetDisturbIconTask", function(CoroutineObj)
     if bNotDisturb then
@@ -23,5 +34,4 @@ function M:SetDisturbIcon(bNotDisturb)
     end
   end)
 end
-
 return M

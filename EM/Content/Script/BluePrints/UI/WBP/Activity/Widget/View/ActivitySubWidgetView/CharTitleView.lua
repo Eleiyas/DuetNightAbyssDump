@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(CharId, SkinId, ColorVarName, ClickCallback, ParentWiget)
   local CharInfo = DataMgr.Char[CharId]
   local BattleCharInfo = DataMgr.BattleChar[CharId]
@@ -18,7 +17,6 @@ function M:Init(CharId, SkinId, ColorVarName, ClickCallback, ParentWiget)
   self.Btn_Detail.OnClicked:Clear()
   self.Btn_Detail.OnClicked:Add(self, self.BtnClicked)
 end
-
 function M:FillWithTitleInfo(TargetName, TargetRarity, CharId, ColorVarName)
   self.Text_CharName:SetText(GText(TargetName))
   for i = 1, CommonConst.GachaRarityMax do
@@ -39,12 +37,10 @@ function M:FillWithTitleInfo(TargetName, TargetRarity, CharId, ColorVarName)
     self.Img_TryOutBG:SetColorAndOpacity(self[ColorVarName].SpecifiedColor)
   end
 end
-
 function M:BtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   if self.ClickCallback then
     self.ClickCallback(self.ParentWiget)
   end
 end
-
 return M

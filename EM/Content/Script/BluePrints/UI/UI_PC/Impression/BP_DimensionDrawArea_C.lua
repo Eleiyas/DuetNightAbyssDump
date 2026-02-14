@@ -1,13 +1,12 @@
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local BP_DimensionDrawArea_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function BP_DimensionDrawArea_C:Init(ImpressionAreaId, UsingGM)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    local Message = "Avatar\228\184\141\229\173\152\229\156\168\239\188\140\229\141\176\232\177\161\228\186\148\231\187\180\229\155\190\232\175\187\229\143\150\230\149\176\230\141\174\229\164\177\232\180\165"
-    local Title = "Avatar\228\184\141\229\173\152\229\156\168"
+    local Message = "Avatar不存在，印象五维图读取数据失败"
+    local Title = "Avatar不存在"
     if not UsingGM then
-      UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+      UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Impression, Title, Message)
     end
     return
   end
@@ -26,21 +25,17 @@ function BP_DimensionDrawArea_C:Init(ImpressionAreaId, UsingGM)
     self["BP_Group_DimensionIcon_" .. Index]:Init(ImpressionType, PlayerValue)
   end
 end
-
 function BP_DimensionDrawArea_C:GetDimensionIcon(Index)
   return self["BP_Group_DimensionIcon_" .. Index]
 end
-
 function BP_DimensionDrawArea_C:ForceDefault()
   self:PlayAnimation(self.In)
   self:StopAllAnimations()
 end
-
 function BP_DimensionDrawArea_C:SetGrowStyle(Index)
   local DimensionIcon = self:GetDimensionIcon(Index)
   DimensionIcon:PlayAddAnim()
 end
-
 function BP_DimensionDrawArea_C:SwitchActive(bActive)
   if bActive then
     self:SetVisibility(ESlateVisibility.Visble)
@@ -54,19 +49,15 @@ function BP_DimensionDrawArea_C:SwitchActive(bActive)
     self:StopLoop()
   end
 end
-
 function BP_DimensionDrawArea_C:StartLoop()
   self:PlayAnimation(self.Loop, 0, 5)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_five_dimension_panel_show", "DimensionPanel", nil)
 end
-
 function BP_DimensionDrawArea_C:StopLoop()
   self:StopAnimation(self.Loop)
   AudioManager(self):SetEventSoundParam(self, "DimensionPanel", {ToEnd = 1})
 end
-
 function BP_DimensionDrawArea_C:Destruct()
   AudioManager(self):SetEventSoundParam(self, "DimensionPanel", {ToEnd = 1})
 end
-
 return BP_DimensionDrawArea_C

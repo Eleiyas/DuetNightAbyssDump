@@ -1,17 +1,31 @@
 local Component = {}
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
-
 function Component:RequestPay(GoodsId, Callback)
   print(_G.LogTag, "RequestPay", GoodsId)
   self:CallServer("RequestPay", Callback, GoodsId)
 end
-
 function Component:OnPayFinished(Result, GoodsId, OrderId, ShopItems)
   print(_G.LogTag, "OnPayFinished", Result, GoodsId, OrderId, ShopItems)
   self:NotifyPayFinish(OrderId, Result, GoodsId, ShopItems)
-  EventManager:FireEvent(EventID.OnRechargeFinished, Result, GoodsId, ShopItems)
+  if Result == ErrorCode.RET_SUCCESS then
+    if ShopItems and DataMgr.PayGoods[GoodsId].ItemId then
+      local ShopItemData = DataMgr.ShopItem[DataMgr.PayGoods[GoodsId].ItemId]
+      assert(ShopItemData, "购买成功后读表ShopItemData为空", DataMgr.PayGoods[GoodsId].ItemId)
+      if ShopItemData.ItemType == "DailyPack" then
+        UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, ShopItems, ShopItemData.IsSpPopup, function()
+          UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText("UI_DailyPack_PurchaseDone"))
+        end, nil, true)
+      else
+        UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, ShopItems, ShopItemData.IsSpPopup, ShopUtils:GetCloseGetItemPageCallback(), nil, true)
+      end
+    end
+  else
+    UIManager(GWorld.GameInstance):ShowError(Result, 1.0, "CommonToastMain")
+  end
+  EventManager:FireEvent(EventID.OnRechargeFinished, Result, GoodsId, ShopItems, OrderId)
   local EMHeroUSDKSubsystem = UE4.USubsystemBlueprintLibrary.GetGameInstanceSubsystem(GWorld.GameInstance, UEMHeroUSDKSubsystem:StaticClass())
   local Parameters = TMap("", "")
+  local FBParameters = TMap("", "")
   local GameRoleInfo = HeroUSDKUtils.GenHeroHDCGameRoleInfo()
   Parameters:Add("content_id", tostring(DataMgr.PayGoods[GoodsId].ItemId))
   Parameters:Add("currency", "USD")
@@ -20,9 +34,12 @@ function Component:OnPayFinished(Result, GoodsId, OrderId, ShopItems)
   Parameters:Add("order_id", tostring(OrderId))
   Parameters:Add("item_id", tostring(GoodsId))
   Parameters:Add("server_id", tostring(GameRoleInfo.serverId))
-  EMHeroUSDKSubsystem:MSDKSendPurchaseWithOrderIdWithChannel(OrderId, DataMgr.PayGoods[GoodsId].PriceUSD, "USD", Parameters)
+  FBParameters:Add("fb_content_id", tostring(DataMgr.PayGoods[GoodsId].ItemId))
+  FBParameters:Add("fb_currency", "USD")
+  FBParameters:Add("_valueToSum", tostring(DataMgr.PayGoods[GoodsId].PriceUSD))
+  FBParameters:Add("fb_order_id", tostring(OrderId))
+  EMHeroUSDKSubsystem:MSDKSendPurchaseWithOrderIdWithChannel(OrderId, DataMgr.PayGoods[GoodsId].PriceUSD, "USD", Parameters, FBParameters)
 end
-
 function Component:ListenPayFinish(OrderId, EventFunc)
   if not OrderId then
     return
@@ -35,7 +52,6 @@ function Component:ListenPayFinish(OrderId, EventFunc)
   end
   self.WaitPayDict[OrderId] = EventFunc
 end
-
 function Component:UnListenPayFinish(OrderId)
   if not OrderId then
     return
@@ -45,7 +61,6 @@ function Component:UnListenPayFinish(OrderId)
   end
   self.WaitPayDict[OrderId] = nil
 end
-
 function Component:NotifyPayFinish(OrderId, Result, GoodsId, ShopItems)
   if not self.WaitPayDict then
     return
@@ -59,9 +74,18 @@ function Component:NotifyPayFinish(OrderId, Result, GoodsId, ShopItems)
     EventFunc(Result, OrderId, GoodsId, ShopItems)
   end
 end
-
 function Component:LeaveWorld()
   self.WaitPayDict = nil
 end
-
+function Component:GetCumulativeRechargeReward(Callback, EventId, Index)
+  DebugPrint("GetCumulativeRechargeReward", EventId, Index)
+  assert(EventId)
+  Index = Index or -1
+  local function cb(ret, Rewards)
+    if Callback then
+      Callback(ret, Rewards)
+    end
+  end
+  self:CallServer("GetCumulativeRechargeReward", cb, EventId, Index)
+end
 return Component

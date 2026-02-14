@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17217269355792905",
       type = "StoryNode",
-      name = "\230\156\172\229\156\176\229\149\134\228\186\186\229\188\128\229\144\175\229\175\185\232\175\157",
+      name = "本地商人开启对话",
       pos = {x = 1178.8838616189303, y = 275.64358010410626},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -170,6 +172,12 @@ return {
             startPort = "Option_2",
             endQuest = "17388976599771108",
             endPort = "In"
+          },
+          {
+            startQuest = "17388976599761101",
+            startPort = "Out",
+            endQuest = "17618919155556123421",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -197,7 +205,7 @@ return {
           ["17388976599751098"] = {
             key = "17388976599751098",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\229\149\134\228\186\186",
+            name = "生成商人",
             pos = {x = 1292.8370277404479, y = 194.106554754155},
             propsData = {
               ActiveEnable = true,
@@ -211,7 +219,7 @@ return {
           ["17388976599751099"] = {
             key = "17388976599751099",
             type = "TalkNode",
-            name = "\230\151\129\231\153\189\229\188\128\232\189\166\229\175\185\232\175\157",
+            name = "旁白开车对话",
             pos = {x = 1287.5636628203433, y = 14.822366719966794},
             propsData = {
               IsNpcNode = false,
@@ -228,7 +236,7 @@ return {
           ["17388976599751100"] = {
             key = "17388976599751100",
             type = "PickUpNode",
-            name = "\233\135\135\233\155\134\228\186\164\228\186\146",
+            name = "采集交互",
             pos = {x = 1680.246205132581, y = 339.4234774629206},
             propsData = {
               bActiveEnable = true,
@@ -249,7 +257,7 @@ return {
           ["17388976599761101"] = {
             key = "17388976599761101",
             type = "TalkNode",
-            name = "\233\135\135\233\155\134\229\174\140\230\136\144\229\188\128\232\189\166\229\175\185\232\175\157",
+            name = "采集完成开车对话",
             pos = {x = 2046.067275366695, y = 318.60835297388303},
             propsData = {
               IsNpcNode = false,
@@ -266,7 +274,7 @@ return {
           ["17388976599761102"] = {
             key = "17388976599761102",
             type = "TalkNode",
-            name = "\233\135\135\233\155\134\229\175\185\232\175\157",
+            name = "采集对话",
             pos = {x = 2045.0320207027212, y = 125.31326931993237},
             propsData = {
               IsNpcNode = false,
@@ -283,7 +291,7 @@ return {
           ["17388976599761103"] = {
             key = "17388976599761103",
             type = "TalkNode",
-            name = "\229\146\140\230\156\172\229\156\176\229\149\134\228\186\186\229\175\185\232\175\157",
+            name = "和本地商人对话",
             pos = {x = 2647.544985305854, y = 33.41582448816985},
             propsData = {
               IsNpcNode = true,
@@ -308,6 +316,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = false,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -315,13 +324,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "branch",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -334,7 +343,7 @@ return {
           ["17388976599771104"] = {
             key = "17388976599771104",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3399.659634644395, y = 23.435881610649403},
             propsData = {
               DialogueId = 71001406,
@@ -345,7 +354,7 @@ return {
           ["17388976599771105"] = {
             key = "17388976599771105",
             type = "TalkNode",
-            name = "\229\146\140\229\164\150\229\156\176\229\149\134\228\186\186\228\186\164\230\181\129",
+            name = "和外地商人交流",
             pos = {x = 2664.313436649311, y = 349.03542434070437},
             propsData = {
               IsNpcNode = true,
@@ -370,6 +379,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = false,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -377,13 +387,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "branch",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -396,7 +406,7 @@ return {
           ["17388976599771106"] = {
             key = "17388976599771106",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 3401.4363371796567, y = 350.3152250099449},
             propsData = {
               DialogueId = 71001407,
@@ -407,21 +417,21 @@ return {
           ["17388976599771107"] = {
             key = "17388976599771107",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 2649.058864293314, y = 228.48214285714266},
             propsData = {WaitTime = 0.5}
           },
           ["17388976599771108"] = {
             key = "17388976599771108",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 2678.969578579028, y = 549.375},
             propsData = {WaitTime = 0.5}
           },
           ["17388976599771111"] = {
             key = "17388976599771111",
             type = "PickUpNode",
-            name = "\228\184\142\231\137\169\229\147\1291\232\191\155\232\161\140\228\186\164\228\186\146",
+            name = "与物品1进行交互",
             pos = {x = 1697.1603933713914, y = 150.365325077399},
             propsData = {
               bActiveEnable = false,
@@ -433,6 +443,17 @@ return {
               GuideType = "P",
               GuidePointName = "",
               IsUseCount = false
+            }
+          },
+          ["17618919155556123421"] = {
+            key = "17618919155556123421",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 2382, y = -77},
+            propsData = {
+              NewDescription = "DynQuest_TrafficwayDaomaidaomai_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
             }
           }
         },

@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Init(Rarity)
   self:SetRarity(Rarity)
 end
-
 function M:SetRarity(Rarity)
   if not Rarity or Rarity < 1 or Rarity > 6 then
     DebugPrint("No Rarity")
@@ -39,9 +37,7 @@ function M:SetRarity(Rarity)
   self.Text_Tag:SetText(Text)
   self:PlayAnimation(InAnimation)
 end
-
 function M:SetCustomizedTextTag(Text)
   self.Text_Tag:SetText(Text)
 end
-
 return M

@@ -1,17 +1,14 @@
 local EMCache = require("EMCache.EMCache")
 local Component = {}
-
 function Component:ReadSeGlobalParameters()
   Component.GlobalParams = {}
   Component.GlobalParams.VoHitHeavyDmg = DataMgr.SeGlobalParameter.VoHitHeavyDmg.SeGlobalValue
   Component.GlobalParams.VoHitHeavySeId = DataMgr.SeGlobalParameter.VoHitHeavySeId.SeGlobalValue
   Component.GlobalParams.VoHitLightSeId = DataMgr.SeGlobalParameter.VoHitLightSeId.SeGlobalValue
 end
-
 function Component:GetGlobalParamsTable(ParamKey)
   return Component.GlobalParams[ParamKey]
 end
-
 function Component:RecoverVolumeData()
   DebugPrint("Recover Volume")
   local RecordedVolume = EMCache:Get("FMODVolume")
@@ -23,7 +20,6 @@ function Component:RecoverVolumeData()
     self:SetBusVolume(Bus, VolumeValue)
   end
 end
-
 function Component:SaveVolumeData(Bus, VolumeValue)
   local RecordedVolume = EMCache:Get("FMODVolume")
   RecordedVolume = RecordedVolume or {}
@@ -31,5 +27,4 @@ function Component:SaveVolumeData(Bus, VolumeValue)
   DebugPrint("Current Volume Setting")
   PrintTable(RecordedVolume, 2)
 end
-
 return Component

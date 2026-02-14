@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1732783211067619163",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1218.0478192493704, y = 289.0876656393516},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,7 +121,7 @@ return {
           ["1734678041247910339"] = {
             key = "1734678041247910339",
             type = "TalkNode",
-            name = "\229\188\128\232\189\166-\232\190\190\232\138\153\230\182\133\230\177\130\229\138\169",
+            name = "开车-达芙涅求助",
             pos = {x = 1433.2631578947367, y = 427.2631578947368},
             propsData = {
               IsNpcNode = false,
@@ -136,7 +138,7 @@ return {
           ["1734678052120910635"] = {
             key = "1734678052120910635",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = 1421.8947368421052, y = 220.21052631578942},
             propsData = {
               SoundStateType = 0,

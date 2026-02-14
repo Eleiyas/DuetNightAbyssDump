@@ -46,8 +46,8 @@ return {
       isStoryNode = true,
       key = "17316513946438349683",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
-      pos = {x = 1440, y = 339.0877192982456},
+      name = "任务节点",
+      pos = {x = 1438, y = 339.0877192982456},
       propsData = {
         QuestId = 0,
         QuestDescriptionComment = "",
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -184,7 +186,25 @@ return {
             endPort = "In"
           },
           {
+            startQuest = "1731651506926256",
+            startPort = "Out",
+            endQuest = "17562005326561594404",
+            endPort = "In"
+          },
+          {
+            startQuest = "174226749963721619792",
+            startPort = "Out",
+            endQuest = "17562005443671594812",
+            endPort = "In"
+          },
+          {
             startQuest = "1747039043670571923",
+            startPort = "Out",
+            endQuest = "17562106001075401941",
+            endPort = "In"
+          },
+          {
+            startQuest = "17562106001075401941",
             startPort = "Out",
             endQuest = "17316513946448349690",
             endPort = "Fail"
@@ -209,13 +229,13 @@ return {
             key = "17316513946448349690",
             type = "QuestFailNode",
             name = "QuestFail",
-            pos = {x = 1578.0935986056952, y = 909.747273425499},
+            pos = {x = 1927.5935986056952, y = 1206.7472734254989},
             propsData = {}
           },
           ["17316514006538349958"] = {
             key = "17316514006538349958",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = 1042.4562296441868, y = 157.74540766577547},
             propsData = {
               MessageType = "GameMode",
@@ -226,7 +246,7 @@ return {
           ["17316514006538349959"] = {
             key = "17316514006538349959",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\1693",
+            name = "生成怪物3",
             pos = {x = 1320.9406167304285, y = 546.9367251099594},
             propsData = {
               ActiveEnable = true,
@@ -247,7 +267,7 @@ return {
           ["17316514006538349960"] = {
             key = "17316514006538349960",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1555.947170882275, y = 164.66041221782885},
             propsData = {
               KillMonsterType = "Id",
@@ -269,7 +289,7 @@ return {
           ["17316514006538349961"] = {
             key = "17316514006538349961",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175 - gamemode\230\184\133\230\128\170",
+            name = "发送消息 - gamemode清怪",
             pos = {x = 2243.6855366271798, y = 60.64857564559907},
             propsData = {
               MessageType = "GameMode",
@@ -280,7 +300,7 @@ return {
           ["1731651506926256"] = {
             key = "1731651506926256",
             type = "TalkNode",
-            name = "\233\148\129\233\151\168",
+            name = "锁门",
             pos = {x = 798.7638621773874, y = 149.10964912280704},
             propsData = {
               IsNpcNode = false,
@@ -300,14 +320,15 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "EXPlayer",
@@ -317,8 +338,8 @@ return {
           ["1731651506926257"] = {
             key = "1731651506926257",
             type = "TalkNode",
-            name = "\229\188\128\233\151\168",
-            pos = {x = 2179.806494754168, y = 572.3093008491682},
+            name = "开门",
+            pos = {x = 2178.1398280875014, y = 573.8093008491682},
             propsData = {
               IsNpcNode = false,
               TalkType = "Cinematic",
@@ -337,14 +358,15 @@ return {
               HideMonsters = true,
               HideAllBattleEntity = true,
               HideEffectCreature = true,
+              HideMechanismsFX = true,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
               SwitchToMaster = "EXPlayer",
@@ -354,21 +376,21 @@ return {
           ["1731651553626204428"] = {
             key = "1731651553626204428",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 577.86392942806, y = 890.0226107226108},
             propsData = {}
           },
           ["1731651563154204777"] = {
             key = "1731651563154204777",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 2759.798318367743, y = 578.4413153933011},
             propsData = {}
           },
           ["1736421550448707001"] = {
             key = "1736421550448707001",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\1691",
+            name = "生成怪物1",
             pos = {x = 1298.1775305895449, y = 167.27992213570636},
             propsData = {
               ActiveEnable = true,
@@ -389,7 +411,7 @@ return {
           ["1736421550846707015"] = {
             key = "1736421550846707015",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\1692",
+            name = "生成怪物2",
             pos = {x = 1297.325917686319, y = 336.3250834260289},
             propsData = {
               ActiveEnable = true,
@@ -410,7 +432,7 @@ return {
           ["1736421608879707899"] = {
             key = "1736421608879707899",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1566.6404338153511, y = 347.93798665183544},
             propsData = {
               KillMonsterType = "Id",
@@ -432,7 +454,7 @@ return {
           ["1736421644685708257"] = {
             key = "1736421644685708257",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1576.7019188199101, y = 541.8530042717866},
             propsData = {
               KillMonsterType = "Id",
@@ -454,8 +476,8 @@ return {
           ["17364993247245449"] = {
             key = "17364993247245449",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
-            pos = {x = 1023.2605049043028, y = -33.685991798812466},
+            name = "对话节点",
+            pos = {x = 999.7822440347376, y = -179.77294832055162},
             propsData = {
               IsNpcNode = false,
               FirstDialogueId = 11018207,
@@ -471,7 +493,7 @@ return {
           ["1739256955862807"] = {
             key = "1739256955862807",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = 910.6563725490194, y = 894.3547619047617},
             propsData = {
               MessageType = "GameMode",
@@ -482,14 +504,14 @@ return {
           ["174226749963721619792"] = {
             key = "174226749963721619792",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
-            pos = {x = 1955.120943849154, y = 416.7143519326915},
+            name = "延迟等待",
+            pos = {x = 1905.120943849154, y = 441.0000662184058},
             propsData = {WaitTime = 5}
           },
           ["1747039043670571921"] = {
             key = "1747039043670571921",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\1691",
+            name = "生成怪物1",
             pos = {x = 1247.2021721390793, y = 843.7516602136254},
             propsData = {
               ActiveEnable = false,
@@ -510,7 +532,7 @@ return {
           ["1747039043670571922"] = {
             key = "1747039043670571922",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\1692",
+            name = "生成怪物2",
             pos = {x = 1244.921987807282, y = 1012.796821503948},
             propsData = {
               ActiveEnable = false,
@@ -531,7 +553,7 @@ return {
           ["1747039043670571923"] = {
             key = "1747039043670571923",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\230\128\170\231\137\1693",
+            name = "生成怪物3",
             pos = {x = 1268.5366868513916, y = 1223.4084631878786},
             propsData = {
               ActiveEnable = false,
@@ -548,6 +570,27 @@ return {
                 1640310
               }
             }
+          },
+          ["17562005326561594404"] = {
+            key = "17562005326561594404",
+            type = "SimplePostProcessNode",
+            name = "开启关闭屏幕后处理",
+            pos = {x = 1193.1304347826087, y = -10.000000000000014},
+            propsData = {bEnablePP = true, PPEnum = 10}
+          },
+          ["17562005443671594812"] = {
+            key = "17562005443671594812",
+            type = "SimplePostProcessNode",
+            name = "开启关闭屏幕后处理",
+            pos = {x = 2214.3726708074537, y = 399.1925465838509},
+            propsData = {bEnablePP = false, PPEnum = 10}
+          },
+          ["17562106001075401941"] = {
+            key = "17562106001075401941",
+            type = "SimplePostProcessNode",
+            name = "开启关闭屏幕后处理",
+            pos = {x = 1567.5, y = 1215},
+            propsData = {bEnablePP = false, PPEnum = 10}
           }
         },
         commentData = {}

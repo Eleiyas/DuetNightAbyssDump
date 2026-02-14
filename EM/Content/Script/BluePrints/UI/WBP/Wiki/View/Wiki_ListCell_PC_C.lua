@@ -3,7 +3,6 @@ local WikiController = require("BluePrints.UI.WBP.Wiki.WikiController")
 local M = Class({
   "BluePrints.UI.Common.Common_List_Cell_PC_C"
 })
-
 function M:Construct()
   self.IsFold = true
   self.IsSelected = false
@@ -21,12 +20,12 @@ function M:Construct()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   end)
 end
-
 function M:OnListItemObjectSet(InObject)
   if not InObject then
     return
   end
   self.Index = InObject.Index
+  self.SubTypeId = InObject.SubTypeId
   self.EntryId = InObject.EntryId
   self.EntryTitle = InObject.EntryTitle
   self.OriginalTitle = InObject.OriginalTitle or InObject.EntryTitle
@@ -40,11 +39,9 @@ function M:OnListItemObjectSet(InObject)
     self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:Destruct()
   self:UnbindEvent()
 end
-
 function M:BindEvent()
   self.Com_Bg.Button_Area.OnClicked:Add(self, self.OnCellClicked)
   self.Com_Bg.Button_Area.OnHovered:Add(self, self.OnCellHovered)
@@ -52,7 +49,6 @@ function M:BindEvent()
   self.Com_Bg.Button_Area.OnPressed:Add(self, self.OnCellPressed)
   self.Com_Bg.Button_Area.OnReleased:Add(self, self.OnCellReleased)
 end
-
 function M:UnbindEvent()
   self.Com_Bg.Button_Area.OnClicked:Remove(self, self.OnCellClicked)
   self.Com_Bg.Button_Area.OnHovered:Remove(self, self.OnCellHovered)
@@ -60,13 +56,13 @@ function M:UnbindEvent()
   self.Com_Bg.Button_Area.OnPressed:Remove(self, self.OnCellPressed)
   self.Com_Bg.Button_Area.OnReleased:Remove(self, self.OnCellReleased)
 end
-
 function M:OnCellUnSelect()
   self.IsSelected = false
-  self.Text_Name:SetDefaultColorAndOpacity(self.Text_NormalColor)
+  if self.Text_Name then
+    self.Text_Name:SetDefaultColorAndOpacity(self.Text_NormalColor)
+  end
   self.Com_Bg:OnCellUnSelect()
 end
-
 function M:OnCellClicked(bNotPlaySound)
   self.IsSelected = true
   self.Text_Name:SetDefaultColorAndOpacity(self.Text_SelectColor)
@@ -82,14 +78,12 @@ function M:OnCellClicked(bNotPlaySound)
   self:_OnWikiEntryTextReaded(self.EntryId)
   self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnCellHovered()
   if not self.IsSelected then
     self.Com_Bg:StopAnimation(self.Normal)
     self.Com_Bg:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnCellUnhovered()
   if not self.IsSelected then
     self:StopAnimation(self.Hover)
@@ -97,18 +91,14 @@ function M:OnCellUnhovered()
     self.Com_Bg:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnCellPressed()
   self.Com_Bg:PlayAnimation(self.Press)
 end
-
 function M:OnCellReleased()
   self.Com_Bg:PlayAnimation(self.Normal)
 end
-
 function M:BP_OnEntryReleased()
 end
-
 function M:_OnWikiEntryTextReaded(EntryId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -120,7 +110,6 @@ function M:_OnWikiEntryTextReaded(EntryId)
     end
   end
 end
-
 function M:InitListenEvent()
   local PlayerController = self:GetOwningPlayer()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -128,13 +117,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -144,7 +131,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     if self.Owner.Owner then
@@ -153,7 +139,6 @@ function M:OnAddedToFocusPath(InFocusEvent)
     self:OnCellClicked(true)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if not self.IsSelected then
     if CommonUtils.GetDeviceTypeByPlatformName() ~= "Mobile" then
@@ -205,7 +190,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:InitNavigationRules()
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:InitNavigationRules()
   self:SetNavigationRuleCustom(EUINavigation.Down, {
     self,
@@ -216,7 +200,6 @@ function M:InitNavigationRules()
     self.SetUpTarget
   })
 end
-
 function M:SetDownTarget()
   if self.Index < self.Owner.List_Box:GetChildrenCount() - 1 then
     return self.Owner.List_Box:GetChildAt(self.Index + 1)
@@ -224,7 +207,6 @@ function M:SetDownTarget()
     return self.Owner:GetNextListCatalogueItem()
   end
 end
-
 function M:SetUpTarget()
   if self.Index > 0 then
     return self.Owner.List_Box:GetChildAt(self.Index - 1)
@@ -232,5 +214,4 @@ function M:SetUpTarget()
     return self.Owner:GetSelfListCatalogueItem()
   end
 end
-
 return M

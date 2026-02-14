@@ -1,43 +1,42 @@
 require("UnLua")
 local BP_SeatBase_C = Class("BluePrints.Item.Chest.BP_MechanismBase_C")
 local UseNewNpcMoveComp = true
-
 function BP_SeatBase_C:ReceiveBeginPlay()
-  self.Super.ReceiveBeginPlay(self)
+  BP_SeatBase_C.Super.ReceiveBeginPlay(self)
   self.PointArray = self:K2_GetComponentsByClass(LoadClass("/Game/BluePrints/Item/Mechanism/Seat/BP_SeatPointComponent.BP_SeatPointComponent_C"):StaticClass())
   self.PlayerAndSeat = {}
   self.DefaultInteractiveComponent.MergeName = "Seat"
   if self.DefaultInteractiveComponent then
-    self.DefaultInteractiveComponent.bCanUsed = false
+    self.DefaultInteractiveComponent.bCanUsed = true
     self.DefaultInteractiveComponent.IsDefault = true
     self.InteractiveComponents:Clear()
     self.InteractiveComponents:Add(self.DefaultInteractiveComponent)
     self.ChestInteractiveComponent = self.DefaultInteractiveComponent
   end
 end
-
-function BP_SeatBase_C:InitActorInfo(Info)
+function BP_SeatBase_C:BeginInitInfo()
+  print(_G.LogTag, "LXZ BeginInitInfo", self.InitSuccess)
   if self.InitSuccess then
+    local GameState = UGameplayStatics.GetGameState(self)
+    GameState:FireRegionOnlineMechanismUser(self.UniqueId, self)
     return
   end
-  BP_SeatBase_C.Super.InitActorInfo(self, Info)
+  self:InitActorInfo_New()
 end
-
 function BP_SeatBase_C:AuthorityInitInfo(Info)
   BP_SeatBase_C.Super.AuthorityInitInfo(self, Info)
 end
-
 function BP_SeatBase_C:CommonInitInfo(Info)
   BP_SeatBase_C.Super.CommonInitInfo(self, Info)
   self.ChestInteractiveComponent.DisPlayInteractiveName = GText(self.ChestInteractiveComponent.InteractiveName)
 end
-
 function BP_SeatBase_C:ClientInitInfo(Info)
   BP_SeatBase_C.Super.ClientInitInfo(self, Info)
 end
-
 function BP_SeatBase_C:OnActorReady(Info)
   BP_SeatBase_C.Super.OnActorReady(self, Info)
+  local GameState = UGameplayStatics.GetGameState(self)
+  GameState:FireRegionOnlineMechanismUser(self.UniqueId, self)
   if self.CacheOpenMechanismWithoutInteractive then
     local CharacterEid = self.CacheOpenMechanismWithoutInteractive.CharacterEid
     local Character = Battle(self):GetEntity(CharacterEid)
@@ -46,70 +45,118 @@ function BP_SeatBase_C:OnActorReady(Info)
     SourceFunc(self, Character, CallBackFunc, false)
   end
 end
-
-function BP_SeatBase_C:OpenMechanism(PlayerActorEid)
+function BP_SeatBase_C:SendServerStartInteractive(PlayerActorEid)
+  if not Battle(self) then
+    return
+  end
   local Player = Battle(self):GetEntity(PlayerActorEid)
-  Player:AddForbidTag("Battle")
+  self:SpecialRegionOnlineStartLogic(Player)
+end
+function BP_SeatBase_C:SendServerEndInteractive(PlayerActorEid)
+  if not Battle(self) then
+    return
+  end
+  local Player = Battle(self):GetEntity(PlayerActorEid)
+  self:SpecialRegionOnlineEndLogic(Player)
+end
+function BP_SeatBase_C:OpenMechanism(PlayerActorEid)
+  print(_G.LogTag, "LXZ OpenMechanism", PlayerActorEid, self:GetName(), self.PlayerAndSeat[PlayerActorEid])
+  if self.PlayerAndSeat and self.PlayerAndSeat[PlayerActorEid] then
+    return
+  end
+  local Player = Battle(self):GetEntity(PlayerActorEid)
   local Point = self:FindPoint(PlayerActorEid)
   local EnterPoint = Point:FindEnterPoint(PlayerActorEid)
-  local RealZ = EnterPoint:K2_GetComponentLocation().Z + Player.CapsuleComponent.CapsuleHalfHeight + Player:GetFloorInfo().FloorDist
+  local FloorDist = math.max(Player:GetFloorInfo().FloorDist, 2.4)
+  local RealZ = EnterPoint:K2_GetComponentLocation().Z + Player.CapsuleComponent.CapsuleHalfHeight + FloorDist
   local Loc = FVector(EnterPoint:K2_GetComponentLocation().X, EnterPoint:K2_GetComponentLocation().Y, RealZ)
   local Rot = EnterPoint:K2_GetComponentRotation()
   Point.IsUsed = true
   Point.EnterType = EnterPoint.Type
   self.PlayerAndSeat[PlayerActorEid] = Point
-  local Controller = UE4.UGameplayStatics.GetPlayerController(self, 0)
-  Player:DisableInput(Controller)
-  local handle = UE4.ULTweenBPLibrary.Vector3To(self, {
-    self,
-    function(_, value)
-      Player.MoveInput = FVector(0, 0, 0)
-      Player.MoveInputCache = FVector(0, 0, 0)
-      Player:K2_SetActorLocationAndRotation(value, Rot, false, nil, false)
-    end
-  }, Player:K2_GetActorLocation(), Loc, 0.1, 0)
-  handle:OnComplete({
-    self,
-    function()
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  local IsMainPlayer = Player.Eid == MainPlayer.Eid
+  print(_G.LogTag, "LXZ OpenMechanism00", self:GetName(), EnterPoint:K2_GetComponentLocation().Z, Player.CapsuleComponent.CapsuleHalfHeight, FloorDist)
+  if IsMainPlayer then
+    Player:AddForbidTag("Battle")
+    local Controller = UE4.UGameplayStatics.GetPlayerController(self, 0)
+    Player:DisableInput(Controller)
+    local handle = UE4.ULTweenBPLibrary.Vector3To(self, {
+      self,
+      function(_, value)
+        Player.MoveInput = FVector(0, 0, 0)
+        Player.MoveInputCache = FVector(0, 0, 0)
+        Player:K2_SetActorLocationAndRotation(value, Rot, false, nil, false)
+      end
+    }, Player:K2_GetActorLocation(), Loc, 0.1, 0)
+    handle:OnComplete({
+      self,
+      function()
+        Player:K2_SetActorLocationAndRotation(Loc, Rot, false, nil, false)
+        Player.OnInteractiveDelegate:Add(self.ChestInteractiveComponent, self.ChestInteractiveComponent.EndInteractive)
+        Player:GetMovementComponent():SetMovementMode(1)
+        Player.CapsuleComponent:SetCollisionResponseToChannel(ECollisionChannel.ECC_WorldStatic, ECollisionResponse.ECR_OverLap)
+        Player.CharSpringArmComponent.bArmCollision = false
+        self.CameraProbeSize = Player.CharSpringArmComponent.CameraProbeSize
+        Player.CharSpringArmComponent.CameraProbeSize = 2
+        self:SetSittingParam(Player, Point, EnterPoint)
+        self:ClientPlayAnim(Player.Eid, 0, self.Eid)
+        Player:EnableInput(Controller)
+        EventManager:FireEvent(EventID.OnOpenMechanism, self.Eid)
+      end
+    })
+  else
+    print(_G.LogTag, "LXZ OpenMechanism2222", Player:GetName(), Loc, Rot, Player:K2_GetActorLocation())
+    if Player:GetFloorInfo().FloorDist > 0 then
       Player:K2_SetActorLocationAndRotation(Loc, Rot, false, nil, false)
-      Player.OnInteractiveDelegate:Add(self.ChestInteractiveComponent, self.ChestInteractiveComponent.EndInteractive)
-      Player:GetMovementComponent():SetMovementMode(1)
-      Player.CapsuleComponent:SetCollisionResponseToChannel(ECollisionChannel.ECC_WorldStatic, ECollisionResponse.ECR_OverLap)
-      Player.CharSpringArmComponent.bArmCollision = false
-      Player.CharSpringArmComponent.CameraProbeSize = 2
-      self:SetSittingParam(Player, Point, EnterPoint)
-      self:ClientPlayAnim(Player.Eid, 0, self.Eid)
-      Player:EnableInput(Controller)
     end
-  })
-end
-
-function BP_SeatBase_C:CloseMechanism(PlayerActorEid, IsSuccess)
-  local Player = Battle(self):GetEntity(PlayerActorEid)
-  if IsValid(Player) then
-    Player.OnInteractiveDelegate:Remove(self.ChestInteractiveComponent, self.ChestInteractiveComponent.EndInteractive)
-    Player:GetMovementComponent().bAllowPhysicsRotationDuringAnimRootMotion = true
-    Player.CharSpringArmComponent.bArmCollision = true
-    Player.CharSpringArmComponent.CameraProbeSize = 12
-    local EnterPoint = self:GetLeavingPoint(Player)
-    self.PlayerAndSeat[Player.Eid].EnterType = EnterPoint.Type
-    self:SetLeavingParam(Player, self.PlayerAndSeat[PlayerActorEid], EnterPoint)
-    self:ClientPlayAnim(PlayerActorEid, 2, self.Eid)
+    Player:GetMovementComponent():SetMovementMode(1)
+    Player.CapsuleComponent:SetCollisionResponseToChannel(ECollisionChannel.ECC_WorldStatic, ECollisionResponse.ECR_OverLap)
+    self:SetSittingParam(Player, Point, EnterPoint)
+    self:ClientPlayAnim(Player.Eid, 0, self.Eid)
   end
-  self.PlayerAndSeat[PlayerActorEid].IsUsed = false
-  self.PlayerAndSeat[PlayerActorEid] = nil
 end
-
+function BP_SeatBase_C:CloseMechanism(PlayerActorEid, IsSuccess)
+  if not Battle(self) then
+    return
+  end
+  local Player = Battle(self):GetEntity(PlayerActorEid)
+  local MainPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  if not IsValid(Player) or not IsValid(MainPlayer) then
+    return
+  end
+  print(_G.LogTag, "LXZ CloseMechanism", MainPlayer, self)
+  local IsMainPlayer = Player.Eid == MainPlayer.Eid
+  if IsValid(Player) then
+    if IsMainPlayer then
+      Player.OnInteractiveDelegate:Remove(self.ChestInteractiveComponent, self.ChestInteractiveComponent.EndInteractive)
+      Player.CharSpringArmComponent.bArmCollision = true
+      Player.CharSpringArmComponent.CameraProbeSize = self.CameraProbeSize
+    end
+    Player:GetMovementComponent().bAllowPhysicsRotationDuringAnimRootMotion = true
+    local EnterPoint = self:GetLeavingPoint(Player)
+    if self.PlayerAndSeat[Player.Eid] then
+      self.PlayerAndSeat[Player.Eid].EnterType = EnterPoint.Type
+      self:SetLeavingParam(Player, self.PlayerAndSeat[PlayerActorEid], EnterPoint)
+      self:ClientPlayAnim(PlayerActorEid, 2, self.Eid)
+    end
+  end
+  if self.PlayerAndSeat[Player.Eid] then
+    self.PlayerAndSeat[PlayerActorEid].IsUsed = false
+    self.PlayerAndSeat[PlayerActorEid] = nil
+  end
+end
 function BP_SeatBase_C:ForceCloseMechanism(PlayerActorEid, IsSuccess)
   local Player = Battle(self):GetEntity(PlayerActorEid)
-  Player.OnInteractiveDelegate:Remove(self.ChestInteractiveComponent, self.ChestInteractiveComponent.EndInteractive)
+  if IsMainPlayer then
+    Player.OnInteractiveDelegate:Remove(self.ChestInteractiveComponent, self.ChestInteractiveComponent.EndInteractive)
+  end
   Player.CapsuleComponent:SetCollisionResponseToChannel(ECollisionChannel.ECC_WorldStatic, ECollisionResponse.ECR_Block)
   Player:GetMovementComponent().bAllowPhysicsRotationDuringAnimRootMotion = true
   Player:GetMovementComponent():SetMovementMode(1)
   self.PlayerAndSeat[PlayerActorEid].IsUsed = false
   self.PlayerAndSeat[PlayerActorEid] = nil
 end
-
 function BP_SeatBase_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
   local Player = Battle(self):GetEntity(PlayerId)
   if 0 == InteractiveState then
@@ -123,7 +170,6 @@ function BP_SeatBase_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
     Player.Mesh:GetAnimInstance():Montage_JumpToSection("SitEnd" .. self.PlayerAndSeat[Player.Eid].EnterType)
   end
 end
-
 function BP_SeatBase_C:GetCanOpen(PlayerEid)
   local tmp = true
   for i = 1, self.PointArray:Length() do
@@ -134,16 +180,24 @@ function BP_SeatBase_C:GetCanOpen(PlayerEid)
   local CharacterInfo = DataMgr.PlayerStateMachine[Player.AutoSyncProp.CharacterTag]
   self.CanOpen = self.CanOpen and not CharacterInfo.Seating
 end
-
 function BP_SeatBase_C:FindPoint(PlayerEid)
   local Result
-  local ResDis = 99999
-  for i = 1, self.PointArray:Length() do
-    if not self.PointArray[i].IsUsed then
-      local Dis = self:SeatGetPlayerPointDis(Battle(self):GetEntity(PlayerEid), self.PointArray[i])
-      if nil == Result or ResDis > Dis or Dis == ResDis and math.random() >= 0.5 then
-        Result = self.PointArray[i]
-        ResDis = Dis
+  if self.RegionOnlineInteractiveMessage:Find(PlayerEid) then
+    local Index = self.RegionOnlineInteractiveMessage:Find(PlayerEid)
+    for i, v in pairs(self.PointArray) do
+      if v.Index == Index then
+        Result = v
+      end
+    end
+  else
+    local ResDis = 99999
+    for i = 1, self.PointArray:Length() do
+      if not self.PointArray[i].IsUsed then
+        local Dis = self:SeatGetPlayerPointDis(Battle(self):GetEntity(PlayerEid), self.PointArray[i])
+        if nil == Result or ResDis > Dis or Dis == ResDis and math.random() >= 0.5 then
+          Result = self.PointArray[i]
+          ResDis = Dis
+        end
       end
     end
   end
@@ -152,7 +206,6 @@ function BP_SeatBase_C:FindPoint(PlayerEid)
   end
   return Result
 end
-
 function BP_SeatBase_C:SetSittingParam(Player, Point, EnterPoint)
   Player:SetCollisionType("CapsuleComponent", "MonsterPawn", ECollisionResponse.ECR_OverLap, false)
   Player:SetCollisionType("CapsuleComponent", "Pawn", ECollisionResponse.ECR_OverLap, false)
@@ -175,7 +228,6 @@ function BP_SeatBase_C:SetSittingParam(Player, Point, EnterPoint)
     Player:GetMovementComponent().RootMotionZScale = UpDiff / RootMotionDis
   end
 end
-
 function BP_SeatBase_C:SetLeavingParam(Player, Point, EnterPoint)
   Player:SetCollisionType("CapsuleComponent", "MonsterPawn", ECollisionResponse.ECR_Block, false)
   Player:SetCollisionType("CapsuleComponent", "Pawn", ECollisionResponse.ECR_Block, false)
@@ -196,7 +248,6 @@ function BP_SeatBase_C:SetLeavingParam(Player, Point, EnterPoint)
   end
   Player:GetMovementComponent().RootMotionZScale = UpDiff / RootMotionDis
 end
-
 function BP_SeatBase_C:GetLeavingType(Player)
   local TypeList = {
     "F",
@@ -236,25 +287,29 @@ function BP_SeatBase_C:GetLeavingType(Player)
   end
   return TypeList[Index + Offset]
 end
-
 function BP_SeatBase_C:GetLeavingPoint(Player)
+  if not self.PlayerAndSeat or not self.PlayerAndSeat[Player.Eid] then
+    return
+  end
   return self.PlayerAndSeat[Player.Eid]:FindLeavingPoint(self:GetLeavingType(Player))
 end
-
 function BP_SeatBase_C:NpcGetLeavingPoint(Npc)
   if not self.PlayerAndSeat[Npc.Eid] then
     return nil
   end
   return self.PlayerAndSeat[Npc.Eid]:NpcFindLeavingPoint(Npc)
 end
-
-function BP_SeatBase_C:OnEMActorDestroy(...)
-  BP_SeatBase_C.Super.OnEMActorDestroy(self, ...)
+function BP_SeatBase_C:OnEMActorDestroy(DestroyReason)
   for PlayerEid, Point in pairs(self.PlayerAndSeat) do
-    self.ChestInteractiveComponent:EndInteractive(self.Eid, PlayerEid)
+    local Player = Battle(self):GetEntity(PlayerEid)
+    print(_G.LogTag, "LXZ OnEMActorDestroy", self:GetName(), Player, IsValid(Player))
+    if IsValid(Player) then
+      self.ChestInteractiveComponent:EndInteractive(Player)
+    end
   end
+  self.PlayerAndSeat = {}
+  BP_SeatBase_C.Super.OnEMActorDestroy(self, DestroyReason)
 end
-
 function BP_SeatBase_C:OpenMechanismWithoutInteractive(Character, CallBackFunc, IsImmediately)
   if not self.InitSuccess then
     self.CacheOpenMechanismWithoutInteractive = {
@@ -310,22 +365,19 @@ function BP_SeatBase_C:OpenMechanismWithoutInteractive(Character, CallBackFunc, 
         local GravityScale = Character:GetMovementComponent().GravityScale
         Character.SitGravityScale = GravityScale
         Character:GetMovementComponent().GravityScale = 0
-        if not Character:GetMovementComponent():IsComponentTickEnabled() then
-          if Character.SetNpcMovementTickEnable then
-            Character:SetNpcMovementTickEnable(true)
-          else
-            Character:GetMovementComponent():SetComponentTickEnabled(true)
-          end
+        if Character.SetNpcMovementTickEnable then
+          Character:SetNpcMovementTickEnable(true)
+        else
+          Character:GetMovementComponent():SetComponentTickEnabled(true)
         end
+        Character:GetMovementComponent():OnNpcSeatingBegin()
       end
       Character:NpcSitSeat_Transform(Point, EnterPoint, Character.CapsuleComponent.CapsuleHalfHeight)
       if Character.NpcAnimInstance then
         Character.NpcAnimInstance.EnableDataFootIK = false
       end
-      
       local function Completed()
       end
-      
       local function NotifyBegin()
         if CallBackFunc then
           CallBackFunc()
@@ -333,17 +385,22 @@ function BP_SeatBase_C:OpenMechanismWithoutInteractive(Character, CallBackFunc, 
         EventManager:FireEvent(EventID.OnNpcPoseChange)
         Character:SetNpcMovementTickEnable(false)
       end
-      
       local AllCallback = {OnCompleted = Completed, OnNotifyBegin = NotifyBegin}
       if self.PlayerAndSeat[Character.Eid] and self.PlayerAndSeat[Character.Eid].EnterType then
         local MontageName = self.ChestInteractiveComponent.MontageName .. "_" .. self.PlayerAndSeat[Character.Eid].EnterType .. "_Montage"
+        local MontagePrePath = "Interactive/MechInteractive"
         if Character.NpcId and DataMgr.Npc[Character.NpcId] and DataMgr.Npc[Character.NpcId].SpecialSit then
-          MontageName = DataMgr.Npc[Character.NpcId].SpecialSit
+          local ActionId = DataMgr.Npc[Character.NpcId].SpecialSit
+          local TalkActionData = DataMgr.TalkAction[ActionId]
+          if TalkActionData then
+            MontageName = TalkActionData.ActionMontage .. "_Montage" or MontageName
+            MontagePrePath = TalkActionData.MontagePrePath or MontagePrePath
+          end
         end
         if nil == IsImmediately or false == IsImmediately then
-          Character:PlayActionMontage("Interactive/MechInteractive", MontageName, AllCallback, false, true, false)
+          Character:PlayActionMontage(MontagePrePath, MontageName, AllCallback, false, true, false)
         else
-          local MontPath = Character:GetMontagePath("Interactive/MechInteractive", MontageName)
+          local MontPath = Character:GetMontagePath(MontagePrePath, MontageName)
           Character:K2_SetActorLocationAndRotation(Point:K2_GetComponentLocation(), Rot, false, nil, false)
           UResourceLibrary.LoadObjectAsync(self, MontPath, {
             self,
@@ -369,13 +426,15 @@ function BP_SeatBase_C:OpenMechanismWithoutInteractive(Character, CallBackFunc, 
   })
   Character:AddTimer(3, function()
     local HasSection = Character.Mesh:GetAnimInstance():IsPlayingMontagesContainsSection("SitLoop")
+    if Character:GetMovementComponent() and Character:GetMovementComponent().OnNpcSeatingEnd then
+      Character:GetMovementComponent():OnNpcSeatingEnd(EMovementMode.MOVE_NavWalking)
+    end
     if HasSection then
       Character:SetNpcMovementTickEnable(false)
       Character:RemoveTimer("DelayCloseNpcMovementTickBySit")
     end
   end, true, 0, "DelayCloseNpcMovementTickBySit")
 end
-
 function BP_SeatBase_C:CloseMechanismWithoutInteractive(Character, Callback)
   Character:GetMovementComponent().bAllowPhysicsRotationDuringAnimRootMotion = true
   Character:SetNpcMovementTickEnable(true)
@@ -405,7 +464,6 @@ function BP_SeatBase_C:CloseMechanismWithoutInteractive(Character, Callback)
     end, false, 0, "StandCallBackTimer")
   end
 end
-
 function BP_SeatBase_C:CloseMechanismWithoutMontage(Character)
   Character:GetMovementComponent().bAllowPhysicsRotationDuringAnimRootMotion = true
   local EnterPoint = self:NpcGetLeavingPoint(Character)
@@ -434,7 +492,6 @@ function BP_SeatBase_C:CloseMechanismWithoutMontage(Character)
     Character:SetNpcMovementTickEnable(false)
   end
 end
-
 function BP_SeatBase_C:OpenMechanismNpcSpecial(Character, CallBackFunc)
   if not Character then
     return
@@ -455,12 +512,90 @@ function BP_SeatBase_C:OpenMechanismNpcSpecial(Character, CallBackFunc)
   end
   return Point
 end
-
 function BP_SeatBase_C:CloseMechanismNpcSpecial(Character, CallBackFunc)
   if IsValid(self.PlayerAndSeat[Character.Eid]) then
     self.PlayerAndSeat[Character.Eid].IsUsed = false
   end
   self.PlayerAndSeat[Character.Eid] = nil
 end
-
+function BP_SeatBase_C:SpecialRegionOnlineStartLogic(PlayerActor)
+  local Avatar = GWorld:GetAvatar()
+  local MainPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if not Avatar or not PlayerActor then
+    return
+  end
+  print(_G.LogTag, "LXZ SpecialRegionOnlineStartLogic", PlayerActor:GetName())
+  local Point = self.PlayerAndSeat[PlayerActor.Eid] or self:FindPoint(PlayerActor.Eid)
+  if not Point then
+    return
+  end
+  print(_G.LogTag, "LXZ SpecialRegionOnlineStartLogic111", self.UniqueId, self.SenderId)
+  local InteractiveId = Point.Index
+  local AvatarEid = Avatar.Eid
+  if self.SenderId and self.SenderId ~= "" then
+    print(_G.LogTag, "LXZ SpecialRegionOnlineStartLogic222", self.UniqueId)
+    AvatarEid = CommonUtils.Str2ObjId(self.SenderId)
+  end
+  Avatar:RequestChangeRegionOnlineItemState(Avatar.CurrentOnlineType, self.UniqueId, AvatarEid, InteractiveId, self.StateId, self.BpBorn)
+end
+function BP_SeatBase_C:SpecialRegionOnlineEndLogic(PlayerActor)
+  local Avatar = GWorld:GetAvatar()
+  local MainPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if not Avatar or not PlayerActor then
+    return
+  end
+  print(_G.LogTag, "LXZ SpecialRegionOnlineEndLogic", PlayerActor:GetName())
+  local Point = self.PlayerAndSeat[PlayerActor.Eid]
+  if not Point then
+    return
+  end
+  print(_G.LogTag, "LXZ SpecialRegionOnlineEndLogic111", self.SenderId)
+  local InteractiveId = Point.Index
+  local AvatarEid = Avatar.Eid
+  if self.SenderId and self.SenderId ~= "" then
+    AvatarEid = CommonUtils.Str2ObjId(self.SenderId)
+  end
+  Avatar:RequestLeaveRegionOnlineItem(Avatar.CurrentOnlineType, self.UniqueId, AvatarEid, InteractiveId)
+end
+function BP_SeatBase_C:IsCanOnlineInteractive(Player)
+  if not Player then
+    return false
+  end
+  local MainPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  if MainPlayer ~= Player then
+    return true
+  end
+  local Dis = (Player:K2_GetActorLocation() - self:K2_GetActorLocation()):Size()
+  if Dis >= 800 then
+    return false
+  end
+  if not self.ChestInteractiveComponent:CheckPlayerTag(Player) then
+    return false
+  end
+  if Player:GetIsInDelivery() then
+    ScreenPrint("玩家传送中，不允许坐下")
+    return false
+  end
+  local TS = USubsystemBlueprintLibrary.GetWorldSubsystem(GWorld.GameInstance, UTalkSubsystem)
+  if TS:IsInImmersiveStory() then
+    ScreenPrint("玩家剧情中，不允许坐下")
+    return false
+  end
+  return true
+end
+function BP_SeatBase_C:GetValidPoint()
+  local PointIndex = {}
+  for i, Point in pairs(self.PointArray) do
+    local Valid = true
+    local Eid = 0
+    for PlayerEid, UsePoint in pairs(self.PlayerAndSeat) do
+      if UsePoint.Index == Point.Index then
+        Valid = false
+        Eid = PlayerEid
+      end
+    end
+    PointIndex[Point.Index] = {Valid = Valid, Eid = Eid}
+  end
+  return PointIndex
+end
 return BP_SeatBase_C

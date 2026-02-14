@@ -1,10 +1,8 @@
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
-local ReddotTreeNode_ActivityBase = Class("BluePrints.UI.Reddot.ReddotTreeNode")
-
+local ReddotTreeNode_ActivityBase = Class("BluePrints.UI.Reddot.Child.Activity.IActivityBase")
 function ReddotTreeNode_ActivityBase:OverrideSelfRdType()
   self:_JudgeReddotType(self.Cache.Detail)
 end
-
 function ReddotTreeNode_ActivityBase:OnRefreshNodeData(EventId)
   ReddotManager.IncreaseLeafNodeCount(self.Name, 1, {CacheKey = "New", EventId = EventId})
   if self:_Judge(EventId) then
@@ -13,7 +11,6 @@ function ReddotTreeNode_ActivityBase:OnRefreshNodeData(EventId)
     ReddotManager.DecreaseLeafNodeCount(self.Name, 1, {CacheKey = "Red", EventId = EventId})
   end
 end
-
 function ReddotTreeNode_ActivityBase:OnIncreaseJudge(AddValue, CacheDetailChangedParams)
   if not CacheDetailChangedParams then
     return true
@@ -30,7 +27,6 @@ function ReddotTreeNode_ActivityBase:OnIncreaseJudge(AddValue, CacheDetailChange
   end
   return false
 end
-
 function ReddotTreeNode_ActivityBase:OnDecreaseJudge(SubValue, CacheDetailChangedParams)
   if not CacheDetailChangedParams then
     return true
@@ -50,11 +46,9 @@ function ReddotTreeNode_ActivityBase:OnDecreaseJudge(SubValue, CacheDetailChange
   end
   return false
 end
-
 function ReddotTreeNode_ActivityBase:_Judge(EventId)
   return false
 end
-
 function ReddotTreeNode_ActivityBase:OnIncreaseCount(AddValue, CacheDetailChangedParams)
   if not CacheDetailChangedParams then
     return
@@ -64,7 +58,6 @@ function ReddotTreeNode_ActivityBase:OnIncreaseCount(AddValue, CacheDetailChange
   CacheDetail[CacheKey] = 1
   self:JudgeReddotType(CacheDetail)
 end
-
 function ReddotTreeNode_ActivityBase:OnDecreaseCount(SubValue, CacheDetailChangedParams)
   if not CacheDetailChangedParams then
     return
@@ -78,15 +71,14 @@ function ReddotTreeNode_ActivityBase:OnDecreaseCount(SubValue, CacheDetailChange
     CacheDetail.New = 0
     CacheDetail.Red = 0
     CacheDetail.bClose = true
+    CacheDetail.CurrentEventId = CacheDetailChangedParams.EventId
   end
   self:JudgeReddotType(CacheDetail)
 end
-
 function ReddotTreeNode_ActivityBase:JudgeReddotType(CacheDetail)
   self:_JudgeReddotType(CacheDetail)
   self:UpdateRdType()
 end
-
 function ReddotTreeNode_ActivityBase:_JudgeReddotType(CacheDetail)
   local NewRdType = self.ReddotType
   local bRed = CacheDetail.Red and CacheDetail.Red >= 1
@@ -98,16 +90,20 @@ function ReddotTreeNode_ActivityBase:_JudgeReddotType(CacheDetail)
   end
   self.ReddotType = NewRdType
 end
-
 function ReddotTreeNode_ActivityBase:OnInitNodeCache(NodeCache)
-  NodeCache.Count = 0
-  for k, v in pairs(NodeCache.Detail) do
-    if 1 == v then
-      NodeCache.Count = NodeCache.Count + 1
-    end
-  end
+  self.bImplemented = true
   self.bInvokeEveryTime = true
-  self:JudgeReddotType(NodeCache.Detail)
+  NodeCache.Count = 0
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar:CheckUIUnlocked("GameEvent") then
+    NodeCache.Detail = {}
+  else
+    for k, v in pairs(NodeCache.Detail) do
+      if 1 == v then
+        NodeCache.Count = NodeCache.Count + 1
+      end
+    end
+    self:JudgeReddotType(NodeCache.Detail)
+  end
 end
-
 return ReddotTreeNode_ActivityBase

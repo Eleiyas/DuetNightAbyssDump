@@ -1,6 +1,5 @@
 require("UnLua")
 local G = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function G:Construct()
   self.Super.Construct(self)
   self.PerPageRecordCount = 10
@@ -9,21 +8,17 @@ function G:Construct()
   self.Text_Type:SetText(GText("UI_SkinGacha_Type"))
   self.Text_Time:SetText(GText("UI_SkinGacha_Time"))
   self.Text_GachaHistory_Empry:SetText(GText("UI_GACHA_NOHISTORY"))
-  
   function self.Btn_Before.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   end
-  
   function self.Btn_Next.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   end
-  
   self.Btn_Before:BindEventOnClicked(self, self.OnFlipBefore)
   self.Btn_Next:BindEventOnClicked(self, self.OnFlipNext)
   self.Key_ImgLeft:CreateGamepadKey(UIConst.GamePadImgKey.DPadLeft)
   self.Key_ImgRight:CreateGamepadKey(UIConst.GamePadImgKey.DPadRight)
 end
-
 function G:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self:BindDialogEvent(DialogEvent.OnTitleTabSelected, self.OnTabSelected)
@@ -32,17 +27,14 @@ function G:InitContent(Params, PopupData, Owner)
   self.NowGachaId = Params.CurrentGachaId
   self:InitListHistory()
 end
-
 function G:InitGamepadView()
   self.WS_Left:SetActiveWidgetIndex(1)
   self.WS_Right:SetActiveWidgetIndex(1)
 end
-
 function G:InitKeyboardView()
   self.WS_Left:SetActiveWidgetIndex(0)
   self.WS_Right:SetActiveWidgetIndex(0)
 end
-
 function G:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -52,7 +44,6 @@ function G:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function G:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.DPadLeft then
@@ -64,13 +55,11 @@ function G:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function G:OnTabSelected(TabWidget)
   self.NowTabId = TabWidget.Idx
   self.NowGachaId = self.Params.TabMapGacha[self.NowTabId]
   self:InitListHistory()
 end
-
 function G:OnFlipBefore()
   if 1 == self.PageIndex then
     return
@@ -85,7 +74,6 @@ function G:OnFlipBefore()
   self.Text_Page:SetText(self.PageIndex .. "/" .. self.PageMax)
   self:UpdateListRecord()
 end
-
 function G:OnFlipNext()
   if self.PageIndex == self.PageMax then
     return
@@ -100,7 +88,6 @@ function G:OnFlipNext()
   self.Text_Page:SetText(self.PageIndex .. "/" .. self.PageMax)
   self:UpdateListRecord()
 end
-
 function G:InitListHistory()
   local RecordData = self.RecordTable[self.NowGachaId]
   if not RecordData then
@@ -126,7 +113,6 @@ function G:InitListHistory()
     self:UpdateListRecord()
   end
 end
-
 function G:UpdateListRecord()
   local RecordData = self:GetGachaRecord((self.PageIndex - 1) * self.PerPageRecordCount, self.PerPageRecordCount)
   self.List_History:ClearListItems()
@@ -143,7 +129,6 @@ function G:UpdateListRecord()
   end
   self.List_History:ScrollIndexIntoView(0)
 end
-
 function G:GetGachaRecord(StartIndex, Limit)
   StartIndex = StartIndex or 0
   local RecordData = self.RecordTable[self.NowGachaId]
@@ -160,5 +145,4 @@ function G:GetGachaRecord(StartIndex, Limit)
   end
   return Result
 end
-
 return G

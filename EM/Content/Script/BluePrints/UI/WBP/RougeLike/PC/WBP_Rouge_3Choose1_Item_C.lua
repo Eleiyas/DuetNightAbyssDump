@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.BtnCD = 0.5
   self.Rarity2Color = {
@@ -8,13 +7,12 @@ function M:Construct()
     "Purple",
     "Yellow"
   }
+  UIUtils.InitDefinitionTextWidget(self, self.Text_Desc, "ExplanationId")
 end
-
 function M:OnListItemObjectSet(Content)
   Content.SelfWidget = self
   self:OnLoaded(Content.AwardInfo, Content.Parent, Content.NotHit)
 end
-
 function M:OnLoaded(...)
   local AwardInfo, Parent, NotHit = ...
   self.NotHit = NotHit
@@ -43,9 +41,6 @@ function M:OnLoaded(...)
     AwardDesc = UIUtils.GenRougeTreasureDesc(self.AwardId)
     self.ExplanationId = AwardData[self.AwardId].ExplanationId
   end
-  if self.ExplanationId ~= nil and #self.ExplanationId > 0 then
-    AwardDesc = UIUtils.GenRougeCombatTermDesc(AwardDesc, self.ExplanationId)
-  end
   self.Text_Desc:SetText(AwardDesc)
   self.Button_Select.OnHovered:Add(self, self.OnBtnHover)
   self.Button_Select.OnClicked:Add(self, self.OnBtn_SelectClicked)
@@ -69,7 +64,7 @@ function M:OnLoaded(...)
       self.Rouge_SuitSign.Text_SuitTitle:SetText(Text)
       if ItemInfo.Icon then
         local IconObj = LoadObject(ItemInfo.Icon)
-        assert(IconObj, "\230\156\170\230\137\190\229\136\176\229\175\185\229\186\148TreasureGroup\231\154\132Icon:" .. DataMgr.RougeLikeTreasure[self.AwardId].TreasureGroup)
+        assert(IconObj, "未找到对应TreasureGroup的Icon:" .. DataMgr.RougeLikeTreasure[self.AwardId].TreasureGroup)
         self.Rouge_SuitSign.Image_TitleIcon:SetBrushResourceObject(IconObj)
       else
         self.Rouge_SuitSign.Image_TitleIcon:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -101,7 +96,7 @@ function M:OnLoaded(...)
           }
           self.Rouge_SuitSign.ItemDetails_MenuAnchor:OpenItemDetailsWidget(false, Content)
         else
-          DebugPrint("@@@ Rouge\230\178\161\230\137\190\229\136\176TreasureGroupId")
+          DebugPrint("@@@ Rouge没找到TreasureGroupId")
         end
       end
     })
@@ -137,7 +132,6 @@ function M:OnLoaded(...)
   self:UpdateCompadKeyDefinition(false)
   self.Super.OnLoaded(self, ...)
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   if not bIsOpen then
     self.Parent.bInSuitScroll = false
@@ -147,7 +141,6 @@ function M:ItemMenuAnchorChanged(bIsOpen)
     end
   end
 end
-
 function M:OnBtnHover()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:AddDelayFrameFunc(function()
@@ -155,7 +148,6 @@ function M:OnBtnHover()
     end, 1)
   end
 end
-
 function M:OnBtn_SelectClicked()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.IsSelected == true then
     self.Parent:OnConfirmBtnClicked()
@@ -163,24 +155,17 @@ function M:OnBtn_SelectClicked()
   end
   self:SelectItem()
 end
-
 function M:OnBtn_DescClicked()
   if not self.IsSelected and self.Button_Select:GetVisibility() == UIConst.VisibilityOp.Visible then
     self:SelectItem()
     return
   end
-  if self.ExplanationId == nil then
-    print("lgc ExplanationId is nil")
-    return
-  end
-  local DefinitionWidget = UIManager(self):LoadUINew("Rouge_Definition", self.ExplanationId)
-  if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and DefinitionWidget then
-    DefinitionWidget.Button_Close:SetFocus()
+  if UIUtils.IsGamepadInput() then
+    UIUtils.OnDefinitionLinkClicked(self, self.ExplanationId)
   end
 end
-
 function M:SelectItem()
-  DebugPrint("\230\163\128\230\181\139\229\136\176\232\162\171\233\128\137\228\184\173")
+  DebugPrint("检测到被选中")
   if self:IsAnimationPlaying(self.Hover) then
     self:StopAnimation(self.Hover)
   end
@@ -189,7 +174,6 @@ function M:SelectItem()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_click", nil, nil)
   self.Parent:SelectItem(self.AwardId, self)
 end
-
 function M:UpdateCompadKeyDefinition(bShowGamepadKey)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and bShowGamepadKey and self.ExplanationId ~= nil and #self.ExplanationId > 0 then
     self.Key_Definition:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -199,10 +183,9 @@ function M:UpdateCompadKeyDefinition(bShowGamepadKey)
     self.Key_Definition:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnBtn_ConfirmClicked()
   self.CurrentTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
-  DebugPrint("\230\163\128\230\181\139\229\136\176\230\140\137\233\148\174\230\140\137\228\184\139")
+  DebugPrint("检测到按键按下")
   if self.CurrentTime - self.StartTime < self.BtnCD then
     self:PlayAnimationForward(self.Normal)
     return
@@ -211,7 +194,6 @@ function M:OnBtn_ConfirmClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/choose_point_confirm", nil, nil)
   self.Parent:ChooseItem(self.AwardId, self)
 end
-
 function M:SwitchDesc(IsSimple)
   if self.AwardId == nil then
     return
@@ -231,25 +213,25 @@ function M:SwitchDesc(IsSimple)
     end
   end
   if nil == AwardDesc then
-    Battle(self):ShowBattleError("\232\130\137\233\184\189" + self.AwardType + "\232\161\168\228\184\173Id\228\184\186" + tostring(self.AwardId)("\231\154\132\230\143\143\232\191\176\228\184\186\231\169\186"))
+    Battle(self):ShowBattleError("肉鸽" + self.AwardType + "表中Id为" + tostring(self.AwardId)("的描述为空"))
   end
-  if nil ~= self.ExplanationId and #self.ExplanationId > 0 then
-    AwardDesc = UIUtils.GenRougeCombatTermDesc(AwardDesc, self.ExplanationId)
+  if AwardDesc ~= tostring(self.Text_Desc:GetText()) then
+    self.Text_Desc:SetText(AwardDesc)
+    if nil ~= self.ExplanationId and #self.ExplanationId > 0 then
+      UIUtils.SetDefinitionText(self.Text_Desc, self.ExplanationId)
+    end
   end
-  self.Text_Desc:SetText(AwardDesc)
   if IsSimple then
     self["WBP_Rouge" .. self.AwardType .. "ItemPart"].Text_ArchiveSign:SetVisibility(UIConst.VisibilityOp.Collapsed)
   else
     self["WBP_Rouge" .. self.AwardType .. "ItemPart"].Text_ArchiveSign:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnBlessingBuffIconLoadFinish(Object)
   if Object and IsValid(self) then
     self.BlessingBuffIcon.Image_BlessingBuffIcon:SetBrushResourceObject(Object)
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -258,7 +240,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if self.Parent then
@@ -278,10 +259,9 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
-  if CurInputType == ECommonInputType.Gamepad then
+  if CurInputType == ECommonInputType.Gamepad and self.DefinitionWidget and IsValid(self.DefinitionWidget) then
+    self.DefinitionWidget:SetFocus()
   end
 end
-
 return M

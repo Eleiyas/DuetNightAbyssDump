@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.Common.TimerMgr")
-
 function M:IsCanPlay()
   if self.bIsSkill and Const.bEnableSkillFeatureCD and self.OwnerCharacter.bSkillFeatureCD then
     return false
   end
   return true
 end
-
 function M:ReceiveBeginPlay()
   if self.FeatureSequence == nil then
     return
@@ -18,7 +16,6 @@ function M:ReceiveBeginPlay()
   self:SetCineCameraActor()
   self:ResetPlayerSpeed()
 end
-
 function M:StartSkillFeature()
   EventManager:FireEvent(EventID.OnStartSkillFeature, self.HideAllUI)
   if self.HideAllUI then
@@ -26,8 +23,8 @@ function M:StartSkillFeature()
     EventManager:AddEvent(EventID.OnCreatedEnergySupplyWidget, self, self.OnCreatedEnergySupplyWidget)
   end
   self.Overridden.StartSkillFeature(self)
+  self.OwnerCharacter:SkillFeatureHideAllEffectCreature("StartSkillFeature", true)
 end
-
 function M:StartSkillFeatureCD()
   if not self.bIsSkill then
     return
@@ -40,7 +37,6 @@ function M:StartSkillFeatureCD()
     end, false, 0, "SkillFeatureCD")
   end
 end
-
 function M:EndSkillFeature()
   EventManager:FireEvent(EventID.OnEndSkillFeature, self.HideAllUI)
   if self.HideAllUI then
@@ -48,14 +44,18 @@ function M:EndSkillFeature()
     EventManager:RemoveEvent(EventID.OnCreatedEnergySupplyWidget, self)
   end
   self.Overridden.EndSkillFeature(self)
+  self.OwnerCharacter:SkillFeatureHideAllEffectCreature("StartSkillFeature", false)
 end
-
+function M:ReceiveTick(DeltaSeconds)
+  if self.NewCamera and self.CineCameraActor then
+    self.NewCamera.CameraComponent:SetCurrentFocalLength(self.CineCameraActor.CameraComponent.CurrentFocalLength)
+  end
+end
 function M:SetInstanceData()
   self.bOverrideInstanceData = true
   local DefaultInstanceData = self.DefaultInstanceData
   DefaultInstanceData.TransformOriginActor = self
 end
-
 function M:TryAttachToPlayer()
   if not self.AttachToPlayer then
     return
@@ -63,13 +63,11 @@ function M:TryAttachToPlayer()
   self:K2_AttachToComponent(self.OwnerCharacter.Mesh, "Root", EAttachmentRule.SnapToTarget, EAttachmentRule.SnapToTarget, EAttachmentRule.SnapToTarget, true)
   self:K2_SetActorRelativeRotation(FRotator(0, 90, 0), false, nil, false)
 end
-
 function M:ResetPlayerSpeed()
   if self.ResetSpeed then
     self.OwnerCharacter:GetMovementComponent().Velocity:Set(0, 0, 0)
   end
 end
-
 function M:RecordPlayerCamera()
   if not self.CameraCurve then
     return
@@ -97,7 +95,6 @@ function M:RecordPlayerCamera()
   Rotation:Add(self.CameraArmRotation)
   self.OwnerCharacter.Controller:SetControlRotation(Rotation)
 end
-
 function M:ResetCamera()
   if not self.bPlayCameraAnim then
     return
@@ -116,13 +113,12 @@ function M:ResetCamera()
     CameraControlComponent:PopCameraState("SkillFeature")
   end, false, 0, "SkillFeatureCamera")
 end
-
 function M:SetCineCameraActor()
   self.SequencePlayer:Play()
   self.SequencePlayer:Pause()
   local CineCameraBind = self:FindNamedBinding(self.BindingTag)
   local BoundObjects = self.SequencePlayer:GetBoundObjects(CineCameraBind)
-  assert(1 == BoundObjects:Num(), self.BindingTag .. "\231\187\145\229\174\154\230\160\135\231\173\190\230\156\170\230\137\190\229\136\176\230\136\150\230\137\190\229\136\176\228\186\134\229\164\154\228\184\170\229\175\185\232\177\161\227\128\130")
+  assert(1 == BoundObjects:Num(), self.BindingTag .. "绑定标签未找到或找到了多个对象。")
   self.CineCameraActor = BoundObjects[1]
   self.CineCameraActor.CameraComponent:SetConstraintAspectRatio(false)
   if self.bUseNewSkillFeature then
@@ -145,7 +141,6 @@ function M:SetCineCameraActor()
     end
   end
 end
-
 function M:ReceiveOnObjectSpawned(InObject)
   if not self.NewSkillFeatureObjectBinds then
     return
@@ -169,17 +164,14 @@ function M:ReceiveOnObjectSpawned(InObject)
     end
   end
 end
-
 function M:OnCreatedEnergySupplyWidget(UIWidget)
   if IsValid(UIWidget) then
     UIWidget:Hide(Const.SkillFeatureHideTag)
   end
 end
-
 function M:OnUIWidgetCreate(UIInfo)
   if IsValid(UIInfo.UIObject) then
     UIInfo.UIObject:Hide(Const.SkillFeatureHideTag)
   end
 end
-
 return M

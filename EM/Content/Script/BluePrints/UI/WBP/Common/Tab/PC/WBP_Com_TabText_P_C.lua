@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.Btn.OnClicked:Add(self, self.Btn_Click)
   self.Btn.OnPressed:Add(self, self.Btn_Press)
   self.Btn.OnHovered:Add(self, self.Btn_Hover)
   self.Btn.OnUnhovered:Add(self, self.Btn_UnHover)
 end
-
 function M:Update(Idx, Info)
   self.Info = Info
   Info.UI = self
@@ -42,15 +40,12 @@ function M:Update(Idx, Info)
     self:PlayAnimation(self.Normal, 0, 1, 0, 1000)
   end
 end
-
 function M:GetTabId()
   return self.Info.TabId
 end
-
 function M:GetTabIndex()
   return self.Idx
 end
-
 function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   if self.IsLocked then
     local ShowTextContent = self.Info.LockReasonText or "Not Define!!!!"
@@ -66,7 +61,6 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
       local function PlayPressAnimFinished()
         self:PlayAnimation(self.Click)
       end
-      
       self:UnbindAllFromAnimationFinished(self.Press)
       self:BindToAnimationFinished(self.Press, {self, PlayPressAnimFinished})
       self:PlayAnimation(self.Press)
@@ -84,51 +78,41 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
     end
   end
 end
-
 function M:BindEventOnHoverOnOrOff(Obj, Event)
   self.ObjHoverOnOrOff = Obj
   self.EventHoverOnOrOff = Event
 end
-
 function M:UnbindEventOnHoverOnOrOff()
   self.ObjHoverOnOrOff = nil
   self.EventHoverOnOrOff = nil
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:BindHoverSoundFunc(func, Receiver)
   self.HoverSoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:SetClickEnable(bEnable)
   self.bClickEnable = bEnable
 end
-
 function M:SetLockInfo(bUnLock)
   self.IsLocked = bUnLock
   if bUnLock then
@@ -137,15 +121,12 @@ function M:SetLockInfo(bUnLock)
     self:PlayAnimation(self.Lock)
   end
 end
-
 function M:IsTabLocked()
   return self.IsLocked
 end
-
 function M:GetIsCanSelect()
   return self.bClickEnable and not self.IsLocked
 end
-
 function M:Btn_Click()
   if not self.bClickEnable then
     return
@@ -157,7 +138,6 @@ function M:Btn_Click()
     self:SetSwitchOn(true, false)
   end
 end
-
 function M:Btn_Press()
   if self.IsOn or self.IsLocked or not self.bClickEnable then
     return
@@ -168,7 +148,6 @@ function M:Btn_Press()
   self:UnbindAllFromAnimationFinished(self.Press)
   self:PlayAnimation(self.Press)
 end
-
 function M:Btn_Hover()
   if self.IsOn or self.IsLocked or not self.bClickEnable then
     return
@@ -181,7 +160,6 @@ function M:Btn_Hover()
     self.EventHoverOnOrOff(self.ObjHoverOnOrOff, self, true)
   end
 end
-
 function M:Btn_UnHover()
   if self.IsOn or self.IsLocked or not self.bClickEnable then
     return
@@ -194,7 +172,6 @@ function M:Btn_UnHover()
     self.EventHoverOnOrOff(self.ObjHoverOnOrOff, self, false)
   end
 end
-
 function M:SetReddot(IsNew, Upgradeable, OtherReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -217,10 +194,8 @@ function M:SetReddot(IsNew, Upgradeable, OtherReddot)
     end
   end
 end
-
 function M:HideTextName(bHide)
 end
-
 function M:SetReddotNum(RedNum)
   if nil ~= RedNum and RedNum > 0 then
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -229,5 +204,4 @@ function M:SetReddotNum(RedNum)
     self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return M

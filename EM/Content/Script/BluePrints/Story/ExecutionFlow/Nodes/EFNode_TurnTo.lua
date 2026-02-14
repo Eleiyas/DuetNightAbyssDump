@@ -1,12 +1,13 @@
 local M = {}
-
+local ETalkVisibility = {Show = "Show", Hide = "Hide"}
 function M:CreateNode(Flow, TalkTask, Params)
   local TurnToDescription = Params.TurnToDescription
   local MontageName = Params.AnimationId
+  local Visibility = Params.Visibility or ETalkVisibility.Show
   local TalkTaskData = TalkTask.TalkTaskData
   local TalkContext = GWorld.GameInstance:GetTalkContext()
   local TurnToNode = Flow:CreateNode(UEFNode_Delegate)
-  TurnToNode.DebugLog = string.format("TurnTo TurnToDescription: %s", TurnToDescription)
+  TurnToNode.DebugLog = string.format("TurnTo TurnToDescription: %s, Visibility: %s", TurnToDescription, Visibility)
   local HasCallback = false
   local TurnActor, TargetYaw, LookAtedActor
   TurnToNode.OnStart:Add(TurnToNode, function(Node)
@@ -23,9 +24,16 @@ function M:CreateNode(Flow, TalkTask, Params)
         Node.FinishPin
       })
     end
-    
     TurnActor, TargetYaw, LookAtedActor = TalkContext.TalkActionManager:RotateToReady(TalkContext, TalkTask, TalkTaskData, TurnToDescription, MontageName, {Func = FinishCallback})
     TalkContext.TalkTimerManager:AddTimer(Node, 4, false, nil, nil, FinishCallback)
+    if Visibility == ETalkVisibility.Show then
+      TalkContext:ShowHideActor(TurnActor, true)
+    end
+  end)
+  TurnToNode.OnFinish:Add(TurnToNode, function(Node)
+    if Visibility == ETalkVisibility.Hide then
+      TalkContext:ShowHideActor(TurnActor, false)
+    end
   end)
   TurnToNode.OnSkip:Add(TurnToNode, function(Node)
     TalkContext.TalkTimerManager:ClearTimer(Node)
@@ -49,5 +57,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return TurnToNode
 end
-
 return M

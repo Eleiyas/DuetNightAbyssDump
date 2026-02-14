@@ -1,11 +1,9 @@
 require("UnLua")
 require("DataMgr")
 local WBP_Battle_Aim_Fort_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Battle_Aim_Fort_C:Construct()
   self:InitInfo()
 end
-
 function WBP_Battle_Aim_Fort_C:Init(Root)
   self.Root = Root
   self.OwnerPlayer = self.Root.OwnerPlayer
@@ -13,7 +11,6 @@ function WBP_Battle_Aim_Fort_C:Init(Root)
   self:PlayAnimation(self.Test, Time)
   self:PauseAnimation(self.Test)
 end
-
 function WBP_Battle_Aim_Fort_C:UpdateAmmo()
   local Time = self.Root.Percent * self.SumTime
   self:PlayAnimation(self.Test, Time)
@@ -26,11 +23,9 @@ function WBP_Battle_Aim_Fort_C:UpdateAmmo()
     self:RefreshPanelAmmo(false)
   end
 end
-
 function WBP_Battle_Aim_Fort_C:GetCurrentPercent()
   return self.BarAmmoMat:K2_GetScalarParameterValue("Percent")
 end
-
 function WBP_Battle_Aim_Fort_C:RefreshAimColorByState(ActorRelation)
   if "Default" == ActorRelation then
     ActorRelation = "Normal"
@@ -47,7 +42,6 @@ function WBP_Battle_Aim_Fort_C:RefreshAimColorByState(ActorRelation)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self[self.CurActorRelation])
   end
 end
-
 function WBP_Battle_Aim_Fort_C:GetAimNeedChangeState(SourceActor, TargetActor)
   if not IsValid(SourceActor) or not IsValid(TargetActor) then
     return "Normal"
@@ -76,13 +70,11 @@ function WBP_Battle_Aim_Fort_C:GetAimNeedChangeState(SourceActor, TargetActor)
     return "Normal"
   end
 end
-
 function WBP_Battle_Aim_Fort_C:InitInfo()
   self.BarAmmoMat = self.Bar_Ammo:GetDynamicMaterial()
   self.PanelAmmoHide = false
   self.SumTime = self.Test:GetEndTime()
 end
-
 function WBP_Battle_Aim_Fort_C:RefreshPanelAmmo(IsHide)
   if IsHide then
     self.Panel_Ammo:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -91,7 +83,6 @@ function WBP_Battle_Aim_Fort_C:RefreshPanelAmmo(IsHide)
   end
   self.PanelAmmoHide = IsHide
 end
-
 function WBP_Battle_Aim_Fort_C:TryToPlayAimDiffusionStartAnim()
   if EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Normal) then
     EMUIAnimationSubsystem:EMStopAnimation(self, self.Normal)
@@ -106,5 +97,4 @@ function WBP_Battle_Aim_Fort_C:TryToPlayAimDiffusionStartAnim()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.AirFire)
   end
 end
-
 return WBP_Battle_Aim_Fort_C

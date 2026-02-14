@@ -1,7 +1,6 @@
 require("UnLua")
 local AnnouncementUtils = require("BluePrints.UI.WBP.Announcement.AnnounceUtils")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Construct()
   self.ButtonArea.OnClicked:Add(self, self.OnClick)
   self.ButtonArea.OnHovered:Add(self, function()
@@ -20,7 +19,6 @@ function M:Construct()
     end
   end)
 end
-
 function M:Destruct()
   self.ButtonArea.OnClicked:Remove(self, self.OnClick)
   self.ButtonArea.OnHovered:Clear()
@@ -30,7 +28,6 @@ function M:Destruct()
     self:RemoveReddotListener(self.ReddotName)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Parent = Content.Parent
@@ -46,12 +43,12 @@ function M:OnListItemObjectSet(Content)
   self.ButtonArea:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Text_AnnouncementTitle:SetText(GText(Content.Conf.NoticeTitle))
   if Content.IsSelected then
-    self:OnClick(true)
+    self:OnClick(true, Content.bForce)
+    Content.bForce = nil
   end
   self.ReddotName = AnnouncementUtils:GetReddotNameByConf(self.Content.Conf)
   self:AddReddotListener(self.ReddotName)
 end
-
 function M:OnReddotChange(Count)
   if not self.Content.Conf then
     return
@@ -60,7 +57,6 @@ function M:OnReddotChange(Count)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail(AnnouncementUtils:GetReddotNameByConf(self.Content.Conf))
   self.Common_Item_Subsize_New_PC:SetEnable(CacheDetail[CacheKey] and Count > 0)
 end
-
 function M:BP_OnEntryReleased()
   self:PlayNormal()
   self.Group_Normal:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -70,13 +66,11 @@ function M:BP_OnEntryReleased()
   end
   self.Content.Widget = nil
 end
-
 function M:AddReddotListener(ReddotNodeName)
   self:RemoveReddotListener(ReddotNodeName)
   ReddotManager.AddListener(ReddotNodeName, self, self.OnReddotChange)
   self.ListenedReddot = true
 end
-
 function M:RemoveReddotListener(ReddotNodeName)
   if self.ListenedReddot then
     ReddotManager.RemoveListener(ReddotNodeName, self)
@@ -84,13 +78,11 @@ function M:RemoveReddotListener(ReddotNodeName)
     self.ListenedReddot = false
   end
 end
-
 function M:PlayNormal()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
-function M:OnClick(bMuteSound)
+function M:OnClick(bMuteSound, bForce)
   if self.Parent.CurContent and self.Parent.CurContent.Conf.NoticeID ~= self.Content.Conf.NoticeID then
     if self.Parent.CurContent.Widget then
       self.Parent.CurContent.Widget:PlayNormal()
@@ -103,10 +95,9 @@ function M:OnClick(bMuteSound)
   self.Content.IsSelected = true
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
-  self.Parent:ChangeMainContent(self.Content, bMuteSound)
+  self.Parent:ChangeMainContent(self.Content, bForce)
   AnnouncementUtils:TrySubReddotCacheDetail(self.Content.Conf)
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -114,5 +105,4 @@ function M:BP_OnItemSelectionChanged(IsSelected)
   end
   self.Parent.List_Announcement:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 return M

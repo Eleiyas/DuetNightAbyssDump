@@ -1,9 +1,7 @@
 local UnlockDetectiveAnswerNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function UnlockDetectiveAnswerNode:Init()
   self.AnswerIds = {}
 end
-
 function UnlockDetectiveAnswerNode:Execute()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -13,5 +11,4 @@ function UnlockDetectiveAnswerNode:Execute()
     end
   end
 end
-
 return UnlockDetectiveAnswerNode

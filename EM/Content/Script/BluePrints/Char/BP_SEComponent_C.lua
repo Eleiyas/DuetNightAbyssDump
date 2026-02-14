@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_SEComponent_C = Class()
-
 function BP_SEComponent_C:PlayGroupFMODSe(GroupName, Mesh, HitedLocation, SocketName)
   local PlayFMODSoundTransform = Mesh:GetSocketTransform(SocketName, UE4.ERelativeTransformSpace.RTS_Component)
   local Effects = self.FMODEventEffects:Find(GroupName)
@@ -10,5 +9,4 @@ function BP_SEComponent_C:PlayGroupFMODSe(GroupName, Mesh, HitedLocation, Socket
     UE4.UFMODBlueprintStatics.PlayEventAtLocation(self, FMODEvent, PlayFMODSoundTransform, true)
   end
 end
-
 return BP_SEComponent_C

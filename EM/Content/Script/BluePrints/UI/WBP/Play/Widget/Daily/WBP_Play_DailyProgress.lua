@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:RefreshProgress(Parent)
   self.Parent = Parent
   local PlayerAvatar = GWorld:GetAvatar()
@@ -42,7 +41,6 @@ function M:RefreshProgress(Parent)
     Reward:Init(ItemData, Parent)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self.Mobile then
     return
@@ -84,5 +82,4 @@ function M:OnAddedToFocusPath(InFocusEvent)
   }
   StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 return M

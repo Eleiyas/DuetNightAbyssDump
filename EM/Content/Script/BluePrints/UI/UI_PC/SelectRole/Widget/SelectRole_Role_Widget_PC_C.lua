@@ -21,7 +21,6 @@ local StateEventIndex = {
   Female = 6,
   Male = 7
 }
-
 function M:Init()
   self.NowState = StateEventIndex.Enter
   self.Btn_Continue:BindEventOnClicked(self, self.OnClickButtonNext)
@@ -63,32 +62,25 @@ function M:Init()
     end
   })
 end
-
 function M:CreateMobileKeyAndLogic(Key, Text, Logic)
   Key:BindEventOnClicked(self, Logic)
 end
-
 function M:ForbidCanClick(Time)
   self.bCanClickButton = false
 end
-
 function M:UnlockCanClick()
   self.bCanClickButton = true
 end
-
 function M:OnReleaseButtonMale()
   self:PlayAnimation(self.Unhover_Male)
 end
-
 function M:OnReleaseButtonFemale()
   self:PlayAnimation(self.Unhover_Female)
 end
-
 function M:OnClickButton(EventIndex)
   self:StopAnimation(self.Forbidden)
   EventManager:FireEvent(EventID.OnSelectRole, EventIndex)
 end
-
 function M:ChangeRoleBtnStyle(SelectRole)
   local OtherRole = "Female"
   if "Female" == SelectRole then
@@ -113,7 +105,6 @@ function M:ChangeRoleBtnStyle(SelectRole)
     AudioManager(self):PlayUISound(self, "event:/ui/common/gender_select_role_exchange", nil, nil)
   end
 end
-
 function M:OnClickButtonFemale()
   if not self.bCanClickButton or not self.RootPage.bCanChangeRole then
     return
@@ -136,7 +127,6 @@ function M:OnClickButtonFemale()
     self:OnClickButton(SwitchEventIndex.Female)
   end
 end
-
 function M:OnClickButtonMale()
   if not self.bCanClickButton or not self.RootPage.bCanChangeRole then
     return
@@ -159,7 +149,6 @@ function M:OnClickButtonMale()
     self:OnClickButton(SwitchEventIndex.Male)
   end
 end
-
 function M:OnClickButtonBack()
   self.NowState = StateEventIndex.WholeBody
   if self.RootPage.IsGM then
@@ -168,7 +157,6 @@ function M:OnClickButtonBack()
     self:OnClickButton(SwitchEventIndex.WholeBody)
   end
 end
-
 function M:OnClickButtonTurnAround()
   if not self.bCanClickButton then
     return
@@ -183,7 +171,6 @@ function M:OnClickButtonTurnAround()
     self:OnClickButton(SwitchEventIndex.WholeBody)
   end
 end
-
 function M:OnClickButtonObserve()
   if self.RootPage.IsGM then
     self:OnClickButton(SwitchEventIndex.Enter)
@@ -216,7 +203,6 @@ function M:OnClickButtonObserve()
     AudioManager(self):PlayUISound(self, "event:/ui/common/gender_select_role_disselect", nil, nil)
   end
 end
-
 function M:OnClickButtonNext()
   if not self.bCanClickButton then
     return
@@ -230,7 +216,6 @@ function M:OnClickButtonNext()
   end
   self.RootPage:ChangeWidget("SelectName")
 end
-
 function M:OnClickButtonFullBody(Tag)
   if "L" == Tag then
     self:OnClickButtonMale()
@@ -238,7 +223,6 @@ function M:OnClickButtonFullBody(Tag)
     self:OnClickButtonFemale()
   end
 end
-
 function M:OnClickButtonDetail(Tag)
   if "L" == Tag then
   elseif self.NowState == StateEventIndex.Female or self.NowState == StateEventIndex.Name then
@@ -247,7 +231,6 @@ function M:OnClickButtonDetail(Tag)
     self:OnClickButtonFemale()
   end
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   if "Gamepad_FaceButton_Right" == InKeyName or "Escape" == InKeyName then
     if self.NowState ~= StateEventIndex.WholeBody and self.NowState ~= StateEventIndex.Enter then
@@ -275,7 +258,6 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return true
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard then
     if self.NowState ~= StateEventIndex.Enter and self.NowState ~= StateEventIndex.WholeBody then
@@ -288,5 +270,4 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Btn_Back:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return M

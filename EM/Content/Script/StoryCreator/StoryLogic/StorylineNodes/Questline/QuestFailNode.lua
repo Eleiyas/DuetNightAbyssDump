@@ -1,6 +1,5 @@
 local QuestFailNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
 QuestFailNode.IsFailNode = true
-
 function QuestFailNode:OnQuestlineFinish()
   DebugPrint("----------------------------------------------------------QuestFailNode:OnQuestlineFinish", self:ToString())
   local Avatar = GWorld:GetAvatar()
@@ -20,5 +19,4 @@ function QuestFailNode:OnQuestlineFinish()
   AudioManager(GameInstance):RecoverLastSTLBGM()
   return
 end
-
 return QuestFailNode

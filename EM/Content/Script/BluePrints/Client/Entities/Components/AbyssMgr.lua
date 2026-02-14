@@ -1,12 +1,10 @@
 local EMCache = require("EMCache.EMCache")
 local Component = {}
-
 function Component:EnterWorld()
   self:RefreshAbyssRewardReddot()
   self:InitEntryNode("AbyssEntry1")
   self:InitEntryNode("AbyssEntry2")
 end
-
 function Component:InitEntryNode(ReddotName)
   local Node = ReddotManager.GetTreeNode(ReddotName)
   Node = Node or ReddotManager.AddNode(ReddotName, nil, 1)
@@ -20,11 +18,9 @@ function Component:InitEntryNode(ReddotName)
     end
   end
 end
-
 function Component:ClearEntryNode(ReddotName)
   ReddotManager.ClearLeafNodeCount(ReddotName, true)
 end
-
 function Component:GetAbyssSeasonBestAbyssId(SeasonId)
   if not SeasonId or not DataMgr.AbyssSeasonList[SeasonId] then
     return nil
@@ -35,18 +31,45 @@ function Component:GetAbyssSeasonBestAbyssId(SeasonId)
   end
   local Infinite = SeasonData.Abyss.Infinite
   local AbyssInfinite = self.Abysses[Infinite]
-  if AbyssInfinite and (AbyssInfinite.MaxAbyssProgress[1] > 1 or 1 == AbyssInfinite.MaxAbyssProgress[1] and AbyssInfinite.MaxAbyssProgress[2] > 0) then
+  if AbyssInfinite and AbyssInfinite:GetAllPassRoomCount() > 0 then
     return Infinite
   else
     local Rotate = SeasonData.Abyss.Rotate
     local AbyssRotate = self.Abysses[Rotate]
-    if AbyssRotate and AbyssRotate.FastestTeamList then
+    if AbyssRotate and AbyssRotate:GetAllPassRoomCount() > 0 then
       return Rotate
     end
   end
   return nil
 end
-
+function Component:GetJumpLevelIndex(AbyssId)
+  local Abyss = self.Abysses[AbyssId]
+  if not AbyssId or not Abyss then
+    return
+  end
+  if not Abyss:IsLoopAbyss() then
+    return
+  end
+  local SeasonInfo = Abyss:Data()
+  if not SeasonInfo.LastInfinite then
+    return
+  end
+  if not SeasonInfo.InfiniteNode then
+    return
+  end
+  local LastInfinite = self.Abysses[SeasonInfo.LastInfinite]
+  if not LastInfinite then
+    return
+  end
+  local LastMaxProgress = LastInfinite.MaxAbyssProgress[1] - 1
+  local JumpIndex
+  for _, InfiniteNode in pairs(SeasonInfo.InfiniteNode) do
+    if LastMaxProgress >= InfiniteNode[1] and (not JumpIndex or JumpIndex < InfiniteNode[2]) then
+      JumpIndex = InfiniteNode[2]
+    end
+  end
+  return JumpIndex
+end
 function Component:CheckAbyssCanJump(AbyssId, AbyssLevelId)
   local Abyss = self.Abysses[AbyssId]
   if not AbyssId or not Abyss then
@@ -93,71 +116,70 @@ function Component:CheckAbyssCanJump(AbyssId, AbyssLevelId)
   end
   return false
 end
-
 function Component:SaveAbyssTeam(callback, AbyssId, AbyssLevelId, TeamTable)
   self.logger.debug("SaveAbyssTeam Begin", AbyssId, AbyssLevelId, TeamTable)
-  
   local function Callback(Ret)
     self.logger.debug("SaveAbyssTeam Callback", Ret, AbyssId, AbyssLevelId, TeamTable)
     if callback then
       callback(Ret)
     end
   end
-  
   self:CallServer("SaveAbyssTeam", Callback, AbyssId, AbyssLevelId, TeamTable)
 end
-
 function Component:UnLockAbyssTeam(callback, AbyssId, AbyssLevelId)
   self.logger.debug("UnLockAbyssTeam Begin", AbyssId, AbyssLevelId)
-  
   local function Callback(Ret)
     self.logger.debug("UnLockAbyssTeam Callback", Ret, AbyssId, AbyssLevelId)
     if callback then
       callback(Ret)
     end
   end
-  
   self:CallServer("UnLockAbyssTeam", Callback, AbyssId, AbyssLevelId)
 end
-
 function Component:TriggerEnterAbyss(callback, AbyssId, AbyssLevelId, AbyssDungeonIndex)
   self.logger.debug("TriggerEnterAbyss Begin", AbyssId, AbyssLevelId, AbyssDungeonIndex)
-  
   local function Callback(Ret)
     self.logger.debug("TriggerEnterAbyss Callback", Ret, AbyssId, AbyssLevelId, AbyssDungeonIndex)
     if callback then
       callback(Ret)
     end
   end
-  
   self:CallServer("TriggerEnterAbyss", Callback, AbyssId, AbyssLevelId, AbyssDungeonIndex)
 end
-
 function Component:TriggerReEnterAbyss()
   self.logger.debug("TriggerReEnterAbyss Begin")
   local GameMode = GWorld.GameInstance:GetCurrentGameMode()
   if GameMode then
+    if GameMode.IsAbyssTeleporting then
+      self.logger.debug("TriggerReEnterAbyss 正在传送")
+      return
+    end
+    if not GameMode.EMGameState:CheckGameModeStateEnable() then
+      self.logger.debug("TriggerReEnterAbyss 副本已结算")
+      return
+    end
+    GameMode:TriggerDungeonComponentFun("SetReEnteringAbyss")
     GameMode:FlushRewards()
   end
-  
   local function Callback(Ret)
     self.logger.debug("TriggerReEnterAbyss Callback", Ret)
+    if not ErrorCode:Check(Ret) then
+      if GameMode then
+        GameMode:TriggerDungeonFailed()
+      end
+      return
+    end
   end
-  
   self:CallServer("TriggerReEnterAbyss", Callback)
 end
-
 function Component:TriggerCompleteAbyssRoom(RoomId, PassTime)
   self.logger.debug("TriggerCompleteAbyssRoom Begin", RoomId, PassTime)
-  
   local function Callback(Ret)
     self:TryIncreaceAbyssRewardReddot()
     self.logger.debug("TriggerCompleteAbyssRoom Callback", Ret, RoomId, PassTime)
   end
-  
   self:CallServer("TriggerCompleteAbyssRoom", Callback, RoomId, PassTime)
 end
-
 function Component:OnAbyssEnd(AbyssId, AbyssLevelId, AbyssDungeonIndex, IsWin, PassTime)
   self.logger.debug("OnAbyssEnd", AbyssId, AbyssLevelId, AbyssDungeonIndex, IsWin, PassTime)
   GWorld.GameInstance:PushLogicServerCallbackInfo(IsWin, AbyssId, AbyssLevelId, AbyssDungeonIndex, PassTime)
@@ -166,10 +188,8 @@ function Component:OnAbyssEnd(AbyssId, AbyssLevelId, AbyssDungeonIndex, IsWin, P
     PlayerCharacter:EnableBattleWheel()
   end
 end
-
 function Component:GetAbyssReward(AbyssId, StarCount, InCallBack)
   self.logger.debug("GetAbyssReward Begin", AbyssId, StarCount)
-  
   local function Callback(Ret, RewardReturn)
     self.logger.debug("GetAbyssReward Callback", Ret, AbyssId, StarCount, RewardReturn)
     if 0 == Ret then
@@ -185,13 +205,10 @@ function Component:GetAbyssReward(AbyssId, StarCount, InCallBack)
       end
     end
   end
-  
   self:CallServer("GetAbyssReward", Callback, AbyssId, StarCount)
 end
-
 function Component:GetAbyssAllReward(AbyssId, InCallBack)
   self.logger.debug("GetAbyssAllReward Begin", AbyssId)
-  
   local function Callback(Ret, RewardReturn)
     self.logger.debug("GetAbyssAllReward Callback", Ret, AbyssId, RewardReturn)
     if 0 == Ret then
@@ -202,15 +219,12 @@ function Component:GetAbyssAllReward(AbyssId, InCallBack)
       end
     end
   end
-  
   self:CallServer("GetAbyssAllReward", Callback, AbyssId)
 end
-
 function Component:OnAbyssSeasonEnd(AbyssSeasonId)
   self.logger.debug("OnAbyssSeasonEnd", AbyssSeasonId)
   EventManager:FireEvent(EventID.OnAbyssSeasonEnd, AbyssSeasonId)
 end
-
 function Component:TryIncreaceAbyssRewardReddot()
   local Node = ReddotManager.GetTreeNode("AbyssReward")
   if not Node then
@@ -234,7 +248,6 @@ function Component:TryIncreaceAbyssRewardReddot()
     end
   end
 end
-
 function Component:TryDecreaceAbyssRewardReddot(AbyssId, StarCount)
   local Node = ReddotManager.GetTreeNode("AbyssReward")
   if not Node then
@@ -258,15 +271,13 @@ function Component:TryDecreaceAbyssRewardReddot(AbyssId, StarCount)
     end
   end
 end
-
 function Component:_OnPropChangeCurrentAbyssSeasonId(Keys)
   self:ClearEntryNode("AbyssEntry1")
   self:ClearEntryNode("AbyssEntry2")
   self:RefreshAbyssRewardReddot()
-  EMCache:Remove("LastUnlockNodeLevel")
+  EMCache:Remove("NodeLevelUnlockAnimationPlayed", true)
   EventManager:FireEvent(EventID.OnCurrentAbyssSeasonIdChange)
 end
-
 function Component:RefreshAbyssRewardReddot()
   if not ReddotManager.GetTreeNode("AbyssReward") then
     ReddotManager.AddNode("AbyssReward")
@@ -296,5 +307,25 @@ function Component:RefreshAbyssRewardReddot()
     ReddotManager.IncreaseLeafNodeCount("AbyssReward", IncreaceNum)
   end
 end
-
+function Component:ChooseAbyssAttrType(AbyssId, AttrType)
+  self.logger.debug("ChooseAbyssAttrType Begin", AbyssId, AttrType)
+  local function Callback(Ret)
+    self.logger.debug("ChooseAbyssAttrType Callback", Ret, AbyssId, AttrType)
+  end
+  self:CallServer("ChooseAbyssAttrType", Callback, AbyssId, AttrType)
+end
+function Component:GetAbyssAttrType(AbyssId)
+  if not AbyssId or not self.Abysses[AbyssId] then
+    return nil
+  end
+  local Abyss = self.Abysses[AbyssId]
+  if not Abyss:IsLoopAbyss() then
+    return nil
+  end
+  local AttrType = Abyss.AttributeType
+  if not AttrType or not DataMgr.Attribute[AttrType] then
+    return nil
+  end
+  return AttrType
+end
 return Component

@@ -1,10 +1,11 @@
 require("UnLua")
 local SkillUtils = require("Utils.SkillUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
+M._components = {
+  "BluePrints.UI.UI_Phone.Battle.Component.DraggableWidgetComponent"
+}
 function M:Initialize(Initializer)
 end
-
 function M:Construct()
   self.Super.Construct(self)
   self.SkillItems = {
@@ -19,23 +20,19 @@ function M:Construct()
     self.MaxSp = self.OwnerPlayer:GetAttr("MaxSp")
   end
 end
-
 function M:UpdateSkillInTimer()
   self.CharSkill_1:UpdateSkillInTimer()
   self.CharSkill_2:UpdateSkillInTimer()
 end
-
 function M:OnUpdateMaxSp(NewMaxSp)
   if not NewMaxSp then
     return
   end
-  DebugPrint("@zyh \230\156\128\230\150\176MaxSp\230\155\180\230\150\176\228\184\186", NewMaxSp)
+  DebugPrint("@zyh 最新MaxSp更新为", NewMaxSp)
   self.MaxSp = NewMaxSp
   local SpPercent = math.min(math.max(self.NowSp / self.MaxSp, 0), 1)
-  self.EnergyBar = self.Bg_BarPercent.SlateMesh.Material
-  self.EnergyBar:SetScalarParameterValue("percent", SpPercent)
+  self:Set_ProgressValue(SpPercent)
 end
-
 function M:OnUpdateCharSp(NowSp, OldSp, Owner)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -53,8 +50,7 @@ function M:OnUpdateCharSp(NowSp, OldSp, Owner)
   end
   self.Total_Energy_Num:SetText(math.floor(self.NowSp))
   local SpPercent = math.min(math.max(self.NowSp / self.MaxSp, 0), 1)
-  self.EnergyBar = self.Bg_BarPercent.SlateMesh.Material
-  self.EnergyBar:SetScalarParameterValue("percent", SpPercent)
+  self:Set_ProgressValue(SpPercent)
   for i = 1, 2 do
     if not self.SkillItems[i].SkillInfo.CostSp then
       return
@@ -66,5 +62,5 @@ function M:OnUpdateCharSp(NowSp, OldSp, Owner)
     end
   end
 end
-
+AssembleComponents(M)
 return M

@@ -1,5 +1,4 @@
 local WBP_Rouge_FilterSortItem_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_FilterSortItem_C:Construct()
   self.BtnArea.OnClicked:Add(self, self.OnBtnClicked)
   self.BtnArea.OnHovered:Add(self, self.OnBtnHovered)
@@ -9,7 +8,6 @@ function WBP_Rouge_FilterSortItem_C:Construct()
   self.Hover_In = self.Hover
   self.Hover_Out = self.Unhover
 end
-
 function WBP_Rouge_FilterSortItem_C:OnListItemObjectSet(Obj)
   self.Obj = Obj
   self.Obj.Entry = self
@@ -22,7 +20,6 @@ function WBP_Rouge_FilterSortItem_C:OnListItemObjectSet(Obj)
   end
   self:OnEntrySelectionChanged()
 end
-
 function WBP_Rouge_FilterSortItem_C:OnEntrySelectionChanged()
   if not self.UnLock then
     self:PlayAnimation(self.Forbidden)
@@ -32,7 +29,6 @@ function WBP_Rouge_FilterSortItem_C:OnEntrySelectionChanged()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Rouge_FilterSortItem_C:OnBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/difficulty_select", nil, nil)
   if self.UnLock then
@@ -42,19 +38,16 @@ function WBP_Rouge_FilterSortItem_C:OnBtnClicked()
     self.Obj.Owner:OnListItemClicked(self.Obj)
   end
 end
-
 function WBP_Rouge_FilterSortItem_C:OnBtnHovered()
   if self.UnLock then
     self:OnEntryHoveredChanged(true)
   end
 end
-
 function WBP_Rouge_FilterSortItem_C:OnBtnUnhovered()
   if self.UnLock then
     self:OnEntryHoveredChanged(false)
   end
 end
-
 function WBP_Rouge_FilterSortItem_C:OnBtnPressed()
   if self.Obj.IsSelected then
     return
@@ -65,10 +58,8 @@ function WBP_Rouge_FilterSortItem_C:OnBtnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Rouge_FilterSortItem_C:OnBtnReleased()
 end
-
 function WBP_Rouge_FilterSortItem_C:OnEntryHoveredChanged(IsHovered)
   if IsHovered then
     self.IsMouseOut = false
@@ -82,7 +73,6 @@ function WBP_Rouge_FilterSortItem_C:OnEntryHoveredChanged(IsHovered)
     self:PlayAnimation(self.Hover_Out)
   end
 end
-
 function WBP_Rouge_FilterSortItem_C:Destruct()
   self.BtnArea.OnClicked:Remove(self, self.OnBtnClicked)
   self.BtnArea.OnHovered:Remove(self, self.OnBtnHovered)
@@ -90,26 +80,20 @@ function WBP_Rouge_FilterSortItem_C:Destruct()
   self.BtnArea.OnPressed:Remove(self, self.OnBtnPressed)
   self.BtnArea.OnReleased:Remove(self, self.OnBtnReleased)
 end
-
 function WBP_Rouge_FilterSortItem_C:OnAnimationFinished(InAnim)
   if InAnim == self.Click and not self.Obj.IsSelected then
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Rouge_FilterSortItem_C:GetInAnimTime()
   return 0
 end
-
 function WBP_Rouge_FilterSortItem_C:GetOutAnimTime()
   return 0
 end
-
 function WBP_Rouge_FilterSortItem_C:PlayInAnim()
   self:OnEntrySelectionChanged()
 end
-
 function WBP_Rouge_FilterSortItem_C:PlayOutAnim()
 end
-
 return WBP_Rouge_FilterSortItem_C

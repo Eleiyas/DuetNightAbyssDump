@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function M:OnActiveStateChange()
   local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
   if self.IsActive then
@@ -12,7 +11,6 @@ function M:OnActiveStateChange()
     GameState.HatredCombatProp:Remove(self.Eid)
   end
 end
-
 function M:GetRealSkillId()
   print(_G.LogTag, "LXZ GetRealSkillId", self.UnitId)
   self.SkillList = self.UnitParams.SkillId
@@ -27,7 +25,7 @@ function M:GetRealSkillId()
   for SkillId, Data in pairs(self.SkillList) do
     local RandomNumber = math.random(1, WeightSum)
     if #Data < 4 then
-      print(_G.LogTag, "Error: GoldBoxBase \230\156\186\229\133\179\229\143\130\230\149\176\233\148\153\232\175\175")
+      print(_G.LogTag, "Error: GoldBoxBase 机关参数错误")
     else
       print(_G.LogTag, "LXZ GetRealSkillId22", SkillId, Data[1], RandomNumber)
       if RandomNumber <= Data[1] then
@@ -38,7 +36,6 @@ function M:GetRealSkillId()
     end
   end
 end
-
 function M:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   local SkillId, Data = self:GetRealSkillId()
   print(_G.LogTag, "LXZ GetRealSkillId  OnDead", SkillId, Data[1], Data[2], Data[3], Data[4])
@@ -62,5 +59,4 @@ function M:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   end
   M.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
 end
-
 return M

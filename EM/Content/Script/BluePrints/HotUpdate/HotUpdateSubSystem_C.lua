@@ -1,6 +1,5 @@
 require("Unlua")
 local M = Class()
-
 function M:ShowRestartDialog()
   local Params = {}
   Params.LeftCallbackObj = self
@@ -11,5 +10,4 @@ function M:ShowRestartDialog()
   Params.CloseBtnCallbackFunction = self.QuitAndReopenGame
   UIManager(self):ShowCommonPopupUI(100053, Params)
 end
-
 return M

@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.SquadInfo = Content.SquadInfo
@@ -12,13 +11,11 @@ function M:OnListItemObjectSet(Content)
   self.IsSelected = false
   self:InitItemContent()
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:InitItemContent()
   self.Selected:SetRenderOpacity(0)
   self:StopAllAnimations()
@@ -34,13 +31,11 @@ function M:InitItemContent()
   else
     self.Text_Name:SetText(self.SquadInfo.Name)
   end
-  
   local function SetEmptyIcon(Widget, EmptyMethod, Type)
     if Widget and Widget[EmptyMethod] then
-      Widget[EmptyMethod](Widget, nil, Type, IsEmptyRed)
+      Widget[EmptyMethod](Widget, nil, Type)
     end
   end
-  
   local function SetIcon(Widget, Info)
     if not Widget or not Info then
       return
@@ -59,7 +54,6 @@ function M:InitItemContent()
       SetEmptyIcon(Widget, Info.EmptyMethod, Info.Type)
     end
   end
-  
   local SquadIcons = {
     {
       Widget = self.Character,
@@ -168,6 +162,9 @@ function M:InitItemContent()
   if not Avatar then
     return
   end
+  if 0 == self.SquadInfo.Index then
+    return
+  end
   if not (self.SquadInfo.PhantomWeapon1Id and self.SquadInfo.PhantomWeapon2Id) or not self.SquadInfo.PetId then
     local Info = {}
     if not self.SquadInfo.PhantomWeapon1Id then
@@ -182,7 +179,6 @@ function M:InitItemContent()
     Avatar:UpdateSquad(nil, self.SquadInfo.Index, Info)
   end
 end
-
 function M:SetIsSelected(IsSelected, IsAutoSelected)
   if self.IsSelected == IsSelected or IsAutoSelected then
     return
@@ -207,15 +203,12 @@ function M:SetIsSelected(IsSelected, IsAutoSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnMouseButtonUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   return self:OnMouseButtonDown(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if not self.IsComMissing and not self.IsSelected then
     self:StopAllAnimations()
@@ -223,7 +216,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:ShowMissingComponentHint()
   if not self.SquadInfo then
     local SquadMainUI = UIManager(self):GetUIObj("SquadMainUINew")
@@ -249,7 +241,6 @@ function M:ShowMissingComponentHint()
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "UI_Squad_Miss_Challenge")
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.IsSelected then
     return
@@ -258,7 +249,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Hover)
   self:UpdatKeyDisplay("NotSelected")
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if self.IsSelected then
     return
@@ -266,7 +256,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -280,7 +269,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonLeft then
@@ -289,7 +277,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -353,5 +340,4 @@ function M:UpdatKeyDisplay(FocusTypeName)
     StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
   end
 end
-
 return M

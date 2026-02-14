@@ -5,10 +5,8 @@ local PhantomStateEnum = {
   Dead = 1,
   Resurrecting = 2
 }
-
 function WBP_Common_Phantom_C:OnLoaded(...)
 end
-
 function WBP_Common_Phantom_C:Initialize(Initializer)
   self.PhantomEid = nil
   self.PhantomActor = nil
@@ -18,19 +16,16 @@ function WBP_Common_Phantom_C:Initialize(Initializer)
   self.IsHostage = false
   self.PlayerIndex = nil
 end
-
 function WBP_Common_Phantom_C:Construct()
   self.Super.Construct(self)
   EventManager:AddEvent(EventID.OnHostageDeadUpdateMiniMap, self, self.ChangeHostageMiniMapImage)
   EventManager:AddEvent(EventID.OnTeamRecoveryStateChange, self, self.ChangePhantomMiniMapIcon)
 end
-
 function WBP_Common_Phantom_C:Destruct()
   self.Super.Destruct(self)
   EventManager:RemoveEvent(EventID.OnHostageDeadUpdateMiniMap, self)
   EventManager:RemoveEvent(EventID.OnTeamRecoveryStateChange, self)
 end
-
 function WBP_Common_Phantom_C:ChangeHostageMiniMapImage(IsDead)
   if self.IsHostage then
     if IsDead then
@@ -40,14 +35,12 @@ function WBP_Common_Phantom_C:ChangeHostageMiniMapImage(IsDead)
     end
   end
 end
-
 function WBP_Common_Phantom_C:GetCanRecoveryCount()
   if self.PhantomActor then
     return self.PhantomActor:GetRecoveryMaxCount() - self.PhantomActor:GetRecoveryCount()
   end
   return 0
 end
-
 function WBP_Common_Phantom_C:ChangePhantomMiniMapIcon(TargetEid, State, PrevState)
   if TargetEid ~= self.PhantomEid then
     return
@@ -93,9 +86,7 @@ function WBP_Common_Phantom_C:ChangePhantomMiniMapIcon(TargetEid, State, PrevSta
     })
   end
 end
-
 function WBP_Common_Phantom_C:SetImgAvatar(IconImage)
   self.Img_Avatar:SetBrushResourceObject(IconImage)
 end
-
 return WBP_Common_Phantom_C

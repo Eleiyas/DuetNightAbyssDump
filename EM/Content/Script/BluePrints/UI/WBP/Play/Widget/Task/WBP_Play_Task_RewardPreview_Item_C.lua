@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnListItemObjectSet(Content)
   self.Parent = Content.Parent
   self.Index = Content.Index
@@ -8,11 +7,9 @@ function M:OnListItemObjectSet(Content)
   self.RewardPreview = Content.RewardPreview
   self:InitPreRewardView()
 end
-
 function M:InitPreRewardView()
   self.Text_TitleNum:SetText(string.format(GText("UI_GameEvent_StarterQuest_Phase"), self.Index))
   local RewardContentList = {}
-  
   local function FillWithRewardData(RewardInfo)
     if RewardInfo then
       local RewardObject = {}
@@ -35,7 +32,6 @@ function M:InitPreRewardView()
       table.insert(RewardContentList, RewardObject)
     end
   end
-  
   local PreViewReward = self.RewardPreview or DataMgr.CommonQuestPhase[self.PhaseId].RewardPreview
   local AllRewardList = RewardUtils:GetRewardViewInfoById(PreViewReward)
   if type(AllRewardList) == "table" then
@@ -62,7 +58,6 @@ function M:InitPreRewardView()
     self.Wrap_RewardBox:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -73,7 +68,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self.Parent:UpdatKeyDisplay("SelfWidget")
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   local FocusWidget = self.Wrap_RewardBox:GetChildAt(0)
   if FocusWidget then
@@ -82,5 +76,4 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UIUtils.Unhandled
 end
-
 return M

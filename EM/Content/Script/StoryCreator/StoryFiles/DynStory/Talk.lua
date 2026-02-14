@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1717398953280124605",
       type = "StoryNode",
-      name = "\229\138\168\230\128\129\228\186\139\228\187\182\231\139\172\231\171\139talk\232\138\130\231\130\185",
+      name = "动态事件独立talk节点",
       pos = {x = 1338, y = 284},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,7 +121,7 @@ return {
           ["1717399016962125819"] = {
             key = "1717399016962125819",
             type = "BranchTriggerNode",
-            name = "\232\167\166\229\143\145\229\136\134\230\148\175\232\138\130\231\130\185",
+            name = "触发分支节点",
             pos = {x = 1128.3405572755416, y = 288.6563467492259},
             propsData = {
               Branches = {710005}
@@ -128,7 +130,7 @@ return {
           ["1717399035434126024"] = {
             key = "1717399035434126024",
             type = "TalkNode",
-            name = "\230\157\145\229\186\132\231\154\142\231\154\142\230\149\145\230\143\180\229\134\146\230\179\161",
+            name = "村庄皎皎救援冒泡",
             pos = {x = 1623.2631578947369, y = 251.09774436090225},
             propsData = {
               IsNpcNode = false,
@@ -152,9 +154,6 @@ return {
                   TalkActorId = 800005,
                   TalkActorVisible = true
                 }
-              },
-              RemoveTalkActors = {
-                {TalkActorType = "Npc", TalkActorId = 800005}
               },
               OverrideFailBlend = false
             }

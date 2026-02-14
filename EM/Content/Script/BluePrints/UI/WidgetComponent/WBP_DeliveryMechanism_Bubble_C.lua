@@ -1,21 +1,17 @@
 require("UnLua")
 local WBP_DeliveryMechanism_Bubble_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_DeliveryMechanism_Bubble_C:Initialize(Initializer)
 end
-
 function WBP_DeliveryMechanism_Bubble_C:Construct()
   self.Super.Construct(self)
   EventManager:AddEvent(EventID.OnChangeTaskIndicator, self, self.SetCurrentTrackingTaskIndicatorNames)
   self.IsDestroied = false
 end
-
 function WBP_DeliveryMechanism_Bubble_C:Destruct()
   self.Super.Destruct(self)
   EventManager:RemoveEvent(EventID.OnChangeTaskIndicator, self)
   self.IsDestroied = true
 end
-
 function WBP_DeliveryMechanism_Bubble_C:SetCurrentTrackingTaskIndicatorNames()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -35,5 +31,4 @@ function WBP_DeliveryMechanism_Bubble_C:SetCurrentTrackingTaskIndicatorNames()
     end
   end
 end
-
 return WBP_DeliveryMechanism_Bubble_C

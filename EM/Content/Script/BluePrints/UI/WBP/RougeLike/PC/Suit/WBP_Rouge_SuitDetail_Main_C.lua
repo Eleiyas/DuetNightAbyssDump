@@ -2,16 +2,13 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.ActivateNeedMap = {}
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/affix_info_panel_show", "RougeSuitDetail", nil)
-  assert(GWorld.RougeLikeManager, "\230\137\190\228\184\141\229\136\176RougeLikeManager,\229\143\175\232\131\189\228\184\141\229\156\168\232\130\137\233\184\189\229\133\179\229\134\133")
   local Param = (...)
   if Param and Param[1] then
     self.SelectedSuit = Param[1]
@@ -21,8 +18,16 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   if Param and Param[2] then
     self.PreAddSuit = Param[2]
   end
+  if Param and Param[3] then
+    self.IsGuide = Param[3]
+  end
   self:InitVariables()
-  self:InitTextInfo()
+  if self.IsGuide then
+    self.Group_Got:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    self.Text_Tip:SetText(GText("UI_RougeLike_End__ClickEmpty"))
+  else
+    self:InitTextInfo()
+  end
   self.CurrentListIndex = self.SuitIdToIndex[self.SelectedSuit]
   self:SetListView()
   self:UpdateSuitInfo(self.SelectedSuit, self.CurrentListIndex)
@@ -36,12 +41,10 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(...)
   self.Btn_FullClose.OnClicked:Add(self, self.Close)
 end
-
 function M:InitKey()
   self.Btn_Left.Btn.OnClicked:Add(self, self.TabToLeft)
   self.Btn_Right.Btn.OnClicked:Add(self, self.TabToRight)
@@ -87,14 +90,13 @@ function M:InitKey()
     self.Key_Esc:AddExecuteLogic(self, self.Close)
   end
 end
-
 function M:InitVariables()
   self.SuitIdToCount = {}
   self.SuitIdToIndex = {}
   self.BlessingGroupData = DataMgr.BlessingGroup
   local Index = 0
   for _, v in pairs(self.BlessingGroupData) do
-    local SuitCount = GWorld.RougeLikeManager.BlessingGroup:Find(v.GroupId)
+    local SuitCount = self.IsGuide and #DataMgr.RougeBlessingGroupContains[v.GroupId] or GWorld.RougeLikeManager.BlessingGroup:Find(v.GroupId)
     SuitCount = SuitCount or 0
     self.SuitIdToCount[v.GroupId] = SuitCount
     self.SuitIdToIndex[v.GroupId] = Index
@@ -102,18 +104,20 @@ function M:InitVariables()
       if self.ActivateNeedMap[v.GroupId] == nil then
         self.ActivateNeedMap[v.GroupId] = {}
       end
-      table.insert(self.ActivateNeedMap[v.GroupId], ActiveNeed + GWorld.RougeLikeManager.BlessingGroupDiscount)
+      if self.IsGuide then
+        table.insert(self.ActivateNeedMap[v.GroupId], ActiveNeed)
+      else
+        table.insert(self.ActivateNeedMap[v.GroupId], ActiveNeed + GWorld.RougeLikeManager.BlessingGroupDiscount)
+      end
     end
     Index = Index + 1
   end
   self.MaxSuitNum = Index
 end
-
 function M:InitTextInfo()
   self.Text_GotTitle:SetText(GText("RLBlessingGroup_HavingNum") .. ":")
   self.Text_Tip:SetText(GText("UI_RougeLike_End__ClickEmpty"))
 end
-
 function M:UpdateSuitInfo(SuitId, Index)
   self:SetFocus()
   self:PlayAnimation(self.Switch)
@@ -134,9 +138,9 @@ function M:UpdateSuitInfo(SuitId, Index)
     local DetailWidget = UIManager(self):CreateWidget("/Game/UI/WBP/RougeLike/Widget/Suit/WBP_Rouge_SuitDetail_SubItem.WBP_Rouge_SuitDetail_SubItem", false)
     local DetailInfo = {}
     if self.PreAddSuit and self.PreAddSuit == SuitId then
-      DetailInfo = RougeUtils:GenSuitDetail(SuitId, i, true)
+      DetailInfo = RougeUtils:GenSuitDetail(SuitId, i, true, false, self.IsGuide)
     else
-      DetailInfo = RougeUtils:GenSuitDetail(SuitId, i, false)
+      DetailInfo = RougeUtils:GenSuitDetail(SuitId, i, false, false, self.IsGuide)
     end
     DetailInfo.Parent = self
     DetailWidget:InitUIInfo(DetailInfo)
@@ -149,7 +153,6 @@ function M:UpdateSuitInfo(SuitId, Index)
     end, 10)
   end
 end
-
 function M:SetSuitImage(SuitId, CurrentCount)
   local Icon = LoadObject(self.BlessingGroupData[SuitId].BigIcon)
   self.Image_SuitIcon.Image_SuitIcon:SetBrushFromTexture(Icon)
@@ -167,7 +170,6 @@ function M:SetSuitImage(SuitId, CurrentCount)
     end
   end
 end
-
 function M:SetListView()
   self.List_BottomTab:ClearListItems()
   local Index = 0
@@ -188,11 +190,11 @@ function M:SetListView()
     end
     Content.Parent = self
     Content.UseBigFont = true
+    Content.IsGuide = self.IsGuide
     self.List_BottomTab:AddItem(Content)
     Index = Index + 1
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
@@ -201,12 +203,17 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   else
     self:InitKeyboardView()
   end
+  local AllChildren = self.ScrollBox_List:GetAllChildren():ToTable() or {}
+  for _, DetailWidget in ipairs(AllChildren) do
+    if DetailWidget and IsValid(DetailWidget) and DetailWidget.OnUpdateUIStyleByInputTypeChange then
+      DetailWidget:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
+    end
+  end
 end
-
 function M:UpdateKeyTips()
   local BottomKeyInfo = {}
   local bScrollBoxCanScroll = UIUtils.CheckScrollBoxCanScroll(self.ScrollBox_List)
-  local bShowExplain = type(self.CurrentHoverItem.ExplanationId) == "table" and #self.CurrentHoverItem.ExplanationId > 0
+  local bShowExplain = type(self.CurrentHoverItem and self.CurrentHoverItem.ExplanationId or nil) == "table" and self.CurrentHoverItem and self.CurrentHoverItem.ExplanationId and next(self.CurrentHoverItem.ExplanationId)
   if bShowExplain then
     table.insert(BottomKeyInfo, {
       KeyInfoList = {
@@ -231,7 +238,6 @@ function M:UpdateKeyTips()
   })
   self.Com_KeyTips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function M:InitGamepadView()
   self.Key_Left:SetActiveWidgetIndex(1)
   self.Key_Right:SetActiveWidgetIndex(1)
@@ -243,7 +249,6 @@ function M:InitGamepadView()
     self:UpdateKeyTips()
   end, 10)
 end
-
 function M:InitKeyboardView()
   self.Key_Left:SetActiveWidgetIndex(0)
   self.Key_Right:SetActiveWidgetIndex(0)
@@ -252,7 +257,6 @@ function M:InitKeyboardView()
   self.Com_KeyTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_FullClose:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -265,7 +269,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -277,7 +280,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:TabToRight()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   if self.CurrentListIndex < self.MaxSuitNum - 1 then
@@ -285,7 +287,6 @@ function M:TabToRight()
     self:UpdateSuitInfo(SuitId, self.CurrentListIndex + 1)
   end
 end
-
 function M:TabToLeft()
   if self.CurrentListIndex > 0 then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
@@ -293,7 +294,6 @@ function M:TabToLeft()
     self:UpdateSuitInfo(SuitId, self.CurrentListIndex - 1)
   end
 end
-
 function M:DisableKeyWhenNeed()
   if 0 == self.CurrentListIndex then
     self.Btn_KeyLeft:DisableKey()
@@ -306,7 +306,6 @@ function M:DisableKeyWhenNeed()
     self.Btn_KeyRight:EnableKey()
   end
 end
-
 function M:OnHoverItemChange(HoverItem)
   self.CurrentHoverItem = HoverItem
   self:AddDelayFrameFunc(function()
@@ -314,11 +313,9 @@ function M:OnHoverItemChange(HoverItem)
   end, 10)
   self.ScrollBox_List:ScrollWidgetIntoView(self.CurrentHoverItem)
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "RougeSuitDetail", {ToEnd = 1})
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/affix_info_panel_show", "SwitchGuideBook", nil)
   self.Super.Close(self)
 end
-
 return M

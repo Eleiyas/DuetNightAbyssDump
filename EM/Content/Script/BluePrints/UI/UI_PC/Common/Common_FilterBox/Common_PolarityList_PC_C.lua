@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(Filters)
   self.Filters = Filters or {}
   self.SelectedItem = {}
@@ -30,24 +29,19 @@ function M:Init(Filters)
   end
   self:UpdateFilterInfos()
 end
-
 function M:BindEventOnSelectionsChanged(Obj, Event)
   self.Obj_OnSelectionsChanged = Obj
   self.Event_OnSelectionsChanged = Event
 end
-
 function M:GetFilterInfos()
   return self.FilterRes
 end
-
 function M:UpdateFilterInfos()
   self.FilterRes = self.SelectedItem.Polarity
   return self.FilterRes
 end
-
 function M:Construct()
 end
-
 function M:OnListItemClicked(Content)
   if not Content.IsSelected then
     return
@@ -63,7 +57,6 @@ function M:OnListItemClicked(Content)
     self.Event_OnSelectionsChanged(self.Obj_OnSelectionsChanged, FilterIdx)
   end
 end
-
 function M:UpdateListIndex(indexChange)
   if self.List == nil then
     return
@@ -83,5 +76,4 @@ function M:UpdateListIndex(indexChange)
     end
   end
 end
-
 return M

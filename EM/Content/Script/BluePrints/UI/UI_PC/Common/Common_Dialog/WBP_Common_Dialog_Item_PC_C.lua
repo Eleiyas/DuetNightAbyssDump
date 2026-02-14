@@ -7,13 +7,12 @@ local TypeIdx2Type = {
   [3] = "Tip",
   [4] = "SelectHint"
 }
-
 function WBP_Common_Dialog_Item_PC_C:Init(PosIndex, TypeIdx, Params, PopupData, Owner)
   self.Owner = Owner
   self.PosIndex = PosIndex
   local ItemType = TypeIdx2Type[TypeIdx]
   if not ItemType then
-    DebugPrint("Tianyi@ ItemType\229\161\171\229\134\153\233\148\153\232\175\175!")
+    DebugPrint("Tianyi@ ItemType填写错误!")
     return
   end
   self.ItemType = ItemType
@@ -23,7 +22,6 @@ function WBP_Common_Dialog_Item_PC_C:Init(PosIndex, TypeIdx, Params, PopupData, 
   self:BindDialogEvent(DialogEvent.HideDialogItem, self.HideDialogItem)
   self:BindDialogEvent("UpdateDialogTipText", self.UpdateDialogTipText)
 end
-
 function WBP_Common_Dialog_Item_PC_C:Show_Tip(Params, PopupData)
   local Text
   if PopupData and PopupData.Tip then
@@ -38,7 +36,6 @@ function WBP_Common_Dialog_Item_PC_C:Show_Tip(Params, PopupData)
     self.Text_Tips03:SetText(GText(Text))
   end
 end
-
 function WBP_Common_Dialog_Item_PC_C:Show_Funds(Params, PopupData)
   if Params and Params.Funds then
     local Widgets = self.HB_Item:GetAllChildren()
@@ -70,7 +67,6 @@ function WBP_Common_Dialog_Item_PC_C:Show_Funds(Params, PopupData)
     self.Panel_Currency:SetVisibility(UE.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Common_Dialog_Item_PC_C:Show_SelectHint(Params, PopupData)
   local Text
   if PopupData and PopupData.HintText then
@@ -87,7 +83,6 @@ function WBP_Common_Dialog_Item_PC_C:Show_SelectHint(Params, PopupData)
     self.Bg_Select:SetVisibility(self.Bg_Select:IsVisible() and UE.ESlateVisibility.Hidden or UE.ESlateVisibility.Visible)
   end)
 end
-
 function WBP_Common_Dialog_Item_PC_C:HideDialogItem(Params, PopupData)
   if Params.DialogItemIndex == self.PosIndex then
     if Params.bHideDialogItem then
@@ -98,13 +93,11 @@ function WBP_Common_Dialog_Item_PC_C:HideDialogItem(Params, PopupData)
   end
   self.Owner:AutofitDialog()
 end
-
 function WBP_Common_Dialog_Item_PC_C:UpdateDialogTipText(Params, PopupData)
   if Params.DialogItemIndex == self.PosIndex then
     self:Show_Tip(Params, PopupData)
   end
 end
-
 function WBP_Common_Dialog_Item_PC_C:PackageData()
   local PackageResult = {}
   if self.ItemType == "SelectHint" then
@@ -112,5 +105,4 @@ function WBP_Common_Dialog_Item_PC_C:PackageData()
   end
   return PackageResult
 end
-
 return WBP_Common_Dialog_Item_PC_C

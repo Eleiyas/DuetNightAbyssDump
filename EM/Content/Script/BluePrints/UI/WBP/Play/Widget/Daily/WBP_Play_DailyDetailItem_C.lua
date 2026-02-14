@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Init(Obj)
   self.Obj = Obj
   local RewardList = self.Obj.RewardList
@@ -20,7 +19,6 @@ function M:Init(Obj)
   if self.Obj.IsTabPage then
     self.Text_Title:SetText(Des)
   end
-  
   local function SortFunc(A, B)
     if A.Rarity == B.Rarity then
       local RewardA = DataMgr.RewardType[A.ItemType]
@@ -34,7 +32,6 @@ function M:Init(Obj)
     end
     return A.Rarity > B.Rarity
   end
-  
   table.sort(RewardList, SortFunc)
   for _, ItemData in pairs(RewardList) do
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
@@ -63,7 +60,6 @@ function M:Init(Obj)
     end
   end, false, 0, "_DeputeDetailItem_List_Item")
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -76,10 +72,8 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self.ParentWidget:ShowGamepadCloseBtn(true)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self.List_Item:NavigateToIndex(0)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   self.Owner = Owner
@@ -10,7 +9,6 @@ function M:PreInitContent(Params, PopupData, Owner)
   self.Tab01:InitBtn(Params.FirstTabText, true, self, self.OnTabFirstClicked)
   self.Tab02:InitBtn(Params.SecondTabText, false, self, self.OnTabSecondClicked)
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -20,11 +18,9 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
     self:OnTabSecondClicked()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnTabFirstClicked()
   if self.CurrentTab == self.FirstTab then
   else
@@ -34,7 +30,6 @@ function M:OnTabFirstClicked()
     self:BroadcastDialogEvent("OnCommonDialogTabChange", self.CurrentTab)
   end
 end
-
 function M:OnTabSecondClicked()
   if self.CurrentTab == self.FirstTab then
     self.CurrentTab = self.SecondTab
@@ -44,5 +39,4 @@ function M:OnTabSecondClicked()
   else
   end
 end
-
 return M

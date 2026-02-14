@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Owner = Content.Owner
@@ -25,7 +23,6 @@ function M:OnListItemObjectSet(Content)
   self:SetIsMaxLevel(Content.IsMaxLevel)
   self:ShowShadow(Content.bShadowed)
 end
-
 function M:ShowShadow(bShow)
   if bShow then
     self.Img_Shadow:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -33,17 +30,14 @@ function M:ShowShadow(bShow)
     self.Img_Shadow:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:SetText(Text)
   self.TextBlock_Name:SetText(Text)
 end
-
 function M:SetNumber(Number)
   if Number then
     self.TextBlock_Num:SetText(Number)
@@ -52,13 +46,11 @@ function M:SetNumber(Number)
     self.Panel_Num:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetIcon(Icon)
   if Icon then
     self.Image_Icon:SetBrushResourceObject(LoadObject(Icon))
   end
 end
-
 function M:SetIsMaxLevel(IsMaxLevel)
   if IsMaxLevel then
     self:SetMaxLevelColor()
@@ -66,7 +58,6 @@ function M:SetIsMaxLevel(IsMaxLevel)
     self:SetNormalColor()
   end
 end
-
 function M:SetReddot(ShowNew, ShowReddot)
   if ShowNew then
     self.New:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -80,39 +71,33 @@ function M:SetReddot(ShowNew, ShowReddot)
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self._OnKeyDown then
     return self._OnKeyDown(self.Owner, MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self._OnFocusReceived then
     self._OnFocusReceived(self.Owner, self.Content)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnFocusLost()
   if self._OnFocusLost then
     self._OnFocusLost(self.Owner, self.Content)
   end
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -123,14 +108,12 @@ function M:SetIsSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.IsSelected then
     return
   end
   self:PlayAnimationForward(self.Hover)
 end
-
 function M:OnMouseLeave(MouseEvent)
   if self.IsSelected then
     return
@@ -138,7 +121,6 @@ function M:OnMouseLeave(MouseEvent)
   self:StopAnimation(self.Press)
   self:PlayAnimationReverse(self.Hover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.IsSelected then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -146,7 +128,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Press)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.IsSelected then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -158,13 +139,10 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_AchievementPanel_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_AchievementPanel_C:Initialize(Initializer)
   WBP_AchievementPanel_C.Super.Initialize(self, Initializer)
   self.AchievementId = nil
@@ -9,7 +8,6 @@ function WBP_AchievementPanel_C:Initialize(Initializer)
   self.index = 1
   self.StartTime = 0
 end
-
 function WBP_AchievementPanel_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local AchievementId, CountStage, TargetNeedCount, NewIndex = ...
@@ -29,12 +27,10 @@ function WBP_AchievementPanel_C:OnLoaded(...)
     end
   end)
 end
-
 function WBP_AchievementPanel_C:Destruct()
   self.Super.Destruct(self)
   self.IconMaterial = nil
 end
-
 function WBP_AchievementPanel_C:CloseProgressBar(CurrentProgress)
   self.TriggerUnlockItem = nil
   local AchvData = DataMgr.Achievement[self.AchievementId]
@@ -43,13 +39,11 @@ function WBP_AchievementPanel_C:CloseProgressBar(CurrentProgress)
     TargetCount = #AchvData.TargetProgressRenew + 1
   end
 end
-
 function WBP_AchievementPanel_C:UpdateAchievementPage(CountStage, TargetNeedCount, NewIndex)
   if not self.AchievementConfigData then
     print(_G.LogTag, "ZJT_ UpdateAchievementPage Not exist ")
     return
   end
-  
   local function wrapfunc()
     if self:IsAnimationPlaying(self.FadeIn) or self:IsAnimationPlaying(self.FadeOut) then
       self:StopAnimation(self.FadeIn)
@@ -57,7 +51,6 @@ function WBP_AchievementPanel_C:UpdateAchievementPage(CountStage, TargetNeedCoun
     end
     self:PlayAnimation(self.FadeOut, 0, 1, EUMGSequencePlayMode.Forward, 1, true)
   end
-  
   self:AddTimer(5.0, wrapfunc)
   self.StartTime = UE4.UGameplayStatics.GetTimeSeconds(self)
   local Text_Title_Info = GText(self.AchievementConfigData.AchievementName)
@@ -95,7 +88,6 @@ function WBP_AchievementPanel_C:UpdateAchievementPage(CountStage, TargetNeedCoun
   end
   self:PlayAnimation(self.FadeIn, 0, 1, EUMGSequencePlayMode.Forward, 1, false)
 end
-
 function WBP_AchievementPanel_C:AddQuene(AchvId, Count, TargetNeedCount, NewIndex)
   local info = {}
   info.AchievementId = AchvId
@@ -104,7 +96,6 @@ function WBP_AchievementPanel_C:AddQuene(AchvId, Count, TargetNeedCount, NewInde
   info.TargetNeedCount = TargetNeedCount
   table.insert(self.ShowQueen, info)
 end
-
 function WBP_AchievementPanel_C:Text_Title_End_Event()
   local avatar = GWorld:GetAvatar()
   if self.ShowQueen[self.index] ~= nil and avatar then
@@ -129,7 +120,6 @@ function WBP_AchievementPanel_C:Text_Title_End_Event()
   end
   self:Close()
 end
-
 function WBP_AchievementPanel_C:TriggerUnlock()
   if self.TriggerUnlockItem then
     AudioManager(self):PlayUISound(self, "event:/ui/common/achieve_toast_check", "", nil)
@@ -137,25 +127,20 @@ function WBP_AchievementPanel_C:TriggerUnlock()
     self.TriggerUnlockItem:PlayAnimation(self.TriggerUnlockItem.Unlock)
   end
 end
-
 function WBP_AchievementPanel_C:CloseSelfBlend()
   if self.AchievCanvasPanel then
     self.AchievCanvasPanel:SetRenderOpacity(0)
   end
 end
-
 function WBP_AchievementPanel_C:OpenSelfBlend()
   if self.AchievCanvasPanel then
     self.AchievCanvasPanel:SetRenderOpacity(1)
   end
 end
-
 function WBP_AchievementPanel_C:StartTalk()
 end
-
 function WBP_AchievementPanel_C:EndTalk()
 end
-
 function WBP_AchievementPanel_C:Show(HideTag)
   WBP_AchievementPanel_C.Super.Show(self, HideTag)
   local IsHide = not IsEmptyTable(self.HideTags)
@@ -163,5 +148,4 @@ function WBP_AchievementPanel_C:Show(HideTag)
     self:Text_Title_End_Event()
   end
 end
-
 return WBP_AchievementPanel_C

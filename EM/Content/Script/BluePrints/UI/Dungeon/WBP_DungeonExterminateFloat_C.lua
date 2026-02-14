@@ -1,15 +1,12 @@
 require("UnLua")
 local WBP_DungeonExterminateFloat_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_DungeonExterminateFloat_C:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function WBP_DungeonExterminateFloat_C:InitListenEvent()
   self.Super.InitListenEvent(self)
   self:AddDispatcher(EventID.OnRepExterminateKilledNum, self, self.OnRepExterminateKilledNum)
 end
-
 function WBP_DungeonExterminateFloat_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitListenEvent()
@@ -28,7 +25,6 @@ function WBP_DungeonExterminateFloat_C:OnLoaded(...)
   end
   self:PlayAnimation(self.In)
 end
-
 function WBP_DungeonExterminateFloat_C:OnRepExterminateKilledNum()
   if not self.GameState then
     return
@@ -42,5 +38,4 @@ function WBP_DungeonExterminateFloat_C:OnRepExterminateKilledNum()
     self:RemoveDispatcher(EventID.OnRepExterminateKilledNum)
   end
 end
-
 return WBP_DungeonExterminateFloat_C

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:InitRouteItem(RoomIndex, RoomId)
   if nil == RoomIndex or nil == RoomId then
     return
@@ -11,7 +10,6 @@ function M:InitRouteItem(RoomIndex, RoomId)
   self:SetInfo(RoomTypeInfo.Name, RoomIndex)
   self:SetIcon(RoomTypeInfo.ESCIcon)
 end
-
 function M:SetLine(RoomIndex)
   local CurRoomIndex = GWorld.RougeLikeManager.RoomIndex
   if CurRoomIndex == RoomIndex then
@@ -21,16 +19,13 @@ function M:SetLine(RoomIndex)
     self.Line_L:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:SetInfo(RoomType, RoomIndex)
   self.Text_Type:SetText(GText(RoomType))
   self.Text_Layer:SetText("0" .. tostring(RoomIndex))
 end
-
 function M:HideArrow()
   self.Arrow:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:SetIcon(Path)
   if nil == Path then
     Path = "/Game/UI/Texture/Dynamic/Atlas/Entrance/T_Entrance_Armory.T_Entrance_Armory"
@@ -41,13 +36,10 @@ function M:SetIcon(Path)
     Material:SetTextureParameterValue("Mask", ImageResource)
   end
 end
-
 function M:PlayPassAnim()
   self:PlayAnimation(self.Pass)
 end
-
 function M:PlayPresentAnim()
   self:PlayAnimation(self.Present)
 end
-
 return M

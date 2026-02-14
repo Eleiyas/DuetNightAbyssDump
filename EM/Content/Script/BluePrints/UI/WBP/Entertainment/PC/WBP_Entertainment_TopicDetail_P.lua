@@ -17,7 +17,6 @@ local ContinueState = {
   [EPartyTopicState.RedeemResource] = true
 }
 local M = Class("BluePrints.UI.WBP.Entertainment.Widget.WBP_Entertainment_TopicDetail_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.Key_Controller_Topic:CreateCommonKey({
@@ -36,7 +35,6 @@ function M:Construct()
     }
   })
 end
-
 function M:OnGamePadKeyPreviewDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -54,7 +52,6 @@ function M:OnGamePadKeyPreviewDown(MyGeometry, InKeyEvent)
     return true
   end
 end
-
 function M:OnGamePadKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -71,7 +68,6 @@ function M:OnGamePadKeyDown(MyGeometry, InKeyEvent)
     return true
   end
 end
-
 function M:OnGamePadKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -91,10 +87,8 @@ function M:OnGamePadKeyUp(MyGeometry, InKeyEvent)
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self.Key_Controller_Topic:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -106,7 +100,6 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Key_Controller_Unlock:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   local State = self:GetState()
   if LockedState[State] then
@@ -117,7 +110,6 @@ function M:BP_GetDesiredFocusTarget()
     return self
   end
 end
-
 function M:SetTab(...)
   M.Super.SetTab(self, ...)
   self.HandleKeyDown = false
@@ -138,7 +130,6 @@ function M:SetTab(...)
   self:PlayAnimation(self.UnLock_Normal)
   self:PlayAnimation(self.Continue_Normal)
 end
-
 function M:ClosePanel(...)
   M.Super.ClosePanel(self, ...)
   self.HandleKeyDown = false
@@ -147,5 +138,4 @@ function M:ClosePanel(...)
   self:PlayAnimation(self.UnLock_Normal)
   self:PlayAnimation(self.Continue_Normal)
 end
-
 return M

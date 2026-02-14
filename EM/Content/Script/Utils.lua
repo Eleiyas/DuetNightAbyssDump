@@ -37,23 +37,21 @@ Utils.Traceback = not (not bDistribution or bEnableShippingLog) and MiscUtils.Em
   end
   return error
 end
-
 function Utils.IsStandAlone(Actor)
   return UNeModeFunctionLibrary.IsStandAlone(Actor)
 end
-
 function Utils.IsDedicatedServer(Actor)
+  if GWorld._IsDedicatedServer ~= nil and not GWorld.IsDev then
+    return GWorld._IsDedicatedServer
+  end
   return UNeModeFunctionLibrary.IsDedicatedServer(Actor)
 end
-
 function Utils.IsClient(Actor)
   return UNeModeFunctionLibrary.IsClient(Actor)
 end
-
 function Utils.IsAuthority(actor)
   return 3 == actor:GetLocalRole()
 end
-
 function Utils.New(Table)
   if nil == Table then
     return Table
@@ -75,11 +73,9 @@ function Utils.New(Table)
   end
   return Obj
 end
-
 function Utils.IsEmptyTable(Table)
   return table.isempty(Table)
 end
-
 function Utils.Split(str, reps)
   local Results = {}
   string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -87,23 +83,35 @@ function Utils.Split(str, reps)
   end)
   return Results
 end
-
 Utils.ScreenPrint = not (not bDistribution or bEnableShippingLog) and MiscUtils.EmptyFunction or function(text)
   GWorld.logger.error(text)
 end
-
+function Utils.GLink(LinkId)
+  local IsGlobalPak = UE.AHotUpdateGameMode.IsGlobalPak()
+  local LinkInfo = DataMgr.PolicyLink[LinkId]
+  if not LinkInfo then
+    return nil
+  end
+  local Link
+  if IsGlobalPak then
+    local SystemLanguage = EMCache:Get("SystemLanguage") or "CN"
+    if LinkInfo then
+      Link = LinkInfo["Abroad" .. SystemLanguage] or LinkInfo.ChinaCN
+    end
+  elseif LinkInfo then
+    Link = LinkInfo.ChinaCN
+  end
+  return Link
+end
+_G.Link = Utils.GLink
 function Utils.GText(Text)
   return TextUtils:GetDisplayText(Text)
 end
-
 _G.GText = Utils.GText
-
 function Utils.EnText(Text)
   return TextUtils:GetDisplayText(Text, CommonConst.SystemLanguages.EN)
 end
-
 _G.EnText = Utils.EnText
-
 function Utils.GDate(Month, Day, Language)
   Language = Language or CommonConst.SystemLanguage
   if Language == CommonConst.SystemLanguages.CN or Language == CommonConst.SystemLanguages.JP or Language == CommonConst.SystemLanguages.KR then
@@ -112,7 +120,6 @@ function Utils.GDate(Month, Day, Language)
     return string.format("%02d-%02d", Day, Month)
   end
 end
-
 function Utils.GDate_YMD(Year, Month, Day, Language)
   Language = Language or CommonConst.SystemLanguage
   if Language == CommonConst.SystemLanguages.CN or Language == CommonConst.SystemLanguages.JP or Language == CommonConst.SystemLanguages.KR then
@@ -121,12 +128,10 @@ function Utils.GDate_YMD(Year, Month, Day, Language)
     return string.format("%02d-%02d-%02d", Day, Month, Year)
   end
 end
-
 function Utils.GDate_YMD_Timestamp(Timestamp, Language)
   local Date = os.date("*t", Timestamp)
   return Utils.GDate_YMD(Date.year, Date.month, Date.day, Language)
 end
-
 function Utils.Split(input, delimiter)
   input = tostring(input)
   delimiter = tostring(delimiter)
@@ -143,10 +148,9 @@ function Utils.Split(input, delimiter)
   table.insert(arr, string.sub(input, pos))
   return arr
 end
-
 function Utils.UIManager(context)
   if not Utils.IsValid(Utils._UIManager) then
-    DebugPrint(WarningTag, "Utils.UIManager \233\135\141\230\150\176\232\142\183\229\190\151UIManager")
+    DebugPrint(WarningTag, "Utils.UIManager 重新获得UIManager")
     context = context or GWorld.GameInstance
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(context)
     Utils._UIManager = GameInstance:GetGameUIManager()
@@ -154,40 +158,34 @@ function Utils.UIManager(context)
   end
   return Utils._UIManager
 end
-
 _G.UIManager = Utils.UIManager
-
 function Utils.GameState(context)
   context = context or GWorld.GameInstance
   return UE4.UGameplayStatics.GetGameState(context)
 end
-
 _G.GameState = Utils.GameState
 Utils.IsValid = MiscUtils.IsValid
 _G.IsValid = Utils.IsValid
 Utils.AudioManager_Var = nil
-
 function Utils.AudioManager(context)
-  return Utils.AudioManager_Var or MiscUtils.GetAudioManager_Lua(context)
+  if not Utils.AudioManager_Var then
+    Utils.AudioManager_Var = MiscUtils.GetAudioManager_Lua(context)
+  end
+  return Utils.AudioManager_Var
 end
-
 _G.AudioManager = Utils.AudioManager
-
 function Utils.HeroUSDKSubsystem(WorldContext)
   WorldContext = WorldContext or GWorld.GameInstance
   return USubsystemBlueprintLibrary.GetGameInstanceSubsystem(WorldContext, UEMHeroUSDKSubsystem)
 end
-
 function Utils.WorldTravelSubsystem(WorldContext)
   WorldContext = WorldContext or GWorld.GameInstance
   return USubsystemBlueprintLibrary.GetGameInstanceSubsystem(WorldContext, UWorldTravelSubsystem)
 end
-
 function Utils.TalkSubsystem(WorldContext)
   WorldContext = WorldContext or GWorld.GameInstance
   return USubsystemBlueprintLibrary.GetWorldSubsystem(WorldContext, UTalkSubsystem)
 end
-
 local function TestCrypt(...)
   local crypt = require("crypt")
   local s = crypt.randomkey()
@@ -199,25 +197,21 @@ local function TestCrypt(...)
   local p = crypt.rc4_crypt(rc4_1, p)
   local p = crypt.rc4_crypt(rc4_1, p)
   if p ~= text then
-    Utils.ScreenPrint("\229\138\160\229\175\134\231\174\151\230\179\149\233\170\140\232\175\129\229\164\177\232\180\165")
+    Utils.ScreenPrint("加密算法验证失败")
   end
 end
-
 TestCrypt()
-
 local function IsDLSSEnabled()
   if UE4.UDLSSLibrary then
     return UE4.UDLSSLibrary.IsDLSSSupported() and (UE4.UDLSSLibrary.IsDLAAEnabled() or UE4.UDLSSLibrary.GetDLSSMode() ~= UE4.UDLSSMode.Off)
   end
   return false
 end
-
 local FormatNumberTable = {
   k = 1000,
   M = 1000000,
   B = 1000000000
 }
-
 function Utils.FormatNumber(Number, UseFormat)
   if not UseFormat then
     local Result = MiscUtils.FormatNumberWithCommas(Number)
@@ -261,12 +255,22 @@ function Utils.FormatNumber(Number, UseFormat)
     end
   end
 end
-
+function Utils.FormatWeaponInfo(TempWeapon, DumpWeaponInfo)
+  TempWeapon.SlotData = {}
+  TempWeapon.ModData = {}
+  TempWeapon.ModPassives = nil
+  TempWeapon.SkillInfos = nil
+  TempWeapon.ReplaceAttrs = nil
+  TempWeapon.EnhanceLevel = DumpWeaponInfo.EnhanceLevel or 0
+  TempWeapon.WeaponId = DumpWeaponInfo.WeaponId or 0
+  TempWeapon.GradeLevel = DumpWeaponInfo.GradeLevel or 0
+  TempWeapon.AppearanceInfo = DumpWeaponInfo
+  TempWeapon.AppearanceInfo.EnhanceLevel = nil
+  TempWeapon.AppearanceInfo.GradeLevel = nil
+end
 Utils.NPCCreateSubSystem_Var = nil
-
 function Utils.NPCCreateSubSystem(context)
   return Utils.NPCCreateSubSystem_Var or MiscUtils.GetNPCCreateSubSystem_Lua(context)
 end
-
 _G.NPCCreateSubSystem = Utils.NPCCreateSubSystem
 return Utils

@@ -1,6 +1,5 @@
 require("UnLua")
 local Common_BlackScreen_C = Class("BluePrints.UI.BP_UIState_C")
-
 function Common_BlackScreen_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local Params = (...)
@@ -38,7 +37,6 @@ function Common_BlackScreen_C:OnLoaded(...)
     self:PlayInAnimationWhenLoaded()
   end
 end
-
 function Common_BlackScreen_C:InitScreenColor()
   if self.ScreenColor and self.ScreenColor == "White" then
     self.BlackScreen:SetColorAndOpacity(self.Color_White)
@@ -46,7 +44,6 @@ function Common_BlackScreen_C:InitScreenColor()
     self.BlackScreen:SetColorAndOpacity(self.Color_Black)
   end
 end
-
 function Common_BlackScreen_C:InitBlackScreenText()
   if self.BlackScreenText then
     self.Text_BlackScreen:SetText(self.BlackScreenText)
@@ -55,7 +52,6 @@ function Common_BlackScreen_C:InitBlackScreenText()
     self.Text_BlackScreen:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Common_BlackScreen_C:PlayInAnimationWhenLoaded()
   if self.InAnimationPlayTime and 0 ~= self.InAnimationPlayTime then
     self:RealPlayInAnimation()
@@ -63,13 +59,11 @@ function Common_BlackScreen_C:PlayInAnimationWhenLoaded()
     self:DirectSetIn()
   end
 end
-
 function Common_BlackScreen_C:RealPlayInAnimation()
   local PlaySpeed = 1 / self.InAnimationPlayTime
   DebugPrint("Common_BlackScreen_C:PlayInAnimation  PlayTime:", string.format("%.2f", 1 / PlaySpeed))
   self:PlayAnimation(self.In, 0, 1, EUMGSequencePlayMode.Forward, PlaySpeed)
 end
-
 function Common_BlackScreen_C:DirectSetIn()
   self.BlackScreen:SetRenderOpacity(1)
   if self.InAnimationObj and self.InAnimationCallback then
@@ -77,13 +71,11 @@ function Common_BlackScreen_C:DirectSetIn()
   end
   DebugPrint("Common_BlackScreen_C:DirectSetIn")
 end
-
 function Common_BlackScreen_C:PlayOutAnimationWhenLoaded()
   DebugPrint("Common_BlackScreen_C:PlayOutAnimationWhenLoaded")
   self:DirectSetIn()
   self:HideCommonBlackScreen()
 end
-
 function Common_BlackScreen_C:HideCommonBlackScreen()
   if self.OutAnimationBPSetting then
     local SettingTime = self[self.OutAnimationBPSetting]
@@ -100,12 +92,10 @@ function Common_BlackScreen_C:HideCommonBlackScreen()
   end
   self:DirectSetOut()
 end
-
 function Common_BlackScreen_C:RealPlayOutAnimation(PlaySpeed)
   DebugPrint("Common_BlackScreen_C:PlayOutAnimation  PlayTime:", string.format("%.2f", 1 / PlaySpeed))
   self:PlayAnimation(self.Out, 0, 1, EUMGSequencePlayMode.Forward, PlaySpeed)
 end
-
 function Common_BlackScreen_C:DirectSetOut()
   self.BlackScreen:SetRenderOpacity(0)
   DebugPrint("Common_BlackScreen_C:DirectSetOut")
@@ -116,5 +106,4 @@ function Common_BlackScreen_C:DirectSetOut()
   end
   self:Close()
 end
-
 return Common_BlackScreen_C

@@ -1,5 +1,4 @@
 local Heap = {}
-
 function Heap.GetSortValue(Value)
   if type(Value) == "number" then
     return Value
@@ -7,7 +6,6 @@ function Heap.GetSortValue(Value)
     return Value.SortValue
   end
 end
-
 function Heap.BuildMinHeap(Source)
   if not Source or type(Source) ~= "table" then
     return
@@ -23,7 +21,6 @@ function Heap.BuildMinHeap(Source)
     Heap.AdjustDown(Source, i, EndIndex)
   end
 end
-
 function Heap.AdjustDown(Source, ParentIndex, EndIndex)
   local Left = 2 * ParentIndex
   local Right = 2 * ParentIndex + 1
@@ -40,7 +37,6 @@ function Heap.AdjustDown(Source, ParentIndex, EndIndex)
   Source[ParentIndex], Source[MinIndex] = Source[MinIndex], Source[ParentIndex]
   Heap.AdjustDown(Source, MinIndex, EndIndex)
 end
-
 function Heap.HeapPush(Source, Item)
   if not Source or type(Source) ~= "table" then
     return
@@ -51,7 +47,6 @@ function Heap.HeapPush(Source, Item)
   end
   Heap.AdjustUp(Source, #Source)
 end
-
 function Heap.AdjustUp(Source, ChildIndex)
   if ChildIndex <= 1 then
     return
@@ -67,7 +62,6 @@ function Heap.AdjustUp(Source, ChildIndex)
     Heap.AdjustUp(Source, ParentIndex)
   end
 end
-
 function Heap.HeapPop(Source)
   if not Source or type(Source) ~= "table" then
     return
@@ -80,7 +74,6 @@ function Heap.HeapPop(Source)
   end
   return Min
 end
-
 function Heap.HeapPushWithComp(Source, Item, CompFunc)
   if not Source or type(Source) ~= "table" then
     return
@@ -91,7 +84,6 @@ function Heap.HeapPushWithComp(Source, Item, CompFunc)
   end
   Heap.AdjustUpWithComp(Source, #Source, CompFunc)
 end
-
 function Heap.AdjustUpWithComp(Source, ChildIndex, CompFunc)
   if ChildIndex <= 1 then
     return
@@ -107,7 +99,6 @@ function Heap.AdjustUpWithComp(Source, ChildIndex, CompFunc)
     Heap.AdjustUpWithComp(Source, ParentIndex, CompFunc)
   end
 end
-
 function Heap.HeapPopWithComp(Source, CompFunc)
   if not Source or type(Source) ~= "table" then
     return
@@ -120,7 +111,6 @@ function Heap.HeapPopWithComp(Source, CompFunc)
   end
   return Min
 end
-
 function Heap.AdjustDownWithComp(Source, ParentIndex, EndIndex, CompFunc)
   local Left = 2 * ParentIndex
   local Right = 2 * ParentIndex + 1
@@ -137,7 +127,6 @@ function Heap.AdjustDownWithComp(Source, ParentIndex, EndIndex, CompFunc)
   Source[ParentIndex], Source[MinIndex] = Source[MinIndex], Source[ParentIndex]
   Heap.AdjustDownWithComp(Source, MinIndex, EndIndex, CompFunc)
 end
-
 function Heap.BuildHeapWithComp(Source, CompFunc, EndIndex)
   if not Source or type(Source) ~= "table" then
     return
@@ -153,7 +142,6 @@ function Heap.BuildHeapWithComp(Source, CompFunc, EndIndex)
     Heap.AdjustDownWithComp(Source, i, EndIndex, CompFunc)
   end
 end
-
 function Heap.SortWithComp(Source, CompFunc)
   if not Source or type(Source) ~= "table" then
     return
@@ -168,5 +156,4 @@ function Heap.SortWithComp(Source, CompFunc)
     Heap.AdjustDownWithComp(Source, 1, i, CompFunc)
   end
 end
-
 return Heap

@@ -6,7 +6,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Common.Input.WBP_Com_Input_Base_Component_C"
 }
-
 function M:Construct()
   self.Group_ControllerChoose:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Group_ControllerControl:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -17,7 +16,6 @@ function M:Construct()
   self.Btn_Delete.OnClicked:Add(self, self.OnDeleteBtnClicked)
   self.bIsFocusable = true
 end
-
 function M:UpdateBtns()
   if self.bNeedPasteBtn then
     self.WS_Btn:GetWidgetAtIndex(0):SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -36,12 +34,10 @@ function M:UpdateBtns()
     self.HB_Btn:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateGamePadKey()
   self:UpdateGamePadFocusKey()
   self:UpdateGamePadPasteKey()
 end
-
 function M:UpdateGamePadFocusKey()
   if self.IsShowGamPadKey and self.CurInputDeviceType == ECommonInputType.Gamepad then
     if self.Text_Input:HasAnyUserFocus() then
@@ -53,7 +49,6 @@ function M:UpdateGamePadFocusKey()
     self.Group_ControllerChoose:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdateGamePadPasteKey()
   if self.IsShowGamPadKey and self.CurInputDeviceType == ECommonInputType.Gamepad then
     if self.WS_Btn:GetActiveWidget():IsVisible() then
@@ -65,11 +60,9 @@ function M:UpdateGamePadPasteKey()
     self.Group_ControllerControl:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnEditTextFocusReceived()
   self:UpdateGamePadFocusKey()
 end
-
 function M:OnEditTextFocusLost()
   self:UpdateGamePadFocusKey()
   if self.IsLastInputDeviceTypeGamepad then
@@ -77,13 +70,11 @@ function M:OnEditTextFocusLost()
     self:UpdateBtns()
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if not self.Text_Input:HasAnyUserFocus() then
     self:FocusInputField()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 AssembleComponents(M)
 return M

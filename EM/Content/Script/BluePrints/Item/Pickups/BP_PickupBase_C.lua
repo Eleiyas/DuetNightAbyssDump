@@ -5,13 +5,11 @@ local PickupUseComponent = require("BluePrints.Item.Pickups.PickupUseComponent")
 local BP_PickupBase_C = Class({
   "BluePrints.Item.SceneItemBase"
 })
-
 function BP_PickupBase_C:AuthorityInitInfo(Info)
+  self.MoveSpeed = 3000
 end
-
 function BP_PickupBase_C:ClientCreateInitInfo(Info)
 end
-
 function BP_PickupBase_C:CreateRegionData()
   local Location = self:K2_GetActorLocation()
   local Rotation = self:K2_GetActorRotation()
@@ -28,23 +26,19 @@ function BP_PickupBase_C:CreateRegionData()
     }
   }
 end
-
 function BP_PickupBase_C:GetRarity()
   return self.Rarity
 end
-
 function BP_PickupBase_C:CheckUnitNeedStorage()
   return self.RegionDataType ~= ERegionDataType.RDT_None
 end
-
 function BP_PickupBase_C:CheckRarity(TargetRarity)
   TargetRarity = TargetRarity or 3
   return TargetRarity <= self.Data.Rarity
 end
-
 function BP_PickupBase_C:ClientInitInfo(Info)
+  self.MoveSpeed = 3000
 end
-
 function BP_PickupBase_C:CheckIsNeedShowGuideCallback(IsShowInMinimap, IsAllConditionAchieve)
   DebugPrint("BP_PickupBase_C:CheckIsNeedShowGuideCallback IsShowInMinimap", IsShowInMinimap, "IsAllConditionAchieve", IsAllConditionAchieve)
   local ItemInfo = self.Data
@@ -72,7 +66,7 @@ function BP_PickupBase_C:CheckIsNeedShowGuideCallback(IsShowInMinimap, IsAllCond
         self:CreateAndAddGuideIconComponent()
       end
       local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
-      self.GuideIconComponent:InitGuide(self, ItemInfo.PickType, self.ToCharacter or PlayerCharacter, ItemInfo.GuideIconBPPath, self.GuideIconRenderSize, self.GuideIconOffsetZ, "PickUp", "Guide", nil)
+      self.GuideIconComponent:InitGuide(self, self.ToCharacter or PlayerCharacter, ItemInfo.GuideIconBPPath, self.GuideIconOffsetZ)
       if self.GuideIconComponent:GetWidget() then
         self.GuideIconComponent:SetWidgetHiddenByTag(false, "Pickup")
       end
@@ -94,7 +88,6 @@ function BP_PickupBase_C:CheckIsNeedShowGuideCallback(IsShowInMinimap, IsAllCond
   end
   return IsAllConditionAchieve
 end
-
 function BP_PickupBase_C:OnActorReady(Info)
   BP_PickupBase_C.Super.OnActorReady(self, Info)
   if PickupUseComponent.PostInitFuncMap[self.UseEffectType] ~= nil then
@@ -105,12 +98,10 @@ function BP_PickupBase_C:OnActorReady(Info)
     self:K2_AttachToActor(AttachActor, "", UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget)
   end
 end
-
 function BP_PickupBase_C:OnPickedUp(Character)
   self:InvokeSource()
   self:OnClientPickUp(Character)
 end
-
 function BP_PickupBase_C:OnClientPickUp(Character)
   if IsDedicatedServer(self) then
     return
@@ -135,13 +126,11 @@ function BP_PickupBase_C:OnClientPickUp(Character)
     end
   end
 end
-
 function BP_PickupBase_C:OnRep_ServerInitSuccess()
   if not self.ServerInitSuccess then
     self.InitSuccess = false
   end
 end
-
 function BP_PickupBase_C:OnRep_ServerInitCount()
   self.InitSuccess = false
   self:K2_SetActorLocation(self.ServerInitLocation, false, nil, false)
@@ -149,69 +138,58 @@ function BP_PickupBase_C:OnRep_ServerInitCount()
   self.InfoForInitNew.UnitType = self.UnitType
   self:TryInitActorInfo("InitInfo")
 end
-
 function BP_PickupBase_C:DestroyByExceedMaxDropNum()
   if PickupUseComponent.ExceedMaxDropNumFuncMap[self.UseEffectType] ~= nil then
     PickupUseComponent.ExceedMaxDropNumFuncMap[self.UseEffectType](PickupUseComponent, self)
   end
 end
-
 function BP_PickupBase_C:SetLifeTime(LifeTime, Reason)
-  DebugPrint("THY_ \229\189\147\229\137\141\230\173\187\228\186\161\231\154\132\230\156\186\229\133\179\229\144\141\231\167\176\228\184\186\239\188\154 ", self:GetName(), self.UnitType, LifeTime, Reason, self.IsCache)
+  DebugPrint("THY_ 当前死亡的机关名称为： ", self:GetName(), self.UnitType, LifeTime, Reason, self.IsCache)
   if self.IsCache then
     return
   end
-  
   local function TryDestroy()
-    self:EMActorDestroy(EDestroyReason.MechanismLifeTime)
+    self:EMActorDestroy(Reason)
   end
-  
   self:AddTimer(LifeTime, TryDestroy, false)
 end
-
 function BP_PickupBase_C:TriggerFallingCallable()
   DebugPrint("OtherActor is Falling Dead. ActorName: ", self:GetName(), ", UnitId: ", self.UnitId, ", Eid: ", self.Eid, ", CreatorId: ", self.CreatorId, " CreatorType: ", self.CreatorType, ", BornPos: ", self.BornPos)
   self:SetLifeTime(1.0, EDeathReason.TriggerFalling)
 end
-
 function BP_PickupBase_C:TriggerWaterFallingCallable()
   self:TriggerFallingCallable()
 end
-
 function BP_PickupBase_C:GetItemId()
   return self.UnitId
 end
-
 function BP_PickupBase_C:InvokeSource_lua()
+  print(_G.LogTag, "LXZ InvokeSource_lua", self.SourceEid)
   if not self.SourceEid then
     return
   end
   EventManager:FireEvent(EventID.OnItemPickedUp, self.SourceEid)
 end
-
 function BP_PickupBase_C:RedirectRarity()
   local HandleEffectTypeFunctionName = "Handle" .. self.UseEffectType
   if self[HandleEffectTypeFunctionName] then
     self[HandleEffectTypeFunctionName](self)
   end
 end
-
 function BP_PickupBase_C:HandleGetResource()
   self.Rarity = DataMgr.Resource[self.UseParam].Rarity
 end
-
 function BP_PickupBase_C:HandleGetMod()
   self.Rarity = DataMgr.Mod[self.UseParam].Rarity
 end
-
 function BP_PickupBase_C:AddPickupBaseToCache_Lua()
 end
-
 function BP_PickupBase_C:OnEMActorDestroy(DestroyReason)
   BP_PickupBase_C.Super.OnEMActorDestroy(self, DestroyReason)
   if DestroyReason ~= EDestroyReason.Pickup then
     return
   end
+  EventManager:RemoveEvent(EventID.OnPlayerGetResource, self)
   if self.UseEffectType == "GetResource" or self.UseEffectType == "GetMod" or self.UseEffectType == "GetWeapon" then
     return
   end
@@ -221,10 +199,46 @@ function BP_PickupBase_C:OnEMActorDestroy(DestroyReason)
   end
   local CallbackMap = GameMode.PickUpSuccessCallback
   if CallbackMap and CallbackMap[self.UnitId] then
-    for _, Callback in pairs(CallbackMap[self.UnitId]) do
+    local CopyTable = CommonUtils.DeepCopy(CallbackMap[self.UnitId])
+    for _, Callback in pairs(CopyTable) do
       Callback()
     end
   end
 end
-
+function BP_PickupBase_C:WaitForGetResourece()
+  EventManager:AddEvent(EventID.OnPlayerGetResource, self, self.OnPlayerGetResource)
+end
+function BP_PickupBase_C:OnPlayerGetResource(ResourceId, ExtraInfo)
+  if ResourceId == self.UseParam and ExtraInfo and ExtraInfo.WorldRegionEid == self.WorldRegionEid then
+    DebugPrint("Pickup OnPlayerGetResource:", self:GetName(), self.UnitId, self.CreatorId, self.WorldRegionEid)
+    self:AfterPick()
+    EventManager:RemoveEvent(EventID.OnPlayerGetResource, self)
+  end
+end
+function BP_PickupBase_C:ReceiveEndPlay()
+  BP_PickupBase_C.Super.ReceiveEndPlay(self)
+  EventManager:RemoveEvent(EventID.OnPlayerGetResource, self)
+end
+function BP_PickupBase_C:WCOnEMActorDestroy(DestroyReason, GameMode)
+  local WCSubSystem = GameMode:GetWCSubSystem()
+  if not IsValid(WCSubSystem) then
+    return
+  end
+  if self.BpBorn and (not self:CheckManuItemRegionStorage() or DestroyReason == EDestroyReason.RecoverSubRegionDataCacheButBpBornHasAlreadyDead) then
+    return
+  end
+  if self.WorldRegionEid == "" then
+    if self.Data then
+      GWorld.logger.errorlog("Error : Actor在Destroy时没有赋值WorldRegionEid", self.UnitId, self.UnitType, self.Eid)
+    end
+  elseif not WCSubSystem.IsInDungeon and self.UseEffectType == "GetResource" then
+    local Avatar = GWorld:GetAvatar()
+    if Avatar then
+      Avatar:RegionActorDead(self, DestroyReason, self.SubRegionId, self.LevelName, true)
+    end
+  else
+    GameMode:GetRegionDataMgrSubSystem():DeadRegionActorData(self, DestroyReason)
+  end
+  WCSubSystem:UnregisterEntryToWorldComposition(self)
+end
 return BP_PickupBase_C

@@ -1,12 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init()
   self.Key:CreateCommonKey({
     KeyInfoList = {
       {
         Type = "Text",
-        Text = CommonUtils:GetKeyText(CommonUtils:GetActionMappingKeyName("Interactive"))
+        Text = CommonUtils:GetActionMappingKeyName("Interactive")
       }
     }
   })
@@ -32,7 +31,6 @@ function M:Init()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:UpdateOwner(Hook, HookComp, PlayerActor)
   if not self:IsListeningForInputAction("Interactive") then
     self:ListenForInputAction("Interactive", EInputEvent.IE_Pressed, true, {
@@ -48,7 +46,6 @@ function M:UpdateOwner(Hook, HookComp, PlayerActor)
   self.HookComp = HookComp
   self.Player = PlayerActor
 end
-
 function M:PressedSelectAction()
   print(_G.LogTag, "LXZ PressedSelectAction")
   if not self.bInScreen then
@@ -56,16 +53,13 @@ function M:PressedSelectAction()
   end
   self.HookComp:StartInteractive(self.Player)
 end
-
 function M:ReleasedSelectAction()
   print(_G.LogTag, "LXZ ReleasedSelectAction")
 end
-
 function M:ReleasedSpace()
   print(_G.LogTag, "LXZ ReleasedSpace")
   self.HookComp:EndInteractive(self.Player)
 end
-
 function M:RefreshKeyLoc(FXLocComp)
   local ViewportSize = UIManager(self):GetViewportSize()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -90,18 +84,15 @@ function M:RefreshKeyLoc(FXLocComp)
     self.bInScreen = false
   end
 end
-
 function M:Close()
   M.Super.Close(self)
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if IsValid(self.HookComp) then
     local Owner = self.HookComp:GetOwner()
     self:RefreshKeyLoc(Owner.FXLoc)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.MouseAndKeyboard and self.DeviceInPc then
     self.WS_Type:SetActiveWidgetIndex(0)
@@ -110,5 +101,4 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   elseif CurInputDevice == ECommonInputType.Touch then
   end
 end
-
 return M

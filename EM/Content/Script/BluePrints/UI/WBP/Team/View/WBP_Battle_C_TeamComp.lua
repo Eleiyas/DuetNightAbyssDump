@@ -1,12 +1,11 @@
 local TeamModel = TeamController:GetModel()
 local Component = {}
-
 function Component:InitTeam()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
-  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug \231\187\132\233\152\159\230\181\129\231\168\139\230\151\182\229\186\143\239\188\140WBP_Battle_C::OnLoaded, WBP_Battle_C_TeamComp::InitTeam")
+  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug 组队流程时序，WBP_Battle_C::OnLoaded, WBP_Battle_C_TeamComp::InitTeam")
   if self.Platform == "PC" then
     self.TeamInputAction = DataMgr.KeyboardMap.ShowTeamInfo
     self:ListenForInputAction(self.TeamInputAction.ActionName, EInputEvent.IE_Pressed, false, {
@@ -35,7 +34,11 @@ function Component:InitTeam()
         return
       end
       if TeamModel:IsYourself(NewLeader.Uid) and GWorld:IsStandAlone() then
-        self.WBP_Team_Tag:Init(true, NewLeader.Index, NewLeader.Uid)
+        if self.Platform == "PC" then
+          self.WBP_Team_Tag:Init(true, NewLeader.Index, NewLeader.Uid)
+        else
+          self.HUD_MainBar.T_Tag:Init(true, NewLeader.Index, NewLeader.Uid)
+        end
       end
     elseif EventId == TeamCommon.EventId.TeamOnVoteRefused then
       self.HUD_MainBar.Icon_Agree:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -51,21 +54,20 @@ function Component:InitTeam()
     end
   end)
   self:AddDispatcher(EventID.OnRepEidPlayerState, self, function(self, Eid)
-    DebugPrint("TeamSyncDebug OnRepEidPlayerState\229\144\140\230\173\165\233\152\159\229\143\139", Eid)
+    DebugPrint("TeamSyncDebug OnRepEidPlayerState同步队友", Eid)
     if 0 ~= Eid then
-      self:AddTeammateUI(Eid, true, nil)
+      self:AddTeammateUI(Eid, true)
     end
   end)
   self:AddDispatcher(EventID.OnDelPlayerState, self, self.RemoveBattleTeamBloodBar)
   self:AddDispatcher(EventID.OnRepOwnerEidPhantomState, self, function(self, Eid, OwnerEid)
-    DebugPrint("TeamSyncDebug OnRepEidPlayerState\229\144\140\230\173\165\233\173\133\229\189\177", Eid, "OwnerEid:", OwnerEid)
+    DebugPrint("TeamSyncDebug OnRepEidPlayerState同步魅影", Eid, "OwnerEid:", OwnerEid)
     if 0 ~= Eid and 0 ~= OwnerEid then
-      self:AddTeammateUI(Eid, false, nil)
+      self:AddTeammateUI(Eid, false)
     end
   end)
   self:AddDispatcher(EventID.OnDelPhantomState, self, self.RemoveBattleTeamBloodBar)
 end
-
 function Component:OnInputDeviceChange_Team()
   if not TeamModel:GetTeam() then
     return
@@ -94,40 +96,43 @@ function Component:OnInputDeviceChange_Team()
     })
   end
 end
-
 function Component:RefreshTeamWhenEnterGame(bMultiGame)
   self:ResetTeamAbout()
+  if GameState(self).GameModeType == "Party" then
+    return
+  end
   if not IsStandAlone(self) then
     self.TeamBloodBars, self.TeamBloodBarCount = {}, 0
   end
   if bMultiGame then
     if #TeamModel:GetTeam().Members <= 1 then
-      return
-    end
-    self:_ShowTeamPart(true)
-    local AddedPhantom = {}
-    for i, Member in ipairs(TeamModel:GetTeam().Members) do
-      DebugPrint(LXYTag, "TeamSyncDebug WBP_Battle_C::RefreshTeam.......PlayerArray Exist\239\188\140 Eid:", Member.Uid)
-      local bSelfCharacter = false
-      if TeamModel:IsYourself(Member.Uid) and self.Platform == "PC" then
-        self.WBP_Team_Tag:Init(false, Member.Index, Member.Uid)
-        bSelfCharacter = true
-      else
-        self:AddTeammateUI(Member.Uid, true)
-      end
-      local Player = Battle(self):GetEntity(Member.Uid)
-      if Player then
-        for i, Phantom in pairs(Player:GetAllTeammates()) do
-          if Phantom.PhantomOwner and Phantom.PhantomOwner.Eid == Player.Eid then
-            self:AddTeammateUI(Phantom.Eid, false)
-            AddedPhantom[Phantom.Eid] = 1
-          end
+      self:_ShowTeamPart(false)
+      local Player = GWorld:GetMainPlayer(0)
+      for _, PhantomState in pairs(GameState(self).PhantomArray) do
+        if PhantomState.OwnerEid == Player.Eid then
+          self:AddTeammateUI(PhantomState.Eid, false)
         end
       end
-    end
-    for _, PhantomState in pairs(GameState(self).PhantomArray) do
-      if not AddedPhantom[PhantomState.Eid] then
-        self:AddTeammateUI(PhantomState.Eid, false)
+    else
+      self:_ShowTeamPart(true)
+      for i, Member in ipairs(TeamModel:GetTeam().Members) do
+        DebugPrint(LXYTag, "TeamSyncDebug WBP_Battle_C::RefreshTeam.......PlayerArray Exist， Eid:", Member.Uid)
+        local bSelfCharacter = false
+        if TeamModel:IsYourself(Member.Uid) and self.Platform == "PC" then
+          if self.Platform == "PC" then
+            self.WBP_Team_Tag:Init(false, Member.Index, Member.Uid)
+          else
+            self.HUD_MainBar.T_Tag:Init(false, Member.Index, Member.Uid)
+          end
+          bSelfCharacter = true
+        else
+          self:AddTeammateUI(Member.Uid, true)
+        end
+        for _, PhantomState in pairs(GameState(self).PhantomArray) do
+          if PhantomState.OwnerEid == Member.Uid then
+            self:AddTeammateUI(PhantomState.Eid, false)
+          end
+        end
       end
     end
   elseif TeamModel:GetTeam() then
@@ -136,12 +141,11 @@ function Component:RefreshTeamWhenEnterGame(bMultiGame)
     self:_ShowTeamPart(false)
   end
 end
-
 function Component:ResetTeamAbout()
   if not TeamModel:GetAvatar() then
     return
   end
-  DebugPrint(LXYTag, "TeamSyncDebug \233\135\141\231\189\174\230\136\152\230\150\151\231\149\140\233\157\162\228\184\138\232\183\159\231\187\132\233\152\159\231\155\184\229\133\179\231\154\132\228\184\156\232\165\191")
+  DebugPrint(LXYTag, "TeamSyncDebug 重置战斗界面上跟组队相关的东西")
   self:_ShowTeamPart(false)
   self.VB_PlayerBar:ClearChildren()
   self.Team:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -157,7 +161,6 @@ function Component:ResetTeamAbout()
     self.Pos_Player:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Component:OpenTeamInfo()
   if not TeamModel:GetTeam() or #TeamModel:GetTeam().Members <= 1 then
     return
@@ -177,14 +180,13 @@ function Component:OpenTeamInfo()
       TeamInfoUI:UnbindAllFromAnimationFinished(TeamInfoUI.Auto_Out)
       TeamInfoUI:StopAnimation(TeamInfoUI.Auto_Out)
       TeamInfoUI:InitUIInfo(TeamCommon.InfoUIName, false, nil)
-      DebugPrint(DebugTag, LXYTag, "\229\164\141\231\148\168TeamInfoUI")
+      DebugPrint(DebugTag, LXYTag, "复用TeamInfoUI")
     else
       TeamInfoUI = UIManager(self):LoadUIAsync(TeamCommon.InfoUIName, CoObj)
-      DebugPrint(DebugTag, LXYTag, "\229\136\155\229\187\186TeamInfoUI")
+      DebugPrint(DebugTag, LXYTag, "创建TeamInfoUI")
     end
   end)
 end
-
 function Component:CloseTeamInfo()
   RunAsyncTask(self, "CloseTeamInfoAsync", function(CoObj)
     local TeamInfoUI = UIManager(self):GetUIObjAsync(TeamCommon.InfoUIName, CoObj)
@@ -193,34 +195,48 @@ function Component:CloseTeamInfo()
     end
   end)
 end
-
 function Component:AddBattleTeamBloodBar(Eid, bIsPlayer, Entity)
+  local Avatar = GWorld:GetAvatar()
+  if GameState(self).GameModeType == "Party" then
+    return false
+  end
+  if GWorld:IsStandAlone() or Avatar and Avatar.IsInRegionOnline then
+    return false
+  end
   if not Battle(self):GetEntity(Eid) then
     Battle(self):AddEntity(Eid, Entity)
   end
   if not self.TeamBloodBars or not self.TeamBloodBarCount then
-    DebugPrint("TeamSyncDebug  \231\173\137Loading\231\187\147\230\157\159\239\188\140ds\229\175\185\232\177\161\229\144\140\230\173\165\229\174\140\230\136\144\228\185\139\229\144\142\229\134\141\229\136\155\229\187\186\232\161\128\230\157\161")
+    DebugPrint("TeamSyncDebug  等Loading结束，ds对象同步完成之后再创建血条")
     return true
   end
   Entity = Entity or Battle(self):GetEntity(Eid)
-  Utils.Traceback(LXYTag, "TeamSyncDebug \231\187\132\233\152\159\230\181\129\231\168\139\230\151\182\229\186\143\239\188\140 EventID::ShowTeammateBloodUI, WBP_Battle_C::AddTeammateUI,  WBP_Battle_C_TeamComp::AddBattleTeamBloodBar")
-  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug \233\152\159 WBP_Battle_C::AddBattleTeamBloodBar, Eid, PlayerCount, bIsPlayer", Eid, GameState(self).PlayerArray:Num(), bIsPlayer)
+  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug 队 WBP_Battle_C::AddBattleTeamBloodBar, Eid, PlayerCount, bIsPlayer", Eid, GameState(self).PlayerArray:Num(), bIsPlayer)
   local PlayerEid, PhantomEid = Eid, Eid
   if not bIsPlayer then
     PlayerEid, PhantomEid = TeamModel:GetOwnerEidOfUnknowEid(self, Eid)
     if not PlayerEid then
-      DebugPrint(LXYTag, ErrorTag, "TeamSyncDebug\231\187\132\233\152\159\230\159\165\232\175\162\233\173\133\229\189\177\229\189\146\229\177\158\229\164\177\232\180\165\239\188\140\233\173\133\229\189\177Eid", Eid)
+      DebugPrint(LXYTag, ErrorTag, "TeamSyncDebug组队查询魅影归属失败，魅影Eid", Eid)
       return false
     end
+    local PlayerEntity = Battle(self):GetEntity(PlayerEid)
+    if not IsValid(PlayerEntity) then
+      DebugPrint(LXYTag, "TeamSyncDebug 魅影的Owner玩家角色无效，该魅影的角色应该也是无效的", Eid)
+      Entity = nil
+    end
     local PhantomState = GameState(self):GetPhantomState(PhantomEid)
+    if not PhantomState then
+      DebugPrint(WarningTag, LXYTag, "TeamSyncDebug PhantomState尚未准备就绪，等回调触发，Eid", PhantomEid)
+      return false
+    end
     local PhantomCharConf = DataMgr.Phantom[PhantomState.CharId]
     if PhantomCharConf and PhantomCharConf.IsHostage then
-      DebugPrint(LXYTag, WarningTag, "TeamSyncDebug\228\186\186\232\180\168\231\137\185\230\174\138\229\164\132\231\144\134\239\188\140\228\184\141\229\186\148\232\175\165\232\162\171\229\189\147\228\189\156\233\173\133\229\189\177")
+      DebugPrint(LXYTag, WarningTag, "TeamSyncDebug人质特殊处理，不应该被当作魅影")
       return false
     end
   end
   if TeamModel:IsYourself(PlayerEid) then
-    DebugPrint(LXYTag, "TeamSyncDebug\233\152\159 \232\135\170\229\183\177\231\154\132Eid\228\184\141\230\152\190\231\164\186\232\161\128\230\157\161 true")
+    DebugPrint(LXYTag, "TeamSyncDebug队 自己的Eid不显示血条 true")
     return false
   end
   if bIsPlayer then
@@ -228,21 +244,26 @@ function Component:AddBattleTeamBloodBar(Eid, bIsPlayer, Entity)
     self.VB_PlayerBar:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
   if not self.VB_PlayerBar:IsVisible() then
-    DebugPrint(LXYTag, "TeamSyncDebug\233\152\159 \232\161\128\230\157\161\230\140\130\230\142\165\231\130\185\228\184\141\229\143\175\232\167\129 false")
+    DebugPrint(LXYTag, "TeamSyncDebug队 血条挂接点不可见 false")
     return false
   end
   if not next(self.TeamBloodBars) and 0 == self.TeamBloodBarCount then
     self:_ShowTeamPart(true)
   end
+  local PlayerState = GameState(self):GetPlayerState(PlayerEid)
+  if not PlayerState then
+    DebugPrint(WarningTag, LXYTag, "TeamSyncDebug PlayerState尚未准备就绪，等回调触发，Eid", PlayerEid)
+    return false
+  end
   local BloodBar = self.TeamBloodBars[PlayerEid]
   if not BloodBar then
     local MaxTeammate = TeamCommon.MaxTeamMembers - 1
     if MaxTeammate > self.VB_PlayerBar:GetChildrenCount() then
-      DebugPrint(LXYTag, "TeamSyncDebug\229\136\155\229\187\186\230\150\176\231\154\132\233\152\159\229\143\139\232\161\128\230\157\161")
+      DebugPrint(LXYTag, "TeamSyncDebug创建新的队友血条")
       BloodBar = self:CreateWidgetNew(DataMgr.WidgetUI.TeamBattleBloodBar.UIName)
       self.VB_PlayerBar:AddChild(BloodBar)
     else
-      DebugPrint(LXYTag, "TeamSyncDebug\229\164\141\231\148\168\229\183\178\231\187\143\229\136\155\229\187\186\231\154\132\233\152\159\229\143\139\232\161\128\230\157\161")
+      DebugPrint(LXYTag, "TeamSyncDebug复用已经创建的队友血条")
       for _, InActiveUI in pairs(self.VB_PlayerBar:GetAllChildren()) do
         if not InActiveUI:IsVisible() then
           BloodBar = InActiveUI
@@ -251,7 +272,7 @@ function Component:AddBattleTeamBloodBar(Eid, bIsPlayer, Entity)
       end
       BloodBar:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
-    DebugPrint(LXYTag, "TeamSyncDebug\233\152\159\229\143\139\232\161\128\230\157\161\232\174\176\229\189\149")
+    DebugPrint(LXYTag, "TeamSyncDebug队友血条记录")
     self.TeamBloodBars[PlayerEid] = BloodBar
     self.TeamBloodBarCount = self.TeamBloodBarCount + 1
     if bIsPlayer and IsValid(Entity) then
@@ -269,16 +290,14 @@ function Component:AddBattleTeamBloodBar(Eid, bIsPlayer, Entity)
   end
   return true
 end
-
 function Component:RemoveBattleTeamBloodBar(Eid)
-  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug\231\187\132\233\152\159\230\181\129\231\168\139\230\151\182\229\186\143\239\188\140 EventID::CloseTeammateBloodUI, WBP_Battle_C::RemoveTeammateUI,  WBP_Battle_C_TeamComp::RemoveBattleTeamBloodBar")
+  DebugPrint(DebugTag, LXYTag, "TeamSyncDebug组队流程时序， EventID::CloseTeammateBloodUI, WBP_Battle_C::RemoveTeammateUI,  WBP_Battle_C_TeamComp::RemoveBattleTeamBloodBar")
   if not self.TeamBloodBars then
     return false
   end
   if not self.VB_PlayerBar:IsVisible() then
     return false
   end
-  
   local function RealClose(BloodBar, PlayerEid, PhantomEid)
     if not BloodBar then
       return false
@@ -294,7 +313,6 @@ function Component:RemoveBattleTeamBloodBar(Eid)
     TeamController:DelTeamMemberWithDs(Eid)
     return true
   end
-  
   local BloodBar = self.TeamBloodBars[Eid]
   if RealClose(BloodBar, Eid, Eid) then
     return true
@@ -309,7 +327,6 @@ function Component:RemoveBattleTeamBloodBar(Eid)
   end
   return false
 end
-
 function Component:_ShowTeamPart(bShow)
   if self._bShowTeamPart == bShow then
     return
@@ -320,6 +337,8 @@ function Component:_ShowTeamPart(bShow)
     if self.Platform == "PC" then
       self.VB_Tag:SetVisibility(UIConst.VisibilityOp.Collapsed)
       self.Key:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    else
+      self.HUD_MainBar.T_Tag:SetVisibility(UIConst.VisibilityOp.Collapsed)
     end
     self.Pos_Player:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.VB_PlayerBar:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -337,6 +356,7 @@ function Component:_ShowTeamPart(bShow)
     self:OnInputDeviceChange_Team()
   elseif self.Platform == "Mobile" then
     self.Spacer_Tag:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.HUD_MainBar.T_Tag:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
   if TeamModel:GetAvatar() then
     local PlayerChar = GWorld:GetMainPlayer()
@@ -350,9 +370,11 @@ function Component:_ShowTeamPart(bShow)
       if self.Platform == "Mobile" then
         self.Spacer_Tag:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
       end
+      local YourselfMember = TeamModel:GetTeamMember(PlayerChar.Eid)
       if self.Platform == "PC" then
-        local YourselfMember = TeamModel:GetTeamMember(PlayerChar.Eid)
         self.WBP_Team_Tag:Init(false, YourselfMember.Index, YourselfMember.Uid)
+      else
+        self.HUD_MainBar.T_Tag:Init(false, YourselfMember.Index, YourselfMember.Uid)
       end
       return
     end
@@ -360,9 +382,11 @@ function Component:_ShowTeamPart(bShow)
     if not TeamData then
       return
     end
+    local YourselfMember = TeamModel:GetTeamMember(TeamModel:GetAvatar().Uid)
     if self.Platform == "PC" then
-      local YourselfMember = TeamModel:GetTeamMember(TeamModel:GetAvatar().Uid)
       self.WBP_Team_Tag:Init(IsLeader, YourselfMember.Index, YourselfMember.Uid)
+    else
+      self.HUD_MainBar.T_Tag:Init(IsLeader, YourselfMember.Index, YourselfMember.Uid)
     end
     if #TeamData.Members > 0 and self.Pos_Player:IsVisible() then
       if self.TeamHeadUI then
@@ -376,14 +400,12 @@ function Component:_ShowTeamPart(bShow)
     end
   end
 end
-
 function Component:Show1PTagBar(bShow)
   local Func = self["Show1PTagBar" .. self.Platform]
   if Func then
     Func(self, bShow)
   end
 end
-
 function Component:Show1PTagBarPC(bShowBar)
   if not self.VB_Tag:IsVisible() then
     return
@@ -398,7 +420,6 @@ function Component:Show1PTagBarPC(bShowBar)
     self.Img_Up:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function Component:Show1PTagBarMobile(bShowBar)
   if bShowBar then
     self:PlayAnimation(self.Shadow_Add)
@@ -406,7 +427,6 @@ function Component:Show1PTagBarMobile(bShowBar)
     self:PlayAnimationReverse(self.Shadow_Add)
   end
 end
-
 function Component:EndTeam()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -422,5 +442,4 @@ function Component:EndTeam()
   end
   TeamController:UnRegisterEvent(self)
 end
-
 return Component

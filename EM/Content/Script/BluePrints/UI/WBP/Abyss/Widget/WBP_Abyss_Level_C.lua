@@ -1,5 +1,4 @@
 local WBP_Abyss_Level = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Abyss_Level:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnBtnClicked)
   self.Btn_Click.OnHovered:Add(self, self.OnBtnHovered)
@@ -18,11 +17,9 @@ function WBP_Abyss_Level:Construct()
   local ConfigData = {}
   ConfigData.OwnerWidget = self
   ConfigData.MenuPlacement = EMenuPlacement.MenuPlacement_CenteredAboveAnchor
-  
   function ConfigData.SoundFunc()
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   ConfigData.TextContent = GText("Abyss_InfiniteNode_Tips")
   self.Btn_Qa:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Btn_Qa:Init(ConfigData)
@@ -34,11 +31,9 @@ function WBP_Abyss_Level:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Abyss_Level:Destruct()
   self:ClearListenEvent()
 end
-
 function WBP_Abyss_Level:OnListItemObjectSet(Content)
   if self.Content then
     if self.Content.IsLastNormalLevel then
@@ -66,6 +61,19 @@ function WBP_Abyss_Level:OnListItemObjectSet(Content)
     self:PlayAnimation(self.In)
   end
   if self.IsJumpTip then
+    local Level
+    if self.Content.JumpIndex then
+      local InfiniteNode = DataMgr.AbyssSeason[self.AbyssId].InfiniteNode
+      for _, InfiniteNodeInfo in pairs(InfiniteNode) do
+        if InfiniteNodeInfo[2] == self.Content.JumpIndex then
+          Level = InfiniteNodeInfo[1]
+          break
+        end
+      end
+    end
+    if Level then
+      self.Text_Skip:SetText(string.format(GText("Abyss_InfiniteNode_Tips02"), Level, self.Content.JumpIndex))
+    end
     self.WS_Type:SetActiveWidgetIndex(1)
     return
   else
@@ -74,7 +82,7 @@ function WBP_Abyss_Level:OnListItemObjectSet(Content)
   if self.Content.PlayNodeLevelUnlockAnimation then
     self:PlayAnimation(self.Unlock)
     local EMCache = require("EMCache.EMCache")
-    EMCache:Set("LastUnlockNodeLevel", self.Index)
+    EMCache:Set("NodeLevelUnlockAnimationPlayed", true, true)
     self.Content.PlayNodeLevelUnlockAnimation = false
   end
   if self.Content.IsLastNormalLevel then
@@ -85,7 +93,7 @@ function WBP_Abyss_Level:OnListItemObjectSet(Content)
     })
   elseif self.Content.IsNodeLevel then
     self.Panel_Node:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-    self.Text_Node:SetText(string.format(GText("Abyss_InfiniteNode"), tostring(self.Content.NodeIndex)))
+    self.Text_Node:SetText(GText("Abyss_InfiniteNode"))
     self:SetNavigationRuleCustom(EUINavigation.Up, {
       self,
       self.NavigateToLastNormalLevel
@@ -129,7 +137,6 @@ function WBP_Abyss_Level:OnListItemObjectSet(Content)
     end
   end
 end
-
 function WBP_Abyss_Level:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -140,7 +147,6 @@ function WBP_Abyss_Level:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function WBP_Abyss_Level:OnBtnClicked()
   if self.IsLocked then
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_disable", nil, nil)
@@ -153,7 +159,6 @@ function WBP_Abyss_Level:OnBtnClicked()
     self.Func(self.Obj, table.unpack(self.Params))
   end
 end
-
 function WBP_Abyss_Level:OnBtnHovered()
   if not self.IsLocked then
     AudioManager(self):PlayUISound(nil, "event:/ui/activity/drama_chapter_btn_hover", nil, nil)
@@ -168,7 +173,6 @@ function WBP_Abyss_Level:OnBtnHovered()
   end
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Abyss_Level:OnBtnUnhovered()
   self.IsHovering = false
   if not self.IsPressing then
@@ -176,13 +180,11 @@ function WBP_Abyss_Level:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Abyss_Level:OnBtnPressed()
   self.IsPressing = true
   self:StopAllBtnAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Abyss_Level:OnBtnReleased()
   self.IsPressing = false
   if not self.IsHovering then
@@ -199,7 +201,6 @@ function WBP_Abyss_Level:OnBtnReleased()
     end
   end
 end
-
 function WBP_Abyss_Level:StopAllBtnAnimations()
   self:StopAnimation(self.Normal)
   self:StopAnimation(self.UnLock_Normal)
@@ -209,33 +210,27 @@ function WBP_Abyss_Level:StopAllBtnAnimations()
   self:StopAnimation(self.Hover)
   self:StopAnimation(self.Click)
 end
-
 function WBP_Abyss_Level:BP_GetDesiredFocusTarget()
   self.IsTipMode = false
   self.Content.Root:TryChangeCurFocusedMissionList(self)
   return self.Btn_Click
 end
-
 function WBP_Abyss_Level:NavigateToNodeLevel()
   return self.Content.Root:NavigateToNodeLevel(self)
 end
-
 function WBP_Abyss_Level:NavigateToLastNormalLevel()
   return self.Content.Root:NavigateToLastNormalLevel(self)
 end
-
 function WBP_Abyss_Level:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Abyss_Level:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Abyss_Level:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -243,7 +238,6 @@ function WBP_Abyss_Level:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadNa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Abyss_Level:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -251,14 +245,11 @@ function WBP_Abyss_Level:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Abyss_Level:InitGamepadView()
 end
-
 function WBP_Abyss_Level:InitKeyboardView()
   self.Key_Controller_Qa:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function WBP_Abyss_Level:InitWidgetInfoInGamePad()
   self.Key_Controller_Qa:CreateCommonKey({
     KeyInfoList = {
@@ -266,7 +257,6 @@ function WBP_Abyss_Level:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function WBP_Abyss_Level:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -286,27 +276,22 @@ function WBP_Abyss_Level:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Abyss_Level:EnterTipMode()
   self.IsTipMode = true
   self.Btn_Qa:OnViewInfoClick(true)
 end
-
 function WBP_Abyss_Level:LeaveTipMode()
   self.IsTipMode = false
   self.Btn_Qa:OnViewInfoClick(false)
 end
-
 function WBP_Abyss_Level:HideIcon()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_Controller_Qa:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Abyss_Level:ShowIcon()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_Controller_Qa:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 return WBP_Abyss_Level

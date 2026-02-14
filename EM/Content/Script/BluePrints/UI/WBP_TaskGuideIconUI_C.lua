@@ -1,49 +1,40 @@
 require("UnLua")
 local Guide_Icon_Point_C = Class("BluePrints.UI.BP_UIState_C")
-
 function Guide_Icon_Point_C:DebugPrint(...)
   DebugPrint("DungeonIndicator", ...)
 end
-
 function Guide_Icon_Point_C:AssignVector(from, to)
   to.X, to.Y, to.Z = from.X, from.Y, from.Z
 end
-
 function Guide_Icon_Point_C:AssignVector2D(from, to)
   to.X, to.Y = from.X, from.Y
 end
-
 function Guide_Icon_Point_C:GetBPName()
   if self.ConfigData == nil then
     return nil
   end
   return self.ConfigData.GuideIconAni
 end
-
 function Guide_Icon_Point_C:GetIconSize()
   if self.ConfigData == nil or nil == self.ConfigData.GuideIconAni then
     return FVector2D(64, 64)
   end
   return self.IconSize
 end
-
 function Guide_Icon_Point_C:GetRealDistance()
   return self.PointRealDistance
 end
-
 function Guide_Icon_Point_C:GetIconPathName()
   if self.ConfigData == nil then
     return ""
   end
   return self.ConfigData.GuideIconAni
 end
-
 local PhantomStateEnum = {
   Alive = 0,
   Dead = 1,
   Resurrecting = 2
 }
-
 function Guide_Icon_Point_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ConfigData = nil
@@ -91,7 +82,6 @@ function Guide_Icon_Point_C:Initialize(Initializer)
   self.CurrentPhantomOpacity = 1
   self.PhantomOpacityLerpInterval = 0.1
 end
-
 function Guide_Icon_Point_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.TargetEid, self.TargetActor, self.TargetPointPos, self.ConfigData, self.RequireDirectionArrow, self.RequireFollowingActor, self.RequireLookUpEntity, self.RequireInAnimation, self.UseRealDistance = ...
@@ -102,7 +92,6 @@ function Guide_Icon_Point_C:OnLoaded(...)
   self:SetVisibilityOnDoor(true)
   self:SetVisibilityNotOnDoor(true)
 end
-
 function Guide_Icon_Point_C:InitConfigData()
   if IsValid(self.TargetActor) then
     self.GuideType = self.TargetActor.UnitType
@@ -136,7 +125,6 @@ function Guide_Icon_Point_C:InitConfigData()
     self.Text_PointName:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Guide_Icon_Point_C:SetPhantomImgAvatar()
   if self.GuideType == "Phantom" and self.Phantom then
     if self.PhantomGuideState == PhantomStateEnum.Alive then
@@ -154,25 +142,22 @@ function Guide_Icon_Point_C:SetPhantomImgAvatar()
     end
   end
 end
-
 function Guide_Icon_Point_C:TryPlayAppearAudio()
   if self.GuideType == "Task" then
     AudioManager(self):PlayUISound(self, "event:/ui/common/guide_point_show", nil, nil)
   end
 end
-
 function Guide_Icon_Point_C:SetGuideImage(ImageName)
   local ImagePath = UIConst.DUNGEONINDICATORIMG[ImageName]
   if nil ~= ImagePath and nil ~= self.Img_GuidePoint_Icon then
     local IconImage = LoadObject(ImagePath)
     if nil == IconImage then
-      self:DebugPrint("InitConfigData: \230\140\135\229\188\149\231\130\185 Icon \229\155\190\231\137\135\228\184\141\229\173\152\229\156\168\239\188\129")
+      self:DebugPrint("InitConfigData: 指引点 Icon 图片不存在！")
       return
     end
     self.Img_GuidePoint_Icon:SetBrushResourceObject(IconImage)
   end
 end
-
 function Guide_Icon_Point_C:Refresh(BPName, RequireInAnimation)
   if nil ~= BPName then
     if nil ~= self[BPName .. "_Arrows"] and nil ~= self.Common_Arrows then
@@ -190,7 +175,6 @@ function Guide_Icon_Point_C:Refresh(BPName, RequireInAnimation)
     self:SetVisibilityNotOnDoor(false)
   end
 end
-
 function Guide_Icon_Point_C:Reset(TargetEid, TargetActor, TargetLocation, ConfigData, RequireDirectionArrow, RequireFollowingActor, RequireLookUpEntity, RequireInAnimation, UseRealDistance, IsResetPos)
   self.TargetEid = TargetEid
   self.TargetActor = TargetActor
@@ -208,7 +192,6 @@ function Guide_Icon_Point_C:Reset(TargetEid, TargetActor, TargetLocation, Config
   end
   self:InitConfigData()
 end
-
 function Guide_Icon_Point_C:Disappear()
   if self.Style == self.Styles.Disappearing then
     return
@@ -216,7 +199,6 @@ function Guide_Icon_Point_C:Disappear()
   self.Style = self.Styles.Disappearing
   if self.ConfigData ~= nil and nil ~= self.ConfigData.GuideIconAni and self.RequireInAnimation then
     self:UnbindAllFromAnimationFinished(self.Out)
-    
     local function PlayAnimFinished()
       local StyleNode = "Panel_" .. self.ConfigData.GuideIconAni
       if nil ~= self[StyleNode] then
@@ -224,7 +206,6 @@ function Guide_Icon_Point_C:Disappear()
       end
       self:Close()
     end
-    
     if self.Out ~= nil then
       self:BindToAnimationFinished(self.Out, {self, PlayAnimFinished})
       self:PlayAnimation(self.Out)
@@ -235,10 +216,9 @@ function Guide_Icon_Point_C:Disappear()
     self:Close()
   end
 end
-
 function Guide_Icon_Point_C:ChangeStyle(Style, Count)
   if self.ConfigData == nil or nil == self.ConfigData.GuideIconAni then
-    self:DebugPrint("ChangeStyle: \230\140\135\229\188\149\231\130\185\230\156\170\230\152\190\231\164\186")
+    self:DebugPrint("ChangeStyle: 指引点未显示")
     return
   end
   if Style == self.Styles.Single then
@@ -257,14 +237,12 @@ function Guide_Icon_Point_C:ChangeStyle(Style, Count)
       self.Panel_GuidePoint_More:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     end
   else
-    self:DebugPrint("ChangeStyle: \230\160\183\229\188\143\228\184\141\229\144\136\230\179\149")
+    self:DebugPrint("ChangeStyle: 样式不合法")
   end
 end
-
 function Guide_Icon_Point_C:GetVisible()
   return self.TargetVisibilityOnDoor
 end
-
 function Guide_Icon_Point_C:SetVisibilityNotOnDoor(Visible)
   self.TargetVisibility = Visible
   if self.TargetVisibility == true and true == self.TargetVisibilityOnDoor then
@@ -274,7 +252,6 @@ function Guide_Icon_Point_C:SetVisibilityNotOnDoor(Visible)
     self.Guide_Node:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Guide_Icon_Point_C:SetVisibilityOnDoor(Visible, HideObjs)
   if true == Visible then
     self.TargetVisibilityOnDoor = true
@@ -287,19 +264,16 @@ function Guide_Icon_Point_C:SetVisibilityOnDoor(Visible, HideObjs)
     self.Guide_Node:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function Guide_Icon_Point_C:PlayAppearAnim()
   if self.In ~= nil then
     self:PlayAnimation(self.In)
   end
 end
-
 function Guide_Icon_Point_C:RePlayAppearAnim()
   if self.Loop ~= nil then
     self:PlayAnimation(self.Loop, 0, 2)
   end
 end
-
 function Guide_Icon_Point_C:GetTargetPosition(SceneManager)
   if self.RequireLookUpEntity == true then
     self.TargetActor = Battle(self):GetEntity(self.TargetEid)
@@ -313,10 +287,10 @@ function Guide_Icon_Point_C:GetTargetPosition(SceneManager)
           if ClientGuideData.Entity and ClientGuideData.Entity.Loc then
             self.TargetPointPos = ClientGuideData.Entity.Loc
           else
-            self:DebugPrint("GetTargetPosition: Entity.Loc \230\151\160\230\149\136")
+            self:DebugPrint("GetTargetPosition: Entity.Loc 无效")
           end
         else
-          local RealEntity = Battle(self):GetEntity(CurSceneGuideData.Entity)
+          local RealEntity = Battle(self):GetEntity(ClientGuideData.Entity)
           if IsValid(RealEntity) then
             self.TargetPointPos = RealEntity:K2_GetActorLocation()
           else
@@ -326,11 +300,10 @@ function Guide_Icon_Point_C:GetTargetPosition(SceneManager)
       end
     end
   elseif not IsValid(self.TargetActor) then
-    self:DebugPrint("GetTargetPosition: \233\135\141\230\150\176\232\142\183\229\143\150 TargetActor \229\174\158\228\190\139")
+    self:DebugPrint("GetTargetPosition: 重新获取 TargetActor 实例")
     self.RequireLookUpEntity = true
   end
 end
-
 function Guide_Icon_Point_C:AdjustTargetPosition()
   if not IsValid(self.TargetActor) or not IsValid(self.TargetActor) then
     return
@@ -354,12 +327,10 @@ function Guide_Icon_Point_C:AdjustTargetPosition()
     self.TargetPointPos.Z = TargetActorLocation.Z + self.TargetActor.Box:GetScaledBoxExtent().Z
   end
 end
-
 function Guide_Icon_Point_C:CheckPhantomIsNeedChangeIconState()
   local function TryPlayResurgenceSuccessFromResurrectEnd()
     if self.PhantomGuideState == PhantomStateEnum.Resurrecting then
       DebugPrint("Guide_Icon_Point_C:TryPlayResurgenceSuccessFromResurrectEnd", self.TargetEid)
-      
       self:BindToAnimationFinished(self.Resurgence_Success, {
         self,
         self.PlayPhantomNormalAnimation
@@ -367,7 +338,6 @@ function Guide_Icon_Point_C:CheckPhantomIsNeedChangeIconState()
       self:PlayAnimation(self.Resurgence_Success)
     end
   end
-  
   if self.TargetActor:IsInRecovering() and self.PhantomGuideState ~= PhantomStateEnum.Resurrecting then
     DebugPrint("Guide_Icon_Point_C:CheckPhantomIsNeedChangeIconState Recovering", self.TargetEid)
     self.PhantomGuideState = PhantomStateEnum.Resurrecting
@@ -399,11 +369,9 @@ function Guide_Icon_Point_C:CheckPhantomIsNeedChangeIconState()
   end
   return false
 end
-
 function Guide_Icon_Point_C:PlayPhantomNormalAnimation()
   self:PlayAnimation(self.Normal)
 end
-
 function Guide_Icon_Point_C:SetIconStateStyle()
   self:SetPhantomImgAvatar()
   if self.PhantomGuideState == PhantomStateEnum.Alive then
@@ -422,7 +390,6 @@ function Guide_Icon_Point_C:SetIconStateStyle()
     self.Text_Distance:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function Guide_Icon_Point_C:UpdatePhantomVisbility()
   if self.TargetActor:IsDead() then
     if self:GetCanRecoveryCount() <= 0 then
@@ -445,7 +412,6 @@ function Guide_Icon_Point_C:UpdatePhantomVisbility()
   self.CurrentPhantomOpacity = UE4.UKismetMathLibrary.Lerp(self.CurrentPhantomOpacity, self.TargetPhantomOpacity, self.PhantomOpacityLerpInterval)
   self:SetRenderOpacity(self.CurrentPhantomOpacity)
 end
-
 function Guide_Icon_Point_C:UpdatePhantomGuide()
   if self:CheckPhantomIsNeedChangeIconState() then
     self:SetIconStateStyle()
@@ -453,7 +419,6 @@ function Guide_Icon_Point_C:UpdatePhantomGuide()
   self:UpdatePhantomCanRecoveryCount()
   self:UpdateRecoveryBarCircle()
 end
-
 function Guide_Icon_Point_C:UpdatePhantomCanRecoveryCount()
   if self.TargetActor:IsDead() then
     local CanRecoveryCount = self:GetCanRecoveryCount()
@@ -463,30 +428,27 @@ function Guide_Icon_Point_C:UpdatePhantomCanRecoveryCount()
     end
   end
 end
-
 function Guide_Icon_Point_C:UpdateRecoveryBarCircle()
   if self.TargetActor:IsInRecovering() and self.PhantomGuideState == PhantomStateEnum.Resurrecting then
     self.Text_Percent:SetText(math.floor(self.TargetActor:GetRecoveryPercent()))
     self.Phantom.Bar_Circle:GetDynamicMaterial():SetScalarParameterValue("Percent", self.TargetActor:GetRecoveryPercent() / 100)
   end
 end
-
 function Guide_Icon_Point_C:GetCanRecoveryCount()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   local PhantomRecoveryCount = Player.PlayerState.PhantomRecoveryCount
   local PhantomRecoveryMaxCount = Player.PlayerState.PhantomRecoveryMaxCount
   return PhantomRecoveryMaxCount - PhantomRecoveryCount
 end
-
 function Guide_Icon_Point_C:UpdateIndicator()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if nil == GameInstance then
-    self:DebugPrint("UpdateIndicator: GameInstance \228\184\141\229\173\152\229\156\168")
+    self:DebugPrint("UpdateIndicator: GameInstance 不存在")
     return
   end
   local SceneManager = GameInstance:GetSceneManager()
   if nil == SceneManager then
-    self:DebugPrint("UpdateIndicator: SceneManager \228\184\141\229\173\152\229\156\168")
+    self:DebugPrint("UpdateIndicator: SceneManager 不存在")
     return
   end
   if self.GuideType == "Phantom" and self.Phantom then
@@ -501,7 +463,7 @@ function Guide_Icon_Point_C:UpdateIndicator()
   end
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) or nil == self.TargetPointPos then
-    self:DebugPrint("UpdateIndicator: Player \228\184\141\229\173\152\229\156\168")
+    self:DebugPrint("UpdateIndicator: Player 不存在")
     return
   end
   local Controller = Player:GetController()
@@ -551,7 +513,6 @@ function Guide_Icon_Point_C:UpdateIndicator()
   self.CacheScreenPos:Set(self.ScreenLocation.X / ViewPortScale, self.ScreenLocation.Y / ViewPortScale)
   CanvasSlot:SetPosition(self.CacheScreenPos)
 end
-
 function Guide_Icon_Point_C:GetDistanceText()
   if self.PointRealDistance < 1 then
     return "<1" .. self.DistanceUnit
@@ -561,7 +522,6 @@ function Guide_Icon_Point_C:GetDistanceText()
   end
   return ">9999" .. self.DistanceUnit
 end
-
 function Guide_Icon_Point_C:SetArrowAndNumVisiblity(IndicatorAngle)
   local StyleNodeName = self.ConfigData and self.ConfigData.GuideIconAni or ""
   if self.RequireDirectionArrow and self.IsOutElliptic then
@@ -601,5 +561,4 @@ function Guide_Icon_Point_C:SetArrowAndNumVisiblity(IndicatorAngle)
     end
   end
 end
-
 return Guide_Icon_Point_C

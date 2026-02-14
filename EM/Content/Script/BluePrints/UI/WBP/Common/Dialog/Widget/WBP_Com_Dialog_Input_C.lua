@@ -1,7 +1,6 @@
 require("UnLua")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   if not Params then
@@ -18,7 +17,6 @@ function M:PreInitContent(Params, PopupData, Owner)
   end
   AssembleComponents(self)
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.PackageKey = "ComDialogInput"
@@ -48,7 +46,6 @@ function M:InitContent(Params, PopupData, Owner)
   end
   self:InitContentComp(Params, PopupData, Owner)
 end
-
 function M:OnDialogRightBtnClicked()
   local Str = self:GetText()
   if self.bNotAllowEmpty then
@@ -74,57 +71,44 @@ function M:OnDialogRightBtnClicked()
     end, false)
   end
 end
-
 function M:PackageData()
   return {
     Text = self:GetText(),
     bSuccess = self.bSuccess
   }
 end
-
 function M:InitContentComp(Params, PopupData, Owner)
 end
-
 function M:SetGamePadKey(FocusKeyName, PasteKeyName)
   self.CurrentInputWidget:SetGamePadKey(FocusKeyName, PasteKeyName)
 end
-
 function M:BindEvent(Events)
   self.CurrentInputWidget:BindEvent(Events)
 end
-
 function M:SetHintText(Text)
   self.CurrentInputWidget:SetHintText(Text)
 end
-
 function M:SetText(Text)
   self.CurrentInputWidget:SetText(Text)
 end
-
 function M:InsertText(InStr, Position)
   self.CurrentInputWidget:InsertText(InStr, Position)
 end
-
 function M:GetText()
   return self.CurrentInputWidget:GetText()
 end
-
 function M:SetTextLimit(TextLimit)
   self.CurrentInputWidget:SetTextLimit(TextLimit)
 end
-
 function M:ShowTips(TipText, Style)
   self.CurrentInputWidget:ShowTips(TipText, Style)
 end
-
 function M:SetResidentTips(TipText)
   self.CurrentInputWidget:SetResidentTips(TipText)
 end
-
 function M:HideTips()
   self.CurrentInputWidget:HideTips()
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -136,8 +120,6 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
     end
   end
 end
-
 function M:OnContentFocusReceived()
 end
-
 return M

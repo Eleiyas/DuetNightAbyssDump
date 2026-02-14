@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.Item.Chest.BP_MechanismBase_C"
 })
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
   self.MaxTime = self.UnitParams.MaxTime
@@ -12,7 +11,6 @@ function M:CommonInitInfo(Info)
   self.IsInInteractive = false
   self.InteractiveType = Const.PressInteractive
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if self.IsInInteractive then
@@ -37,7 +35,6 @@ function M:ReceiveTick(DeltaSeconds)
   end
   self.PrePercent = self.CurPercent
 end
-
 function M:OpenMechanism(Eid)
   local Player = Battle(self):GetEntity(Eid)
   if Player then
@@ -47,7 +44,6 @@ function M:OpenMechanism(Eid)
     self.NowPlayerEid = Eid
   end
 end
-
 function M:CloseMechanism(Eid, IsSuccess)
   local Player = Battle(self):GetEntity(Eid)
   if Player then
@@ -59,7 +55,6 @@ function M:CloseMechanism(Eid, IsSuccess)
     self.IsInInteractive = false
   end
 end
-
 function M:OnMechanismComplete(Eid)
   local Player = Battle(self):GetEntity(Eid)
   if Player then
@@ -69,12 +64,10 @@ function M:OnMechanismComplete(Eid)
     self:ChangeState("InteractDone", Eid)
   end
 end
-
 function M:ChangeToNormalState(Player)
   Player.OnInteractiveDelegate:Remove(self, self.ChangeToNormalState)
   self:ChangeState("InteractBreak", Player.Eid)
 end
-
 function M:CameraToPlayer(BlendTime)
   if not self.CameraOnSelf then
     return
@@ -89,7 +82,6 @@ function M:CameraToPlayer(BlendTime)
   Controller:SetViewTargetWithBlend(Player, BlendTime)
   self.CameraOnSelf = false
 end
-
 function M:CameraToMechanism(CameraComp, BlendTime)
   if self.CameraOnSelf then
     return
@@ -107,5 +99,13 @@ function M:CameraToMechanism(CameraComp, BlendTime)
   Player.CharSpringArmComponent:SetTickableWhenPaused(true)
   self.CameraOnSelf = true
 end
-
+function M:GetNeedLongPressTime()
+  return self.MaxTime or 0
+end
+function M:GetLongPressedPercent()
+  return self.CurPercent or 0
+end
+function M:GetReduceTime()
+  return self.ReduceTime or 0
+end
 return M

@@ -6,7 +6,6 @@ local Guide_Image_Cell = Class({
 Guide_Image_Cell._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function Guide_Image_Cell:Construct()
   self.GuideType = "None"
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
@@ -19,19 +18,16 @@ function Guide_Image_Cell:Construct()
     }
   end
 end
-
 function Guide_Image_Cell:Destruct()
   if self.MediaPlayer and self.MediaPlayer:IsPlaying() then
     self.MediaPlayer:SetLooping(false)
     self.MediaPlayer:Close()
   end
 end
-
 function Guide_Image_Cell:SetNumStep(i)
   self.num_index = i
   self.MediaPlayer = LoadObject("MediaPlayer'/Game/UI/UI_PC/Guide/Guide_Image/MediaPlayer/MediaPlayer_Video" .. i .. ".MediaPlayer_Video" .. i .. "'")
 end
-
 function Guide_Image_Cell:SetGuideType(GuideType)
   self.GuideType = GuideType
   if self.GuideType == "ImageText" then
@@ -42,18 +38,15 @@ function Guide_Image_Cell:SetGuideType(GuideType)
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
   end
 end
-
 function Guide_Image_Cell:UpdateContent(ChildGuideId, i, isPC)
   self.ChildInfo = DataMgr.UIChildGuide[ChildGuideId]["GuideInfo" .. i]
   self:UpdateCellText(ChildGuideId, i, isPC)
   self:UpdateCellImgs(ChildGuideId, i, isPC)
   self:PlayAnimation(self.SwitchCell)
 end
-
 function Guide_Image_Cell:UpdateCellImgs(ChildGuideId, i, isPC)
   self:GetChildeGuideUIInfoById(ChildGuideId, i, isPC)
 end
-
 function Guide_Image_Cell:UpdateCellText(ChildGuideId, i, isPC)
   local SubTitleText = self.ChildInfo.GuideSubTitle
   if SubTitleText then
@@ -92,7 +85,6 @@ function Guide_Image_Cell:UpdateCellText(ChildGuideId, i, isPC)
     self.Guide_Desc_Text:SetWrapTextAt(UIManager():GetWidgetRenderSize(self.WidgetSwitcher_State).X - 50)
   end)
 end
-
 function Guide_Image_Cell:GetChildeGuideUIInfoById(ChildGuideId, i, isPC)
   local PictureList = self.ChildInfo.GuidePicture
   if not PictureList then
@@ -113,7 +105,6 @@ function Guide_Image_Cell:GetChildeGuideUIInfoById(ChildGuideId, i, isPC)
     self:ShowImg(self.GuidePicture)
   end
 end
-
 function Guide_Image_Cell:ShowImg(ImgPath)
   local img = LoadObject(ImgPath)
   if self.ShowType ~= "Img" then
@@ -125,7 +116,6 @@ function Guide_Image_Cell:ShowImg(ImgPath)
   end
   self.Image_Guide:SetBrushFromTexture(img, true)
 end
-
 function Guide_Image_Cell:ShowVideo(VideoPath)
   self:ScaleImageSize()
   local video = LoadObject(VideoPath)
@@ -140,7 +130,6 @@ function Guide_Image_Cell:ShowVideo(VideoPath)
   end
   self.VideoPath = VideoPath
 end
-
 function Guide_Image_Cell:ScaleImageSize(img)
   local Size = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Image_Guide):GetSize()
   local CellX = Size.X
@@ -164,7 +153,6 @@ function Guide_Image_Cell:ScaleImageSize(img)
   end
   self.Image_Guide:SetRenderScale(UE4.FVector2D(scalex, scaley))
 end
-
 function Guide_Image_Cell:GetCurrentTextIsLong()
   if self.GuideType ~= "Text" then
     return false
@@ -174,7 +162,6 @@ function Guide_Image_Cell:GetCurrentTextIsLong()
   end
   return false
 end
-
 function Guide_Image_Cell:UpdateTextOnInputDeviceChanged(NewInputDevice)
   self.CurInputDeviceType = NewInputDevice
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -191,6 +178,5 @@ function Guide_Image_Cell:UpdateTextOnInputDeviceChanged(NewInputDevice)
   self:UpdateCellText(nil, nil, true)
   self:UpdateCellImgs(nil, nil, true)
 end
-
 AssembleComponents(Guide_Image_Cell)
 return Guide_Image_Cell

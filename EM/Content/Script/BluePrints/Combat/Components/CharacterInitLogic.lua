@@ -1,18 +1,15 @@
 local EffectResults = require("BluePrints.Combat.BattleLogic.EffectResults")
 local MiscUtils = require("Utils.MiscUtils")
 local Component = {}
-
 function Component:RegisterInfo(Info)
   if Info then
     self.InfoForInit = Info
   end
   self:TryInitCharacterInfo("InitInfo")
 end
-
 function Component:OnRep_ServerBornInfo()
   self.BornInfo = EffectResults.UnpackEffectStruct(self.ServerBornInfo)
 end
-
 function Component:OnRep_ServerInitSuccessOld()
   if self.ServerInitSuccess == true then
     print(_G.LogTag, "OnRep_ServerInitSuccess")
@@ -24,7 +21,6 @@ function Component:OnRep_ServerInitSuccessOld()
     self:TryInitCharacterInfo("InitInfo")
   end
 end
-
 function Component:GetInfoForInit()
   return {
     RoleId = self.CurrentRoleId,
@@ -32,7 +28,6 @@ function Component:GetInfoForInit()
     ShadowModelId = self.ShadowModelId
   }
 end
-
 function Component:BeginInitInfo()
   print(_G.LogTag, "BeginInitInfo")
   if self.InitSuccess then
@@ -41,7 +36,6 @@ function Component:BeginInitInfo()
   end
   self:InitCharacterInfo()
 end
-
 function Component:InitCharacterInfoForRegionPlayer(Info)
   Info = Info or self.InfoForInit
   if not Info then
@@ -67,7 +61,72 @@ function Component:InitCharacterInfoForRegionPlayer(Info)
     self:RegionPlayerPendingInit()
   end
 end
-
+function Component:RegionPlayerInitInfo(ObjId, EidOverride)
+  local RegionSyncSubsys = UE4.URegionSyncSubsystem.GetInstance(self)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  if not RegionSyncSubsys then
+    print(_G.LogTag, "RegionPlayerInitInfo RegionSyncSubsys is nil")
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    print(_G.LogTag, "RegionPlayerInitInfo Avatar is nil")
+    return
+  end
+  if not Avatar.OtherRoleInfo then
+    print(_G.LogTag, "RegionPlayerInitInfo Avatar.TempRoleInfo is nil")
+    return
+  end
+  if not CommonUtils.IsObjIdStr(ObjId) then
+    print(_G.LogTag, "RegionPlayerInitInfo ObjId is  not a Legal ObjIdStr")
+    return
+  end
+  local LuaObjId = CommonUtils.Str2ObjId(ObjId)
+  local RoleInfo = Avatar.OtherRoleInfo[LuaObjId]
+  if not RoleInfo then
+    print(_G.LogTag, "RegionPlayerInitInfo RoleInfo is nil")
+    return
+  end
+  if EidOverride and EidOverride > 0 then
+    RoleInfo.Eid = EidOverride
+  end
+  self.CacheInfo = RoleInfo
+  if RoleInfo.AppearanceSuit then
+    self.CurrentSkinId = RoleInfo.AppearanceSuit.SkinId
+  else
+    self.CurrentSkinId = RoleInfo.SkinId
+  end
+  self.ShadowModelId = RoleInfo.ShadowModelId or 0
+  self:PreInitInfo(RoleInfo)
+  self:RegionPlayerPendingInit()
+  self:AddInteractiveComponent()
+  RoleInfo.CharEid = self.Eid
+  if self.RegionInterComp then
+    self.RegionInterComp:InitRegionInfo(self.Eid, LuaObjId)
+  end
+  if self.RegionInterAddFriendComp then
+    self.RegionInterAddFriendComp:InitRegionInfo(self.Eid, LuaObjId)
+  end
+  if self.RegionInterInviteTeamComp then
+    self.RegionInterInviteTeamComp:InitRegionInfo(self.Eid, LuaObjId)
+  end
+  if self.RegionInterPersonInfoComp then
+    self.RegionInterPersonInfoComp:InitRegionInfo(self.Eid, LuaObjId)
+  end
+  EventManager:FireEvent(EventID.OnlineAddOtherPlayer, self.Eid, RoleInfo.Uid, self, LuaObjId)
+  EventManager:FireEvent(EventID.AddRegionIndicatorInfo, self.Eid, RoleInfo.Uid, self:K2_GetActorLocation(), LuaObjId)
+  self:RegisterOtherWorldPlayerCharacterToSubSystem(ObjId)
+  print(_G.LogTag, "RegionPlayerInitInfo Spawn Other Player Character Success Init", RoleInfo.IsCrouching)
+  if RoleInfo.MountDatas and 0 ~= RoleInfo.MountDatas.MountId then
+    RoleInfo.IsCrouching = false
+    self:EnableBattleMount(RoleInfo.MountDatas.MountId, 0, true)
+  end
+  if RoleInfo.IsCrouching then
+    self:SetCrouch(true)
+  else
+    self:SetCrouch(false)
+  end
+end
 function Component:ColletctPartMeshIds(AppearanceSuitInfo)
   if not self.CharacterFashion then
     return {}
@@ -76,7 +135,6 @@ function Component:ColletctPartMeshIds(AppearanceSuitInfo)
   self.CharacterFashion:ColletctPartMeshIds(AppearanceSuitInfo, PartMeshIds)
   return PartMeshIds
 end
-
 function Component:RegionPlayerPendingInit()
   print(_G.LogTag, "RegionPlayerPendingInit")
   if not self.CacheInfo then
@@ -87,7 +145,6 @@ function Component:RegionPlayerPendingInit()
     self:RealInitInfo(Info)
   end
 end
-
 function Component:InitCharacterInfo(Info)
   Info = Info or self.InfoForInit
   if not Info then
@@ -100,26 +157,27 @@ function Component:InitCharacterInfo(Info)
     self:RealInitInfo(Info)
   end
 end
-
 function Component:AuthorityPreInitInfo(Info)
   if 0 == self.Eid then
     if Info.Eid ~= nil then
       self:SetEid(Info.Eid)
     else
       local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-      self:SetEid(GameMode:GetBattleEid())
+      if GameMode then
+        self:SetEid(GameMode:GetBattleEid())
+      end
     end
   end
   self:SetDirectSource(Info.DirectSource and Info.DirectSource.Eid)
-  self:RawRemoveAllBuff()
-  self:DestroyActorOnDead_CPP(false)
+  self:RawRemoveAllBuff(true)
+  self:DestroyActorOnDead_CPP(false, EDeathReason.NoReason, true)
   self:ClearSkill()
   self:ClearAttrs()
+  self:ServerResourceDisableBattleMount(true)
 end
-
 function Component:ClientPreInitInfo(Info)
+  self:DestroyAllCreatures(ECreatureDeathWithCreator.Destroy, EDeathReason.CreatureRawDestroy)
 end
-
 function Component:UnpackAvatarInfoNew(Context)
   local AvatarInfo = Context:GetLuaTable("AvatarInfo")
   if not AvatarInfo then
@@ -152,7 +210,6 @@ function Component:UnpackAvatarInfoNew(Context)
     Context:AddLuaTable("UltraWeapons", AvatarInfo.UltraWeapons)
   end
 end
-
 function Component:UnpackAvatarInfo(Info)
   if Info.UseMasterRole then
     return
@@ -176,16 +233,16 @@ function Component:UnpackAvatarInfo(Info)
   end
   Info.RoleInfo = nil
 end
-
 function Component:PreInitInfo(Info)
+  self:UnpackAvatarInfo(Info)
   self.FromOtherWorld = Info.FromOtherWorld or false
   self.FromArmory = Info.FromArmory or false
+  self.IsSettlementOtherRole = Info.IsSettlementOtherRole or false
   self.InfoForInit = Info
   if Info.ChangeRole then
     self:ResetIdle()
   end
   self:SetActorHideTag("login", true)
-  self:UnpackAvatarInfo(Info)
   if not self.BornInfo then
     self.BornInfo = EffectResults.Result()
   end
@@ -207,10 +264,8 @@ function Component:PreInitInfo(Info)
   self.PlayDieEffect = false
   self.PlayBodyAccessoryEffect = false
 end
-
 function Component:PreInitAssets(Info)
 end
-
 function Component:PrepareWaitInitTags()
   if not self.IsSimplePlayer and self:NeedPreloadAssets() then
     self:SetWaitInitTag(true, Const.CharWaitInitTag.AssetsLoading)
@@ -219,14 +274,12 @@ function Component:PrepareWaitInitTags()
     self:SetCharacterActive(false, "Init")
   end
 end
-
 function Component:NeedPreloadAssets()
   if self.GetCharPreloadComp and self:GetCharPreloadComp() then
     return self:GetCharPreloadComp():NeedPreloadAssets()
   end
   return false
 end
-
 function Component:NeedCacheLoadAssets()
   local IsPIE = UE4.URuntimeCommonFunctionLibrary.IsPlayInEditor(self)
   if IsPIE then
@@ -246,7 +299,6 @@ function Component:NeedCacheLoadAssets()
   end
   return Res
 end
-
 function Component:RealInitInfo(Info)
   if IsAuthority(self) and not self.FromOtherWorld then
     self:AuthorityInitInfo(Info)
@@ -270,9 +322,11 @@ function Component:RealInitInfo(Info)
   if self:NeedCacheLoadAssets() then
     self:GetCharPreloadComp():CacheLoadAssets()
   end
+  self:OnCharacterInitOver()
   if not self:IsMainPlayer() then
     return
   end
+  self.ShouldTickVisible = true
   if self.RangedWeapon == nil then
     return
   end
@@ -286,7 +340,6 @@ function Component:RealInitInfo(Info)
     DebugPrint("@gulinan RealInitInfo Disable physics, WeaponId: ", RangedWeaponId)
   end
 end
-
 function Component:PostInitInfo(Info)
   if not self.bCharacterActive then
     self:SetCharacterActive(true, "Init")
@@ -299,7 +352,6 @@ function Component:PostInitInfo(Info)
     self:ClearInputCache()
   end
 end
-
 function Component:SetCharacterActive(bActive, Tag)
   self.bCharacterActive = bActive
   if not self.bCharacterActive then
@@ -323,18 +375,15 @@ function Component:SetCharacterActive(bActive, Tag)
     self:RemoveGravityModifier(UE4.EGravityModifierTag.CharInit)
   end
 end
-
 function Component:SetWaitInitTag(bWait, Tag)
   self.WaitInitTags[Tag] = bWait or nil
   if IsEmptyTable(self.WaitInitTags) then
     self:RealInitInfo(self.CacheInfo)
   end
 end
-
 function Component:GetWaitInitTag(Tag)
   return not IsEmptyTable(self.WaitInitTags) and self.WaitInitTags[Tag]
 end
-
 function Component:CommonInitInfo(Info)
   Battle(self):AddEntity(self.Eid, self)
   self:InitCharacterTag()
@@ -344,6 +393,9 @@ function Component:CommonInitInfo(Info)
   end
   self.CurrentSkinId = Info.AppearanceSuit and Info.AppearanceSuit.SkinId or Info.SkinId
   self.ShadowModelId = Info.ShadowModelId or 0
+  if self.CurrentCompositeMesh then
+    self.CurrentCompositeMesh = nil
+  end
   self:LoadCurrentModel()
   self.EnableAnimGravity = 0
   self.UsingAnimGravity = false
@@ -356,11 +408,9 @@ function Component:CommonInitInfo(Info)
   print(_G.LogTag, "bJetJump", self.bJetJump)
   self:PlayerCommonInit(Info)
 end
-
 function Component:LoadCurrentModel()
   self:GetCharModelComponent():LoadCurrentModel()
 end
-
 function Component:AuthorityInitInfo(Info)
   self.UnitType = Info.UnitType
   if not self:IsAIControlled() then
@@ -377,7 +427,6 @@ function Component:AuthorityInitInfo(Info)
   self:SetTableAttr(Info.ReplaceAttrs)
   if self:IsPlayer() then
     self:SetStartLevelId()
-    self:SetPlayerInfo(Info)
   else
     self:UpdateCurrentLevelId()
     if self.CurrentLevelId:Length() > 0 then
@@ -386,7 +435,6 @@ function Component:AuthorityInitInfo(Info)
   end
   self.AvatarQuestRoleID = Info.AvatarQuestRoleID or 0
 end
-
 function Component:SetPlayerInfo(Info)
   self.EndPointTransform = nil
   if Info.PlayerHp then
@@ -396,39 +444,66 @@ function Component:SetPlayerInfo(Info)
   if Info.PlayerSp then
     self:SetAttr("Sp", math.min(Info.PlayerSp, self:GetAttr("MaxSp")))
   end
-  if Info.PlayerEs then
+  if Info.PlayerES then
     self:SetAttr("ES", math.min(Info.PlayerES, self:GetAttr("MaxES")))
   end
   if Info.DeathInfo then
     self:SetDeathInfo(Info.DeathInfo)
   end
 end
-
 function Component:SnapShotInitInfo(Info)
 end
-
-function Component:InitAvatarBuffs()
+function Component:GetAvatarBuffList()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  local PlayerController = self:GetController()
+  local PlayerController, AvatarBuffs
+  if self:IsPhantom() then
+    PlayerController = self.PhantomOwner:GetController()
+  else
+    PlayerController = self:GetController()
+  end
   if GameMode and PlayerController then
-    local AvatarEid = PlayerController.AvatarEidStr
-    local AvatarInfo = GameMode.AvatarInfos[AvatarEid]
-    if not AvatarInfo then
-      return
+    if IsStandAlone(PlayerController) then
+      local Avatar = GWorld:GetAvatar()
+      if Avatar then
+        AvatarBuffs = Avatar.ServerBuffs
+      end
+    else
+      local AvatarEid = PlayerController.AvatarEidStr
+      local AvatarInfo = GameMode.AvatarInfos[AvatarEid]
+      if not AvatarInfo then
+        return
+      end
+      AvatarBuffs = AvatarInfo.PlayerInfo.Buffs
     end
-    local AvatarBuffs = AvatarInfo.PlayerInfo.Buffs
-    local Battle = Battle(self)
-    if AvatarBuffs then
-      for _, BuffInfo in pairs(AvatarBuffs) do
-        DebugPrint("Tianyi@ BuffInfo: " .. BuffInfo.BuffId .. " StartTime: " .. BuffInfo.StartTime .. " Duration: " .. BuffInfo.Duration .. "SkillLevel: " .. BuffInfo.Level)
-        if Battle then
-          Battle:AddAvatarBuffToTarget(self, self, BuffInfo.BuffId, -1, 0, BuffInfo.Level)
-        end
+  end
+  return AvatarBuffs
+end
+function Component:GetAvatarBuffList_Cpp()
+  local AvatarBuffs = self:GetAvatarBuffList() or {}
+  local RetArr = TArray(UE4.FAvatarBuffInfo)
+  if AvatarBuffs then
+    for _, BuffInfo in pairs(AvatarBuffs) do
+      local BuffInfoCpp = UE4.FAvatarBuffInfo()
+      BuffInfoCpp.BuffId = BuffInfo.BuffId
+      BuffInfoCpp.BuffLevel = BuffInfo.Level
+      RetArr:Add(BuffInfoCpp)
+    end
+  end
+  return RetArr
+end
+function Component:InitAvatarBuffs()
+  local AvatarBuffs = self:GetAvatarBuffList()
+  local Battle = Battle(self)
+  if AvatarBuffs then
+    for _, BuffInfo in pairs(AvatarBuffs) do
+      local BuffData = DataMgr.Buff[BuffInfo.BuffId]
+      if not BuffData or 1 == BuffData.IsAvatarBuff and not self:IsPlayer() then
+      elseif Battle then
+        Battle:AddAvatarBuffToTarget(self, self, BuffInfo.BuffId, -1, 0, BuffInfo.Level)
       end
     end
   end
 end
-
 function Component:ClientInitInfo(Info)
   if Info.FromOtherWorld then
     self:SetCharacterTagIdle()
@@ -467,7 +542,19 @@ function Component:ClientInitInfo(Info)
     self:ServerNotifyAutonomousInit()
   end
 end
-
+function Component:FormatWeaponInfo(TempWeapon, DumpWeaponInfo)
+  TempWeapon.SlotData = {}
+  TempWeapon.ModData = {}
+  TempWeapon.ModPassives = nil
+  TempWeapon.SkillInfos = nil
+  TempWeapon.ReplaceAttrs = nil
+  TempWeapon.EnhanceLevel = DumpWeaponInfo.EnhanceLevel or 0
+  TempWeapon.WeaponId = DumpWeaponInfo.WeaponId or 0
+  TempWeapon.GradeLevel = DumpWeaponInfo.GradeLevel or 0
+  TempWeapon.AppearanceInfo = DumpWeaponInfo
+  TempWeapon.AppearanceInfo.EnhanceLevel = nil
+  TempWeapon.AppearanceInfo.GradeLevel = nil
+end
 function Component:ClientPlayEnterMontage()
   if not self.ShouldPlayEnterMontage then
     return
@@ -484,36 +571,18 @@ function Component:ClientPlayEnterMontage()
   end
   self:PlayActionMontage("Interactive/LevelFinish", "LevelEnter_Montage", Callback)
 end
-
-function Component:FormatWeaponInfo(TempWeapon, DumpWeaponInfo)
-  TempWeapon.SlotData = {}
-  TempWeapon.ModData = {}
-  TempWeapon.ModPassives = nil
-  TempWeapon.SkillInfos = nil
-  TempWeapon.ReplaceAttrs = nil
-  TempWeapon.EnhanceLevel = DumpWeaponInfo.EnhanceLevel or 0
-  TempWeapon.WeaponId = DumpWeaponInfo.WeaponId or 0
-  TempWeapon.GradeLevel = DumpWeaponInfo.GradeLevel or 0
-  TempWeapon.AppearanceInfo = DumpWeaponInfo
-  TempWeapon.AppearanceInfo.EnhanceLevel = nil
-  TempWeapon.AppearanceInfo.GradeLevel = nil
-end
-
 function Component:OnCharacterReady(Info)
   self:SetActorHideTag("login", false)
   if Info.FromOtherWorld then
     if Info.IsDungeonEnd then
       self:ServerSetUpWeapons(Info.MeleeWeapon, Info.RangedWeapon, Info.UltraWeapons)
-    elseif Info.RegionWeaponInfo then
-      local MeleeWeapon = {}
-      self:FormatWeaponInfo(MeleeWeapon, Info.RegionWeaponInfo.MeleeWeapon)
-      local RangedWeapon = {}
-      self:FormatWeaponInfo(RangedWeapon, Info.RegionWeaponInfo.RangedWeapon)
-      self:ServerSetUpWeapons(MeleeWeapon, RangedWeapon, nil)
-      if Info.ShowWeapon then
-        self:ChangeUsingWeaponByType(Info.ShowWeapon)
-      end
+    else
+      self:ServerSetUpWeapons(Info.MeleeWeapon, Info.RangedWeapon, nil)
     end
+    if Info.ShowWeapon then
+      self:ChangeUsingWeaponByType(Info.ShowWeapon)
+    end
+    self.DontInitColor = true
     self:HandleModelFashion()
     self.Overridden.OnCharacterReady(self)
     self.Overridden.ReceiveBeginPlay(self)
@@ -526,12 +595,8 @@ function Component:OnCharacterReady(Info)
     if not self:IsSummonMonster() then
       self:ServerSetRoleMod(Info.RoleId, Info.ModPassives, false)
     end
-    PrintTable({
-      ZJYINFOINFO = Info.MeleeWeapon
-    }, 100)
     self:ServerSetUpWeapons(Info.MeleeWeapon, Info.RangedWeapon, Info.UltraWeapons)
     self:InitAllWeaponModifier(Info.ReplaceAttrs)
-    self:ServerSetUpAccessories()
     self:ServerSetUpDestructableBody()
     self:InitAvatarBuffs(Info)
     if Info.Pet and self:IsPlayer() then
@@ -577,18 +642,16 @@ function Component:OnCharacterReady(Info)
     if LoadingUI and LoadingUI.bIsInLoading then
       self:SetCanInteractiveTrigger(false, "Loading")
     end
-    self:SetInteractiveTriggerDistance(self:GetAttr("DropDistance"))
   end
+  self:SetInteractiveTriggerDistance(self:GetAttr("DropDistance"))
   if self:IsPlayer() and not Info.ChangeRole then
     local function ClientTryEndLoading()
       local GameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
-      
       if not GameState.PlayerReady then
         GameState.PlayerReady = true
         GameState:TryEndLoading("PlayerReady")
       end
     end
-    
     if IsAuthority(self) then
       self:InitRegionBattleStateObject()
       if self:GetController() then
@@ -599,9 +662,7 @@ function Component:OnCharacterReady(Info)
         end
         GameMode:OnCharacterReady(AvatarEidStr, self)
         GameMode:TryTriggerOnInit(AvatarEidStr)
-        if GameMode:GetDungeonComponent() then
-          self:CreatePhantomBySquad(AvatarEidStr, GameMode)
-        end
+        self:TryCreatePhantomBySquad(GameMode, AvatarEidStr)
       end
     else
       ClientTryEndLoading()
@@ -614,6 +675,7 @@ function Component:OnCharacterReady(Info)
     self.ServerBornInfo = self.BornInfo:ToEffectStruct()
   end
   self:ZeroComboCount(UE4.EClearComboReason.Timelimit)
+  self.DontInitColor = true
   self:HandleModelFashion()
   self:RefreshActorHideTag()
   self.Overridden.OnCharacterReady(self)
@@ -653,18 +715,52 @@ function Component:OnCharacterReady(Info)
       end
     end
   end
+  if IsAuthority(self) then
+    self:SetPlayerInfo(Info)
+  end
   self.InfoForInit.ChangeRole = true
 end
-
+function Component:TryCreatePhantomBySquad(GameMode, AvatarEidStr)
+  if not GameMode:GetDungeonComponent() then
+    DebugPrint("TryCreatePhantomBySquad not Valid", self.Eid, AvatarEidStr)
+    return
+  end
+  if URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) then
+    if GameMode.AlreadyInit then
+      DebugPrint("TryCreatePhantomBySquad WC AlreadyInit, Create", self.Eid, AvatarEidStr)
+      self:CreatePhantomBySquad(AvatarEidStr, GameMode)
+    else
+      DebugPrint("TryCreatePhantomBySquad WC, Register to OnInit", self.Eid, AvatarEidStr)
+      GameMode.EMGameState:RegisterGameModeEvent("OnInit", self, function()
+        DebugPrint("TryCreatePhantomBySquad WC, Create", self.Eid, AvatarEidStr)
+        self:CreatePhantomBySquad(AvatarEidStr, GameMode)
+      end)
+    end
+  else
+    DebugPrint("TryCreatePhantomBySquad not WC, Create", self.Eid, AvatarEidStr)
+    self:CreatePhantomBySquad(AvatarEidStr, GameMode)
+  end
+end
 function Component:HandleModelFashion()
-  print(_G.LogTag, "HandleModelFashionHandleModelFashion111")
   if not IsStandAlone(self) and not IsClient(self) then
     return
   end
-  print(_G.LogTag, "HandleModelFashionHandleModelFashion")
+  if not self.CharacterFashion then
+    return
+  end
   self.CharacterFashion:CreateAllDynamicMaterialNew()
+  if not self.BuffManager then
+    return
+  end
+  if self.BuffManager.ChangeModelId > 0 then
+    return
+  end
+  if self.DontInitColor then
+    self.DontInitColor = false
+    return
+  end
+  self.CharacterFashion:InitColorsWithInfo()
 end
-
 function Component:GetBossDestructableComponent()
   local PartComponents = self:K2_GetComponentsByClass(UDestructableBodyComponent:StaticClass())
   if 0 == PartComponents:Num() then
@@ -682,7 +778,6 @@ function Component:GetBossDestructableComponent()
   end
   self.MaxHpNum = PartComponents:Num()
 end
-
 function Component:PlayerCommonInit(Info)
   if self:IsPlayer() or self:IsPhantom() then
     self:SetupActionLogicPramas()
@@ -690,7 +785,6 @@ function Component:PlayerCommonInit(Info)
     self:InitAppearanceSuit(Info.AppearanceSuit or self.BornInfo.AppearanceSuit)
   end
 end
-
 function Component:GetNewSkinId(Context)
   if not Context then
     return CurrentSkinId
@@ -701,7 +795,6 @@ function Component:GetNewSkinId(Context)
   end
   return CurrentSkinId
 end
-
 function Component:NewPlayerCommonInit(Context)
   if self:IsPlayer() or self:IsPhantom() then
     self:SetupActionLogicPramas()
@@ -709,7 +802,6 @@ function Component:NewPlayerCommonInit(Context)
     self:InitAppearanceSuit(Context:GetLuaTable("AppearanceSuit") or self.BornInfo.AppearanceSuit)
   end
 end
-
 function Component:InitAnimIntanceParam()
   if self.EMAnimInstance then
     local ModelId = self:GetCharModelComponent():GetCurrentModelId()
@@ -726,7 +818,6 @@ function Component:InitAnimIntanceParam()
     self:InitKawaiiParams(ModelData)
   end
 end
-
 function Component:InitKawaiiParams(ModelData)
   if self.PlayerAnimInstance then
     if not ModelData.KawaiiIdList then
@@ -760,7 +851,6 @@ function Component:InitKawaiiParams(ModelData)
     self.NpcAnimInstance:SetKawaiiPhysics_Cpp("LevelEnter")
   end
 end
-
 function Component:InitAppearanceSuit(AppearanceSuit)
   if AppearanceSuit then
     if self.CharacterFashion then
@@ -771,9 +861,22 @@ function Component:InitAppearanceSuit(AppearanceSuit)
     end
   else
     self:ClearAllSuitItem()
+    self:InitPartMeshCompWithDefault()
   end
+  local Avatar = GWorld:GetAvatar()
+  if Avatar then
+    return
+  end
+  if not self.CharacterFashion then
+    return
+  end
+  if AppearanceSuit then
+    return
+  end
+  AppearanceSuit = {}
+  AppearanceSuit.AccessorySuit = self.CharacterFashion:GetDefaultAccessorySuit()
+  self.CharacterFashion:InitAppearanceSuit(AppearanceSuit)
 end
-
 function Component:SetStartLevelId()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -787,7 +890,6 @@ function Component:SetStartLevelId()
   array:Add(levelLoader.enterLevelID)
   self:SetCurrentLevelId(array)
 end
-
 function Component:JudgeIfPlayLevelEnter()
   if MiscUtils.IsSimulatedProxy(self) then
     return false
@@ -797,12 +899,11 @@ function Component:JudgeIfPlayLevelEnter()
   end
   local PlayerState = self:GetEMPlayerState()
   if PlayerState and PlayerState.bIsEMInactive == true then
-    DebugPrint("Tianyi@ \233\135\141\232\191\158\228\184\141\233\156\128\232\166\129LevelEnter")
+    DebugPrint("Tianyi@ 重连不需要LevelEnter")
     return false
   elseif not PlayerState then
     DebugPrint("Tianyi@ PlayState is nullptr")
   end
-  local LevelName = UE4.UGameplayStatics.GetCurrentLevelName(self, true)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if GameInstance.NeedPlayTempSceneMonstage then
     GameInstance.NeedPlayTempSceneMonstage = false
@@ -812,19 +913,12 @@ function Component:JudgeIfPlayLevelEnter()
   if CurrentDungeonId and DataMgr.Dungeon[CurrentDungeonId] and DataMgr.Dungeon[CurrentDungeonId].IsPlayLevelEnter then
     return true
   end
-  for i, v in pairs(DataMgr.Dungeon) do
-    if string.match(v.DungeonMapFile, LevelName) and v.IsPlayLevelEnter then
-      return true
-    end
-  end
   return false
 end
-
 function Component:CleanAllTimer()
   self.Overridden.CleanAllTimer(self)
   self:CleanTimer()
 end
-
 function Component:OnCharacterInitSuitRecover()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local Avatar = GWorld:GetAvatar()
@@ -833,21 +927,34 @@ function Component:OnCharacterInitSuitRecover()
     GameMode:InitRegionSuit(Avatar, Avatar:GetSubRegionId2RegionId())
   end
 end
-
 function Component:SetInteractiveTriggerDistance(NewDropDistance)
   if not IsValid(self.InteractiveTriggerComponent) then
     return
   end
   self.InteractiveTriggerComponent:SetInteractiveTriggerDistance(NewDropDistance)
 end
-
 function Component:CreatePhantomBySquad(AvatarEidStr, GameMode)
-  local PhantomInfo = GameMode.AvatarInfos[AvatarEidStr].PhantomInfo
-  for Index, Data in ipairs(PhantomInfo) do
-    if next(Data.RoleInfo) then
-      self:CreatePhantom(Data.RoleInfo.RoleId, 1, Data, {IsSpawnBySquad = 1, TeamIndex = Index})
+  if nil == GameMode or nil == AvatarEidStr then
+    DebugPrint("gmy@CharacterInitLogic Component:CreatePhantomBySquad", "invalid params", AvatarEidStr)
+    return
+  end
+  local AvatarInfos = GameMode.AvatarInfos
+  if nil == AvatarInfos then
+    DebugPrint("gmy@CharacterInitLogic Component:CreatePhantomBySquad", "invalid AvatarInfos", AvatarEidStr)
+    return
+  end
+  local AvatarInfo = AvatarInfos[AvatarEidStr]
+  if nil == AvatarInfo then
+    DebugPrint("gmy@CharacterInitLogic Component:CreatePhantomBySquad", "invalid AvatarInfo", AvatarEidStr)
+    return
+  end
+  local PhantomInfo = AvatarInfo.PhantomInfo
+  if PhantomInfo then
+    for Index, Data in ipairs(PhantomInfo) do
+      if Data.RoleInfo and Data.RoleInfo.RoleId then
+        self:CreatePhantom(Data.RoleInfo.RoleId, 1, Data, {IsSpawnBySquad = 1, TeamIndex = Index})
+      end
     end
   end
 end
-
 return Component

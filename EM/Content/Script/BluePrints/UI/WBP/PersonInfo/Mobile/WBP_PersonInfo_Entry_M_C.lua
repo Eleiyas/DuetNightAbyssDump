@@ -4,7 +4,6 @@ local M = Class("BluePrints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Base.PersonInfoEntryBaseView"
 }
-
 function M:InitTabInfo()
   self.Com_Tab_M:Init({
     Tabs = {},
@@ -28,24 +27,20 @@ function M:InitTabInfo()
     },
     StyleName = "Text",
     OwnerPanel = self,
-    TitleName = GText("\228\184\170\228\186\186\228\184\187\233\161\181"),
+    TitleName = GText("UI_PersonInfo_Name"),
     BackCallback = self.OnReturnKeyDown
   })
 end
-
 function M:Close()
   M.Super.Close(self)
 end
-
 function M:InitListenEvent()
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self:InitListenEvent()
   self.Com_BtnVisible.Button_Area.OnClicked:Add(self, self.OnBtnVisibleClick)
 end
-
 function M:RefreshBaseInfo()
   local PageData = {}
   self.PersonInfoMainPage = self:CreatePersonInfoMainPage({
@@ -56,34 +51,29 @@ function M:RefreshBaseInfo()
   end
   self:SetFocus()
 end
-
 function M:OnReturnKeyDown()
   if not self:CheckIsCanCloseSelf() then
     return
   end
   self:PlayOutAnim()
 end
-
 function M:OnReturnKeyDown()
   if self:CheckIsCanCloseSelf() then
     self:PlayOutAnim()
   end
 end
-
 function M:Hideui()
   self.bIsHide = true
   self.PersonInfoMainPage.MainPanel:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Com_Tab_M:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self:PlayAnimation(self.HideUi)
 end
-
 function M:Recoverui()
   self.bIsHide = false
   self.PersonInfoMainPage.MainPanel:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Com_Tab_M:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:PlayAnimation(self.ShowUi)
 end
-
 function M:OnBtnVisibleClick()
   self.bIsHide = not self.bIsHide
   if self.bIsHide == true then
@@ -92,7 +82,6 @@ function M:OnBtnVisibleClick()
     self:Recoverui()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -107,15 +96,12 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = self.Com_Tab:Handle_KeyEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad()
   return true
 end
-
 AssembleComponents(M)
 return M

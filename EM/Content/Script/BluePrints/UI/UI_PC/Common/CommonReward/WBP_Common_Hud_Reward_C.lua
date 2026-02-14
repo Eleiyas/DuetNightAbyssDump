@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.TitleText, self.RewardInfoList = ...
   self.LastShowRewardList = {}
@@ -13,7 +12,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:InitRewardInfo(TitleText, RewardInfoList)
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
@@ -63,14 +61,12 @@ function M:InitRewardInfo(TitleText, RewardInfoList)
     self:ShowRewardInfo()
   end
 end
-
 function M:ShowRewardInfo()
   AudioManager(self):PlayUISound(self, "event:/ui/common/reward_light", nil, nil)
   self:PlayAnimation(self.Auto_In)
   self:AddItemToListRewardIn()
   self:AddItemToListRewardOut()
 end
-
 function M:AddItemToListRewardIn()
   self.LastShowRewardList = {}
   self.List_Reward:ClearListItems()
@@ -100,7 +96,6 @@ function M:AddItemToListRewardIn()
     self.List_Reward:AddItem(Object)
   end
 end
-
 function M:AddItemToListRewardOut()
   if self.LastShowRewardList then
     self.List_Reward_1:ClearListItems()
@@ -121,7 +116,6 @@ function M:AddItemToListRewardOut()
     end
   end
 end
-
 function M:MergeRewardInfo(RewardInfoList)
   local RewardList = {}
   for _, RewardInfo in pairs(RewardInfoList) do
@@ -151,7 +145,6 @@ function M:MergeRewardInfo(RewardInfoList)
   end
   return Res
 end
-
 function M:SetFollowNode()
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
   if UIBattleMain then
@@ -172,7 +165,6 @@ function M:SetFollowNode()
     end
   end
 end
-
 function M:PlayOutAnim()
   if self.TotalRewardCount > self.CurrentCount then
     self:AddTimer(self.RefreshTime, function()
@@ -184,7 +176,6 @@ function M:PlayOutAnim()
     self:AddTimer(self.RefreshTime, self.CloseSelf, false, nil, "PlayOutAnim", false)
   end
 end
-
 function M:CloseSelf()
   EventManager:FireEvent(EventID.OnHudRewardClose, self)
   local UIBattleMain = UIManager(self.Owner):GetUI("BattleMain")
@@ -196,15 +187,12 @@ function M:CloseSelf()
   end
   self:Close()
 end
-
 function M:OnAnimationFinished(InAnimation)
 end
-
 function M:IsShowing()
   if self:IsAnimationPlaying(self.Auto_In) or self:IsAnimationPlaying(self.Auto_Out) or self:IsExistTimer("PlayOutAnim") then
     return true
   end
   return false
 end
-
 return M

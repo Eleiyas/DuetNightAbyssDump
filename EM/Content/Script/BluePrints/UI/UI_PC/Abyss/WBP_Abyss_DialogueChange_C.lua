@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.Owner:SetFocus()
@@ -47,7 +46,6 @@ function M:InitContent(Params, PopupData, Owner)
   })
   self:HideGamepadShortcut(self.GamepadScrollBtnIndex1)
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -64,7 +62,6 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return false
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -75,5 +72,4 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     self.List_Item:SetScrollOffset(ScrollOffset)
   end
 end
-
 return M

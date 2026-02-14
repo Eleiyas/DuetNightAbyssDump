@@ -3,7 +3,6 @@ local TimeUtils = require("Utils.TimeUtils")
 local M = Class({
   "BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase"
 })
-
 function M:Construct()
   self.ListKeyToWidget = {
     CharId = "Character",
@@ -16,7 +15,6 @@ function M:Construct()
     PhantomWeaponId2 = "Phantom_Weapon02"
   }
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.Text_TimeTitle:SetText(GText("Abyss_SeasonReview_SeasonTime"))
@@ -76,7 +74,6 @@ function M:InitContent(Params, PopupData, Owner)
     end
   end)
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -87,9 +84,7 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
     self.ScrollBox_Review:SetScrollOffset(ScrollOffset)
   end
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.Owner:SetFocus()
 end
-
 return M

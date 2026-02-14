@@ -2,111 +2,7 @@ require("UnLua")
 require("DataMgr")
 local EMCache = require("EMCache.EMCache")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
-local ConditionTree = {}
-
-function ConditionTree:New(Docker)
-  local CT = {}
-  setmetatable(CT, {__index = ConditionTree})
-  CT.Docker = Docker
-  return CT
-end
-
-function ConditionTree:Check(Condition)
-  if not Condition then
-    return true
-  end
-  if Condition.And then
-    return self:And(Condition.And)
-  end
-  if Condition.Or then
-    return self:Or(Condition.Or)
-  end
-  if Condition.Not then
-    return self:Not(Condition.Not)
-  end
-  for Func, Param in pairs(Condition) do
-    if self.Docker[Func] then
-      return self.Docker[Func](self.Docker, Param)
-    end
-  end
-  return true
-end
-
-function ConditionTree:And(Condition)
-  for _, Cond in ipairs(Condition) do
-    if not self:Check(Cond) then
-      return false
-    end
-  end
-  return true
-end
-
-function ConditionTree:Or(Condition)
-  for _, Cond in ipairs(Condition) do
-    if self:Check(Cond) then
-      return true
-    end
-  end
-  return false
-end
-
-function ConditionTree:Not(Condition)
-  return not self:Check(Condition)
-end
-
-local LoadingCondition = {}
-
-function LoadingCondition:QuestStart(Params)
-  local QuestId = Params.QuestId
-  local Avatar = GWorld:GetAvatar()
-  if nil == Avatar then
-    return false
-  end
-  local RtnRes = Avatar:IsQuestDoing(QuestId)
-  return RtnRes
-end
-
-function LoadingCondition:QuestUnstart(Params)
-  local QuestId = Params.QuestId
-  local Avatar = GWorld:GetAvatar()
-  if nil == Avatar then
-    return false
-  end
-  local RtnRes = not Avatar:IsQuestDoing(QuestId) and not Avatar:IsQuestFinished(QuestId)
-  return RtnRes
-end
-
-function LoadingCondition:QuestFinish(Params)
-  local QuestId = Params.QuestId
-  local Avatar = GWorld:GetAvatar()
-  if nil == Avatar then
-    return false
-  end
-  local RtnRes = Avatar:IsQuestFinished(QuestId)
-  return RtnRes
-end
-
-local SpecialLoadingRule = {}
-
-function SpecialLoadingRule:GetLoadingBpPath()
-  local SceneId = WorldTravelSubsystem():GetCurrentSceneId()
-  local LastSceneId = WorldTravelSubsystem():GetLastSceneId()
-  if not (DataMgr.Region and DataMgr.SpecialLoading) or 0 == LastSceneId then
-    return
-  end
-  local Region = DataMgr.Region[SceneId]
-  local LastRegion = DataMgr.Region[LastSceneId]
-  if not Region or not LastRegion then
-    return
-  end
-  for _, Rule in ipairs(DataMgr.SpecialLoading) do
-    if Rule.RegionType.From == LastRegion.RegionType and Rule.RegionType.To == Region.RegionType then
-      local CT = ConditionTree:New(LoadingCondition)
-      return CT:Check(Rule.TriggerCondition) and Rule.WBPPath
-    end
-  end
-end
-
+local SpecialLoadingRule = require("Utils.LoadingUtils")
 local WBP_CommonChangeSceneBg_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
@@ -114,10 +10,8 @@ local WBP_CommonChangeSceneBg_C = Class({
 WBP_CommonChangeSceneBg_C._components = {
   "BluePrints.UI.WidgetComponent.ChangeTextToKeyInfoComponent"
 }
-
 function WBP_CommonChangeSceneBg_C:Initialize(Initializer)
 end
-
 function WBP_CommonChangeSceneBg_C:OnShowLoading()
   self.NowLoadLevelName = nil
   self.NowLoadAssetId = nil
@@ -131,7 +25,7 @@ function WBP_CommonChangeSceneBg_C:OnShowLoading()
   self.ShowTipsInterval = Const.LoadingTipsInterval
   self.WidgetLoading = nil
   self.bIsInLoading = true
-  DebugPrint(WaringTag, LXYTag, "Loading\231\149\140\233\157\162\230\137\147\229\188\128....")
+  DebugPrint(WarningTag, LXYTag, "Loading界面打开....")
   UIManager():DestroyAfterLoadingMgr()
   EventManager:FireEvent(EventID.InLoading)
   if GWorld:GetAvatar() then
@@ -140,11 +34,6 @@ function WBP_CommonChangeSceneBg_C:OnShowLoading()
   EMCache:SaveCommon()
   print(_G.LogTag, "SetSyncLoaderOptimization False")
   GWorld.GameInstance:SetSyncLoaderOptimization(false)
-  local SpecialQuestEvent = ClientEventUtils:GetCurrentEvent()
-  if SpecialQuestEvent then
-    SpecialQuestEvent:HandleInLoading()
-  end
-  GWorld.StoryMgr:HandleInLoading()
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if PlayerCharacter then
     PlayerCharacter:SetCanInteractiveTrigger(false, "Loading")
@@ -172,7 +61,9 @@ function WBP_CommonChangeSceneBg_C:OnShowLoading()
     local BattleCharData = DataMgr.BattleChar[PartyNpcData.CharId]
     assert(BattleCharData, "BattleCharData is nil" .. PartyNpcData.CharId)
     Widget.Text_CharacterName:SetText(GText(BattleCharData.CharName))
-    Widget.Icon_Avatar:SetBrushFromTexture(LoadObject(PartyNpcData.AvatarIconPath))
+    Widget.WorldText_Name:SetText(EnText(BattleCharData.CharName))
+    local IconDynaMaterial = Widget.Icon_Avatar:GetDynamicMaterial()
+    IconDynaMaterial:SetTextureParameterValue("Mask", LoadObject(PartyNpcData.AvatarIconPath))
     local PartyTopicData = SojournsGameInstanceSubsystem.PartyTopicData
     assert(PartyTopicData, "PartyTopicData is nil")
     Widget.Text_TopicName:SetText(GText(PartyTopicData.PartyTopicName))
@@ -190,7 +81,7 @@ function WBP_CommonChangeSceneBg_C:OnShowLoading()
     local LoginPage = UIManager(self):GetUIObj("LoginMainPage")
     if LoginPage then
       self.IsFromLoginPage = true
-      self.Panel_Bg:SetContent(UIManager(self):CreateWidget(Const.DungeonBgBluePrint))
+      self.Panel_Bg:SetContent(UIManager(self):CreateWidget(Const.LoadingBgBluePrint))
     elseif not DungeonData then
       isDungeonData = false
     elseif DungeonData.DungeonUIBG then
@@ -203,9 +94,12 @@ function WBP_CommonChangeSceneBg_C:OnShowLoading()
   end
   if not isDungeonData then
     self.WidgetSwitcher_Root:SetActiveWidgetIndex(1)
-    local SpecialLoadingBp = SpecialLoadingRule:GetLoadingBpPath()
+    local LoadingData, SpecialLoadingBp = SpecialLoadingRule:GetLoadingBpPath(true)
     if SpecialLoadingBp then
       self.WidgetLoading = UIManager(self):CreateWidget(SpecialLoadingBp)
+      if self.WidgetLoading.InitLoadingData then
+        self.WidgetLoading:InitLoadingData(LoadingData, self)
+      end
     else
       self.WidgetLoading = UIManager(self):_CreateWidgetNew("ComLoadingXiaoBai")
     end
@@ -226,7 +120,6 @@ function WBP_CommonChangeSceneBg_C:OnShowLoading()
   self:SetMouseCursorVisable(false)
   self.bShowThisFrame = true
 end
-
 function WBP_CommonChangeSceneBg_C:Construct()
   self.Overridden.Construct(self)
   UIManager(self):GetGameInputModeSubsystem().OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
@@ -242,31 +135,26 @@ function WBP_CommonChangeSceneBg_C:Construct()
     }
   end
 end
-
 function WBP_CommonChangeSceneBg_C:ConstructSoundFunc()
   AudioManager(self):PlayUISound(self, "event:/ui/common/loading_common", "Loading", nil)
-  local bus = UE4.UFMODBlueprintStatics.FindAssetByName("bus:/sfx")
-  UE4.UFMODBlueprintStatics.BusSetVolume(bus:Cast(UE4.UFMODBus), 0)
   AudioManager(self):PausePlayBGMCauseIsLoadingOrBlackScreen()
+  AudioManager(self):AddAuANotifyForbidTag("LoadingUI")
 end
-
 function WBP_CommonChangeSceneBg_C:Destruct()
-  DebugPrint(WaringTag, LXYTag, "Loading\231\149\140\233\157\162\229\186\148\232\175\165\233\148\128\230\175\129\228\186\134")
+  DebugPrint(WarningTag, LXYTag, "Loading界面应该销毁了")
   self.Overridden.Destruct(self)
-  UIManager(self):GetGameInputModeSubsystem().OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
+  local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem()
+  if GameInputModeSubsystem and GameInputModeSubsystem.OnInputMethodChanged then
+    GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
+  end
   self:DestructSoundFunc()
 end
-
 local EMCache = require("EMCache.EMCache")
-
 function WBP_CommonChangeSceneBg_C:DestructSoundFunc()
-  local bus = UE4.UFMODBlueprintStatics.FindAssetByName("bus:/sfx")
-  local sfxvolume = EMCache:Get("FMODVolume") and EMCache:Get("FMODVolume")[3] or 1
-  UE4.UFMODBlueprintStatics.BusSetVolume(bus:Cast(UE4.UFMODBus), sfxvolume)
   AudioManager(self):SetEventSoundParam(self, "Loading", {ToEnd = 1})
   AudioManager(self):ResumePlayBGMCauseIsLoadingOrBlackScreen()
+  AudioManager(self):RemoveAuANotifyForbidTag("LoadingUI")
 end
-
 function WBP_CommonChangeSceneBg_C:Tick(MyGeometry, InDeltaTime)
   if not self.bEnableTick then
     return
@@ -283,6 +171,9 @@ function WBP_CommonChangeSceneBg_C:Tick(MyGeometry, InDeltaTime)
   self.ShowTipsInterval = self.ShowTipsInterval - InDeltaTime
   if self.ShowTipsInterval <= 0 then
     self:SetRandomTips()
+    if self.WidgetLoading and self.WidgetLoading.SetRandomTips then
+      self.WidgetLoading:SetRandomTips()
+    end
   end
   if self.NowPercentNum >= 100 then
     self.NowPercentNum = 100
@@ -301,7 +192,6 @@ function WBP_CommonChangeSceneBg_C:Tick(MyGeometry, InDeltaTime)
   end
   self:UpdateShowUI()
 end
-
 function WBP_CommonChangeSceneBg_C:UpdateShowUI()
   self.ProgressBar:SetPercent(self.NowPercentNum / 100)
   if self.NowPercentNum >= 100 then
@@ -309,20 +199,22 @@ function WBP_CommonChangeSceneBg_C:UpdateShowUI()
   end
   self.Progress_Text_Bar:SetText(string.format("%.0f", self.NowPercentNum))
   if self.WidgetLoading then
-    self.WidgetLoading.ProgressBar:SetPercent(self.NowPercentNum / 100)
-    self.WidgetLoading.Text_Progress:SetText(string.format("%.0f", self.NowPercentNum))
-    self.WidgetLoading.Text_Progress_Back:SetText(string.format("%.0f", self.NowPercentNum))
+    if self.WidgetLoading.UpdateProgressBar then
+      self.WidgetLoading:UpdateProgressBar(self.NowPercentNum)
+    else
+      self.WidgetLoading.ProgressBar:SetPercent(self.NowPercentNum / 100)
+      self.WidgetLoading.Text_Progress:SetText(string.format("%.0f", self.NowPercentNum))
+      self.WidgetLoading.Text_Progress_Back:SetText(string.format("%.0f", self.NowPercentNum))
+    end
   end
 end
-
 function WBP_CommonChangeSceneBg_C:AddQuene(Progress)
   table.insert(self.QueenShow, Progress)
   DebugPrint("SL_LoadingDBG", "AddQuene: +", Progress, "  QueueLen =", #self.QueenShow)
   if Progress >= 100 then
-    DebugPrint(WarningTag, LXYTag, "Loading\232\191\155\229\186\166\229\186\148\232\175\165\231\187\147\230\157\159\228\186\134\230\137\141\229\175\185")
+    DebugPrint(WarningTag, LXYTag, "Loading进度应该结束了才对")
   end
 end
-
 function WBP_CommonChangeSceneBg_C:RemoveQueen()
   local NextNum = 0
   if not self.QueenShow[self.Index] then
@@ -336,30 +228,25 @@ function WBP_CommonChangeSceneBg_C:RemoveQueen()
   end
   return NextNum
 end
-
 function WBP_CommonChangeSceneBg_C:AddDynamic(FuncName)
   if type(FuncName) == "function" then
     table.insert(self.DynamicFunc, FuncName)
   end
 end
-
 function WBP_CommonChangeSceneBg_C:ExeDyanmicFunc()
   for _, func in ipairs(self.DynamicFunc) do
     func()
   end
   self:ClearDynamicFunc()
 end
-
 function WBP_CommonChangeSceneBg_C:ClearDynamicFunc()
   self.DynamicFunc = {}
 end
-
 function WBP_CommonChangeSceneBg_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_CommonChangeSceneBg_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if not self.Com_KeyTitle then
     return
@@ -382,7 +269,6 @@ function WBP_CommonChangeSceneBg_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     })
   end
 end
-
 function WBP_CommonChangeSceneBg_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -391,7 +277,6 @@ function WBP_CommonChangeSceneBg_C:RefreshOpInfoByInputDevice(CurInputDevice, Cu
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self:SetRandomTips()
 end
-
 function WBP_CommonChangeSceneBg_C:GetSceneLoadProgress()
   if self.IsRandomScene then
     if self.NowPercentNum >= 100.0 then
@@ -402,7 +287,6 @@ function WBP_CommonChangeSceneBg_C:GetSceneLoadProgress()
   end
   return self.NowPercentNum / 100.0
 end
-
 function WBP_CommonChangeSceneBg_C:SetRandomTips()
   self.ShowTipsInterval = Const.LoadingTipsInterval
   local RandomTips = self:GetRandomLoadingTips()
@@ -410,7 +294,6 @@ function WBP_CommonChangeSceneBg_C:SetRandomTips()
   local Messages = self:GetFinalContentText(RandomTips.Message, self.CurrentInputDevice)
   self.Text_Message:SetText(Messages)
 end
-
 function WBP_CommonChangeSceneBg_C:SetCommonKey(CommonKeyUI, KeyInfo)
   local ActionName = string.sub(KeyInfo, 2, -2)
   local Key, KeyType = self:GetKeyName(ActionName)
@@ -428,7 +311,6 @@ function WBP_CommonChangeSceneBg_C:SetCommonKey(CommonKeyUI, KeyInfo)
     CommonKeyUI:SetImgInfo(Key)
   end
 end
-
 function WBP_CommonChangeSceneBg_C:GetRandomLoadingTips()
   if not self.TipsPoolByPlatform then
     self.TipsPoolByPlatform = {
@@ -475,13 +357,13 @@ function WBP_CommonChangeSceneBg_C:GetRandomLoadingTips()
   local RandomIndex = math.random(1, #TipsList)
   return TipsList[RandomIndex]
 end
-
 function WBP_CommonChangeSceneBg_C:RealCloseLoading()
-  EventManager:FireEvent(EventID.CloseLoading)
+  local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
+  EventManager:FireEvent(EventID.CloseLoading, PlayerCharacter and PlayerCharacter.Eid)
   self.bIsInLoading = nil
   if self.WidgetLoading then
     self.bEnableTick = false
-    DebugPrint("SL_LoadingDBG \229\133\179\233\151\173\229\189\147\229\137\141Loading  UIName :", self.WidgetLoading:GetName())
+    DebugPrint("SL_LoadingDBG 关闭当前Loading  UIName :", self.WidgetLoading:GetName())
     if self.WidgetLoading.Out then
       self.WidgetLoading:UnbindAllFromAnimationFinished(self.WidgetLoading.Out)
       self.WidgetLoading:BindToAnimationFinished(self.WidgetLoading.Out, {
@@ -497,27 +379,25 @@ function WBP_CommonChangeSceneBg_C:RealCloseLoading()
     UIManager(self):LaunchAfterLoadingMgr()
   end
   self:SetMouseCursorVisable(true)
+  print(_G.LogTag, "SetSyncLoaderOptimization True")
+  GWorld.GameInstance:SetSyncLoaderOptimization(true)
 end
-
 function WBP_CommonChangeSceneBg_C:Close()
   self:ExeDyanmicFunc()
   self:RealCloseLoading()
 end
-
 function WBP_CommonChangeSceneBg_C:OnLevelRemovedFromWorld_Lua()
   self.bReset = false
 end
-
 function WBP_CommonChangeSceneBg_C:OnOutAnimationFinished()
   if not self.WidgetLoading then
     return
   end
   if not self.bShowThisFrame then
-    DebugPrint("SL_LoadingDBG OnOutAnimationFinished \233\148\128\230\175\129\229\189\147\229\137\141Loading  UIName :", self.WidgetLoading:GetName())
+    DebugPrint("SL_LoadingDBG OnOutAnimationFinished 销毁当前Loading  UIName :", self.WidgetLoading:GetName())
     GWorld.GameInstance:CloseLoadingUI()
     UIManager(self):LaunchAfterLoadingMgr()
   end
 end
-
 AssembleComponents(WBP_CommonChangeSceneBg_C)
 return WBP_CommonChangeSceneBg_C

@@ -3,11 +3,9 @@ local WikiController = require("BluePrints.UI.WBP.Wiki.WikiController")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Guide_Desc_Text02:SetText(GText("UI_Wiki_ToBeUnlcoked"))
 end
-
 function M:OnListItemObjectSet(InObject)
   if not InObject then
     return
@@ -38,7 +36,6 @@ function M:OnListItemObjectSet(InObject)
     self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:FindFirstUnlockedText(entryId)
   local AllTexts = WikiController:GetModel():GetWikiTextByEntryId(entryId)
   for currentTextId, _ in pairs(AllTexts) do
@@ -47,12 +44,10 @@ function M:FindFirstUnlockedText(entryId)
     end
   end
 end
-
 function M:IsTextUnlocked(TextId)
   local UnlockTexts = WikiController:GetModel():GetUnlockTexts()
   return nil ~= UnlockTexts[TextId]
 end
-
 function M:CheckAndPlayNewTextTips()
   if not self.TextId then
     return
@@ -67,7 +62,6 @@ function M:CheckAndPlayNewTextTips()
     end
   end
 end
-
 function M:AreAllTextsRead(entryId)
   local allTexts = WikiController:GetModel():GetWikiTextByEntryId(entryId)
   for textId, _ in pairs(allTexts) do
@@ -77,7 +71,6 @@ function M:AreAllTextsRead(entryId)
   end
   return true
 end
-
 function M:IsLastUnlockedText(entryId, textId)
   local UnlockedWikiNotes = WikiController:GetModel():GetUnlockedWikiEntryIds()
   if not UnlockedWikiNotes[entryId] then
@@ -96,8 +89,6 @@ function M:IsLastUnlockedText(entryId, textId)
   end
   return textId == maxTextId
 end
-
 function M:Destruct()
 end
-
 return M

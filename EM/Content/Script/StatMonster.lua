@@ -20,7 +20,6 @@ local StrOutput = ""
 local StrLine = "\n"
 local StrSpace = "        "
 StatMonster.BeginStat = false
-
 function StatMonster:Stat(GM)
   self.BeginStat = not self.BeginStat
   if self.BeginStat then
@@ -29,13 +28,11 @@ function StatMonster:Stat(GM)
     self:StatEnd(GM)
   end
 end
-
 function StatMonster:StatStart(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   TmpPlayer = GM.Player
   local SkillInterval = 5
   local RecordInterval = 0.5
-  
   local function StatLoadCb(Mon)
     self:AddMon(Mon)
     if #TestMonsters == #TestIds then
@@ -43,10 +40,8 @@ function StatMonster:StatStart(GM)
       GM.Player:AddTimer(RecordInterval, self.StatRecordTimer, true, 0, "Test_StatRecordTimer")
     end
   end
-  
   self:CreateMonster(StatLoadCb)
 end
-
 function StatMonster:CreateMonster(Callback)
   local Row = 0
   local Col = 0
@@ -65,13 +60,11 @@ function StatMonster:CreateMonster(Callback)
     end
   end
 end
-
 function StatMonster:AddMon(Mon)
   table.insert(TestMonsters, Mon)
   table.insert(TestSkillIndex, 1)
   Mon.EMAnimInstance:SetRootMotionMode(ERootMotionMode.NoRootMotionExtraction)
 end
-
 function StatMonster:RepeatSkillTimer()
   for Key, Mon in pairs(TestMonsters) do
     local Idx = TestSkillIndex[Key]
@@ -83,7 +76,6 @@ function StatMonster:RepeatSkillTimer()
     end
   end
 end
-
 function StatMonster:StatRecordTimer()
   if "" == StrOutput then
     StrOutput = "Frame" .. StrSpace .. "CPU" .. StrSpace .. "Draw" .. StrSpace .. "GPU" .. StrLine
@@ -100,9 +92,8 @@ function StatMonster:StatRecordTimer()
   table.insert(AllStat[3], EMData.RenderThreadTime)
   table.insert(AllStat[4], EMData.GPUFrameTime)
 end
-
 function StatMonster:StatEnd(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   GM.Player:RemoveTimer("Test_RepeatSkillTimer")
   GM.Player:RemoveTimer("Test_StatRecordTimer")
   StrOutput = StrOutput .. "Average" .. StrLine
@@ -127,12 +118,10 @@ function StatMonster:StatEnd(GM)
   io.close(File)
   TmpPlayer = nil
 end
-
 function StatMonster:StatMem(GM)
-  assert(GM.Player, "\231\188\186\229\176\145Player")
+  assert(GM.Player, "缺少Player")
   TmpPlayer = GM.Player
   local AllNum = 0
-  
   local function StatMemLoadCb(Mon)
     self:AddMon(Mon)
     AllNum = AllNum + 1
@@ -140,10 +129,8 @@ function StatMonster:StatMem(GM)
       self:StatMemRecord()
     end
   end
-  
   self:CreateMonster(StatMemLoadCb)
 end
-
 function StatMonster:StatMemRecord()
   StrOutput = ""
   for i = 1, #TestMonsters do
@@ -164,5 +151,4 @@ function StatMonster:StatMemRecord()
   io.close(File)
   TmpPlayer = nil
 end
-
 return StatMonster

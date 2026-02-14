@@ -1,11 +1,9 @@
 require("UnLua")
 local WBP_Char_LevelUp_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Char_LevelUp_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.UIManager = GWorld.GameInstance:GetGameUIManager()
 end
-
 function WBP_Char_LevelUp_C:OnLoaded(IsPlayerLevelUp)
   self.IsPlaying = false
   if IsPlayerLevelUp then
@@ -14,17 +12,14 @@ function WBP_Char_LevelUp_C:OnLoaded(IsPlayerLevelUp)
     self:TryFindNextToast()
   end
 end
-
 function WBP_Char_LevelUp_C:Hide(HideTag)
   WBP_Char_LevelUp_C.Super.Hide(self, HideTag)
   self:PauseTimer("FindNextToast")
 end
-
 function WBP_Char_LevelUp_C:Show(ShowTag)
   WBP_Char_LevelUp_C.Super.Show(self, ShowTag)
   self:UnPauseTimer("FindNextToast")
 end
-
 function WBP_Char_LevelUp_C:PlayNextToast(Type)
   local GameInstance = GWorld.GameInstance
   if "Player" == Type then
@@ -65,7 +60,6 @@ function WBP_Char_LevelUp_C:PlayNextToast(Type)
     end
   end
 end
-
 function WBP_Char_LevelUp_C:TryFindNextToast()
   if self.IsPlaying then
     return
@@ -73,7 +67,6 @@ function WBP_Char_LevelUp_C:TryFindNextToast()
   self.IsPlaying = true
   self:FindNextToast()
 end
-
 function WBP_Char_LevelUp_C:FindNextToast()
   local GameInstance = GWorld.GameInstance
   if GameInstance.LevelUpToastQueue.Player ~= nil then
@@ -94,7 +87,6 @@ function WBP_Char_LevelUp_C:FindNextToast()
     return
   end
 end
-
 function WBP_Char_LevelUp_C:RealShowPlayerToast(LevelupInfo)
   local GameInstance = GWorld.GameInstance
   self.Group_HeMingLvUp:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
@@ -136,7 +128,6 @@ function WBP_Char_LevelUp_C:RealShowPlayerToast(LevelupInfo)
     self:AddTimer(AnimLength, self.FindNextToast, false, nil, "FindNextToast", true)
   end
 end
-
 function WBP_Char_LevelUp_C:ShowPlayerToast()
   local GameInstance = GWorld.GameInstance
   if GameInstance.LevelUpToastQueue and GameInstance.LevelUpToastQueue.Player ~= nil then
@@ -146,12 +137,10 @@ function WBP_Char_LevelUp_C:ShowPlayerToast()
     self:RealClose()
   end
 end
-
 function WBP_Char_LevelUp_C:PlayToastAnimation(InAnim, OutAnim)
   local InAnimTime = InAnim:GetEndTime()
   local OutAnimTime = OutAnim:GetEndTime()
   DebugPrint("Tianyi@ InTime: " .. InAnimTime)
-  
   local function PlayOutAnim()
     DebugPrint("Tianyi@ PlayOut")
     if EMUIAnimationSubsystem then
@@ -159,22 +148,18 @@ function WBP_Char_LevelUp_C:PlayToastAnimation(InAnim, OutAnim)
     end
     self:AddTimer(OutAnimTime, self.FindNextToast, false, nil, nil, false)
   end
-  
   if EMUIAnimationSubsystem then
     EMUIAnimationSubsystem:EMPlayAnimation(self, InAnim)
   end
   self:AddTimer(InAnimTime + self.DelayTime, PlayOutAnim, false, nil, nil, false)
 end
-
 function WBP_Char_LevelUp_C:RefreshLevelNum_Lua()
   self.Text_HeMingLevelUpNum:SetText(self.ToLevel)
 end
-
 function WBP_Char_LevelUp_C:RefreshExpNum_Lua()
   self.Text_Exp_Num:SetText(self.ToExp)
   self.Text_Exp_Total:SetText(self.CurTotalExp)
 end
-
 function WBP_Char_LevelUp_C:PlayExpBarAnim_Lua()
   if self.FromExp and self.ToExp and self.CurTotalExp then
     if self.TimerHandle then
@@ -199,7 +184,6 @@ function WBP_Char_LevelUp_C:PlayExpBarAnim_Lua()
     end, true, nil, nil, true)
   end
 end
-
 function WBP_Char_LevelUp_C:SetExpProgress(Progress)
   self.Panel_ExpBar:ForceLayoutPrepass()
   local TotalLength = self.Panel_ExpBar:GetDesiredSize().X
@@ -207,7 +191,6 @@ function WBP_Char_LevelUp_C:SetExpProgress(Progress)
   local CurSize = ExpBarSlot:GetSize()
   ExpBarSlot:SetSize(UE4.FVector2D(TotalLength * Progress, CurSize.Y))
 end
-
 function WBP_Char_LevelUp_C:CalcTotalGetExp(OldLevel, OldExp, NewLevel, NewExp)
   if OldLevel == NewLevel then
     return NewExp - OldExp
@@ -221,5 +204,4 @@ function WBP_Char_LevelUp_C:CalcTotalGetExp(OldLevel, OldExp, NewLevel, NewExp)
   end
   return TotalGetExp
 end
-
 return WBP_Char_LevelUp_C

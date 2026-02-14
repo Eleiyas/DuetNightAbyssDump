@@ -3,12 +3,10 @@ local WalnutBagCommon = require("BluePrints.UI.WBP.Walnut.WalnutBag.WalnutBagCom
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self:InitBaseInfo()
 end
-
 function M:InitBaseInfo()
   self.Text_Method:SetText(GText("UI_Tips_Obtining"))
   self.Key_Check:CreateCommonKey({
@@ -19,14 +17,11 @@ function M:InitBaseInfo()
   })
   self.ScrollBox_Detail:SetControlScrollbarInside(true)
 end
-
 function M:ResetInfo()
 end
-
 function M:SetOwner(ParentWidget)
   self.ParentWidget = ParentWidget
 end
-
 function M:RefreshItemDetails(WalnutInfo)
   if nil == WalnutInfo then
     return
@@ -101,7 +96,6 @@ function M:RefreshItemDetails(WalnutInfo)
     self:PlayAnimationForward(self.Refresh)
   end
 end
-
 function M:RefreshIconAsset(bIsAsync, WalnutTypeConfigData, WalnutId)
   self.Walnut_Number:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if bIsAsync then
@@ -117,7 +111,6 @@ function M:RefreshIconAsset(bIsAsync, WalnutTypeConfigData, WalnutId)
     self.Icon_Walnut:SetBrushResourceObject(LoadObject(DataMgr.Walnut[WalnutId].Icon))
   end
 end
-
 function M:GenerateRewardShowInfo(WalnutConfigData, Rarity, Index, ItemWidget)
   local RewardId = WalnutConfigData.Id[Rarity]
   local RewardType = WalnutConfigData.Type[Rarity]
@@ -134,7 +127,6 @@ function M:GenerateRewardShowInfo(WalnutConfigData, Rarity, Index, ItemWidget)
     self:FillWithRewardStuffData(ItemWidget, RewardData)
   end
 end
-
 function M:FillWithRewardStuffData(ItemWidget, RewardData)
   local Icon = RewardData.Icon
   ItemWidget:Init({
@@ -151,7 +143,6 @@ function M:FillWithRewardStuffData(ItemWidget, RewardData)
     OnMenuOpenChanged = self.OnStuffMenuOpenChanged
   })
 end
-
 function M:RefreshAccessMethod(WalnutTypeConfigData, WalnutConfigData)
   self.AllMethodSubWidgetList = {}
   if not WalnutConfigData.AccessKey then
@@ -205,7 +196,6 @@ function M:RefreshAccessMethod(WalnutTypeConfigData, WalnutConfigData)
     end
   end
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -218,7 +208,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     end
   end
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad)
   if IsUseGamePad and not self:IsInGamePadViewMode() then
     self.Key_Check:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -226,11 +215,9 @@ function M:UpdateUIStyleInPlatform(IsUseGamePad)
     self.Key_Check:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetIsNeedPlayResolveAnim(bIsNeedPlay)
   self.bIsNeedPlayResolveAnim = bIsNeedPlay
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = true
   DebugPrint("Handle_KeyDownOnGamePad", InKeyName, self:IsInGamePadViewMode())
@@ -251,7 +238,6 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:DoCustomNavigationWithStuff(EUINavigation)
   local TargetNavigateWidget
   if self.AllMethodSubWidgetList and #self.AllMethodSubWidgetList > 0 then
@@ -262,14 +248,12 @@ function M:DoCustomNavigationWithStuff(EUINavigation)
   end
   return TargetNavigateWidget
 end
-
 function M:DoCustomNavigationWithMethod(EUINavigation)
   if self.ParentWidget then
     self.ParentWidget:RefreshBottomKeyInfo("ViewStuff")
   end
   return self.Item_3rd_1
 end
-
 function M:EnterGamePadViewMode()
   self.Item_1st:SetFocus()
   self:UpdateUIStyleInPlatform(false)
@@ -278,7 +262,6 @@ function M:EnterGamePadViewMode()
     self.ParentWidget:RefreshBottomKeyInfo("ViewStuff")
   end
 end
-
 function M:LeaveGamePadViewMode()
   if self.ParentWidget then
     self.ParentWidget:SetFocus()
@@ -287,7 +270,6 @@ function M:LeaveGamePadViewMode()
   end
   self:UpdateUIStyleInPlatform(true)
 end
-
 function M:IsInGamePadViewMode()
   local PlayerController = self:GetOwningPlayer()
   if self.Item_1st:HasUserFocus(PlayerController) then
@@ -312,5 +294,4 @@ function M:IsInGamePadViewMode()
   end
   return false
 end
-
 return M

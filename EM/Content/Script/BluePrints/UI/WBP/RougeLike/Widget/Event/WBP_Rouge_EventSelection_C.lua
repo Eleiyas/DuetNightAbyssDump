@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnBtnUnhovered)
@@ -18,7 +17,6 @@ function M:Construct()
     [3] = "Texture2D'/Game/UI/Texture/Dynamic/Atlas/RougeLike/T_Rouge_Event_IconSelectionGame.T_Rouge_Event_IconSelectionGame'"
   }
 end
-
 function M:InitUI(SelectionInfo)
   self.StartTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
   self:PlayAnimation(self.In)
@@ -41,7 +39,7 @@ function M:InitUI(SelectionInfo)
   end
   if not self.IsFromArchive then
     local Avatar = GWorld:GetAvatar()
-    assert(Avatar, "\230\137\190\228\184\141\229\136\176Avatar")
+    assert(Avatar, "找不到Avatar")
     local Currency = Avatar:GetCurrentRougeLikeToken()
     if self.SelectId then
       self.ChoicePrice = DataMgr.RougeLikeEventSelect[self.SelectId].Price
@@ -52,7 +50,6 @@ function M:InitUI(SelectionInfo)
     end
   end
 end
-
 function M:OnBtnHovered()
   if self.IsSelected then
     return
@@ -60,7 +57,6 @@ function M:OnBtnHovered()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/level_event_select_btn_hover", nil, nil)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   if self.IsSelected then
     return
@@ -68,20 +64,18 @@ function M:OnBtnUnhovered()
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnBtnPressed()
   if self.IsForbidden or self.IsSelected then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnClicked()
   if not self.IsFromArchive then
     local Avatar = GWorld:GetAvatar()
-    assert(Avatar, "\230\137\190\228\184\141\229\136\176Avatar")
+    assert(Avatar, "找不到Avatar")
     local UIManager = GWorld.GameInstance:GetGameUIManager()
-    assert(UIManager, "\230\137\190\228\184\141\229\136\176UIManager")
+    assert(UIManager, "找不到UIManager")
     local Currency = Avatar:GetCurrentRougeLikeToken()
     if self.ChoicePrice and Currency < self.ChoicePrice then
       UIManager:ShowUITip(UIConst.Tip_CommonToast, GText("RL_Event_CantSelect"))
@@ -109,5 +103,4 @@ function M:OnBtnClicked()
   self.IsSelected = true
   self:PlayAnimation(self.Click)
 end
-
 return M

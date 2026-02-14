@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnAnimationFinished(Anim)
   if Anim == self.Click then
     if self.Parent and self.Parent.RougePurchase then
@@ -12,5 +11,4 @@ function M:OnAnimationFinished(Anim)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
   end
 end
-
 return M

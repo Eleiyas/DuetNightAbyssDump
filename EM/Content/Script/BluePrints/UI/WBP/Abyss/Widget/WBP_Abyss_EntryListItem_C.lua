@@ -1,9 +1,7 @@
 require("UnLua")
 local M = Class("Blueprints.UI.BP_UIState_C")
-
 function M:Construct()
 end
-
 function M:Init(ConfigData)
   self.BuffInfo = ConfigData.BuffInfo
   self.BuffId = ConfigData.AbyssBuffID
@@ -14,14 +12,14 @@ function M:Init(ConfigData)
   self.AbyssBuffDes = ConfigData.AbyssBuffDes
   self.BuffLockToast = ConfigData.BuffLockToast
   self.Unlocked = ConfigData.Unlocked
-  self.Text_Name:SetText(GText(self.AbyssBuffName) or "\230\151\160")
+  self.Text_Name:SetText(GText(self.AbyssBuffName) or "无")
   self.Islocked = ConfigData.Islocked
   self.Text_Lock:SetText(GText(self.BuffLockToast))
   if self.Islocked then
     self:PlayAnimation(self.Locked)
   else
     self.AbyssBuffDes = UIUtils.GenAbyssEntryDesc(GText(self.AbyssBuffDes), self.AbyssEntryConfig, 0)
-    self.Text_Descirbe:SetText(GText(self.AbyssBuffDes) or "\230\151\160")
+    self.Text_Descirbe:SetText(GText(self.AbyssBuffDes) or "无")
     if self.Unlocked then
       self:PlayAnimation(self.UnLock)
     else
@@ -40,14 +38,12 @@ function M:Init(ConfigData)
     self.Text_Name:SetColorAndOpacity(self.Color_Red)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   Content.SelfWidget = self
   self.Content = Content
   self.Owner = Content.Owner
   self:Init(Content.ConfigData)
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -55,7 +51,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -63,7 +58,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self:UpdateHotKeyInfo(CurGamepadName)
 end
-
 function M:UpdateHotKeyInfo(CurGamepadName)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:CreateHotKeyAndAddToParent(self.Key_Left, "Img", "LT")
@@ -73,7 +67,6 @@ function M:UpdateHotKeyInfo(CurGamepadName)
     self:CreateHotKeyAndAddToParent(self.Key_Right, "Text", self.ConfigData.RightKey or "D")
   end
 end
-
 function M:CreateHotKeyAndAddToParent(PanelWidget, KeyType, KeyContent)
   PanelWidget:ClearChildren()
   local HotKeyWidget
@@ -100,18 +93,15 @@ function M:CreateHotKeyAndAddToParent(PanelWidget, KeyType, KeyContent)
   end
   PanelWidget:AddChildToOverlay(HotKeyWidget)
 end
-
 function M:BindEventOnTabSelected(Obj, Event)
   self.ObjTabSelected = Obj
   self.EventTabSelected = Event
 end
-
 function M:SelectTab(Idx)
   if self.Tabs[Idx] then
     self.List_Tab:GetChildAt(math.max(Idx - 1, 0)):SetSwitchOn(true)
   end
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   local IsEventHandled = true
   if InKeyName == UE4.EKeys.A.KeyName then
@@ -123,7 +113,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = true
   if "Gamepad_LeftTrigger" == InKeyName then
@@ -135,5 +124,4 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

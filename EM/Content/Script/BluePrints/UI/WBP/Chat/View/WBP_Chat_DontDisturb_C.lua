@@ -3,7 +3,6 @@ local ChatModel = ChatController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.ChatChannelMute = GWorld:GetAvatar().ChatChannelMute
   self.List_Channel.OnCreateEmptyContent:Bind(self, function(self)
@@ -17,7 +16,6 @@ function M:Construct()
   self.bHaveForbidden = true
   self:AddDispatcher("ComfirmDisturbClick", self, self.Save)
 end
-
 function M:LateInit()
   self:SetClickCallback()
   self.CommonDialogWindow:InitGamepadShortcut({
@@ -28,7 +26,6 @@ function M:LateInit()
   })
   self:SetOriginFocus()
 end
-
 function M:InitItems()
   self.Items = {}
   local ChannelDatas = DataMgr.Channel
@@ -47,7 +44,6 @@ function M:InitItems()
   end
   self.List_Channel:RequestFillEmptyContent()
 end
-
 function M:Save()
   local ItemsTable = self.Items
   local Avatar = ChatModel:GetAvatar()
@@ -61,7 +57,6 @@ function M:Save()
   end
   UIManager(self):ShowUITip("CommonToastMain", GText("UI_PersonInfo_Saved"))
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -77,7 +72,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:SetClickCallback()
   for index, value in ipairs(self.Items) do
     if value.UI then
@@ -87,7 +81,6 @@ function M:SetClickCallback()
     end
   end
 end
-
 function M:CheckIsChange()
   local bDifferent = false
   for index, value in ipairs(self.Items) do
@@ -103,13 +96,11 @@ function M:CheckIsChange()
     self:LockOrUnLockSaveButton(true)
   end
 end
-
 function M:LockOrUnLockSaveButton(bLock)
   local CommonDialogWindow = UIManager(self):GetUIObj("CommonDialog")
   self.bHaveForbidden = bLock
   CommonDialogWindow:ForbidRightBtn(bLock)
 end
-
 function M:SetItemEnableHover(IsEnable)
   ScreenPrint("SetItemEnableHover" .. (IsEnable and "true" or "false"))
   local ItemsTable = self.Items
@@ -119,7 +110,6 @@ function M:SetItemEnableHover(IsEnable)
     end
   end
 end
-
 function M:ClearHover()
   local ItemsTable = self.Items
   for index, value in ipairs(ItemsTable) do
@@ -128,7 +118,6 @@ function M:ClearHover()
     end
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.CurInputDeviceType = CurInputType
   if CurInputType == ECommonInputType.Gamepad then
@@ -138,13 +127,11 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self:SetItemEnableHover(false)
   end
 end
-
 function M:InitGamepadView()
   self.CurInputDeviceType = ECommonInputType.Gamepad
   self:SetOriginFocus()
   self:SetItemEnableHover(true)
 end
-
 function M:InitKeyboardView()
   self.CurInputDeviceType = ECommonInputType.MouseAndKeyboard
   self:SetItemEnableHover(false)
@@ -154,11 +141,9 @@ function M:InitKeyboardView()
     self:ClearHover()
   end)
 end
-
 function M:SetOriginFocus()
   if self.List_Channel:GetNumItems() > 0 then
     self.List_Channel:NavigateToIndex(0)
   end
 end
-
 return M

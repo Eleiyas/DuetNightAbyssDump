@@ -1,8 +1,8 @@
 require("UnLua")
 local CommonUtils = require("Utils.CommonUtils")
 local SerializeUtils = require("Utils.SerializeUtils")
+local WalnutUtils = require("BluePrints.UI.WBP.Walnut.WalnutChoice.WalnutUtils")
 local ProgressSnapShotComponent = {}
-
 function ProgressSnapShotComponent:TryResetBattleEid()
   if GWorld:GetAvatar() and GWorld:GetAvatar():IsInBigWorld() then
     return
@@ -19,7 +19,6 @@ function ProgressSnapShotComponent:TryResetBattleEid()
   end
   self:SetBattleEid(LastEid)
 end
-
 function ProgressSnapShotComponent:NeedProgressRecover()
   local ProgressData = self:GetProgressData()
   if not ProgressData then
@@ -31,7 +30,6 @@ function ProgressSnapShotComponent:NeedProgressRecover()
   end
   return true
 end
-
 function ProgressSnapShotComponent:GetProgressData()
   if self.ProgressData == nil then
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -39,12 +37,10 @@ function ProgressSnapShotComponent:GetProgressData()
   end
   return self.ProgressData
 end
-
 function ProgressSnapShotComponent:GetPlayerSliceData()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   return GameInstance:GetPlayerSliceData()
 end
-
 function ProgressSnapShotComponent:GetProgressDataJsonName()
   local ProgressData = self:GetProgressData()
   if ProgressData then
@@ -52,7 +48,6 @@ function ProgressSnapShotComponent:GetProgressDataJsonName()
   end
   return nil
 end
-
 function ProgressSnapShotComponent:GetProgressDataDungeonId()
   local ProgressData = self:GetProgressData()
   if ProgressData then
@@ -60,7 +55,6 @@ function ProgressSnapShotComponent:GetProgressDataDungeonId()
   end
   return nil
 end
-
 function ProgressSnapShotComponent:GetProgressDataPlayerTransform()
   local ProgressData = self:GetProgressData()
   if ProgressData then
@@ -68,28 +62,43 @@ function ProgressSnapShotComponent:GetProgressDataPlayerTransform()
   end
   return nil
 end
-
 function ProgressSnapShotComponent:TriggerProgressRecover()
   local ProgressData = self:GetProgressData()
   if ProgressData then
+    local RecoverStage = "OnBattle"
     if ProgressData.IsRougeLike then
       self:RougeRecoverProgressData()
     elseif ProgressData.IsAbyss then
       self:AbyssRecoverProgressData()
     else
-      self:RecoverProgressData()
+      RecoverStage = self:RecoverProgressData()
     end
-    self:OnProgressRecoverSucceed()
+    if "OnVoteBegin" == RecoverStage then
+      self:ExecuteNextStepOfDungeonVote()
+      self:DoCustomLogicOnRecoverToVoteEnd()
+    elseif "OnBattle" == RecoverStage then
+      self:OnProgressRecoverSucceed()
+    end
   end
 end
-
-function ProgressSnapShotComponent:RecordProgressData()
+function ProgressSnapShotComponent:CheckProgressSnapShotEnable()
   if not IsStandAlone(self) then
-    return
+    return false
   end
   if not Const.ProgressRecoverDungeonType[self.EMGameState.GameModeType] then
+    return false
+  end
+  return true
+end
+function ProgressSnapShotComponent:RecordProgressData()
+  if not self:CheckProgressSnapShotEnable() then
     return
   end
+  local ResData = self:GenerateProgressData("OnBattle")
+  UE4.UGameplayStatics.GetGameInstance(self):ClearProgressData()
+  GWorld:GetAvatar():SaveProgressData(ResData)
+end
+function ProgressSnapShotComponent:GenerateProgressData(CurStage)
   DebugPrint("ProgressSnapShotComponent: RecordProgressData")
   local StaticCreatorData = {}
   local RandomCreatorData = {}
@@ -104,7 +113,11 @@ function ProgressSnapShotComponent:RecordProgressData()
           RandomLevelName = self.RandomActorManager:GetCreatorRegionDataLevelName(Monster.RandomRuleId, Monster.RandomCreatorId),
           RandomIdxInRule = self.RandomActorManager:GetCreatorRegionDataIdxInRule(Monster.RandomRuleId, Monster.RandomCreatorId)
         }
-        table.insert(RandomCreatorData, TmpData)
+        if self:IsRandomCreatorInfoValid(TmpData, true) then
+          table.insert(RandomCreatorData, TmpData)
+        else
+          DebugPrint("ProgressSnapShotComponent: 尝试存储非法随机点数据 Monster Eid", Monster.Eid, "UnitId", Monster.UnitId, "RandomCreatorId", Monster.RandomCreatorId)
+        end
       elseif 0 ~= Monster.CreatorId then
         local TmpData = {
           StaticCreatorId = Monster.CreatorId,
@@ -116,29 +129,19 @@ function ProgressSnapShotComponent:RecordProgressData()
     end
   end
   for _, Monster in pairs(self.EMGameState.NpcMap) do
-    if IsValid(Monster) and not Monster:IsDead() and Monster.CreatorType == "StaticCreator" then
-      if 0 ~= Monster.RandomCreatorId then
-        local TmpData = {
-          RandomRuleId = Monster.RandomRuleId,
-          RandomTableId = Monster.RandomTableId,
-          RandomLevelName = self.RandomActorManager:GetCreatorRegionDataLevelName(Monster.RandomRuleId, Monster.RandomCreatorId),
-          RandomIdxInRule = self.RandomActorManager:GetCreatorRegionDataIdxInRule(Monster.RandomRuleId, Monster.RandomCreatorId)
-        }
-        table.insert(RandomCreatorData, TmpData)
-      elseif 0 ~= Monster.CreatorId and not Monster:IsPetNpc() then
-        local TmpData = {
-          StaticCreatorId = Monster.CreatorId,
-          PrivateEnable = Monster.PrivateEnable,
-          LevelName = self:GetActorLevelName(Monster)
-        }
-        table.insert(StaticCreatorData, TmpData)
-      end
+    if IsValid(Monster) and not Monster:IsDead() and Monster.CreatorType == "StaticCreator" and 0 ~= Monster.CreatorId and not Monster:IsPetNpc() then
+      local TmpData = {
+        StaticCreatorId = Monster.CreatorId,
+        PrivateEnable = Monster.PrivateEnable,
+        LevelName = self:GetActorLevelName(Monster)
+      }
+      table.insert(StaticCreatorData, TmpData)
     end
   end
   for _, CombatItem in pairs(self.EMGameState.CombatItemMap) do
     if IsValid(CombatItem) then
       if CombatItem.CanDungeonSave and not CombatItem:CanDungeonSave() then
-        DebugPrint("ProgressSnapShotComponent: CombatItem \229\141\179\229\176\134\233\148\128\230\175\129, \228\184\141\229\173\152\229\130\168", CombatItem:GetName(), CombatItem.Eid, CombatItem.CreatorId, CombatItem.UnitType)
+        DebugPrint("ProgressSnapShotComponent: CombatItem 即将销毁, 不存储", CombatItem:GetName(), CombatItem.Eid, CombatItem.CreatorId, CombatItem.UnitType)
       elseif 0 ~= CombatItem.RandomCreatorId then
         local TmpData = {
           RandomRuleId = CombatItem.RandomRuleId,
@@ -147,7 +150,11 @@ function ProgressSnapShotComponent:RecordProgressData()
           RandomIdxInRule = self.RandomActorManager:GetCreatorRegionDataIdxInRule(CombatItem.RandomRuleId, CombatItem.RandomCreatorId),
           ItemData = CombatItem:GetDungeonSaveData() or {}
         }
-        table.insert(RandomCreatorData, TmpData)
+        if self:IsRandomCreatorInfoValid(TmpData, true) then
+          table.insert(RandomCreatorData, TmpData)
+        else
+          DebugPrint("ProgressSnapShotComponent: 尝试存储非法随机点数据 CombatItem Eid", CombatItem.Eid, "UnitId", CombatItem.UnitId, "RandomCreatorId", CombatItem.RandomCreatorId)
+        end
       elseif 0 ~= CombatItem.CreatorId and not CombatItem.IsPetDefenceMechanism then
         local TmpData = {
           StaticCreatorId = CombatItem.CreatorId,
@@ -214,6 +221,14 @@ function ProgressSnapShotComponent:RecordProgressData()
   if Player and Player:IsDead() and RecoveryCountInfo.RecoveryCount then
     RecoveryCountInfo.RecoveryCount = RecoveryCountInfo.RecoveryCount + 1
   end
+  local DungeonTimeData = {}
+  DungeonTimeData.GameTime = self.EMGameState:GetGameEndTime()
+  DungeonTimeData.PlayerTime = PlayerState:GetPlayerEndTime()
+  local AutoNextRoundInfo = {}
+  AutoNextRoundInfo.TicketId = GWorld.GameInstance:GetTicketId()
+  local CachedWalnutId, CachedWalnutType = WalnutUtils:GetWalnutCacheIdByDungeonId(self.DungeonId)
+  AutoNextRoundInfo.WalnutId = CachedWalnutId
+  AutoNextRoundInfo.WalnutType = CachedWalnutType
   local ResData = {
     Eid = Eid,
     DungeonId = DungeonId,
@@ -228,13 +243,14 @@ function ProgressSnapShotComponent:RecordProgressData()
     BattleAchievementData = BattleAchievementData,
     DungeonUIInfoData = DungeonUIInfoData,
     DungeonEventData = DungeonEventData,
-    RecoveryCountInfo = RecoveryCountInfo
+    RecoveryCountInfo = RecoveryCountInfo,
+    DungeonTimeData = DungeonTimeData,
+    AutoNextRoundInfo = AutoNextRoundInfo,
+    CurStage = CurStage
   }
   PrintTable(ResData, 6)
-  UE4.UGameplayStatics.GetGameInstance(self):ClearProgressData()
-  GWorld:GetAvatar():SaveProgressData(ResData)
+  return ResData
 end
-
 function ProgressSnapShotComponent:RecoverProgressData()
   local ProgressData = self:GetProgressData()
   if not ProgressData then
@@ -272,11 +288,13 @@ function ProgressSnapShotComponent:RecoverProgressData()
         Creator:RealActiveStaticCreator()
       end
     else
-      DebugPrint("ProgressSnapShotComponent: \230\137\190\228\184\141\229\136\176\233\157\153\230\128\129\231\130\185,, StaticCreatorId", Data.StaticCreatorId, "PrivateEnable", Data.PrivateEnable, "LevelName", Data.LevelName)
+      DebugPrint("ProgressSnapShotComponent: 找不到静态点,, StaticCreatorId", Data.StaticCreatorId, "PrivateEnable", Data.PrivateEnable, "LevelName", Data.LevelName)
     end
   end
   for i, RandomData in pairs(ProgressData.RandomCreatorData) do
-    self.RandomActorManager:ProgressDataRecoverRandomActor(RandomData.RandomRuleId, RandomData.RandomLevelName, RandomData.RandomIdxInRule, RandomData.RandomTableId, RandomData.ItemData)
+    if self:IsRandomCreatorInfoValid(RandomData, false) then
+      self.RandomActorManager:ProgressDataRecoverRandomActor(RandomData.RandomRuleId, RandomData.RandomLevelName, RandomData.RandomIdxInRule, RandomData.RandomTableId, RandomData.ItemData)
+    end
   end
   self:TriggerDungeonComponentFun("RecoverDungeonRoundData", ProgressData.DungeonData)
   self:SetDungeonSnapShotData(ProgressData.DungeonSnapShotData)
@@ -285,7 +303,7 @@ function ProgressSnapShotComponent:RecoverProgressData()
     if SubGameMode then
       SubGameMode.GameModeFirstActiveEnable = FirstActiveEnable
     else
-      DebugPrint("ProgressSnapShot \229\173\144GameMode\228\184\141\229\173\152\229\156\168\239\188\140LevelName\239\188\154", LevelName)
+      DebugPrint("ProgressSnapShot 子GameMode不存在，LevelName：", LevelName)
     end
   end
   self.EMGameState.DungeonUIInfo.TexturePath = ProgressData.DungeonUIInfoData.TexturePath
@@ -297,24 +315,76 @@ function ProgressSnapShotComponent:RecoverProgressData()
   end
   Player:SetRecoveryCount(ProgressData.RecoveryCountInfo.RecoveryCount)
   Player:SetRecoveryMaxCount(ProgressData.RecoveryCountInfo.RecoveryMaxCount)
+  if ProgressData.DungeonTimeData then
+    self.EMGameState.RecoveredGameTime = ProgressData.DungeonTimeData.GameTime or 0
+    if Player.PlayerState then
+      Player.PlayerState.RecoveredPlayerTime = ProgressData.DungeonTimeData.PlayerTime or 0
+    end
+  end
+  if ProgressData.AutoNextRoundInfo then
+    local SavedTickId = ProgressData.AutoNextRoundInfo.TicketId
+    if SavedTickId then
+      GWorld.GameInstance:SetTicketId(SavedTickId)
+    end
+    local SavedWalnutId = ProgressData.AutoNextRoundInfo.WalnutId
+    local SavedWalnutType = ProgressData.AutoNextRoundInfo.WalnutType
+    if SavedWalnutId and SavedWalnutType then
+      WalnutUtils:SetWalnutCacheId(SavedWalnutId, SavedWalnutType)
+    end
+  end
+  local ResCurStage = ProgressData.CurStage or "OnBattle"
+  if self:IsWalnutDungeon() and "OnVoteBegin" == ResCurStage then
+    local Avatar = GWorld:GetAvatar()
+    if Avatar then
+      local CurWalnutId = Avatar.Walnuts.WalnutId
+      if -1 == CurWalnutId or CurWalnutId > 0 then
+        ResCurStage = "OnBattle"
+      end
+    end
+  end
+  return ResCurStage
 end
-
 function ProgressSnapShotComponent:OnProgressRecoverSucceed()
   self.Overridden.OnProgressRecoverSucceed(self)
 end
-
+function ProgressSnapShotComponent:DoCustomLogicOnRecoverToVoteEnd()
+  if self.EMGameState.GameModeType == "SurvivalMini" then
+    self:OnProgressRecoverSucceed()
+  end
+  if self:IsWalnutDungeon() then
+    EventManager:AddEvent(EventID.OnDungeonWalnutChoiceUIOpen, self, function()
+      EventManager:RemoveEvent(EventID.OnDungeonWalnutChoiceUIOpen, self)
+      self:SetGamePaused("NextWalnutRecover", true)
+    end)
+  end
+end
+function ProgressSnapShotComponent:IsRandomCreatorInfoValid(TmpInfo, IsRecord)
+  if not TmpInfo.RandomLevelName or TmpInfo.RandomLevelName == "" then
+    ScreenPrint("ProgressSnapShotComponent: 非法的随机点数据, RandomLevelName非法  是否发生在存储时: " .. tostring(IsRecord))
+    return false
+  end
+  if not TmpInfo.RandomRuleId then
+    ScreenPrint("ProgressSnapShotComponent: 非法的随机点数据, RandomRuleId为空  是否发生在存储时: " .. tostring(IsRecord))
+    return false
+  end
+  if not TmpInfo.RandomTableId then
+    ScreenPrint("ProgressSnapShotComponent: 非法的随机点数据, RandomTableId为空  是否发生在存储时: " .. tostring(IsRecord))
+    return false
+  end
+  return true
+end
 function ProgressSnapShotComponent:RougeRecordProgressData(PassRoomExtraInfo)
   if self:IsAllRoomPassed() then
-    DebugPrint("ProgressSnapShotComponent: \230\137\128\230\156\137\230\136\191\233\151\180\229\183\178\233\128\154\229\133\179\229\144\142\228\184\141\229\133\129\232\174\184\229\173\152\229\130\168")
+    DebugPrint("ProgressSnapShotComponent: 所有房间已通关后不允许存储")
     return
   end
   if self:IsDungeonInSettlement() then
-    DebugPrint("ProgressSnapShotComponent: \229\137\175\230\156\172\229\183\178\231\187\147\231\174\151\229\144\142\228\184\141\229\133\129\232\174\184\229\173\152\229\130\168")
+    DebugPrint("ProgressSnapShotComponent: 副本已结算后不允许存储")
     return
   end
   local IsCurRoomClear = GWorld.RougeLikeManager:IsCurRougeLikeRoomClear()
   local IsInEvent = GWorld.RougeLikeManager.IsListeningDealRewardEvent or false
-  DebugPrint("ProgressSnapShotComponent: RougeRecordProgressData \229\189\147\229\137\141\230\136\191\233\151\180\230\152\175\229\144\166\233\128\154\229\133\179\239\188\154", IsCurRoomClear, "\230\152\175\229\144\166\230\173\163\229\164\132\228\186\142\228\186\139\228\187\182\229\133\179\231\154\132\228\186\139\228\187\182\228\184\173", IsInEvent)
+  DebugPrint("ProgressSnapShotComponent: RougeRecordProgressData 当前房间是否通关：", IsCurRoomClear, "是否正处于事件关的事件中", IsInEvent)
   local PlayerController = UE.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
   local PlayerState = PlayerController.PlayerState
   local RecoveryCountInfo = {}
@@ -324,7 +394,7 @@ function ProgressSnapShotComponent:RougeRecordProgressData(PassRoomExtraInfo)
   if Player and Player:IsDead() and RecoveryCountInfo.RecoveryCount then
     RecoveryCountInfo.RecoveryCount = RecoveryCountInfo.RecoveryCount + 1
   end
-  DebugPrint("Tianyi@ \229\188\128\229\167\139\230\154\130\229\173\152\232\130\137\233\184\189Buff")
+  DebugPrint("Tianyi@ 开始暂存肉鸽Buff")
   local BuffsSnapshot = {}
   local BuffManager = Player.BuffManager
   if BuffManager then
@@ -404,7 +474,6 @@ function ProgressSnapShotComponent:RougeRecordProgressData(PassRoomExtraInfo)
   UE4.UGameplayStatics.GetGameInstance(self):ClearProgressData()
   GWorld:GetAvatar():SaveProgressData(ResData)
 end
-
 function ProgressSnapShotComponent:RougeRecoverProgressData()
   local ProgressData = self:GetProgressData()
   if not ProgressData then
@@ -413,7 +482,7 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
   end
   local IsCurRoomClear = GWorld.RougeLikeManager:IsCurRougeLikeRoomClear()
   local IsInEvent = ProgressData.IsListeningDealRewardEvent or false
-  DebugPrint("ProgressSnapShotComponent: RougeRecoverProgressData \229\189\147\229\137\141\230\136\191\233\151\180\230\152\175\229\144\166\233\128\154\229\133\179\239\188\154", IsCurRoomClear, "\230\152\175\229\144\166\230\173\163\229\164\132\228\186\142\228\186\139\228\187\182\229\133\179\231\154\132\228\186\139\228\187\182\228\184\173", IsInEvent)
+  DebugPrint("ProgressSnapShotComponent: RougeRecoverProgressData 当前房间是否通关：", IsCurRoomClear, "是否正处于事件关的事件中", IsInEvent)
   PrintTable(ProgressData, 6)
   UE4.UGameplayStatics.GetGameInstance(self):ClearProgressData()
   local PlayerController = UE.UGameplayStatics.GetPlayerController(GWorld.GameInstance, 0)
@@ -423,12 +492,12 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
   PlayerState:SetRecoveryMaxCount(ProgressData.RecoveryCountInfo.RecoveryMaxCount)
   local BuffsSnapshot = ProgressData.BuffsSnapshot
   local RecoveredBuffsNum = 0
-  DebugPrint("Tianyi@ \229\188\128\229\167\139\230\129\162\229\164\141Buff")
+  DebugPrint("Tianyi@ 开始恢复Buff")
   for _, BuffSnapshot in ipairs(BuffsSnapshot) do
     local BuffId = BuffSnapshot.BuffId
     local BuffConfig = DataMgr.Buff[BuffId]
     if not BuffConfig then
-      DebugPrint("Tianyi@ Buff\230\129\162\229\164\141\229\164\177\232\180\165, \229\173\152\229\156\168\233\157\158\230\179\149BuffId: ", BuffId)
+      DebugPrint("Tianyi@ Buff恢复失败, 存在非法BuffId: ", BuffId)
     else
       local MergeRule2 = BuffConfig.MergeRule2
       if "Merge" == MergeRule2 then
@@ -462,9 +531,9 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
   if #BuffsSnapshot > 0 then
     Player:RefreshBuff()
     if RecoveredBuffsNum == #BuffsSnapshot then
-      DebugPrint("Tianyi@ Buff\230\129\162\229\164\141\230\136\144\229\138\159")
+      DebugPrint("Tianyi@ Buff恢复成功")
     else
-      DebugPrint("Tianyi@ Buff\230\129\162\229\164\141\229\164\177\232\180\165, \230\129\162\229\164\141\228\186\134" .. tostring(RecoveredBuffsNum) .. "\228\184\170Buff, \228\189\134\230\128\187\229\133\177\230\156\137" .. tostring(#BuffsSnapshot) .. "\228\184\170Buff")
+      DebugPrint("Tianyi@ Buff恢复失败, 恢复了" .. tostring(RecoveredBuffsNum) .. "个Buff, 但总共有" .. tostring(#BuffsSnapshot) .. "个Buff")
     end
   end
   local DataSetObjInfo = ProgressData.DataSetObjInfo
@@ -504,8 +573,13 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
   UE4.UGameplayStatics.GetGameInstance(self):ClearPlayerSliceData()
   for FuncName, MapName in pairs(DataSetObjInfo) do
     for key, value in pairs(MapName) do
-      DataSetObj[FuncName](DataSetObj, key, value)
-      DebugPrint("Tianyi@ \230\129\162\229\164\141\228\186\134\232\147\157\229\155\190\230\149\176\230\141\174: ", key, value)
+      local DataSetFunc = GWorld.RougeLikeManager[FuncName]
+      if DataSetFunc and type(DataSetFunc) == "function" then
+        DataSetFunc(GWorld.RougeLikeManager, key, value)
+        DebugPrint("Tianyi@ 恢复了蓝图数据: ", key, value)
+      else
+        DebugPrint("Tianyi@ 恢复蓝图数据失败, 不存在该函数: ", FuncName)
+      end
     end
   end
   Battle(self):TriggerBattleEvent(BattleEventName.RougeParamRecover, Player, GWorld.RougeLikeManager)
@@ -523,7 +597,7 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
             Creator:RealActiveStaticCreator()
           end
         else
-          DebugPrint("\230\137\190\228\184\141\229\136\176\233\157\153\230\128\129\231\130\185,, StaticCreatorId", Data.StaticCreatorId, "PrivateEnable", Data.PrivateEnable, "LevelName", Data.LevelName)
+          DebugPrint("找不到静态点,, StaticCreatorId", Data.StaticCreatorId, "PrivateEnable", Data.PrivateEnable, "LevelName", Data.LevelName)
         end
       end
     end
@@ -535,14 +609,14 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
   if IsInEvent or IsCurRoomClear then
     for LevelName, SubGameMode in pairs(self.LevelGameMode.SubGameModeInfo) do
       SubGameMode.GameModeFirstActiveEnable = false
-      DebugPrint("ProgressSnapShotComponent: SubGameMode", LevelName, SubGameMode:GetName(), "\229\133\179\233\151\173OnFirstActive")
+      DebugPrint("ProgressSnapShotComponent: SubGameMode", LevelName, SubGameMode:GetName(), "关闭OnFirstActive")
     end
   end
   if (IsInEvent or IsCurRoomClear) and ProgressData.DungeonUIInfoData.TextMap and ProgressData.DungeonUIInfoData.TextMap ~= "" then
     local TexturePath = ProgressData.DungeonUIInfoData.TexturePath
     local TextTitle = ProgressData.DungeonUIInfoData.TextTitle
     local TextMap = ProgressData.DungeonUIInfoData.TextMap
-    self:NotifyClientShowDungeonTask("", TexturePath, TextTitle, TextMap)
+    self:NotifyClientShowDungeonTaskNew(TexturePath, TextTitle, TextMap)
     local RougeLikeSubTaskText = ProgressData.DungeonUIInfoData.RougeLikeSubTaskText
     if RougeLikeSubTaskText then
       self:InitRougeLikeSubTask(RougeLikeSubTaskText)
@@ -566,20 +640,19 @@ function ProgressSnapShotComponent:RougeRecoverProgressData()
     GWorld.RougeLikeManager:OnPassRoom(RecoveryFlag)
   end
   local CurrentEventId = GWorld.RougeLikeManager.EventId
-  DebugPrint("ProgressSnapShotComponent \229\189\147\229\137\141\228\186\139\228\187\182ID\228\184\186\239\188\154", CurrentEventId)
+  DebugPrint("ProgressSnapShotComponent 当前事件ID为：", CurrentEventId)
   if CurrentEventId > 0 then
     local GameModeEvent = DataMgr.RougeLikeEventSelect[CurrentEventId].GameModeEvent
     if GameModeEvent then
-      DebugPrint("ProgressSnapShotComponent: \230\129\162\229\164\141\232\167\166\229\143\145\228\186\139\228\187\182\229\133\179\228\186\139\228\187\182", GameModeEvent)
+      DebugPrint("ProgressSnapShotComponent: 恢复触发事件关事件", GameModeEvent)
       self:PostCustomEvent(GameModeEvent)
     end
   end
   if ProgressData.PassRoomExtraInfo.IsRougeFinished and 0 ~= GWorld.RougeLikeManager.StoryId then
-    DebugPrint("ProgressSnapShotComponent: \230\129\162\229\164\141\232\167\166\229\143\145\233\128\154\229\133\179Story", GWorld.RougeLikeManager.StoryId, "\230\152\175\229\144\166\233\128\154\229\133\179:", ProgressData.PassRoomExtraInfo.IsWin)
+    DebugPrint("ProgressSnapShotComponent: 恢复触发通关Story", GWorld.RougeLikeManager.StoryId, "是否通关:", ProgressData.PassRoomExtraInfo.IsWin)
     self:ShowFinishRougeStory(ProgressData.PassRoomExtraInfo.IsWin)
   end
 end
-
 function ProgressSnapShotComponent:AbyssRecordProgressData(AbyssInfo)
   DebugPrint("ProgressSnapShotComponent: AbyssRecordProgressData")
   local JsonName = UE4.URuntimeCommonFunctionLibrary.GetLevelLoadJsonName(self)
@@ -600,7 +673,6 @@ function ProgressSnapShotComponent:AbyssRecordProgressData(AbyssInfo)
   UE4.UGameplayStatics.GetGameInstance(self):ClearProgressData()
   GWorld:GetAvatar():SaveProgressData(ResData)
 end
-
 function ProgressSnapShotComponent:AbyssRecoverProgressData()
   local ProgressData = self:GetProgressData()
   if not ProgressData then
@@ -615,7 +687,6 @@ function ProgressSnapShotComponent:AbyssRecoverProgressData()
   self:TriggerDungeonComponentFun("TriggerStartNextRoom", ProgressData.LastLevelId, ProgressData.NewLevelId)
   GWorld.GameInstance.PreAbyssLevelProgress = ProgressData.PreAbyssLevelProgress
 end
-
 function ProgressSnapShotComponent:GetProgressDataAbyssLogicServerInfo()
   local ProgressData = self:GetProgressData()
   if ProgressData then
@@ -623,5 +694,4 @@ function ProgressSnapShotComponent:GetProgressDataAbyssLogicServerInfo()
   end
   return nil
 end
-
 return ProgressSnapShotComponent

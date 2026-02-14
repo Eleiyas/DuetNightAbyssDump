@@ -2,9 +2,9 @@ require("UnLua")
 local M = Class({
   "Blueprints.UI.BP_UIState_C"
 })
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
+  local ShowMailId = (...)
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "MailMain", nil)
   if self.Platform == "PC" then
@@ -47,10 +47,19 @@ function M:OnLoaded(...)
       BackCallback = self.OnPressESC
     })
   end
-  self.WBP_Mail_Root:Init(self)
+  self.WBP_Mail_Root:Init(self, ShowMailId)
   self:PlayInAnim()
 end
-
+function M:ReceiveEnterState(StackAction)
+  M.Super.ReceiveEnterState(self, StackAction)
+  if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+    self.WBP_Mail_Root:SetFocus()
+    self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
+  end
+  if self.WBP_Mail_Root.bMarkMailStar then
+    self.WBP_Mail_Root:PlayStarAnim()
+  end
+end
 function M:RefreshTabBottomKey()
   if UIUtils.IsMobileInput() then
     return
@@ -133,45 +142,36 @@ function M:RefreshTabBottomKey()
     self.Common_Tab:UpdateBottomKeyInfo(BottomKeyInfo)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   self.WBP_Mail_Root:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   self.WBP_Mail_Root:OnMailRootPreviewKeyDown(MyGeometry, InKeyEvent)
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   self.WBP_Mail_Root:OnMailRootKeyDown(MyGeometry, InKeyEvent)
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:OnPressESC()
   self:PlayOutAnim()
 end
-
 function M:OnPressSPACE()
   self.WBP_Mail_Root:OnPressSPACE()
 end
-
 function M:PlayInAnim()
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:PlayAnimation(self.In)
-  
   local function PlayAnimFinished()
     self:BlockAllUIInput(false)
     self.WBP_Mail_Root:UpdateFocusState("ListMail")
   end
-  
   self:BindToAnimationFinished(self.In, {self, PlayAnimFinished})
 end
-
 function M:PlayOutAnim()
   self:PlayAnimation(self.Out)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self.WBP_Mail_Root:PlayOutAnim()
   AudioManager(self):SetEventSoundParam(self, "MailMain", {ToEnd = 1})
   self:BindToAnimationFinished(self.Out, {
@@ -179,11 +179,9 @@ function M:PlayOutAnim()
     self.CloseSelf
   })
 end
-
 function M:CloseSelf()
   self:BlockAllUIInput(false)
   self.WBP_Mail_Root:RemoveReddotListen()
   self:Close()
 end
-
 return M

@@ -7,7 +7,6 @@ local EFilmBackTextShowType = {
   ShortcutKey = "ShortcutKey"
 }
 local OutAnimationTime = 0.5
-
 function WBP_Cinematic_Common:Construct()
   WBP_Cinematic_Common.Super.Construct(self)
   self.DefaultDeactiveUI = false
@@ -15,11 +14,9 @@ function WBP_Cinematic_Common:Construct()
   self.bUseVoiceover = false
   self:SetStoryInputModeEnabled(true)
 end
-
 function WBP_Cinematic_Common:Destruct()
   WBP_Cinematic_Common.Super.Destruct(self)
 end
-
 function WBP_Cinematic_Common:OnLoaded(...)
   WBP_Cinematic_Common.Super.OnLoaded(self, ...)
   self.WikiEntryIds = {}
@@ -33,17 +30,14 @@ function WBP_Cinematic_Common:OnLoaded(...)
   self:ShowConfirmButton(false)
   self:ShowAutoPlayButton(false)
 end
-
 function WBP_Cinematic_Common:AlwaysShowSkipButton()
   self.EnableDeactiveUI = false
 end
-
 function WBP_Cinematic_Common:PreEnterTalkTask(TalkTask, TaskData, OnPreEnterTalkTaskFinished)
   DebugPrint("WBP_Cinematic_Common:PreEnterTalkTask")
   WBP_Cinematic_Common.Super.PreEnterTalkTask(self, TalkTask, TaskData, OnPreEnterTalkTaskFinished)
   self:ShowVideo(false)
 end
-
 function WBP_Cinematic_Common:SwitchEnableActiveUI(bEnable)
   self:StopListeningForInputAction("TalkClick", EInputEvent.IE_Pressed)
   self:StopListeningForInputAction("TalkClick", EInputEvent.IE_Released)
@@ -58,7 +52,6 @@ function WBP_Cinematic_Common:SwitchEnableActiveUI(bEnable)
     })
   end
 end
-
 function WBP_Cinematic_Common:PostEnterTalkTask(TalkTask, TaskData, OnPostEnterTalkTaskFinished)
   DebugPrint("WBP_Cinematic_Common:PostEnterTalkTask")
   self.HasShowWikiButton = false
@@ -70,7 +63,6 @@ function WBP_Cinematic_Common:PostEnterTalkTask(TalkTask, TaskData, OnPostEnterT
   self:PlayAnimation(self.In)
   WBP_Cinematic_Common.Super.PostEnterTalkTask(self, TalkTask, TaskData, OnPostEnterTalkTaskFinished)
 end
-
 function WBP_Cinematic_Common:PreExitTalkTask(TalkTask, TaskData, OnPreExitTalkTaskFinished)
   DebugPrint("WBP_Cinematic_Common:PreExitTalkTask")
   self:SwitchEnableWikiButton(false)
@@ -82,22 +74,18 @@ function WBP_Cinematic_Common:PreExitTalkTask(TalkTask, TaskData, OnPreExitTalkT
     OnPreExitTalkTaskFinished:Fire()
   end
 end
-
 function WBP_Cinematic_Common:PostExitTalkTask(TalkTask, TaskData, OnPostExitTalkTaskFinished)
   DebugPrint("WBP_Cinematic_Common:PostExitTalkTask")
   WBP_Cinematic_Common.Super.PostExitTalkTask(self, TalkTask, TaskData, OnPostExitTalkTaskFinished)
 end
-
 function WBP_Cinematic_Common:EnableFilmBack()
   self:StopAllAnimations()
   self:PlayAnimation(self.Bg_In)
 end
-
 function WBP_Cinematic_Common:DisableFilmBack()
   self:StopAllAnimations()
   self:PlayAnimation(self.Bg_Out)
 end
-
 function WBP_Cinematic_Common:SetFilmBackDisplay(bDisplay, ShowTag)
   if bDisplay then
     if IsEmptyTable(self.FilmBackDisplayShowTypes) then
@@ -111,7 +99,6 @@ function WBP_Cinematic_Common:SetFilmBackDisplay(bDisplay, ShowTag)
     end
   end
 end
-
 function WBP_Cinematic_Common:SetTextBorderHidden(bHidden)
   self:SetFilmBackDisplay(not bHidden, EFilmBackTextShowType.Dialogue)
   if bHidden then
@@ -122,7 +109,6 @@ function WBP_Cinematic_Common:SetTextBorderHidden(bHidden)
     self.Text_Video_World_Language:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Cinematic_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
   DebugPrint("Cinematic", DialogueData.Content)
   if DialogueData.DialogueId == nil then
@@ -161,11 +147,10 @@ function WBP_Cinematic_Common:PlayDialogue(TalkTask, DialogueData, TaskData)
       self:SetVisibility(ESlateVisibility.Collapsed)
       self:SetTipImageHidden(true)
       self:SetTextBorderHidden(true)
-      self.WholeDialogueTypingFinished_Delegate:Fire(true, true)
+      self.WholeDialogueTypingFinished_Delegate:Fire(true)
     end
   end
 end
-
 function WBP_Cinematic_Common:ShowVideo(bShow)
   if bShow then
     self.Image_Video:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -173,19 +158,16 @@ function WBP_Cinematic_Common:ShowVideo(bShow)
     self.Image_Video:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Cinematic_Common:OnPlayerActiveUI()
   DebugPrint("WBP_Cinematic_Common:OnPlayerActiveUI")
   self:OnPlayKeyActive()
   self:SetFilmBackDisplay(true, EFilmBackTextShowType.ShortcutKey)
 end
-
 function WBP_Cinematic_Common:OnPlayerDeactiveUI()
   DebugPrint("WBP_Cinematic_Common:OnPlayerDeactiveUI")
   self:OnPlayKeyDeactive()
   self:SetFilmBackDisplay(false, EFilmBackTextShowType.ShortcutKey)
 end
-
 function WBP_Cinematic_Common:SwitchEnableTalkClick(bEnable)
   DebugPrint("WBP_Cinematic_Common:SwitchEnableTalkClick", bEnable)
   self:SwitchEnableConfirmButton(bEnable)
@@ -202,17 +184,13 @@ function WBP_Cinematic_Common:SwitchEnableTalkClick(bEnable)
     })
   end
 end
-
 function WBP_Cinematic_Common:OnPlayKeyActive()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Cinematic_Common:OnPlayKeyActive")
+  DebugPrint("Error: 未实现的函数WBP_Cinematic_Common:OnPlayKeyActive")
 end
-
 function WBP_Cinematic_Common:OnPlayKeyDeactive()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Cinematic_Common:OnPlayKeyDeactive")
+  DebugPrint("Error: 未实现的函数WBP_Cinematic_Common:OnPlayKeyDeactive")
 end
-
 function WBP_Cinematic_Common:InitPlayKey()
-  DebugPrint("Error: \230\156\170\229\174\158\231\142\176\231\154\132\229\135\189\230\149\176WBP_Cinematic_Common:InitPlayKey")
+  DebugPrint("Error: 未实现的函数WBP_Cinematic_Common:InitPlayKey")
 end
-
 return WBP_Cinematic_Common

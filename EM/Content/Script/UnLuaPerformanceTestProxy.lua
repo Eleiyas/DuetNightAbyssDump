@@ -1,6 +1,5 @@
 require("UnLua")
 local UnLuaPerformanceTestProxy = Class()
-
 function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
   local N = 1000000
   local Multiplier = 1.0E9 / N
@@ -172,5 +171,4 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
   Message = Message .. "\n" .. "FHitResult() ; " .. tostring((EndTime - StartTime) * Multiplier)
   LogPerformanceData(Message)
 end
-
 return UnLuaPerformanceTestProxy

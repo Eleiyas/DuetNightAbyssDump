@@ -1,7 +1,6 @@
 local CommonUtils = require("Utils.CommonUtils")
 local MiscUtils = require("Utils.MiscUtils")
 local GameModeLogin = {}
-
 function GameModeLogin:InitNewPlayerLua(PlayerController, UniqueId, Options, Portal)
   if not self.AvatarInfos then
     self.AvatarInfos = {}
@@ -34,7 +33,6 @@ function GameModeLogin:InitNewPlayerLua(PlayerController, UniqueId, Options, Por
         local function start()
           self:StartAutoBattleTest(true)
         end
-        
         self:AddTimer(2, start)
         return ""
       end
@@ -99,7 +97,6 @@ function GameModeLogin:InitNewPlayerLua(PlayerController, UniqueId, Options, Por
   self.ClientReadyMap:Add(AvatarEid, false)
   return ""
 end
-
 function GameModeLogin:GetDefaultPawnClassForController(PlayerController)
   local Avatar = GWorld:GetAvatar()
   if Avatar and Avatar.IsAutoBattle then
@@ -112,7 +109,6 @@ function GameModeLogin:GetDefaultPawnClassForController(PlayerController)
   end
   return UE4.LoadClass(PawnClassPath)
 end
-
 function GameModeLogin:K2_PostLogin(PlayerController)
   if GWorld.bDebugServer then
     return
@@ -122,7 +118,6 @@ function GameModeLogin:K2_PostLogin(PlayerController)
     DSEntity:ConnectDSServerSuccess(PlayerController.AvatarEidStr, PlayerController.PlayerState.bIsEMInactive)
   end
 end
-
 function GameModeLogin:K2_OnRestartPlayer(PlayerController)
   if PlayerController.PlayerState.bIsEMInactive then
     ServerPrint("Reconnect Player")
@@ -140,23 +135,17 @@ function GameModeLogin:K2_OnRestartPlayer(PlayerController)
   local InfoForInit = {Camp = "Player", AvatarInfo = AvatarInfo}
   Character:RegisterInfo(InfoForInit)
 end
-
 function GameModeLogin:K2_OnLogout(ExitingController)
   local AvatarEidStr = ExitingController.AvatarEidStr
   ServerPrint("K2_OnLogout", AvatarEidStr)
   self.LevelGameMode.PlayerNumber = self.LevelGameMode.PlayerNumber - 1
   self:OnAvatarLogout(AvatarEidStr)
 end
-
 function GameModeLogin:OnAvatarLogout(AvatarEidStr)
   ServerPrint("OnAvatarLogout", AvatarEidStr)
   if AvatarEidStr then
-    self.AvatarInfos[AvatarEidStr] = nil
     self.BattleAvatars[AvatarEidStr] = nil
-    local DSEntity = GWorld:GetDSEntity()
-    if DSEntity then
-      DSEntity.AvatarInfos[AvatarEidStr] = nil
-    end
+    EventManager:FireEvent(EventID.OnAvatarLogout, AvatarEidStr)
   end
   if GWorld.bDebugServer then
     return
@@ -166,7 +155,6 @@ function GameModeLogin:OnAvatarLogout(AvatarEidStr)
     DSEntity:DisconnectDSServerSuccess(AvatarEidStr)
   end
 end
-
 function GameModeLogin:OnCharacterReady(AvatarEid, Character)
   self.LevelGameMode.PlayerNumber = self.LevelGameMode.PlayerNumber + 1
   if self.BattleAvatars[AvatarEid] or not AvatarEid then
@@ -175,7 +163,6 @@ function GameModeLogin:OnCharacterReady(AvatarEid, Character)
   DebugPrint("GameModeLogin OnCharacterReady", AvatarEid)
   self.BattleAvatars[AvatarEid] = Character
 end
-
 function GameModeLogin:PreInitPlayer(PlayerController, CustomInfo)
   local AvatarBattleInfo = CustomInfo.AvatarBattleInfo or AvatarUtils:GetDefaultBattleInfo(CustomInfo.Avatar)
   local PlayerInfo = CustomInfo.PlayerInfo
@@ -195,7 +182,6 @@ function GameModeLogin:PreInitPlayer(PlayerController, CustomInfo)
   end
   PlayerController:SetAvatarInfo(AvatarEid, AvatarBattleInfo)
 end
-
 function GameModeLogin:StartAutoBattleTest(bClientMode)
   print(_G.LogTag, "InitAutoTestCount")
   Battle(GWorld.GameInstance):InitBattleEventWithPath("AutoTestCount")
@@ -214,7 +200,6 @@ function GameModeLogin:StartAutoBattleTest(bClientMode)
     self:SetLocationFromPlayerStart(Location, true)
   end
   print(_G.LogTag, "StartPoint Location", Location)
-  
   local function LoadFinishCallback(Phantom)
     if not Phantom then
       print(_G.LogTag, "PlaherCharacter AI load fail")
@@ -237,7 +222,6 @@ function GameModeLogin:StartAutoBattleTest(bClientMode)
     local Controller = UE4.UGameplayStatics.GetPlayerController(Phantom, 0)
     Controller:SetLastPawn(Phantom)
   end
-  
   local Context = AEventMgr.CreateUnitContext()
   Context.UnitId = 1
   Context.IntParams:Add("RoleId", RoleId)
@@ -254,11 +238,9 @@ function GameModeLogin:StartAutoBattleTest(bClientMode)
     GameMode.AutoTestStartTime = GWorld:GetCurrentTime()
   end
 end
-
 function GameModeLogin:RealStartAutoBattleTest()
   local function RealStart()
     print(_G.LogTag, "RealStartAutoBattleTest")
-    
     self:SetGameModeState(Const.StateRunning)
     self:OnInit()
     local DSEntity = GWorld:GetDSEntity()
@@ -272,8 +254,6 @@ function GameModeLogin:RealStartAutoBattleTest()
       return
     end
   end
-  
   self:AddTimer(5, RealStart)
 end
-
 return GameModeLogin

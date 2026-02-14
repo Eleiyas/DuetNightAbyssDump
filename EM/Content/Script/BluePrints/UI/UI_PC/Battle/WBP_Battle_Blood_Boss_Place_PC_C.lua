@@ -1,7 +1,6 @@
 require("UnLua")
 local BloodBarUtils = require("BluePrints.UI.BloodBar.BloodBarUtils")
 local WBP_Battle_Bar_Blood_Place_PC_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Battle_Bar_Blood_Place_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.Owner = nil
@@ -9,7 +8,6 @@ function WBP_Battle_Bar_Blood_Place_PC_C:Initialize(Initializer)
   self.PlaceAnimTime = 0.5
   self.PlaceHideTime = 3.0
 end
-
 function WBP_Battle_Bar_Blood_Place_PC_C:Construct()
   self.Super.Construct(self)
   self.RootWidget:SetRenderOpacity(0.0)
@@ -23,7 +21,6 @@ function WBP_Battle_Bar_Blood_Place_PC_C:Construct()
     end
   end
 end
-
 function WBP_Battle_Bar_Blood_Place_PC_C:InitBossPlaceBlood(OwnerActor)
   self.Owner = OwnerActor
   self.Hp = OwnerActor:GetAttr("Hp")
@@ -39,7 +36,6 @@ function WBP_Battle_Bar_Blood_Place_PC_C:InitBossPlaceBlood(OwnerActor)
     self.bCanShowSelf = not OwnerActor.HideBloodUI
   end
 end
-
 function WBP_Battle_Bar_Blood_Place_PC_C:UpdateBossPlaceBlood()
   self.RootWidget:SetRenderOpacity(1.0)
   if self.bCanShowSelf ~= false then
@@ -53,14 +49,12 @@ function WBP_Battle_Bar_Blood_Place_PC_C:UpdateBossPlaceBlood()
   self.HpBar:SetBarPercent(CurPercent)
   if IsRealReduceBlood then
     self.HpBar:PlayDeduct(true)
-    
     local function CheckBossPlace()
       if self.Hp == self.Owner:GetCurrentBloodVolume() then
         self.RootWidget:SetRenderOpacity(0.0)
         self.RootWidget:SetVisibility(UE4.ESlateVisibility.Collapsed)
       end
     end
-    
     self:AddTimer(self.PlaceTickTime, CheckBossPlace, false, self.PlaceHideTime, "CheckBossPlaceIsHit")
   else
     if self:IsExistTimer("CheckBossPlaceIsHit") then
@@ -71,9 +65,7 @@ function WBP_Battle_Bar_Blood_Place_PC_C:UpdateBossPlaceBlood()
   end
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Battle_Bar_Blood_Place_PC_C:CheckIsShowByType()
   return self.RootWidget:GetRenderOpacity() >= 1.0 and self.Boss_Place_Blood:IsVisible()
 end
-
 return WBP_Battle_Bar_Blood_Place_PC_C

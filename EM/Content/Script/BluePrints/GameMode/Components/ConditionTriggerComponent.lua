@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:TriggerCondition(ConditionType, ...)
   local info = DataMgr.Condition2Id[ConditionType]
   assert(info, "Unknown ConditionType: " .. ConditionType)
@@ -33,7 +32,6 @@ function Component:TriggerCondition(ConditionType, ...)
     end
   end
 end
-
 function Component:ServerTriggerCheckCondition(ConditionId)
   if IsStandAlone(self) or IsClient(self) then
     local Avatar = GWorld:GetAvatar()
@@ -50,5 +48,4 @@ function Component:ServerTriggerCheckCondition(ConditionId)
     end
   end
 end
-
 return Component

@@ -3,7 +3,6 @@ local WBP_Common_Dialog_Title_SubTab_PC_C = Class("BluePrints.UI.UI_PC.Common.Co
 WBP_Common_Dialog_Title_SubTab_PC_C._components = {
   "Blueprints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_Title.Common_Dialog_TitleBase"
 }
-
 function WBP_Common_Dialog_Title_SubTab_PC_C:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self:RegisterCloseButton(self.BtnClose, PopupData)
@@ -21,11 +20,9 @@ function WBP_Common_Dialog_Title_SubTab_PC_C:InitContent(Params, PopupData, Owne
     self.Com_Tab:SelectTab(Index)
   end)
 end
-
 function WBP_Common_Dialog_Title_SubTab_PC_C:OnTabSelected(TabWidget)
   self:BroadcastDialogEvent(DialogEvent.OnTitleTabSelected, TabWidget)
 end
-
 function WBP_Common_Dialog_Title_SubTab_PC_C:OnContentKeyDown(MyGeometry, InKeyEvent)
   self.Super.OnContentKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -36,6 +33,5 @@ function WBP_Common_Dialog_Title_SubTab_PC_C:OnContentKeyDown(MyGeometry, InKeyE
     self.Com_Tab:Handle_KeyEventOnPC(InKeyName)
   end
 end
-
 AssembleComponents(WBP_Common_Dialog_Title_SubTab_PC_C)
 return WBP_Common_Dialog_Title_SubTab_PC_C

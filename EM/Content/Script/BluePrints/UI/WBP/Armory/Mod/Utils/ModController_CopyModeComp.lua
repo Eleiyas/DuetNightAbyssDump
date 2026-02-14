@@ -1,6 +1,5 @@
 local ModModel = ModController:GetModel()
 local Component = {}
-
 function Component:TryAbortImport()
   if ModModel:IsInImport() then
     ModModel:StopImport()
@@ -9,7 +8,6 @@ function Component:TryAbortImport()
     self:NotifyEvent(ModCommon.EventId.OnImportAbort)
   end
 end
-
 function Component:ImportTryTakeoffAllMods(Target, ModSuitIndex)
   local ModSuit = Target:GetModSuit(ModSuitIndex)
   for ModSlotId = 1, ModSuit:Length() do
@@ -19,7 +17,6 @@ function Component:ImportTryTakeoffAllMods(Target, ModSuitIndex)
     Target:SetExtralModVolume(0, ModSuitIndex)
   end
 end
-
 function Component:ImportResumeMods(Target, ModSuitIndex)
   local ModSuit = Target:GetModSuit(ModSuitIndex)
   local RealModSuit = AvatarUtils:GetTargetModSuit(Target, ModSuitIndex)
@@ -27,7 +24,6 @@ function Component:ImportResumeMods(Target, ModSuitIndex)
     ModSuit[ModSlotId].ModEid = RealModSuit[ModSlotId]
   end
 end
-
 function Component:ImportTryEquipMod(Target, Mod, bIgnorePolarity, RecordImportMods)
   local SortedSlotList = ModModel:CalcImportSlotsList(Target, Mod, bIgnorePolarity)
   if not next(SortedSlotList) then
@@ -51,11 +47,10 @@ function Component:ImportTryEquipMod(Target, Mod, bIgnorePolarity, RecordImportM
   end
   return false
 end
-
 function Component:CopyModToRealAvatar(TargetType, TargetUuid, ModSuitIndex, CallBack)
   local RealAvatar = GWorld:GetAvatar()
   if not RealAvatar then
-    DebugPrint("ModController@CopyModToRealAvatar: Avatar\230\151\160\230\149\136")
+    DebugPrint("ModController@CopyModToRealAvatar: Avatar无效")
     return
   end
   local Target = RealAvatar[TargetType .. "s"][TargetUuid]
@@ -114,7 +109,6 @@ function Component:CopyModToRealAvatar(TargetType, TargetUuid, ModSuitIndex, Cal
   end
   self:ImportResumeMods(Target, ModSuitIndex)
   Target.ModSuitIndex = OldModSuitIndex
-  
   local function RealStartImport()
     if 0 == #RealImportMods then
       CallBack(0)
@@ -135,14 +129,12 @@ function Component:CopyModToRealAvatar(TargetType, TargetUuid, ModSuitIndex, Cal
     ModModel.ImportData.ImportModList = RealImportMods
     RunAsyncTask(self, "ImportModTask", self.ImportModTaskFunc)
   end
-  
   if #NotOwnedMods > 0 or #LackCostMods > 0 then
     CallBack(1, NotOwnedMods, LackCostMods, RealStartImport)
   else
     RealStartImport()
   end
 end
-
 function Component.ImportModTaskFunc(CoroutineObj, self)
   ModModel.ImportData.CoroutineObj = CoroutineObj
   local CallBack = ModModel.ImportData.CallBack
@@ -165,12 +157,10 @@ function Component.ImportModTaskFunc(CoroutineObj, self)
   self:StopImportTimer()
   self:NotifyEvent(ModCommon.EventId.OnImportFinished)
 end
-
 function Component:StopImportTimer()
   if self:IsExistTimer(self.ImportTimeOutKey) then
     self:StopTimer(self.ImportTimeOutKey)
     self.ImportTimeOutKey = nil
   end
 end
-
 return Component

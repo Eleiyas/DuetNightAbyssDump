@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMDungeonWidget_C")
-
 function M:OnListItemObjectSet(Content)
   self.BuffId = Content.BuffId
   self.BuffIconPath = Content.BuffIconPath
@@ -18,24 +17,20 @@ function M:OnListItemObjectSet(Content)
   })
   AudioManager(self):PlayUISound(self, "event:/ui/common/week_level_buff_add", nil, nil)
 end
-
 function M:UpdateDiplayPercent(Percent)
   local Material = self.Progress_Bar:GetDynamicMaterial()
   if Material then
     Material:SetScalarParameterValue("Percent", 1 - Percent)
   end
 end
-
 function M:HideBuffItem(obj, cb)
   self.CbObj = obj
   self.CbFun = cb
   self:PlayAnimation(self.Out)
 end
-
 function M:OnOutAnimFinished()
   if self.CbObj and self.CbFun then
     self.CbFun(self.CbObj)
   end
 end
-
 return M

@@ -1,7 +1,6 @@
 require("UnLua")
 local StringUtils = require("Utils.StringUtils")
 local M = {}
-
 function M:Construct()
   self.Group_InputTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Text_Input:SetText("")
@@ -31,7 +30,6 @@ function M:Construct()
   self.DefaultPasteKeyName = "LS"
   self:PlayAnimation(self.Normal)
 end
-
 function M:Destruct()
   self.Text_Input.OnFocusReceived:Clear()
   self.Text_Input.OnFocusLost:Clear()
@@ -45,7 +43,6 @@ function M:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Init(Config, DialogParams)
   Config = Config or {}
   self.Owner = Config.Owner
@@ -68,7 +65,6 @@ function M:Init(Config, DialogParams)
   local PasteKeyName = Config.PasteKeyName or self.DefaultPasteKeyName
   self:SetGamePadKey(FocusKeyName, PasteKeyName)
 end
-
 function M:SetGamePadKey(FocusKeyName, PasteKeyName)
   if FocusKeyName and PasteKeyName then
     self.IsShowGamPadKey = true
@@ -82,7 +78,6 @@ function M:SetGamePadKey(FocusKeyName, PasteKeyName)
   self:UpdateBtns()
   self:UpdateGamePadFocusKey()
 end
-
 function M:BindEvent(Events)
   Events = Events or {}
   self.OnTextChanged = Events.OnTextChanged
@@ -93,16 +88,13 @@ function M:BindEvent(Events)
   self.OnCheckTextLegality = Events.OnCheckTextLegality
   self.OnTextLengthExceedLimit = Events.OnTextLengthExceedLimit
 end
-
 function M:SetHintText(Text)
   self.Text_Input:SetHintText(Text)
 end
-
 function M:SetText(Text)
   Text = Text or ""
   self:TrySetText(Text)
 end
-
 function M:InsertText(InStr, Position)
   InStr = InStr or ""
   local NewCursotPos
@@ -119,15 +111,12 @@ function M:InsertText(InStr, Position)
     self:SetCursorPosition(self.CursorLineIdx, NewCursotPos)
   end
 end
-
 function M:GetText()
   return self.Text_Input:GetText()
 end
-
 function M:SetTextLimit(TextLimit)
   self.TextLimit = TextLimit
 end
-
 function M:ShowTips(TipText, Style, Time)
   if not TipText then
     return
@@ -169,7 +158,6 @@ function M:ShowTips(TipText, Style, Time)
     end, false, 0, "DelayHideTips", true)
   end
 end
-
 function M:SetResidentTips(TipText)
   if TipText and "" ~= TipText then
     self.HasResidentTips = true
@@ -189,7 +177,6 @@ function M:SetResidentTips(TipText)
     end
   end
 end
-
 function M:HideTips()
   if self.bTipsShowed then
     self.bTipsShowed = false
@@ -207,15 +194,12 @@ function M:HideTips()
     end
   end
 end
-
 function M:PasteText()
   self:OnPasteBtnClicked()
 end
-
 function M:ChangeKeyByInputDevice(InputDevice)
   self:RefreshOpInfoByInputDevice(InputDevice)
 end
-
 function M:CheckTextLegality(Text, NeedLengthTips)
   local bLegal = true
   local ResText = Text
@@ -239,7 +223,6 @@ function M:CheckTextLegality(Text, NeedLengthTips)
   end
   return bLegal, ResText
 end
-
 function M:Utf8StrLen(Str)
   local Len = 0
   local TextTable = StringUtils.Utf8ToTable(Str)
@@ -252,7 +235,6 @@ function M:Utf8StrLen(Str)
   end
   return Len
 end
-
 function M:ClampText(Text, MaxLen)
   local Len = 0
   local ResText = ""
@@ -272,7 +254,6 @@ function M:ClampText(Text, MaxLen)
   end
   return ResText
 end
-
 function M:FilterSpaceAndBr(Text)
   if not self.bLimitSpaces and not self.bLimitBr then
     return Text
@@ -287,7 +268,7 @@ function M:FilterSpaceAndBr(Text)
   local TextTable = StringUtils.Utf8ToTable(Text)
   local bIsLastCharSpace = false
   for _, value in ipairs(TextTable) do
-    if self.bLimitSpaces and (" " == value or "\227\128\128" == value) then
+    if self.bLimitSpaces and (" " == value or "　" == value) then
       if not bIsLastCharSpace then
         Res = Res .. value
       else
@@ -301,7 +282,6 @@ function M:FilterSpaceAndBr(Text)
   end
   return Res, DeletedSpaceCount, DeletedBrCount
 end
-
 function M:HandleOnTextChanged(Text)
   self.NewText = Text
   self.bHasNewText = true
@@ -313,7 +293,6 @@ function M:HandleOnTextChanged(Text)
     end
   end
 end
-
 function M:CorrectText(Text, NeedLengthTips)
   Text, self.IgnoredSpaceCount, self.IgnoredBrCount = self:FilterSpaceAndBr(Text)
   local bLegal, LegalText = self:CheckTextLegality(Text, NeedLengthTips)
@@ -325,7 +304,6 @@ function M:CorrectText(Text, NeedLengthTips)
   end
   return true, LegalText
 end
-
 function M:HandleOnTextComposing(Text)
   self.bCursorMoveByComposing = true
   self.ComposingText = Text
@@ -334,38 +312,32 @@ function M:HandleOnTextComposing(Text)
     self.OnTextComposing(self.Owner, Text)
   end
 end
-
 function M:HandleOnTextCommitted(Text, CommitMethod)
   if self.OnTextCommitted then
     self.OnTextCommitted(self.Owner, Text, CommitMethod)
   end
 end
-
 function M:OnPasteBtnClicked()
   local Str = ULowEntryExtendedStandardLibrary.ClipboardGet()
   Str = string.gsub(Str, "^[%s\n\r\t]*(.-)[%s\n\r\t]*$", "%1")
   self:TrySetText(Str)
   self:FocusInputField()
 end
-
 function M:FocusInputField()
   self._bFocusing = true
   self.Text_Input:SetFocus()
   self._bFocusing = false
 end
-
 function M:OnDeleteBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self:TrySetText("")
   self:FocusInputField()
 end
-
 function M:TrySetText(Text)
   self.Text_Input:SetText(Text)
   self:SetCursorPosition(self.CursorLineIdx, self.CursorOffset + UKismetStringLibrary.Len(Text))
   self:UpdateBtns()
 end
-
 function M:RealSetText(Text)
   self.Text_Input.OnTextChanged:Clear()
   self.Text_Input.OnCursorMoved:Clear()
@@ -376,7 +348,6 @@ function M:RealSetText(Text)
   self.ComposingText = Text
   self:UpdateBtns()
 end
-
 function M:OnEditTextFocusReceived()
   if self._bFocusing then
     self:StopAnimation(self.Normal)
@@ -388,10 +359,8 @@ function M:OnEditTextFocusReceived()
     self.OnEditTextFocusEvent(self.Owner)
   end
 end
-
 function M:OnFocusLost(InFocusEvent)
 end
-
 function M:OnEditTextFocusLost()
   if self.bHasNewText and CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     self:OnEditTextCursorMoved(0, UKismetStringLibrary.Len(self.NewText))
@@ -400,7 +369,6 @@ function M:OnEditTextFocusLost()
     self.OnEditTextFocusLostEvent(self.Owner)
   end
 end
-
 function M:OnEditTextCursorMoved(LineIdx, Offset)
   if self.bHasNewText then
     self.bHasNewText = false
@@ -428,21 +396,16 @@ function M:OnEditTextCursorMoved(LineIdx, Offset)
   self.CursorLineIdx = LineIdx
   self.CursorOffset = Offset
 end
-
 function M:SetCursorPosition(LineIdx, Offset)
   self.Text_Input:CursorGoto(LineIdx, Offset)
 end
-
 function M:OnDoubleClicked()
   self.Text_Input:SelectAllText()
 end
-
 function M:UpdateBtns()
 end
-
 function M:UpdateGamePadFocusKey()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -461,7 +424,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self:UpdateBtns()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -477,5 +439,4 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled
 end
-
 return M

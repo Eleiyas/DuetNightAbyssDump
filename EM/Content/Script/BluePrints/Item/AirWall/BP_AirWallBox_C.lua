@@ -2,12 +2,35 @@ require("UnLua")
 local BP_AirWallBox_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
+function BP_AirWallBox_C:ReceiveBeginPlay()
+  BP_AirWallBox_C.Super.ReceiveBeginPlay(self)
+  EventManager:AddEvent(EventID.OnLevelDeliverBlackCurtainEnd, self, self.CloseLoading)
+  EventManager:AddEvent(EventID.CloseLoading, self, self.CloseLoading)
+  local GameState = UGameplayStatics.GetGameState(self)
+  local IsInDungeon = GameState and GameState:IsInDungeon()
+  if GameState and IsInDungeon and URuntimeCommonFunctionLibrary.IsWorldCompositionEnabled(self) and self.OutAirWallCheckBox then
+    DebugPrint(self:GetName() .. " @gulinan Start Huaxu region dungeon AirDoorBoxOutCheck")
+    GameState.CheckOutAirDoorBoxTransform = self.OutAirWallCheckBox:K2_GetComponentToWorld()
+    GameState.CheckOutAirBoxLocal = self.OutAirWallCheckBox.BoxExtent * self:GetActorScale3D()
+    if Const.bOutAirWallBoxCheckRangeVisualDebug then
+      UE4.UKismetSystemLibrary.DrawDebugBox(self, GameState.CheckOutAirDoorBoxTransform.Translation, GameState.CheckOutAirBoxLocal, FLinearColor(255, 0, 0), self.OutAirWallCheckBox:K2_GetComponentRotation(), 6000, 20)
+    end
+  end
+end
+function BP_AirWallBox_C:ReceiveEndPlay()
+  EventManager:RemoveEvent(EventID.OnLevelDeliverBlackCurtainEnd, self)
+  EventManager:RemoveEvent(EventID.CloseLoading, self)
+end
+function BP_AirWallBox_C:OnRep_Size()
+  self:SetBoxExtent(self.Size)
+end
 function BP_AirWallBox_C:AuthorityInitInfo(Info)
   BP_AirWallBox_C.Super.AuthorityInitInfo(self, Info)
-  self:SetBoxExtent(Info.Creator.TriggerBoxContent, Info.Creator.TriggerTipsBoxContent)
+  if not self.BpBorn then
+    self.Size = Info.Creator.TriggerBoxContent
+    self:SetBoxExtent(Info.Creator.TriggerBoxContent, Info.Creator.TriggerTipsBoxContent)
+  end
 end
-
 function BP_AirWallBox_C:CommonInitInfo(Info)
   BP_AirWallBox_C.Super.CommonInitInfo(self, Info)
   local DynamicEffectId = self.UnitParams.DynamicEffectId
@@ -22,7 +45,6 @@ function BP_AirWallBox_C:CommonInitInfo(Info)
   local ConstantColor = FLinearColor(ConstantEffect[1], ConstantEffect[2], ConstantEffect[3], ConstantEffect[4])
   self.ResidentEffect:GetMaterials():GetRef(1):SetVectorParameterValue("MainTexColor", ConstantColor)
 end
-
 function BP_AirWallBox_C:SetBoxExtent_Multicast(Size)
   local targetVector = FVector(0, 0, 0)
   if nil ~= Size then
@@ -36,8 +58,10 @@ function BP_AirWallBox_C:SetBoxExtent_Multicast(Size)
     targetVector.Z = self:GetScale(Size.Z) / 2
   end
   self:SetActorScale(targetVector)
+  if self.EMAutoGenerateModifier then
+    self.EMAutoGenerateModifier:SpawnAllModifiers()
+  end
 end
-
 function BP_AirWallBox_C:GetScale(Length)
   if Length < 0 then
     Length = 0
@@ -46,5 +70,11 @@ function BP_AirWallBox_C:GetScale(Length)
   end
   return Length
 end
-
+function BP_AirWallBox_C:CloseLoading()
+  if self.EMAutoGenerateModifier then
+    self:AddTimer(1.5, function()
+      self.EMAutoGenerateModifier:RefreshNavmodifier()
+    end)
+  end
+end
 return BP_AirWallBox_C

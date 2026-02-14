@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.ActiveBossUINum = 0
@@ -12,8 +11,13 @@ function M:OnLoaded(...)
   if BattleMain and BattleMain.Pos_Boss_DoubleLifeBar then
     BattleMain.Pos_Boss_DoubleLifeBar:AddChildToOverlay(self)
   end
+  self.IsPlayingSe = false
+  EventManager:AddEvent(EventID.DoubleBossChargeTextUpdate, self, self.PlayEnergyUpdateSe)
 end
-
+function M:Destruct()
+  M.Super.Destruct(self)
+  EventManager:RemoveEvent(EventID.DoubleBossChargeTextUpdate, self)
+end
 function M:OnBossDead(Index)
   self.ActiveBossUINum = self.ActiveBossUINum - 1
   if self.ActiveBossUINum <= 0 then
@@ -24,9 +28,21 @@ function M:OnBossDead(Index)
     end
   end
 end
-
 function M:ActiveBossUI(Index)
   self.ActiveBossUINum = self.ActiveBossUINum + 1
 end
-
+function M:PlayEnergyUpdateSe(IsWarning)
+  if self.IsPlayingSe or self.ActiveBossUINum <= 0 then
+    return
+  end
+  self.IsPlayingSe = true
+  self:AddDelayFrameFunc(function()
+    if IsWarning then
+      AudioManager(self):PlayUISound(self, "event:/ui/common/countdown_warning_short_reverb", nil, nil)
+    else
+      AudioManager(self):PlayUISound(self, "event:/ui/common/tick_beep_01_normal", nil, nil)
+    end
+    self.IsPlayingSe = false
+  end, 1)
+end
 return M

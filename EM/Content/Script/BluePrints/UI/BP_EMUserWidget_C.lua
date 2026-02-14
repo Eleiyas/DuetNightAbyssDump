@@ -1,76 +1,17 @@
 local M = Class()
-local bUseRawSetOpt = true
-
 function M:EMAfterInitialize()
-  if not bUseRawSetOpt then
-    return
-  end
-  self.ScrollBoxies = {}
-  if not self.NamedWidgetMap then
-    return
-  end
-  for Key, Value in pairs(self.NamedWidgetMap) do
-    rawset(self, Key, Value)
-    if Value:IsA(UScrollBox) and Value.SetControlScrollbarInside then
-      table.insert(self.ScrollBoxies, Value)
-    end
-  end
-  if not self.UIAnimationsMap then
-    return
-  end
-  for Key, Value in pairs(self.UIAnimationsMap) do
-    rawset(self, Key, Value)
-  end
-  self:ProcessAndroidSafeZoneRule()
-end
-
-function M:PreConstruct(IsDesignTime)
-  self.Overridden.PreConstruct(self, IsDesignTime)
-  if IsDesignTime then
-    return
-  end
-  local bPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
-  if self.ScrollBoxies and bPC then
-    for _, ScrollBox in ipairs(self.ScrollBoxies) do
-      self:_SetUpScrollBox(ScrollBox)
-    end
-  end
-  self:EMPreConstruct()
-end
-
-function M:EMPreConstruct()
-end
-
-function M:_SetUpScrollBox(Value)
-  local bMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
-  if bMobile then
-    Value:SetControlScrollbarInside(false)
-  else
-    Value:SetScrollBarVisibility(UIConst.VisibilityOp.Hidden)
-    Value:SetControlScrollbarInside(true)
+  self.Overridden.EMAfterInitialize(self)
+  if not self.GameInputModeSubsystem then
+    self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   end
 end
-
 function M:_SetUpScrollBoxRStickInput(ScrollView, ScrollSpeed, bIsReserve)
   self.TargetScrollBoxWithRStickInput = ScrollView
   self.ScrollOffsetOfEndOfSBox = ScrollView:GetScrollOffsetOfEnd()
   self.ScrollSpeedRStickOfSBox = ScrollSpeed or 10.0
   self.bReserveSBoxScrollDir = bIsReserve and 1 or -1
 end
-
-function M:_SetUpListViewRStickInput(ListView, ScrollSpeed, bIsReserve)
-  self.TargetListViewWithRStickInput = ListView
-  self.ScrollOffsetOfEndOfList = ListView:GetScrollOffsetOfEnd()
-  self.ScrollSpeedRStickOfList = ScrollSpeed or 1.0
-  self.bReserveListScrollDir = bIsReserve and 1 or -1
-end
-
-function M:HandleOnEMGameViewportChange()
-  self:ProcessAndroidSafeZoneRule()
-end
-
-function M:ProcessAndroidSafeZoneRule()
-  local PlatformName = UUIFunctionLibrary.GetDevicePlatformName(self)
+function M:ProcessAndroidSafeZoneRule(PlatformName)
   if "Android" == PlatformName then
     if not self.MainSafeZone then
       return
@@ -84,7 +25,17 @@ function M:ProcessAndroidSafeZoneRule()
       return
     end
     local VSize = UWidgetLayoutLibrary.GetViewportSize(self)
-    local SpecialSafeZoneRule = DataMgr.AndroidSafeZoneRule[DeviceMake][DeviceModel][VSize.X][VSize.Y]
+    local SpecialSafeZoneRule
+    local Rule1 = DataMgr.AndroidSafeZoneRule[DeviceMake]
+    if Rule1 then
+      local Rule2 = Rule1[DeviceModel]
+      if Rule2 then
+        local Rule3 = Rule2[VSize.X]
+        if Rule3 then
+          SpecialSafeZoneRule = Rule3[VSize.Y]
+        end
+      end
+    end
     if SpecialSafeZoneRule then
       if not SpecialSafeZoneRule.UDPadding or 0 == SpecialSafeZoneRule.UDPadding then
         self.MainSafeZone.PadTop = false
@@ -123,5 +74,9 @@ function M:ProcessAndroidSafeZoneRule()
     self.MainSafeZone:SetSidesToPad(bPadLeft, bPadRight, bPadTop, bPadBottom)
   end
 end
-
+function M:EMDestruct()
+  if self.ClearScriptRegister then
+    self:ClearScriptRegister()
+  end
+end
 return M

@@ -4,61 +4,80 @@ local OpacityName = {
   Slide_Attack = "OpacitySideAtack",
   Slide = "OpacitySide"
 }
-
+Jump_Phone_C.SkillInfos = {
+  [ESkillName.Slide] = {
+    SkillActive = true,
+    AnimName = "UnLock_Slide"
+  },
+  [ESkillName.Attack] = {
+    SkillActive = true,
+    AnimName = "UnLock_SlideAttack"
+  },
+  [ESkillName.BulletJump] = {
+    SkillActive = true,
+    AnimName = "UnLock_BulletJump"
+  }
+}
+Jump_Phone_C._components = {
+  "BluePrints.UI.UI_Phone.Battle.Component.DraggableWidgetComponent"
+}
 function Jump_Phone_C:Initialize(Initializer)
   self.CurButtonState = "Normal"
   self.LastButtonState = "Normal"
-  self.InnerButtonDis = 50
+  self.DefaultButtonDis = 50
   self.StartSlide = false
-  self.JumpAngle_Max = 125
-  self.JumpAngle_Min = 0
+  self.BulletJumpAngle_Max = 125
+  self.BulletJumpAngle_Min = 0
   self.AttackAngle_Max = 215
   self.AttackAngle_Min = 125
   self.SlideAngle_Min = 215
   self.SlideAngle_Max = 360
+  self.SlideAngle_Min_2in1 = 135
+  self.SlideAngle_Max_2in1 = 315
+  self.CurrentLayout = 2
+  self.InnerButtonDis = self.DefaultButtonDis
 end
-
 function Jump_Phone_C:Construct()
   self.OwnerPlayer = UGameplayStatics.GetPlayerCharacter(self, 0)
+  self.IconMaterial = self.Image_PanelIcon:GetDynamicMaterial()
   self.PanelMaterial = self.Image_Panel_State:GetDynamicMaterial()
   self.PanelMaterialGuide = self.Image_Panel_State_Guide:GetDynamicMaterial()
   for _, Opacity in pairs(OpacityName) do
     self.PanelMaterial:SetScalarParameterValue(Opacity, 0)
     self.PanelMaterialGuide:SetScalarParameterValue(Opacity, 0)
   end
+  self:ChangeByLayout(self.CurrentLayout)
+  local IconMat = self.Image_Main:GetDynamicMaterial()
+  IconMat:SetTextureParameterValue("Icon_Ranged", self.Icon_Jump)
 end
-
-function Jump_Phone_C:InitSkillInfos()
-  self.SkillInfos = {
-    [ESkillName.Slide] = {
-      SkillActive = true,
-      AnimName = self.UnLock_Slide
-    },
-    [ESkillName.Attack] = {
-      SkillActive = true,
-      AnimName = self.UnLock_SlideAttack
-    },
-    [ESkillName.BulletJump] = {
-      SkillActive = true,
-      AnimName = self.UnLock_BulletJump
-    }
-  }
+function Jump_Phone_C:ChangeByLayout(Layout)
+  if 2 == Layout then
+    self.IconMaterial:SetScalarParameterValue("S_BulletJumpSplit", 1)
+    self.PanelMaterial:SetScalarParameterValue("S_BulletJumpSplit", 1)
+    self.PanelMaterialGuide:SetScalarParameterValue("S_BulletJumpSplit", 1)
+  elseif 1 == Layout then
+    self.IconMaterial:SetScalarParameterValue("S_BulletJumpSplit", 0)
+    self.PanelMaterial:SetScalarParameterValue("S_BulletJumpSplit", 0)
+    self.PanelMaterialGuide:SetScalarParameterValue("S_BulletJumpSplit", 0)
+  end
+  self.CurrentLayout = Layout
 end
-
 function Jump_Phone_C.ButtonJumpDown(Battle_Button_Phone, Index, StartPos)
   local Jump_M = Battle_Button_Phone.Jump
   if Jump_M.OwnerPlayer:CheckSkillInActive(ESkillName.Jump) then
     return
   end
   Jump_M.CurButtonState = "Press"
-  if Jump_M.OwnerPlayer:IsFlying() then
+  if Jump_M.OwnerPlayer:IsFlying() or Jump_M.OwnerPlayer.CurMount then
     Jump_M.OwnerPanel:TryToPlayTargetCommand("Jump", true)
   end
   Jump_M:PlayStateAnimation()
 end
-
 function Jump_Phone_C.ButtonJumpMove(Battle_Button_Phone, TouchFingerCount, Index, LastPos, TotalDeltaDis, LastDeltaDis)
   local Jump_M = Battle_Button_Phone.Jump
+  if Jump_M.OwnerPlayer.CurMount then
+    return
+  end
   if Jump_M.OwnerPlayer:CheckSkillInActive(ESkillName.Jump) then
     return
   end
@@ -82,17 +101,15 @@ function Jump_Phone_C.ButtonJumpMove(Battle_Button_Phone, TouchFingerCount, Inde
   end
   Jump_M:PlayStateAnimation()
 end
-
 function Jump_Phone_C.ButtonJumpUp(Battle_Button_Phone, Index, WidgetLocalPos, LastWidgetTouchPos, EndTouchPos, TotalDeltaDis)
   local Jump_M = Battle_Button_Phone.Jump
   if Jump_M.OwnerPlayer:CheckSkillInActive(ESkillName.Jump) then
     return
   end
   local FromCenterDis = UE4.UKismetMathLibrary.Distance2D(TotalDeltaDis, FVector2D(0, 0))
-  if FromCenterDis >= Jump_M.InnerButtonDis then
-    Jump_M:GetVectorRegionAngle(TotalDeltaDis)
+  if FromCenterDis >= Jump_M.InnerButtonDis and not Jump_M.OwnerPlayer.CurMount then
     Jump_M:HandleStateWhenUp()
-  elseif Jump_M.OwnerPlayer:IsFlying() then
+  elseif Jump_M.OwnerPlayer:IsFlying() or Jump_M.OwnerPlayer.CurMount then
     Jump_M.OwnerPanel:TryToStopTargetCommand("Jump", true)
   else
     Jump_M.OwnerPanel:TryToPlayTargetCommand("Jump", true)
@@ -100,7 +117,6 @@ function Jump_Phone_C.ButtonJumpUp(Battle_Button_Phone, Index, WidgetLocalPos, L
   Jump_M.CurButtonState = "Normal"
   Jump_M:PlayStateAnimation()
 end
-
 function Jump_Phone_C:GetVectorRegionAngle(Vector2D)
   local Angle = math.atan(-Vector2D.Y / Vector2D.X) * (180 / math.pi)
   if Vector2D.X < 0 then
@@ -108,15 +124,20 @@ function Jump_Phone_C:GetVectorRegionAngle(Vector2D)
   elseif -Vector2D.Y < 0 then
     Angle = Angle + 360
   end
-  if Angle >= self.JumpAngle_Min and Angle <= self.JumpAngle_Max then
-    self.CurButtonState = "Jump"
-  elseif Angle > self.AttackAngle_Min and Angle <= self.AttackAngle_Max then
-    self.CurButtonState = "Attack"
-  elseif Angle > self.SlideAngle_Min and Angle <= self.SlideAngle_Max then
+  if 1 == self.CurrentLayout then
+    if Angle >= self.BulletJumpAngle_Min and Angle <= self.BulletJumpAngle_Max then
+      self.CurButtonState = "Jump"
+    elseif Angle > self.AttackAngle_Min and Angle <= self.AttackAngle_Max then
+      self.CurButtonState = "Attack"
+    elseif Angle > self.SlideAngle_Min and Angle <= self.SlideAngle_Max then
+      self.CurButtonState = "Slide"
+    end
+  elseif Angle >= self.SlideAngle_Min_2in1 and Angle <= self.SlideAngle_Max_2in1 then
     self.CurButtonState = "Slide"
+  else
+    self.CurButtonState = "Attack"
   end
 end
-
 function Jump_Phone_C:HandleStateWhenUp()
   if self.CurButtonState == "Jump" then
     if self.OwnerPlayer:IsFlying() then
@@ -138,12 +159,10 @@ function Jump_Phone_C:HandleStateWhenUp()
     self.OwnerPanel:TryToStopTargetCommand("Slide", true)
   end, false)
 end
-
 function Jump_Phone_C:PlayAndSetVisibility(SkillName)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self["VX_" .. SkillName])
   self.PanelMaterial:SetScalarParameterValue(OpacityName[SkillName], 0)
 end
-
 function Jump_Phone_C:PlayStateAnimation()
   if self.LastButtonState ~= self.CurButtonState then
     if self.CurButtonState == "Jump" then
@@ -183,7 +202,6 @@ function Jump_Phone_C:PlayStateAnimation()
   end
   self.LastButtonState = self.CurButtonState
 end
-
 function Jump_Phone_C:EndBtnAnimation()
   if self.LastAnime then
     local anime = self.LastAnime
@@ -200,28 +218,23 @@ function Jump_Phone_C:EndBtnAnimation()
     end)
   end
 end
-
 function Jump_Phone_C:OnSkillActive(SkillName)
   if not self.SkillInfos[SkillName] then
     return
   end
   self.SkillInfos[SkillName].SkillActive = true
-  EMUIAnimationSubsystem:EMPlayAnimation(self, self.SkillInfos[SkillName].AnimName)
+  local AnimName = self.SkillInfos[SkillName].AnimName
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self[AnimName])
 end
-
 function Jump_Phone_C:OnSkillInActive(SkillName)
   if not self.SkillInfos[SkillName] then
     return
   end
   self.SkillInfos[SkillName].SkillActive = false
-  EMUIAnimationSubsystem:EMPlayAnimation(self, self.SkillInfos[SkillName].AnimName, EUMGSequencePlayMode.Reverse)
+  local AnimName = self.SkillInfos[SkillName].AnimName
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self[AnimName], EUMGSequencePlayMode.Reverse)
 end
-
-function Jump_Phone_C:PlayVX(SkillName, IsClose)
-  if IsClose then
-    self:OnGuideEnd()
-    return
-  end
+function Jump_Phone_C:OnGuideStart(SkillName)
   self.GuidingSkill = self.GuidingSkill or {}
   local CurEvent
   if "SlideAttack" == SkillName then
@@ -233,6 +246,9 @@ function Jump_Phone_C:PlayVX(SkillName, IsClose)
     CurEvent = EventID.OnSlidePressed
     self.GuidingSkill.Slide = CurEvent
   elseif SkillName == ESkillName.BulletJump or "BulletJump" == SkillName then
+    if 2 == self.CurrentLayout then
+      return
+    end
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Guide_Bullet_Jump)
     CurEvent = EventID.OnBulletJumpStarted
     self.GuidingSkill.Bullet_Jump = CurEvent
@@ -245,7 +261,6 @@ function Jump_Phone_C:PlayVX(SkillName, IsClose)
     self:OnUseGuidingSkill(SkillName)
   end)
 end
-
 function Jump_Phone_C:OnUseGuidingSkill(SkillName)
   if not self.GuidingSkill[SkillName] then
     return
@@ -254,7 +269,6 @@ function Jump_Phone_C:OnUseGuidingSkill(SkillName)
   self:RemoveDispatcher(self.GuidingSkill[SkillName])
   self.GuidingSkill[SkillName] = nil
 end
-
 function Jump_Phone_C:OnGuideEnd()
   self.GuidingSkill = self.GuidingSkill or {}
   for SkillName, _ in pairs(self.GuidingSkill) do
@@ -263,5 +277,25 @@ function Jump_Phone_C:OnGuideEnd()
   self.Panel_State_Guide:SetVisibility(ESlateVisibility.Collapsed)
   self.GuidingSkill = {}
 end
-
+function Jump_Phone_C:OnStartMountFly()
+  local IconMat = self.Image_Main:GetDynamicMaterial()
+  IconMat:SetTextureParameterValue("Icon_Ranged", self.Icon_MountUp)
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self.Flash)
+end
+function Jump_Phone_C:OnStopMountFly()
+  local IconMat = self.Image_Main:GetDynamicMaterial()
+  IconMat:SetTextureParameterValue("Icon_Ranged", self.Icon_Jump)
+  EMUIAnimationSubsystem:EMPlayAnimation(self, self.Flash)
+end
+function Jump_Phone_C:OnEnableBattleMount()
+  self:OnSkillInActive(ESkillName.Slide)
+  self:OnSkillInActive(ESkillName.Attack)
+  self:OnSkillInActive(ESkillName.BulletJump)
+end
+function Jump_Phone_C:OnDisableBattleMount()
+  self:OnSkillActive(ESkillName.Slide)
+  self:OnSkillActive(ESkillName.Attack)
+  self:OnSkillActive(ESkillName.BulletJump)
+end
+AssembleComponents(Jump_Phone_C)
 return Jump_Phone_C

@@ -2,11 +2,10 @@ require("UnLua")
 local WBP_MultiDestroyProgress_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_MultiDestroyProgress_C:OnLoaded(...)
   WBP_MultiDestroyProgress_C.Super.OnLoaded(self, ...)
   local BattleMain = UIManager(self):GetUIObj("BattleMain")
-  assert(BattleMain, "WBP_Abyss_CountDown_C \229\138\160\232\189\189\230\151\182\230\139\191\228\184\141\229\136\176BattleMain\239\188\129")
+  assert(BattleMain, "WBP_Abyss_CountDown_C 加载时拿不到BattleMain！")
   BattleMain.Pos_ProcessCabin:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   BattleMain.Pos_ProcessCabin:AddChild(self)
   self.IsInit = true
@@ -33,7 +32,6 @@ function WBP_MultiDestroyProgress_C:OnLoaded(...)
   })
   self:PlayAnimation(self.In)
 end
-
 function WBP_MultiDestroyProgress_C:InitUIParams()
   self.TotalPointNum = 4
   self.MultiDestroyTextMap = {
@@ -52,7 +50,6 @@ function WBP_MultiDestroyProgress_C:InitUIParams()
     self.MultiDestroyTextMap[i] = UIParams["MultiDestroy_" .. i]
   end
 end
-
 function WBP_MultiDestroyProgress_C:InitPoints()
   for i = 1, self.TotalPointNum do
     local NewPointWidget = self:CreateWidgetNew("BattleProcessPoint")
@@ -62,7 +59,6 @@ function WBP_MultiDestroyProgress_C:InitPoints()
     NewPointWidget:SetPointState(self.CommonStateToName[1])
   end
 end
-
 function WBP_MultiDestroyProgress_C:SetPointPos()
   local CanvasPanelWidthth = USlateBlueprintLibrary.GetLocalSize(self.Point:GetCachedGeometry()).X
   local PointInterval = CanvasPanelWidthth / (self.TotalPointNum - 1)
@@ -72,13 +68,11 @@ function WBP_MultiDestroyProgress_C:SetPointPos()
     Slot:SetPosition(FVector2D(PointInterval * (i - 1), 0))
   end
 end
-
 function WBP_MultiDestroyProgress_C:SetPointCountDownPercent(Percent)
   if self.PointWidgetInstances[self.CurCountDownIndex] then
     self.PointWidgetInstances[self.CurCountDownIndex]:UpdateColorBarProgressPercent(Percent)
   end
 end
-
 function WBP_MultiDestroyProgress_C:SetPointState(PointIndex, NewState)
   assert(PointIndex and PointIndex >= 1 and PointIndex <= self.TotalPointNum, "WBP_MultiDestroyProgress_C:SetPointState InValid PointIndex!")
   assert(NewState and NewState >= 1 and NewState <= 4, "WBP_MultiDestroyProgress_C:SetPointState Invalid NewState!")
@@ -91,16 +85,13 @@ function WBP_MultiDestroyProgress_C:SetPointState(PointIndex, NewState)
     end
   end
 end
-
 function WBP_MultiDestroyProgress_C:OnPointEnterState_CountDown(PointIndex)
   self.CurCountDownIndex = PointIndex
   self:UpdateMainText(string.format(GText(self.MultiDestroyTextMap[3]), PointIndex))
 end
-
 function WBP_MultiDestroyProgress_C:OnPointEnterState_CanStart(PointIndex)
   self:UpdateMainText(string.format(GText(self.MultiDestroyTextMap[1]), PointIndex))
 end
-
 function WBP_MultiDestroyProgress_C:OnPointEnterState_Complete(PointIndex)
   self:UpdateMainText(string.format(GText(self.MultiDestroyTextMap[2]), PointIndex))
   if self:IsAllPointsComplete() then
@@ -108,7 +99,6 @@ function WBP_MultiDestroyProgress_C:OnPointEnterState_Complete(PointIndex)
     self:PlayAnimation(self.Complete)
   end
 end
-
 function WBP_MultiDestroyProgress_C:IsAllPointsComplete()
   for _, PointWidget in pairs(self.PointWidgetInstances) do
     if PointWidget.CurState ~= self.CommonStateToName[4] then
@@ -117,14 +107,11 @@ function WBP_MultiDestroyProgress_C:IsAllPointsComplete()
   end
   return true
 end
-
 function WBP_MultiDestroyProgress_C:UpdateMainText(NewText)
   self.Text_Title:SetText(NewText)
   self:PlayAnimation(self.Text_Refresh)
 end
-
 function WBP_MultiDestroyProgress_C:CloseDungeonUI()
   self:Close()
 end
-
 return WBP_MultiDestroyProgress_C

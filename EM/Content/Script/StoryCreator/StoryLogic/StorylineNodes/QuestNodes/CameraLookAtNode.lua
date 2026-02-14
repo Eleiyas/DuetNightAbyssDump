@@ -1,5 +1,4 @@
 local CameraLookAtNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function CameraLookAtNode:Init()
   self.TargetType = nil
   self.PointName = ""
@@ -8,7 +7,6 @@ function CameraLookAtNode:Init()
   self.EasingFunc = 0
   self.bDisableUserInput = true
 end
-
 function CameraLookAtNode:Execute(Callback)
   DebugPrint("------------ CameraLookAtNode ------------------")
   local Action
@@ -38,12 +36,10 @@ function CameraLookAtNode:Execute(Callback)
     end)
   end
 end
-
 function CameraLookAtNode:Clear()
   if self.ActionRefProxy and IsValid(self.Action) then
     self.Action.OnEnd:Clear()
   end
   self.ActionRefProxy = nil
 end
-
 return CameraLookAtNode

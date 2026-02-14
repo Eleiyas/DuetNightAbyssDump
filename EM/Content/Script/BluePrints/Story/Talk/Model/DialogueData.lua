@@ -1,7 +1,6 @@
 local TalkUtils = require("BluePrints.Story.Talk.View.TalkUtils")
 local DefaultAllowClickTime = 1
 local DialogueDataBase_C = {}
-
 function DialogueDataBase_C.New(TalkTask, DialogueId, DialogueData, TalkContext)
   TalkContext = GWorld.GameInstance:GetTalkContext()
   local Obj = {}
@@ -25,16 +24,13 @@ function DialogueDataBase_C.New(TalkTask, DialogueId, DialogueData, TalkContext)
   Obj.ExStoryInfo = DialogueData.ExStoryInfo
   return Obj
 end
-
 local SimpleDialogueData_C = {}
-
 function SimpleDialogueData_C.New(TalkTask, DialogueId, TalkContext)
   local DialogueData = DataMgr.Dialogue[DialogueId]
   if not DialogueData then
-    local Message = "DialogueId\229\156\168Dialogue\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168" .. [[
-
+    local Message = "DialogueId在Dialogue表中不存在" .. [[
 DialogueId:]] .. tostring(DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "DialogueId\228\184\141\229\173\152\229\156\168", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Talk, "SimpleDialogueData创建失败：DialogueId不存在", Message)
     return
   end
   local Obj = DialogueDataBase_C.New(TalkTask, DialogueId, DialogueData, TalkContext)
@@ -58,9 +54,7 @@ DialogueId:]] .. tostring(DialogueId)
   end
   return Obj
 end
-
 local CinematicDialogueData_C = {}
-
 function CinematicDialogueData_C.New(TalkTask, DialogueId, TalkContext)
   local DialogueData = DataMgr.Dialogue[DialogueId]
   assert(DialogueData, "Can't find dialogue data from dialogue id: " .. DialogueId)
@@ -73,7 +67,6 @@ function CinematicDialogueData_C.New(TalkTask, DialogueId, TalkContext)
   Obj.Subtitle = WildcardSubsystem:ReplaceWildcard(DialogueData.Subtitle)
   return Obj
 end
-
 return {
   DialogueDataBase_C = DialogueDataBase_C,
   SimpleDialogueData_C = SimpleDialogueData_C,

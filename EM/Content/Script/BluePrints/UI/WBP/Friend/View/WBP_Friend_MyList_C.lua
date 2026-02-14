@@ -6,7 +6,6 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.UI.WBP.Friend.View.Base.WBP_Friend_ListBase"
 })
-
 function M:OnTeamMainFocusChanged(bFocused)
   for _, Entry in pairs(self.MyListView:GetDisplayedEntryWidgets()) do
     Entry:OnTeamMainFocusChanged(bFocused)
@@ -22,7 +21,6 @@ function M:OnTeamMainFocusChanged(bFocused)
     KeyWidget:SetVisibility(UIConst.VisibilityOp[Visibility])
   end
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.MyListView = self.List_MyFriend
@@ -67,18 +65,15 @@ function M:Construct()
       AudioManager(self):PlayUISound(self, "event:/ui/common/team_friend_recieve", nil, nil)
     end
   end)
-  
   local function RefreshListOnly(bAnimation)
     self:RefreshList(bAnimation)
   end
-  
   local function RefreshOneItemByUid(Uid)
     local Data = FriendModel:GetFriendDict()[Uid]
     if Data then
       self:RefreshListItem(Data)
     end
   end
-  
   self.EventSwitch = {
     [FriendCommon.EventId.AgreeAdd] = RefreshListOnly,
     [FriendCommon.EventId.DeleteFriend] = RefreshListOnly,
@@ -143,12 +138,10 @@ function M:Construct()
   self:AddInputMethodChangedListen()
   self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:OnFilterChanged()
   self.FuncIdx, self.SortType = self.WBP_Com_FilterSort:GetSortInfos()
   self:RefreshList()
 end
-
 function M:OnListEmpty()
   if self.bFilterOnline then
     self.WidgetSwitcher_OnLine:SetActiveWidgetIndex(1)
@@ -157,31 +150,25 @@ function M:OnListEmpty()
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
   end
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
 end
-
 function M:OnRefreshListBegin()
   self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   self.WidgetSwitcher_OnLine:SetActiveWidgetIndex(0)
   self.WBP_Com_FilterSort:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnOnlineCheckBoxChange(bChecked)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self.bFilterOnline = bChecked
   self:RefreshList()
 end
-
 function M:OpenFriendDialogWindow(DialogType)
   FriendController:OpenDialog(self, DialogType)
 end
-
 function M:JumpToAddFriend()
   self.Parent:SelectTab(FriendCommon.FriendTabType.AddFriend)
 end
-
 function M:GetListData()
   FriendModel:SortFriends(self.FuncIdx, self.SortType)
   local FriendList, FriendOnlineList = FriendModel:GetFriendList()
@@ -191,21 +178,19 @@ function M:GetListData()
     self.ListDatas = FriendList
   end
 end
-
 function M:SetupListContent(Uid, NewContent)
   local Dict = FriendModel:GetFriendDict()
   local FriendData = Dict[Uid]
   NewContent.Data = FriendData
   NewContent.Type = FriendCommon.FriendTabType.MyFriend
+  NewContent.bShowGift = true
 end
-
 function M:InitWidget(Parent)
   self.Parent = Parent
   self:RefreshList()
   self.bRefreshing = true
   FriendController:SendRequest(FriendCommon.EventId.RefreshFriend)
 end
-
 function M:OnRefreshListEnd()
   local FriendList, FriendOnlineList = FriendModel:GetFriendList()
   self.Num_OnlineFriend:SetText(#FriendOnlineList)
@@ -215,7 +200,6 @@ function M:OnRefreshListEnd()
     self.MyListView:SetFocus()
   end
 end
-
 function M:Destruct()
   self.Button_BlackList:UnBindEventOnReleased(self, self.OpenFriendDialogWindow)
   self.Button_Request:UnBindEventOnReleased(self, self.OpenFriendDialogWindow)
@@ -228,7 +212,6 @@ function M:Destruct()
   self:RemoveInputMethodChangedListen()
   M.Super.Destruct(self)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -241,7 +224,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -253,15 +235,12 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   end
   self:RefreshNavigationRule()
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(self.NavigateWidgetOpacity)
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -289,5 +268,4 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 return M

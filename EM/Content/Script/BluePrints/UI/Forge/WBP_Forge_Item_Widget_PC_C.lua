@@ -6,25 +6,20 @@ local WBP_ForgeItemWidget = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_ForgeItemWidget:Construct()
   self.GameInputSubsystem = UIManager(self):GetGameInputModeSubsystem()
   self.GameInputSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
 end
-
 function WBP_ForgeItemWidget:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Widget = self
   self.EventStartProduce = nil
   self.EventShowPath = nil
 end
-
 function WBP_ForgeItemWidget:OnMouseEnter(MyGeometry, MouseEvent)
 end
-
 function WBP_ForgeItemWidget:OnMouseLeave(MyGeometry, MouseEvent)
 end
-
 function WBP_ForgeItemWidget:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -38,7 +33,6 @@ function WBP_ForgeItemWidget:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_ForgeItemWidget:SetGamepadFocus(bFocus)
   if not UIUtils.IsGamepadInput() then
     return
@@ -57,20 +51,17 @@ function WBP_ForgeItemWidget:SetGamepadFocus(bFocus)
     self.BtnStart.WS_Type:SetActiveWidgetIndex(0)
   end
 end
-
 function WBP_ForgeItemWidget:OnFocusReceived(MyGeometry, InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == UE4.ECommonInputType.Gamepad and self.Content.OnReceiveFocus then
     self.Content.OnReceiveFocus(self)
   end
   return UIUtils.Handle
 end
-
 function WBP_ForgeItemWidget:OnFocusLost(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == UE4.ECommonInputType.Gamepad and self.Content.OnLostFocus then
     self.Content.OnLostFocus(self)
   end
 end
-
 function WBP_ForgeItemWidget:RefreshOpInfoByInputDevice()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -82,7 +73,6 @@ function WBP_ForgeItemWidget:RefreshOpInfoByInputDevice()
     self:InitKeyboardView()
   end
 end
-
 function WBP_ForgeItemWidget:EnableGamepadBlock(Value)
   if not self.BtnGamepadBlock then
     return
@@ -93,7 +83,6 @@ function WBP_ForgeItemWidget:EnableGamepadBlock(Value)
     self.BtnGamepadBlock:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeItemWidget:InitGamepadView()
   self.Cost_Resource:SwitchToPC()
   self.Cost_Ticket:SwitchToPC()
@@ -110,7 +99,6 @@ function WBP_ForgeItemWidget:InitGamepadView()
   self.Btn_Cancel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.BtnReward:SetDefaultGamePadImg("A")
 end
-
 function WBP_ForgeItemWidget:InitKeyboardView()
   self:PlayAnimation(self.Normal)
   self.BtnStart:SetGamePadVisibility(UE4.ESlateVisibility.Collapsed)
@@ -120,24 +108,20 @@ function WBP_ForgeItemWidget:InitKeyboardView()
   self.BtnStart.WS_Type:SetActiveWidgetIndex(0)
   self.BtnReward:SetDefaultGamePadImg("A")
 end
-
 function WBP_ForgeItemWidget:InitMobileView()
   self:PlayAnimation(self.Normal)
   self.Btn_Cancel:SetVisibility(UE4.ESlateVisibility.Visible)
   self.BtnStart:SetGamePadVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_ForgeItemWidget:EnterShowItemView()
   self.ItemWidget:SetFocus()
   self.BtnStart:SetGamePadVisibility(UE4.ESlateVisibility.Collapsed)
   self:EnableGamepadBlock(false)
 end
-
 function WBP_ForgeItemWidget:LeaveShowItemView()
   self.BtnStart:SetGamePadVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:EnableGamepadBlock(true)
 end
-
 function WBP_ForgeItemWidget:SetHovered(IsSelected)
   if IsSelected then
     self:PlayAnimation(self.State_Hover)
@@ -146,7 +130,6 @@ function WBP_ForgeItemWidget:SetHovered(IsSelected)
     self.Hover_HighLight:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeItemWidget:OnBtnStartClicked()
   if self.WidgetCurrentState == ForgeConst.DraftState.NotStarted and (not self.Content.IsFoundryEnough or not self.Content.IsResourceEnough) then
     if self.EventShowPath then
@@ -160,18 +143,16 @@ function WBP_ForgeItemWidget:OnBtnStartClicked()
     DebugPrint("Tianyi@ EventStartProduce not bind")
   end
 end
-
 function WBP_ForgeItemWidget:UpdateSetTargetBtn(Value)
   self.Btn_SetTarget:SetChecked(Value)
 end
-
 function WBP_ForgeItemWidget:OnDraftSetTargetChanged(bIsSelected)
   DebugPrint("Tianyi@ OnSetTarget: " .. tostring(bIsSelected) .. "DraftId = " .. self.Content.Id)
   if bIsSelected then
     local TargetDraftsCount = self.Content.GetDataModel():GetTargetDraftCount()
     local MaxTargetDraftCount = DataMgr.GlobalConstant.ForgeTargetMaxNum.ConstantValue or ForgeConst.DefaultForgeTargetMaxNum
     if TargetDraftsCount >= MaxTargetDraftCount then
-      UIManager(self):ShowUITip("CommonToastMain", "\231\155\174\230\160\135\232\174\190\232\174\161\231\168\191\230\149\176\233\135\143\229\183\178\232\190\190\229\136\176\228\184\138\233\153\144")
+      UIManager(self):ShowUITip("CommonToastMain", GText("UI_Forging_TargetLimit"))
       self.Btn_SetTarget:SetCheckedNoNotify(false)
       return
     end
@@ -185,7 +166,6 @@ function WBP_ForgeItemWidget:OnDraftSetTargetChanged(bIsSelected)
   end
   self.Content.IsSetTarget = bIsSelected
 end
-
 function WBP_ForgeItemWidget:OnBtnCancelClicked()
   if self.EventCancelProduce then
     self.EventCancelProduce()
@@ -193,8 +173,8 @@ function WBP_ForgeItemWidget:OnBtnCancelClicked()
     DebugPrint("Tianyi@ EventCancelProduce not bind")
   end
 end
-
 function WBP_ForgeItemWidget:InitializeView()
+  self:StopAllAnimations()
   self:RefreshOpInfoByInputDevice()
   if self.Content.IsEmptyWidget then
     self.Switch:SetActiveWidgetIndex(1)
@@ -257,7 +237,6 @@ function WBP_ForgeItemWidget:InitializeView()
   self.Panel:SetRenderOpacity(0)
   self:PlayAnimation(self.In)
 end
-
 function WBP_ForgeItemWidget:BindUIEvents()
   if self.HasBindUIEvents then
     return
@@ -271,7 +250,6 @@ function WBP_ForgeItemWidget:BindUIEvents()
   self.Btn_SetTarget.OnCheckStateChanged:Add(self, self.OnDraftSetTargetChanged)
   self.HasBindUIEvents = true
 end
-
 function WBP_ForgeItemWidget:InitNotStartedView()
   self.WidgetCurrentState = ForgeConst.DraftState.NotStarted
   self.Switch_Btn:SetActiveWidgetIndex(0)
@@ -286,7 +264,6 @@ function WBP_ForgeItemWidget:InitNotStartedView()
   self:UpdateFoundry(self.Content.Id)
   self:UpdateMaterial()
 end
-
 function WBP_ForgeItemWidget:InitInProgressView()
   self.WidgetCurrentState = ForgeConst.DraftState.InProgress
   local DraftInfo = DataMgr.Draft[self.Content.Id]
@@ -306,7 +283,6 @@ function WBP_ForgeItemWidget:InitInProgressView()
   self:UpdateFoundry(self.Content.Id)
   self:UpdatePercent()
 end
-
 function WBP_ForgeItemWidget:InitCompleteView(bShouldPlayCompleteAnim)
   self.WidgetCurrentState = ForgeConst.DraftState.Complete
   self.ProduceProgress:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -329,7 +305,6 @@ function WBP_ForgeItemWidget:InitCompleteView(bShouldPlayCompleteAnim)
   end
   self:UpdateFoundry(self.Content.Id)
 end
-
 function WBP_ForgeItemWidget:RefreshNum()
   local DraftInfo = DataMgr.Draft[self.Content.Id]
   self.Text_BluePrintsNumName:SetText(GText("UI_FORGING_BLUEPRINT"))
@@ -345,7 +320,6 @@ function WBP_ForgeItemWidget:RefreshNum()
     self.ItemWidget:SetRedDot(nil)
   end
 end
-
 function WBP_ForgeItemWidget:RefreshView()
   self:RefreshNum()
   if self.Content.State == ForgeConst.DraftState.NotStarted then
@@ -367,7 +341,6 @@ function WBP_ForgeItemWidget:RefreshView()
     self:InitCompleteView(true)
   end
 end
-
 function WBP_ForgeItemWidget:UpdateMaterial()
   if self.WidgetCurrentState ~= ForgeConst.DraftState.NotStarted then
     return
@@ -425,13 +398,11 @@ function WBP_ForgeItemWidget:UpdateMaterial()
     self.BtnStart.Icon_Forging:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeItemWidget:OnMenuOpenChanged(IsOpen)
   if self.Content.OnMenuOpenChanged then
     self.Content.OnMenuOpenChanged(IsOpen)
   end
 end
-
 function WBP_ForgeItemWidget:UpdatePercent()
   if self.WidgetCurrentState ~= ForgeConst.DraftState.InProgress then
     return
@@ -454,12 +425,29 @@ function WBP_ForgeItemWidget:UpdatePercent()
     self.LastTime:SetTimeText("", RemainTimeDict)
     self.Bar_Produce:SetPercent(DurationPercent)
     self:UpdateProgressVXPosition()
+  else
+    local DraftId = self.Content.Id
+    self.ErrorRestTimeMap = self.ErrorRestTimeMap or {}
+    if not self.ErrorRestTimeMap[DraftId] then
+      local Battle = GWorld.Battle
+      if Battle then
+        local ErrorStr = string.format("Forge@ RestTime <= 0, CurrentTime: %d, DurationTime: %d, RestTime: %d, osTime: %d", CurrentTime, DurationTime, RestTime, os.time())
+        local DataModel = self.Content.GetDataModel()
+        if DataModel then
+          local DraftInfo = DataModel:CheckState(DraftId)
+          if DraftInfo then
+            ErrorStr = ErrorStr .. string.format(", State: %d, StartTime: %d, DoingNum: %d, CompleteNum: %d", DraftInfo.State, DraftInfo.StartTime, DraftInfo.DraftDoingNum, DraftInfo.DraftCompleteNum)
+          end
+        end
+        Battle:StandardShowBattleErrorLua(UE.EShowBattleErrorType.Other, ErrorStr)
+      end
+      self.ErrorRestTimeMap[DraftId] = true
+    end
   end
   local Str = string.format("(<Highlight>%d</>/%d)", self.Content.DraftCompleteNum, self.Content.DraftDoingNum + self.Content.DraftCompleteNum)
   self.Text_BatchProduce:SetText(Str)
   self:UpdateAccerateTickets()
 end
-
 function WBP_ForgeItemWidget:UpdateAccerateTickets()
   local AccelerateCostType = DataMgr.GlobalConstant.AccelerateCostType.ConstantValue
   local FoundryData = DataMgr.Resource[AccelerateCostType]
@@ -479,7 +467,6 @@ function WBP_ForgeItemWidget:UpdateAccerateTickets()
     end
   end
 end
-
 function WBP_ForgeItemWidget:UpdateFoundry(DraftId)
   if self.Content.State == ForgeConst.DraftState.NotStarted then
     local DraftInfo = DataMgr.Draft[DraftId]
@@ -511,9 +498,7 @@ function WBP_ForgeItemWidget:UpdateFoundry(DraftId)
     self.CostTimePanel:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ForgeItemWidget:SwitchToMaterialView(IsImmediately)
-  self:StopAllAnimations()
   if IsImmediately then
     self.Material:SetRenderOpacity(1)
     self.ProduceProgress:SetRenderOpacity(0)
@@ -522,9 +507,7 @@ function WBP_ForgeItemWidget:SwitchToMaterialView(IsImmediately)
   end
   self.Material:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_ForgeItemWidget:SwitchToProgressView(IsImmediately)
-  self:StopAllAnimations()
   if IsImmediately then
     self.Material:SetRenderOpacity(0)
     self.ProduceProgress:SetRenderOpacity(1)
@@ -533,21 +516,17 @@ function WBP_ForgeItemWidget:SwitchToProgressView(IsImmediately)
   end
   self.Material:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
 end
-
 function WBP_ForgeItemWidget:OnItemWidgetClicked()
   if self.Content.OnItemWidgetClicked then
     self.Content.OnItemWidgetClicked(self)
   end
 end
-
 function WBP_ForgeItemWidget:UpdateProgressVXPosition()
   local GlowfireCanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.VX_glowfire)
   local ScrollBarSize = USlateBlueprintLibrary.GetLocalSize(self.Bar_Produce:GetCachedGeometry())
   GlowfireCanvasSlot:SetPosition(FVector2D(ScrollBarSize.X * self.Bar_Produce.Percent, 0))
 end
-
 function WBP_ForgeItemWidget:PlayScanlineAnim()
   self:PlayAnimation(self.Scanline)
 end
-
 return WBP_ForgeItemWidget

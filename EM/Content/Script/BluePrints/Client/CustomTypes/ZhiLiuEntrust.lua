@@ -12,22 +12,17 @@ ZhiLiuEntrust.__Props__ = {
   CombatEntrustCompleted = prop.prop("Bool", "client save", false),
   SubmitEntrustCompleted = prop.prop("Bool", "client save", false)
 }
-
 function ZhiLiuEntrust:Init(Key)
   self.Key = Key
 end
-
 function ZhiLiuEntrust:Data()
   return DataMgr.ZhiLiuDateTab[self.Key]
 end
-
 FormatProperties(ZhiLiuEntrust)
 local ZhiLiuEntrustDict = Class("ZhiLiuEntrustDict", CustomTypes.CustomDict)
 ZhiLiuEntrustDict.KeyType = BaseTypes.Int
 ZhiLiuEntrustDict.ValueType = ZhiLiuEntrust
-
 function ZhiLiuEntrustDict:NewZhiLiuEntrust(ZhiLiuEntrustId)
   return ZhiLiuEntrust(ZhiLiuEntrustId)
 end
-
 return {ZhiLiuEntrustDict = ZhiLiuEntrustDict, ZhiLiuEntrust = ZhiLiuEntrust}

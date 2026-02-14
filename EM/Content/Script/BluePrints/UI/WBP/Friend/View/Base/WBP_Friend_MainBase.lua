@@ -2,18 +2,10 @@ require("UnLua")
 local FriendController = require("BluePrints.UI.WBP.Friend.FriendController")
 local FriendCommon = require("BluePrints.UI.WBP.Friend.FriendCommon")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   M.Super.Construct(self)
   FriendController:RegisterEvent(self, function(self, EventId, ...)
-    if EventId == FriendCommon.EventId.BlockUI then
-      local Dialog = FriendController:GetDialog(self)
-      if IsValid(Dialog) then
-        Dialog:BlockAllUIInput(true)
-      else
-        self:BlockAllUIInput(true)
-      end
-    elseif EventId == FriendCommon.EventId.UnblockUI then
+    if EventId == FriendCommon.EventId.UnblockUI then
       local Dialog = FriendController:GetDialog(self)
       if IsValid(Dialog) then
         Dialog:BlockAllUIInput(false)
@@ -35,30 +27,24 @@ function M:Construct()
   end)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "FriendMainBase", nil)
 end
-
 function M:ShowPlayerInfoBtn(bShow)
 end
-
 function M:OnChatBtnListOpen()
 end
-
 function M:Destruct()
   FriendController:UnRegisterEvent(self)
   ChatController:UnRegisterEvent(self)
   AudioManager(self):SetEventSoundParam(self, "FriendMainBase", {ToEnd = 1})
   M.Super.Destruct(self)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self:SetFocus()
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   local AttachWidget = self:GetAttachWidget()
   self._TeamHeadPanel = TeamController:OpenHeadUI(AttachWidget)
-  
   function self._TeamHeadPanel.OnTeamMainFocusChanged(bFocused)
     if not TeamController:IsGamepad() then
       return
@@ -76,7 +62,6 @@ function M:OnLoaded(...)
     self.CurrWidget:OnTeamMainFocusChanged(bFocused)
   end
 end
-
 function M:GetAttachWidget()
   local AttachWidget
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -87,10 +72,8 @@ function M:GetAttachWidget()
   AttachWidget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   return AttachWidget
 end
-
 function M:SelectTab(TabType)
 end
-
 function M:Close()
   if self.IsBeginToClose then
     return
@@ -102,5 +85,6 @@ function M:Close()
   end
   M.Super.Close(self)
 end
-
+function M:ShowCheckBtn(bShow)
+end
 return M

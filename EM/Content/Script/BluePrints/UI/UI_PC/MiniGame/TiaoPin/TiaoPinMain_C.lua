@@ -3,15 +3,6 @@ local WBP_MiniGame_Tiaopin_P_C = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
-function WBP_MiniGame_Tiaopin_P_C:Destruct()
-  if self.bGameStart then
-    self:SetInputUIOnly(false)
-    self.UseActor:ChangeState("InteractBreak", self.UseActor.PlayerEid)
-  end
-  self.Super.Destruct(self)
-end
-
 function WBP_MiniGame_Tiaopin_P_C:OnLoaded(...)
   WBP_MiniGame_Tiaopin_P_C.Super.OnLoaded(self, ...)
   self.PlayerController = UGameplayStatics.GetPlayerController(self, 0)
@@ -22,7 +13,6 @@ function WBP_MiniGame_Tiaopin_P_C:OnLoaded(...)
   self.IsWin = false
   self.IsClosing = false
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitAfterBeginPlay()
   DebugPrint("thy    InitAfterBeginPlay", self.Difficulty)
   self:InitDataInfo()
@@ -34,7 +24,6 @@ function WBP_MiniGame_Tiaopin_P_C:InitAfterBeginPlay()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_start", "TiaoPinStart", nil)
   self:SetFocus()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitDataInfo()
   self.GameDifficulty = self.Difficulty or 1
   self.GameDataInfo = DataMgr["MiniGameFreq" .. self.GameDifficulty]
@@ -67,7 +56,6 @@ function WBP_MiniGame_Tiaopin_P_C:InitDataInfo()
   self.BindingIndex = {}
   DebugPrint("thy   GameConfigInfo: self.GameDifficulty " .. self.GameDifficulty .. " self.FreqType " .. self.FreqType .. " self.RowNum " .. self.RowNum .. " self.BindingRowNum " .. self.BindingRowNum .. " self.BindingRowInterval " .. self.BindingRowInterval .. " self.MoveRange " .. self.MoveRange)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitUI()
   self.Text_Float:SetText(GText("UI_MiniGame_Hint_TiaoPin"))
   self.MiniGame_Text.Text_Fail:SetText(GText("UI_MiniGame_Fail"))
@@ -76,7 +64,6 @@ function WBP_MiniGame_Tiaopin_P_C:InitUI()
   self:InitFreqUI()
   self:InitButtonUIAndEvent()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitBtnTipsUI()
   DebugPrint("thy    InitBtnTipsUI", self.CurInputDeviceType)
   if not self.CurInputDeviceType or self.CurInputDeviceType == ECommonInputType.Touch then
@@ -92,7 +79,7 @@ function WBP_MiniGame_Tiaopin_P_C:InitBtnTipsUI()
         {Type = "Text", Text = "A"},
         {Type = "Text", Text = "D"}
       },
-      Desc = "\229\136\135\230\141\162"
+      Desc = GText("UI_Controller_Switch")
     }
     self.KeyInfo2 = {
       Type = "Or",
@@ -100,7 +87,7 @@ function WBP_MiniGame_Tiaopin_P_C:InitBtnTipsUI()
         {Type = "Text", Text = "W"},
         {Type = "Text", Text = "S"}
       },
-      Desc = "\231\167\187\229\138\168"
+      Desc = GText("UI_CTL_Move")
     }
     self.KeyInfo3 = {
       KeyInfoList = {
@@ -124,13 +111,13 @@ function WBP_MiniGame_Tiaopin_P_C:InitBtnTipsUI()
       KeyInfoList = {
         {Type = "Img", ImgShortPath = "LH"}
       },
-      Desc = "\229\136\135\230\141\162"
+      Desc = GText("UI_Controller_Switch")
     }
     self.KeyInfo2 = {
       KeyInfoList = {
         {Type = "Img", ImgShortPath = "LV"}
       },
-      Desc = "\231\167\187\229\138\168"
+      Desc = GText("UI_CTL_Move")
     }
     self.KeyInfo3 = {
       KeyInfoList = {
@@ -145,7 +132,6 @@ function WBP_MiniGame_Tiaopin_P_C:InitBtnTipsUI()
     end
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitCrack()
   local Param = {
     RootPage = self,
@@ -157,14 +143,12 @@ function WBP_MiniGame_Tiaopin_P_C:InitCrack()
   self.MiniGame_Crack:SetVisibility(ESlateVisibility.Visibility)
   self.MiniGame_Crack:Init(Param)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:Reset()
   for key, value in pairs(self.TiaoPinList) do
     value:ResetPointPosition()
   end
   self:InitBindingRowAnimation()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitButtonUIAndEvent()
   if self.MoveRange > 1 then
     self.Switcher_D:SetActiveWidgetIndex(1)
@@ -181,7 +165,6 @@ function WBP_MiniGame_Tiaopin_P_C:InitButtonUIAndEvent()
     self.Btn_Close:Init("Close", self, self.ExitGameByMoble)
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:OnBtnLClicked()
   if self:CheckIsInCD() then
     return
@@ -196,7 +179,6 @@ function WBP_MiniGame_Tiaopin_P_C:OnBtnLClicked()
     AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_block_or_bar_err", "TiaoPinWarning", nil)
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:OnBtnRClicked()
   if self:CheckIsInCD() then
     return
@@ -211,7 +193,6 @@ function WBP_MiniGame_Tiaopin_P_C:OnBtnRClicked()
     AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_block_or_bar_err", "TiaoPinWarning", nil)
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:OnBtnDClicked()
   if self:CheckIsInCD() then
     return
@@ -237,7 +218,6 @@ function WBP_MiniGame_Tiaopin_P_C:OnBtnDClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_block_or_bar_err", "TiaoPinWarning", nil)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:OnBtnTClicked()
   if self:CheckIsInCD() then
     return
@@ -263,7 +243,6 @@ function WBP_MiniGame_Tiaopin_P_C:OnBtnTClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_block_or_bar_err", "TiaoPinWarning", nil)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CheckIsInCD()
   if self.IsInCD then
     DebugPrint("thy       self.IsInCD", self.IsInCD)
@@ -274,18 +253,15 @@ function WBP_MiniGame_Tiaopin_P_C:CheckIsInCD()
     return false
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CDIsOver()
   self.IsInCD = false
   self:RemoveTimer("CD")
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitTime()
   self:RemoveTimer(self.TimeHandleName)
   self.MiniGame_Time.Text_Time:SetText("00:" .. tostring(self.RemainTime))
   self:AddTimer(1, self.CountDown, true, 0.1, self.TimeHandleName, true)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CountDown()
   self.RemainTime = self.RemainTime - 1
   if self.RemainTime < 0 then
@@ -304,7 +280,6 @@ function WBP_MiniGame_Tiaopin_P_C:CountDown()
   end
   self.MiniGame_Time.Text_Time:SetText("00:" .. tostring(self.RemainTime))
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitFreqUI()
   self.TiaoPinList = {}
   self.ListView_255:ClearListItems()
@@ -319,20 +294,17 @@ function WBP_MiniGame_Tiaopin_P_C:InitFreqUI()
     self.ListView_255:AddItem(TiaoPin)
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitBindingRowAnimation()
   if self:CheckBindingRow(1) then
     self:UpdateBindingRowAnimation()
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:AddItemInTiaoPinList(Index, TiaoPin)
   self.TiaoPinList[Index] = TiaoPin
   if Index == self.TiaoPinListLen then
     self:InitBindingRowAnimation()
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CheckBindingRow(MoveTargetRowIndex)
   if MoveTargetRowIndex < 1 or MoveTargetRowIndex > self.TiaoPinListLen then
     return false
@@ -349,7 +321,6 @@ function WBP_MiniGame_Tiaopin_P_C:CheckBindingRow(MoveTargetRowIndex)
   self.BindingIndex = PreBindingIndex
   return true
 end
-
 function WBP_MiniGame_Tiaopin_P_C:UpdateBindingRowAnimation()
   if not self.BindingIndex or 0 == #self.BindingIndex then
     return
@@ -361,7 +332,6 @@ function WBP_MiniGame_Tiaopin_P_C:UpdateBindingRowAnimation()
     self.TiaoPinList[value]:OpenSelectState()
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CheckIsCompleteGame()
   for index = 1, self.TiaoPinListLen do
     if not self.TiaoPinList[index].IsComplete then
@@ -370,11 +340,10 @@ function WBP_MiniGame_Tiaopin_P_C:CheckIsCompleteGame()
   end
   self:CompleteGame()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CompleteGame()
   for key, value in pairs(self.TiaoPinList) do
     value:PlayAnimation(value.Success_Out)
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
   end
   self.IsWin = true
   self:BindToAnimationFinished(self.Success_Out, {
@@ -385,14 +354,12 @@ function WBP_MiniGame_Tiaopin_P_C:CompleteGame()
   self:AddTimer(0, self.PlaySuccessAnimation, false, 0.5, "Success_Out")
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_success", "TiaoPinSuccess", nil)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:PlaySuccessAnimation()
   self:PlayAnimation(self.Success_Out)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self.MiniGame_Text.Switcher_Tip:SetActiveWidgetIndex(0)
   self:RemoveTimer("Success_Out")
 end
-
 function WBP_MiniGame_Tiaopin_P_C:TimeOut()
   self.IsWin = false
   if self.IsPressEsc then
@@ -405,15 +372,13 @@ function WBP_MiniGame_Tiaopin_P_C:TimeOut()
   })
   self:RemoveTimer(self.TimeHandleName)
   self:PlayAnimation(self.Fail_Out)
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self.MiniGame_Text.Switcher_Tip:SetActiveWidgetIndex(1)
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/tiaopin_fail", "TiaoPinFail", nil)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:ExitGameByMoble()
   self:TimeOut()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:ExitGame()
   if self.IsWin then
     AudioManager(self):PlayFMODSound(self.UseActor, nil, "event:/ui/minigame/tiaopin_gear_unlock", "TiaoPinGearClose")
@@ -423,13 +388,11 @@ function WBP_MiniGame_Tiaopin_P_C:ExitGame()
   self:RemoveTimer("InitArrow")
   self:Close()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:Close()
   self.UseActor:SetVariableBool("IsGameSuccess", self.IsWin, UE4.UGameplayStatics.GetPlayerPawn(self, 0).Eid)
   self.UseActor.ChestInteractiveComponent:EndInteractive(UE4.UGameplayStatics.GetPlayerPawn(self, 0))
   self.Super.Close(self)
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitDeviceInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -437,13 +400,11 @@ function WBP_MiniGame_Tiaopin_P_C:InitDeviceInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("thy     CurGamepadName", CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -453,7 +414,6 @@ function WBP_MiniGame_Tiaopin_P_C:RefreshOpInfoByInputDevice(CurInputDevice, Cur
   self.CurGamepadName = CurGamepadName
   self:InitBtnTipsUI()
 end
-
 function WBP_MiniGame_Tiaopin_P_C:Handle_OnPCDown(InKeyName)
   if "Escape" == InKeyName then
     self:TimeOut()
@@ -481,7 +441,6 @@ function WBP_MiniGame_Tiaopin_P_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function WBP_MiniGame_Tiaopin_P_C:Handle_OnGamePadDown(InKeyName)
   DebugPrint("thy    Handle_OnGamePadDown", InKeyName)
   if "Gamepad_DPad_Up" == InKeyName or "Gamepad_LeftStick_Up" == InKeyName then
@@ -509,7 +468,6 @@ function WBP_MiniGame_Tiaopin_P_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_MiniGame_Tiaopin_P_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -527,7 +485,6 @@ function WBP_MiniGame_Tiaopin_P_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_MiniGame_Tiaopin_P_C:CheckLeftStickKeyName()
   local InKeyName
   if self.MoveDeltaX and 0 ~= self.MoveDeltaX then
@@ -546,7 +503,6 @@ function WBP_MiniGame_Tiaopin_P_C:CheckLeftStickKeyName()
   end
   return InKeyName
 end
-
 function WBP_MiniGame_Tiaopin_P_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -558,5 +514,4 @@ function WBP_MiniGame_Tiaopin_P_C:OnAnalogValueChanged(MyGeometry, InAnalogInput
   self:Handle_OnGamePadDown(self:CheckLeftStickKeyName())
   return self.Unhandle
 end
-
 return WBP_MiniGame_Tiaopin_P_C

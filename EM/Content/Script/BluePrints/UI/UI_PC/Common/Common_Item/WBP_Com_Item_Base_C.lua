@@ -3,25 +3,24 @@ local TimeUtils = require("Utils.TimeUtils")
 local StrLib = require("BluePrints.Common.DataStructure")
 local Deque = StrLib.Deque
 local M = Class({
-  "BluePrints.UI.BP_UIState_C",
+  "BluePrints.UI.BP_EMUserWidget_C",
+  "BluePrints.UI.BP_EMUserWidgetUtils_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:Init(Content)
   self:OnListItemObjectSet(Content)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.SelfWidget = self
   self.WidgetMap = self.WidgetMap or {}
   self:RemoveAllEvent()
   self:InitData(Content)
   self:InitCompView()
+  self:InitNavigationRule()
   if self.AfterInitCallback then
     self.AfterInitCallback(self)
   end
 end
-
 function M:InitData(Content)
   self.Content = Content
   self.ParentWidget = Content.ParentWidget
@@ -39,6 +38,7 @@ function M:InitData(Content)
   self.bShowNotHaveStyle = Content.bShowNotHaveStyle
   self.PetEntryId = Content.PetEntryId
   self.CountTextRed = Content.CountTextRed
+  self.CountTextWhite = Content.CountTextWhite
   self.ItemName = Content.ItemName
   self.Level = Content.Level
   self.NotInteractive = Content.NotInteractive
@@ -58,6 +58,7 @@ function M:InitData(Content)
   self.Item.ItemDetails_MenuAnchor.ParentWidget = self
   self.ItemDetailKeyDownEvent = Content.ItemDetailKeyDownEvent
   self.ItemDetailHandleKeyDown = Content.ItemDetailHandleKeyDown
+  self.bNoJumpPreview = Content.bNoJumpPreview
   self.Content.IsShowTips = false
   self.RedDotType = Content.RedDotType
   self.bHasGot = Content.bHasGot
@@ -99,14 +100,17 @@ function M:InitData(Content)
     self.bAllUseAsyncLoadWidget = true
   end
 end
-
+function M:InitNavigationRule()
+  if self.NavigationRule then
+    self.NavigationRule.UINavigationRuleFunc(self.Content.SelfWidget, self.NavigationRule.UINavigation, self.NavigationRule.FocusWidget)
+  end
+end
 function M:InitCommonView()
   self:ClearBackGroundHeight()
   if self.Item.ItemDetails_MenuAnchor then
     self.Item.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
   end
   self:SetOutline(false)
-  self:SetRarity(self.Rarity)
   if self.bAdd then
     self:SetAdd(self.bAdd)
     return
@@ -118,23 +122,26 @@ function M:InitCommonView()
     self.Item.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   end
   self:SetIcon(self.Icon)
+  self:SetRarity(self.Rarity)
   self:SetSelected(self.Content.IsSelect)
   self:SetDraftType(self.ItemType == "Draft")
   if self.bPlayInAnim then
     self:PlayInAnimation()
   end
 end
-
 function M:SetIcon(IconPath)
   if self.ItemType == "Walnut" then
     IconPath = DataMgr.Walnut[self.Id].Icon
     self:SetWalnutNum(self.Id)
   end
+  if self.Item.SetBgMaterialByItemType then
+    self.Item:SetBgMaterialByItemType(self.ItemType, "HeadSculpture")
+  end
   if self.bAsyncLoadIcon then
     self:LoadTextureAsync(IconPath, function(Texture)
       if not Texture then
         Texture = LoadObject("Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'")
-        DebugPrint(ErrorTag, string.format("\231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\232\191\153\233\135\140\231\148\168\233\187\152\232\174\164\231\154\132\229\155\190\230\160\135\233\161\182\228\184\128\228\184\139\n \233\148\153\232\175\175\231\154\132\232\183\175\229\190\132\230\152\175\239\188\154%s", IconPath))
+        DebugPrint(ErrorTag, string.format("用错图标路径了！！！这里用默认的图标顶一下\n 错误的路径是：%s", IconPath))
       end
       if Texture then
         local __IconDynaMaterial = self.Item.Item_BG:GetDynamicMaterial()
@@ -144,25 +151,30 @@ function M:SetIcon(IconPath)
       end
     end, "LoadIcon")
   else
+    local Type = self.ItemType and tostring(self.ItemType) or "nil"
+    local Id = self.ItemType and tostring(self.Id) or "nil"
+    if nil == IconPath then
+      IconPath = "Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'"
+      ScreenPrint(string.format("ItemType为：%s ，Id为：%s 的通用道具框没配IconPath！！！，辛苦对应策划配一下", Type, Id))
+    end
     local Icon = LoadObject(IconPath)
     if not Icon then
       Icon = LoadObject("Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'")
-      DebugPrint(ErrorTag, string.format("\231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\232\191\153\233\135\140\231\148\168\233\187\152\232\174\164\231\154\132\229\155\190\230\160\135\233\161\182\228\184\128\228\184\139\n \233\148\153\232\175\175\231\154\132\232\183\175\229\190\132\230\152\175\239\188\154%s", IconPath))
+      DebugPrint(ErrorTag, string.format("用错图标路径了！！！这里用默认的图标顶一下\n 错误的路径是：%s", IconPath))
     end
     local DynamicMaterial = self.Item.Item_BG:GetDynamicMaterial()
     if not IsValid(DynamicMaterial) then
-      DebugPrint("ZDX_DynamicMaterial\228\184\141\229\144\136\230\179\149")
+      DebugPrint("ZDX_DynamicMaterial不合法")
     end
     DynamicMaterial:SetTextureParameterValue("IconMap", Icon)
   end
 end
-
 function M:SetDraftType(IsDraftType)
   local function Callback(CoroutineObj)
+    if self.DraftItemWidget and not IsValid(self.DraftItemWidget) then
+      self.WidgetMap[self.DraftItemWidget] = nil
+    end
     if IsDraftType then
-      if self.DraftItemWidget and not IsValid(self.DraftItemWidget) then
-        self.WidgetMap[self.DraftItemWidget] = nil
-      end
       if not self.WidgetMap[self.DraftItemWidget] then
         self.DraftItemWidget = self:CreateWidgetAsync("DraftCompendiumItem", CoroutineObj)
       end
@@ -171,10 +183,8 @@ function M:SetDraftType(IsDraftType)
       self:RemoveWidgetFromNode(self.DraftItemWidget)
     end
   end
-  
   self:AsyncLoadWidgetCommon("DraftItemWidget", "SetDraftTypeTask", Callback)
 end
-
 function M:LoadTextureAsync(TexturePath, cb, TaskName)
   rawset(self, TaskName, nil)
   local Handle = UE.UResourceLibrary.LoadObjectAsyncWithId(self, TexturePath, {
@@ -190,29 +200,56 @@ function M:LoadTextureAsync(TexturePath, cb, TaskName)
     rawset(self, TaskName, Handle.ResourceID)
   end
 end
-
 function M:SetRarity(Rarity)
   local DynamicMaterial = self.Item.Item_BG:GetDynamicMaterial()
   DynamicMaterial:SetScalarParameterValue("IconOpacity", 1)
   if not IsValid(DynamicMaterial) then
-    DebugPrint("ZDX_DynamicMaterial\228\184\141\229\144\136\230\179\149")
+    DebugPrint("ZDX_DynamicMaterial不合法")
   end
   if not Rarity or Rarity < 1 or Rarity > 6 then
     DynamicMaterial:SetScalarParameterValue("Index", 0)
     return
   end
   DynamicMaterial:SetScalarParameterValue("Index", Rarity)
+  self:_SetMostRarityFX(Rarity, DynamicMaterial)
 end
-
+function M:_SetMostRarityFX(Rarity, DynamicMaterial)
+  DynamicMaterial = DynamicMaterial or self.Item.Item_BG:GetDynamicMaterial()
+  if 6 ~= Rarity then
+    if self.WidgetMap[self._MostRarityFX] then
+      self:RemoveWidgetFromNode(self._MostRarityFX)
+    end
+    DynamicMaterial:SetScalarParameterValue("Colorful_Alpha", 0.35)
+    DynamicMaterial:SetScalarParameterValue("AddOpacity", 0)
+    DynamicMaterial:SetScalarParameterValue("IconAddOpacity", 0)
+    return
+  end
+  if not self._MostRarityFX then
+    self:CreateWidgetAsync(nil, function(MostRarityFX)
+      if not MostRarityFX then
+        return
+      end
+      self._MostRarityFX = MostRarityFX
+      if not self.WidgetMap[self._MostRarityFX] then
+        self:AddWidgetToNode(self._MostRarityFX)
+        self:CheckWidgetIsTop(self._MostRarityFX)
+      end
+    end, "/Game/UI/WBP/Common/Item/Widget/WBP_Com_Item_RedVX.WBP_Com_Item_RedVX")
+  else
+    self:AddWidgetToNode(self._MostRarityFX)
+    self:CheckWidgetIsTop(self._MostRarityFX)
+  end
+  DynamicMaterial:SetScalarParameterValue("Colorful_Alpha", 0.8)
+  DynamicMaterial:SetScalarParameterValue("AddOpacity", 1)
+  DynamicMaterial:SetScalarParameterValue("IconAddOpacity", 1)
+end
 function M:SetWalnutNum(ItemId)
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.SelfWidget = nil
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -226,7 +263,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -241,7 +277,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.UnHover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   local HandleResult = UWidgetBlueprintLibrary.Unhandled()
   if self.HandleMouseDown then
@@ -264,19 +299,22 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self.bMouseButtonDown = true
   return HandleResult
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.NotInteractive or self:IsInAnimationPlaying() or not self.bMouseButtonDown then
     return UWidgetBlueprintLibrary.Unhandled()
   end
   self.bMouseButtonDown = false
-  AudioManager(self):PlayItemSound(self, self.Id, "Click", self.ItemType)
+  if self.ItemType == CommonConst.ArmoryType.Mod then
+    AudioManager(self):PlayItemSound(self, self.Content.UnitId or self.Id, "Click", self.ItemType)
+  else
+    AudioManager(self):PlayItemSound(self, self.Id, "Click", self.ItemType)
+  end
   if not self.bDisableCommonClick then
     if self.ItemType == "Walnut" then
-      UIManager(self):LoadUINew("WalnutRewardDialog", self.Id, self.UIName)
+      self:OpenWalnutRewardDialog()
       return UWidgetBlueprintLibrary.Handled()
     end
-    if self.ItemType == "Skin" or self.ItemType == "WeaponSkin" then
+    if (self.ItemType == "Skin" or self.ItemType == "WeaponSkin" or self.ItemType == "Mount") and not self.bNoJumpPreview then
       if DataMgr.SystemUI[self.UIName] and DataMgr.SystemUI[self.UIName].IsBanAccess then
         UIManager(self):ShowUITip("CommonToastMain", GText("UI_COMMONPOP_TITLE_100059"))
         return UWidgetBlueprintLibrary.Handled()
@@ -315,15 +353,12 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnTouchEnded(MyGeometry, TouchEvent)
   return self:OnMouseButtonUp(MyGeometry, TouchEvent)
 end
-
 function M:OnTouchStarted(MyGeometry, TouchEvent)
   return self:OnMouseButtonDown(MyGeometry, TouchEvent)
 end
-
 function M:BindEventOnMouseButtonUp(Obj, Callback, Params)
   if not self.OnMouseButtonUpEvent then
     self.OnMouseButtonUpEvent = {}
@@ -332,7 +367,6 @@ function M:BindEventOnMouseButtonUp(Obj, Callback, Params)
   self.OnMouseButtonUpEvent[Obj] = Callback
   self.OnMouseButtonUpEventParam[Obj] = Params
 end
-
 function M:ClearEventOnMouseButtonUp(Obj)
   if not self.OnMouseButtonUpEvent then
     return
@@ -340,21 +374,18 @@ function M:ClearEventOnMouseButtonUp(Obj)
   self.OnMouseButtonUpEvent[Obj] = nil
   self.OnMouseButtonUpEventParam[Obj] = nil
 end
-
 function M:RemoveAllEvent()
   self.OnMouseButtonUpEvent = {}
   self.OnMouseButtonUpEventParam = {}
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.OnFocusReceivedEvent then
     local Obj = self.OnFocusReceivedEvent.Obj
     local Callback = self.OnFocusReceivedEvent.Callback
     Callback(Obj)
   end
-  return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
+  return UIUtils.Handled
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if self.OnAddedToFocusPathEvent then
     local Obj = self.OnAddedToFocusPathEvent.Obj
@@ -363,7 +394,6 @@ function M:OnAddedToFocusPath(InFocusEvent)
     Callback(Obj, Params)
   end
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.OnRemovedFromFocusPathEvent then
     local Obj = self.OnRemovedFromFocusPathEvent.Obj
@@ -372,13 +402,10 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     Callback(Obj, Params)
   end
 end
-
 function M:Construct()
-  M.Super.Construct(self)
   self.WidgetMap = {}
   self.Item.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function M:Destruct()
   self.Item.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
   for TaskName, _ in pairs(self.ComItemAsyncTasks or {}) do
@@ -386,9 +413,7 @@ function M:Destruct()
   end
   self.ComItemAsyncTasks = nil
   self.bMaxHeight = nil
-  M.Super.Destruct(self)
 end
-
 function M:OnMenuOpenChanged(bIsOpen)
   self.Content.IsShowTips = bIsOpen
   self.Content.IsSelect = bIsOpen
@@ -396,7 +421,6 @@ function M:OnMenuOpenChanged(bIsOpen)
     self.Event_OnMenuOpenChanged(self.Obj, bIsOpen, self.Content)
   end
 end
-
 function M:BindEventOnMenuOpenChanged(Obj, Callback)
   if not Obj or not Callback then
     return
@@ -405,44 +429,69 @@ function M:BindEventOnMenuOpenChanged(Obj, Callback)
   Event.OnMenuOpenChanged = Callback
   self:BindEvents(Obj, Event)
 end
-
 function M:BindEvents(Obj, Events)
   Events = Events or {}
   self.Obj = Obj
   self.Event_OnMenuOpenChanged = Events.OnMenuOpenChanged
 end
-
-function M:AddWidgetToNode(Widget)
-  if not self.Node_Widget or not Widget then
+function M:AddWidgetToNode(Widget, WidgetPtr)
+  if not self.Node_Widget or not Widget and not WidgetPtr then
     return
   end
   if not self.WidgetMap then
     self.WidgetMap = {}
   end
-  if self.WidgetMap[Widget] == nil then
-    local Slot = self.Node_Widget:AddChild(Widget)
-    Slot:SetVerticalAlignment(EVerticalAlignment.HAlign_Fill)
-    Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
+  if Widget then
+    if self.WidgetMap[Widget] == nil then
+      local Slot = self.Node_Widget:AddChild(Widget)
+      Slot:SetVerticalAlignment(EVerticalAlignment.HAlign_Fill)
+      Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
+    end
+    Widget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    self.WidgetMap[Widget] = true
   end
-  Widget:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  self.WidgetMap[Widget] = true
+  if WidgetPtr then
+    if WidgetPtr:IsValid() then
+      if self.WidgetMap[WidgetPtr] == nil then
+        local Slot = self.Node_Widget:AddChild(WidgetPtr:Get())
+        Slot:SetVerticalAlignment(EVerticalAlignment.HAlign_Fill)
+        Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
+      end
+      WidgetPtr:Get():SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    end
+    self.WidgetMap[WidgetPtr] = true
+  end
 end
-
-function M:RemoveWidgetFromNode(Widget, bForce)
-  if not self.Node_Widget or not Widget then
+function M:RemoveWidgetFromNode(Widget, bForce, WidgetPtr)
+  if not self.Node_Widget or not Widget and not WidgetPtr then
     return
   end
   if self.bDontRemoveSubWidget and not bForce then
-    Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    self.WidgetMap[Widget] = true
-  else
-    if self.WidgetMap[Widget] then
-      Widget:RemoveFromParent()
+    if Widget then
+      Widget:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.WidgetMap[Widget] = true
     end
-    self.WidgetMap[Widget] = nil
+    if WidgetPtr then
+      if WidgetPtr:IsValid() then
+        WidgetPtr:Get():SetVisibility(UIConst.VisibilityOp.Collapsed)
+      end
+      self.WidgetMap[WidgetPtr] = true
+    end
+  else
+    if Widget then
+      if self.WidgetMap[Widget] then
+        Widget:RemoveFromParent()
+      end
+      self.WidgetMap[Widget] = nil
+    end
+    if WidgetPtr then
+      if self.WidgetMap[WidgetPtr] and WidgetPtr:IsValid() then
+        WidgetPtr:Get():RemoveFromParent()
+      end
+      self.WidgetMap[WidgetPtr] = nil
+    end
   end
 end
-
 function M:InitCompView()
   self:InitCommonView()
   self.OwningList = UE4.UUserListEntryLibrary.GetOwningListView(self)
@@ -451,7 +500,6 @@ function M:InitCompView()
     self.OwningList.BP_OnItemClicked:Add(self, self.OnOwningListItemClicked)
   end
 end
-
 function M:OnOwningListItemClicked(Content)
   if Content ~= self.Content or self.NotInteractive then
     return
@@ -460,12 +508,12 @@ function M:OnOwningListItemClicked(Content)
     self:OpenItemMenu()
   end
 end
-
 function M:OpenItemMenu()
   if self.Item.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() then
     return
   end
   local Content = {
+    Type = self.Content.Type,
     ItemType = self.ItemType,
     ItemId = self.Id,
     Uuid = self.Uuid,
@@ -485,18 +533,17 @@ function M:OpenItemMenu()
     self.Item.ItemDetails_MenuAnchor.CommonItemDetails:InitLockedEvent(self.ItemDetailsLockEventInfo)
   end
 end
-
+function M:OpenWalnutRewardDialog()
+  UIManager(self):LoadUINew("WalnutRewardDialog", self.Id, self.UIName)
+end
 function M:PlayInAnimation()
 end
-
 function M:IsInAnimationPlaying()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation ~= self.Click or not self.NotInteractive then
   end
 end
-
 function M:SetSelected(IsSelected)
   if self.NotInteractive then
     return
@@ -511,11 +558,9 @@ function M:SetSelected(IsSelected)
     self.Item:PlayAnimation(self.Item.Normal)
   end
 end
-
 function M:SetIsGot(IsGot)
-  local function Callback(Coroutine)
+  local function Callback(CoroutineObj)
     self.Content.bHasGot = IsGot
-    
     if IsGot then
       if not self.WidgetMap[self.IsGotWidget] then
         self.IsGotWidget = self:CreateWidgetAsync("ComItemHasGot", CoroutineObj)
@@ -525,18 +570,15 @@ function M:SetIsGot(IsGot)
       self:RemoveWidgetFromNode(self.IsGotWidget)
     end
   end
-  
   if IsGot then
     self:AsyncLoadWidgetCommon("IsGotWidget", "SetIsGotTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetIsCanGet(IsCanGet, StyleStr)
   local function Callback(CoroutineObj)
     self.Content.bCanGet = IsCanGet
-    
     self.Content.CanGetStyle = StyleStr
     if IsCanGet then
       if not self.WidgetMap[self.CanGetWidget] then
@@ -548,14 +590,12 @@ function M:SetIsCanGet(IsCanGet, StyleStr)
       self:RemoveWidgetFromNode(self.CanGetWidget)
     end
   end
-  
   if IsCanGet then
     self:AsyncLoadWidgetCommon("CanGetWidget", "SetIsCanGetTack", Callback)
   else
     Callback()
   end
 end
-
 function M:SetLock(LockType)
   self:AsyncLoadWidgetCommon(nil, "SetLockTack", function(CoroutineObj)
     if 1 ~= LockType then
@@ -574,12 +614,10 @@ function M:SetLock(LockType)
     end
   end)
 end
-
 function M:SetCount(Count, NeedCount, MaxCount, bNotCountFormat, bShowNotHaveStyle)
   local function Callback(CoroutineObj)
     if self.WidgetMap[self.CountWidget] then
       self:RemoveWidgetFromNode(self.CountWidget, true)
-      
       self:ClearBackGroundHeight(true)
     end
     if DataMgr.RewardType[self.ItemType] and DataMgr.RewardType[self.ItemType].UniqueType then
@@ -594,7 +632,7 @@ function M:SetCount(Count, NeedCount, MaxCount, bNotCountFormat, bShowNotHaveSty
       self.CountWidget = self:CreateWidgetAsync("ComItemNeedCount", CoroutineObj)
       self.CountWidget.Text_Hold:SetText(FormatNumber(Count, bCountFormat))
       self.CountWidget.Text_Total:SetText("/" .. tostring(FormatNumber(NeedCount, bCountFormat)))
-      if Count >= NeedCount then
+      if Count >= NeedCount or self.CountTextWhite then
         self.CountWidget.Text_Hold:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToSlateColor("FFFFFFFF"))
       else
         self.CountWidget.Text_Hold:SetColorAndOpacity(UE4.UUIFunctionLibrary.StringToSlateColor("D82E30FF"))
@@ -622,18 +660,14 @@ function M:SetCount(Count, NeedCount, MaxCount, bNotCountFormat, bShowNotHaveSty
     else
       self:SetItemGreyStyle(self.CountWidget, true)
     end
-    self:AddDelayFrameFunc(function()
-      self:AdjustBackGroundHeight(self.CountWidget, "SetCount  " .. Count)
-    end)
+    self:AdjustBackGroundHeight(self.CountWidget, "SetCount  " .. Count)
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon(nil, "SetCountTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetBonus(BonusType, ExtraText)
   self:AsyncLoadWidgetCommon(nil, "SetBonusTask", function(CoroutineObj)
     if self.WidgetMap[self.BonusWidget] then
@@ -660,7 +694,6 @@ function M:SetBonus(BonusType, ExtraText)
     self:AddWidgetToNode(self.BonusWidget)
   end)
 end
-
 function M:SetName(Name)
   self:AsyncLoadWidgetCommon("NameWidget", "SetNameTask", function(CoroutineObj)
     if Name then
@@ -680,13 +713,13 @@ function M:SetName(Name)
     end
   end)
 end
-
 function M:SetLevel(Level)
   local function Callback(CoroutineObj)
+    if not self.WidgetMap[self.LevelWidget] then
+      self.LevelWidget = self:CreateWidgetAsync("ComItemLevel", CoroutineObj)
+      self:AddWidgetToNode(self.LevelWidget)
+    end
     if Level then
-      if not self.WidgetMap[self.LevelWidget] then
-        self.LevelWidget = self:CreateWidgetAsync("ComItemLevel", CoroutineObj)
-      end
       self.LevelWidget.Text_Lv:SetText(Level)
       self.LevelWidget:SetVisibility(UIConst.VisibilityOp.Visible)
       self:AdjustBackGroundHeight(self.LevelWidget, "SetLevel  " .. Level)
@@ -696,14 +729,12 @@ function M:SetLevel(Level)
       self:ClearBackGroundHeight(true)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("LevelWidget", "SetLevelTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetRedDot(RedDotType)
   self:AsyncLoadWidgetCommon(nil, "SetRedDotTask", function(CoroutineObj)
     if self.WidgetMap[self.ComItemReddot] then
@@ -728,13 +759,12 @@ function M:SetRedDot(RedDotType)
       if not self.ComItemReddot then
         self.ComItemReddot = self:CreateWidgetAsync("ComItemReddot", CoroutineObj)
       end
-      self.ComItemReddot:EMShowReddot(true, EReddotType.Gray, 0)
+      self.ComItemReddot:EMShowReddot(true, EReddotType.Gray)
       self:AddWidgetToNode(self.ComItemReddot)
       self:CheckWidgetIsTop(self.ComItemReddot)
     end
   end)
 end
-
 function M:SetShadow(bShadow)
   self:AsyncLoadWidgetCommon(nil, "SetShadowTask", function(CoroutineObj)
     if bShadow then
@@ -747,16 +777,13 @@ function M:SetShadow(bShadow)
     end
   end)
 end
-
 function M:SetOutline(bOutline)
   self.Item:SetIconShadow(bOutline)
 end
-
 function M:SetAdd(bAdd)
   if bAdd then
     local function Callback(CoroutineObj)
       local DynamicMaterial = self.Item.Item_BG:GetDynamicMaterial()
-      
       self:SetRarity(0)
       DynamicMaterial:SetScalarParameterValue("IconOpacity", 0)
       self.Item.WidgetSwitcher_State:SetActiveWidgetIndex(0)
@@ -766,7 +793,6 @@ function M:SetAdd(bAdd)
       self:AddWidgetToNode(self.AddWidget)
       self:ClearBackGroundHeight(true)
     end
-    
     if self.bAllUseAsyncLoadWidget then
       self:AsyncLoadWidgetCommon(nil, "SetAddTask", Callback)
     else
@@ -774,7 +800,6 @@ function M:SetAdd(bAdd)
     end
   end
 end
-
 function M:SetSelectNum(SelectNeedCount, SelectTotalCount)
   local function Callback(CoroutineObj)
     if SelectNeedCount or SelectTotalCount then
@@ -793,14 +818,12 @@ function M:SetSelectNum(SelectNeedCount, SelectTotalCount)
       self:RemoveWidgetFromNode(self.SelectCountWidget)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("SelectCountWidget", "SetSelectNumTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetWeaponPhantomIcon(Uuid)
   self:AsyncLoadWidgetCommon(nil, "SetWeaponPhantomIconTask", function(CoroutineObj)
     if self.WidgetMap[self.PhantomTagWidget] then
@@ -826,7 +849,6 @@ function M:SetWeaponPhantomIcon(Uuid)
     end
   end)
 end
-
 function M:SetWeaponMiniPhantomIcon(CharId)
   self:AsyncLoadWidgetCommon(nil, "SetWeaponMiniPhantomIconTask", function(CoroutineObj)
     if self.WidgetMap[self.PhantomTagWidget] then
@@ -842,7 +864,6 @@ function M:SetWeaponMiniPhantomIcon(CharId)
     end
   end)
 end
-
 function M:SetItemGreyStyle(NumWidget, bShowGrey)
   if bShowGrey then
     NumWidget:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -852,16 +873,14 @@ function M:SetItemGreyStyle(NumWidget, bShowGrey)
     self:SetRenderOpacity(1.0)
   end
 end
-
 function M:SetItemConflict(bConflict)
   self:_SetItemConflictImpl(bConflict, GText("UI_Armory_Conflict"))
 end
-
 function M:_SetItemConflictImpl(bConflict, Text)
   local function Callback(CoroutineObj)
     if bConflict then
       if not self.WidgetMap[self.ConflictWidget] then
-        self.ConflictWidget = self:CreateWidgetAsync("ComItemConflict", Coroutine)
+        self.ConflictWidget = self:CreateWidgetAsync("ComItemConflict", CoroutineObj)
       end
       self.ConflictWidget.Text_SoldOut:SetText(Text)
       self:AddWidgetToNode(self.ConflictWidget)
@@ -869,14 +888,12 @@ function M:_SetItemConflictImpl(bConflict, Text)
       self:RemoveWidgetFromNode(self.ConflictWidget)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("ConflictWidget", "SetItemConflictTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetItemSold(bSold)
   self:AsyncLoadWidgetCommon("SoldWidget", "SetItemSoldTask", function(CoroutineObj)
     if bSold then
@@ -890,7 +907,6 @@ function M:SetItemSold(bSold)
     end
   end)
 end
-
 function M:SetItemMinus(bMinus)
   local function Callback(CoroutineObj)
     if bMinus then
@@ -902,35 +918,44 @@ function M:SetItemMinus(bMinus)
       self:RemoveWidgetFromNode(self.MinusWidget, true)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("MinusWidget", "SetItemMinusTask", Callback)
   else
     Callback()
   end
 end
-
-function M:SetItemMoney(CurrencyId, CurrencyNum)
+function M:SetItemMoney(CurrencyId, CurrencyNum, bShowAfterLoadComplete, CurrencyIcon)
   local function Callback(CoroutineObj)
-    if CurrencyId and CurrencyNum then
+    if (CurrencyId or CurrencyIcon) and CurrencyNum then
       self.MoneyWidget = self:GetOrCreateGroupWidget("ComItemMoney", CoroutineObj)
-      
-      self:LoadTextureAsync(DataMgr.Resource[CurrencyId].Icon, function(Texture)
+      if bShowAfterLoadComplete then
+        self.MoneyWidget.Img_Coin:SetVisibility(ESlateVisibility.Collapsed)
+        self.MoneyWidget.Text_Cost:SetVisibility(ESlateVisibility.Collapsed)
+      end
+      local IconPath
+      if CurrencyIcon then
+        IconPath = CurrencyIcon
+      else
+        IconPath = DataMgr.Resource[CurrencyId].Icon
+      end
+      self:LoadTextureAsync(IconPath, function(Texture)
         self.MoneyWidget.Img_Coin:SetBrushResourceObject(Texture)
         self.MoneyWidget.Text_Cost:SetText(CurrencyNum)
+        if bShowAfterLoadComplete then
+          self.MoneyWidget.Img_Coin:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+          self.MoneyWidget.Text_Cost:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+        end
       end, "SetItemMoney_LoadIcon")
     else
       self:RemoveGroupWidget("ComItemMoney")
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("MoneyWidget", "SetItemMoneyTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetItemSelect(bSelect)
   local function Callback(CoroutineObj)
     if bSelect then
@@ -942,14 +967,12 @@ function M:SetItemSelect(bSelect)
       self:RemoveWidgetFromNode(self.SelectWidget)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("SelectWidget", "SetItemSelectTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetItemSet(bSet, TipText)
   self:AsyncLoadWidgetCommon("SetWidget", "SetItemSetTask", function(CoroutineObj)
     if bSet then
@@ -963,7 +986,6 @@ function M:SetItemSet(bSet, TipText)
     end
   end)
 end
-
 function M:SetItemUnrevealed(bUnrevealed)
   self:AsyncLoadWidgetCommon("UnrevealedWidget", "SetItemUnrevealedTask", function(CoroutineObj)
     if bUnrevealed then
@@ -976,7 +998,6 @@ function M:SetItemUnrevealed(bUnrevealed)
     end
   end)
 end
-
 function M:SetItemLevelCard(LevelCardNum)
   self:AsyncLoadWidgetCommon("LevelCardWidget", "SetItemLevelCardTask", function(CoroutineObj)
     if LevelCardNum then
@@ -993,7 +1014,6 @@ function M:SetItemLevelCard(LevelCardNum)
     end
   end)
 end
-
 function M:SetItemStartLevel(StartLevelNum)
   self:AsyncLoadWidgetCommon("StartLevelWidget", "SetItemStartLevelTask", function(CoroutineObj)
     if StartLevelNum then
@@ -1004,7 +1024,6 @@ function M:SetItemStartLevel(StartLevelNum)
     end
   end)
 end
-
 function M:SetPhantomWeaponIcon(UnitId, IsPhantom)
   local function Callback(CoroutineObj)
     if IsPhantom then
@@ -1029,14 +1048,12 @@ function M:SetPhantomWeaponIcon(UnitId, IsPhantom)
       self:RemoveWidgetFromNode(self.PhantomWidget)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("PhantomWidget", "SetPhantomWeaponIconTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetAttrIcon(AttrIcon)
   self:AsyncLoadWidgetCommon("AttrIconWidget", "SetAttrIconTask", function(CoroutineObj)
     if AttrIcon then
@@ -1056,7 +1073,6 @@ function M:SetAttrIcon(AttrIcon)
     end
   end)
 end
-
 function M:SetTeamIcon(TeamIdx, CharId)
   self:AsyncLoadWidgetCommon(nil, "SetTeamIconTask", function(CoroutineObj)
     if not TeamIdx then
@@ -1097,7 +1113,6 @@ function M:SetTeamIcon(TeamIdx, CharId)
     self:AddWidgetToNode(self.TeamWidget)
   end)
 end
-
 function M:SetRareTag(bRare)
   self:AsyncLoadWidgetCommon("RareWidget", "SetRareTagTask", function(CoroutineObj)
     if bRare then
@@ -1110,7 +1125,6 @@ function M:SetRareTag(bRare)
     end
   end)
 end
-
 function M:SetInGear(bInGear)
   self:AsyncLoadWidgetCommon("InGearWidget", "SetInGearTask", function(CoroutineObj)
     if bInGear then
@@ -1123,7 +1137,6 @@ function M:SetInGear(bInGear)
     end
   end)
 end
-
 function M:SetTryOutText(TryOutText)
   self:AsyncLoadWidgetCommon("TryOutWidget", "SetTryOutTextTask", function(CoroutineObj)
     if TryOutText then
@@ -1138,12 +1151,10 @@ function M:SetTryOutText(TryOutText)
     end
   end)
 end
-
 function M:SetPetPremium(bPremium)
   local function Callback(CoroutineObj)
     if not self.Item then
-      DebugPrint(ErrorTag, "SetPetPremium::\230\178\161\230\156\137Item\230\142\167\228\187\182\228\184\141\231\172\166\229\144\136\233\128\154\231\148\168\233\129\147\229\133\183\230\161\134\231\187\147\230\158\132")
-      
+      DebugPrint(ErrorTag, "SetPetPremium::没有Item控件不符合通用道具框结构")
       return
     end
     local DynamicMat = self.Item.Item_BG:GetDynamicMaterial()
@@ -1157,12 +1168,9 @@ function M:SetPetPremium(bPremium)
       DynamicMat:SetScalarParameterValue("Colorful_Alpha", self.Item.Colorful_Normal)
     end
   end
-  
   self:AsyncLoadWidgetCommon("PetRareWidget", "SetPetPremiumTask", Callback)
 end
-
 local USE_ASYNC = false
-
 function M:AsyncLoadWidgetCommon(WidgetName, TaskName, Callback)
   if not self.ComItemAsyncTasks then
     self.ComItemAsyncTasks = {}
@@ -1170,18 +1178,15 @@ function M:AsyncLoadWidgetCommon(WidgetName, TaskName, Callback)
   if USE_ASYNC and (not (WidgetName and self.WidgetMap[self[WidgetName]]) or not IsValid(self[WidgetName])) then
     self.ComItemAsyncTasks[TaskName] = 1
     ForceStopAsyncTask(self, TaskName)
-    
     local function CallbackWrapper(CoroutineObj)
       Callback(CoroutineObj)
       self.ComItemAsyncTasks[TaskName] = nil
     end
-    
     RunAsyncTask(self, TaskName, CallbackWrapper)
   else
     Callback()
   end
 end
-
 function M:SetPetEntryId(PetEntries)
   local function Callback(CoroutineObj)
     if PetEntries then
@@ -1223,15 +1228,12 @@ function M:SetPetEntryId(PetEntries)
       self:ClearBackGroundHeight(true)
     end
   end
-  
   self:AsyncLoadWidgetCommon("PetEntryIdWidget", "SetPetEntryIdTask", Callback)
 end
-
 function M:SetPetStarLevel(PetStarLevel)
   local function Callback(CoroutineObj)
     if not self.Item then
-      DebugPrint(ErrorTag, "SetPetStarLevel::\230\178\161\230\156\137Item\230\142\167\228\187\182\228\184\141\231\172\166\229\144\136\233\128\154\231\148\168\233\129\147\229\133\183\230\161\134\231\187\147\230\158\132")
-      
+      DebugPrint(ErrorTag, "SetPetStarLevel::没有Item控件不符合通用道具框结构")
       return
     end
     if PetStarLevel > 0 then
@@ -1251,13 +1253,11 @@ function M:SetPetStarLevel(PetStarLevel)
       self:RemoveWidgetFromNode(self.PetStarLevelWidget)
     end
   end
-  
   self:AsyncLoadWidgetCommon("PetStarLevelWidget", "SetPetStarLevelTask", Callback)
 end
-
 function M:SetItemPolarity(Polarity, PolarityNum)
   local function Callback(CoroutineObj)
-    if Polarity then
+    if Polarity and (Polarity ~= CommonConst.NonePolarity or PolarityNum) then
       if not self.WidgetMap[self.PolarityWidget] then
         self.PolarityWidget = self:CreateWidgetAsync("ComItemPolarity", CoroutineObj)
       end
@@ -1275,19 +1275,16 @@ function M:SetItemPolarity(Polarity, PolarityNum)
       self:RemoveWidgetFromNode(self.PolarityWidget)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("PolarityWidget", "SetItemPolarityTask", Callback)
   else
     Callback()
   end
 end
-
 function M:SetAura(bAura)
   local function Callback(CoroutineObj)
     if self.ItemType == "Mod" and nil == bAura then
       local HaloMod = DataMgr.Mod[self.Id]
-      
       if HaloMod and HaloMod.ApplySlot and 1 == #HaloMod.ApplySlot and 9 == HaloMod.ApplySlot[1] then
         bAura = true
       end
@@ -1301,10 +1298,8 @@ function M:SetAura(bAura)
       self:RemoveWidgetFromNode(self.AuraWidget)
     end
   end
-  
   self:AsyncLoadWidgetCommon("AuraWidget", "SetAuraTask", Callback)
 end
-
 function M:GetOrCreateGroupWidget(WidgetName, CoroutineObj)
   if not self.ItemGroup then
     self.ItemGroup = self:CreateWidgetNew("ComItemGroup")
@@ -1312,7 +1307,6 @@ function M:GetOrCreateGroupWidget(WidgetName, CoroutineObj)
   self:AddWidgetToNode(self.ItemGroup)
   return self.ItemGroup:CreateAndAddWidgetAsyc(WidgetName, CoroutineObj)
 end
-
 function M:RemoveGroupWidget(WidgetName)
   if not self.ItemGroup then
     return
@@ -1323,27 +1317,29 @@ function M:RemoveGroupWidget(WidgetName)
     self:RemoveWidgetFromNode(self.ItemGroup)
   end
 end
-
 function M:SetTimeLimitData(TimeLimitData)
   local function Callback(CoroutineObj)
     if self.ItemType == "Resource" and DataMgr.LimitedTimeResource[self.Id] then
       local LimitedData = ItemUtils.GetItemLimitedInfo(self.Id)
-      
       if not LimitedData then
         self:RemoveWidgetFromNode(self.TimeLimitWidget)
         return
       end
+      local EndTime = LimitedData.EndTime
+      if type(EndTime) == "table" and EndTime.GetTime then
+        EndTime = EndTime.GetTime()
+      end
       local NowTime = TimeUtils.NowTime()
       if not self.WidgetMap[self.TimeLimitWidget] then
         self.TimeLimitWidget = self:CreateWidgetAsync("ComItemTimeLimit", CoroutineObj)
-        self:AddWidgetToNode(self.TimeLimitWidget)
       end
+      self:AddWidgetToNode(self.TimeLimitWidget)
       if self.bSmall then
         self.TimeLimitWidget.Text_Time:SetVisibility(ESlateVisibility.Collapsed)
       else
         self.TimeLimitWidget.Text_Time:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
       end
-      local diff = os.difftime(LimitedData.EndTime, NowTime)
+      local diff = os.difftime(EndTime, NowTime)
       if diff < 86400 then
         self.TimeLimitWidget.BG:SetColorAndOpacity(self.TimeLimitWidget.Color_Red)
       else
@@ -1366,28 +1362,26 @@ function M:SetTimeLimitData(TimeLimitData)
       self:RemoveWidgetFromNode(self.TimeLimitWidget)
     end
   end
-  
   if self.bAllUseAsyncLoadWidget then
     self:AsyncLoadWidgetCommon("TimeLimitWidget", "SetTimeLimitDataTask", Callback)
   else
     Callback()
   end
 end
-
 function M:AdjustBackGroundHeight(TextWidget, Reason)
   if not IsValid(TextWidget) then
     return
   end
-  DebugPrint(WarningTag, "AdjustBackGroundHeight::\231\156\139\231\156\139\229\142\159\229\155\160", Reason)
+  DebugPrint(WarningTag, "AdjustBackGroundHeight::看看原因", Reason)
   if 1 == TextWidget:GetVisibility() or 2 == TextWidget:GetVisibility() then
     return
   end
   if not TextWidget.GetTextWidget and not TextWidget.GetDesireWidget then
-    DebugPrint(ErrorTag, "AdjustBackGroundHeight::\228\188\160\229\133\165\231\154\132TextWidget\229\191\133\233\161\187\232\166\129\230\156\137GetTextWidget\229\146\140GetDesireWidget\230\142\165\229\143\163")
+    DebugPrint(ErrorTag, "AdjustBackGroundHeight::传入的TextWidget必须要有GetTextWidget和GetDesireWidget接口")
     return
   end
   if not self.Item then
-    DebugPrint(ErrorTag, "AdjustBackGroundHeight::\230\178\161\230\156\137Item\230\142\167\228\187\182\228\184\141\231\172\166\229\144\136\233\128\154\231\148\168\233\129\147\229\133\183\230\161\134\231\187\147\230\158\132")
+    DebugPrint(ErrorTag, "AdjustBackGroundHeight::没有Item控件不符合通用道具框结构")
     return
   end
   if self:IsExistTimer(self.AdjustBGTimer) then
@@ -1396,10 +1390,7 @@ function M:AdjustBackGroundHeight(TextWidget, Reason)
   self:DefaultBackGroundHeight()
   local Layout = TextWidget:GetDesireWidget()
   Layout:ForceLayoutPrePass()
-  local Interval = self.Content and self.Content.AdjustBackGroundHeightDelay or 0.05
-  if self.Content then
-    self.Content.AdjustBackGroundHeightDelay = nil
-  end
+  local Interval = 0.05
   local _, TimerKey = self:AddTimer(Interval, function()
     if not IsValid(TextWidget) then
       return
@@ -1407,7 +1398,7 @@ function M:AdjustBackGroundHeight(TextWidget, Reason)
     local Text = TextWidget:GetTextWidget()
     local Layout = TextWidget:GetDesireWidget()
     if not Text or not Layout then
-      DebugPrint(ErrorTag, "AdjustBackGroundHeight::GetTextWidget\229\146\140GetDesireWidget\230\142\165\229\143\163\228\184\141\232\131\189\232\191\148\229\155\158\231\169\186\231\154\132\229\128\188")
+      DebugPrint(ErrorTag, "AdjustBackGroundHeight::GetTextWidget和GetDesireWidget接口不能返回空的值")
       return
     end
     local DynamicMat = self.Item.Item_BG:GetDynamicMaterial()
@@ -1418,7 +1409,7 @@ function M:AdjustBackGroundHeight(TextWidget, Reason)
       DesireHeight = Layout:GetDesiredSize().Y
     end
     if 0 == DesireHeight then
-      DebugPrint(ErrorTag, "AdjustBackGroundHeight::\230\150\135\230\156\172\230\152\190\231\164\186\229\140\186\229\159\159\231\154\132\233\171\152\229\186\166\228\184\1860,\228\184\141\229\186\148\232\175\165\229\134\141\232\176\131\230\149\180\232\131\140\230\153\175\228\186\134")
+      DebugPrint(ErrorTag, "AdjustBackGroundHeight::文本显示区域的高度为0,不应该再调整背景了")
       self:ClearBackGroundHeight()
       return
     end
@@ -1431,14 +1422,13 @@ function M:AdjustBackGroundHeight(TextWidget, Reason)
   end)
   self.AdjustBGTimer = TimerKey
 end
-
 function M:DefaultBackGroundHeight()
   if not self.Item then
-    DebugPrint(ErrorTag, "DefaultBackGroundHeight::\230\178\161\230\156\137Item\230\142\167\228\187\182\228\184\141\231\172\166\229\144\136\233\128\154\231\148\168\233\129\147\229\133\183\230\161\134\231\187\147\230\158\132")
+    DebugPrint(ErrorTag, "DefaultBackGroundHeight::没有Item控件不符合通用道具框结构")
     return
   end
   if not self.Item.ComItemType then
-    DebugPrint(ErrorTag, Traceback(ErrorTag, "DefaultBackGroundHeight::Item\230\142\167\228\187\182\230\178\161\230\156\137ComItemType\229\143\152\233\135\143\230\158\154\228\184\190\230\157\165\230\143\143\232\191\176\233\129\147\229\133\183\230\161\134\231\177\187\229\158\139\239\188\140\233\156\128\232\166\129\230\137\190\232\147\157\229\155\190\229\138\160\228\184\128\228\184\170", true))
+    DebugPrint(ErrorTag, Traceback(ErrorTag, "DefaultBackGroundHeight::Item控件没有ComItemType变量枚举来描述道具框类型，需要找蓝图加一个", true))
     return
   end
   local DynamicMat = self.Item.Item_BG:GetDynamicMaterial()
@@ -1450,10 +1440,9 @@ function M:DefaultBackGroundHeight()
     self:_RealSetBottomBlackHeight(DynamicMat, self.Item.BottomBlack_L)
   end
 end
-
 function M:ClearBackGroundHeight(bForce)
   if not self.Item then
-    DebugPrint(ErrorTag, "ClearBackGroundHeight::\230\178\161\230\156\137Item\230\142\167\228\187\182\228\184\141\231\172\166\229\144\136\233\128\154\231\148\168\233\129\147\229\133\183\230\161\134\231\187\147\230\158\132")
+    DebugPrint(ErrorTag, "ClearBackGroundHeight::没有Item控件不符合通用道具框结构")
     return
   end
   if not self.bMaxHeight and not bForce then
@@ -1466,14 +1455,12 @@ function M:ClearBackGroundHeight(bForce)
   local DynamicMat = self.Item.Item_BG:GetDynamicMaterial()
   self:_RealSetBottomBlackHeight(DynamicMat, self.Item.BottomBlack_None)
 end
-
 function M:_RealSetBottomBlackHeight(DynamicMat, Height)
   DynamicMat:SetScalarParameterValue("BottomBlackHeight", Height)
   if self.OnSetBottomBlackHeight then
     self:OnSetBottomBlackHeight(Height)
   end
 end
-
 function M:CheckWidgetIsTop(Widget)
   if not IsValid(Widget) then
     return
@@ -1494,5 +1481,4 @@ function M:CheckWidgetIsTop(Widget)
   Slot:SetVerticalAlignment(EVerticalAlignment.HAlign_Fill)
   Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
 end
-
 return M

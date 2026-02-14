@@ -1,7 +1,6 @@
 local AvatarUtils = {}
 local BattleDumpUtils = require("BluePrints.Client.BattleDumpUtils")
 local CommonUtils = require("Utils.CommonUtils")
-
 function AvatarUtils:GetModCostInSuit_ExchangeMod(Avatar, Tag, Uuid, ModSuitIndex, SModSlotId, TModSlotId)
   local CurrentCost, ReducePolarityEffect, PolarityCount, ModSuit, Target = self:GetModCostInSuit_SwitchMod(Avatar, Tag, Uuid, ModSuitIndex)
   local SModSlotEid = ModSuit[SModSlotId]
@@ -20,14 +19,12 @@ function AvatarUtils:GetModCostInSuit_ExchangeMod(Avatar, Tag, Uuid, ModSuitInde
   end
   return math.max(0, CurrentCost - ExchangeBeforeCost + ExchangeAfterCost)
 end
-
 function AvatarUtils:GetModSlotCost(Target, ModSlotId, Mod)
   local SlotPolarity = Target.ModSlotPolarity[ModSlotId]
   local ModCost = Mod.Cost
   local ModPolarity = Mod.Polarity
   return self:GetModSlotCostImpl(ModPolarity, ModCost, SlotPolarity)
 end
-
 function AvatarUtils:GetModSlotCostImpl(ModPolarity, ModCost, SlotPolarity)
   if SlotPolarity <= 0 then
     return ModCost
@@ -40,7 +37,6 @@ function AvatarUtils:GetModSlotCostImpl(ModPolarity, ModCost, SlotPolarity)
     return ModCost
   end
 end
-
 function AvatarUtils:GetModCostInSuit_ChangeMod(Avatar, Tag, Uuid, ModSuitIndex, TargetSlotId, NewMod)
   local Res, Cost, ReducePolarityEffect, PolarityCount, ModSuit, Target = self:CheckGetModCostInSuit(Avatar, Tag, Uuid, ModSuitIndex)
   if not Res then
@@ -69,7 +65,6 @@ function AvatarUtils:GetModCostInSuit_ChangeMod(Avatar, Tag, Uuid, ModSuitIndex,
   end
   return math.max(0, Cost)
 end
-
 function AvatarUtils:CheckGetModCostInSuit(Avatar, Tag, Uuid, ModSuitIndex)
   local Property
   local ReducePolarityEffect = {}
@@ -92,7 +87,6 @@ function AvatarUtils:CheckGetModCostInSuit(Avatar, Tag, Uuid, ModSuitIndex)
   end
   return true, Cost, ReducePolarityEffect, PolarityCount, ModSuit, Property
 end
-
 function AvatarUtils:GetModCostInSuit_SwitchMod(Avatar, Tag, Uuid, ModSuitIndex, OldMod, NewMod, InitializeFunc)
   InitializeFunc = InitializeFunc or self.CheckGetModCostInSuit
   local Res, Cost, ReducePolarityEffect, PolarityCount, ModSuit, Target = InitializeFunc(self, Avatar, Tag, Uuid, ModSuitIndex)
@@ -131,7 +125,6 @@ function AvatarUtils:GetModCostInSuit_SwitchMod(Avatar, Tag, Uuid, ModSuitIndex,
   end
   return math.max(0, Cost), ReducePolarityEffect, ReducePolarityEffect, ModSuit, Target
 end
-
 function AvatarUtils:GetModCostInSuit_TakeOffMod(Avatar, Tag, Uuid, ModSuitIndex, TargetSlotId)
   local Res, Cost, ReducePolarityEffect, PolarityCount, ModSuit, Target = self:CheckGetModCostInSuit(Avatar, Tag, Uuid, ModSuitIndex)
   local ExtraVolume = 0
@@ -155,7 +148,6 @@ function AvatarUtils:GetModCostInSuit_TakeOffMod(Avatar, Tag, Uuid, ModSuitIndex
   end
   return math.max(0, Cost), ReducePolarityEffect, PolarityCount, ExtraVolume
 end
-
 function AvatarUtils:CalcReduceMod(Mod, ReducePolarityEffect, PolarityCount)
   if Mod then
     if Mod.ReducePolarityEffect then
@@ -167,7 +159,6 @@ function AvatarUtils:CalcReduceMod(Mod, ReducePolarityEffect, PolarityCount)
     Mod:CountModPolarity(PolarityCount)
   end
 end
-
 function AvatarUtils:GetProperty(Avatar, Tag, Uuid)
   local Property
   if "Char" == Tag then
@@ -182,7 +173,17 @@ function AvatarUtils:GetProperty(Avatar, Tag, Uuid)
   end
   return true, Property
 end
-
+function AvatarUtils:IsHaveModRepeatGroup(SourceRepeatGroup, TargetRepeatGroup)
+  if not SourceRepeatGroup or not TargetRepeatGroup then
+    return false
+  end
+  for _, RepeatGroupId in ipairs(TargetRepeatGroup) do
+    if CommonUtils.HasValue(SourceRepeatGroup, RepeatGroupId) then
+      return true
+    end
+  end
+  return false
+end
 function AvatarUtils:CheckChangeModRepeat(Avatar, Tag, Uuid, ModSuitIndex, TargetModSlotId, ModUuid, ModSuit)
   local res, Property = self:GetProperty(Avatar, Tag, Uuid)
   if not res then
@@ -197,8 +198,8 @@ function AvatarUtils:CheckChangeModRepeat(Avatar, Tag, Uuid, ModSuitIndex, Targe
   local SuitModIds = {}
   for ModSlotId, ModSlotEid in pairs(ModSuit) do
     local Mod = Avatar.Mods[ModSlotEid]
-    if Mod and Mod.RepeatGroup == TargetMod.RepeatGroup then
-      if TargetModSlotId ~= ModSlotId and Mod.IsOriginal and TargetMod.IsOriginal and Mod.ModId == TargetMod.ModId then
+    if Mod and self:IsHaveModRepeatGroup(Mod.RepeatGroup, TargetMod.RepeatGroup) then
+      if TargetModSlotId ~= ModSlotId and Mod.IsOriginal and TargetMod.IsOriginal then
         if skynet then
           return false
         else
@@ -210,13 +211,7 @@ function AvatarUtils:CheckChangeModRepeat(Avatar, Tag, Uuid, ModSuitIndex, Targe
   end
   for ModSlotId, Mod in pairs(SuitModIds) do
     if ModSlotId ~= TargetModSlotId then
-      if Mod.ModId ~= TargetMod.ModId then
-        if skynet then
-          return false
-        else
-          table.insert(ConflictMods, Mod)
-        end
-      else
+      if Mod.ModId == TargetMod.ModId or Mod.ModId ~= TargetMod.ModId and self:IsHaveModRepeatGroup(Mod.RepeatGroup, TargetMod.RepeatGroup) then
         if TargetMod.RepeatModLevel == nil or TargetMod.RepeatModLevel <= 0 then
           if skynet then
             return false
@@ -243,6 +238,10 @@ function AvatarUtils:CheckChangeModRepeat(Avatar, Tag, Uuid, ModSuitIndex, Targe
             end
           end
         end
+      elseif skynet then
+        return false
+      else
+        table.insert(ConflictMods, Mod)
       end
     end
   end
@@ -252,11 +251,9 @@ function AvatarUtils:CheckChangeModRepeat(Avatar, Tag, Uuid, ModSuitIndex, Targe
     return table.isempty(ConflictMods), ConflictMods
   end
 end
-
 function AvatarUtils:CheckModRepeat(Avatar, Tag, Uuid, ModSuitIndex, ModUuid, ModSuit)
   return self:CheckChangeModRepeat(Avatar, Tag, Uuid, ModSuitIndex, nil, ModUuid, ModSuit)
 end
-
 function AvatarUtils:HasAvatarStatusChanged(OldStatus, NewStatus, StateEnum)
   OldStatus = OldStatus or {}
   if type(StateEnum) == "number" then
@@ -271,7 +268,6 @@ function AvatarUtils:HasAvatarStatusChanged(OldStatus, NewStatus, StateEnum)
     end
   end
 end
-
 function AvatarUtils:GetAttrNameFromAttrData(AttrData, UniqueName)
   local AttrName = AttrData.AttrName
   if "DamageRate" == AttrName or "DamagedRate" == AttrName then
@@ -287,23 +283,18 @@ function AvatarUtils:GetAttrNameFromAttrData(AttrData, UniqueName)
   end
   return AttrName
 end
-
 function AvatarUtils:IsStorylineComplete(Avatar, TalkTriggerId)
   return AvatarUtils:IsStorylineSuccess(Avatar, TalkTriggerId) or AvatarUtils:IsStorylineFailure(Avatar, TalkTriggerId)
 end
-
 function AvatarUtils:IsStorylineUnComplete(Avatar, TalkTriggerId)
   return not AvatarUtils:IsStorylineComplete(Avatar, TalkTriggerId)
 end
-
 function AvatarUtils:IsStorylineSuccess(Avatar, TalkTriggerId)
   return Avatar.ImpressionTalkTriggers[TalkTriggerId] == CommonConst.ImpressionCheckType.Success
 end
-
 function AvatarUtils:IsStorylineFailure(Avatar, TalkTriggerId)
   return Avatar.ImpressionTalkTriggers[TalkTriggerId] == CommonConst.ImpressionCheckType.Failed
 end
-
 function AvatarUtils:GetDefaultBattleInfo(...)
   local Info = BattleDumpUtils:GetDefaultBattleInfo(...)
   if Info then
@@ -311,13 +302,11 @@ function AvatarUtils:GetDefaultBattleInfo(...)
   end
   return Info
 end
-
 function AvatarUtils:GetCurrentBattleInfo(...)
   return {
     CharacterInfo = BattleDumpUtils:GetDefaultBattleInfo(...)
   }
 end
-
 function AvatarUtils:GetDefaultAvatarInfo()
   local DefaulAvatarInfo = {
     RoleId = Const.DefaultRoleId
@@ -334,31 +323,24 @@ function AvatarUtils:GetDefaultAvatarInfo()
   end
   return DefaulAvatarInfo
 end
-
 function AvatarUtils:GetPhantomBattleInfo(...)
   return BattleDumpUtils:GetPhantomBattleInfo(...)
 end
-
 function AvatarUtils:GetCharBattleInfo(...)
   return BattleDumpUtils:GetCharBattleInfo(...)
 end
-
 function AvatarUtils:GetWeaponBattleInfo(...)
   return BattleDumpUtils:GetWeaponBattleInfo(...)
 end
-
 function AvatarUtils:GetBattleInfoByQuestRoleId(...)
   return BattleDumpUtils:GetBattleInfoByQuestRoleId(...)
 end
-
 function AvatarUtils:GetSquadInfoByQuestRoleId(...)
   return BattleDumpUtils:GetSquadInfoByQuestRoleId(...)
 end
-
 function AvatarUtils:UpdateBattleInfo(...)
   return BattleDumpUtils:UpdateBattleInfo(...)
 end
-
 function AvatarUtils:GetAbyssBattleInfo(Avatar, Char, MeleeWeapon, RangedWeapon, PhantomChar1, PhantomWeapon1, PhantomChar2, PhantomWeapon2, Pet)
   if not Avatar then
     return
@@ -385,13 +367,13 @@ function AvatarUtils:GetAbyssBattleInfo(Avatar, Char, MeleeWeapon, RangedWeapon,
   AvatarBattleInfo.PhantomInfo2 = self:GetPhantomBattleInfo(Avatar, PhantomChar2, PhantomWeapon2, Pet)
   return AvatarBattleInfo
 end
-
 function AvatarUtils:ReShapeSquadInfo(Avatar, Squad)
   local Info = {
     Char = Avatar.Chars[Squad.Char],
     CharModSuit = Squad.ModSuit,
     MeleeWeapon = Avatar.Weapons[Squad.MeleeWeapon],
     MeleeWeaponModSuit = Squad.MeleeWeaponModSuit,
+    MeleeWeaponModSuitSecondary = Squad.MeleeWeaponModSuitSecondary,
     RangedWeapon = Avatar.Weapons[Squad.RangedWeapon],
     RangedWeaponModSuit = Squad.RangedWeaponModSuit,
     Pet = Avatar.Pets[Squad.Pet],
@@ -406,7 +388,6 @@ function AvatarUtils:ReShapeSquadInfo(Avatar, Squad)
   end
   return Info
 end
-
 function AvatarUtils:GetSquadBattleInfo(Avatar, Squad, bNotUseUWeapon)
   if not Avatar or not Squad then
     return
@@ -422,7 +403,6 @@ function AvatarUtils:GetSquadBattleInfo(Avatar, Squad, bNotUseUWeapon)
   AvatarBattleInfo.PhantomInfo2 = self:GetPhantomBattleInfo(Avatar, PhantomChar2, PhantomWeapon2, Pet, bNotUseUWeapon)
   return AvatarBattleInfo
 end
-
 function AvatarUtils:GetWeaponDetails(WeaponId, Level)
   local WeaponInfo = {
     WeaponId = WeaponId,
@@ -440,7 +420,6 @@ function AvatarUtils:GetWeaponDetails(WeaponId, Level)
   local WeaponDetails = Weapon:BattleDump(Avatar)
   return WeaponDetails
 end
-
 function AvatarUtils:GetTargetModSuit(Target, ModSuitIndex)
   if not Target then
     return nil
@@ -454,33 +433,28 @@ function AvatarUtils:GetTargetModSuit(Target, ModSuitIndex)
   end
   return Target[ParamsName]
 end
-
 function AvatarUtils:SetModSlotPolarity(Target, ModSlotId, Polarity)
   if Target and Target.ModSlotPolarity and ModSlotId and Target.ModSlotPolarity[ModSlotId] then
     Target.ModSlotPolarity[ModSlotId] = Polarity
   end
 end
-
 function AvatarUtils:GetModSlotPolarity(Target, ModSlotId)
   if Target and Target.ModSlotPolarity and ModSlotId and Target.ModSlotPolarity[ModSlotId] then
     return Target.ModSlotPolarity[ModSlotId]
   end
   return CommonConst.NonePolarity
 end
-
 function AvatarUtils:ModSlotIsUnLock(Target, ModSlotId)
   if nil ~= Target and nil ~= Target.ModSlotStatus and nil ~= ModSlotId and nil ~= Target.ModSlotStatus[ModSlotId] then
     return Target.ModSlotStatus[ModSlotId] == CommonConst.CommonStatus.UnLock
   end
   return false
 end
-
 function AvatarUtils:UnLockModSlot(Target, ModSlotId)
   if Target and Target.ModSlotStatus and ModSlotId and Target.ModSlotStatus[ModSlotId] then
     Target.ModSlotStatus[ModSlotId] = CommonConst.CommonStatus.UnLock
   end
 end
-
 function AvatarUtils:GenerateModSuitInfo(Avatar, Tag, Eid, ModSuitIndex)
   local Target, TargetInfo
   if "Char" == Tag then
@@ -560,7 +534,6 @@ function AvatarUtils:GenerateModSuitInfo(Avatar, Tag, Eid, ModSuitIndex)
   ModSuitInfo.ModsInfo = ModsInfo
   return ModSuitInfo
 end
-
 function AvatarUtils:InitModInfo(Avatar, Info, Target)
   if Info.ModData then
     return
@@ -590,7 +563,6 @@ function AvatarUtils:InitModInfo(Avatar, Info, Target)
   Info.SlotData = SlotData
   Info.ModData = ModData
 end
-
 function AvatarUtils:DumpModData(Info)
   if not Info.ModData then
     return
@@ -619,7 +591,6 @@ function AvatarUtils:DumpModData(Info)
   end
   return DumpedModData
 end
-
 function AvatarUtils:RebuildModSuit(Target)
   if skynet then
     return
@@ -636,7 +607,6 @@ function AvatarUtils:RebuildModSuit(Target)
   Target.ModSuits = ModSuits
   Target.ModSuitsCostMap = CustomTypes.Int2IntDict()
 end
-
 function AvatarUtils:CalculateFishPrice(FishResourceId, FishSize)
   if not FishResourceId then
     return 0
@@ -665,7 +635,6 @@ function AvatarUtils:CalculateFishPrice(FishResourceId, FishSize)
   local FinalPrice = Price + Stage * PriceOnWeight[3]
   return FinalPrice
 end
-
 function AvatarUtils:GetTargetDataStatistics(Avatar, TargetType, TargetId)
   if not (Avatar and TargetId) or not TargetType then
     return 0
@@ -679,7 +648,6 @@ function AvatarUtils:GetTargetDataStatistics(Avatar, TargetType, TargetId)
   end
   return Avatar.DataStatistics[TargetType .. TargetId] or 0
 end
-
 function AvatarUtils:GetPlayerPersonalInfoChar(Avatar, FromDb)
   local PlayerPersonalInfoChar = {}
   if Avatar.PersonalInfo and Avatar.PersonalInfo.CharDisplay then
@@ -729,16 +697,29 @@ function AvatarUtils:GetPlayerPersonalInfoChar(Avatar, FromDb)
         if FromDb then
           CharSkin = CommonChar.OwnedSkins[tostring(SkinId)]
         end
+        local HairId = AppearanceSuit and AppearanceSuit.HairId
+        local CharHair = CommonChar.OwnedHairs[HairId]
+        if FromDb then
+          CharHair = CommonChar.OwnedHairs[tostring(HairId)]
+        end
         local Appearance = {
           SkinId = SkinId,
+          HairId = HairId,
           Accessory = AppearanceSuit and AppearanceSuit.Accessory or {},
-          CurrentPlanIndex = CharSkin.CurrentPlanIndex or 1
+          CurrentPlanIndex = CharSkin.CurrentPlanIndex or 1,
+          CurrentHairPlanIndex = CharHair.CurrentPlanIndex or 1
         }
         for key, value in pairs(CharSkin.Colors) do
           if not Appearance.SkinColors then
             Appearance.SkinColors = {}
           end
           Appearance.SkinColors[tonumber(key)] = value
+        end
+        for key, value in pairs(CharHair.Colors) do
+          if not Appearance.HairColors then
+            Appearance.HairColors = {}
+          end
+          Appearance.HairColors[tonumber(key)] = value
         end
         local ModSuitIndex = value.ModPlan or 1
         local ModSuit = Char["ModSuit_" .. ModSuitIndex]
@@ -775,7 +756,6 @@ function AvatarUtils:GetPlayerPersonalInfoChar(Avatar, FromDb)
   end
   return PlayerPersonalInfoChar
 end
-
 function AvatarUtils:GetPlayerPersonalInfoWeapon(Avatar, FromDb)
   local PlayerPersonalInfoWeapon = {}
   if Avatar.PersonalInfo and Avatar.PersonalInfo.WeaponDisplay then
@@ -841,7 +821,6 @@ function AvatarUtils:GetPlayerPersonalInfoWeapon(Avatar, FromDb)
   end
   return PlayerPersonalInfoWeapon
 end
-
 function AvatarUtils:GetAbyssSeasonMaxProgress(Avatar, FromDb)
   local SeasonId = Avatar.CurrentAbyssSeasonId or -1
   local Abysses = Avatar.Abysses
@@ -856,31 +835,38 @@ function AvatarUtils:GetAbyssSeasonMaxProgress(Avatar, FromDb)
       if FromDb then
         Abyss = Abysses[tostring(AbyssId)]
       end
-      local MaxLevel = #Info.AbyssLevelId
-      local IsAbyssNotPass = true
-      local MaxAbyssProgress = Abyss.MaxAbyssProgress or {1, 0}
-      if MaxLevel > MaxAbyssProgress[1] then
-        IsAbyssNotPass = true
+      if Abyss then
+        local MaxLevel = #Info.AbyssLevelId
+        local IsAbyssNotPass = true
+        local MaxAbyssProgress = Abyss.MaxAbyssProgress or {1, 0}
+        if MaxLevel > MaxAbyssProgress[1] then
+          IsAbyssNotPass = true
+        else
+          local LastAbyssLevelId = Info.AbyssLevelId[#Info.AbyssLevelId]
+          local LevelInfo = DataMgr.AbyssLevel[LastAbyssLevelId]
+          local LevelRoomCount = 0
+          if LevelInfo.AbyssDungeon1 then
+            local DungeonInfo = DataMgr.AbyssDungeon[LevelInfo.AbyssDungeon1]
+            LevelRoomCount = LevelRoomCount + #DungeonInfo.RoomId
+          end
+          if LevelInfo.AbyssDungeon2 then
+            local DungeonInfo = DataMgr.AbyssDungeon[LevelInfo.AbyssDungeon2]
+            LevelRoomCount = LevelRoomCount + #DungeonInfo.RoomId
+          end
+          if MaxAbyssProgress[2] == LevelRoomCount then
+            IsAbyssNotPass = false
+          end
+        end
+        if not (not IsAbyssNotPass and SeasonId) or not DataMgr.AbyssSeasonList[SeasonId] then
+          Progress[1] = Info.AbyssType
+          Progress[2] = MaxAbyssProgress[1]
+          Progress[3] = self:CalculateAbyssAllRoomCount(Abyss)
+          return Progress
+        end
       else
-        local LastAbyssLevelId = Info.AbyssLevelId[#Info.AbyssLevelId]
-        local LevelInfo = DataMgr.AbyssLevel[LastAbyssLevelId]
-        local LevelRoomCount = 0
-        if LevelInfo.AbyssDungeon1 then
-          local DungeonInfo = DataMgr.AbyssDungeon[LevelInfo.AbyssDungeon1]
-          LevelRoomCount = LevelRoomCount + #DungeonInfo.RoomId
-        end
-        if LevelInfo.AbyssDungeon2 then
-          local DungeonInfo = DataMgr.AbyssDungeon[LevelInfo.AbyssDungeon2]
-          LevelRoomCount = LevelRoomCount + #DungeonInfo.RoomId
-        end
-        if MaxAbyssProgress[2] == LevelRoomCount then
-          IsAbyssNotPass = false
-        end
-      end
-      if not (not IsAbyssNotPass and SeasonId) or not DataMgr.AbyssSeasonList[SeasonId] then
         Progress[1] = Info.AbyssType
-        Progress[2] = MaxAbyssProgress[1]
-        Progress[3] = self:CalculateAbyssAllRoomCount(Abyss)
+        Progress[2] = 1
+        Progress[3] = 0
         return Progress
       end
     end
@@ -916,7 +902,6 @@ function AvatarUtils:GetAbyssSeasonMaxProgress(Avatar, FromDb)
   end
   return Progress
 end
-
 function AvatarUtils:CalculateAbyssAllRoomCount(Abyss)
   local AllPassRoomCount = 0
   local MaxAbyssProgress = Abyss.MaxAbyssProgress or {1, 0}
@@ -928,7 +913,6 @@ function AvatarUtils:CalculateAbyssAllRoomCount(Abyss)
   end
   return AllPassRoomCount + MaxAbyssProgress[2]
 end
-
 function AvatarUtils:GetPlayerPersonalInfoWeaponCount(Avatar)
   local MeleeWeaponCount = 0
   local RangedWeaponCount = 0
@@ -945,7 +929,6 @@ function AvatarUtils:GetPlayerPersonalInfoWeaponCount(Avatar)
   end
   return MeleeWeaponCount, RangedWeaponCount
 end
-
 function AvatarUtils:GetPlayerPersonalInfoCharSkinCount(Avatar)
   local CharSkinCount = 0
   for _, CommonChar in pairs(Avatar.CommonChars) do
@@ -957,7 +940,6 @@ function AvatarUtils:GetPlayerPersonalInfoCharSkinCount(Avatar)
   CharSkinCount = CharSkinCount - CommonUtils.TableLength(Avatar.Chars)
   return CharSkinCount
 end
-
 function AvatarUtils:GetPlayerPersonalInfoRougeLikeProgress(Avatar)
   local TimeUtils
   if GWorld:IsSkynetServer() then
@@ -983,7 +965,6 @@ function AvatarUtils:GetPlayerPersonalInfoRougeLikeProgress(Avatar)
   end
   return Progress
 end
-
 function AvatarUtils:GetPlayerPersonalInfoAchievementCount(Avatar, FromDb)
   local Achievement_Array = {}
   local Achievement_Count = 0
@@ -1003,7 +984,6 @@ function AvatarUtils:GetPlayerPersonalInfoAchievementCount(Avatar, FromDb)
   end
   return Achievement_Array, Achievement_Count
 end
-
 function AvatarUtils:IsAchvFinished(Achv, FromDb)
   local AchvInfo = DataMgr.Achievement[Achv.AchvId]
   local FinishCount = 0
@@ -1019,7 +999,6 @@ function AvatarUtils:IsAchvFinished(Achv, FromDb)
   end
   return false
 end
-
 function AvatarUtils:IsAchvLocked(Avatar, AchvId, FromDb)
   local AchvInfo = DataMgr.Achievement[AchvId]
   if not AchvInfo.AchievementRequire then
@@ -1033,7 +1012,6 @@ function AvatarUtils:IsAchvLocked(Avatar, AchvId, FromDb)
   end
   return false
 end
-
 function AvatarUtils:HandleActiveRandomCreator(RandomRuleId, ParamsNum, ProportionList)
   local ClientRes = {}
   ProportionList = ProportionList or {}
@@ -1046,11 +1024,10 @@ function AvatarUtils:HandleActiveRandomCreator(RandomRuleId, ParamsNum, Proporti
   if 1 == ClientRes.RuleType then
     ClientRes.UnitId, ClientRes.Level, ClientRes.CurrentTableId = self:GetRandomRuleType_One(RandomRuleInfo)
   else
-    ClientRes.UnitId, ClientRes.Level, ClientRes.CurrentTableId = self:GetRandomRuleType_Two(RandomRuleInfo, ParamsNum, ProportionList or {})
+    ClientRes.UnitId, ClientRes.Level, ClientRes.CurrentTableId = self:GetRandomRuleType_Two(RandomRuleInfo, ParamsNum, ProportionList)
   end
   return true, ClientRes
 end
-
 function AvatarUtils:GetRandomRuleType_Two(RandomRuleInfo, ParamsNum, ProportionList)
   local UnitInfoWeight = {}
   local UnitLevel = {}
@@ -1067,27 +1044,28 @@ function AvatarUtils:GetRandomRuleType_Two(RandomRuleInfo, ParamsNum, Proportion
     UnitIdToTableId[ActorInfo.UnitId] = MaxTableId
   end
   local Count = math.min(RandomRuleInfo.Count, ParamsNum)
-  
   local function GetRandomRes()
     local CurrentTableId = 1
     for Id, Num in pairs(UnitInfoWeight) do
-      if nil == ProportionList[Id] then
-        ProportionList[Id] = 0
+      if ProportionList[RandomRuleInfo.RandomId] == nil then
+        ProportionList[RandomRuleInfo.RandomId] = {}
       end
-      if ProportionList[Id] ~= math.floor(Num / WeightSum * Count) then
-        ProportionList[Id] = ProportionList[Id] + 1
+      if ProportionList[RandomRuleInfo.RandomId][Id] == nil then
+        ProportionList[RandomRuleInfo.RandomId][Id] = 0
+      end
+      if ProportionList[RandomRuleInfo.RandomId][Id] ~= math.floor(Num / WeightSum * Count) then
+        ProportionList[RandomRuleInfo.RandomId][Id] = ProportionList[RandomRuleInfo.RandomId][Id] + 1
         return Id, UnitLevel[Id], UnitIdToTableId[Id]
       end
       CurrentTableId = CurrentTableId + 1
       if CurrentTableId > MaxTableId then
-        return UnitIdList[CurrentTableId], UnitLevel[Id], math.random(1, MaxTableId)
+        CurrentTableId = math.random(1, MaxTableId)
+        return UnitIdList[CurrentTableId], UnitLevel[Id], CurrentTableId
       end
     end
   end
-  
   return GetRandomRes()
 end
-
 function AvatarUtils:GetRandomRuleType_One(RandomRuleInfo)
   local UnitInfoWeight = {}
   local UnitLevel = {}
@@ -1101,7 +1079,6 @@ function AvatarUtils:GetRandomRuleType_One(RandomRuleInfo)
     MaxTableId = MaxTableId + 1
     UnitIdToTableId[ActorInfo.UnitId] = MaxTableId
   end
-  
   local function GetRandomRes()
     for UnitId, Weight in pairs(UnitInfoWeight) do
       local RandomNumber = math.random(1, WeightSum)
@@ -1111,8 +1088,96 @@ function AvatarUtils:GetRandomRuleType_One(RandomRuleInfo)
       WeightSum = WeightSum - Weight
     end
   end
-  
   return GetRandomRes()
 end
-
+function AvatarUtils:GetRaidSeasonMaxScore(Avatar)
+  local RaidSeasonId = Avatar.CurrentRaidSeasonId
+  local RaidSeasonInfo = Avatar.RaidSeasons[RaidSeasonId]
+  if not RaidSeasonInfo then
+    return 0
+  end
+  return RaidSeasonInfo.MaxRaidScore
+end
+function AvatarUtils:GetFishCurrentPeriod(Avatar)
+  local CurPeriod
+  if not Avatar.TimeOfDay then
+    return 0
+  end
+  if Avatar.TimeOfDay >= 4 and Avatar.TimeOfDay < 12 then
+    CurPeriod = 1
+  elseif Avatar.TimeOfDay >= 12 and Avatar.TimeOfDay < 20 then
+    CurPeriod = 2
+  else
+    CurPeriod = 3
+  end
+  return CurPeriod
+end
+function AvatarUtils:GetRaidSeasonMaxScrSquad(Avatar, FromDb)
+  local RaidSeasonId = Avatar.CurrentRaidSeasonId
+  if not RaidSeasonId then
+    return
+  end
+  local RaidSeasonInfo = Avatar.RaidSeasons[RaidSeasonId]
+  if FromDb then
+    RaidSeasonInfo = Avatar.RaidSeasons[tostring(RaidSeasonId)]
+  end
+  if not RaidSeasonInfo then
+    return
+  end
+  return RaidSeasonInfo.MaxSquad
+end
+function AvatarUtils:GetCurCharRankInfo(Avatar, FromDb)
+  local CurChar = Avatar.CurrentChar
+  local Char = Avatar.Chars[CurChar]
+  if not Char then
+    return {}
+  end
+  local CurrentAppearanceIndex = Char.CurrentAppearanceIndex or 1
+  local AppearanceSuit = Char.AppearanceSuits[CurrentAppearanceIndex]
+  local CommonChar = Avatar.CommonChars[Char.CharId]
+  if FromDb then
+    CommonChar = Avatar.CommonChars[tostring(Char.CharId)]
+  end
+  local SkinId = AppearanceSuit and AppearanceSuit.SkinId
+  local CharSkin = CommonChar.OwnedSkins[SkinId]
+  if FromDb then
+    CharSkin = CommonChar.OwnedSkins[tostring(SkinId)]
+  end
+  local SkinColors = {}
+  for key, value in ipairs(CharSkin.Colors) do
+    SkinColors[tonumber(key)] = value
+    break
+  end
+  return {
+    CharId = Char.CharId,
+    SkinId = SkinId,
+    Accessory = AppearanceSuit and AppearanceSuit.Accessory or {},
+    SkinColors = SkinColors
+  }
+end
+function AvatarUtils:GetCurWeaponRankInfo(Avatar, FromDb)
+  local CurWeapon = Avatar.MeleeWeapon
+  local Weapon = Avatar.Weapons[CurWeapon]
+  if not Weapon then
+    return {}
+  end
+  local CurrentAppearanceIndex = Weapon.CurrentAppearanceIndex or 1
+  local AppearanceSuit = Weapon.AppearanceSuits[CurrentAppearanceIndex]
+  local SkinId = AppearanceSuit and AppearanceSuit.SkinId or Weapon.WeaponId
+  local WeaponSkin = Weapon.UsedSkins[SkinId]
+  if FromDb then
+    WeaponSkin = Weapon.UsedSkins[tostring(SkinId)]
+  end
+  local SkinColors = {}
+  for key, value in ipairs(WeaponSkin.Colors) do
+    SkinColors[tonumber(key)] = value
+    break
+  end
+  return {
+    WeaponId = Weapon.WeaponId,
+    SkinId = SkinId,
+    Accessory = AppearanceSuit and AppearanceSuit.Accessory or {},
+    SkinColors = SkinColors
+  }
+end
 return AvatarUtils

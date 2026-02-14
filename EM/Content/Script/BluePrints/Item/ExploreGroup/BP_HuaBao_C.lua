@@ -2,21 +2,16 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/ExploreGroup/BP_DongGuoBreakableItem_C"
 })
-
 function M:OnPlayerIn(Player)
   if not self.IsActive then
     return
   end
-  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-  if GameMode then
-    local WCSubsystem = GameMode.WorldCompositionSubSystem
-    if WCSubsystem and WCSubsystem:IsAsyncTraveling() then
-      return
-    end
+  local WCSubsystem = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE4.UWorldCompositionSubSystem)
+  if WCSubsystem and WCSubsystem:IsAsyncTraveling() then
+    return
   end
   self:OnPlayerStay(Player.Eid, nil, Player:GetCharacterTag())
 end
-
 function M:OnPlayerStay(PlayerEid, OldTag, NewTag)
   local Player = Battle(self):GetEntity(PlayerEid)
   if IsValid(Player) == false then
@@ -28,21 +23,17 @@ function M:OnPlayerStay(PlayerEid, OldTag, NewTag)
     self:LaunchPlayer(Player)
   end
 end
-
 function M:OnSpecialBulletHitted(SourceEid)
   self:ChangeState("Hit", SourceEid)
 end
-
 function M:ActiveCombat()
   self.Super.ActiveCombat(self)
   self:OnActiveEffect()
 end
-
 function M:DeActiveCombat()
   self.Super.DeActiveCombat(self)
   self:OnDeactiveEffect()
 end
-
 function M:LaunchPlayer(Player)
   if not self.IsCdOver then
     return
@@ -67,5 +58,4 @@ function M:LaunchPlayer(Player)
     GameMode:TriggerDungeonAchieve("PlayerUsePad", Player.Eid)
   end
 end
-
 return M

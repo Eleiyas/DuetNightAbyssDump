@@ -6,20 +6,16 @@ local M = Class()
 M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
-
 function M:Construct()
   self.Super.Construct(self)
 end
-
 function M:ModifySortWidgetParams(Params)
 end
-
 function M:OnBackKeyDown()
   AudioManager(self):SetEventSoundParam(self, "PetIndex", {ToEnd = 1})
   self.PetEntryAchive:PlayAnimation(self.PetEntryAchive.Auto_Out)
   self:Close()
 end
-
 function M:InitComp(SelectedPetEntryID)
   self.SelectedPetEntryID = SelectedPetEntryID
   self.Btn_Close:Init("Close", self, self.OnBackKeyDown)
@@ -31,6 +27,7 @@ function M:InitComp(SelectedPetEntryID)
   ContentOverlaySlot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   self.HB_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Tab_Archive:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Text_Title:SetText(GText("Pet_Affix_Archive"))
   self.PetEntryAchive.Text_Lock:SetText(GText("Pet_Affix_AutoLock"))
   self.PetEntryAchive.Text_Hold:SetText(GText("Pet_Affix_Hold"))
   self.PetEntryAchive.List_Item.BP_OnItemClicked:Add(self, self.OnItemClicked)
@@ -61,13 +58,11 @@ function M:InitComp(SelectedPetEntryID)
     self.PetEntryAchive.Key_Lock:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:LockPetEntry(IsChecked, LockBagPet)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
-  
   local function Cb(ErrCode)
     if 0 == ErrCode then
       local Avatar = GWorld:GetAvatar()
@@ -89,11 +84,9 @@ function M:LockPetEntry(IsChecked, LockBagPet)
     end
     self:BlockAllUIInput(false)
   end
-  
   self:BlockAllUIInput(true)
   Avatar:PetEntryLock(self.SelectedContent.Id, IsChecked, LockBagPet, Cb)
 end
-
 function M:OnLockStateChanged(IsChecked)
   print("OnLockStateChanged", IsChecked)
   if not IsChecked then
@@ -108,27 +101,22 @@ function M:OnLockStateChanged(IsChecked)
   elseif self.SelectedContent.IsLocked then
     return
   end
-  
   local function CancelFunc()
     self:LockPetEntry(IsChecked, false)
   end
-  
   local function ConfirmFunc()
     self:LockPetEntry(IsChecked, true)
   end
-  
   local function CloseBtnFunc()
     self.PetEntryAchive.Switch_Lock:SetChecked(false, true)
     self:SelectItem(self.SelectedContent)
   end
-  
   UIManager():ShowCommonPopupUI(100221, {
     LeftCallbackFunction = CancelFunc,
     RightCallbackFunction = ConfirmFunc,
     CloseBtnCallbackFunction = CloseBtnFunc
   }, self)
 end
-
 function M:InitTab()
   local Tabs = {}
   local ConfigData = {
@@ -165,7 +153,6 @@ function M:InitTab()
   self.Tab_Archive:SelectTab(TabId)
   self.Tab_Archive:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ReallyInitUIInfo(Name, IsInUIMode, EventList, Params)
   self:CreateContents()
   if 0 == #self.ContentArray then
@@ -191,7 +178,6 @@ function M:ReallyInitUIInfo(Name, IsInUIMode, EventList, Params)
   end
   self.PetEntryAchive:PlayAnimation(self.PetEntryAchive.Auto_In)
 end
-
 function M:UpdateBottomKeyInfo(IsGamepad)
   if IsGamepad then
     self.WBP_Com_KeyTextDesc:CreateCommonKey({
@@ -214,7 +200,6 @@ function M:UpdateBottomKeyInfo(IsGamepad)
     })
   end
 end
-
 function M:CreateContents()
   self.ContentArray = {}
   self.ContentMap = {}
@@ -269,13 +254,11 @@ function M:CreateContents()
     end
   end
 end
-
 function M:OnAddedToFocusPathEvent(Content)
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self:OnItemClicked(Content)
   end
 end
-
 function M:OnItemClicked(Content)
   if Content and not Content.Id then
     return
@@ -287,7 +270,6 @@ function M:OnItemClicked(Content)
   self:SelectItem(Content)
   self:UpdateLockState(Content)
 end
-
 function M:SelectItem(Content)
   ArmoryUtils:SetItemIsSelected(self.SelectedContent, false)
   self.SelectedContent = Content
@@ -302,7 +284,6 @@ function M:SelectItem(Content)
   self:UpdateLockState(Content)
   self.PetEntryAchive.List_Item:BP_NavigateToItem(Content)
 end
-
 function M:UpdateLockState(Content)
   if Content.IsLocked then
     if not self.PetEntryAchive.Switch_Lock:GetChecked() then
@@ -312,7 +293,6 @@ function M:UpdateLockState(Content)
     self.PetEntryAchive.Switch_Lock:SetChecked(false, true)
   end
 end
-
 function M:OnSortSelectionChanged(Idx)
   self.SortSelection = Idx
   if 2 == Idx then
@@ -322,12 +302,10 @@ function M:OnSortSelectionChanged(Idx)
   end
   self:FillListview()
 end
-
 function M:OnSortTypeChanged(SortType)
   self.SortType = SortType
   self:OnSortSelectionChanged(self.SortSelection)
 end
-
 function M:FillListview()
   self.PetEntryAchive.List_Item:ClearListItems()
   for _, value in ipairs(self.ContentArray) do
@@ -345,7 +323,6 @@ function M:FillListview()
     end
   end
 end
-
 function M:TryReadReddot(Content)
   if not Content then
     return
@@ -359,22 +336,18 @@ function M:TryReadReddot(Content)
     end
   end
 end
-
 function M:AddReddotListener()
   self:RemoveReddotListener()
 end
-
 function M:RemoveReddotListener()
   if self.ReddotNodeName then
   end
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   self:RemoveReddotListener()
   self:HorizontalListViewResize_TearDown()
 end
-
 function M:ReallyOnKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = self.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -394,17 +367,14 @@ function M:ReallyOnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:ReallyDestruct()
   self.Super.Destruct(self)
   self:RemoveReddotListener()
   self:HorizontalListViewResize_TearDown()
 end
-
 function M:ReallyOnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self:BP_GetDesiredFocusTarget())
 end
-
 function M:ReallyRefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -428,10 +398,8 @@ function M:ReallyRefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.SelectedContent.SelfWidget or self.PetEntryAchive.List_Item
 end
-
 AssembleComponents(M)
 return M

@@ -11,7 +11,6 @@ local FileDir = UEMPathFunctionLibrary.GetProjectSavedDirectory() .. "SaveGames/
 local EMCache = Class()
 EMCache.CommonCache = {}
 EMCache.UserCache = {}
-
 function EMCache:_GetCacheInstance(bUseUUID, bCreateIfNil)
   if nil == bCreateIfNil then
     bCreateIfNil = true
@@ -35,7 +34,6 @@ function EMCache:_GetCacheInstance(bUseUUID, bCreateIfNil)
     return EMCache.CommonCache
   end
 end
-
 function EMCache:_IsDedicatedServer()
   if self._bDedicatedServer == nil then
     local GameInstance = GWorld.GameInstance
@@ -43,9 +41,9 @@ function EMCache:_IsDedicatedServer()
       GameInstance = UE4.UGameplayStatics.GetGameInstance(UE.UEngine:GetDefaultObject())
     end
     if not IsValid(GameInstance) then
-      DebugPrint(ErrorTag, "GameInstace\233\131\189\232\191\152\230\178\161\229\136\157\229\167\139\229\140\150\229\165\189\239\188\140\228\184\141\229\133\129\232\174\184\228\189\191\231\148\168\230\156\172\229\156\176\231\188\147\229\173\152")
+      DebugPrint(ErrorTag, "GameInstace都还没初始化好，不允许使用本地缓存")
       if self.__DebugKey then
-        DebugPrint(ErrorTag, Traceback(nil, string.format("\233\157\158\230\179\149\232\176\131\231\148\168\231\154\132Key\239\188\154%s", self.__DebugKey), false))
+        DebugPrint(ErrorTag, Traceback(nil, string.format("非法调用的Key：%s", self.__DebugKey), false))
       end
       self.__DebugKey = nil
       return true
@@ -54,7 +52,6 @@ function EMCache:_IsDedicatedServer()
   end
   return self._bDedicatedServer
 end
-
 function EMCache:Get(Key, bUseUUID)
   self.__DebugKey = Key
   if self:_IsDedicatedServer() then
@@ -67,7 +64,6 @@ function EMCache:Get(Key, bUseUUID)
   end
   return Cache[Key]
 end
-
 function EMCache:Set(Key, Value, bUseUUID)
   self.__DebugKey = Key
   if self:_IsDedicatedServer() then
@@ -80,7 +76,6 @@ function EMCache:Set(Key, Value, bUseUUID)
   end
   Cache[Key] = Value
 end
-
 function EMCache:Remove(Key, bUseUUID)
   self.__DebugKey = Key
   if self:_IsDedicatedServer() then
@@ -93,7 +88,6 @@ function EMCache:Remove(Key, bUseUUID)
   end
   Cache[Key] = nil
 end
-
 function EMCache:_GetCacheName(bUseUUID)
   local Tag = CommonTag
   if bUseUUID then
@@ -103,19 +97,19 @@ function EMCache:_GetCacheName(bUseUUID)
       return
     end
     Tag = tostring(Avatar.Account)
-    if Avatar.Hostnum then
-      Tag = tostring(Avatar.Hostnum) .. "_" .. Tag
+    if Avatar.Uid then
+      local Hostnum = tonumber(Avatar.Uid) // 10000000 // 10
+      Tag = tostring(Hostnum) .. "_" .. Tag
     end
     return FileNamePart .. "_" .. Tag
   end
   return Tag .. "_" .. FileNamePart
 end
-
 function EMCache:_Save(bUseUUID, bNeedClean)
   if self:_IsDedicatedServer() then
     return
   end
-  DebugPrint("[laixiaoyang]EMCache:_Save, " .. (bUseUUID and "\231\148\168\230\136\183" or "\229\133\172\229\133\177") .. "\231\188\147\229\173\152\232\167\166\229\143\145\228\191\157\229\173\152\239\188\129\239\188\129\239\188\129 \230\152\175\229\144\166Clean\239\188\154" .. tostring(bNeedClean))
+  DebugPrint("[laixiaoyang]EMCache:_Save, " .. (bUseUUID and "用户" or "公共") .. "缓存触发保存！！！ 是否Clean：" .. tostring(bNeedClean))
   local Cache = self:_GetCacheInstance(bUseUUID, false)
   if not Cache or not next(Cache) then
     print(_G.LogTag, "[EMCache]_SaveFile, Cache is Empty or nil")
@@ -131,7 +125,6 @@ function EMCache:_Save(bUseUUID, bNeedClean)
   end
   return Res
 end
-
 function EMCache:_RealLoadCache(bUseUUID)
   if not self._SaveGameClassWrap then
     self._SaveGameClassWrap = MiscUtils.LazyLoadClass("/Game/BluePrints/Client/BP_EMSaveGame.BP_EMSaveGame_C", true)
@@ -146,7 +139,7 @@ function EMCache:_RealLoadCache(bUseUUID)
     return {}
   end
   if #SaveGame.EMCacheContent > MaxFileSize then
-    GWorld.logger.error(string.format("\231\188\147\229\173\152\229\134\133\229\174\185\232\182\133\232\191\1352M\228\186\134\239\188\140\232\183\179\232\191\135\230\156\172\230\172\161\229\186\143\229\136\151\229\140\150\229\185\182\229\136\160\233\153\164\232\175\165\231\188\147\229\173\152 \239\188\154%s", CacheName))
+    GWorld.logger.error(string.format("缓存内容超过2M了，跳过本次序列化并删除该缓存 ：%s", CacheName))
     return {}
   end
   local FileContent = ""
@@ -155,18 +148,18 @@ function EMCache:_RealLoadCache(bUseUUID)
       FileContent = self:Decryption(SaveGame.EMCacheContent)
     end,
     catch = function(err)
-      DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\232\167\163\229\175\134\229\164\177\232\180\165", err)
+      DebugPrint(ErrorTag, "本地缓存解密失败", err)
     end
   })
   local EMCacheVersion = Version.GetVersion(bUseUUID)
   local Cache = self:Deserialize(FileContent, EMCacheVersion)
   if not Cache or Cache.Version ~= EMCacheVersion then
     if Cache then
-      DebugPrint(WarningTag, "[laixiaoyang]EMCache:_RealLoadCache," .. (bUseUUID and "\231\148\168\230\136\183" or "\229\133\172\229\133\177") .. "\231\188\147\229\173\152\231\137\136\230\156\172\232\191\135\228\189\142\239\188\140\232\167\166\229\143\145\233\135\141\229\187\186\231\188\147\229\173\152\239\188\140\230\151\167\231\137\136\230\156\172\229\143\183:" .. Cache.Version .. "\239\188\140\230\150\176\231\137\136\230\156\172\229\143\183:" .. EMCacheVersion)
+      DebugPrint(WarningTag, "[laixiaoyang]EMCache:_RealLoadCache," .. (bUseUUID and "用户" or "公共") .. "缓存版本过低，触发重建缓存，旧版本号:" .. Cache.Version .. "，新版本号:" .. EMCacheVersion)
       EMCache:Reset(false, bUseUUID)
     else
-      DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\230\150\135\228\187\182\228\184\141\229\133\188\229\174\185\\\230\132\143\229\164\150\230\141\159\229\157\143\\\232\162\171\228\186\186\228\184\186\228\191\174\230\148\185\228\186\134\239\188\140\233\135\141\229\187\186\230\150\176\231\154\132\231\169\186\231\153\189\231\188\147\229\173\152")
-      DebugPrint(ErrorTag, Traceback(nil, string.format("\229\135\186\233\148\153\231\154\132\231\188\147\229\173\152\230\150\135\228\187\182 %s", CacheName), true))
+      DebugPrint(ErrorTag, "本地缓存文件不兼容\\意外损坏\\被人为修改了，重建新的空白缓存")
+      DebugPrint(ErrorTag, Traceback(nil, string.format("出错的缓存文件 %s", CacheName), true))
     end
     Cache = {}
     Cache.Initialized = 1
@@ -174,7 +167,6 @@ function EMCache:_RealLoadCache(bUseUUID)
   end
   return Cache
 end
-
 function EMCache:_RealSaveCache(Cache, bUseUUID)
   if Cache.IsUserCache == nil then
     Cache.IsUserCache = false
@@ -183,41 +175,40 @@ function EMCache:_RealSaveCache(Cache, bUseUUID)
     bUseUUID = false
   end
   if Cache.IsUserCache ~= bUseUUID then
-    local Prediction = bUseUUID and "\231\148\168\230\136\183\231\188\147\229\173\152" or "\229\133\172\229\133\177\231\188\147\229\173\152"
-    local Actural = Cache.IsUserCache and "\231\148\168\230\136\183\231\188\147\229\173\152" or "\229\133\172\229\133\177\231\188\147\229\173\152"
-    DebugPrint(Traceback(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\228\191\157\229\173\152\229\164\177\232\180\165\239\188\140\231\188\147\229\173\152\231\177\187\229\158\139\228\184\178\228\186\134" .. "  \233\162\132\232\174\161\232\166\129\228\191\157\229\173\152\231\154\132\239\188\154" .. Prediction .. "  \229\174\158\233\153\133\228\191\157\229\173\152\231\154\132\239\188\154" .. Actural))
+    local Prediction = bUseUUID and "用户缓存" or "公共缓存"
+    local Actural = Cache.IsUserCache and "用户缓存" or "公共缓存"
+    DebugPrint(Traceback(ErrorTag, "本地缓存保存失败，缓存类型串了" .. "  预计要保存的：" .. Prediction .. "  实际保存的：" .. Actural))
     return
   end
   local FileContent = self:Serialize(Cache, Version.GetVersion(bUseUUID))
   if string.isempty(FileContent) then
-    DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\228\191\157\229\173\152\229\164\177\232\180\165\239\188\140\229\142\159\229\155\160\239\188\154\231\188\147\229\173\152\229\186\143\229\136\151\229\140\150\229\164\177\232\180\165")
+    DebugPrint(ErrorTag, "本地缓存保存失败，原因：缓存序列化失败")
     return
   end
   local CacheName = self:_GetCacheName(bUseUUID)
   if not CacheName then
-    DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\229\143\141\229\186\143\229\136\151\229\140\150\229\164\177\232\180\165\239\188\140\229\142\159\229\155\160\239\188\154\231\188\147\229\173\152\232\183\175\229\190\132\231\148\159\230\136\144\229\164\177\232\180\165")
+    DebugPrint(ErrorTag, "本地缓存反序列化失败，原因：缓存路径生成失败")
     return
   end
   if GWorld.IsDev then
-    local FullFileDir = URuntimeCommonFunctionLibrary.ConvertRelativePathToFull(FileDir)
-    if not UE4.UBlueprintFileUtilsBPLibrary.DirectoryExists(FullFileDir) then
-      DebugPrint(DebugTag, "\229\136\155\229\187\186\230\156\172\229\156\176\231\188\147\229\173\152\230\152\142\230\150\135\231\155\174\229\189\149", FullFileDir)
-      UE4.UBlueprintFileUtilsBPLibrary.MakeDirectory(FullFileDir)
+    if not UE4.UBlueprintFileUtilsBPLibrary.DirectoryExists(FileDir) then
+      DebugPrint(DebugTag, "创建本地缓存明文目录", FileDir)
+      UE4.UBlueprintFileUtilsBPLibrary.MakeDirectory(FileDir)
     end
-    local ExtraPath = FullFileDir .. CacheName .. ".json"
+    local ExtraPath = FileDir .. CacheName .. ".json"
     if #FileContent > MaxFileSize then
-      GWorld.logger.error(string.format("\231\188\147\229\173\152\229\134\133\229\174\185\232\182\133\232\191\1352M\228\186\134\239\188\140\229\164\170\229\164\167\231\154\132\231\188\147\229\173\152\230\128\128\231\150\145\230\152\175\230\156\137\229\134\153\229\133\165\230\179\132\230\188\143\239\188\140\230\159\165\228\184\128\228\184\139\229\136\176\229\186\149\229\147\170\233\135\140\230\156\137\229\134\153\229\133\165\230\179\132\230\188\143\n\230\156\137\233\151\174\233\162\152\231\154\132\231\188\147\229\173\152\230\150\135\228\187\182: %s", ExtraPath))
+      GWorld.logger.error(string.format("缓存内容超过2M了，太大的缓存怀疑是有写入泄漏，查一下到底哪里有写入泄漏\n有问题的缓存文件: %s", ExtraPath))
     end
     local file = io.open(ExtraPath, "w")
     if file then
       file:write(FileContent)
       file:close()
     else
-      DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\229\144\141\230\150\135\228\191\157\229\173\152\229\164\177\232\180\165\239\188\140\230\148\190\229\188\131\228\191\157\229\173\152\230\152\142\230\150\135", ExtraPath)
+      DebugPrint(ErrorTag, "本地缓存名文保存失败，放弃保存明文", ExtraPath)
     end
   end
   if not IsValid(UE.UGameplayStatics) then
-    DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\228\191\157\229\173\152\229\164\177\232\180\165\239\188\140\229\142\159\229\155\160\239\188\154\230\178\161\232\190\153\228\186\134\239\188\140\232\147\157\229\155\190\229\135\189\230\149\176\229\186\147\233\131\189\232\162\171GC\228\186\134...")
+    DebugPrint(ErrorTag, "本地缓存保存失败，原因：没辙了，蓝图函数库都被GC了...")
     return
   end
   if not self._SaveGameClassWrap then
@@ -225,12 +216,12 @@ function EMCache:_RealSaveCache(Cache, bUseUUID)
   end
   local SaveGameClass = self._SaveGameClassWrap:get()
   if not IsValid(SaveGameClass) then
-    DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\228\191\157\229\173\152\229\164\177\232\180\165\239\188\140\229\142\159\229\155\160\239\188\154SaveGameClass\229\136\155\229\187\186\229\164\177\232\180\165")
+    DebugPrint(ErrorTag, "本地缓存保存失败，原因：SaveGameClass创建失败")
     return
   end
   local SaveGame = UE.UGameplayStatics.CreateSaveGameObject(SaveGameClass)
   if not IsValid(SaveGame) then
-    DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\228\191\157\229\173\152\229\164\177\232\180\165\239\188\140\229\142\159\229\155\160\239\188\154SaveGame\229\175\185\232\177\161\229\136\155\229\187\186\229\164\177\232\180\165")
+    DebugPrint(ErrorTag, "本地缓存保存失败，原因：SaveGame对象创建失败")
     return
   end
   SaveGame.EMCacheContent = self:Encryption(FileContent)
@@ -238,31 +229,26 @@ function EMCache:_RealSaveCache(Cache, bUseUUID)
   SaveGame.EMCacheContent = ""
   return Res
 end
-
 function EMCache:SaveUser(bNeedClean, TempAvatar)
   self.TempAvatar = TempAvatar
   self:_Save(true, bNeedClean)
   self.TempAvatar = nil
 end
-
 function EMCache:SaveCommon(bNeedClean)
   self:_Save(false, bNeedClean)
 end
-
 function EMCache:SaveAll(bNeedClean)
   self:SaveUser(bNeedClean)
   self:SaveCommon(bNeedClean)
 end
-
 function EMCache:Reset(bClean, bUseUUID)
   if nil == bClean then
     bClean = true
   end
-  
   local function RealReset(Dir)
     local FileNames = TArray("")
     local Res = UE4.URuntimeCommonFunctionLibrary.GetAllFileNamesInDic(Dir, FileNames)
-    assert(Res, "\230\184\133\231\169\186\230\156\172\229\156\176\231\188\147\229\173\152\229\164\177\232\180\165\239\188\140" .. Dir .. "\232\183\175\229\190\132\228\184\141\229\173\152\229\156\168")
+    assert(Res, "清空本地缓存失败，" .. Dir .. "路径不存在")
     for i = 1, FileNames:Length() do
       local FileFull = FileNames:GetRef(i)
       if bClean then
@@ -284,12 +270,10 @@ function EMCache:Reset(bClean, bUseUUID)
       end
     end
   end
-  
   local SaveGameDir = UKismetSystemLibrary.GetProjectSavedDirectory() .. "SaveGames/"
   RealReset(SaveGameDir)
   if GWorld.IsDev then
-    local FullFileDir = URuntimeCommonFunctionLibrary.ConvertRelativePathToFull(FileDir)
-    RealReset(FullFileDir)
+    RealReset(FileDir)
   end
   if bClean then
     EMCache.UserCache, EMCache.CommonCache = {}, {}
@@ -299,7 +283,6 @@ function EMCache:Reset(bClean, bUseUUID)
     EMCache.CommonCache = {}
   end
 end
-
 function EMCache:Serialize(Obj, EMCacheVersion)
   if EMCacheVersion and not Obj.Version then
     Obj.Version = EMCacheVersion
@@ -318,12 +301,11 @@ function EMCache:Serialize(Obj, EMCacheVersion)
       Content = rapidjson.encode(Obj, Params)
     end,
     catch = function(err)
-      DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\229\186\143\229\136\151\229\140\150\229\164\177\232\180\165", err)
+      DebugPrint(ErrorTag, "本地缓存序列化失败", err)
     end
   })
   return Content
 end
-
 function EMCache:Deserialize(Str, EMCacheVersion)
   local Type = type(Str)
   if "nil" == Type or "" == Str then
@@ -343,12 +325,11 @@ function EMCache:Deserialize(Str, EMCacheVersion)
       end
     end,
     catch = function(err)
-      DebugPrint(ErrorTag, "\230\156\172\229\156\176\231\188\147\229\173\152\229\143\141\229\186\143\229\136\151\229\140\150\229\164\177\232\180\165", err)
+      DebugPrint(ErrorTag, "本地缓存反序列化失败", err)
     end
   })
   return Cache
 end
-
 function EMCache:Encryption(ContentStr)
   local Encrypted = crypt.xor_str(ContentStr, CryptKey)
   local EMCacheContent = {}
@@ -357,7 +338,6 @@ function EMCache:Encryption(ContentStr)
   end
   return table.concat(EMCacheContent)
 end
-
 function EMCache:Decryption(ContentStr)
   local EMCacheContent = {}
   for Char in string.gmatch(ContentStr, "(..)") do
@@ -366,5 +346,4 @@ function EMCache:Decryption(ContentStr)
   local Encrypted = table.concat(EMCacheContent)
   return crypt.xor_str(Encrypted, CryptKey)
 end
-
 return EMCache

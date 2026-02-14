@@ -1,5 +1,4 @@
 local ConditionUtils = {}
-
 function ConditionUtils.CheckCondition(Avatar, ConditionIds, bShowFailed)
   if not Avatar then
     DebugPrint("CheckCondition bug Avatar is nil")
@@ -21,13 +20,11 @@ function ConditionUtils.CheckCondition(Avatar, ConditionIds, bShowFailed)
   end
   return true
 end
-
 function ConditionUtils.CheckConditionInternal(Avatar, ConditionId, ConditionCheckId)
   local ConditionInfo = DataMgr.Condition[ConditionId]
   if not ConditionInfo then
     return false
   end
-  
   local function CheckResult(ret)
     if ConditionInfo.IsNot then
       return not ret
@@ -35,7 +32,6 @@ function ConditionUtils.CheckConditionInternal(Avatar, ConditionId, ConditionChe
       return ret
     end
   end
-  
   local Logic = string.lower(ConditionInfo.ConditionLogic)
   if "and" == Logic then
     for Condition, List in pairs(ConditionInfo.ConditionMap) do
@@ -60,12 +56,10 @@ function ConditionUtils.CheckConditionInternal(Avatar, ConditionId, ConditionChe
   end
   return CheckResult(false)
 end
-
 function ConditionUtils.ServerCheckCondition(Avatar, ConditionId, Callback, bShowFailed)
-  assert(not GWorld:IsSkynetServer() and not IsDedicatedServer(GWorld.GameInstance), "ServerCheckCondition \233\157\158Server/DedicatedServer \230\142\165\229\143\163")
+  assert(not GWorld:IsSkynetServer() and not IsDedicatedServer(GWorld.GameInstance), "ServerCheckCondition 非Server/DedicatedServer 接口")
   Avatar:ServerCheckCondition(ConditionId, Callback, bShowFailed)
 end
-
 function ConditionUtils:CheckShowFailed(ConditionId, Result, bShowFailed)
   if not bShowFailed then
     return
@@ -81,36 +75,39 @@ function ConditionUtils:CheckShowFailed(ConditionId, Result, bShowFailed)
     UIManger:ShowUITip(UIConst.Tip_CommonToast, GText(ShowText))
   end
 end
-
 function ConditionUtils:JudgePlayerLevelMin(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     return Params <= self.Level
   end
   return false
 end
-
 function ConditionUtils:JudgePlayerLevelMax(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     return Params >= self.Level
   end
   return false
 end
-
 function ConditionUtils:JudgeQuestChain(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    if self.QuestChains[Params] and (self.QuestChains[Params]:IsFinish() or self.QuestChains[Params]:GetAssumeFinish()) then
+      return true
+    end
     return self.QuestChains[Params] and self.QuestChains[Params]:IsFinish() and true or false
   end
   return false
 end
-
-function ConditionUtils:JudgeVarEqual(Params)
+function ConditionUtils:JudgeQuest(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
-    return self.StoryVariable[Params[1]] ~= nil and self.StoryVariable[Params[1]] == Params[2]
+    local QuestChainId = tonumber(string.sub(tostring(Params), 1, 6))
+    local QuestChain = self.QuestChains[QuestChainId]
+    if QuestChain then
+      return QuestChain.CompleteQuestId:HasValue(Params) or QuestChain:GetAssumeFinish()
+    end
+    return false
   end
   return false
 end
-
-function ConditionUtils:JudgeQuest(Params)
+function ConditionUtils:JudgeTrueQuest(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local QuestChainId = tonumber(string.sub(tostring(Params), 1, 6))
     local QuestChain = self.QuestChains[QuestChainId]
@@ -118,7 +115,48 @@ function ConditionUtils:JudgeQuest(Params)
   end
   return false
 end
-
+function ConditionUtils:JudgeTrueQuestChain(Params)
+  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    return self.QuestChains[Params] and self.QuestChains[Params]:IsFinish() and true or false
+  end
+  return false
+end
+function ConditionUtils:JudgeRegionCapturePet(CreatorId)
+  if GWorld:IsSkynetServer() then
+    local WorldRegionEid = self:GetStaticCreatorRegionEid_StaticCreatorId(CreatorId)
+    if not WorldRegionEid then
+      return false
+    end
+    local PetRegionAttr = self.PetRegionAttrs:GetPetRegionAttr(WorldRegionEid)
+    return PetRegionAttr and PetRegionAttr:IsSuccess()
+  else
+    if not IsDedicatedServer(GWorld.GameInstance) then
+      local GameMode = UGameplayStatics.GetGameMode(self)
+      if not IsValid(GameMode) then
+        return false
+      end
+      local RegionDataMgrSubSystem = GameMode:GetRegionDataMgrSubSystem()
+      if RegionDataMgrSubSystem then
+        local WorldRegionEids = RegionDataMgrSubSystem:GetControlWorldRegionEidByCreatorId(CreatorId)
+        for WorldRegionEid, _ in pairs(WorldRegionEids) do
+          local PetRegionAttr = self.PetRegionAttrs:GetPetRegionAttr(WorldRegionEid)
+          if PetRegionAttr then
+            return PetRegionAttr and PetRegionAttr:IsSuccess()
+          end
+        end
+      end
+      return false
+    end
+    return false
+  end
+  return false
+end
+function ConditionUtils:JudgeVarEqual(Params)
+  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    return self.StoryVariable[Params[1]] ~= nil and self.StoryVariable[Params[1]] == Params[2]
+  end
+  return false
+end
 function ConditionUtils:JudgeImpression(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local TalkTriggerId, StorylineState = Params[1], Params[2]
@@ -128,7 +166,6 @@ function ConditionUtils:JudgeImpression(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeHaveResource(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local ResourceId, ResourceCount = Params[1], Params[2]
@@ -137,7 +174,6 @@ function ConditionUtils:JudgeHaveResource(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeMechanismState(Params, ConditionCheckId)
   if GWorld:IsSkynetServer() then
     ConditionUtils.CallDedicatedServerCondition(self, "MechanismState", Params, ConditionCheckId)
@@ -153,7 +189,6 @@ function ConditionUtils:JudgeMechanismState(Params, ConditionCheckId)
     return true
   end
 end
-
 function ConditionUtils:JudgeAvatarStatus(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local AvatarStatus, Condition = Params[1], Params[2]
@@ -174,14 +209,12 @@ function ConditionUtils:JudgeAvatarStatus(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeSubRegionType(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     return self:CheckSubRegionType(nil, Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeDungeonComplete(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local DungeonId, Relation, Counts = Params[1], Params[2], Params[3]
@@ -198,7 +231,6 @@ function ConditionUtils:JudgeDungeonComplete(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgePhaseQuestEnd(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local EventId, PhaseId = Params[1], Params[2]
@@ -221,7 +253,6 @@ function ConditionUtils:JudgePhaseQuestEnd(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeDailyLoginEnd(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local EventId = Params[1]
@@ -237,12 +268,10 @@ function ConditionUtils:JudgeDailyLoginEnd(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeConstantBool(Params)
   Params = string.lower(Params)
   return "t" == Params or "true" == Params
 end
-
 function ConditionUtils:JudgeTestClientCon(Params, ConditionCheckId)
   if GWorld:IsSkynetServer() then
     ConditionUtils.CallClientCondition(self, "TestClientCon", Params, ConditionCheckId)
@@ -254,7 +283,6 @@ function ConditionUtils:JudgeTestClientCon(Params, ConditionCheckId)
     return true
   end
 end
-
 function ConditionUtils:JudgeInStoryMode(Params, ConditionCheckId)
   local bIsInStoryMode = false
   if "T" == Params then
@@ -277,7 +305,6 @@ function ConditionUtils:JudgeInStoryMode(Params, ConditionCheckId)
     return PlayerController:GetStoryModeState() == bIsInStoryMode
   end
 end
-
 function ConditionUtils:JudgeInDungeon(Params)
   if GWorld:IsSkynetServer() then
     local DungeonComponentBase = require("src.components.dungeon_components.DungeonComponentBase")
@@ -289,16 +316,44 @@ function ConditionUtils:JudgeInDungeon(Params)
     return GameMode:IsInDungeon() and GameMode.DungeonId == Params
   end
 end
-
 function ConditionUtils:JudgeInHardBossDifficulty(Params)
   if GWorld:IsSkynetServer() then
+    if not self:IsInHardBoss() then
+      return false
+    end
+    if self:IsInMultiDungeon() then
+      local DungeonComponentBase = require("src.components.dungeon_components.DungeonComponentBase")
+      local DungeonId = DungeonComponentBase:GetUniqueDungeonId()
+      local HardBossInfo = DataMgr.HardBossDg[DungeonId]
+      if not HardBossInfo then
+        return false
+      end
+      return HardBossInfo.DifficultyId == Params
+    end
     return self:IsInHardBoss() and self.CurrentHardBossInfo and self.CurrentHardBossInfo.DifficultyId == Params
   elseif not IsDedicatedServer(GWorld.GameInstance) then
-    return self:IsInHardBoss() and self.HardBossInfo and self.HardBossInfo.DifficultyId == Params
+    if not self:IsInHardBoss() then
+      return false
+    end
+    if self:IsInMultiDungeon() then
+      local DungeonId = WorldTravelSubsystem():GetCurrentSceneId()
+      local HardBossInfo = DataMgr.HardBossDg[DungeonId]
+      if not HardBossInfo then
+        return false
+      end
+      return HardBossInfo.DifficultyId == Params
+    else
+      return self.HardBossInfo and self.HardBossInfo.DifficultyId == Params
+    end
+  else
+    local DungeonId = WorldTravelSubsystem():GetCurrentSceneId()
+    local HardBossInfo = DataMgr.HardBossDg[DungeonId]
+    if not HardBossInfo then
+      return false
+    end
+    return HardBossInfo.DifficultyId == Params
   end
-  return false
 end
-
 function ConditionUtils:JudgeCharEquipRarityLevelModCount(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local Rarity, ModLevel, Count = Params[1], Params[2], Params[3]
@@ -318,7 +373,6 @@ function ConditionUtils:JudgeCharEquipRarityLevelModCount(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeCurrentCharId(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local CurrentChar = self.Chars[self.CurrentChar]
@@ -326,7 +380,6 @@ function ConditionUtils:JudgeCurrentCharId(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeOwnCharIdAndLevel(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local CharId, CharLevel = Params[1], Params[2]
@@ -338,7 +391,6 @@ function ConditionUtils:JudgeOwnCharIdAndLevel(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeDynamicEventCompleteTimes(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     local DynamicEventId, Times = Params[1], Params[2]
@@ -348,7 +400,6 @@ function ConditionUtils:JudgeDynamicEventCompleteTimes(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeExploreGroup(Params)
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
     for ExploreId, Info in pairs(self.Explores) do
@@ -359,7 +410,6 @@ function ConditionUtils:JudgeExploreGroup(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeImprShopUnlock(Params)
   local TargetRegionId = Params[1]
   local ImpressionType = Params[2]
@@ -382,7 +432,6 @@ function ConditionUtils:JudgeImprShopUnlock(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeRougeLikePreAward(Params)
   if not GWorld:IsSkynetServer() then
     return false
@@ -397,7 +446,6 @@ function ConditionUtils:JudgeRougeLikePreAward(Params)
   local AwardList = RougeLike[AwardType .. "s"]
   return AwardList[AwardId]
 end
-
 function ConditionUtils:JudgeRougeLikeGroupMin(Params)
   if not GWorld:IsSkynetServer() then
     return false
@@ -422,7 +470,6 @@ function ConditionUtils:JudgeRougeLikeGroupMin(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeRougeLikeGroupMax(Params)
   if not GWorld:IsSkynetServer() then
     return false
@@ -447,14 +494,12 @@ function ConditionUtils:JudgeRougeLikeGroupMax(Params)
   end
   return true
 end
-
 function ConditionUtils:JudgeRougeLikeDifficulty(Params)
   if not GWorld:IsSkynetServer() then
     return false
   end
   local DifficultyId = Params[1]
   local Logic = Params[2]
-  
   local function CheckResult(bOriginResult)
     if "T" == Logic then
       return bOriginResult
@@ -462,7 +507,6 @@ function ConditionUtils:JudgeRougeLikeDifficulty(Params)
       return not bOriginResult
     end
   end
-  
   local SeasonId = self:GetCurrentRougeLikeSeason()
   local RougeLike = self.RougeLike:GetSeason(SeasonId)
   if not RougeLike then
@@ -470,7 +514,6 @@ function ConditionUtils:JudgeRougeLikeDifficulty(Params)
   end
   return CheckResult(RougeLike.DifficultyId == DifficultyId)
 end
-
 function ConditionUtils:JudgeRougeLikePassRoom(Params)
   if not GWorld:IsSkynetServer() then
     return false
@@ -483,7 +526,6 @@ function ConditionUtils:JudgeRougeLikePassRoom(Params)
   end
   return PassRoom <= RougeLike.PassRooms:Length()
 end
-
 function ConditionUtils:JudgeDialogueHasRead(DialogueId)
   if not GWorld:IsSkynetServer() and IsDedicatedServer(GWorld.GameInstance) then
     return false
@@ -494,7 +536,6 @@ function ConditionUtils:JudgeDialogueHasRead(DialogueId)
     return false
   end
 end
-
 function ConditionUtils:JudgeEquipPetId(PetUnitId)
   if not GWorld:IsSkynetServer() and IsDedicatedServer(GWorld.GameInstance) then
     return false
@@ -511,7 +552,23 @@ function ConditionUtils:JudgeEquipPetId(PetUnitId)
   end
   return false
 end
-
+function ConditionUtils:JudgeUnlockMountId(MountId)
+  if not GWorld:IsSkynetServer() and IsDedicatedServer(GWorld.GameInstance) then
+    return false
+  end
+  if -1 == MountId then
+    if CommonUtils.Size(self.Mounts) > 0 then
+      return true
+    else
+      return false
+    end
+  end
+  if self.Mounts[MountId] then
+    return true
+  else
+    return false
+  end
+end
 function ConditionUtils:JudgeConditionalRewardEventEnd(EventId)
   if not GWorld:IsSkynetServer() and IsDedicatedServer(GWorld.GameInstance) then
     return false
@@ -522,7 +579,6 @@ function ConditionUtils:JudgeConditionalRewardEventEnd(EventId)
     return false
   end
 end
-
 function ConditionUtils:JudgeDualTerminalLogin(DeviceType)
   if not GWorld:IsSkynetServer() and IsDedicatedServer(GWorld.GameInstance) then
     return false
@@ -534,14 +590,12 @@ function ConditionUtils:JudgeDualTerminalLogin(DeviceType)
   DebugPrint("JudgeConditionalDualTerminalLogin true", DeviceType)
   return true
 end
-
 local function IsGameServerOrClient()
   if not GWorld:IsSkynetServer() and IsDedicatedServer(GWorld.GameInstance) then
     return false
   end
   return true
 end
-
 function ConditionUtils:JudgePlayerLvEventEnd(EventId)
   if not IsGameServerOrClient() then
     return false
@@ -555,7 +609,6 @@ function ConditionUtils:JudgePlayerLvEventEnd(EventId)
   end
   return AllComplete
 end
-
 function ConditionUtils:JudgeHardBossComplete(Params)
   local DifficultyId, Times = Params[1], Params[2]
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
@@ -563,7 +616,6 @@ function ConditionUtils:JudgeHardBossComplete(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeDungeonType(Params)
   local DungeonType = Params
   if GWorld:IsSkynetServer() then
@@ -581,7 +633,6 @@ function ConditionUtils:JudgeDungeonType(Params)
     return CurDungeonType == DungeonType
   end
 end
-
 function ConditionUtils:JudgeRougeLikeManual(Params)
   local ManualType, ManualId, ConditionLogic = Params[1], Params[2], Params[3]
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
@@ -594,7 +645,6 @@ function ConditionUtils:JudgeRougeLikeManual(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeRougeLikeComplete(Params)
   local DifficultyId = Params
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
@@ -602,7 +652,6 @@ function ConditionUtils:JudgeRougeLikeComplete(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgePlayerInBattlePass(Params)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -611,7 +660,6 @@ function ConditionUtils:JudgePlayerInBattlePass(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeTeleportIsUnlock(Params, ConditionCheckId)
   local TargetData = DataMgr.TeleportPoint[Params]
   if not (TargetData and TargetData.StaticId) or not TargetData.TeleportPointSubRegion then
@@ -637,7 +685,6 @@ function ConditionUtils:JudgeTeleportIsUnlock(Params, ConditionCheckId)
   end
   return false
 end
-
 function ConditionUtils:JudgeLoginDay(Params)
   local Day = Params
   if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
@@ -645,7 +692,6 @@ function ConditionUtils:JudgeLoginDay(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeRougeLikePreRoom(Params)
   if not GWorld:IsSkynetServer() then
     return false
@@ -658,7 +704,6 @@ function ConditionUtils:JudgeRougeLikePreRoom(Params)
   end
   return CommonUtils.HasValue(RougeLike.PassRooms, RoomId)
 end
-
 function ConditionUtils:JudgeTimeArrived(Params)
   local TimeStr = Params
   local year, month, day, hour, min, sec = TimeStr:match("(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
@@ -669,10 +714,14 @@ function ConditionUtils:JudgeTimeArrived(Params)
   min = tonumber(min)
   sec = tonumber(sec)
   local timestamp = TimeUtils.DataToTimestampForArea(year, month, day, hour, min, sec, "China")
+  if GWorld:IsSkynetServer() then
+    timestamp = TimeUtils.EastEightToLocalTimestamp(timestamp)
+  else
+    timestamp = DataMgr.LocalTimeProxy(timestamp)
+  end
   local now = TimeUtils.NowTime()
   return timestamp <= now
 end
-
 function ConditionUtils:JudgeHaveResourceSType(Params)
   local ResourceSType = Params[1]
   local Count = Params[2]
@@ -690,19 +739,24 @@ function ConditionUtils:JudgeHaveResourceSType(Params)
   end
   return false
 end
-
 function ConditionUtils:JudgeFollowCommunityComplete(Params)
-  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+  if not GWorld:IsSkynetServer() and not IsDedicatedServer(GWorld.GameInstance) then
     local DevServerList = require("BluePrints.UI.GameLogin.DevServerList")
     if not DevServerList[self.Hostnum] then
       return false
     end
-    local ServerName = DevServerList[self.Hostnum].area
-    local ServerData = DataMgr.FollowCommunityEvent[ServerName]
-    if not ServerData then
+    local EMCache = require("EMCache.EMCache")
+    local Languagetype = "ChinaCN"
+    local SystemLanguage = EMCache:Get("SystemLanguage") or "CN"
+    local IsGlobalPak = UE.AHotUpdateGameMode.IsGlobalPak()
+    if IsGlobalPak then
+      Languagetype = "Abroad" .. SystemLanguage
+    end
+    local CommunityInfo = DataMgr.FollowCommunityEvent[Languagetype]
+    if not CommunityInfo or not CommunityInfo.CommunityList then
       return false
     end
-    for _, CommunityId in ipairs(ServerData.CommunityList) do
+    for _, CommunityId in ipairs(CommunityInfo.CommunityList) do
       if not self.Community:IsRewardGot(CommunityId) then
         return false
       end
@@ -711,7 +765,138 @@ function ConditionUtils:JudgeFollowCommunityComplete(Params)
   end
   return false
 end
-
+function ConditionUtils:JudgeIsCurrentCharEquipMod(Params)
+  local bIsCurrentCharEquipMod = false
+  if "T" == Params then
+    bIsCurrentCharEquipMod = true
+  end
+  local bEquipMod = false
+  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    local CurrentChar = self.Chars[self.CurrentChar]
+    for ModSlotId, ModSlotEid in pairs(AvatarUtils:GetTargetModSuit(CurrentChar, CurrentChar.ModSuitIndex)) do
+      local mod = self.Mods[ModSlotEid]
+      if mod then
+        bEquipMod = true
+        break
+      end
+    end
+  end
+  return bEquipMod == bIsCurrentCharEquipMod
+end
+function ConditionUtils:JudgeActivePropEffectId(Params, ConditionCheckId)
+  if GWorld:IsSkynetServer() then
+    ConditionUtils.CallClientCondition(self, "ActivePropEffectId", Params, ConditionCheckId)
+    return true
+  elseif IsDedicatedServer(GWorld.GameInstance) then
+    return false
+  else
+    local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
+    if nil == Player then
+      return false
+    end
+    if not Player.ActivePropEffectId then
+      return false
+    end
+    return Player.ActivePropEffectId == Params
+  end
+end
+function ConditionUtils:JudgeBattleWheelEquipResourceId(Params, ConditionCheckId)
+  if GWorld:IsSkynetServer() then
+    ConditionUtils.CallClientCondition(self, "BattleWheelEquipResourceId", Params, ConditionCheckId)
+    return true
+  elseif IsDedicatedServer(GWorld.GameInstance) then
+    return false
+  else
+    if not Params or not type(Params) == "number" then
+      DebugPrint("lgc@JudgeBattleWheelEquipResourceId Params is not number")
+      return false
+    end
+    local Ret = false
+    local Avatar = GWorld:GetAvatar()
+    if not (Avatar and Avatar.Wheels) or not next(Avatar.Wheels) then
+      return false
+    else
+      for _, Wheel in pairs(Avatar.Wheels) do
+        if Wheel then
+          for _, Slot in pairs(Wheel) do
+            if Slot and Slot.ResourceId and Slot.ResourceId == Params then
+              Ret = true
+              break
+            end
+          end
+        end
+        if Ret then
+          break
+        end
+      end
+    end
+    DebugPrint("lgc@JudgeBattleWheelEquipResourceId Params = " .. tostring(Params) .. " Ret = " .. tostring(Ret))
+    return Ret
+  end
+end
+function ConditionUtils:JudgeDailyFreeTicketAmount(Params)
+  local Now = TimeUtils.NowTime()
+  local OpenEventId
+  for EventId, _ in pairs(DataMgr.DoubleModDrop) do
+    local EventConf = DataMgr.EventMain[EventId]
+    if EventConf and EventConf.EventStartTime and EventConf.EventEndTime and Now >= EventConf.EventStartTime and Now < EventConf.EventEndTime then
+      OpenEventId = EventId
+      break
+    end
+  end
+  local DailyFreeTicketAmount = DataMgr.ModDropConstant.DailyFreeTicketAmount.ConstantValue
+  if not OpenEventId or not DailyFreeTicketAmount then
+    return false
+  end
+  local DoubleModDropProp = self.DoubleModDrop[OpenEventId]
+  if DoubleModDropProp then
+    local RemainTimes = DailyFreeTicketAmount - DoubleModDropProp:GetEliteRushTimes()
+    if Params > RemainTimes then
+      return false
+    end
+  elseif Params > DailyFreeTicketAmount then
+    return false
+  end
+  return true
+end
+function ConditionUtils:JudgeHaveItem(Params)
+  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    local ItemType, ItemId, Count = Params[1], Params[2], Params[3]
+    local CheckFuncName = "Check" .. ItemType .. "Enough"
+    local CheckMethod = self[CheckFuncName]
+    if not CheckMethod then
+      return false
+    end
+    if CheckMethod(self, {
+      [ItemId] = Count
+    }) then
+      return true
+    end
+  end
+  return false
+end
+function ConditionUtils:JudgeBuyGoods(Params)
+  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    local ShopItemId, Count = Params[1], Params[2]
+    local ShopItem = self.ShopItems[ShopItemId]
+    if not ShopItem then
+      return false
+    end
+    return Count <= ShopItem.AlreadyPurchaseTimes
+  end
+  return false
+end
+function ConditionUtils:JudgeGachaCount(Params)
+  if GWorld:IsSkynetServer() or not IsDedicatedServer(GWorld.GameInstance) then
+    local GachaId, Count = Params[1], Params[2]
+    local Gacha = self.SkinGachaPool[GachaId]
+    if not Gacha then
+      return false
+    end
+    return Count <= Gacha.DrawCounts
+  end
+  return false
+end
 function ConditionUtils:PackParams(ConditionName, Params)
   local ResultStr = ConditionName .. ","
   if type(Params) == "table" then
@@ -727,7 +912,6 @@ function ConditionUtils:PackParams(ConditionName, Params)
   end
   return ResultStr
 end
-
 function ConditionUtils:UnpackParams(ParamStr)
   local t = CommonUtils.Split(ParamStr, ",")
   local Params = {}
@@ -741,7 +925,6 @@ function ConditionUtils:UnpackParams(ParamStr)
   end
   return t[1], Params
 end
-
 function ConditionUtils:GetConditionContent(ConditionId)
   local Condition = DataMgr.Condition[ConditionId]
   if not Condition then
@@ -749,7 +932,6 @@ function ConditionUtils:GetConditionContent(ConditionId)
   end
   return Condition.ConditionMap
 end
-
 function ConditionUtils:GetConditionLogic(ConditionId)
   local Condition = DataMgr.Condition[ConditionId]
   if not Condition then
@@ -757,19 +939,16 @@ function ConditionUtils:GetConditionLogic(ConditionId)
   end
   return Condition.ConditionLogic
 end
-
 function ConditionUtils:CallDedicatedServerCondition(ConditionName, Params, ConditionCheckId)
   if not ConditionCheckId then
     return
   end
   self:CallClientMethod("CheckDedicatedServerCondition", ConditionCheckId, ConditionUtils:PackParams(ConditionName, Params))
 end
-
 function ConditionUtils:CallClientCondition(ConditionName, Params, ConditionCheckId)
   if not ConditionCheckId then
     return
   end
   self:CallClientMethod("CheckClientCondition", ConditionCheckId, ConditionUtils:PackParams(ConditionName, Params))
 end
-
 return ConditionUtils

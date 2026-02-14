@@ -1,12 +1,10 @@
 local PlayerCameraSightNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function PlayerCameraSightNode:Init()
   self.TargetPointName = ""
   self.KeepSightTime = 0
   self.ECameraAxisLockType = "None"
   self.Speed = 1
 end
-
 function PlayerCameraSightNode:Execute(Callback)
   DebugPrint("------------ PlayerCameraSightNode ------------------")
   local GameInstance = GWorld.GameInstance
@@ -17,12 +15,10 @@ function PlayerCameraSightNode:Execute(Callback)
     local function Func()
       Callback()
     end
-    
     Player:StartCameraKeepSightOnActor(NewTargetPoint, self.KeepSightTime, self.ECameraAxisLockType, self.Speed, Func)
   else
-    print(_G.LogTag, "ERROR: \228\184\141\229\173\152\229\156\168NewTargetPoint\239\188\154" .. (self.TargetPointName or "") .. "\230\136\150PlayerCharacter\228\184\141\229\143\175\231\148\168")
+    print(_G.LogTag, "ERROR: 不存在NewTargetPoint：" .. (self.TargetPointName or "") .. "或PlayerCharacter不可用")
     Callback()
   end
 end
-
 return PlayerCameraSightNode

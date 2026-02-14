@@ -1,43 +1,38 @@
 local Component = {}
 local NumberModel = require("BluePrints.UI.UI_PC.Archive.WBP_Archive_Number_Model")
-
 function Component:EnterWorld()
   self:RefreshArchiveReddot()
 end
-
 function Component:GetArchiveReward(CallBackFunction, ArchiveId, ArchiveCount)
   self.logger.debug("GetArchiveReward Begin", ArchiveId, ArchiveCount)
-  
   local function Callback(Ret, RewardReturn)
     CallBackFunction(Ret, RewardReturn)
     self.logger.debug("GetArchiveReward Callback", Ret, ArchiveId, ArchiveCount, RewardReturn)
   end
-  
   self:CallServer("GetArchiveReward", Callback, ArchiveId, ArchiveCount)
 end
-
 function Component:GetAllArchiveReward(CallBackFunction, ArchiveId)
   self.logger.debug("GetAllArchiveReward Begin", ArchiveId)
-  
   local function Callback(Ret, RewardReturn)
     CallBackFunction(Ret, RewardReturn)
     self.logger.debug("GetAllArchiveReward Callback", Ret, ArchiveId, RewardReturn)
   end
-  
   self:CallServer("GetAllArchiveReward", Callback, ArchiveId)
 end
-
 function Component:_OnPropChangeArchives(key)
   local ArchiveType = key[1]
   self:_TryAddRewardReddotCommon(ArchiveType)
   self:_TryAddNewReddot(ArchiveType)
 end
-
 function Component:_TryAddRewardReddotCommon(ArchiveType)
   local Info = DataMgr.ArchiveInfo[ArchiveType]
   local Count = self.Archives[Info.ArchiveType]:GetArchiveCount()
   if 1005 == ArchiveType then
     Count = NumberModel:GetCurrentBookNumber()
+  end
+  local SumNum = NumberModel["Get" .. NumberModel.ArchiveType2Name[ArchiveType] .. "SumNumber"](NumberModel)
+  if Count > SumNum then
+    Count = SumNum
   end
   if not ReddotManager.GetTreeNode("ArchiveReward") then
     ReddotManager.AddNode("ArchiveReward")
@@ -59,12 +54,10 @@ function Component:_TryAddRewardReddotCommon(ArchiveType)
     ReddotManager.IncreaseLeafNodeCount("ArchiveReward", IncreaceNum)
   end
 end
-
 function Component:_TryAddNewReddot(ArchiveType)
   local NodeName = self:GetNodeName(ArchiveType)
   self:_TryAddNewReddotCommon(ArchiveType, NodeName)
 end
-
 function Component:_TryAddNewReddotCommon(ArchiveType, NodeName)
   if NodeName then
     if not ReddotManager.GetTreeNode(NodeName) then
@@ -83,7 +76,6 @@ function Component:_TryAddNewReddotCommon(ArchiveType, NodeName)
     end
   end
 end
-
 function Component:GetNodeName(ArchiveType)
   local NodeName
   if 1001 == ArchiveType then
@@ -101,7 +93,6 @@ function Component:GetNodeName(ArchiveType)
   end
   return NodeName
 end
-
 function Component:RefreshArchiveReddot()
   if not ReddotManager.GetTreeNode("ArchiveReward") then
     ReddotManager.AddNode("ArchiveReward")
@@ -112,5 +103,4 @@ function Component:RefreshArchiveReddot()
     self:_TryAddNewReddot(ArchiveType)
   end
 end
-
 return Component

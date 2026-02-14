@@ -1,5 +1,5 @@
 return {
-  storyName = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+  storyName = "未命名任务",
   storyDescription = "",
   lineData = {
     {
@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "story_16759276668144",
       type = "StoryNode",
-      name = "\230\156\170\229\145\189\229\144\141\228\187\187\229\138\161",
+      name = "未命名任务",
       pos = {x = 491, y = 108.59615384615384},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,7 +121,7 @@ return {
           ["1715596373966146387"] = {
             key = "1715596373966146387",
             type = "SetPlayerStatusNode",
-            name = "\232\174\190\231\189\174\231\142\169\229\174\182\231\138\182\230\128\129",
+            name = "设置玩家状态",
             pos = {x = 442.07789003159917, y = -248.36298550284107},
             propsData = {
               HPPercent = -1,
@@ -138,19 +140,19 @@ return {
           ["1715916489140364"] = {
             key = "1715916489140364",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 133.39504048583007, y = 144.29757085020236},
             propsData = {WaitTime = 2}
           },
           ["17159165288731749"] = {
             key = "17159165288731749",
             type = "ShowGuideButtonNode",
-            name = "\229\140\186\229\159\159\229\143\179\228\184\138\232\167\146UI",
+            name = "区域右上角UI",
             pos = {x = 688.7796558704455, y = 156.98987854251013},
             propsData = {
               ShowEnable = true,
               MessageId = 300302,
-              MessageNote = "\231\130\185\229\135\187<H>\226\128\156\230\149\180\229\164\135\226\128\157</>\232\191\155\229\133\165\230\149\180\229\164\135\231\179\187\231\187\159\227\128\130",
+              MessageNote = "点击<H>“整备”</>进入整备系统。",
               DelayTime = 0.5,
               IsForceClick = true,
               IsControlPlayer = false,

@@ -1,13 +1,10 @@
 require("UnLua")
 local M = Class("Blueprints.UI.BP_UIState_C")
-
 function M:Construct()
 end
-
 function M:Init(Content)
   self:OnListItemObjectSet(Content)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.SelfWidget = self
   self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(self)
@@ -33,7 +30,7 @@ function M:OnListItemObjectSet(Content)
   end
   self.Rewards = Content.ConfigData.Rewards
   self.ReceiveCallBack = Content.ConfigData.ReceiveCallBack
-  self.BtnReward:SetText(GText(Content.ConfigData.ReceiveButtonText) or "\233\162\134\229\143\150")
+  self.BtnReward:SetText(GText(Content.ConfigData.ReceiveButtonText) or "领取")
   if Content.ConfigData.ReceiveCallBack then
     self.BtnReward:BindEventOnClicked(self, function()
       Content.ConfigData.ReceiveCallBack(self, Content)
@@ -62,7 +59,6 @@ function M:OnListItemObjectSet(Content)
   self.IsListened = true
   self:InitRewards(Content.ConfigData)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if self.Owner.IsInViewMode then
@@ -92,7 +88,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return self.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:InitRewards(Config)
   if not Config.Rewards then
     return
@@ -152,13 +147,11 @@ function M:InitRewards(Config)
     end
   end, false, 0, nil, true)
 end
-
 function M:RefreshBtn(IsGot)
   if IsGot then
     self.Switch_Btn:SetActiveWidgetIndex(1)
   end
 end
-
 function M:RefreshBaseInfo()
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   if IsValid(GameInputModeSubsystem) then
@@ -166,7 +159,6 @@ function M:RefreshBaseInfo()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -175,35 +167,29 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:InitGamepadView()
   end
 end
-
 function M:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:InitGamepadView()
   self.UsedList:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Owner:ChangeCloseShortKeyText(GText("UI_Controller_Close"))
 end
-
 function M:InitKeyBoardView()
   if self.UsedList then
     self.UsedList:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:Destruct()
   self:RemoveInputMethodChangedListen()
   self.Super.Destruct(self)
 end
-
 function M:NewItemContent(ItemType, ItemId, Count)
   if 0 == ItemId then
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -228,21 +214,18 @@ function M:NewItemContent(ItemType, ItemId, Count)
   }
   return NewObj
 end
-
 function M:OnMenuOpenChanged(bIsOpen, Obj)
   if Obj.SelfWidget and false == bIsOpen and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     Obj.SelfWidget.Item:PlayAnimation(Obj.SelfWidget.Item.Hover)
   end
   self.Owner:OnMenuOpenChanged(bIsOpen)
 end
-
 function M:OnNavigateLeft()
   if self.SelectedIndex - 1 >= 0 then
     return self:UpdateSelectedWidget(self.SelectedIndex - 1)
   end
   return
 end
-
 function M:UpdateSelectedWidget(SelectedIndex)
   self.Owner.NeedOpenMenuWhenResoureFocused = false
   local CurItem = self.UsedList:GetItemAt(self.SelectedIndex)
@@ -266,7 +249,6 @@ function M:UpdateSelectedWidget(SelectedIndex)
   end
   return
 end
-
 function M:OnNavigateRight()
   local ItemsCount = self.UsedList:GetNumItems()
   if ItemsCount > self.SelectedIndex + 1 then
@@ -274,7 +256,6 @@ function M:OnNavigateRight()
   end
   return
 end
-
 function M:OnNavigateDown()
   local CurItem = self.UsedList:GetItemAt(self.SelectedIndex)
   if CurItem and CurItem.SelfWidget then
@@ -287,7 +268,6 @@ function M:OnNavigateDown()
   end
   self.Owner:OnNavigateDown(self.Content)
 end
-
 function M:OnNavigateUp()
   local CurItem = self.UsedList:GetItemAt(self.SelectedIndex)
   if CurItem and CurItem.SelfWidget then
@@ -300,7 +280,6 @@ function M:OnNavigateUp()
   end
   self.Owner:OnNavigateUp(self.Content)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -331,7 +310,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:SwitchSelectedMode()
   if self.Owner.IsInViewMode then
     self.Owner.BtnReward:SetGamePadIconVisible(true)
@@ -354,7 +332,6 @@ function M:SwitchSelectedMode()
     self.Owner:ShowGamepadViewSingleBtn(true)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.IsEnter = true
   local IsGamePad = UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad
@@ -364,7 +341,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsEnter = false
   if self.Mobile or self:IsAnimationPlaying(self.In) then
@@ -373,11 +349,9 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnFocusLost(InFocusEvent)
   if self.GameInputModeSubsystem and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.BtnReward:SetGamePadIconVisible(false)
   end
 end
-
 return M

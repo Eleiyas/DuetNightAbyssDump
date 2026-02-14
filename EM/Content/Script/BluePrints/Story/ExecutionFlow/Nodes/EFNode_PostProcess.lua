@@ -1,11 +1,11 @@
 local M = {}
-
+local ScriptLogType = UE.EStoryLogType.Script
 function M:CreateNode(Flow, TalkTask, Params)
   local MaterialInstance = Params.MaterailInstance
   local TalkContext = GWorld.GameInstance:GetTalkContext()
   if not IsValid(TalkContext) then
     local Message = string.format("PostProcess create failed: TalkContext not found, DialogueId: %d", Flow.DialogueId)
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\229\175\185\232\175\157\232\191\144\232\161\140\230\151\182\229\135\186\233\148\153", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, ScriptLogType, "PostProcess脚本执行出错：TalkContext无效", Message)
     return
   end
   local PostProcessNode = Flow:CreateNode(UEFNode_Delegate)
@@ -18,5 +18,4 @@ function M:CreateNode(Flow, TalkTask, Params)
   end)
   return PostProcessNode
 end
-
 return M

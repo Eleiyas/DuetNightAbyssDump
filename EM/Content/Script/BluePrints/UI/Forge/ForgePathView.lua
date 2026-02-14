@@ -1,7 +1,6 @@
 local ForgePathView = Class("BluePrints.UI.BP_UIState_C")
 local ForgeUtils = require("Blueprints.UI.Forge.ForgeUtils")
 local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
-
 function ForgePathView:PreInit()
   self.ItemMap = {
     {
@@ -88,9 +87,13 @@ function ForgePathView:PreInit()
   self.LastTargetRowIndex = nil
   self.LastTargetColIndex = nil
 end
-
 function ForgePathView:InitView(DraftId, MaxLen)
   self:PlayAnimation(self.In)
+  self.Btn_Close:TryOverrideSoundFunc(function()
+    AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
+  end)
+  self.Btn_Close:UnBindEventOnClicked(self, self.OnBtnCloseClicked)
+  self.Btn_Close:BindEventOnClicked(self, self.OnBtnCloseClicked)
   self.ItemDetails.Forging:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local Content = ForgeUtils:ConstructItemContentFromDraftId(DraftId)
   Content.OnMouseButtonDownEvent = {
@@ -143,7 +146,6 @@ function ForgePathView:InitView(DraftId, MaxLen)
     Item.Line02_Connect:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function ForgePathView:RefreshView(DraftInfo)
   local ItemDetailParam = {}
   ItemDetailParam.ItemId = DraftInfo.ProductId
@@ -153,7 +155,6 @@ function ForgePathView:RefreshView(DraftInfo)
   self.ItemDetails:RefreshItemInfo(ItemDetailParam, true)
   self.ItemDetails.Text_DraftNum:SetText(DraftInfo.Count)
 end
-
 function ForgePathView:TickRefreshView(DraftInfo)
   if DraftInfo then
     self.ItemDetails.Forging:RefreshView(DraftInfo)
@@ -161,12 +162,7 @@ function ForgePathView:TickRefreshView(DraftInfo)
     self.ItemDetails.Forging:SetDraftNotEnough()
   end
 end
-
 function ForgePathView:BindUIEvents()
-  self.Btn_Close:BindEventOnClicked(self, self.OnBtnCloseClicked)
-  self.Btn_Close:TryOverrideSoundFunc(function()
-    AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_return", nil, nil)
-  end)
   for RowIndex, ItemRow in ipairs(self.ItemMap) do
     if 1 ~= RowIndex then
       for ColIndex, PathItem in ipairs(ItemRow) do
@@ -175,7 +171,6 @@ function ForgePathView:BindUIEvents()
     end
   end
 end
-
 function ForgePathView:SelectNodeView(RowIndex, ColIndex, HasNextRowItems)
   if RowIndex > 1 then
     local ItemView = self.ItemMap[RowIndex][ColIndex]
@@ -183,14 +178,12 @@ function ForgePathView:SelectNodeView(RowIndex, ColIndex, HasNextRowItems)
   end
   self:SetTargetSelectedView(RowIndex, ColIndex, true)
 end
-
 function ForgePathView:UnSelectNodeView(RowIndex, ColIndex)
   if RowIndex > 1 then
     local ItemView = self.ItemMap[RowIndex][ColIndex]
     ItemView:SetSelected(false)
   end
 end
-
 function ForgePathView:SetTargetSelectedView(RowIndex, ColIndex, IsSelected)
   local PathItem = self.ItemMap[RowIndex][ColIndex]
   if 1 == RowIndex then
@@ -204,7 +197,6 @@ function ForgePathView:SetTargetSelectedView(RowIndex, ColIndex, IsSelected)
   self.LastTargetRowIndex = RowIndex
   self.LastTargetColIndex = ColIndex
 end
-
 function ForgePathView:RefreshSingleItemView(RowIndex, ColIndex, ItemInfo)
   local ItemView = self.ItemMap[RowIndex][ColIndex]
   if ItemView then
@@ -213,7 +205,6 @@ function ForgePathView:RefreshSingleItemView(RowIndex, ColIndex, ItemInfo)
     DebugPrint("Tianyi@ RefreshSingleItemView failed: ItemView not found!")
   end
 end
-
 function ForgePathView:_RefreshSingleItemView(Item, ItemInfo)
   local Avatar = GWorld:GetAvatar()
   local ItemContent = ForgeUtils:ConstructItemContentFromResourceId(ItemInfo.ResourceType, ItemInfo.ResourceId)
@@ -245,14 +236,12 @@ function ForgePathView:_RefreshSingleItemView(Item, ItemInfo)
   end
   Item:UpdateDraftState(ItemDraftState, ShowRedDot)
 end
-
 function ForgePathView:UpdateNewRowItem(Item, ItemInfo)
   self:_RefreshSingleItemView(Item, ItemInfo)
   Item:SetUpLineVisible(true)
   Item:SetDownLineVisible(false)
   Item:SetSelected(false)
 end
-
 function ForgePathView:ClearItemCountWidget()
   for RowIndex, ItemRow in ipairs(self.ItemMap) do
     if 1 ~= RowIndex then
@@ -263,7 +252,6 @@ function ForgePathView:ClearItemCountWidget()
     end
   end
 end
-
 function ForgePathView:ClearRowView(RowIndex)
   if not self.ItemMap[RowIndex] then
     return
@@ -278,7 +266,6 @@ function ForgePathView:ClearRowView(RowIndex)
     LineItem:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function ForgePathView:UpdateRowItemsView(RowIndex, ItemsList)
   for Index, Item in ipairs(self.ItemMap[RowIndex]) do
     if Index > #ItemsList then
@@ -295,7 +282,6 @@ function ForgePathView:UpdateRowItemsView(RowIndex, ItemsList)
     end
   end
 end
-
 function ForgePathView:UpdateRowLinesView(RowIndex, RightMostPos)
   for Index, Line in ipairs(self.LineMap[RowIndex]) do
     local LineRightPos = self.LinePosMap[RowIndex][Index]
@@ -309,7 +295,6 @@ function ForgePathView:UpdateRowLinesView(RowIndex, RightMostPos)
     self:PlayAnimation(self.LineAnimMap[RowIndex])
   end
 end
-
 function ForgePathView:InitKeyboardView()
   for RowIndex, ItemRow in ipairs(self.ItemMap) do
     if 1 ~= RowIndex then
@@ -319,7 +304,6 @@ function ForgePathView:InitKeyboardView()
     end
   end
 end
-
 function ForgePathView:InitGamepadView()
   for RowIndex, ItemRow in ipairs(self.ItemMap) do
     if 1 ~= RowIndex then
@@ -329,25 +313,20 @@ function ForgePathView:InitGamepadView()
     end
   end
 end
-
 function ForgePathView:SetGamepadFocus()
   self.Item_Head:SetFocus()
 end
-
 function ForgePathView:OnBtnCloseClicked()
   self:OnClose()
 end
-
 function ForgePathView:CloseView()
   self:PlayAnimation(self.Out)
 end
-
 function ForgePathView:OnAnimationFinished(InAnim)
   if InAnim == self.Out then
     self:RealCloseView()
   end
 end
-
 function ForgePathView:RealCloseView()
   if self.OnClosedCallback then
     local Obj, Func = table.unpack(self.OnClosedCallback)
@@ -356,7 +335,6 @@ function ForgePathView:RealCloseView()
     end
   end
 end
-
 function ForgePathView:GetDesiredFocusTarget()
   if self.LastTargetColIndex and self.LastTargetRowIndex then
     local ItemWidget = self.ItemMap[self.LastTargetRowIndex][self.LastTargetColIndex]
@@ -365,12 +343,10 @@ function ForgePathView:GetDesiredFocusTarget()
     return self.Item_Head
   end
 end
-
 function ForgePathView:RefocusToPathView()
   self:GetDesiredFocusTarget():SetFocus()
   self.ItemDetails.Forging:SetGamepadButtonKeyVisible(true)
 end
-
 function ForgePathView:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadFaceButtonDown then
@@ -391,7 +367,6 @@ function ForgePathView:Handle_KeyDownOnGamePad(InKeyName)
   IsEventHandled = IsEventHandled or self.ItemDetails:OnGamePadDown(InKeyName)
   return IsEventHandled
 end
-
 function ForgePathView:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -404,7 +379,6 @@ function ForgePathView:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function ForgePathView:InitCompendiumView()
   self.State:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.ItemDetails.Forging:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -416,5 +390,4 @@ function ForgePathView:InitCompendiumView()
     end
   end
 end
-
 return ForgePathView

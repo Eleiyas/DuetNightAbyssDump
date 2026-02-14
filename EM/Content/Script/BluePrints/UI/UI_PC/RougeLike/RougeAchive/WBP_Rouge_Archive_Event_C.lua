@@ -7,7 +7,6 @@ local M = Class({
 local EntryScale = FVector2D(0, 0)
 local OriginSize = FVector2D(278, 545)
 local AspectBase = 1.7777777777777777
-
 function M:Construct()
   M.Super.Construct(self)
   self.List_Item.OnListViewScrolled:Add(self, self._OnListItemScrolled)
@@ -23,7 +22,6 @@ function M:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
 end
-
 function M:OnListItemReleased()
   local Scrolloffset = self.List_Item:GetScrollOffset()
   local FullFillCount = self.List_Item:GetFullFillItemCount()
@@ -33,7 +31,6 @@ function M:OnListItemReleased()
     self:SelectItem(self.CurSelectIndex, true)
   end
 end
-
 function M:_CalcEntryScale(Entry, ItemOffset)
   local FullFillCount = self.List_Item:GetFullFillItemCount()
   local EntryCoord = Entry.Index - (ItemOffset - FullFillCount)
@@ -62,7 +59,6 @@ function M:_CalcEntryScale(Entry, ItemOffset)
   end
   return Scale
 end
-
 function M:_ApplyEntryScale(ItemOffset)
   ItemOffset = ItemOffset or self.List_Item:GetScrollOffset()
   for i, Entry in pairs(self.List_Item:GetDisplayedEntryWidgets()) do
@@ -75,7 +71,6 @@ function M:_ApplyEntryScale(ItemOffset)
     Slot:SetSize(Size)
   end
 end
-
 function M:_OnListItemScrolled(ItemOffset, DistanceRemaining)
   local bInitTimer = false
   if not self._ApplyEntryTimer then
@@ -101,7 +96,6 @@ function M:_OnListItemScrolled(ItemOffset, DistanceRemaining)
     end
   end
 end
-
 function M:Destruct()
   M.Super.Destruct(self)
   if self._ApplyEntryTimer then
@@ -112,7 +106,6 @@ function M:Destruct()
   self.List_Item.OnMouseButtonUp:Clear()
   self.List_Item.OnListViewScrolled:Clear()
 end
-
 function M:InitUIInfo(EventInfo, DataModel)
   self.CenterPadding = 0
   self.bGamepadReady = false
@@ -134,11 +127,9 @@ function M:InitUIInfo(EventInfo, DataModel)
   end
   self:AddInputMethodChangedListen()
 end
-
 function M:InitReddot()
   ReddotManager.AddListener("RougeArchiveReward", self, self.OnArchiveRewardReddotChange)
 end
-
 function M:OnArchiveRewardReddotChange(Count)
   DebugPrint("Tianyi@ OnArchiveRewardReddotChange", Count)
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("RougeArchiveReward")
@@ -147,7 +138,6 @@ function M:OnArchiveRewardReddotChange(Count)
   end
   self.ArchiveRewardBtn:SetReddot(Count > 0)
 end
-
 function M:InitTab()
   local TabConfigData = {
     PlatformName = self.PlatformName,
@@ -181,7 +171,6 @@ function M:InitTab()
   }
   self.Root:InitOtherPageTab(TabConfigData, nil, true, self, nil)
 end
-
 function M:ResortEventData(EventInfo)
   self.SeriesList = {}
   for _, Data in pairs(DataMgr.RLRoomStorySeries) do
@@ -198,9 +187,7 @@ function M:ResortEventData(EventInfo)
       self.SeriesList[Data.Data.RLArchiveSeriesId].UnlockNum = (self.SeriesList[Data.Data.RLArchiveSeriesId].UnlockNum or 0) + 1
     end
     self.SeriesList[Data.Data.RLArchiveSeriesId].TotalNum = (self.SeriesList[Data.Data.RLArchiveSeriesId].TotalNum or 0) + 1
-    if Data.IsNew then
-      self.SeriesList[Data.Data.RLArchiveSeriesId].IsNew = true
-    end
+    self.SeriesList[Data.Data.RLArchiveSeriesId].IsNew = Data.IsNew
     if not self.SeriesList[Data.Data.RLArchiveSeriesId].SubItems then
       self.SeriesList[Data.Data.RLArchiveSeriesId].SubItems = {}
     end
@@ -213,6 +200,7 @@ function M:ResortEventData(EventInfo)
     end
     table.insert(self.SeriesList[Data.Data.RLArchiveSeriesId].SubItems, {
       EventId = RoomId,
+      ArchiveId = Data.Data.RLArchiveSubId,
       IsUnlocked = Data.IsUnlocked,
       IsNew = Data.IsNew,
       Name = Data.Data.Name or Data.Data.EventName,
@@ -246,7 +234,6 @@ function M:ResortEventData(EventInfo)
   self.CurSelectIndex = FirstIndex
   self.MaxNum = #self.SeriesList
 end
-
 function M:InitEventItems()
   for Index, Data in ipairs(self.SeriesList) do
     local Obj = NewObject(UIUtils.GetCommonItemContentClass())
@@ -270,7 +257,6 @@ function M:InitEventItems()
     self:SelectItem(self.CurSelectIndex, true)
   end)
 end
-
 function M:InitBtns()
   self.Btn_Left.Btn.OnClicked:Add(self, self.SwitchLeft)
   self.Btn_Right.Btn.OnClicked:Add(self, self.SwitchRight)
@@ -293,7 +279,6 @@ function M:InitBtns()
   self.ArchiveRewardBtn:InitView(self.DataModel)
   self.ArchiveRewardBtn:SetItemNum(RougeConst.ArchiveType.Event)
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if not self.bGamepadReady then
     return UIUtils.Unhandle
@@ -316,7 +301,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandle
 end
-
 function M:SwitchLeft()
   local LastCurSelectIndex = self.CurSelectIndex
   if 0 == LastCurSelectIndex then
@@ -327,7 +311,6 @@ function M:SwitchLeft()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   end
 end
-
 function M:SwitchRight()
   local LastCurSelectIndex = self.CurSelectIndex
   if LastCurSelectIndex == self.MaxNum - 1 then
@@ -338,7 +321,6 @@ function M:SwitchRight()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
   end
 end
-
 function M:_CalcCenterPadding()
   self.CenterPadding = 0
   local ListSizeX = UIManager():GetWidgetRenderSize(self.List_Item).X
@@ -349,7 +331,6 @@ function M:_CalcCenterPadding()
   DebugPrint("WBP_Rougelike_Archive_Event_P_C,,_CalcCenterPadding ", Aspect / AspectBase)
   self.CenterPadding = ListSizeX / ItemWidth / 2 - 0.4 - 0.4 * (Aspect / AspectBase)
 end
-
 function M:SelectItem(Index, bAdjustScale)
   self.bSelecting = true
   local FullFillCount = self.List_Item:GetFullFillItemCount()
@@ -365,7 +346,6 @@ function M:SelectItem(Index, bAdjustScale)
     self:_InnerSelectItem(Index, RealIndex)
   end
 end
-
 function M:_InnerSelectItem(Index, RealIndex)
   self.List_Item:SetSelectedIndex(RealIndex)
   self.List_Item:SetScrollOffset(RealIndex - self.CenterPadding)
@@ -374,7 +354,6 @@ function M:_InnerSelectItem(Index, RealIndex)
   self.Btn_Click.Btn_Click:SetForbidden(not self.CurSelectItem.IsUnlocked)
   self.bSelecting = false
 end
-
 function M:ChooseItem(Index, Item)
   if self.CurSelectIndex ~= Index then
     self:AddTimer(0.5, function()
@@ -385,7 +364,6 @@ function M:ChooseItem(Index, Item)
   end
   self:SelectItem(Index)
 end
-
 function M:OpenItem()
   if not self.CurSelectItem then
     return
@@ -407,7 +385,6 @@ function M:OpenItem()
     self.CurSelectItem.SubItems
   })
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   DebugPrint("@zyh OnUpdateUIStyleByInputTypeChange")
   self.Super.RefreshOpInfoByInputDevice(self, CurInputType, CurGamepadName)
@@ -417,7 +394,6 @@ function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   if UIUtils.HasAnyFocus(self.Root) then
     self.List_Item:SetFocus()
@@ -425,12 +401,10 @@ function M:InitGamepadView()
   self.Btn_Click.Key_GamePad:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Click.ImageSlot:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:InitKeyboardView()
   self.Btn_Click.Key_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_Click.ImageSlot:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnReturnKeyDown()
   self.Btn_Left.Btn.OnClicked:Clear()
   self.Btn_Right.Btn.OnClicked:Clear()
@@ -444,31 +418,32 @@ function M:OnReturnKeyDown()
     WidgetUI.Archive_EventItem:SetFocus()
   end
 end
-
 function M:OpenReward()
   local Params = self:MakeRewardData()
   Params.ConfigData.Type = RougeConst.ArchiveType.Event
   UIManager(self):ShowCommonPopupUI(100173, Params, self)
 end
-
 function M:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
       local HaveReWardToGet = false
-      
+      DebugPrint("@@@RougeArchive GetAllRewards CallBack")
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Item = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
-        local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.Type)
-        local CanReceive = CurrentNum >= Item.ConfigData.Num
-        local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
-        if CanReceive and not IsGot then
-          HaveReWardToGet = true
-        end
-        Item.ConfigData.CanReceive = CanReceive
-        Item.ConfigData.RewardsGot = IsGot
-        if Item.SelfWidget then
-          Item.SelfWidget:RefreshBtn(IsGot)
+        if Item then
+          local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.ConfigData.Type)
+          local CanReceive = CurrentNum >= Item.ConfigData.Num
+          local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
+          if CanReceive and not IsGot then
+            HaveReWardToGet = true
+          end
+          DebugPrint("@@@RougeArchive GetAllRewards ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
+          Item.ConfigData.CanReceive = CanReceive
+          Item.ConfigData.RewardsGot = IsGot
+          if Item.SelfWidget then
+            Item.SelfWidget:RefreshBtn(IsGot)
+          end
         end
       end
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward, false, function()
@@ -476,27 +451,27 @@ function M:GetAllRewards(ReceiveAllParm)
       end, ReceiveAllParm.SelfWidget)
       ReceiveAllParm.SelfWidget:RefreshReddotInfo()
       ReceiveAllParm.SelfWidget:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetAllRewards HaveReWardToGet", HaveReWardToGet)
     end
-    
     Avatar:GetRougeLikeManualReward(CallBack, ReceiveAllParm.SelfWidget.Type, -1)
   end
 end
-
 function M:GetReward(Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Errorcode, Rewards)
       local HaveReWardToGet = false
-      
+      DebugPrint("@@@RougeArchive GetReward CallBack")
       for i = 0, Content.Owner.List_Item:GetNumItems() - 1 do
         local Item = Content.Owner.List_Item:GetItemAt(i)
         if Item then
-          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.Type)
-          local CanReceive = CurrentNum >= Content.ConfigData.Num
+          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.ConfigData.Type)
+          local CanReceive = CurrentNum >= Item.ConfigData.Num
           local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
           if CanReceive and not IsGot then
             HaveReWardToGet = true
           end
+          DebugPrint("@@@RougeArchive GetReward ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
           Item.ConfigData.CanReceive = CanReceive
           Item.ConfigData.RewardsGot = IsGot
           if Item.SelfWidget then
@@ -506,15 +481,14 @@ function M:GetReward(Content)
       end
       Content.SelfWidget:RefreshReddotInfo()
       Content.Owner:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetReward HaveReWardToGet", HaveReWardToGet)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function()
         Content.SelfWidget:SetFocus()
       end, Content.SelfWidget)
     end
-    
     Avatar:GetRougeLikeManualReward(Callback, Content.SelfWidget.Type, Content.SelfWidget.ItemId)
   end
 end
-
 function M:MakeRewardData()
   local Avatar = GWorld:GetAvatar()
   local Params = {}
@@ -602,7 +576,6 @@ function M:MakeRewardData()
   Params.ConfigData.ReddotName = "RougeArchiveReward"
   return Params
 end
-
 function M:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -617,5 +590,4 @@ function M:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 return M

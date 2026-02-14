@@ -6,7 +6,6 @@ local PARSE_CODE = {
 }
 local PARSE_OPTION_TYPE = {EPSILON = "EPSILON", TALK_ID = "TALK_ID"}
 local OptionParser = {}
-
 function OptionParser:ParseWhitespace(str, idx)
   while str[idx] do
     if " " == str[idx] or "\n" == str[idx] or "\t" == str[idx] or "\r" == str[idx] then
@@ -20,18 +19,15 @@ function OptionParser:ParseWhitespace(str, idx)
   end
   return idx
 end
-
 local function GetChar(str, idx)
   return string.sub(str, idx, idx)
 end
-
 local function EXPECT(str, idx, val)
   if GetChar(str, idx) ~= val then
     error(string.format("Expect %s,Get %s", val, GetChar(str, idx)))
   end
   return idx + 1
 end
-
 function OptionParser:ParseOptionList(str, idx)
   local option_list = {}
   while true do
@@ -69,7 +65,6 @@ function OptionParser:ParseOptionList(str, idx)
     end
   end
 end
-
 function OptionParser:ParseOptionItem(str, idx)
   idx = OptionParser:ParseWhitespace(str, idx)
   local option_item = {}
@@ -111,7 +106,6 @@ function OptionParser:ParseOptionItem(str, idx)
     option_item = option_item
   }
 end
-
 function OptionParser:ParseNumber(str, idx)
   local char = GetChar(str, idx)
   if not (char >= "0") or not (char <= "9") then
@@ -128,7 +122,6 @@ function OptionParser:ParseNumber(str, idx)
   end
   return idx, tonumber(number_str), PARSE_CODE.OK
 end
-
 function OptionParser:ParseOptionOperator(str, idx)
   idx = EXPECT(str, idx, "(")
   local current_char = GetChar(str, idx)
@@ -169,11 +162,9 @@ function OptionParser:ParseOptionOperator(str, idx)
     }
   end
 end
-
 function OptionParser:Parse(str)
   return OptionParser:ParseOptionList(str, 1)
 end
-
 return {
   OptionParser,
   PARSE_CODE,

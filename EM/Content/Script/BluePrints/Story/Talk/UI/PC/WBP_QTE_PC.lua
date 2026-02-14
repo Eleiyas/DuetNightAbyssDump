@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.Story.Talk.UI.Common.WBP_QTE_Common")
-
 function M:SwitchBindButtonClickEvents(bBind)
   if bBind then
     self:InitButtonPerformance()
@@ -10,7 +9,6 @@ function M:SwitchBindButtonClickEvents(bBind)
     self.Key_Handle:DisableKey()
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
@@ -19,7 +17,6 @@ function M:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   end
   M.Super.RefreshOpInfoByInputDevice(self, CurInputType, CurGamepadName)
 end
-
 function M:InitGamepadView()
   self.Key_Handle:CreateCommonKey({
     KeyInfoList = {
@@ -31,7 +28,6 @@ function M:InitGamepadView()
     }
   })
 end
-
 function M:InitKeyBoardView()
   self.Key_Handle:CreateCommonKey({
     KeyInfoList = {
@@ -43,7 +39,6 @@ function M:InitKeyBoardView()
     }
   })
 end
-
 function M:InitButtonPerformance()
   if self.bHasInitButtonPerformance then
     return
@@ -55,7 +50,6 @@ function M:InitButtonPerformance()
     self:InitKeyBoardView()
   end
 end
-
 function M:AdaptPlatform()
   local UIPosName = self.QTEConfig.UIPosition
   local Offset = {x = 0, y = 0}
@@ -69,8 +63,6 @@ function M:AdaptPlatform()
   local Slot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Main)
   Slot:SetPosition(FVector2D(Offset.x, Offset.y))
 end
-
 function M:SwitchShowMouseCursorInPIE(bShow)
 end
-
 return M

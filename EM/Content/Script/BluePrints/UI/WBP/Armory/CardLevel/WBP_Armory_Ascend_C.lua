@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:Init(Params)
   self.Parent = Params.Parent
   self.Target = Params.Target
@@ -22,22 +21,18 @@ function M:Init(Params)
     self.SuccessToast.Text_Success:SetText(GText("Weapon_BreakLevelUp_Success"))
   end
 end
-
 function M:Construct()
   self:BindToAnimationFinished(self.LevelUp_In, {
     self,
     self.OnBreakLevelUpAnimFinished
   })
 end
-
 function M:Destruct()
   self:UnbindAllFromAnimationFinished(self.LevelUp_In)
 end
-
 function M:SetCallbacks(Callbacks)
   self.OnBreakLevelUpSuccessCallback = Callbacks.OnBreakLevelUpSuccessCallback
 end
-
 function M:OnBreakLevelUpSuccess(NewEnhanceLevel)
   self:SetBreakLevelStars(NewEnhanceLevel)
   self:PlayAnimation(self.LevelUp_In)
@@ -54,7 +49,6 @@ function M:OnBreakLevelUpSuccess(NewEnhanceLevel)
     self:PlayAttrAnim()
   end, false, 0, nil, true)
 end
-
 function M:UpdataAttrListView(Attrs, ComparedAttrs)
   self.Attrs = Attrs
   self.ComparedAttrs = ComparedAttrs
@@ -101,7 +95,6 @@ function M:UpdataAttrListView(Attrs, ComparedAttrs)
     Idx = Idx + 1
   end
 end
-
 function M:PlayAttrAnim()
   local ListView = self.List_Atrr
   local Items = ListView:GetListItems():ToTable()
@@ -115,7 +108,6 @@ function M:PlayAttrAnim()
     end
   end
 end
-
 function M:InitBreakLevelStars(BreakLevel)
   for i = 1, self.StarNum do
     local Star = self["WBP_Armory_Star_" .. i]
@@ -131,7 +123,6 @@ function M:InitBreakLevelStars(BreakLevel)
     end
   end
 end
-
 function M:SetBreakLevelStars(BreakLevel)
   local Stars = BreakLevel
   for i = 1, self.StarNum do
@@ -145,12 +136,10 @@ function M:SetBreakLevelStars(BreakLevel)
     end
   end
 end
-
 function M:OnBreakLevelUpAnimFinished()
   self:AddTimer(1.5, function()
     self:PlayAnimation(self.LevelUp_Out)
     self.Parent:OnBreakLevelUpAnimFinishedCallback()
   end, false, 0, nil, true)
 end
-
 return M

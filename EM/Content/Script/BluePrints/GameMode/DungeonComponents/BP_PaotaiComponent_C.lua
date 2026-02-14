@@ -2,7 +2,6 @@ require("UnLua")
 local BP_PaotaiComponent_C = Class({
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_PaotaiComponent_C:InitPaotaiBaseInfo()
   self.MonsterUnitId2Point = {}
   local MonsterPointInfo = DataMgr.PaotaiGamePoint
@@ -25,39 +24,36 @@ function BP_PaotaiComponent_C:InitPaotaiBaseInfo()
     Battle(self):AddBuffToTarget(Player, Player, BuffId, -1, nil, nil)
   end
 end
-
 function BP_PaotaiComponent_C:TriggerPaotaiOnEnd()
   EventManager:RemoveEvent(EventID.EndCanonMiniGame, self)
   EventManager:RemoveEvent(EventID.CanonBegionCountFinish, self)
 end
-
 function BP_PaotaiComponent_C:StartCanonMiniGame()
   self.GameMode:TriggerGameModeEvent("OnCanonBegionCountDownStart")
   EventManager:FireEvent(EventID.StartCanonMiniGame)
 end
-
 function BP_PaotaiComponent_C:CanonBegionCountFinish()
   self.GameMode:TriggerGameModeEvent("OnCanonBegionCountDownFinish")
   self.GameMode:PostCustomEvent("RealStartCanonGame")
 end
-
 function BP_PaotaiComponent_C:RealEndCanonMiniGame()
   EventManager:RemoveEvent(EventID.EndCanonMiniGame, self)
   self.GameMode:TriggerGameModeEvent("OnCanonMiniGameEnd")
   local Avatar = GWorld:GetAvatar()
-  Avatar:ExitBattle(true)
+  if self.Star > 0 then
+    Avatar:ExitBattle(true)
+  else
+    Avatar:ExitBattle(false)
+  end
 end
-
 function BP_PaotaiComponent_C:EndCanonMiniGame()
   EventManager:FireEvent(EventID.EndCanonMiniGame)
 end
-
 function BP_PaotaiComponent_C:SetMonsterNum()
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
   local Info = DataMgr.PaotaiMiniGame[DungeonId]
   self.GameMode.MonsterNum = Info.MonsterNum or -1
 end
-
 function BP_PaotaiComponent_C:CanonMonsterDead(Monster)
   if not IsValid(Monster) then
     return
@@ -72,14 +68,12 @@ function BP_PaotaiComponent_C:CanonMonsterDead(Monster)
     self:AddCanonScore(AddScore)
   end
 end
-
 function BP_PaotaiComponent_C:AddCanonScore(Score)
   self.CanonScore = (self.CanonScore or 0) + Score
   self:RefreshSatr()
   EventManager:FireEvent(EventID.OnCanonScoreAdd, self.CanonScore, Score)
   DebugPrint("PaotaiComponent:AddCanonScore Score", Score, "CurrentScore:", self.CanonScore)
 end
-
 function BP_PaotaiComponent_C:RefreshSatr()
   local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
   local Info = DataMgr.PaotaiMiniGame[DungeonId]
@@ -91,20 +85,16 @@ function BP_PaotaiComponent_C:RefreshSatr()
     end
   end
 end
-
 function BP_PaotaiComponent_C:GetScore()
   return self.CanonScore
 end
-
 function BP_PaotaiComponent_C:GetStar()
   return self.Star
 end
-
 function BP_PaotaiComponent_C:CustomFinishInfo()
   return {
     Score = self.CanonScore,
     Star = self.Star
   }
 end
-
 return BP_PaotaiComponent_C

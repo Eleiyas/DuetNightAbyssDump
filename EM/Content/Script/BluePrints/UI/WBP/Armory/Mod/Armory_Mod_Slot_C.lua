@@ -7,7 +7,6 @@ local UnHandled = UE.UWidgetBlueprintLibrary.UnHandled()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.bClickBegin = false
   self.LinkWidgets = {}
@@ -17,10 +16,10 @@ function M:Construct()
     UIManager(self):SetIsMenuAnchorOpen(bOpen)
   end)
   if ModController:IsMobile() then
+    self.bIsFocusable = true
     self.ItemDetails_MenuAnchor.bIsFocusable = true
   end
 end
-
 function M:Destruct()
   self.bClickBegin = false
   self:UnbindAllFromAnimationFinished(self.UnHover)
@@ -36,10 +35,12 @@ function M:Destruct()
   self.ItemDetails_MenuAnchor:ClearSetup()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Clear()
 end
-
 function M:ResetUI()
   self.Img_NoneHint:SetVisibility(UIConst.VisibilityOp.Collapsed)
-  self.Quality_Bar:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Panel_Quality:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  if self.Quality_Bar then
+    self.Quality_Bar:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
   self.Panel_Select:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.List_ModStar:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Icon_Mod:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -57,7 +58,6 @@ function M:ResetUI()
   self.ItemDetails_MenuAnchor:ClearMenuOpenChangedListen()
   self:SetRenderOpacity(1)
 end
-
 function M:_IsSelected()
   local SelectedStuff = ModModel:GetSelectStuff()
   if not SelectedStuff then
@@ -65,7 +65,6 @@ function M:_IsSelected()
   end
   return SelectedStuff.SlotId == self.SlotUIData.SlotId
 end
-
 function M:SetCallbacks(Callbacks)
   self.OnDragCancelCallback = Callbacks.OnDragCancelCallback
   self.OnDropCallback = Callbacks.OnDropCallback
@@ -74,7 +73,6 @@ function M:SetCallbacks(Callbacks)
   self.OnDragDetectedCallback = Callbacks.OnDragDetectedCallback
   self.OnRemovedFromFocusPathCallback = Callbacks.OnRemovedFromFocusPathCallback
 end
-
 function M:OnRemovedFromFocusPath(InFocusEvent)
   if self.OnRemovedFromFocusPathCallback then
     self.OnRemovedFromFocusPathCallback(self, InFocusEvent)
@@ -83,7 +81,6 @@ function M:OnRemovedFromFocusPath(InFocusEvent)
     self.ItemDetails_MenuAnchor:CloseItemDetailsWidget()
   end
 end
-
 function M:UpdateSlotUI(SlotUIData)
   self.SlotUIData = SlotUIData
   self.ModContent = nil
@@ -108,10 +105,8 @@ function M:UpdateSlotUI(SlotUIData)
   end
   self:CloseLinkLine()
 end
-
 function M:UpdateSlotUIUnlock()
 end
-
 function M:UpdateSlotUILock()
   self.Icon_Lock:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   if ModModel:IsInPolarityEditMode() then
@@ -120,7 +115,6 @@ function M:UpdateSlotUILock()
     self:PlayAnimation(self.Lock)
   end
 end
-
 function M:SetModIcon(Mod)
   self.Icon_Mod:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   UResourceLibrary.LoadObjectAsync(self, Mod.Icon, {
@@ -128,13 +122,12 @@ function M:SetModIcon(Mod)
     function(_, Icon)
       if not Icon then
         Icon = LoadObject("Texture2D'/Game/UI/Texture/Dynamic/Image/Head/Monster/T_Head_Empty.T_Head_Empty'")
-        DebugPrint(ErrorTag, string.format("Mod%s\230\178\161\230\156\137\233\133\141\231\189\174\229\155\190\230\160\135\230\136\150\232\128\133\231\148\168\233\148\153\229\155\190\230\160\135\232\183\175\229\190\132\228\186\134\239\188\129\239\188\129\239\188\129\232\191\153\233\135\140\231\148\168\233\187\152\232\174\164\231\154\132\229\155\190\230\160\135\233\161\182\228\184\128\228\184\139\n \232\161\168\233\135\140\233\133\141\231\154\132\233\148\153\232\183\175\229\190\132\230\152\175\239\188\154%s", Mod.ModId, Mod.Icon))
+        DebugPrint(ErrorTag, string.format("Mod%s没有配置图标或者用错图标路径了！！！这里用默认的图标顶一下\n 表里配的错路径是：%s", Mod.ModId, Mod.Icon))
       end
       self.Icon_Mod:SetBrushResourceObject(Icon)
     end
   })
 end
-
 function M:UpdateSlotUIUsed(SlotUIData)
   local Mod = SlotUIData:GetMod()
   if not Mod then
@@ -173,35 +166,23 @@ function M:UpdateSlotUIUsed(SlotUIData)
       self.List_ModStar:AddItem(StarContent)
     end
   end
-  self.Quality_Bar:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-  local RarityImgPath
+  self.Panel_Quality:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   local Rarity = Mod.Rarity
-  if SlotUIData.SlotId == ModCommon.MaxSlotCount then
-    RarityImgPath = DataMgr.ModRarity[Rarity].MidSlotBg
-  else
-    RarityImgPath = DataMgr.ModRarity[Rarity].LRSlotBg
-  end
-  UResourceLibrary.LoadObjectAsync(self, RarityImgPath, {
-    self,
-    function(_, Icon)
-      self.Quality_Bar:SetBrushResourceObject(Icon)
-    end
-  })
-  self.ModContent = ModModel:CreateModContent(Mod)
+  local Mat = self.BG_Quality:GetDynamicMaterial()
+  Mat:SetScalarParameterValue("Index", Rarity)
+  self.ModContent = ModModel:CreateModContent(Mod, true, not ModModel:IsModUIPreview())
   self.ModContent.IsShowDetails = true
   self.ModContent.MenuPlacement = ModCommon.SlotIdToMenuPlacement[SlotUIData.SlotId]
   self.ItemDetails_MenuAnchor:InitializeSetUp(self, self.ModContent, true)
   self.ItemDetails_MenuAnchor:SetRevertShear(true)
   ArmoryUtils:SetReddotRead(self.ModContent, true)
-  if SlotUIData.bEquiping then
+  if SlotUIData:IsNeedPlayScanline() then
     self:PlayScanlineAnim(Mod.Rarity)
-    SlotUIData.bEquiping = false
   end
   if SlotUIData.bNotOwned then
     self.Img_NoneHint:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:UpdateSlotUIPolarityEdit(SlotUIData)
   if SlotUIData:InState(ModCommon.SlotState.Lock) then
     return
@@ -219,7 +200,6 @@ function M:UpdateSlotUIPolarityEdit(SlotUIData)
     end
   end
 end
-
 function M:UpdatePolarity(SlotUIData, bTrick)
   if SlotUIData:GetCost() > 0 then
     self.Num_Volume:SetText(SlotUIData:GetCost())
@@ -242,7 +222,6 @@ function M:UpdatePolarity(SlotUIData, bTrick)
     self:UpdatePolarityNoMatch(SlotUIData, Polarity)
   end
 end
-
 function M:UpdatePolarityBothNoPolarity(SlotUIData, Polarity, bTrick)
   if SlotUIData:InState(ModCommon.SlotState.PolarityEdit) and not bTrick then
     local EditPolarity = SlotUIData.EditPolarity
@@ -256,12 +235,11 @@ function M:UpdatePolarityBothNoPolarity(SlotUIData, Polarity, bTrick)
     end
   end
 end
-
 function M:UpdatePolarityModNoPolarity(SlotUIData, Polarity)
   local Mod = SlotUIData:GetMod()
   if Mod then
     self.Text_ModPolarity:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    if Mod.Polarity ~= CommonConst.NonePolarity then
+    if Mod.Polarity == CommonConst.NonePolarity then
       self.Panel_RightPolarity:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     end
     self.Mod_RightPolarity:SetText(SlotUIData:GetPolarityText(Polarity))
@@ -271,7 +249,6 @@ function M:UpdatePolarityModNoPolarity(SlotUIData, Polarity)
     self.Panel_Polarity:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:UpdatePolaritySlotNoPolarity(SlotUIData, Polarity)
   local Mod = SlotUIData:GetMod()
   self.Text_ModPolarity:SetText(ModModel:GetPolarityText(Mod.Polarity))
@@ -280,7 +257,6 @@ function M:UpdatePolaritySlotNoPolarity(SlotUIData, Polarity)
     self.Mod_RightPolarity:SetText(SlotUIData:GetPolarityText(Polarity))
   end
 end
-
 function M:UpdatePolarityMatch(SlotUIData, Polarity)
   local Mod = SlotUIData:GetMod()
   self.Text_ModPolarity:SetText(ModModel:GetPolarityText(Mod.Polarity))
@@ -290,7 +266,6 @@ function M:UpdatePolarityMatch(SlotUIData, Polarity)
     self.Mod_RightPolarity:SetText(SlotUIData:GetPolarityText(Polarity))
   end
 end
-
 function M:UpdatePolarityNoMatch(SlotUIData, Polarity)
   local Mod = SlotUIData:GetMod()
   self.Text_ModPolarity:SetText(ModModel:GetPolarityText(Mod.Polarity))
@@ -300,7 +275,6 @@ function M:UpdatePolarityNoMatch(SlotUIData, Polarity)
     self.Mod_RightPolarity:SetText(SlotUIData:GetPolarityText(Polarity))
   end
 end
-
 function M:SetPolarityColor(Color)
   self.Bg_Polarity:SetColorAndOpacity(Color.SpecifiedColor)
   self.Bg_Polarity:SetOpacity(Color.SpecifiedColor.A * 0.3)
@@ -308,7 +282,6 @@ function M:SetPolarityColor(Color)
   self.Text_ModPolarity:SetColorAndOpacity(Color)
   self.Text_ModPolarity:SetOpacity(Color.SpecifiedColor.A * 0.8)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.SlotUIData:InState(ModCommon.SlotState.Lock) then
     return UnHandled
@@ -330,7 +303,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self:PlayBtnAnimation(self.Press)
   return LocalHandle
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   CommonUtils:CloseGuideTouchIfExist(self)
   if self.SlotUIData:InState(ModCommon.SlotState.Lock) then
@@ -367,7 +339,7 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
       ModController:SetSelectedStuff(self.SlotUIData.ModEid, self.SlotUIData.SlotId)
     end
   elseif MouseKey == UE.EKeys.RightMouseButton then
-    if Mod and ModModel:IsModUINormal() then
+    if Mod and ModModel:IsModUINormal() and not self.SlotUIData:InState(ModCommon.SlotState.PolarityEdit) then
       ModController:SendTakeOffMod(ModModel:GetTarget(), self.SlotUIData.SlotId)
     end
   elseif nil == MyGeometry and nil == MouseEvent then
@@ -382,7 +354,6 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return Handled
 end
-
 function M:OnMouseEnter(MyGeometry, InKeyEvent)
   if self.SlotUIData:InState(ModCommon.SlotState.Lock) then
     return
@@ -428,7 +399,6 @@ function M:OnMouseEnter(MyGeometry, InKeyEvent)
     end
   end
 end
-
 function M:OnMouseLeave(MyGeometry, InKeyEvent)
   if self.SlotUIData:InState(ModCommon.SlotState.Lock) then
     return
@@ -450,7 +420,6 @@ function M:OnMouseLeave(MyGeometry, InKeyEvent)
     self.Parent:UpdateCostUI(self.Parent.CachedCost)
   end
 end
-
 function M:StopBtnAnimation()
   self:StopAnimation(self.Normal)
   self:StopAnimation(self.Hover)
@@ -458,7 +427,6 @@ function M:StopBtnAnimation()
   self:StopAnimation(self.Press)
   self:StopAnimation(self.UnHover)
 end
-
 function M:StopScanlineAnim()
   self:StopAnimation(self.ScanLine_Gray)
   self:StopAnimation(self.ScanLine_Green)
@@ -466,7 +434,6 @@ function M:StopScanlineAnim()
   self:StopAnimation(self.ScanLine_Purple)
   self:StopAnimation(self.ScanLine_Golden)
 end
-
 function M:PlayBtnAnimation(Anim)
   self:StopBtnAnimation()
   self.WidgetSwitcher_State:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -475,17 +442,15 @@ function M:PlayBtnAnimation(Anim)
     self:PlaySelectedAnim(true)
   end
 end
-
 function M:PlayRefresh()
   self:PlayAnimation(self.Refresh)
 end
-
 function M:PlayConflictVX()
   self:PlayAnimation(self.Mod_Clash)
 end
-
 function M:PlayScanlineAnim(Rarity)
   self:StopAnimation(self.Normal)
+  self:StopScanlineAnim()
   if 1 == Rarity then
     self:PlayAnimation(self.ScanLine_Gray)
   elseif 2 == Rarity then
@@ -501,7 +466,6 @@ function M:PlayScanlineAnim(Rarity)
     self:PlayAnimation(self.ProgressRefresh)
   end
 end
-
 function M:InitAsDragUI(ModUuid)
   self.LinkWidgets = {}
   self.ActiveLinkWidgets = {}
@@ -522,7 +486,6 @@ function M:InitAsDragUI(ModUuid)
   self.ExtraScale = 0.8
   self:SetRenderScale(FVector2D(self.ExtraScale, self.ExtraScale))
 end
-
 function M:OnDragDetected(MyGeometry, PointerEvent)
   if ModModel:IsInPolarityEditMode() then
     return nil
@@ -544,7 +507,6 @@ function M:OnDragDetected(MyGeometry, PointerEvent)
   end
   return DragDropOperation
 end
-
 function M:OnDragEnter(MyGeometry, PointerEvent, Operation)
   if Operation.Tag ~= "ArmoryModSlot" and Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
     return
@@ -561,7 +523,6 @@ function M:OnDragEnter(MyGeometry, PointerEvent, Operation)
   end
   self:ChangeSlotOutlines(Operation.Payload.Uuid)
 end
-
 function M:OnDragLeave(PointerEvent, Operation)
   if Operation.Tag ~= "ArmoryModSlot" and Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
     return
@@ -578,7 +539,6 @@ function M:OnDragLeave(PointerEvent, Operation)
   end
   self:PlayNormalAnim()
 end
-
 function M:OnDragCancelled(PointerEvent, Operation)
   if Operation.Tag ~= "ArmoryModSlot" and Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
     return
@@ -591,7 +551,6 @@ function M:OnDragCancelled(PointerEvent, Operation)
   end
   ModController:SendTakeOffMod(ModModel:GetTarget(), Operation.InSlotUIData.SlotId)
 end
-
 function M:OnDrop(MyGeometry, PointerEvent, Operation)
   if Operation.Tag ~= "ArmoryModSlot" and Operation.Tag ~= "WBP_Com_Item_Universal_L_C" then
     return
@@ -614,7 +573,6 @@ function M:OnDrop(MyGeometry, PointerEvent, Operation)
   end
   return true
 end
-
 function M:ChangeSlotOutlines(ModUuid)
   local Mod = ModModel:GetMod(ModUuid)
   if not Mod then
@@ -633,7 +591,6 @@ function M:ChangeSlotOutlines(ModUuid)
   end
   self:PlaySelectedAnim(true)
 end
-
 function M:PlaySelectedAnim(bSelected)
   if bSelected then
     if self.Selected then
@@ -643,7 +600,6 @@ function M:PlaySelectedAnim(bSelected)
     self:StopAnimation(self.Selected)
   end
 end
-
 function M:PlayNormalAnim()
   self:StopScanlineAnim()
   self:StopAnimation(self.Lock)
@@ -652,7 +608,6 @@ function M:PlayNormalAnim()
   self:PlayBtnAnimation(self.Normal)
   self.ItemDetails_MenuAnchor:SetAllowHover(true)
 end
-
 function M:ShowLinkLine(bGolden)
   if table.isempty(self.LinkWidgets) then
     local RootWidget = self.WidgetTree.RootWidget
@@ -679,7 +634,6 @@ function M:ShowLinkLine(bGolden)
   table.insert(self.ActiveLinkWidgets, ActiveLinkWidget)
   return ActiveLinkWidget
 end
-
 function M:CloseLinkLine()
   for _, LinkWidget in ipairs(self.ActiveLinkWidgets) do
     LinkWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -687,5 +641,4 @@ function M:CloseLinkLine()
   end
   self.ActiveLinkWidgets = {}
 end
-
 return M

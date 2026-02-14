@@ -1,7 +1,6 @@
 local Component = Class({
   "BluePrints.Combat.Components.CharacterInitLogic"
 })
-
 function Component:GetInfoForInit()
   return {
     RoleId = self.CurrentRoleId,
@@ -10,7 +9,6 @@ function Component:GetInfoForInit()
     ShadowModelId = self.ShadowModelId
   }
 end
-
 function Component:InitCharacterInfo(Info)
   Info = Info or self.InfoForInit
   local InitType = Info.InitType
@@ -20,7 +18,6 @@ function Component:InitCharacterInfo(Info)
     self:GetInitLogicComp():FirstInit(Info)
   end
 end
-
 function Component:IsBpbornRegionStorage()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode then
@@ -29,7 +26,6 @@ function Component:IsBpbornRegionStorage()
   local BPBornActor = GameMode.BPBornRegionActor:FindRef(self.ManualItemId)
   return self.BpBorn and IsValid(BPBornActor)
 end
-
 function Component:CheckInitGuideType()
   local InitGuideInfo = DataMgr[self.UnitType][self.UnitId].InitGuide
   if not InitGuideInfo or not self:GetShowGuideDis(InitGuideInfo) then
@@ -37,7 +33,6 @@ function Component:CheckInitGuideType()
   end
   return true
 end
-
 function Component:GetShowGuideDis(InitGuideInfo)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   for type, dis in pairs(InitGuideInfo) do
@@ -48,11 +43,9 @@ function Component:GetShowGuideDis(InitGuideInfo)
   end
   return false
 end
-
 function Component:CreateGuideHandle()
   self.FixTryToAddGuideHandle = self:AddTimer(1, self.TryToAddGuide, true)
 end
-
 function Component:StopTryToAddGuideTimer()
   if not IsValid(self) then
     self:StopAddGuideTimer()
@@ -64,14 +57,12 @@ function Component:StopTryToAddGuideTimer()
   end
   return false
 end
-
 function Component:CheckUnitNeedStorage()
   if self.RegionDataType and CommonUtils.HasValue(Const.RegionDataStorageType, self.RegionDataType) then
     return true
   end
   return false
 end
-
 function Component:ClearFXComponent()
   self.FXComponent:StopAllEffects(true)
   if not self.Weapons then
@@ -81,26 +72,23 @@ function Component:ClearFXComponent()
     Weapon.FXComponent:StopAllEffects(true)
   end
 end
-
 function Component:ServerClearMonsterExtraInfo(DestroyReason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if self.MonAlertComponent then
     self.MonAlertComponent:TryResetCommonAlertingInfo()
   end
-  self:RegionOnEMActorDestroy(GameMode)
+  self:WCOnEMActorDestroy(GameMode)
   if self.MonEliteComponent then
     self.MonEliteComponent:ClearEliteTeamInfo()
   end
   self:ServerClearAIExtraInfo(DestroyReason)
 end
-
 function Component:ServerClearNpcExtraInfo(DestroyReason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  self:RegionOnEMActorDestroy(GameMode)
+  self:WCOnEMActorDestroy(GameMode)
   self:ServerClearAIExtraInfo(DestroyReason)
 end
-
 function Component:ServerClearAIExtraInfo(DestroyReason)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if CommonUtils.CheckDestroyReason(DestroyReason, "IsClearStaticCreatorRef") and self.CreatorType == "StaticCreator" then
@@ -117,14 +105,12 @@ function Component:ServerClearAIExtraInfo(DestroyReason)
     GameState:RemoveGuideEid(self.Eid)
   end
 end
-
-function Component:RegionOnEMActorDestroy(GameMode)
-  if GameMode:IsInDungeon() or not IsValid(GameMode:GetWCSubSystem()) then
+function Component:WCOnEMActorDestroy(GameMode)
+  if not IsValid(GameMode:GetWCSubSystem()) then
     return
   end
   GameMode:GetWCSubSystem():UnregisterEntryToWorldComposition(self)
 end
-
 function Component:RemoveBuffOfInDirect()
   for i = 1, self.BuffManager.Buffs:Length() do
     local Buff = self.BuffManager.Buffs:GetRef(i)
@@ -133,5 +119,4 @@ function Component:RemoveBuffOfInDirect()
     end
   end
 end
-
 return Component

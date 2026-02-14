@@ -1,5 +1,4 @@
 local WBP_Abyss_Lineup_Character_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Abyss_Lineup_Character_C:Construct()
   self.Checked = false
   self.IsEmpty = true
@@ -11,18 +10,15 @@ function WBP_Abyss_Lineup_Character_C:Construct()
   self.Img_Quality:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self:BindButtonPerformances()
 end
-
 function WBP_Abyss_Lineup_Character_C:Destruct()
   self:UnBindButtonPerformances()
 end
-
 function WBP_Abyss_Lineup_Character_C:Init(Name, LineupPage, DungeonIndex)
   self.SlotName = Name
   self.LineupPage = LineupPage
   self.DungeonIndex = DungeonIndex
   self:SetIsChecked(false)
 end
-
 function WBP_Abyss_Lineup_Character_C:Update(Content)
   if not Content then
     return
@@ -45,11 +41,10 @@ function WBP_Abyss_Lineup_Character_C:Update(Content)
     self.CollapsedSlot:Update(Content)
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:SetRarity(Rarity)
   if not Rarity then
     self.Img_Quality:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    DebugPrint("lhr@WBP_Abyss_Lineup_Character_C:SetRarity@ \231\168\128\230\156\137\229\186\166\230\151\160\230\149\136")
+    DebugPrint("lhr@WBP_Abyss_Lineup_Character_C:SetRarity@ 稀有度无效")
     return
   end
   self.Img_Quality:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -58,10 +53,9 @@ function WBP_Abyss_Lineup_Character_C:SetRarity(Rarity)
     self.Img_Quality:SetBrushResourceObject(RarityTexture)
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:SetIcon(IconPath)
   if not IconPath then
-    DebugPrint("lhr@WBP_Abyss_Lineup_Slot_C:SetIcon@ \229\155\190\230\160\135\232\183\175\229\190\132\230\151\160\230\149\136")
+    DebugPrint("lhr@WBP_Abyss_Lineup_Slot_C:SetIcon@ 图标路径无效")
     self:SetEmptyIcon()
     return
   end
@@ -71,14 +65,12 @@ function WBP_Abyss_Lineup_Character_C:SetIcon(IconPath)
     IconDynaMaterial:SetTextureParameterValue("IconMap", LoadObject(IconPath))
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:SetEmptyIcon()
   local IconDynaMaterial = self.Icon_Item:GetDynamicMaterial()
   if IconDynaMaterial then
     IconDynaMaterial:SetScalarParameterValue("IconMapOpacity", 0)
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:Clear()
   if self.IsEmpty then
     return
@@ -96,24 +88,20 @@ function WBP_Abyss_Lineup_Character_C:Clear()
   end
   self.Img_Quality:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Abyss_Lineup_Character_C:Expand()
 end
-
 function WBP_Abyss_Lineup_Character_C:Collapse()
   if not self.IsEmpty and self.CollapsedSlot then
     self.CollapsedSlot:Collapse()
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:OnClicked(bNotToList)
   if self.LineupPage then
     self.LineupPage:SlotSelectionChanged(self.SlotName, self.DungeonIndex, not bNotToList)
   else
-    DebugPrint("lhr@WBP_Abyss_Lineup_Character_C:OnClicked\239\188\140\233\152\181\229\174\185\233\133\141\231\189\174\231\149\140\233\157\162\229\164\177\230\149\136")
+    DebugPrint("lhr@WBP_Abyss_Lineup_Character_C:OnClicked，阵容配置界面失效")
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:BindButtonPerformances()
   self.Item.Btn_Click.OnClicked:Add(self, self.OnBtnClicked)
   self.Item.Btn_Click.OnPressed:Add(self, self.OnBtnPressed)
@@ -123,7 +111,6 @@ function WBP_Abyss_Lineup_Character_C:BindButtonPerformances()
     self.Item.Btn_Click.OnUnhovered:Add(self, self.OnBtnUnhovered)
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:UnBindButtonPerformances()
   if not self.Item.Btn_Click then
     return
@@ -136,12 +123,10 @@ function WBP_Abyss_Lineup_Character_C:UnBindButtonPerformances()
     self.Item.Btn_Click.OnUnhovered:Clear()
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:SwitchNormalAnimation()
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Normal)
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonClickSound()
   if self.IsEmpty then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_mid", nil, nil)
@@ -149,12 +134,10 @@ function WBP_Abyss_Lineup_Character_C:PlayButtonClickSound()
     AudioManager(self):PlayUISound(self, "event:/ui/armory/click_select_role", nil, nil)
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonClickAnimation()
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Click)
 end
-
 function WBP_Abyss_Lineup_Character_C:OnBtnClicked(bNotPlaySound, bNotToList)
   if self.Checked == false then
     if not bNotPlaySound then
@@ -164,12 +147,10 @@ function WBP_Abyss_Lineup_Character_C:OnBtnClicked(bNotPlaySound, bNotToList)
   end
   self:OnClicked(bNotToList)
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonPressAnim()
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Press)
 end
-
 function WBP_Abyss_Lineup_Character_C:OnBtnPressed()
   if self.Checked == true then
     return
@@ -177,12 +158,10 @@ function WBP_Abyss_Lineup_Character_C:OnBtnPressed()
   self.IsPressing = true
   self:PlayButtonPressAnim()
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonHoverAnim()
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Hover)
 end
-
 function WBP_Abyss_Lineup_Character_C:OnBtnHovered()
   if self.Checked == true then
     return
@@ -190,7 +169,6 @@ function WBP_Abyss_Lineup_Character_C:OnBtnHovered()
   self.IsHovering = true
   self:PlayButtonHoverAnim()
 end
-
 function WBP_Abyss_Lineup_Character_C:SetBtnHovered(IsHovered)
   if IsHovered then
     self:OnBtnHovered()
@@ -198,15 +176,12 @@ function WBP_Abyss_Lineup_Character_C:SetBtnHovered(IsHovered)
     self:OnBtnUnhovered()
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonReleaseButHoverAnim()
   self:PlayButtonHoverAnim()
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonReleaseAndUnHoverAnim()
   self:SwitchNormalAnimation()
 end
-
 function WBP_Abyss_Lineup_Character_C:OnBtnReleased()
   self.IsPressing = false
   if self.Checked == true then
@@ -218,11 +193,9 @@ function WBP_Abyss_Lineup_Character_C:OnBtnReleased()
     self:PlayButtonReleaseButHoverAnim()
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonUnHoverAnim()
   self:SwitchNormalAnimation()
 end
-
 function WBP_Abyss_Lineup_Character_C:OnBtnUnhovered()
   self.IsHovering = false
   if self.Checked == true then
@@ -232,12 +205,10 @@ function WBP_Abyss_Lineup_Character_C:OnBtnUnhovered()
     self:PlayButtonUnHoverAnim()
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayButtonSelectAnim()
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Select)
 end
-
 function WBP_Abyss_Lineup_Character_C:SetIsChecked(IsChecked)
   if self.Checked == false and true == IsChecked then
     self.Checked = true
@@ -250,14 +221,11 @@ function WBP_Abyss_Lineup_Character_C:SetIsChecked(IsChecked)
     self.CollapsedSlot:SetIsChecked(IsChecked)
   end
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayRemindAnim()
   self:PlayAnimation(self.Remind)
 end
-
 function WBP_Abyss_Lineup_Character_C:PlayRefreshAnim()
   self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Refresh)
 end
-
 return WBP_Abyss_Lineup_Character_C

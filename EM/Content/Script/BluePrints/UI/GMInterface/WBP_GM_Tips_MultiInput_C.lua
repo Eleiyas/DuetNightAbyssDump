@@ -1,7 +1,6 @@
 require("UnLua")
 local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
 local WBP_GM_Tips_MultiInput_C = Class("BluePrints.UI.GMInterface.WBP_GM_Menu_Base_C")
-
 function WBP_GM_Tips_MultiInput_C:InitMenu(Command)
   self.Super.InitMenu(self, Command)
   self.List:ClearListItems()
@@ -21,7 +20,6 @@ function WBP_GM_Tips_MultiInput_C:InitMenu(Command)
     end
   end
 end
-
 function WBP_GM_Tips_MultiInput_C:ExecCommand()
   local Commands = self.Command.Commands
   local Length = Commands:Length()
@@ -33,5 +31,4 @@ function WBP_GM_Tips_MultiInput_C:ExecCommand()
   end
   GMFunctionLibrary.Exec(self, Commands[Length])
 end
-
 return WBP_GM_Tips_MultiInput_C

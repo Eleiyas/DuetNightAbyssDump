@@ -5,7 +5,6 @@ local FOptionNode = Class({
   "BluePrints.Story.StoryIteration.StoryIterationNode"
 })
 FOptionNode.NodeType = EDialogueNodeType.Option
-
 function FOptionNode:CreateNodeData(DialogueId)
   local Dialogue = self.Dialogues[DialogueId]
   local Avatar = GWorld:GetAvatar()
@@ -21,9 +20,9 @@ function FOptionNode:CreateNodeData(DialogueId)
     local OptionDialogue = self.Dialogues[OptionId]
     if nil == OptionDialogue then
       do
-        local Message = "OptionDialogue\228\184\141\229\173\152\229\156\168, DialogueId\228\184\186 " .. OptionId
-        local Title = "OptionDialogue\228\184\141\229\173\152\229\156\168"
-        UStoryLogUtils.PrintToFeiShu(self, Title, Message)
+        local Message = "OptionDialogue不存在, DialogueId为 " .. OptionId
+        local Title = "OptionDialogue不存在"
+        UStoryLogUtils.PrintToFeiShu(self, UE.EStoryLogType.Talk, Title, Message)
       end
     else
       OptionId2Index[OptionId] = Index
@@ -84,7 +83,6 @@ function FOptionNode:CreateNodeData(DialogueId)
   self.VisitedOptions = {}
   self.IterGraph.OptionNodeMap[DialogueId] = self
 end
-
 function FOptionNode:GenerateNextNodes()
   for Index, OptionId in ipairs(self.Options) do
     if self.NextDialogueMap[OptionId] then
@@ -107,7 +105,6 @@ function FOptionNode:GenerateNextNodes()
     end
   end
 end
-
 function FOptionNode:Execute(bSkip)
   if bSkip then
     return
@@ -115,7 +112,6 @@ function FOptionNode:Execute(bSkip)
   local Options = self:GetOptions()
   self.TalkTask:ShowDialogueOptions(Options)
 end
-
 function FOptionNode:GetOptions()
   local ValidOptions = {}
   for _, OptionId in pairs(self.Options) do
@@ -154,7 +150,6 @@ function FOptionNode:GetOptions()
   end
   return ValidOptions
 end
-
 function FOptionNode:IsImpressionSuccess(DialogueId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -175,11 +170,9 @@ function FOptionNode:IsImpressionSuccess(DialogueId)
   end
   return false
 end
-
 function FOptionNode:HasFinalDialogue()
   return self.FinalDialogue ~= nil
 end
-
 function FOptionNode:RealSkip()
   DebugPrint("FOptionNode@RealSkip", self.LastSelectedId, self.bForbidSkip, self.IterGraph:GetRestartTag())
   if self.bForbidSkip and not self.IterGraph:GetRestartTag() then
@@ -209,7 +202,6 @@ function FOptionNode:RealSkip()
   end
   return OutPortName, bSkipFail
 end
-
 function FOptionNode:Skip()
   local OutPortName, bSkipFail = self:RealSkip()
   local NextNode = self:GetOutPort(OutPortName)
@@ -218,7 +210,6 @@ function FOptionNode:Skip()
   end
   return bSkipFail
 end
-
 function FOptionNode:Iterate(...)
   local Index, FinishType = ...
   self:Record(Index)
@@ -226,7 +217,6 @@ function FOptionNode:Iterate(...)
   local OutPortName = self:CalcOutPortName(Index, FinishType)
   FOptionNode.Super.Iterate(self, OutPortName)
 end
-
 function FOptionNode:SelectOption(Index)
   Index = self.OptionId2Index[Index] or Index
   self.VisitedOptions[self.Options[Index]] = true
@@ -243,7 +233,6 @@ function FOptionNode:SelectOption(Index)
     end
   end
 end
-
 function FOptionNode:CalcOutPortName(Index, FinishType)
   Index = self.OptionId2Index[Index] or Index
   if FinishType == ETalkNodeFinishType.Fail then
@@ -252,18 +241,15 @@ function FOptionNode:CalcOutPortName(Index, FinishType)
     return EDialogueIterType.Option .. Index
   end
 end
-
 function FOptionNode:GetDesiredNode()
   return self.OverriddenNode or self
 end
-
 function FOptionNode:GetOptionType()
   if self.IsImpression then
     return self.OptionType
   end
   return false
 end
-
 function FOptionNode:Record(OptionId)
   FOptionNode.Super.Record(self, OptionId)
   OptionId = self.Options[OptionId] or OptionId
@@ -279,5 +265,4 @@ function FOptionNode:Record(OptionId)
   }
   self.DialogueRecordComponent:OnOptionRecord(OptionId, OptionData)
 end
-
 return FOptionNode

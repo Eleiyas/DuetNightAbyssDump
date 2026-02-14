@@ -3,7 +3,6 @@ local WBP_Rouge_TalentMenu_P_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Rouge_TalentMenu_P_C:Construct()
   self.LoadTalentTreeFinish = false
   local RetainerBoxCanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.RetainerBox)
@@ -11,6 +10,8 @@ function WBP_Rouge_TalentMenu_P_C:Construct()
   local RetainerBoxMargin = RetainerBoxCanvasSlot:GetOffsets()
   local EMScrollBoxMargin = EMScrollBoxCanvasSlot:GetOffsets()
   self.OffsetX = RetainerBoxMargin.Left + RetainerBoxMargin.Right + EMScrollBoxMargin.Left + EMScrollBoxMargin.Right
+  local RetainerBoxAnchors = RetainerBoxCanvasSlot:GetAnchors()
+  self.OffsetAnchors = RetainerBoxAnchors.Minimum.X + (1 - RetainerBoxAnchors.Maximum.X)
   local Avatar = GWorld:GetAvatar()
   self.Com_Cost:InitContent({
     ResourceId = Avatar and Avatar:GetCurrentRougeLikeTalentId(),
@@ -19,11 +20,9 @@ function WBP_Rouge_TalentMenu_P_C:Construct()
     bShowDenominator = false
   })
 end
-
 function WBP_Rouge_TalentMenu_P_C:Destruct()
   AudioManager(self):StopSound(self, "RougeTalentOpenSound")
 end
-
 function WBP_Rouge_TalentMenu_P_C:OnReturnKeyDown()
   local WidgetUI = self.Root:OpenSubUI("RougeTalentPage")
   self.Root.IsOpenSelectLevel = false
@@ -31,7 +30,6 @@ function WBP_Rouge_TalentMenu_P_C:OnReturnKeyDown()
   WidgetUI:SetInfo()
   AudioManager(self):SetEventSoundParam(self, "RougeTalentOpenSound", {ToEnd = 1})
 end
-
 function WBP_Rouge_TalentMenu_P_C:InitTable(SelectIndex)
   if not self.LoadTalentTreeFinish then
     self:LoadTalentTree()
@@ -113,7 +111,6 @@ function WBP_Rouge_TalentMenu_P_C:InitTable(SelectIndex)
   self.Root:InitOtherPageTab(self.TabConfigData, ResoucesTab, true, self, self.ChangeBranch)
   self.Root:SelectTab(SelectIndex)
 end
-
 function WBP_Rouge_TalentMenu_P_C:SetTabReddot()
   self.RougeTalent = DataMgr.RougeLikeTalent
   self.Lines = {}
@@ -147,7 +144,6 @@ function WBP_Rouge_TalentMenu_P_C:SetTabReddot()
     self.AllTabInfo[Index].ShowRedDot = Reddot
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:UpdateTabReddot()
   self:SetTabReddot()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
@@ -157,7 +153,6 @@ function WBP_Rouge_TalentMenu_P_C:UpdateTabReddot()
   end
   Item.ComTab:UpdateReddots()
 end
-
 function WBP_Rouge_TalentMenu_P_C:CheckReachable(TalentId)
   if 1 == self.ReachableTable[TalentId] then
     return true
@@ -184,7 +179,6 @@ function WBP_Rouge_TalentMenu_P_C:CheckReachable(TalentId)
     return false
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:ChangeBranch(WidgetInfo, TabsInfo)
   local Branch = self.Index2Branch[WidgetInfo.Idx]
   local CurActiveTalent, CurSumTalent = self.TalentTree:ChangeBranch(Branch)
@@ -193,11 +187,10 @@ function WBP_Rouge_TalentMenu_P_C:ChangeBranch(WidgetInfo, TabsInfo)
     self:PlayAnimation(self.Switch_Tab)
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:ScrollToPoint(Id)
   local ViewportSize = UWidgetLayoutLibrary.GetViewportSize(self)
   local ViewportScale = UWidgetLayoutLibrary.GetViewportScale(self)
-  local SizeX = ViewportSize.X / ViewportScale - self.OffsetX
+  local SizeX = ViewportSize.X / ViewportScale * (1 - self.OffsetAnchors) - self.OffsetX
   local FullSizeX = self.TalentTree:GetFullSizeX()
   local BottomOffset = FullSizeX - SizeX
   if BottomOffset <= 0 then
@@ -214,7 +207,6 @@ function WBP_Rouge_TalentMenu_P_C:ScrollToPoint(Id)
     self:SetScrollOffset_Lerp(TargetOffset)
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:SetScrollOffset_Lerp(TargetOffset)
   local ChangeSpeed = 3
   local CurrentOffset = self.EMScrollBox_84:GetScrollOffset()
@@ -233,7 +225,6 @@ function WBP_Rouge_TalentMenu_P_C:SetScrollOffset_Lerp(TargetOffset)
     self.EMScrollBox_84:SetScrollOffset(Offset)
   end, true, 0, "UpdateOffset", true, 0.033)
 end
-
 function WBP_Rouge_TalentMenu_P_C:LoadTalentTree()
   local Path = "/Game/UI/WBP/RougeLike/Widget/TalentTree/WBP_Rouge_TalentTree.WBP_Rouge_TalentTree"
   self.TalentTree = UIManager(self):CreateWidget(Path, false)
@@ -241,7 +232,6 @@ function WBP_Rouge_TalentMenu_P_C:LoadTalentTree()
   self.TalentTree.Parent = self
   self.TalentTree:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Rouge_TalentMenu_P_C:InitText()
   self.WorldText01:SetText(EnText("UI_Rouge_Talent_HaveActive_World"))
   self.Text_Activated:SetText(GText("UI_Rouge_Talent_HaveActive"))
@@ -250,7 +240,6 @@ function WBP_Rouge_TalentMenu_P_C:InitText()
   self.Btn_Active:SetText(GText("UI_Rouge_Talent_ActiveBtn"))
   self.Btn_Active:SetDefaultGamePadImg("A")
 end
-
 function WBP_Rouge_TalentMenu_P_C:OpenTips(Id, DoNotPlayAnimation)
   self.Switch_Btn:SetActiveWidgetIndex(0)
   if not DoNotPlayAnimation then
@@ -266,7 +255,6 @@ function WBP_Rouge_TalentMenu_P_C:OpenTips(Id, DoNotPlayAnimation)
   self.TipsId = Id
   self:RefreshTalentPoint()
 end
-
 function WBP_Rouge_TalentMenu_P_C:ActiveTalent()
   if self.TalentTree:CheckIsActive(self.TipsId) then
     return
@@ -290,13 +278,11 @@ function WBP_Rouge_TalentMenu_P_C:ActiveTalent()
     end
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:GetCurPoint()
   if self.TipsId then
     return self.TalentTree:GetPoint(self.TipsId)
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:RefreshTalentPoint()
   local RougeLikeTalent = DataMgr.RougeLikeTalent
   local Avatar = GWorld:GetAvatar()
@@ -345,7 +331,6 @@ function WBP_Rouge_TalentMenu_P_C:RefreshTalentPoint()
     end
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:RefreshActivedTalentNumAndIcon(CurActiveTalent, CurSumTalent, BranchId)
   local IconPath = DataMgr.RougeLikeTalentBranch[BranchId].Icon
   if IconPath then
@@ -371,18 +356,15 @@ function WBP_Rouge_TalentMenu_P_C:RefreshActivedTalentNumAndIcon(CurActiveTalent
   self.Text_All:SetColorAndOpacity(SlateColor)
   self.Text_Split:SetColorAndOpacity(SlateColor)
 end
-
 function WBP_Rouge_TalentMenu_P_C:OnSpaceKeyDown()
   if self.TipsId then
     self:ActiveTalent()
   end
 end
-
 function WBP_Rouge_TalentMenu_P_C:SetVisibility(InVisibility)
   self.Overridden.SetVisibility(self, InVisibility)
   self.EMScrollBox_84:SetVisibility(InVisibility)
 end
-
 function WBP_Rouge_TalentMenu_P_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -394,7 +376,6 @@ function WBP_Rouge_TalentMenu_P_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Rouge_TalentMenu_P_C:HandlePreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -406,5 +387,4 @@ function WBP_Rouge_TalentMenu_P_C:HandlePreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 return WBP_Rouge_TalentMenu_P_C

@@ -1,7 +1,6 @@
 local BP_TempleRotator_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_TempleRotator_C:CommonInitInfo(Info)
   BP_TempleRotator_C.Super.CommonInitInfo(self, Info)
   self.bCanRotate = true
@@ -13,7 +12,6 @@ function BP_TempleRotator_C:CommonInitInfo(Info)
   self.InitRotation = self:K2_GetActorRotation()
   self.TargetRotation = self.TargetRotArray[self.CurRotateEndIdx]
 end
-
 function BP_TempleRotator_C:ResetInfo()
   self.bCanRotate = true
   self.bInStage = false
@@ -28,14 +26,12 @@ function BP_TempleRotator_C:ResetInfo()
   end
   self.TargetRotation = self.TargetRotArray[self.CurRotateEndIdx]
 end
-
 function BP_TempleRotator_C:OnActorReady(Info)
   BP_TempleRotator_C.Super.OnActorReady(self, Info)
   if self.bAutoActive then
     self:ChangeState("Manual", 0, self.ActiveStateId)
   end
 end
-
 function BP_TempleRotator_C:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if not self.IsActive then
@@ -62,15 +58,12 @@ function BP_TempleRotator_C:ReceiveTick(DeltaSeconds)
     end
   end
 end
-
 function BP_TempleRotator_C:ActiveCombat(bFromGameMode)
   self:ChangeState("Manual", 0, self.ActiveStateId)
 end
-
 function BP_TempleRotator_C:InactiveCombat(bFromGameMode)
   self:ChangeState("Manual", 0, self.NormalStateId)
 end
-
 function BP_TempleRotator_C:StartRotate()
   if self.bAutoMove or self.bInStage then
     return
@@ -79,7 +72,6 @@ function BP_TempleRotator_C:StartRotate()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:GetDungeonComponent():SetIsRotateEnd(self.ManualItemId, false)
 end
-
 function BP_TempleRotator_C:SetSequence(Start, End)
   if self.bAutoMove then
     return
@@ -93,11 +85,9 @@ function BP_TempleRotator_C:SetSequence(Start, End)
   end
   self.Sequence = math.abs(Start - End) + 1
 end
-
 function BP_TempleRotator_C:SetTargetRotation(Idx)
   self.TargetRotation = self.TargetRotArray[Idx + 1]
 end
-
 function BP_TempleRotator_C:OnEnterState(NowStateId)
   self.Overridden.OnEnterState(self, NowStateId)
   if NowStateId == self.ActiveStateId then
@@ -106,7 +96,6 @@ function BP_TempleRotator_C:OnEnterState(NowStateId)
     self.IsActive = false
   end
 end
-
 function BP_TempleRotator_C:GetRotateState()
   if self.bAutoMove then
     return -2
@@ -117,7 +106,6 @@ function BP_TempleRotator_C:GetRotateState()
     return self.CurIdx
   end
 end
-
 function BP_TempleRotator_C:AddRotateIdx()
   self.CurRotateEndIdx = self.CurRotateEndIdx + 1 * self.PositiveRotate
   if self.CurRotateEndIdx > self.TargetRotArray:Length() then
@@ -145,9 +133,7 @@ function BP_TempleRotator_C:AddRotateIdx()
     self.TargetRotation = self.TargetRotArray[self.CurRotateEndIdx]
   end
 end
-
 function BP_TempleRotator_C:OnBreakCountDown(SourceEid)
   self.Overridden.OnBreakCountDown(self, SourceEid)
 end
-
 return BP_TempleRotator_C

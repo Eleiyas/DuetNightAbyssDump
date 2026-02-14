@@ -6,11 +6,9 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Play.Widget.Task.NewPlayer.NewPlayerTaskItemView"
 }
-
 function M:Construct()
   self:InitItemView()
 end
-
 function M:OnListItemObjectSet(Content)
   Content.OwnerPanel = self
   self.Parent = Content.Parent
@@ -27,7 +25,6 @@ function M:OnListItemObjectSet(Content)
     self:UpdateUIStyleInPlatform(true)
   end
 end
-
 function M:ReceiveReward()
   local PlayerAvatar = GWorld:GetAvatar()
   if not PlayerAvatar then
@@ -35,12 +32,10 @@ function M:ReceiveReward()
   end
   PlayerAvatar:StarterQuestGetReward(self.QuestId)
 end
-
 function M:GoToSystem()
   local TaskConfigData = DataMgr.StarterQuestDetail[self.QuestId]
   PageJumpUtils:JumpToTargetPageByJumpId(TaskConfigData.JumpUIId)
 end
-
 function M:SwitchToKeyAndMouseAnimation(IsWait, IsSwitch)
   if not IsSwitch or IsWait and self:IsAnimationPlaying(self.In) then
     return
@@ -51,12 +46,11 @@ function M:SwitchToKeyAndMouseAnimation(IsWait, IsSwitch)
   self:StopAllAnimations()
   self:PlayAnimation(IsTaskFinish and self.Recived or self.Normal)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
   end
-  if self.Item_Reward_1:HasAnyFocus() or self.Item_Reward_2:HasAnyFocus() then
+  if UIUtils.HasAnyFocus(self.Item_Reward_1) or UIUtils.HasAnyFocus(self.Item_Reward_2) then
     self:UpdatKeyDisplay("RewardWidget")
   end
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -68,7 +62,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if self.Mobile then
     return
@@ -93,7 +86,6 @@ function M:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self.Btn_Reward:SetGamePadVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:OnSelect()
   if not self:IsAnimationPlaying(self.In) then
     self:StopAllAnimations()
@@ -101,7 +93,6 @@ function M:OnSelect()
   end
   self:UpdateUIStyleInPlatform(false)
 end
-
 function M:OnUnselect()
   if not self:IsAnimationPlaying(self.In) then
     self:StopAllAnimations()
@@ -135,14 +126,12 @@ function M:OnUnselect()
     self.FocusTypeName = nil
   end
 end
-
 function M:OnFocusReceived(MyGeometry, MouseEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Parent:OnSelectChange(self)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.In then
     local CurInputDevice = UIUtils.UtilsGetCurrentInputType()
@@ -152,7 +141,6 @@ function M:OnAnimationFinished(InAnimation)
     end
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -166,7 +154,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == Const.GamepadLeftThumbstick then
@@ -199,7 +186,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:UpdatKeyDisplay(FocusTypeName)
   if self.Mobile or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -285,6 +271,5 @@ function M:UpdatKeyDisplay(FocusTypeName)
   end
   self.FocusTypeName = FocusTypeName
 end
-
 AssembleComponents(M)
 return M

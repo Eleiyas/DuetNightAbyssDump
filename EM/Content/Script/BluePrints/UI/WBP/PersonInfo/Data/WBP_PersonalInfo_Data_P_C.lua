@@ -5,7 +5,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Data.PersonInfoDataPageBaseView"
 }
-
 function M:Construct()
   self:AddTimer(0.2, function()
     self:InitTab()
@@ -18,7 +17,6 @@ function M:Construct()
   end)
   self:SetFocus()
 end
-
 function M:InitNormalBottonKey()
   DebugPrint("InitNormalBottonKey The Length of ScrollBox is :" .. self.ScrollBox:GetScrollOffsetOfEnd())
   if self.ScrollBox:GetScrollOffsetOfEnd() > 1 then
@@ -27,10 +25,8 @@ function M:InitNormalBottonKey()
     self:InitTabWithoutScroll()
   end
 end
-
 function M:InitBaseView()
 end
-
 function M:InitTab()
   local TabInfo = {
     Tabs = self.AllTabInfo,
@@ -77,7 +73,6 @@ function M:InitTab()
   }
   self.Root.Com_Tab:Init(TabInfo)
 end
-
 function M:InitTabWithScroll()
   local ScroolKeyInfo = {
     GamePadInfoList = {
@@ -122,12 +117,10 @@ function M:InitTabWithScroll()
   }
   self.Root.Com_Tab:UpdateSingleBottomKeyInfo(ScroolKeyInfo)
 end
-
 function M:InitTabWithoutScroll()
   local BottomKeyInfo = {}
   self.Root.Com_Tab:UpdateSingleBottomKeyInfo(1, BottomKeyInfo)
 end
-
 function M:InitTabInSortDown()
   local BottomKeyInfo = {
     {
@@ -162,10 +155,8 @@ function M:InitTabInSortDown()
   }
   self.Root.Com_Tab:UpdateBottomKeyInfo(BottomKeyInfo)
 end
-
 function M:OnReturnKeyDown()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -184,10 +175,9 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
-  ScreenPrint("OnGamePadDown" .. InKeyName)
+  DebugPrint("OnGamePadDown" .. InKeyName)
   if InKeyName == UIConst.GamePadKey.FaceButtonRight then
     self:OnReturnKeyDown()
     IsEventHandled = true
@@ -196,7 +186,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -208,14 +197,12 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Handled
 end
-
 function M:AddDeltaOffset(DeltaOffset)
   local CurrentOffset = self.ScrollBox:GetScrollOffset()
   local OffsetToEnd = self.ScrollBox:GetScrollOffsetOfEnd()
   local NextOffset = math.clamp(CurrentOffset + DeltaOffset, 0, OffsetToEnd)
-  ScreenPrint("CurrentOffset  " .. CurrentOffset .. "  OffsetToEnd  " .. OffsetToEnd)
+  DebugPrint("CurrentOffset  " .. CurrentOffset .. "  OffsetToEnd  " .. OffsetToEnd)
   self.ScrollBox:SetScrollOffset(NextOffset)
 end
-
 AssembleComponents(M)
 return M

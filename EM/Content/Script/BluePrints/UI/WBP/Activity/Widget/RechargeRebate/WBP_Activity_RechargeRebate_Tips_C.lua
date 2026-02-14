@@ -1,15 +1,12 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Initialize(Initializer)
 end
-
 function M:Destruct()
   self:UnBindInputMethodChangedDelegate()
   AudioManager(self):SetEventSoundParam(self, "RechargeTipOpen", {ToEnd = 1})
   self.Super.Destruct(self)
 end
-
 function M:PlayFadeOut(IsRemoveFromParent)
   self:SetFocus(false)
   self:PlayAnimation(self.Out)
@@ -19,7 +16,6 @@ function M:PlayFadeOut(IsRemoveFromParent)
     self.Close
   })
 end
-
 function M:PlayFadeIn(TipType)
   self:SetFocus(true)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -34,7 +30,6 @@ function M:PlayFadeIn(TipType)
   end
   self:RefreshUI()
 end
-
 function M:InitTips(TipType, ParentUI)
   self.ParentUI = ParentUI
   self.isPC = CommonUtils.GetDeviceTypeByPlatformName() == "PC"
@@ -50,7 +45,6 @@ function M:InitTips(TipType, ParentUI)
   self:PlayFadeIn(TipType)
   self:BindInputMethodChangedDelegate()
 end
-
 function M:ShowPhoxeneType()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -79,7 +73,6 @@ function M:ShowPhoxeneType()
     Owner = self
   })
 end
-
 function M:ShowMonthlyCardType()
   local Avatar = GWorld:GetAvatar()
   if nil == Avatar then
@@ -102,7 +95,6 @@ function M:ShowMonthlyCardType()
   self.Text_DayNumTitle:SetText(GText("UI_GameEvent_TimeRemain_Day"))
   self.Text_MonthCardTipsDetailNum:SetText(GText("FeeRefund_MonthlyCard_Addup") .. TotalMonthlyCard)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -123,7 +115,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:BindInputMethodChangedDelegate()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -131,7 +122,6 @@ function M:BindInputMethodChangedDelegate()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.OnInputMethodChanged)
   end
 end
-
 function M:UnBindInputMethodChangedDelegate()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -139,12 +129,10 @@ function M:UnBindInputMethodChangedDelegate()
     GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnInputMethodChanged)
   end
 end
-
 function M:OnInputMethodChanged(CurInputDevice, CurGamepadName)
   self.CurInputDevice = CurInputDevice
   self:RefreshUI()
 end
-
 function M:RefreshUI()
   if not self.isPC or self.LastInputDevice == self.CurInputDevice then
     return
@@ -156,5 +144,4 @@ function M:RefreshUI()
     self.Key_Close:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

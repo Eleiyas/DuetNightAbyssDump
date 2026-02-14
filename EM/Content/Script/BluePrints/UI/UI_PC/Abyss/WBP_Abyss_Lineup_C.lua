@@ -60,7 +60,6 @@ WBP_Abyss_Lineup_C.EDirection = {
 WBP_Abyss_Lineup_C.GamepadIcons = {
   "Controller_SwitchTeam"
 }
-
 function WBP_Abyss_Lineup_C:Construct()
   self.Platform = CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance)
   self.TypeTabs = {
@@ -73,16 +72,15 @@ function WBP_Abyss_Lineup_C:Construct()
   self.Btn_Save:SetText(GText("UI_RegionMap_Save"))
   self.Btn_Save:Init(self, self.SaveLineup)
   self.Btn_Click.OnClicked:Add(self, self.OnBackgroundClicked)
+  self.Btn_Click:SetTouchMethod(UE4.EButtonTouchMethod.Down)
   self:InitSelectiveList()
   self:InitItemDetailWidget()
   self:InitGamepadKeys()
   self:InitListenEvent()
 end
-
 function WBP_Abyss_Lineup_C:IsMobile()
   return self.Platform == CommonConst.CLIENT_DEVICE_TYPE.MOBILE
 end
-
 function WBP_Abyss_Lineup_C:InitGamepadKeys()
   if self:IsMobile() then
     return
@@ -99,13 +97,12 @@ function WBP_Abyss_Lineup_C:InitGamepadKeys()
     Desc = GText("UI_Abyss_SwitchTeam")
   })
 end
-
 function WBP_Abyss_Lineup_C:InitWidget()
   self.bInList = false
   self.CurDungeonPanel = self.Team_Detail1
-  local Avatar = ArmoryUtils:GetAvatar()
+  local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("lhr@\233\152\181\229\174\185\233\133\141\231\189\174\231\149\140\233\157\162Avatar\232\142\183\229\143\150\229\164\177\232\180\165")
+    DebugPrint("lhr@阵容配置界面Avatar获取失败")
     return
   end
   self.Btn_Save:SetForbidden(true)
@@ -114,7 +111,7 @@ function WBP_Abyss_Lineup_C:InitWidget()
       if DungeonPanel then
         DungeonPanel:ClearAllSlots(true)
       else
-        DebugPrint("lhr@WBP_Abyss_Lineup_C:Enter, \233\152\181\229\174\185\233\157\162\230\157\191\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165")
+        DebugPrint("lhr@WBP_Abyss_Lineup_C:Enter, 阵容面板初始化失败")
       end
     end
   end
@@ -127,7 +124,6 @@ function WBP_Abyss_Lineup_C:InitWidget()
   self:WeaponMain_InitWidget()
   self:PetMain_InitWidget()
 end
-
 function WBP_Abyss_Lineup_C:Destruct()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
@@ -137,7 +133,6 @@ function WBP_Abyss_Lineup_C:Destruct()
     self.SetFocusTimer = nil
   end
 end
-
 function WBP_Abyss_Lineup_C:InitTable()
   self.BottomKeyInfo = {
     {
@@ -199,7 +194,6 @@ function WBP_Abyss_Lineup_C:InitTable()
   self:ShowConfirmBtn(false)
   self:ShowAddAndRemoveBtn(false)
 end
-
 function WBP_Abyss_Lineup_C:AddTabItem(idx)
   local TabUI = self.Root.Com_Tab
   if not TabUI then
@@ -208,7 +202,6 @@ function WBP_Abyss_Lineup_C:AddTabItem(idx)
   local BottomKeyInfo = TabUI.ConfigData.BottomKeyInfo
   BottomKeyInfo[idx] = self.BottomKeyInfo[idx]
 end
-
 function WBP_Abyss_Lineup_C:RemoveTabItem(idx)
   local TabUI = self.Root.Com_Tab
   if not TabUI then
@@ -217,7 +210,6 @@ function WBP_Abyss_Lineup_C:RemoveTabItem(idx)
   local BottomKeyInfo = TabUI.ConfigData.BottomKeyInfo
   BottomKeyInfo[idx] = {}
 end
-
 function WBP_Abyss_Lineup_C:ShowConfirmBtn(bShow)
   local TabUI = self.Root.Com_Tab
   if not TabUI then
@@ -233,7 +225,6 @@ function WBP_Abyss_Lineup_C:ShowConfirmBtn(bShow)
   end
   TabUI:UpdateHotKeyInfo(self.CurGamepadName)
 end
-
 function WBP_Abyss_Lineup_C:ShowAddAndRemoveBtn(bShow)
   local TabUI = self.Root.Com_Tab
   if not TabUI then
@@ -249,14 +240,12 @@ function WBP_Abyss_Lineup_C:ShowAddAndRemoveBtn(bShow)
   end
   TabUI:UpdateHotKeyInfo(self.CurGamepadName)
 end
-
 function WBP_Abyss_Lineup_C:OnBackgroundClicked()
   if self.bItemDetailsShowed then
     self:ShowItemDetails(false)
   end
   self:SetContentIsSelected(self.SelectedContent, false)
 end
-
 function WBP_Abyss_Lineup_C:Enter(LevelInfo, SelectedDungeon, SelectedSlot)
   self.Saved = true
   self.InList = nil
@@ -276,10 +265,9 @@ function WBP_Abyss_Lineup_C:Enter(LevelInfo, SelectedDungeon, SelectedSlot)
   end
   self:DelaySetFocusTarget(nil, 0.2)
 end
-
 function WBP_Abyss_Lineup_C:InitDungeons(DungeonIds, SelectedDungeon)
   if not DungeonIds or type(DungeonIds) ~= "table" then
-    DebugPrint("lhr@WBP_Abyss_Lineup_C:Enter, \229\137\175\230\156\172Id\230\151\160\230\149\136")
+    DebugPrint("lhr@WBP_Abyss_Lineup_C:Enter, 副本Id无效")
     return
   end
   self.DungeonIds = DungeonIds
@@ -301,15 +289,14 @@ function WBP_Abyss_Lineup_C:InitDungeons(DungeonIds, SelectedDungeon)
     if DungeonPanel then
       DungeonPanel:Init(DungeonIndex, self, self.DungeonIds[DungeonIndex], DungeonIndex == SelectedDungeon)
     else
-      DebugPrint("lhr@WBP_Abyss_Lineup_C:InitDungeons, \233\152\181\229\174\185\233\157\162\230\157\191\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165")
+      DebugPrint("lhr@WBP_Abyss_Lineup_C:InitDungeons, 阵容面板初始化失败")
     end
   end
 end
-
 function WBP_Abyss_Lineup_C:InitDetailPanels()
-  local Avatar = ArmoryUtils:GetAvatar()
+  local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("WBP_Abyss_Lineup_C:InitDetailPanels, \233\133\141\231\189\174\233\157\162\230\157\191\229\136\157\229\167\139\229\140\150\229\164\177\232\180\165\239\188\140Avatar\230\151\160\230\149\136")
+    DebugPrint("WBP_Abyss_Lineup_C:InitDetailPanels, 配置面板初始化失败，Avatar无效")
     return
   end
   for SlotName, EName in pairs(self.ESlotName) do
@@ -320,7 +307,7 @@ function WBP_Abyss_Lineup_C:InitDetailPanels()
         local DataType = self.SlotType2DataType[SlotType]
         local Unit = Avatar[DataType .. "s"][Uuid]
         if not Unit then
-          GWorld.logger.error("WBP_Abyss_Lineup_C:InitDetailPanels@\232\175\165Uuid\229\175\185\229\186\148\231\154\132\231\137\169\229\147\129\229\183\178\229\164\177\230\149\136" .. CommonUtils.ObjId2Str(Uuid))
+          GWorld.logger.error("WBP_Abyss_Lineup_C:InitDetailPanels@该Uuid对应的物品已失效" .. CommonUtils.ObjId2Str(Uuid))
         end
         local UnitData = Unit and Unit:Data()
         local Content = {
@@ -350,7 +337,6 @@ function WBP_Abyss_Lineup_C:InitDetailPanels()
     end
   end
 end
-
 function WBP_Abyss_Lineup_C:CheckUnit(UnitId)
   if type(UnitId) == "number" then
     return UnitId ~= NullUnitId
@@ -358,7 +344,6 @@ function WBP_Abyss_Lineup_C:CheckUnit(UnitId)
     return UnitId ~= NullUUid
   end
 end
-
 function WBP_Abyss_Lineup_C:InitSelectiveList()
   self.OrderByDisplayNames = {
     "UI_LEVEL_SELECT",
@@ -395,7 +380,6 @@ function WBP_Abyss_Lineup_C:InitSelectiveList()
     table.insert(self.RangedFilterIcons, Data and Data.Icon)
   end
 end
-
 function WBP_Abyss_Lineup_C:SetDetailPanelLocation(SelectedDungeon, IsInit)
   local SetLocationAnimName = ""
   if 1 == SelectedDungeon then
@@ -408,7 +392,6 @@ function WBP_Abyss_Lineup_C:SetDetailPanelLocation(SelectedDungeon, IsInit)
   end
   EMUIAnimationSubsystem:EMPlayAnimation(self, self[SetLocationAnimName])
 end
-
 function WBP_Abyss_Lineup_C:SelectDungeon(SelectedDungeon, SlotSelected)
   local PreDungeonIndex = self.CurDungeonPanel.DungeonIndex
   if PreDungeonIndex == SelectedDungeon then
@@ -428,7 +411,6 @@ function WBP_Abyss_Lineup_C:SelectDungeon(SelectedDungeon, SlotSelected)
   end
   self:DelaySetFocusTarget(nil, 0.2)
 end
-
 function WBP_Abyss_Lineup_C:SlotSelectionChanged(SlotName, DungeonIndex, bToList)
   if self.Dungeons[DungeonIndex] == nil then
     return
@@ -465,7 +447,6 @@ function WBP_Abyss_Lineup_C:SlotSelectionChanged(SlotName, DungeonIndex, bToList
     self:ReInitListItems()
   end
 end
-
 function WBP_Abyss_Lineup_C:ReInitListItems()
   local Uuid = self.CurDungeonPanel:GetCurrentUuid(self.CurSlotName)
   self["Current" .. self.CurSlotType .. "Uuid"] = Uuid
@@ -473,7 +454,6 @@ function WBP_Abyss_Lineup_C:ReInitListItems()
   self:InitItemDetailWidget()
   self:FillSelectiveList()
 end
-
 function WBP_Abyss_Lineup_C:OnListInited(bListEmpty)
   self.bListEmpty = bListEmpty
   if self.bItemDetailsShowed then
@@ -482,7 +462,6 @@ function WBP_Abyss_Lineup_C:OnListInited(bListEmpty)
   self:SetContentIsSelected(self.SelectedContent, false)
   self:UpdateTeamIcons()
 end
-
 function WBP_Abyss_Lineup_C:InitItemDetailWidget()
   if self.ItemDetailsWidget then
     self.ItemDetailsWidget:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -503,21 +482,18 @@ function WBP_Abyss_Lineup_C:InitItemDetailWidget()
   self.bItemDetailsShowed = false
   self.ItemDetailsContent = nil
 end
-
 function WBP_Abyss_Lineup_C:GetCurrentContent()
   return self[self.CurSlotType .. "Main_CurContent"]
 end
-
 function WBP_Abyss_Lineup_C:CallFunctionByName(FunctionName, ...)
   if self[FunctionName] then
     return self[FunctionName](self, ...)
   end
 end
-
 function WBP_Abyss_Lineup_C:RemoveTeamIcons(DungeonIndex)
   local DungeonPanel = self.Dungeons[DungeonIndex]
   if not DungeonPanel then
-    DebugPrint("lhr@WBP_Abyss_Lineup_C:RemoveTeamIcons, DungeonIndex\229\175\185\229\186\148\231\154\132\229\133\179\229\141\161\233\152\181\229\174\185\233\157\162\230\157\191\230\151\160\230\149\136")
+    DebugPrint("lhr@WBP_Abyss_Lineup_C:RemoveTeamIcons, DungeonIndex对应的关卡阵容面板无效")
     return
   end
   for SlotName, Slot in pairs(DungeonPanel.Slots) do
@@ -533,7 +509,6 @@ function WBP_Abyss_Lineup_C:RemoveTeamIcons(DungeonIndex)
     end
   end
 end
-
 function WBP_Abyss_Lineup_C:UpdateTeamIcons()
   for DungeonIndex, DungeonPanel in pairs(self.Dungeons) do
     for SlotName, Slot in pairs(DungeonPanel.Slots) do
@@ -566,17 +541,15 @@ function WBP_Abyss_Lineup_C:UpdateTeamIcons()
     end
   end
 end
-
 function WBP_Abyss_Lineup_C:UpdateSingleTeamIcon(Uuid, bVisble, Type)
   local Type = Type or self.CurSlotType
   local Content = self[Type .. "ItemContentsMap"][Uuid]
   if not Content then
-    DebugPrint("lhr@UpdateSingleTeamIcon: Uuid\230\178\161\230\156\137\229\175\185\229\186\148\231\154\132Content")
+    DebugPrint("lhr@UpdateSingleTeamIcon: Uuid没有对应的Content")
     return
   end
   Content.TeamIdx = bVisble and Content.TeamIdx or nil
 end
-
 function WBP_Abyss_Lineup_C:FillSelectiveList()
   self.List_Lineup:BindEvents(self, {
     SortFuncion = self.SortItemContents,
@@ -596,7 +569,6 @@ function WBP_Abyss_Lineup_C:FillSelectiveList()
     Type = self.CurSlotType
   })
 end
-
 function WBP_Abyss_Lineup_C:PhantomWeaponTypeChanged(Type, IsPlaySound, bSlotChanged)
   if Type == self.SlotName2Type[self.ESlotName.RangedWeapon] or Type == self.SlotName2Type[self.ESlotName.MeleeWeapon] then
     if not bSlotChanged and not self:IsListAllowRefresh() then
@@ -614,17 +586,15 @@ function WBP_Abyss_Lineup_C:PhantomWeaponTypeChanged(Type, IsPlaySound, bSlotCha
     self:ReInitListItems()
     self:DelaySetFocusTarget(bSlotChanged)
   else
-    DebugPrint("lhr@PhantomWeaponTypeChanged:\228\188\160\229\133\165\230\173\166\229\153\168\231\177\187\229\158\139\230\151\160\230\149\136,", Type)
+    DebugPrint("lhr@PhantomWeaponTypeChanged:传入武器类型无效,", Type)
   end
 end
-
 function WBP_Abyss_Lineup_C:IsListAllowRefresh()
   if not self.List_Lineup then
     return false
   end
   return self.List_Lineup.bAllowRefreshList
 end
-
 function WBP_Abyss_Lineup_C:CreateFilters(InTags, InTexts, InIcons)
   local Filters = {}
   for i, _ in ipairs(InTags) do
@@ -636,7 +606,6 @@ function WBP_Abyss_Lineup_C:CreateFilters(InTags, InTexts, InIcons)
   end
   return Filters
 end
-
 function WBP_Abyss_Lineup_C:OnItemIsHoverChanged(ItemContent, bHovered)
   if not ItemContent.Uuid then
     return
@@ -648,7 +617,6 @@ function WBP_Abyss_Lineup_C:OnItemIsHoverChanged(ItemContent, bHovered)
     self:ShowItemDetails(bHovered and not self:IsChar(), ItemContent)
   end
 end
-
 function WBP_Abyss_Lineup_C:OnListItemClicked(Content)
   if not Content.Uuid then
     return
@@ -685,26 +653,22 @@ function WBP_Abyss_Lineup_C:OnListItemClicked(Content)
         CurContent.TeamCharId = PreChar
         CurContent.SelfWidget:SetTeamIcon(PreIndex, PreChar)
       end
-      UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText(Content.UnitName) .. GText("Abyss_Party_Replaced") .. "<Highlight>" .. self.CurDungeonPanel.Name .. "\194\183" .. self.SlotName2TextMap[self.CurSlotName] .. "</>")
+      UIManager(GWorld.GameInstance):ShowUITip(UIConst.Tip_CommonToast, GText(Content.UnitName) .. GText("Abyss_Party_Replaced") .. "<Highlight>" .. self.CurDungeonPanel.Name .. "·" .. self.SlotName2TextMap[self.CurSlotName] .. "</>")
       return
     end
   end
   self:CallFunctionByName(self.CurSlotType .. "Main_OnListItemClicked", Content)
 end
-
 function WBP_Abyss_Lineup_C:IsChar()
   return self.CurSlotType == CommonConst.ArmoryType.Char
 end
-
 function WBP_Abyss_Lineup_C:GetZOrder()
   return self.Root:GetZOrder()
 end
-
 function WBP_Abyss_Lineup_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self:SetFocusTarget()
-  return UIUtils.Handle
+  return UIUtils.Handled
 end
-
 function WBP_Abyss_Lineup_C:SortItemContents(InOutContentArray, SortByIdx, SortType)
   local FirstContent = self[self.CurSlotType .. "Main_CurContent"] or self[self.CurSlotType .. "Main_CmpContent"]
   local OrderByAttrNames
@@ -726,7 +690,6 @@ function WBP_Abyss_Lineup_C:SortItemContents(InOutContentArray, SortByIdx, SortT
   end
   ArmoryUtils:SortItemContents(InOutContentArray, SortByAttrNames, SortType, FirstContent)
 end
-
 function WBP_Abyss_Lineup_C:FilterItemContents(InContentArray, FilterIdxes)
   local SlotType = self.CurSlotType
   local DataType = self.SlotType2DataType[SlotType]
@@ -735,12 +698,10 @@ function WBP_Abyss_Lineup_C:FilterItemContents(InContentArray, FilterIdxes)
   if "Char" == DataType then
     function FilterFunc(FilterTag, Content)
       local Data = DataMgr.BattleChar[Content.UnitId]
-      
       return FilterTag == Data.Attribute
     end
   elseif "Weapon" == DataType then
-    local Avatar = ArmoryUtils:GetAvatar()
-    
+    local Avatar = GWorld:GetAvatar()
     function FilterFunc(FilterTag, Content)
       local Weapon = Avatar.Weapons[Content.Uuid]
       return Weapon:HasTag(FilterTag)
@@ -762,7 +723,6 @@ function WBP_Abyss_Lineup_C:FilterItemContents(InContentArray, FilterIdxes)
   end
   return FilteredItems
 end
-
 function WBP_Abyss_Lineup_C:NewItemContent(Target, Type, Tag)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Uuid = Target.Uuid
@@ -790,7 +750,6 @@ function WBP_Abyss_Lineup_C:NewItemContent(Target, Type, Tag)
   }
   return Obj
 end
-
 function WBP_Abyss_Lineup_C:NewPetItemContent(Target)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Uuid = Target.UniqueId
@@ -812,7 +771,6 @@ function WBP_Abyss_Lineup_C:NewPetItemContent(Target)
   }
   return Obj
 end
-
 function WBP_Abyss_Lineup_C:ShowItemDetails(bShow, Content)
   if bShow then
     if self.bListEmpty then
@@ -835,11 +793,9 @@ function WBP_Abyss_Lineup_C:ShowItemDetails(bShow, Content)
   end
   self.ItemDetailsContent = Content
 end
-
 function WBP_Abyss_Lineup_C:AttachTipsWidget(Widget)
   self.Pos_Tip:AddChild(Widget)
 end
-
 function WBP_Abyss_Lineup_C:SetContentIsChosen(Content, IsChosen)
   if Content then
     if Content.SelfWidget then
@@ -852,7 +808,6 @@ function WBP_Abyss_Lineup_C:SetContentIsChosen(Content, IsChosen)
     end
   end
 end
-
 function WBP_Abyss_Lineup_C:SetContentIsSelected(Content, IsSelected)
   if Content then
     Content.IsSelect = IsSelected
@@ -867,7 +822,6 @@ function WBP_Abyss_Lineup_C:SetContentIsSelected(Content, IsSelected)
     end
   end
 end
-
 local SelectSoundPaths = {
   Char = "event:/ui/armory/click_select_role",
   Weapon = "event:/ui/armory/click_select_weapon",
@@ -879,7 +833,6 @@ local EquipSoundPaths = {
   Weapon = "event:/ui/common/weapon_replace",
   Pet = "event:/ui/common/role_replace"
 }
-
 function WBP_Abyss_Lineup_C:PlaySelectSound(IsSelected, Type)
   if not IsSelected then
     AudioManager(self):PlayUISound(self, SelectSoundPaths.Default, nil, nil)
@@ -888,7 +841,6 @@ function WBP_Abyss_Lineup_C:PlaySelectSound(IsSelected, Type)
     AudioManager(self):PlayUISound(self, EquipSoundPaths[Type], nil, nil)
   end
 end
-
 function WBP_Abyss_Lineup_C:SaveLineup()
   if self.Saved then
     if self.UsingGamepad then
@@ -901,7 +853,7 @@ function WBP_Abyss_Lineup_C:SaveLineup()
   end
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    DebugPrint("lhr@\233\152\181\229\174\185\233\133\141\231\189\174\231\149\140\233\157\162\228\191\157\229\173\152\229\164\177\232\180\165\239\188\154Avatar\232\142\183\229\143\150\229\164\177\232\180\165")
+    DebugPrint("lhr@阵容配置界面保存失败：Avatar获取失败")
     return
   end
   local TeamTable = {
@@ -934,7 +886,6 @@ function WBP_Abyss_Lineup_C:SaveLineup()
       end
     end
   end
-  
   local function Callback(RetCode)
     if RetCode == ErrorCode.RET_SUCCESS then
       self.Saved = true
@@ -949,18 +900,14 @@ function WBP_Abyss_Lineup_C:SaveLineup()
       self:OnReturnKeyDown()
     end
   end
-  
   Avatar:SaveAbyssTeam(Callback, self.AbyssId, self.LevelIndex, TeamTable)
 end
-
 function WBP_Abyss_Lineup_C:GetCurModType()
   return self.SlotType2DataType[self.SlotName2Type[self.CurSlotName]]
 end
-
 function WBP_Abyss_Lineup_C:GetModType(SlotName)
   return self.SlotType2DataType[self.SlotName2Type[SlotName]]
 end
-
 function WBP_Abyss_Lineup_C:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -968,13 +915,11 @@ function WBP_Abyss_Lineup_C:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Abyss_Lineup_C:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_Abyss_Lineup_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -1012,7 +957,6 @@ function WBP_Abyss_Lineup_C:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_Abyss_Lineup_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1051,12 +995,12 @@ function WBP_Abyss_Lineup_C:OnKeyDown(MyGeometry, InKeyEvent)
       IsHandled = false
     end
   elseif "Escape" == InKeyName then
-  elseif "Q" == InKeyName then
-    if self.bInList and (self.CurSlotName == self.ESlotName.PhantomWeapon1 or self.CurSlotName == self.ESlotName.PhantomWeapon2) then
+  elseif "A" == InKeyName then
+    if self.CurSlotName == self.ESlotName.PhantomWeapon1 or self.CurSlotName == self.ESlotName.PhantomWeapon2 then
       self:PhantomWeaponTypeChanged("Melee", true)
     end
-  elseif "E" == InKeyName then
-    if self.bInList and (self.CurSlotName == self.ESlotName.PhantomWeapon1 or self.CurSlotName == self.ESlotName.PhantomWeapon2) then
+  elseif "D" == InKeyName then
+    if self.CurSlotName == self.ESlotName.PhantomWeapon1 or self.CurSlotName == self.ESlotName.PhantomWeapon2 then
       self:PhantomWeaponTypeChanged("Ranged", true)
     end
   else
@@ -1064,7 +1008,6 @@ function WBP_Abyss_Lineup_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return IsHandled and UE4.UWidgetBlueprintLibrary.Handled() or UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Abyss_Lineup_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1102,7 +1045,6 @@ function WBP_Abyss_Lineup_C:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return IsHandled and UE4.UWidgetBlueprintLibrary.Handled() or UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function WBP_Abyss_Lineup_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1115,27 +1057,24 @@ function WBP_Abyss_Lineup_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Handled
 end
-
 function WBP_Abyss_Lineup_C:CreateCDTimer()
   self.CdTimer = self:AddTimer(0.15, function()
     self.CdTimer = nil
   end, nil, nil, nil, true)
 end
-
 function WBP_Abyss_Lineup_C:ClearListenEvent()
   for _, DungeonPanel in pairs(self.Dungeons) do
     DungeonPanel:ClearListenEvent()
   end
 end
-
 function WBP_Abyss_Lineup_C:ResetListenEvent()
   for _, DungeonPanel in pairs(self.Dungeons) do
     DungeonPanel:ResetListenEvent()
   end
 end
-
 function WBP_Abyss_Lineup_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self:IsMobile() then
+    self:OnUpdateUIStyleByInputTypeChange(ECommonInputType.Touch)
     return
   end
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -1154,9 +1093,10 @@ function WBP_Abyss_Lineup_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepa
   end
   self:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
 end
-
 function WBP_Abyss_Lineup_C:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
-  if self:IsMobile() then
+  if CurInputDevice == ECommonInputType.Touch then
+    self.List_Lineup:OnUpdateUIStyleByInputTypeChange(CurInputDevice)
+    self.CurDungeonPanel:OnUpdateUIStyleByInputTypeChange(CurInputDevice)
     return
   end
   if CurInputDevice == ECommonInputType.Gamepad then
@@ -1183,7 +1123,6 @@ function WBP_Abyss_Lineup_C:OnUpdateUIStyleByInputTypeChange(CurInputDevice, Cur
     self.CurDungeonPanel:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   end
 end
-
 function WBP_Abyss_Lineup_C:SwitchGamepadUIMode(bToList)
   if not self.UsingGamepad then
     return
@@ -1211,7 +1150,6 @@ function WBP_Abyss_Lineup_C:SwitchGamepadUIMode(bToList)
     self:SetContentIsSelected(self.SelectedContent, false)
   end
 end
-
 function WBP_Abyss_Lineup_C:DelaySetFocusTarget(bToList, OverriddenDelayTime)
   if self.SetFocusTimer then
     self:RemoveTimer(self.SetFocusTimer)
@@ -1221,7 +1159,6 @@ function WBP_Abyss_Lineup_C:DelaySetFocusTarget(bToList, OverriddenDelayTime)
     self.SetFocusTimer = nil
   end, nil, nil, nil, true)
 end
-
 function WBP_Abyss_Lineup_C:SetFocusTarget(bToList)
   if not self.UsingGamepad then
     return
@@ -1256,42 +1193,34 @@ function WBP_Abyss_Lineup_C:SetFocusTarget(bToList)
   end
   self:SwitchGamepadUIMode(self.bInList)
 end
-
 function WBP_Abyss_Lineup_C:BP_GetDesiredFocusTarget()
   self:SetFocusTarget()
   return nil
 end
-
 function WBP_Abyss_Lineup_C:ShowReturnConfirmWindow()
   local CommonDialogParams = {}
   if self.ReturnTimer then
     self:RemoveTimer(self.ReturnTimer)
   end
-  
   function CommonDialogParams.LeftCallbackFunction()
     self:SetFocus()
   end
-  
   function CommonDialogParams.OnCloseCallbackFunction()
     self:SetFocus()
     self.ReturnTimer = self:AddTimer(1, function()
       self.ReturnPressed = false
     end, nil, nil, nil, true)
   end
-  
   function CommonDialogParams.RightCallbackFunction()
     self.Root:OpenSubUI(self.PreWidgetInfo, true)
   end
-  
   self:ShowConfirmWindow(100149, CommonDialogParams, self.Root)
 end
-
 function WBP_Abyss_Lineup_C:ShowConfirmWindow(PopupId, Params, ParentWidget)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   UIManager:ShowCommonPopupUI(PopupId, Params, ParentWidget)
 end
-
 function WBP_Abyss_Lineup_C:OnReturnKeyDown()
   if not self.Saved then
     self:ShowReturnConfirmWindow()
@@ -1303,7 +1232,6 @@ function WBP_Abyss_Lineup_C:OnReturnKeyDown()
     self.SetFocusTimer = nil
   end
 end
-
 function WBP_Abyss_Lineup_C:SwitchIn(...)
   local LevelParams, DungeonIndex, SlotName = ...
   self:InitTable()
@@ -1314,7 +1242,6 @@ function WBP_Abyss_Lineup_C:SwitchIn(...)
   self:PlayAnimation(self.In)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Abyss_Lineup_C:SwitchOut()
   self:ResetListenEvent()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -1329,6 +1256,5 @@ function WBP_Abyss_Lineup_C:SwitchOut()
   end
   self:PlayAnimation(self.Out)
 end
-
 AssembleComponents(WBP_Abyss_Lineup_C)
 return WBP_Abyss_Lineup_C

@@ -3,13 +3,11 @@ local WBP_ModArchive_Recommend_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_ModArchive_Recommend_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function WBP_ModArchive_Recommend_C:OnSelected(Params)
   if Params then
     self.Owner = Params.Owner
@@ -33,7 +31,6 @@ function WBP_ModArchive_Recommend_C:OnSelected(Params)
   self:CheckHasMod()
   self:InitTab()
 end
-
 function WBP_ModArchive_Recommend_C:InitTab()
   local Tabs = {}
   for i, v in ipairs(DataMgr.ModGuideBookBuildTab) do
@@ -55,19 +52,17 @@ function WBP_ModArchive_Recommend_C:InitTab()
   self.RecommendTab:SelectTab(1)
   self.TabNum = #Tabs
 end
-
 function WBP_ModArchive_Recommend_C:SortRecommends()
   self.Keys = {}
   for BuildId, _ in pairs(self.Recommends) do
     table.insert(self.Keys, BuildId)
   end
-  
   local function SortFunc(a, b)
     local RecommendInfoA = self.Recommends[a]
     local aInfo = {}
     aInfo.Id = RecommendInfoA.BuildId
     aInfo.HasThis = false
-    if RecommendInfoA.TargetType == "Char" then
+    if RecommendInfoA.TargetType and string.find(RecommendInfoA.TargetType, "Char") then
       local Info = DataMgr.Char[RecommendInfoA.TargetId]
       aInfo.Rarity = Info.CharRarity
       for _, Char in pairs(self.Avatar.Chars) do
@@ -76,7 +71,7 @@ function WBP_ModArchive_Recommend_C:SortRecommends()
           break
         end
       end
-    elseif RecommendInfoA.TargetType == "Weapon" then
+    elseif RecommendInfoA.TargetType and string.find(RecommendInfoA.TargetType, "Weapon") then
       local Info = DataMgr.Weapon[RecommendInfoA.TargetId]
       aInfo.Rarity = Info.WeaponRarity
       for _, Weapon in pairs(self.Avatar.Weapons) do
@@ -90,7 +85,7 @@ function WBP_ModArchive_Recommend_C:SortRecommends()
     local bInfo = {}
     bInfo.Id = RecommendInfoB.BuildId
     bInfo.HasThis = false
-    if RecommendInfoB.TargetType == "Char" then
+    if RecommendInfoB.TargetType and string.find(RecommendInfoB.TargetType, "Char") then
       local Info = DataMgr.Char[RecommendInfoB.TargetId]
       bInfo.Rarity = Info.CharRarity
       for _, Char in pairs(self.Avatar.Chars) do
@@ -99,7 +94,7 @@ function WBP_ModArchive_Recommend_C:SortRecommends()
           break
         end
       end
-    elseif RecommendInfoB.TargetType == "Weapon" then
+    elseif RecommendInfoB.TargetType and string.find(RecommendInfoB.TargetType, "Weapon") then
       local Info = DataMgr.Weapon[RecommendInfoB.TargetId]
       bInfo.Rarity = Info.WeaponRarity
       for _, Weapon in pairs(self.Avatar.Weapons) do
@@ -119,17 +114,14 @@ function WBP_ModArchive_Recommend_C:SortRecommends()
       return aInfo.Id < bInfo.Id
     end
   end
-  
   table.sort(self.Keys, SortFunc)
 end
-
 function WBP_ModArchive_Recommend_C:OnTabSelected(Idx)
   self.FirstSelected = true
   local NextTab = self.RecommendTab:GetCurrentTabIndex()
   self.CurTab = NextTab
   self:InitRecommends()
 end
-
 function WBP_ModArchive_Recommend_C:InitRecommends()
   self.List_Recommend:ClearListItems()
   local Index = 0
@@ -137,14 +129,14 @@ function WBP_ModArchive_Recommend_C:InitRecommends()
     local RecommendInfo = self.Recommends[v]
     if RecommendInfo.TabId == self.CurTab then
       local HasThis = false
-      if RecommendInfo.TargetType == "Char" then
+      if RecommendInfo.TargetType and string.find(RecommendInfo.TargetType, "Char") then
         for _, Char in pairs(self.Avatar.Chars) do
           if Char.CharId == RecommendInfo.TargetId then
             HasThis = true
             break
           end
         end
-      elseif RecommendInfo.TargetType == "Weapon" then
+      elseif RecommendInfo.TargetType and string.find(RecommendInfo.TargetType, "Weapon") then
         for _, Weapon in pairs(self.Avatar.Weapons) do
           if Weapon.WeaponId == RecommendInfo.TargetId then
             HasThis = true
@@ -179,11 +171,9 @@ function WBP_ModArchive_Recommend_C:InitRecommends()
     end, 5, "SelectFirstTab")
   end
 end
-
 function WBP_ModArchive_Recommend_C:UpdateListWidgets(Widget)
   self.Widgets[Widget.Info.Index] = Widget
 end
-
 function WBP_ModArchive_Recommend_C:CheckHasMod()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -202,12 +192,10 @@ function WBP_ModArchive_Recommend_C:CheckHasMod()
     end
   end
 end
-
 function WBP_ModArchive_Recommend_C:RefreshInfo()
   self:SetFocus()
   self:InitRecommends()
 end
-
 function WBP_ModArchive_Recommend_C:OnSelectionChanged(Item, IsSelected)
   if Item and Item.SelfWidget and self.CurWidget and Item.SelfWidget ~= self.CurWidget then
     DebugPrint("zwjkjkjk OnSelectionChanged", Item.SelfWidget:GetName())
@@ -215,11 +203,9 @@ function WBP_ModArchive_Recommend_C:OnSelectionChanged(Item, IsSelected)
     self.CurWidget = Item.SelfWidget
   end
 end
-
 function WBP_ModArchive_Recommend_C:TabClickSoundFunc()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
 end
-
 function WBP_ModArchive_Recommend_C:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -237,7 +223,6 @@ function WBP_ModArchive_Recommend_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_ModArchive_Recommend_C:Handle_OnPCDown(InKeyName)
   if "A" == InKeyName then
     self.RecommendTab:TabToLeft()
@@ -248,7 +233,6 @@ function WBP_ModArchive_Recommend_C:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Recommend_C:Handle_OnGamePadDown(InKeyName)
   DebugPrint("zwkkk  Handle_OnGamePadDown", InKeyName, self:GetName())
   if "Gamepad_DPad_Up" == InKeyName or "Gamepad_LeftStick_Up" == InKeyName then
@@ -266,7 +250,6 @@ function WBP_ModArchive_Recommend_C:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function WBP_ModArchive_Recommend_C:OnGamepadReturnKeyDown(Index)
   DebugPrint("123123321 OnGamepadReturnKeyDown")
   if not self.SelectingModItem then
@@ -285,7 +268,6 @@ function WBP_ModArchive_Recommend_C:OnGamepadReturnKeyDown(Index)
   end
   self.SelectingModItem = false
 end
-
 function WBP_ModArchive_Recommend_C:OnGamepadEnterKeyDown()
   DebugPrint("123123321 OnGamepadEnterKeyDown")
   if self.Owner then
@@ -297,7 +279,6 @@ function WBP_ModArchive_Recommend_C:OnGamepadEnterKeyDown()
   end
   self.SelectingModItem = true
 end
-
 function WBP_ModArchive_Recommend_C:OnMenuOpenChanged(bIsOpen)
   if not self.Owner then
     return
@@ -318,7 +299,6 @@ function WBP_ModArchive_Recommend_C:OnMenuOpenChanged(bIsOpen)
     self.RecommendTab.Key_Right:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_ModArchive_Recommend_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName, self:GetName())
   if self.CurInputDeviceType == CurInputDevice then
@@ -327,5 +307,4 @@ function WBP_ModArchive_Recommend_C:RefreshOpInfoByInputDevice(CurInputDevice, C
   self.CurInputDeviceType = CurInputDevice
   self.CurGamepadName = CurGamepadName
 end
-
 return WBP_ModArchive_Recommend_C

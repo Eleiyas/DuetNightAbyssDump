@@ -2,17 +2,13 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
 end
-
 function M:Destruct()
 end
-
 function M:OnListItemObjectSet(Content)
   self:Init(Content)
 end
-
 function M:Init(Content)
   if not Content.ItemType then
     return
@@ -38,10 +34,9 @@ function M:Init(Content)
   self.Count = Content.Count
   self:InitCommonView(Content)
 end
-
 function M:InitCommonView(Content)
   self.Text_Name:SetText(Content.Name)
-  self.Text_Num:SetText("\195\151" .. Content.Count)
+  self.Text_Num:SetText("×" .. Content.Count)
   local GiftContent = NewObject(UIUtils.GetCommonItemContentClass())
   GiftContent.ParentWidget = self
   GiftContent.Id = Content.Id
@@ -57,26 +52,16 @@ function M:InitCommonView(Content)
   }
   self.Item_Gift:Init(GiftContent)
 end
-
-function M:OnMenuOpenChangedEvents(bIsOpen)
-  self.ParentWidget:OnMenuOpenChangedEvents(bIsOpen)
-end
-
 function M:SetSelected(IsSelected)
 end
-
 function M:OnComListClicked()
 end
-
 function M:OnItemClicked()
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
 end
-
 function M:OnBtnChooseHovered()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -90,7 +75,6 @@ function M:OnBtnChooseHovered()
   end
   self.IsInHovered = true
 end
-
 function M:OnBtnChooseUnHovered()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -104,5 +88,7 @@ function M:OnBtnChooseUnHovered()
   end
   self.IsInHovered = false
 end
-
+function M:OnMenuOpenChangedEvents(bIsOpen)
+  self.ParentWidget:OnMenuOpenChangedEvents(bIsOpen)
+end
 return M

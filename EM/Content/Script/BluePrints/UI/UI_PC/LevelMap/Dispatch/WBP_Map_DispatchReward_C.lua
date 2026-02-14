@@ -6,10 +6,8 @@ local DispatchLevelEnum = {
   Perfect = 0,
   BigSuccess = 1,
   Success = 2,
-  Fail,
-  3
+  Fail = 3
 }
-
 function M:Construct()
   M.Super.Construct(self)
   self:InitListenEvent()
@@ -18,38 +16,36 @@ function M:Construct()
     self.List_Reward:SetControlScrollbarInside(true)
   end
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
+  self:ShowGamepadABtn(true)
   for Index, RewardId in ipairs(Params.RewardList) do
     if 1 == Index then
-      self:SetRewardItem(DispatchLevelEnum.Perfect, RewardId)
+      self:SetRewardItem(DispatchLevelEnum.Perfect, RewardId, self)
     elseif 2 == Index then
-      self:SetRewardItem(DispatchLevelEnum.BigSuccess, RewardId)
+      self:SetRewardItem(DispatchLevelEnum.BigSuccess, RewardId, self)
     elseif 3 == Index then
-      self:SetRewardItem(DispatchLevelEnum.Success, RewardId)
+      self:SetRewardItem(DispatchLevelEnum.Success, RewardId, self)
     else
-      self:SetRewardItem(DispatchLevelEnum.Fail, RewardId)
+      self:SetRewardItem(DispatchLevelEnum.Fail, RewardId, self)
     end
   end
   self.List_Reward:SetFocus()
   self.List_Reward:NavigateToIndex(0)
 end
-
-function M:SetRewardItem(Level, RewardId)
+function M:SetRewardItem(Level, RewardId, Owner)
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Level = Level
   Content.RewardId = RewardId
   Content.UI = nil
+  Content.Owner = Owner
   self.List_Reward:AddItem(Content)
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -62,7 +58,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.List_Reward:NavigateToIndex(0)
   end
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -71,5 +66,19 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
+function M:ShowGamepadABtn(bIsShow)
+  if bIsShow then
+    self.GamepadCheckItemKeyInfo = self.GamepadCheckItemKeyInfo or self:ShowGamepadShortcutBtn({
+      KeyInfoList = {
+        {
+          Type = "Img",
+          ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
+        }
+      },
+      Desc = GText("UI_Controller_CheckDetails")
+    })
+  elseif self.GamepadCheckItemKeyInfo then
+    self.GamepadCheckItemKeyInfo = nil
+  end
+end
 return M

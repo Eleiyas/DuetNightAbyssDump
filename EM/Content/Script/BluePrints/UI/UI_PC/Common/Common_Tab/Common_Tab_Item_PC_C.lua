@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:Update(Idx, Info)
   self.Info = Info
   Info.UI = self
@@ -46,7 +44,6 @@ function M:Update(Idx, Info)
   self.ItemPosition = CanvasSlot:GetPosition()
   self.bClickEnable = true
 end
-
 function M:SetReddot(IsNew, Upgradeable, OhterReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -65,7 +62,6 @@ function M:SetReddot(IsNew, Upgradeable, OhterReddot)
     self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:Btn_Click()
   if not self.bClickEnable then
     return
@@ -77,11 +73,9 @@ function M:Btn_Click()
     self:SetSwitchOn(true)
   end
 end
-
 function M:SetClickEnable(bEnable)
   self.bClickEnable = bEnable
 end
-
 function M:Btn_Press()
   if self.IsOn or self.IsLocked or not self.bClickEnable then
     return
@@ -92,14 +86,12 @@ function M:Btn_Press()
   self:UnbindAllFromAnimationFinished(self.Pressed)
   self:PlayAnimation(self.Pressed)
 end
-
 function M:Btn_Hover()
   if self.IsOn or self.IsLocked then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:Btn_UnHover()
   if self.IsOn or self.IsLocked then
     return
@@ -112,7 +104,6 @@ function M:Btn_UnHover()
   end
   self:PlayAnimation(self.UnHover)
 end
-
 function M:Update_LineEffect(InGeometry, MouseEvent)
   if self.IsOn or self.IsLocked then
     return
@@ -129,7 +120,6 @@ function M:Update_LineEffect(InGeometry, MouseEvent)
   local VXLineMat = self.VX_Line_Copy:GetDynamicMaterial()
   VXLineMat:SetScalarParameterValue("Mask_U_offset", MatFactor)
 end
-
 function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   if self.IsLocked then
     local ShowTextContent = self.Info.LockReasonText or string.format(GText("UI_HardBoss_Unlocklevel"), 30)
@@ -139,11 +129,9 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   self.IsOn = IsOn
   if IsOn then
     self:StopAllAnimations()
-    
     local function PlayPressAnimFinished()
       self:PlayAnimation(self.Click)
     end
-    
     if self:IsAnimationPlaying(self.Pressed) then
       self:UnbindAllFromAnimationFinished(self.Pressed)
       self:BindToAnimationFinished(self.Pressed, {self, PlayPressAnimFinished})
@@ -166,25 +154,20 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
     end
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 return M

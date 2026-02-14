@@ -3,13 +3,12 @@ local BP_ExcavationComponent_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.GameMode.DungeonComponents.BP_DungeonVoteComponent_C"
 })
-
 function BP_ExcavationComponent_C:InitExcavationComponent()
   self.GameMode = self:GetOwner()
   self:InitVoteComponent()
   self.ExcavationData = DataMgr.Excavation[self.GameMode.DungeonId]
   if not self.ExcavationData then
-    GameState(self):ShowDungeonError("ExcavationComponent:\229\189\147\229\137\141\229\137\175\230\156\172ID\230\178\161\230\156\137\229\161\171\229\134\153\229\156\168\229\175\185\229\186\148\231\154\132\229\137\175\230\156\172\232\161\168\228\184\173, \232\175\187\232\161\168\229\164\177\232\180\165! \232\175\187\229\133\165Id\239\188\154" .. self.GameMode.DungeonId)
+    GameState(self):ShowDungeonError("ExcavationComponent:当前副本ID没有填写在对应的副本表中, 读表失败! 读入Id：" .. self.GameMode.DungeonId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.GameMode.EMGameState:SetExcavationItemId(self.ExcavationData.ExcavationItemId)
@@ -28,10 +27,8 @@ function BP_ExcavationComponent_C:InitExcavationComponent()
   self.bCanTriggerBatteryFull = true
   self.GuideOrder = {}
 end
-
 function BP_ExcavationComponent_C:InitExcavationBaseInfo()
 end
-
 function BP_ExcavationComponent_C:RecordDungeonRoundData()
   local RoundData = {
     DungeonProgress = self.GameMode.EMGameState.DungeonProgress,
@@ -43,7 +40,6 @@ function BP_ExcavationComponent_C:RecordDungeonRoundData()
   PrintTable(RoundData, 3)
   return RoundData
 end
-
 function BP_ExcavationComponent_C:RecoverDungeonRoundData(Data)
   PrintTable(Data, 3)
   self.GameMode.EMGameState:SetDungeonProgress(Data.DungeonProgress)
@@ -52,14 +48,13 @@ function BP_ExcavationComponent_C:RecoverDungeonRoundData(Data)
   self.IsFirstRoundEnd = Data.IsFirstRoundEnd
   self.GuideOrder = Data.GuideOrder
 end
-
 function BP_ExcavationComponent_C:TriggerPrepareActiveExcavation()
   DebugPrint("BP_ExcavationComponent_C  ThisTurnExcavNum =", self.ThisTurnExcavNum, ", FinishedExcavNum =", self.FinishedExcavNum, ", TurnDeadExcavNum =", self.TurnDeadExcavNum)
   if 2 == self.GameMode.EMGameState.DungeonProgress and self.GameMode:GetNeedCreateEmergencyMonster("Pet") then
     self.GameMode:TriggerSpawnPet()
   end
   if self.NowExcavNum >= self.ExcavMaxNum or self.ThisTurnExcavNum >= self.ATurnExcavMaxNum then
-    DebugPrint("BP_ExcavationComponent_C \230\140\150\230\142\152\230\156\186\230\149\176\233\135\143\229\183\178\232\190\190\230\156\128\229\164\167")
+    DebugPrint("BP_ExcavationComponent_C 挖掘机数量已达最大")
     return
   end
   local Info = TArray(0)
@@ -74,7 +69,6 @@ function BP_ExcavationComponent_C:TriggerPrepareActiveExcavation()
   self.NowExcavNum = self.NowExcavNum + 1
   self.ThisTurnExcavNum = self.ThisTurnExcavNum + 1
 end
-
 function BP_ExcavationComponent_C:TriggerRealCreateExcavation(TriggerBox)
   if TriggerBox.RandomRuleId == self.ExcavationData.FirstRandomId then
     self.GameMode.EMGameState:StartGameTime()
@@ -91,7 +85,6 @@ function BP_ExcavationComponent_C:TriggerRealCreateExcavation(TriggerBox)
   Context:AddObjectParams("RandomCreator", Creator)
   self.GameMode.EMGameState.EventMgr:CreateUnitNew(Context, false)
 end
-
 function BP_ExcavationComponent_C:RegisterGuideOrder(Eid)
   local Index = self:GetIndexByEid(Eid)
   if 0 ~= Index then
@@ -101,7 +94,6 @@ function BP_ExcavationComponent_C:RegisterGuideOrder(Eid)
   table.insert(self.GuideOrder, Eid)
   return #self.GuideOrder
 end
-
 function BP_ExcavationComponent_C:GetIndexByEid(Eid)
   for index, _Eid in pairs(self.GuideOrder) do
     if _Eid == Eid then
@@ -110,14 +102,12 @@ function BP_ExcavationComponent_C:GetIndexByEid(Eid)
   end
   return 0
 end
-
 function BP_ExcavationComponent_C:TriggerClearExcavNum()
-  DebugPrint("BP_ExcavationComponent_C  \230\140\150\230\142\152\231\142\169\230\179\149\229\188\128\229\167\139\230\150\176\231\154\132\232\189\174\230\172\161")
+  DebugPrint("BP_ExcavationComponent_C  挖掘玩法开始新的轮次")
   self.ThisTurnExcavNum = 0
   self.FinishedExcavNum = 0
   self.TurnDeadExcavNum = 0
 end
-
 function BP_ExcavationComponent_C:JudgeNextTurn()
   if self.FinishedExcavNum + self.TurnDeadExcavNum >= self.ATurnExcavMaxNum then
     if self.FinishedExcavNum > 0 then
@@ -127,7 +117,6 @@ function BP_ExcavationComponent_C:JudgeNextTurn()
     end
   end
 end
-
 function BP_ExcavationComponent_C:OnEachRoundEnd()
   if self.GameMode.EMGameState:CheckGameModeStateEnable() then
     if self.IsFirstRoundEnd then
@@ -136,7 +125,6 @@ function BP_ExcavationComponent_C:OnEachRoundEnd()
     self.GameMode:TriggerActiveGameModeState(Const.StatePause)
   end
 end
-
 function BP_ExcavationComponent_C:UpdateExcavationItemNum(Num)
   if Num <= 0 then
     return
@@ -144,29 +132,25 @@ function BP_ExcavationComponent_C:UpdateExcavationItemNum(Num)
   local LastExcavationItemNum = self:GetExcavationItemNum()
   self:SetExcavationItemNum(self:GetExcavationItemNum() + Num)
 end
-
 function BP_ExcavationComponent_C:GetExcavationItemNum()
   return self.GameMode.EMGameState.ExcavationItemNum
 end
-
 function BP_ExcavationComponent_C:SetExcavationItemNum(Num)
   self.GameMode.EMGameState:SetExcavationItemNum(Num)
 end
-
 function BP_ExcavationComponent_C:UpdateNowExcavNum(Num)
   self.NowExcavNum = self.NowExcavNum + Num
 end
-
 function BP_ExcavationComponent_C:UpdateFinishedExcavNum(Num)
   self.FinishedExcavNum = self.FinishedExcavNum + Num
   if not self.ExcavationData.TreasureMonsterSpawnProbability or #self.ExcavationData.TreasureMonsterSpawnProbability < 2 then
-    GameState(self):ShowDungeonError("\230\140\150\230\142\152\230\156\172\233\133\141\231\189\174\232\161\168\228\184\173\231\154\132\229\174\157\231\137\169\230\128\170\231\137\169\229\175\185\229\186\148\231\154\132\229\136\183\230\150\176\230\166\130\231\142\135\230\149\176\230\141\174\228\184\141\229\133\168")
+    GameState(self):ShowDungeonError("挖掘本配置表中的宝物怪物对应的刷新概率数据不全", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   else
     self.CurrentTreasureMonsterProb = self.CurrentTreasureMonsterProb + self.ExcavationData.TreasureMonsterSpawnProbability[2]
   end
   if not self.ExcavationData.ButcherMonsterSpawnProbability or #self.ExcavationData.ButcherMonsterSpawnProbability < 2 then
-    GameState(self):ShowDungeonError("\230\140\150\230\142\152\230\156\172\233\133\141\231\189\174\232\161\168\228\184\173\231\154\132\229\177\160\229\164\171\230\128\170\231\137\169\229\175\185\229\186\148\231\154\132\229\136\183\230\150\176\230\166\130\231\142\135\230\149\176\230\141\174\228\184\141\229\133\168")
+    GameState(self):ShowDungeonError("挖掘本配置表中的屠夫怪物对应的刷新概率数据不全", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   else
     self.CurrentButcherMonsterProb = self.CurrentButcherMonsterProb + self.ExcavationData.ButcherMonsterSpawnProbability[2]
@@ -175,27 +159,21 @@ function BP_ExcavationComponent_C:UpdateFinishedExcavNum(Num)
   self:CheckCreateSpecialMonster("Treasure")
   self:CheckCreateSpecialMonster("Butcher")
 end
-
 function BP_ExcavationComponent_C:UpdateTurnDeadExcavNum(Num)
   self.TurnDeadExcavNum = self.TurnDeadExcavNum + Num
 end
-
 function BP_ExcavationComponent_C:GetFinishedExcavNum(Num)
   return self.FinishedExcavNum
 end
-
 function BP_ExcavationComponent_C:GetThisTurnExcavNum(Num)
   return self.ThisTurnExcavNum
 end
-
 function BP_ExcavationComponent_C:GetATurnExcavMaxNum(Num)
   return self.ATurnExcavMaxNum
 end
-
 function BP_ExcavationComponent_C:GetTurnDeadExcavNum(Num)
   return self.TurnDeadExcavNum
 end
-
 function BP_ExcavationComponent_C:BatteryFull()
   if self.bCanTriggerBatteryFull and self:IsNotFullExcavationExist() then
     self.bCanTriggerBatteryFull = false
@@ -205,7 +183,6 @@ function BP_ExcavationComponent_C:BatteryFull()
     self.GameMode:TriggerGameModeEvent("OnBatteryFull")
   end
 end
-
 function BP_ExcavationComponent_C:IsNotFullExcavationExist()
   for Eid, Excavation in pairs(self.GameMode.EMGameState.DefBaseMap) do
     if IsValid(Excavation) and (Excavation.BatteryNum == nil or nil == Excavation.MaxEnergy or nil == Excavation.BatteryEnergy) then
@@ -218,13 +195,11 @@ function BP_ExcavationComponent_C:IsNotFullExcavationExist()
   end
   return false
 end
-
 function BP_ExcavationComponent_C:GetBatteryMonsterUnitId()
   local Length = #self.ExcavationData.BatteryMonsterId
   local Index = math.random(1, Length)
   return self.ExcavationData.BatteryMonsterId[Index]
 end
-
 function BP_ExcavationComponent_C:GetExcavationMechData()
   local RandomValue = math.random(1, 10)
   local RandomCount = 0
@@ -236,7 +211,6 @@ function BP_ExcavationComponent_C:GetExcavationMechData()
   end
   return self.ExcavationData.Excavation[1]
 end
-
 function BP_ExcavationComponent_C:CheckCreateSpecialMonster(MonsterType)
   DebugPrint("BP_ExcavationComponent_C CheckCreateSpecialMonster", MonsterType)
   if self[MonsterType .. "MonsterTimer"] ~= nil then
@@ -252,7 +226,6 @@ function BP_ExcavationComponent_C:CheckCreateSpecialMonster(MonsterType)
     self:TryCreateEmergencyMonster(MonsterType)
   end, true)
 end
-
 function BP_ExcavationComponent_C:TryCreateEmergencyMonster(MonsterType)
   if self.GameMode:GetNeedCreateEmergencyMonster(MonsterType) == false then
     self:RemoveTimer(self[MonsterType .. "MonsterTimer"])
@@ -264,7 +237,6 @@ function BP_ExcavationComponent_C:TryCreateEmergencyMonster(MonsterType)
   self.GameMode:TryCreateEmergencyMonster(MonsterType)
   self:RemoveTimer(self[MonsterType .. "MonsterTimer"])
 end
-
 function BP_ExcavationComponent_C:InitTreasureMonsterEecapeLoc(TreasureMonster)
   local mechanimArray = self.GameMode.EMGameState.MechanismMap:FindRef("AOITriggerBox")
   local monLoc = TreasureMonster.CurrentLocation
@@ -285,7 +257,6 @@ function BP_ExcavationComponent_C:InitTreasureMonsterEecapeLoc(TreasureMonster)
     end
   end
 end
-
 function BP_ExcavationComponent_C:GetPickupUnitPreloadTable()
   local PreloadID = {2005, 2006}
   local BPPath = {}
@@ -297,5 +268,4 @@ function BP_ExcavationComponent_C:GetPickupUnitPreloadTable()
   end
   return BPPath
 end
-
 return BP_ExcavationComponent_C

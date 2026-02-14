@@ -2,18 +2,16 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self:InitItemContent()
 end
-
 function M:BP_OnEntryReleased()
+  self.Switch_Type:SetActiveWidgetIndex(0)
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:InitItemContent()
   if self.Content.IsEmpty then
     self.Switch_Type:SetActiveWidgetIndex(1)
@@ -23,5 +21,4 @@ function M:InitItemContent()
   self.Img_Event:SetBrushFromTexture(IconObj)
   self.Text_Event:SetText(GText(self.Content.Des))
 end
-
 return M

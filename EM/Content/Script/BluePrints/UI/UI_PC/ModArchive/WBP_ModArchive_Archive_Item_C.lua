@@ -3,14 +3,12 @@ local EMCache = require("EMCache.EMCache")
 local WBP_ModArchive_Archive_Item_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_ModArchive_Archive_Item_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function WBP_ModArchive_Archive_Item_C:OnListItemObjectSet(ListItemObject)
   ListItemObject.SelfWidget = self
   self.Info = ListItemObject
@@ -19,7 +17,7 @@ function WBP_ModArchive_Archive_Item_C:OnListItemObjectSet(ListItemObject)
   self.Text_ArchiveTitle:SetText(GText(self.Info.Name))
   self.CurSelectedItem = nil
   self.Owner:UpdateListWidgets(self)
-  DebugPrint("zwkkkkkkk \231\142\176\229\156\168\231\154\132Index ", self.Info.Index, #self.Info.ModList)
+  DebugPrint("zwkkkkkkk 现在的Index ", self.Info.Index, #self.Info.ModList)
   local Exp = 0
   for i = 1, #self.Info.ModList do
     local Info = DataMgr.Mod[self.Info.ModList[i]]
@@ -53,7 +51,6 @@ function WBP_ModArchive_Archive_Item_C:OnListItemObjectSet(ListItemObject)
   self:SetReward()
   self.List_Item:DisableScroll(true)
 end
-
 function WBP_ModArchive_Archive_Item_C:InitListMod()
   self.List_Item.BP_OnEntryInitialized:Clear()
   self.List_Item.BP_OnEntryInitialized:Add(self, self.OnEntryInitialized)
@@ -71,7 +68,6 @@ function WBP_ModArchive_Archive_Item_C:InitListMod()
     if self.Info.RedDotNewStates and self.Info.RedDotNewStates[Content.Id] then
       Content.RedDotType = UIConst.RedDotType.NewRedDot
     end
-    
     function Content.AfterInitCallback(Widget)
       self.Mods[i] = Widget
       if 1 == i and 1 == self.Info.Index and self.Owner.FirstSelected then
@@ -103,19 +99,17 @@ function WBP_ModArchive_Archive_Item_C:InitListMod()
         self.CurSelectedItem = Widget
       end
     end
-    
     Content.OnMouseButtonUpEvents = {
       Obj = self,
       Callback = self.OnClickItem,
       Params = {ModInfo, i}
     }
+    local HasThisMod = self.Owner.HasMod[Content.Id]
+    if HasThisMod then
+      self.HasModNum = self.HasModNum + 1
+    end
     if 1 == self.LockState then
-      local HasThisMod = self.Owner.HasMod[Content.Id]
-      DebugPrint("zw123 ", HasThisMod, self.HasModNum)
       Content.bShadow = not HasThisMod
-      if HasThisMod then
-        self.HasModNum = self.HasModNum + 1
-      end
     elseif 2 == self.LockState then
       Content.bShadow = true
       Content.ItemName = nil
@@ -125,24 +119,21 @@ function WBP_ModArchive_Archive_Item_C:InitListMod()
     end
     self.List_Item:AddItem(Content)
   end
+  self.Text_ArchiveSuitNum:SetColorAndOpacity(self.Color_Normal)
+  self.Text_ArchiveSuitNum:SetText(self.HasModNum .. "/" .. #self.Info.ModList)
   if 1 ~= self.LockState then
-    self.Image_Lock:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    self.Text_ArchiveSuitNum:SetColorAndOpacity(self.Color_Lock)
+    self.Group_Lock:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     if 2 == self.LockState then
-      DebugPrint("\230\156\170\230\143\173\230\153\147")
       local Text = DataMgr.Condition[self.Info.ShowCondition].ConditionText
-      self.Text_ArchiveSuitNum:SetText(GText(Text))
+      self.Text_ArchiveSuitLock:SetText(GText(Text))
     elseif 3 == self.LockState then
       local Text = DataMgr.Condition[self.Info.UnlockCondition].ConditionText
-      self.Text_ArchiveSuitNum:SetText(GText(Text))
+      self.Text_ArchiveSuitLock:SetText(GText(Text))
     end
   else
-    self.Image_Lock:SetVisibility(ESlateVisibility.Collapsed)
-    self.Text_ArchiveSuitNum:SetColorAndOpacity(self.Color_Normal)
-    self.Text_ArchiveSuitNum:SetText(self.HasModNum .. "/" .. #self.Info.ModList)
+    self.Group_Lock:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:OnClickItem(ModInfo, Index)
   DebugPrint("zwkk OnClickItem", ModInfo.Id, Index)
   self.Owner:OnItemClicked(ModInfo, self.LockState, self.Info.Index, Index, self.Mods[Index], self.Info.Id)
@@ -157,14 +148,12 @@ function WBP_ModArchive_Archive_Item_C:OnClickItem(ModInfo, Index)
   self.CurSelectedItem = self.Mods[Index]
   self.CurSelectedItem:SetSelected(true)
 end
-
 function WBP_ModArchive_Archive_Item_C:OnOtherArchiveItemSelected()
   if self.CurSelectedItem then
     self.CurSelectedItem:SetSelected(false)
     self.CurSelectedItem = nil
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:SetReward()
   local RewardInfo = self:GetFirstRewardInfoById(self.Info.RewardId)
   local Content = {
@@ -191,7 +180,6 @@ function WBP_ModArchive_Archive_Item_C:SetReward()
     Content.IsShowDetails = false
   else
     Content.IsShowDetails = true
-    
     function Content.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnTipsOpenChanged
@@ -203,14 +191,11 @@ function WBP_ModArchive_Archive_Item_C:SetReward()
   end
   self.Item_Title:Init(Content)
 end
-
 function WBP_ModArchive_Archive_Item_C:CheckRewardCanGet()
   return self.Owner.CanGetRewardGroups[self.Info.Id]
 end
-
 function WBP_ModArchive_Archive_Item_C:OnClickReward()
   local Avatar = GWorld:GetAvatar()
-  
   local function CallBack(ErrCode, Reward)
     if ErrorCode:Check(ErrCode) then
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Reward, false, function()
@@ -244,16 +229,13 @@ function WBP_ModArchive_Archive_Item_C:OnClickReward()
       end
     end
   end
-  
   Avatar:GetModGuideBookArchiveReward(self.Info.Id, CallBack)
 end
-
 function WBP_ModArchive_Archive_Item_C:ReturnReward()
   if self.CurInputDeviceType == ECommonInputType.GamePad and self.Item_Title:HasAnyUserFocus() then
     self.Owner.Owner:SwitchComKeyTipsState(2)
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:GetRewards()
   DebugPrint("zwjkijki OnClickReward", self.Info.Id)
   local Avatar = GWorld:GetAvatar()
@@ -261,7 +243,6 @@ function WBP_ModArchive_Archive_Item_C:GetRewards()
     return
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:GetFirstRewardInfoById(RewardId)
   local RewardInfo = {}
   local RewardData = DataMgr.Reward[RewardId]
@@ -285,7 +266,6 @@ function WBP_ModArchive_Archive_Item_C:GetFirstRewardInfoById(RewardId)
   end
   return RewardInfo
 end
-
 function WBP_ModArchive_Archive_Item_C:SetItemSelected(Index)
   DebugPrint("zwkkk SetItemSelected", Index)
   local ModInfo = DataMgr.Mod[self.Info.ModList[Index]]
@@ -294,7 +274,6 @@ function WBP_ModArchive_Archive_Item_C:SetItemSelected(Index)
     self:OnClickItem(ModInfo, Index)
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:SetRewardTextVisibility(Show)
   if self.CurInputDeviceType ~= ECommonInputType.GamePad then
     return
@@ -305,19 +284,16 @@ function WBP_ModArchive_Archive_Item_C:SetRewardTextVisibility(Show)
     self.Key_TitleReward:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:OnTipsOpenChanged(bIsOpen)
   DebugPrint("zwkkk OnTipsOpenChanged", bIsOpen, self:GetName())
   self.Owner:OnTipsOpenChanged(bIsOpen, self)
 end
-
 function WBP_ModArchive_Archive_Item_C:OnEntryInitialized(Item, Widget)
   if Widget and Widget.WidgetMap and Widget.WidgetMap[Widget.NameWidget] and Item and Item.ItemName == nil then
     Widget:RemoveWidgetFromNode(Widget.NameWidget)
     Widget:ClearBackGroundHeight(true)
   end
 end
-
 function WBP_ModArchive_Archive_Item_C:OnNavigateLeft()
   DebugPrint("zwkkkkkk OnNavigateLeft")
   if not self.Owner then
@@ -331,7 +307,6 @@ function WBP_ModArchive_Archive_Item_C:OnNavigateLeft()
   self.Mods[CurSelectedItemIndex]:SetFocus()
   return
 end
-
 function WBP_ModArchive_Archive_Item_C:OnNavigateRight()
   DebugPrint("zwkkkkkk OnNavigateRight")
   if not self.Owner then
@@ -348,7 +323,6 @@ function WBP_ModArchive_Archive_Item_C:OnNavigateRight()
   self.Mods[CurSelectedItemIndex + 1]:SetFocus()
   return
 end
-
 function WBP_ModArchive_Archive_Item_C:OnNavigateUp()
   DebugPrint("zwkkkkkk OnNavigateUp")
   if not self.Owner then
@@ -399,7 +373,6 @@ function WBP_ModArchive_Archive_Item_C:OnNavigateUp()
   self.Mods[CurSelectedItemIndex]:SetFocus()
   return
 end
-
 function WBP_ModArchive_Archive_Item_C:OnNavigateDown()
   DebugPrint("zwkkkkkk OnNavigateDown")
   if not self.Owner then
@@ -439,7 +412,6 @@ function WBP_ModArchive_Archive_Item_C:OnNavigateDown()
   self.Mods[CurSelectedItemIndex]:SetFocus()
   return
 end
-
 function WBP_ModArchive_Archive_Item_C:OnLBKeyDown()
   if not self.RewardInFocus then
     self.RewardInFocus = true
@@ -447,7 +419,6 @@ function WBP_ModArchive_Archive_Item_C:OnLBKeyDown()
   self.Item_Title:SetFocus()
   self:SetRewardTextVisibility(false)
 end
-
 function WBP_ModArchive_Archive_Item_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -457,12 +428,10 @@ function WBP_ModArchive_Archive_Item_C:RefreshOpInfoByInputDevice(CurInputDevice
   self.CurGamepadName = CurGamepadName
   self:UpdateOnInputDeviceTypeChange()
 end
-
 function WBP_ModArchive_Archive_Item_C:UpdateOnInputDeviceTypeChange()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
   elseif self.CurInputDeviceType == ECommonInputType.MouseAndKeyboard and self.Key_TitleReward then
     self.Key_TitleReward:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_ModArchive_Archive_Item_C

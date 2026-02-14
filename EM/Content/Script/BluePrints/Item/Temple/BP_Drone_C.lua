@@ -2,15 +2,13 @@ require("UnLua")
 local M = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   self:AddDrone()
 end
-
 function M:CommonInitInfo(Info)
   M.Super.CommonInitInfo(self, Info)
-  DebugPrint("zwjkjk CommonInitInfo \229\136\157\229\167\139\231\138\182\230\128\129", self.StateId, self:GetName())
+  DebugPrint("zwjkjk CommonInitInfo 初始状态", self.StateId, self:GetName())
   self.AlertValue = 0.0
   self.MaxAlertValue = 100.0
   self.OverlappingPlayer = nil
@@ -28,7 +26,6 @@ function M:CommonInitInfo(Info)
     self:ActiveCombat()
   end
 end
-
 function M:ResetInfo()
   self.Overridden.ResetInfo(self)
   self:K2_SetActorLocation(self.InitLoc, false, nil, false)
@@ -55,13 +52,11 @@ function M:ResetInfo()
     self:ActiveCombat()
   end
 end
-
 function M:OnPlayerIn(Player)
   self.PlayerInOverlap = true
   self.OverlappingPlayer = Player
   self:AddTimer(0.1, self.TryFindPlayer, true, -0.1, "TryFindPlayer", false, Player)
 end
-
 function M:OnPlayerOut()
   self.OverlappingPlayer = nil
   self.FoundPlayer = false
@@ -69,7 +64,6 @@ function M:OnPlayerOut()
   self.RotateFinish = false
   self:RemoveTimer("TryFindPlayer")
 end
-
 function M:TryFindPlayer(Player)
   if not self.IsActive then
     return
@@ -82,7 +76,7 @@ function M:TryFindPlayer(Player)
   local bHitHead = UE4.UKismetSystemLibrary.LineTraceSingle(self, EyeLcoation, EndPositionHead, ETraceTypeQuery.TraceScene, false, nil, 0, HitResultHead, true)
   local HitResultFoot = FHitResult()
   local bHitFoot = UE4.UKismetSystemLibrary.LineTraceSingle(self, EyeLcoation, EndPositionFoot, ETraceTypeQuery.TraceScene, false, nil, 0, HitResultFoot, true)
-  if not bHitHead or not bHitFoot then
+  if (not bHitHead or not bHitFoot) and not self:CheckPlayerInBox(Player) then
     self.FoundPlayer = true
     self.RotateFinish = false
     self.OtherFound = false
@@ -97,7 +91,6 @@ function M:TryFindPlayer(Player)
     self.PlayerDetected = false
   end
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if not self.IsActive then
@@ -127,7 +120,6 @@ function M:ReceiveTick(DeltaSeconds)
     self:RotateToAim(DeltaSeconds)
   end
 end
-
 function M:RotateToAim(DeltaSeconds, Player)
   local SelfLocation = self:K2_GetActorLocation()
   local PlayerLocation
@@ -145,7 +137,6 @@ function M:RotateToAim(DeltaSeconds, Player)
     self.RotateFinish = true
   end
 end
-
 function M:RotateToInit(DeltaSeconds)
   self:RotateComponentRelative(DeltaSeconds, self.RotateSpeed, self.InitMeshRelativeRotation:ToQuat(), self.Mesh)
   if self:CheckComponentTargetRelative(self.InitMeshRelativeRotation:ToQuat(), self.Mesh) then
@@ -155,29 +146,24 @@ function M:RotateToInit(DeltaSeconds)
     end
   end
 end
-
 function M:OnOtherDroneFoundPlayer()
   self:OnGroupDroneFoundPlayer()
   self.OtherFound = true
   self.RotateFinish = false
   self:SetActorTickEnabled(true)
 end
-
 function M:OnAllGroupDroneAlertZero()
   self.OtherFound = false
   self.RotateFinish = false
   self:SetActorTickEnabled(true)
 end
-
 function M:ActiveCombat(bFromGameMode)
   self.IsActive = true
 end
-
 function M:InactiveCombat(bFromGameMode)
   self.IsActive = false
   self:RemoveTimer("TryFindPlayer")
 end
-
 function M:UpdateAlertValue(Distance, DeltaSeconds)
   local DetectedTime
   if Distance <= self.MinDistance then
@@ -196,7 +182,6 @@ function M:UpdateAlertValue(Distance, DeltaSeconds)
     self:OnDroneAlarmChange(2)
   end
 end
-
 function M:ReduceAlertValue(DeltaSeconds)
   self.AlertValue = math.max(0, self.AlertValue - self.DetectedTimeReduceRate * DeltaSeconds)
   if self.AlertValue <= 0 then
@@ -207,7 +192,6 @@ function M:ReduceAlertValue(DeltaSeconds)
     end
   end
 end
-
 function M:CheckAllGroupDroneReset()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GroupDroneAllFinish = GameMode:GetDungeonComponent():OnDroneChangeToInit(self.GroupId, self.ManualItemId)
@@ -217,7 +201,6 @@ function M:CheckAllGroupDroneReset()
     self.OtherFound = false
   end
 end
-
 function M:OnBreakCountDown(SourceEid)
   self:SetActorEnableCollision(false)
   self:SetActorTickEnabled(false)
@@ -234,12 +217,10 @@ function M:OnBreakCountDown(SourceEid)
   self.IsActive = false
   self:OnDroneDestoryed()
 end
-
 function M:AddDrone()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:GetDungeonComponent():AddDrone(self.GroupId, self.ManualItemId)
 end
-
 function M:OnFound()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:GetDungeonComponent():OnDroneFoundPlayer(self.GroupId, self.ManualItemId)
@@ -249,12 +230,10 @@ function M:OnFound()
     GameState:AddGuideEid(self.Eid)
   end
 end
-
 function M:OnAlarm()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:TriggerGameModeEvent("OnDroneAlarm", self.ManualItemId)
 end
-
 function M:OnAlertValueReset()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if GameState then
@@ -263,9 +242,7 @@ function M:OnAlertValueReset()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:GetDungeonComponent():OnDroneAlertValueReset(self.GroupId, self.ManualItemId)
 end
-
 function M:ReceiveEndPlay()
   M.Super.ReceiveEndPlay(self)
 end
-
 return M

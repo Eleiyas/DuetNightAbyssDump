@@ -2,18 +2,16 @@ local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local UpgradeUtils = require("Utils.UpgradeUtils")
 local WeaponModel = require("BluePrints.Common.MVC.Model.WeaponModel")
 local M = {}
-
 function M:ComponentInitDispatcher()
   self:AddDispatcher(EventID.OnWeaponLevelUp, self, self.OnWeaponUpgraded)
   self:AddDispatcher(EventID.OnWeaponBreakLevelUp, self, self.OnWeaponUpgraded)
   self:AddDispatcher(EventID.OnWeaponGradeLevelUp, self, self.OnWeaponGradeLevelUp)
   self:AddDispatcher(EventID.OnWeaponColorsChanged, self, self.OnWeaponColorsChanged)
-  self:AddDispatcher(EventID.OnSwitchWeapon, self, self.OnSwitchWeapon)
+  self:AddDispatcher(EventID.OnChangeWeapon, self, self.OnChangeWeapon)
   self:AddDispatcher(EventID.OnNewWeaponObtained, self, self.OnNewWeaponObtained)
   self:AddDispatcher(EventID.OnWeaponDeleted, self, self.OnWeaponDeleted)
   self:AddDispatcher(EventID.OnWeaponRewardStateChanged, self, self.OnWeaponRewardStateChanged)
 end
-
 function M:Construct()
   self.AllWeaponMainTabNames = {
     ArmoryUtils.ArmoryMainTabNames.Melee,
@@ -62,26 +60,21 @@ function M:Construct()
     end
   end
 end
-
 function M:MeleeMain_Init()
   self.WeaponTag = CommonConst.ArmoryTag.Melee
   self:WeaponMain_Init()
 end
-
 function M:RangedMain_Init()
   self.WeaponTag = CommonConst.ArmoryTag.Ranged
   self:WeaponMain_Init()
 end
-
 function M:UWeaponMain_Init()
   self.WeaponTag = CommonConst.ArmoryTag.UWeapon
   self:WeaponMain_Init()
 end
-
 function M:CreateMainTabs()
   self:ComponentRegisterUWeaponFunctions()
 end
-
 function M:ComponentRegisterUWeaponFunctions()
   for _, Tab in pairs(self.MainTabs) do
     if string.find(Tab.Name, CommonConst.ArmoryTag.UWeapon) then
@@ -92,7 +85,6 @@ function M:ComponentRegisterUWeaponFunctions()
     end
   end
 end
-
 function M:WeaponMain_OnArmoryTargetStateChanged(NewAvatar)
   local _, Weapon = next(NewAvatar.Weapons)
   if nil == Weapon then
@@ -116,7 +108,6 @@ function M:WeaponMain_OnArmoryTargetStateChanged(NewAvatar)
     self:WeaponMain_OnRoleListItemClicked(CmpContent)
   end
 end
-
 function M:WeaponMain_Init()
   self.Panel_SubTab:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -126,6 +117,7 @@ function M:WeaponMain_Init()
     self:WeaponMain_PreprocessContents(self.WeaponTag)
   end
   if self.WeaponTag == CommonConst.ArmoryTag.UWeapon then
+    self.Panel_SubTab:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self:UpdateWeaponInfos()
     self:CreateAndSelectSubTab()
   else
@@ -135,7 +127,6 @@ function M:WeaponMain_Init()
   self:PlayAnimation(self.RoleList_In)
   self:UpdateBoxReddot()
 end
-
 function M:WeaponMain_JumpToSubPage(SubPageName)
   if not SubPageName or not IsValid(self.CurrentSubUI) then
     return
@@ -144,7 +135,6 @@ function M:WeaponMain_JumpToSubPage(SubPageName)
     self.CurrentSubUI:OnModBtnClicked()
   end
 end
-
 function M:UpdateWeaponTag(Type)
   self.WeaponTag = self.WeaponTag or Type or "Weapon"
   self.CurrentWeaponName = "Current" .. self.WeaponTag
@@ -152,7 +142,6 @@ function M:UpdateWeaponTag(Type)
   self.CurContentName = self.WeaponTag .. "Main_CurContent"
   self.CmpContentName = self.WeaponTag .. "Main_CmpContent"
 end
-
 function M:WeaponMain_PreprocessContents(Type, PreprocessParams)
   PreprocessParams = PreprocessParams or {}
   local Uuid = PreprocessParams.SelectedTargetUuid
@@ -238,7 +227,6 @@ function M:WeaponMain_PreprocessContents(Type, PreprocessParams)
     self:WeaponMain_InitContentState()
   end
 end
-
 function M:SwitchContentsArray()
   self.WeaponItemContentsMap = self[self.WeaponTag .. "ItemContentsMap"]
   self.WeaponItemContentsArray = self[self.WeaponTag .. "ItemContentsArray"]
@@ -246,7 +234,6 @@ function M:SwitchContentsArray()
   self.UnownedWeaponContentMap = self[self.WeaponTag .. "UnownedWeaponContentMap"]
   self.WeaponId2Contents = self[self.WeaponTag .. "WeaponId2Contents"]
 end
-
 function M:WeaponMain_InitSubUI()
   local Target = self[self.ComparedWeaponName]
   local IsTargetUnowned = ArmoryUtils:GetWeaponByUuid(Target.Uuid) == nil
@@ -267,15 +254,14 @@ function M:WeaponMain_InitSubUI()
     self:WeaponMain_InitSubUI_Attribute()
   end
 end
-
 function M:WeaponMain_ReceiveEnterState()
   self:ResetWeaponData()
   if self.CurSubTab.Name ~= ArmoryUtils.ArmorySubTabNames.Grade then
     self:InitSubUI()
   end
-  self:UpdateSubTabReddotByName(ArmoryUtils.ArmorySubTabNames.Grade)
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Attribute)
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Grade)
 end
-
 function M:WeaponMain_InitSubUI_Attribute()
   if self.CurrentSubUI then
     self.CurrentSubUI:BindEvents(self, {
@@ -287,11 +273,9 @@ function M:WeaponMain_InitSubUI_Attribute()
   end
   self:WeaponMain_UpdatAttributeButton()
 end
-
 function M:Component_BeforeClose()
-  self:RemoveDispatcher(EventID.OnSwitchWeapon)
+  self:RemoveDispatcher(EventID.OnChangeWeapon)
 end
-
 function M:WeaponMain_UpdatAttributeButton()
   if self.CurSubTab.Name ~= ArmoryUtils.ArmorySubTabNames.Attribute then
     return
@@ -352,7 +336,6 @@ function M:WeaponMain_UpdatAttributeButton()
   end
   self.CurrentSubUI:UpdateButtonStyle(self.AttributeButtonStyleParams)
 end
-
 function M:UpdateWeaponInfos()
   local Data
   self.Stats:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -384,7 +367,6 @@ function M:UpdateWeaponInfos()
   self.TextBlock_Name:SetText(GText(Data.WeaponName))
   self:SetStars(Data.WeaponRarity or 0)
 end
-
 function M:WeaponMain_UpdateWeaponTagIcon()
   local TargetWeapon = self[self.ComparedWeaponName]
   local MeleeTags, MeleeTagNames, RangedTags, RangedTagNames = UIUtils.GetAllWeaponTags()
@@ -419,7 +401,6 @@ function M:WeaponMain_UpdateWeaponTagIcon()
     self.Stats_ListView:AddItem(self:NewWeaponTagIconContent(Data and Data.Icon, WeaponTagNames[idx], Tag == WeaponTag))
   end
 end
-
 function M:NewWeaponTagIconContent(IconPath, TagName, IsSelected)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.Icon = IconPath or ""
@@ -427,12 +408,10 @@ function M:NewWeaponTagIconContent(IconPath, TagName, IsSelected)
   Obj.IsSelected = IsSelected
   return Obj
 end
-
 function M:WeaponMain_UpdateBoxReddot()
   local WeaponNode = ReddotManager.GetTreeNode(self.WeaponTag)
-  self.Btn_Selective:SetReddot(WeaponNode and WeaponNode.Count > 0, false)
+  self:UpdateBoxReddotView(WeaponNode and WeaponNode.Count > 0, false)
 end
-
 function M:WeaponMain_OnRoleListItemClicked(Content)
   if self[self.CmpContentName] == Content then
     return
@@ -446,7 +425,6 @@ function M:WeaponMain_OnRoleListItemClicked(Content)
     self:SelectRoleListItem(Content)
   end
 end
-
 function M:WeaponMain_SelectRoleListItem(Content)
   if self.bFromArchive then
     ArmoryUtils:SetArchiveReddotRead(Content)
@@ -469,7 +447,6 @@ function M:WeaponMain_SelectRoleListItem(Content)
   end
   self:UpdateWeaponCardLevel()
 end
-
 function M:UpdateWeaponCardLevel()
   for _, value in ipairs(self.SubTabs) do
     if value.Name == ArmoryUtils.ArmorySubTabNames.Grade then
@@ -486,7 +463,6 @@ function M:UpdateWeaponCardLevel()
     end
   end
 end
-
 local function GetMainTabNameByWeaponTag(self, WeaponTag)
   local MainTabName
   if self.WeaponTag == ArmoryUtils.ArmoryMainTabNames.Weapon then
@@ -496,7 +472,6 @@ local function GetMainTabNameByWeaponTag(self, WeaponTag)
   end
   return MainTabName
 end
-
 local function AddContentCommon(self, Obj, MainTabName)
   self["BP_" .. MainTabName .. "ItemContents"]:Add(Obj)
   table.insert(self[MainTabName .. "ItemContentsArray"], Obj)
@@ -507,7 +482,6 @@ local function AddContentCommon(self, Obj, MainTabName)
   self:OnRoleListContentCreated(Obj)
   return Obj
 end
-
 local function AddContent(self, Weapon, Content)
   local WeaponTag = Weapon:HasTag("Melee") and "Melee" or "Ranged"
   local MainTabName = GetMainTabNameByWeaponTag(self, WeaponTag)
@@ -520,7 +494,6 @@ local function AddContent(self, Weapon, Content)
   Obj.IsOwned = true
   return AddContentCommon(self, Obj, MainTabName)
 end
-
 local function AddUnownedContent(self, Weapon, Content)
   local WeaponTag = Weapon:HasTag("Melee") and "Melee" or "Ranged"
   local MainTabName = GetMainTabNameByWeaponTag(self, WeaponTag)
@@ -537,7 +510,6 @@ local function AddUnownedContent(self, Weapon, Content)
   self[MainTabName .. "UnownedWeaponContentMap"][Obj.UnitId] = Obj
   return AddContentCommon(self, Obj, MainTabName)
 end
-
 local function UnownedContent2Content(self, UnownedContent, Weapon)
   local WeaponTag = Weapon:HasTag("Melee") and "Melee" or "Ranged"
   self[WeaponTag .. "ItemContentsMap"][UnownedContent.Uuid] = nil
@@ -558,7 +530,6 @@ local function UnownedContent2Content(self, UnownedContent, Weapon)
   UnownedContent.AvatarMax = nil
   UnownedContent.Avatar = nil
 end
-
 local function RemoveContent(self, WeaponUuid)
   local function RemoveContentByTag(Tag)
     if self[Tag .. "ItemContentsMap"] == nil then
@@ -577,12 +548,10 @@ local function RemoveContent(self, WeaponUuid)
       self[self.WeaponTag .. "WeaponId2Contents"][Content.UnitId][Content.Uuid] = nil
     end
   end
-  
   RemoveContentByTag(ArmoryUtils.ArmoryMainTabNames.Melee)
   RemoveContentByTag(ArmoryUtils.ArmoryMainTabNames.Ranged)
   RemoveContentByTag(ArmoryUtils.ArmoryMainTabNames.Weapon)
 end
-
 function M:WeaponMain_CreateItemContents()
   self.WeaponTag = self.WeaponTag or ArmoryUtils.ArmoryMainTabNames.Weapon
   local Avatar = ArmoryUtils:GetAvatar()
@@ -609,7 +578,6 @@ function M:WeaponMain_CreateItemContents()
   end
   if self.WeaponTag == "Weapon" then
     local WeaponTags = {}
-    
     local function InsertLogic(Weapon)
       local WeaponTag = Weapon:HasTag("Melee") and "Melee" or "Ranged"
       if WeaponTag ~= WeaponTags[1] then
@@ -625,7 +593,6 @@ function M:WeaponMain_CreateItemContents()
         end
       end
     end
-    
     if self.DoNotSort and self.IsPreviewMode then
       local WeaponArray = {}
       if self.InitialOrderWeaponUuids then
@@ -656,7 +623,6 @@ function M:WeaponMain_CreateItemContents()
         end
       end
     end
-    
     if self.DoNotSort and self.IsPreviewMode then
       for _, Weapon in ipairs(Weapons) do
         InsertLogic(Weapon)
@@ -672,7 +638,6 @@ function M:WeaponMain_CreateItemContents()
         exec = function()
           local function ShouldDisplayWeapon(WeaponId)
             local WeaponData = DataMgr.BattleWeapon[WeaponId]
-            
             if not WeaponData then
               return
             end
@@ -687,10 +652,9 @@ function M:WeaponMain_CreateItemContents()
             end
             return false
           end
-          
           ArmoryUtils:DontResetUuid(true)
           for WeaponId, value in pairs(DataMgr.Weapon) do
-            if not value.IsNotOpen and not OwnedWeapons[WeaponId] and ShouldDisplayWeapon(WeaponId) then
+            if not value.IsNotOpen and not OwnedWeapons[WeaponId] and ShouldDisplayWeapon(WeaponId) and CommonUtils.IsCurrentVersionRealease(CommonConst.DataType.Weapon, WeaponId) then
               local DummyAvatar = ArmoryUtils:CreateNewDummyAvatar(ArmoryUtils.PreviewTargetStates.Prime, {
                 WeaponIds = {WeaponId}
               })
@@ -710,13 +674,22 @@ function M:WeaponMain_CreateItemContents()
         catch = function(err)
           local trace = debug.traceback()
           err = err or ""
-          DebugPrint("Error: CY@ \230\156\170\232\167\163\233\148\129\230\173\166\229\153\168\228\191\161\230\129\175\229\136\155\229\187\186\229\164\177\232\180\165!\n" .. err .. "\n" .. trace)
+          DebugPrint("Error: CY@ 未解锁武器信息创建失败!\n" .. err .. "\n" .. trace)
         end
       })
     end
   end
 end
-
+function M:WeaponMain_SortAndInitRoleList()
+  if self[self.CurrentWeaponName] then
+    self:WeaponMain_InitContentState()
+    self:WeaponMain_SortItemContents()
+  else
+    self:WeaponMain_SortItemContents()
+    self:WeaponMain_InitContentState()
+  end
+  self:InitRoleList()
+end
 function M:WeaponMain_InitRoleList()
   self.EMListView_Role:ClearListItems()
   for _, Content in ipairs(self.WeaponItemContentsArray) do
@@ -727,7 +700,6 @@ function M:WeaponMain_InitRoleList()
   end
   self.EMListView_Role:RegenerateAllEntries()
 end
-
 function M:WeaponMain_SortItemContents()
   if self.DoNotSort then
     return
@@ -739,7 +711,6 @@ function M:WeaponMain_SortItemContents()
     "UnitId"
   }, CommonConst.DESC, self.CurContentName and self[self.CurContentName], ArmoryUtils.IsOwnedCmpFunc)
 end
-
 function M:WeaponMain_InitContentState()
   if self[self.CurContentName] then
     self[self.CurContentName].bInGear = false
@@ -766,11 +737,9 @@ function M:WeaponMain_InitContentState()
   self[self.CmpContentName] = self.WeaponItemContentsMap[CmpWeapon.Uuid]
   self[self.CmpContentName].IsSelect = true
 end
-
 function M:WeaponMain_UpdateResourceInfos()
   self.Tab_Arm:UpdateResource()
 end
-
 function M:WeaponMain_OnBtnIntensifyClicked()
   local Type = self.CurSubTab.Type
   local Tag = self.CurSubTab.Tag
@@ -803,11 +772,9 @@ function M:WeaponMain_OnBtnIntensifyClicked()
     UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
   end
 end
-
 function M:CharMain_OnForbiddenBtnIntensifyClicked()
   UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
 end
-
 function M:WeaponMain_OnBtnReplaceClicked()
   local Avatar = ArmoryUtils:GetAvatar()
   local Weapon = self[self.ComparedWeaponName]
@@ -819,12 +786,10 @@ function M:WeaponMain_OnBtnReplaceClicked()
     local function func()
       self:BlockAllUIInput(false)
     end
-    
     local function OnPopupConfirm()
       self:BlockAllUIInput(true)
       Avatar:SwitchWeapon(self.WeaponTag, Uuid)
     end
-    
     local Params = {
       ShortText = string.format(GText(DataMgr.CommonPopupUIContext[100044].PopoverText), GText(Weapon.WeaponName), GText(Avatar.Resources[Weapon.AssisterId].ResourceName)),
       LeftCallbackFunction = func,
@@ -837,10 +802,12 @@ function M:WeaponMain_OnBtnReplaceClicked()
     Avatar:SwitchWeapon(self.WeaponTag, Uuid)
   end
 end
-
-function M:OnSwitchWeapon()
+function M:OnChangeWeapon(Ret)
   self:BlockAllUIInput(false)
-  if self.ComponentReceivedEvent.OnSwitchWeapon then
+  if Ret ~= ErrorCode.RET_SUCCESS then
+    return
+  end
+  if self.ComponentReceivedEvent.OnChangeWeapon then
     return
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/weapon_replace", nil, nil)
@@ -852,23 +819,18 @@ function M:OnSwitchWeapon()
   self[self.CurContentName] = self[self.CmpContentName]
   self:WeaponMain_UpdatAttributeButton()
 end
-
 function M:WeaponMain_OnForbiddenBtnConfirm1Clicked()
   UIManager(self):ShowUITip("CommonToastMain", GText("Max_Level_Achieved"))
 end
-
 function M:WeaponMain_OnForbiddenBtnConfirm2Clicked()
 end
-
 function M:WeaponMain_PreMainTabChange()
   self:ShowElementTips(false)
   self:RemoveSubTabReddotListen()
 end
-
 function M:WeaponMain_PreSubTabChange()
   self:ResetWeaponData()
 end
-
 function M:WeaponMain_SetAllReddotRead()
   for _, Content in ipairs(self.WeaponItemContentsArray) do
     if Content.IsOwned then
@@ -876,7 +838,6 @@ function M:WeaponMain_SetAllReddotRead()
     end
   end
 end
-
 function M:ResetWeaponData()
   local Avatar = ArmoryUtils:GetAvatar()
   if self.WeaponTag == CommonConst.ArmoryTag.UWeapon then
@@ -891,7 +852,6 @@ function M:ResetWeaponData()
     end
   end
 end
-
 function M:OnNewWeaponObtained(WeaponUuid)
   if self.Params.WeaponUuids then
     return
@@ -925,24 +885,9 @@ function M:OnNewWeaponObtained(WeaponUuid)
   if IsCmpContent then
     self:SelectRoleListItem(UnownedContent)
   end
-  self:UpdateSubTabReddotByName(ArmoryUtils.ArmorySubTabNames.Grade)
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Grade)
   self:UpdateBoxReddot()
 end
-
-function M:UpdateSubTabReddotByName(TabName)
-  if not self.SubTabs then
-    return
-  end
-  for index, value in ipairs(self.SubTabs) do
-    if value.Name == TabName then
-      if value.Widget and value.CheckReddot then
-        value.Widget:SetReddot(value.CheckReddot({}))
-      end
-      break
-    end
-  end
-end
-
 function M:OnWeaponDeleted(WeaponUuid)
   if self.Params.WeaponUuids then
     return
@@ -952,10 +897,9 @@ function M:OnWeaponDeleted(WeaponUuid)
     return
   end
   self:InitRoleList()
-  self:UpdateSubTabReddotByName(ArmoryUtils.ArmorySubTabNames.Grade)
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Grade)
   self:UpdateBoxReddot()
 end
-
 function M:OnWeaponRewardStateChanged(WeaponId)
   if self.IsPreviewMode or not self.WeaponId2Contents then
     return
@@ -970,24 +914,21 @@ function M:OnWeaponRewardStateChanged(WeaponId)
     value.HasReward = HasReward
     ArmoryUtils:UpdateContentRetDotType(value)
     if value == self[self.CmpContentName] then
-      self:UpdateSubTabReddotByName(ArmoryUtils.ArmorySubTabNames.Attribute)
+      self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Attribute)
     end
   end
 end
-
 function M:WeaponMain_OnLockBtnClicked()
   if self[self.ComparedWeaponName]:IsLock() then
     local function CancelFunc()
       self:SetFocus()
     end
-    
     local function ConfirmFunc()
       self:SetFocus()
       local Avatar = ArmoryUtils:GetAvatar()
       self:BlockAllUIInput(true)
       Avatar:UnLockResourceInBag(CommonConst.AllType.Weapon, self[self.ComparedWeaponName].Uuid)
     end
-    
     UIManager(self):ShowCommonPopupUI(100019, {
       LeftCallbackFunction = CancelFunc,
       RightCallbackFunction = ConfirmFunc,
@@ -999,7 +940,6 @@ function M:WeaponMain_OnLockBtnClicked()
     Avatar:LockResourceInBag(CommonConst.AllType.Weapon, self[self.ComparedWeaponName].Uuid)
   end
 end
-
 function M:WeaponMain_OnBagItemLockedOrUnlocked(OpAction, ErrCode, Id)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(ErrCode) then
@@ -1026,10 +966,8 @@ function M:WeaponMain_OnBagItemLockedOrUnlocked(OpAction, ErrCode, Id)
     end
   end
 end
-
 function M:WeaponMain_OnFocusReceived(ReplyInfo)
 end
-
 function M:WeaponMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
@@ -1054,38 +992,30 @@ function M:WeaponMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   end
   table.insert(self.BottomKeyInfo, self.ESCKeyInfoList)
 end
-
 function M:WeaponMain_InitNavigationRules()
   self:InitNavigationRulesCommon()
 end
-
 function M:WeaponMain_OnTableKeyDown()
   if self.CurrentSubUI and self.CurrentSubUI.OnContrastKeyDown then
     self.CurrentSubUI:OnContrastKeyDown()
   end
 end
-
 function M:WeaponMain_OnTableKeyUp()
   if self.CurrentSubUI and self.CurrentSubUI.OnContrastKeyDown then
     self.CurrentSubUI:OnContrastKeyUp()
   end
 end
-
 function M:WeaponMain_OnLeftThumbstickKeyDown()
   self:ShowElementTips(true)
 end
-
 function M:WeaponMain_OnLeftThumbstickKeyUp()
   self:ShowElementTips(false)
 end
-
 function M:WeaponMain_OnViewKeyDown()
 end
-
 function M:WeaponMain_OnLockKeyDown()
   self:WeaponMain_OnLockBtnClicked()
 end
-
 function M:WeaponMain_UpdateGamepadStyle()
   if self.IsGamepadInput and self.WeaponTag ~= CommonConst.ArmoryTag.UWeapon and not self.IsPreviewMode and not self.IsListExpanded then
     self.Key_GamePad_Lock:CreateCommonKey({
@@ -1098,7 +1028,6 @@ function M:WeaponMain_UpdateGamepadStyle()
     self.Key_GamePad_Lock:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnWeaponUpgraded(Ret, WeaponUuid)
   local Avatar = ArmoryUtils:GetAvatar()
   local Weapon = Avatar.Weapons[WeaponUuid]
@@ -1114,9 +1043,8 @@ function M:OnWeaponUpgraded(Ret, WeaponUuid)
   if self[self.CmpContentName] == Content then
     self:InitSubUI()
   end
-  self:InitRoleList()
+  self:WeaponMain_SortAndInitRoleList()
 end
-
 function M:OnWeaponGradeLevelUp(Ret, WeaponUuid, CurrentGradeLevel, ConsumeWeaponUuids)
   local Avatar = ArmoryUtils:GetAvatar()
   local Weapon = Avatar.Weapons[WeaponUuid]
@@ -1138,11 +1066,10 @@ function M:OnWeaponGradeLevelUp(Ret, WeaponUuid, CurrentGradeLevel, ConsumeWeapo
   end
   if self[self.ComparedWeaponName] == Weapon then
     self:UpdateWeaponCardLevel()
-    self:UpdateSubTabReddotByName(ArmoryUtils.ArmorySubTabNames.Grade)
+    self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Grade)
     self:InitSubUI()
   end
 end
-
 function M:WeaponMain_FindContent(WeaponUuid)
   for index, value in ipairs(self.AllWeaponMainTabNames) do
     local _Map = self[value .. "ItemContentsMap"]
@@ -1151,9 +1078,7 @@ function M:WeaponMain_FindContent(WeaponUuid)
     end
   end
 end
-
 function M:OnWeaponColorsChanged()
   self:ResetWeaponData()
 end
-
 return M

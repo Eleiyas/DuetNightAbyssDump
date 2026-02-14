@@ -1,6 +1,5 @@
 local SkillUtils = require("Utils.SkillUtils")
 local BP_BattlePet_C = Class()
-
 function BP_BattlePet_C:ApplyAddAttrs()
   self.Overridden.ApplyAddAttrs(self)
   local AddAttrs = DataMgr.BattlePet[self.BattlePetId].AddAttrs
@@ -50,7 +49,6 @@ function BP_BattlePet_C:ApplyAddAttrs()
     end
   end
 end
-
 function BP_BattlePet_C:ApplyAddAttrsByAffixId(AffixId)
   local PetEntryConfig = DataMgr.PetEntry[AffixId]
   if not PetEntryConfig then
@@ -104,7 +102,6 @@ function BP_BattlePet_C:ApplyAddAttrsByAffixId(AffixId)
     end
   end
 end
-
 function BP_BattlePet_C:ApplyAttrToPhantom(Phantom)
   if not Phantom.IsSpawnByResource and not Phantom.IsSpawnByGM and not Phantom.IsSpawnBySquad then
     return
@@ -144,7 +141,6 @@ function BP_BattlePet_C:ApplyAttrToPhantom(Phantom)
   end
   Phantom:CalcATK()
 end
-
 function BP_BattlePet_C:ResetAddAttrs()
   local AddAttrs = DataMgr.BattlePet[self.BattlePetId].AddAttrs
   if not AddAttrs then
@@ -187,7 +183,6 @@ function BP_BattlePet_C:ResetAddAttrs()
     end
   end
 end
-
 function BP_BattlePet_C:ResetAddAttrsById(AffixId)
   local PetEntryConfig = DataMgr.PetEntry[AffixId]
   if not PetEntryConfig then
@@ -234,5 +229,4 @@ function BP_BattlePet_C:ResetAddAttrsById(AffixId)
     end
   end
 end
-
 return BP_BattlePet_C

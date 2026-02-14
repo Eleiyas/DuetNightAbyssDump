@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function M:OnGravityBallIn(Ball)
   if not self.IsActive then
     return
@@ -11,7 +10,6 @@ function M:OnGravityBallIn(Ball)
   self.GravityBall = Ball
   self:SetActorTickEnabled(true)
 end
-
 function M:OnGravityBallOut()
   if not self.IsActive then
     return
@@ -19,7 +17,6 @@ function M:OnGravityBallOut()
   self.GravityBall = nil
   self:SetActorTickEnabled(false)
 end
-
 function M:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if not self.GravityBall then
@@ -31,12 +28,10 @@ function M:ReceiveTick(DeltaSeconds)
     self:SetActorTickEnabled(false)
   end
 end
-
 function M:OnComplete()
   self:ChangeState("Manual", 0, self.CompleteStateId)
   if self.GravityBall then
     self.GravityBall:OnComplete()
   end
 end
-
 return M

@@ -2,17 +2,18 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.WBP.StoryReview.StoryReviewWidget.WBP_Story_Review_ItemBase"
 })
-
+function M:Construct()
+  self.Text_Lose:SetText(GText("Impression_UI_CheckFail"))
+  self.Text_Win:SetText(GText("Impression_UI_CheckSucc"))
+end
 function M:SetItemRenderOpacity(Opacity)
   self.List_Item_1:SetRenderOpacity(Opacity)
 end
-
 function M:InitData(Data, ParentWidget)
   self.TalkData = Data
   self.FatherWidget = ParentWidget
   self.CurValue = 0
 end
-
 function M:ListOtherOptions()
   if self.CloseListHandle then
     ULTweenBPLibrary.KillIfIsTweening(self, self.CloseListHandle)
@@ -36,7 +37,6 @@ function M:ListOtherOptions()
     LTweenActor:SetTickableWhenPaused(true)
   end
 end
-
 function M:RemoveOtherOptions()
   if self.ShowListHandle then
     ULTweenBPLibrary.KillIfIsTweening(self, self.ShowListHandle)
@@ -61,5 +61,4 @@ function M:RemoveOtherOptions()
     LTweenActor:SetTickableWhenPaused(true)
   end
 end
-
 return M

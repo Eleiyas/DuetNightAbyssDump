@@ -1,6 +1,5 @@
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local M = {}
-
 function M:ComponentInitDispatcher()
   self:AddDispatcher(EventID.OnSwitchPet, self, self.OnSwitchPet)
   self:AddDispatcher(EventID.PetAddExpMulti, self, self.OnPetExpChanged)
@@ -14,7 +13,6 @@ function M:ComponentInitDispatcher()
   self:AddDispatcher(EventID.OnPropChangePets, self, self.OnPropChangePets)
   self:AddDispatcher(EventID.OnPetReddotRead, self, self.OnPetReddotRead)
 end
-
 function M:PetMain_Init()
   self.Panel_SubTab:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   if self.IsPreviewMode then
@@ -43,7 +41,6 @@ function M:PetMain_Init()
   self:PlayAnimation(self.RoleList_In)
   self:UpdateBoxReddot()
 end
-
 function M:PetMain_PreprocessContents(Type, PreprocessParams)
   PreprocessParams = PreprocessParams or {}
   local UniqueId = PreprocessParams.SelectedTargetUuid
@@ -78,11 +75,6 @@ function M:PetMain_PreprocessContents(Type, PreprocessParams)
       self.ComparedPet = Avatar.Pets[Content.UniqueId]
     end
   end
-  if self.ComparedChar and self.CharItemContentsMap[self.ComparedChar.Uuid] then
-    self.ComparedChar = Avatar.Chars[self.ComparedChar.Uuid] or self.ComparedChar
-  else
-    self.ComparedChar = nil
-  end
   if self.ComparedPet then
     if self.PetItemContentsMap[self.ComparedPet.UniqueId] then
       self.ComparedPet = Avatar.Pets[self.ComparedPet.UniqueId]
@@ -94,7 +86,6 @@ function M:PetMain_PreprocessContents(Type, PreprocessParams)
     self.ComparedPet = Avatar.Pets[ContentArray[1].UniqueId]
   end
 end
-
 function M:PetMain_InitContentState()
   if self.PetMain_CurContent then
     self.PetMain_CurContent.bInGear = false
@@ -125,21 +116,23 @@ function M:PetMain_InitContentState()
   self.PetMain_CmpContent = self.PetItemContentsMap[self.ComparedPet.UniqueId]
   self.PetMain_CmpContent.IsSelect = true
 end
-
 function M:PetMain_PreMainTabChange()
   self.Tab_PetAlive:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_Edit:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.ActorController:ChangePetModel(nil)
   if self.PetMain_LastChar then
+    if self.CharMain_CmpContent.Avatar then
+      self.ActorController:SetAvatar(self.CharMain_CmpContent.Avatar)
+    end
     self.ActorController:ChangeCharModel(self.PetMain_LastChar)
+    self.ActorController:SetAvatar(ArmoryUtils:GetAvatar())
   end
 end
-
 function M:PetMain_SetAllReddotRead()
   for _, Content in ipairs(self.PetItemContentsArray) do
     ArmoryUtils:SetItemReddotRead(Content, true)
   end
 end
-
 function M:PetMain_InitSubUI()
   self:DefaultInitSubUI({
     Target = self.ComparedPet,
@@ -148,19 +141,16 @@ function M:PetMain_InitSubUI()
   })
   self:CallFunctionByName("PetMain_InitSubUI_" .. self.CurSubTab.Name)
 end
-
 function M:PetMain_InitSubUI_Attribute()
   if self.CurrentSubUI then
     self.SubUIButtonStyleInfo = self.CurrentSubUI:GetButtonStyleInfo()
   end
 end
-
 function M:PetMain_InitSubUI_Entry()
   if self.CurrentSubUI then
     self.SubUIButtonStyleInfo = self.CurrentSubUI:GetButtonStyleInfo()
   end
 end
-
 function M:UpdatePetInfos(Content)
   self.Panel_Element:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Tab_L:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -182,33 +172,29 @@ function M:UpdatePetInfos(Content)
   self.TextBlock_Name:SetText(Content.UnitName)
   self:SetStars(Content.Rarity or 0)
 end
-
 function M:PetMain_UpdateBoxReddot()
   local PetNode = ReddotManager.GetTreeNode(CommonConst.DataType.Pet) or {Count = 0}
   local ResourcePetNode = ReddotManager.GetTreeNode("Resource" .. CommonConst.DataType.Pet) or {Count = 0}
   if self.UseablePetItemContentsArray == self.PetItemContentsArray then
-    self.Btn_Selective:SetReddot(PetNode.Count - ResourcePetNode.Count > 0, false)
+    self:UpdateBoxReddotView(PetNode.Count - ResourcePetNode.Count > 0, false)
   else
-    self.Btn_Selective:SetReddot(ResourcePetNode.Count > 0, false)
+    self:UpdateBoxReddotView(ResourcePetNode.Count > 0, false)
   end
   local bShowReddot = self.Tab_PetAlive:IsVisible() and not self.Tab_PetAlive.bIsForbidden
   self.Tab_PetAlive:SetReddotRight(bShowReddot and ResourcePetNode.Count > 0)
   self.Tab_PetAlive:SetReddotLeft(bShowReddot and PetNode.Count - ResourcePetNode.Count > 0)
 end
-
 function M:PetMain_OnRoleListEntryInitialized(Content, Widget)
   if not Content.Level then
     Widget:SetLevel(1)
   end
 end
-
 function M:PetMain_OnRoleListItemClicked(Content)
   if self.PetMain_CmpContent == Content then
     return
   end
   self:SelectRoleListItem(Content)
 end
-
 function M:PetMain_SelectRoleListItem(Content)
   ArmoryUtils:SetItemReddotRead(Content, true)
   local Avatar = ArmoryUtils:GetAvatar()
@@ -223,7 +209,6 @@ function M:PetMain_SelectRoleListItem(Content)
   self.ActorController:ChangePetModel(self.ComparedPet)
   self.EMListView_Role:BP_ScrollItemIntoView(Content)
 end
-
 function M:PetMain_InitRoleList()
   self.EMListView_Role:ClearListItems()
   for _, Content in ipairs(self.PetItemContentsArray) do
@@ -234,15 +219,14 @@ function M:PetMain_InitRoleList()
   end
   self.EMListView_Role:RegenerateAllEntries()
 end
-
 function M:PetMain_SortItemContents()
   if self.PetItemContentsArray == self.ResourcePetItemContentsArray then
     ArmoryUtils:SortItemContents(self.PetItemContentsArray, {
-      "Rarity",
+      "_PetEntryRarity",
       "_PetEntryId",
       "SortPriority",
       "UnitId"
-    }, CommonConst.DESC, self.PetMain_CurContent)
+    }, CommonConst.DESC)
   else
     ArmoryUtils:SortItemContents(self.PetItemContentsArray, {
       "BreakNum",
@@ -253,14 +237,17 @@ function M:PetMain_SortItemContents()
     }, CommonConst.DESC, self.PetMain_CurContent)
   end
 end
-
 local function AddContent(self, Pet)
   local Obj = ArmoryUtils:NewPetItemContent(Pet)
   Obj.bHideItemLevel = self.bFromArchive
   Obj.IsOwned = true
   self.BP_PetItemContents:Add(Obj)
   if Obj.IsResourcePet then
-    Obj._PetEntryId = Obj.Entry and Obj.Entry[1]
+    rawset(Obj, "_PetEntryId", Obj.PetEntry and Obj.PetEntry[1])
+    local PetEntryData = DataMgr.PetEntry[Obj._PetEntryId]
+    if PetEntryData then
+      rawset(Obj, "_PetEntryRarity", PetEntryData.Rarity)
+    end
     self.ResourcePetItemContentsMap[Obj.UniqueId] = Obj
     table.insert(self.ResourcePetItemContentsArray, Obj)
   else
@@ -270,7 +257,6 @@ local function AddContent(self, Pet)
   self:OnRoleListContentCreated(Obj)
   return Obj
 end
-
 local function RemoveContent(self, UniqueId)
   if self.ResourcePetItemContentsMap[UniqueId] then
     local Obj = self.ResourcePetItemContentsMap[UniqueId]
@@ -294,7 +280,6 @@ local function RemoveContent(self, UniqueId)
     self.BP_PetItemContents:RemoveItem(Obj)
   end
 end
-
 function M:PetMain_CreateItemContents()
   local Avatar = ArmoryUtils:GetAvatar()
   self.UseablePetItemContentsMap = {}
@@ -318,7 +303,6 @@ function M:PetMain_CreateItemContents()
       end
     end
   end
-  
   local function InsertLogic(Pet)
     local Obj = AddContent(self, Pet)
     if self.bFromArchive then
@@ -329,7 +313,6 @@ function M:PetMain_CreateItemContents()
       end
     end
   end
-  
   if self.DoNotSort and self.IsPreviewMode then
     local PetArray = {}
     if self.InitialOrderPetUniqueId then
@@ -352,7 +335,6 @@ function M:PetMain_CreateItemContents()
     self.CurPetTabIdx = 2
   end
 end
-
 function M:PetMain_SwitchCurrentContents()
   if 1 == self.CurPetTabIdx then
     self.PetItemContentsArray = self.UseablePetItemContentsArray
@@ -362,7 +344,6 @@ function M:PetMain_SwitchCurrentContents()
     self.PetItemContentsMap = self.ResourcePetItemContentsMap
   end
 end
-
 function M:PetMain_OnPetTabClicked(TabIdx)
   self:InitRoleListByPetTab(TabIdx)
   if 1 == TabIdx then
@@ -371,7 +352,6 @@ function M:PetMain_OnPetTabClicked(TabIdx)
   self:SelectRoleListItem(self.PetMain_CmpContent)
   self:UpdateBoxReddot()
 end
-
 function M:InitRoleListByPetTab(TabIdx)
   self.CurPetTabIdx = TabIdx
   self:PetMain_SwitchCurrentContents()
@@ -401,11 +381,9 @@ function M:InitRoleListByPetTab(TabIdx)
   self.PetMain_CmpContent = self.PetItemContentsMap[self.ComparedPet.UniqueId]
   self:InitRoleList()
 end
-
 function M:PetMain_UpdateResourceInfos()
   self.Tab_Arm:UpdateResource()
 end
-
 function M:ResetPetData()
   local Avatar = ArmoryUtils:GetAvatar()
   self.ComparedPet = Avatar.Pets[self.ComparedPet.UniqueId]
@@ -413,7 +391,6 @@ function M:ResetPetData()
     self.CurrentPet = Avatar.Pets[self.CurrentPet.UniqueId]
   end
 end
-
 function M:OnNewPetObtained(UniqueID)
   if self.Params.PetUniqueIds or not self.PetItemContentsMap then
     return
@@ -431,7 +408,6 @@ function M:OnNewPetObtained(UniqueID)
     self:UpdateBoxReddot()
   end
 end
-
 function M:OnPetDeleted(UniqueID)
   if self.Params.PetUniqueIds or not self.PetItemContentsMap then
     return
@@ -445,7 +421,6 @@ function M:OnPetDeleted(UniqueID)
   self:InitRoleListByPetTab(self.CurPetTabIdx)
   self:UpdateBoxReddot()
 end
-
 function M:OnSwitchPet()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm_positive", nil, nil)
   self.CurrentPet = self.ComparedPet
@@ -457,7 +432,6 @@ function M:OnSwitchPet()
     self.ActorController:PlayPetVoice("vo_happy")
   end
 end
-
 function M:OnPetEntryReplace(ErrCode, UniqueId)
   if ErrCode ~= ErrorCode.RET_SUCCESS then
     return
@@ -476,7 +450,6 @@ function M:OnPetEntryReplace(ErrCode, UniqueId)
     self:InitSubUI()
   end
 end
-
 function M:OnPetEntryUp(ErrCode, UniqueId, EntryIndex, ConsumePetUniqueIds)
   if ErrCode ~= ErrorCode.RET_SUCCESS then
     return
@@ -491,18 +464,24 @@ function M:OnPetEntryUp(ErrCode, UniqueId, EntryIndex, ConsumePetUniqueIds)
   if not Content then
     return
   end
-  if Content.IsResourcePet == true and self.IsListExpanded then
+  if Content.IsResourcePet then
+    Content.PetEntry = {
+      Pet.Entry and Pet.Entry[1]
+    }
+    Content._PetEntryId = Content.PetEntry and Content.PetEntry[1]
+    local PetEntryData = DataMgr.PetEntry[Content._PetEntryId]
+    if PetEntryData then
+      Content._PetEntryRarity = PetEntryData.Rarity
+    end
     local EntryID = Content.PetEntry[1]
-    if DataMgr.PetEntry[EntryID] then
-      local NewEntryID = DataMgr.PetEntry[Content.PetEntry[1]].PetEntryUPID
-      ArmoryUtils:ResetResourcePetEntryIcons(Content, NewEntryID)
+    if EntryID then
+      ArmoryUtils:ResetResourcePetEntryIcons(Content, EntryID)
     end
   end
   if self.PetMain_CmpContent == Content then
     self:InitSubUI()
   end
 end
-
 function M:PetMain_OnEditBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local PetName = self.PetMain_CmpContent.UnitName
@@ -538,7 +517,6 @@ function M:PetMain_OnEditBtnClicked()
     }
   }, self)
 end
-
 function M:OnPetNameChanged(ErrCode, UniqueId, Name)
   if not ErrorCode:Check(ErrCode) then
     return
@@ -551,20 +529,17 @@ function M:OnPetNameChanged(ErrCode, UniqueId, Name)
     end
   end
 end
-
 function M:PetMain_OnLockBtnClicked()
   if self.ComparedPet.IsLock then
     local function CancelFunc()
       self:SetFocus()
     end
-    
     local function ConfirmFunc()
       self:SetFocus()
       local Avatar = ArmoryUtils:GetAvatar()
       self:BlockAllUIInput(true)
       Avatar:UnLockPet(self.ComparedPet.UniqueId)
     end
-    
     UIManager(self):ShowCommonPopupUI(100019, {
       LeftCallbackFunction = CancelFunc,
       RightCallbackFunction = ConfirmFunc,
@@ -576,14 +551,12 @@ function M:PetMain_OnLockBtnClicked()
     Avatar:LockPet(self.ComparedPet.UniqueId)
   end
 end
-
 function M:OnPetLocked(ErrCode, UniqueId, IsLocked)
   self:BlockAllUIInput(false)
   if not ErrorCode:Check(ErrCode) then
     return
   end
 end
-
 function M:UpdatePetLockState(UniqueId)
   self:ResetPetData()
   local Avatar = ArmoryUtils:GetAvatar()
@@ -609,7 +582,6 @@ function M:UpdatePetLockState(UniqueId)
     end
   end
 end
-
 function M:UpdatePetBreakLevel(UniqueId)
   local Avatar = ArmoryUtils:GetAvatar()
   local Pet = Avatar.Pets[UniqueId]
@@ -626,7 +598,6 @@ function M:UpdatePetBreakLevel(UniqueId)
     Content.SelfWidget:SetPetStarLevel(Content.BreakNum)
   end
 end
-
 function M:UpdatePetLevel(UniqueId)
   self:ResetPetData()
   local Avatar = ArmoryUtils:GetAvatar()
@@ -641,7 +612,6 @@ function M:UpdatePetLevel(UniqueId)
     self:InitSubUI()
   end
 end
-
 function M:OnPetExpChanged(ErrCode, UniqueId)
   if ErrCode ~= ErrorCode.RET_SUCCESS then
     return
@@ -649,7 +619,6 @@ function M:OnPetExpChanged(ErrCode, UniqueId)
   self:UpdatePetLevel(UniqueId)
   self:InitRoleListByPetTab(self.CurPetTabIdx)
 end
-
 function M:OnPetBreakLevelUp(ErrCode, UniqueId)
   if ErrCode ~= ErrorCode.RET_SUCCESS then
     return
@@ -658,7 +627,6 @@ function M:OnPetBreakLevelUp(ErrCode, UniqueId)
   self:UpdatePetLevel(UniqueId)
   self:InitRoleListByPetTab(self.CurPetTabIdx)
 end
-
 function M:OnPropChangePets(keys)
   if not self.UseablePetItemContentsMap then
     return
@@ -671,8 +639,10 @@ function M:OnPropChangePets(keys)
     self:UpdatePetLockState(UniqueId)
   end
 end
-
 function M:OnPetReddotRead(UniqueId, InContent)
+  if not self.UseablePetItemContentsMap or not self.ResourcePetItemContentsMap then
+    return
+  end
   local Content = self.UseablePetItemContentsMap[UniqueId] or self.ResourcePetItemContentsMap[UniqueId]
   if Content and InContent == Content then
     return
@@ -680,19 +650,16 @@ function M:OnPetReddotRead(UniqueId, InContent)
   Content.IsNew = false
   ArmoryUtils:UpdateContentRetDotType(Content)
 end
-
 function M:PetMain_ReceiveEnterState()
   self:ResetPetData()
   self:UpdateMontageAndCamera()
+  self:UpdateSubTabReddotCommon(ArmoryUtils.ArmorySubTabNames.Attribute)
 end
-
 function M:Destruct()
   self.Tab_PetAlive:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:PetMain_OnFocusReceived(ReplyInfo)
 end
-
 function M:PetMain_UpdateGamepadStyle()
   if self.IsGamepadInput and not self.IsPreviewMode and not self.IsListExpanded then
     self.Key_GamePad_Lock:CreateCommonKey({
@@ -717,7 +684,6 @@ function M:PetMain_UpdateGamepadStyle()
     self.Btn_Edit:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 function M:PetMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   if not self.bHideSquadBuildBtn or not self.IsPreviewMode then
     self:AddKeyEvents(KeyDownEvents, self.MenuKeyDownEvents)
@@ -742,14 +708,11 @@ function M:PetMain_InitKeySetting(KeyDownEvents, KeyUpEvents, BottomKeyInfo)
   self:AddKeyEvents(KeyDownEvents, self.LeftThumbstickKeyDownEvents)
   table.insert(BottomKeyInfo, self.ESCKeyInfoList)
 end
-
 function M:PetMain_InitNavigationRules()
   self:InitNavigationRulesCommon()
 end
-
 function M:PetMain_OnViewKeyDown()
 end
-
 function M:PetMain_OnLeftThumbstickKeyDown(ReplyInfo)
   if self.Tab_PetAlive:IsVisible() then
     self.Tab_PetAlive:OnBtnClicked()
@@ -769,13 +732,10 @@ function M:PetMain_OnLeftThumbstickKeyDown(ReplyInfo)
     end
   end
 end
-
 function M:PetMain_OnLockKeyDown()
   self:PetMain_OnLockBtnClicked()
 end
-
 function M:PetMain_OnEditNameKeyDown()
   self:PetMain_OnEditBtnClicked()
 end
-
 return M

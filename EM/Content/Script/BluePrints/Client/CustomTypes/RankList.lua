@@ -24,11 +24,9 @@ RankList.__Props__ = {
   SortRule = prop.getter("Data", "SortRule"),
   Capacity = prop.getter("Data", "Capacity")
 }
-
 function RankList:Data()
   return DataMgr.Rank[self.RankId]
 end
-
 function RankList:Init(RankId)
   if not RankId then
     return
@@ -37,19 +35,15 @@ function RankList:Init(RankId)
   self.RankSize = math.min(self.Capacity, 100)
   self:_Init()
 end
-
 function RankList:_Init()
   self:SetCompFunc()
 end
-
 function RankList:IsAscend()
   return self.SortRule == "ascend"
 end
-
 function RankList:IsDescend()
   return self.SortRule == "descend"
 end
-
 function RankList:SetCompFunc()
   local RankProp = Param2RankProp[self.Param]
   if not RankProp then
@@ -71,18 +65,15 @@ function RankList:SetCompFunc()
     end
   end
 end
-
 function RankList:SetRankSize(size)
   self.RankSize = math.min(size, 100)
 end
-
 function RankList:Top()
   local RankProp = Param2RankProp[self.Param]
   if self.RankListInfo:Length() > 0 then
     return self.RankListInfo[1][RankProp]
   end
 end
-
 function RankList:InsertItem(param, value, eid, detail)
   GWorld.logger.debug("InsertItem start", param, value)
   if param ~= self.Param then
@@ -126,7 +117,6 @@ function RankList:InsertItem(param, value, eid, detail)
   end
   return result
 end
-
 function RankList:RemoveItem(eid, old_value)
   GWorld.logger.debug("RemoveItem start")
   local Length = self.RankListInfo:Length()
@@ -148,7 +138,6 @@ function RankList:RemoveItem(eid, old_value)
   GWorld.logger.debug("RemoveItem end")
   return true
 end
-
 function RankList:IndexEid(eid)
   for index, value in ipairs(self.RankListInfo) do
     if value.Eid == eid then
@@ -156,7 +145,6 @@ function RankList:IndexEid(eid)
     end
   end
 end
-
 function RankList:UpdateRankDetailInfo(eid, detail)
   if not detail then
     return
@@ -166,7 +154,6 @@ function RankList:UpdateRankDetailInfo(eid, detail)
   end
   self.RankDetailInfo[eid]:Update(detail)
 end
-
 function RankList:CanRefreshRank(eid, new_value)
   local old_value = self:GetRankValue(eid)
   if not old_value then
@@ -179,13 +166,11 @@ function RankList:CanRefreshRank(eid, new_value)
   end
   return false
 end
-
 function RankList:GetRankValue(eid)
   if self.RankDetailInfo[eid] then
     return self.RankDetailInfo[eid].RankValue
   end
 end
-
 function RankList:GetTotalRankList()
   local SortedList = {}
   for index, value in ipairs(self.RankListInfo._inner) do
@@ -206,16 +191,13 @@ function RankList:GetTotalRankList()
   end
   return infos
 end
-
 FormatProperties(RankList)
 local RankLists = Class("RankLists", CustomTypes.CustomDict)
 RankLists.KeyType = BaseTypes.Int
 RankLists.ValueType = RankList
-
 function RankLists:NewRankList(RankId)
   local _RankList = RankList(RankId)
   self[RankId] = _RankList
   return _RankList
 end
-
 return {RankList = RankList, RankLists = RankLists}

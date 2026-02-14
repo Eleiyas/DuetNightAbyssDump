@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17370121184391397897",
       type = "StoryNode",
-      name = "\231\167\152\229\175\134\229\159\186\229\156\176\229\164\150\230\137\152\230\150\175\229\141\161boss",
+      name = "秘密基地外托斯卡boss",
       pos = {x = 1271.7133200133198, y = 283.8240426240422},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -143,21 +145,21 @@ return {
           ["17370121184391397904"] = {
             key = "17370121184391397904",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = -1260.1635259401914, y = 279.67846059651504},
             propsData = {}
           },
           ["17370121184391397905"] = {
             key = "17370121184391397905",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = -2596.33393644539, y = 863.3936043316846},
             propsData = {}
           },
           ["17375367257172916"] = {
             key = "17375367257172916",
             type = "BossBattleFinishNode",
-            name = "\229\174\140\230\136\144BOSS\230\136\152\233\152\182\230\174\181",
+            name = "完成BOSS战阶段",
             pos = {x = -2129.4031377285637, y = 273.3047672863868},
             propsData = {
               SendMessage = "cp2secoutsidebossbegin",
@@ -167,7 +169,7 @@ return {
           ["1745567009920555658"] = {
             key = "1745567009920555658",
             type = "SendMessageNode",
-            name = "\229\143\145\233\128\129\230\182\136\230\129\175",
+            name = "发送消息",
             pos = {x = -1780, y = 868},
             propsData = {
               MessageType = "GameMode",
@@ -178,7 +180,7 @@ return {
           ["1750150983705388"] = {
             key = "1750150983705388",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = -2106, y = -54.00000000000003},
             propsData = {
               IsNpcNode = false,
@@ -195,7 +197,7 @@ return {
           ["1758013775481962685"] = {
             key = "1758013775481962685",
             type = "PlayOrStopBGMNode",
-            name = "BGM\232\138\130\231\130\185",
+            name = "BGM节点",
             pos = {x = -2607.7142857142862, y = -68.00000000000017},
             propsData = {
               SoundStateType = 0,

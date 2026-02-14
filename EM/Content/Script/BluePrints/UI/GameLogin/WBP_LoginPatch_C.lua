@@ -1,7 +1,6 @@
 require("UnLua")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Initialize(Initializer)
   self.LastBytesSoFar = 0
   self.TotalBytes = 0
@@ -9,7 +8,6 @@ function M:Initialize(Initializer)
   self.PaksInfo = {}
   self.DownloadSpeed = 0
 end
-
 function M:Construct()
   self.HorizontalBox_DownloadPercent:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.HorizontalBox_DownloadSpeed:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -27,7 +25,6 @@ function M:Construct()
     self.ProgressMaterial:SetScalarParameterValue("percent", 0)
   end
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   if not self.bStartDownload then
     return
@@ -43,13 +40,11 @@ function M:Tick(MyGeometry, InDeltaTime)
     self.ProgressMaterial:SetScalarParameterValue("percent", Percent)
   end
 end
-
 function M:SetHotUpdateStateText(InText)
   self.Panel_Downloading:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Text_Finished:SetText("")
   self.Text_Download:SetText(InText)
 end
-
 function M:OnAssetDownloadProgress(PakIndex, InBytesSoFar, InTotalBytes)
   if not self.PaksInfo[PakIndex] then
     self.PaksInfo[PakIndex] = {}
@@ -62,10 +57,8 @@ function M:OnAssetDownloadProgress(PakIndex, InBytesSoFar, InTotalBytes)
   self.PaksInfo[PakIndex].TotalBytes = InTotalBytes
   self.BytesSoFar = self.BytesSoFar + BytesDiff
 end
-
 function M:OnAssetDownloadComplete(PakIndex, bSuccess, ErrorCode)
 end
-
 function M:OnHotUpdateEventChanged(UpdateEvent)
   if UpdateEvent == EUpdateEvent.DownloadCompleted then
     self:SetHotUpdateStateText(GText("UI_PATCH_MOUNTASSTES"))
@@ -95,11 +88,9 @@ function M:OnHotUpdateEventChanged(UpdateEvent)
     end
   end
 end
-
 function M:OnVertifyAssets()
   self:SetHotUpdateStateText(GText("UI_PATCH_VERTIFYASSETS"))
 end
-
 function M:ShowOptionPatchPopUI(OptionalAssetsSize)
   self:ShowPatchPopUI(string.format(GText("UI_PATCH_OPTIONALPATCH"), string.format("%.2f", OptionalAssetsSize / 1024 / 1024) .. "MB"), true, true, function()
     local GameMode = UGameplayStatics.GetGameMode(self)
@@ -111,13 +102,11 @@ function M:ShowOptionPatchPopUI(OptionalAssetsSize)
     self.Tips:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end)
 end
-
 function M:ShowDownloadBasepakUI()
   self:ShowPatchPopUI(GText("UI_PATCH_NEWPAK"), true, false, function()
     UKismetSystemLibrary.QuitGame(self, UGameplayStatics.GetPlayerCharacter(self, 0), EQuitPreference.Quit, false)
   end)
 end
-
 function M:OnPatchFailed(UpdateEvent)
   if UpdateEvent == EUpdateEvent.GetRemoteVersionFailed then
     self:ShowPatchPopUI(GText("UI_PATCH_GETREMOTEVERSIONFAILED"), true, true, function()
@@ -145,7 +134,6 @@ function M:OnPatchFailed(UpdateEvent)
     end)
   end
 end
-
 function M:ShowPatchPopUI(Text, bShowEnsure, bShowCancel, EnsureFunc, CancelFunc)
   self.Tips:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Text_DataSize:SetText(Text)
@@ -160,5 +148,4 @@ function M:ShowPatchPopUI(Text, bShowEnsure, bShowCancel, EnsureFunc, CancelFunc
     self.btn_cancel:BindEventOnClicked(self, CancelFunc)
   end
 end
-
 return M

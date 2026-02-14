@@ -3,15 +3,14 @@ local NumberModel = require("BluePrints.UI.UI_PC.Archive.WBP_Archive_Number_Mode
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Destruct()
-  ReddotManager.RemoveListener("ArchiveReward", self)
+  if self.NodeName then
+    ReddotManager.RemoveListener(self.NodeName, self)
+  end
 end
-
 function M:Construct()
   self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:Init(Name, Type)
   self.Name = Name
   self.Type = Type
@@ -51,7 +50,6 @@ function M:Init(Name, Type)
     ReddotManager.AddListener(self.NodeName, self, self.RefreshReddot)
   end
 end
-
 function M:RefreshInfo()
   local CurrentNumber = NumberModel:GetCurrentNumber(self.Type)
   local SumNumber = NumberModel["Get" .. self.Name .. "SumNumber"](NumberModel)
@@ -61,23 +59,19 @@ function M:RefreshInfo()
   self.Num_Now:SetText(CurrentNumber)
   self.Num_Total:SetText(SumNumber)
 end
-
 function M:HideHover()
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnHoveredEntry()
   AudioManager(self):PlayUISound(self, "event:/ui/common/hover_btn_pic_large", nil, nil)
   self:StopAnimation(self.Normal)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnCellClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_pic_large", nil, nil)
   UIManager(self):LoadUINew(self.Name2SystemUIName[self.Name], self.Name, self.Type)
 end
-
 function M:RefreshReddot()
   local Node = ReddotManager.GetTreeNode(self.NodeName)
   if Node.Count > 0 then
@@ -86,5 +80,4 @@ function M:RefreshReddot()
     self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

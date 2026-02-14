@@ -2,8 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
+local AnnouncementUtils = require("BluePrints.UI.WBP.Announcement.AnnounceUtils")
 function M:Construct()
+  self.ListenerAdded = false
   self.Avatar = GWorld:GetAvatar()
   self.Button_Area.OnClicked:Add(self, self.OnCellClicked)
   self.Button_Area.OnHovered:Add(self, self.OnCellHovered)
@@ -11,13 +12,15 @@ function M:Construct()
   self.Button_Area.OnPressed:Add(self, self.OnCellPressed)
   self.Button_Area.OnReleased:Add(self, self.OnCellReleased)
 end
-
+function M:Destruct()
+  self.ListenerAdded = false
+  ReddotManager.RemoveListener("PaotaiEventNewLevel", self)
+end
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Entry = nil
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -73,6 +76,11 @@ function M:OnListItemObjectSet(Content)
       self.Content.LockReason = nil
     end
   end
+  if self.Content.LockReason then
+    self:PlayAnimation(self.Lock)
+  else
+    self:PlayAnimation(self.Normal)
+  end
   self.PaotaiGameLevelInfo = nil
   if PaotaiGame then
     local PaotaiGameEventInfo = PaotaiGame[self.Content.EventId]
@@ -92,43 +100,56 @@ function M:OnListItemObjectSet(Content)
     end
   end
   for i = 1, 3 do
-    local StarMat = self["Image_Star_" .. i]:GetDynamicMaterial()
+    local StarSwitcher = self["WS_Star_" .. i]
     if i <= StarNum then
-      StarMat:SetScalarParameterValue("Saturation", 0)
+      StarSwitcher:SetActiveWidgetIndex(1)
     else
-      StarMat:SetScalarParameterValue("Saturation", 1)
+      StarSwitcher:SetActiveWidgetIndex(0)
     end
   end
+  if not self.ListenerAdded then
+    self.ListenerAdded = true
+    if not ReddotManager.GetTreeNode("PaotaiEventNewLevel") then
+      ReddotManager.AddNodeEx("PaotaiEventNewLevel")
+    end
+    ReddotManager.AddListenerEx("PaotaiEventNewLevel", self, self.UpdateReddot)
+  end
 end
-
 function M:RemoveRefreshTimer()
   self:RemoveTimer("CountDownTimer")
 end
-
 function M:SetRefreshTimer()
   self:AddTimer(1, self.SetTime, true, -1, "CountDownTimer", true)
 end
-
 function M:SetTime()
-  if self.Content.StartTime <= TimeUtils.NowTime() then
+  if not self.Content.StartTime then
+    return
+  end
+  local NowTime = TimeUtils.NowTime()
+  if NowTime >= self.Content.StartTime then
+    self:RemoveRefreshTimer()
     self:OnListItemObjectSet(self.Content)
+    return
   end
-  local TimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(self.Content.StartTime, TimeUtils.NowTime())
-  local FinalResult = ""
-  if TimeDict then
-    for TimeCount, ThisTimeInfo in ipairs(TimeDict) do
-      if TimeCount > 2 then
-        DebugPrint("WBP_Com_Time SetTimeText TimeCount too much, 2 need but get more")
-        break
-      end
-      FinalResult = string.format("%s%02d%s", FinalResult, ThisTimeInfo.TimeValue, GText("UI_GameEvent_TimeRemain_" .. ThisTimeInfo.TimeType))
-    end
+  local TotalDiffTime = self.Content.StartTime - NowTime
+  local DiffDay = math.floor(TotalDiffTime / CommonConst.SECOND_IN_DAY)
+  TotalDiffTime = TotalDiffTime - DiffDay * CommonConst.SECOND_IN_DAY
+  local DiffHour = math.floor(TotalDiffTime / CommonConst.SECOND_IN_HOUR)
+  TotalDiffTime = TotalDiffTime - DiffHour * CommonConst.SECOND_IN_HOUR
+  local DiffMin = math.floor(TotalDiffTime / CommonConst.SECOND_IN_MINUTE)
+  local TimeArgs = TArray(FFormatArgumentData)
+  local FinalStr = ""
+  if DiffDay > 0 then
+    AnnouncementUtils:_AddFormatArg(TimeArgs, "DD", DiffDay)
+    AnnouncementUtils:_AddFormatArg(TimeArgs, "H", DiffHour)
+    FinalStr = UKismetTextLibrary.Format(GText("ZhiLiuEntrust_Lock_Time1"), TimeArgs)
   else
-    FinalResult = "-"
+    AnnouncementUtils:_AddFormatArg(TimeArgs, "H", DiffHour)
+    AnnouncementUtils:_AddFormatArg(TimeArgs, "M", DiffMin)
+    FinalStr = UKismetTextLibrary.Format(GText("ZhiLiuEntrust_Lock_Time2"), TimeArgs)
   end
-  self.Text_Lock:SetText(FinalResult)
+  self.Text_Lock:SetText(FinalStr)
 end
-
 function M:BindEventOnClicked(Obj, Func, Params)
   if not Obj or not Func then
     return
@@ -137,27 +158,32 @@ function M:BindEventOnClicked(Obj, Func, Params)
   self.Func = Func
   self.Params = Params
 end
-
 function M:UnBindEventOnClicked()
   self.Obj = nil
   self.Func = nil
   self.Params = nil
 end
-
 function M:OnCellClicked()
-  AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
-  return self:OnCellClickedWithoutSound()
+  local Ans = self:OnCellClickedWithoutSound()
+  if Ans then
+    AudioManager(self):PlayUISound(self, "event:/ui/common/special_content_01_click", nil, nil)
+  end
 end
-
 function M:OnCellClickedWithoutSound()
+  if not ReddotManager.GetTreeNode("PaotaiEventNewLevel") then
+    ReddotManager.AddNodeEx("PaotaiEventNewLevel")
+  end
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("PaotaiEventNewLevel")
+  if 1 == CacheDetail[self.Content.DungeonId] then
+    CacheDetail[self.Content.DungeonId] = 0
+    ReddotManager.DecreaseLeafNodeCount("PaotaiEventNewLevel")
+  end
   if self.Content.IsSelect then
     return false
   end
   if self.Content.LockReason then
-    if self.Content.LockReason == "Time" then
-      UE.UKismetSystemLibrary.PrintString(self, "\230\151\182\233\151\180\230\156\170\229\136\176")
-    elseif self.Content.LockReason == "PreDungeon" then
-      UE.UKismetSystemLibrary.PrintString(self, "\229\137\141\231\189\174\229\133\179\229\141\161\230\156\170\230\187\161\232\182\179")
+    if self.Content.LockReason == "PreDungeon" then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText(DataMgr.PaotaiMiniGame[self.Content.DungeonId].LockToast))
     end
     return false
   else
@@ -169,7 +195,6 @@ function M:OnCellClickedWithoutSound()
     return true
   end
 end
-
 function M:OnCellHovered()
   if self.Content.IsSelect then
     return
@@ -179,27 +204,25 @@ function M:OnCellHovered()
   self:StopAnimation(self.Lock)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnCellUnhovered()
   if self.Content.IsSelect then
     return
   end
   self.Hovered = false
   self:StopAnimation(self.Hover)
+  self:PlayAnimation(self.UnHover)
   if self.Content.LockReason then
     self:PlayAnimation(self.Lock)
   else
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnCellPressed()
   if self.Content.IsSelect then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnCellReleased()
   if self.Content.IsSelect then
     return
@@ -213,7 +236,6 @@ function M:OnCellReleased()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:SetSelected(IsSelect)
   self.Content.IsSelect = IsSelect
   self:StopAllAnimations()
@@ -224,5 +246,18 @@ function M:SetSelected(IsSelect)
     self:PlayAnimation(self.Normal)
   end
 end
-
+function M:SelectOnGamePad()
+  self:OnCellClicked()
+end
+function M:UpdateReddot()
+  if not ReddotManager.GetTreeNode("PaotaiEventNewLevel") then
+    ReddotManager.AddNodeEx("PaotaiEventNewLevel")
+  end
+  local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("PaotaiEventNewLevel")
+  if 1 == CacheDetail[self.Content.DungeonId] then
+    self.New:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
+  else
+    self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+end
 return M

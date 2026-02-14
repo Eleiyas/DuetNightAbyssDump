@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(Parent, TabId, Title, IsSelected)
   self.Parent = Parent
   self.TabId = TabId
@@ -18,7 +17,6 @@ function M:Init(Parent, TabId, Title, IsSelected)
   self.Btn_Click.OnHovered:Add(self, self.OnBtnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnBtnUnhovered)
 end
-
 function M:OnBtnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_02", nil, nil)
   if self.IsClick then
@@ -28,21 +26,18 @@ function M:OnBtnClicked()
   self:PlayAnimation(self.Click)
   self.Parent:OnMailListTabClicked(self.TabId, 1)
 end
-
 function M:OnBtnPressed()
   if self.IsClick then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnHovered()
   if self.IsClick then
     return
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:ChangeIsSelected(IsSelected)
   if IsSelected then
     self.IsClick = true
@@ -52,12 +47,10 @@ function M:ChangeIsSelected(IsSelected)
     self.WS_Tab:SetActiveWidgetIndex(0)
   end
 end
-
 function M:OnBtnUnhovered()
   if self.IsClick then
     return
   end
   self:PlayAnimationReverse(self.Hover)
 end
-
 return M

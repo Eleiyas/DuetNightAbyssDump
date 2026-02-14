@@ -11,7 +11,6 @@ RougeServerBuild.__Props__ = {
   bTriggered = prop.prop("Bool", "save", true)
 }
 FormatProperties(RougeServerBuild)
-
 function RougeServerBuild:Init(Id)
   self.Id = Id
   self:InitRoomType()
@@ -19,7 +18,6 @@ function RougeServerBuild:Init(Id)
   self.RoomCount = Info.RoomCount
   self.bTriggered = false
 end
-
 function RougeServerBuild:InitRoomType()
   local Info = DataMgr.RougeLikeServerBuild[self.Id]
   local RoomType = Info.RoomType
@@ -31,7 +29,6 @@ function RougeServerBuild:InitRoomType()
     end
   end
 end
-
 function RougeServerBuild:CanEffect(RoomType)
   if self.RoomType:IsEmpty() then
     self:InitRoomType()
@@ -44,7 +41,6 @@ function RougeServerBuild:CanEffect(RoomType)
   end
   return false
 end
-
 function RougeServerBuild:TriggerEffect(bRoomEnd)
   if not self.bTriggered then
     self.bTriggered = true
@@ -57,11 +53,9 @@ function RougeServerBuild:TriggerEffect(bRoomEnd)
   end
   self.RoomCount = self.RoomCount - 1
 end
-
 function RougeServerBuild:IsFinishEffect()
   return 0 == self.RoomCount and self.bTriggered
 end
-
 local RougeServerBuildList = Class("RougeServerBuildList", CustomTypes.CustomList)
 RougeServerBuildList.ValueType = RougeServerBuild
 local RougeServerBuildTotalList = Class("RougeServerBuildTotalList", CustomTypes.CustomList)
@@ -76,7 +70,6 @@ RougeServerBuildInfo.__Props__ = {
   IndependentServerBuild = prop.prop("IndependentServerBuild", "save")
 }
 FormatProperties(RougeServerBuildInfo)
-
 function RougeServerBuildInfo:Init(ServerBuild)
   if not ServerBuild then
     return
@@ -90,23 +83,18 @@ function RougeServerBuildInfo:Init(ServerBuild)
     self.RougeServerBuild:Append(TotalList)
   end
 end
-
 function RougeServerBuildInfo:IsFinishAllEffects()
   return self.CurrentIndex > self.RougeServerBuild:Length()
 end
-
 local RougeServerBuildManager = Class("RougeServerBuildManager", CustomTypes.CustomDict)
 RougeServerBuildManager.KeyType = BaseTypes.Str
 RougeServerBuildManager.ValueType = RougeServerBuildInfo
-
 function RougeServerBuildManager:AddServerBuild(Tag, ServerBuild)
   self:AddValue(Tag, RougeServerBuildInfo(ServerBuild))
 end
-
 function RougeServerBuildManager:RemoveServerBuild(Tag)
   self:RemoveValue(Tag)
 end
-
 function RougeServerBuildManager:AddIndependentServerBuild(SourceTag, Tag, ServerBuild)
   if not self[SourceTag] then
     return
@@ -116,7 +104,6 @@ function RougeServerBuildManager:AddIndependentServerBuild(SourceTag, Tag, Serve
   IndependentServerBuild:AddValue(Tag, ServerBuild)
   return ServerBuild
 end
-
 function RougeServerBuildManager:RemoveIndependentServerBuild(SourceTag, Tag)
   if not self[SourceTag] then
     return
@@ -124,7 +111,6 @@ function RougeServerBuildManager:RemoveIndependentServerBuild(SourceTag, Tag)
   local IndependentServerBuild = self[SourceTag].IndependentServerBuild
   IndependentServerBuild:RemoveValue(Tag)
 end
-
 local RougeAwardInfo = Class("RougeAwardInfo", CustomTypes.CustomAttr)
 RougeAwardInfo.__Props__ = {
   Level = prop.prop("Int", "save", 1),
@@ -132,12 +118,10 @@ RougeAwardInfo.__Props__ = {
   bEffected = prop.prop("Bool", "save", true)
 }
 FormatProperties(RougeAwardInfo)
-
 function RougeAwardInfo:Init(Level, EffectStartRoomIndex)
   self.Level = Level
   self.EffectStartRoomIndex = EffectStartRoomIndex
 end
-
 function RougeAwardInfo:SetEffectDuration(Duration, RoomType)
   self.EffectDuration = Duration
   self.EffectRoomType:Clear()
@@ -145,7 +129,6 @@ function RougeAwardInfo:SetEffectDuration(Duration, RoomType)
     self.EffectRoomType:AddElement(RoomType[i])
   end
 end
-
 function RougeAwardInfo:IsRoomValid(RoomType)
   if 0 == self.EffectRoomType:IsEmpty() then
     return true
@@ -158,28 +141,23 @@ function RougeAwardInfo:IsRoomValid(RoomType)
   end
   return false
 end
-
 function RougeAwardInfo:Dump()
   local Data = self:all_dump(self)
   return Data
 end
-
 local RougeAwardDict = Class("RougeAwardDict", CustomTypes.CustomDict)
 RougeAwardDict.KeyType = BaseTypes.Int
 RougeAwardDict.ValueType = RougeAwardInfo
-
 function RougeAwardDict:AddAward(AwardId, Level, RoomIndex)
   local AwardInfo = RougeAwardInfo(Level, RoomIndex)
   self:AddValue(AwardId, AwardInfo)
   return AwardInfo
 end
-
 function RougeAwardDict:RemoveAward(AwardId)
   local AwardInfo = self:Get(AwardId)
   self:RemoveValue(AwardId)
   return AwardInfo
 end
-
 function RougeAwardDict:Dump()
   local Data = {}
   for k, v in pairs(self._inner) do
@@ -187,33 +165,27 @@ function RougeAwardDict:Dump()
   end
   return Data
 end
-
 local AutoUpgrade = Class("AutoUpgrade", CustomTypes.CustomAttr)
 AutoUpgrade.__Props__ = {
   Level = prop.prop("Int", "save", 1),
   Rarity = prop.prop("IntSet", "save")
 }
 FormatProperties(AutoUpgrade)
-
 function AutoUpgrade:Init(Level, Rarity)
   self.Level = Level
   for i = 1, #Rarity do
     self.Rarity:AddElement(Rarity[i])
   end
 end
-
 local AutoUpgradeDict = Class("AutoUpgradeDict", CustomTypes.CustomDict)
 AutoUpgradeDict.KeyType = BaseTypes.Str
 AutoUpgradeDict.ValueType = AutoUpgrade
-
 function AutoUpgradeDict:AddAutoUpgrade(Tag, Level, Rarity)
   self:AddValue(Tag, AutoUpgrade(Level, Rarity))
 end
-
 function AutoUpgradeDict:RemoveAutoUpgrade(Tag)
   self:RemoveValue(Tag)
 end
-
 local DeathCounter = Class("DeathCounter", CustomTypes.CustomAttr)
 DeathCounter.__Props__ = {
   SourceTag = prop.prop("Str", "save"),
@@ -223,52 +195,42 @@ DeathCounter.__Props__ = {
   ServerBuild = prop.prop("Int", "save")
 }
 FormatProperties(DeathCounter)
-
 function DeathCounter:Init(SourceTag, MonsterType, Count, ServerBuild)
   self.SourceTag = SourceTag
   self.TargetCount = Count
   self.MonsterType = MonsterType
   self.ServerBuild = ServerBuild
 end
-
 local DeathCounterDict = Class("DeathCounterDict", CustomTypes.CustomDict)
 DeathCounterDict.KeyType = BaseTypes.Str
 DeathCounterDict.ValueType = DeathCounter
-
 function DeathCounterDict:AddDeathCounter(Tag, MonsterType, Count, ServerBuild)
   self:AddValue(Tag, DeathCounter(Tag, MonsterType, Count, ServerBuild))
 end
-
 function DeathCounterDict:RemoveDeathCounter(Tag)
   self:RemoveValue(Tag)
 end
-
 local GroupWeightRate = Class("GroupWeightRate", CustomTypes.CustomAttr)
 GroupWeightRate.__Props__ = {
   GroupIds = prop.prop("IntSet", "save"),
   WeightRate = prop.prop("Float", "save", 1.0)
 }
 FormatProperties(GroupWeightRate)
-
 function GroupWeightRate:Init(GroupIds, WeightRate)
   for i = 1, #GroupIds do
     self.GroupIds:AddElement(GroupIds[i])
   end
   self.WeightRate = WeightRate
 end
-
 local GroupWeightRateDict = Class("GroupWeightRateDict", CustomTypes.CustomDict)
 GroupWeightRateDict.KeyType = BaseTypes.Str
 GroupWeightRateDict.ValueType = GroupWeightRate
-
 function GroupWeightRateDict:AddGroupWeightRate(Tag, GroupIds, WeightRate)
   self:AddValue(Tag, GroupWeightRate(GroupIds, WeightRate))
 end
-
 function GroupWeightRateDict:RemoveGroupWeightRate(Tag)
   self:RemoveValue(Tag)
 end
-
 local RougeLike = Class("RougeLike", CustomTypes.CustomAttr)
 RougeLike.__Props__ = {
   SeasonId = prop.prop("Int", "save"),
@@ -325,18 +287,15 @@ RougeLike.__Props__ = {
   TalentId = prop.getter("Data", "TalentId"),
   OuterShopTokenId = prop.getter("Data", "OuterShopTokenId")
 }
-
 function RougeLike:Init(SeasonId, DifficultyId)
   self.SeasonId = SeasonId
   self.DifficultyId = DifficultyId
   self:AddMaxRefreshTime(self:GenTag("Default"), DataMgr.RougeLikeSeason[SeasonId].MRTLimitTimes)
   self.DungeonSid = GWorld.IdManager.GenId()
 end
-
 function RougeLike:Data()
   return DataMgr.RougeLikeSeason[self.SeasonId]
 end
-
 function RougeLike:EnterRoom(RoomId)
   if self.RoomId == RoomId then
     return ErrorCode.RET_ROUGELIKE_ROOM_REPEAT
@@ -354,7 +313,6 @@ function RougeLike:EnterRoom(RoomId)
   self:SetShopCanRefresh()
   return ErrorCode.RET_SUCCESS
 end
-
 function RougeLike:GetCurrentRoomType()
   if -1 == self.RoomId then
     return 0
@@ -365,7 +323,6 @@ function RougeLike:GetCurrentRoomType()
   end
   return RoomInfo.RoomType
 end
-
 function RougeLike:PassRoom(Time)
   if self.RoomIndex == self.PassRooms:Length() then
     return ErrorCode.RET_ROUGELIKE_ROOM_PASS_REPEAT
@@ -385,13 +342,11 @@ function RougeLike:PassRoom(Time)
   self:UpdateScore(self:GenTag("PassRoomExtra", self.RoomId), ExtraScore)
   return ErrorCode.RET_SUCCESS
 end
-
 function RougeLike:GenTag(...)
   return table.concat({
     ...
   }, "_")
 end
-
 function RougeLike:SplitTag(Tag)
   local result = {}
   for str in string.gmatch(Tag, "([^_]+)") do
@@ -399,15 +354,12 @@ function RougeLike:SplitTag(Tag)
   end
   return result
 end
-
 function RougeLike:AddMaxRefreshTime(Tag, Count)
   self.MaxRefreshTime:AddValue(Tag, Count)
 end
-
 function RougeLike:RemoveMaxRefreshTime(Tag)
   self.MaxRefreshTime:RemoveValue(Tag)
 end
-
 function RougeLike:GetMaxRefreshTime()
   local count = 0
   for _, v in pairs(self.MaxRefreshTime) do
@@ -415,7 +367,6 @@ function RougeLike:GetMaxRefreshTime()
   end
   return count
 end
-
 function RougeLike:GetRefreshCost()
   local SortedTags = {}
   for k, v in pairs(self.OverrideRefreshCost) do
@@ -449,7 +400,6 @@ function RougeLike:GetRefreshCost()
   OriginCost = OriginCost or DataMgr.RougeLikeSeason[self.SeasonId].MRTCost
   return math.ceil(OriginCost * self:GetRefreshRate())
 end
-
 function RougeLike:GetRefreshRate()
   local rate = 1
   for _, v in pairs(self.RefreshRate) do
@@ -457,7 +407,6 @@ function RougeLike:GetRefreshRate()
   end
   return rate
 end
-
 function RougeLike:ResetRandomRooms(RandomRooms)
   self.RandomRooms:Clear()
   if not RandomRooms then
@@ -467,7 +416,6 @@ function RougeLike:ResetRandomRooms(RandomRooms)
     self.RandomRooms:Append(RandomRooms[i])
   end
 end
-
 function RougeLike:ResetRandomBlessings(RandomBlessings, RandomBlessingId)
   self.RandomBlessings:Clear()
   self.RandomBlessingId = RandomBlessingId or -1
@@ -482,7 +430,6 @@ function RougeLike:ResetRandomBlessings(RandomBlessings, RandomBlessingId)
     self.RandomBlessings:Append(RandomBlessings[i])
   end
 end
-
 function RougeLike:ResetRandomTreasures(RandomTreasures, RandomTreasureId)
   self.RandomTreasures:Clear()
   self.RandomTreasureId = RandomTreasureId or -1
@@ -497,7 +444,6 @@ function RougeLike:ResetRandomTreasures(RandomTreasures, RandomTreasureId)
     self.RandomTreasures:Append(RandomTreasures[i])
   end
 end
-
 function RougeLike:SetShopCanRefresh(bRefresh)
   if nil ~= bRefresh and false == bRefresh then
     self.bShopRefresh = 0
@@ -505,16 +451,13 @@ function RougeLike:SetShopCanRefresh(bRefresh)
     self.bShopRefresh = 1
   end
 end
-
 function RougeLike:ResetShop()
   self.Shop:Clear()
 end
-
 function RougeLike:NewShop(ShopRandomId, Blessings, Treasures, Items)
   local ShopInfo = self.Shop:NewShop(Blessings, Treasures, Items)
   self.Shop[ShopRandomId] = ShopInfo
 end
-
 function RougeLike:DumpShop()
   local result = {}
   for k, v in pairs(self.Shop) do
@@ -526,7 +469,6 @@ function RougeLike:DumpShop()
   end
   return result
 end
-
 function RougeLike:UpdateScore(Tag, Value)
   if not Value then
     self.Score:RemoveValue(Tag)
@@ -534,7 +476,6 @@ function RougeLike:UpdateScore(Tag, Value)
     self.Score:AddValue(Tag, Value)
   end
 end
-
 function RougeLike:GetScore()
   local fv = 0
   for _, v in pairs(self.Score) do
@@ -542,7 +483,6 @@ function RougeLike:GetScore()
   end
   return fv
 end
-
 function RougeLike:GetTokenExtraRate()
   local rate = 1
   for _, v in pairs(self.TokenExtraRate) do
@@ -550,7 +490,6 @@ function RougeLike:GetTokenExtraRate()
   end
   return math.max(rate, 0)
 end
-
 function RougeLike:GetEndPointsExtraRate()
   local rate = 1
   for _, v in pairs(self.EndPointsExtraRate) do
@@ -558,7 +497,6 @@ function RougeLike:GetEndPointsExtraRate()
   end
   return math.max(rate, 0)
 end
-
 function RougeLike:GetShopDiscount()
   local rate = 1
   for _, v in pairs(self.ShopDiscount) do
@@ -566,7 +504,6 @@ function RougeLike:GetShopDiscount()
   end
   return math.max(rate, 0)
 end
-
 function RougeLike:GetModifiedChoiceNumber()
   local number = -1
   local len = self.ModifiedChoiceNumberStack:Length()
@@ -575,7 +512,6 @@ function RougeLike:GetModifiedChoiceNumber()
   end
   return number
 end
-
 function RougeLike:GetOverrideMRTLimitRarity(AwardType, DefaultLimitRarity)
   local LimitRarityKey = "Override" .. AwardType .. "MRTLimitRarity"
   local LimitRarity = self[LimitRarityKey]
@@ -591,7 +527,6 @@ function RougeLike:GetOverrideMRTLimitRarity(AwardType, DefaultLimitRarity)
   end
   return ret
 end
-
 function RougeLike:GetGroupWeightRate(AwardType, GroupId)
   local BaseRate = 1
   local GroupWeight = self[AwardType .. "GroupWeightRate"]
@@ -602,15 +537,12 @@ function RougeLike:GetGroupWeightRate(AwardType, GroupId)
   end
   return BaseRate
 end
-
 function RougeLike:IsRandomChoice()
   return not self.bRandomChoice:IsEmpty()
 end
-
 function RougeLike:IsCanGetToken()
   return self.bDisableGetToken:IsEmpty()
 end
-
 function RougeLike:SaveDungeonInfo(PlayerInfo, SquadInfo, CommonCombatInfo)
   local DungeonInfo = {
     PlayerInfo,
@@ -619,32 +551,25 @@ function RougeLike:SaveDungeonInfo(PlayerInfo, SquadInfo, CommonCombatInfo)
   }
   self.DungeonInfo = SerializeUtils:Serialize(DungeonInfo)
 end
-
 function RougeLike:GetDungeonInfo()
   return table.unpack(SerializeUtils:UnSerialize(self.DungeonInfo))
 end
-
 function RougeLike:SavePlayerSliceInfo(SliceInfo)
   self.PlayerSliceInfo:Append(SliceInfo)
 end
-
 function RougeLike:SetCanTriggerStory(bCanTrigger)
   self.bCanTriggerStory = bCanTrigger and 1 or 0
 end
-
 function RougeLike:CanTriggerStory()
   return 1 == self.bCanTriggerStory
 end
-
 function RougeLike:IsStoryEventFinished()
   return 0 == self.StoryId and 1 == self.bStoryTriggered
 end
-
 function RougeLike:CheckAllFrontEvent(FrontEvents)
   if not FrontEvents then
     return true
   end
-  
   local function CheckConditionUnit(EventDict)
     for EventCondition, IndexCondition in pairs(EventDict) do
       local SelectIndex = self.StoryHistory:Get(EventCondition)
@@ -665,7 +590,6 @@ function RougeLike:CheckAllFrontEvent(FrontEvents)
     end
     return true
   end
-  
   for i = 1, #FrontEvents do
     if CheckConditionUnit(FrontEvents[i]) then
       return true
@@ -673,16 +597,13 @@ function RougeLike:CheckAllFrontEvent(FrontEvents)
   end
   return false
 end
-
 FormatProperties(RougeLike)
 local RougeLikeDict = Class("RougeLikeDict", CustomTypes.CustomDict)
 RougeLikeDict.KeyType = BaseTypes.Int
 RougeLikeDict.ValueType = RougeLike
-
 function RougeLikeDict:NewRougeLike(SeasonId, DifficultyId)
   return RougeLike(SeasonId, DifficultyId)
 end
-
 return {
   RougeAwardInfo = RougeAwardInfo,
   RougeLike = RougeLike,

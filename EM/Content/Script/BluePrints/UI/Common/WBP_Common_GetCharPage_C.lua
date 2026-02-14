@@ -3,7 +3,6 @@ local M = Class("BluePrints.UI.BP_UIState_C")
 M._components = {
   "BluePrints.UI.KeyInputComponent"
 }
-
 function M:Construct()
   self.Btn_FullClose.OnClicked:Add(self, self.OnBtnFullCloseClicked)
   if not UIUtils.IsMobileInput() then
@@ -24,13 +23,11 @@ function M:Construct()
     EventManager:AddEvent(EventID.ApplicationHasEnteredForeground, self, self.OnApplicationHasEnteredForeground)
   end
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local Params = (...)
   self:Init(Params)
 end
-
 function M:Init(Params)
   self.Params = Params
   self.TextFonts = {
@@ -43,27 +40,23 @@ function M:Init(Params)
   self.CurShowIndex = 0
   self.TargetType = self.Params.TargetType
   self.ShowTimes = #self.Params.TargetIdList
+  self:RefreshCommonShowUI()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:InitGamepadView()
   else
     self:InitKeyboardView()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_amb", "GachaAmb", nil)
-  self:RefreshCommonShowUI()
 end
-
 function M:IsSkin()
   return self.TargetType == CommonConst.DataType.Skin
 end
-
 function M:IsChar()
   return self.TargetType == CommonConst.DataType.Char
 end
-
 function M:IsResource()
   return self.TargetType == CommonConst.DataType.Resource
 end
-
 function M:RefreshCommonShowUI()
   self.CurShowIndex = self.CurShowIndex + 1
   if self.Params.TargetIdList[self.CurShowIndex] == nil then
@@ -75,6 +68,7 @@ function M:RefreshCommonShowUI()
   self.WS_BG:SetActiveWidgetIndex(0)
   self.Btn_FullClose:SetVisibility(UE4.ESlateVisibility.Visible)
   self.bSpaceBarSkip = false
+  self.bPlayVideo = false
   self:SetCharImgRole()
   self:SetTargetNew()
   if self.Group_Skip then
@@ -93,7 +87,6 @@ function M:RefreshCommonShowUI()
   end
   self:PlayInAnim()
 end
-
 function M:InitCharDetails()
   local CharInfo = DataMgr.Char[self.TargetId]
   if not CharInfo then
@@ -104,12 +97,15 @@ function M:InitCharDetails()
   self.Group_Detail:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   if CharInfo and CharInfo.SpineBp then
     self:GetCharSpineUI(CharInfo.SpineBp)
+    local IsPCPlatform = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
+    if IsPCPlatform then
+      self:InitLongPressEvent()
+    end
   else
     self:GetCharSpineUI("WBP_Get_Avatar_WidgetMaer")
-    DebugPrint(ErrorTag, "----jzn---\229\189\147\229\137\141\232\167\146\232\137\178\230\151\160Spine\232\147\157\229\155\190\232\181\132\230\186\144----", self.TargetId)
+    DebugPrint(ErrorTag, "----jzn---当前角色无Spine蓝图资源----", self.TargetId)
   end
 end
-
 function M:InitSkinDetails()
   local SkinInfo = DataMgr.Skin[self.TargetId]
   if not SkinInfo then
@@ -130,18 +126,18 @@ function M:InitSkinDetails()
       if self.Group_Skip then
         self.Group_Skip:SetVisibility(UE4.ESlateVisibility.Visible)
       end
-      self.Btn_FullClose:SetVisibility(UE4.ESlateVisibility.Collapsed)
       self:InitLongPressEvent()
+      self.bPlayVideo = true
+      self.Btn_FullClose:SetVisibility(UE4.ESlateVisibility.Collapsed)
       self.UIDisplayTime = SkinInfo.UIDisplayTime or 5
     elseif 2 == SkinInfo.GetDisplayType then
       self:GetCharSpineUI(nil, SkinInfo.DisplayPath)
     end
   else
     self:GetCharSpineUI("WBP_Get_Avatar_WidgetMaer")
-    DebugPrint(ErrorTag, "----jzn---\229\189\147\229\137\141\231\154\174\232\130\164\230\151\160Spine\232\147\157\229\155\190\232\181\132\230\186\144----", self.TargetId)
+    DebugPrint(ErrorTag, "----jzn---当前皮肤无Spine蓝图资源----", self.TargetId)
   end
 end
-
 function M:InitResourceDetails()
   local ResourceInfo = DataMgr.Resource[self.TargetId]
   if not ResourceInfo then
@@ -159,27 +155,27 @@ function M:InitResourceDetails()
     if self.Group_Skip then
       self.Group_Skip:SetVisibility(UE4.ESlateVisibility.Visible)
     end
-    self.Btn_FullClose:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self:InitLongPressEvent()
     self.UIDisplayTime = ResourceInfo.UIDisplayTime or 5
+    self.bPlayVideo = true
+    self.Btn_FullClose:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self:PlayResourceVideo(ResourceInfo.DisplayPath)
   else
     self:GetCharSpineUI("WBP_Get_Avatar_WidgetMaer")
-    DebugPrint(ErrorTag, "----jzn---\229\189\147\229\137\141\232\189\174\231\155\152\229\138\168\228\189\156\230\151\160Spine\232\147\157\229\155\190\232\181\132\230\186\144----", self.TargetId)
+    DebugPrint(ErrorTag, "----jzn---当前轮盘动作无Spine蓝图资源----", self.TargetId)
   end
 end
-
 function M:InitLongPressEvent()
   self.bSpaceBarSkip = true
-  self:AddLongPressEvent("SpaceBar", 1.5, self.OnSpaceBar_LongPressStart, self.OnSpaceBar_LongPressCancel, self.OnSpaceBar_LongPressEnd)
-  self:AddLongPressEvent("Gamepad_FaceButton_Bottom", 1.5, self.OnGamepad_FaceButton_Bottom_LongPressStart, self.OnGamepad_FaceButton_Bottom_LongPressCancel, self.OnGamepad_FaceButton_Bottom_LongPressEnd)
+  self.bCanSkip = false
+  self:AddLongPressEvent("SpaceBar", 1, self.OnSpaceBar_LongPressStart, self.OnSpaceBar_LongPressCancel, self.OnSpaceBar_LongPressEnd)
+  self:AddLongPressEvent("Gamepad_FaceButton_Bottom", 1, self.OnGamepad_FaceButton_Bottom_LongPressStart, self.OnGamepad_FaceButton_Bottom_LongPressCancel, self.OnGamepad_FaceButton_Bottom_LongPressEnd)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self:InitGamepadView()
   else
     self:InitKeyboardView()
   end
 end
-
 function M:PlaySkinVideo()
   if not self:IsSkin() then
     return
@@ -198,7 +194,6 @@ function M:PlaySkinVideo()
     self:PlayCharUISound()
   end
 end
-
 function M:PlayResourceVideo(VideoPath)
   if not self:IsResource() then
     return
@@ -210,23 +205,21 @@ function M:PlayResourceVideo(VideoPath)
   self.VideoPlayer:Play()
   self:PlayCharUISound()
 end
-
 function M:OnVideoPlayEnd()
   self:OnBtnFullCloseClicked()
 end
-
 function M:PlayCharSpineSpecialIn()
   if self.IsSpineAnimation and self.CharSpineUI then
     self.CharSpineUI:PlayAnimation(self.CharSpineUI.Special_In)
   end
 end
-
 function M:PlayCharSpine()
   self.SpineContent:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if self.IsSpineAnimation and self.CharSpineUI then
     self.SpineContent:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     if self.CharSpineUI.Spine_Char then
-      if self:IsSkin() then
+      local IsPCPlatform = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
+      if self:IsSkin() or not IsPCPlatform then
         self.CharSpineUI.Spine_Char:SetAnimation(0, "In", false)
         self.CharSpineUI.Spine_Char:AddAnimation(0, "Loop", true, 0)
       else
@@ -240,7 +233,6 @@ function M:PlayCharSpine()
     self:PlayCharUISound()
   end
 end
-
 function M:GetCharSpineUI(SpineName, SpineResource)
   self.SpineContent:ClearChildren()
   local BgPath
@@ -268,7 +260,6 @@ function M:GetCharSpineUI(SpineName, SpineResource)
   self.CharSpineUI = CharSpineUI
   return self.CharSpineUI
 end
-
 function M:SetCharImgRole()
   if self:IsResource() then
     return
@@ -296,7 +287,6 @@ function M:SetCharImgRole()
     self.Text_AvatarDesc:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:GetCharCampUI(BpPath)
   self.IsCampAnimation = true
   self.Group_Camp:ClearChildren()
@@ -317,7 +307,6 @@ function M:GetCharCampUI(BpPath)
   self.CharCampUI = CharCampUI
   return self.CharCampUI
 end
-
 function M:SetTargetNew()
   local Avatar = GWorld:GetAvatar()
   self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -337,7 +326,6 @@ function M:SetTargetNew()
     self.New_Skin:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:SetCharAttributeIcon()
   local CharId = self.TargetId
   if self:IsSkin() then
@@ -372,7 +360,6 @@ function M:SetCharAttributeIcon()
     self.Image_AvatarIcon:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:SetResourceAttributeIcon()
   if not self:IsResource() then
     return
@@ -392,7 +379,6 @@ function M:SetResourceAttributeIcon()
     self.Image_AvatarIcon:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:PlayCharVoiceAndText()
   self.Text_VoiceText:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if not self.TargetId then
@@ -427,7 +413,6 @@ function M:PlayCharVoiceAndText()
   self.Text_VoiceText:SetText(GText(NeedPlayVoiceInfo[1].VoiceText[1]))
   self.Text_VoiceText:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:SplitPlayerInfo(PlayerInfo)
   if not PlayerInfo then
     return ""
@@ -437,12 +422,10 @@ function M:SplitPlayerInfo(PlayerInfo)
   end
   return PlayerInfo
 end
-
 function M:PlayCharVoice(CharName, Voice, VoiceName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self.VoiceEventInstance = AudioManager(self):PlayCharVoice(Player, CharName, Voice, nil, VoiceName)
 end
-
 function M:StopCharVoice(VoiceName)
   if self.VoiceEventInstance then
     self.VoiceEventInstance = nil
@@ -450,7 +433,6 @@ function M:StopCharVoice(VoiceName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   AudioManager(self):StopSound(Player, VoiceName)
 end
-
 function M:PlayCharUISound()
   local SoundPath
   if self:IsSkin() then
@@ -479,17 +461,24 @@ function M:PlayCharUISound()
   end
   AudioManager(self):PlayUISound(self, SoundPath, "ShowTarget", nil)
 end
-
 function M:PlayInAnim()
   self.CantClick = true
+  self.bCanSkip = false
   local AnimTime
-  
   local function SetClick()
     self:SetFocus()
     self.CantClick = false
+    if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+      self:InitGamepadView()
+    else
+      self:InitKeyboardView()
+    end
   end
-  
   local function IconInFinish()
+    if self.bSpaceBarSkip then
+      self.bCanSkip = true
+      self:SetFocus()
+    end
     if self:IsChar() then
       self:PlayAnimation(self.In)
       AnimTime = self.In:GetEndTime()
@@ -511,7 +500,6 @@ function M:PlayInAnim()
       self:AddTimer(AnimTime, SetClick, false, 0, "SetClick")
     end
   end
-  
   self.Icon_Group:SetVisibility(ESlateVisibility.HitTestInvisible)
   if self:IsSkin() then
     self:UnbindAllFromAnimationFinished(self.Icon_In)
@@ -528,24 +516,20 @@ function M:PlayInAnim()
     self:BindToAnimationFinished(self.Icon_In, {self, IconInFinish})
   end
 end
-
 function M:PlayCampIn()
   if self.IsCampAnimation and self.CharCampUI then
     self.CharCampUI:PlayAnimation(self.CharCampUI.In)
   end
 end
-
 function M:PlayCharInfoIn()
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_get_role_show_name", nil, nil)
 end
-
 function M:PlaySkinInfoIn()
   self.Group_SkinInfo:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Image_AvatarIcon:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:PlayAnimation(self.SkinInfo_In)
   AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_get_skin_show_name", nil, nil)
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
   if UIUtils.IsMobileInput() then
     return
@@ -556,66 +540,104 @@ function M:RefreshInfoByInputTypeChange(CurInputType, CurGamepadName)
     self:InitKeyboardView()
   end
 end
-
 function M:InitGamepadView()
   self:SetFocus()
   if self.bSpaceBarSkip then
-    self.Key_Tips:UpdateKeyInfo({
-      {
-        KeyInfoList = {
-          {
-            Type = "Img",
-            ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
-          }
-        },
-        Desc = GText("UI_CTL_Continue"),
-        bLongPress = true
-      }
-    })
+    if self.CantClick or self.bPlayVideo then
+      self.Key_Tips:UpdateKeyInfo({
+        {
+          KeyInfoList = {
+            {
+              Type = "Img",
+              ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
+            }
+          },
+          Desc = GText("UI_TALK_SKIP"),
+          bLongPress = true
+        }
+      })
+    else
+      self.Key_Tips:UpdateKeyInfo({
+        {
+          KeyInfoList = {
+            {
+              Type = "Img",
+              ImgShortPath = UIConst.GamePadImgKey.FaceButtonRight
+            }
+          },
+          Desc = GText("UI_BACK")
+        }
+      })
+    end
   else
     self.Key_Tips:UpdateKeyInfo({
       {
         KeyInfoList = {
           {
             Type = "Img",
-            ImgShortPath = UIConst.GamePadImgKey.FaceButtonBottom
+            ImgShortPath = UIConst.GamePadImgKey.FaceButtonRight
           }
         },
-        Desc = GText("UI_CTL_Continue")
+        Desc = GText("UI_BACK")
       }
     })
   end
   self.Key_Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:InitKeyboardView()
   if UIUtils.IsMobileInput() then
     return
   end
-  self.Key_Tips:UpdateKeyInfo({
-    {
-      KeyInfoList = {
-        {
-          Type = "Text",
-          Text = "SpaceBar",
-          ClickCallback = self.OnBtnFullCloseClicked,
-          Owner = self
-        }
-      },
-      bLongPress = true,
-      Desc = GText("UI_TALK_SKIP")
-    }
-  })
-  self.Key_Tips:SetVisibility(ESlateVisibility.Collapsed)
   if self.bSpaceBarSkip then
+    if self.CantClick or self.bPlayVideo then
+      self.Key_Tips:UpdateKeyInfo({
+        {
+          KeyInfoList = {
+            {
+              Type = "Text",
+              Text = "SpaceBar",
+              ClickCallback = self.OnBtnSkipClicked,
+              Owner = self
+            }
+          },
+          bLongPress = true,
+          Desc = GText("UI_TALK_SKIP")
+        }
+      })
+    else
+      self.Key_Tips:UpdateKeyInfo({
+        {
+          KeyInfoList = {
+            {
+              Type = "Text",
+              Text = "Esc",
+              ClickCallback = self.OnBtnFullCloseClicked,
+              Owner = self
+            }
+          },
+          Desc = GText("UI_BACK")
+        }
+      })
+    end
+  else
+    self.Key_Tips:UpdateKeyInfo({
+      {
+        KeyInfoList = {
+          {
+            Type = "Text",
+            Text = "Esc",
+            ClickCallback = self.OnBtnFullCloseClicked,
+            Owner = self
+          }
+        },
+        Desc = GText("UI_BACK")
+      }
+    })
     self.Key_Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
+  self.Key_Tips:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
-  if self.CantClick then
-    return UE4.UWidgetBlueprintLibrary.Handled()
-  end
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   local Reply, IsHandled = self:ProcessOnKeyDown(MyGeometry, InKeyEvent)
@@ -624,21 +646,19 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if self.CantClick then
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
-  if InKeyName == UIConst.GamePadKey.FaceButtonBottom and not self.bSpaceBarSkip then
+  if (InKeyName == UIConst.GamePadKey.FaceButtonBottom or InKeyName == UIConst.GamePadKey.FaceButtonRight) and not self.bPlayVideo then
     self:OnBtnFullCloseClicked()
-  elseif "Escape" == InKeyName and not self.bSpaceBarSkip then
+  elseif "Escape" == InKeyName and not self.bPlayVideo then
     self:OnBtnFullCloseClicked()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local Reply, IsHandled = self:ProcessOnKeyUp(MyGeometry, InKeyEvent)
   if IsHandled then
@@ -646,9 +666,11 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UIUtils.Unhandled, false
 end
-
 function M:OnSpaceBar_LongPressStart()
   if not self.bSpaceBarSkip then
+    return
+  end
+  if not self.bCanSkip then
     return
   end
   local SpaceBarBtn = self.Key_Tips:GetComKeyById(1)
@@ -656,9 +678,11 @@ function M:OnSpaceBar_LongPressStart()
     SpaceBarBtn:OnButtonPressed(false, true, 0, self:GetLongPressAnimationTime("SpaceBar"))
   end
 end
-
 function M:OnSpaceBar_LongPressCancel()
   if not self.bSpaceBarSkip then
+    return
+  end
+  if not self.bCanSkip then
     return
   end
   local SpaceBarBtn = self.Key_Tips:GetComKeyById(1)
@@ -668,16 +692,20 @@ function M:OnSpaceBar_LongPressCancel()
     SpaceBarBtn:PlayAnimation(SpaceBarBtn.Normal)
   end
 end
-
 function M:OnSpaceBar_LongPressEnd()
   if not self.bSpaceBarSkip then
     return
   end
-  self:OnBtnFullCloseClicked()
+  if not self.bCanSkip then
+    return
+  end
+  self:OnBtnSkipClicked()
 end
-
 function M:OnGamepad_FaceButton_Bottom_LongPressStart()
   if not self.bSpaceBarSkip then
+    return
+  end
+  if not self.bCanSkip then
     return
   end
   local FaceButtonBottomBtn = self.Key_Tips:GetComKeyById(1)
@@ -685,7 +713,6 @@ function M:OnGamepad_FaceButton_Bottom_LongPressStart()
     FaceButtonBottomBtn:OnButtonPressed(false, true, 0, self:GetLongPressAnimationTime("Gamepad_FaceButton_Bottom"))
   end
 end
-
 function M:OnGamepad_FaceButton_Bottom_LongPressCancel()
   if not self.bSpaceBarSkip then
     return
@@ -697,27 +724,22 @@ function M:OnGamepad_FaceButton_Bottom_LongPressCancel()
     FaceButtonBottomBtn:PlayAnimation(FaceButtonBottomBtn.Normal)
   end
 end
-
 function M:OnGamepad_FaceButton_Bottom_LongPressEnd()
   if not self.bSpaceBarSkip then
     return
   end
-  self:OnBtnFullCloseClicked()
+  self:OnBtnSkipClicked()
 end
-
 function M:OnBtnSkipClicked()
   if self.CantClick then
     return
   end
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
-    self:OnBtnFullCloseClicked()
+    self:OnBtnSkipClicked()
   end
-  
   UIManager(self):ShowCommonPopupUI(100253, CommonDialogParams)
 end
-
 function M:OnBtnFullCloseClicked()
   if self.CantClick then
     return
@@ -731,7 +753,27 @@ function M:OnBtnFullCloseClicked()
     self:PlayOutAnim()
   end
 end
-
+function M:OnBtnSkipClicked()
+  if self.bPlayVideo then
+    self:OnBtnFullCloseClicked()
+  else
+    if not self.CantClick then
+      return
+    end
+    if self.CharSpineUI and self.CharSpineUI.Spine_Char then
+      self.CharSpineUI.Spine_Char:SetAnimation(0, "In", false)
+      self.CharSpineUI.Spine_Char:AddAnimation(0, "Loop", true, 0)
+      self.CantClick = false
+      if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+        self:InitGamepadView()
+      else
+        self:InitKeyboardView()
+      end
+      self:StopAnimation(self.In)
+      self:PlayAnimation(self.Info_In)
+    end
+  end
+end
 function M:PlayOutAnim()
   self.CantClick = true
   self:UnbindAllFromAnimationFinished(self.Out)
@@ -741,7 +783,6 @@ function M:PlayOutAnim()
     self.OnCloseCallback
   })
 end
-
 function M:OnCloseCallback()
   self.CantClick = false
   AudioManager(self):SetEventSoundParam(self, "GachaAmb", {ToEnd = 1})
@@ -750,7 +791,6 @@ function M:OnCloseCallback()
     self.Params.CallbackFunc(self.Params.CallbackObj)
   end
 end
-
 function M:OnApplicationWillEnterBackground()
   DebugPrint("JLY OnApplicationWillEnterBackground")
   if self:IsExistTimer("PlaySkinInfoIn") then
@@ -767,7 +807,6 @@ function M:OnApplicationWillEnterBackground()
   self.Group_SkinInfo:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Image_AvatarIcon:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:OnApplicationHasEnteredForeground()
   DebugPrint("JLY OnApplicationHasEnteredForeground")
   if self.bWasPlayingBeforeBackground and self.VideoPlayer then
@@ -789,13 +828,11 @@ function M:OnApplicationHasEnteredForeground()
     end, false, 0, "ResumeVideoPlayback")
   end
 end
-
 function M:Destruct()
   EventManager:RemoveEvent(EventID.ApplicationWillEnterBackground, self)
   EventManager:RemoveEvent(EventID.ApplicationHasEnteredForeground, self)
   self.bWasPlayingBeforeBackground = false
   self.Super.Destruct(self)
 end
-
 AssembleComponents(M)
 return M

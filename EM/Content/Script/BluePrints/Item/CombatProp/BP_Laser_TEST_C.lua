@@ -3,12 +3,10 @@ local MiscUtils = require("Utils.MiscUtils")
 local BP_Laser_TEST_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_Laser_TEST_C:AuthorityInitInfo(Info)
   BP_Laser_TEST_C.Super.AuthorityInitInfo(self, Info)
   self.ActiveRange = self.UnitParams.ActiveRange
 end
-
 function BP_Laser_TEST_C:CommonInitInfo(Info)
   BP_Laser_TEST_C.Super.CommonInitInfo(self, Info)
   self.RotateSpeed = self.UnitParams.RotateSpeed
@@ -19,11 +17,9 @@ function BP_Laser_TEST_C:CommonInitInfo(Info)
   self.RotatingMovement.RotationRate.Yaw = self.RotateSpeed
   self.HitedArray = {}
 end
-
 function BP_Laser_TEST_C:SetActiveType()
   self.ActiveType = "Distance"
 end
-
 function BP_Laser_TEST_C:OnActiveStateChange()
   self.Super.OnActiveStateChange(self)
   if self.IsActive then
@@ -35,11 +31,9 @@ function BP_Laser_TEST_C:OnActiveStateChange()
     self.HitedCDMap:Clear()
   end
 end
-
 function BP_Laser_TEST_C:ChangeCD()
   self.InCD = false
 end
-
 function BP_Laser_TEST_C:LaunchLaser(Index)
   local LaserInfo = FLaserInfo()
   LaserInfo.LaserLength = self.LaserLength
@@ -51,7 +45,6 @@ function BP_Laser_TEST_C:LaunchLaser(Index)
   self["LaserRay" .. Index]:SetActive(true, false)
   return LaserPort
 end
-
 function BP_Laser_TEST_C:OnHitTarget(Port, HitResult)
   if HitResult.Actor then
     local SelfPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -62,12 +55,10 @@ function BP_Laser_TEST_C:OnHitTarget(Port, HitResult)
     end
   end
 end
-
 function BP_Laser_TEST_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   self.RotatingMovement:SetActive(false, false)
   BP_Laser_TEST_C.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
 end
-
 function BP_Laser_TEST_C:ShowDeath()
   self:RemoveTimer("DistanceDeActiveTimer")
   self:PlayDeadMontage()
@@ -80,7 +71,6 @@ function BP_Laser_TEST_C:ShowDeath()
   self:PlaySound("event:/sfx/common/scene/laser_gear_break")
   BP_Laser_TEST_C.Super.ShowDeath(self)
 end
-
 function BP_Laser_TEST_C:DeActive()
   BP_Laser_TEST_C.Super.DeActive(self)
   if not IsAuthority(self) or IsStandAlone(self) then
@@ -91,7 +81,6 @@ function BP_Laser_TEST_C:DeActive()
     self:PlayDeactiveMontage()
   end
 end
-
 function BP_Laser_TEST_C:ActiveAfterAnim(Eid)
   for i = 1, 4 do
     local LaserPort = self:LaunchLaser(i)
@@ -104,15 +93,4 @@ function BP_Laser_TEST_C:ActiveAfterAnim(Eid)
   self:PlaySound("event:/sfx/common/scene/laser_gear_rotate", self.SoundKeyRotate)
   self:PlaySound("event:/sfx/common/scene/laser_loop", self.SoundKeyLoop)
 end
-
-function BP_Laser_TEST_C:OnEMActorDestroy(DestroyReason)
-  MiscUtils.RemoveTickLodActor(ESignificanceTag.None, self, ETickObjectFlag.FLAG_ALL)
-  BP_Laser_TEST_C.Super.OnEMActorDestroy(self, DestroyReason)
-end
-
-function BP_Laser_TEST_C:ReceiveEndPlay(Reason)
-  MiscUtils.RemoveTickLodActor(ESignificanceTag.None, self, ETickObjectFlag.FLAG_ALL)
-  self.Overridden.ReceiveEndPlay(self, Reason)
-end
-
 return BP_Laser_TEST_C

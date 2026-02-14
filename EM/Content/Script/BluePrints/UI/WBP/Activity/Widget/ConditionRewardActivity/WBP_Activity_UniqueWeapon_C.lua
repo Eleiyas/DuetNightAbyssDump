@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.WBP.Activity.Widget.ConditionRewardActivity.ConditionRewardActiviyBase"
 })
-
 function M:InitUI()
   local ActivityConfigData = self:GetPageConfigData()
   local RewardId = ActivityConfigData.EventReward
@@ -60,7 +59,6 @@ function M:InitUI()
   self.Btn_Reward:SetGamePadIconVisible(true)
   self.Btn_Reward:SetGamePadImg("X")
 end
-
 function M:ViewWeaponDetailFunction()
   local PageConfigData = self:GetPageConfigData()
   local WeaponId = PageConfigData.Weapon
@@ -73,7 +71,6 @@ function M:ViewWeaponDetailFunction()
     EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewArmory
   })
 end
-
 function M:OnViewStuffDetailClick(IsOpenDetail, RewardItem)
   self.IsOpenTip = IsOpenDetail
   if ModController:IsMobile() then
@@ -92,7 +89,6 @@ function M:OnViewStuffDetailClick(IsOpenDetail, RewardItem)
     end
   end
 end
-
 function M:UpdateUIByInputDevice(CurInputDeviceType)
   if CurInputDeviceType == ECommonInputType.Gamepad then
     self.TryOutChar_Title.WS_DetailImg:SetActiveWidgetIndex(1)
@@ -104,7 +100,6 @@ function M:UpdateUIByInputDevice(CurInputDeviceType)
     end
   end
 end
-
 function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -115,12 +110,10 @@ function M:HandleKeyDownInPage(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.LeftThumb then
@@ -137,7 +130,6 @@ function M:Handle_KeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -155,5 +147,4 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UIUtils.Handled
   end
 end
-
 return M

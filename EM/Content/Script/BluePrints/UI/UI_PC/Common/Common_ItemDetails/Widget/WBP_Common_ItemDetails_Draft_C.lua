@@ -3,11 +3,9 @@ local ForgeModel = require("Blueprints.UI.Forge.ForgeDataModel")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Super.Construct(self)
 end
-
 function M:InitItemInfo(ItemType, ItemId, UnitId)
   local DraftInfo = DataMgr.Draft[ItemId]
   local PlayerAvatar = GWorld:GetAvatar()
@@ -68,7 +66,7 @@ function M:InitItemInfo(ItemType, ItemId, UnitId)
   self.ParentWidget.Text_Hold02:SetText(Count)
   local ItemName = ItemUtils:GetDraftName(ItemId)
   self.ParentWidget.Text_ItemName:SetText(ItemName)
-  self.ParentWidget.Line.Switch_Bg:SetActiveWidgetIndex(1)
+  self.ParentWidget.Line.Switch_Bg:SetActiveWidgetIndex(0)
   self.ParentWidget.Line.Switch_Text:SetActiveWidgetIndex(1)
   for FoundryId, CostNum in pairs(DraftInfo.FoundryCost) do
     local FoundryData = DataMgr.Resource[FoundryId]
@@ -87,5 +85,4 @@ function M:InitItemInfo(ItemType, ItemId, UnitId)
   end
   self.ParentWidget.Line.Text_RequiredTime:SetText(string.format(GText("UI_SHOP_REMAINTIME_MINUTE"), DraftInfo.Time))
 end
-
 return M

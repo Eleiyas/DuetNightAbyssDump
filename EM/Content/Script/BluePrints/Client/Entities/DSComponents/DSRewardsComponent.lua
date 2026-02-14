@@ -1,7 +1,6 @@
 local msgpack = require("msgpack_core")
 local Component = {}
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
-
 function Component:EnterWorld()
   self.logger.debug("DSRewardsComponent EnterWorld")
   self.PersistenceRewards = {}
@@ -22,7 +21,6 @@ function Component:EnterWorld()
   self.RewardCallbackUpValue = {}
   self.RewardCallbackId = 0
 end
-
 function Component:AddExpsToCache(ExpMap, BattleAvatars)
   if 0 == ExpMap:Num() then
     return
@@ -38,7 +36,6 @@ function Component:AddExpsToCache(ExpMap, BattleAvatars)
     end
   end
 end
-
 function Component:PickUpToSave(FunctionName, PickUpCount, ItemInfo, UnitId, Transform, CharacterEid, bExtra)
   if ItemUtils:IsServerCreate(ItemInfo.DropId) and ItemInfo.IsPickShare then
     self[FunctionName](self, PickUpCount, ItemInfo.UseParam, UnitId, Transform, nil, bExtra)
@@ -49,7 +46,6 @@ function Component:PickUpToSave(FunctionName, PickUpCount, ItemInfo, UnitId, Tra
     self[FunctionName](self, PickUpCount, ItemInfo.UseParam, UnitId, Transform, AvatarEid, bExtra)
   end
 end
-
 function Component:PickupToGetMod(PickUpCount, ModId, UnitId, Transform, AvatarEid, bExtra)
   local Mods = RewardUtils:GetMod(ModId)
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
@@ -64,7 +60,6 @@ function Component:PickupToGetMod(PickUpCount, ModId, UnitId, Transform, AvatarE
     GameMode.GameState:HandleAndNotifyDungeonPickUpReward(CommonConst.DataType.Mod, ModId, bExtra)
   end
 end
-
 function Component:PickupToGetResource(PickUpCount, ResourceId, DropId, Transform, AvatarEid, bExtra)
   if not RewardUtils:CheckResourceSources(DropId, ResourceId) then
     return
@@ -85,7 +80,6 @@ function Component:PickupToGetResource(PickUpCount, ResourceId, DropId, Transfor
     GameMode.GameState:HandleAndNotifyDungeonPickUpReward(CommonConst.DataType.Resource, DropId, bExtra, "", ResourceId)
   end
 end
-
 function Component:AddImmediateRes(Rewards, Eid)
   local ImmediateRes = {}
   local ResourcesTable = {}
@@ -112,7 +106,6 @@ function Component:AddImmediateRes(Rewards, Eid)
     end
   end
 end
-
 function Component:RecordImmediateResources(ImmediateRes, AvatarEid)
   for k, v in pairs(ImmediateRes) do
     if AvatarEid then
@@ -124,7 +117,6 @@ function Component:RecordImmediateResources(ImmediateRes, AvatarEid)
     end
   end
 end
-
 function Component:RecordImmediateResourcesInternal(AvatarEid, k, v)
   assert(AvatarEid)
   if not rawget(self.ImmediateResources, AvatarEid) then
@@ -135,7 +127,6 @@ function Component:RecordImmediateResourcesInternal(AvatarEid, k, v)
   end
   self.ImmediateResources[AvatarEid][k] = self.ImmediateResources[AvatarEid][k] + v
 end
-
 function Component:GetCurrentRewards(AvatarEidStr)
   local Rewards = RewardBox:New()
   Rewards:Merge(self.PersistenceRewards[AvatarEidStr])
@@ -143,7 +134,6 @@ function Component:GetCurrentRewards(AvatarEidStr)
   Rewards:AddResource(self.ImmediateResources[AvatarEidStr])
   return Rewards:DumpAll()
 end
-
 function Component:TriggerRewardEvent(LogicRewards)
   local PlayerCount = CommonUtils.Size(self.AvatarInfos)
   for AvatarEid, RewardsArr in pairs(LogicRewards) do
@@ -158,7 +148,6 @@ function Component:TriggerRewardEvent(LogicRewards)
     self.RewardCallbackId = self.RewardCallbackId + 1
   end
 end
-
 function Component:OnGetRewardFromLogicServer(Rewards, AvatarEidStr, RewardCallbackId)
   local CallbackTable = self.RewardCallbackUpValue[RewardCallbackId]
   local RewardsArr = CallbackTable.UpValues
@@ -184,5 +173,4 @@ function Component:OnGetRewardFromLogicServer(Rewards, AvatarEidStr, RewardCallb
     end
   end
 end
-
 return Component

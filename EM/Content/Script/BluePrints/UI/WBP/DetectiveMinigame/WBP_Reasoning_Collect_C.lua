@@ -1,7 +1,6 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local ReasoningUtils = require("BluePrints.UI.WBP.DetectiveMinigame.ReasoningUtils")
-
 function M:OnLoaded(...)
   self.QuestionId = (...)
   self.Super:OnLoaded(...)
@@ -13,10 +12,8 @@ function M:OnLoaded(...)
   self.Reasoning_Entrance.Btn_Click.OnClicked:Add(self, self.OnReasoningEntranceClicked)
   self.Reasoning_Entrance:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnReasoningEntranceClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   UIManager(GWorld.GameInstance):LoadUINew("DetectiveMinigame", nil, self.QuestionId, true)
 end
-
 return M

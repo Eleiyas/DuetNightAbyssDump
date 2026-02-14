@@ -9,13 +9,20 @@ local FSMStates = {
 local BATTLE_PASS_LEVEL_PURCHASE_POPUP = 100183
 local BATTLE_PASS_LACK_COIN1_POPUP = 100136
 local BATTLE_PASS_ALL_LACK_COIN_POPUP = 100137
+local BattlePassController = require("BluePrints.UI.WBP.BattlePass.Controller.BattlePassController")
 local WBP_BattlePass_Book_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_BattlePass_Book_C:Construct()
   self.Overridden.Construct(self)
   self.Avatar = GWorld:GetAvatar()
+  BattlePassController:Init()
+  BattlePassController:SetModelData("BattlePassId", self.Avatar.BattlePassVersion)
+  BattlePassController:SetModelData("BattlePassInfo", DataMgr.BattlePassMain[BattlePassController:GetModelData("BattlePassId")])
+  self.Text_Check:SetText(GText("UI_BattlePass_PreviewPortal"))
+  local function EmptyFunction()
+  end
+  self.Btn_GetAll:TryOverrideSoundFunc(EmptyFunction)
   self.Btn_GetAll:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_GetAll:SetGamePadImg("Y")
   self.Btn_GetAll:SetGamePadIconVisible(true)
@@ -23,13 +30,11 @@ function WBP_BattlePass_Book_C:Construct()
   self.Btn_GetAll:BindEventOnClicked(self, self.GetAllReward)
   self.Btn_Unlock:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_BuyLv:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  self.BattlePassId = self.Avatar.BattlePassVersion
-  self.BattlePassInfo = DataMgr.BattlePassMain[self.BattlePassId]
   self.Reward_Sp.Content = nil
   self.Reward_Sp:SetSp()
   self.List_Reward.BP_OnEntryGenerated:Add(self, self.OnEntryGenerated)
   self.List_Reward.BP_OnEntryReleased:Add(self, self.OnEntryReleased)
-  self.Text_Title:SetText(GText(self.BattlePassInfo.BattlePassTitle))
+  self.Text_Title:SetText(GText(BattlePassController:GetModelData("BattlePassInfo").BattlePassTitle))
   self.RewardTab_Normal:Init(self)
   self.RewardTab_Sp:Init(self, self.OpenPurchase)
   self.Key_Swtich_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -62,13 +67,19 @@ function WBP_BattlePass_Book_C:Construct()
   self.NeedShowAutoGetPopupUI = false
   self.ShowingPopupUI = false
   self.HaveGetAllTip = nil
+  self.IsTipMode = false
+  self.OpenTipsWidget = nil
+  self.IsLoop = false
+  self.ExpandedMaxLevel = nil
+  self.LastLevelForLevelUp = nil
+  self.WaitingTimerFinish = false
   self.SumTime = 1
   self.Speed = 1 / self.SumTime
   self:BindToAnimationFinished(self.ProgressPrompt, {
     self,
     function()
       self:SetLevelBar(0, 1)
-      self.TargetPercent = self.CurExp / self.BattlePassInfo.LevelExp
+      self.TargetPercent = self.CurExp / BattlePassController:GetModelData("BattlePassInfo").LevelExp
       self:AddLevelBarTimer()
     end
   })
@@ -100,7 +111,6 @@ function WBP_BattlePass_Book_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_BattlePass_Book_C:Destruct()
   self:InitWhenSwitch()
   self.CurSelectedTab = nil
@@ -108,6 +118,8 @@ function WBP_BattlePass_Book_C:Destruct()
   self.PetIconList:Clear()
   self.List_Reward:ClearListItems()
   self:ClearBindEventAndTimer()
+  self:RemoveTimer("ShowAutoGetPopupUITimer")
+  self:RemoveTimer("RefreshLastLevelForLevelUpTimer")
   EventManager:RemoveEvent(EventID.BattlePassTaskProgressChange, self)
   EventManager:RemoveEvent(EventID.BattlePassLevelChange, self)
   EventManager:RemoveEvent(EventID.BattlePassRank2Unlock, self)
@@ -116,27 +128,27 @@ function WBP_BattlePass_Book_C:Destruct()
   ReddotManager.RemoveListener("BattlePassReward", self)
   ReddotManager.RemoveListener("BattlePassMission", self)
   self:ClearListenEvent()
+  BattlePassController:Destory()
   self.Overridden.Construct(self)
 end
-
 function WBP_BattlePass_Book_C:Init(Parent)
   self.Parent = Parent
   self.Btn_Check:BindEventOnClicked(self, self.JumpToDetail)
   self:InitBottomKeyInfo()
 end
-
 function WBP_BattlePass_Book_C:JumpToDetail()
   if self.Parent then
     self.Parent:JumpToDetail()
   end
 end
-
-function WBP_BattlePass_Book_C:InitSkinOrAccessoryInfo(Type, Id)
+function WBP_BattlePass_Book_C:InitSkinOrAccessoryInfo()
   local Name, Rarity
-  if "Skin" == Type then
+  if BattlePassController:GetModelData("BPRewardTyppe") == "Skin" then
+    local Id = BattlePassController:GetModelData("TargetSkinId")
     Name = GText(DataMgr.Skin[Id].SkinName)
     Rarity = DataMgr.Skin[Id].Rarity
-  elseif "Accessory" == Type then
+  elseif BattlePassController:GetModelData("BPRewardTyppe") == "Accessory" then
+    local Id = BattlePassController:GetModelData("AccessoryId")
     Name = GText(DataMgr.CharAccessory[Id].Name)
     Rarity = DataMgr.CharAccessory[Id].Rarity
   end
@@ -148,7 +160,6 @@ function WBP_BattlePass_Book_C:InitSkinOrAccessoryInfo(Type, Id)
     self.Tag_Quality:Init(Rarity)
   end
 end
-
 function WBP_BattlePass_Book_C:UpdateShowTitleFontByRarity(Rarity)
   local ShowTitleFontMap = {
     [6] = self.Font_Red,
@@ -161,17 +172,16 @@ function WBP_BattlePass_Book_C:UpdateShowTitleFontByRarity(Rarity)
     self.Text_ShowTitle:SetFont(FontToSet)
   end
 end
-
 function WBP_BattlePass_Book_C:InitPetIconInfo()
   if not ShopUtils:IsCanOpenPay(false) then
     self.Text_Desc:SetText(GText("UI_BattlePass_Oversea_PurchaseLocked"))
   else
     self.Text_Desc:SetText(GText("UI_BattlePass_PetClaimDetail"))
   end
-  self.PetList = DataMgr.BattlePassMain[self.BattlePassId].PetId
+  BattlePassController:SetModelData("PetList", DataMgr.BattlePassMain[BattlePassController:GetModelData("BattlePassId")].PetId)
   self.PetIconList:Clear()
   self.PetIconLengt = 0
-  for Index, PetId in ipairs(self.PetList) do
+  for Index, PetId in ipairs(BattlePassController:GetModelData("PetList")) do
     local PetIconPath = DataMgr.Pet[PetId].Icon
     if PetIconPath then
       local PetIcon = LoadObject(PetIconPath)
@@ -180,26 +190,30 @@ function WBP_BattlePass_Book_C:InitPetIconInfo()
   end
   self.PetIconLengt = self.PetIconList:Length()
 end
-
 function WBP_BattlePass_Book_C:InitLevelInfo()
   self.Text_Exp:SetText(GText("UI_BattlePass_BPExp"))
   self.Text_WeekExp:SetText(GText("UI_BattlePass_BPWeeklyMaxExp"))
   self:RefreshLevelInfo()
-  self:RefreshLevelBar()
+  self:SetLevelBarForce()
 end
-
 function WBP_BattlePass_Book_C:RefreshLevelInfo()
+  if not self.WaitingTimerFinish then
+    self.LastLevelForLevelUp = self.CurLevel
+    self.WaitingTimerFinish = true
+    self:AddTimer(0.1, function()
+      self.WaitingTimerFinish = false
+    end, false, 0, "RefreshLastLevelForLevelUpTimer", true)
+  end
   self.LastLevel = self.CurLevel
   self.CurLevel = self.Avatar.BattlePassLevel
   self.LastExp = self.CurExp
   self.CurExp = self.Avatar.BattlePassExp
   self.BattlePass_Level.Text_Level:SetText(self.CurLevel)
   self.Num_Exp_Now:SetText(self.Avatar.BattlePassExp)
-  self.Num_Exp_Total:SetText(self.BattlePassInfo.LevelExp)
+  self.Num_Exp_Total:SetText(BattlePassController:GetModelData("BattlePassInfo").LevelExp)
   self.Num_WeekExp_Now:SetText(self.Avatar.BattlePassWeeklyExp)
-  self.Num_WeekExp_Total:SetText(self.BattlePassInfo.WeeklyMaxExp)
+  self.Num_WeekExp_Total:SetText(BattlePassController:GetModelData("BattlePassInfo").WeeklyMaxExp)
 end
-
 function WBP_BattlePass_Book_C:RefreshLevelBar()
   if self.PlayLevelUp then
     return
@@ -210,26 +224,27 @@ function WBP_BattlePass_Book_C:RefreshLevelBar()
     return
   end
   if not self.LastLevel and not self.LastExp then
-    self:SetLevelBar(self.Avatar.BattlePassExp, self.BattlePassInfo.LevelExp)
+    self:SetLevelBar(self.Avatar.BattlePassExp, BattlePassController:GetModelData("BattlePassInfo").LevelExp)
   elseif self.CurLevel < self.LastLevel then
-    self:SetLevelBar(self.Avatar.BattlePassExp, self.BattlePassInfo.LevelExp)
+    self:SetLevelBar(self.Avatar.BattlePassExp, BattlePassController:GetModelData("BattlePassInfo").LevelExp)
   elseif self.CurLevel == self.LastLevel then
     if self.CurExp <= self.LastExp then
-      self:SetLevelBar(self.Avatar.BattlePassExp, self.BattlePassInfo.LevelExp)
+      self:SetLevelBar(self.Avatar.BattlePassExp, BattlePassController:GetModelData("BattlePassInfo").LevelExp)
     else
-      self.TargetPercent = self.CurExp / self.BattlePassInfo.LevelExp
+      self.TargetPercent = self.CurExp / BattlePassController:GetModelData("BattlePassInfo").LevelExp
       self:AddLevelBarTimer()
     end
   else
-    self:SetLevelBar(self.BattlePassInfo.LevelExp, self.BattlePassInfo.LevelExp)
+    self:SetLevelBar(BattlePassController:GetModelData("BattlePassInfo").LevelExp, BattlePassController:GetModelData("BattlePassInfo").LevelExp)
   end
 end
-
 function WBP_BattlePass_Book_C:SetLevelBar(CurrentExp, MaxExp)
   self:RemoveLevelBarTimer()
   self.Exp_Bar:SetPercent(CurrentExp / MaxExp)
 end
-
+function WBP_BattlePass_Book_C:SetLevelBarForce()
+  self:SetLevelBar(self.Avatar.BattlePassExp, BattlePassController:GetModelData("BattlePassInfo").LevelExp)
+end
 function WBP_BattlePass_Book_C:SetLevelBarLerp(DeltaTime)
   if self.TargetPercent then
     local CurPercent = self.Exp_Bar.Percent
@@ -244,16 +259,14 @@ function WBP_BattlePass_Book_C:SetLevelBarLerp(DeltaTime)
     self:RemoveLevelBarTimer()
   end
 end
-
 function WBP_BattlePass_Book_C:InitTime()
-  self.BattlePassEndTime = DataMgr.BattlePassMain[self.BattlePassId].BattlePassEndTime
+  BattlePassController:SetModelData("BattlePassEndTime", DataMgr.BattlePassMain[BattlePassController:GetModelData("BattlePassId")].BattlePassEndTime)
   self.NextDayEndTime = math.floor(TimeUtils.NextDailyRefreshTime())
   self.NextWeekEndTime = math.floor(TimeUtils.NextWeeklyRefreshTime())
   self.Time_Left.Text_TimeTitle:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  self:RefreshTime(self.NextDayEndTime, self.NextWeekEndTime, self.BattlePassEndTime)
-  self:AddTimer(1, self.RefreshTime, true, 0, "RefreshBattlePassTime", true, self.NextDayEndTime, self.NextWeekEndTime, self.BattlePassEndTime)
+  self:RefreshTime(self.NextDayEndTime, self.NextWeekEndTime, BattlePassController:GetModelData("BattlePassEndTime"))
+  self:AddTimer(1, self.RefreshTime, true, 0, "RefreshBattlePassTime", true, self.NextDayEndTime, self.NextWeekEndTime, BattlePassController:GetModelData("BattlePassEndTime"))
 end
-
 function WBP_BattlePass_Book_C:RefreshTime(DayEndTime, WeekEndTime, VersionEndTime)
   local RemainTimeDictDaily = UIUtils.GetLeftTimeStrStyle2(DayEndTime)
   local RemainTimeDictWeekly = UIUtils.GetLeftTimeStrStyle2(WeekEndTime)
@@ -269,14 +282,12 @@ function WBP_BattlePass_Book_C:RefreshTime(DayEndTime, WeekEndTime, VersionEndTi
     end
   end
 end
-
 function WBP_BattlePass_Book_C:InitBtn()
   self.Button_Area.OnClicked:Add(self, self.PageTurnerToNext)
   self.Btn_Pet.OnClicked:Add(self, self.PageTurnerToNextNew)
   self:RefreshBtnBuy()
   self:RefreshBtnUnlock()
 end
-
 function WBP_BattlePass_Book_C:RefreshBtnBuy()
   local bIsLevelMax = BattlePassUtils:IsMaxLevel()
   DebugPrint("gmy@WBP_BattlePass_Book_C WBP_BattlePass_Book_C:InitBtn", GText("UI_BattlePass_MaxLevel"))
@@ -284,6 +295,7 @@ function WBP_BattlePass_Book_C:RefreshBtnBuy()
     self.Btn_BuyLv:SetDefaultGamePadImg("RS")
     self.Btn_BuyLv:SetText(GText("UI_BattlePass_MaxLevel"))
     self.Btn_BuyLv:ForbidBtn(true)
+    self.Btn_BuyLv:UnBindEventOnClicked()
   else
     self.Btn_BuyLv:SetDefaultGamePadImg("RS")
     self.Btn_BuyLv:SetText(GText("UI_BattlePass_BuyLevel"))
@@ -294,7 +306,6 @@ function WBP_BattlePass_Book_C:RefreshBtnBuy()
     end)
   end
 end
-
 function WBP_BattlePass_Book_C:RefreshBtnUnlock()
   if not ShopUtils:IsCanOpenPay(false) then
     self.Btn_Unlock:InitBtnInfo("Forbidden", GText("UI_BattlePass_UnlockGoldRank"), function()
@@ -318,7 +329,6 @@ function WBP_BattlePass_Book_C:RefreshBtnUnlock()
     end
   end
 end
-
 function WBP_BattlePass_Book_C:ScrollToNext()
   local FirstCanGetReward, FirstCantGetReward
   local Contents = self.List_Reward:GetListItems()
@@ -344,7 +354,6 @@ function WBP_BattlePass_Book_C:ScrollToNext()
   end
   self:AddTimer(0.001, self.RefreshRewardSpAfterScroll, false, 0, nil, true)
 end
-
 function WBP_BattlePass_Book_C:CheckHaveAnyRewardCanGet_Item(Content)
   if 1 == Content.IsGotState_Rank1 or Content.IsUnlocked and 1 == Content.IsGotState_Rank2 then
     return true
@@ -352,7 +361,6 @@ function WBP_BattlePass_Book_C:CheckHaveAnyRewardCanGet_Item(Content)
     return false
   end
 end
-
 function WBP_BattlePass_Book_C:CheckHaveAnyRewardCantGet_Item(Content)
   if 0 == Content.IsGotState_Rank1 or Content.IsUnlocked and 0 == Content.IsGotState_Rank2 then
     return true
@@ -360,44 +368,88 @@ function WBP_BattlePass_Book_C:CheckHaveAnyRewardCantGet_Item(Content)
     return false
   end
 end
-
 function WBP_BattlePass_Book_C:ScrollToTarget(Content)
   self.List_Reward:BP_NavigateToItem(Content)
 end
-
 function WBP_BattlePass_Book_C:InitRewardInfo()
   self.List_Reward:ClearListItems()
-  local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(self.BattlePassId)
+  local BattlePassId = BattlePassController:GetModelData("BattlePassId")
+  local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(BattlePassId)
   for Level, RewardInfo in ipairs(BattlePassRewardData or {}) do
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     self:ChangeContentWithUnlockInfo(Content)
-    self:ChangeContentWithGotInfo(Content, RewardInfo)
+    self:ChangeContentWithGotInfo(Content, RewardInfo.BattlePassLevel)
     Content.BattlePassLevel = RewardInfo.BattlePassLevel
     Content.Rank1Reward = RewardInfo.Rank1Reward
     Content.Rank2Reward = RewardInfo.Rank2Reward
+    Content.IsLoop = false
+    Content.IsLoopEmpty = false
+    Content.Root = self
+    self.List_Reward:AddItem(Content)
+  end
+  local LoopRewardPeriod = DataMgr.BattlePassMain[BattlePassId].LoopRewardPeriod
+  if LoopRewardPeriod then
+    self.IsLoop = true
+    local MaxLevel = self:GetMaxLevel()
+    local LevelLimit = DataMgr.BattlePassMain[BattlePassId].LevelLimit
+    local LoopTime = 1
+    if MaxLevel < self.CurLevel then
+      local TargetNum = math.ceil((self.CurLevel - MaxLevel) / LoopRewardPeriod) * LoopRewardPeriod + LoopRewardPeriod
+      if TargetNum > LevelLimit - MaxLevel then
+        TargetNum = LevelLimit - MaxLevel
+      end
+      LoopTime = math.ceil(TargetNum / LoopRewardPeriod)
+    end
+    local LoopFreeRewardId = DataMgr.BattlePassMain[BattlePassId].LoopFreeRewardId
+    local LoopPaidRewardId = DataMgr.BattlePassMain[BattlePassId].LoopPaidRewardId
+    local TempIndex = MaxLevel
+    for i = 1, LoopTime do
+      for Index = 1, LoopRewardPeriod do
+        local Level = MaxLevel + (i - 1) * LoopRewardPeriod + Index
+        if LevelLimit >= Level then
+          TempIndex = Level
+          local Content = NewObject(UIUtils.GetCommonItemContentClass())
+          self:ChangeContentWithUnlockInfo(Content)
+          self:ChangeContentWithGotInfo(Content, Level)
+          Content.BattlePassLevel = Level
+          Content.Rank1Reward = LoopFreeRewardId[Index]
+          Content.Rank2Reward = LoopPaidRewardId[Index]
+          Content.IsLoop = true
+          Content.IsLoopEmpty = false
+          Content.Root = self
+          self.List_Reward:AddItem(Content)
+        end
+      end
+    end
+    local Content = NewObject(UIUtils.GetCommonItemContentClass())
+    Content.Index = TempIndex + 1
+    Content.LevelLimit = LevelLimit
+    Content.IsLoop = true
+    Content.IsLoopEmpty = true
     Content.Root = self
     self.List_Reward:AddItem(Content)
   end
 end
-
 function WBP_BattlePass_Book_C:ChangeContentWithUnlockInfo(Content)
   Content.IsUnlocked = self.Avatar.BattlePassUnlockRank2
 end
-
-function WBP_BattlePass_Book_C:ChangeContentWithGotInfo(Content, RewardInfo)
+function WBP_BattlePass_Book_C:ChangeContentWithGotInfo(Content, BattlePassLevel)
+  if Content.IsLoopEmpty then
+    return
+  end
   local Rank1GotInfo = self.Avatar.BattlePassRank1LevelRewardsGot
   local Rank2GotInfo = self.Avatar.BattlePassRank2LevelRewardsGot
-  if Rank1GotInfo[RewardInfo.BattlePassLevel] then
+  if Rank1GotInfo[BattlePassLevel] then
     Content.IsGotState_Rank1 = 2
-  elseif RewardInfo.BattlePassLevel > self.Avatar.BattlePassLevel then
+  elseif BattlePassLevel > self.Avatar.BattlePassLevel then
     Content.IsGotState_Rank1 = 0
   else
     Content.IsGotState_Rank1 = 1
   end
   if self.Avatar.BattlePassUnlockRank2 then
-    if Rank2GotInfo[RewardInfo.BattlePassLevel] then
+    if Rank2GotInfo[BattlePassLevel] then
       Content.IsGotState_Rank2 = 2
-    elseif RewardInfo.BattlePassLevel > self.Avatar.BattlePassLevel then
+    elseif BattlePassLevel > self.Avatar.BattlePassLevel then
       Content.IsGotState_Rank2 = 0
     else
       Content.IsGotState_Rank2 = 1
@@ -406,11 +458,10 @@ function WBP_BattlePass_Book_C:ChangeContentWithGotInfo(Content, RewardInfo)
     Content.IsGotState_Rank2 = 0
   end
 end
-
 function WBP_BattlePass_Book_C:CheckHaveAnyRewardCanGet()
   local Rank1GotInfo = self.Avatar.BattlePassRank1LevelRewardsGot
   local Rank2GotInfo = self.Avatar.BattlePassRank2LevelRewardsGot
-  local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(self.BattlePassId)
+  local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(BattlePassController:GetModelData("BattlePassId"))
   for Level, RewardInfo in ipairs(BattlePassRewardData or {}) do
     if RewardInfo.BattlePassLevel <= self.Avatar.BattlePassLevel then
       if not Rank1GotInfo[RewardInfo.BattlePassLevel] then
@@ -421,15 +472,24 @@ function WBP_BattlePass_Book_C:CheckHaveAnyRewardCanGet()
       end
     end
   end
+  local MaxLevel = self:GetMaxLevel()
+  if self.CurLevel and MaxLevel and MaxLevel < self.CurLevel then
+    for Level = MaxLevel, self.CurLevel do
+      if not Rank1GotInfo[Level] then
+        return true
+      end
+      if self.Avatar.BattlePassUnlockRank2 and not Rank2GotInfo[Level] then
+        return true
+      end
+    end
+  end
   return false
 end
-
 function WBP_BattlePass_Book_C:GetReward(Level, IsRank2)
   local function Callback(Rewards)
     self:UpdateItems()
-    
     self:RefreshRewardSp()
-    self:RefreshGetAllRewardBtn(self.CurTabId)
+    self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
     if IsRank2 then
       self:RefreshBattlePassRewardReddotInfo(Level, "Rank2")
     else
@@ -439,41 +499,82 @@ function WBP_BattlePass_Book_C:GetReward(Level, IsRank2)
     if not ShopUtils:IsCanOpenPay(false) or self.Avatar.BattlePassUnlockRank2 then
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
     else
-      UIManager:LoadUINew("BattlePassGetItemPage", nil, nil, nil, Rewards, nil, nil, self, self.Parent and self.Parent.ActorController)
+      UIManager:LoadUINew("BattlePassGetItemPage", nil, nil, nil, Rewards, nil, nil, self, BattlePassController:GetModelData("ActorController"))
     end
   end
-  
   self.Avatar:RpcBattlePassGetLevelReward(Level, IsRank2, Callback)
 end
-
 function WBP_BattlePass_Book_C:GetAllBattlePassReward()
   if self:CheckHaveAnyRewardCanGet() then
+    AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_btn_click_normal", nil, nil)
     local function Callback(Rewards)
       self:UpdateItems()
-      
       self:RefreshRewardSp()
-      self:RefreshGetAllRewardBtn(self.CurTabId)
+      self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
       self:RefreshBattlePassRewardReddotInfo()
       local UIManager = GWorld.GameInstance:GetGameUIManager()
       if not ShopUtils:IsCanOpenPay(false) or self.Avatar.BattlePassUnlockRank2 then
         UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, nil, self)
       else
-        UIManager:LoadUINew("BattlePassGetItemPage", nil, nil, nil, Rewards, nil, nil, self, self.Parent and self.Parent.ActorController)
+        UIManager:LoadUINew("BattlePassGetItemPage", nil, nil, nil, Rewards, nil, nil, self, BattlePassController:GetModelData("ActorController"))
       end
     end
-    
     self.Avatar:RpcBattlePassGetAllLevelReward(Callback)
   end
 end
-
 function WBP_BattlePass_Book_C:UpdateItems()
+  local MaxLevel = BattlePassUtils:GetMaxLevel()
+  if self.IsLoop and MaxLevel < self.CurLevel then
+    local Index = self.List_Reward:GetNumItems()
+    local CurNum = Index - 1
+    local BattlePassId = BattlePassController:GetModelData("BattlePassId")
+    local LoopRewardPeriod = DataMgr.BattlePassMain[BattlePassId].LoopRewardPeriod
+    local LevelLimit = DataMgr.BattlePassMain[BattlePassId].LevelLimit
+    local LoopTime = 0
+    local TargetNum = math.ceil((self.CurLevel - MaxLevel) / LoopRewardPeriod) * LoopRewardPeriod + LoopRewardPeriod
+    if TargetNum > LevelLimit - MaxLevel then
+      TargetNum = LevelLimit - MaxLevel
+    end
+    LoopTime = math.ceil((TargetNum - (CurNum - MaxLevel)) / LoopRewardPeriod)
+    if LoopTime > 0 then
+      local EmptyContent = self.List_Reward:GetItemAt(Index - 1)
+      self.List_Reward:RemoveItem(EmptyContent)
+      local LoopFreeRewardId = DataMgr.BattlePassMain[BattlePassId].LoopFreeRewardId
+      local LoopPaidRewardId = DataMgr.BattlePassMain[BattlePassId].LoopPaidRewardId
+      local TempIndex = CurNum
+      for i = 1, LoopTime do
+        for Index = 1, LoopRewardPeriod do
+          local Level = CurNum + (i - 1) * LoopRewardPeriod + Index
+          if LevelLimit >= Level then
+            TempIndex = Level
+            local Content = NewObject(UIUtils.GetCommonItemContentClass())
+            self:ChangeContentWithUnlockInfo(Content)
+            self:ChangeContentWithGotInfo(Content, Level)
+            Content.BattlePassLevel = Level
+            Content.Rank1Reward = LoopFreeRewardId[Index]
+            Content.Rank2Reward = LoopPaidRewardId[Index]
+            Content.IsLoop = true
+            Content.IsLoopEmpty = false
+            Content.Root = self
+            self.List_Reward:AddItem(Content)
+          end
+        end
+      end
+      local Content = NewObject(UIUtils.GetCommonItemContentClass())
+      Content.Index = TempIndex + 1
+      Content.LevelLimit = LevelLimit
+      Content.IsLoop = true
+      Content.IsLoopEmpty = true
+      Content.Root = self
+      self.List_Reward:AddItem(Content)
+    end
+  end
   local Contents = self.List_Reward:GetListItems()
-  local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(self.BattlePassId)
+  local BattlePassRewardData = BattlePassUtils:GetBattlePassReward(BattlePassController:GetModelData("BattlePassId"))
   if BattlePassRewardData then
     for _, Content in pairs(Contents) do
-      local RewardInfo = BattlePassRewardData[Content.BattlePassLevel]
       self:ChangeContentWithUnlockInfo(Content)
-      self:ChangeContentWithGotInfo(Content, RewardInfo)
+      self:ChangeContentWithGotInfo(Content, Content.BattlePassLevel)
     end
   end
   local AllDisplayWidget = self.List_Reward:GetDisplayedEntryWidgets()
@@ -481,15 +582,19 @@ function WBP_BattlePass_Book_C:UpdateItems()
     Widget:Refresh()
   end
 end
-
 function WBP_BattlePass_Book_C:OnEntryGenerated(Entry)
+  if Entry.Content.IsLoopEmpty then
+    return
+  end
   local Content = self:GetCurSpecialRewardContent(Entry.Content.BattlePassLevel)
-  if not self.Reward_Sp.Content or Content and Content.BattlePassLevel > self.Reward_Sp.Content.BattlePassLevel then
+  if not self.Reward_Sp.Content or Content and Content.BattlePassLevel and Content.BattlePassLevel > self.Reward_Sp.Content.BattlePassLevel then
     self.Reward_Sp:Init(Content)
   end
 end
-
 function WBP_BattlePass_Book_C:OnEntryReleased(Entry)
+  if Entry.Content.IsLoopEmpty then
+    return
+  end
   local ReleasedTargetLevel = self:GetTargetLevel(Entry.Content.BattlePassLevel)
   if ReleasedTargetLevel >= self.Reward_Sp.Content.BattlePassLevel then
     local TargetLevel = self:GetTargetLevel(Entry.Content.BattlePassLevel - 1)
@@ -501,44 +606,46 @@ function WBP_BattlePass_Book_C:OnEntryReleased(Entry)
     end
   end
 end
-
 function WBP_BattlePass_Book_C:RefreshRewardSpAfterScroll()
   local AllDisplayWidget = self.List_Reward:GetDisplayedEntryWidgets()
   local TargetContent
   for _, Widget in pairs(AllDisplayWidget) do
-    local Content = self:GetCurSpecialRewardContent(Widget.Content.BattlePassLevel)
-    if not TargetContent or TargetContent.BattlePassLevel < Content.BattlePassLevel then
-      TargetContent = Content
+    if not Widget.Content.IsLoopEmpty then
+      local Content = self:GetCurSpecialRewardContent(Widget.Content.BattlePassLevel)
+      if not TargetContent or TargetContent.BattlePassLevel < Content.BattlePassLevel then
+        TargetContent = Content
+      end
     end
   end
   if TargetContent and self.Reward_Sp.Content and TargetContent.BattlePassLevel ~= self.Reward_Sp.Content.BattlePassLevel then
     self.Reward_Sp:Init(TargetContent)
   end
 end
-
 function WBP_BattlePass_Book_C:RefreshRewardSp()
   local AllDisplayWidget = self.List_Reward:GetDisplayedEntryWidgets()
   local TargetContent
   for _, Widget in pairs(AllDisplayWidget) do
-    local Content = self:GetCurSpecialRewardContent(Widget.Content.BattlePassLevel)
-    if not TargetContent or TargetContent.BattlePassLevel < Content.BattlePassLevel then
-      TargetContent = Content
+    if Widget.Content.BattlePassLevel then
+      local Content = self:GetCurSpecialRewardContent(Widget.Content.BattlePassLevel)
+      if not TargetContent or TargetContent.BattlePassLevel < Content.BattlePassLevel then
+        TargetContent = Content
+      end
     end
   end
   if TargetContent then
     self.Reward_Sp:Init(TargetContent)
   end
 end
-
 function WBP_BattlePass_Book_C:GetCurSpecialRewardContent(Level)
   local TargetLevel = self:GetTargetLevel(Level)
   return self:GetContent(TargetLevel)
 end
-
 function WBP_BattlePass_Book_C:GetTargetLevel(Level)
-  return (math.floor((Level - 1) / self.BattlePassInfo.MilestoneInterval) + 1) * self.BattlePassInfo.MilestoneInterval
+  if not Level then
+    return nil
+  end
+  return (math.floor((Level - 1) / BattlePassController:GetModelData("BattlePassInfo").MilestoneInterval) + 1) * BattlePassController:GetModelData("BattlePassInfo").MilestoneInterval
 end
-
 function WBP_BattlePass_Book_C:GetContent(Level)
   local Contents = self.List_Reward:GetListItems()
   for _, Content in pairs(Contents) do
@@ -547,25 +654,20 @@ function WBP_BattlePass_Book_C:GetContent(Level)
     end
   end
 end
-
 function WBP_BattlePass_Book_C:InitMissionInfo()
   self:InitDailyMission()
   self:InitWeeklyMission()
   self:InitVersionMission()
 end
-
 function WBP_BattlePass_Book_C:InitDailyMission()
   self.WBP_BattlePass_MissionTab_Daily:Init("Daily", self)
 end
-
 function WBP_BattlePass_Book_C:InitWeeklyMission()
   self.WBP_BattlePass_MissionTab_Weekly:Init("Weekly", self)
 end
-
 function WBP_BattlePass_Book_C:InitVersionMission()
   self.WBP_BattlePass_MissionTab_Version:Init("Version", self)
 end
-
 function WBP_BattlePass_Book_C:OpenMissionList(Tab, IsForce)
   if self.CurSelectedTab then
     if self.CurSelectedTab.Type == Tab.Type then
@@ -588,7 +690,6 @@ function WBP_BattlePass_Book_C:OpenMissionList(Tab, IsForce)
     self.List_Mission:RequestPlayEntriesAnim()
   end, false, 0, nil, true)
 end
-
 function WBP_BattlePass_Book_C:GetSortedMissionTable(MissionInfo)
   local BattlePassTask = DataMgr.BattlePassTask
   local SortedMissionTable = {}
@@ -628,7 +729,6 @@ function WBP_BattlePass_Book_C:GetSortedMissionTable(MissionInfo)
   end)
   return SortedMissionTable
 end
-
 function WBP_BattlePass_Book_C:FillListWithMissionInfo(Type)
   local MissionInfo
   if "Daily" == Type then
@@ -649,7 +749,7 @@ function WBP_BattlePass_Book_C:FillListWithMissionInfo(Type)
       Content.Progress = TargetCounter.Progress
       Content.Target = TargetCounter.Target
       Content.RewardsGot = TargetCounter.RewardsGot
-      Content.BattlePassId = self.BattlePassId
+      Content.BattlePassId = BattlePassController:GetModelData("BattlePassId")
       Content.Parent = self
       if "Version" == Content.Type then
         Content.TaskEndTime = BattlePassTask[Content.ID].TaskEndTime
@@ -658,7 +758,6 @@ function WBP_BattlePass_Book_C:FillListWithMissionInfo(Type)
     end
   end
 end
-
 function WBP_BattlePass_Book_C:CheckHaveAnyMissionRewardCanGet()
   local MissionInfos = {
     self.Avatar.BattlePassTaskDaily,
@@ -672,7 +771,6 @@ function WBP_BattlePass_Book_C:CheckHaveAnyMissionRewardCanGet()
   end
   return false
 end
-
 function WBP_BattlePass_Book_C:CheckHaveMissionRewardCanGet(MissionInfo)
   for BattlePassTaskId, TargetCounter in pairs(MissionInfo) do
     if not TargetCounter.RewardsGot and TargetCounter:IsComplete() then
@@ -681,31 +779,25 @@ function WBP_BattlePass_Book_C:CheckHaveMissionRewardCanGet(MissionInfo)
   end
   return false
 end
-
 function WBP_BattlePass_Book_C:GetMissionReward(BattlePassType, BattlePassTaskId)
   local function Callback(Reward)
     self:RefreshMissionList(self.CurSelectedTab.Type)
-    
-    self:RefreshGetAllRewardBtn(self.CurTabId)
+    self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
     self:RefreshLevelInfo()
     self:RefreshLevelBar()
   end
-  
   self.Avatar:RpcBattlePassGetTaskReward(Callback, BattlePassType, BattlePassTaskId)
 end
-
 function WBP_BattlePass_Book_C:GetAllMissionReward()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_btn_click_normal", nil, nil)
   local function Callback(Reward)
     self:RefreshMissionList(self.CurSelectedTab.Type)
-    
-    self:RefreshGetAllRewardBtn(self.CurTabId)
+    self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
     self:RefreshLevelInfo()
     self:RefreshLevelBar()
   end
-  
   self.Avatar:RpcBattlePassGetAllTaskReward(Callback)
 end
-
 function WBP_BattlePass_Book_C:RefreshMissionList(Type)
   local MissionInfo
   if "Daily" == Type then
@@ -731,7 +823,7 @@ function WBP_BattlePass_Book_C:RefreshMissionList(Type)
       Content.Progress = TargetCounter.Progress
       Content.Target = TargetCounter.Target
       Content.RewardsGot = TargetCounter.RewardsGot
-      Content.BattlePassId = self.BattlePassId
+      Content.BattlePassId = BattlePassController:GetModelData("BattlePassId")
       Content.Parent = self
       if "Version" == Content.Type then
         Content.TaskEndTime = BattlePassTask[Content.ID].TaskEndTime
@@ -753,69 +845,95 @@ function WBP_BattlePass_Book_C:RefreshMissionList(Type)
     end
   end
 end
-
 function WBP_BattlePass_Book_C:OnBattlePassTaskProgressChange(TaskType, TaskId)
+  self:RefreshLevelInfo()
   if self.CurSelectedTab and self.CurSelectedTab.Type == TaskType then
     self:RefreshMissionList(TaskType)
-    self:RefreshGetAllRewardBtn(self.CurTabId)
+    self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
   end
-  self:RefreshLevelInfo()
   self:RefreshLevelBar()
 end
-
 function WBP_BattlePass_Book_C:OnBattlePassLevelChange()
-  if self.CurTabId == "BattlePassReward" then
+  self:RefreshLevelInfo()
+  if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:UpdateItems()
     self:RefreshRewardSp()
-    self:RefreshGetAllRewardBtn(self.CurTabId)
+    self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
   end
   self:RefreshBtnBuy()
-  self:RefreshLevelInfo()
   self:TryPlayLevelUpAnimation()
   self:RefreshLevelBar()
 end
-
 function WBP_BattlePass_Book_C:OnBattlePassRank2Unlock()
-  if self.CurTabId == "BattlePassReward" then
+  if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:UpdateItems()
     self:RefreshRewardSp()
-    self:RefreshGetAllRewardBtn(self.CurTabId)
+    self:RefreshGetAllRewardBtn(BattlePassController:GetModelData("CurTabId"))
   end
   self:RefreshBtnUnlock()
-  if UIUtils.HasAnyFocus(self) and self.CurTabId == "BattlePassReward" then
+  if UIUtils.HasAnyFocus(self) and BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:PlayUnlockAnimation()
   else
     self.PlayUnlock = true
   end
 end
-
 function WBP_BattlePass_Book_C:TryPlayLevelUpAnimation()
+  local ExpandedMaxLevel
+  local CurTargetNum = self:GetTargetNum(self.CurLevel)
+  local LastTargetNum = self:GetTargetNum(self.LastLevelForLevelUp)
+  if CurTargetNum and LastTargetNum and CurTargetNum > LastTargetNum then
+    ExpandedMaxLevel = CurTargetNum
+  end
   if UIUtils.HasAnyFocus(self) then
-    self:PlayLevelUpAnimation()
+    self:PlayLevelUpAnimation(ExpandedMaxLevel)
   elseif self.CurLevel > 1 then
     local UIManager = GWorld.GameInstance:GetGameUIManager()
     local BattlePassLevelUp = UIManager:GetUIObj("BattlePassLevelUp")
     if BattlePassLevelUp then
-      BattlePassLevelUp:Refresh(self.CurLevel)
+      BattlePassLevelUp:Refresh(self.CurLevel, ExpandedMaxLevel)
+      self.ExpandedMaxLevel = nil
       self.PlayLevelUp = false
     else
+      self.ExpandedMaxLevel = ExpandedMaxLevel
       self.PlayLevelUp = true
     end
   end
 end
-
-function WBP_BattlePass_Book_C:PlayLevelUpAnimation()
+function WBP_BattlePass_Book_C:GetTargetNum(Level)
+  if not self.IsLoop then
+    return
+  end
+  if not Level then
+    return
+  end
+  local MaxLevel = BattlePassUtils:GetMaxLevel()
+  local BattlePassId = BattlePassController:GetModelData("BattlePassId")
+  local LoopRewardPeriod = DataMgr.BattlePassMain[BattlePassId].LoopRewardPeriod
+  local LevelLimit = DataMgr.BattlePassMain[BattlePassId].LevelLimit
+  if Level < MaxLevel then
+    return MaxLevel + LoopRewardPeriod
+  end
+  local TargetNum = math.ceil((Level - MaxLevel) / LoopRewardPeriod) * LoopRewardPeriod + LoopRewardPeriod
+  if TargetNum > LevelLimit - MaxLevel then
+    TargetNum = LevelLimit - MaxLevel
+  end
+  return TargetNum + MaxLevel
+end
+function WBP_BattlePass_Book_C:PlayLevelUpAnimation(ExpandedMaxLevel)
   if self.CurLevel > 1 then
     local UIManager = GWorld.GameInstance:GetGameUIManager()
-    local BattlePassLevelUp = UIManager:LoadUINew("BattlePassLevelUp", self.CurLevel)
-    BattlePassLevelUp:Refresh(self.CurLevel)
+    local BattlePassLevelUp = UIManager:GetUIObj("BattlePassLevelUp")
+    if BattlePassLevelUp then
+      BattlePassLevelUp:Refresh(self.CurLevel, ExpandedMaxLevel)
+    else
+      UIManager:LoadUINew("BattlePassLevelUp", self.CurLevel, ExpandedMaxLevel)
+    end
     self:SetLevelBar(1, 1)
     AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_exp_bar_update", nil, nil)
     self:PlayAnimation(self.ProgressPrompt)
     self.PlayLevelUp = false
   end
 end
-
 function WBP_BattlePass_Book_C:TryCloseLevelUpUI()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local BattlePassLevelUp = UIManager:GetUIObj("BattlePassLevelUp")
@@ -824,24 +942,21 @@ function WBP_BattlePass_Book_C:TryCloseLevelUpUI()
     self.PlayLevelUp = false
   end
 end
-
 function WBP_BattlePass_Book_C:PlayUnlockAnimation()
   self.RewardTab_Sp:PlayUnlockAnimation()
   self.PlayUnlock = false
 end
-
 function WBP_BattlePass_Book_C:JumptoOtherUI(JumpUIId)
   PageJumpUtils:JumpToTargetPageByJumpId(JumpUIId)
 end
-
 function WBP_BattlePass_Book_C:JumpToPetDetail()
+  local PetList = BattlePassController:GetModelData("PetList")
   UIManager(self):LoadUINew("ArmoryDetail", {
-    PreviewPetIds = self.PetList,
-    SelectedTargetId = self.PetList[self.CurrentPetIndex],
+    PreviewPetIds = PetList,
+    SelectedTargetId = PetList[self.CurrentPetIndex],
     EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon
   })
 end
-
 function WBP_BattlePass_Book_C:RefreshGetAllRewardBtn(TabId)
   local CurInputDevice = self.GameInputModeSubsystem:GetCurrentInputType()
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -875,7 +990,6 @@ function WBP_BattlePass_Book_C:RefreshGetAllRewardBtn(TabId)
     end
   end
 end
-
 function WBP_BattlePass_Book_C:OnBattlePassMissionReddotChange()
   if not ReddotManager.GetTreeNode("BattlePassMission") then
     ReddotManager.AddNode("BattlePassMission")
@@ -897,20 +1011,15 @@ function WBP_BattlePass_Book_C:OnBattlePassMissionReddotChange()
     self.WBP_BattlePass_MissionTab_Version:SetReddotVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_BattlePass_Book_C:OnBattlePassPetCanClaim()
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
     self.Parent:SwitchTab("BattlePassPetSelection")
   end
-  
   self.BattlePassPetCanClaimPopupUI = UIManager(self):ShowCommonPopupUI(100184, CommonDialogParams, self)
 end
-
 function WBP_BattlePass_Book_C:RefreshBattlePassRewardReddotInfo(Level, RankType)
 end
-
 function WBP_BattlePass_Book_C:OnSpaceBarDown()
   if self.Btn_GetAll:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
     self:GetAllReward()
@@ -919,7 +1028,6 @@ function WBP_BattlePass_Book_C:OnSpaceBarDown()
     return false
   end
 end
-
 function WBP_BattlePass_Book_C:InitBottomKeyInfo()
   self.BottomKeyInfo = {}
   table.insert(self.BottomKeyInfo, {
@@ -952,7 +1060,6 @@ function WBP_BattlePass_Book_C:InitBottomKeyInfo()
     bLongPress = false
   })
 end
-
 function WBP_BattlePass_Book_C:RefreshTab(HaveGetAllTip)
   if HaveGetAllTip and not self.HaveGetAllTip then
     table.insert(self.BottomKeyInfo, 1, {
@@ -973,21 +1080,19 @@ function WBP_BattlePass_Book_C:RefreshTab(HaveGetAllTip)
   self.HaveGetAllTip = HaveGetAllTip
   self.Parent:UpdateBottomKeyInfo(self.BottomKeyInfo)
 end
-
 function WBP_BattlePass_Book_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
   if "Gamepad_RightX" == InKeyName then
     IsEventHandled = true
-    if self.Parent.ActorController then
+    if BattlePassController:GetModelData("ActorController") then
       local DeltaX = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 10
-      self.Parent.ActorController:OnDragging({X = DeltaX})
+      BattlePassController:GetModelData("ActorController"):OnDragging({X = DeltaX})
     end
   end
   return IsEventHandled
 end
-
 function WBP_BattlePass_Book_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -1008,7 +1113,12 @@ function WBP_BattlePass_Book_C:HandleKeyDown(MyGeometry, InKeyEvent)
       IsEventHandled = true
       self:JumpToDetail()
     elseif InKeyName == UIConst.GamePadKey.FaceButtonRight then
-      IsEventHandled = self:TryLeaveSpecialMode()
+      if self.IsTipMode then
+        IsEventHandled = true
+        self:TryCloseTips()
+      else
+        IsEventHandled = self:TryLeaveSpecialMode()
+      end
     elseif InKeyName == UIConst.GamePadKey.FaceButtonLeft then
       IsEventHandled = true
       if not ShopUtils:IsCanOpenPay(false) then
@@ -1019,7 +1129,7 @@ function WBP_BattlePass_Book_C:HandleKeyDown(MyGeometry, InKeyEvent)
     elseif InKeyName == UIConst.GamePadKey.RightThumb then
       IsEventHandled = true
       self:PageTurnerToNextNew()
-    elseif InKeyName == UIConst.GamePadKey.LeftThumb and self.CurTabId == "BattlePassReward" then
+    elseif InKeyName == UIConst.GamePadKey.LeftThumb and BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
       IsEventHandled = self:TryEnterSpecialMode()
     end
   elseif "SpaceBar" == InKeyName then
@@ -1027,7 +1137,6 @@ function WBP_BattlePass_Book_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_BattlePass_Book_C:TryChangeSelectedTab(NavigationDirection)
   if NavigationDirection == EUINavigation.Up then
     return self:OnNavigationToIndex(self.CurSelectedTabIndex - 1)
@@ -1035,7 +1144,6 @@ function WBP_BattlePass_Book_C:TryChangeSelectedTab(NavigationDirection)
     return self:OnNavigationToIndex(self.CurSelectedTabIndex + 1)
   end
 end
-
 function WBP_BattlePass_Book_C:OnNavigationToIndex(Index)
   if Index <= 0 or Index > 3 then
     return self.CurSelectedTab
@@ -1049,7 +1157,6 @@ function WBP_BattlePass_Book_C:OnNavigationToIndex(Index)
   end
   return self.CurSelectedTab
 end
-
 function WBP_BattlePass_Book_C:TryEnterSpecialMode()
   if self.InSpecialMode then
     return false
@@ -1059,21 +1166,19 @@ function WBP_BattlePass_Book_C:TryEnterSpecialMode()
   self.Reward_Sp:SetFocus()
   return true
 end
-
 function WBP_BattlePass_Book_C:TryLeaveSpecialMode()
   if not self.InSpecialMode then
     return false
   end
   self.InSpecialMode = false
   self.Key_Check_GamePad:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-  if self.CurFocusedRewardItem then
-    self.List_Reward:BP_NavigateToItem(self.CurFocusedRewardItem.Content)
+  if self.CurFocusedItem then
+    self.List_Reward:BP_NavigateToItem(self.CurFocusedItem.Content)
   else
     self:NavigateToFirstDisplayedItem(self.List_Reward)
   end
   return true
 end
-
 function WBP_BattlePass_Book_C:TryEnterSelectMode(Entry)
   if self.InSelectMode then
     return false
@@ -1082,7 +1187,6 @@ function WBP_BattlePass_Book_C:TryEnterSelectMode(Entry)
   Entry:EnterSelectMode()
   return true
 end
-
 function WBP_BattlePass_Book_C:TryLeaveSelectMode(Entry)
   if not self.InSelectMode then
     return false
@@ -1091,25 +1195,21 @@ function WBP_BattlePass_Book_C:TryLeaveSelectMode(Entry)
   Entry:LeaveSelectMode()
   return true
 end
-
 function WBP_BattlePass_Book_C:ClickMissionList()
   if self.CurFocusedMissionList then
     self.CurFocusedMissionList:ClickMissionList()
   end
 end
-
 function WBP_BattlePass_Book_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_BattlePass_Book_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_BattlePass_Book_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -1117,7 +1217,6 @@ function WBP_BattlePass_Book_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGam
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_BattlePass_Book_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self.InSelectMode = false
   self.InSpecialMode = false
@@ -1127,19 +1226,18 @@ function WBP_BattlePass_Book_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_BattlePass_Book_C:InitGamepadView()
   if UIManager(self):GetUI("CommonDialog") then
     return
   end
   if UIUtils.HasAnyFocus(self) then
-    if self.CurTabId == "BattlePassReward" then
+    if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
       if self.CurFocusedRewardItem then
-        self.CurFocusedRewardItem:SetFocus()
+        self.List_Reward:BP_NavigateToItem(self.CurFocusedRewardItem.Content)
       else
         self:NavigateToFirstDisplayedItem(self.List_Reward)
       end
-    elseif self.CurTabId == "BattlePassMission" then
+    elseif BattlePassController:GetModelData("CurTabId") == "BattlePassMission" then
       if self.CurSelectedTab then
         self.CurSelectedTab:SetFocus()
       else
@@ -1158,7 +1256,6 @@ function WBP_BattlePass_Book_C:InitGamepadView()
   self.WidgetSwitcher_L:SetActiveWidgetIndex(1)
   self.WidgetSwitcher_R:SetActiveWidgetIndex(1)
 end
-
 function WBP_BattlePass_Book_C:InitKeyboardView()
   if self.CurFocusedMissionList then
     self.CurFocusedMissionList:StopHover(true)
@@ -1175,7 +1272,6 @@ function WBP_BattlePass_Book_C:InitKeyboardView()
   self.WidgetSwitcher_L:SetActiveWidgetIndex(0)
   self.WidgetSwitcher_R:SetActiveWidgetIndex(0)
 end
-
 function WBP_BattlePass_Book_C:InitWidgetInfoInGamePad()
   self.Key_Check_GamePad:CreateCommonKey({
     KeyInfoList = {
@@ -1197,18 +1293,17 @@ function WBP_BattlePass_Book_C:InitWidgetInfoInGamePad()
     }
   })
 end
-
 function WBP_BattlePass_Book_C:BP_GetDesiredFocusTarget()
   local CurInputDevice = self.GameInputModeSubsystem:GetCurrentInputType()
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if not IsUseKeyAndMouse then
-    if self.CurTabId == "BattlePassReward" then
-      if self.CurFocusedRewardItem then
-        return self.CurFocusedRewardItem
+    if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
+      if self.CurFocusedItem then
+        return self.CurFocusedItem
       else
         return self
       end
-    elseif self.CurTabId == "BattlePassMission" then
+    elseif BattlePassController:GetModelData("CurTabId") == "BattlePassMission" then
       if self.CurFocusedMissionList then
         return self.CurFocusedMissionList
       end
@@ -1222,7 +1317,6 @@ function WBP_BattlePass_Book_C:BP_GetDesiredFocusTarget()
     return self
   end
 end
-
 function WBP_BattlePass_Book_C:OnUINavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     if self.CurFocusedMissionList then
@@ -1232,20 +1326,23 @@ function WBP_BattlePass_Book_C:OnUINavigation(NavigationDirection)
     return self.CurSelectedTab
   end
 end
-
 function WBP_BattlePass_Book_C:FocusToFirstMission()
   return self:NavigateToFirstDisplayedItem(self.List_Mission)
 end
-
 function WBP_BattlePass_Book_C:GetCurFocusedRewardIndex()
   return self.CurFocusedRewardIndex
 end
-
 function WBP_BattlePass_Book_C:SetCurFocusedRewardIndex(RewardItem, Index)
-  self.CurFocusedRewardItem = RewardItem
+  if self.CurFocusedItem then
+    self.CurFocusedItem:HideIcon()
+  end
+  self.CurFocusedItem = RewardItem
+  if not RewardItem.Content.IsLoopEmpty then
+    self.CurFocusedRewardItem = RewardItem
+  end
   self.CurFocusedRewardIndex = Index
+  self.CurFocusedItem:ShowIcon()
 end
-
 function WBP_BattlePass_Book_C:TryChangeCurFocusedMissionList(MissionItem)
   if self.CurFocusedMissionList then
     self.CurFocusedMissionList:StopHover()
@@ -1253,7 +1350,6 @@ function WBP_BattlePass_Book_C:TryChangeCurFocusedMissionList(MissionItem)
   self.CurFocusedMissionList = MissionItem
   self.CurFocusedMissionList:BeginHover()
 end
-
 function WBP_BattlePass_Book_C:NavigateToFirstDisplayedItem(List)
   local ItemUIs = List:GetDisplayedEntryWidgets()
   if ItemUIs:Length() > 0 then
@@ -1265,9 +1361,8 @@ function WBP_BattlePass_Book_C:NavigateToFirstDisplayedItem(List)
   end
   return List
 end
-
 function WBP_BattlePass_Book_C:InitWhenSwitch()
-  self.CurTabId = nil
+  BattlePassController:SetModelData("CurTabId", nil)
   if self.CurFocusedMissionList then
     self.CurFocusedMissionList:StopHover()
     self.CurFocusedMissionList = nil
@@ -1282,9 +1377,8 @@ function WBP_BattlePass_Book_C:InitWhenSwitch()
     self.Key_Check_GamePad:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_BattlePass_Book_C:SwitchState(...)
-  if self.CurTabId == "BattlePassReward" then
+  if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:OnLeaveRewardTab()
   end
   self:InitWhenSwitch()
@@ -1297,7 +1391,6 @@ function WBP_BattlePass_Book_C:SwitchState(...)
   self:RefreshGetAllRewardBtn(TabId)
   self:PlaySwitchStateAnim(TabId)
 end
-
 function WBP_BattlePass_Book_C:SwitchIn(...)
   self:InitWhenSwitch()
   local TabId = (...)
@@ -1310,33 +1403,29 @@ function WBP_BattlePass_Book_C:SwitchIn(...)
   self:SetBindEvent()
   self:PlayInAnim()
 end
-
 function WBP_BattlePass_Book_C:SwitchToBattlePassReward(TabId)
   self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
-  self.CurTabId = TabId
+  BattlePassController:SetModelData("CurTabId", TabId)
   self:InitRewardInfo()
   self:ScrollToNext()
 end
-
 function WBP_BattlePass_Book_C:SwitchToBattlePassMission(TabId)
   self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
-  self.CurTabId = TabId
+  BattlePassController:SetModelData("CurTabId", TabId)
   if self.CurSelectedTab then
     self.CurSelectedTab:OnCellClicked(true)
   else
     self.WBP_BattlePass_MissionTab_Daily:OnCellClicked(true)
   end
 end
-
 function WBP_BattlePass_Book_C:SwitchOut(...)
-  if self.CurTabId == "BattlePassReward" then
+  if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:OnLeaveRewardTab()
   end
   self:InitWhenSwitch()
   self:ClearBindEventAndTimer()
   self:PlayOutAnim()
 end
-
 function WBP_BattlePass_Book_C:SetBindEvent()
   self:BindToAnimationFinished(self.Img_Show_Out, {
     self,
@@ -1354,13 +1443,11 @@ function WBP_BattlePass_Book_C:SetBindEvent()
   self.Arrow_L:BindEventOnClicked(self, self.PageTurnerToPrevious, true)
   self.Arrow_R:BindEventOnClicked(self, self.PageTurnerToNext, true)
 end
-
 function WBP_BattlePass_Book_C:PageTurnerToNextNew()
   if self.Parent then
     self.Parent:PageTurnerToNext()
   end
 end
-
 function WBP_BattlePass_Book_C:PageTurnerToNext(StopAtEdge)
   local NewPetIndex
   if not StopAtEdge then
@@ -1375,7 +1462,6 @@ function WBP_BattlePass_Book_C:PageTurnerToNext(StopAtEdge)
   self.PageTurner:SwtichPagePointAnimation(NewPetIndex)
   self:UpdateGuideInfo(NewPetIndex)
 end
-
 function WBP_BattlePass_Book_C:PageTurnerToPrevious(StopAtEdge)
   local NewPetIndex
   if not StopAtEdge then
@@ -1393,7 +1479,6 @@ function WBP_BattlePass_Book_C:PageTurnerToPrevious(StopAtEdge)
   self.PageTurner:SwtichPagePointAnimation(NewPetIndex)
   self:UpdateGuideInfo(NewPetIndex)
 end
-
 function WBP_BattlePass_Book_C:UpdateGuideInfo(NewIndex)
   if self.CurrentPetIndex == NewIndex then
     return
@@ -1405,7 +1490,6 @@ function WBP_BattlePass_Book_C:UpdateGuideInfo(NewIndex)
   end
   self:PlayAnimation(self.Img_Show_In)
 end
-
 function WBP_BattlePass_Book_C:ClearBindEventAndTimer()
   self:UnbindAllFromAnimationFinished(self.Img_Show_In)
   self:UnbindAllFromAnimationFinished(self.Img_Show_Out)
@@ -1413,7 +1497,6 @@ function WBP_BattlePass_Book_C:ClearBindEventAndTimer()
   self:RemoveTimer("RefreshPetIconTimer")
   self:RemoveLevelBarTimer()
 end
-
 function WBP_BattlePass_Book_C:PlayInAnim()
   if self:IsAnimationPlaying(self.Out) then
     self:StopAnimation(self.Out)
@@ -1430,7 +1513,6 @@ function WBP_BattlePass_Book_C:PlayInAnim()
   self:PlayAnimation(self.Img_Show_In)
   self:PlayAnimation(self.ShowDesc_In)
 end
-
 function WBP_BattlePass_Book_C:PlayOutAnim()
   if not self.BindOutAnimation then
     self:BindToAnimationFinished(self.Out, {
@@ -1447,7 +1529,6 @@ function WBP_BattlePass_Book_C:PlayOutAnim()
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:PlayAnimation(self.Out)
 end
-
 function WBP_BattlePass_Book_C:PlaySwitchStateAnim(TabId)
   if "BattlePassReward" == TabId then
     if self:IsAnimationPlaying(self.SwitchTab_In) then
@@ -1461,18 +1542,15 @@ function WBP_BattlePass_Book_C:PlaySwitchStateAnim(TabId)
     self:PlayAnimation(self.SwitchTab_In)
   end
 end
-
 function WBP_BattlePass_Book_C:PlaySwitchAnim()
   if self:IsAnimationPlaying(self.SwitchTab) then
     self:StopAnimation(self.SwitchTab)
   end
   self:PlayAnimation(self.SwitchTab)
 end
-
 function WBP_BattlePass_Book_C:ShowUITip()
   UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_BattlePass_Oversea_PurchaseLocked"))
 end
-
 function WBP_BattlePass_Book_C:OpenPurchase()
   AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_btn_click_special", nil, nil)
   local PurchasePanel = UIManager(self):GetUIObj("BattlePassPurchase")
@@ -1481,22 +1559,22 @@ function WBP_BattlePass_Book_C:OpenPurchase()
     PurchasePanel = nil
   end
   if nil == PurchasePanel then
-    PurchasePanel = UIManager(self):LoadUINew("BattlePassPurchase", self.Parent and self.Parent.ActorController, 666)
+    PurchasePanel = UIManager(self):LoadUINew("BattlePassPurchase", BattlePassController:GetModelData("ActorController"), 666)
     DebugPrint("gmy@WBP_BattlePass_Book_C WBP_BattlePass_Book_C:OpenPurchase")
-    if self.Parent.ActorController then
-      self.Parent.ActorController:SetMontageAndCamera(CommonConst.ArmoryType.Char, "Skin", CommonConst.ArmoryTag.Appearance, "Purchase")
+    if BattlePassController:GetModelData("ActorController") then
+      BattlePassController:GetModelData("ActorController"):SetMontageAndCamera(CommonConst.ArmoryType.Char, "Skin", CommonConst.ArmoryTag.Appearance, "Purchase")
     end
   end
 end
-
 function WBP_BattlePass_Book_C:OpenPurchaseDialog()
   AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_btn_click_normal", nil, nil)
+  local CurLoopMaxLevel = BattlePassUtils:GetCurLoopMaxLevel()
   local Params = {
     RightCallbackObj = self,
     RightCallbackFunction = self.StartBuyLevel,
     ShortText = string.format(GText("UI_BattlePass_BuyLevel")),
     MinLevel = 1,
-    MaxLevel = self:GetMaxLevel() - self.CurLevel,
+    MaxLevel = CurLoopMaxLevel - self.CurLevel,
     Funds = {
       {
         FundId = DataMgr.GlobalConstant.BattlePassBuyLvMoney.ConstantValue,
@@ -1508,7 +1586,6 @@ function WBP_BattlePass_Book_C:OpenPurchaseDialog()
   }
   self.PurchaseDialog = UIManager(self):ShowCommonPopupUI(BATTLE_PASS_LEVEL_PURCHASE_POPUP, Params)
 end
-
 function WBP_BattlePass_Book_C:StartBuyLevel(Res)
   DebugPrint("gmy@WBP_BattlePass_Book_C M:StartBuyLevel", Res and Res.BattlePass and Res.BattlePass.Level)
   local Avatar = GWorld:GetAvatar()
@@ -1523,15 +1600,22 @@ function WBP_BattlePass_Book_C:StartBuyLevel(Res)
       local Coin4 = Avatar.Resources[CommonConst.Coins.Coin4]
       local Coin4Count = Coin4 and Coin4.Count or 0
       if NeedTransformCount > Coin4Count then
-        local function JumpToShop()
-          PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
-        end
-        
-        local Params = {}
-        Params.LeftCallbackObj = self
-        Params.RightCallbackObj = self
-        Params.RightCallbackFunction = JumpToShop
-        self.JumpToShopPopupUI = UIManager(self):ShowCommonPopupUI(BATTLE_PASS_ALL_LACK_COIN_POPUP, Params, self)
+        local CostType = CommonConst.Coins.Coin4
+        local CostNum = NeedTransformCount
+        UIManager(self):ShowCommonPopupUI(100290, {
+          CostNum = CostNum,
+          CostType = CostType,
+          RightCallbackObj = self,
+          CallbackInfo = {
+            Func = function(GoodsId, ShopItems, OrderId)
+              if not self or not IsValid(self) then
+                return
+              end
+              self:StartBuyLevel(Res)
+            end,
+            Obj = self
+          }
+        }, self)
       else
         local ItemList = {}
         table.insert(ItemList, {
@@ -1562,8 +1646,10 @@ function WBP_BattlePass_Book_C:StartBuyLevel(Res)
           RightCallbackFunction = function()
             Avatar:TransformCoin4ToCoin1(NeedTransformCount, function(Count)
               DebugPrint("gmy@WBP_BattlePass_Book_C WBP_BattlePass_Book_C:StartBuyLevel Callback", Count)
-              UIUtils.ShowGetItemPageAndOpenBagIfNeeded("Resource", FundId, Count, nil, false, nil, self, false)
               self:OpenPurchaseDialog()
+              self:AddTimer(0.2, function()
+                UIUtils.ShowGetItemPageAndOpenBagIfNeeded("Resource", FundId, Count, nil, false, nil, self, false)
+              end, false, 0, "ShowGetItemPageTimer", true)
             end)
           end,
           ItemList = ItemList,
@@ -1579,33 +1665,29 @@ function WBP_BattlePass_Book_C:StartBuyLevel(Res)
     end
   end
 end
-
 function WBP_BattlePass_Book_C:GetMaxLevel()
   return BattlePassUtils:GetMaxLevel()
 end
-
 function WBP_BattlePass_Book_C:OnAddedToFocusPath(InFocusEvent)
   if self.PlayLevelUp then
-    self:PlayLevelUpAnimation()
+    self:PlayLevelUpAnimation(self.ExpandedMaxLevel)
+    self.ExpandedMaxLevel = nil
   end
   if self.NeedShowAutoGetPopupUI then
     self:ShowAutoGetPopupUI()
   end
-  if self.PlayUnlock and self.CurTabId == "BattlePassReward" then
+  if self.PlayUnlock and BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:PlayUnlockAnimation()
   end
 end
-
 function WBP_BattlePass_Book_C:OnBattlePassAutoGetTaskReward()
   self:TryShowAutoGetPopupUI()
 end
-
 function WBP_BattlePass_Book_C:CheckBattlePassAutoGetTaskReward()
   if self.Avatar.BattlePassAutoGetTaskReward then
     self:TryShowAutoGetPopupUI()
   end
 end
-
 function WBP_BattlePass_Book_C:TryShowAutoGetPopupUI()
   if not self.ShowingPopupUI then
     if UIUtils.HasAnyFocus(self) then
@@ -1615,20 +1697,22 @@ function WBP_BattlePass_Book_C:TryShowAutoGetPopupUI()
     end
   end
 end
-
 function WBP_BattlePass_Book_C:ShowAutoGetPopupUI()
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   local CommonDialogParams = {}
-  
   function CommonDialogParams.RightCallbackFunction()
     self.ShowingPopupUI = false
   end
-  
-  self.ShowingPopupUI = true
-  self.AutoGetPopupUI = UIManager(self):ShowCommonPopupUI(100203, CommonDialogParams, self)
-  self.NeedShowAutoGetPopupUI = false
-  self.Avatar:CallServerMethod("BattlePassAutoGetTaskRewardReset")
+  if not self:IsExistTimer("ShowAutoGetPopupUITimer") then
+    self:AddTimer(0.5, function()
+      self:BlockAllUIInput(false)
+      self.ShowingPopupUI = true
+      self.AutoGetPopupUI = UIManager(self):ShowCommonPopupUI(100203, CommonDialogParams, self)
+      self.NeedShowAutoGetPopupUI = false
+      self.Avatar:CallServerMethod("BattlePassAutoGetTaskRewardReset")
+    end, false, 0, "ShowAutoGetPopupUITimer", true)
+  end
 end
-
 function WBP_BattlePass_Book_C:TryClosePopupUI()
   if IsValid(self.BattlePassPetCanClaimPopupUI) then
     self.BattlePassPetCanClaimPopupUI:Close()
@@ -1646,14 +1730,12 @@ function WBP_BattlePass_Book_C:TryClosePopupUI()
     self.AutoGetPopupUI:Close()
   end
 end
-
 function WBP_BattlePass_Book_C:AddLevelBarTimer()
   if not self.LevelBarTimer then
     AudioManager(self):PlayUISound(self, "event:/ui/common/battle_pass_exp_bar_grow", "LevelBarUpSound", nil)
     self.LevelBarTimer = self:AddTimer(0.01, self.SetLevelBarLerp, true, 0, "LevelBarTimer", true, 0.01)
   end
 end
-
 function WBP_BattlePass_Book_C:RemoveLevelBarTimer()
   if self.LevelBarTimer then
     AudioManager(self):SetEventSoundParam(self, "LevelBarUpSound", {ToEnd = 1})
@@ -1662,15 +1744,13 @@ function WBP_BattlePass_Book_C:RemoveLevelBarTimer()
     self.LevelBarTimer = nil
   end
 end
-
 function WBP_BattlePass_Book_C:GetAllReward()
-  if self.CurTabId == "BattlePassReward" then
+  if BattlePassController:GetModelData("CurTabId") == "BattlePassReward" then
     self:GetAllBattlePassReward()
-  elseif self.CurTabId == "BattlePassMission" then
+  elseif BattlePassController:GetModelData("CurTabId") == "BattlePassMission" then
     self:GetAllMissionReward()
   end
 end
-
 function WBP_BattlePass_Book_C:EnterState_Default()
   local Index = 1
   if self.HaveGetAllTip then
@@ -1681,7 +1761,6 @@ function WBP_BattlePass_Book_C:EnterState_Default()
   end
   self.Parent:UpdateBottomKeyInfo(self.BottomKeyInfo)
 end
-
 function WBP_BattlePass_Book_C:EnterState_FocusItemCantGet()
   local Index = 1
   if self.HaveGetAllTip then
@@ -1699,7 +1778,6 @@ function WBP_BattlePass_Book_C:EnterState_FocusItemCantGet()
   })
   self.Parent:UpdateBottomKeyInfo(self.BottomKeyInfo)
 end
-
 function WBP_BattlePass_Book_C:EnterState_FocusItemCanGet()
   local Index = 1
   if self.HaveGetAllTip then
@@ -1717,19 +1795,35 @@ function WBP_BattlePass_Book_C:EnterState_FocusItemCanGet()
   })
   self.Parent:UpdateBottomKeyInfo(self.BottomKeyInfo)
 end
-
-function WBP_BattlePass_Book_C:OnFocusItemChanged(bCanGet)
+function WBP_BattlePass_Book_C:OnFocusItemChanged(bCanGet, IsLoopEmpty)
   self.LastState = self.ControllerFSM:Current()
-  if bCanGet then
+  if IsLoopEmpty then
+    self.ControllerFSM:Enter(FSMStates.Default)
+  elseif bCanGet then
     self.ControllerFSM:Enter(FSMStates.FocusItemCanGet)
   else
     self.ControllerFSM:Enter(FSMStates.FocusItemCantGet)
   end
 end
-
 function WBP_BattlePass_Book_C:OnLeaveRewardTab()
   self.LastState = self.ControllerFSM:Current()
   self.ControllerFSM:Enter(FSMStates.Default)
 end
-
+function WBP_BattlePass_Book_C:OpenTips(Widget)
+  self.IsTipMode = true
+  self.OpenTipsWidget = Widget
+  Widget:OpenTips()
+end
+function WBP_BattlePass_Book_C:TryCloseTips()
+  if self.OpenTipsWidget then
+    self.OpenTipsWidget:CloseTips()
+    if self.CurFocusedItem then
+      self.List_Reward:BP_NavigateToItem(self.CurFocusedItem.Content)
+    else
+      self:NavigateToFirstDisplayedItem(self.List_Reward)
+    end
+  end
+  self.IsTipMode = false
+  self.OpenTipsWidget = nil
+end
 return WBP_BattlePass_Book_C

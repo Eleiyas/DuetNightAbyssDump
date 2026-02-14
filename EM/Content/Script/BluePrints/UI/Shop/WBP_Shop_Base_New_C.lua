@@ -1,8 +1,7 @@
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
-function M:InitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType)
+function M:InitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType, bBanAnimation)
   local PlayerController = UGameplayStatics.GetPlayerController(self, 0)
   if IsValid(PlayerController) then
     if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -15,7 +14,7 @@ function M:InitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType)
   Player:SetCanInteractiveTrigger(false)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "OpenShopMain", nil)
   if not ShopType then
-    DebugPrint("ShopType\231\188\186\229\164\177\239\188\140ZDX_\232\175\183\229\175\185\229\186\148\231\179\187\231\187\159\230\142\165\229\143\163\232\180\159\232\180\163\228\186\186\228\188\160\229\133\165\229\149\134\229\159\142\229\133\183\228\189\147\231\154\132SystemName")
+    DebugPrint("ShopType缺失，ZDX_请对应系统接口负责人传入商城具体的SystemName")
     ShopType = "Shop"
   end
   self.ShopType = ShopType
@@ -25,10 +24,14 @@ function M:InitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType)
   self.SelectShopItemId = ShopItemId
   self:CommmonInitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType)
   self:InitShopTabInfo(MainTabIdx, SubTabIdx, ShopType)
-  self:PlayAnimation(self.In)
-  self:BlockAllUIInput(true)
+  if not bBanAnimation then
+    self:PlayAnimation(self.In)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
+  else
+    self:PlayAnimation(self.In, 0, 1, EUMGSequencePlayMode.Forward, 6000.0, false)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
+  end
 end
-
 function M:CommmonInitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType)
   self.Group_BG:ClearChildren()
   local BGPath = DataMgr.Shop[ShopType].ShopBgBPPath
@@ -45,7 +48,6 @@ function M:CommmonInitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopType)
     end
   end
 end
-
 function M:LoadShopTabInfo(MainShopTabData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -92,7 +94,6 @@ function M:LoadShopTabInfo(MainShopTabData)
     self.OverridenTopResouces = self:GetOverrideTopResource()
   end
 end
-
 function M:LoadMainTabInfo(MainTabId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -124,7 +125,6 @@ function M:LoadMainTabInfo(MainTabId)
     table.insert(self.SubTabMap, Tab.Data)
   end
 end
-
 function M:LoadSubTabInfo(SubTabData)
   self:CleanTimer()
   self.CurSubTabMap = SubTabData
@@ -132,7 +132,7 @@ function M:LoadSubTabInfo(SubTabData)
   if SubTabData.TabCoin then
     self.TabCoinInfo = SubTabData.TabCoin
   else
-    assert(DataMgr.Shop[self.ShopType].ShopUIName, "\232\175\165\229\149\134\229\159\142\229\175\185\229\186\148\231\154\132\232\147\157\229\155\190\229\156\168SystemUI\228\184\173\228\184\141\229\173\152\229\156\168\239\188\154" .. self.ShopType)
+    assert(DataMgr.Shop[self.ShopType].ShopUIName, "该商城对应的蓝图在SystemUI中不存在：" .. self.ShopType)
     self.TabCoinInfo = DataMgr.SystemUI[DataMgr.Shop[self.ShopType].ShopUIName].TabCoin
   end
   self.Common_Tab:OverrideTopResource(self.TabCoinInfo)
@@ -164,7 +164,6 @@ function M:LoadSubTabInfo(SubTabData)
     })
   end
 end
-
 function M:UpdateShopDetail(SubTabData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -191,7 +190,6 @@ function M:UpdateShopDetail(SubTabData)
     end
   end
   local SortFunc
-  
   local function SortBySequence(a, b)
     if SortType == CommonConst.ASC then
       if a.Sequence == b.Sequence then
@@ -202,7 +200,6 @@ function M:UpdateShopDetail(SubTabData)
       return a.Sequence < b.Sequence
     end
   end
-  
   local function SortFuncByTime(a, b)
     if SortType == CommonConst.ASC then
       return a.StartTime < b.StartTime
@@ -210,7 +207,6 @@ function M:UpdateShopDetail(SubTabData)
       return a.StartTime > b.StartTime
     end
   end
-  
   local function SortFuncByRarity(a, b)
     local ItemDataA = DataMgr[a.ItemType][a.TypeId]
     local ItemDataB = DataMgr[b.ItemType][b.TypeId]
@@ -222,7 +218,6 @@ function M:UpdateShopDetail(SubTabData)
       return RarityA > RarityB
     end
   end
-  
   local function SortFuncByPrice(a, b)
     if SortType == CommonConst.ASC then
       return ShopUtils:GetShopItemPrice(a.ItemId) < ShopUtils:GetShopItemPrice(b.ItemId)
@@ -230,7 +225,6 @@ function M:UpdateShopDetail(SubTabData)
       return ShopUtils:GetShopItemPrice(a.ItemId) > ShopUtils:GetShopItemPrice(b.ItemId)
     end
   end
-  
   if 1 == Filter1 then
     function SortFunc(a, b)
       if SortBySequence(a, b) then
@@ -362,17 +356,16 @@ function M:UpdateShopDetail(SubTabData)
   self.SkinCount = 0
   for i = 1, self.ShopItemNum do
     local ShopData = ShopDataList[i]
-    local Content = NewObject(self.ShopItemContentClass)
+    local Content = NewObject(UIUtils.GetCommonItemContentClass())
+    Content.ShopType = self.ShopType
     Content.ShopId = ShopData.ItemId
-    if ShopData.ItemType == "Skin" or ShopData.ItemType == "WeaponSkin" or ShopData.ItemType == "CharAccessory" or ShopData.ItemType == "WeaponAccessory" then
+    if UIUtils.CanOpenSkinPreview(ShopData.ItemType, ShopData.TypeId) then
       self.SkinCount = self.SkinCount + 1
       self.Index2ShopSkin[self.SkinCount] = ShopData.ItemId
       self.ShopSkin2Index[ShopData.ItemId] = self.SkinCount
     end
-    if ShopData.ItemType == "Resource" and DataMgr.Resource[ShopData.TypeId] and DataMgr.Resource[ShopData.TypeId].ResourceSType == "GestureItem" then
-      self.SkinCount = self.SkinCount + 1
-      self.Index2ShopSkin[self.SkinCount] = ShopData.ItemId
-      self.ShopSkin2Index[ShopData.ItemId] = self.SkinCount
+    if self.SelectShopItemId and self.SelectShopItemId == ShopData.ItemId and 0 ~= ShopUtils:GetShopItemPurchaseLimit(self.SelectShopItemId) then
+      self.ItemIndex = i - 1
     end
     self.List_Item:AddItem(Content)
   end
@@ -380,6 +373,8 @@ function M:UpdateShopDetail(SubTabData)
   self:HorizontalListViewResize_SetUp(self.Group_Item, self.List_Item, XAnchor)
   local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
   if self.List_Item:GetNumItems() > 0 then
+    self.Group_Bottom:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Common_SortList_PC:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self:AddTimer(0.1, function()
       if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
         GameInputModeSubsystem:SetNavigateWidgetVisibility(true)
@@ -391,14 +386,28 @@ function M:UpdateShopDetail(SubTabData)
       if not CommonUtils:IfExistSystemGuideUI(self) or self:HasAnyFocus() or self:HasFocusedDescendants() then
         self.List_Item:SetFocus()
       end
+      if self.ItemIndex then
+        self.List_Item:ScrollIndexIntoView(self.ItemIndex)
+      end
+      self.ItemIndex = nil
     end)
   else
+    if self.bFilterOwned then
+      self.Text_ShopItemEmpty:SetText(GText("UI_SHOP_NOITEM"))
+    else
+      self.Text_ShopItemEmpty:SetText(GText("UI_SHOP_SOLDOUT"))
+    end
     GameInputModeSubsystem:SetNavigateWidgetVisibility(false)
     self.VB_ItemList:SetVisibility(ESlateVisibility.Collapsed)
     self.Group_Empty:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Common_SortList_PC:SetVisibility(ESlateVisibility.Collapsed)
+    if self.bFilterOwned then
+      self.Group_Bottom:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    else
+      self.Group_Bottom:SetVisibility(ESlateVisibility.Collapsed)
+    end
   end
 end
-
 function M:OnClickFilterOwned()
   if self:IsAnimationPlaying(self.Filtrate) then
     return
@@ -412,34 +421,29 @@ function M:OnClickFilterOwned()
   self.bFilterOwned = not self.bFilterOwned
   self:UpdateShopDetail(self.CurSubTabMap, true)
 end
-
 function M:GetOverrideTopResource()
   if self.TabCoinInfo then
     return self.TabCoinInfo
   end
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Out) then
     return
   end
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   AudioManager(self):SetEventSoundParam(self, "OpenShopMain", {ToEnd = 1})
   if self.IsAddInDeque then
-    self:PlayAnimationForward(self.Out, UIConst.AnimOutSpeedWithPageJump.LittleFastSpeed)
+    self:PlayAnimationForward(self.Out, UIConst.AnimOutSpeedWithPageJump.MaxSpeed)
   else
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:BindEventOnSelectionsChanged(Filter1, Filter2, Filter3, SortType)
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
 function M:BindEventOnSortTypeChanged(SortType)
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
 function M:ShowItemDetail()
   if not DataMgr.ShopItem[self.SelectShopItemId] then
     return
@@ -457,10 +461,12 @@ function M:ShowItemDetail()
   local ItemData = DataMgr[ItemType][TypeId]
   local CommonPopupUIID
   if "Reward" == ItemType and (DataMgr.Reward[ItemData.RewardId].Mode == "Fixed" or DataMgr.Reward[ItemData.RewardId].Mode == "Once") then
-    if 0 == RemainTimes then
-      CommonPopupUIID = 100040
+    if 1 == self.ShopItemData.Bg then
+      UIManager(self):LoadUINew("PayGiftPopup_Yellow", self.ShopItemData, self)
+    elseif 2 == self.ShopItemData.Bg then
+      UIManager(self):LoadUINew("PayGiftPopup_Purple", self.ShopItemData, self)
     else
-      CommonPopupUIID = 100039
+      UIManager(self):LoadUINew("PayGiftPopup_Purple", self.ShopItemData, self)
     end
   elseif 0 == RemainTimes then
     CommonPopupUIID = 100042
@@ -506,12 +512,10 @@ function M:ShowItemDetail()
     ForbidRightBtn = not ShopUtils:CanPurchase(self.ShopItemData, Funds[1].FundId, Funds[1].FundNeed)
   }, UIManager(self):GetUIObj(ShopUIName))
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   self:OnKeyDownForLSComp(MyGeometry, InKeyEvent)
   return M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -521,10 +525,8 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
       IsEventHandled = self:OnGamePadDown(InKeyName)
     end
   elseif "Escape" == InKeyName then
-    if not UIManager(self):GetUIObj("CommonDialog") then
-      IsEventHandled = true
-      self:CloseSelf()
-    end
+    IsEventHandled = true
+    self:CloseSelf()
   elseif "Q" == InKeyName then
     IsEventHandled = true
     self.ShopTab:TabToLeft()
@@ -552,21 +554,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnRechargeFinished(Result, GoodsId, ShopItems)
   self:BlockAllUIInput(false)
   self:RefreshSubTabData(self.CurSubTabMap)
-  if Result == ErrorCode.RET_SUCCESS then
-    if ShopItems and DataMgr.PayGoods[GoodsId].ItemId then
-      local ShopItemData = DataMgr.ShopItem[DataMgr.PayGoods[GoodsId].ItemId]
-      assert(ShopItemData, "\232\180\173\228\185\176\230\136\144\229\138\159\229\144\142\232\175\187\232\161\168ShopItemData\228\184\186\231\169\186", DataMgr.PayGoods[GoodsId].ItemId)
-      UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, ShopItems, ShopItemData.IsSpPopup)
-    end
-  else
-    UIManager(GWorld.GameInstance):ShowError(Result, 1.0, "CommonToastMain")
-  end
 end
-
 function M:SetFocus_Lua()
   local AllItemCount = self.List_Item:GetNumItems()
   if AllItemCount > 0 then
@@ -575,5 +566,4 @@ function M:SetFocus_Lua()
     self:SetFocus()
   end
 end
-
 return M

@@ -1,21 +1,18 @@
 require("UnLua")
 local Component = {}
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
+local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function Component:InitComponentCoroutine()
 end
-
 function Component:AddComponentEvent()
   EventManager:AddEvent(EventID.UpdateMiniMap, self, self.UpdateMiniMapIndicatorsByStoryNode)
-  EventManager:AddEvent(EventID.ChangeIndicatorFloorStyle, self, self.ChangeMiniMapIndicatorsFloorStyle)
+  EventManager:AddEvent(EventID.OnMissiongIndicatorFloorLevelChange, self, self.SetMissionIndicatorsWidgetFloorStyle)
 end
-
 function Component:RemoveComponentEvent()
   EventManager:RemoveEvent(EventID.UpdateMiniMap, self)
-  EventManager:RemoveEvent(EventID.ChangeIndicatorFloorStyle, self)
+  EventManager:RemoveEvent(EventID.OnMissiongIndicatorFloorLevelChange, self)
 end
-
 function Component:ClearData()
   if self.TaskArea then
     for _, area in pairs(self.TaskArea) do
@@ -41,11 +38,9 @@ function Component:ClearData()
     self.IndicatorWidgets = {}
   end
 end
-
 function Component:ShowFloor_Component(FloorId)
   self:SetMissionIndicatorsWidgetFloorStyle(FloorId)
 end
-
 function Component:OnScaleChange_Component(Percent)
   if not IsEmptyTable(self.IndicatorWidgets) then
     local ConstIndicatorScale = 0.5
@@ -64,7 +59,6 @@ function Component:OnScaleChange_Component(Percent)
     end
   end
 end
-
 function Component:ClearIndicatorWidgets()
   if not IsEmptyTable(self.IndicatorWidgets) then
     for k, v in pairs(self.IndicatorWidgets) do
@@ -77,7 +71,6 @@ function Component:ClearIndicatorWidgets()
   end
   self.IndicatorWidgets = {}
 end
-
 function Component:CheckIsTrackingQuest(CurMapRegionId)
   local Info = TaskUtils:GetTrackingQuestDetailInfo()
   local QuestSubRegionMapId
@@ -108,7 +101,7 @@ function Component:CheckIsTrackingQuest(CurMapRegionId)
         break
       end
       if Const.EnableTaskPrintError then
-        ScreenPrint(string.format("CheckIsTrackingQuest: \230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \228\187\187\229\138\161\229\140\186\229\159\159\228\191\161\230\129\175\232\142\183\229\143\150\229\164\177\232\180\165\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\229\135\186\230\149\176\230\141\174, \230\140\135\229\188\149\231\130\185: %s", v:GetName()))
+        ScreenPrint(string.format("CheckIsTrackingQuest: 指引点区域数据不存在, 任务区域信息获取失败，请检查导出数据, 指引点: %s", v:GetName()))
       end
       break
     end
@@ -122,7 +115,6 @@ function Component:CheckIsTrackingQuest(CurMapRegionId)
   local QuestRegionMapId = DataMgr.SubRegion[QuestSubRegionMapId].RegionId
   return QuestRegionMapId and QuestRegionMapId ~= CurMapRegionId
 end
-
 function Component:UpdateMiniMapIndicatorsByStoryNode(InUIName, InUIType, OpType)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -149,6 +141,19 @@ function Component:UpdateMiniMapIndicatorsByStoryNode(InUIName, InUIType, OpType
   elseif "Add" == OpType then
     if 999999 == TrackingQuestChainId then
       return
+    end
+    local DelWidget = self.IndicatorWidgets[InUIName]
+    if IsValid(DelWidget) and DelWidget then
+      self:AddOrDeleteMissionIndicatorArray(false, DelWidget)
+      self:RemoveTrack(DelWidget)
+      if IsValid(self.MainMap.TracePanel) and self.MainMap.TracePanel:HasChild(DelWidget) then
+        self.MainMap.TracePanel:RemoveChild(DelWidget)
+      end
+      if IsValid(self.Panel_Gamer) and self.Panel_Gamer:HasChild(DelWidget) then
+        self.Panel_Gamer:RemoveChild(DelWidget)
+      end
+      self.IndicatorWidgets[InUIName] = nil
+      self:RemoveIndicatorLocation(InUIName)
     end
     local IndicatorWidget = self:CreateIndicatorMiniMapWidget()
     self.IndicatorWidgets[InUIName] = IndicatorWidget
@@ -178,13 +183,11 @@ function Component:UpdateMiniMapIndicatorsByStoryNode(InUIName, InUIType, OpType
     end
   end
 end
-
 function Component:CreateIndicatorMiniMapWidget()
   local Path = "/Game/UI/UI_PC/Common/Common_GuidePoint_PC.Common_GuidePoint_PC_C"
   local GuidePointWidget = UE4.UWidgetBlueprintLibrary.Create(self, LoadClass(Path))
   return GuidePointWidget
 end
-
 function Component:CreateIndicatorRegionMapWidget(InChainId)
   local PointPath = "/Game/UI/WBP/Map/Widget/WBP_Map_Point.WBP_Map_Point"
   local Point = UIManager(self):CreateWidget(PointPath)
@@ -201,7 +204,6 @@ function Component:CreateIndicatorRegionMapWidget(InChainId)
   end
   return Point, Select
 end
-
 function Component:UpdateMiniIndicatorWidgetByType(InUIName, Widget, Type)
   if "Task" == Type then
     self:AddTaskMiniMapIndicator(InUIName, Widget)
@@ -211,7 +213,6 @@ function Component:UpdateMiniIndicatorWidgetByType(InUIName, Widget, Type)
     self:AddSpecialSideMiniMapIndicator(InUIName, Widget)
   end
 end
-
 function Component:ChangeMissionIndicatorLocationtoSmartPointLoc(InUIName, InWidget)
   local IndicatorUI = UIManager(self):GetUIObj(InUIName)
   if not IndicatorUI then
@@ -233,7 +234,6 @@ function Component:ChangeMissionIndicatorLocationtoSmartPointLoc(InUIName, InWid
   self.IndicatorWidgets[InUIName] = IndicatorWidget
   self:UpdateMiniIndicatorWidgetByType(InUIName, IndicatorWidget, "Task")
 end
-
 function Component:AddTaskMiniMapIndicator(InUIName, Widget)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -246,7 +246,7 @@ function Component:AddTaskMiniMapIndicator(InUIName, Widget)
   end
   if 0 == TrackingQuestId then
     if Const.EnableTaskPrintError then
-      ScreenPrint(string.format("[line:555]\232\191\189\232\184\170\228\187\187\229\138\161\228\184\141\229\173\152\229\156\168\239\188\140\229\176\143\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\229\138\160\232\189\189\229\164\177\232\180\165, \228\187\187\229\138\161\233\147\190Id: %s", TrackingQuestChainId))
+      ScreenPrint(string.format("[line:555]追踪任务不存在，小地图指引点加载失败, 任务链Id: %s", TrackingQuestChainId))
     end
     return
   end
@@ -275,7 +275,7 @@ function Component:AddTaskMiniMapIndicator(InUIName, Widget)
   end
   if nil == GuidePointLocData[TargetPointKey] then
     if Const.EnableTaskPrintError then
-      ScreenPrint(string.format("[line:577]\228\187\187\229\138\161\229\176\143\229\156\176\229\155\190\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\154%s", IndicatorUI:GetName()))
+      ScreenPrint(string.format("[line:577]任务小地图地图指引点数据不存在, 指引点名称：%s", IndicatorUI:GetName()))
     end
     return
   end
@@ -307,7 +307,7 @@ function Component:AddTaskMiniMapIndicator(InUIName, Widget)
   local TaskWorldMapRegionId = GuidePointLocData[TargetPointKey].SubRegionId
   if not TaskWorldMapRegionId then
     if Const.EnableTaskPrintError then
-      ScreenPrint(string.format("[line:601]\228\187\187\229\138\161\229\176\143\229\156\176\229\155\190\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\154%s", TargetPointKey))
+      ScreenPrint(string.format("[line:601]任务小地图地图指引点区域数据不存在, 指引点名称：%s", TargetPointKey))
     end
     return
   end
@@ -326,15 +326,14 @@ function Component:AddTaskMiniMapIndicator(InUIName, Widget)
     if IsValid(self.Panel_Gamer) then
       self.Panel_Gamer:AddChild(Widget)
     end
-    Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75
-    Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75
+    Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75 * self.MiniMapScale
+    Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75 * self.MiniMapScale
   elseif IsValid(self.MainMap.TracePanel) then
     self.MainMap.TracePanel:AddChild(Widget)
   end
   self:SetIndicatorRangeMaterial(Widget, TrackingQuestChainId, false)
   self:SetIndicatorLoopColor(Widget, TrackingQuestChainId)
   local GuidePointSlot = Widget.Slot
-  
   local function AdjustSlot(GuidePointSlot)
     GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
     GuidePointSlot:SetAutoSize(true)
@@ -347,22 +346,20 @@ function Component:AddTaskMiniMapIndicator(InUIName, Widget)
     Offset.Top = 0
     GuidePointSlot:SetOffsets(Offset)
   end
-  
   AdjustSlot(GuidePointSlot)
   Widget:StopAllAnimations()
   self:AddIndicatorLocation(InUIName, Location.X, Location.Y, Location.Z, Location.R)
-  self:SetIndicatorsFloorIdByData(Widget, TaskWorldMapRegionId, TargetPointKey)
-  self:ChangeMiniMapIndicatorsFloorStyle(Widget)
+  self:SetIndicatorsFloorIdByData(IndicatorUI, Widget, TaskWorldMapRegionId, TargetPointKey)
   self:TrySetDiffGuideIcon(Widget, TrackingQuestChainId, IndicatorUI.GuideInfoCache.QuestNode.Key)
   local LocInUI = self:TransformWorldLocToUILoc(Location.X, Location.Y)
   Widget:SetRenderTranslation(LocInUI)
-  local arrow = self.MainMap:NewPointArrow()
   if nil ~= Location.R and Location.R > 0 then
     Widget.Img_GuidePoint_Icon:SetVisibility(UE4.ESlateVisibility.Collapsed)
     Widget.Img_Range:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     Widget.Img_Range.Slot:SetSize(FVector2D(Location.R * 2 * self.Scale, Location.R * 2 * self.Scale))
     Widget:ClearAllFunc()
   else
+    local arrow = self.MainMap:NewPointArrow()
     if TargetActor.IsNPC and TargetActor:IsNPC() then
       self:AddOrDeleteMissionIndicatorArray(true, Widget)
       self:AddTrack(Widget, arrow, TargetActor)
@@ -371,10 +368,10 @@ function Component:AddTaskMiniMapIndicator(InUIName, Widget)
     end
     Widget:PlayAnimation(Widget.Loop, 0, 0)
   end
-  local IsRangeOrPoint = self:CheckIsNeedShowRangeStyleByLocation(Location)
+  local IsRangeOrPoint = nil ~= Location.R and Location.R > 0
   self:RealChangeRangesGuideInMap(InUIName, IsRangeOrPoint)
+  self:ChangeMiniMapIndicatorsFloorStyle(Widget, InUIName)
 end
-
 function Component:AddSpecialSideMiniMapIndicator(InUIName, Widget)
   local TargetPointKey
   for _, Data in pairs(DataMgr.QuestChain) do
@@ -385,7 +382,7 @@ function Component:AddSpecialSideMiniMapIndicator(InUIName, Widget)
   end
   if nil == GuidePointLocData[TargetPointKey] then
     if Const.EnableTaskPrintError then
-      ScreenPrint(string.format("[line:577]\228\187\187\229\138\161\229\176\143\229\156\176\229\155\190\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\154%s", InUIName))
+      ScreenPrint(string.format("[line:577]任务小地图地图指引点数据不存在, 指引点名称：%s", InUIName))
     end
     return
   end
@@ -416,7 +413,7 @@ function Component:AddSpecialSideMiniMapIndicator(InUIName, Widget)
   local TaskWorldMapRegionId = GuidePointLocData[TargetPointKey].SubRegionId
   if not TaskWorldMapRegionId then
     if Const.EnableTaskPrintError then
-      ScreenPrint(string.format("[line:601]\228\187\187\229\138\161\229\176\143\229\156\176\229\155\190\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\154%s", TargetPointKey))
+      ScreenPrint(string.format("[line:601]任务小地图地图指引点区域数据不存在, 指引点名称：%s", TargetPointKey))
     end
     return
   end
@@ -428,7 +425,6 @@ function Component:AddSpecialSideMiniMapIndicator(InUIName, Widget)
     self.MainMap.TracePanel:AddChild(Widget)
   end
   local GuidePointSlot = Widget.Slot
-  
   local function AdjustSlot(GuidePointSlot)
     GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
     GuidePointSlot:SetAutoSize(true)
@@ -441,12 +437,11 @@ function Component:AddSpecialSideMiniMapIndicator(InUIName, Widget)
     Offset.Top = 0
     GuidePointSlot:SetOffsets(Offset)
   end
-  
   AdjustSlot(GuidePointSlot)
   Widget:StopAllAnimations()
   self:AddIndicatorLocation(InUIName, Location.X, Location.Y, Location.Z, Location.R)
-  self:SetIndicatorsFloorIdByData(Widget, TaskWorldMapRegionId, TargetPointKey)
-  self:ChangeMiniMapIndicatorsFloorStyle(Widget)
+  self:SetIndicatorsFloorIdByData(IndicatorUI, Widget, TaskWorldMapRegionId, TargetPointKey)
+  self:ChangeMiniMapIndicatorsFloorStyle(Widget, InUIName)
   local LocInUI = self:TransformWorldLocToUILoc(Location.X, Location.Y)
   Widget:SetRenderTranslation(LocInUI)
   local arrow = self.MainMap:NewPointArrow()
@@ -457,7 +452,6 @@ function Component:AddSpecialSideMiniMapIndicator(InUIName, Widget)
     self:AddTrack(Widget, arrow, nil)
   end
 end
-
 function Component:TrySetDiffGuideIcon(Widget, InGuidePointChainId, InKey)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -473,25 +467,33 @@ function Component:TrySetDiffGuideIcon(Widget, InGuidePointChainId, InKey)
       for Index, OptionElemts in pairs(Data.DiffGuideList) do
         for _, KeyList in pairs(OptionElemts) do
           for _, KeyData in pairs(KeyList) do
-            if Widget.Img_GuidePoint_Icon then
+            if Data.IsUseDifftation and Widget.Img_GuidePoint_Icon then
               if KeyData.IsShowOptional and KeyData.TargetIndicatorKey == InKey then
-                local IconTexture = TaskUtils:GetOptinalIconTextureByQuestChainType(InGuidePointChainId)
-                Widget.Img_GuidePoint_Icon:SetBrushResourceObject(IconTexture)
+                local Content = string.char(string.byte("A") + Index - 1)
+                local RetPath = TaskUtils:GetDiffIconOptionalByQuestChainType(InGuidePointChainId, Content)
+                Widget.Img_GuidePoint_Icon:SetBrushResourceObject(LoadObject(RetPath))
               elseif KeyData.TargetIndicatorKey == InKey then
                 local Content = string.char(string.byte("A") + Index - 1)
-                local RetPath = "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Digging_" .. Content .. ".T_Gp_Digging_" .. Content
+                local RetPath = TaskUtils:GetDiffIconByQuestChainType(InGuidePointChainId, Content)
                 Widget.Img_GuidePoint_Icon:SetBrushResourceObject(LoadObject(RetPath))
               end
+            elseif Widget.Img_GuidePoint_Icon and KeyData.IsShowOptional and InKey == KeyData.TargetIndicatorKey then
+              local IconTexture = TaskUtils:GetOptinalIconTextureByQuestChainType(InGuidePointChainId)
+              Widget.Img_GuidePoint_Icon:SetBrushResourceObject(IconTexture)
             end
-            if Widget.Img_Point then
+            if Data.IsUseDifftation and Widget.Img_Point then
               if KeyData.IsShowOptional and KeyData.TargetIndicatorKey == InKey then
-                local IconTexture = TaskUtils:GetOptinalIconTextureByQuestChainType(InGuidePointChainId)
-                Widget.Img_Point:SetBrushResourceObject(IconTexture)
+                local Content = string.char(string.byte("A") + Index - 1)
+                local RetPath = TaskUtils:GetDiffIconOptionalByQuestChainType(InGuidePointChainId, Content)
+                Widget.Img_Point:SetBrushResourceObject(LoadObject(RetPath))
               elseif KeyData.TargetIndicatorKey == InKey then
                 local Content = string.char(string.byte("A") + Index - 1)
-                local RetPath = "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Digging_" .. Content .. ".T_Gp_Digging_" .. Content
+                local RetPath = TaskUtils:GetDiffIconByQuestChainType(InGuidePointChainId, Content)
                 Widget.Img_Point:SetBrushResourceObject(LoadObject(RetPath))
               end
+            elseif Widget.Img_Point and KeyData.IsShowOptional and InKey == KeyData.TargetIndicatorKey then
+              local IconTexture = TaskUtils:GetOptinalIconTextureByQuestChainType(InGuidePointChainId)
+              Widget.Img_Point:SetBrushResourceObject(IconTexture)
             end
           end
         end
@@ -499,7 +501,6 @@ function Component:TrySetDiffGuideIcon(Widget, InGuidePointChainId, InKey)
     end
   end
 end
-
 function Component:SetIndicatorRangeMaterial(InWidget, TrackQuestChainId, IsDynEvent)
   if not IsValid(InWidget) then
     return
@@ -530,7 +531,6 @@ function Component:SetIndicatorRangeMaterial(InWidget, TrackQuestChainId, IsDynE
     end
   end
 end
-
 function Component:SetIndicatorLoopColor(InWidget, TrackQuestChainId)
   if not IsValid(InWidget) then
     return
@@ -555,7 +555,6 @@ function Component:SetIndicatorLoopColor(InWidget, TrackQuestChainId)
     end
   end
 end
-
 function Component:AddDynamicMiniMapIndicator(InUIName, Widget)
   local IndicatorUI = UIManager(self):GetUIObj(InUIName)
   if not IndicatorUI then
@@ -576,7 +575,7 @@ function Component:AddDynamicMiniMapIndicator(InUIName, Widget)
   local Location = GuidePointLocData[TargetPointKey]
   if nil == TargetPointKey or "" == TargetPointKey or nil == GuidePointLocData[TargetPointKey] then
     if Const.EnableTaskPrintError then
-      ScreenPrint(string.format("\229\138\168\230\128\129\228\186\139\228\187\182\229\176\143\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176 %s:", IndicatorUI:GetName()))
+      ScreenPrint(string.format("动态事件小地图指引点数据不存在, 指引点名称 %s:", IndicatorUI:GetName()))
     end
     return
   end
@@ -593,14 +592,13 @@ function Component:AddDynamicMiniMapIndicator(InUIName, Widget)
     if IsValid(self.Panel_Gamer) then
       self.Panel_Gamer:AddChild(Widget)
     end
-    Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75
-    Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75
+    Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75 * self.MiniMapScale
+    Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75 * self.MiniMapScale
   elseif IsValid(self.MainMap.TracePanel) then
     self.MainMap.TracePanel:AddChild(Widget)
   end
   self:SetIndicatorRangeMaterial(Widget, nil, true)
   local GuidePointSlot = Widget.Slot
-  
   local function AdjustSlot(GuidePointSlot)
     GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
     GuidePointSlot:SetAutoSize(true)
@@ -613,13 +611,11 @@ function Component:AddDynamicMiniMapIndicator(InUIName, Widget)
     Offset.Top = 0
     GuidePointSlot:SetOffsets(Offset)
   end
-  
   AdjustSlot(GuidePointSlot)
   Widget:StopAllAnimations()
   self:AddIndicatorLocation(InUIName, Location.X, Location.Y, Location.Z, Location.R)
   local TargetSubRegionId = GuidePointLocData[TargetPointKey].SubRegionId
-  self:SetIndicatorsFloorIdByData(Widget, TargetSubRegionId, TargetPointKey)
-  self:ChangeMiniMapIndicatorsFloorStyle(Widget)
+  self:SetIndicatorsFloorIdByData(IndicatorUI, Widget, TargetSubRegionId, TargetPointKey)
   local LocInUI = self:TransformWorldLocToUILoc(Location.X, Location.Y)
   Widget:SetRenderTranslation(LocInUI)
   if nil ~= Location.R and Location.R > 0 then
@@ -639,7 +635,6 @@ function Component:AddDynamicMiniMapIndicator(InUIName, Widget)
   local IsRangeOrPoint = self:CheckIsNeedShowRangeStyleByLocation(Location)
   self:RealChangeRangesGuideInMap(InUIName, IsRangeOrPoint)
 end
-
 function Component:SetMiniMapIsRangeIndicator(InUIName, IsAdd)
   local IndicatorUI = UIManager(self):GetUIObj(InUIName)
   if not IndicatorUI then
@@ -665,7 +660,6 @@ function Component:SetMiniMapIsRangeIndicator(InUIName, IsAdd)
     self.IsRangeIndicator = false
   end
 end
-
 function Component:TryToFindGuidePointTarget(DisplayName)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local TargetStaticCreator
@@ -688,14 +682,12 @@ function Component:TryToFindGuidePointTarget(DisplayName)
   end
   return nil
 end
-
 function Component:ShowMissionIndicatorsInRegionMap()
   self:AddMainTaskGuidePointToRegionMap()
   self:AddSpecialSideTaskGuidePointToRegionMap()
-  self:SetMissionIndicatorsWidgetFloorStyle()
+  self:ChangeRegionMapIndicatorsFloorStyle()
 end
-
-function Component:ChangeMiniMapIndicatorsFloorStyle(Widget)
+function Component:ChangeMiniMapIndicatorsFloorStyle(Widget, InUIName)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
@@ -709,11 +701,23 @@ function Component:ChangeMiniMapIndicatorsFloorStyle(Widget)
       return
     end
   end
-  if IsValid(Widget) then
-    if Widget.FloorId ~= nil and self.CurrentFloorId > Widget.FloorId then
+  local IndicatorUI = UIManager(self):GetUIObj(InUIName)
+  if IsValid(Widget) and Widget.Img_GuidePoint_Icon and Widget.Img_GuidePoint_Icon.Visibility == UE4.ESlateVisibility.Collapsed then
+    Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    return
+  end
+  if IsValid(Widget) and IndicatorUI then
+    if self.CurrentFloorId > IndicatorUI.CurrentFloorLevelId then
       Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
       Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    elseif Widget.FloorId ~= nil and self.CurrentFloorId < Widget.FloorId then
+    elseif self.CurrentFloorId < IndicatorUI.CurrentFloorLevelId then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    elseif IndicatorUI.CurrentFloorLevel == UE4.FloorLevelType.FloorLevelBottom then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    elseif IndicatorUI.CurrentFloorLevel == UE4.FloorLevelType.FloorLevelUp then
       Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
       Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     else
@@ -722,37 +726,91 @@ function Component:ChangeMiniMapIndicatorsFloorStyle(Widget)
     end
   end
 end
-
 function Component:SetMissionIndicatorsWidgetFloorStyle(InFloorId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
   local CurRegionId = DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId
-  for _, Widget in pairs(self.IndicatorWidgets) do
+  local IndicatorUI = UIManager(self):GetUIObj(InFloorId)
+  local Widget = self.IndicatorWidgets[InFloorId]
+  if not Widget then
+    return
+  end
+  if Widget.TaskSubRegionId and DataMgr.SubRegion[Widget.TaskSubRegionId] then
+    local TaskRegionId = DataMgr.SubRegion[Widget.TaskSubRegionId].RegionId
+    if CurRegionId ~= TaskRegionId then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      return
+    end
+  end
+  local TargetKey = IndicatorUI.GuideInfoCache.PointOrStaticCreatorName
+  if TargetKey and GuidePointLocData[TargetKey] and GuidePointLocData[TargetKey].R > 0 then
+    Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    return
+  end
+  if IsValid(Widget) and IndicatorUI then
+    if self.CurrentFloorId > IndicatorUI.CurrentFloorLevelId then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    elseif self.CurrentFloorId < IndicatorUI.CurrentFloorLevelId then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    elseif IndicatorUI.CurrentFloorLevel == UE4.FloorLevelType.FloorLevelBottom then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    elseif IndicatorUI.CurrentFloorLevel == UE4.FloorLevelType.FloorLevelUp then
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    else
+      Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+  end
+end
+function Component:ChangeRegionMapIndicatorsFloorStyle()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local CurRegionId = DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId
+  for UIName, Widget in pairs(self.IndicatorWidgets) do
+    local IndicatorUI = UIManager(self):GetUIObj(UIName)
     if Widget.TaskSubRegionId and DataMgr.SubRegion[Widget.TaskSubRegionId] then
       local TaskRegionId = DataMgr.SubRegion[Widget.TaskSubRegionId].RegionId
       if CurRegionId ~= TaskRegionId then
         Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
         Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
-        return
-      end
     end
-    if IsValid(Widget) then
-      if Widget.FloorId ~= nil and self.CurrentFloorId > Widget.FloorId then
-        Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-        Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
-      elseif Widget.FloorId ~= nil and self.CurrentFloorId < Widget.FloorId then
-        Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
-        Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-      else
+    elseif not IndicatorUI or IndicatorUI.GuideInfoCache == nil or nil == IndicatorUI.GuideInfoCache.PointOrStaticCreatorName then
+    else
+      local TargetKey = IndicatorUI.GuideInfoCache.PointOrStaticCreatorName
+      if TargetKey and GuidePointLocData[TargetKey] and GuidePointLocData[TargetKey].R > 0 then
         Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
         Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+      elseif IsValid(Widget) and IndicatorUI then
+        if self.CurrentFloorId > IndicatorUI.CurrentFloorLevelId then
+          Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+          Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+        elseif self.CurrentFloorId < IndicatorUI.CurrentFloorLevelId then
+          Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+          Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+        elseif IndicatorUI.CurrentFloorLevel == UE4.FloorLevelType.FloorLevelBottom then
+          Widget.Bottom:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+          Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+        elseif IndicatorUI.CurrentFloorLevel == UE4.FloorLevelType.FloorLevelUp then
+          Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+          Widget.Top:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+        else
+          Widget.Bottom:SetVisibility(UE4.ESlateVisibility.Collapsed)
+          Widget.Top:SetVisibility(UE4.ESlateVisibility.Collapsed)
+        end
       end
     end
   end
 end
-
 function Component:AddSpecialSideTaskGuidePointToRegionMap()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -766,7 +824,6 @@ function Component:AddSpecialSideTaskGuidePointToRegionMap()
       if TaskRegionId == self.RegionID then
         local function CreateSpecialSideIndicatorRegionMapWidget()
           local PointPath = "/Game/UI/WBP/Map/Widget/WBP_Map_Point.WBP_Map_Point"
-          
           local Point = UIManager(self):CreateWidget(PointPath)
           local SelectPath = "/Game/UI/WBP/Map/Widget/WBP_Map_Select.WBP_Map_Select"
           local Select = UIManager(self):CreateWidget(SelectPath)
@@ -776,7 +833,6 @@ function Component:AddSpecialSideTaskGuidePointToRegionMap()
           end
           return Point, Select
         end
-        
         local IndicatorName = "NpcSpecialSideQuest_" .. QuestChainData.SpecialQuestDisplayName
         local Location = GuidePointLocData[QuestChainData.SpecialQuestDisplayName]
         local IndicatorWidget, SelectWidget = CreateSpecialSideIndicatorRegionMapWidget()
@@ -792,7 +848,6 @@ function Component:AddSpecialSideTaskGuidePointToRegionMap()
           self.IndicatorWidgets[IndicatorName] = IndicatorWidget
           self.SelectWidgetTable[IndicatorName] = SelectWidget
           IndicatorWidget:InitGuidePoint(self, IndicatorName, self.OnSpecialGuidePointClicked, self.OnGuidePointHover, self.OnGuidePointUnHover)
-          
           local function AdjustSlot(GuidePointSlot)
             GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
             GuidePointSlot:SetAutoSize(true)
@@ -805,7 +860,6 @@ function Component:AddSpecialSideTaskGuidePointToRegionMap()
             Offset.Top = 0
             GuidePointSlot:SetOffsets(Offset)
           end
-          
           AdjustSlot(IndicatorWidget.Slot)
           AdjustSlot(SelectWidget.Slot)
           self:AddIndicatorLocation(IndicatorName, Location.X, Location.Y, Location.Z, Location.R)
@@ -823,7 +877,6 @@ function Component:AddSpecialSideTaskGuidePointToRegionMap()
     end
   end
 end
-
 function Component:AddMainTaskGuidePointToRegionMap()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -859,7 +912,7 @@ function Component:AddMainTaskGuidePointToRegionMap()
     end
     if nil == TargetPointKey or nil == GuidePointLocData[TargetPointKey] then
       if Const.EnableTaskPrintError then
-        ScreenPrint(string.format("[line:782]\229\140\186\229\159\159\229\156\176\229\155\190\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, TargetPointKey\239\188\154%s", TargetPointKey))
+        ScreenPrint(string.format("[line:782]区域地图任务指引点数据不存在, TargetPointKey：%s", TargetPointKey))
       end
     else
       local TempLocation = GuidePointLocData[TargetPointKey]
@@ -878,11 +931,11 @@ function Component:AddMainTaskGuidePointToRegionMap()
       end
       if not TaskSubRegionId then
         if Const.EnableTaskPrintError then
-          ScreenPrint(string.format("\229\140\186\229\159\159\229\156\176\229\155\190\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, TargetPointKey\239\188\154%s", TargetPointKey))
+          ScreenPrint(string.format("区域地图任务指引点数据不存在, TargetPointKey：%s", TargetPointKey))
         end
       elseif nil == DataMgr.SubRegion[TaskSubRegionId] or nil == DataMgr.SubRegion[TaskSubRegionId].RegionId then
         if Const.EnableTaskPrintError then
-          ScreenPrint(string.format("SubRegion\232\161\168\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, SubRegionId\239\188\154%s", TaskSubRegionId))
+          ScreenPrint(string.format("SubRegion表区域数据不存在, SubRegionId：%s", TaskSubRegionId))
         end
       else
         if nil ~= TempLocation then
@@ -905,11 +958,10 @@ function Component:AddMainTaskGuidePointToRegionMap()
             IndicatorWidget.TargetQuestChainId = TrackingQuestChainId
             self.IndicatorWidgets[IndicatorUI:GetName()] = IndicatorWidget
             self.SelectWidgetTable[IndicatorUI:GetName()] = SelectWidget
-            self:SetIndicatorsFloorIdByData(IndicatorWidget, TaskSubRegionId, TargetPointKey)
+            self:SetIndicatorsFloorIdByData(IndicatorUI, IndicatorWidget, TaskSubRegionId, TargetPointKey)
             IndicatorWidget:InitGuidePoint(self, IndicatorUI:GetName(), self.OnGuidePointClicked, self.OnGuidePointHover, self.OnGuidePointUnHover)
             self:SetIndicatorRangeMaterial(IndicatorWidget, TrackingQuestChainId, false)
             self:TrySetDiffGuideIcon(IndicatorWidget, TrackingQuestChainId, IndicatorUI.GuideInfoCache.QuestNode.Key)
-            
             local function AdjustSlot(GuidePointSlot)
               GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
               GuidePointSlot:SetAutoSize(true)
@@ -922,12 +974,10 @@ function Component:AddMainTaskGuidePointToRegionMap()
               Offset.Top = 0
               GuidePointSlot:SetOffsets(Offset)
             end
-            
             AdjustSlot(IndicatorWidget.Slot)
             AdjustSlot(SelectWidget.Slot)
             if DataMgr.SubRegion[TaskSubRegionId].DefaultQuestPoint then
               local LocData = DataMgr.SubRegion[TaskSubRegionId].DefaultQuestPoint
-              
               local function SplitStrLoc(str, reps)
                 local resultStrList = {}
                 string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -935,7 +985,6 @@ function Component:AddMainTaskGuidePointToRegionMap()
                 end)
                 return resultStrList
               end
-              
               local RetLoc = SplitStrLoc(LocData, ",")
               for i = 1, 3 do
                 local TempNumber = tonumber(RetLoc[i])
@@ -950,7 +999,7 @@ function Component:AddMainTaskGuidePointToRegionMap()
             IndicatorWidget:SetRenderTranslation(LocInUI)
             SelectWidget:SetRenderTranslation(LocInUI)
             self:CreateTaskRegionMapGuidPointIndicator(IndicatorUI:GetName())
-            if nil ~= Location.R and Location.R > 0 and self:CheckIsNeedShowRangeStyleByLocation(Location) then
+            if nil ~= Location.R and Location.R > 0 then
               IndicatorWidget.Img_Point:SetVisibility(UE4.ESlateVisibility.Collapsed)
               IndicatorWidget.Img_Range:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
               IndicatorWidget.Img_Range.Slot:SetSize(FVector2D(Location.R * 2 * self.Scale, Location.R * 2 * self.Scale))
@@ -965,7 +1014,6 @@ function Component:AddMainTaskGuidePointToRegionMap()
     end
   end
 end
-
 function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -991,7 +1039,7 @@ function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
     local TargetPointKey = TargetKey
     if nil == TargetPointKey or nil == GuidePointLocData[TargetPointKey] then
       if Const.EnableTaskPrintError then
-        ScreenPrint(string.format("[line:782]\229\140\186\229\159\159\229\156\176\229\155\190\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, TargetPointKey\239\188\154%s", TargetPointKey))
+        ScreenPrint(string.format("[line:782]区域地图任务指引点数据不存在, TargetPointKey：%s", TargetPointKey))
       end
       return
     end
@@ -1005,7 +1053,7 @@ function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
     local TaskSubRegionId = GuidePointLocData[TargetPointKey].SubRegionId
     if nil == DataMgr.SubRegion[TaskSubRegionId] or nil == DataMgr.SubRegion[TaskSubRegionId].RegionId then
       if Const.EnableTaskPrintError then
-        ScreenPrint(string.format("SubRegion\232\161\168\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, SubRegionId\239\188\154%s", TaskSubRegionId))
+        ScreenPrint(string.format("SubRegion表区域数据不存在, SubRegionId：%s", TaskSubRegionId))
       end
       return
     end
@@ -1026,12 +1074,11 @@ function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
       IndicatorWidget.TargetQuestChainId = TrackingQuestChainId
       self.IndicatorWidgets[IndicatorUI:GetName()] = IndicatorWidget
       self.SelectWidgetTable[IndicatorUI:GetName()] = SelectWidget
-      self:SetIndicatorsFloorIdByData(IndicatorWidget, TaskSubRegionId, TargetPointKey)
+      self:SetIndicatorsFloorIdByData(IndicatorUI, IndicatorWidget, TaskSubRegionId, TargetPointKey)
       IndicatorWidget:InitGuidePoint(self, IndicatorUI:GetName(), self.OnGuidePointClicked, self.OnGuidePointHover, self.OnGuidePointUnHover)
       self:SetIndicatorRangeMaterial(IndicatorWidget, TrackingQuestChainId, false)
       if DataMgr.SubRegion[TaskSubRegionId].DefaultQuestPoint then
         local LocData = DataMgr.SubRegion[TaskSubRegionId].DefaultQuestPoint
-        
         local function SplitStrLoc(str, reps)
           local resultStrList = {}
           string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -1039,7 +1086,6 @@ function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
           end)
           return resultStrList
         end
-        
         local RetLoc = SplitStrLoc(LocData, ",")
         for i = 1, 3 do
           local TempNumber = tonumber(RetLoc[i])
@@ -1054,7 +1100,7 @@ function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
       IndicatorWidget:SetRenderTranslation(LocInUI)
       SelectWidget:SetRenderTranslation(LocInUI)
       self:CreateTaskRegionMapGuidPointIndicator(IndicatorUI:GetName())
-      if nil ~= Location.R and Location.R > 0 and self:CheckIsNeedShowRangeStyleByLocation(Location) then
+      if nil ~= Location.R and Location.R > 0 then
         IndicatorWidget.Img_Point:SetVisibility(UE4.ESlateVisibility.Collapsed)
         IndicatorWidget.Img_Range:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
         IndicatorWidget.Img_Range.Slot:SetSize(FVector2D(Location.R * 2 * self.Scale, Location.R * 2 * self.Scale))
@@ -1067,15 +1113,14 @@ function Component:AddMainTaskGuidePointToRegionMapForTrackingQuest(TargetKey)
     break
   end
 end
-
-function Component:SetIndicatorsFloorIdByData(Widget, SubRegionId, TargetPointKey)
+function Component:SetIndicatorsFloorIdByData(Indicator, Widget, SubRegionId, TargetPointKey)
+  Indicator.PlayerFloorLevelId = self.CurrentFloorId
   if not GuidePointLocData[TargetPointKey] or not GuidePointLocData[TargetPointKey].FloorId then
     Widget.FloorId = 0
     return
   end
   Widget.FloorId = GuidePointLocData[TargetPointKey].FloorId
 end
-
 function Component:AddDynamicGuidePointToRegionMap()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1099,7 +1144,7 @@ function Component:AddDynamicGuidePointToRegionMap()
     end
     if nil == TargetPointKey or "" == TargetPointKey or nil == GuidePointLocData[TargetPointKey] then
       if Const.EnableTaskPrintError then
-        ScreenPrint(string.format("\229\138\168\230\128\129\228\186\139\228\187\182\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\154%s", IndicatorUI:GetName()))
+        ScreenPrint(string.format("动态事件地图指引点数据不存在, 指引点名称：%s", IndicatorUI:GetName()))
       end
     else
       local TempLocation = GuidePointLocData[TargetPointKey]
@@ -1119,7 +1164,7 @@ function Component:AddDynamicGuidePointToRegionMap()
       local TargetSubRegionId = Avatar.CurrentRegionId
       if not TargetSubRegionId or not DataMgr.SubRegion[TargetSubRegionId] then
         if Const.EnableTaskPrintError then
-          ScreenPrint(string.format("\229\138\168\230\128\129\228\186\139\228\187\182\229\156\176\229\155\190\230\140\135\229\188\149\231\130\185\229\140\186\229\159\159\230\149\176\230\141\174\228\184\141\229\173\152\229\156\168, \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176\239\188\154%s", IndicatorUI:GetName()))
+          ScreenPrint(string.format("动态事件地图指引点区域数据不存在, 指引点名称：%s", IndicatorUI:GetName()))
         end
       elseif DataMgr.SubRegion[TargetSubRegionId].RegionId == self.RegionID then
         local Path = "/Game/UI/UI_PC/Common/Common_GuidePoint_PC.Common_GuidePoint_PC_C"
@@ -1134,10 +1179,9 @@ function Component:AddDynamicGuidePointToRegionMap()
           local ImgXScaleX = IndicatorWidget.Img_Range.RenderTransform.Scale.X
           local ImgXScaleY = IndicatorWidget.Img_Range.RenderTransform.Scale.Y
           self.IndicatorWidgets[IndicatorUI:GetName()] = IndicatorWidget
-          self:SetIndicatorsFloorIdByData(IndicatorWidget, TargetSubRegionId, TargetPointKey)
+          self:SetIndicatorsFloorIdByData(IndicatorUI, IndicatorWidget, TargetSubRegionId, TargetPointKey)
           self:SetIndicatorRangeMaterial(IndicatorWidget, nil, true)
           local GuidePointSlot = IndicatorWidget.Slot
-          
           local function AdjustSlot(GuidePointSlot)
             GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
             GuidePointSlot:SetAutoSize(true)
@@ -1150,11 +1194,9 @@ function Component:AddDynamicGuidePointToRegionMap()
             Offset.Top = 0
             GuidePointSlot:SetOffsets(Offset)
           end
-          
           AdjustSlot(GuidePointSlot)
           if DataMgr.SubRegion[TargetSubRegionId].DefaultQuestPoint then
             local LocData = DataMgr.SubRegion[TargetSubRegionId].DefaultQuestPoint
-            
             local function SplitStrLoc(str, reps)
               local resultStrList = {}
               string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -1162,7 +1204,6 @@ function Component:AddDynamicGuidePointToRegionMap()
               end)
               return resultStrList
             end
-            
             local RetLoc = SplitStrLoc(LocData, ",")
             for i = 1, 3 do
               local TempNumber = tonumber(RetLoc[i])
@@ -1176,7 +1217,7 @@ function Component:AddDynamicGuidePointToRegionMap()
           local LocInUI = self:TransformWorldLocToUILoc(Location.X, Location.Y)
           IndicatorWidget:SetRenderTranslation(LocInUI)
           self:CreateDynamicRegionMapGuidPointIndicator(IndicatorUI:GetName())
-          if nil ~= Location.R and Location.R > 0 and self:CheckIsNeedShowRangeStyleByLocation(Location) then
+          if nil ~= Location.R and Location.R > 0 then
             IndicatorWidget.Panel_Guide_Point:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
             IndicatorWidget.Button_GuidePoint:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
             IndicatorWidget.Img_GuidePoint_Icon:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -1192,7 +1233,6 @@ function Component:AddDynamicGuidePointToRegionMap()
     end
   end
 end
-
 function Component:CheckIsNeedShowRangeStyleByLocation(Location)
   if nil == Location or nil == Location.R or not IsValid(self.Player) then
     return false
@@ -1212,10 +1252,194 @@ function Component:CheckIsNeedShowRangeStyleByLocation(Location)
   end
   return false
 end
-
+function Component:EnterOrExitTaskRegion(WidgetName, IsEnter)
+  local Widget = self.IndicatorWidgets[WidgetName]
+  local TaskBar = TaskUtils:GetTaskBarWidget()
+  if not Widget then
+    if TaskBar and TaskBar.Panel_Tips2:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
+      if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+        TaskBar:PlayAnimation(TaskBar.Tooltip_In)
+      end
+      TaskBar.Panel_Tips2:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  if TaskBar.VBox_SubTasks:GetChildrenCount() > 0 then
+    local DoingQuestId = Avatar.QuestChains[Avatar.TrackingQuestChainId].DoingQuestId
+    local Info = TaskUtils:GetQuestExtraInfo(Avatar.TrackingQuestChainId, DoingQuestId)
+    if not Info then
+      return {}
+    end
+    local guidePoints = {}
+    for _, Data in pairs(Info) do
+      if Data.Node and Data.Node.Type == "BranchQuestStartNode" and not IsEmptyTable(Data.DiffGuideList) then
+        for optionIndex, optionGroup in pairs(Data.DiffGuideList) do
+          local optionChar = string.char(string.byte("A") + optionIndex - 1)
+          local optionKey = "Option" .. optionChar
+          guidePoints[optionIndex] = {}
+          for _, keyGroup in pairs(optionGroup) do
+            for _, keyData in pairs(keyGroup) do
+              table.insert(guidePoints[optionIndex], {
+                targetKey = keyData.TargetIndicatorKey
+              })
+            end
+          end
+        end
+      end
+    end
+    local bSame = true
+    local UIObjs = MissionIndicatorManager:GetIndicatorUIObjByQuestChainIdWithType(Avatar.TrackingQuestChainId, "Task")
+    local First, CurKey
+    for _, v in pairs(UIObjs) do
+      local a = v:GetName()
+      if WidgetName == v:GetName() then
+        CurKey = v.GuideInfoCache.QuestNode.Key
+      end
+    end
+    for _, v in pairs(UIObjs) do
+      if v.GuideInfoCache and v.GuideInfoCache.QuestNode.Key and self:CheckIsBranchQuest(guidePoints, v.GuideInfoCache.QuestNode.Key) and v.GuideInfoCache.QuestNode.Key == CurKey then
+        bSame = false
+        break
+      end
+    end
+    if not bSame then
+      local Index = self:FindBranchQuest(guidePoints, CurKey)
+      if IsEnter then
+        for key, value in pairs(TaskBar.VBox_SubTasks:GetAllChildren()) do
+          if key == Index then
+            value:PlayArrive()
+            break
+          end
+        end
+      else
+        for key, value in pairs(TaskBar.VBox_SubTasks:GetAllChildren()) do
+          if key == Index then
+            value:StopArrive()
+            break
+          end
+        end
+      end
+    end
+  end
+  if self.CurrentFloorId ~= Widget.FloorId then
+    self:RemoveTimer("TargetArea")
+    if TaskBar and TaskBar.Panel_Tips2:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
+      if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+        TaskBar:PlayAnimation(TaskBar.Tooltip_In)
+      end
+      TaskBar.Panel_Tips2:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+    return
+  end
+  if IsEnter then
+    local IsIn = self.EnterTaskRegion[WidgetName]
+    if not IsIn then
+      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Quest_TargetArea"), 2, nil, {Color = 1})
+      self.EnterTaskRegion[WidgetName] = true
+      self:AddTimer(0.5, function()
+        if TaskBar then
+          TaskBar.Text_TextTip:SetText(GText("UI_Quest_TargetArea"))
+          if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+            TaskBar:StopAnimation(TaskBar.Tooltip_In)
+            TaskBar:PlayAnimation(TaskBar.Tooltip_Out)
+          end
+          AudioManager(self):PlayUISound(self, "event:/ui/common/reach_target_region", "", nil)
+          TaskBar:StopAnimation(TaskBar.Tooltip2_Out)
+          TaskBar:PlayAnimation(TaskBar.Tooltip2_In)
+        end
+      end, false, 0, "TargetArea")
+    elseif TaskBar then
+      TaskBar.Text_TextTip:SetText(GText("UI_Quest_TargetArea"))
+      if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+        TaskBar:StopAnimation(TaskBar.Tooltip_In)
+        TaskBar:PlayAnimation(TaskBar.Tooltip_Out)
+      end
+      AudioManager(self):PlayUISound(self, "event:/ui/common/reach_target_region", "", nil)
+      TaskBar:StopAnimation(TaskBar.Tooltip2_Out)
+      TaskBar:PlayAnimation(TaskBar.Tooltip2_In)
+    end
+    self:ShowOrHideGuidePointInRangeIndicator(true)
+  else
+    self:RemoveTimer("TargetArea")
+    TaskBar.Text_TextTip:SetText(GText("UI_Quest_TargetArea"))
+    TaskBar:StopAnimation(TaskBar.Tooltip2_In)
+    TaskBar:PlayAnimation(TaskBar.Tooltip2_Out)
+    if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
+      TaskBar:StopAnimation(TaskBar.Tooltip_Out)
+      TaskBar:PlayAnimation(TaskBar.Tooltip_In)
+    end
+    self:ShowOrHideGuidePointInRangeIndicator(false)
+  end
+  self:ChangeLocationDataRangeOrPoint(WidgetName, IsEnter)
+end
+function Component:CheckIsBranchQuest(BranchQuests, Nodekey)
+  for Option, OptionInfo in pairs(BranchQuests) do
+    for k, v in pairs(OptionInfo) do
+      for key, value in pairs(v) do
+        if value == Nodekey then
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+function Component:FindBranchQuest(BranchQuests, Nodekey)
+  for Option, OptionInfo in pairs(BranchQuests) do
+    for k, v in pairs(OptionInfo) do
+      for key, value in pairs(v) do
+        if value == Nodekey then
+          return Option
+        end
+      end
+    end
+  end
+end
+function Component:ShowOrHideGuidePointInRangeIndicator(IsShowOrHide)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local CurQuestChainId, CurDoingQuestId
+  if Avatar.InSpecialQuest then
+    CurQuestChainId = ClientEventUtils:GetCurrentEvent().PreQuestChainId
+  else
+    CurQuestChainId = Avatar.TrackingQuestChainId
+  end
+  if Avatar.QuestChains[CurQuestChainId] then
+    CurDoingQuestId = Avatar.QuestChains[CurQuestChainId].DoingQuestId
+  end
+  local QuestExtraInfo = TaskUtils:GetQuestExtraInfo(CurQuestChainId, CurDoingQuestId)
+  if QuestExtraInfo then
+    for _, Data in pairs(QuestExtraInfo) do
+      if Data.Node and Data.Node.Type == "KillMonsterNode" then
+        if IsShowOrHide then
+          for _, Eid in pairs(Data.Node.MonsterGuideMap) do
+            local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+            local SceneMgrComponent = GameInstance:GetSceneManager()
+            if IsValid(SceneMgrComponent) then
+              SceneMgrComponent:ShowOrHideSceneGuideIcon(Eid, true, "KillMonsterNodeTag")
+            end
+          end
+        else
+          for _, Eid in pairs(Data.Node.MonsterGuideMap) do
+            local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+            local SceneMgrComponent = GameInstance:GetSceneManager()
+            if IsValid(SceneMgrComponent) then
+              SceneMgrComponent:ShowOrHideSceneGuideIcon(Eid, false, "KillMonsterNodeTag")
+            end
+          end
+        end
+      end
+    end
+  end
+end
 function Component:RealChangeRangesGuideInMap(WidgetName, IsRange)
   local Widget = self.IndicatorWidgets[WidgetName]
-  
   local function AdjustSlot(GuidePointSlot)
     GuidePointSlot:SetAlignment(FVector2D(0.5, 0.5))
     GuidePointSlot:SetAutoSize(true)
@@ -1228,67 +1452,26 @@ function Component:RealChangeRangesGuideInMap(WidgetName, IsRange)
     Offset.Top = 0
     GuidePointSlot:SetOffsets(Offset)
   end
-  
   if not IsRange then
-    self:RemoveTimer("TargetArea")
     if IsValid(Widget) and self.Panel_Gamer:HasChild(Widget) then
       self.Panel_Gamer:RemoveChild(Widget)
       self.MainMap.TracePanel:AddChild(Widget)
     end
     AdjustSlot(Widget.Slot)
     Widget:SetRenderScale(FVector2D(1, 1))
-    local arrow = self.MainMap:NewPointArrow()
     Widget.Img_GuidePoint_Icon:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     Widget.Img_Range:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    self:AddTrack(Widget, arrow, nil)
     Widget:PlayAnimation(Widget.Loop, 0, 0)
-    local TaskBar = TaskUtils:GetTaskBarWidget()
-    if TaskBar and TaskBar.Panel_Tips2:GetVisibility() == UE4.ESlateVisibility.SelfHitTestInvisible then
-      if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
-        TaskBar:PlayAnimation(TaskBar.Tooltip_In)
-      end
-      TaskBar.Panel_Tips2:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    end
   else
-    local IsIn = self.EnterTaskRegion[WidgetName]
-    if not IsIn then
-      UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Quest_TargetArea"), 2, nil, {Color = 1})
-      AudioManager(self):PlayUISound(self, "event:/ui/common/reach_target_region", nil, nil)
-      self.EnterTaskRegion[WidgetName] = true
-      self:AddTimer(0.5, function()
-        if IsValid(Widget) and self.MainMap.TracePanel:HasChild(Widget) then
-          self.MainMap.TracePanel:RemoveChild(Widget)
-          self.Panel_Gamer:AddChild(Widget)
-        end
-        if IsValid(Widget) and self.Panel_Gamer:HasChild(Widget) then
-          AdjustSlot(Widget.Slot)
-          Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75
-          Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75
-          self:RemoveTrack(Widget)
-          Widget.Img_GuidePoint_Icon:SetVisibility(UE4.ESlateVisibility.Collapsed)
-          Widget.Img_Range:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-          if Widget:IsAnimationPlaying(Widget.Loop) then
-            Widget:StopAnimation(Widget.Loop)
-          end
-          Widget:PlayAnimation(Widget.Range_In)
-        end
-        local TaskBar = TaskUtils:GetTaskBarWidget()
-        if TaskBar then
-          TaskBar.Text_TextTip:SetText(GText("UI_Quest_TargetArea"))
-          if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
-            TaskBar:PlayAnimation(TaskBar.Tooltip_Out)
-          end
-          TaskBar:PlayAnimation(TaskBar.Tooltip2_In)
-        end
-      end, false, 0, "TargetArea")
-    else
-      if IsValid(Widget) and self.MainMap.TracePanel:HasChild(Widget) then
-        self.MainMap.TracePanel:RemoveChild(Widget)
-        self.Panel_Gamer:AddChild(Widget)
-      end
+    AudioManager(self):PlayUISound(self, "event:/ui/common/reach_target_region", nil, nil)
+    if IsValid(Widget) and self.MainMap.TracePanel:HasChild(Widget) then
+      self.MainMap.TracePanel:RemoveChild(Widget)
+      self.Panel_Gamer:AddChild(Widget)
+    end
+    if IsValid(Widget) and self.Panel_Gamer:HasChild(Widget) then
       AdjustSlot(Widget.Slot)
-      Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75
-      Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75
+      Widget.RenderTransform.Scale.X = self.MainMap.TracePanel.RenderTransform.Scale.X * 0.75 * self.MiniMapScale
+      Widget.RenderTransform.Scale.Y = self.MainMap.TracePanel.RenderTransform.Scale.Y * 0.75 * self.MiniMapScale
       self:RemoveTrack(Widget)
       Widget.Img_GuidePoint_Icon:SetVisibility(UE4.ESlateVisibility.Collapsed)
       Widget.Img_Range:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -1296,17 +1479,10 @@ function Component:RealChangeRangesGuideInMap(WidgetName, IsRange)
         Widget:StopAnimation(Widget.Loop)
       end
       Widget:PlayAnimation(Widget.Range_In)
-      local TaskBar = TaskUtils:GetTaskBarWidget()
-      if TaskBar then
-        TaskBar.Text_TextTip:SetText(GText("UI_Quest_TargetArea"))
-        TaskBar:PlayAnimation(TaskBar.Tooltip_Out)
-        TaskBar:PlayAnimation(TaskBar.Tooltip2_In)
-      end
     end
   end
   self:ChangeLocationDataRangeOrPoint(WidgetName, IsRange)
 end
-
 function Component:OnGuidePointClicked(InFloorId, GuidePoint)
   self:ClosePanel(true)
   if not self:CheckSelect(GuidePoint) then
@@ -1319,7 +1495,6 @@ function Component:OnGuidePointClicked(InFloorId, GuidePoint)
   end
   self:MoveMapToQuestTarget(nil, GuidePoint)
 end
-
 function Component:OnSpecialGuidePointClicked(InFloorId, GuidePoint)
   self:ClosePanel(true)
   if not self:CheckSelect(GuidePoint) then
@@ -1344,7 +1519,6 @@ function Component:OnSpecialGuidePointClicked(InFloorId, GuidePoint)
   end
   self:ShowQuestDetailInRegionMap(GuidePoint.TargetQuestChainId)
 end
-
 function Component:ShowQuestDetailInRegionMap(InQuestChainId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -1454,8 +1628,8 @@ function Component:ShowQuestDetailInRegionMap(InQuestChainId)
     self.MapTipsWidget.Btn_Cancel_Track:SetText(GText("UI_RegionMap_Untrack"))
     self.MapTipsWidget.Switch_Button:SetActiveWidgetIndex(3)
   end
-  self.MapTipsWidget.Btn_Track:BindEventOnClicked(self, self.OnSpecialSideTaskGuidePointTrackClick)
-  self.MapTipsWidget.Btn_Cancel_Track:BindEventOnClicked(self, self.OnSpecialSideTaskGuidePointUnTrackClick)
+  self.MapTipsWidget.Btn_Track:BindSingleEventOnClicked(self, self.OnSpecialSideTaskGuidePointTrackClick)
+  self.MapTipsWidget.Btn_Cancel_Track:BindSingleEventOnClicked(self, self.OnSpecialSideTaskGuidePointUnTrackClick)
   local Info = TaskUtils:GetQuestDetail(CurTrackingQuestChaindId, TrackingQuestId)
   if not Info then
     return
@@ -1520,12 +1694,18 @@ function Component:ShowQuestDetailInRegionMap(InQuestChainId)
   self:OnPanelOpen(4)
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_level", nil, nil)
 end
-
 function Component:OnSpecialSideTaskGuidePointTrackClick()
+  self:CancelCurrentTracking()
   MissionIndicatorManager.TrackingSpecialSideQuestChainId = self.MapTipsWidget.CurTrackingQuestChaindId
+  GWorld.GameInstance.TrackingPack = {
+    CommonConst.RegionMapTrackingType.SpecialSideQuest,
+    self.MapTipsWidget.CurTrackingQuestChaindId
+  }
+  local SpecialSideQuestWidget
   for k, v in pairs(self.IndicatorWidgets) do
     if v.UnLockSpecialTask and v.TargetQuestChainId and v.TargetQuestChainId == self.MapTipsWidget.CurTrackingQuestChaindId then
       v:PlayAnimation(v.Loop, 0, 0)
+      SpecialSideQuestWidget = v
     elseif v.UnLockSpecialTask and v.TargetQuestChainId and v.TargetQuestChainId == self.MapTipsWidget.CurTrackingQuestChaindId then
       v:StopAnimation(v.Loop)
     end
@@ -1536,14 +1716,21 @@ function Component:OnSpecialSideTaskGuidePointTrackClick()
     MissionIndicatorManager:ActiveMissionIndicatorByRegionMap(self.MapTipsWidget.SpecialQuestDisplayName, self.MapTipsWidget.SideQuestNpcId)
     EventManager:FireEvent(EventID.OnChangeTaskIndicator, TaskUtils.MissionNpcGuideMaps)
   end
+  if SpecialSideQuestWidget then
+    self:CreateTrackIndicator(SpecialSideQuestWidget)
+  end
   self:ClosePanel()
 end
-
 function Component:OnSpecialSideTaskGuidePointUnTrackClick()
+  local SpecialSideQuestWidget
   for k, v in pairs(self.IndicatorWidgets) do
     if v.UnLockSpecialTask and v.TargetQuestChainId and v.TargetQuestChainId == MissionIndicatorManager.TrackingSpecialSideQuestChainId then
       v:StopAnimation(v.Loop)
+      SpecialSideQuestWidget = v
     end
+  end
+  if SpecialSideQuestWidget then
+    self:RemoveTrackIndicator()
   end
   MissionIndicatorManager.TrackingSpecialSideQuestChainId = nil
   self.MapTipsWidget.Btn_Track:SetText(GText("UI_RegionMap_Track"))
@@ -1555,21 +1742,18 @@ function Component:OnSpecialSideTaskGuidePointUnTrackClick()
   end
   self:ClosePanel()
 end
-
 function Component:OnGuidePointHover(InName)
   if InName and IsValid(self.SelectWidgetTable[InName]) and IsValid(self.IndicatorWidgets[InName]) and self.IndicatorWidgets[InName].IsSelected == false then
     self.SelectWidgetTable[InName]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.SelectWidgetTable[InName]:PlayAnimation(self.SelectWidgetTable[InName].Hover)
   end
 end
-
 function Component:OnGuidePointUnHover(InName)
   if InName and IsValid(self.SelectWidgetTable[InName]) and IsValid(self.IndicatorWidgets[InName]) and self.IndicatorWidgets[InName].IsSelected == false then
     self.SelectWidgetTable[InName]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.SelectWidgetTable[InName]:PlayAnimation(self.SelectWidgetTable[InName].Out)
   end
 end
-
 function Component:InitTaskArea()
   local uiManager = UIManager(self)
   local Result = uiManager:GetAllUINameByBPClass(UE4.UClass.Load(UIConst.TASKINDICATORUIBASE))
@@ -1591,7 +1775,6 @@ function Component:InitTaskArea()
     end
   end
 end
-
 function Component:CreateDynamicRegionMapGuidPointIndicator(InName)
   if not self.RegionMapIndicatorWidgets[InName] then
     local Widget = self:NewIndicator()
@@ -1606,7 +1789,6 @@ function Component:CreateDynamicRegionMapGuidPointIndicator(InName)
     self.RegionMapIndicatorWidgets[InName]:OnPointerMove(self.CurrentDragOffset, self.IndicatorWidgets[InName].RenderTransform.Translation)
   end
 end
-
 function Component:CreateTaskRegionMapGuidPointIndicator(InName)
   if not self.RegionMapIndicatorWidgets[InName] then
     local Widget = self:NewIndicator()
@@ -1621,12 +1803,10 @@ function Component:CreateTaskRegionMapGuidPointIndicator(InName)
     self.RegionMapIndicatorWidgets[InName]:OnPointerMove(self.CurrentDragOffset, self.IndicatorWidgets[InName].RenderTransform.Translation)
   end
 end
-
 function Component:RemoveRegionMapGuidPointIndicator(InName)
   if self.RegionMapIndicatorWidgets[InName] then
     self.RegionMapIndicatorWidgets[InName]:RemoveFromParent()
     self.RegionMapIndicatorWidgets[InName] = nil
   end
 end
-
 return Component

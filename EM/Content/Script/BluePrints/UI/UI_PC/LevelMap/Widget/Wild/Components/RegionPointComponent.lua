@@ -1,12 +1,10 @@
 require("UnLua")
 local Component = {}
-
 function Component:InitComponentCoroutine()
   local Coroutine = CreateCoroutine(self.InitRegionPoint)
   table.insert(self.InitCoroutines, Coroutine)
   coroutine.resume(Coroutine, self, #self.InitCoroutines)
 end
-
 function Component:ClearData()
   if self.RegionPoints then
     for _, widget in pairs(self.RegionPoints) do
@@ -15,9 +13,8 @@ function Component:ClearData()
     self.RegionPoints = {}
   end
 end
-
 function Component:CheckRegionPointCancelTrack(RegionID)
-  local TrackingID = GWorld.GameInstance.TrackingID
+  local TrackingID = self:GetTrackingId(CommonConst.RegionMapTrackingType.RegionPoint)
   if nil == TrackingID then
     return
   end
@@ -32,16 +29,14 @@ function Component:CheckRegionPointCancelTrack(RegionID)
   if RegionPointTargetSubRegion then
     for i = 1, #RegionPointTargetSubRegion do
       if RegionPointTargetSubRegion[i] == RegionID then
-        EventManager:FireEvent(EventID.OnCommonTrack, TrackingID, false)
+        EventManager:FireEvent(EventID.OnCommonTrack, CommonConst.RegionMapTrackingType.RegionPoint, TrackingID, false)
         TrackTarget:StopAllAnimations()
-        GWorld.GameInstance.TrackingID = nil
         self:RemoveTrackIndicator()
         break
       end
     end
   end
 end
-
 function Component:InitRegionPoint(CoroutineIndex)
   self.RegionPoints = {}
   self.RegionPointLocation = {}
@@ -57,6 +52,7 @@ function Component:InitRegionPoint(CoroutineIndex)
     self:InitCoroutineCheck(CoroutineIndex)
     return
   end
+  local TrackingId = self:GetTrackingId(CommonConst.RegionMapTrackingType.RegionPoint)
   for _, subRegionID in pairs(self.RegionData.IsRandom) do
     local transferDatas = {}
     for _, RegionPointData in pairs(DataMgr.RegionPoint) do
@@ -87,7 +83,7 @@ function Component:InitRegionPoint(CoroutineIndex)
       if data.StartTime or data.EndTime then
         table.insert(self.RegionPointTickTable, data.Id)
       end
-      if data.Id == GWorld.GameInstance.TrackingID then
+      if data.Id == TrackingId then
         point:PlayAnimation(point.Loop, 0, 0)
         self:CreateTrackIndicator(point)
       end
@@ -116,7 +112,6 @@ function Component:InitRegionPoint(CoroutineIndex)
   end
   self:InitCoroutineCheck(CoroutineIndex)
 end
-
 function Component:ShowFloor_Component(FloorId)
   for id, RegionPoint in pairs(self.RegionPoints) do
     if self.RegionPoint2FloorId[id] == FloorId then
@@ -129,33 +124,33 @@ function Component:ShowFloor_Component(FloorId)
     end
   end
 end
-
 function Component:OnScaleChange_Component(Percent)
-  local TrackingID = GWorld.GameInstance.TrackingID
+  local TrackingID = self:GetTrackingId(CommonConst.RegionMapTrackingType.RegionPoint)
   local Visible = self:GetMapIconVisible("UI_SUBREGION", Percent)
   for id, point in pairs(self.RegionPoints) do
-    if Visible or id == self.CurrentConveyId or id == TrackingID then
-      if (point:GetVisibility() ~= ESlateVisibility.SelfHitTestInvisible or not point.PlayForward) and point:SetPointVisibility("Scale", true) then
-        point:StopAnimation(point.In)
-        point:PlayAnimation(point.In)
-        point.PlayForward = true
+    if not self.IsMinimap then
+      if Visible or id == self.CurrentConveyId or id == TrackingID then
+        if (point:GetVisibility() ~= ESlateVisibility.SelfHitTestInvisible or not point.PlayForward) and point:SetPointVisibility("Scale", true) then
+          point:StopAnimation(point.In)
+          point:PlayAnimation(point.In)
+          point.PlayForward = true
+        end
+      elseif point:GetVisibility() ~= ESlateVisibility.Collapsed or point.PlayForward then
+        if not point:IsAnimationPlaying(point.In) or point.PlayForward then
+          point:StopAnimation(point.In)
+          point:PlayAnimationReverse(point.In)
+          point.PlayForward = false
+        end
+        point:SetPointVisibility("Scale", false)
       end
-    elseif point:GetVisibility() ~= ESlateVisibility.Collapsed or point.PlayForward then
-      if not point:IsAnimationPlaying(point.In) or point.PlayForward then
-        point:StopAnimation(point.In)
-        point:PlayAnimationReverse(point.In)
-        point.PlayForward = false
-      end
-      point:SetPointVisibility("Scale", false)
     end
-    if point:GetVisibility() ~= ESlateVisibility.Collapsed then
+    if point:GetVisibility() ~= ESlateVisibility.Collapsed or self.IsMinimap then
       local position = self:TransformWorldLocToUILoc(self.RegionPointLocation[id].X, self.RegionPointLocation[id].Y)
       point:SetRenderTranslation(position)
       self.SelectWidgetTable[id]:SetRenderTranslation(position)
     end
   end
 end
-
 function Component:IsWithinActivityTime(Id)
   local NowTime = TimeUtils.NowTime()
   if not self.RegionPointStartTime then
@@ -171,14 +166,12 @@ function Component:IsWithinActivityTime(Id)
     return false
   end
 end
-
 function Component:HasActivityTime(Id)
   if self.RegionPointStartTime[Id] or self.RegionPointEndTime[Id] then
     return true
   end
   return
 end
-
 function Component:OnRegionPointClick(Id, IgnoreCheckSelect)
   self.CurrentConveyId = nil
   local data = DataMgr.RegionPoint[Id]
@@ -206,7 +199,12 @@ function Component:OnRegionPointClick(Id, IgnoreCheckSelect)
   self.LevelMap_Convey_Widget_PC:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.LevelMap_Convey_Widget_PC:PlayAnimation(self.LevelMap_Convey_Widget_PC.Auto_In)
   self.LevelMap_Convey_Widget_PC.Text_Name:SetText(GText(data.Name))
-  self.LevelMap_Convey_Widget_PC.Text_Describe:SetText("")
+  if data.Desc then
+    self.LevelMap_Convey_Widget_PC.Describe:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.LevelMap_Convey_Widget_PC.Text_Describe:SetText(GText(data.Desc))
+  else
+    self.LevelMap_Convey_Widget_PC.Describe:SetVisibility(ESlateVisibility.Collapsed)
+  end
   self.LevelMap_Convey_Widget_PC.Lock:SetVisibility(ESlateVisibility.Collapsed)
   self.LevelMap_Convey_Widget_PC:SetFocus()
   self.LevelMap_Convey_Widget_PC.Img_GuidePoint_Icon:SetBrushFromTexture(self.CurrentSelectPoint.Img_Point.Brush.ResourceObject)
@@ -222,7 +220,7 @@ function Component:OnRegionPointClick(Id, IgnoreCheckSelect)
   else
     self.LevelMap_Convey_Widget_PC.Switch_Button:SetActiveWidgetIndex(2)
   end
-  if GWorld.GameInstance.TrackingID ~= self.CurrentConveyId then
+  if self:GetTrackingId(CommonConst.RegionMapTrackingType.RegionPoint) ~= self.CurrentConveyId then
     self.LevelMap_Convey_Widget_PC.Btn_Go_Track:SetText(GText("UI_RegionMap_Track"))
     self.LevelMap_Convey_Widget_PC.Btn_Go_Track.Img_Convey_1:SetBrushResourceObject(LoadObject("/Game/UI/Texture/Static/Atlas/Common/T_Com_IconConvey.T_Com_IconConvey"))
     self.LevelMap_Convey_Widget_PC.Btn_Go_Track.Img_Convey_1:SetBrushTintColor(UE4.UUIFunctionLibrary.StringToSlateColor("E1B454"))
@@ -232,8 +230,8 @@ function Component:OnRegionPointClick(Id, IgnoreCheckSelect)
     self.LevelMap_Convey_Widget_PC.Btn_Go_Track.Img_Convey_1:SetBrushTintColor(UE4.UUIFunctionLibrary.StringToSlateColor("BD4545"))
   end
   self:MoveMapToRegionPoint(Id)
+  self.CurrentSelectPoint:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function Component:OnRegionPointTeleportClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_click_enter_level", "", nil)
   if self.CurrentConveyId and self.RegionPoints[self.CurrentConveyId] and not self.IsConveyClicked then
@@ -249,23 +247,20 @@ function Component:OnRegionPointTeleportClicked()
     end
   end
 end
-
 function Component:OnRegionPointHover(Id)
   if self.RegionPoints[Id] and self.SelectWidgetTable[Id] ~= self.ClickedSelectWidget then
     self.SelectWidgetTable[Id]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self.SelectWidgetTable[Id]:PlayAnimation(self.SelectWidgetTable[Id].Hover)
   end
 end
-
 function Component:OnRegionPointUnhover(Id)
   if self.RegionPoints[Id] and self.SelectWidgetTable[Id] ~= self.ClickedSelectWidget then
     self.SelectWidgetTable[Id]:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function Component:OnConveyGoTrace()
   if self.CurrentConveyId then
-    if GWorld.GameInstance.TrackingID ~= self.CurrentConveyId then
+    if self:GetTrackingId(CommonConst.RegionMapTrackingType.RegionPoint) ~= self.CurrentConveyId then
       local avatar = GWorld:GetAvatar()
       if nil == avatar then
         self:ClosePanel(false)
@@ -281,22 +276,14 @@ function Component:OnConveyGoTrace()
           end
         end
       end
-      if GWorld.GameInstance.TrackingID then
-        local TrackingID = GWorld.GameInstance.TrackingID
-        local trackTarget = self.MarkTable[TrackingID] or self.TeleportPoints[TrackingID] or self.RegionPoints[TrackingID]
-        if trackTarget then
-          EventManager:FireEvent(EventID.OnCommonTrack, TrackingID, false)
-          trackTarget:StopAllAnimations()
-        end
-      end
-      EventManager:FireEvent(EventID.OnCommonTrack, self.CurrentConveyId, true)
+      self:CancelCurrentTracking()
+      EventManager:FireEvent(EventID.OnCommonTrack, CommonConst.RegionMapTrackingType.RegionPoint, self.CurrentConveyId, true)
       self.CurrentSelectPoint:PlayAnimation(self.CurrentSelectPoint.Loop, 0, 0)
-      GWorld.GameInstance.TrackingID = self.CurrentConveyId
       self:CreateTrackIndicator(self.CurrentSelectPoint)
+      self:TryToastNotInSameRegion()
     else
-      EventManager:FireEvent(EventID.OnCommonTrack, self.CurrentConveyId, false)
+      EventManager:FireEvent(EventID.OnCommonTrack, CommonConst.RegionMapTrackingType.RegionPoint, self.CurrentConveyId, false)
       self.CurrentSelectPoint:StopAllAnimations()
-      GWorld.GameInstance.TrackingID = nil
       self:RemoveTrackIndicator()
       self:ClosePanel(false)
       return
@@ -304,5 +291,4 @@ function Component:OnConveyGoTrace()
   end
   self:ClosePanel(false)
 end
-
 return Component

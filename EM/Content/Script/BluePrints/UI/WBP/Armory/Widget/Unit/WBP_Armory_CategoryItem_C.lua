@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   Content.UI = self
@@ -13,13 +12,11 @@ function M:OnListItemObjectSet(Content)
   self:ShowRecommend(Content.bShowRecommend)
   self.Owner = Content.Owner
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
 end
-
 function M:SetIcon(Icon)
   if type(Icon) == "string" then
     self.Image_Attribute:SetBrushResourceObject(LoadObject(Icon))
@@ -27,7 +24,6 @@ function M:SetIcon(Icon)
     self.Image_Attribute:SetBrushResourceObject(Icon)
   end
 end
-
 function M:ShowRecommend(bShowRecommend)
   if bShowRecommend then
     self.Tag_Recommend:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -35,7 +31,6 @@ function M:ShowRecommend(bShowRecommend)
     self.Tag_Recommend:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -46,7 +41,6 @@ function M:SetIsSelected(IsSelected)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if self.IsSelected then
     return
@@ -54,7 +48,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAnimation(self.UnHover)
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MouseEvent)
   if self.IsSelected then
     return
@@ -63,7 +56,6 @@ function M:OnMouseLeave(MouseEvent)
   self:StopAnimation(self.Hover)
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.IsSelected then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -71,7 +63,6 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Press)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.IsSelected then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -83,18 +74,15 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return UIUtils.Unhandled
 end
-
 function M:OnFocusReceived()
   if self.Owner then
-    if self.Owner.IsFromListContent and self.Owner.CurFilterItem then
+    if self.Owner.IsFromListContent and self.Owner.CurFilterItem and self.Owner.CurFilterItem == self.Content then
       self.Owner.CurFilterItem.UI:SetFocus()
       self.Owner.EMListView_Filter:BP_SetSelectedItem(self.Owner.CurFilterItem)
       self.Owner.IsFromListContent = false
@@ -105,5 +93,4 @@ function M:OnFocusReceived()
   end
   return UIUtils.Unhandled
 end
-
 return M

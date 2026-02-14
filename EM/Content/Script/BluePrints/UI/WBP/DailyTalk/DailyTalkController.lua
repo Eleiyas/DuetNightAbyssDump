@@ -1,7 +1,6 @@
 local M = Class("BluePrints.Common.MVC.Controller")
 local DailyTalkModel = require("BluePrints.UI.WBP.DailyTalk.DailyTalkModel")
 local DailyTalkCommon = require("BluePrints.UI.WBP.DailyTalk.DailyTalkCommon")
-
 function M:Init()
   M.Super.Init(self)
   EventManager:AddEvent(EventID.OnTalkTriggerComplete, self, self.OnTalkTriggerComplete)
@@ -9,7 +8,6 @@ function M:Init()
   self.ShowDailyRewardUI = {}
   self.EnterStory = false
 end
-
 function M:Destory()
   M.Super.Destory(self)
   EventManager:RemoveEvent(EventID.OnTalkTriggerComplete, self)
@@ -18,7 +16,6 @@ function M:Destory()
   self.ShowDailyRewardUI = nil
   self.EnterStory = false
 end
-
 function M:OnHudRewardClose(RewardUI)
   if not self.bInited then
     return
@@ -31,7 +28,6 @@ function M:OnHudRewardClose(RewardUI)
     Player:SetCanInteractiveTrigger(true, "ShowDailyRewards")
   end
 end
-
 function M:ShowDailyRewards(TalkTriggerId, RewardInfo)
   if not self.bInited then
     return
@@ -47,7 +43,6 @@ function M:ShowDailyRewards(TalkTriggerId, RewardInfo)
     self:OnHudRewardClose(RewardUI)
   end)
 end
-
 function M:OnTalkTriggerComplete(TalkTriggerId)
   DebugPrint("OnTalkTriggerComplete", TalkTriggerId)
   if not self:GetModel():CheckDailyTalkUnFinish(TalkTriggerId) then
@@ -59,7 +54,6 @@ function M:OnTalkTriggerComplete(TalkTriggerId)
   end
   Avatar:GetDailyTalkReward(TalkTriggerId)
 end
-
 function M:OnEnterStory(TalkTriggerId)
   local NpcMap = DailyTalkModel.DailyTalkNpc
   if self:GetModel():CheckDailyTalkUnFinish(TalkTriggerId) then
@@ -75,7 +69,6 @@ function M:OnEnterStory(TalkTriggerId)
     end
   end
 end
-
 function M:CheckNeedShowRewardBubble()
   if not self:GetAvatar() then
     self:StopTimer(self.TickTimer)
@@ -101,7 +94,6 @@ function M:CheckNeedShowRewardBubble()
     end
   end
 end
-
 function M:RegisterDailyTalkNpc(NpcId, NpcTalkInteractiveComponent)
   DailyTalkModel:RegisterNpc(NpcId, NpcTalkInteractiveComponent)
   self:StopTimer(self.TickTimer)
@@ -112,7 +104,6 @@ function M:RegisterDailyTalkNpc(NpcId, NpcTalkInteractiveComponent)
     end, true)
   end
 end
-
 function M:OnGetReward()
   self.EnterStory = false
   local NpcMap = DailyTalkModel.DailyTalkNpc
@@ -134,13 +125,10 @@ function M:OnGetReward()
     end
   end
 end
-
 function M:GetModel()
   return DailyTalkModel
 end
-
 function M:GetEventName()
   return EventID.DailyTalkControllerEvent
 end
-
 return M

@@ -1,11 +1,10 @@
 require("UnLua")
 local AttrModel = require("BluePrints.UI.UI_PC.Experience.WBP_Experience_Attr_Model")
+local TimeUtils = require("Utils.TimeUtils")
 local WBP_Experience_Main_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Experience_Main_C:ReceiveEnterState(StackAction)
   self.Super.ReceiveEnterState(self, StackAction)
 end
-
 function WBP_Experience_Main_C:ReceiveExitState(StackAction)
   self.Super.ReceiveExitState(self, StackAction)
   if 1 == StackAction then
@@ -19,7 +18,6 @@ function WBP_Experience_Main_C:ReceiveExitState(StackAction)
     end
   end
 end
-
 function WBP_Experience_Main_C:PlayBaiAnim()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -36,7 +34,6 @@ function WBP_Experience_Main_C:PlayBaiAnim()
     })
   end
 end
-
 function WBP_Experience_Main_C:EnableTickWhenPaused(Value)
   local TweenActor = UE4.ALTweenActor.GetLTweenInstance(self:GetWorld())
   if Value then
@@ -51,7 +48,6 @@ function WBP_Experience_Main_C:EnableTickWhenPaused(Value)
     UE4.UGameplayStatics.GetPlayerController(self, 0).bShouldPerformFullTickWhenPaused = false
   end
 end
-
 function WBP_Experience_Main_C:PlayNPCAnim(NpcAnimId)
   local PlayNPC = UE4.ANpcCharacter.GetNpc(self, self.NpcId)
   if PlayNPC then
@@ -70,7 +66,6 @@ function WBP_Experience_Main_C:PlayNPCAnim(NpcAnimId)
     PlayNPC:PlayUITalkAction(NpcAnimId)
   end
 end
-
 function WBP_Experience_Main_C:SwitchCamera(bPlayer)
   local PlayerController = UGameplayStatics.GetPlayerController(self, 0)
   if bPlayer then
@@ -94,7 +89,6 @@ function WBP_Experience_Main_C:SwitchCamera(bPlayer)
     end
   end
 end
-
 function WBP_Experience_Main_C:MoveCamera(Camera)
   local StartPosition = Camera.RelativeLocation
   local EndPosition = FVector(0)
@@ -105,7 +99,6 @@ function WBP_Experience_Main_C:MoveCamera(Camera)
     end
   }, StartPosition, EndPosition, 0.5, 0, 17)
 end
-
 function WBP_Experience_Main_C:Construct()
   self.Super.Construct(self)
   self.WrapBox_Buff:ClearChildren()
@@ -145,7 +138,6 @@ function WBP_Experience_Main_C:Construct()
   EventManager:AddEvent(EventID.OnPlayerLevelUp, self, self.RefreshLevelInfo)
   AudioManager(self):SetEventSoundParam(self, "EnergySupplyOpen", {ToEnd = 1})
 end
-
 function WBP_Experience_Main_C:Destruct()
   self.Super.Destruct(self)
   self.WrapBox_Buff:ClearChildren()
@@ -154,19 +146,16 @@ function WBP_Experience_Main_C:Destruct()
   self.EMMenuAnchor_Item.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
   EventManager:RemoveEvent(EventID.OnPlayerLevelUp, self)
 end
-
 function WBP_Experience_Main_C:RefreshLevelInfo()
   self:InitNormalInfo()
   self:RefreshItemInfo()
   self:UpdateBtnState()
   self:UpdateBuffInfo()
 end
-
 function WBP_Experience_Main_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:PlayBaiAnim()
 end
-
 function WBP_Experience_Main_C:InitCommonTab()
   self.TabConfigData = {
     TitleName = GText("UI_Player_Level_Reward"),
@@ -203,7 +192,6 @@ function WBP_Experience_Main_C:InitCommonTab()
   }
   self.Com_Tab:Init(self.TabConfigData, false)
 end
-
 function WBP_Experience_Main_C:InitNormalTab()
   local BottomKeyInfo = {
     {
@@ -235,7 +223,6 @@ function WBP_Experience_Main_C:InitNormalTab()
     self.Com_Tab:UpdateBottomKeyInfo(BottomKeyInfo, false)
   end
 end
-
 function WBP_Experience_Main_C:InitSelectTab()
   local BottomKeyInfo = {
     {
@@ -263,14 +250,12 @@ function WBP_Experience_Main_C:InitSelectTab()
   }
   self.Com_Tab:UpdateBottomKeyInfo(BottomKeyInfo, false)
 end
-
 function WBP_Experience_Main_C:InitItemTipOpenTab()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     local BottomKeyInfo = {}
     self.Com_Tab:UpdateBottomKeyInfo(BottomKeyInfo, false)
   end
 end
-
 function WBP_Experience_Main_C:InitTipOpenTab()
   local BottomKeyInfo = {
     {
@@ -291,7 +276,6 @@ function WBP_Experience_Main_C:InitTipOpenTab()
   }
   self.Com_Tab:UpdateBottomKeyInfo(BottomKeyInfo, false)
 end
-
 function WBP_Experience_Main_C:InitNormalInfo(...)
   self.Text_Tips:SetText(GText("PlayerLv_Now"))
   self.Text_EXTips:SetText(GText("PlayerLevel_ExpNow"))
@@ -326,7 +310,6 @@ function WBP_Experience_Main_C:InitNormalInfo(...)
   self.BtnReward:SetText(GText("UI_Achievement_GetReward"))
   self.Text_Btn:SetText(GText("UI_Reward_Received"))
 end
-
 function WBP_Experience_Main_C:InitScrollBox()
   self.ScrollBox.OnUserScrolled:Add(self, self.OnUserScrolled)
   self.ScrollBox.OnMouseButtonUp:Add(self, self.ScrollBoxOnMouseButtonUp)
@@ -376,17 +359,14 @@ function WBP_Experience_Main_C:InitScrollBox()
     self:SelectFirstItem()
   end)
 end
-
 function WBP_Experience_Main_C:AddSpaceItem()
   local Obj = self:CreateWidgetNew("ExperienceItem")
   Obj:InitSpace(self.ScrollBoxSizeX, self)
   self.ScrollBox:AddChild(Obj)
 end
-
 function WBP_Experience_Main_C:CalculateSumDistance()
   self.SumDistance = (self.NumMax - 1) * self.ItemSizeX
 end
-
 function WBP_Experience_Main_C:GetDistance(Index, CurrentOffset)
   CurrentOffset = CurrentOffset or self.ScrollBox:GetScrollOffset()
   local EndOffset = self.ScrollBox:GetScrollOffsetOfEnd()
@@ -394,7 +374,6 @@ function WBP_Experience_Main_C:GetDistance(Index, CurrentOffset)
   local IndexDistance = (Index - 1) * self.ItemSizeX
   return CurrentDistance - IndexDistance
 end
-
 function WBP_Experience_Main_C:GetMagnification(Distance)
   if Distance < 0 then
     Distance = -Distance
@@ -405,7 +384,6 @@ function WBP_Experience_Main_C:GetMagnification(Distance)
   end
   return self.Fa * Distance + self.Fb
 end
-
 function WBP_Experience_Main_C:SelectFirstItem()
   local Avatar = GWorld:GetAvatar()
   local TargetIndex = 1
@@ -426,37 +404,31 @@ function WBP_Experience_Main_C:SelectFirstItem()
   FirstItem:OnCellClicked(nil, nil, true)
   self.CanPlayNumChangeSound = true
 end
-
 function WBP_Experience_Main_C:SelectItem(Index)
   local Item = self.ScrollBox:GetChildAt(Index)
   if Item then
     Item:OnCellClicked()
   end
 end
-
 function WBP_Experience_Main_C:GetTargetIndex(Offset)
   local EndOffset = self.ScrollBox:GetScrollOffsetOfEnd()
   local EachItemOffset = EndOffset / (self.NumMax - 1)
   return math.floor((Offset + EachItemOffset / 2) / EachItemOffset) + 1
 end
-
 function WBP_Experience_Main_C:GetTargetOffset(Offset)
   local TargetIndex = self:GetTargetIndex(Offset)
   return self:GetTargetOffsetByIndex(TargetIndex)
 end
-
 function WBP_Experience_Main_C:GetTargetOffsetByIndex(Index)
   local EndOffset = self.ScrollBox:GetScrollOffsetOfEnd()
   return (Index - 1) * (EndOffset / (self.NumMax - 1))
 end
-
 function WBP_Experience_Main_C:OnUserScrolled(CurrentOffset)
   self:ScrolledTo(CurrentOffset, false)
   if not self.DragScrollBox then
     self:AddTimer(0.3, self.ScrollBoxOnMouseButtonUp, false, 0, "ExperienceMainScrollBoxUserScrolledEnd", true)
   end
 end
-
 function WBP_Experience_Main_C:ScrolledTo(CurrentOffset, isAutoScroll)
   local AllChildren = self.ScrollBox:GetAllChildren()
   for i = 1, AllChildren:Length() do
@@ -477,7 +449,6 @@ function WBP_Experience_Main_C:ScrolledTo(CurrentOffset, isAutoScroll)
     end
   end
 end
-
 function WBP_Experience_Main_C:ScrollBoxOnMouseButtonUp(Geometry, MouseEvent)
   self.DragScrollBox = false
   self.ScrollBox:EndInertialScrolling()
@@ -490,7 +461,6 @@ function WBP_Experience_Main_C:ScrollBoxOnMouseButtonUp(Geometry, MouseEvent)
     self:ScrollToTargetOffset(CurrentOffset, TargetOffset, self.ChangeSpeedSlow)
   end
 end
-
 function WBP_Experience_Main_C:ScrollToTargetOffset(CurrentOffset, TargetOffset, ChangeSpeed)
   self.ScrollBox:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.LerpAlpha = 0
@@ -510,7 +480,6 @@ function WBP_Experience_Main_C:ScrollToTargetOffset(CurrentOffset, TargetOffset,
     self:ScrolledTo(Offset)
   end, true, 0, "UpdateOffset", true, 0.033)
 end
-
 function WBP_Experience_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -573,11 +542,9 @@ function WBP_Experience_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Experience_Main_C:OnReturnKeyDown()
   self:OnClickBack(true)
 end
-
 function WBP_Experience_Main_C:OnClickBack(Sound)
   if self:IsAnimationPlaying(self.In) then
     return
@@ -587,7 +554,6 @@ function WBP_Experience_Main_C:OnClickBack(Sound)
   end
   self:PlayOutAnim()
 end
-
 function WBP_Experience_Main_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -601,12 +567,10 @@ function WBP_Experience_Main_C:PlayOutAnim()
   self:SwitchCamera(true)
   self:DoRecoverCamera()
 end
-
 function WBP_Experience_Main_C:Close()
   self.Super.Close(self)
   self.ScrollBox:ClearChildren()
 end
-
 function WBP_Experience_Main_C:UpdateSelectedInfo(ExperienceItem, Speed, isDragSelect, IsFirstTime)
   Speed = Speed or self.ChangeSpeedSlow
   if self.SelectedItem then
@@ -623,14 +587,12 @@ function WBP_Experience_Main_C:UpdateSelectedInfo(ExperienceItem, Speed, isDragS
   self:UpdateNodeInfo()
   self:UpdateRewardInfo()
   self:AddTimer(0.01, function()
-    self:OnRefreshListLater()
     self.List_Item:ScrollToTop()
   end, false, 0, "OnRefreshListLater", true)
   self:UpdateArrow()
   self:StopAnimation(self.Refresh)
   self:PlayAnimation(self.Refresh)
 end
-
 function WBP_Experience_Main_C:UpdateBtnState()
   if self.SelectedItem.IsGot then
     self.Switcher_Btn:SetActiveWidgetIndex(2)
@@ -640,7 +602,6 @@ function WBP_Experience_Main_C:UpdateBtnState()
     self.Switcher_Btn:SetActiveWidgetIndex(1)
   end
 end
-
 function WBP_Experience_Main_C:UpdateRewardInfo()
   self:UpdateBtnState()
   local Rewards = {
@@ -681,75 +642,90 @@ function WBP_Experience_Main_C:UpdateRewardInfo()
     end
   end
 end
-
 function WBP_Experience_Main_C:UpdateNodeInfo()
   local LevelInfos = DataMgr.PlayerLevelUp
   local LevelInfo = LevelInfos[self.SelectedItem.Level]
   if LevelInfo and LevelInfo.NodeType then
-    self.Switch_promote:SetActiveWidgetIndex(1)
+    local HaveItem = false
     local ClassPath = "/Game/UI/UI_PC/Common/Common_Item_subsize_PC_Content.Common_Item_subsize_PC_Content_C"
+    local ShopItem = DataMgr.ShopItem
+    local Walnut = DataMgr.Walnut
+    local NowTime = TimeUtils:NowTime()
     self.ListView_Promote:ClearListItems()
     for Index, Type in ipairs(LevelInfo.NodeType) do
-      local Content = NewObject(UE4.LoadClass(ClassPath))
-      Content.Root = self
-      Content.Index = Index
-      Content.Type = Type
-      Content.Title = LevelInfo.NodeTitle[Index]
-      Content.Content = LevelInfo.NodeContent[Index] or {}
-      Content.Level = self.SelectedItem.Level
-      self.ListView_Promote:AddItem(Content)
-    end
-    self:AddTimer(0.1, function()
-      local AllEntryHeight = 0
-      local DisplayedEntries = self.ListView_Promote:GetDisplayedEntryWidgets()
-      for i = 1, DisplayedEntries:Length() do
-        local Entry = DisplayedEntries:GetRef(i)
-        local EntryHeight = Entry:GetDesiredSize().Y
-        AllEntryHeight = AllEntryHeight + EntryHeight
+      local SortedItemInfos
+      if "Walnut" == Type and LevelInfo.NodeContent[Index] and LevelInfo.NodeContent[Index].Id then
+        local Ids = LevelInfo.NodeContent[Index].Id
+        local IncludIds = {}
+        for Index, Id in pairs(Ids) do
+          IncludIds[Id] = 1
+        end
+        for ItemId, Info in pairs(ShopItem) do
+          if "Walnut" == Info.ItemType and Info.UnlockLevel == self.SelectedItem.Level and Walnut[Info.TypeId] and IncludIds[Walnut[Info.TypeId].WalnutType] and (not Info.StartTime or NowTime >= Info.StartTime) and (not Info.EndTime or NowTime <= Info.StartTime) then
+            SortedItemInfos = SortedItemInfos or {}
+            table.insert(SortedItemInfos, Info)
+          end
+        end
+        if SortedItemInfos then
+          table.sort(SortedItemInfos, function(a, b)
+            return a.ItemId > b.ItemId
+          end)
+        end
       end
-      if AllEntryHeight > self.SwitchHeight then
-        self.NeedShowTip = true
-      else
-        self.NeedShowTip = false
-      end
-      self:InitNormalTab()
-    end, false, 0, "UpdateNodeInfoTimer", true)
-  else
-    self.NeedShowTip = false
-    self.Switch_promote:SetActiveWidgetIndex(0)
-    local TargetLevel
-    for Level, Info in ipairs(LevelInfos) do
-      if Level > self.SelectedItem.Level and Info.NodeType then
-        TargetLevel = Level
-        break
+      if "Walnut" ~= Type or "Walnut" == Type and SortedItemInfos then
+        HaveItem = true
+        local Content = NewObject(UE4.LoadClass(ClassPath))
+        Content.Root = self
+        Content.SortedItemInfos = SortedItemInfos
+        Content.Index = Index
+        Content.Type = Type
+        Content.Title = LevelInfo.NodeTitle[Index]
+        Content.Content = LevelInfo.NodeContent[Index] or {}
+        Content.Level = self.SelectedItem.Level
+        self.ListView_Promote:AddItem(Content)
       end
     end
-    if TargetLevel then
-      self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-      local Text = string.format(GText("PlayerLevel_Toast_Locked"), TargetLevel)
-      self.Com_EmptyBg.Text_Empty:SetText(Text)
-    else
-      self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    if HaveItem then
+      self.Switch_promote:SetActiveWidgetIndex(1)
+      self:AddTimer(0.1, function()
+        local AllEntryHeight = 0
+        local DisplayedEntries = self.ListView_Promote:GetDisplayedEntryWidgets()
+        for i = 1, DisplayedEntries:Length() do
+          local Entry = DisplayedEntries:GetRef(i)
+          local EntryHeight = Entry:GetDesiredSize().Y
+          AllEntryHeight = AllEntryHeight + EntryHeight
+        end
+        if AllEntryHeight > self.SwitchHeight then
+          self.NeedShowTip = true
+        else
+          self.NeedShowTip = false
+        end
+        self:InitNormalTab()
+      end, false, 0, "UpdateNodeInfoTimer", true)
+      return
     end
-    self:InitNormalTab()
   end
-end
-
-function WBP_Experience_Main_C:OnRefreshListLater()
-  self.List_Item:RegenerateAllEntries()
-  self.List_Item:SetRenderOpacity(0)
-  self:AddTimer(0.1, function()
-    self.List_Item:SetRenderOpacity(1)
-    local DisplayedEntries = self.List_Item:GetDisplayedEntryWidgets()
-    for i = 1, DisplayedEntries:Length() do
-      local Entry = DisplayedEntries:GetRef(i)
-      Entry:SetVisibility(UIConst.VisibilityOp.Visible)
-      Entry:StopAllAnimations()
-      Entry:PlayAnimation(Entry.In)
+  self.NeedShowTip = false
+  self.Switch_promote:SetActiveWidgetIndex(0)
+  local TargetLevel
+  for Level, Info in ipairs(LevelInfos) do
+    if Level > self.SelectedItem.Level and Info.NodeType then
+      TargetLevel = Level
+      break
     end
-  end, false, 0, "OnRefreshListLater", true)
+  end
+  self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+  if TargetLevel then
+    self.Com_EmptyBg.Slot_Text:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    self.Com_EmptyBg.Text_Empty_World:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    local Text = string.format(GText("PlayerLevel_Toast_Locked"), TargetLevel)
+    self.Com_EmptyBg.Text_Empty:SetText(Text)
+  else
+    self.Com_EmptyBg.Slot_Text:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Com_EmptyBg.Text_Empty_World:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  end
+  self:InitNormalTab()
 end
-
 function WBP_Experience_Main_C:UpdateArrow()
   if 1 == self.SelectedItem.Index then
     self.Btn_L:PlayAnimation(self.Btn_L.Grey)
@@ -782,7 +758,6 @@ function WBP_Experience_Main_C:UpdateArrow()
     end
   end
 end
-
 function WBP_Experience_Main_C:OnBtnLClicked()
   local NextIndex = self.SelectedItem.Index - 1
   if NextIndex >= 1 then
@@ -790,7 +765,6 @@ function WBP_Experience_Main_C:OnBtnLClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
 end
-
 function WBP_Experience_Main_C:OnBtnRClicked()
   local NextIndex = self.SelectedItem.Index + 1
   if NextIndex <= self.NumMax then
@@ -798,11 +772,9 @@ function WBP_Experience_Main_C:OnBtnRClicked()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
 end
-
 function WBP_Experience_Main_C:OnBtnRewardClicked()
   local Avatar = GWorld:GetAvatar()
   self.CanPlayNumChangeSound = false
-  
   local function Callback(Rewards)
     self:RefreshItemInfo()
     self:RefreshReddotInfo()
@@ -812,12 +784,10 @@ function WBP_Experience_Main_C:OnBtnRewardClicked()
       self.CanPlayNumChangeSound = true
     end)
   end
-  
   if Avatar then
     Avatar:GetAvatarLevelRewards(Callback, self.SelectedItem.Level)
   end
 end
-
 function WBP_Experience_Main_C:RefreshItemInfo()
   local AllChildren = self.ScrollBox:GetAllChildren()
   for i = 1, AllChildren:Length() do
@@ -827,7 +797,6 @@ function WBP_Experience_Main_C:RefreshItemInfo()
     end
   end
 end
-
 function WBP_Experience_Main_C:RefreshNextRewardInfo()
   local StartIndex = self.SelectedItem.Index
   local AllChildren = self.ScrollBox:GetAllChildren()
@@ -840,7 +809,6 @@ function WBP_Experience_Main_C:RefreshNextRewardInfo()
   end
   self:UpdateRewardInfo()
 end
-
 function WBP_Experience_Main_C:RefreshReddotInfo()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("ExperienceItem")
   if CacheDetail[self.SelectedItem.Level] then
@@ -856,7 +824,6 @@ function WBP_Experience_Main_C:RefreshReddotInfo()
     end
   end
 end
-
 function WBP_Experience_Main_C:TipsOut()
   if not self.EMMenuAnchor_Item:IsOpen() then
     return
@@ -864,7 +831,6 @@ function WBP_Experience_Main_C:TipsOut()
   self.EMMenuAnchor_Item:Close()
   self.Com_Tab:SetFocus()
 end
-
 function WBP_Experience_Main_C:OnAnchorGetUserMenuContent()
   if not IsValid(self.Bubble) then
     self.Bubble = UIManager(self):CreateWidget("/Game/UI/WBP/Guide/Widget/WBP_Guide_ContentBlock.WBP_Guide_ContentBlock")
@@ -876,14 +842,12 @@ function WBP_Experience_Main_C:OnAnchorGetUserMenuContent()
   end
   return self.Bubble
 end
-
 function WBP_Experience_Main_C:OnMenuOpenChanged(IsOpened)
   if self.EMMenuAnchor_Item.bAllowHover then
     return
   end
   self:TipsChanged(IsOpened)
 end
-
 function WBP_Experience_Main_C:TipsChanged(IsOpened)
   if IsOpened then
     self.IsInTipState = true
@@ -895,7 +859,6 @@ function WBP_Experience_Main_C:TipsChanged(IsOpened)
     self.Img_Pitchon:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Experience_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   if CurInputDevice == ECommonInputType.Touch then
@@ -904,7 +867,6 @@ function WBP_Experience_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGam
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Experience_Main_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   self.IsInSelectState = false
   self.IsInTipState = false
@@ -922,7 +884,6 @@ function WBP_Experience_Main_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     end
   end
 end
-
 function WBP_Experience_Main_C:InitGamepadView()
   if self.Switcher_L then
     self.Switcher_L:SetActiveWidgetIndex(1)
@@ -940,14 +901,12 @@ function WBP_Experience_Main_C:InitGamepadView()
     self.KeyImg_Promote:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
 end
-
 function WBP_Experience_Main_C:InitGamepadVisibility()
   self.ScrollBox:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Switcher_Btn:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.List_Item:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.ListView_Promote:SetVisibility(ESlateVisibility.HitTestInvisible)
 end
-
 function WBP_Experience_Main_C:InitKeyboardView()
   if self.Switcher_L then
     self.Switcher_L:SetActiveWidgetIndex(0)
@@ -965,14 +924,12 @@ function WBP_Experience_Main_C:InitKeyboardView()
     self.KeyImg_Promote:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Experience_Main_C:InitKeyboardVisibility()
   self.ScrollBox:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Switcher_Btn:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.List_Item:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.ListView_Promote:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function WBP_Experience_Main_C:InitWidgetInfoInGamePad()
   self.WBP_Com_BtnLockCondition:SetGamepadIconVisibility(false)
   self.BtnReward:SetDefaultGamePadImg("Y")
@@ -1005,7 +962,6 @@ function WBP_Experience_Main_C:InitWidgetInfoInGamePad()
     })
   end
 end
-
 function WBP_Experience_Main_C:EnterSelectMode(Name)
   if self.IsInSelectState then
     return
@@ -1054,7 +1010,6 @@ function WBP_Experience_Main_C:EnterSelectMode(Name)
     end
   end
 end
-
 function WBP_Experience_Main_C:LeaveSelectMode()
   if not self.IsInSelectState then
     return
@@ -1071,7 +1026,6 @@ function WBP_Experience_Main_C:LeaveSelectMode()
     self:AllItemIconRefresh()
   end
 end
-
 function WBP_Experience_Main_C:MenuOpenChangedEvent(IsOpened)
   if ModController:IsMobile() then
     return
@@ -1082,7 +1036,6 @@ function WBP_Experience_Main_C:MenuOpenChangedEvent(IsOpened)
     self:InitSelectTab()
   end
 end
-
 function WBP_Experience_Main_C:OnUINavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     return self:OnNavigationToIndex(self.SelectedIndex - 1)
@@ -1091,7 +1044,6 @@ function WBP_Experience_Main_C:OnUINavigation(NavigationDirection)
   end
   return nil
 end
-
 function WBP_Experience_Main_C:OnNavigationToIndex(Index)
   local Item = self.List_item:GetItemAt(Index)
   if Item then
@@ -1109,13 +1061,11 @@ function WBP_Experience_Main_C:OnNavigationToIndex(Index)
   end
   return nil
 end
-
 function WBP_Experience_Main_C:OnAddedToFocusPathEvent(Widget)
   if self.NeedOpenMenuWhenResoureFocused and Widget then
     Widget:OpenItemMenu()
   end
 end
-
 function WBP_Experience_Main_C:UpdateBuffInfo(IsFirstTime)
   local CurrentLevel = self.SelectedItem.Level
   local BuffId = DataMgr.PlayerLevelUp[CurrentLevel].PlayerBuffId
@@ -1164,22 +1114,18 @@ function WBP_Experience_Main_C:UpdateBuffInfo(IsFirstTime)
     end
   end
 end
-
 function WBP_Experience_Main_C:InitBtn()
   self.Button_EX.OnClicked:Add(self, self.ClickEXBtn)
   self.Text_Tips_EX:SetText(GText("PlayerLevel_ExpSource"))
 end
-
 function WBP_Experience_Main_C:ClickEXBtn()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   self:OpenEXSource()
 end
-
 function WBP_Experience_Main_C:OpenEXSource()
   local Params = {Parent = self}
   UIManager(self):ShowCommonPopupUI(100249, Params, self)
 end
-
 function WBP_Experience_Main_C:AllItemIconRefresh()
   local ItemUIs = self.ListView_Promote:GetDisplayedEntryWidgets()
   for i = 1, ItemUIs:Length() do
@@ -1187,7 +1133,6 @@ function WBP_Experience_Main_C:AllItemIconRefresh()
     Entry:ItemIconRefresh()
   end
 end
-
 function WBP_Experience_Main_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1200,5 +1145,4 @@ function WBP_Experience_Main_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEve
   end
   return UIUtils.Unhandled
 end
-
 return WBP_Experience_Main_C

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.WBP.Camera.WBP_Camera_JoyStick_Base_C")
-
 function M:Construct()
   self.PressAnims = {
     Left = {
@@ -17,7 +16,6 @@ function M:Construct()
     }
   }
 end
-
 function M:InitKeyInfo(LeftKey, RightKey, UpKey, DownKey)
   self.A:CreateCommonKey({
     KeyInfoList = {
@@ -45,7 +43,6 @@ function M:InitKeyInfo(LeftKey, RightKey, UpKey, DownKey)
     }
   })
 end
-
 function M:SetPressed(DirectionStr, bPressed)
   if not self.PressAnims[DirectionStr] then
     return
@@ -62,7 +59,6 @@ function M:SetPressed(DirectionStr, bPressed)
     self:PlayAnimation(self.PressAnims[DirectionStr].Anim, 0, 1, EUMGSequencePlayMode.Reverse)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self.Controller:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -75,5 +71,4 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
     self.Panel_Key:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 return M

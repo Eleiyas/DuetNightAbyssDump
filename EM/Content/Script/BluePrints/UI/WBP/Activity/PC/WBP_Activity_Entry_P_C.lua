@@ -7,7 +7,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.Activity.Widget.View.ActivityEntryBaseView"
 }
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.OwnerPlayer = nil
@@ -17,7 +16,6 @@ function M:Initialize(Initializer)
   self.AllCurrentActivityID = {}
   self.AllCurrentActivityPage = {}
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.OwnerPlayer, self.NeedJumpToTabId, self.NeedJumpToActivityId, self.TryOutActivityNeedJumpToTabIndex, self.NeedJumpToCharId = ...
@@ -37,31 +35,53 @@ function M:OnLoaded(...)
     end
     if not self.NeedJumpToTabId then
       self.EventTypeTab:ResetPos()
+      self.NeedJumpToTabId = nil
     end
   end)
   self.OpenKey = CommonUtils:GetActionMappingKeyName("OpenEvent")
   EventManager:AddEvent(EventID.OnReturnToActivityEntry, self, self.OnReturnToActivityEntry)
   EventManager:AddEvent(EventID.OnLeaveActivityEntry, self, self.OnLeaveActivityEntry)
+  EventManager:AddEvent(EventID.OnActivityEntryShowVisible, self, self.OnActivityEntryShowVisible)
   EventManager:AddEvent(EventID.OnActivityComplete, self, self.OnActivityComplete)
+  local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
+  self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
+  if IsValid(self.GameInputModeSubsystem) then
+    self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
+    self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
+  end
 end
-
+function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
+  self.CurInputDevice = CurInputDevice
+  self.CurGamepadName = CurGamepadName
+  if CurInputDevice == ECommonInputType.Gamepad then
+    if not self:HasFocusedDescendants() and not self:HasAnyUserFocus() then
+      return
+    end
+    if self.CurFocusWidgetItem then
+      self.CurFocusWidgetItem:SetFocus()
+    else
+      self.List_Tab:SetFocus()
+    end
+  end
+end
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdateActivityEvent, self, self.OnUpdateActivityByAction)
   self:AddDispatcher(EventID.ActivityControllerEvent, self, self.OnUpdateActivityByControllerEvent)
 end
-
 function M:ReceiveEnterState(StackAction)
   if 1 == StackAction then
     self:OnRefreshCurrentPageAfterJump()
-    self:PlayAnimationForward(self.In)
+    self:UpdateActivityKeyTips()
   end
   self.Super.ReceiveEnterState(self, StackAction)
+  local CurrentActivePage = self.AllCurrentActivityPage[self.CurTabId]
+  if nil ~= CurrentActivePage and type(CurrentActivePage.ReceiveEnterStateSelf) == "function" then
+    CurrentActivePage:ReceiveEnterStateSelf(StackAction)
+  end
 end
-
 function M:Close()
   self.Super.Close(self)
 end
-
 function M:Destruct()
   self.WidgetBGAnchor:ClearChildren()
   self.Group_Anchor:ClearChildren()
@@ -71,7 +91,6 @@ function M:Destruct()
   EventManager:RemoveEvent(EventID.OnActivityComplete, self)
   self.Super.Destruct(self)
 end
-
 function M:RefreshBaseInfo(TopTabInfo, SubTabItems, BtnClickFunction, VirtualClickFunction, SelectTabIndex)
   local SubTabInfo = {
     Tabs = SubTabItems,
@@ -82,7 +101,6 @@ function M:RefreshBaseInfo(TopTabInfo, SubTabItems, BtnClickFunction, VirtualCli
   self:InitTabView(TopTabInfo, SubTabInfo, BtnClickFunction, VirtualClickFunction, SelectTabIndex)
   self:ShowContentView(nil == SubTabItems or 0 == #SubTabItems, false)
 end
-
 function M:UpdateUIStyleInPlatform(IsUseGamePad)
   local ActiveWidgetIndex = IsUseGamePad and 1 or 0
   local CurrentActivePage, CurFocusWidgetName, CurFocusWidgetItem = self.AllCurrentActivityPage[self.CurTabId]
@@ -108,7 +126,6 @@ function M:UpdateUIStyleInPlatform(IsUseGamePad)
     self.EventTypeTab:UpdateUIStyleInPlatform(IsUseGamePad)
   end
 end
-
 function M:GetTopTabInfo()
   local TopTabInfo = {
     LeftKey = "NotShow",
@@ -123,7 +140,6 @@ function M:GetTopTabInfo()
   }
   return TopTabInfo
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -149,20 +165,26 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = self:Handle_KeyDownOnGamePad(InKeyName)
   IsEventHandled = IsEventHandled or self.Activity_Tab:Handle_KeyEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
 function M:Handle_KeyDownOnGamePad(InKeyName)
   if InKeyName == UIConst.GamePadKey.FaceButtonLeft then
     return false
   end
   return false
 end
-
+function M:Hide(HideTag)
+  if "UIStackChange" == HideTag then
+    self:AddTimer(0.2, function()
+      self:SetUIVisibilityTag(UIConst.CommonHideTagName.UIStackChange, true)
+    end)
+  else
+    M.Super.Hide(self, HideTag)
+  end
+end
 function M:HandleVirtualClickInGamePad(TabWidget)
   if self.GameInputModeSubsystem:GetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -172,7 +194,6 @@ function M:HandleVirtualClickInGamePad(TabWidget)
     CurrentActivePage:OnGamePadButtonDown(UIConst.GamePadKey.FaceButtonBottom)
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -190,18 +211,17 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnReturnToActivityEntry()
   self:PlayAnimationForward(self.In)
 end
-
 function M:OnLeaveActivityEntry()
   self:PlayAnimationForward(self.Out)
 end
-
 function M:OnActivityComplete(EventID)
   self:SetActivityComplete(EventID)
 end
-
+function M:OnActivityEntryShowVisible()
+  self:SetUIVisibilityTag(UIConst.CommonHideTagName.UIStackChange, false)
+end
 AssembleComponents(M)
 return M

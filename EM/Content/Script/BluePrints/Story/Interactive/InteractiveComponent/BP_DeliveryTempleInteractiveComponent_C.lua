@@ -1,7 +1,7 @@
 require("UnLua")
 require("DataMgr")
+local LuaConst = require("EMLuaConst")
 local BP_DeliveryTempleInteractiveComponent_C = Class("BluePrints.Story.Interactive.InteractiveComponent.BP_InteractiveBaseComponent_C")
-
 function BP_DeliveryTempleInteractiveComponent_C:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.Owner = self:GetOwner()
@@ -9,11 +9,9 @@ function BP_DeliveryTempleInteractiveComponent_C:ReceiveBeginPlay()
   self.LockByCondition = false
   self.ConditionId = 0
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:TriggerTick(PlayerActor)
   self.Overridden.TriggerTick(self, PlayerActor)
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:IsCanInteractive(PlayerActor)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -28,12 +26,12 @@ function BP_DeliveryTempleInteractiveComponent_C:IsCanInteractive(PlayerActor)
   if Controller:GetStoryModeState() then
     return false
   end
-  if self:GetInteractiveName() ~= "" and self.DistanceCheckComponent(self, PlayerActor, self.InteractiveDistance, false) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle, false) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle, false) then
-    return true
+  if LuaConst.OpenComputeInteractive then
+    return self:GetInteractiveName() ~= "" and self:GetDistanceCheckResult() and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle, false) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle, false)
+  else
+    return self:GetInteractiveName() ~= "" and self.DistanceCheckComponent(self, PlayerActor, self.InteractiveDistance, false) and self.CFaceToACheckComponent(self, PlayerActor, self.InteractiveFaceAngle, false) and self.AFaceToCCheckComponent(PlayerActor, self, self.InteractiveAngle, false)
   end
-  return false
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:UpdateDisplayInteractiveBtn(PlayerActor)
   local bCanInteractive = self:IsCanInteractive(PlayerActor)
   if not PlayerActor:IsMainPlayer() then
@@ -47,7 +45,6 @@ function BP_DeliveryTempleInteractiveComponent_C:UpdateDisplayInteractiveBtn(Pla
     self:NotDisplayInteractiveBtn(PlayerActor)
   end
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:DisplayInteractiveBtn(PlayerActor)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
   local InteractiveUI = UIManager:GetUIObj(UIConst.InteractiveUIName)
@@ -72,7 +69,6 @@ function BP_DeliveryTempleInteractiveComponent_C:DisplayInteractiveBtn(PlayerAct
   self:SetBtnDisplayed(PlayerActor, true)
   self:RefreshInteractiveBtn(PlayerActor)
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:NotDisplayInteractiveBtn(PlayerActor)
   self:SetBtnDisplayed(PlayerActor, false)
   local UIManager = UGameplayStatics.GetGameInstance(self):GetGameUIManager()
@@ -82,18 +78,16 @@ function BP_DeliveryTempleInteractiveComponent_C:NotDisplayInteractiveBtn(Player
   end
   InteractiveUI:RemoveInteractiveItem(self)
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:GetInteractiveName()
   if 0 ~= self.TempleId then
     local DungeonInfo = DataMgr.Dungeon[self.TempleId]
     if not DungeonInfo then
-      error("Region\232\161\168\228\184\173\233\133\141\231\189\174\228\186\134\228\184\141\229\173\152\229\156\168\231\154\132\231\165\158\229\186\153ID\239\188\140\n\233\148\153\232\175\175\231\154\132\231\165\158\229\186\153ID\239\188\154" .. self.TempleId)
+      error("Region表中配置了不存在的神庙ID，\n错误的神庙ID：" .. self.TempleId)
     end
     return GText(DungeonInfo.DungeonName)
   end
   return ""
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:StartInteractive(PlayerActor)
   if self:IsForbidden() then
     return
@@ -110,7 +104,6 @@ function BP_DeliveryTempleInteractiveComponent_C:StartInteractive(PlayerActor)
     self.Owner:NotDisplayInteractiveBtn(PlayerActor)
   end
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:EnterTemple()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -119,7 +112,6 @@ function BP_DeliveryTempleInteractiveComponent_C:EnterTemple()
         UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disabled_Des_Temple"))
       end
     end
-    
     local bIsInTeam = Avatar:IsInTeam()
     if bIsInTeam then
       Avatar:EnterDungeon(self.TempleId, CommonConst.DungeonNetMode.Standalone, function(RetCode, ...)
@@ -133,7 +125,6 @@ function BP_DeliveryTempleInteractiveComponent_C:EnterTemple()
     end
   end
 end
-
 function BP_DeliveryTempleInteractiveComponent_C.HandleEnterDungeonRetCode(RetCode, ...)
   ErrorCode:Check(RetCode)
   if RetCode == ErrorCode.RET_SUCCESS then
@@ -144,7 +135,6 @@ function BP_DeliveryTempleInteractiveComponent_C.HandleEnterDungeonRetCode(RetCo
     return false
   end
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:BtnPressed(PlayerActor)
   if self:IsLocked() then
     self:LockInteractive()
@@ -152,15 +142,12 @@ function BP_DeliveryTempleInteractiveComponent_C:BtnPressed(PlayerActor)
   end
   self:StartInteractive(PlayerActor)
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:OnClicked_Forbidden()
   UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disabled_Des_Temple"))
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:GetUUID()
   return self:GetClass():GetName() .. tostring(self.TempleId)
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:IsLocked()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -182,7 +169,6 @@ function BP_DeliveryTempleInteractiveComponent_C:IsLocked()
   end
   return false
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:IsForbidden()
   local Avatar = GWorld:GetAvatar()
   if DataMgr.Temple[self.TempleId] then
@@ -190,7 +176,6 @@ function BP_DeliveryTempleInteractiveComponent_C:IsForbidden()
   end
   return Avatar.InSpecialQuest
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:LockInteractive()
   local Avatar = GWorld:GetAvatar()
   if self.LockByCondition and self.ConditionId > 0 then
@@ -199,7 +184,6 @@ function BP_DeliveryTempleInteractiveComponent_C:LockInteractive()
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Tosat_Temple_Locked"))
   end
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:GetInteractiveIcon(PlayerActor)
   if self:IsLocked() then
     return "Texture2D'/Game/UI/Texture/Dynamic/Atlas/Interactive/T_Interactive_Lock.T_Interactive_Lock'"
@@ -209,7 +193,6 @@ function BP_DeliveryTempleInteractiveComponent_C:GetInteractiveIcon(PlayerActor)
   end
   return nil
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:GetStars()
   if self:IsLocked() or self:IsForbidden() then
     return nil
@@ -240,9 +223,7 @@ function BP_DeliveryTempleInteractiveComponent_C:GetStars()
     return 0
   end
 end
-
 function BP_DeliveryTempleInteractiveComponent_C:SetTempleId(Id)
   self.TempleId = Id
 end
-
 return BP_DeliveryTempleInteractiveComponent_C

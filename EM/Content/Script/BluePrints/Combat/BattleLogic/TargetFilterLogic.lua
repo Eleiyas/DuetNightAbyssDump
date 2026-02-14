@@ -1,6 +1,5 @@
 require("DataMgr")
 local Component = {}
-
 function Component:AddCollisionCompToMap(CollisionCompMap, TargetActor, TargetComp)
   local Eid = self:IsDanmakuTarget(TargetActor) and TargetComp.Eid or TargetActor.Eid
   if Eid then
@@ -8,7 +7,6 @@ function Component:AddCollisionCompToMap(CollisionCompMap, TargetActor, TargetCo
     table.insert(CollisionCompMap[Eid], TargetComp)
   end
 end
-
 function Component:ApplyRangeModify(Source, ModifyInfo, Ranges)
   local RealSource = Source
   if RealSource:IsSkillCreature() then
@@ -35,7 +33,6 @@ function Component:ApplyRangeModify(Source, ModifyInfo, Ranges)
   end
   return Ranges
 end
-
 function Component:GetComponentByName(Target, CompName)
   local CollisionComp = Target[CompName]
   if CollisionComp then
@@ -45,7 +42,6 @@ function Component:GetComponentByName(Target, CompName)
   end
   return Target:K2_GetRootComponent()
 end
-
 function Component:GetCollisionNamesByComps(CollisionCompMap)
   local CollisionNames = {}
   if CollisionCompMap then
@@ -66,7 +62,6 @@ function Component:GetCollisionNamesByComps(CollisionCompMap)
   end
   return CollisionNames
 end
-
 function Component:Table2TMap(CollisionCompMap)
   local Eid2CollisionComponents = TMap(0, FCollisionsArray)
   for Eid, CollisionComps in pairs(CollisionCompMap) do
@@ -81,7 +76,6 @@ function Component:Table2TMap(CollisionCompMap)
   end
   return Eid2CollisionComponents
 end
-
 function Component:TMap2Table(Eid2CollisionComponents)
   local CollisionCompMap = {}
   for Eid, CollisionComps in pairs(Eid2CollisionComponents) do
@@ -92,7 +86,6 @@ function Component:TMap2Table(Eid2CollisionComponents)
   end
   return CollisionCompMap
 end
-
 function Component:GetConfigFilterResults_Lua(Source, PreTarget, LuaFilter, TargetFilterKey, ModifyInfo, Debug, SkillEffectInfo, Skill)
   local Targets, CollisionComps = self["Filter_" .. LuaFilter](self, Source, PreTarget, TargetFilterKey, ModifyInfo, Debug, SkillEffectInfo, Skill)
   if "CheckRangeHit" ~= LuaFilter and CollisionComps then
@@ -107,9 +100,7 @@ function Component:GetConfigFilterResults_Lua(Source, PreTarget, LuaFilter, Targ
   end
   return Targets, CollisionComps
 end
-
 function Component:GetPureServerTargetFilters_Lua()
   return {"MySummoned", "MyCreature"}
 end
-
 return Component

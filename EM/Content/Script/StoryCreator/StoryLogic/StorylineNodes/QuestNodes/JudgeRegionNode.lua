@@ -1,14 +1,11 @@
 local JudgeRegionNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
-
 function JudgeRegionNode:Init()
   self.IsWaitingEnterRegion = false
   self.RegionIds = {}
 end
-
 function JudgeRegionNode:Execute()
   self:GoToRegion()
 end
-
 function JudgeRegionNode:GetOutIndex()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -23,17 +20,14 @@ function JudgeRegionNode:GetOutIndex()
   end
   return OutIndex
 end
-
 function JudgeRegionNode:FinishAction(OutPortName)
-  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-  local WCSubsystem = GameMode.WorldCompositionSubSystem
+  local WCSubsystem = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE4.UWorldCompositionSubSystem)
   if WCSubsystem then
     self:CheckIsAsyncTraveling(WCSubsystem, OutPortName)
     return
   end
   self:Finish(OutPortName)
 end
-
 function JudgeRegionNode:GoToRegion()
   local OutIndex = self:GetOutIndex()
   if OutIndex then
@@ -46,7 +40,6 @@ function JudgeRegionNode:GoToRegion()
     if not GameMode or not Avatar then
       return
     end
-    
     function self.RegionSkipCallback()
       OutIndex = self:GetOutIndex()
       if OutIndex then
@@ -56,13 +49,11 @@ function JudgeRegionNode:GoToRegion()
         self:FinishAction("Region_" .. OutIndex)
       end
     end
-    
     for _, RegionId in pairs(self.RegionIds) do
       Avatar:AddRegionSkipCallback(RegionId, self, self.RegionSkipCallback)
     end
   end
 end
-
 function JudgeRegionNode:CheckIsAsyncTraveling(WCSubsystem, OutPortName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if not Player then
@@ -78,14 +69,11 @@ function JudgeRegionNode:CheckIsAsyncTraveling(WCSubsystem, OutPortName)
     self:Finish(OutPortName)
     return
   end
-  
   local function Func()
     self:Finish(OutPortName)
   end
-  
   WCSubsystem:AddOnAsyncTravelEnded(self, Func)
 end
-
 function JudgeRegionNode:Clear()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -94,5 +82,4 @@ function JudgeRegionNode:Clear()
     end
   end
 end
-
 return JudgeRegionNode

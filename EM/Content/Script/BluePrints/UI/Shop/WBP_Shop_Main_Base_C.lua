@@ -1,7 +1,6 @@
 require("UnLua")
 local MiscUtils = require("Utils.MiscUtils")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:InitShopTabInfo(MainTabIdx, SubTabIdx, ShopType)
   self.MainTabData = "ShopTabMain"
   self.SubTabData = "ShopTabSub"
@@ -115,16 +114,23 @@ function M:InitShopTabInfo(MainTabIdx, SubTabIdx, ShopType)
       BackCallback = self.CloseSelf
     }, true)
   elseif 2 == ShopType then
+    self.MainTabMap = {}
+    local FilteredTabList = {}
     local Avatar = GWorld:GetAvatar()
-    local RegionId = Avatar:GetSubRegionId2RegionId(Avatar:GetCurrentRegionId())
-    local TitleText = "UI_ImpressionShop_ShopName_" .. RegionId
-    if TitleText == GText(TitleText) then
-      TitleText = "UI_ImpressionShop_ShopName_1011"
+    local TitleText = "UI_ImpressionShop_ShopName"
+    local ShopInfos = DataMgr.ImpressionShopInfo
+    for _, TabInfo in ipairs(TabList) do
+      local RegionId = DataMgr[self.MainTabData][TabInfo.TabId].RegionId
+      local ImprShopInfo = ShopInfos[RegionId]
+      if ConditionUtils.CheckCondition(Avatar, ImprShopInfo.ShopUnlockRuleId) then
+        table.insert(FilteredTabList, TabInfo)
+        table.insert(self.MainTabMap, TabInfo.TabId)
+      end
     end
     self.Common_Tab:Init({
       LeftKey = "Q",
       RightKey = "E",
-      Tabs = TabList,
+      Tabs = FilteredTabList,
       DynamicNode = {
         "Back",
         "ResourceBar",
@@ -168,7 +174,6 @@ function M:InitShopTabInfo(MainTabIdx, SubTabIdx, ShopType)
     end
   end
 end
-
 function M:OnMainTabChanged(TabWidget)
   local MainTabId = self.MainTabMap[TabWidget.Idx]
   if not MainTabId then
@@ -209,7 +214,6 @@ function M:OnMainTabChanged(TabWidget)
     end
   end
 end
-
 function M:OnSubTabChanged(TabWidget)
   local SubTabData = self.SubTabMap[TabWidget.Idx]
   if not SubTabData then
@@ -233,7 +237,6 @@ function M:OnSubTabChanged(TabWidget)
     self:UpdateShopDetail(self.CurSubTabMap, false, true)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -266,7 +269,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftTrigger" == InKeyName or "Gamepad_RightTrigger" == InKeyName then
@@ -278,28 +280,23 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDevice = CurInputDevice
   M.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:SetFocus_Lua()
   return UIUtils.Handle
 end
-
 function M:SetFocus_Lua()
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   self:OnUpdateUIStyleByInputTypeChange(self.GameInputModeSubsystem:GetCurrentInputType())
 end
-
 function M:SortByFloatField(ItemA, ItemB, Field, bReverse)
   if nil == ItemA[Field] then
-    DebugPrint("Error: \228\189\191\231\148\168\228\186\134\230\156\170\231\159\165\231\154\132\229\173\151\230\174\181\231\148\168\228\186\142\230\175\148\232\190\131\229\149\134\229\147\129", Field)
+    DebugPrint("Error: 使用了未知的字段用于比较商品", Field)
     return false
   end
   local bRes = false
@@ -310,7 +307,6 @@ function M:SortByFloatField(ItemA, ItemB, Field, bReverse)
   end
   return bRes
 end
-
 function M:SortByBoolField(ItemA, ItemB, Field, bReverse)
   local bRes = false
   if ItemA[Field] and not ItemB[Field] then
@@ -323,10 +319,8 @@ function M:SortByBoolField(ItemA, ItemB, Field, bReverse)
   end
   return bRes
 end
-
 function M:GetItemRarity(ItemType, ItemId, DefaultRarity)
   local Rarity = DataMgr[ItemType][ItemId].Rarity or DataMgr[ItemType][ItemId].WeaponRarity or DataMgr[ItemType][ItemId].CharRarity or DefaultRarity or 1
   return Rarity
 end
-
 return M

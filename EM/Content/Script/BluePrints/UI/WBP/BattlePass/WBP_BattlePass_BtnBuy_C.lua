@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:InitBtnInfo(State, Label, Callback, KeyShortPath, bLongPress)
   DebugPrint("gmy@WBP_BattlePass_BtnBuy_C M:InitBtnInfo", State, Label, Callback, KeyShortPath, os.time())
   self.KeyShortPath = KeyShortPath
@@ -26,17 +25,18 @@ function M:InitBtnInfo(State, Label, Callback, KeyShortPath, bLongPress)
     self:PlayAnimation(self.Normal)
     self.Button_Area.OnClicked:Add(self, Callback)
   end
-  self.Button_Area.OnHovered:Add(self, function()
-    self:PlayAnimation(self.Hover)
-  end)
-  self.Button_Area.OnUnhovered:Add(self, function()
-    self:PlayAnimation(self.UnHover)
-  end)
-  self.Button_Area.OnPressed:Add(self, function()
-    self:PlayAnimation(self.Press)
-  end)
+  if "Forbidden" ~= State and "UnlockForbidden" ~= State then
+    self.Button_Area.OnHovered:Add(self, function()
+      self:PlayAnimation(self.Hover)
+    end)
+    self.Button_Area.OnUnhovered:Add(self, function()
+      self:PlayAnimation(self.UnHover)
+    end)
+    self.Button_Area.OnPressed:Add(self, function()
+      self:PlayAnimation(self.Press)
+    end)
+  end
 end
-
 function M:InitInputSettings()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -53,7 +53,6 @@ function M:InitInputSettings()
   })
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("gmy@WBP_BattlePass_BtnBuy_C M:RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -72,9 +71,7 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:Destruct()
   self.Button_Area.OnClicked:Clear()
 end
-
 return M

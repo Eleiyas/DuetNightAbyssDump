@@ -1,7 +1,6 @@
 require("UnLua")
 local ModModel = ModController:GetModel()
 local Component = {}
-
 function Component:ProcessCharTabExInfo(Info, CharContent, ...)
   if Info then
     CharContent.Info = Info
@@ -19,7 +18,6 @@ function Component:ProcessCharTabExInfo(Info, CharContent, ...)
     end
   end
 end
-
 function Component:ProcessWeaponTabExInfo(Info, WeaponContent, ...)
   local WeaponTag = (...)
   if Info then
@@ -37,7 +35,6 @@ function Component:ProcessWeaponTabExInfo(Info, WeaponContent, ...)
     self.CurTargetTabContent = WeaponContent
   end
 end
-
 function Component:GetCurrWeaponOwnerChar()
   local Avatar = ModModel:GetAvatar()
   local Char
@@ -49,5 +46,4 @@ function Component:GetCurrWeaponOwnerChar()
   Char = Char or self.ReplaceChar
   return Char
 end
-
 return Component

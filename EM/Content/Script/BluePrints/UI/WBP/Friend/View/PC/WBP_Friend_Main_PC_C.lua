@@ -2,7 +2,6 @@ require("UnLua")
 local FriendCommon = require("BluePrints.UI.WBP.Friend.FriendCommon")
 local FriendController = require("BluePrints.UI.WBP.Friend.FriendController")
 local M = Class("BluePrints.UI.WBP.Friend.View.Base.WBP_Friend_MainBase")
-
 function M:Initialize()
   M.Super.Initialize(self)
   self.InputSwitch = {
@@ -20,12 +19,10 @@ function M:Initialize()
     end
   }
 end
-
 function M:OnRemovedFromFocusPath()
   if not (FriendController:IsGamepad() and self._TeamHeadPanel) or self._TeamHeadPanel:HasAnyUserFocus() then
   end
 end
-
 function M:OnKeyUp(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -35,7 +32,6 @@ function M:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.Button_Copy.OnClicked:Add(self, self.OnBtnCopyClicked)
@@ -61,13 +57,11 @@ function M:Construct()
     }
   })
 end
-
 function M:OnInputDeviceChange()
   if not ChatController:IsGamepad() then
     self.bChatBtnListOpen = false
   end
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Copy_UnHover then
     self:PlayAnimation(self.Copy_Normal)
@@ -75,7 +69,6 @@ function M:OnAnimationFinished(InAnimation)
     self:PlayAnimation(self.Copy_Normal)
   end
 end
-
 function M:StopCopyBtnAnim()
   self:StopAnimation(self.Copy_Click)
   self:StopAnimation(self.Copy_UnHover)
@@ -83,27 +76,22 @@ function M:StopCopyBtnAnim()
   self:StopAnimation(self.Copy_Hover)
   self:StopAnimation(self.Copy_Normal)
 end
-
 function M:OnBtnCopyHover()
   self:StopCopyBtnAnim()
   self:PlayAnimation(self.Copy_Hover)
 end
-
 function M:OnBtnCopyPressed()
   self:StopCopyBtnAnim()
   self:PlayAnimation(self.Copy_Press)
 end
-
 function M:OnBtnCopyReleased()
   self:StopCopyBtnAnim()
   self:PlayAnimation(self.Copy_Click)
 end
-
 function M:OnBtnCopyUnHover()
   self:StopCopyBtnAnim()
   self:PlayAnimation(self.Copy_UnHover)
 end
-
 function M:OnBtnCopyClicked()
   self:StopCopyBtnAnim()
   self:PlayAnimation(self.Copy_Click)
@@ -111,21 +99,18 @@ function M:OnBtnCopyClicked()
   UUIFunctionLibrary.ClipboardCopy(tostring(FriendController:GetModel():GetSelfUid()))
   FriendController:ShowToast(GText("UI_Tosat_Menu_CopyUID"))
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.InitTabType = (...)
   if not self.InitTabType then
     self.InitTabType = FriendCommon.FriendTabType.MyFriend
   end
-  
   local function CloseCb(self)
     if IsValid(self._TeamHeadPanel) and self._TeamHeadPanel.bIsFocusable then
       return
     end
     self:Close()
   end
-  
   local Tabs = {}
   local Avatar = GWorld:GetAvatar()
   local IsInRegionOnline = Avatar and Avatar.IsInRegionOnline
@@ -182,6 +167,7 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
     table.insert(TabKeyInfo, KeyInfo)
   end
   local TabInfo = {
+    TitleName = GText("MAIN_UI_FRIEND"),
     LeftKey = "Q",
     RightKey = "E",
     StyleName = "TextImage",
@@ -197,14 +183,12 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self:SelectTab(self.InitTabType)
   self:ShowCheckBtn(false)
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   if self._TeamHeadPanel then
     self._TeamHeadPanel:OnFocusLost()
   end
 end
-
 function M:AddTabItem(idx)
   if not self.WBP_Com_Tab_P then
     return
@@ -212,7 +196,6 @@ function M:AddTabItem(idx)
   local BottomKeyInfo = self.WBP_Com_Tab_P.ConfigData.BottomKeyInfo
   BottomKeyInfo[idx] = self.BottomKeyInfo[idx]
 end
-
 function M:RemoveTabItem(idx)
   if not self.WBP_Com_Tab_P then
     return
@@ -220,7 +203,6 @@ function M:RemoveTabItem(idx)
   local BottomKeyInfo = self.WBP_Com_Tab_P.ConfigData.BottomKeyInfo
   BottomKeyInfo[idx] = {}
 end
-
 function M:ShowPlayerInfoBtn(bShow)
   if not self.WBP_Com_Tab_P then
     return
@@ -235,7 +217,6 @@ function M:ShowPlayerInfoBtn(bShow)
   end
   self.WBP_Com_Tab_P:UpdateHotKeyInfo()
 end
-
 function M:ShowCheckBtn(bShow)
   if not self.WBP_Com_Tab_P then
     return
@@ -250,7 +231,6 @@ function M:ShowCheckBtn(bShow)
   end
   self.WBP_Com_Tab_P:UpdateHotKeyInfo()
 end
-
 function M:ShowBackBtn(bShow)
   if not self.WBP_Com_Tab_P then
     return
@@ -265,7 +245,6 @@ function M:ShowBackBtn(bShow)
   end
   self.WBP_Com_Tab_P:UpdateHotKeyInfo()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -285,7 +264,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnTabSelected(TabWidget, TabItemInfo)
   if IsValid(self.CurrWidget) then
     self.Main:RemoveChild(self.CurrWidget)
@@ -297,14 +275,12 @@ function M:OnTabSelected(TabWidget, TabItemInfo)
   if FriendController:IsGamepad() then
     self.CurrWidget:SetIsLimitNavigationInside(true)
     self.CurrWidget:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
-    self.CurrWidget:SetFocus()
   end
+  self.CurrWidget:SetFocus()
 end
-
 function M:SelectTab(TabType)
   self.WBP_Com_Tab_P:SelectTab(TabType)
 end
-
 function M:Destruct()
   self.Button_Copy.OnClicked:Remove(self, self.OnBtnCopyClicked)
   self.Button_Copy.OnHovered:Remove(self, self.OnBtnCopyHover)
@@ -317,11 +293,9 @@ function M:Destruct()
   UIManager(self):GetGameInputModeSubsystem().OnInputMethodChanged:Remove(self, self.OnInputDeviceChange)
   M.Super.Destruct(self)
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.CurrWidget or self
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -332,5 +306,4 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Key_UID:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 return M

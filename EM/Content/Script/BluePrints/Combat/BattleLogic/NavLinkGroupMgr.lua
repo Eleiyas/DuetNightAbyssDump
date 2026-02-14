@@ -1,10 +1,8 @@
 local Component = {}
-
 function Component:Initialize(Initializer)
   self.NavLinkToLinkGroupIndex = {}
   self.NavLinkGroupList = {}
 end
-
 function Component:RegisterLink(LinkToRegister, LinkToFollow)
   local Index = self.NavLinkToLinkGroupIndex[LinkToFollow]
   local NavLinkList
@@ -16,7 +14,6 @@ function Component:RegisterLink(LinkToRegister, LinkToFollow)
   NavLinkList = self.NavLinkGroupList[Index]
   NavLinkList[#NavLinkList + 1] = LinkToRegister
 end
-
 function Component:FindAndOccupyLink(LinkGroupLeader)
   local Index = self.NavLinkToLinkGroupIndex[LinkGroupLeader]
   if not Index then
@@ -33,7 +30,6 @@ function Component:FindAndOccupyLink(LinkGroupLeader)
   end
   return nil
 end
-
 function Component:UnregisterLink(LinkToUnregister)
   local Index = self.NavLinkToLinkGroupIndex[LinkToUnregister]
   local NavLinkList
@@ -43,7 +39,6 @@ function Component:UnregisterLink(LinkToUnregister)
   self.NavLinkToLinkGroupIndex[LinkToUnregister] = nil
   self.NavLinkGroupList[Index] = nil
 end
-
 function Component:SetNavLinkState(GroupId, Enable)
   for _, Link in ipairs(self.NavLinkGroupList) do
     local NavLink = Link[#Link]
@@ -54,5 +49,4 @@ function Component:SetNavLinkState(GroupId, Enable)
     end
   end
 end
-
 return Component

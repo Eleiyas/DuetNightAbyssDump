@@ -1,11 +1,13 @@
 local SpecialQuestEvent = Class("BluePrints.Common.ClientEvent.BaseClientEvent")
-
+local SpecialQuestLogType = UE.EStoryLogType.SpecialQuest
 function SpecialQuestEvent:InitEvent(SpecialQuestId, BlackScreenImmediately, PreQuestChainId, Callback)
   self.Type = "SpecialQuest"
   self.SpecialQuestId = SpecialQuestId
   self.BlackScreenImmediately = BlackScreenImmediately
   self.PreQuestChainId = PreQuestChainId
   self.SpecialQuestFinishCallback = Callback
+  self.SuccessNodeCallback = nil
+  self.FailNodeCallback = nil
   self.SpecialQuestStory = nil
   self.UniversalConfig = nil
   self.TryActive = false
@@ -29,8 +31,11 @@ function SpecialQuestEvent:InitEvent(SpecialQuestId, BlackScreenImmediately, Pre
     LeaveTriggerBox = "Fail",
     FailNode = "Fail",
     SuccessNode = "Success",
-    QuestChainEnd = "NoExit"
+    ServerNotifyEnd = "NoExit",
+    NodeClear = "NoExit"
   }
+  self.FinishReason = nil
+  self.FinishResult = nil
   self.FailCustomEventCallback = nil
   self.StartBlackScreenFadeInFinish = false
   self.StartBlackScreenContinueFinish = false
@@ -39,21 +44,18 @@ function SpecialQuestEvent:InitEvent(SpecialQuestId, BlackScreenImmediately, Pre
   self.FailBlackScreenFadeInFinish = false
   self.FailBlackScreenContinueFinish = false
 end
-
 function SpecialQuestEvent:OnStartEvent(...)
   DebugPrint("gyy@StartSpecialQuestEvent ", self.SpecialQuestId)
   self.SpecialQuestConfig = DataMgr.SpecialQuestConfig[self.SpecialQuestId]
   if not self.SpecialQuestConfig then
-    local Message = "\230\137\190\228\184\141\229\136\176\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183" .. "\n\229\188\128\229\144\175\231\137\185\230\174\138\228\187\187\229\138\161\231\154\132\228\187\187\229\138\161\233\147\190Id:" .. self.PreQuestChainId .. "\n\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183:" .. self.SpecialQuestId
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\230\137\190\228\184\141\229\136\176\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183", Message)
+    local Message = "找不到特殊任务编号" .. "\n开启特殊任务的任务链Id:" .. self.PreQuestChainId .. "\n特殊任务编号:" .. self.SpecialQuestId
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, SpecialQuestLogType, "找不到特殊任务编号", Message)
     return
   end
   local Avatar = GWorld:GetAvatar()
   local SpecialQuestData = Avatar.SpecialQuestData[self.SpecialQuestId]
   if SpecialQuestData and SpecialQuestData:IsSuccess() then
-    DebugPrint("gyy@SpecialQuest Is Finished ", self.SpecialQuestId)
-    self.SpecialQuestFinishCallback("Success")
-    return
+    DebugPrint("gyy@SpecialQuest Is Successed ", self.SpecialQuestId)
   end
   if self.SpecialQuestConfig.UniversalConfigId then
     self.UniversalConfig = DataMgr.UniversalConfig[self.SpecialQuestConfig.UniversalConfigId]
@@ -78,24 +80,21 @@ function SpecialQuestEvent:OnStartEvent(...)
       DebugPrint("gyy@StartBlackScreenImmediately ", self.SpecialQuestId)
       self:PlayStartBlackScreen()
     else
-      local Message = "STL\232\138\130\231\130\185\228\184\138\229\139\190\233\128\137\228\186\134\231\171\139\229\136\187\233\187\145\229\177\143\239\188\140UniversalConfig\232\161\168\228\184\173\230\156\170\233\133\141\231\189\174\230\146\173\230\148\190\233\187\145\229\177\143\229\143\130\230\149\176" .. "\n\229\188\128\229\144\175\231\137\185\230\174\138\228\187\187\229\138\161\231\154\132\228\187\187\229\138\161\233\147\190Id:" .. self.PreQuestChainId .. "\n\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183:" .. self.SpecialQuestId
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "STL\232\138\130\231\130\185\228\184\138\229\139\190\233\128\137\228\186\134\231\171\139\229\136\187\233\187\145\229\177\143\239\188\140UniversalConfig\232\161\168\228\184\173\230\156\170\233\133\141\231\189\174\230\146\173\230\148\190\233\187\145\229\177\143\229\143\130\230\149\176", Message)
+      local Message = "STL节点上勾选了立刻黑屏，UniversalConfig表中未配置播放黑屏参数" .. "\n开启特殊任务的任务链Id:" .. self.PreQuestChainId .. "\n特殊任务编号:" .. self.SpecialQuestId
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, SpecialQuestLogType, "STL节点上勾选了立刻黑屏，UniversalConfig表中未配置播放黑屏参数", Message)
       return
     end
   end
 end
-
 function SpecialQuestEvent:TryActivateEvent(...)
   DebugPrint("gyy@TryActivateSpecialQuestEvent ", self.SpecialQuestId)
   self.TryActive = true
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local Infos = self:GetStartInfos()
-    
     local function Callback(...)
       self:OnActivateEvent()
     end
-    
     Avatar:StartSpecialQuest(self.SpecialQuestId, Infos, Callback)
   end
   if self.UniversalConfig and self.UniversalConfig.StartBlackScreen and not self.BlackScreenImmediately then
@@ -103,7 +102,6 @@ function SpecialQuestEvent:TryActivateEvent(...)
     self:PlayStartBlackScreen()
   end
 end
-
 function SpecialQuestEvent:OnActivateEvent()
   DebugPrint("gyy@ActivateSpecialQuestEvent ", self.SpecialQuestId)
   local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
@@ -128,13 +126,11 @@ function SpecialQuestEvent:OnActivateEvent()
     self:RunSpecialStory()
   end
 end
-
 function SpecialQuestEvent:TryPreRunSpecialStory()
   if self.StartBlackScreenFadeInFinish and self.IsActive then
     self:PreRunSpecialStory()
   end
 end
-
 function SpecialQuestEvent:PreRunSpecialStory()
   PrintTable({
     OnActivateEvent = self.SpecialQuestId
@@ -143,6 +139,9 @@ function SpecialQuestEvent:PreRunSpecialStory()
   self:StopOtherQuest()
   self:StopDynamicQuest()
   self:SaveRegionData()
+  self:ResetQuestArtLevel()
+  self:SetFailCondition()
+  self:WaitingFail()
   local BattleMainUI = UIManager():GetUIObj("BattleMain")
   if nil ~= BattleMainUI and nil ~= BattleMainUI.Pos_TaskBar then
     local TaskBarWidget = BattleMainUI.Pos_TaskBar:GetChildAt(0)
@@ -153,13 +152,11 @@ function SpecialQuestEvent:PreRunSpecialStory()
   EventManager:FireEvent(EventID.OnNpcEnterOrQuitSpecialQuest)
   self.PreRunSpecialStoryFinish = true
 end
-
 function SpecialQuestEvent:TryRunSpecialStory()
   if self.StartBlackScreenContinueFinish and self.PreRunSpecialStoryFinish then
     self:RunSpecialStory()
   end
 end
-
 function SpecialQuestEvent:RunSpecialStory()
   DebugPrint("gyy@RunSpecialStory ", self.SpecialQuestId)
   local StoryPath = self.SpecialQuestConfig.StoryPath
@@ -168,75 +165,39 @@ function SpecialQuestEvent:RunSpecialStory()
   })
   self.RunSpecialStoryFinish = true
 end
-
-function SpecialQuestEvent:SpecialQuestEventFinishAndStopDirectly(Reason)
-  DebugPrint("gyy@SpecialQuestEventFinishAndStopDirectly ", self.SpecialQuestId)
-  local Result = self.Reason2Result[Reason]
-  local IsStop = true
-  self:OnFinishEvent(Result, IsStop)
-  self:PlaySuccessOrFailBlackScreen(Result)
-end
-
-function SpecialQuestEvent:HandleInLoading()
-  DebugPrint("gyy@SpecialQuestEventHandleInLoading ", self.SpecialQuestId)
-  local Result = "Fail"
-  local Avatar = GWorld:GetAvatar()
-  if Avatar then
-    local Infos = self:GetFinishInfos(Result)
-    
-    local function _Callback(Ret)
-      self:RealFinishEventInLoading(Result)
-    end
-    
-    Avatar:FailerSpecialQuest(self.SpecialQuestId, Infos, _Callback)
-  else
-    self:RealFinishEventInLoading(Result)
-  end
-end
-
-function SpecialQuestEvent:RealFinishEventInLoading(Result)
-  DebugPrint("gyy@SpecialQuestEventRealFinishEventInLoading ", self.SpecialQuestId)
-  local Avatar = GWorld:GetAvatar()
-  if Avatar then
-    Avatar.InSpecialQuest = false
-    Avatar.SpecialQuestId = nil
-  end
-  self.IsFinish = true
-  self.RealFinish = true
-  self:Destroy(Result)
-  self:RecoverUniversalConfig()
-  self:EventEnd()
-end
-
 function SpecialQuestEvent:TryFinishEvent(Reason)
   DebugPrint("gyy@TryFinishEvent TryFinish:", self.TryFinish, self.SpecialQuestId)
+  EventManager:RemoveEvent(EventID.OnSpecialQuestFail, self)
   if not self.TryFinish then
     self.TryFinish = true
-    local Result = self.Reason2Result[Reason]
-    local Avatar = GWorld:GetAvatar()
-    if Avatar then
-      local Infos = self:GetFinishInfos(Reason)
-      if self.ResultTable[Result] then
-        local function _Callback(Ret)
-          self:OnFinishEvent(Result)
-        end
-        
-        Avatar:SuccessSpecialQuest(self.SpecialQuestId, Infos, _Callback)
-      else
-        local function _Callback(Ret)
-          self:OnFinishEvent(Result)
-        end
-        
-        Avatar:FailerSpecialQuest(self.SpecialQuestId, Infos, _Callback)
-      end
+    self.FinishReason = Reason
+    self.FinishResult = self.Reason2Result[self.FinishReason]
+    if self.FinishReason == "ServerNotifyEnd" then
+      self:OnFinishEvent(self.FinishResult)
     else
-      DebugPrint("gyy@TryFinishEvent Avatar Is nil", self.SpecialQuestId)
+      local Avatar = GWorld:GetAvatar()
+      if Avatar then
+        local Infos = self:GetFinishInfos(self.FinishReason)
+        if self.ResultTable[self.FinishResult] then
+          local function _Callback(Ret)
+            self:OnFinishEvent(self.FinishResult)
+          end
+          Avatar:SuccessSpecialQuest(self.SpecialQuestId, Infos, _Callback)
+        else
+          local function _Callback(Ret)
+            self:OnFinishEvent(self.FinishResult)
+          end
+          Avatar:FailerSpecialQuest(self.SpecialQuestId, Infos, _Callback)
+        end
+      else
+        DebugPrint("gyy@TryFinishEvent Avatar Is nil", self.SpecialQuestId)
+        self:OnFinishEvent(self.FinishResult)
+      end
     end
-    self:PlaySuccessOrFailBlackScreen(Result)
+    self:PlaySuccessOrFailBlackScreen(self.FinishResult)
   end
 end
-
-function SpecialQuestEvent:OnFinishEvent(Result, IsStop)
+function SpecialQuestEvent:OnFinishEvent(Result)
   DebugPrint("gyy@FinishSpecialQuestEvent ", self.SpecialQuestId)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -250,21 +211,20 @@ function SpecialQuestEvent:OnFinishEvent(Result, IsStop)
     if "PassiveFail" == Result and self.UniversalConfig.FailureGuidanceCombinationId then
       self:TryOpenFailureGuidanceUIAndFinishFailBlackScreen()
     else
-      self:TryRecoverQuestAndFinishFailBlackScreen(Result, IsStop)
+      self:TryRecoverQuestAndFinishFailBlackScreen(Result)
     end
   elseif self.ResultTable[Result] and self.UniversalConfig and self.UniversalConfig.SuccessBlackScreen then
     self:TryRealFinishEvent(Result)
-    self:TryRecoverQuestAndFinishSuccessBlackScreen(Result, IsStop)
+    self:TryRecoverQuestAndFinishSuccessBlackScreen(Result)
   else
     self:RealFinishEvent(Result)
     if "PassiveFail" == Result and self.UniversalConfig.FailureGuidanceCombinationId then
       self:OpenFailureGuidanceUI()
     else
-      self:RecoverOtherQuestAndPreQuest(Result, IsStop)
+      self:RecoverOtherQuestAndPreQuest(Result)
     end
   end
 end
-
 function SpecialQuestEvent:TryRealFinishEvent(Result)
   if self.ResultTable[Result] then
     if self.SuccessBlackScreenFadeInFinish and self.IsFinish then
@@ -274,7 +234,6 @@ function SpecialQuestEvent:TryRealFinishEvent(Result)
     self:RealFinishEvent(Result)
   end
 end
-
 function SpecialQuestEvent:RealFinishEvent(Result)
   DebugPrint("gyy@RealFinishSpecialQuestEvent ", self.SpecialQuestId)
   self:EndInteractive()
@@ -284,22 +243,21 @@ function SpecialQuestEvent:RealFinishEvent(Result)
   self:InitPlayerOnFinish()
   self:RecoverUniversalConfig()
   self:RecoverRegionData()
+  self:RecoverQuestArtLevel()
   self:EventEnd()
   self.RealFinish = true
 end
-
 function SpecialQuestEvent:InitPlayerOnFinish()
   self:InitPlayer()
 end
-
-function SpecialQuestEvent:RecoverOtherQuestAndPreQuest(Result, IsStop)
+function SpecialQuestEvent:RecoverOtherQuestAndPreQuest(Result)
   self:RecoverOtherQuest()
-  if self.SpecialQuestFinishCallback and not IsStop then
+  if self.SpecialQuestFinishCallback and "NoExit" ~= Result then
     DebugPrint("gyy@ContinueMainQuest ", self.SpecialQuestId)
     self.SpecialQuestFinishCallback(Result)
   end
+  self.SpecialQuestFinishCallback = nil
 end
-
 function SpecialQuestEvent:Destroy(Result, Info)
   EventManager:RemoveEvent(EventID.OnSpecialQuestFail, self)
   EventManager:RemoveEvent(EventID.OnEnterTriggerBox, self)
@@ -334,15 +292,14 @@ function SpecialQuestEvent:Destroy(Result, Info)
   end
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if not IsValid(GameMode) then
-    local Message = "GameMode is not valid\239\188\140\230\151\160\230\179\149\230\184\133\231\144\134\229\140\186\229\159\159\230\149\176\230\141\174" .. "\n\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183:" .. self.SpecialQuestId
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "GameMode is not valid\239\188\140\230\151\160\230\179\149\230\184\133\231\144\134\229\140\186\229\159\159\230\149\176\230\141\174", Message)
+    local Message = "GameMode is not valid，无法清理区域数据" .. "\n特殊任务编号:" .. self.SpecialQuestId
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, SpecialQuestLogType, "GameMode is not valid，无法清理区域数据", Message)
     return
   end
   GameMode:ClearRegionActorData("SpecialQuestId", self.SpecialQuestId, EDestroyReason.QuestChainClear, function(Target, Key, Value)
     return Target.ExtraRegionInfo.SpecialQuestId == Value
   end)
 end
-
 function SpecialQuestEvent:ExecuteFinishNodeCallback(Result)
   local Callbacks
   if self.ResultTable[Result] then
@@ -359,35 +316,13 @@ function SpecialQuestEvent:ExecuteFinishNodeCallback(Result)
       Callback(Obj)
     end
   end
+  self.SuccessNodeCallback = nil
+  self.FailNodeCallback = nil
 end
-
 function SpecialQuestEvent:EventEnd()
   local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
   ClientEventUtils:ClearSpecailQuestEvent(self.SpecialQuestId)
 end
-
-function SpecialQuestEvent:CheckWhenNodeClear()
-  self.SpecialQuestFinishCallback = nil
-  if not self.IsActive then
-    EventManager:RemoveEvent(EventID.OnEnterTriggerBox, self)
-    local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
-    if IsValid(GameMode) then
-      local StaticCreatorArray = TArray(0)
-      StaticCreatorArray:Add(self.TriggerBoxStaticCreatorId)
-      GameMode:TriggerInactiveStaticCreator(StaticCreatorArray)
-    end
-    local Avatar = GWorld:GetAvatar()
-    if Avatar and self.EnterRegionSkipCallback then
-      for _, SubRegionId in pairs(self.SubRegionIds) do
-        Avatar:RemoveSubRegionSkipCallback(SubRegionId, self, self.EnterRegionSkipCallback)
-      end
-    end
-    return true
-  else
-    return false
-  end
-end
-
 function SpecialQuestEvent:OnEnterTriggerBox(TriggerEventId, TriggerBase, EMActorEid)
   PrintTable({OnEnterTriggerBox = 1})
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -400,7 +335,6 @@ function SpecialQuestEvent:OnEnterTriggerBox(TriggerEventId, TriggerBase, EMActo
     self:TryActivateEvent()
   end
 end
-
 function SpecialQuestEvent:OnLeaveTriggerBox(TriggerEventId, TriggerBase, EMActorEid)
   PrintTable({OnLeaveTriggerBox = 1})
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
@@ -414,7 +348,6 @@ function SpecialQuestEvent:OnLeaveTriggerBox(TriggerEventId, TriggerBase, EMActo
     EventManager:FireEvent(EventID.OnSpecialQuestFail, "LeaveTriggerBox")
   end
 end
-
 function SpecialQuestEvent:CheckSubRegionIds()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -428,31 +361,26 @@ function SpecialQuestEvent:CheckSubRegionIds()
   end
   return false
 end
-
 function SpecialQuestEvent:WaitingEnterSubRegion()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
-  
   function self.EnterRegionSkipCallback()
     self:TryActivateEvent()
     for _, SubRegionId in pairs(self.SubRegionIds) do
       Avatar:RemoveSubRegionSkipCallback(SubRegionId, self, self.EnterRegionSkipCallback)
     end
   end
-  
   for _, SubRegionId in pairs(self.SubRegionIds) do
     Avatar:AddRegionSkipCallback(SubRegionId, self, self.EnterRegionSkipCallback)
   end
 end
-
 function SpecialQuestEvent:WaitingLeaveSubRegion()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
-  
   function self.LeaveRegionSkipCallback()
     if not self:CheckSubRegionIds() then
       DebugPrint("gyy@SpecialQuestFail,LeaveSubRegion ", self.SpecialQuestId)
@@ -466,12 +394,10 @@ function SpecialQuestEvent:WaitingLeaveSubRegion()
       end
     end
   end
-  
   for _, SubRegionId in pairs(self.SubRegionIds) do
     Avatar:AddRegionSkipCallback(SubRegionId, self, self.LeaveRegionSkipCallback)
   end
 end
-
 function SpecialQuestEvent:PlaySuccessOrFailBlackScreen(Result)
   if not self.ResultTable[Result] and self.UniversalConfig and self.UniversalConfig.FailBlackScreen then
     DebugPrint("gyy@FailBlackScreen ", self.SpecialQuestId)
@@ -481,19 +407,16 @@ function SpecialQuestEvent:PlaySuccessOrFailBlackScreen(Result)
     self:PlaySuccessBlackScreen(Result)
   end
 end
-
 function SpecialQuestEvent:PlayStartBlackScreen()
   local PlayBlackScreenTime = {
     FadeIn = self.UniversalConfig.StartBlackScreen[1] or 0,
     FadeOut = self.UniversalConfig.StartBlackScreen[2] or 0,
     Continue = self.UniversalConfig.StartBlackScreen[3] or DataMgr.GlobalConstant.SpecialQuestBlackTimeMin.ConstantValue
   }
-  
   local function OnStartBlackScreenFadeOutSecond()
     self:FinishStartBlackScreen()
-    assert(false, "\229\183\178\232\190\190\233\187\145\229\177\143\230\156\128\233\149\191\230\151\182\233\151\180\239\188\140\228\189\134\231\137\185\230\174\138\228\187\187\229\138\161\230\156\170\230\136\144\229\138\159\229\188\128\229\167\139\239\188\140SpecialQuestId:" .. self.SpecialQuestId .. ",TryActive:" .. tostring(self.TryActive) .. ",BlackScreenImmediately:" .. tostring(self.BlackScreenImmediately))
+    assert(false, "已达黑屏最长时间，但特殊任务未成功开始，SpecialQuestId:" .. self.SpecialQuestId .. ",TryActive:" .. tostring(self.TryActive) .. ",BlackScreenImmediately:" .. tostring(self.BlackScreenImmediately))
   end
-  
   local function OnStartBlackScreenFadeOutFirst()
     self.StartBlackScreenContinueFinish = true
     self:TryRunSpecialStory()
@@ -502,13 +425,11 @@ function SpecialQuestEvent:PlayStartBlackScreen()
       GWorld.GameInstance:AddTimer(DataMgr.GlobalConstant.SpecialQuestBlackTimeMax.ConstantValue - PlayBlackScreenTime.Continue, OnStartBlackScreenFadeOutSecond, false, nil, "SpecialQuestStartBlackScreenTimer", true)
     end
   end
-  
   local function StartBlackScreenContinue()
     self.StartBlackScreenFadeInFinish = true
     self:TryPreRunSpecialStory()
     GWorld.GameInstance:AddTimer(PlayBlackScreenTime.Continue, OnStartBlackScreenFadeOutFirst, false, nil, nil, true)
   end
-  
   local function OnStartBlackScreenFnish()
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
     if IsValid(Player) then
@@ -516,7 +437,6 @@ function SpecialQuestEvent:PlayStartBlackScreen()
     end
     UIManager(GWorld.GameInstance):SetBannedActionCallback("BlackScreen", false, "SpecialQuestStart")
   end
-  
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local Params = {}
   Params.BlackScreenHandle = "SpecialQuestStart"
@@ -533,7 +453,6 @@ function SpecialQuestEvent:PlayStartBlackScreen()
   UIManager:SetBannedActionCallback("BlackScreen", true, "SpecialQuestStart")
   UIManager:ShowCommonBlackScreen(Params)
 end
-
 function SpecialQuestEvent:TryFinishStartBlackScreen()
   if self.RunSpecialStoryFinish then
     self:FinishStartBlackScreen()
@@ -541,25 +460,21 @@ function SpecialQuestEvent:TryFinishStartBlackScreen()
   end
   return false
 end
-
 function SpecialQuestEvent:FinishStartBlackScreen()
   DebugPrint("gyy@FinishStartBlackScreen ", self.SpecialQuestId)
   GWorld.GameInstance:RemoveTimer("SpecialQuestStartBlackScreenTimer")
   UIManager(self):HideCommonBlackScreen("SpecialQuestStart")
 end
-
 function SpecialQuestEvent:PlaySuccessBlackScreen(Result)
   local PlayBlackScreenTime = {
     FadeIn = self.UniversalConfig.SuccessBlackScreen[1] or 0,
     FadeOut = self.UniversalConfig.SuccessBlackScreen[2] or 0,
     Continue = self.UniversalConfig.SuccessBlackScreen[3] or DataMgr.GlobalConstant.SpecialQuestBlackTimeMin.ConstantValue
   }
-  
   local function OnSuccessBlackScreenFadeOutSecond()
     self:FinishSuccessBlackScreen()
-    assert(false, "\229\183\178\232\190\190\233\187\145\229\177\143\230\156\128\233\149\191\230\151\182\233\151\180\239\188\140\228\189\134\231\137\185\230\174\138\228\187\187\229\138\161\230\156\170\230\136\144\229\138\159\231\187\147\230\157\159\239\188\140SpecialQuestId:" .. self.SpecialQuestId .. ",TryFinish:" .. tostring(self.TryFinish))
+    assert(false, "已达黑屏最长时间，但特殊任务未成功结束，SpecialQuestId:" .. self.SpecialQuestId .. ",TryFinish:" .. tostring(self.TryFinish))
   end
-  
   local function OnSuccessBlackScreenContinueFinish()
     self.SuccessBlackScreenContinueFinish = true
     local Ans = self:TryRecoverQuestAndFinishSuccessBlackScreen(Result)
@@ -567,7 +482,6 @@ function SpecialQuestEvent:PlaySuccessBlackScreen(Result)
       GWorld.GameInstance:AddTimer(DataMgr.GlobalConstant.SpecialQuestBlackTimeMax.ConstantValue - PlayBlackScreenTime.Continue, OnSuccessBlackScreenFadeOutSecond, false, nil, "SpecialQuestSuccessBlackScreenTimer", true)
     end
   end
-  
   local function OnSuccessBlackScreenFnish()
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
     if IsValid(Player) then
@@ -575,13 +489,11 @@ function SpecialQuestEvent:PlaySuccessBlackScreen(Result)
     end
     UIManager(GWorld.GameInstance):SetBannedActionCallback("BlackScreen", false, "SpecialQuestSuccess")
   end
-  
   local function SuccessBlackScreenContinue()
     self.SuccessBlackScreenFadeInFinish = true
     self:TryRealFinishEvent(Result)
     GWorld.GameInstance:AddTimer(PlayBlackScreenTime.Continue, OnSuccessBlackScreenContinueFinish, false, nil, nil, true)
   end
-  
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local Params = {}
   Params.BlackScreenHandle = "SpecialQuestSuccess"
@@ -598,33 +510,28 @@ function SpecialQuestEvent:PlaySuccessBlackScreen(Result)
   UIManager:SetBannedActionCallback("BlackScreen", true, "SpecialQuestSuccess")
   UIManager:ShowCommonBlackScreen(Params)
 end
-
-function SpecialQuestEvent:TryRecoverQuestAndFinishSuccessBlackScreen(Result, IsStop)
+function SpecialQuestEvent:TryRecoverQuestAndFinishSuccessBlackScreen(Result)
   if self.RealFinish and self.SuccessBlackScreenContinueFinish then
-    self:RecoverOtherQuestAndPreQuest(Result, IsStop)
+    self:RecoverOtherQuestAndPreQuest(Result)
     self:FinishSuccessBlackScreen()
     return true
   end
 end
-
 function SpecialQuestEvent:FinishSuccessBlackScreen()
   DebugPrint("gyy@FinishSuccessBlackScreen ", self.SpecialQuestId)
   GWorld.GameInstance:RemoveTimer("SpecialQuestSuccessBlackScreenTimer")
   UIManager(self):HideCommonBlackScreen("SpecialQuestSuccess")
 end
-
 function SpecialQuestEvent:PlayFailBlackScreen(Result)
   local PlayBlackScreenTime = {
     FadeIn = self.UniversalConfig.FailBlackScreen[1] or 0,
     FadeOut = self.UniversalConfig.FailBlackScreen[2] or 0,
     Continue = self.UniversalConfig.FailBlackScreen[3] or DataMgr.GlobalConstant.SpecialQuestBlackTimeMin.ConstantValue
   }
-  
   local function OnFailBlackScreenFadeOutSecond()
     self:FinishFailBlackScreen()
-    assert(false, "\229\183\178\232\190\190\233\187\145\229\177\143\230\156\128\233\149\191\230\151\182\233\151\180\239\188\140\228\189\134\231\137\185\230\174\138\228\187\187\229\138\161\230\156\170\230\136\144\229\138\159\231\187\147\230\157\159\239\188\140SpecialQuestId:" .. self.SpecialQuestId .. ",TryFinish:" .. tostring(self.TryFinish))
+    assert(false, "已达黑屏最长时间，但特殊任务未成功结束，SpecialQuestId:" .. self.SpecialQuestId .. ",TryFinish:" .. tostring(self.TryFinish))
   end
-  
   local function OnFailBlackScreenContinueFinish()
     self.FailBlackScreenContinueFinish = true
     local Ans = false
@@ -637,7 +544,6 @@ function SpecialQuestEvent:PlayFailBlackScreen(Result)
       GWorld.GameInstance:AddTimer(DataMgr.GlobalConstant.SpecialQuestBlackTimeMax.ConstantValue - PlayBlackScreenTime.Continue, OnFailBlackScreenFadeOutSecond, false, nil, "SpecialQuestFailBlackScreenTimer", true)
     end
   end
-  
   local function OnFailBlackScreenFnish()
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
     if IsValid(Player) then
@@ -645,13 +551,11 @@ function SpecialQuestEvent:PlayFailBlackScreen(Result)
     end
     UIManager(GWorld.GameInstance):SetBannedActionCallback("BlackScreen", false, "SpecialQuestFail")
   end
-  
   local function FailBlackScreenContinue()
     self.FailBlackScreenFadeInFinish = true
     self:TryRealFinishEvent(Result)
     GWorld.GameInstance:AddTimer(PlayBlackScreenTime.Continue, OnFailBlackScreenContinueFinish, false, nil, nil, true)
   end
-  
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local Params = {}
   Params.BlackScreenHandle = "SpecialQuestFail"
@@ -669,21 +573,18 @@ function SpecialQuestEvent:PlayFailBlackScreen(Result)
   UIManager:SetBannedActionCallback("BlackScreen", true, "SpecialQuestFail")
   UIManager:ShowCommonBlackScreen(Params)
 end
-
-function SpecialQuestEvent:TryRecoverQuestAndFinishFailBlackScreen(Result, IsStop)
+function SpecialQuestEvent:TryRecoverQuestAndFinishFailBlackScreen(Result)
   if self.RealFinish and self.FailBlackScreenContinueFinish then
-    self:RecoverOtherQuestAndPreQuest(Result, IsStop)
+    self:RecoverOtherQuestAndPreQuest(Result)
     self:FinishFailBlackScreen()
     return true
   end
 end
-
 function SpecialQuestEvent:FinishFailBlackScreen()
   DebugPrint("gyy@FinishFailBlackScreen ", self.SpecialQuestId)
   GWorld.GameInstance:RemoveTimer("SpecialQuestFailBlackScreenTimer")
   UIManager(self):HideCommonBlackScreen("SpecialQuestFail")
 end
-
 function SpecialQuestEvent:TryOpenFailureGuidanceUIAndFinishFailBlackScreen()
   if self.RealFinish and self.FailBlackScreenContinueFinish then
     self:OpenFailureGuidanceUI()
@@ -691,23 +592,19 @@ function SpecialQuestEvent:TryOpenFailureGuidanceUIAndFinishFailBlackScreen()
     return true
   end
 end
-
 function SpecialQuestEvent:OpenFailureGuidanceUI()
   local StoryBattleFailUI = UIManager(self):LoadUINew("StoryBattleFail", self.UniversalConfig.FailureGuidanceCombinationId)
   StoryBattleFailUI:BindEventOnRetry(self, self.RetryCallback)
   StoryBattleFailUI:BindEventOnExit(self, self.ExitCallback)
 end
-
 function SpecialQuestEvent:RetryCallback()
   local Result = "PassiveFail"
   self:RecoverOtherQuestAndPreQuest(Result)
 end
-
 function SpecialQuestEvent:ExitCallback()
   local Result = "Fail"
   self:RecoverOtherQuestAndPreQuest(Result)
 end
-
 function SpecialQuestEvent:SetUniversalConfig()
   if self.UniversalConfig then
     local GameInstance = GWorld.GameInstance
@@ -716,8 +613,11 @@ function SpecialQuestEvent:SetUniversalConfig()
     local PlayerController = UE4.UGameplayStatics.GetPlayerController(GameInstance, 0)
     DebugPrint("gmy@SpecialQuestEvent:SetUniversalConfig ", self.UniversalConfig.DisableBattleWheel, self.UniversalConfig.HideBattleWheel)
     if Player then
+      Player:SetQuestBattleWheelID(self.UniversalConfig.QuestBattleWheelID)
       if self.UniversalConfig.DisableBattleWheel then
         Player:DisableBattleWheel()
+      elseif not self.UniversalConfig.DisableBattleWheel then
+        Player:EnableBattleWheel()
       end
       if self.UniversalConfig.HideBattleWheel then
         Player:HideBattleWheel()
@@ -740,6 +640,9 @@ function SpecialQuestEvent:SetUniversalConfig()
     end
     if self.UniversalConfig.IfInitPlayer then
       self:InitPlayer()
+    end
+    if Player and self.UniversalConfig.RespawnRuleId then
+      Player:RefreshRecoveryData(self.UniversalConfig.RespawnRuleId)
     end
     if self.UniversalConfig.HideBattlePet then
       if Player.GetBattlePet then
@@ -769,18 +672,23 @@ function SpecialQuestEvent:SetUniversalConfig()
         PlayerController:SetStoryModeState(true)
       end
     end
+    if self.UniversalConfig.IfChangeESC then
+      local BattleMainUI = UIManager():GetUIObj("BattleMain")
+      if nil ~= BattleMainUI then
+        BattleMainUI:InitEsc()
+      end
+    end
     if self.UniversalConfig.IfInActiveInteractive then
       local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
       if self.UniversalConfig.IfInActiveInteractive.Type == "Part" and not self.UniversalConfig.IfInActiveInteractive.Id then
-        local Message = "\231\137\185\230\174\138\228\187\187\229\138\161\229\144\175\231\148\168\229\133\179\233\151\173\233\131\168\229\136\134\230\156\186\229\133\179\228\186\164\228\186\146\239\188\140\228\189\134\230\152\175\230\178\161\230\156\137\229\161\171\230\156\186\229\133\179ID" .. "\n\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183:" .. self.SpecialQuestId
-        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\231\137\185\230\174\138\228\187\187\229\138\161\229\144\175\231\148\168\229\133\179\233\151\173\233\131\168\229\136\134\230\156\186\229\133\179\228\186\164\228\186\146\239\188\140\228\189\134\230\152\175\230\178\161\230\156\137\229\161\171\230\156\186\229\133\179ID", Message)
+        local Message = "特殊任务启用关闭部分机关交互，但是没有填机关ID" .. "\n特殊任务编号:" .. self.SpecialQuestId
+        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, SpecialQuestLogType, "特殊任务启用关闭部分机关交互，但是没有填机关ID", Message)
         return
       end
       GameState:ChangeMechanismInteractiveInSpecialQuest(true, self.UniversalConfig.IfInActiveInteractive.Type, self.UniversalConfig.IfInActiveInteractive.Id)
     end
   end
 end
-
 function SpecialQuestEvent:SaveRegionData()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local HoldRegionDataType = self.UniversalConfig and self.UniversalConfig.RegionDataType
@@ -834,7 +742,6 @@ function SpecialQuestEvent:SaveRegionData()
     end
   end
 end
-
 function SpecialQuestEvent:RecoverRegionData()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if GameMode and self.UniversalConfig then
@@ -844,18 +751,27 @@ function SpecialQuestEvent:RecoverRegionData()
     end
   end
 end
-
 function SpecialQuestEvent:RecoverUniversalConfig()
   if self.UniversalConfig then
     local GameInstance = GWorld.GameInstance
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
     local PlayerController = UE4.UGameplayStatics.GetPlayerController(GameInstance, 0)
     DebugPrint("gmy@SpecialQuestEvent:RecoverUniversalConfig ", self.UniversalConfig.DisableBattleWheel, self.UniversalConfig.HideBattleWheel)
+    if Player then
+      Player:SetQuestBattleWheelID(nil)
+    end
     if self.UniversalConfig.DisableBattleWheel and Player then
       Player:EnableBattleWheel()
     end
     if self.UniversalConfig.HideBattleWheel and Player then
       Player:ShowBattleWheel()
+    end
+    if self.UniversalConfig.RespawnRuleId then
+      local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
+      if Player and GameMode then
+        local RespawnRuleName = GameMode:GetRespawnRuleName(Player)
+        Player:RefreshRecoveryData(RespawnRuleName)
+      end
     end
     if self.UniversalConfig.HideBattlePet then
       if Player.GetBattlePet then
@@ -879,25 +795,29 @@ function SpecialQuestEvent:RecoverUniversalConfig()
     if self.UniversalConfig.IfStartStoryMode and PlayerController then
       PlayerController:SetStoryModeState(self.LastStoryMode)
     end
+    if self.UniversalConfig.IfChangeESC then
+      local BattleMainUI = UIManager():GetUIObj("BattleMain")
+      if nil ~= BattleMainUI then
+        BattleMainUI:InitEsc()
+      end
+    end
     if self.UniversalConfig.IfInActiveInteractive then
       local GameState = UE4.UGameplayStatics.GetGameState(GWorld.GameInstance)
       if self.UniversalConfig.IfInActiveInteractive.Type == "Part" and not self.UniversalConfig.IfInActiveInteractive.Id then
-        local Message = "\231\137\185\230\174\138\228\187\187\229\138\161\229\144\175\231\148\168\230\137\147\229\188\128\233\131\168\229\136\134\230\156\186\229\133\179\228\186\164\228\186\146\239\188\140\228\189\134\230\152\175\230\178\161\230\156\137\229\161\171\230\156\186\229\133\179ID" .. "\n\231\137\185\230\174\138\228\187\187\229\138\161\231\188\150\229\143\183:" .. self.SpecialQuestId
-        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\231\137\185\230\174\138\228\187\187\229\138\161\229\144\175\231\148\168\230\137\147\229\188\128\233\131\168\229\136\134\230\156\186\229\133\179\228\186\164\228\186\146\239\188\140\228\189\134\230\152\175\230\178\161\230\156\137\229\161\171\230\156\186\229\133\179ID", Message)
+        local Message = "特殊任务启用打开部分机关交互，但是没有填机关ID" .. "\n特殊任务编号:" .. self.SpecialQuestId
+        UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, SpecialQuestLogType, "特殊任务启用打开部分机关交互，但是没有填机关ID", Message)
         return
       end
       GameState:ChangeMechanismInteractiveInSpecialQuest(false, self.UniversalConfig.IfInActiveInteractive.Type, self.UniversalConfig.IfInActiveInteractive.Id)
     end
   end
 end
-
 function SpecialQuestEvent:InitPlayer()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if GameMode then
     GameMode:SwitchToQuestRole(0)
   end
 end
-
 function SpecialQuestEvent:SetPlayerLocation(TargetPointName)
   local GameInstance = GWorld.GameInstance
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -910,7 +830,6 @@ function SpecialQuestEvent:SetPlayerLocation(TargetPointName)
     PlayerController:SetControlRotation(FRotator(0, PlayerPoint:K2_GetActorRotation().Yaw, 0))
   end
 end
-
 function SpecialQuestEvent:EndInteractive()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if Player then
@@ -923,14 +842,12 @@ function SpecialQuestEvent:EndInteractive()
     end
   end
 end
-
 function SpecialQuestEvent:GetStartInfos()
   local Infos = {
     scriptboss_pve_id = self.SpecialQuestId
   }
   return Infos
 end
-
 function SpecialQuestEvent:GetFinishInfos(Reason, Result)
   local Infos = {}
   local GameInstance = GWorld.GameInstance
@@ -946,7 +863,38 @@ function SpecialQuestEvent:GetFinishInfos(Reason, Result)
   end
   return Infos
 end
-
+function SpecialQuestEvent:ResetQuestArtLevel()
+  self:UpdateQuestArtLevel_SpecialQuest(0)
+end
+function SpecialQuestEvent:RecoverQuestArtLevel()
+  self:UpdateQuestArtLevel_SpecialQuest(1)
+end
+function SpecialQuestEvent:UpdateQuestArtLevel_SpecialQuest(NewValue)
+  if not self.SpecialQuestConfig.ResetVarNameList then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local SubRegionId = Avatar:GetCurrentRegionId()
+  local SubRegionData = DataMgr.SubRegion[SubRegionId]
+  if not SubRegionData then
+    return
+  end
+  local RegionId = SubRegionData.RegionId
+  local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
+  if not IsValid(GameMode) then
+    return
+  end
+  local BlackScreenEnable = 1 == NewValue
+  for i, VarName in pairs(self.SpecialQuestConfig.ResetVarNameList) do
+    local VarValue = Avatar.StoryVariable[VarName]
+    if 1 == VarValue then
+      GameMode:RealQuestArtLevelChange(RegionId, VarName, BlackScreenEnable, NewValue)
+    end
+  end
+end
 function SpecialQuestEvent:StopOtherQuest()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -954,7 +902,6 @@ function SpecialQuestEvent:StopOtherQuest()
   end
   EventManager:FireEvent(EventID.HideNpcSideIndicator, false)
 end
-
 function SpecialQuestEvent:RecoverOtherQuest()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -962,14 +909,12 @@ function SpecialQuestEvent:RecoverOtherQuest()
   end
   EventManager:FireEvent(EventID.HideNpcSideIndicator, true)
 end
-
 function SpecialQuestEvent:StopDynamicQuest()
   local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
   if ClientEventUtils:GetCurrentDoingDynamicEvent() then
     ClientEventUtils:ClearCurrentDoingDynamicEvent(true)
   end
 end
-
 function SpecialQuestEvent:SetFailCondition()
   if self.UniversalConfig and self.UniversalConfig.IfWaitDead then
     EventManager:AddEvent(EventID.CharDie, self, function(_, Eid)
@@ -984,29 +929,23 @@ function SpecialQuestEvent:SetFailCondition()
   if self.SpecialQuestConfig.FailCustomEvent then
     local GameInstance = GWorld.GameInstance
     local GameMode = UE4.UGameplayStatics.GetGameMode(GameInstance)
-    
     function self.FailCustomEventCallback(Owner, EventName, Channel)
       if EventName == self.SpecialQuestConfig.FailCustomEvent then
         EventManager:FireEvent(EventID.OnSpecialQuestFail, "FailCustomEvent")
         DebugPrint("gyy@SpecialQuestFail,ReceiveFailCustomEvent ", EventName, self.SpecialQuestId)
       end
     end
-    
     GameMode.OnCustomEventDelegates:Add(GameInstance, self.FailCustomEventCallback)
   end
 end
-
 function SpecialQuestEvent:WaitingFail()
   local function SpecialQuestFail(_, Reason)
     EventManager:RemoveEvent(EventID.OnSpecialQuestFail, self)
-    
     self:TryFinishEvent(Reason)
   end
-  
   EventManager:RemoveEvent(EventID.OnSpecialQuestFail, self)
   EventManager:AddEvent(EventID.OnSpecialQuestFail, self, SpecialQuestFail)
 end
-
 function SpecialQuestEvent:AddFailNodeCallback(Obj, FailNodeCallback)
   if not self.FailNodeCallback then
     self.FailNodeCallback = {}
@@ -1015,14 +954,12 @@ function SpecialQuestEvent:AddFailNodeCallback(Obj, FailNodeCallback)
     self.FailNodeCallback[Obj] = FailNodeCallback
   end
 end
-
 function SpecialQuestEvent:RemoveFailNodeCallback(Obj)
   if not self.FailNodeCallback then
     return
   end
   self.FailNodeCallback[Obj] = nil
 end
-
 function SpecialQuestEvent:AddSuccessNodeCallback(Obj, SuccessNodeCallback)
   if not self.SuccessNodeCallback then
     self.SuccessNodeCallback = {}
@@ -1031,12 +968,36 @@ function SpecialQuestEvent:AddSuccessNodeCallback(Obj, SuccessNodeCallback)
     self.SuccessNodeCallback[Obj] = SuccessNodeCallback
   end
 end
-
 function SpecialQuestEvent:RemoveSuccessNodeCallback(Obj)
   if not self.SuccessNodeCallback then
     return
   end
   self.SuccessNodeCallback[Obj] = nil
 end
-
+function SpecialQuestEvent:InterruptSpecialQuestEvent(Reason)
+  DebugPrint("gyy@InterruptSpecialQuestEvent ", self.SpecialQuestId, Reason)
+  if "NodeClear" == Reason then
+    self.SpecialQuestFinishCallback = nil
+  end
+  if not self.TryActive then
+    self.SpecialQuestFinishCallback = nil
+    EventManager:RemoveEvent(EventID.OnEnterTriggerBox, self)
+    local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
+    if IsValid(GameMode) then
+      local StaticCreatorArray = TArray(0)
+      StaticCreatorArray:Add(self.TriggerBoxStaticCreatorId)
+      GameMode:TriggerInactiveStaticCreator(StaticCreatorArray)
+    end
+    local Avatar = GWorld:GetAvatar()
+    if Avatar and self.EnterRegionSkipCallback then
+      for _, SubRegionId in pairs(self.SubRegionIds) do
+        Avatar:RemoveSubRegionSkipCallback(SubRegionId, self, self.EnterRegionSkipCallback)
+      end
+    end
+    local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
+    ClientEventUtils:ClearSpecailQuestEvent(self.SpecialQuestId)
+  else
+    self:TryFinishEvent(Reason)
+  end
+end
 return SpecialQuestEvent

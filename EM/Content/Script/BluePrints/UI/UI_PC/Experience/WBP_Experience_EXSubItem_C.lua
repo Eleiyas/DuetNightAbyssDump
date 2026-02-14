@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -21,5 +20,4 @@ function M:OnListItemObjectSet(Content)
     self.Text_AttributeNum:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

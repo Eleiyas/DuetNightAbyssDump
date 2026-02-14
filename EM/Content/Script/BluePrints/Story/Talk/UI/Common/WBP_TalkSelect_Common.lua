@@ -4,12 +4,10 @@ local Scroll_Mouse = MiscUtils.LazyLoadObject("/Game/UI/Texture/Dynamic/Atlas/Ke
 local Scroll_Xbox = MiscUtils.LazyLoadObject("/Game/UI/Texture/Dynamic/Atlas/Key/XBOX/T_Key_LV.T_Key_LV")
 local Scroll_PS = MiscUtils.LazyLoadObject("/Game/UI/Texture/Dynamic/Atlas/Key/PS5/T_Key_LV.T_Key_LV")
 local M = Class()
-
 function M:New()
   local Obj = setmetatable({}, {__index = M})
   return Obj
 end
-
 function M:Init(ParentWidget)
   self.ItemUIPathName = "/Game/UI/WBP/Story/Widget/WBP_Story_TalkItem.WBP_Story_TalkItem"
   self.ItemClickedInfo = nil
@@ -22,29 +20,24 @@ function M:Init(ParentWidget)
   self.LastSelectItemIdx = -1
   self:ListenUpDownEvents()
 end
-
 function M:ReceiveTick(InDeltaTime)
   if self.MouseWheelTime > 0 then
     self.MouseWheelTime = self.MouseWheelTime - InDeltaTime
   end
 end
-
 function M:BindItemClicked(InObj, InFunc)
   self.ItemClickedInfo = {}
   self.ItemClickedInfo.Obj = InObj
   self.ItemClickedInfo.Func = InFunc
 end
-
 function M:UnBindItemClicked()
   self.ItemClickedInfo = nil
 end
-
 function M:OnItemClicked(InItemIdx)
   if self.ItemClickedInfo then
     self.ItemClickedInfo.Func(self.ItemClickedInfo.Obj, InItemIdx)
   end
 end
-
 function M:OnItemClickStart()
   local ChildMaxIndex = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -53,7 +46,6 @@ function M:OnItemClickStart()
   end
   self.ParentWidget:OnItemClickedStart()
 end
-
 function M:AddItem(InItem)
   local UIManager = UIManager(GWorld.GameInstance)
   local ItemUI = UIManager:CreateWidget(self.ItemUIPathName)
@@ -70,7 +62,6 @@ function M:AddItem(InItem)
     ItemUI:SetNavigationRuleExplicit(EUINavigation.Up, LastItem)
   end
 end
-
 function M:SetItemsVisibility(InVisibility)
   local ChildMaxIndex = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -78,12 +69,10 @@ function M:SetItemsVisibility(InVisibility)
     Child:SetVisibility(InVisibility)
   end
 end
-
 function M:ClearListItems()
   self.ScrollBox_TalkOptions:ClearChildren()
   self:UnlistenUpDownEvents()
 end
-
 function M:ListenUpDownEvents()
   self.ParentWidget:ListenForInputAction("TalkUpSelect", EInputEvent.IE_Pressed, true, {
     self.ParentWidget,
@@ -98,12 +87,10 @@ function M:ListenUpDownEvents()
     end
   })
 end
-
 function M:UnlistenUpDownEvents()
   self.ParentWidget:StopListeningForInputAction("TalkUpSelect", EInputEvent.IE_Pressed)
   self.ParentWidget:StopListeningForInputAction("TalkDownSelect", EInputEvent.IE_Pressed)
 end
-
 function M:UpdateImgMouse()
   if CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance) == "Mobile" then
     return
@@ -115,15 +102,12 @@ function M:UpdateImgMouse()
     self.Img_Mouse:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:UpSelectAction()
   self:SwitchUpDownSelectAction(true)
 end
-
 function M:DownSelectAction()
   self:SwitchUpDownSelectAction(false)
 end
-
 function M:SwitchUpDownSelectAction(bUp)
   if self.MouseWheelTime > 0 then
     return
@@ -137,7 +121,6 @@ function M:SwitchUpDownSelectAction(bUp)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_add", "", nil)
   self:SelectNewItem(TargetIdx)
 end
-
 function M:GetTargetSelectIdx(bUp)
   if bUp then
     return self.CurrentSelectItemIdx - 1
@@ -145,7 +128,6 @@ function M:GetTargetSelectIdx(bUp)
     return self.CurrentSelectItemIdx + 1
   end
 end
-
 function M:CheckTargetSelectIdx(TargetIdx)
   local MaxIdx = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   if TargetIdx < 0 or TargetIdx > MaxIdx then
@@ -153,7 +135,6 @@ function M:CheckTargetSelectIdx(TargetIdx)
   end
   return true
 end
-
 function M:SelectNewItem(NewItemIdx, bIsDefault)
   if bIsDefault then
     self.CurrentSelectItemIdx = NewItemIdx
@@ -179,11 +160,9 @@ function M:SelectNewItem(NewItemIdx, bIsDefault)
     self.ScrollBox_TalkOptions:ScrollWidgetIntoView(SelectItemUI, true)
   end
 end
-
 function M:SetDefaultItem()
   self:SelectNewItem(0, true)
 end
-
 function M:GetItemIndex(Item)
   local ChildMaxIndex = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -194,11 +173,9 @@ function M:GetItemIndex(Item)
   end
   return -1
 end
-
 function M:GetCurrentItem()
   return self.ScrollBox_TalkOptions:GetChildAt(self.CurrentSelectItemIdx)
 end
-
 function M:UpdateKeyImg(IsGamePad, GamepadName)
   local ChildMaxIndex = self.ScrollBox_TalkOptions:GetChildrenCount() - 1
   for i = 0, ChildMaxIndex do
@@ -217,5 +194,4 @@ function M:UpdateKeyImg(IsGamePad, GamepadName)
     self.Img_Mouse:SetBrushResourceObject(Scroll_Mouse:get())
   end
 end
-
 return M

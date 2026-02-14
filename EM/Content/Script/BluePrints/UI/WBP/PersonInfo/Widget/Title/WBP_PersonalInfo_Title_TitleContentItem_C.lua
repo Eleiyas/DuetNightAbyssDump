@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(ItemObject)
   self.Text_Title:SetText(GText(ItemObject.Name))
   if not ItemObject.IsSelected then
@@ -22,16 +21,14 @@ function M:OnListItemObjectSet(ItemObject)
     ItemObject.IsNew = true
   else
     self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    ItemObject.IsNew = false
   end
 end
-
 function M:OnEntryReleased()
 end
-
 function M:SetNotNew()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("Title")
   UIUtils.TrySubReddotCacheDetailNumber(self.Item.TitleID, "Title")
   self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 return M

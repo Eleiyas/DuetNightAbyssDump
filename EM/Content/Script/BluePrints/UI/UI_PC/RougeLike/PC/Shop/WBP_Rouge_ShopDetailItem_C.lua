@@ -3,7 +3,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   local Avatar = GWorld:GetAvatar()
   local TokenId = Avatar and Avatar:GetCurrentRougeLikeTokenId() or 0
@@ -18,7 +17,6 @@ function M:Construct()
   })
   self.Btn_Buy.Btn_Click.OnClicked:Add(self, self.RougePurchase)
   self.Btn_Buy.Btn_Click.OnHovered:Add(self, self.OnPurchaseHovered)
-  self.Btn_DetailDesc.OnClicked:Add(self, self.OnCheckDetails)
   self.Key_SuitSign:CreateCommonKey({
     KeyInfoList = {
       {
@@ -30,20 +28,16 @@ function M:Construct()
   self.Text_SuitUnlockTitle:SetText(GText("RLBlessingGroup_Active"))
   self:InitListenEvent()
   self:AddInputMethodChangedListen()
-  local CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
-  local CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
-  self:OnUpdateUIStyleByInputTypeChange(CurInputDeviceType, CurGamepadName)
+  UIUtils.InitDefinitionTextWidget(self, self.Text_DetailDesc, "ExplanationId")
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnRougeInfoUpdate, self, self.OnRougeInfoUpdate)
 end
-
 function M:UpdateDetails(Type, ItemId, ShopId, Price, IsSoldOut, IsCanLevelUp)
   self.RougeLikeManager = GWorld.RougeLikeManager
-  assert(self.RougeLikeManager, "RougeLikeManager\230\156\170\230\137\190\229\136\176")
+  assert(self.RougeLikeManager, "RougeLikeManager未找到")
   local ItemData = DataMgr["RougeLike" .. Type][ItemId]
-  assert(ItemData, "\232\130\137\233\184\189\229\149\134\229\159\142\230\156\170\230\137\190\229\136\176\232\175\165\229\149\134\229\147\129\228\191\161\230\129\175: Type:" .. Type .. " Id:" .. ItemId)
+  assert(ItemData, "肉鸽商城未找到该商品信息: Type:" .. Type .. " Id:" .. ItemId)
   self.Type = Type
   self.ItemId = ItemId
   self.ShopId = ShopId
@@ -66,17 +60,23 @@ function M:UpdateDetails(Type, ItemId, ShopId, Price, IsSoldOut, IsCanLevelUp)
   end
   if self.ExplanationId then
     self.CanShowExplanation = true
+    self.Btn_DetailDesc:SetForbidden(true)
   else
     self.CanShowExplanation = false
+    self.Btn_DetailDesc:SetForbidden(false)
   end
   self:CanPurchase(self.Price)
   self:SetDesc()
   self:SetSuit()
   local RougeLikeShop = UIManager(self):GetUIObj("RougeShop")
-  assert(RougeLikeShop, "\232\130\137\233\184\189\229\149\134\229\159\142\228\184\141\229\173\152\229\156\168")
+  assert(RougeLikeShop, "肉鸽商城不存在")
   EMUIAnimationSubsystem:EMPlayAnimation(RougeLikeShop, RougeLikeShop.Switch)
+  self.bSkipDefinitionAutoInit = true
+  UIUtils.SetDefinitionText(self.Text_DetailDesc, self.ExplanationId)
+  local CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
+  local CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
+  self:OnUpdateUIStyleByInputTypeChange(CurInputDeviceType, CurGamepadName)
 end
-
 function M:SetRarity(Rarity)
   local BgRarityTexture, TitleRarityTexture
   if 1 == Rarity then
@@ -92,13 +92,12 @@ function M:SetRarity(Rarity)
     TitleRarityTexture = self.TitleQuality_Yellow
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Yellow)
   else
-    DebugPrint("ZDX_\232\130\137\233\184\189\229\149\134\229\159\142\229\149\134\229\147\129\231\168\128\230\156\137\229\186\166\233\148\153\232\175\175")
+    DebugPrint("ZDX_肉鸽商城商品稀有度错误")
     return
   end
   self.Image_ShopItemType:SetBrushFromTexture(BgRarityTexture)
   self.Image_TitleQuality:SetBrushFromTexture(TitleRarityTexture)
 end
-
 function M:SetIcon(IconPath)
   if not IconPath then
     return
@@ -121,7 +120,6 @@ function M:SetIcon(IconPath)
     self.Image_TreasureIcon:SetBrushResourceObject(LoadObject(IconPath))
   end
 end
-
 function M:SetBuffType(IconPath)
   if not IconPath then
     return
@@ -129,7 +127,6 @@ function M:SetBuffType(IconPath)
   self.Image_BuffType:SetVisibility(ESlateVisibility.Visible)
   self.Image_BuffType:SetBrushResourceObject(LoadObject(IconPath))
 end
-
 function M:SetDesc()
   local ItemDesc
   if self.Type == "Blessing" then
@@ -139,7 +136,7 @@ function M:SetDesc()
     end
     if self.IsCanLevelUp and not self.IsSoldOut then
       if 0 == Level and not self.IsSoldOut then
-        DebugPrint("ZDX_\232\130\137\233\184\189\229\149\134\229\159\142\231\165\157\231\166\143\231\173\137\231\186\167\233\148\153\232\175\175:" .. self.ItemId)
+        DebugPrint("ZDX_肉鸽商城祝福等级错误:" .. self.ItemId)
       else
         ItemDesc = UIUtils.GenRougeBlessingDesc(self.ItemId, Level - 1, Level)
       end
@@ -147,20 +144,16 @@ function M:SetDesc()
       ItemDesc = UIUtils.GenRougeBlessingDesc(self.ItemId, Level)
     end
     self.GroupId = DataMgr.RougeLikeBlessing[self.ItemId].BlessingGroup
-    assert(self.GroupId, "\230\156\170\230\137\190\229\136\176\231\165\157\231\166\143\229\175\185\229\186\148\229\165\151\232\163\133Id\239\188\154" .. self.GroupId)
+    assert(self.GroupId, "未找到祝福对应套装Id：" .. self.GroupId)
     local GroupData = DataMgr.BlessingGroup[self.GroupId]
-    assert(GroupData, "\230\156\170\230\137\190\229\136\176\229\165\151\232\163\133\230\149\176\230\141\174\239\188\154" .. self.GroupId)
+    assert(GroupData, "未找到套装数据：" .. self.GroupId)
   elseif self.Type == "Treasure" then
     ItemDesc = UIUtils.GenRougeTreasureDesc(self.ItemId)
     self.GroupId = DataMgr.RougeLikeTreasure[self.ItemId].TreasureGroup
   end
-  if self.ExplanationId ~= nil and #self.ExplanationId > 0 then
-    ItemDesc = UIUtils.GenRougeCombatTermDesc(ItemDesc, self.ExplanationId)
-  end
   self.Text_DetailDesc:SetText(GText(ItemDesc))
   self:SetBtnInfo(self.IsCanLevelUp)
 end
-
 function M:SetBtnInfo(bUpgrade)
   self.Btn_Buy.Text_BtnTitle:SetText(bUpgrade and GText("UI_RougeLike_Blessing_CanUpgrade") or GText("UI_SHOP_PURCHASE"))
   if 0 ~= self.PurchaseFailRes then
@@ -181,7 +174,6 @@ function M:SetBtnInfo(bUpgrade)
     self.Btn_Buy.Text_Reset:SetText(self.Price)
   end
 end
-
 function M:SetSuit()
   self.bShowTreasureSuit = false
   self.ShowSuitActive = false
@@ -207,6 +199,7 @@ function M:SetSuit()
       self.ShowSuitActive = true
       local SuitData = RougeUtils:GenSuitDetail(self.GroupId, Level, true)
       self.SuitDetail_SubItem:InitUIInfo(SuitData)
+      UIUtils.SetDefinitionText(self.SuitDetail_SubItem.Text_SuitDesc, SuitData.ExplanationId)
     end
   elseif self.Type == "Treasure" and DataMgr.TreasureGroup[self.GroupId] then
     self.bShowTreasureSuit = true
@@ -228,7 +221,6 @@ function M:SetSuit()
   end
   self:ShowGamePadBtn()
 end
-
 function M:ShowGamePadBtn()
   if self.bShowTreasureSuit and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Key_SuitSign:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -236,7 +228,6 @@ function M:ShowGamePadBtn()
     self.Key_SuitSign:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:CanPurchase(Price)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -255,7 +246,6 @@ function M:CanPurchase(Price)
     self.PurchaseFailRes = 2
   end
 end
-
 function M:OnRougeInfoUpdate()
   local RougeLikeShop = UIManager(self):GetUIObj("RougeShop")
   if RougeLikeShop then
@@ -263,7 +253,6 @@ function M:OnRougeInfoUpdate()
     RougeLikeShop:UpdateShopDetail()
   end
 end
-
 function M:RougePurchase()
   if not self.Btn_buy.Btn_Click:GetIsEnabled() then
     return
@@ -272,7 +261,6 @@ function M:RougePurchase()
   if not Avatar then
     return
   end
-  
   local function PurchaseCallback(Ret, NewAwardInfo)
     local NewLevel = NewAwardInfo and NewAwardInfo.Level or 0
     local RougeLikeShop = UIManager(self):GetUIObj("RougeShop")
@@ -281,7 +269,6 @@ function M:RougePurchase()
       RougeLikeShop:UpdateShopDetail()
     end
   end
-  
   local RougeShop = UIManager(self):GetUIObj("RougeShop")
   RougeShop:BlockAllUIInput(true)
   local EventSoundPath = "event:/ui/roguelike/btn_black_mid_click"
@@ -292,27 +279,38 @@ function M:RougePurchase()
     Avatar:RougeShopPurchase(self.ShopId, self.Type, self.ItemId, PurchaseCallback)
   end
 end
-
 function M:OnPurchaseHovered()
   self.Btn_Buy:PlayAnimation(self.Btn_Buy.Hover)
   local EventSoundPath = "event:/ui/roguelike/btn_black_hover"
   AudioManager(self):PlayUISound(self, EventSoundPath, nil, nil)
 end
-
 function M:OnCheckDetails()
   local RougeShopItemData = DataMgr["RougeLike" .. self.Type][self.ItemId]
   if RougeShopItemData.ExplanationId then
-    UIManager(self):LoadUINew("Rouge_Definition", RougeShopItemData.ExplanationId)
+    local Params = {}
+    Params.DefinitionItems = {}
+    for Idx, ExplanationId in ipairs(RougeShopItemData.ExplanationId) do
+      local TermData = DataMgr.CombatTerm[ExplanationId]
+      if not TermData then
+      else
+        table.insert(Params.DefinitionItems, {
+          Index = Idx,
+          Name = TermData.CombatTerm,
+          Des = TermData.CombatTermExplaination
+        })
+      end
+    end
+    UIManager(self):ShowCommonPopupUI(100266, Params)
     self.Parent:ChangeBottomGamePadInfo(false)
   end
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Gamepad then
     self:ShowGamePadBtn()
+    self.Btn_DetailDesc:SetForbidden(false)
   else
     self.Key_SuitSign:SetVisibility(ESlateVisibility.Collapsed)
+    self.Btn_DetailDesc:SetForbidden(self.CanShowExplanation)
   end
 end
-
 return M

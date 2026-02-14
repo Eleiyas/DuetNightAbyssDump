@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:GMAddMod(ModId, Level, Reason)
   local info = DataMgr.Mod[ModId]
   if not info or 1 == info.GMNot then
@@ -7,7 +6,6 @@ function Component:GMAddMod(ModId, Level, Reason)
   end
   return self:AddMod(ModId, Level, Reason, true)
 end
-
 function Component:AddMod(ModId, Level, Reason, GiveNotOpen)
   self.logger.info("AddMod", ModId, Level, Reason)
   local ModInfo = DataMgr.Mod[ModId]
@@ -42,11 +40,10 @@ function Component:AddMod(ModId, Level, Reason, GiveNotOpen)
     end
   end
   if not Mod then
-    self.logger.error("ZJT_ \230\183\187\229\138\160Mod\233\148\153\232\175\175 \230\166\130\231\142\135\233\133\141\232\161\168\233\151\174\233\162\152 ", ModId, Level, Reason, GiveNotOpen)
+    self.logger.error("ZJT_ 添加Mod错误 概率配表问题 ", ModId, Level, Reason, GiveNotOpen)
     return
   end
   self.Mods[Mod.Uuid] = Mod
   return Mod.Uuid
 end
-
 return Component

@@ -3,7 +3,6 @@ local WikiCommon = require("BluePrints.UI.WBP.Wiki.WikiCommon")
 local WikiController = require("BluePrints.UI.WBP.Wiki.WikiController")
 local WikiText_BP = "/Game/UI/WBP/Encyclopedia/Widget/WBP_Encyclopedia_Text.WBP_Encyclopedia_Text"
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   self.Super.Construct(self)
   self.Categories = WikiCommon.Categories
@@ -32,7 +31,6 @@ function M:Construct()
   self:InitListenEvent()
   self:RefreshBaseInfo()
 end
-
 function M:InitWikiNoteData()
   self.Categories[1].WikiNotes = {}
   self.UnlockedWikiNotes = WikiController:GetModel():GetUnlockedWikiEntryIds()
@@ -56,12 +54,10 @@ function M:InitWikiNoteData()
     DebugPrint(TXTTag, "AllGuideNotes is nil")
   end
 end
-
 function M:UpdateTextNum(tabId)
   local NumNow, NumAll = WikiController:GetModel():GetTextNum(tabId)
   self.Text_Num:SetText(NumNow .. "/" .. NumAll)
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, Params)
   self.Params = Params
@@ -78,11 +74,9 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   self.List_label:SetAllowOverscroll(false)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "WikiMain", nil)
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
 end
-
 function M:InitMainTab(TargetTabId)
   local CurLanguageTabs = CommonUtils.DeepCopy(self.Tabs)
   for i, tab in ipairs(self.Tabs) do
@@ -143,7 +137,6 @@ function M:InitMainTab(TargetTabId)
     self:ShowDialogueWiki()
   end
 end
-
 function M:SelectFirstEntryInWikiMain()
   self:AddTimer(0.1, function()
     local SubTypeWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Catalogue, 0)
@@ -166,18 +159,15 @@ function M:SelectFirstEntryInWikiMain()
     end
   end)
 end
-
 function M:ShowDialogueWiki()
   self:SetDialogueWikiMode(true)
   if self.Params.DialogueEntryIds then
     self:ShowDialogueEntry(self.Params.DialogueEntryIds)
   end
 end
-
 function M:ClearDialogueWiki()
   self:SetDialogueWikiMode(false)
 end
-
 function M:SetDialogueWikiMode(bShow)
   local visibility = bShow and UIConst.VisibilityOp.Collapsed or UIConst.VisibilityOp.Visible
   local elements = {}
@@ -223,6 +213,7 @@ function M:SetDialogueWikiMode(bShow)
     self.Group_Search:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.Switcher_List:SetActiveWidgetIndex(1)
   else
+    self.Group_Search:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.Switcher_List:SetActiveWidgetIndex(0)
   end
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -237,7 +228,6 @@ function M:SetDialogueWikiMode(bShow)
     end
   end
 end
-
 function M:ShowDialogueEntry(entryIds)
   self.List_Catalogue_Subsize:ClearListItems()
   WikiController:HandleDialogueEntries(entryIds, function(readableEntries)
@@ -251,7 +241,6 @@ function M:ShowDialogueEntry(entryIds)
     self:AutoSelectFirstEntry()
   end)
 end
-
 function M:AutoSelectFirstEntry()
   self:AddTimer(0.1, function()
     local entryWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Catalogue_Subsize, 0)
@@ -260,7 +249,6 @@ function M:AutoSelectFirstEntry()
     end
   end)
 end
-
 function M:CreateDialogueEntryItem(entryData)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.EntryId = entryData.EntryId
@@ -269,7 +257,6 @@ function M:CreateDialogueEntryItem(entryData)
   Obj.Parent = self
   return Obj
 end
-
 function M:UpdateTabsLockState()
   local shouldUpdateTabs = false
   if self.InitializedTab then
@@ -292,7 +279,6 @@ function M:UpdateTabsLockState()
     self.Com_Tab:UpdateTabs(self.Tabs)
   end
 end
-
 function M:OnTabChanged(TabWidget)
   self.CatalogueScroll:ScrollToStart()
   self:PlayAnimation(self.Refresh)
@@ -314,14 +300,12 @@ function M:OnTabChanged(TabWidget)
     self:SelectFirstEntryInWikiMain()
   end
 end
-
 function M:ClearItemState()
   local items = self.List_Catalogue:GetListItems()
   for _, item in pairs(items) do
     item:ClearItemState()
   end
 end
-
 function M:ChangeListContent(TabId)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
     self.Text_ListTabTitle:SetText(self.Tabs[self.CurrentTabIndex].Text)
@@ -337,7 +321,6 @@ function M:ChangeListContent(TabId)
     self:UpdateListView()
   end
 end
-
 function M:OnContentChanged(NewText)
   self.CurrentSearchContent = NewText
   self.IsSearchMode = "" ~= NewText
@@ -360,7 +343,6 @@ function M:OnContentChanged(NewText)
   end
   self:OnFilteredBySearch(SearchResult)
 end
-
 function M:OnFilteredBySearch(SearchResult)
   if self.IsSearchMode and next(SearchResult) == nil then
     self.FilteredList = nil
@@ -388,7 +370,6 @@ function M:OnFilteredBySearch(SearchResult)
   self.FilteredList = filteredTargetList
   self:UpdateListView()
 end
-
 function M:FilterEntriesBySubType(entries, subTypeId)
   if self.CurrentSearchContent == "" then
     return entries
@@ -407,8 +388,11 @@ function M:FilterEntriesBySubType(entries, subTypeId)
   end
   return next(filteredEntries) and filteredEntries or nil
 end
-
 function M:UpdateListView()
+  if self.CurrentSelectedEntry and IsValid(self.CurrentSelectedEntry.ListBox_Parent) then
+    self.CurrentSelectedEntry.ListBox_Parent:PlayAnimation(self.CurrentSelectedEntry.ListBox_Parent.UnSelect)
+  end
+  self.CurrentSelectedEntry = nil
   self.List_Catalogue:ClearListItems()
   local tabId = self.Tabs[self.CurrentTabIndex].TabId
   local subTypes = WikiController:GetModel():GetWikiSubType(tabId)
@@ -442,12 +426,16 @@ function M:UpdateListView()
         local subTypeItem = self:CreateSubTypeItem(actualIndex, subTypeId, subTypeText, displayEntries, self.IsSearchMode)
         self.List_Catalogue:AddItem(subTypeItem)
         actualIndex = actualIndex + 1
+      else
+        self.CurrentSelectedCell = nil
       end
     end
   end
+  if self.CurrentSelectedCell then
+    self:NavigateToEntry(self.CurrentSelectedCell.SubTypeId, self.CurrentSelectedCell.EntryId)
+  end
   self.Group_ListEmpty:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:RefreshList_Catalogue()
   DebugPrint(LXYTag, "RefreshList_Cataloguexxxxxxxxx")
   self.List_Catalogue:RequestRefresh()
@@ -458,7 +446,6 @@ function M:RefreshList_Catalogue()
     self.List_Catalogue:SetScrollbarVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:FilterEntriesByUnlock(entries)
   if not entries then
     return {}
@@ -474,23 +461,22 @@ function M:FilterEntriesByUnlock(entries)
   end
   return filteredEntries
 end
-
 function M:UpdateEntryWidgetSelectedStyle(EntryWidget)
-  if self.CurrentSelectedEntry and self.CurrentSelectedEntry.SubTypeId ~= EntryWidget.SubTypeId then
+  if self.CurrentSelectedEntry and IsValid(self.CurrentSelectedEntry.ListBox_Parent) and self.CurrentSelectedEntry ~= EntryWidget then
     self.CurrentSelectedEntry.ListBox_Parent:PlayAnimation(self.CurrentSelectedEntry.ListBox_Parent.UnSelect)
   end
   self.CurrentSelectedEntry = EntryWidget
-  self.CurrentSelectedEntry.ListBox_Parent:PlayAnimation(self.CurrentSelectedEntry.ListBox_Parent.Select)
+  if IsValid(self.CurrentSelectedEntry.ListBox_Parent) then
+    self.CurrentSelectedEntry.ListBox_Parent:PlayAnimation(self.CurrentSelectedEntry.ListBox_Parent.Select)
+  end
 end
-
 function M:OnEntrySelected(selectedCell)
-  if self.CurrentSelectedCell and self.CurrentSelectedCell.EntryId ~= selectedCell.EntryId then
+  if self.CurrentSelectedCell and self.CurrentSelectedCell.EntryId ~= selectedCell.EntryId and IsValid(self.CurrentSelectedCell) then
     self.CurrentSelectedCell:OnCellUnSelect()
   end
   self.CurrentSelectedCell = selectedCell
   self:OpenDescPage(selectedCell)
 end
-
 function M:OpenDescPage(selectedCell)
   if not self.AllGuideNotes then
     DebugPrint(TXTTag, "AllGuideNotes is nil")
@@ -520,13 +506,11 @@ function M:OpenDescPage(selectedCell)
   self:UpdateAssociatedEntry(entryData)
   self:UpdateDescScroll()
 end
-
 function M:ShowEmptyDescContent()
   self.Text_DescTitle:SetText("")
   self.Group_ContentEmpty:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Content:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:UpdateDescContent(entryTexts, ListText)
   if not entryTexts or CommonUtils.Size(entryTexts) <= 0 then
     return
@@ -542,7 +526,6 @@ function M:UpdateDescContent(entryTexts, ListText)
     textItemObj:OnListItemObjectSet(textItem)
   end
 end
-
 function M:UpdateDescScroll()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     return
@@ -605,7 +588,6 @@ function M:UpdateDescScroll()
     })
   end
 end
-
 function M:UpdateAssociatedEntry(entryData)
   self.List_Label:ClearListItems()
   local unlockedEntries = WikiController:GetModel():GetUnlockedWikiEntryIds()
@@ -631,7 +613,6 @@ function M:UpdateAssociatedEntry(entryData)
     self.HB:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function M:OnAssociatedEntryClicked(targetData)
   if self.IsAssociatedJump then
     return
@@ -643,7 +624,6 @@ function M:OnAssociatedEntryClicked(targetData)
   self:NavigateToEntry(targetData.SubType, targetData.EntryId)
   self.IsAssociatedJump = false
 end
-
 function M:ValidateEntryData(targetData)
   if not targetData or not targetData.EntryId then
     return false
@@ -655,7 +635,6 @@ function M:ValidateEntryData(targetData)
   end
   return true
 end
-
 function M:SwitchToTargetTab(mainType)
   if self.IsSearchMode then
     self.Com_Input_Light:OnDeleteBtnClicked()
@@ -663,6 +642,9 @@ function M:SwitchToTargetTab(mainType)
   end
   self.IsAssociatedJump = true
   local RealMainType = mainType + 1
+  if self.CurrentTabIndex == RealMainType then
+    return
+  end
   for index, tab in ipairs(self.Tabs) do
     if tab.MainType == RealMainType and self.CurrentTabIndex ~= tab.TabId then
       self.CurrentTabIndex = tab.TabId
@@ -671,7 +653,6 @@ function M:SwitchToTargetTab(mainType)
   end
   self.Com_Tab:SelectTabById(self.CurrentTabIndex)
 end
-
 function M:NavigateToEntry(subType, entryId)
   self:AddTimer(0.1, function()
     self:ScrollToSubType(subType, function(subTypeItem)
@@ -679,7 +660,6 @@ function M:NavigateToEntry(subType, entryId)
     end)
   end)
 end
-
 function M:ScrollToSubType(subType, callback)
   local subTypeIndex = self:GetSubTypeIndex(subType)
   if not subTypeIndex then
@@ -697,7 +677,6 @@ function M:ScrollToSubType(subType, callback)
     callback(subTypeItem)
   end
 end
-
 function M:SelectEntryInSubType(subTypeItem, entryId)
   self:AddTimer(0.1, function()
     local entryIndex = subTypeItem:GetEntryIndex(entryId)
@@ -714,20 +693,18 @@ function M:SelectEntryInSubType(subTypeItem, entryId)
     end
   end)
 end
-
 function M:GetSubTypeIndex(subTypeId)
   local items = self.List_Catalogue:GetListItems()
   if not items then
     return nil
   end
-  for index, item in ipairs(items) do
+  for _, item in pairs(items) do
     if item.SubTypeId == subTypeId then
       return item.Index
     end
   end
   return nil
 end
-
 function M:CreateSubTypeItem(index, subTypeId, subTypeText, entries, IsSearchMode)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.IsSearchMode = IsSearchMode
@@ -738,7 +715,6 @@ function M:CreateSubTypeItem(index, subTypeId, subTypeText, entries, IsSearchMod
   Obj.Index = index
   return Obj
 end
-
 function M:CreateLabelItem(index, entryData)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.TargetData = entryData
@@ -746,7 +722,6 @@ function M:CreateLabelItem(index, entryData)
   Obj.Index = index
   return Obj
 end
-
 function M:CreateTextItem(textData)
   local Obj = NewObject(UIUtils.GetCommonItemContentClass())
   Obj.TextId = textData.TextId
@@ -756,11 +731,9 @@ function M:CreateTextItem(textData)
   Obj.PreviousText = textData.PreviousText
   return Obj
 end
-
 function M:ShowEmptyList()
   self.Group_ListEmpty:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local ParentHandled = M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -814,12 +787,10 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return ParentHandled
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   WikiController:GetModel():RemoveNewStateListener(self)
 end
-
 function M:CloseSelf()
   if self:IsAnimationPlaying(self.Auto_In) then
     return
@@ -838,7 +809,6 @@ function M:CloseSelf()
   end
   self:Close()
 end
-
 function M:UpdateTabsRedDot()
   self:UpdateTabsLockState()
   for Idx, tab in ipairs(self.Tabs) do
@@ -851,7 +821,6 @@ function M:UpdateTabsRedDot()
     end
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.IsSearchMode then
     self.Com_Input_Light:SetFocus()
@@ -872,7 +841,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:InitNavigationRules()
   return M.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function M:InitListenEvent()
   local PlayerController = self:GetOwningPlayer()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -880,17 +848,16 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
+  local IsUseGamePad = CurInputDevice == ECommonInputType.Gamepad
   local ActiveWidgetIndex = IsUseKeyAndMouse and 0 or 1
   if IsUseKeyAndMouse then
     if self.ListText then
@@ -901,7 +868,9 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     if self.ListText then
       self.ListText:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     end
-    self.Com_Input_Light:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    if IsUseGamePad then
+      self.Com_Input_Light:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+    end
     if self.IsSearchMode then
       self.Com_Input_Light:SetFocus()
       self.Com_Input_Light:FocusInputField()
@@ -915,14 +884,12 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDevice = CurInputDevice
 end
-
 function M:OnEditTextFocusLost()
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Com_Input_Light:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   end
   self:SelectFirstEntryInWikiMain()
 end
-
 function M:InitNavigationRules()
   self:SetNavigationRuleCustom(EUINavigation.Right, {
     self,
@@ -930,7 +897,6 @@ function M:InitNavigationRules()
   })
   self.List_Label:SetNavigationRuleExplicit(EUINavigation.Left, self.CurrentSelectedCell)
 end
-
 function M:SetRightTarget()
   if self.CurInputDevice == ECommonInputType.Gamepad then
     self.Com_Tab:UpdateBottomKeyInfo({
@@ -961,7 +927,6 @@ function M:SetRightTarget()
   end
   return nil
 end
-
 function M:SetGetBackFocusWidget()
   if IsValid(self.List_Catalogue) then
     local SubTypeWidget = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.List_Catalogue, 0)
@@ -971,7 +936,6 @@ function M:SetGetBackFocusWidget()
   end
   return self
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if not self.ListText then
     return UE4.UWidgetBlueprintLibrary.UnHandled()
@@ -986,6 +950,5 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 AssembleComponents(M)
 return M

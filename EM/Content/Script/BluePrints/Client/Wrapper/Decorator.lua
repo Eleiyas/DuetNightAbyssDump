@@ -1,10 +1,8 @@
 local ClassMgr = require("NetworkEngine.Common.ClassManager")
 local PropUtils = require("BluePrints.Client.PropUtils")
 local Decorator = {}
-
 local function GetArgsName(fun)
   local args = {}
-  
   local function hook(...)
     local info = debug.getinfo(3)
     if info.name ~= "pcall" then
@@ -20,16 +18,13 @@ local function GetArgsName(fun)
       args[i] = name
     end
   end
-  
   debug.sethook(hook, "c")
   pcall(fun)
   return args
 end
-
 local function trim(input)
   return (string.gsub(input, "^%s*(.-)%s*$", "%1"))
 end
-
 local function SplitAndTrim(str, reps)
   local Results = {}
   string.gsub(str, "[^" .. reps .. "]+", function(w)
@@ -37,14 +32,12 @@ local function SplitAndTrim(str, reps)
   end)
   return Results
 end
-
 function Decorator:AddDecorator(Func)
   if not self.Decorators then
     self.Decorators = {}
   end
   table.insert(self.Decorators, Func)
 end
-
 local LuaBaseTypes = {
   Int = "number",
   Float = "number",
@@ -56,12 +49,10 @@ local LuaBaseTypes = {
   boolean = "boolean",
   table = "table"
 }
-
 function Decorator:Rpc(args)
   self:AddDecorator(function(FuncName, f)
     local args_type = SplitAndTrim(args, ",")
     GWorld:AddRpcFunc(FuncName)
-    
     local function NewFunc(obj, ...)
       local args_value = {
         ...
@@ -94,16 +85,31 @@ function Decorator:Rpc(args)
       end
       f(obj, ...)
     end
-    
     return NewFunc
   end)
 end
-
+function Decorator:BlockAllUIInput(RPCName)
+  self:AddDecorator(function(FuncName, f)
+    local function NewFunc(obj, ...)
+      if obj.__Name__ == "Avatar" then
+        if not obj.BlockUIMarks then
+          obj.BlockUIMarks = {}
+        end
+        if not obj.BlockUIMarks[RPCName] then
+          obj.BlockUIMarks[RPCName] = 1
+          DebugPrint(LXYTag, "Decorator:BlockAllUIInput", RPCName)
+          UIManager(GWorld.GameInstance):_BlockAllUIInput(true, RPCName)
+        end
+      end
+      f(obj, ...)
+    end
+    return NewFunc
+  end)
+end
 function Decorator:LimitCall(interval)
   self:AddDecorator(function(FuncName, f)
     local function NewFunc(obj, ...)
       local now_time = os.time()
-      
       local refresh_time = GWorld.LimitCallMethods[FuncName]
       refresh_time = refresh_time or 0
       if now_time > refresh_time then
@@ -112,16 +118,13 @@ function Decorator:LimitCall(interval)
       else
       end
     end
-    
     return NewFunc
   end)
 end
-
 function Decorator:NoShipping()
   self:AddDecorator(function(FuncName, f)
     local function NewFunc(obj, ...)
       local IsDistribution = UE.URuntimeCommonFunctionLibrary.IsDistribution()
-      
       local bEnableShippingLog = UE4.URuntimeCommonFunctionLibrary.EnableLogInShipping()
       if IsDistribution and not bEnableShippingLog then
         DebugPrint(FuncName .. " is not for Distribution")
@@ -129,27 +132,56 @@ function Decorator:NoShipping()
       end
       f(obj, ...)
     end
-    
     return NewFunc
   end)
 end
-
+function Decorator:VersionControl(DataName, KeyIndex, ReplacedVersionKey)
+  assert(DataName, "DataName is nil")
+  self:AddDecorator(function(FuncName, f)
+    local function NewFunc(obj, ...)
+      local args = {
+        ...
+      }
+      KeyIndex = KeyIndex or 1
+      ReplacedVersionKey = ReplacedVersionKey or "ReleaseVersion"
+      local bValidVersion = true
+      local Version = -1
+      if #args < KeyIndex then
+        bValidVersion = false
+      else
+        local Key = args[KeyIndex]
+        if not DataMgr[DataName][Key] then
+          bValidVersion = false
+        else
+          Version = DataMgr[DataName][Key][ReplacedVersionKey] or 0
+          bValidVersion = Version <= DataMgr.GlobalConstant.CurrentVersion.ConstantValue
+        end
+      end
+      if not bValidVersion then
+        obj.logger.info("The version is not valid to call function", FuncName, Version, DataMgr.GlobalConstant.CurrentVersion.ConstantValue)
+        local ret = obj:OnInvalidVersionControlCallback(FuncName, DataName, ...)
+        if not ret then
+          return
+        end
+      end
+      return f(obj, ...)
+    end
+    return NewFunc
+  end)
+end
 function Decorator:Time()
   self:AddDecorator(function(FuncName, f)
     local function NewFunc(obj, ...)
       local StartTime = GWorld:GetCurrentTime()
-      
       DebugPrint(FuncName .. " Start Exe: ", StartTime)
       f(obj, ...)
       local EndTime = GWorld:GetCurrentTime()
       DebugPrint(FuncName .. " End Exe: ", EndTime)
       DebugPrint(FuncName .. " time-consuming is ", EndTime - StartTime)
     end
-    
     return NewFunc
   end)
 end
-
 function Decorator:GM_CMD(args)
   self:AddDecorator(function(FuncName, f)
     local args_name = GetArgsName(f)
@@ -164,7 +196,6 @@ function Decorator:GM_CMD(args)
     return f
   end)
 end
-
 Decorator = setmetatable(Decorator, {
   __newindex = function(T, key, value)
     if type(value) == "function" then
@@ -179,4 +210,10 @@ Decorator = setmetatable(Decorator, {
     rawset(T, key, value)
   end
 })
+function Decorator:ApplyDecorator(Cls)
+  for key, value in pairs(self) do
+    Cls[key] = value
+  end
+  setmetatable(Cls, getmetatable(self))
+end
 return Decorator

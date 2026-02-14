@@ -4,13 +4,14 @@ local EMCache = require("EMCache.EMCache")
 local M = Class("BluePrints.UI.Shop.WBP_Shop_Base_New_C")
 M._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp",
-  "BluePrints.UI.UI_PC.Common.LSFocusComp"
+  "BluePrints.UI.UI_PC.Common.LSFocusComp",
+  "BluePrints.UI.Shop.SkinPreview.SkinPreview_ActorComponent",
+  "BluePrints.UI.Shop.Component.Shop_PointerInputComponent",
+  "BluePrints.UI.WBP.Armory.ActorController.PreviewActorComponent"
 }
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self)
   if not EMCache:Get("ShopUnlockTime", true) then
@@ -39,34 +40,75 @@ function M:OnLoaded(...)
       AudioManager(self):PlaySystemUIBGM(ShopBGM, nil, ShopSystemName)
     end
   end
-  self:InitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopSystemName)
-  self._OriginVisibilityMap = self._OriginVisibilityMap or {}
-  if "Shop" == self.ShopType and (170 == MainTabIdx or nil == MainTabIdx) then
-    self:InitVideoPlayer()
-    self:PlayVideoTOP()
-  end
   if GWorld.GameInstance then
     GWorld.GameInstance:SetHighFrequencyMemoryCheckGCEnabled(true, "ShopMain")
   end
+  self.bAllowedToShowHideUI = false
+  self.bShowModel = false
+  self.bHideUIExceptVideo = false
+  self._OriginVisibilityMap = self._OriginVisibilityMap or {}
+  self.BannerTabStates = {}
+  local bPlayVideoTopFirst = false
+  local BgVideoPath, DisplayType, DisplayId
+  local ShopMainTabData = DataMgr.ShopTabMain[MainTabIdx]
+  if "Shop" == ShopSystemName and (nil == MainTabIdx or ShopMainTabData and ShopMainTabData.PinVideo) then
+    local SwitchBannerList = ShopUtils:GetBannerInfo(true)
+    local BannerList = ShopUtils:GetBannerInfo()
+    local Banner
+    if SwitchBannerList[1] then
+      Banner = SwitchBannerList[1]
+    elseif BannerList[1] then
+      Banner = BannerList[1]
+    end
+    if Banner then
+      local BannerId = Banner.Id
+      BgVideoPath = DataMgr.ShopBannerTab[BannerId].BgVideoPath
+      DisplayId = DataMgr.ShopBannerTab[BannerId].DisplayId
+      DisplayType = DataMgr.ShopBannerTab[BannerId].DisplayType
+      if BgVideoPath and "" ~= BgVideoPath and self:IsFirstTimeToEnterBanner(BannerId) then
+        bPlayVideoTopFirst = true
+      end
+    end
+  end
+  self:InitShop(MainTabIdx, SubTabIdx, ShopItemId, ShopSystemName, bPlayVideoTopFirst)
+  if bPlayVideoTopFirst then
+    self:InitVideoPlayer(BgVideoPath, DisplayType, DisplayId)
+    self:PlayVideoTop()
+  end
+  self:ShowSkipButton(false)
+  self.Image_Hit.OnMouseButtonDownEvent:Unbind()
+  self.Image_Hit.OnMouseButtonDownEvent:Bind(self, self.On_Image_Click_MouseButtonDown)
 end
-
+function M:IsFirstTimeToEnterBanner(BannerId)
+  local key = "bHasPlayedVideo_" .. BannerId
+  if not EMCache:Get(key, true) then
+    EMCache:Set(key, true, true)
+    return true
+  end
+  return false
+end
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
-  if 1 == StackAction and self:IsInVideoPage() then
-    self:PlayVideoBG(false)
-  end
   if self.ShopType then
     local ShopBGM = DataMgr.Shop[self.ShopType].PlaySystemUIBGM
     if ShopBGM then
       AudioManager(self):PlaySystemUIBGM(ShopBGM, nil, self.ShopType)
     end
   end
+  if 1 == StackAction and self:IsHasVideo() then
+    if self.bPlayVideoBG then
+      self:StopVideoBG()
+    end
+    self:PlayVideoBG()
+  end
 end
-
 function M:ReceiveExitState(StackAction)
   M.Super.ReceiveExitState(self, StackAction)
+  if 0 == StackAction and self:IsHasVideo() and self.bPlayVideoBG then
+    self:StopVideoBGWithDelay(0.5)
+  end
+  self:HideAllPreviewActor()
 end
-
 function M:Construct()
   M.Super.Construct(self)
   self.List_Item.OnCreateEmptyContent:Bind(self, function(self)
@@ -95,20 +137,33 @@ function M:Construct()
   if self.Common_Tab.WBP_Com_Tab_ResourceBar then
     self.Common_Tab.WBP_Com_Tab_ResourceBar:SetLastFocusWidget(self.List_Item)
   end
-  self.List_Recommend.OnListViewScrolled:Add(self, self.OnUserScrolled)
+  self.ScrollBox_Recommend.OnUserScrolled:Add(self, self.OnUserScrolled)
+  self.ScrollBox_Recommend.OnMouseButtonDown:Add(self, function(self, Geo, MouseEvent)
+    local BannerGeo = self.Shop_RecommendBanner:GetCachedGeometry()
+    local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(MouseEvent)
+    if UE4.USlateBlueprintLibrary.IsUnderLocation(BannerGeo, MousePos) then
+      self.Shop_RecommendBanner:OnScrollBoxMouseButtonDown(BannerGeo, MouseEvent)
+    end
+  end)
+  self.ScrollBox_Recommend.OnMouseButtonUp:Add(self, function(self, Geo, MouseEvent)
+    local BannerGeo = self.Shop_RecommendBanner:GetCachedGeometry()
+    local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(MouseEvent)
+    if UE4.USlateBlueprintLibrary.IsUnderLocation(BannerGeo, MousePos) then
+      self.Shop_RecommendBanner:OnScrollBoxMouseButtonUp(BannerGeo, MouseEvent)
+    end
+  end)
   self:AddDispatcher(EventID.OnRechargeFinished, self, self.OnRechargeFinished)
   self:AddDispatcher(EventID.RefreshShop, self, self.RefreshShop)
-  if self.Btn_Hide and self.Btn_Hide.Btn_Area then
-    self.Btn_Hide.Btn_Area.OnClicked:Add(self, self.HideUIExceptVideoCallBack)
+  if self.Btn_Shop_Visible and self.Btn_Shop_Visible.Btn_Click then
+    self.Btn_Shop_Visible.Btn_Click.OnClicked:Add(self, self.HideUIExceptVideoAutoCallBack)
   end
-  if self.Btn_Hide then
-    self.Btn_Hide:SetVisibility(ESlateVisibility.Collapsed)
-    if self.Btn_Hide.Panel_Name then
-      self.Btn_Hide.Panel_Name:SetVisibility(ESlateVisibility.Collapsed)
-    end
+  if self.Btn_Shop_Visible then
+    self.Btn_Shop_Visible:SetVisibility(ESlateVisibility.Collapsed)
+  end
+  if self.Btn_Shop_Refresh then
+    self.Btn_Shop_Refresh:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:RefreshShop()
   if not self.bNeedRefreshShop then
     self.bNeedRefreshShop = true
@@ -118,14 +173,13 @@ function M:RefreshShop()
     end, false, 0, "RefreshShop", true)
   end
 end
-
 function M:InitShopTabInfo(MainTabIdx, SubTabIdx)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return
   end
   local MainShopTabData = DataMgr.Shop[self.ShopType]
-  assert(MainShopTabData, "\232\142\183\229\143\150\229\149\134\229\186\151\231\177\187\229\158\139\228\191\161\230\129\175\229\164\177\232\180\165:" .. self.ShopType)
+  assert(MainShopTabData, "获取商店类型信息失败:" .. self.ShopType)
   self:LoadShopTabInfo(MainShopTabData)
   self.Common_Tab:Init({
     DynamicNode = {
@@ -167,6 +221,8 @@ function M:InitShopTabInfo(MainTabIdx, SubTabIdx)
     StyleName = "Text",
     TitleName = GText(MainShopTabData.ShopName),
     OverridenTopResouces = self.OverridenTopResouces,
+    OnResourceBarAddedToFocusPath = self.OnResourceBarAddedToFocusPath,
+    OnResourceBarRemovedFromFocusPath = self.OnResourceBarRemovedFromFocusPath,
     OwnerPanel = self,
     BackCallback = self.CloseSelf
   })
@@ -195,7 +251,6 @@ function M:InitShopTabInfo(MainTabIdx, SubTabIdx)
   self:AddLSFocusTarget(self.CheckBox_Own.Com_KeyImg, self.CheckBox_Own, "X", true)
   self:AddTabReddotListen()
 end
-
 function M:AddTabReddotListen()
   for _, MainTabId in pairs(DataMgr.Shop[self.ShopType].MainTabId) do
     local Data = DataMgr.ShopItem2ShopTab[MainTabId]
@@ -233,7 +288,6 @@ function M:AddTabReddotListen()
     end
   end
 end
-
 function M:_ShowSubTabReddot(SubTabList)
   for _, SubTab in ipairs(SubTabList) do
     local SubTabId = SubTab.TabId
@@ -251,7 +305,6 @@ function M:_ShowSubTabReddot(SubTabList)
     end
   end
 end
-
 function M:RemoveTabReddotListen()
   for _, MainTabId in pairs(DataMgr.Shop[self.ShopType].MainTabId) do
     local Data = DataMgr.ShopItem2ShopTab[MainTabId]
@@ -269,7 +322,6 @@ function M:RemoveTabReddotListen()
     end
   end
 end
-
 function M:OnMainTabChanged(TabWidget)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -285,7 +337,7 @@ function M:OnMainTabChanged(TabWidget)
       LeftKey = "A",
       RightKey = "D",
       Tabs = self.SubTabList,
-      ChildWidgetName = "TabSubItem6"
+      ChildWidgetName = "TabSubTextItem"
     })
     self.Common_Toggle_TabGroup_PC:BindEventOnTabSelected(self, self.OnSubTabChanged)
     if #self.SubTabList <= 1 then
@@ -299,7 +351,6 @@ function M:OnMainTabChanged(TabWidget)
   end
   self:_ShowSubTabReddot(self.SubTabList)
 end
-
 function M:OnSubTabChanged(TabWidget)
   local SubTabData = self.SubTabMap[TabWidget.Idx]
   if not SubTabData then
@@ -308,7 +359,6 @@ function M:OnSubTabChanged(TabWidget)
   self:ClearSubTabReddot()
   self:RefreshSubTabData(SubTabData)
 end
-
 function M:ClearSubTabReddot()
   if not self.CurSubTabMap then
     return
@@ -318,21 +368,25 @@ function M:ClearSubTabReddot()
     ReddotManager.ClearLeafNodeCount(NodeName, false, {bAll = 1})
   end
 end
-
 function M:RefreshSubTabData(SubTabData)
+  self.bShoulFocusToLastFocusedWidget = true
+  self.Shop_RecommendBanner:ClearAllTimer()
   self.TabType = SubTabData.TabType
   self.IsBannerPage = false
   self.IsJumpShopPage = false
+  self.ShowSwitchBanner = false
   self:LoadSubTabInfo(SubTabData)
   self:SetIsDealWithVirtualAccept(false)
   self.Group_Recharge:SetVisibility(ESlateVisibility.Collapsed)
-  self.Group_MonthCard:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_PayGift:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_Empty:SetVisibility(ESlateVisibility.Collapsed)
-  self.List_Jump:SetVisibility(ESlateVisibility.Collapsed)
+  self.VB_Jump:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_Recommend:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_Item:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Group_Bottom:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.Group_BG:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.CheckBox_Own:ForbidBtn(false)
+  self:SetAllowedToShowHideUI(false)
   self.Group_RecommendAnchor:SetVisibility(ESlateVisibility.Collapsed)
   if self.Common_Tab and self.Common_Tab.WBP_Com_Tab_ResourceBar then
     self.Common_Tab.WBP_Com_Tab_ResourceBar:SetLastFocusWidget(self.List_Item)
@@ -343,9 +397,17 @@ function M:RefreshSubTabData(SubTabData)
     self:PlayAnimation(self.Change)
   end
   if self.ShopType == "Shop" and SubTabData.TabType ~= "Banner" then
-    self:RemoveVideoBG()
+    self:StopVideoBG()
+    self:SetAllowedToShowHideUI(false)
+    self:SetShowModel(false)
+    self:SetHasVideo(false)
+    self:DestroyPreviewActor()
+    if self.Common_Tab and self.Common_Tab.WBP_Com_Tab_ResourceBar then
+      self.Common_Tab.WBP_Com_Tab_ResourceBar:SetGetReplyOnBack(nil)
+    end
   end
   if SubTabData.TabType == "Pay" then
+    self.CheckBox_Own:ForbidBtn(true)
     self.Group_Bottom:SetVisibility(ESlateVisibility.Collapsed)
     self:InitRechargePage(SubTabData)
     return
@@ -356,6 +418,7 @@ function M:RefreshSubTabData(SubTabData)
     return
   end
   if SubTabData.TabType == "Banner" then
+    self.CheckBox_Own:ForbidBtn(true)
     self.Group_Bottom:SetVisibility(ESlateVisibility.Collapsed)
     self.Group_Item:SetVisibility(ESlateVisibility.Collapsed)
     if self.BannerIdMap then
@@ -364,14 +427,22 @@ function M:RefreshSubTabData(SubTabData)
       end
     end
     if self.Common_Tab and self.Common_Tab.WBP_Com_Tab_ResourceBar then
-      self.Common_Tab.WBP_Com_Tab_ResourceBar:SetLastFocusWidget(self.List_Recommend)
+      self.Common_Tab.WBP_Com_Tab_ResourceBar:SetGetReplyOnBack(function()
+        self:GamePadFocusToSelectBannerItem()
+        return UIUtils.Handled
+      end)
     end
+    self:AddTimer(0.05, function()
+      self:GamePadFocusToSelectBannerItem()
+    end)
     self.IsBannerPage = true
     self:SetIsDealWithVirtualAccept(true)
     self:InitBannerPage()
+    self.bShoulFocusToLastFocusedWidget = false
     return
   end
   if SubTabData.TabType == "Complex" then
+    self.CheckBox_Own:ForbidBtn(true)
     self.Group_Bottom:SetVisibility(ESlateVisibility.Collapsed)
     self.IsJumpShopPage = true
     self:InitJumpShopPage()
@@ -381,7 +452,11 @@ function M:RefreshSubTabData(SubTabData)
   self.VB_ItemList:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:UpdateShopDetail(self.CurSubTabMap)
 end
-
+function M:BP_GetDesiredFocusTarget()
+  if self.TabType == "Banner" then
+    return self:GetSelectBannerItem()
+  end
+end
 function M:CommonInitPage(OverlayWidget, WidgetName)
   self.VB_ItemList:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_Bottom:SetVisibility(ESlateVisibility.Collapsed)
@@ -404,7 +479,6 @@ function M:CommonInitPage(OverlayWidget, WidgetName)
   Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
   return Widget
 end
-
 function M:InitPayGiftPage(ShopItemsData)
   local Widget = self:CommonInitPage(self.Group_PayGift, "PayGiftPage")
   if self.Common_Tab and self.Common_Tab.WBP_Com_Tab_ResourceBar then
@@ -422,16 +496,15 @@ function M:InitPayGiftPage(ShopItemsData)
   end
   Widget:InitPayGiftInfo(ShopItemsData)
 end
-
 function M:InitRechargePage(SubTabData)
   local Widget = self:CommonInitPage(self.Group_Recharge, "ShopRechargePage")
   if self.Common_Tab and self.Common_Tab.WBP_Com_Tab_ResourceBar then
     self.Common_Tab.WBP_Com_Tab_ResourceBar:SetLastFocusWidget(Widget)
   end
   local RechargeContent = {}
-  for _, ShopData in pairs(DataMgr.ShopItem) do
-    if ShopData.SubTabId == SubTabData.SubTabId then
-      table.insert(RechargeContent, ShopData)
+  for _, ShopItemId in ipairs(Const.ReChargeLst) do
+    if DataMgr.ShopItem[ShopItemId] then
+      table.insert(RechargeContent, DataMgr.ShopItem[ShopItemId])
     end
   end
   table.sort(RechargeContent, function(a, b)
@@ -447,40 +520,76 @@ function M:InitRechargePage(SubTabData)
   end
   Widget:InitRechargeInfo(RechargeContent)
   if not CommonUtils:IfExistSystemGuideUI(self) or self:HasAnyFocus() or self:HasFocusedDescendants() then
-    Widget:SetFocus()
+    self:AddTimer(0.3, function()
+      Widget:SetFocus()
+    end)
   end
 end
-
 function M:OnUserScrolled()
-  UIUtils.UpdateListArrow(self.List_Recommend, self.Group_ListTop, self.Group_ListBottom)
+  UIUtils.UpdateScrollBoxArrow(self.ScrollBox_Recommend, self.Group_ListTop, self.Group_ListBottom, 100)
 end
-
 function M:InitBannerPage(SelectBannerId)
-  if not CommonUtils:IfExistSystemGuideUI(self) then
-    self.List_Recommend:BP_ClearSelection()
-    self.List_Recommend:SetFocus()
+  local LastSelectBanner = self.BannerIdMap and self.BannerIdMap[self.SelectBannerId]
+  self.BannerIdMap = {}
+  self.SwitchBannerList = ShopUtils:GetBannerInfo(true)
+  local BannerData, BannerIdDict = ShopUtils:GetBannerInfo()
+  if SelectBannerId then
+    self.SelectBannerId = SelectBannerId
+  elseif not BannerIdDict[self.SelectBannerId] then
+    self.SelectBannerId = nil
   end
-  self.BannerList = ShopUtils:GetBannerInfo()
-  self.VB_ItemList:SetVisibility(ESlateVisibility.Collapsed)
-  self.Group_Recommend:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-  self.Group_RecommendAnchor:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  local ScrollBoxChildrenTable = self.ScrollBox_Recommend:GetAllChildren():ToTable()
+  if ScrollBoxChildrenTable and next(ScrollBoxChildrenTable) then
+    for _, value in ipairs(ScrollBoxChildrenTable) do
+      if value and value.ScrollboxIndex and value.ScrollboxIndex >= 1 then
+        value:RemoveFromParent()
+      end
+    end
+  end
+  if not self.SelectBannerId then
+    if next(self.SwitchBannerList) then
+      self.SelectBannerId = self.SwitchBannerList[1].Id
+    else
+      assert(BannerData[1], "有效Banner数量不足一个")
+      self.SelectBannerId = BannerData[1].Id
+    end
+  end
   local Path
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
     Path = CommonConst.ShopBannerMobilePath
   else
     Path = CommonConst.ShopBannerPCPath
   end
-  self.BannerIdMap = {}
-  local BannerData = ShopUtils:GetBannerInfo()
-  self.SelectBannerId = SelectBannerId
-  if not self.SelectBannerId then
-    self.SelectBannerId = self.LastSelectBannerId
+  local bSwitchBanner = false
+  if self.SwitchBannerList and next(self.SwitchBannerList) then
+    self.Shop_RecommendBanner:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Shop_RecommendBanner:InitItemInfo()
+    self.Shop_RecommendBanner:BindBtnEvent(self, self.OnSwitchBannerChanged)
+    self.Shop_RecommendBanner:BindBtnClickEvent(self, self.OnSwitchBannerItemClick)
+    local BannerBPPath = Path .. "WBP_Shop_Recommend_Common"
+    local BannerPageWidget = UIManager(self):CreateWidget(BannerBPPath)
+    if BannerPageWidget then
+      for _, BannerInfo in ipairs(self.SwitchBannerList) do
+        if BannerInfo.Id == self.SelectBannerId then
+          bSwitchBanner = true
+        end
+        self.BannerIdMap[BannerInfo.Id] = BannerPageWidget
+      end
+      BannerPageWidget:SetVisibility(ESlateVisibility.Collapsed)
+      self.Group_RecommendAnchor:AddChild(BannerPageWidget)
+      local Slot = UE4.UWidgetLayoutLibrary.SlotAsOverlaySlot(BannerPageWidget)
+      Slot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Fill)
+      Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
+    end
+    self.Shop_RecommendBanner.ScrollboxIndex = 0
+  else
+    self.Shop_RecommendBanner:SetVisibility(ESlateVisibility.Collapsed)
   end
-  self.List_Recommend:ClearListItems()
-  if not self.SelectBannerId then
-    assert(BannerData[1], "\230\156\137\230\149\136Banner\230\149\176\233\135\143\228\184\141\232\182\179\228\184\128\228\184\170")
-    self.SelectBannerId = BannerData[1].Id
-  end
+  self.BannerList = ShopUtils:GetBannerInfo()
+  self.VB_ItemList:SetVisibility(ESlateVisibility.Collapsed)
+  self.Group_Recommend:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.Group_RecommendAnchor:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  self.BannerBpMap = {}
   for i, BannerInfo in ipairs(BannerData) do
     local Content = NewObject(UIUtils.GetCommonItemContentClass())
     Content.BannerId = BannerInfo.Id
@@ -492,7 +601,10 @@ function M:InitBannerPage(SelectBannerId)
     Content.OnKeyDownCallBack = self.HandleOnKeyDownCallBack
     Content.SetListItemCallBack = self.HandleSetListItemCallBack
     Content.Parent = self
-    self.List_Recommend:AddItem(Content)
+    Content.ScrollboxIndex = i
+    if 1 == i then
+      Content.UpToSwitchWidget = self.Shop_RecommendBanner
+    end
     if self.SelectBannerId == BannerInfo.Id then
       Content.bSelected = true
     else
@@ -510,18 +622,19 @@ function M:InitBannerPage(SelectBannerId)
         Slot:SetVerticalAlignment(EVerticalAlignment.VAlign_Fill)
       end
     end
+    local BannerItemWidget = UIManager(self):CreateWidget("WidgetBlueprint'/Game/UI/WBP/Shop/Widget/Recommend/WBP_Shop_Recommend_ListItem.WBP_Shop_Recommend_ListItem'")
+    BannerItemWidget:OnListItemObjectSet(Content)
+    self.ScrollBox_Recommend:AddChild(BannerItemWidget)
   end
-  self.BannerBpMap = {}
   self.BannerBpMap[DataMgr.ShopBannerTab[self.SelectBannerId].Bp] = self.BannerIdMap[self.SelectBannerId]
-  self:OnBannerItemClick(self.SelectBannerId, nil, nil)
+  if bSwitchBanner and not CommonUtils:IfExistSystemGuideUI(self) then
+    self.Shop_RecommendBanner:SetFocus()
+  elseif not CommonUtils:IfExistSystemGuideUI(self) then
+  end
   self:AddTimer(0.5, function()
     self:OnUserScrolled()
   end)
-  if self.List_Recommend:GetNumItems() > 0 then
-    self.List_Recommend:RequestPlayEntriesAnim()
-  end
 end
-
 function M:HandleVirtualClickInGamePad(BannerId)
   local GameInputModeSubsystem = UIManager(self):GetGameInputModeSubsystem(self)
   local CurInputDeviceType = GameInputModeSubsystem and GameInputModeSubsystem:GetCurrentInputType() or nil
@@ -536,7 +649,6 @@ function M:HandleVirtualClickInGamePad(BannerId)
     CurrentPage:OnGamePadDown(UIConst.GamePadKey.FaceButtonBottom)
   end
 end
-
 function M:HandleOnKeyDownCallBack(BannerId, MyGeometry, InKeyEvent)
   if not BannerId then
     return
@@ -547,7 +659,6 @@ function M:HandleOnKeyDownCallBack(BannerId, MyGeometry, InKeyEvent)
   end
   return UIUtils.UnHandled
 end
-
 function M:HandleSetListItemCallBack(BannerId, ListItem)
   if not BannerId then
     return
@@ -557,35 +668,65 @@ function M:HandleSetListItemCallBack(BannerId, ListItem)
     CurrentPage:SetListItem(ListItem)
   end
 end
-
-function M:OnBannerItemClick(BannerId, Content, bPlaySound)
-  if self.ShopType == "Shop" and not self:IsPlayVideoTOP() then
-    if 1 == BannerId and not self:IsPlayVideoBG() then
-      self:InitVideoPlayer()
-      self:PlayVideoBG(false)
-    elseif 1 ~= BannerId then
-      self:RemoveVideoBG()
-    end
-  end
-  if self.Btn_Hide then
-    if 1 == BannerId then
-      self.Btn_Hide:SetVisibility(ESlateVisibility.Visible)
-    else
-      self.Btn_Hide:SetVisibility(ESlateVisibility.Collapsed)
-    end
-  end
-  if self.LastWidgetContent and self.LastWidgetContent.SelfWidget then
-    self.LastWidgetContent.SelfWidget:UnSelect()
-  end
-  self.LastWidgetContent = Content
-  self.SelectBannerId = BannerId
+function M:ChangeBanner(BannerId, bSwitch, bRight)
   if self.LastSelectBannerId and self.LastSelectBannerId ~= BannerId and self.BannerIdMap[self.LastSelectBannerId] then
-    if self.BannerIdMap[self.LastSelectBannerId].PlayAnimationOut then
+    if bSwitch then
+      self.BannerIdMap[self.LastSelectBannerId]:PlayAnimationSwitch(bRight)
+    elseif self.BannerIdMap[self.LastSelectBannerId].PlayAnimationOut then
       self.BannerIdMap[self.LastSelectBannerId]:PlayAnimationOut()
     else
       self.BannerIdMap[self.LastSelectBannerId]:SetVisibility(ESlateVisibility.Collapsed)
     end
+    self:SetAllowedToShowHideUI(false)
+    self:SetShowModel(false)
+    self:SetHasVideo(false)
   end
+  if self.LastWidgetContent and self.LastWidgetContent.SelfWidget then
+    self.LastWidgetContent.SelfWidget:UnSelect()
+  end
+  local BannerData = DataMgr.ShopBannerTab[BannerId]
+  if BannerData and BannerData.Bp and BannerData.Bp ~= "WBP_Shop_Recommend_Common" and BannerData.Bp ~= "WBP_Shop_Banner_MonthCard" and BannerData.Bp ~= "WBP_Shop_Recommend_PageGift" then
+    self:SetCameraToDefault()
+    self:StopActorSound()
+    self.Group_BG:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  end
+  self:SetReplayGestureVisible(false)
+  if self.BannerIdMap[BannerId] and self.BannerIdMap[BannerId].InitBannerPage then
+    self.BannerIdMap[BannerId]:InitBannerPage(BannerId, self)
+  end
+  self.BannerIdMap[BannerId]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  if not bSwitch and self.BannerIdMap[BannerId].PlayAnimationIn then
+    self.BannerIdMap[BannerId]:PlayAnimationIn()
+  end
+  self.SelectBannerId = BannerId
+  self.LastSelectBannerId = BannerId
+  self:UpdateSwitchBannerGamePadKey()
+end
+function M:UpdateSwitchBannerGamePadKey()
+  if self.ShowSwitchBanner and UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
+    self.Shop_RecommendBanner.Key_Left:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Shop_RecommendBanner.Key_Right:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Shop_RecommendBanner.Key_Left:SetVisibility(ESlateVisibility.Collapsed)
+    self.Shop_RecommendBanner.Key_Right:SetVisibility(ESlateVisibility.Collapsed)
+  end
+end
+function M:OnSwitchBannerItemClick(BannerId, bSwitch, bRight)
+  self.ShowSwitchBanner = true
+  self:OnSwitchBannerChanged(BannerId, bSwitch, bRight)
+end
+function M:OnSwitchBannerChanged(BannerId, bSwitch, bRight)
+  if not self.ShowSwitchBanner then
+    return
+  end
+  self.Shop_RecommendBanner:StopBannerTimer()
+  self:ChangeBanner(BannerId, bSwitch, bRight)
+  self.LastWidgetContent = nil
+end
+function M:OnBannerItemClick(BannerId, Content, bPlaySound)
+  self.Shop_RecommendBanner:StartBannerTimer()
+  self.Shop_RecommendBanner:UnSelect()
+  self.ShowSwitchBanner = false
   local BannerData = DataMgr.ShopBannerTab[BannerId]
   local Path
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -606,23 +747,15 @@ function M:OnBannerItemClick(BannerId, Content, bPlaySound)
     AudioManager(self):PlayUISound(self, "event:/ui/activity/large_btn_click", nil, nil)
   end
   self.BannerBpMap[DataMgr.ShopBannerTab[BannerId].Bp] = self.BannerIdMap[BannerId]
-  if self.BannerIdMap[BannerId].InitBannerPage then
-    self.BannerIdMap[BannerId]:InitBannerPage(BannerId, self)
-  end
-  self.BannerIdMap[BannerId]:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-  if self.BannerIdMap[BannerId].PlayAnimationIn then
-    self.BannerIdMap[BannerId]:PlayAnimationIn()
-  end
-  self.LastSelectBannerId = BannerId
+  self:ChangeBanner(BannerId)
+  self.LastWidgetContent = Content
   self:UpdateCommonTabInfo()
 end
-
 function M:OnBannerExpire()
   if self.IsBannerPage then
     self.ShopTab:SelectTab(self.ShopTab.CurrentTab)
   end
 end
-
 function M:InitMonthCardPage(SubTabData)
   self.VB_ItemList:SetVisibility(ESlateVisibility.Collapsed)
   self.Group_MonthCard:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -644,14 +777,13 @@ function M:InitMonthCardPage(SubTabData)
     Widget:SetFocus()
   end
 end
-
 function M:InitJumpShopPage()
   if self.Common_Tab and self.Common_Tab.WBP_Com_Tab_ResourceBar then
     self.Common_Tab.WBP_Com_Tab_ResourceBar:SetLastFocusWidget(self.List_Jump)
   end
   self.VB_ItemList:SetVisibility(ESlateVisibility.Collapsed)
-  self.List_Jump:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-  local JumpShopList = ShopUtils:GetComplexInfo()
+  self.VB_Jump:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+  local JumpShopList = ShopUtils:GetComplexInfo(self.CurSubTabMap.SubTabId)
   self.List_Jump:ScrollIndexIntoView(0)
   self.List_Jump:ClearListItems()
   for index, JumpShopInfo in ipairs(JumpShopList) do
@@ -675,16 +807,10 @@ function M:InitJumpShopPage()
     end)
   end
 end
-
 function M:Close()
   if self.VideoPlayer then
-    if self.VideoPlayer:IsPlaying() then
-      self.VideoPlayer:Stop()
-    end
-    if self.VideoPlayer.MediaPlayer and self.OnPlayVideoTOPEnd then
-      self.VideoPlayer.MediaPlayer.OnEndReached:Remove(self, self.OnPlayVideoTOPEnd)
-    end
-    self.VideoPlayer = nil
+    self:StopVideoTop()
+    self:StopVideoBG()
   end
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(1)
   if self.CloseCallBack then
@@ -692,12 +818,12 @@ function M:Close()
   end
   self:ClearSubTabReddot()
   self:RemoveTabReddotListen()
+  self:CloseMVPSequence()
   self.Super.Close(self)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
-    self:BlockAllUIInput(true)
+    self:BlockAllUIInput(true, "SP_DisplayOnly")
     self:Close()
   elseif InAnimation == self.In then
     self:BlockAllUIInput(false)
@@ -709,7 +835,6 @@ function M:OnAnimationFinished(InAnimation)
     end
   end
 end
-
 function M:Destruct()
   local Player = UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player then
@@ -721,31 +846,51 @@ function M:Destruct()
   self:CleanTimer()
   self.List_Item.OnCreateEmptyContent:Unbind()
   self.List_Jump.OnCreateEmptyContent:Unbind()
-  if self.Btn_Hide and self.Btn_Hide.Btn_Area then
-    self.Btn_Hide.Btn_Area.OnClicked:Remove(self, self.HideUIExceptVideoCallBack)
+  if self.Btn_Shop_Visible and self.Btn_Shop_Visible.Btn_Click then
+    self.Btn_Shop_Visible.Btn_Click.OnClicked:Remove(self, self.HideUIExceptVideoAutoCallBack)
   end
   if GWorld.GameInstance then
     GWorld.GameInstance:SetHighFrequencyMemoryCheckGCEnabled(false, "ShopMain")
   end
+  self:DestroyPreviewActor()
   self.Super.Destruct(self)
 end
-
 function M:OnGamePadSelect(ItemContent, bHover)
-  if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and bHover then
-    ItemContent.SelfWidget:OnItemClick(true)
+  if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or bHover then
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
+  local IsRepeat = UKismetInputLibrary.InputEvent_IsRepeat(InputEvent)
+  if IsRepeat then
+    return UWidgetBlueprintLibrary.UnHandled()
+  end
+  if self:IsAllowedToShowHideUI() then
+    if "U" == InKeyName or InKeyName == Const.GamepadFaceButtonLeft then
+      self:HideUIExceptVideoAutoCallBack()
+      return UWidgetBlueprintLibrary.Handled()
+    end
+    if self.bHideUIExceptVideo then
+      self:HideUIExceptVideo(false)
+      return UWidgetBlueprintLibrary.Handled()
+    end
+  end
   local IsHandled = false
+  if self.ShowSwitchBanner and not self.FocusOnResourceBar then
+    if InKeyName == UIConst.GamePadKey.DPadRight then
+      self.Shop_RecommendBanner:SwitchBannerItem(nil, true)
+    elseif InKeyName == UIConst.GamePadKey.DPadLeft then
+      self.Shop_RecommendBanner:SwitchBannerItem(nil, false)
+    end
+  end
   if "Gamepad_FaceButton_Bottom" == InKeyName and self.IsBannerPage and self.BannerMap and self.BannerMap[self.CurrentPageIndex] then
     local Banner = self.BannerMap[self.CurrentPageIndex]
     Banner:OnGoToInterface()
     IsHandled = true
   end
-  if "SpaceBar" == InKeyName and self.List_Recommend:HasFocusedDescendants() and self.IsBannerPage then
+  if "SpaceBar" == InKeyName and self.IsBannerPage and not self.bPlayVideoTop then
     local BpName = DataMgr.ShopBannerTab[self.SelectBannerId].Bp
     local Banner = self.BannerBpMap[BpName]
     if Banner and Banner.OnGoToInterface then
@@ -753,12 +898,17 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
       IsHandled = true
     end
   end
+  if self.TabType == "Banner" and self.SelectBannerId and self.BannerIdMap and type(self.BannerIdMap) == "table" then
+    local CurrentPage = self.BannerIdMap[self.SelectBannerId]
+    if CurrentPage and CurrentPage.HandlePreviewKeyDown and not IsHandled then
+      IsHandled = CurrentPage:HandlePreviewKeyDown(InKey, InKeyName)
+    end
+  end
   if IsHandled then
     return UE4.UWidgetBlueprintLibrary.Handled()
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftTrigger" == InKeyName or "Gamepad_RightTrigger" == InKeyName then
@@ -778,7 +928,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -788,6 +937,7 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   else
     self:InitKeyboardView()
   end
+  self:UpdateSwitchBannerGamePadKey()
   if self.BannerIdMap then
     for _, Banner in pairs(self.BannerIdMap) do
       if Banner and Banner.RefreshOpInfoByInputDevice then
@@ -800,10 +950,10 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
       self.List_Jump:SetFocus()
     end
   elseif self.IsBannerPage and CurInputDevice == ECommonInputType.Gamepad and (self:HasAnyFocus() or self:HasFocusedDescendants()) and not CommonUtils:IfExistSystemGuideUI(self) then
-    self.List_Recommend:SetFocus()
+    self.ScrollBox_Recommend:SetFocus()
   end
+  self:UpdateVideoKeyInfo(CurInputDevice, CurGamepadName)
 end
-
 function M:InitGamepadView()
   self.CheckBox_Own.Com_KeyImg:SetVisibility(ESlateVisibility.Visible)
   self.CheckBox_Own.Com_KeyImg:CreateCommonKey({
@@ -812,11 +962,9 @@ function M:InitGamepadView()
     }
   })
 end
-
 function M:InitKeyboardView()
   self.CheckBox_Own.Com_KeyImg:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function M:OnSpaceBarDown()
   if self.IsBannerPage and self.BannerIdMap and self.SelectBannerId then
     local Banner = self.BannerIdMap[self.SelectBannerId]
@@ -825,14 +973,18 @@ function M:OnSpaceBarDown()
     end
   end
 end
-
-function M:UpdateCommonTabInfo()
+function M:UpdateCommonTabInfo(Params)
   if not (self.SelectBannerId and self.Common_Tab) or not self.Common_Tab.UpdateBottomKeyInfo then
     return
   end
+  if Params and next(Params) then
+    self.Common_Tab:UpdateBottomKeyInfo(Params)
+    return
+  end
+  local Params = {}
   local TargetBannerData = DataMgr.ShopBannerTab[self.SelectBannerId]
   if TargetBannerData and TargetBannerData.Bp and TargetBannerData.Bp == "WBP_Shop_Recommend_WeaponSkin" then
-    self.Common_Tab:UpdateBottomKeyInfo({
+    Params = {
       {
         GamePadInfoList = {
           {
@@ -875,9 +1027,9 @@ function M:UpdateCommonTabInfo()
         },
         Desc = GText("UI_BACK")
       }
-    })
+    }
   elseif TargetBannerData and TargetBannerData.Bp and TargetBannerData.Bp == "WBP_Shop_Recommend_Gift4_1" then
-    self.Common_Tab:UpdateBottomKeyInfo({
+    Params = {
       {
         GamePadInfoList = {
           {
@@ -919,16 +1071,16 @@ function M:UpdateCommonTabInfo()
         },
         Desc = GText("UI_BACK")
       }
-    })
+    }
   elseif TargetBannerData and TargetBannerData.Bp and TargetBannerData.Bp == "WBP_Shop_Recommend_AvatarSkin" then
-    self.Common_Tab:UpdateBottomKeyInfo({
+    Params = {
       {
         KeyInfoList = {
           {
             Type = "Text",
             Text = "Tab",
             Owner = self,
-            ClickCallback = self.HideUIExceptVideoCallBack
+            ClickCallback = self.HideUIExceptVideoAutoCallBack
           }
         },
         GamePadInfoList = {
@@ -983,9 +1135,9 @@ function M:UpdateCommonTabInfo()
         Desc = GText("UI_BACK"),
         bLongPress = false
       }
-    })
+    }
   elseif TargetBannerData and TargetBannerData.Bp and TargetBannerData.Bp == "WBP_Shop_Banner_MonthCard" then
-    self.Common_Tab:UpdateBottomKeyInfo({
+    Params = {
       {
         KeyInfoList = {
           {
@@ -1017,9 +1169,10 @@ function M:UpdateCommonTabInfo()
         Desc = GText("UI_BACK"),
         bLongPress = false
       }
-    })
+    }
+  elseif TargetBannerData and TargetBannerData.Bp and TargetBannerData.Bp == "WBP_Shop_Recommend_PageGift" then
   else
-    self.Common_Tab:UpdateBottomKeyInfo({
+    Params = {
       {
         GamePadInfoList = {
           {
@@ -1049,10 +1202,10 @@ function M:UpdateCommonTabInfo()
         },
         Desc = GText("UI_BACK")
       }
-    })
+    }
   end
+  self.Common_Tab:UpdateBottomKeyInfo(Params)
 end
-
 function M:UpdateCommonTabInfoByReward()
   if not self.SelectBannerId then
     return
@@ -1091,37 +1244,110 @@ function M:UpdateCommonTabInfoByReward()
         Desc = GText("UI_BACK")
       }
     })
+  elseif TargetBannerData and TargetBannerData.Bp and TargetBannerData.Bp == "WBP_Shop_Recommend_PageGift" then
+    self.Common_Tab:UpdateBottomKeyInfo({
+      {
+        GamePadInfoList = {
+          {
+            Type = "Img",
+            ImgShortPath = "A",
+            Owner = self
+          }
+        },
+        Desc = GText("UI_Controller_CheckDetails"),
+        bLongPress = false
+      },
+      {
+        KeyInfoList = {
+          {
+            Type = "Text",
+            Text = "Esc",
+            ClickCallback = self.CloseSelf,
+            Owner = self
+          }
+        },
+        GamePadInfoList = {
+          {
+            Type = "Img",
+            ImgShortPath = "B",
+            ClickCallback = self.CloseSelf,
+            Owner = self
+          }
+        },
+        Desc = GText("UI_BACK")
+      }
+    })
   end
 end
-
-function M:IsInVideoPage()
-  return self.ShopType == "Shop" and self.TabType == "Banner" and 1 == self.SelectBannerId
+function M:SetHasVideo(flag)
+  self.bHasVideo = flag
 end
-
+function M:IsHasVideo()
+  return self.bHasVideo
+end
+function M:SetAllowedToShowHideUI(flag)
+  self.bAllowedToShowHideUI = flag
+  if self.Btn_Shop_Visible then
+    if flag then
+      self.Btn_Shop_Visible:SetVisibility(ESlateVisibility.Visible)
+    else
+      self.Btn_Shop_Visible:SetVisibility(ESlateVisibility.Collapsed)
+    end
+  end
+end
+function M:SetShowModel(flag)
+  self.bShowModel = flag
+end
+function M:IsShowModel()
+  return self.bShowModel
+end
+function M:SetReplayGestureVisible(flag)
+  if self.Btn_Shop_Refresh then
+    if flag then
+      self.Btn_Shop_Refresh:SetVisibility(ESlateVisibility.Visible)
+    else
+      self.Btn_Shop_Refresh:SetVisibility(ESlateVisibility.Collapsed)
+    end
+  end
+end
+function M:IsAllowedToShowHideUI()
+  return self.bAllowedToShowHideUI
+end
 function M:OnKeyDown(MyGeometry, InKeyEvent)
-  if self:IsPlayVideoTOP() then
-    self:PlayVideoBG(true)
-    return UWidgetBlueprintLibrary.Handled()
-  end
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
-  if self:IsInVideoPage() and ("Tab" == InKeyName or InKeyName == Const.GamepadLeftThumbstick) then
-    self:HideUIExceptVideoCallBack()
+  if self.bPlayVideoTop and ("Escape" == InKeyName or InKeyName == Const.GamepadFaceButtonRight) then
     return UWidgetBlueprintLibrary.Handled()
+  end
+  if self.TabType == "Banner" and self.SelectBannerId and self.BannerIdMap and type(self.BannerIdMap) == "table" then
+    local CurrentPage = self.BannerIdMap[self.SelectBannerId]
+    if CurrentPage and CurrentPage.HandleKeyDown and CurrentPage:HandleKeyDown(InKey, InKeyName) then
+      return UWidgetBlueprintLibrary.Handled()
+    end
   end
   return M.Super.OnKeyDown(self, MyGeometry, InKeyEvent)
 end
-
-function M:OnMouseButtonDown(MyGeometry, MouseEvent)
-  if self:IsPlayVideoTOP() then
-    self:PlayVideoBG(true)
+function M:OnKeyUp(MyGeometry, InKeyEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if self.Key_Video and self.bPlayVideoTop and ("SpaceBar" == InKeyName or InKeyName == Const.GamepadFaceButtonDown) then
+    self.Key_Video.Panel_Key:GetChildAt(0):OnButtonReleased()
     return UWidgetBlueprintLibrary.Handled()
   end
-  return UWidgetBlueprintLibrary.UnHandled()
+  return M.Super.OnKeyUp(self, MyGeometry, InKeyEvent)
 end
-
+function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
+  return self:OnPointerDown(MyGeometry, MouseEvent)
+end
+function M:OnMouseWheel(MyGeometry, MouseEvent)
+  return self:OnMouseWheelScroll(MyGeometry, MouseEvent)
+end
+function M:OnMouseButtonUp(MyGeometry, MouseEvent)
+  return self:OnPointerUp(MyGeometry, MouseEvent)
+end
 function M:OnMouseMove(MyGeometry, MouseEvent)
-  if self:IsPlayVideoTOP() then
+  if self.bPlayVideoTop and self:IsAllowedToShowHideUI() and self.bHideUIExceptVideo then
+    DebugPrint("WBP_ShopMain_C:OnMouseMove")
     local MouseMoveThreshold = 10
     self.LastMousePos = self.LastMousePos or {X = nil, Y = nil}
     local CurPos = UWidgetLayoutLibrary.GetMousePositionOnViewport(self)
@@ -1132,48 +1358,105 @@ function M:OnMouseMove(MyGeometry, MouseEvent)
       local Dy = CurPos.Y - LastPos.Y
       local Dist = math.sqrt(Dx * Dx + Dy * Dy)
       if MouseMoveThreshold <= Dist then
-        DebugPrint(string.format("WBP_ShopMain_C:OnMouseMove, Dist: %f", Dist))
+        DebugPrint(string.format("WBP_ShopMain_C:OnMouseMove, Dist: %f, ShouldHandle = true", Dist))
         ShouldHandle = true
       end
     end
     self.LastMousePos.X = CurPos.X
     self.LastMousePos.Y = CurPos.Y
     if ShouldHandle then
-      self:PlayVideoBG(true)
+      self:HideUIExceptVideo(false)
       return UWidgetBlueprintLibrary.Handled()
     end
+  else
+    return self:OnPointerMove(MyGeometry, MouseEvent)
   end
-  return UWidgetBlueprintLibrary.UnHandled()
 end
-
-function M:OnTouchStarted(MyGeometry, TouchEvent)
-  if self:IsPlayVideoTOP() then
-    self:PlayVideoBG(true)
-    return UWidgetBlueprintLibrary.Handled()
-  end
-  return UWidgetBlueprintLibrary.UnHandled()
+function M:OnTouchStarted(MyGeometry, InTouchEvent)
+  return self:OnSinglePointerDown(MyGeometry, InTouchEvent)
 end
-
-function M:InitVideoPlayer()
-  self._OriginVisibilityMap = self._OriginVisibilityMap or {}
-  self.bHideUIExceptVideo = false
-  local BgVideoPath = DataMgr.ShopBannerTab[1].BgVideoPath
-  self.VideoPlayer:SetUrlByMediaSource(LoadObject(BgVideoPath))
-  self.VideoPlayer.Button_Skip:SetVisibility(ESlateVisibility.Collapsed)
-  self.Group_Video:SetVisibility(UIConst.VisibilityOp.Collapsed)
-  self.Group_BG:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+function M:OnTouchEnded(MyGeometry, InTouchEvent)
+  return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
-function M:HideUIExceptVideoCallBack()
-  if self:IsInVideoPage() then
-    local flag = not self:IsPlayVideoTOP()
-    if self:HideUIExceptVideo(flag) then
-      self.bPlayVideoTOP = flag
+function M:OnTouchMoved(MyGeometry, InTouchEvent)
+  return self:OnPointerMove(MyGeometry, InTouchEvent)
+end
+function M:OnCameraScrollBackwardKeyDown()
+  self:ScrollCamera(1)
+end
+function M:OnCameraScrollForwardKeyDown()
+  self:ScrollCamera(-1)
+end
+function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "Gamepad_RightX" == InKeyName then
+    if self.ActorController then
+      if self.EnableDrag == false then
+        return UIUtils.Unhandled
+      end
+      local DeltaX = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 10
+      self.ActorController:OnDragging({X = DeltaX})
     end
+    return UIUtils.Handled
+  end
+  return UIUtils.Unhandled
+end
+function M:OnMouseCaptureLost()
+  self:OnPointerCaptureLost()
+end
+function M:OnBackgroundClicked()
+  if self.bSelfHidden then
+    self:OnHideUIKeyDown()
   end
 end
-
+function M:InitVideoPlayer(BgVideoPath, DisplayType, DisplayId)
+  self._OriginVisibilityMap = self._OriginVisibilityMap or {}
+  self.bPlayVideoTop = false
+  self.VideoPlayer:SetUrlByMediaSource(LoadObject(BgVideoPath))
+  self.DisplayType = DisplayType
+  self.DisplayId = DisplayId
+end
+function M:UpdateVideoKeyInfo(CurInputDevice, CurGamepadName)
+  if IsValid(self.GameInputModeSubsystem) then
+    CurInputDevice = CurInputDevice or self.GameInputModeSubsystem:GetCurrentInputType()
+    CurGamepadName = CurGamepadName or self.GameInputModeSubsystem:GetCurrentGamepadName()
+  end
+  if not self.Key_Video then
+    return
+  end
+end
+function M:SetSkipButton()
+  self.VideoPlayer.Button_Skip:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+    if self.Button_Skip then
+      self.Button_Skip.Button_Area.OnClicked:Add(self, self.StopVideoTop)
+      self.Button_Skip.Text_Function:SetText(GText("UI_TALK_SKIP_MOIILE"))
+    end
+  elseif CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" and self.Key_Video then
+    self:UpdateVideoKeyInfo()
+  end
+end
+function M:ShowSkipButton(flag)
+  local Visibility = flag and UIConst.VisibilityOp.Visible or UIConst.VisibilityOp.Collapsed
+  if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
+    if self.Button_Skip then
+      self.Button_Skip:SetVisibility(Visibility)
+    end
+  elseif CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" and self.Key_Video then
+    self.Key_Video:SetVisibility(Visibility)
+  end
+end
+function M:HideUIExceptVideoAutoCallBack()
+  if self:IsAllowedToShowHideUI() then
+    self:HideUIExceptVideo(not self.bHideUIExceptVideo, false)
+  end
+end
 function M:HideUIExceptVideo(flag, bSkipAnimation)
+  DebugPrint("WBP_ShopMain_C HideUIExceptVideo")
+  if not flag and self.bPlayVideoTop then
+    self:StopVideoTop()
+  end
   if not bSkipAnimation and (self:IsAnimationPlaying(self.In_Info) or self:IsAnimationPlaying(self.Out_Info)) then
     return false
   end
@@ -1201,12 +1484,15 @@ function M:HideUIExceptVideo(flag, bSkipAnimation)
   if not bSkipAnimation then
     if flag then
       self:PlayAnimation(self.Out_Info)
+      self:SetFocus()
     else
       self:PlayAnimation(self.In_Info)
+      if not CommonUtils:IfExistSystemGuideUI(self) and self:HasAnyFocus() and self.CurSubTabMap.TabType == "Banner" then
+        self:AddTimer(0.05, function()
+          self:GamePadFocusToSelectBannerItem()
+        end)
+      end
     end
-  end
-  if self.List_Recommend then
-    self.List_Recommend:SetFocus()
   end
   if flag then
     self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
@@ -1218,76 +1504,187 @@ function M:HideUIExceptVideo(flag, bSkipAnimation)
     X = CurPos.X,
     Y = CurPos.Y
   }
+  if self.Shop_RecommendBanner then
+    if flag or self.ShowSwitchBanner then
+      self.Shop_RecommendBanner:StopBannerTimer()
+    else
+      self.Shop_RecommendBanner:StartBannerTimer()
+    end
+  end
   return true
 end
-
-function M:PlayVideoTOP()
-  if CommonUtils:IfExistSystemGuideUI(self) then
-    self:PlayVideoBG(false)
-    return
-  end
-  local key = "HasPlayVideoTOPInShop"
-  if EMCache:Get(key, true) then
-    self:PlayVideoBG(false)
-    return
-  end
-  EMCache:Set(key, true, true)
-  self.bPlayVideoTOP = true
-  self.bPlayVideoBG = false
-  self:HideUIExceptVideo(true, true)
-  self.Group_Video:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
-  self.Group_BG:SetVisibility(UIConst.VisibilityOp.Collapsed)
-  self.VideoPlayer:SetLooping(true)
-  self.VideoPlayer:Play()
-  self.VideoPlayer.MediaPlayer.OnEndReached:Add(self, self.OnPlayVideoTOPEnd)
+function M:HideCursor()
   if CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance) == "PC" then
     local GameInputSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
     GameInputSubsystem:SetMouseCursorVisable(false)
   end
 end
-
-function M:IsPlayVideoTOP()
-  return self.bPlayVideoTOP
-end
-
-function M:IsPlayVideoBG()
-  return self.bPlayVideoBG
-end
-
-function M:IsPlayVideo()
-  return self:IsPlayVideoTOP() or self:IsPlayVideoBG()
-end
-
-function M:OnPlayVideoTOPEnd()
-  self:PlayVideoBG(false)
-end
-
-function M:PlayVideoBG(bContinue)
-  if not self:HideUIExceptVideo(false) then
-    return
-  end
-  self.bPlayVideoTOP = false
-  self.bPlayVideoBG = true
-  self.VideoPlayer.MediaPlayer.OnEndReached:Remove(self, self.OnPlayVideoTOPEnd)
+function M:ShowCursor()
   if CommonUtils.GetDeviceTypeByPlatformName(GWorld.GameInstance) == "PC" then
     local GameInputSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(GWorld.GameInstance)
     GameInputSubsystem:SetMouseCursorVisable(true)
   end
-  self.Group_Video:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
+end
+function M:PlayVideoTop()
+  DebugPrint("WBP_ShopMain_C PlayVideoTop")
+  if CommonUtils:IfExistSystemGuideUI(self) then
+    self:PlayVideoBG()
+    return
+  end
+  if self.bPlayVideoTop then
+    return
+  end
+  self:UpdateVideoKeyInfo()
+  self.bPlayVideoTop = true
+  self:HideUIExceptVideo(true, true)
+  self.Group_Video:SetVisibility(UIConst.VisibilityOp.Visible)
+  self.Group_Video:SetFocus()
+  self.VideoPlayer.MediaPlayer.OnEndReached:Add(self, self.OnPlayVideoTopEnd)
+  self:HideCursor()
+  self.VideoPlayer:SetLooping(true)
+  self.VideoPlayer:Play()
+  self:StopOtherSound()
+  self:PlayVideoSound()
+end
+function M:StopOtherSound()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/gacha_amb", "GachaAmb", nil)
+end
+function M:ResumeOtherSound()
+  AudioManager(self):SetEventSoundParam(self, "GachaAmb", {ToEnd = 1})
+end
+function M:PlayVideoSound()
+  if not self.DisplayType or not self.DisplayId then
+    DebugPrint("没有配置DisplayType或DisplayId，无法找到视频需要的声音")
+    return
+  end
+  local SoundPath
+  if self.DisplayType == CommonConst.DataType.Skin then
+    local SkinInfo = DataMgr.Skin[self.DisplayId]
+    if not SkinInfo then
+      DebugPrint("DisplayId对应的Skin配置不存在")
+      return
+    end
+    SoundPath = SkinInfo.GetSoundPath
+  elseif self.DisplayType == CommonConst.DataType.Resource then
+    local ResourceInfo = DataMgr.Resource[self.DisplayId]
+    if not ResourceInfo then
+      DebugPrint("DisplayId对应的Resource配置不存在")
+      return
+    end
+    SoundPath = ResourceInfo.GetSoundPath
+  elseif self.DisplayType == CommonConst.DataType.Char then
+    local CharInfo = DataMgr.Char[self.DisplayId]
+    local TargetName = CharInfo.GUIPathVariable
+    if not TargetName then
+      DebugPrint("DisplayId对应的Char配置不存在GUIPathVariable")
+      return
+    end
+    SoundPath = "event:/ui/char/gacha_show_" .. TargetName
+  end
+  if not SoundPath then
+    DebugPrint("DisplayType不是Skin、Resource、Char其中之一，无法找到声音")
+    return
+  end
+  AudioManager(self):PlayUISound(self, SoundPath, "VideoSound", nil)
+end
+function M:StopVideoSound()
+  AudioManager(self):StopSound(self, "VideoSound")
+end
+function M:OnPlayVideoTopEnd()
+  self:StopVideoTop()
+end
+function M:StopVideoTop()
+  DebugPrint("WBP_ShopMain_C StopVideoTop")
+  if not self.bPlayVideoTop then
+    return
+  end
+  self.bPlayVideoTop = false
+  self:HideUIExceptVideo(false, false)
+  self.VideoPlayer.MediaPlayer.OnEndReached:Remove(self, self.OnPlayVideoTopEnd)
+  self:ShowCursor()
+  self:ResumeOtherSound()
+  self:StopVideoSound()
+  self.bPlayVideoBG = true
+  self:AddTimer(0.05, function()
+    self:GamePadFocusToSelectBannerItem()
+  end)
+end
+function M:PlayVideoBG()
+  DebugPrint("WBP_ShopMain_C PlayVideoBG")
+  if self.bPlayVideoBG then
+    return
+  end
+  self.bPlayVideoBG = true
+  self.Group_Video:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Group_BG:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.VideoPlayer:SetLooping(true)
   self.VideoPlayer:Play()
-  if not bContinue then
-    self.VideoPlayer.MediaPlayer:Rewind()
-  end
 end
-
-function M:RemoveVideoBG()
+function M:StopVideoBGWithDelay(Time)
+  self:AddTimer(Time, function()
+    if self then
+      self:StopVideoBG()
+      self.Group_BG:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+  end)
+end
+function M:StopVideoBG()
+  DebugPrint("WBP_ShopMain_C StopVideoBG")
+  if not self.bPlayVideoBG then
+    return
+  end
   self.bPlayVideoBG = false
   self.Group_Video:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Group_BG:SetVisibility(UIConst.VisibilityOp.Visible)
   self.VideoPlayer:Stop()
-  self.Group_BG:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
 end
-
+function M:GamePadFocusToSelectBannerItem()
+  local SelectBannerItem = self:GetSelectBannerItem()
+  if not SelectBannerItem or CommonUtils:IfExistSystemGuideUI(self) then
+    return
+  end
+  SelectBannerItem:SetFocus()
+end
+function M:GetSelectBannerItem()
+  if not self.SelectBannerId or self.ShowSwitchBanner then
+    return self.Shop_RecommendBanner
+  end
+  local ScrollBoxChildrenTable = self.ScrollBox_Recommend:GetAllChildren():ToTable()
+  if ScrollBoxChildrenTable and next(ScrollBoxChildrenTable) then
+    for index, Widget in pairs(ScrollBoxChildrenTable) do
+      if Widget.BannerId and Widget.BannerId == self.SelectBannerId then
+        return Widget
+      end
+    end
+  end
+  return nil
+end
+function M:OnRepeatKeyDown(MyGeometry, InKeyEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  local IsHandled = false
+  if self.TabType == "Banner" and self.SelectBannerId and self.BannerIdMap and type(self.BannerIdMap) == "table" then
+    local CurrentPage = self.BannerIdMap[self.SelectBannerId]
+    if CurrentPage and CurrentPage.HandleRepeatKeyDown and not IsHandled then
+      IsHandled = CurrentPage:HandleRepeatKeyDown(InKey, InKeyName)
+    end
+  end
+  if IsHandled then
+    return UE4.UWidgetBlueprintLibrary.Handled()
+  end
+  return UE4.UWidgetBlueprintLibrary.Unhandled()
+end
+function M:OnResourceBarAddedToFocusPath()
+  self.FocusOnResourceBar = true
+end
+function M:OnResourceBarRemovedFromFocusPath()
+  self.FocusOnResourceBar = false
+  if self.SelectBannerId and self.BannerIdMap and type(self.BannerIdMap) == "table" then
+    local CurrentPage = self.BannerIdMap[self.SelectBannerId]
+    if CurrentPage and CurrentPage.OnResourceBarRemovedFromFocusPath then
+      CurrentPage:OnResourceBarRemovedFromFocusPath()
+    end
+  end
+end
 AssembleComponents(M)
 return M

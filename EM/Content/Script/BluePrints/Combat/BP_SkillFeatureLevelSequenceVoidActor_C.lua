@@ -1,5 +1,4 @@
 local M = Class("BluePrints.Combat.BP_SkillFeatureLevelSequenceActorBase_C")
-
 function M:ReceiveBeginPlay()
   if self.FeatureSequence == nil then
     return
@@ -8,7 +7,6 @@ function M:ReceiveBeginPlay()
   self:SetInstanceData()
   self:SetCineCameraActor()
 end
-
 function M:IsCanPlay()
   if not self.Super.IsCanPlay(self) then
     return false
@@ -18,7 +16,6 @@ function M:IsCanPlay()
   end
   return true
 end
-
 function M:StartSkillFeature()
   self:RecordPlayerCamera()
   self.SequencePlayer.OnFinished:Add(self, self.EndSkillFeature)
@@ -43,7 +40,6 @@ function M:StartSkillFeature()
   self.OwnerCharacter.SkillFeatureActor = self
   self:SetSkillFeatureTimeDilation()
 end
-
 function M:EndSkillFeature()
   self:ResetCamera()
   if self.Level then
@@ -57,12 +53,10 @@ function M:EndSkillFeature()
   self:K2_DestroyActor()
   self.OwnerCharacter.SkillFeatureActor = nil
 end
-
 function M:TryAttachToPlayer()
   local Location = self.FakeCharacter:K2_GetActorLocation()
   local Rotation = self.FakeCharacter:K2_GetActorRotation()
   Rotation.Yaw = Rotation.Yaw + 90
   self:K2_SetActorLocationAndRotation(Location, Rotation, false, nil, false)
 end
-
 return M

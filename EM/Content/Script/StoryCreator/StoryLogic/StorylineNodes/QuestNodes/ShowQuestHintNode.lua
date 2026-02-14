@@ -1,6 +1,5 @@
 local ShowQuestHintNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
-
 function ShowQuestHintNode:Init()
   self.IsShow = false
   self.HintId = 0
@@ -10,7 +9,6 @@ function ShowQuestHintNode:Init()
   self.NodeKey = "ShowQuestHintNode"
   self.ListenHandleName = "ListenQuestHintHide"
 end
-
 function ShowQuestHintNode:Start(Context)
   self.Context = Context
   TaskUtils:SetQuestExtraInfo(self.QuestChainId, self.QuestData.QuestId, {
@@ -26,7 +24,6 @@ function ShowQuestHintNode:Start(Context)
     self:StartListen()
   end
 end
-
 function ShowQuestHintNode:OnCancelTrack()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if TaskUIObj.Tips.Visibility == UE4.ESlateVisibility.SelfHitTestInvisible then
@@ -34,43 +31,36 @@ function ShowQuestHintNode:OnCancelTrack()
   end
   self:RemoveListen()
 end
-
 function ShowQuestHintNode:OnChooseTrack()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   TaskUIObj.Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:ExecuteTaskHintShowOrHide()
   self:StartListen()
 end
-
 function ShowQuestHintNode:StartListen()
   self.ListenTimer = GWorld.GameInstance:AddTimer(1, function()
     self:LoopFunction()
   end, true)
 end
-
 function ShowQuestHintNode:RemoveListen()
   if self.ListenTimer then
     GWorld.GameInstance:RemoveTimer(self.ListenTimer)
     self.ListenTimer = nil
   end
 end
-
 function ShowQuestHintNode:LoopFunction()
   if -1 == self.ShowTime or self.ListenCount == self.ShowTime then
     self:FinishAction()
   end
   self.ListenCount = self.ListenCount + 1
 end
-
 function ShowQuestHintNode:EndListen()
   self:FinishAction()
 end
-
 function ShowQuestHintNode:ExecuteTaskHintShowOrHide()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   local MessageId = CommonUtils.ChooseOptionByPlatform(DataMgr.Message[self.HintId].MessageContentPC, DataMgr.Message[self.HintId].MessageContentPhone)
   local MessageContent = GText(MessageId)
-  
   local function GenAndParseActionMapContent(Panel, SourceContent)
     local FirstIndex = string.find(SourceContent, "&")
     if not FirstIndex then
@@ -95,7 +85,6 @@ function ShowQuestHintNode:ExecuteTaskHintShowOrHide()
     Panel.Text_Tips01:SetText(sub1)
     Panel.Text_Tips02:SetText(sub2)
   end
-  
   GenAndParseActionMapContent(TaskUIObj, MessageContent)
   if not self.IsShow then
     if TaskUIObj.Visibility == UE4.ESlateVisibility.SelfHitTestInvisible then
@@ -108,7 +97,6 @@ function ShowQuestHintNode:ExecuteTaskHintShowOrHide()
     TaskUIObj.Tips:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function ShowQuestHintNode:FinishAction()
   if self.ListenTimer then
     GWorld.GameInstance:RemoveTimer(self.ListenTimer)
@@ -118,7 +106,7 @@ function ShowQuestHintNode:FinishAction()
     local GameInstance = GWorld.GameInstance
     local GameMode = UE4.UGameplayStatics.GetGameMode(GameInstance)
     if nil == GameMode then
-      DebugPrint("ShowQuestHintNode:FinishAction GameMode == nil\239\188\140 QuestId", self.QuestData.QuestId)
+      DebugPrint("ShowQuestHintNode:FinishAction GameMode == nil， QuestId", self.QuestData.QuestId)
       return
     end
     local TaskUIObj = TaskUtils:GetTaskBarWidget()
@@ -126,16 +114,13 @@ function ShowQuestHintNode:FinishAction()
   end
   self:Finish()
 end
-
 function ShowQuestHintNode:Clear()
   if self.ListenTimer then
     GWorld.GameInstance:RemoveTimer(self.ListenTimer)
     self.ListenTimer = nil
   end
 end
-
 function ShowQuestHintNode:ClearWhenQuestSuccess()
   TaskUtils:ClearQuestExtraInfo(self.Context.QuestChainId, self.QuestId, self.Key)
 end
-
 return ShowQuestHintNode

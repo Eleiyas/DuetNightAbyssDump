@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_DungeonSettlement_Role_C = Class("BluePrints.UI.BP_EMDungeonWidget_C")
-
 function WBP_DungeonSettlement_Role_C:Construct()
   self.Text_Level:SetText("")
   self.Text_Exp_Up:SetText("")
@@ -11,7 +10,6 @@ function WBP_DungeonSettlement_Role_C:Construct()
   self.UpdateExpKey_Audio = "UpdateExp_Audio_" .. self:GetName()
   self:SetVisibility(ESlateVisibility.Hidden)
 end
-
 function WBP_DungeonSettlement_Role_C:SetItem(OldBattleInfo, RoleName, IncrsExp, IsDisplayCurInfo, CurInfo, IsShowTextWhenZero)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -20,7 +18,7 @@ function WBP_DungeonSettlement_Role_C:SetItem(OldBattleInfo, RoleName, IncrsExp,
   if "MeleeWeapon" == RoleName or "RangedWeapon" == RoleName then
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
     if not Player[RoleName] then
-      DebugPrint("DungeonSettlement_Role:SetItem RoleName", RoleName, "\230\178\161\230\156\137\229\175\185\229\186\148\230\173\166\229\153\168, \232\191\148\229\155\158false\239\188\129")
+      DebugPrint("DungeonSettlement_Role:SetItem RoleName", RoleName, "没有对应武器, 返回false！")
       return false
     end
   end
@@ -94,12 +92,10 @@ function WBP_DungeonSettlement_Role_C:SetItem(OldBattleInfo, RoleName, IncrsExp,
   end
   return true
 end
-
 function WBP_DungeonSettlement_Role_C:PlayInAnimation()
   self:SetVisibility(ESlateVisibility.Visible)
   self:PlayAnimation(self.In)
 end
-
 function WBP_DungeonSettlement_Role_C:PlayExpAnim()
   if self.CachedLevel >= self.MaxLevel then
     return
@@ -110,7 +106,6 @@ function WBP_DungeonSettlement_Role_C:PlayExpAnim()
   local DisExp = self.CachedExp
   local TotalAddExp = 0
   local LevelMaxExp, DeltaAddExp = self:GetDeltaExpInfo(DisLevel, FrameRate)
-  
   local function UpdateExpFun_Bar()
     local IsBreakLevel = false
     local NewDisExp = DisExp + DeltaAddExp
@@ -146,23 +141,18 @@ function WBP_DungeonSettlement_Role_C:PlayExpAnim()
       end
     end
   end
-  
   self:AddTimer(FullTime / FrameRate, UpdateExpFun_Bar, true, 0, self.UpdateExpKey_Bar, true)
   local AudioInterval = 0.05
-  
   local function UpdateExpFun_Audio()
     AudioManager(self):PlayUISound(self, "event:/ui/common/level_sucess_exp_grow", nil, nil)
   end
-  
   self:AddTimer(AudioInterval, UpdateExpFun_Audio, true, 0, self.UpdateExpKey_Audio, true)
 end
-
 function WBP_DungeonSettlement_Role_C:GetDeltaExpInfo(Level, DeltaNum)
   local LevelMaxExp = self:GetRoleLevelMaxExp(Level)
   local DeltaExp = math.ceil(LevelMaxExp / DeltaNum)
   return LevelMaxExp, DeltaExp
 end
-
 function WBP_DungeonSettlement_Role_C:GetRoleInfo(Avatar)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if self.RoleName == "Char" then
@@ -175,7 +165,6 @@ function WBP_DungeonSettlement_Role_C:GetRoleInfo(Avatar)
     return self:GetWeaponInfo(Player)
   end
 end
-
 function WBP_DungeonSettlement_Role_C:GetCharInfo(Player)
   if not self.CurInfo then
     self.CurInfo = {
@@ -208,7 +197,6 @@ function WBP_DungeonSettlement_Role_C:GetCharInfo(Player)
   assert(MaxLevel)
   return Name, IconPath, MaxLevel, CurrentLevel, CurrentExp, bIsMaxEnhanceLevel, bCanEnhance
 end
-
 function WBP_DungeonSettlement_Role_C:GetPlayerInfo(Avatar)
   local IconPath = "/Game/UI/Texture/Dynamic/Atlas/Prop/Item/T_Exp_Rank.T_Exp_Rank"
   local MaxLevel = #DataMgr.PlayerLevelUp
@@ -221,7 +209,6 @@ function WBP_DungeonSettlement_Role_C:GetPlayerInfo(Avatar)
   assert(MaxLevel)
   return "", IconPath, MaxLevel, CurrentLevel, CurrentExp, bIsMaxEnhanceLevel, bCanEnhance
 end
-
 function WBP_DungeonSettlement_Role_C:GetWeaponInfo(Player)
   if not Player[self.RoleName] then
     self.CurInfo = {
@@ -260,7 +247,6 @@ function WBP_DungeonSettlement_Role_C:GetWeaponInfo(Player)
   assert(MaxLevel)
   return Name, IconPath, MaxLevel, CurrentLevel, CurrentExp, bIsMaxEnhanceLevel, bCanEnhance
 end
-
 function WBP_DungeonSettlement_Role_C:GetRoleLevelMaxExp(Level)
   if self.RoleName == "Char" then
     return DataMgr.LevelUp[Level].CharLevelMaxExp
@@ -270,7 +256,6 @@ function WBP_DungeonSettlement_Role_C:GetRoleLevelMaxExp(Level)
     return DataMgr.WeaponLevelUp[Level].WeaponLevelMaxExp
   end
 end
-
 function WBP_DungeonSettlement_Role_C:SetPercent_BarExp(percent)
   if self.RoleName == "Player" then
     DebugPrint("thy     percent", percent)
@@ -294,7 +279,6 @@ function WBP_DungeonSettlement_Role_C:SetPercent_BarExp(percent)
     end
   end, true, 0, "SetPercentDelay", true)
 end
-
 function WBP_DungeonSettlement_Role_C:TryRealSetPercent()
   local Length = USlateBlueprintLibrary.GetLocalSize(self.Bg_Exp:GetCachedGeometry()).X
   if Length <= 0 then
@@ -309,7 +293,6 @@ function WBP_DungeonSettlement_Role_C:TryRealSetPercent()
   end
   return true
 end
-
 function WBP_DungeonSettlement_Role_C:CalcIncreasedExp()
   if self.CachedLevel > self.CurrentLevel then
     return 0
@@ -320,5 +303,4 @@ function WBP_DungeonSettlement_Role_C:CalcIncreasedExp()
   end
   return resExp
 end
-
 return WBP_DungeonSettlement_Role_C

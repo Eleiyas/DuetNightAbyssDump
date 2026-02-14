@@ -2,19 +2,15 @@ require("UnLua")
 local RpcRecorder = require("NetworkEngine.Rpc.RpcRecorder")
 local table = _ENV.table
 local BP_TcpConnection_C = Class()
-
 function BP_TcpConnection_C:Initialize(Initializer)
 end
-
 local function errorHandler(err)
   return err .. "\n" .. debug.traceback()
 end
-
 function BP_TcpConnection_C:InitSuccessLua()
   function _G.NetProxy(FuncName, ArgsTable)
     local ok, ret = xpcall(function()
       local func = self[FuncName]
-      
       if not func then
         error("NetProxy function not found: " .. FuncName)
       end
@@ -29,7 +25,6 @@ function BP_TcpConnection_C:InitSuccessLua()
     end
   end
 end
-
 function BP_TcpConnection_C:CreateEntity(entity_type, entity_id, info, use_protoattr)
   DebugNetPrint("CreateEntity ", entity_type, use_protoattr)
   local entity = GWorld.EntityManager:GetEntity(entity_id)
@@ -50,7 +45,6 @@ function BP_TcpConnection_C:CreateEntity(entity_type, entity_id, info, use_proto
     entity:CreateSuccess()
   end
 end
-
 function BP_TcpConnection_C:DestroyEntity(entity_id)
   DebugNetPrint("DestroyEntity", entity_id)
   local entity = GWorld.EntityManager:GetEntity(entity_id)
@@ -59,7 +53,6 @@ function BP_TcpConnection_C:DestroyEntity(entity_id)
   end
   GWorld.EntityManager:DelEntity(entity_id)
 end
-
 function BP_TcpConnection_C:EntityMessage(entity_id, func_name, ...)
   if GWorld.IsForbidEntityMessage then
     return
@@ -78,6 +71,5 @@ function BP_TcpConnection_C:EntityMessage(entity_id, func_name, ...)
   Args = RpcUtils.ConvertArgs(Args)
   method(entity, table.unpack(Args))
 end
-
 AssembleComponents(BP_TcpConnection_C)
 return BP_TcpConnection_C

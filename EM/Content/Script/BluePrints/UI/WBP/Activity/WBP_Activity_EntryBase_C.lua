@@ -2,25 +2,80 @@ require("UnLua")
 local ActivityCommon = require("BluePrints.UI.WBP.Activity.ActivityCommon")
 local ActivityUtils = require("Blueprints.UI.WBP.Activity.ActivityUtils")
 local M = Class()
-
 function M:GenerateAllDataInfo()
+  EventManager:FireEvent(EventID.RefreshWuyoushengLevelReddot)
   ActivityUtils.RefreshActivityReddotNode()
   local SubTabItems = self:GenerateCurrentSubTabItems()
   local TopTabInfo = self:GetTopTabInfo()
-  self:RefreshBaseInfo(TopTabInfo, SubTabItems, self.ActivityItemClick, self.HandleVirtualClickInGamePad, self.NeedJumpToTabId or 1)
+  self.LimitStateCurActivityId = self.bLimit and self.LimitStateCurActivityId or self.CurActivityId
+  local LimitStateCurTabIndex = self.bLimit and self:GetCurTabIndexByActivityId(self.LimitStateCurActivityId) or 1
+  self.NormalStateCurActivityId = self.bLimit and self.CurActivityId or self.NormalStateCurActivityId
+  local NormalStateCurTabIndex = self.bLimit and 1 or self:GetCurTabIndexByActivityId(self.NormalStateCurActivityId)
+  if not self.NeedJumpToTabIndex or 1 == self.NeedJumpToTabIndex then
+    self.NeedJumpToTabIndex = self.bLimit and LimitStateCurTabIndex or NormalStateCurTabIndex
+  end
+  if self.NeedJumpToTabId then
+    self.NeedJumpToTabInfo = self:GetCurTabIndexByTabId(self.NeedJumpToTabId)
+    if self.NeedJumpToTabInfo.TargetTabType == "Normal" and self.EventTypeTab:IsLimitTime() then
+      self.EventTypeTab:SwitchTab(self.NeedJumpToTabInfo.TargetTabType)
+      return
+    elseif self.NeedJumpToTabInfo.TargetTabType == "LimitTime" and not self.EventTypeTab:IsLimitTime() then
+      self.EventTypeTab:SwitchTab(self.NeedJumpToTabInfo.TargetTabType)
+      return
+    end
+    if -1 ~= self.NeedJumpToTabInfo.TargetTabIndex then
+      self.NeedJumpToTabIndex = self.NeedJumpToTabInfo.TargetTabIndex
+    end
+    self.NeedJumpToTabId = nil
+  end
+  self:RefreshBaseInfo(TopTabInfo, SubTabItems, self.ActivityItemClick, self.HandleVirtualClickInGamePad, self.NeedJumpToTabIndex or 1)
   self:RefreshDynamicInfo()
   self:AddTimer(0.15, function()
     if not self then
       return
     end
-    if not self.NeedJumpToTabId then
+    if not self.NeedJumpToTabIndex then
     else
-      self.NeedJumpToTabId = nil
+      self.NeedJumpToTabIndex = nil
     end
   end)
   self.List_Tab.BP_OnItemSelectionChanged:Add(self, self.OnSelectActivityPageChanged)
 end
-
+function M:GetCurTabIndexByActivityId(ActivityId)
+  local CurIdx = 0
+  local ResetIdx = false
+  for Idx, v in ipairs(self.SubTabItems) do
+    if not v.bLimit and not ResetIdx then
+      CurIdx = 0
+      ResetIdx = true
+    end
+    CurIdx = CurIdx + 1
+    for _, EventId in ipairs(v.EventId) do
+      if EventId == ActivityId then
+        return CurIdx
+      end
+    end
+  end
+  return 1
+end
+function M:GetCurTabIndexByTabId(TabId)
+  local TargetTabInfo = {TargetTabType = nil, TargetTabIndex = -1}
+  local CurIdx = 0
+  local ResetIdx = false
+  for Idx, v in ipairs(self.SubTabItems) do
+    if not v.bLimit and not ResetIdx then
+      CurIdx = 0
+      ResetIdx = true
+    end
+    CurIdx = CurIdx + 1
+    if v.TabId == TabId then
+      TargetTabInfo.TargetTabType = v.bLimit and "LimitTime" or "Normal"
+      TargetTabInfo.TargetTabIndex = CurIdx
+      break
+    end
+  end
+  return TargetTabInfo
+end
 function M:GenerateCurrentSubTabItems()
   self.AllCurrentActivityInfo, self.AllAllActivityTabIdx = ActivityUtils.GetCurrentAllActivityWithoutSystemCheck()
   self.SubTabItems = {}
@@ -83,25 +138,21 @@ function M:GenerateCurrentSubTabItems()
   ActivityInfo = {}
   local limitTotal = #LimitUndone + #LimitDone
   local idx = 0
-  
   local function fillLimit(list)
     for _, value in ipairs(list) do
       idx = idx + 1
       ActivityInfo[idx] = value.EventId
     end
   end
-  
   fillLimit(LimitUndone)
   fillLimit(LimitDone)
   local normalIdx = 0
-  
   local function fillNormal(list)
     for _, value in ipairs(list) do
       normalIdx = normalIdx + 1
       ActivityInfo[self.ActivityInfoIdxOffset + normalIdx] = value.EventId
     end
   end
-  
   fillNormal(NormalUndone)
   fillNormal(NormalDone)
   if LimitCount <= 0 then
@@ -113,17 +164,17 @@ function M:GenerateCurrentSubTabItems()
     self.EventTypeTab:SetForbidden(true)
     self.Group_EventType:SetVisibility(UIConst.VisibilityOp.Collapsed)
   else
+    self.EventTypeTab:SetForbidden(false)
     self.Group_EventType:SetVisibility(UIConst.VisibilityOp.Visible)
   end
+  self.bLimit = self.EventTypeTab:IsLimitTime()
   self.SubTabItems = ordered
   self.AllCurrentActivityInfo = ActivityInfo
   return self.SubTabItems
 end
-
 function M:BP_GetDesiredFocusTarget()
   return self.CurFocusWidgetItem or self.List_Tab
 end
-
 function M:ActivityItemClick(TabWidget)
   if not TabWidget then
     return
@@ -179,13 +230,13 @@ function M:ActivityItemClick(TabWidget)
     end
   end
   self.CurTabId = TabId
+  self.CurActivityId = ActivityId
   self.CurTabIndex = TabIndex
   self.List_Tab:SetSelectedIndex(self.CurTabIndex - 1)
   self:GenerateActivityPage(ActivityId, ActivityInfo, ActivityConfigData, TabId)
   ActivityUtils.TrySubActivityReddotCommon("New", ActivityId)
   self:UpdateTabRedInfoByActivityID(ActivityInfoIndex, ActivityId)
 end
-
 function M:GenerateActivityPage(ActivityId, ActivityInfo, ActivityConfigData, TabId)
   if nil == ActivityConfigData then
     return
@@ -208,6 +259,7 @@ function M:GenerateActivityPage(ActivityId, ActivityInfo, ActivityConfigData, Ta
           self:RefreshViewAfterPageDataSet(ActivityConfigData, PageConfigData)
           ActivityPage:PlayFadeIn()
           self:SetDescTextType(ActivityPage)
+          self:SetDescTextAlign(ActivityPage)
           self.AllCurrentActivityPage[TabId] = ActivityPage
           self:RefreshUIStyleAfterPageChange()
         end
@@ -234,22 +286,55 @@ function M:GenerateActivityPage(ActivityId, ActivityInfo, ActivityConfigData, Ta
     self:RefreshUIStyleAfterPageChange()
   end
   self:SetDescTextType(ActivityPage)
+  self:SetDescTextAlign(ActivityPage)
 end
-
 function M:SetDescTextType(ActivityPage)
-  if ActivityPage and ActivityPage.WS_TextDesc ~= nil then
+  if ActivityPage then
     local index = 0
-    local JumpPageBG = self.WidgetBGAnchor:GetChildAt(index)
+    local JumpPageBG = self.WidgetBGAnchor:GetChildAt(0)
     if JumpPageBG and JumpPageBG.WS_DescIndex then
       local descIndex = tonumber(JumpPageBG.WS_DescIndex)
       if descIndex and descIndex >= 0 and descIndex <= 1 then
         index = math.floor(descIndex)
       end
+      if ActivityPage.WS_TextDesc ~= nil then
+        ActivityPage.WS_TextDesc:SetActiveWidgetIndex(index)
+      elseif ActivityPage.Text_ActivityDesc and ActivityPage.Text_ActivityDesc_White then
+        if 0 == descIndex then
+          ActivityPage.Text_ActivityDesc:SetVisibility(UIConst.VisibilityOp.Visible)
+          ActivityPage.Text_ActivityDesc_White:SetVisibility(UIConst.VisibilityOp.Collapsed)
+        else
+          ActivityPage.Text_ActivityDesc:SetVisibility(UIConst.VisibilityOp.Collapsed)
+          ActivityPage.Text_ActivityDesc_White:SetVisibility(UIConst.VisibilityOp.Visible)
+        end
+      end
     end
-    ActivityPage.WS_TextDesc:SetActiveWidgetIndex(index)
   end
 end
-
+function M:SetDescTextAlign(ActivityPage)
+  if ActivityPage then
+    local index = ETextJustify.Left
+    local JumpPageBG = self.WidgetBGAnchor:GetChildAt(0)
+    if JumpPageBG and JumpPageBG.DescText_IsLeft and 1 == JumpPageBG.DescText_IsLeft then
+      index = ETextJustify.Right
+    end
+    if CommonConst.SystemLanguage == CommonConst.SystemLanguages.JP then
+      index = ETextJustify.Left
+    end
+    if ActivityPage.Text_Desc ~= nil then
+      ActivityPage.Text_Desc:SetJustification(index)
+    end
+    if nil ~= ActivityPage.Text_Desc_White then
+      ActivityPage.Text_Desc_White:SetJustification(index)
+    end
+    if nil ~= ActivityPage.Text_ActivityDesc then
+      ActivityPage.Text_ActivityDesc:SetJustification(index)
+    end
+    if nil ~= ActivityPage.Text_ActivityDesc_White then
+      ActivityPage.Text_ActivityDesc_White:SetJustification(index)
+    end
+  end
+end
 function M:RefreshDynamicInfo()
   local CurActivityPage = self.AllCurrentActivityPage[self.CurTabId]
   if nil ~= CurActivityPage then
@@ -263,7 +348,6 @@ function M:RefreshDynamicInfo()
     self:RefreshViewAfterPageDataSet(ActivityConfigData, CurPageConfigData)
   end
 end
-
 function M:ResetListTab()
   if not self.List_Tab then
     return
@@ -279,7 +363,6 @@ function M:ResetListTab()
     end
   end
 end
-
 function M:RefreshUIStyleAfterPageChange()
   self:UpdateUIStyleInPlatform(self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.PC then
@@ -294,7 +377,6 @@ function M:RefreshUIStyleAfterPageChange()
     end
   end
 end
-
 function M:OnReturnKeyDown()
   if not self:CheckIsCanCloseSelf() then
     return
@@ -315,21 +397,18 @@ function M:OnReturnKeyDown()
   end
   self:PlayOutAnim()
 end
-
 function M:OnSpaceBarKeyDown()
   local CurActivityPage = self.AllCurrentActivityPage[self.CurTabId]
   if nil ~= CurActivityPage and type(CurActivityPage.OnSpaceBarKeyDown) == "function" then
     CurActivityPage:OnSpaceBarKeyDown()
   end
 end
-
 function M:OnRefreshCurrentPageAfterJump()
   local ActivityPage = self.AllCurrentActivityPage[self.CurTabId]
   if nil ~= ActivityPage then
     ActivityPage:UpdatePage("BackToPageWithJump")
   end
 end
-
 function M:UpdateActivityKeyTips(FocusTypeName, FocusWidgetItem)
   FocusTypeName = FocusTypeName or "DefaultWidget"
   FocusWidgetItem = FocusWidgetItem or self.List_Tab
@@ -515,6 +594,15 @@ function M:UpdateActivityKeyTips(FocusTypeName, FocusWidgetItem)
       }
     end
   end
+  local isCanScroll = self:IsScrollBoxDescCanScroll()
+  if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad and isCanScroll and #BottomKeyInfo > 0 then
+    BottomKeyInfo[#BottomKeyInfo + 1] = {
+      KeyInfoList = {
+        {Type = "Img", ImgShortPath = "RV"}
+      },
+      Desc = GText("UI_Controller_Slide")
+    }
+  end
   self.CurFocusWidgetName = FocusTypeName
   self.CurFocusWidgetItem = FocusWidgetItem
   if self.Com_KeyTips then
@@ -524,7 +612,21 @@ function M:UpdateActivityKeyTips(FocusTypeName, FocusWidgetItem)
     self.Com_KeyTipsEmpty:UpdateKeyInfo(BottomKeyInfo)
   end
 end
-
+function M:IsScrollBoxDescCanScroll()
+  local CurActivityPage = self.AllCurrentActivityPage[self.CurTabId]
+  if nil == CurActivityPage then
+    return false
+  end
+  local ScrollBox_Desc = CurActivityPage.ScrollBox_Desc
+  if nil == ScrollBox_Desc then
+    return false
+  end
+  local EndOffset = ScrollBox_Desc:GetScrollOffsetOfEnd()
+  if EndOffset > 1.0 then
+    return true
+  end
+  return false
+end
 function M:GetDefaultTipsWithCurTab()
   local ResultKeyInfo
   local CurActivityPage = self.AllCurrentActivityPage[self.CurTabId]
@@ -533,16 +635,35 @@ function M:GetDefaultTipsWithCurTab()
   end
   return ResultKeyInfo
 end
-
 function M:IsCanChangeToGamePadViewMode()
   return true
 end
-
+function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
+  local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
+  local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
+  if "Gamepad_RightY" == InKeyName then
+    local CurActivityPage = self.AllCurrentActivityPage[self.CurTabId]
+    if nil == CurActivityPage then
+      return UWidgetBlueprintLibrary.Unhandled()
+    end
+    local ScrollBox_Desc = CurActivityPage.ScrollBox_Desc
+    if nil == ScrollBox_Desc then
+      return UWidgetBlueprintLibrary.Unhandled()
+    end
+    local a = UKismetInputLibrary.GetAnalogValue(InAnalogInputEvent) * 30
+    local CurScrollOffset = ScrollBox_Desc:GetScrollOffset()
+    local ScrollOffset = math.clamp(CurScrollOffset - a, 0, ScrollBox_Desc:GetScrollOffsetOfEnd())
+    ScrollBox_Desc:SetScrollOffset(ScrollOffset)
+    if CurActivityPage.OnUserScrolled then
+      CurActivityPage:OnUserScrolled()
+    end
+  end
+  return UWidgetBlueprintLibrary.Unhandled()
+end
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   local IsUseGamePad = CurInputType == ECommonInputType.Gamepad and self:IsCanChangeToGamePadViewMode()
   self:UpdateUIStyleInPlatform(IsUseGamePad)
 end
-
 function M:OnUpdateActivityByAction(OpAction, ...)
   if "QuestGetReward" == OpAction then
     local QuestId = (...)
@@ -588,7 +709,6 @@ function M:OnUpdateActivityByAction(OpAction, ...)
     self:UpdateTabRedInfoByActivityID(nil, ActivityID)
   end
 end
-
 function M:OnUpdateActivityByControllerEvent(ActivityEventId, ...)
   if ActivityEventId == ActivityCommon.EventId.OnRefreshInNextDay then
     local CurActivityPage = self.AllCurrentActivityPage[self.CurTabId]
@@ -597,7 +717,6 @@ function M:OnUpdateActivityByControllerEvent(ActivityEventId, ...)
     end
   end
 end
-
 function M:OnSelectActivityPageChanged(SelectActivityItem, bIsSelect)
   if not SelectActivityItem then
     return
@@ -615,15 +734,16 @@ function M:OnSelectActivityPageChanged(SelectActivityItem, bIsSelect)
     end
   end
   if self.LastIndex == SelectActivityItem.Index then
-    self:AddTimer(0.3, function()
-      local NextOffset = self.List_Tab:GetScrollOffsetOfEnd()
-      self.List_Tab:SetScrollOffset(NextOffset)
-    end, false, 0, nil, true)
+    if self.DisplayedWidgetsCount > 0 and self.LastIndex >= self.DisplayedWidgetsCount then
+      self:AddTimer(0.3, function()
+        local NextOffset = self.List_Tab:GetScrollOffsetOfEnd()
+        self.List_Tab:SetScrollOffset(NextOffset)
+      end, false, 0, nil, true)
+    end
   elseif self.GameInputModeSubsystem:GetCurrentInputType() ~= ECommonInputType.Gamepad then
     self:ScrollToItemWithPadding(SelectActivityItem.Index, 0.05)
   end
 end
-
 function M:ScrollToItemWithPadding(Index, Padding)
   DebugPrint("JLYScrollToItemWithPadding", Index, Padding)
   if not self.List_Tab then
@@ -657,7 +777,6 @@ function M:ScrollToItemWithPadding(Index, Padding)
   NewScrollOffset = math.max(0.0, math.min(NewScrollOffset, MaxScrollOffset))
   self.List_Tab:SetScrollOffset(NewScrollOffset)
 end
-
 function M:GetListViewContentMaxCount()
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local ListSize = UIManager:GetWidgetRenderSize(self.List_Tab)
@@ -667,7 +786,8 @@ function M:GetListViewContentMaxCount()
   end
   local ItemWidget
   for _, Widget in pairs(self.List_Tab:GetDisplayedEntryWidgets()) do
-    if Widget and Widget.IsTabSelected == false and Widget.Index > 1 then
+    local index = Widget.Index or 0
+    if Widget and Widget.IsTabSelected == false and index > 1 then
       ItemWidget = Widget
       break
     end
@@ -685,7 +805,6 @@ function M:GetListViewContentMaxCount()
   local Count = math.ceil(RawCount - 0.01)
   return Count
 end
-
 function M:UpdateTabRedInfoByActivityID(TabIndex, ActivityId)
   if nil == TabIndex then
     for k, v in pairs(self.AllCurrentActivityInfo) do
@@ -714,5 +833,13 @@ function M:UpdateTabRedInfoByActivityID(TabIndex, ActivityId)
     TabIndex = TabIndex - self.ActivityInfoIdxOffset
   end
 end
-
+function M:SetActivityComplete(EventID)
+  for _, Widget in pairs(self.List_Tab:GetDisplayedEntryWidgets()) do
+    if Widget and Widget.Content.EventId and Widget.Content.EventId[1] == EventID then
+      Widget.Group_Done:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+      break
+    end
+  end
+  return true
+end
 return M

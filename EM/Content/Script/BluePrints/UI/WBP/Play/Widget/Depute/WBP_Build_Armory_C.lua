@@ -2,19 +2,16 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:InitItemContent(SquadInfo, Parent)
   self.SquadInfo = SquadInfo
   self.Parent = Parent
   self.IsSelected = false
   self:PlayAnimation(self.Normal)
-  
   local function SetEmptyIcon(Widget, EmptyMethod, Type)
     if Widget and Widget[EmptyMethod] then
-      Widget[EmptyMethod](Widget, nil, Type, IsEmptyRed)
+      Widget[EmptyMethod](Widget, nil, Type)
     end
   end
-  
   local function SetIcon(Widget, Info)
     if not Widget or not Info then
       return
@@ -33,7 +30,6 @@ function M:InitItemContent(SquadInfo, Parent)
       SetEmptyIcon(Widget, Info.EmptyMethod, Info.Type)
     end
   end
-  
   local SquadIcons = {
     {
       Widget = self.Character,
@@ -78,18 +74,15 @@ function M:InitItemContent(SquadInfo, Parent)
   end
   self.IsComMissing = not self.SquadInfo.CharId or not self.SquadInfo.MeleeWeaponId or not self.SquadInfo.RangedWeaponId
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnMouseButtonUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if not self.IsSelected then
     self:PlayAnimation(self.Press)
   end
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:UpSelected()
   self.IsSelected = true
   self.Parent:UpdatKeyDisplay("Selected")
@@ -97,7 +90,6 @@ function M:UpSelected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.IsSelected then
     return
@@ -110,7 +102,6 @@ function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   UIManager(self):ShowUITip(UIConst.Tip_CommonToast, "UI_Squad_ChangeSuccess_Tips")
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     if self.IsSelected then
@@ -124,11 +115,9 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   end
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if not self.IsSelected then
     self:PlayAnimation(self.Unhover)
   end
 end
-
 return M

@@ -1,5 +1,4 @@
 local WBP_Experience_Item_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Experience_Item_C:Construct()
   self.EMCustomCheckBox.OnClicked:Add(self, self.OnCellClicked)
   self.EMCustomCheckBox.OnHovered:Add(self, self.OnCellHovered)
@@ -12,11 +11,9 @@ function WBP_Experience_Item_C:Construct()
   end
   ReddotManager.AddListener("ExperienceItem", self, self.RefreshReddot)
 end
-
 function WBP_Experience_Item_C:Destruct()
   ReddotManager.RemoveListener("ExperienceItem", self)
 end
-
 function WBP_Experience_Item_C:BindEventOnClicked(Obj, Func, ...)
   if not Obj or not Func then
     return
@@ -27,7 +24,6 @@ function WBP_Experience_Item_C:BindEventOnClicked(Obj, Func, ...)
     ...
   }
 end
-
 function WBP_Experience_Item_C:InitSpace(ScrollBoxSizeX, Root)
   self.Root = Root
   self.IsSpace = true
@@ -40,7 +36,6 @@ function WBP_Experience_Item_C:InitSpace(ScrollBoxSizeX, Root)
     ChildItem:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Experience_Item_C:Init(Index, PlayerLevel, Root)
   self.Root = Root
   self.IsSpace = false
@@ -54,35 +49,30 @@ function WBP_Experience_Item_C:Init(Index, PlayerLevel, Root)
   self:SetRenderTransformPivot(FVector2D(0.5, 1))
   self.Panel:SetRenderTransformPivot(FVector2D(0.5, 1))
 end
-
 function WBP_Experience_Item_C:Normalize(value, fromMin, fromMax, toMin, toMax)
   local clampedValue = math.max(fromMin, math.min(fromMax, value))
   local factor = (clampedValue - fromMin) / (fromMax - fromMin)
   local result = toMin + factor * (toMax - toMin)
   return math.max(toMin, math.min(toMax, result))
 end
-
 function WBP_Experience_Item_C:SetMagnification(Magnification)
   local normalizedScale = self:Normalize(Magnification, 0.64, 1.0, self.MinScale or 0.64, 1.0)
   self.Lv_Num:SetRenderScale(FVector2D(normalizedScale, normalizedScale))
   local normalizedOpacity = self:Normalize(Magnification, 0.64, 1.0, self.MinOpacity or 0.4, 1.0)
   self.Text_Lv:SetRenderOpacity(normalizedOpacity)
 end
-
 function WBP_Experience_Item_C:UnSelected()
   self:StopAnimations()
   self.Text_World:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.IsSelect = false
   self:PlayUnselectAnimation()
 end
-
 function WBP_Experience_Item_C:Selected()
   self:StopAnimations()
   self:PlayAnimation(self.Click)
   self.Text_World:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.IsSelect = true
 end
-
 function WBP_Experience_Item_C:OnCellClicked(Speed, isDragSelect, IsFirstTime)
   if self.IsSpace then
     return
@@ -101,7 +91,6 @@ function WBP_Experience_Item_C:OnCellClicked(Speed, isDragSelect, IsFirstTime)
     AudioManager(self):PlayUISound(self, "event:/ui/common/trail_rank_award_num_change", nil, nil)
   end
 end
-
 function WBP_Experience_Item_C:OnCellHovered()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     return
@@ -114,7 +103,6 @@ function WBP_Experience_Item_C:OnCellHovered()
   self:PlayUnselectAnimation()
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Experience_Item_C:OnCellUnhovered()
   self.IsHovering = false
   if self.IsSelect then
@@ -123,7 +111,6 @@ function WBP_Experience_Item_C:OnCellUnhovered()
   self:StopAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 function WBP_Experience_Item_C:OnCellPressed()
   self.Root.DragScrollBox = true
   self.IsPressing = true
@@ -133,7 +120,6 @@ function WBP_Experience_Item_C:OnCellPressed()
   self:StopAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Experience_Item_C:OnCellReleased()
   self.IsPressing = false
   if self.IsLocked or self.IsSelect then
@@ -147,7 +133,6 @@ function WBP_Experience_Item_C:OnCellReleased()
     self:PlayUnselectAnimation()
   end
 end
-
 function WBP_Experience_Item_C:StopAnimations()
   self:StopAnimation(self.Normal)
   self:StopAnimation(self.Click)
@@ -155,7 +140,6 @@ function WBP_Experience_Item_C:StopAnimations()
   self:StopAnimation(self.Hover)
   self:StopAnimation(self.Unhover)
 end
-
 function WBP_Experience_Item_C:RefreshInfo()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -168,7 +152,6 @@ function WBP_Experience_Item_C:RefreshInfo()
   end
   self:PlayUnselectAnimation()
 end
-
 function WBP_Experience_Item_C:PlayUnselectAnimation()
   if self.CanGet then
     if self.IsGot then
@@ -183,7 +166,6 @@ function WBP_Experience_Item_C:PlayUnselectAnimation()
     self:PlayAnimation(self.Click)
   end
 end
-
 function WBP_Experience_Item_C:RefreshReddot()
   if self.IsSpace then
     return
@@ -195,5 +177,4 @@ function WBP_Experience_Item_C:RefreshReddot()
     self.Reddot:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return WBP_Experience_Item_C

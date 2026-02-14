@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:OnLoaded(...)
   local Type, Time = ...
   if "In" == Type then
@@ -30,7 +29,6 @@ function M:OnLoaded(...)
     self:UpdateTime(Time)
   end
 end
-
 function M:UpdateTime(Time)
   self.CurTime = Time
   self.Text_Toast_Out_Time:SetText(self.CurTime)
@@ -47,5 +45,4 @@ function M:UpdateTime(Time)
     end
   end, true, 0, "OnlineLoop")
 end
-
 return M

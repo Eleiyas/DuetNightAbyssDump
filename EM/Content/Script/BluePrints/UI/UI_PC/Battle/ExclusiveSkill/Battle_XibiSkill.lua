@@ -5,7 +5,6 @@ local STATE_TO_ANIM = {
   [SWITCH_STATE.STATE_0] = "Normal_In",
   [SWITCH_STATE.STATE_1] = "Special_In"
 }
-
 function M:OnLoaded(OwnerPlayer, Params)
   DebugPrint("gmy@Battle_XibiSkill:OnLoaded OwnerPlayer, Params", OwnerPlayer, Params, Params.SpecialUI)
   self.OwnerPlayer = OwnerPlayer
@@ -21,7 +20,6 @@ function M:OnLoaded(OwnerPlayer, Params)
   self:PlayAnimation(self[STATE_TO_ANIM[SwitchUI]])
   self:AddTimer(0.2, self.UpdateProgress, true, 0)
 end
-
 function M:UpdateProgress()
   if IsValid(self.OwnerPlayer) then
     local CurrentEnergy = self.OwnerPlayer:GetAttr("SecondSp")
@@ -34,14 +32,12 @@ function M:UpdateProgress()
     end
   end
 end
-
 function M:SetProgressPercent(Percent)
   self.Process_Xibi_Glow:SetPercent(Percent)
   self.Process_Xibi_Normal:SetPercent(Percent)
   self.Process_Xibi_Special:SetPercent(Percent)
   self.Process_Xibi_Glow2:SetPercent(Percent)
 end
-
 function M:SwitchUI(bSwitchUI)
   if bSwitchUI then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(SWITCH_STATE.STATE_1)
@@ -49,5 +45,4 @@ function M:SwitchUI(bSwitchUI)
     self.WidgetSwitcher_State:SetActiveWidgetIndex(SWITCH_STATE.STATE_0)
   end
 end
-
 return M

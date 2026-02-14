@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(InSelectUI, InItem)
   self.SelectUI = InSelectUI
   self.Item = InItem
@@ -31,24 +30,20 @@ function M:Init(InSelectUI, InItem)
   })
   self.Key_PickUp:AddExecuteLogic(self, self.OnAutoPlayClicked)
 end
-
 function M:OnItemClicked()
   UIUtils.PlayCommonBtnSe(self)
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", "", nil)
   self:PlayAnimation(self.Pickup)
   self.SelectUI:SetItemsVisibility(ESlateVisibility.HitTestInvisible)
 end
-
 function M:OnPickupAnimFinished()
   self.SelectUI:OnItemClicked(self.Item)
 end
-
 function M:OnHoverItem()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_add", "", nil)
   DebugPrint(self.SelectUI:GetItemIndex(self))
   self.SelectUI:SelectNewItem(self.SelectUI:GetItemIndex(self))
 end
-
 function M:OnSelectItem()
   self.Noise:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -65,7 +60,6 @@ function M:OnSelectItem()
     self.OnItemClicked
   })
 end
-
 function M:OnUnselectItem()
   self.Noise:SetVisibility(UE4.ESlateVisibility.Collapsed)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "PC" then
@@ -77,25 +71,20 @@ function M:OnUnselectItem()
   self.Border_ItemBg:SetVisibility(UE4.ESlateVisibility.Hidden)
   self:StopListeningForInputAction("TalkOption", EInputEvent.IE_Pressed)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if self["in"] == InAnimation and self.Noise:GetVisibility() ~= ESlateVisibility.Collapsed then
     self:PlayAnimation(self.Loop, 0, 0)
   end
 end
-
 function M:BindOutAnimFinished(InObj, InFunc)
   self.OutAnimFinishedInfo = {}
   self.OutAnimFinishedInfo.Obj = InObj
   self.OutAnimFinishedInfo.Func = InFunc
 end
-
 function M:UnbindOutAnimFinished()
   self.OutAnimFinishedInfo = nil
 end
-
 function M:PlayOutAnim()
   self.OutAnimFinishedInfo.Func(self.OutAnimFinishedInfo.Obj, self)
 end
-
 return M

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnClick)
   if not ModController:IsMobile() then
@@ -16,7 +15,6 @@ function M:Construct()
   end
   self.Text_AvatarNeedTitle:SetText(GText("UI_CharTrial_AccessWalnut"))
 end
-
 function M:Init(WalnutId)
   self.WalnutId = WalnutId
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
@@ -33,9 +31,7 @@ function M:Init(WalnutId)
   Content.ItemType = "Walnut"
   self.Com_Item:Init(Content)
 end
-
 function M:OnClick()
   UIManager(self):LoadUINew("WalnutRewardDialog", self.WalnutId)
 end
-
 return M

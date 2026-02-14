@@ -6,16 +6,13 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function M:Construct()
 end
-
 function M:Destruct()
   if self.TabId then
     ActivityReddotHelper.RemoveReddotListenByTabId(self.TabId, self)
   end
 end
-
 function M:OnListItemObjectSet(Content)
   Content.UI = self
   self.Content = Content
@@ -32,7 +29,7 @@ function M:OnListItemObjectSet(Content)
   self:InitListItemView(Content)
   ActivityReddotHelper.AddReddotListenByTabId(self.TabId, {
     Obj = self,
-    Func = function(self, Count, RdType)
+    Func = function(self, Count, RdType, Name)
       if 0 == Count then
         self:RefreshReddot(false, nil, nil)
         return
@@ -59,14 +56,12 @@ function M:OnListItemObjectSet(Content)
   end
   self.bMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
 end
-
 function M:OnSubTabNavigationRight()
   local ActivityPage = self.Content.ParentWidget.AllCurrentActivityPage[self.TabId]
   if ActivityPage and ActivityPage.OnSubTabNavigationRight then
     ActivityPage:OnSubTabNavigationRight()
   end
 end
-
 function M:InitListItemView(Content)
   local Avatar = GWorld:GetAvatar()
   self.Text_Title:SetText(Content.Name)
@@ -92,13 +87,14 @@ function M:InitListItemView(Content)
   end
   if self.EventId and self.EventId[1] and Avatar.CompletedActivity[self.EventId[1]] then
     self.Group_Done:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    self.Image_SelectSign:SetVisibility(UIConst.VisibilityOp.Collapsed)
     self.IsDone = true
   else
     self.Group_Done:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Image_SelectSign:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.IsDone = false
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
@@ -107,15 +103,12 @@ function M:BP_OnEntryReleased()
     end
   end
 end
-
 function M:GetTabId()
   return self.TabId
 end
-
 function M:GetTabIndex()
   return self.Index
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsTabSelected = IsSelected
   self:UpdateIsSelected()
@@ -123,7 +116,6 @@ function M:SetIsSelected(IsSelected)
     self.Content.IsSelected = IsSelected
   end
 end
-
 function M:UpdateIsSelected()
   if self.IsTabSelected then
     if self.IsPlayClick == false then
@@ -144,7 +136,6 @@ function M:UpdateIsSelected()
     end
   end
 end
-
 function M:Btn_Click()
   if self.IsTabSelected then
     if type(self.VirtualClickCallback) == "function" then
@@ -156,7 +147,6 @@ function M:Btn_Click()
   self:SetIsSelected(NewSelected)
   AudioManager(self):PlayUISound(self, "event:/ui/activity/large_btn_click", nil, nil)
 end
-
 function M:Btn_Press()
   if self.IsTabSelected then
     return
@@ -177,7 +167,6 @@ function M:Btn_Press()
     })
   end
 end
-
 function M:Btn_Hover()
   if self.IsTabSelected or self.bMobile then
     return
@@ -187,7 +176,6 @@ function M:Btn_Hover()
     self.EventHoverOnOrOff(self.ObjHoverOnOrOff, self, true)
   end
 end
-
 function M:Btn_UnHover()
   if self.IsTabSelected or self.bMobile then
     return
@@ -200,34 +188,36 @@ function M:Btn_UnHover()
     self.EventHoverOnOrOff(self.ObjHoverOnOrOff, self, false)
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:RefreshReddot(IsNew, Upgradeable, OtherReddot)
+  self:AddDelayFrameFunc(function()
+    if self and self.Content and self.Content.ParentWidget and self.Content.ParentWidget.EventTypeTab then
+      self.Content.ParentWidget.EventTypeTab:UpdateEventTypeTabReddot()
+    end
+  end, 2)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
   self.OtherReddot = OtherReddot
   if IsNew then
     self.New:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
     self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Content.ShowRedDot = false
+    self.Content.IsNew = IsNew
     return
   end
   self.New:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -248,11 +238,5 @@ function M:RefreshReddot(IsNew, Upgradeable, OtherReddot)
   else
     self.Content.ShowRedDot = false
   end
-  self:AddDelayFrameFunc(function()
-    if self.Content and self.Content.ParentWidget and self.Content.ParentWidget.EventTypeTab then
-      self.Content.ParentWidget.EventTypeTab:UpdateEventTypeTabReddot()
-    end
-  end, 2)
 end
-
 return M

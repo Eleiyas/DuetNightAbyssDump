@@ -9,6 +9,7 @@ Resource.__Props__ = {
   Count = prop.prop("Int", "client save"),
   Status = prop.prop("Int", "client save", 0),
   WeaponUuid = prop.prop("ObjId", "client save"),
+  MountId = prop.prop("Int", "client save"),
   ResourceName = prop.getter("Data", "ResourceName"),
   Type = prop.getter("Data", "Type"),
   ResourceSType = prop.getter("Data", "ResourceSType"),
@@ -23,37 +24,36 @@ Resource.__Props__ = {
   BattleItemLimit = prop.getter("Data", "BattleItemLimit"),
   CreateMechanism = prop.getter("Data", "CreateMechanism")
 }
-
 function Resource:Init(ResourceId)
   if not ResourceId then
     return
   end
   self.ResourceId = ResourceId
 end
-
+function Resource:IsValid()
+  return self.Count > 0
+end
 function Resource:Data()
   return DataMgr.Resource[self.ResourceId]
 end
-
 function Resource:IsBattleItem()
   return self.Type == "BattleItem"
 end
-
 function Resource:IsInfiniteBattleItem()
   return self.Type == "InfiniteBattleItem"
 end
-
 function Resource:SubTypeIsGestureItem()
   if not self.ResourceSType then
     return false
   end
   return self.ResourceSType == "GestureItem"
 end
-
 function Resource:IsPhantomItem()
   return self.ResourceSType == "PhantomItem"
 end
-
+function Resource:IsMountItem()
+  return self.ResourceSType == "MountItem"
+end
 function Resource:AddCount(count)
   if type(count) == "number" and count > 0 then
     if self:IsInfiniteBattleItem() then
@@ -65,7 +65,6 @@ function Resource:AddCount(count)
   end
   return false
 end
-
 function Resource:ReduceCount(count)
   if type(count) == "number" and count > 0 then
     if self:IsInfiniteBattleItem() then
@@ -77,11 +76,9 @@ function Resource:ReduceCount(count)
   end
   return false
 end
-
 function Resource:IsLock()
   return self.Status == CommonConst.CommonStatus.Lock
 end
-
 function Resource:Lock()
   if not self:IsLock() then
     self.Status = CommonConst.CommonStatus.Lock
@@ -89,7 +86,6 @@ function Resource:Lock()
   end
   return false
 end
-
 function Resource:UnLock()
   if self:IsLock() then
     self.Status = CommonConst.CommonStatus.UnLock
@@ -97,36 +93,29 @@ function Resource:UnLock()
   end
   return false
 end
-
 function Resource:GetStatus()
   return self.Status
 end
-
 FormatProperties(Resource)
 local ResourceDict = Class("ResourceDict", CustomTypes.CustomDict)
 ResourceDict.KeyType = BaseTypes.Int
 ResourceDict.ValueType = Resource
-
 function ResourceDict:NewResource(ResourceId)
   return Resource(ResourceId)
 end
-
 function ResourceDict:GetResource(ResourceId)
   if nil == self[ResourceId] then
     self[ResourceId] = self:NewResource(ResourceId)
   end
   return self[ResourceId]
 end
-
 function ResourceDict:QueryResourceCount(ResourceId)
   if nil == self[ResourceId] then
     return 0
   end
   return self[ResourceId].Count
 end
-
 function ResourceDict:ClearResource(ResourceId)
   self[ResourceId] = nil
 end
-
 return {Resource = Resource, ResourceDict = ResourceDict}

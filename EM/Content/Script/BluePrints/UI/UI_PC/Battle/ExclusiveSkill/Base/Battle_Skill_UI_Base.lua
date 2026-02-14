@@ -1,22 +1,18 @@
 local M = Class("BluePrints.UI.BP_UIState_C")
 local MOBILE_SCALE = 0.8
 local PC_SCALE = 1
-
 function M:OnLoaded()
   self.IsInit = true
 end
-
 function M:RemoveSelf()
   self:Close()
 end
-
 function M:IsMainPlayerSummon(Summoner, UIOwner, UISummonId)
   if Summoner and UIOwner and Summoner.UnitId == UISummonId and Summoner:GetRootSourceEid() == UIOwner.Eid then
     return true
   end
   return false
 end
-
 function M:InitBattleCharUI(CharUIId, GradeLevel)
   local CharUIInfo = DataMgr.BattleCharUI[CharUIId][GradeLevel]
   if CharUIInfo then
@@ -35,12 +31,10 @@ function M:InitBattleCharUI(CharUIId, GradeLevel)
   end
   self.FrameCount = 0
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   self.FrameCount = self.FrameCount or 0
   self.FrameCount = self.FrameCount + 1
 end
-
 function M:InitQuantityScale(ScaleNode)
   local bIsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   local Scale = bIsMobile and MOBILE_SCALE or PC_SCALE
@@ -48,7 +42,6 @@ function M:InitQuantityScale(ScaleNode)
     self[ScaleNode]:SetRenderScale(FVector2D(Scale, Scale))
   end
 end
-
 function M:TrySetSummon(SummonId, bIsSummonMonster)
   if nil == self.Summoner then
     local Player = GWorld:GetMainPlayer()
@@ -68,5 +61,4 @@ function M:TrySetSummon(SummonId, bIsSummonMonster)
     end
   end
 end
-
 return M

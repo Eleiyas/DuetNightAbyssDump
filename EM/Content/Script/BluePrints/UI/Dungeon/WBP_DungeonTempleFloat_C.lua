@@ -1,6 +1,5 @@
 require("UnLua")
 local WBP_DungeonTempleFloat_C = Class("BluePrints.UI.Dungeon.WBP_DungeonUIBase_C")
-
 function WBP_DungeonTempleFloat_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ScoreOrCollect = 0
@@ -8,7 +7,6 @@ function WBP_DungeonTempleFloat_C:Initialize(Initializer)
   self.CurStar = 0
   self.IsStarTemple = false
 end
-
 function WBP_DungeonTempleFloat_C:InitListenEvent()
   self.Super.InitListenEvent(self)
   self:AddDispatcher(EventID.OnSetTempleLimit, self, self.OnSetTempleLimit)
@@ -16,13 +14,11 @@ function WBP_DungeonTempleFloat_C:InitListenEvent()
   self:AddDispatcher(EventID.OnTempleScoreCollectChanged, self, self.OnTempleScoreCollectChanged)
   self:AddDispatcher(EventID.OnTempleEnter, self, self.OnTempleEnter)
 end
-
 function WBP_DungeonTempleFloat_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:InitListenEvent()
   self:InitInfo()
 end
-
 function WBP_DungeonTempleFloat_C:InitInfo()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if not GameInstance then
@@ -38,7 +34,6 @@ function WBP_DungeonTempleFloat_C:InitInfo()
     self:InitTemple()
   end
 end
-
 function WBP_DungeonTempleFloat_C:InitTemple()
   self.HB_Time:SetVisibility(ESlateVisibility.Hidden)
   self.HB_ScoreNum:SetVisibility(ESlateVisibility.Hidden)
@@ -57,7 +52,6 @@ function WBP_DungeonTempleFloat_C:InitTemple()
     self:InitTargetInfo()
   end
 end
-
 function WBP_DungeonTempleFloat_C:OnTempleTimeChanged(CurrentTime, ThresholdTime)
   local Time = ThresholdTime - CurrentTime
   local ChangeValue = Time - self.CurTime
@@ -79,7 +73,6 @@ function WBP_DungeonTempleFloat_C:OnTempleTimeChanged(CurrentTime, ThresholdTime
   end
   self:CheckStar()
 end
-
 function WBP_DungeonTempleFloat_C:OnSetTempleLimit(Limit, Value)
   self.Limit = Limit
   self.HB_Time:SetVisibility(ESlateVisibility.Visible)
@@ -95,7 +88,6 @@ function WBP_DungeonTempleFloat_C:OnSetTempleLimit(Limit, Value)
     self:InitTargetInfo()
   end
 end
-
 function WBP_DungeonTempleFloat_C:OnTempleScoreCollectChanged(Value)
   local Dif = Value - self.ScoreOrCollect
   if Dif > 0 then
@@ -109,7 +101,6 @@ function WBP_DungeonTempleFloat_C:OnTempleScoreCollectChanged(Value)
   self.Text_ScoreNum:SetText(self.ScoreOrCollect)
   self:CheckStar()
 end
-
 function WBP_DungeonTempleFloat_C:InitTargetInfo()
   local TextRule2 = ""
   if self.TempleInfo.SucRule == "Time" then
@@ -161,7 +152,6 @@ function WBP_DungeonTempleFloat_C:InitTargetInfo()
     end
   end
 end
-
 function WBP_DungeonTempleFloat_C:CheckStar()
   if self.IsStarTemple then
     if self.TempleInfo.SucRule == "Score" or self.TempleInfo.SucRule == "Collect" then
@@ -183,7 +173,6 @@ function WBP_DungeonTempleFloat_C:CheckStar()
     end
   end
 end
-
 function WBP_DungeonTempleFloat_C:OnTempleEnter()
   if self.IsStarTemple then
     if self.TempleInfo.SucRule == "Score" or self.TempleInfo.SucRule == "Collect" then
@@ -211,5 +200,4 @@ function WBP_DungeonTempleFloat_C:OnTempleEnter()
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Time_Add)
   EMUIAnimationSubsystem:EMStopAnimation(self, self.Time_Minus)
 end
-
 return WBP_DungeonTempleFloat_C

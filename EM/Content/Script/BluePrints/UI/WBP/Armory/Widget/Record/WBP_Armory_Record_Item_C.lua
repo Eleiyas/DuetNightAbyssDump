@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Common_List_Subcell_PC:BindEventOnClicked(self, self.OnCellClicked)
   self.Common_List_Subcell_PC:SetCanCancelSelection(true)
   self.Button_Play.OnClicked:Add(self, self.OnBtnClicked)
 end
-
 function M:OnListItemObjectSet(Content)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Content = Content
@@ -51,14 +49,12 @@ function M:OnListItemObjectSet(Content)
     self:SetIsSelected(Content.IsSelected, 1000)
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
   end
   self.Common_List_Subcell_PC:OnCellUnSelect()
 end
-
 function M:SetIsPlaying(IsPlaying)
   if self.Content then
     self.Content.IsPlaying = IsPlaying
@@ -71,7 +67,6 @@ function M:SetIsPlaying(IsPlaying)
     self:StopAnimation(self.Play_Loop)
   end
 end
-
 function M:OnCellClicked()
   if self.Content.OnClicked then
     self.Content.OnClicked(self.Content.Parent, self.Content)
@@ -86,7 +81,6 @@ function M:OnCellClicked()
     end
   end
 end
-
 function M:SetIsSelected(IsSelected, AnimSpeed)
   self.Content.IsSelected = IsSelected
   if IsSelected then
@@ -103,7 +97,6 @@ function M:SetIsSelected(IsSelected, AnimSpeed)
     self.Common_List_Subcell_PC:OnCellUnSelect()
   end
 end
-
 function M:SetReddot(IsNew)
   self.Content.IsNew = IsNew
   if not self.Content.IsLocked and IsNew then
@@ -112,16 +105,13 @@ function M:SetReddot(IsNew)
     self.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnBtnClicked()
   if self.Content and self.Content.OnBtnClicked then
     self.Content.OnBtnClicked(self.Content.Parent, self.Content)
   end
 end
-
 function M:GetSize()
   local Slot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Common_List_Subcell_PC)
   return Slot:GetSize()
 end
-
 return M

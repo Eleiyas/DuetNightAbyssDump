@@ -1,11 +1,9 @@
 require("UnLua")
 local ForgeConst = require("Blueprints.UI.Forge.ForgeConst")
 local WBP_ForgeConfirmDialog_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_ForgeConfirmDialog_C:Initialize()
   self.Super.Initialize(self)
 end
-
 function WBP_ForgeConfirmDialog_C:OnLoaded(WindowContent)
   self.Super.OnLoaded(self)
   local PopupId = WindowContent.PopupId
@@ -71,7 +69,6 @@ function WBP_ForgeConfirmDialog_C:OnLoaded(WindowContent)
   self:PlayAnimation(self.In)
   self:SetFocus()
 end
-
 function WBP_ForgeConfirmDialog_C:OnYesButtonClicked()
   DebugPrint("Tianyi@ On Yes Button Clicked")
   if self.YesCallBackFunction then
@@ -79,7 +76,6 @@ function WBP_ForgeConfirmDialog_C:OnYesButtonClicked()
   end
   self:PlayOutAnimation()
 end
-
 function WBP_ForgeConfirmDialog_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -90,7 +86,6 @@ function WBP_ForgeConfirmDialog_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_ForgeConfirmDialog_C:OnNoButtonClicked()
   DebugPrint("Tianyi@ On No Button Clicked")
   if self.NoCallBackFunction then
@@ -98,15 +93,12 @@ function WBP_ForgeConfirmDialog_C:OnNoButtonClicked()
   end
   self:PlayOutAnimation()
 end
-
 function WBP_ForgeConfirmDialog_C:PlayOutAnimation()
   self:PlayAnimation(self.Out)
 end
-
 function WBP_ForgeConfirmDialog_C:OnAnimationFinished(Animation)
   if Animation == self.Out then
     self:Close()
   end
 end
-
 return WBP_ForgeConfirmDialog_C

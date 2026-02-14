@@ -14,7 +14,6 @@ local DaysInMonth = {
   30,
   31
 }
-
 function WBP_Common_Dialog_Birth_PC_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -24,18 +23,15 @@ function WBP_Common_Dialog_Birth_PC_C:RefreshOpInfoByInputDevice(CurInputDevice,
     self:InitKeyboardView()
   end
 end
-
 function WBP_Common_Dialog_Birth_PC_C:InitGamepadView()
   self:GamepadFocusMonth()
   self:AddTimer(0.1, function()
     self.Panel_GamepadVX:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end)
 end
-
 function WBP_Common_Dialog_Birth_PC_C:InitKeyboardView()
   self.Panel_GamepadVX:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function WBP_Common_Dialog_Birth_PC_C:GamepadFocusMonth()
   if self.FocusBirthScrollWidget == self.NumberScroll_Month then
     return
@@ -43,7 +39,6 @@ function WBP_Common_Dialog_Birth_PC_C:GamepadFocusMonth()
   self:PlayAnimation(self.GamePad_SelectMonth)
   self.FocusBirthScrollWidget = self.NumberScroll_Month
 end
-
 function WBP_Common_Dialog_Birth_PC_C:GamepadFocusDay()
   if self.FocusBirthScrollWidget == self.NumberScroll_Day then
     return
@@ -51,7 +46,6 @@ function WBP_Common_Dialog_Birth_PC_C:GamepadFocusDay()
   self:PlayAnimation(self.GamePad_SelectDay)
   self.FocusBirthScrollWidget = self.NumberScroll_Day
 end
-
 function WBP_Common_Dialog_Birth_PC_C:Handle_PreviewKeyDownOnGamePad(InKeyName)
   if InKeyName == Const.GamepadDPadLeft or InKeyName == Const.LeftStickLeft then
     self:GamepadFocusMonth()
@@ -70,7 +64,6 @@ function WBP_Common_Dialog_Birth_PC_C:Handle_PreviewKeyDownOnGamePad(InKeyName)
   end
   return false
 end
-
 function WBP_Common_Dialog_Birth_PC_C:OnContentPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -80,7 +73,6 @@ function WBP_Common_Dialog_Birth_PC_C:OnContentPreviewKeyDown(MyGeometry, InKeyE
   end
   return IsHandled
 end
-
 function WBP_Common_Dialog_Birth_PC_C:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -100,12 +92,10 @@ function WBP_Common_Dialog_Birth_PC_C:OnContentAnalogValueChanged(MyGeometry, In
   end
   return UIUtils.Unhandled
 end
-
 function WBP_Common_Dialog_Birth_PC_C:PreInitContent(Params, PopupData, Owner)
   self.Super.PreInitContent(self, Params, PopupData, Owner)
   self.PackageKey = "Birthday"
 end
-
 function WBP_Common_Dialog_Birth_PC_C:InitContent(Params, PopupData, Owner)
   self.NumberScroll_Month:BindOnNumberSelected(self, self.OnMonthSelected)
   self.NumberScroll_Day:BindOnNumberSelected(self, self.OnDaySelected)
@@ -135,7 +125,6 @@ function WBP_Common_Dialog_Birth_PC_C:InitContent(Params, PopupData, Owner)
   })
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Common_Dialog_Birth_PC_C:OnMonthSelected(Month)
   local Days = DaysInMonth[Month]
   self.NumberScroll_Day.NumberRequired = Days
@@ -144,7 +133,6 @@ function WBP_Common_Dialog_Birth_PC_C:OnMonthSelected(Month)
   end
   self:OnDaySelected(1)
 end
-
 function WBP_Common_Dialog_Birth_PC_C:OnDaySelected(Day)
   local Month = self.NumberScroll_Month:GetSelectedNumber()
   local Day = self.NumberScroll_Day:GetSelectedNumber()
@@ -154,12 +142,10 @@ function WBP_Common_Dialog_Birth_PC_C:OnDaySelected(Day)
     self.Owner:ForbidRightBtn(false)
   end
 end
-
 function WBP_Common_Dialog_Birth_PC_C:PackageData()
   local PackageResult = {}
   PackageResult.Month = self.NumberScroll_Month:GetSelectedNumber()
   PackageResult.Day = self.NumberScroll_Day:GetSelectedNumber()
   return PackageResult
 end
-
 return WBP_Common_Dialog_Birth_PC_C

@@ -1,13 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:OnListItemObjectSet(Obj)
   self.DialogueType = Obj.DialogueType
   self.SpeakerName = Obj.SpeakerName
   self.DialogueContent = Obj.DialogueContent
   self:SetShowContent()
 end
-
 function M:SetShowContent()
   self.Group_VB:SetActiveWidgetIndex(self.DialogueType)
   if 0 == self.DialogueType then
@@ -23,5 +21,4 @@ function M:SetShowContent()
     self.Text_Aside:SetText(self.DialogueContent)
   end
 end
-
 return M

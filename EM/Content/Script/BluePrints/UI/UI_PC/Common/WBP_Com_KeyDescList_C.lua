@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:InitKey(CommonKeyDatas)
   self.List_KeyDesc:ClearListItems()
   if not CommonKeyDatas then
@@ -15,7 +14,6 @@ function M:InitKey(CommonKeyDatas)
     self.List_KeyDesc:AddItem(RightKeyTextDescData)
   end
 end
-
 function M:InitCommonKey(CommonKey, Index)
   local CommonKeyData = self.CommonKeyDatas[Index]
   if not CommonKeyData then
@@ -65,5 +63,4 @@ function M:InitCommonKey(CommonKey, Index)
     CommonKey:AddExecuteLogic(CommonKeyData.CallbackObj, CommonKeyData.CallbackFunc)
   end
 end
-
 return M

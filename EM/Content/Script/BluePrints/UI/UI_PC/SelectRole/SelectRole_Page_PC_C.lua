@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:PreConstruct(IsDesignTime)
   GWorld.GameInstance:GetGameUIManager():CloseResidentUI()
   EventManager:FireEvent(EventID.OnSelectRoleUIOpen, self)
 end
-
 function M:Construct()
   self.DeviceInPc = CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile"
   self.RealMousePos = FVector2D(0, 0)
@@ -64,7 +62,6 @@ function M:Construct()
   AudioManager(self):PlayUISound(self, "event:/ui/common/gender_select_hud_show", "SelectRoleHud", nil)
   self:PlayAnimation(self.In)
 end
-
 function M:CreateCommonKeyAndLogic(Root, Key, Text, DescText, Logic, LogicObj)
   Key:CreateCommonKey({
     KeyInfoList = {
@@ -79,7 +76,6 @@ function M:CreateCommonKeyAndLogic(Root, Key, Text, DescText, Logic, LogicObj)
   })
   Key:AddExecuteLogic(Root, Logic)
 end
-
 function M:OnClickButtonObserve()
   if self.PageState == "SelectRole" then
     self.Page_Role:OnClickButtonObserve()
@@ -87,7 +83,6 @@ function M:OnClickButtonObserve()
     self.Page_Name:OnClickButtonBack()
   end
 end
-
 function M:ChangeWidget(Reason)
   if "SelectName" == Reason then
     print(_G.LogTag, "LXZ ChangeWidget SelectName")
@@ -113,7 +108,6 @@ function M:ChangeWidget(Reason)
     self.Page_Role:ChangeRoleBtnStyle(self.Page_Role.NowRole)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -129,11 +123,9 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:ShowWidget(MyGeometry, InKeyEvent)
   self.Page_Role:UnlockCanClick()
 end
-
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   if self.DeviceInPc then
     return
@@ -145,7 +137,6 @@ function M:OnTouchStarted(MyGeometry, InTouchEvent)
   local UnHandled = UE4.UWidgetBlueprintLibrary.UnHandled()
   return UnHandled
 end
-
 function M:OnClickBtn()
   if self.PageState ~= "SelectRole" then
     return
@@ -175,7 +166,6 @@ function M:OnClickBtn()
     }, "Detail", true)
   end
 end
-
 function M:GetSelectImage(BtnList, Type, IsFullScreen)
   if self.DeviceInPc then
     self.RealMousePos = UE4.UWidgetLayoutLibrary.GetMousePositionOnViewport(self)
@@ -196,7 +186,6 @@ function M:GetSelectImage(BtnList, Type, IsFullScreen)
     end
   end
 end
-
 function M:OnBackToFullBody()
   if not self.DeviceInPc then
     return
@@ -208,7 +197,6 @@ function M:OnBackToFullBody()
   self.Key_Left:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Key_Right:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnBackToDetail()
   if not self.DeviceInPc then
     return
@@ -220,16 +208,13 @@ function M:OnBackToDetail()
   self.Key_Back:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.Key_Observe:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:OnClickButtonDetail(Tag)
   self.Page_Role:OnClickButtonFullBody(Tag)
 end
-
 function M:OnClickButtonFullBody(Tag)
   self:OnBackToDetail()
   self.Page_Role:OnClickButtonDetail(Tag)
 end
-
 function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
   if not self.DeviceInPc then
     return
@@ -251,9 +236,5 @@ function M:RefreshInfoByInputTypeChange(CurInputDevice, CurGamepadName)
     end
   elseif CurInputDevice == ECommonInputType.Touch then
   end
-  if UE4.UUCloudGameInstanceSubsystem.IsCloudGame() then
-    self.GameInputModeSubsystem:SetMouseCursorVisable(false)
-  end
 end
-
 return M

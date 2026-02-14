@@ -1,13 +1,11 @@
 require("UnLua")
 local WBP_Battle_Weapon_Hint_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Battle_Weapon_Hint_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.CurLevel = nil
   self.LevelProcess = 0
   self.CurPlatformName = nil
 end
-
 function WBP_Battle_Weapon_Hint_C:Construct()
   self:AddDispatcher(EventID.OnCharForbidWeapon, self, self.HideOrShowWidget)
   self.text_num_1:SetText("x0")
@@ -19,7 +17,6 @@ function WBP_Battle_Weapon_Hint_C:Construct()
   end
   self:PlayAnim(self.InOrHitAnimName)
 end
-
 function WBP_Battle_Weapon_Hint_C:UpdateCurLevelProcess(IsShowIn, CurrentComboLevel, CurrentComboCount, CurLevelNeedCount, NextLevelNeedCount, MaxComboLevel, IsUseOut)
   self.text_num_1:SetText("x" .. tostring(CurrentComboLevel))
   self.CurLevel = CurrentComboLevel
@@ -28,7 +25,6 @@ function WBP_Battle_Weapon_Hint_C:UpdateCurLevelProcess(IsShowIn, CurrentComboLe
     self.Progress_bar:SetPercent((CurrentComboCount - CurLevelNeedCount) / (NextLevelNeedCount - CurLevelNeedCount))
   end
 end
-
 function WBP_Battle_Weapon_Hint_C:UpdateBulletNumInTick()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if not IsValid(Player) then
@@ -72,7 +68,6 @@ function WBP_Battle_Weapon_Hint_C:UpdateBulletNumInTick()
     self.panel_batter:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Battle_Weapon_Hint_C:HideOrShowWidget(WeaponTag, IsHide)
   local Widget = "Melee" == WeaponTag and self.panel_batter or self.Panel_Bullet
   if nil ~= Widget then
@@ -83,5 +78,4 @@ function WBP_Battle_Weapon_Hint_C:HideOrShowWidget(WeaponTag, IsHide)
     end
   end
 end
-
 return WBP_Battle_Weapon_Hint_C

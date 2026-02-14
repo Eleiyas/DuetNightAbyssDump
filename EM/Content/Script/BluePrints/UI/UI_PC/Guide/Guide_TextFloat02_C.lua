@@ -1,5 +1,4 @@
 local Guide_TextFloat02_PC = Class("BluePrints.UI.BP_UIState_C")
-
 function Guide_TextFloat02_PC:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local BuffName, BuffIconPath, BuffChangeInfo, LastTime = ...
@@ -10,14 +9,11 @@ function Guide_TextFloat02_PC:OnLoaded(...)
   self:AddTimer(LastTime, self.Close)
   self:PlayAnimation(self.In)
 end
-
 function Guide_TextFloat02_PC:Close()
   local _, Proxy = UWidgetAnimationPlayCallbackProxy.CreatePlayAnimationProxyObject(nil, self, self.Out, 0, 1, 0)
   Proxy.Finished:Add(self, self.OnClose_Internal)
 end
-
 function Guide_TextFloat02_PC:OnClose_Internal()
   self.Super.Close(self)
 end
-
 return Guide_TextFloat02_PC

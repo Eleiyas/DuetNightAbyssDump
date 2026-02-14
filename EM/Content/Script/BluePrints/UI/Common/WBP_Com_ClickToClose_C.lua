@@ -2,13 +2,10 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
 end
-
 function M:Destruct()
 end
-
 function M:Init(ConfigData)
   self.ConfigData = ConfigData
   self.Text_Tip:SetText(GText(ConfigData.TextTip))
@@ -16,7 +13,6 @@ function M:Init(ConfigData)
   self:RefreshBaseInfo()
   self:InitListenEvent()
 end
-
 function M:InitGamepadKey(GamepadKeyName)
   if GamepadKeyName then
     self.GamepadKeyName = GamepadKeyName
@@ -33,7 +29,6 @@ function M:InitGamepadKey(GamepadKeyName)
     }
   })
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -41,13 +36,11 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -59,5 +52,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.WS_Type:SetActiveWidgetIndex(0)
   end
 end
-
 return M

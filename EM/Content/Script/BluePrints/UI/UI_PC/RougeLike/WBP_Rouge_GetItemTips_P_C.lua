@@ -1,5 +1,4 @@
 local WBP_Rouge_GetItemTips_P_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Rouge_GetItemTips_P_C:Construct()
   self.Widget_VXMap = {
     4,
@@ -9,7 +8,6 @@ function WBP_Rouge_GetItemTips_P_C:Construct()
     0
   }
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnLoaded(InfoDatas, AwardList)
   self.List_BlessingItem:SetVisibility(UIConst.VisibilityOp.Visible)
   self.List_TreasureItem:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -93,7 +91,6 @@ function WBP_Rouge_GetItemTips_P_C:OnLoaded(InfoDatas, AwardList)
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_GetItemTips_P_C:SetNavigation(Widget)
   Widget:SetNavigationRuleCustom(UE4.EUINavigation.Left, {
     self,
@@ -104,14 +101,12 @@ function WBP_Rouge_GetItemTips_P_C:SetNavigation(Widget)
     self.OnNavigateRight
   })
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnNavigateLeft()
   if self.SelectedIndex - 1 >= 0 then
     return self:UpdateSelectedWidget(self.SelectedIndex - 1)
   end
   return
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnNavigateRight()
   local ItemsCount = self.UsedList:GetNumItems()
   if ItemsCount >= self.SelectedIndex + 1 then
@@ -119,7 +114,6 @@ function WBP_Rouge_GetItemTips_P_C:OnNavigateRight()
   end
   return
 end
-
 function WBP_Rouge_GetItemTips_P_C:UpdateSelectedWidget(SelectedIndex)
   self.SelectedIndex = SelectedIndex
   self.UsedList:NavigateToIndex(self.SelectedIndex)
@@ -129,7 +123,6 @@ function WBP_Rouge_GetItemTips_P_C:UpdateSelectedWidget(SelectedIndex)
   end
   return
 end
-
 function WBP_Rouge_GetItemTips_P_C:SetInfo(Parent, InfoId, InfoData, AwardType)
   self.Parent = Parent
   self.InfoId = InfoId
@@ -141,16 +134,13 @@ function WBP_Rouge_GetItemTips_P_C:SetInfo(Parent, InfoId, InfoData, AwardType)
   self.Btn_Select:SetText(GText("UI_CONFIRM_SELECTION"))
   self.StartTime = UE4.UGameplayStatics.GetRealTimeSeconds(self)
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnBtn_SelectClicked()
 end
-
 function WBP_Rouge_GetItemTips_P_C:CloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return
   end
   local AnimObj = self:GetAnimationByName("Out")
-  
   local function PlayAnimFinished()
     if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
       EventManager:FireEvent(EventID.OnHomeBaseBtnPlayAnim, "RougeBag", "Rouge_Get_Phone")
@@ -166,7 +156,6 @@ function WBP_Rouge_GetItemTips_P_C:CloseSelf()
       GWorld.RougeLikeManager:ShowNextAward(self.AwardList)
     end
   end
-  
   if self:IsAnimationPlaying(self.Out) then
     return
   end
@@ -178,7 +167,6 @@ function WBP_Rouge_GetItemTips_P_C:CloseSelf()
   end
   self:RemoveInputMethodChangedListen()
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -201,7 +189,6 @@ function WBP_Rouge_GetItemTips_P_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Rouge_GetItemTips_P_C:ChangeSelectItem(NewWidget)
   self.CurrentSelectItem = NewWidget
   if 1 == self.ItemNum then
@@ -209,15 +196,24 @@ function WBP_Rouge_GetItemTips_P_C:ChangeSelectItem(NewWidget)
   end
   self:UpdateKeyGamePad()
 end
-
 function WBP_Rouge_GetItemTips_P_C:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
     self:InitGamepadView()
   else
     self:InitKeyboardView()
   end
+  local TargetUpdateItem = self.CurrentSelectItem
+  if not TargetUpdateItem then
+    if self.AwardType == "Blessing" then
+      TargetUpdateItem = self.List_BlessingItem:GetItemAt(self.SelectedIndex or 0)
+    elseif self.AwardType == "Treasure" then
+      TargetUpdateItem = self.List_TreasureItem:GetItemAt(self.SelectedIndex or 0)
+    end
+  end
+  if TargetUpdateItem and TargetUpdateItem.OnUpdateUIStyleByInputTypeChange then
+    TargetUpdateItem:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
+  end
 end
-
 function WBP_Rouge_GetItemTips_P_C:ShowBottomGamePadKey(bShow)
   if 1 ~= self.ItemNum then
     return
@@ -231,7 +227,6 @@ function WBP_Rouge_GetItemTips_P_C:ShowBottomGamePadKey(bShow)
     self.Key_GamePad04:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Rouge_GetItemTips_P_C:InitGamepadView()
   self.Button_FullClose:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Switch_Key:SetActiveWidgetIndex(1)
@@ -276,7 +271,6 @@ function WBP_Rouge_GetItemTips_P_C:InitGamepadView()
     self:UpdateKeyGamePad()
   end)
 end
-
 function WBP_Rouge_GetItemTips_P_C:UpdateKeyGamePad()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad and self.CurrentSelectItem and self.CurrentSelectItem.ExplanationId ~= nil and #self.CurrentSelectItem.ExplanationId > 0 then
     self.Key_GamePad03:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -299,7 +293,6 @@ function WBP_Rouge_GetItemTips_P_C:UpdateKeyGamePad()
     self.Key_GamePad04:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Rouge_GetItemTips_P_C:InitKeyboardView()
   self.Button_FullClose:SetVisibility(UIConst.VisibilityOp.Visible)
   if CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile" then
@@ -313,19 +306,16 @@ function WBP_Rouge_GetItemTips_P_C:InitKeyboardView()
     end
   end
 end
-
 function WBP_Rouge_GetItemTips_P_C:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_GetItemTips_P_C:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
@@ -338,21 +328,17 @@ function WBP_Rouge_GetItemTips_P_C:OnAnalogValueChanged(MyGeometry, InAnalogInpu
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_Rouge_GetItemTips_P_C:OnItemSelected()
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.CurrentSelectItem:SetNavigatePosAngle(0)
     self.CurrentSelectItem:SetNavigatePosOffsetPercent(UE4.FVector2D(0.5, -0.05))
     self.CurrentSelectItem:SetNavigatePosOffsetAlignment(UE4.FVector2D(0.5, 0.5))
-    
     local function HideKeyTips()
       if not UIUtils.CheckScrollBoxCanScroll(self.CurrentSelectItem.ScrollBox_Desc) then
         self.Key_GamePad02:SetVisibility(UIConst.VisibilityOp.Collapsed)
       end
     end
-    
     self:AddDelayFrameFunc(HideKeyTips, 2)
   end
 end
-
 return WBP_Rouge_GetItemTips_P_C

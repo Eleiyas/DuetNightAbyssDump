@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_RegionHijackComponent_C = Class()
-
 function BP_RegionHijackComponent_C:InitRegionHijackComponent()
   DebugPrint("RegionHijackComponent: Init!")
   self.GameMode = self:GetOwner()
@@ -9,11 +8,9 @@ function BP_RegionHijackComponent_C:InitRegionHijackComponent()
   self.Checkpoint = 0
   self.CheckpointMonsterNum = {10, 20}
 end
-
 function BP_RegionHijackComponent_C:ClearRegionHijackComponent()
   self.GameMode.EMGameState.StopTrollyBoxLocation:Clear()
 end
-
 function BP_RegionHijackComponent_C:GetNextPathInfos(NowPathId)
   local EMGameState = self.GameMode.EMGameState
   if EMGameState.NowPathId ~= NowPathId then
@@ -38,11 +35,9 @@ function BP_RegionHijackComponent_C:GetNextPathInfos(NowPathId)
   end
   return nil
 end
-
 function BP_RegionHijackComponent_C:SetCheckpoint(Checkpoint)
   self.Checkpoint = Checkpoint
 end
-
 function BP_RegionHijackComponent_C:CheckPointMonsterDead(Monster)
   if 0 ~= Monster.CreatorId and Monster.CreatorType == "MonsterSpawn" and Monster:GetCamp() == ECampName.Monster and 0 ~= self.Checkpoint then
     self.CheckpointMonsterNum[self.Checkpoint] = self.CheckpointMonsterNum[self.Checkpoint] - 1
@@ -54,5 +49,4 @@ function BP_RegionHijackComponent_C:CheckPointMonsterDead(Monster)
   end
   return 0
 end
-
 return BP_RegionHijackComponent_C

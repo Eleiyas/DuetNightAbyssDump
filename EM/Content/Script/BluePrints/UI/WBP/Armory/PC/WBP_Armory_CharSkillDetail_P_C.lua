@@ -7,7 +7,6 @@ local FocusStates = {
   SkillAttr = 2,
   Resource = 3
 }
-
 function M:Construct()
   self:InitKeySetting()
   self.bIsShowNavigateGuide = false
@@ -34,7 +33,6 @@ function M:Construct()
   self.ScrollBox_Attr:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self.ScrollBox_Attr:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
 end
-
 function M:InitKeySetting()
   self.TableKey = "Tab"
   self.EscapeKey = "Escape"
@@ -56,7 +54,6 @@ function M:InitKeySetting()
   self.KeyDownEvent[UIConst.GamePadKey.RightThumb] = self.OnRightThumbKeyDown
   self.KeyDownEvent[self.TrainingClose] = self.OnTraingCloseKeydown
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self.IsGamepadInput = self.CurInputDeviceType == ECommonInputType.Gamepad
@@ -83,7 +80,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:UpdateGamepadKeyState()
 end
-
 function M:UpdateGamepadKeyState()
   if self.IsGamepadInput then
     self.Key_Consume:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -173,49 +169,38 @@ function M:UpdateGamepadKeyState()
     self:InitSkillKeyInfo(SkillData)
   end
 end
-
 function M:OnTreeNodeClicked(BranchInfo, NodeInfo)
   M.Super.OnTreeNodeClicked(self, BranchInfo, NodeInfo)
   self:UpdateGamepadKeyState()
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, Params)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, Params)
 end
-
 function M:ModifyCharSkillInitParams(Params)
   function Params.OnAddedToFocusPath()
     self.CurrentFocusState = FocusStates.CharSkill
-    
     self:OnFocusChanged()
   end
-  
   function Params.OnRemovedFromFocusPath()
     self.CurrentFocusState = nil
   end
-  
   function Params:OnTreeNodeWidgetAddedToFocusPath(NodeInfo)
     if self.IsGamepadInput and NodeInfo and NodeInfo.UI then
       NodeInfo.UI:OnBtnClicked()
     end
   end
-  
   function Params:OnTreeNodeWidgetRemovedFromFocusPath(NodeInfo)
   end
 end
-
 function M:OnAddedToFocusPath()
   self.IsInFocusPath = true
 end
-
 function M:OnRemovedFromFocusPath()
   self.IsInFocusPath = false
 end
-
 function M:OnFocusChanged()
   self:UpdateGamepadKeyState()
 end
-
 function M:ShowNextLevelInfo(bShow)
   M.Super.ShowNextLevelInfo(self, bShow)
   if bShow then
@@ -226,7 +211,6 @@ function M:ShowNextLevelInfo(bShow)
     self.KeyDownEvent[self.TabRightKey] = self.OnTabRightKeyDown
   end
 end
-
 function M:OnLeftThumbKeyDown()
   if self.HB_Item:IsVisible() then
     local Widget = self.HB_Item:GetChildAt(0)
@@ -235,7 +219,6 @@ function M:OnLeftThumbKeyDown()
     end
   end
 end
-
 function M:OnResourceContentCreated(Content)
   if Content then
     Content.OnAddedToFocusPathEvent = {
@@ -260,7 +243,6 @@ function M:OnResourceContentCreated(Content)
     }
   end
 end
-
 function M:UpdateResourceList(ResourcesUse)
   M.Super.UpdateResourceList(self, ResourcesUse)
   local AllChildren = self.HB_Item:GetAllChildren():ToTable()
@@ -282,7 +264,6 @@ function M:UpdateResourceList(ResourcesUse)
     end
   end
 end
-
 function M:UpdateAttrList(...)
   M.Super.UpdateAttrList(self, ...)
   local AllChildren = self.ScrollBox_Attr:GetAllChildren():ToTable()
@@ -308,7 +289,6 @@ function M:UpdateAttrList(...)
     end
   end
 end
-
 function M:OnRightThumbKeyDown()
   local Widget = self:GetAnyFocusableSkillAttrWidget()
   if Widget then
@@ -317,7 +297,6 @@ function M:OnRightThumbKeyDown()
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self), true
   end
 end
-
 function M:GetAnyFocusableSkillAttrWidget()
   local AllChildren = self.ScrollBox_Attr:GetAllChildren():ToTable()
   for _, Widget in ipairs(AllChildren) do
@@ -326,23 +305,19 @@ function M:GetAnyFocusableSkillAttrWidget()
     end
   end
 end
-
 function M:OnSkillAttrContentCreated(Content)
   Content.Owner = self
-  
   function Content.OnAddedToFocusPath(_self, _Content)
     self.CurrentFocusState = FocusStates.SkillAttr
     self.SkillAttrWidget = _Content.Widget
     self.ScrollBox_Attr:ScrollWidgetIntoView(_Content.Widget, true)
     self:UpdateGamepadKeyState()
   end
-  
   function Content.OnRemovedFromFocusPath()
     self.CurrentFocusState = nil
     self.SkillAttrWidget = nil
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InputEvent = UWidgetBlueprintLibrary.GetInputEventFromKeyEvent(InKeyEvent)
   local IsRepeat = UKismetInputLibrary.InputEvent_IsRepeat(InputEvent)
@@ -359,7 +334,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UIUtils.Handled
 end
-
 function M:OnFaceButtonLeftKeyDown()
   if 0 == self.WidgetSwitcher_Page:GetActiveWidgetIndex() then
     local WidgetToFocus = self:ShowGamepadTermTip(not self.IsGamepadTermTipShowed)
@@ -373,7 +347,6 @@ function M:OnFaceButtonLeftKeyDown()
     end
   end
 end
-
 function M:ShowGamepadTermTip(IsShow)
   local Widget
   if IsShow then
@@ -411,11 +384,9 @@ function M:ShowGamepadTermTip(IsShow)
   self:UpdateGamepadKeyState()
   return Widget
 end
-
 function M:OnUpgradeKeyDown()
   self:OnLevelUpBtnClicked()
 end
-
 function M:OnBackKeyDown()
   if self.IsGamepadInput then
     if self.IsNexLevelInfoShowed then
@@ -430,7 +401,6 @@ function M:OnBackKeyDown()
   end
   self:OnCloseBtnClicked()
 end
-
 function M:OnTraingCloseKeydown()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -438,7 +408,6 @@ function M:OnTraingCloseKeydown()
     self:OnCloseBtnClicked()
   end
 end
-
 function M:OnTabLeftKeyDown()
   if not (not self.IsNexLevelInfoShowed and self.CurrentNodeInfo) or not self.ScrollBox_Attr:HasAnyChildren() then
     return
@@ -449,19 +418,16 @@ function M:OnTabLeftKeyDown()
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurrentNodeInfo.UI), true
   end
 end
-
 function M:OnTabRightKeyDown()
   if not (not self.IsNexLevelInfoShowed and self.CurrentNodeInfo) or not self.ScrollBox_Attr:HasAnyChildren() then
     return
   end
   self.Tab_SkillDetail:TabToRight()
 end
-
 function M:OnTabSelected(Tab)
   M.Super.OnTabSelected(self, Tab)
   self:UpdateGamepadKeyState()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -475,7 +441,6 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.IsNexLevelInfoShowed then
     local Widget = self:GetAnyFocusableSkillAttrWidget()
@@ -487,5 +452,4 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
     return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.CurrentNodeInfo.UI)
   end
 end
-
 return M

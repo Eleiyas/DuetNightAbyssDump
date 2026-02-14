@@ -4,13 +4,11 @@ local BP_CircularElevator = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_CircularElevator:CreateRegionData()
   self.RegionData = {
     OpenState = self.OpenState
   }
 end
-
 function BP_CircularElevator:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self:AddTimer(1, self.Init)
@@ -39,7 +37,6 @@ function BP_CircularElevator:ReceiveBeginPlay()
   self.PlayerIn = {}
   self.RecoverCollisionFrameNum = -1
 end
-
 function BP_CircularElevator:Init()
   if self.BpBorn and IsAuthority(self) then
     local Context = AEventMgr.CreateUnitContext()
@@ -59,7 +56,6 @@ function BP_CircularElevator:Init()
     self.Diban.ElevatorInteractiveComponent:SetInteractiveName(DataMgr.Mechanism[self.UnitId].InteractiveName)
   end
 end
-
 function BP_CircularElevator:ReceiveTick(DeltaSeconds)
   self.Overridden.ReceiveTick(self, DeltaSeconds)
   if self.RecoverCollisionFrameNum >= 0 and self.RecoverCollisionFrameNum < 1 then
@@ -82,7 +78,6 @@ function BP_CircularElevator:ReceiveTick(DeltaSeconds)
     self:RealMoveElevator(DeltaSeconds, self.Direction)
   end
 end
-
 function BP_CircularElevator:RealMoveLua(ElevatorId)
   if IsAuthority(self) then
     self.Diban.ElevatorInteractiveComponent:InteractiveSuccess()
@@ -90,7 +85,6 @@ function BP_CircularElevator:RealMoveLua(ElevatorId)
     self:PlayMiddle()
   end
 end
-
 function BP_CircularElevator:RealOpenDoorLua(ElevatorId)
   self.OnDoorOpen = true
   self.OnDoorClose = false
@@ -98,15 +92,16 @@ function BP_CircularElevator:RealOpenDoorLua(ElevatorId)
   self.Overridden.RealOpenDoorLua(self, ElevatorId)
   AudioManager(self):PlayFMODSound(self.Diban, nil, "event:/sfx/common/scene/lift_fast_door_open", "Elevator")
 end
-
 function BP_CircularElevator:RealCloseDoorLua(ElevatorId)
   self.OnDoorOpen = false
+  self.OtherElevator.OnDoorOpen = false
   self.OnDoorClose = true
+  self.OtherElevator.OnDoorClose = true
   self.HasDoorOpen = false
+  self.OtherElevator.HasDoorOpen = false
   self.Overridden.RealCloseDoorLua(self, ElevatorId)
   AudioManager(self):PlayFMODSound(self.Diban, nil, "event:/sfx/common/scene/lift_fast_door_close", "Elevator")
 end
-
 function BP_CircularElevator:InitBeforeRun()
   self:UpdateRegionData("OpenState", true)
   self.Time = 0
@@ -135,7 +130,6 @@ function BP_CircularElevator:InitBeforeRun()
     self.OtherElevator.Direction = 0
   end
 end
-
 function BP_CircularElevator:PlayMiddle()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   AudioManager(self):PlayFMODSound(self.Diban, nil, "event:/sfx/common/scene/lift_slow_door_running", "Elevator_Running1", nil, nil, false, false, nil, true)
@@ -149,10 +143,8 @@ function BP_CircularElevator:PlayMiddle()
   self:RealCloseDoorLua()
   self.OtherElevator:RealCloseDoorLua()
 end
-
 function BP_CircularElevator:OnDoorMove(XValue)
 end
-
 function BP_CircularElevator:ClientCloseDoor(Door, Direction, DeltaSeconds)
   if self.OnDoorClose == false then
     return
@@ -174,7 +166,6 @@ function BP_CircularElevator:ClientCloseDoor(Door, Direction, DeltaSeconds)
     end
   end
 end
-
 function BP_CircularElevator:ChangeElevatorLoc(MovePlayer)
   local MoveVector = self.MoveTransform.Translation
   local Player = UE.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -190,7 +181,6 @@ function BP_CircularElevator:ChangeElevatorLoc(MovePlayer)
     if not HitRes.Actor then
       return
     end
-    
     local function RealMovePlayer()
       local PreviousDesiredLoc = Player.CharSpringArmComponent:GetPreviousDesiredLoc()
       local DiffLoc = PreviousDesiredLoc - Player:K2_GetActorLocation()
@@ -200,7 +190,6 @@ function BP_CircularElevator:ChangeElevatorLoc(MovePlayer)
       Player.CharSpringArmComponent:SetPreviousDesiredLoc(DiffLoc + PlayerLoc)
       Player.PlayerAnimInstance.ForceIdle = true
     end
-    
     local GameMode = UGameplayStatics.GetGameMode()
     if GameMode and GameMode:GetWCSubSystem() then
       GameMode:GetWCSubSystem():PauseAndAsyncDestroyRegionData({self, RealMovePlayer})
@@ -209,11 +198,9 @@ function BP_CircularElevator:ChangeElevatorLoc(MovePlayer)
     end
   end
 end
-
 function BP_CircularElevator:WaitToStopElevator()
   self.SpeedDown = true
 end
-
 function BP_CircularElevator:RealMoveElevator(DeltaSeconds, Direction)
   if 0 == Direction then
     self:MoveElevatorUp(self.ElevatorQueue[1], DeltaSeconds, self.MovePlayer)
@@ -221,7 +208,6 @@ function BP_CircularElevator:RealMoveElevator(DeltaSeconds, Direction)
     self:MoveElevatorDown(self.ElevatorQueue[self.ElevatorQueue:Length()], DeltaSeconds, self.MovePlayer)
   end
 end
-
 function BP_CircularElevator:MoveElevatorUp(Elevator, DeltaSeconds, MovePlayer)
   local Current = Elevator:K2_GetComponentLocation()
   if Current.Z <= self.BenchMark.Z - self.SingleHeight + 1 then
@@ -229,7 +215,7 @@ function BP_CircularElevator:MoveElevatorUp(Elevator, DeltaSeconds, MovePlayer)
       self.stage1 = true
       Elevator:K2_SetWorldLocation(self.TopUp, false, nil, false)
       self.ElevatorQueue:Remove(1)
-      self:ChangeElevatorLoc(MovePlayer)
+      self:ChangeElevatorLoc(MovePlayer, Current)
       self:OnSpeedUniform()
       if IsAuthority(self) and MovePlayer then
         UE4.UGameplayStatics.GetGameMode(self):PostCustomEvent("ElevatorUniform")
@@ -326,7 +312,6 @@ function BP_CircularElevator:MoveElevatorUp(Elevator, DeltaSeconds, MovePlayer)
     end
   end
 end
-
 function BP_CircularElevator:MoveElevatorDown(Elevator, DeltaSeconds, MovePlayer)
   local Current = Elevator:K2_GetComponentLocation()
   if Current.Z >= self.BenchMark.Z + self.SingleHeight then
@@ -423,7 +408,6 @@ function BP_CircularElevator:MoveElevatorDown(Elevator, DeltaSeconds, MovePlayer
     end
   end
 end
-
 function BP_CircularElevator:OpenDoorOnEndMove(MovePlayer)
   if self.HasDoorOpen then
     return
@@ -447,12 +431,10 @@ function BP_CircularElevator:OpenDoorOnEndMove(MovePlayer)
   if IsAuthority(self) and MovePlayer then
     UE4.UGameplayStatics.GetGameMode(self):PostCustomEvent("ElevatorEndMove")
   end
-  self.Smoke:Activate()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   self:OpenDoor(Player.Eid, self.Eid)
   self:UpdateRegionData("OpenState", false)
 end
-
 function BP_CircularElevator:BoxOverLap(Player)
   if 0 == self.NowOpenDoorNum and (not self.OnElevatorMove or self.OnDoorOpen or not not self.OnDoorClose) then
     if not self.HasDoorOpen then
@@ -466,14 +448,12 @@ function BP_CircularElevator:BoxOverLap(Player)
   end
   self.NowOpenDoorNum = self.NowOpenDoorNum + 1
 end
-
 function BP_CircularElevator:BoxEndOverLap(Player)
   self.NowOpenDoorNum = math.max(self.NowOpenDoorNum - 1, 0)
   if 0 == self.NowOpenDoorNum and 0 == self.NowMoveElevatorNum then
     self:CloseDoor(Player.Eid, self.Eid)
   end
 end
-
 function BP_CircularElevator:GoIn(Player)
   self.PlayerIn[Player.Eid] = true
   if (self.OnElevatorMove or self.OtherElevator.OnElevatorMove) and not self.OnDoorClose and not self.OnDoorOpen then
@@ -481,7 +461,6 @@ function BP_CircularElevator:GoIn(Player)
   end
   self.NowMoveElevatorNum = self.NowMoveElevatorNum + 1
 end
-
 function BP_CircularElevator:GoOut(Player)
   if self.PlayerIn[Player.Eid] == false then
     return
@@ -499,31 +478,25 @@ function BP_CircularElevator:GoOut(Player)
   AudioManager(self):StopSound(self.Diban, "Elevator_Running1")
   AudioManager(self):StopSound(self.OtherElevator.Diban, "Elevator_Running2")
 end
-
 function BP_CircularElevator:OpenPlayerPosSync()
-  print(_G.LogTag, "LXZ OpenPlayerPosSync", self.OnElevatorMove)
   local Avatar = GWorld:GetAvatar()
   if not Avatar or self.OnElevatorMove then
     return
   end
   Avatar:ClientNotifyServerOpenSync("InElevator")
 end
-
 function BP_CircularElevator:ClosePlayerPosSync()
-  print(_G.LogTag, "LXZ ClosePlayerPosSync", self.OnElevatorMove)
   local Avatar = GWorld:GetAvatar()
   if not Avatar or self.OnElevatorMove then
     return
   end
   Avatar:ClientNotifyServerCloseSync("InElevator")
 end
-
 function BP_CircularElevator:TriggerStoryNodeCallback(StateName)
   if self.StoryNodeCallback and self.StoryNodeCallback[StateName] then
     self.StoryNodeCallback[StateName](self)
   end
 end
-
 function BP_CircularElevator:OnElevatorStartUp()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) then
@@ -532,7 +505,6 @@ function BP_CircularElevator:OnElevatorStartUp()
   GameMode:ElevatorStartUp(self)
   self:TriggerStoryNodeCallback("StartUp")
 end
-
 function BP_CircularElevator:OnElevatorStopUp()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) then
@@ -541,7 +513,6 @@ function BP_CircularElevator:OnElevatorStopUp()
   GameMode:ElevatorStopUp(self)
   self.OtherElevator:TriggerStoryNodeCallback("StopUp")
 end
-
 function BP_CircularElevator:OnElevatorStartDown()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) then
@@ -550,7 +521,6 @@ function BP_CircularElevator:OnElevatorStartDown()
   GameMode:ElevatorStartDown(self)
   self:TriggerStoryNodeCallback("StartDown")
 end
-
 function BP_CircularElevator:OnElevatorStopDown()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not IsValid(GameMode) then
@@ -559,40 +529,22 @@ function BP_CircularElevator:OnElevatorStopDown()
   GameMode:ElevatorStopDown(self)
   self.OtherElevator:TriggerStoryNodeCallback("StopDown")
 end
-
 function BP_CircularElevator:AddStoryNodeCallback(StateName, Callback)
   if not self.StoryNodeCallback then
     self.StoryNodeCallback = {}
   end
   self.StoryNodeCallback[StateName] = Callback
 end
-
 function BP_CircularElevator:RemoveStoryNodeCallback(StateName)
   self.StoryNodeCallback[StateName] = nil
 end
-
 function BP_CircularElevator:PlayInteractiveEffects()
-  self.Diban.FXStartInteractive:Activate(true)
-  self.Diban.FXLock:Deactivate()
-  self.Diban.FXRunning:Activate(true)
-  self.OtherElevator.Diban.FXStartInteractive:Activate(true)
-  self.OtherElevator.Diban.FXLock:Deactivate()
-  self.OtherElevator.Diban.FXRunning:Activate(true)
 end
-
 function BP_CircularElevator:PlayStopEffects()
-  self.Diban.FXStartInteractive:Deactivate()
-  self.Diban.FXLock:Activate(true)
-  self.Diban.FXRunning:Deactivate()
-  self.OtherElevator.Diban.FXStartInteractive:Deactivate()
-  self.OtherElevator.Diban.FXLock:Activate(true)
-  self.OtherElevator.Diban.FXRunning:Deactivate()
 end
-
 function BP_CircularElevator:RegisterComponent(CompArray)
   for i, v in pairs(CompArray) do
     self.ComponentLoc:Add(v, v.RelativeLocation)
   end
 end
-
 return BP_CircularElevator

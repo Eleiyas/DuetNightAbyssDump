@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_StartAndEndPoint_C = Class()
-
 function BP_StartAndEndPoint_C:DebugPrint(...)
   if self.IsStartPoint == true then
     DebugPrint("StartAndEndPoint StartPoint", ...)
@@ -8,7 +7,6 @@ function BP_StartAndEndPoint_C:DebugPrint(...)
     DebugPrint("StartAndEndPoint EndPoint", ...)
   end
 end
-
 function BP_StartAndEndPoint_C:ReceiveBeginPlay()
   self:DebugPrint("ReceiveBeginPlay")
   self.PointArray = self:K2_GetComponentsByClass(LoadClass("/Game/BluePrints/Item/Mechanism/Seat/BP_SeatEnterComponent.BP_SeatEnterComponent"):StaticClass())
@@ -24,7 +22,6 @@ function BP_StartAndEndPoint_C:ReceiveBeginPlay()
     self:ShufflePointList()
   end
 end
-
 function BP_StartAndEndPoint_C:ShufflePointList()
   local Count = #self.PointList
   while Count > 1 do
@@ -38,7 +35,6 @@ function BP_StartAndEndPoint_C:ShufflePointList()
     DebugPrint("BP_StartAndEndPoint_C:ShufflePointList ", k, v:GetName())
   end
 end
-
 function BP_StartAndEndPoint_C:SetPlayerTrans()
   self:DebugPrint("WorldComposition, SetPlayerTrans")
   local Character = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -63,7 +59,6 @@ function BP_StartAndEndPoint_C:SetPlayerTrans()
   Controller:SetControlRotation(Rotation)
   self:OpenPlayerPositionSync()
 end
-
 function BP_StartAndEndPoint_C:InitSetPlayerTrans()
   self:DebugPrint("InitSetPlayerTrans")
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -85,15 +80,14 @@ function BP_StartAndEndPoint_C:InitSetPlayerTrans()
         else
           Player:K2_SetActorLocation(Controller.TargetBornLocation, false, nil, true)
           print(_G.LogTag, "InitSetPlayerTrans SetLocation Succcesss", Player:K2_GetActorLocation())
-          Player:GetMovementComponent():ForceClientUpdate()
           Player:MulticastSetPlayerRotation(Controller.TargetBornRotator)
+          Player:GetMovementComponent():ForceClientUpdate()
           Player:RemoveGravityModifier(UE4.EGravityModifierTag.LoadLevel)
         end
       end
     end
   end
 end
-
 function BP_StartAndEndPoint_C:OpenPlayerPositionSync()
   self:DebugPrint("OpenPlayerPositionSync")
   local Avatar = GWorld:GetAvatar()
@@ -107,7 +101,6 @@ function BP_StartAndEndPoint_C:OpenPlayerPositionSync()
   end
   WorldLoader:OpenPlayerPositionSync()
 end
-
 function BP_StartAndEndPoint_C:SetInitTrans(PlayerController, Index)
   self:DebugPrint("SetInitTrans")
   local Player = PlayerController:GetMyPawn()
@@ -121,7 +114,6 @@ function BP_StartAndEndPoint_C:SetInitTrans(PlayerController, Index)
   PlayerController.TargetBornLocation = NewTranslation
   PlayerController.TargetBornRotator = Transform.Rotation:ToRotator()
 end
-
 function BP_StartAndEndPoint_C:SetEnteredPlayerTrans(PlayerController)
   self:DebugPrint("SetEnteredPlayerTrans")
   if not GWorld.GameInstance:GetCurrentGameMode():SetEnteredPlayerTransform(PlayerController) then
@@ -129,7 +121,6 @@ function BP_StartAndEndPoint_C:SetEnteredPlayerTrans(PlayerController)
     PlayerController.TargetBornRotator = self:K2_GetActorRotation()
   end
 end
-
 function BP_StartAndEndPoint_C:RealSetNewEnteredPlayerTrans(AvatarEidStr)
   self:DebugPrint("RealSetNewEnteredPlayerTrans")
   local PlayerController = UE4.URuntimeCommonFunctionLibrary.GetPlayerControllerByAvatarEid(self, AvatarEidStr)
@@ -138,17 +129,15 @@ function BP_StartAndEndPoint_C:RealSetNewEnteredPlayerTrans(AvatarEidStr)
   NewLocation.Z = NewLocation.Z + Character.CapsuleComponent:GetUnscaledCapsuleHalfHeight()
   Character:K2_SetActorLocation(PlayerController.TargetBornLocation, false, nil, true)
   Character:K2_SetBase()
-  Character:GetMovementComponent():ForceClientUpdate()
   Character:UpdateCurrentLevelId()
   Character:MulticastSetPlayerRotation(PlayerController.TargetBornRotator)
+  Character:GetMovementComponent():ForceClientUpdate()
   Character:RemoveGravityModifier(UE4.EGravityModifierTag.LoadLevel)
 end
-
 function BP_StartAndEndPoint_C:GetTransform(i)
   i = i or 0
   self:DebugPrint("GetTransform i =", i)
   assert(i + 1 <= self.PointArray:Length(), "PlayerNumber " .. i .. " Can not find a point")
   return self.PointList[i + 1]:K2_GetComponentToWorld()
 end
-
 return BP_StartAndEndPoint_C

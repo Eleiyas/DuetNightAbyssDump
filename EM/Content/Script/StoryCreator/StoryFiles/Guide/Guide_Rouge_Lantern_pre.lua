@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17220576930467595",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1234.4933252039084, y = 281.6911060081542},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,17 +121,17 @@ return {
           ["17220577029167894"] = {
             key = "17220577029167894",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1382.4845532740837, y = 332.88659472995863},
             propsData = {WaitTime = 0.5}
           },
           ["172205860903010231"] = {
             key = "172205860903010231",
             type = "TestPrintNode",
-            name = "\230\181\139\232\175\149\230\137\147\229\141\176",
+            name = "测试打印",
             pos = {x = 1763.6498193805262, y = 336.67459414024904},
             propsData = {
-              Text = "tyx2025\229\174\140\230\136\144"
+              Text = "tyx2025完成"
             }
           }
         },

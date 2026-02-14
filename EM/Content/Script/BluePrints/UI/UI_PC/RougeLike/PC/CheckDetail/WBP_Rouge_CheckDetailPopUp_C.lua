@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Btn_Close.OnClicked:Add(self, self.OnBtnCloseClicked)
   self.Text_Tip:SetText(GText("UI_TRAIN_CLOSE"))
@@ -14,7 +13,6 @@ function M:Construct()
   self.CurInputDeviceType = nil
   self.TextOverflow = false
 end
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self)
   self.bIsFocusable = true
@@ -42,12 +40,10 @@ function M:OnLoaded(...)
   self:InitListenEvent()
   self:InitTipsInfo()
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   self:ClearListenEvent()
 end
-
 function M:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -58,13 +54,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -76,7 +70,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self:UpdateTips(IsGamePad, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
 end
-
 function M:InitTipsInfo()
   self.Key_GamePad01:CreateCommonKey({
     KeyInfoList = {
@@ -91,7 +84,6 @@ function M:InitTipsInfo()
     Desc = GText("UI_BACK")
   })
 end
-
 function M:UpdateTips(IsGamePad, CurGamepadName)
   if IsGamePad then
     self.Switch_Key:SetActiveWidgetIndex(1)
@@ -103,7 +95,6 @@ function M:UpdateTips(IsGamePad, CurGamepadName)
     self.Switch_Key:SetActiveWidgetIndex(0)
   end
 end
-
 function M:ShowSwipeTip()
   self.TextOverflow = self[self.ItemType .. "Item"].ScrollBox_Desc:GetScrollOffsetOfEnd() > 1
   if self.TextOverflow then
@@ -112,20 +103,17 @@ function M:ShowSwipeTip()
     self.Key_GamePad01:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnBtnCloseClicked()
   if self:IsPlayingAnimation() then
     return
   end
   self:PlayAnimation(self.Out)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.Out then
     self:Close()
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -141,7 +129,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:Handle_KeyEventOnPC(InKeyName)
   local IsEventHandled = false
   if "Escape" == InKeyName then
@@ -150,7 +137,6 @@ function M:Handle_KeyEventOnPC(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:Handle_KeyEventOnGamePad(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Right" == InKeyName then
@@ -159,7 +145,6 @@ function M:Handle_KeyEventOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -174,5 +159,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return self.Unhandle
 end
-
 return M

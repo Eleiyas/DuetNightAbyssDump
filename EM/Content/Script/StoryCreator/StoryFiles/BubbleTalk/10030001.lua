@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1711459796232647",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1054.5040688212046, y = 303.9065333643339},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -239,7 +241,7 @@ return {
           ["17472118917288309"] = {
             key = "17472118917288309",
             type = "BranchTriggerNode",
-            name = "\232\167\166\229\143\145\229\136\134\230\148\175\232\138\130\231\130\185",
+            name = "触发分支节点",
             pos = {x = 1083.0588235294117, y = 416.47058823529414},
             propsData = {
               Branches = {
@@ -260,7 +262,7 @@ return {
           ["17472121713869828"] = {
             key = "17472121713869828",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1448.8556149732617, y = -210.46810542398762},
             propsData = {
               IsNpcNode = false,
@@ -279,14 +281,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["174721219018210457"] = {
             key = "174721219018210457",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1450.032085561497, y = -56.938693659281824},
             propsData = {
               IsNpcNode = false,
@@ -305,14 +306,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["174721219085810509"] = {
             key = "174721219085810509",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1451.2085561497327, y = 93.64954163483571},
             propsData = {
               IsNpcNode = false,
@@ -331,14 +331,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["174721219204010615"] = {
             key = "174721219204010615",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1453.5614973262032, y = 252.47307104660047},
             propsData = {
               IsNpcNode = false,
@@ -357,14 +356,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["174721219272010689"] = {
             key = "174721219272010689",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1457.0909090909092, y = 407.76718869365936},
             propsData = {
               IsNpcNode = false,
@@ -383,14 +381,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["174721219347410752"] = {
             key = "174721219347410752",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1462.6112710818595, y = 567.3147000058767},
             propsData = {
               IsNpcNode = false,
@@ -409,14 +406,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["1748344146534936"] = {
             key = "1748344146534936",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1463.020979020979, y = 737.7762237762237},
             propsData = {
               IsNpcNode = false,
@@ -435,14 +431,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["17483441765522107"] = {
             key = "17483441765522107",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1467.4577922077922, y = 910.4685314685315},
             propsData = {
               IsNpcNode = false,
@@ -461,14 +456,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["17483441783762224"] = {
             key = "17483441783762224",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1466.2077922077922, y = 1067.9685314685316},
             propsData = {
               IsNpcNode = false,
@@ -487,14 +481,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["17483441811332352"] = {
             key = "17483441811332352",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1467.4577922077922, y = 1230.4685314685316},
             propsData = {
               IsNpcNode = false,
@@ -513,14 +506,13 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           },
           ["17539483682991230"] = {
             key = "17539483682991230",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1470.6666666666667, y = 1404.6666666666667},
             propsData = {
               IsNpcNode = false,
@@ -540,7 +532,6 @@ return {
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               TalkActors = {},
-              RemoveTalkActors = {},
               OverrideFailBlend = false
             }
           }

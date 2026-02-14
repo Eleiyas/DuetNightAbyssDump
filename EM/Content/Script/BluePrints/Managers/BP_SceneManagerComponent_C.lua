@@ -2,19 +2,18 @@ require("UnLua")
 require("DataMgr")
 local BP_SceneManagerComponent_C = Class("BluePrints.Common.TimerMgr")
 local BattleUtils = require("Utils.BattleUtils")
-
+local Json = require("rapidjson")
+local SDC_MOUSE_CHECKCOUNT_PER_ROUND = 10
+local SDC_MOUSE_REPORT_SERVER_THRESHOLD = 5
 function BP_SceneManagerComponent_C:DebugPrint(...)
   DebugPrint("SceneManagerComponent", ...)
 end
-
 function BP_SceneManagerComponent_C:GetExcavationABCIconPath(Index)
   return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Digging_" .. Index .. ".T_Gp_Digging_" .. Index
 end
-
 function BP_SceneManagerComponent_C:GetSabotageABCIconPath(Index)
   return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_DestroyTarget_" .. Index .. ".T_Gp_DestroyTarget_" .. Index
 end
-
 function BP_SceneManagerComponent_C:GetABCText(Map, Eid, Mod)
   if nil == Map then
     return ""
@@ -25,11 +24,9 @@ function BP_SceneManagerComponent_C:GetABCText(Map, Eid, Mod)
   end
   return string.char(string.byte("A") + Map.Index[Eid])
 end
-
 function BP_SceneManagerComponent_C:GetABCTextByMapName(Map, Eid, Mod)
   return self:GetABCText(self[Map], Eid, Mod)
 end
-
 function BP_SceneManagerComponent_C:Initialize(Initializer)
   self.LoadJsonLevelData = nil
   self.LastAssetName = ""
@@ -53,8 +50,8 @@ function BP_SceneManagerComponent_C:Initialize(Initializer)
     Index = {}
   }
   self.RegionOnlineCharacterInfo = {}
+  self.CurrentCheckCountInScene = 0
 end
-
 function BP_SceneManagerComponent_C:AddRegionEvent(IsRegion)
   DebugPrint(" BP_SceneManagerComponent_C:AddRegionEvent IsRegion: ", IsRegion)
   if IsRegion then
@@ -63,34 +60,28 @@ function BP_SceneManagerComponent_C:AddRegionEvent(IsRegion)
     EventManager:AddEvent(EventID.RemoveRegionIndicatorInfo, self, self.RemoveRegionOnlineCharacterInfo)
   end
 end
-
 function BP_SceneManagerComponent_C:RemoveRegionEvent()
   DebugPrint(" BP_SceneManagerComponent_C:RemoveRegionEvent")
   TeamController:UnRegisterEvent(self)
   EventManager:RemoveEvent(EventID.AddRegionIndicatorInfo, self)
   EventManager:RemoveEvent(EventID.RemoveRegionIndicatorInfo, self)
 end
-
 function BP_SceneManagerComponent_C:NotifyOnWindowResized()
   EventManager:FireEvent(EventID.OnWindowResized)
 end
-
 function BP_SceneManagerComponent_C:NotifyOnWindowMoved()
   EventManager:FireEvent(EventID.OnWindowMoved)
 end
-
 function BP_SceneManagerComponent_C:OnOtherPlayerEntityChange(Avatars)
   DebugPrint("LHQ_BP_SceneManagerComponent_C:OnOtherPlayerEntityChange")
   PrintTable(Avatars)
   if Avatars then
   end
 end
-
 function BP_SceneManagerComponent_C:GetCurSceneName()
   local World = self:GetWorld()
   return World:GetName()
 end
-
 function BP_SceneManagerComponent_C:GetTargetActorByName(ActorName)
   local AllActors = TArray(AActor)
   UE4.UGameplayStatics.GetAllActorsOfClass(self, AActor:StaticClass(), AllActors)
@@ -102,7 +93,6 @@ function BP_SceneManagerComponent_C:GetTargetActorByName(ActorName)
     end
   end
 end
-
 function BP_SceneManagerComponent_C:GetNpcActorInSceneByID(NpcId)
   local NpcConfig = DataMgr.Npc[NpcId]
   if not NpcConfig then
@@ -118,14 +108,12 @@ function BP_SceneManagerComponent_C:GetNpcActorInSceneByID(NpcId)
     end
   end
 end
-
 function BP_SceneManagerComponent_C:GetTargetActorInSceneByBPPath(BPPath)
   local ObjClass = UE4.UClass.Load(BPPath)
   local AllActors = TArray(AActor)
   UE4.UGameplayStatics.GetAllActorsOfClass(self, ObjClass, AllActors)
   return AllActors
 end
-
 function BP_SceneManagerComponent_C:UpdateSceneTargetDoorInfo(TargetEid, DoorName, NextLevelID)
   if not self.Guide2NextLevelIdMaps:Find(TargetEid) then
     self.Guide2NextLevelIdMaps:Add(TargetEid, NextLevelID)
@@ -143,7 +131,6 @@ function BP_SceneManagerComponent_C:UpdateSceneTargetDoorInfo(TargetEid, DoorNam
   end
   self:UpdateGuide2LevelDoorInfo(TargetEid, DoorName, NextLevelID, "Update")
 end
-
 function BP_SceneManagerComponent_C:IsDungeonScene()
   local SceneName = self:GetCurSceneName()
   for _, ConfigData in pairs(DataMgr.Dungeon) do
@@ -165,7 +152,6 @@ function BP_SceneManagerComponent_C:IsDungeonScene()
   end
   return false, false, ""
 end
-
 function BP_SceneManagerComponent_C:GetSceneLoadProgress(SceneId)
   local MapLevelConfig = DataMgr.Dungeon[SceneId]
   if nil == MapLevelConfig then
@@ -176,7 +162,6 @@ function BP_SceneManagerComponent_C:GetSceneLoadProgress(SceneId)
   local NowProgress = UE4.UResourceLibrary.GetLoadProgress(self, MapLevelName, self:GetCurrentLoadSceneResourceId())
   return NowProgress
 end
-
 function BP_SceneManagerComponent_C:CheckPlayerIsInDefaultMainCity()
   local SceneName = self:GetCurSceneName()
   local PathConfigDataArray = Split(Const.DefaultMainCityFile, "/")
@@ -196,7 +181,6 @@ function BP_SceneManagerComponent_C:CheckPlayerIsInDefaultMainCity()
   end
   return false
 end
-
 function BP_SceneManagerComponent_C:CheckIsInLevelSceneByPath(LevelPath)
   local SceneName = self:GetCurSceneName()
   local PathConfigDataArray = Split(LevelPath, "/")
@@ -216,12 +200,10 @@ function BP_SceneManagerComponent_C:CheckIsInLevelSceneByPath(LevelPath)
   end
   return false
 end
-
 function BP_SceneManagerComponent_C:CheckIsInLevelSceneBySceneId(SceneId)
   local LevelPath = DataMgr.Dungeon[SceneId].DungeonMapFile
   return self:CheckIsInLevelSceneByPath(LevelPath)
 end
-
 function BP_SceneManagerComponent_C:ReplaceGuideIcon(TargetActorEid, TargetActor, StyleNode, ImgPath)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -241,7 +223,6 @@ function BP_SceneManagerComponent_C:ReplaceGuideIcon(TargetActorEid, TargetActor
   end
   self.CaptureMonsterEid = TargetActorEid
 end
-
 function BP_SceneManagerComponent_C:RecoverGuideIcon()
   local GuideName = tostring(self.CaptureMonsterEid) .. "Replace"
   RunAsyncTask(self, "RecoverGuideIcon_GetUIObjAsync" .. GuideName, function(CoroutineObj)
@@ -259,12 +240,10 @@ function BP_SceneManagerComponent_C:RecoverGuideIcon()
     end
   end)
 end
-
 function BP_SceneManagerComponent_C:SetGuideActorInfo(GuideInfo)
   if nil == GuideInfo then
     return
   end
-  
   local function CheckEidIsValid(InEid)
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
     local GameState = UE4.UGameplayStatics.GetGameState(self)
@@ -294,9 +273,8 @@ function BP_SceneManagerComponent_C:SetGuideActorInfo(GuideInfo)
     end
     return false
   end
-  
   if CheckEidIsValid(GuideInfo.SnapShotId) == false then
-    DebugPrint("BP_SceneManagerComponent_C:SetGuideActorInfo \229\186\143\229\136\151\229\140\150\230\149\176\230\141\174\231\154\132SnapShotId\228\184\141\229\144\136\230\179\149 SnapShotId: ", GuideInfo.SnapShotId)
+    DebugPrint("BP_SceneManagerComponent_C:SetGuideActorInfo 序列化数据的SnapShotId不合法 SnapShotId: ", GuideInfo.SnapShotId)
     return
   end
   local ConfigData = DataMgr[GuideInfo.UnitType][GuideInfo.UnitId]
@@ -320,29 +298,34 @@ function BP_SceneManagerComponent_C:SetGuideActorInfo(GuideInfo)
     self.PathfindingEid:Add(GuideInfo.SnapShotId, true)
   end
 end
-
 function BP_SceneManagerComponent_C:GetCurSceneGuideEntityByEid(Eid)
   if self.CurSceneGuideEids and self.CurSceneGuideEids[Eid] then
     if self.CurSceneGuideEids[Eid].IsDataStruct then
       return self.CurSceneGuideEids[Eid].Entity, true
     else
-      return Battle(self):GetEntity(Eid), false
+      local TargetActor
+      if Battle(self) then
+        TargetActor = Battle(self):GetEntity(Eid)
+      end
+      return TargetActor, false
     end
   end
   return nil, false
 end
-
 function BP_SceneManagerComponent_C:GetCurSceneGuideEntityByData(CurSceneGuideData)
   if CurSceneGuideData then
     if CurSceneGuideData.IsDataStruct then
       return nil
     else
-      return Battle(self):GetEntity(CurSceneGuideData.Entity)
+      local TargetActor
+      if Battle(self) then
+        TargetActor = Battle(self):GetEntity(CurSceneGuideData.Entity)
+      end
+      return TargetActor
     end
   end
   return nil
 end
-
 function BP_SceneManagerComponent_C:UpdateOneSceneGuideIcon(TargetEid, IsAdd, IsPlayerEid)
   DebugPrint("BP_SceneManagerComponent_C:UpdateOneSceneGuideIcon TargetEid: ", TargetEid, "IsAdd: ", IsAdd, "IsPlayerEid: ", IsPlayerEid)
   self.CurSceneGuideEids = self.CurSceneGuideEids or {}
@@ -351,7 +334,7 @@ function BP_SceneManagerComponent_C:UpdateOneSceneGuideIcon(TargetEid, IsAdd, Is
     if Battle(self) then
       TargetActor = Battle(self):GetEntity(TargetEid)
     end
-    if IsValid(TargetActor) and (TargetActor.OpenState == nil or TargetActor.OpenState == false) then
+    if IsValid(TargetActor) then
       local GuideOp = self.CurSceneGuideEids[TargetEid] == nil and "Add" or "Modify"
       self:UpdateSceneGuideIcon(TargetEid, TargetActor, nil, GuideOp, true, nil, IsPlayerEid)
     else
@@ -381,7 +364,6 @@ function BP_SceneManagerComponent_C:UpdateOneSceneGuideIcon(TargetEid, IsAdd, Is
     end
   end
 end
-
 function BP_SceneManagerComponent_C:AddOneGuideIconWithSkillEffect(TargetEid, IsPlayerEid, GuideDuration, GuideCloseRange)
   if not Battle(self) then
     return
@@ -400,11 +382,9 @@ function BP_SceneManagerComponent_C:AddOneGuideIconWithSkillEffect(TargetEid, Is
     self:UpdateSceneGuideIcon(TargetEid, TargetActor, nil, GuideOp, true, NewConfigData, IsPlayerEid)
   end
 end
-
 function BP_SceneManagerComponent_C:CloseOneGuideIconByTargetEid(TargetEid)
   self:UpdateSceneGuideIcon(TargetEid, nil, nil, "Delete", true, nil, nil)
 end
-
 function BP_SceneManagerComponent_C:UpdateAllSceneGuideIcon()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if nil == GameState then
@@ -425,7 +405,7 @@ function BP_SceneManagerComponent_C:UpdateAllSceneGuideIcon()
     if IsValid(TargetActor) and TargetActor.IsCombatItemBase then
       IsCombatItemBase = TargetActor:IsCombatItemBase()
     end
-    if IsValid(TargetActor) and (nil == TargetActor.OpenState or TargetActor.OpenState == false) and true == IsCombatItemBase then
+    if IsValid(TargetActor) then
       local GuideOp = nil == self.CurSceneGuideEids[TargetEid] and "Add" or "Modify"
       self:UpdateSceneGuideIcon(TargetEid, TargetActor, nil, GuideOp, true)
     else
@@ -435,17 +415,22 @@ function BP_SceneManagerComponent_C:UpdateAllSceneGuideIcon()
     end
   end
 end
-
 function BP_SceneManagerComponent_C:UpdateAllCommonGuideIcon()
+  DebugPrint("DebugGuideEid UpdateAllCommonGuideIcon")
   local GameState = UE4.UGameplayStatics.GetGameState(self)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local UIManager = GameInstance:GetGameUIManager()
   if nil == GameState then
     return
   end
   self.CurSceneGuideEids = self.CurSceneGuideEids or {}
   local CommonGuideInfos = {}
   for k, v in pairs(self.CurSceneGuideEids) do
-    if not v.IsPlayerEid then
-      CommonGuideInfos[k] = v
+    DebugPrint("DebugGuideEid UpdateAllCommonGuideIcon self.CurSceneGuideEids Loop key", k, "v.IsPlayerEid", v.IsPlayerEid)
+    CommonGuideInfos[k] = v
+    local GuideIcon = UIManager:GetUIObj(tostring(k))
+    if GuideIcon and nil ~= GuideIcon.PlayerIndex and GuideIcon.PlayerIndex > 0 then
+    else
       v.IsActive = false
     end
   end
@@ -454,25 +439,31 @@ function BP_SceneManagerComponent_C:UpdateAllCommonGuideIcon()
     AllGuideEids = GameState.GuideEids
   end
   DebugPrint("BP_SceneManagerComponent_C:UpdateAllCommonGuideIcon AllGuideEids", AllGuideEids.Items:Num())
+  local BattleInstance = Battle(self)
+  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+  local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   for Index = 1, AllGuideEids.Items:Num() do
     local TargetEid = AllGuideEids.Items:GetRef(Index).IntProperty
+    DebugPrint("DebugGuideEid UpdateAllCommonGuideIcon GuideEids Loop TargetEid", TargetEid)
     local TargetActor
-    if Battle(self) then
-      TargetActor = Battle(self):GetEntity(TargetEid)
+    if BattleInstance then
+      TargetActor = BattleInstance:GetEntity(TargetEid)
     end
     if nil ~= CommonGuideInfos[TargetEid] then
       CommonGuideInfos[TargetEid].IsActive = true
     end
-    if IsValid(TargetActor) and (nil == TargetActor.OpenState or false == TargetActor.OpenState) then
+    if IsValid(TargetActor) then
+      DebugPrint("DebugGuideEid UpdateAllCommonGuideIcon GuideEids TargetActor.OpenState", TargetActor.OpenState)
       local GuideOp = nil == CommonGuideInfos[TargetEid] and "Add" or "Modify"
       self:UpdateSceneGuideIcon(TargetEid, TargetActor, nil, GuideOp, true)
     else
-      local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-      local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
       PlayerCharacter.RPCComponent:RequestGuideInfo(TargetEid)
     end
   end
   for k, v in pairs(CommonGuideInfos) do
+    if v then
+      DebugPrint("DebugGuideEid UpdateAllCommonGuideIcon PlayerGuideInfos Loop key", k, "v.IsActive", v.IsActive)
+    end
     if v and not v.IsActive then
       local Entity = self:GetCurSceneGuideEntityByData(v)
       if UKismetSystemLibrary.IsValid(Entity) then
@@ -483,8 +474,8 @@ function BP_SceneManagerComponent_C:UpdateAllCommonGuideIcon()
     end
   end
 end
-
 function BP_SceneManagerComponent_C:UpdateAllPlayerGuideIcon()
+  DebugPrint("DebugGuideEid UpdateAllPlayerGuideIcon")
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -495,24 +486,22 @@ function BP_SceneManagerComponent_C:UpdateAllPlayerGuideIcon()
   self.CurSceneGuideEids = self.CurSceneGuideEids or {}
   local PlayerGuideInfos = {}
   for k, v in pairs(self.CurSceneGuideEids) do
-    if v.IsPlayerEid then
-      PlayerGuideInfos[k] = v
-      local GuideIcon = UIManager:GetUIObj(tostring(k))
-      if GuideIcon and nil ~= GuideIcon.PlayerIndex and GuideIcon.PlayerIndex > 0 then
-      else
-        v.IsActive = false
-      end
+    DebugPrint("DebugGuideEid UpdateAllPlayerGuideIcon self.CurSceneGuideEids Loop key", k, "v.IsPlayerEid", v.IsPlayerEid)
+    PlayerGuideInfos[k] = v
+    local GuideIcon = UIManager:GetUIObj(tostring(k))
+    if GuideIcon and nil ~= GuideIcon.PlayerIndex and GuideIcon.PlayerIndex > 0 then
+    else
+      v.IsActive = false
     end
   end
   local AllGuideEids = FIntArray()
-  if nil ~= GameState.GuideEids then
-    local PlayerState = GameState:GetPlayerState(Player.Eid)
-    if nil ~= PlayerState then
-      AllGuideEids = PlayerState.PlayerGuideEids
-    end
+  local PlayerState = GameState:GetPlayerState(Player.Eid)
+  if nil ~= PlayerState and nil ~= PlayerState.PlayerGuideEids then
+    AllGuideEids = PlayerState.PlayerGuideEids
   end
   for Index = 1, AllGuideEids.Items:Num() do
     local TargetEid = AllGuideEids.Items:GetRef(Index).IntProperty
+    DebugPrint("DebugGuideEid UpdateAllPlayerGuideIcon PlayerGuideEids Loop TargetEid", TargetEid)
     local TargetActor
     if Battle(self) then
       TargetActor = Battle(self):GetEntity(TargetEid)
@@ -520,7 +509,8 @@ function BP_SceneManagerComponent_C:UpdateAllPlayerGuideIcon()
     if nil ~= PlayerGuideInfos[TargetEid] then
       PlayerGuideInfos[TargetEid].IsActive = true
     end
-    if IsValid(TargetActor) and (nil == TargetActor.OpenState or false == TargetActor.OpenState) then
+    if IsValid(TargetActor) then
+      DebugPrint("DebugGuideEid UpdateAllPlayerGuideIcon PlayerGuideEids TargetActor.OpenState", TargetActor.OpenState)
       local GuideOp = nil == PlayerGuideInfos[TargetEid] and "Add" or "Modify"
       self:UpdateSceneGuideIcon(TargetEid, TargetActor, nil, GuideOp, true, nil, true)
     else
@@ -530,6 +520,9 @@ function BP_SceneManagerComponent_C:UpdateAllPlayerGuideIcon()
     end
   end
   for k, v in pairs(PlayerGuideInfos) do
+    if v then
+      DebugPrint("DebugGuideEid UpdateAllPlayerGuideIcon PlayerGuideInfos Loop key", k, "v.IsActive", v.IsActive)
+    end
     if v and not v.IsActive then
       local Entity = self:GetCurSceneGuideEntityByData(v)
       if UKismetSystemLibrary.IsValid(Entity) then
@@ -540,7 +533,6 @@ function BP_SceneManagerComponent_C:UpdateAllPlayerGuideIcon()
     end
   end
 end
-
 function BP_SceneManagerComponent_C:RemoveGuideFromPathFinding(TargetEid)
   if self:IsExistTimer("AddGuideToPathFinding" .. TargetEid) then
     self:RemoveTimer("AddGuideToPathFinding" .. TargetEid)
@@ -557,7 +549,6 @@ function BP_SceneManagerComponent_C:RemoveGuideFromPathFinding(TargetEid)
     self.Guide2InDoorNameMaps:Remove(TargetEid)
   end
 end
-
 function BP_SceneManagerComponent_C:GetGuideTypeByBPPath(GuideIconAni, GuideIconBPPath)
   local GuideType = UIConst.IndicatorCategoryTable[GuideIconAni]
   GuideType = GuideType or UIConst.IndicatorCategoryIconTable[GuideIconBPPath]
@@ -566,7 +557,6 @@ function BP_SceneManagerComponent_C:GetGuideTypeByBPPath(GuideIconAni, GuideIcon
   end
   return ""
 end
-
 function BP_SceneManagerComponent_C:GetGuideGuideAnimByBPPath(GuideIconAni, GuideIconBPPath)
   local GuideAnim = UIConst.IndicatorAnimTable[GuideIconAni]
   GuideAnim = GuideAnim or UIConst.IndicatorAnimIconTable[GuideIconBPPath]
@@ -575,7 +565,6 @@ function BP_SceneManagerComponent_C:GetGuideGuideAnimByBPPath(GuideIconAni, Guid
   end
   return ""
 end
-
 function BP_SceneManagerComponent_C:RegisterTeamEvent()
   TeamController:RegisterEvent(self, function(self, EventId, ...)
     if EventId == TeamCommon.EventId.TeamOnAddPlayer then
@@ -601,7 +590,6 @@ function BP_SceneManagerComponent_C:RegisterTeamEvent()
     end
   end)
 end
-
 function BP_SceneManagerComponent_C:AddRegionOnlineCharacterInfo(Eid, Uid, StartLoc)
   DebugPrint("AddRegionOnlineCharacterInfo Eid", Eid, "Uid", Uid, "StartLoc", StartLoc)
   self.RegionOnlineCharacterInfo[Uid] = Eid
@@ -611,20 +599,21 @@ function BP_SceneManagerComponent_C:AddRegionOnlineCharacterInfo(Eid, Uid, Start
   end
   self:AddRegionOtherPlayerGuide(Eid, StartLoc, MemberIndex)
 end
-
 function BP_SceneManagerComponent_C:OnTeamAddRegionOtherPlayerGuide(MemberInfo)
   DebugPrint("OnTeamAddRegionOtherPlayerGuide MemberInfo.Uid", MemberInfo.Uid, "MemberInfo.Index", MemberInfo.Index)
   local MemberEid = self.RegionOnlineCharacterInfo[MemberInfo.Uid]
   if MemberEid then
     local StartLoc = FVector(0, 0, 0)
-    local Player = Battle(self):GetEntity(MemberEid)
+    local Player
+    if Battle(self) then
+      Player = Battle(self):GetEntity(MemberEid)
+    end
     if Player then
       StartLoc = Player:K2_GetActorLocation()
     end
     self:AddRegionOtherPlayerGuide(MemberEid, StartLoc, MemberInfo.Index)
   end
 end
-
 function BP_SceneManagerComponent_C:AddRegionOtherPlayerGuide(Eid, StartLoc, MemberIndex)
   DebugPrint("AddRegionOtherPlayerGuide Eid: ", Eid, "StartLoc", StartLoc, "MemberIndex", MemberIndex)
   local GuideOp = self.CurSceneGuideEids[Eid] == nil and "Add" or "Modify"
@@ -635,7 +624,6 @@ function BP_SceneManagerComponent_C:AddRegionOtherPlayerGuide(Eid, StartLoc, Mem
     PlayerIndex = MemberIndex
   }, true)
 end
-
 function BP_SceneManagerComponent_C:RemoveRegionOnlineCharacterInfo(Uid)
   local CurrentEid = self.RegionOnlineCharacterInfo[Uid]
   DebugPrint("RemoveRegionOnlineCharacterInfo Uid", Uid, "CurrentEid", CurrentEid)
@@ -645,7 +633,6 @@ function BP_SceneManagerComponent_C:RemoveRegionOnlineCharacterInfo(Uid)
   self.RegionOnlineCharacterInfo[Uid] = nil
   self:RemoveRegionOtherPlayerGuide(CurrentEid)
 end
-
 function BP_SceneManagerComponent_C:OnTeamRemoveRegionOtherPlayerGuide(MemberInfo)
   local MemberEid = self.RegionOnlineCharacterInfo[MemberInfo.Uid]
   DebugPrint("RemoveRegionOnlineCharacterInfo MemberInfo", MemberInfo, "MemberEid", MemberEid)
@@ -656,7 +643,6 @@ function BP_SceneManagerComponent_C:OnTeamRemoveRegionOtherPlayerGuide(MemberInf
     self:RemoveRegionOtherPlayerGuide(MemberEid)
   end
 end
-
 function BP_SceneManagerComponent_C:RemoveRegionOtherPlayerGuide(Eid)
   DebugPrint("RemoveRegionOtherPlayerGuide Eid: ", Eid)
   local DeleteName = tostring(Eid)
@@ -667,7 +653,10 @@ function BP_SceneManagerComponent_C:RemoveRegionOtherPlayerGuide(Eid)
       return
     end
     local GuideIcon = UIManager:GetUIObjAsync(DeleteName, CoroutineObj)
-    local TargetActor = Battle(self):GetEntity(Eid)
+    local TargetActor
+    if Battle(self) then
+      TargetActor = Battle(self):GetEntity(Eid)
+    end
     if GuideIcon then
       if IsValid(TargetActor) then
         self:UpdateSceneGuideIcon(Eid, TargetActor, nil, "Delete", true)
@@ -677,7 +666,6 @@ function BP_SceneManagerComponent_C:RemoveRegionOtherPlayerGuide(Eid)
     end
   end)
 end
-
 function BP_SceneManagerComponent_C:UpdateSceneOtherPlayerGuide(Eid, OpType)
   DebugPrint("BP_SceneManagerComponent_C:UpdateSceneOtherPlayerGuide Eid: ", Eid, "OpType", OpType)
   if "Enter" == OpType then
@@ -713,7 +701,10 @@ function BP_SceneManagerComponent_C:UpdateSceneOtherPlayerGuide(Eid, OpType)
       end
       local GuideIcon = UIManager:GetUIObjAsync(DeleteName, CoroutineObj)
       if GuideIcon then
-        local TargetActor = Battle(self):GetEntity(Eid)
+        local TargetActor
+        if Battle(self) then
+          TargetActor = Battle(self):GetEntity(Eid)
+        end
         if IsValid(TargetActor) then
           self:UpdateSceneGuideIcon(Eid, TargetActor, nil, "Delete", true)
         else
@@ -723,7 +714,6 @@ function BP_SceneManagerComponent_C:UpdateSceneOtherPlayerGuide(Eid, OpType)
     end)
   end
 end
-
 function BP_SceneManagerComponent_C:GetPlayerGuideIcon(PlayerIndex, IsAlive)
   if IsAlive then
     return "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Player" .. tostring(PlayerIndex) .. "A.T_Gp_Player" .. tostring(PlayerIndex) .. "A"
@@ -732,7 +722,6 @@ function BP_SceneManagerComponent_C:GetPlayerGuideIcon(PlayerIndex, IsAlive)
   end
   return ""
 end
-
 function BP_SceneManagerComponent_C:UpdateAllGuideIconsByName(OpType, InEid, InName)
   if "Add" == OpType or "Modify" == OpType then
     if nil ~= InName then
@@ -751,22 +740,24 @@ function BP_SceneManagerComponent_C:UpdateAllGuideIconsByName(OpType, InEid, InN
     self.GuideIcons:Remove(InEid)
   end
 end
-
 function BP_SceneManagerComponent_C:IsExistInGuideEidArrays(TargetEid)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
-  local PlayerState = GameState:GetPlayerState(Player.Eid)
-  DebugPrint("BP_SceneManagerComponent_C:IsExistInGuideEidArrays TargetEid", TargetEid)
-  if PlayerState and PlayerState.PlayerGuideEids ~= nil then
-    for Index = 1, PlayerState.PlayerGuideEids.Items:Num() do
-      local Eid = PlayerState.PlayerGuideEids.Items:GetRef(Index).IntProperty
-      DebugPrint("IsExistInGuideEidArrays PlayerState.PlayerGuideEids Eid", Eid)
-      if Eid == TargetEid then
-        return true
+  if Player then
+    local PlayerState = GameState:GetPlayerState(Player.Eid)
+    DebugPrint("BP_SceneManagerComponent_C:IsExistInGuideEidArrays TargetEid", TargetEid)
+    if PlayerState and PlayerState.PlayerGuideEids ~= nil then
+      for Index = 1, PlayerState.PlayerGuideEids.Items:Num() do
+        local Eid = PlayerState.PlayerGuideEids.Items:GetRef(Index).IntProperty
+        DebugPrint("IsExistInGuideEidArrays PlayerState.PlayerGuideEids Eid", Eid)
+        if Eid == TargetEid then
+          return true
+        end
       end
     end
   end
+  local AllCommonGuideEids = FIntArray()
   if nil ~= GameState.GuideEids then
     AllCommonGuideEids = GameState.GuideEids
   end
@@ -779,7 +770,6 @@ function BP_SceneManagerComponent_C:IsExistInGuideEidArrays(TargetEid)
   end
   return false
 end
-
 function BP_SceneManagerComponent_C:UpdateSceneGuideIcon(TargetEid, TargetActor, TargetLocation, OpType, IsUseRealDis, ConfigData, IsPlayerEid, IsDataStruct)
   self.Overridden.UpdateSceneGuideIcon(self, TargetEid, TargetActor, TargetLocation, OpType, IsUseRealDis)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -845,6 +835,14 @@ function BP_SceneManagerComponent_C:UpdateSceneGuideIcon(TargetEid, TargetActor,
       TargetActorLocation = UE4.FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z)
     end
     local NotDataStruct = not IsDataStruct
+    if NotDataStruct and ("Add" == OpType or "Modify" == OpType) then
+      self.CurSceneGuideEids[TargetEid] = {
+        Entity = TargetEid,
+        IsDataStruct = false,
+        IsPlayerEid = IsPlayerEid,
+        IsActive = true
+      }
+    end
     DebugPrint("UpdateSceneGuideIcon START UpdateSceneGuideIcon_GetUIObjAsync" .. GuideName .. OpType)
     RunAsyncTask(self, "UpdateSceneGuideIcon_GetUIObjAsync" .. GuideName .. OpType, function(CoroutineObj)
       DebugPrint("UpdateSceneGuideIcon REAL START UpdateSceneGuideIcon_GetUIObjAsync" .. GuideName .. OpType)
@@ -852,7 +850,10 @@ function BP_SceneManagerComponent_C:UpdateSceneGuideIcon(TargetEid, TargetActor,
       if nil == GuideIcon and "Modify" == OpType then
         GuideIcon = self:GetGuideIconByEid(TargetEid)
       end
-      TargetActor = Battle(self):GetEntity(TargetEid)
+      TargetActor = nil
+      if Battle(self) then
+        TargetActor = Battle(self):GetEntity(TargetEid)
+      end
       DebugPrint("UpdateSceneGuideIcon  GuideName is ", GuideName, GuideType, GuideUnitId, TargetEid, TargetActor, TargetActorLocation, OpType, IsUseRealDis, GuideIcon, IsNeedArrow)
       self:AddTimer(0.2, self.UpdateMiniMapGuideIcon, false, nil, "UpdateMiniMapGuideIcon" .. GuideName .. OpType, false, GuideName, OpType, TargetEid, TargetActorLocation, ConfigData, IsNeedArrow, IsGuideFollowActor, IsNeedLookUpEntity)
       if nil ~= GuideIcon then
@@ -861,17 +862,7 @@ function BP_SceneManagerComponent_C:UpdateSceneGuideIcon(TargetEid, TargetActor,
           if GuideIcon.IsFromPool then
             GuideIcon.IsActiveInPoor = true
           end
-          if UKismetSystemLibrary.IsValid(TargetActor) then
-            if NotDataStruct then
-              self.CurSceneGuideEids[TargetEid] = {
-                Entity = TargetEid,
-                IsDataStruct = false,
-                IsPlayerEid = IsPlayerEid,
-                IsActive = true
-              }
-            end
-            self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, false)
-          end
+          self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, false)
           self:UpdateAllGuideIconsByName(OpType, TargetEid, nil)
         elseif "Delete" == OpType then
           self:ProcessGuideIconBeforeClose(GuideIcon)
@@ -894,73 +885,24 @@ function BP_SceneManagerComponent_C:UpdateSceneGuideIcon(TargetEid, TargetActor,
             end
             PoolClass:Reset(TargetEid, TargetActor, TargetActorLocation, ConfigData, IsNeedArrow, IsGuideFollowActor, IsNeedLookUpEntity, false, IsUseRealDis, true)
             PoolClass.IsActiveInPoor = true
-            self:ProcessGuideIconAfterLoad(PoolClass)
+            self:ProcessGuideIconAfterLoad(PoolClass, ConfigData.GuideIconAni, TargetEid, GuideUnitId)
             self:UpdateAllGuideIconsByName(OpType, TargetEid, PoolClass:GetName())
-            if UKismetSystemLibrary.IsValid(TargetActor) then
-              if NotDataStruct then
-                self.CurSceneGuideEids[TargetEid] = {
-                  Entity = TargetEid,
-                  IsDataStruct = false,
-                  IsPlayerEid = IsPlayerEid,
-                  IsActive = true
-                }
-              end
-              self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, true)
-            elseif NotDataStruct then
-              self.CurSceneGuideEids[TargetEid] = {
-                Entity = nil,
-                IsDataStruct = false,
-                IsPlayerEid = IsPlayerEid,
-                IsActive = true
-              }
-            end
+            self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, true)
           else
             local NewGuideIcon = UIManager:LoadGuideIconAsync(ConfigData.GuideIconAni, GuideName, UIConst.ZORDER_FOR_INDICATORS, CoroutineObj, TargetEid, TargetActor, TargetActorLocation, ConfigData, IsNeedArrow, IsGuideFollowActor, IsNeedLookUpEntity, false, IsUseRealDis)
-            self:ProcessGuideIconAfterLoad(NewGuideIcon)
+            self:ProcessGuideIconAfterLoad(NewGuideIcon, ConfigData.GuideIconAni, TargetEid, GuideUnitId)
             self:UpdateAllGuideIconsByName(OpType, TargetEid, GuideName)
-            TargetActor = Battle(self):GetEntity(TargetEid)
-            if UKismetSystemLibrary.IsValid(TargetActor) then
-              if NotDataStruct then
-                self.CurSceneGuideEids[TargetEid] = {
-                  Entity = TargetEid,
-                  IsDataStruct = false,
-                  IsPlayerEid = IsPlayerEid,
-                  IsActive = true
-                }
-              end
-              self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, true)
-            elseif NotDataStruct then
-              self.CurSceneGuideEids[TargetEid] = {
-                Entity = nil,
-                IsDataStruct = false,
-                IsPlayerEid = IsPlayerEid,
-                IsActive = true
-              }
+            TargetActor = nil
+            if Battle(self) then
+              TargetActor = Battle(self):GetEntity(TargetEid)
             end
+            self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, true)
           end
         else
           local NewGuideIcon = UIManager:LoadGuideIconAsync(ConfigData.GuideIconAni, GuideName, UIConst.ZORDER_FOR_INDICATORS, CoroutineObj, TargetEid, TargetActor, TargetActorLocation, ConfigData, IsNeedArrow, IsGuideFollowActor, IsNeedLookUpEntity, false, IsUseRealDis)
-          self:ProcessGuideIconAfterLoad(NewGuideIcon)
+          self:ProcessGuideIconAfterLoad(NewGuideIcon, ConfigData.GuideIconAni, TargetEid, GuideUnitId)
           self:UpdateAllGuideIconsByName(OpType, TargetEid, GuideName)
-          TargetActor = Battle(self):GetEntity(TargetEid)
-          if UKismetSystemLibrary.IsValid(TargetActor) then
-            if NotDataStruct then
-              self.CurSceneGuideEids[TargetEid] = {
-                Entity = TargetEid,
-                IsDataStruct = false,
-                IsPlayerEid = IsPlayerEid,
-                IsActive = true
-              }
-            end
-            self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, true)
-          elseif NotDataStruct then
-            self.CurSceneGuideEids[TargetEid] = {
-              Entity = nil,
-              IsDataStruct = false,
-              IsPlayerEid = IsPlayerEid,
-              IsActive = true
-            }
-          end
+          self:AddTimer(0.1, self.AddGuideToPathFindingTimerFunc, false, nil, "AddGuideToPathFinding" .. TargetEid, false, TargetEid, true)
         end
       elseif "Delete" == OpType then
         EventManager:FireEvent(EventID.RecycleClassToCachePool, TargetEid)
@@ -971,7 +913,6 @@ function BP_SceneManagerComponent_C:UpdateSceneGuideIcon(TargetEid, TargetActor,
     end)
   end
 end
-
 function BP_SceneManagerComponent_C:UpdateMiniMapGuideIcon(GuideName, OpType, TargetEid, TargetActorLocation, ConfigData, IsNeedArrow, IsGuideFollowActor, IsNeedLookUpEntity)
   if "Delete" == OpType then
     if self:IsExistTimer("UpdateMiniMapGuideIcon" .. GuideName .. "Add") then
@@ -981,7 +922,10 @@ function BP_SceneManagerComponent_C:UpdateMiniMapGuideIcon(GuideName, OpType, Ta
       self:RemoveTimer("UpdateMiniMapGuideIcon" .. GuideName .. "Modify")
     end
   end
-  local TargetActor = Battle(self):GetEntity(TargetEid)
+  local TargetActor
+  if Battle(self) then
+    TargetActor = Battle(self):GetEntity(TargetEid)
+  end
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   local battleMain = UIManager:GetUI("BattleMain")
@@ -1006,14 +950,20 @@ function BP_SceneManagerComponent_C:UpdateMiniMapGuideIcon(GuideName, OpType, Ta
     end
   end
 end
-
 function BP_SceneManagerComponent_C:AddGuideToPathFindingTimerFunc(TargetEid, RequireBlockTickLod)
-  local TargetActor = Battle(self):GetEntity(TargetEid)
+  local TargetActor
+  if Battle(self) then
+    TargetActor = Battle(self):GetEntity(TargetEid)
+  end
   self:AddGuideToPathFinding(TargetActor, TargetEid, RequireBlockTickLod)
 end
-
-function BP_SceneManagerComponent_C:ProcessGuideIconAfterLoad(NewGuideIcon)
+function BP_SceneManagerComponent_C:ProcessGuideIconAfterLoad(NewGuideIcon, GuideIconAni, TargetEid, GuideUnitId)
   if nil == NewGuideIcon then
+    local EMGameState = UE4.UGameplayStatics.GetGameState(self)
+    if EMGameState then
+      EMGameState:ShowDungeonError("ProcessGuideIconAfterLoad Icon加载失败 请检查配表数据 GuideIconAni: " .. tostring(GuideIconAni) .. " GuideUnitId: " .. GuideUnitId .. " TargetEid: " .. TargetEid, Const.DungeonErrorType.DungeonIndicator, Const.DungeonErrorTitle.Config)
+    end
+    DebugPrint("Error ProcessGuideIconAfterLoad NewGuideIcon == nil GuideIconAni: ", GuideIconAni, "TargetEid: ", TargetEid)
     return
   end
   NewGuideIcon.IsDungeonIndicator = true
@@ -1026,7 +976,6 @@ function BP_SceneManagerComponent_C:ProcessGuideIconAfterLoad(NewGuideIcon)
   self.GuideIconMain:AddGuideIcon(NewGuideIcon)
   NewGuideIcon:AttachEventOnLoaded()
 end
-
 function BP_SceneManagerComponent_C:ProcessGuideIconBeforeClose(GuideIcon)
   if self.GuideIconMain then
     self.GuideIconMain:DeleteGuideIcon(GuideIcon.WidgetName)
@@ -1034,7 +983,6 @@ function BP_SceneManagerComponent_C:ProcessGuideIconBeforeClose(GuideIcon)
   GuideIcon:RemoveFromParent()
   GuideIcon.IsInit = true
 end
-
 function BP_SceneManagerComponent_C:ShowOrHideAllSceneGuideIcon(IsShow, OpTag)
   self.IsSceneGuideShow = IsShow
   for k, v in pairs(self.CurSceneGuideEids) do
@@ -1044,29 +992,59 @@ function BP_SceneManagerComponent_C:ShowOrHideAllSceneGuideIcon(IsShow, OpTag)
       if nil == UIManager then
         return
       end
-      local IconName = self.GuideIcons:FindRef(k)
-      if IconName then
-        local GuideIcon = UIManager:GetUIObjAsync(IconName, CoroutineObj)
-        if nil ~= GuideIcon then
-          if OpTag then
-            if IsShow then
-              GuideIcon:Show(OpTag)
-            else
-              GuideIcon:Hide(OpTag)
-            end
+      local GuideName = tostring(k)
+      local GuideIcon = UIManager:GetUIObjAsync(GuideName, CoroutineObj) or UIManager:GetUIObjAsync(GuideName .. "Replace", CoroutineObj)
+      if nil == GuideIcon then
+        local IconName = self.GuideIcons:FindRef(k)
+        if IconName then
+          GuideIcon = UIManager:GetUIObj(IconName)
+        end
+      end
+      if nil ~= GuideIcon then
+        if OpTag then
+          if IsShow then
+            GuideIcon:Show(OpTag)
           else
-            GuideIcon:SetVisibilityNotOnDoor(IsShow)
+            GuideIcon:Hide(OpTag)
           end
+        else
+          GuideIcon:SetVisibilityNotOnDoor(IsShow)
         end
       end
     end)
   end
 end
-
+function BP_SceneManagerComponent_C:ShowOrHideSceneGuideIcon(Eid, IsShow, OpTag)
+  if not OpTag then
+    DebugPrint("Error: OpTag == nil 本接口必须传入显隐Tag")
+    return
+  end
+  RunAsyncTask(self, "ShowOrHideSceneGuideIcon_GetUIObjAsync" .. Eid, function(CoroutineObj)
+    local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
+    local UIManager = GameInstance:GetGameUIManager()
+    if nil == UIManager then
+      return
+    end
+    local GuideName = tostring(Eid)
+    local GuideIcon = UIManager:GetUIObjAsync(GuideName, CoroutineObj) or UIManager:GetUIObjAsync(GuideName .. "Replace", CoroutineObj)
+    if nil == GuideIcon then
+      local IconName = self.GuideIcons:FindRef(Eid)
+      if IconName then
+        GuideIcon = UIManager:GetUIObj(IconName)
+      end
+    end
+    if nil ~= GuideIcon then
+      if IsShow then
+        GuideIcon:Show(OpTag)
+      else
+        GuideIcon:Hide(OpTag)
+      end
+    end
+  end)
+end
 function BP_SceneManagerComponent_C:ExistPathfindingEid(TargetEid)
   return self.PathfindingEid:FindRef(TargetEid)
 end
-
 function BP_SceneManagerComponent_C:ShowOrHideGuideIconByGuideName(GuideName, IsShow)
   RunAsyncTask(self, "ShowOrHideGuideIconByGuideName_GetUIObjAsync" .. GuideName, function(CoroutineObj)
     local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -1080,7 +1058,6 @@ function BP_SceneManagerComponent_C:ShowOrHideGuideIconByGuideName(GuideName, Is
     end
   end)
 end
-
 function BP_SceneManagerComponent_C:GetAllKindsOfGuide()
   local UINames = TArray("")
   for k, v in pairs(self.GuideIcons) do
@@ -1091,7 +1068,6 @@ function BP_SceneManagerComponent_C:GetAllKindsOfGuide()
   end
   return UINames
 end
-
 function BP_SceneManagerComponent_C:GetGuideIconByEid(Eid)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -1104,7 +1080,6 @@ function BP_SceneManagerComponent_C:GetGuideIconByEid(Eid)
   end
   return nil
 end
-
 function BP_SceneManagerComponent_C:RefreshAllGuideStyle()
   local FrameCount = UE4.UKismetSystemLibrary.GetFrameCount()
   if FrameCount == self.PreFrameCount then
@@ -1119,7 +1094,7 @@ function BP_SceneManagerComponent_C:RefreshAllGuideStyle()
     local TargetEid = math.tointeger(UIName)
     local GuideIcon = UIManager:GetUIObj(UIName)
     if nil == GuideIcon then
-      DebugPrint("RefreshAllGuideStyle: GuideIcon\228\184\186\231\169\186 UIName: ", UIName)
+      DebugPrint("RefreshAllGuideStyle: GuideIcon为空 UIName: ", UIName)
     else
       if nil ~= GuideIcon.TargetEid then
         TargetEid = GuideIcon.TargetEid
@@ -1195,14 +1170,13 @@ function BP_SceneManagerComponent_C:RefreshAllGuideStyle()
     end
   end
 end
-
 function BP_SceneManagerComponent_C:RealArrangeAllGuideIcons()
   self:RefreshAllGuideStyle()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
   if nil == Player then
-    DebugPrint("RealArrangeAllGuideIcons: Player \228\184\141\229\173\152\229\156\168")
+    DebugPrint("RealArrangeAllGuideIcons: Player 不存在")
     return
   end
   local UINames = self:GetAllKindsOfGuide()
@@ -1213,7 +1187,7 @@ function BP_SceneManagerComponent_C:RealArrangeAllGuideIcons()
     local TargetEid = math.tointeger(UIName)
     local GuideIcon = UIManager:GetUIObj(UIName)
     if nil == GuideIcon then
-      DebugPrint("RealArrangeAllGuideIcons: GuideIcon\228\184\186\231\169\186 UIName: ", UIName)
+      DebugPrint("RealArrangeAllGuideIcons: GuideIcon为空 UIName: ", UIName)
     else
       if nil ~= GuideIcon.TargetEid then
         TargetEid = GuideIcon.TargetEid
@@ -1341,7 +1315,6 @@ function BP_SceneManagerComponent_C:RealArrangeAllGuideIcons()
     end
   end
 end
-
 function BP_SceneManagerComponent_C:ArrangeAllGuideIcons(TargetEid, DoorName, TargetDoorLocation)
   if "NotInDoor" == DoorName then
     self.Guide2NextLevelIdMaps:Remove(TargetEid)
@@ -1360,11 +1333,80 @@ function BP_SceneManagerComponent_C:ArrangeAllGuideIcons(TargetEid, DoorName, Ta
     MiniMap:ArrangeGuideIcons(TargetEid, TargetDoorLocation, "NotInDoor" == DoorName)
   end
 end
-
+function BP_SceneManagerComponent_C:GetIsEnableScriptDetectionCheck()
+  local CurrentPlatform = CommonUtils.GetDeviceTypeByPlatformName(self)
+  local CurInputType = UIUtils.UtilsGetCurrentInputType()
+  local IsCloudGame = UE4.UUCloudGameInstanceSubsystem.IsCloudGame()
+  return CurrentPlatform == CommonConst.CLIENT_DEVICE_TYPE.PC and CurInputType == ECommonInputType.MouseAndKeyboard and not IsCloudGame
+end
+function BP_SceneManagerComponent_C:GetScriptDetectionConditionMet_OnMouse(DungeonType, DungeonId)
+  DebugPrint("GetScriptDetectionConditionMet_OnMouse DungeonType:", DungeonType, " DungeonId:", DungeonId)
+  local BlockDungeonTypes = {"ExtermPro"}
+  local BlockDungeonIds = {
+    90108,
+    90604,
+    60702,
+    62702,
+    64702
+  }
+  local bIsMetCondition = true
+  for _, CheckDungeonType in ipairs(BlockDungeonTypes) do
+    if DungeonType == CheckDungeonType then
+      bIsMetCondition = false
+      break
+    end
+  end
+  if bIsMetCondition then
+    for _, CheckDungeonId in ipairs(BlockDungeonIds) do
+      if DungeonId == CheckDungeonId then
+        bIsMetCondition = false
+        break
+      end
+    end
+  end
+  return bIsMetCondition
+end
+function BP_SceneManagerComponent_C:StartScriptDetectionCheck(CheckType)
+  local bIsInDungeon = false
+  local EMGameState = UE4.URuntimeCommonFunctionLibrary.GetCurrentGameState(self)
+  if EMGameState and EMGameState:IsInDungeon() then
+    bIsInDungeon = true
+  end
+  if CheckType == Const.ScriptDetectionCheckType.OnMouse then
+    local IsNeedOpenCheck = bIsInDungeon and self:GetScriptDetectionConditionMet_OnMouse(EMGameState.GameModeType, EMGameState.DungeonId)
+    if IsNeedOpenCheck and Const.bIsUseCppVersion then
+      self:StartScriptDetectionCheck_OnMouse(SDC_MOUSE_CHECKCOUNT_PER_ROUND, SDC_MOUSE_REPORT_SERVER_THRESHOLD)
+    else
+    end
+  elseif CheckType == Const.ScriptDetectionCheckType.OnKeyboard and bIsInDungeon and self:IsEnableSDC_Keyboard(EMGameState.DungeonId) then
+    if Const.bIsUseCppVersion then
+      self:StartScriptDetectionCheck_OnKeyboard()
+    else
+      self:StartScriptDetectionCheck_OnKeyboard_Lua()
+    end
+  end
+end
+function BP_SceneManagerComponent_C:IsEnableSDC_Keyboard(DungeonId)
+  return true
+end
+function BP_SceneManagerComponent_C:StartScriptDetectionCheck_OnKeyboard_Lua()
+end
+function BP_SceneManagerComponent_C:OnDungeonEnd_ToSceneManager(IsWin, BattleInfo, DungeonType, DungeonId)
+  DebugPrint("OnDungeonEnd_ToSceneManager: 副本结束通知，当前副本类型：", DungeonType, DungeonId)
+  if self:GetIsEnableScriptDetectionCheck() then
+    if self:GetScriptDetectionConditionMet_OnMouse(DungeonType, DungeonId) and Const.bIsUseCppVersion then
+      local ResultAlertString = self:UpdateValueAndCheckIfNeedSendToServer_OnMouse()
+      if ResultAlertString and "" ~= ResultAlertString then
+        self:ReportCheatMsg(CommonConst.MonitorCheatType.Mouse, ResultAlertString)
+      end
+    else
+    end
+    self:EndScriptDetectionCheck_OnKeyboard()
+  end
+end
 function BP_SceneManagerComponent_C:GetLogMask()
   return _G.LogTag
 end
-
 function BP_SceneManagerComponent_C:CaluCurGuideNeedShowPos(TargetEid, TargetPosition, TargetDirection)
   if self:GetLevelLoader() == nil then
     return false, nil
@@ -1376,37 +1418,41 @@ function BP_SceneManagerComponent_C:CaluCurGuideNeedShowPos(TargetEid, TargetPos
   end
   return false
 end
-
 function BP_SceneManagerComponent_C:AddFoorBox(FoorBox)
   if not self.FloorBoxArray then
     self.FloorBoxArray = {}
   end
   table.insert(self.FloorBoxArray, FoorBox)
 end
-
 function BP_SceneManagerComponent_C:AddMinimapDoor(Door)
   if not self.MinimapDoorArray then
     self.MinimapDoorArray = {}
   end
   table.insert(self.MinimapDoorArray, Door)
 end
-
 function BP_SceneManagerComponent_C:DelaySetFullScreen_Lua(Resolution, WindowMode)
   self:AddTimer(0.1, function()
     local GameUserSettings = UE4.UGameUserSettings:GetGameUserSettings()
     if GameUserSettings then
-      DebugPrint("@zyh DelaySetFullScreen_Lua\230\137\167\232\161\140")
+      DebugPrint("@zyh DelaySetFullScreen_Lua执行")
       GameUserSettings:SetFullscreenMode(WindowMode)
       GameUserSettings:ApplySettings(false)
     end
   end, false)
 end
-
 function BP_SceneManagerComponent_C:CleanSpecialMonsterInfo(Eid)
   if Eid then
     self.SpecialMonsterInfo[Eid] = nil
   end
 end
-
+function BP_SceneManagerComponent_C:ReportCheatMsg(CheatType, AlertString)
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local JsonTable = {CheatMsg = AlertString}
+  local JsonMsg = Json.encode(JsonTable)
+  Avatar:CallServerMethod("SendCheatMsgToServer", CheatType, JsonMsg)
+end
 AssembleComponents(BP_SceneManagerComponent_C)
 return BP_SceneManagerComponent_C

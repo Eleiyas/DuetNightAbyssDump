@@ -2,7 +2,6 @@ local TimeUtils = require("Utils.TimeUtils")
 local ReddotManager = require("BluePrints.UI.Reddot.ReddotManager")
 local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
 local WBP_Rouge_Main_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Rouge_Main_C:Construct()
   self.IsHovering = false
   self.IsPressing = false
@@ -13,12 +12,10 @@ function WBP_Rouge_Main_C:Construct()
   self.Difficulty_Select:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.DifficultySelection:InitParent(self)
 end
-
 function WBP_Rouge_Main_C:Destruct()
   AudioManager(self):StopSound(self, "RougeMainOpenSound")
   self:ClearListenEvent()
 end
-
 function WBP_Rouge_Main_C:Init()
   self.SelectModeBtn = {
     self.Entrance_Store,
@@ -53,7 +50,6 @@ function WBP_Rouge_Main_C:Init()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Rouge_Main_C:InitWidgetInfoInGamePad()
   if self.Icon_Key_Entrance then
     self.Icon_Key_Entrance:CreateCommonKey({
@@ -77,7 +73,6 @@ function WBP_Rouge_Main_C:InitWidgetInfoInGamePad()
     })
   end
 end
-
 function WBP_Rouge_Main_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   if self.InDifficultySelect then
@@ -108,19 +103,16 @@ function WBP_Rouge_Main_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Rouge_Main_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_Main_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Rouge_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -128,7 +120,6 @@ function WBP_Rouge_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadN
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Rouge_Main_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -136,7 +127,6 @@ function WBP_Rouge_Main_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Rouge_Main_C:InitGamepadView()
   if self.Controller_Entrance then
     self.Controller_Entrance:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -157,7 +147,6 @@ function WBP_Rouge_Main_C:InitGamepadView()
     end
   end
 end
-
 function WBP_Rouge_Main_C:InitKeyboardView()
   self:LeaveSelectMode()
   if self.Controller_Entrance then
@@ -172,7 +161,6 @@ function WBP_Rouge_Main_C:InitKeyboardView()
   self.RewardInfo:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Btn_Enter:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function WBP_Rouge_Main_C:EnterSelectMode()
   if self.IsInSelectState then
     return
@@ -197,7 +185,6 @@ function WBP_Rouge_Main_C:EnterSelectMode()
     end
   end
 end
-
 function WBP_Rouge_Main_C:LeaveSelectMode()
   if not self.IsInSelectState then
     return
@@ -217,9 +204,9 @@ function WBP_Rouge_Main_C:LeaveSelectMode()
     self.Bg:SetFocus()
   end
 end
-
 function WBP_Rouge_Main_C:InitSelectTab()
   self.TabConfigData = {
+    TitleName = GText("MAIN_UI_ROUGE"),
     DynamicNode = {
       "Back",
       "ResourceBar",
@@ -256,9 +243,9 @@ function WBP_Rouge_Main_C:InitSelectTab()
   local ResoucesTab = {}
   self.Root:InitOtherPageTab(self.TabConfigData, ResoucesTab, true)
 end
-
 function WBP_Rouge_Main_C:InitNormalTab()
   self.TabConfigData = {
+    TitleName = GText("MAIN_UI_ROUGE"),
     DynamicNode = {
       "Back",
       "ResourceBar",
@@ -289,12 +276,10 @@ function WBP_Rouge_Main_C:InitNormalTab()
   local ResoucesTab = {}
   self.Root:InitOtherPageTab(self.TabConfigData, ResoucesTab, true)
 end
-
 function WBP_Rouge_Main_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self.Bg:SetFocus()
   return UIUtils.Unhandled
 end
-
 function WBP_Rouge_Main_C:SetInfo()
   self.InDifficultySelect = false
   self.Main:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -362,11 +347,9 @@ function WBP_Rouge_Main_C:SetInfo()
   ReddotManager.RemoveListener("RougeArchiveTreasure", self)
   ReddotManager.AddListener("RougeArchiveMain", self, self.UpdateArchiveReddot)
 end
-
 function WBP_Rouge_Main_C:UpdateArchiveReddot(Count)
   self.Entrance_Illustration:Init(Count > 0)
 end
-
 function WBP_Rouge_Main_C:CheckReachable(TalentId)
   if 1 == self.ReachableTable[TalentId] then
     return true
@@ -393,14 +376,14 @@ function WBP_Rouge_Main_C:CheckReachable(TalentId)
     return false
   end
 end
-
 function WBP_Rouge_Main_C:InitTable(JumpType)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/open", "RougeMainOpenSound", nil)
   self:SetInfo()
   self:LeaveSelectMode()
-  self.JumpType = JumpType or self.JumpType
+  self:SetJumpType(JumpType)
   self.IsClosing = false
   self.TabConfigData = {
+    TitleName = GText("MAIN_UI_ROUGE"),
     DynamicNode = {
       "Back",
       "ResourceBar",
@@ -435,23 +418,11 @@ function WBP_Rouge_Main_C:InitTable(JumpType)
   }
   local ResoucesTab = {}
   self.Root:InitOtherPageTab(self.TabConfigData, ResoucesTab, true)
-  if self.JumpType == "ExitFromRouge" then
-    local Avatar = GWorld:GetAvatar()
-    if Avatar then
-      local RougeLikeReward = Avatar.FirstTimeRougeLikeReward
-      if RougeLikeReward and next(RougeLikeReward) then
-        UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, RougeLikeReward, false, nil, self, false)
-        Avatar.FirstTimeRougeLikeReward = nil
-      end
-    end
-  end
   self:ShowSeasonFirstStory()
 end
-
 function WBP_Rouge_Main_C:OpenStore()
-  UIManager(self):LoadUINew("ShopActivity", nil, nil, nil, "Rouge")
+  PageJumpUtils:JumpToShopPage(nil, nil, nil, "Rouge")
 end
-
 function WBP_Rouge_Main_C:OpenTalentTree()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Back) then
     return
@@ -460,7 +431,6 @@ function WBP_Rouge_Main_C:OpenTalentTree()
   self.Root.IsOpenSelectLevel = false
   TalentPage:InitTable()
 end
-
 function WBP_Rouge_Main_C:OpenIllustration()
   if self:IsAnimationPlaying(self.In) or self:IsAnimationPlaying(self.Back) then
     return
@@ -469,14 +439,12 @@ function WBP_Rouge_Main_C:OpenIllustration()
   self.Root.IsOpenSelectLevel = false
   ArchiveMain:Init()
 end
-
 function WBP_Rouge_Main_C:OnBtnHovered()
   self.IsHovering = true
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/enter_btn_hover", nil, nil)
   self:StopAllAnimationsExceptInOut()
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_Rouge_Main_C:OnBtnUnhovered()
   self.IsHovering = false
   if not self.IsPressing and not self:IsAnimationPlaying(self.Next) then
@@ -484,13 +452,11 @@ function WBP_Rouge_Main_C:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Rouge_Main_C:OnBtnPressed()
   self.IsPressing = true
   self:StopAllAnimationsExceptInOut()
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Rouge_Main_C:OnBtnReleased()
   self.IsPressing = false
   if not self.IsHovering then
@@ -498,19 +464,16 @@ function WBP_Rouge_Main_C:OnBtnReleased()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function WBP_Rouge_Main_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Unhover then
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Rouge_Main_C:StopAllAnimationsExceptInOut()
   if not self:IsAnimationPlaying(self.In) and not self:IsAnimationPlaying(self.Out) and not self:IsAnimationPlaying(self.Next) and not self:IsAnimationPlaying(self.Back) then
     self:StopAllAnimations()
   end
 end
-
 function WBP_Rouge_Main_C:OnReturnKeyDown()
   if not self:IsAnyAnimationPlaying() then
     AudioManager(self):SetEventSoundParam(self, "RougeMainOpenSound", {ToEnd = 1})
@@ -522,10 +485,21 @@ function WBP_Rouge_Main_C:OnReturnKeyDown()
     end
   end
 end
-
 function WBP_Rouge_Main_C:SwitchIn()
 end
-
+function WBP_Rouge_Main_C:SetJumpType(JumpType)
+  self.JumpType = JumpType or self.JumpType
+  if self.JumpType == "ExitFromRouge" then
+    local Avatar = GWorld:GetAvatar()
+    if Avatar then
+      local RougeLikeReward = Avatar.FirstTimeRougeLikeReward
+      if RougeLikeReward and next(RougeLikeReward) then
+        UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, RougeLikeReward, false, nil, self, false)
+        Avatar.FirstTimeRougeLikeReward = nil
+      end
+    end
+  end
+end
 function WBP_Rouge_Main_C:ShowSeasonFirstStory()
   if not self.SeasonId then
     return
@@ -547,7 +521,6 @@ function WBP_Rouge_Main_C:ShowSeasonFirstStory()
   })
   Avatar:NotifyTriggerRougeLikeStoryEvent(SeasonStoryId)
 end
-
 function WBP_Rouge_Main_C:CheckSeasonTimeValid(SeasonId)
   if not SeasonId then
     return false
@@ -559,19 +532,17 @@ function WBP_Rouge_Main_C:CheckSeasonTimeValid(SeasonId)
   local NowTime = TimeUtils.NowTime()
   return NowTime >= SeasonInfo.SeasonStartTime and NowTime <= SeasonInfo.SeasonEndTime
 end
-
 function WBP_Rouge_Main_C:OpenDifficultySelection()
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/enter_btn_click", nil, nil)
-  self.DifficultySelection:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Main:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.DifficultySelection:StopAllAnimations()
   self:StopAllAnimations()
+  self.DifficultySelection:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.DifficultySelection:PlayAnimation(self.DifficultySelection.In)
   self:PlayAnimation(self.Next)
   self:InitTableDifficultySelection()
   self.DifficultySelection:FocusOnFirstItem()
 end
-
 function WBP_Rouge_Main_C:InitTableDifficultySelection()
   self.DifficultySelection:SetInfo()
   self.InDifficultySelect = true
@@ -606,7 +577,6 @@ function WBP_Rouge_Main_C:InitTableDifficultySelection()
   local ResoucesTab = {}
   self.Root:InitOtherPageTab(self.TabConfigData, ResoucesTab, true)
 end
-
 function WBP_Rouge_Main_C:BackToRougeMain()
   self.DifficultySelection:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.DifficultySelection:HideWeeklyPoints()
@@ -619,5 +589,4 @@ function WBP_Rouge_Main_C:BackToRougeMain()
   self:InitTable()
   self.Bg:SetFocus()
 end
-
 return WBP_Rouge_Main_C

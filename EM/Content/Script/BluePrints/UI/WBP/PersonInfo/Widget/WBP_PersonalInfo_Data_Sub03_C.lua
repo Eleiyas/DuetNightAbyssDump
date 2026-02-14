@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(ItemObject)
   if ItemObject.Des then
     self.Text_TitlePlayerData:SetText(GText(ItemObject.Des))
@@ -18,5 +17,4 @@ function M:OnListItemObjectSet(ItemObject)
     self.WidgetSwitcher_Bg:SetActiveWidgetIndex(0)
   end
 end
-
 return M

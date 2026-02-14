@@ -7,36 +7,30 @@ local BP_WeaponBase_C = Class({
 BP_WeaponBase_C._components = {
   "BluePrints.Combat.Weapons.WeaponAttrComponent",
   "BluePrints.Combat.Components.SkillLevelInterface",
-  "BluePrints.Combat.Components.ActorTypeComponent"
+  "BluePrints.Combat.Components.ActorTypeComponent",
+  "BluePrints.Common.DelayFrameComponent"
 }
-
 function BP_WeaponBase_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self.ForbidTag = {}
 end
-
 function BP_WeaponBase_C:OnRep_ServerBornInfo()
   self.BornInfo = EffectResults.UnpackEffectStruct(self.ServerBornInfo)
 end
-
 function BP_WeaponBase_C:SetBornInfo()
   if not self.BornInfo then
     self.BornInfo = EffectResults.Result()
   end
 end
-
 function BP_WeaponBase_C:IsReplaceAttrs()
   return not self.ReplaceAttrs
 end
-
 function BP_WeaponBase_C:SetBornInfoAppearance()
   self.BornInfo.AppearanceInfo = self.AppearanceInfo
 end
-
 function BP_WeaponBase_C:SetData()
   self.Data = DataMgr.BattleWeapon[self.WeaponId]
 end
-
 function BP_WeaponBase_C:ApplyWeaponAttributes()
   if IsClient(self) then
     return
@@ -46,15 +40,12 @@ function BP_WeaponBase_C:ApplyWeaponAttributes()
   end
   self:SetTableAttr(self.ReplaceAttrs)
 end
-
 function BP_WeaponBase_C:SetServerBornInfo()
   self.ServerBornInfo = self.BornInfo:ToEffectStruct()
 end
-
 function BP_WeaponBase_C:Lua_InitWeaponAppearance()
   self:InitWeaponAppearance(self.AppearanceInfo)
 end
-
 function BP_WeaponBase_C:InitWeaponAppearance(AppearanceInfo)
   self.AppearanceInfo = AppearanceInfo
   self:InitWeaponSkin(AppearanceInfo and AppearanceInfo.SkinId)
@@ -63,18 +54,15 @@ function BP_WeaponBase_C:InitWeaponAppearance(AppearanceInfo)
   end
   self:Lua_InitShowWeaponAppearance()
 end
-
 function BP_WeaponBase_C:Lua_InitShowWeaponAppearance()
   self:InitWeaponBreakMI()
   self:InitWeaponColor(self.AppearanceInfo and self.AppearanceInfo.Colors)
   self:ChangeAccessory(self.AppearanceInfo and self.AppearanceInfo.AccessoryId)
   EventManager:FireEvent(EventID.OnShowWeaponLoadFinished, self)
 end
-
 function BP_WeaponBase_C:InitWeaponSkin(SkinId)
   self:InitWeaponSkinImpl(SkinId, self.bIsShow)
 end
-
 function BP_WeaponBase_C:InitWeaponColor(Colors)
   if Colors then
     local SpecialColor = Colors.SpecialColor
@@ -84,7 +72,6 @@ function BP_WeaponBase_C:InitWeaponColor(Colors)
     end
   end
 end
-
 function BP_WeaponBase_C:InitWeaponPartsColor(Colors)
   if self.ChildWeapon then
     self.ChildWeapon:InitWeaponPartsColor(Colors)
@@ -108,7 +95,6 @@ function BP_WeaponBase_C:InitWeaponPartsColor(Colors)
     end
   end
 end
-
 function BP_WeaponBase_C:InitWeaponSpecialColor(Colors)
   if self.ChildWeapon then
     self.ChildWeapon:InitWeaponSpecialColor(Colors)
@@ -120,7 +106,6 @@ function BP_WeaponBase_C:InitWeaponSpecialColor(Colors)
     end
   end
 end
-
 function BP_WeaponBase_C:ChangeAccessory(AccessoryId)
   self:DetachWeaponSuit()
   if nil == AccessoryId then
@@ -139,7 +124,6 @@ function BP_WeaponBase_C:ChangeAccessory(AccessoryId)
   self:AttachWeaponSuit(Data.AccessorySocket, Data.ModelPath, Offset, Data.NiagaraPath, Data.NiagaraSocket)
   self:ChangeWPSuitLook(Data.ChangeColor or 1)
 end
-
 function BP_WeaponBase_C:ClearAccessories()
   for i = 1, self.Accessories:Length() do
     local Accessory = self.Accessories:GetRef(i)
@@ -147,7 +131,6 @@ function BP_WeaponBase_C:ClearAccessories()
   end
   self.Accessories:Clear()
 end
-
 function BP_WeaponBase_C:Destroy()
   if self.Owner ~= nil then
     self.Owner:RemovePassiveEffectByWeapon(self)
@@ -159,29 +142,30 @@ function BP_WeaponBase_C:Destroy()
   end
   self:K2_DestroyActor()
 end
-
 function BP_WeaponBase_C:GetSkillByType(SkillType)
   if not self.TypeSkills then
     return 0
   end
   return self.TypeSkills[SkillType]
 end
-
 function BP_WeaponBase_C:GetWeaponOwner()
   return self.Owner
 end
-
 function BP_WeaponBase_C:AddWeaponSkill()
   if not self.Owner then
+    return
+  end
+  if self.Owner.FromOtherWorld then
     return
   end
   if self.SkillInfos then
     for SkillId, SkillInfo in pairs(self.SkillInfos) do
       local SkillLevel = SkillInfo.Level or Const.DefaultSkillLevel
       local SkillGrade = SkillInfo.Grade or Const.DefaultSkillGrade
-      self.Owner.SkillsComponent:ServerAddSkillInfo(SkillId, SkillLevel, SkillGrade, 0, self)
+      if self.Owner.SkillsComponent then
+        self.Owner.SkillsComponent:ServerAddSkillInfo(SkillId, SkillLevel, SkillGrade, 0, self)
+      end
     end
-    self.BornInfo.SkillInfos = self.SkillInfos
   else
     local SkillLevel = 1
     local SkillGrade = 0
@@ -195,12 +179,13 @@ function BP_WeaponBase_C:AddWeaponSkill()
     end
     if nil ~= SkillList then
       for _, SkillId in ipairs(SkillList) do
-        self.Owner.SkillsComponent:ServerAddSkillInfo(SkillId, SkillLevel, SkillGrade, 0, self)
+        if self.Owner.SkillsComponent then
+          self.Owner.SkillsComponent:ServerAddSkillInfo(SkillId, SkillLevel, SkillGrade, 0, self)
+        end
       end
     end
   end
 end
-
 function BP_WeaponBase_C:RemoveWeaponSkill()
   if not self.Owner then
     return
@@ -208,41 +193,73 @@ function BP_WeaponBase_C:RemoveWeaponSkill()
   local SkillList = self.Data.WeaponSkillList
   if nil ~= SkillList then
     for i, SkillId in pairs(SkillList) do
-      self.Owner.SkillsComponent:ServerRemoveSkillInfo(SkillId)
+      if self.Owner.SkillsComponent then
+        self.Owner.SkillsComponent:ServerRemoveSkillInfo(SkillId)
+      end
       if SkillId == self.Owner.CurrentSkillId then
-        self.Owner:StopSkill()
+        self.Owner:StopSkill(UE.ESkillStopReason.SkillRemove)
       end
     end
   end
 end
-
 function BP_WeaponBase_C:ActivateSkills()
   if not self.Owner then
     return
   end
   self:SetIsActivated(true)
-  if self.BornInfo.SkillInfos then
-    for SkillId, _ in pairs(self.BornInfo.SkillInfos) do
-      self.Owner:ActivateSkill(SkillId)
+  local ChangedSkills = TMap(0, 0)
+  if self.Owner.SkillsComponent and self.Owner.SkillsComponent.SkillInfos then
+    for _, Data in pairs(self.Owner.SkillsComponent.SkillInfos) do
+      if Data.Weapon and Data.Weapon == self and not Data.IsSubSkill then
+        local SkillId = Data.SkillId
+        local Skill = self.Owner:GetSkill(SkillId)
+        if Skill then
+          local SkillType = Skill:GetSkillType()
+          local OldSkillId = self.Owner.Type_2_Skills:Find(SkillType)
+          if OldSkillId and OldSkillId ~= SkillId then
+            self.Owner.WeaponReplaceSkills:Add(SkillId, OldSkillId)
+            ChangedSkills:Add(OldSkillId, SkillId)
+          end
+        end
+        self.Owner:ActivateSkill(SkillId)
+      end
     end
   else
     local SkillList = self.Data.WeaponSkillList
     if nil ~= SkillList then
-      for _, v in pairs(SkillList) do
-        self.Owner:ActivateSkill(v)
+      for _, SkillId in pairs(SkillList) do
+        local Skill = self.Owner:GetSkill(SkillId)
+        if Skill then
+          local SkillType = Skill:GetSkillType()
+          local OldSkillId = self.Owner.Type_2_Skills:Find(SkillType)
+          if OldSkillId and OldSkillId ~= SkillId then
+            self.Owner.WeaponReplaceSkills:Add(SkillId, OldSkillId)
+            ChangedSkills:Add(OldSkillId, SkillId)
+          end
+        end
+        self.Owner:ActivateSkill(SkillId)
       end
     end
   end
+  if self.Owner:IsMainPlayer() and not self.Owner:IsRobot() then
+    self:AddDelayFrameFunc(function()
+      if IsValid(self.Owner) and self.Owner.UpdateSkillUIInfo then
+        self.Owner:UpdateSkillUIInfo(ChangedSkills)
+      end
+    end)
+  end
 end
-
 function BP_WeaponBase_C:DeactivateSkills()
   if not self.Owner then
     return
   end
   self:SetIsActivated(false)
-  if self.BornInfo.SkillInfos then
-    for SkillId, _ in pairs(self.BornInfo.SkillInfos) do
-      self.Owner:DeactivateSkill(SkillId)
+  if self.Owner.SkillsComponent and self.Owner.SkillsComponent.SkillInfos then
+    for _, Data in pairs(self.Owner.SkillsComponent.SkillInfos) do
+      if Data.Weapon and Data.Weapon == self and not Data.IsSubSkill then
+        local SkillId = Data.SkillId
+        self.Owner:DeactivateSkill(SkillId)
+      end
     end
   else
     local SkillList = self.Data.WeaponSkillList
@@ -253,24 +270,25 @@ function BP_WeaponBase_C:DeactivateSkills()
     end
   end
 end
-
 function BP_WeaponBase_C:GetSkills()
-  local SKills = {}
-  if self.BornInfo.SkillInfos then
-    for SkillId, _ in pairs(self.BornInfo.SkillInfos) do
-      table.insert(SKills, SkillId)
+  local Skills = {}
+  if self.Owner.SkillsComponent and self.Owner.SkillsComponent.SkillInfos then
+    for _, Data in pairs(self.Owner.SkillsComponent.SkillInfos) do
+      if Data.Weapon and Data.Weapon == self then
+        local SkillId = Data.SkillId
+        table.insert(Skills, SkillId)
+      end
     end
   else
     local SkillList = self.Data.WeaponSkillList
     if nil ~= SkillList then
       for _, v in pairs(SkillList) do
-        table.insert(SKills, v)
+        table.insert(Skills, v)
       end
     end
   end
-  return SKills
+  return Skills
 end
-
 function BP_WeaponBase_C:OnLeave(DontPlayDissolve)
   if not self.InHand then
     return
@@ -285,7 +303,6 @@ function BP_WeaponBase_C:OnLeave(DontPlayDissolve)
     self.Accessories:GetRef(i):OnLeave()
   end
 end
-
 function BP_WeaponBase_C:WeaponBright()
   if not self:CheckWeaponIsClient() then
     return
@@ -295,7 +312,6 @@ function BP_WeaponBase_C:WeaponBright()
     self.ChildWeapon:WeaponBright()
   end
 end
-
 function BP_WeaponBase_C:RemoveWeaponBright()
   if not self:CheckWeaponIsClient() then
     return
@@ -305,15 +321,12 @@ function BP_WeaponBase_C:RemoveWeaponBright()
     self.ChildWeapon:RemoveWeaponBright()
   end
 end
-
 function BP_WeaponBase_C:EnterIdleAnimationRepPlay_Implementation(AnimIndex)
   self:EnterIdleAnimation(AnimIndex)
 end
-
 function BP_WeaponBase_C:GetWeaponTypes()
   return CommonConst.WeaponTypes
 end
-
 function BP_WeaponBase_C:GetWeaponMeleeOrRanged()
   local WeaponTags = self:GetWeaponTags()
   if WeaponTags:Contains("Condemn") then
@@ -327,10 +340,8 @@ function BP_WeaponBase_C:GetWeaponMeleeOrRanged()
   end
   return "Melee"
 end
-
 function BP_WeaponBase_C:GetHideDelayTimeOnMoveToBack()
   return 5
 end
-
 AssembleComponents(BP_WeaponBase_C)
 return BP_WeaponBase_C

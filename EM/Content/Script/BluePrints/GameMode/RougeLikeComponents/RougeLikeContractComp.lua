@@ -1,6 +1,5 @@
 local UIUtils = require("Utils.UIUtils")
 local Component = {}
-
 function Component:UpdateContractEffect()
   DebugPrint("Tianyi@ UpdateContractEffect!")
   for k, v in pairs(self.Contract) do
@@ -13,21 +12,19 @@ function Component:UpdateContractEffect()
     end
   end
 end
-
 function Component:TriggerAllContractDungeonEffect()
   DebugPrint("HTY UpdateContractDungeonEffect")
   for k, v in pairs(self.Contract) do
     self:TriggerContractDungeonEffect(k, v)
   end
 end
-
 function Component:TriggerContractDungeonEffect(ContractId, ContractLevel)
   DebugPrint("HTY TriggerContractDungeonEffect ContractId: ", ContractId, "ContractLevel: ", ContractLevel)
   local RoomType = DataMgr.RougeLikeRoom[self.RoomId].RoomType
   local ContractData = DataMgr.RougelikeContract[ContractId]
   local EffectRoomTypes = ContractData.RoomType
   if nil == EffectRoomTypes then
-    DebugPrint("HTY \229\189\147\229\137\141ContractId \230\178\161\230\156\137\232\166\129\231\148\159\230\149\136\231\154\132\229\133\179\229\141\161\229\165\145\231\186\166\230\149\136\230\158\156")
+    DebugPrint("HTY 当前ContractId 没有要生效的关卡契约效果")
     return
   end
   for i = 1, #EffectRoomTypes do
@@ -52,7 +49,7 @@ function Component:TriggerContractDungeonEffect(ContractId, ContractLevel)
         end
       end
       if 0 == #CheckStatic then
-        DebugPrint("Error: HTY \230\178\161\230\156\137\231\148\159\230\136\144\229\165\145\231\186\166Unit\231\154\132\233\157\153\230\128\129\231\130\185 ContractId: ", ContractId, "ContractLevel: ", ContractLevel, "UnitType: ", UnitType)
+        DebugPrint("Error: HTY 没有生成契约Unit的静态点 ContractId: ", ContractId, "ContractLevel: ", ContractLevel, "UnitType: ", UnitType)
         return
       end
       for Count = 1, UnitNum do
@@ -71,5 +68,4 @@ function Component:TriggerContractDungeonEffect(ContractId, ContractLevel)
     end
   end
 end
-
 return Component

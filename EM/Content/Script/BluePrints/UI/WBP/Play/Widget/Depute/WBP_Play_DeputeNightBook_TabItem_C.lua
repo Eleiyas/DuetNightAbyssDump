@@ -2,20 +2,17 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Initialize(Initializer)
 end
-
 function M:Construct()
   M.Super.Construct(self)
-  self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(CapturePanel) == "PC"
+  self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
   self.Btn_Click.OnClicked:Add(self, self.OnClicked)
   self.Btn_Click.OnPressed:Add(self, self.OnPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnReleased)
   self.Btn_Click.OnHovered:Add(self, self.OnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function M:SelectCell()
   if self.IsSelect then
     return
@@ -31,7 +28,6 @@ function M:SelectCell()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Parent = Content.Parent
@@ -48,7 +44,6 @@ function M:OnListItemObjectSet(Content)
     self:OnClickedCell()
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.UI = nil
@@ -56,7 +51,6 @@ function M:BP_OnEntryReleased()
   self.IsSelect = false
   self:PlayAnimation(self.Normal)
 end
-
 function M:InitItemContent()
   if self.DungeonData then
     self.Text_LvNum:SetText(GText(self.DungeonData.Name))
@@ -75,12 +69,10 @@ function M:InitItemContent()
     end
   end
 end
-
 function M:OnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_level_03", nil, nil)
   self:OnClickedCell()
 end
-
 function M:OnClickedCell()
   if self.IsUnLocked then
     PageJumpUtils:CheckDungeonCondition(self.DungeonData.Condition, true)
@@ -93,7 +85,6 @@ function M:OnClickedCell()
     self.Parent:OnClickedCell(self.Content)
   end
 end
-
 function M:OnPressed()
   if self.IsUnLocked then
     return
@@ -104,7 +95,6 @@ function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
   if self.IsUnLocked then
     return
@@ -115,7 +105,6 @@ function M:OnReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnHovered()
   if self.IsUnLocked then
     return
@@ -129,7 +118,6 @@ function M:OnHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnUnhovered()
   if self.IsUnLocked then
     return
@@ -140,7 +128,6 @@ function M:OnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnCellUnSelect()
   if self.IsUnLocked then
     return
@@ -149,7 +136,6 @@ function M:OnCellUnSelect()
   self.IsSelect = false
   self:PlayAnimation(self.Normal)
 end
-
 function M:RefreshDungeonRewards()
   self.List_NightBookItem:ClearListItems()
   local MonsterRewardDataList = {}
@@ -174,16 +160,15 @@ function M:RefreshDungeonRewards()
         self:CreateAndAddEmptyItem()
       end
       self.List_NightBookItem:ScrollToTop()
+      self.List_NightBookItem:RequestPlayEntriesAnim()
     end, false, 0, "DeputeNightBook_TabItemListView")
   end
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.IsEmpty = true
   self.List_NightBookItem:AddItem(Content)
 end
-
 function M:CreateRewardContent(RewardData)
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.MonRewardData = RewardData
@@ -192,7 +177,6 @@ function M:CreateRewardContent(RewardData)
   Content.Parent = self.Parent
   return Content
 end
-
 function M:UpdatKeyDisplay()
   local Item = UIManager(self):GetUIObj("StyleOfPlay")
   if not Item then
@@ -255,5 +239,4 @@ function M:UpdatKeyDisplay()
   end
   Item:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 return M

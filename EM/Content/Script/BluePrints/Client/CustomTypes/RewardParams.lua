@@ -10,7 +10,8 @@ RewardParams.__Props__ = {
   BonusRate = prop.prop("Int", "cross", 0),
   BonusRateTag = prop.prop("Str2IntDict", "cross save"),
   ExpRate = prop.prop("Int", "cross", 0),
-  ExpRateTag = prop.prop("Str2IntDict", "cross save")
+  ExpRateTag = prop.prop("Str2IntDict", "cross save"),
+  bForbidExp = prop.prop("Bool", "", false)
 }
 FormatProperties(RewardParams)
 return {RewardParams = RewardParams}

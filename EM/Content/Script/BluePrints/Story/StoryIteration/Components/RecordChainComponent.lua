@@ -1,7 +1,6 @@
 local EDialogueNodeType = require("BluePrints.Story.Talk.View.TalkUtils").EDialogueNodeType
 local M = {}
 local DialogueNodeChain = {}
-
 function M:OnNodeRecord(Node, ...)
   DialogueNodeChain = DialogueNodeChain or {}
   if Node.NodeType == EDialogueNodeType.Start then
@@ -16,5 +15,4 @@ function M:OnNodeRecord(Node, ...)
   end
   self.DialogueNodeChain = DialogueNodeChain or {}
 end
-
 return M

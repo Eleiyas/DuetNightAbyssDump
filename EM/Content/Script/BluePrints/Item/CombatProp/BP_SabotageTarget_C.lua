@@ -1,6 +1,5 @@
 require("UnLua")
 local BP_SabotageTarget_C = Class("BluePrints/Item/CombatProp/BP_CombatPropBase_C")
-
 function BP_SabotageTarget_C:AuthorityInitInfo(Info)
   BP_SabotageTarget_C.Super.AuthorityInitInfo(self, Info)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -18,15 +17,12 @@ function BP_SabotageTarget_C:AuthorityInitInfo(Info)
     GameMode:GetDungeonComponent().SabotageTarget = self
   end
 end
-
 function BP_SabotageTarget_C:CustomAddGuideCondition()
   return false
 end
-
 function BP_SabotageTarget_C:TriggerByChild(ChildEid)
   self:ChangeToState(1)
 end
-
 function BP_SabotageTarget_C:ChangeToState(StateId)
   if 1 == StateId then
     local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -36,14 +32,14 @@ function BP_SabotageTarget_C:ChangeToState(StateId)
     Battle(self):AddBuffToTarget(self, self, 301, -1, nil, nil)
   end
 end
-
 function BP_SabotageTarget_C:ActiveOnServer()
   if self.bIsDead then
     return
   end
   BP_SabotageTarget_C.Super.ActiveOnServer(self)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if GameMode then
+  if GameMode and not self.bTriggerActiveGameMode then
+    self.bTriggerActiveGameMode = true
     GameMode:TriggerDungeonComponentFun("SabotageTargetActive")
     GameMode:SetClientDungeonUIState(Const.EDungeonUIState.OnTarget)
   end
@@ -57,11 +53,9 @@ function BP_SabotageTarget_C:ActiveOnServer()
   end
   self:OnSabotageActive()
 end
-
 function BP_SabotageTarget_C:SetActiveType()
   self.ActiveType = "OtherCombat"
 end
-
 function BP_SabotageTarget_C:ShowDeath()
   BP_SabotageTarget_C.Super.ShowDeath(self)
   if IsAuthority(self) and IsStandAlone(self) then
@@ -69,16 +63,14 @@ function BP_SabotageTarget_C:ShowDeath()
     self:PlayDeadMontage()
   end
 end
-
 function BP_SabotageTarget_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   BP_SabotageTarget_C.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
-  if GameMode then
-    GameMode:TriggerGameModeEvent("OnSabotageTargetDead")
+  if GameMode and not self.bSabotageIsDead then
     self.bSabotageIsDead = true
+    GameMode:TriggerGameModeEvent("OnSabotageTargetDead")
   end
 end
-
 function BP_SabotageTarget_C:OnRep_bSabotageIsDead()
   if self.bSabotageIsDead then
     self:UnLoadBloodUI()
@@ -86,11 +78,9 @@ function BP_SabotageTarget_C:OnRep_bSabotageIsDead()
     self:DeactiveGuide()
   end
 end
-
 function BP_SabotageTarget_C:ReceiveEndPlay()
   self:UnLoadBloodUI()
 end
-
 function BP_SabotageTarget_C:UnLoadBloodUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -101,7 +91,6 @@ function BP_SabotageTarget_C:UnLoadBloodUI()
     end
   end
 end
-
 function BP_SabotageTarget_C:SelectCollisionComp(CollisionArray)
   local MaxRate = -1
   local Res
@@ -115,11 +104,9 @@ function BP_SabotageTarget_C:SelectCollisionComp(CollisionArray)
   end
   return Res
 end
-
 function BP_SabotageTarget_C:UpdateDamageRate(Character, Damage, Source, Target)
   local Rate = self.DamageRate:Find(Damage.CollisionName)
   self.HitedComponent = Damage.CollisionName
   Damage:AddGlobalDamageRate(Rate, "", true)
 end
-
 return BP_SabotageTarget_C

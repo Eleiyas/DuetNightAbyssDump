@@ -10,7 +10,6 @@ WBP_SquadListItem_C._components = {
 }
 local Handled = UE.UWidgetBlueprintLibrary.Handled()
 local UnHandled = UE.UWidgetBlueprintLibrary.UnHandled()
-
 function WBP_SquadListItem_C:Init()
   self:SwitchItemType()
   self:InitBtn()
@@ -33,15 +32,17 @@ function WBP_SquadListItem_C:Init()
     self.Owner:HideOrShowItemInDraging(self.Owner.CurSelectSquadIndex)
   end
   if not self.Owner.IsDraging then
-    if self.Owner.CurSelectSquadIndex == self.Index then
-      self.IsSelect = true
+    if self.IsSelect then
       self:PlayAnimation(self.Select)
+      self.Melee:PlayAnimation(self.Melee.Click)
+      self.Ranged:PlayAnimation(self.Ranged.Click)
     else
       self:PlayAnimation(self.Normal)
+      self.Melee:PlayAnimation(self.Melee.Normal)
+      self.Ranged:PlayAnimation(self.Ranged.Normal)
     end
   end
 end
-
 function WBP_SquadListItem_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.SelfWidget = self
@@ -51,26 +52,24 @@ function WBP_SquadListItem_C:OnListItemObjectSet(Content)
   self.Owner = Content.Owner
   self.IsAddSquad = Content.IsAddSquad
   self.Index = self.IsAddSquad and self.Owner.SquadMax or Content.Index
-  self.IsSelect = false
+  self.IsSelect = self.Owner.CurSelectSquadIndex == self.Index
   self.FakeIndex = self.Index
   self:Init()
   self:PlayAnimation(self.ResetPos)
 end
-
 function WBP_SquadListItem_C:SetIndex(Index)
   self.FakeIndex = Index
 end
-
 function WBP_SquadListItem_C:SwitchItemType()
   if self.IsAddSquad then
     self.Panel_Normal:SetVisibility(ESlateVisibility.Collapsed)
     self.Panel_Add:SetVisibility(ESlateVisibility.Visible)
+    self.Frame_Black:SetVisibility(ESlateVisibility.Collapsed)
   else
     self.Panel_Add:SetVisibility(ESlateVisibility.Collapsed)
     self.Panel_Normal:SetVisibility(ESlateVisibility.Visible)
   end
 end
-
 function WBP_SquadListItem_C:InitItem()
   local SquadName = ""
   if self.SquadInfo.Name and "" ~= self.SquadInfo.Name then
@@ -79,31 +78,38 @@ function WBP_SquadListItem_C:InitItem()
     SquadName = GText("Squad_DefaultName1")
   end
   self.Text_Name:SetText(SquadName)
-  if self:CheckBasicSquadInfo() then
-    self.Icon_Warning:SetVisibility(ESlateVisibility.Collapsed)
-  else
-    self.Icon_Warning:SetVisibility(ESlateVisibility.Visible)
-  end
   local CharId = self.SquadInfo.CharId
   local IconDynaMaterial = self.Icon_Avatar:GetDynamicMaterial()
   if IconDynaMaterial and CharId then
-    IconDynaMaterial:SetTextureParameterValue("IconMap", LoadObject(DataMgr.Char[CharId].Icon))
+    IconDynaMaterial:SetTextureParameterValue("MainTex", LoadObject(DataMgr.Char[CharId].Icon))
   end
+  self.Melee:InitInfo(self.SquadInfo.MeleeWeaponId)
+  self.Ranged:InitInfo(self.SquadInfo.RangedWeaponId)
 end
-
 function WBP_SquadListItem_C:HideOrShowItemUIInfo(bShow)
   if bShow then
+    self.Pattern:SetVisibility(ESlateVisibility.Visible)
+    self.BG:SetVisibility(ESlateVisibility.Visible)
+    self.Frame_Black:SetVisibility(ESlateVisibility.Visible)
+    self.Panel_Normal:SetVisibility(ESlateVisibility.Visible)
     self.Avatar:SetVisibility(ESlateVisibility.Visible)
-    self.HorizontalBox_0:SetVisibility(ESlateVisibility.Visible)
-    self.Icon_Sort:SetVisibility(ESlateVisibility.Visible)
+    if self.Owner then
+      local AllWidgets = self.Panel_Normal:GetAllChildren():ToTable()
+      for key, value in pairs(AllWidgets) do
+        if value:GetName() == "Arrow_Up" or value:GetName() == "Arrow_Down" or value:GetName() == "Icon_Warning" or value:GetName() == "Panel_Selected" then
+        else
+          value:SetVisibility(ESlateVisibility.Visible)
+        end
+      end
+    end
   else
-    self.Avatar:SetVisibility(ESlateVisibility.Collapsed)
-    self.HorizontalBox_0:SetVisibility(ESlateVisibility.Collapsed)
-    self.Icon_Sort:SetVisibility(ESlateVisibility.Collapsed)
+    self.Pattern:SetVisibility(ESlateVisibility.Collapsed)
+    self.BG:SetVisibility(ESlateVisibility.Collapsed)
+    self.Frame_Black:SetVisibility(ESlateVisibility.Collapsed)
+    self.Panel_Normal:SetVisibility(ESlateVisibility.Collapsed)
   end
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_SquadListItem_C:CheckSortIcon()
   self.IsNeedSort = self.Index == self.Owner.CurSelectSquadIndex and self.Owner.SquadListLen > 1
   if self.IsNeedSort then
@@ -114,86 +120,65 @@ function WBP_SquadListItem_C:CheckSortIcon()
     self.Icon_Sort:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_SquadListItem_C:PlayUpArrowAnimation()
   self.Arrow_Up:SetVisibility(ESlateVisibility.Visible)
 end
-
 function WBP_SquadListItem_C:PlayDownArrowAnimation()
   self.Arrow_Down:SetVisibility(ESlateVisibility.Visible)
 end
-
 function WBP_SquadListItem_C:OnlyShowUpArrow()
   self.Arrow_Up:SetVisibility(ESlateVisibility.Visible)
   self.Arrow_Down:SetVisibility(ESlateVisibility.Collapsed)
 end
-
 function WBP_SquadListItem_C:OnlyShowDownArrow()
   self.Arrow_Up:SetVisibility(ESlateVisibility.Collapsed)
   self.Arrow_Down:SetVisibility(ESlateVisibility.Visible)
 end
-
 function WBP_SquadListItem_C:ShowAllArrow()
   self.Arrow_Down:SetVisibility(ESlateVisibility.Visible)
   self.Arrow_Up:SetVisibility(ESlateVisibility.Visible)
 end
-
 function WBP_SquadListItem_C:HideAllArrow()
   self.Arrow_Down:SetVisibility(ESlateVisibility.Collapsed)
   self.Arrow_Up:SetVisibility(ESlateVisibility.Collapsed)
 end
-
-function WBP_SquadListItem_C:CheckBasicSquadInfo()
-  if self.SquadInfo.Char and self.SquadInfo.MeleeWeapon and self.SquadInfo.RangedWeapon then
-    return true
-  end
-  return false
-end
-
 function WBP_SquadListItem_C:InitBtn()
   if self.IsAddSquad then
-    self.Btn_Add.OnClicked:Add(self, function()
-      self:OnBtnAddClicked()
-    end)
-    self.Btn_Add.OnPressed:Add(self, function()
-      self:OnBtnAddPressed()
-    end)
-    self.Btn_Add.OnHovered:Add(self, function()
-      self:OnBtnAddHovered()
-    end)
-    self.Btn_Add.OnUnhovered:Add(self, function()
-      self:OnBtnAddUnhovered()
-    end)
+    self.Btn_Add.OnClicked:Clear()
+    self.Btn_Add.OnPressed:Clear()
+    self.Btn_Add.OnHovered:Clear()
+    self.Btn_Add.OnUnhovered:Clear()
+    self.Btn_Add.OnClicked:Add(self, self.OnBtnAddClicked)
+    self.Btn_Add.OnPressed:Add(self, self.OnBtnAddPressed)
+    self.Btn_Add.OnHovered:Add(self, self.OnBtnAddHovered)
+    self.Btn_Add.OnUnhovered:Add(self, self.OnBtnAddUnhovered)
     self:PlayAnimation(self.Add_Normal)
   else
   end
 end
-
 function WBP_SquadListItem_C:MoveUp()
   local NowIndex = self.Index - self.FakeIndex
   if NowIndex >= 0 then
     self:PlayAnimation(self["Offset_Up_" .. NowIndex])
-    DebugPrint("thy  MoveUp: Offset_Up_   ", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
+    DebugPrint("MoveUp: Offset_Up_   ", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
   else
     NowIndex = math.abs(NowIndex) - 1
     self:PlayAnimation(self["Offset_Down_" .. NowIndex], 0, 1, EUMGSequencePlayMode.Reverse)
-    DebugPrint("thy  MoveUp:   Offset_Down_    ", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
+    DebugPrint("MoveUp:   Offset_Down_    ", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
   end
 end
-
 function WBP_SquadListItem_C:MoveDown()
   local NowIndex = self.Index - self.FakeIndex
   if NowIndex <= 0 then
     NowIndex = math.abs(NowIndex)
     self:PlayAnimation(self["Offset_Down_" .. NowIndex])
-    DebugPrint("thy  MoveDown: Offset_Down_", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
+    DebugPrint("MoveDown: Offset_Down_", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
   else
     NowIndex = NowIndex - 1
     self:PlayAnimation(self["Offset_Up_" .. NowIndex], 0, 1, EUMGSequencePlayMode.Reverse)
-    DebugPrint("thy  MoveDown: Offset_Up_   ", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
+    DebugPrint("MoveDown: Offset_Up_   ", NowIndex, self.FakeIndex, self.Index, self.SquadInfo.CharId)
   end
 end
-
 function WBP_SquadListItem_C:OnBtnAddClicked()
   self:PlayAnimation(self.Add_Click)
   if self.ClickCallback then
@@ -201,20 +186,19 @@ function WBP_SquadListItem_C:OnBtnAddClicked()
     self.ClickCallback(self.Owner)
   end
 end
-
 function WBP_SquadListItem_C:OnBtnAddPressed()
   self:PlayAnimation(self.Add_Press)
 end
-
 function WBP_SquadListItem_C:OnBtnAddHovered()
   self:PlayAnimation(self.Add_Hover)
 end
-
 function WBP_SquadListItem_C:OnBtnAddUnhovered()
   self:PlayAnimation(self.Add_UnHover)
 end
-
 function WBP_SquadListItem_C:OnMouseButtonDown(MyGeometry, MouseEvent)
+  if self.Owner.CurInputDeviceType == ECommonInputType.Touch then
+    return Handled
+  end
   self.bClickBegin = true
   if not self.IsAddSquad then
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_large", nil, nil)
@@ -228,7 +212,7 @@ function WBP_SquadListItem_C:OnMouseButtonDown(MyGeometry, MouseEvent)
     self.StartDragCountDown = self.StartDragTime
     self:AddTimer(0.1, function()
       if not self.IsPressingItem then
-        DebugPrint("thy  OnDragDetected fail")
+        DebugPrint("OnDragDetected fail")
         self:RemoveTimer("DragDelay")
         return UnHandled
       end
@@ -243,8 +227,10 @@ function WBP_SquadListItem_C:OnMouseButtonDown(MyGeometry, MouseEvent)
   local LocalHandle = UE.UWidgetBlueprintLibrary.DetectDragIfPressed(MouseEvent, self, UE.EKeys.LeftMouseButton)
   return UE4.UWidgetBlueprintLibrary.CaptureMouse(LocalHandle, self)
 end
-
 function WBP_SquadListItem_C:OnMouseButtonUp(MyGeometry, MouseEvent)
+  if self.Owner.CurInputDeviceType == ECommonInputType.Touch then
+    return Handled
+  end
   self.Owner:GetSquadWidgetInSquadList(self.Owner.CurSelectSquadIndex):HideAllArrow()
   if not self.bClickBegin then
     return Handled
@@ -257,22 +243,31 @@ function WBP_SquadListItem_C:OnMouseButtonUp(MyGeometry, MouseEvent)
   self.IsPressingItem = false
   return Handled
 end
-
 function WBP_SquadListItem_C:OnMouseMove(MyGeometry, MouseEvent)
   if self.Owner.IsDraging then
   end
-  local Reply = UE4.UWidgetBlueprintLibrary.DetectDragIfPressed(InMouseEvent, self, EKeys.LeftMouseButton)
+  if self.Owner.CurInputDeviceType == ECommonInputType.Touch then
+    return Handled
+  end
+  local Reply = UE4.UWidgetBlueprintLibrary.DetectDragIfPressed(MouseEvent, self, EKeys.LeftMouseButton)
   return UE4.UWidgetBlueprintLibrary.ReleaseMouseCapture(Reply)
 end
-
 function WBP_SquadListItem_C:OnMouseEnter(MyGeometry, InKeyEvent)
+  if self.Owner.IsDraging then
+    return
+  end
+  if self.Owner.CurInputDeviceType == ECommonInputType.Touch then
+    return Handled
+  end
   if not self.IsSelect and "PC" == Platform then
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_SquadListItem_C:OnMouseLeave(MyGeometry, InKeyEvent)
   if self.Owner.IsDraging then
+  end
+  if self.Owner.CurInputDeviceType == ECommonInputType.Touch then
+    return Handled
   end
   self.IsPressingItem = false
   if not self.IsSelect and "PC" == Platform then
@@ -281,12 +276,10 @@ function WBP_SquadListItem_C:OnMouseLeave(MyGeometry, InKeyEvent)
     self:PlayAnimation(self.Select)
   end
 end
-
 function WBP_SquadListItem_C:OnTouchStarted(MyGeometry, InTouchEvent)
   local LocalHandle = UE.UWidgetBlueprintLibrary.DetectDragIfPressed(InTouchEvent, self, UE.FKey("Touch"))
   self.bClickBegin = true
   if self.Owner.CurSelectSquadIndex ~= self.Index then
-    self:PlayAnimation(self.Press)
   end
   if self.IsNeedSort and self.Owner.CurSelectSquadIndex == self.Index then
     self.IsPressingItem = true
@@ -294,15 +287,19 @@ function WBP_SquadListItem_C:OnTouchStarted(MyGeometry, InTouchEvent)
     self.StartDragCountDown = self.StartDragTime
     self:AddTimer(0.1, function()
       if not self.IsPressingItem then
-        DebugPrint("thy  OnDragDetected fail")
+        DebugPrint("OnDragDetected fail")
         self:RemoveTimer("DragDelay")
         return
       end
-      DebugPrint("thy  self.StartDragCountDown ", self.StartDragCountDown)
+      DebugPrint("self.StartDragCountDown ", self.StartDragCountDown)
       self.StartDragCountDown = math.max(self.StartDragCountDown - 0.1, 0)
       if self.StartDragCountDown <= 0 then
+        if self.Owner.IsTouchMoving then
+          self:RemoveTimer("DragDelay")
+          return
+        end
         self.StartDrag = true
-        DebugPrint("thy  self.StartDragCountDown 0")
+        DebugPrint("self.StartDragCountDown 0")
         self:CheckArrowState()
         self:RemoveTimer("DragDelay")
       end
@@ -310,9 +307,23 @@ function WBP_SquadListItem_C:OnTouchStarted(MyGeometry, InTouchEvent)
   end
   return LocalHandle
 end
-
+function WBP_SquadListItem_C:OnTouchMoved(MyGeometry, InTouchEvent)
+  local MousePos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(PointerEvent)
+  if not self.Owner.PreMousPos then
+    self.Owner.PreMousPos = MousePos
+  end
+  local Distance = UKismetMathLibrary.Vector_Distance2D(FVector(self.Owner.PreMousPos.X, self.Owner.PreMousPos.Y, 0), FVector(MousePos.X, MousePos.Y, 0))
+  if Distance > 10 then
+    self.Owner.IsTouchMoving = true
+  else
+    self.Owner.IsTouchMoving = false
+  end
+  self.Owner.PreMousPos = MousePos
+  return Handled
+end
 function WBP_SquadListItem_C:OnTouchEnded(MyGeometry, InTouchEvent)
-  DebugPrint("thy   OnTouchEnded")
+  DebugPrint("OnTouchEnded")
+  self.Owner.IsTouchMoving = false
   self.Owner:GetSquadWidgetInSquadList(self.Owner.CurSelectSquadIndex):HideAllArrow()
   if not self.bClickBegin then
     return Handled
@@ -324,25 +335,21 @@ function WBP_SquadListItem_C:OnTouchEnded(MyGeometry, InTouchEvent)
   self.IsPressingItem = false
   return Handled
 end
-
-function WBP_SquadListItem_C:ShowFakeIconInDrag()
-  self.BG:SetVisibility(ESlateVisibility.HitTestInvisible)
-  self.Avatar:SetVisibility(ESlateVisibility.HitTestInvisible)
-  self.HorizontalBox_0:SetVisibility(ESlateVisibility.HitTestInvisible)
-end
-
 function WBP_SquadListItem_C:InitAsDragUI(Owner)
   self.LinkWidgets = {}
   self.ActiveLinkWidgets = {}
   self.Panel_Add:SetVisibility(ESlateVisibility.Collapsed)
-  local AllWidgets = self.Panel_Normal:GetAllChildren():ToTable()
+  local AllWidgets = Owner.Panel_Normal:GetAllChildren():ToTable()
   for key, value in pairs(AllWidgets) do
     value:GetName()
     value:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
-  self.Icon_Warning:SetVisibility(ESlateVisibility.Collapsed)
-  self:ShowFakeIconInDrag()
-  self:PlayAnimation(self.Click, 0.17)
+  self.SquadInfo = Owner.SquadInfo
+  self:InitItem()
+  self:HideOrShowItemUIInfo(true)
+  self:PlayAnimation(self.Select)
+  self.Melee:PlayAnimation(self.Melee.Click)
+  self.Ranged:PlayAnimation(self.Ranged.Click)
   local CharId = Owner.SquadInfo.CharId
   local IconDynaMaterial = self.Icon_Avatar:GetDynamicMaterial()
   if IconDynaMaterial then
@@ -353,13 +360,11 @@ function WBP_SquadListItem_C:InitAsDragUI(Owner)
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:SetRenderScale(FVector2D(1, 1))
 end
-
 function WBP_SquadListItem_C:CreateDragUI()
   local DragUI = UIManager(self):_CreateWidgetNew("SquadListItem")
   DragUI:InitAsDragUI(self)
   return DragUI
 end
-
 function WBP_SquadListItem_C:OnDragDetected(MyGeometry, PointerEvent)
   self.Owner:GetSquadWidgetInSquadList(self.Owner.CurSelectSquadIndex):HideAllArrow()
   if self.Owner.CurSelectSquadIndex ~= self.Index or not self.StartDrag then
@@ -380,12 +385,10 @@ function WBP_SquadListItem_C:OnDragDetected(MyGeometry, PointerEvent)
   self.Owner:SwitchAddSquadItemVisibility(false)
   return DragDropOperation
 end
-
 function WBP_SquadListItem_C:OnDragEnter(MyGeometry, PointerEvent, Operation)
   if self.Owner.IsDraging then
   end
-  if not self.IsSelect and "PC" == Platform then
-    self:PlayAnimation(self.Hover)
+  if self.IsSelect or "PC" == Platform then
   end
   if 1 == Operation.FakeIndex then
     Operation.DefaultDragVisual:OnlyShowDownArrow()
@@ -400,12 +403,10 @@ function WBP_SquadListItem_C:OnDragEnter(MyGeometry, PointerEvent, Operation)
   end
   return true
 end
-
 function WBP_SquadListItem_C:OnDragLeave(PointerEvent, Operation)
   if self.Owner.IsDraging then
   end
-  if not self.IsSelect and "PC" == Platform then
-    self:PlayAnimation(self.UnHover)
+  if self.IsSelect or "PC" == Platform then
   end
   local SquadMainUI = UIManager(self):GetUIObj("SquadMainUINew")
   local ListViewGeo = SquadMainUI.List_Default:GetTickSpaceGeometry()
@@ -419,35 +420,32 @@ function WBP_SquadListItem_C:OnDragLeave(PointerEvent, Operation)
     self.StartDrag = false
     self.Owner.IsInSortState = false
     self.Owner.IsOutBound = true
-    self.Owner:SelectCurSquadInSquadList(self.Owner.CurSelectSquadIndex)
+    self:UpdateListView()
     self.Owner:HideOrShowItemInDraging()
   end
   return true
 end
-
 function WBP_SquadListItem_C:OnDragCancelled(PointerEvent, Operation)
   self.Owner.IsDraging = false
   self.StartDrag = false
   Operation.DefaultDragVisual:HideAllArrow()
   if not self.Owner.IsOutBound then
-    self.Owner:SelectCurSquadInSquadList(self.Owner.CurSelectSquadIndex)
+    self:UpdateListView()
     self.Owner:HideOrShowItemInDraging()
   end
   self.Owner.IsOutBound = false
   self.Owner:SwitchAddSquadItemVisibility(true)
   return true
 end
-
 function WBP_SquadListItem_C:OnDrop(MyGeometry, PointerEvent, Operation)
   self.Owner.IsDraging = false
   self.StartDrag = false
   Operation.DefaultDragVisual:HideAllArrow()
   self.Owner:HideOrShowItemInDraging()
   self.Owner:SwitchAddSquadItemVisibility(true)
-  self.Owner:SelectCurSquad(self.Owner.CurSelectSquadIndex)
+  self:UpdateListView()
   return true
 end
-
 function WBP_SquadListItem_C:OnDragOver(MyGeometry, PointerEvent, Operation)
   if not self.Owner.IsDraging then
     return true
@@ -455,29 +453,53 @@ function WBP_SquadListItem_C:OnDragOver(MyGeometry, PointerEvent, Operation)
   local ListView = self.Owner.List_Default
   local MouseDownPos = UE4.UKismetInputLibrary.PointerEvent_GetScreenSpacePosition(PointerEvent)
   local LocalPos = USlateBlueprintLibrary.AbsoluteToLocal(ListView:GetCachedGeometry(), MouseDownPos)
+  local ScrollUpCachedGeometry = self.Owner.TriggerScrollUp:GetCachedGeometry()
+  local ScrollDownCachedGeometry = self.Owner.TriggerScrollDown:GetCachedGeometry()
+  local IsUnderInScrollUp = USlateBlueprintLibrary.IsUnderLocation(ScrollUpCachedGeometry, MouseDownPos)
+  local IsUnderInScrollDown = USlateBlueprintLibrary.IsUnderLocation(ScrollDownCachedGeometry, MouseDownPos)
+  if IsUnderInScrollUp then
+    DebugPrint("thyScroll IsUnderInScrollUp")
+    self.Owner:AutoSetScrollBoxOffSet(self.Owner.ScrollBox_0, -120)
+  elseif IsUnderInScrollDown then
+    DebugPrint("thyScroll IsUnderInScrollDown")
+    self.Owner:AutoSetScrollBoxOffSet(self.Owner.ScrollBox_0, 120)
+  end
   local ScrollOffset = ListView:GetScrollOffset()
   local YPos = LocalPos.Y + ScrollOffset
   local ListViewHeight, ItemHeight = self:GetListViewSize(ListView)
-  local NewIndex = math.clamp(math.floor(YPos / ItemHeight), 0, self.Owner.SquadListLen - 1) + 1
+  local OffsetIndex = math.clamp(math.floor(YPos / ItemHeight), 0, self.Owner.SquadListLen) + 1
+  local NewIndex = OffsetIndex
   local DragIndex = Operation.FakeIndex
-  if DragIndex ~= NewIndex then
+  if NewIndex > 5 then
+    NewIndex = NewIndex - 1
+  end
+  if 1 == math.abs(DragIndex - NewIndex) then
     self:ChangeTwoItemInListView(ListView, DragIndex, NewIndex, Operation)
+  end
+  if 1 == Operation.FakeIndex then
+    Operation.DefaultDragVisual:OnlyShowDownArrow()
+    Operation.DefaultDragVisual:PlayDownArrowAnimation()
+  elseif Operation.FakeIndex < Operation.Owner.SquadListLen then
+    Operation.DefaultDragVisual:ShowAllArrow()
+    Operation.DefaultDragVisual:PlayUpArrowAnimation()
+    Operation.DefaultDragVisual:PlayDownArrowAnimation()
+  else
+    Operation.DefaultDragVisual:OnlyShowUpArrow()
+    Operation.DefaultDragVisual:PlayUpArrowAnimation()
   end
   return true
 end
-
 function WBP_SquadListItem_C:ChangeTwoItemInListView(ListView, DragIndex, NewIndex, Operation)
   local ListViewItems = ListView:GetListItems()
   NewIndex = math.min(NewIndex, self.Owner.SquadMax)
   if ListViewItems[NewIndex].IsAddSquad then
     return
   end
-  DebugPrint("thy  MoveChangeTwoItemInListView", DragIndex, NewIndex)
   local DragItem = self.Owner:GetSquadContent(DragIndex)
   local NewItem = self.Owner:GetSquadContent(NewIndex)
   if DragItem and NewItem then
-    DebugPrint("thy  DragItem", DragItem.Index, DragItem.SquadInfo.CharId)
-    DebugPrint("thy  NewItem", NewItem.Index, NewItem.SquadInfo.CharId)
+    DebugPrint("DragItem", DragItem.FakeIndex, DragItem.SquadInfo.CharId)
+    DebugPrint("NewItem", NewItem.FakeIndex, NewItem.SquadInfo.CharId)
     if DragIndex < NewIndex then
       DragItem:MoveDown()
       NewItem:MoveUp()
@@ -488,17 +510,21 @@ function WBP_SquadListItem_C:ChangeTwoItemInListView(ListView, DragIndex, NewInd
     DragItem:SetIndex(NewIndex)
     NewItem:SetIndex(DragIndex)
   else
-    DebugPrint("thy  DragItem or NewItem is nil", DragItem, NewItem)
+    DebugPrint("DragItem or NewItem is nil", DragItem, NewItem)
   end
   if Operation then
     Operation.FakeIndex = NewIndex
   end
-  self.Owner.CurSelectSquadIndex = self.FakeIndex
-  self.Owner:SelectCurSquadInSquadList(self.Owner.CurSelectSquadIndex, false)
+  self.Owner.CurSelectSquadIndex = NewIndex
   local Avatar = GWorld:GetAvatar()
   Avatar:SwitchSquad(nil, self, DragIndex, NewIndex)
 end
-
+function WBP_SquadListItem_C:UpdateListView()
+  self.Owner:PlayAnimation(self.Owner.UpdateList)
+  self:AddDelayFrameFunc(function()
+    self.Owner:SwitchToSquadList(false)
+  end, 8, "DelayUpdateListView")
+end
 function WBP_SquadListItem_C:GetListViewSize(TileView)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   local ListSize = UIManager:GetWidgetRenderSize(TileView)
@@ -511,12 +537,10 @@ function WBP_SquadListItem_C:GetListViewSize(TileView)
   self.Offset = (ListSizeX - ItemSizeX) / 2
   return ListSizeY, ItemSizeY
 end
-
 function WBP_SquadListItem_C:GetItemRenderSizeXY(Item)
   local UIManager = GWorld.GameInstance:GetGameUIManager()
   return UIManager:GetWidgetRenderSize(Item).X, UIManager:GetWidgetRenderSize(Item).Y
 end
-
 function WBP_SquadListItem_C:CheckArrowState()
   if 1 == self.FakeIndex then
     self:OnlyShowDownArrow()
@@ -530,7 +554,6 @@ function WBP_SquadListItem_C:CheckArrowState()
     self:PlayUpArrowAnimation()
   end
 end
-
 function WBP_SquadListItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.Owner.CurInputDeviceType and self.Owner.CurInputDeviceType == ECommonInputType.Gamepad then
     if self.Owner.IsInSortState then
@@ -538,7 +561,7 @@ function WBP_SquadListItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
       return UnHandled
     else
       self.Owner.IsOnlyPlayAnimation = false
-      self.Owner:SelectCurSquad(self.Owner:GetSquadContentListIndex(self.FakeIndex))
+      self.Owner:SelectCurSquad(self.Index)
       if self.IsAddSquad then
         self.Owner.IsAddSquadDefault = true
         self.Owner:InitBottomTab(false, 2)
@@ -546,7 +569,7 @@ function WBP_SquadListItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
         return UnHandled
       else
         local PreIndex = self.Owner.CurSelectSquadIndex
-        self.Owner.CurSelectSquadIndex = self.Owner:GetSquadContentListIndex(self.FakeIndex)
+        self.Owner.CurSelectSquadIndex = self.Index
         self.Owner:GetSquadWidgetInSquadList(PreIndex):CheckSortIcon()
         if self.Owner.IsAddSquadDefault then
           self.Owner.IsAddSquadDefault = false
@@ -559,5 +582,4 @@ function WBP_SquadListItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UnHandled
 end
-
 return WBP_SquadListItem_C

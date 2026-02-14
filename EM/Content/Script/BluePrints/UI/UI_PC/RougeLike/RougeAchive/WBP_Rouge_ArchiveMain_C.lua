@@ -2,7 +2,6 @@ local TimeUtils = require("Utils.TimeUtils")
 local RougeConst = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.RougeConst")
 local ReddotManager = require("BluePrints.UI.Reddot.ReddotManager")
 local WBP_Rouge_ArchiveMain_C = Class("BluePrints.UI.BP_UIState_C", "BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Rouge_ArchiveMain_C:Construct()
   self.DataModel = require("BluePrints.UI.UI_PC.RougeLike.RougeAchive.Rouge_Archive_DataModel")
   self.DataModel:InitData(GWorld:GetAvatar())
@@ -15,13 +14,11 @@ function WBP_Rouge_ArchiveMain_C:Construct()
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self:InitView()
 end
-
 function WBP_Rouge_ArchiveMain_C:Init()
   self:InitTable()
   self.Archive_EventItem:SetFocus()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "RougeArchive", nil)
 end
-
 function WBP_Rouge_ArchiveMain_C:InitView()
   self:InitReddot()
   for Type, Widget in pairs(self.ArchiveEntries) do
@@ -36,27 +33,26 @@ function WBP_Rouge_ArchiveMain_C:InitView()
   self.ArchiveRewardBtn:HideItemNum()
   self.ArchiveRewardBtn.Btn_Collect.OnClicked:Add(self, self.OpenReward)
 end
-
 function WBP_Rouge_ArchiveMain_C:OpenReward()
   AudioManager(self):PlayUISound(nil, "event:/ui/common/click_btn_small", nil, nil)
   local Params = self:MakeRewardData()
   UIManager(self):ShowCommonPopupUI(100173, Params, self)
 end
-
 function WBP_Rouge_ArchiveMain_C:GetAllRewards(ReceiveAllParm)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CallBack(Ret, Reward)
+      DebugPrint("@@@RougeArchive GetAllRewards CallBack")
       local HaveReWardToGet = false
-      
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
         local Item = ReceiveAllParm.SelfWidget.List_Item:GetItemAt(i)
-        local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.Type)
+        local CurrentNum = ReceiveAllParm.DataModel:GetUnlockedItemNum(Item.ConfigData.Type)
         local CanReceive = CurrentNum >= Item.ConfigData.Num
         local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
         if CanReceive and not IsGot then
           HaveReWardToGet = true
         end
+        DebugPrint("@@@RougeArchive GetAllRewards ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
         Item.ConfigData.CanReceive = CanReceive
         Item.ConfigData.RewardsGot = IsGot
         if Item.SelfWidget then
@@ -67,28 +63,28 @@ function WBP_Rouge_ArchiveMain_C:GetAllRewards(ReceiveAllParm)
         ReceiveAllParm.SelfWidget:SetFocus()
       end, ReceiveAllParm.SelfWidget)
       ReceiveAllParm.SelfWidget:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetAllRewards HaveReWardToGet", HaveReWardToGet)
       ReceiveAllParm.SelfWidget:RefreshReddotInfo()
     end
-    
     Avatar:GetRougeLikeManualReward(CallBack, ReceiveAllParm.SelfWidget.Type, -1)
   end
 end
-
 function WBP_Rouge_ArchiveMain_C:GetReward(Content)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function Callback(Errorcode, Rewards)
+      DebugPrint("@@@RougeArchive GetReward CallBack")
       local HaveReWardToGet = false
-      
       for i = 0, Content.Owner.List_Item:GetNumItems() - 1 do
         local Item = Content.Owner.List_Item:GetItemAt(i)
         if Item then
-          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.Type)
-          local CanReceive = CurrentNum >= Content.ConfigData.Num
+          local CurrentNum = Content.ConfigData.ReceiveParm.DataModel:GetUnlockedItemNum(self.Content.ConfigData.Type)
+          local CanReceive = CurrentNum >= Item.ConfigData.Num
           local IsGot = Avatar.RougeLike:IsManualRewardGot(Item.ConfigData.Type, Item.ConfigData.ItemId)
           if CanReceive and not IsGot then
             HaveReWardToGet = true
           end
+          DebugPrint("@@@RougeArchive GetReward ,Type,ItemId,CanReceive,IsGot", Item.ConfigData.Type, Item.ConfigData.ItemId, CanReceive, IsGot)
           Item.ConfigData.CanReceive = CanReceive
           Item.ConfigData.RewardsGot = IsGot
           if Item.SelfWidget then
@@ -98,15 +94,14 @@ function WBP_Rouge_ArchiveMain_C:GetReward(Content)
       end
       Content.SelfWidget:RefreshReddotInfo()
       Content.Owner:RefreshButton(HaveReWardToGet)
+      DebugPrint("@@@RougeArchive GetReward HaveReWardToGet", HaveReWardToGet)
       UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, Rewards, false, function()
         Content.SelfWidget:SetFocus()
       end, Content.SelfWidget)
     end
-    
     Avatar:GetRougeLikeManualReward(Callback, Content.SelfWidget.Type, Content.SelfWidget.ItemId)
   end
 end
-
 function WBP_Rouge_ArchiveMain_C:MakeRewardData()
   local Avatar = GWorld:GetAvatar()
   local Params = {}
@@ -194,7 +189,6 @@ function WBP_Rouge_ArchiveMain_C:MakeRewardData()
   Params.ConfigData.ReddotName = "RougeArchiveReward"
   return Params
 end
-
 function WBP_Rouge_ArchiveMain_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice or UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = CurGamepadName or UIUtils.UtilsGetCurrentGamepadName()
@@ -205,16 +199,13 @@ function WBP_Rouge_ArchiveMain_C:RefreshOpInfoByInputDevice(CurInputDevice, CurG
   end
   self.Super.RefreshOpInfoByInputDevice(self, self.CurInputDeviceType, self.CurGamepadName)
 end
-
 function WBP_Rouge_ArchiveMain_C:InitGamepadView()
   if UIUtils.HasAnyFocus(self) then
     self.Archive_EventItem:SetFocus()
   end
 end
-
 function WBP_Rouge_ArchiveMain_C:InitKeyboardView()
 end
-
 function WBP_Rouge_ArchiveMain_C:InitReddot()
   ReddotManager.AddListener("RougeArchiveReward", self, self.OnArchiveRewardReddotChange)
   ReddotManager.AddListener("RougeArchiveTreasure", self, self.OnTreasureReddotChange)
@@ -223,40 +214,32 @@ function WBP_Rouge_ArchiveMain_C:InitReddot()
   ReddotManager.AddListener("RougeArchiveStory", self, self.OnStoryEventReddotChange)
   self.DataModel:UpdateArchiveRewardReddot()
 end
-
 function WBP_Rouge_ArchiveMain_C:OnArchiveRewardReddotChange(Count)
   DebugPrint("Tianyi@ OnArchiveRewardReddotChange", Count)
   self.ArchiveRewardBtn:SetReddot(Count > 0)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnNewDotChange(ArchiveType, Count)
   self.ArchiveEntries[ArchiveType]:OnReddotChange(Count > 0)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnTreasureReddotChange(Count)
   DebugPrint("Tianyi@ OnTreasureReddotChange", Count)
   self:OnNewDotChange(RougeConst.ArchiveType.Treasure, Count)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnBlessingReddotChange(Count)
   DebugPrint("Tianyi@ OnBlessingReddotChange", Count)
   self:OnNewDotChange(RougeConst.ArchiveType.Blessing, Count)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnRoomReddotChange(Count)
   DebugPrint("Tianyi@ OnRoomReddotChange", Count)
   self:OnNewDotChange(RougeConst.ArchiveType.Event, Count)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnStoryEventReddotChange(Count)
   DebugPrint("Tianyi@ OnStoryEventReddotChange", Count)
   self:OnNewDotChange(RougeConst.ArchiveType.Story, Count)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnRewardReddotChange(Count)
   DebugPrint("Tianyi@ OnRewardReddotChange", Count)
 end
-
 function WBP_Rouge_ArchiveMain_C:InitTable()
   self.TabConfigData = {
     TitleName = GText("System_Name_Rouge_Index"),
@@ -303,7 +286,6 @@ function WBP_Rouge_ArchiveMain_C:InitTable()
   }
   self.Root:InitOtherPageTab(self.TabConfigData, nil, true, self, self.ChangeBranch)
 end
-
 function WBP_Rouge_ArchiveMain_C:OnArchiveEntryClicked(ArchiveType)
   DebugPrint("Tianyi@ OnArchiveEntryClicked, ", ArchiveType)
   if ArchiveType == RougeConst.ArchiveType.Treasure then
@@ -324,7 +306,6 @@ function WBP_Rouge_ArchiveMain_C:OnArchiveEntryClicked(ArchiveType)
     AudioManager(self):PlayUISound(nil, "event:/ui/roguelike/btn_black_mid_click", nil, nil)
   end
 end
-
 function WBP_Rouge_ArchiveMain_C:OnArchiveEntryHovered(ArchiveType)
   if ArchiveType == RougeConst.ArchiveType.Treasure then
     AudioManager(self):PlayUISound(nil, "event:/ui/roguelike/handbook_btn_hover_small", nil, nil)
@@ -336,7 +317,6 @@ function WBP_Rouge_ArchiveMain_C:OnArchiveEntryHovered(ArchiveType)
     AudioManager(self):PlayUISound(nil, "event:/ui/roguelike/handbook_btn_hover_story", nil, nil)
   end
 end
-
 function WBP_Rouge_ArchiveMain_C:OnReturnKeyDown()
   ReddotManager.RemoveAllListener("RougeArchiveTreasure")
   ReddotManager.RemoveAllListener("RougeArchiveBlessing")
@@ -348,7 +328,6 @@ function WBP_Rouge_ArchiveMain_C:OnReturnKeyDown()
     WidgetUI:InitTable()
   end
 end
-
 function WBP_Rouge_ArchiveMain_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -363,13 +342,10 @@ function WBP_Rouge_ArchiveMain_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Rouge_ArchiveMain_C:SwitchOut()
   AudioManager(self):SetEventSoundParam(self, "RougeArchive", {ToEnd = 1})
 end
-
 function WBP_Rouge_ArchiveMain_C:Destruct()
   AudioManager(self):SetEventSoundParam(self, "RougeArchive", {ToEnd = 1})
 end
-
 return WBP_Rouge_ArchiveMain_C

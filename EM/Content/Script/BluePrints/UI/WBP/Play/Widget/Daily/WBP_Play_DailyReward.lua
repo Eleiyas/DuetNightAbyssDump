@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   M.Super.Construct(self)
   self.Btn_Click.OnPressed:Add(self, self.OnPressed)
@@ -10,7 +9,6 @@ function M:Construct()
   self.Btn_Click.OnHovered:Add(self, self.OnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function M:Init(Data, Parent)
   self.RequiredActiveness = Data.RequiredActiveness
   self.Text_Point:SetText(self.RequiredActiveness)
@@ -18,7 +16,6 @@ function M:Init(Data, Parent)
   self:RefreshView()
   self.Mobile = "Mobile" == CommonUtils.GetDeviceTypeByPlatformName(self)
 end
-
 function M:RefreshView()
   self.Btn_Click.OnClicked:Clear()
   self:StopAllAnimations()
@@ -44,7 +41,6 @@ function M:RefreshView()
     self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:ReceiveReward()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   local PlayerAvatar = GWorld:GetAvatar()
@@ -53,27 +49,22 @@ function M:ReceiveReward()
   end
   PlayerAvatar:GetAllDailyProgressReward()
 end
-
 function M:ParentReceiveReward()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self.Parent:RewardView()
 end
-
 function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
@@ -86,5 +77,4 @@ function M:OnUnhovered()
     self:PlayAnimation(self.Recived)
   end
 end
-
 return M

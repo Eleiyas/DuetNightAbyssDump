@@ -1,14 +1,11 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
-
 function M:Construct()
   self:InitListenEvent()
 end
-
 function M:Destruct()
   self:StopAllAnimations()
 end
-
 function M:OnLoaded(OwnerPlayer, Params)
   self.Super.OnLoaded(self)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.In)
@@ -16,7 +13,6 @@ function M:OnLoaded(OwnerPlayer, Params)
   self:InitBuffParam(OwnerPlayer, Params)
   self:ResetToNormal()
 end
-
 function M:InitBuffParam(PlayerCharacter, Params)
   self.Owner = PlayerCharacter
   self:K2_SetBuffsOwner(PlayerCharacter)
@@ -35,7 +31,6 @@ function M:InitBuffParam(PlayerCharacter, Params)
   end
   self.bHasBuff = false
 end
-
 function M:IsBuffIndexActive(BuffIndex)
   if not self.Buff2State or not self.Buff2Index then
     return false
@@ -47,7 +42,6 @@ function M:IsBuffIndexActive(BuffIndex)
   end
   return false
 end
-
 function M:ResetToNormal(ExceptIndex)
   self:StopAllAnimations()
   for Index, NormalAnim in ipairs(self.SummonNormalAnim) do
@@ -68,7 +62,6 @@ function M:ResetToNormal(ExceptIndex)
     end
   end
 end
-
 function M:InitFeinaUIInfo()
   self.SummonUINodes = {
     self.Skill_Water,
@@ -113,7 +106,6 @@ function M:InitFeinaUIInfo()
     self.Wind_Buff
   }
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   self.Super.Tick(self, MyGeometry, InDeltaTime)
   if IsValid(self.NowSummoner) then
@@ -137,12 +129,10 @@ function M:Tick(MyGeometry, InDeltaTime)
     end
   end
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnCharCallSummoner, self, self.OnSummonerAdd)
   self:AddDispatcher(EventID.OnCharRemoveSummoner, self, self.OnSummonRemove)
 end
-
 function M:OnSummonerAdd(NowSummoner, RemainingLifeTime)
   DebugPrint("gmy@M:OnSummonerAdd", NowSummoner.Eid, RemainingLifeTime)
   if self:IsRealSummonMainPlayer(NowSummoner) then
@@ -150,7 +140,6 @@ function M:OnSummonerAdd(NowSummoner, RemainingLifeTime)
     self.NowSummoner = NowSummoner
   end
 end
-
 function M:OnSummonRemove(NowSummoner)
   DebugPrint("gmy@M:OnSummonRemove", NowSummoner.Eid)
   if self:IsRealSummonMainPlayer(NowSummoner) then
@@ -159,7 +148,6 @@ function M:OnSummonRemove(NowSummoner)
     self:ClearState()
   end
 end
-
 function M:IsRealSummonMainPlayer(NowSummoner)
   local PC = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local SummonMaster = NowSummoner:GetDirectSource()
@@ -168,7 +156,6 @@ function M:IsRealSummonMainPlayer(NowSummoner)
   end
   return false
 end
-
 function M:HoverSummon(OldIndex, NewIndex)
   DebugPrint("gmy@M:HoverSummon", OldIndex, NewIndex)
   if OldIndex then
@@ -180,7 +167,6 @@ function M:HoverSummon(OldIndex, NewIndex)
     AudioManager(self):PlayUISound(self, "event:/ui/common/feina_skill_press", "feina_switch", nil)
   end
 end
-
 function M:SelectSummon(OldIndex, NewIndex)
   DebugPrint("gmy@M:SelectSummon", OldIndex, NewIndex)
   self:ResetToNormal(NewIndex + 1)
@@ -189,7 +175,6 @@ function M:SelectSummon(OldIndex, NewIndex)
     AudioManager(self):PlayUISound(self, "event:/ui/common/feina_skill_switch", "feina_switch", nil)
   end
 end
-
 function M:StopAllAnimations()
   if self.SummonNormalAnim then
     for Index, NormalAnim in ipairs(self.SummonNormalAnim) do
@@ -212,23 +197,20 @@ function M:StopAllAnimations()
     end
   end
 end
-
 function M:ClearState()
   self.NowSummoner = nil
   self.NowSummonID = nil
   self.NowNewSummonID = nil
 end
-
 function M:ReceiveOnBuffsChanged()
   local Buffs = self.Owner.BuffManager.Buffs
   self:OnBuffsChanged(Buffs)
 end
-
 function M:OnBuffsChanged(Buffs)
   local NewBuffState = {}
   local bHasAnyBuff = false
   for _, Buff in pairs(Buffs) do
-    if Buff.BuffId and nil ~= self.Buff2Anim[Buff.BuffId] then
+    if IsValid(Buff) and Buff.BuffId and nil ~= self.Buff2Anim[Buff.BuffId] then
       NewBuffState[Buff.BuffId] = true
       bHasAnyBuff = true
     end
@@ -274,20 +256,17 @@ function M:OnBuffsChanged(Buffs)
     end
   end
 end
-
 function M:StartRefreshBuffTime()
   self.TimeTextHandle = self:AddTimer(0.5, function()
     self:DoRefreshBuffTime()
   end, true)
 end
-
 function M:EndRefreshBuffTime()
   if self.TimeTextHandle then
     self:RemoveTimer(self.TimeTextHandle)
     self.TimeTextHandle = nil
   end
 end
-
 function M:DoRefreshBuffTime()
   if IsValid(self.Owner) then
     for BuffId, State in pairs(self.Buff2State) do
@@ -307,5 +286,4 @@ function M:DoRefreshBuffTime()
     end
   end
 end
-
 return M

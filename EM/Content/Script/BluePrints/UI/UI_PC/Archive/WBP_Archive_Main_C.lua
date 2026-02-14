@@ -1,20 +1,7 @@
 require("UnLua")
 local WBP_Archive_Main_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Archive_Main_C:Construct()
   self.Super.Construct(self)
-  self:BindToAnimationFinished(self.In, {
-    self,
-    function()
-      self:PlayAnimation(self.Loop)
-    end
-  })
-  self:BindToAnimationFinished(self.Loop, {
-    self,
-    function()
-      self:PlayAnimation(self.Loop)
-    end
-  })
   self.DeviceInPc = CommonUtils.GetDeviceTypeByPlatformName(self) ~= "Mobile"
   self.EntryList = {
     self.Entry_Character,
@@ -32,13 +19,20 @@ function WBP_Archive_Main_C:Construct()
     Read = 1005,
     Enemy = 1006
   }
+  self:BindToAnimationFinished(self.In, {
+    self,
+    function()
+      for _, Entry in pairs(self.EntryList) do
+        Entry:PlayAnimation(Entry.Loop, 0, 0)
+      end
+    end
+  })
   self:Init()
   self:PlayInAnim()
   if GWorld.GameInstance then
     GWorld.GameInstance:SetHighFrequencyMemoryCheckGCEnabled(false, "ArchiveMain")
   end
 end
-
 function WBP_Archive_Main_C:Destruct()
   self.Super.Destruct(self)
   self:ClearListenEvent()
@@ -46,11 +40,9 @@ function WBP_Archive_Main_C:Destruct()
     GWorld.GameInstance:SetHighFrequencyMemoryCheckGCEnabled(true, "ArchiveMain")
   end
 end
-
 function WBP_Archive_Main_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
 end
-
 function WBP_Archive_Main_C:Init()
   self:InitTable()
   self:InitBtn()
@@ -64,7 +56,6 @@ function WBP_Archive_Main_C:Init()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Archive_Main_C:InitTable()
   self.TabConfigData = {
     TitleName = GText("UI_MainTitle_Archive"),
@@ -92,7 +83,6 @@ function WBP_Archive_Main_C:InitTable()
   }
   self.Com_Tab:Init(self.TabConfigData)
 end
-
 function WBP_Archive_Main_C:InitBtn()
   self.Entry_Character:Init("Character", self.Name2ArchiveType.Character)
   self.Entry_Ranged:Init("Ranged", self.Name2ArchiveType.Ranged)
@@ -101,7 +91,6 @@ function WBP_Archive_Main_C:InitBtn()
   self.Entry_Item:Init("Resource", self.Name2ArchiveType.Resource)
   self.Entry_Enemy:Init("Enemy", self.Name2ArchiveType.Enemy)
 end
-
 function WBP_Archive_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -124,26 +113,21 @@ function WBP_Archive_Main_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Archive_Main_C:OnReturnKeyDown()
   UIUtils.PlayCommonBtnSe(self)
   self:OnClickBack()
 end
-
 function WBP_Archive_Main_C:OnClickBack()
   if self:CheckIsCanCloseSelf() then
     self:PlayOutAnim()
   end
 end
-
 function WBP_Archive_Main_C:Close()
   self.Super.Close(self)
 end
-
 function WBP_Archive_Main_C:ClickRewardBtn()
   self.Collect:ClickRewardBtn()
 end
-
 function WBP_Archive_Main_C:Tick(MyGeometry, InDeltaTime)
   if self:HasUserFocus(self:GetOwningPlayer()) or self:HasUserFocusedDescendants(self:GetOwningPlayer()) then
     self.Overridden.Tick(self, MyGeometry, InDeltaTime)
@@ -151,13 +135,11 @@ function WBP_Archive_Main_C:Tick(MyGeometry, InDeltaTime)
     self:GetSelectImage()
   end
 end
-
 function WBP_Archive_Main_C:GetMouseLocal()
   if self.DeviceInPc then
     self.RealMousePos = UE4.UWidgetLayoutLibrary.GetMousePositionOnViewport(self)
   end
 end
-
 function WBP_Archive_Main_C:GetSelectImage()
   if self.RealMousePos == false then
     return
@@ -176,14 +158,12 @@ function WBP_Archive_Main_C:GetSelectImage()
   end
   self:HideHover()
 end
-
 function WBP_Archive_Main_C:HideHover()
   if self.SelectBtnIdx then
     self.EntryList[self.SelectBtnIdx]:HideHover()
     self.SelectBtnIdx = nil
   end
 end
-
 function WBP_Archive_Main_C:OnHoveredEntry(Index)
   if self.SelectBtnIdx == Index then
     return
@@ -192,19 +172,16 @@ function WBP_Archive_Main_C:OnHoveredEntry(Index)
   self.EntryList[Index]:OnHoveredEntry()
   self.SelectBtnIdx = Index
 end
-
 function WBP_Archive_Main_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_Main_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Archive_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -212,7 +189,6 @@ function WBP_Archive_Main_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Archive_Main_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -220,7 +196,6 @@ function WBP_Archive_Main_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Archive_Main_C:InitGamepadView()
   if self.Controller_Reward then
     self.Controller_Reward:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -230,14 +205,12 @@ function WBP_Archive_Main_C:InitGamepadView()
     self.Entry_Character.Btn_Click:SetFocus()
   end
 end
-
 function WBP_Archive_Main_C:InitKeyboardView()
   if self.Controller_Reward then
     self.Controller_Reward:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   self.Collect:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function WBP_Archive_Main_C:InitWidgetInfoInGamePad()
   if self.Key_Reward then
     self.Key_Reward:CreateCommonKey({
@@ -247,11 +220,9 @@ function WBP_Archive_Main_C:InitWidgetInfoInGamePad()
     })
   end
 end
-
 function WBP_Archive_Main_C:BP_GetDesiredFocusTarget()
   return self.Entry_Character.Btn_Click
 end
-
 function WBP_Archive_Main_C:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -259,7 +230,6 @@ function WBP_Archive_Main_C:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "ArchiveMainOpenSound", nil)
   self:PlayAnimationForward(self.In)
 end
-
 function WBP_Archive_Main_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -271,12 +241,10 @@ function WBP_Archive_Main_C:PlayOutAnim()
   })
   self:PlayAnimationForward(self.Out)
 end
-
 function WBP_Archive_Main_C:CheckIsCanCloseSelf()
   if self:IsAnimationPlaying(self.In) then
     return false
   end
   return true
 end
-
 return WBP_Archive_Main_C

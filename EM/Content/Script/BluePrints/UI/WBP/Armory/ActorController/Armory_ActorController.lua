@@ -6,10 +6,11 @@ M._components = {
   "BluePrints.UI.WBP.Armory.ActorController.Armory_PetActorComponent",
   "BluePrints.UI.WBP.Armory.ActorController.Armory_ActorAppearanceComponent",
   "BluePrints.UI.WBP.Armory.ActorController.Armory_SceneActorComponent",
-  "BluePrints.UI.WBP.Armory.ActorController.Armory_CharActorComponent"
+  "BluePrints.UI.WBP.Armory.ActorController.Armory_CharActorComponent",
+  "BluePrints.UI.WBP.Armory.ActorController.Armory_MountActorComponent"
 }
 local SelfObjCount = 0
-
+local HitResult = FHitResult()
 function M:SwitchArmoryCamera(IsArmoryCamera, Duration)
   if not self.ArmoryHelper then
     return
@@ -27,37 +28,78 @@ function M:SwitchArmoryCamera(IsArmoryCamera, Duration)
       local CameraTrans = self:LoadOpenArmoryCameraInfo(self.ArmoryPlayer)
       self.ArmoryHelper:SetCameraStartTrans(CameraTrans, Player.CharCameraComponent.FieldOfView, self.ArmoryPlayer)
     elseif self.ArmoryWeapon or self.IsArmoryWeaponLoading then
+    else
+      self:SetNoActorCamera()
     end
   else
     local StartTransform, StartLocation, StartRotation, _Duration = self:LoadCloseArmoryCameraInfo()
     Duration = Duration or _Duration
-    
     local function OnRecoverEnd()
       self:OnRecorverCameraEnd()
     end
-    
     self.ArmoryHelper:RecorverCamera(nil, OnRecoverEnd, Duration, StartTransform, StartLocation, StartRotation)
   end
 end
-
+function M:SetNoActorCamera()
+  if not self.EPreviewSceneType then
+    return
+  end
+  local CameraTrans, FOV = self:LoadNoActorCameraInfo()
+  if CameraTrans then
+    if not FOV then
+      local Player = UE4.UGameplayStatics.GetPlayerCharacter(self.ViewUI, 0)
+      FOV = Player.CharCameraComponent.FieldOfView
+    end
+    self.ArmoryHelper:SetCameraStartTrans(CameraTrans, FOV)
+  end
+end
+function M:LoadNoActorCameraInfo()
+  local Data = self:GetCameraData()
+  Data = Data and Data.Char_Girl
+  if not Data then
+    return
+  end
+  local CameraTrans
+  if self.EPreviewSceneType then
+    local SceneTransform = self:GetPreviewSceneTrans()
+    local Transform = FTransform()
+    Transform.Translation.Z = SceneTransform.Translation.Z
+    Transform.Translation.X = SceneTransform.Translation.X
+    Transform.Translation.Y = SceneTransform.Translation.Y
+    CameraTrans = FTransform()
+    local Location = FVector(Data.Location[1], Data.Location[2], Data.Location[3])
+    local Rotation = FRotator(Data.Rotation[2], Data.Rotation[3], Data.Rotation[1])
+    CameraTrans.Translation = UE4.UKismetMathLibrary.TransformLocation(Transform, Location)
+    CameraTrans.Rotation = UE4.UKismetMathLibrary.TransformRotation(Transform, Rotation):ToQuat()
+  end
+  local FOV
+  if Data.CameraFocal then
+    FOV = CommonUtils:FocalLengthToFOV(Data.CameraFocal or 22)
+  end
+  return CameraTrans, FOV
+end
 function M:LoadOpenArmoryCameraInfo(Player)
   local CameraTrans
   local Data = self:GetCameraData()["Char_" .. Player:GetBattleCharBodyType()]
   if Data and DataMgr.GlobalConstant.ArmoryCameraX then
-    local PlayerTransform = self.ArmoryPlayer.Mesh:GetSocketTransform("Root", ERelativeTransformSpace.RTS_World)
+    local Transform
+    if self.ArmoryPlayer then
+      Transform = self.ArmoryPlayer.Mesh:GetSocketTransform("Root", ERelativeTransformSpace.RTS_World)
+    elseif self.EPreviewSceneType then
+      Transform = self:GetPreviewSceneTrans()
+    end
     local EndCameraPos = FVector(Data.Location[1], Data.Location[2], Data.Location[3])
     local EndCameraRot = FRotator(Data.Rotation[2], Data.Rotation[3], Data.Rotation[1])
     CameraTrans = FTransform()
     local Location = EndCameraPos + FVector(DataMgr.GlobalConstant.ArmoryCameraX.ConstantValue, DataMgr.GlobalConstant.ArmoryCameraY.ConstantValue, DataMgr.GlobalConstant.ArmoryCameraZ.ConstantValue)
-    CameraTrans.Translation = UE4.UKismetMathLibrary.TransformLocation(PlayerTransform, Location)
-    CameraTrans.Rotation = UKismetMathLibrary.FindLookAtRotation(CameraTrans.Translation, PlayerTransform.Translation)
-    CameraTrans.Rotation = UE4.UKismetMathLibrary.TransformRotation(PlayerTransform, EndCameraRot):ToQuat()
+    CameraTrans.Translation = UE4.UKismetMathLibrary.TransformLocation(Transform, Location)
+    CameraTrans.Rotation = UKismetMathLibrary.FindLookAtRotation(CameraTrans.Translation, Transform.Translation)
+    CameraTrans.Rotation = UE4.UKismetMathLibrary.TransformRotation(Transform, EndCameraRot):ToQuat()
   else
     CameraTrans = Player.CharCameraComponent:K2_GetComponentToWorld()
   end
   return CameraTrans
 end
-
 function M:LoadCloseArmoryCameraInfo()
   local StartTransform, StartLocation, StartRotation, Duration
   if DataMgr.GlobalConstant.ArmoryExitX then
@@ -72,8 +114,9 @@ function M:LoadCloseArmoryCameraInfo()
   end
   return StartTransform, StartLocation, StartRotation, Duration
 end
-
 function M:OnHelperBecomeViewTarget(PC)
+  self.IsControled = true
+  self.bTryDestroyActorsWhenDestruct = false
   if self.OnFirstBecomeViewTarget then
     self.OnFirstBecomeViewTarget()
     self.OnFirstBecomeViewTarget = nil
@@ -81,6 +124,9 @@ function M:OnHelperBecomeViewTarget(PC)
     self:HideWeaponActor("ActorController_ChangeViewTarget", false)
     self:HidePetActor("ActorController_ChangeViewTarget", false)
     self:UpdateLighting()
+    return
+  end
+  if self.IsPlayingSequence then
     return
   end
   for key, value in pairs(self.PlayerActorHideTags) do
@@ -91,6 +137,16 @@ function M:OnHelperBecomeViewTarget(PC)
   self:HidePlayerActor("ActorController_ChangeViewTarget", false)
   self:HideWeaponActor("ActorController_ChangeViewTarget", false)
   self:HidePetActor("ActorController_ChangeViewTarget", false)
+  if self.ViewActorType == self.ViewActorTypes.Player then
+    self:RecoverToPlayerActor()
+  elseif self.ViewActorType == self.ViewActorTypes.SingleWeapon then
+    self:RecoverToSingleWeapon()
+  else
+    self:SetNoActorCamera()
+  end
+  self:UpdateLighting()
+end
+function M:RecoverToPlayerActor()
   local LastCharModelInfo = self.LastCharModelInfo
   self.LastCharModelInfo = nil
   if not LastCharModelInfo then
@@ -98,11 +154,11 @@ function M:OnHelperBecomeViewTarget(PC)
   end
   local IsRoleChanged
   if self.IsProtagonist then
-    IsRoleChanged = self:ChangeToProtagonist(true, true)
+    IsRoleChanged = self:ChangeToProtagonist(true, true, true)
   else
     IsRoleChanged = self:ChangeCharModel(LastCharModelInfo, true, true, true)
     if self.LastCharAppearanceInfo then
-      self.ArmoryPlayer.CharacterFashion:InitAppearanceSuit(self.LastCharAppearanceInfo)
+      self:ChangeCharAppearance(self.LastCharAppearanceInfo)
     end
   end
   if self.CurrentPetInfo then
@@ -121,16 +177,30 @@ function M:OnHelperBecomeViewTarget(PC)
     end
   end
   self.ArmoryHelper:OnRoleChanged()
-  self.bPlaySameMontage = true
-  self:SetArmoryMontageTag(self.ArmoryPlayer, self.CurMontageTag, self.LastShowOrHideWeapon)
-  self:UpdateLighting()
+  if self.PlayMVPInfo then
+    self:ReplayMVPSequence()
+  else
+    self.bPlaySameMontage = true
+    self:SetArmoryMontageTag(self.ArmoryPlayer, self.CurMontageTag, self.LastShowOrHideWeapon)
+  end
 end
-
+function M:RecoverToSingleWeapon()
+  if self.CurrentWeaponInfo then
+    self:ChangeWeaponModel(self.CurrentWeaponInfo, nil, true, true)
+    if self.LastWeaponAppearanceInfo then
+      self:ChangeWeaponAppearance(self.LastWeaponAppearanceInfo)
+    end
+  end
+end
 function M:OnHelperEndViewTarget(PC)
+  self.IsControled = false
   self.LastCharModelInfo = self.CurrentCharInfo
   self.LastCharAppearanceInfo = self.CurrentAppearanceInfo
   self.LastWeaponAppearanceInfo = self.CurrentWeaponAppearanceInfo
   if self.bDestructed then
+    return
+  end
+  if self.IsPlayingSequence then
     return
   end
   for key, value in pairs(self.PlayerActorHideTags) do
@@ -146,7 +216,6 @@ function M:OnHelperEndViewTarget(PC)
     self.LastArmoryPlayerRot = self.ArmoryPlayer:K2_GetActorRotation()
   end
 end
-
 function M:OnOpened(Duration)
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self.ViewUI)
   local UIManager = GameInstance:GetGameUIManager()
@@ -156,7 +225,8 @@ function M:OnOpened(Duration)
   if IsValid(self.ArmoryHelper) then
     self.ArmoryHelper:BindViewTargetEvents({
       OnBecomeViewTarget = self.OnHelperBecomeViewTarget,
-      OnEndViewTarget = self.OnHelperEndViewTarget
+      OnEndViewTarget = self.OnHelperEndViewTarget,
+      OnAfterEndViewTarget = self.OnAfterHelperEndViewTarget
     }, self)
     self:UpdateCameraPPSetting()
     self.ArmoryHelper.ArchivePreview = false
@@ -173,24 +243,26 @@ function M:OnOpened(Duration)
   end
   self:TryLoadPreviewScene()
   self.UncalculatedTrans = self.PreviewSceneTrans or Player:GetTransform()
-  local Trans = UKismetMathLibrary.MakeTransform(self.UncalculatedTrans.Translation, FRotator(0), FVector(1))
-  Trans.Translation.Z = Trans.Translation.Z + 90
-  Trans.Translation.Y = Trans.Translation.Y + 90
-  Trans.Rotation = self.UncalculatedTrans.Rotation
-  self.ArmoryHelper:K2_SetActorTransform(Trans, false, nil, false)
+  self:UpdateHelperTrans(self.UncalculatedTrans)
   self:HideRealPlayer(true)
   self.OpenDuration = Duration
-  
   function self.OnFirstBecomeViewTarget()
     self:InitActors()
   end
-  
-  if self.ArmoryHelper then
-    local Controller = UE4.UGameplayStatics.GetPlayerController(self.ViewUI, 0)
-    Controller:SetViewTargetWithBlend(self.ArmoryHelper, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
+  self:ViewTarget()
+  local FXMgr = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self.ViewUI, UE4.UFXPriorityManager)
+  if FXMgr then
+    FXMgr.SetFXTickEvenPaused(self.ViewUI, self.UIName, true)
   end
+  GWorld.GameInstance:SetDynamicResolution(self.UIName, true)
 end
-
+function M:UpdateHelperTrans(Trans)
+  local Trans = UKismetMathLibrary.MakeTransform(Trans.Translation, FRotator(0), FVector(1))
+  Trans.Translation.Z = Trans.Translation.Z + 90
+  Trans.Translation.Y = Trans.Translation.Y + 90
+  Trans.Rotation = Trans.Rotation
+  self.ArmoryHelper:K2_SetActorTransform(Trans, false, nil, false)
+end
 function M:InitActors()
   if self.CurrentCharInfo then
     self:GetPlayerActor(true)
@@ -202,8 +274,10 @@ function M:InitActors()
   end
   self:SwitchArmoryCamera(true, self.OpenDuration)
 end
-
 function M:HideRealPlayer(bHide)
+  if self.IsPreviewMode or self.IsSecondary then
+    return
+  end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self.ViewUI, 0)
   if not Player then
     return
@@ -213,12 +287,11 @@ function M:HideRealPlayer(bHide)
   if self.IsCharActorFistCreated then
     local UIManager = UIManager(self.ViewUI)
     UIManager:HideOrShowPlayerFX(Player, bHide, self.UIName)
-    if self.ArmoryPlayer and self.IsCharActorFistCreated then
+    if IsValid(self.ArmoryPlayer) then
       UIManager:SetTargetActorState(bHide, self.ArmoryPlayer, self.UIName)
     end
   end
 end
-
 function M:CalcArmoryCameraTag(Type, Tag, Behavior, ExtraTag)
   local CameraTag1, CameraTag2, CameraTag3, CameraTag4 = "", "", "", ""
   if self.ViewUI.IsListExpanded then
@@ -235,6 +308,7 @@ function M:CalcArmoryCameraTag(Type, Tag, Behavior, ExtraTag)
         CameraTag2 = Behavior
       else
         CameraTag2 = Tag
+        CameraTag3 = ExtraTag or ""
       end
     elseif Behavior == CommonConst.ArmoryTag.Files then
       CameraTag2 = Behavior
@@ -277,19 +351,20 @@ function M:CalcArmoryCameraTag(Type, Tag, Behavior, ExtraTag)
   end
   return CameraTag1, CameraTag2, CameraTag3, CameraTag4
 end
-
 function M:CalcArmoryMontageTag(Type, Tag, Behavior)
   local bShowOrHideWeapon, MontageTag
   if Type == CommonConst.ArmoryType.Char then
     if Behavior == CommonConst.ArmoryType.Mod then
       MontageTag = Const.ArmoryIdleTags.Armory_Mod
       bShowOrHideWeapon = false
-    elseif Behavior == CommonConst.ArmoryTag.Skill then
-      MontageTag = Const.ArmoryIdleTags.Armory
     elseif Behavior == CommonConst.ArmoryTag.Grade then
       MontageTag = Const.ArmoryIdleTags.Armory_Grade
     elseif Behavior == CommonConst.ArmoryTag.Appearance then
-      MontageTag = nil
+      if Tag and Tag ~= CommonConst.ArmoryType.Char then
+        MontageTag = Const.ArmoryIdleTags.None
+      else
+        MontageTag = Const.ArmoryIdleTags.Armory
+      end
     else
       MontageTag = Const.ArmoryIdleTags.Armory
     end
@@ -313,7 +388,6 @@ function M:CalcArmoryMontageTag(Type, Tag, Behavior)
   end
   return MontageTag, bShowOrHideWeapon
 end
-
 function M:SetMontageAndCamera(Type, Tag, Behavior, ExtraTag)
   if not IsValid(self.ViewUI) then
     return
@@ -331,7 +405,7 @@ function M:SetMontageAndCamera(Type, Tag, Behavior, ExtraTag)
     self:HidePlayerActor(self.UIName, true)
     self.LastMontageTag, self.bShowOrHideWeapon = self:CalcArmoryMontageTag(self.LastMontageAndCameraType, self.LastMontageAndCameraTag, self.LastMontageAndCameraBehavior)
     self:PlayDisappearFX(ArmoryPlayer.FXComponent, function()
-      if self.bClosed or self.bDestructed then
+      if self.bClosed or self.bDestructed or not self.IsControled then
         return
       end
       self:PlayAppearFX(ArmoryPlayer.FXComponent)
@@ -342,7 +416,6 @@ function M:SetMontageAndCamera(Type, Tag, Behavior, ExtraTag)
     self:RealPlayMontageAndCamera(ArmoryPlayer)
   end
 end
-
 function M:PlayDisappearFX(FXComponent, OnFXFinished)
   local DelayFrame = self.DelayFrame
   self.DelayFrame = nil
@@ -380,14 +453,13 @@ function M:PlayDisappearFX(FXComponent, OnFXFinished)
     LTweenActor:SetTickableWhenPaused(true)
   end
 end
-
 function M:PlayAppearFX(FXComponent)
   if FXComponent and not self.bNoDisappearFX then
     AudioManager(self.ViewUI):PlayUISound(self.ViewUI, "event:/ui/common/role_appear", nil, nil)
     local Params = {bTickEvenWhenPaused = true, NotAttached = true}
     if self.bPreviewSceneLoaded then
       Params.UseAbsoluteLocation = true
-      local Loc = self.PreviewSceneTrans.Translation
+      local Loc = self:GetPreviewSceneTrans().Translation
       Params.Location = {
         Loc.X,
         Loc.Y,
@@ -397,7 +469,6 @@ function M:PlayAppearFX(FXComponent)
     FXComponent:PlayEffectByIDParams(301, Params)
   end
 end
-
 function M:RealPlayMontageAndCamera(ArmoryPlayer, MontageTag, bShowOrHideWeapon, CameraTags)
   if nil == MontageTag then
     MontageTag, bShowOrHideWeapon = self:CalcArmoryMontageTag(self.LastMontageAndCameraType, self.LastMontageAndCameraTag, self.LastMontageAndCameraBehavior)
@@ -414,7 +485,6 @@ function M:RealPlayMontageAndCamera(ArmoryPlayer, MontageTag, bShowOrHideWeapon,
     end
   end
 end
-
 function M:ResetActorRotation()
   self.ArmoryHelper:ResetRotation()
   local ArmoryPet = self:GetPetActor()
@@ -422,14 +492,12 @@ function M:ResetActorRotation()
     ArmoryPet.SkeletalMesh:K2_SetRelativeRotation(FRotator(0, 0, 0), false, nil, false)
   end
 end
-
 function M:BindEvent(Obj, Events)
   Events = Events or {}
   self.EventObj = Obj
   self.OnPlayPetFresnel = Events.OnPlayPetFresnel
   self.OnCharModelChanged = Events.OnCharModelChanged
 end
-
 function M:SetArmoryMontageTag(Player, Tag, bShowOrHideWeapon)
   self.bShowOrHideWeapon = bShowOrHideWeapon
   Tag = Tag or "None"
@@ -484,7 +552,6 @@ function M:SetArmoryMontageTag(Player, Tag, bShowOrHideWeapon)
     end
   end
 end
-
 function M:SetAccessoriesTickableWhenPaused(Accessories)
   if Accessories then
     for _, value in pairs(Accessories) do
@@ -492,11 +559,9 @@ function M:SetAccessoriesTickableWhenPaused(Accessories)
     end
   end
 end
-
 function M:SetExCameraOffset(Offset)
   self.ExCameraOffset = Offset
 end
-
 function M:SetArmoryCameraTag(Tag1, Tag2, Tag3, Tag4)
   DebugPrint("gmy@Armory_ActorController M:SetArmoryCameraTag", Tag1, Tag2, Tag3, Tag4)
   self.LastCameraTags = {
@@ -531,7 +596,7 @@ function M:SetArmoryCameraTag(Tag1, Tag2, Tag3, Tag4)
   local Rotation = FRotator(Data.Rotation[2], Data.Rotation[3], Data.Rotation[1])
   local OffsetVector = FVector(0, 0, 0)
   local OffsetRotator = FRotator(0, 0, 0)
-  local CurrentRoleId = self.ArmoryPlayer and self.ArmoryPlayer.CurrentRoleId or self.ArmoryWeapon.WeaponId
+  local CurrentRoleId = (not self.ArmoryPlayer or not self.ArmoryPlayer.CurrentRoleId) and self.ArmoryWeapon and self.ArmoryWeapon.WeaponId
   if Data.LocationOffset then
     local OffsetData = Data.LocationOffset[CurrentRoleId]
     if OffsetData then
@@ -616,41 +681,47 @@ function M:SetArmoryCameraTag(Tag1, Tag2, Tag3, Tag4)
     self.LastApplyCameraTag = Tag
   end
 end
-
 function M:FixedCameraTransTimeOnce(Time)
   self._FixedCameraTransTimeOnce = Time
 end
-
-function M:UpdateCameraPPSetting()
+function M:UpdateCameraPPSetting(Params)
+  if not self.ViewUI then
+    return
+  end
+  Params = Params or {}
   self.ViewUI:AddTimer(0.1, function()
     self.ArmoryHelper:ClearPPSetting()
-    if self.EPreviewSceneType == CommonConst.EPreviewSceneType.PreviewArmory then
+    if Params.IsAccessoryPPSetting then
+      self.ArmoryHelper:OnOpenAccessory()
+    elseif self.EPreviewSceneType == CommonConst.EPreviewSceneType.PreviewArmory then
       self.ArmoryHelper:UpdatePPSetting(1)
     elseif self.EPreviewSceneType == CommonConst.EPreviewSceneType.PreviewCommon then
       self.ArmoryHelper:UpdatePPSetting(2)
     else
       self.ArmoryHelper:UpdatePPSetting(0)
     end
-  end)
+  end, false, 0, "DelayUpdateCameraPPSetting", true)
 end
-
+local SystemUI = DataMgr.SystemUI
+local CameraDataConfig = {
+  [SystemUI.ArmoryMain.UIName] = DataMgr.ArmoryCameraData,
+  [SystemUI.ArmoryDetail.UIName] = DataMgr.ArmoryCameraData,
+  [SystemUI.PersonInfoPageMain.UIName] = DataMgr.PersonalPageCameraData,
+  [SystemUI.SquadMainUI.UIName] = DataMgr.SquadCameraData,
+  [SystemUI.BattlePassMain.UIName] = DataMgr.BattlePassCameraData,
+  [SystemUI.BattlePassPurchase.UIName] = DataMgr.BattlePassCameraData,
+  [SystemUI.CharSkinPreview.UIName] = DataMgr.BattlePassCameraData,
+  [SystemUI.SkinPreview.UIName] = DataMgr.SkinPreviewCameraData,
+  [SystemUI.GuildWarRank.UIName] = DataMgr.GuildWarRankCameraData,
+  [SystemUI.ShopMain.UIName] = DataMgr.RecommendCameraData,
+  [SystemUI.MountsMain.UIName] = DataMgr.MountCameraData
+}
 function M:GetCameraData()
-  local SystemUI = DataMgr.SystemUI
-  if self.UIName == SystemUI.ArmoryMain.UIName or self.UIName == SystemUI.ArmoryDetail.UIName then
-    return DataMgr.ArmoryCameraData
-  elseif self.UIName == SystemUI.PersonInfoPageMain.UIName then
-    return DataMgr.PersonalPageCameraData
-  elseif self.UIName == SystemUI.SquadMainUI.UIName then
-    return DataMgr.SquadCameraData
-  elseif self.UIName == SystemUI.BattlePassMain.UIName or self.UIName == SystemUI.BattlePassPurchase.UIName or self.UIName == SystemUI.CharSkinPreview.UIName then
-    return DataMgr.BattlePassCameraData
-  elseif self.UIName == SystemUI.SkinPreview.UIName then
-    return DataMgr.SkinPreviewCameraData
-  else
-    return DataMgr.ArmoryCameraData
+  if CameraDataConfig[self.UIName] then
+    return CameraDataConfig[self.UIName]
   end
+  return DataMgr.ArmoryCameraData
 end
-
 function M:OnDragging(CursorDelta)
   local ArmoryPet = self:GetPetActor()
   if ArmoryPet and ArmoryPet.SkeletalMesh then
@@ -661,21 +732,17 @@ function M:OnDragging(CursorDelta)
     self.ArmoryHelper:OnDragging(CursorDelta)
   end
 end
-
 function M:OnScrolling(DeltaMove)
   self.ArmoryHelper:OnScrolling(DeltaMove)
 end
-
 function M:OnRecorverCameraEnd()
   self:BeforeDestruct()
   if self.Event_OnRecorverCameraEnd then
     self.Event_OnRecorverCameraEnd.Func(self.Event_OnRecorverCameraEnd.Obj)
   end
 end
-
 function M:BeforeDestruct()
 end
-
 function M:OnClosed()
   if self.bClosed then
     return
@@ -684,7 +751,6 @@ function M:OnClosed()
   self:RecoverCamera()
   self:OnClosed_Implementation()
 end
-
 function M:OnClosed_Implementation()
   try({
     exec = function()
@@ -699,10 +765,8 @@ function M:OnClosed_Implementation()
     end
   })
 end
-
 function M:Component_OnClosed()
 end
-
 function M:RecoverCamera()
   if not self.bNeedEndCamera then
     self:SwitchArmoryCamera(false, 0)
@@ -713,58 +777,89 @@ function M:RecoverCamera()
     self:SwitchArmoryCamera(false, nil)
   end
 end
-
 function M:OnDestruct()
   if self.bDestructed then
     return
   end
   SelfObjCount = SelfObjCount - 1
+  GWorld.GameInstance:SetDynamicResolution(self.UIName, false)
   self.bDestructed = true
   if not self.bClosed then
     self:OnClosed_Implementation()
   end
   EventManager:RemoveEvent(EventID.OnWindowResized, self)
   self:Component_OnDestruct()
-  self.ArmoryHelper:DestroyViewActorIfNeed()
+  if self.bTryDestroyActorsWhenDestruct then
+    self.bTryDestroyActorsWhenDestruct = false
+    self:TryDestroyActors()
+  end
   if self.LTweenHandle_PlayDisappearFX and IsValid(self.LTweenHandle_PlayDisappearFX) and IsValid(self.ViewUI) then
     ULTweenBPLibrary.KillIfIsTweening(self.ViewUI, self.LTweenHandle_PlayDisappearFX, false)
   end
-  if IsValid(self.ArmoryHelper) then
-    self.ArmoryHelper:K2_DestroyActor()
+  local FXMgr = UE4.USubsystemBlueprintLibrary.GetWorldSubsystem(self.ViewUI, UE4.UFXPriorityManager)
+  if FXMgr then
+    FXMgr.SetFXTickEvenPaused(self.ViewUI, self.UIName, false)
   end
-  self.ViewUI = nil
 end
-
+function M:TryDestroyActors()
+  if self.bActorsDestroyed then
+    return
+  end
+  if not self.bDestructed then
+    self.bTryDestroyActorsWhenDestruct = true
+    return
+  end
+  self.bActorsDestroyed = true
+  self:Component_DestroyActors()
+  self:DestroyHelper()
+  self:AfterDestroyActors()
+end
+function M:AfterDestroyActors()
+  self:Component_AfterDestroyActors()
+end
+function M:Component_AfterDestroyActors()
+end
+function M:Component_DestroyActors()
+end
 function M:Component_OnDestruct()
 end
-
 function M:ViewTarget()
+  if self.IsControled then
+    return
+  end
   if not IsValid(self.ArmoryHelper) then
     return
   end
-  local Controller = UE4.UGameplayStatics.GetPlayerController(self.ArmoryHelper, 0)
-  Controller:SetViewTargetWithBlend(self.ArmoryHelper, 0, UE4.EViewTargetBlendFunction.VTBlend_Linear, 0, false)
+  self.ArmoryHelper:ViewTarget()
 end
-
+function M:OnAfterHelperEndViewTarget(NewTarget)
+  self:TryDestroyActors()
+  if self.Event_AfterEndViewTarget then
+    self.Event_AfterEndViewTarget.Func(self.Event_AfterEndViewTarget.Obj)
+  end
+end
+function M:DestroyHelper()
+  if not IsValid(self.ArmoryHelper) then
+    return
+  end
+  self.ArmoryHelper:DestroyViewActorIfNeed()
+  self.ArmoryHelper:DestroySelf()
+end
 function M:GetViewTarget()
   return self.ArmoryHelper
 end
-
 function M:SetAvatar(Avatar)
   self.Avatar = Avatar
 end
-
 function M:GetAvatar()
   return self.Avatar
 end
-
 function M:DestoryCreature(Key)
   if self.Creatures[Key] then
     self.Creatures[Key]:DestroyEffectCreature()
     self.Creatures[Key] = nil
   end
 end
-
 function M:Init(Params)
   Params = Params or {}
   self.Params = Params
@@ -780,6 +875,7 @@ function M:Init(Params)
   self.CurrentPetInfo = Params.Pet
   self.Event_OnRecorverCameraStart = Params.OnRecorverCameraStart
   self.Event_OnRecorverCameraEnd = Params.OnRecorverCameraEnd
+  self.Event_AfterEndViewTarget = Params.AfterEndViewTarget
   self.SmoothLoad = Params.SmoothLoad or false
   self.ViewActorTypes = {Player = 1, SingleWeapon = 2}
   self.Creatures = {}
@@ -807,15 +903,15 @@ function M:Init(Params)
       end
     end, false, 0, "DelayUpdateCamera", true)
   end)
+  if self.IsPreviewMode or self.IsSecondary then
+    return
+  end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self.ViewUI, 0)
   if not Player then
     return
   end
   print(_G.LogtTag, "Player:RemoveSyncUsingWeapon()")
-  Player:RemoveSyncUsingWeapon()
-  Player:RemoveSyncLocation()
 end
-
 function M:New(Params)
   SelfObjCount = SelfObjCount + 1
   local Obj = {}
@@ -824,6 +920,5 @@ function M:New(Params)
   Obj:Init(Params)
   return Obj
 end
-
 AssembleComponents(M)
 return M

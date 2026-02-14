@@ -1,13 +1,17 @@
 local WBP_Battle_Training_SettingItem_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Battle_Training_SettingItem_C:BindEventOnHovered(Obj, Callback)
   self.OnHovered = {Obj, Callback}
 end
-
 function WBP_Battle_Training_SettingItem_C:BindEventOnUnHovered(Obj, Callback)
   self.OnUnHovered = {Obj, Callback}
 end
-
+function WBP_Battle_Training_SettingItem_C:OnListItemObjectSet(Content)
+  self.OnHovered = Content.OnHovered
+  self.OnUnHovered = Content.OnUnHovered
+  self.OnCheckStateChanged = Content.OnCheckStateChanged
+  self.Text_SettingTitle:SetText(Content.Title)
+  self.Btn_Setting:SetChecked(Content.IsChecked or false, false)
+end
 function WBP_Battle_Training_SettingItem_C:Construct()
   self.OnHovered = nil
   self.MaskGamepad.OnClicked:Clear()
@@ -28,6 +32,11 @@ function WBP_Battle_Training_SettingItem_C:Construct()
       self.OnUnHovered[2](self.OnUnHovered[1])
     end
   end)
+  self.Btn_Setting:AddEventOnCheckStateChanged(self, function(Obj, IsChecked)
+    if self.OnCheckStateChanged then
+      self.OnCheckStateChanged[2](self.OnCheckStateChanged[1], IsChecked)
+    end
+  end)
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   if IsValid(self.GameInputModeSubsystem) then
@@ -35,7 +44,6 @@ function WBP_Battle_Training_SettingItem_C:Construct()
   end
   self:RefreshOpInfoByInputDevice()
 end
-
 function WBP_Battle_Training_SettingItem_C:RefreshOpInfoByInputDevice()
   self.CurInputDeviceType = UIUtils.UtilsGetCurrentInputType()
   self.CurGamepadName = UIUtils.UtilsGetCurrentGamepadName()
@@ -45,5 +53,4 @@ function WBP_Battle_Training_SettingItem_C:RefreshOpInfoByInputDevice()
     self.MaskGamepad:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 return WBP_Battle_Training_SettingItem_C

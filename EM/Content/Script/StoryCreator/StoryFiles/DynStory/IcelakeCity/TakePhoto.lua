@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1749799107834369965",
       type = "StoryNode",
-      name = "\230\139\141\231\133\167",
+      name = "拍照",
       pos = {x = 1153.3101736972706, y = 283.85856079404465},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -170,6 +172,12 @@ return {
             startPort = "Fail",
             endQuest = "1749799107834369972",
             endPort = "In"
+          },
+          {
+            startQuest = "1749799107834369974",
+            startPort = "Success",
+            endQuest = "176189391354921783090",
+            endPort = "In"
           }
         },
         nodeData = {
@@ -197,7 +205,7 @@ return {
           ["1749799107834369969"] = {
             key = "1749799107834369969",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144NPC",
+            name = "生成NPC",
             pos = {x = 1208, y = 296.4},
             propsData = {
               ActiveEnable = true,
@@ -211,7 +219,7 @@ return {
           ["1749799107834369970"] = {
             key = "1749799107834369970",
             type = "TalkNode",
-            name = "\230\139\141\231\133\167\229\188\128\232\189\166",
+            name = "拍照开车",
             pos = {x = 1509.2, y = 83.99999999999993},
             propsData = {
               IsNpcNode = false,
@@ -228,7 +236,7 @@ return {
           ["1749799107834369971"] = {
             key = "1749799107834369971",
             type = "TalkNode",
-            name = "\228\186\164\228\186\146\229\188\128\232\189\166",
+            name = "交互开车",
             pos = {x = 1590.5233082706764, y = 261.53684210526325},
             propsData = {
               IsNpcNode = true,
@@ -253,6 +261,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -260,13 +269,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -281,14 +290,14 @@ return {
           ["1749799107834369972"] = {
             key = "1749799107834369972",
             type = "DynamicQuestFailNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "动态任务主动失败",
             pos = {x = 2051.5262672811064, y = 711.7640552995392},
             propsData = {UseTalkFadeOut = false, TalkFadeOutTime = 0}
           },
           ["1749799107834369974"] = {
             key = "1749799107834369974",
             type = "CameraNode",
-            name = "\231\155\184\230\156\186\232\138\130\231\130\185",
+            name = "相机节点",
             pos = {x = 2357.26446989196, y = 201.45395249911374},
             propsData = {
               bFadeInOut = false,
@@ -300,8 +309,11 @@ return {
                 "Npc_Dyn_1190959",
                 "BP_Dyn_PhotoPoint"
               },
+              EventId = 0,
+              EventParams = {},
               Text_TargetFound = "",
               Text_TargetNotFound = "",
+              ForceMaxLodStaticPointList = {},
               bShouldSetCameraParams = true,
               FocalLength = 15,
               LookAtTargetName = "Npc_Dyn_1190959",
@@ -321,7 +333,7 @@ return {
           ["1749799107834369975"] = {
             key = "1749799107834369975",
             type = "TalkNode",
-            name = "\229\174\140\230\136\144\229\175\185\232\175\157",
+            name = "完成对话",
             pos = {x = 2593.451696129958, y = 234.62990922121347},
             propsData = {
               IsNpcNode = true,
@@ -347,6 +359,7 @@ return {
               HideNpcs = false,
               HideMonsters = true,
               HideAllBattleEntity = true,
+              HideMechanismsFX = true,
               ShowSkipButton = true,
               ShowAutoPlayButton = true,
               ShowReviewButton = true,
@@ -354,13 +367,13 @@ return {
               SkipToOption = false,
               DisableNpcOptimization = false,
               DoNotReceiveCharacterShadow = false,
+              PauseTimeElapse = false,
               BeginNewTargetPointName = "",
               EndNewTargetPointName = "",
               CameraLookAtTartgetPoint = "",
               RestoreStand = false,
               PauseNpcBT = true,
               TalkActors = {},
-              RemoveTalkActors = {},
               OptionType = "normal",
               FreezeWorldComposition = false,
               bTravelFullLoadWorldComposition = false,
@@ -373,7 +386,7 @@ return {
           ["1749799107834369976"] = {
             key = "1749799107834369976",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 2853.83197123243, y = 271.6574043805165},
             propsData = {
               DialogueId = 0,
@@ -384,7 +397,7 @@ return {
           ["1749799107834369977"] = {
             key = "1749799107834369977",
             type = "ChangeStaticCreatorNode",
-            name = "\231\148\159\230\136\144\231\133\167\231\155\184\230\156\186\230\156\186\229\133\179",
+            name = "生成照相机机关",
             pos = {x = 2046.3535631035636, y = -136.0480769230769},
             propsData = {
               ActiveEnable = true,
@@ -398,7 +411,7 @@ return {
           ["1749799107834369978"] = {
             key = "1749799107834369978",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2045.476764707299, y = 164.24464759378563},
             propsData = {
               CreateType = "StaticCreator",
@@ -411,7 +424,7 @@ return {
           ["1749799107834369979"] = {
             key = "1749799107834369979",
             type = "ChangeStaticCreatorNode",
-            name = "\233\148\128\230\175\129\231\133\167\231\155\184\230\156\186\230\156\186\229\133\179",
+            name = "销毁照相机机关",
             pos = {x = 2942.021167125594, y = 10.929924074892941},
             propsData = {
               ActiveEnable = false,
@@ -425,7 +438,7 @@ return {
           ["1749799107834369980"] = {
             key = "1749799107834369980",
             type = "SwitchMechanismStateNode",
-            name = "\229\136\157\229\167\139\229\140\150\230\156\186\229\133\179",
+            name = "初始化机关",
             pos = {x = 2055.905959752322, y = 16.75849550346436},
             propsData = {
               StaticCreatorIdList = {1190964},
@@ -437,14 +450,14 @@ return {
           ["1749799107834369981"] = {
             key = "1749799107834369981",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 2071.199581064097, y = 383.64079388353565},
             propsData = {WaitTime = 0.5}
           },
           ["1749799107834369982"] = {
             key = "1749799107834369982",
             type = "WaitingMechanismEnterStateNode",
-            name = "\231\173\137\229\190\133\230\156\186\229\133\179\232\191\155\229\133\165\231\138\182\230\128\129",
+            name = "等待机关进入状态",
             pos = {x = 2656.8253875157097, y = 2.156922915793688},
             propsData = {
               CreateType = "StaticCreator",
@@ -452,6 +465,17 @@ return {
               StateId = 780420,
               IsGuideEnable = false,
               GuidePointName = "Mechanism_Dyn_1190964"
+            }
+          },
+          ["176189391354921783090"] = {
+            key = "176189391354921783090",
+            type = "UpdateTaskBarAndTaskMainNode",
+            name = "更新任务目标节点",
+            pos = {x = 2641.6242963692657, y = -157.39966225724754},
+            propsData = {
+              NewDescription = "DynQuest_TakePhoto_Target1",
+              NewDetail = "",
+              SubTaskTargetIndex = 0
             }
           }
         },

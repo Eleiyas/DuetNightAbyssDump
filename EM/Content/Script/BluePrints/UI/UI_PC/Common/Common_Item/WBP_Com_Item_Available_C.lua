@@ -8,7 +8,6 @@ local StyleMap = {
   Purple = 4,
   Blue = 3
 }
-
 function M:SetStyle(StyleStr)
   StyleStr = StyleStr or "Gold"
   local StyleCode = StyleMap[StyleStr]
@@ -19,5 +18,4 @@ function M:SetStyle(StyleStr)
   DynMat = self.VX_Scanlight:GetDynamicMaterial()
   DynMat:SetVectorParameterValue("MainColor", self["VX_Scanlight_" .. StyleCode].SpecifiedColor)
 end
-
 return M

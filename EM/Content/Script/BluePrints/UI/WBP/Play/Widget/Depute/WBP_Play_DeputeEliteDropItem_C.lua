@@ -10,7 +10,6 @@ local TypeSort = {
   Reward = 5,
   Resource = 6
 }
-
 function M:OnListItemObjectSet(Content)
   if 0 == Content.MonId then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(1)
@@ -49,7 +48,6 @@ function M:OnListItemObjectSet(Content)
   end
   self:RefreshRewardInfoList(MonRewardData.DungeonRewardView)
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -60,7 +58,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:RefreshRewardInfoList(DungeonReward)
   if not DungeonReward then
     DebugPrint("SL DungeonReward is nil")
@@ -93,8 +90,11 @@ function M:RefreshRewardInfoList(DungeonReward)
       local ModModel = ModController:GetModel()
       Content.bShadow = ModModel:GetModCountById(Content.Id) <= 0
     elseif Content.ItemType == "Walnut" then
-      local WalnutsInBag = Avatar.Walnuts.WalnutBag
-      Content.bShadow = (WalnutsInBag[Content.Id] or 0) <= 0
+      local Avatar = GWorld:GetAvatar()
+      if Avatar then
+        local WalnutsInBag = Avatar.Walnuts.WalnutBag
+        Content.bShadow = (WalnutsInBag[Content.Id] or 0) <= 0
+      end
     end
     self.List_EliteProp:AddItem(Content)
   end
@@ -106,7 +106,6 @@ function M:RefreshRewardInfoList(DungeonReward)
     end
   end, false, 0, "DeputeDetailListView_List_EliteProp")
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   self.IsEnter = true
   if self.Mobile or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
@@ -115,7 +114,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   self.IsEnter = false
   if self.Mobile or UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
@@ -124,7 +122,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -139,13 +136,11 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self.ParentWidget:ShowGamepadLSBtn(false)
   end
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Id = 0
   self.List_EliteProp:AddItem(Content)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -159,7 +154,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   DebugPrint("SL OnGamePadDown is DeputeEliteDropItem InKeyName", InKeyName)
   local IsEventHandled = false
@@ -204,7 +198,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:ShowGamepadABtn(bIsShow)
   if bIsShow then
     self.GamepadCheckItemKeyInfo = self.GamepadCheckItemKeyInfo or self.ParentWidget:ShowGamepadShortcutBtn({
@@ -221,5 +214,4 @@ function M:ShowGamepadABtn(bIsShow)
     self.GamepadCheckItemKeyInfo = nil
   end
 end
-
 return M

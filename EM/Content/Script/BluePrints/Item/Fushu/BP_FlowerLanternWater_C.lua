@@ -2,7 +2,6 @@ require("UnLua")
 local BP_FlowerLanternWater_C = Class({
   "BluePrints.Item.Fushu.BP_FushuItemBase_C"
 })
-
 function BP_FlowerLanternWater_C:CommonInitInfo(Info)
   BP_FlowerLanternWater_C.Super.CommonInitInfo(self, Info)
   self.SkillEffectHp = self.UnitParams.SkillEffectHp
@@ -15,7 +14,6 @@ function BP_FlowerLanternWater_C:CommonInitInfo(Info)
   self.HasRestore = false
   self.OverlappingPlayer = nil
 end
-
 function BP_FlowerLanternWater_C:OnActorReady(Info)
   BP_FlowerLanternWater_C.Super.OnActorReady(self, Info)
   if not self.ToughRange then
@@ -29,7 +27,6 @@ function BP_FlowerLanternWater_C:OnActorReady(Info)
   EventManager:AddEvent(EventID.OnFlowerLanternActive, self, self.OnFlowerLanternActive)
   EventManager:AddEvent(EventID.OnFlowerLanternDeActive, self, self.OnFlowerLanternDeActive)
 end
-
 function BP_FlowerLanternWater_C:OnStartTough(Component, OtherActor, OtherComp)
   if OtherActor.IsPlayer and OtherActor:IsPlayer() then
     self.TargetInRange = true
@@ -44,7 +41,6 @@ function BP_FlowerLanternWater_C:OnStartTough(Component, OtherActor, OtherComp)
     self:OnPlayerEnterCheckBuff(OtherActor)
   end
 end
-
 function BP_FlowerLanternWater_C:OnEndTough(Component, OtherActor, OtherComp)
   if OtherActor.IsPlayer and OtherActor:IsPlayer() then
     self.TargetInRange = false
@@ -52,7 +48,6 @@ function BP_FlowerLanternWater_C:OnEndTough(Component, OtherActor, OtherComp)
     self:OnPlayerLeaveCheckBuff(OtherActor)
   end
 end
-
 function BP_FlowerLanternWater_C:RestorePlayer(Player)
   if not self.TargetInRange or not self.IsActive then
     self:RemoveTimer("RestorePlayer")
@@ -60,7 +55,6 @@ function BP_FlowerLanternWater_C:RestorePlayer(Player)
   end
   self:UseEffect(Player)
 end
-
 function BP_FlowerLanternWater_C:UseEffect(Player)
   if self.SkillEffectHp and self.SkillEffectHp > 0 and self.IsRedLight then
     self.Super.PropUseSkill(self, self.SkillEffectHp, Player)
@@ -68,7 +62,6 @@ function BP_FlowerLanternWater_C:UseEffect(Player)
     self.Super.PropUseSkill(self, self.SkillEffectSp, Player)
   end
 end
-
 function BP_FlowerLanternWater_C:OnFlowerLanternActive(IsRed)
   if self.IsActive then
     return
@@ -80,7 +73,6 @@ function BP_FlowerLanternWater_C:OnFlowerLanternActive(IsRed)
     self:OnStartTough(nil, self.OverlappingPlayer, nil)
   end
 end
-
 function BP_FlowerLanternWater_C:OnFlowerLanternDeActive()
   if not self.IsActive then
     return
@@ -91,12 +83,10 @@ function BP_FlowerLanternWater_C:OnFlowerLanternDeActive()
     self:OnPlayerLeaveCheckBuff(self.OverlappingPlayer)
   end
 end
-
 function BP_FlowerLanternWater_C:ReceiveEndPlay()
   BP_FlowerLanternWater_C.Super.ReceiveEndPlay(self)
   self:RemoveTimer("RestorePlayer")
   EventManager:RemoveEvent(EventID.OnFlowerLanternActive, self)
   EventManager:RemoveEvent(EventID.OnFlowerLanternDeActive, self)
 end
-
 return BP_FlowerLanternWater_C

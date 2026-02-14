@@ -34,8 +34,6 @@ local BattleEventName = {
   "AfterCutToughness",
   "AfterBeCutToughness",
   "OnToughnessToZero",
-  "OnGetSpBall",
-  "OnGetHpBall",
   "OnGetBullet",
   "OnConsumeBullet",
   "OnMagazineBulletCleared",

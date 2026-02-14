@@ -3,7 +3,6 @@ local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local M = Class("BluePrints.UI.BP_UIState_C")
 local SONGLU_WALNUT_ID = 1020
 local SYSTEM_GUIDE_ID = 2072
-
 function M:Construct()
   self:CommonConstruct()
   if IsStandAlone(self) then
@@ -21,8 +20,8 @@ function M:Construct()
   if self.NoWalnut and not self.IsStandAlone then
     self.WB_Player:GetChildAt(0).Head_Team:SetFocus()
   end
+  self:CheckIsAutoMode()
 end
-
 function M:OnLoaded(...)
   if #self.RewardList > 0 then
     self:PlayAllInAnimation()
@@ -33,12 +32,10 @@ function M:OnLoaded(...)
   end
   self:CheckRunSystemGuide()
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "WalnutReward", {ToEnd = 1})
   self.Super.Close(self)
 end
-
 function M:PlayAllInAnimation()
   self.Reward_1st:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Reward_2nd:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -58,30 +55,25 @@ function M:PlayAllInAnimation()
     AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choose_start_normal", nil, nil)
   end
 end
-
 function M:PlayAnimationOn1st()
   local RewardAnimation = self:GetRewardItemAnimation(1)
   self.Reward_1st:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Reward_1st:PlayAnimation(RewardAnimation)
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choose_page_show", nil, nil)
 end
-
 function M:PlayAnimationOn2nd()
   local RewardAnimation = self:GetRewardItemAnimation(2)
   self.Reward_2nd:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Reward_2nd:PlayAnimation(RewardAnimation)
 end
-
 function M:PlayAnimationOn3rd()
   local RewardAnimation = self:GetRewardItemAnimation(3)
   self.Reward_3rd:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Reward_3rd:PlayAnimation(RewardAnimation)
   self.Reward_1st.Button_Area:SetFocus()
 end
-
 function M:PlayNoRewardInAnimation()
 end
-
 function M:GetRewardItemAnimation(Index)
   local RewardInfo = self.RewardList[Index]
   local RewardItem = self.RewardSelectWidgetList[Index]
@@ -93,7 +85,6 @@ function M:GetRewardItemAnimation(Index)
     return RewardItem.VX_Bronze_In
   end
 end
-
 function M:CommonConstruct()
   self.Text_Choose:SetText(GText("UI_Reward_Walnut_Choose"))
   self.Text_Selected:SetText(GText("UI_Walnut_Reward_Select"))
@@ -108,7 +99,6 @@ function M:CommonConstruct()
   self.Btn_Confirm:TryOverrideSoundFunc(self.PlayClickButtonComfirmSound)
   self:InitGameInputMode()
 end
-
 function M:StandaloneConstruct()
   DebugPrint("Walnut_Reward StandaloneConstruct")
   self.Text_CountDown:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -117,7 +107,6 @@ function M:StandaloneConstruct()
   self.Text_Empty:SetText(GText("UI_Reward_Walnut_Select_Warning"))
   self.Text_Hint_Multi:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:MultiConstruct()
   DebugPrint("Walnut_Reward MultiConstruct")
   self.Text_CountDown:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -127,7 +116,6 @@ function M:MultiConstruct()
   self.Text_Hint_Multi:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self.Text_Hint_Multi:SetText(GText("UI_Reward_Walnut_Select_Warning"))
 end
-
 function M:InitRewards()
   self.RewardList = {}
   self.NoWalnut = false
@@ -204,7 +192,6 @@ function M:InitRewards()
   self:InitCommonItem(3)
   self:OnClickReward1st()
 end
-
 function M:GetWalnutRewardRarity(RewardID, RewardType, RewardCount)
   if self.WalnutId then
     local WalnutData = DataMgr.Walnut[self.WalnutId]
@@ -228,7 +215,6 @@ function M:GetWalnutRewardRarity(RewardID, RewardType, RewardCount)
   end
   return 1
 end
-
 function M:InitCommonItem(Index)
   local CurRewardInfo = self.RewardList[Index]
   local Parent = self.RewardSelectWidgetList[Index]
@@ -252,21 +238,21 @@ function M:InitCommonItem(Index)
   local Img
   if 1 == CurRewardInfo.WalnutRewardRarity then
     local TextBlock = NewObject(UTextBlock, self)
-    TextBlock:SetText("\226\133\160")
+    TextBlock:SetText("Ⅰ")
     TextBlock:SetColorAndOpacity(self.ColorAndOpacities[1])
     TextBlock:SetFont(self.Fonts[1])
     Parent.Slot_Level:SetContent(TextBlock)
     Img = LoadObject("/Game/UI/Texture/Static/Image/Walnut/T_Walnut_Bg04.T_Walnut_Bg04")
   elseif 2 == CurRewardInfo.WalnutRewardRarity then
     local TextBlock = NewObject(UTextBlock, self)
-    TextBlock:SetText("\226\133\161")
+    TextBlock:SetText("Ⅱ")
     TextBlock:SetColorAndOpacity(self.ColorAndOpacities[2])
     TextBlock:SetFont(self.Fonts[2])
     Parent.Slot_Level:SetContent(TextBlock)
     Img = LoadObject("/Game/UI/Texture/Static/Image/Walnut/T_Walnut_Bg05.T_Walnut_Bg05")
   else
     local TextBlock = NewObject(UTextBlock, self)
-    TextBlock:SetText("\226\133\162")
+    TextBlock:SetText("Ⅲ")
     TextBlock:SetColorAndOpacity(self.ColorAndOpacities[3])
     TextBlock:SetFont(self.Fonts[3])
     Parent.Slot_Level:SetContent(TextBlock)
@@ -299,7 +285,6 @@ function M:InitCommonItem(Index)
   DebugPrint("InitCommonItem HOLD NUMBER", HoldNum)
   Parent.Num_Hold:SetText(HoldNum)
 end
-
 function M:InitTeamHeads()
   self.TeamHeadTable = {}
   self.WB_Player:ClearChildren()
@@ -315,7 +300,6 @@ function M:InitTeamHeads()
   end
   self:ReceiveWalnutRewardChoose()
 end
-
 function M:BindEvents()
   self.Reward_1st.Button_Area.OnClicked:Add(self, self.OnClickReward1st)
   self.Reward_2nd.Button_Area.OnClicked:Add(self, self.OnClickReward2nd)
@@ -325,7 +309,6 @@ function M:BindEvents()
   self.Reward_3rd.Button_Area.OnPressed:Add(self, self.OnPressReward3rd)
   self.Btn_Confirm.Button_Area.OnClicked:Add(self, self.OnClickButtonComfirm)
 end
-
 function M:OnClickReward1st()
   if self.SelectDone or 1 == self.CurrentSelectIndex then
     return
@@ -335,8 +318,8 @@ function M:OnClickReward1st()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choice_btn_click", "WalnutRewardOptionClick", nil)
   self.State = 0
   self:UpdateCommonKeys("LS", GText("UI_Controller_CheckDetails"))
+  self:InterruptAutoMode()
 end
-
 function M:OnClickReward2nd()
   if self.SelectDone or 2 == self.CurrentSelectIndex then
     return
@@ -346,8 +329,8 @@ function M:OnClickReward2nd()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choice_btn_click", "WalnutRewardOptionClick", nil)
   self.State = 0
   self:UpdateCommonKeys("LS", GText("UI_Controller_CheckDetails"))
+  self:InterruptAutoMode()
 end
-
 function M:OnClickReward3rd()
   if self.SelectDone or 3 == self.CurrentSelectIndex then
     return
@@ -357,8 +340,8 @@ function M:OnClickReward3rd()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choice_btn_click", "WalnutRewardOptionClick", nil)
   self.State = 0
   self:UpdateCommonKeys("LS", GText("UI_Controller_CheckDetails"))
+  self:InterruptAutoMode()
 end
-
 function M:OnPressReward1st()
   if self.SelectDone then
     return
@@ -368,7 +351,6 @@ function M:OnPressReward1st()
   end
   self.Reward_1st:PlayAnimation(self.Reward_1st.Press)
 end
-
 function M:OnPressReward2nd()
   if self.SelectDone then
     return
@@ -378,7 +360,6 @@ function M:OnPressReward2nd()
   end
   self.Reward_2nd:PlayAnimation(self.Reward_2nd.Press)
 end
-
 function M:OnPressReward3rd()
   if self.SelectDone then
     return
@@ -388,17 +369,14 @@ function M:OnPressReward3rd()
   end
   self.Reward_3rd:PlayAnimation(self.Reward_3rd.Press)
 end
-
 function M:OnClickButtonComfirm()
   DebugPrint("OnClickButtonComfirm SelectWalnutReward", self.CurrentSelectIndex)
   local Avatar = GWorld:GetAvatar()
   Avatar:SelectWalnutReward(self:OnSelectDone(self.CurrentSelectIndex), self.CurrentSelectIndex)
 end
-
 function M:PlayClickButtonComfirmSound()
   AudioManager(self):PlayUISound(self, "event:/ui/common/mihan_level_finish_choice_btn_confirm", "WalnutRewardClickBtnConfirm", nil)
 end
-
 function M:OnSelectDone(CurrentSelectIndex)
   local CurrentSelectedReward = self.RewardSelectWidgetList[CurrentSelectIndex]
   CurrentSelectedReward:PlayAnimation(CurrentSelectedReward.Selected)
@@ -417,7 +395,6 @@ function M:OnSelectDone(CurrentSelectIndex)
   self.Reward_3rd.SelectDone = true
   self.WidgetSwitcher_Btn:SetActiveWidgetIndex(2)
 end
-
 function M:OnClickButtonRetreat()
   DebugPrint("OnClickButtonComfirm SelectWalnutReward", self.CurrentSelectIndex)
   local Params = {
@@ -427,12 +404,10 @@ function M:OnClickButtonRetreat()
   }
   UIManager(self):ShowCommonPopupUI(100141, Params)
 end
-
 function M:Retreat()
   local Avatar = GWorld:GetAvatar()
   Avatar:ExitBattle(true)
 end
-
 function M:UpdateSelectedReward(Index)
   DebugPrint("Walnut_Reward UpdateSelectedReward: ", Index)
   if self.CurrentSelectIndex then
@@ -440,21 +415,23 @@ function M:UpdateSelectedReward(Index)
     self:InitSelectedReward(CurrentSelectedReward)
   end
   self.CurrentSelectIndex = Index
-  self.RewardSelectWidgetList[Index].WidgetSwitcher_State:SetActiveWidgetIndex(1)
+  self:AddTimer(0.1, function()
+    self.RewardSelectWidgetList[Index].WidgetSwitcher_State:SetActiveWidgetIndex(1)
+  end, false, 0, "UpdateRewardState")
   self.RewardSelectWidgetList[Index].IsSelected = true
 end
-
 function M:InitSelectedReward(RewardSelectWidget)
+  if self.UpdateRewardState then
+    self:RemoveTimer("UpdateRewardState")
+  end
   RewardSelectWidget.WidgetSwitcher_State:SetActiveWidgetIndex(0)
   RewardSelectWidget:PlayAnimation(RewardSelectWidget.UnHover)
   RewardSelectWidget:PlayAnimation(RewardSelectWidget.Normal)
   RewardSelectWidget.IsSelected = false
 end
-
 function M:StartCountDown()
   self:AddTimer(0.1, self.WalnutRewardCountDown, true, 0, "WalnutRewardCountDown")
 end
-
 function M:WalnutRewardCountDown()
   local CurrentCountDown = self:GetRemainWalnutRewardTime()
   if CurrentCountDown < 0 then
@@ -467,20 +444,17 @@ function M:WalnutRewardCountDown()
     self:RemoveTimer("WalnutRewardCountDown")
   end
 end
-
 function M:FinishStandNoWalnutTips()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   GameMode:OnClientSelectedWalnutReward_StandAlone()
   self:RemoveTimer("StandaloneNoWalnut")
 end
-
 function M:GetRemainWalnutRewardTime()
   local GameState = UGameplayStatics.GetGameState(self)
   local Info = GameState.ClientTimerStruct:GetTimerInfo("ShowWalnutReward")
   local WalnutRewardVoteTime = Info.Time - (GameState.ReplicatedRealTimeSeconds - Info.RealTimeSeconds)
   return WalnutRewardVoteTime
 end
-
 function M:ReceiveWalnutRewardChoose()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   local WalnutRewarPlayer = GameState.WalnutRewardPlayer:ToTable()
@@ -493,7 +467,6 @@ function M:ReceiveWalnutRewardChoose()
     end
   end
 end
-
 function M:ChangeSelectedHead(TeamHead)
   if TeamHead == self.SelectedHead then
     return
@@ -503,7 +476,6 @@ function M:ChangeSelectedHead(TeamHead)
   end
   self.SelectedHead = TeamHead
 end
-
 function M:InitCommonKey()
   if not self.Panel_Key_GamePad then
     return
@@ -518,7 +490,6 @@ function M:InitCommonKey()
   self.State = 0
   self:UpdateCommonKeys()
 end
-
 function M:UpdateCommonKeys(...)
   if not self.Panel_Key_GamePad then
     return
@@ -550,7 +521,6 @@ function M:UpdateCommonKeys(...)
     end
   end
 end
-
 function M:GamePadToPC()
   if not self.Panel_Key_GamePad then
     return
@@ -560,7 +530,6 @@ function M:GamePadToPC()
   self:SetItemRewardVisibility(true)
   self.State = 0
 end
-
 function M:PCToGamePad()
   if not self.Panel_Key_GamePad then
     return
@@ -575,7 +544,6 @@ function M:PCToGamePad()
   end
   self:SetItemRewardVisibility(false)
 end
-
 function M:InitGameInputMode()
   if not self.Panel_Key_GamePad then
     return
@@ -594,7 +562,6 @@ function M:InitGameInputMode()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("RefreshOpInfoByInputDevice", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -614,7 +581,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -674,7 +640,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:SetItemRewardVisibility(HitTest)
   if HitTest then
     self.Reward_1st.Item_Reward:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -686,11 +651,9 @@ function M:SetItemRewardVisibility(HitTest)
     self.Reward_3rd.Item_Reward:SetVisibility(UE4.ESlateVisibility.HitTestInvisible)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   self:UpdateCommonKeys("A", GText("UI_Tips_Ensure"), "LS", GText("UI_Controller_CheckDetails"))
 end
-
 function M:RecordCurrentTeamMemberFocus()
   for i = 0, 3 do
     if self.WB_Player:GetChildAt(i) then
@@ -703,7 +666,6 @@ function M:RecordCurrentTeamMemberFocus()
   end
   self.RecordCurrentTeamMember = 0
 end
-
 function M:CheckRunSystemGuide()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -725,5 +687,38 @@ function M:CheckRunSystemGuide()
   DebugPrint("ljl@ RunSystemGuide", SYSTEM_GUIDE_ID)
   SystemGuideManager:RunGuideById(SYSTEM_GUIDE_ID)
 end
-
+function M:CheckIsAutoMode()
+  local Avatar = GWorld:GetAvatar()
+  local GameState = UE4.UGameplayStatics.GetGameState(self)
+  if not Avatar then
+    return
+  end
+  local DungeonId = GWorld.GameInstance:GetCurrentDungeonId()
+  local IsAutoMode = Avatar.Dungeons[DungeonId].AutoProgress
+  local Progress = GameState.DungeonProgress or 0
+  if IsAutoMode and Progress <= IsAutoMode + 1 and 0 ~= IsAutoMode then
+    local AutoCheckTime
+    if DataMgr.GlobalConstant.AutoRoundsCheckTime then
+      AutoCheckTime = DataMgr.GlobalConstant.AutoRoundsCheckTime.ConstantValue
+    else
+      AutoCheckTime = 5
+    end
+    self.CheckIsAutoModeTimer = self:AddTimer(1, function()
+      if AutoCheckTime <= 0 then
+        self:RemoveTimer(self.CheckIsAutoModeTimer)
+        self:OnClickButtonComfirm()
+        return
+      end
+      self.Btn_Confirm:SetText(string.format(GText("UI_Auto_Round_TicketConfirm_Time"), AutoCheckTime))
+      AutoCheckTime = AutoCheckTime - 1
+    end, true, 0, "CheckIsAutoModeTimer")
+  end
+end
+function M:InterruptAutoMode()
+  if self.CheckIsAutoModeTimer then
+    self:RemoveTimer(self.CheckIsAutoModeTimer)
+    self.Btn_Confirm:SetText(GText("UI_CONFIRM_SELECTION"))
+    DebugPrint("ayff test InterruptAutoMode in reward choose")
+  end
+end
 return M

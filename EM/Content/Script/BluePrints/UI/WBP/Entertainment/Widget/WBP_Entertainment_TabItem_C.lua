@@ -2,11 +2,9 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   Content.Widget = self
@@ -17,7 +15,6 @@ function M:OnListItemObjectSet(Content)
   self:SetIsSelected(Content.IsSelected)
   self:SetReddot(Content.IsNew, Content.Upgradeable)
 end
-
 function M:SetIcon(Icon, SwitcherIdx)
   SwitcherIdx = SwitcherIdx or 0
   self.WidgetSwitcher_Head:SetActiveWidgetIndex(SwitcherIdx)
@@ -31,7 +28,6 @@ function M:SetIcon(Icon, SwitcherIdx)
     end
   end
 end
-
 function M:SetReddot(ShowNew, ShowReddot)
   if ShowNew then
     self.New:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -45,13 +41,11 @@ function M:SetReddot(ShowNew, ShowReddot)
     end
   end
 end
-
 function M:BP_OnEntryReleased()
   if self.Content then
     self.Content.Widget = nil
   end
 end
-
 function M:SetIsSelected(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
@@ -63,14 +57,15 @@ function M:SetIsSelected(IsSelected)
   end
   self:FlushAnimations()
 end
-
-function M:OnMouseEnter(MyGeometry, MouseEvent)
+function M:OnMouseEnter(MyGeometry, MouseEvent, bForce)
   if self.IsSelected then
     return
   end
-  self:PlayAnimationForward(self.Hover)
+  local bMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
+  if bForce or not bMobile then
+    self:PlayAnimationForward(self.Hover)
+  end
 end
-
 function M:OnMouseLeave(MouseEvent)
   if self.IsSelected then
     return
@@ -78,7 +73,6 @@ function M:OnMouseLeave(MouseEvent)
   self:StopAnimation(self.Press)
   self:PlayAnimationReverse(self.Hover)
 end
-
 function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   if self.IsSelected then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
@@ -86,30 +80,34 @@ function M:OnMouseButtonDown(MyGeometry, MouseEvent)
   self:PlayAnimation(self.Press)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   if self.IsSelected then
     return UE4.UWidgetBlueprintLibrary.Unhandled()
   end
   if self:IsHovered() then
-    self:OnMouseEnter()
+    self:OnMouseEnter(MyGeometry, MouseEvent, true)
   else
     self:PlayAnimation(self.Normal)
   end
   AudioManager(self):PlayItemSound(self, self.Content.UnitId, "Click", self.Content.Type)
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
+function M:RecoverButton(MyGeometry, MouseEvent)
+  if self.IsSelected then
+    return UE4.UWidgetBlueprintLibrary.Unhandled()
+  end
+  self:StopAllAnimations()
+  self:PlayAnimation(self.Normal)
+  self:FlushAnimations()
+  return UE4.UWidgetBlueprintLibrary.Unhandled()
+end
 function M:OnTouchStarted(MyGeometry, InTouchEvent)
   return self:OnMouseButtonDown(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnMouseButtonUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnRemovedFromFocusPath(MyGeometry, InTouchEvent)
-  return self:OnMouseButtonUp(MyGeometry, InTouchEvent)
+  return self:RecoverButton(MyGeometry, InTouchEvent)
 end
-
 return M

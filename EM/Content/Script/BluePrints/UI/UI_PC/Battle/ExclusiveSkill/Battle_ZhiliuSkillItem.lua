@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.MarkType = nil
   self.StopAnimationTable = {
@@ -15,7 +14,6 @@ function M:Construct()
   }
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Empty_In)
 end
-
 function M:PlayInAnimation(MarkType)
   if EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.ScanLline) then
     self.NextInAnimationType = MarkType
@@ -25,7 +23,6 @@ function M:PlayInAnimation(MarkType)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self[MarkType .. "_In"])
   end
 end
-
 function M:PlayOutAnimation()
   if not EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.ScanLline) then
     self:StopAllAnimationsExceptScanLline()
@@ -37,12 +34,10 @@ function M:PlayOutAnimation()
   end
   self.MarkType = nil
 end
-
 function M:PlaySwitchAnimation()
   self:StopAllAnimationsExceptScanLline()
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.ScanLline)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.ScanLline then
     if self.NextInAnimationType then
@@ -56,7 +51,6 @@ function M:OnAnimationFinished(Animation)
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Empty_In)
   end
 end
-
 function M:StopAllAnimationsExceptScanLline()
   for _, Animation in ipairs(self.StopAnimationTable) do
     if EMUIAnimationSubsystem:EMAnimationIsPlaying(self, Animation) then
@@ -64,10 +58,8 @@ function M:StopAllAnimationsExceptScanLline()
     end
   end
 end
-
 function M:InitSkillItem()
   self:StopAllAnimationsExceptScanLline()
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Empty_In)
 end
-
 return M

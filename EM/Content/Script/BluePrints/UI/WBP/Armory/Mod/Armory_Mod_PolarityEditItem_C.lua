@@ -3,21 +3,17 @@ local ModModel = ModController:GetModel()
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Destruct()
   self.ButtonArea.OnCheckStateChanged:Remove(self, self.OnMyCheckStateChanged)
 end
-
 function M:Construct()
   self.ButtonArea.OnCheckStateChanged:Add(self, self.OnMyCheckStateChanged)
 end
-
 function M:OnAnimationFinished(Animation)
   if Animation == self.In then
     self:InitSelectedState()
   end
 end
-
 function M:InitSelectedState()
   local SelectedStuff = ModModel:GetSelectStuff()
   local SlotUIData = ModModel:GetSlotUIData(SelectedStuff.SlotId)
@@ -29,7 +25,6 @@ function M:InitSelectedState()
     self:DeSelect()
   end
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.ButtonArea:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -48,7 +43,6 @@ function M:OnListItemObjectSet(Content)
     self:SetImageIcon(Content.Polarity)
   end
 end
-
 function M:SetImageVisibile(bVisible)
   if bVisible then
     self.WidgetSwitcher_State:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -56,7 +50,6 @@ function M:SetImageVisibile(bVisible)
     self.WidgetSwitcher_State:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetImageIcon(Polarity)
   if Polarity == CommonConst.NonePolarity then
     self.WidgetSwitcher_State:SetActiveWidgetIndex(0)
@@ -66,7 +59,6 @@ function M:SetImageIcon(Polarity)
     self.Text_Polarity:SetText(PText)
   end
 end
-
 function M:OnMyCheckStateChanged(bChecked)
   if bChecked then
     self.ButtonArea:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -76,11 +68,9 @@ function M:OnMyCheckStateChanged(bChecked)
     end
   end
 end
-
 function M:SetOnItemSelectOn(Callback)
   self.OnItemSelectOnCallback = Callback
 end
-
 function M:DeSelect()
   if self.Content.Polarity then
     self.ButtonArea:SetVisibility(UIConst.VisibilityOp.Visible)
@@ -88,12 +78,10 @@ function M:DeSelect()
     self.ButtonArea:SetCheckedNoNotify(false)
   end
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   self.IsSelected = IsSelected
   if IsSelected then
     self.ButtonArea:SetChecked(true)
   end
 end
-
 return M

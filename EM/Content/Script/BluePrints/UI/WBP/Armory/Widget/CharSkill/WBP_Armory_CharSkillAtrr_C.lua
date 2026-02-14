@@ -2,12 +2,10 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Button_Area.OnClicked:Add(self, self.OnBtnClicked)
   self.Text_Effect:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Owner = Content.Owner
@@ -40,7 +38,6 @@ function M:OnListItemObjectSet(Content)
   self.IsShowDesc = Content.IsShowDesc
   self:ShowDesc(self.IsShowDesc, false)
 end
-
 function M:ShowDesc(bShow, NeedAnim)
   self.IsShowDesc = bShow
   if bShow and self.Text_Effect:GetText() ~= "" then
@@ -54,27 +51,22 @@ function M:ShowDesc(bShow, NeedAnim)
     self.Icon_Arrow:SetRenderTransformAngle(0)
   end
 end
-
 function M:OnBtnClicked()
   if self._OnBtnClicked then
     self._OnBtnClicked(self.Owner, self.Content)
   end
 end
-
 function M:OnAddedToFocusPath()
   if self._OnAddedToFocusPath then
     self._OnAddedToFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnRemovedFromFocusPath()
   if self._OnRemovedFromFocusPath then
     self._OnRemovedFromFocusPath(self.Owner, self.Content)
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.Button_Area)
 end
-
 return M

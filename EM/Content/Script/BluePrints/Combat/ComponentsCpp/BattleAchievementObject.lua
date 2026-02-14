@@ -1,6 +1,5 @@
 require("UnLua")
 local BattleAchievementObject = Class()
-
 function BattleAchievementObject:GetIndividualValues()
   local Avatar = GWorld:GetAvatar()
   if Avatar then
@@ -15,7 +14,6 @@ function BattleAchievementObject:GetIndividualValues()
   end
   return TMap(0, 0)
 end
-
 function BattleAchievementObject:UploadTargetValue(Key, Value)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local PlayerController = self.OwnerCharacter:GetController()
@@ -27,7 +25,6 @@ function BattleAchievementObject:UploadTargetValue(Key, Value)
     [Key] = Value
   }, AvatarId)
 end
-
 function BattleAchievementObject:UploadTargetValues(TargetValues)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   TargetValues = TargetValues:ToTable()
@@ -38,5 +35,4 @@ function BattleAchievementObject:UploadTargetValues(TargetValues)
   local AvatarId = PlayerController.AvatarId
   GameMode:UploadTargetValues(TargetValues, AvatarId)
 end
-
 return BattleAchievementObject

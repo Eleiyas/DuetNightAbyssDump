@@ -4,14 +4,14 @@ local ComItemPriority = {
   ComItemLock = 1,
   ComItemCardLevel = 2,
   ComItemMoney = 3,
-  ComItemStartLevel = 4
+  ComItemStartLevel = 4,
+  ComItemCustomTag = 5,
+  DraftCompendiumItem = 6
 }
-
 function M:Construct()
   self.WidgetsMap = {}
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
 end
-
 function M:CreateAndAddWidgetAsyc(WidgetName, CoroutineObj)
   local AddedWidget = self.WidgetsMap[WidgetName]
   if AddedWidget then
@@ -27,7 +27,6 @@ function M:CreateAndAddWidgetAsyc(WidgetName, CoroutineObj)
   end
   return AddedWidget
 end
-
 function M:RemoveWidget(WidgetName, bFroce)
   local ChildWidget = self.WidgetsMap[WidgetName]
   if not ChildWidget then
@@ -40,18 +39,15 @@ function M:RemoveWidget(WidgetName, bFroce)
     ChildWidget:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:ClearWidgets()
   self.GP_ItemGroup:ClearChildren()
   self.WidgetsMap = {}
 end
-
 function M:GetWidget(WidgetName)
   if type(WidgetName) == "string" then
     return self.WidgetsMap[WidgetName]
   end
 end
-
 function M:GetAllWidgets()
   local AllWidgets = {}
   for _, Widget in pairs(self.WidgetsMap) do
@@ -59,9 +55,7 @@ function M:GetAllWidgets()
   end
   return AllWidgets
 end
-
 function M:GetWidgetCount()
   return self.GP_ItemGroup:GetChildrenCount()
 end
-
 return M

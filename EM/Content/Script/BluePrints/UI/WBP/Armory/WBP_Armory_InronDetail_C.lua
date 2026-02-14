@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Construct()
   M.Super.Construct(self)
   self.Image_Click.OnMouseButtonDownEvent:Unbind()
@@ -15,7 +14,6 @@ function M:Construct()
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
   self:OnInputChange()
 end
-
 function M:OnLoaded(...)
   M.Super.OnLoaded(self, ...)
   self.Parent, self.SelectTraceId, self.SelectMod = ...
@@ -32,7 +30,7 @@ function M:OnLoaded(...)
   end
   self.InFinished = false
   self.IsInOutAnim = false
-  self.Parent.Parent:BlockAllUIInput(true)
+  self.Parent.Parent:BlockAllUIInput(true, "SP_DisplayOnly")
   self:BindToAnimationFinished(self.Detail_In, {
     self,
     self.OnInAnimFinished
@@ -50,7 +48,6 @@ function M:OnLoaded(...)
     self.Armory_Inron["InronItem_" .. self.SelectTraceId]:SetFocus()
   end
 end
-
 function M:UpdateDetailInfo(TraceId, SelectMod)
   self.SelectTraceId = TraceId
   if self.Parent then
@@ -101,7 +98,6 @@ function M:UpdateDetailInfo(TraceId, SelectMod)
   self.Armory_InronItem.VX_CirceMid24:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Armory_InronItem.VX_Dot:SetVisibility(UE4.ESlateVisibility.Collapsed)
 end
-
 function M:ShowCollectRewardExpText(TraceId, SelectMod)
   if 2 == SelectMod or 3 == SelectMod then
     self.Panel_ExpHint:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -114,11 +110,9 @@ function M:ShowCollectRewardExpText(TraceId, SelectMod)
     self.Panel_ExpHint:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:OnUnlockBtnClicked()
   self.Armory_Inron:OnClickBTN(self.Type, self.Resource1, self.Resource2)
 end
-
 function M:OnBackgroundClicked()
   if not (not self.IsInOutAnim and self.InFinished) or self.UnlockPlaying then
     return
@@ -132,7 +126,6 @@ function M:OnBackgroundClicked()
   end
   self:OnCloseBtnClicked()
 end
-
 function M:OnCloseBtnClicked()
   self:StopAllAnimations()
   self.IsInOutAnim = true
@@ -140,7 +133,7 @@ function M:OnCloseBtnClicked()
     self,
     self.OnOutAnimFinished
   })
-  self:BlockAllUIInput(true)
+  self:BlockAllUIInput(true, "SP_DisplayOnly")
   self:PlayAnimation(self.Detail_Out)
   if self.Armory_Inron["InronItem_" .. self.SelectTraceId] and self.CurInputDeviceType ~= ECommonInputType.GamePad then
     self.Armory_Inron["InronItem_" .. self.SelectTraceId].IsClick = false
@@ -166,13 +159,8 @@ function M:OnCloseBtnClicked()
     ArmoryMain.Tab_Arm:PlayInAnim()
     ArmoryMain.ReceiveEnterStateNoAnim = true
     ArmoryMain:UpdateMontageAndCamera()
-    if ArmoryMain.CurSubTab.Name == "Grade" and ArmoryMain.CurSubTab.Widget and self.Parent and self.Parent.Char then
-      local IsRed = not self.Parent.IsPreviewMode and ArmoryMain.CheckCharPromoteReddot and ArmoryMain:CheckCharPromoteReddot(self.Parent.Char)
-      ArmoryMain.CurSubTab.Widget:SetReddot(false, IsRed)
-    end
   end
 end
-
 function M:OnOutAnimFinished()
   self.IsInOutAnim = false
   self:BlockAllUIInput(false)
@@ -183,12 +171,10 @@ function M:OnOutAnimFinished()
   end
   self:Close()
 end
-
 function M:OnInAnimFinished()
   self.Parent.Parent:BlockAllUIInput(false)
   self.InFinished = true
 end
-
 function M:OnTipsOpenChanged(bIsOpen)
   if not self.Panel_GamePad then
     return
@@ -199,7 +185,6 @@ function M:OnTipsOpenChanged(bIsOpen)
     self.HB_Key_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:ReceiveEnterState(StackAction)
   M.Super.ReceiveEnterState(self, StackAction)
   if self.Parent and self.SelectTraceId then
@@ -208,10 +193,10 @@ function M:ReceiveEnterState(StackAction)
       self.Armory_Inron["InronItem_" .. self.SelectTraceId].IsClick = false
       self.Armory_Inron["InronItem_" .. self.SelectTraceId]:SetClickState()
       self.Armory_Inron.LastFocusItem = self["InronItem_" .. self.SelectTraceId]
+      self.Armory_Inron["InronItem_" .. self.SelectTraceId]:SetReddotState(self.Armory_Inron:CheckCharCanUpGradeLevel())
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -220,7 +205,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   self:OnInputChange()
 end
-
 function M:OnInputChange()
   if not self.Panel_GamePad then
     return
@@ -238,7 +222,6 @@ function M:OnInputChange()
     self.Panel_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   if not self.InFinished or self.IsInOutAnim then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -257,7 +240,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:Handle_OnPCDown(InKeyName)
   if "Escape" == InKeyName then
     self:OnBackgroundClicked()
@@ -265,7 +247,6 @@ function M:Handle_OnPCDown(InKeyName)
   end
   return false
 end
-
 function M:Handle_OnGamePadDown(InKeyName)
   if not self.Panel_GamePad then
     return
@@ -297,7 +278,6 @@ function M:Handle_OnGamePadDown(InKeyName)
   end
   return false
 end
-
 function M:SwitchGamepadKeyState(State)
   if not self.HB_Key_GamePad then
     return
@@ -334,5 +314,4 @@ function M:SwitchGamepadKeyState(State)
     Item2:CreateCommonKey(Info2)
   end
 end
-
 return M

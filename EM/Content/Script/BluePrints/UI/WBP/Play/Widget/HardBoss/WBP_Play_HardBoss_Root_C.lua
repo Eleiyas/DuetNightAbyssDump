@@ -1,7 +1,7 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
+local PageJumpFunctionLibrary = require("Utils.PageJumpFunctionConfig")
 local WBP_Play_HardBoss_Root_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Play_HardBoss_Root_C:Construct()
   self.SelectedIndex = nil
   self.CurTeleportId = nil
@@ -9,6 +9,7 @@ function WBP_Play_HardBoss_Root_C:Construct()
   self.TitleWidget = nil
   self.IsInSelectState = false
   self.AllTabInfo = {}
+  self.HardBossId2Index = {}
   self.List_Boss.BP_OnItemSelectionChanged:Add(self, self.OnSelectItemChanged)
   self:PlayInAnim()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -19,19 +20,16 @@ function WBP_Play_HardBoss_Root_C:Construct()
   self:InitListenEvent()
   self:InitWidgetInfoInGamePad()
 end
-
 function WBP_Play_HardBoss_Root_C:Destruct()
   self:RemoveTimer("AddHardBossItem")
   self:ClearListenEvent()
 end
-
 function WBP_Play_HardBoss_Root_C:PlayInAnim()
   self:UpdateTabReddot()
   self:RefreshOtherInfo()
   self:InitRewardTimesInfo()
   self:InitListBossInfo()
 end
-
 function WBP_Play_HardBoss_Root_C:UpdateTabReddot()
   if not ReddotManager.GetTreeNode("HardBossMain") then
     ReddotManager.AddNode("HardBossMain")
@@ -41,7 +39,6 @@ function WBP_Play_HardBoss_Root_C:UpdateTabReddot()
     ReddotManager.DecreaseLeafNodeCount("HardBossMain")
   end
 end
-
 function WBP_Play_HardBoss_Root_C:RefreshOtherInfo()
   self.Btn_Enter:BindEventOnClicked(self, self.OnClickTrack)
   self.Btn_Enter:SetText(GText("UI_HardBoss_Track"))
@@ -49,7 +46,6 @@ function WBP_Play_HardBoss_Root_C:RefreshOtherInfo()
   self.Text_HardLevelUnlock:SetText(GText("UI_HardBoss_Maxlevel"))
   self.Text_DetailTips:SetText(GText("UI_HardBoss_FirstTime"))
 end
-
 function WBP_Play_HardBoss_Root_C:InitRewardTimesInfo()
   local Text = GText("UI_HardBoss_ChancesRemain")
   local RemainTimes = 0
@@ -65,7 +61,6 @@ function WBP_Play_HardBoss_Root_C:InitRewardTimesInfo()
   end
   self.Text_RewardTimes:SetText(Text)
 end
-
 function WBP_Play_HardBoss_Root_C:InitListBossInfo()
   local SortedHardBossMain = {}
   for _, HardBossData in pairs(DataMgr.HardBossMain) do
@@ -93,7 +88,6 @@ function WBP_Play_HardBoss_Root_C:InitListBossInfo()
   local TryTime = 0
   self.List_Boss:ClearListItems()
   local HasEmptyCell = false
-  
   local function SetAfterFillEmpty()
     if HasEmptyCell then
       self.List_Boss.ConsumeMouseWheel = EConsumeMouseWheel.Never
@@ -102,7 +96,6 @@ function WBP_Play_HardBoss_Root_C:InitListBossInfo()
       self.List_Boss.ConsumeMouseWheel = EConsumeMouseWheel.WhenScrollingPossible
     end
   end
-  
   local function FillWrapBoxFunc()
     local ScrollBoxSize = USlateBlueprintLibrary.GetLocalSize(self.List_Boss:GetCachedGeometry())
     local Item = self.List_Boss:GetItemAt(0)
@@ -137,7 +130,6 @@ function WBP_Play_HardBoss_Root_C:InitListBossInfo()
     EmptyNum = EmptyNum + 1
     return true
   end
-  
   self:AddTimer(self.IntervalTime, function()
     if Index > #SortedUnlockHardBossMain then
       if not FillWrapBoxFunc() then
@@ -152,18 +144,18 @@ function WBP_Play_HardBoss_Root_C:InitListBossInfo()
     BossObj.Index = Index
     BossObj.Parent = self
     BossObj.Empty = false
+    self.HardBossId2Index[BossObj.Id] = Index
     Index = Index + 1
     self.List_Boss:AddItem(BossObj)
   end, true, 0, "AddHardBossItem", true)
   SetAfterFillEmpty()
 end
-
 function WBP_Play_HardBoss_Root_C:RefreshListBossInfo(Index, IsFirstTime)
   if self.SelectedIndex ~= nil then
     local CurSelectBossContent = self.List_Boss:GetItemAt(math.max(self.SelectedIndex - 1, 0))
     local SubCell = CurSelectBossContent.Entry
     SubCell.IsSelect = false
-    SubCell:StopAllAnimations()
+    SubCell:StopAllAnimationsExceptIn()
     SubCell:PlayAnimation(SubCell.Normal)
   end
   self.SelectedIndex = Index
@@ -192,7 +184,6 @@ function WBP_Play_HardBoss_Root_C:RefreshListBossInfo(Index, IsFirstTime)
   end
   self:RefreshRewardsList(BossInfo)
 end
-
 function WBP_Play_HardBoss_Root_C:RefreshRewardsList(BossInfo)
   self.ListView_Rewards:ClearListItems()
   local HardBossDifficulty = DataMgr.HardBossDifficulty
@@ -210,7 +201,7 @@ function WBP_Play_HardBoss_Root_C:RefreshRewardsList(BossInfo)
           self.HaveFreeChance = true
         end
         if HighestDifficultyId == BossInfo.DifficultyId[1] then
-          if not self.DifficultyIndexCache and DifficultyIndex > 1 or self.DifficultyIndexCache and DifficultyIndex > self.DifficultyIndexCache then
+          if not self.DifficultyIndexCache and DifficultyIndex > 1 and 0 == Avatar.HardBoss:GetPassCount(DifficultyId) or self.DifficultyIndexCache and DifficultyIndex > self.DifficultyIndexCache and 0 == Avatar.HardBoss:GetPassCount(DifficultyId) then
             self.IsUpdate = true
             self.DifficultyIndexCache = DifficultyIndex
           end
@@ -229,14 +220,21 @@ function WBP_Play_HardBoss_Root_C:RefreshRewardsList(BossInfo)
   else
     self.Group_DetailTips:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
-  local AllRewardView = {}
+  local AllDynamicRewardIds = {}
   for DifficultyIndex = #BossInfo.DifficultyId, 1, -1 do
     local DifficultyId = BossInfo.DifficultyId[DifficultyIndex]
-    table.insert(AllRewardView, HardBossDifficulty[DifficultyId].DifficultyRewardView)
+    table.insert(AllDynamicRewardIds, HardBossDifficulty[DifficultyId].DifficultyReward)
+  end
+  local AllRewardViewIds = {}
+  for _, DynamicRewardId in ipairs(AllDynamicRewardIds) do
+    local DynamicRewardInfo = UIUtils.GetDynamicRewardInfo(DynamicRewardId)
+    if DynamicRewardInfo then
+      table.insert(AllRewardViewIds, DynamicRewardInfo.RewardView)
+    end
   end
   self.ListView_Rewards:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   local AllRewardInfo = {}
-  for _, RewardViewId in pairs(AllRewardView) do
+  for _, RewardViewId in pairs(AllRewardViewIds) do
     local RewardInfo = DataMgr.RewardView[RewardViewId]
     if RewardInfo then
       local Ids = RewardInfo.Id or {}
@@ -271,11 +269,25 @@ function WBP_Play_HardBoss_Root_C:RefreshRewardsList(BossInfo)
       return a.Rarity > b.Rarity
     end
   end)
-  for _, RewardContent in ipairs(SortedAllRewardInfo) do
-    self.ListView_Rewards:AddItem(RewardContent)
+  if table.isempty(SortedAllRewardInfo) then
+    if self.HB_Rewards then
+      self.HB_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    else
+      self.Text_BossRewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+    self.ListView_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  else
+    if self.HB_Rewards then
+      self.HB_Rewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    else
+      self.Text_BossRewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    end
+    self.ListView_Rewards:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    for _, RewardContent in ipairs(SortedAllRewardInfo) do
+      self.ListView_Rewards:AddItem(RewardContent)
+    end
   end
 end
-
 function WBP_Play_HardBoss_Root_C:OnClickTrack()
   if not self.CurTeleportId then
     return
@@ -285,25 +297,18 @@ function WBP_Play_HardBoss_Root_C:OnClickTrack()
     HardBossDifficultyCache[self.CurBossId] = self.DifficultyIndexCache
     EMCache:Set("HardBossDifficulty", HardBossDifficultyCache, true)
   end
-  local SubRegionId = DataMgr.TeleportPoint[self.CurTeleportId].TeleportPointSubRegion
-  local RegionId = DataMgr.SubRegion[SubRegionId].RegionId
-  if RegionId then
-    UIManager(self):LoadUINew("LevelMapMain", false, RegionId, "TeleportPoint", self.CurTeleportId)
-  end
+  PageJumpFunctionLibrary.JumpToRegionMapByTeleportId(self.CurTeleportId)
 end
-
 function WBP_Play_HardBoss_Root_C:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Play_HardBoss_Root_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_Play_HardBoss_Root_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -311,7 +316,6 @@ function WBP_Play_HardBoss_Root_C:RefreshOpInfoByInputDevice(CurInputDevice, Cur
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   self:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
 end
-
 function WBP_Play_HardBoss_Root_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
   if IsUseKeyAndMouse then
     self:InitKeyboardView()
@@ -319,7 +323,6 @@ function WBP_Play_HardBoss_Root_C:UpdateUIStyleInPlatform(IsUseKeyAndMouse)
     self:InitGamepadView()
   end
 end
-
 function WBP_Play_HardBoss_Root_C:InitGamepadView()
   if self.Btn_Enter then
     self.Btn_Enter:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
@@ -330,7 +333,6 @@ function WBP_Play_HardBoss_Root_C:InitGamepadView()
   end
   self:SetFocus()
 end
-
 function WBP_Play_HardBoss_Root_C:InitKeyboardView()
   self:LeaveSelectMode()
   if self.Btn_Enter then
@@ -341,7 +343,6 @@ function WBP_Play_HardBoss_Root_C:InitKeyboardView()
     self.Key_Rewards:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Play_HardBoss_Root_C:InitWidgetInfoInGamePad()
   if self.Btn_Enter then
     self.Btn_Enter:SetGamePadImg("A")
@@ -354,7 +355,6 @@ function WBP_Play_HardBoss_Root_C:InitWidgetInfoInGamePad()
     })
   end
 end
-
 function WBP_Play_HardBoss_Root_C:OnSelectItemChanged(SelectItem)
   if not SelectItem then
     return
@@ -363,11 +363,9 @@ function WBP_Play_HardBoss_Root_C:OnSelectItemChanged(SelectItem)
     self:ClickListItemWhenSelectItemChanged(SelectItem)
   end
 end
-
 function WBP_Play_HardBoss_Root_C:ClickListItemWhenSelectItemChanged(Content)
   Content.Entry:OnCellClicked()
 end
-
 function WBP_Play_HardBoss_Root_C:BP_GetDesiredFocusTarget()
   if self.SelectedIndex then
     local CurSelectPermanent = self.List_Boss:GetItemAt(math.max(self.SelectedIndex - 1, 0))
@@ -376,7 +374,6 @@ function WBP_Play_HardBoss_Root_C:BP_GetDesiredFocusTarget()
     return self.List_Boss
   end
 end
-
 function WBP_Play_HardBoss_Root_C:EnterSelectMode()
   if self.IsInSelectState then
     return
@@ -391,7 +388,6 @@ function WBP_Play_HardBoss_Root_C:EnterSelectMode()
   self:SetectFirstItem(self.ListView_Rewards)
   self.IsInSelectState = true
 end
-
 function WBP_Play_HardBoss_Root_C:LeaveSelectMode()
   if not self.IsInSelectState then
     return
@@ -406,7 +402,6 @@ function WBP_Play_HardBoss_Root_C:LeaveSelectMode()
   self:FocusOnFirstItem()
   self.IsInSelectState = false
 end
-
 function WBP_Play_HardBoss_Root_C:SetectFirstItem(List)
   if List then
     if List:GetNumItems() > 0 then
@@ -416,7 +411,6 @@ function WBP_Play_HardBoss_Root_C:SetectFirstItem(List)
     end
   end
 end
-
 function WBP_Play_HardBoss_Root_C:InitSelectTab()
   local BottomKeyInfo = {
     {
@@ -447,15 +441,21 @@ function WBP_Play_HardBoss_Root_C:InitSelectTab()
     self.Root.ComTab.WBP_Com_Tab_ResourceBar.Tip_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
   self.Root:UpdateOtherPageTab(BottomKeyInfo)
+  if self.Root.TeamHeadUI and self.Root.TeamHeadUI.Key_GamePad then
+    self.Root.TeamHeadUI.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+  if self.Root.ComTab and self.Root.ComTab.Group_Chat and self.Root.ComTab.Group_Chat:GetChildAt(0) then
+    self.Root.ComTab.Group_Chat:GetChildAt(0).bOpen = false
+    self.Root.ComTab.Group_Chat:GetChildAt(0):HideWSKey(false)
+  end
 end
-
 function WBP_Play_HardBoss_Root_C:InitNormalTab()
   local BottomKeyInfo = {
     {
       GamePadInfoList = {
         {Type = "Img", ImgShortPath = "LS"}
       },
-      Desc = GText("UI_Tips_Ensure"),
+      Desc = GText("UI_Controller_CheckReward"),
       bLongPress = false
     },
     {
@@ -486,8 +486,18 @@ function WBP_Play_HardBoss_Root_C:InitNormalTab()
     end
   end
   self.Root:UpdateOtherPageTab(BottomKeyInfo)
+  if self.Root.TeamHeadUI and self.Root.TeamHeadUI.Key_GamePad then
+    if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
+      self.Root.TeamHeadUI.Key_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    else
+      self.Root.TeamHeadUI.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+  end
+  if self.Root.ComTab and self.Root.ComTab.Group_Chat and self.Root.ComTab.Group_Chat:GetChildAt(0) then
+    self.Root.ComTab.Group_Chat:GetChildAt(0).bOpen = true
+    self.Root.ComTab.Group_Chat:GetChildAt(0):HideWSKey(true)
+  end
 end
-
 function WBP_Play_HardBoss_Root_C:InitMenuOpenTab()
   local BottomKeyInfo = {
     {
@@ -509,7 +519,6 @@ function WBP_Play_HardBoss_Root_C:InitMenuOpenTab()
   end
   self.Root:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function WBP_Play_HardBoss_Root_C:OnMenuOpenChanged(bIsOpen)
   if bIsOpen then
     self:InitMenuOpenTab()
@@ -519,7 +528,6 @@ function WBP_Play_HardBoss_Root_C:OnMenuOpenChanged(bIsOpen)
     self:InitNormalTab()
   end
 end
-
 function WBP_Play_HardBoss_Root_C:HandleKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -529,8 +537,10 @@ function WBP_Play_HardBoss_Root_C:HandleKeyDown(MyGeometry, InKeyEvent)
       IsEventHandled = true
       self:OnClickTrack()
     elseif InKeyName == UIConst.GamePadKey.LeftThumb then
-      IsEventHandled = true
-      self:EnterSelectMode()
+      if self.ListView_Rewards:GetVisibility() ~= UIConst.VisibilityOp.Collapsed then
+        IsEventHandled = true
+        self:EnterSelectMode()
+      end
     elseif InKeyName == UIConst.GamePadKey.FaceButtonRight and self.IsInSelectState then
       IsEventHandled = true
       self:LeaveSelectMode()
@@ -542,7 +552,6 @@ function WBP_Play_HardBoss_Root_C:HandleKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function WBP_Play_HardBoss_Root_C:FocusOnFirstItem()
   if self.SelectedIndex then
     local CurSelectPermanent = self.List_Boss:GetItemAt(math.max(self.SelectedIndex - 1, 0))
@@ -551,20 +560,36 @@ function WBP_Play_HardBoss_Root_C:FocusOnFirstItem()
     self.List_Boss:SetFocus()
   end
 end
-
 function WBP_Play_HardBoss_Root_C:SwitchIn()
   self:InitNormalTab()
   if self.TitleWidget then
     self.TitleWidget:PlayAnimation(self.TitleWidget.In)
   end
 end
-
 function WBP_Play_HardBoss_Root_C:TrySelectFirstTime(Entry)
   if not self.SelectFirstTime then
     self.SelectFirstTime = true
-    Entry:OnCellClickedWithoutSound()
+    Entry:OnCellClickedWithoutSound(true, true)
     Entry:SetFocus()
+    self.List_Boss:BP_NavigateToItem(Entry.Content)
   end
 end
-
+function WBP_Play_HardBoss_Root_C:TrySelectTargetHardBossId(Entry)
+  self.TargetHardBossId = nil
+  Entry:OnCellClickedWithoutSound(false, true)
+  Entry:SetFocus()
+  self.List_Boss:BP_NavigateToItem(Entry.Content)
+  self:LeaveSelectMode()
+end
+function WBP_Play_HardBoss_Root_C:SubUIJumpFunc(HardBossId)
+  if HardBossId and self.HardBossId2Index[HardBossId] then
+    local TargetIndex = self.HardBossId2Index[HardBossId]
+    local TargetItem = self.List_Boss:GetItemAt(TargetIndex - 1)
+    if TargetItem and TargetItem.Entry then
+      self:TrySelectTargetHardBossId(TargetItem.Entry)
+      return
+    end
+  end
+  self.TargetHardBossId = HardBossId
+end
 return WBP_Play_HardBoss_Root_C

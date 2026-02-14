@@ -1,8 +1,8 @@
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
+local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
 local PickUpNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseAsynQuestNode")
 local QuestNodeUtils = require("StoryCreator.StoryLogic.QuestNodeUtils")
-
 function PickUpNode:Init()
   self.bActiveEnable = true
   self.StaticCreatorIdList = {}
@@ -22,34 +22,25 @@ function PickUpNode:Init()
   self.PickupNodeProtectDistance = DataMgr.GlobalConstant.PickupNodeProtectDistance.ConstantValue or 0
   self.MaxPickUpCount = 0
 end
-
 function PickUpNode:Execute(Callback)
   DebugPrint("------------ PickUpNode ------------------")
   if -1 ~= self.QuestPickupId then
     if not DataMgr.QuestPickup[self.QuestPickupId] then
-      local Message = "PickUpNode\229\161\171\228\186\134QuestPickupId\239\188\140QuestPickup\232\161\168\228\184\173\230\178\161\230\156\137\229\175\185\229\186\148\231\154\132\230\149\176\230\141\174" .. [[
-
+      local Message = "PickUpNode填了QuestPickupId，QuestPickup表中没有对应的数据" .. [[
 FileName:]] .. self.Context.FileName .. [[
-
 QuestChainId:]] .. self.Context.QuestChainId .. [[
-
 QuestId:]] .. self.Context.QuestId .. [[
-
 StoryNodeKey:]] .. self.Context.Data.key
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "PickUpNode\229\161\171\228\186\134QuestPickupId\239\188\140QuestPickup\232\161\168\228\184\173\230\178\161\230\156\137\229\175\185\229\186\148\231\154\132\230\149\176\230\141\174", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Quest, "PickUpNode填了QuestPickupId，QuestPickup表中没有对应的数据", Message)
       return
     end
     if self.Context.QuestChainId ~= DataMgr.QuestPickup[self.QuestPickupId].QuestChainId then
-      local Message = "PickUpNode\229\161\171\228\186\134QuestPickupId\239\188\140\228\189\134QuestPickup\232\161\168\228\184\173\231\154\132QuestChainId\228\184\142\232\175\165\228\187\187\229\138\161\231\154\132QuestChainId\228\184\141\228\184\128\232\135\180" .. [[
-
+      local Message = "PickUpNode填了QuestPickupId，但QuestPickup表中的QuestChainId与该任务的QuestChainId不一致" .. [[
 FileName:]] .. self.Context.FileName .. [[
-
 QuestChainId:]] .. self.Context.QuestChainId .. [[
-
 QuestId:]] .. self.Context.QuestId .. [[
-
 StoryNodeKey:]] .. self.Context.Data.key
-      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "PickUpNode\229\161\171\228\186\134QuestPickupId\239\188\140\228\189\134QuestPickup\232\161\168\228\184\173\231\154\132QuestChainId\228\184\142\232\175\165\228\187\187\229\138\161\231\154\132QuestChainId\228\184\141\228\184\128\232\135\180", Message)
+      UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Quest, "PickUpNode填了QuestPickupId，但QuestPickup表中的QuestChainId与该任务的QuestChainId不一致", Message)
       return
     end
     self:ExecuteQuestPickup(Callback)
@@ -117,9 +108,9 @@ StoryNodeKey:]] .. self.Context.Data.key
     end
     QuestNodeUtils.STLTriggerActiveStaticCreator(self, self.StaticCreatorArray)
   end
-  
+  self.StartCount = self.UnitCount
   function SuccessCallback()
-    self.UnitCount = self.UnitCount - MinCount
+    self.StartCount = self.StartCount - MinCount
     if self.IsUseCount then
       local Avatar = GWorld:GetAvatar()
       if Avatar and self.bIsDynamicEvent == false then
@@ -129,7 +120,7 @@ StoryNodeKey:]] .. self.Context.Data.key
         end
         local DoingQuestId = Avatar.QuestChains[ChainId].DoingQuestId
         Avatar:DoRefreshTaskItemUIInfo("Modify", nil, {
-          self.MaxPickUpCount - self.UnitCount,
+          self.MaxPickUpCount - self.StartCount,
           self.MaxPickUpCount,
           ChainId,
           DoingQuestId,
@@ -137,20 +128,32 @@ StoryNodeKey:]] .. self.Context.Data.key
         })
       end
     end
-    MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
-    if self.UnitCount <= 0 then
+    local UIManager = GWorld.GameInstance:GetGameUIManager()
+    local IndicatorName = ""
+    if self.bIsDynamicEvent then
+      IndicatorName = "DynamicEventIndicator_" .. self.Key
+    else
+      IndicatorName = "TaskIndicator_" .. self.Key
+    end
+    local UIObj = UIManager:GetUIObj(IndicatorName)
+    if UIObj and UIObj.GuideInfoCache then
+      local TargetKey = UIObj.GuideInfoCache.PointOrStaticCreatorName
+      if TargetKey and GuidePointLocData[TargetKey] and GuidePointLocData[TargetKey].SubRegionId > 0 and self.StartCount <= 0 then
+        MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
+      elseif TargetKey and GuidePointLocData[TargetKey] and 0 == GuidePointLocData[TargetKey].SubRegionId then
+        MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
+      end
+    end
+    if self.StartCount <= 0 then
       GameMode:RemovePickUpSuccessCallback(self.UnitId, self.NodeId)
       Callback(nil)
     end
   end
-  
   GameMode:AddPickUpSuccessCallback(self.UnitId, self.NodeId, SuccessCallback)
   self:AddGuide()
 end
-
 function PickUpNode:OnCancelTrack()
 end
-
 function PickUpNode:OnChooseTrack()
   if self.IsUseCount then
     local Avatar = GWorld:GetAvatar()
@@ -170,7 +173,6 @@ function PickUpNode:OnChooseTrack()
     end
   end
 end
-
 function PickUpNode:TickGuideCreator()
   local MinDistance = -1
   local NearestCreator
@@ -207,13 +209,11 @@ function PickUpNode:TickGuideCreator()
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
   end
 end
-
 function PickUpNode:ExecuteQuestPickup(Callback)
   local Avatar = GWorld:GetAvatar()
   if Avatar then
     local function CreatePickup()
       local TargetQuestPick = Avatar.QuestChains[self.Context.QuestChainId].QuestPicks:GetQuestPickAttr(self.QuestPickupId)
-      
       if TargetQuestPick:IsComplete() then
         Callback()
         return
@@ -236,7 +236,6 @@ function PickUpNode:ExecuteQuestPickup(Callback)
       end
       self:AddGuide()
     end
-    
     local TargetQuestPick = Avatar.QuestChains[self.Context.QuestChainId].QuestPicks:GetQuestPickAttr(self.QuestPickupId)
     if not TargetQuestPick then
       Avatar:RegisterQuestPickId(self.QuestPickupId, CreatePickup)
@@ -245,7 +244,6 @@ function PickUpNode:ExecuteQuestPickup(Callback)
     end
   end
 end
-
 function PickUpNode:AddGuide()
   if self.bGuideUIEnable then
     local GuideType = self.GuideType
@@ -278,7 +276,6 @@ function PickUpNode:AddGuide()
     MissionIndicatorManager:ActiveMissionIndicatorByNode(self)
   end
 end
-
 function PickUpNode:Clear()
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   if self.bActiveEnable then
@@ -292,5 +289,4 @@ function PickUpNode:Clear()
     MissionIndicatorManager:ReactiveMissionIndicatorByNode(self)
   end
 end
-
 return PickUpNode

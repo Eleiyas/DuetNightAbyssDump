@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.ChapterName, self.CantoName, self.Title, self.AudioPath, self.Func = ...
@@ -26,7 +25,6 @@ function M:OnLoaded(...)
     self:PlayAnimation(self.In)
   end
 end
-
 function M:OnEnd()
   if self.Out then
     self:UnbindAllFromAnimationFinished(self.Out)
@@ -44,7 +42,6 @@ function M:OnEnd()
     self:PlayAnimation(self.Out)
   end
 end
-
 function M:SetSwitchIndex()
   local Language = CommonConst.SystemLanguage
   if Language == CommonConst.SystemLanguages.CN then
@@ -69,10 +66,8 @@ function M:SetSwitchIndex()
     self:SetText(self.Text_TopTextSign_KR, self.Text_BottomSubTitle_KR)
   end
 end
-
 function M:SetText(TopText, BottomText)
   TopText:SetText(GText(self.Title))
   BottomText:SetText(GText(self.CantoName))
 end
-
 return M

@@ -1,7 +1,7 @@
 local M = Class("BluePrints.Story.FlowGraph.FlowNode.TalkFlowNode.FlowNode_TalkNodeBase")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
+local FlowLogType = UE.EStoryLogType.TalkFlow
 local CameraBlendTime = 1
-
 function M:Start()
   self.OptionStr = nil
   local TalkTask = self:TryGetTalkTask()
@@ -13,7 +13,6 @@ function M:Start()
     self:RealFinish("ApproveOut")
   end
 end
-
 function M:InitCameraSequence()
   local NpcHeadTrans = self:InitNpcAndGetTransform()
   if not NpcHeadTrans then
@@ -23,10 +22,9 @@ function M:InitCameraSequence()
   self.CameraSequenceActor = self:GetWorld():SpawnActor(ALevelSequenceActor)
   if not IsValid(self.CameraSequenceActor) then
     local Message = string.format("%s start failed, CameraSequenceActor is invalid", self:GetName())
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "\230\148\175\231\186\191\230\142\165\229\143\150\232\138\130\231\130\185", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, FlowLogType, "支线接取节点出错", Message)
     return
   end
-  self.CameraSequenceActor.CameraSettings.bOverrideAspectRatioAxisConstraint = false
   self.CameraSequenceActor:SetSequence(self.CameraSequence)
   self.CameraSequenceActor.bOverrideInstanceData = 1
   self.CameraSequenceActor.DefaultInstanceData.TransformOrigin = NpcHeadTrans
@@ -37,7 +35,6 @@ function M:InitCameraSequence()
   PlaybackParams.PositionType = EMovieScenePositionType.MarkedFrame
   self.CameraSequenceActor.SequencePlayer:PlayTo(PlaybackParams)
 end
-
 function M:InitReceiveUI()
   local GameInstance = GWorld.GameInstance
   local UIManager = GameInstance:GetGameUIManager()
@@ -45,7 +42,6 @@ function M:InitReceiveUI()
     self.Widget = UIManager:LoadUINew("BranchTaskReceiveTips", self)
   end
 end
-
 function M:InitNpcAndGetTransform()
   local GameInstance = GWorld.GameInstance
   self.PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -61,7 +57,6 @@ function M:InitNpcAndGetTransform()
   end
   return nil
 end
-
 function M:CheckIsNeedShowDialog()
   if not DataMgr.QuestChain[self.SideQuestChainId] or not DataMgr.QuestChain[self.SideQuestChainId].QuestNpcId then
     return true
@@ -71,7 +66,6 @@ function M:CheckIsNeedShowDialog()
   end
   return true
 end
-
 function M:FinishAction(OptionStr)
   self.OptionStr = OptionStr
   self.CameraSequenceActor.SequencePlayer:Play()
@@ -79,7 +73,6 @@ function M:FinishAction(OptionStr)
     self.Widget:CloseTips()
   end
 end
-
 function M:RealFinish(OptionStr)
   local OptionStr = OptionStr or self.OptionStr
   if self.IsShowDialog then
@@ -104,7 +97,6 @@ function M:RealFinish(OptionStr)
   end
   self:FinishCancel()
 end
-
 function M:K2_Cleanup()
   local TalkTask = self:TryGetTalkTask()
   TalkTask:HideUI(false, "QuestAccept")
@@ -113,9 +105,7 @@ function M:K2_Cleanup()
   UIManager:UnLoadUINew("BranchTaskReceiveTips")
   self.Widget = nil
 end
-
 function M:CanSkip()
   return false
 end
-
 return M

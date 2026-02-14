@@ -2,7 +2,6 @@ require("UnLua")
 local WBP_Archive_RewardTab_C = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_Archive_RewardTab_C:Construct()
   self.IsSelect = false
   self.AddListenerFinish = false
@@ -12,11 +11,9 @@ function WBP_Archive_RewardTab_C:Construct()
   self.Btn_Click.OnPressed:Add(self, self.OnCellPressed)
   self.Btn_Click.OnReleased:Add(self, self.OnCellReleased)
 end
-
 function WBP_Archive_RewardTab_C:Destruct()
   ReddotManager.RemoveListener("ArchiveReward", self)
 end
-
 function WBP_Archive_RewardTab_C:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.Entry = self
@@ -33,19 +30,16 @@ function WBP_Archive_RewardTab_C:OnListItemObjectSet(Content)
     ReddotManager.AddListener("ArchiveReward", self, self.RefreshReddot)
   end
 end
-
 function WBP_Archive_RewardTab_C:UnSelected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self.IsSelect = false
 end
-
 function WBP_Archive_RewardTab_C:Selected()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
   self.IsSelect = true
 end
-
 function WBP_Archive_RewardTab_C:OnCellClicked()
   if self.IsSelect then
     return
@@ -53,7 +47,6 @@ function WBP_Archive_RewardTab_C:OnCellClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_sort_tab", nil, nil)
   self.Content.Root:RefreshListRewardInfo(self)
 end
-
 function WBP_Archive_RewardTab_C:OnCellHovered()
   if self.IsSelect then
     return
@@ -63,7 +56,6 @@ function WBP_Archive_RewardTab_C:OnCellHovered()
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_Archive_RewardTab_C:OnCellUnhovered()
   if self.IsSelect then
     return
@@ -74,14 +66,12 @@ function WBP_Archive_RewardTab_C:OnCellUnhovered()
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_Archive_RewardTab_C:OnCellPressed()
   if self.IsSelect then
     return
   end
   self:PlayAnimation(self.Press)
 end
-
 function WBP_Archive_RewardTab_C:OnCellReleased()
   if self.IsSelect then
     return
@@ -89,7 +79,6 @@ function WBP_Archive_RewardTab_C:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function WBP_Archive_RewardTab_C:RefreshReddot()
   local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("ArchiveReward")
   if not CacheDetail[self.Content.Type] then
@@ -98,5 +87,4 @@ function WBP_Archive_RewardTab_C:RefreshReddot()
     self.Reddot:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 return WBP_Archive_RewardTab_C

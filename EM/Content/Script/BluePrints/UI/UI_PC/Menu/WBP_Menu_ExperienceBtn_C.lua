@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "Blueprints.UI.BP_UIState_C"
 })
-
 function M:Init(Params)
   self:SetText(GText(Params.Name))
   self:BindEventOnClicked(self, Params.OpenDialog)
@@ -14,7 +13,6 @@ function M:Init(Params)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(self)
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
 end
-
 function M:Construct()
   self.Button_EX.OnHovered:Add(self, self.OnBtnHovered)
   self.Button_EX.OnUnhovered:Add(self, self.OnBtnUnhovered)
@@ -22,28 +20,23 @@ function M:Construct()
   self.Button_EX.OnReleased:Add(self, self.OnBtnReleased)
   self.Button_EX.OnClicked:Add(self, self.OnBtnClicked)
 end
-
 function M:AddInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RemoveInputMethodChangedListen()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:Destruct()
   self:RemoveInputMethodChangedListen()
   self.Super.Destruct(self)
 end
-
 function M:SetText(Text)
   self.Text_Tips_EX:SetText(Text)
 end
-
 function M:BindEventOnClicked(Obj, Func, Params)
   if not Obj or not Func then
     return
@@ -52,7 +45,6 @@ function M:BindEventOnClicked(Obj, Func, Params)
   self.Func = Func
   self.Params = Params
 end
-
 function M:OnBtnHovered()
   self.IsHovering = true
   if self.IsPressing then
@@ -61,7 +53,6 @@ function M:OnBtnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnUnhovered()
   self.IsHovering = false
   if not self.IsPressing then
@@ -69,13 +60,11 @@ function M:OnBtnUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function M:OnBtnPressed()
   self.IsPressing = true
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnReleased()
   self.IsPressing = false
   if not self.IsHovering then
@@ -86,7 +75,6 @@ function M:OnBtnReleased()
     self:PlayAnimationReverse(self.Hover)
   end
 end
-
 function M:OnBtnClicked()
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
@@ -98,7 +86,6 @@ function M:OnBtnClicked()
     end
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
@@ -108,14 +95,11 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.CurInputDeviceType = CurInputDevice
 end
-
 function M:InitKeyBoardView()
   self.KeyImg_EX:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:InitGamepadView()
 end
-
 function M:HandleKeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonTop then
@@ -124,5 +108,4 @@ function M:HandleKeyDownOnGamePad(InKeyName)
   end
   return IsEventHandled
 end
-
 return M

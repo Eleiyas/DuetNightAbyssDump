@@ -1,7 +1,8 @@
 require("UnLua")
 local EMCache = require("EMCache.EMCache")
 local M = Class({
-  "BluePrints.UI.BP_UIState_C"
+  "BluePrints.UI.BP_EMUserWidget_C",
+  "BluePrints.UI.BP_EMUserWidgetUtils_C"
 })
 M._components = {
   "BluePrints.UI.WBP.Play.Widget.Depute.DoubleModDropView"
@@ -15,9 +16,7 @@ local TypeSort = {
   Resource = 6,
   Drop = 7
 }
-
 function M:Construct()
-  M.Super.Construct(self)
   self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
   self.IsMobile = CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile"
   self.bFocusList_Reward = false
@@ -29,11 +28,9 @@ function M:Construct()
   self:AddDispatcher(EventID.OnActivityTimeOpen, self, self.OnActivityTimeOpen)
   self:AddDispatcher(EventID.OnActivityTimeOpenClose, self, self.OnActivityTimeOpenClose)
   self:AddInputMethodChangedListen()
-  
   function self.Btn_Qa.SoundFunc()
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   self.SelectCellIndex = 0
   self.DoubleMod = self:IsDoubleMod()
   self.Btn_Qa:BindEventOnClicked(self, self.OnTips)
@@ -60,15 +57,11 @@ function M:Construct()
     end
   })
 end
-
 function M:Destruct()
-  M.Super.Destruct(self)
   self:PlayAnimation(self.Out)
 end
-
 function M:NightBookFocusReceived(bInIsMatching)
 end
-
 function M:InitContent(Root)
   self.ContinuousCombat = EMCache:Get("Is_DoubleMod_SwitchTab", true) or false
   self.Root = Root
@@ -76,7 +69,6 @@ function M:InitContent(Root)
   self.Text_MonsterTitleName:SetText(GText("UI_Dungeon_Title_RewardList"))
   self:RefreshData()
 end
-
 function M:RefreshData()
   self.HB_ActivityTab:SetVisibility(self.DoubleMod and UE4.ESlateVisibility.SelfHitTestInvisible or UE4.ESlateVisibility.Collapsed)
   self.List_NigheBookTab:ClearListItems()
@@ -98,6 +90,9 @@ function M:RefreshData()
     local UsedTimes = IsElite and self.DoubleModDropInfo.EliteRushTimes or self.DoubleModDropInfo.DropTimes
     UsedTimes = tonumber(UsedTimes) or 0
     local Remaining = math.floor(ConfigValue - UsedTimes)
+    if not IsElite then
+      self.DropRemaining = Remaining
+    end
     local TextValue = Remaining <= 0 and "<Warning>0</>" .. "/" .. ConfigValue or Remaining .. "/" .. ConfigValue
     self.Text_Times:SetText(TextValue)
     self.Text_ModUpNum:SetVisibility(IsElite and UE4.ESlateVisibility.Collapsed or UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -106,8 +101,10 @@ function M:RefreshData()
     self.Text_ModUpNum:SetText("+" .. BonusPercent .. "%")
     local TextModUp = IsElite and "UI_Event_ModDrop_LotsOfElites" or "UI_Event_ModDrop_DropDes_1"
     self.Text_ModUp:SetText(GText(TextModUp))
+    self.ModSelectDungeon = self.ContinuousCombat and DataMgr.EliteRushSelectDungeon or DataMgr.ModSelectDungeon
+  else
+    self.ModSelectDungeon = DataMgr.ModSelectDungeon
   end
-  self.ModSelectDungeon = self.ContinuousCombat and DataMgr.EliteRushSelectDungeon or DataMgr.ModSelectDungeon
   local SortedDungeonData = {}
   for _, DungeonData in pairs(self.ModSelectDungeon) do
     table.insert(SortedDungeonData, DungeonData)
@@ -144,7 +141,6 @@ function M:RefreshData()
     self:SetClickedCell(self.Root.JumpNightBooKTabName)
   end
 end
-
 function M:SetClickedCell(TabName)
   self:AddTimer(0.1, function()
     for i = 0, self.List_NigheBookTab:GetNumItems() - 1 do
@@ -156,7 +152,6 @@ function M:SetClickedCell(TabName)
     end
   end)
 end
-
 function M:OnClickedCell(Content)
   if self.SelectCellContent ~= nil and self.SelectCellContent.UI then
     self.SelectCellContent.UI.IsSelect = false
@@ -168,7 +163,6 @@ function M:OnClickedCell(Content)
   Content.UI:SelectCell()
   Content.UI:RefreshDungeonRewards()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -183,7 +177,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self:UpdatKeyDisplay()
 end
-
 function M:UpdatKeyDisplay()
   local StyleOfPlay = UIManager(self):GetUIObj("StyleOfPlay")
   if not StyleOfPlay then
@@ -305,7 +298,6 @@ function M:UpdatKeyDisplay()
   end
   StyleOfPlay:UpdateOtherPageTab(BottomKeyInfo)
 end
-
 function M:GetAllModSelectRewards(CurrentLevel)
   local RewardIdSet = {}
   local FinalRewardList = {}
@@ -328,7 +320,6 @@ function M:GetAllModSelectRewards(CurrentLevel)
   end
   return FinalRewardList
 end
-
 function M:RefreshRewardInfoList(Level)
   self.RewardLists = {}
   self.List_Reward:ClearListItems()
@@ -405,38 +396,32 @@ function M:RefreshRewardInfoList(Level)
     end
   end, false, 0, "DeputeNightBookListView")
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Id = 0
   return Content
 end
-
 function M:OpenRewardDetails()
   AudioManager(self):PlayUISound(self, "event:/ui/common/tip_show_click", nil, nil)
   local Params = {}
   Params.RewardList = self.RewardLists
   local UI = UIManager(self):ShowCommonPopupUI(100156, Params)
 end
-
 function M:OnDoubleModSwitchTab()
   self.ContinuousCombat = EMCache:Get("Is_DoubleMod_SwitchTab", true) or false
   self:RefreshData()
 end
-
 function M:OnActivityTimeOpen()
   self.DoubleMod = self:IsDoubleMod()
   AudioManager(self):PlayUISound(self, "event:/ui/common/tip_show_click", nil, nil)
   self.ContinuousCombat = EMCache:Get("Is_DoubleMod_SwitchTab", true) or false
   self:RefreshData()
 end
-
 function M:OnActivityTimeOpenClose()
   AudioManager(self):PlayUISound(self, "event:/ui/common/tip_show_click", nil, nil)
   self.ContinuousCombat = EMCache:Set("Is_DoubleMod_SwitchTab", nil, true)
   self:RefreshData()
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -451,7 +436,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_FaceButton_Left" == InKeyName then
@@ -483,7 +467,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnNightBookSpecialRightUp()
   if self.bFocusList_Reward then
     return
@@ -493,13 +476,15 @@ function M:OnNightBookSpecialRightUp()
       if self.bFocusDownList_Reward and not self.MenuOpen then
         self:OpenRewardDetails()
       end
-    elseif self.Key_Qa:GetVisibility() == ESlateVisibility.SelfHitTestInvisible then
+    elseif self.Key_Qa:GetVisibility() == ESlateVisibility.SelfHitTestInvisible and self.DoubleMod then
       self:OnTips()
     end
   end
 end
-
 function M:OnTips()
+  if not self.DoubleMod then
+    return
+  end
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   end
@@ -510,7 +495,6 @@ function M:OnTips()
   }
   UIManager(self):ShowCommonPopupUI(100237, Params, self)
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -518,6 +502,5 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
   self.MenuOpen = bIsOpen
   self:UpdatKeyDisplay()
 end
-
 AssembleComponents(M)
 return M

@@ -1,4 +1,5 @@
 require("UnLua")
+local GameFlowUtils = require("Utils.GameFlowUtils")
 local GMCommandConfig = require("BluePrints.UI.GMInterface.GMCommandConfig")
 local GMVariable = require("BluePrints.UI.GMInterface.GMVariable")
 local GMFunctionLibrary = require("BluePrints.UI.GMInterface.GMFunctionLibrary")
@@ -6,44 +7,103 @@ local GMObjectUtils = require("BluePrints.UI.GMInterface.GMObjectUtils")
 local WBP_GM_C = Class("BluePrints.UI.BP_UIState_C")
 local LastGMTabIndex = 0
 local GMTabTotalNum = 0
-
 function WBP_GM_C:Initialize(Initializer)
   self.Super.Initialize(self)
   local GMKeys = UE4.TArray(UE4.FInputActionKeyMapping)
   UE4.UInputSettings.GetInputSettings():GetActionMappingByName("OpenGM", GMKeys)
   self.GMKeys = GMKeys:ToTable()
 end
-
+function WBP_GM_C:Construct()
+  WBP_GM_C.Super.Construct(self)
+  self.Input_GM:SetText("")
+  self.Input_Search:SetText("")
+  self.Input_GM.OnTextCommitted:Add(self, self.ExecuteGMCommand)
+  self.Btn_Clear.OnClicked:Add(self, self.ExecuteGMCommand)
+  self.Input_Search.OnTextCommitted:Add(self, self.OnSearchGM)
+  self.Btn_Search.OnPressed:Add(self, self.OnSearchBtn)
+  self.HorizontalBox_0:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+  self.SearchResTitle:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.Text_Search:SetText("搜索")
+end
+function WBP_GM_C:OnSearchBtn()
+  local BtnText = self.Text_Search:GetText()
+  if "搜索" == BtnText then
+    self:ExecuteSearchGM()
+  elseif "清空" == BtnText then
+    self.Input_Search:SetText("")
+    self:OnSearchTextChange("")
+  end
+end
+function WBP_GM_C:OnSearchTextChange(Text)
+  if not self.IsInit then
+    return
+  end
+  if "" == Text then
+    self.List_Tab_Top:SetSelectedIndex(LastGMTabIndex)
+    self.HorizontalBox_0:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    self.SearchResTitle:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    self.Text_Search:SetText("搜索")
+  end
+end
+function WBP_GM_C:ExecuteSearchGM()
+  local SearchText = self.Input_Search:GetText()
+  if string.isempty(SearchText) then
+    return
+  end
+  local AllContentArray = TArray(UObject)
+  for _, Command in pairs(self.GMPanelObj.Commands) do
+    AllContentArray:Append(Command.Commands)
+  end
+  self:SearchCommandByName(SearchText, {Commands = AllContentArray})
+  self.HorizontalBox_0:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  self.SearchResTitle:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+  self.SearchResTitle:SetText(string.format("\"%s\"的搜索结果(%s个)", SearchText, self.List:GetNumItems()))
+end
+function WBP_GM_C:OnSearchGM()
+  self:ExecuteSearchGM()
+  local SearchText = self.Input_Search:GetText()
+  if not string.isempty(SearchText) then
+    self.Text_Search:SetText("清空")
+  else
+    self:OnSearchTextChange("")
+  end
+end
+function WBP_GM_C:RegisterFlow()
+  self.Flow = GameFlowUtils:AddFlow("OpenSystemUI")
+end
+function WBP_GM_C:UnregisterFlow()
+  if self.Flow then
+    GameFlowUtils:RemoveFlow(self.Flow)
+  end
+  self.Flow = nil
+end
 function WBP_GM_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
-  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-  self.AllCommands = GameInstance.GMPanelObj
-  if not IsValid(self.AllCommands) then
+  self:RegisterFlow()
+  if not IsValid(self.GMPanelObj) then
     self:TryToGetCommandList()
-    assert(self.AllCommands, "GM\230\140\135\228\187\164\229\136\151\232\161\168\232\175\187\229\143\150\229\164\177\232\180\165,\232\175\183\230\163\128\230\159\165\230\160\188\229\188\143\230\136\150\232\183\175\229\190\132\239\188\129")
+    assert(self.GMPanelObj, "GM指令列表读取失败,请检查格式或路径！")
     self.List_Tab_Top:ClearListItems()
-    for k, v in pairs(self.AllCommands.Commands) do
+    for k, v in pairs(self.GMPanelObj.Commands) do
       self.List_Tab_Top:AddItem(v)
     end
-    self.List_Tab_Top:SetSelectedIndex(0)
-  else
     self.List_Tab_Top:SetSelectedIndex(LastGMTabIndex)
   end
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player then
-    local str = "\230\178\137\230\181\184\230\168\161\229\188\143"
+    local str = "沉浸模式"
     if Player.IsImmersionModel then
-      str = str .. "\239\188\154\229\188\128"
+      str = str .. "：开"
     else
-      str = str .. "\239\188\154\229\133\179"
+      str = str .. "：关"
     end
     self.Text_Immerse:SetText(str)
   end
-  local str = "\231\149\140\233\157\162\230\149\176\230\141\174"
+  local str = "界面数据"
   if GMVariable.EnableUIData then
-    str = str .. "\239\188\154\229\188\128"
+    str = str .. "：开"
   else
-    str = str .. "\239\188\154\229\133\179"
+    str = str .. "：关"
   end
   self.Text_Data:SetText(str)
   self.Key_L:CreateCommonKey({
@@ -64,94 +124,87 @@ function WBP_GM_C:OnLoaded(...)
   })
   GMTabTotalNum = self.List_Tab_Top:GetNumItems()
 end
-
 function WBP_GM_C:TryToGetCommandList()
-  local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
-  GameInstance.GMPanelObj = GMObjectUtils.NewCommandObject(GMCommandConfig, self.CommandContentClass)
-  self.AllCommands = GameInstance.GMPanelObj
-  if IsValid(self.AllCommands) then
-    local len1 = self.AllCommands.Commands:Length()
+  self.GMPanelObj = GMObjectUtils.NewCommandObject(GMCommandConfig, self.CommandContentClass)
+  if IsValid(self.GMPanelObj) then
+    local len1 = self.GMPanelObj.Commands:Length()
     for i = 1, len1 do
-      self.AllCommands.Commands[i].ParentWidget = self
-      local len2 = self.AllCommands.Commands[i].Commands:Length()
+      self.GMPanelObj.Commands[i].ParentWidget = self
+      local len2 = self.GMPanelObj.Commands[i].Commands:Length()
       for j = 1, len2 do
-        self.AllCommands.Commands[i].Commands[j].ParentWidget = self
+        self.GMPanelObj.Commands[i].Commands[j].ParentWidget = self
       end
     end
   end
-  GMVariable.AllCommands = self.AllCommands
+  GMVariable.AllCommands = self.GMPanelObj
 end
-
 function WBP_GM_C:SearchCommandByName(text, Command)
-  if nil == text or not IsValid(Command) then
+  if not (nil ~= text and Command) or type(Command) == "userdata" and not IsValid(Command) then
     return
   end
   UE4.UWidgetBlueprintLibrary.DismissAllMenus()
   local commands = Command.Commands
   self.List:ClearListItems()
   for _, v in pairs(commands) do
-    if nil ~= v.Text and nil ~= string.find(v.Text, text) then
+    local FindRes = UKismetStringLibrary.FindSubstring(v.Text, text, false)
+    if nil ~= v.Text and (-1 ~= FindRes or "" == text) then
       self.List:AddItem(v)
       self.List:BP_SetItemSelection(v, v.IsEnable)
     end
   end
 end
-
 function WBP_GM_C:ExecuteGMCommand()
   GMFunctionLibrary.ExecConsoleCommand(self, self.Input_GM:GetText())
+  self.Input_GM:SetText("")
+  self.Input_GM:SetHintText("请输入指令")
 end
-
 function WBP_GM_C:UIData()
   UIUtils.PlayCommonBtnSe(self)
   GMVariable.EnableUIData = not GMVariable.EnableUIData
   GMFunctionLibrary.ShowUIData(GMVariable.EnableUIData)
-  local str = "\231\149\140\233\157\162\230\149\176\230\141\174"
+  local str = "界面数据"
   if GMVariable.EnableUIData then
-    str = str .. "\239\188\154\229\188\128"
+    str = str .. "：开"
   else
-    str = str .. "\239\188\154\229\133\179"
+    str = str .. "：关"
   end
   self.Text_Data:SetText(str)
 end
-
 function WBP_GM_C:Immerse()
   UIUtils.PlayCommonBtnSe(self)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   if Player and Player.ImmersionModel then
     Player:ImmersionModel()
-    local str = "\230\178\137\230\181\184\230\168\161\229\188\143"
+    local str = "沉浸模式"
     if Player.IsImmersionModel then
-      str = str .. "\239\188\154\229\188\128"
+      str = str .. "：开"
       self:Close()
     else
-      str = str .. "\239\188\154\229\133\179"
+      str = str .. "：关"
     end
     self.Text_Immerse:SetText(str)
   end
 end
-
 function WBP_GM_C:TabClicked(Item)
   LastGMTabIndex = self.List_Tab_Top:GetIndexForItem(Item)
   self:SearchCommandByName(self.Input_GM:GetText(), Item)
   self.List_Tab_Top:NavigateToIndex(LastGMTabIndex)
 end
-
 function WBP_GM_C:CloseAllMenus()
   UE4.UWidgetBlueprintLibrary.DismissAllMenus()
-  if IsValid(self.AllCommands) then
-    local len1 = self.AllCommands.Commands:Length()
+  if IsValid(self.GMPanelObj) then
+    local len1 = self.GMPanelObj.Commands:Length()
     for i = 1, len1 do
-      local len2 = self.AllCommands.Commands[i].Commands:Length()
+      local len2 = self.GMPanelObj.Commands[i].Commands:Length()
       for j = 1, len2 do
-        local len3 = self.AllCommands.Commands[i].Commands[j].Commands:Length()
+        local len3 = self.GMPanelObj.Commands[i].Commands[j].Commands:Length()
         for k = 1, len3 do
-          self:CloseAllMenusDfs(self.AllCommands.Commands[i].Commands[j].Commands[k])
+          self:CloseAllMenusDfs(self.GMPanelObj.Commands[i].Commands[j].Commands[k])
         end
       end
     end
   end
 end
-
 function WBP_GM_C:CloseAllMenusDfs(Command)
   local len = Command.Commands:Length()
   for i = 1, len do
@@ -161,12 +214,14 @@ function WBP_GM_C:CloseAllMenusDfs(Command)
     Command.ParentWidget:Close()
   end
 end
-
 function WBP_GM_C:Close()
   UIUtils.PlayCommonBtnSe(self)
   self.Super.Close(self)
 end
-
+function WBP_GM_C:Destruct()
+  self.Super.Destruct(self)
+  self:UnregisterFlow()
+end
 function WBP_GM_C:GMTabToLeft()
   local CurGMTabIndex = LastGMTabIndex - 1
   if CurGMTabIndex < 0 then
@@ -174,7 +229,6 @@ function WBP_GM_C:GMTabToLeft()
   end
   self.List_Tab_Top:SetSelectedIndex(CurGMTabIndex)
 end
-
 function WBP_GM_C:GMTabToRight()
   local CurGMTabIndex = LastGMTabIndex + 1
   if CurGMTabIndex >= GMTabTotalNum then
@@ -182,7 +236,6 @@ function WBP_GM_C:GMTabToRight()
   end
   self.List_Tab_Top:SetSelectedIndex(CurGMTabIndex)
 end
-
 function WBP_GM_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -201,5 +254,4 @@ function WBP_GM_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return WBP_GM_C

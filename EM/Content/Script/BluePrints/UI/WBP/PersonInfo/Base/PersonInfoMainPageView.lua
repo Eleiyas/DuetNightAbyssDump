@@ -8,14 +8,12 @@ M._components = {
   "BluePrints.UI.WBP.PersonInfo.PersonInfoEditListCompoment",
   "BluePrints.UI.WBP.Armory.MainComponent.Armory_PointerInputComponent"
 }
-
 function M:Initialize()
   self.IsPersonInfoPage = true
   self.SelectCharIndex = -1
   self.SelectWeaponIndex = -1
   self.Events_BeforeClose = {}
 end
-
 function M:InitBaseView(Personid)
   self.isfirst = true
   local PersonalBaseInfo = PersonInfoModel:GetPersonalBaseInfo()
@@ -93,7 +91,6 @@ function M:InitBaseView(Personid)
   self.Btn_Data:SetText(GText("UI_PersonalPage_Recount_Name"))
   self:AddReddotListener("EditBtn", self.OnPortraitReddotChange)
 end
-
 function M:InitDisplayBoxView(IsChanegeModel)
   if PersonInfoModel:IsOwener() == false then
     self.Btn_EditShow:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -203,7 +200,6 @@ function M:InitDisplayBoxView(IsChanegeModel)
     self:ModelViewIni()
   end
 end
-
 function M:GetEditPageClickFunc(ItemName, i, string)
   if PersonInfoModel:IsOwener() then
     self[ItemName .. i].Com_Item:SetAdd(true)
@@ -218,7 +214,6 @@ function M:GetEditPageClickFunc(ItemName, i, string)
     return OnMouseButtonDownEvent
   end
 end
-
 function M:GetDetialPageClickFunc(Item, i, string, bIsWeapon)
   if nil == bIsWeapon then
     bIsWeapon = false
@@ -266,7 +261,6 @@ function M:GetDetialPageClickFunc(Item, i, string, bIsWeapon)
   }
   return OnMouseButtonDownEvent
 end
-
 function M:ModelViewIni()
   if -1 == self.SelectCharIndex then
     local Avatar = GWorld:GetAvatar()
@@ -315,32 +309,20 @@ function M:ModelViewIni()
     self.Com_EmptyBg:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
     if true == PersonInfoController.bReturnMain then
     else
-      self.ActorController:SetMontageAndCamera("Char", "Char", "Char", nil)
+      local t1, t2, t3, t4 = self.ActorController:CalcArmoryCameraTag("Char", "Char", "Char", nil)
+      self.ActorController:SetArmoryCameraTag(t1, t2, t3, t4)
       PersonInfoController.bReturnMain = false
     end
     self.ActorController:HidePlayerActor("PersonInfo", true)
   end
 end
-
 function M:FreshCamera()
   if not self.ActorController then
     return
   end
-  self.ActorController:SetMontageAndCamera("Char", "Char", "Char", nil)
-  if self.SelectWeaponIndex > 0 then
-    local WeaponData = PersonInfoModel:GetShowWeaponData(self.SelectWeaponIndex)
-    if WeaponData then
-      if WeaponData:HasTag("Melee") then
-        self.ActorController:SetMontageAndCamera("Weapon", "Melee", "Melee", nil)
-      else
-        self.ActorController:SetMontageAndCamera("Weapon", "Ranged", "Ranged", nil)
-      end
-    end
-  else
-    self.ActorController:SetMontageAndCamera("Char", "Char", "Char", nil)
-  end
+  local t1, t2, t3, t4 = self.ActorController:CalcArmoryCameraTag("Char", "Char", "Char", nil)
+  self.ActorController:SetArmoryCameraTag(t1, t2, t3, t4)
 end
-
 function M:ForbidenWeaponBox()
   for i = 1, 3 do
     self["WeaponItem_" .. i].Button_Area:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -348,7 +330,6 @@ function M:ForbidenWeaponBox()
     self["WeaponItem_" .. i]:PlayAnimation(self["WeaponItem_" .. i].Forbidden)
   end
 end
-
 function M:OnPersonalInfoOpened(CharData)
   if self.ActorController == nil then
     self.ActorController = ActorController:New({
@@ -358,22 +339,19 @@ function M:OnPersonalInfoOpened(CharData)
       SmoothLoad = true,
       EPreviewSceneType = CommonConst.EPreviewSceneType.PreviewCommon,
       bNeedEndCamera = true,
-      bPlayRoleChangedSound = nil ~= CharData
+      bPlayRoleChangedSound = -1 ~= self.SelectCharIndex
     })
     self.ActorController:OnOpened()
   end
 end
-
 function M:OnPersonalInfoClosed()
 end
-
 function M:Destruct()
   self:RemoveReddotListener("EscPortrait", self.OnPortraitFrameReddotChange)
   self.ActorController:OnClosed()
   self.ActorController:OnDestruct()
   self.ActorController = nil
 end
-
 function M:ChangeWeaponView()
   if self.ActorController == nil then
     return
@@ -390,7 +368,6 @@ function M:ChangeWeaponView()
     end
   end
 end
-
 function M:OnClickChangeSelectChar(index)
   ScreenPrint("OnClickChangeSelectChar")
   self["AvatarItem_" .. self.SelectCharIndex].Button_Area:SetForbidden(false)
@@ -412,13 +389,11 @@ function M:OnClickChangeSelectChar(index)
   local CharBaseInfo = PersonInfoModel:GetShowCharBaseInfo(self.SelectCharIndex)
   self:ChanegeCharInfo(CharBaseInfo)
 end
-
 function M:OnClickChangeSelectWeapon(index)
   self:CancelSelectWeapon(self.SelectWeaponIndex)
   self.SelectWeaponIndex = index
   self:ChangeWeaponView()
 end
-
 function M:ChanegeCharInfo(CharData)
   self.Image_CharType:SetBrushResourceObject(CharData.AttributeIcon)
   self.Text_CharName:SetText(GText(CharData.Name))
@@ -428,17 +403,14 @@ function M:ChanegeCharInfo(CharData)
     self.Gacha_Star_5:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:CancelSelectChar(index)
   self["AvatarItem_" .. self.SelectCharIndex].Button_Area:SetChecked(false)
   self["AvatarItem_" .. self.SelectCharIndex].Button_Area:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:CancelSelectWeapon(index)
   self["WeaponItem_" .. self.SelectWeaponIndex].Button_Area:SetChecked(false)
   self["WeaponItem_" .. self.SelectWeaponIndex].Button_Area:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:FreshHeadAndFrames(IsFrame, HeadOrFrameId)
   if true == IsFrame then
     self.Com_ItemHead:SetHeadFrame(HeadOrFrameId)
@@ -446,7 +418,6 @@ function M:FreshHeadAndFrames(IsFrame, HeadOrFrameId)
     self.Com_ItemHead:SetHeadIconById(HeadOrFrameId, false)
   end
 end
-
 function M:OnClose()
   PersonInfoModel:DeleteFakeAvatar()
   for _, Events in pairs(self.Events_BeforeClose) do
@@ -456,11 +427,9 @@ function M:OnClose()
   end
   self:OnPersonalInfoClosed()
 end
-
 function M:OnClickOpenEditPage()
   PersonInfoController:OpenEditView("Char", nil)
 end
-
 function M:OnClickOpenDataPage()
   if PersonInfoModel:IsOwener() then
     PersonInfoController:OpenDataView()
@@ -473,7 +442,6 @@ function M:OnClickOpenDataPage()
     end
   end
 end
-
 function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   if self.IsEditOpen then
     self.IsEditOpen = false
@@ -481,33 +449,26 @@ function M:On_Image_Click_MouseButtonDown(MyGeometry, MouseEvent)
   end
   return self:OnPointerDown(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseWheel(MyGeometry, MouseEvent)
   return self:OnMouseWheelScroll(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseButtonUp(MyGeometry, MouseEvent)
   return self:OnPointerUp(MyGeometry, MouseEvent)
 end
-
 function M:OnMouseMove(MyGeometry, MouseEvent)
   return self:OnPointerMove(MyGeometry, MouseEvent)
 end
-
 function M:OnTouchEnded(MyGeometry, InTouchEvent)
   return self:OnPointerUp(MyGeometry, InTouchEvent)
 end
-
 function M:OnTouchMoved(MyGeometry, InTouchEvent)
   return self:OnPointerMove(MyGeometry, InTouchEvent)
 end
-
 function M:OnMouseCaptureLost()
   self:OnPointerCaptureLost()
 end
-
 function M:SetOriginFocus()
-  DebugPrint("\232\129\154\231\132\166\229\136\176\232\181\183\231\130\185")
+  DebugPrint("聚焦到起点")
   if not PersonInfoModel:IsOwener() then
     PersonInfoController.MainPage:SetFocus()
     if 1 ~= self.AvatarItem_1.Com_Item.Id then
@@ -524,17 +485,20 @@ function M:SetOriginFocus()
     self.AvatarItem_1.Com_Item:SetFocus()
   end
 end
-
 function M:RotateActorForGamePad(MoveDeltaX)
+  if not self.ActorController then
+    return
+  end
   local CursorDelta = {X = 5, Y = 0}
   CursorDelta.X = MoveDeltaX * CursorDelta.X
   self.ActorController:OnDragging(CursorDelta)
 end
-
 function M:ZoomCamare(Dalta)
+  if not self.ActorController then
+    return
+  end
   self.ActorController:OnScrolling(Dalta)
 end
-
 function M:OnItemFocusForGamePad(ItemObj)
   if PersonInfoController.MainPage.CurInputDeviceType == ECommonInputType.Gamepad then
     if 0 ~= ItemObj.Content.Id then
@@ -546,23 +510,19 @@ function M:OnItemFocusForGamePad(ItemObj)
     end
   end
 end
-
 function M:OnPortraitReddotChange(Count)
   self.Button_Edit.New:SetEnable(Count > 0)
 end
-
 function M:AddReddotListener(ReddotNodeName, func)
   self:RemoveReddotListener(ReddotNodeName)
   ReddotManager.AddListenerEx(ReddotNodeName, self, func)
   self.ListenedReddot = true
 end
-
 function M:RemoveReddotListener(ReddotNodeName)
   if self.ListenedReddot then
     ReddotManager.RemoveListener(ReddotNodeName, self)
     self.ListenedReddot = false
   end
 end
-
 AssembleComponents(M)
 return M

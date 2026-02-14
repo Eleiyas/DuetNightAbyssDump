@@ -10,7 +10,6 @@ local DispatchStateEnum = {
   Unlock = 3,
   CanDispatch = 4
 }
-
 function M:Initialize(Initializer)
   M.Super.Initialize(self)
   self.Dispatch = nil
@@ -22,11 +21,11 @@ function M:Initialize(Initializer)
   self.AgentCount = 0
   self.SpecialAbilityBubble = nil
   self.IsPlayIn = true
+  self.bPack = false
+  self.PackId = -1
 end
-
 function M:OnLoaded(...)
 end
-
 function M:Construct()
   self.Btn_CheckReward.OnClicked:Add(self, self.OnClickCheckReward)
   self.Btn_Select.Button_Area.OnClicked:Add(self, self.OnClickDispatch)
@@ -38,9 +37,7 @@ function M:Construct()
   EventManager:AddEvent(EventID.CancelDispatch, self, self.CancelDispatchEvent)
   EventManager:AddEvent(EventID.StartDispatch, self, self.StartDispatchEvent)
   EventManager:AddEvent(EventID.CompleteDispatch, self, self.CompleteDispatchEvent)
-  self.List_ExReward.BP_OnEntryInitialized:Add(self, self.OnListItemInited)
 end
-
 function M:Destruct()
   self.Btn_CheckReward.OnClicked:Remove(self, self.OnClickCheckReward)
   self.Btn_Select.Button_Area.OnClicked:Remove(self, self.OnClickDispatch)
@@ -55,11 +52,12 @@ function M:Destruct()
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:InitDispatchDetail(Dispatch)
   self:PlayAnimation(self.In)
   self:SetDispatchDetail(Dispatch)
-  self.Text_Reward:SetText(GText("UI_Dispatch_Toast_BaseReward"))
+  self.Text_Reward:SetText(GText("Dispatch_RewardPreview"))
+  self.Text_NReward:SetText(GText("UI_Dispatch_Toast_BaseReward"))
+  self.Text_ExReward_Describe:SetText(GText("UI_Dispatch_DispatchCompleteObtain"))
   self.Text_Ability:SetText(GText("UI_Disptach_Recom"))
   self.Text_Buff:SetText(GText("UI_Disptach_Buff"))
   self.Btn_Go.Text_Button:SetText(GText("UI_Disptach_Goto"))
@@ -76,12 +74,20 @@ function M:InitDispatchDetail(Dispatch)
   self:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.List_Reward:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
-  self.List_Reward:SetNavigationRuleExplicit(EUINavigation.Down, self.List_ExReward)
+  self.List_Reward:SetNavigationRuleCustom(EUINavigation.Down, {
+    self,
+    function()
+      if 0 == self.WS_Reward:GetActiveWidgetIndex() then
+        return self.List_ExReward
+      else
+        return self.Btn_Package
+      end
+    end
+  })
   self.List_ExReward:SetNavigationRuleExplicit(EUINavigation.Up, self.List_Reward)
   self.List_ExReward:SetNavigationRuleBase(EUINavigation.Left, EUINavigationRule.Stop)
   self.List_ExReward:SetNavigationRuleBase(EUINavigation.Down, EUINavigationRule.Stop)
 end
-
 function M:RrefreshDispatchDetail(Dispatch)
   self:RemoveTimer("RefreshRemainingTime")
   if self.IsPlayIn == true then
@@ -92,7 +98,6 @@ function M:RrefreshDispatchDetail(Dispatch)
   self.AgentCount = 0
   self:SetDispatchDetail(Dispatch)
 end
-
 function M:SetDispatchDetail(Dispatch)
   self.Tip_ExBuff.Main:SetRenderOpacity(0)
   self.Dispatch = Dispatch
@@ -121,39 +126,57 @@ function M:SetDispatchDetail(Dispatch)
   self:InitAgentList()
   self:InitBtnInfo()
 end
-
 function M:SetDispatchRarity(DispatchRarity)
   if 1 == DispatchRarity then
-    local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_DetailQuality_Green.T_Map_DetailQuality_Green")
-    self.Quality:SetBrushResourceObject(Icon)
-    self.Text_Title:SetColorAndOpacity(self.Quality_Text_Green)
-    self.Icon_Type:SetColorAndOpacity(self.Quality_Icon_Green)
+    local IconDynaMaterial = self.Icon_Type:GetDynamicMaterial()
+    if IconDynaMaterial then
+      IconDynaMaterial:SetTextureParameterValue("MainTex", self.Img_Color_2)
+    end
+    local FontMaterial = self.Text_Title:GetDynamicFontMaterial()
+    if FontMaterial then
+      FontMaterial:SetTextureParameterValue("DecalTex", self.Img_Color_2)
+    end
   elseif 2 == DispatchRarity then
-    local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_DetailQuality_Blue.T_Map_DetailQuality_Blue")
-    self.Quality:SetBrushResourceObject(Icon)
-    self.Text_Title:SetColorAndOpacity(self.Quality_Text_Blue)
-    self.Icon_Type:SetColorAndOpacity(self.Quality_Icon_Blue)
+    local IconDynaMaterial = self.Icon_Type:GetDynamicMaterial()
+    if IconDynaMaterial then
+      IconDynaMaterial:SetTextureParameterValue("MainTex", self.Img_Color_3)
+    end
+    local FontMaterial = self.Text_Title:GetDynamicFontMaterial()
+    if FontMaterial then
+      FontMaterial:SetTextureParameterValue("DecalTex", self.Img_Color_3)
+    end
   elseif 3 == DispatchRarity then
-    local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_DetailQuality_Purple.T_Map_DetailQuality_Purple")
-    self.Quality:SetBrushResourceObject(Icon)
-    self.Text_Title:SetColorAndOpacity(self.Quality_Text_Purple)
-    self.Icon_Type:SetColorAndOpacity(self.Quality_Icon_Purple)
+    local IconDynaMaterial = self.Icon_Type:GetDynamicMaterial()
+    if IconDynaMaterial then
+      IconDynaMaterial:SetTextureParameterValue("MainTex", self.Img_Color_4)
+    end
+    local FontMaterial = self.Text_Title:GetDynamicFontMaterial()
+    if FontMaterial then
+      FontMaterial:SetTextureParameterValue("DecalTex", self.Img_Color_4)
+    end
   end
 end
-
 function M:SetDispatchType(DispatchType)
   if "Battle" == DispatchType then
     local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_IconBattle.T_Map_IconBattle")
-    self.Icon_Type:SetBrushResourceObject(Icon)
+    local IconDynaMaterial = self.Icon_Type:GetDynamicMaterial()
+    if IconDynaMaterial then
+      IconDynaMaterial:SetTextureParameterValue("Mask", Icon)
+    end
   elseif "Collect" == DispatchType then
     local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_IconProduce.T_Map_IconProduce")
-    self.Icon_Type:SetBrushResourceObject(Icon)
+    local IconDynaMaterial = self.Icon_Type:GetDynamicMaterial()
+    if IconDynaMaterial then
+      IconDynaMaterial:SetTextureParameterValue("Mask", Icon)
+    end
   elseif "Social" == DispatchType then
     local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_IconSocial.T_Map_IconSocial")
-    self.Icon_Type:SetBrushResourceObject(Icon)
+    local IconDynaMaterial = self.Icon_Type:GetDynamicMaterial()
+    if IconDynaMaterial then
+      IconDynaMaterial:SetTextureParameterValue("Mask", Icon)
+    end
   end
 end
-
 function M:SetBasicReward()
   local Rewards = DataMgr.DynQuest[self.Dispatch.DispatchId].Reward
   if nil == Rewards then
@@ -197,17 +220,14 @@ function M:SetBasicReward()
     Reward.Rarity = RewardContent.Rarity
     Reward.ItemType = RewardContent.ItemType
     Reward.IsShowDetails = true
-    
     function Reward.AfterInitCallback(Widget)
       Widget:BindEvents(self, {
         OnMenuOpenChanged = self.OnRewardMenuOpenChanged
       })
     end
-    
     self.List_Reward:AddItem(Reward)
   end
 end
-
 function M:OnRewardMenuOpenChanged(bIsOpen)
   if bIsOpen then
     if self.Owner.Key_Tip == nil or self.UsingGamepad == false then
@@ -218,42 +238,13 @@ function M:OnRewardMenuOpenChanged(bIsOpen)
     self:InitPadKeyInfo()
   end
 end
-
 function M:SetDispatchReward()
   local Rewards = DataMgr.Dispatch[self.Dispatch.DispatchId].RewardId
   if nil == Rewards then
     return
   end
-  local RewardInfo = DataMgr.Reward[Rewards[1]]
-  if RewardInfo then
-    local Ids = RewardInfo.Id or {}
-    local RewardCount = RewardInfo.Count or {}
-    local TableName = RewardInfo.Type or {}
-    for i = 1, #Ids do
-      local ItemId = Ids[i]
-      local Count = RewardUtils:GetCount(RewardCount[i])
-      local Icon = ItemUtils.GetItemIconPath(ItemId, TableName[i])
-      local Rarity = ItemUtils.GetItemRarity(ItemId, TableName[i])
-      local ItemType = TableName[i]
-      local RewardContent = NewObject(UIUtils.GetCommonItemContentClass())
-      RewardContent.Id = ItemId
-      RewardContent.Count = Count
-      RewardContent.Icon = Icon
-      RewardContent.Rarity = Rarity
-      RewardContent.ItemType = ItemType
-      RewardContent.IsShowDetails = true
-      
-      function RewardContent.AfterInitCallback(Widget)
-        Widget:BindEvents(self, {
-          OnMenuOpenChanged = self.OnRewardMenuOpenChanged
-        })
-      end
-      
-      self.List_ExReward:AddItem(RewardContent)
-    end
-  end
+  self:SetRewardItem(Rewards[1], self.List_ExReward)
 end
-
 function M:SetSuccessDispatchReward()
   self.List_ExReward:ClearListItems()
   local Reward = DataMgr.Dispatch[self.Dispatch.DispatchId].RewardId
@@ -268,48 +259,92 @@ function M:SetSuccessDispatchReward()
     self:SetRewardItem(Reward[4], self.List_ExReward)
   end
 end
-
 function M:SetRewardItem(RewardId, RewardsList)
   if nil == RewardId then
     return
   end
   local RewardInfo = DataMgr.Reward[RewardId]
-  if RewardInfo then
-    local Ids = RewardInfo.Id or {}
-    local RewardCount = RewardInfo.Count or {}
-    local TableName = RewardInfo.Type or {}
-    for i = 1, #Ids do
-      local ItemId = Ids[i]
-      local Count = RewardUtils:GetCount(RewardCount[i])
-      local Icon = ItemUtils.GetItemIconPath(ItemId, TableName[i])
-      local Rarity = ItemUtils.GetItemRarity(ItemId, TableName[i])
-      local ItemType = TableName[i]
-      local RewardContent = NewObject(UIUtils.GetCommonItemContentClass())
-      RewardContent.Id = ItemId
-      RewardContent.Count = Count
-      RewardContent.Icon = Icon
-      RewardContent.Rarity = Rarity
-      RewardContent.ItemType = ItemType
-      RewardContent.IsShowDetails = true
-      
-      function RewardContent.AfterInitCallback(Widget)
-        Widget:BindEvents(self, {
-          OnMenuOpenChanged = self.OnRewardMenuOpenChanged
-        })
+  local Id = RewardInfo.Id[1]
+  local FinalReward = DataMgr.Reward[Id]
+  if FinalReward.Name then
+    self.bPack = true
+  else
+    self.bPack = false
+  end
+  if self.bPack then
+    self.PackId = Id
+    self.WS_Reward:SetActiveWidgetIndex(1)
+    self.Text_CheckPackage:SetText(GText("UI_Dispatch_ClickView"))
+    local Icon = LoadObject(FinalReward.Icon)
+    self.Icon_Package:SetBrushResourceObject(Icon)
+    self.Btn_Package.OnClicked:Remove(self, self.OnClickPack)
+    self.Btn_Package.OnClicked:Add(self, self.OnClickPack)
+  else
+    self.WS_Reward:SetActiveWidgetIndex(0)
+    if RewardInfo then
+      local Ids = RewardInfo.Id or {}
+      local RewardCount = RewardInfo.Count or {}
+      local TableName = RewardInfo.Type or {}
+      for i = 1, #Ids do
+        local ItemId = Ids[i]
+        local Count = RewardUtils:GetCount(RewardCount[i])
+        local Icon = ItemUtils.GetItemIconPath(ItemId, TableName[i])
+        local Rarity = ItemUtils.GetItemRarity(ItemId, TableName[i])
+        local ItemType = TableName[i]
+        local RewardContent = NewObject(UIUtils.GetCommonItemContentClass())
+        RewardContent.Id = ItemId
+        RewardContent.Count = Count
+        RewardContent.Icon = Icon
+        RewardContent.Rarity = Rarity
+        RewardContent.ItemType = ItemType
+        RewardContent.IsShowDetails = true
+        function RewardContent.AfterInitCallback(Widget)
+          Widget:BindEvents(self, {
+            OnMenuOpenChanged = self.OnRewardMenuOpenChanged
+          })
+        end
+        RewardsList:AddItem(RewardContent)
       end
-      
-      RewardsList:AddItem(RewardContent)
     end
   end
 end
-
+function M:OnClickPack()
+  AudioManager(self):PlayUISound(self, "event:/ui/common/special_content_01_click", nil, nil)
+  local Parent
+  if self.Owner.DispatchAgentList then
+    Parent = self.Owner.DispatchAgentList
+  elseif self.Owner.DispatchList then
+    Parent = self.Owner.DispatchList
+  else
+    Parent = self
+  end
+  local Params = {
+    PackId = self.PackId,
+    Owner = self.Owner
+  }
+  Params.CloseBtnCallbackObj = self
+  function Params.CloseBtnCallbackFunction()
+    if self.Owner.DispatchAgentList then
+      if self.UsingGamepad then
+        self:ShowPadUI(true)
+        self.Owner.DispatchAgentList.Key_Controller_Desc:SetVisibility(ESlateVisibility.Visible)
+      end
+    elseif self.Owner.DispatchList then
+      self:InitPadKeyInfo()
+      if self.UsingGamepad then
+        self:ShowPadUI(true)
+        self.Owner.DispatchList.List_Sort:HideGamePadIcon(false, "DispatchDetail")
+      end
+    end
+  end
+  UIManager(self):ShowCommonPopupUI(100286, Params, Parent)
+end
 function M:OnListItemInited(Content, EntryUI)
   local DispatchState = self.Dispatch.State
   if DispatchState == CommonConst.DispatchState.Unlock or DispatchState == CommonConst.DispatchState.Doing and 0 == self.Dispatch.DispatchCharsList:Length() or DispatchState == CommonConst.DispatchState.CanDispatch then
     EntryUI:SetShadow(true)
   end
 end
-
 function M:InitAbilityItem()
   local DispatchDemand = self.Dispatch.DispatchDemand
   local Path = "/Game/UI/WBP/Map/Widget/Dispatch/WBP_Map_Ability_L.WBP_Map_Ability_L"
@@ -332,10 +367,8 @@ function M:InitAbilityItem()
     end
   end
 end
-
 function M:ChangeAbilityItem(Id)
 end
-
 function M:OnClickCheckReward()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self.Btn_CheckReward_S:PlayAnimation(self.Btn_CheckReward_S.Click)
@@ -354,7 +387,6 @@ function M:OnClickCheckReward()
   }
   UIManager(self):ShowCommonPopupUI(100138, Params, Parent)
 end
-
 function M:OpenAgentList()
   self.Owner:OpenAgentList()
   self.Switch_Btn:SetActiveWidgetIndex(1)
@@ -369,19 +401,16 @@ function M:OpenAgentList()
     self.Owner.RealWildMap:ShowAllMiniHead(self.Dispatch.DispatchId)
   end
 end
-
 function M:RealClose()
   self:RemoveFromParent()
   self.Owner.DispatchDetail = nil
 end
-
 function M:Close()
   self:BindToAnimationFinished(self.Out, function()
     self:RealClose()
   end)
   self:PlayAnimation(self.Out)
 end
-
 function M:BindAgentButton()
   for i = 0, 2 do
     local Agent = self.WBox_Agent:GetChildAt(i)
@@ -393,7 +422,6 @@ function M:BindAgentButton()
     end)
   end
 end
-
 function M:InitAgentList()
   if self.Dispatch.DispatchCharsList:Length() > 0 then
     for Index, Id in pairs(self.Dispatch.DispatchCharsList) do
@@ -406,29 +434,20 @@ function M:InitAgentList()
     end
   end
 end
-
 function M:IsShowExtraText(IsShow)
-  if IsShow then
-    self.Panel_ExTip:SetVisibility(ESlateVisibility.Visible)
-  else
-    self.Panel_ExTip:SetVisibility(ESlateVisibility.Collapsed)
-  end
 end
-
 function M:IsSetAwardGray(IsShadow)
   for _, Content in pairs(self.List_ExReward:GetListItems()) do
     Content.bShadow = IsShadow
     Content.SelfWidget:Init(Content)
   end
 end
-
 function M:InitAbility(IdList)
   for Index, UuId in pairs(IdList) do
     local Id = CommonUtils.ObjId2Str(UuId)
     self:UpdateAbilityUI(true, Id, false)
   end
 end
-
 function M:RemoveAgentData(Index, CharId, IsPlay)
   local AgentId
   if nil ~= Index then
@@ -455,7 +474,6 @@ function M:RemoveAgentData(Index, CharId, IsPlay)
   self:RefreshConfirmBtn()
   self.Owner.RealWildMap:RemoveDispatchPoint(self.Dispatch.DispatchId, AgentId)
 end
-
 function M:AddAgentData(Id, IsPlay, AbilityList)
   local Ind = 0
   for Index, Id in pairs(self.AgentList) do
@@ -475,13 +493,11 @@ function M:AddAgentData(Id, IsPlay, AbilityList)
   self:RefreshConfirmBtn()
   self.Owner.RealWildMap:RefreshDispatchPoint(self.Dispatch.DispatchId, Id)
 end
-
 function M:UpdateRemoveTips()
   if self.MatchTime == false and false == self.MatchSuccess and 0 ~= self.Tip_ExBuff.Main:GetRenderOpacity() then
     self.Tip_ExBuff:PlayAnimation(self.Tip_ExBuff.Out)
   end
 end
-
 function M:UpdateAddTips()
   if self.MatchTime or self.MatchSuccess then
     if 0 == self.Tip_ExBuff.Main:GetRenderOpacity() then
@@ -494,7 +510,6 @@ function M:UpdateAddTips()
     end
   end
 end
-
 function M:UpdateSuccessRate()
   self.Switch_Type:SetVisibility(UE4.ESlateVisibility.Visible)
   self.Switch_Type:SetActiveWidgetIndex(1)
@@ -514,7 +529,6 @@ function M:UpdateSuccessRate()
   end)
   self.Text_Percent01:SetText(Res)
 end
-
 function M:UpdateExptectedTime()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -552,7 +566,6 @@ function M:UpdateExptectedTime()
   self.ExpectTime02.Text_TimeDesc:SetColorAndOpacity(self.Color_Green)
   self.ExpectTime02:SetTimeText(GText("UI_Disptach_DispatchTime"), RemainTimeDict)
 end
-
 function M:UpdateRemainingTime()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -578,18 +591,15 @@ function M:UpdateRemainingTime()
     Res = math.floor((BaseTime - BaseTime * Count * Effect) * 60)
   end
   local EndTime = StartTime + Res
-  
   local function Refresh()
     local NowTime = TimeUtils.NowTime()
     self.Bar_Progressing:SetPercent((NowTime - StartTime) / (EndTime - StartTime))
     local RemainTimeDict, TimeCount = UIUtils.GetLeftTimeStrStyle2(EndTime)
     self.LastTime:SetTimeText(GText("UI_Disptach_RemainTime"), RemainTimeDict)
   end
-  
   Refresh()
   self:AddTimer(1, Refresh, true, 0, "RefreshRemainingTime")
 end
-
 function M:OnClickConfirm()
   local DispatchState = self.Dispatch.State
   if DispatchState == CommonConst.DispatchState.Cooling then
@@ -606,7 +616,6 @@ function M:OnClickConfirm()
     self:GetReward()
   end
 end
-
 function M:StartDispatch()
   if 0 == self.AgentCount then
     UIManager(self):ShowUITip(UIConst.Tip_CommonTop, GText("UI_Disptach_Toast_NoAgent"))
@@ -624,7 +633,6 @@ function M:StartDispatch()
   end
   Avatar:StartDispatch(self.Dispatch.DispatchId, false, AgentList)
 end
-
 function M:CancelDispatch()
   local DispatchState = self.Dispatch.State
   if DispatchState == CommonConst.DispatchState.Doing and self.Dispatch.DispatchCharsList:Length() > 0 then
@@ -642,7 +650,6 @@ function M:CancelDispatch()
     UIManager(self):ShowCommonPopupUI(100145, Params, Parent)
   end
 end
-
 function M:RealCancelDispatch()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -650,7 +657,6 @@ function M:RealCancelDispatch()
   end
   Avatar:CancelDispatch(self.Dispatch.DispatchId)
 end
-
 function M:InitBtnInfo()
   local DispatchState = self.Dispatch.State
   if DispatchState == CommonConst.DispatchState.Unlock then
@@ -713,7 +719,6 @@ function M:InitBtnInfo()
     self:InitAbility(self.Dispatch.DispatchCharsList)
   end
 end
-
 function M:SetSuccessInfo(Type)
   if Type == CommonConst.DispatchState.Perfect then
     local Icon = LoadObject("/Game/UI/Texture/Dynamic/Atlas/Map/T_Map_Rank_SS_L.T_Map_Rank_SS_L")
@@ -737,7 +742,6 @@ function M:SetSuccessInfo(Type)
     self:PlayAnimation(self.Success_Blue)
   end
 end
-
 function M:OnClickDispatch()
   local DispatchState = self.Dispatch.State
   if DispatchState == CommonConst.DispatchState.Cooling then
@@ -756,7 +760,6 @@ function M:OnClickDispatch()
     self.Owner.RealWildMap:ShowAllMiniHead(self.Dispatch.DispatchId)
   end
 end
-
 function M:GetReward()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -764,7 +767,6 @@ function M:GetReward()
   end
   Avatar:CompleteDispatch(self.Dispatch.DispatchId)
 end
-
 function M:UpdateAbilityUI(IsActive, Id, IsPlay)
   if IsActive then
     local Avatar = GWorld:GetAvatar()
@@ -828,7 +830,6 @@ function M:UpdateAbilityUI(IsActive, Id, IsPlay)
     self.Buff:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:AbilityPlayAnimation(Type, Ability, IsPlay, IsNormal)
   local AnimName = UIUtils.GetDispathchColorNameByType(Type)
   if AnimName then
@@ -846,7 +847,6 @@ function M:AbilityPlayAnimation(Type, Ability, IsPlay, IsNormal)
     Ability:PlayAnimation(Ability.Special)
   end
 end
-
 function M:SetColor(Item, Type)
   if "Battle" == Type then
     Item.BG:SetColorAndOpacity(Item.Color_BG_Red)
@@ -856,7 +856,6 @@ function M:SetColor(Item, Type)
     Item.BG:SetColorAndOpacity(Item.Color_BG_Green)
   end
 end
-
 function M:GetIdByUuid(Uuid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -868,7 +867,6 @@ function M:GetIdByUuid(Uuid)
     end
   end
 end
-
 function M:CancelDispatchEvent()
   if self.Owner.DispatchAgentList then
     self.Owner.DispatchAgentList:StartDispatch(true)
@@ -876,7 +874,6 @@ function M:CancelDispatchEvent()
     self.Owner.DispatchList:UpdateDispatch(true)
   end
 end
-
 function M:StartDispatchEvent()
   AudioManager(self):PlayUISound(self, "event:/ui/common/dispatch_event_start", "", nil)
   self.Owner.DispatchAgentList:StartDispatch(false)
@@ -886,7 +883,6 @@ function M:StartDispatchEvent()
   self.Btn_Cancel.Text_Button:SetText(GText("UI_Disptach_State_Cancel"))
   self:PlayAnimation(self.Progessing_In)
 end
-
 function M:CompleteDispatchEvent(TotalReward)
   local function Callback()
     if self.Owner.DispatchAgentList then
@@ -895,10 +891,8 @@ function M:CompleteDispatchEvent(TotalReward)
       self.Owner.DispatchList:UpdateDispatch(true)
     end
   end
-  
   UIUtils.ShowGetItemPageAndOpenBagIfNeeded(nil, nil, nil, TotalReward, false, Callback, self, false)
 end
-
 function M:CalSuccessRate()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -940,7 +934,6 @@ function M:CalSuccessRate()
   local Res = math.floor((ActiveNum / TotalNum + ResSuccess + CountRate) * 100)
   return Res
 end
-
 function M:OpenSpecailAbility()
   if not self.UsingGamepad then
     self.Btn_Check.Btn_CheckBuff_S:PlayAnimation(self.Btn_Check.Btn_CheckBuff_S.Click)
@@ -951,14 +944,12 @@ function M:OpenSpecailAbility()
   self.Btn_Check.MenuAnchor_Dispatch:Open(true)
   self.SpecialAbilityBubble:Init(self)
 end
-
 function M:GotoCloestTeleportPoint()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", "", nil)
   local GotoSubRegionId = DataMgr.DynQuest[self.Dispatch.DispatchId].SubRegionId
   local GameMode = UE4.UGameplayStatics.GetGameMode(GWorld.GameInstance)
   local Params = {}
   Params.RightCallbackObj = self
-  
   function Params.RightCallbackFunction()
     local DispatchId = self.Dispatch.DispatchId
     local TriggerBoxId = DataMgr.DynQuest[DispatchId].TriggerBoxID
@@ -973,21 +964,17 @@ function M:GotoCloestTeleportPoint()
     EventManager:AddEvent(EventID.OnLevelDeliverBlackCurtainEnd, GWorld.GameInstance, GWorld.GameInstance.TeleportToCloestTeleportPoint)
     EventManager:FireEvent(EventID.GoToDispatch, DispatchId)
   end
-  
   UIManager(self):ShowCommonPopupUI(100146, Params)
 end
-
 function M:ResetBtn()
   self.Switch_Btn:SetActiveWidgetIndex(0)
   self.Btn_Select.Text_Button:SetText(GText("UI_Disptach_ChoseAgent"))
 end
-
 function M:OnClickSpecialAbility()
   local Path = "/Game/UI/WBP/Map/Widget/Dispatch/WBP_Map_AbilityDetail.WBP_Map_AbilityDetail"
   self.SpecialAbilityBubble = UIManager(self):CreateWidget(Path)
   return self.SpecialAbilityBubble
 end
-
 function M:RefreshConfirmBtn()
   if 0 == self.AgentCount then
     self.Btn_Confirm:ForbidBtn(true)
@@ -997,7 +984,6 @@ function M:RefreshConfirmBtn()
     self.Btn_Confirm:PlayAnimation(self.Btn_Confirm.Normal)
   end
 end
-
 function M:OnMenuOpenChanged(bOpen)
   self.TipsOpen = bOpen
   if bOpen then
@@ -1027,13 +1013,11 @@ function M:OnMenuOpenChanged(bOpen)
     end
   end
 end
-
 function M:InitListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -1041,7 +1025,6 @@ function M:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -1065,7 +1048,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:InitPCKeyInfo()
   if self.Owner.Key_Tip == nil then
     return
@@ -1080,7 +1062,6 @@ function M:InitPCKeyInfo()
     Desc = GText("Impression_UI_Back")
   })
 end
-
 function M:InitKeyInfo()
   self.Img_Key_CheckReward:CreateCommonKey({
     KeyInfoList = {
@@ -1093,13 +1074,14 @@ function M:InitKeyInfo()
     }
   })
 end
-
 function M:InitPadKeyInfo()
   if self.Owner.Key_Tip == nil then
     return
   end
   self.Owner.Key_Tip.Panel_Key:ClearChildren()
   local Key_Back = UIManager(self):_CreateWidgetNew("ComKeyTextDesc")
+  local Key_Check = UIManager(self):_CreateWidgetNew("ComKeyTextDesc")
+  self.Owner.Key_Tip.Panel_Key:AddChild(Key_Check)
   self.Owner.Key_Tip.Panel_Key:AddChild(Key_Back)
   Key_Back:CreateCommonKey({
     KeyInfoList = {
@@ -1107,8 +1089,13 @@ function M:InitPadKeyInfo()
     },
     Desc = GText("UI_BACK")
   })
+  Key_Check:CreateCommonKey({
+    KeyInfoList = {
+      {Type = "Img", ImgShortPath = "A"}
+    },
+    Desc = GText("UI_Controller_CheckDetails")
+  })
 end
-
 function M:InitPadKeyInfoByDetail()
   if self.Owner.Key_Tip == nil then
     return
@@ -1131,7 +1118,6 @@ function M:InitPadKeyInfoByDetail()
   })
   self.Owner.Key_Tip.Panel_Key:AddChild(Key_B)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1151,6 +1137,7 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
         self.Owner.DispatchAgentList.List_Agent:NavigateToIndex(0)
         self:ShowPadUI(true)
       end
+      self.Owner.DispatchAgentList.Key_Controller_Desc:SetVisibility(ESlateVisibility.Visible)
     elseif self.Owner.DispatchList then
       self.Owner.DispatchList:NavigateToItem()
       self:InitPadKeyInfo()
@@ -1187,7 +1174,7 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     local Item = self.List_Reward:GetItemAt(0)
     if Item then
       self.List_Reward:NavigateToIndex(0)
-      self:InitPadKeyInfo()
+      self:InitPadKeyItemInfo()
       self:ShowPadUI(false)
     end
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -1197,7 +1184,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   if self:HasAnyUserFocus() == false then
     return
@@ -1234,13 +1220,13 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:ShowPadUI(IsShow)
   if IsShow then
     self.Btn_CheckReward_S:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.Img_Key_CheckReward:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.Img_Key_Ability:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.Text_Controller_Check:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    self.Btn_Nearby.Key_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.Btn_Check.Switch_Mode:SetActiveWidgetIndex(1)
     self.Btn_Go:SetPCVisibility(false)
     self.Btn_Select:SetPCVisibility(false)
@@ -1248,6 +1234,7 @@ function M:ShowPadUI(IsShow)
     self.Btn_Cancel:SetPCVisibility(false)
     self.Owner:InitPadTab()
   else
+    self.Btn_Nearby.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.Btn_CheckReward_S:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.Img_Key_CheckReward:SetVisibility(UE4.ESlateVisibility.Collapsed)
     self.Img_Key_Ability:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -1259,5 +1246,4 @@ function M:ShowPadUI(IsShow)
     self.Btn_Cancel:SetPCVisibility(true)
   end
 end
-
 return M

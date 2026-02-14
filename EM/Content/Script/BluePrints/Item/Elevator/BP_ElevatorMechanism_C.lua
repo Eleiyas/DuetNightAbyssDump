@@ -4,15 +4,12 @@ local BP_ElevatorMechanism_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function BP_ElevatorMechanism_C:ReceiveBeginPlay()
   self.Overridden.ReceiveBeginPlay(self)
   self.Super.ReceiveBeginPlay(self)
 end
-
 function BP_ElevatorMechanism_C:Init()
 end
-
 function BP_ElevatorMechanism_C:AuthorityInitInfo(Info)
   BP_ElevatorMechanism_C.Super.AuthorityInitInfo(self, Info)
   if Info.State then
@@ -45,12 +42,10 @@ function BP_ElevatorMechanism_C:AuthorityInitInfo(Info)
   GameMode:TriggerActiveStaticCreator(MiniGameList)
   EventManager:AddEvent(EventID.OnMiniGameCreated, self, self.OnMiniGameCreated)
 end
-
 function BP_ElevatorMechanism_C:ReceiveEndPlay(reason)
   BP_ElevatorMechanism_C.Super.ReceiveEndPlay(self, reason)
   EventManager:RemoveEvent(EventID.OnMiniGameCreated, self)
 end
-
 function BP_ElevatorMechanism_C:OnMiniGameCreated(MiniGameActor)
   if not self.ChildrenState then
     self.ChildrenState = {}
@@ -68,19 +63,16 @@ function BP_ElevatorMechanism_C:OnMiniGameCreated(MiniGameActor)
     end
   end
 end
-
 function BP_ElevatorMechanism_C:OpenTopDoor(ElevatorTopChildActor)
   self.Overridden.OpenTopDoor(self, ElevatorTopChildActor)
   self.ElevatorInCharacter:OpenDoor(ElevatorTopChildActor)
   self:UpdateRegionData("StateId", self.CurrentElevatorState)
 end
-
 function BP_ElevatorMechanism_C:OpenBottomDoor(ElevatorBottomChildActor)
   self.Overridden.OpenBottomDoor(self, ElevatorBottomChildActor)
   self.ElevatorInCharacter:OpenDoor(ElevatorBottomChildActor)
   self:UpdateRegionData("StateId", self.CurrentElevatorState)
 end
-
 function BP_ElevatorMechanism_C:OpenMoveSetting(TargetActor)
   if IsValid(TargetActor) then
     if self.ChildrenState[TargetActor].IsRun or self.ChildrenState[TargetActor].IsOpenDoor then
@@ -91,7 +83,6 @@ function BP_ElevatorMechanism_C:OpenMoveSetting(TargetActor)
   end
   return false
 end
-
 function BP_ElevatorMechanism_C:CloseMoveSetting(TargetActor)
   if IsValid(TargetActor) then
     if not self.ChildrenState[TargetActor].IsOpenDoor or self.ChildrenState[TargetActor].IsRun then
@@ -102,31 +93,31 @@ function BP_ElevatorMechanism_C:CloseMoveSetting(TargetActor)
   end
   return false
 end
-
 function BP_ElevatorMechanism_C:CompleteNotify(TargetActor)
   if IsValid(TargetActor) then
+    DebugPrint("CompleteNotify", TargetActor == self.ElevatorBottomChildActor, self.ChildrenState[TargetActor].IsOpenDoor)
     self.ChildrenState[TargetActor].IsOpenDoor = not self.ChildrenState[TargetActor].IsOpenDoor
     self.ChildrenState[TargetActor].IsRun = false
     EventManager:FireEvent(EventID.ElevatorMechanismCompleteNotify, self)
   end
   self:UpdateMiniGameState()
 end
-
 function BP_ElevatorMechanism_C:CloseAllDoor()
-  self:CloseBottomDoor(self.ElevatorBottomChildActor)
-  self:CloseTopDoor(self.ElevatorTopChildActor)
+  if not self.ElevatorBottomChildActor or self.ChildrenState[self.ElevatorBottomChildActor].IsOpenDoor then
+    self:CloseBottomDoor(self.ElevatorBottomChildActor)
+  end
+  if not self.ElevatorTopChildActor or self.ChildrenState[self.ElevatorTopChildActor].IsOpenDoor then
+    self:CloseTopDoor(self.ElevatorTopChildActor)
+  end
   self.ElevatorInCharacter:CloseDoor(self.ElevatorBottomChildActor)
   self.ElevatorInCharacter:CloseDoor(self.ElevatorTopChildActor)
 end
-
 function BP_ElevatorMechanism_C:PlayOpenDoorSound(Component)
   AudioManager(self):PlayFMODSound(Component, nil, "event:/sfx/common/scene/lift_fast_door_open")
 end
-
 function BP_ElevatorMechanism_C:PlayCloseDoorSound(Component)
   AudioManager(self):PlayFMODSound(Component, nil, "event:/sfx/common/scene/lift_fast_door_close")
 end
-
 function BP_ElevatorMechanism_C:RealMoveLua(ElevatorId, SourceEid)
   if IsAuthority(self) then
     local SelfChildActor = self:GetSelfChildActor(SourceEid)
@@ -146,7 +137,6 @@ function BP_ElevatorMechanism_C:RealMoveLua(ElevatorId, SourceEid)
     end
   end
 end
-
 function BP_ElevatorMechanism_C:GetSelfChildActor(SourceEid)
   if SourceEid == self.ElevatorTopChildActor.Eid then
     return self.ElevatorTopChildActor
@@ -157,7 +147,6 @@ function BP_ElevatorMechanism_C:GetSelfChildActor(SourceEid)
   end
   return nil
 end
-
 function BP_ElevatorMechanism_C:GetSelfChildActorState(SourceEid)
   if SourceEid == self.ElevatorTopChildActor.Eid then
     return ElevatorMechanismState.ElevatorTop
@@ -166,32 +155,14 @@ function BP_ElevatorMechanism_C:GetSelfChildActorState(SourceEid)
   end
   return ElevatorMechanismState.ElevatorIn
 end
-
 function BP_ElevatorMechanism_C:SetChildActorRunningEffect()
-  if IsValid(self.ElevatorInCharacter) then
-    if self.ElevatorInCharacter.FXLock:IsActive() then
-      self.ElevatorInCharacter.FXLock:Deactivate()
-    end
-    if not self.ElevatorInCharacter.FXRunning:IsActive() then
-      self.ElevatorInCharacter.FXRunning:Activate(true)
-    end
-  end
 end
-
 function BP_ElevatorMechanism_C:SetChildActorLockEffect()
-  if IsValid(self.ElevatorInCharacter) then
-    if self.ElevatorInCharacter.FXRunning:IsActive() then
-      self.ElevatorInCharacter.FXRunning:Deactivate()
-    end
-    self.ElevatorInCharacter.FXLock:Activate(true)
-  end
 end
-
 function BP_ElevatorMechanism_C:ClientInitInfo(Info)
   if IsStandAlone(self) or IsClient(self) then
   end
 end
-
 function BP_ElevatorMechanism_C:OnRep_ElevatorBottomChildActor()
   DebugPrint("crack,....OnRep_ElevatorBottomChildActor")
   if not self.ChildrenState then
@@ -199,7 +170,6 @@ function BP_ElevatorMechanism_C:OnRep_ElevatorBottomChildActor()
   end
   self.ChildrenState[self.ElevatorBottomChildActor] = {IsRun = false, IsOpenDoor = false}
 end
-
 function BP_ElevatorMechanism_C:OnRep_ElevatorTopChildActor()
   DebugPrint("crack,....OnRep_ElevatorTopChildActor")
   if not self.ChildrenState then
@@ -207,22 +177,18 @@ function BP_ElevatorMechanism_C:OnRep_ElevatorTopChildActor()
   end
   self.ChildrenState[self.ElevatorTopChildActor] = {IsRun = false, IsOpenDoor = false}
 end
-
 function BP_ElevatorMechanism_C:OnRep_ElevatorInCharacter()
   self.ElevatorInCharacter.ElevatorInteractiveComponent.DisplayInteractiveName = GText(self.ElevatorInCharacter.ElevatorInteractiveComponent.InteractiveName)
 end
-
 function BP_ElevatorMechanism_C:AddStoryNodeCallback(StateName, Callback)
   if not self.StoryNodeCallback then
     self.StoryNodeCallback = {}
   end
   self.StoryNodeCallback[StateName] = Callback
 end
-
 function BP_ElevatorMechanism_C:RemoveStoryNodeCallback(StateName)
   self.StoryNodeCallback[StateName] = nil
 end
-
 function BP_ElevatorMechanism_C:GetGuideLocation(IsTargetTop, Target)
   if IsTargetTop then
     if self.CurrentElevatorState == ElevatorMechanismState.ElevatorBottom and not self.ElevatorInCharacter.IsMoveStart then
@@ -244,14 +210,11 @@ function BP_ElevatorMechanism_C:GetGuideLocation(IsTargetTop, Target)
     return nil, false
   end
 end
-
 function BP_ElevatorMechanism_C:SetLifeTime(LifeTime, Reason)
 end
-
 function BP_ElevatorMechanism_C:TriggerByChild(SourceEid)
   self:RealMove(self.Eid, SourceEid)
 end
-
 function BP_ElevatorMechanism_C:ElevatorMove(ChildState)
   if 0 == ChildState then
     if 2 == self.CurrentElevatorState then
@@ -267,7 +230,6 @@ function BP_ElevatorMechanism_C:ElevatorMove(ChildState)
     self.ElevatorInCharacter:MoveEnd()
   end
 end
-
 function BP_ElevatorMechanism_C:UpdateMiniGameState()
   DebugPrint("crack", "UpdateMiniGameState", self.ChildrenState[self.ElevatorTopChildActor], self.ChildrenState[self.ElevatorBottomChildActor])
   if self.ChildrenState[self.ElevatorTopChildActor] then
@@ -297,7 +259,6 @@ function BP_ElevatorMechanism_C:UpdateMiniGameState()
     self.ElevatorBottomChildActor:ChangeState("Manual", 0, bottomStateId)
   end
 end
-
 function BP_ElevatorMechanism_C:CheckChildrenStateOpen()
   if not self.ElevatorTopChildActor and not self.ElevatorBottomChildActor then
     return true
@@ -310,14 +271,11 @@ function BP_ElevatorMechanism_C:CheckChildrenStateOpen()
   end
   return false
 end
-
 function BP_ElevatorMechanism_C:CreateRegionData()
   self.RegionData = {
     StateId = self.CurrentElevatorState
   }
 end
-
 function BP_ElevatorMechanism_C:OnRep_StateId()
 end
-
 return BP_ElevatorMechanism_C

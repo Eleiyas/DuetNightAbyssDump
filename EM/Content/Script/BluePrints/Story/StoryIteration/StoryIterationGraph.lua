@@ -11,17 +11,16 @@ local ETalkType = require("BluePrints.Story.Talk.Base.ETalkType")
 local EDialogueNodeType = TalkUtils.EDialogueNodeType
 local FStoryIterationGraph = {}
 local RecordChainComponent = "BluePrints.Story.StoryIteration.Components.RecordChainComponent"
-
 function FStoryIterationGraph:New(Dialogues, InitialDialogueId, TalkTask)
   local StoryIterationGraph = setmetatable({}, {__index = FStoryIterationGraph})
   StoryIterationGraph.TalkTask = TalkTask
+  StoryIterationGraph.InitialDialogueId = InitialDialogueId
   StoryIterationGraph.BasicTalkType = TalkTask:GetBasicTalkType()
   StoryIterationGraph.TalkTriggerComponent = FTalkTriggerComponent:New()
   StoryIterationGraph.bShowInStoryReview = TalkTask.TalkTaskData.bShowInStoryReview
   StoryIterationGraph:Init(Dialogues, InitialDialogueId)
   return StoryIterationGraph
 end
-
 function FStoryIterationGraph:Init(Dialogues, InitialDialogueId)
   if not InitialDialogueId or not Dialogues[InitialDialogueId] then
     DebugPrint("lhr@FStoryIterationGraph:Init, Dialogue is nil", InitialDialogueId)
@@ -33,13 +32,11 @@ function FStoryIterationGraph:Init(Dialogues, InitialDialogueId)
   self.CurrentNode = FIterationStartNode:New(Dialogues, InitialDialogueId, self)
   self:SetComponent(RecordChainComponent)
 end
-
 function FStoryIterationGraph:InitNodeMaps()
   self.CheckConditionNodeMap = {}
   self.DialogueNodeMap = {}
   self.OptionNodeMap = {}
 end
-
 function FStoryIterationGraph:GetOrCreateNode(NodeType, DialogueId)
   local Node = self:GetNode(NodeType, DialogueId)
   if nil ~= Node then
@@ -52,18 +49,17 @@ function FStoryIterationGraph:GetOrCreateNode(NodeType, DialogueId)
   elseif "CheckOptionCondition" == NodeType then
     Node = FCheckOptionConditionNode:New(self.Dialogues, DialogueId, self)
   elseif "Start" == NodeType then
-    DebugPrint("FStoryIterationGraph@GetOrCreateNode: \228\184\141\232\131\189\229\136\155\229\187\186Start\232\138\130\231\130\185")
+    DebugPrint("FStoryIterationGraph@GetOrCreateNode: 不能创建Start节点")
     return
   elseif "End" == NodeType then
-    DebugPrint("FStoryIterationGraph@GetOrCreateNode: \228\184\141\232\131\189\229\136\155\229\187\186End\232\138\130\231\130\185")
+    DebugPrint("FStoryIterationGraph@GetOrCreateNode: 不能创建End节点")
     return
   else
-    DebugPrint("FStoryIterationGraph@GetOrCreateNode: NodeType\230\151\160\230\149\136", NodeType)
+    DebugPrint("FStoryIterationGraph@GetOrCreateNode: NodeType无效", NodeType)
     return
   end
   return Node
 end
-
 function FStoryIterationGraph:GetNode(NodeType, DialogueId)
   if "End" == NodeType then
     return self.EndNode
@@ -75,54 +71,44 @@ function FStoryIterationGraph:GetNode(NodeType, DialogueId)
     return self.CheckConditionNodeMap[DialogueId]
   end
 end
-
 function FStoryIterationGraph:Iterate(...)
   self.CurrentNode:Iterate(...)
 end
-
 function FStoryIterationGraph:OnNodeEnter(Node)
   if not Node then
-    DebugPrint("FStoryIterationGraph@OnNodeEnter: Node\230\151\160\230\149\136")
+    DebugPrint("FStoryIterationGraph@OnNodeEnter: Node无效")
     return
   end
   if self.CurrentNode == Node then
-    DebugPrint("FStoryIterationGraph@OnNodeEnter: \233\135\141\229\164\141\232\191\155\229\133\165\232\138\130\231\130\185")
+    DebugPrint("FStoryIterationGraph@OnNodeEnter: 重复进入节点")
     return
   end
   self.CurrentNode = Node
 end
-
 function FStoryIterationGraph:OnNodeRecord(Node, ...)
 end
-
 function FStoryIterationGraph:Skip()
   local bSkipFail = self.CurrentNode:Skip()
   return not bSkipFail
 end
-
 function FStoryIterationGraph:IsBlack()
   return self.BasicTalkType == ETalkType.Black
 end
-
 function FStoryIterationGraph:IsCinematic()
   return self.BasicTalkType == ETalkType.Cinematic
 end
-
 function FStoryIterationGraph:UsingImpressionUI()
   return self.TalkTask.TalkType == "Impression" or self.TalkTask.TalkType == "QuestImpression"
 end
-
 function FStoryIterationGraph:GetCurrentNode()
   return self.CurrentNode
 end
-
 function FStoryIterationGraph:GetDesiredNode(Node)
   if Node then
     return Node:GetDesiredNode()
   end
   return nil
 end
-
 function FStoryIterationGraph:RecordOption(OptionData, bTalkOption)
   DebugPrint("lhr@RecordOption", TalkUtils:DialogueIdToContent(OptionData.SelectedOption))
   if OptionData then
@@ -143,7 +129,7 @@ function FStoryIterationGraph:RecordOption(OptionData, bTalkOption)
         local AreaId = OptionInfo.RegionId
         local Avatar = GWorld:GetAvatar()
         if not Avatar then
-          DebugPrint("FStoryIterationGraph@RecordOption\230\151\182\239\188\140Avatar\228\184\141\229\173\152\229\156\168")
+          DebugPrint("FStoryIterationGraph@RecordOption时，Avatar不存在")
           return
         end
         local ImpressionInfo = Avatar:GetRegionImpression(AreaId)
@@ -167,21 +153,17 @@ function FStoryIterationGraph:RecordOption(OptionData, bTalkOption)
     end
   end
 end
-
 function FStoryIterationGraph:RecordCheckResult(CheckRes, CheckValue)
   if self.CheckHandle then
     self.CheckHandle:InsertCheckData(CheckRes, CheckValue)
   end
 end
-
 function FStoryIterationGraph:SetRestartTag(RestartDialogueId)
   self.RestartDialogueId = RestartDialogueId
 end
-
 function FStoryIterationGraph:GetRestartTag()
   return self.RestartDialogueId
 end
-
 function FStoryIterationGraph:SetComponent(CompModulePath)
   self.assembledComponents = self.assembledComponents or {}
   if not self.assembledComponents[CompModulePath] then
@@ -190,5 +172,4 @@ function FStoryIterationGraph:SetComponent(CompModulePath)
     self.assembledComponents[CompModulePath] = true
   end
 end
-
 return FStoryIterationGraph

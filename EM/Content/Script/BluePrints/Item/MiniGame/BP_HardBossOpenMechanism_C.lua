@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints/Item/MiniGame/BP_OpenUIMechanism_C")
-
 function M:OpenUI(PlayerId, NextStateId)
   M.Super.OpenUI(self, PlayerId, NextStateId)
   local Controller = UE4.UGameplayStatics.GetPlayerController(self, 0)
@@ -12,7 +11,6 @@ function M:OpenUI(PlayerId, NextStateId)
   Controller.bShouldPerformFullTickWhenPaused = true
   Player.CharSpringArmComponent:SetTickableWhenPaused(true)
 end
-
 function M:CloseMechanism(PlayerId, IsSuccess)
   local Controller = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local Player = Battle(self):GetEntity(PlayerId)
@@ -22,7 +20,6 @@ function M:CloseMechanism(PlayerId, IsSuccess)
   EventManager:AddEvent(EventID.UnLoadUI, self, self.ResetPauseState)
   M.Super.CloseMechanism(self, PlayerId)
 end
-
 function M:ResetPauseState(UIName)
   if "HardBossLevelChoose" ~= UIName then
     return
@@ -33,16 +30,23 @@ function M:ResetPauseState(UIName)
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
   Player.CharSpringArmComponent:SetTickableWhenPaused(false)
 end
-
-function M:GetCanOpen()
+function M:GetCanOpen(PlayerEid)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     self.CanOpen = true
     return
   end
+  local Battle = Battle(self)
+  if not Battle then
+    return
+  end
+  local Player = Battle:GetEntity(PlayerEid)
+  if Player and Player:IsDead() then
+    self.CanOpen = false
+    return
+  end
   self.CanOpen = not Avatar:IsInHardBoss()
 end
-
 function M:HideMechanism(NeedCallBack, Reason, AlwaysShow)
   local CompArray = self:K2_GetComponentsByClass(UShapeComponent:StaticClass())
   for i, v in pairs(CompArray) do
@@ -50,12 +54,15 @@ function M:HideMechanism(NeedCallBack, Reason, AlwaysShow)
   end
   if not AlwaysShow then
     self:SetActorHideTag(Reason, true)
+    local MeshCompArray = self:K2_GetComponentsByClass(UMeshComponent:StaticClass())
+    for i, v in pairs(MeshCompArray) do
+      v:SetCollisionEnabled(0)
+    end
   end
   if NeedCallBack then
     EventManager:AddEvent(EventID.ConditionComplete, self, self.ShowMechanismWithCondition)
   end
 end
-
 function M:ShowMechanismWithCondition(ShowConditionId)
   if ShowConditionId ~= self.Data.ShowConditionId then
     return
@@ -64,13 +71,27 @@ function M:ShowMechanismWithCondition(ShowConditionId)
   for i, v in pairs(CompArray) do
     v:SetCollisionEnabled(1)
   end
+  local MeshCompArray = self:K2_GetComponentsByClass(UMeshComponent:StaticClass())
+  for i, v in pairs(MeshCompArray) do
+    v:SetCollisionEnabled(1)
+  end
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
   self:SetActorHideTag("Condition", false)
 end
-
+function M:OnActorReady(Info)
+  M.Super.OnActorReady(self, Info)
+  local StateData = DataMgr.MechanismState[self.StateId]
+  if StateData and StateData.StateEvent then
+    for i, v in pairs(StateData.StateEvent) do
+      if v.TypeNextState and v.TypeNextState.Type == "InteractDone" then
+        self:ChangeState("InteractDone", 0)
+      end
+    end
+  end
+  EventManager:FireEvent(EventID.OnMiniGameCreated, self)
+end
 function M:ReceiveEndPlay(EndReason)
   M.Super.ReceiveEndPlay(self, EndReason)
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
 end
-
 return M

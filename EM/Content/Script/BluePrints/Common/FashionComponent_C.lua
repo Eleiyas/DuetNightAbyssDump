@@ -1,7 +1,6 @@
 require("UnLua")
 require("Utils")
 local M = Class()
-
 function M:GetDefaultFresnel_Lua()
   local DefaultParams = Const.BuffDefaultFresnelParams
   local Ret = FFresnelParams()
@@ -14,5 +13,4 @@ function M:GetDefaultFresnel_Lua()
   Ret.bDefault = true
   return Ret
 end
-
 return M

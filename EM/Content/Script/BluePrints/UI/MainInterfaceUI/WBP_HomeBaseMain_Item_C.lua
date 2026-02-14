@@ -10,7 +10,6 @@ local WBP_HomeBaseMain_Item_C = Class({
 WBP_HomeBaseMain_Item_C._components = {
   "BluePrints.UI.UI_PC.Menu.Reddot.MainUIItem_ReddotTree_Component"
 }
-
 function WBP_HomeBaseMain_Item_C:Construct()
   self.Btn_top.OnClicked:Add(self, self.OnBtnClick)
   self.Btn_top.OnHovered:Add(self, self.OnBtnHovered)
@@ -20,32 +19,62 @@ function WBP_HomeBaseMain_Item_C:Construct()
   end
   EventManager:AddEvent(EventID.ConditionComplete, self, self.OnConditionComplete)
 end
-
 function WBP_HomeBaseMain_Item_C:OnConditionComplete(ConditionId)
   if self.ConditionMap[ConditionId] then
     self:UpdateGuidePoint()
   end
 end
-
 function WBP_HomeBaseMain_Item_C:RefreshNewClueUI()
   if not self.IsBtnTask then
     return
   end
-  local HasNewQuestionOrClue = ReasoningUtils:IsHasNewQuestionOrClue()
-  if 2 == HasNewQuestionOrClue then
-    self.NewClue = UIManager(self):CreateWidget("WidgetBlueprint'/Game/UI/WBP/Common/WBP_Com_HudBubble_L.WBP_Com_HudBubble_L'", true)
-    self.NewClue.Text_Bubble:SetText(GText("Minigame_Textmap_100319"))
-    self.NewClue.Text_Bubble:SetColorAndOpacity(self.NewClue.Color_Orange)
-    self.NewClue.Icon:SetVisibility(UIConst.VisibilityOp.Collapsed)
+  if ReasoningUtils:IsAllClueHasNewClue() then
+    if not self.NewClue then
+      self.NewClue = UIManager(self):_CreateWidgetNew("ReasoningBubble")
+    end
     if self.NewClue then
+      self.NewClue:ShowInfo()
       self.Pos_Bubble_L:AddChild(self.NewClue)
-      self.NewClue:PlayAnimation(self.NewClue.In)
     end
   elseif self.NewClue then
     self.Pos_Bubble_L:ClearChildren()
   end
 end
-
+function WBP_HomeBaseMain_Item_C:RefreshNewTheaterUI()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local ConditionId = 8029
+  local PreQuestId = 400111
+  local QuestChain = Avatar.QuestChains[PreQuestId]
+  if not QuestChain then
+    DebugPrint("ayff 剧院tips配置了一个不存在的任务")
+    return
+  end
+  local isUnlock = ConditionUtils.CheckCondition(Avatar, ConditionId)
+  if not isUnlock or not QuestChain:IsFinish() then
+    return
+  end
+  self.NewTheaterBubble = UIManager(self):_CreateWidgetNew("CommonHudBubble")
+  self.Pos_Bubble_L:AddChild(self.NewTheaterBubble)
+  local ConfigData = {
+    IconPath = "/Game/UI/Texture/Dynamic/Atlas/Interactive/T_Interactive_TheaterOnline.T_Interactive_TheaterOnline",
+    Text = "UI_Theater_Waiting",
+    ColorType = 0,
+    Arrow = 1
+  }
+  self.NewTheaterBubble:Init(ConfigData)
+  self.NewTheaterBubble:PlayInAnimation()
+  self.NewTheaterBubble:SetIconColor(true)
+  local function HideTheaterBubble()
+    self.NewTheaterBubble:PlayOutAnimation()
+    if self:IsExistTimer("HideTheaterBubble") then
+      self:RemoveTimer("HideTheaterBubble")
+    end
+  end
+  self:AddTimer(3, HideTheaterBubble, false, 0.1, "HideTheaterBubble", true)
+end
 function WBP_HomeBaseMain_Item_C:OnListItemObjectSet(Content)
   self.CurContent = Content
   self.CurContent.SelfWidget = self
@@ -57,7 +86,6 @@ function WBP_HomeBaseMain_Item_C:OnListItemObjectSet(Content)
     self:SetRedDot(false, false, nil)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:UpdateGuidePoint()
   local GuidePointArray = {}
   local Avatar = GWorld:GetAvatar()
@@ -72,25 +100,30 @@ function WBP_HomeBaseMain_Item_C:UpdateGuidePoint()
       local TempShow = false
       if GuidePointInfo.ShowCondition then
         TempShow = ConditionUtils.CheckCondition(Avatar, GuidePointInfo.ShowCondition)
+        DebugPrint("@@@Updateguidepoint Home Base main EnterId,ShowCondition", GuidePointInfo.EnterId, TempShow)
         self.ConditionMap[GuidePointInfo.ShowCondition] = true
       end
       if GuidePointInfo.HideCondition then
         local NotShowCondition = ConditionUtils.CheckCondition(Avatar, GuidePointInfo.HideCondition)
+        DebugPrint("@@@Updateguidepoint Home Base main EnterId,HideCondition", GuidePointInfo.EnterId, NotShowCondition)
         if NotShowCondition then
           TempShow = false
         end
         self.ConditionMap[GuidePointInfo.HideCondition] = true
       end
-      CurrentPointShow = CurrentPointShow or TempShow
+      if not CurrentPointShow then
+        DebugPrint("@@@Updateguidepoint Home Base main UpdateCurrentShow EnterId,CurrentPointShow", CurrentPointShow)
+        CurrentPointShow = TempShow
+      end
     end
   end
+  DebugPrint("@@@Updateguidepoint Home Base main Update Final Current Show,CurrentPointShow", CurrentPointShow)
   if CurrentPointShow then
     self.Icon_GuidePoint:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   else
     self.Icon_GuidePoint:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -99,13 +132,11 @@ function WBP_HomeBaseMain_Item_C:InitListenEvent()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_HomeBaseMain_Item_C:ClearListenEvent()
   if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
     return
@@ -114,7 +145,6 @@ function WBP_HomeBaseMain_Item_C:RefreshOpInfoByInputDevice(CurInputDevice, CurG
   local IsUseGamePad = CurInputDevice == ECommonInputType.Gamepad
   self:InitWidgetInfoInGamePad(IsUseGamePad)
 end
-
 function WBP_HomeBaseMain_Item_C:InitWidgetInfoInGamePad(IsUseGamePad)
   if self.Key_GamePad then
     self.Key_GamePad:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -141,7 +171,6 @@ function WBP_HomeBaseMain_Item_C:InitWidgetInfoInGamePad(IsUseGamePad)
     self.Key_GamePad:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:LoadImage(MainUIId)
   self.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -213,7 +242,6 @@ function WBP_HomeBaseMain_Item_C:LoadImage(MainUIId)
   self.Switcher:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self:ReddotTreePlugIn(BtnInfo[Id])
 end
-
 function WBP_HomeBaseMain_Item_C:Destruct()
   EventManager:RemoveEvent(EventID.ConditionComplete, self)
   self:ReddotTreePlugOut()
@@ -231,11 +259,9 @@ function WBP_HomeBaseMain_Item_C:Destruct()
   end
   self:ClearListenEvent()
 end
-
 function WBP_HomeBaseMain_Item_C:UpdateTaskBtnRedDot()
   local function GetRet()
     local NewQuestChainTable = EMCache:Get("NewQuestChainTable", true) or {}
-    
     local NewQuestReddotSetCache = EMCache:Get("NewQuestReddotSet", true) or {}
     if IsEmptyTable(NewQuestReddotSetCache) == false then
       for _, IsNew in pairs(NewQuestReddotSetCache) do
@@ -255,15 +281,12 @@ function WBP_HomeBaseMain_Item_C:UpdateTaskBtnRedDot()
     end
     return false, false
   end
-  
   local IsNew, OtherReddot = GetRet()
   self:SetRedDot(IsNew, OtherReddot, nil)
   self:RefreshNewClueUI()
 end
-
 function WBP_HomeBaseMain_Item_C:UpdateRedDot()
 end
-
 function WBP_HomeBaseMain_Item_C:SetRedDot(IsNew, Upgradeable, OtherReddot, Count)
   if not IsValid(self) then
     return
@@ -275,7 +298,7 @@ function WBP_HomeBaseMain_Item_C:SetRedDot(IsNew, Upgradeable, OtherReddot, Coun
   self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   if self.bForceInvisible and (IsNew or Upgradeable or Count and "0" ~= Count) then
     self.Reddot_Num:SetVisibility(UIConst.VisibilityOp.Collapsed)
-    Traceback(ErrorTag, "Esc\231\186\162\231\130\185\229\183\178\231\187\143\229\188\186\229\136\182\228\184\141\229\143\175\232\167\129\228\186\134\239\188\140\232\181\176\229\136\176\232\191\153\233\135\140\232\130\175\229\174\154\230\156\137\233\151\174\233\162\152\231\154\132\239\188\140\230\156\128\231\187\136\229\174\185\233\148\153\229\183\178\231\187\143\229\129\154\228\186\134,\228\189\134\232\191\152\230\152\175\229\159\139\228\184\170\230\161\169\231\156\139\231\156\139\230\152\175\229\147\170\233\135\140\230\141\163\233\172\188")
+    Traceback(ErrorTag, "Esc红点已经强制不可见了，走到这里肯定有问题的，最终容错已经做了,但还是埋个桩看看是哪里捣鬼")
     return
   end
   if IsNew then
@@ -297,7 +320,6 @@ function WBP_HomeBaseMain_Item_C:SetRedDot(IsNew, Upgradeable, OtherReddot, Coun
     self.Reddot_Num:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:OnBtnClick()
   if self.CurContent == nil then
     return
@@ -314,7 +336,6 @@ function WBP_HomeBaseMain_Item_C:OnBtnClick()
     CommonUtils:CloseGuideTouchIfExist(self)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:OnBtnHovered()
   local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
   if "Mobile" == Platform then
@@ -328,7 +349,6 @@ function WBP_HomeBaseMain_Item_C:OnBtnHovered()
   self:StopAnimation(self.HoverOut)
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_HomeBaseMain_Item_C:OnBtnUnhovered()
   local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
   self.Switcher:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -342,7 +362,6 @@ function WBP_HomeBaseMain_Item_C:OnBtnUnhovered()
     self:HideBubble(self.BubbleEndTime or 3)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:ShowSystemEntranceOnGamePadInput(IsShow)
   if not self.HasGamePadTips or not self.Common_Key_Hud_Gamepad then
     return
@@ -363,7 +382,6 @@ function WBP_HomeBaseMain_Item_C:ShowSystemEntranceOnGamePadInput(IsShow)
     self.Common_Key_Hud_Gamepad:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_HomeBaseMain_Item_C:UpdateArmoryIcon()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -382,7 +400,6 @@ function WBP_HomeBaseMain_Item_C:UpdateArmoryIcon()
   local CharIcon = LoadObject(CharIconPath)
   self:SetButtonStyle(CharIcon)
 end
-
 function WBP_HomeBaseMain_Item_C:RefreshTimeLimitResource()
   self.IsBubblePlaying = false
   self.Pos_Bubble:ClearChildren()
@@ -413,13 +430,12 @@ function WBP_HomeBaseMain_Item_C:RefreshTimeLimitResource()
     return
   end
   if TimeDiff > 0 and TimeDiff < CommonConst.SECOND_IN_DAY then
-    self:ShowBubble(true, Icon)
+    self:ShowBubble(2, 1, Icon)
   elseif TimeDiff >= CommonConst.SECOND_IN_DAY and TimeDiff < CommonConst.SECOND_IN_WEEKDAY then
-    self:ShowBubble(false, Icon)
+    self:ShowBubble(1, 1, Icon)
   end
 end
-
-function WBP_HomeBaseMain_Item_C:ShowBubble(IsRed, Icon)
+function WBP_HomeBaseMain_Item_C:ShowBubble(ColorType, Arrow, Icon)
   if not self.HudBubbleWidget then
     self.HudBubbleWidget = UIManager(self):_CreateWidgetNew("CommonHudBubble")
   end
@@ -429,25 +445,20 @@ function WBP_HomeBaseMain_Item_C:ShowBubble(IsRed, Icon)
   OverlaySlot:SetHorizontalAlignment(EHorizontalAlignment.HAlign_Center)
   local ConfigData = {
     IconPath = Icon,
-    Text = "UI_GachaTicket_Bubble"
+    Text = "UI_GachaTicket_Bubble",
+    ColorType = ColorType,
+    Arrow = Arrow
   }
-  if IsRed then
-    ConfigData.TextColor = 1
-  else
-    ConfigData.TextColor = 0
-  end
   self.HudBubbleWidget:Init(ConfigData)
   self.HudBubbleWidget:PlayInAnimation()
   self.IsBubblePlaying = true
   EMCache:Set("GachaBubble", true)
   self:HideBubble(self.BubbleEndTime or 3)
 end
-
 function WBP_HomeBaseMain_Item_C:HideBubble(EndTime)
   if self:IsExistTimer("HideBubble") then
     self:RemoveTimer("HideBubble")
   end
-  
   local function HideBubble()
     self.HudBubbleWidget:PlayOutAnimation()
     self.IsBubblePlaying = false
@@ -455,10 +466,8 @@ function WBP_HomeBaseMain_Item_C:HideBubble(EndTime)
       self:RemoveTimer("HideBubble")
     end
   end
-  
   self:AddTimer(EndTime, HideBubble, false, 0.1, "HideBubble", true)
 end
-
 function WBP_HomeBaseMain_Item_C:OnHomeBaseBtnPlayAnim(UIName, AnimationName)
   if not UIName then
     return
@@ -473,10 +482,50 @@ function WBP_HomeBaseMain_Item_C:OnHomeBaseBtnPlayAnim(UIName, AnimationName)
     end
   end
 end
-
 function WBP_HomeBaseMain_Item_C:OnHomeBaseeBtnShowNewClue(UIName)
   self:RefreshNewClueUI()
 end
-
+function WBP_HomeBaseMain_Item_C:InitInterface(IconPath, KeyText, Name)
+  self.Common_Item_Subsize_New_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.Reddot:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.Reddot_Num:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  local ImageResource
+  if IconPath then
+    ImageResource = LoadObject(IconPath)
+  end
+  local VSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.VerticalBox_0)
+  local Anchors = FAnchors()
+  VSlot:SetAlignment(FVector2D(0.5, 0))
+  Anchors.Minimum = FVector2D(0.5, 1)
+  Anchors.Maximum = FVector2D(0.5, 1)
+  VSlot:SetAnchors(Anchors)
+  if nil ~= ImageResource then
+    self:SetButtonStyle(ImageResource)
+  end
+  self.Switcher:SetActiveWidgetIndex(0)
+  if KeyText then
+    self.IsHaveKey = true
+    self.Common_Key_Hud_PC:CreateCommonKey({
+      KeyInfoList = {
+        {Type = "Text", Text = KeyText}
+      }
+    })
+    self.Common_Key_Hud_PC:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.IsHaveKey = false
+    self.Common_Key_Hud_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+  if Name then
+    self.Name:SetText(GText(Name))
+    self.Name:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+  else
+    self.Name:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+  local Platform = CommonUtils.GetDeviceTypeByPlatformName(self)
+  if "Mobile" == Platform then
+    self.Common_Key_Hud_PC:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  end
+  self.Switcher:SetVisibility(UE4.ESlateVisibility.Collapsed)
+end
 AssembleComponents(WBP_HomeBaseMain_Item_C)
 return WBP_HomeBaseMain_Item_C

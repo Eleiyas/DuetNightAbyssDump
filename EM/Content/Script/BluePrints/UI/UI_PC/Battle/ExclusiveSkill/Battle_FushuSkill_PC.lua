@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
 local FUSHU_BATTLE_CHAR_UI_ID = 14
 local ALLOW_MAX_SUMMONER_COUNT = 3
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.OwnerPlayer = nil
@@ -10,14 +9,12 @@ function M:Initialize(Initializer)
   self.MaxSummonerCount = 2
   self.AllSummonerInfo = {}
 end
-
 function M:OnLoaded(PlayerCharacter, SpecialUIInfo)
   self.Super.OnLoaded(self, PlayerCharacter, SpecialUIInfo)
   self:InitPanelInfo(PlayerCharacter)
   self:InitListenEvent()
   self:RefreshNode(SpecialUIInfo, PlayerCharacter)
 end
-
 function M:InitPanelInfo(PlayerCharacter)
   self.List_Fushu:ClearListItems()
   self.ProgressPercentMinCache = self.ProgressPercentMin
@@ -37,12 +34,10 @@ function M:InitPanelInfo(PlayerCharacter)
     self.List_Fushu:AddItem(Content)
   end
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnCharCallSummoner, self, self.OnSummonerAdd)
   self:AddDispatcher(EventID.OnCharGradeLevelUp, self, self.OnCharGradeLevelUp)
 end
-
 function M:RefreshNode(Params, OwnerPlayer)
   self.OwnerPlayer = OwnerPlayer
   if not IsValid(self.OwnerPlayer) or not Params then
@@ -67,7 +62,6 @@ function M:RefreshNode(Params, OwnerPlayer)
     end
   end
 end
-
 function M:OnSummonerAdd(Entity, MaxLifeTime)
   if nil ~= Entity and Entity.UnitId == self.BattleSkillHelpInfo.UnitId then
     local MinTimeIndex = 1
@@ -97,7 +91,6 @@ function M:OnSummonerAdd(Entity, MaxLifeTime)
     self:AddTimer(0.1, self.RefreshAllSummonerInfo, true, 0, "RefreshAllSummonerInfo")
   end
 end
-
 function M:RefreshAllSummonerInfo()
   local ValidSummonerCount = 0
   for i, SummonerInfo in ipairs(self.AllSummonerInfo) do
@@ -121,7 +114,6 @@ function M:RefreshAllSummonerInfo()
     self:RemoveTimer("RefreshAllSummonerInfo")
   end
 end
-
 function M:SetSummonerItem(Index, bVisibility, SummonerInfo)
   self.VisibleStatus = self.VisibleStatus or {}
   local OldVisibility = self.VisibleStatus[Index]
@@ -144,7 +136,6 @@ function M:SetSummonerItem(Index, bVisibility, SummonerInfo)
     self:SetEffectItem(Index, false)
   end
 end
-
 function M:SetEffectItem(Index, bActive)
   local EffectItem = self.List_Fushu:GetItemAt(Index - 1)
   if bActive then
@@ -155,7 +146,6 @@ function M:SetEffectItem(Index, bActive)
     EffectItem.SelfWidget:PlayInActiveAnimation()
   end
 end
-
 function M:GetPercentValue(RealPercent)
   local res = UKismetMathLibrary.MapRangeClamped(RealPercent, 0.0, 1.0, self.ProgressPercentMinCache, self.ProgressPercentMaxCache)
   if 0 == res then
@@ -163,11 +153,9 @@ function M:GetPercentValue(RealPercent)
   end
   return res
 end
-
 function M:IsSummonerLiving(Entity)
   return Entity and IsValid(Entity) and UE4.UBattleFunctionLibrary.GetSummonRemainingLifeTime(Entity) > 0
 end
-
 function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
   if Ret == ErrorCode.RET_SUCCESS then
     CurrentGradeLevel = CurrentGradeLevel + 1
@@ -184,5 +172,4 @@ function M:OnCharGradeLevelUp(Ret, CharUuid, CurrentGradeLevel)
     end
   end
 end
-
 return M

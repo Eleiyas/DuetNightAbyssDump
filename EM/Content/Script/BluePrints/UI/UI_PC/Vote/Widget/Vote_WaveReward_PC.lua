@@ -1,10 +1,8 @@
 require("UnLua")
 local RewardBox = require("BluePrints.Client.CustomTypes.SimpleRewardBox")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Init(IsCurrentWave, Type, CurrentDungeonProgress, RewardId)
 end
-
 function M:InitContinue(IsCurrentWave)
   self.RewardContentList = {}
   if IsCurrentWave then
@@ -14,7 +12,6 @@ function M:InitContinue(IsCurrentWave)
     self.Panel_Wave:SetRenderOpacity(0.5)
   end
 end
-
 function M:InitLeave(DefenceWave, CurrentDungeonProgress)
   self.RewardContentList = {}
   if DefenceWave > 3 then
@@ -32,7 +29,6 @@ function M:InitLeave(DefenceWave, CurrentDungeonProgress)
     self.Panel_Finish:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:InitRewardList(CurrentDungeonProgress, RewardId, IsContinue)
   self:SetWaveText(CurrentDungeonProgress)
   local Reward = DataMgr.Reward[RewardId]
@@ -76,21 +72,18 @@ function M:InitRewardList(CurrentDungeonProgress, RewardId, IsContinue)
     end
   end
 end
-
 function M:OnContinueFirstItemNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     local VoteMain = UIManager(self):GetUIObj("Vote")
     return VoteMain.Box_Leave.Box_Leave
   end
 end
-
 function M:OnLeaveLastItemNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Right then
     local VoteMain = UIManager(self):GetUIObj("Vote")
     return VoteMain.Box_Continue.Box_Continue
   end
 end
-
 function M:SetWaveText(CurrentDungeonProgress)
   local Ten = CurrentDungeonProgress // 10
   local Bit = CurrentDungeonProgress % 10
@@ -105,7 +98,6 @@ function M:SetWaveText(CurrentDungeonProgress)
   self.Text_Ten:SetText(Ten)
   self.Text_Bit:SetText(Bit)
 end
-
 function M:CreateOneReward(RewardTag, ItemType, ItemId, Count, ListItemNums)
   if Count <= 0 then
     return
@@ -124,7 +116,6 @@ function M:CreateOneReward(RewardTag, ItemType, ItemId, Count, ListItemNums)
     self.RewardContentList[self.ResourceNum] = Content
   end
 end
-
 function M:ReadRewardInfo(Reward, ListItemNums)
   for i, ResourceId in ipairs(Reward.Id) do
     local DungeonDoubleCost = 1
@@ -145,7 +136,6 @@ function M:ReadRewardInfo(Reward, ListItemNums)
     end
   end
 end
-
 function M:NewItemContent(ItemType, ItemId, Count, BonusType, NeedAdd, IsExtra)
   if 0 == ItemId then
     local Obj
@@ -199,27 +189,22 @@ function M:NewItemContent(ItemType, ItemId, Count, BonusType, NeedAdd, IsExtra)
   end
   return Obj
 end
-
 function M:OnItemMenuOpenChanged(bIsOpen)
   local VoteMain = UIManager(self):GetUIObj("Vote")
   VoteMain:OnItemMenuOpenChanged(bIsOpen)
 end
-
 function M:OnAddedToFocusPathEvent()
   self.SelectedContent = self.RewardList:BP_GetSelectedItem()
   self.bFirstSelect = true
   local VoteMain = UIManager(self):GetUIObj("Vote")
   VoteMain.SelectContinueWaveReward = self.IsContinue
 end
-
 function M:OnRemovedFromFocusPathEvent()
 end
-
 function M:Close()
   self:PlayAnimationReverse(self.Out)
   M.Super.Close(self)
 end
-
 function M:OnListItemObjectSet(Content)
   print(_G.LogTag, "LXZ OnListItemObjectSet", Content:GetName())
   Content.SelfWidget = self
@@ -239,12 +224,10 @@ function M:OnListItemObjectSet(Content)
   self:InitRewardList(Content.CurrentDungeonProgress, Content.RewardId, Content.Type == "Continue")
   self:PlayAnimation(self.In)
 end
-
 function M:PlayAnimationPanelIn()
   self.Panel_Finish:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self:PlayAnimation(self.Panel_Finish_In)
 end
-
 function M:OnItemIsHoverChanged(Item, IsHovered)
   if IsHovered then
     return
@@ -259,7 +242,6 @@ function M:OnItemIsHoverChanged(Item, IsHovered)
     Reward:OnMouseLeave()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -280,7 +262,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -317,5 +298,4 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return M

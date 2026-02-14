@@ -1,7 +1,6 @@
 require("UnLua")
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:Close()
   if self.Animating then
     return
@@ -11,18 +10,15 @@ function M:Close()
   self.DimensionGraph:SwitchActive(false)
   self.Panel:SetFocus()
 end
-
 function M:OnAnimationFinished(Animation)
   self.Animating = false
 end
-
 function M:Construct()
   local UIModePlatform = CommonUtils.GetDeviceTypeByPlatformName(self)
   if "Mobile" == UIModePlatform then
     self.bInMobile = true
   end
 end
-
 function M:Init(RegionId, Panel, bInShop)
   if self.Animating then
     return
@@ -35,7 +31,7 @@ function M:Init(RegionId, Panel, bInShop)
   local ImpressionAreaId = Avatar:GetImpressionAreaIdFromRegionId(RegionId)
   self:InitDimensionGraph(ImpressionAreaId)
   self.DimensionGraph:SwitchActive(true)
-  self.Text_Area:SetText(GText(DataMgr.WorldMap[self.Panel.WorldId].WorldMapName))
+  self.Text_Area:SetText(GText(DataMgr.ImpressionRegion[ImpressionAreaId].RegionName))
   self.Text_Desc:SetText(GText("UI_RegionMap_ImpressionTitle"))
   self.Btn_Go:SetText(GText("UI_ImpressionShop_ShopName_Short"))
   self.Btn_Go:SetDefaultGamePadImg("Y")
@@ -57,7 +53,6 @@ function M:Init(RegionId, Panel, bInShop)
   end
   self.Btn_Go:SetVisibility(not bInShop and self.GoUnlocked and ESlateVisibility.Visible or ESlateVisibility.Collapsed)
 end
-
 function M:InitDimensionGraph(ImpressionAreaId)
   self.DimensionGraph = self.Dimension
   local RegionInfo = DataMgr.ImpressionRegion[ImpressionAreaId]
@@ -71,7 +66,6 @@ function M:InitDimensionGraph(ImpressionAreaId)
   end
   self.DimensionGraph:Init(ImpressionAreaId)
 end
-
 function M:GoShop()
   self:Close()
   if self.ImpressionRegionId and self.RegionPointId then
@@ -80,7 +74,6 @@ function M:GoShop()
     end)
   end
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(UKismetInputLibrary.GetKey(InKeyEvent))
   if "Escape" == InKeyName or InKeyName == UIConst.GamePadKey.FaceButtonRight then
@@ -90,7 +83,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
   if self.bInMobile then
     return
@@ -128,5 +120,4 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputDevice, CurGamepadName)
     self.Key_Tips:UpdateKeyInfo(KeyInfo)
   end
 end
-
 return M

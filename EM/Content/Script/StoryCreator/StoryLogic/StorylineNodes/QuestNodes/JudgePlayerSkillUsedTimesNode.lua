@@ -1,5 +1,4 @@
 local JudgePlayerSkillUsedTimesNode = Class("StoryCreator.StoryLogic.StorylineNodes.BaseQuestNode")
-
 function JudgePlayerSkillUsedTimesNode:Execute()
   local GameInstance = GWorld.GameInstance
   local PlayerCharacter = UE4.UGameplayStatics.GetPlayerCharacter(GameInstance, 0)
@@ -24,5 +23,4 @@ function JudgePlayerSkillUsedTimesNode:Execute()
   end
   return Branch
 end
-
 return JudgePlayerSkillUsedTimesNode

@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1732783210485457566",
       type = "StoryNode",
-      name = "\230\137\147\229\138\171\231\154\142\231\154\142",
+      name = "打劫皎皎",
       pos = {x = 1450, y = 322},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -137,7 +139,7 @@ return {
           ["1732783210485457570"] = {
             key = "1732783210485457570",
             type = "ListenActorDestroyNode",
-            name = "\231\155\145\229\144\172Actor\233\148\128\230\175\129\232\138\130\231\130\185",
+            name = "监听Actor销毁节点",
             pos = {x = 1672.5705037996056, y = 274.3357725865465},
             propsData = {
               StaticCreatorId = 1270066,
@@ -147,7 +149,7 @@ return {
           ["1732783210485457571"] = {
             key = "1732783210485457571",
             type = "KillMonsterNode",
-            name = "\229\135\187\230\157\128\230\128\170\231\137\169",
+            name = "击杀怪物",
             pos = {x = 1672.0681114551082, y = 487.7089783281733},
             propsData = {
               KillMonsterType = "Id",
@@ -162,7 +164,7 @@ return {
           ["1732783210485457572"] = {
             key = "1732783210485457572",
             type = "ChangeStaticCreatorNode",
-            name = "\230\137\147\229\138\171\231\154\142\231\154\142\229\135\186\231\142\176",
+            name = "打劫皎皎出现",
             pos = {x = 1217.11595834506, y = 296.65634674922603},
             propsData = {
               ActiveEnable = true,
@@ -176,7 +178,7 @@ return {
           ["1732783210485457573"] = {
             key = "1732783210485457573",
             type = "DynamicQuestSuccessNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\230\136\144\229\138\159",
+            name = "动态任务主动成功",
             pos = {x = 2148.910216718266, y = 479.8142414860681},
             propsData = {
               DialogueId = 0,
@@ -187,7 +189,7 @@ return {
           ["1732783210485457574"] = {
             key = "1732783210485457574",
             type = "DynamicQuestFailNode",
-            name = "\229\138\168\230\128\129\228\187\187\229\138\161\228\184\187\229\138\168\229\164\177\232\180\165",
+            name = "动态任务主动失败",
             pos = {x = 2147.7563705644197, y = 275.7049297451773},
             propsData = {UseTalkFadeOut = false, TalkFadeOutTime = 0}
           }

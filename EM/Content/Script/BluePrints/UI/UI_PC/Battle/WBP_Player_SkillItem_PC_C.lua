@@ -8,10 +8,8 @@ local AllButtonStyleName, DefaultSkillStyleNodeName = {
   "Sprint_Multi",
   "Switch"
 }, "Common_Btn"
-
 function WBP_Player_SkillItem_PC_C:Initialize(Initializer)
   self.Super.Initialize(self)
-  self.CurButtonState = nil
   self.LastButtonState = nil
   self.OwnerPlayer = nil
   self.SkillName = nil
@@ -28,29 +26,26 @@ function WBP_Player_SkillItem_PC_C:Initialize(Initializer)
   self.EnergyBgMatLinearColor1 = UE4.FLinearColor(1.0, 1.0, 1.0, 1.0)
   self.EnergyBgMatLinearColor2 = UE4.FLinearColor(1.0, 1.0, 1.0, 1.0)
   self.EnergyBgMatLinearColor3 = UE4.FLinearColor(1.5, 1.3, 1.0, 1.0)
-  self.InActiveStates = {
+  self.InActiveStates_Cover = {
     "Lock",
     "Ban",
-    "RegionBan",
-    "Empty",
-    "Hooking"
+    "Empty"
   }
+  self.InActiveStates_Opacity = {"RegionBan", "Hooking"}
 end
-
 function WBP_Player_SkillItem_PC_C:Construct()
   self.EnergyBgMat = self.Energy_Num_Bg:GetDynamicMaterial()
   self.IsSkillEnoughSpCanUse = true
+  self.CurButtonState = nil
   self:ClearRemainAnim()
   self:UnEmptySkill()
 end
-
 function WBP_Player_SkillItem_PC_C:Destruct()
   if EMUIAnimationSubsystem:EMAnimationIsPlaying(self, self.Unlock) then
     EMUIAnimationSubsystem:EMStopAnimation(self, self.Unlock)
   end
   WBP_Player_SkillItem_PC_C.Super.Destruct(self)
 end
-
 function WBP_Player_SkillItem_PC_C:SetGamepadIcons()
   if not self.SkillName then
     return
@@ -62,7 +57,6 @@ function WBP_Player_SkillItem_PC_C:SetGamepadIcons()
     }
   })
 end
-
 function WBP_Player_SkillItem_PC_C:RefreshButtonStyle(SkillName, Skill, SkillEnumId, Owner)
   self.OwnerPlayer = Owner
   local SkillCostSp, SkillBtnStyle, SkillBaseConfig = 0, "", {}
@@ -113,14 +107,12 @@ function WBP_Player_SkillItem_PC_C:RefreshButtonStyle(SkillName, Skill, SkillEnu
     self:UpdateCharSpInfo(SkillName)
   end
 end
-
 function WBP_Player_SkillItem_PC_C:RemoveAllListenInput()
   for i = 1, 2 do
     local SkillName = "Skill" .. tostring(i)
     self:StopListeningForInputAction(SkillName, UE4.EInputEvent.IE_Pressed)
   end
 end
-
 function WBP_Player_SkillItem_PC_C:CalculateSkillCostSp(SkillObj)
   if not SkillObj then
     return 0
@@ -139,7 +131,6 @@ function WBP_Player_SkillItem_PC_C:CalculateSkillCostSp(SkillObj)
   CostSpNum = math.max(math.ceil(CostSpNum + ModifyValue), 0)
   return self.OwnerPlayer:ApplySkillEfficiency(CostSpNum) or 0
 end
-
 function WBP_Player_SkillItem_PC_C:CheckSkillHaveEnoughSp(SkillName)
   local SkillCostSp = self.SkillInfo[SkillName].SkillCostSp
   if not IsValid(self.OwnerPlayer) then
@@ -147,17 +138,13 @@ function WBP_Player_SkillItem_PC_C:CheckSkillHaveEnoughSp(SkillName)
   end
   return SkillCostSp <= self.OwnerPlayer:GetAttr("Sp")
 end
-
 function WBP_Player_SkillItem_PC_C:SetButtonStyleByState(SkillEnumId, StateName)
   if StateName == self.CurButtonState then
     return
   end
   if "UnLock" == StateName then
     self:RemoveAllListenInput()
-    self:ListenForInputAction(self.SkillName, UE4.EInputEvent.IE_Pressed, false, {
-      self,
-      self.OnSkillActionInput
-    })
+    self:AddSkillListeningInput()
     if self.CurButtonState == "Lock" then
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.UnLock)
     end
@@ -169,10 +156,7 @@ function WBP_Player_SkillItem_PC_C:SetButtonStyleByState(SkillEnumId, StateName)
     self:PlayAnimationForward(self.Ban)
   elseif "UnBan" == StateName then
     self:RemoveAllListenInput()
-    self:ListenForInputAction(self.SkillName, UE4.EInputEvent.IE_Pressed, false, {
-      self,
-      self.OnSkillActionInput
-    })
+    self:AddSkillListeningInput()
     if self.CurButtonState ~= "Lock" then
       EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
     end
@@ -181,20 +165,14 @@ function WBP_Player_SkillItem_PC_C:SetButtonStyleByState(SkillEnumId, StateName)
     self:SetPanelOpacityForBan(true)
   elseif "RegionUnBan" == StateName then
     self:RemoveAllListenInput()
-    self:ListenForInputAction(self.SkillName, UE4.EInputEvent.IE_Pressed, false, {
-      self,
-      self.OnSkillActionInput
-    })
+    self:AddSkillListeningInput()
     self:SetPanelOpacityForBan(false)
   elseif "Empty" == StateName then
     self:RemoveAllListenInput()
     self:EmptySkill()
   elseif "UnEmpty" == StateName then
     self:RemoveAllListenInput()
-    self:ListenForInputAction(self.SkillName, UE4.EInputEvent.IE_Pressed, false, {
-      self,
-      self.OnSkillActionInput
-    })
+    self:AddSkillListeningInput()
     self:UnEmptySkill()
   elseif "Hooking" == StateName then
     self:SetPanelOpacityForBan(true)
@@ -209,18 +187,15 @@ function WBP_Player_SkillItem_PC_C:SetButtonStyleByState(SkillEnumId, StateName)
     self.CurButtonState = StateName
   end
 end
-
 function WBP_Player_SkillItem_PC_C:EmptySkill()
   self.Switcher_Skill:SetActiveWidgetIndex(1)
   self.Bg01:SetBrushTintColor(UE4.UUIFunctionLibrary.GetSlateColorByRGBA(0, 0, 0, 0.2))
 end
-
 function WBP_Player_SkillItem_PC_C:UnEmptySkill()
   self:SetPanelOpacityForBan(false)
   self.Switcher_Skill:SetActiveWidgetIndex(0)
   self.Bg01:SetBrushTintColor(UE4.UUIFunctionLibrary.GetSlateColorByRGBA(0, 0, 0, 0.55))
 end
-
 function WBP_Player_SkillItem_PC_C:CheckIsCanUseSkillByName(SkillName)
   if not IsValid(self.OwnerPlayer) then
     return false
@@ -228,7 +203,6 @@ function WBP_Player_SkillItem_PC_C:CheckIsCanUseSkillByName(SkillName)
   local SkillId = self.SkillInfo[SkillName].SkillId
   return self.OwnerPlayer:DoCheckUseSkill(SkillId)
 end
-
 function WBP_Player_SkillItem_PC_C:ExecuteCheckIsSkillInUsing(SkillId)
   local Skill = self.OwnerPlayer:GetSkill(SkillId)
   if not Skill then
@@ -240,7 +214,6 @@ function WBP_Player_SkillItem_PC_C:ExecuteCheckIsSkillInUsing(SkillId)
   end
   return false
 end
-
 function WBP_Player_SkillItem_PC_C:RefreshSkillStyleInTimer(SkillName)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -249,16 +222,21 @@ function WBP_Player_SkillItem_PC_C:RefreshSkillStyleInTimer(SkillName)
     return
   end
   local SkillId = self.SkillInfo[SkillName].SkillId
-  if nil == SkillId or CommonUtils.HasValue(self.InActiveStates, self.CurButtonState) then
+  if nil == SkillId or CommonUtils.HasValue(self.InActiveStates_Cover, self.CurButtonState) then
     return
   end
   self:CheckIsInAir(SkillName)
   local SkillBtnStyleName = self.SkillInfo[SkillName].SkillBtnStyle
   local SkillCdTime, SkillCdPercent = self.OwnerPlayer:GetSkillCdTimeAndPercent(SkillId)
   if SkillCdTime > 0 then
-    self.CurButtonState = "InCDTime"
     self.Text_CD:SetText(self:GetPreciseDecimal(SkillCdTime, 1))
     self.Bar_Skill_CD:SetPercent(1 - SkillCdPercent)
+  end
+  if CommonUtils.HasValue(self.InActiveStates_Opacity, self.CurButtonState) then
+    return
+  end
+  if SkillCdTime > 0 then
+    self.CurButtonState = "InCDTime"
   elseif not self.IsSkillEnoughSpCanUse then
     self.CurButtonState = "EnergyNotEnough"
   else
@@ -281,15 +259,12 @@ function WBP_Player_SkillItem_PC_C:RefreshSkillStyleInTimer(SkillName)
     end
     if self.SustainedTypeSkillIsOpen[SkillName] ~= IsInUseSkill and self.SustainedTypeSkillIsOpen[SkillName] == false then
       self:RefreshSkillIconAndText(SkillName, self.OwnerPlayer:GetSkillByType(UE.ESkillType.Skill2), "Open")
-      EventManager:FireEvent(EventID.OnCharacterStartSkill, SkillId, SkillName, self.SkillInfo[SkillName].SkillCostSp, self.OwnerPlayer)
     elseif self.SustainedTypeSkillIsOpen[SkillName] ~= IsInUseSkill and self.SustainedTypeSkillIsOpen[SkillName] then
       self:RefreshSkillIconAndText(SkillName, self.OwnerPlayer:GetSkillByType(UE.ESkillType.Skill2), "Close")
-      EventManager:FireEvent(EventID.OnCharacterStopSkill, SkillId, SkillName, self.OwnerPlayer)
     end
     self.SustainedTypeSkillIsOpen[SkillName] = IsInUseSkill
   end
 end
-
 function WBP_Player_SkillItem_PC_C:HandleButtonStateChange(SkillName)
   if self.LastButtonState ~= self.CurButtonState then
     if self.CurButtonState == "InCDTime" then
@@ -316,7 +291,6 @@ function WBP_Player_SkillItem_PC_C:HandleButtonStateChange(SkillName)
   end
   self.LastButtonState = self.CurButtonState
 end
-
 function WBP_Player_SkillItem_PC_C:CheckIsInAir(SkillName)
   local SkillId = self.SkillInfo[SkillName].SkillId
   if not SkillId then
@@ -326,7 +300,7 @@ function WBP_Player_SkillItem_PC_C:CheckIsInAir(SkillName)
   if not Skill then
     return
   end
-  if CommonUtils.HasValue(self.InActiveStates, self.CurButtonState) then
+  if CommonUtils.HasValue(self.InActiveStates_Opacity, self.CurButtonState) or CommonUtils.HasValue(self.InActiveStates_Cover, self.CurButtonState) then
     return
   end
   if not Skill.Data.AllowUseSkillInAir and (self.OwnerPlayer.IsInAir or self.OwnerPanel.IsCharacterInFalling) then
@@ -337,7 +311,6 @@ function WBP_Player_SkillItem_PC_C:CheckIsInAir(SkillName)
     self:SetPanelOpacityForBan(false)
   end
 end
-
 function WBP_Player_SkillItem_PC_C:SetPanelOpacityForBan(IsBan)
   if IsBan then
     self.Panel_Skill01:SetRenderOpacity(0.6)
@@ -345,7 +318,6 @@ function WBP_Player_SkillItem_PC_C:SetPanelOpacityForBan(IsBan)
     self.Panel_Skill01:SetRenderOpacity(1.0)
   end
 end
-
 function WBP_Player_SkillItem_PC_C:UpdateCharSpInfo(SkillName, NowSp)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -381,7 +353,6 @@ function WBP_Player_SkillItem_PC_C:UpdateCharSpInfo(SkillName, NowSp)
   end
   self.LastSkillEnoughSpCanUse = self.IsSkillEnoughSpCanUse
 end
-
 function WBP_Player_SkillItem_PC_C:UpdateSkillEfficiency(SkillName, NowSp)
   if not IsValid(self.OwnerPlayer) then
     return
@@ -402,7 +373,6 @@ function WBP_Player_SkillItem_PC_C:UpdateSkillEfficiency(SkillName, NowSp)
   self.SkillInfo[SkillName].SkillCostSp = SkillCostSp
   self:UpdateCharSpInfo(SkillName, NowSp)
 end
-
 function WBP_Player_SkillItem_PC_C:UpdateBuffSpModify(SkillName, NowSp)
   if self.SkillInfo[SkillName] == nil then
     return
@@ -417,7 +387,6 @@ function WBP_Player_SkillItem_PC_C:UpdateBuffSpModify(SkillName, NowSp)
   self.SkillInfo[SkillName].SkillCostSp = SkillCostSp
   self:UpdateCharSpInfo(SkillName, NowSp)
 end
-
 function WBP_Player_SkillItem_PC_C:RefreshSkillIconAndText(SkillName, SkillId, State)
   local Skill = self.OwnerPlayer:GetSkill(SkillId)
   if not Skill then
@@ -445,7 +414,6 @@ function WBP_Player_SkillItem_PC_C:RefreshSkillIconAndText(SkillName, SkillId, S
   self.SkillInfo[SkillName].State = State
   self.SkillInfo[SkillName].CloseSkillCostSp = SkillCostSp
 end
-
 function WBP_Player_SkillItem_PC_C:OnSkillActionInput()
   if self.CurButtonState == "Lock" or self.CanNotUseInAir then
     return
@@ -459,7 +427,6 @@ function WBP_Player_SkillItem_PC_C:OnSkillActionInput()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Click)
   end
 end
-
 function WBP_Player_SkillItem_PC_C:OnIconLoadFinishWithID(Object, ResourceID)
   if not (Object and IsValid(self)) or ResourceID ~= self.LoadSkillIconID then
     return
@@ -468,7 +435,12 @@ function WBP_Player_SkillItem_PC_C:OnIconLoadFinishWithID(Object, ResourceID)
   local VXSkillMat = self.VX_skillIcon:GetDynamicMaterial()
   VXSkillMat:SetTextureParameterValue("Mask", Object)
 end
-
+function WBP_Player_SkillItem_PC_C:AddSkillListeningInput()
+  self:ListenForInputAction(self.SkillName, UE4.EInputEvent.IE_Pressed, false, {
+    self,
+    self.OnSkillActionInput
+  })
+end
 function WBP_Player_SkillItem_PC_C:ClearRemainAnim()
   if self.VX_skillIcon and self.VX_skillIcon:GetRenderOpacity() > 0.0 then
     self:PlayAnimation(self.Sustain_Loop, self.Sustain_Loop:GetEndTime(), 1, UE4.EUMGSequencePlayMode.Reverse)
@@ -483,6 +455,5 @@ function WBP_Player_SkillItem_PC_C:ClearRemainAnim()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Guide_Remind, 1)
   end
 end
-
 AssembleComponents(WBP_Player_SkillItem_PC_C)
 return WBP_Player_SkillItem_PC_C

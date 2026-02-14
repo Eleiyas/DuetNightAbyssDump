@@ -12,7 +12,6 @@ local AlreadyDeleteToast = false
 BP_TempleEnergySupply_C._components = {
   "BluePrints.Item.Components.RecoverEnergy"
 }
-
 function BP_TempleEnergySupply_C:AuthorityInitInfo(Info)
   BP_TempleEnergySupply_C.Super.AuthorityInitInfo(self, Info)
   self.NormalEnergy = self.UnitParams.NormalEnergy
@@ -31,7 +30,6 @@ function BP_TempleEnergySupply_C:AuthorityInitInfo(Info)
   self.HasAllEnergyGuideClose = {}
   self.HasEnergyGuideClose = {}
 end
-
 function BP_TempleEnergySupply_C:CommonInitInfo(Info)
   BP_TempleEnergySupply_C.Super.CommonInitInfo(self, Info)
   self.InteractiveType = Const.PressInteractive
@@ -41,29 +39,26 @@ function BP_TempleEnergySupply_C:CommonInitInfo(Info)
   self.BuffNum = 0
   self.BuffFXNum = 0
   self.BuffFXIds = {
-    900014,
-    900015,
     900016,
     900019,
     900017,
     900018
   }
   self.BuffFX = {}
+  self.RemoveBuffId = self.UnitParams.RemoveBuffId
   self.GuideRadius = DataMgr.GlobalConstant.SurvivalProGuideRadius.ConstantValue or 500
-  self.SurvivalValueChange = DataMgr.GlobalConstant.SurvivalValueChange.ConstantValue
+  self.ReduceValue = self.UnitParams.ReduceValue
   self.ChestInteractiveComponent.DisPlayInteractiveName = GText(self.ChestInteractiveComponent.InteractiveName)
   self.Target = {}
   self.InToastDisPlayer = {}
   self.BuffId = self.UnitParams.BuffId
   self.bActiveMontage = false
 end
-
 function BP_TempleEnergySupply_C:ClientInitInfo(Info)
   BP_TempleEnergySupply_C.Super.ClientInitInfo(self, Info)
   DebugPrint("ADD TIMER FindTarget_Client", self:GetName())
   self:AddTimer(0.1, BP_TempleEnergySupply_C.FindTarget_Client, true)
 end
-
 function BP_TempleEnergySupply_C:OnActorReady(Info)
   BP_TempleEnergySupply_C.Super.OnActorReady(self, Info)
   if IsAuthority(self) then
@@ -73,15 +68,14 @@ function BP_TempleEnergySupply_C:OnActorReady(Info)
   for i, v in pairs(self.BuffFXIds) do
     self.FXComponent:PlayEffectByID(v)
   end
+  self.FXMax = self.FXComponent:PlayEffectByID(900015)
 end
-
 function BP_TempleEnergySupply_C:ReceiveEndPlay(Reason)
   self.Overridden.ReceiveEndPlay(self, Reason)
   EventManager:RemoveEvent(EventID.OnStartSkillFeature, self)
   EventManager:RemoveEvent(EventID.OnEndSkillFeature, self)
   self:ResetToastInfo()
 end
-
 function BP_TempleEnergySupply_C:OnEMActorDestroy(...)
   BP_TempleEnergySupply_C.Super.OnEMActorDestroy(self, ...)
   print(_G.LogTag, "LXZ OnEMActorDestroy", self:GetName(), self._RegisterOnCharacterDead)
@@ -89,16 +83,6 @@ function BP_TempleEnergySupply_C:OnEMActorDestroy(...)
     Battle(self):UnregisterBattleEvent(BattleEventName.OnAfterDead, self, "_OnCharacterDead")
   end
 end
-
-function BP_TempleEnergySupply_C:RegisterToGameState()
-  local GameState = UE4.UGameplayStatics.GetGameState(self)
-  if nil == GameState then
-    print(_G.LogTag, "GameState is nil")
-    return
-  end
-  GameState:RegisterMechanism(self, self:GetUnitRealType())
-end
-
 function BP_TempleEnergySupply_C:OpenMechanism(PlayerActorEid)
   if IsClient(self) then
     return
@@ -121,7 +105,6 @@ function BP_TempleEnergySupply_C:OpenMechanism(PlayerActorEid)
   end
   self:OnOpenMechanism()
 end
-
 function BP_TempleEnergySupply_C:CloseMechanism(Eid, IsSuccess)
   if IsAuthority(self) and Eid == self.NowPlayerEid then
     local Player = Battle(self):GetEntity(self.NowPlayerEid)
@@ -136,7 +119,6 @@ function BP_TempleEnergySupply_C:CloseMechanism(Eid, IsSuccess)
   end
   AudioManager(self):SetEventSoundParam(self, "EnergySupplyOpen", {ToEnd = 1})
 end
-
 function BP_TempleEnergySupply_C:ForceCloseMechanism(Eid, IsSuccess)
   print(_G.LogTag, "LXZ ForceCloseMechanism", Eid, self.NowPlayerEid)
   if IsAuthority(self) and Eid == self.NowPlayerEid then
@@ -151,7 +133,6 @@ function BP_TempleEnergySupply_C:ForceCloseMechanism(Eid, IsSuccess)
   end
   AudioManager(self):SetEventSoundParam(self, "EnergySupplyOpen", {ToEnd = 1})
 end
-
 function BP_TempleEnergySupply_C:ChangeToNormalState(Player)
   if IsAuthority(self) then
     self.DefaultInteractiveComponent.bCanUsed = false
@@ -159,19 +140,14 @@ function BP_TempleEnergySupply_C:ChangeToNormalState(Player)
     Player.OnInteractiveDelegate:Remove(self, self.ChangeToNormalState)
   end
 end
-
 function BP_TempleEnergySupply_C:SetInteractiveCanUsed(value)
 end
-
 function BP_TempleEnergySupply_C:PlayAnim(PlayerId, InteractiveState, MechanismEid)
   local PlayerCharacter = Battle(self):GetEntity(PlayerId)
   if 0 == InteractiveState then
     self.ChestInteractiveComponent:OnStartInteractive(PlayerCharacter, self.ChestInteractiveComponent.MontageName, MechanismEid)
     if IsClient(self) then
       PlayerCharacter:SetCharacterTag("Interactive")
-    end
-    if not IsValid(self.InteractiveFXObjext) or not self.InteractiveFXObjext:IsActive() then
-      self.InteractiveFXObjext = self.FXComponent:PlayEffectByID(900012)
     end
     self:OnInteracrive(PlayerId)
   end
@@ -180,13 +156,8 @@ function BP_TempleEnergySupply_C:PlayAnim(PlayerId, InteractiveState, MechanismE
   if 2 == InteractiveState then
     self.DefaultInteractiveComponent.bCanUsed = false
     self.ChestInteractiveComponent:OnEndInteractive(PlayerCharacter, self.ChestInteractiveComponent.MontageName, MechanismEid)
-    if IsValid(self.InteractiveFXObjext) then
-      self.InteractiveFXObjext:Deactivate()
-      self.InteractiveFXObjext = nil
-    end
   end
 end
-
 function BP_TempleEnergySupply_C:OnBuffNumChange()
   if not self.BuffId then
     return
@@ -194,15 +165,14 @@ function BP_TempleEnergySupply_C:OnBuffNumChange()
   local NewBuffNum = self.NowEnergy // self.BuffBase
   local Sub = math.floor(NewBuffNum - self.BuffNum)
   if Sub < 0 then
-    DebugPrint("\232\191\153\233\135\140\230\152\175BuffNumChangelxh1: " .. Sub)
+    DebugPrint("这里是BuffNumChangelxh1: " .. Sub)
     Battle(self):ReduceBuffLayerFromTarget(self, self, self.BuffId, -Sub, false)
   elseif Sub > 0 then
-    DebugPrint("\232\191\153\233\135\140\230\152\175BuffNumChangelxh2: " .. Sub)
+    DebugPrint("这里是BuffNumChangelxh2: " .. Sub)
     Battle(self):AddBuffToTarget(self, self, self.BuffId, -1, nil, nil, Sub)
   end
   self.BuffNum = NewBuffNum
 end
-
 function BP_TempleEnergySupply_C:FindTarget()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local FindPlayer = false
@@ -244,7 +214,6 @@ function BP_TempleEnergySupply_C:FindTarget()
     self.HasFindPlayer = FindPlayer
   end
 end
-
 function BP_TempleEnergySupply_C:StartRecover()
   self.RecoverHandle = self:AddTimer(1, BP_TempleEnergySupply_C.AutoRecover, true)
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -257,7 +226,6 @@ function BP_TempleEnergySupply_C:StartRecover()
   end
   self.BuffHandle = self:AddTimer(0.1, BP_TempleEnergySupply_C.FindTarget, true)
 end
-
 function BP_TempleEnergySupply_C:AutoRecover()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local bFindPlayer = false
@@ -279,7 +247,6 @@ function BP_TempleEnergySupply_C:AutoRecover()
     self:TriggerBluePrintEvent("PlayStopMontage")
   end
 end
-
 function BP_TempleEnergySupply_C:OutRecover_Lua(Monster)
   if not IsValid(Monster) or not Monster:IsMonster() then
     return
@@ -301,7 +268,7 @@ function BP_TempleEnergySupply_C:OutRecover_Lua(Monster)
         self:ChangeEnergy(self.NormalEnergy, true)
       end
     end
-    if not IsAuthority(self) or IsStandAlone(self) then
+    if (not IsAuthority(self) or IsStandAlone(self)) and self.NowEnergy > 0 then
       local Player = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
       local MonsterLoc = Monster.Mesh:K2_GetComponentLocation()
       local MonsterRot = Monster.Mesh:K2_GetComponentRotation()
@@ -323,22 +290,29 @@ function BP_TempleEnergySupply_C:OutRecover_Lua(Monster)
         self:OnFxObjectCreated(FXObject)
         UE4.UNiagaraFunctionLibrary.OverrideSystemUserVariableSkeletalMeshComponent(FXObject, "Skeletal Mesh", Monster.Mesh)
         FXObject:SetNiagaraVariableVec3("AttarctionPosition", self.AttarctionPosition:K2_GetComponentLocation())
+        if self.AttarctionStrength then
+          FXObject:SetNiagaraVariableFloat("AttarctionStrength", self.AttarctionStrength)
+        end
+        if self.ParticleNumberMul then
+          FXObject:SetNiagaraVariableFloat("ParticleNumberMul", self.ParticleNumberMul)
+        end
+        if self.ParticleSizeScale then
+          FXObject:SetNiagaraVariableFloat("ParticleSizeScale", self.ParticleSizeScale)
+        end
       end
     end
     Monster.EnergySupplyCheck = -1
   end
 end
-
 function BP_TempleEnergySupply_C:EnergyToSurvival()
   if not self.IsEnergyInteractive then
     return
   end
-  local RealChangeVal = math.min(self.SurvivalValueChange / 10, self.NowEnergy)
+  local RealChangeVal = math.min(self.ReduceValue / 10, self.NowEnergy)
   self:ChangeEnergy(-RealChangeVal, false)
   self:OnEnergyDown()
   self.FXNum = self.FXNum + 1
 end
-
 function BP_TempleEnergySupply_C:OnForceEndInteractive_Lua(SurvivalValue, MaxSurvivalValue)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   if not GameState then
@@ -352,17 +326,53 @@ function BP_TempleEnergySupply_C:OnForceEndInteractive_Lua(SurvivalValue, MaxSur
     end
   end
 end
-
 function BP_TempleEnergySupply_C:ChangeEnergy_Lua(ChangeValue, bFromMonster)
   self.NowEnergy = self.NowEnergy + ChangeValue
   self.NowEnergy = math.min(self.NowEnergy, self.MaxEnergy)
   self.NowEnergy = math.max(self.NowEnergy, 0)
   self.EnergyChangeFromMonster = bFromMonster
-  if (IsStandAlone(self) or not IsAuthority(self)) and ChangeValue < 0 then
-    self:OnEnergyDown()
+  if IsStandAlone(self) then
+    if ChangeValue < 0 then
+      self:OnEnergyDown()
+    end
+    if self.ActiveFX ~= nil and self.NowEnergy <= 0 then
+      self.ActiveFX:Deactivate()
+      self.ActiveFX = nil
+      if not IsValid(self.InteractiveFXObjext) or not self.InteractiveFXObjext:IsActive() then
+        self.InteractiveFXObjext = self.FXComponent:PlayEffectByID(900012)
+        self.InteractiveFXObjext:SetWorldScale3D(self.EffectScale)
+        local function StopInteractiveFX()
+          if IsValid(self.InteractiveFXObjext) then
+            self.InteractiveFXObjext:Deactivate()
+            self.InteractiveFXObjext = nil
+          end
+        end
+        self:AddTimer(1, StopInteractiveFX, false, 0)
+      end
+      local GameState = UE4.UGameplayStatics.GetGameState(self)
+      for _, Target in pairs(GameState.MonsterMap) do
+        if Target:GetCamp() == ECampName.Monster and self.RemoveBuffId and 0 ~= self.RemoveBuffId then
+          DebugPrint("zwk RemoveBuffId", self.RemoveBuffId, Target:GetName())
+          Battle(self):RemoveBuffFromTarget(self, Target, self.RemoveBuffId, false, -1)
+        end
+      end
+      local GameMode = UE4.UGameplayStatics.GetGameMode(self)
+      GameMode:GetDungeonComponent():OnTempleEnergyToZero()
+      self.CanOpen = false
+    end
+    if self.FXMax ~= nil and self.NowEnergy < self.MaxEnergy then
+      self.FXMax:Deactivate()
+      self.FXMax = nil
+    end
   end
 end
-
+function BP_TempleEnergySupply_C:GetCanOpen()
+  if self.NowEnergy > 0 then
+    self.CanOpen = true
+  else
+    self.CanOpen = false
+  end
+end
 function BP_TempleEnergySupply_C:PlayActiveMontage()
   local AnimInstance = self.Mesh:GetAnimInstance()
   local Montage = AnimInstance:GetCurrentActiveMontage()
@@ -374,7 +384,6 @@ function BP_TempleEnergySupply_C:PlayActiveMontage()
     self.ActiveFX = self.FXComponent:PlayEffectByID(900013)
   end
 end
-
 function BP_TempleEnergySupply_C:PlayStopMontage()
   local AnimInstance = self.Mesh:GetAnimInstance()
   local Montage = AnimInstance:GetCurrentActiveMontage()
@@ -383,7 +392,6 @@ function BP_TempleEnergySupply_C:PlayStopMontage()
     AnimInstance:Montage_JumpToSection("Stop", Montage)
   end
 end
-
 function BP_TempleEnergySupply_C:CalDistance(Player)
   local PlayerX = Player:K2_GetActorLocation().X
   local PlayerY = Player:K2_GetActorLocation().Y
@@ -393,7 +401,6 @@ function BP_TempleEnergySupply_C:CalDistance(Player)
   local y = PlayerY - SelfY
   return math.sqrt(x * x + y * y)
 end
-
 function BP_TempleEnergySupply_C:OnRep_NowEnergy()
   if self.InitSuccess then
     self:OnFxObjectFinished()
@@ -401,21 +408,17 @@ function BP_TempleEnergySupply_C:OnRep_NowEnergy()
     local function Callback()
       if self.InitSuccess then
         self:OnFxObjectFinished()
-        
         self:RemoveTimer("OnRep_NowEnergy")
       end
     end
-    
     self:AddTimer(0.1, Callback, true, 0, "OnRep_NowEnergy", false)
   end
 end
-
 function BP_TempleEnergySupply_C:CheckInSameLevel(Actor)
   local ActorLevelId = self:CheckActorLevel(Actor)
   local SupplyLevelId = self:CheckActorLevel(self)
   return -1 ~= ActorLevelId and ActorLevelId == SupplyLevelId
 end
-
 function BP_TempleEnergySupply_C:CheckActorLevel(Actor)
   local LevelLoader = UE4.UGameplayStatics.GetGameInstance(self):GetSceneManager():GetLevelLoader()
   if not LevelLoader then
@@ -423,17 +426,13 @@ function BP_TempleEnergySupply_C:CheckActorLevel(Actor)
   end
   return LevelLoader:GetLevelId(Actor)
 end
-
 function BP_TempleEnergySupply_C:OnFxObjectCreated(FxObject)
   FxObject.OnSystemFinished:Add(self, self.OnFxObjectFinished)
 end
-
 function BP_TempleEnergySupply_C:OnStartSkillFeature(IsHideAllUI)
 end
-
 function BP_TempleEnergySupply_C:OnEndSkillFeature(IsHideAllUI)
 end
-
 function BP_TempleEnergySupply_C:CheckPlayerInShowToastDis(Dis, PlayerEid)
   if bIsToastShowed then
     return
@@ -448,7 +447,6 @@ function BP_TempleEnergySupply_C:CheckPlayerInShowToastDis(Dis, PlayerEid)
     self.InToastDisPlayer[PlayerEid] = nil
   end
 end
-
 function BP_TempleEnergySupply_C:RealShowToast()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManager = GameInstance:GetGameUIManager()
@@ -462,7 +460,6 @@ function BP_TempleEnergySupply_C:RealShowToast()
     bIsToastShowed = true
   end
 end
-
 function BP_TempleEnergySupply_C:OnInteracrive(PlayerId)
   if AlreadyDeleteToast then
     return
@@ -481,13 +478,11 @@ function BP_TempleEnergySupply_C:OnInteracrive(PlayerId)
     end
   end
 end
-
 function BP_TempleEnergySupply_C:ResetToastInfo()
   bIsToastShowed = false
   AlreadyDeleteToast = false
   self.InToastDisPlayer = {}
 end
-
 function BP_TempleEnergySupply_C:GetDungeonSaveData()
   return {
     StateId = self.StateId,
@@ -495,14 +490,11 @@ function BP_TempleEnergySupply_C:GetDungeonSaveData()
     BuffNum = self.BuffNum
   }
 end
-
 function BP_TempleEnergySupply_C:ActiveMaterialNotify()
 end
-
 function BP_TempleEnergySupply_C:ShowInteractedToast(PlayerEid)
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   GameState:ShowInteractedToast(PlayerEid)
 end
-
 AssembleComponents(BP_TempleEnergySupply_C)
 return BP_TempleEnergySupply_C

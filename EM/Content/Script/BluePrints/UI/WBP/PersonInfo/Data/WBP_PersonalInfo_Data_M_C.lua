@@ -5,11 +5,9 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Data.PersonInfoDataPageBaseView"
 }
-
 function M:InitBaseView()
   self:InitTab()
 end
-
 function M:InitTab()
   local TabWithoutChar = {
     Tabs = self.AllTabInfo,
@@ -38,6 +36,5 @@ function M:InitTab()
   }
   self.Root.Com_Tab_M:Init(TabWithoutChar)
 end
-
 AssembleComponents(M)
 return M

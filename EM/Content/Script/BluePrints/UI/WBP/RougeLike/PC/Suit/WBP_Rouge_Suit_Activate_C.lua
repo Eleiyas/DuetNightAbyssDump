@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   AudioManager(self):PlayUISound(self, "event:/ui/roguelike/suit_active_show", "RougeSuitActivate", nil)
-  assert(GWorld.RougeLikeManager, "\230\137\190\228\184\141\229\136\176RougeLikeManager,\229\143\175\232\131\189\228\184\141\229\156\168\232\130\137\233\184\189\229\133\179\229\134\133")
+  assert(GWorld.RougeLikeManager, "找不到RougeLikeManager,可能不在肉鸽关内")
   self.SuitId, self.CurActiveLevel, self.bTreasure = ...
   if self.bTreasure then
     self.CurrentCount = GWorld.RougeLikeManager.TreasureGroup:Find(self.SuitId)
@@ -25,7 +23,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   end
   self.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
 end
-
 function M:SetText()
   self.Text_Title:SetText(GText("RLBlessing_ActivateGroup"))
   self.Text_SuitNum:SetText(self.CurrentCount)
@@ -36,7 +33,6 @@ function M:SetText()
   end
   self.Text_Tip:SetText(GText("UI_RougeLike_ClickEmptyContinue"))
 end
-
 function M:SetSuitInfo()
   self:SetSuitImage(self.SuitId)
   local ActiveWidgetIndex = self.bTreasure and 1 or 0
@@ -70,7 +66,6 @@ function M:SetSuitInfo()
     end, 10)
   end
 end
-
 function M:SetSuitImage(SuitId)
   local ActiveWidgetIndex = self.bTreasure and 1 or 0
   self.WS_Icon:SetActiveWidgetIndex(ActiveWidgetIndex)
@@ -88,7 +83,6 @@ function M:SetSuitImage(SuitId)
   end
   self.Image_SuitIcon:PlayAnimation(self.Image_SuitIcon[self.CurActiveLevel])
 end
-
 function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   self.Super.OnUpdateUIStyleByInputTypeChange(self, CurInputType, CurGamepadName)
   if CurInputType == ECommonInputType.Gamepad then
@@ -96,8 +90,13 @@ function M:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   else
     self:InitKeyboardView()
   end
+  local Items = self.ScrollBox_Suit:GetAllChildren():ToTable()
+  for key, value in pairs(Items) do
+    if value and value.OnUpdateUIStyleByInputTypeChange then
+      value:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
+    end
+  end
 end
-
 function M:UpdateKeyTips()
   if not self.bTreasure and not self.CurrentHoverItem then
     return
@@ -130,7 +129,6 @@ function M:UpdateKeyTips()
   })
   self.Com_MidKeyTips:UpdateKeyInfo(BottomKeyInfo)
 end
-
 function M:InitGamepadView()
   self.Com_MidKeyTips:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Text_Tip:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -148,14 +146,12 @@ function M:InitGamepadView()
     end
   end
 end
-
 function M:InitKeyboardView()
   if self.Com_MidKeyTips then
     self.Com_MidKeyTips:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
   self.Text_Tip:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -166,7 +162,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -178,22 +173,18 @@ function M:OnAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UE4.UWidgetBlueprintLibrary.UnHandled()
 end
-
 function M:Close()
   AudioManager(self):SetEventSoundParam(self, "RougeSuitActivate", {ToEnd = 1})
   self.Super.Close(self)
 end
-
 function M:Destruct()
   self.Super.Destruct(self)
   EventManager:FireEvent(EventID.OnGetAwardUIClose)
 end
-
 function M:OnHoverItemChange(HoverItem)
   self.CurrentHoverItem = HoverItem
   self:AddDelayFrameFunc(function()
     self:UpdateKeyTips()
   end, 10)
 end
-
 return M

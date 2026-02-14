@@ -1,18 +1,16 @@
+local EMCache = require("EMCache.EMCache")
 local TimeUtils = require("Utils.TimeUtils")
 local GachaCommon = require("BluePrints.UI.WBP.Gacha.GachaCommon")
 local M = Class("BluePrints.Common.MVC.Model")
-
 function M:Init()
   self._Avatar = nil
   self.IsDestroied = nil
   self:GetAvatar()
 end
-
 function M:Destory()
   self._Avatar = nil
   self.IsDestroied = true
 end
-
 function M:GetAvatar()
   if self._Avatar == nil then
     self._Avatar = GWorld:GetAvatar()
@@ -22,9 +20,8 @@ function M:GetAvatar()
   end
   return self._Avatar
 end
-
 function M:GetGachaAvatarInfo(GachaId)
-  assert(GachaId, "GetGachaAvatarInfo\228\188\160\229\133\165\228\186\134\231\169\186\231\154\132GachaId")
+  assert(GachaId, "GetGachaAvatarInfo传入了空的GachaId")
   local Avatar = self:GetAvatar()
   local GachaLst = Avatar.SkinGachaPool
   if not GachaLst[GachaId] or not GachaLst[GachaId].Usable then
@@ -32,7 +29,6 @@ function M:GetGachaAvatarInfo(GachaId)
   end
   return GachaLst[GachaId]
 end
-
 function M:GetEffectiveGachaInfo()
   local Avatar = self:GetAvatar()
   local GachaType2Gacha = {}
@@ -56,7 +52,6 @@ function M:GetEffectiveGachaInfo()
   end
   return GachaType2Gacha
 end
-
 function M:GetGachaTabInfo()
   local SkinGachaTabData = DataMgr.SkinGachaTab
   local Res = {}
@@ -76,20 +71,18 @@ function M:GetGachaTabInfo()
   end)
   return Res
 end
-
 function M:CheckGachaEffective(GachaId)
   local GachaData = DataMgr.SkinGacha[GachaId]
-  assert(GachaData, "\230\138\189\229\141\161\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. GachaId)
+  assert(GachaData, "抽卡信息不存在:" .. GachaId)
   if GachaData.GachaStartTime < TimeUtils.NowTime() and GachaData.GachaEndTime > TimeUtils.NowTime() then
     return true
   end
   return false
 end
-
 function M:GetSkinGachaItemLst(SkinGachaItemId)
   local SkinGachaItemData = DataMgr.SkinGachaItem[SkinGachaItemId]
   local Res = {}
-  assert(SkinGachaItemData, "\230\138\189\229\141\161\229\165\150\229\138\177\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. SkinGachaItemId)
+  assert(SkinGachaItemData, "抽卡奖励信息不存在:" .. SkinGachaItemId)
   for i = 1, #SkinGachaItemData.Type do
     local Content = {}
     Content.Type = SkinGachaItemData.Type[i]
@@ -100,10 +93,9 @@ function M:GetSkinGachaItemLst(SkinGachaItemId)
   end
   return Res
 end
-
 function M:GetSkinGachaUpInfo(GachaId)
   local GachaInfo = DataMgr.SkinGacha[GachaId]
-  assert(GachaInfo, "\230\138\189\229\141\161\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. GachaId)
+  assert(GachaInfo, "抽卡信息不存在:" .. GachaId)
   local UpItemId, UpItemType, Probaility
   if GachaInfo.RewardUpId then
     UpItemType = GachaCommon.GachaItemTypeMap[GachaInfo.RewardUpType]
@@ -115,10 +107,9 @@ function M:GetSkinGachaUpInfo(GachaId)
   end
   return UpItemId, UpItemType, Probaility
 end
-
 function M:GetSkinGachaCumulativeInfo(GahcaId)
   local GachaCumulativeData = DataMgr.SkinGachaCumulative[GahcaId]
-  assert(GachaCumulativeData, "\230\138\189\229\141\161\228\191\161\230\129\175\228\184\141\229\173\152\229\156\168:" .. GahcaId)
+  assert(GachaCumulativeData, "抽卡信息不存在:" .. GahcaId)
   local Res = {}
   for i = 1, #GachaCumulativeData.RewardTarget do
     local Content = {}
@@ -128,10 +119,9 @@ function M:GetSkinGachaCumulativeInfo(GahcaId)
   end
   return Res
 end
-
 function M:GetSkinGachaCurrentCumulativeInfo(GachaId)
   local GachaData = self:GetGachaAvatarInfo(GachaId)
-  assert(GachaData, "GetSkinGachaCurrentCumulativeInfo\229\189\147\229\137\141\229\141\161\230\177\160\230\151\160\230\149\136\239\188\154" .. GachaId)
+  assert(GachaData, "GetSkinGachaCurrentCumulativeInfo当前卡池无效：" .. GachaId)
   local GachaCumulativeData = DataMgr.SkinGachaCumulative[GachaData.GachaId]
   local Res, NeedCount = nil, 0
   local LastReward
@@ -154,7 +144,6 @@ function M:GetSkinGachaCurrentCumulativeInfo(GachaId)
   end
   return Res, NeedCount, LastReward
 end
-
 function M:GetALlSkinGachaCurrentCumulativeInfo()
   local GachaTabInfo = self:GetGachaTabInfo()
   if GachaTabInfo then
@@ -169,7 +158,6 @@ function M:GetALlSkinGachaCurrentCumulativeInfo()
   end
   return false
 end
-
 function M:GetSkinGachaAlreadyTimes(GachaType)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -181,14 +169,13 @@ function M:GetSkinGachaAlreadyTimes(GachaType)
   local GuaranteedCount = Avatar.GuaranteedDict.Guaranteed5StarDict[GachaType]
   return GuaranteedCount or 0
 end
-
 function M:CheckCanGacha(GachaId, GachaCounts, bShowError)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
     return -1
   end
   local GachaInfo = DataMgr.SkinGacha[GachaId]
-  assert(GachaInfo, "CheckCanGacha\228\188\160\229\133\165\228\186\134\230\151\160\230\149\136\231\154\132GachaId\239\188\154" .. GachaId)
+  assert(GachaInfo, "CheckCanGacha传入了无效的GachaId：" .. GachaId)
   if not ConditionUtils.CheckCondition(Avatar, GachaInfo.ConditionId, false) then
     return 2
   end
@@ -205,28 +192,71 @@ function M:CheckCanGacha(GachaId, GachaCounts, bShowError)
   end
   return 0
 end
-
-function M:CheckReddot()
+function M:CheckReddot(GachaReddotNode)
   local GachaTabInfoLst = self:GetGachaTabInfo()
   local GachaInfo = self:GetEffectiveGachaInfo()
   for _, GachaData in ipairs(GachaTabInfoLst) do
-    if GachaInfo[GachaData.TabId] then
-      local GacahTabData = DataMgr.SkinGachaTab[GachaData.TabId]
+    local GacahTabData = DataMgr.SkinGachaTab[GachaData.TabId]
+    if GacahTabData and GacahTabData.ReddotNode then
       local NodeName = GacahTabData.ReddotNode
-      if NodeName then
-        local Node = ReddotManager.GetTreeNode(NodeName)
-        if Node then
+      local Node
+      if GachaReddotNode and GachaReddotNode.Name == NodeName then
+        Node = GachaReddotNode
+      else
+        Node = ReddotManager.GetTreeNode(NodeName)
+      end
+      if Node then
+        if Node.Count > 0 then
+          Node:DecreaseCount(Node.Count)
+        end
+        if GachaInfo[GachaData.TabId] then
           local RewardId, NeedCount = self:GetSkinGachaCurrentCumulativeInfo(GachaData.GachaIdLst[1])
-          ReddotManager.ClearLeafNodeCount(NodeName, true)
           if RewardId and NeedCount <= 0 then
-            ReddotManager.IncreaseLeafNodeCount(NodeName, 1)
-          else
-            ReddotManager.DecreaseLeafNodeCount(NodeName, 0)
+            Node:IncreaseCount(1)
           end
         end
       end
     end
   end
 end
-
+function M:CheckNew(GachaNewNode)
+  local GachaNewNodeName = DataMgr.ReddotNode.Gacha_New.Name
+  local Node = GachaNewNode or ReddotManager.GetTreeNode(GachaNewNodeName)
+  if not Node then
+    return
+  end
+  local GachaTabInfoLst = self:GetGachaTabInfo()
+  local GachaInfo = self:GetEffectiveGachaInfo()
+  local newCount = 0
+  for _, GachaData in ipairs(GachaTabInfoLst) do
+    if GachaInfo[GachaData.TabId] then
+      for _, GachaId in ipairs(GachaInfo[GachaData.TabId]) do
+        if self:IsGachaNew(GachaId) then
+          newCount = newCount + 1
+        end
+      end
+    end
+  end
+  if Node.Count > 0 then
+    Node:DecreaseCount(Node.Count)
+  end
+  if newCount > 0 then
+    Node:IncreaseCount(newCount)
+  end
+end
+function M:IsGachaNew(GachaId)
+  if not GachaId then
+    return false
+  end
+  local GachaKey = string.format("Gacha%dOpened", GachaId)
+  local GachaNewCache = EMCache:Get(GachaKey, true)
+  return nil == GachaNewCache
+end
+function M:MarkGachaAsOpened(GachaId)
+  if not GachaId then
+    return
+  end
+  local GachaKey = string.format("Gacha%dOpened", GachaId)
+  EMCache:Set(GachaKey, true, true)
+end
 return M

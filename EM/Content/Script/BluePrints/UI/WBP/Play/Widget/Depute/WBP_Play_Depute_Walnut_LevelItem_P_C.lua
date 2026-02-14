@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.IsPC = CommonUtils.GetDeviceTypeByPlatformName(self) == "PC"
   self.Btn_Click.OnClicked:Add(self, self.OnClicked)
@@ -11,7 +10,6 @@ function M:Construct()
   self.Btn_Click.OnHovered:Add(self, self.OnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function M:Init(DungeonData, DungeonIds, WalnutTypeData, WalnutType, Parent)
   self.Parent = Parent
   if not DungeonData then
@@ -42,23 +40,19 @@ function M:Init(DungeonData, DungeonIds, WalnutTypeData, WalnutType, Parent)
     end
   end
 end
-
 function M:OnClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_confirm", nil, nil)
   self:StopAllAnimations()
   self:PlayAnimation(self.Click)
 end
-
 function M:OnPressed()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnReleased()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:OnHovered()
   if not self.IsPC then
     return
@@ -66,7 +60,6 @@ function M:OnHovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnUnhovered()
   if not self.IsPC then
     return
@@ -74,7 +67,6 @@ function M:OnUnhovered()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnAnimationFinished(InAnimation)
   if InAnimation == self.Click then
     local Item = UIManager(self):GetUIObj("StyleOfPlay")
@@ -135,11 +127,9 @@ function M:OnAnimationFinished(InAnimation)
     }, nil, true)
   end
 end
-
 function M:OnAddedToFocusPath(InFocusEvent)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     self.Parent:UpdatKeyDisplay()
   end
 end
-
 return M

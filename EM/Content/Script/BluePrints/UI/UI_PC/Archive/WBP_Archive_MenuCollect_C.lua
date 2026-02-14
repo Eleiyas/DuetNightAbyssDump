@@ -3,7 +3,6 @@ local RewardModel = require("BluePrints.UI.UI_PC.Archive.WBP_Archive_Reward_Mode
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Collect.OnClicked:Add(self, self.ClickRewardBtn)
   self.Btn_Collect.OnHovered:Add(self, self.OnCellHovered)
@@ -16,32 +15,26 @@ function M:Construct()
   end
   ReddotManager.AddListener("ArchiveReward", self, self.RefreshReddot)
 end
-
 function M:Destruct()
   ReddotManager.RemoveListener("ArchiveReward", self)
 end
-
 function M:Init(Parent)
   self.Parent = Parent
 end
-
 function M:ClickRewardBtn()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_small", nil, nil)
   self:PlayAnimation(self.Click)
   self:OpenReward()
 end
-
 function M:OpenReward()
   RewardModel:OpenReward(self.Parent or self)
 end
-
 function M:OnCellHovered()
   if not self:IsAnimationPlaying(self.Click) then
     self:StopAnimation(self.Normal)
     self:PlayAnimation(self.Hover)
   end
 end
-
 function M:OnCellUnhovered()
   if not self:IsAnimationPlaying(self.Click) then
     self:StopAnimation(self.Hover)
@@ -49,16 +42,13 @@ function M:OnCellUnhovered()
     self:PlayAnimation(self.Unhover)
   end
 end
-
 function M:OnCellPressed()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnCellReleased()
   self:StopAnimation(self.Press)
   self:PlayAnimation(self.Normal)
 end
-
 function M:RefreshReddot()
   local Node = ReddotManager.GetTreeNode("ArchiveReward")
   if not Node then
@@ -74,5 +64,4 @@ function M:RefreshReddot()
     self.Reddot:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return M

@@ -5,7 +5,6 @@ local WBP_Build_Slot_P_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.Common.DelayFrameComponent"
 })
-
 function WBP_Build_Slot_P_C:Construct()
   self:InitBtn()
   self.ItemInfo = nil
@@ -16,7 +15,6 @@ function WBP_Build_Slot_P_C:Construct()
     end
   })
 end
-
 function WBP_Build_Slot_P_C:InitSlot(Params)
   self.Params = Params
   self.Owner = Params.Owner
@@ -45,13 +43,35 @@ function WBP_Build_Slot_P_C:InitSlot(Params)
   self:CheckClick()
   self.Item:Init({Owner = self})
 end
-
 function WBP_Build_Slot_P_C:PlayRefreshAnimation()
   if not self.IsEmpty then
     self.Item:PlayAnimation(self.Item.Refresh)
   end
 end
-
+function WBP_Build_Slot_P_C:CheckUuidIsVaild()
+  if self.IsEmpty then
+    return true
+  end
+  local Avatar = GWorld:GetAvatar()
+  local IsValid = false
+  if Avatar then
+    if self.Type == "Char" then
+      IsValid = Avatar.Chars[self.Uuid] and true
+    elseif self.Type == "Pet" then
+      IsValid = Avatar.Pets[self.Uuid] and true
+    elseif self.Type == "Melee" then
+      IsValid = Avatar.Weapons[self.Uuid] and true
+    elseif self.Type == "Ranged" then
+      IsValid = Avatar.Weapons[self.Uuid] and true
+    end
+    if not IsValid then
+      self:ClearSlot()
+    end
+  else
+    self:ClearSlot()
+  end
+  return IsValid
+end
 function WBP_Build_Slot_P_C:AddDelelteIcon()
   if self.Uuid and self.Id and self.Owner.IsInEditor then
     self.Minus.Btn_Minus.Button_Area.OnClicked:Clear()
@@ -62,7 +82,6 @@ function WBP_Build_Slot_P_C:AddDelelteIcon()
     self.Minus:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Build_Slot_P_C:CheckIsColorfulPet()
   if not (self.Uuid and self.Id) or not self.Item.VX_Colorful then
     self.Item.VX_Colorful:SetVisibility(ESlateVisibility.Collapsed)
@@ -70,7 +89,6 @@ function WBP_Build_Slot_P_C:CheckIsColorfulPet()
   end
   if self.Type == "Pet" then
     local Premium = DataMgr.Pet[self.Id].Premium
-    DebugPrint("thy   CheckIsColorfulPet: Premium", Premium)
     if Premium and 1 == Premium then
       self.Item.VX_Colorful:SetVisibility(ESlateVisibility.Visible)
     else
@@ -80,7 +98,6 @@ function WBP_Build_Slot_P_C:CheckIsColorfulPet()
     self.Item.VX_Colorful:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Build_Slot_P_C:UpdateListItemState(CurItemInfo)
   if CurItemInfo and self.ItemInfo and self.ItemInfo.Uuid == CurItemInfo.Uuid then
     return
@@ -97,7 +114,6 @@ function WBP_Build_Slot_P_C:UpdateListItemState(CurItemInfo)
     end
   end
 end
-
 function WBP_Build_Slot_P_C:ClearItemFlag()
   if self.ItemInfo then
     self.ItemInfo.IsSelected = false
@@ -107,7 +123,6 @@ function WBP_Build_Slot_P_C:ClearItemFlag()
     end
   end
 end
-
 function WBP_Build_Slot_P_C:ShowListItemStateOnce(CurItemInfo)
   if CurItemInfo then
     if self.IsPhantomWeapon then
@@ -117,7 +132,6 @@ function WBP_Build_Slot_P_C:ShowListItemStateOnce(CurItemInfo)
     end
   end
 end
-
 function WBP_Build_Slot_P_C:CheckClick()
   if self.IsClicking then
     self.Item:PlayAnimation(self.Item.Select)
@@ -125,7 +139,6 @@ function WBP_Build_Slot_P_C:CheckClick()
     self.Item:PlayAnimation(self.Item.Normal)
   end
 end
-
 function WBP_Build_Slot_P_C:UpdateCurSquadInfo()
   if self.IsPhantomWeapon and self.Num then
     self.Owner:UpdateCurSquadInfo("PhantomWeapon" .. self.Num, self.Uuid or "")
@@ -141,7 +154,6 @@ function WBP_Build_Slot_P_C:UpdateCurSquadInfo()
     self.Owner:UpdateCurSquadInfo("RangedWeaponModSuit", self.ModSuit or 0)
   end
 end
-
 function WBP_Build_Slot_P_C:GetItemRarity()
   if not self.Id then
     self.Item.Image_Quality:SetVisibility(ESlateVisibility.Collapsed)
@@ -155,7 +167,7 @@ function WBP_Build_Slot_P_C:GetItemRarity()
   elseif self.Type == "Pet" then
     local PetInfo = DataMgr.Pet[self.Id]
     if PetInfo then
-      self.Text_Name:SetVisibility(ESlateVisibility.Collapsed)
+      self.Panel_Text:SetVisibility(ESlateVisibility.Collapsed)
       self:SetModTextBgVisbile(false)
       return self:SetItemRarity(PetInfo.Rarity)
     end
@@ -166,16 +178,13 @@ function WBP_Build_Slot_P_C:GetItemRarity()
     end
   end
 end
-
 function WBP_Build_Slot_P_C:SetItemRarity(Rarity)
   if Rarity then
-    self.Item.Image_Quality:SetVisibility(ESlateVisibility.Visible)
-    self.Item.Image_Quality:SetBrushResourceObject(self.Item["Img_Quality_" .. Rarity])
+    self.Item.Image_Bg:GetDynamicMaterial():SetScalarParameterValue("Index", Rarity)
   else
     self.Item.Image_Quality:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Build_Slot_P_C:CheckIsNeedLackState()
   if self.Owner.IsInEditor or self.IsAddSquad then
     self.Panel_Lack_Phantom:SetVisibility(ESlateVisibility.Collapsed)
@@ -202,20 +211,16 @@ function WBP_Build_Slot_P_C:CheckIsNeedLackState()
     end
   end
 end
-
 function WBP_Build_Slot_P_C:WeakClearSlotInfo()
   self.Uuid = nil
   self.Id = nil
 end
-
 function WBP_Build_Slot_P_C:PlayNormalAnimation()
   self.Item:PlayAnimation(self.Item.Normal)
 end
-
 function WBP_Build_Slot_P_C:GetParams()
   return self.Params
 end
-
 function WBP_Build_Slot_P_C:ClearSlot(IsAddSquad)
   local Params = {
     Owner = self.Owner,
@@ -235,14 +240,12 @@ function WBP_Build_Slot_P_C:ClearSlot(IsAddSquad)
     self.Owner.PhantomSlot.Weapon_Phantom02:ClearSlot(IsAddSquad)
   end
 end
-
 function WBP_Build_Slot_P_C:CheckIsPhantomWeapon()
   self.IsPhantomWeapon, self.Num = self:IsSubstringContained(self:GetName(), "Weapon_Phantom")
   if self.IsPhantomWeapon then
     self.WeaponOnwerWidget = self.Owner["Head_Phantom0" .. self.Num]
   end
 end
-
 function WBP_Build_Slot_P_C:IsSubstringContained(parentStr, subStr)
   local startPos, endPos = string.find(parentStr, subStr)
   if nil ~= startPos then
@@ -250,7 +253,6 @@ function WBP_Build_Slot_P_C:IsSubstringContained(parentStr, subStr)
   end
   return nil, nil
 end
-
 function WBP_Build_Slot_P_C:PlaySound()
   if self:GetName() == "Head_Phantom01" or self:GetName() == "Head_Phantom02" then
     if self.Id then
@@ -270,7 +272,6 @@ function WBP_Build_Slot_P_C:PlaySound()
     AudioManager(self):PlayUISound(nil, "event:/ui/common/click_mid", nil, nil)
   end
 end
-
 function WBP_Build_Slot_P_C:OnClickCallback()
   self:PlaySound()
   if self.Owner.IsInClickCD then
@@ -317,7 +318,6 @@ function WBP_Build_Slot_P_C:OnClickCallback()
   self.IsClicking = true
   self.Item:PlayAnimation(self.Item.Click)
 end
-
 function WBP_Build_Slot_P_C:UpdateIcon()
   self.Item.Image_Bg:SetVisibility(ESlateVisibility.Visible)
   self.Item.Image_Empty:SetVisibility(ESlateVisibility.Collapsed)
@@ -344,20 +344,17 @@ function WBP_Build_Slot_P_C:UpdateIcon()
     self:SetImage(IconPath)
   end
 end
-
 function WBP_Build_Slot_P_C:GetPetId()
   if self.Owner.Avatar and self.Owner.Avatar.Pets[self.Uuid] then
     return self.Owner.Avatar.Pets[self.Uuid].Props.PetId
   end
 end
-
 function WBP_Build_Slot_P_C:SetModTextBgVisbile(bShow)
   local DynamciMaterial = self.Item.Image_Bg:GetDynamicMaterial()
   if DynamciMaterial then
     DynamciMaterial:SetScalarParameterValue("TextBGOpacity", bShow and self.Item.TaskBG_Opacity or 0)
   end
 end
-
 function WBP_Build_Slot_P_C:SwitchDeleteIconVisible()
   if self.Owner.CurInputDeviceType == ECommonInputType.Gamepad then
     self.Minus:SetVisibility(ESlateVisibility.HitTestInvisible)
@@ -365,7 +362,6 @@ function WBP_Build_Slot_P_C:SwitchDeleteIconVisible()
     self.Minus:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Build_Slot_P_C:SetTitleName()
   if not self.Uuid or not self.Id then
     self.Panel_Text:SetVisibility(ESlateVisibility.Collapsed)
@@ -373,12 +369,11 @@ function WBP_Build_Slot_P_C:SetTitleName()
     return
   end
   if self.Owner.PhantomSlot[self:GetName()] then
-    self.Panel_Text:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
-    self.Text_Name:SetVisibility(ESlateVisibility.Collapsed)
+    self.Panel_Text:SetVisibility(ESlateVisibility.Collapsed)
     self:SetModTextBgVisbile(false)
     return
   else
-    self.Text_Name:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
+    self.Panel_Text:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
     self:SetModTextBgVisbile(true)
   end
   if not self.Owner:CheckSlotTypeIsAboutMainRole(self) then
@@ -397,15 +392,12 @@ function WBP_Build_Slot_P_C:SetTitleName()
   local SuitName = ModController:GetModel():GetSuitName(self.ModSuit)
   self.Text_Name:SetText(SuitName)
 end
-
 function WBP_Build_Slot_P_C:GetItemId()
   return self.Uuid
 end
-
 function WBP_Build_Slot_P_C:GetIsEmpty()
   return self.IsEmpty
 end
-
 function WBP_Build_Slot_P_C:SetImage(ImgShortPath, ImgLongPath)
   local ImgPath, Img
   local FixPath = ""
@@ -426,7 +418,7 @@ function WBP_Build_Slot_P_C:SetImage(ImgShortPath, ImgLongPath)
     Img = LoadObject(ImgLongPath)
   end
   if not IsValid(Img) then
-    DebugPrint("\231\188\186\229\176\145\229\155\190\231\137\135\232\181\132\230\186\144: ImgPath = " .. ImgPath)
+    DebugPrint("缺少图片资源: ImgPath = " .. ImgPath)
     return
   end
   local IconDynaMaterial = self.Item.Image_Bg:GetDynamicMaterial()
@@ -435,7 +427,6 @@ function WBP_Build_Slot_P_C:SetImage(ImgShortPath, ImgLongPath)
     IconDynaMaterial:SetScalarParameterValue("IconMapOpacity", 1)
   end
 end
-
 function WBP_Build_Slot_P_C:InitBtn()
   self.Item.Btn_Click.OnClicked:Add(self, function()
     self:OnBtnClickClicked()
@@ -450,34 +441,32 @@ function WBP_Build_Slot_P_C:InitBtn()
     self:OnBtnClickUnhovered()
   end)
 end
-
 function WBP_Build_Slot_P_C:OnBtnClickClicked()
   if self.OnClickCallback then
     self:OnClickCallback()
   end
 end
-
 function WBP_Build_Slot_P_C:OnBtnClickPressed()
   if self.IsClicking then
     return
   end
+  self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Press)
 end
-
 function WBP_Build_Slot_P_C:OnBtnClickHovered()
   if self.IsClicking then
     return
   end
+  self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.Hover)
 end
-
 function WBP_Build_Slot_P_C:OnBtnClickUnhovered()
   if self.IsClicking then
     return
   end
+  self.Item:StopAllAnimations()
   self.Item:PlayAnimation(self.Item.UnHover)
 end
-
 function WBP_Build_Slot_P_C:OnFocusReceived(MyGeometry, InFocusEvent)
   if self.Owner.IsInEditor then
     if self.Owner.CurFocusSlot and self.Owner.CurFocusSlot.Uuid and 0 ~= self.Owner.CurFocusSlot.Uuid then
@@ -488,5 +477,4 @@ function WBP_Build_Slot_P_C:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return true
 end
-
 return WBP_Build_Slot_P_C

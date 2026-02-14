@@ -2,7 +2,6 @@ require("UnLua")
 local FriendCommon = require("BluePrints.UI.WBP.Friend.FriendCommon")
 local FriendController = require("BluePrints.UI.WBP.Friend.FriendController")
 local M = Class("BluePrints.UI.WBP.Friend.View.Base.WBP_Friend_MainBase")
-
 function M:Construct()
   M.Super.Construct(self)
   self.Button_Copy.OnClicked:Add(self, self.OnBtnCopyClicked)
@@ -17,23 +16,19 @@ function M:Construct()
     self.WBP_Com_Tab_M.Tabs[1].UI:SetReddot(IsNew, Upgradeable)
   end)
 end
-
 function M:OnBtnCopyClicked()
   UUIFunctionLibrary.ClipboardCopy(tostring(FriendController:GetModel():GetSelfUid()))
   FriendController:ShowToast(GText("UI_Tosat_Menu_CopyUID"))
 end
-
 function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   M.Super.InitUIInfo(self, Name, IsInUIMode, EventList, ...)
   self.InitTabType = (...)
   if not self.InitTabType then
     self.InitTabType = FriendCommon.FriendTabType.MyFriend
   end
-  
   local function CloseCb(self)
     self:Close()
   end
-  
   local Tabs = {}
   local Avatar = GWorld:GetAvatar()
   local IsInRegionOnline = Avatar and Avatar.IsInRegionOnline
@@ -65,7 +60,6 @@ function M:InitUIInfo(Name, IsInUIMode, EventList, ...)
   self.WBP_Com_Tab_M:BindEventOnTabSelected(self, self.OnTabSelected)
   self:SelectTab(self.InitTabType)
 end
-
 function M:OnTabSelected(TabWidget, TabItemInfo)
   if IsValid(self.CurrWidget) then
     self.Main:RemoveChild(self.CurrWidget)
@@ -75,15 +69,12 @@ function M:OnTabSelected(TabWidget, TabItemInfo)
   self.Main:AddChild(self.CurrWidget)
   self.CurrWidget:InitWidget(self)
 end
-
 function M:SelectTab(TabType)
   self.WBP_Com_Tab_M:SelectTab(TabType)
 end
-
 function M:Destruct()
   ReddotManager.RemoveListener(FriendCommon.ReddotName, self)
   self.Main:RemoveChild(self.CurrWidget)
   M.Super.Destruct(self)
 end
-
 return M

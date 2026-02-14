@@ -3,12 +3,10 @@ local MiscUtils = require("Utils.MiscUtils")
 local BP_LaserAndShock_C = Class({
   "BluePrints/Item/CombatProp/BP_CombatPropBase_C"
 })
-
 function BP_LaserAndShock_C:AuthorityInitInfo(Info)
   BP_LaserAndShock_C.Super.AuthorityInitInfo(self, Info)
   self.SkillRange = 0
 end
-
 function BP_LaserAndShock_C:CommonInitInfo(Info)
   BP_LaserAndShock_C.Super.CommonInitInfo(self, Info)
   self.RotateSpeed = self.UnitParams.RotateSpeed
@@ -25,7 +23,6 @@ function BP_LaserAndShock_C:CommonInitInfo(Info)
   self.ShockRange:SetBoxExtent(FVector(self.ShockMaxRadius, self.ShockMaxRadius, 10))
   self.SkillRange = 0
 end
-
 function BP_LaserAndShock_C:OnActiveStateChange()
   DebugPrint("zwkk OnActiveStateChange")
   self.Super.OnActiveStateChange(self)
@@ -40,11 +37,9 @@ function BP_LaserAndShock_C:OnActiveStateChange()
     self.ShockHitedCDMap:Clear()
   end
 end
-
 function BP_LaserAndShock_C:ChangeCD()
   self.InCD = false
 end
-
 function BP_LaserAndShock_C:LaunchLaser(Index)
   local LaserInfo = FLaserInfo()
   LaserInfo.LaserLength = self.LaserLength
@@ -56,7 +51,6 @@ function BP_LaserAndShock_C:LaunchLaser(Index)
   self["LaserRay" .. Index]:SetActive(true, false)
   return LaserPort
 end
-
 function BP_LaserAndShock_C:OnHitTarget(Port, HitResult)
   if HitResult.Actor and self.IsActive then
     local SelfPlayer = UE4.UGameplayStatics.GetPlayerCharacter(self, 0)
@@ -68,7 +62,6 @@ function BP_LaserAndShock_C:OnHitTarget(Port, HitResult)
     end
   end
 end
-
 function BP_LaserAndShock_C:AddHitMap(Actor)
   if not IsAuthority(self) then
     return
@@ -78,19 +71,16 @@ function BP_LaserAndShock_C:AddHitMap(Actor)
   end
   self.HitMap:Add(Actor.Eid, Actor)
 end
-
 function BP_LaserAndShock_C:RemoveHitMap(Actor)
   if not IsAuthority(self) then
     return
   end
   self.HitMap:Remove(Actor.Eid)
 end
-
 function BP_LaserAndShock_C:OnDead(KillMineRoleEid, KillMineSkillId, DeathReason)
   self.RotatingMovement:SetActive(false, false)
   BP_LaserAndShock_C.Super.OnDead(self, KillMineRoleEid, KillMineSkillId, DeathReason)
 end
-
 function BP_LaserAndShock_C:ShowDeath()
   self:RemoveTimer("DistanceDeActiveTimer")
   self:PlayDeadMontage()
@@ -104,7 +94,6 @@ function BP_LaserAndShock_C:ShowDeath()
   self:PlaySound("event:/sfx/common/scene/laser_gear_break")
   BP_LaserAndShock_C.Super.ShowDeath(self)
 end
-
 function BP_LaserAndShock_C:DeActive()
   BP_LaserAndShock_C.Super.DeActive(self)
   self.SkillRange = 0
@@ -117,7 +106,6 @@ function BP_LaserAndShock_C:DeActive()
     self:PlayDeactiveMontage()
   end
 end
-
 function BP_LaserAndShock_C:ActiveAfterAnim(Eid)
   for i = 1, self.LaserNum do
     local LaserPort = self:LaunchLaser(i)
@@ -130,20 +118,8 @@ function BP_LaserAndShock_C:ActiveAfterAnim(Eid)
   self:PlaySound("event:/sfx/common/scene/laser_gear_rotate", self.SoundKeyRotate)
   self:PlaySound("event:/sfx/common/scene/laser_loop", self.SoundKeyLoop)
 end
-
 function BP_LaserAndShock_C:ReceiveBeginPlay()
   BP_LaserAndShock_C.Super.ReceiveBeginPlay(self)
   self:DeActiveFX(self.ShockFX)
 end
-
-function BP_LaserAndShock_C:OnEMActorDestroy(DestroyReason)
-  MiscUtils.RemoveTickLodActor(ESignificanceTag.None, self, ETickObjectFlag.FLAG_ALL)
-  BP_LaserAndShock_C.Super.OnEMActorDestroy(self, DestroyReason)
-end
-
-function BP_LaserAndShock_C:ReceiveEndPlay(Reason)
-  MiscUtils.RemoveTickLodActor(ESignificanceTag.None, self, ETickObjectFlag.FLAG_ALL)
-  self.Overridden.ReceiveEndPlay(self, Reason)
-end
-
 return BP_LaserAndShock_C

@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OpenDetailWidget(ItemType, ItemId, Placement)
   self.Content = {
     ItemType = ItemType,
@@ -15,11 +14,9 @@ function M:OpenDetailWidget(ItemType, ItemId, Placement)
   self.ItemDetail_MenuAnchor:OpenItemDetailsWidget(false, self.Content)
   self.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function M:IsMenuOpen()
   return self.ItemDetail_MenuAnchor.ItemDetailsMenuAnchor:IsOpen()
 end
-
 function M:OnMenuOpenChanged()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -32,5 +29,4 @@ function M:OnMenuOpenChanged()
     end
   end
 end
-
 return M

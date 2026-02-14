@@ -2,13 +2,11 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Title_Button.OnHovered:Add(self, self.OnBtnHovered)
   self.Title_Button.OnUnhovered:Add(self, self.OnBtnUnhovered)
   self.CurInputDeviceType = nil
 end
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.SuitId = Content.GroupId
@@ -24,7 +22,6 @@ function M:OnListItemObjectSet(Content)
   self:ShowAllButtomTips()
   self:InitListenEvent()
 end
-
 function M:InitListenEvent()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -35,7 +32,6 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurInputDeviceType = CurInputDevice
   local IsGamePad = CurInputDevice == ECommonInputType.Gamepad
@@ -48,7 +44,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:InitSuitInfo()
   local TreasureGroupDataMgr = DataMgr.TreasureGroup
   local Des
@@ -71,7 +66,7 @@ function M:InitSuitInfo()
     end
   else
     self.Group_TitleIcon:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    Des = string.format("\194\183 %s", GText("UI_DUNGEON_DES_TRAINING_23"))
+    Des = string.format("· %s", GText("UI_DUNGEON_DES_TRAINING_23"))
   end
   self.Text_SuitTitle:SetText(Des)
   self.Text_SuitEffectTitle:SetText(GText("RL_GroupEffect"))
@@ -93,7 +88,6 @@ function M:InitSuitInfo()
   end
   self:InitSuitTips()
 end
-
 function M:InitSuitTips()
   if -1 == self.SuitId then
     self.Com_BtnQa:SetVisibility(ESlateVisibility.Collapsed)
@@ -107,12 +101,10 @@ function M:InitSuitTips()
       OwnerWidget = self,
       ClickCallback = self.OnSuitTipClicked
     })
-    
     function self.Com_BtnQa.OpenMenuAnchor()
     end
   end
 end
-
 function M:ShowAllButtomTips()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self.Owner.Common_Tab:UpdateBottomKeyInfo({
@@ -149,19 +141,16 @@ function M:ShowAllButtomTips()
     })
   end
 end
-
 function M:HiedAllButtomTips()
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self.Owner.Common_Tab:UpdateBottomKeyInfo({})
   end
 end
-
 function M:OnSuitTitleClicked()
   self.Com_BtnQa:PlayAnimation(self.Com_BtnQa.Click)
   self.Com_BtnQa.Btn_Click:SetChecked(true)
   self:OnSuitTipClicked()
 end
-
 function M:OnSuitTipClicked()
   if self.SuitId and -1 ~= self.SuitId then
     local bActiveTreasure = false
@@ -177,11 +166,10 @@ function M:OnSuitTipClicked()
     }
     self.ItemDetails_MenuAnchor:OpenItemDetailsWidget(false, Content)
   else
-    DebugPrint("@@@ Rouge\230\178\161\230\137\190\229\136\176TreasureGroupId")
+    DebugPrint("@@@ Rouge没找到TreasureGroupId")
   end
   self:HiedAllButtomTips()
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   if not bIsOpen then
     self:SetFocus()
@@ -189,7 +177,6 @@ function M:ItemMenuAnchorChanged(bIsOpen)
     self.Com_BtnQa:ResetStyle()
   end
 end
-
 function M:CreateEntryItem(EntryData)
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.ItemId = EntryData.ItemId
@@ -199,7 +186,6 @@ function M:CreateEntryItem(EntryData)
   Content.Parent = self
   return Content
 end
-
 function M:OnBtnHovered()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -209,7 +195,6 @@ function M:OnBtnHovered()
     self.HoveredTitle = true
   end
 end
-
 function M:OnBtnUnhovered()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -219,19 +204,16 @@ function M:OnBtnUnhovered()
     self.HoveredTitle = false
   end
 end
-
 function M:OnSuitIconLoadFinish(Object)
   if Object and IsValid(self) then
     self.Group_TitleIcon:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     self.Image_TitleIcon:SetBrushResourceObject(Object)
   end
 end
-
 function M:Destruct()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.ItemMenuAnchorChanged)
   self.Title_Button.OnClicked:Remove(self, self.OnSuitTitleClicked)
 end
-
 function M:InitNavigationRules()
   self:SetNavigationRuleCustom(UE4.EUINavigation.Up, {
     self,
@@ -242,7 +224,6 @@ function M:InitNavigationRules()
     self.OnSuitNavigateDown
   })
 end
-
 function M:OnSuitNavigateUp()
   local PreSuitItem = self:GetPreListSuitItem()
   if not PreSuitItem then
@@ -250,11 +231,9 @@ function M:OnSuitNavigateUp()
   end
   return PreSuitItem.List_Box:GetChildAt(PreSuitItem.List_Box:GetChildrenCount() - 1)
 end
-
 function M:OnSuitNavigateDown()
   return self.List_Box:GetChildAt(0)
 end
-
 function M:GetPreListSuitItem()
   if self.Owner and self.Owner.List_SuitItem and self.Index > 0 then
     local PreItem = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.Owner.List_SuitItem, self.Index - 1)
@@ -262,7 +241,6 @@ function M:GetPreListSuitItem()
   end
   return nil
 end
-
 function M:GetNextListSuitItem()
   if self.Owner and self.Owner.List_SuitItem then
     local PreItem = UE4.URuntimeCommonFunctionLibrary.GetEntryWidgetFromItem(self.Owner.List_SuitItem, self.Index + 1)
@@ -270,5 +248,4 @@ function M:GetNextListSuitItem()
   end
   return nil
 end
-
 return M

@@ -10,11 +10,9 @@ local TypeSort = {
   Reward = 5,
   Resource = 6
 }
-
 function M:Construct()
   M.Super.Construct(self)
 end
-
 function M:InitItemContent(MonId, WeaknessIcon, Parent, DungeonRewardView)
   if not MonId then
     self.Switch_Type:SetActiveWidgetIndex(1)
@@ -41,7 +39,6 @@ function M:InitItemContent(MonId, WeaknessIcon, Parent, DungeonRewardView)
   end
   self:RefreshRewardInfoList(DungeonRewardView)
 end
-
 function M:RefreshRewardInfoList(DungeonReward)
   if not DungeonReward then
     DebugPrint("SL DungeonReward is nil")
@@ -103,13 +100,11 @@ function M:RefreshRewardInfoList(DungeonReward)
     end
   end, false, 0, "DeputeEliteInfoListView")
 end
-
 function M:CreateAndAddEmptyItem()
   local Content = NewObject(UIUtils.GetCommonItemContentClass())
   Content.Id = 0
   self.List_EliteProp:AddItem(Content)
 end
-
 function M:OnStuffMenuOpenChanged(bIsOpen)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad then
     return
@@ -124,7 +119,6 @@ function M:OnStuffMenuOpenChanged(bIsOpen)
     self.Parent.Button_Solo:SetPCVisibility(false)
   end
 end
-
 function M:OnMouseEnter(MyGeometry, MouseEvent)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
     return
@@ -133,7 +127,6 @@ function M:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnMouseLeave(MyGeometry, MouseEvent)
   if UIUtils.UtilsGetCurrentInputType() ~= ECommonInputType.Gamepad or self:IsAnimationPlaying(self.In) then
     return
@@ -142,7 +135,6 @@ function M:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Unhover)
 end
-
 function M:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -156,7 +148,6 @@ function M:OnKeyDown(MyGeometry, InKeyEvent)
     return UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if "Gamepad_LeftThumbstick" == InKeyName then
@@ -194,7 +185,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -207,5 +197,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   end
   self.Super.RefreshOpInfoByInputDevice(self, CurInputDevice, CurGamepadName)
 end
-
 return M

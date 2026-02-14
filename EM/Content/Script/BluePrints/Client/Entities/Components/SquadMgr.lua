@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:TryCreateDefaultSquad()
   DebugPrint("TryCreateDefaultSquad")
   if self.Squad:Length() > 0 then
@@ -7,10 +6,8 @@ function Component:TryCreateDefaultSquad()
   end
   self:CallServerMethod("ClientTryCreateDefaultSquad")
 end
-
 function Component:CreateSquad(Callback, Info)
   DebugPrint("CreateSquad")
-  
   local function cb(ret)
     if not ErrorCode:Check(ret) then
       return
@@ -19,13 +16,10 @@ function Component:CreateSquad(Callback, Info)
       Callback(ret)
     end
   end
-  
   self:CallServer("CreateSquad", cb, self.Squad:Length() + 1, Info)
 end
-
 function Component:DeleteSquad(Callback, Index)
   DebugPrint("DeleteSquad", Index)
-  
   local function cb(ret)
     if not ErrorCode:Check(ret) then
       return
@@ -34,13 +28,12 @@ function Component:DeleteSquad(Callback, Index)
       Callback(ret)
     end
   end
-  
   self:CallServer("DeleteSquad", cb, Index)
 end
-
 function Component:UpdateSquad(Callback, Index, Info)
   DebugPrint("UpdateSquad", Index)
-  
+  assert(Index)
+  assert(Info)
   local function cb(ret)
     if not ErrorCode:Check(ret) then
       return
@@ -49,13 +42,10 @@ function Component:UpdateSquad(Callback, Index, Info)
       Callback(ret)
     end
   end
-  
   self:CallServer("UpdateSquad", cb, Index, Info)
 end
-
 function Component:SwitchSquad(Callback, CallbackObj, SourceIndex, TargetIndex)
   DebugPrint("SwitchSquad")
-  
   local function cb(ret)
     if not ErrorCode:Check(ret) then
       return
@@ -64,18 +54,16 @@ function Component:SwitchSquad(Callback, CallbackObj, SourceIndex, TargetIndex)
       Callback(CallbackObj, ret)
     end
   end
-  
   self:CallServer("SwitchSquad", cb, SourceIndex, TargetIndex)
 end
-
 function Component:tttt()
   self:UpdateSquad(nil, 1, {Name = "SnowMoon01"})
 end
-
 function Component:_OnPropChangeSquad()
   DebugPrint("Squad update", self.Squad:Length())
   local SquadMain = UIManager(self):GetUI("SquadMainUINew")
   if SquadMain and not SquadMain.IsDraging then
+    SquadMain:CloseAllTips()
     if SquadMain.IsInSortState then
       SquadMain:SwitchToSquadList(false)
     else
@@ -83,7 +71,6 @@ function Component:_OnPropChangeSquad()
     end
   end
 end
-
 function Component:GetSquadCreateInfoByNow(SquadName)
   self.logger.debug("GetSquadCreateInfoByNow")
   return {
@@ -98,14 +85,11 @@ function Component:GetSquadCreateInfoByNow(SquadName)
     Pet = self.CurrentPet
   }
 end
-
 function Component:CreateTempSquad()
   return self.Squad:CreateSquad(self:GetSquadCreateInfoByNow("TempSquad"))
 end
-
 function Component:SwitchSquadAutoPhantom(NewState)
   print(_G.LogTag, "SwitchSquadAutoPhantom", NewState)
   self:CallServerMethod("SwitchSquadAutoPhantom", NewState)
 end
-
 return Component

@@ -1,6 +1,5 @@
 require("UnLua")
 local MonAnimPawn = Class()
-
 function MonAnimPawn:KeepSightOnTarget()
   if self.OwnerController == nil then
     return
@@ -9,7 +8,6 @@ function MonAnimPawn:KeepSightOnTarget()
   self:AddControllerYawInput(X)
   self:AddControllerPitchInput(-Y)
 end
-
 function MonAnimPawn:SetFocus()
   if self.IsTriggerFocus then
     self.Target:GetMovementComponent().bOrientRotationToMovement = false
@@ -31,7 +29,6 @@ function MonAnimPawn:SetFocus()
     self.IsTriggerFocus = true
   end
 end
-
 function MonAnimPawn:UseSkillByActionMap(Mapping)
   if Mapping.KeyName ~= nil then
     local TempKeyMap = {
@@ -53,5 +50,4 @@ function MonAnimPawn:UseSkillByActionMap(Mapping)
     end
   end
 end
-
 return MonAnimPawn

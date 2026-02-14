@@ -5,7 +5,8 @@ BagCommon.BagSellPageZOrder = 56
 BagCommon.StuffType = {
   Weapon = "Weapon",
   Mod = "Mod",
-  Resource = "Resource"
+  Resource = "Resource",
+  Draft = "Draft"
 }
 BagCommon.ItemTypeToTabId = {
   MeleeWeapon = 101,
@@ -15,7 +16,19 @@ BagCommon.ItemTypeToTabId = {
   TaskItem = 4,
   ReadItem = 5,
   FishItem = 6,
-  ConsumableItem = 7
+  ConsumableItem = 7,
+  Draft = 9
+}
+BagCommon.TabIdToStuffType = {
+  [BagCommon.ItemTypeToTabId.MeleeWeapon] = BagCommon.StuffType.Weapon,
+  [BagCommon.ItemTypeToTabId.RangedWeapon] = BagCommon.StuffType.Weapon,
+  [BagCommon.ItemTypeToTabId.Mod] = BagCommon.StuffType.Mod,
+  [BagCommon.ItemTypeToTabId.Resource] = BagCommon.StuffType.Resource,
+  [BagCommon.ItemTypeToTabId.TaskItem] = BagCommon.StuffType.Resource,
+  [BagCommon.ItemTypeToTabId.ReadItem] = BagCommon.StuffType.Resource,
+  [BagCommon.ItemTypeToTabId.FishItem] = BagCommon.StuffType.Resource,
+  [BagCommon.ItemTypeToTabId.ConsumableItem] = BagCommon.StuffType.Resource,
+  [BagCommon.ItemTypeToTabId.Draft] = BagCommon.StuffType.Draft
 }
 BagCommon.ConsumableItemTypeSortWeight = {
   ResourcePack = 1,
@@ -63,6 +76,10 @@ BagCommon.SortFilters = {
   },
   [BagCommon.ItemTypeToTabId.ConsumableItem] = {
     "UI_Select_Unique"
+  },
+  [BagCommon.ItemTypeToTabId.Draft] = {
+    "UI_Select_Kind",
+    "UI_Select_Unique"
   }
 }
 BagCommon.DefaultSelectTabId = BagCommon.ItemTypeToTabId.Resource
@@ -79,6 +96,8 @@ BagCommon.BagItemSelectOpMode = {
   ResolveMode = "ResolveMode",
   SellMode = "SellMode"
 }
+BagCommon.MountTypeInResource = "MountItem"
+BagCommon.MountJumpId = 78
 BagCommon.RarityColorInfo = {
   Grey = 1,
   Green = 2,
@@ -95,12 +114,10 @@ BagCommon.OptionalItemType = {
   Weapon = "Weapon",
   Pet = "Pet"
 }
-
 function BagCommon:IsFishResource(ResourceId)
   local numId = tonumber(ResourceId)
   return numId and DataMgr.ResourceId2FishId[math.tointeger(numId)] ~= nil
 end
-
 function BagCommon:IsFishResourceLocked(FishResourceId, FishSize)
   local FishId = tonumber(FishResourceId)
   local Size = tonumber(FishSize)
@@ -111,5 +128,40 @@ function BagCommon:IsFishResourceLocked(FishResourceId, FishSize)
   local BagFish = Avatar.FishSizes[FishId]
   return BagFish and BagFish:GetLockState(Size) or false
 end
-
+function BagCommon:GetFishSize2Count(FishResourceId)
+  local FishId = tonumber(FishResourceId)
+  if not FishId then
+    return
+  end
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return
+  end
+  local StuffServerData = Avatar.Resources[FishId]
+  if not StuffServerData then
+    return
+  end
+  local TotalFishCount = StuffServerData.Count
+  if not TotalFishCount or TotalFishCount < 1 then
+    return
+  end
+  local PlayerBagFish = Avatar.FishSizes[FishId]
+  if not PlayerBagFish or not PlayerBagFish.FishSize2Count then
+    return
+  end
+  local FishSize2Count = {}
+  for Size, Count in pairs(PlayerBagFish.FishSize2Count) do
+    if TotalFishCount < 1 then
+      break
+    end
+    if TotalFishCount - Count <= 0 then
+      FishSize2Count[Size] = TotalFishCount
+      return FishSize2Count
+    else
+      FishSize2Count[Size] = Count
+      TotalFishCount = TotalFishCount - Count
+    end
+  end
+  return FishSize2Count
+end
 return BagCommon

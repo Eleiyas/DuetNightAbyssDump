@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
 local TimeUtils = require("Utils.TimeUtils")
-
 function M:GetBannerTabData(BpName)
   for _, BannerTab in ipairs(DataMgr.ShopBannerTab) do
     if BannerTab.Bp == BpName then
@@ -12,21 +11,33 @@ function M:GetBannerTabData(BpName)
     end
   end
 end
-
+function M:GetValidItemId(BannerData)
+  local LastItemId
+  if not BannerData.ItemIds or not next(BannerData.ItemIds) then
+    return LastItemId
+  end
+  for _, ItemId in ipairs(BannerData.ItemIds) do
+    local PurchaseLimit = ShopUtils:GetShopItemPurchaseLimit(ItemId)
+    if PurchaseLimit and PurchaseLimit > 0 then
+      return ItemId
+    else
+      LastItemId = ItemId
+    end
+  end
+  return LastItemId
+end
 function M:Construct()
   if self.Btn_Drag then
     self.Btn_Drag.OnPressed:Add(self, self.OnBtnPressed)
     self.Btn_Drag.OnReleased:Add(self, self.OnBtnReleased)
   end
 end
-
 function M:Destruct()
   if self.RefreshTimer then
     self:RemoveTimer(self.RefreshTimer)
     self.RefreshTimer = nil
   end
 end
-
 function M:NotifyTimeTick()
   if not self.EndTime then
     return
@@ -42,7 +53,6 @@ function M:NotifyTimeTick()
   local RemainTimeDict, _ = UIUtils.GetLeftTimeStrStyle2(self.EndTime)
   self.Com_Time:SetTimeText(GText("UI_Mail_Date_Remain"), RemainTimeDict)
 end
-
 function M:InitInterface(Owner)
   self.Owner = Owner
   self.BannerEndTime = self.BannerTab and self.BannerTab.EndTime
@@ -66,7 +76,6 @@ function M:InitInterface(Owner)
     self:UpdateUIStyleInterface(UIUtils.UtilsGetCurrentInputType())
   end
 end
-
 function M:UpdateUIStyleInterface(CurInputDevice)
   if not self.Key_ControllerGoto then
     return
@@ -74,7 +83,6 @@ function M:UpdateUIStyleInterface(CurInputDevice)
   local IsGamepad = CurInputDevice == ECommonInputType.Gamepad
   self.Key_ControllerGoto:SetVisibility(IsGamepad and ESlateVisibility.SelfHitTestInvisible or ESlateVisibility.Collapsed)
 end
-
 function M:OnGoToInterface()
   AudioManager(self):PlayUISound(self, "event:/ui/common/click_btn_large_crystal", nil, nil)
   if not self.BannerTab or not self.BannerTab.InterfaceJumpId then
@@ -83,11 +91,9 @@ function M:OnGoToInterface()
   local JumpUIId = self.BannerTab.InterfaceJumpId
   PageJumpUtils:JumpToTargetPageByJumpId(JumpUIId)
 end
-
 function M:OnGoToHovered()
   AudioManager(self):PlayUISound(self, "event:/ui/common/hover_btn_large_crystal", nil, nil)
 end
-
 function M:UpdateSlotSize(Size)
   local Slot = UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Group_Content)
   if Slot then
@@ -95,24 +101,20 @@ function M:UpdateSlotSize(Size)
     Slot:SetSize(Size)
   end
 end
-
 function M:BindBtnEvent(Obj, Func)
   self.Obj = Obj
   self.Func = Func
 end
-
 function M:OnBtnPressed()
   local MousePos = UWidgetLayoutLibrary.GetMousePositionOnPlatform()
   self.PressX = MousePos.X
 end
-
 function M:OnBtnReleased()
   local MousePos = UWidgetLayoutLibrary.GetMousePositionOnPlatform()
   if self.Func then
     self.Func(self.Obj, MousePos.X > self.PressX)
   end
 end
-
 function M:AdjustGroupDetail()
   if self.Group_Detail then
     local CanvasSlot = UE4.UWidgetLayoutLibrary.SlotAsCanvasSlot(self.Group_Detail)
@@ -127,5 +129,4 @@ function M:AdjustGroupDetail()
     end
   end
 end
-
 return M

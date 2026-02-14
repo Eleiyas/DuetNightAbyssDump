@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17185354547352143748",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1080.285623506724, y = 319.06486391183324},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -137,7 +139,7 @@ return {
           ["17185354624122144465"] = {
             key = "17185354624122144465",
             type = "BossBattleFinishNode",
-            name = "\231\173\137\229\190\133\230\136\191\233\151\180\229\134\133\230\128\170\231\137\169\230\184\133\231\169\186",
+            name = "等待房间内怪物清空",
             pos = {x = 1107.8176547924306, y = 293.5827120767397},
             propsData = {
               SendMessage = "Chapter01_Kuangkeng_Part02_Batttle_Start",
@@ -147,10 +149,11 @@ return {
           ["17185354937612145741"] = {
             key = "17185354937612145741",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\230\152\190\231\164\186/\233\154\144\232\151\143\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185",
+            name = "显示/隐藏任务指引点节点",
             pos = {x = 879.378070216391, y = 293.03564675504725},
             propsData = {
               IsShow = true,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "QuestPoint_Part02_Battle"
             }
@@ -158,10 +161,11 @@ return {
           ["17185355013072146384"] = {
             key = "17185355013072146384",
             type = "ShowOrHideTaskIndicatorNode",
-            name = "\230\152\190\231\164\186/\233\154\144\232\151\143\228\187\187\229\138\161\230\140\135\229\188\149\231\130\185\232\138\130\231\130\185",
+            name = "显示/隐藏任务指引点节点",
             pos = {x = 1346.0447368830562, y = 298.03564675504674},
             propsData = {
               IsShow = false,
+              bOpenRangeEffect = false,
               GuideType = "P",
               GuideName = "QuestPoint_Part02_Battle"
             }
@@ -169,14 +173,14 @@ return {
           ["17185355331332147151"] = {
             key = "17185355331332147151",
             type = "SpecialQuestSuccessNode",
-            name = "\230\136\144\229\138\159\229\174\140\230\136\144\231\137\185\230\174\138\228\187\187\229\138\161",
+            name = "成功完成特殊任务",
             pos = {x = 1591.878070216389, y = 303.03564675504714},
             propsData = {}
           },
           ["17185355406222147639"] = {
             key = "17185355406222147639",
             type = "WaitingSpecialQuestFailNode",
-            name = "\231\173\137\229\190\133\231\137\185\230\174\138\228\187\187\229\138\161\229\164\177\232\180\165",
+            name = "等待特殊任务失败",
             pos = {x = 880.2114035497242, y = 473.86898008837994},
             propsData = {}
           }

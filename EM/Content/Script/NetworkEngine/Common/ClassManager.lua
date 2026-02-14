@@ -2,7 +2,6 @@ local PropUtils = require("BluePrints.Client.PropUtils")
 Classes = {}
 Types = {}
 local ClassMgr = {}
-
 function ClassMgr:RegisterClass(Name, Type)
   if not Classes[Name] then
     Classes[Name] = Type
@@ -11,11 +10,9 @@ function ClassMgr:RegisterClass(Name, Type)
     Types[Name] = Type
   end
 end
-
 function ClassMgr:GetClass(Name)
   return Classes[Name]
 end
-
 function ClassMgr:GetType(Name)
   if Types[Name] ~= nil then
     return Types[Name]
@@ -41,5 +38,4 @@ function ClassMgr:GetType(Name)
     end
   end
 end
-
 return ClassMgr

@@ -4,7 +4,6 @@ local WikiController = require("BluePrints.UI.WBP.Wiki.WikiController")
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.WBP_Encyclopedia_Culture.Culture_Title:SetText(GText("MainType_Civilization"))
   self.WBP_Encyclopedia_Influence.Influence_Title:SetText(GText("MainType_Faction"))
@@ -32,16 +31,13 @@ function M:Construct()
     }
   })
 end
-
 function M:Initialize(Parent)
   self.Parent = Parent
 end
-
 function M:OnAwardClicked()
   AudioManager(self):PlayUISound(self, "event:/ui/common/tip_show_click", nil, nil)
   WikiController:OpenAwardPopup(self)
 end
-
 function M:OnButtonClicked(buttonType)
   if self.Parent.IsCloseSelf or self:IsAnimationPlaying(self.Auto_Out) or self.IsHide then
     return
@@ -66,7 +62,6 @@ function M:OnButtonClicked(buttonType)
   end
   WikiController:HandleButtonClick(buttonType, self)
 end
-
 function M:UpdateLockState(type)
   self.LockedStates = {}
   for _, config in ipairs(WikiCommon.ButtonConfig) do
@@ -82,7 +77,6 @@ function M:UpdateLockState(type)
     end
   end
 end
-
 function M:UpdateEntranceNewState()
   local categoryConfigs = {
     {
@@ -113,7 +107,6 @@ function M:UpdateEntranceNewState()
     end
   end
 end
-
 function M:UpdateRedDot()
   local WikiRewardReddotName = DataMgr.ReddotNode.WikiReward.Name
   local reddotNode = ReddotManager.GetTreeNode(WikiRewardReddotName)
@@ -125,14 +118,12 @@ function M:UpdateRedDot()
     end
   end
 end
-
 function M:RegisterRewardStateChange()
   local WikiRewardReddotName = DataMgr.ReddotNode.WikiReward.Name
   ReddotManager.AddListener(WikiRewardReddotName, self, function(NodeName, Count)
     self:UpdateRedDot()
   end)
 end
-
 function M:UpdateTextNum(categoryType)
   local config = WikiCommon.CategoryConfig[categoryType]
   if not config then
@@ -150,7 +141,6 @@ function M:UpdateTextNum(categoryType)
     widget[config.maxField]:SetText("/" .. tostring(NumAll))
   end
 end
-
 function M:BindAllEvents()
   if not self.EventFunctions then
     self.EventFunctions = {}
@@ -187,7 +177,6 @@ function M:BindAllEvents()
     end
   end
 end
-
 function M:UnbindAllEvents()
   if not self.EventFunctions then
     return
@@ -207,11 +196,9 @@ function M:UnbindAllEvents()
     end
   end
 end
-
 function M:IsLocked(buttonType)
   return self.LockedStates[buttonType] == true
 end
-
 function M:GetConfigByType(buttonType)
   for _, config in ipairs(WikiCommon.ButtonConfig) do
     if config.type == buttonType then
@@ -220,26 +207,22 @@ function M:GetConfigByType(buttonType)
   end
   return nil
 end
-
 function M:HideSelf()
   self.IsHide = true
   self:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Parent:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:ShowSelf()
   self.IsHide = false
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Parent:SetVisibility(UIConst.VisibilityOp.Visible)
 end
-
 function M:Destruct()
   self:UnbindAllEvents()
   WikiController:GetModel():RemoveNewStateListener(self)
   local WikiRewardReddotName = DataMgr.ReddotNode.WikiReward.Name
   ReddotManager.RemoveListener(WikiRewardReddotName, self)
 end
-
 function M:OnButtonHovered(buttonType)
   if self:IsLocked(buttonType) then
     return
@@ -249,7 +232,6 @@ function M:OnButtonHovered(buttonType)
     self[config.widget]:PlayAnimation(self[config.widget][config.animations.hover])
   end
 end
-
 function M:OnButtonUnhovered(buttonType)
   if self:IsLocked(buttonType) then
     return
@@ -259,7 +241,6 @@ function M:OnButtonUnhovered(buttonType)
     self[config.widget]:PlayAnimation(self[config.widget][config.animations.unhover])
   end
 end
-
 function M:OnButtonPressed(buttonType)
   if self:IsLocked(buttonType) then
     return
@@ -269,7 +250,6 @@ function M:OnButtonPressed(buttonType)
     self[config.widget]:PlayAnimation(self[config.widget][config.animations.pressed])
   end
 end
-
 function M:OnButtonReleased(buttonType)
   if self:IsLocked(buttonType) then
     return
@@ -279,7 +259,6 @@ function M:OnButtonReleased(buttonType)
     self[config.widget]:PlayAnimation(self[config.widget][config.animations.normal])
   end
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   self:InitNavigationRules()
   if self:HasAnyUserFocus() then
@@ -287,7 +266,6 @@ function M:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function M:InitListenEvent()
   local PlayerController = self:GetOwningPlayer()
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -295,13 +273,11 @@ function M:InitListenEvent()
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
 function M:RefreshBaseInfo()
   if IsValid(self.GameInputModeSubsystem) then
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   self.CurGamepadName = CurGamepadName
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
@@ -315,7 +291,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     end
   end
 end
-
 function M:InitNavigationRules()
   self.WBP_Encyclopedia_Influence:SetNavigationRuleExplicit(EUINavigation.Right, self.WBP_Encyclopedia_Terroir)
   self.WBP_Encyclopedia_Influence:SetNavigationRuleExplicit(EUINavigation.Down, self.WBP_Encyclopedia_Personage)
@@ -326,5 +301,4 @@ function M:InitNavigationRules()
   self.WBP_Encyclopedia_Culture:SetNavigationRuleExplicit(EUINavigation.Left, self.WBP_Encyclopedia_Personage)
   self.WBP_Encyclopedia_Culture:SetNavigationRuleExplicit(EUINavigation.Up, self.WBP_Encyclopedia_Terroir)
 end
-
 return M

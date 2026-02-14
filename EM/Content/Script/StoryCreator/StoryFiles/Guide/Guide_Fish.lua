@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "1743579959386507",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1670.7499999999998, y = 301.5},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -137,7 +139,7 @@ return {
           ["17435800020091913"] = {
             key = "17435800020091913",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1446.6027306027304, y = 292.66666666666674},
             propsData = {
               ShowEnable = true,
@@ -167,7 +169,7 @@ return {
           ["17435820797115088"] = {
             key = "17435820797115088",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1777.2693972693971, y = 291.33333333333337},
             propsData = {
               ShowEnable = true,
@@ -197,7 +199,7 @@ return {
           ["17435823210815859"] = {
             key = "17435823210815859",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 1129.2693972693971, y = 293.33333333333337},
             propsData = {
               ShowEnable = true,
@@ -227,7 +229,7 @@ return {
           ["17435824044197788"] = {
             key = "17435824044197788",
             type = "ShowGuideButtonNode",
-            name = "Button\230\152\190\231\164\186/\233\154\144\232\151\143\228\191\161\230\129\175",
+            name = "Button显示/隐藏信息",
             pos = {x = 2158.60273060273, y = 486.66666666666674},
             propsData = {
               ShowEnable = true,
@@ -257,14 +259,14 @@ return {
           ["1743582510780526835"] = {
             key = "1743582510780526835",
             type = "ShowGuideMainNode",
-            name = "\230\152\190\231\164\186\229\155\190\230\150\135\229\188\149\229\175\188",
+            name = "显示图文引导",
             pos = {x = 2261.269397269397, y = 306.66666666666674},
             propsData = {GuideId = 72}
           },
           ["1754447494200425"] = {
             key = "1754447494200425",
             type = "WaitOfTimeNode",
-            name = "\229\187\182\232\191\159\231\173\137\229\190\133",
+            name = "延迟等待",
             pos = {x = 1149.7034302985362, y = 72.54155390709911},
             propsData = {WaitTime = 0.2}
           }

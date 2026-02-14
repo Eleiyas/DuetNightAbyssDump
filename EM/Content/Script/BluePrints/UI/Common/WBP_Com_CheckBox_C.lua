@@ -1,10 +1,9 @@
 local WBP_Com_CheckBox_C = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function WBP_Com_CheckBox_C:Construct()
+  self.bShowImg = false
   self:InitCommonCheckBox()
   self:SetKey("Img", "LS", nil)
 end
-
 function WBP_Com_CheckBox_C:SetKey(KeyType, KeyName, SoundFunc)
   self.Com_KeyImg:CreateCommonKey({
     KeyInfoList = {
@@ -17,7 +16,16 @@ function WBP_Com_CheckBox_C:SetKey(KeyType, KeyName, SoundFunc)
     SoundFunc = SoundFunc
   })
 end
-
+function WBP_Com_CheckBox_C:InitGamepadKey(KeyName)
+  if not KeyName then
+    self.bShowImg = false
+    self.Com_KeyImg:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    return
+  end
+  self:SetKey("Img", KeyName, nil)
+  self.bShowImg = true
+  self:RefreshBaseInfo()
+end
 function WBP_Com_CheckBox_C:HideKey(bIsHide)
   if bIsHide then
     self.KeyHolder:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -25,7 +33,6 @@ function WBP_Com_CheckBox_C:HideKey(bIsHide)
     self.KeyHolder:SetVisibility(UE4.ESlateVisibility.Visibie)
   end
 end
-
 function WBP_Com_CheckBox_C:InitCommonCheckBox()
   rawset(self, "Checked", false)
   rawset(self, "IsHovering", false)
@@ -40,20 +47,23 @@ function WBP_Com_CheckBox_C:InitCommonCheckBox()
   self:RefreshBaseInfo()
   self:InitListenEvent()
 end
-
 function WBP_Com_CheckBox_C:UnInitCommonCheckBox()
   rawset(self, "ClickLogics", {})
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Normal)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Check_Switch, EUMGSequencePlayMode.Reverse)
   self:UnBindButtonPerformances()
+  self:UnInitListenEvent()
 end
-
 function WBP_Com_CheckBox_C:InitListenEvent()
-  if not self.IsInGroup and IsValid(self.GameInputModeSubsystem) then
+  if IsValid(self.GameInputModeSubsystem) then
     self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   end
 end
-
+function WBP_Com_CheckBox_C:UnInitListenEvent()
+  if IsValid(self.GameInputModeSubsystem) then
+    self.GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.RefreshOpInfoByInputDevice)
+  end
+end
 function WBP_Com_CheckBox_C:RefreshBaseInfo()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local Subsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -62,7 +72,6 @@ function WBP_Com_CheckBox_C:RefreshBaseInfo()
     self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   end
 end
-
 function WBP_Com_CheckBox_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -70,11 +79,18 @@ function WBP_Com_CheckBox_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepa
   local IsUseKeyAndMouse = CurInputDevice == ECommonInputType.MouseAndKeyboard
   if IsUseKeyAndMouse then
     self.Group_BG:SetVisibility(UE4.ESlateVisibility.Collapsed)
-  elseif not self.NotShowBg then
-    self.Group_BG:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    if self.bShowImg then
+      self.Com_KeyImg:SetVisibility(UE4.ESlateVisibility.Collapsed)
+    end
+  else
+    if not self.NotShowBg then
+      self.Group_BG:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    end
+    if self.bShowImg then
+      self.Com_KeyImg:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    end
   end
 end
-
 function WBP_Com_CheckBox_C:BindEventOnClicked(PressCallback)
   if not (PressCallback and PressCallback.Inst) or not PressCallback.Func then
     return
@@ -84,7 +100,6 @@ function WBP_Com_CheckBox_C:BindEventOnClicked(PressCallback)
   end
   table.insert(self.ClickLogics[PressCallback.Inst], PressCallback.Func)
 end
-
 function WBP_Com_CheckBox_C:UnBindEventOnClicked(PressCallback)
   if not PressCallback.Inst or not PressCallback.Func then
     return
@@ -99,7 +114,6 @@ function WBP_Com_CheckBox_C:UnBindEventOnClicked(PressCallback)
     rawset(self.ClickLogics, PressCallback.Inst, temp_table)
   end
 end
-
 function WBP_Com_CheckBox_C:UnBindEventOnClickedByObj(Obj)
   if not Obj then
     return
@@ -108,7 +122,6 @@ function WBP_Com_CheckBox_C:UnBindEventOnClickedByObj(Obj)
     rawset(self.ClickLogics, Obj, nil)
   end
 end
-
 function WBP_Com_CheckBox_C:BindButtonPerformances()
   self.Btn_Click.OnClicked:Add(self, self.OnClicked)
   self.Btn_Click.OnPressed:Add(self, self.OnPressed)
@@ -116,7 +129,6 @@ function WBP_Com_CheckBox_C:BindButtonPerformances()
   self.Btn_Click.OnHovered:Add(self, self.OnHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnUnhovered)
 end
-
 function WBP_Com_CheckBox_C:UnBindButtonPerformances()
   self.Btn_Click.OnClicked:Clear()
   self.Btn_Click.OnPressed:Clear()
@@ -124,7 +136,6 @@ function WBP_Com_CheckBox_C:UnBindButtonPerformances()
   self.Btn_Click.OnHovered:Clear()
   self.Btn_Click.OnUnhovered:Clear()
 end
-
 function WBP_Com_CheckBox_C:OnClicked()
   if self.CurrentClickIsForbid ~= self.IsForbidden then
     return
@@ -151,7 +162,6 @@ function WBP_Com_CheckBox_C:OnClicked()
     end
   end
 end
-
 function WBP_Com_CheckBox_C:OnPressed()
   if self.IsForbidden == true then
     rawset(self, "CurrentClickIsForbid", true)
@@ -161,7 +171,6 @@ function WBP_Com_CheckBox_C:OnPressed()
   rawset(self, "IsPressing", true)
   EMUIAnimationSubsystem:EMPlayAnimation(self, self.Press)
 end
-
 function WBP_Com_CheckBox_C:OnReleased()
   rawset(self, "IsPressing", false)
   if self.IsForbidden == true then
@@ -172,7 +181,6 @@ function WBP_Com_CheckBox_C:OnReleased()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.UnHover)
   end
 end
-
 function WBP_Com_CheckBox_C:OnHovered()
   if self.IsForbidden == true then
     return
@@ -182,7 +190,6 @@ function WBP_Com_CheckBox_C:OnHovered()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.Hover)
   end
 end
-
 function WBP_Com_CheckBox_C:OnUnhovered()
   rawset(self, "IsHovering", false)
   if self.IsForbidden == true then
@@ -192,7 +199,6 @@ function WBP_Com_CheckBox_C:OnUnhovered()
     EMUIAnimationSubsystem:EMPlayAnimation(self, self.UnHover)
   end
 end
-
 function WBP_Com_CheckBox_C:ForbidBtn(IsForbid)
   if self.IsForbidden == false and true == IsForbid then
     rawset(self, "IsForbidden", true)
@@ -206,11 +212,9 @@ function WBP_Com_CheckBox_C:ForbidBtn(IsForbid)
     end
   end
 end
-
 function WBP_Com_CheckBox_C:IsChecked()
   return self.Checked
 end
-
 function WBP_Com_CheckBox_C:SetIsChecked(IsChecked, IsPlaySound)
   if self.Checked == false and true == IsChecked then
     rawset(self, "Checked", true)
@@ -241,7 +245,6 @@ function WBP_Com_CheckBox_C:SetIsChecked(IsChecked, IsPlaySound)
     end
   end
 end
-
 function WBP_Com_CheckBox_C:SetIsCheckedWithoutCallback(IsChecked, IsPlaySound)
   if self.Checked == false and true == IsChecked then
     rawset(self, "Checked", true)
@@ -265,7 +268,6 @@ function WBP_Com_CheckBox_C:SetIsCheckedWithoutCallback(IsChecked, IsPlaySound)
     end
   end
 end
-
 function WBP_Com_CheckBox_C:PlayCheckSound(IsChecked)
   if IsChecked then
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_checkbox_check", nil, nil)
@@ -273,13 +275,10 @@ function WBP_Com_CheckBox_C:PlayCheckSound(IsChecked)
     AudioManager(self):PlayUISound(self, "event:/ui/common/click_checkbox_uncheck", nil, nil)
   end
 end
-
 function WBP_Com_CheckBox_C:HideGamepadBackground(bNotShowBg)
   rawset(self, "NotShowBg", bNotShowBg)
 end
-
 function WBP_Com_CheckBox_C:Activate()
   self:OnClicked()
 end
-
 return WBP_Com_CheckBox_C

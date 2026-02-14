@@ -1,7 +1,6 @@
 local UpdateTaskBarAndTaskMainNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
 local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
-
 function UpdateTaskBarAndTaskMainNode:Init()
   self.NewDescription = ""
   self.NewDetail = ""
@@ -9,7 +8,6 @@ function UpdateTaskBarAndTaskMainNode:Init()
   self.CurDoingQuestId = 0
   self.SubTaskTargetIndex = 0
 end
-
 function UpdateTaskBarAndTaskMainNode:Start(Context)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -36,10 +34,8 @@ function UpdateTaskBarAndTaskMainNode:Start(Context)
   })
   self:OnChooseTrack()
 end
-
 function UpdateTaskBarAndTaskMainNode:OnCancelTrack()
 end
-
 function UpdateTaskBarAndTaskMainNode:OnChooseTrack()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -54,8 +50,16 @@ function UpdateTaskBarAndTaskMainNode:OnChooseTrack()
   if Avatar.QuestChains[self.CurQuestChainId] then
     self.CurDoingQuestId = Avatar.QuestChains[self.CurQuestChainId].DoingQuestId
   end
-  if Avatar.TrackingQuestChainId == self.CurQuestChainId then
+  if Avatar.TrackingQuestChainId == self.CurQuestChainId and 0 ~= Avatar.TrackingQuestChainId and 0 ~= self.CurQuestChainId then
     IsTracking = true
+  end
+  if self.bIsDynamicEvent and self.NewDescription ~= "" then
+    local UIManager = GWorld.GameInstance:GetGameUIManager()
+    local BattleMain = UIManager:GetUIObj("BattleMain")
+    local DynamicEventUI = BattleMain:GetOrAddDynamicEventWidget()
+    if DynamicEventUI then
+      DynamicEventUI:SetEventInfo(nil, self.NewDescription)
+    end
   end
   if IsTracking then
     self:ChangeMainTaskBarInfo()
@@ -63,7 +67,6 @@ function UpdateTaskBarAndTaskMainNode:OnChooseTrack()
     self:FinishAction()
   end
 end
-
 function UpdateTaskBarAndTaskMainNode:ChangeMainTaskBarInfo()
   local TaskUIObj = TaskUtils:GetTaskBarWidget()
   if not TaskUIObj then
@@ -99,7 +102,6 @@ function UpdateTaskBarAndTaskMainNode:ChangeMainTaskBarInfo()
     return
   end
   NewDescrible = GText(NewDescrible)
-  
   local function SetTaskContentUIInfo(InFlag, InTaskDescribe)
     if InFlag then
       TaskUIObj.CurSpecialTaskInfo.TaskDescribe = InTaskDescribe
@@ -110,7 +112,6 @@ function UpdateTaskBarAndTaskMainNode:ChangeMainTaskBarInfo()
     end
     self:FinishAction()
   end
-  
   if self.SubTaskTargetIndex > 0 and TaskUIObj.SubTaskWidgetsTable["Branch_" .. tostring(self.SubTaskTargetIndex)] then
     local TargetSubWidget = TaskUIObj.SubTaskWidgetsTable["Branch_" .. tostring(self.SubTaskTargetIndex)]
     if IsValid(TargetSubWidget) then
@@ -159,23 +160,18 @@ function UpdateTaskBarAndTaskMainNode:ChangeMainTaskBarInfo()
     })
   end
 end
-
 function UpdateTaskBarAndTaskMainNode:FinishAction()
   if self.HasFinished then
     return
   end
   self:Finish()
 end
-
 function UpdateTaskBarAndTaskMainNode:Clear()
 end
-
 function UpdateTaskBarAndTaskMainNode:OnQuestlineFail()
   TaskUtils:ClearQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId, self.Key)
 end
-
 function UpdateTaskBarAndTaskMainNode:ClearWhenQuestSuccess()
   TaskUtils:ClearQuestExtraInfo(self.CurQuestChainId, self.CurDoingQuestId, self.Key)
 end
-
 return UpdateTaskBarAndTaskMainNode

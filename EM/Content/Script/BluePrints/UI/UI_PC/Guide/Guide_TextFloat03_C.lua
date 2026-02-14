@@ -1,5 +1,4 @@
 local Guide_TextFloat03_PC = Class("BluePrints.UI.BP_UIState_C")
-
 function Guide_TextFloat03_PC:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.Horizontal:SetVisibility(ESlateVisibility.Collapsed)
@@ -7,7 +6,6 @@ function Guide_TextFloat03_PC:OnLoaded(...)
   self:PlayAnimation(self.In)
   self:RemoveTimer("CloseMonsterPanel")
 end
-
 function Guide_TextFloat03_PC:ShowDungeonToast(TextMapIndex, Duration)
   self.Horizontal:SetVisibility(ESlateVisibility.Collapsed)
   self.Text_Float01_1:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -15,15 +13,12 @@ function Guide_TextFloat03_PC:ShowDungeonToast(TextMapIndex, Duration)
   local Text = GText(TextMapIndex)
   self.Text_Float01_1:SetText(Text)
 end
-
 function Guide_TextFloat03_PC:CloseMonsterPanel()
   self:Close()
 end
-
 function Guide_TextFloat03_PC:OnClose_Internal()
   self.Super.Close(self)
 end
-
 function Guide_TextFloat03_PC:InitEnterEnergySupplyInfo(BuffName, BuffIconPath)
   self:RemoveTimer("CloseMonsterPanel")
   self.Text_Float01:SetVisibility(ESlateVisibility.Collapsed)
@@ -42,7 +37,6 @@ function Guide_TextFloat03_PC:InitEnterEnergySupplyInfo(BuffName, BuffIconPath)
   end
   self:AddTimer(5.0, self.CloseMonsterPanel, false, 0, "CloseMonsterPanel")
 end
-
 function Guide_TextFloat03_PC:InitExitEnergySupplyInfo()
   self:RemoveTimer("CloseMonsterPanel")
   self.Horizontal:SetVisibility(ESlateVisibility.Collapsed)
@@ -52,7 +46,6 @@ function Guide_TextFloat03_PC:InitExitEnergySupplyInfo()
   self.Text_Float01_1:SetText(Text)
   self:AddTimer(5.0, self.CloseMonsterPanel, false, 0, "CloseMonsterPanel")
 end
-
 function Guide_TextFloat03_PC:InitEnergyRanOutInfo()
   self.Horizontal:SetVisibility(ESlateVisibility.Collapsed)
   self.Text_Float01:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -63,7 +56,6 @@ function Guide_TextFloat03_PC:InitEnergyRanOutInfo()
   self:RemoveTimer("CloseMonsterPanel")
   self:AddTimer(5.0, self.CloseMonsterPanel, false, 0, "CloseMonsterPanel")
 end
-
 function Guide_TextFloat03_PC:InitSurvivalValueMaxInfo()
   self.Horizontal:SetVisibility(ESlateVisibility.Collapsed)
   self.Text_Float01:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
@@ -74,7 +66,6 @@ function Guide_TextFloat03_PC:InitSurvivalValueMaxInfo()
   self:RemoveTimer("CloseMonsterPanel")
   self:AddTimer(5.0, self.CloseMonsterPanel, false, 0, "CloseMonsterPanel")
 end
-
 function Guide_TextFloat03_PC:InitEnergySupplyBuffInfo(BuffName, BuffIconPath, BuffChangeStr)
   self.Text_Float01_1:SetVisibility(ESlateVisibility.Collapsed)
   self.Horizontal:SetVisibility(ESlateVisibility.Collapsed)
@@ -86,5 +77,4 @@ function Guide_TextFloat03_PC:InitEnergySupplyBuffInfo(BuffName, BuffIconPath, B
   self.Text_Float02:SetText(BuffChangeStr)
   self:AddTimer(5.0, self.CloseMonsterPanel, false, 0, "CloseMonsterPanel")
 end
-
 return Guide_TextFloat03_PC

@@ -4,7 +4,6 @@ local CommonUtils = require("Utils.CommonUtils")
 local WeaponUtils = require("BluePrints.Client.CustomTypes.Weapon")
 local ModModel = ModController:GetModel()
 local M = Class()
-
 function M:InitItemInfo(ItemType, ItemId, UnitId)
   local WeaponData = DataMgr.Weapon[ItemId]
   local BattleWeaponData = DataMgr.BattleWeapon[ItemId]
@@ -31,7 +30,7 @@ function M:InitItemInfo(ItemType, ItemId, UnitId)
   end
   self.ParentWidget.Text_WeaponLevel02:SetText(Level)
   self.ParentWidget.Text_WeaponLevel03:SetText(WeaponData.WeaponMaxLevel)
-  assert(DataMgr.WeaponBreak[ItemId], "\232\175\183\230\163\128\230\159\165\230\173\166\229\153\168\231\170\129\231\160\180\232\161\168, WeaponId:", ItemId)
+  assert(DataMgr.WeaponBreak[ItemId], "请检查武器突破表, WeaponId:", ItemId)
   for _, v in pairs(DataMgr.WeaponBreak[ItemId]) do
     if MaxEnhanceLevel < v.WeaponBreakNum then
       MaxEnhanceLevel = v.WeaponBreakNum
@@ -58,7 +57,47 @@ function M:InitItemInfo(ItemType, ItemId, UnitId)
     self.Text_SkillEffect:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
+function M:InitItemInfoInBag(ItemType, ItemId, UnitId)
+  local WeaponData = DataMgr.Weapon[ItemId]
+  local BattleWeaponData = DataMgr.BattleWeapon[ItemId]
+  local Avatar = GWorld:GetAvatar()
+  local WeaponServerData
+  local Level = 1
+  local EnhanceLevel, MaxEnhanceLevel = 0, 0
+  if UnitId and type(UnitId) == "string" and not CommonUtils.IsObjId(UnitId) then
+    UnitId = CommonUtils.Str2ObjId(UnitId)
+  end
+  WeaponServerData = Avatar.Weapons[UnitId]
+  self.Text_Mod:SetText(GText("UI_Bag_MODSapacity"))
+  local GradeLevel = 0
+  if WeaponServerData then
+    Level = WeaponServerData.Level
+    EnhanceLevel = WeaponServerData.EnhanceLevel
+    GradeLevel = WeaponServerData.GradeLevel
+    local Cost = WeaponServerData:GetModSuitCost()
+    self.Text_Mod01:SetText(Cost)
+    self.Text_Mod02:SetText(WeaponServerData:LevelUpData().ModVolume)
+  else
+    self.Text_Mod01:SetText("0")
+    self.Text_Mod02:SetText(DataMgr.WeaponLevelUp[1].ModVolume)
+  end
+  assert(DataMgr.WeaponBreak[ItemId], "请检查武器突破表, WeaponId:", ItemId)
+  for _, v in pairs(DataMgr.WeaponBreak[ItemId]) do
+    if MaxEnhanceLevel < v.WeaponBreakNum then
+      MaxEnhanceLevel = v.WeaponBreakNum
+    end
+  end
+  local WeaponTypeName = self:GetWeaponTypeName(ItemId)
+  self.Text_SubTitle:SetText(WeaponTypeName)
+  self:UpdateAttrInfo(ItemId)
+  local PassiveSkillDesc = SkillUtils.CalcWeaponPassiveEffectsDesc(WeaponServerData or BattleWeaponData)
+  if nil ~= PassiveSkillDesc and "" ~= PassiveSkillDesc then
+    self.Text_SkillEffect:SetVisibility(ESlateVisibility.Visible)
+    self.Text_SkillEffect:SetText(PassiveSkillDesc)
+  else
+    self.Text_SkillEffect:SetVisibility(ESlateVisibility.Collapsed)
+  end
+end
 function M:SetWeaponEnhanceLevel(EnhanceLevel, MaxEnhanceLevel)
   for i = 1, 6 do
     local str = "Switch_Star0" .. i
@@ -74,7 +113,6 @@ function M:SetWeaponEnhanceLevel(EnhanceLevel, MaxEnhanceLevel)
     end
   end
 end
-
 function M:GetWeaponType(WeaponId)
   local BattleWeaponData = DataMgr.BattleWeapon[WeaponId]
   for _, v in pairs(BattleWeaponData.WeaponTag) do
@@ -89,7 +127,6 @@ function M:GetWeaponType(WeaponId)
   end
   return false
 end
-
 function M:GetWeaponTypeName(WeaponId)
   local WeaponType, WeaponName
   local BattleWeaponData = DataMgr.BattleWeapon[WeaponId]
@@ -101,22 +138,30 @@ function M:GetWeaponTypeName(WeaponId)
       elseif WeaponTagData.WeaponTagfilter == "MeleeType" then
         WeaponType = GText("UI_BAG_Meleeweapon")
       end
+      if "Bow" == v then
+        local BowTag
+        for _, tag in pairs(BattleWeaponData.WeaponTag) do
+          if "Bow01" == tag then
+            BowTag = tag
+          end
+        end
+        WeaponTagData = DataMgr.WeaponTag[BowTag or "Bow02"] or {}
+      end
       if WeaponTagData.WeaponTagTextmap then
         WeaponName = GText(WeaponTagData.WeaponTagTextmap)
       end
     end
   end
   if not WeaponType then
-    ScreenPrint("WeaponId" .. WeaponId .. "\231\154\132WeaponType\228\184\186\231\169\186\239\188\140\232\175\183\230\163\128\230\159\165WeaponTag\228\184\173\230\152\175\229\144\166\233\133\141\231\189\174\229\175\185\229\186\148\231\154\132WeaponTagfilter")
+    ScreenPrint("WeaponId" .. WeaponId .. "的WeaponType为空，请检查WeaponTag中是否配置对应的WeaponTagfilter")
     return ""
   end
   if not WeaponName then
-    ScreenPrint("WeaponId" .. WeaponId .. "\231\154\132WeaponName\228\184\186\231\169\186\239\188\140\232\175\183\230\163\128\230\159\165WeaponTag\228\184\173\230\152\175\229\144\166\233\133\141\231\189\174\229\175\185\229\186\148\231\154\132WeaponTagTextmap")
+    ScreenPrint("WeaponId" .. WeaponId .. "的WeaponName为空，请检查WeaponTag中是否配置对应的WeaponTagTextmap")
     return WeaponType
   end
-  return WeaponType .. "\239\188\154" .. WeaponName
+  return WeaponType .. "：" .. WeaponName
 end
-
 function M:UpdateAttrInfo(WeaponId)
   local SortIndexes = {Melee = 2, Ranged = 3}
   local StuffTypeTag = "Ranged"
@@ -147,7 +192,6 @@ function M:UpdateAttrInfo(WeaponId)
   end)
   self:UpdataWeaponAttrListView()
 end
-
 function M:UpdataWeaponAttrListView()
   self.VerticalBox_Property:ClearChildren()
   local PropertyDescribeData = {}
@@ -162,7 +206,6 @@ function M:UpdataWeaponAttrListView()
     self.VerticalBox_Property:AddChildToVerticalBox(PropertyDescribeObj)
   end
 end
-
 function M:GetDefaultAttrValue(AttrName)
   if not self.BattleWeaponAttr then
     self.BattleWeaponAttr = DataMgr.BattleWeaponAttr
@@ -173,7 +216,6 @@ function M:GetDefaultAttrValue(AttrName)
   end
   return AttrData.DefaultValue or 0
 end
-
 function M:GetAttrLevelGrow(AttrName)
   local BattleInfo = DataMgr.BattleWeapon
   local LevelGrow = BattleInfo[AttrName .. "LevelGrow"]
@@ -184,7 +226,6 @@ function M:GetAttrLevelGrow(AttrName)
   local GrowFactor = LevelUpInfo[LevelGrow]
   return GrowFactor
 end
-
 function M:FillCardValues(CardValues, CardLevelValues, AttrName, CardValue, LevelGrowAttrName)
   CardValue = CardValue or self:GetDefaultAttrValue(AttrName)
   if not CardValue then
@@ -193,7 +234,6 @@ function M:FillCardValues(CardValues, CardLevelValues, AttrName, CardValue, Leve
   CardValues[AttrName] = CardValue
   CardLevelValues[AttrName] = self:GetAttrLevelGrow(LevelGrowAttrName)
 end
-
 function M:GetWeaponAttrInfo(WeaponId)
   local WeaponAttr = {}
   local WeaponAttrLevelValues = {}
@@ -210,7 +250,6 @@ function M:GetWeaponAttrInfo(WeaponId)
   end
   return WeaponAttr
 end
-
 function M:CreatePropertyDescribeItem(Content)
   if nil == Content then
     return
@@ -225,5 +264,4 @@ function M:CreatePropertyDescribeItem(Content)
   end
   return PropertyDescribeObj
 end
-
 return M

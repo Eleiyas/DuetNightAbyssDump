@@ -1,10 +1,8 @@
 local WBP_Rouge_EnterToast_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Rouge_EnterToast_C:Construct()
   self.ToastExistTime = 3
   self.NeedClose = false
 end
-
 function WBP_Rouge_EnterToast_C:InitEnterToast(RoomIndex, RoomId, SeasonId)
   DebugPrint("RougeEnterToast: InitEnterToast", RoomIndex, RoomId, "self.NeedClose ==", self.NeedClose)
   self:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
@@ -26,18 +24,15 @@ function WBP_Rouge_EnterToast_C:InitEnterToast(RoomIndex, RoomId, SeasonId)
     self:Close()
   end)
 end
-
 function WBP_Rouge_EnterToast_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   if self.NeedClose then
-    DebugPrint("RougeEnterToast: OnLoaded\230\151\182\229\155\160\228\184\186 self.NeedClose == true \229\133\179\233\151\173")
+    DebugPrint("RougeEnterToast: OnLoaded时因为 self.NeedClose == true 关闭")
     self:Close()
   end
 end
-
 function WBP_Rouge_EnterToast_C:Close()
   self.Super.Close(self)
   self.NeedClose = true
 end
-
 return WBP_Rouge_EnterToast_C

@@ -3,13 +3,11 @@ local M = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
   self.Btn_Click.OnClicked:Add(self, self.OnCellClicked)
   self.Btn_Click.OnHovered:Add(self, self.OnCellHovered)
   self.Btn_Click.OnUnhovered:Add(self, self.OnCellUnhovered)
 end
-
 function M:OnListItemObjectSet(Content)
   Content.UI = self
   self.IsNew = Content.IsNew
@@ -25,7 +23,6 @@ function M:OnListItemObjectSet(Content)
   self:InitStoryItem()
   self:InitSubItems()
 end
-
 function M:InitStoryItem()
   local SeriesName = self.Data.Data.SeriesName
   if self.IsUnlocked then
@@ -67,7 +64,6 @@ function M:InitStoryItem()
     self.Image_Lock:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function M:InitSubItems()
   self.List_SubItem:ClearListItems()
   self.LastChooseItem = nil
@@ -92,7 +88,6 @@ function M:InitSubItems()
     end
   end
 end
-
 function M:ChooseItem(Index, SubItem)
   if self.LastChooseItem then
     self.LastChooseItem:OnSubItemLoseSelection()
@@ -100,7 +95,6 @@ function M:ChooseItem(Index, SubItem)
   self.LastChooseItem = SubItem
   self.List_SubItem:SetSelectedIndex(Index)
 end
-
 function M:OnCellClicked()
   if self.Parent.CurSelectIndex ~= self.Index then
     local FirstIndex
@@ -146,6 +140,7 @@ function M:OnCellClicked()
     if self.Parent.List_Item:GetItemAt(self.Index + 1) then
       self.Btn_Click:SetNavigationRuleExplicit(EUINavigation.Down, self.Parent.List_Item:GetItemAt(self.Index + 1).UI.Btn_Click)
     end
+    self.Parent.List_Item:SetScrollOffset(self.Parent.List_Item:GetScrollOffset() + 1)
     self:StopAnimation(self.List_In)
     self:PlayAnimation(self.List_Out)
     self.Parent:ChooseSeries(self.Index, self)
@@ -156,7 +151,6 @@ function M:OnCellClicked()
   end
   self.Btn_Click:SetFocus()
 end
-
 function M:OnCellHovered()
   if not self.IsSelected then
     self:PlayAnimation(self.Hover)
@@ -165,6 +159,7 @@ function M:OnCellHovered()
     self.Parent:HoverSeries(self)
     self.Btn_Click:SetFocus()
     self.List_SubItem:BP_ClearSelection()
+    self.Parent.List_Item:BP_NavigateToItem(self)
   end
   if self.IsSelected and self.IsUnlocked then
     self.Btn_Click:SetNavigationRuleExplicit(EUINavigation.Down, self.List_SubItem)
@@ -185,14 +180,12 @@ function M:OnCellHovered()
     end
   end
 end
-
 function M:OnCellUnhovered()
   if not self.IsSelected then
     self:StopAnimation(self.Hover)
     self:PlayAnimation(self.UnHover)
   end
 end
-
 function M:BP_OnItemSelectionChanged(IsSelected)
   if UIUtils.UtilsGetCurrentInputType() == ECommonInputType.Gamepad then
     return
@@ -203,7 +196,6 @@ function M:BP_OnItemSelectionChanged(IsSelected)
     self:OnItemLoseSelection()
   end
 end
-
 function M:OnItemLoseSelection()
   self.IsSelected = false
   self:StopAnimation(self.Click)
@@ -216,5 +208,4 @@ function M:OnItemLoseSelection()
     self:PlayAnimation(self.Forbidden)
   end
 end
-
 return M

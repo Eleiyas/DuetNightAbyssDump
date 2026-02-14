@@ -2,11 +2,9 @@ require("UnLua")
 local TimeUtils = require("Utils.TimeUtils")
 local HeroUSDKUtils = require("Utils.HeroUSDKUtils")
 local M = Class("BluePrints.UI.UI_PC.Common.Common_Dialog.Common_Dialog_ContentBase")
-
 function M:Construct()
   self:AddInputMethodChangedListen()
 end
-
 function M:InitContent(Params, PopupData, Owner)
   self.Super.InitContent(self, Params, PopupData, Owner)
   self.ShopItemData = Params.ShopItemData
@@ -136,7 +134,6 @@ function M:InitContent(Params, PopupData, Owner)
     self.Group_BtnDetail:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnDescOpenChanged(bOpen)
   self.bIsOpen = bOpen
   local CurMode = UIUtils.UtilsGetCurrentInputType()
@@ -150,7 +147,6 @@ function M:OnDescOpenChanged(bOpen)
   end
   self:RefreshDialogButton()
 end
-
 function M:UpdateLimitTime()
   if not self.ShopItemData.EndTime then
     self:RemoveTimer("UpdateShopItemEndRefreshTime")
@@ -167,7 +163,7 @@ function M:UpdateLimitTime()
     return
   end
   local StartTiem = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(TimeUtils.NowTime())
-  local EndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(self.ShopItemData.EndTime)
+  local EndTime = URuntimeCommonFunctionLibrary.GetDateTimeFromUnixTime(self.ShopItemData.EndTime and self.ShopItemData.EndTime.GetTime())
   local RemainTime = UKismetMathLibrary.Subtract_DateTimeDateTime(EndTime, StartTiem)
   local RemainTimeStr = ""
   local TimeCount = 0
@@ -189,7 +185,6 @@ function M:UpdateLimitTime()
   end
   self.Text_Time:SetText(string.format(GText("UI_SHOP_REMAINTIME"), RemainTimeStr))
 end
-
 function M:Purchase()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -214,7 +209,9 @@ function M:Purchase()
       PaymentParameters.cpOrder = OrderId
       PaymentParameters.callbackUrl = CallbackUrl
       local GameRoleInfo = HeroUSDKUtils.GenHeroHDCGameRoleInfo()
-      HeroUSDKSubsystem():HeroSDKPay(PaymentParameters, GameRoleInfo)
+      local ItemName = ""
+      ItemName = GText(ItemUtils:GetDropName(self.ShopItemData.TypeId, self.ShopItemData.ItemType))
+      HeroUSDKSubsystem():HeroSDKPay(PaymentParameters, GameRoleInfo, ItemName)
       local TrackInfo = {}
       TrackInfo.product_id = DataMgr.ShopItem2PayGoods[self.ShopItemData.ItemId]
       if self.ShopItemData.ItemId then
@@ -260,7 +257,6 @@ function M:Purchase()
       if string.find(PopoverText, "&Num2&") then
         PopoverText = string.gsub(PopoverText, "&Num2&", self.CurrentCount)
       end
-      
       local function Confirm()
         local Coin4Count = 0
         if Avatar.Resources[CommonConst.Coins.Coin4] then
@@ -270,7 +266,6 @@ function M:Purchase()
           local function JumpToShop()
             PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
           end
-          
           local Params = {}
           Params.LeftCallbackObj = self
           Params.RightCallbackObj = self
@@ -280,7 +275,6 @@ function M:Purchase()
           ShopUtils:SendExchangeRequest(self.ShopItemData.ItemId, self.CurrentCount)
         end
       end
-      
       local ItemList = {}
       local Coin4Count = Avatar.Resources[CommonConst.Coins.Coin4] and Avatar.Resources[CommonConst.Coins.Coin4].Count or 0
       table.insert(ItemList, {
@@ -299,7 +293,6 @@ function M:Purchase()
       local function JumpToShop()
         PageJumpUtils:JumpToShopPage(CommonConst.GachaJumpToShopMainTabId, nil, nil, "Shop")
       end
-      
       local Params = {}
       Params.LeftCallbackObj = self
       Params.RightCallbackObj = self
@@ -312,7 +305,6 @@ function M:Purchase()
   ShopMain:BlockAllUIInput(true)
   Avatar:PurchaseShopItem(self.ShopItemData.ItemId, 1)
 end
-
 function M:OnBtnDetailClick()
   local Content = {}
   Content.ItemType = "Tips"
@@ -322,18 +314,15 @@ function M:OnBtnDetailClick()
   Content.MenuPlacement = 7
   self.ItemDetails_MenuAnchor:OpenItemDetailsWidget(false, Content)
 end
-
 function M:UpdateDialogBtn()
   self.Owner:GetButtonBar().Btn_Yes:ForbidBtn(not ShopUtils:CanPurchase(self.ShopItemData, self.ShopItemData.PriceType, self.CurrentCount * ShopUtils:GetShopItemPrice(self.ShopItemData.ItemId)))
 end
-
 function M:PackageData()
   return {
     CallObj = self,
     CallFunc = self.Purchase
   }
 end
-
 function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -344,7 +333,6 @@ function M:OnContentKeyDown(MyGeometry, InKeyEvent)
   end
   return IsEventHandled
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.LeftThumb then
@@ -364,7 +352,6 @@ function M:OnGamePadDown(InKeyName)
   self:RefreshDialogButton()
   return IsEventHandled
 end
-
 function M:RefreshDialogButton()
   if self.FocusOnSubItem then
     self:ShowGamepadShortcut(self.ButtonIndexA)
@@ -393,7 +380,6 @@ function M:RefreshDialogButton()
     self:SetGamepadBtnKeyVisibility(true)
   end
 end
-
 function M:ItemMenuAnchorChanged(bIsOpen)
   self.bTipsOpen = bIsOpen
   local CurMode = UIUtils.UtilsGetCurrentInputType()
@@ -410,7 +396,6 @@ function M:ItemMenuAnchorChanged(bIsOpen)
     self:RefreshDialogButton()
   end
 end
-
 function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InAnalogInputEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -423,7 +408,6 @@ function M:OnContentAnalogValueChanged(MyGeometry, InAnalogInputEvent)
   end
   return UIUtils.Unhandled
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if CurInputDevice == ECommonInputType.Touch then
     return
@@ -444,5 +428,4 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self.Key_BtnDetail:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 return M

@@ -7,19 +7,15 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Base.PersonInfoMainPageView"
 }
-
 function M:Construct()
   self:InitBaseView()
 end
-
 function M:InitPage(Data)
   self:RefreshPageView(Data)
 end
-
 function M:ModelViewIni()
   self:FreshHideButton()
 end
-
 function M:FreshHideButton()
   if -1 == self.SelectCharIndex then
     PersonInfoController.MainPage.Com_BtnVisible:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -27,6 +23,5 @@ function M:FreshHideButton()
     PersonInfoController.MainPage.Com_BtnVisible:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   end
 end
-
 AssembleComponents(M)
 return M

@@ -2,34 +2,27 @@ local M = Class("BluePrints.Common.MVC.Model")
 local SignBoardBubbleTalkCommon = require("BluePrints.UI.WBP.SignBoardBubble.SignBoardBubbleTalkCommon")
 local FTalkTriggerComponent = require("BluePrints.Story.Talk.Component.TalkTriggerComponent")
 local TimeUtils = require("Utils.TimeUtils")
-
 function M:Init()
   M.Super.Init(self)
   self:ResetTalkData()
 end
-
 function M:Destory()
   M.Super.Destory(self)
   self.WaitTriggerQueue = nil
 end
-
 function M:GetWaitTriggerQueue()
   return self.WaitTriggerQueue
 end
-
 function M:GetRunningTalkTrigger()
   return self.RunningTalkTrigger
 end
-
 function M:GetRunningTalkTriggerBubbleKey()
   return self.RunningTalkTriggerBubbleKey
 end
-
 function M:SetRunningTalkTrigger(TriggerId, RunningTalkTriggerBubbleKey)
   self.RunningTalkTrigger = TriggerId
   self.RunningTalkTriggerBubbleKey = RunningTalkTriggerBubbleKey
 end
-
 function M:AddStartWaitTrigger(TriggerId)
   if not self.WaitTriggerQueue then
     return
@@ -39,7 +32,6 @@ function M:AddStartWaitTrigger(TriggerId)
   end
   self.WaitTriggerQueue[TriggerId] = TimeUtils.NowTime()
 end
-
 function M:RemoveWaitTrigger(TriggerId)
   if not self.WaitTriggerQueue then
     return
@@ -47,7 +39,6 @@ function M:RemoveWaitTrigger(TriggerId)
   self.WaitTriggerQueue[TriggerId] = nil
   self.FinishTrigger[TriggerId] = nil
 end
-
 function M:GetTalkTriggerId(TriggerId)
   local NpcGossipTrigger = DataMgr.NpcGossipTrigger
   local TriggerInfo = NpcGossipTrigger[TriggerId]
@@ -56,7 +47,6 @@ function M:GetTalkTriggerId(TriggerId)
   end
   return TriggerInfo.RelatedTalks
 end
-
 function M:GetNpcCombination(TriggerId)
   local NpcGossipTrigger = DataMgr.NpcGossipTrigger
   local TriggerInfo = NpcGossipTrigger[TriggerId]
@@ -65,7 +55,6 @@ function M:GetNpcCombination(TriggerId)
   end
   return TriggerInfo.NpcCombination
 end
-
 function M:GetServerCanTriggerNpc(TriggerId)
   local Avatar = self:GetAvatar()
   if not Avatar then
@@ -81,7 +70,6 @@ function M:GetServerCanTriggerNpc(TriggerId)
     end
   end
 end
-
 function M:CheckWaitTriggerQueue()
   if not self.WaitTriggerQueue then
     return
@@ -105,7 +93,6 @@ function M:CheckWaitTriggerQueue()
   local Index = math.random(1, #TriggerIds)
   return TriggerIds[Index]
 end
-
 function M:CheckTriggerDistance(TriggerId)
   local NpcGossipTrigger = DataMgr.NpcGossipTrigger
   local TriggerInfo = NpcGossipTrigger[TriggerId]
@@ -132,7 +119,6 @@ function M:CheckTriggerDistance(TriggerId)
   end
   return false
 end
-
 function M:GetNpcCanTrigger(NpcId)
   local NpcTriggerConvert = DataMgr.NpcGossipTriggerConvert
   local NpcTrigger = NpcTriggerConvert.NpcTrigger or {}
@@ -142,7 +128,6 @@ function M:GetNpcCanTrigger(NpcId)
   end
   return TriggerIds
 end
-
 function M:CheckCanTrigger(TriggerId)
   if not self:GetServerCanTriggerNpc(TriggerId) then
     return
@@ -173,14 +158,12 @@ function M:CheckCanTrigger(TriggerId)
     return true
   end
 end
-
 function M:ResetTalkData()
   self.WaitTriggerQueue = {}
   self.FinishTrigger = {}
   self.RunningTalkTrigger = nil
   self.RunningTalkTriggerBubbleKey = nil
 end
-
 function M:ResetTalkWaitTime(RunningTriggerId)
   local NpcGossipTrigger = DataMgr.NpcGossipTrigger
   local InvitateBubbleTime = DataMgr.GlobalConstant.InvitateBubbleWaitTime.ConstantValue
@@ -190,5 +173,4 @@ function M:ResetTalkWaitTime(RunningTriggerId)
     self.WaitTriggerQueue[TriggerId] = NowTime
   end
 end
-
 return M

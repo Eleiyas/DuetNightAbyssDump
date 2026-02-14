@@ -3,14 +3,12 @@ local ReasoningUtils = require("BluePrints.UI.WBP.DetectiveMinigame.ReasoningUti
 local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:OnListItemObjectSet(Content)
   self.Content = Content
   self.Content.UI = self
   self:InitUIInfo()
   ReddotManager.AddListener("DetectiveAnswer", self, self.RefreshReddotAndSolvedUI)
 end
-
 function M:InitUIInfo()
   local DetectiveQuestionData = DataMgr.DetectiveQuestion[self.Content.Question]
   self.Text_Question:SetText(GText(DetectiveQuestionData.Tips))
@@ -19,31 +17,28 @@ function M:InitUIInfo()
   self:PlaySelectAnimation()
   self:RefreshProgress()
   self.Text_Clue:SetText(GText("Minigame_Textmap_100303"))
+  self.Text_Clue_1:SetText(GText("Minigame_Textmap_100340"))
 end
-
 function M:RefreshProgress()
   local currentClueCount, totalClueCount = ReasoningUtils:GetQuestionClueCount(self.Content.Question)
   self.Text_Progress:SetText(string.format("%d/%d", currentClueCount, totalClueCount))
 end
-
 function M:Construct()
   self.BG.Button_Area.OnClicked:Add(self, self.OnClickButton)
   self.BG.Button_Area.OnHovered:Add(self, self.OnHoverButton)
   EventManager:AddEvent(EventID.OnDetectiveRefreshProgress, self, self.RefreshProgress)
 end
-
 function M:Destruct()
   ReddotManager.RemoveListener("DetectiveAnswer", self)
   EventManager:RemoveEvent(EventID.OnDetectiveRefreshProgress, self)
 end
-
 function M:OnHoverButton()
   if self.Content.ParentUI.CurInputDeviceType == ECommonInputType.Gamepad then
     self:OnClickButton()
     self.BG:SelectCell()
+    self.Content.ParentUI.Book.Controller_01:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function M:OnClickButton()
   if self.Content.ParentUI.CurerntQuestionId == self.Content.Question then
     return
@@ -73,7 +68,6 @@ function M:OnClickButton()
   self:RefreshReddotAndSolvedUI()
   self:PlaySelectAnimation()
 end
-
 function M:PlaySelectAnimation()
   if self.IsSelect then
     self:StopAllAnimations()
@@ -84,36 +78,27 @@ function M:PlaySelectAnimation()
     self:PlayAnimation(self.Text_Forbidden)
   end
 end
-
 function M:RefreshReddotAndSolvedUI()
+  self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
+  self.Panel_Reason:SetVisibility(UE4.ESlateVisibility.Collapsed)
   self:RefreshProgress()
   if self.Content.IsSolved then
     self.WS_Type:SetActiveWidgetIndex(1)
-    self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
-    self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
   else
     self.WS_Type:SetActiveWidgetIndex(0)
-    local CacheKey = self.Content.Question
-    if not ReddotManager.GetTreeNode("DetectiveQuestion") then
-      ReddotManager.AddNode("DetectiveQuestion")
-    end
-    local CacheDetail = ReddotManager.GetLeafNodeCacheDetail("DetectiveQuestion")
-    if CacheDetail then
-      self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.Collapsed)
-      if nil == CacheDetail[CacheKey] then
-        CacheDetail[CacheKey] = true
-        ReddotManager.IncreaseLeafNodeCount("DetectiveQuestion")
-        self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-      elseif CacheDetail[CacheKey] then
-        self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-      else
-        self.New:SetVisibility(UE4.ESlateVisibility.Collapsed)
-        if ReasoningUtils:IsQuestionHasNewClue(self.Content.Question) then
-          self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
-        end
-      end
+    local QuestionId = self.Content.Question
+    local IsReasoningState = ReasoningUtils:IsQuestionReasoningState(QuestionId)
+    local Result = ReasoningUtils:IsHasNewQuestionOrClue(QuestionId)
+    local IsNewQuestion = 1 == Result
+    local IsNewClue = 2 == Result
+    if IsNewClue then
+      self.Panel_Clue:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    elseif IsNewQuestion then
+      self.New:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
+    elseif IsReasoningState then
+      self.Panel_Reason:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
     end
   end
 end
-
 return M

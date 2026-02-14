@@ -3,28 +3,27 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.Common.TimerMgr"
 })
-M._components = {
-  "BluePrints.UI.BP_EMUserWidgetUtils_C"
-}
-
 function M:Construct()
   self.Overridden.Construct(self)
   self.Pos_Tips:ClearChildren()
-  self.Bg_Dialog.Text_MailDetail_Empry:SetText("")
-  self:AddInputMethodChangedListen()
-  self:RefreshOpInfoByInputDevice(UIUtils.UtilsGetCurrentInputType())
+  self:AddTimer(0.1, function()
+    self.Bg_Dialog.Text_MailDetail_Empry:SetText("")
+    self.List_RedDotTop:PlayAnimation(self.List_RedDotTop.Loop_T, 0, 0)
+    self.List_New_Top:PlayAnimation(self.List_New_Top.Loop_T, 0, 0)
+    self.List_New_Bottom:PlayAnimation(self.List_New_Bottom.Loop_D, 0, 0)
+    self.List_RedDotBottom:PlayAnimation(self.List_RedDotBottom.Loop_D, 0, 0)
+    self.List_RedDotTop.Btn_Click.OnClicked:Add(self, self.OnTopReddotClicked)
+    self.List_New_Top.Btn_Click.OnClicked:Add(self, self.OnTopReddotClicked)
+    self.List_New_Bottom.Btn_Click.OnClicked:Add(self, self.OnBottomReddotClicked)
+    self.List_RedDotBottom.Btn_Click.OnClicked:Add(self, self.OnBottomReddotClicked)
+  end, false, 0, "DelayConstruct", true)
 end
-
-function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
-  self.IsGamepadInput = CurInputDevice == ECommonInputType.Gamepad
-end
-
 function M:OnListItemInited(Content, EntryUI)
+  self:UpdateReddot()
   if self.Event_OnEntryInitialized then
     self.Event_OnEntryInitialized(self.EventReceiver, Content, EntryUI)
   end
 end
-
 function M:Init(Parent, Params)
   self.Parent = Parent
   self.Params = Params
@@ -32,6 +31,7 @@ function M:Init(Parent, Params)
   self.FilterMod = Params.FilterMod or "Single"
   self.FilterIdxes = {}
   self.OrderByDisplayNames = Params.OrderByDisplayNames
+  self.SortIdx = Params.SortIdx
   self.SortType = Params.SortType
   self.AllItemContents = Params.ItemContents
   self.EMListView_Filter:ClearListItems()
@@ -68,6 +68,7 @@ function M:Init(Parent, Params)
     self.EMListView_Filter:AddItem(Obj)
   end
   self.Common_Sort_List:Init(self.Parent, self.OrderByDisplayNames, self.SortType or CommonConst.DESC, {
+    SortBy = self.SortIdx,
     OnGetBackFocusWidget = function(_self, MyGeometry, InKeyEvent)
       return self:OnSortListWidgetBack(MyGeometry, InKeyEvent)
     end,
@@ -84,21 +85,19 @@ function M:Init(Parent, Params)
   self:FillListView()
   self:InitNavigationRules()
 end
-
 function M:SetItemContents(ItemContents)
   self.AllItemContents = ItemContents
   self:UpdateFilterInfos()
   if self.Event_FilterFunction then
     self.FilteredContents = self.Event_FilterFunction(self.EventReceiver, self.AllItemContents, self.FilterIdxes) or {}
     if self.Event_SortFuncion then
-      local SortByIdx, SortType = self.Common_Sort_List:GetSortInfos()
-      self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortByIdx, SortType)
+      local SortBy, SortType = self.Common_Sort_List:GetSortInfos()
+      self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortBy, SortType)
     end
     self:FillListView()
     self:RegenerateAllEntries()
   end
 end
-
 function M:BindEvents(EventReceiver, Events)
   self.EventReceiver = EventReceiver
   self.Event_OnListItemClicked = Events.OnListItemClicked
@@ -109,11 +108,9 @@ function M:BindEvents(EventReceiver, Events)
   self.Event_OnEntryInitialized = Events.OnEntryInitialized
   self.Event_OnItemIsHoverChanged = Events.OnItemIsHoverChanged
 end
-
 function M:SetSortWidgetFocus()
   self.Common_Sort_List:SetFocus()
 end
-
 function M:SetFocusToList()
   self.TileView_Select_Role:SetFocus()
   if self.LastSelectedListContent then
@@ -123,13 +120,11 @@ function M:SetFocusToList()
     self.TileView_Select_Role:BP_NavigateToItem(self.LastSelectedListContent)
   end
 end
-
 function M:OnListItemClicked(Content)
   if self.Event_OnListItemClicked then
     self.Event_OnListItemClicked(self.EventReceiver, Content)
   end
 end
-
 function M:OnListItemSelectionChanged(Content, IsSelected)
   if IsSelected then
     self.LastSelectedListContent = Content
@@ -138,19 +133,11 @@ function M:OnListItemSelectionChanged(Content, IsSelected)
     self.Event_OnListItemSelectionChanged(self.EventReceiver, Content, IsSelected)
   end
 end
-
 function M:OnItemIsHoverChanged(Content)
   if self.Event_OnItemIsHoverChanged then
     self.Event_OnItemIsHoverChanged(self.EventReceiver, Content)
   end
 end
-
-function M:OnFilterListItemSelectionChanged(Content, IsSelected)
-  if self.IsGamepadInput and IsSelected then
-    self:OnFilterListItemClicked(Content)
-  end
-end
-
 function M:OnFilterListItemClicked(Content)
   self.LastSelectedFilterContent = Content
   if self.FilterMod == "Single" then
@@ -178,14 +165,13 @@ function M:OnFilterListItemClicked(Content)
   if self.Event_FilterFunction then
     self.FilteredContents = self.Event_FilterFunction(self.EventReceiver, self.AllItemContents, self.FilterIdxes) or {}
     if self.Event_SortFuncion then
-      local SortByIdx, SortType = self.Common_Sort_List:GetSortInfos()
-      self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortByIdx, SortType)
+      local SortBy, SortType = self.Common_Sort_List:GetSortInfos()
+      self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortBy, SortType)
     end
     self:FillListView()
     self.TileView_Select_Role:ScrollToTop()
   end
 end
-
 function M:SetFilterContentIsSelected(Content, IsSelected)
   Content.IsSelected = IsSelected
   if Content.UI then
@@ -195,7 +181,6 @@ function M:SetFilterContentIsSelected(Content, IsSelected)
     self.SelectedFilterContents[Content.Tag] = Content
   end
 end
-
 function M:UpdateFilterInfos()
   local Indexes = {}
   local bHasItem = next(self.SelectedFilterContents) ~= nil
@@ -215,39 +200,32 @@ function M:UpdateFilterInfos()
   self.FilterIdxes = Indexes
   return self.FilterIdxes
 end
-
 function M:Resort()
   self:OnSortListSelectionsChanged()
 end
-
 function M:OnSortListSelectionsChanged()
-  local SortByIdx, SortType = self.Common_Sort_List:GetSortInfos()
+  local SortBy, SortType = self.Common_Sort_List:GetSortInfos()
   if self.Event_SortFuncion then
-    self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortByIdx, SortType)
+    self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortBy, SortType)
     self:FillListView()
   end
 end
-
 function M:OnSortTypeChanged()
-  local SortByIdx, SortType = self.Common_Sort_List:GetSortInfos()
+  local SortBy, SortType = self.Common_Sort_List:GetSortInfos()
   if self.Event_SortFuncion then
-    self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortByIdx, SortType)
+    self.Event_SortFuncion(self.EventReceiver, self.FilteredContents, SortBy, SortType)
     self:FillListView()
   end
 end
-
 function M:NavigateToItem(Content)
   self.TileView_Select_Role:BP_NavigateToItem(Content)
 end
-
 function M:ScrollItemIntoView(Content)
   self.TileView_Select_Role:BP_ScrollItemIntoView(Content)
 end
-
 function M:GetSelectedListItem()
   return self.LastSelectedListContent
 end
-
 function M:FillListView()
   self:PlayAnimation(self.List_Change)
   self.TileView_Select_Role:ClearListItems()
@@ -282,30 +260,93 @@ function M:FillListView()
       end
     end, false, 0, "DelayAddEmptyItem", true)
   end
+  self:UpdateReddot()
 end
-
+function M:OnListEntryReleased()
+end
+function M:UpdateReddot()
+  self:AddTimer(0.2, function()
+    local MinEntryIdx, MaxEntryIdx = UIUtils.GetMinAndMaxDisplayedItemIndex(self.TileView_Select_Role)
+    local AllItems = self.TileView_Select_Role:GetListItems():ToTable()
+    local ShowTopRed = false
+    local ShowTopNew = false
+    local ShowBottomRed = false
+    local ShowBottomNew = false
+    for i = MinEntryIdx - 1, 1, -1 do
+      if AllItems[i].RedDotType == UIConst.RedDotType.CommonRedDot then
+        ShowTopRed = true
+        break
+      elseif AllItems[i].RedDotType == UIConst.RedDotType.NewRedDot then
+        ShowTopNew = true
+      end
+    end
+    for i = MaxEntryIdx + 1, #AllItems do
+      if AllItems[i].RedDotType == UIConst.RedDotType.CommonRedDot then
+        ShowBottomRed = true
+        break
+      elseif AllItems[i].RedDotType == UIConst.RedDotType.NewRedDot then
+        ShowBottomNew = true
+      end
+    end
+    if ShowTopRed then
+      self.List_RedDotTop:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+      self.List_New_Top:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    elseif ShowTopNew then
+      self.List_RedDotTop:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.List_New_Top:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    else
+      self.List_RedDotTop:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.List_New_Top:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+    if ShowBottomRed then
+      self.List_RedDotBottom:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+      self.List_New_Bottom:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    elseif ShowBottomNew then
+      self.List_RedDotBottom:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.List_New_Bottom:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
+    else
+      self.List_RedDotBottom:SetVisibility(UIConst.VisibilityOp.Collapsed)
+      self.List_New_Bottom:SetVisibility(UIConst.VisibilityOp.Collapsed)
+    end
+  end, false, 0, "DelayUpdateReddot", true)
+end
+function M:OnTopReddotClicked()
+  local MinEntryIdx, MaxEntryIdx = UIUtils.GetMinAndMaxDisplayedItemIndex(self.TileView_Select_Role)
+  local AllItems = self.TileView_Select_Role:GetListItems():ToTable()
+  for i = MinEntryIdx - 1, 1, -1 do
+    if AllItems[i].RedDotType then
+      self.TileView_Select_Role:BP_ScrollItemIntoView(AllItems[i])
+      break
+    end
+  end
+end
+function M:OnBottomReddotClicked()
+  local MinEntryIdx, MaxEntryIdx = UIUtils.GetMinAndMaxDisplayedItemIndex(self.TileView_Select_Role)
+  local AllItems = self.TileView_Select_Role:GetListItems():ToTable()
+  for i = MaxEntryIdx + 1, #AllItems do
+    if AllItems[i].RedDotType then
+      self.TileView_Select_Role:BP_ScrollItemIntoView(AllItems[i])
+      break
+    end
+  end
+end
 function M:RegenerateAllEntries()
   self.TileView_Select_Role:RegenerateAllEntries()
 end
-
 function M:FillEmptyItems(Count)
   for i = 1, Count do
     self.TileView_Select_Role:AddItem(NewObject(UIUtils.GetCommonItemContentClass()))
   end
 end
-
 function M:AttachTipsWidget(Widget)
   self.Pos_Tips:AddChild(Widget)
 end
-
 function M:IsTipsWidgetShowed()
   return self.bTipsWidgetShowed
 end
-
 function M:SetEmptyStateText(Text)
   self.Bg_Dialog.Text_MailDetail_Empry:SetText(Text)
 end
-
 function M:SetTitle(Title)
   if Title then
     self.Panel_Recommend:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
@@ -314,7 +355,6 @@ function M:SetTitle(Title)
     self.Panel_Recommend:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function M:SetSubTitle(Title)
   if not Title then
     self.Text_Commond:SetVisibility(UIConst.VisibilityOp.Collapsed)
@@ -325,48 +365,40 @@ function M:SetSubTitle(Title)
     self.Text_Commond:SetText(Title)
   end
 end
-
 function M:ScrollItemIntoView(Content)
   if Content then
     self.TileView_Select_Role:BP_ScrollItemIntoView(Content)
   end
 end
-
 function M:PlayInAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "Selective_Listing_In", nil)
   self:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self:StopAnimation(self.Out)
   self:PlayAnimation(self.In)
 end
-
 function M:PlayOutAnim()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "Selective_Listing_In", {ToEnd = 1})
   self:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self:StopAnimation(self.In)
   self:PlayAnimation(self.Out)
 end
-
 function M:Destruct()
   if AudioManager(self):IsSoundPlaying(self, "Selective_Listing_In") then
     AudioManager(self):SetEventSoundParam(self, "Selective_Listing_In", {ToEnd = 1})
   end
   self:RemoveTimer("DelayAddEmptyItem")
 end
-
 function M:OnFocusReceived(MyGeometry, InFocusEvent)
   return UWidgetBlueprintLibrary.SetUserFocus(UWidgetBlueprintLibrary.Handled(), self.TileView_Select_Role)
 end
-
 function M:GetItemAt(Index)
   return self.TileView_Select_Role:GetItemAt(Index)
 end
-
 function M:WBP_Armory_Selective_Listing_Out()
   if self.HB_Main:IsVisible() then
     self.Overridden.WBP_Armory_Selective_Listing_Out(self)
   end
 end
-
 function M:InitNavigationRules()
   self.TileView_Select_Role:SetNavigationRuleBase(EUINavigation.Up, EUINavigationRule.Stop)
   self.TileView_Select_Role:SetNavigationRuleBase(EUINavigation.Right, EUINavigationRule.Stop)
@@ -384,7 +416,6 @@ function M:InitNavigationRules()
   })
   self.TileView_Select_Role.bWrapHorizontalNavigation = not self.Panel_FilterTab:IsVisible()
 end
-
 function M:OnRoleListNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Left then
     self.EMListView_Filter:BP_SetSelectedItem(self.LastSelectedFilterContent)
@@ -393,7 +424,6 @@ function M:OnRoleListNavigation(NavigationDirection)
   end
   return self.TileView_Select_Role
 end
-
 function M:OnFilterListNavigation(NavigationDirection)
   if NavigationDirection == EUINavigation.Right then
     self.TileView_Select_Role:BP_SetSelectedItem(self.LastSelectedListContent)
@@ -402,13 +432,11 @@ function M:OnFilterListNavigation(NavigationDirection)
   end
   return self.EMListView_Filter
 end
-
 function M:OnSortListWidgetBack(MyGeometry, InKeyEvent)
   if self.LastFocusList:IsVisible() then
     return self.LastFocusList
   end
 end
-
 function M:OnSortListAddedToFocusPath()
   if UIUtils.HasAnyFocus(self.EMListView_Filter) then
     self.LastFocusList = self.EMListView_Filter
@@ -416,9 +444,6 @@ function M:OnSortListAddedToFocusPath()
     self.LastFocusList = self.TileView_Select_Role
   end
 end
-
 function M:OnSortListRemovedFromFocusPath()
 end
-
-AssembleComponents(M)
 return M

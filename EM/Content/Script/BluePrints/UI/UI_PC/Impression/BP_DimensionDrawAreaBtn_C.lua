@@ -1,10 +1,9 @@
 local ImpressionTypes = require("BluePrints.UI.UI_PC.Impression.ImpressionConst").ImpressionTypes
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:Init(RegionId)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
-    GWorld.logger.error("BP_DimensionDrawAreaBtn_C\239\188\154Init()\239\188\140Avatar\228\184\141\229\173\152\229\156\168")
+    GWorld.logger.error("BP_DimensionDrawAreaBtn_C：Init()，Avatar不存在")
     return
   end
   local RegionId = RegionId or DataMgr.SubRegion[Avatar.CurrentRegionId].RegionId
@@ -26,7 +25,6 @@ function M:Init(RegionId)
     end
   end
 end
-
 function M:Construct()
   self.Checked = false
   self.ClickLogics = {}
@@ -39,12 +37,10 @@ function M:Construct()
   self.Btn_Dimension:SetRenderOpacity(0)
   self.Text_Dimension:SetText(GText("UIGuide_Title_ImpressionSystem_1"))
 end
-
 function M:Destruct()
   self.ClickLogics = {}
   self:UnBindButtonPerformances()
 end
-
 function M:BindEventOnClicked(Obj, Func)
   if not Obj or not Func then
     return
@@ -54,7 +50,6 @@ function M:BindEventOnClicked(Obj, Func)
   end
   table.insert(self.ClickLogics[Obj], Func)
 end
-
 function M:UnBindEventOnClicked(Obj, Func)
   if not Obj or not Func then
     return
@@ -69,7 +64,6 @@ function M:UnBindEventOnClicked(Obj, Func)
     self.ClickLogics[Obj] = temp_table
   end
 end
-
 function M:BindButtonPerformances()
   self.Btn_Dimension.OnClicked:Add(self, self.OnBtnClicked)
   self.Btn_Dimension.OnPressed:Add(self, self.OnBtnPressed)
@@ -79,7 +73,6 @@ function M:BindButtonPerformances()
     self.Btn_Dimension.OnUnhovered:Add(self, self.OnBtnUnhovered)
   end
 end
-
 function M:UnBindButtonPerformances()
   if not self.Btn_Dimension then
     return
@@ -92,22 +85,18 @@ function M:UnBindButtonPerformances()
     self.Btn_Dimension.OnUnhovered:Clear()
   end
 end
-
 function M:SwitchNormalAnimation()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
 end
-
 function M:PlayButtonClickSound()
   UIUtils.PlayCommonBtnSe(self)
 end
-
 function M:PlayButtonClickAnimation()
   self:StopAllAnimations()
   self:PlayAnimation(self.Normal)
   self:PlayAnimation(self.Click)
 end
-
 function M:OnBtnClicked()
   if self.Checked == false then
     self:SetIsChecked(true, true)
@@ -122,12 +111,10 @@ function M:OnBtnClicked()
     end
   end
 end
-
 function M:PlayButtonPressAnim()
   self:StopAllAnimations()
   self:PlayAnimation(self.Press)
 end
-
 function M:OnBtnPressed()
   if self.Checked == true then
     return
@@ -136,12 +123,10 @@ function M:OnBtnPressed()
   self.IsPressing = true
   self:PlayButtonPressAnim()
 end
-
 function M:PlayButtonHoverAnim()
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function M:OnBtnHovered()
   if self.Checked == true then
     return
@@ -150,7 +135,6 @@ function M:OnBtnHovered()
   AudioManager(self):PlayUISound(self, "event:/ui/common/map_five_dimension_btn_hover", nil, nil)
   self:PlayButtonHoverAnim()
 end
-
 function M:SetBtnHovered(IsHovered)
   if IsHovered then
     self:OnBtnHovered()
@@ -158,17 +142,14 @@ function M:SetBtnHovered(IsHovered)
     self:OnBtnUnhovered()
   end
 end
-
 function M:PlayButtonReleaseButHoverAnim()
   self:StopAllAnimations()
   self:PlayButtonHoverAnim()
 end
-
 function M:PlayButtonReleaseAndUnHoverAnim()
   self:StopAllAnimations()
   self:SwitchNormalAnimation()
 end
-
 function M:OnBtnReleased()
   self.IsPressing = false
   if self.Checked == true then
@@ -180,12 +161,10 @@ function M:OnBtnReleased()
     self:PlayButtonReleaseButHoverAnim()
   end
 end
-
 function M:PlayButtonUnHoverAnim()
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function M:OnBtnUnhovered()
   self.IsHovering = false
   if self.Checked == true then
@@ -195,7 +174,6 @@ function M:OnBtnUnhovered()
     self:PlayButtonUnHoverAnim()
   end
 end
-
 function M:SetIsChecked(IsChecked)
   if self.Checked == false and true == IsChecked then
     self.Checked = true
@@ -205,9 +183,7 @@ function M:SetIsChecked(IsChecked)
     self:SwitchNormalAnimation()
   end
 end
-
 function M:Activate()
   self:OnBtnClicked()
 end
-
 return M

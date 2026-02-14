@@ -1,12 +1,10 @@
 local SimapleDialogNode = Class("StoryCreator.StoryLogic.StorylineNodes.Questline.QuestNode")
-
 function SimapleDialogNode:Init()
   self.ui_type = ""
   self.camera_type = ""
   self.ui_caninteractive = false
   self.talk_id = 0
 end
-
 function SimapleDialogNode:Start(Context)
   self.Context = Context
   print("------------ CommonDialogNode ------------------")

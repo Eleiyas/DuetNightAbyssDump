@@ -1,13 +1,11 @@
 require("UnLua")
 local GetRewardTipsItemBase = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function GetRewardTipsItemBase:Construct()
   if not self:IsTipsCanUse() then
     return
   end
   self:CleanUp()
 end
-
 function GetRewardTipsItemBase:CleanUp()
   self.ItemId = nil
   self.ItemCount = nil
@@ -15,11 +13,9 @@ function GetRewardTipsItemBase:CleanUp()
   self:SetVisibility(ESlateVisibility.Collapsed)
   self:StopListeningForAllInputActions()
 end
-
 function GetRewardTipsItemBase:IsTipsCanUse()
   return self.ItemId == nil
 end
-
 function GetRewardTipsItemBase:CloseSelf()
   self:CleanUp()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
@@ -33,7 +29,6 @@ function GetRewardTipsItemBase:CloseSelf()
     PickUpInfoTipsUI:OnTipsItemClose(self)
   end
 end
-
 function GetRewardTipsItemBase:GetParentUI()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   local UIManger = GameInstance:GetGameUIManager()
@@ -51,5 +46,4 @@ function GetRewardTipsItemBase:GetParentUI()
   end
   return PickUpInfoTipsUI
 end
-
 return GetRewardTipsItemBase

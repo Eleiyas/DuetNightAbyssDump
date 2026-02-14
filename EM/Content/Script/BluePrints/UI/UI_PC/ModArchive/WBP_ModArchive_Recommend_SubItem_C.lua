@@ -2,14 +2,12 @@ require("UnLua")
 local WBP_ModArchive_Recommend_SubItem_C = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function WBP_ModArchive_Recommend_SubItem_C:Construct()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   self.GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
   self.GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.RefreshOpInfoByInputDevice)
   self.CurInputDeviceType = self.GameInputModeSubsystem:GetCurrentInputType()
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnListItemObjectSet(ListItemObject)
   ListItemObject.SelfWidget = self
   self.Content = ListItemObject
@@ -24,7 +22,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnListItemObjectSet(ListItemObject)
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Add(self, self.OnMenuOpenChanged)
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:CheckState()
   self.LockState = 1
   local ArchiveId = DataMgr.RecommendModId2ArchiveId[self.Content.ModId]
@@ -46,7 +43,6 @@ function WBP_ModArchive_Recommend_SubItem_C:CheckState()
     end
   end
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:InitModInfo()
   self.ModData = DataMgr.Mod[self.Content.ModId]
   self.Text_Title:SetText(GText(self.ModData.Name))
@@ -79,7 +75,6 @@ function WBP_ModArchive_Recommend_SubItem_C:InitModInfo()
     self.Item.WS:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnMenuOpenChanged(bIsOpen)
   if not bIsOpen and self.CurInputDeviceType == ECommonInputType.Gamepad then
     DebugPrint("zw456789 ")
@@ -91,7 +86,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnMenuOpenChanged(bIsOpen)
     self.Owner:OnMenuOpenChanged(bIsOpen)
   end
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnFocusReceived(MyGeometry, InFocusEvent)
   DebugPrint("zw456789 OnFocusReceived", self:GetName())
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -99,7 +93,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnFocusReceived(MyGeometry, InFocusE
     self:PlayAnimation(self.Hover)
   end
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnFocusLost(InFocusEvent)
   DebugPrint("zw456789 OnFocusLost", self:GetName())
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
@@ -107,7 +100,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnFocusLost(InFocusEvent)
     self:PlayAnimation(self.Normal)
   end
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnMouseEnter(MyGeometry, MouseEvent)
   DebugPrint("zwjk11 OnMouseEnter", self:GetName())
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -122,7 +114,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnMouseEnter(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.Hover)
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnMouseLeave(MyGeometry, MouseEvent)
   DebugPrint("zwjk11 OnMouseLeave", self:GetName())
   if CommonUtils.GetDeviceTypeByPlatformName(self) == "Mobile" then
@@ -137,17 +128,14 @@ function WBP_ModArchive_Recommend_SubItem_C:OnMouseLeave(MyGeometry, MouseEvent)
   self:StopAllAnimations()
   self:PlayAnimation(self.UnHover)
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnTouchEnded(MyGeometry, TouchEvent)
   DebugPrint("zwjk OnTouchEnded")
   return self:OnMouseButtonUp(MyGeometry, TouchEvent)
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnTouchStarted(MyGeometry, TouchEvent)
   DebugPrint("zwjk OnTouchStarted")
   return self:OnMouseButtonDown(MyGeometry, TouchEvent)
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnMouseButtonDown(MyGeometry, MouseEvent)
   DebugPrint("zwjk OnMouseButtonDown")
   if self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() or self.Content.IsSelect or self.Content.IsShowTips then
@@ -159,7 +147,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnMouseButtonDown(MyGeometry, MouseE
   end
   return UWidgetBlueprintLibrary.Handled()
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:OnMouseButtonUp(MyGeometry, MouseEvent)
   DebugPrint("zwjk OnMouseButtonUp")
   if self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor:IsOpen() or self.Content.IsSelect or self.Content.IsShowTips then
@@ -180,7 +167,6 @@ function WBP_ModArchive_Recommend_SubItem_C:OnMouseButtonUp(MyGeometry, MouseEve
   AudioManager(self):PlayItemSound(self, self.Content.ModId, "Click", self.Content.ItemType)
   return UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   DebugPrint("zwkkk   RefreshOpInfoByInputDevice ", CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
@@ -189,10 +175,8 @@ function WBP_ModArchive_Recommend_SubItem_C:RefreshOpInfoByInputDevice(CurInputD
   self.CurInputDeviceType = CurInputDevice
   self.CurGamepadName = CurGamepadName
 end
-
 function WBP_ModArchive_Recommend_SubItem_C:Destruct()
   self.ItemDetails_MenuAnchor.ItemDetailsMenuAnchor.OnMenuOpenChanged:Remove(self, self.OnMenuOpenChanged)
   WBP_ModArchive_Recommend_SubItem_C.Super.Destruct(self)
 end
-
 return WBP_ModArchive_Recommend_SubItem_C

@@ -1,12 +1,10 @@
 require("UnLua")
 local M = Class("BluePrints.UI.UI_PC.Battle.ExclusiveSkill.Base.Battle_Skill_UI_Base")
 local ACTIVE_FUNNEL_CLASS = 1
-
 function M:Construct()
   DebugPrint("gmy@Battle_XierSkill M:Construct", 123123)
   self.DeltaTime = 0
 end
-
 function M:OnLoaded(OwnerPlayer, Params)
   DebugPrint("gmy@Battle_XierSkill M:OnLoaded", 123123)
   self.OwnerPlayer = OwnerPlayer
@@ -16,7 +14,6 @@ function M:OnLoaded(OwnerPlayer, Params)
   self.Root:SetVisibility(ESlateVisibility.Collapsed)
   self:AddTimer(0.3, self.UpdateBattleCharUI, true, 0)
 end
-
 function M:UpdateBattleCharUI()
   if IsValid(self.OwnerPlayer) then
     local SummonList = self.OwnerPlayer:GetSummonsList(self.SummonId, false, true)
@@ -69,7 +66,6 @@ function M:UpdateBattleCharUI()
     end
   end
 end
-
 function M:UpdateProgress(Remaining, Max)
   if Remaining > 0 then
     local Percent = math.max(Remaining / Max, 0)
@@ -77,5 +73,4 @@ function M:UpdateProgress(Remaining, Max)
     self.Num_Xier:SetText(string.format("%.0f", Remaining))
   end
 end
-
 return M

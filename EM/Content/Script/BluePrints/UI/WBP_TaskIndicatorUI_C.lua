@@ -5,7 +5,6 @@ local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local WBP_TaskIndicatorUI_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_TaskIndicatorUI_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.TargetPointPos = nil
@@ -29,7 +28,6 @@ function WBP_TaskIndicatorUI_C:Initialize(Initializer)
   self.ShowQuestHintFlag = false
   self.AvatarTrackingId = 0
 end
-
 function WBP_TaskIndicatorUI_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:OnLoadedInit()
@@ -50,7 +48,6 @@ function WBP_TaskIndicatorUI_C:OnLoaded(...)
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_TaskIndicatorUI_C:OnLoadedInit()
   local DesignedScreenSize = UIManager(self):GetDesignedScreenSize()
   self.CenterPos = FVector2D(DesignedScreenSize.X / 2, DesignedScreenSize.Y / 2)
@@ -73,7 +70,6 @@ function WBP_TaskIndicatorUI_C:OnLoadedInit()
   self.NpcIndicatorHideTags = {}
   self.DistanceUnit = GText("UI_SCALE_METER")
 end
-
 function WBP_TaskIndicatorUI_C:SetGuideInfo(PointType, PointName, MapKey, QuestNode, GuideTag)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -99,11 +95,13 @@ function WBP_TaskIndicatorUI_C:SetGuideInfo(PointType, PointName, MapKey, QuestN
   if self.GuideInfoCache.PointOrStaticCreatorName == nil or GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName] == nil or 0 == GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName].SubRegionId then
     if self.GuideInfoCache.PointName ~= nil and GuidePointLocData[self.GuideInfoCache.PointName] and 0 ~= GuidePointLocData[self.GuideInfoCache.PointName].SubRegionId then
       self.TaskRegionId = GuidePointLocData[self.GuideInfoCache.PointName].SubRegionId
+      self.CurrentFloorLevelId = GuidePointLocData[self.GuideInfoCache.PointName].FloorId
     elseif Const.EnableTaskPrintError then
-      ScreenPrint(string.format("\230\140\135\229\188\149\231\130\185\230\137\128\229\156\168\229\140\186\229\159\159\228\184\141\229\173\152\229\156\168\239\188\140\232\175\183\230\163\128\230\159\165\229\175\188\229\135\186\230\149\176\230\141\174\230\152\175\229\144\166\230\173\163\231\161\174\239\188\129QuestChainId:" .. tostring(GuidePointChainId) .. ", STL\232\138\130\231\130\185Key:" .. tostring(QuestNode.Key) .. ", \230\140\135\229\188\149\231\130\185\229\144\141\231\167\176:" .. tostring(self.GuideInfoCache.PointName)))
+      ScreenPrint(string.format("指引点所在区域不存在，请检查导出数据是否正确！QuestChainId:" .. tostring(GuidePointChainId) .. ", STL节点Key:" .. tostring(QuestNode.Key) .. ", 指引点名称:" .. tostring(self.GuideInfoCache.PointName)))
     end
   else
     self.TaskRegionId = GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName].SubRegionId
+    self.CurrentFloorLevelId = GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName].FloorId
   end
   local TrackingQuestChainId = Avatar.TrackingQuestChainId
   self:SetSmarPointInfoByQuestRegionId()
@@ -111,17 +109,29 @@ function WBP_TaskIndicatorUI_C:SetGuideInfo(PointType, PointName, MapKey, QuestN
   self.CurGuideChainId = GuidePointChainId
   self.AvatarTrackingId = TrackingQuestChainId
   DebugPrint("SetGuideInfo CurGuideChainId is:", self.CurGuideChainId, "TaskRegionId:", self.TaskRegionId, "NodeKey:", QuestNode.Key)
+  if self.CurGuideChainId ~= self.AvatarTrackingId then
+    self:Hide("TrackQuest")
+  end
   if self.CurGuideChainId == TrackingQuestChainId and 0 ~= TrackingQuestChainId then
     EventManager:FireEvent(EventID.UpdateMiniMap, self:GetName(), "Task", "Add")
   end
   if GuidePointChainId == TrackingQuestChainId and self.TargetPointType == "N" then
     TaskUtils:UpdateAllMissionNpcGuideMaps(true, self:GetName(), tonumber(PointName))
   end
+  if GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName] and GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName].R and GuidePointLocData[self.GuideInfoCache.PointOrStaticCreatorName].R <= 0 then
+    local BattleMain = UIManager(self):GetUIObj("BattleMain")
+    if BattleMain.Battle_Map then
+      BattleMain.Battle_Map.WildMap:EnterOrExitTaskRegion(self.GuideInfoCache.PointOrStaticCreatorName, false)
+    end
+  end
 end
-
 function WBP_TaskIndicatorUI_C:TrySetDiffGuideIcon(InGuidePointChainId, InKey)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
+    return
+  end
+  local BarWidget = TaskUtils:GetTaskBarWidget()
+  if not BarWidget then
     return
   end
   local DoingQuestId = Avatar.QuestChains[InGuidePointChainId].DoingQuestId
@@ -129,23 +139,29 @@ function WBP_TaskIndicatorUI_C:TrySetDiffGuideIcon(InGuidePointChainId, InKey)
   if not Info then
     return
   end
-  local BarWidget = TaskUtils:GetTaskBarWidget()
   for _, Data in pairs(Info) do
     if Data.Node and Data.Node.Type == "BranchQuestStartNode" and IsEmptyTable(Data.DiffGuideList) == false then
       for Index, OptionElemts in pairs(Data.DiffGuideList) do
         for _, KeyList in pairs(OptionElemts) do
           for _, KeyData in pairs(KeyList) do
-            if KeyData.IsShowOptional == true and InKey == KeyData.TargetIndicatorKey then
+            if Data.IsUseDifftation then
+              if KeyData.IsShowOptional == true and InKey == KeyData.TargetIndicatorKey then
+                local Content = string.char(string.byte("A") + Index - 1)
+                local RetPath = TaskUtils:GetDiffIconOptionalByQuestChainType(InGuidePointChainId, Content)
+                self.IconObject = LoadObject(RetPath)
+                self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", self.IconObject)
+                BarWidget:SetTaskBarSubTaskIcon(Index, InGuidePointChainId, "DiffOptional")
+              elseif KeyData.TargetIndicatorKey == InKey then
+                local Content = string.char(string.byte("A") + Index - 1)
+                local RetPath = TaskUtils:GetDiffIconByQuestChainType(InGuidePointChainId, Content)
+                self.IconObject = LoadObject(RetPath)
+                self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", self.IconObject)
+                BarWidget:SetTaskBarSubTaskIcon(Index, InGuidePointChainId, "Diff")
+              end
+            elseif KeyData.IsShowOptional == true and InKey == KeyData.TargetIndicatorKey then
               self.IconObject = TaskUtils:GetOptinalIconTextureByQuestChainType(InGuidePointChainId)
               self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", self.IconObject)
-              if BarWidget then
-                BarWidget:SetTaskBarSubTaskIcon(Index, "Optional")
-              end
-            elseif KeyData.TargetIndicatorKey == InKey then
-              local Content = string.char(string.byte("A") + Index - 1)
-              local RetPath = "/Game/UI/Texture/Dynamic/Atlas/GuidePoint/T_Gp_Digging_" .. Content .. ".T_Gp_Digging_" .. Content
-              self.IconObject = LoadObject(RetPath)
-              self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", self.IconObject)
+              BarWidget:SetTaskBarSubTaskIcon(Index, InGuidePointChainId, "Optional")
             end
           end
         end
@@ -153,11 +169,9 @@ function WBP_TaskIndicatorUI_C:TrySetDiffGuideIcon(InGuidePointChainId, InKey)
     end
   end
 end
-
 function WBP_TaskIndicatorUI_C:RealSetABCImg(Object)
   self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", Object)
 end
-
 function WBP_TaskIndicatorUI_C:Construct()
   self.Super.Construct(self)
   EventManager:AddEvent(EventID.OnChangeTaskSubRegion, self, self.SetSmarPointInfoByQuestRegionId)
@@ -165,9 +179,9 @@ function WBP_TaskIndicatorUI_C:Construct()
   EventManager:AddEvent(EventID.OnSetQuestTracking, self, self.OnDoSetQuestTracking)
   EventManager:AddEvent(EventID.PlayLoopAnimAfterBarAnim, self, self.RePlayAppearAnim)
   EventManager:AddEvent(EventID.OnLevelDeliverBlackCurtainEnd, self, self.OnDeliverEnd)
+  EventManager:AddEvent(EventID.ResetNpcMiniMap, self, self.ResetNpcIndicatorMiniMap)
   self.IsDestroied = false
 end
-
 function WBP_TaskIndicatorUI_C:Destruct()
   self.Super.Destruct(self)
   if self:IsListeningForInputAction("ActiveGuide") then
@@ -178,9 +192,9 @@ function WBP_TaskIndicatorUI_C:Destruct()
   EventManager:RemoveEvent(EventID.OnSetQuestTracking, self)
   EventManager:RemoveEvent(EventID.PlayLoopAnimAfterBarAnim, self)
   EventManager:RemoveEvent(EventID.OnLevelDeliverBlackCurtainEnd, self)
+  EventManager:RemoveEvent(EventID.ResetNpcMiniMap, self)
   self.IsDestroied = true
 end
-
 function WBP_TaskIndicatorUI_C:GetGuideInfoFromCache(ChainId)
   if 0 == ChainId then
     self.TargetPointName = nil
@@ -197,7 +211,6 @@ function WBP_TaskIndicatorUI_C:GetGuideInfoFromCache(ChainId)
   self.TargetPointName = PointName
   self.TargetAreaName = AreaName
 end
-
 function WBP_TaskIndicatorUI_C:OnDeliverEnd()
   if 0 == self.CurGuideChainId then
     return
@@ -210,7 +223,11 @@ function WBP_TaskIndicatorUI_C:OnDeliverEnd()
     self:Hide(Const.TalkHideTag)
   end
 end
-
+function WBP_TaskIndicatorUI_C:ResetNpcIndicatorMiniMap(InUnitId)
+  if (self.TargetPointType == "N" or self.TargetPointType == "Npc") and self.GuideInfoCache.PointName == InUnitId and self.CurGuideChainId == self.AvatarTrackingId then
+    EventManager:FireEvent(EventID.UpdateMiniMap, self:GetName(), "Task", "Add")
+  end
+end
 function WBP_TaskIndicatorUI_C:ChangeIconStyleByQuestChainType(InChainId)
   self.IsNeedChangeSmartGuideStyle = true
   if self.IconObject == nil or IsValid(self.IconObject) == false then
@@ -246,8 +263,10 @@ function WBP_TaskIndicatorUI_C:ChangeIconStyleByQuestChainType(InChainId)
     self.WBP_TaskGuide_Base.Img_Main:GetDynamicMaterial():SetTextureParameterValue("GuideIcon", self.IconObject)
   end
 end
-
 function WBP_TaskIndicatorUI_C:CreateAndMoveFollowingPath()
+  if not IsValid(self) then
+    return
+  end
   if self.Guide_Node.Visibility ~= UE4.ESlateVisibility.Collapsed then
     local UIObjs = MissionIndicatorManager:GetIndicatorUIObjByQuestChainIdWithType(self.CurGuideChainId, "Task")
     if #UIObjs > 1 then
@@ -260,7 +279,6 @@ function WBP_TaskIndicatorUI_C:CreateAndMoveFollowingPath()
     TaskUtils:CreateAndMoveFollowingPath(self)
   end
 end
-
 function WBP_TaskIndicatorUI_C:OnDoSetQuestTracking()
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -273,14 +291,12 @@ function WBP_TaskIndicatorUI_C:OnDoSetQuestTracking()
     self:CreateAndMoveFollowingPath()
   end, false)
 end
-
 function WBP_TaskIndicatorUI_C:RePlayAppearAnim()
   if self.WBP_TaskGuide_Base.Loop ~= nil then
-    self.WBP_TaskGuide_Base:PlayAnimation(self.WBP_TaskGuide_Base.Loop, 0, 3)
+    EMUIAnimationSubsystem:EMPlayAnimation(self.WBP_TaskGuide_Base, self.WBP_TaskGuide_Base.Loop)
     self:TryPlayAppearAudio()
   end
 end
-
 function WBP_TaskIndicatorUI_C:PlayAppearAnim()
   local BarWidget = TaskUtils:GetTaskBarWidget()
   if BarWidget then
@@ -317,11 +333,9 @@ function WBP_TaskIndicatorUI_C:PlayAppearAnim()
     self:RePlayAppearAnim()
   end
 end
-
 function WBP_TaskIndicatorUI_C:Disappear()
   self:Close()
 end
-
 function WBP_TaskIndicatorUI_C:GetTargetStaticCreator(InTargetName)
   local TargetStaticCreator
   TargetStaticCreator = self.GameState.StaticCreatorStringNameMap:FindRef(InTargetName)
@@ -339,12 +353,10 @@ function WBP_TaskIndicatorUI_C:GetTargetStaticCreator(InTargetName)
     end
   end
 end
-
 function WBP_TaskIndicatorUI_C:GetNewTargetPoint()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   return GameState:GetTargetPoint(self.TargetPointName)
 end
-
 function WBP_TaskIndicatorUI_C:ChengeIsNeedCollapsedByRangeStyle()
   if self.TargetPointType ~= "P" then
     self.IsRangeOrPoint = false
@@ -373,7 +385,6 @@ function WBP_TaskIndicatorUI_C:ChengeIsNeedCollapsedByRangeStyle()
   self.IsRangeOrPoint = false
   return
 end
-
 function WBP_TaskIndicatorUI_C:TriggerQuestHint()
   if self.ShowQuestHintFlag == self.IsRangeOrPoint then
     return
@@ -389,7 +400,6 @@ function WBP_TaskIndicatorUI_C:TriggerQuestHint()
   end
   self.ShowQuestHintFlag = self.IsRangeOrPoint
 end
-
 function WBP_TaskIndicatorUI_C:TryGetTaskGuideNpcUnitId()
   local TargetNpc = self.GameState:GetNpcInfo(self.TargetPointName)
   if TargetNpc and UE4.UKismetSystemLibrary.IsValid(TargetNpc) then
@@ -401,7 +411,6 @@ function WBP_TaskIndicatorUI_C:TryGetTaskGuideNpcUnitId()
   end
   return nil
 end
-
 function WBP_TaskIndicatorUI_C:CalculateTargetPointPos()
   if self.IsInTaskRegion then
     self.TargetPointType = self.GuideInfoCache.PointType
@@ -421,7 +430,6 @@ function WBP_TaskIndicatorUI_C:CalculateTargetPointPos()
     self:SetTargetPositionByStaticCreator()
   end
 end
-
 function WBP_TaskIndicatorUI_C:SetNpcGuideTargetPosition()
   local TargetNpc = self.GameState:GetNpcInfo(tonumber(self.TargetPointName))
   if TargetNpc then
@@ -444,13 +452,11 @@ function WBP_TaskIndicatorUI_C:SetNpcGuideTargetPosition()
     self.Guide_Node:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_TaskIndicatorUI_C:TryPlayAppearAudio()
   if self.Guide_Node.Visibility ~= ESlateVisibility.Collapsed then
     AudioManager(self):PlayUISound(self, "event:/ui/common/guide_point_show", nil, nil)
   end
 end
-
 function WBP_TaskIndicatorUI_C:TickChildBP()
   if 0 == self.CurGuideChainId then
     self.Guide_Node:SetVisibility(UE4.ESlateVisibility.Collapsed)
@@ -477,7 +483,6 @@ function WBP_TaskIndicatorUI_C:TickChildBP()
   self:ChangePointStyle(IsOpenSmartGuide)
   self:UpdateTaskIndicator_CPP()
 end
-
 function WBP_TaskIndicatorUI_C:TryReplaceNearlySmartPoint(SmarPointInfo)
   if nil == SmarPointInfo then
     return false
@@ -492,7 +497,6 @@ function WBP_TaskIndicatorUI_C:TryReplaceNearlySmartPoint(SmarPointInfo)
   end
   return false
 end
-
 function WBP_TaskIndicatorUI_C:ChangePointStyle(IsOpenSmartGuide)
   if self.IsShowSmartPointStyle ~= IsOpenSmartGuide then
     self.IsNeedChangeSmartGuideStyle = true
@@ -517,7 +521,6 @@ function WBP_TaskIndicatorUI_C:ChangePointStyle(IsOpenSmartGuide)
     self.IsNeedChangeSmartGuideStyle = false
   end
 end
-
 function WBP_TaskIndicatorUI_C:SetSmarPointInfoByQuestRegionId()
   DebugPrint("SetSmarPointInfoByQuestRegionId start===")
   local Avatar = GWorld:GetAvatar()
@@ -538,12 +541,19 @@ function WBP_TaskIndicatorUI_C:SetSmarPointInfoByQuestRegionId()
     DebugPrint("CurTrackQuestChain:", CurTrackingQuestChaindId, "CurTrackDoingQuestId", TrackingQuestId)
   end
   MissionIndicatorManager:TryToArrangeIndicatorBySmartPointInfo()
+  if self.SmartGuidePointInfo == nil and self.GuideInfoCache.PointOrStaticCreatorName then
+    local SourceTarget = self:TryToFindGuidePointTarget(self.GuideInfoCache.PointOrStaticCreatorName)
+    if nil == SourceTarget then
+      self:Hide("ExistTarget")
+    end
+  elseif self.SmartGuidePointInfo ~= nil then
+    self:Show("ExistTarget")
+  end
   DebugPrint("TargetPointName:", self.TargetPointName)
   DebugPrint("TargePosition:", self.TargetPointPos)
   DebugPrint("TaskRegionId:", self.TaskRegionId, "PlayerRegionId:", self.PlayerRegionId)
   DebugPrint("SetSmarPointInfoByQuestRegionId end===")
 end
-
 function WBP_TaskIndicatorUI_C:ChangeAvatarTrackingQuestChainId(InMissionNpcGuideMaps)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -552,7 +562,6 @@ function WBP_TaskIndicatorUI_C:ChangeAvatarTrackingQuestChainId(InMissionNpcGuid
   local CurTrackingQuestChaindId = Avatar.TrackingQuestChainId
   self.AvatarTrackingId = CurTrackingQuestChaindId
 end
-
 function WBP_TaskIndicatorUI_C:CheckConditionIsUnlock(RegionData)
   local Avatar = GWorld:GetAvatar()
   if not Avatar then
@@ -563,7 +572,6 @@ function WBP_TaskIndicatorUI_C:CheckConditionIsUnlock(RegionData)
   end
   return ConditionUtils.CheckCondition(Avatar, RegionData)
 end
-
 function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionId, TargetSubRegionId)
   local function ContainsElement(table, element)
     for _, value in pairs(table) do
@@ -573,7 +581,6 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
     end
     return nil
   end
-  
   local function CreateQueue()
     local queue = {}
     queue.first = 0
@@ -582,14 +589,12 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
     queue.Path = {}
     return queue
   end
-  
   local function Enqueue(queue, value)
     local last = queue.last + 1
     queue.last = last
     queue.QueueValue[last] = value
     table.insert(queue.Path, value[1])
   end
-  
   local function ContainsPath(table, element)
     for _, value in pairs(table) do
       if value == element then
@@ -598,7 +603,6 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
     end
     return false
   end
-  
   local function Dequeue(queue)
     local first = queue.first
     if first > queue.last then
@@ -609,11 +613,9 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
     queue.first = first + 1
     return value
   end
-  
   local function IsEmptyQueue(queue)
     return queue.first > queue.last
   end
-  
   if not DataMgr.RegionGraph[TargetSubRegionId] or not DataMgr.SubRegion[TargetSubRegionId].RegionId then
     return nil
   end
@@ -622,7 +624,6 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
     return nil
   end
   local RegionTargetDatas = DataMgr.RegionGraph[CurSubRegionId].SubRegionTarget.RegionTarget
-  
   local function TryFindTargetPointByBFS(RootTargetData)
     local RootSubRegionId = RootTargetData[1]
     if not (DataMgr.RegionGraph[RootSubRegionId] and DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget) or not DataMgr.RegionGraph[RootSubRegionId].SubRegionTarget.RegionTarget then
@@ -668,7 +669,6 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
       return -1
     end
   end
-  
   local function TryFindNearestEnterByRegionId()
     local NearestData
     local CurrentParentRegionId = DataMgr.SubRegion[CurSubRegionId].RegionId
@@ -699,7 +699,6 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
     end
     return NearestData
   end
-  
   local RetData = TryFindNearestEnterByRegionId()
   local RetWeight = math.maxinteger
   if nil ~= RetData then
@@ -793,7 +792,6 @@ function WBP_TaskIndicatorUI_C:TryGetTargetGuidePointByRegionGraph(CurSubRegionI
   end
   return RetData
 end
-
 function WBP_TaskIndicatorUI_C:TryToFindGuidePointTarget(DisplayName)
   local TargetStaticCreator
   TargetStaticCreator = self.GameState.StaticCreatorStringNameMap:FindRef(DisplayName)
@@ -815,7 +813,6 @@ function WBP_TaskIndicatorUI_C:TryToFindGuidePointTarget(DisplayName)
   end
   return nil
 end
-
 function WBP_TaskIndicatorUI_C:CloseIndicator()
   TaskUtils:UpdateAllMissionNpcGuideMaps(false, self:GetName(), nil)
   EventManager:FireEvent(EventID.OnChangeTaskIndicator, TaskUtils.MissionNpcGuideMaps)
@@ -823,7 +820,6 @@ function WBP_TaskIndicatorUI_C:CloseIndicator()
   self.Super.Close(self)
   MissionIndicatorManager:TryToArrangeIndicatorBySmartPointInfo()
 end
-
 function WBP_TaskIndicatorUI_C:UpdateQuestArea(isAdd)
   if not self.TargetAreaName then
     return
@@ -849,7 +845,6 @@ function WBP_TaskIndicatorUI_C:UpdateQuestArea(isAdd)
     self.TargetArea = nil
   end
 end
-
 function WBP_TaskIndicatorUI_C:GetTaskGuideNpcUnitIdFromCache()
   if not self.GuideInfoCache or not self.GuideInfoCache.PointName then
     return nil
@@ -862,5 +857,4 @@ function WBP_TaskIndicatorUI_C:GetTaskGuideNpcUnitIdFromCache()
     return nil
   end
 end
-
 return WBP_TaskIndicatorUI_C

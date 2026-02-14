@@ -20,29 +20,23 @@ ModBookQuest.__Props__ = {
   CompletionValue = prop.getter("Data", "CompletionValue"),
   QuestPhaseId = prop.getter("Data", "QuestPhaseId")
 }
-
 function ModBookQuest:Init(UniqueID)
   self.UniqueID = UniqueID
 end
-
 function ModBookQuest:Data()
   return DataMgr.ModGuideBookTask[self.UniqueID]
 end
-
 function ModBookQuest:IsLock()
   return 0 == self.Status
 end
-
 function ModBookQuest:IsUnlock()
   return 1 == self.Status
 end
-
 function ModBookQuest:Unlock()
   if not self:IsUnlock() then
     self.Status = 1
   end
 end
-
 function ModBookQuest:Reset()
   self.FinishedTargets = {}
   self.Progress = 0
@@ -50,15 +44,12 @@ function ModBookQuest:Reset()
   self.RewardsGot = false
   self.UniqueRecords = {}
 end
-
 function ModBookQuest:GetUniqueID()
   return self.UniqueID
 end
-
 function ModBookQuest:IsComplete()
   return self.Progress >= self.TargetNeedCount
 end
-
 function ModBookQuest:IndividualRule(TargetId, Count)
   local Target = DataMgr.Target[TargetId]
   local rule = Target.IndividualRule
@@ -71,7 +62,6 @@ function ModBookQuest:IndividualRule(TargetId, Count)
   end
   return false
 end
-
 function ModBookQuest:TargetRefreshProgress(TargetId, UniqueAttr, Count)
   if self:IsComplete() then
     return
@@ -104,38 +94,30 @@ function ModBookQuest:TargetRefreshProgress(TargetId, UniqueAttr, Count)
     self.FinishTime = TimeUtils.NowTime()
   end
 end
-
 function ModBookQuest:CanRecvReward()
   return not self.RewardsGot
 end
-
 function ModBookQuest:HasRecvReward()
   return self.RewardsGot
 end
-
 function ModBookQuest:RecvReward()
   self.RewardsGot = true
 end
-
 function ModBookQuest:GetCurrentCount(ConditionId)
   return self.Progress
 end
-
 FormatProperties(ModBookQuest)
 local ModBookQuestDict = Class("ModBookQuestDict", CustomTypes.CustomDict)
 ModBookQuestDict.KeyType = BaseTypes.Int
 ModBookQuestDict.ValueType = ModBookQuest
-
 function ModBookQuestDict:NewModBookQuest(UniqueID)
   self[UniqueID] = ModBookQuest(UniqueID)
   return self[UniqueID]
 end
-
 function ModBookQuestDict:GetModBookQuest(UniqueID)
   if not self[UniqueID] then
     self[UniqueID] = ModBookQuest(UniqueID)
   end
   return self[UniqueID]
 end
-
 return {ModBookQuest = ModBookQuest, ModBookQuestDict = ModBookQuestDict}

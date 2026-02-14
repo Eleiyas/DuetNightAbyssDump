@@ -1,6 +1,5 @@
 local MiscUtils = require("Utils.MiscUtils")
 local Component = {}
-
 function Component:InitInteractiveComponentImpl()
   self.bIsInCapture = false
   if self:HasAnyTags_Table(self, {
@@ -43,7 +42,6 @@ function Component:InitInteractiveComponentImpl()
     end
   end
 end
-
 function Component:OnTimerBegin(TimerHandleName)
   if "CaptureLimitTimer" ~= TimerHandleName then
     return
@@ -51,14 +49,12 @@ function Component:OnTimerBegin(TimerHandleName)
   self.bTimerStart = true
   self.bTimerEnded = false
 end
-
 function Component:OnTimerEnded(TimerHandleName)
   if "CaptureLimitTimer" ~= TimerHandleName then
     return
   end
   self.bTimerEnded = true
 end
-
 function Component:OpenMechanism(PlayerId)
   if not self:IsCaptureMonster() then
     return
@@ -74,7 +70,6 @@ function Component:OpenMechanism(PlayerId)
     Player:RotateToInteractiveTarget(self.Eid)
   end
 end
-
 function Component:CloseMechanism(PlayerId, IsSuccess)
   if not self:IsCaptureMonster() or self.CapturePlayer == nil then
     return
@@ -97,11 +92,9 @@ function Component:CloseMechanism(PlayerId, IsSuccess)
     self:MonsterCaptureFailed(PlayerId)
   end
 end
-
 function Component:ForceCloseMechanism(PlayerId, IsSuccess)
   self:CloseMechanism(PlayerId, false)
 end
-
 function Component:GetCanCapture(PlayerId)
   if not self:IsCaptureMonster() then
     return false
@@ -118,7 +111,6 @@ function Component:GetCanCapture(PlayerId)
     return false
   end
 end
-
 function Component:CaptureSuccess(PlayerId)
   self:MonsterCaptureEnd(PlayerId)
   Battle(self):CaptureMonsterSuccess(self.Eid, self.Eid, 0, EDeathReason.Capture)
@@ -139,10 +131,8 @@ function Component:CaptureSuccess(PlayerId)
     DungeonCaptureFloat:AddMessageTimer()
   end
 end
-
 function Component:CaptureFail()
 end
-
 function Component:SetMonWaitForCaughtTag()
   self:SetCharacterTag("WaitForCaught")
   local MontageFolder, MontagePrefix = self:GetHitMontageFolderAndPrefix()
@@ -151,7 +141,6 @@ function Component:SetMonWaitForCaughtTag()
     self:PlayMontageByPath(Path)
   end
 end
-
 function Component:WaitForCapture()
   self:SetMonWaitForCaughtTag()
   self:SetMonWaitForCaught(true)
@@ -176,7 +165,6 @@ function Component:WaitForCapture()
     end
   end
 end
-
 function Component:CaptureMonsterSuccess(KillMineRoleEid, KillMineSkillId, DeathReason)
   self:SetMonWaitForCaught(false)
   self:SetCharacterTag("CaptureSuccess")
@@ -191,11 +179,10 @@ function Component:CaptureMonsterSuccess(KillMineRoleEid, KillMineSkillId, Death
   local DeathDelayTime = CaptureParam and (CaptureParam.DeathDelayTime or 0) or 0
   self:AddTimer_Combat(DeathDelayTime, self.OnDead, false, 0, "HideCaptureMonster", KillMineRoleEid, KillMineSkillId, DeathReason)
 end
-
 function Component:MonsterWaitForCapture(KillMineRoleEid, KillMineSkillId, DeathReason)
   self:WaitForCapture()
-  self:StopSkill()
-  self:HandleDestroyCreature()
+  self:StopSkill(UE.ESkillStopReason.Death)
+  self:DestroyAllCreatures(ECreatureDeathWithCreator.Normal, EDeathReason.CreatureNotDelay)
   self:HandleRemoveBuff()
   self:ClearSummons(false)
   local KillMineRole = Battle(self):GetEntity(KillMineRoleEid)
@@ -203,7 +190,6 @@ function Component:MonsterWaitForCapture(KillMineRoleEid, KillMineSkillId, Death
   self:SetVector("DamageCauserLocation", DamageCauserLocation)
   self.Overridden.MonsterWaitForCapture(self, KillMineRoleEid, KillMineSkillId, DeathReason)
 end
-
 function Component:ForceDestroyAccessories()
   local Accessories = self:GetAccessories()
   if not Accessories then
@@ -216,7 +202,6 @@ function Component:ForceDestroyAccessories()
   end
   Accessories:Clear()
 end
-
 function Component:ClientPlayAnimOnInteractive(PlayerEid, InteractiveState)
   if 0 == InteractiveState then
     self.CapturePlayer = Battle(self):GetEntity(PlayerEid)
@@ -275,11 +260,9 @@ function Component:ClientPlayAnimOnInteractive(PlayerEid, InteractiveState)
     self.InteractiveComponent:OnEndInteractive(Battle(self):GetEntity(PlayerEid), self.InteractiveComponent.MontageName)
   end
 end
-
 function Component:IsInCapture()
   return self.bIsInCapture
 end
-
 function Component:CaptureMonsterRecover()
   if IsAuthority(self) then
     self:SetAttr("Hp", self:GetAttr("MaxHp"))
@@ -289,7 +272,6 @@ function Component:CaptureMonsterRecover()
   end
   self:SetDead(false, nil, nil, nil)
 end
-
 function Component:InitFirstSeenLogic()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   if not GameMode or not GameMode:GetDungeonComponent() then
@@ -303,7 +285,6 @@ function Component:InitFirstSeenLogic()
   end
   self:AddTimer(1, self.CheckFirstSeen, true, 0, "CheckCaptureMonFirstSeen")
 end
-
 function Component:CheckFirstSeen()
   local GameMode = UE4.UGameplayStatics.GetGameMode(self)
   local Distance = 999999
@@ -320,5 +301,4 @@ function Component:CheckFirstSeen()
     end
   end
 end
-
 return Component

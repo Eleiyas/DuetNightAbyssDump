@@ -19,17 +19,14 @@ Explore.__Props__ = {
   RewardId = prop.getter("ExploreGroupReward", "RewardId"),
   IfOnlyOnce = prop.getter("ExploreGroupReward", "IfOnlyOnce")
 }
-
 function Explore:ExploreGroupReward()
   return DataMgr.ExploreGroupReward[self.RarelyId]
 end
-
 function Explore:Init(RarelyId, RegionId)
   self.RarelyId = RarelyId
   self.ExploreState = CommonConst.ExploreState.InActive
   self.RegionId = RegionId
 end
-
 function Explore:RestingState()
   if self.ExploreState == CommonConst.ExploreState.InActive then
     return
@@ -37,7 +34,6 @@ function Explore:RestingState()
   self.ExploreState = CommonConst.ExploreState.InActive
   self.ExploreData.bGroupInLimit = false
 end
-
 function Explore:SetActive()
   if self.ExploreState == CommonConst.ExploreState.Doing then
     return true
@@ -48,7 +44,6 @@ function Explore:SetActive()
   self.ExploreState = CommonConst.ExploreState.Doing
   return true
 end
-
 function Explore:SetChallageComplete()
   if self.ExploreState == CommonConst.ExploreState.ChallageComplete then
     return true
@@ -59,7 +54,6 @@ function Explore:SetChallageComplete()
   self.ExploreState = CommonConst.ExploreState.ChallageComplete
   return true
 end
-
 function Explore:SetSpecialActive()
   if self.ExploreState == CommonConst.ExploreState.SpecialActive then
     return true
@@ -70,11 +64,9 @@ function Explore:SetSpecialActive()
   self.ExploreState = CommonConst.ExploreState.SpecialActive
   return true
 end
-
 function Explore:IsCanComplete()
   return self:IsDoing() or self:IsChallageComplete() or self:IsSpecialActive()
 end
-
 function Explore:Complete()
   if self.ExploreState == CommonConst.ExploreState.Complete then
     return true
@@ -85,31 +77,24 @@ function Explore:Complete()
   self.ExploreState = CommonConst.ExploreState.Complete
   return true
 end
-
 function Explore:GetState()
   return self.ExploreState
 end
-
 function Explore:IsInActive()
   return self.ExploreState == CommonConst.ExploreState.InActive
 end
-
 function Explore:IsDoing()
   return self.ExploreState == CommonConst.ExploreState.Doing
 end
-
 function Explore:IsChallageComplete()
   return self.ExploreState == CommonConst.ExploreState.ChallageComplete
 end
-
 function Explore:IsComplete()
   return self.ExploreState == CommonConst.ExploreState.Complete
 end
-
 function Explore:IsSpecialActive()
   return self.ExploreState == CommonConst.ExploreState.SpecialActive
 end
-
 function Explore:UpdateExploreData(data_key, data_value)
   if not data_key then
     return false
@@ -117,12 +102,10 @@ function Explore:UpdateExploreData(data_key, data_value)
   self.ExploreData[data_key] = data_value
   return true
 end
-
 FormatProperties(Explore)
 local ExploreDict = Class("ExploreDict", CustomTypes.CustomDict)
 ExploreDict.KeyType = BaseTypes.Int
 ExploreDict.ValueType = Explore
-
 function ExploreDict:NewExplore(RarelyId, SubRegionId)
   local Explore = Explore(RarelyId, SubRegionId)
   Explore:Init(RarelyId)
@@ -130,25 +113,21 @@ function ExploreDict:NewExplore(RarelyId, SubRegionId)
   Explore.RarelyId = RarelyId
   return Explore
 end
-
 function ExploreDict:GetExplore(RarelyId)
   return self[RarelyId]
 end
-
 function ExploreDict:GetNewExplore(RarelyId, SubRegionId)
   if not self[RarelyId] then
     return self:NewExplore(RarelyId, SubRegionId)
   end
   return self[RarelyId]
 end
-
 function ExploreDict:UpdateExploreDataByExploreId(RarelyId, data_key, data_value)
   if not self[RarelyId] then
     return false
   end
   return self[RarelyId]:UpdateExploreData(data_key, data_value)
 end
-
 return {
   ExploreBaseAttr = ExploreBaseAttr,
   Explore = Explore,

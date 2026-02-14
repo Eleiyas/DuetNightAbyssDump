@@ -1,7 +1,6 @@
 local BP_Water_C = Class({
   "BluePrints.Item.BP_CombatItemBase_C"
 })
-
 function BP_Water_C:OnOverlapActor(OtherActor, OtherComponent)
   if UE4.UKismetMathLibrary.ClassIsChildOf(OtherComponent:GetClass(), UInteractiveBaseComponent:StaticClass()) then
     return
@@ -11,7 +10,7 @@ function BP_Water_C:OnOverlapActor(OtherActor, OtherComponent)
     return
   end
   if not OtherActor.IsCharacter then
-    print(_G.LogTag, "Error: FallTrigger \232\167\166\229\143\145\229\136\176\228\186\134\230\178\161\230\156\137IsCharacter()\231\154\132\228\184\156\232\165\191, \230\173\164\231\137\169\228\184\141\229\156\168ActorType\232\140\131\231\149\180\229\134\133", OtherActor:GetName())
+    print(_G.LogTag, "Error: FallTrigger 触发到了没有IsCharacter()的东西, 此物不在ActorType范畴内", OtherActor:GetName())
   end
   if OtherActor.IsCharacter and not OtherActor:IsCharacter() and not OtherActor:Cast(UE4.APickupBase) then
     return
@@ -22,7 +21,6 @@ function BP_Water_C:OnOverlapActor(OtherActor, OtherComponent)
   end
   GameMode:TriggerWaterFallingCallable(OtherActor, ResComponent:K2_GetComponentToWorld(), 10000, true)
 end
-
 function BP_Water_C:GetNearestComponentTransform(PlayerLoc)
   local DefaultTransforms = TArray(UChildActorComponent)
   local Mesh = self:K2_GetRootComponent()
@@ -41,7 +39,6 @@ function BP_Water_C:GetNearestComponentTransform(PlayerLoc)
   end
   return ResComponent
 end
-
 function BP_Water_C:Initialize()
   self.CurHeight = 0
   self.TargetHeight = 0
@@ -49,7 +46,6 @@ function BP_Water_C:Initialize()
   self.TargetIndex = 0
   self.FirstChange = true
 end
-
 function BP_Water_C:ReceiveBeginPlay()
   self.Super.ReceiveBeginPlay(self)
   self.OriZ = self.PlaneWater.RelativeLocation.Z
@@ -76,7 +72,6 @@ function BP_Water_C:ReceiveBeginPlay()
     end
   end
 end
-
 function BP_Water_C:OnEnterState(NowStateId)
   DebugPrint("zwk BP_Water EnterState", NowStateId, self:GetName(), GWorld:GetCurrentTime())
   self.CurHeight = self.PlaneWater.RelativeLocation.Z
@@ -107,7 +102,7 @@ function BP_Water_C:OnEnterState(NowStateId)
   self.TargetIndex = Idx
   local NumTime = self.Time:Length()
   if TimeIdx > NumTime then
-    DebugPrint("\232\175\183\230\163\128\230\159\165\230\176\180\228\189\141\230\156\186\229\133\179\231\138\182\230\128\129")
+    DebugPrint("请检查水位机关状态")
     self:EnableTriggerBox()
     return
   end
@@ -116,14 +111,12 @@ function BP_Water_C:OnEnterState(NowStateId)
   end
   self:EnableTriggerBox()
 end
-
 function BP_Water_C:EnableTriggerBox()
   if self.FirstChange then
     self.Navbox:SetCollisionEnabled(ECollisionEnabled.QueryOnly)
     self.FirstChange = false
   end
 end
-
 function BP_Water_C:BeginChangeWaterHeight(Time, Height)
   if self.EMNavModifierComponent then
     local GameMode = UE4.UGameplayStatics.GetGameMode(self)
@@ -139,7 +132,6 @@ function BP_Water_C:BeginChangeWaterHeight(Time, Height)
   Times = math.floor(Times)
   self:AddTimer(0.02, self.ChangeWaterHeight, true, -1, "ChangeWaterHeight", nil, Times, ChangeHeight)
 end
-
 function BP_Water_C:ChangeWaterHeight(Times, ChangeHeight)
   self.TimerTimes = self.TimerTimes + 1
   if Times <= self.TimerTimes then
@@ -155,12 +147,10 @@ function BP_Water_C:ChangeWaterHeight(Times, ChangeHeight)
     self.PlaneWater:K2_AddRelativeLocation(UE4.FVector(0, 0, ChangeHeight), false, nil, false)
   end
 end
-
 function BP_Water_C:ReceiveEndPlay(EndReason)
   if self.TargetIndex > 0 then
     self:UpdateRegionData("StateId", self.CompleteStates[self.TargetIndex])
   end
   self.Super.ReceiveEndPlay(self, EndReason)
 end
-
 return BP_Water_C

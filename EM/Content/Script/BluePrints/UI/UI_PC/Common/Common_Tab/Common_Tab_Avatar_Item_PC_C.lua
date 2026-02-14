@@ -1,11 +1,9 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:BindSoundFunc(func, Receiver)
   self.SoundFunc = func
   self.SoundFuncReceiver = Receiver
 end
-
 function M:Update(Idx, Info)
   Info.UI = self
   self.Info = Info
@@ -34,11 +32,9 @@ function M:Update(Idx, Info)
   self.bClickEnable = true
   self:PlayAnimation(self.Normal)
 end
-
 function M:SetClickEnable(bEnable)
   self.bClickEnable = bEnable
 end
-
 function M:Btn_Click()
   if not self.bClickEnable then
     return
@@ -50,7 +46,6 @@ function M:Btn_Click()
     self.SoundFunc(self.SoundFuncReceiver)
   end
 end
-
 function M:Btn_Press()
   if self.IsOn or not self.bClickEnable then
     return
@@ -61,7 +56,6 @@ function M:Btn_Press()
   self:UnbindAllFromAnimationFinished(self.Pressed)
   self:PlayAnimation(self.Pressed)
 end
-
 function M:SetSwitchOn(IsOn, IsNeedPressAnim)
   self.IsOn = IsOn
   if IsOn then
@@ -70,7 +64,6 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
       local function PlayPressAnimFinished()
         self:PlayAnimation(self.Click)
       end
-      
       self:UnbindAllFromAnimationFinished(self.Pressed)
       self:BindToAnimationFinished(self.Pressed, {self, PlayPressAnimFinished})
     else
@@ -88,32 +81,26 @@ function M:SetSwitchOn(IsOn, IsNeedPressAnim)
     end
   end
 end
-
 function M:BindEventOnSwitchOn(Obj, Event)
   self.ObjSwitchOn = Obj
   self.EventSwitchOn = Event
 end
-
 function M:UnbindEventOnSwitchOn()
   self.ObjSwitchOn = nil
   self.EventSwitchOn = nil
 end
-
 function M:BindEventOnSwitchOff(Obj, Event)
   self.ObjSwitchOff = Obj
   self.EventSwitchOff = Event
 end
-
 function M:UnbindEventOnSwitchOff()
   self.ObjSwitchOff = nil
   self.EventSwitchOff = nil
 end
-
 function M:HideReddot()
   self.Common_Item_Subsize_New_PC:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
 end
-
 function M:SetReddot(IsNew, Upgradeable, OhterReddot)
   self.IsNew = IsNew
   self.Upgradeable = Upgradeable
@@ -132,5 +119,4 @@ function M:SetReddot(IsNew, Upgradeable, OhterReddot)
     self.Reddot:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 return M

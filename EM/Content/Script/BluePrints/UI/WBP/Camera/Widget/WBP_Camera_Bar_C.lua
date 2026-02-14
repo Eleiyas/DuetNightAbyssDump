@@ -3,15 +3,12 @@ local M = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function M:Construct()
 end
-
 function M:BindEvents(Events)
   self.EventObj = Events.EventObj
   self.OnSliderChangedEvent = Events.OnSliderChangedEvent
 end
-
 function M:InitSliderValue(CurrentValue, MinValue, MaxValue, StepSize)
   self.Com_Slider:Init({
     InitValue = CurrentValue,
@@ -41,14 +38,12 @@ function M:InitSliderValue(CurrentValue, MinValue, MaxValue, StepSize)
     }
   })
 end
-
 function M:OnSliderValueChanged(Value)
   self:_SetTextValue(Value)
   if self.OnSliderChangedEvent then
     self.OnSliderChangedEvent(self.EventObj, Value)
   end
 end
-
 function M:SetSliderValue(Value, bCallEvent)
   if bCallEvent then
     self.Com_Slider:ChangeSliderValueByInputNumber(Value)
@@ -57,7 +52,6 @@ function M:SetSliderValue(Value, bCallEvent)
     self:_SetTextValue(Value)
   end
 end
-
 function M:_SetTextValue(Value)
   local FloorValue = math.clamp(Value, self.MinValue, self.MaxValue)
   FloorValue = math.floor(FloorValue + 0.5)
@@ -73,22 +67,17 @@ function M:_SetTextValue(Value)
   Pos.Y = SlotSizeY * (1 - FloorValue / Diff) - SlotSizeY / 2
   NumSlot:SetPosition(Pos)
 end
-
 function M:AddValue()
   self.Com_Slider:OnClickToAdd()
 end
-
 function M:SubValue()
   self.Com_Slider:OnClickToMinus()
 end
-
 function M:_SetExtraText(Text)
   self.Text:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
   self.Text:SetText(Text)
 end
-
 function M:SliderClickInterval(NewInterval)
   self.Com_Slider.ClickInterval = NewInterval
 end
-
 return M

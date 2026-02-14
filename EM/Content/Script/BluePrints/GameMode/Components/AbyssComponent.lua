@@ -1,14 +1,21 @@
 require("UnLua")
 require("Const")
 local AbyssComponent = {}
-
+function AbyssComponent:IsAbyssDungeon()
+  if self.IsDungeonTypeAbyss == nil then
+    local DungeonInfo = DataMgr.Dungeon[self.DungeonId]
+    if DungeonInfo then
+      self.IsDungeonTypeAbyss = DungeonInfo.DungeonType == "Abyss"
+    end
+  end
+  return self.IsDungeonTypeAbyss
+end
 function AbyssComponent:OnStartNextRoom(LevelId, NewLevelId)
   if self:IsSubGameMode() then
     return
   end
   print(_G.LogTag, "LXZ OnStartNextRoom", LevelId, NewLevelId)
 end
-
 function AbyssComponent:OnAbyssRoomBegin(LevelId, RoomId)
   if not self:IsSubGameMode() then
     return
@@ -16,19 +23,19 @@ function AbyssComponent:OnAbyssRoomBegin(LevelId, RoomId)
   self.AbyssRoomId = RoomId
   local AbyssRoomInfo = DataMgr.AbyssRoom[self.AbyssRoomId]
   if not AbyssRoomInfo then
-    self.EMGameState:ShowDungeonError("RoomId\228\184\141\229\173\152\229\156\168\228\186\142AbyssRoom\232\161\168\233\135\140, RoomId" .. self.AbyssRoomId)
+    self.EMGameState:ShowDungeonError("RoomId不存在于AbyssRoom表里, RoomId" .. self.AbyssRoomId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   if not AbyssRoomInfo.ClearCondition then
-    self.EMGameState:ShowDungeonError("AbyssRoom\232\161\168\233\135\140\228\184\141\229\173\152\229\156\168ClearCondition, RoomId" .. self.AbyssRoomId)
+    self.EMGameState:ShowDungeonError("AbyssRoom表里不存在ClearCondition, RoomId" .. self.AbyssRoomId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   if not AbyssRoomInfo.TimeLimit then
-    self.EMGameState:ShowDungeonError("AbyssRoom\232\161\168\233\135\140\228\184\141\229\173\152\229\156\168TimeLimit, RoomId" .. self.AbyssRoomId)
+    self.EMGameState:ShowDungeonError("AbyssRoom表里不存在TimeLimit, RoomId" .. self.AbyssRoomId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   if not AbyssRoomInfo.UnitSpawnId then
-    self.EMGameState:ShowDungeonError("AbyssRoom\232\161\168\233\135\140\228\184\141\229\173\152\229\156\168UnitSpawnId, RoomId" .. self.AbyssRoomId)
+    self.EMGameState:ShowDungeonError("AbyssRoom表里不存在UnitSpawnId, RoomId" .. self.AbyssRoomId, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     return
   end
   self.ClearCondition = AbyssRoomInfo.ClearCondition
@@ -46,7 +53,6 @@ function AbyssComponent:OnAbyssRoomBegin(LevelId, RoomId)
   AudioManager(self):PlayUISound(self, "event:/ui/common/battle_warning", nil, nil)
   self.Overridden.OnAbyssRoomBegin(self, LevelId, RoomId)
 end
-
 function AbyssComponent:IsAbyssBossRoom()
   if self.IsAbyssRoomTypeBossRoom == nil then
     local AbyssRoomInfo = DataMgr.AbyssRoom[self.AbyssRoomId]
@@ -54,7 +60,6 @@ function AbyssComponent:IsAbyssBossRoom()
   end
   return self.IsAbyssRoomTypeBossRoom
 end
-
 function AbyssComponent:TryUnlockDoor()
   if self.GetLevelLoader and self:GetLevelLoader() then
     local LevelLoader = self:GetLevelLoader()
@@ -70,14 +75,13 @@ function AbyssComponent:TryUnlockDoor()
         end
       end
     else
-      self.EMGameState:ShowDungeonError("\229\189\147\229\137\141\230\136\191\233\151\180\233\128\154\232\191\135\239\188\140\228\189\134\230\152\175LevelLoader.LevelId2Doors\228\184\173\230\178\161\230\156\137\229\189\147\229\137\141LevelName\239\188\154" .. self.LevelName)
+      self.EMGameState:ShowDungeonError("当前房间通过，但是LevelLoader.LevelId2Doors中没有当前LevelName：" .. self.LevelName, Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     end
   else
-    self.EMGameState:ShowDungeonError("\229\189\147\229\137\141\230\136\191\233\151\180\233\128\154\232\191\135\239\188\140\228\189\134\230\152\175GameMode\232\142\183\229\143\150\228\184\141\229\136\176LevelLoader")
+    self.EMGameState:ShowDungeonError("当前房间通过，但是GameMode获取不到LevelLoader", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.FindObject)
   end
   return false
 end
-
 function AbyssComponent:TryLockDoor()
   if self.LevelGameMode.GetLevelLoader and self.LevelGameMode:GetLevelLoader() then
     local LevelLoader = self.LevelGameMode:GetLevelLoader()
@@ -89,18 +93,16 @@ function AbyssComponent:TryLockDoor()
         end
       end
     else
-      self.EMGameState:ShowDungeonError("\232\191\155\229\133\165\230\150\176\230\136\191\233\151\180\239\188\140\228\189\134\230\152\175LevelLoader.LevelId2Doors\228\184\173\230\178\161\230\156\137\229\189\147\229\137\141LevelName\239\188\154" .. self.LevelName .. self:GetName())
+      self.EMGameState:ShowDungeonError("进入新房间，但是LevelLoader.LevelId2Doors中没有当前LevelName：" .. self.LevelName .. self:GetName(), Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.Config)
     end
   else
-    self.EMGameState:ShowDungeonError("\232\191\155\229\133\165\230\150\176\230\136\191\233\151\180\239\188\140\228\189\134\230\152\175GameMode\232\142\183\229\143\150\228\184\141\229\136\176LevelLoader")
+    self.EMGameState:ShowDungeonError("进入新房间，但是GameMode获取不到LevelLoader", Const.DungeonErrorType.DungeonGame, Const.DungeonErrorTitle.FindObject)
   end
 end
-
 function AbyssComponent:AddAbyssBattleCount(Value)
   self.EMGameState.AbyssBattleCount = self.EMGameState.AbyssBattleCount + Value
   EventManager:FireEvent(EventID.OnRepAbyssBattleCount)
 end
-
 function AbyssComponent:SetAbyssBattleMaxNum(Value, DisplayText, IsShowBar)
   self.EMGameState.AbyssBattleCount = 0
   self.EMGameState.AbyssBattleMaxNum = Value
@@ -120,27 +122,23 @@ function AbyssComponent:SetAbyssBattleMaxNum(Value, DisplayText, IsShowBar)
     end, true, 0, "InitAbyssDisplayTextTimer")
   end
 end
-
 function AbyssComponent:HideAbyssBattlePanel()
   self:SetAbyssBattlePanelVisibility(false)
 end
-
 function AbyssComponent:SetAbyssBattlePanelVisibility(IsShow)
   local AbyssBattleUI = UIManager(self):GetUIObj("Abyss_BattleProgress")
   if AbyssBattleUI then
     AbyssBattleUI:SetAbyssBattleVisibility(IsShow)
   else
-    DebugPrint("AbyssComponent:SetAbyssBattlePanelVisibility \230\137\190\228\184\141\229\136\176AbyssBattleUI ", IsShow)
+    DebugPrint("AbyssComponent:SetAbyssBattlePanelVisibility 找不到AbyssBattleUI ", IsShow)
   end
 end
-
 function AbyssComponent:GetCurrentAbyssDungeonId()
   if self.EMGameState.GameModeType ~= "Abyss" then
     return 0
   end
   return self.LevelGameMode:GetDungeonComponent() and self.LevelGameMode:GetDungeonComponent().AbyssDungeonId or 0
 end
-
 function AbyssComponent:BpOnTimerDel_AbyssBattle()
   if CommonUtils.HasClientTimerStruct("AbyssBattle") then
     local PassedTime = CommonUtils.GetClientTimerStructPassedTime("AbyssBattle")
@@ -153,16 +151,13 @@ function AbyssComponent:BpOnTimerDel_AbyssBattle()
     self:BpDelTimer("AbyssBattleNew", IsRealTime, Const.GameModeEventServerClient)
   end
 end
-
 function AbyssComponent:BpOnTimerDel_AbyssBattleNew()
   local PassedTime = CommonUtils.GetClientTimerStructPassedTime("AbyssBattleNew")
   self.LevelGameMode:TriggerDungeonComponentFun("SendAbyssPassedTime", PassedTime)
 end
-
 function AbyssComponent:BpOnTimerEnd_AbyssBattleNew()
   self:BpOnTimerEnd("AbyssBattle")
 end
-
 function AbyssComponent:AbyssTeleport(Location, Rotation, IsBoss)
   if self.EMGameState.GameModeType ~= "Abyss" then
     return
@@ -174,14 +169,39 @@ function AbyssComponent:AbyssTeleport(Location, Rotation, IsBoss)
   local NewLevelId = self:GetLevelLoader():GetLevelIdByLocation(Location)
   PlayerCharacter:K2_TeleportTo(Location, Rotation, false, nil, false)
   EventManager:FireEvent(EventID.ForceUpdatePlayerCurrentLevelId)
+  self.LevelGameMode.IsAbyssTeleporting = true
   self:AddTimer(2, self.OnCharacterChangeLevel, false, 0, "AbyssTeleport", false, LastLevelId, NewLevelId)
 end
-
 function AbyssComponent:OnCharacterChangeLevel(LastLevelId, NewLevelId)
+  self.LevelGameMode.IsAbyssTeleporting = false
   print(_G.LogTag, "LXZ OnCharacterChangeLevel", LastLevelId, NewLevelId, self:GetName())
   self:TryLockDoor()
   self.LevelGameMode:AbyssRecordProgressData({LastLevelId = LastLevelId, NewLevelId = NewLevelId})
   self.LevelGameMode:TriggerDungeonComponentFun("TriggerStartNextRoom", LastLevelId, NewLevelId)
 end
-
+function AbyssComponent:OnAbyssRoomTimeUp()
+  local IsReEntering = self.LevelGameMode:TriggerDungeonComponentFun("IsReEnteringAbyss")
+  DebugPrint("AbyssComponent:OnAbyssRoomTimeUp Abyss IsReEntering", IsReEntering)
+  if IsReEntering then
+    return
+  end
+  self:TriggerDungeonFailed()
+end
+function AbyssComponent:GetCurAbyssDungeonWeaknessType()
+  local Avatar = GWorld:GetAvatar()
+  if not Avatar then
+    return UE4.EWeaknessType.Default
+  end
+  local AbyssId = self.LevelGameMode:TriggerDungeonComponentFun("GetAbyssId")
+  local CurAttrTypeRawName = Avatar:GetAbyssAttrType(AbyssId)
+  if not CurAttrTypeRawName then
+    return UE4.EWeaknessType.Default
+  end
+  local WeaknessTypeRawName = DataMgr.CounterType2Attribute[CurAttrTypeRawName]
+  if not WeaknessTypeRawName then
+    return UE4.EWeaknessType.Default
+  end
+  local WeaknessType = DataMgr.DamageType[WeaknessTypeRawName] and DataMgr.DamageType[WeaknessTypeRawName].WeaknessTypeID or UE4.EWeaknessType.Default
+  return WeaknessType
+end
 return AbyssComponent

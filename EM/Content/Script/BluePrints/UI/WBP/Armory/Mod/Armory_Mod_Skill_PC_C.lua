@@ -2,7 +2,6 @@ require("UnLua")
 local ArmoryUtils = require("BluePrints.UI.WBP.Armory.ArmoryUtils")
 local ModModel = ModController:GetModel()
 local M = Class("BluePrints.UI.BP_EMUserWidget_C")
-
 function M:OnListItemObjectSet(Content)
   self:SetVisibility(UIConst.VisibilityOp.Visible)
   self.Content = Content
@@ -34,20 +33,16 @@ function M:OnListItemObjectSet(Content)
     self.Line_1:SetRenderTranslation(FVector2D(Content.LineOffset, 0))
   end
 end
-
 function M:Construct()
   self.BtnArea.OnClicked:Add(self, self.OnBtnClick)
 end
-
 function M:Destruct()
   self.BtnArea.OnClicked:Remove(self, self.OnBtnClick)
 end
-
 function M:OnBtnClick()
   self:LoadSkillDetailsUI()
   AudioManager(self):PlayUISound(self, "event:/ui/armory/click_skill_icon", nil, nil)
 end
-
 function M:LoadSkillDetailsUI()
   local UIConfig = DataMgr.SystemUI.SkillDetails
   UIManager(self):LoadUI(UIConst.LoadInConfig, UIConfig.UIName, self.Parent:GetZOrder(), {
@@ -58,7 +53,6 @@ function M:LoadSkillDetailsUI()
     IsPreviewMode = ArmoryUtils:GetIsPreviewMode()
   })
 end
-
 function M:OnSkillDetailsClosed()
   if self.Content.Parent and self.Content.Parent.CurrentMontageTags then
     local ArmoryMain = UIManager(self):GetArmoryUIObj()
@@ -67,5 +61,4 @@ function M:OnSkillDetailsClosed()
     end
   end
 end
-
 return M

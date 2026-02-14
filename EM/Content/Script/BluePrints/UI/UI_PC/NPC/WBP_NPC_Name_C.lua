@@ -3,7 +3,6 @@ local WBP_NPC_Name_C = Class({
   "BluePrints.Common.TimerMgr",
   "BluePrints.UI.BP_EMUserWidget_C"
 })
-
 function WBP_NPC_Name_C:Initialize(Initializer)
   self.ParentHeadWidget = nil
   self.bIsEnabled_Name = false
@@ -11,7 +10,6 @@ function WBP_NPC_Name_C:Initialize(Initializer)
   self.Style = nil
   self.PlayerNumber = nil
 end
-
 function WBP_NPC_Name_C:Init(ParentHeadWidget)
   self:SetRenderOpacity(0)
   if not self.PosInitialized then
@@ -19,8 +17,8 @@ function WBP_NPC_Name_C:Init(ParentHeadWidget)
     self.PosInitialized = true
   end
   self.ParentHeadWidget = ParentHeadWidget
+  self.bIsEnabled_Name = false
 end
-
 function WBP_NPC_Name_C:OnEnabled(Name, Style, PlayerNumber)
   if self.bIsEnabled_Name then
     return
@@ -34,7 +32,6 @@ function WBP_NPC_Name_C:OnEnabled(Name, Style, PlayerNumber)
   self.ParentHeadWidget:StopAllAnimations()
   self.ParentHeadWidget:PlayAnimation(self.ParentHeadWidget.Name_In)
 end
-
 function WBP_NPC_Name_C:SwitchStyle(Style)
   self.Style = Style
   local LoadMaterial
@@ -63,7 +60,6 @@ function WBP_NPC_Name_C:SwitchStyle(Style)
     end
   })
 end
-
 function WBP_NPC_Name_C:SetPlayerNumber(PlayerNumber)
   if 0 == PlayerNumber then
     PlayerNumber = nil
@@ -74,7 +70,6 @@ function WBP_NPC_Name_C:SetPlayerNumber(PlayerNumber)
     return
   end
   self.Group_TeamSign:SetVisibility(UIConst.VisibilityOp.SelfHitTestInvisible)
-  
   local function UpdateTeamTag(TeamTag)
     if not IsValid(TeamTag) then
       return
@@ -85,7 +80,6 @@ function WBP_NPC_Name_C:SetPlayerNumber(PlayerNumber)
     local Number = self.PlayerNumber
     TeamTag:Init(false, Number, nil)
   end
-  
   if self.Group_TeamSign:HasAnyChildren() then
     local TeamTag = self.Group_TeamSign:GetChildAt(0)
     if IsValid(TeamTag) then
@@ -104,7 +98,6 @@ function WBP_NPC_Name_C:SetPlayerNumber(PlayerNumber)
     end
   end, tostring(self.NameTagReference))
 end
-
 function WBP_NPC_Name_C:OnDisabled()
   if not self.bIsEnabled_Name then
     return
@@ -113,5 +106,4 @@ function WBP_NPC_Name_C:OnDisabled()
   self.ParentHeadWidget:StopAllAnimations()
   self.ParentHeadWidget:PlayAnimation(self.ParentHeadWidget.Name_Out)
 end
-
 return WBP_NPC_Name_C

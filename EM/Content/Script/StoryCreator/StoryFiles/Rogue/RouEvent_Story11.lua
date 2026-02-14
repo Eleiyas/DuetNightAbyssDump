@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "17370335783171628451",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1166.8500000000001, y = 292.894671169903},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -119,7 +121,7 @@ return {
           ["17370335783171628455"] = {
             key = "17370335783171628455",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1039.3019127611522, y = 330.57986315183433},
             propsData = {
               IsNpcNode = false,
@@ -134,7 +136,7 @@ return {
           ["175464511636817551965"] = {
             key = "175464511636817551965",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 976.5843979390177, y = 622.4331327840061},
             propsData = {
               IsNpcNode = false,
@@ -156,7 +158,7 @@ return {
           ["175464511636817551966"] = {
             key = "175464511636817551966",
             type = "TalkNode",
-            name = "\229\175\185\232\175\157\232\138\130\231\130\185",
+            name = "对话节点",
             pos = {x = 1299.6656020609826, y = 658.0668672159941},
             propsData = {
               IsNpcNode = false,

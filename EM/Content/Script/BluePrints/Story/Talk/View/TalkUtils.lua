@@ -13,7 +13,6 @@ TalkUtils.EDialogueIterType = {
   Fail = "Fail",
   Final = "Final"
 }
-
 function TalkUtils:GetTalkActorName(UnitType, UnitId)
   if "Npc" == UnitType then
     local Npc = DataMgr.Npc[UnitId]
@@ -28,7 +27,6 @@ function TalkUtils:GetTalkActorName(UnitType, UnitId)
   end
   return ""
 end
-
 function TalkUtils:GetHeadIcon(UnitType, UnitId)
   if "Npc" == UnitType then
     local Npc = DataMgr.Npc[UnitId]
@@ -45,15 +43,13 @@ function TalkUtils:GetHeadIcon(UnitType, UnitId)
   end
   return nil
 end
-
 function TalkUtils:DialogueIdToContent(DialogueId)
   DialogueId = tonumber(DialogueId)
   local DialogueInfo = DataMgr.Dialogue[DialogueId]
   if not DialogueInfo then
-    local Message = "DialogueId\229\156\168Dialogue\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168" .. [[
-
+    local Message = "DialogueId在Dialogue表中不存在" .. [[
 DialogueId:]] .. DialogueId
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "DialogueId\228\184\141\229\173\152\229\156\168", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Talk, "DialogueId不存在", Message)
     return
   end
   local Content = DialogueInfo.Content
@@ -62,7 +58,7 @@ DialogueId:]] .. DialogueId
     if ContentLanguage then
       Content = ContentLanguage
     else
-      DebugPrint(DialogueId .. ", " .. CommonConst.SystemLanguage .. " \230\150\135\230\156\172\232\175\173\232\168\128\231\188\186\229\164\177\239\188\140\229\183\178\228\189\191\231\148\168\233\187\152\232\174\164\230\150\135\230\156\172\227\128\130")
+      DebugPrint(DialogueId .. ", " .. CommonConst.SystemLanguage .. " 文本语言缺失，已使用默认文本。")
     end
   end
   Content = Content or " "
@@ -70,24 +66,20 @@ DialogueId:]] .. DialogueId
   Content = WildcardSubsystem:ReplaceWildcard(Content)
   return Content
 end
-
 function TalkUtils:OptionIdToContent(OptionId)
   return self:DialogueIdToContent(OptionId)
 end
-
 function TalkUtils:IsKeyOption(DialogueId)
   DialogueId = tonumber(DialogueId)
   local DialogueInfo = DataMgr.Dialogue[DialogueId]
   if not DialogueInfo then
-    local Message = "DialogueId\229\156\168Dialogue\232\161\168\228\184\173\228\184\141\229\173\152\229\156\168" .. [[
-
+    local Message = "DialogueId在Dialogue表中不存在" .. [[
 DialogueId:]] .. DialogueId
-    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, "DialogueId\228\184\141\229\173\152\229\156\168", Message)
+    UStoryLogUtils.PrintToFeiShu(GWorld.GameInstance, UE.EStoryLogType.Talk, "DialogueId不存在", Message)
     return
   end
   return DialogueInfo.IsKeyOption
 end
-
 function TalkUtils:GetUnitType(UnitId)
   if DataMgr.Npc[UnitId] then
     return "Npc"
@@ -97,13 +89,11 @@ function TalkUtils:GetUnitType(UnitId)
     return "Player"
   end
 end
-
 function TalkUtils:FirstToUpper(Str)
   if Str then
     return (Str:gsub("^%l", string.upper))
   end
 end
-
 function TalkUtils:FindTargetString(Str, SubStr)
   local StrInfo = string.match(Str, SubStr .. ":[^;^}]*")
   if StrInfo then
@@ -111,7 +101,6 @@ function TalkUtils:FindTargetString(Str, SubStr)
     return ResStr
   end
 end
-
 function TalkUtils:GetImpressionPlusInfo(ImpressionPlusId)
   local PlusInfo = DataMgr.ImpressionPlus[ImpressionPlusId]
   if PlusInfo then
@@ -126,10 +115,9 @@ function TalkUtils:GetImpressionPlusInfo(ImpressionPlusId)
     end
     return Res
   else
-    DebugPrint("Error: ImpressionPlusId\228\184\141\229\173\152\229\156\168", ImpressionPlusId)
+    DebugPrint("Error: ImpressionPlusId不存在", ImpressionPlusId)
   end
 end
-
 function TalkUtils:SetPlayerInvincible()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if Player then
@@ -137,7 +125,6 @@ function TalkUtils:SetPlayerInvincible()
     Player:SetInvincible(true, "Talk")
   end
 end
-
 function TalkUtils:RemovePlayerInvincible()
   local Player = UE4.UGameplayStatics.GetPlayerCharacter(GWorld.GameInstance, 0)
   if Player then
@@ -145,7 +132,6 @@ function TalkUtils:RemovePlayerInvincible()
     Player:SetInvincible(false, "Talk")
   end
 end
-
 function TalkUtils:GetPlayDialogueWaitItemTags()
   return {
     UIPlayDialogue = "UIPlayDialogue",
@@ -157,7 +143,6 @@ function TalkUtils:GetPlayDialogueWaitItemTags()
     Expression = "Expression"
   }
 end
-
 function TalkUtils:TryResolveStoryPanel(DialoguePanelType)
   if not DialoguePanelType then
     return
@@ -173,5 +158,4 @@ function TalkUtils:TryResolveStoryPanel(DialoguePanelType)
   end
   return
 end
-
 return TalkUtils

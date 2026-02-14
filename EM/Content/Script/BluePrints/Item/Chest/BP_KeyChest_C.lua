@@ -1,12 +1,10 @@
 require("Unlua")
 local M = Class("BluePrints.Item.Chest.BP_ChestBase_C")
-
 function M:AuthorityInitInfo(Info)
   M.Super.AuthorityInitInfo(self, Info)
   self.UsePlayerId = 0
   EventManager:AddEvent(EventID.OnResourceDeductSuccess, self, self.OnKeyDeductSuccess)
 end
-
 function M:OpenMechanism(PlayerId)
   print(_G.LogTag, "LXZ OpenMechanism", self.OpenState)
   if self.OpenState ~= false then
@@ -29,7 +27,6 @@ function M:OpenMechanism(PlayerId)
     end)
   end
 end
-
 function M:CreateKeyList()
   self.KeyList = {}
   local InteractiveCondition = self.ChestInteractiveComponent.InteractiveParam.InteractiveCondition
@@ -42,7 +39,6 @@ function M:CreateKeyList()
     end
   end
 end
-
 function M:OnKeyDeductSuccess(Reason, Rewards, ExtraInfo, RewardPosition, RewardDropDatas)
   print(_G.LogTag, "LXZ OnKeyDeductSuccess", self.UsePlayerId)
   if 0 == self.UsePlayerId then
@@ -67,5 +63,4 @@ function M:OnKeyDeductSuccess(Reason, Rewards, ExtraInfo, RewardPosition, Reward
     self:AddTimer(3, self.PlayDestroyEffect, false, 0)
   end
 end
-
 return M

@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class("BluePrints.UI.BP_UIState_C")
-
 function M:OnLoaded(...)
   M.Super:OnLoaded(...)
   self.AnswerId = (...)
@@ -11,7 +10,6 @@ function M:OnLoaded(...)
   self:RefreshOpInfoByInputDevice(self.GameInputModeSubsystem:GetCurrentInputType(), self.GameInputModeSubsystem:GetCurrentGamepadName())
   self.GameInputModeSubsystem:SetNavigateWidgetOpacity(0)
 end
-
 function M:InitUI()
   local DetectiveAnswerData = DataMgr.DetectiveAnswer[self.AnswerId]
   self.Icon_Clue:SetBrushResourceObject(LoadObject(DetectiveAnswerData.Icon))
@@ -25,14 +23,12 @@ function M:InitUI()
     Desc = GText("UI_AntiAliasing_Close")
   })
 end
-
 function M:BtnClickClose()
   self:Close()
 end
-
 function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
   if self.CurInputDeviceType == CurInputDevice then
-    DebugPrint("thy    \229\183\178\231\187\143\230\152\190\231\164\186\231\154\132\230\152\175\232\175\165\232\190\147\229\133\165\230\168\161\229\188\143\239\188\140\228\184\141\233\156\128\232\166\129\232\191\155\232\161\140\229\136\183\230\150\176")
+    DebugPrint("thy    已经显示的是该输入模式，不需要进行刷新")
     return
   end
   self.CurInputDeviceType = CurInputDevice
@@ -47,7 +43,6 @@ function M:RefreshOpInfoByInputDevice(CurInputDevice, CurGamepadName)
     self:SetFocus()
   end
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -57,5 +52,4 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 return M

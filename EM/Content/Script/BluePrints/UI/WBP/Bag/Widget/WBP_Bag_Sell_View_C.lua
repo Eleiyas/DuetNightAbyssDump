@@ -6,7 +6,6 @@ local CommonUtils = require("Utils.CommonUtils")
 local BagCommon = require("BluePrints.UI.WBP.Bag.BagCommon")
 local TimeUtils = require("Utils.TimeUtils")
 local WBP_Bag_Sell_View_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_Bag_Sell_View_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.ParentWidget = nil
@@ -25,7 +24,6 @@ function WBP_Bag_Sell_View_C:Initialize(Initializer)
   self.BagCurState = nil
   self.CurFocusWidget = "DefaultWidget"
 end
-
 function WBP_Bag_Sell_View_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.List_Item:ClearListItems()
@@ -38,7 +36,6 @@ function WBP_Bag_Sell_View_C:OnLoaded(...)
   end
   self:PlayInAnim()
 end
-
 function WBP_Bag_Sell_View_C:OnFocusReceived(MyGeometry, InFocusEvent)
   self.CurFocusWidget = "DefaultWidget"
   if self.ParentWidget then
@@ -46,13 +43,11 @@ function WBP_Bag_Sell_View_C:OnFocusReceived(MyGeometry, InFocusEvent)
   end
   return WBP_Bag_Sell_View_C.Super.OnFocusReceived(self, MyGeometry, InFocusEvent)
 end
-
 function WBP_Bag_Sell_View_C:InitListenEvent()
   self:AddDispatcher(EventID.OnUpdateBagItem, self, self.OnUpdateBagItemByAction)
   self:AddDispatcher(EventID.OnAddBagItemToList, self, self.AddBagItemToList)
   self:AddDispatcher(EventID.OnRemoveBagItemInList, self, self.RemoveBagItemInList)
 end
-
 function WBP_Bag_Sell_View_C:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
   if 0 ~= ErrCode then
     return
@@ -92,10 +87,29 @@ function WBP_Bag_Sell_View_C:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
       end
     elseif "FishResourceBulkSale" == OpAction then
       local SaleFishResources, SaleFishPrice = ...
+      if Utils.IsEmptyTable(SaleFishPrice) then
+        return
+      end
       AllRewards[ItemKeys] = {}
-      bIsNotShowGetItemPage = false
       for CoinId, Price in pairs(SaleFishPrice) do
         AllRewards[ItemKeys][CoinId] = Price
+        bIsNotShowGetItemPage = bIsNotShowGetItemPage and false
+      end
+    elseif "DraftBulkSale" == OpAction then
+      local SaleDraftsSucc = (...)
+      AllRewards[ItemKeys] = {}
+      bIsNotShowGetItemPage = false
+      for k, v in pairs(SaleDraftsSucc) do
+        local StuffUnitId = tostring(k)
+        local SellDraftObj = self.NeedDealWithStuffData[StuffUnitId]
+        if SellDraftObj then
+          local NowSaleStuffCount = self.NeedDealWithStuffCount[StuffUnitId]
+          if AllRewards[ItemKeys][SellDraftObj.CoinId] then
+            AllRewards[ItemKeys][SellDraftObj.CoinId] = AllRewards[ItemKeys][SellDraftObj.CoinId] + SellDraftObj.Price * NowSaleStuffCount
+          else
+            AllRewards[ItemKeys][SellDraftObj.CoinId] = SellDraftObj.Price * NowSaleStuffCount
+          end
+        end
       end
     end
     if not bIsNotShowGetItemPage then
@@ -105,7 +119,6 @@ function WBP_Bag_Sell_View_C:OnUpdateBagItemByAction(OpAction, ErrCode, ...)
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:ShowGetItemPage(AllRewards)
   if self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad then
     self:AddTimer(0.8, function()
@@ -115,7 +128,6 @@ function WBP_Bag_Sell_View_C:ShowGetItemPage(AllRewards)
     UIManager(self):LoadUINew("GetItemPage", nil, nil, nil, AllRewards, self.PlayOutAnim, self, true)
   end
 end
-
 function WBP_Bag_Sell_View_C:PlayInAnim()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -125,7 +137,6 @@ function WBP_Bag_Sell_View_C:PlayInAnim()
   self:InitListenEvent()
   AudioManager(self):PlayUISound(self, "event:/ui/common/sell_panel_expand", nil, nil)
 end
-
 function WBP_Bag_Sell_View_C:PlayOutAnim()
   if self:IsAnimationPlaying(self.Out) then
     return
@@ -133,7 +144,6 @@ function WBP_Bag_Sell_View_C:PlayOutAnim()
   if self.bIsOpenList or self:IsAnimationPlaying(self.CloseList) then
     local function PlayCloseAnimFinished()
       self.List_Item:SetVisibility(UE4.ESlateVisibility.Collapsed)
-      
       self.Panel_Sell_List:SetVisibility(UE4.ESlateVisibility.Collapsed)
       self.bIsOpenList = false
       self:BindToAnimationFinished(self.Out, {
@@ -142,7 +152,6 @@ function WBP_Bag_Sell_View_C:PlayOutAnim()
       })
       self:PlayAnimationForward(self.Out)
     end
-    
     self:UnbindAllFromAnimationFinished(self.CloseList)
     self:BindToAnimationFinished(self.CloseList, {self, PlayCloseAnimFinished})
     self:PlayAnimationForward(self.CloseList)
@@ -155,7 +164,6 @@ function WBP_Bag_Sell_View_C:PlayOutAnim()
   end
   AudioManager(self):PlayUISound(self, "event:/ui/common/sell_panel_shrink", nil, nil)
 end
-
 function WBP_Bag_Sell_View_C:RefreshBaseInfo()
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.PC then
     self.Key_Check:CreateCommonKey({
@@ -242,11 +250,9 @@ function WBP_Bag_Sell_View_C:RefreshBaseInfo()
     self.Button_Purchase:ForbidBtn(true)
   end
   self.List_Item.BP_OnItemSelectionChanged:Add(self, self.OnSelectStuffItemChanged)
-  
   function self.Button_List.SoundFunc(Btn)
     AudioManager(self):PlayUISound(self.Button_List, "event:/ui/common/click_btn_small", nil, nil)
   end
-  
   if self.ParentWidget then
     self.BagCurState = self.ParentWidget.BagCurState
     if type(self.ParentWidget.SetFocus_Lua) == "function" then
@@ -258,7 +264,6 @@ function WBP_Bag_Sell_View_C:RefreshBaseInfo()
   local IsUseGamePad = self.GameInputModeSubsystem:GetCurrentInputType() == ECommonInputType.Gamepad and self:IsCanChangeToGamePadViewMode()
   self:UpdateUIStyleInPlatform(IsUseGamePad)
 end
-
 function WBP_Bag_Sell_View_C:GetCoin3DataInfo()
   local PlayerAvatar = GWorld:GetAvatar()
   local CurrentLevel = PlayerAvatar.Level
@@ -266,7 +271,6 @@ function WBP_Bag_Sell_View_C:GetCoin3DataInfo()
   local LimitedCoinNum, CurCoinNumDaily = PlayerLevelInfo.ModExtractMax or 0, PlayerAvatar.ResourceCoinNumDaily or 0
   return LimitedCoinNum, CurCoinNumDaily
 end
-
 function WBP_Bag_Sell_View_C:RefreshCoinInfo(CoinId)
   local AllChildren = self.ItemBox:GetAllChildren()
   local TotalRewardTypeNum, ExtraShowCoinNum = 0, 0
@@ -379,10 +383,8 @@ function WBP_Bag_Sell_View_C:RefreshCoinInfo(CoinId)
     self.Panel_Total:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   end
 end
-
 function WBP_Bag_Sell_View_C:RefreshRewardInfo()
   self.AllRewardContentList = {}
-  
   local function FillWithRewardData(RewardId, Count)
     local RewardInfo = DataMgr.Reward[RewardId]
     if RewardInfo then
@@ -398,7 +400,6 @@ function WBP_Bag_Sell_View_C:RefreshRewardInfo()
       table.insert(self.AllRewardContentList, RewardObject)
     end
   end
-  
   local RewardIds = {}
   for k, v in pairs(self.AllTypeRewardsInfo) do
     if RewardIds[v] then
@@ -435,7 +436,6 @@ function WBP_Bag_Sell_View_C:RefreshRewardInfo()
     self.Panel_Total:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_Bag_Sell_View_C:SetNavigationRuleForRewardItem(TotalRewardTypeNum)
   if 1 == TotalRewardTypeNum then
     local CurRewardItemWidget = self.ItemBox:GetChildAt(0)
@@ -469,7 +469,6 @@ function WBP_Bag_Sell_View_C:SetNavigationRuleForRewardItem(TotalRewardTypeNum)
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:IsCanChangeToGamePadViewMode()
   if self.CurFocusWidget == "DefaultWidget" then
     return true
@@ -485,7 +484,6 @@ function WBP_Bag_Sell_View_C:IsCanChangeToGamePadViewMode()
     return true
   end
 end
-
 function WBP_Bag_Sell_View_C:OnUpdateUIStyleByInputTypeChange(CurInputType, CurGamepadName)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
   else
@@ -500,7 +498,6 @@ function WBP_Bag_Sell_View_C:OnUpdateUIStyleByInputTypeChange(CurInputType, CurG
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:GenerateAllRewardIds(RewardIds)
   local RewardType, RewardList = DataMgr.RewardType, {}
   for ItemType, _ in pairs(RewardType) do
@@ -540,7 +537,6 @@ function WBP_Bag_Sell_View_C:GenerateAllRewardIds(RewardIds)
   end)
   return RewardInfoList
 end
-
 function WBP_Bag_Sell_View_C:TryToSaleStuff()
   if self.CurStuffCountInList <= 0 then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_BAG_Nochosen"))
@@ -556,6 +552,13 @@ function WBP_Bag_Sell_View_C:TryToSaleStuff()
       if nil ~= StuffServerData then
         local StuffDataDict = StuffIconObject:GetModStuffData(StuffServerData, self)
         StuffDataDict.StuffCount = self.NeedDealWithStuffCount[ModItemUuid]
+        table.insert(CommonDialogParams.StuffInfoList, StuffDataDict)
+      end
+    elseif ItemData.StuffType == BagCommon.StuffType.Draft then
+      StuffServerData = PlayerAvatar.Drafts[ItemData.UnitId]
+      if nil ~= StuffServerData then
+        local StuffDataDict = StuffIconObject:GetDraftsStuffData(StuffServerData, self)
+        StuffDataDict.StuffCount = self.NeedDealWithStuffCount[ItemUuid]
         table.insert(CommonDialogParams.StuffInfoList, StuffDataDict)
       end
     else
@@ -574,7 +577,9 @@ function WBP_Bag_Sell_View_C:TryToSaleStuff()
       end
     end
   end
+  local bIsNeedCheckLimitType = false
   if self.ParentWidget and self.ParentWidget.CurTabId == BagCommon.ItemTypeToTabId.Mod then
+    bIsNeedCheckLimitType = true
     CommonDialogParams.LeftText = GText("UI_Bag_ModExtract_Ready")
     CommonDialogParams.RightText = GText("UI_Bag_ModExtract_Get")
     local LimitedCoinNum, CurCoinNumDaily = self:GetCoin3DataInfo()
@@ -593,7 +598,7 @@ function WBP_Bag_Sell_View_C:TryToSaleStuff()
   for k, v in pairs(self.AllTypeCoinInfo) do
     if v > 0 then
       local ValueCount = 0
-      if k == CommonConst.Coins.Coin3 then
+      if k == CommonConst.Coins.Coin3 and bIsNeedCheckLimitType then
         local LimitedCoinNum, CurCoinNumDaily = self:GetCoin3DataInfo()
         if LimitedCoinNum < CurCoinNumDaily + v and not CommonDialogParams.IsShowEmptyText then
           bIsNeedShowTips = true
@@ -625,11 +630,9 @@ function WBP_Bag_Sell_View_C:TryToSaleStuff()
     CommonDialogParams.bHideDialogItem = true
     CommonDialogParams.DialogItemIndex = 1
   end
-  
   function CommonDialogParams.RightCallbackFunction()
     self:ConfirmDealWithItems()
   end
-  
   local LastStuffTimeStamp = EMCache:Get(BagCommon.LastStuffSellTimeStamp, true)
   if LastStuffTimeStamp and LastStuffTimeStamp > TimeUtils.TimestampLastClock(0) then
     UIManager(self):ShowCommonPopupUI(100164, CommonDialogParams, self)
@@ -641,17 +644,14 @@ function WBP_Bag_Sell_View_C:TryToSaleStuff()
     if ConfirmParams.ShortText then
       function ConfirmParams.RightCallbackFunction(_, Data)
         self:UpdatePopupSelectedInfo(Data, BagCommon.LastStuffSellTimeStamp)
-        
         UIManager(self):ShowCommonPopupUI(100164, CommonDialogParams, self)
       end
-      
       UIManager(self):ShowCommonPopupUI(100165, ConfirmParams, self)
     else
       UIManager(self):ShowCommonPopupUI(100164, CommonDialogParams, self)
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:TryToResolveStuff()
   if self.CurStuffCountInList <= 0 then
     UIManager(self):ShowUITip(UIConst.Tip_CommonToast, GText("UI_BAG_Nochosen"))
@@ -674,7 +674,6 @@ function WBP_Bag_Sell_View_C:TryToResolveStuff()
     local WeaponData = StuffIconObject:GetWeaponStuffData(StuffServerData, self)
     table.insert(CommonDialogParams.StuffInfoList, WeaponData)
   end
-  
   local function CheckWeaponInSquadPresets()
     if not PlayerAvatar or not PlayerAvatar.Squad then
       return false
@@ -704,7 +703,6 @@ function WBP_Bag_Sell_View_C:TryToResolveStuff()
     end
     return false
   end
-  
   local function ShowCommonDialogFunction()
     CommonDialogParams.LeftText = GText("UI_Bag_Decompose_Waiting")
     CommonDialogParams.RightText = GText("UI_Bag_Decompose_Get")
@@ -719,11 +717,9 @@ function WBP_Bag_Sell_View_C:TryToResolveStuff()
       RewardData.ParentWidget = self
       table.insert(CommonDialogParams.RewardList, RewardData)
     end
-    
     function CommonDialogParams.RightCallbackFunction()
       self:ConfirmDealWithItems()
     end
-    
     local LastWeaponTimeStamp = EMCache:Get(BagCommon.LastWeaponResolveTimeStamp, true)
     if LastWeaponTimeStamp and LastWeaponTimeStamp > TimeUtils.TimestampLastClock(0) then
       UIManager(self):ShowCommonPopupUI(100063, CommonDialogParams, self)
@@ -739,17 +735,14 @@ function WBP_Bag_Sell_View_C:TryToResolveStuff()
       if ConfirmParams.ShortText then
         function ConfirmParams.RightCallbackFunction(_, Data)
           self:UpdatePopupSelectedInfo(Data, BagCommon.LastWeaponResolveTimeStamp)
-          
           UIManager(self):ShowCommonPopupUI(100063, CommonDialogParams, self)
         end
-        
         UIManager(self):ShowCommonPopupUI(100064, ConfirmParams, self)
       else
         UIManager(self):ShowCommonPopupUI(100063, CommonDialogParams, self)
       end
     end
   end
-  
   local ShowSecondConfirm = false
   ShowSecondConfirm = CheckWeaponInSquadPresets()
   if ShowSecondConfirm then
@@ -761,7 +754,6 @@ function WBP_Bag_Sell_View_C:TryToResolveStuff()
     ShowCommonDialogFunction()
   end
 end
-
 function WBP_Bag_Sell_View_C:GetStuffObjId(StuffUuid)
   local FinalObjId = StuffUuid
   if type(FinalObjId) == "string" and CommonUtils.IsObjIdStr(FinalObjId) then
@@ -769,7 +761,6 @@ function WBP_Bag_Sell_View_C:GetStuffObjId(StuffUuid)
   end
   return FinalObjId
 end
-
 function WBP_Bag_Sell_View_C:ConfirmDealWithItems()
   if self.ConfirmCallback ~= nil then
     self.ConfirmCallback(self.ParentWidget, self.NeedDealWithStuffData, self.NeedDealWithStuffCount)
@@ -782,7 +773,6 @@ function WBP_Bag_Sell_View_C:ConfirmDealWithItems()
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:UpdatePopupSelectedInfo(Data, CacheKey)
   local IsSelected = Data.SelectHint.IsSelected
   if IsSelected then
@@ -790,33 +780,32 @@ function WBP_Bag_Sell_View_C:UpdatePopupSelectedInfo(Data, CacheKey)
     EMCache:Set(CacheKey, NowTime, true)
   end
 end
-
 function WBP_Bag_Sell_View_C:OnClickToMinusStuff(NewValue, OldValue)
   if self.CurSelectStuffContentInList == nil then
     return
   end
   local StuffCoinId = self.CurSelectStuffContentInList.CoinId
+  local DeltaValue = math.max(1, OldValue - NewValue)
   if nil ~= self.AllTypeCoinInfo[StuffCoinId] then
-    self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] - self.NeedDealWithStuffData[self.CurSelectStuffContentInList.Uuid].Price
+    self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] - DeltaValue * self.NeedDealWithStuffData[self.CurSelectStuffContentInList.Uuid].Price
   end
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(NewValue)
 end
-
 function WBP_Bag_Sell_View_C:OnClickToAddStuff(NewValue, OldValue)
   if self.CurSelectStuffContentInList == nil then
     return
   end
   local StuffCoinId = self.CurSelectStuffContentInList.CoinId
+  local DeltaValue = math.max(1, NewValue - OldValue)
   if nil ~= self.AllTypeCoinInfo[StuffCoinId] then
-    self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] + self.NeedDealWithStuffData[self.CurSelectStuffContentInList.Uuid].Price
+    self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] + DeltaValue * self.NeedDealWithStuffData[self.CurSelectStuffContentInList.Uuid].Price
   else
     self.AllTypeCoinInfo[StuffCoinId] = self.NeedDealWithStuffData[self.CurSelectStuffContentInList.Uuid].Price
   end
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(NewValue)
 end
-
 function WBP_Bag_Sell_View_C:OnClickToMaxStuff(NewValue, OldValue)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -830,7 +819,6 @@ function WBP_Bag_Sell_View_C:OnClickToMaxStuff(NewValue, OldValue)
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(NewValue)
 end
-
 function WBP_Bag_Sell_View_C:OnClickToMinStuff(NewValue, OldValue)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -842,7 +830,6 @@ function WBP_Bag_Sell_View_C:OnClickToMinStuff(NewValue, OldValue)
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(NewValue)
 end
-
 function WBP_Bag_Sell_View_C:OnInputStuffNum(NewValue, OldValue)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -857,7 +844,6 @@ function WBP_Bag_Sell_View_C:OnInputStuffNum(NewValue, OldValue)
   self:OnUpdateCurSelectItemSaleInfo(NewValue, true)
   self:SetFocus_Lua()
 end
-
 function WBP_Bag_Sell_View_C:SliderChangeCallback(NewValue)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -872,7 +858,6 @@ function WBP_Bag_Sell_View_C:SliderChangeCallback(NewValue)
   self:RefreshCoinInfo(StuffCoinId)
   self:OnUpdateCurSelectItemSaleInfo(NewValue)
 end
-
 function WBP_Bag_Sell_View_C:OnUpdateCurSelectItemSaleInfo(SaleNum, bIsNeedRefreshSliderBar)
   if self.CurSelectStuffContentInList == nil then
     return
@@ -892,7 +877,6 @@ function WBP_Bag_Sell_View_C:OnUpdateCurSelectItemSaleInfo(SaleNum, bIsNeedRefre
     self.ParentWidget:OnRefreshSaleSelectNum(self.CurSelectStuffContentInList.Uuid, SaleNum)
   end
 end
-
 function WBP_Bag_Sell_View_C:ClickToOpenStuffList()
   if self:IsAnimationPlaying(self.OpenList) or self:IsAnimationPlaying(self.CloseList) then
     return
@@ -900,7 +884,6 @@ function WBP_Bag_Sell_View_C:ClickToOpenStuffList()
   if self.bIsOpenList then
     local function PlayCloseAnimFinished()
       local ChooseItem = self.List_Item:BP_GetSelectedItem()
-      
       if ChooseItem and ChooseItem.SelfWidget then
         ChooseItem.SelfWidget:SetSelected(false)
       end
@@ -909,19 +892,17 @@ function WBP_Bag_Sell_View_C:ClickToOpenStuffList()
       self.Panel_Sell_List:SetVisibility(UE4.ESlateVisibility.Collapsed)
       self.bIsOpenList = false
       self.Com_NumInput:OverrideFocusToWidget(self.ParentWidget)
-      if self.ParentWidget then
-        self.ParentWidget:SetFocus_Lua()
-      end
     end
-    
     self:UnbindAllFromAnimationFinished(self.CloseList)
     self:BindToAnimationFinished(self.CloseList, {self, PlayCloseAnimFinished})
     self:PlayAnimationForward(self.CloseList)
     AudioManager(self):SetEventSoundParam(self, "ExpandStuffList", {ToEnd = 1})
+    if self.ParentWidget then
+      self.ParentWidget:SetFocus_Lua()
+    end
   else
     local function PlayOpenAnimFinished()
       self.bIsOpenList = true
-      
       local AllItemCount = self.List_Item:GetNumItems()
       for i = 0, AllItemCount - 1 do
         local ItemObj = self.List_Item:GetItemAt(i)
@@ -938,7 +919,6 @@ function WBP_Bag_Sell_View_C:ClickToOpenStuffList()
       self.Com_NumInput:OverrideFocusToWidget(self)
       self:UpdateCurFocusInfo("ToSellListView")
     end
-    
     self:UnbindAllFromAnimationFinished(self.OpenList)
     self:BindToAnimationFinished(self.OpenList, {self, PlayOpenAnimFinished})
     self:PlayAnimationForward(self.OpenList)
@@ -947,7 +927,6 @@ function WBP_Bag_Sell_View_C:ClickToOpenStuffList()
     AudioManager(self):PlayUISound(self, "event:/ui/common/sub_panel_expand", "ExpandStuffList", nil)
   end
 end
-
 function WBP_Bag_Sell_View_C:AddBagItemToList(StuffData)
   if self.CurrentMode == BagCommon.BagItemSelectOpMode.ResolveMode then
     self:FillWithWeaponResolveData(StuffData)
@@ -966,7 +945,6 @@ function WBP_Bag_Sell_View_C:AddBagItemToList(StuffData)
   end
   self:RefreshKeyCount()
 end
-
 function WBP_Bag_Sell_View_C:MultiAddBagItemToList(StuffDataList)
   if self.CurrentMode == BagCommon.BagItemSelectOpMode.ResolveMode then
     self:FillWithWeaponResolveDataWithList(StuffDataList)
@@ -990,7 +968,6 @@ function WBP_Bag_Sell_View_C:MultiAddBagItemToList(StuffDataList)
   end
   self:RefreshKeyCount()
 end
-
 function WBP_Bag_Sell_View_C:FillWithStuffSellData(StuffData, AddTypeMode)
   StuffData.ParentWidget = self
   StuffData.GridIndex = self.CurStuffCountInList + 1
@@ -1024,14 +1001,12 @@ function WBP_Bag_Sell_View_C:FillWithStuffSellData(StuffData, AddTypeMode)
   local StuffCoinId = StuffObj.CoinId
   self.AllTypeCoinInfo[StuffCoinId] = (self.AllTypeCoinInfo[StuffCoinId] or 0) + AddStuffValue
 end
-
 function WBP_Bag_Sell_View_C:FillWithStuffSellDataWithList(StuffDataList, AddTypeMode)
   for index, StuffData in ipairs(StuffDataList) do
     self:FillWithStuffSellData(StuffData, AddTypeMode)
   end
   self:RefreshCoinInfo()
 end
-
 function WBP_Bag_Sell_View_C:FillWithWeaponResolveData(StuffData, bIsAllAddInList)
   StuffData.ParentWidget = self
   StuffData.GridIndex = self.CurStuffCountInList + 1
@@ -1056,14 +1031,12 @@ function WBP_Bag_Sell_View_C:FillWithWeaponResolveData(StuffData, bIsAllAddInLis
   self.CurStuffCountInList = self.CurStuffCountInList + 1
   self.AllTypeRewardsInfo[StuffObj.Uuid] = StuffObj.CoinId
 end
-
 function WBP_Bag_Sell_View_C:FillWithWeaponResolveDataWithList(StuffDataList, bIsAllAddInList)
   for index, StuffData in ipairs(StuffDataList) do
     self:FillWithWeaponResolveData(StuffData, bIsAllAddInList)
   end
   self:RefreshRewardInfo()
 end
-
 function WBP_Bag_Sell_View_C:RemoveBagItemInList(StuffUuid)
   local StuffContent = self.NeedDealWithStuffData[StuffUuid]
   if nil ~= StuffContent then
@@ -1078,7 +1051,6 @@ function WBP_Bag_Sell_View_C:RemoveBagItemInList(StuffUuid)
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:MultiRemoveBagItemInList(StuffUuidList)
   local StuffContentList, IsNeedResetSelectItem = {}, false
   for index, StuffUuid in ipairs(StuffUuidList) do
@@ -1106,7 +1078,6 @@ function WBP_Bag_Sell_View_C:MultiRemoveBagItemInList(StuffUuidList)
     self:RefreshCoinInfo()
   end
 end
-
 function WBP_Bag_Sell_View_C:RemoveFromResolveList(StuffContent)
   local NeedRemoveStuffContent
   local AllItemCount = self.List_Item:GetNumItems()
@@ -1128,7 +1099,6 @@ function WBP_Bag_Sell_View_C:RemoveFromResolveList(StuffContent)
   self.AllTypeRewardsInfo[StuffContent.Uuid] = nil
   return IsRemoveSelectedItem
 end
-
 function WBP_Bag_Sell_View_C:RemoveFromSellList(StuffContent)
   local NeedRemoveStuffContent
   local AllItemCount = self.List_Item:GetNumItems()
@@ -1153,7 +1123,6 @@ function WBP_Bag_Sell_View_C:RemoveFromSellList(StuffContent)
   end
   return IsRemoveSelectedItem
 end
-
 function WBP_Bag_Sell_View_C:AfterRemoveItemFromList(StuffContent, IsRemoveSelectedItem)
   self.NeedDealWithStuffCount[StuffContent.Uuid] = nil
   self.Num_Select:SetText(tostring(math.max(self.CurStuffCountInList, 0)))
@@ -1182,7 +1151,6 @@ function WBP_Bag_Sell_View_C:AfterRemoveItemFromList(StuffContent, IsRemoveSelec
     self.RemoveCallback(self.ParentWidget, StuffContent.Uuid)
   end
 end
-
 function WBP_Bag_Sell_View_C:AfterMultiRemoveItemFromList(StuffContentList, IsRemoveSelectedItem)
   for index, StuffContent in ipairs(StuffContentList) do
     self.NeedDealWithStuffCount[StuffContent.Uuid] = nil
@@ -1213,7 +1181,6 @@ function WBP_Bag_Sell_View_C:AfterMultiRemoveItemFromList(StuffContentList, IsRe
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:RefreshAllGridIndex()
   local AllItemCount = self.List_Item:GetNumItems()
   for i = 0, AllItemCount - 1 do
@@ -1221,7 +1188,6 @@ function WBP_Bag_Sell_View_C:RefreshAllGridIndex()
     ItemObj.GridIndex = i + 1
   end
 end
-
 function WBP_Bag_Sell_View_C:UpdateItemInfoFromList(StuffContentList)
   for index, StuffContent in ipairs(StuffContentList) do
     local StuffCoinId = StuffContent.CoinId
@@ -1248,14 +1214,14 @@ function WBP_Bag_Sell_View_C:UpdateItemInfoFromList(StuffContentList)
     self.Com_NumInput:RefreshCurInputNumber(self.NeedDealWithStuffCount[FirstItemInList.Uuid])
   end
 end
-
 function WBP_Bag_Sell_View_C:UpdateItemNumFromList(StuffContent, DeltaNum)
   local StuffCoinId = StuffContent.CoinId
   if self.AllTypeCoinInfo[StuffCoinId] ~= nil and DeltaNum > 0 then
+    local CanSaleNum = math.min(StuffContent.AddNum, StuffContent.Count - self.NeedDealWithStuffCount[StuffContent.Uuid])
     if self.NeedDealWithStuffData[StuffContent.Uuid].Price then
-      self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] + StuffContent.AddNum * self.NeedDealWithStuffData[StuffContent.Uuid].Price
+      self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] + CanSaleNum * self.NeedDealWithStuffData[StuffContent.Uuid].Price
     else
-      self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] + StuffContent.AddNum * StuffContent.Price
+      self.AllTypeCoinInfo[StuffCoinId] = self.AllTypeCoinInfo[StuffCoinId] + CanSaleNum * StuffContent.Price
     end
   end
   local SaleNum = StuffContent.StateTagInfo.ExtraData[1]
@@ -1275,7 +1241,6 @@ function WBP_Bag_Sell_View_C:UpdateItemNumFromList(StuffContent, DeltaNum)
   self.Com_NumInput:RefreshCurInputNumber(SaleNum)
   self.Com_Slider:RefreshCurInputNumber(SaleNum)
 end
-
 function WBP_Bag_Sell_View_C:OnListSelectStuffClicked(Content, ClickReason)
   local GridIndex, StuffUuid = Content.GridIndex, Content.Uuid
   if IsValid(self.CurSelectStuffContentInList) and self.CurSelectStuffContentInList.Uuid == StuffUuid then
@@ -1292,7 +1257,6 @@ function WBP_Bag_Sell_View_C:OnListSelectStuffClicked(Content, ClickReason)
   self.CurSelectStuffContentInList = Content
   self:ClickChooseStuff(GridIndex, StuffUuid)
 end
-
 function WBP_Bag_Sell_View_C:ClickChooseStuff(GridIndex, StuffUuid)
   self.CurSelectGridIndex = GridIndex
   self:RefreshKeyCount()
@@ -1304,7 +1268,6 @@ function WBP_Bag_Sell_View_C:ClickChooseStuff(GridIndex, StuffUuid)
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:OnSelectStuffItemChanged(SelectItem, bIsSelect)
   if not SelectItem then
     return
@@ -1313,7 +1276,6 @@ function WBP_Bag_Sell_View_C:OnSelectStuffItemChanged(SelectItem, bIsSelect)
     self:OnListSelectStuffClicked(SelectItem, "ChangeHoverInGamepad")
   end
 end
-
 function WBP_Bag_Sell_View_C:RefreshKeyCount()
   if self.CurSelectStuffContentInList then
     local InitDealWithStuffCount = self.NeedDealWithStuffCount[self.CurSelectStuffContentInList.Uuid]
@@ -1322,7 +1284,6 @@ function WBP_Bag_Sell_View_C:RefreshKeyCount()
     self.Com_Slider:OverrideValueLimit(InitDealWithStuffCount, MaxDealWithStuffCount, 1, true)
   end
 end
-
 function WBP_Bag_Sell_View_C:UpdateUIStyleInPlatform(IsUseGamePad)
   if CommonUtils.GetDeviceTypeByPlatformName(self) == CommonConst.CLIENT_DEVICE_TYPE.MOBILE then
     return
@@ -1336,11 +1297,9 @@ function WBP_Bag_Sell_View_C:UpdateUIStyleInPlatform(IsUseGamePad)
     self.Key_View:SetVisibility(UIConst.VisibilityOp.Collapsed)
   end
 end
-
 function WBP_Bag_Sell_View_C:UpdateCurFocusInfo(NewFocusName)
   self.CurFocusWidget = NewFocusName
 end
-
 function WBP_Bag_Sell_View_C:SetFocus_Lua()
   if self.bIsOpenList then
     self.List_Item:SetFocus()
@@ -1354,7 +1313,6 @@ function WBP_Bag_Sell_View_C:SetFocus_Lua()
     end
   end
 end
-
 function WBP_Bag_Sell_View_C:GetGetDesiredFocusTarget_Lua()
   local DesiredFocusTarget
   if self.bIsOpenList then
@@ -1362,7 +1320,6 @@ function WBP_Bag_Sell_View_C:GetGetDesiredFocusTarget_Lua()
   end
   return DesiredFocusTarget
 end
-
 function WBP_Bag_Sell_View_C:OnKeyDown(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1385,7 +1342,6 @@ function WBP_Bag_Sell_View_C:OnKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Bag_Sell_View_C:OnKeyUp(MyGeometry, InKeyEvent)
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
   local InKeyName = UE4.UFormulaFunctionLibrary.Key_GetFName(InKey)
@@ -1399,7 +1355,6 @@ function WBP_Bag_Sell_View_C:OnKeyUp(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function WBP_Bag_Sell_View_C:OnGamePadButtonDown(InKeyName)
   local IsEventHandled = false
   if self.CurSelectStuffContentInList then
@@ -1497,7 +1452,6 @@ function WBP_Bag_Sell_View_C:OnGamePadButtonDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function WBP_Bag_Sell_View_C:OnGamePadButtonUp(InKeyName)
   local IsEventHandled = false
   if self.CurSelectStuffContentInList then
@@ -1505,7 +1459,6 @@ function WBP_Bag_Sell_View_C:OnGamePadButtonUp(InKeyName)
   end
   return IsEventHandled
 end
-
 function WBP_Bag_Sell_View_C:TryToHoverToItemOnNavigation(SelectItem)
   local ToHoverStuffData = self.NeedDealWithStuffData[SelectItem.Uuid]
   if ToHoverStuffData then
@@ -1530,7 +1483,6 @@ function WBP_Bag_Sell_View_C:TryToHoverToItemOnNavigation(SelectItem)
   else
   end
 end
-
 function WBP_Bag_Sell_View_C:Close()
   if type(self.CloseCallback) == "function" then
     self.CloseCallback(self.ParentWidget)
@@ -1538,5 +1490,4 @@ function WBP_Bag_Sell_View_C:Close()
   self.List_Item:ClearListItems()
   self.Super.Close(self)
 end
-
 return WBP_Bag_Sell_View_C

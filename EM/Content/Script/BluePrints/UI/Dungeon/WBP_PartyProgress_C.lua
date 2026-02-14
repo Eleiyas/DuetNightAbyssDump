@@ -2,7 +2,6 @@ require("UnLua")
 local M = Class({
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Initialize(Initializer)
   self.Super.Initialize(self)
   self.PlayerEids = {}
@@ -22,7 +21,6 @@ function M:Initialize(Initializer)
   self.CompleteNum = 0
   self.AllPlayNum = 0
 end
-
 function M:UpdateProgress()
   if not (self.PartyPlayerDisPercentValues and self.LastProgress ~= {} and self.PlayersInfo ~= {} and self.GameState) or self.IsInFallTrigger or self.GameEnd then
     return
@@ -115,12 +113,10 @@ function M:UpdateProgress()
     end
   end
 end
-
 function M:ConstructInfo()
   self:InitListenEvent()
   self:InitInfo()
 end
-
 function M:InitListenEvent()
   self:AddDispatcher(EventID.OnPartyProgressUpdate, self, self.OnPartyProgressUpdate)
   self:AddDispatcher(EventID.OnPartyPlayerGetBuff, self, self.OnPartyPlayerGetBuff)
@@ -130,7 +126,6 @@ function M:InitListenEvent()
   self:AddDispatcher(EventID.OnPartyPlayerTriggerFallTrigger, self, self.OnPartyPlayerTriggerFallTrigger)
   self:AddDispatcher(EventID.OnPlayerGetDeBuff, self, self.OnPlayerGetDeBuff)
 end
-
 function M:InitInfo()
   local GameInstance = UE4.UGameplayStatics.GetGameInstance(self)
   if not GameInstance then
@@ -149,7 +144,6 @@ function M:InitInfo()
   self.Text_MulrTempleProgressTitle:SetText(GText("UI_Party_Parkour_FinishingRate") .. " 0%")
   self:SetVisibility(ESlateVisibility.Hidden)
 end
-
 function M:OnPartyProgressUpdate()
   local GameState = UE4.UGameplayStatics.GetGameState(self)
   self.GameState = GameState
@@ -161,7 +155,7 @@ function M:OnPartyProgressUpdate()
     return
   end
   self.PartyPlayerDisPercentValues = GameState.PartyPlayerDisPercentValues
-  DebugPrint("zwk \230\180\190\229\175\185\229\189\147\229\137\141\228\186\186\230\149\176\239\188\154", self.PartyPlayerDisPercentValues:Num())
+  DebugPrint("zwk 派对当前人数：", self.PartyPlayerDisPercentValues:Num())
   if not self.PartyPlayerDisPercentValues then
     return
   end
@@ -320,7 +314,6 @@ function M:OnPartyProgressUpdate()
     end
   end
 end
-
 function M:OnPartyPlayerGetBuff(Eid, BuffId, IsPositive, Time)
   if self.PlayersInfo[Eid] and self.PlayersInfo[Eid][3] then
     self.PlayersInfo[Eid][5] = IsPositive
@@ -329,18 +322,15 @@ function M:OnPartyPlayerGetBuff(Eid, BuffId, IsPositive, Time)
     else
       self.PlayersInfo[Eid][3]:PlayAnimation(self.PlayersInfo[Eid][3].Failure)
     end
-    
     local function PlayNormal()
       if self.PlayersInfo[Eid] and self.PlayersInfo[Eid][3] then
         self.PlayersInfo[Eid][3]:PlayAnimation(self.PlayersInfo[Eid][3].Normal)
       end
     end
-    
     self:RemoveTimer("PlayerGetBuff_" .. Eid)
     self:AddTimer(Time, PlayNormal, false, 0, "PlayerGetBuff_" .. Eid)
   end
 end
-
 function M:OnPlayerGetDeBuff(BuffId, LastTime, Eid)
   DebugPrint("zwkkk OnPlayerGetDeBuff", BuffId, LastTime, Eid)
   if not DataMgr.PartyDebuff or not DataMgr.PartyDebuff[BuffId] then
@@ -349,18 +339,15 @@ function M:OnPlayerGetDeBuff(BuffId, LastTime, Eid)
   if self.PlayersInfo[Eid] and self.PlayersInfo[Eid][3] then
     self.PlayersInfo[Eid][5] = false
     self.PlayersInfo[Eid][3]:PlayAnimation(self.PlayersInfo[Eid][3].Failure)
-    
     local function PlayNormal()
       if self.PlayersInfo[Eid] and self.PlayersInfo[Eid][3] then
         self.PlayersInfo[Eid][3]:PlayAnimation(self.PlayersInfo[Eid][3].Normal)
       end
     end
-    
     self:RemoveTimer("PlayerGetBuff_" .. Eid)
     self:AddTimer(LastTime, PlayNormal, false, 0, "PlayerGetBuff_" .. Eid)
   end
 end
-
 function M:OnUpdatePartyRightUI(CompletionRate, Rank, TotalNum)
   if self.AlreadyFinish then
     return
@@ -374,7 +361,6 @@ function M:OnUpdatePartyRightUI(CompletionRate, Rank, TotalNum)
     self.Text_MulrTempleProgressTitle:SetText(GText("UI_Party_Parkour_FinishingRate") .. " " .. self:GetCompletionRate(CompletionRate) .. "%")
   end
 end
-
 function M:OnPlayerEnterToExit(Info, bIsWaiting)
   DebugPrint("zwk OnPlayerEnterToExit ", self.GameState.ExitCountDown, self.GameState.ReplicatedTimeSeconds, Info.StartExitCountdownTime, Info.WaitingPlayerNum, bIsWaiting)
   if self.GameEnd then
@@ -406,7 +392,6 @@ function M:OnPlayerEnterToExit(Info, bIsWaiting)
     self:AddTimer(1, self.UpdateRemainTime, true, 0, "UpdateRemainTime")
   end
 end
-
 function M:UpdateRemainTime()
   if self.RemainTime <= 0 then
     self.Text_MulrTempleProgressTitle:SetText(GText("UI_PARTY_PARKOUR_TEAMWAIT") .. "(" .. "<Warning>" .. self:GetTimeStr(0) .. "</>" .. ")")
@@ -425,7 +410,6 @@ function M:UpdateRemainTime()
     AudioManager(self):PlayUISound(self, "event:/ui/common/countdown_warning_short_reverb", nil, nil)
   end
 end
-
 function M:OnOnePlayerEnd(Eid)
   self.PlayersInfo[Eid][3].Image_Done:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   local Complete = 0
@@ -442,7 +426,6 @@ function M:OnOnePlayerEnd(Eid)
     self.Text_MulrTempleProgressTitle:SetText(string.format(GText("UI_PARTY_PARKOUR_ENDPOINTWAIT"), self.CompleteNum, self.AllPlayNum))
   end
 end
-
 function M:OnPartyPlayerTriggerFallTrigger(Eid)
   DebugPrint("zwkkk OnPartyPlayerTriggerFallTrigger", Eid)
   if self.PlayersInfo[Eid] then
@@ -452,7 +435,6 @@ function M:OnPartyPlayerTriggerFallTrigger(Eid)
     self.PlayersInfo[Eid][4] = true
   end
 end
-
 function M:GetCompletionRate(CompletionRate)
   if CompletionRate < 0 then
     return 0
@@ -463,7 +445,6 @@ function M:GetCompletionRate(CompletionRate)
   end
   return PercentValue
 end
-
 function M:OnGameEnd()
   self:RemoveDispatcher(EventID.OnPartyProgressUpdate)
   self:RemoveDispatcher(EventID.OnPartyPlayerGetBuff)
@@ -474,10 +455,8 @@ function M:OnGameEnd()
   self:RemoveDispatcher(EventID.OnPlayerGetDeBuff)
   self:RemoveTimer("UpdateRemainTime")
 end
-
 function M:Destruct()
   self:RemoveTimer("UpdateProgress")
   M.Super.Destruct(self)
 end
-
 return M

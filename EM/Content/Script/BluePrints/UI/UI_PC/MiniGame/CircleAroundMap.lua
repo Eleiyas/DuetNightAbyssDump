@@ -3,7 +3,6 @@ local CircleAroundMap = Class({
   "BluePrints.UI.BP_UIState_C",
   "BluePrints.Common.TimerMgr"
 })
-
 function CircleAroundMap:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self.PointerArray = {}
@@ -32,7 +31,6 @@ function CircleAroundMap:OnLoaded(...)
   PlayerCharacter:SetCharacterTag("Interactive")
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_rotate_start", "", nil)
 end
-
 function CircleAroundMap:InitUIWithPlatform()
   if self.isPC then
     self.WidgetSwitcher_Hint:SetActiveWidgetIndex(0)
@@ -64,7 +62,6 @@ function CircleAroundMap:InitUIWithPlatform()
     self.WidgetSwitcher_Hint:SetActiveWidgetIndex(1)
   end
 end
-
 function CircleAroundMap:InitItemArray()
   table.insert(self.PointerArray, self.MiniGame_Pointer_PC)
   table.insert(self.PointerArray, self.MiniGame_Pointer_PC_1)
@@ -73,7 +70,6 @@ function CircleAroundMap:InitItemArray()
     table.insert(self.BlockArray, self["MiniGame_Block_PC_" .. i])
   end
 end
-
 function CircleAroundMap:InitCrack()
   if not self.bCanCrack then
     return
@@ -87,7 +83,6 @@ function CircleAroundMap:InitCrack()
   self.MiniGame_Crack:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   self.MiniGame_Crack:Init(Param)
 end
-
 function CircleAroundMap:InitAfterBeginPlay()
   self:PlayAnimation(self.In)
   self:PlayAnimation(self.Gear_Loop, 0, 0)
@@ -116,14 +111,12 @@ function CircleAroundMap:InitAfterBeginPlay()
     self.MiniGame_Time.WidgetSwitcher_MP:SetVisibility(ESlateVisibility.Collapsed)
   end
 end
-
 function CircleAroundMap:RealBeginGameAfterIn()
   self.bCanEscape = true
   if not self.isPC then
     self.Btn_Close:SetVisibility(UIConst.VisibilityOp.Visible)
   end
 end
-
 function CircleAroundMap:InitPointerAndBlock()
   local TableInfo = DataMgr["MiniGameBattery" .. self.Difficulty][self.MapIndex]
   self.SwitchPosition = TableInfo.SwitchPosition
@@ -153,7 +146,6 @@ function CircleAroundMap:InitPointerAndBlock()
   end
   self:CheckIfGameSuccess()
 end
-
 function CircleAroundMap:InitTextTimerAndButton()
   local FloatHintText = GText("UI_MiniGame_Hint_ZhuanQuanQuan")
   local index = string.find(FloatHintText, "%$")
@@ -175,7 +167,6 @@ function CircleAroundMap:InitTextTimerAndButton()
     self.Button_Area.OnReleased:Add(self, self.OnButtonAreaReleased)
   end
 end
-
 function CircleAroundMap:OnButtonAreaPressed()
   if self.IsQuitGame or self.KeyDown then
     return
@@ -183,21 +174,18 @@ function CircleAroundMap:OnButtonAreaPressed()
   EventManager:FireEvent(EventID.CircleAroundTryToTriggerPointer)
   self.KeyDown = true
 end
-
 function CircleAroundMap:OnButtonAreaReleased()
   if self.IsQuitGame then
     return
   end
   self.KeyDown = false
 end
-
 function CircleAroundMap:OnBtnCloseClicked()
   if self.IsQuitGame or self.KeyDown then
     return
   end
   self:GameFailed()
 end
-
 function CircleAroundMap:OnKeyDown(MyGeometry, InKeyEvent)
   if self.IsQuitGame or self.KeyDown then
     return UE4.UWidgetBlueprintLibrary.Handled
@@ -223,7 +211,6 @@ function CircleAroundMap:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function CircleAroundMap:OnKeyUp(MyGeometry, InKeyEvent)
   if self.IsQuitGame then
     return UE4.UWidgetBlueprintLibrary.Handled
@@ -239,13 +226,11 @@ function CircleAroundMap:OnKeyUp(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function CircleAroundMap:OnFocusReceived(MyGeometry, InFocusEvent)
   self.IsShowingCursor = false
   self:SetCursor(0)
   return UE4.UWidgetBlueprintLibrary.Handled()
 end
-
 function CircleAroundMap:Close(Value)
   self.bGameStart = false
   self.UseActor:SetVariableBool("IsGameSuccess", Value, UE4.UGameplayStatics.GetPlayerPawn(self, 0).Eid)
@@ -253,7 +238,6 @@ function CircleAroundMap:Close(Value)
   self:UnBindInputMethodChangedDelegate()
   self.Super.Close(self)
 end
-
 function CircleAroundMap:GameSuccess()
   AudioManager(self):PlayUISound(self, "event:/ui/minigame/mech_rotate_pointer_success", "", nil)
   self.IsQuitGame = true
@@ -265,7 +249,6 @@ function CircleAroundMap:GameSuccess()
   self:PlayAnimation(self.Success, 0, 1, UE4.EUMGSequencePlayMode.Reverse)
   self:AddTimer(1, self.Close, false, 0, "CircleAroundClose", true, true)
 end
-
 function CircleAroundMap:GameFailed()
   if self.IsQuitGame then
     return
@@ -280,7 +263,6 @@ function CircleAroundMap:GameFailed()
   self:PlayAnimation(self.Fail)
   self:AddTimer(1, self.Close, false, 0, "CircleAroundClose", true, false)
 end
-
 function CircleAroundMap:CheckIfInputRegionHasSwitch(LowIndex, HighIndex)
   for i = 1, #self.SwitchPosition do
     if LowIndex <= self.SwitchPosition[i] and HighIndex >= self.SwitchPosition[i] then
@@ -289,7 +271,6 @@ function CircleAroundMap:CheckIfInputRegionHasSwitch(LowIndex, HighIndex)
   end
   return nil
 end
-
 function CircleAroundMap:CountDown()
   local time_str = string.format("%02d:%02d", math.floor(self.Time / 60), self.Time % 60)
   self.MiniGame_Time.Text_Time:SetText(time_str)
@@ -302,7 +283,6 @@ function CircleAroundMap:CountDown()
   end
   self.Time = self.Time - 1
 end
-
 function CircleAroundMap:TriggerBlock(BlockIndex)
   self.BlockArray[BlockIndex]:Trigger()
   if self.BlockArray[BlockIndex].ActiveState == "IsActived" then
@@ -312,13 +292,11 @@ function CircleAroundMap:TriggerBlock(BlockIndex)
   end
   self:CheckIfGameSuccess()
 end
-
 function CircleAroundMap:CheckIfGameSuccess()
   if self.ActiveSwitch == #self.SwitchPosition then
     self:GameSuccess()
   end
 end
-
 function CircleAroundMap:BindInputMethodChangedDelegate()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -326,7 +304,6 @@ function CircleAroundMap:BindInputMethodChangedDelegate()
     GameInputModeSubsystem.OnInputMethodChanged:Add(self, self.OnInputMethodChanged)
   end
 end
-
 function CircleAroundMap:UnBindInputMethodChangedDelegate()
   local PlayerController = UE4.UGameplayStatics.GetPlayerController(self, 0)
   local GameInputModeSubsystem = UGameInputModeSubsystem.GetGameInputModeSubsystem(PlayerController)
@@ -334,7 +311,6 @@ function CircleAroundMap:UnBindInputMethodChangedDelegate()
     GameInputModeSubsystem.OnInputMethodChanged:Remove(self, self.OnInputMethodChanged)
   end
 end
-
 function CircleAroundMap:OnInputMethodChanged(NewGameInputType, NewGamepadName)
   if self.InputDevice == NewGameInputType then
     return
@@ -343,7 +319,6 @@ function CircleAroundMap:OnInputMethodChanged(NewGameInputType, NewGamepadName)
   self:RefreshHintWidget()
   self:RfreshCloseWidget()
 end
-
 function CircleAroundMap:RefreshHintWidget()
   if not self.isPC then
     return
@@ -356,7 +331,6 @@ function CircleAroundMap:RefreshHintWidget()
     self.MiniGame_Time.WidgetSwitcher_MP:SetActiveWidgetIndex(0)
   end
 end
-
 function CircleAroundMap:RfreshCloseWidget()
   if not self.isPC then
     return
@@ -379,13 +353,10 @@ function CircleAroundMap:RfreshCloseWidget()
     })
   end
 end
-
 function CircleAroundMap:Destruct()
   if self.bGameStart then
-    self:SetInputUIOnly(false)
     self.UseActor:ChangeState("InteractBreak", self.UseActor.PlayerEid)
   end
   self.Super.Destruct(self)
 end
-
 return CircleAroundMap

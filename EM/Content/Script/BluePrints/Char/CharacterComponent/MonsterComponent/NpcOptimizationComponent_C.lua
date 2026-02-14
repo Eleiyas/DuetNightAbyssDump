@@ -1,6 +1,5 @@
 require("UnLua")
 local M = Class()
-
 function M:GetConfig_NPC(Owner, Config)
   Config.bEnableSCO = true
   if IsDedicatedServer(Owner) and IsAuthority(Owner) then
@@ -20,7 +19,6 @@ function M:GetConfig_NPC(Owner, Config)
   Config.bEnableHiddenBudget = true
   Config.bEnableMeshLODBudget = false
 end
-
 function M:GetConfig_All(Owner, Config)
   Config.bEnableSCO = true
   if IsDedicatedServer(Owner) and IsAuthority(Owner) then
@@ -43,5 +41,4 @@ function M:GetConfig_All(Owner, Config)
   Config.bEnableDynamicShadowBudget = true
   return Config
 end
-
 return M

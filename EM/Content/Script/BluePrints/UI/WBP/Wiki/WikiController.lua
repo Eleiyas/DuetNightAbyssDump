@@ -1,24 +1,19 @@
 local WikiModel = require("BluePrints.UI.WBP.Wiki.WikiModel")
 local WikiCommon = require("BluePrints.UI.WBP.Wiki.WikiCommon")
 local M = Class("BluePrints.Common.MVC.Controller")
-
 function M:Init()
   M.Super.Init(self)
   self.isProcessingCallback = false
 end
-
 function M:Destory()
   M.Super.Destory(self)
 end
-
 function M:GetEventName()
   return EventID.WikiControllerEvent
 end
-
 function M:GetModel()
   return WikiModel
 end
-
 function M:HandleButtonClick(buttonType, entranceWidget)
   if buttonType == WikiCommon.CategoryType.Faction then
     self:OpenWikiMain("Faction", entranceWidget)
@@ -30,11 +25,9 @@ function M:HandleButtonClick(buttonType, entranceWidget)
     self:OpenWikiMain("Civilization", entranceWidget)
   end
 end
-
 function M:GetTabIdByCategory(category)
   return WikiCommon.CategoryType[category] or WikiCommon.CategoryType.All
 end
-
 function M:OpenWikiMain(category, entranceWidget)
   local View = self:GetView(nil, WikiCommon.MainUIName)
   local params = {
@@ -47,11 +40,9 @@ function M:OpenWikiMain(category, entranceWidget)
     entranceWidget:HideSelf()
   end
 end
-
 function M:GetView(WorldContex, UIName)
   return M.Super.GetView(self, WorldContex, UIName)
 end
-
 function M:OpenDialogueWiki(entryIds, entranceWidget, CloseCb)
   if not entryIds or next(entryIds) == nil then
     return false
@@ -75,18 +66,15 @@ function M:OpenDialogueWiki(entryIds, entranceWidget, CloseCb)
   end
   return true
 end
-
 function M:GetDialogueEntries(entryIds)
   return self:GetModel():GetReadableDialogueEntries(entryIds)
 end
-
 function M:HandleDialogueEntries(entryIds, callback)
   local readableEntries = self:GetDialogueEntries(entryIds)
   if callback then
     callback(readableEntries)
   end
 end
-
 function M:CheckEntriesUnlocked(entryIds)
   local unlockedEntries = self:GetDialogueEntries(entryIds)
   if not unlockedEntries then
@@ -102,7 +90,6 @@ function M:CheckEntriesUnlocked(entryIds)
   end
   return not allLocked
 end
-
 function M:OpenAwardPopup(Owner)
   local NowNum, AllNum = WikiController:GetModel():GetTextNum(1)
   local params = {
@@ -113,7 +100,7 @@ function M:OpenAwardPopup(Owner)
       Text_Total = "Wiki_RewardProgress",
       ReceiveAllCallBack = self.GetAllWikiRewards,
       ReceiveAllParam = {},
-      SortType = 2,
+      SortType = 1,
       NowNum = NowNum,
       NumMax = AllNum,
       ReceiveButtonText = "UI_Achievement_GetAllReward"
@@ -155,7 +142,6 @@ function M:OpenAwardPopup(Owner)
   params.Title = GText("UI_Wiki_Reward_Title")
   UIManager(self):ShowCommonPopupUI(WikiCommon.AwardUIName, params, Owner)
 end
-
 function M:BuildRewardContent(RewardId)
   local Rewards = {}
   local RewardInfo = DataMgr.Reward[RewardId]
@@ -179,7 +165,6 @@ function M:BuildRewardContent(RewardId)
   end
   return Rewards
 end
-
 function M:GetAllWikiRewards(ReceiveAllParm)
   if self.isProcessingCallback then
     return
@@ -188,7 +173,6 @@ function M:GetAllWikiRewards(ReceiveAllParm)
   if Avatar then
     local function CallBack(ErrCode, RewardReturn, rewardId, AllCount)
       self.isProcessingCallback = false
-      
       self:BlockAllUIInput(false)
       local HaveRewardToGet = false
       for i = 0, ReceiveAllParm.SelfWidget.List_Item:GetNumItems() - 1 do
@@ -210,13 +194,11 @@ function M:GetAllWikiRewards(ReceiveAllParm)
         UIManager(GWorld.GameInstance):LoadUI(UIConst.LoadInConfig, "GetItemPage", nil, rewardData.Type[1], rewardData.Id[1], AllCount)
       end
     end
-    
     self.isProcessingCallback = true
     self:BlockAllUIInput(true)
     Avatar:WikiEntryGetAllRewards(CallBack)
   end
 end
-
 function M:GetWikiReward(ReceiveParm)
   if self.isProcessingCallback then
     return
@@ -225,7 +207,6 @@ function M:GetWikiReward(ReceiveParm)
   if Avatar then
     local function CallBack(Num, rewardId)
       self.isProcessingCallback = false
-      
       self:BlockAllUIInput(false)
       Avatar:GetWikiReward(ReceiveParm.ConfigData.SourceNum)
       local CanReceive = Avatar:CheckWikiRewardCanGet(ReceiveParm.ConfigData.SourceNum)
@@ -241,12 +222,10 @@ function M:GetWikiReward(ReceiveParm)
         UIManager(GWorld.GameInstance):LoadUI(UIConst.LoadInConfig, "GetItemPage", nil, rewardData.Type[1], rewardData.Id[1], rewardData.Count[1][1])
       end
     end
-    
     self.isProcessingCallback = true
     self:BlockAllUIInput(true)
     Avatar:WikiEntryGetReward(ReceiveParm.ConfigData.SourceNum, CallBack)
   end
 end
-
 _G.WikiController = M
 return M

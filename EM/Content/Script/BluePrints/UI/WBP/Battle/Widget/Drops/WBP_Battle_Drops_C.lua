@@ -4,7 +4,6 @@ local M = Class({
   "BluePrints.UI.BP_EMUserWidget_C",
   "BluePrints.UI.BP_UIState_C"
 })
-
 function M:Construct()
   self.Overridden.Construct(self)
   self:SetVisibility(ESlateVisibility.Collapsed)
@@ -18,14 +17,16 @@ function M:Construct()
     self.DropItemMaxNum = 3
   end
 end
-
 function M:Destruct()
   self:StopAllAnimations()
   self:CleanTimer()
 end
-
 function M:Tick(MyGeometry, InDeltaTime)
   local CurrentTime = os.clock()
+  if 0 == CommonUtils.TableLength(self.UsingItemList) and 0 == CommonUtils.TableLength(self.TickWaitingList) and 0 == #self.WaitingList then
+    self.ListView_Box:ClearListItems()
+    self:SetVisibility(ESlateVisibility.Collapsed)
+  end
   if CurrentTime - self.LastUpdateTime >= self.UpdateInterval and #self.TickWaitingList > 0 then
     local Data = self.TickWaitingList[1]
     self:ShowDropItem(Data.ItemId, Data.ItemCount, Data.TableName)
@@ -33,7 +34,6 @@ function M:Tick(MyGeometry, InDeltaTime)
     table.remove(self.TickWaitingList, 1)
   end
 end
-
 function M:ShowDropItem(ItemId, ItemCount, TableName)
   self:SetVisibility(ESlateVisibility.SelfHitTestInvisible)
   if not self:OnUpdateTips(ItemId, ItemCount, TableName) then
@@ -43,10 +43,9 @@ function M:ShowDropItem(ItemId, ItemCount, TableName)
     table.insert(self.WaitingList[TableName], {ItemId, ItemCount})
   end
 end
-
 function M:OnUpdateTips(ItemId, ItemCount, TableName)
   local ItemData = DataMgr[TableName][ItemId]
-  assert(ItemData, "\230\142\137\232\144\189\231\137\169\228\184\141\229\173\152\229\156\168:" .. TableName .. ItemId)
+  assert(ItemData, "掉落物不存在:" .. TableName .. ItemId)
   local ListItems = self.ListView_Box:GetListItems()
   if ListItems:Length() > 0 then
     for _, Content in pairs(ListItems) do
@@ -75,7 +74,6 @@ function M:OnUpdateTips(ItemId, ItemCount, TableName)
   end
   return true
 end
-
 function M:OnTipsItemClose(InItem)
   if not InItem then
     return
@@ -103,5 +101,4 @@ function M:OnTipsItemClose(InItem)
     end
   end, 5, "ShowDropItem")
 end
-
 return M

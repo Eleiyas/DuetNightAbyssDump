@@ -7,7 +7,6 @@ WBP_Forging_Compendium_C._components = {
   "BluePrints.UI.UI_PC.Common.HorizontalListViewResizeComp"
 }
 local CompendiumState = {NormalPage = 1, FocusSort = 2}
-
 function WBP_Forging_Compendium_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   local PrevSelectedTab = (...) or 1
@@ -119,7 +118,6 @@ function WBP_Forging_Compendium_C:OnLoaded(...)
   self:PlayAnimation(self.In)
   AudioManager(self):PlayUISound(self, "event:/ui/armory/open", "ForgeCompendiumIn", nil)
 end
-
 function WBP_Forging_Compendium_C:HandleGamepadRefocus()
   if UIUtils.IsGamepadInput() then
     self.ControllerFSM:Enter(CompendiumState.NormalPage)
@@ -129,13 +127,11 @@ function WBP_Forging_Compendium_C:HandleGamepadRefocus()
     end
   end
 end
-
 function WBP_Forging_Compendium_C:OnEnterState_NormalPage()
   self:UpdateGamepadBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_Forging_Compendium_C:OnEnterState_FocusSort()
   self.Sort:SetFocus()
   self.Sort:SetControllerKeyHidden(true)
@@ -148,7 +144,6 @@ function WBP_Forging_Compendium_C:OnEnterState_FocusSort()
     ForgeConst.BottomKeyTypes.BottomKey_Back
   })
 end
-
 function WBP_Forging_Compendium_C:OnLeaveState_FocusSort()
   self.ItemDetails.Btn01_Mod:OverrideGamePadVisibility(nil)
   self.ItemDetails.Btn01_Mod:SetGamepadIconVisibility(true)
@@ -156,7 +151,6 @@ function WBP_Forging_Compendium_C:OnLeaveState_FocusSort()
   self.ItemDetails.Btn02_Mod:SetGamepadIconVisibility(true)
   self.Sort:SetControllerKeyHidden(false)
 end
-
 function WBP_Forging_Compendium_C:InitKeySetting()
   self.SwitchTab_LeftKey = "Q"
   self.SwitchTab_RightKey = "E"
@@ -170,11 +164,9 @@ function WBP_Forging_Compendium_C:InitKeySetting()
     self.Tab:TabToRight()
   end
 end
-
 function WBP_Forging_Compendium_C:OnSortMethodChanged()
   self:UpdateCompendiumContent()
 end
-
 function WBP_Forging_Compendium_C:InitTab(PrevSelectedTab)
   local AllTabInfo = {}
   self.TabIdx2TabType = {}
@@ -208,7 +200,6 @@ function WBP_Forging_Compendium_C:InitTab(PrevSelectedTab)
   self.Tab:PlayInAnim()
   self:BindReddotTreeEvents()
 end
-
 function WBP_Forging_Compendium_C:BindReddotTreeEvents()
   for TabIdx, TabType in pairs(self.TabIdx2TabType) do
     ReddotManager.AddListener(ForgeConst.NewdotNodeName[TabType], self, function()
@@ -216,14 +207,12 @@ function WBP_Forging_Compendium_C:BindReddotTreeEvents()
     end)
   end
 end
-
 function WBP_Forging_Compendium_C:UpdateTabReddot(TabIdx)
   local TabType = self.TabIdx2TabType[TabIdx]
   local NewdotNode = ReddotManager.GetTreeNode(ForgeConst.NewdotNodeName[TabType])
   local ShowNewReddot = NewdotNode.Count > 0
   self.Tab:ShowTabRedDot(TabIdx, ShowNewReddot, false)
 end
-
 function WBP_Forging_Compendium_C:RefreshOpInfoByInputDevice(CurInputType, CurGamepadName)
   if UIUtils.IsGamepadInput() then
     self:InitGamepadView()
@@ -232,16 +221,13 @@ function WBP_Forging_Compendium_C:RefreshOpInfoByInputDevice(CurInputType, CurGa
     self:InitKeyboardView()
   end
 end
-
 function WBP_Forging_Compendium_C:InitKeyboardView()
   self:UpdateKeyboardBottomKeyInfo({
     ForgeConst.BottomKeyTypes.BottomKey_Keyboard_Esc
   })
 end
-
 function WBP_Forging_Compendium_C:InitGamepadView()
 end
-
 function WBP_Forging_Compendium_C:OnKeyDown(MyGeometry, InKeyEvent)
   if CommonUtils:IfExistSystemGuideUI(self) then
     return UE4.UWidgetBlueprintLibrary.Handled()
@@ -260,7 +246,6 @@ function WBP_Forging_Compendium_C:OnKeyDown(MyGeometry, InKeyEvent)
   end
   return UE4.UWidgetBlueprintLibrary.Unhandled()
 end
-
 function WBP_Forging_Compendium_C:Handle_KeyDownOnGamePad(InKeyName)
   local IsEventHandled = false
   local CurrentState = self.ControllerFSM:Current()
@@ -276,12 +261,27 @@ function WBP_Forging_Compendium_C:Handle_KeyDownOnGamePad(InKeyName)
   IsEventHandled = self.Tab:Handle_KeyEventOnGamePad(InKeyName)
   return IsEventHandled
 end
-
+function WBP_Forging_Compendium_C:NavigateToTargetDraft(DraftId)
+  local ListItems = self.List_Item:GetListItems()
+  local ListItemsNum = ListItems:Num()
+  self:AddTimer(0.5, function()
+    local TargetObject
+    for i = 1, ListItemsNum do
+      local ListItem = ListItems:GetRef(i)
+      if ListItem.Id == DraftId then
+        self.List_Item:ScrollIndexIntoView(i - 1)
+        self:SelectDraftItem(ListItem)
+        break
+      end
+    end
+    self:ShowDraftPath(DraftId)
+  end)
+end
 function WBP_Forging_Compendium_C:OnTabItemSelected(TabWidget)
   self.TabIndex = TabWidget.Idx
   local TabType = self.TabIdx2TabType[self.TabIndex]
   if not TabType then
-    DebugPrint(LogTag.Error, "\230\137\190\228\184\141\229\136\176TabIndex\229\175\185\229\186\148\231\154\132TabType! TabIndex = ", self.TabIndex)
+    DebugPrint(LogTag.Error, "找不到TabIndex对应的TabType! TabIndex = ", self.TabIndex)
     return
   end
   self:UpdateCompendiumContent(TabType)
@@ -297,7 +297,6 @@ function WBP_Forging_Compendium_C:OnTabItemSelected(TabWidget)
     self.List_Item:ScrollIndexIntoView(0)
   end
 end
-
 function WBP_Forging_Compendium_C:UpdateCompendiumContent(TabType)
   local TabType = self.TabIdx2TabType[self.TabIndex]
   local FiltedDrafts = ForgeModel:GetCompendiumDatasByFilter(TabType)
@@ -318,7 +317,7 @@ function WBP_Forging_Compendium_C:UpdateCompendiumContent(TabType)
       Params = {Content}
     }
     Content.SoundItemType = "Draft"
-    Content.IsHold = not ForgeModel:IsDraftNotSeen(Content.Id)
+    Content.IsHold = not ForgeModel:IsDraftNotSeen(Content.Id) or Content.IsNew
     if UIUtils.IsGamepadInput() and 1 == Index then
       Content.IsSelect = true
       self:SelectDraftItem(Content)
@@ -334,7 +333,6 @@ function WBP_Forging_Compendium_C:UpdateCompendiumContent(TabType)
   self:HorizontalListViewResize_SetUp(self.Panel_Content, self.List_Item, 0)
   self.List_Item:RequestFillEmptyContent()
 end
-
 function WBP_Forging_Compendium_C:SelectDraftItem(Content)
   if self.CurSelectedContent == Content then
     return
@@ -379,21 +377,18 @@ function WBP_Forging_Compendium_C:SelectDraftItem(Content)
     ForgeModel:MarkDraftAsSeen(Content.Id)
   end
 end
-
 function WBP_Forging_Compendium_C:OnArchiveItemSelected(ItemContent)
   self:SelectDraftItem(ItemContent)
 end
-
 function WBP_Forging_Compendium_C:OnArchiveItemFocusReceived(ItemContent)
   if UIUtils.IsGamepadInput() then
     self:SelectDraftItem(ItemContent)
   end
 end
-
 function WBP_Forging_Compendium_C:ShowDraftPath(DraftId)
   self.PathWidget = UIManager(self):LoadUINew("ForgePathView", DraftId)
+  self.PathWidget:SetFocus()
 end
-
 function WBP_Forging_Compendium_C:UpdateKeyboardBottomKeyInfo(KeyTypeList)
   local KeyInfo = {}
   for _, Value in ipairs(KeyTypeList) do
@@ -401,7 +396,6 @@ function WBP_Forging_Compendium_C:UpdateKeyboardBottomKeyInfo(KeyTypeList)
   end
   self.Tab:UpdateBottomKeyInfo(KeyInfo)
 end
-
 function WBP_Forging_Compendium_C:UpdateGamepadBottomKeyInfo(KeyInfoTypeList)
   local KeyInfo = {}
   for Index, Value in ipairs(KeyInfoTypeList) do
@@ -409,7 +403,6 @@ function WBP_Forging_Compendium_C:UpdateGamepadBottomKeyInfo(KeyInfoTypeList)
   end
   self.Tab:UpdateBottomKeyInfo(KeyInfo)
 end
-
 function WBP_Forging_Compendium_C:ShowItemDetailsPanel(bIsShow)
   if bIsShow then
     self.ItemDetails:SetVisibility(UE4.ESlateVisibility.Visible)
@@ -425,7 +418,6 @@ function WBP_Forging_Compendium_C:ShowItemDetailsPanel(bIsShow)
     self.CurSelectedContent = nil
   end
 end
-
 function WBP_Forging_Compendium_C:OnClose()
   if self:IsAnimationPlaying(self.In) then
     return
@@ -441,21 +433,17 @@ function WBP_Forging_Compendium_C:OnClose()
     ReddotManager.RemoveListener(NodeName, self)
   end
 end
-
 function WBP_Forging_Compendium_C:OnAnimationFinished(InAnimation)
   if InAnimation == self.Out then
     self:Close()
   end
 end
-
 function WBP_Forging_Compendium_C:OnReturnKeyDown()
   self:OnClose()
 end
-
 function WBP_Forging_Compendium_C:Destruct()
   self.Super.Destruct(self)
   self:HorizontalListViewResize_TearDown()
 end
-
 AssembleComponents(WBP_Forging_Compendium_C)
 return WBP_Forging_Compendium_C

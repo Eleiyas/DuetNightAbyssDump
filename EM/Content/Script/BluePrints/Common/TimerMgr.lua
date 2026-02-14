@@ -1,5 +1,4 @@
 local Component = {}
-
 function Component:Timer_Init()
   if rawget(self, "TimerHandles") == nil then
     rawset(self, "TimerHandles", {})
@@ -7,7 +6,6 @@ function Component:Timer_Init()
     rawset(self, "TimerKeyIdx", 0)
   end
 end
-
 function Component:AddTimer(interval, func, isloop, delay, Key, IsRealTime, ...)
   if nil == self then
     return
@@ -28,7 +26,6 @@ function Component:AddTimer(interval, func, isloop, delay, Key, IsRealTime, ...)
     Key = "AutoMade_" .. self.TimerKeyIdx
   end
   self:RemoveTimer(Key)
-  
   local function f(self)
     if not self then
       return
@@ -38,7 +35,6 @@ function Component:AddTimer(interval, func, isloop, delay, Key, IsRealTime, ...)
     end
     func(self, table.unpack(Params))
   end
-  
   local Source = self:GetTimerSource(IsRealTime) or UE4.UKismetSystemLibrary
   local Timer = Source.K2_SetTimerDelegate({self, f}, interval, isloop, delay)
   self.TimerHandles[Key] = Timer
@@ -49,7 +45,6 @@ function Component:AddTimer(interval, func, isloop, delay, Key, IsRealTime, ...)
   }
   return Timer, Key
 end
-
 function Component:_GetTimerInfo(Key)
   if not Key or not rawget(self, "TimerHandles") then
     return nil, nil, nil
@@ -69,7 +64,6 @@ function Component:_GetTimerInfo(Key)
   end
   return Key, Timer, TimerInfo
 end
-
 function Component:RemoveTimer(KeyOrTimer, bNotCallRemoveHandler)
   if nil == KeyOrTimer or not rawget(self, "TimerHandles") then
     return
@@ -93,7 +87,6 @@ function Component:RemoveTimer(KeyOrTimer, bNotCallRemoveHandler)
   self.TimerHandles[Key] = nil
   self.TimerHandleDatas[Timer] = nil
 end
-
 function Component:PauseTimer(KeyOrTimer)
   if nil == KeyOrTimer then
     return
@@ -112,7 +105,6 @@ function Component:PauseTimer(KeyOrTimer)
     Source.K2_PauseTimerHandle(self, Timer)
   end
 end
-
 function Component:UnPauseTimer(KeyOrTimer)
   if nil == KeyOrTimer then
     return
@@ -131,14 +123,16 @@ function Component:UnPauseTimer(KeyOrTimer)
     Source.K2_UnPauseTimerHandle(self, Timer)
   end
 end
-
-function Component:IsExistTimer(Key)
-  if nil == Key then
+function Component:IsExistTimer(KeyOrTimer)
+  if nil == KeyOrTimer then
+    return false
+  end
+  local Key, Timer, TimerInfo = self:_GetTimerInfo(KeyOrTimer)
+  if not Key then
     return false
   end
   return rawget(self, "TimerHandles") and nil ~= self.TimerHandles[Key]
 end
-
 function Component:CleanTimer()
   if rawget(self, "TimerHandles") == nil then
     return
@@ -149,7 +143,6 @@ function Component:CleanTimer()
   self.TimerHandles = {}
   self.TimerHandleDatas = {}
 end
-
 function Component:GetTimerRemainingTime(KeyOrTimer)
   if not KeyOrTimer then
     return -1
@@ -168,7 +161,6 @@ function Component:GetTimerRemainingTime(KeyOrTimer)
     return Source.K2_GetTimerRemainingTimeHandle(self, Timer)
   end
 end
-
 function Component:GetTimerSource(IsRealTime)
   if IsRealTime then
     return URuntimeCommonFunctionLibrary
@@ -176,7 +168,6 @@ function Component:GetTimerSource(IsRealTime)
     return UE4.UKismetSystemLibrary
   end
 end
-
 function Component:AddTimer_Combat(interval, func, isloop, delay, Key, ...)
   if nil == self then
     return
@@ -197,7 +188,6 @@ function Component:AddTimer_Combat(interval, func, isloop, delay, Key, ...)
     Key = "AutoMade_" .. self.TimerKeyIdx
   end
   self:RemoveTimer(Key)
-  
   local function f(self)
     if not self then
       return
@@ -207,7 +197,6 @@ function Component:AddTimer_Combat(interval, func, isloop, delay, Key, ...)
     end
     func(self, table.unpack(Params))
   end
-  
   local Timer = self:SetTimerDelegate_Combat({self, f}, interval, isloop, delay, 0)
   self.TimerHandles[Key] = Timer
   self.TimerHandleDatas[Timer] = {
@@ -220,5 +209,4 @@ function Component:AddTimer_Combat(interval, func, isloop, delay, Key, ...)
   end
   return Timer, Key
 end
-
 return Component

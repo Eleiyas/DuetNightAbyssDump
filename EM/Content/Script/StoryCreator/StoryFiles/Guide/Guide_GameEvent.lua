@@ -46,7 +46,7 @@ return {
       isStoryNode = true,
       key = "172378365337726268",
       type = "StoryNode",
-      name = "\228\187\187\229\138\161\232\138\130\231\130\185",
+      name = "任务节点",
       pos = {x = 1229.9036763165018, y = 300.20199130757413},
       propsData = {
         QuestId = 0,
@@ -70,8 +70,10 @@ return {
         bDeadTriggerQuestFail = false,
         IsFairyLand = false,
         SubRegionId = 0,
+        SubRegionIdList = {},
         StoryGuideType = "Point",
-        StoryGuidePointName = ""
+        StoryGuidePointName = "",
+        JumpId = 0
       },
       questNodeData = {
         lineData = {
@@ -125,11 +127,11 @@ return {
           ["172378365337726275"] = {
             key = "172378365337726275",
             type = "ShowGuideTextNode",
-            name = "Text\230\152\190\231\164\186\228\191\161\230\129\175",
+            name = "Text显示信息",
             pos = {x = 1103.8795455189843, y = 285.5064979669668},
             propsData = {
               MessageId = 302001,
-              MessageNote = "\230\180\187\229\138\168\229\183\178\232\167\163\233\148\129\239\188\140\229\143\130\228\184\142\229\144\132\231\167\141\229\144\132\230\160\183\231\154\132\230\180\187\229\138\168\239\188\140\229\143\175\228\187\165\232\142\183\229\190\151\228\184\176\229\175\140\231\154\132\229\165\150\229\138\177\229\147\166\239\188\129",
+              MessageNote = "活动已解锁，参与各种各样的活动，可以获得丰富的奖励哦！",
               IsTimePause = false,
               IsResetPlayer = false,
               IsForbidInAnim = false,
@@ -141,12 +143,12 @@ return {
           ["172378365337726276"] = {
             key = "172378365337726276",
             type = "ShowGuideButtonNode",
-            name = "\229\140\186\229\159\159\229\143\179\228\184\138\232\167\146UI",
+            name = "区域右上角UI",
             pos = {x = 1395.1670913065298, y = 278.39660785707673},
             propsData = {
               ShowEnable = true,
               MessageId = 302002,
-              MessageNote = "\231\130\185\229\135\187<Highlight>\226\128\156\230\180\187\229\138\168\226\128\157</>\232\191\155\229\133\165\230\180\187\229\138\168\231\149\140\233\157\162\227\128\130",
+              MessageNote = "点击<Highlight>“活动”</>进入活动界面。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,
@@ -171,12 +173,12 @@ return {
           ["172378365337726278"] = {
             key = "172378365337726278",
             type = "ShowGuideButtonNode",
-            name = "\233\162\134\229\143\150\230\140\137\233\146\174",
+            name = "领取按钮",
             pos = {x = 1739.5590326984716, y = 281.3835687222983},
             propsData = {
               ShowEnable = true,
               MessageId = 302003,
-              MessageNote = "\231\130\185\229\135\187\226\128\156\229\133\168\233\131\168\233\162\134\229\143\150\226\128\157\239\188\140\233\162\134\229\143\150\230\180\187\229\138\168\229\165\150\229\138\177\227\128\130",
+              MessageNote = "点击“全部领取”，领取活动奖励。",
               DelayTime = 0,
               IsForceClick = true,
               IsControlPlayer = false,

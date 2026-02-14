@@ -10,19 +10,15 @@ GuideBook.__Props__ = {
   Sort = prop.prop("Int", "client save"),
   IsGettingReward = prop.prop("Int", "")
 }
-
 function GuideBook:Init(GuideNoteId, Sort)
   self.GuideNoteId = GuideNoteId
   self.Sort = Sort
 end
-
 FormatProperties(GuideBook)
 local GuideBookDict = Class("GuideBookDict", CustomTypes.CustomDict)
 GuideBookDict.KeyType = BaseTypes.Int
 GuideBookDict.ValueType = GuideBook
-
 function GuideBookDict:NewGuideBook(GuideNoteId)
   self[GuideNoteId] = GuideBook(GuideNoteId, self:Length() + 1)
 end
-
 return {GuideBook = GuideBook, GuideBookDict = GuideBookDict}

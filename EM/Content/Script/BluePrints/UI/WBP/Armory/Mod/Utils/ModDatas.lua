@@ -1,9 +1,7 @@
 local function GetModModel()
   return ModController:GetModel()
 end
-
 local ModSlotUIData = Class()
-
 function ModSlotUIData.New()
   local NewObj = {}
   setmetatable(NewObj, ModSlotUIData)
@@ -20,15 +18,22 @@ function ModSlotUIData.New()
   NewObj.PolarityEditMode = false
   return NewObj
 end
-
+function ModSlotUIData:IsNeedPlayScanline()
+  local bEquiping = self.bEquiping
+  local bMarkForceCalcSlotCost = self.bMarkForceCalcSlotCost
+  self.bMarkForceCalcSlotCost = nil
+  if bEquiping and not bMarkForceCalcSlotCost then
+    self.bEquiping = nil
+    return true
+  end
+  return false
+end
 function ModSlotUIData:MarkPendingTakeOff(bPendingTakeOff)
   self.bPendingTakeOff = bPendingTakeOff
 end
-
 function ModSlotUIData:IsPendingTakeOff()
   return self.bPendingTakeOff
 end
-
 function ModSlotUIData:SetPolarityEditMode(bOn)
   self.bOverCost = false
   if bOn then
@@ -42,23 +47,23 @@ function ModSlotUIData:SetPolarityEditMode(bOn)
     self:SetPolarity(self.UIPolarity)
   end
 end
-
 function ModSlotUIData:GetSlotIdStr()
   return string.format("0%s", self.SlotId)
 end
-
 function ModSlotUIData:GetPolarityText(InPolarity)
   InPolarity = InPolarity or self:GetPolarity()
   return GetModModel():GetPolarityText(InPolarity)
 end
-
 function ModSlotUIData:InState(State)
   return self.SlotState & State == State
 end
-
-function ModSlotUIData:Init(SlotId, Target)
+function ModSlotUIData:Init(SlotId, Target, bEquiping)
   self.SlotId = SlotId
   self.SuitIndex = Target.ModSuitIndex
+  if bEquiping then
+    self.bEquiping = bEquiping
+    self.bMarkForceCalcSlotCost = true
+  end
   local Slot = self:GetSlot()
   self.UIPolarity = Slot.Polarity
   if GetModModel():IsModUuidValid(Slot.ModEid) then
@@ -83,7 +88,6 @@ function ModSlotUIData:Init(SlotId, Target)
     self:_CalcPolarityState()
   end
 end
-
 function ModSlotUIData:_CalcCopyState(TargetMod)
   if GetModModel():IsModUICopyMode() then
     local RealAvatar = GWorld:GetAvatar()
@@ -100,21 +104,18 @@ function ModSlotUIData:_CalcCopyState(TargetMod)
     self.bNotOwned = NotOwned
   end
 end
-
 function ModSlotUIData:GetPolarity()
   if self.EditPolarity then
     return self.EditPolarity
   end
   return self.UIPolarity
 end
-
 function ModSlotUIData:GetCost()
   if self.EditCost then
     return self.EditCost
   end
   return self.UICost
 end
-
 function ModSlotUIData:_CalcPolarityState(Mod)
   local Polarity = self:GetPolarity()
   if Mod then
@@ -137,11 +138,9 @@ function ModSlotUIData:_CalcPolarityState(Mod)
     self.PolarityState = ModCommon.SlotPolarityState.ModNoPolarity
   end
 end
-
 function ModSlotUIData:IsPolarityDirty()
   return self.EditPolarity ~= self.UIPolarity
 end
-
 function ModSlotUIData:SetPolarity(Polarity)
   if self.EditPolarity then
     self.EditPolarity = Polarity
@@ -157,7 +156,6 @@ function ModSlotUIData:SetPolarity(Polarity)
     self:_CalcPolarityState()
   end
 end
-
 function ModSlotUIData:SetCost(Val)
   if self.EditCost then
     self.EditCost = Val
@@ -165,7 +163,6 @@ function ModSlotUIData:SetCost(Val)
     self.UICost = Val
   end
 end
-
 function ModSlotUIData:ApplyEditPolarity()
   if not self.EditPolarity then
     return
@@ -177,17 +174,15 @@ function ModSlotUIData:ApplyEditPolarity()
   end
   self.bOverCost = false
 end
-
 function ModSlotUIData:GetCostDiff()
   if not self.EditCost then
     return 0
   end
   return self.EditCost - self.UICost
 end
-
 function ModSlotUIData:SetModEid(ModEid)
   if self:InState(ModCommon.SlotState.Lock) then
-    DebugPrint(WarningTag, LXYTag, "\230\167\189\228\189\141\228\184\138\233\148\129\228\184\173\239\188\140\228\184\141\232\131\189\232\174\190\231\189\174Mod")
+    DebugPrint(WarningTag, LXYTag, "槽位上锁中，不能设置Mod")
     return
   end
   if self.ModEid ~= nil then
@@ -213,32 +208,26 @@ function ModSlotUIData:SetModEid(ModEid)
     self:_CalcPolarityState()
   end
 end
-
 function ModSlotUIData:_CalcUICost(Mod, ExPolarity)
   local Target = GetModModel():GetTarget()
   return GetModModel():CalcSlotRealCost(self.SlotId, Target, Mod, ExPolarity)
 end
-
 function ModSlotUIData:GetMod()
   if self.ModEid then
     return GetModModel():GetMod(self.ModEid)
   end
   return nil
 end
-
 function ModSlotUIData:GetSlot()
   local Target = GetModModel():GetTarget()
   local ModSuit = Target:GetModSuit(self.SuitIndex)
   local ModSlot = ModSuit[self.SlotId]
   return ModSlot
 end
-
 function ModSlotUIData:IsAura()
   return self.SlotId == ModCommon.MaxSlotCount
 end
-
 local SelectedStuff = Class()
-
 function SelectedStuff.New()
   local NewObj = {}
   setmetatable(NewObj, SelectedStuff)
@@ -246,21 +235,16 @@ function SelectedStuff.New()
   NewObj.SlotId = nil
   return NewObj
 end
-
 function SelectedStuff:IsSlot()
   return self.SlotId ~= nil
 end
-
 function SelectedStuff:IsModExist()
   return self.ModUuid ~= nil
 end
-
 local PolarityEditModePayload = Class()
-
 local function DirtySlotsFinder(v, SlotUIData)
   return v.SlotId == SlotUIData.SlotId
 end
-
 function PolarityEditModePayload.New(SuitCost)
   local NewObj = {}
   setmetatable(NewObj, PolarityEditModePayload)
@@ -270,7 +254,6 @@ function PolarityEditModePayload.New(SuitCost)
   NewObj.SuitCost = SuitCost
   return NewObj
 end
-
 function PolarityEditModePayload:SetSelectedStuff(SlotId)
   if not SlotId then
     self.SelectedStuff = nil
@@ -279,7 +262,6 @@ function PolarityEditModePayload:SetSelectedStuff(SlotId)
   self.SelectedStuff = SelectedStuff.New()
   self.SelectedStuff.SlotId = SlotId
 end
-
 function PolarityEditModePayload:EditSlotPolarity(Polarity)
   if not self.SelectedStuff then
     return
@@ -330,14 +312,12 @@ function PolarityEditModePayload:EditSlotPolarity(Polarity)
     end
   })
 end
-
 function PolarityEditModePayload:RevertAllSlotPolarity()
   for _, SlotUIData in ipairs(self.DirtySlots) do
     self:RevertSlotPolarity(SlotUIData)
   end
   self.DirtySlots = {}
 end
-
 function PolarityEditModePayload:RevertSlotPolarity(SlotUIData, bRemoved)
   self.SuitCost = self.SuitCost - SlotUIData:GetCostDiff()
   SlotUIData:SetPolarity(SlotUIData.UIPolarity)
@@ -345,11 +325,9 @@ function PolarityEditModePayload:RevertSlotPolarity(SlotUIData, bRemoved)
     self:RemoveDirtySlot(SlotUIData)
   end
 end
-
 function PolarityEditModePayload:GetDirtyCount()
   return #self.DirtySlots
 end
-
 function PolarityEditModePayload:ApplyAllEditPolarity()
   self:ResetRecvEditCounter()
   for _, SlotUIData in ipairs(self.DirtySlots) do
@@ -357,31 +335,25 @@ function PolarityEditModePayload:ApplyAllEditPolarity()
   end
   self.DirtySlots = {}
 end
-
 function PolarityEditModePayload:IsAnySlotOverCost()
   if not table.isempty(self.DirtySlots) then
     return self.DirtySlots[#self.DirtySlots].bOverCost
   end
   return false
 end
-
 function PolarityEditModePayload:AddRecvEditCounter()
   self.RecvPolarityEditCounter = self.RecvPolarityEditCounter + 1
 end
-
 function PolarityEditModePayload:ResetRecvEditCounter()
   self.RecvPolarityEditCounter = 0
 end
-
 function PolarityEditModePayload:IsRecvEditDone()
   return #self.DirtySlots == self.RecvPolarityEditCounter
 end
-
 function PolarityEditModePayload:FindDirtySlot(SlotIdUIData)
   local Res, i = table.findValue(self.DirtySlots, SlotIdUIData, DirtySlotsFinder)
   return Res, i
 end
-
 function PolarityEditModePayload:RemoveDirtySlot(SlotUIData)
   local Res, i = self:FindDirtySlot(SlotUIData)
   SlotUIData.bOverCost = false
@@ -391,9 +363,7 @@ function PolarityEditModePayload:RemoveDirtySlot(SlotUIData)
   end
   return nil
 end
-
 local AutoEquipPayload = Class()
-
 function AutoEquipPayload.New(CoroutineObj)
   local NewObj = {}
   setmetatable(NewObj, AutoEquipPayload)
@@ -403,23 +373,18 @@ function AutoEquipPayload.New(CoroutineObj)
   NewObj.EquipedMods = {}
   return NewObj
 end
-
 function AutoEquipPayload:IsModEquiped(ModUuid)
   return self.EquipedMods[ModUuid]
 end
-
 function AutoEquipPayload:SetEquipMod(ModUuid)
   if not self.EquipedMods[ModUuid] then
     self.EquipedMods[ModUuid] = 1
   end
 end
-
 function AutoEquipPayload:ResumeAutoEquip()
   coroutine.resume(self.CoroutineObj)
 end
-
 local ImportPayload = Class()
-
 function ImportPayload.New()
   local NewObj = {}
   setmetatable(NewObj, ImportPayload)
@@ -432,13 +397,11 @@ function ImportPayload.New()
   NewObj.ImportModList = nil
   return NewObj
 end
-
 function ImportPayload:ResumeImport()
   if self.CoroutineObj then
     coroutine.resume(self.CoroutineObj)
   end
 end
-
 return {
   ModSlotUIData = ModSlotUIData,
   SelectedStuff = SelectedStuff,

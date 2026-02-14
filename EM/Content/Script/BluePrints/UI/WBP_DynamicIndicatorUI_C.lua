@@ -5,7 +5,6 @@ local TaskUtils = require("BluePrints.UI.TaskPanel.TaskUtils")
 local GuidePointLocData = require("BluePrints.UI.TaskPanel/QuestGuidePointLocData")
 local ClientEventUtils = require("BluePrints.Common.ClientEvent.ClientEventUtils")
 local WBP_DynamicIndicatorUI_C = Class("BluePrints.UI.BP_UIState_C")
-
 function WBP_DynamicIndicatorUI_C:Initialize(Initializer)
   self.Super.Initialize(self)
   self.TargetPointPos = nil
@@ -26,7 +25,6 @@ function WBP_DynamicIndicatorUI_C:Initialize(Initializer)
   self.IsInTaskRegion = false
   self.NpcIndicatorPreVisibility = 0
 end
-
 function WBP_DynamicIndicatorUI_C:OnLoaded(...)
   self.Super.OnLoaded(self, ...)
   self:OnLoadedInit()
@@ -39,7 +37,6 @@ function WBP_DynamicIndicatorUI_C:OnLoaded(...)
     self:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_DynamicIndicatorUI_C:OnLoadedInit()
   local DesignedScreenSize = UIManager(self):GetDesignedScreenSize()
   self.CenterPos = FVector2D(DesignedScreenSize.X / 2, DesignedScreenSize.Y / 2)
@@ -58,7 +55,6 @@ function WBP_DynamicIndicatorUI_C:OnLoadedInit()
   self.NpcIndicatorHideTags = {}
   self.DistanceUnit = GText("UI_SCALE_METER")
 end
-
 function WBP_DynamicIndicatorUI_C:SetDynamicEventGuideInfo(PointType, PointName, MapKey, QuestNode, GuideTag)
   self.GuideInfoCache = {
     GuideTag = GuideTag,
@@ -82,27 +78,22 @@ function WBP_DynamicIndicatorUI_C:SetDynamicEventGuideInfo(PointType, PointName,
   EventManager:FireEvent(EventID.OnChangeTaskIndicator, TaskUtils.MissionNpcGuideMaps)
   EventManager:FireEvent(EventID.UpdateMiniMap, self:GetName(), "Dynamic", "Add")
 end
-
 function WBP_DynamicIndicatorUI_C:RePlayAppearAnim()
   if self.Loop ~= nil then
     self:PlayAnimation(self.Loop, 0, 2)
   end
 end
-
 function WBP_DynamicIndicatorUI_C:PlayAppearAnim()
   self:RePlayAppearAnim()
 end
-
 function WBP_DynamicIndicatorUI_C:Disappear()
   self:Close()
 end
-
 function WBP_DynamicIndicatorUI_C:TryPlayAppearAudio()
   if self.Guide_Node.Visibility ~= ESlateVisibility.Collapsed then
     AudioManager(self):PlayUISound(self, "event:/ui/common/guide_point_show", nil, nil)
   end
 end
-
 function WBP_DynamicIndicatorUI_C:TickChildBP()
   self.Guide_Node:SetVisibility(UE4.ESlateVisibility.SelfHitTestInvisible)
   self:TriggerToChengeIsNeedCollapsedByRangeStyle()
@@ -122,10 +113,8 @@ function WBP_DynamicIndicatorUI_C:TickChildBP()
     return
   end
 end
-
 function WBP_DynamicIndicatorUI_C:TriggerQuestHint()
 end
-
 function WBP_DynamicIndicatorUI_C:ChengeIsNeedCollapsedByRangeStyle()
   local Key = self.GuideInfoCache.PointOrStaticCreatorName
   if nil == GuidePointLocData[Key] or nil == GuidePointLocData[Key].R or not IsValid(self.PlayerCharacter) then
@@ -150,14 +139,12 @@ function WBP_DynamicIndicatorUI_C:ChengeIsNeedCollapsedByRangeStyle()
   self.IsRangeOrPoint = false
   return
 end
-
 function WBP_DynamicIndicatorUI_C:CloseIndicator()
   TaskUtils:UpdateAllMissionNpcGuideMaps(false, self:GetName(), nil)
   EventManager:FireEvent(EventID.OnChangeTaskIndicator, TaskUtils.MissionNpcGuideMaps)
   EventManager:FireEvent(EventID.UpdateMiniMap, self:GetName(), "Dynamic", "Delete")
   self.Super.Close(self)
 end
-
 function WBP_DynamicIndicatorUI_C:SetNpcGuideTargetPosition()
   local TargetNpc = self.GameState:GetNpcInfo(tonumber(self.TargetPointName))
   if TargetNpc then
@@ -180,7 +167,6 @@ function WBP_DynamicIndicatorUI_C:SetNpcGuideTargetPosition()
     self.Guide_Node:SetVisibility(UE4.ESlateVisibility.Collapsed)
   end
 end
-
 function WBP_DynamicIndicatorUI_C:TryGetTaskGuideNpcUnitId()
   local TargetNpc = self.GameState:GetNpcInfo(self.TargetPointName)
   if TargetNpc and UE4.UKismetSystemLibrary.IsValid(TargetNpc) then
@@ -192,7 +178,6 @@ function WBP_DynamicIndicatorUI_C:TryGetTaskGuideNpcUnitId()
   end
   return nil
 end
-
 function WBP_DynamicIndicatorUI_C:GetTargetStaticCreator(InTargetName)
   local TargetStaticCreator
   TargetStaticCreator = self.GameState.StaticCreatorStringNameMap:FindRef(InTargetName)
@@ -210,7 +195,6 @@ function WBP_DynamicIndicatorUI_C:GetTargetStaticCreator(InTargetName)
     end
   end
 end
-
 function WBP_DynamicIndicatorUI_C:CalculateTargetPointPos()
   if self.TargetPointType == "N" or self.TargetPointType == "Npc" then
     self:SetNpcGuideTargetPosition()
@@ -220,5 +204,4 @@ function WBP_DynamicIndicatorUI_C:CalculateTargetPointPos()
     self:SetTargetPositionByStaticCreator()
   end
 end
-
 return WBP_DynamicIndicatorUI_C

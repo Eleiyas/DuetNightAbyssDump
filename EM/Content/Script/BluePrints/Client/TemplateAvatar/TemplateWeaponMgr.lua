@@ -1,6 +1,5 @@
 local AvatarUtils = require("BluePrints.Client.AvatarUtils")
 local Component = {}
-
 function Component:CharInitUltraWeapon(Char, Level, ReasonId)
   if not Char or not Char.UWeapon then
     return
@@ -12,7 +11,6 @@ function Component:CharInitUltraWeapon(Char, Level, ReasonId)
     Char.ProminentWeapon = Char.UWeaponEids[1]
   end
 end
-
 function Component:AddUWeapon(WeaponId, Level, EnhanceLevel, Reason)
   local info = DataMgr.UWeapon[WeaponId]
   if not info or not DataMgr.WeaponLevelUp[Level] then
@@ -25,7 +23,6 @@ function Component:AddUWeapon(WeaponId, Level, EnhanceLevel, Reason)
   self.UWeapons[weapon.Uuid] = weapon
   return weapon.Uuid
 end
-
 function Component:GMAddWeapon(WeaponId, Level, Reason, NotLog, NeedEnhance)
   local info = DataMgr.Weapon[WeaponId]
   if not info or 1 == info.GMNot then
@@ -33,12 +30,10 @@ function Component:GMAddWeapon(WeaponId, Level, Reason, NotLog, NeedEnhance)
   end
   return self:AddWeapon(WeaponId, Level, Reason, true, NotLog, NeedEnhance)
 end
-
 function Component:AddWeapon(WeaponId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
   self.logger.info("AddWeapon", WeaponId, Level, Reason)
   return self:AddWeaponCommon(WeaponId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
 end
-
 function Component:AddWeaponCommon(WeaponId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
   GiveNotOpen = GiveNotOpen or false
   NotLog = NotLog or false
@@ -51,7 +46,6 @@ function Component:AddWeaponCommon(WeaponId, Level, Reason, GiveNotOpen, NotLog,
   end
   return self:RealAddWeapon(WeaponId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
 end
-
 function Component:RealAddWeapon(WeaponId, Level, Reason, GiveNotOpen, NotLog, NeedEnhance)
   local uuid = bson.objectid()
   local weapon = self.Weapons:NewWeapon(uuid, WeaponId, Level)
@@ -76,7 +70,6 @@ function Component:RealAddWeapon(WeaponId, Level, Reason, GiveNotOpen, NotLog, N
   self.Weapons[weapon.Uuid] = weapon
   return uuid
 end
-
 function Component:UnlockModSlotAfterWeaponBreakUp(Weapon)
   local WeaponInfo = DataMgr.Weapon[Weapon.WeaponId]
   if WeaponInfo and WeaponInfo.ModSlot and WeaponInfo.ModSlotUnlock then
@@ -87,5 +80,4 @@ function Component:UnlockModSlotAfterWeaponBreakUp(Weapon)
     end
   end
 end
-
 return Component

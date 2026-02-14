@@ -8,7 +8,6 @@ local M = Class({
 M._components = {
   "BluePrints.UI.WBP.PersonInfo.Base.PersonInfoMainPageView"
 }
-
 function M:Construct()
   self.IsPC = true
   self:InitBaseView()
@@ -23,14 +22,12 @@ function M:Construct()
     }
   })
 end
-
 function M:OnGamePadDown(InKeyName)
   local IsEventHandled = false
   if InKeyName == UIConst.GamePadKey.FaceButtonRight then
     if self.IsEditOpen then
       self:OnClickEdit()
       if self.RootPage and self.IsEditOpen == false then
-        ScreenPrint("\232\191\148\229\155\158\233\148\174\229\133\179\233\151\173List")
         self:FreshFocusLeaveEditListView()
         if not self.RootPage:FocusToSavedWidget() then
           self:SetOriginFocus()
@@ -43,7 +40,6 @@ function M:OnGamePadDown(InKeyName)
   end
   return IsEventHandled
 end
-
 function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
   local IsEventHandled = false
   local InKey = UE4.UKismetInputLibrary.GetKey(InKeyEvent)
@@ -62,7 +58,6 @@ function M:OnPreviewKeyDown(MyGeometry, InKeyEvent)
     return UE4.UWidgetBlueprintLibrary.UnHandled()
   end
 end
-
 function M:FreshFocusOnEditListView()
   DebugPrint("FreshFocusOnEditListView")
   if self.CurInputDeviceType ~= ECommonInputType.Gamepad or not self.Panel_Edit:HasFocusedDescendants() then
@@ -72,7 +67,6 @@ function M:FreshFocusOnEditListView()
   self.Key_Controller:SetVisibility(UIConst.VisibilityOp.Collapsed)
   self.Btn_EditShow:SetGamepadIconVisibility(false)
 end
-
 function M:FreshFocusLeaveEditListView()
   DebugPrint("FreshFocusLeaveEditListView")
   if self.CurInputDeviceType ~= ECommonInputType.Gamepad or self.IsEditOpen == true then
@@ -82,28 +76,23 @@ function M:FreshFocusLeaveEditListView()
   self.Key_Controller:SetVisibility(UIConst.VisibilityOp.HitTestInvisible)
   self.Btn_EditShow:SetGamepadIconVisibility(true)
 end
-
 function M:InitPage(Data)
   self:RefreshPageView(Data)
 end
-
 function M:FocusA()
   self.AvatarItem_1:setFocus()
 end
-
 function M:OnClickChangeSelectChar()
   self:SetIsDealWithVirtualAccept(true)
   if self.CurInputDeviceType ~= ECommonInputType.Gamepad then
     self:SetIsDealWithVirtualAccept(true)
   end
 end
-
 function M:OnClickChangeSelectWeapon()
   self:SetIsDealWithVirtualAccept(true)
   if self.CurInputDeviceType == ECommonInputType.Gamepad then
     self:SetIsDealWithVirtualAccept(true)
   end
 end
-
 AssembleComponents(M)
 return M

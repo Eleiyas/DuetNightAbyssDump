@@ -19,7 +19,6 @@ local RANGED_STATE_ANIM = {
   [RANGED_STATE.HIGHLIGHT] = "Ranged_Highlight",
   [RANGED_STATE.WEAK] = "Ranged_LowLight"
 }
-
 function M:OnLoaded(OwnerPlayer, Params)
   DebugPrint("gmy@Battle_XierSkill M:OnLoaded", Params.RangedBuffId, Params.MeleeBuffId)
   self.Owner = OwnerPlayer
@@ -31,19 +30,16 @@ function M:OnLoaded(OwnerPlayer, Params)
   self:InitBuffConfig()
   self:InitBuffLayer()
 end
-
 function M:InitBuffConfig()
   self.MaxMeleeBuffLayer = DataMgr.Buff[self.MeleeBuffId].MaxLayer or 1
   self.MaxRangedBuffLayer = DataMgr.Buff[self.RangedBuffId].MaxLayer or 1
   self.MeleeState = MELEE_STATE.NORMAL
   self.RangedState = MELEE_STATE.NORMAL
 end
-
 function M:ReceiveOnBuffsChanged()
   local Buffs = self.Owner.BuffManager.Buffs
   self:OnBuffsChanged(Buffs)
 end
-
 function M:OnBuffsChanged(Buffs)
   if not IsValid(self.Owner) then
     return
@@ -85,7 +81,6 @@ function M:OnBuffsChanged(Buffs)
   self:SetRangedState(RangedState)
   self:UpdateBuffLayer(MeleeBuffLayer, RangedBuffLayer)
 end
-
 function M:SetMeleeState(State)
   if State ~= self.MeleeState then
     DebugPrint("gmy@Battle_KezhouSkill M:SetMeleeState", State)
@@ -100,7 +95,6 @@ function M:SetMeleeState(State)
     self.MeleeState = State
   end
 end
-
 function M:SetRangedState(State)
   if State ~= self.RangedState then
     DebugPrint("gmy@Battle_KezhouSkill M:SetRangedState", State, RANGED_STATE_ANIM[State], self[RANGED_STATE_ANIM[State]])
@@ -115,16 +109,13 @@ function M:SetRangedState(State)
     self.RangedState = State
   end
 end
-
 function M:UpdateBuffLayer(MeleeBuffLayer, RangedBuffLayer)
   self.Progress_Melee:SetPercent(MeleeBuffLayer / self.MaxMeleeBuffLayer)
   self.Progress_Ranged:SetPercent(RangedBuffLayer / self.MaxRangedBuffLayer)
   self.Num_Melee:SetText(string.format("%.0f", MeleeBuffLayer))
   self.Num_Ranged:SetText(string.format("%.0f", RangedBuffLayer))
 end
-
 function M:InitBuffLayer()
   self:ReceiveOnBuffsChanged()
 end
-
 return M
